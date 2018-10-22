@@ -97,6 +97,7 @@ public:
             std::vector< Offset > _offsets;
             Offset _stride;
             uint32 _netSize;
+            uint32 _frequency{ PER_VERTEX };
 
             ChannelInfo() : _stride(0), _netSize(0) {}
         };
