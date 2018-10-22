@@ -595,15 +595,6 @@ void Batch::popProfileRange() {
 #endif
 }
 
-void Batch::_glUniform1i(int32 location, int32 v0) {
-    if (location < 0) {
-        return;
-    }
-    ADD_COMMAND(glUniform1i);
-    _params.emplace_back(v0);
-    _params.emplace_back(location);
-}
-
 void Batch::_glUniform1f(int32 location, float v0) {
     if (location < 0) {
         return;
@@ -637,53 +628,6 @@ void Batch::_glUniform4f(int32 location, float v0, float v1, float v2, float v3)
     _params.emplace_back(v2);
     _params.emplace_back(v1);
     _params.emplace_back(v0);
-    _params.emplace_back(location);
-}
-
-void Batch::_glUniform3fv(int32 location, int count, const float* value) {
-    ADD_COMMAND(glUniform3fv);
-
-    const int VEC3_SIZE = 3 * sizeof(float);
-    _params.emplace_back(cacheData(count * VEC3_SIZE, value));
-    _params.emplace_back(count);
-    _params.emplace_back(location);
-}
-
-void Batch::_glUniform4fv(int32 location, int count, const float* value) {
-    ADD_COMMAND(glUniform4fv);
-
-    const int VEC4_SIZE = 4 * sizeof(float);
-    _params.emplace_back(cacheData(count * VEC4_SIZE, value));
-    _params.emplace_back(count);
-    _params.emplace_back(location);
-}
-
-void Batch::_glUniform4iv(int32 location, int count, const int32* value) {
-    ADD_COMMAND(glUniform4iv);
-
-    const int VEC4_SIZE = 4 * sizeof(int);
-    _params.emplace_back(cacheData(count * VEC4_SIZE, value));
-    _params.emplace_back(count);
-    _params.emplace_back(location);
-}
-
-void Batch::_glUniformMatrix3fv(int32 location, int count, uint8 transpose, const float* value) {
-    ADD_COMMAND(glUniformMatrix3fv);
-
-    const int MATRIX3_SIZE = 9 * sizeof(float);
-    _params.emplace_back(cacheData(count * MATRIX3_SIZE, value));
-    _params.emplace_back(transpose);
-    _params.emplace_back(count);
-    _params.emplace_back(location);
-}
-
-void Batch::_glUniformMatrix4fv(int32 location, int count, uint8 transpose, const float* value) {
-    ADD_COMMAND(glUniformMatrix4fv);
-
-    const int MATRIX4_SIZE = 16 * sizeof(float);
-    _params.emplace_back(cacheData(count * MATRIX4_SIZE, value));
-    _params.emplace_back(transpose);
-    _params.emplace_back(count);
     _params.emplace_back(location);
 }
 

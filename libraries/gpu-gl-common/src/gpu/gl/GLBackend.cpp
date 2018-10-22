@@ -89,16 +89,10 @@ GLBackend::CommandCall GLBackend::_commandCalls[Batch::NUM_COMMANDS] =
     (&::gpu::gl::GLBackend::do_startNamedCall),
     (&::gpu::gl::GLBackend::do_stopNamedCall),
 
-    (&::gpu::gl::GLBackend::do_glUniform1i),
     (&::gpu::gl::GLBackend::do_glUniform1f),
     (&::gpu::gl::GLBackend::do_glUniform2f),
     (&::gpu::gl::GLBackend::do_glUniform3f),
     (&::gpu::gl::GLBackend::do_glUniform4f),
-    (&::gpu::gl::GLBackend::do_glUniform3fv),
-    (&::gpu::gl::GLBackend::do_glUniform4fv),
-    (&::gpu::gl::GLBackend::do_glUniform4iv),
-    (&::gpu::gl::GLBackend::do_glUniformMatrix3fv),
-    (&::gpu::gl::GLBackend::do_glUniformMatrix4fv),
 
     (&::gpu::gl::GLBackend::do_pushProfileRange),
     (&::gpu::gl::GLBackend::do_popProfileRange),
