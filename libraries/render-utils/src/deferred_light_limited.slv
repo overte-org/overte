@@ -13,7 +13,9 @@
 //
 
 <@include gpu/Transform.slh@>
-<@include gpu/Inputs.slh@>
+<@include gpu/ShaderConstants.h@>
+layout(location=GPU_ATTR_POSITION) in vec4 inPosition;
+
 <@include render-utils/ShaderConstants.h@>
 
 <$declareStandardTransform()$>
