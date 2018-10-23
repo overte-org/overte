@@ -9,7 +9,10 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-<@include gpu/Inputs.slh@>
+<@include gpu/ShaderConstants.h@>
+layout(location=GPU_ATTR_POSITION) in vec4 inPosition;
+layout(location=GPU_ATTR_NORMAL) in vec4 inNormal;
+
 <@include render-utils/ShaderConstants.h@>
 
 <@include gpu/Transform.slh@>
@@ -27,6 +30,7 @@
 <@endif@>
 
 void main(void) {
+    // standard transform
     TransformCamera cam = getTransformCamera();
     TransformObject obj = getTransformObject();
 
