@@ -10,8 +10,11 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-<@include gpu/Inputs.slh@>
-<@include gpu/Color.slh@>
+<@include gpu/ShaderConstants.h@>
+layout(location=GPU_ATTR_POSITION) in vec4 inPosition;
+layout(location=GPU_ATTR_TEXCOORD0) in vec4 inTexCoord0;
+
+<@include gpu/Transform.slh@>
 <@include render-utils/ShaderConstants.h@>
 
 <@include gpu/Transform.slh@>
