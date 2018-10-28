@@ -9,8 +9,8 @@
 //
 
 <@include gpu/ShaderConstants.h@>
-layout(location=GPU_ATTR_POSITION) in vec4 inPosition;
-layout(location=GPU_ATTR_COLOR) in vec4 inColor;
+INPUT(GPU_ATTR_POSITION, vec4, inPosition);
+INPUT(GPU_ATTR_COLOR, vec4, inColor);
 
 <@include gpu/Color.slh@>
 <@include gpu/Transform.slh@>
@@ -18,7 +18,7 @@ layout(location=GPU_ATTR_COLOR) in vec4 inColor;
 
 <@include render-utils/ShaderConstants.h@>
 
-layout(location=RENDER_UTILS_ATTR_COLOR) out vec4 _color;
+OUTPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);
 
 void main(void) {
     // pass along the color

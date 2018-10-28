@@ -26,7 +26,7 @@
 <@endif@>
 
 <@if HIFI_USE_FORWARD@>
-    layout(location=0) out vec4 _fragColor0;
+    OUTPUT(0, vec4, _fragColor0);
 <@else@>
     <@include DeferredBufferWrite.slh@>
 <@endif@>
@@ -47,22 +47,22 @@
 
 <@if HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
     <@if not HIFI_USE_UNLIT@>
-        layout(location=RENDER_UTILS_ATTR_POSITION_ES) in vec4 _positionES;
+        INPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
     <@endif@>
 <@endif@>
 <@if not HIFI_USE_FORWARD@>
     layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) in vec4 _prevPositionCS;
 <@endif@>
 <@if HIFI_USE_FADE@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_WS) in vec4 _positionWS;
+    INPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
 <@endif@>
-layout(location=RENDER_UTILS_ATTR_NORMAL_WS) in vec3 _normalWS;
-layout(location=RENDER_UTILS_ATTR_COLOR) in vec4 _color;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4 _texCoord01;
+INPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
+INPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);
+INPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 #define _texCoord0 _texCoord01.xy
 #define _texCoord1 _texCoord01.zw
 
-LAYOUT(binding=0) uniform sampler2D simpleTexture;
+TEXTURE(0, sampler2D, simpleTexture);
 
 void main(void) {
     vec4 texel = texture(simpleTexture, _texCoord0);

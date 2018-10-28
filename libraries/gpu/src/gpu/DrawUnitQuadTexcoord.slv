@@ -13,7 +13,7 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
-layout(location=0) out vec2 varTexCoord0;
+OUTPUT(0, vec2, varTexCoord0);
 
 void main(void) {
     const float depth = 1.0;

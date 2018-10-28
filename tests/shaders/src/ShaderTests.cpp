@@ -17,6 +17,7 @@
 #include <algorithm>
 
 #include <QtCore/QJsonDocument>
+#include <QtConcurrent/QtConcurrent>
 
 #include <GLMHelpers.h>
 
@@ -380,38 +381,38 @@ void rebuildSource(shader::Dialect dialect, shader::Variant variant, const shade
             throw std::runtime_error("Wrong");
         }
 
-    // Output the SPIR-V code from the shader program
-    std::vector<uint32_t> spirv;
-    glslang::GlslangToSpv(*program.getIntermediate(stage), spirv);
+        // Output the SPIR-V code from the shader program
+        std::vector<uint32_t> spirv;
+        glslang::GlslangToSpv(*program.getIntermediate(stage), spirv);
 
-    spvtools::SpirvTools core(SPV_ENV_VULKAN_1_1);
-    spvtools::Optimizer opt(SPV_ENV_VULKAN_1_1);
+        spvtools::SpirvTools core(SPV_ENV_VULKAN_1_1);
+        spvtools::Optimizer opt(SPV_ENV_VULKAN_1_1);
 
-    auto outputLambda = [](spv_message_level_t, const char*, const spv_position_t&, const char* m) { qWarning() << m; };
-    core.SetMessageConsumer(outputLambda);
-    opt.SetMessageConsumer(outputLambda);
+        auto outputLambda = [](spv_message_level_t, const char*, const spv_position_t&, const char* m) { qWarning() << m; };
+        core.SetMessageConsumer(outputLambda);
+        opt.SetMessageConsumer(outputLambda);
 
-    if (!core.Validate(spirv)) {
-        throw std::runtime_error("invalid spirv");
-    }
-    writeSpirv(baseOutName + ".spv", spirv);
+        if (!core.Validate(spirv)) {
+            throw std::runtime_error("invalid spirv");
+        }
+        writeSpirv(baseOutName + ".spv", spirv);
 
-    opt.RegisterPass(spvtools::CreateFreezeSpecConstantValuePass())
-        .RegisterPass(spvtools::CreateStrengthReductionPass())
-        .RegisterPass(spvtools::CreateEliminateDeadConstantPass())
-        .RegisterPass(spvtools::CreateEliminateDeadFunctionsPass())
-        .RegisterPass(spvtools::CreateUnifyConstantPass());
+        opt.RegisterPass(spvtools::CreateFreezeSpecConstantValuePass())
+            .RegisterPass(spvtools::CreateStrengthReductionPass())
+            .RegisterPass(spvtools::CreateEliminateDeadConstantPass())
+            .RegisterPass(spvtools::CreateEliminateDeadFunctionsPass())
+            .RegisterPass(spvtools::CreateUnifyConstantPass());
 
-    std::vector<uint32_t> optspirv;
-    if (!opt.Run(spirv.data(), spirv.size(), &optspirv)) {
-        throw std::runtime_error("bad optimize run");
-    }
-    writeSpirv(baseOutName + ".opt.spv", optspirv);
+        std::vector<uint32_t> optspirv;
+        if (!opt.Run(spirv.data(), spirv.size(), &optspirv)) {
+            throw std::runtime_error("bad optimize run");
+        }
+        writeSpirv(baseOutName + ".opt.spv", optspirv);
 
-    std::string disassembly;
-    if (!core.Disassemble(optspirv, &disassembly)) {
-        throw std::runtime_error("bad disassembly");
-    }
+        std::string disassembly;
+        if (!core.Disassemble(optspirv, &disassembly)) {
+            throw std::runtime_error("bad disassembly");
+        }
 
         write(baseOutName + ".spv.txt", disassembly);
     } catch (const std::runtime_error& error) {
@@ -490,7 +491,25 @@ void ShaderTests::testShaderLoad() {
                 const auto& shader = shader::Source::get(shaderId);
                 qDebug() << "Unused shader found" << shader.name.c_str();
             }
+
+#if RUNTIME_SHADER_COMPILE_TEST
+            auto threadPool = QThreadPool::globalInstance();
+            threadPool->setMaxThreadCount(24);
+            glslang::InitializeProcess();
+            static TBuiltInResource glslCompilerResources;
+            configureGLSLCompilerResources(&glslCompilerResources);
+            for (const auto& shaderId : programUsedShaders) {
+                const auto& shaderSource = shader::Source::get(shaderId);
+                for (const auto& dialect : shader::allDialects()) {
+                    for (const auto& variant : shader::allVariants()) {
+                        rebuildSource(dialect, variant, shaderSource);
+                    }
+                }
+            }
+            glslang::FinalizeProcess();
+#endif
         }
+
 
         // Traverse all programs again to do program level tests
         for (const auto& programId : programIds) {

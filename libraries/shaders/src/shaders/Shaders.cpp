@@ -31,32 +31,17 @@ static void initShadersResources() {
 namespace shader {
 
 #if defined(USE_GLES)
-
-const Dialect DEFAULT_DIALECT = Dialect::glsl310es;
-
-const std::vector<Dialect>& allDialects() {
-    static const std::vector<Dialect> ALL_DIALECTS{ Dialect::glsl310es };
-    return ALL_DIALECTS;
-}
-    
-#elif defined(Q_OS_MAC) 
-
-const Dialect DEFAULT_DIALECT = Dialect::glsl410;
-
-const std::vector<Dialect>& allDialects() {
-    static const std::vector<Dialect> ALL_DIALECTS{ Dialect::glsl410 };
-    return ALL_DIALECTS;
-}
-
+static const Dialect DEFAULT_DIALECT = Dialect::glsl320es;
+#elif defined(Q_OS_MAC)
+static const Dialect DEFAULT_DIALECT = Dialect::glsl410;
 #else
+static const Dialect DEFAULT_DIALECT = Dialect::glsl450;
+#endif
 
-const Dialect DEFAULT_DIALECT = Dialect::glsl450;
-
-const std::vector<Dialect> & allDialects() {
-    static const std::vector<Dialect> ALL_DIALECTS{ { Dialect::glsl450, Dialect::glsl410 } };
+const std::vector<Dialect>& allDialects() {
+    static const std::vector<Dialect> ALL_DIALECTS{ { DEFAULT_DIALECT } };
     return ALL_DIALECTS;
 }
-#endif
 
 const std::vector<Variant>& allVariants() {
     static const std::vector<Variant> ALL_VARIANTS{ { Variant::Mono, Variant::Stereo } };
@@ -64,19 +49,27 @@ const std::vector<Variant>& allVariants() {
 }
 
 const std::string& dialectPath(Dialect dialect) {
-    static const std::string e310esPath { "/310es/" };
-    static const std::string e410Path { "/410/" };
-    static const std::string e450Path { "/450/" };
-    switch (dialect) {
-#if defined(USE_GLES) 
-        case Dialect::glsl310es: return e310esPath;
+#if defined(USE_GLES)
+    static const std::string e320esPath{ "/320es/" };
+#elif defined(Q_OS_MAC)
+    static const std::string e410Path{ "/410/" };
 #else
-#if !defined(Q_OS_MAC)
-        case Dialect::glsl450: return e450Path;
+    static const std::string e450Path{ "/450/" };
 #endif
-        case Dialect::glsl410: return e410Path;
+
+    switch (dialect) {
+#if defined(USE_GLES)
+        case Dialect::glsl320es:
+            return e320esPath;
+#elif defined(Q_OS_MAC)
+        case Dialect::glsl410:
+            return e410Path;
+#else
+        case Dialect::glsl450:
+            return e450Path;
 #endif
-        default: break;
+        default:
+            break;
     }
     throw std::runtime_error("Invalid dialect");
 }
@@ -165,8 +158,8 @@ bool Source::doReplacement(String& source) const {
     for (const auto& entry : replacements) {
         const auto& key = entry.first;
         // First try search for a block to replace
-        // Blocks are required because oftentimes we need a stub function 
-        // in the original source code to allow it to compile.  As such we 
+        // Blocks are required because oftentimes we need a stub function
+        // in the original source code to allow it to compile.  As such we
         // need to replace the stub with our own code rather than just inject
         // some code.
         const auto beginMarker = key + "_BEGIN";
@@ -210,7 +203,6 @@ const DialectVariantSource& Source::getDialectVariantSource(Dialect dialect, Var
 
     return variantEntry->second;
 }
-
 
 String Source::getSource(Dialect dialect, Variant variant) const {
     String result;
@@ -304,7 +296,7 @@ void Reflection::parse(const std::string& jsonString) {
             if (!resourceBuffers.empty()) {
                 throw std::runtime_error("Input shader has both SSBOs and texture buffers defined");
             }
-            for (const auto& bufferTexture : bufferTextures){
+            for (const auto& bufferTexture : bufferTextures) {
                 resourceBuffers[bufferTexture] = textures[bufferTexture];
                 textures.erase(bufferTexture);
             }

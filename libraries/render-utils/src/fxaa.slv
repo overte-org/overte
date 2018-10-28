@@ -13,15 +13,15 @@
 //
 
 <@include gpu/ShaderConstants.h@>
-layout(location=GPU_ATTR_POSITION) in vec4 inPosition;
-layout(location=GPU_ATTR_TEXCOORD0) in vec4 inTexCoord0;
+INPUT(GPU_ATTR_POSITION, vec4, inPosition);
+INPUT(GPU_ATTR_TEXCOORD0, vec4, inTexCoord0);
 
 
 <@include gpu/Transform.slh@>
 
 <$declareStandardTransform()$>
 
-layout(location=0) out vec2 varTexcoord;
+OUTPUT(0, vec2, varTexcoord);
 
 void main(void) {
     varTexcoord = inTexCoord0.xy;

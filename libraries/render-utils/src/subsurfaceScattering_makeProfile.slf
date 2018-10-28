@@ -14,8 +14,8 @@
 <@include SubsurfaceScattering.slh@>
 <$declareSubsurfaceScatteringGenerateProfileMap()$>
 
-layout(location=0) in vec2 varTexCoord0;
-layout(location=0) out vec4 outFragColor;
+INPUT(0, vec2, varTexCoord0);
+OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
     outFragColor = vec4(generateProfile(varTexCoord0.xy), 1.0);
