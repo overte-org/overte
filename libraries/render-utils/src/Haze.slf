@@ -21,7 +21,7 @@
 
 <@include graphics/Haze.slh@>
 
-LAYOUT(binding=RENDER_UTILS_TEXTURE_HAZE_LINEAR_DEPTH) uniform sampler2D linearDepthMap;
+TEXTURE(RENDER_UTILS_TEXTURE_HAZE_LINEAR_DEPTH, sampler2D, linearDepthMap);
 
 vec4 unpackPositionFromZeye(vec2 texcoord) {
     float Zeye = -texture(linearDepthMap, texcoord).x;
@@ -35,8 +35,8 @@ vec4 unpackPositionFromZeye(vec2 texcoord) {
     return vec4(evalEyePositionFromZeye(side, Zeye, texcoord), 1.0);
 }
 
-layout(location=0) in vec2 varTexCoord0;
-layout(location=0) out vec4 outFragColor;
+INPUT(0, vec2, varTexCoord0);
+OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
     if ((isHazeEnabled() == 0.0) || (hazeParams.hazeMode & HAZE_MODE_IS_ACTIVE) != HAZE_MODE_IS_ACTIVE) {

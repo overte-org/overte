@@ -12,18 +12,18 @@
 //
 <@include graphics/ShaderConstants.h@>
 
-LAYOUT(binding=GRAPHICS_TEXTURE_SKYBOX) uniform samplerCube cubeMap;
+TEXTURE(GRAPHICS_TEXTURE_SKYBOX, samplerCube, cubeMap);
 
 struct Skybox {
     vec4 color;
 };
 
-LAYOUT(binding=GRAPHICS_BUFFER_SKYBOX_PARAMS) uniform skyboxBuffer {
+UNIFORM_BUFFER(GRAPHICS_BUFFER_SKYBOX_PARAMS, skyboxBuffer) {
     Skybox skybox;
 };
 
-layout(location=0) in vec3  _normal;
-layout(location=0) out vec4 _fragColor;
+INPUT(0, vec3, _normal);
+OUTPUT(0, vec4, _fragColor);
 
 <@include procedural/ProceduralCommon.slh@>
 

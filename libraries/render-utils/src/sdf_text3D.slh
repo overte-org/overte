@@ -14,7 +14,7 @@
 <@if not SDF_TEXT3D_SLH@>
 <@def SDF_TEXT3D_SLH@>
 
-LAYOUT(binding=0) uniform sampler2D fontTexture;
+TEXTURE(0, sampler2D, fontTexture);
 
 struct TextParams {
     vec4 bounds;
@@ -29,7 +29,7 @@ struct TextParams {
     float spare;
 };
 
-LAYOUT(binding=0) uniform textParamsBuffer {
+UNIFORM_BUFFER(0, textParamsBuffer) {
     TextParams params;
 };
 

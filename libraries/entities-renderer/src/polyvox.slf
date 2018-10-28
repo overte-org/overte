@@ -14,7 +14,7 @@
     <@include Fade.slh@>
     <$declareFadeFragment()$>
 
-    layout(location=RENDER_UTILS_ATTR_POSITION_WS) in vec4 _positionWS;
+    INPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
 <@endif@>
 
 <@if not HIFI_USE_SHADOW@>
@@ -35,26 +35,27 @@
     <@endif@>
 
     <@if HIFI_USE_FORWARD@>
-        layout(location=RENDER_UTILS_ATTR_POSITION_ES) in vec4 _positionES;
+        INPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
     <@endif@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_MS) in vec3 _positionMS;
-    layout(location=RENDER_UTILS_ATTR_NORMAL_WS) in vec3 _normalWS;
+    INPUT(RENDER_UTILS_ATTR_POSITION_MS, vec4, _positionMS);
+    INPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
 
-    LAYOUT(binding=ENTITIES_TEXTURE_POLYVOX_XMAP) uniform sampler2D xMap;
-    LAYOUT(binding=ENTITIES_TEXTURE_POLYVOX_YMAP) uniform sampler2D yMap;
-    LAYOUT(binding=ENTITIES_TEXTURE_POLYVOX_ZMAP) uniform sampler2D zMap;
+    TEXTURE(ENTITIES_TEXTURE_POLYVOX_XMAP, sampler2D, xMap);
+    TEXTURE(ENTITIES_TEXTURE_POLYVOX_YMAP, sampler2D, yMap);
+    TEXTURE(ENTITIES_TEXTURE_POLYVOX_ZMAP, sampler2D, zMap);
 
     struct PolyvoxParams {
         vec4 voxelVolumeSize;
     };
 
-    LAYOUT(binding=0) uniform polyvoxParamsBuffer {
+    UNIFORM_BUFFER(0, polyvoxParamsBuffer) {
         PolyvoxParams params;
     };
+
 <@endif@>
 
 <@if HIFI_USE_SHADOW or HIFI_USE_FORWARD@>
-    layout(location=0) out vec4 _fragColor0;
+    OUTPUT(0, vec4, _fragColor0);
 <@endif@>
 
 void main(void) {

@@ -22,7 +22,7 @@
     <@include gpu/Transform.slh@>
     <$declareStandardCameraTransform()$>
 
-    layout(location=0) out vec4 _fragColor0;
+    OUTPUT(0, vec4, _fragColor0);
 <@else@>
     <@include DeferredBufferWrite.slh@>
 <@endif@>
@@ -34,13 +34,16 @@
 
 layout(location=RENDER_UTILS_ATTR_POSITION_MS) in vec2 _positionMS;
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_ES) in vec4 _positionES;
+    INPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
 <@endif@>
-layout(location=RENDER_UTILS_ATTR_NORMAL_WS) in vec3 _normalWS;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4 _texCoord01;
+// the interpolated normal
+INPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
+INPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 #define _texCoord0 _texCoord01.xy
 #define _texCoord1 _texCoord01.zw
-layout(location=RENDER_UTILS_ATTR_FADE1) flat in vec4 _glyphBounds; // we're reusing the fade texcoord locations here
+// TODO: what does flat mean?
+//layout(location=RENDER_UTILS_ATTR_FADE1) flat in vec4 _glyphBounds; // we're reusing the fade texcoord locations here
+INPUT(RENDER_UTILS_ATTR_FADE1, vec4, _glyphBounds); // we're reusing the fade texcoord locations here
 
 void main() {
     vec4 color = evalSDFSuperSampled(_texCoord0, _positionMS, _glyphBounds);
