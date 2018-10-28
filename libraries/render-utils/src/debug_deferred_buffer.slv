@@ -13,10 +13,10 @@
 //
 
 <@include gpu/ShaderConstants.h@>
-layout(location=GPU_ATTR_POSITION) in vec4 inPosition;
+INPUT(GPU_ATTR_POSITION, vec4, inPosition);
 
 
-layout(location=0) out vec2 uv;
+OUTPUT(0, vec2, uv);
 
 void main(void) {
     uv = (inPosition.xy + 1.0) * 0.5;

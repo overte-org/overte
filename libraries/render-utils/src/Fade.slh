@@ -15,7 +15,7 @@
 
 <@include FadeObjectParams.shared.slh@>
 
-LAYOUT(binding=RENDER_UTILS_TEXTURE_FADE_MASK) uniform sampler2D fadeMaskMap;
+TEXTURE(RENDER_UTILS_TEXTURE_FADE_MASK, sampler2D, fadeMaskMap);
 
 vec2 hash2D(vec3 position) {
     return position.xy* vec2(0.1677,  0.221765) + position.z*0.561;
@@ -99,7 +99,7 @@ void applyFade(FadeObjectParams params, vec3 position, out vec3 emissive) {
 
 <@func declareFadeFragmentUniform()@>
 
-LAYOUT_STD140(binding=RENDER_UTILS_BUFFER_FADE_OBJECT_PARAMS) uniform fadeObjectParametersBuffer {
+UNIFORM_BUFFER(RENDER_UTILS_BUFFER_FADE_OBJECT_PARAMS, fadeObjectParametersBuffer) {
     FadeObjectParams fadeObjectParams;
 };
 
@@ -111,13 +111,13 @@ LAYOUT_STD140(binding=RENDER_UTILS_BUFFER_FADE_OBJECT_PARAMS) uniform fadeObject
 
 <@func declareFadeFragmentVertexInput()@>
 
-layout(location=RENDER_UTILS_ATTR_FADE1) flat in vec4 _fadeData1;
-layout(location=RENDER_UTILS_ATTR_FADE2) flat in vec4 _fadeData2;
-layout(location=RENDER_UTILS_ATTR_FADE3) flat in vec4 _fadeData3;
-layout(location=RENDER_UTILS_ATTR_FADE4) flat in vec4 _fadeData4;
-layout(location=RENDER_UTILS_ATTR_FADE5) flat in vec4 _fadeData5;
-layout(location=RENDER_UTILS_ATTR_FADE6) flat in vec4 _fadeData6;
-layout(location=RENDER_UTILS_ATTR_FADE7) flat in float _fadeData7;
+FLAT_INPUT(RENDER_UTILS_ATTR_FADE1, vec4, _fadeData1);
+FLAT_INPUT(RENDER_UTILS_ATTR_FADE2, vec4, _fadeData2);
+FLAT_INPUT(RENDER_UTILS_ATTR_FADE3, vec4, _fadeData3);
+FLAT_INPUT(RENDER_UTILS_ATTR_FADE4, vec4, _fadeData4);
+FLAT_INPUT(RENDER_UTILS_ATTR_FADE5, vec4, _fadeData5);
+FLAT_INPUT(RENDER_UTILS_ATTR_FADE6, vec4, _fadeData6);
+FLAT_INPUT(RENDER_UTILS_ATTR_FADE7, float, _fadeData7);
 
 <@endfunc@>
 
@@ -142,21 +142,21 @@ layout(location=RENDER_UTILS_ATTR_FADE7) flat in float _fadeData7;
 <@endfunc@>
 
 <@func declareFadeVertexInstanced()@>
-layout(location=GPU_ATTR_FADEDATA1) in vec4 fadeData1;
-layout(location=GPU_ATTR_FADEDATA2) in vec4 fadeData2;
-layout(location=GPU_ATTR_FADEDATA3) in vec4 fadeData3;
-layout(location=GPU_ATTR_FADEDATA4) in vec4 fadeData4;
-layout(location=GPU_ATTR_FADEDATA5) in vec4 fadeData5;
-layout(location=GPU_ATTR_FADEDATA6) in vec4 fadeData6;
-layout(location=GPU_ATTR_FADEDATA7) in float fadeData7;
+INPUT(GPU_ATTR_FADEDATA1, vec4, fadeData1);
+INPUT(GPU_ATTR_FADEDATA2, vec4, fadeData2);
+INPUT(GPU_ATTR_FADEDATA3, vec4, fadeData3);
+INPUT(GPU_ATTR_FADEDATA4, vec4, fadeData4);
+INPUT(GPU_ATTR_FADEDATA5, vec4, fadeData5);
+INPUT(GPU_ATTR_FADEDATA6, vec4, fadeData6);
+INPUT(GPU_ATTR_FADEDATA7, float, fadeData7);
 
-layout(location=RENDER_UTILS_ATTR_FADE1) flat out vec4 _fadeData1;
-layout(location=RENDER_UTILS_ATTR_FADE2) flat out vec4 _fadeData2;
-layout(location=RENDER_UTILS_ATTR_FADE3) flat out vec4 _fadeData3;
-layout(location=RENDER_UTILS_ATTR_FADE4) flat out vec4 _fadeData4;
-layout(location=RENDER_UTILS_ATTR_FADE5) flat out vec4 _fadeData5;
-layout(location=RENDER_UTILS_ATTR_FADE6) flat out vec4 _fadeData6;
-layout(location=RENDER_UTILS_ATTR_FADE7) flat out float _fadeData7;
+FLAT_OUTPUT(RENDER_UTILS_ATTR_FADE1, vec4, _fadeData1);
+FLAT_OUTPUT(RENDER_UTILS_ATTR_FADE2, vec4, _fadeData2);
+FLAT_OUTPUT(RENDER_UTILS_ATTR_FADE3, vec4, _fadeData3);
+FLAT_OUTPUT(RENDER_UTILS_ATTR_FADE4, vec4, _fadeData4);
+FLAT_OUTPUT(RENDER_UTILS_ATTR_FADE5, vec4, _fadeData5);
+FLAT_OUTPUT(RENDER_UTILS_ATTR_FADE6, vec4, _fadeData6);
+FLAT_OUTPUT(RENDER_UTILS_ATTR_FADE7, float, _fadeData7);
 <@endfunc@>
 
 <@func passThroughFadeObjectParams()@>

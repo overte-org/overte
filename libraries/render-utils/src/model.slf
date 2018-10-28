@@ -101,19 +101,19 @@
     <@endif@>
 
     <@if HIFI_USE_FORWARD@>
-        layout(location=0) out vec4 _fragColor0;
+        OUTPUT(0, vec4, _fragColor0);
     <@else@>
         <@include DeferredBufferWrite.slh@>
     <@endif@>
 <@else@>
     <@if HIFI_USE_MIRROR@>
         <@if HIFI_USE_FORWARD@>
-            layout(location=0) out vec4 _fragColor0;
+            OUTPUT(0, vec4, _fragColor0);
         <@else@>
             <@include DeferredBufferWrite.slh@>
         <@endif@>
     <@else@>
-        layout(location=0) out vec4 _fragColor0;
+         OUTPUT(0, vec4, _fragColor0);
     <@endif@>
 <@endif@>
 
@@ -129,8 +129,8 @@
     <$declareStandardObjectTransform()$>
 <@endif@>
 
-layout(location=RENDER_UTILS_ATTR_POSITION_WS) in vec4 _positionWS;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4  _texCoord01[NUM_LAYERS];
+INPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
+INPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01[NUM_LAYERS]);
 #define _texCoords mat2[NUM_LAYERS](                \
     mat2(_texCoord01[0].xy, _texCoord01[0].zw)      \
 <@if HIFI_USE_LAYERS2 or HIFI_USE_LAYERS3@>
@@ -142,15 +142,15 @@ layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4  _texCoord01[NUM_LAYERS];
 )
 
 <@if not HIFI_USE_SHADOW@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_ES) in vec4 _positionES;
-    layout(location=RENDER_UTILS_ATTR_NORMAL_WS) in vec3 _normalWS;
+    INPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
+    INPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
     <@if not HIFI_USE_MTOON@>
-        layout(location=RENDER_UTILS_ATTR_COLOR) in vec4 _color;
+        INPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);
     <@endif@>
     layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) in vec4 _prevPositionCS;
     <@if not HIFI_USE_TRIPLANAR@>
         <@if HIFI_USE_NORMALMAP@>
-            layout(location=RENDER_UTILS_ATTR_TANGENT_WS) in vec3 _tangentWS;
+            INPUT(RENDER_UTILS_ATTR_TANGENT_WS, vec3, _tangentWS);
         <@endif@>
     <@endif@>
 <@endif@>

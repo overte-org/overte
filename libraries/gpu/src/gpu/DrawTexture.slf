@@ -14,10 +14,10 @@
 //
 
 
-LAYOUT(binding=0) uniform sampler2D colorMap;
+TEXTURE(0, sampler2D, colorMap);
 
-layout(location=0) in vec2 varTexCoord0;
-layout(location=0) out vec4 outFragColor;
+INPUT(0, vec2, varTexCoord0);
+OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
     outFragColor = texture(colorMap, varTexCoord0);

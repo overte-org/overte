@@ -32,10 +32,10 @@ namespace shader {
 
 #if defined(USE_GLES)
 
-const Dialect DEFAULT_DIALECT = Dialect::glsl310es;
+const Dialect DEFAULT_DIALECT = Dialect::glsl320es;
 
 const std::vector<Dialect>& allDialects() {
-    static const std::vector<Dialect> ALL_DIALECTS{ Dialect::glsl310es };
+    static const std::vector<Dialect> ALL_DIALECTS{ Dialect::glsl320es };
     return ALL_DIALECTS;
 }
     
@@ -69,7 +69,7 @@ const std::string& dialectPath(Dialect dialect) {
     static const std::string e450Path { "/450/" };
     switch (dialect) {
 #if defined(USE_GLES) 
-        case Dialect::glsl310es: return e310esPath;
+        case Dialect::glsl320es: return e320esPath;
 #elif defined(Q_OS_MAC)
         case Dialect::glsl410: return e410Path;
 #else
@@ -164,8 +164,8 @@ bool Source::doReplacement(String& source) const {
     for (const auto& entry : replacements) {
         const auto& key = entry.first;
         // First try search for a block to replace
-        // Blocks are required because oftentimes we need a stub function 
-        // in the original source code to allow it to compile.  As such we 
+        // Blocks are required because oftentimes we need a stub function
+        // in the original source code to allow it to compile.  As such we
         // need to replace the stub with our own code rather than just inject
         // some code.
         const auto beginMarker = key + "_BEGIN";
@@ -303,7 +303,7 @@ void Reflection::parse(const std::string& jsonString) {
             if (!resourceBuffers.empty()) {
                 throw std::runtime_error("Input shader has both SSBOs and texture buffers defined");
             }
-            for (const auto& bufferTexture : bufferTextures){
+            for (const auto& bufferTexture : bufferTextures) {
                 resourceBuffers[bufferTexture] = textures[bufferTexture];
                 textures.erase(bufferTexture);
             }
