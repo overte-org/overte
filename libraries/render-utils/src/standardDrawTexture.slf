@@ -14,14 +14,14 @@
 <@include gpu/ShaderConstants.h@>
 
 // the texture
-LAYOUT(binding=0) uniform sampler2D colorMap;
+TEXTURE(0, sampler2D, colorMap);
 
-layout(location=GPU_ATTR_POSITION) in vec3 varPosition;
-layout(location=GPU_ATTR_NORMAL) in vec3 varNormal;
-layout(location=GPU_ATTR_TEXCOORD0) in vec2 varTexCoord0;
-layout(location=GPU_ATTR_COLOR) in vec4 varColor;
+INPUT(GPU_ATTR_POSITION, vec3, varPosition);
+INPUT(GPU_ATTR_NORMAL, vec3, varNormal);
+INPUT(GPU_ATTR_TEXCOORD0, vec2, varTexCoord0);
+INPUT(GPU_ATTR_COLOR, vec4, varColor);
 
-layout(location=0) out vec4 outFragColor;
+OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
     vec4 color = texture(colorMap, varTexCoord0);

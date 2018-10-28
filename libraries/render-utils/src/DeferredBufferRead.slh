@@ -17,23 +17,23 @@
 // See DeferredShader_MapSlot in DeferredLightingEffect.cpp for constants
 
 // the albedo texture
-LAYOUT(binding=RENDER_UTILS_TEXTURE_DEFERRRED_COLOR) uniform sampler2D albedoMap;
+TEXTURE(RENDER_UTILS_TEXTURE_DEFERRRED_COLOR, sampler2D, albedoMap);
 
 // the normal texture
-LAYOUT(binding=RENDER_UTILS_TEXTURE_DEFERRRED_NORMAL) uniform sampler2D normalMap;
+TEXTURE(RENDER_UTILS_TEXTURE_DEFERRRED_NORMAL, sampler2D, normalMap);
 
 // the specular texture
-LAYOUT(binding=RENDER_UTILS_TEXTURE_DEFERRRED_SPECULAR) uniform sampler2D specularMap;
+TEXTURE(RENDER_UTILS_TEXTURE_DEFERRRED_SPECULAR, sampler2D, specularMap);
 
 // the depth texture
-LAYOUT(binding=RENDER_UTILS_TEXTURE_DEFERRRED_DEPTH) uniform sampler2D depthMap;
-LAYOUT(binding=RENDER_UTILS_TEXTURE_DEFERRRED_LINEAR_Z_EYE) uniform sampler2D linearZeyeMap;
+TEXTURE(RENDER_UTILS_TEXTURE_DEFERRRED_DEPTH, sampler2D, depthMap);
+TEXTURE(RENDER_UTILS_TEXTURE_DEFERRRED_LINEAR_Z_EYE, sampler2D, linearZeyeMap);
 
 // the obscurance texture
-LAYOUT(binding=RENDER_UTILS_TEXTURE_DEFERRED_OBSCURANCE) uniform sampler2D obscuranceMap;
+TEXTURE(RENDER_UTILS_TEXTURE_DEFERRED_OBSCURANCE, sampler2D, obscuranceMap);
 
 // the lighting texture
-LAYOUT(binding=RENDER_UTILS_TEXTURE_DEFERRED_LIGHTING) uniform sampler2D lightingMap;
+TEXTURE(RENDER_UTILS_TEXTURE_DEFERRED_LIGHTING, sampler2D, lightingMap);
 
 
 struct DeferredFragment {
@@ -160,14 +160,14 @@ DeferredFragment unpackDeferredFragment(DeferredFrameTransform deferredTransform
 <@func declareDeferredCurvature()@>
 
 // the curvature texture
-LAYOUT(binding=RENDER_UTILS_TEXTURE_DEFERRED_CURVATURE) uniform sampler2D curvatureMap;
+TEXTURE(RENDER_UTILS_TEXTURE_DEFERRED_CURVATURE, sampler2D, curvatureMap);
 
 vec4 fetchCurvature(vec2 texcoord) {
     return texture(curvatureMap, texcoord);
 }
 
 // the curvature texture
-LAYOUT(binding=RENDER_UTILS_TEXTURE_DEFERRED_DIFFUSED_CURVATURE) uniform sampler2D diffusedCurvatureMap;
+TEXTURE(RENDER_UTILS_TEXTURE_DEFERRED_DIFFUSED_CURVATURE, sampler2D, diffusedCurvatureMap);
 
 vec4 fetchDiffusedCurvature(vec2 texcoord) {
     return texture(diffusedCurvatureMap, texcoord);

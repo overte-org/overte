@@ -17,11 +17,11 @@ struct DrawColorParams {
     vec4 color;
 };
 
-LAYOUT(binding=0) uniform drawColorParamsBuffer {
+UNIFORM_BUFFER(0, drawColorParamsBuffer) {
     DrawColorParams params;
 };
 
-layout(location=0) out vec4 outFragColor;
+OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
     outFragColor = params.color;

@@ -14,7 +14,7 @@
 
 <@include gpu/Transform.slh@>
 <@include gpu/ShaderConstants.h@>
-layout(location=GPU_ATTR_POSITION) in vec4 inPosition;
+INPUT(GPU_ATTR_POSITION, vec4, inPosition);
 
 <@include render-utils/ShaderConstants.h@>
 
@@ -23,7 +23,7 @@ layout(location=GPU_ATTR_POSITION) in vec4 inPosition;
 // FIXME make into a uniform buffer or push constant if this shader ever comes into use
 vec4 sphereParam = vec4(0.0);
 
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
+OUTPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 
 void main(void) {
     if (sphereParam.w != 0.0) {
