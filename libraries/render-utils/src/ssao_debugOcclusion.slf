@@ -26,7 +26,7 @@ struct DebugParams{
     vec4 pixelInfo;
 };
 
-LAYOUT(binding=RENDER_UTILS_BUFFER_SSAO_DEBUG_PARAMS) uniform debugAmbientOcclusionBuffer {
+UNIFORM_BUFFER(RENDER_UTILS_BUFFER_SSAO_DEBUG_PARAMS, debugAmbientOcclusionBuffer) {
     DebugParams debugParams;
 };
 
@@ -34,7 +34,7 @@ vec2 getDebugCursorTexcoord(){
     return debugParams.pixelInfo.xy;
 }
 
-layout(location=0) out vec4 outFragColor;
+OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
     // Stereo side info based on the real viewport size of this pass

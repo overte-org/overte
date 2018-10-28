@@ -12,11 +12,11 @@
 //
 
 <@include gpu/ShaderConstants.h@>
-layout(location=GPU_ATTR_POSITION) in vec4 inPosition;
-layout(location=GPU_ATTR_NORMAL) in vec4 inNormal;
-layout(location=GPU_ATTR_COLOR) in vec4 inColor;
-layout(location=GPU_ATTR_TEXCOORD0) in vec4 inTexCoord0;
-layout(location=GPU_ATTR_TEXCOORD1) in vec4 inTexCoord1;
+INPUT(GPU_ATTR_POSITION, vec4, inPosition);
+INPUT(GPU_ATTR_NORMAL, vec4, inNormal);
+INPUT(GPU_ATTR_COLOR, vec4, inColor);
+INPUT(GPU_ATTR_TEXCOORD0, vec4, inTexCoord0);
+INPUT(GPU_ATTR_TEXCOORD1, vec4, inTexCoord1);
 
 <@include gpu/Color.slh@>
 <@include render-utils/ShaderConstants.h@>
@@ -49,16 +49,16 @@ layout(location=GPU_ATTR_TEXCOORD1) in vec4 inTexCoord1;
     <$declareMeshDeformerActivation(1, 1)$>
 <@endif@>
 
-layout(location=RENDER_UTILS_ATTR_POSITION_WS) out vec4 _positionWS;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
+OUTPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
+OUTPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 <@if not HIFI_USE_SHADOW@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_ES) out vec4 _positionES;
-    layout(location=RENDER_UTILS_ATTR_NORMAL_WS) out vec3 _normalWS;
+    OUTPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
+    OUTPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
     <@if not HIFI_USE_MTOON@>
-        layout(location=RENDER_UTILS_ATTR_COLOR) out vec4 _color;
+        OUTPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);
     <@endif@>
     <@if HIFI_USE_NORMALMAP@>
-        layout(location=RENDER_UTILS_ATTR_TANGENT_WS) out vec3 _tangentWS;
+        OUTPUT(RENDER_UTILS_ATTR_TANGENT_WS, vec3, _tangentWS);
     <@endif@>
 <@endif@>
 

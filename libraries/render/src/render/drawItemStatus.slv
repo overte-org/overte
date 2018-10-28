@@ -17,13 +17,13 @@
 
 <$declareStandardTransform()$>
 
-layout(location=0) out vec4 varColor;
-layout(location=1) out vec3 varTexcoord;
+OUTPUT(0, vec4, varColor);
+OUTPUT(1, vec3, varTexcoord);
 
-layout(location=0) in vec3 inBoundPos;
-layout(location=1) in vec3 inBoundDim;
-layout(location=2) in ivec4 inStatus0;
-layout(location=3) in ivec4 inStatus1;
+INPUT(0, vec3, inBoundPos);
+INPUT(1, vec3, inBoundDim);
+INPUT(2, ivec4, inStatus0);
+INPUT(3, ivec4, inStatus1);
 
 vec3 paintRainbow(float normalizedHue) {
     float v = normalizedHue * 6.f;

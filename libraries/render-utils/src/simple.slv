@@ -11,10 +11,10 @@
 //
 
 <@include gpu/ShaderConstants.h@>
-layout(location=GPU_ATTR_POSITION) in vec4 inPosition;
-layout(location=GPU_ATTR_NORMAL) in vec4 inNormal;
-layout(location=GPU_ATTR_COLOR) in vec4 inColor;
-layout(location=GPU_ATTR_TEXCOORD0) in vec4 inTexCoord0;
+INPUT(GPU_ATTR_POSITION, vec4, inPosition);
+INPUT(GPU_ATTR_NORMAL, vec4, inNormal);
+INPUT(GPU_ATTR_COLOR, vec4, inColor);
+INPUT(GPU_ATTR_TEXCOORD0, vec4, inTexCoord0);
 
 <@include gpu/Color.slh@>
 <@include gpu/Transform.slh@>
@@ -26,17 +26,17 @@ layout(location=GPU_ATTR_TEXCOORD0) in vec4 inTexCoord0;
     <@include Fade.slh@>
     <$declareFadeVertexInstanced()$>
 
-    layout(location=RENDER_UTILS_ATTR_POSITION_WS) out vec4 _positionWS;
+    OUTPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
 <@endif@>
 
 <@if not HIFI_USE_UNLIT@>
     <@if HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
-        layout(location=RENDER_UTILS_ATTR_POSITION_ES) out vec4 _positionES;
+        OUTPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
     <@endif@>
 <@endif@>
-layout(location=RENDER_UTILS_ATTR_NORMAL_WS) out vec3 _normalWS;
-layout(location=RENDER_UTILS_ATTR_COLOR) out vec4 _color;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
+OUTPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
+OUTPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);
+OUTPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 
 void main(void) {
     _color = color_sRGBAToLinear(inColor);

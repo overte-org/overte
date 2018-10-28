@@ -13,15 +13,15 @@
 
 <@include gpu/ShaderConstants.h@>
 
-layout(location=GPU_ATTR_POSITION) in vec4 inPosition;
-layout(location=GPU_ATTR_NORMAL) in vec4 inNormal;
-layout(location=GPU_ATTR_COLOR) in vec4 inColor;
-layout(location=GPU_ATTR_TEXCOORD0) in vec4 inTexCoord0;
-layout(location=GPU_ATTR_TANGENT) in vec4 inTangent;
-layout(location=GPU_ATTR_SKIN_CLUSTER_INDEX) in ivec4 inSkinClusterIndex;
-layout(location=GPU_ATTR_SKIN_CLUSTER_WEIGHT) in vec4 inSkinClusterWeight;
-layout(location=GPU_ATTR_TEXCOORD1) in vec4 inTexCoord1;
-layout(location=GPU_ATTR_TEXCOORD2) in vec4 inTexCoord2;
-layout(location=GPU_ATTR_TEXCOORD3) in vec4 inTexCoord3;
-layout(location=GPU_ATTR_TEXCOORD4) in vec4 inTexCoord4;
+INPUT(GPU_ATTR_POSITION, vec4, inPosition);
+INPUT(GPU_ATTR_NORMAL, vec4, inNormal);
+INPUT(GPU_ATTR_COLOR, vec4, inColor);
+INPUT(GPU_ATTR_TEXCOORD0, vec4, inTexCoord0);
+INPUT(GPU_ATTR_TANGENT, vec4, inTangent);
+INPUT(GPU_ATTR_SKIN_CLUSTER_INDEX, ivec4, inSkinClusterIndex);
+INPUT(GPU_ATTR_SKIN_CLUSTER_WEIGHT, vec4, inSkinClusterWeight);
+INPUT(GPU_ATTR_TEXCOORD1, vec4, inTexCoord1);
+INPUT(GPU_ATTR_TEXCOORD2, vec4, inTexCoord2);
+INPUT(GPU_ATTR_TEXCOORD3, vec4, inTexCoord3);
+INPUT(GPU_ATTR_TEXCOORD4, vec4, inTexCoord4);
 <@endif@>
