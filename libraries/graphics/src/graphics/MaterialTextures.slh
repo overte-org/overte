@@ -214,12 +214,12 @@ float fetchScatteringMap(int layer, mat2 uvs) {
 #else
 
 <@if withAlbedo@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO) uniform sampler2D albedoMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_ALBEDO, sampler2D, albedoMap);
 <@if HIFI_USE_LAYERS2@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO2_2) uniform sampler2D albedoMap2;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_ALBEDO2_2, sampler2D, albedoMap2);
 <@elif HIFI_USE_LAYERS3@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO2_3) uniform sampler2D albedoMap2;
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO3_3) uniform sampler2D albedoMap3;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_ALBEDO2_3), sampler2D, albedoMap2);
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_ALBEDO3_3), sampler2D, albedoMap3);
 <@endif@>
 vec4 fetchAlbedoMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_ALBEDO);
@@ -230,12 +230,12 @@ vec4 fetchAlbedoMap(int layer, mat2 uvs) {
 <@endif@>
 
 <@if withNormal@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_NORMAL) uniform sampler2D normalMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_NORMAL, sampler2D, normalMap);
 <@if HIFI_USE_LAYERS2@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_NORMAL2_2) uniform sampler2D normalMap2;
+TEXTURE(RAPHICS_TEXTURE_MATERIAL_NORMAL2_2, sampler2D, normalMap2);
 <@elif HIFI_USE_LAYERS3@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_NORMAL2_3) uniform sampler2D normalMap2;
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_NORMAL3_3) uniform sampler2D normalMap3;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_NORMAL2_3, sampler2D, normalMap2);
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_NORMAL3_3, sampler2D, normalMap3);
 <@endif@>
 vec3 fetchNormalMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_NORMAL);
@@ -249,12 +249,12 @@ vec3 fetchNormalMap(int layer, mat2 uvs) {
 <@endif@>
 
 <@if withMetallic@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_METALLIC) uniform sampler2D metallicMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_METALLIC, sampler2D, metallicMap);
 <@if HIFI_USE_LAYERS2@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_METALLIC2_2) uniform sampler2D metallicMap2;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_METALLIC2_2, sampler2D, metallicMap2);
 <@elif HIFI_USE_LAYERS3@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_METALLIC2_3) uniform sampler2D metallicMap2;
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_METALLIC3_3) uniform sampler2D metallicMap3;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_METALLIC2_3, sampler2D, metallicMap2);
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_METALLIC3_3, sampler2D, metallicMap3);
 <@endif@>
 float fetchMetallicMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_METALLIC);
@@ -265,12 +265,12 @@ float fetchMetallicMap(int layer, mat2 uvs) {
 <@endif@>
 
 <@if withEmissive@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP) uniform sampler2D emissiveMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP, sampler2D, emissiveMap);
 <@if HIFI_USE_LAYERS2@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP2_2) uniform sampler2D emissiveMap2;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP2_2, sampler2D, emissiveMap2);
 <@elif HIFI_USE_LAYERS3@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP2_3) uniform sampler2D emissiveMap2;
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP3_3) uniform sampler2D emissiveMap3;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP2_3, sampler2D, emissiveMap2);
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP3_3, sampler2D, emissiveMap3);
 <@endif@>
 vec3 fetchEmissiveMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP);
@@ -283,9 +283,9 @@ vec3 fetchEmissiveMap(int layer, mat2 uvs) {
 <! only supported for 1 or 2 layers !>
 <@if not HIFI_USE_LAYERS3@>
 <@if withRoughness@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS) uniform sampler2D roughnessMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS, sampler2D, roughnessMap);
 <@if HIFI_USE_LAYERS2@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS2_2) uniform sampler2D roughnessMap2;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS2_2, sampler2D, roughnessMap2);
 <@endif@>
 float fetchRoughnessMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS);
@@ -296,9 +296,9 @@ float fetchRoughnessMap(int layer, mat2 uvs) {
 <@endif@>
 
 <@if withOcclusion@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_OCCLUSION) uniform sampler2D occlusionMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_OCCLUSION, sampler2D, occlusionMap);
 <@if HIFI_USE_LAYERS2@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_OCCLUSION2_2) uniform sampler2D occlusionMap2;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_OCCLUSION2_2, sampler2D, occlusionMap2);
 <@endif@>
 float fetchOcclusionMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_OCCLUSION);
@@ -313,7 +313,7 @@ float fetchOcclusionMap(int layer, mat2 uvs) {
 <! only supported for 1 layer !>
 <@else@>
 <@if withScattering@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SCATTERING) uniform sampler2D scatteringMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_SCATTERING, sampler2D, scatteringMap);
 float fetchScatteringMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_SCATTERING);
     float scattering; // boolean scattering for now

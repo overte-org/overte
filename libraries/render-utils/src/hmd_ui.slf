@@ -14,21 +14,21 @@
 <@include render-utils/ShaderConstants.h@>
 <@include gpu/Color.slh@>
 
-LAYOUT(binding=0) uniform sampler2D hudTexture;
+TEXTURE(0, sampler2D, hudTexture);
 
 struct HUDData {
     float alpha;
 };
 
-LAYOUT_STD140(binding=0) uniform hudBuffer {
+UNIFORM_BUFFER(0, hudBuffer) {
     HUDData hud;
 };
 
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4 _texCoord01;
+INPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 #define _texCoord0 _texCoord01.xy
 #define _texCoord1 _texCoord01.zw
 
-layout(location=0) out vec4 fragColor0;
+OUTPUT(0, vec4, fragColor0);
 
 void main() {
     vec4 color = texture(hudTexture, _texCoord0);

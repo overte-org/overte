@@ -27,7 +27,7 @@ const int ToneCurveGamma22 = 1;
 const int ToneCurveReinhard = 2;
 const int ToneCurveFilmic = 3;
 
-LAYOUT(binding=RENDER_UTILS_BUFFER_TM_PARAMS) uniform toneMappingParamsBuffer {
+UNIFORM_BUFFER(RENDER_UTILS_BUFFER_TM_PARAMS, toneMappingParamsBuffer) {
     ToneMappingParams params;
 };
 float getTwoPowExposure() {
@@ -37,10 +37,10 @@ int getToneCurve() {
     return params._toneCurve;
 }
 
-LAYOUT(binding=RENDER_UTILS_TEXTURE_TM_COLOR) uniform sampler2D colorMap;
+TEXTURE(RENDER_UTILS_TEXTURE_TM_COLOR, sampler2D, colorMap);
 
-layout(location=0) in vec2 varTexCoord0;
-layout(location=0) out vec4 outFragColor;
+INPUT(0, vec2, varTexCoord0);
+OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
 <@if HIFI_USE_MIRRORED@>

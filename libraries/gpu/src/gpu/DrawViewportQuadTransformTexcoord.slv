@@ -18,7 +18,7 @@
 
 <$declareStandardTransform()$>
 
-layout(location=0) out vec2 varTexCoord0;
+OUTPUT(0, vec2, varTexCoord0);
 
 void main(void) {
     const vec4 UNIT_QUAD[4] = vec4[4](
