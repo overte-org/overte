@@ -200,7 +200,7 @@ const gpu::BufferPointer GameWorkloadRenderItem::getDrawViewBuffer() {
         verts[numSegments] = verts[0];
         verts[numSegments].p.w = 0.0f;
 
-        _drawViewBuffer = std::make_shared<gpu::Buffer>(verts.size() * sizeof(Vert), (const gpu::Byte*) verts.data());
+        _drawViewBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, verts.size() * sizeof(Vert), (const gpu::Byte*) verts.data());
         _numDrawViewVerts = numSegments + 1;
     }
     return _drawViewBuffer;

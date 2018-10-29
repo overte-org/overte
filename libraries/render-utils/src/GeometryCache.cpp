@@ -541,8 +541,8 @@ void extrudePolygon(GeometryCache::ShapeData& shapeData, gpu::BufferPointer& ver
 // and smooth shading
 void GeometryCache::buildShapes() {
     using namespace geometry;
-    auto vertexBuffer = std::make_shared<gpu::Buffer>();
-    auto indexBuffer = std::make_shared<gpu::Buffer>();
+    auto vertexBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+    auto indexBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::IndexBuffer);
     // Cube
     setupFlatShape(_shapes[Cube], geometry::cube(), _shapeVertices, _shapeIndices);
     //Quad renders as flat Cube
@@ -786,7 +786,7 @@ void GeometryCache::renderGrid(gpu::Batch& batch, const glm::vec2& minCorner, co
             gridBuffer = gridBufferIter.value();
         } else {
             GridSchema gridSchema;
-            gridBuffer = std::make_shared<gpu::Buffer>(sizeof(GridSchema), (const gpu::Byte*)&gridSchema);
+            gridBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(GridSchema), (const gpu::Byte*)&gridSchema);
         }
 
         if (!hadGridBuffer || _lastRegisteredGridBuffer[id] != key) {
@@ -827,9 +827,10 @@ void GeometryCache::updateVertices(int id, const QVector<glm::vec2>& points, con
     details.vertices = points.size();
     details.vertexSize = FLOATS_PER_VERTEX;
 
-    auto verticesBuffer = std::make_shared<gpu::Buffer>();
-    auto normalBuffer = std::make_shared<gpu::Buffer>();
-    auto colorBuffer = std::make_shared<gpu::Buffer>();
+    auto verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+    auto normalBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+    auto colorBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+
     auto streamFormat = std::make_shared<gpu::Stream::Format>();
     auto stream = std::make_shared<gpu::BufferStream>();
 
@@ -897,9 +898,9 @@ void GeometryCache::updateVertices(int id, const QVector<glm::vec3>& points, con
     details.vertices = points.size();
     details.vertexSize = FLOATS_PER_VERTEX;
 
-    auto verticesBuffer = std::make_shared<gpu::Buffer>();
-    auto normalBuffer = std::make_shared<gpu::Buffer>();
-    auto colorBuffer = std::make_shared<gpu::Buffer>();
+    auto verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+    auto normalBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+    auto colorBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
     auto streamFormat = std::make_shared<gpu::Stream::Format>();
     auto stream = std::make_shared<gpu::BufferStream>();
 
@@ -972,9 +973,9 @@ void GeometryCache::updateVertices(int id, const QVector<glm::vec3>& points, con
     details.vertices = points.size();
     details.vertexSize = FLOATS_PER_VERTEX;
 
-    auto verticesBuffer = std::make_shared<gpu::Buffer>();
-    auto normalBuffer = std::make_shared<gpu::Buffer>();
-    auto colorBuffer = std::make_shared<gpu::Buffer>();
+    auto verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+    auto normalBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+    auto colorBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
     auto streamFormat = std::make_shared<gpu::Stream::Format>();
     auto stream = std::make_shared<gpu::BufferStream>();
 
@@ -1060,8 +1061,8 @@ void GeometryCache::renderBevelCornersRect(gpu::Batch& batch, int x, int y, int 
         details.vertices = NUM_VERTICES;
         details.vertexSize = FLOATS_PER_VERTEX;
 
-        auto verticesBuffer = std::make_shared<gpu::Buffer>();
-        auto colorBuffer = std::make_shared<gpu::Buffer>();
+        auto verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto colorBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
         auto streamFormat = std::make_shared<gpu::Stream::Format>();
         auto stream = std::make_shared<gpu::BufferStream>();
 
@@ -1153,9 +1154,9 @@ void GeometryCache::renderQuad(gpu::Batch& batch, const glm::vec2& minCorner, co
         details.vertices = VERTICES;
         details.vertexSize = FLOATS_PER_VERTEX;
 
-        auto verticesBuffer = std::make_shared<gpu::Buffer>();
-        auto normalBuffer = std::make_shared<gpu::Buffer>();
-        auto colorBuffer = std::make_shared<gpu::Buffer>();
+        auto verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto normalBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto colorBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
         auto streamFormat = std::make_shared<gpu::Stream::Format>();
         auto stream = std::make_shared<gpu::BufferStream>();
 
@@ -1236,9 +1237,9 @@ void GeometryCache::renderQuad(gpu::Batch& batch, const glm::vec2& minCorner, co
         details.vertices = VERTICES;
         details.vertexSize = FLOATS_PER_VERTEX;
 
-        auto verticesBuffer = std::make_shared<gpu::Buffer>();
-        auto normalBuffer = std::make_shared<gpu::Buffer>();
-        auto colorBuffer = std::make_shared<gpu::Buffer>();
+        auto verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto normalBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto colorBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
         auto streamFormat = std::make_shared<gpu::Stream::Format>();
         auto stream = std::make_shared<gpu::BufferStream>();
 
@@ -1306,9 +1307,9 @@ void GeometryCache::renderQuad(gpu::Batch& batch, const glm::vec3& minCorner, co
         details.vertices = VERTICES;
         details.vertexSize = FLOATS_PER_VERTEX;
 
-        auto verticesBuffer = std::make_shared<gpu::Buffer>();
-        auto normalBuffer = std::make_shared<gpu::Buffer>();
-        auto colorBuffer = std::make_shared<gpu::Buffer>();
+        auto verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto normalBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto colorBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
         auto streamFormat = std::make_shared<gpu::Stream::Format>();
         auto stream = std::make_shared<gpu::BufferStream>();
 
@@ -1396,9 +1397,9 @@ void GeometryCache::renderQuad(gpu::Batch& batch, const glm::vec3& topLeft, cons
         details.vertices = VERTICES;
         details.vertexSize = FLOATS_PER_VERTEX; // NOTE: this isn't used for BatchItemDetails maybe we can get rid of it
 
-        auto verticesBuffer = std::make_shared<gpu::Buffer>();
-        auto normalBuffer = std::make_shared<gpu::Buffer>();
-        auto colorBuffer = std::make_shared<gpu::Buffer>();
+        auto verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto normalBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto colorBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
         auto streamFormat = std::make_shared<gpu::Stream::Format>();
         auto stream = std::make_shared<gpu::BufferStream>();
 
@@ -1553,9 +1554,9 @@ void GeometryCache::renderDashedLine(gpu::Batch& batch, const glm::vec3& start, 
         details.vertices = (segmentCountFloor + 1) * 2;
         details.vertexSize = FLOATS_PER_VERTEX;
 
-        auto verticesBuffer = std::make_shared<gpu::Buffer>();
-        auto normalBuffer = std::make_shared<gpu::Buffer>();
-        auto colorBuffer = std::make_shared<gpu::Buffer>();
+        auto verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto normalBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto colorBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
         auto streamFormat = std::make_shared<gpu::Stream::Format>();
         auto stream = std::make_shared<gpu::BufferStream>();
 
@@ -1990,7 +1991,7 @@ graphics::MeshPointer GeometryCache::meshFromShape(Shape geometryShape, glm::vec
 
     const auto startIndex = 0, baseVertex = 0;
     graphics::Mesh::Part part(startIndex, (graphics::Index)indexBufferView.getNumElements(), baseVertex, graphics::Mesh::TRIANGLES);
-    auto partBuffer = new gpu::Buffer(sizeof(graphics::Mesh::Part), (gpu::Byte*)&part);
+    auto partBuffer = new gpu::Buffer(gpu::Buffer::IndirectBuffer, sizeof(graphics::Mesh::Part), (gpu::Byte*)&part);
     mesh->setPartBuffer(gpu::BufferView(partBuffer, gpu::Element::PART_DRAWCALL));
 
     mesh->modelName = GeometryCache::stringFromShape(geometryShape).toStdString();
