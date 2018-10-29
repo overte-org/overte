@@ -19,9 +19,11 @@
 
 <$declarePackOcclusionDepth()$>
 
+// Unused, but needed to match the vertex shader
 #define SSAO_HBAO_MAX_RADIUS    300.0
 
 INPUT(0, vec2, varTexCoord0);
+
 OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
