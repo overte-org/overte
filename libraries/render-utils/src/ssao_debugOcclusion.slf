@@ -34,6 +34,9 @@ vec2 getDebugCursorTexcoord(){
     return debugParams.pixelInfo.xy;
 }
 
+// Unused, but needed to match the vertex shader
+INPUT(0, vec2, varTexCoord0);
+
 OUTPUT(0, vec4, outFragColor);
 
 void main(void) {

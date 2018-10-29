@@ -13,6 +13,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
+
 struct DrawColorParams {
     vec4 color;
 };
@@ -21,6 +22,8 @@ UNIFORM_BUFFER(0, drawColorParamsBuffer) {
     DrawColorParams params;
 };
 
+// Unused, but needed to match the vertex shader
+INPUT(0, vec2, varTexCoord0);
 OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
