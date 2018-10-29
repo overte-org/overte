@@ -204,17 +204,17 @@ public:
 
     virtual void shutdown() {}
     virtual const std::string& getVersion() const = 0;
-
+    virtual void setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool reset = false) = 0;
+    virtual uint32_t getTextureID(const TexturePointer& texture) = 0;
     void setStereoState(const StereoState& stereo) { _stereo = stereo; }
 
-    virtual void render(const Batch& batch) = 0;
     virtual void syncCache() = 0;
     virtual void syncProgram(const gpu::ShaderPointer& program) = 0;
     virtual void recycle() const = 0;
     virtual void downloadFramebuffer(const FramebufferPointer& srcFramebuffer, const Vec4i& region, QImage& destImage) = 0;
     virtual void setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool reset = false) {}
 
-    virtual bool supportedTextureFormat(const gpu::Element& format) = 0;
+    virtual bool supportedTextureFormat(const gpu::Element& format) const = 0;
 
     // Shared header between C++ and GLSL
 #include "TransformCamera_shared.slh"
@@ -263,6 +263,32 @@ public:
     static ContextMetricSize texturePendingGPUTransferMemSize;
     static ContextMetricSize textureResourcePopulatedGPUMemSize;
     static ContextMetricSize textureResourceIdealGPUMemSize;
+
+protected:
+    // MUST only be called on the rendering thread.
+    //
+    // Consuming a frame applies any updates queued from the recording thread and applies them to the
+    // shadow copy used by the rendering thread.
+    //
+    // EVERY frame generated MUST be consumed, regardless of whether the frame is actually executed,
+    // or the buffer shadow copies can become unsynced from the recording thread copies.
+    //
+    // Consuming a frame is idempotent, as the frame encapsulates the updates and clears them out as
+    // it applies them, so calling it more than once on a given frame will have no effect after the
+    // first time
+    //
+    //
+    // This is automatically called by executeFrame, so you only need to call it if you
+    // have frames you aren't going to otherwise execute, for instance when a display plugin is
+    // being disabled, or in the null display plugin where no rendering actually occurs
+    //void consumeFrameUpdates(const FramePointer& frame) const;
+
+    // MUST only be called on the rendering thread
+    //
+    // Executes a frame, applying any updates contained in the frame batches to the rendering
+    // thread shadow copies.  Either executeFrame or consumeFrameUpdates MUST be called on every frame
+    // generated, IN THE ORDER they were generated.
+    virtual void executeFrame(const FramePointer& frame) = 0;
 
     virtual bool isStereo() const {
         return _stereo.isStereo();
@@ -352,7 +378,7 @@ public:
     // have frames you aren't going to otherwise execute, for instance when a display plugin is
     // being disabled, or in the null display plugin where no rendering actually occurs
     void consumeFrameUpdates(const FramePointer& frame) const;
-
+    
     const BackendPointer& getBackend() const { return _backend; }
 
     void enableStereo(bool enable = true);

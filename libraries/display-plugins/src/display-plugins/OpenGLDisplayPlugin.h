@@ -192,7 +192,7 @@ protected:
         f();
     }
 
-    gpu::gl::GLBackend* getGLBackend();
+    const gpu::BackendPointer& getBackend() const;
 
     // Any resource shared by the main thread and the presentation thread must
     // be serialized through this mutex
