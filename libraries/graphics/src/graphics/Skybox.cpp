@@ -21,7 +21,7 @@ using namespace graphics;
 
 Skybox::Skybox() {
     Schema schema;
-    _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Schema), (const gpu::Byte*) &schema));
+    _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema));
 }
 
 void Skybox::setColor(const Color& color) {

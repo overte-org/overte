@@ -293,7 +293,7 @@ void Antialiasing::run(const render::RenderContextPointer& renderContext, const 
             batch.setResourceFramebufferSwapChainTexture(0, _antialiasingBuffers, 1);
             // Disable sharpen if FXAA
             if (!_blendParamsBuffer) {
-                _blendParamsBuffer = std::make_shared<gpu::Buffer>(sizeof(glm::vec4), nullptr);
+                _blendParamsBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(glm::vec4), nullptr);
             }
             _blendParamsBuffer->setSubData(0, _sharpen * _params.get().regionInfo.z);
             batch.setUniformBuffer(0, _blendParamsBuffer);

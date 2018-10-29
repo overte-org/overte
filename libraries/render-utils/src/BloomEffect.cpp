@@ -200,7 +200,7 @@ void DebugBloomConfig::setMode(int mode) {
 }
 
 DebugBloom::DebugBloom() {
-    _params = std::make_shared<gpu::Buffer>(sizeof(glm::vec4), nullptr);
+    _params = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(glm::vec4), nullptr);
 }
 
 void DebugBloom::configure(const Config& config) {
