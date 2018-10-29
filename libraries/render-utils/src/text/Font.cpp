@@ -378,8 +378,8 @@ inline QuadBuilder adjustedQuadBuilderForAlignmentMode(const Glyph& glyph, glm::
 
 void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm::vec2& origin, const glm::vec2& bounds, float scale, bool enlargeForShadows,
                          TextAlignment alignment) {
-    drawInfo.verticesBuffer = std::make_shared<gpu::Buffer>();
-    drawInfo.indicesBuffer = std::make_shared<gpu::Buffer>();
+    drawInfo.verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+    drawInfo.indicesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::IndexBuffer);
     drawInfo.indexCount = 0;
     int numVertices = 0;
 
@@ -552,7 +552,7 @@ void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const QString
         gpuDrawParams.effectThickness = drawInfo.params.effectThickness;
         gpuDrawParams.effectColor = ColorUtils::sRGBToLinearVec3(drawInfo.params.effectColor);
         if (!drawInfo.paramsBuffer) {
-            drawInfo.paramsBuffer = std::make_shared<gpu::Buffer>(sizeof(DrawParams), nullptr);
+            drawInfo.paramsBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(GpuDrawParams), nullptr);
         }
         drawInfo.paramsBuffer->setSubData(0, sizeof(DrawParams), (const gpu::Byte*)&gpuDrawParams);
 

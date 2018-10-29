@@ -102,7 +102,7 @@ void ModelMeshPartPayload::updateClusterBuffer(const std::vector<glm::mat4>& clu
     // Once computed the cluster matrices, update the buffer(s)
     if (clusterMatrices.size() > 1) {
         if (!_clusterBuffer) {
-            _clusterBuffer = std::make_shared<gpu::Buffer>(clusterMatrices.size() * sizeof(glm::mat4),
+            _clusterBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, clusterMatrices.size() * sizeof(glm::mat4),
                 (const gpu::Byte*) clusterMatrices.data());
         } else {
             _clusterBuffer->setSubData(0, clusterMatrices.size() * sizeof(glm::mat4),
@@ -121,7 +121,7 @@ void ModelMeshPartPayload::updateClusterBuffer(const std::vector<Model::Transfor
     // Once computed the cluster matrices, update the buffer(s)
     if (clusterDualQuaternions.size() > 1) {
         if (!_clusterBuffer) {
-            _clusterBuffer = std::make_shared<gpu::Buffer>(clusterDualQuaternions.size() * sizeof(Model::TransformDualQuaternion),
+            _clusterBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, clusterDualQuaternions.size() * sizeof(Model::TransformDualQuaternion),
                 (const gpu::Byte*) clusterDualQuaternions.data());
         } else {
             _clusterBuffer->setSubData(0, clusterDualQuaternions.size() * sizeof(Model::TransformDualQuaternion),

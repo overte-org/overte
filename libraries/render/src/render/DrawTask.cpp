@@ -180,11 +180,11 @@ void DrawBounds::run(const RenderContextPointer& renderContext,
 
     static const uint32_t sizeOfItemBound = sizeof(ItemBound);
     if (!_drawBuffer) {
-        _drawBuffer = std::make_shared<gpu::Buffer>(sizeOfItemBound);
+        _drawBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::ResourceBuffer, sizeOfItemBound);
     }
 
     if (!_paramsBuffer) {
-        _paramsBuffer = std::make_shared<gpu::Buffer>(sizeof(vec4), nullptr);
+        _paramsBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(vec4), nullptr);
     }
 
     _drawBuffer->setData(numItems * sizeOfItemBound, (const gpu::Byte*) items.data());
@@ -217,8 +217,8 @@ void DrawBounds::run(const RenderContextPointer& renderContext,
 gpu::Stream::FormatPointer DrawQuadVolume::_format;
 
 DrawQuadVolume::DrawQuadVolume(const glm::vec3& color) {
-    _meshVertices = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(glm::vec3) * 8, nullptr), gpu::Element::VEC3F_XYZ);
-    _params = std::make_shared<gpu::Buffer>(sizeof(glm::vec4), nullptr);
+    _meshVertices = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer, sizeof(glm::vec3) * 8, nullptr), gpu::Element::VEC3F_XYZ);
+    _params = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(glm::vec4), nullptr);
     _params->setSubData(0, vec4(color, 1.0));
     if (!_format) {
         _format = std::make_shared<gpu::Stream::Format>();
@@ -299,7 +299,7 @@ void DrawAABox::run(const render::RenderContextPointer& renderContext, const Inp
         };
 
         if (!_cubeMeshIndices._buffer) {
-            auto indices = std::make_shared<gpu::Buffer>(sizeof(indexData), indexData);
+            auto indices = std::make_shared<gpu::Buffer>(gpu::Buffer::IndexBuffer, sizeof(indexData), indexData);
             _cubeMeshIndices = gpu::BufferView(indices, gpu::Element(gpu::SCALAR, gpu::UINT8, gpu::INDEX));
         }
 
@@ -352,7 +352,7 @@ void DrawFrustum::run(const render::RenderContextPointer& renderContext, const I
         };
 
         if (!_frustumMeshIndices._buffer) {
-            auto indices = std::make_shared<gpu::Buffer>(sizeof(indexData), indexData);
+            auto indices = std::make_shared<gpu::Buffer>(gpu::Buffer::IndexBuffer, sizeof(indexData), indexData);
             _frustumMeshIndices = gpu::BufferView(indices, gpu::Element(gpu::SCALAR, gpu::UINT8, gpu::INDEX));
         }
 

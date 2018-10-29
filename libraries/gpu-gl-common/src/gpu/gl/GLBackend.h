@@ -122,7 +122,10 @@ public:
     void shutdown() override;
 
     void setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool reset = false) override;
-    void render(const Batch& batch) final override;
+
+    void executeFrame(const FramePointer& frame) override;
+
+    void render(const Batch& batch);
 
     // This call synchronize the Full Backend cache with the current GLState
     // THis is only intended to be used when mixing raw gl calls with the gpu api usage in order to sync
@@ -230,16 +233,10 @@ public:
     // TODO: As long as we have gl calls explicitely issued from interface
     // code, we need to be able to record and batch these calls. THe long
     // term strategy is to get rid of any GL calls in favor of the HIFI GPU API
-    virtual void do_glUniform1i(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniform1f(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniform2f(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniform3f(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniform4f(const Batch& batch, size_t paramOffset) final;
-    virtual void do_glUniform3fv(const Batch& batch, size_t paramOffset) final;
-    virtual void do_glUniform4fv(const Batch& batch, size_t paramOffset) final;
-    virtual void do_glUniform4iv(const Batch& batch, size_t paramOffset) final;
-    virtual void do_glUniformMatrix3fv(const Batch& batch, size_t paramOffset) final;
-    virtual void do_glUniformMatrix4fv(const Batch& batch, size_t paramOffset) final;
 
     // The State setters called by the GLState::Commands when a new state is assigned
     virtual void do_setStateFillMode(int32 mode) final;
@@ -522,9 +519,8 @@ protected:
         GLShader* _programShader{ nullptr };
         bool _invalidProgram{ false };
 
-        BufferView _cameraCorrectionBuffer{ gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(CameraCorrection), nullptr)) };
-        BufferView _cameraCorrectionBufferIdentity{ gpu::BufferView(
-            std::make_shared<gpu::Buffer>(sizeof(CameraCorrection), nullptr)) };
+        BufferView _cameraCorrectionBuffer { gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(CameraCorrection), nullptr )) };
+        BufferView _cameraCorrectionBufferIdentity { gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(CameraCorrection), nullptr )) };
 
         State::Data _stateCache{ State::DEFAULT };
         State::Signature _stateSignatureCache{ 0 };

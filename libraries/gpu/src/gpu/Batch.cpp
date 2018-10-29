@@ -521,7 +521,7 @@ const BufferPointer& Batch::getNamedBuffer(const std::string& instanceName, uint
         instance.buffers.resize(index + 1);
     }
     if (!instance.buffers[index]) {
-        instance.buffers[index] = std::make_shared<Buffer>();
+        instance.buffers[index] = std::make_shared<Buffer>(Buffer::VertexBuffer);
     }
     return instance.buffers[index];
 }

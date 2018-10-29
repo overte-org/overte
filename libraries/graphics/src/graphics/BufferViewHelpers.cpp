@@ -122,21 +122,21 @@ template<> glm::uint32 forEach<glm::vec3>(const gpu::BufferView& view, std::func
 
 // QVector<T> => BufferView
 template <typename T>
-gpu::BufferView newFromVector(const QVector<T>& elements, const gpu::Element& elementType) {
-    auto vertexBuffer = std::make_shared<gpu::Buffer>(elements.size() * sizeof(T), (gpu::Byte*)elements.data());
+gpu::BufferView newFromVector(uint32_t usage, const QVector<T>& elements, const gpu::Element& elementType) {
+    auto vertexBuffer = std::make_shared<gpu::Buffer>(usage, elements.size() * sizeof(T), (gpu::Byte*)elements.data());
     return { vertexBuffer, 0, vertexBuffer->getSize(),sizeof(T), elementType };
 }
 
 template <typename T>
-gpu::BufferView bufferViewFromVector(const QVector<T>& elements, const gpu::Element& elementType) {
-    auto vertexBuffer = std::make_shared<gpu::Buffer>(elements.size() * sizeof(T), (gpu::Byte*)elements.data());
+gpu::BufferView bufferViewFromVector(uint32_t usage, const QVector<T>& elements, const gpu::Element& elementType) {
+    auto vertexBuffer = std::make_shared<gpu::Buffer>(usage, elements.size() * sizeof(T), (gpu::Byte*)elements.data());
     return { vertexBuffer, 0, vertexBuffer->getSize(),sizeof(T), elementType };
 }
-template<> gpu::BufferView newFromVector<unsigned int>(const QVector<unsigned int>& elements, const gpu::Element& elementType) { return bufferViewFromVector(elements, elementType); }
-template<> gpu::BufferView newFromVector<glm::vec2>(const QVector<glm::vec2>& elements, const gpu::Element& elementType) { return bufferViewFromVector(elements, elementType); }
-template<> gpu::BufferView newFromVector<glm::vec3>( const QVector<glm::vec3>& elements, const gpu::Element& elementType) { return bufferViewFromVector(elements, elementType); }
-template<> gpu::BufferView newFromVector<glm::vec4>(const QVector<glm::vec4>& elements, const gpu::Element& elementType) { return bufferViewFromVector(elements, elementType); }
-template<> gpu::BufferView newFromVector<graphics::Mesh::Part>(const QVector<graphics::Mesh::Part>& elements, const gpu::Element& elementType) { return bufferViewFromVector(elements, elementType); }
+template<> gpu::BufferView newFromVector<unsigned int>(uint32_t usage, const QVector<unsigned int>& elements, const gpu::Element& elementType) { return bufferViewFromVector(usage, elements, elementType); }
+template<> gpu::BufferView newFromVector<glm::vec2>(uint32_t usage, const QVector<glm::vec2>& elements, const gpu::Element& elementType) { return bufferViewFromVector(usage, elements, elementType); }
+template<> gpu::BufferView newFromVector<glm::vec3>(uint32_t usage, const QVector<glm::vec3>& elements, const gpu::Element& elementType) { return bufferViewFromVector(usage, elements, elementType); }
+template<> gpu::BufferView newFromVector<glm::vec4>(uint32_t usage, const QVector<glm::vec4>& elements, const gpu::Element& elementType) { return bufferViewFromVector(usage, elements, elementType); }
+template<> gpu::BufferView newFromVector<graphics::Mesh::Part>(uint32_t usage, const QVector<graphics::Mesh::Part>& elements, const gpu::Element& elementType) { return bufferViewFromVector(usage, elements, elementType); }
 
 struct GpuToGlmAdapter {
     static float error(const QString& name, const gpu::BufferView& view, glm::uint32 index, const char *hint) {
@@ -443,9 +443,9 @@ template<> QVector<glm::vec2> variantToVector<glm::vec2>(const QVariant& value) 
 template<> QVector<glm::vec3> variantToVector<glm::vec3>(const QVariant& value) { return qVariantListToGlmVector<glm::vec3>(value.toList()); }
 template<> QVector<glm::vec4> variantToVector<glm::vec4>(const QVariant& value) { return qVariantListToGlmVector<glm::vec4>(value.toList()); }
 
-template<> gpu::BufferView newFromVector<QVariant>(const QVector<QVariant>& _elements, const gpu::Element& elementType) {
+template<> gpu::BufferView newFromVector<QVariant>(uint32_t usage, const QVector<QVariant>& _elements, const gpu::Element& elementType) {
     glm::uint32 numElements = _elements.size();
-    auto buffer = new gpu::Buffer();
+    auto buffer = new gpu::Buffer(usage);
     buffer->resize(elementType.getSize() * numElements);
     auto bufferView = gpu::BufferView(buffer, elementType);
     for (glm::uint32 i = 0; i < numElements; i++) {
@@ -457,7 +457,7 @@ template<> gpu::BufferView newFromVector<QVariant>(const QVector<QVariant>& _ele
 
 gpu::BufferView clone(const gpu::BufferView& input) {
     return gpu::BufferView(
-        std::make_shared<gpu::Buffer>(input._buffer->getSize(), input._buffer->getData()),
+        std::make_shared<gpu::Buffer>(input._buffer->getUsage(), input._buffer->getSize(), input._buffer->getData()),
         input._offset, input._size, input._stride, input._element
     );
 }
@@ -470,7 +470,7 @@ gpu::BufferView resized(const gpu::BufferView& input, glm::uint32 numElements) {
     auto vsize = input._element.getSize() * numElements;
     std::unique_ptr<gpu::Byte[]> data{ new gpu::Byte[vsize] };
     memset(data.get(), 0, vsize);
-    auto buffer = new gpu::Buffer(vsize, data.get());
+    auto buffer = new gpu::Buffer(input._buffer->getUsage(), vsize, data.get());
     memcpy(data.get(), input._buffer->getData(), std::min(vsize, (glm::uint32)input._buffer->getSize()));
     auto output = gpu::BufferView(buffer, input._element);
 #ifdef DEBUG_BUFFERVIEW_HELPERS

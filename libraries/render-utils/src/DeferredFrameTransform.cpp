@@ -15,7 +15,7 @@
 
 DeferredFrameTransform::DeferredFrameTransform() {
     FrameTransform frameTransform;
-    _frameTransformBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(FrameTransform), (const gpu::Byte*) &frameTransform));
+    _frameTransformBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(FrameTransform), (const gpu::Byte*) &frameTransform));
 }
 
 void DeferredFrameTransform::update(RenderArgs* args, glm::vec2 jitter) {

@@ -35,7 +35,7 @@ namespace gr {
 
 SubsurfaceScatteringResource::SubsurfaceScatteringResource() {
     Parameters parameters;
-    _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Parameters), (const gpu::Byte*) &parameters));
+    _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Parameters), (const gpu::Byte*) &parameters));
 
 }
 
@@ -422,7 +422,7 @@ void DebugSubsurfaceScattering::configure(const Config& config) {
     _showCursorPixel = config.showCursorPixel;
     _debugCursorTexcoord = config.debugCursorTexcoord;
     if (!_debugParams) {
-        _debugParams = std::make_shared<gpu::Buffer>(sizeof(glm::vec4), nullptr);
+        _debugParams = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(glm::vec4), nullptr);
     }
     _debugParams->setSubData(0, _debugCursorTexcoord);
 }
@@ -484,7 +484,7 @@ void DebugSubsurfaceScattering::run(const render::RenderContextPointer& renderCo
    // const auto light = DependencyManager::get<DeferredLightingEffect>()->getLightStage()->getLight(0);
     const auto light = lightStage->getLight(0);
     if (!_debugParams) {
-        _debugParams = std::make_shared<gpu::Buffer>(sizeof(glm::vec4), nullptr);
+        _debugParams = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(glm::vec4), nullptr);
         _debugParams->setSubData(0, _debugCursorTexcoord);
     }
     

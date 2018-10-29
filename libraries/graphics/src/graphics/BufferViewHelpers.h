@@ -79,8 +79,8 @@ namespace buffer_helpers {
     glm::uint32 forEachVariant(const gpu::BufferView& view, std::function<bool(glm::uint32 index, const QVariant& value)> func, const char* hint = "");
     template <typename T> glm::uint32 forEach(const gpu::BufferView& view, std::function<bool(glm::uint32 index, const T& value)> func);
 
-    template <typename T> gpu::BufferView newFromVector(const QVector<T>& elements, const gpu::Element& elementType);
-    template <typename T> gpu::BufferView newFromVariantList(const QVariantList& list, const gpu::Element& elementType);
+    template <typename T> gpu::BufferView newFromVector(uint32_t usage, const QVector<T>& elements, const gpu::Element& elementType);
+    template <typename T> gpu::BufferView newFromVariantList(uint32_t usage, const QVariantList& list, const gpu::Element& elementType);
 
     template <typename T> QVector<T> variantToVector(const QVariant& value);
     template <typename T> QVector<T> bufferToVector(const gpu::BufferView& view, const char *hint = "");

@@ -47,7 +47,7 @@ public:
     static const std::string GL41_VERSION;
     const std::string& getVersion() const override { return GL41_VERSION; }
 
-    bool supportedTextureFormat(const gpu::Element& format) override;
+    bool supportedTextureFormat(const gpu::Element& format) const override;
 
     class GL41Texture : public GLTexture {
         using Parent = GLTexture;
