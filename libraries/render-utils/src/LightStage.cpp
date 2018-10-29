@@ -127,7 +127,7 @@ LightStage::Shadow::Shadow(graphics::LightPointer light, unsigned int cascadeCou
     cascadeCount = std::min(cascadeCount, (unsigned int)SHADOW_CASCADE_MAX_COUNT);
     Schema schema;
     schema.cascadeCount = cascadeCount;
-    _schemaBuffer = std::make_shared<gpu::Buffer>(sizeof(Schema), (const gpu::Byte*) &schema);
+    _schemaBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema);
 
     // Create shadow cascade texture array
     auto depthFormat = gpu::Element(gpu::SCALAR, gpu::FLOAT, gpu::DEPTH);  // Depth32 texel format
