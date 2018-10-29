@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Context.h"
-#include "Shaders.h"
 
 namespace vks {
     namespace pipelines {
@@ -151,13 +150,6 @@ namespace vks {
                     device.destroyShaderModule(shaderStage.module);
                 }
                 shaderStages.clear();
-            }
-
-            // Load a SPIR-V shader
-            vk::PipelineShaderStageCreateInfo& loadShader(const std::string& fileName, vk::ShaderStageFlagBits stage, const char* entryPoint = "main") {
-                vk::PipelineShaderStageCreateInfo shaderStage = vks::shaders::loadShader(device, fileName, stage, entryPoint);
-                shaderStages.push_back(shaderStage);
-                return shaderStages.back();
             }
 
             vk::Pipeline create(const vk::PipelineCache& cache) {

@@ -149,6 +149,11 @@ namespace gpu {
         class GLESBackend;
         class GLESBuffer;
     }
+
+    namespace vulkan {
+        class VKBackend;
+        class VKBuffer;
+    }
 }
 
 #endif
