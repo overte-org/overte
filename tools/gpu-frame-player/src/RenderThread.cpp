@@ -9,7 +9,10 @@
 
 #include "RenderThread.h"
 #include <QtGui/QWindow>
+
+#ifdef USE_GL
 #include <gl/QOpenGLContextWrapper.h>
+#endif
 
 void RenderThread::submitFrame(const gpu::FramePointer& frame) {
     std::unique_lock<std::mutex> lock(_frameLock);
