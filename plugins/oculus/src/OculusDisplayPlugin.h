@@ -37,7 +37,6 @@ protected:
 private:
     static const char* NAME;
     ovrTextureSwapChain _textureSwapChain;
-    gpu::FramebufferPointer _outputFramebuffer;
     bool _customized { false };
 
     std::atomic_bool _aswActive;
