@@ -406,8 +406,14 @@ macro(AUTOSCRIBE_SHADER_LIBS)
     configure_file(shaders.qrc.in ${CMAKE_CURRENT_BINARY_DIR}/shaders.qrc)
     list(APPEND QT_RESOURCES_FILE ${CMAKE_CURRENT_BINARY_DIR}/shaders.qrc)
 
-    list(APPEND AUTOSCRIBE_SHADER_HEADERS ${AUTOSCRIBE_HEADER_DIR}/mono.glsl ${AUTOSCRIBE_HEADER_DIR}/stereo.glsl)
-    list(APPEND AUTOSCRIBE_SHADER_HEADERS ${AUTOSCRIBE_HEADER_DIR}/450/header.glsl ${AUTOSCRIBE_HEADER_DIR}/410/header.glsl ${AUTOSCRIBE_HEADER_DIR}/320es/header.glsl)
+    list(APPEND AUTOSCRIBE_SHADER_HEADERS 
+        ${AUTOSCRIBE_HEADER_DIR}/mono.glsl 
+        ${AUTOSCRIBE_HEADER_DIR}/stereo.glsl
+        ${AUTOSCRIBE_HEADER_DIR}/450/header.glsl 
+        ${AUTOSCRIBE_HEADER_DIR}/410/header.glsl 
+        ${AUTOSCRIBE_HEADER_DIR}/320es/header.glsl
+    )
+
     source_group("Shader Headers" FILES ${AUTOSCRIBE_HEADER_DIR}/mono.glsl ${AUTOSCRIBE_HEADER_DIR}/stereo.glsl)
     source_group("Shader Headers\\450" FILES ${AUTOSCRIBE_HEADER_DIR}/450/header.glsl)
     source_group("Shader Headers\\410" FILES ${AUTOSCRIBE_HEADER_DIR}/410/header.glsl)
