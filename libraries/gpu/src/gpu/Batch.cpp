@@ -29,7 +29,9 @@ ProfileRangeBatch::~ProfileRangeBatch() {
 }
 #endif
 
-#define ADD_COMMAND(call) _commands.emplace_back(COMMAND_##call); _commandOffsets.emplace_back(_params.size());
+#define ADD_COMMAND(call)                   \
+    _commands.emplace_back(COMMAND_##call); \
+    _commandOffsets.emplace_back(_params.size());
 
 using namespace gpu;
 
@@ -75,6 +77,9 @@ void Batch::clear() {
     _dataMax = std::max(_data.size(), _dataMax);
     _objectsMax = std::max(_objects.size(), _objectsMax);
     _drawCallInfosMax = std::max(_drawCallInfos.size(), _drawCallInfosMax);
+
+    _currentStreamFormat.reset();
+    _currentPipeline.reset();
 
     _commands.clear();
     _commandOffsets.clear();
@@ -122,7 +127,37 @@ void Batch::setDrawcallUniformReset(uint16_t uniformReset) {
     _drawcallUniformReset = uniformReset;
 }
 
+#pragma optimize("", off)
+
+void Batch::validateDrawState() const {
+    return;
+    if (!_currentPipeline) {
+        qCWarning(gpulogging) << "Missing pipeline during draw call";
+    }
+    const auto& vertexShader = _currentPipeline->getProgram()->getShaders()[0];
+    const auto variant = _enableStereo ? shader::Variant::Stereo : shader::Variant::Mono;
+    const auto dialect = shader::allDialects()[0];
+    const auto& vertexSource = vertexShader->getSource();
+    const auto& vertexName = vertexSource.name;
+    const auto& vertexReflection = vertexSource.getReflection(dialect, variant);
+    const auto& vertexInputs = vertexReflection.inputs;
+
+    for (const auto& entry : vertexInputs) {
+        auto slot = entry.second;
+        if (slot == gpu::slot::attr::DrawCallInfo) {
+            continue;
+        }
+        if (slot == gpu::slot::attr::Color) {
+            continue;
+        }
+        if (!_currentStreamFormat || (0 == _currentStreamFormat->getAttributes().count(slot))) {
+            qCWarning(gpulogging) << "Vertex shader expects slot " << slot << " which is not proveded";
+        }
+    }
+}
+
 void Batch::draw(Primitive primitiveType, uint32 numVertices, uint32 startVertex) {
+    validateDrawState();
     ADD_COMMAND(draw);
 
     _params.emplace_back(startVertex);
@@ -133,6 +168,7 @@ void Batch::draw(Primitive primitiveType, uint32 numVertices, uint32 startVertex
 }
 
 void Batch::drawIndexed(Primitive primitiveType, uint32 numIndices, uint32 startIndex) {
+    validateDrawState();
     ADD_COMMAND(drawIndexed);
 
     _params.emplace_back(startIndex);
@@ -142,7 +178,12 @@ void Batch::drawIndexed(Primitive primitiveType, uint32 numIndices, uint32 start
     captureDrawCallInfo();
 }
 
-void Batch::drawInstanced(uint32 numInstances, Primitive primitiveType, uint32 numVertices, uint32 startVertex, uint32 startInstance) {
+void Batch::drawInstanced(uint32 numInstances,
+                          Primitive primitiveType,
+                          uint32 numVertices,
+                          uint32 startVertex,
+                          uint32 startInstance) {
+    validateDrawState();
     ADD_COMMAND(drawInstanced);
 
     _params.emplace_back(startInstance);
@@ -154,7 +195,12 @@ void Batch::drawInstanced(uint32 numInstances, Primitive primitiveType, uint32 n
     captureDrawCallInfo();
 }
 
-void Batch::drawIndexedInstanced(uint32 numInstances, Primitive primitiveType, uint32 numIndices, uint32 startIndex, uint32 startInstance) {
+void Batch::drawIndexedInstanced(uint32 numInstances,
+                                 Primitive primitiveType,
+                                 uint32 numIndices,
+                                 uint32 startIndex,
+                                 uint32 startInstance) {
+    validateDrawState();
     ADD_COMMAND(drawIndexedInstanced);
 
     _params.emplace_back(startInstance);
@@ -167,6 +213,7 @@ void Batch::drawIndexedInstanced(uint32 numInstances, Primitive primitiveType, u
 }
 
 void Batch::multiDrawIndirect(uint32 numCommands, Primitive primitiveType) {
+    validateDrawState();
     ADD_COMMAND(multiDrawIndirect);
     _params.emplace_back(numCommands);
     _params.emplace_back(primitiveType);
@@ -175,6 +222,7 @@ void Batch::multiDrawIndirect(uint32 numCommands, Primitive primitiveType) {
 }
 
 void Batch::multiDrawIndexedIndirect(uint32 nbCommands, Primitive primitiveType) {
+    validateDrawState();
     ADD_COMMAND(multiDrawIndexedIndirect);
     _params.emplace_back(nbCommands);
     _params.emplace_back(primitiveType);
@@ -183,8 +231,8 @@ void Batch::multiDrawIndexedIndirect(uint32 nbCommands, Primitive primitiveType)
 }
 
 void Batch::setInputFormat(const Stream::FormatPointer& format) {
+    _currentStreamFormat = format;
     ADD_COMMAND(setInputFormat);
-
     _params.emplace_back(_streamFormats.cache(format));
 }
 
@@ -282,8 +330,8 @@ void Batch::setDepthRangeTransform(float nearDepth, float farDepth) {
 }
 
 void Batch::setPipeline(const PipelinePointer& pipeline) {
+    _currentPipeline = pipeline;
     ADD_COMMAND(setPipeline);
-
     _params.emplace_back(_pipelines.cache(pipeline));
 }
 
@@ -348,7 +396,10 @@ void Batch::setResourceTextureTable(const TextureTablePointer& textureTable, uin
     _params.emplace_back(slot);
 }
 
-void Batch::setResourceFramebufferSwapChainTexture(uint32 slot, const FramebufferSwapChainPointer& framebuffer, unsigned int swapChainIndex, unsigned int renderBufferSlot) {
+void Batch::setResourceFramebufferSwapChainTexture(uint32 slot,
+                                                   const FramebufferSwapChainPointer& framebuffer,
+                                                   unsigned int swapChainIndex,
+                                                   unsigned int renderBufferSlot) {
     ADD_COMMAND(setResourceFramebufferSwapChainTexture);
 
     _params.emplace_back(_swapChains.cache(framebuffer));
@@ -405,8 +456,10 @@ void Batch::clearDepthStencilFramebuffer(float depth, int stencil, bool enableSc
     clearFramebuffer(Framebuffer::BUFFER_DEPTHSTENCIL, Vec4(0.0f), depth, stencil, enableScissor);
 }
 
-void Batch::blit(const FramebufferPointer& src, const Vec4i& srcViewport,
-    const FramebufferPointer& dst, const Vec4i& dstViewport) {
+void Batch::blit(const FramebufferPointer& src,
+                 const Vec4i& srcViewport,
+                 const FramebufferPointer& dst,
+                 const Vec4i& dstViewport) {
     ADD_COMMAND(blit);
 
     _params.emplace_back(_framebuffers.cache(src));
