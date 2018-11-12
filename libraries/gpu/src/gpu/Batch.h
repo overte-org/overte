@@ -493,6 +493,9 @@ public:
     mutable TransformObjects _objects;
     static size_t _objectsMax;
 
+    Stream::FormatPointer _currentStreamFormat;
+    PipelinePointer _currentPipeline;
+
     BufferCaches _buffers;
     TextureCaches _textures;
     TextureTableCaches _textureTables;
@@ -531,6 +534,8 @@ protected:
     // MUST only be called on the render thread
     // MUST only be called on batches created on the render thread
     void flush();
+
+    void validateDrawState() const;
 
     void startNamedCall(const std::string& name);
     void stopNamedCall();

@@ -386,7 +386,7 @@ LightStage::LightPointer LightStage::getCurrentAmbientLight(const LightFrame& fr
 void LightStage::updateLightArrayBuffer(Index lightId) {
     auto lightSize = sizeof(graphics::Light::LightSchema);
     if (!_lightArrayBuffer) {
-        _lightArrayBuffer = std::make_shared<gpu::Buffer>(lightSize);
+        _lightArrayBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, lightSize);
     }
 
     if (lightId > (Index)_lightArrayBuffer->getNumTypedElements<graphics::Light::LightSchema>()) {
