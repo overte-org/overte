@@ -37,6 +37,7 @@ class VKBackend : public Backend, public std::enable_shared_from_this<VKBackend>
 public:
     VKBackend();
     ~VKBackend();
+    void syncProgram(const gpu::ShaderPointer& program) override {}
     void syncCache() override {}
     void recycle() const override {}
     void setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool reset = false) override {}
