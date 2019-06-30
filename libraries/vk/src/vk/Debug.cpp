@@ -90,7 +90,7 @@ const vk::DispatchLoaderDynamic& getInstanceDispatcher(const vk::Instance& insta
     static vk::DispatchLoaderDynamic dispatcher;
     static std::once_flag once;
     if (instance) {
-        std::call_once(once, [&] { dispatcher.init(instance); });
+        std::call_once(once, [&] { dispatcher.init(instance, &vkGetInstanceProcAddr); });
     }
     return dispatcher;
 }

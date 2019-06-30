@@ -11,6 +11,7 @@
 //
 
 <@include gpu/ShaderConstants.h@>
+<@include gpu/Color.slh@>
 INPUT(GPU_ATTR_POSITION, vec4, inPosition);
 INPUT(GPU_ATTR_TEXCOORD0, vec4, inTexCoord0);
 
