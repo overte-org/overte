@@ -22,12 +22,12 @@
 
 <@include CullFace.slh@>
 // the albedo texture
-TEXTURE(0, sampler2D, originalTexture);
+TEXTURE(0, sampler2D, _texture);
 
 <@include render-utils/ShaderConstants.h@>
 
 <@if not HIFI_USE_FORWARD@>
-    layout(location=RENDER_UTILS_ATTR_NORMAL_WS) in vec3 _normalWS;
+    INPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
     layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) in vec4 _prevPositionCS;
 <@endif@>
 layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec2 _texCoord;
