@@ -118,6 +118,7 @@ extern vk::CommandBuffer currentCommandBuffer;
 #endif
 
 void RenderThread::renderFrame(gpu::FramePointer& frame) {
+    PROFILE_RANGE(render_gpu_gl, __FUNCTION__);
     ++_presentCount;
 #ifdef USE_GL
     _context.makeCurrent();
