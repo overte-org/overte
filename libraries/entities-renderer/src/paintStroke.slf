@@ -21,14 +21,14 @@
 
 <@include CullFace.slh@>
 // the albedo texture
-TEXTURE(0, sampler2D, originalTexture);
+TEXTURE(0, sampler2D, _texture);
 
 <@if not HIFI_USE_FORWARD@>
-    layout(location=0) in vec3 _normalWS;
+    INPUT(0, vec3, _normalWS);
 <@endif@>
-layout(location=1) in vec2 _texCoord;
-layout(location=2) in vec4 _color;
-layout(location=3) in float _distanceFromCenter;
+INPUT(1, vec2, _texCoord);
+INPUT(2, vec4, _color);
+INPUT(3, float, _distanceFromCenter);
 
 void main(void) {
     vec4 texel = texture(_texture, _texCoord);
