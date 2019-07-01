@@ -74,6 +74,14 @@ void PlayerWindow::keyPressEvent(QKeyEvent* event) {
             loadFrame();
             return;
 
+        case Qt::Key_F3:
+            _renderThread.testGlTransfer();
+            return;
+
+        case Qt::Key_F4:
+            _renderThread.testVkTransfer();
+            return;
+
         case Qt::Key_W:
             _renderThread.move(vec3{ 0, 0, -0.1f } * moveScale);
             return;
@@ -114,7 +122,7 @@ static const QString DEFAULT_TRACING_RULES =
 void PlayerWindow::loadFrame(const QString& path) {
     DependencyManager::get<tracing::Tracer>()->startTracing();
     QLoggingCategory::setFilterRules(DEFAULT_TRACING_RULES);
-    QTimer::singleShot(8000, [] {
+    QTimer::singleShot(10 * 1000, [] {
         DependencyManager::get<tracing::Tracer>()->stopTracing();
         DependencyManager::get<tracing::Tracer>()->serialize("D:/frames/trace-{DATE}_{TIME}.json.gz");
     });
