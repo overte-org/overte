@@ -8,7 +8,8 @@
 
 #include "RenderThread.h"
 #include <QtGui/QWindow>
-
+#include <QtCore/QThreadPool>
+#include <gl/OffscreenGLCanvas.h>
 #ifdef USE_GL
 #include <gl/QOpenGLContextWrapper.h>
 #endif
@@ -34,7 +35,13 @@ void RenderThread::initialize(QWindow* window) {
     Parent::initialize();
 
     _window = window;
+    _vkcontext.setValidationEnabled(true);
+
 #ifdef USE_GL
+    _vkcontext.createInstance();
+    _vkcontext.createDevice();
+    _vkstagingBuffer = _vkcontext.createStagingBuffer(1024 * 1024 * 512, nullptr);
+
     _window->setFormat(getDefaultOpenGLSurfaceFormat());
     _context.setWindow(window);
     _context.create();
@@ -64,15 +71,14 @@ void RenderThread::initialize(QWindow* window) {
     auto size = window->size();
     _extent = vk::Extent2D{ (uint32_t)size.width(), (uint32_t)size.height() };
 
-    _context.setValidationEnabled(true);
-    _context.requireExtensions({
+    _vkcontext.requireExtensions({
         std::string{ VK_KHR_SURFACE_EXTENSION_NAME },
         std::string{ VK_KHR_WIN32_SURFACE_EXTENSION_NAME },
     });
-    _context.requireDeviceExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME });
-    _context.createInstance();
-    _surface = _context.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)window->winId() });
-    _context.createDevice(_surface);
+    _vkcontext.requireDeviceExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME });
+    _vkcontext.createInstance();
+    _surface = _vkcontext.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)window->winId() });
+    _vkcontext.createDevice(_surface);
     _swapchain.setSurface(_surface);
     _swapchain.create(_extent, true);
 
@@ -124,11 +130,11 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     _context.makeCurrent();
 #endif
     if (_correction != glm::mat4()) {
-       std::unique_lock<std::mutex> lock(_frameLock);
-       if (_correction != glm::mat4()) {
-           _backend->setCameraCorrection(_correction, _activeFrame->view);
-           //_prevRenderView = _correction * _activeFrame->view;
-       }
+        std::unique_lock<std::mutex> lock(_frameLock);
+        if (_correction != glm::mat4()) {
+            _backend->setCameraCorrection(_correction, _activeFrame->view);
+            //_prevRenderView = _correction * _activeFrame->view;
+        }
     }
     _backend->recycle();
     _backend->syncCache();
@@ -196,10 +202,9 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     //glClear(GL_COLOR_BUFFER_BIT);
   /*  glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glBlitFramebuffer(
-        0, 0, fboSize.x, fboSize.y, 
-        0, 0, windowSize.width(), windowSize.height(),
-        GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glBlitFramebuffer(0, 0, fboSize.x, fboSize.y, 0, 0, windowSize.width(), windowSize.height(), GL_COLOR_BUFFER_BIT,
+                      GL_NEAREST);
+
 */
     (void)CHECK_GL_ERROR();
     _context.swapBuffers();
@@ -232,7 +237,7 @@ bool RenderThread::process() {
         pendingFrames.swap(_pendingFrames);
         pendingSize.swap(_pendingSize);
     }
-    
+
     while (!pendingFrames.empty()) {
         _activeFrame = pendingFrames.front();
         pendingFrames.pop();
@@ -318,3 +323,216 @@ void RenderThread::setupRenderPass() {
     _renderPass = _device.createRenderPass(renderPassInfo);
 }
 #endif
+
+class QLambdaRunnable : public QRunnable {
+public:
+    QLambdaRunnable(const std::function<void()>& f) : _f(f) {}
+
+    void run() override { _f(); }
+
+private:
+    std::function<void()> _f;
+};
+
+struct VkBufferTransferItem {
+    using Vector = std::vector<VkBufferTransferItem>;
+    vk::DeviceSize offset{ 0 };
+    gpu::BufferPointer gpuBuffer;
+    vks::Buffer deviceBuffer;
+
+    void allocateDeviceBuffer(const vks::Context& context) {
+        static const vk::BufferUsageFlags flags = vk::BufferUsageFlagBits::eVertexBuffer |
+                                                  vk::BufferUsageFlagBits::eUniformBuffer |
+                                                  vk::BufferUsageFlagBits::eTransferDst;
+        deviceBuffer = context.createDeviceBuffer(flags, gpuBuffer->getSize());
+    }
+
+    static void populateStagingBuffer(vks::Buffer& stagingBuffer, Vector& vector) {
+        vk::DeviceSize totalSize = 0;
+        for (auto& item : vector) {
+            item.offset = totalSize;
+            totalSize += item.gpuBuffer->getSize();
+        }
+        stagingBuffer.map();
+
+        for (auto& item : vector) {
+            const auto& gpuBuffer = item.gpuBuffer;
+            auto itemSize = gpuBuffer->getSize();
+            item.offset = totalSize;
+            if ((itemSize + item.offset) >= stagingBuffer.size) {
+                qDebug() << "Bad copy";
+            }
+            stagingBuffer.copy(itemSize, gpuBuffer->getData(), item.offset);
+            totalSize += itemSize;
+        }
+        stagingBuffer.unmap();
+    }
+
+    static void transferBuffers(const vks::Context& context, vks::Buffer& stagingBuffer, Vector& vector) {
+        vk::CommandPool commandPool;
+        {
+            vk::CommandPoolCreateInfo createInfo{ vk::CommandPoolCreateFlagBits::eTransient, context.queueIndices.transfer };
+            commandPool = context.device.createCommandPool(createInfo);
+        }
+
+        vk::CommandBuffer commandBuffer;
+        {
+            vk::CommandBufferAllocateInfo allocInfo{ commandPool, vk::CommandBufferLevel::ePrimary, 1 };
+            commandBuffer = context.device.allocateCommandBuffers(allocInfo)[0];
+        }
+        commandBuffer.begin(vk::CommandBufferBeginInfo{ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
+        for (auto& item : vector) {
+            vk::BufferCopy region{ item.offset, 0, item.gpuBuffer->getSize() };
+            commandBuffer.copyBuffer(stagingBuffer.buffer, item.deviceBuffer.buffer, region);
+        }
+        commandBuffer.end();
+
+        {
+            PROFILE_RANGE(render_gpu_gl, "vk_submitTranferCommandBuffer");
+            auto transferQueue = context.device.getQueue(context.queueIndices.transfer, 0);
+            auto fence = context.device.createFence({});
+            {
+                vk::SubmitInfo submitInfo{};
+                submitInfo.commandBufferCount = 1;
+                submitInfo.pCommandBuffers = &commandBuffer;
+                transferQueue.submit(submitInfo, fence);
+            }
+            {
+                PROFILE_RANGE(render_gpu_gl, "vk_submitTranferCommandBufferWait");
+                transferQueue.waitIdle();
+                while (vk::Result::eSuccess != context.device.waitForFences(fence, VK_TRUE, UINT64_MAX)) {
+                    QThread::msleep(1);
+                }
+            }
+        }
+    }
+};
+
+void RenderThread::testVkTransfer() {
+    static std::atomic<bool> running{ false };
+    if (running) {
+        return;
+    }
+
+    running = true;
+    QThreadPool::globalInstance()->start(new QLambdaRunnable([this] {
+        PROFILE_RANGE(render_gpu_gl, "vk_bufferCopyTest");
+        VkBufferTransferItem::Vector bufferTransfers;
+        {
+            std::unordered_set<gpu::BufferPointer> allBuffers;
+            for (const auto& batch : _activeFrame->batches) {
+                for (const auto& buffer : batch->_buffers._items) {
+                    if (buffer._data && 0 != buffer._data->getSize()) {
+                        allBuffers.insert(buffer._data);
+                    }
+                }
+            }
+            {
+                PROFILE_RANGE(render_gpu_gl, "vk_populateStagingBuffers");
+                bufferTransfers.resize(allBuffers.size());
+                size_t i = 0;
+                for (const auto& buffer : allBuffers) {
+                    auto& item = bufferTransfers[i++];
+                    item.gpuBuffer = buffer;
+                }
+                VkBufferTransferItem::populateStagingBuffer(_vkstagingBuffer, bufferTransfers);
+            }
+        }
+
+        //{
+        //    PROFILE_RANGE(render_gpu_gl, "vk_defragStagingBuffers");
+        //    VkBufferTransferItem::defragStagingBuffers(_vkcontext, bufferTransfers);
+        //}
+
+        {
+            PROFILE_RANGE(render_gpu_gl, "vk_allocateDeviceBuffers");
+            for (auto& item : bufferTransfers) {
+                item.allocateDeviceBuffer(_vkcontext);
+            }
+        }
+
+        {
+            PROFILE_RANGE(render_gpu_gl, "vk_transferBuffers");
+            VkBufferTransferItem::transferBuffers(_vkcontext, _vkstagingBuffer, bufferTransfers);
+        }
+
+        {
+            PROFILE_RANGE(render_gpu_gl, "vk_destroyTransferDeviceBuffers");
+            for (auto& item : bufferTransfers) {
+                item.deviceBuffer.destroy();
+            }
+        }
+
+        running = false;
+    }));
+}
+
+struct GlBufferTransferItem {
+    using Vector = std::vector<GlBufferTransferItem>;
+    gpu::BufferPointer gpuBuffer;
+    GLuint glbuffer;
+
+    void allocateDeviceBuffer() {
+        glCreateBuffers(1, &glbuffer);
+        glNamedBufferStorage(glbuffer, gpuBuffer->getSize(), gpuBuffer->getData(), 0);
+    }
+
+    void destroyDeviceBuffer() { glDeleteBuffers(1, &glbuffer); }
+};
+
+void RenderThread::testGlTransfer() {
+    static std::atomic<bool> running{ false };
+    if (running) {
+        return;
+    }
+
+    running = true;
+    QThreadPool::globalInstance()->start(new QLambdaRunnable([this] {
+        static std::once_flag once;
+        static OffscreenGLCanvas glcanvas;
+        std::call_once(once, [] {
+            glcanvas.create();
+            glcanvas.makeCurrent();
+        });
+        PROFILE_RANGE(render_gpu_gl, "gl_bufferTransferTest");
+
+
+        GlBufferTransferItem::Vector bufferTransfers;
+        {
+            std::unordered_set<gpu::BufferPointer> allBuffers;
+            for (const auto& batch : _activeFrame->batches) {
+                for (const auto& buffer : batch->_buffers._items) {
+                    if (buffer._data && 0 != buffer._data->getSize()) {
+                        allBuffers.insert(buffer._data);
+                    }
+                }
+            }
+
+            {
+                PROFILE_RANGE(render_gpu_gl, "gl_initBuffers");
+                bufferTransfers.resize(allBuffers.size());
+                size_t i = 0;
+                for (const auto& buffer : allBuffers) {
+                    auto& item = bufferTransfers[i++];
+                    item.gpuBuffer = buffer;
+                }
+            }
+        }
+
+        {
+            PROFILE_RANGE(render_gpu_gl, "gl_allocateDeviceBuffers");
+            for (auto& item : bufferTransfers) {
+                item.allocateDeviceBuffer();
+            }
+        }
+
+        {
+            PROFILE_RANGE(render_gpu_gl, "gl_destroyDeviceBuffers");
+            for (auto& item : bufferTransfers) {
+                item.destroyDeviceBuffer();
+            }
+        }
+
+        running = false;
+}));
+}
