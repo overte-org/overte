@@ -45,7 +45,7 @@ size_t ByteSlice::length() const {
     return _length;
 }
 
-const quint8& ByteSlice::operator[](size_t idx) {
+const quint8& ByteSlice::operator[](size_t idx) const {
     if (_content.isNull() || idx > _length) {
         return gl_fallback;
     } else {

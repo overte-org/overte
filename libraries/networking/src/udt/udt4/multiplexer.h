@@ -13,6 +13,7 @@
 #ifndef hifi_udt4_Multiplexer_h
 #define hifi_udt4_Multiplexer_h
 
+#include "Packet.h"
 #include <QtNetwork/QHostAddress>
 #include <QtCore/QList>
 #include <QtCore/QMap>
@@ -24,33 +25,37 @@
 
 namespace udt4 {
 
+class UdtServer;
 class UdtSocket;
 
-class UDTMultiplexer : public QObject {
+class UdtMultiplexer : public QObject {
     Q_OBJECT
 public:
-    typedef QSharedPointer<UDTMultiplexer> TSharedPointer;
-    typedef QWeakPointer<UDTMultiplexer> TWeakPointer;
+    typedef QSharedPointer<UdtMultiplexer> TSharedPointer;
+    typedef QWeakPointer<UdtMultiplexer> TWeakPointer;
 
 public:
     static TSharedPointer getInstance(quint16 port, const QHostAddress& localAddress = QHostAddress::Any);
     bool isLive() const;
+    void sendPacket(const QHostAddress& destAddr, quint32 destPort, quint32 destSockID, quint32 timestamp, Packet packet);
+    QHostAddress serverAddress() const;
+    quint16 serverPort() const;
+
+    bool startListenUdt(UdtServer* server);
+    bool stopListenUdt(UdtServer* server);
 
 private:
-    UDTMultiplexer(quint16 port, const QHostAddress& localAddress);
+    UdtMultiplexer(quint16 port, const QHostAddress& localAddress);
     void create(quint16 port, const QHostAddress& localAddress);
-
-    //	network       string
-    //	laddr         *net.UDPAddr   // the local address handled by this multiplexer
-    //	listenSock    *listener      // the server socket listening to incoming connections, if there is one
-    //	servSockMutex sync.Mutex
-    //	mtu           uint           // the Maximum Transmission Unit of packets sent from this address
-    //	pktOut        chan packetWrapper // packets queued for immediate sending
+    void checkLive();
 
 private slots:
     void onPacketError(QUdpSocket::SocketError socketError);
     void onPacketReadReady();
-    void onPacketWriteReady();
+    void onPacketWriteReady(Packet packet, QHostAddress destAddr, quint32 destPort);
+
+signals:
+    void sendPacket(Packet packet, QHostAddress destAddr, quint32 destPort, QPrivateSignal);
 
 private:
     typedef QPair<quint16, QHostAddress> TLocalPortPair;
@@ -59,14 +64,18 @@ private:
     typedef QMap<quint32, UdtSocket*> TSocketMap;
 
     QUdpSocket _udpSocket;  // the listening socket where we receive all our packets
-    quint32 _nextSid;       // the SockID for the next socket created -- set to a random number on construction
+    quint32 _nextSid{ 0 };  // the SockID for the next socket created -- set to a random number on construction
     QThread _readThread;
     QThread _writeThread;
+    quint16 _serverPort{ 0 };
+    QHostAddress _serverAddress{ QHostAddress::Null };
 
     mutable QMutex _rendezvousSocketsProtect;
     TSocketList _rendezvousSockets;
     mutable QMutex _connectedSocketsProtect;
     TSocketMap _connectedSockets;
+    mutable QMutex _serverSocketProtect;
+    UdtServer* _serverSocket{ nullptr };  //	the server socket listening to incoming connections, if there is one
 
     static QMutex gl_multiplexerMapProtect;
     static TMultiplexerMap gl_multiplexerMap;

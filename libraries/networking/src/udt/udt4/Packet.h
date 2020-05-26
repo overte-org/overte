@@ -15,6 +15,7 @@
 
 // Structure of packets and functions for writing/reading them
 #include "ByteSlice.h"
+#include <QtNetwork/QHostAddress>
 
 namespace udt4 {
 
@@ -36,9 +37,29 @@ enum class PacketType : quint16
     Invalid = 0x8001,
 };
 
+// SocketType describes the kind of socket this is (i.e. streaming vs message)
+enum class SocketType : quint16
+{
+    Unknown = 0,
+    STREAM = 1, // reliable streaming protocol (e.g. TCP)
+    DGRAM = 2,  // partially-reliable messaging protocol
+};
+
+// HandshakeReqType describes the type of handshake packet
+enum class HandshakeRequestType : qint32
+{
+    Request = 1,    // an attempt to establish a new connection
+    Rendezvous = 0, // an attempt to establish a new connection using mutual rendezvous packets
+    Response = -1,  // a response to a handshake request
+    Response2 = -2, // an acknowledgement that a HsResponse was received
+    Refused = 1002, // notifies the peer of a connection refusal
+};
+
 class Packet {
 public:
+    inline Packet() {}
     Packet(ByteSlice networkPacket);
+    ByteSlice toNetworkPacket() const;
 
 public:
     PacketType _type{ PacketType::Invalid };
@@ -47,6 +68,27 @@ public:
     quint32 _timestamp{ 0 };
     quint32 _socketID{ 0 };
     ByteSlice _contents;
+};
+
+class HandshakePacket {
+public:
+    inline HandshakePacket() {}
+    HandshakePacket(const Packet& src, QAbstractSocket::NetworkLayerProtocol protocol);
+    Packet toPacket() const;
+
+public:
+    quint32 _timestamp{ 0 };
+    quint32 _socketID{ 0 };
+    quint32 _udtVer{ 0 };           // UDT version
+    SocketType _sockType{ SocketType::Unknown };  // Socket Type (1 = STREAM or 2 = DGRAM)
+    quint32 _initPktSeq{ 0 };       // initial packet sequence number
+    quint32 _maxPktSize{ 0 };       // maximum packet size (including UDP/IP headers)
+    quint32 _maxFlowWinSize{ 0 };   // maximum flow window size
+    HandshakeRequestType _reqType{ HandshakeRequestType::Refused };  // connection type (regular(1), rendezvous(0), -1/-2 response)
+    quint32 _farSocketID{ 0 };      // socket ID
+    quint32 _synCookie{ 0 };        // SYN cookie
+	QHostAddress _sockAddr;         // the IP address of the UDP socket to which this packet is being sent
+    ByteSlice _extra;
 };
 
 }  // namespace udt4

@@ -12,11 +12,11 @@
 
 #include "ByteSlice.h"
 #include "../../NetworkLogging.h"
-#include "Packet.h"
 #include <QtCore/QException>
 #include <QtCore/QLoggingCategory>
 #include <QtNetwork/QNetworkDatagram>
 #include <QtCore/QRandomGenerator>
+#include "UdtServer.h"
 
 #ifdef WIN32
 #include <winsock2.h>
@@ -27,8 +27,8 @@
 
 using namespace udt4;
 
-QMutex UDTMultiplexer::gl_multiplexerMapProtect;
-UDTMultiplexer::TMultiplexerMap UDTMultiplexer::gl_multiplexerMap;
+QMutex UdtMultiplexer::gl_multiplexerMapProtect;
+UdtMultiplexer::TMultiplexerMap UdtMultiplexer::gl_multiplexerMap;
 
 /*
 // packetWrapper is used to explicitly designate the destination of a packet,
@@ -45,7 +45,7 @@ public:
 };
 
 // getInstance gets or creates a multiplexer for the given local address.
-UDTMultiplexer::TSharedPointer UDTMultiplexer::getInstance(quint16 port,
+UdtMultiplexer::TSharedPointer UdtMultiplexer::getInstance(quint16 port,
                                                            const QHostAddress& localAddress /* = QHostAddress::Any */) {
     TLocalPortPair localPort(port, localAddress);
     TSharedPointer multiplexer;
@@ -88,7 +88,7 @@ UDTMultiplexer::TSharedPointer UDTMultiplexer::getInstance(quint16 port,
     return multiplexer;
 }
 
-UDTMultiplexer::UDTMultiplexer(quint16 port, const QHostAddress& localAddress) {
+UdtMultiplexer::UdtMultiplexer(quint16 port, const QHostAddress& localAddress) {
     QRandomGenerator random;
     _nextSid = random.generate();
 
@@ -98,12 +98,14 @@ UDTMultiplexer::UDTMultiplexer(quint16 port, const QHostAddress& localAddress) {
     create(port, localAddress);
 }
 
-void UDTMultiplexer::create(quint16 port, const QHostAddress& localAddress) {
+void UdtMultiplexer::create(quint16 port, const QHostAddress& localAddress) {
 
     if (!_udpSocket.bind(localAddress, port)) {
         qCCritical(networking) << "Socket::bind failed";
         throw new SocketBindingFailure();
     }
+    _serverAddress = localAddress;
+    _serverPort = port;
 
     // try to avoid fragmentation (and hopefully be notified if we exceed path MTU)
 #if defined(Q_OS_LINUX)
@@ -130,29 +132,38 @@ void UDTMultiplexer::create(quint16 port, const QHostAddress& localAddress) {
     _udpSocket.moveToThread(&_readThread);
     moveToThread(&_writeThread);
 }
+
+QHostAddress UdtMultiplexer::serverAddress() const {
+    return _serverAddress;
+}
+
+quint16 UdtMultiplexer::serverPort() const {
+    return _serverPort;
+}
+
+bool UdtMultiplexer::startListenUdt(UdtServer* server) {
+    _serverSocketProtect.lock();
+    if (_serverSocket != nullptr) {
+        _serverSocketProtect.unlock();
+        return false;
+	}
+	_serverSocket = server;
+    _serverSocketProtect.unlock();
+	return true;
+}
+
+bool UdtMultiplexer::stopListenUdt(UdtServer* server) {
+    _serverSocketProtect.lock();
+    if (_serverSocket != server) {
+        _serverSocketProtect.unlock();
+		return false;
+	}
+    _serverSocket = nullptr;
+	_serverSocketProtect.unlock();
+    checkLive();
+	return true;
+}
 /*
-func (m *multiplexer) listenUDT(l *listener) bool {
-	m.servSockMutex.Lock()
-	defer m.servSockMutex.Unlock()
-	if m.listenSock != nil {
-		return false
-	}
-	m.listenSock = l
-	return true
-}
-
-func (m *multiplexer) unlistenUDT(l *listener) bool {
-	m.servSockMutex.Lock()
-	if m.listenSock != l {
-		m.servSockMutex.Unlock()
-		return false
-	}
-	m.listenSock = nil
-	m.servSockMutex.Unlock()
-	m.checkLive()
-	return true
-}
-
 // Adapted from https://github.com/hlandau/degoutils/blob/master/net/mtu.go
 const absMaxDatagramSize = 2147483646 // 2**31-2
 func discoverMTU(ourIP net.IP) (uint, error) {
@@ -243,19 +254,19 @@ func (m *multiplexer) checkLive() bool {
 	return false
 }
 */
-bool UDTMultiplexer::isLive() const {
+bool UdtMultiplexer::isLive() const {
     if (!_udpSocket.isOpen()) {
         return false;
 	}
     bool isEmpty = true;
-    /*
-	_servSockMutex.Lock();
-	if(_listenSock != nullptr) {
-		_servSockMutex.Unlock();
+    
+	_serverSocketProtect.lock();
+    if (_serverSocket != nullptr) {
+		_serverSocketProtect.unlock();
 		return true;
 	}
-	_servSockMutex.Unlock();
-    */
+    _serverSocketProtect.unlock();
+    
     _rendezvousSocketsProtect.lock();
     isEmpty = _rendezvousSockets.empty();
     _rendezvousSocketsProtect.unlock();
@@ -284,11 +295,11 @@ func (m *multiplexer) endRendezvous(s *udtSocket) {
 }
 */
 
-void UDTMultiplexer::onPacketError(QUdpSocket::SocketError socketError) {
+void UdtMultiplexer::onPacketError(QUdpSocket::SocketError socketError) {
     qCWarning(networking) << "UDT Packet error: [" << socketError << "] " << _udpSocket.errorString();
 }
 
-void UDTMultiplexer::onPacketReadReady() {  // executes from goRead thread
+void UdtMultiplexer::onPacketReadReady() {  // executes from goRead thread
     ByteSlice packetData;
     qint64 packetSize = _udpSocket.pendingDatagramSize();
     void* packetBuffer = packetData.create(packetSize);
@@ -312,7 +323,7 @@ void UDTMultiplexer::onPacketReadReady() {  // executes from goRead thread
         _rendezvousSocketsProtect.lock();
         for (TSocketList::const_iterator trans = _rendezvousSockets.begin(); !isHandled && trans != _rendezvousSockets.end();
              ++trans) {
-			if((*trans)->readHandshake(this, udtPacket, peerAddress)) {
+            if ((*trans)->readHandshake(this, udtPacket, peerAddress, peerPort)) {
                 isHandled = true;
                 break;
 			}
@@ -321,13 +332,12 @@ void UDTMultiplexer::onPacketReadReady() {  // executes from goRead thread
 		if(isHandled) {
             return;
 		}
-        /*
-		_servSockMutex.Lock();
-		if(_listenSock != nullptr) {
-			_listenSock->readHandshake(this, udtPacket, peerAddress);
+        
+		_serverSocketProtect.lock();
+		if(_serverSocket != nullptr) {
+			_serverSocket->readHandshake(this, udtPacket, peerAddress, peerPort);
 		}
-		_servSockMutex.Unlock();
-        */
+		_serverSocketProtect.unlock();
 	}
 
     UdtSocket* destSocket = nullptr;
@@ -338,7 +348,7 @@ void UDTMultiplexer::onPacketReadReady() {  // executes from goRead thread
     }
     _connectedSocketsProtect.unlock();
     if (destSocket) {
-        destSocket->readPacket(this, udtPacket, peerAddress);
+        destSocket->readPacket(this, udtPacket, peerAddress, peerPort);
 	}
 }
 
@@ -346,36 +356,21 @@ void UDTMultiplexer::onPacketReadReady() {  // executes from goRead thread
 write runs in a goroutine and writes packets to conn using a buffer from the
 writeBufferPool, or a new buffer.
 */
-void UDTMultiplexer::onPacketWriteReady() {
-	buf := make([]byte, m.mtu)
-	pktOut := m.pktOut
-	for {
-		select {
-		case pw, ok := <-pktOut:
-			if !ok {
-				return
-			}
-			plen, err := pw.pkt.WriteTo(buf)
-			if err != nil {
-				// TODO: handle write error
-				log.Fatalf("Unable to buffer out: %s", err.Error())
-				continue
-			}
-
-			if _, err = m.conn.WriteTo(buf[0:plen], pw.dest); err != nil {
-				// TODO: handle write error
-				log.Fatalf("Unable to write out: %s", err.Error())
-			}
-		}
-	}
+void UdtMultiplexer::onPacketWriteReady(Packet packet, QHostAddress destAddr, quint32 destPort) {
+    ByteSlice networkPacket = packet.toNetworkPacket();
+    _udpSocket.writeDatagram(reinterpret_cast<const char*>(&networkPacket[0]), networkPacket.length(), destAddr, destPort);
 }
 
-void UDTMultiplexer::sendPacket(const QHostAddress& destAddr, quint32 destSockID, quint32 ts, Packet p) {
-	p.SetHeader(destSockID, ts)
-	if(destSockID == 0) {
-		if _, ok := p.(*packet.HandshakePacket); !ok {
-			log.Fatalf("Sending non-handshake packet with destination socket = 0")
-		}
+void UdtMultiplexer::sendPacket(const QHostAddress& destAddr,
+                                quint32 destPort,
+                                quint32 destSockID,
+                                quint32 timestamp,
+                                Packet packet) {
+    packet._socketID = destSockID;
+    packet._timestamp = timestamp;
+	if(destSockID == 0 && packet._type != PacketType::Handshake) {
+        qCCritical(networking) << "Attempt to send non-handshake packet with destination socket = 0";
+        return;
 	}
-	m.pktOut <- packetWrapper{pkt: p, dest: destAddr};
+    emit sendPacket(packet, destAddr, destPort, QPrivateSignal());
 }

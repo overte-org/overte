@@ -27,7 +27,7 @@ public:
 
     inline size_t length() const;
     inline bool empty() const;
-    inline const quint8& operator[](size_t idx);
+    inline const quint8& operator[](size_t idx) const;
 
     quint8 pop_front();
     ByteSlice substring(size_t offset, size_t length = static_cast<size_t>(-1)) const;
