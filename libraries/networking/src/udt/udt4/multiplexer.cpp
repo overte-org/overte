@@ -30,25 +30,13 @@ using namespace udt4;
 QMutex UdtMultiplexer::gl_multiplexerMapProtect;
 UdtMultiplexer::TMultiplexerMap UdtMultiplexer::gl_multiplexerMap;
 
-/*
-// packetWrapper is used to explicitly designate the destination of a packet,
-// to assist with sending it to its destination
-type packetWrapper struct {
-	pkt  packet.Packet
-	dest *net.UDPAddr
-}
-*/
-
-class SocketBindingFailure : public QException {
-public:
-    inline SocketBindingFailure() {}
-};
-
 // getInstance gets or creates a multiplexer for the given local address.
-UdtMultiplexer::TSharedPointer UdtMultiplexer::getInstance(quint16 port,
-                                                           const QHostAddress& localAddress /* = QHostAddress::Any */) {
+UdtMultiplexerPointer UdtMultiplexer::getInstance(quint16 port,
+                                                           const QHostAddress& localAddress /* = QHostAddress::Any */,
+                                                           QAbstractSocket::SocketError* serverError /* = nullptr */,
+                                                           QString* errorString /* = nullptr */) {
     TLocalPortPair localPort(port, localAddress);
-    TSharedPointer multiplexer;
+    UdtMultiplexerPointer multiplexer;
 
     gl_multiplexerMapProtect.lock();
     TMultiplexerMap::const_iterator lookup = gl_multiplexerMap.find(localPort);
@@ -61,9 +49,8 @@ UdtMultiplexer::TSharedPointer UdtMultiplexer::getInstance(quint16 port,
     }
 
 	// No multiplexer, need to create connection
-    try {
-        multiplexer = TSharedPointer::create(port, localAddress);
-    } catch (const SocketBindingFailure&) {
+    multiplexer = UdtMultiplexerPointer::create();
+    if (!multiplexer->create(port, localAddress)) {
         // if we hit an exception trying to construct a multiplexer, check to see if we haven't hit a race condition
         gl_multiplexerMapProtect.lock();
         TMultiplexerMap::const_iterator lookup = gl_multiplexerMap.find(localPort);
@@ -76,10 +63,13 @@ UdtMultiplexer::TSharedPointer UdtMultiplexer::getInstance(quint16 port,
         }
 
         // we haven't, throw our exception
-        //throw e;
-
-        // ick, Qt doesn't fully support exceptions, just return nothing
-        return TSharedPointer();
+        if (serverError != nullptr) {
+            *serverError = multiplexer->serverError();
+        }
+        if (errorString != nullptr) {
+            *errorString = multiplexer->errorString();
+        }
+        return UdtMultiplexerPointer();
     }
 
     gl_multiplexerMapProtect.lock();
@@ -93,16 +83,36 @@ UdtMultiplexer::UdtMultiplexer(quint16 port, const QHostAddress& localAddress) {
     _nextSid = random.generate();
 
     connect(&_udpSocket, SIGNAL(readyRead), this, SLOT(onPacketReadReady), Qt::DirectConnection);
-    connect(&_udpSocket, QOverload<QUdpSocket::SocketError>::of(&QUdpSocket::error), this, SLOT(onPacketError), Qt::DirectConnection);
+    connect(this, SIGNAL(sendPacket), this, SLOT(onPacketWriteReady));
 
     create(port, localAddress);
 }
 
-void UdtMultiplexer::create(quint16 port, const QHostAddress& localAddress) {
+UdtMultiplexer::~UdtMultiplexer() {
+    // deregister this multiplexer
+    TLocalPortPair localPort(_serverPort, _serverAddress);
+    gl_multiplexerMapProtect.lock();
+    TMultiplexerMap::iterator lookup = gl_multiplexerMap.find(localPort);
+    if (lookup != gl_multiplexerMap.end()) {
+        gl_multiplexerMap.erase(lookup);
+    }
+    gl_multiplexerMapProtect.unlock();
+
+    // tear everything down
+    _udpSocket.close();
+
+    _readThread.quit();
+    _writeThread.quit();
+}
+
+bool UdtMultiplexer::create(quint16 port, const QHostAddress& localAddress) {
+    _readThread.start();
+    _writeThread.start();
+    _udpSocket.moveToThread(&_readThread);
+    moveToThread(&_writeThread);
 
     if (!_udpSocket.bind(localAddress, port)) {
-        qCCritical(networking) << "Socket::bind failed";
-        throw new SocketBindingFailure();
+        return false;
     }
     _serverAddress = localAddress;
     _serverPort = port;
@@ -126,19 +136,23 @@ void UdtMultiplexer::create(quint16 port, const QHostAddress& localAddress) {
         }
     }
 #endif
-
-    _readThread.start();
-    _writeThread.start();
-    _udpSocket.moveToThread(&_readThread);
-    moveToThread(&_writeThread);
+    return true;
 }
 
 QHostAddress UdtMultiplexer::serverAddress() const {
     return _serverAddress;
 }
 
+QAbstractSocket::SocketError UdtMultiplexer::serverError() const {
+    return _udpSocket.error();
+}
+
 quint16 UdtMultiplexer::serverPort() const {
     return _serverPort;
+}
+
+QString UdtMultiplexer::errorString() const {
+    return _udpSocket.errorString();
 }
 
 bool UdtMultiplexer::startListenUdt(UdtServer* server) {
@@ -160,7 +174,6 @@ bool UdtMultiplexer::stopListenUdt(UdtServer* server) {
 	}
     _serverSocket = nullptr;
 	_serverSocketProtect.unlock();
-    checkLive();
 	return true;
 }
 /*
@@ -213,47 +226,29 @@ func discoverMTU(ourIP net.IP) (uint, error) {
 	}
 	return uint(mtu), nil
 }
-
-func (m *multiplexer) newSocket(config *Config, peer *net.UDPAddr, isServer bool, isDatagram bool) (s *udtSocket) {
-	sid := atomic.AddUint32(&m.nextSid, ^uint32(0))
-
-	s = newSocket(m, config, sid, isServer, isDatagram, peer)
-
-	m.sockets.Store(sid, s)
-	return s
-}
-
-func (m *multiplexer) closeSocket(sockID uint32) bool {
-	if _, ok := m.sockets.Load(sockID); !ok {
-		return false
-	}
-	m.sockets.Delete(sockID)
-	m.checkLive()
-	return true
-}
-
-func (m *multiplexer) checkLive() bool {
-	if m.conn == nil { // have we already been destructed ?
-		return false
-	}
-	if m.isLive() { // are we currently in use?
-		return true
-	}
-
-	// deregister this multiplexer
-	key := m.key()
-	multiplexers.Delete(key)
-	if m.isLive() { // checking this in case we have a race condition with multiplexer destruction
-		multiplexers.Store(key, m)
-		return true
-	}
-
-	// tear everything down
-	m.conn.Close()
-	close(m.pktOut)
-	return false
-}
 */
+UdtSocketPointer UdtMultiplexer::newSocket(const QHostAddress& peerAddress, quint16 peerPort, bool isServer, bool isDatagram) {
+    quint32 sid = _nextSid.fetchAndSubRelaxed(1);
+
+	UdtSocketPointer socket = UdtSocket::newSocket(this, sid, isServer, isDatagram, peerAddress, peerPort);
+
+    _connectedSocketsProtect.lock();
+    _connectedSockets.insert(sid, socket.get());
+    _connectedSocketsProtect.unlock();
+
+	return socket;
+}
+
+bool UdtMultiplexer::closeSocket(quint32 sockID) {
+    _connectedSocketsProtect.lock();
+    TSocketMap::iterator lookup = _connectedSockets.find(sockID);
+    if (lookup != _connectedSockets.end()) {
+        _connectedSockets.erase(lookup);
+    }
+    _connectedSocketsProtect.unlock();
+    return lookup != _connectedSockets.end();
+}
+
 bool UdtMultiplexer::isLive() const {
     if (!_udpSocket.isOpen()) {
         return false;
@@ -280,23 +275,25 @@ bool UdtMultiplexer::isLive() const {
 
 	return !isEmpty;
 }
-/*
-func (m *multiplexer) startRendezvous(s *udtSocket) {
-	peer := s.raddr.String()
-	m.rvSockets.Store(peer, s)
+
+bool UdtMultiplexer::startRendezvous(UdtSocket* udtSocket) {
+    _rendezvousSocketsProtect.lock();
+    int indexOf = _rendezvousSockets.indexOf(udtSocket);
+    if (indexOf == -1) {
+        _rendezvousSockets.append(udtSocket);
+    }
+    _rendezvousSocketsProtect.unlock();
+    return indexOf == -1;
 }
 
-func (m *multiplexer) endRendezvous(s *udtSocket) {
-	peer := s.raddr.String()
-	sock, ok := m.rvSockets.Load(peer)
-	if ok && sock.(*udtSocket) == s {
-		m.rvSockets.Delete(peer)
-	}
-}
-*/
-
-void UdtMultiplexer::onPacketError(QUdpSocket::SocketError socketError) {
-    qCWarning(networking) << "UDT Packet error: [" << socketError << "] " << _udpSocket.errorString();
+bool UdtMultiplexer::endRendezvous(UdtSocket* udtSocket) {
+    _rendezvousSocketsProtect.lock();
+    int indexOf = _rendezvousSockets.indexOf(udtSocket);
+    if (indexOf != -1) {
+        _rendezvousSockets.removeAt(indexOf);
+    }
+    _rendezvousSocketsProtect.unlock();
+    return indexOf != -1;
 }
 
 void UdtMultiplexer::onPacketReadReady() {  // executes from goRead thread

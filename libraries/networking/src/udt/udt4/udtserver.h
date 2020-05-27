@@ -13,8 +13,11 @@
 #define hifi_udt4_UdtServer_h
 
 #include "packet.h"
+#include <QtCore/QAtomicInt>
 #include <QtCore/QCryptographicHash>
+#include <QtCore/QDeadlineTimer>
 #include <QtNetwork/QHostAddress>
+#include <QtCore/QMutex>
 #include <QtCore/QSharedPointer>
 #include <QtCore/QTimer>
 
@@ -24,17 +27,20 @@ class UdtMultiplexer;
 class UdtSocket;
 typedef QSharedPointer<UdtMultiplexer> UdtMultiplexerPointer;
 typedef QSharedPointer<UdtSocket> UdtSocketPointer;
+typedef QWeakPointer<UdtSocket> UdtSocketWeakPointer;
 
 class UdtServer : public QObject {
     Q_OBJECT
 public:
     explicit UdtServer(QObject* parent = nullptr);
+    virtual ~UdtServer();
 
     void close();
     QString errorString() const;
     virtual bool hasPendingConnections() const;
     bool isListening() const;
     bool listen(quint16 port, const QHostAddress& address = QHostAddress::Any);
+    qint64 listenReplayWindow() const;
     int maxPendingConnections() const;
     virtual UdtSocketPointer nextPendingConnection();
     void pauseAccepting();
@@ -42,6 +48,7 @@ public:
     QHostAddress serverAddress() const;
     QAbstractSocket::SocketError serverError() const;
     quint16 serverPort() const;
+    void setListenReplayWindow(qint64 msecs);
     void setMaxPendingConnections(int numConnections);
     bool waitForNewConnection(int msec = 0, bool* timedOut = nullptr);
 
@@ -64,20 +71,30 @@ private:
     bool rejectHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort);
 
 private:
-    UdtMultiplexerPointer _multiplexer;
-    quint32 _synEpoch{ 0 };
-    quint32 _synCookie{ 0 };
-    QString _errorString;
-    QAbstractSocket::SocketError _serverError{ QAbstractSocket::SocketError::UnknownSocketError };
-    QTimer _epochBumper;
+    struct AcceptedSockInfo {
+        quint32 sockID{ 0 };
+        quint32 initialSequenceNumber{ 0 };
+        UdtSocketWeakPointer socket;
+    };
+    typedef QMap<QDeadlineTimer, AcceptedSockInfo> AcceptSockInfoMap;
 
+    UdtMultiplexerPointer _multiplexer;
+    QTimer _epochBumper;
+    QString _errorString;
+    QAtomicInteger<qint64> _listenReplayWindow{ 5 * 60 * 1000 };
+    QAtomicInteger<quint32> _maxPendingConn{ 30 };
+    QAtomicInteger<quint8> _pausePendingConn{ 0 };
+    QAbstractSocket::SocketError _serverError{ QAbstractSocket::SocketError::UnknownSocketError };
+    quint32 _synCookie{ 0 };
+    quint32 _synEpoch{ 0 };
+
+    mutable QMutex _acceptedHistoryProtect;
+    AcceptSockInfoMap _acceptedHistory;
     /*
-    	accept         chan *udtSocket
+    accept         chan *udtSocket
 	closed         chan struct{}
-	acceptHist     acceptSockHeap
-	acceptHistProt sync.Mutex
 	config         *Config
-*/
+    */
 };
 
 }  // namespace udt4

@@ -14,6 +14,7 @@
 #define hifi_udt4_Multiplexer_h
 
 #include "Packet.h"
+#include <QtCore/QAtomicInt>
 #include <QtNetwork/QHostAddress>
 #include <QtCore/QList>
 #include <QtCore/QMap>
@@ -25,32 +26,41 @@
 
 namespace udt4 {
 
+class UdtMultiplexer;
 class UdtServer;
 class UdtSocket;
+typedef QSharedPointer<UdtMultiplexer> UdtMultiplexerPointer;
+typedef QWeakPointer<UdtMultiplexer> UdtMultiplexerWeakPointer;
+typedef QSharedPointer<UdtSocket> UdtSocketPointer;
 
 class UdtMultiplexer : public QObject {
     Q_OBJECT
 public:
-    typedef QSharedPointer<UdtMultiplexer> TSharedPointer;
-    typedef QWeakPointer<UdtMultiplexer> TWeakPointer;
-
-public:
-    static TSharedPointer getInstance(quint16 port, const QHostAddress& localAddress = QHostAddress::Any);
+    virtual ~UdtMultiplexer();
+    static UdtMultiplexerPointer getInstance(quint16 port,
+                                      const QHostAddress& localAddress = QHostAddress::Any,
+                                      QAbstractSocket::SocketError* serverError = nullptr,
+                                      QString* errorString = nullptr);
     bool isLive() const;
     void sendPacket(const QHostAddress& destAddr, quint32 destPort, quint32 destSockID, quint32 timestamp, Packet packet);
     QHostAddress serverAddress() const;
+    QAbstractSocket::SocketError serverError() const;
     quint16 serverPort() const;
+    QString errorString() const;
 
     bool startListenUdt(UdtServer* server);
     bool stopListenUdt(UdtServer* server);
+    bool startRendezvous(UdtSocket* udtSocket);
+    bool endRendezvous(UdtSocket* udtSocket);
+
+    UdtSocketPointer newSocket(const QHostAddress& peerAddress, quint16 peerPort, bool isServer, bool isDatagram);
+    bool closeSocket(quint32 sockID);
 
 private:
     UdtMultiplexer(quint16 port, const QHostAddress& localAddress);
-    void create(quint16 port, const QHostAddress& localAddress);
-    void checkLive();
+    bool create(quint16 port, const QHostAddress& localAddress);
 
 private slots:
-    void onPacketError(QUdpSocket::SocketError socketError);
     void onPacketReadReady();
     void onPacketWriteReady(Packet packet, QHostAddress destAddr, quint32 destPort);
 
@@ -59,12 +69,12 @@ signals:
 
 private:
     typedef QPair<quint16, QHostAddress> TLocalPortPair;
-    typedef QMap<TLocalPortPair, TWeakPointer> TMultiplexerMap;
+    typedef QMap<TLocalPortPair, UdtMultiplexerWeakPointer> TMultiplexerMap;
     typedef QList<UdtSocket*> TSocketList;
     typedef QMap<quint32, UdtSocket*> TSocketMap;
 
     QUdpSocket _udpSocket;  // the listening socket where we receive all our packets
-    quint32 _nextSid{ 0 };  // the SockID for the next socket created -- set to a random number on construction
+    QAtomicInteger<quint32> _nextSid{ 0 };  // the SockID for the next socket created -- set to a random number on construction
     QThread _readThread;
     QThread _writeThread;
     quint16 _serverPort{ 0 };

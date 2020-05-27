@@ -12,6 +12,8 @@
 #include "udtserver.h"
 
 #include "multiplexer.h"
+#include "../../NetworkLogging.h"
+#include <QtCore/QLoggingCategory>
 #include <QtCore/QRandomGenerator>
 #include <QtCore/QtEndian>
 
@@ -19,6 +21,10 @@ using namespace udt4;
 
 UdtServer::UdtServer(QObject* parent /*= nullptr*/) : QObject(parent) {
     connect(&_epochBumper, SIGNAL(timeout), this, SLOT(onEpochBump));
+}
+
+UdtServer::~UdtServer() {
+    close();
 }
 
 void UdtServer::close() {
@@ -63,13 +69,23 @@ bool UdtServer::listen(quint16 port, const QHostAddress& address /* = QHostAddre
 
     return true;
 }
-
 /*
-int maxPendingConnections() const;
-virtual UdtSocketPointer nextPendingConnection();
-void pauseAccepting();
-void resumeAccepting();
+qint64 listenReplayWindow() const;
 */
+int UdtServer::maxPendingConnections() const {
+    return _maxPendingConn.load();
+}
+/*
+virtual UdtSocketPointer nextPendingConnection();
+*/
+void UdtServer::pauseAccepting() {
+    _pausePendingConn.store(1);
+}
+
+void UdtServer::resumeAccepting() {
+    _pausePendingConn.store(0);
+}
+
 QHostAddress UdtServer::serverAddress() const {
     if (_multiplexer.isNull()) {
         return QHostAddress(QHostAddress::SpecialAddress::Null);
@@ -90,10 +106,14 @@ quint16 UdtServer::serverPort() const {
     }
 }
 /*
-void setMaxPendingConnections(int numConnections);
+void setListenReplayWindow(qint64 msecs);
+*/
+void UdtServer::setMaxPendingConnections(int numConnections) {
+    _maxPendingConn.store(std::max(0, numConnections));
+}
+/*
 bool waitForNewConnection(int msec = 0, bool* timedOut = nullptr);
 */
-
 void UdtServer::onEpochBump() {
     _synEpoch++;
 }
@@ -133,19 +153,26 @@ bool UdtServer::checkSynCookie(quint32 cookie, const QHostAddress& peerAddress, 
 
 // checkValidHandshake checks to see if we want to accept a new connection with this handshake.
 bool UdtServer::checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort) {
-    if (!_config.CanAcceptDgram && hsPacket.SockType == packet.TypeDGRAM) {
-        log.Printf("Refusing new socket creation from listener requesting DGRAM");
+    if (_pausePendingConn.load() != 0) {
         return false;
     }
-    if (!_config.CanAcceptStream && hsPacket.SockType == packet.TypeSTREAM) {
-        log.Printf("Refusing new socket creation from listener requesting STREAM");
+    if (!_config.CanAcceptDgram && hsPacket._sockType == SocketType::DGRAM) {
+        qCInfo(networking) << _multiplexer->serverAddress() << ":" << _multiplexer->serverPort()
+                           << " Refusing new socket creation from listener requesting DGRAM";
+        return false;
+    }
+    if (!_config.CanAcceptStream && hsPacket._sockType == SocketType::STREAM) {
+        qCInfo(networking) << _multiplexer->serverAddress() << ":" << _multiplexer->serverPort()
+                           << " Refusing new socket creation from listener requesting STREAM";
         return false;
     }
     return true;
 }
 
 bool UdtServer::rejectHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort) {
-    log.Printf("%s (listener) sending handshake(reject) to %s (id=%d)", l.m.laddr.String(), from.String(), hsPacket.SockID);
+    qCInfo(networking) << _multiplexer->serverAddress() << ":" << _multiplexer->serverPort()
+                       << " (listener) sending handshake(reject) to " << peerAddress << ":" << peerPort
+                       << " (id=" << hsPacket._farSocketID << ")";
 
     HandshakePacket hsResponse;
     hsResponse._udtVer = hsPacket._udtVer;
@@ -161,7 +188,9 @@ bool UdtServer::readHandshake(UdtMultiplexer* multiplexer, const Packet& udtPack
     HandshakePacket hsPacket(udtPacket, peerAddress.protocol());
     if (hsPacket._reqType == HandshakeRequestType::Request) {
         quint32 newCookie = generateSynCookie(peerAddress, peerPort);
-		log.Printf("%s (listener) sending handshake(request) to %s (id=%d)", l.m.laddr.String(), from.String(), hsPacket.SockID);
+        qCDebug(networking) << _multiplexer->serverAddress() << ":" << _multiplexer->serverPort()
+                            << " (listener) sending handshake(request) to " << peerAddress << ":" << peerPort
+                            << " (id=" << hsPacket._farSocketID << ")";
 
         HandshakePacket hsResponse;
         hsResponse._udtVer = hsPacket._udtVer;
@@ -180,52 +209,54 @@ bool UdtServer::readHandshake(UdtMultiplexer* multiplexer, const Packet& udtPack
 		return false; // ignore packets with failed SYN checks
 	}
 
-	now := time.Now();
-	_acceptHistProt.Lock();
-	if(_acceptHist != nullptr) {
-		replayWindow := _config.ListenReplayWindow;
-		if(replayWindow <= 0){
-			replayWindow = DefaultConfig().ListenReplayWindow;
-		}
-		_acceptHist.Prune(time.Now().Add(-replayWindow));
-		s, idx := _acceptHist.Find(hsPacket.SockID, hsPacket.InitPktSeq);
-		if(s != nullptr) {
-			_acceptHist[idx].lastTouch = now;
-			_acceptHistProt.Unlock();
-			return s.readHandshake(m, hsPacket, from);
-		}
-	}
-	_acceptHistProt.Unlock();
+    // have we received this handshake before? (is it just a lost/replayed packet?)
+    _acceptedHistoryProtect.lock();
+    while (!_acceptedHistory.empty()) {
+        AcceptSockInfoMap::iterator first = _acceptedHistory.begin();
+        if (first.key().hasExpired()) {
+            _acceptedHistory.erase(first);
+        } else {
+            break;
+        }
+    }
+    AcceptSockInfoMap::iterator lookup = _acceptedHistory.begin();
+    while (lookup != _acceptedHistory.end() && (lookup.value().sockID != hsPacket._farSocketID || lookup.value().initialSequenceNumber != hsPacket._initPktSeq)) {
+        lookup++;
+    }
+    QDeadlineTimer listenReplayTimer(_listenReplayWindow.fetch());
+    AcceptedSockInfo acceptedSockInfo;
+    UdtSocketPointer socket;
+    if (lookup != _acceptedHistory.end()) {
+        acceptedSockInfo = lookup.value();
+        socket = acceptedSockInfo.socket.lock();
+        _acceptedHistory.erase(lookup);
+        if (!socket.isNull()) {
+            _acceptedHistory.insert(listenReplayTimer, acceptedSockInfo);
+            _acceptedHistoryProtect.unlock();
+            return socket->readHandshake(_multiplexer, hsPacket, peerAddress, peerPort);
+        }
+    }
+    _acceptedHistoryProtect.unlock();
 
 	if (!checkValidHandshake(hsPacket, peerAddress, peerPort)) {
 		rejectHandshake(hsPacket, peerAddress, peerPort);
 		return false;
 	}
 
-	UdtSocketPointer socket = _multiplexer->newSocket(peerAddress, peerPort, true, hsPacket._sockType == SocketType::DGRAM);
-	_acceptHistProt.Lock();
-	if(_acceptHist == nullptr) {
-		_acceptHist = []acceptSockInfo{acceptSockInfo{
-			sockID:    hsPacket.SockID,
-			initSeqNo: hsPacket.InitPktSeq,
-			lastTouch: now,
-			sock:      socket,
-		}};
-		heap.Init(&_acceptHist);
-	} else {
-		heap.Push(&_acceptHist, acceptSockInfo{
-			sockID:    hsPacket.SockID,
-			initSeqNo: hsPacket.InitPktSeq,
-			lastTouch: now,
-			sock:      socket,
-		});
-	}
-	_acceptHistProt.Unlock();
-	if(!socket->checkValidHandshake(m, hsPacket, from)) {
+	socket = _multiplexer->newSocket(peerAddress, peerPort, true, hsPacket._sockType == SocketType::DGRAM);
+
+    _acceptedHistoryProtect.lock();
+    AcceptedSockInfo& newInfo = _acceptedHistory.insert(listenReplayTimer, acceptedSockInfo).value();
+    newInfo.sockID = hsPacket._farSocketID;
+    newInfo.initialSequenceNumber = hsPacket._initPktSeq;
+    newInfo.socket = socket;
+    _acceptedHistoryProtect.unlock();
+
+	if (!socket->checkValidHandshake(_multiplexer, hsPacket, peerAddress, peerPort)) {
 		rejectHandshake(hsPacket, peerAddress, peerPort);
 		return false;
 	}
-	if(!socket->readHandshake(m, hsPacket, from)) {
+	if (!socket->readHandshake(_multiplexer, hsPacket, peerAddress, peerPort)) {
 		rejectHandshake(hsPacket, peerAddress, peerPort);
 		return false;
 	}

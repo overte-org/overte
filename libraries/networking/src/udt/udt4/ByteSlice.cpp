@@ -15,6 +15,8 @@ ByteSlice::Bytestring::Bytestring(const quint8* source, size_t length) {
     quint8* myContent = new quint8[length];
     if (source != nullptr) {
         memcpy(myContent, source, length);
+    } else {
+        memset(myContent, 0, length);
     }
     _content = myContent;
     _fullLength = length;
@@ -43,16 +45,7 @@ ByteSlice ByteSlice::substring(size_t offset, size_t length /* = static_cast<siz
         return ByteSlice(_content, _offset + offset, std::min(maxLen, length));
     }
 }
-/*
-ByteSlice ByteSlice::pop_substring(size_t offset, size_t length) {
-    size_t newOffset = std::min(offset, _length);
-    size_t newLength = std::min(_length, newOffset - length);
-    ByteSlice newSlice(_content, _offset + newOffset, newLength);
-    _offset += newOffset;
-    _length -= newLength;
-    return newSlice;
-}
-*/
+
 // create a new buffer and return a pointer to it
 void* ByteSlice::create(size_t length) {
     _offset = 0;
