@@ -9,15 +9,16 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#include "udtserver.h"
+#include "UdtServer.h"
 
-#include "multiplexer.h"
+#include "Multiplexer.h"
 #include "../../NetworkLogging.h"
 #include <QtCore/QDeadlineTimer>
 #include <QtCore/QLoggingCategory>
 #include <QtCore/QMutexLocker>
 #include <QtCore/QRandomGenerator>
 #include <QtCore/QtEndian>
+#include "UdtSocket.h"
 
 using namespace udt4;
 
@@ -212,6 +213,12 @@ bool UdtServer::checkValidHandshake(const HandshakePacket& hsPacket, const QHost
     if (_pausePendingConn.load() != 0) {
         return false;
     }
+
+    // we don't support any protocols other than UDT4 at this time
+    if (hsPacket._udtVer != 4) {
+        return false;
+    }
+
     AcceptFlags acceptFlags = _acceptFlags;
     if (!acceptFlags.testFlag(AcceptDatagramConnections) && hsPacket._sockType == SocketType::DGRAM) {
         qCInfo(networking) << _multiplexer->serverAddress() << ":" << _multiplexer->serverPort()
@@ -223,6 +230,7 @@ bool UdtServer::checkValidHandshake(const HandshakePacket& hsPacket, const QHost
                            << " Refusing new socket creation from listener requesting STREAM";
         return false;
     }
+
     {
         QMutexLocker locker(&_acceptedSocketsProtect);
         if (static_cast<quint32>(_acceptedSockets.size()) >= _maxPendingConn.load()) {
@@ -233,7 +241,7 @@ bool UdtServer::checkValidHandshake(const HandshakePacket& hsPacket, const QHost
     return true;
 }
 
-bool UdtServer::rejectHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort) {
+void UdtServer::rejectHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort) {
     qCInfo(networking) << _multiplexer->serverAddress() << ":" << _multiplexer->serverPort()
                        << " (listener) sending handshake(reject) to " << peerAddress << ":" << peerPort
                        << " (id=" << hsPacket._farSocketID << ")";
@@ -247,9 +255,8 @@ bool UdtServer::rejectHandshake(const HandshakePacket& hsPacket, const QHostAddr
     _multiplexer->sendPacket(peerAddress, peerPort, hsPacket._farSocketID, 0, hsResponse.toPacket());
 }
 
-bool UdtServer::readHandshake(UdtMultiplexer* multiplexer, const Packet& udtPacket, const QHostAddress& peerAddress, quint16 peerPort) {
+bool UdtServer::readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort) {
 
-    HandshakePacket hsPacket(udtPacket, peerAddress.protocol());
     if (hsPacket._reqType == HandshakeRequestType::Request) {
         quint32 newCookie = generateSynCookie(peerAddress, peerPort);
         qCDebug(networking) << _multiplexer->serverAddress() << ":" << _multiplexer->serverPort()
@@ -306,7 +313,7 @@ bool UdtServer::readHandshake(UdtMultiplexer* multiplexer, const Packet& udtPack
                 return true;
             } else {
                 // this appears from a previously-connected socket that is still connected, forward the handshake to the connection
-                return socket->readHandshake(_multiplexer, hsPacket, peerAddress, peerPort);
+                return socket->readHandshake(hsPacket, peerAddress, peerPort);
             }
         }
     }
@@ -326,11 +333,11 @@ bool UdtServer::readHandshake(UdtMultiplexer* multiplexer, const Packet& udtPack
         newInfo.socket = socket;
     }
 
-	if (!socket->checkValidHandshake(_multiplexer, hsPacket, peerAddress, peerPort)) {
+	if (!socket->checkValidHandshake(hsPacket, peerAddress, peerPort)) {
 		rejectHandshake(hsPacket, peerAddress, peerPort);
 		return false;
 	}
-	if (!socket->readHandshake(_multiplexer, hsPacket, peerAddress, peerPort)) {
+	if (!socket->readHandshake(hsPacket, peerAddress, peerPort)) {
 		rejectHandshake(hsPacket, peerAddress, peerPort);
 		return false;
 	}

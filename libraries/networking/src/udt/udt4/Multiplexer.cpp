@@ -8,7 +8,7 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
-#include "multiplexer.h"
+#include "Multiplexer.h"
 
 #include "ByteSlice.h"
 #include "../../NetworkLogging.h"
@@ -18,6 +18,7 @@
 #include <QtNetwork/QNetworkDatagram>
 #include <QtCore/QRandomGenerator>
 #include "UdtServer.h"
+#include "UdtSocket.h"
 
 #ifdef WIN32
 #include <winsock2.h>
@@ -36,7 +37,7 @@ UdtMultiplexerPointer UdtMultiplexer::getInstance(quint16 port,
                                                            const QHostAddress& localAddress /* = QHostAddress::Any */,
                                                            QAbstractSocket::SocketError* serverError /* = nullptr */,
                                                            QString* errorString /* = nullptr */) {
-    TLocalPortPair localPort(port, localAddress);
+    TLocalPortPair localPort(port, localAddress.toString());
     UdtMultiplexerPointer multiplexer;
 
     {
@@ -51,7 +52,7 @@ UdtMultiplexerPointer UdtMultiplexer::getInstance(quint16 port,
     }
 
 	// No multiplexer, need to create connection
-    multiplexer = UdtMultiplexerPointer::create();
+    multiplexer = UdtMultiplexerPointer(new UdtMultiplexer());
     if (!multiplexer->create(port, localAddress)) {
         // if we hit an exception trying to construct a multiplexer, check to see if we haven't hit a race condition
         {
@@ -82,19 +83,17 @@ UdtMultiplexerPointer UdtMultiplexer::getInstance(quint16 port,
     return multiplexer;
 }
 
-UdtMultiplexer::UdtMultiplexer(quint16 port, const QHostAddress& localAddress) {
+UdtMultiplexer::UdtMultiplexer() {
     QRandomGenerator random;
     _nextSid = random.generate();
 
     connect(&_udpSocket, SIGNAL(readyRead), this, SLOT(onPacketReadReady), Qt::DirectConnection);
     connect(this, SIGNAL(sendPacket), this, SLOT(onPacketWriteReady));
-
-    create(port, localAddress);
 }
 
 UdtMultiplexer::~UdtMultiplexer() {
     // deregister this multiplexer
-    TLocalPortPair localPort(_serverPort, _serverAddress);
+    TLocalPortPair localPort(_serverPort, _serverAddress.toString());
     {
         QMutexLocker locker(&gl_multiplexerMapProtect);
         TMultiplexerMap::iterator lookup = gl_multiplexerMap.find(localPort);
@@ -231,7 +230,7 @@ func discoverMTU(ourIP net.IP) (uint, error) {
 UdtSocketPointer UdtMultiplexer::newSocket(const QHostAddress& peerAddress, quint16 peerPort, bool isServer, bool isDatagram) {
     quint32 sid = _nextSid.fetchAndSubRelaxed(1);
 
-	UdtSocketPointer socket = UdtSocket::newSocket(this, sid, isServer, isDatagram, peerAddress, peerPort);
+	UdtSocketPointer socket = UdtSocket::newSocket(sharedFromThis(), sid, isServer, isDatagram, peerAddress, peerPort);
 
     QMutexLocker locker(&_connectedSocketsProtect);
     _connectedSockets.insert(sid, socket.get());
@@ -314,11 +313,12 @@ void UdtMultiplexer::onPacketReadReady() {  // executes from goRead thread
             qCWarning(networking) << "Received non-handshake packet with destination socket = 0";
             return;
         }
+        HandshakePacket hsPacket(udtPacket, peerAddress.protocol());
 
         {
             QMutexLocker locker(&_rendezvousSocketsProtect);
             for (TSocketList::const_iterator trans = _rendezvousSockets.begin(); trans != _rendezvousSockets.end(); ++trans) {
-                if ((*trans)->readHandshake(this, udtPacket, peerAddress, peerPort)) {
+                if ((*trans)->readHandshake(hsPacket, peerAddress, peerPort)) {
                     return;
                 }
             }
@@ -327,7 +327,7 @@ void UdtMultiplexer::onPacketReadReady() {  // executes from goRead thread
         {
             QMutexLocker locker(&_serverSocketProtect);
             if (_serverSocket != nullptr) {
-                _serverSocket->readHandshake(this, udtPacket, peerAddress, peerPort);
+                _serverSocket->readHandshake(hsPacket, peerAddress, peerPort);
             }
         }
 	}
@@ -341,7 +341,7 @@ void UdtMultiplexer::onPacketReadReady() {  // executes from goRead thread
         }
     }
     if (destSocket) {
-        destSocket->readPacket(this, udtPacket, peerAddress, peerPort);
+        destSocket->readPacket(udtPacket, peerAddress, peerPort);
 	}
 }
 

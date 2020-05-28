@@ -66,7 +66,7 @@ public:
     bool waitForNewConnection(int msec = 0, bool* timedOut = nullptr);
 
 public: // internal use
-    bool readHandshake(UdtMultiplexer* multiplexer, const Packet& udtPacket, const QHostAddress& peerAddress, quint16 peerPort);
+    bool readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort);
 
 signals:
     void acceptError(QAbstractSocket::SocketError socketError);
@@ -81,7 +81,7 @@ private slots:
 private:
     quint32 generateSynCookie(const QHostAddress& peerAddress, quint16 peerPort);
     bool checkSynCookie(quint32 cookie, const QHostAddress& peerAddress, quint16 peerPort);
-    bool rejectHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort);
+    void rejectHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort);
 
 private:
     struct AcceptedSockInfo {

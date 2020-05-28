@@ -15,6 +15,7 @@
 
 #include "Packet.h"
 #include <QtCore/QAtomicInt>
+#include <QtCore/QEnableSharedFromThis>
 #include <QtNetwork/QHostAddress>
 #include <QtCore/QList>
 #include <QtCore/QMap>
@@ -33,7 +34,7 @@ typedef QSharedPointer<UdtMultiplexer> UdtMultiplexerPointer;
 typedef QWeakPointer<UdtMultiplexer> UdtMultiplexerWeakPointer;
 typedef QSharedPointer<UdtSocket> UdtSocketPointer;
 
-class UdtMultiplexer : public QObject {
+class UdtMultiplexer : public QObject, public QEnableSharedFromThis<UdtMultiplexer> {
     Q_OBJECT
 public:
     virtual ~UdtMultiplexer();
@@ -57,7 +58,7 @@ public:
     bool closeSocket(quint32 sockID);
 
 private:
-    UdtMultiplexer(quint16 port, const QHostAddress& localAddress);
+    UdtMultiplexer();
     bool create(quint16 port, const QHostAddress& localAddress);
 
 private slots:
@@ -68,7 +69,7 @@ signals:
     void sendPacket(Packet packet, QHostAddress destAddr, quint32 destPort, QPrivateSignal);
 
 private:
-    typedef QPair<quint16, QHostAddress> TLocalPortPair;
+    typedef QPair<quint16, QString> TLocalPortPair;
     typedef QMap<TLocalPortPair, UdtMultiplexerWeakPointer> TMultiplexerMap;
     typedef QList<UdtSocket*> TSocketList;
     typedef QMap<quint32, UdtSocket*> TSocketMap;
