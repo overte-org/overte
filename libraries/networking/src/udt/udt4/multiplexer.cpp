@@ -14,6 +14,7 @@
 #include "../../NetworkLogging.h"
 #include <QtCore/QException>
 #include <QtCore/QLoggingCategory>
+#include <QtCore/QMutexLocker>
 #include <QtNetwork/QNetworkDatagram>
 #include <QtCore/QRandomGenerator>
 #include "UdtServer.h"
@@ -38,12 +39,13 @@ UdtMultiplexerPointer UdtMultiplexer::getInstance(quint16 port,
     TLocalPortPair localPort(port, localAddress);
     UdtMultiplexerPointer multiplexer;
 
-    gl_multiplexerMapProtect.lock();
-    TMultiplexerMap::const_iterator lookup = gl_multiplexerMap.find(localPort);
-    if (lookup != gl_multiplexerMap.end()) {
-        multiplexer = lookup.value().lock();
+    {
+        QMutexLocker locker(&gl_multiplexerMapProtect);
+        TMultiplexerMap::const_iterator lookup = gl_multiplexerMap.find(localPort);
+        if (lookup != gl_multiplexerMap.end()) {
+            multiplexer = lookup.value().lock();
+        }
     }
-    gl_multiplexerMapProtect.unlock();
     if (!multiplexer.isNull() && multiplexer->isLive()) {
         return multiplexer;
     }
@@ -52,12 +54,13 @@ UdtMultiplexerPointer UdtMultiplexer::getInstance(quint16 port,
     multiplexer = UdtMultiplexerPointer::create();
     if (!multiplexer->create(port, localAddress)) {
         // if we hit an exception trying to construct a multiplexer, check to see if we haven't hit a race condition
-        gl_multiplexerMapProtect.lock();
-        TMultiplexerMap::const_iterator lookup = gl_multiplexerMap.find(localPort);
-        if (lookup != gl_multiplexerMap.end()) {
-            multiplexer = lookup.value().lock();
+        {
+            QMutexLocker locker(&gl_multiplexerMapProtect);
+            TMultiplexerMap::const_iterator lookup = gl_multiplexerMap.find(localPort);
+            if (lookup != gl_multiplexerMap.end()) {
+                multiplexer = lookup.value().lock();
+            }
         }
-        gl_multiplexerMapProtect.unlock();
         if (!multiplexer.isNull() && multiplexer->isLive()) {
             return multiplexer;
         }
@@ -72,9 +75,10 @@ UdtMultiplexerPointer UdtMultiplexer::getInstance(quint16 port,
         return UdtMultiplexerPointer();
     }
 
-    gl_multiplexerMapProtect.lock();
-    gl_multiplexerMap.insert(localPort, multiplexer);
-    gl_multiplexerMapProtect.unlock();
+    {
+        QMutexLocker locker(&gl_multiplexerMapProtect);
+        gl_multiplexerMap.insert(localPort, multiplexer);
+    }
     return multiplexer;
 }
 
@@ -91,12 +95,13 @@ UdtMultiplexer::UdtMultiplexer(quint16 port, const QHostAddress& localAddress) {
 UdtMultiplexer::~UdtMultiplexer() {
     // deregister this multiplexer
     TLocalPortPair localPort(_serverPort, _serverAddress);
-    gl_multiplexerMapProtect.lock();
-    TMultiplexerMap::iterator lookup = gl_multiplexerMap.find(localPort);
-    if (lookup != gl_multiplexerMap.end()) {
-        gl_multiplexerMap.erase(lookup);
+    {
+        QMutexLocker locker(&gl_multiplexerMapProtect);
+        TMultiplexerMap::iterator lookup = gl_multiplexerMap.find(localPort);
+        if (lookup != gl_multiplexerMap.end()) {
+            gl_multiplexerMap.erase(lookup);
+        }
     }
-    gl_multiplexerMapProtect.unlock();
 
     // tear everything down
     _udpSocket.close();
@@ -156,24 +161,20 @@ QString UdtMultiplexer::errorString() const {
 }
 
 bool UdtMultiplexer::startListenUdt(UdtServer* server) {
-    _serverSocketProtect.lock();
+    QMutexLocker locker(&_serverSocketProtect);
     if (_serverSocket != nullptr) {
-        _serverSocketProtect.unlock();
         return false;
 	}
 	_serverSocket = server;
-    _serverSocketProtect.unlock();
 	return true;
 }
 
 bool UdtMultiplexer::stopListenUdt(UdtServer* server) {
-    _serverSocketProtect.lock();
+    QMutexLocker locker(&_serverSocketProtect);
     if (_serverSocket != server) {
-        _serverSocketProtect.unlock();
 		return false;
 	}
     _serverSocket = nullptr;
-	_serverSocketProtect.unlock();
 	return true;
 }
 /*
@@ -232,20 +233,18 @@ UdtSocketPointer UdtMultiplexer::newSocket(const QHostAddress& peerAddress, quin
 
 	UdtSocketPointer socket = UdtSocket::newSocket(this, sid, isServer, isDatagram, peerAddress, peerPort);
 
-    _connectedSocketsProtect.lock();
+    QMutexLocker locker(&_connectedSocketsProtect);
     _connectedSockets.insert(sid, socket.get());
-    _connectedSocketsProtect.unlock();
 
 	return socket;
 }
 
 bool UdtMultiplexer::closeSocket(quint32 sockID) {
-    _connectedSocketsProtect.lock();
+    QMutexLocker locker(&_connectedSocketsProtect);
     TSocketMap::iterator lookup = _connectedSockets.find(sockID);
     if (lookup != _connectedSockets.end()) {
         _connectedSockets.erase(lookup);
     }
-    _connectedSocketsProtect.unlock();
     return lookup != _connectedSockets.end();
 }
 
@@ -255,44 +254,44 @@ bool UdtMultiplexer::isLive() const {
 	}
     bool isEmpty = true;
     
-	_serverSocketProtect.lock();
-    if (_serverSocket != nullptr) {
-		_serverSocketProtect.unlock();
-		return true;
-	}
-    _serverSocketProtect.unlock();
+    {
+        QMutexLocker locker(&_serverSocketProtect);
+        if (_serverSocket != nullptr) {
+            return true;
+        }
+    }
     
-    _rendezvousSocketsProtect.lock();
-    isEmpty = _rendezvousSockets.empty();
-    _rendezvousSocketsProtect.unlock();
+    {
+        QMutexLocker locker(&_rendezvousSocketsProtect);
+        isEmpty = _rendezvousSockets.empty();
+    }
 	if(!isEmpty) {
 		return true;
 	}
 
-    _connectedSocketsProtect.lock();
-    isEmpty = _connectedSockets.empty();
-    _connectedSocketsProtect.unlock();
+    {
+        QMutexLocker locker(&_connectedSocketsProtect);
+        isEmpty = _connectedSockets.empty();
+    }
 
 	return !isEmpty;
 }
 
 bool UdtMultiplexer::startRendezvous(UdtSocket* udtSocket) {
-    _rendezvousSocketsProtect.lock();
+    QMutexLocker locker(&_rendezvousSocketsProtect);
     int indexOf = _rendezvousSockets.indexOf(udtSocket);
     if (indexOf == -1) {
         _rendezvousSockets.append(udtSocket);
     }
-    _rendezvousSocketsProtect.unlock();
     return indexOf == -1;
 }
 
 bool UdtMultiplexer::endRendezvous(UdtSocket* udtSocket) {
-    _rendezvousSocketsProtect.lock();
+    QMutexLocker locker(&_rendezvousSocketsProtect);
     int indexOf = _rendezvousSockets.indexOf(udtSocket);
     if (indexOf != -1) {
         _rendezvousSockets.removeAt(indexOf);
     }
-    _rendezvousSocketsProtect.unlock();
     return indexOf != -1;
 }
 
@@ -316,34 +315,31 @@ void UdtMultiplexer::onPacketReadReady() {  // executes from goRead thread
             return;
         }
 
-		bool isHandled = false;
-        _rendezvousSocketsProtect.lock();
-        for (TSocketList::const_iterator trans = _rendezvousSockets.begin(); !isHandled && trans != _rendezvousSockets.end();
-             ++trans) {
-            if ((*trans)->readHandshake(this, udtPacket, peerAddress, peerPort)) {
-                isHandled = true;
-                break;
-			}
-		}
-        _rendezvousSocketsProtect.unlock();
-		if(isHandled) {
-            return;
-		}
+        {
+            QMutexLocker locker(&_rendezvousSocketsProtect);
+            for (TSocketList::const_iterator trans = _rendezvousSockets.begin(); trans != _rendezvousSockets.end(); ++trans) {
+                if ((*trans)->readHandshake(this, udtPacket, peerAddress, peerPort)) {
+                    return;
+                }
+            }
+        }
         
-		_serverSocketProtect.lock();
-		if(_serverSocket != nullptr) {
-			_serverSocket->readHandshake(this, udtPacket, peerAddress, peerPort);
-		}
-		_serverSocketProtect.unlock();
+        {
+            QMutexLocker locker(&_serverSocketProtect);
+            if (_serverSocket != nullptr) {
+                _serverSocket->readHandshake(this, udtPacket, peerAddress, peerPort);
+            }
+        }
 	}
 
     UdtSocket* destSocket = nullptr;
-    _connectedSocketsProtect.lock();
-    TSocketMap::const_iterator lookup = _connectedSockets.find(udtPacket._socketID);
-    if (lookup != _connectedSockets.end()) {
-        destSocket = lookup.value();
+    {
+        QMutexLocker locker(&_connectedSocketsProtect);
+        TSocketMap::const_iterator lookup = _connectedSockets.find(udtPacket._socketID);
+        if (lookup != _connectedSockets.end()) {
+            destSocket = lookup.value();
+        }
     }
-    _connectedSocketsProtect.unlock();
     if (destSocket) {
         destSocket->readPacket(this, udtPacket, peerAddress, peerPort);
 	}
