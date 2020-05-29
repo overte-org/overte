@@ -65,9 +65,6 @@ public:
     void setMaxPendingConnections(int numConnections);
     bool waitForNewConnection(int msec = 0, bool* timedOut = nullptr);
 
-public: // internal use
-    bool readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort);
-
 signals:
     void acceptError(QAbstractSocket::SocketError socketError);
     void newConnection();
@@ -77,6 +74,7 @@ protected:
 
 private slots:
     void onEpochBump();
+    void readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort);
 
 private:
     quint32 generateSynCookie(const QHostAddress& peerAddress, quint16 peerPort);
@@ -108,6 +106,9 @@ private:
     mutable QMutex _acceptedSocketsProtect;
     UdtSocketQueue _acceptedSockets;
     QWaitCondition _socketAvailable;
+
+private:
+    Q_DISABLE_COPY(UdtServer)
 };
 
 }  // namespace udt4

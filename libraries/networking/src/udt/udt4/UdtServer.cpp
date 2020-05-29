@@ -39,7 +39,8 @@ void UdtServer::close() {
         UdtMultiplexerPointer multiplexer = _multiplexer;
         _multiplexer.clear();
         _epochBumper.stop();
-        multiplexer->stopListenUdt(this);
+        moveToThread(QThread::currentThread());
+        disconnect(&*_multiplexer, SIGNAL(serverHandshake), this, SLOT(readHandshake));
         _socketAvailable.wakeAll();
     }
 }
@@ -70,11 +71,8 @@ bool UdtServer::listen(quint16 port, const QHostAddress& address /* = QHostAddre
     _synCookieSeed = random.generate();
     _synEpoch.store(random.generate());
 
-    if (!_multiplexer->startListenUdt(this)) {
-        _serverError = QAbstractSocket::SocketError::AddressInUseError;
-        _errorString = "Port in use";
-        return false;
-    }
+    _multiplexer->moveToReadThread(this);
+    connect(&*_multiplexer, SIGNAL(serverHandshake), this, SLOT(readHandshake));
 
     _epochBumper.start(64 * 1000);
 
@@ -255,9 +253,10 @@ void UdtServer::rejectHandshake(const HandshakePacket& hsPacket, const QHostAddr
     _multiplexer->sendPacket(peerAddress, peerPort, hsPacket._farSocketID, 0, hsResponse.toPacket());
 }
 
-bool UdtServer::readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort) {
+void UdtServer::readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort) {
 
     if (hsPacket._reqType == HandshakeRequestType::Request) {
+        // initial packet received, generate a SYN cookie, send it back, and forget about it
         quint32 newCookie = generateSynCookie(peerAddress, peerPort);
         qCDebug(networking) << _multiplexer->serverAddress() << ":" << _multiplexer->serverPort()
                             << " (listener) sending handshake(request) to " << peerAddress << ":" << peerPort
@@ -272,12 +271,12 @@ bool UdtServer::readHandshake(const HandshakePacket& hsPacket, const QHostAddres
         hsResponse._sockAddr = peerAddress;
 
         _multiplexer->sendPacket(peerAddress, peerPort, hsPacket._farSocketID, 0, hsResponse.toPacket());
-		return true;
+		return;
 	}
 
 	bool isSYN = checkSynCookie(hsPacket._synCookie, peerAddress, peerPort);
 	if(!isSYN) {
-		return false; // ignore packets with failed SYN checks
+		return; // ignore packets with failed SYN checks
 	}
 
     // have we received this handshake before? (is it just a lost/replayed packet?)
@@ -308,23 +307,28 @@ bool UdtServer::readHandshake(const HandshakePacket& hsPacket, const QHostAddres
             _acceptedHistory.erase(lookup);
             _acceptedHistory.insert(listenReplayTimer, acceptedSockInfo);
 
-            if (socket.isNull()) {
-                // this appears from a previously-connected socket that is no longer connected, discard the handshake
-                return true;
-            } else {
+            if (!socket.isNull()) {
                 // this appears from a previously-connected socket that is still connected, forward the handshake to the connection
-                return socket->readHandshake(hsPacket, peerAddress, peerPort);
+                socket->readHandshake(hsPacket, peerAddress, peerPort);
             }
+            return;
         }
     }
 
+    // This seems to be a brand new, valid handshake.  Shall we accept it?
 	if (!checkValidHandshake(hsPacket, peerAddress, peerPort)) {
 		rejectHandshake(hsPacket, peerAddress, peerPort);
-		return false;
+		return;
 	}
 
+    // Seems good to us, create the socket and let them check it
 	socket = _multiplexer->newSocket(peerAddress, peerPort, true, hsPacket._sockType == SocketType::DGRAM);
+    if (!socket->checkValidHandshake(hsPacket, peerAddress, peerPort)) {
+        rejectHandshake(hsPacket, peerAddress, peerPort);
+        return;
+    }
 
+    // They think it's good too, store this in the list of recently-accepted sockets
     {
         QMutexLocker locker(&_acceptedHistoryProtect);
         AcceptedSockInfo& newInfo = _acceptedHistory.insert(listenReplayTimer, acceptedSockInfo).value();
@@ -333,21 +337,17 @@ bool UdtServer::readHandshake(const HandshakePacket& hsPacket, const QHostAddres
         newInfo.socket = socket;
     }
 
-	if (!socket->checkValidHandshake(hsPacket, peerAddress, peerPort)) {
-		rejectHandshake(hsPacket, peerAddress, peerPort);
-		return false;
-	}
+    // Process the handshake (likely sending a response back to the peer)
 	if (!socket->readHandshake(hsPacket, peerAddress, peerPort)) {
 		rejectHandshake(hsPacket, peerAddress, peerPort);
-		return false;
+		return;
 	}
 
+    // And let the listeners know that we have a new connection
     {
         QMutexLocker locker(&_acceptedSocketsProtect);
         _acceptedSockets.enqueue(socket);
         _socketAvailable.wakeAll();
     }
     emit newConnection();
-
-	return true;
 }

@@ -28,7 +28,6 @@
 namespace udt4 {
 
 class UdtMultiplexer;
-class UdtServer;
 class UdtSocket;
 typedef QSharedPointer<UdtMultiplexer> UdtMultiplexerPointer;
 typedef QWeakPointer<UdtMultiplexer> UdtMultiplexerWeakPointer;
@@ -49,13 +48,11 @@ public:
     quint16 serverPort() const;
     QString errorString() const;
 
-    bool startListenUdt(UdtServer* server);
-    bool stopListenUdt(UdtServer* server);
-    bool startRendezvous(UdtSocket* udtSocket);
-    bool endRendezvous(UdtSocket* udtSocket);
-
     UdtSocketPointer newSocket(const QHostAddress& peerAddress, quint16 peerPort, bool isServer, bool isDatagram);
     bool closeSocket(quint32 sockID);
+
+    void moveToReadThread(QObject* object);
+    void moveToWriteThread(QObject* object);
 
 private:
     UdtMultiplexer();
@@ -66,12 +63,14 @@ private slots:
     void onPacketWriteReady(Packet packet, QHostAddress destAddr, quint32 destPort);
 
 signals:
+    void rendezvousHandshake(HandshakePacket hsPacket, QHostAddress peerAddress, quint32 peerPort);
+    void serverHandshake(HandshakePacket hsPacket, QHostAddress peerAddress, quint32 peerPort);
+
     void sendPacket(Packet packet, QHostAddress destAddr, quint32 destPort, QPrivateSignal);
 
 private:
     typedef QPair<quint16, QString> TLocalPortPair;
     typedef QMap<TLocalPortPair, UdtMultiplexerWeakPointer> TMultiplexerMap;
-    typedef QList<UdtSocket*> TSocketList;
     typedef QMap<quint32, UdtSocket*> TSocketMap;
 
     QUdpSocket _udpSocket;  // the listening socket where we receive all our packets
@@ -81,15 +80,14 @@ private:
     quint16 _serverPort{ 0 };
     QHostAddress _serverAddress{ QHostAddress::Null };
 
-    mutable QMutex _rendezvousSocketsProtect;
-    TSocketList _rendezvousSockets;
     mutable QMutex _connectedSocketsProtect;
     TSocketMap _connectedSockets;
-    mutable QMutex _serverSocketProtect;
-    UdtServer* _serverSocket{ nullptr };  //	the server socket listening to incoming connections, if there is one
 
     static QMutex gl_multiplexerMapProtect;
     static TMultiplexerMap gl_multiplexerMap;
+
+private:
+    Q_DISABLE_COPY(UdtMultiplexer)
 };
 
 } /* namespace udt4 */

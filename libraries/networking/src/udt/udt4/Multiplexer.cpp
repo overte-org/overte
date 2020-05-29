@@ -17,7 +17,6 @@
 #include <QtCore/QMutexLocker>
 #include <QtNetwork/QNetworkDatagram>
 #include <QtCore/QRandomGenerator>
-#include "UdtServer.h"
 #include "UdtSocket.h"
 
 #ifdef WIN32
@@ -112,8 +111,8 @@ UdtMultiplexer::~UdtMultiplexer() {
 bool UdtMultiplexer::create(quint16 port, const QHostAddress& localAddress) {
     _readThread.start();
     _writeThread.start();
-    _udpSocket.moveToThread(&_readThread);
-    moveToThread(&_writeThread);
+    moveToReadThread(&_udpSocket);
+    moveToWriteThread(this);
 
     if (!_udpSocket.bind(localAddress, port)) {
         return false;
@@ -143,6 +142,14 @@ bool UdtMultiplexer::create(quint16 port, const QHostAddress& localAddress) {
     return true;
 }
 
+void UdtMultiplexer::moveToReadThread(QObject* object) {
+    object->moveToThread(&_readThread);
+}
+
+void UdtMultiplexer::moveToWriteThread(QObject* object) {
+    object->moveToThread(&_writeThread);
+}
+
 QHostAddress UdtMultiplexer::serverAddress() const {
     return _serverAddress;
 }
@@ -157,24 +164,6 @@ quint16 UdtMultiplexer::serverPort() const {
 
 QString UdtMultiplexer::errorString() const {
     return _udpSocket.errorString();
-}
-
-bool UdtMultiplexer::startListenUdt(UdtServer* server) {
-    QMutexLocker locker(&_serverSocketProtect);
-    if (_serverSocket != nullptr) {
-        return false;
-	}
-	_serverSocket = server;
-	return true;
-}
-
-bool UdtMultiplexer::stopListenUdt(UdtServer* server) {
-    QMutexLocker locker(&_serverSocketProtect);
-    if (_serverSocket != server) {
-		return false;
-	}
-    _serverSocket = nullptr;
-	return true;
 }
 /*
 // Adapted from https://github.com/hlandau/degoutils/blob/master/net/mtu.go
@@ -248,50 +237,7 @@ bool UdtMultiplexer::closeSocket(quint32 sockID) {
 }
 
 bool UdtMultiplexer::isLive() const {
-    if (!_udpSocket.isOpen()) {
-        return false;
-	}
-    bool isEmpty = true;
-    
-    {
-        QMutexLocker locker(&_serverSocketProtect);
-        if (_serverSocket != nullptr) {
-            return true;
-        }
-    }
-    
-    {
-        QMutexLocker locker(&_rendezvousSocketsProtect);
-        isEmpty = _rendezvousSockets.empty();
-    }
-	if(!isEmpty) {
-		return true;
-	}
-
-    {
-        QMutexLocker locker(&_connectedSocketsProtect);
-        isEmpty = _connectedSockets.empty();
-    }
-
-	return !isEmpty;
-}
-
-bool UdtMultiplexer::startRendezvous(UdtSocket* udtSocket) {
-    QMutexLocker locker(&_rendezvousSocketsProtect);
-    int indexOf = _rendezvousSockets.indexOf(udtSocket);
-    if (indexOf == -1) {
-        _rendezvousSockets.append(udtSocket);
-    }
-    return indexOf == -1;
-}
-
-bool UdtMultiplexer::endRendezvous(UdtSocket* udtSocket) {
-    QMutexLocker locker(&_rendezvousSocketsProtect);
-    int indexOf = _rendezvousSockets.indexOf(udtSocket);
-    if (indexOf != -1) {
-        _rendezvousSockets.removeAt(indexOf);
-    }
-    return indexOf != -1;
+    return _udpSocket.isOpen();
 }
 
 void UdtMultiplexer::onPacketReadReady() {  // executes from goRead thread
@@ -315,21 +261,18 @@ void UdtMultiplexer::onPacketReadReady() {  // executes from goRead thread
         }
         HandshakePacket hsPacket(udtPacket, peerAddress.protocol());
 
-        {
-            QMutexLocker locker(&_rendezvousSocketsProtect);
-            for (TSocketList::const_iterator trans = _rendezvousSockets.begin(); trans != _rendezvousSockets.end(); ++trans) {
-                if ((*trans)->readHandshake(hsPacket, peerAddress, peerPort)) {
-                    return;
-                }
-            }
+        switch (hsPacket._reqType) {
+        case HandshakeRequestType::Rendezvous:
+            emit rendezvousHandshake(hsPacket, peerAddress, peerPort);
+            break;
+        case HandshakeRequestType::Request:
+            emit serverHandshake(hsPacket, peerAddress, peerPort);
+            break;
+        default:
+            qCInfo(networking) << "Received handshake packet directed at sockID=0 with unexpected request type=" << static_cast<uint>(hsPacket._reqType);
+            break;
         }
-        
-        {
-            QMutexLocker locker(&_serverSocketProtect);
-            if (_serverSocket != nullptr) {
-                _serverSocket->readHandshake(hsPacket, peerAddress, peerPort);
-            }
-        }
+        return;
 	}
 
     UdtSocket* destSocket = nullptr;
