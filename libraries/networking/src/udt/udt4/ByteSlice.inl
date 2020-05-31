@@ -53,4 +53,13 @@ const quint8& ByteSlice::operator[](size_t idx) const {
     }
 }
 
+inline const quint8* ByteSlice::constData() const {
+    if (_content.isNull()) {
+        return NULL;
+    } else {
+        return _content->_content;
+    }
+}
+
+
 #endif /* serialization_Byteslice_inl */

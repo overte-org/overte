@@ -30,10 +30,6 @@ UdtServer::~UdtServer() {
     close();
 }
 
-UdtServer::AcceptFlags UdtServer::acceptFlags() const {
-    return _acceptFlags;
-}
-
 void UdtServer::close() {
     if (!_multiplexer.isNull()) {
         UdtMultiplexerPointer multiplexer = _multiplexer;
@@ -45,17 +41,9 @@ void UdtServer::close() {
     }
 }
 
-QString UdtServer::errorString() const {
-    return _errorString;
-}
-
 bool UdtServer::hasPendingConnections() const {
     QMutexLocker locker(&_acceptedSocketsProtect);
     return !_acceptedSockets.empty();
-}
-
-bool UdtServer::isListening() const {
-    return !_multiplexer.isNull();
 }
 
 bool UdtServer::listen(quint16 port, const QHostAddress& address /* = QHostAddress::Any */ ) {
@@ -79,28 +67,12 @@ bool UdtServer::listen(quint16 port, const QHostAddress& address /* = QHostAddre
     return true;
 }
 
-qint64 UdtServer::listenReplayWindow() const {
-    return _listenReplayWindow;
-}
-
-int UdtServer::maxPendingConnections() const {
-    return _maxPendingConn.load();
-}
-
 UdtSocketPointer UdtServer::nextPendingConnection() {
     QMutexLocker locker(&_acceptedSocketsProtect);
     if (_acceptedSockets.empty()) {
         return UdtSocketPointer();
     }
     return _acceptedSockets.dequeue();
-}
-
-void UdtServer::pauseAccepting() {
-    _pausePendingConn.store(1);
-}
-
-void UdtServer::resumeAccepting() {
-    _pausePendingConn.store(0);
 }
 
 QHostAddress UdtServer::serverAddress() const {
@@ -111,24 +83,12 @@ QHostAddress UdtServer::serverAddress() const {
     }
 }
 
-QAbstractSocket::SocketError UdtServer::serverError() const {
-    return _serverError;
-}
-
 quint16 UdtServer::serverPort() const {
     if (_multiplexer.isNull()) {
         return 0;
     } else {
         return _multiplexer->serverPort();
     }
-}
-
-void UdtServer::setAcceptFlags(AcceptFlags flags) {
-    _acceptFlags = flags;
-}
-
-void UdtServer::setListenReplayWindow(qint64 msecs) {
-    _listenReplayWindow = msecs;
 }
 
 void UdtServer::setMaxPendingConnections(int numConnections) {
@@ -247,15 +207,15 @@ void UdtServer::rejectHandshake(const HandshakePacket& hsPacket, const QHostAddr
     HandshakePacket hsResponse;
     hsResponse._udtVer = hsPacket._udtVer;
     hsResponse._sockType = hsPacket._sockType;
-    hsResponse._reqType = HandshakeRequestType::Refused;
-    hsResponse._sockAddr = peerAddress;
+    hsResponse._reqType = HandshakePacket::RequestType::Refused;
+    hsResponse._sockAddr = _multiplexer->serverAddress();
 
     _multiplexer->sendPacket(peerAddress, peerPort, hsPacket._farSocketID, 0, hsResponse.toPacket());
 }
 
 void UdtServer::readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort) {
 
-    if (hsPacket._reqType == HandshakeRequestType::Request) {
+    if (hsPacket._reqType == HandshakePacket::RequestType::Request) {
         // initial packet received, generate a SYN cookie, send it back, and forget about it
         quint32 newCookie = generateSynCookie(peerAddress, peerPort);
         qCDebug(networking) << _multiplexer->serverAddress() << ":" << _multiplexer->serverPort()
@@ -266,9 +226,9 @@ void UdtServer::readHandshake(const HandshakePacket& hsPacket, const QHostAddres
         hsResponse._udtVer = hsPacket._udtVer;
         hsResponse._sockType = hsPacket._sockType;
         hsResponse._initPktSeq = hsPacket._initPktSeq;
-        hsResponse._reqType = HandshakeRequestType::Request;
+        hsResponse._reqType = HandshakePacket::RequestType::Request;
         hsResponse._synCookie = newCookie;
-        hsResponse._sockAddr = peerAddress;
+        hsResponse._sockAddr = _multiplexer->serverAddress();
 
         _multiplexer->sendPacket(peerAddress, peerPort, hsPacket._farSocketID, 0, hsResponse.toPacket());
 		return;

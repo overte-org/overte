@@ -142,29 +142,6 @@ bool UdtMultiplexer::create(quint16 port, const QHostAddress& localAddress) {
     return true;
 }
 
-void UdtMultiplexer::moveToReadThread(QObject* object) {
-    object->moveToThread(&_readThread);
-}
-
-void UdtMultiplexer::moveToWriteThread(QObject* object) {
-    object->moveToThread(&_writeThread);
-}
-
-QHostAddress UdtMultiplexer::serverAddress() const {
-    return _serverAddress;
-}
-
-QAbstractSocket::SocketError UdtMultiplexer::serverError() const {
-    return _udpSocket.error();
-}
-
-quint16 UdtMultiplexer::serverPort() const {
-    return _serverPort;
-}
-
-QString UdtMultiplexer::errorString() const {
-    return _udpSocket.errorString();
-}
 /*
 // Adapted from https://github.com/hlandau/degoutils/blob/master/net/mtu.go
 const absMaxDatagramSize = 2147483646 // 2**31-2
@@ -236,10 +213,6 @@ bool UdtMultiplexer::closeSocket(quint32 sockID) {
     return lookup != _connectedSockets.end();
 }
 
-bool UdtMultiplexer::isLive() const {
-    return _udpSocket.isOpen();
-}
-
 void UdtMultiplexer::onPacketReadReady() {  // executes from goRead thread
     ByteSlice packetData;
     qint64 packetSize = _udpSocket.pendingDatagramSize();
@@ -262,10 +235,10 @@ void UdtMultiplexer::onPacketReadReady() {  // executes from goRead thread
         HandshakePacket hsPacket(udtPacket, peerAddress.protocol());
 
         switch (hsPacket._reqType) {
-        case HandshakeRequestType::Rendezvous:
+        case HandshakePacket::RequestType::Rendezvous :
             emit rendezvousHandshake(hsPacket, peerAddress, peerPort);
             break;
-        case HandshakeRequestType::Request:
+        case HandshakePacket::RequestType::Request:
             emit serverHandshake(hsPacket, peerAddress, peerPort);
             break;
         default:
@@ -294,7 +267,7 @@ writeBufferPool, or a new buffer.
 */
 void UdtMultiplexer::onPacketWriteReady(Packet packet, QHostAddress destAddr, quint32 destPort) {
     ByteSlice networkPacket = packet.toNetworkPacket();
-    _udpSocket.writeDatagram(reinterpret_cast<const char*>(&networkPacket[0]), networkPacket.length(), destAddr, destPort);
+    _udpSocket.writeDatagram(reinterpret_cast<const char*>(networkPacket.constData()), networkPacket.length(), destAddr, destPort);
 }
 
 void UdtMultiplexer::sendPacket(const QHostAddress& destAddr,

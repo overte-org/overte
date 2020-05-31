@@ -11,8 +11,138 @@
 
 #include "UdtSocket.h"
 
+#include "Multiplexer.h"
+#include "../../NetworkLogging.h"
+#include <QtCore/QLoggingCategory>
+
 using namespace udt4;
 
+QHostAddress UdtSocket::localAddress() const {
+    if (_multiplexer.isNull()) {
+        return QHostAddress(QHostAddress::SpecialAddress::Null);
+    } else {
+        return _multiplexer->serverAddress();
+    }
+}
+
+quint16 UdtSocket::localPort() const {
+    if (_multiplexer.isNull()) {
+        return 0;
+    } else {
+        return _multiplexer->serverPort();
+    }
+}
+
+void UdtSocket::sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType) {
+
+    HandshakePacket hsResponse;
+    hsResponse._udtVer = 3;
+    hsResponse._sockType = _isDatagram ? SocketType::DGRAM : SocketType::STREAM;
+    hsResponse._initPktSeq = _initialPacketSequence;
+    hsResponse._maxPktSize = _mtu;
+    hsResponse._maxFlowWinSize = _maxFlowWinSize; // maximum flow window size
+    hsResponse._reqType = requestType;
+    hsResponse._farSocketID = _socketID;
+    hsResponse._synCookie = synCookie;
+    hsResponse._sockAddr = _multiplexer->serverAddress();
+
+    Packet udtPacket = hsResponse.toPacket();
+    quint32 ts = static_cast<quint32>(_createTime.nsecsElapsed() / 1000);
+	_cong->onPktSent(udtPacket);
+    qCDebug(networking) << _multiplexer->serverAddress() << ":" << _multiplexer->serverPort() << "[" << _socketID
+        << "] sending handshake(" << static_cast<uint>(requestType) << ") to " << _remoteAddr << ":" << _remotePort << "[" << _farSocketID << "]";
+    _multiplexer->sendPacket(_remoteAddr, _remotePort, _socketID, ts, udtPacket);
+}
+
+// called by the multiplexer read loop when a packet is received for this socket.
+// Minimal processing is permitted but try not to stall the caller
+void UdtSocket::readPacket(const Packet& udtPacket, const QHostAddress& peerAddress, uint peerPort) {
+	now := time.Now()
+	if(_sockState == SocketState::Closed) {
+		return
+	}
+	if(!from.IP.Equal(s.raddr.IP) || from.Port != s.raddr.Port) {
+		log.Printf("Socket connected to %s received a packet from %s? Discarded", s.raddr.String(), from.String());
+		return;
+	}
+
+	s.recvEvent <- recvPktEvent{pkt: p, now: now};
+
+	switch (udtPacket._type) {
+    case PacketType::Handshake: { // sent by both peers
+        HandshakePacket hsPacket(udtPacket, peerAddress.protocol());
+        readHandshake(hsPacket, peerAddress, peerPort);
+        break;
+    }
+    case PacketType::Shutdown:    // sent by either peer
+        emit _shutdownEvent(sockStateClosed, true);
+        break;
+    case PacketType::Ack:  // receiver -> sender
+    case PacketType::Nak:
+		emit _sendEvent(udtPacket, now);
+        break;
+    case PacketType::UserDefPkt:
+		emit _cong.onCustomMsg(udtPacket);
+        break;
+	}
+}
+/*
+public:
+    explicit UdtSocket(QObject* parent = nullptr);
+    virtual ~UdtSocket();
+
+public: // from QUdpSocket
+    bool hasPendingDatagrams() const;
+    qint64 pendingDatagramSize() const;
+    QNetworkDatagram receiveDatagram(qint64 maxSize = -1);
+    qint64 readDatagram(char* data, qint64 maxlen);
+    qint64 writeDatagram(const char* data, qint64 len);
+
+public:  // from QAbstractSocket
+    void abort();
+    virtual void connectToHost(const QString& hostName, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
+    virtual void connectToHost(const QHostAddress& address, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
+    virtual void rendezvousToHost(const QString& hostName, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
+    virtual void rendezvousToHost(const QHostAddress& address, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
+    virtual void disconnectFromHost();
+    QAbstractSocket::SocketError error() const;
+    bool flush();
+    bool isValid() const;
+    qint64 readBufferSize() const;
+    virtual void setReadBufferSize(qint64 size);
+    virtual void setSocketOption(QAbstractSocket::SocketOption option, const QVariant& value);
+    virtual QVariant socketOption(QAbstractSocket::SocketOption option);
+    virtual bool waitForConnected(int msecs = 30000);
+    virtual bool waitForDisconnected(int msecs = 30000);
+
+    virtual bool atEnd() const override;
+    virtual qint64 bytesAvailable() const override;
+    virtual qint64 bytesToWrite() const override;
+    virtual bool canReadLine() const override;
+    virtual void close() override;
+    virtual bool isSequential() const override;
+    virtual bool waitForBytesWritten(int msecs = 30000) override;
+    virtual bool waitForReadyRead(int msecs = 30000) override;
+
+signals: // from QAbstractSocket
+    void connected();
+    void disconnected();
+    void errorOccurred(QAbstractSocket::SocketError socketError);
+    void hostFound();
+    void stateChanged(SocketState socketState);
+
+protected: // from QAbstractSocket
+    virtual qint64 readData(char* data, qint64 maxSize) override;
+    virtual qint64 readLineData(char* data, qint64 maxlen) override;
+    virtual qint64 writeData(const char* data, qint64 size) override;
+
+public: // internal implementation
+    bool readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
+    bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
+    static UdtSocketPointer newSocket(UdtMultiplexerPointer multiplexer, quint32 socketID, bool isServer, bool isDatagram,
+        const QHostAddress& peerAddress, uint peerPort);
+    void readPacket(const Packet& udtPacket, const QHostAddress& peerAddress, uint peerPort);
+*/
 typedef struct ReceivePacketEvent {
     Packet packet;
     time.Time now;
@@ -217,18 +347,6 @@ func (s *udtSocket) isOpen() bool {
 	}
 }
 
-// LocalAddr returns the local network address.
-// (required for net.Conn implementation)
-func (s *udtSocket) LocalAddr() net.Addr {
-	return s.m.laddr
-}
-
-// RemoteAddr returns the remote network address.
-// (required for net.Conn implementation)
-func (s *udtSocket) RemoteAddr() net.Addr {
-	return s.raddr
-}
-
 // SetDeadline sets the read and write deadlines associated
 // with the connection. It is equivalent to calling both
 // SetReadDeadline and SetWriteDeadline.
@@ -428,31 +546,6 @@ func (s *udtSocket) goManageConnection() {
 			}
 		}
 	}
-}
-
-func (s *udtSocket) sendHandshake(synCookie uint32, reqType packet.HandshakeReqType) {
-	sockType := packet.TypeSTREAM
-	if s.isDatagram {
-		sockType = packet.TypeDGRAM
-	}
-
-	p := &packet.HandshakePacket{
-		UdtVer:         uint32(s.udtVer),
-		SockType:       sockType,
-		InitPktSeq:     s.initPktSeq,
-		MaxPktSize:     s.mtu.get(),              // maximum packet size (including UDP/IP headers)
-		MaxFlowWinSize: uint32(s.maxFlowWinSize), // maximum flow window size
-		ReqType:        reqType,
-		SockID:         s.sockID,
-		SynCookie:      synCookie,
-		SockAddr:       s.raddr.IP,
-	}
-
-	ts := uint32(time.Now().Sub(s.created) / time.Microsecond)
-	s.cong.onPktSent(p)
-	log.Printf("%s (id=%d) sending handshake(%d) to %s (id=%d)", s.m.laddr.String(), s.sockID, int(reqType),
-		s.raddr.String(), s.farSockID)
-	s.m.sendPacket(s.raddr, s.farSockID, ts, p)
 }
 
 // checkValidHandshake checks to see if we want to accept a new connection with this handshake.
@@ -664,28 +757,3 @@ func (s *udtSocket) getRcvSpeeds() (deliveryRate uint, bandwidth uint) {
 	return
 }
 
-// called by the multiplexer read loop when a packet is received for this socket.
-// Minimal processing is permitted but try not to stall the caller
-func (s *udtSocket) readPacket(m *multiplexer, p packet.Packet, from *net.UDPAddr) {
-	now := time.Now()
-	if s.sockState == sockStateClosed {
-		return
-	}
-	if !from.IP.Equal(s.raddr.IP) || from.Port != s.raddr.Port {
-		log.Printf("Socket connected to %s received a packet from %s? Discarded", s.raddr.String(), from.String())
-		return
-	}
-
-	s.recvEvent <- recvPktEvent{pkt: p, now: now}
-
-	switch sp := p.(type) {
-	case *packet.HandshakePacket: // sent by both peers
-		s.readHandshake(m, sp, from)
-	case *packet.ShutdownPacket: // sent by either peer
-		s.shutdownEvent <- shutdownMessage{sockState: sockStateClosed, permitLinger: true}
-	case *packet.AckPacket, *packet.LightAckPacket, *packet.NakPacket: // receiver -> sender
-		s.sendEvent <- recvPktEvent{pkt: p, now: now}
-	case *packet.UserDefControlPacket:
-		s.cong.onCustomMsg(*sp)
-	}
-}

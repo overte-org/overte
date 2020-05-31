@@ -13,6 +13,8 @@
 #define hifi_udt4_UdtSocket_h
 
 #include "ByteSlice.h"
+#include "Packet.h"
+#include <QtCore/QIODevice>
 #include <QtCore/QAtomicInteger>
 #include <QtCore/QDeadlineTimer>
 #include <QtCore/QElapsedTimer>
@@ -20,6 +22,7 @@
 #include <QtCore/QMutex>
 #include <QtCore/QReadWriteLock>
 #include <QtCore/QSharedPointer>
+#include <QtNetwork/QUdpSocket>
 
 namespace udt4 {
 
@@ -35,9 +38,80 @@ defined by the UDT specification.  udtSocket implements the net.Conn interface
 so that it can be used anywhere that a stream-oriented network connection
 (like TCP) would be used.
 */
-class UdtSocket : public QObject {
+class UdtSocket : public QIODevice {
     Q_OBJECT
 public:
+    enum class SocketState
+    {
+        Init,        // object is being constructed
+        Rendezvous,  // attempting to create a rendezvous connection
+        Connecting,  // attempting to connect to a server
+        Connected,   // connection is established
+        Closed,      // connection has been closed (by either end)
+        Refused,     // connection rejected by remote host
+        Corrupted,   // peer behaved in an improper manner
+        Timeout,     // connection failed due to peer timeout
+    };
+    Q_ENUM(SocketState)
+
+public:
+    explicit UdtSocket(QObject* parent = nullptr);
+    virtual ~UdtSocket();
+
+public: // from QUdpSocket
+    bool isInDatagramMode() const;
+    bool hasPendingDatagrams() const;
+    qint64 pendingDatagramSize() const;
+    ByteSlice receiveDatagram(qint64 maxSize = -1);
+    qint64 readDatagram(char* data, qint64 maxlen);
+    qint64 writeDatagram(const char* data, qint64 len, const QDeadlineTimer& timeout = QDeadlineTimer(QDeadlineTimer::Forever));
+    inline qint64 writeDatagram(const QByteArray& datagram);
+    inline qint64 writeDatagram(const ByteSlice& datagram);
+
+public:  // from QAbstractSocket
+    void abort();
+    virtual void connectToHost(const QString& hostName, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
+    virtual void connectToHost(const QHostAddress& address, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
+    virtual void rendezvousToHost(const QString& hostName, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
+    virtual void rendezvousToHost(const QHostAddress& address, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
+    virtual void disconnectFromHost();
+    QAbstractSocket::SocketError error() const;
+    bool flush();
+    bool isValid() const;
+    QHostAddress localAddress() const;
+    quint16 localPort() const;
+    inline const QHostAddress& peerAddress() const;
+    inline quint16 peerPort() const;
+    qint64 readBufferSize() const;
+    virtual void setReadBufferSize(qint64 size);
+    virtual void setSocketOption(QAbstractSocket::SocketOption option, const QVariant& value);
+    virtual QVariant socketOption(QAbstractSocket::SocketOption option);
+    inline SocketState state() const;
+    virtual bool waitForConnected(int msecs = 30000);
+    virtual bool waitForDisconnected(int msecs = 30000);
+
+    virtual bool atEnd() const override;
+    virtual qint64 bytesAvailable() const override;
+    virtual qint64 bytesToWrite() const override;
+    virtual bool canReadLine() const override;
+    virtual void close() override;
+    virtual bool isSequential() const override;
+    virtual bool waitForBytesWritten(int msecs = 30000) override;
+    virtual bool waitForReadyRead(int msecs = 30000) override;
+
+signals: // from QAbstractSocket
+    void connected();
+    void disconnected();
+    void errorOccurred(QAbstractSocket::SocketError socketError);
+    void hostFound();
+    void stateChanged(SocketState socketState);
+
+protected: // from QAbstractSocket
+    virtual qint64 readData(char* data, qint64 maxSize) override;
+    virtual qint64 readLineData(char* data, qint64 maxlen) override;
+    virtual qint64 writeData(const char* data, qint64 size) override;
+
+public: // internal implementation
     bool readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
     bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
     static UdtSocketPointer newSocket(UdtMultiplexerPointer multiplexer, quint32 socketID, bool isServer, bool isDatagram,
@@ -45,17 +119,7 @@ public:
     void readPacket(const Packet& udtPacket, const QHostAddress& peerAddress, uint peerPort);
 
 private:
-    enum class SocketState
-    {
-        Init,        // object is being constructed
-        Rendezvous,  // attempting to create a rendezvous connection
-        Connecting,  // attempting to create a connection
-        Connected,   // connection is established
-        Closed,      // connection has been closed (by either end)
-        Refused,     // connection rejected by remote host
-        Corrupted,   // peer behaved in an improper manner
-        Timeout,     // connection failed due to peer timeout
-    };
+    void sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType);
 
 private:
 	// this data not changed after the socket is initialized and/or handshaked
@@ -65,6 +129,7 @@ private:
     quint32 _initialPacketSequence;      // initial packet sequence to start the connection with
     bool _isDatagram;                    // if true then we're sending and receiving datagrams, otherwise we're a streaming socket
 	bool _isServer;                      // if true then we are behaving like a server, otherwise client (or rendezvous). Only useful during handshake
+    QUdpSocket _offAxisUdpSocket;        // a "connected" udp socket we only use for detecting MTU path (as otherwise the system won't tell us about ICMP packets)
     UdtMultiplexerPointer _multiplexer;  // the multiplexer that handles this socket
     QHostAddress _remoteAddr;            // the remote address
     quint16 _remotePort;                 // the remote port number
@@ -129,7 +194,11 @@ private:
 	//double        MbpsBandwidth       // estimated bandwidth, in Mb/s
 	//uint          ByteAvailSndBuf     // available UDT sender buffer size
 	//uint          ByteAvailRcvBuf     // available UDT receiver buffer size
+
+private:
+    Q_DISABLE_COPY(UdtSocket)
 };
 
 } // namespace udt4
+#include "UdtSocket.inl"
 #endif /* hifi_udt4_UdtSocket_h */

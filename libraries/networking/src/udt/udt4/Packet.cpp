@@ -60,7 +60,7 @@ HandshakePacket::HandshakePacket(const Packet& src, QAbstractSocket::NetworkLaye
         _initPktSeq = qFromBigEndian<quint32>(&src._contents[8]);
         _maxPktSize = qFromBigEndian<quint32>(&src._contents[12]);
         _maxFlowWinSize = qFromBigEndian<quint32>(&src._contents[16]);
-        _reqType = static_cast<HandshakeRequestType>(qFromBigEndian<quint32>(&src._contents[20]));
+        _reqType = static_cast<RequestType>(qFromBigEndian<quint32>(&src._contents[20]));
         _farSocketID = qFromBigEndian<quint32>(&src._contents[24]);
         _synCookie = qFromBigEndian<quint32>(&src._contents[28]);
         _extra = src._contents.substring(48);

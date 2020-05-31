@@ -33,6 +33,16 @@ typedef QSharedPointer<UdtMultiplexer> UdtMultiplexerPointer;
 typedef QWeakPointer<UdtMultiplexer> UdtMultiplexerWeakPointer;
 typedef QSharedPointer<UdtSocket> UdtSocketPointer;
 
+// UdtMultiplexer
+//
+// Responsible for binding to a local port, receiving UDT packets, and routing them to the
+// sockets and/or servers registered to the local port.  All established connections are
+// identified on both the local and peer side by a unique sockID value (which may permit
+// multiple independent connections to be established with the same addr+port)
+//
+// This class is not generally user-visible and is generated+maintained internally
+// by the UDT connection classes
+
 class UdtMultiplexer : public QObject, public QEnableSharedFromThis<UdtMultiplexer> {
     Q_OBJECT
 public:
@@ -41,18 +51,18 @@ public:
                                       const QHostAddress& localAddress = QHostAddress::Any,
                                       QAbstractSocket::SocketError* serverError = nullptr,
                                       QString* errorString = nullptr);
-    bool isLive() const;
+    inline bool isLive() const;
     void sendPacket(const QHostAddress& destAddr, quint32 destPort, quint32 destSockID, quint32 timestamp, Packet packet);
-    QHostAddress serverAddress() const;
-    QAbstractSocket::SocketError serverError() const;
-    quint16 serverPort() const;
-    QString errorString() const;
+    inline QHostAddress serverAddress() const;
+    inline QAbstractSocket::SocketError serverError() const;
+    inline quint16 serverPort() const;
+    inline QString errorString() const;
 
     UdtSocketPointer newSocket(const QHostAddress& peerAddress, quint16 peerPort, bool isServer, bool isDatagram);
     bool closeSocket(quint32 sockID);
 
-    void moveToReadThread(QObject* object);
-    void moveToWriteThread(QObject* object);
+    inline void moveToReadThread(QObject* object);
+    inline void moveToWriteThread(QObject* object);
 
 private:
     UdtMultiplexer();
@@ -65,7 +75,7 @@ private slots:
 signals:
     void rendezvousHandshake(HandshakePacket hsPacket, QHostAddress peerAddress, quint32 peerPort);
     void serverHandshake(HandshakePacket hsPacket, QHostAddress peerAddress, quint32 peerPort);
-
+signals: // private
     void sendPacket(Packet packet, QHostAddress destAddr, quint32 destPort, QPrivateSignal);
 
 private:
@@ -91,4 +101,6 @@ private:
 };
 
 } /* namespace udt4 */
+#include "Multiplexer.inl"
+
 #endif /* hifi_udt4_Multiplexer_h */

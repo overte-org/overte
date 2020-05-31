@@ -46,22 +46,22 @@ public:
     explicit UdtServer(QObject* parent = nullptr);
     virtual ~UdtServer();
 
-    AcceptFlags acceptFlags() const;
+    inline AcceptFlags acceptFlags() const;
     void close();
-    QString errorString() const;
+    inline QString errorString() const;
     virtual bool hasPendingConnections() const;
-    bool isListening() const;
+    inline bool isListening() const;
     bool listen(quint16 port, const QHostAddress& address = QHostAddress::Any);
-    qint64 listenReplayWindow() const;
-    int maxPendingConnections() const;
+    inline qint64 listenReplayWindow() const;
+    inline int maxPendingConnections() const;
     virtual UdtSocketPointer nextPendingConnection();
-    void pauseAccepting();
-    void resumeAccepting();
-    QHostAddress serverAddress() const;
+    inline void pauseAccepting();
+    inline void resumeAccepting();
+    inline QHostAddress serverAddress() const;
     QAbstractSocket::SocketError serverError() const;
     quint16 serverPort() const;
-    void setAcceptFlags(AcceptFlags flags);
-    void setListenReplayWindow(qint64 msecs);
+    inline void setAcceptFlags(AcceptFlags flags);
+    inline void setListenReplayWindow(qint64 msecs);
     void setMaxPendingConnections(int numConnections);
     bool waitForNewConnection(int msec = 0, bool* timedOut = nullptr);
 
@@ -113,5 +113,5 @@ private:
 
 }  // namespace udt4
 
-
+#include "UdtServer.inl"
 #endif /* hifi_udt4_UdtServer_h */
