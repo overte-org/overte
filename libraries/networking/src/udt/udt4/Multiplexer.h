@@ -48,9 +48,9 @@ class UdtMultiplexer : public QObject, public QEnableSharedFromThis<UdtMultiplex
 public:
     virtual ~UdtMultiplexer();
     static UdtMultiplexerPointer getInstance(quint16 port,
-                                      const QHostAddress& localAddress = QHostAddress::Any,
-                                      QAbstractSocket::SocketError* serverError = nullptr,
-                                      QString* errorString = nullptr);
+                                             const QHostAddress& localAddress = QHostAddress::Any,
+                                             QAbstractSocket::SocketError* serverError = nullptr,
+                                             QString* errorString = nullptr);
     inline bool isLive() const;
     void sendPacket(const QHostAddress& destAddr, quint32 destPort, quint32 destSockID, quint32 timestamp, Packet packet);
     inline QHostAddress serverAddress() const;
@@ -67,6 +67,7 @@ public:
 private:
     UdtMultiplexer();
     bool create(quint16 port, const QHostAddress& localAddress);
+    static UdtMultiplexerPointer lookupInstance(quint16 port, const QHostAddress& localAddress);
 
 private slots:
     void onPacketReadReady();

@@ -15,7 +15,21 @@
 #include "../../NetworkLogging.h"
 #include <QtCore/QLoggingCategory>
 
+#ifdef WIN32
+#include <winsock2.h>
+#include <WS2tcpip.h>
+#else
+#include <netinet/in.h>
+#endif
+
 using namespace udt4;
+
+UdtSocket::UdtSocket(QObject* parent) : QIODevice(parent) {
+    _connTimeout.setSingleShot(true);
+    _connTimeout.setTimer(Qt::PreciseTimer);
+    _connRetry.setSingleShot(true);
+    _connRetry.setTimer(Qt::PreciseTimer);
+}
 
 QHostAddress UdtSocket::localAddress() const {
     if (_multiplexer.isNull()) {
@@ -31,6 +45,141 @@ quint16 UdtSocket::localPort() const {
     } else {
         return _multiplexer->serverPort();
     }
+}
+
+void UdtSocket::connectToHost(const QString& hostName, quint16 port, quint16 localPort, bool datagramMode) {
+    abort();
+    _isDatagram = datagramMode;
+    _isServer = false;
+}
+
+void UdtSocket::connectToHost(const QHostAddress& address, quint16 port, quint16 localPort, bool datagramMode) {
+    abort();
+    _isDatagram = datagramMode;
+    _isServer = false;
+    startConnect(address, port, localPort);
+}
+
+void UdtSocket::rendezvousToHost(const QString& hostName, quint16 port, quint16 localPort, bool datagramMode) {
+    abort();
+    _isDatagram = datagramMode;
+    _isServer = false;
+}
+
+void UdtSocket::rendezvousToHost(const QHostAddress& address, quint16 port, quint16 localPort, bool datagramMode) {
+    abort();
+    _isDatagram = datagramMode;
+    _isServer = false;
+    startRendezvous(address, port, localPort);
+}
+
+// Contains code common between server/client and rendezvous code to execute before beginning the connection attempt
+bool UdtSocket::preConnect(const QHostAddress& address, quint16 port, quint16 localPort) {
+
+    // discover and/or create the multiplexer responsible for packets on this local port & protocol
+    QAbstractSocket::NetworkLayerProtocol protocol = address.protocol();
+    QHostAddress localAddress;
+    switch (protocol) {
+        case QAbstractSocket::NetworkLayerProtocol::IPv6Protocol:
+            localAddress = QHostAddress(QHostAddress::AnyIPv6);
+            break;
+        case QAbstractSocket::NetworkLayerProtocol::IPv4Protocol:
+            localAddress = QHostAddress(QHostAddress::AnyIPv4);
+            break;
+        default:
+            localAddress = QHostAddress(QHostAddress::Any);
+            break;
+    }
+    _multiplexer = UdtMultiplexer::getInstance(localPort, localAddress, NULL, NULL);
+    if (_multiplexer.isNull()) {
+        // TODO: retrieve the error message associated with this? or error messages anywhere?
+        return false;
+    }
+
+    _remoteAddr = address;
+    _remotePort = port;
+
+    // setup an "off-axis" UDP socket that (hopefully) will inform us of Path-MTU issues for the destination
+    _offAxisUdpSocket.bind(_multiplexer->serverAddress());
+    _offAxisUdpSocket.connectToHost(address, port);
+
+    // try to avoid fragmentation (and hopefully be notified if we exceed path MTU)
+#if defined(Q_OS_LINUX)
+    auto sd = _udpSocket.socketDescriptor();
+    if (localAddress.protocol() == QAbstractSocket::IPv4Protocol) {  // DF bit is only relevant for IPv4
+        int val = IP_PMTUDISC_DONT;
+        setsockopt(sd, IPPROTO_IP, IP_MTU_DISCOVER, &val, sizeof(val));
+    }
+    //int on = 1;
+    //setsockopt(sd, SOL_IP, IP_RECVERR, &on, sizeof(on)); // Let us know of any network errors
+#elif defined(Q_OS_WIN)
+    if (localAddress.protocol() == QAbstractSocket::IPv4Protocol) {  // DF bit is only relevant for IPv4
+        auto sd = _offAxisUdpSocket.socketDescriptor();
+        int val = 0;  // false
+        if (setsockopt(sd, IPPROTO_IP, IP_DONTFRAGMENT, reinterpret_cast<const char*>(&val), sizeof(val))) {
+            auto wsaErr = WSAGetLastError();
+            qCWarning(networking) << "Socket::bind Cannot setsockopt IP_DONTFRAGMENT" << wsaErr;
+        }
+    }
+#endif
+
+    // retrieve the (initial?) Path MTU from the off-axis socket
+    QVariant varMtu = _offAxisUdpSocket.socketOption(QAbstractSocket::PathMtuSocketOption);
+    int mtu = varMtu.toInt(NULL);
+    if (mtu == 0) {
+        qCWarning(networking) << "Attempt to retrieve Path MTU setting failed";
+        _mtu.store(1500);  // default value, shouldn't be seeing this though
+    } else {
+        _mtu.store(mtu);
+    }
+
+    return true;
+}
+
+void UdtSocket::startConnect(const QHostAddress& address, quint16 port, quint16 localPort) {
+
+    if (!preConnect(address, port, localPort)) {
+        // an error occurred, do something?
+        return;
+    }
+
+	connectWait := &sync.WaitGroup{};
+	_connectWait = connectWait;
+	connectWait.Add(1);
+
+	_sockState = SocketState::Connecting;
+
+	_connTimeout.start(3 * Second);
+	_connRetry.start(250 * Millisecond);
+	go s.goManageConnection();
+
+	sendHandshake(0, HandshakePacket::RequestType::Request);
+
+	connectWait.Wait();
+	return _connectionError();
+}
+
+void UdtSocket::startRendezvous(const QHostAddress& address, quint16 port, quint16 localPort) {
+    if (!preConnect(address, port, localPort)) {
+        // an error occurred, do something?
+        return;
+    }
+
+	connectWait := &sync.WaitGroup{};
+	_connectWait = connectWait;
+	_connectWait.Add(1);
+
+	_sockState = SocketState::Rendezvous;
+
+	_connTimeout.start(30 * Second);
+	_connRetry.start(250 * Millisecond);
+	go s.goManageConnection();
+
+	_multiplexer->startRendezvous(s);
+	sendHandshake(0, HandshakePacket::RequestType::Rendezvous);
+
+	connectWait.Wait();
+	return _connectionError();
 }
 
 void UdtSocket::sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType) {
@@ -105,7 +254,6 @@ public:  // from QAbstractSocket
     virtual void rendezvousToHost(const QString& hostName, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
     virtual void rendezvousToHost(const QHostAddress& address, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
     virtual void disconnectFromHost();
-    QAbstractSocket::SocketError error() const;
     bool flush();
     bool isValid() const;
     qint64 readBufferSize() const;
@@ -127,7 +275,6 @@ public:  // from QAbstractSocket
 signals: // from QAbstractSocket
     void connected();
     void disconnected();
-    void errorOccurred(QAbstractSocket::SocketError socketError);
     void hostFound();
     void stateChanged(SocketState socketState);
 
@@ -473,42 +620,6 @@ func (s *udtSocket) launchProcessors() {
 	s.send = newUdtSocketSend(s)
 	s.recv = newUdtSocketRecv(s)
 	s.cong.init(s.initPktSeq)
-}
-
-func (s *udtSocket) startConnect() error {
-
-	connectWait := &sync.WaitGroup{}
-	s.connectWait = connectWait
-	connectWait.Add(1)
-
-	s.sockState = sockStateConnecting
-
-	s.connTimeout = time.After(3 * time.Second)
-	s.connRetry = time.After(250 * time.Millisecond)
-	go s.goManageConnection()
-
-	s.sendHandshake(0, packet.HsRequest)
-
-	connectWait.Wait()
-	return s.connectionError()
-}
-
-func (s *udtSocket) startRendezvous() error {
-	connectWait := &sync.WaitGroup{}
-	s.connectWait = connectWait
-	s.connectWait.Add(1)
-
-	s.sockState = sockStateRendezvous
-
-	s.connTimeout = time.After(30 * time.Second)
-	s.connRetry = time.After(250 * time.Millisecond)
-	go s.goManageConnection()
-
-	s.m.startRendezvous(s)
-	s.sendHandshake(0, packet.HsRendezvous)
-
-	connectWait.Wait()
-	return s.connectionError()
 }
 
 func (s *udtSocket) goManageConnection() {

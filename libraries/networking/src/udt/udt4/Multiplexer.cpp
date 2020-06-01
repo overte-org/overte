@@ -33,19 +33,11 @@ UdtMultiplexer::TMultiplexerMap UdtMultiplexer::gl_multiplexerMap;
 
 // getInstance gets or creates a multiplexer for the given local address.
 UdtMultiplexerPointer UdtMultiplexer::getInstance(quint16 port,
-                                                           const QHostAddress& localAddress /* = QHostAddress::Any */,
-                                                           QAbstractSocket::SocketError* serverError /* = nullptr */,
-                                                           QString* errorString /* = nullptr */) {
-    TLocalPortPair localPort(port, localAddress.toString());
-    UdtMultiplexerPointer multiplexer;
+                                                  const QHostAddress& localAddress /* = QHostAddress::Any */,
+                                                  QAbstractSocket::SocketError* serverError /* = nullptr */,
+                                                  QString* errorString /* = nullptr */) {
 
-    {
-        QMutexLocker locker(&gl_multiplexerMapProtect);
-        TMultiplexerMap::const_iterator lookup = gl_multiplexerMap.find(localPort);
-        if (lookup != gl_multiplexerMap.end()) {
-            multiplexer = lookup.value().lock();
-        }
-    }
+    UdtMultiplexerPointer multiplexer = lookupInstance(port, localAddress);
     if (!multiplexer.isNull() && multiplexer->isLive()) {
         return multiplexer;
     }
@@ -54,13 +46,7 @@ UdtMultiplexerPointer UdtMultiplexer::getInstance(quint16 port,
     multiplexer = UdtMultiplexerPointer(new UdtMultiplexer());
     if (!multiplexer->create(port, localAddress)) {
         // if we hit an exception trying to construct a multiplexer, check to see if we haven't hit a race condition
-        {
-            QMutexLocker locker(&gl_multiplexerMapProtect);
-            TMultiplexerMap::const_iterator lookup = gl_multiplexerMap.find(localPort);
-            if (lookup != gl_multiplexerMap.end()) {
-                multiplexer = lookup.value().lock();
-            }
-        }
+        multiplexer = lookupInstance(port, localAddress);
         if (!multiplexer.isNull() && multiplexer->isLive()) {
             return multiplexer;
         }
@@ -76,9 +62,46 @@ UdtMultiplexerPointer UdtMultiplexer::getInstance(quint16 port,
     }
 
     {
+        TLocalPortPair resultLocalPort(multiplexer->serverPort(), multiplexer->serverAddress().toString());
         QMutexLocker locker(&gl_multiplexerMapProtect);
-        gl_multiplexerMap.insert(localPort, multiplexer);
+        gl_multiplexerMap.insert(resultLocalPort, multiplexer);
     }
+    return multiplexer;
+}
+
+UdtMultiplexerPointer UdtMultiplexer::lookupInstance(quint16 port, const QHostAddress& localAddress) {
+    // we don't even attempt to lookup port=0 (which should normally be handled as "pick an ephemeral port")
+    if (port == 0) {
+        return UdtMultiplexerPointer();
+    }
+
+    UdtMultiplexerPointer multiplexer;
+
+    {
+        TLocalPortPair localPort(port, localAddress.toString());
+        QMutexLocker locker(&gl_multiplexerMapProtect);
+        TMultiplexerMap::const_iterator lookup = gl_multiplexerMap.find(localPort);
+        if (lookup != gl_multiplexerMap.end()) {
+            multiplexer = lookup.value().lock();
+        }
+    }
+
+    // if we found it on the first try then return what we've got
+    if (multiplexer || (localAddress != QHostAddress::AnyIPv4 && localAddress != QHostAddress::AnyIPv6)) {
+        return multiplexer;
+    }
+
+    // at this point we haven't found a multiplexer and we're using AnyIPv4/AnyIPv6.  Retry with Any
+    {
+        QHostAddress anyAddress(QHostAddress::Any);
+        TLocalPortPair localPort(port, anyAddress.toString());
+        QMutexLocker locker(&gl_multiplexerMapProtect);
+        TMultiplexerMap::const_iterator lookup = gl_multiplexerMap.find(localPort);
+        if (lookup != gl_multiplexerMap.end()) {
+            multiplexer = lookup.value().lock();
+        }
+    }
+
     return multiplexer;
 }
 
@@ -117,8 +140,8 @@ bool UdtMultiplexer::create(quint16 port, const QHostAddress& localAddress) {
     if (!_udpSocket.bind(localAddress, port)) {
         return false;
     }
-    _serverAddress = localAddress;
-    _serverPort = port;
+    _serverAddress = _udpSocket.localAddress();
+    _serverPort = _udpSocket.localPort();
 
     // try to avoid fragmentation (and hopefully be notified if we exceed path MTU)
 #if defined(Q_OS_LINUX)
@@ -267,7 +290,11 @@ writeBufferPool, or a new buffer.
 */
 void UdtMultiplexer::onPacketWriteReady(Packet packet, QHostAddress destAddr, quint32 destPort) {
     ByteSlice networkPacket = packet.toNetworkPacket();
-    _udpSocket.writeDatagram(reinterpret_cast<const char*>(networkPacket.constData()), networkPacket.length(), destAddr, destPort);
+    if (0 > _udpSocket.writeDatagram(reinterpret_cast<const char*>(networkPacket.constData()), networkPacket.length(), destAddr,
+                                     destPort)) {
+        qCWarning(networking) << "Error sending packet to " << destAddr.toString() << ":" << destPort << "[" << packet._socketID << "] - (" <<
+            _udpSocket.error() << ")" << _udpSocket.errorString();
+    }
 }
 
 void UdtMultiplexer::sendPacket(const QHostAddress& destAddr,

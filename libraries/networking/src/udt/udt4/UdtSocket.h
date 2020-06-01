@@ -43,16 +43,24 @@ class UdtSocket : public QIODevice {
 public:
     enum class SocketState
     {
-        Init,        // object is being constructed
-        Rendezvous,  // attempting to create a rendezvous connection
-        Connecting,  // attempting to connect to a server
-        Connected,   // connection is established
-        Closed,      // connection has been closed (by either end)
-        Refused,     // connection rejected by remote host
-        Corrupted,   // peer behaved in an improper manner
-        Timeout,     // connection failed due to peer timeout
+        Init,          // object is idle
+        HostLookup,    // resolving the requested hostname to an IP address
+        LookupFailure, // could not resolve the requested hostname
+        Rendezvous,    // attempting to create a rendezvous connection
+        Connecting,    // attempting to connect to a server
+        Connected,     // connection is established
+        Closed,        // connection has been closed (by either end)
+        Refused,       // connection rejected by remote host
+        Corrupted,     // peer behaved in an improper manner
+        Timeout,       // connection failed due to peer timeout
     };
     Q_ENUM(SocketState)
+
+    enum TimeStuff
+    {
+        Millisecond = 1,
+        Second = 1000,
+    };
 
 public:
     explicit UdtSocket(QObject* parent = nullptr);
@@ -70,12 +78,11 @@ public: // from QUdpSocket
 
 public:  // from QAbstractSocket
     void abort();
-    virtual void connectToHost(const QString& hostName, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
-    virtual void connectToHost(const QHostAddress& address, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
-    virtual void rendezvousToHost(const QString& hostName, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
-    virtual void rendezvousToHost(const QHostAddress& address, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
+    virtual void connectToHost(const QString& hostName, quint16 port, quint16 localPort = 0, bool datagramMode = true);
+    virtual void connectToHost(const QHostAddress& address, quint16 port, quint16 localPort = 0, bool datagramMode = true);
+    virtual void rendezvousToHost(const QString& hostName, quint16 port, quint16 localPort = 0, bool datagramMode = true);
+    virtual void rendezvousToHost(const QHostAddress& address, quint16 port, quint16 localPort = 0, bool datagramMode = true);
     virtual void disconnectFromHost();
-    QAbstractSocket::SocketError error() const;
     bool flush();
     bool isValid() const;
     QHostAddress localAddress() const;
@@ -102,7 +109,6 @@ public:  // from QAbstractSocket
 signals: // from QAbstractSocket
     void connected();
     void disconnected();
-    void errorOccurred(QAbstractSocket::SocketError socketError);
     void hostFound();
     void stateChanged(SocketState socketState);
 
@@ -119,38 +125,41 @@ public: // internal implementation
     void readPacket(const Packet& udtPacket, const QHostAddress& peerAddress, uint peerPort);
 
 private:
+    bool preConnect(const QHostAddress& address, quint16 port, quint16 localPort);
+    void startConnect(const QHostAddress& address, quint16 port, quint16 localPort);
+    void startRendezvous(const QHostAddress& address, quint16 port, quint16 localPort);
     void sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType);
 
 private:
 	// this data not changed after the socket is initialized and/or handshaked
-    QMutex _connectWait;                 // released when connection is complete (or failed)
+//    QMutex _connectWait;                 // released when connection is complete (or failed)
     QElapsedTimer _createTime;           // the time this socket was created
-	quint32 _farSocketID;                // the remote's socketID
-    quint32 _initialPacketSequence;      // initial packet sequence to start the connection with
-    bool _isDatagram;                    // if true then we're sending and receiving datagrams, otherwise we're a streaming socket
-	bool _isServer;                      // if true then we are behaving like a server, otherwise client (or rendezvous). Only useful during handshake
+    quint32 _farSocketID{ 0 };           // the remote's socketID
+    quint32 _initialPacketSequence{ 0 }; // initial packet sequence to start the connection with
+    bool _isDatagram{ true };            // if true then we're sending and receiving datagrams, otherwise we're a streaming socket
+	bool _isServer{ true };              // if true then we are behaving like a server, otherwise client (or rendezvous). Only useful during handshake
     QUdpSocket _offAxisUdpSocket;        // a "connected" udp socket we only use for detecting MTU path (as otherwise the system won't tell us about ICMP packets)
     UdtMultiplexerPointer _multiplexer;  // the multiplexer that handles this socket
     QHostAddress _remoteAddr;            // the remote address
-    quint16 _remotePort;                 // the remote port number
-    quint32 _socketID;                   // our socketID identifying this stream to the multiplexer
+    quint16 _remotePort{ 0 };            // the remote port number
+    quint32 _socketID{ 0 };              // our socketID identifying this stream to the multiplexer
 
-	SocketState _sockState;        // socket state - used mostly during handshakes
+	SocketState _sockState{ Init };  // socket state - used mostly during handshakes
     QAtomicInteger<quint32> _mtu;  // the negotiated maximum packet size
-	uint _maxFlowWinSize;          // receiver: maximum unacknowledged packet count
-	ByteSlice _currPartialRead;    // stream connections: currently reading message (for partial reads). Owned by client caller (Read)
-	QDeadlineTimer _readDeadline;  // if set, then calls to Read() will return "timeout" after this time
-	bool _readDeadlinePassed;      // if set, then calls to Read() will return "timeout"
-	QDeadlineTimer _writeDeadline; // if set, then calls to Write() will return "timeout" after this time
-	bool _writeDeadlinePassed;     // if set, then calls to Write() will return "timeout"
+//	uint _maxFlowWinSize;          // receiver: maximum unacknowledged packet count
+//	ByteSlice _currPartialRead;    // stream connections: currently reading message (for partial reads). Owned by client caller (Read)
+//	QDeadlineTimer _readDeadline;  // if set, then calls to Read() will return "timeout" after this time
+//	bool _readDeadlinePassed;      // if set, then calls to Read() will return "timeout"
+//	QDeadlineTimer _writeDeadline; // if set, then calls to Write() will return "timeout" after this time
+//	bool _writeDeadlinePassed;     // if set, then calls to Write() will return "timeout"
 
-	QReadWriteLock _rttProt;  // lock must be held before referencing rtt/rttVar
-	uint _rtt;                // receiver: estimated roundtrip time. (in microseconds)
-	uint _rttVar;             // receiver: roundtrip variance. (in microseconds)
+//	QReadWriteLock _rttProt;  // lock must be held before referencing rtt/rttVar
+//	uint _rtt;                // receiver: estimated roundtrip time. (in microseconds)
+//	uint _rttVar;             // receiver: roundtrip variance. (in microseconds)
 
-	QReadWriteLock _receiveRateProt; // lock must be held before referencing deliveryRate/bandwidth
-	uint _deliveryRate;              // delivery rate reported from peer (packets/sec)
-	uint _bandwidth;                 // bandwidth reported from peer (packets/sec)
+//	QReadWriteLock _receiveRateProt; // lock must be held before referencing deliveryRate/bandwidth
+//	uint _deliveryRate;              // delivery rate reported from peer (packets/sec)
+//	uint _bandwidth;                 // bandwidth reported from peer (packets/sec)
 /*
 	// channels
 	messageIn     chan []byte          // inbound messages. Sender is goReceiveEvent->ingestData, Receiver is client caller (Read)
@@ -161,12 +170,12 @@ private:
 	shutdownEvent chan shutdownMessage // channel signals the connection to be shutdown
 	sockShutdown  chan struct{}        // closed when socket is shutdown
 	sockClosed    chan struct{}        // closed when socket is closed
-
+*/
 	// timers
-	connTimeout <-chan time.Time // connecting: fires when connection attempt times out
-	connRetry   <-chan time.Time // connecting: fires when connection attempt to be retried
-	lingerTimer <-chan time.Time // after disconnection, fires once our linger timer runs out
-
+	QTimer _connTimeout; // connecting: fires when connection attempt times out
+	QTimer _connRetry;   // connecting: fires when connection attempt to be retried
+//	QTimer _lingerTimer; // after disconnection, fires once our linger timer runs out
+/*
 	send *udtSocketSend // reference to sending side of this socket
 	recv *udtSocketRecv // reference to receiving side of this socket
 	cong *udtSocketCc   // reference to contestion control
