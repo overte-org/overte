@@ -17,6 +17,11 @@
 
 namespace udt4 {
 
+template <class P>
+PacketEvent<P>::PacketEvent(const P& p, const QHostAddress& address, quint32 port) : packet(p), peerAddress(address), peerPort(port) {
+    age.start();
+}
+
 void UdtMultiplexer::moveToReadThread(QObject* object) {
     object->moveToThread(&_readThread);
 }

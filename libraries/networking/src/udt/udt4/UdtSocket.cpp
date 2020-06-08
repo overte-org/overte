@@ -26,9 +26,9 @@ using namespace udt4;
 
 UdtSocket::UdtSocket(QObject* parent) : QIODevice(parent) {
     _connTimeout.setSingleShot(true);
-    _connTimeout.setTimer(Qt::PreciseTimer);
+    _connTimeout.setTimerType(Qt::PreciseTimer);
     _connRetry.setSingleShot(true);
-    _connRetry.setTimer(Qt::PreciseTimer);
+    _connRetry.setTimerType(Qt::PreciseTimer);
 }
 
 QHostAddress UdtSocket::localAddress() const {
@@ -50,27 +50,69 @@ quint16 UdtSocket::localPort() const {
 void UdtSocket::connectToHost(const QString& hostName, quint16 port, quint16 localPort, bool datagramMode) {
     abort();
     _isDatagram = datagramMode;
-    _isServer = false;
+    _socketRole = SocketRole::Client;
+    startNameConnect(hostName, port, localPort);
 }
 
 void UdtSocket::connectToHost(const QHostAddress& address, quint16 port, quint16 localPort, bool datagramMode) {
     abort();
     _isDatagram = datagramMode;
-    _isServer = false;
+    _socketRole = SocketRole::Client;
     startConnect(address, port, localPort);
 }
 
 void UdtSocket::rendezvousToHost(const QString& hostName, quint16 port, quint16 localPort, bool datagramMode) {
     abort();
     _isDatagram = datagramMode;
-    _isServer = false;
+    _socketRole = SocketRole::Rendezvous;
+    startNameConnect(hostName, port, localPort);
 }
 
 void UdtSocket::rendezvousToHost(const QHostAddress& address, quint16 port, quint16 localPort, bool datagramMode) {
     abort();
     _isDatagram = datagramMode;
-    _isServer = false;
-    startRendezvous(address, port, localPort);
+    _socketRole = SocketRole::Rendezvous;
+    startConnect(address, port, localPort);
+}
+
+void UdtSocket::startNameConnect(const QString& hostName, quint16 port, quint16 localPort) {
+    // set the connection event to "blocking"
+    _connectWait.tryLock();
+
+    // first check to see if the specified hostName is really an ip address
+    QHostAddress ipResolver;
+    if (ipResolver.setAddress(hostName)) {
+        startConnect(ipResolver, port, localPort);
+        return;
+    }
+
+    _sockState = SocketState::HostLookup;
+    _hostLookupID = QHostInfo::lookupHost(hostName, [this, port, localPort](QHostInfo info) { onNameResolved(info, port, localPort); });
+}
+
+void UdtSocket::onNameResolved(QHostInfo info, quint16 port, quint16 localPort) {
+    if (_sockState != SocketState::HostLookup || _hostLookupID != info.lookupId()) {
+        qCInfo(networking) << _multiplexer->serverAddress() << ":" << _multiplexer->serverPort() << "[" << _socketID
+                            << "] received unexpected host resolution response event";
+        return;
+    }
+
+    if (info.error() != QHostInfo::NoError) {
+        // error = info.errorString();
+        _sockState = SocketState::LookupFailure;
+        _connectWait.unlock();
+        return;
+    }
+
+    QList<QHostAddress> addresses = info.addresses();
+    if (addresses.isEmpty()) {
+        // error = "Address did not resolve to an IP address";
+        _sockState = SocketState::LookupFailure;
+        _connectWait.unlock();
+        return;
+    }
+
+    startConnect(addresses.first(), _remotePort, localPort);
 }
 
 // Contains code common between server/client and rendezvous code to execute before beginning the connection attempt
@@ -137,49 +179,36 @@ bool UdtSocket::preConnect(const QHostAddress& address, quint16 port, quint16 lo
 }
 
 void UdtSocket::startConnect(const QHostAddress& address, quint16 port, quint16 localPort) {
+    // set the connection event to "blocking"
+    _connectWait.tryLock();
 
     if (!preConnect(address, port, localPort)) {
         // an error occurred, do something?
+        _sockState = SocketState::Error;
+        _connectWait.unlock();
         return;
     }
 
-	connectWait := &sync.WaitGroup{};
-	_connectWait = connectWait;
-	connectWait.Add(1);
+    if (_socketRole == SocketRole::Rendezvous) {
+        _sockState = SocketState::Rendezvous;
 
-	_sockState = SocketState::Connecting;
+        _connTimeout.start(30 * Second);
+        _connRetry.start(250 * Millisecond);
+    } else {
+        _sockState = SocketState::Connecting;
 
-	_connTimeout.start(3 * Second);
-	_connRetry.start(250 * Millisecond);
-	go s.goManageConnection();
-
-	sendHandshake(0, HandshakePacket::RequestType::Request);
-
-	connectWait.Wait();
-	return _connectionError();
-}
-
-void UdtSocket::startRendezvous(const QHostAddress& address, quint16 port, quint16 localPort) {
-    if (!preConnect(address, port, localPort)) {
-        // an error occurred, do something?
-        return;
+        _connTimeout.start(3 * Second);
+        _connRetry.start(250 * Millisecond);
     }
 
-	connectWait := &sync.WaitGroup{};
-	_connectWait = connectWait;
-	_connectWait.Add(1);
-
-	_sockState = SocketState::Rendezvous;
-
-	_connTimeout.start(30 * Second);
-	_connRetry.start(250 * Millisecond);
 	go s.goManageConnection();
 
-	_multiplexer->startRendezvous(s);
-	sendHandshake(0, HandshakePacket::RequestType::Rendezvous);
-
-	connectWait.Wait();
-	return _connectionError();
+    if (_socketRole == SocketRole::Rendezvous) {
+        connect(_multiplexer.get(), &UdtMultiplexer::readyRendezvousHandshake, this, &UdtSocket::onRendezvousHandshake);
+        sendHandshake(0, HandshakePacket::RequestType::Rendezvous);
+    } else {
+        sendHandshake(0, HandshakePacket::RequestType::Request);
+    }
 }
 
 void UdtSocket::sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType) {
@@ -206,9 +235,9 @@ void UdtSocket::sendHandshake(quint32 synCookie, HandshakePacket::RequestType re
 // called by the multiplexer read loop when a packet is received for this socket.
 // Minimal processing is permitted but try not to stall the caller
 void UdtSocket::readPacket(const Packet& udtPacket, const QHostAddress& peerAddress, uint peerPort) {
-	now := time.Now()
+	now := time.Now();
 	if(_sockState == SocketState::Closed) {
-		return
+		return;
 	}
 	if(!from.IP.Equal(s.raddr.IP) || from.Port != s.raddr.Port) {
 		log.Printf("Socket connected to %s received a packet from %s? Discarded", s.raddr.String(), from.String());
@@ -237,7 +266,6 @@ void UdtSocket::readPacket(const Packet& udtPacket, const QHostAddress& peerAddr
 }
 /*
 public:
-    explicit UdtSocket(QObject* parent = nullptr);
     virtual ~UdtSocket();
 
 public: // from QUdpSocket
@@ -249,10 +277,6 @@ public: // from QUdpSocket
 
 public:  // from QAbstractSocket
     void abort();
-    virtual void connectToHost(const QString& hostName, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
-    virtual void connectToHost(const QHostAddress& address, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
-    virtual void rendezvousToHost(const QString& hostName, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
-    virtual void rendezvousToHost(const QHostAddress& address, quint16 port, QIODevice::OpenMode openMode = ReadWrite, bool datagramMode = true);
     virtual void disconnectFromHost();
     bool flush();
     bool isValid() const;
@@ -288,7 +312,6 @@ public: // internal implementation
     bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
     static UdtSocketPointer newSocket(UdtMultiplexerPointer multiplexer, quint32 socketID, bool isServer, bool isDatagram,
         const QHostAddress& peerAddress, uint peerPort);
-    void readPacket(const Packet& udtPacket, const QHostAddress& peerAddress, uint peerPort);
 */
 typedef struct ReceivePacketEvent {
     Packet packet;
@@ -347,7 +370,7 @@ func (s *udtSocket) fetchReadPacket(blocking bool) ([]byte, error) {
 }
 
 func (s *udtSocket) connectionError() error {
-	switch s.sockState {
+	switch _sockState {
 	case sockStateRefused:
 		return errors.New("Connection refused by remote host")
 	case sockStateCorrupted:

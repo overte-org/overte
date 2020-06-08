@@ -74,7 +74,7 @@ protected:
 
 private slots:
     void onEpochBump();
-    void readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort);
+    void readHandshake();
 
 private:
     quint32 generateSynCookie(const QHostAddress& peerAddress, quint16 peerPort);

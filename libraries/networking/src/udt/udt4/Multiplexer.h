@@ -15,12 +15,14 @@
 
 #include "Packet.h"
 #include <QtCore/QAtomicInt>
+#include <QtCore/QElapsedTimer>
 #include <QtCore/QEnableSharedFromThis>
 #include <QtNetwork/QHostAddress>
 #include <QtCore/QList>
 #include <QtCore/QMap>
 #include <QtCore/QMutex>
 #include <QtCore/QPair>
+#include <QtCore/QQueue>
 #include <QtCore/QSharedPointer>
 #include <QtCore/QThread>
 #include <QtNetwork/QUdpSocket>
@@ -32,6 +34,20 @@ class UdtSocket;
 typedef QSharedPointer<UdtMultiplexer> UdtMultiplexerPointer;
 typedef QWeakPointer<UdtMultiplexer> UdtMultiplexerWeakPointer;
 typedef QSharedPointer<UdtSocket> UdtSocketPointer;
+
+template<class P>
+class PacketEvent {
+public:
+    inline PacketEvent(const P& packet, const QHostAddress& address, quint32 port);
+public:
+    P packet;
+    QHostAddress peerAddress;
+    quint32 peerPort;
+    QElapsedTimer age;
+};
+
+template<class P>
+using PacketEventPointer = QSharedPointer<PacketEvent<P>>;
 
 // UdtMultiplexer
 //
@@ -64,25 +80,39 @@ public:
     inline void moveToReadThread(QObject* object);
     inline void moveToWriteThread(QObject* object);
 
+    PacketEventPointer<HandshakePacket> nextServerHandshake();
+    PacketEventPointer<HandshakePacket> nextRendezvousHandshake(const QHostAddress& peerAddress, quint32 peerPort);
+
 private:
     UdtMultiplexer();
     bool create(quint16 port, const QHostAddress& localAddress);
     static UdtMultiplexerPointer lookupInstance(quint16 port, const QHostAddress& localAddress);
+    void pruneServerHandshakes();
+    void pruneRendezvousHandshakes();
 
 private slots:
     void onPacketReadReady();
-    void onPacketWriteReady(Packet packet, QHostAddress destAddr, quint32 destPort);
+    void onPacketWriteReady();
 
 signals:
-    void rendezvousHandshake(HandshakePacket hsPacket, QHostAddress peerAddress, quint32 peerPort);
-    void serverHandshake(HandshakePacket hsPacket, QHostAddress peerAddress, quint32 peerPort);
+    void readyRendezvousHandshake();
+    void readyServerHandshake();
 signals: // private
-    void sendPacket(Packet packet, QHostAddress destAddr, quint32 destPort, QPrivateSignal);
+    void readySendPacket(QPrivateSignal);
 
 private:
     typedef QPair<quint16, QString> TLocalPortPair;
     typedef QMap<TLocalPortPair, UdtMultiplexerWeakPointer> TMultiplexerMap;
     typedef QMap<quint32, UdtSocket*> TSocketMap;
+    typedef QQueue<PacketEventPointer<Packet>> TPacketQueue;
+    typedef QQueue<PacketEventPointer<HandshakePacket>> THandshakeQueue;
+    typedef QList<PacketEventPointer<HandshakePacket>> THandshakeList;
+
+    enum
+    {
+        MAX_SERVER_HANDSHAKE_AGE = 500000000, // age in nsecs before discarding a server handshake = 500msec
+        MAX_RENDEZVOUS_HANDSHAKE_AGE = 500000000,  // age in nsecs before discarding a rendezvous handshake = 500msec
+    };
 
     QUdpSocket _udpSocket;  // the listening socket where we receive all our packets
     QAtomicInteger<quint32> _nextSid{ 0 };  // the SockID for the next socket created -- set to a random number on construction
@@ -93,6 +123,15 @@ private:
 
     mutable QMutex _connectedSocketsProtect;
     TSocketMap _connectedSockets;
+
+    mutable QMutex _serverHandshakesProtect;
+    THandshakeQueue _serverHandshakes;
+
+    mutable QMutex _rendezvousHandshakesProtect;
+    THandshakeList _rendezvousHandshakes;
+
+    mutable QMutex _sendPacketProtect;
+    TPacketQueue _sendPacket;
 
     static QMutex gl_multiplexerMapProtect;
     static TMultiplexerMap gl_multiplexerMap;

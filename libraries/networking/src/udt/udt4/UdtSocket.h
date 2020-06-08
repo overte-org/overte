@@ -19,9 +19,11 @@
 #include <QtCore/QDeadlineTimer>
 #include <QtCore/QElapsedTimer>
 #include <QtNetwork/QHostAddress>
+#include <QtNetwork/QHostInfo>
 #include <QtCore/QMutex>
 #include <QtCore/QReadWriteLock>
 #include <QtCore/QSharedPointer>
+#include <QtCore/QTimer>
 #include <QtNetwork/QUdpSocket>
 
 namespace udt4 {
@@ -46,6 +48,7 @@ public:
         Init,          // object is idle
         HostLookup,    // resolving the requested hostname to an IP address
         LookupFailure, // could not resolve the requested hostname
+        Error,         // an error occurred establishing the connection
         Rendezvous,    // attempting to create a rendezvous connection
         Connecting,    // attempting to connect to a server
         Connected,     // connection is established
@@ -124,27 +127,41 @@ public: // internal implementation
         const QHostAddress& peerAddress, uint peerPort);
     void readPacket(const Packet& udtPacket, const QHostAddress& peerAddress, uint peerPort);
 
+private slots:
+    void onRendezvousHandshake();
+
 private:
     bool preConnect(const QHostAddress& address, quint16 port, quint16 localPort);
+    void startNameConnect(const QString& hostName, quint16 port, quint16 localPort);
+    void onNameResolved(QHostInfo info, quint16 port, quint16 localPort);
     void startConnect(const QHostAddress& address, quint16 port, quint16 localPort);
-    void startRendezvous(const QHostAddress& address, quint16 port, quint16 localPort);
     void sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType);
 
 private:
+    enum class SocketRole
+    {
+        Unknown,
+        Client,
+        Server,
+        Rendezvous
+    };
+
+private:
 	// this data not changed after the socket is initialized and/or handshaked
-//    QMutex _connectWait;                 // released when connection is complete (or failed)
+    QMutex _connectWait;                 // released when connection is complete (or failed)
     QElapsedTimer _createTime;           // the time this socket was created
     quint32 _farSocketID{ 0 };           // the remote's socketID
+    int _hostLookupID{ 0 };              // when doing a host lookup, the ID of the active request
     quint32 _initialPacketSequence{ 0 }; // initial packet sequence to start the connection with
     bool _isDatagram{ true };            // if true then we're sending and receiving datagrams, otherwise we're a streaming socket
-	bool _isServer{ true };              // if true then we are behaving like a server, otherwise client (or rendezvous). Only useful during handshake
+    SocketRole _socketRole{ SocketRole::Unknown };  // what role do we play in the channel negotiation?
     QUdpSocket _offAxisUdpSocket;        // a "connected" udp socket we only use for detecting MTU path (as otherwise the system won't tell us about ICMP packets)
     UdtMultiplexerPointer _multiplexer;  // the multiplexer that handles this socket
     QHostAddress _remoteAddr;            // the remote address
     quint16 _remotePort{ 0 };            // the remote port number
     quint32 _socketID{ 0 };              // our socketID identifying this stream to the multiplexer
 
-	SocketState _sockState{ Init };  // socket state - used mostly during handshakes
+	SocketState _sockState{ SocketState::Init };  // socket state - used mostly during handshakes
     QAtomicInteger<quint32> _mtu;  // the negotiated maximum packet size
 //	uint _maxFlowWinSize;          // receiver: maximum unacknowledged packet count
 //	ByteSlice _currPartialRead;    // stream connections: currently reading message (for partial reads). Owned by client caller (Read)

@@ -109,8 +109,8 @@ UdtMultiplexer::UdtMultiplexer() {
     QRandomGenerator random;
     _nextSid = random.generate();
 
-    connect(&_udpSocket, SIGNAL(readyRead), this, SLOT(onPacketReadReady), Qt::DirectConnection);
-    connect(this, SIGNAL(sendPacket), this, SLOT(onPacketWriteReady));
+    connect(&_udpSocket, &QUdpSocket::readyRead, this, &UdtMultiplexer::onPacketReadReady, Qt::DirectConnection);
+    connect(this, &UdtMultiplexer::readySendPacket, this, &UdtMultiplexer::onPacketWriteReady);
 }
 
 UdtMultiplexer::~UdtMultiplexer() {
@@ -237,63 +237,89 @@ bool UdtMultiplexer::closeSocket(quint32 sockID) {
 }
 
 void UdtMultiplexer::onPacketReadReady() {  // executes from goRead thread
-    ByteSlice packetData;
-    qint64 packetSize = _udpSocket.pendingDatagramSize();
-    void* packetBuffer = packetData.create(packetSize);
-    QHostAddress peerAddress;
-    quint16 peerPort;
-    if (-1 == _udpSocket.readDatagram(reinterpret_cast<char*>(packetBuffer), packetSize, &peerAddress, &peerPort)) {
-        qCWarning(networking) << "Received an invalid UDP packet (error likely logged nearby)";
-        return;
-	}
+    while (_udpSocket.hasPendingDatagrams()) {
+        ByteSlice packetData;
+        qint64 packetSize = _udpSocket.pendingDatagramSize();
+        void* packetBuffer = packetData.create(packetSize);
+        QHostAddress peerAddress;
+        quint16 peerPort;
+        if (-1 == _udpSocket.readDatagram(reinterpret_cast<char*>(packetBuffer), packetSize, &peerAddress, &peerPort)) {
+            qCWarning(networking) << "Received an invalid UDP packet (error likely logged nearby)";
+            continue;
+        }
 
-    Packet udtPacket(packetData);
+        Packet udtPacket(packetData);
 
-	// attempt to route the packet
-	if(udtPacket._socketID == 0) {
-        if (udtPacket._type != PacketType::Handshake) {
-            qCWarning(networking) << "Received non-handshake packet with destination socket = 0";
+        // attempt to route the packet
+        if (udtPacket._socketID == 0) {
+            if (udtPacket._type != PacketType::Handshake) {
+                qCWarning(networking) << "Received non-handshake packet with destination socket = 0";
+                continue;
+            }
+            HandshakePacket hsPacket(udtPacket, peerAddress.protocol());
+
+            switch (hsPacket._reqType) {
+                case HandshakePacket::RequestType::Rendezvous:
+                    {
+                        QMutexLocker locker(&_rendezvousHandshakesProtect);
+                        _rendezvousHandshakes.append(PacketEventPointer<HandshakePacket>::create(hsPacket, peerAddress, peerPort));
+                    }
+                    emit readyRendezvousHandshake();
+                    break;
+                case HandshakePacket::RequestType::Request:
+                    {
+                        QMutexLocker locker(&_serverHandshakesProtect);
+                        _serverHandshakes.enqueue(PacketEventPointer<HandshakePacket>::create(hsPacket, peerAddress, peerPort));
+                    }
+                    emit readyServerHandshake();
+                    break;
+                default:
+                    qCInfo(networking) << "Received handshake packet directed at sockID=0 with unexpected request type="
+                                       << static_cast<uint>(hsPacket._reqType);
+                    break;
+            }
             return;
         }
-        HandshakePacket hsPacket(udtPacket, peerAddress.protocol());
 
-        switch (hsPacket._reqType) {
-        case HandshakePacket::RequestType::Rendezvous :
-            emit rendezvousHandshake(hsPacket, peerAddress, peerPort);
-            break;
-        case HandshakePacket::RequestType::Request:
-            emit serverHandshake(hsPacket, peerAddress, peerPort);
-            break;
-        default:
-            qCInfo(networking) << "Received handshake packet directed at sockID=0 with unexpected request type=" << static_cast<uint>(hsPacket._reqType);
-            break;
+        UdtSocket* destSocket = nullptr;
+        {
+            QMutexLocker locker(&_connectedSocketsProtect);
+            TSocketMap::const_iterator lookup = _connectedSockets.find(udtPacket._socketID);
+            if (lookup != _connectedSockets.end()) {
+                destSocket = lookup.value();
+            }
         }
-        return;
-	}
-
-    UdtSocket* destSocket = nullptr;
-    {
-        QMutexLocker locker(&_connectedSocketsProtect);
-        TSocketMap::const_iterator lookup = _connectedSockets.find(udtPacket._socketID);
-        if (lookup != _connectedSockets.end()) {
-            destSocket = lookup.value();
+        if (destSocket) {
+            destSocket->readPacket(udtPacket, peerAddress, peerPort);
         }
     }
-    if (destSocket) {
-        destSocket->readPacket(udtPacket, peerAddress, peerPort);
-	}
 }
 
 /*
 write runs in a goroutine and writes packets to conn using a buffer from the
 writeBufferPool, or a new buffer.
 */
-void UdtMultiplexer::onPacketWriteReady(Packet packet, QHostAddress destAddr, quint32 destPort) {
-    ByteSlice networkPacket = packet.toNetworkPacket();
-    if (0 > _udpSocket.writeDatagram(reinterpret_cast<const char*>(networkPacket.constData()), networkPacket.length(), destAddr,
-                                     destPort)) {
-        qCWarning(networking) << "Error sending packet to " << destAddr.toString() << ":" << destPort << "[" << packet._socketID << "] - (" <<
-            _udpSocket.error() << ")" << _udpSocket.errorString();
+void UdtMultiplexer::onPacketWriteReady() {
+    for (;;) {
+        PacketEventPointer<Packet> thisPacket;
+        {
+            QMutexLocker locker(&_sendPacketProtect);
+            if (_sendPacket.isEmpty()) {
+                return;
+            }
+            thisPacket = _sendPacket.dequeue();
+            if (thisPacket.isNull()) {
+                return;
+            }
+        }
+
+        ByteSlice networkPacket = thisPacket->packet.toNetworkPacket();
+        if (0 > _udpSocket.writeDatagram(reinterpret_cast<const char*>(networkPacket.constData()), networkPacket.length(),
+                                         thisPacket->peerAddress, thisPacket->peerPort)) {
+            qCWarning(networking) << "Error sending packet to " << thisPacket->peerAddress.toString() << ":"
+                                  << thisPacket->peerPort << "[" << thisPacket->packet._socketID << "] - ("
+                                  << _udpSocket.error() << ")" << _udpSocket.errorString();
+        }
     }
 }
 
@@ -308,5 +334,50 @@ void UdtMultiplexer::sendPacket(const QHostAddress& destAddr,
         qCCritical(networking) << "Attempt to send non-handshake packet with destination socket = 0";
         return;
 	}
-    emit sendPacket(packet, destAddr, destPort, QPrivateSignal());
+
+    QMutexLocker locker(&_sendPacketProtect);
+    _sendPacket.enqueue(PacketEventPointer<Packet>::create(packet, destAddr, destPort));
+    emit readySendPacket(QPrivateSignal());
+}
+
+PacketEventPointer<HandshakePacket> UdtMultiplexer::nextServerHandshake() {
+    QMutexLocker locker(&_serverHandshakesProtect);
+    pruneServerHandshakes();
+    if (_serverHandshakes.isEmpty()) {
+        return PacketEventPointer<HandshakePacket>();
+    }
+    return _serverHandshakes.dequeue();
+}
+
+void UdtMultiplexer::pruneServerHandshakes() { // ASSUMES WE ARE HOLDING _serverHandshakesProtect
+    while (!_serverHandshakes.isEmpty()) {
+        const PacketEventPointer<HandshakePacket>& firstPacket = _serverHandshakes.head();
+        if (firstPacket->age.nsecsElapsed() < MAX_SERVER_HANDSHAKE_AGE) {
+            return;
+        }
+        _serverHandshakes.dequeue();
+    }
+}
+
+PacketEventPointer<HandshakePacket> UdtMultiplexer::nextRendezvousHandshake(const QHostAddress& peerAddress, quint32 peerPort) {
+    QMutexLocker locker(&_rendezvousHandshakesProtect);
+    pruneRendezvousHandshakes();
+    for (THandshakeList::iterator trans = _rendezvousHandshakes.begin(); trans != _rendezvousHandshakes.end(); ++trans) {
+        PacketEventPointer<HandshakePacket> thisPacket = *trans;
+        if (thisPacket->peerAddress == peerAddress && thisPacket->peerPort == peerPort) {
+            _rendezvousHandshakes.erase(trans);
+            return thisPacket;
+        }
+    }
+    return PacketEventPointer<HandshakePacket>();
+}
+
+void UdtMultiplexer::pruneRendezvousHandshakes() {  // ASSUMES WE ARE HOLDING _rendezvousHandshakesProtect
+    while (!_rendezvousHandshakes.isEmpty()) {
+        const PacketEventPointer<HandshakePacket>& firstPacket = _rendezvousHandshakes.front();
+        if (firstPacket->age.nsecsElapsed() < MAX_SERVER_HANDSHAKE_AGE) {
+            return;
+        }
+        _serverHandshakes.pop_front();
+    }
 }
