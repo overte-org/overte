@@ -23,6 +23,7 @@
 #include <QtCore/QMutex>
 #include <QtCore/QReadWriteLock>
 #include <QtCore/QSharedPointer>
+#include <QtCore/QThread>
 #include <QtCore/QTimer>
 #include <QtNetwork/QUdpSocket>
 
@@ -40,7 +41,7 @@ defined by the UDT specification.  udtSocket implements the net.Conn interface
 so that it can be used anywhere that a stream-oriented network connection
 (like TCP) would be used.
 */
-class UdtSocket : public QIODevice {
+class UdtSocket : public QIODevice, public QEnableSharedFromThis<UdtSocket> {
     Q_OBJECT
 public:
     enum class SocketState
@@ -80,12 +81,13 @@ public: // from QUdpSocket
     inline qint64 writeDatagram(const ByteSlice& datagram);
 
 public:  // from QAbstractSocket
-    void abort();
+    void abort(bool setState = true);
     virtual void connectToHost(const QString& hostName, quint16 port, quint16 localPort = 0, bool datagramMode = true);
     virtual void connectToHost(const QHostAddress& address, quint16 port, quint16 localPort = 0, bool datagramMode = true);
     virtual void rendezvousToHost(const QString& hostName, quint16 port, quint16 localPort = 0, bool datagramMode = true);
     virtual void rendezvousToHost(const QHostAddress& address, quint16 port, quint16 localPort = 0, bool datagramMode = true);
     virtual void disconnectFromHost();
+    inline QString errorString() const;
     bool flush();
     bool isValid() const;
     QHostAddress localAddress() const;
@@ -100,10 +102,8 @@ public:  // from QAbstractSocket
     virtual bool waitForConnected(int msecs = 30000);
     virtual bool waitForDisconnected(int msecs = 30000);
 
-    virtual bool atEnd() const override;
     virtual qint64 bytesAvailable() const override;
     virtual qint64 bytesToWrite() const override;
-    virtual bool canReadLine() const override;
     virtual void close() override;
     virtual bool isSequential() const override;
     virtual bool waitForBytesWritten(int msecs = 30000) override;
@@ -123,14 +123,18 @@ protected: // from QAbstractSocket
 public: // internal implementation
     bool readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
     bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
-    static UdtSocketPointer newSocket(UdtMultiplexerPointer multiplexer, quint32 socketID, bool isServer, bool isDatagram,
-        const QHostAddress& peerAddress, uint peerPort);
+    static UdtSocketPointer newServerSocket(UdtMultiplexerPointer multiplexer, const QHostAddress& peerAddress, uint peerPort,
+        quint32 socketID, bool isDatagram);
     void readPacket(const Packet& udtPacket, const QHostAddress& peerAddress, uint peerPort);
+    inline void setLocalSocketID(quint32 socketID);
 
 private slots:
     void onRendezvousHandshake();
+    void onConnectionRetry();
+    void onConnectionTimeout();
 
 private:
+    void createOffAxisSocket();
     bool preConnect(const QHostAddress& address, quint16 port, quint16 localPort);
     void startNameConnect(const QString& hostName, quint16 port, quint16 localPort);
     void onNameResolved(QHostInfo info, quint16 port, quint16 localPort);
@@ -150,20 +154,22 @@ private:
 	// this data not changed after the socket is initialized and/or handshaked
     QMutex _connectWait;                 // released when connection is complete (or failed)
     QElapsedTimer _createTime;           // the time this socket was created
+    QString _errorString;                // a string describing the most recent error on this socket
     quint32 _farSocketID{ 0 };           // the remote's socketID
     int _hostLookupID{ 0 };              // when doing a host lookup, the ID of the active request
     quint32 _initialPacketSequence{ 0 }; // initial packet sequence to start the connection with
     bool _isDatagram{ true };            // if true then we're sending and receiving datagrams, otherwise we're a streaming socket
-    SocketRole _socketRole{ SocketRole::Unknown };  // what role do we play in the channel negotiation?
-    QUdpSocket _offAxisUdpSocket;        // a "connected" udp socket we only use for detecting MTU path (as otherwise the system won't tell us about ICMP packets)
+    QThread _monitorThread;              // thread to monitor the state of the overall connection
     UdtMultiplexerPointer _multiplexer;  // the multiplexer that handles this socket
+    QUdpSocket _offAxisUdpSocket;        // a "connected" udp socket we only use for detecting MTU path (as otherwise the system won't tell us about ICMP packets)
     QHostAddress _remoteAddr;            // the remote address
     quint16 _remotePort{ 0 };            // the remote port number
-    quint32 _socketID{ 0 };              // our socketID identifying this stream to the multiplexer
+    quint32 _socketID{ 0 };                         // our socketID identifying this stream to the multiplexer
+    SocketRole _socketRole{ SocketRole::Unknown };  // what role do we play in the channel negotiation?
 
 	SocketState _sockState{ SocketState::Init };  // socket state - used mostly during handshakes
     QAtomicInteger<quint32> _mtu;  // the negotiated maximum packet size
-//	uint _maxFlowWinSize;          // receiver: maximum unacknowledged packet count
+	uint _maxFlowWinSize{32};          // receiver: maximum unacknowledged packet count (minimum = 32)
 //	ByteSlice _currPartialRead;    // stream connections: currently reading message (for partial reads). Owned by client caller (Read)
 //	QDeadlineTimer _readDeadline;  // if set, then calls to Read() will return "timeout" after this time
 //	bool _readDeadlinePassed;      // if set, then calls to Read() will return "timeout"

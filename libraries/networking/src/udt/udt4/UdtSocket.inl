@@ -31,12 +31,24 @@ UdtSocket::SocketState UdtSocket::state() const {
     return _sockState;
 }
 
+QString UdtSocket::errorString() const {
+    return _errorString;
+}
+
 qint64 UdtSocket::writeDatagram(const QByteArray& datagram) {
     return writeDatagram(datagram.constData(), datagram.size());
 }
 
 qint64 UdtSocket::writeDatagram(const ByteSlice& datagram) {
     return writeDatagram(reinterpret_cast<const char*>(datagram.constData()), datagram.length());
+}
+
+bool UdtSocket::isValid() const {
+    return _sockState == SocketState::Connected;
+}
+
+void UdtSocket::setLocalSocketID(quint32 socketID) {
+    _socketID = socketID;
 }
 
 }  // namespace udt4

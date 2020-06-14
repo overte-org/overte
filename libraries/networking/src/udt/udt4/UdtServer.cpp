@@ -291,7 +291,8 @@ void UdtServer::readHandshake() {
         }
 
         // Seems good to us, create the socket and let them check it
-        socket = _multiplexer->newSocket(peerAddress, peerPort, true, hsPacket._sockType == SocketType::DGRAM);
+        socket = UdtSocket::newServerSocket(_multiplexer, peerAddress, peerPort,
+            hsPacket._farSocketID, hsPacket._sockType == SocketType::DGRAM);
         if (!socket->checkValidHandshake(hsPacket, peerAddress, peerPort)) {
             rejectHandshake(hsPacket, peerAddress, peerPort);
             return;

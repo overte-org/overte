@@ -59,7 +59,7 @@ using PacketEventPointer = QSharedPointer<PacketEvent<P>>;
 // This class is not generally user-visible and is generated+maintained internally
 // by the UDT connection classes
 
-class UdtMultiplexer : public QObject, public QEnableSharedFromThis<UdtMultiplexer> {
+class UdtMultiplexer : public QObject {
     Q_OBJECT
 public:
     virtual ~UdtMultiplexer();
@@ -74,7 +74,7 @@ public:
     inline quint16 serverPort() const;
     inline QString errorString() const;
 
-    UdtSocketPointer newSocket(const QHostAddress& peerAddress, quint16 peerPort, bool isServer, bool isDatagram);
+    void newSocket(UdtSocketPointer socket);
     bool closeSocket(quint32 sockID);
 
     inline void moveToReadThread(QObject* object);

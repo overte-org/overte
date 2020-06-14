@@ -31,6 +31,43 @@ UdtSocket::UdtSocket(QObject* parent) : QIODevice(parent) {
     _connRetry.setTimerType(Qt::PreciseTimer);
 }
 
+// force this socket into a known-good state.  If the socket is open, this closes it (and not kindly)
+void UdtSocket::abort(bool setState /* = true */ ) {
+/*    QMutex _connectWait;                  // released when connection is complete (or failed)
+    quint32 _initialPacketSequence{ 0 };  // initial packet sequence to start the connection with
+    QThread _monitorThread;    // thread to monitor the state of the overall connection
+*/
+    if (_hostLookupID != 0) {
+        QHostInfo::abortHostLookup(_hostLookupID);
+        _hostLookupID = 0;
+    }
+    if (_multiplexer != nullptr && _socketID != 0) {
+        _multiplexer->closeSocket(_socketID);
+    }
+    _multiplexer.reset();
+    _socketID = 0;
+    _farSocketID = 0;
+    if (_offAxisUdpSocket.isOpen()) {
+        _offAxisUdpSocket.close();
+    }
+    if (_connTimeout.isActive()) {
+        _connTimeout.stop();
+    }
+    if (_connRetry.isActive()) {
+        _connRetry.stop();
+    }
+/*    if (_connectWait.) {
+        _connectWait.unlock();
+    }*/
+    if (setState) {
+        _sockState = SocketState::Init;
+    }
+}
+
+bool UdtSocket::isSequential() const {
+    return true;
+}
+
 QHostAddress UdtSocket::localAddress() const {
     if (_multiplexer.isNull()) {
         return QHostAddress(QHostAddress::SpecialAddress::Null);
@@ -48,28 +85,28 @@ quint16 UdtSocket::localPort() const {
 }
 
 void UdtSocket::connectToHost(const QString& hostName, quint16 port, quint16 localPort, bool datagramMode) {
-    abort();
+    abort(true);
     _isDatagram = datagramMode;
     _socketRole = SocketRole::Client;
     startNameConnect(hostName, port, localPort);
 }
 
 void UdtSocket::connectToHost(const QHostAddress& address, quint16 port, quint16 localPort, bool datagramMode) {
-    abort();
+    abort(true);
     _isDatagram = datagramMode;
     _socketRole = SocketRole::Client;
     startConnect(address, port, localPort);
 }
 
 void UdtSocket::rendezvousToHost(const QString& hostName, quint16 port, quint16 localPort, bool datagramMode) {
-    abort();
+    abort(true);
     _isDatagram = datagramMode;
     _socketRole = SocketRole::Rendezvous;
     startNameConnect(hostName, port, localPort);
 }
 
 void UdtSocket::rendezvousToHost(const QHostAddress& address, quint16 port, quint16 localPort, bool datagramMode) {
-    abort();
+    abort(true);
     _isDatagram = datagramMode;
     _socketRole = SocketRole::Rendezvous;
     startConnect(address, port, localPort);
@@ -96,9 +133,10 @@ void UdtSocket::onNameResolved(QHostInfo info, quint16 port, quint16 localPort) 
                             << "] received unexpected host resolution response event";
         return;
     }
+    _hostLookupID = 0;
 
     if (info.error() != QHostInfo::NoError) {
-        // error = info.errorString();
+        _errorString = info.errorString();
         _sockState = SocketState::LookupFailure;
         _connectWait.unlock();
         return;
@@ -106,13 +144,45 @@ void UdtSocket::onNameResolved(QHostInfo info, quint16 port, quint16 localPort) 
 
     QList<QHostAddress> addresses = info.addresses();
     if (addresses.isEmpty()) {
-        // error = "Address did not resolve to an IP address";
+        _errorString = "Address did not resolve to an IP address";
         _sockState = SocketState::LookupFailure;
         _connectWait.unlock();
         return;
     }
 
     startConnect(addresses.first(), _remotePort, localPort);
+}
+
+// setup an "off-axis" UDP socket that (hopefully) will inform us of Path-MTU issues for the destination
+void UdtSocket::createOffAxisSocket() {
+    _offAxisUdpSocket.bind(_multiplexer->serverAddress());
+    _offAxisUdpSocket.connectToHost(_remoteAddr, _remotePort);
+
+    // try to avoid fragmentation (and hopefully be notified if we exceed path MTU)
+    QAbstractSocket::NetworkLayerProtocol protocol = _multiplexer->serverAddress().protocol();
+    if (protocol == QAbstractSocket::IPv4Protocol) {  // DF bit is only relevant for IPv4
+        auto sd = _offAxisUdpSocket.socketDescriptor();
+#if defined(Q_OS_LINUX)
+        int val = IP_PMTUDISC_DONT;
+        setsockopt(sd, IPPROTO_IP, IP_MTU_DISCOVER, &val, sizeof(val));
+#elif defined(Q_OS_WIN)
+        int val = 0;  // false
+        if (setsockopt(sd, IPPROTO_IP, IP_DONTFRAGMENT, reinterpret_cast<const char*>(&val), sizeof(val))) {
+            auto wsaErr = WSAGetLastError();
+            qCWarning(networking) << "Socket::bind Cannot setsockopt IP_DONTFRAGMENT" << wsaErr;
+        }
+#endif
+    }
+
+    // retrieve the (initial?) Path MTU from the off-axis socket
+    QVariant varMtu = _offAxisUdpSocket.socketOption(QAbstractSocket::PathMtuSocketOption);
+    int mtu = varMtu.toInt(NULL);
+    if (mtu == 0) {
+        qCWarning(networking) << "Attempt to retrieve Path MTU setting failed";
+        _mtu.store(1500);  // default value, shouldn't be seeing this though
+    } else {
+        _mtu.store(mtu);
+    }
 }
 
 // Contains code common between server/client and rendezvous code to execute before beginning the connection attempt
@@ -132,7 +202,7 @@ bool UdtSocket::preConnect(const QHostAddress& address, quint16 port, quint16 lo
             localAddress = QHostAddress(QHostAddress::Any);
             break;
     }
-    _multiplexer = UdtMultiplexer::getInstance(localPort, localAddress, NULL, NULL);
+    _multiplexer = UdtMultiplexer::getInstance(localPort, localAddress, NULL, &_errorString);
     if (_multiplexer.isNull()) {
         // TODO: retrieve the error message associated with this? or error messages anywhere?
         return false;
@@ -141,41 +211,49 @@ bool UdtSocket::preConnect(const QHostAddress& address, quint16 port, quint16 lo
     _remoteAddr = address;
     _remotePort = port;
 
+    // register ourselves with the multiplexer
+    _multiplexer->newSocket(sharedFromThis());
+    _createTime.start();
+
     // setup an "off-axis" UDP socket that (hopefully) will inform us of Path-MTU issues for the destination
-    _offAxisUdpSocket.bind(_multiplexer->serverAddress());
-    _offAxisUdpSocket.connectToHost(address, port);
+    createOffAxisSocket();
 
-    // try to avoid fragmentation (and hopefully be notified if we exceed path MTU)
-#if defined(Q_OS_LINUX)
-    auto sd = _udpSocket.socketDescriptor();
-    if (localAddress.protocol() == QAbstractSocket::IPv4Protocol) {  // DF bit is only relevant for IPv4
-        int val = IP_PMTUDISC_DONT;
-        setsockopt(sd, IPPROTO_IP, IP_MTU_DISCOVER, &val, sizeof(val));
-    }
-    //int on = 1;
-    //setsockopt(sd, SOL_IP, IP_RECVERR, &on, sizeof(on)); // Let us know of any network errors
-#elif defined(Q_OS_WIN)
-    if (localAddress.protocol() == QAbstractSocket::IPv4Protocol) {  // DF bit is only relevant for IPv4
-        auto sd = _offAxisUdpSocket.socketDescriptor();
-        int val = 0;  // false
-        if (setsockopt(sd, IPPROTO_IP, IP_DONTFRAGMENT, reinterpret_cast<const char*>(&val), sizeof(val))) {
-            auto wsaErr = WSAGetLastError();
-            qCWarning(networking) << "Socket::bind Cannot setsockopt IP_DONTFRAGMENT" << wsaErr;
-        }
-    }
-#endif
-
-    // retrieve the (initial?) Path MTU from the off-axis socket
-    QVariant varMtu = _offAxisUdpSocket.socketOption(QAbstractSocket::PathMtuSocketOption);
-    int mtu = varMtu.toInt(NULL);
-    if (mtu == 0) {
-        qCWarning(networking) << "Attempt to retrieve Path MTU setting failed";
-        _mtu.store(1500);  // default value, shouldn't be seeing this though
-    } else {
-        _mtu.store(mtu);
-    }
+    // spin up the monitoring connection and attach ourselves to it
+    _monitorThread.start();
+    moveToThread(&_monitorThread);
 
     return true;
+}
+
+// called when an incoming handshake was received by a UdtServer
+UdtSocketPointer UdtSocket::newServerSocket(UdtMultiplexerPointer multiplexer, const QHostAddress& peerAddress,
+                                            uint peerPort, quint32 socketID, bool isDatagram) {
+    UdtSocketPointer socket = UdtSocketPointer::create();
+    socket->_remoteAddr = peerAddress;
+    socket->_remotePort = peerPort;
+    socket->_farSocketID = socketID;
+    socket->_socketRole = SocketRole::Server;
+    socket->_isDatagram = isDatagram;
+
+    // register ourselves with the multiplexer
+    socket->_multiplexer->newSocket(socket);
+    socket->_createTime.start();
+
+    // setup an "off-axis" UDP socket that (hopefully) will inform us of Path-MTU issues for the destination
+    socket->createOffAxisSocket();
+
+    // spin up the monitoring connection and attach ourselves to it
+    socket->_monitorThread.start();
+    socket->moveToThread(&socket->_monitorThread);
+
+    /*
+    QMutex _connectWait;                  // released when connection is complete (or failed)
+    quint32 _initialPacketSequence{ 0 };  // initial packet sequence to start the connection with
+    QThread _monitorThread;    // thread to monitor the state of the overall connection
+
+    SocketState _sockState{ SocketState::Init };  // socket state - used mostly during handshakes
+    uint _maxFlowWinSize{ 32 };                   // receiver: maximum unacknowledged packet count (minimum = 32)
+    */
 }
 
 void UdtSocket::startConnect(const QHostAddress& address, quint16 port, quint16 localPort) {
@@ -183,8 +261,9 @@ void UdtSocket::startConnect(const QHostAddress& address, quint16 port, quint16 
     _connectWait.tryLock();
 
     if (!preConnect(address, port, localPort)) {
-        // an error occurred, do something?
+        // an error occurred
         _sockState = SocketState::Error;
+        abort(false);
         _connectWait.unlock();
         return;
     }
@@ -201,14 +280,23 @@ void UdtSocket::startConnect(const QHostAddress& address, quint16 port, quint16 
         _connRetry.start(250 * Millisecond);
     }
 
-	go s.goManageConnection();
-
     if (_socketRole == SocketRole::Rendezvous) {
         connect(_multiplexer.get(), &UdtMultiplexer::readyRendezvousHandshake, this, &UdtSocket::onRendezvousHandshake);
         sendHandshake(0, HandshakePacket::RequestType::Rendezvous);
     } else {
         sendHandshake(0, HandshakePacket::RequestType::Request);
     }
+}
+
+bool UdtSocket::waitForConnected(int msecs /* = 30000 */) {
+    if (_connectWait.tryLock(msecs)) {
+        _connectWait.unlock();
+        return isValid();
+    }
+
+    // connection timed out, shut it down
+    abort(false);
+    return false;
 }
 
 void UdtSocket::sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType) {
@@ -230,6 +318,132 @@ void UdtSocket::sendHandshake(quint32 synCookie, HandshakePacket::RequestType re
     qCDebug(networking) << _multiplexer->serverAddress() << ":" << _multiplexer->serverPort() << "[" << _socketID
         << "] sending handshake(" << static_cast<uint>(requestType) << ") to " << _remoteAddr << ":" << _remotePort << "[" << _farSocketID << "]";
     _multiplexer->sendPacket(_remoteAddr, _remotePort, _socketID, ts, udtPacket);
+}
+
+// readHandshake is received when a handshake packet is received without a destination, either as part
+// of a listening response or as a rendezvous connection
+bool UdtSocket::readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort) {
+	if(peerAddress != _remoteAddr || peerPort != _remotePort) {
+        log.Printf("huh? initted with %s but handshake with %s", _remoteAddr.String(), peerAddress.String());
+		return false;
+	}
+
+	switch(_sockState) {
+	case SocketState::Init: // server accepting a connection from a client
+		_initialPacketSequence = hsPacket._initPktSeq;
+		//_udtVer = int(hsPacket.UdtVer);
+		_farSocketID = hsPacket._socketID;
+		_isDatagram = hsPacket._sockType == SocketType::DGRAM;
+
+		if(_mtu.load() > hsPacket._maxPktSize) {
+			_mtu.store(hsPacket._maxPktSize);
+		}
+		launchProcessors();
+		_recv.configureHandshake(hsPacket);
+		_send.configureHandshake(hsPacket, true);
+		_sockState = SocketState::Connected;
+		_connTimeout = nullptr;
+		_connRetry = nullptr;
+
+		sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response);
+		return true;
+
+	case SocketState::Connecting:  // client attempting to connect to server
+        switch(hsPacket._reqType) {
+		case HandshakePacket::RequestType::Refused:
+			_sockState = SocketState::Refused;
+			return true;
+		
+		case HandshakePacket::RequestType::Request:
+			if(!checkValidHandshake(hsPacket, peerAddress, peerPort) || hsPacket._initPktSeq != _initialPacketSequence || _isDatagram != (hsPacket._sockType == SocketType::DGRAM)) {
+				// ignore, not a valid handshake request
+				return true;
+			}
+			// handshake isn't done yet, send it back with the cookie we received
+			sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response);
+			return true;
+
+        case HandshakePacket::RequestType::Response:
+		    if(!checkValidHandshake(hsPacket, peerAddress, peerPort) || hsPacket._initPktSeq != _initialPacketSequence || _isDatagram != (hsPacket._sockType == SocketType::DGRAM)) {
+			    // ignore, not a valid handshake request
+			    return true;
+		    }
+		    _farSocketID = hsPacket._farSocketID;
+
+		    if (_mtu.load() > hsPacket._maxPktSize) {
+			    _mtu.store(hsPacket._maxPktSize);
+		    }
+		    launchProcessors();
+		    _recv.configureHandshake(hsPacket);
+		    _send.configureHandshake(hsPacket, true);
+		    _connRetry = nullptr;
+		    _sockState = SocketState::Connected;
+		    _connTimeout = nullptr;
+		    if(_connectWait != nullptr) {
+			    _connectWait.Done();
+			    _connectWait = nullptr;
+		    }
+        }
+		return true;
+
+	case SocketState::Rendezvous:  // client attempting to rendezvous with another client
+		if(hsPacket._reqType == HandshakePacket::RequestType::Refused) {
+			_sockState = SocketState::Refused;
+			return true;
+		}
+		if(hsPacket._reqType != HandshakePacket::RequestType::Rendezvous || _farSocketID == 0) {
+			return true; // not a request packet, ignore
+		}
+		if(!checkValidHandshake(hsPacket, peerAddress, peerPort) || _isDatagram != (hsPacket._sockType == SocketType::DGRAM)) {
+			// not a compatible handshake, ignore
+			return true;
+		}
+		/* not quite sure how to negotiate this, assuming split-brain for now
+		if(p.InitPktSeq != s.initPktSeq) {
+			s.sockState = sockStateCorrupted;
+			return true;
+		}
+		*/
+		_farSocketID = hsPacket._farSocketID;
+		_multiplexer.endRendezvous(s);
+
+		if (_mtu.load() > hsPacket._maxPktSize) {
+			_mtu.store(hsPacket._maxPktSize);
+		}
+		launchProcessors();
+		_recv.configureHandshake(p);
+		_send.configureHandshake(p, false);
+		_connRetry = nullptr;
+		_sockState = SocketState::Connected;
+		_connTimeout = nullptr;
+		if(_connectWait != nullptr) {
+			_connectWait.Done();
+			_connectWait = nullptr;
+		}
+
+		// send the final rendezvous packet
+		sendHandshake(p.SynCookie, HandshakePacket::RequestType::Response);
+		return true;
+
+	case SocketState::Connected:  // server repeating a handshake to a client
+        switch(_socketRole) {
+        case SocketRole::Server:
+            if (hsPacket._reqType == HandshakePacket::RequestType::Request) {
+                // client didn't receive our response handshake, resend it
+                sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response);
+            }
+            break;
+        case SocketRole::Rendezvous:
+            if (hsPacket._reqType == HandshakePacket::RequestType::Response) {
+                // this is a rendezvous connection (re)send our response
+                sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response2);
+            }
+            break;
+		}
+		return true;
+	}
+
+	return false;
 }
 
 // called by the multiplexer read loop when a packet is received for this socket.
@@ -276,7 +490,6 @@ public: // from QUdpSocket
     qint64 writeDatagram(const char* data, qint64 len);
 
 public:  // from QAbstractSocket
-    void abort();
     virtual void disconnectFromHost();
     bool flush();
     bool isValid() const;
@@ -284,7 +497,6 @@ public:  // from QAbstractSocket
     virtual void setReadBufferSize(qint64 size);
     virtual void setSocketOption(QAbstractSocket::SocketOption option, const QVariant& value);
     virtual QVariant socketOption(QAbstractSocket::SocketOption option);
-    virtual bool waitForConnected(int msecs = 30000);
     virtual bool waitForDisconnected(int msecs = 30000);
 
     virtual bool atEnd() const override;
@@ -308,10 +520,7 @@ protected: // from QAbstractSocket
     virtual qint64 writeData(const char* data, qint64 size) override;
 
 public: // internal implementation
-    bool readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
     bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
-    static UdtSocketPointer newSocket(UdtMultiplexerPointer multiplexer, quint32 socketID, bool isServer, bool isDatagram,
-        const QHostAddress& peerAddress, uint peerPort);
 */
 typedef struct ReceivePacketEvent {
     Packet packet;
@@ -508,87 +717,6 @@ func (s *udtSocket) Close() error {
 	return nil
 }
 
-func (s *udtSocket) isOpen() bool {
-	switch s.sockState {
-	case sockStateClosed, sockStateRefused, sockStateCorrupted, sockStateTimeout:
-		return false
-	default:
-		return true
-	}
-}
-
-// SetDeadline sets the read and write deadlines associated
-// with the connection. It is equivalent to calling both
-// SetReadDeadline and SetWriteDeadline.
-//
-// A deadline is an absolute time after which I/O operations
-// fail with a timeout (see type Error) instead of
-// blocking. The deadline applies to all future and pending
-// I/O, not just the immediately following call to Read or
-// Write. After a deadline has been exceeded, the connection
-// can be refreshed by setting a deadline in the future.
-//
-// An idle timeout can be implemented by repeatedly extending
-// the deadline after successful Read or Write calls.
-//
-// A zero value for t means I/O operations will not time out.
-//
-// Note that if a TCP connection has keep-alive turned on,
-// which is the default unless overridden by Dialer.KeepAlive
-// or ListenConfig.KeepAlive, then a keep-alive failure may
-// also return a timeout error. On Unix systems a keep-alive
-// failure on I/O can be detected using
-// errors.Is(err, syscall.ETIMEDOUT).
-// (required for net.Conn implementation)
-func (s *udtSocket) SetDeadline(t time.Time) error {
-	s.setDeadline(t, &s.readDeadline, &s.readDeadlinePassed)
-	s.setDeadline(t, &s.writeDeadline, &s.writeDeadlinePassed)
-	return nil
-}
-
-func (s *udtSocket) setDeadline(dl time.Time, timer **time.Timer, timerPassed *bool) {
-	if *timer == nil {
-		if !dl.IsZero() {
-			*timer = time.NewTimer(dl.Sub(time.Now()))
-		}
-	} else {
-		now := time.Now()
-		if !dl.IsZero() && dl.Before(now) {
-			*timerPassed = true
-		}
-		oldTime := *timer
-		if dl.IsZero() {
-			*timer = nil
-		}
-		oldTime.Stop()
-		_, _ = <-oldTime.C
-		if !dl.IsZero() && dl.After(now) {
-			*timerPassed = false
-			oldTime.Reset(dl.Sub(time.Now()))
-		}
-	}
-}
-
-// SetReadDeadline sets the deadline for future Read calls
-// and any currently-blocked Read call.
-// A zero value for t means Read will not time out.
-// (required for net.Conn implementation)
-func (s *udtSocket) SetReadDeadline(t time.Time) error {
-	s.setDeadline(t, &s.readDeadline, &s.readDeadlinePassed)
-	return nil
-}
-
-// SetWriteDeadline sets the deadline for future Write calls
-// and any currently-blocked Write call.
-// Even if write times out, it may return n > 0, indicating that
-// some of the data was successfully written.
-// A zero value for t means Write will not time out.
-// (required for net.Conn implementation)
-func (s *udtSocket) SetWriteDeadline(t time.Time) error {
-	s.setDeadline(t, &s.writeDeadline, &s.writeDeadlinePassed)
-	return nil
-}
-
 /*******************************************************************************
  Private functions
 *******************************************************************************/
@@ -688,127 +816,6 @@ func (s *udtSocket) checkValidHandshake(m *multiplexer, p *packet.HandshakePacke
 		return false
 	}
 	return true
-}
-
-// readHandshake is received when a handshake packet is received without a destination, either as part
-// of a listening response or as a rendezvous connection
-func (s *udtSocket) readHandshake(m *multiplexer, p *packet.HandshakePacket, from *net.UDPAddr) bool {
-	if !from.IP.Equal(s.raddr.IP) || from.Port != s.raddr.Port {
-		log.Printf("huh? initted with %s but handshake with %s", s.raddr.String(), from.String())
-		return false
-	}
-
-	switch s.sockState {
-	case sockStateInit: // server accepting a connection from a client
-		s.initPktSeq = p.InitPktSeq
-		s.udtVer = int(p.UdtVer)
-		s.farSockID = p.SockID
-		s.isDatagram = p.SockType == packet.TypeDGRAM
-
-		if s.mtu.get() > p.MaxPktSize {
-			s.mtu.set(p.MaxPktSize)
-		}
-		s.launchProcessors()
-		s.recv.configureHandshake(p)
-		s.send.configureHandshake(p, true)
-		s.sockState = sockStateConnected
-		s.connTimeout = nil
-		s.connRetry = nil
-		go s.goManageConnection()
-
-		s.sendHandshake(p.SynCookie, packet.HsResponse)
-		return true
-
-	case sockStateConnecting: // client attempting to connect to server
-		if p.ReqType == packet.HsRefused {
-			s.sockState = sockStateRefused
-			return true
-		}
-		if p.ReqType == packet.HsRequest {
-			if !s.checkValidHandshake(m, p, from) || p.InitPktSeq != s.initPktSeq || !from.IP.Equal(s.raddr.IP) || from.Port != s.raddr.Port || s.isDatagram != (p.SockType == packet.TypeDGRAM) {
-				// ignore, not a valid handshake request
-				return true
-			}
-			// handshake isn't done yet, send it back with the cookie we received
-			s.sendHandshake(p.SynCookie, packet.HsResponse)
-			return true
-		}
-		if p.ReqType != packet.HsResponse {
-			// unexpected packet type, ignore
-			return true
-		}
-		if !s.checkValidHandshake(m, p, from) || p.InitPktSeq != s.initPktSeq || !from.IP.Equal(s.raddr.IP) || from.Port != s.raddr.Port || s.isDatagram != (p.SockType == packet.TypeDGRAM) {
-			// ignore, not a valid handshake request
-			return true
-		}
-		s.farSockID = p.SockID
-
-		if s.mtu.get() > p.MaxPktSize {
-			s.mtu.set(p.MaxPktSize)
-		}
-		s.launchProcessors()
-		s.recv.configureHandshake(p)
-		s.send.configureHandshake(p, true)
-		s.connRetry = nil
-		s.sockState = sockStateConnected
-		s.connTimeout = nil
-		if s.connectWait != nil {
-			s.connectWait.Done()
-			s.connectWait = nil
-		}
-		return true
-
-	case sockStateRendezvous: // client attempting to rendezvous with another client
-		if p.ReqType == packet.HsRefused {
-			s.sockState = sockStateRefused
-			return true
-		}
-		if p.ReqType != packet.HsRendezvous || s.farSockID == 0 {
-			return true // not a request packet, ignore
-		}
-		if !s.checkValidHandshake(m, p, from) || !from.IP.Equal(s.raddr.IP) || from.Port != s.raddr.Port || s.isDatagram != (p.SockType == packet.TypeDGRAM) {
-			// not a compatible handshake, ignore
-			return true
-		}
-		/* not quite sure how to negotiate this, assuming split-brain for now
-		if p.InitPktSeq != s.initPktSeq {
-			s.sockState = sockStateCorrupted
-			return true
-		}
-		*/
-		s.farSockID = p.SockID
-		s.m.endRendezvous(s)
-
-		if s.mtu.get() > p.MaxPktSize {
-			s.mtu.set(p.MaxPktSize)
-		}
-		s.launchProcessors()
-		s.recv.configureHandshake(p)
-		s.send.configureHandshake(p, false)
-		s.connRetry = nil
-		s.sockState = sockStateConnected
-		s.connTimeout = nil
-		if s.connectWait != nil {
-			s.connectWait.Done()
-			s.connectWait = nil
-		}
-
-		// send the final rendezvous packet
-		s.sendHandshake(p.SynCookie, packet.HsResponse)
-		return true
-
-	case sockStateConnected: // server repeating a handshake to a client
-		if s.isServer && p.ReqType == packet.HsRequest {
-			// client didn't receive our response handshake, resend it
-			s.sendHandshake(p.SynCookie, packet.HsResponse)
-		} else if !s.isServer && p.ReqType == packet.HsResponse {
-			// this is a rendezvous connection (re)send our response
-			s.sendHandshake(p.SynCookie, packet.HsResponse2)
-		}
-		return true
-	}
-
-	return false
 }
 
 func (s *udtSocket) shutdown(sockState sockState, permitLinger bool, err error) {

@@ -216,15 +216,12 @@ func discoverMTU(ourIP net.IP) (uint, error) {
 	return uint(mtu), nil
 }
 */
-UdtSocketPointer UdtMultiplexer::newSocket(const QHostAddress& peerAddress, quint16 peerPort, bool isServer, bool isDatagram) {
-    quint32 sid = _nextSid.fetchAndSubRelaxed(1);
-
-	UdtSocketPointer socket = UdtSocket::newSocket(sharedFromThis(), sid, isServer, isDatagram, peerAddress, peerPort);
+void UdtMultiplexer::newSocket(UdtSocketPointer socket) {
+    quint32 socketID = _nextSid.fetchAndSubRelaxed(1);
+    socket->setLocalSocketID(socketID);
 
     QMutexLocker locker(&_connectedSocketsProtect);
-    _connectedSockets.insert(sid, socket.get());
-
-	return socket;
+    _connectedSockets.insert(socketID, socket.get());
 }
 
 bool UdtMultiplexer::closeSocket(quint32 sockID) {
