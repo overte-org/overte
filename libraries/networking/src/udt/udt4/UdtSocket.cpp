@@ -14,6 +14,7 @@
 #include "Multiplexer.h"
 #include "../../NetworkLogging.h"
 #include <QtCore/QLoggingCategory>
+#include <QtCore/QRandomGenerator>
 
 #ifdef WIN32
 #include <winsock2.h>
@@ -27,40 +28,98 @@ using namespace udt4;
 UdtSocket::UdtSocket(QObject* parent) : QIODevice(parent) {
     _connTimeout.setSingleShot(true);
     _connTimeout.setTimerType(Qt::PreciseTimer);
+    connect(&_connTimeout, &QTimer::timeout, this, &UdtSocket::onConnectionTimeout);
     _connRetry.setSingleShot(true);
     _connRetry.setTimerType(Qt::PreciseTimer);
+    connect(&_connRetry, &QTimer::timeout, this, &UdtSocket::onConnectionRetry);
 }
 
-// force this socket into a known-good state.  If the socket is open, this closes it (and not kindly)
-void UdtSocket::abort(bool setState /* = true */ ) {
-/*    QMutex _connectWait;                  // released when connection is complete (or failed)
-    quint32 _initialPacketSequence{ 0 };  // initial packet sequence to start the connection with
-    QThread _monitorThread;    // thread to monitor the state of the overall connection
-*/
-    if (_hostLookupID != 0) {
+UdtSocket::~UdtSocket() {
+    setState(SocketState::Init);
+}
+
+void UdtSocket::setState(SocketState newState) {
+    QMutexLocker locker(&_sockStateProtect);
+    if (_sockState == newState) {
+        return;
+    }
+
+    // stop listening for rendezvous packets
+    if (_sockState == SocketState::Rendezvous && !_multiplexer.isNull()) {
+        disconnect(_multiplexer.get(), &UdtMultiplexer::readyRendezvousHandshake, this, &UdtSocket::onRendezvousHandshake);
+    }
+
+    bool isFullClosed = true;
+    bool isLookup = false;
+    bool isConnecting = false;
+    bool isError = false;
+
+    switch (newState) {
+    case SocketState::HostLookup:
+        isLookup = true;
+        break;
+    case SocketState::Rendezvous:
+    case SocketState::Connecting:
+        isFullClosed = false;
+        isConnecting = true;
+        break;
+    case SocketState::Connected:
+    case SocketState::CloseLinger:
+        isFullClosed = false;
+        break;
+    case SocketState::LookupFailure:
+    case SocketState::Error:
+    case SocketState::Refused:
+    case SocketState::Corrupted:
+    case SocketState::Timeout:
+        isError = true;
+        break;
+    case SocketState::Init:
+    case SocketState::Closed:
+        break;
+    }
+
+    if (!isError) {
+        _errorString.clear();
+    }
+    if (!isLookup && _hostLookupID != 0) {
         QHostInfo::abortHostLookup(_hostLookupID);
         _hostLookupID = 0;
     }
-    if (_multiplexer != nullptr && _socketID != 0) {
-        _multiplexer->closeSocket(_socketID);
+    if (!isConnecting) {
+        if (_connTimeout.isActive()) {
+            _connTimeout.stop();
+        }
+        if (_connRetry.isActive()) {
+            _connRetry.stop();
+        }
     }
-    _multiplexer.reset();
-    _socketID = 0;
-    _farSocketID = 0;
-    if (_offAxisUdpSocket.isOpen()) {
-        _offAxisUdpSocket.close();
+    if (isFullClosed) {
+        if (_monitorThread.isRunning()) {
+            _monitorThread.quit();
+            moveToThread(QThread::currentThread());
+        }
+        if (_multiplexer != nullptr && _socketID != 0) {
+            _multiplexer->closeSocket(_socketID);
+        }
+        _multiplexer.reset();
+        _socketID = 0;
+        _farSocketID = 0;
+        if (_offAxisUdpSocket.isOpen()) {
+            _offAxisUdpSocket.close();
+        }
     }
-    if (_connTimeout.isActive()) {
-        _connTimeout.stop();
-    }
-    if (_connRetry.isActive()) {
-        _connRetry.stop();
-    }
-/*    if (_connectWait.) {
-        _connectWait.unlock();
-    }*/
-    if (setState) {
-        _sockState = SocketState::Init;
+
+    SocketState oldState = _sockState;
+    _sockState = newState;
+    _sockStateCondition.wakeAll();
+    locker.unlock();
+
+    emit stateChanged(newState);
+    if (oldState == SocketState::Connected) {
+        emit disconnected();
+    } else if (newState == SocketState::Connected) {
+        emit connected();
     }
 }
 
@@ -85,36 +144,34 @@ quint16 UdtSocket::localPort() const {
 }
 
 void UdtSocket::connectToHost(const QString& hostName, quint16 port, quint16 localPort, bool datagramMode) {
-    abort(true);
+    setState(SocketState::Init);
     _isDatagram = datagramMode;
     _socketRole = SocketRole::Client;
     startNameConnect(hostName, port, localPort);
 }
 
 void UdtSocket::connectToHost(const QHostAddress& address, quint16 port, quint16 localPort, bool datagramMode) {
-    abort(true);
+    setState(SocketState::Init);
     _isDatagram = datagramMode;
     _socketRole = SocketRole::Client;
     startConnect(address, port, localPort);
 }
 
 void UdtSocket::rendezvousToHost(const QString& hostName, quint16 port, quint16 localPort, bool datagramMode) {
-    abort(true);
+    setState(SocketState::Init);
     _isDatagram = datagramMode;
     _socketRole = SocketRole::Rendezvous;
     startNameConnect(hostName, port, localPort);
 }
 
 void UdtSocket::rendezvousToHost(const QHostAddress& address, quint16 port, quint16 localPort, bool datagramMode) {
-    abort(true);
+    setState(SocketState::Init);
     _isDatagram = datagramMode;
     _socketRole = SocketRole::Rendezvous;
     startConnect(address, port, localPort);
 }
 
 void UdtSocket::startNameConnect(const QString& hostName, quint16 port, quint16 localPort) {
-    // set the connection event to "blocking"
-    _connectWait.tryLock();
 
     // first check to see if the specified hostName is really an ip address
     QHostAddress ipResolver;
@@ -122,8 +179,9 @@ void UdtSocket::startNameConnect(const QString& hostName, quint16 port, quint16 
         startConnect(ipResolver, port, localPort);
         return;
     }
+    _remotePort = port;
 
-    _sockState = SocketState::HostLookup;
+    setState(SocketState::HostLookup);
     _hostLookupID = QHostInfo::lookupHost(hostName, [this, port, localPort](QHostInfo info) { onNameResolved(info, port, localPort); });
 }
 
@@ -137,20 +195,19 @@ void UdtSocket::onNameResolved(QHostInfo info, quint16 port, quint16 localPort) 
 
     if (info.error() != QHostInfo::NoError) {
         _errorString = info.errorString();
-        _sockState = SocketState::LookupFailure;
-        _connectWait.unlock();
+        setState(SocketState::LookupFailure);
         return;
     }
 
     QList<QHostAddress> addresses = info.addresses();
     if (addresses.isEmpty()) {
         _errorString = "Address did not resolve to an IP address";
-        _sockState = SocketState::LookupFailure;
-        _connectWait.unlock();
+        setState(SocketState::LookupFailure);
         return;
     }
 
     startConnect(addresses.first(), _remotePort, localPort);
+    emit hostFound();
 }
 
 // setup an "off-axis" UDP socket that (hopefully) will inform us of Path-MTU issues for the destination
@@ -211,6 +268,9 @@ bool UdtSocket::preConnect(const QHostAddress& address, quint16 port, quint16 lo
     _remoteAddr = address;
     _remotePort = port;
 
+    QRandomGenerator random;
+    _initialPacketSequence = random.generate();
+
     // register ourselves with the multiplexer
     _multiplexer->newSocket(sharedFromThis());
     _createTime.start();
@@ -226,14 +286,13 @@ bool UdtSocket::preConnect(const QHostAddress& address, quint16 port, quint16 lo
 }
 
 // called when an incoming handshake was received by a UdtServer
-UdtSocketPointer UdtSocket::newServerSocket(UdtMultiplexerPointer multiplexer, const QHostAddress& peerAddress,
-                                            uint peerPort, quint32 socketID, bool isDatagram) {
+UdtSocketPointer UdtSocket::newServerSocket(UdtMultiplexerPointer multiplexer, const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort) {
     UdtSocketPointer socket = UdtSocketPointer::create();
     socket->_remoteAddr = peerAddress;
     socket->_remotePort = peerPort;
-    socket->_farSocketID = socketID;
+    socket->_farSocketID = hsPacket._farSocketID;
     socket->_socketRole = SocketRole::Server;
-    socket->_isDatagram = isDatagram;
+    socket->_isDatagram = (hsPacket._sockType == SocketType::DGRAM);
 
     // register ourselves with the multiplexer
     socket->_multiplexer->newSocket(socket);
@@ -246,35 +305,28 @@ UdtSocketPointer UdtSocket::newServerSocket(UdtMultiplexerPointer multiplexer, c
     socket->_monitorThread.start();
     socket->moveToThread(&socket->_monitorThread);
 
-    /*
-    QMutex _connectWait;                  // released when connection is complete (or failed)
-    quint32 _initialPacketSequence{ 0 };  // initial packet sequence to start the connection with
-    QThread _monitorThread;    // thread to monitor the state of the overall connection
+    if (!socket->readHandshake(hsPacket, peerAddress, peerPort)) {
+        return UdtSocketPointer();
+    }
 
-    SocketState _sockState{ SocketState::Init };  // socket state - used mostly during handshakes
-    uint _maxFlowWinSize{ 32 };                   // receiver: maximum unacknowledged packet count (minimum = 32)
-    */
+    return socket;
 }
 
 void UdtSocket::startConnect(const QHostAddress& address, quint16 port, quint16 localPort) {
-    // set the connection event to "blocking"
-    _connectWait.tryLock();
 
     if (!preConnect(address, port, localPort)) {
         // an error occurred
-        _sockState = SocketState::Error;
-        abort(false);
-        _connectWait.unlock();
+        setState(SocketState::Error);
         return;
     }
 
     if (_socketRole == SocketRole::Rendezvous) {
-        _sockState = SocketState::Rendezvous;
+        setState(SocketState::Rendezvous);
 
         _connTimeout.start(30 * Second);
         _connRetry.start(250 * Millisecond);
     } else {
-        _sockState = SocketState::Connecting;
+        setState(SocketState::Connecting);
 
         _connTimeout.start(3 * Second);
         _connRetry.start(250 * Millisecond);
@@ -289,20 +341,44 @@ void UdtSocket::startConnect(const QHostAddress& address, quint16 port, quint16 
 }
 
 bool UdtSocket::waitForConnected(int msecs /* = 30000 */) {
-    if (_connectWait.tryLock(msecs)) {
-        _connectWait.unlock();
-        return isValid();
+    QDeadlineTimer deadline(msecs);
+    QMutexLocker locker(&_sockStateProtect);
+    while (!deadline.hasExpired()) {
+        switch (_sockState) {
+            case SocketState::HostLookup:
+            case SocketState::Rendezvous:
+            case SocketState::Connecting:
+                break;  // continue to wait
+            default:
+                return true;  // either connected or failed to connect
+        }
+
+        _sockStateCondition.wait(&_sockStateProtect, deadline);
     }
 
     // connection timed out, shut it down
-    abort(false);
+    setState(SocketState::Timeout);
+    return false;
+}
+
+bool UdtSocket::waitForDisconnected(int msecs /* = 30000 */) {
+    QDeadlineTimer deadline(msecs);
+    QMutexLocker locker(&_sockStateProtect);
+    while (!deadline.hasExpired()) {
+        if (_sockState != SocketState::Connected) {
+            return true;  // not connected, success?
+        }
+        _sockStateCondition.wait(&_sockStateProtect, deadline);
+    }
+
+    // connection timed out
     return false;
 }
 
 void UdtSocket::sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType) {
 
     HandshakePacket hsResponse;
-    hsResponse._udtVer = 3;
+    hsResponse._udtVer = UDT_VERSION;
     hsResponse._sockType = _isDatagram ? SocketType::DGRAM : SocketType::STREAM;
     hsResponse._initPktSeq = _initialPacketSequence;
     hsResponse._maxPktSize = _mtu;
@@ -320,15 +396,43 @@ void UdtSocket::sendHandshake(quint32 synCookie, HandshakePacket::RequestType re
     _multiplexer->sendPacket(_remoteAddr, _remotePort, _socketID, ts, udtPacket);
 }
 
+// slot called when the multiplexer has received a rendezvous packet and we're currently trying to connect
+void UdtSocket::onRendezvousHandshake() {
+    if (_multiplexer.isNull()) {
+        // we have no multiplexer, not much point in going forward (and crashing)
+        return;
+    }
+    if (state() != SocketState::Rendezvous) {
+        // shouldn't have received this, are we connected?
+        disconnect(_multiplexer.get(), &UdtMultiplexer::readyRendezvousHandshake, this, &UdtSocket::onRendezvousHandshake);
+        return;
+    }
+    for (;;) {
+        PacketEventPointer<HandshakePacket> packetEvent = _multiplexer->nextRendezvousHandshake(_remoteAddr, _remotePort);
+        if (packetEvent.isNull()) { // is there anything here for us to look at?
+            return;
+        }
+        readHandshake(packetEvent->packet, packetEvent->peerAddress, packetEvent->peerPort);
+    }
+}
+
+// checkValidHandshake checks to see if we want to accept a new connection with this handshake.
+bool UdtSocket::checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort) {
+    if (hsPacket._udtVer != UDT_VERSION) {
+        return false;
+	}
+	return true;
+}
+
 // readHandshake is received when a handshake packet is received without a destination, either as part
 // of a listening response or as a rendezvous connection
 bool UdtSocket::readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort) {
-	if(peerAddress != _remoteAddr || peerPort != _remotePort) {
+    if (peerAddress != _remoteAddr || peerPort != _remotePort || _isDatagram != (hsPacket._sockType == SocketType::DGRAM)) {
         log.Printf("huh? initted with %s but handshake with %s", _remoteAddr.String(), peerAddress.String());
 		return false;
 	}
 
-	switch(_sockState) {
+	switch(state()) {
 	case SocketState::Init: // server accepting a connection from a client
 		_initialPacketSequence = hsPacket._initPktSeq;
 		//_udtVer = int(hsPacket.UdtVer);
@@ -341,9 +445,7 @@ bool UdtSocket::readHandshake(const HandshakePacket& hsPacket, const QHostAddres
 		launchProcessors();
 		_recv.configureHandshake(hsPacket);
 		_send.configureHandshake(hsPacket, true);
-		_sockState = SocketState::Connected;
-		_connTimeout = nullptr;
-		_connRetry = nullptr;
+        setState(SocketState::Connected);
 
 		sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response);
 		return true;
@@ -351,22 +453,22 @@ bool UdtSocket::readHandshake(const HandshakePacket& hsPacket, const QHostAddres
 	case SocketState::Connecting:  // client attempting to connect to server
         switch(hsPacket._reqType) {
 		case HandshakePacket::RequestType::Refused:
-			_sockState = SocketState::Refused;
+            setState(SocketState::Refused);
 			return true;
 		
 		case HandshakePacket::RequestType::Request:
-			if(!checkValidHandshake(hsPacket, peerAddress, peerPort) || hsPacket._initPktSeq != _initialPacketSequence || _isDatagram != (hsPacket._sockType == SocketType::DGRAM)) {
+			if(!checkValidHandshake(hsPacket, peerAddress, peerPort) || hsPacket._initPktSeq != _initialPacketSequence) {
 				// ignore, not a valid handshake request
-				return true;
+				return false;
 			}
 			// handshake isn't done yet, send it back with the cookie we received
 			sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response);
 			return true;
 
         case HandshakePacket::RequestType::Response:
-		    if(!checkValidHandshake(hsPacket, peerAddress, peerPort) || hsPacket._initPktSeq != _initialPacketSequence || _isDatagram != (hsPacket._sockType == SocketType::DGRAM)) {
+		    if(!checkValidHandshake(hsPacket, peerAddress, peerPort) || hsPacket._initPktSeq != _initialPacketSequence) {
 			    // ignore, not a valid handshake request
-			    return true;
+			    return false;
 		    }
 		    _farSocketID = hsPacket._farSocketID;
 
@@ -376,53 +478,40 @@ bool UdtSocket::readHandshake(const HandshakePacket& hsPacket, const QHostAddres
 		    launchProcessors();
 		    _recv.configureHandshake(hsPacket);
 		    _send.configureHandshake(hsPacket, true);
-		    _connRetry = nullptr;
-		    _sockState = SocketState::Connected;
-		    _connTimeout = nullptr;
-		    if(_connectWait != nullptr) {
-			    _connectWait.Done();
-			    _connectWait = nullptr;
-		    }
+            setState(SocketState::Connected);
         }
 		return true;
 
 	case SocketState::Rendezvous:  // client attempting to rendezvous with another client
 		if(hsPacket._reqType == HandshakePacket::RequestType::Refused) {
-			_sockState = SocketState::Refused;
+            setState(SocketState::Refused);
 			return true;
 		}
 		if(hsPacket._reqType != HandshakePacket::RequestType::Rendezvous || _farSocketID == 0) {
-			return true; // not a request packet, ignore
+			return false; // not a request packet, ignore
 		}
-		if(!checkValidHandshake(hsPacket, peerAddress, peerPort) || _isDatagram != (hsPacket._sockType == SocketType::DGRAM)) {
+		if(!checkValidHandshake(hsPacket, peerAddress, peerPort)) {
 			// not a compatible handshake, ignore
-			return true;
+			return false;
 		}
 		/* not quite sure how to negotiate this, assuming split-brain for now
 		if(p.InitPktSeq != s.initPktSeq) {
 			s.sockState = sockStateCorrupted;
-			return true;
+			return false;
 		}
 		*/
 		_farSocketID = hsPacket._farSocketID;
-		_multiplexer.endRendezvous(s);
 
 		if (_mtu.load() > hsPacket._maxPktSize) {
 			_mtu.store(hsPacket._maxPktSize);
 		}
 		launchProcessors();
-		_recv.configureHandshake(p);
-		_send.configureHandshake(p, false);
-		_connRetry = nullptr;
-		_sockState = SocketState::Connected;
-		_connTimeout = nullptr;
-		if(_connectWait != nullptr) {
-			_connectWait.Done();
-			_connectWait = nullptr;
-		}
+		_recv.configureHandshake(hsPacket);
+		_send.configureHandshake(hsPacket, false);
+        setState(SocketState::Connected);
 
 		// send the final rendezvous packet
-		sendHandshake(p.SynCookie, HandshakePacket::RequestType::Response);
+        sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response);
 		return true;
 
 	case SocketState::Connected:  // server repeating a handshake to a client
@@ -479,9 +568,6 @@ void UdtSocket::readPacket(const Packet& udtPacket, const QHostAddress& peerAddr
 	}
 }
 /*
-public:
-    virtual ~UdtSocket();
-
 public: // from QUdpSocket
     bool hasPendingDatagrams() const;
     qint64 pendingDatagramSize() const;
@@ -497,30 +583,23 @@ public:  // from QAbstractSocket
     virtual void setReadBufferSize(qint64 size);
     virtual void setSocketOption(QAbstractSocket::SocketOption option, const QVariant& value);
     virtual QVariant socketOption(QAbstractSocket::SocketOption option);
-    virtual bool waitForDisconnected(int msecs = 30000);
 
     virtual bool atEnd() const override;
     virtual qint64 bytesAvailable() const override;
     virtual qint64 bytesToWrite() const override;
     virtual bool canReadLine() const override;
     virtual void close() override;
-    virtual bool isSequential() const override;
     virtual bool waitForBytesWritten(int msecs = 30000) override;
     virtual bool waitForReadyRead(int msecs = 30000) override;
-
-signals: // from QAbstractSocket
-    void connected();
-    void disconnected();
-    void hostFound();
-    void stateChanged(SocketState socketState);
 
 protected: // from QAbstractSocket
     virtual qint64 readData(char* data, qint64 maxSize) override;
     virtual qint64 readLineData(char* data, qint64 maxlen) override;
     virtual qint64 writeData(const char* data, qint64 size) override;
 
-public: // internal implementation
-    bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
+private slots:
+    void onConnectionRetry();
+    void onConnectionTimeout();
 */
 typedef struct ReceivePacketEvent {
     Packet packet;
@@ -808,14 +887,6 @@ func (s *udtSocket) goManageConnection() {
 			}
 		}
 	}
-}
-
-// checkValidHandshake checks to see if we want to accept a new connection with this handshake.
-func (s *udtSocket) checkValidHandshake(m *multiplexer, p *packet.HandshakePacket, from *net.UDPAddr) bool {
-	if s.udtVer != 4 {
-		return false
-	}
-	return true
 }
 
 func (s *udtSocket) shutdown(sockState sockState, permitLinger bool, err error) {

@@ -173,7 +173,7 @@ bool UdtServer::checkValidHandshake(const HandshakePacket& hsPacket, const QHost
     }
 
     // we don't support any protocols other than UDT4 at this time
-    if (hsPacket._udtVer != 4) {
+    if (hsPacket._udtVer != UDT_VERSION) {
         return false;
     }
 
@@ -252,7 +252,6 @@ void UdtServer::readHandshake() {
         QDeadlineTimer listenReplayTimer(_listenReplayWindow);
         AcceptedSockInfo acceptedSockInfo;
 
-        UdtSocketPointer socket;
         {
             QMutexLocker locker(&_acceptedHistoryProtect);
             while (!_acceptedHistory.empty()) {
@@ -270,7 +269,7 @@ void UdtServer::readHandshake() {
             }
             if (lookup != _acceptedHistory.end()) {
                 acceptedSockInfo = lookup.value();
-                socket = acceptedSockInfo.socket.lock();
+                UdtSocketPointer socket = acceptedSockInfo.socket.lock();
 
                 // we reset the discard clock whenever we see a replay from it
                 _acceptedHistory.erase(lookup);
@@ -291,9 +290,8 @@ void UdtServer::readHandshake() {
         }
 
         // Seems good to us, create the socket and let them check it
-        socket = UdtSocket::newServerSocket(_multiplexer, peerAddress, peerPort,
-            hsPacket._farSocketID, hsPacket._sockType == SocketType::DGRAM);
-        if (!socket->checkValidHandshake(hsPacket, peerAddress, peerPort)) {
+        UdtSocketPointer socket = UdtSocket::newServerSocket(_multiplexer, hsPacket, peerAddress, peerPort);
+        if (socket.isNull()) {
             rejectHandshake(hsPacket, peerAddress, peerPort);
             return;
         }
@@ -305,12 +303,6 @@ void UdtServer::readHandshake() {
             newInfo.sockID = hsPacket._farSocketID;
             newInfo.initialSequenceNumber = hsPacket._initPktSeq;
             newInfo.socket = socket;
-        }
-
-        // Process the handshake (likely sending a response back to the peer)
-        if (!socket->readHandshake(hsPacket, peerAddress, peerPort)) {
-            rejectHandshake(hsPacket, peerAddress, peerPort);
-            return;
         }
 
         // And let the listeners know that we have a new connection

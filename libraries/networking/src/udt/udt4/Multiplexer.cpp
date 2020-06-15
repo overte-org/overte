@@ -263,13 +263,18 @@ void UdtMultiplexer::onPacketReadReady() {  // executes from goRead thread
                     }
                     emit readyRendezvousHandshake();
                     break;
-                case HandshakePacket::RequestType::Request:
+                case HandshakePacket::RequestType::Request: {
+                    bool wasEmpty;
                     {
                         QMutexLocker locker(&_serverHandshakesProtect);
+                        wasEmpty = _serverHandshakes.isEmpty();
                         _serverHandshakes.enqueue(PacketEventPointer<HandshakePacket>::create(hsPacket, peerAddress, peerPort));
                     }
-                    emit readyServerHandshake();
+                    if (wasEmpty) {
+                        emit readyServerHandshake();
+                    }
                     break;
+                }
                 default:
                     qCInfo(networking) << "Received handshake packet directed at sockID=0 with unexpected request type="
                                        << static_cast<uint>(hsPacket._reqType);

@@ -24,6 +24,7 @@
 #include <QtCore/QReadWriteLock>
 #include <QtCore/QSharedPointer>
 #include <QtCore/QThread>
+#include <QtCore/QWaitCondition>
 #include <QtCore/QTimer>
 #include <QtNetwork/QUdpSocket>
 
@@ -34,6 +35,11 @@ class UdtMultiplexer;
 class UdtSocket;
 typedef QSharedPointer<UdtMultiplexer> UdtMultiplexerPointer;
 typedef QSharedPointer<UdtSocket> UdtSocketPointer;
+
+enum
+{
+    UDT_VERSION = 4,
+};
 
 /*
 udtSocket encapsulates a UDT socket between a local and remote address pair, as
@@ -53,7 +59,8 @@ public:
         Rendezvous,    // attempting to create a rendezvous connection
         Connecting,    // attempting to connect to a server
         Connected,     // connection is established
-        Closed,        // connection has been closed (by either end)
+        CloseLinger,   // connection is being closed (by either end), keeping receiver open for packet retransmits
+        Closed,        // connection has been closed
         Refused,       // connection rejected by remote host
         Corrupted,     // peer behaved in an improper manner
         Timeout,       // connection failed due to peer timeout
@@ -81,7 +88,7 @@ public: // from QUdpSocket
     inline qint64 writeDatagram(const ByteSlice& datagram);
 
 public:  // from QAbstractSocket
-    void abort(bool setState = true);
+    inline void abort();
     virtual void connectToHost(const QString& hostName, quint16 port, quint16 localPort = 0, bool datagramMode = true);
     virtual void connectToHost(const QHostAddress& address, quint16 port, quint16 localPort = 0, bool datagramMode = true);
     virtual void rendezvousToHost(const QString& hostName, quint16 port, quint16 localPort = 0, bool datagramMode = true);
@@ -122,11 +129,13 @@ protected: // from QAbstractSocket
 
 public: // internal implementation
     bool readHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
-    bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
-    static UdtSocketPointer newServerSocket(UdtMultiplexerPointer multiplexer, const QHostAddress& peerAddress, uint peerPort,
-        quint32 socketID, bool isDatagram);
+    static UdtSocketPointer newServerSocket(UdtMultiplexerPointer multiplexer, const HandshakePacket& hsPacket,
+        const QHostAddress& peerAddress, uint peerPort);
     void readPacket(const Packet& udtPacket, const QHostAddress& peerAddress, uint peerPort);
     inline void setLocalSocketID(quint32 socketID);
+
+protected:
+    virtual bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
 
 private slots:
     void onRendezvousHandshake();
@@ -134,6 +143,7 @@ private slots:
     void onConnectionTimeout();
 
 private:
+    void setState(SocketState newState);
     void createOffAxisSocket();
     bool preConnect(const QHostAddress& address, quint16 port, quint16 localPort);
     void startNameConnect(const QString& hostName, quint16 port, quint16 localPort);
@@ -151,12 +161,15 @@ private:
     };
 
 private:
+    // these variables are used during specific _sockState values and invalid on all other values
+    int _hostLookupID{ 0 };  // HostLookup: when doing a host lookup, the ID of the active request
+    QTimer _connTimeout;     // Connecting/Rendezvous: fires when connection attempt times out
+    QTimer _connRetry;       // Connecting/Rendezvous: fires when connection attempt to be retried
+
 	// this data not changed after the socket is initialized and/or handshaked
-    QMutex _connectWait;                 // released when connection is complete (or failed)
     QElapsedTimer _createTime;           // the time this socket was created
     QString _errorString;                // a string describing the most recent error on this socket
     quint32 _farSocketID{ 0 };           // the remote's socketID
-    int _hostLookupID{ 0 };              // when doing a host lookup, the ID of the active request
     quint32 _initialPacketSequence{ 0 }; // initial packet sequence to start the connection with
     bool _isDatagram{ true };            // if true then we're sending and receiving datagrams, otherwise we're a streaming socket
     QThread _monitorThread;              // thread to monitor the state of the overall connection
@@ -167,7 +180,10 @@ private:
     quint32 _socketID{ 0 };                         // our socketID identifying this stream to the multiplexer
     SocketRole _socketRole{ SocketRole::Unknown };  // what role do we play in the channel negotiation?
 
+    mutable QMutex _sockStateProtect;
+    QWaitCondition _sockStateCondition;
 	SocketState _sockState{ SocketState::Init };  // socket state - used mostly during handshakes
+
     QAtomicInteger<quint32> _mtu;  // the negotiated maximum packet size
 	uint _maxFlowWinSize{32};          // receiver: maximum unacknowledged packet count (minimum = 32)
 //	ByteSlice _currPartialRead;    // stream connections: currently reading message (for partial reads). Owned by client caller (Read)
@@ -195,8 +211,6 @@ private:
 	sockClosed    chan struct{}        // closed when socket is closed
 */
 	// timers
-	QTimer _connTimeout; // connecting: fires when connection attempt times out
-	QTimer _connRetry;   // connecting: fires when connection attempt to be retried
 //	QTimer _lingerTimer; // after disconnection, fires once our linger timer runs out
 /*
 	send *udtSocketSend // reference to sending side of this socket

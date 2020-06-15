@@ -15,6 +15,10 @@
 
 namespace udt4 {
 
+void UdtSocket::abort() {
+    setState(SocketState::Init);
+}
+
 bool UdtSocket::isInDatagramMode() const {
     return _isDatagram;
 }
@@ -28,6 +32,7 @@ quint16 UdtSocket::peerPort() const {
 }
 
 UdtSocket::SocketState UdtSocket::state() const {
+    QMutexLocker locker(&_sockStateProtect);
     return _sockState;
 }
 
@@ -44,7 +49,7 @@ qint64 UdtSocket::writeDatagram(const ByteSlice& datagram) {
 }
 
 bool UdtSocket::isValid() const {
-    return _sockState == SocketState::Connected;
+    return state() == SocketState::Connected;
 }
 
 void UdtSocket::setLocalSocketID(quint32 socketID) {
