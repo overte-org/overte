@@ -51,6 +51,9 @@ public:
     Packet(ByteSlice networkPacket);
     ByteSlice toNetworkPacket() const;
 
+    static uint ipHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol);
+    static uint packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol);
+
 public:
     PacketType _type{ PacketType::Invalid };
     quint32 _sequence{ 0 };
@@ -76,6 +79,8 @@ public:
     inline HandshakePacket() {}
     HandshakePacket(const Packet& src, QAbstractSocket::NetworkLayerProtocol protocol);
     Packet toPacket() const;
+
+    static uint packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol);
 
 public:
     quint32 _timestamp{ 0 };

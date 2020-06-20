@@ -15,6 +15,13 @@
 
 using namespace udt4;
 
+enum
+{
+    IPV4_HEADER_SIZE = 20,
+    IPV6_HEADER_SIZE = 40,
+    UDP_HEADER_SIZE = 8,
+};
+
 Packet::Packet(ByteSlice networkPacket) {
     if (networkPacket.length() >= 16) {
         _sequence = qFromBigEndian<quint32>(&networkPacket[0]);
@@ -29,6 +36,21 @@ Packet::Packet(ByteSlice networkPacket) {
             _type = static_cast<PacketType>((_sequence & 0x7F00) >> 16);
         }
     }
+}
+
+uint Packet::ipHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol) {
+    switch (protocol) {
+        case QAbstractSocket::IPv4Protocol:
+            return IPV4_HEADER_SIZE + UDP_HEADER_SIZE;
+        case QAbstractSocket::IPv6Protocol:
+            return IPV6_HEADER_SIZE + UDP_HEADER_SIZE;
+        default:
+            return UDP_HEADER_SIZE;
+    }
+}
+
+uint Packet::packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol) {
+    return ipHeaderSize(protocol) + 16;
 }
 
 ByteSlice Packet::toNetworkPacket() const {
@@ -74,6 +96,10 @@ HandshakePacket::HandshakePacket(const Packet& src, QAbstractSocket::NetworkLaye
                 break;
         }
     }
+}
+
+uint HandshakePacket::packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol) {
+    return Packet::packetHeaderSize(protocol) + 48;
 }
 
 Packet HandshakePacket::toPacket() const {

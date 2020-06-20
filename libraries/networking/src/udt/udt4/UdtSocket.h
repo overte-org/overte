@@ -52,7 +52,7 @@ class UdtSocket : public QIODevice, public QEnableSharedFromThis<UdtSocket> {
 public:
     enum class SocketState
     {
-        Init,          // object is idle
+        Init,          // connection is closed
         HostLookup,    // resolving the requested hostname to an IP address
         LookupFailure, // could not resolve the requested hostname
         Error,         // an error occurred establishing the connection
@@ -69,8 +69,16 @@ public:
 
     enum TimeStuff
     {
-        Millisecond = 1,
-        Second = 1000,
+        MILLISECOND = 1,
+        SECOND = 1000,
+    };
+
+    enum Timeouts
+    {
+        CONNECT_TIMEOUT = 3 * SECOND,
+        RENDEZVOUS_CONNECT_TIMEOUT = 30 * SECOND,
+        CONNECT_RETRY = 250 * MILLISECOND,
+        LINGER_TIMEOUT = 180 * SECOND,
     };
 
 public:
@@ -121,6 +129,10 @@ signals: // from QAbstractSocket
     void disconnected();
     void hostFound();
     void stateChanged(SocketState socketState);
+    void customMessageReceived(Packet udtPacket, QElapsedTimer now);
+signals:  // private
+    void handshakeReceived(HandshakePacket hsPacket, QElapsedTimer now, QPrivateSignal);
+    void shutdownRequested(SocketState toState, QString error, QPrivateSignal);
 
 protected: // from QAbstractSocket
     virtual qint64 readData(char* data, qint64 maxSize) override;
@@ -141,6 +153,9 @@ private slots:
     void onRendezvousHandshake();
     void onConnectionRetry();
     void onConnectionTimeout();
+    void onLingerTimeout();
+    void onHandshakeReceived(HandshakePacket hsPacket, QElapsedTimer now);
+    void onShutdownRequested(SocketState toState, QString error);
 
 private:
     void setState(SocketState newState);
@@ -149,6 +164,7 @@ private:
     void startNameConnect(const QString& hostName, quint16 port, quint16 localPort);
     void onNameResolved(QHostInfo info, quint16 port, quint16 localPort);
     void startConnect(const QHostAddress& address, quint16 port, quint16 localPort);
+    bool processHandshake(const HandshakePacket& hsPacket);
     void sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType);
 
 private:
@@ -162,9 +178,10 @@ private:
 
 private:
     // these variables are used during specific _sockState values and invalid on all other values
-    int _hostLookupID{ 0 };  // HostLookup: when doing a host lookup, the ID of the active request
-    QTimer _connTimeout;     // Connecting/Rendezvous: fires when connection attempt times out
-    QTimer _connRetry;       // Connecting/Rendezvous: fires when connection attempt to be retried
+    int _hostLookupID{ 0 };   // HostLookup: when doing a host lookup, the ID of the active request
+    QTimer _connTimeout;      // Connecting/Rendezvous: fires when connection attempt times out
+    QTimer _connRetry;        // Connecting/Rendezvous: fires when connection attempt to be retried
+	QTimer _lingerTimer;      // CloseLinger: after disconnection, fires once our linger timer runs out
 
 	// this data not changed after the socket is initialized and/or handshaked
     QElapsedTimer _createTime;           // the time this socket was created
@@ -197,8 +214,8 @@ private:
 //	uint _rttVar;             // receiver: roundtrip variance. (in microseconds)
 
 //	QReadWriteLock _receiveRateProt; // lock must be held before referencing deliveryRate/bandwidth
-//	uint _deliveryRate;              // delivery rate reported from peer (packets/sec)
-//	uint _bandwidth;                 // bandwidth reported from peer (packets/sec)
+//	uint _deliveryRate{16};              // delivery rate reported from peer (packets/sec)
+//	uint _bandwidth{1};                 // bandwidth reported from peer (packets/sec)
 /*
 	// channels
 	messageIn     chan []byte          // inbound messages. Sender is goReceiveEvent->ingestData, Receiver is client caller (Read)
@@ -211,7 +228,6 @@ private:
 	sockClosed    chan struct{}        // closed when socket is closed
 */
 	// timers
-//	QTimer _lingerTimer; // after disconnection, fires once our linger timer runs out
 /*
 	send *udtSocketSend // reference to sending side of this socket
 	recv *udtSocketRecv // reference to receiving side of this socket
