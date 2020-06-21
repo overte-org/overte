@@ -27,6 +27,7 @@
 #include <QtCore/QWaitCondition>
 #include <QtCore/QTimer>
 #include <QtNetwork/QUdpSocket>
+#include "UdtSocket_send.h"
 
 namespace udt4 {
 
@@ -41,32 +42,36 @@ enum
     UDT_VERSION = 4,
 };
 
+// private interface for interactions within a UdtSocket
+class UdtSocket_private {
+
+};
+
+enum class UdtSocketState
+{
+    Init,           // connection is closed
+    HostLookup,     // resolving the requested hostname to an IP address
+    LookupFailure,  // could not resolve the requested hostname
+    Error,          // an error occurred establishing the connection
+    Rendezvous,     // attempting to create a rendezvous connection
+    Connecting,     // attempting to connect to a server
+    Connected,      // connection is established
+    CloseLinger,    // connection is being closed (by either end), keeping receiver open for packet retransmits
+    Closed,         // connection has been closed
+    Refused,        // connection rejected by remote host
+    Corrupted,      // peer behaved in an improper manner
+    Timeout,        // connection failed due to peer timeout
+};
+
 /*
 udtSocket encapsulates a UDT socket between a local and remote address pair, as
 defined by the UDT specification.  udtSocket implements the net.Conn interface
 so that it can be used anywhere that a stream-oriented network connection
 (like TCP) would be used.
 */
-class UdtSocket : public QIODevice, public QEnableSharedFromThis<UdtSocket> {
+class UdtSocket : public QIODevice, public QEnableSharedFromThis<UdtSocket>, protected UdtSocket_private {
     Q_OBJECT
 public:
-    enum class SocketState
-    {
-        Init,          // connection is closed
-        HostLookup,    // resolving the requested hostname to an IP address
-        LookupFailure, // could not resolve the requested hostname
-        Error,         // an error occurred establishing the connection
-        Rendezvous,    // attempting to create a rendezvous connection
-        Connecting,    // attempting to connect to a server
-        Connected,     // connection is established
-        CloseLinger,   // connection is being closed (by either end), keeping receiver open for packet retransmits
-        Closed,        // connection has been closed
-        Refused,       // connection rejected by remote host
-        Corrupted,     // peer behaved in an improper manner
-        Timeout,       // connection failed due to peer timeout
-    };
-    Q_ENUM(SocketState)
-
     enum TimeStuff
     {
         MILLISECOND = 1,
@@ -113,7 +118,7 @@ public:  // from QAbstractSocket
     virtual void setReadBufferSize(qint64 size);
     virtual void setSocketOption(QAbstractSocket::SocketOption option, const QVariant& value);
     virtual QVariant socketOption(QAbstractSocket::SocketOption option);
-    inline SocketState state() const;
+    inline UdtSocketState state() const;
     virtual bool waitForConnected(int msecs = 30000);
     virtual bool waitForDisconnected(int msecs = 30000);
 
@@ -128,11 +133,11 @@ signals: // from QAbstractSocket
     void connected();
     void disconnected();
     void hostFound();
-    void stateChanged(SocketState socketState);
+    void stateChanged(UdtSocketState socketState);
     void customMessageReceived(Packet udtPacket, QElapsedTimer now);
 signals:  // private
     void handshakeReceived(HandshakePacket hsPacket, QElapsedTimer now, QPrivateSignal);
-    void shutdownRequested(SocketState toState, QString error, QPrivateSignal);
+    void shutdownRequested(UdtSocketState toState, QString error, QPrivateSignal);
 
 protected: // from QAbstractSocket
     virtual qint64 readData(char* data, qint64 maxSize) override;
@@ -155,10 +160,10 @@ private slots:
     void onConnectionTimeout();
     void onLingerTimeout();
     void onHandshakeReceived(HandshakePacket hsPacket, QElapsedTimer now);
-    void onShutdownRequested(SocketState toState, QString error);
+    void onShutdownRequested(UdtSocketState toState, QString error);
 
 private:
-    void setState(SocketState newState);
+    void setState(UdtSocketState newState);
     void createOffAxisSocket();
     bool preConnect(const QHostAddress& address, quint16 port, quint16 localPort);
     void startNameConnect(const QString& hostName, quint16 port, quint16 localPort);
@@ -166,6 +171,10 @@ private:
     void startConnect(const QHostAddress& address, quint16 port, quint16 localPort);
     bool processHandshake(const HandshakePacket& hsPacket);
     void sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType);
+    bool initServerSocket(UdtMultiplexerPointer multiplexer, const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
+    static QString addressDebugString(const QHostAddress& address, quint16 port, quint32 socketID);
+    QString localAddressDebugString() const;
+    QString remoteAddressDebugString() const;
 
 private:
     enum class SocketRole
@@ -199,7 +208,7 @@ private:
 
     mutable QMutex _sockStateProtect;
     QWaitCondition _sockStateCondition;
-	SocketState _sockState{ SocketState::Init };  // socket state - used mostly during handshakes
+    UdtSocketState _sockState{ UdtSocketState::Init };  // socket state - used mostly during handshakes
 
     QAtomicInteger<quint32> _mtu;  // the negotiated maximum packet size
 	uint _maxFlowWinSize{32};          // receiver: maximum unacknowledged packet count (minimum = 32)
@@ -227,9 +236,10 @@ private:
 	sockShutdown  chan struct{}        // closed when socket is shutdown
 	sockClosed    chan struct{}        // closed when socket is closed
 */
+
+    UdtSocket_send _send; // the "outgoing" side of this UDT connection
 	// timers
 /*
-	send *udtSocketSend // reference to sending side of this socket
 	recv *udtSocketRecv // reference to receiving side of this socket
 	cong *udtSocketCc   // reference to contestion control
 */
