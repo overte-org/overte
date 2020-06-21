@@ -889,14 +889,8 @@ func (s *udtSocket) launchProcessors() {
 }
 
 func (s *udtSocket) goManageConnection() {
-	sockClosed := s.sockClosed
-	sockShutdown := s.sockShutdown
 	for {
 		select {
-		case <-s.lingerTimer: // linger timer expired, shut everything down
-			s.m.closeSocket(s.sockID)
-			close(s.sockClosed)
-			return
 		case p := <-s.sendPacket:
 			ts := uint32(time.Now().Sub(s.created) / time.Microsecond)
 			s.cong.onPktSent(p)

@@ -10,21 +10,18 @@
 //
 
 #include "UdtSocket_send.h"
+#include "UdtSocket.h"
 
 using namespace udt4;
 
 UdtSocket_send::UdtSocket_send(UdtSocket_private& socket):_socket(socket) {
-    _SNDevent.setSingleShot(true);
-    _SNDevent.setTimerType(Qt::PreciseTimer);
-    connect(&_SNDevent, &QTimer::timeout, this, &UdtSocket_send::onConnectionTimeout);
+    _SNDtimer.setSingleShot(true);
+    _SNDtimer.setTimerType(Qt::PreciseTimer);
+    connect(&_SNDtimer, &QTimer::timeout, this, &UdtSocket_send::SNDevent);
 
-    _ACK2SentEvent.setSingleShot(true);
-    _ACK2SentEvent.setTimerType(Qt::PreciseTimer);
-    connect(&_ACK2SentEvent, &QTimer::timeout, this, &UdtSocket_send::onConnectionTimeout);
-
-    _EXPtimerEvent.setSingleShot(true);
-    _EXPtimerEvent.setTimerType(Qt::PreciseTimer);
-    connect(&_EXPtimerEvent, &QTimer::timeout, this, &UdtSocket_send::onConnectionTimeout);
+    _EXPtimer.setSingleShot(true);
+    _EXPtimer.setTimerType(Qt::PreciseTimer);
+    connect(&_EXPtimer, &QTimer::timeout, this, &UdtSocket_send::EXPevent);
 }
 
 void UdtSocket_send::configureHandshake(const HandshakePacket& hsPacket, bool resetSequence) {
@@ -35,78 +32,151 @@ void UdtSocket_send::configureHandshake(const HandshakePacket& hsPacket, bool re
     _flowWindowSize = static_cast<uint>(hsPacket._maxFlowWinSize);
 }
 
+// the main event loop for the "send" side of the socket, this controls the behavior and permitted actions
 void UdtSocket_send::run() {
-	sendEvent := _sendEvent;
-	messageOut := _messageOut;
-	sockClosed := _sockClosed;
 	for(;;) {
-		thisMsgChan := messageOut;
-		sockShutdown := _sockShutdown;
+        QMutexLocker guard(&_eventMutex);
+        while (!processEvent(guard)) {
+            if (_sendState == SendState::Closed) {
+                // socket is closed, leave this thread
+                return;
+            }
+            _eventCondition.wait(&_eventMutex);
+        }
+    }
+}
 
-		switch (_sendState) {
-		case SendState::Idle: // not waiting for anything, can send immediately
-			if _msgPartialSend != nil { // we have a partial message waiting, try to send more of it now
-				_processDataMsg(false, messageOut);
-				continue;
-			}
-		case SendState::ProcessDrop: // immediately re-process any drop list requests
-			_sendState = reevalSendState(); // try to reconstruct what our state should be if it wasn't sendStateProcessDrop
+void UdtSocket_send::setState(UdtSocketState newState) {
+    QMutexLocker guard(&_eventMutex);
+    _flagRecentReceivedPacket = true;
+    _eventCondition.notify_all();
+}
+
+void UdtSocket_send::resetReceiveTimer() {
+    QMutexLocker guard(&_eventMutex);
+    _flagRecentReceivedPacket = true;
+    _eventCondition.notify_all();
+}
+
+void UdtSocket_send::EXPevent() {
+    QMutexLocker guard(&_eventMutex);
+    _flagRecentEXPevent = true;
+    _eventCondition.notify_all();
+}
+
+void UdtSocket_send::SNDevent() {
+    QMutexLocker guard(&_eventMutex);
+    _flagRecentSNDevent = true;
+    _eventCondition.notify_all();
+}
+
+void UdtSocket_send::queueDisconnect() {
+    QMutexLocker guard(&_eventMutex);
+    _flagSendDisconnect = true;
+    _eventCondition.notify_all();
+}
+
+// the main event loop for the "send" side of the socket, this controls the behavior and permitted actions
+bool UdtSocket_send::processEvent(QMutexLocker& eventGuard) {
+
+    bool canSendPacket = true;
+
+    if (_flagRecentReceivedPacket && _sendState != SendState::Shutdown) {
+        _flagRecentReceivedPacket = false;
+        _flagRecentEXPevent = false;
+        eventGuard.unlock();
+        _expCount = 1;
+        resetEXP(evt.now);
+    }
+
+	switch (_sendState) {
+	case SendState::Idle: // not waiting for anything, can send immediately
+		if(_msgPartialSend != nullptr) { // we have a partial message waiting, try to send more of it now
+            eventGuard.unlock();
+			processDataMsg(false);
+			return true;
+		}
+        break;
+	case SendState::ProcessDrop: // immediately re-process any drop list requests
+        eventGuard.unlock();
+		_sendState = reevalSendState(); // try to reconstruct what our state should be if it wasn't sendStateProcessDrop
+		if(!processSendLoss() || _sendPktSeq.Seq%16 == 0) {
+			processSendExpire();
+		}
+		return true;
+	case SendState::Shutdown:
+		canSendPacket = false;
+        break;
+	default:
+		canSendPacket = false;
+        break;
+	}
+
+    switch (_socketState) {
+    case UdtSocketState::Connected: // this is the expected state while we are running
+        break;
+    case UdtSocketState::CloseLinger:
+        if (_sendState != SendState::Shutdown) {
+            _sendState = SendState::Shutdown;
+            _flagRecentEXPevent = false;
+            eventGuard.unlock();
+            if (_EXPtimer.isActive()) {  // don't process EXP events if we're shutting down
+                _EXPtimer.stop();
+            }
+            return true;
+        }
+        break;
+    default: // not a running state
+        _sendState = SendState::Closed;
+        return false;
+    }
+
+    if (canSendPacket) {
+        if (_flagSendDisconnect) {
+            _flagSendDisconnect = false;
+            _sendPacket <- &packet.ShutdownPacket{};
+            return true;
+        }
+        _msgPartialSend = &msg;
+        processDataMsg(true);
+    }
+
+	select {
+	case evt, ok := <-sendEvent:
+		switch sp := evt.pkt.(type) {
+		case *packet.AckPacket:
+			ingestAck(sp, evt.now);
+		case *packet.LightAckPacket:
+			ingestLightAck(sp, evt.now);
+		case *packet.NakPacket:
+			ingestNak(sp, evt.now);
+		case *packet.CongestionPacket:
+			ingestCongestion(sp, evt.now);
+		}
+		_sendState = reevalSendState();
+    }
+
+    if (_flagRecentEXPevent) {
+        _flagRecentEXPevent = false;
+        eventGuard.unlock();
+        processExpEvent();
+        return true;
+    }
+
+    if (_flagRecentSNDevent) {
+        _flagRecentSNDevent = false;
+        if (_sendState == SendState::Sending) {
+            eventGuard.unlock();
+            _sendState = reevalSendState();
 			if(!processSendLoss() || _sendPktSeq.Seq%16 == 0) {
 				processSendExpire();
 			}
-			continue;
-		case SendState::Shutdown:
-			sockShutdown = nil;
-			thisMsgChan = nil;
-		default:
-			thisMsgChan = nil;
-		}
-
-		select {
-		case _, _ = <-sockShutdown:
-			_sendState = sendStateShutdown;
-			_expTimerEvent = nil; // don't process EXP events if we're shutting down
-		case msg, ok := <-thisMsgChan: // nil if we can't process outgoing messages right now
-			if (!ok) {
-				_sendPacket <- &packet.ShutdownPacket{};
-				_shutdownEvent <- shutdownMessage{sockState: sockStateClosed, permitLinger: true};
-				return;
-			}
-			_msgPartialSend = &msg;
-			_processDataMsg(true, messageOut);
-		case evt, ok := <-sendEvent:
-			if (!ok) {
-				return;
-			}
-			_expCount = 1;
-			resetEXP(evt.now);
-			switch sp := evt.pkt.(type) {
-			case *packet.AckPacket:
-				ingestAck(sp, evt.now);
-			case *packet.LightAckPacket:
-				ingestLightAck(sp, evt.now);
-			case *packet.NakPacket:
-				ingestNak(sp, evt.now);
-			case *packet.CongestionPacket:
-				ingestCongestion(sp, evt.now);
-			}
-			_sendState = reevalSendState();
-		case _, _ = <-sockClosed:
-			return;
-		case <-_ack2SentEvent: // ACK2 unlocked
-			_ack2SentEvent = nil;
-		case now := <-_expTimerEvent: // EXP event
-			_expEvent(now);
-		case <-_sndEvent: // SND event
-			_sndEvent = nil;
-			if(_sendState == SendState::Sending) {
-				_sendState = reevalSendState();
-				if(!processSendLoss() || _sendPktSeq.Seq%16 == 0) {
-					processSendExpire();
-				}
-			}
-		}
+            return true;
+        }
 	}
+
+    // no events seen to process
+    return false;
 }
 
 const (
@@ -118,8 +188,6 @@ func newUdtSocketSend(s *udtSocket) *udtSocketSend {
 		socket:         s,
 		expCount:       1,
 		sendPktSeq:     s.initPktSeq,
-		sockClosed:     s.sockClosed,
-		sockShutdown:   s.sockShutdown,
 		sendEvent:      s.sendEvent,
 		messageOut:     s.messageOut,
 		congestWindow:  atomicUint32{val: 16},
@@ -146,11 +214,11 @@ func (s *udtSocketSend) SetPacketSendPeriod(snd time.Duration) {
 }
 
 func (s *udtSocketSend) reevalSendState() sendState {
-	if s.sndEvent != nil {
+	if s.sndEvent != nullptr {
 		return sendStateSending
 	}
 	// Do we have too many unacknowledged packets for us to send any more?
-	if s.sendPktPend != nil {
+	if s.sendPktPend != nullptr {
 		congestWindow := uint(s.congestWindow.get())
 		cwnd := s.flowWindowSize
 		if cwnd > congestWindow {
@@ -165,7 +233,7 @@ func (s *udtSocketSend) reevalSendState() sendState {
 
 // try to pack a new data packet and send it
 func (s *udtSocketSend) processDataMsg(isFirst bool, inChan <-chan sendMessage) {
-	for s.msgPartialSend != nil {
+	for s.msgPartialSend != nullptr {
 		partialSend := s.msgPartialSend
 		state := packet.MbOnly
 		if s.socket.isDatagram {
@@ -189,7 +257,7 @@ func (s *udtSocketSend) processDataMsg(isFirst bool, inChan <-chan sendMessage) 
 					Seq:  s.sendPktSeq,
 					Data: partialSend.content,
 				}
-				s.msgPartialSend = nil
+				s.msgPartialSend = nullptr
 			} else {
 				dp = &packet.DataPacket{
 					Seq:  s.sendPktSeq,
@@ -232,7 +300,7 @@ func (s *udtSocketSend) processDataMsg(isFirst bool, inChan <-chan sendMessage) 
 			Seq:  s.sendPktSeq,
 			Data: partialSend.content,
 		}
-		s.msgPartialSend = nil
+		s.msgPartialSend = nullptr
 		s.sendPktSeq.Incr()
 		dp.SetMessageData(state, !s.socket.isDatagram, s.msgSeq)
 		s.sendDataPacket(sendPacketEntry{pkt: dp, tim: partialSend.tim, ttl: partialSend.ttl}, false)
@@ -242,7 +310,7 @@ func (s *udtSocketSend) processDataMsg(isFirst bool, inChan <-chan sendMessage) 
 
 // If the sender's loss list is not empty, retransmit the first packet in the list and remove it from the list.
 func (s *udtSocketSend) processSendLoss() bool {
-	if s.sendLossList == nil || s.sendPktPend == nil {
+    if s.sendLossList == nullptr || s.sendPktPend == nullptr {
 		return false
 	}
 
@@ -256,11 +324,11 @@ func (s *udtSocketSend) processSendLoss() bool {
 
 		heap.Remove(&s.sendLossList, minLossIdx)
 		if len(s.sendLossList) == 0 {
-			s.sendLossList = nil
+			s.sendLossList = nullptr
 		}
 
 		dp, _ = s.sendPktPend.Find(minLoss)
-		if dp == nil {
+		if dp == nullptr {
 			// can't find record of this packet, not much we can do really
 			continue
 		}
@@ -279,7 +347,7 @@ func (s *udtSocketSend) processSendLoss() bool {
 
 // evaluate our pending packet list to see if we have any expired messages
 func (s *udtSocketSend) processSendExpire() bool {
-	if s.sendPktPend == nil {
+	if s.sendPktPend == nullptr {
 		return false
 	}
 
@@ -306,14 +374,14 @@ func (s *udtSocketSend) processSendExpire() bool {
 						dropMsg.LastSeq = p.pkt.Seq
 					}
 				}
-				if s.sendLossList != nil {
+				if s.sendLossList != nullptr {
 					if _, slIdx := s.sendLossList.Find(p.pkt.Seq); slIdx >= 0 {
 						heap.Remove(&s.sendLossList, slIdx)
 					}
 				}
 			}
-			if s.sendLossList != nil && len(s.sendLossList) == 0 {
-				s.sendLossList = nil
+			if s.sendLossList != nullptr && len(s.sendLossList) == 0 {
+				s.sendLossList = nullptr
 			}
 
 			s.sendPacket <- dropMsg
@@ -325,7 +393,7 @@ func (s *udtSocketSend) processSendExpire() bool {
 
 // we have a packed packet and a green light to send, so lets send this and mark it
 func (s *udtSocketSend) sendDataPacket(dp sendPacketEntry, isResend bool) {
-	if s.sendPktPend == nil {
+	if s.sendPktPend == nullptr {
 		s.sendPktPend = sendPacketHeap{dp}
 		heap.Init(&s.sendPktPend)
 	} else {
@@ -379,7 +447,7 @@ func (s *udtSocketSend) ingestAck(p *packet.AckPacket, now time.Time) {
 	// Update the largest acknowledged sequence number.
 
 	// Send back an ACK2 with the same ACK sequence number in this ACK.
-	if s.ack2SentEvent == nil && p.AckSeqNo == s.sentAck2 {
+	if s.ack2SentEvent == nullptr && p.AckSeqNo == s.sentAck2 {
 		s.sentAck2 = p.AckSeqNo
 		s.sendPacket <- &packet.Ack2Packet{AckSeqNo: p.AckSeqNo}
 		s.ack2SentEvent = time.After(synTime)
@@ -412,7 +480,7 @@ func (s *udtSocketSend) ingestAck(p *packet.AckPacket, now time.Time) {
 	// Update estimated link capacity: B = (B * 7 + b) / 8, where b is the value carried in the ACK.
 
 	// Update sender's buffer (by releasing the buffer that has been acknowledged).
-	if s.sendPktPend != nil {
+	if s.sendPktPend != nullptr {
 		for {
 			minLoss, minLossIdx := s.sendPktPend.Min(oldAckSeq, s.sendPktSeq)
 			if pktSeqHi.BlindDiff(minLoss.Seq) >= 0 || minLossIdx < 0 {
@@ -421,12 +489,12 @@ func (s *udtSocketSend) ingestAck(p *packet.AckPacket, now time.Time) {
 			heap.Remove(&s.sendPktPend, minLossIdx)
 		}
 		if len(s.sendPktPend) == 0 {
-			s.sendPktPend = nil
+			s.sendPktPend = nullptr
 		}
 	}
 
 	// Update sender's loss list (by removing all those that has been acknowledged).
-	if s.sendLossList != nil {
+	if s.sendLossList != nullptr {
 		for {
 			minLoss, minLossIdx := s.sendLossList.Min(oldAckSeq, s.sendPktSeq)
 			if pktSeqHi.BlindDiff(minLoss) >= 0 || minLossIdx < 0 {
@@ -435,7 +503,7 @@ func (s *udtSocketSend) ingestAck(p *packet.AckPacket, now time.Time) {
 			heap.Remove(&s.sendLossList, minLossIdx)
 		}
 		if len(s.sendLossList) == 0 {
-			s.sendLossList = nil
+			s.sendLossList = nullptr
 		}
 	}
 }
@@ -481,7 +549,7 @@ func (s *udtSocketSend) ingestNak(p *packet.NakPacket, now time.Time) {
 
 	s.socket.cong.onNAK(newLossList)
 
-	if s.sendLossList == nil {
+	if s.sendLossList == nullptr {
 		s.sendLossList = newLossList
 		heap.Init(&s.sendLossList)
 	} else {
@@ -533,8 +601,8 @@ func (s *udtSocketSend) expEvent(currTime time.Time) {
 
 	// sender: Insert all the packets sent after last received acknowledgement into the sender loss list.
 	// recver: Send out a keep-alive packet
-	if s.sendPktPend != nil {
-		if s.sendPktPend != nil && s.sendLossList == nil {
+	if s.sendPktPend != nullptr {
+		if s.sendPktPend != nullptr && s.sendLossList == nullptr {
 			// resend all unacknowledged packets on timeout, but only if there is no packet in the loss list
 			newLossList := make([]packet.PacketID, 0)
 			for span := s.recvAckSeq.Add(1); span != s.sendPktSeq.Add(1); span.Incr() {

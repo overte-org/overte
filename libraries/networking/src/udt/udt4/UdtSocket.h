@@ -233,8 +233,6 @@ private:
 	sendEvent     chan recvPktEvent    // sender: ingest the specified packet. Sender is readPacket, receiver is goSendEvent
 	sendPacket    chan packet.Packet   // packets to send out on the wire (once goManageConnection is running)
 	shutdownEvent chan shutdownMessage // channel signals the connection to be shutdown
-	sockShutdown  chan struct{}        // closed when socket is shutdown
-	sockClosed    chan struct{}        // closed when socket is closed
 */
 
     UdtSocket_send _send; // the "outgoing" side of this UDT connection
