@@ -304,7 +304,7 @@ bool UdtSocket::preConnect(const QHostAddress& address, quint16 port, quint16 lo
     _remotePort = port;
 
     QRandomGenerator random;
-    _initialPacketSequence = random.generate();
+    _initialPacketSequence = PacketID(random.generate());
 
     // register ourselves with the multiplexer
     _multiplexer->newSocket(sharedFromThis());
@@ -376,9 +376,9 @@ void UdtSocket::startConnect(const QHostAddress& address, quint16 port, quint16 
 
     if (_socketRole == SocketRole::Rendezvous) {
         connect(_multiplexer.get(), &UdtMultiplexer::readyRendezvousHandshake, this, &UdtSocket::onRendezvousHandshake);
-        sendHandshake(0, HandshakePacket::RequestType::Rendezvous);
+        sendHandshake(0, HandshakePacket::RequestType::Rendezvous, false);
     } else {
-        sendHandshake(0, HandshakePacket::RequestType::Request);
+        sendHandshake(0, HandshakePacket::RequestType::Request, false);
     }
 }
 
@@ -392,9 +392,9 @@ void UdtSocket::onConnectionRetry() {
     _connRetry.start(CONNECT_RETRY);
 
     if (_socketRole == SocketRole::Rendezvous) {
-        sendHandshake(0, HandshakePacket::RequestType::Rendezvous);
+        sendHandshake(0, HandshakePacket::RequestType::Rendezvous, false);
     } else {
-        sendHandshake(0, HandshakePacket::RequestType::Request);
+        sendHandshake(0, HandshakePacket::RequestType::Request, false);
     }
 }
 
@@ -443,18 +443,44 @@ bool UdtSocket::waitForDisconnected(int msecs /* = 30000 */) {
     return false;
 }
 
-void UdtSocket::sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType) {
+void UdtSocket::sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType, bool mtuDiscovery) {
 
+    int sockMtu = _mtu.load();
     HandshakePacket hsResponse;
     hsResponse._udtVer = UDT_VERSION;
     hsResponse._sockType = _isDatagram ? SocketType::DGRAM : SocketType::STREAM;
     hsResponse._initPktSeq = _initialPacketSequence;
-    hsResponse._maxPktSize = _mtu;
+    hsResponse._maxPktSize = sockMtu;
     hsResponse._maxFlowWinSize = _maxFlowWinSize; // maximum flow window size
     hsResponse._reqType = requestType;
     hsResponse._farSocketID = _socketID;
     hsResponse._synCookie = synCookie;
     hsResponse._sockAddr = _multiplexer->serverAddress();
+
+    if (mtuDiscovery) {
+        // during MTU discovery we send the biggest packet we believe we can send and see if it makes it to the other side alive
+        // in theory an ICMP "Packet Too Big" or "Fragmentation required" packet will be sent if we hit a bump.  The operating
+        // system normally wouldn't allow us to see ICMP packets but should process them and set PathMtuSocketOption of a "connected"
+        // udp socket.  The multiplexer cannot "connect" to the destination, we're hoping that the off-axis udp socket will be seen
+        // as the "sender" of the packets well enough to have it be a stand-in (the ICMP packet has enough information in it to
+        // prove that the off-axis socket was not the source of the message though).  If we don't get ICMP packets (either because
+        // of the operating system or due to firewalls blocking ICMP) then we need to gradually dial back the maximum MTU on
+        // packet-resends until something gets through.
+
+        uint headerSize = hsResponse.packetHeaderSize(_remoteAddr.protocol());
+
+        // update the Path MTU from the off-axis socket (if possible)
+        QVariant varMtu = _offAxisUdpSocket.socketOption(QAbstractSocket::PathMtuSocketOption);
+        int mtu = varMtu.toInt(NULL);
+        if (mtu != 0 && mtu < sockMtu) {
+            _mtu.store(mtu);
+            sockMtu = mtu;
+            hsResponse._maxPktSize = sockMtu;
+        }
+
+        assert(sockMtu > headerSize);
+        hsResponse._extra.create(sockMtu - headerSize);
+    }
 
     Packet udtPacket = hsResponse.toPacket();
     quint32 ts = static_cast<quint32>(_createTime.nsecsElapsed() / 1000);
@@ -520,10 +546,28 @@ bool UdtSocket::readHandshake(const HandshakePacket& hsPacket, const QHostAddres
 
     return processHandshake(hsPacket);
 }
+/*  Connection protocol
+
+    Client -> Server
+        Client[Connecting] sends Request ->
+            -> Server[UdtServer] sees Request, creates a SYN cookie and returns Request
+        Client[Connecting] sees Request with cookie, sends Response ->
+            -> Server[UdtServer] sees Response with valid cookie, creates UdtSocket[Connected] and sends Response
+        Client[Connected] sees Response
+
+    Rendezvous <-> Rendezvous
+        Peer[Rendezvous] sends Rendezvous ->
+        Peer[Connected] sees Rendezvous and sends Response ->
+        Peer[Connected] sees Response and sends Response2 ->
+
+    Currently all "Response" packets are sent padded up to the maximum MTU, this currently seems like a good place
+    to probe for maximum packet size without modifying the protocol too badly, where dropped packets should elicit
+    a retry request
+*/
 
 bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
     switch(state()) {
-        case UdtSocketState::Init:  // server accepting a connection from a client
+    case UdtSocketState::Init:  // server accepting a connection from a client
         _initialPacketSequence = hsPacket._initPktSeq;
         _farSocketID = hsPacket._socketID;
         _isDatagram = hsPacket._sockType == SocketType::DGRAM;
@@ -536,7 +580,7 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
         _send.configureHandshake(hsPacket, true);
         setState(UdtSocketState::Connected);
 
-        sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response);
+        sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response, true);
         return true;
 
     case UdtSocketState::Connecting:  // client attempting to connect to server
@@ -551,7 +595,7 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
                 return false;
             }
             // handshake isn't done yet, send it back with the cookie we received
-            sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response);
+            sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response, true);
             return true;
 
         case HandshakePacket::RequestType::Response:
@@ -596,7 +640,7 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
         setState(UdtSocketState::Connected);
 
         // send the final rendezvous packet
-        sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response);
+        sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response, true);
         return true;
 
     case UdtSocketState::Connected:  // server repeating a handshake to a client
@@ -604,13 +648,19 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
         case SocketRole::Server:
             if (hsPacket._reqType == HandshakePacket::RequestType::Request) {
                 // client didn't receive our response handshake, resend it
-                sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response);
+                sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response, true);
             }
             break;
         case SocketRole::Rendezvous:
-            if (hsPacket._reqType == HandshakePacket::RequestType::Response) {
+            switch (hsPacket._reqType) {
+            case HandshakePacket::RequestType::Request:
+                // this is a rendezvous connection and peer didn't receive our response packet, resend it
+                sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response, true);
+                break;
+            case HandshakePacket::RequestType::Response:
                 // this is a rendezvous connection (re)send our response
-                sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response2);
+                sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response2, false);
+                break;
             }
             break;
         }

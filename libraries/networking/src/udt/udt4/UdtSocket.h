@@ -14,6 +14,7 @@
 
 #include "ByteSlice.h"
 #include "Packet.h"
+#include "PacketID.h"
 #include <QtCore/QIODevice>
 #include <QtCore/QAtomicInteger>
 #include <QtCore/QDeadlineTimer>
@@ -170,7 +171,7 @@ private:
     void onNameResolved(QHostInfo info, quint16 port, quint16 localPort);
     void startConnect(const QHostAddress& address, quint16 port, quint16 localPort);
     bool processHandshake(const HandshakePacket& hsPacket);
-    void sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType);
+    void sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType, bool mtuDiscovery);
     bool initServerSocket(UdtMultiplexerPointer multiplexer, const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
     static QString addressDebugString(const QHostAddress& address, quint16 port, quint32 socketID);
     QString localAddressDebugString() const;
@@ -196,7 +197,7 @@ private:
     QElapsedTimer _createTime;           // the time this socket was created
     QString _errorString;                // a string describing the most recent error on this socket
     quint32 _farSocketID{ 0 };           // the remote's socketID
-    quint32 _initialPacketSequence{ 0 }; // initial packet sequence to start the connection with
+    PacketID _initialPacketSequence;     // initial packet sequence to start the connection with
     bool _isDatagram{ true };            // if true then we're sending and receiving datagrams, otherwise we're a streaming socket
     QThread _monitorThread;              // thread to monitor the state of the overall connection
     UdtMultiplexerPointer _multiplexer;  // the multiplexer that handles this socket

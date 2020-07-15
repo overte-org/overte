@@ -15,6 +15,7 @@
 
 // Structure of packets and functions for writing/reading them
 #include "ByteSlice.h"
+#include "PacketID.h"
 #include <QtNetwork/QHostAddress>
 
 namespace udt4 {
@@ -56,7 +57,7 @@ public:
 
 public:
     PacketType _type{ PacketType::Invalid };
-    quint32 _sequence{ 0 };
+    PacketID _sequence;
     quint32 _additionalInfo{ 0 };
     quint32 _timestamp{ 0 };
     quint32 _socketID{ 0 };
@@ -87,7 +88,7 @@ public:
     quint32 _socketID{ 0 };
     quint32 _udtVer{ 0 };           // UDT version
     SocketType _sockType{ SocketType::Unknown };  // Socket Type (1 = STREAM or 2 = DGRAM)
-    quint32 _initPktSeq{ 0 };       // initial packet sequence number
+    PacketID _initPktSeq;           // initial packet sequence number
     quint32 _maxPktSize{ 0 };       // maximum packet size (including UDP/IP headers)
     quint32 _maxFlowWinSize{ 0 };   // maximum flow window size
     RequestType _reqType{ RequestType::Refused };  // connection type (regular(1), rendezvous(0), -1/-2 response)

@@ -79,8 +79,6 @@ void UdtSocket_send::queueDisconnect() {
 // the main event loop for the "send" side of the socket, this controls the behavior and permitted actions
 bool UdtSocket_send::processEvent(QMutexLocker& eventGuard) {
 
-    bool canSendPacket = true;
-
     if (_flagRecentReceivedPacket && _sendState != SendState::Shutdown) {
         _flagRecentReceivedPacket = false;
         _flagRecentEXPevent = false;
@@ -89,13 +87,10 @@ bool UdtSocket_send::processEvent(QMutexLocker& eventGuard) {
         resetEXP(evt.now);
     }
 
-	switch (_sendState) {
+    bool canSendPacket = false;
+    switch (_sendState) {
 	case SendState::Idle: // not waiting for anything, can send immediately
-		if(_msgPartialSend != nullptr) { // we have a partial message waiting, try to send more of it now
-            eventGuard.unlock();
-			processDataMsg(false);
-			return true;
-		}
+        canSendPacket = true;
         break;
 	case SendState::ProcessDrop: // immediately re-process any drop list requests
         eventGuard.unlock();
@@ -104,12 +99,6 @@ bool UdtSocket_send::processEvent(QMutexLocker& eventGuard) {
 			processSendExpire();
 		}
 		return true;
-	case SendState::Shutdown:
-		canSendPacket = false;
-        break;
-	default:
-		canSendPacket = false;
-        break;
 	}
 
     switch (_socketState) {
@@ -132,13 +121,21 @@ bool UdtSocket_send::processEvent(QMutexLocker& eventGuard) {
     }
 
     if (canSendPacket) {
+        if (_msgPartialSend != nullptr) {  // we have a partial message waiting, try to send more of it now
+            eventGuard.unlock();
+            processDataMsg(false);
+            return true;
+        }
         if (_flagSendDisconnect) {
             _flagSendDisconnect = false;
             _sendPacket <- &packet.ShutdownPacket{};
             return true;
         }
-        _msgPartialSend = &msg;
-        processDataMsg(true);
+        if (_msg) {
+            _msgPartialSend = &msg;
+            processDataMsg(true);
+            return true;
+        }
     }
 
 	select {

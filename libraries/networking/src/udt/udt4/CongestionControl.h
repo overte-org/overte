@@ -1,5 +1,5 @@
 //
-//  Congestion.h
+//  CongestionControl.h
 //  libraries/networking/src/udt/udt4
 //
 //  Created by Heather Anderson on 2020-06-20.
@@ -10,11 +10,12 @@
 //
 #pragma once
 
-#ifndef hifi_udt4_Congestion_h
-#define hifi_udt4_Congestion_h
+#ifndef hifi_udt4_CongestionControl_h
+#define hifi_udt4_CongestionControl_h
 
 #include <QtCore/QList>
 #include "Packet.h"
+#include "PacketID.h"
 
 namespace udt4 {
 
@@ -40,8 +41,8 @@ class CongestionControl {
 public:
     virtual void init(CongestionControlParms& parms) = 0;                                    // connection is being setup.
     virtual void close(CongestionControlParms& parms) = 0;                                   // connection is closed.
-    virtual void onACK(CongestionControlParms& parms, quint32 packetID) = 0;                 // ACK packet is received
-    virtual void onNAK(CongestionControlParms& parms, const QList<quint32>& packetIDs) = 0;  // loss report is received
+    virtual void onACK(CongestionControlParms& parms, PacketID packetID) = 0;                // ACK packet is received
+    virtual void onNAK(CongestionControlParms& parms, const QList<PacketID>& packetIDs) = 0;  // loss report is received
     virtual void onTimeout(CongestionControlParms& parms) = 0;                               // a timeout event occurs
     virtual void onPktSent(CongestionControlParms& parms, const Packet& packet) = 0;         // data is sent
     virtual void onPktRecv(CongestionControlParms& parms, const Packet& packet) = 0;         // data is received
@@ -50,4 +51,4 @@ public:
 
 }  // namespace udt4
 
-#endif /* hifi_udt4_Congestion_h */
+#endif /* hifi_udt4_CongestionControl_h */

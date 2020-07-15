@@ -24,16 +24,17 @@ enum
 
 Packet::Packet(ByteSlice networkPacket) {
     if (networkPacket.length() >= 16) {
-        _sequence = qFromBigEndian<quint32>(&networkPacket[0]);
+        quint32 sequence = qFromBigEndian<quint32>(&networkPacket[0]);
+        _sequence = PacketID(sequence);
         _additionalInfo = qFromBigEndian<quint32>(&networkPacket[4]);
         _timestamp = qFromBigEndian<quint32>(&networkPacket[8]);
         _socketID = qFromBigEndian<quint32>(&networkPacket[12]);
         _contents = networkPacket.substring(16);
-        if ((_sequence & 0x8000) == 0) {
+        if ((sequence & 0x8000) == 0) {
             // this is a data packet
             _type = PacketType::Data;
         } else {
-            _type = static_cast<PacketType>((_sequence & 0x7F00) >> 16);
+            _type = static_cast<PacketType>((sequence & 0x7F00) >> 16);
         }
     }
 }
@@ -54,11 +55,11 @@ uint Packet::packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol) {
 }
 
 ByteSlice Packet::toNetworkPacket() const {
-    quint16 sequence;
+    quint32 sequence;
     if (_type < PacketType::Data) {
-        sequence = 0x8000 | (static_cast<quint16>(_type) << 16);
+        sequence = 0x80000000 | (static_cast<quint32>(_type) << 16);
     } else {
-        sequence = _sequence;
+        sequence = static_cast<quint32>(_sequence);
     }
 
     ByteSlice packetData;
@@ -79,7 +80,7 @@ HandshakePacket::HandshakePacket(const Packet& src, QAbstractSocket::NetworkLaye
     if (src._contents.length() >= 48) {
         _udtVer = qFromBigEndian<quint32>(&src._contents[0]);
         _sockType = static_cast <SocketType>(qFromBigEndian<quint32>(&src._contents[4]));
-        _initPktSeq = qFromBigEndian<quint32>(&src._contents[8]);
+        _initPktSeq = PacketID(qFromBigEndian<quint32>(&src._contents[8]));
         _maxPktSize = qFromBigEndian<quint32>(&src._contents[12]);
         _maxFlowWinSize = qFromBigEndian<quint32>(&src._contents[16]);
         _reqType = static_cast<RequestType>(qFromBigEndian<quint32>(&src._contents[20]));
@@ -108,7 +109,7 @@ Packet HandshakePacket::toPacket() const {
 
     *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(_udtVer);
     *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(static_cast<quint32>(_sockType));
-    *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_initPktSeq);
+    *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(static_cast<quint32>(_initPktSeq));
     *reinterpret_cast<quint32*>(&buffer[12]) = qToBigEndian<quint32>(_maxPktSize);
     *reinterpret_cast<quint32*>(&buffer[16]) = qToBigEndian<quint32>(_maxFlowWinSize);
     *reinterpret_cast<quint32*>(&buffer[20]) = qToBigEndian<quint32>(static_cast<quint32>(_reqType));

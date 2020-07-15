@@ -13,6 +13,8 @@
 #define hifi_udt4_UdtSocket_send_h
 
 #include "Packet.h"
+#include "PacketID.h"
+#include <QtCore/QDeadlineTimer>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QMutex>
 #include <QtCore/QThread>
@@ -50,12 +52,12 @@ private slots:
 private:
     enum class SendState
     {
-        Closed,
-        Idle,
-        Sending,
-        Waiting,
-        ProcessDrop,
-        Shutdown,
+        Closed,      // Connection is closed
+        Idle,        // Connection is open and waiting
+        Sending,     // Recently sent a packet
+        Waiting,     // Waiting for the peer to process a packet
+        ProcessDrop, // Dropping a lost packet
+        Shutdown,    // Connection has been recently closed and is listening for packet-resend requests
     };
 
 private:  // called exclusively within our private thread
@@ -88,12 +90,12 @@ private:
     // While the send thread is running these variables only to be accessed by that thread (can be initialized carefully by other threads)
 	SendState      _sendState{SendState::Closed};  // current sender state
 //	sendPktPend    sendPacketHeap  // list of packets that have been sent but not yet acknoledged
-	quint32        _sendPacketID;   // the current packet sequence number
+	PacketID       _sendPacketID;   // the current packet sequence number
 //	msgPartialSend *sendMessage    // when a message can only partially fit in a socket, this is the remainder
 //	msgSeq         uint32          // the current message sequence number
 //	expCount       uint            // number of continuous EXP timeouts.
 	QElapsedTimer  _lastReceiveTime; // the last time we've heard something from the remote system
-	quint32        _lastAckPacketID; // largest packetID we've received an ACK from
+	PacketID       _lastAckPacketID; // largest packetID we've received an ACK from
 //	sentAck2       uint32          // largest ACK2 packet we've sent
 //	sendLossList   packetIDHeap    // loss list
 //	sndPeriod      atomicDuration  // (set by congestion control) delay between sending packets
@@ -102,9 +104,9 @@ private:
 	uint           _flowWindowSize; // negotiated maximum number of unacknowledged packets (in packets)
 
 	// timers
-	QTimer _SNDtimer;             // if a packet is recently sent, this timer fires when SND completes
-	QElapsedTimer _ACK2SentTimer; // if an ACK2 packet has recently sent, wait SYN before sending another one
-	QTimer _EXPtimer;             // Fires when we haven't heard from the peer in a while
+	QTimer _SNDtimer;              // if a packet is recently sent, this timer fires when SND completes
+	QTimer _EXPtimer;              // Fires when we haven't heard from the peer in a while
+	QDeadlineTimer _ACK2SentTimer; // if an ACK2 packet has recently sent, wait SYN before sending another one
 
 private:
     Q_DISABLE_COPY(UdtSocket_send)

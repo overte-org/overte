@@ -13,6 +13,7 @@
 #define hifi_udt4_UdtServer_h
 
 #include "packet.h"
+#include "PacketID.h"
 #include <QtCore/QAtomicInt>
 #include <QtCore/QCryptographicHash>
 #include <QtCore/QDeadlineTimer>
@@ -84,7 +85,7 @@ private:
 private:
     struct AcceptedSockInfo {
         quint32 sockID{ 0 };
-        quint32 initialSequenceNumber{ 0 };
+        PacketID initialSequenceNumber;
         UdtSocketWeakPointer socket;
     };
     typedef QMap<QDeadlineTimer, AcceptedSockInfo> AcceptSockInfoMap;
