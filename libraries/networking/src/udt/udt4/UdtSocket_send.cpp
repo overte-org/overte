@@ -104,7 +104,7 @@ bool UdtSocket_send::processEvent(QMutexLocker& eventGuard) {
     switch (_socketState) {
     case UdtSocketState::Connected: // this is the expected state while we are running
         break;
-    case UdtSocketState::CloseLinger:
+    case UdtSocketState::HalfClosed:
         if (_sendState != SendState::Shutdown) {
             _sendState = SendState::Shutdown;
             _flagRecentEXPevent = false;

@@ -24,7 +24,6 @@
 namespace udt4 {
 
 class UdtSocket_private;
-class UdtSocket;
 enum class UdtSocketState;
 
 /* UdtSocket_send

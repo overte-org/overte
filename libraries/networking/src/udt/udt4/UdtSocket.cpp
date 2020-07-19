@@ -25,7 +25,7 @@
 
 using namespace udt4;
 
-UdtSocket::UdtSocket(QObject* parent) : QIODevice(parent), _send(*this) {
+UdtSocket::UdtSocket(QObject* parent) : QIODevice(parent), _send(*this), _recv(*this) {
     _connTimeout.setSingleShot(true);
     _connTimeout.setTimerType(Qt::PreciseTimer);
     connect(&_connTimeout, &QTimer::timeout, this, &UdtSocket::onConnectionTimeout);
@@ -81,6 +81,7 @@ void UdtSocket::setState(UdtSocketState newState) {
         break;
     case UdtSocketState::Rendezvous:
     case UdtSocketState::Connecting:
+    case UdtSocketState::HalfConnected:
         isClosed = false;
         isFullClosed = false;
         isConnecting = true;
@@ -89,7 +90,7 @@ void UdtSocket::setState(UdtSocketState newState) {
         isClosed = false;
         isFullClosed = false;
         break;
-    case UdtSocketState::CloseLinger:
+    case UdtSocketState::HalfClosed:
         isFullClosed = false;
         _lingerTimer.start(LINGER_TIMEOUT);
         break;
@@ -120,7 +121,7 @@ void UdtSocket::setState(UdtSocketState newState) {
             _connRetry.stop();
         }
     }
-    if (newState != UdtSocketState::CloseLinger && _lingerTimer.isActive()) {
+    if (newState != UdtSocketState::HalfClosed && _lingerTimer.isActive()) {
         _lingerTimer.stop();
     }
     if (isFullClosed) {
@@ -135,6 +136,8 @@ void UdtSocket::setState(UdtSocketState newState) {
         _multiplexer.reset();
         _socketID = 0;
         _farSocketID = 0;
+        _synCookie = 0;
+        _connectionRetriesBeforeMTU = 0;
         if (_offAxisUdpSocket.isOpen()) {
             _offAxisUdpSocket.close();
         }
@@ -147,8 +150,15 @@ void UdtSocket::setState(UdtSocketState newState) {
 
     _send.setState(newState);
 
-    if (isClosed && (oldState == UdtSocketState::Connecting || oldState == UdtSocketState::Connected)) {
-        _congestion.close();
+    if (isClosed) {
+        switch(oldState) {
+            case UdtSocketState::Rendezvous:
+            case UdtSocketState::Connecting:
+            case UdtSocketState::HalfConnected:
+            case UdtSocketState::Connected:
+                _congestion.close();
+                break;
+        }
     }
 
     emit stateChanged(newState);
@@ -267,8 +277,7 @@ void UdtSocket::createOffAxisSocket() {
     }
 
     // retrieve the (initial?) Path MTU from the off-axis socket
-    QVariant varMtu = _offAxisUdpSocket.socketOption(QAbstractSocket::PathMtuSocketOption);
-    int mtu = varMtu.toInt(NULL);
+    unsigned mtu = getCurrentPathMtu();
     if (mtu == 0) {
         qCWarning(networking) << "Attempt to retrieve Path MTU setting failed";
         _mtu.store(1500);  // default value, shouldn't be seeing this though
@@ -349,8 +358,8 @@ bool UdtSocket::initServerSocket(UdtMultiplexerPointer multiplexer, const Handsh
 
     // spin up the monitoring connection and attach ourselves to it
     _monitorThread.start();
-    moveToThread(&socket->_monitorThread);
-    _send.moveToThread(&socket->_monitorThread);
+    moveToThread(&_monitorThread);
+    _send.moveToThread(&_monitorThread);
 
     return checkValidHandshake(hsPacket, peerAddress, peerPort) && processHandshake(hsPacket);
 }
@@ -372,37 +381,58 @@ void UdtSocket::startConnect(const QHostAddress& address, quint16 port, quint16 
 
         _connTimeout.start(CONNECT_TIMEOUT);
     }
+    _connectionRetriesBeforeMTU = 0;
     _connRetry.start(CONNECT_RETRY);
 
     if (_socketRole == SocketRole::Rendezvous) {
         connect(_multiplexer.get(), &UdtMultiplexer::readyRendezvousHandshake, this, &UdtSocket::onRendezvousHandshake);
-        sendHandshake(0, HandshakePacket::RequestType::Rendezvous, false);
+        sendHandshake(HandshakePacket::RequestType::Rendezvous, false);
     } else {
-        sendHandshake(0, HandshakePacket::RequestType::Request, false);
+        sendHandshake(HandshakePacket::RequestType::Request, false);
     }
 }
 
 // called while connecting if we haven't received a response from the peer within 250ms.  Resend initial handshake
 // This is a slot called on the "object-local" thread
 void UdtSocket::onConnectionRetry() {
-    if (state() != UdtSocketState::Connecting) {
-        return;
-    }
-
-    _connRetry.start(CONNECT_RETRY);
-
-    if (_socketRole == SocketRole::Rendezvous) {
-        sendHandshake(0, HandshakePacket::RequestType::Rendezvous, false);
-    } else {
-        sendHandshake(0, HandshakePacket::RequestType::Request, false);
+    switch(state()) {
+        case UdtSocketState::Rendezvous:
+            _connRetry.start(CONNECT_RETRY);
+            sendHandshake(HandshakePacket::RequestType::Rendezvous, false);
+            break;
+        case UdtSocketState::Connecting:
+            _connRetry.start(CONNECT_RETRY);
+            sendHandshake(HandshakePacket::RequestType::Request, false);
+            break;
+        case UdtSocketState::HalfConnected:
+            unsigned mtu = getCurrentPathMtu();
+            if (mtu != 0 && mtu < _mtu.load()) {
+                _connectionRetriesBeforeMTU = 0;
+                _mtu.store(mtu);
+            } else if (++_connectionRetriesBeforeMTU > MTU_DROP_INTERVAL) {
+                _connectionRetriesBeforeMTU = 0;
+                quint32 newMtu = _mtu.load() - MTU_DROP_INCREMENT;
+                if (newMtu < MTU_MINIMUM) {
+                    newMtu = MTU_MINIMUM;
+                }
+                _mtu.store(newMtu);
+            }
+            _connRetry.start(CONNECT_RETRY);
+            sendHandshake(HandshakePacket::RequestType::Response, true);
+            break;
     }
 }
 
 // Called when we have failed to connect to the peer within an acceptible timeframe
 // This is a slot called on the "object-local" thread
 void UdtSocket::onConnectionTimeout() {
-    if (state() != UdtSocketState::Connecting) {
-        return;
+    switch(state()) {
+        case UdtSocketState::Rendezvous:
+        case UdtSocketState::Connecting:
+        case UdtSocketState::HalfConnected:
+            break;
+        default:
+            return;
     }
 
     setState(UdtSocketState::Timeout);
@@ -416,6 +446,7 @@ bool UdtSocket::waitForConnected(int msecs /* = 30000 */) {
             case UdtSocketState::HostLookup:
             case UdtSocketState::Rendezvous:
             case UdtSocketState::Connecting:
+            case UdtSocketState::HalfConnected:
                 break;  // continue to wait
             default:
                 return true;  // either connected or failed to connect
@@ -443,7 +474,12 @@ bool UdtSocket::waitForDisconnected(int msecs /* = 30000 */) {
     return false;
 }
 
-void UdtSocket::sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType, bool mtuDiscovery) {
+unsigned UdtSocket::getCurrentPathMtu() const {
+    QVariant varMtu = const_cast<QUdpSocket&>(_offAxisUdpSocket).socketOption(QAbstractSocket::PathMtuSocketOption);
+    return varMtu.toUInt(NULL);
+}
+
+void UdtSocket::sendHandshake(HandshakePacket::RequestType requestType, bool mtuDiscovery) {
 
     int sockMtu = _mtu.load();
     HandshakePacket hsResponse;
@@ -454,7 +490,7 @@ void UdtSocket::sendHandshake(quint32 synCookie, HandshakePacket::RequestType re
     hsResponse._maxFlowWinSize = _maxFlowWinSize; // maximum flow window size
     hsResponse._reqType = requestType;
     hsResponse._farSocketID = _socketID;
-    hsResponse._synCookie = synCookie;
+    hsResponse._synCookie = _synCookie;
     hsResponse._sockAddr = _multiplexer->serverAddress();
 
     if (mtuDiscovery) {
@@ -468,16 +504,6 @@ void UdtSocket::sendHandshake(quint32 synCookie, HandshakePacket::RequestType re
         // packet-resends until something gets through.
 
         uint headerSize = hsResponse.packetHeaderSize(_remoteAddr.protocol());
-
-        // update the Path MTU from the off-axis socket (if possible)
-        QVariant varMtu = _offAxisUdpSocket.socketOption(QAbstractSocket::PathMtuSocketOption);
-        int mtu = varMtu.toInt(NULL);
-        if (mtu != 0 && mtu < sockMtu) {
-            _mtu.store(mtu);
-            sockMtu = mtu;
-            hsResponse._maxPktSize = sockMtu;
-        }
-
         assert(sockMtu > headerSize);
         hsResponse._extra.create(sockMtu - headerSize);
     }
@@ -549,16 +575,16 @@ bool UdtSocket::readHandshake(const HandshakePacket& hsPacket, const QHostAddres
 /*  Connection protocol
 
     Client -> Server
-        Client[Connecting] sends Request ->
+        Client sends Request, sets state=Connecting ->
             -> Server[UdtServer] sees Request, creates a SYN cookie and returns Request
-        Client[Connecting] sees Request with cookie, sends Response ->
-            -> Server[UdtServer] sees Response with valid cookie, creates UdtSocket[Connected] and sends Response
-        Client[Connected] sees Response
+        Client[Connecting] sees Request with cookie, sends Response(MTU), sets state=HalfConnected ->
+            -> Server[UdtServer] sees Response with valid cookie, creates UdtSocket and sends Response, sets state=Connected
+        Client[HalfConnected] sees Response, sets state=Connected
 
     Rendezvous <-> Rendezvous
-        Peer[Rendezvous] sends Rendezvous ->
-        Peer[Connected] sees Rendezvous and sends Response ->
-        Peer[Connected] sees Response and sends Response2 ->
+        Peer sends Rendezvous, sets state=Rendezvous ->
+        Peer[Rendezvous] sees Rendezvous and sends Response(MTU), sets state=HalfConnected ->
+        Peer[HalfConnected] sees Response and sends Response2, sets state=Connected ->
 
     Currently all "Response" packets are sent padded up to the maximum MTU, this currently seems like a good place
     to probe for maximum packet size without modifying the protocol too badly, where dropped packets should elicit
@@ -578,9 +604,9 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
         launchProcessors();
         _recv.configureHandshake(hsPacket);
         _send.configureHandshake(hsPacket, true);
+        _synCookie = hsPacket._synCookie;
         setState(UdtSocketState::Connected);
-
-        sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response, true);
+        sendHandshake(HandshakePacket::RequestType::Response, false);
         return true;
 
     case UdtSocketState::Connecting:  // client attempting to connect to server
@@ -595,32 +621,26 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
                 return false;
             }
             // handshake isn't done yet, send it back with the cookie we received
-            sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response, true);
+            {
+                unsigned mtu = getCurrentPathMtu();
+                if (mtu != 0 && mtu < _mtu.load()) {
+                    _mtu.store(mtu);
+                }
+            }
+            _synCookie = hsPacket._synCookie;
+            sendHandshake(HandshakePacket::RequestType::Response, true);
+            _connectionRetriesBeforeMTU = 0;
+            _connRetry.start(CONNECT_RETRY);
+            setState(UdtSocketState::HalfConnected);
             return true;
-
-        case HandshakePacket::RequestType::Response:
-            if(hsPacket._initPktSeq != _initialPacketSequence) {
-                // ignore, not a valid handshake request
-                return false;
-            }
-            _farSocketID = hsPacket._farSocketID;
-
-            if (_mtu.load() > hsPacket._maxPktSize) {
-                _mtu.store(hsPacket._maxPktSize);
-            }
-            launchProcessors();
-            _recv.configureHandshake(hsPacket);
-            _send.configureHandshake(hsPacket, true);
-            setState(UdtSocketState::Connected);
         }
-        return true;
 
     case UdtSocketState::Rendezvous:  // client attempting to rendezvous with another client
         if(hsPacket._reqType == HandshakePacket::RequestType::Refused) {
             setState(UdtSocketState::Refused);
             return true;
         }
-        if(hsPacket._reqType != HandshakePacket::RequestType::Rendezvous || _farSocketID == 0) {
+        if(hsPacket._reqType != HandshakePacket::RequestType::Rendezvous) {
             return false; // not a request packet, ignore
         }
         /* not quite sure how to negotiate this, assuming split-brain for now
@@ -634,13 +654,66 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
         if (_mtu.load() > hsPacket._maxPktSize) {
             _mtu.store(hsPacket._maxPktSize);
         }
+        {
+            unsigned mtu = getCurrentPathMtu();
+            if (mtu != 0 && mtu < _mtu.load()) {
+                _mtu.store(mtu);
+            }
+        }
+        _synCookie = hsPacket._synCookie;
+        sendHandshake(HandshakePacket::RequestType::Response, true);
+        _connectionRetriesBeforeMTU = 0;
+        _connRetry.start(CONNECT_RETRY);
+        setState(UdtSocketState::HalfConnected);
+        return true;
+
+    case UdtSocketState::HalfConnected:
+        switch (hsPacket._reqType) {
+            case HandshakePacket::RequestType::Refused:
+                setState(UdtSocketState::Refused);
+                return true;
+            case HandshakePacket::RequestType::Rendezvous:
+                if (_socketRole == SocketRole::Rendezvous) {  // replay of the rendezvous handshake?
+                    assert(_farSocketID == hsPacket._farSocketID);
+                    _farSocketID = hsPacket._farSocketID;
+
+                    if (_mtu.load() > hsPacket._maxPktSize) {
+                        _mtu.store(hsPacket._maxPktSize);
+                    }
+                    unsigned mtu = getCurrentPathMtu();
+                    if (mtu != 0 && mtu < _mtu.load()) {
+                        _connectionRetriesBeforeMTU = 0;
+                        _mtu.store(mtu);
+                    }
+                    _connRetry.start(CONNECT_RETRY);
+                    sendHandshake(HandshakePacket::RequestType::Response, true);
+                    return true;
+                }
+                return false;
+            case HandshakePacket::RequestType::Response:
+                break;  // handled below
+            default:
+                return false;  // not a packet we're handling here
+        }
+        if (_socketRole == SocketRole::Client && hsPacket._initPktSeq != _initialPacketSequence) {
+            // ignore, not a valid handshake request
+            return false;
+        }
+        assert(_socketRole == SocketRole::Client || _farSocketID == hsPacket._farSocketID);
+        _farSocketID = hsPacket._farSocketID;
+
+        if (_mtu.load() > hsPacket._maxPktSize) {
+            _mtu.store(hsPacket._maxPktSize);
+        }
         launchProcessors();
         _recv.configureHandshake(hsPacket);
-        _send.configureHandshake(hsPacket, false);
+        _send.configureHandshake(hsPacket, _socketRole == SocketRole::Client);
         setState(UdtSocketState::Connected);
 
-        // send the final rendezvous packet
-        sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response, true);
+        if (_socketRole == SocketRole::Rendezvous) {
+            // send the final rendezvous packet
+            sendHandshake(HandshakePacket::RequestType::Response2, false);
+        }
         return true;
 
     case UdtSocketState::Connected:  // server repeating a handshake to a client
@@ -648,18 +721,13 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
         case SocketRole::Server:
             if (hsPacket._reqType == HandshakePacket::RequestType::Request) {
                 // client didn't receive our response handshake, resend it
-                sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response, true);
+                sendHandshake(HandshakePacket::RequestType::Response, true);
             }
             break;
         case SocketRole::Rendezvous:
-            switch (hsPacket._reqType) {
-            case HandshakePacket::RequestType::Request:
-                // this is a rendezvous connection and peer didn't receive our response packet, resend it
-                sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response, true);
-                break;
-            case HandshakePacket::RequestType::Response:
-                // this is a rendezvous connection (re)send our response
-                sendHandshake(hsPacket._synCookie, HandshakePacket::RequestType::Response2, false);
+            if (hsPacket._reqType == HandshakePacket::RequestType::Response) {
+                // peer didn't receive our response2 handshake, resend it
+                sendHandshake(HandshakePacket::RequestType::Response2, false);
                 break;
             }
             break;
@@ -691,14 +759,14 @@ void UdtSocket::readPacket(const Packet& udtPacket, const QHostAddress& peerAddr
         }
         break;
     }
-    case PacketType::Shutdown:    // sent by either peer
-        emit shutdownRequested(UdtSocketState::CloseLinger, "", QPrivateSignal());
-        break;
     case PacketType::Ack:  // receiver -> sender
     case PacketType::Nak:
         emit _send.packetReceived(udtPacket, now);
         break;
-    case PacketType::Ack2: // sender -> receiver
+    case PacketType::Shutdown:  // sent by either peer
+//        emit shutdownRequested(UdtSocketState::HalfClosed, "", QPrivateSignal());
+//        break;
+    case PacketType::Ack2:  // sender -> receiver
     case PacketType::MsgDropReq:
     case PacketType::Data:
     case PacketType::SpecialErr:
@@ -712,7 +780,7 @@ void UdtSocket::readPacket(const Packet& udtPacket, const QHostAddress& peerAddr
 }
 
 void UdtSocket::onShutdownRequested(UdtSocketState toState, QString error) {
-    if (toState == UdtSocketState::CloseLinger && state() != UdtSocketState::Connected) {
+    if (toState == UdtSocketState::HalfClosed && state() != UdtSocketState::Connected) {
         toState = UdtSocketState::Closed;
     }
     _errorString = error;
@@ -727,16 +795,18 @@ void UdtSocket::disconnectFromHost() {
     switch (state()) {
     case UdtSocketState::Connected:
         _send.queueDisconnect();
-        setState(UdtSocketState::CloseLinger);
+        setState(UdtSocketState::HalfClosed);
         break;
+    case UdtSocketState::Rendezvous:
     case UdtSocketState::Connecting:
+    case UdtSocketState::HalfConnected:
         setState(UdtSocketState::Closed);
         break;
     }
 }
 
 void UdtSocket::onLingerTimeout() {
-    if (state() == UdtSocketState::CloseLinger) {
+    if (state() == UdtSocketState::HalfClosed) {
         setState(UdtSocketState::Closed);
     }
 }

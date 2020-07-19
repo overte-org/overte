@@ -29,6 +29,7 @@
 #include <QtCore/QTimer>
 #include <QtNetwork/QUdpSocket>
 #include "UdtSocket_send.h"
+#include "UdtSocket_recv.h"
 
 namespace udt4 {
 
@@ -56,8 +57,9 @@ enum class UdtSocketState
     Error,          // an error occurred establishing the connection
     Rendezvous,     // attempting to create a rendezvous connection
     Connecting,     // attempting to connect to a server
+    HalfConnected,  // connection is technically established, can receive but we want to confirm the MTU before sending anything
     Connected,      // connection is established
-    CloseLinger,    // connection is being closed (by either end), keeping receiver open for packet retransmits
+    HalfClosed,     // connection is being closed (by either end), keeping receiver open for packet retransmits
     Closed,         // connection has been closed
     Refused,        // connection rejected by remote host
     Corrupted,      // peer behaved in an improper manner
@@ -81,10 +83,13 @@ public:
 
     enum Timeouts
     {
-        CONNECT_TIMEOUT = 3 * SECOND,
-        RENDEZVOUS_CONNECT_TIMEOUT = 30 * SECOND,
-        CONNECT_RETRY = 250 * MILLISECOND,
-        LINGER_TIMEOUT = 180 * SECOND,
+        CONNECT_TIMEOUT = 3 * SECOND,               // how long should a client -> server connection take, from start to connected?
+        RENDEZVOUS_CONNECT_TIMEOUT = 30 * SECOND,   // how long should a client <-> client connection take, from start to connected?
+        CONNECT_RETRY = 250 * MILLISECOND,          // if we haven't received a response to a packet in this amount of time, resend it
+        LINGER_TIMEOUT = 180 * SECOND,              // after a connection is closed, wait this long for any potential packet resend requests
+        MTU_DROP_INTERVAL = 3,                      // if we're negotiating a connection and have sent this many retries, drop the MTU
+        MTU_DROP_INCREMENT = 10,                    // if we're negotiating a connection and think we may not be getting through, drop the MTU by this much
+        MTU_MINIMUM = 1280,                         // we should not drop the MTU below this point on our own
     };
 
 public:
@@ -167,11 +172,12 @@ private:
     void setState(UdtSocketState newState);
     void createOffAxisSocket();
     bool preConnect(const QHostAddress& address, quint16 port, quint16 localPort);
+    unsigned getCurrentPathMtu() const;
     void startNameConnect(const QString& hostName, quint16 port, quint16 localPort);
     void onNameResolved(QHostInfo info, quint16 port, quint16 localPort);
     void startConnect(const QHostAddress& address, quint16 port, quint16 localPort);
     bool processHandshake(const HandshakePacket& hsPacket);
-    void sendHandshake(quint32 synCookie, HandshakePacket::RequestType requestType, bool mtuDiscovery);
+    void sendHandshake(HandshakePacket::RequestType requestType, bool mtuDiscovery);
     bool initServerSocket(UdtMultiplexerPointer multiplexer, const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
     static QString addressDebugString(const QHostAddress& address, quint16 port, quint32 socketID);
     QString localAddressDebugString() const;
@@ -197,6 +203,8 @@ private:
     QElapsedTimer _createTime;           // the time this socket was created
     QString _errorString;                // a string describing the most recent error on this socket
     quint32 _farSocketID{ 0 };           // the remote's socketID
+    quint32 _synCookie{ 0 };             // the remote's SYN cookie
+    unsigned _connectionRetriesBeforeMTU{ 0 }; // the number of connection retry attempts we've made before adjusting the MTU
     PacketID _initialPacketSequence;     // initial packet sequence to start the connection with
     bool _isDatagram{ true };            // if true then we're sending and receiving datagrams, otherwise we're a streaming socket
     QThread _monitorThread;              // thread to monitor the state of the overall connection
@@ -237,6 +245,8 @@ private:
 */
 
     UdtSocket_send _send; // the "outgoing" side of this UDT connection
+    UdtSocket_receive _recv; // the "incoming" side of this UDT connection
+
 	// timers
 /*
 	recv *udtSocketRecv // reference to receiving side of this socket
