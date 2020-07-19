@@ -26,7 +26,8 @@ Packet::Packet(ByteSlice networkPacket) {
     if (networkPacket.length() >= 16) {
         quint32 sequence = qFromBigEndian<quint32>(&networkPacket[0]);
         _sequence = PacketID(sequence);
-        _additionalInfo = qFromBigEndian<quint32>(&networkPacket[4]);
+        quint32 additionalInfo = qFromBigEndian<quint32>(&networkPacket[4]);
+        _additionalInfo = SequenceNumber(additionalInfo);
         _timestamp = qFromBigEndian<quint32>(&networkPacket[8]);
         _socketID = qFromBigEndian<quint32>(&networkPacket[12]);
         _contents = networkPacket.substring(16);
@@ -65,7 +66,7 @@ ByteSlice Packet::toNetworkPacket() const {
     ByteSlice packetData;
     quint8* buffer = reinterpret_cast<quint8*>(packetData.create(_contents.length() + 16));
     *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(sequence);
-    *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(_additionalInfo);
+    *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(static_cast<quint32>(_additionalInfo));
     *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_timestamp);
     *reinterpret_cast<quint32*>(&buffer[12]) = qToBigEndian<quint32>(_socketID);
     if (_contents.length() != 0) {
@@ -77,6 +78,7 @@ ByteSlice Packet::toNetworkPacket() const {
 
 HandshakePacket::HandshakePacket(const Packet& src, QAbstractSocket::NetworkLayerProtocol protocol) :
     _timestamp(src._timestamp), _socketID(src._socketID) {
+    assert(src._type == PacketType::Handshake && src._contents.length() >= 48);
     if (src._contents.length() >= 48) {
         _udtVer = qFromBigEndian<quint32>(&src._contents[0]);
         _sockType = static_cast <SocketType>(qFromBigEndian<quint32>(&src._contents[4]));
@@ -135,6 +137,43 @@ Packet HandshakePacket::toPacket() const {
 
     Packet packet;
     packet._type = PacketType::Handshake;
+    packet._timestamp = _timestamp;
+    packet._socketID = _socketID;
+    packet._contents = packetData;
+    return packet;
+}
+
+MessageDropRequestPacket::MessageDropRequestPacket(const Packet& src) :
+    _timestamp(src._timestamp), _socketID(src._socketID), _messageID(src._additionalInfo) {
+
+    assert(src._type == PacketType::MsgDropReq && src._contents.length() >= 8);
+    if (src._contents.length() >= 8) {
+        quint32 firstPacketID = qFromBigEndian<quint32>(&src._contents[0]);
+        _firstPacketID = PacketID(firstPacketID);
+        quint32 lastPacketID = qFromBigEndian<quint32>(&src._contents[4]);
+        _lastPacketID = PacketID(lastPacketID);
+        _extra = src._contents.substring(8);
+    }
+}
+
+uint MessageDropRequestPacket::packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol) {
+    return Packet::packetHeaderSize(protocol) + 8;
+}
+
+Packet MessageDropRequestPacket::toPacket() const {
+    ByteSlice packetData;
+    quint8* buffer = reinterpret_cast<quint8*>(packetData.create(_extra.length() + 8));
+
+    *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(static_cast<quint32>(_firstPacketID));
+    *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(static_cast<quint32>(_lastPacketID));
+
+    if (_extra.length() != 0) {
+        memcpy(&buffer[48], &_extra[0], _extra.length());
+    }
+
+    Packet packet;
+    packet._type = PacketType::MsgDropReq;
+    packet._additionalInfo = _messageID;
     packet._timestamp = _timestamp;
     packet._socketID = _socketID;
     packet._contents = packetData;

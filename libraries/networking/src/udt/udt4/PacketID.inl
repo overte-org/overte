@@ -16,122 +16,155 @@
 
 namespace udt4 {
 
-inline PacketID::PacketID(const PacketID& other) : _value(other._value & MAX) {
+template <int BITS>
+inline WrappedSequence<BITS>::WrappedSequence(const WrappedSequence& other) : _value(other._value) {
 }
 
-inline PacketID::PacketID(PacketID&& other) : _value(other._value) {
+template <int BITS>
+inline WrappedSequence<BITS>::WrappedSequence(WrappedSequence&& other) : _value(other._value) {
 }
 
-inline PacketID::PacketID(Type value) {
-    _value = (value <= MAX) ? ((value >= 0) ? value : 0) : MAX;
+template <int BITS>
+inline WrappedSequence<BITS>::WrappedSequence(UType value) {
+    _value = value & MAX;
 }
 
-inline PacketID::PacketID(UType value) {
-    _value = (value <= MAX) ? value : MAX;
-}
-
-inline PacketID::operator Type() const {
-    return _value;
-}
-
-inline PacketID::operator UType() const {
+template <int BITS>
+inline WrappedSequence<BITS>::operator UType() const {
     return static_cast<UType>(_value);
 }
     
-inline PacketID& PacketID::operator++() {
+template <int BITS>
+inline WrappedSequence<BITS>& WrappedSequence<BITS>::operator++() {
     _value = (_value + 1) & MAX;
     return *this;
 }
-inline PacketID& PacketID::operator--() {
+
+template <int BITS>
+inline WrappedSequence<BITS>& WrappedSequence<BITS>::operator--() {
     _value = (_value - 1) & MAX;
     return *this;
 }
 
-inline PacketID PacketID::operator++(int) {
-    PacketID before = *this;
+template <int BITS>
+inline WrappedSequence<BITS> WrappedSequence<BITS>::operator++(int) {
+    WrappedSequence before = *this;
     ++(*this);
     return before;
 }
 
-inline PacketID PacketID::operator--(int) {
-    PacketID before = *this;
+template <int BITS>
+inline WrappedSequence<BITS> WrappedSequence<BITS>::operator--(int) {
+    WrappedSequence before = *this;
     --(*this);
     return before;
 }
     
-inline PacketID& PacketID::operator=(const PacketID& other) {
+template <int BITS>
+inline WrappedSequence<BITS>& WrappedSequence<BITS>::operator=(const WrappedSequence& other) {
     _value = other._value;
     return *this;
 }
 
-inline PacketID& PacketID::operator=(PacketID&& other) {
+template <int BITS>
+inline WrappedSequence<BITS>& WrappedSequence<BITS>::operator=(UType value) {
+    _value = value & MAX;
+    return *this;
+}
+
+template <int BITS>
+inline WrappedSequence<BITS>& WrappedSequence<BITS>::operator=(WrappedSequence&& other) noexcept {
     if (&other != this) {
         _value = other._value;
     }
     return *this;
 }
 
-inline PacketID& PacketID::operator+=(Type inc) {
+template <int BITS>
+inline WrappedSequence<BITS>& WrappedSequence<BITS>::operator+=(Type inc) {
     _value = (_value + inc) & MAX;
     return *this;
 }
 
-inline PacketID& PacketID::operator-=(Type dec) {
+template <int BITS>
+inline WrappedSequence<BITS>& WrappedSequence<BITS>::operator-=(Type dec) {
     _value = (_value - dec) & MAX;
     return *this;
 }
     
-inline bool PacketID::operator==(const PacketID& other) const {
+template <int BITS>
+inline bool WrappedSequence<BITS>::operator==(const WrappedSequence& other) const {
     return _value == other._value;
 }
 
-inline bool PacketID::operator!=(const PacketID& other) const {
+template <int BITS>
+inline bool WrappedSequence<BITS>::operator!=(const WrappedSequence& other) const {
     return _value != other._value;
 }
 
-inline PacketID::Type PacketID::blindDifference(const PacketID& rhs) const {
-    UType diff = (_value - rhs._value) & PacketID::MAX;
-    if ((diff & 0x40000000) != 0) {
-        diff = diff | 0x80000000;
+template <int BITS>
+inline typename WrappedSequence<BITS>::Type WrappedSequence<BITS>::blindDifference(const WrappedSequence& rhs) const {
+    UType diff = (_value - rhs._value) & WrappedSequence::MAX;
+    if ((diff & SIGN) != 0) {
+        diff = diff | ~MAX;
 	}
 	return static_cast<Type>(diff);
 }
     
-inline bool PacketID::operator<(const PacketID& rhs) const {
+template <int BITS>
+inline bool WrappedSequence<BITS>::operator<(const WrappedSequence& rhs) const {
     return blindDifference(rhs) < 0;
 }
 
-inline bool PacketID::operator>(const PacketID& rhs) const {
+template <int BITS>
+inline bool WrappedSequence<BITS>::operator>(const WrappedSequence& rhs) const {
     return blindDifference(rhs) > 0;
 }
 
-inline bool PacketID::operator<=(const PacketID& rhs) const {
+template <int BITS>
+inline bool WrappedSequence<BITS>::operator<=(const WrappedSequence& rhs) const {
     return blindDifference(rhs) <= 0;
 }
 
-inline bool PacketID::operator>=(const PacketID& rhs) const {
+template <int BITS>
+inline bool WrappedSequence<BITS>::operator>=(const WrappedSequence& rhs) const {
     return blindDifference(rhs) >= 0;
 }
     
-inline PacketID operator+(PacketID a, const PacketID::Type& b) {
+template <int BITS>
+inline WrappedSequence<BITS> operator+(WrappedSequence<BITS> a, qint32 b) {
     a += b;
     return a;
 }
 
-inline PacketID operator+(const PacketID::Type& a, PacketID b) {
+template <int BITS>
+inline WrappedSequence<BITS> operator+(qint32 a, const WrappedSequence<BITS> b) {
     b += a;
     return b;
 }
 
-inline PacketID operator-(PacketID a, const PacketID::Type& b) {
+template <int BITS>
+inline WrappedSequence<BITS> operator-(WrappedSequence<BITS> a, qint32 b) {
     a -= b;
     return a;
 }
 
-inline PacketID operator-(const PacketID::Type& a, PacketID b) {
+template <int BITS>
+inline WrappedSequence<BITS> operator-(qint32 a, WrappedSequence<BITS> b) {
     b -= a;
     return b;
 }
+
+template <int BITS>
+uint qHash(const WrappedSequence<BITS>& key) {
+    return qHash(key._value);
+}
+
+template <int BITS>
+uint qHash(const WrappedSequence<BITS> & key, uint seed) {
+    return qHash(key._value, seed);
+}
+
 
 }  // namespace udt4
 

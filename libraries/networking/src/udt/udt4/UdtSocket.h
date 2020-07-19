@@ -46,7 +46,8 @@ enum
 
 // private interface for interactions within a UdtSocket
 class UdtSocket_private {
-
+public:
+    virtual void applyRTT(quint32 RTTinMicroseconds) = 0;
 };
 
 enum class UdtSocketState
@@ -81,7 +82,7 @@ public:
         SECOND = 1000,
     };
 
-    enum Timeouts
+    enum Timings
     {
         CONNECT_TIMEOUT = 3 * SECOND,               // how long should a client -> server connection take, from start to connected?
         RENDEZVOUS_CONNECT_TIMEOUT = 30 * SECOND,   // how long should a client <-> client connection take, from start to connected?
@@ -90,6 +91,7 @@ public:
         MTU_DROP_INTERVAL = 3,                      // if we're negotiating a connection and have sent this many retries, drop the MTU
         MTU_DROP_INCREMENT = 10,                    // if we're negotiating a connection and think we may not be getting through, drop the MTU by this much
         MTU_MINIMUM = 1280,                         // we should not drop the MTU below this point on our own
+        SYN = 10 * MILLISECOND,                     // SYN is used as a timing duration in a number of places in UDT
     };
 
 public:
@@ -156,6 +158,9 @@ public: // internal implementation
         const QHostAddress& peerAddress, uint peerPort);
     void readPacket(const Packet& udtPacket, const QHostAddress& peerAddress, uint peerPort);
     inline void setLocalSocketID(quint32 socketID);
+
+private: // UdtSocket_private implementation
+    virtual void applyRTT(quint32 RTTinMicroseconds);
 
 protected:
     virtual bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);

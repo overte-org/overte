@@ -16,55 +16,65 @@
 
 namespace udt4 {
 
-class PacketID {
+template <int BITS>
+class WrappedSequence {
 public:
     // Base type of sequence numbers
     using Type = qint32;
     using UType = quint32;
     
     // Values are for 31 bit PacketID
-    static const Type MAX = 0x7FFFFFFF; // maximum packet ID used in UDT
+    static constexpr UType MAX = (1UL << BITS) - 1; // maximum value that can be stored
+    static constexpr UType SIGN = 1UL << (BITS - 1);  // the "sign" bit when doing comparisons
     
-    PacketID() = default;
-    inline PacketID(const PacketID& other);
-    inline PacketID(PacketID&& other);
+    WrappedSequence() = default;
+    inline WrappedSequence(const WrappedSequence& other);
+    inline WrappedSequence(WrappedSequence&& other);
     
     // Only explicit conversions
-    explicit inline PacketID(Type value);
-    explicit inline PacketID(UType value);
-    explicit inline operator Type() const;
+    explicit inline WrappedSequence(UType value);
     explicit inline operator UType() const;
     
-    inline PacketID& operator++();
-    inline PacketID& operator--();
-    inline PacketID operator++(int);
-    inline PacketID operator--(int);
-    inline PacketID& operator=(const PacketID& other);
-    inline PacketID& operator=(PacketID&& other);
-    inline PacketID& operator+=(Type inc);
-    inline PacketID& operator-=(Type dec);
+    inline WrappedSequence& operator++();
+    inline WrappedSequence& operator--();
+    inline WrappedSequence operator++(int);
+    inline WrappedSequence operator--(int);
+    inline WrappedSequence& operator=(const WrappedSequence& other);
+    inline WrappedSequence& operator=(UType value);
+    inline WrappedSequence& operator=(WrappedSequence&& other) noexcept;
+    inline WrappedSequence& operator+=(Type inc);
+    inline WrappedSequence& operator-=(Type dec);
     
-    inline bool operator==(const PacketID& other) const;
-    inline bool operator!=(const PacketID& other) const;
+    inline bool operator==(const WrappedSequence& other) const;
+    inline bool operator!=(const WrappedSequence& other) const;
 
-    inline Type blindDifference(const PacketID& rhs) const;
+    inline Type blindDifference(const WrappedSequence& rhs) const;
     
-    inline bool operator<(const PacketID& rhs) const;
-    inline bool operator>(const PacketID& rhs) const;
-    inline bool operator<=(const PacketID& rhs) const;
-    inline bool operator>=(const PacketID& rhs) const;
+    // these do not provide a strict ordering, please do not use this as a key in QMap (although QHash is okay)
+    inline bool operator<(const WrappedSequence& rhs) const;
+    inline bool operator>(const WrappedSequence& rhs) const;
+    inline bool operator<=(const WrappedSequence& rhs) const;
+    inline bool operator>=(const WrappedSequence& rhs) const;
     
 private:
     UType _value { 0 };
 };
-static_assert(sizeof(PacketID) == sizeof(uint32_t), "PacketID invalid size");
 
-inline PacketID operator+(PacketID a, const PacketID::Type& b);
-inline PacketID operator+(const PacketID::Type& a, PacketID b);
-inline PacketID operator-(PacketID a, const PacketID::Type& b);
-inline PacketID operator-(const PacketID::Type& a, PacketID b);
-    
-} // namespace udt4
+template <int BITS> inline WrappedSequence<BITS> operator+(WrappedSequence<BITS> a, qint32 b);
+template <int BITS> inline WrappedSequence<BITS> operator+(qint32 a, WrappedSequence<BITS> b);
+template <int BITS> inline WrappedSequence<BITS> operator-(WrappedSequence<BITS> a, qint32 b);
+template <int BITS> inline WrappedSequence<BITS> operator-(qint32 a, WrappedSequence<BITS> b);
+
+template <int BITS> inline uint qHash(const WrappedSequence<BITS>& key);
+template <int BITS> inline uint qHash(const WrappedSequence<BITS>& key, uint seed);
+
+typedef WrappedSequence<31> PacketID;
+static_assert(sizeof(PacketID) == sizeof(quint32), "PacketID invalid size");
+
+typedef WrappedSequence<29> SequenceNumber; // either an ACK number or a Message number
+static_assert(sizeof(SequenceNumber) == sizeof(quint32), "SequenceNumber invalid size");
+
+}  // namespace udt4
 
 #include "PacketID.inl"
 #endif  // hifi_udt4_PacketID_h

@@ -58,7 +58,7 @@ public:
 public:
     PacketType _type{ PacketType::Invalid };
     PacketID _sequence;
-    quint32 _additionalInfo{ 0 };
+    SequenceNumber _additionalInfo;
     quint32 _timestamp{ 0 };
     quint32 _socketID{ 0 };
     ByteSlice _contents;
@@ -95,6 +95,23 @@ public:
     quint32 _farSocketID{ 0 };      // socket ID
     quint32 _synCookie{ 0 };        // SYN cookie
 	QHostAddress _sockAddr;         // the IP address of the UDP socket to which this packet is being sent
+    ByteSlice _extra;
+};
+
+class MessageDropRequestPacket {
+public:
+    inline MessageDropRequestPacket() {}
+    MessageDropRequestPacket(const Packet& src);
+    Packet toPacket() const;
+
+    static uint packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol);
+
+public:
+    SequenceNumber _messageID;
+    quint32 _timestamp{ 0 };
+    quint32 _socketID{ 0 };
+    PacketID _firstPacketID;
+    PacketID _lastPacketID;
     ByteSlice _extra;
 };
 

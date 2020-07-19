@@ -24,35 +24,29 @@ UdtSocket_receive::UdtSocket_receive(UdtSocket_private& socket) : _socket(socket
 const (
 	ackSelfClockInterval = 64
 );
-
-func newUdtSocketRecv(s *udtSocket) *udtSocketRecv {
-	sr := &udtSocketRecv{
-		socket:        s,
-		sockClosed:    s.sockClosed,
-		sockShutdown:  s.sockShutdown,
-		recvEvent:     s.recvEvent,
-		messageIn:     s.messageIn,
-		sendPacket:    s.sendPacket,
-		ackTimerEvent: time.After(synTime),
-	}
-	go sr.goReceiveEvent()
-	return sr
-}
 */
 
 void UdtSocket_receive::configureHandshake(const HandshakePacket& hsPacket) {
     _farNextPktSeq = hsPacket._initPktSeq;
     _farRecdPktSeq = hsPacket._initPktSeq - 1;
-    _sentAck = hsPacket._initPktSeq;
-    _recvAck2 = hsPacket._initPktSeq;
+    _sentACK = hsPacket._initPktSeq;
+    _recvACK2 = hsPacket._initPktSeq;
 }
 
 void UdtSocket_receive::run() {
+    _ackHistory.clear();
+    _recvLossList.clear();
+    _largestACK = 0UL;
+    _flagRecentACKevent = false;
+    _recvLastArrival.invalidate();
+    _recvLastProbe.invalidate();
+    _ACKtimer.start(UdtSocket::SYN);
+
     for (;;) {
         QMutexLocker guard(&_eventMutex);
         while (!processEvent(guard)) {
-            if (_sendState == SendState::Closed) {
-                // socket is closed, leave this thread
+            if (_flagListenerShutdown) {
+                // listener is closed, leave this thread
                 return;
             }
             _eventCondition.wait(&_eventMutex);
@@ -66,291 +60,287 @@ void UdtSocket_receive::ACKevent() {
     _eventCondition.notify_all();
 }
 
-void UdtSocket_receive::run() {
-	recvEvent := _recvEvent;
-	sockClosed := _sockClosed;
-	sockShutdown := _sockShutdown;
-	for(;;) {
-		select {
-		case evt, ok := <-recvEvent:
-			if !ok {
-				return;
-			}
-			switch sp := evt.pkt.(type) {
-			case *packet.Ack2Packet:
-				ingestAck2(sp, evt.now);
-			case *packet.MsgDropReqPacket:
-				ingestMsgDropReq(sp, evt.now);
-			case *packet.DataPacket:
-				ingestData(sp, evt.now);
-			case *packet.ErrPacket:
-				ingestError(sp);
-			}
-		case _, _ = <-sockShutdown: // socket is shut down, no need to receive any further data
-			return;
-		case _, _ = <-sockClosed: // socket is closed, leave now
-			return;
-		case <-_ackSentEvent:
-			_ackSentEvent = nil;
-		case <-_ackSentEvent2:
-			_ackSentEvent2 = nil;
-		case <-_ackTimerEvent:
-			ackEvent();
-		}
-	}
+void UdtSocket_receive::packetReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived) {
+    QMutexLocker guard(&_eventMutex);
+    ReceivedPacket packet(udtPacket, timeReceived);
+    _receivedPacketList.append(packet);
+    _eventCondition.notify_all();
 }
 
-/*
-ACK is used to trigger an acknowledgement (ACK). Its period is set by
-   the congestion control module. However, UDT will send an ACK no
-   longer than every 0.01 second, even though the congestion control
-   does not need timer-based ACK. Here, 0.01 second is defined as the
-   SYN time, or synchronization time, and it affects many of the other
-   timers used in UDT.
+// the main event loop for the "receive" side of the socket, this controls the behavior and permitted actions
+bool UdtSocket_receive::processEvent(QMutexLocker& eventGuard) {
+    if (!_receivedPacketList.isEmpty()) {
+        ReceivedPacket packet = _receivedPacketList.takeFirst();
+        switch (packet.udtPacket._type) {
+            case PacketType::Ack2:
+                eventGuard.unlock();
+                ingestACK2(packet.udtPacket, packet.timeReceived);
+                return true;
+            case PacketType::MsgDropReq:
+                eventGuard.unlock();
+                ingestMsgDropReq(MessageDropRequestPacket(packet.udtPacket), packet.timeReceived);
+                return true;
+            case PacketType::Data:
+                eventGuard.unlock();
+                ingestData(packet.udtPacket, packet.timeReceived);
+                return true;
+            case PacketType::SpecialErr:
+                eventGuard.unlock();
+                ingestError(packet.udtPacket);
+                return true;
+            case PacketType::Shutdown:  // sent by either peer
+                eventGuard.unlock();
+                ingestShutdown();
+                return true;
+        }
+    }
 
-   NAK is used to trigger a negative acknowledgement (NAK). Its period
-   is dynamically updated to 4 * RTT_+ RTTVar + SYN, where RTTVar is the
-   variance of RTT samples.
+	if (_flagRecentACKevent && !_flagListenerShutdown) {
+        eventGuard.unlock();
+		ackEvent();
+        return true;
+	}
 
-   EXP is used to trigger data packets retransmission and maintain
-   connection status. Its period is dynamically updated to N * (4 * RTT
-   + RTTVar + SYN), where N is the number of continuous timeouts. To
-   avoid unnecessary timeout, a minimum threshold (e.g., 0.5 second)
-   should be used in the implementation.
+    return false;
+}
+
+/*  Excerpt from the spec:
+
+    ACK is used to trigger an acknowledgement (ACK). Its period is set by
+    the congestion control module. However, UDT will send an ACK no
+    longer than every 0.01 second, even though the congestion control
+    does not need timer-based ACK. Here, 0.01 second is defined as the
+    SYN time, or synchronization time, and it affects many of the other
+    timers used in UDT.
+
+    NAK is used to trigger a negative acknowledgement (NAK). Its period
+    is dynamically updated to 4 * RTT_+ RTTVar + SYN, where RTTVar is the
+    variance of RTT samples.
+
+    EXP is used to trigger data packets retransmission and maintain
+    connection status. Its period is dynamically updated to N * (4 * RTT
+    + RTTVar + SYN), where N is the number of continuous timeouts. To
+    avoid unnecessary timeout, a minimum threshold (e.g., 0.5 second)
+    should be used in the implementation.
 */
 
 // ingestAck2 is called to process an ACK2 packet
-func (s *udtSocketRecv) ingestAck2(p *packet.Ack2Packet, now time.Time) {
-	ackSeq := p.AckSeqNo
-	if s.ackHistory == nil {
-		return // no ACKs to search
-	}
+void UdtSocket_receive::ingestACK2(const Packet& udtPacket, const QElapsedTimer& timeReceived) {
 
-	ackHistEntry, ackIdx := s.ackHistory.Find(ackSeq)
-	if ackHistEntry == nil {
-		return // this ACK not found
+    SequenceNumber ackSeq = udtPacket._additionalInfo;
+    ACKHistoryMap::iterator lookup = _ackHistory.find(ackSeq);
+    if (lookup == _ackHistory.end()) {
+        return;  // this ACK not found
+    }
+
+    if (_recvACK2 < lookup->lastPacket) {
+		_recvACK2 = lookup->lastPacket;
 	}
-	if s.recvAck2.BlindDiff(ackHistEntry.lastPacket) < 0 {
-		s.recvAck2 = ackHistEntry.lastPacket
-	}
-	heap.Remove(&s.ackHistory, ackIdx)
 
 	// Update the largest ACK number ever been acknowledged.
-	if s.largestACK < ackSeq {
-		s.largestACK = ackSeq
+	if(_largestACK < ackSeq) {
+		_largestACK = ackSeq;
 	}
 
-	s.socket.applyRTT(uint(now.Sub(ackHistEntry.sendTime) / time.Microsecond))
+	_socket.applyRTT(static_cast<quint32>((timeReceived.nsecsElapsed() - lookup->sendTime.nsecsElapsed()) / 1000));
+    _ackHistory.erase(lookup);
 
 	//s.rto = 4 * s.rtt + s.rttVar
 }
 
 // ingestMsgDropReq is called to process an message drop request packet
-func (s *udtSocketRecv) ingestMsgDropReq(p *packet.MsgDropReqPacket, now time.Time) {
-	stopSeq := p.LastSeq.Add(1)
-	for pktID := p.FirstSeq; pktID != stopSeq; pktID.Incr() {
+void UdtSocket_receive::ingestMsgDropReq(const MessageDropRequestPacket& dropPacket, const QElapsedTimer& timeReceived) {
+    PacketID stopSeq = dropPacket._lastPacketID + 1;
+    for (PacketID packetID = dropPacket._firstPacketID; packetID != stopSeq; packetID++) {
+
 		// remove all these packets from the loss list
-		if s.recvLossList != nil {
-			if lossEntry, idx := s.recvLossList.Find(pktID); lossEntry != nil {
-				heap.Remove(&s.recvLossList, idx)
-			}
+        ReceiveLossMap::iterator lossLookup = _recvLossList.find(packetID);
+        if(lossLookup != _recvLossList.end()) {
+            _recvLossList.erase(lossLookup);
 		}
 
 		// remove all pending packets with this message
-		if s.recvPktPend != nil {
-			if lossEntry, idx := s.recvPktPend.Find(pktID); lossEntry != nil {
-				heap.Remove(&s.recvPktPend, idx)
+		if(_recvPktPend != nil) {
+			if(lossEntry, idx := _recvPktPend.Find(packetID); lossEntry != nil) {
+				heap.Remove(&_recvPktPend, idx);
 			}
 		}
-
 	}
 
-	if p.FirstSeq == s.farRecdPktSeq.Add(1) {
-		s.farRecdPktSeq = p.LastSeq
+	if (dropPacket._firstPacketID == _farRecdPktSeq + 1) {
+        _farRecdPktSeq = dropPacket._lastPacketID;
 	}
-	if s.recvLossList != nil && len(s.recvLossList) == 0 {
-		s.farRecdPktSeq = s.farNextPktSeq.Add(-1)
-		s.recvLossList = nil
-	}
-	if s.recvPktPend != nil && len(s.recvPktPend) == 0 {
-		s.recvPktPend = nil
+	if(_recvLossList.empty()) {
+		_farRecdPktSeq = _farNextPktSeq - 1;
 	}
 
 	// try to push any pending packets out, now that we have dropped any blocking packets
-	for s.recvPktPend != nil && stopSeq != s.farNextPktSeq {
-		nextPkt, _ := s.recvPktPend.Min(stopSeq, s.farNextPktSeq)
-		if nextPkt == nil || !s.attemptProcessPacket(nextPkt, false) {
-			break
+	while(!_recvPktPend.empty() && stopSeq != _farNextPktSeq) {
+		nextPkt, _ := _recvPktPend.Min(stopSeq, _farNextPktSeq);
+		if(nextPkt == nil || !attemptProcessPacket(nextPkt, false)) {
+			break;
 		}
 	}
 }
 
 // ingestData is called to process a data packet
-func (s *udtSocketRecv) ingestData(p *packet.DataPacket, now time.Time) {
-	s.socket.cong.onPktRecv(*p)
+void UdtSocket_receive::ingestData(const Packet& udtPacket, const QElapsedTimer& timeReceived) {
+    _socket.cong.onPktRecv(udtPacket);
 
-	seq := p.Seq
+	PacketID packetID = udtPacket._sequence;
 
 	/* If the sequence number of the current data packet is 16n + 1,
 	where n is an integer, record the time interval between this
 	packet and the last data packet in the Packet Pair Window. */
-	if (seq.Seq-1)&0xf == 0 {
-		if !s.recvLastProbe.IsZero() {
-			if s.recvPktPairHistory == nil {
-				s.recvPktPairHistory = []time.Duration{now.Sub(s.recvLastProbe)}
-			} else {
-				s.recvPktPairHistory = append(s.recvPktPairHistory, now.Sub(s.recvLastProbe))
-				if len(s.recvPktPairHistory) > 16 {
-					s.recvPktPairHistory = s.recvPktPairHistory[len(s.recvPktPairHistory)-16:]
-				}
+	if((static_cast<quint32>(packetID)-1)&0xf == 0) {
+		if(_recvLastProbe.isValid()) {
+			_recvPktPairHistory = append(_recvPktPairHistory, timeReceived.Sub(_recvLastProbe));
+			if(len(_recvPktPairHistory) > 16) {
+				_recvPktPairHistory = _recvPktPairHistory[len(s.recvPktPairHistory)-16:];
 			}
 		}
-		s.recvLastProbe = now
+		_recvLastProbe = timeReceived;
 	}
 
 	// Record the packet arrival time in PKT History Window.
-	if !s.recvLastArrival.IsZero() {
-		if s.recvPktHistory == nil {
-			s.recvPktHistory = []time.Duration{now.Sub(s.recvLastArrival)}
-		} else {
-			s.recvPktHistory = append(s.recvPktHistory, now.Sub(s.recvLastArrival))
-			if len(s.recvPktHistory) > 16 {
-				s.recvPktHistory = s.recvPktHistory[len(s.recvPktHistory)-16:]
-			}
+	if(_recvLastArrival.isValid()) {
+		_recvPktHistory = append(_recvPktHistory, timeReceived.Sub(s.recvLastArrival));
+		if(len(s.recvPktHistory) > 16) {
+			_recvPktHistory = _recvPktHistory[len(s.recvPktHistory)-16:];
 		}
 	}
-	s.recvLastArrival = now
+	_recvLastArrival = timeReceived;
 
 	/* If the sequence number of the current data packet is greater
 	than LRSN + 1, put all the sequence numbers between (but
 	excluding) these two values into the receiver's loss list and
 	send them to the sender in an NAK packet. */
-	seqDiff := seq.BlindDiff(s.farNextPktSeq)
-	if seqDiff > 0 {
-		newLoss := make(receiveLossHeap, 0, seqDiff)
-		for idx := s.farNextPktSeq; idx != seq; idx.Incr() {
-			newLoss = append(newLoss, recvLossEntry{packetID: seq})
+	qint32 seqDiff = packetID.blindDifference(_farNextPktSeq);
+	if(seqDiff > 0) {
+		newLoss := make(receiveLossHeap, 0, seqDiff);
+		for(PacketID idx = _farNextPktSeq; idx != packetID; idx++) {
+			newLoss = append(newLoss, ReceiveLossEntry{packetID: packetID});
 		}
 
-		if s.recvLossList == nil {
-			s.recvLossList = newLoss
-			heap.Init(&s.recvLossList)
+		if(_recvLossList == nil) {
+			_recvLossList = newLoss;
+			heap.Init(&_recvLossList);
 		} else {
-			for idx := s.farNextPktSeq; idx != seq; idx.Incr() {
-				heap.Push(&s.recvLossList, recvLossEntry{packetID: seq})
+			for(PacketID idx = _farNextPktSeq; idx != packetID; idx+) {
+				heap.Push(&_recvLossList, ReceiveLossEntry{packetID: packetID});
 			}
-			heap.Init(&newLoss)
+			heap.Init(&newLoss);
 		}
 
-		s.sendNAK(newLoss)
-		s.farNextPktSeq = seq.Add(1)
+		sendNAK(newLoss);
+		_farNextPktSeq = packetID + 1;
 
-	} else if seqDiff < 0 {
+	} else if(seqDiff < 0) {
 		// If the sequence number is less than LRSN, remove it from the receiver's loss list.
-		if !s.recvLossList.Remove(seq) {
-			return // already previously received packet -- ignore
+		if(!_recvLossList.Remove(packetID)) {
+			return; // already previously received packet -- ignore
 		}
 
-		if len(s.recvLossList) == 0 {
-			s.farRecdPktSeq = s.farNextPktSeq.Add(-1)
-			s.recvLossList = nil
+		if(len(_recvLossList) == 0) {
+			_farRecdPktSeq = _farNextPktSeq - 1;
+			_recvLossList = nil;
 		} else {
-			s.farRecdPktSeq, _ = s.recvLossList.Min(s.farRecdPktSeq, s.farNextPktSeq)
+			_farRecdPktSeq, _ = _recvLossList.Min(_farRecdPktSeq, _farNextPktSeq);
 		}
 	}
 
-	s.attemptProcessPacket(p, true)
-}
+	attemptProcessPacket(udtPacket, true);
+        }
 
-func (s *udtSocketRecv) attemptProcessPacket(p *packet.DataPacket, isNew bool) bool {
-	seq := p.Seq
+bool UdtSocket_receive::attemptProcessPacket(const Packet& udtPacket, bool isNew) {
+	PacketID packetID = udtPacket._sequence;
 
 	// can we process this packet?
-	boundary, mustOrder, msgID := p.GetMessageData()
-	if s.recvLossList != nil && mustOrder && s.farRecdPktSeq.Add(1) != seq {
+	boundary, mustOrder, msgID := p.GetMessageData();
+	if(s.recvLossList != nil && mustOrder && s.farRecdPktSeq.Add(1) != seq) {
 		// we're required to order these packets and we're missing prior packets, so push and return
-		if isNew {
-			if s.recvPktPend == nil {
-				s.recvPktPend = dataPacketHeap{p}
-				heap.Init(&s.recvPktPend)
+		if(isNew) {
+			if(s.recvPktPend == nil) {
+				s.recvPktPend = dataPacketHeap{p};
+				heap.Init(&s.recvPktPend);
 			} else {
-				heap.Push(&s.recvPktPend, p)
+				heap.Push(&s.recvPktPend, p);
 			}
 		}
-		return false
+		return false;
 	}
 
 	// can we find the start of this message?
-	pieces := make([]*packet.DataPacket, 0)
-	cannotContinue := false
-	switch boundary {
+	pieces := make([]*packet.DataPacket, 0);
+	cannotContinue := false;
+	switch(boundary) {
 	case packet.MbLast, packet.MbMiddle:
 		// we need prior packets, let's make sure we have them
-		if s.recvPktPend != nil {
-			pieceSeq := seq.Add(-1)
-			for {
-				prevPiece, _ := s.recvPktPend.Find(pieceSeq)
-				if prevPiece == nil {
+		if(s.recvPktPend != nil) {
+			pieceSeq := seq.Add(-1);
+			for(;;) {
+				prevPiece, _ := s.recvPktPend.Find(pieceSeq);
+				if(prevPiece == nil) {
 					// we don't have the previous piece, is it missing?
-					if s.recvLossList != nil {
-						if lossEntry, _ := s.recvLossList.Find(pieceSeq); lossEntry != nil {
+					if(s.recvLossList != nil) {
+						if(lossEntry, _ := s.recvLossList.Find(pieceSeq); lossEntry != nil) {
 							// it's missing, stop processing
-							cannotContinue = true
+							cannotContinue = true;
 						}
 					}
 					// in any case we can't continue with this
-					log.Printf("Message with id %d appears to be a broken fragment", msgID)
-					break
+					log.Printf("Message with id %d appears to be a broken fragment", msgID);
+					break;
 				}
-				prevBoundary, _, prevMsg := prevPiece.GetMessageData()
-				if prevMsg != msgID {
+				prevBoundary, _, prevMsg := prevPiece.GetMessageData();
+				if(prevMsg != msgID) {
 					// ...oops? previous piece isn't in the same message
-					log.Printf("Message with id %d appears to be a broken fragment", msgID)
-					break
+					log.Printf("Message with id %d appears to be a broken fragment", msgID);
+					break;
 				}
-				pieces = append([]*packet.DataPacket{prevPiece}, pieces...)
-				if prevBoundary == packet.MbFirst {
-					break
+				pieces = append([]*packet.DataPacket{prevPiece}, pieces...);
+				if(prevBoundary == packet.MbFirst) {
+					break;
 				}
-				pieceSeq.Decr()
+				pieceSeq.Decr();
 			}
 		}
 	}
-	if !cannotContinue {
-		pieces = append(pieces, p)
+	if(!cannotContinue) {
+		pieces = append(pieces, p);
 
-		switch boundary {
+		switch(boundary) {
 		case packet.MbFirst, packet.MbMiddle:
 			// we need following packets, let's make sure we have them
-			if s.recvPktPend != nil {
-				pieceSeq := seq.Add(1)
+			if(s.recvPktPend != nil) {
+				pieceSeq := seq.Add(1);
 				for {
-					nextPiece, _ := s.recvPktPend.Find(pieceSeq)
-					if nextPiece == nil {
+					nextPiece, _ := s.recvPktPend.Find(pieceSeq);
+					if(nextPiece == nil) {
 						// we don't have the previous piece, is it missing?
-						if pieceSeq == s.farNextPktSeq {
+						if(pieceSeq == s.farNextPktSeq) {
 							// hasn't been received yet
-							cannotContinue = true
-						} else if s.recvLossList != nil {
-							if lossEntry, _ := s.recvLossList.Find(pieceSeq); lossEntry != nil {
+							cannotContinue = true;
+						} else if(s.recvLossList != nil) {
+							if(lossEntry, _ := s.recvLossList.Find(pieceSeq); lossEntry != nil) {
 								// it's missing, stop processing
-								cannotContinue = true
+								cannotContinue = true;
 							}
 						} else {
-							log.Printf("Message with id %d appears to be a broken fragment", msgID)
+							log.Printf("Message with id %d appears to be a broken fragment", msgID);
 						}
 						// in any case we can't continue with this
-						break
+						break;
 					}
-					nextBoundary, _, nextMsg := nextPiece.GetMessageData()
-					if nextMsg != msgID {
+					nextBoundary, _, nextMsg := nextPiece.GetMessageData();
+					if(nextMsg != msgID) {
 						// ...oops? previous piece isn't in the same message
-						log.Printf("Message with id %d appears to be a broken fragment", msgID)
-						break
+						log.Printf("Message with id %d appears to be a broken fragment", msgID);
+						break;
 					}
-					pieces = append(pieces, nextPiece)
-					if nextBoundary == packet.MbLast {
-						break
+					pieces = append(pieces, nextPiece);
+					if(nextBoundary == packet.MbLast) {
+						break;
 					}
 				}
 			}
@@ -358,49 +348,49 @@ func (s *udtSocketRecv) attemptProcessPacket(p *packet.DataPacket, isNew bool) b
 	}
 
 	// we've received a data packet, do we need to send an ACK for it?
-	s.unackPktCount++
-	ackInterval := uint(s.ackInterval.get())
-	if (ackInterval > 0) && (ackInterval <= s.unackPktCount) {
+	s.unackPktCount++;
+	ackInterval := uint(s.ackInterval.get());
+	if((ackInterval > 0) && (ackInterval <= s.unackPktCount)) {
 		// ACK timer expired or ACK interval is reached
-		s.ackEvent()
-	} else if ackSelfClockInterval*s.lightAckCount <= s.unackPktCount {
+		s.ackEvent();
+	} else if(ackSelfClockInterval*s.lightAckCount <= s.unackPktCount) {
 		//send a "light" ACK
-		s.sendLightACK()
-		s.lightAckCount++
+		s.sendLightACK();
+		s.lightAckCount++;
 	}
 
-	if cannotContinue {
+	if(cannotContinue) {
 		// we need to wait for more packets, store and return
-		if isNew {
-			if s.recvPktPend == nil {
-				s.recvPktPend = dataPacketHeap{p}
-				heap.Init(&s.recvPktPend)
+		if(isNew) {
+			if(s.recvPktPend == nil) {
+				s.recvPktPend = dataPacketHeap{p};
+				heap.Init(&s.recvPktPend);
 			} else {
-				heap.Push(&s.recvPktPend, p)
+				heap.Push(&s.recvPktPend, p);
 			}
 		}
-		return false
+		return false;
 	}
 
 	// we have a message, pull it from the pending heap (if necessary), assemble it into a message, and return it
-	if s.recvPktPend != nil {
-		for _, piece := range pieces {
-			s.recvPktPend.Remove(piece.Seq)
+	if(s.recvPktPend != nil) {
+		for(_, piece := range pieces) {
+			s.recvPktPend.Remove(piece.Seq);
 		}
-		if len(s.recvPktPend) == 0 {
-			s.recvPktPend = nil
+		if(len(s.recvPktPend) == 0) {
+			s.recvPktPend = nil;
 		}
 	}
 
-	msg := make([]byte, 0)
-	for _, piece := range pieces {
-		msg = append(msg, piece.Data...)
+	msg := make([]byte, 0);
+	for(_, piece := range pieces) {
+		msg = append(msg, piece.Data...);
 	}
-	s.messageIn <- msg
-	return true
+	s.messageIn <- msg;
+	return true;
 }
 
-func (s *udtSocketRecv) sendLightACK() {
+void UdtSocket_receive::sendLightACK() {
 	var ack packet.PacketID
 
 	// If there is no loss, the ACK is the current largest sequence number plus 1;
@@ -418,7 +408,7 @@ func (s *udtSocketRecv) sendLightACK() {
 	}
 }
 
-func (s *udtSocketRecv) getRcvSpeeds() (recvSpeed, bandwidth int) {
+void UdtSocket_receive::getReceiveSpeeds(int& recvSpeed, int& bandwidth) {
 
 	// get median value, but cannot change the original value order in the window
 	if s.recvPktHistory != nil {
@@ -483,7 +473,7 @@ func (s *udtSocketRecv) getRcvSpeeds() (recvSpeed, bandwidth int) {
 	return
 }
 
-func (s *udtSocketRecv) sendACK() {
+void UdtSocket_receive::sendACK() {
 	var ack packet.PacketID
 
 	// If there is no loss, the ACK is the current largest sequence number plus 1;
@@ -543,7 +533,7 @@ func (s *udtSocketRecv) sendACK() {
 	s.ackSentEvent = time.After(time.Duration(rtt+4*rttVar) * time.Microsecond)
 }
 
-func (s *udtSocketRecv) sendNAK(rl receiveLossHeap) {
+void UdtSocket_receive::sendNAK(receiveLossHeap rl) {
 	lossInfo := make([]uint32, 0)
 
 	curPkt := s.farRecdPktSeq
@@ -574,19 +564,19 @@ func (s *udtSocketRecv) sendNAK(rl receiveLossHeap) {
 }
 
 // ingestData is called to process an (undocumented) OOB error packet
-func (s *udtSocketRecv) ingestError(p *packet.ErrPacket) {
+void UdtSocket_receive::ingestError(const Packet& udtPacket) {
 	// TODO: umm something
 }
 
 // assuming some condition has occured (ACK timer expired, ACK interval), send an ACK and reset the appropriate timer
-func (s *udtSocketRecv) ackEvent() {
-	s.sendACK()
-	ackTime := synTime
-	ackPeriod := s.ackPeriod.get()
-	if ackPeriod > 0 {
-		ackTime = ackPeriod
+void UdtSocket_receive::ackEvent() {
+    sendACK();
+	ackTime := synTime;
+	ackPeriod := _ackPeriod.get();
+	if(ackPeriod > 0) {
+		ackTime = ackPeriod;
 	}
-	s.ackTimerEvent = time.After(ackTime)
-	s.unackPktCount = 0
-	s.lightAckCount = 1
+	_ackTimerEvent = time.After(ackTime);
+	_unackPktCount = 0;
+	_lightAckCount = 1;
 }
