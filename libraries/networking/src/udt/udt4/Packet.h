@@ -24,21 +24,22 @@ namespace udt4 {
 enum class PacketType : quint16
 {
     // Control packet types
-    Handshake = 0x0,
-    Keepalive = 0x1,
-    Ack = 0x2,
-    Nak = 0x3,
-    Congestion = 0x4,  // unused in ver4
-    Shutdown = 0x5,
-    Ack2 = 0x6,
-    MsgDropReq = 0x7,
-    SpecialErr = 0x8,  // undocumented but reference implementation seems to use it
+    Handshake = 0x0,   // see HandshakePacket
+    Keepalive = 0x1,   // no additional data
+    Ack = 0x2,         // see ACKPacket
+    Nak = 0x3,         // see NAKPacket
+    Congestion = 0x4,  // removed in ver4 (no additional data)
+    Shutdown = 0x5,    // no additional data
+    Ack2 = 0x6,        // additional info: ACK sequence number
+    MsgDropReq = 0x7,  // see MessageDropRequestPacket
+    SpecialErr = 0x8,  // undocumented but reference implementation seems to use it (additional info: error code)
     UserDefPkt = 0x7FFF,
-    Data = 0x8000,  // not found in any control packet, but used to identify data packets
+    Data = 0x8000,     // not found in any control packet, but used to identify data packets
     Invalid = 0x8001,
 };
 
 // SocketType describes the kind of socket this is (i.e. streaming vs message)
+// the reference implementation differs from the RFC here, I'm using the definition from the reference
 enum class SocketType : quint16
 {
     Unknown = 0,
@@ -58,7 +59,34 @@ public:
 public:
     PacketType _type{ PacketType::Invalid };
     PacketID _sequence;
-    SequenceNumber _additionalInfo;
+    quint32 _additionalInfo{ 0 };
+    quint32 _timestamp{ 0 };
+    quint32 _socketID{ 0 };
+    ByteSlice _contents;
+};
+
+class DataPacket {
+public:
+    enum class MessagePosition
+    {
+        Only = 3,   // this is the only packet in the message
+        First = 2,  // this is the first packet in a multi-packet message
+        Last = 1,   // this is the last packet in a multi-packet message
+        Middle = 0, // this is a middle packet in a multi-packet message
+    };
+
+public:
+    inline DataPacket() {}
+    DataPacket(const Packet& src);
+    Packet toPacket() const;
+
+    static uint packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol);
+
+public:
+    PacketID _packetID;
+    MessagePosition _messagePosition{ MessagePosition::Only };
+    bool _isOrdered{ false };
+    SequenceNumber _messageNumber;
     quint32 _timestamp{ 0 };
     quint32 _socketID{ 0 };
     ByteSlice _contents;
@@ -72,7 +100,7 @@ public:
         Request = 1,     // an attempt to establish a new connection
         Rendezvous = 0,  // an attempt to establish a new connection using mutual rendezvous packets
         Response = -1,   // a response to a handshake request
-        Response2 = -2,  // an acknowledgement that a HsResponse was received
+        Response2 = -2,  // an acknowledgement that a HsResponse was received (only used for Rendezvous connections)
         Refused = 1002,  // notifies the peer of a connection refusal
     };
 
@@ -96,6 +124,50 @@ public:
     quint32 _synCookie{ 0 };        // SYN cookie
 	QHostAddress _sockAddr;         // the IP address of the UDP socket to which this packet is being sent
     ByteSlice _extra;
+};
+
+class ACKPacket {
+public:
+    enum class AckType
+    {
+        Light,
+        Normal,
+        Full
+    };
+
+public:
+    inline ACKPacket() {}
+    ACKPacket(const Packet& src);
+    Packet toPacket() const;
+
+    uint packetSize(QAbstractSocket::NetworkLayerProtocol protocol) const;
+
+public:
+    quint32 _timestamp{ 0 };
+    quint32 _socketID{ 0 };
+    SequenceNumber _ackSequence;
+    PacketID _lastPacketReceived;
+    AckType _ackType{ AckType::Normal };
+    quint32 _rtt{ 0 };                    // (in microseconds)
+    quint32 _rttVariance{ 0 };            // (in microseconds)
+    quint32 _availBufferSize{ 0 };        // (in bytes)
+    quint32 _packetReceiveRate{ 0 };      // (in packets/sec)
+    quint32 _estimatedLinkCapacity{ 0 };  // (in packets/sec)
+};
+
+class NAKPacket {
+public:
+    inline NAKPacket() {}
+    NAKPacket(const Packet& src);
+    Packet toPacket() const;
+
+    uint packetSize(QAbstractSocket::NetworkLayerProtocol protocol) const;
+
+public:
+    typedef QList<quint32> IntegerList;
+    quint32 _timestamp{ 0 };
+    quint32 _socketID{ 0 };
+    IntegerList _lossData;
 };
 
 class MessageDropRequestPacket {

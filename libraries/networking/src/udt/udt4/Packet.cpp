@@ -26,8 +26,7 @@ Packet::Packet(ByteSlice networkPacket) {
     if (networkPacket.length() >= 16) {
         quint32 sequence = qFromBigEndian<quint32>(&networkPacket[0]);
         _sequence = PacketID(sequence);
-        quint32 additionalInfo = qFromBigEndian<quint32>(&networkPacket[4]);
-        _additionalInfo = SequenceNumber(additionalInfo);
+        _additionalInfo = qFromBigEndian<quint32>(&networkPacket[4]);
         _timestamp = qFromBigEndian<quint32>(&networkPacket[8]);
         _socketID = qFromBigEndian<quint32>(&networkPacket[12]);
         _contents = networkPacket.substring(16);
@@ -74,6 +73,35 @@ ByteSlice Packet::toNetworkPacket() const {
     }
 
     return packetData;
+}
+
+DataPacket::DataPacket(const Packet& src) :
+    _timestamp(src._timestamp), _socketID(src._socketID), _packetID(src._sequence), _contents(src._contents) {
+    assert(src._type == PacketType::Data);
+    _messagePosition = static_cast<MessagePosition>((src._additionalInfo & 0xC0000000) >> 30);
+    _isOrdered = (src._additionalInfo & 0x20000000) != 0;
+    _messageNumber = SequenceNumber(src._additionalInfo);
+}
+
+uint DataPacket::packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol) {
+    return Packet::packetHeaderSize(protocol);
+}
+
+Packet DataPacket::toPacket() const {
+    quint32 additionalInfo = static_cast<quint32>(_messageNumber);
+    assert((additionalInfo & 0xE0000000) == 0);
+    if (_isOrdered) {
+        additionalInfo |= 0x20000000;
+    }
+    additionalInfo |= (static_cast<quint32>(_messagePosition) & 0x3) << 30;
+
+    Packet packet;
+    packet._timestamp = _timestamp;
+    packet._socketID = _socketID;
+    packet._sequence = _packetID;
+    packet._contents = _contents;
+    packet._additionalInfo = static_cast<quint32>(additionalInfo);
+    return packet;
 }
 
 HandshakePacket::HandshakePacket(const Packet& src, QAbstractSocket::NetworkLayerProtocol protocol) :
@@ -143,15 +171,120 @@ Packet HandshakePacket::toPacket() const {
     return packet;
 }
 
+ACKPacket::ACKPacket(const Packet& src) :
+    _timestamp(src._timestamp), _socketID(src._socketID), _ackSequence(src._additionalInfo) {
+    assert(src._type == PacketType::Ack && src._contents.length() >= 4);
+    if (src._contents.length() >= 4) {
+        _lastPacketReceived = PacketID(qFromBigEndian<quint32>(&src._contents[0]));
+        if (src._contents.length() < 24) {
+            _ackType = AckType::Light;
+        } else {
+            _rtt = qFromBigEndian<quint32>(&src._contents[4]);
+            _rttVariance = qFromBigEndian<quint32>(&src._contents[8]);
+            _availBufferSize = qFromBigEndian<quint32>(&src._contents[12]);
+            if (src._contents.length() < 16) {
+                _ackType = AckType::Normal;
+            } else {
+                _ackType = AckType::Full;
+                _packetReceiveRate = qFromBigEndian<quint32>(&src._contents[16]);
+                _estimatedLinkCapacity = qFromBigEndian<quint32>(&src._contents[20]);
+            }
+        }
+    }
+}
+
+uint ACKPacket::packetSize(QAbstractSocket::NetworkLayerProtocol protocol) const {
+    switch (_ackType) {
+    case AckType::Light:
+        return Packet::packetHeaderSize(protocol) + 4;
+        break;
+    case AckType::Normal:
+        return Packet::packetHeaderSize(protocol) + 16;
+        break;
+    case AckType::Full:
+        return Packet::packetHeaderSize(protocol) + 24;
+        break;
+    }
+    assert(false);
+    return 0;
+}
+
+Packet ACKPacket::toPacket() const {
+    ByteSlice packetData;
+    quint8* buffer;
+    
+    switch (_ackType) {
+    case AckType::Light:
+        buffer = reinterpret_cast<quint8*>(packetData.create(4));
+        *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(static_cast<quint32>(_lastPacketReceived));
+        break;
+
+    case AckType::Normal:
+        buffer = reinterpret_cast<quint8*>(packetData.create(16));
+        *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(static_cast<quint32>(_lastPacketReceived));
+        *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(_rtt);
+        *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_rttVariance);
+        *reinterpret_cast<quint32*>(&buffer[12]) = qToBigEndian<quint32>(_availBufferSize);
+        break;
+
+    case AckType::Full:
+        buffer = reinterpret_cast<quint8*>(packetData.create(24));
+        *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(static_cast<quint32>(_lastPacketReceived));
+        *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(_rtt);
+        *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_rttVariance);
+        *reinterpret_cast<quint32*>(&buffer[12]) = qToBigEndian<quint32>(_availBufferSize);
+        *reinterpret_cast<quint32*>(&buffer[16]) = qToBigEndian<quint32>(_packetReceiveRate);
+        *reinterpret_cast<quint32*>(&buffer[20]) = qToBigEndian<quint32>(_estimatedLinkCapacity);
+        break;
+    }
+
+    Packet packet;
+    packet._type = PacketType::Ack;
+    packet._timestamp = _timestamp;
+    packet._additionalInfo = static_cast<quint32>(_ackSequence);
+    packet._socketID = _socketID;
+    packet._contents = packetData;
+    return packet;
+}
+
+NAKPacket::NAKPacket(const Packet& src) : _timestamp(src._timestamp), _socketID(src._socketID) {
+    assert(src._type == PacketType::Nak && src._contents.length() >= 4);
+    if (src._contents.length() >= 4) {
+        unsigned count = static_cast<unsigned>(src._contents.length() / sizeof(quint32));
+        for (unsigned idx = 0; idx < count; idx++) {
+            _lossData.append(qFromBigEndian<quint32>(&src._contents[idx * sizeof(quint32)]));
+        }
+    }
+}
+
+uint NAKPacket::packetSize(QAbstractSocket::NetworkLayerProtocol protocol) const {
+    return Packet::packetHeaderSize(protocol) + _lossData.length() * sizeof(quint32);
+}
+
+Packet NAKPacket::toPacket() const {
+    ByteSlice packetData;
+    quint8* buffer = reinterpret_cast<quint8*>(packetData.create(_lossData.length() * sizeof(quint32)));
+
+    unsigned idx;
+    IntegerList::const_iterator trans;
+    for (idx = 0, trans = _lossData.begin(); trans != _lossData.end(); trans++, idx++) {
+        *reinterpret_cast<quint32*>(&buffer[idx * sizeof(quint32)]) = qToBigEndian<quint32>(static_cast<quint32>(*trans));
+    }
+
+    Packet packet;
+    packet._type = PacketType::Nak;
+    packet._timestamp = _timestamp;
+    packet._socketID = _socketID;
+    packet._contents = packetData;
+    return packet;
+}
+
 MessageDropRequestPacket::MessageDropRequestPacket(const Packet& src) :
     _timestamp(src._timestamp), _socketID(src._socketID), _messageID(src._additionalInfo) {
-
     assert(src._type == PacketType::MsgDropReq && src._contents.length() >= 8);
     if (src._contents.length() >= 8) {
-        quint32 firstPacketID = qFromBigEndian<quint32>(&src._contents[0]);
-        _firstPacketID = PacketID(firstPacketID);
-        quint32 lastPacketID = qFromBigEndian<quint32>(&src._contents[4]);
-        _lastPacketID = PacketID(lastPacketID);
+        _firstPacketID = PacketID(qFromBigEndian<quint32>(&src._contents[0]));
+        _lastPacketID = PacketID(qFromBigEndian<quint32>(&src._contents[4]));
         _extra = src._contents.substring(8);
     }
 }
@@ -173,7 +306,7 @@ Packet MessageDropRequestPacket::toPacket() const {
 
     Packet packet;
     packet._type = PacketType::MsgDropReq;
-    packet._additionalInfo = _messageID;
+    packet._additionalInfo = static_cast<quint32>(_messageID);
     packet._timestamp = _timestamp;
     packet._socketID = _socketID;
     packet._contents = packetData;

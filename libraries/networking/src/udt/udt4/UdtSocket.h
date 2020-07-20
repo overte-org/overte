@@ -48,6 +48,7 @@ enum
 class UdtSocket_private {
 public:
     virtual void applyRTT(quint32 RTTinMicroseconds) = 0;
+    virtual void sendPacket(const Packet& udtPacket) = 0;
 };
 
 enum class UdtSocketState
@@ -161,6 +162,7 @@ public: // internal implementation
 
 private: // UdtSocket_private implementation
     virtual void applyRTT(quint32 RTTinMicroseconds);
+    virtual void sendPacket(const Packet& udtPacket);
 
 protected:
     virtual bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);

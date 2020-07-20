@@ -12,6 +12,7 @@
 #ifndef hifi_udt4_PacketID_h
 #define hifi_udt4_PacketID_h
 
+#include <functional>
 #include <QtCore/QtGlobal>
 
 namespace udt4 {
@@ -67,6 +68,13 @@ template <int BITS> inline WrappedSequence<BITS> operator-(qint32 a, WrappedSequ
 
 template <int BITS> inline uint qHash(const WrappedSequence<BITS>& key);
 template <int BITS> inline uint qHash(const WrappedSequence<BITS>& key, uint seed);
+
+// WrappedSequenceLess is a functor used when using WrappedSequence objects inside of std::map objects
+// (which is permitted, unlike QMap which doesn't permit explicitly specified ordering
+template<class T>
+struct WrappedSequenceLess : std::binary_function<T, T, bool> {
+    inline bool operator()(const T& lhs, const T& rhs);
+};
 
 typedef WrappedSequence<31> PacketID;
 static_assert(sizeof(PacketID) == sizeof(quint32), "PacketID invalid size");
