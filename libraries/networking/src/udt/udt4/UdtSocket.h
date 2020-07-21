@@ -47,8 +47,14 @@ enum
 // private interface for interactions within a UdtSocket
 class UdtSocket_private {
 public:
-    virtual void applyRTT(quint32 RTTinMicroseconds) = 0;
+    virtual void getRTT(unsigned& rtt, unsigned& rttVariance) const = 0;
+    virtual void applyRTT(unsigned RTTinMicroseconds) = 0;
     virtual void sendPacket(const Packet& udtPacket) = 0;
+    virtual void receivedMessage(const ByteSlice& message) = 0;
+    virtual unsigned getMaxFlowWinSize() const = 0;
+    virtual QString localAddressDebugString() const = 0;
+    virtual void ingestError(const Packet& udtPacket) = 0;
+    virtual void ingestShutdown() = 0;
 };
 
 enum class UdtSocketState
@@ -161,8 +167,13 @@ public: // internal implementation
     inline void setLocalSocketID(quint32 socketID);
 
 private: // UdtSocket_private implementation
-    virtual void applyRTT(quint32 RTTinMicroseconds);
+    virtual void getRTT(unsigned& rtt, unsigned& rttVariance) const;
+    virtual void applyRTT(unsigned RTTinMicroseconds);
     virtual void sendPacket(const Packet& udtPacket);
+    virtual void receivedMessage(const ByteSlice& message);
+    virtual unsigned getMaxFlowWinSize() const;
+    virtual void ingestError(const Packet& udtPacket);
+    virtual void ingestShutdown();
 
 protected:
     virtual bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
@@ -187,7 +198,7 @@ private:
     void sendHandshake(HandshakePacket::RequestType requestType, bool mtuDiscovery);
     bool initServerSocket(UdtMultiplexerPointer multiplexer, const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
     static QString addressDebugString(const QHostAddress& address, quint16 port, quint32 socketID);
-    QString localAddressDebugString() const;
+    virtual QString localAddressDebugString() const;
     QString remoteAddressDebugString() const;
 
 private:
@@ -236,7 +247,7 @@ private:
 
 //	QReadWriteLock _rttProt;  // lock must be held before referencing rtt/rttVar
 //	uint _rtt;                // receiver: estimated roundtrip time. (in microseconds)
-//	uint _rttVar;             // receiver: roundtrip variance. (in microseconds)
+//	uint _rttVariance;        // receiver: roundtrip variance. (in microseconds)
 
 //	QReadWriteLock _receiveRateProt; // lock must be held before referencing deliveryRate/bandwidth
 //	uint _deliveryRate{16};              // delivery rate reported from peer (packets/sec)

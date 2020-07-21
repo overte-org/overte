@@ -763,12 +763,15 @@ void UdtSocket::readPacket(const Packet& udtPacket, const QHostAddress& peerAddr
     case PacketType::Nak:
         emit _send.packetReceived(udtPacket, now);
         break;
+    case PacketType::Data:
+        _cong.onPktRecv(udtPacket);
+        emit _recv.packetReceived(udtPacket, now);
+        break;
     case PacketType::Shutdown:  // sent by either peer
 //        emit shutdownRequested(UdtSocketState::HalfClosed, "", QPrivateSignal());
 //        break;
     case PacketType::Ack2:  // sender -> receiver
     case PacketType::MsgDropReq:
-    case PacketType::Data:
     case PacketType::SpecialErr:
         emit _recv.packetReceived(udtPacket, now);
         break;
@@ -843,6 +846,7 @@ private slots:
     void onConnectionRetry();
     void onConnectionTimeout();
 */
+/*
 typedef struct SendMessage {
     ByteSlice content;
     time.Time time;     // time message is submitted
@@ -851,7 +855,7 @@ typedef struct SendMessage {
 
 /*******************************************************************************
  Implementation of net.Conn interface
-*******************************************************************************/
+*******************************************************************************
 
 // Grab the next data packet
 func (s *udtSocket) fetchReadPacket(blocking bool) ([]byte, error) {
@@ -1000,7 +1004,7 @@ func (s *udtSocket) Write(p []byte) (n int, err error) {
 
 /*******************************************************************************
  Private functions
-*******************************************************************************/
+*******************************************************************************
 
 func (s *udtSocket) launchProcessors() {
 	s.send = newUdtSocketSend(s)
@@ -1026,20 +1030,19 @@ func absdiff(a uint, b uint) uint {
 	}
 	return a - b
 }
-
-func (s *udtSocket) applyRTT(rtt uint) {
-	s.rttProt.Lock()
-	s.rttVar = (s.rttVar*3 + absdiff(s.rtt, rtt)) >> 2
-	s.rtt = (s.rtt*7 + rtt) >> 3
-	s.rttProt.Unlock()
+*/
+void UdtSocket::applyRTT(unsigned RTTinMicroseconds) {
+    _rttProt.Lock();
+	_rttVar = (_rttVar*3 + absdiff(_rtt, RTTinMicroseconds)) >> 2;
+	_rtt = (_rtt*7 + RTTinMicroseconds) >> 3;
+	_rttProt.Unlock();
 }
 
-func (s *udtSocket) getRTT() (rtt, rttVar uint) {
-	s.rttProt.RLock()
-	rtt = s.rtt
-	rttVar = s.rttVar
-	s.rttProt.RUnlock()
-	return
+void UdtSocket::getRTT(unsigned& rtt, unsigned& rttVariance) {
+    _rttProt.RLock();
+	rtt = _rtt;
+	rttVariance = _rttVariance;
+	_rttProt.RUnlock();
 }
 
 // Update Estimated Bandwidth and packet delivery rate

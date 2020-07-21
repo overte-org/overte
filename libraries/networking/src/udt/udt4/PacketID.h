@@ -13,6 +13,7 @@
 #define hifi_udt4_PacketID_h
 
 #include <functional>
+#include <QtCore/QHash>
 #include <QtCore/QtGlobal>
 
 namespace udt4 {
@@ -73,7 +74,7 @@ template <int BITS> inline uint qHash(const WrappedSequence<BITS>& key, uint see
 // (which is permitted, unlike QMap which doesn't permit explicitly specified ordering
 template<class T>
 struct WrappedSequenceLess : std::binary_function<T, T, bool> {
-    inline bool operator()(const T& lhs, const T& rhs);
+    inline bool operator()(const T& lhs, const T& rhs) const;
 };
 
 typedef WrappedSequence<31> PacketID;

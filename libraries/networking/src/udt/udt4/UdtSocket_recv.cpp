@@ -9,22 +9,113 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
+#include <algorithm>
 #include "UdtSocket_recv.h"
 #include "UdtSocket.h"
+#include "../../NetworkLogging.h"
+#include <QtCore/QLoggingCategory>
+#include <vector>
 
 using namespace udt4;
+
+// an implementation of the Floyd-Rivest SELECT algorithm
+namespace floydRivest {
+    // left is the left index for the interval
+    // right is the right index for the interval
+    // k is the desired index value, where array[k] is the k+1 smallest element
+    // when left = 0
+    void select(std::vector<quint32>& target, unsigned k, unsigned left, unsigned right) {
+        size_t length = target.size();
+   	    while (right > left) {
+		    if (right - left > 600) {
+                // Choosing a small subarray S based on sampling.
+                // 600, 0.5 and 0.5 are arbitrary constants 
+			    unsigned n = right - left + 1;
+			    unsigned i = k - left + 1;
+                double z = log(n);
+			    double s = 0.5 * exp(2 * z / 3);
+                double sign = 1.0;
+			    if (i - n / 2 < 0) {
+                    sign = -1;
+			    }
+			    double sd = 0.5 * sqrt(z * s * (n - s) / n) * sign;
+			    unsigned newLeft = std::max(left, static_cast<unsigned>(floor(k - i * s / n + sd)));
+			    unsigned newRight = std::min(right, static_cast<unsigned>(floor(k + (n - i) * s / n + sd)));
+			    select(target, k, newLeft, newRight);
+		    }
+
+            // Partition the subarray S[left..right] with arr[k] as pivot 
+            unsigned t = target[k];
+		    unsigned i = left;
+		    unsigned j = right;
+		    std::swap(target[left], target[k]);
+		    if(target[right] > t) {
+			    std::swap(target[left], target[right]);
+		    }
+
+		    while(i < j) {
+			    std::swap(target[i++], target[j--]);
+			    while(i < length && target[i] < t) {
+				    i++;
+			    }
+			    while(j >= 0 && target[j] > t) {
+				    j--;
+			    }
+		    }
+
+		    // All equal points
+		    if(target[left] == t) {
+			    std::swap(target[left], target[j]);
+		    } else {
+			    j++;
+			    std::swap(target[right], target[j]);
+		    }
+		    if (j <= k) {
+			    left = j + 1;
+		    }
+		    if (k <= j) {
+			    right = j - 1;
+		    }
+	    }
+    }
+
+    // Buckets. Sort a slice into buckets of given size. All elements from one bucket are smaller than any element  from the next one.
+    // elements at position i * bucketSize are guaranteed to be the (i * bucketSize) th smallest elements
+    // s := // some slice
+    // FloydRivest.Buckets(sort.Interface(s), 5)
+    // s is now sorted into buckets of size 5
+    // max(s[0:5]) < min(s[5:10])
+    // max(s[10: 15]) < min(s[15:20])
+    // ...
+    void buckets(std::vector<quint32>& target, size_t bucketSize) {
+        unsigned left = 0;
+        unsigned right = static_cast<unsigned>(target.size() - 1);
+        QList<unsigned> s;
+        s.append(left);
+        s.append(right);
+	    while(!s.isEmpty()) {
+            right = s.takeFirst();
+            left = s.takeFirst();
+		    if (right - left <= bucketSize) {
+			    continue;
+		    }
+		    // + bucketSize - 1 is to do math ceil
+		    unsigned mid = static_cast<unsigned>(left + ((right - left + bucketSize - 1) / bucketSize / 2) * bucketSize);
+		    select(target, mid, left, right);
+		    s.append(left);
+		    s.append(mid);
+		    s.append(mid);
+		    s.append(right);
+	    }
+    }
+
+}  // namespace FloydRivest
 
 UdtSocket_receive::UdtSocket_receive(UdtSocket_private& socket) : _socket(socket) {
     _ACKtimer.setSingleShot(true);
     _ACKtimer.setTimerType(Qt::PreciseTimer);
     connect(&_ACKtimer, &QTimer::timeout, this, &UdtSocket_receive::ACKevent);
 }
-
-/*
-const (
-	ackSelfClockInterval = 64
-);
-*/
 
 void UdtSocket_receive::configureHandshake(const HandshakePacket& hsPacket) {
     _farNextPktSeq = hsPacket._initPktSeq;
@@ -33,7 +124,23 @@ void UdtSocket_receive::configureHandshake(const HandshakePacket& hsPacket) {
     _recvACK2 = hsPacket._initPktSeq;
 }
 
-void UdtSocket_receive::run() {
+void UdtSocket_receive::setState(UdtSocketState newState) {
+    bool shouldBeRunning = false;
+    switch (newState) {
+    case UdtSocketState::HalfConnected:
+    case UdtSocketState::Connected:
+        shouldBeRunning = true;
+        break;
+    }
+
+    QMutexLocker guard(&_eventMutex);
+    _flagListenerShutdown = !shouldBeRunning;
+    if (shouldBeRunning && !isRunning()) {
+        start();
+    }
+}
+
+void UdtSocket_receive::startupInit() {
     _ackHistory.clear();
     _recvLossList.clear();
     _recvPktPend.clear();
@@ -48,6 +155,10 @@ void UdtSocket_receive::run() {
     _recvLastProbe.invalidate();
     _ACKsentEvent.setRemainingTime(-1);
     _ACKsentEvent2.setRemainingTime(-1);
+}
+
+void UdtSocket_receive::run() {
+    startupInit();
     _ACKtimer.start(UdtSocket::SYN);
 
     for (;;) {
@@ -69,8 +180,8 @@ void UdtSocket_receive::ACKevent() {
 }
 
 void UdtSocket_receive::packetReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived) {
-    QMutexLocker guard(&_eventMutex);
     ReceivedPacket packet(udtPacket, timeReceived);
+    QMutexLocker guard(&_eventMutex);
     _receivedPacketList.append(packet);
     _eventCondition.notify_all();
 }
@@ -94,11 +205,11 @@ bool UdtSocket_receive::processEvent(QMutexLocker& eventGuard) {
                 return true;
             case PacketType::SpecialErr:
                 eventGuard.unlock();
-                ingestError(packet.udtPacket);
+                _socket.ingestError(packet.udtPacket);
                 return true;
             case PacketType::Shutdown:  // sent by either peer
                 eventGuard.unlock();
-                ingestShutdown();
+                _socket.ingestShutdown();
                 return true;
         }
     }
@@ -192,8 +303,6 @@ void UdtSocket_receive::ingestMsgDropReq(const MessageDropRequestPacket& dropPac
 
 // ingestData is called to process a data packet
 void UdtSocket_receive::ingestData(const DataPacket& dataPacket, const QElapsedTimer& timeReceived) {
-    _socket.cong.onPktRecv(dataPacket);
-
 	const PacketID& packetID = dataPacket._packetID;
 
 	/* If the sequence number of the current data packet is 16n + 1,
@@ -226,14 +335,14 @@ void UdtSocket_receive::ingestData(const DataPacket& dataPacket, const QElapsedT
 	if(seqDiff > 0) {
 		ReceiveLossMap newLoss;
 		for(PacketID idx = _farNextPktSeq; idx != packetID; idx++) {
-			newLoss.insert(ReceiveLossMap::value_type(packetID, ReceiveLossEntry{packetID: packetID});
+			newLoss.insert(ReceiveLossMap::value_type(packetID, ReceiveLossEntry(packetID)));
 		}
 
 		if(_recvLossList.empty()) {
 			_recvLossList = newLoss;
 		} else {
 			for(PacketID idx = _farNextPktSeq; idx != packetID; idx++) {
-                _recvLossList.insert(ReceiveLossMap::value_type(packetID, ReceiveLossEntry{packetID: packetID});
+                _recvLossList.insert(ReceiveLossMap::value_type(packetID, ReceiveLossEntry(packetID)));
 			}
 		}
 
@@ -275,6 +384,7 @@ bool UdtSocket_receive::attemptProcessPacket(const DataPacket& dataPacket, bool 
 	// can we find the start of this message?
     typedef QList<DataPacket> DataPacketList;
 	DataPacketList pieces;
+    size_t pieceLength = 0;
 	bool cannotContinue = false;
 	switch(dataPacket._messagePosition) {
 	case DataPacket::MessagePosition::Last:
@@ -292,16 +402,19 @@ bool UdtSocket_receive::attemptProcessPacket(const DataPacket& dataPacket, bool 
 						cannotContinue = true;
 					}
 					// in any case we can't continue with this
-					log.Printf("Message with id %d appears to be a broken fragment", static_cast<quint32>(dataPacket._messageNumber));
+                    qCInfo(networking) << _socket.localAddressDebugString() << ": Message with id " << static_cast<quint32>(dataPacket._messageNumber)
+                                                           << "appears to be a broken fragment";
 					break;
 				}
                 const DataPacket& prevPiece = findPrevPiece->second;
 				if(prevPiece._messageNumber != dataPacket._messageNumber) {
 					// ...oops? previous piece isn't in the same message
-					log.Printf("Message with id %d appears to be a broken fragment", static_cast<quint32>(dataPacket._messageNumber));
+                    qCInfo(networking) << _socket.localAddressDebugString() << ": Message with id " << static_cast<quint32>(dataPacket._messageNumber)
+                                                           << "appears to be a broken fragment";
 					break;
 				}
 				pieces.prepend(prevPiece);
+                pieceLength += prevPiece._contents.length();
 				if(prevPiece._messagePosition == DataPacket::MessagePosition::First) {
 					break;
 				}
@@ -311,6 +424,7 @@ bool UdtSocket_receive::attemptProcessPacket(const DataPacket& dataPacket, bool 
 	}
 	if(!cannotContinue) {
 		pieces.append(dataPacket);
+        pieceLength += dataPacket._contents.length();
 
     	switch(dataPacket._messagePosition) {
 	    case DataPacket::MessagePosition::First:
@@ -332,7 +446,8 @@ bool UdtSocket_receive::attemptProcessPacket(const DataPacket& dataPacket, bool 
 								cannotContinue = true;
 							}
 						} else {
-							log.Printf("Message with id %d appears to be a broken fragment", static_cast<quint32>(dataPacket._messageNumber));
+                            qCInfo(networking) << _socket.localAddressDebugString() << ": Message with id " << static_cast<quint32>(dataPacket._messageNumber)
+                                                                   << "appears to be a broken fragment";
 						}
 						// in any case we can't continue with this
 						break;
@@ -340,10 +455,12 @@ bool UdtSocket_receive::attemptProcessPacket(const DataPacket& dataPacket, bool 
                     const DataPacket& nextPiece = findNextPiece->second;
                     if (nextPiece._messageNumber != dataPacket._messageNumber) {
 						// ...oops? previous piece isn't in the same message
-						log.Printf("Message with id %d appears to be a broken fragment", static_cast<quint32>(dataPacket._messageNumber));
+                        qCInfo(networking) << _socket.localAddressDebugString() << ": Message with id " << static_cast<quint32>(dataPacket._messageNumber)
+                                                                << "appears to be a broken fragment";
 						break;
 					}
 					pieces.append(nextPiece);
+                    pieceLength += nextPiece._contents.length();
 					if(nextPiece._messagePosition == DataPacket::MessagePosition::Last) {
 						break;
 					}
@@ -354,11 +471,11 @@ bool UdtSocket_receive::attemptProcessPacket(const DataPacket& dataPacket, bool 
 
 	// we've received a data packet, do we need to send an ACK for it?
 	_unackPktCount++;
-	unsigned ackInterval = _ackInterval.get();
+	unsigned ackInterval = _ackInterval.load();
 	if((ackInterval > 0) && (ackInterval <= _unackPktCount)) {
 		// ACK timer expired or ACK interval is reached
 		ackEvent();
-	} else if(ackSelfClockInterval*_lightAckCount <= _unackPktCount) {
+	} else if(ACK_SELF_CLOCK_INTERVAL * _lightAckCount <= _unackPktCount) {
 		//send a "light" ACK
 		sendLightACK();
 		_lightAckCount++;
@@ -374,16 +491,20 @@ bool UdtSocket_receive::attemptProcessPacket(const DataPacket& dataPacket, bool 
 
 	// we have a message, pull it from the pending heap (if necessary), assemble it into a message, and return it
 	if(!_recvPktPend.empty()) {
-		for(_, piece := range pieces) {
-			_recvPktPend.Remove(piece.Seq);
+		for(DataPacketList::const_iterator trans = pieces.begin(); trans != pieces.end(); trans++) {
+            _recvPktPend.erase(trans->_packetID);
 		}
 	}
 
-	msg := make([]byte, 0);
-	for(_, piece := range pieces) {
-		msg = append(msg, piece.Data...);
+    ByteSlice message;
+    quint8* messageBytes = static_cast<quint8*>(message.create(pieceLength));
+    size_t offset = 0;
+    for (DataPacketList::const_iterator trans; trans != pieces.end(); trans++) {
+        size_t len = trans->_contents.length();
+        memcpy(messageBytes + offset, trans->_contents.constData(), len);
+        offset += len;
 	}
-	_socket.receivedMessage(msg);
+	_socket.receivedMessage(message);
 	return true;
 }
 
@@ -408,26 +529,25 @@ void UdtSocket_receive::sendLightACK() {
 	}
 }
 
-void UdtSocket_receive::getReceiveSpeeds(int& recvSpeed, int& bandwidth) {
+void UdtSocket_receive::getReceiveSpeeds(unsigned& recvSpeed, unsigned& bandwidth) {
 
 	// get median value, but cannot change the original value order in the window
 	if(!_recvPktHistory.isEmpty()) {
-		ourPktHistory := make(sortableDurnArray, len(_recvPktHistory));
-		copy(ourPktHistory, _recvPktHistory);
-		n := len(ourPktHistory);
+        std::vector<quint32> ourPktHistory(_recvPktHistory.begin(), _recvPktHistory.end());
+		unsigned n = static_cast<unsigned>(ourPktHistory.size());
 
-		cutPos := n / 2;
-		FloydRivest.Buckets(ourPktHistory, cutPos);
-		median := ourPktHistory[cutPos];
+		unsigned cutPos = n / 2;
+		floydRivest::buckets(ourPktHistory, cutPos);
+		quint32 median = ourPktHistory[cutPos];
 
-		upper := median << 3;  // upper bounds
-		lower := median >> 3;  // lower bounds
-		count := 0;            // number of entries inside bounds
-		var sum time.Duration; // sum of values inside bounds
+		unsigned upper = median << 3;  // upper bounds
+		unsigned lower = median >> 3;  // lower bounds
+		unsigned count = 0;            // number of entries inside bounds
+		quint64 sum = 0;               // sum of values inside bounds
 
 		// median filtering
-		idx := 0;
-		for(i := 0; i < n; i++) {
+		unsigned idx = 0;
+		for(unsigned i = 0; i < n; i++) {
 			if((ourPktHistory[idx] < upper) && (ourPktHistory[idx] > lower)) {
 				count++;
 				sum += ourPktHistory[idx];
@@ -438,28 +558,27 @@ void UdtSocket_receive::getReceiveSpeeds(int& recvSpeed, int& bandwidth) {
 		// do we have enough valid values to return a value?
 		// calculate speed
 		if(count > (n >> 1)) {
-			recvSpeed = int(time.Second * time.Duration(count) / sum);
+			recvSpeed = static_cast<unsigned>(UdtSocket::SECOND * static_cast<quint64>(count) / sum);
 		}
 	}
 
 	// get median value, but cannot change the original value order in the window
 	if(!_recvPktPairHistory.isEmpty()) {
-		ourProbeHistory := make(sortableDurnArray, len(s.recvPktPairHistory));
-		copy(ourProbeHistory, _recvPktPairHistory);
-		n := len(ourProbeHistory);
+        std::vector<quint32> ourProbeHistory(_recvPktPairHistory.begin(), _recvPktPairHistory.end());
+		unsigned n = static_cast<unsigned>(ourProbeHistory.size());
 
-		cutPos := n / 2;
-		FloydRivest.Buckets(ourProbeHistory, cutPos);
-		median := ourProbeHistory[cutPos];
+		unsigned cutPos = n / 2;
+        floydRivest::buckets(ourProbeHistory, cutPos);
+		quint32 median = ourProbeHistory[cutPos];
 
-		upper := median << 3; // upper bounds
-		lower := median >> 3; // lower bounds
-		count := 1;           // number of entries inside bounds
-		sum := median;        // sum of values inside bounds
+		unsigned upper = median << 3; // upper bounds
+		unsigned lower = median >> 3; // lower bounds
+		unsigned count = 1;           // number of entries inside bounds
+		quint64 sum = median;         // sum of values inside bounds
 
 		// median filtering
-		idx := 0;
-		for(i := 0; i < n; i++) {
+		unsigned idx = 0;
+		for(unsigned i = 0; i < n; i++) {
 			if((ourProbeHistory[idx] < upper) && (ourProbeHistory[idx] > lower)) {
 				count++;
 				sum += ourProbeHistory[idx];
@@ -467,7 +586,7 @@ void UdtSocket_receive::getReceiveSpeeds(int& recvSpeed, int& bandwidth) {
 			idx++;
 		}
 
-		bandwidth = static_cast<int>(time.Second * time.Duration(count) / sum);
+		bandwidth = static_cast<unsigned>(UdtSocket::SECOND * static_cast<quint64>(count) / sum);
 	}
 }
 
@@ -493,22 +612,17 @@ void UdtSocket_receive::sendACK() {
 	_sentACK = packetID;
 
 	_lastACK++;
-	ackHist := &ackHistoryEntry{
-		ackID:      _lastACK,
-		lastPacket: ack,
-		sendTime:   time.Now(),
-	}
-	if(_ackHistory == nil) {
-		_ackHistory = ackHistoryHeap{ackHist};
-		heap.Init(&_ackHistory);
-	} else {
-		heap.Push(&_ackHistory, ackHist);
-	}
+    ACKHistoryEntry ackHistoryEntry;
+    ackHistoryEntry.ackID = _lastACK;
+    ackHistoryEntry.lastPacket = packetID;
+    ackHistoryEntry.sendTime.start();
+    _ackHistory.insert(_lastACK, ackHistoryEntry);
 
-	rtt, rttVar := _socket.getRTT();
+    unsigned rtt, rttVariance;
+    _socket.getRTT(rtt, rttVariance);
 
 	int numPendPackets = static_cast<int>(_farNextPktSeq.blindDifference(_farRecdPktSeq) - 1);
-	int availWindow = static_cast<int>(_socket.maxFlowWinSize) - numPendPackets;
+	int availWindow = static_cast<int>(_socket.getMaxFlowWinSize()) - numPendPackets;
 	if(availWindow < 2) {
 		availWindow = 2;
 	}
@@ -521,6 +635,7 @@ void UdtSocket_receive::sendACK() {
     ackPacket._availBufferSize = static_cast<quint32>(availWindow);
 
     if (_ACKsentEvent2.hasExpired() || _ACKsentEvent2.isForever()) {
+        unsigned recvSpeed, bandwidth;
         getReceiveSpeeds(recvSpeed, bandwidth);
         ackPacket._ackType = ACKPacket::AckType::Full;
 		ackPacket._packetReceiveRate = static_cast<quint32>(recvSpeed);
@@ -529,7 +644,7 @@ void UdtSocket_receive::sendACK() {
 	}
     _socket.sendPacket(ackPacket.toPacket());
 
-    quint64 microsecs = rtt+4*rttVar;
+    quint64 microsecs = rtt + 4 * rttVariance;
 	_ACKsentEvent.setPreciseRemainingTime(microsecs/1000, (microsecs%1000)*1000, Qt::PreciseTimer);
 }
 
@@ -560,7 +675,7 @@ void UdtSocket_receive::sendNAK(const ReceiveLossMap& receiveLoss) {
             lossInfo.append(static_cast<quint32>(lastPacket)&0x7FFFFFFF);
 		}
 
-        error: need to set curPkt to something different?
+        currentPacket = lastPacket + 1;
 	}
 
     NAKPacket packet;
@@ -568,16 +683,11 @@ void UdtSocket_receive::sendNAK(const ReceiveLossMap& receiveLoss) {
 	_socket.sendPacket(packet.toPacket());
 }
 
-// ingestData is called to process an (undocumented) OOB error packet
-void UdtSocket_receive::ingestError(const Packet& udtPacket) {
-	// TODO: umm something
-}
-
 // assuming some condition has occured (ACK timer expired, ACK interval), send an ACK and reset the appropriate timer
 void UdtSocket_receive::ackEvent() {
     sendACK();
     int ackTime = UdtSocket::SYN;
-	int ackPeriod = _ackPeriod.get();
+	int ackPeriod = _ackPeriod.load();
 	if(ackPeriod > 0) {
 		ackTime = ackPeriod;
 	}

@@ -36,10 +36,24 @@ This class is private and not user-accessible
 class UdtSocket_send : public QThread {
     Q_OBJECT
 public:
+    struct MessageEntry {
+        ByteSlice content;
+        QElapsedTimer sendTime;
+        QDeadlineTimer expireTime;
+
+        inline MessageEntry(const ByteSlice& c) : content(c) {
+            sendTime.start();
+            expireTime.setRemainingTime(-1);
+        }
+    };
+    typedef QSharedPointer<MessageEntry> MessageEntryPointer;
+
+public:
     UdtSocket_send(UdtSocket_private& socket);
 
     void setState(UdtSocketState newState);
     void configureHandshake(const HandshakePacket& hsPacket, bool resetSequence);
+    void sendMessage(MessageEntryPointer message);
     void packetReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived);
     void queueDisconnect();
     void resetReceiveTimer();
@@ -59,7 +73,17 @@ private:
         Shutdown,    // Connection has been recently closed and is listening for packet-resend requests
     };
 
+    typedef QList<MessageEntryPointer> MessageEntryList;
+
+    struct SendPacketEntry {
+        DataPacket packet;
+        QElapsedTimer sendTime;
+        QDeadlineTimer expireTime;
+    };
+    typedef QSharedPointer<SendPacketEntry> SendPacketEntryPointer;
+
 private:  // called exclusively within our private thread
+    void startupInit();
     virtual void run() override;
     bool processEvent(QMutexLocker& eventGuard);
     void processDataMsg(bool isFirst);
@@ -67,6 +91,7 @@ private:  // called exclusively within our private thread
     bool processSendLoss();
     bool processSendExpire();
     void processExpEvent();
+    void sendDataPacket(SendPacketEntryPointer dataPacket, bool isResend);
 
 private:
     UdtSocket_private& _socket;  // private interface pointing back at the UdtSocket
@@ -79,8 +104,9 @@ private:
     bool           _flagRecentEXPevent{ false };       // has the EXP timer fired recently?
     bool           _flagRecentSNDevent{ false };       // has the SND timer fired recently?
     bool           _flagSendDisconnect{ false };       // are we being asked to send a Disconnect packet?
+    MessageEntryList _pendingMessages;                 // the list of messages queued but not yet sent
 
-//	// channels
+    //	// channels
 //	sendEvent     <-chan recvPktEvent    // sender: ingest the specified packet. Sender is readPacket, receiver is goSendEvent
 //	messageOut    <-chan sendMessage     // outbound messages. Sender is client caller (Write), Receiver is goSendEvent. Closed when socket is closed
 //	sendPacket    chan<- packet.Packet   // send a packet out on the wire
@@ -90,9 +116,9 @@ private:
 	SendState      _sendState{SendState::Closed};  // current sender state
 //	sendPktPend    sendPacketHeap  // list of packets that have been sent but not yet acknoledged
 	PacketID       _sendPacketID;   // the current packet sequence number
-//	msgPartialSend *sendMessage    // when a message can only partially fit in a socket, this is the remainder
-//	msgSeq         uint32          // the current message sequence number
-//	expCount       uint            // number of continuous EXP timeouts.
+    MessageEntryPointer _msgPartialSend; // when a message can only partially fit in a socket, this is the remainder
+    SequenceNumber _messageSequence;   // the current message sequence number
+    unsigned       _expCount{ 1 };   // number of continuous EXP timeouts.
 	QElapsedTimer  _lastReceiveTime; // the last time we've heard something from the remote system
 	PacketID       _lastAckPacketID; // largest packetID we've received an ACK from
 //	sentAck2       uint32          // largest ACK2 packet we've sent
@@ -100,7 +126,7 @@ private:
 //	sndPeriod      atomicDuration  // (set by congestion control) delay between sending packets
 //	rtoPeriod      atomicDuration  // (set by congestion control) override of EXP timer calculations
 //	congestWindow  atomicUint32    // (set by congestion control) size of the current congestion window (in packets)
-	uint           _flowWindowSize; // negotiated maximum number of unacknowledged packets (in packets)
+	uint           _flowWindowSize{ 16 }; // negotiated maximum number of unacknowledged packets (in packets)
 
 	// timers
 	QTimer _SNDtimer;              // if a packet is recently sent, this timer fires when SND completes
