@@ -761,6 +761,7 @@ void UdtSocket::readPacket(const Packet& udtPacket, const QHostAddress& peerAddr
     }
     case PacketType::Ack:  // receiver -> sender
     case PacketType::Nak:
+    case PacketType::Congestion:
         emit _send.packetReceived(udtPacket, now);
         break;
     case PacketType::Data:
@@ -1023,22 +1024,23 @@ func (s *udtSocket) goManageConnection() {
 			s.m.sendPacket(s.raddr, s.farSockID, ts, p)
 	}
 }
-
-func absdiff(a uint, b uint) uint {
-	if a < b {
-		return b - a
-	}
-	return a - b
-}
 */
-void UdtSocket::applyRTT(unsigned RTTinMicroseconds) {
+template<class T>
+T absdiff(T a, T b) {
+	if (a < b) {
+        return b - a;
+	}
+	return a - b;
+}
+
+void UdtSocket::applyRTT(std::chrono::microseconds rtt) {
     _rttProt.Lock();
-	_rttVar = (_rttVar*3 + absdiff(_rtt, RTTinMicroseconds)) >> 2;
-	_rtt = (_rtt*7 + RTTinMicroseconds) >> 3;
+    _rttVar = (_rttVar * 3 + absdiff(_rtt, rtt)) >> 2;
+    _rtt = (_rtt * 7 + rtt) >> 3;
 	_rttProt.Unlock();
 }
 
-void UdtSocket::getRTT(unsigned& rtt, unsigned& rttVariance) {
+void UdtSocket::getRTT(std::chrono::microseconds& rtt, std::chrono::microseconds& rttVariance) const {
     _rttProt.RLock();
 	rtt = _rtt;
 	rttVariance = _rttVariance;
@@ -1046,15 +1048,15 @@ void UdtSocket::getRTT(unsigned& rtt, unsigned& rttVariance) {
 }
 
 // Update Estimated Bandwidth and packet delivery rate
-func (s *udtSocket) applyReceiveRates(deliveryRate uint, bandwidth uint) {
-	s.receiveRateProt.Lock()
-	if deliveryRate > 0 {
-		s.deliveryRate = (s.deliveryRate*7 + deliveryRate) >> 3
+void UdtSocket::applyReceiveRates(unsigned deliveryRate, unsigned bandwidth) {
+    _receiveRateProt.Lock();
+	if(deliveryRate > 0) {
+		_deliveryRate = (s.deliveryRate*7 + deliveryRate) >> 3;
 	}
-	if bandwidth > 0 {
-		s.bandwidth = (s.bandwidth*7 + bandwidth) >> 3
+	if(bandwidth > 0) {
+		_bandwidth = (s.bandwidth*7 + bandwidth) >> 3;
 	}
-	s.receiveRateProt.Unlock()
+	_receiveRateProt.Unlock();
 }
 
 func (s *udtSocket) getRcvSpeeds() (deliveryRate uint, bandwidth uint) {

@@ -24,7 +24,8 @@ namespace floydRivest {
     // right is the right index for the interval
     // k is the desired index value, where array[k] is the k+1 smallest element
     // when left = 0
-    void select(std::vector<quint32>& target, unsigned k, unsigned left, unsigned right) {
+    template<class T>
+    void select(std::vector<T>& target, unsigned k, unsigned left, unsigned right) {
         size_t length = target.size();
    	    while (right > left) {
 		    if (right - left > 600) {
@@ -45,7 +46,7 @@ namespace floydRivest {
 		    }
 
             // Partition the subarray S[left..right] with arr[k] as pivot 
-            unsigned t = target[k];
+            T t = target[k];
 		    unsigned i = left;
 		    unsigned j = right;
 		    std::swap(target[left], target[k]);
@@ -87,7 +88,8 @@ namespace floydRivest {
     // max(s[0:5]) < min(s[5:10])
     // max(s[10: 15]) < min(s[15:20])
     // ...
-    void buckets(std::vector<quint32>& target, size_t bucketSize) {
+    template <class T>
+    void buckets(std::vector<T>& target, size_t bucketSize) {
         unsigned left = 0;
         unsigned right = static_cast<unsigned>(target.size() - 1);
         QList<unsigned> s;
@@ -153,8 +155,8 @@ void UdtSocket_receive::startupInit() {
     _unackPktCount = 0;
     _recvLastArrival.invalidate();
     _recvLastProbe.invalidate();
-    _ACKsentEvent.setRemainingTime(-1);
-    _ACKsentEvent2.setRemainingTime(-1);
+    _ACKsentEvent.setRemainingTime(0); // default expired 
+    _ACKsentEvent2.setRemainingTime(0); // default expired
 }
 
 void UdtSocket_receive::run() {
@@ -261,7 +263,7 @@ void UdtSocket_receive::ingestACK2(const Packet& udtPacket, const QElapsedTimer&
 		_largestACK = ackSeq;
 	}
 
-	_socket.applyRTT(static_cast<quint32>((timeReceived.nsecsElapsed() - lookup->sendTime.nsecsElapsed()) / 1000));
+	_socket.applyRTT(std::chrono::microseconds((timeReceived.nsecsElapsed() - lookup->sendTime.nsecsElapsed()) / 1000));
     _ackHistory.erase(lookup);
 
 	//s.rto = 4 * s.rtt + s.rttVar
@@ -310,7 +312,7 @@ void UdtSocket_receive::ingestData(const DataPacket& dataPacket, const QElapsedT
 	packet and the last data packet in the Packet Pair Window. */
 	if(((static_cast<quint32>(packetID)-1)&0xf) == 0) {
 		if(_recvLastProbe.isValid()) {
-			_recvPktPairHistory.append(static_cast<quint32>((timeReceived.nsecsElapsed() - _recvLastProbe.nsecsElapsed())/1000));
+			_recvPktPairHistory.append(std::chrono::microseconds((timeReceived.nsecsElapsed() - _recvLastProbe.nsecsElapsed())/1000));
 			while(_recvPktPairHistory.length() > 16) {
 				_recvPktPairHistory.removeFirst();
 			}
@@ -320,7 +322,7 @@ void UdtSocket_receive::ingestData(const DataPacket& dataPacket, const QElapsedT
 
 	// Record the packet arrival time in PKT History Window.
 	if(_recvLastArrival.isValid()) {
-		_recvPktHistory.append(static_cast<quint32>((timeReceived.nsecsElapsed() - _recvLastArrival.nsecsElapsed())/1000));
+		_recvPktHistory.append(std::chrono::microseconds((timeReceived.nsecsElapsed() - _recvLastArrival.nsecsElapsed())/1000));
 		while(_recvPktHistory.length() > 16) {
 			_recvPktHistory.removeFirst();
 		}
@@ -533,17 +535,17 @@ void UdtSocket_receive::getReceiveSpeeds(unsigned& recvSpeed, unsigned& bandwidt
 
 	// get median value, but cannot change the original value order in the window
 	if(!_recvPktHistory.isEmpty()) {
-        std::vector<quint32> ourPktHistory(_recvPktHistory.begin(), _recvPktHistory.end());
+        std::vector<std::chrono::microseconds> ourPktHistory(_recvPktHistory.begin(), _recvPktHistory.end());
 		unsigned n = static_cast<unsigned>(ourPktHistory.size());
 
 		unsigned cutPos = n / 2;
 		floydRivest::buckets(ourPktHistory, cutPos);
-		quint32 median = ourPktHistory[cutPos];
+		std::chrono::microseconds median = ourPktHistory[cutPos];
 
-		unsigned upper = median << 3;  // upper bounds
-		unsigned lower = median >> 3;  // lower bounds
+		std::chrono::microseconds upper(median.count() << 3);  // upper bounds
+		std::chrono::microseconds lower(median.count() >> 3);  // lower bounds
 		unsigned count = 0;            // number of entries inside bounds
-		quint64 sum = 0;               // sum of values inside bounds
+		std::chrono::microseconds sum{ 0 };               // sum of values inside bounds
 
 		// median filtering
 		unsigned idx = 0;
@@ -558,23 +560,23 @@ void UdtSocket_receive::getReceiveSpeeds(unsigned& recvSpeed, unsigned& bandwidt
 		// do we have enough valid values to return a value?
 		// calculate speed
 		if(count > (n >> 1)) {
-			recvSpeed = static_cast<unsigned>(UdtSocket::SECOND * static_cast<quint64>(count) / sum);
+			recvSpeed = std::chrono::seconds(count) / sum;
 		}
 	}
 
 	// get median value, but cannot change the original value order in the window
 	if(!_recvPktPairHistory.isEmpty()) {
-        std::vector<quint32> ourProbeHistory(_recvPktPairHistory.begin(), _recvPktPairHistory.end());
+        std::vector<std::chrono::microseconds> ourProbeHistory(_recvPktPairHistory.begin(), _recvPktPairHistory.end());
 		unsigned n = static_cast<unsigned>(ourProbeHistory.size());
 
 		unsigned cutPos = n / 2;
         floydRivest::buckets(ourProbeHistory, cutPos);
-		quint32 median = ourProbeHistory[cutPos];
+		std::chrono::microseconds median = ourProbeHistory[cutPos];
 
-		unsigned upper = median << 3; // upper bounds
-		unsigned lower = median >> 3; // lower bounds
+		std::chrono::microseconds upper(median.count() << 3);  // upper bounds
+		std::chrono::microseconds lower(median.count() >> 3); // lower bounds
 		unsigned count = 1;           // number of entries inside bounds
-		quint64 sum = median;         // sum of values inside bounds
+		std::chrono::microseconds sum = median;         // sum of values inside bounds
 
 		// median filtering
 		unsigned idx = 0;
@@ -586,7 +588,7 @@ void UdtSocket_receive::getReceiveSpeeds(unsigned& recvSpeed, unsigned& bandwidt
 			idx++;
 		}
 
-		bandwidth = static_cast<unsigned>(UdtSocket::SECOND * static_cast<quint64>(count) / sum);
+		bandwidth = std::chrono::seconds(count) / sum;
 	}
 }
 
@@ -606,7 +608,7 @@ void UdtSocket_receive::sendACK() {
 	}
 
 	// only send out an ACK if we either are saying something new or the ackSentEvent has expired
-	if(packetID == _sentACK && !_ACKsentEvent.hasExpired() && !_ACKsentEvent.isForever()) {
+	if(packetID == _sentACK && !_ACKsentEvent.hasExpired()) {
 		return;
 	}
 	_sentACK = packetID;
@@ -618,7 +620,7 @@ void UdtSocket_receive::sendACK() {
     ackHistoryEntry.sendTime.start();
     _ackHistory.insert(_lastACK, ackHistoryEntry);
 
-    unsigned rtt, rttVariance;
+    std::chrono::microseconds rtt, rttVariance;
     _socket.getRTT(rtt, rttVariance);
 
 	int numPendPackets = static_cast<int>(_farNextPktSeq.blindDifference(_farRecdPktSeq) - 1);
@@ -630,11 +632,11 @@ void UdtSocket_receive::sendACK() {
 	ACKPacket ackPacket;
     ackPacket._ackSequence = _lastACK;
     ackPacket._lastPacketReceived = packetID;
-    ackPacket._rtt = static_cast<quint32>(rtt);
-    ackPacket._rttVariance = static_cast<quint32>(rttVariance);
-    ackPacket._availBufferSize = static_cast<quint32>(availWindow);
+    ackPacket._rtt = rtt;
+    ackPacket._rttVariance = rttVariance;
+    ackPacket._availBufferSize = availWindow;
 
-    if (_ACKsentEvent2.hasExpired() || _ACKsentEvent2.isForever()) {
+    if (_ACKsentEvent2.hasExpired()) {
         unsigned recvSpeed, bandwidth;
         getReceiveSpeeds(recvSpeed, bandwidth);
         ackPacket._ackType = ACKPacket::AckType::Full;
@@ -644,8 +646,8 @@ void UdtSocket_receive::sendACK() {
 	}
     _socket.sendPacket(ackPacket.toPacket());
 
-    quint64 microsecs = rtt + 4 * rttVariance;
-	_ACKsentEvent.setPreciseRemainingTime(microsecs/1000, (microsecs%1000)*1000, Qt::PreciseTimer);
+    std::chrono::microseconds microsecs = rtt + 4 * rttVariance;
+	_ACKsentEvent.setPreciseRemainingTime(microsecs.count()/1000, (microsecs.count()%1000)*1000, Qt::PreciseTimer);
 }
 
 void UdtSocket_receive::sendNAK(const ReceiveLossMap& receiveLoss) {
@@ -686,9 +688,9 @@ void UdtSocket_receive::sendNAK(const ReceiveLossMap& receiveLoss) {
 // assuming some condition has occured (ACK timer expired, ACK interval), send an ACK and reset the appropriate timer
 void UdtSocket_receive::ackEvent() {
     sendACK();
-    int ackTime = UdtSocket::SYN;
-	int ackPeriod = _ackPeriod.load();
-	if(ackPeriod > 0) {
+    std::chrono::milliseconds ackTime = UdtSocket::SYN;
+    std::chrono::milliseconds ackPeriod(_ackPeriod.load());
+	if(ackPeriod.count() > 0) {
 		ackTime = ackPeriod;
 	}
 	_ACKtimer.start(ackTime);

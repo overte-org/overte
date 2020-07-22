@@ -47,10 +47,7 @@ private slots:
     void ACKevent();
 
 private: // private datatypes
-    enum Constants
-    {
-        ACK_SELF_CLOCK_INTERVAL = 64,
-    };
+    static constexpr unsigned ACK_SELF_CLOCK_INTERVAL{ 64 };
 
     struct ReceivedPacket {
         Packet        udtPacket;
@@ -78,7 +75,7 @@ private: // private datatypes
 
     typedef std::map<PacketID, DataPacket, WrappedSequenceLess<PacketID>> DataPacketMap;
 
-    typedef QList<quint32> QDurationList;
+    typedef QList<std::chrono::microseconds> QDurationList;
 
 private:  // called exclusively within our private thread
     void startupInit();
@@ -116,7 +113,7 @@ private:
     PacketID _recvACK2;                    // largest PacketID we've received an ACK2 from
     QElapsedTimer _recvLastArrival;        // time of the most recent data packet arrival
     QElapsedTimer _recvLastProbe;          // time of the most recent data packet probe packet
-    QAtomicInteger<quint32> _ackPeriod;    // (set by congestion control) delay between sending ACKs
+    QAtomicInteger<quint32> _ackPeriod;    // (set by congestion control) delay between sending ACKs (in milliseconds)
     QAtomicInteger<unsigned> _ackInterval; // (set by congestion control) number of data packets to send before sending an ACK
     unsigned _unackPktCount{ 0 };          // number of packets we've received that we haven't sent an ACK for
 	unsigned _lightAckCount{ 0 };          // number of "light ACK" packets we've sent since the last ACK

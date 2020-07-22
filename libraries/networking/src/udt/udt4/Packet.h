@@ -148,8 +148,8 @@ public:
     SequenceNumber _ackSequence;
     PacketID _lastPacketReceived;
     AckType _ackType{ AckType::Normal };
-    quint32 _rtt{ 0 };                    // (in microseconds)
-    quint32 _rttVariance{ 0 };            // (in microseconds)
+    std::chrono::microseconds _rtt{ 0 };
+    std::chrono::microseconds _rttVariance{ 0 };
     quint32 _availBufferSize{ 0 };        // (in bytes)
     quint32 _packetReceiveRate{ 0 };      // (in packets/sec)
     quint32 _estimatedLinkCapacity{ 0 };  // (in packets/sec)

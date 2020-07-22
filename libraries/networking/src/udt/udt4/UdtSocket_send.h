@@ -36,6 +36,32 @@ This class is private and not user-accessible
 class UdtSocket_send : public QThread {
     Q_OBJECT
 public:
+    UdtSocket_send(UdtSocket_private& socket);
+
+    void setState(UdtSocketState newState);
+    void configureHandshake(const HandshakePacket& hsPacket, bool resetSequence);
+    void sendMessage(ByteSlice content, QDeadlineTimer expireTime);
+    void packetReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived);
+    void queueDisconnect();
+    void resetReceiveTimer();
+
+private slots:
+    void SNDevent();
+    void EXPevent();
+
+private:
+    static constexpr std::chrono::milliseconds MIN_EXP_INTERVAL{ 300 };
+
+    enum class SendState
+    {
+        Closed,      // Connection is closed
+        Idle,        // Connection is open and waiting
+        Sending,     // Recently sent a packet
+        Waiting,     // Waiting for the peer to process a packet
+        ProcessDrop, // Dropping a lost packet
+        Shutdown,    // Connection has been recently closed and is listening for packet-resend requests
+    };
+
     struct MessageEntry {
         ByteSlice content;
         QElapsedTimer sendTime;
@@ -47,33 +73,15 @@ public:
         }
     };
     typedef QSharedPointer<MessageEntry> MessageEntryPointer;
-
-public:
-    UdtSocket_send(UdtSocket_private& socket);
-
-    void setState(UdtSocketState newState);
-    void configureHandshake(const HandshakePacket& hsPacket, bool resetSequence);
-    void sendMessage(MessageEntryPointer message);
-    void packetReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived);
-    void queueDisconnect();
-    void resetReceiveTimer();
-
-private slots:
-    void SNDevent();
-    void EXPevent();
-
-private:
-    enum class SendState
-    {
-        Closed,      // Connection is closed
-        Idle,        // Connection is open and waiting
-        Sending,     // Recently sent a packet
-        Waiting,     // Waiting for the peer to process a packet
-        ProcessDrop, // Dropping a lost packet
-        Shutdown,    // Connection has been recently closed and is listening for packet-resend requests
-    };
-
     typedef QList<MessageEntryPointer> MessageEntryList;
+
+    struct ReceivedPacket {
+        Packet udtPacket;
+        QElapsedTimer timeReceived;
+
+        inline ReceivedPacket(const Packet& p, const QElapsedTimer& t);
+    };
+    typedef QList<ReceivedPacket> ReceivedPacketList;
 
     struct SendPacketEntry {
         DataPacket packet;
@@ -91,7 +99,12 @@ private:  // called exclusively within our private thread
     bool processSendLoss();
     bool processSendExpire();
     void processExpEvent();
+    void resetEXP();
     void sendDataPacket(SendPacketEntryPointer dataPacket, bool isResend);
+    void ingestAck(const ACKPacket& ackPacket, const QElapsedTimer& timeReceived);
+    void ingestNak(const NAKPacket& nakPacket, const QElapsedTimer& timeReceived);
+    void ingestCongestion(const Packet& udtPacket, const QElapsedTimer& timeReceived);
+    bool assertValidSentPktID(const char* pktType, const PacketID& packetID) const;
 
 private:
     UdtSocket_private& _socket;  // private interface pointing back at the UdtSocket
@@ -105,6 +118,7 @@ private:
     bool           _flagRecentSNDevent{ false };       // has the SND timer fired recently?
     bool           _flagSendDisconnect{ false };       // are we being asked to send a Disconnect packet?
     MessageEntryList _pendingMessages;                 // the list of messages queued but not yet sent
+    ReceivedPacketList _receivedPacketList;            // list of packets we have not yet processed
 
     //	// channels
 //	sendEvent     <-chan recvPktEvent    // sender: ingest the specified packet. Sender is readPacket, receiver is goSendEvent
@@ -114,19 +128,19 @@ private:
 
     // While the send thread is running these variables only to be accessed by that thread (can be initialized carefully by other threads)
 	SendState      _sendState{SendState::Closed};  // current sender state
-//	sendPktPend    sendPacketHeap  // list of packets that have been sent but not yet acknoledged
+//	sendPktPend    sendPacketHeap  // list of packets that have been sent but not yet acknowledged
 	PacketID       _sendPacketID;   // the current packet sequence number
     MessageEntryPointer _msgPartialSend; // when a message can only partially fit in a socket, this is the remainder
     SequenceNumber _messageSequence;   // the current message sequence number
     unsigned       _expCount{ 1 };   // number of continuous EXP timeouts.
 	QElapsedTimer  _lastReceiveTime; // the last time we've heard something from the remote system
 	PacketID       _lastAckPacketID; // largest packetID we've received an ACK from
-//	sentAck2       uint32          // largest ACK2 packet we've sent
+    SequenceNumber _sentAck2;          // largest ACK2 packet we've sent
 //	sendLossList   packetIDHeap    // loss list
 //	sndPeriod      atomicDuration  // (set by congestion control) delay between sending packets
 //	rtoPeriod      atomicDuration  // (set by congestion control) override of EXP timer calculations
 //	congestWindow  atomicUint32    // (set by congestion control) size of the current congestion window (in packets)
-	uint           _flowWindowSize{ 16 }; // negotiated maximum number of unacknowledged packets (in packets)
+	unsigned       _flowWindowSize{ 16 }; // negotiated maximum number of unacknowledged packets (in packets)
 
 	// timers
 	QTimer _SNDtimer;              // if a packet is recently sent, this timer fires when SND completes

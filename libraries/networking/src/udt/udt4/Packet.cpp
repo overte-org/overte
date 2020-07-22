@@ -179,8 +179,8 @@ ACKPacket::ACKPacket(const Packet& src) :
         if (src._contents.length() < 24) {
             _ackType = AckType::Light;
         } else {
-            _rtt = qFromBigEndian<quint32>(&src._contents[4]);
-            _rttVariance = qFromBigEndian<quint32>(&src._contents[8]);
+            _rtt = static_cast<std::chrono::microseconds>(qFromBigEndian<quint32>(&src._contents[4]));
+            _rttVariance = static_cast<std::chrono::microseconds>(qFromBigEndian<quint32>(&src._contents[8]));
             _availBufferSize = qFromBigEndian<quint32>(&src._contents[12]);
             if (src._contents.length() < 16) {
                 _ackType = AckType::Normal;
@@ -222,16 +222,16 @@ Packet ACKPacket::toPacket() const {
     case AckType::Normal:
         buffer = reinterpret_cast<quint8*>(packetData.create(16));
         *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(static_cast<quint32>(_lastPacketReceived));
-        *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(_rtt);
-        *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_rttVariance);
+        *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(_rtt.count());
+        *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_rttVariance.count());
         *reinterpret_cast<quint32*>(&buffer[12]) = qToBigEndian<quint32>(_availBufferSize);
         break;
 
     case AckType::Full:
         buffer = reinterpret_cast<quint8*>(packetData.create(24));
         *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(static_cast<quint32>(_lastPacketReceived));
-        *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(_rtt);
-        *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_rttVariance);
+        *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(_rtt.count());
+        *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_rttVariance.count());
         *reinterpret_cast<quint32*>(&buffer[12]) = qToBigEndian<quint32>(_availBufferSize);
         *reinterpret_cast<quint32*>(&buffer[16]) = qToBigEndian<quint32>(_packetReceiveRate);
         *reinterpret_cast<quint32*>(&buffer[20]) = qToBigEndian<quint32>(_estimatedLinkCapacity);

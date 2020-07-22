@@ -47,8 +47,9 @@ enum
 // private interface for interactions within a UdtSocket
 class UdtSocket_private {
 public:
-    virtual void getRTT(unsigned& rtt, unsigned& rttVariance) const = 0;
-    virtual void applyRTT(unsigned RTTinMicroseconds) = 0;
+    virtual void getRTT(std::chrono::microseconds& rtt, std::chrono::microseconds& rttVariance) const = 0;
+    virtual void applyRTT(std::chrono::microseconds rtt) = 0;
+    virtual void applyReceiveRates(unsigned deliveryRate, unsigned bandwidth) = 0;
     virtual void sendPacket(const Packet& udtPacket) = 0;
     virtual void receivedMessage(const ByteSlice& message) = 0;
     virtual unsigned getMaxFlowWinSize() const = 0;
@@ -85,21 +86,18 @@ class UdtSocket : public QIODevice, public QEnableSharedFromThis<UdtSocket>, pro
 public:
     enum TimeStuff
     {
-        MILLISECOND = 1,
         SECOND = 1000,
     };
 
-    enum Timings
-    {
-        CONNECT_TIMEOUT = 3 * SECOND,               // how long should a client -> server connection take, from start to connected?
-        RENDEZVOUS_CONNECT_TIMEOUT = 30 * SECOND,   // how long should a client <-> client connection take, from start to connected?
-        CONNECT_RETRY = 250 * MILLISECOND,          // if we haven't received a response to a packet in this amount of time, resend it
-        LINGER_TIMEOUT = 180 * SECOND,              // after a connection is closed, wait this long for any potential packet resend requests
-        MTU_DROP_INTERVAL = 3,                      // if we're negotiating a connection and have sent this many retries, drop the MTU
-        MTU_DROP_INCREMENT = 10,                    // if we're negotiating a connection and think we may not be getting through, drop the MTU by this much
-        MTU_MINIMUM = 1280,                         // we should not drop the MTU below this point on our own
-        SYN = 10 * MILLISECOND,                     // SYN is used as a timing duration in a number of places in UDT
-    };
+    static constexpr std::chrono::milliseconds CONNECT_TIMEOUT{ std::chrono::seconds{ 3 } };             // how long should a client -> server connection take, from start to connected?
+    static constexpr std::chrono::milliseconds RENDEZVOUS_CONNECT_TIMEOUT{ std::chrono::seconds{ 30 } }; // how long should a client <-> client connection take, from start to connected?
+    static constexpr std::chrono::milliseconds CONNECT_RETRY{ 250 };                                     // if we haven't received a response to a packet in this amount of time, resend it
+    static constexpr std::chrono::milliseconds LINGER_TIMEOUT{ std::chrono::seconds{ 180 } };            // after a connection is closed, wait this long for any potential packet resend requests
+    static constexpr std::chrono::milliseconds SYN{ 10 };                                                // SYN is used as a timing duration in a number of places in UDT
+
+    static constexpr unsigned MTU_DROP_INTERVAL{ 3 };                     // if we're negotiating a connection and have sent this many retries, drop the MTU
+    static constexpr unsigned MTU_DROP_INCREMENT{ 10 };                   // if we're negotiating a connection and think we may not be getting through, drop the MTU by this much
+    static constexpr unsigned MTU_MINIMUM{ 1280 };                        // we should not drop the MTU below this point on our own
 
 public:
     explicit UdtSocket(QObject* parent = nullptr);
@@ -167,8 +165,9 @@ public: // internal implementation
     inline void setLocalSocketID(quint32 socketID);
 
 private: // UdtSocket_private implementation
-    virtual void getRTT(unsigned& rtt, unsigned& rttVariance) const;
-    virtual void applyRTT(unsigned RTTinMicroseconds);
+    virtual void getRTT(std::chrono::microseconds& rtt, std::chrono::microseconds& rttVariance) const;
+    virtual void applyRTT(std::chrono::microseconds rtt);
+    virtual void applyReceiveRates(unsigned deliveryRate, unsigned bandwidth);
     virtual void sendPacket(const Packet& udtPacket);
     virtual void receivedMessage(const ByteSlice& message);
     virtual unsigned getMaxFlowWinSize() const;
