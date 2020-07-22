@@ -321,10 +321,10 @@ void WebEntityRenderer::doRender(RenderArgs* args) {
     batch.setModelTransform(transform);
 
     // Turn off jitter for these entities
-    batch.pushProjectionJitter();
+    batch.pushProjectionJitterEnabled(false);
     DependencyManager::get<GeometryCache>()->bindWebBrowserProgram(batch, transparent, forward);
     DependencyManager::get<GeometryCache>()->renderQuad(batch, topLeft, bottomRight, texMin, texMax, color, _geometryId);
-    batch.popProjectionJitter();
+    batch.popProjectionJitterEnabled();
     batch.setResourceTexture(0, nullptr);
 }
 

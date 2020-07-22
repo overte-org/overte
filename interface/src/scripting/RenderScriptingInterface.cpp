@@ -191,6 +191,8 @@ void RenderScriptingInterface::forceAntialiasingMode(AntialiasingConfig::Mode mo
     _renderSettingLock.withWriteLock([&] {
         _antialiasingMode = mode;
 
+        // TODO: this may be needed if there are problems with changing antialiasing settings
+        //auto mainViewAntialiasingSetupConfig  = qApp->getRenderEngine()->getConfiguration()->getConfig<AntialiasingSetup>("RenderMainView.AntialiasingSetup");
         auto mainViewJitterCamConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<JitterSample>("RenderMainView.JitterCam");
         auto mainViewAntialiasingConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<Antialiasing>("RenderMainView.Antialiasing");
         auto secondViewJitterCamConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<JitterSample>("RenderSecondView.JitterCam");
