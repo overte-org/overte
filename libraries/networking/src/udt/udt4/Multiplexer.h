@@ -68,7 +68,7 @@ public:
                                              QAbstractSocket::SocketError* serverError = nullptr,
                                              QString* errorString = nullptr);
     inline bool isLive() const;
-    void sendPacket(const QHostAddress& destAddr, quint32 destPort, quint32 destSockID, quint32 timestamp, Packet packet);
+    void sendPacket(const QHostAddress& destAddr, quint32 destPort, quint32 destSockID, std::chrono::microseconds timestamp, Packet packet);
     inline QHostAddress serverAddress() const;
     inline QAbstractSocket::SocketError serverError() const;
     inline quint16 serverPort() const;

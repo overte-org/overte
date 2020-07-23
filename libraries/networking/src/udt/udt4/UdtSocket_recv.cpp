@@ -254,7 +254,7 @@ void UdtSocket_receive::ingestACK2(const Packet& udtPacket, const QElapsedTimer&
         return;  // this ACK not found
     }
 
-    if (_recvACK2 < lookup->lastPacket) {
+    if (_recvACK2 > lookup->lastPacket) {
 		_recvACK2 = lookup->lastPacket;
 	}
 
@@ -296,7 +296,7 @@ void UdtSocket_receive::ingestMsgDropReq(const MessageDropRequestPacket& dropPac
 
 	// try to push any pending packets out, now that we have dropped any blocking packets
 	while(!_recvPktPend.empty() && stopSeq != _farNextPktSeq) {
-        DataPacketMap::const_iterator nextPacketLookup = findFirst(_recvPktPend, stopSeq, _farNextPktSeq);
+        DataPacketMap::const_iterator nextPacketLookup = findFirstEntry(_recvPktPend, stopSeq, _farNextPktSeq);
 		if(nextPacketLookup == _recvPktPend.end() || !attemptProcessPacket(nextPacketLookup->second, false)) {
 			break;
 		}
@@ -362,7 +362,7 @@ void UdtSocket_receive::ingestData(const DataPacket& dataPacket, const QElapsedT
 		if(_recvLossList.empty()) {
 			_farRecdPktSeq = _farNextPktSeq - 1;
 		} else {
-            ReceiveLossMap::const_iterator nextLoss = findFirst(_recvLossList, _farRecdPktSeq, _farNextPktSeq);
+            ReceiveLossMap::const_iterator nextLoss = findFirstEntry(_recvLossList, _farRecdPktSeq, _farNextPktSeq);
             assert(nextLoss != _recvLossList.end());
 			_farRecdPktSeq = nextLoss->first;
 		}
@@ -655,7 +655,7 @@ void UdtSocket_receive::sendNAK(const ReceiveLossMap& receiveLoss) {
 
 	PacketID currentPacket = _farRecdPktSeq;
     while (currentPacket != _farNextPktSeq) {
-        ReceiveLossMap::const_iterator minPacketLookup = findFirst(receiveLoss, currentPacket, _farRecdPktSeq);
+        ReceiveLossMap::const_iterator minPacketLookup = findFirstEntry(receiveLoss, currentPacket, _farRecdPktSeq);
         if (minPacketLookup == receiveLoss.end()) {
 			break;
 		}

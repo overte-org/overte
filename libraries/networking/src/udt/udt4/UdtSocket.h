@@ -13,8 +13,10 @@
 #define hifi_udt4_UdtSocket_h
 
 #include "ByteSlice.h"
+#include <map>
 #include "Packet.h"
 #include "PacketID.h"
+#include <set>
 #include <QtCore/QIODevice>
 #include <QtCore/QAtomicInteger>
 #include <QtCore/QDeadlineTimer>
@@ -50,12 +52,14 @@ public:
     virtual void getRTT(std::chrono::microseconds& rtt, std::chrono::microseconds& rttVariance) const = 0;
     virtual void applyRTT(std::chrono::microseconds rtt) = 0;
     virtual void applyReceiveRates(unsigned deliveryRate, unsigned bandwidth) = 0;
+    virtual unsigned getMaxBandwidth() const = 0;
     virtual void sendPacket(const Packet& udtPacket) = 0;
     virtual void receivedMessage(const ByteSlice& message) = 0;
     virtual unsigned getMaxFlowWinSize() const = 0;
     virtual QString localAddressDebugString() const = 0;
     virtual void ingestError(const Packet& udtPacket) = 0;
     virtual void ingestShutdown() = 0;
+    virtual void requestShutdown(UdtSocketState toState, QString error) = 0;
 };
 
 enum class UdtSocketState
@@ -167,12 +171,14 @@ public: // internal implementation
 private: // UdtSocket_private implementation
     virtual void getRTT(std::chrono::microseconds& rtt, std::chrono::microseconds& rttVariance) const;
     virtual void applyRTT(std::chrono::microseconds rtt);
+    virtual unsigned getMaxBandwidth() const;
     virtual void applyReceiveRates(unsigned deliveryRate, unsigned bandwidth);
     virtual void sendPacket(const Packet& udtPacket);
     virtual void receivedMessage(const ByteSlice& message);
     virtual unsigned getMaxFlowWinSize() const;
     virtual void ingestError(const Packet& udtPacket);
     virtual void ingestShutdown();
+    virtual void requestShutdown(UdtSocketState toState, QString error);
 
 protected:
     virtual bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
@@ -256,9 +262,7 @@ private:
 	messageIn     chan []byte          // inbound messages. Sender is goReceiveEvent->ingestData, Receiver is client caller (Read)
 	messageOut    chan sendMessage     // outbound messages. Sender is client caller (Write), Receiver is goSendEvent. Closed when socket is closed
 	recvEvent     chan recvPktEvent    // receiver: ingest the specified packet. Sender is readPacket, receiver is goReceiveEvent
-	sendEvent     chan recvPktEvent    // sender: ingest the specified packet. Sender is readPacket, receiver is goSendEvent
 	sendPacket    chan packet.Packet   // packets to send out on the wire (once goManageConnection is running)
-	shutdownEvent chan shutdownMessage // channel signals the connection to be shutdown
 */
 
     UdtSocket_send _send; // the "outgoing" side of this UDT connection
@@ -296,6 +300,16 @@ private:
 private:
     Q_DISABLE_COPY(UdtSocket)
 };
+
+template <class T>
+typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::iterator findFirstEntry(std::map<PacketID, T, WrappedSequenceLess<PacketID>>& map, const PacketID& key, const PacketID& limit);
+
+template <class T>
+typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::const_iterator findFirstEntry(const std::map<PacketID, T, WrappedSequenceLess<PacketID>>& map, const PacketID& key, const PacketID& limit);
+
+std::set<PacketID, WrappedSequenceLess<PacketID>>::iterator findFirstEntry(std::set<PacketID, WrappedSequenceLess<PacketID>>& set, const PacketID& key, const PacketID& limit);
+
+std::set<PacketID, WrappedSequenceLess<PacketID>>::const_iterator findFirstEntry(const std::set<PacketID, WrappedSequenceLess<PacketID>>& set, const PacketID& key, const PacketID& limit);
 
 } // namespace udt4
 #include "UdtSocket.inl"

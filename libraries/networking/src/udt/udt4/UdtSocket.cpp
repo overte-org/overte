@@ -509,10 +509,10 @@ void UdtSocket::sendHandshake(HandshakePacket::RequestType requestType, bool mtu
     }
 
     Packet udtPacket = hsResponse.toPacket();
-    quint32 ts = static_cast<quint32>(_createTime.nsecsElapsed() / 1000);
+    std::chrono::microseconds ts(_createTime.nsecsElapsed() / 1000);
     _congestion.onPktSent(udtPacket);
     qCDebug(networking) << localAddressDebugString() << " sending handshake(" << static_cast<uint>(requestType) << ") to " << remoteAddressDebugString();
-    _multiplexer->sendPacket(_remoteAddr, _remotePort, _socketID, ts, udtPacket);
+    _multiplexer->sendPacket(_remoteAddr, _remotePort, _farSocketID, ts, udtPacket);
 }
 
 // slot called when the multiplexer has received a rendezvous packet and we're currently trying to connect
@@ -601,7 +601,6 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
         if(_mtu.load() > hsPacket._maxPktSize) {
             _mtu.store(hsPacket._maxPktSize);
         }
-        launchProcessors();
         _recv.configureHandshake(hsPacket);
         _send.configureHandshake(hsPacket, true);
         _synCookie = hsPacket._synCookie;
@@ -705,7 +704,6 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
         if (_mtu.load() > hsPacket._maxPktSize) {
             _mtu.store(hsPacket._maxPktSize);
         }
-        launchProcessors();
         _recv.configureHandshake(hsPacket);
         _send.configureHandshake(hsPacket, _socketRole == SocketRole::Client);
         setState(UdtSocketState::Connected);
@@ -1012,19 +1010,16 @@ func (s *udtSocket) launchProcessors() {
 	s.recv = newUdtSocketRecv(s)
 	s.cong.init(s.initPktSeq)
 }
-
-func (s *udtSocket) goManageConnection() {
-	for {
-		select {
-		case p := <-s.sendPacket:
-			ts := uint32(time.Now().Sub(s.created) / time.Microsecond)
-			s.cong.onPktSent(p)
-			log.Printf("%s (id=%d) sending %s to %s (id=%d)", s.m.laddr.String(), s.sockID, packet.PacketTypeName(p.PacketType()),
-				s.raddr.String(), s.farSockID)
-			s.m.sendPacket(s.raddr, s.farSockID, ts, p)
-	}
-}
 */
+
+void UdtSocket::sendPacket(const Packet& udtPacket) {
+    std::chrono::microseconds ts(_createTime.nsecsElapsed() / 1000);
+	_cong.onPktSent(udtPacket);
+	log.Printf("%s (id=%d) sending %s to %s (id=%d)", _multiplexer.laddr.String(), _sockID, udtPacket.PacketTypeName(udtPacket.PacketType()),
+		_raddr.String(), _farSockID);
+    _multiplexer->sendPacket(_remoteAddr, _remotePort, _farSocketID, ts, udtPacket);
+}
+
 template<class T>
 T absdiff(T a, T b) {
 	if (a < b) {
@@ -1051,10 +1046,10 @@ void UdtSocket::getRTT(std::chrono::microseconds& rtt, std::chrono::microseconds
 void UdtSocket::applyReceiveRates(unsigned deliveryRate, unsigned bandwidth) {
     _receiveRateProt.Lock();
 	if(deliveryRate > 0) {
-		_deliveryRate = (s.deliveryRate*7 + deliveryRate) >> 3;
+		_deliveryRate = (_deliveryRate*7 + deliveryRate) >> 3;
 	}
 	if(bandwidth > 0) {
-		_bandwidth = (s.bandwidth*7 + bandwidth) >> 3;
+		_bandwidth = (_bandwidth*7 + bandwidth) >> 3;
 	}
 	_receiveRateProt.Unlock();
 }
@@ -1067,3 +1062,44 @@ func (s *udtSocket) getRcvSpeeds() (deliveryRate uint, bandwidth uint) {
 	return
 }
 
+// search through the specified map for the first entry >= key but < limit
+std::set<PacketID>::iterator findFirstEntry(std::set<PacketID>& set, const PacketID& key, const PacketID& limit) {
+    std::set<PacketID>::iterator lookup = set.lower_bound(key);
+    if (key < limit) {
+        if (lookup == set.end() || *lookup >= limit) {
+            return set.end();
+        } else {
+            return lookup;
+        }
+    }
+    if (lookup != set.end()) {
+        return lookup;
+    }
+    lookup = set.lower_bound(PacketID(0UL));
+    if (lookup == set.end() || *lookup >= limit) {
+        return set.end();
+    } else {
+        return lookup;
+    }
+}
+
+// search through
+std::set<PacketID>::const_iterator findFirstEntry(const std::set<PacketID>& set, const PacketID& key, const PacketID& limit) {
+    std::set<PacketID>::const_iterator lookup = set.lower_bound(key);
+    if (key < limit) {
+        if (lookup == set.end() || *lookup >= limit) {
+            return set.end();
+        } else {
+            return lookup;
+        }
+    }
+    if (lookup != set.end()) {
+        return lookup;
+    }
+    lookup = set.lower_bound(PacketID(0UL));
+    if (lookup == set.end() || *lookup >= limit) {
+        return set.end();
+    } else {
+        return lookup;
+    }
+}

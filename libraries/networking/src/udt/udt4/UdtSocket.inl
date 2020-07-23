@@ -56,5 +56,49 @@ void UdtSocket::setLocalSocketID(quint32 socketID) {
     _socketID = socketID;
 }
 
+// search through the specified map for the first entry >= key but < limit
+template <class T>
+typename std::map<PacketID, T>::iterator findFirstEntry(std::map<PacketID, T>& map, const PacketID& key, const PacketID& limit) {
+    std::map<PacketID, T>::iterator lookup = map.lower_bound(key);
+    if (key < limit) {
+        if (lookup == map.end() || lookup->first >= limit) {
+            return map.end();
+        } else {
+            return lookup;
+        }
+    }
+    if (lookup != map.end()) {
+        return lookup;
+    }
+    lookup = map.lower_bound(PacketID(0UL));
+    if (lookup == map.end() || lookup->first >= limit) {
+        return map.end();
+    } else {
+        return lookup;
+    }
+}
+
+// search through 
+template <class T>
+typename std::map<PacketID, T>::const_iterator findFirstEntry(const std::map<PacketID, T>& map, const PacketID& key, const PacketID& limit) {
+    std::map<PacketID, T>::const_iterator lookup = map.lower_bound(key);
+    if (key < limit) {
+        if (lookup == map.end() || lookup->first >= limit) {
+            return map.end();
+        } else {
+            return lookup;
+        }
+    }
+    if (lookup != map.end()) {
+        return lookup;
+    }
+    lookup = map.lower_bound(PacketID(0UL));
+    if (lookup == map.end() || lookup->first >= limit) {
+        return map.end();
+    } else {
+        return lookup;
+    }
+}
+
 }  // namespace udt4
 #endif /* hifi_udt4_UdtSocket_h */

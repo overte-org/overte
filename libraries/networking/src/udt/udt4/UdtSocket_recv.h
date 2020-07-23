@@ -28,12 +28,6 @@ namespace udt4 {
 class UdtSocket_private;
 enum class UdtSocketState;
 
-template <class T>
-typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::iterator findFirst(std::map<PacketID, T, WrappedSequenceLess<PacketID>>& map, const PacketID& key, const PacketID& limit);
-
-template <class T>
-typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::const_iterator findFirst(const std::map<PacketID, T, WrappedSequenceLess<PacketID>>& map, const PacketID& key, const PacketID& limit);
-
 class UdtSocket_receive : public QThread {
     Q_OBJECT
 public:

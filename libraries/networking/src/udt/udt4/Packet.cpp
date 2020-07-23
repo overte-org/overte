@@ -27,7 +27,7 @@ Packet::Packet(ByteSlice networkPacket) {
         quint32 sequence = qFromBigEndian<quint32>(&networkPacket[0]);
         _sequence = PacketID(sequence);
         _additionalInfo = qFromBigEndian<quint32>(&networkPacket[4]);
-        _timestamp = qFromBigEndian<quint32>(&networkPacket[8]);
+        _timestamp = std::chrono::microseconds(qFromBigEndian<quint32>(&networkPacket[8]));
         _socketID = qFromBigEndian<quint32>(&networkPacket[12]);
         _contents = networkPacket.substring(16);
         if ((sequence & 0x8000) == 0) {
@@ -66,7 +66,7 @@ ByteSlice Packet::toNetworkPacket() const {
     quint8* buffer = reinterpret_cast<quint8*>(packetData.create(_contents.length() + 16));
     *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(sequence);
     *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(static_cast<quint32>(_additionalInfo));
-    *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_timestamp);
+    *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_timestamp.count());
     *reinterpret_cast<quint32*>(&buffer[12]) = qToBigEndian<quint32>(_socketID);
     if (_contents.length() != 0) {
         memcpy(&buffer[16], &_contents[0], _contents.length());

@@ -60,7 +60,7 @@ public:
     PacketType _type{ PacketType::Invalid };
     PacketID _sequence;
     quint32 _additionalInfo{ 0 };
-    quint32 _timestamp{ 0 };
+    std::chrono::microseconds _timestamp{ 0 };
     quint32 _socketID{ 0 };
     ByteSlice _contents;
 };
@@ -87,7 +87,7 @@ public:
     MessagePosition _messagePosition{ MessagePosition::Only };
     bool _isOrdered{ false };
     SequenceNumber _messageNumber;
-    quint32 _timestamp{ 0 };
+    std::chrono::microseconds _timestamp{ 0 };
     quint32 _socketID{ 0 };
     ByteSlice _contents;
 };
@@ -112,7 +112,7 @@ public:
     static uint packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol);
 
 public:
-    quint32 _timestamp{ 0 };
+    std::chrono::microseconds _timestamp{ 0 };
     quint32 _socketID{ 0 };
     quint32 _udtVer{ 0 };           // UDT version
     SocketType _sockType{ SocketType::Unknown };  // Socket Type (1 = STREAM or 2 = DGRAM)
@@ -143,7 +143,7 @@ public:
     uint packetSize(QAbstractSocket::NetworkLayerProtocol protocol) const;
 
 public:
-    quint32 _timestamp{ 0 };
+    std::chrono::microseconds _timestamp{ 0 };
     quint32 _socketID{ 0 };
     SequenceNumber _ackSequence;
     PacketID _lastPacketReceived;
@@ -165,7 +165,7 @@ public:
 
 public:
     typedef QList<quint32> IntegerList;
-    quint32 _timestamp{ 0 };
+    std::chrono::microseconds _timestamp{ 0 };
     quint32 _socketID{ 0 };
     IntegerList _lossData;
 };
@@ -180,7 +180,7 @@ public:
 
 public:
     SequenceNumber _messageID;
-    quint32 _timestamp{ 0 };
+    std::chrono::microseconds _timestamp{ 0 };
     quint32 _socketID{ 0 };
     PacketID _firstPacketID;
     PacketID _lastPacketID;

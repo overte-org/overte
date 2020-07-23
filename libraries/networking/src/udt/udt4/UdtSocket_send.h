@@ -12,8 +12,10 @@
 #ifndef hifi_udt4_UdtSocket_send_h
 #define hifi_udt4_UdtSocket_send_h
 
+#include <map>
 #include "Packet.h"
 #include "PacketID.h"
+#include <set>
 #include <QtCore/QDeadlineTimer>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QMutex>
@@ -39,11 +41,12 @@ public:
     UdtSocket_send(UdtSocket_private& socket);
 
     void setState(UdtSocketState newState);
-    void configureHandshake(const HandshakePacket& hsPacket, bool resetSequence);
+    void configureHandshake(const HandshakePacket& hsPacket, bool resetSequence, unsigned mtu);
     void sendMessage(ByteSlice content, QDeadlineTimer expireTime);
     void packetReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived);
     void queueDisconnect();
     void resetReceiveTimer();
+    void setPacketSendPeriod(std::chrono::milliseconds snd);
 
 private slots:
     void SNDevent();
@@ -89,6 +92,9 @@ private:
         QDeadlineTimer expireTime;
     };
     typedef QSharedPointer<SendPacketEntry> SendPacketEntryPointer;
+    typedef std::map<PacketID, SendPacketEntryPointer, WrappedSequenceLess<PacketID>> SendPacketEntryMap;
+
+    typedef std::set<PacketID, WrappedSequenceLess<PacketID>> PacketIDSet;
 
 private:  // called exclusively within our private thread
     void startupInit();
@@ -104,7 +110,7 @@ private:  // called exclusively within our private thread
     void ingestAck(const ACKPacket& ackPacket, const QElapsedTimer& timeReceived);
     void ingestNak(const NAKPacket& nakPacket, const QElapsedTimer& timeReceived);
     void ingestCongestion(const Packet& udtPacket, const QElapsedTimer& timeReceived);
-    bool assertValidSentPktID(const char* pktType, const PacketID& packetID) const;
+    bool assertValidSentPktID(const char* pktType, const PacketID& packetID);
 
 private:
     UdtSocket_private& _socket;  // private interface pointing back at the UdtSocket
@@ -120,27 +126,25 @@ private:
     MessageEntryList _pendingMessages;                 // the list of messages queued but not yet sent
     ReceivedPacketList _receivedPacketList;            // list of packets we have not yet processed
 
-    //	// channels
-//	sendEvent     <-chan recvPktEvent    // sender: ingest the specified packet. Sender is readPacket, receiver is goSendEvent
-//	messageOut    <-chan sendMessage     // outbound messages. Sender is client caller (Write), Receiver is goSendEvent. Closed when socket is closed
-//	sendPacket    chan<- packet.Packet   // send a packet out on the wire
-//	shutdownEvent chan<- shutdownMessage // channel signals the connection to be shutdown
-
     // While the send thread is running these variables only to be accessed by that thread (can be initialized carefully by other threads)
-	SendState      _sendState{SendState::Closed};  // current sender state
-//	sendPktPend    sendPacketHeap  // list of packets that have been sent but not yet acknowledged
-	PacketID       _sendPacketID;   // the current packet sequence number
-    MessageEntryPointer _msgPartialSend; // when a message can only partially fit in a socket, this is the remainder
-    SequenceNumber _messageSequence;   // the current message sequence number
-    unsigned       _expCount{ 1 };   // number of continuous EXP timeouts.
-	QElapsedTimer  _lastReceiveTime; // the last time we've heard something from the remote system
-	PacketID       _lastAckPacketID; // largest packetID we've received an ACK from
-    SequenceNumber _sentAck2;          // largest ACK2 packet we've sent
-//	sendLossList   packetIDHeap    // loss list
-//	sndPeriod      atomicDuration  // (set by congestion control) delay between sending packets
-//	rtoPeriod      atomicDuration  // (set by congestion control) override of EXP timer calculations
-//	congestWindow  atomicUint32    // (set by congestion control) size of the current congestion window (in packets)
+    unsigned       _mtu;
+    bool           _isDatagram{ true };
+	SendState      _sendState{SendState::Closed}; // current sender state
+    SendPacketEntryMap  _sendPktPend;     // list of packets that have been sent but not yet acknowledged
+	PacketID       _sendPacketID;         // the current packet sequence number
+    MessageEntryPointer _msgPartialSend;  // when a message can only partially fit in a socket, this is the remainder
+    SequenceNumber _messageSequence;      // the current message sequence number
+    unsigned       _expCount{ 1 };        // number of continuous EXP timeouts.
+	QElapsedTimer  _lastReceiveTime;      // the last time we've heard something from the remote system
+	PacketID       _lastAckPacketID;      // largest packetID we've received an ACK from
+    SequenceNumber _sentAck2;             // largest ACK2 packet we've sent
+    PacketIDSet    _sendLossList;         // loss list
 	unsigned       _flowWindowSize{ 16 }; // negotiated maximum number of unacknowledged packets (in packets)
+
+    // These variables may be set/adjusted by congestion control and therefore are controlled by QAtomicInteger
+    QAtomicInteger<unsigned> _sndPeriod;      // delay between sending packets (in milliseconds)
+    QAtomicInteger<unsigned> _rtoPeriod;      // override of EXP timer calculations (in milliseconds)
+    QAtomicInteger<unsigned> _congestWindow;  // size of the current congestion window (in packets)
 
 	// timers
 	QTimer _SNDtimer;              // if a packet is recently sent, this timer fires when SND completes

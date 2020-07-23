@@ -15,50 +15,6 @@
 
 namespace udt4 {
 
-// search through the specified map for the first entry >= key but < limit
-template <class T>
-typename std::map<PacketID, T>::iterator findFirst(std::map<PacketID, T>& map, const PacketID& key, const PacketID& limit) {
-    std::map<PacketID, T>::iterator lookup = map.lower_bound(key);
-    if (key < limit) {
-        if (lookup == map.end() || lookup->first >= limit) {
-            return map.end();
-        } else {
-            return lookup;
-        }
-    }
-    if (lookup != map.end()) {
-        return lookup;
-    }
-    lookup = map.lower_bound(PacketID(0UL));
-    if (lookup == map.end() || lookup->first >= limit) {
-        return map.end();
-    } else {
-        return lookup;
-    }
-}
-
-// search through 
-template <class T>
-typename std::map<PacketID, T>::const_iterator findFirst(const std::map<PacketID, T>& map, const PacketID& key, const PacketID& limit) {
-    std::map<PacketID, T>::const_iterator lookup = map.lower_bound(key);
-    if (key < limit) {
-        if (lookup == map.end() || lookup->first >= limit) {
-            return map.end();
-        } else {
-            return lookup;
-        }
-    }
-    if (lookup != map.end()) {
-        return lookup;
-    }
-    lookup = map.lower_bound(PacketID(0UL));
-    if (lookup == map.end() || lookup->first >= limit) {
-        return map.end();
-    } else {
-        return lookup;
-    }
-}
-
 UdtSocket_receive::ReceivedPacket::ReceivedPacket(const Packet& p, const QElapsedTimer& t) : udtPacket(p), timeReceived(t) {
 }
 

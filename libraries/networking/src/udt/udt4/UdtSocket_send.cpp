@@ -24,11 +24,13 @@ UdtSocket_send::UdtSocket_send(UdtSocket_private& socket):_socket(socket) {
     connect(&_EXPtimer, &QTimer::timeout, this, &UdtSocket_send::EXPevent);
 }
 
-void UdtSocket_send::configureHandshake(const HandshakePacket& hsPacket, bool resetSequence) {
+void UdtSocket_send::configureHandshake(const HandshakePacket& hsPacket, bool resetSequence, unsigned mtu) {
     if (resetSequence) {
         _lastAckPacketID = hsPacket._initPktSeq;
         _sendPacketID = hsPacket._initPktSeq;
 	}
+    _mtu = mtu;
+    _isDatagram = hsPacket._sockType == SocketType::DGRAM;
     _flowWindowSize = static_cast<uint>(hsPacket._maxFlowWinSize);
 }
 
@@ -44,6 +46,8 @@ void UdtSocket_send::startupInit() {
     _sentAck2 = 0UL;
     _ACK2SentTimer.setRemainingTime(0); // default expired
     _receivedPacketList.clear();
+    _sendLossList.clear();
+    _sendPktPend.clear();
     resetEXP();
 }
 
@@ -213,17 +217,17 @@ bool UdtSocket_send::processEvent(QMutexLocker& eventGuard) {
     return false;
 }
 
-void UdtSocket_send::setPacketSendPeriod(quint32 SND) { // exported
+void UdtSocket_send::setPacketSendPeriod(std::chrono::milliseconds snd) { // exported
 	// check to see if we have a bandwidth limit here
-	maxBandwidth := _socket.Config.MaxBandwidth;
+	unsigned maxBandwidth = _socket.getMaxBandwidth();
 	if (maxBandwidth > 0) {
-		minSP := time.Second / time.Duration(float64(maxBandwidth)/float64(_socket.mtu.get()));
+		std::chrono::milliseconds minSP(static_cast<quint64>(std::chrono::milliseconds{ std::chrono::seconds{1} }.count() / (static_cast<double>(maxBandwidth)/_mtu)));
 		if (snd < minSP) {
 			snd = minSP;
 		}
 	}
 
-	_sndPeriod.set(snd);
+	_sndPeriod.store(snd.count());
 }
 
 UdtSocket_send::SendState UdtSocket_send::reevalSendState() const {
@@ -232,13 +236,13 @@ UdtSocket_send::SendState UdtSocket_send::reevalSendState() const {
 	}
 
 	// Do we have too many unacknowledged packets for us to send any more?
-	if (_sendPktPend != nullptr) {
-		congestWindow := uint(_congestWindow.get());
+	if (!_sendPktPend.empty()) {
+		unsigned congestWindow = _congestWindow.load();
 		uint cwnd = _flowWindowSize;
 		if (cwnd > congestWindow) {
 			cwnd = congestWindow;
 		}
-		if (cwnd >= uint(len(_sendPktPend))) {
+		if (cwnd >= _sendPktPend.size()) {
 			return SendState::Waiting;
 		}
 	}
@@ -250,40 +254,45 @@ void UdtSocket_send::processDataMsg(bool isFirst) {
 	while (_msgPartialSend != nullptr) {
         MessageEntryPointer partialSend = _msgPartialSend;
 		DataPacket::MessagePosition state = DataPacket::MessagePosition::Only;
-		if (_socket.isDatagram) {
+        if (_isDatagram) {
 			if(isFirst) {
 				state = DataPacket::MessagePosition::First;
 			} else {
 				state = DataPacket::MessagePosition::Middle;
 			}
 		}
-		if (isFirst || !_socket.isDatagram) {
+        if (isFirst || !_isDatagram) {
 			_messageSequence++;
 		}
 
-		unsigned mtu = _socket.mtu.get();
-		unsigned msgLen = partialSend->content.length();
-		if (msgLen >= mtu) {
+		unsigned msgLen = static_cast<unsigned>(partialSend->content.length());
+		if (msgLen >= _mtu) {
 			// we are full -- send what we can and leave the rest
 			DataPacket dataPacket;
             dataPacket._packetID = _sendPacketID;
-			if (msgLen == mtu) {
+            dataPacket._messagePosition = state;
+            dataPacket._isOrdered = !_isDatagram;
+            dataPacket._messageNumber = _messageSequence;
+			if (msgLen == _mtu) {
                 dataPacket._contents = partialSend->content;
 				_msgPartialSend.reset();
 			} else {
-                dataPacket._contents = partialSend->content.substring(0, mtu);
-				_msgPartialSend->content = partialSend->content.substring(mtu);
+                dataPacket._contents = partialSend->content.substring(0, _mtu);
+				_msgPartialSend->content = partialSend->content.substring(_mtu);
 			}
 			_sendPacketID++;
-            dataPacket._messagePosition = state;
-            dataPacket._isOrdered = !_socket.isDatagram;
-            dataPacket._messageNumber = _messageSequence;
-			sendDataPacket(sendPacketEntry{pkt: dataPacket, tim: partialSend->sendTime, ttl: partialSend->expireTime}, false);
+
+            SendPacketEntryPointer dataPacketEntry = SendPacketEntryPointer::create();
+            dataPacketEntry->packet = dataPacket;
+            dataPacketEntry->sendTime = partialSend->sendTime;
+            dataPacketEntry->expireTime = partialSend->expireTime;
+
+			sendDataPacket(dataPacketEntry, false);
 			return;
 		}
 
 		// we are not full -- send only if this is a datagram or there's nothing obvious left
-		if (_socket.isDatagram) {
+		if (_isDatagram) {
 			if(isFirst) {
 				state = DataPacket::MessagePosition::Only;
 			} else {
@@ -293,7 +302,7 @@ void UdtSocket_send::processDataMsg(bool isFirst) {
             QMutexLocker guard(&_eventMutex);
             if(!_pendingMessages.isEmpty()) {
                 MessageEntryPointer morePartialSend = _pendingMessages.takeFirst();
-                _msgPartialSend->content.append(morePartialSend->content);
+                _msgPartialSend->content = _msgPartialSend->content.concat(morePartialSend->content);
 				continue;
 			}
 		}
@@ -302,42 +311,45 @@ void UdtSocket_send::processDataMsg(bool isFirst) {
 		DataPacket dataPacket;
         dataPacket._packetID = _sendPacketID;
         dataPacket._contents = partialSend->content;
-		_msgPartialSend.reset();
-        _sendPacketID++;
         dataPacket._messagePosition = state;
-        dataPacket._isOrdered = !_socket.isDatagram;
+        dataPacket._isOrdered = !_isDatagram;
         dataPacket._messageNumber = _messageSequence;
-		sendDataPacket(sendPacketEntry{pkt: dp, tim: partialSend->sendTime, ttl: partialSend->expireTime}, false);
+        _msgPartialSend.reset();
+        _sendPacketID++;
+
+        SendPacketEntryPointer dataPacketEntry = SendPacketEntryPointer::create();
+        dataPacketEntry->packet = dataPacket;
+        dataPacketEntry->sendTime = partialSend->sendTime;
+        dataPacketEntry->expireTime = partialSend->expireTime;
+
+		sendDataPacket(dataPacketEntry, false);
 		return;
 	}
 }
 
 // If the sender's loss list is not empty, retransmit the first packet in the list and remove it from the list.
 bool UdtSocket_send::processSendLoss() {
-    if (_sendLossList == nullptr || _sendPktPend == nullptr) {
+    if (_sendLossList.empty() || _sendPktPend.empty()) {
 		return false;
 	}
 
-	SendPacketEntryPointer dataPacket;
+	SendPacketEntryPointer dataPacketEntry;
 	for(;;) {
-		minLoss, minLossIdx := _sendLossList.Min(_lastAckPacketID, _sendPacketID);
-		if (minLossIdx < 0) {
+        PacketIDSet::iterator minLossFind = findFirstEntry(_sendLossList, _lastAckPacketID, _sendPacketID);
+		if (minLossFind == _sendLossList.end()) {
 			// empty loss list? shouldn't really happen as we don't keep empty lists, but check for it anyhow
 			return false;
 		}
 
-		heap.Remove(&_sendLossList, minLossIdx);
-		if (len(_sendLossList) == 0) {
-			_sendLossList = nullptr;
-		}
+        _sendLossList.erase(minLossFind);
 
-		dataPacket, _ = _sendPktPend.Find(minLoss);
-		if (dataPacket == nullptr) {
+        SendPacketEntryMap::const_iterator lookup = _sendPktPend.find(*minLossFind);
+		if (lookup == _sendPktPend.end()) {
 			// can't find record of this packet, not much we can do really
 			continue;
 		}
 
-		if (dataPacket->expireTime.hasExpired()) {
+		if (dataPacketEntry->expireTime.hasExpired()) {
 			// this packet has expired, ignore
 			continue;
 		}
@@ -345,50 +357,57 @@ bool UdtSocket_send::processSendLoss() {
 		break;
 	}
 
-	sendDataPacket(dataPacket, true);
+	sendDataPacket(dataPacketEntry, true);
 	return true;
 }
 
 // evaluate our pending packet list to see if we have any expired messages
 bool UdtSocket_send::processSendExpire() {
-	if (_sendPktPend == nullptr) {
+	if (_sendPktPend.empty()) {
 		return false;
 	}
 
-	pktPend := make([]sendPacketEntry, len(_sendPktPend));
-	copy(pktPend, _sendPktPend);
-	for (_, p := range pktPend) {
-		if (p.ttl != 0 && time.Now().Add(p.ttl).After(p.tim)) {
-			// this message has expired, drop it
-			_, _, msgNo := p.pkt.GetMessageData();
+    // make a copy of _sendPktPend as we'll be mucking the heck over its contents and we don't want to invalidate our iterators
+    SendPacketEntryMap ourSendPktPend(_sendPktPend);
+
+    // don't really care (yet) what order we process these packets in so we'll just do it "arbitrary" order without using findFirstEntry
+    for (SendPacketEntryMap::const_iterator evalIterator = ourSendPktPend.begin(); evalIterator != ourSendPktPend.end(); evalIterator++) {
+        
+        SendPacketEntryMap::iterator realEvalIterator = _sendPktPend.find(evalIterator->first);
+        if (realEvalIterator == _sendPktPend.end()) { // has this packet already been dropped?
+            continue;
+        }
+        
+        SendPacketEntryPointer thisEntry = evalIterator->second;
+		if (thisEntry->expireTime.hasExpired()) {
+
+            // this message has expired, drop it
+            SequenceNumber messageNumber = thisEntry->packet._messageNumber;
 
             MessageDropRequestPacket dropMessage;
-            dropMessage._messageID = msgNo;
-            dropMessage._firstPacketID = p.pkt;
-            dropMessage._lastPacketID = p.pkt;
+            dropMessage._messageID = messageNumber;
+            dropMessage._firstPacketID = evalIterator->first;
+            dropMessage._lastPacketID = evalIterator->first;
 
 			// find the other packets in this message
-			for (_, op := range pktPend) {
-				_, _, otherMsgNo := op.pkt.GetMessageData();
-				if (otherMsgNo == msgNo) {
-					if (dropMsg.FirstSeq.blindDifference(p.pkt.Seq) > 0) {
-						dropMsg.FirstSeq = p.pkt.Seq;
+            for (SendPacketEntryMap::const_iterator collectIterator = ourSendPktPend.begin(); collectIterator != ourSendPktPend.end(); collectIterator++) {
+                if (collectIterator->second->packet._messageNumber == messageNumber) {
+                    const PacketID& packetID = collectIterator->first;
+					if (packetID < dropMessage._firstPacketID) {
+                        dropMessage._firstPacketID = packetID;
 					}
-					if (dropMsg.LastSeq.blindDifference(p.pkt.Seq) < 0) {
-						dropMsg.LastSeq = p.pkt.Seq;
+					if (packetID > dropMessage._lastPacketID) {
+                        dropMessage._lastPacketID = packetID;
 					}
-				}
-				if (_sendLossList != nullptr) {
-					if (_, slIdx := _sendLossList.Find(p.pkt.Seq); slIdx >= 0) {
-						heap.Remove(&_sendLossList, slIdx);
-					}
-				}
-			}
-			if (_sendLossList != nullptr && len(_sendLossList) == 0) {
-				_sendLossList = nullptr;
+                    PacketIDSet::iterator findLoss = _sendLossList.find(packetID);
+                    if (findLoss != _sendLossList.end()) {
+                        _sendLossList.erase(findLoss);
+                    }
+                    _sendPktPend.erase(packetID);
+                }
 			}
 
-			_sendPacket <- dropMessage;
+            _socket.sendPacket(dropMessage.toPacket());
 			return true;
 		}
 	}
@@ -396,10 +415,10 @@ bool UdtSocket_send::processSendExpire() {
 }
 
 // we have a packed packet and a green light to send, so lets send this and mark it
-void UdtSocket_send::sendDataPacket(SendPacketEntryPointer dataPacket, bool isResend) {
-	_sendPktPend.insert(dataPacket);
-	_socket.cong.onDataPktSent(dataPacket->packet._packetID);
-	_sendPacket <- dataPacket->packet;
+void UdtSocket_send::sendDataPacket(SendPacketEntryPointer dataPacketEntry, bool isResend) {
+    _sendPktPend.insert(SendPacketEntryMap::value_type(dataPacketEntry->packet._packetID, dataPacketEntry));
+    _socket.cong.onDataPktSent(dataPacketEntry->packet._packetID);
+    _socket.sendPacket(dataPacketEntry->packet.toPacket());
 
 	// have we exceeded our recipient's window size?
 	_sendState = reevalSendState();
@@ -407,22 +426,23 @@ void UdtSocket_send::sendDataPacket(SendPacketEntryPointer dataPacket, bool isRe
 		return;
 	}
 
-	if (!isResend && (static_cast<quint32>(dataPacket->packet._packetID)%16) == 0) {
+	if (!isResend && (static_cast<quint32>(dataPacketEntry->packet._packetID) % 16) == 0) {
 		processSendExpire();
 		return;
 	}
 
-	snd := _sndPeriod.get();
-	if (snd > 0) {
+	std::chrono::milliseconds snd(_sndPeriod.load());
+	if (snd.count() > 0) {
 		_SNDtimer.start(snd);
 		_sendState = SendState::Sending;
 	}
 }
 
-bool UdtSocket_send::assertValidSentPktID(const char* pktType, const PacketID& packetID) const {
+bool UdtSocket_send::assertValidSentPktID(const char* pktType, const PacketID& packetID) {
     if (_sendPacketID.blindDifference(packetID) < 0) {
-		_shutdownEvent <- shutdownMessage{sockState: sockStateCorrupted, permitLinger: false,
-			err: fmt.Errorf("FAULT: Received an %s for packet %d, but the largest packet we've sent has been %d", pktType, packetID.Seq, _sendPacketID.Seq)};
+        _socket.requestShutdown(UdtSocketState::Corrupted,
+			QString("FAULT: Received an %1 for packet %2, but the largest packet we've sent has been %3")
+                .arg(pktType, static_cast<quint32>(packetID), static_cast<quint32>(_sendPacketID)));
 		return false;
 	}
 	return true;
@@ -447,7 +467,11 @@ void UdtSocket_send::ingestAck(const ACKPacket& ackPacket, const QElapsedTimer& 
 	// Send back an ACK2 with the same ACK sequence number in this ACK.
     if (_ACK2SentTimer.hasExpired() && ackPacket._ackSequence == _sentAck2) {
         _sentAck2 = ackPacket._ackSequence;
-		_sendPacket <- &packet.Ack2Packet{AckSeqNo: ackPacket._ackSequence};
+
+        Packet ack2Packet;
+        ack2Packet._type = PacketType::Ack2;
+        ack2Packet._additionalInfo = static_cast<quint32>(ackPacket._ackSequence);
+        _socket.sendPacket(ack2Packet);
         _ACK2SentTimer.setRemainingTime(UdtSocket::SYN, Qt::PreciseTimer);
 	}
 
@@ -455,8 +479,7 @@ void UdtSocket_send::ingestAck(const ACKPacket& ackPacket, const QElapsedTimer& 
         if (!assertValidSentPktID("ACK", lastPacketReceived)) {
 		return;
 	}
-	qint32 diff = lastPacketReceived.blindDifference(_lastAckPacketID);
-	if (diff <= 0) {
+	if (_lastAckPacketID <= lastPacketReceived) {
 		return;
 	}
 
@@ -478,48 +501,44 @@ void UdtSocket_send::ingestAck(const ACKPacket& ackPacket, const QElapsedTimer& 
 	// Update estimated link capacity: B = (B * 7 + b) / 8, where b is the value carried in the ACK.
 
 	// Update sender's buffer (by releasing the buffer that has been acknowledged).
-	if (_sendPktPend != nullptr) {
-		for(;;) {
-			minLoss, minLossIdx := _sendPktPend.Min(oldAckSeq, _sendPacketID);
-			if (lastPacketReceived.blindDifference(minLoss.Seq) >= 0 || minLossIdx < 0) {
-				break;
-			}
-			heap.Remove(&_sendPktPend, minLossIdx);
+	for(;;) {
+        SendPacketEntryMap::iterator minLossFind = findFirstEntry(_sendPktPend, oldAckSeq, _sendPacketID);
+        if(minLossFind == _sendPktPend.end() || minLossFind->first >= lastPacketReceived) {
+			break;
 		}
+        _sendPktPend.erase(minLossFind);
 	}
 
 	// Update sender's loss list (by removing all those that has been acknowledged).
-	if (_sendLossList != nullptr) {
-		for(;;) {
-			minLoss, minLossIdx := _sendLossList.Min(oldAckSeq, _sendPacketID);
-			if (lastPacketReceived.blindDifference(minLoss) >= 0 || minLossIdx < 0) {
-				break;
-			}
-			heap.Remove(&_sendLossList, minLossIdx);
+	for(;;) {
+        PacketIDSet::iterator minLossFind = findFirstEntry(_sendLossList, oldAckSeq, _sendPacketID);
+        if(minLossFind == _sendLossList.end() || *minLossFind >= lastPacketReceived) {
+			break;
 		}
+        _sendLossList.erase(minLossFind);
 	}
 }
 
 // ingestNak is called to process an NAK packet
 void UdtSocket_send::ingestNak(const NAKPacket& nakPacket, const QElapsedTimer& timeReceived) {
-	newLossList := make([]packet.PacketID, 0);
+	PacketIDSet newLossList;
 	for (NAKPacket::IntegerList::const_iterator trans = nakPacket._lossData.begin(); trans != nakPacket._lossData.end(); trans++) {
 		quint32 thisEntry = *trans;
 		if ((thisEntry&0x80000000) != 0) {
 			PacketID thisPacketID(thisEntry);
             trans++;
             if(trans == nakPacket._lossData.end()) {
-				_shutdownEvent <- shutdownMessage{sockState: sockStateCorrupted, permitLinger: false,
-					err: fmt.Errorf("FAULT: While unpacking a NAK, the last entry (%x) was describing a start-of-range", thisEntry)};
+                _socket.requestShutdown(UdtSocketState::Corrupted,
+					QString("FAULT: While unpacking a NAK, the last entry (%1) was describing a start-of-range").arg(thisEntry));
 				return;
 			}
             if (!assertValidSentPktID("NAK", thisPacketID)) {
 				return;
 			}
-            PacketID lastEntry = *trans;
+            quint32 lastEntry = *trans;
 			if ((lastEntry&0x80000000) != 0) {
-				_shutdownEvent <- shutdownMessage{sockState: sockStateCorrupted, permitLinger: false,
-					err: fmt.Errorf("FAULT: While unpacking a NAK, a start-of-range (%x) was followed by another start-of-range (%x)", thisEntry, lastEntry)};
+                _socket.requestShutdown(UdtSocketState::Corrupted,
+					QString("FAULT: While unpacking a NAK, a start-of-range (%1) was followed by another start-of-range (%2)").arg(thisEntry, lastEntry));
 				return;
 			}
 			PacketID lastPacketID(lastEntry);
@@ -527,29 +546,20 @@ void UdtSocket_send::ingestNak(const NAKPacket& nakPacket, const QElapsedTimer& 
 				return;
 			}
 			for (PacketID span = thisPacketID; span != lastPacketID; span++) {
-				newLossList = append(newLossList, span);
+				newLossList.insert(span);
+                _sendLossList.insert(span);
 			}
 		} else {
 			PacketID thisPacketID(thisEntry);
-			if (!assertValidSentPktID("NAK", thisEntry)) {
+			if (!assertValidSentPktID("NAK", thisPacketID)) {
 				return;
 			}
-			newLossList = append(newLossList, thisPacketID);
+			newLossList.insert(thisPacketID);
+            _sendLossList.insert(thisPacketID);
 		}
 	}
 
 	_socket.cong.onNAK(newLossList);
-
-	if(_sendLossList == nullptr) {
-		_sendLossList = newLossList;
-		heap.Init(&_sendLossList);
-	} else {
-		llen := len(newLossList);
-		for (idx := 0; idx < llen; idx++) {
-			heap.Push(&_sendLossList, newLossList[idx]);
-		}
-	}
-
 	_sendState = SendState::ProcessDrop; // immediately restart transmission
 }
 
@@ -557,7 +567,7 @@ void UdtSocket_send::ingestNak(const NAKPacket& nakPacket, const QElapsedTimer& 
 void UdtSocket_send::ingestCongestion(const Packet& udtPacket, const QElapsedTimer& timeReceived) {
 	// One way packet delay is increasing, so decrease the sending rate
 	// this is very rough (not atomic, doesn't inform congestion) but this is a deprecated message in any case
-    _sndPeriod.set(_sndPeriod.get() * 1125 / 1000);
+    _sndPeriod.store(_sndPeriod.load() * 1125 / 1000);
 	//m_iLastDecSeq = s.sendPktSeq;
 }
 
@@ -565,7 +575,7 @@ void UdtSocket_send::resetEXP() {
     _lastReceiveTime.start();
 
 	std::chrono::milliseconds nextExpDurn;
-    std::chrono::milliseconds rtoPeriod(_rtoPeriod.get());
+    std::chrono::milliseconds rtoPeriod(_rtoPeriod.load());
 	if (rtoPeriod.count() > 0) {
 		nextExpDurn = rtoPeriod;
 	} else {
@@ -586,28 +596,27 @@ void UdtSocket_send::processExpEvent() {
 
 	// Haven't receive any information from the peer, is it dead?!
 	// timeout: at least 16 expirations and must be greater than 10 seconds
-    if ((_expCount > 16) && (currTime.Sub(_lastReceiveTime) > 5 * time.Second)) {
+    if ((_expCount > 16) && (std::chrono::milliseconds(_lastReceiveTime.elapsed()) > std::chrono::seconds{ 5 })) {
 		// Connection is broken.
-		_shutdownEvent <- shutdownMessage{sockState: sockStateTimeout, permitLinger: true};
+        _socket.requestShutdown(UdtSocketState::Timeout, QString("Timeout - last packet received %1 seconds ago").arg(_lastReceiveTime.elapsed() / 1000.0));
 		return;
 	}
 
 	// sender: Insert all the packets sent after last received acknowledgement into the sender loss list.
 	// recver: Send out a keep-alive packet
-	if (_sendPktPend != nullptr) {
-		if (_sendPktPend != nullptr && _sendLossList == nullptr) {
+	if (!_sendPktPend.empty()) {
+		if (_sendLossList.empty()) {
 			// resend all unacknowledged packets on timeout, but only if there is no packet in the loss list
-			newLossList := make([]packet.PacketID, 0);
 			for(PacketID span = _lastAckPacketID + 1; span != _sendPacketID + 1; span++) {
-				newLossList = append(newLossList, span);
+                _sendLossList.insert(span);
 			}
-			_sendLossList = newLossList;
-			heap.Init(&_sendLossList);
 		}
 		_socket.cong.onTimeout();
 		_sendState = SendState::ProcessDrop; // immediately restart transmission
 	} else {
-		_sendPacket <- &packet.KeepAlivePacket{};
+        Packet keepalivePacket;
+        keepalivePacket._type = PacketType::Keepalive;
+        _socket.sendPacket(keepalivePacket);
 	}
 
 	_expCount++;

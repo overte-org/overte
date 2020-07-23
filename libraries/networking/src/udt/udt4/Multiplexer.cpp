@@ -328,7 +328,7 @@ void UdtMultiplexer::onPacketWriteReady() {
 void UdtMultiplexer::sendPacket(const QHostAddress& destAddr,
                                 quint32 destPort,
                                 quint32 destSockID,
-                                quint32 timestamp,
+                                std::chrono::microseconds timestamp,
                                 Packet packet) {
     packet._socketID = destSockID;
     packet._timestamp = timestamp;

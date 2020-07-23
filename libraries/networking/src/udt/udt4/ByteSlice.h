@@ -32,6 +32,7 @@ public:
 
     quint8 pop_front();
     ByteSlice substring(size_t offset, size_t length = static_cast<size_t>(-1)) const;
+    ByteSlice concat(const ByteSlice& rhs) const;
 
 private:
     class Bytestring {

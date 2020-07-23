@@ -210,7 +210,7 @@ void UdtServer::rejectHandshake(const HandshakePacket& hsPacket, const QHostAddr
     hsResponse._reqType = HandshakePacket::RequestType::Refused;
     hsResponse._sockAddr = _multiplexer->serverAddress();
 
-    _multiplexer->sendPacket(peerAddress, peerPort, hsPacket._farSocketID, 0, hsResponse.toPacket());
+    _multiplexer->sendPacket(peerAddress, peerPort, hsPacket._farSocketID, std::chrono::microseconds(0), hsResponse.toPacket());
 }
 
 void UdtServer::readHandshake() {
@@ -239,7 +239,7 @@ void UdtServer::readHandshake() {
             hsResponse._synCookie = newCookie;
             hsResponse._sockAddr = _multiplexer->serverAddress();
 
-            _multiplexer->sendPacket(peerAddress, peerPort, hsPacket._farSocketID, 0, hsResponse.toPacket());
+            _multiplexer->sendPacket(peerAddress, peerPort, hsPacket._farSocketID, std::chrono::microseconds(0), hsResponse.toPacket());
             return;
         }
 
