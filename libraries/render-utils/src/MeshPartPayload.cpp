@@ -162,6 +162,7 @@ void ModelMeshPartPayload::computeAdjustedLocalBound(const std::vector<Model::Tr
 }
 
 void ModelMeshPartPayload::updateTransformForSkinnedMesh(const Transform& modelTransform, const Model::MeshState& meshState, bool useDualQuaternionSkinning) {
+    _previousModelTransform = _transform;
     _localTransform = Transform();
     if (useDualQuaternionSkinning) {
         if (meshState.clusterDualQuaternions.size() == 1 || meshState.clusterDualQuaternions.size() == 2) {
@@ -192,7 +193,7 @@ void ModelMeshPartPayload::bindTransform(gpu::Batch& batch, const Transform& tra
     if (_clusterBuffer) {
         batch.setUniformBuffer(graphics::slot::buffer::Skinning, _clusterBuffer);
     }
-    batch.setModelTransform(transform);
+    batch.setModelTransform(transform, _previousModelTransform);
 }
 
 void ModelMeshPartPayload::drawCall(gpu::Batch& batch) const {
