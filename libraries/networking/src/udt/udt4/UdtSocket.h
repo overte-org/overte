@@ -25,6 +25,7 @@
 #include <QtNetwork/QHostAddress>
 #include <QtNetwork/QHostInfo>
 #include <QtCore/QMutex>
+#include <QtCore/QQueue>
 #include <QtCore/QReadWriteLock>
 #include <QtCore/QSharedPointer>
 #include <QtCore/QThread>
@@ -139,10 +140,6 @@ public:  // from QAbstractSocket
     quint16 localPort() const;
     inline const QHostAddress& peerAddress() const;
     inline quint16 peerPort() const;
-    qint64 readBufferSize() const;
-    virtual void setReadBufferSize(qint64 size);
-    virtual void setSocketOption(QAbstractSocket::SocketOption option, const QVariant& value);
-    virtual QVariant socketOption(QAbstractSocket::SocketOption option);
     inline UdtSocketState state() const;
     virtual bool waitForConnected(int msecs = 30000);
     virtual bool waitForDisconnected(int msecs = 30000);
@@ -219,6 +216,7 @@ private:
     static QString addressDebugString(const QHostAddress& address, quint16 port, quint32 socketID);
     virtual QString localAddressDebugString() const;
     QString remoteAddressDebugString() const;
+    ByteSlice receiveMessage();
 
 private:
     enum class SocketRole
@@ -228,6 +226,8 @@ private:
         Server,
         Rendezvous
     };
+
+    typedef QQueue<ByteSlice> MessageQueue;
 
 private:
     // these variables are used during specific _sockState values and invalid on all other values
@@ -258,11 +258,11 @@ private:
 
     QAtomicInteger<unsigned> _mtu;  // the negotiated maximum packet size
 	unsigned _maxFlowWinSize{32};   // receiver: maximum unacknowledged packet count (minimum = 32)
-//	ByteSlice _currPartialRead;     // stream connections: currently reading message (for partial reads). Owned by client caller (Read)
-//	QDeadlineTimer _readDeadline;   // if set, then calls to Read() will return "timeout" after this time
-//	bool _readDeadlinePassed;       // if set, then calls to Read() will return "timeout"
-//	QDeadlineTimer _writeDeadline;  // if set, then calls to Write() will return "timeout" after this time
-//	bool _writeDeadlinePassed;      // if set, then calls to Write() will return "timeout"
+	ByteSlice _currPartialRead;     // stream connections: currently reading message (for partial reads). Owned by client caller (Read)
+
+    mutable QMutex _receivedMessageProtect; // lock must be held before referencing _receivedMessages
+    MessageQueue _receivedMessages;         // list of all recently-received messages from the socket
+    QWaitCondition _receivedMessageCondition;
 
 	mutable QReadWriteLock _rttProtect;          // lock must be held before referencing rtt/rttVar
 	std::chrono::microseconds _rtt{ 0 };         // receiver: estimated roundtrip time. (in microseconds)

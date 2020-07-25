@@ -37,6 +37,12 @@ inline ByteSlice::ByteSlice(BytestringPointer content, size_t offset, size_t len
 inline ByteSlice::ByteSlice(const ByteSlice& data) : _offset(data._offset), _length(data._length), _content(data._content) {
 }
 
+inline void ByteSlice::clear() {
+    _offset = 0;
+    _length = 0;
+    _content.reset();
+}
+
 inline bool ByteSlice::empty() const {
     return !_length;
 }

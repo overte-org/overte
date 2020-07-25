@@ -27,6 +27,7 @@ public:
 
     inline size_t length() const;
     inline bool empty() const;
+    inline void clear();
     inline const quint8* constData() const;
     inline const quint8& operator[](size_t idx) const;
 

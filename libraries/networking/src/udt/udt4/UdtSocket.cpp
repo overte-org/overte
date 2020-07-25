@@ -140,6 +140,8 @@ void UdtSocket::setState(UdtSocketState newState) {
         _socketID = 0;
         _farSocketID = 0;
         _synCookie = 0;
+        _receivedMessages.clear();
+        _currPartialRead.clear();
         _connectionRetriesBeforeMTU = 0;
         if (_offAxisUdpSocket.isOpen()) {
             _offAxisUdpSocket.close();
@@ -150,6 +152,11 @@ void UdtSocket::setState(UdtSocketState newState) {
     _sockState = newState;
     _sockStateCondition.wakeAll();
     locker.unlock();
+    {
+        // notify anything waiting for messages that the state may have changed from underneath them
+        QMutexLocker guard(&_receivedMessageProtect);
+        _receivedMessageCondition.wakeAll();
+    }
 
     _send.setState(newState);
 
@@ -799,7 +806,7 @@ void UdtSocket::disconnectFromHost() {
     switch (state()) {
     case UdtSocketState::Connected:
         _send.queueDisconnect();
-        setState(UdtSocketState::HalfClosed);
+        requestShutdown(UdtSocketState::HalfClosed, "Shutdown requested by us");
         break;
     case UdtSocketState::Rendezvous:
     case UdtSocketState::Connecting:
@@ -857,6 +864,43 @@ qint64 UdtSocket::writeData(const char* data, qint64 size) {
     return size;
 }
 
+void UdtSocket::receivedMessage(const ByteSlice& message) {
+    QMutexLocker guard(&_receivedMessageProtect);
+    _receivedMessages.append(message);
+    _receivedMessageCondition.wakeAll();
+}
+
+bool UdtSocket::hasPendingDatagrams() const {
+    if (!_isDatagram) {
+        return false;
+    }
+    QMutexLocker guard(&_receivedMessageProtect);
+    return _receivedMessages.isEmpty();
+}
+
+qint64 UdtSocket::pendingDatagramSize() const {
+    if (!_isDatagram) {
+        return -1;
+    }
+    QMutexLocker guard(&_receivedMessageProtect);
+    if (_receivedMessages.empty()) {
+        return -1;
+    }
+    return _receivedMessages.first().length();
+}
+
+qint64 UdtSocket::bytesAvailable() const {
+    if (_isDatagram) {
+        return 0;
+    }
+    QMutexLocker guard(&_receivedMessageProtect);
+    quint64 len = 0;
+    for (MessageQueue::const_iterator iter = _receivedMessages.begin(); iter != _receivedMessages.end(); iter++) {
+        len += iter->length();
+    }
+    return len;
+}
+
 qint64 UdtSocket::readDatagram(char* data, qint64 maxlen) {
     if (!_isDatagram) {
         return -1;
@@ -873,6 +917,134 @@ qint64 UdtSocket::readDatagram(char* data, qint64 maxlen) {
         memcpy(data, datagram.constData(), len);
     }
     return datagram.length();
+}
+
+ByteSlice UdtSocket::receiveMessage() {
+    QMutexLocker guard(&_receivedMessageProtect);
+    while (_receivedMessages.empty() && state() == UdtSocketState::Connected) {
+        _receivedMessageCondition.wait(&_receivedMessageProtect);
+    }
+    if (_receivedMessages.empty()) {
+        return ByteSlice();
+    }
+    return _receivedMessages.dequeue();
+}
+
+ByteSlice UdtSocket::receiveDatagram() {
+    if (!_isDatagram) {
+        return ByteSlice();
+    }
+    return receiveMessage();
+}
+
+qint64 UdtSocket::readData(char* data, qint64 maxSize) {
+    // the read starts out as blocking but then grabs whatever is available at the time
+    if (_isDatagram) {
+        return -1;
+    }
+    if (_currPartialRead.empty()) {
+        _currPartialRead = receiveMessage();
+        if (_currPartialRead.empty()) {
+            return -1;
+        }
+    }
+    qint64 totalLen = 0;
+    for (;;) {
+        qint64 len = _currPartialRead.length();
+        if (len >= maxSize) {
+            if (maxSize > 0) {
+                memcpy(data, _currPartialRead.constData(), maxSize);
+                totalLen += maxSize;
+                if (len == maxSize) {
+                    _currPartialRead.clear();
+                } else {
+                    _currPartialRead = _currPartialRead.substring(len);
+                }
+            }
+            return totalLen;
+        }
+
+        memcpy(data, _currPartialRead.constData(), len);
+        totalLen += len;
+        data += len;
+        maxSize -= len;
+
+        // check to see if there's another message we can tack on to this
+        QMutexLocker guard(&_receivedMessageProtect);
+        if (_receivedMessages.empty()) {
+            return totalLen;
+        }
+        _currPartialRead = _receivedMessages.dequeue();
+    }
+}
+
+qint64 UdtSocket::readLineData(char* data, qint64 maxSize) {
+    // the read starts out as blocking but then grabs whatever is available at the time
+    if (_isDatagram) {
+        return -1;
+    }
+    if (_currPartialRead.empty()) {
+        _currPartialRead = receiveMessage();
+        if (_currPartialRead.empty()) {
+            return -1;
+        }
+    }
+    qint64 totalLen = 0;
+    for (;;) {
+        qint64 len = _currPartialRead.length();
+        const quint8* eolnPos = static_cast<const quint8*>(memchr(_currPartialRead.constData(), '\n', len));
+        if (eolnPos != nullptr && eolnPos - _currPartialRead.constData() < maxSize) {
+            qint64 lineLen = eolnPos - _currPartialRead.constData() + 1;
+            memcpy(data, _currPartialRead.constData(), lineLen);
+            if (lineLen < maxSize) {
+                data[lineLen + 1] = '\0';
+            }
+            totalLen += lineLen;
+            _currPartialRead = _currPartialRead.substring(lineLen);
+            return totalLen;
+        }
+        if (len >= maxSize) {
+            if (maxSize > 0) {
+                memcpy(data, _currPartialRead.constData(), maxSize);
+                totalLen += maxSize;
+                _currPartialRead = _currPartialRead.substring(maxSize);
+            }
+            return totalLen;
+        }
+
+        memcpy(data, _currPartialRead.constData(), len);
+        totalLen += len;
+        data += len;
+        maxSize -= len;
+
+        // check to see if there's another message we can tack on to this
+        QMutexLocker guard(&_receivedMessageProtect);
+        if (_receivedMessages.empty()) {
+            return totalLen;
+        }
+        _currPartialRead = _receivedMessages.dequeue();
+    }
+}
+
+bool UdtSocket::waitForReadyRead(int msecs) {
+    if (_isDatagram) {
+        return false;
+    }
+    QDeadlineTimer timeout(msecs);
+    QMutexLocker guard(&_receivedMessageProtect);
+    while (_receivedMessages.empty() && state() == UdtSocketState::Connected) {
+        if (!_receivedMessageCondition.wait(&_receivedMessageProtect, timeout)) {
+            break;
+        }
+    }
+    return (!_receivedMessages.empty());
+}
+
+qint64 UdtSocket::bytesToWrite() const {
+    if (_isDatagram) {
+        return 0;
+    }
+    return _send.bytesToWrite() + QIODevice::bytesToWrite();
 }
 
 /*******************************************************************************
