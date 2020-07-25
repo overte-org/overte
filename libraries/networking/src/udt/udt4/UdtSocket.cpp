@@ -25,7 +25,7 @@
 
 using namespace udt4;
 
-UdtSocket::UdtSocket(QObject* parent) : QIODevice(parent), _send(*this), _recv(*this) {
+UdtSocket::UdtSocket(QObject* parent) : QIODevice(parent), _send(*this), _recv(*this), _congestion(*this) {
     _connTimeout.setSingleShot(true);
     _connTimeout.setTimerType(Qt::PreciseTimer);
     connect(&_connTimeout, &QTimer::timeout, this, &UdtSocket::onConnectionTimeout);
@@ -510,7 +510,7 @@ void UdtSocket::sendHandshake(HandshakePacket::RequestType requestType, bool mtu
 
     Packet udtPacket = hsResponse.toPacket();
     std::chrono::microseconds ts(_createTime.nsecsElapsed() / 1000);
-    _congestion.onPktSent(udtPacket);
+    _congestion.onPacketSent(udtPacket);
     qCDebug(networking) << localAddressDebugString() << " sending handshake(" << static_cast<uint>(requestType) << ") to " << remoteAddressDebugString();
     _multiplexer->sendPacket(_remoteAddr, _remotePort, _farSocketID, ts, udtPacket);
 }
@@ -602,7 +602,7 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
             _mtu.store(hsPacket._maxPktSize);
         }
         _recv.configureHandshake(hsPacket);
-        _send.configureHandshake(hsPacket, true);
+        _send.configureHandshake(hsPacket, true, _mtu.load());
         _synCookie = hsPacket._synCookie;
         setState(UdtSocketState::Connected);
         sendHandshake(HandshakePacket::RequestType::Response, false);
@@ -705,7 +705,7 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
             _mtu.store(hsPacket._maxPktSize);
         }
         _recv.configureHandshake(hsPacket);
-        _send.configureHandshake(hsPacket, _socketRole == SocketRole::Client);
+        _send.configureHandshake(hsPacket, _socketRole == SocketRole::Client, _mtu.load());
         setState(UdtSocketState::Connected);
 
         if (_socketRole == SocketRole::Rendezvous) {
@@ -763,7 +763,7 @@ void UdtSocket::readPacket(const Packet& udtPacket, const QHostAddress& peerAddr
         emit _send.packetReceived(udtPacket, now);
         break;
     case PacketType::Data:
-        _cong.onPktRecv(udtPacket);
+        _congestion.onPacketReceived(udtPacket, now);
         emit _recv.packetReceived(udtPacket, now);
         break;
     case PacketType::Shutdown:  // sent by either peer
@@ -776,7 +776,7 @@ void UdtSocket::readPacket(const Packet& udtPacket, const QHostAddress& peerAddr
         break;
     case PacketType::UserDefPkt:
         emit customMessageReceived(udtPacket, now);
-        emit _congestion.customMessageReceived(udtPacket, now);
+        _congestion.onCustomMessageReceived(udtPacket, now);
         break;
     }
 }
@@ -1014,7 +1014,7 @@ func (s *udtSocket) launchProcessors() {
 
 void UdtSocket::sendPacket(const Packet& udtPacket) {
     std::chrono::microseconds ts(_createTime.nsecsElapsed() / 1000);
-	_cong.onPktSent(udtPacket);
+	_congestion.onPacketSent(udtPacket);
 	log.Printf("%s (id=%d) sending %s to %s (id=%d)", _multiplexer.laddr.String(), _sockID, udtPacket.PacketTypeName(udtPacket.PacketType()),
 		_raddr.String(), _farSockID);
     _multiplexer->sendPacket(_remoteAddr, _remotePort, _farSocketID, ts, udtPacket);

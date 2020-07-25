@@ -15,6 +15,7 @@
 
 // Structure of packets and functions for writing/reading them
 #include "ByteSlice.h"
+#include <chrono>
 #include "PacketID.h"
 #include <QtNetwork/QHostAddress>
 

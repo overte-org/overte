@@ -12,6 +12,7 @@
 #ifndef hifi_udt4_UdtSocket_send_h
 #define hifi_udt4_UdtSocket_send_h
 
+#include <chrono>
 #include <map>
 #include "Packet.h"
 #include "PacketID.h"
@@ -19,6 +20,7 @@
 #include <QtCore/QDeadlineTimer>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QMutex>
+#include <QtCore/QSharedPointer>
 #include <QtCore/QThread>
 #include <QtCore/QTimer>
 #include <QtCore/QWaitCondition>
@@ -53,7 +55,8 @@ private slots:
     void EXPevent();
 
 private:
-    static constexpr std::chrono::milliseconds MIN_EXP_INTERVAL{ 300 };
+    static constexpr std::chrono::milliseconds MIN_EXP_INTERVAL{ 300 };                             // factors into the minimum time we will wait before requesting packet resends
+    static constexpr std::chrono::milliseconds MIN_CONNECTION_TIMEOUT{ std::chrono::seconds{ 5 } }; // we will wait at minimum this time before dropping an inactive connection
 
     enum class SendState
     {

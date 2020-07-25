@@ -13,6 +13,7 @@
 #define hifi_udt4_UdtSocket_h
 
 #include "ByteSlice.h"
+#include <chrono>
 #include <map>
 #include "Packet.h"
 #include "PacketID.h"
@@ -30,8 +31,9 @@
 #include <QtCore/QWaitCondition>
 #include <QtCore/QTimer>
 #include <QtNetwork/QUdpSocket>
-#include "UdtSocket_send.h"
+#include "UdtSocket_cc.h"
 #include "UdtSocket_recv.h"
+#include "UdtSocket_send.h"
 
 namespace udt4 {
 
@@ -44,22 +46,6 @@ typedef QSharedPointer<UdtSocket> UdtSocketPointer;
 enum
 {
     UDT_VERSION = 4,
-};
-
-// private interface for interactions within a UdtSocket
-class UdtSocket_private {
-public:
-    virtual void getRTT(std::chrono::microseconds& rtt, std::chrono::microseconds& rttVariance) const = 0;
-    virtual void applyRTT(std::chrono::microseconds rtt) = 0;
-    virtual void applyReceiveRates(unsigned deliveryRate, unsigned bandwidth) = 0;
-    virtual unsigned getMaxBandwidth() const = 0;
-    virtual void sendPacket(const Packet& udtPacket) = 0;
-    virtual void receivedMessage(const ByteSlice& message) = 0;
-    virtual unsigned getMaxFlowWinSize() const = 0;
-    virtual QString localAddressDebugString() const = 0;
-    virtual void ingestError(const Packet& udtPacket) = 0;
-    virtual void ingestShutdown() = 0;
-    virtual void requestShutdown(UdtSocketState toState, QString error) = 0;
 };
 
 enum class UdtSocketState
@@ -77,6 +63,28 @@ enum class UdtSocketState
     Refused,        // connection rejected by remote host
     Corrupted,      // peer behaved in an improper manner
     Timeout,        // connection failed due to peer timeout
+};
+
+// private interface for interactions within a UdtSocket
+class UdtSocket_private {
+public:
+    virtual void getRTT(std::chrono::microseconds& rtt, std::chrono::microseconds& rttVariance) const = 0;
+    virtual void applyRTT(std::chrono::microseconds rtt) = 0;
+    virtual void getReceiveRates(unsigned& recvSpeed, unsigned& bandwidth) const = 0;
+    virtual void applyReceiveRates(unsigned deliveryRate, unsigned bandwidth) = 0;
+    virtual unsigned getMaxBandwidth() const = 0;
+    virtual void sendPacket(const Packet& udtPacket) = 0;
+    virtual void receivedMessage(const ByteSlice& message) = 0;
+    virtual unsigned getMaxFlowWinSize() const = 0;
+    virtual QString localAddressDebugString() const = 0;
+    virtual void ingestErrorPacket(const Packet& udtPacket) = 0;
+    virtual void requestShutdown(UdtSocketState toState, QString error) = 0;
+    virtual void setCongestionWindow(unsigned pkt) = 0;
+    virtual void setPacketSendPeriod(std::chrono::milliseconds snd) = 0;
+    virtual void setACKperiod(std::chrono::milliseconds ack) = 0;
+    virtual void setACKinterval(unsigned ack) = 0;
+    virtual void setRTOperiod(std::chrono::milliseconds rto) = 0;
+    virtual UdtSocket_CongestionControl& getCongestionControl() = 0;
 };
 
 /*
@@ -172,13 +180,19 @@ private: // UdtSocket_private implementation
     virtual void getRTT(std::chrono::microseconds& rtt, std::chrono::microseconds& rttVariance) const;
     virtual void applyRTT(std::chrono::microseconds rtt);
     virtual unsigned getMaxBandwidth() const;
+    virtual void getReceiveRates(unsigned& recvSpeed, unsigned& bandwidth) const;
     virtual void applyReceiveRates(unsigned deliveryRate, unsigned bandwidth);
     virtual void sendPacket(const Packet& udtPacket);
     virtual void receivedMessage(const ByteSlice& message);
     virtual unsigned getMaxFlowWinSize() const;
-    virtual void ingestError(const Packet& udtPacket);
-    virtual void ingestShutdown();
+    virtual void ingestErrorPacket(const Packet& udtPacket);
     virtual void requestShutdown(UdtSocketState toState, QString error);
+    virtual void setCongestionWindow(unsigned pkt);
+    virtual void setPacketSendPeriod(std::chrono::milliseconds snd);
+    virtual void setACKperiod(std::chrono::milliseconds ack);
+    virtual void setACKinterval(unsigned ack);
+    virtual void setRTOperiod(std::chrono::milliseconds rto);
+    virtual UdtSocket_CongestionControl& getCongestionControl();
 
 protected:
     virtual bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
@@ -265,8 +279,9 @@ private:
 	sendPacket    chan packet.Packet   // packets to send out on the wire (once goManageConnection is running)
 */
 
-    UdtSocket_send _send; // the "outgoing" side of this UDT connection
-    UdtSocket_receive _recv; // the "incoming" side of this UDT connection
+    UdtSocket_send              _send;       // the "outgoing" side of this UDT connection
+    UdtSocket_receive           _recv;       // the "incoming" side of this UDT connection
+    UdtSocket_CongestionControl _congestion; // connecting glue to the chosen congestion control algorighm
 
 	// timers
 /*

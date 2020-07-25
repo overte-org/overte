@@ -17,7 +17,7 @@
 #include <QtCore/QDeadlineTimer>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QHash>
-#include <QtCore/QMap>
+#include <QtCore/QList>
 #include <QtCore/QMutex>
 #include <QtCore/QThread>
 #include <QtCore/QTimer>
@@ -28,6 +28,13 @@ namespace udt4 {
 class UdtSocket_private;
 enum class UdtSocketState;
 
+/* UdtSocket_receive
+
+Implements the "incoming" side of a UDT socket connection, listening for incoming data packets,
+assembling messages, sending ACKs for successful messages and NAKs for packet loss
+
+This class is private and not user-accessible
+*/
 class UdtSocket_receive : public QThread {
     Q_OBJECT
 public:
@@ -41,7 +48,7 @@ private slots:
     void ACKevent();
 
 private: // private datatypes
-    static constexpr unsigned ACK_SELF_CLOCK_INTERVAL{ 64 };
+    static constexpr unsigned ACK_SELF_CLOCK_INTERVAL{ 64 }; // involved in figuring whether we should get away with a "light" ACK packet with minimal information
 
     struct ReceivedPacket {
         Packet        udtPacket;

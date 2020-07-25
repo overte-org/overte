@@ -13,6 +13,7 @@
 #ifndef hifi_udt4_Multiplexer_h
 #define hifi_udt4_Multiplexer_h
 
+#include <chrono>
 #include "Packet.h"
 #include <QtCore/QAtomicInt>
 #include <QtCore/QElapsedTimer>

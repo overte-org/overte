@@ -13,41 +13,44 @@
 #ifndef hifi_udt4_CongestionControl_h
 #define hifi_udt4_CongestionControl_h
 
-#include <QtCore/QList>
+#include <chrono>
 #include "Packet.h"
 #include "PacketID.h"
+#include <QtCore/QList>
+#include <QtCore/QSharedPointer>
 
 namespace udt4 {
 
 // Interface provided to UDT congestion control systems
 class CongestionControlParms {
 public:
-	virtual quint32 getSendCurrentSequenceNumber() const = 0; // returns the most recently sent packet ID
-	virtual void setCongestionWindowSize(uint) = 0;               // sets the size of the congestion window (in packets)
-	virtual uint getCongestionWindowSize() const = 0;         // gets the size of the congestion window (in packets)
-	virtual uint getPacketSendPeriod() const = 0;             // gets the current delay between sending packets (in ms)
-	virtual void setPacketSendPeriod(uint) = 0;               // sets the current delay between sending packets (in ms)
-	virtual uint getMaxFlowWindow() const = 0;                // returns the largest number of unacknowledged packets we can receive (in packets)
+    virtual PacketID getSendCurrentPacketID() const = 0;                      // returns the most recently sent packet ID
+	virtual void setCongestionWindowSize(uint) = 0;                           // sets the size of the congestion window (in packets)
+	virtual uint getCongestionWindowSize() const = 0;                         // gets the size of the congestion window (in packets)
+	virtual std::chrono::milliseconds getPacketSendPeriod() const = 0;        // gets the current delay between sending packets
+	virtual void setPacketSendPeriod(std::chrono::milliseconds) = 0;          // sets the current delay between sending packets
+	virtual uint getMaxFlowWindow() const = 0;                                // returns the largest number of unacknowledged packets we can receive (in packets)
 	virtual void getReceiveRates(uint& recvSpeed, uint& bandwidth) const = 0; // returns the current calculated receive rate and bandwidth (in packets/sec)
-	virtual uint getRTT() const = 0;                          // returns the current calculated roundtrip time between peers (in ms)
-	virtual uint getMSS() const = 0;                          // returns the largest packet size we can currently send (in bytes)
-	virtual void setACKPeriod(uint) = 0;                      // sets the time between ACKs sent to the peer (in ms)
-	virtual void setACKInterval(uint) = 0;                    // sets the number of packets sent to the peer before sending an ACK (in packets)
-	virtual void setRTOPeriod(uint) = 0;                      // overrides the default EXP timeout calculations waiting for data from the peer (in ms)
+	virtual std::chrono::microseconds getRTT() const = 0;                     // returns the current calculated roundtrip time between peers
+	virtual uint getMSS() const = 0;                                          // returns the largest packet size we can currently send (in bytes)
+	virtual void setACKPeriod(std::chrono::milliseconds) = 0;                 // sets the time between ACKs sent to the peer
+	virtual void setACKInterval(uint) = 0;                                    // sets the number of packets sent to the peer before sending an ACK (in packets)
+	virtual void setRTOPeriod(std::chrono::milliseconds) = 0;                 // overrides the default EXP timeout calculations waiting for data from the peer
 };
 
 // Interface to be implemented by UDT congestion control systems
 class CongestionControl {
 public:
-    virtual void init(CongestionControlParms& parms) = 0;                                    // connection is being setup.
-    virtual void close(CongestionControlParms& parms) = 0;                                   // connection is closed.
-    virtual void onACK(CongestionControlParms& parms, PacketID packetID) = 0;                // ACK packet is received
-    virtual void onNAK(CongestionControlParms& parms, const QList<PacketID>& packetIDs) = 0;  // loss report is received
-    virtual void onTimeout(CongestionControlParms& parms) = 0;                               // a timeout event occurs
-    virtual void onPktSent(CongestionControlParms& parms, const Packet& packet) = 0;         // data is sent
-    virtual void onPktRecv(CongestionControlParms& parms, const Packet& packet) = 0;         // data is received
-	virtual void onCustomMsg(CongestionControlParms& parms, const Packet& packet) = 0;       // user-defined packet is received
+    virtual void init(CongestionControlParms& parms) = 0;                                          // connection is being setup.
+    virtual void close(CongestionControlParms& parms) = 0;                                         // connection is closed.
+    virtual void onACK(CongestionControlParms& parms, PacketID packetID) = 0;                      // ACK packet is received
+    virtual void onNAK(CongestionControlParms& parms, const QList<PacketID>& packetIDs) = 0;       // loss report is received
+    virtual void onTimeout(CongestionControlParms& parms) = 0;                                     // a timeout event occurs
+    virtual void onPacketSent(CongestionControlParms& parms, const Packet& packet) = 0;            // data is sent
+    virtual void onPacketReceived(CongestionControlParms& parms, const Packet& packet) = 0;        // data is received
+	virtual void onCustomMessageReceived(CongestionControlParms& parms, const Packet& packet) = 0; // user-defined packet is received
 };
+typedef QSharedPointer<CongestionControl> CongestionControlPointer; 
 
 }  // namespace udt4
 

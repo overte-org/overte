@@ -31,7 +31,7 @@ void UdtSocket_send::configureHandshake(const HandshakePacket& hsPacket, bool re
 	}
     _mtu = mtu;
     _isDatagram = hsPacket._sockType == SocketType::DGRAM;
-    _flowWindowSize = static_cast<uint>(hsPacket._maxFlowWinSize);
+    _flowWindowSize = hsPacket._maxFlowWinSize;
 }
 
 void UdtSocket_send::startupInit() {
@@ -67,9 +67,20 @@ void UdtSocket_send::run() {
 }
 
 void UdtSocket_send::setState(UdtSocketState newState) {
+    bool shouldBeRunning = false;
+    switch (newState) {
+        case UdtSocketState::Connected:
+        case UdtSocketState::HalfClosed:
+            shouldBeRunning = true;
+            break;
+    }
+
     QMutexLocker guard(&_eventMutex);
     _socketState = newState;
     _eventCondition.notify_all();
+    if (shouldBeRunning && !isRunning()) {
+        start();
+    }
 }
 
 void UdtSocket_send::resetReceiveTimer() {
@@ -417,7 +428,7 @@ bool UdtSocket_send::processSendExpire() {
 // we have a packed packet and a green light to send, so lets send this and mark it
 void UdtSocket_send::sendDataPacket(SendPacketEntryPointer dataPacketEntry, bool isResend) {
     _sendPktPend.insert(SendPacketEntryMap::value_type(dataPacketEntry->packet._packetID, dataPacketEntry));
-    _socket.cong.onDataPktSent(dataPacketEntry->packet._packetID);
+    _socket.getCongestionControl().onDataPktSent(dataPacketEntry->packet._packetID);
     _socket.sendPacket(dataPacketEntry->packet.toPacket());
 
 	// have we exceeded our recipient's window size?
@@ -495,7 +506,7 @@ void UdtSocket_send::ingestAck(const ACKPacket& ackPacket, const QElapsedTimer& 
 		_socket.applyReceiveRates(ackPacket._packetReceiveRate, ackPacket._estimatedLinkCapacity);
 	}
 
-	_socket.cong.onACK(lastPacketReceived);
+	_socket.getCongestionControl().onACK(lastPacketReceived);
 
 	// Update packet arrival rate: A = (A * 7 + a) / 8, where a is the value carried in the ACK.
 	// Update estimated link capacity: B = (B * 7 + b) / 8, where b is the value carried in the ACK.
@@ -521,7 +532,7 @@ void UdtSocket_send::ingestAck(const ACKPacket& ackPacket, const QElapsedTimer& 
 
 // ingestNak is called to process an NAK packet
 void UdtSocket_send::ingestNak(const NAKPacket& nakPacket, const QElapsedTimer& timeReceived) {
-	PacketIDSet newLossList;
+    QList<PacketID> newLossList;
 	for (NAKPacket::IntegerList::const_iterator trans = nakPacket._lossData.begin(); trans != nakPacket._lossData.end(); trans++) {
 		quint32 thisEntry = *trans;
 		if ((thisEntry&0x80000000) != 0) {
@@ -546,7 +557,7 @@ void UdtSocket_send::ingestNak(const NAKPacket& nakPacket, const QElapsedTimer& 
 				return;
 			}
 			for (PacketID span = thisPacketID; span != lastPacketID; span++) {
-				newLossList.insert(span);
+				newLossList.append(span);
                 _sendLossList.insert(span);
 			}
 		} else {
@@ -554,12 +565,12 @@ void UdtSocket_send::ingestNak(const NAKPacket& nakPacket, const QElapsedTimer& 
 			if (!assertValidSentPktID("NAK", thisPacketID)) {
 				return;
 			}
-			newLossList.insert(thisPacketID);
+			newLossList.append(thisPacketID);
             _sendLossList.insert(thisPacketID);
 		}
 	}
 
-	_socket.cong.onNAK(newLossList);
+	_socket.getCongestionControl().onNAK(newLossList);
 	_sendState = SendState::ProcessDrop; // immediately restart transmission
 }
 
@@ -596,7 +607,7 @@ void UdtSocket_send::processExpEvent() {
 
 	// Haven't receive any information from the peer, is it dead?!
 	// timeout: at least 16 expirations and must be greater than 10 seconds
-    if ((_expCount > 16) && (std::chrono::milliseconds(_lastReceiveTime.elapsed()) > std::chrono::seconds{ 5 })) {
+    if ((_expCount > 16) && (std::chrono::milliseconds(_lastReceiveTime.elapsed()) > MIN_CONNECTION_TIMEOUT)) {
 		// Connection is broken.
         _socket.requestShutdown(UdtSocketState::Timeout, QString("Timeout - last packet received %1 seconds ago").arg(_lastReceiveTime.elapsed() / 1000.0));
 		return;
@@ -611,7 +622,7 @@ void UdtSocket_send::processExpEvent() {
                 _sendLossList.insert(span);
 			}
 		}
-		_socket.cong.onTimeout();
+		_socket.getCongestionControl().onTimeout();
 		_sendState = SendState::ProcessDrop; // immediately restart transmission
 	} else {
         Packet keepalivePacket;

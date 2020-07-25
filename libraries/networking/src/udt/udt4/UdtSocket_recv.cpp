@@ -207,11 +207,11 @@ bool UdtSocket_receive::processEvent(QMutexLocker& eventGuard) {
                 return true;
             case PacketType::SpecialErr:
                 eventGuard.unlock();
-                _socket.ingestError(packet.udtPacket);
+                _socket.ingestErrorPacket(packet.udtPacket);
                 return true;
             case PacketType::Shutdown:  // sent by either peer
                 eventGuard.unlock();
-                _socket.ingestShutdown();
+                _socket.requestShutdown(UdtSocketState::HalfClosed, "Shutdown requested by peer");
                 return true;
         }
     }
@@ -623,8 +623,8 @@ void UdtSocket_receive::sendACK() {
     std::chrono::microseconds rtt, rttVariance;
     _socket.getRTT(rtt, rttVariance);
 
-	int numPendPackets = static_cast<int>(_farNextPktSeq.blindDifference(_farRecdPktSeq) - 1);
-	int availWindow = static_cast<int>(_socket.getMaxFlowWinSize()) - numPendPackets;
+	int numPendPackets = _farNextPktSeq.blindDifference(_farRecdPktSeq) - 1;
+	int availWindow = _socket.getMaxFlowWinSize() - numPendPackets;
 	if(availWindow < 2) {
 		availWindow = 2;
 	}
@@ -640,8 +640,8 @@ void UdtSocket_receive::sendACK() {
         unsigned recvSpeed, bandwidth;
         getReceiveSpeeds(recvSpeed, bandwidth);
         ackPacket._ackType = ACKPacket::AckType::Full;
-		ackPacket._packetReceiveRate = static_cast<quint32>(recvSpeed);
-		ackPacket._estimatedLinkCapacity = static_cast<quint32>(bandwidth);
+		ackPacket._packetReceiveRate = recvSpeed;
+		ackPacket._estimatedLinkCapacity = bandwidth;
 		_ACKsentEvent2.setRemainingTime(UdtSocket::SYN, Qt::PreciseTimer);
 	}
     _socket.sendPacket(ackPacket.toPacket());
