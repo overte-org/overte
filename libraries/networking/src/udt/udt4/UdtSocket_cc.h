@@ -30,7 +30,7 @@ public:
     void setCongestionControl(CongestionControlPointer congestionControl);
 
 public: // functions accessible to UdtSocket objects
-    void init();
+    void init(const PacketID& packetID, unsigned mtu);
     void close();
     void onACK(const PacketID& lastPacketReceived);
     void onNAK(const QList<PacketID>& packetIDs);
@@ -58,8 +58,12 @@ private: // internal variables
 	UdtSocket_private& _socket;                     // reference to top-level UDT socket private interface
     CongestionControlPointer _congestion;           // congestion control object for this socket
     QAtomicInteger<quint32> _lastSentPacketID{ 0 }; // packetID of most recently sent packet
+    QAtomicInteger<unsigned> _mtu{ 1500 };          // the MTU for the connection
     unsigned _congestionWindow{ 16 };               // size of congestion window (in packets)
     std::chrono::milliseconds _sndPeriod{ 0 };      // delay between sending packets
+
+private:
+    Q_DISABLE_COPY(UdtSocket_CongestionControl)
 };
 
 

@@ -14,6 +14,9 @@
 #include "Multiplexer.h"
 #include "../../NetworkLogging.h"
 #include <QtCore/QLoggingCategory>
+#include <QtCore/QMutexLocker>
+#include <QtCore/QReadLocker>
+#include <QtCore/QWriteLocker>
 #include <QtCore/QRandomGenerator>
 
 #ifdef WIN32
@@ -411,7 +414,7 @@ void UdtSocket::onConnectionRetry() {
                 _mtu.store(mtu);
             } else if (++_connectionRetriesBeforeMTU > MTU_DROP_INTERVAL) {
                 _connectionRetriesBeforeMTU = 0;
-                quint32 newMtu = _mtu.load() - MTU_DROP_INCREMENT;
+                unsigned newMtu = _mtu.load() - MTU_DROP_INCREMENT;
                 if (newMtu < MTU_MINIMUM) {
                     newMtu = MTU_MINIMUM;
                 }
@@ -481,7 +484,7 @@ unsigned UdtSocket::getCurrentPathMtu() const {
 
 void UdtSocket::sendHandshake(HandshakePacket::RequestType requestType, bool mtuDiscovery) {
 
-    int sockMtu = _mtu.load();
+    unsigned sockMtu = _mtu.load();
     HandshakePacket hsResponse;
     hsResponse._udtVer = UDT_VERSION;
     hsResponse._sockType = _isDatagram ? SocketType::DGRAM : SocketType::STREAM;
@@ -704,6 +707,7 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
         if (_mtu.load() > hsPacket._maxPktSize) {
             _mtu.store(hsPacket._maxPktSize);
         }
+        _congestion.init(hsPacket._initPktSeq, _mtu.load());
         _recv.configureHandshake(hsPacket);
         _send.configureHandshake(hsPacket, _socketRole == SocketRole::Client, _mtu.load());
         setState(UdtSocketState::Connected);
@@ -1003,20 +1007,12 @@ func (s *udtSocket) Write(p []byte) (n int, err error) {
 
 /*******************************************************************************
  Private functions
-*******************************************************************************
-
-func (s *udtSocket) launchProcessors() {
-	s.send = newUdtSocketSend(s)
-	s.recv = newUdtSocketRecv(s)
-	s.cong.init(s.initPktSeq)
-}
-*/
+*******************************************************************************/
 
 void UdtSocket::sendPacket(const Packet& udtPacket) {
     std::chrono::microseconds ts(_createTime.nsecsElapsed() / 1000);
 	_congestion.onPacketSent(udtPacket);
-	log.Printf("%s (id=%d) sending %s to %s (id=%d)", _multiplexer.laddr.String(), _sockID, udtPacket.PacketTypeName(udtPacket.PacketType()),
-		_raddr.String(), _farSockID);
+    qCDebug(networking) << localAddressDebugString() << ": sending " << udtPacket._type << " to " << remoteAddressDebugString();
     _multiplexer->sendPacket(_remoteAddr, _remotePort, _farSocketID, ts, udtPacket);
 }
 
@@ -1029,41 +1025,76 @@ T absdiff(T a, T b) {
 }
 
 void UdtSocket::applyRTT(std::chrono::microseconds rtt) {
-    _rttProt.Lock();
-    _rttVar = (_rttVar * 3 + absdiff(_rtt, rtt)) >> 2;
-    _rtt = (_rtt * 7 + rtt) >> 3;
-	_rttProt.Unlock();
+    QWriteLocker guard(&_rttProtect);
+    _rttVariance = std::chrono::microseconds((_rttVariance * 3 + absdiff(_rtt, rtt)).count() >> 2);
+    _rtt = std::chrono::microseconds((_rtt * 7 + rtt).count() >> 3);
 }
 
 void UdtSocket::getRTT(std::chrono::microseconds& rtt, std::chrono::microseconds& rttVariance) const {
-    _rttProt.RLock();
+    QReadLocker guard(&_rttProtect);
 	rtt = _rtt;
 	rttVariance = _rttVariance;
-	_rttProt.RUnlock();
 }
 
 // Update Estimated Bandwidth and packet delivery rate
 void UdtSocket::applyReceiveRates(unsigned deliveryRate, unsigned bandwidth) {
-    _receiveRateProt.Lock();
-	if(deliveryRate > 0) {
+    QWriteLocker guard(&_receiveRateProtect);
+    if (deliveryRate > 0) {
 		_deliveryRate = (_deliveryRate*7 + deliveryRate) >> 3;
 	}
 	if(bandwidth > 0) {
 		_bandwidth = (_bandwidth*7 + bandwidth) >> 3;
 	}
-	_receiveRateProt.Unlock();
 }
 
-func (s *udtSocket) getRcvSpeeds() (deliveryRate uint, bandwidth uint) {
-	s.receiveRateProt.RLock()
-	deliveryRate = s.deliveryRate
-	bandwidth = s.bandwidth
-	s.receiveRateProt.RUnlock()
-	return
+void UdtSocket::getReceiveRates(unsigned& recvSpeed, unsigned& bandwidth) const {
+    QReadLocker guard(&_receiveRateProtect);
+    recvSpeed = _deliveryRate;
+	bandwidth = _bandwidth;
+    return;
 }
 
-// search through the specified map for the first entry >= key but < limit
-std::set<PacketID>::iterator findFirstEntry(std::set<PacketID>& set, const PacketID& key, const PacketID& limit) {
+unsigned UdtSocket::getMaxBandwidth() const {
+    // TODO: eventually we may support bandwidth limits.  Right now we do not
+    return 0;
+}
+
+unsigned UdtSocket::getMaxFlowWinSize() const {
+    return _maxFlowWinSize;
+}
+
+void UdtSocket::ingestErrorPacket(const Packet& udtPacket) {
+    // TODO: this was a packet introduced by the reference implementation but not defined in the spec
+    // We don't send it and I'm not really sure what we would do if we received it
+    // Right now we do nothing.
+}
+
+void UdtSocket::setCongestionWindow(unsigned pkt) {
+    _send.setCongestionWindow(pkt);
+}
+
+void UdtSocket::setPacketSendPeriod(std::chrono::milliseconds snd) {
+    _send.setPacketSendPeriod(snd);
+}
+
+void UdtSocket::setACKperiod(std::chrono::milliseconds ack) {
+    _recv.setACKperiod(ack);
+}
+
+void UdtSocket::setACKinterval(unsigned ack) {
+    _recv.setACKinterval(ack);
+}
+
+void UdtSocket::setRTOperiod(std::chrono::milliseconds rto) {
+    _send.setRTOperiod(rto);
+}
+
+UdtSocket_CongestionControl& UdtSocket::getCongestionControl() {
+    return _congestion;
+}
+
+// search through the specified set for the first entry >= key but < limit
+std::set<PacketID, WrappedSequenceLess<PacketID>>::iterator findFirstEntry(std::set<PacketID, WrappedSequenceLess<PacketID>>& set, const PacketID& key, const PacketID& limit) {
     std::set<PacketID>::iterator lookup = set.lower_bound(key);
     if (key < limit) {
         if (lookup == set.end() || *lookup >= limit) {
@@ -1083,8 +1114,8 @@ std::set<PacketID>::iterator findFirstEntry(std::set<PacketID>& set, const Packe
     }
 }
 
-// search through
-std::set<PacketID>::const_iterator findFirstEntry(const std::set<PacketID>& set, const PacketID& key, const PacketID& limit) {
+// search through the specified set for the first entry >= key but < limit
+std::set<PacketID, WrappedSequenceLess<PacketID>>::const_iterator findFirstEntry(const std::set<PacketID, WrappedSequenceLess<PacketID>>& set, const PacketID& key, const PacketID& limit) {
     std::set<PacketID>::const_iterator lookup = set.lower_bound(key);
     if (key < limit) {
         if (lookup == set.end() || *lookup >= limit) {

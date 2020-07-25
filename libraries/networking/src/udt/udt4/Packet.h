@@ -20,6 +20,7 @@
 #include <QtNetwork/QHostAddress>
 
 namespace udt4 {
+Q_NAMESPACE
 
 // PacketType describes the type of UDP packet we're dealing with
 enum class PacketType : quint16
@@ -38,6 +39,7 @@ enum class PacketType : quint16
     Data = 0x8000,     // not found in any control packet, but used to identify data packets
     Invalid = 0x8001,
 };
+Q_ENUM_NS(PacketType)
 
 // SocketType describes the kind of socket this is (i.e. streaming vs message)
 // the reference implementation differs from the RFC here, I'm using the definition from the reference

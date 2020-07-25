@@ -119,7 +119,7 @@ public: // from QUdpSocket
     bool isInDatagramMode() const;
     bool hasPendingDatagrams() const;
     qint64 pendingDatagramSize() const;
-    ByteSlice receiveDatagram(qint64 maxSize = -1);
+    ByteSlice receiveDatagram();
     qint64 readDatagram(char* data, qint64 maxlen);
     qint64 writeDatagram(const char* data, qint64 len, const QDeadlineTimer& timeout = QDeadlineTimer(QDeadlineTimer::Forever));
     inline qint64 writeDatagram(const QByteArray& datagram);
@@ -256,21 +256,21 @@ private:
     QWaitCondition _sockStateCondition;
     UdtSocketState _sockState{ UdtSocketState::Init };  // socket state - used mostly during handshakes
 
-    QAtomicInteger<quint32> _mtu;  // the negotiated maximum packet size
-	uint _maxFlowWinSize{32};          // receiver: maximum unacknowledged packet count (minimum = 32)
-//	ByteSlice _currPartialRead;    // stream connections: currently reading message (for partial reads). Owned by client caller (Read)
-//	QDeadlineTimer _readDeadline;  // if set, then calls to Read() will return "timeout" after this time
-//	bool _readDeadlinePassed;      // if set, then calls to Read() will return "timeout"
-//	QDeadlineTimer _writeDeadline; // if set, then calls to Write() will return "timeout" after this time
-//	bool _writeDeadlinePassed;     // if set, then calls to Write() will return "timeout"
+    QAtomicInteger<unsigned> _mtu;  // the negotiated maximum packet size
+	unsigned _maxFlowWinSize{32};   // receiver: maximum unacknowledged packet count (minimum = 32)
+//	ByteSlice _currPartialRead;     // stream connections: currently reading message (for partial reads). Owned by client caller (Read)
+//	QDeadlineTimer _readDeadline;   // if set, then calls to Read() will return "timeout" after this time
+//	bool _readDeadlinePassed;       // if set, then calls to Read() will return "timeout"
+//	QDeadlineTimer _writeDeadline;  // if set, then calls to Write() will return "timeout" after this time
+//	bool _writeDeadlinePassed;      // if set, then calls to Write() will return "timeout"
 
-//	QReadWriteLock _rttProt;  // lock must be held before referencing rtt/rttVar
-//	uint _rtt;                // receiver: estimated roundtrip time. (in microseconds)
-//	uint _rttVariance;        // receiver: roundtrip variance. (in microseconds)
+	mutable QReadWriteLock _rttProtect;          // lock must be held before referencing rtt/rttVar
+	std::chrono::microseconds _rtt{ 0 };         // receiver: estimated roundtrip time. (in microseconds)
+	std::chrono::microseconds _rttVariance{ 0 }; // receiver: roundtrip variance. (in microseconds)
 
-//	QReadWriteLock _receiveRateProt; // lock must be held before referencing deliveryRate/bandwidth
-//	uint _deliveryRate{16};              // delivery rate reported from peer (packets/sec)
-//	uint _bandwidth{1};                 // bandwidth reported from peer (packets/sec)
+	mutable QReadWriteLock _receiveRateProtect;  // lock must be held before referencing deliveryRate/bandwidth
+	unsigned _deliveryRate{ 16 };                // delivery rate reported from peer (packets/sec)
+	unsigned _bandwidth{ 1 };                    // bandwidth reported from peer (packets/sec)
 /*
 	// channels
 	messageIn     chan []byte          // inbound messages. Sender is goReceiveEvent->ingestData, Receiver is client caller (Read)

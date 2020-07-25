@@ -697,3 +697,13 @@ void UdtSocket_receive::ackEvent() {
 	_unackPktCount = 0;
 	_lightAckCount = 1;
 }
+
+// Generally called by congestion control to set the time between ACKs
+void UdtSocket_receive::setACKperiod(std::chrono::milliseconds ack) {
+    _ackPeriod.store(ack.count());
+}
+
+// Generally called by congestion control to set the number of packets before we send an ACK
+void UdtSocket_receive::setACKinterval(unsigned ack) {
+    _ackInterval.store(ack);
+}

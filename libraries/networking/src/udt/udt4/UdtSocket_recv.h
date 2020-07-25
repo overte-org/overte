@@ -19,6 +19,7 @@
 #include <QtCore/QHash>
 #include <QtCore/QList>
 #include <QtCore/QMutex>
+#include <QtCore/QMutexLocker>
 #include <QtCore/QThread>
 #include <QtCore/QTimer>
 #include <QtCore/QWaitCondition>
@@ -43,6 +44,8 @@ public:
     void setState(UdtSocketState newState);
     void configureHandshake(const HandshakePacket& hsPacket);
     void packetReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived);
+    void setACKperiod(std::chrono::milliseconds ack);
+    void setACKinterval(unsigned ack);
 
 private slots:
     void ACKevent();
@@ -125,6 +128,9 @@ private:
     QDeadlineTimer  _ACKsentEvent2; // if an ACK packet has recently sent, don't include link information in the next one
     QDeadlineTimer  _ACKsentEvent;  // if an ACK packet has recently sent, wait before resending it
     QTimer          _ACKtimer;      // controls when to send an ACK to our peer
+
+private:
+    Q_DISABLE_COPY(UdtSocket_receive)
 };
 
 }  // namespace udt4

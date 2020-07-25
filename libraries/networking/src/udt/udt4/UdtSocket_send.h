@@ -20,6 +20,7 @@
 #include <QtCore/QDeadlineTimer>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QMutex>
+#include <QtCore/QMutexLocker>
 #include <QtCore/QSharedPointer>
 #include <QtCore/QThread>
 #include <QtCore/QTimer>
@@ -48,7 +49,9 @@ public:
     void packetReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived);
     void queueDisconnect();
     void resetReceiveTimer();
+    void setCongestionWindow(unsigned pkt);
     void setPacketSendPeriod(std::chrono::milliseconds snd);
+    void setRTOperiod(std::chrono::milliseconds rto);
 
 private slots:
     void SNDevent();

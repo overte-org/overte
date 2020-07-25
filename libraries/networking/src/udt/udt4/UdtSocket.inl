@@ -12,6 +12,7 @@
 #ifndef hifi_udt4_UdtSocket_inl
 #define hifi_udt4_UdtSocket_inl
 #include "UdtSocket.h"
+#include <QtCore/QMutexLocker>
 
 namespace udt4 {
 

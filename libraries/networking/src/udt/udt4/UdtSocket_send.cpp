@@ -241,6 +241,16 @@ void UdtSocket_send::setPacketSendPeriod(std::chrono::milliseconds snd) { // exp
 	_sndPeriod.store(snd.count());
 }
 
+// generally set by congestion control
+void UdtSocket_send::setCongestionWindow(unsigned pkt) {
+    _congestWindow.store(pkt);
+}
+
+// generally set by congestion control
+void UdtSocket_send::setRTOperiod(std::chrono::milliseconds rto) {
+    _rtoPeriod.store(rto.count());
+}
+
 UdtSocket_send::SendState UdtSocket_send::reevalSendState() const {
     if (_SNDtimer.isActive()) {
 		return SendState::Sending;

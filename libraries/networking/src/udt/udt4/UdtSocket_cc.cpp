@@ -51,7 +51,7 @@ std::chrono::microseconds UdtSocket_CongestionControl::getRTT() const {
 }
 
 unsigned UdtSocket_CongestionControl::getMSS() const {
-    return _socket.getMTU();
+    return _mtu.load();
 }
 
 void UdtSocket_CongestionControl::setACKPeriod(std::chrono::milliseconds ack) {
