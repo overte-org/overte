@@ -14,7 +14,7 @@
 
 using namespace udt4;
 
-UdtSocket_send::UdtSocket_send(UdtSocket_private& socket):_socket(socket) {
+UdtSocket_send::UdtSocket_send(UdtSocket_private& socket) : _socket(socket), _socketState(UdtSocketState::Init) {
     _SNDtimer.setSingleShot(true);
     _SNDtimer.setTimerType(Qt::PreciseTimer);
     connect(&_SNDtimer, &QTimer::timeout, this, &UdtSocket_send::SNDevent);

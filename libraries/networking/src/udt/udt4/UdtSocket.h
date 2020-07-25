@@ -121,9 +121,9 @@ public: // from QUdpSocket
     qint64 pendingDatagramSize() const;
     ByteSlice receiveDatagram();
     qint64 readDatagram(char* data, qint64 maxlen);
-    qint64 writeDatagram(const char* data, qint64 len, const QDeadlineTimer& timeout = QDeadlineTimer(QDeadlineTimer::Forever));
-    inline qint64 writeDatagram(const QByteArray& datagram);
-    inline qint64 writeDatagram(const ByteSlice& datagram);
+    qint64 writeDatagram(const char* data, quint64 len, const QDeadlineTimer& timeout = QDeadlineTimer(QDeadlineTimer::Forever));
+    qint64 writeDatagram(const QByteArray& datagram, const QDeadlineTimer& timeout = QDeadlineTimer(QDeadlineTimer::Forever));
+    qint64 writeDatagram(const ByteSlice& datagram, const QDeadlineTimer& timeout = QDeadlineTimer(QDeadlineTimer::Forever));
 
 public:  // from QAbstractSocket
     inline void abort();
@@ -271,23 +271,12 @@ private:
 	mutable QReadWriteLock _receiveRateProtect;  // lock must be held before referencing deliveryRate/bandwidth
 	unsigned _deliveryRate{ 16 };                // delivery rate reported from peer (packets/sec)
 	unsigned _bandwidth{ 1 };                    // bandwidth reported from peer (packets/sec)
-/*
-	// channels
-	messageIn     chan []byte          // inbound messages. Sender is goReceiveEvent->ingestData, Receiver is client caller (Read)
-	messageOut    chan sendMessage     // outbound messages. Sender is client caller (Write), Receiver is goSendEvent. Closed when socket is closed
-	recvEvent     chan recvPktEvent    // receiver: ingest the specified packet. Sender is readPacket, receiver is goReceiveEvent
-	sendPacket    chan packet.Packet   // packets to send out on the wire (once goManageConnection is running)
-*/
 
+    // references to the sub-objects that handle the various tasks in this socket
     UdtSocket_send              _send;       // the "outgoing" side of this UDT connection
     UdtSocket_receive           _recv;       // the "incoming" side of this UDT connection
     UdtSocket_CongestionControl _congestion; // connecting glue to the chosen congestion control algorighm
 
-	// timers
-/*
-	recv *udtSocketRecv // reference to receiving side of this socket
-	cong *udtSocketCc   // reference to contestion control
-*/
 	// performance metrics
 	//quint64 PktSent        // number of sent data packets, including retransmissions
 	//quint64 PktRecv        // number of received packets

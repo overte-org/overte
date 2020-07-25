@@ -18,35 +18,35 @@
 namespace udt4 {
 
 template <class P>
-PacketEvent<P>::PacketEvent(const P& p, const QHostAddress& address, quint32 port) : packet(p), peerAddress(address), peerPort(port) {
+inline PacketEvent<P>::PacketEvent(const P& p, const QHostAddress& address, quint32 port) : packet(p), peerAddress(address), peerPort(port) {
     age.start();
 }
 
-void UdtMultiplexer::moveToReadThread(QObject* object) {
+inline void UdtMultiplexer::moveToReadThread(QObject* object) {
     object->moveToThread(&_readThread);
 }
 
-void UdtMultiplexer::moveToWriteThread(QObject* object) {
+inline void UdtMultiplexer::moveToWriteThread(QObject* object) {
     object->moveToThread(&_writeThread);
 }
 
-QHostAddress UdtMultiplexer::serverAddress() const {
+inline QHostAddress UdtMultiplexer::serverAddress() const {
     return _serverAddress;
 }
 
-QAbstractSocket::SocketError UdtMultiplexer::serverError() const {
+inline QAbstractSocket::SocketError UdtMultiplexer::serverError() const {
     return _udpSocket.error();
 }
 
-quint16 UdtMultiplexer::serverPort() const {
+inline quint16 UdtMultiplexer::serverPort() const {
     return _serverPort;
 }
 
-QString UdtMultiplexer::errorString() const {
+inline QString UdtMultiplexer::errorString() const {
     return _udpSocket.errorString();
 }
 
-bool UdtMultiplexer::isLive() const {
+inline bool UdtMultiplexer::isLive() const {
     return _udpSocket.isOpen();
 }
 

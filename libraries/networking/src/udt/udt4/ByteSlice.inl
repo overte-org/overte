@@ -16,36 +16,36 @@
 
 #include "Byteslice.h"
 
-ByteSlice::ByteSlice() : _offset(0), _length(0) {
+inline ByteSlice::ByteSlice() : _offset(0), _length(0) {
 }
 
-ByteSlice::ByteSlice(const QByteArray& data) :
+inline ByteSlice::ByteSlice(const QByteArray& data) :
     _offset(0), _length(data.length()),
     _content(BytestringPointer::create(reinterpret_cast<const quint8*>(data.constData()), _length)) {
 }
 
-ByteSlice::ByteSlice(const std::string& data) :
+inline ByteSlice::ByteSlice(const std::string& data) :
     _offset(0), _length(data.length()),
     _content(BytestringPointer::create(reinterpret_cast<const quint8*>(data.c_str()), _length)) {
 }
 
-ByteSlice::ByteSlice(BytestringPointer content, size_t offset, size_t length) :
+inline ByteSlice::ByteSlice(BytestringPointer content, size_t offset, size_t length) :
     _offset(offset), _length(length), _content(content) {
 }
 
 // internal-only, for creating substrings
-ByteSlice::ByteSlice(const ByteSlice& data) : _offset(data._offset), _length(data._length), _content(data._content) {
+inline ByteSlice::ByteSlice(const ByteSlice& data) : _offset(data._offset), _length(data._length), _content(data._content) {
 }
 
-bool ByteSlice::empty() const {
+inline bool ByteSlice::empty() const {
     return !_length;
 }
 
-size_t ByteSlice::length() const {
+inline size_t ByteSlice::length() const {
     return _length;
 }
 
-const quint8& ByteSlice::operator[](size_t idx) const {
+inline const quint8& ByteSlice::operator[](size_t idx) const {
     if (_content.isNull() || idx > _length) {
         return gl_fallback;
     } else {
@@ -60,6 +60,5 @@ inline const quint8* ByteSlice::constData() const {
         return _content->_content;
     }
 }
-
 
 #endif /* serialization_Byteslice_inl */

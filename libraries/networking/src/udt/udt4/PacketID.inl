@@ -156,17 +156,17 @@ inline WrappedSequence<BITS> operator-(qint32 a, WrappedSequence<BITS> b) {
 }
 
 template <int BITS>
-uint qHash(const WrappedSequence<BITS>& key) {
+inline uint qHash(const WrappedSequence<BITS>& key) {
     return ::qHash(static_cast<quint32>(key));
 }
 
 template <int BITS>
-uint qHash(const WrappedSequence<BITS> & key, uint seed) {
+inline uint qHash(const WrappedSequence<BITS>& key, uint seed) {
     return ::qHash(static_cast<quint32>(key), seed);
 }
 
 template <class T>
-bool WrappedSequenceLess<T>::operator()(const T& lhs, const T& rhs) const {
+inline bool WrappedSequenceLess<T>::operator()(const T& lhs, const T& rhs) const {
     return static_cast<quint32>(lhs) < static_cast<quint32>(rhs);
 }
 

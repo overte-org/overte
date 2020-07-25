@@ -771,8 +771,6 @@ void UdtSocket::readPacket(const Packet& udtPacket, const QHostAddress& peerAddr
         emit _recv.packetReceived(udtPacket, now);
         break;
     case PacketType::Shutdown:  // sent by either peer
-//        emit shutdownRequested(UdtSocketState::HalfClosed, "", QPrivateSignal());
-//        break;
     case PacketType::Ack2:  // sender -> receiver
     case PacketType::MsgDropReq:
     case PacketType::SpecialErr:
@@ -817,192 +815,64 @@ void UdtSocket::onLingerTimeout() {
     }
 }
 
-/*
-public: // from QUdpSocket
-    bool hasPendingDatagrams() const;
-    qint64 pendingDatagramSize() const;
-    QNetworkDatagram receiveDatagram(qint64 maxSize = -1);
-    qint64 readDatagram(char* data, qint64 maxlen);
-    qint64 writeDatagram(const char* data, qint64 len);
-
-public:  // from QAbstractSocket
-    bool flush();
-    bool isValid() const;
-    qint64 readBufferSize() const;
-    virtual void setReadBufferSize(qint64 size);
-    virtual void setSocketOption(QAbstractSocket::SocketOption option, const QVariant& value);
-    virtual QVariant socketOption(QAbstractSocket::SocketOption option);
-
-    virtual bool atEnd() const override;
-    virtual qint64 bytesAvailable() const override;
-    virtual qint64 bytesToWrite() const override;
-    virtual bool canReadLine() const override;
-    virtual bool waitForBytesWritten(int msecs = 30000) override;
-    virtual bool waitForReadyRead(int msecs = 30000) override;
-
-protected: // from QAbstractSocket
-    virtual qint64 readData(char* data, qint64 maxSize) override;
-    virtual qint64 readLineData(char* data, qint64 maxlen) override;
-    virtual qint64 writeData(const char* data, qint64 size) override;
-
-private slots:
-    void onConnectionRetry();
-    void onConnectionTimeout();
-*/
-/*
-typedef struct SendMessage {
-    ByteSlice content;
-    time.Time time;     // time message is submitted
-    time.Duration ttl;  // message dropped if it can't be sent in this timeframe
-};
-
-/*******************************************************************************
- Implementation of net.Conn interface
-*******************************************************************************
-
-// Grab the next data packet
-func (s *udtSocket) fetchReadPacket(blocking bool) ([]byte, error) {
-	var result []byte
-	if blocking {
-		for {
-			if s.readDeadlinePassed {
-				return nil, syscall.ETIMEDOUT
-			}
-			var deadline <-chan time.Time
-			if s.readDeadline != nil {
-				deadline = s.readDeadline.C
-			}
-			select {
-			case result = <-s.messageIn:
-				return result, nil
-			case _, ok := <-deadline:
-				if !ok {
-					continue
-				}
-				s.readDeadlinePassed = true
-				return nil, syscall.ETIMEDOUT
-			}
-		}
-	}
-
-	select {
-	case result = <-s.messageIn:
-		// ok we have a message
-	default:
-		// ok we've read some stuff and there's nothing immediately available
-		return nil, nil
-	}
-	return result, nil
+qint64 UdtSocket::writeDatagram(const char* data, quint64 len, const QDeadlineTimer& timeout) {
+    if (len == 0 || !_isDatagram || state() != UdtSocketState::Connected) {
+        return -1;
+    }
+    ByteSlice slice;
+    void* newData = slice.create(len);
+    memcpy(newData, data, len);
+    _send.sendMessage(slice, timeout);
+    return len;
 }
 
-// TODO: int sendmsg(const char* data, int len, int msttl, bool inorder)
-
-// Read reads data from the connection.
-// Read can be made to time out and return an Error with Timeout() == true
-// after a fixed time limit; see SetDeadline and SetReadDeadline.
-// (required for net.Conn implementation)
-func (s *udtSocket) Read(p []byte) (n int, err error) {
-	connErr := s.connectionError()
-	if s.isDatagram {
-		// for datagram sockets, block until we have a message to return and then return it
-		// if the buffer isn't big enough, return a truncated message (discarding the rest) and return an error
-		msg, rerr := s.fetchReadPacket(connErr == nil)
-		if rerr != nil {
-			err = rerr
-			return
-		}
-		if msg == nil && connErr != nil {
-			err = connErr
-			return
-		}
-		n = copy(p, msg)
-		if n < len(msg) {
-			err = errors.New("Message truncated")
-		}
-	} else {
-		// for streaming sockets, block until we have at least something to return, then
-		// fill up the passed buffer as far as we can without blocking again
-		idx := 0
-		l := len(p)
-		n = 0
-		for idx < l {
-			if s.currPartialRead == nil {
-				// Grab the next data packet
-				currPartialRead, rerr := s.fetchReadPacket(n == 0 && connErr == nil)
-				s.currPartialRead = currPartialRead
-				if rerr != nil {
-					err = rerr
-					return
-				}
-				if s.currPartialRead == nil {
-					if n != 0 {
-						return
-					}
-					if connErr != nil {
-						err = connErr
-						return
-					}
-				}
-			}
-			thisN := copy(p[idx:], s.currPartialRead)
-			n = n + thisN
-			idx = idx + thisN
-			if n >= len(s.currPartialRead) {
-				// we've exhausted the current data packet, reset to nil
-				s.currPartialRead = nil
-			} else {
-				s.currPartialRead = s.currPartialRead[n:]
-			}
-		}
-	}
-	return
+qint64 UdtSocket::writeDatagram(const QByteArray& datagram, const QDeadlineTimer& timeout) {
+    if (datagram.isEmpty() || !_isDatagram || state() != UdtSocketState::Connected) {
+        return -1;
+    }
+    ByteSlice slice;
+    size_t len = datagram.size();
+    void* newData = slice.create(len);
+    memcpy(newData, datagram.constData(), len);
+    _send.sendMessage(slice, timeout);
+    return len;
 }
 
-// Write writes data to the connection.
-// Write can be made to time out and return an Error with Timeout() == true
-// after a fixed time limit; see SetDeadline and SetWriteDeadline.
-// (required for net.Conn implementation)
-func (s *udtSocket) Write(p []byte) (n int, err error) {
-	// at the moment whatever we have right now we'll shove it into a channel and return
-	// on the other side:
-	//  for datagram sockets: this is a distinct message to be broken into as few packets as possible
-	//  for streaming sockets: collect as much as can fit into a packet and send them out
-	switch s.sockState {
-	case sockStateRefused:
-		err = errors.New("Connection refused by remote host")
-		return
-	case sockStateCorrupted:
-		err = errors.New("Connection closed due to protocol error")
-		return
-	case sockStateClosed:
-		err = errors.New("Connection closed")
-		return
-	}
+qint64 UdtSocket::writeDatagram(const ByteSlice& datagram, const QDeadlineTimer& timeout) {
+    if (datagram.empty() || !_isDatagram || state() != UdtSocketState::Connected) {
+        return -1;
+    }
+    _send.sendMessage(datagram, timeout);
+    return datagram.length();
+}
 
-	n = len(p)
+qint64 UdtSocket::writeData(const char* data, qint64 size) {
+    if (size <= 0 || _isDatagram || state() != UdtSocketState::Connected) {
+        return -1;
+    }
+    ByteSlice slice;
+    void* newData = slice.create(size);
+    memcpy(newData, data, size);
+    _send.sendMessage(slice, QDeadlineTimer(QDeadlineTimer::Forever));
+    return size;
+}
 
-	for {
-		if s.writeDeadlinePassed {
-			err = syscall.ETIMEDOUT
-			return
-		}
-		var deadline <-chan time.Time
-		if s.writeDeadline != nil {
-			deadline = s.writeDeadline.C
-		}
-		select {
-		case s.messageOut <- sendMessage{content: p, tim: time.Now()}:
-			// send successful
-			return
-		case _, ok := <-deadline:
-			if !ok {
-				continue
-			}
-			s.writeDeadlinePassed = true
-			err = syscall.ETIMEDOUT
-			return
-		}
-	}
+qint64 UdtSocket::readDatagram(char* data, qint64 maxlen) {
+    if (!_isDatagram) {
+        return -1;
+    }
+    ByteSlice datagram = receiveDatagram();
+    if (datagram.empty()) {
+        return -1;
+    }
+    if (maxlen != 0) {
+        size_t len = datagram.length();
+        if (maxlen > 0 && static_cast<size_t>(maxlen) < len) {
+            len = maxlen;
+        }
+        memcpy(data, datagram.constData(), len);
+    }
+    return datagram.length();
 }
 
 /*******************************************************************************
@@ -1089,13 +959,17 @@ void UdtSocket::setRTOperiod(std::chrono::milliseconds rto) {
     _send.setRTOperiod(rto);
 }
 
+void UdtSocket::requestShutdown(UdtSocketState toState, QString error) {
+    emit shutdownRequested(toState, error, QPrivateSignal());
+}
+
 UdtSocket_CongestionControl& UdtSocket::getCongestionControl() {
     return _congestion;
 }
 
 // search through the specified set for the first entry >= key but < limit
 std::set<PacketID, WrappedSequenceLess<PacketID>>::iterator findFirstEntry(std::set<PacketID, WrappedSequenceLess<PacketID>>& set, const PacketID& key, const PacketID& limit) {
-    std::set<PacketID>::iterator lookup = set.lower_bound(key);
+    std::set<PacketID, WrappedSequenceLess<PacketID>>::iterator lookup = set.lower_bound(key);
     if (key < limit) {
         if (lookup == set.end() || *lookup >= limit) {
             return set.end();
@@ -1116,7 +990,7 @@ std::set<PacketID, WrappedSequenceLess<PacketID>>::iterator findFirstEntry(std::
 
 // search through the specified set for the first entry >= key but < limit
 std::set<PacketID, WrappedSequenceLess<PacketID>>::const_iterator findFirstEntry(const std::set<PacketID, WrappedSequenceLess<PacketID>>& set, const PacketID& key, const PacketID& limit) {
-    std::set<PacketID>::const_iterator lookup = set.lower_bound(key);
+    std::set<PacketID, WrappedSequenceLess<PacketID>>::const_iterator lookup = set.lower_bound(key);
     if (key < limit) {
         if (lookup == set.end() || *lookup >= limit) {
             return set.end();

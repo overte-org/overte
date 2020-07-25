@@ -133,7 +133,7 @@ private:
     ReceivedPacketList _receivedPacketList;            // list of packets we have not yet processed
 
     // While the send thread is running these variables only to be accessed by that thread (can be initialized carefully by other threads)
-    unsigned       _mtu;
+    unsigned       _mtu{ 1500 };
     bool           _isDatagram{ true };
 	SendState      _sendState{SendState::Closed}; // current sender state
     SendPacketEntryMap  _sendPktPend;     // list of packets that have been sent but not yet acknowledged

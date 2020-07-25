@@ -16,43 +16,43 @@
 
 namespace udt4 {
 
-UdtServer::AcceptFlags UdtServer::acceptFlags() const {
+inline UdtServer::AcceptFlags UdtServer::acceptFlags() const {
     return _acceptFlags;
 }
 
-QString UdtServer::errorString() const {
+inline QString UdtServer::errorString() const {
     return _errorString;
 }
 
-bool UdtServer::isListening() const {
+inline bool UdtServer::isListening() const {
     return !_multiplexer.isNull();
 }
 
-qint64 UdtServer::listenReplayWindow() const {
+inline qint64 UdtServer::listenReplayWindow() const {
     return _listenReplayWindow;
 }
 
-int UdtServer::maxPendingConnections() const {
+inline int UdtServer::maxPendingConnections() const {
     return _maxPendingConn.load();
 }
 
-void UdtServer::pauseAccepting() {
+inline void UdtServer::pauseAccepting() {
     _pausePendingConn.store(1);
 }
 
-void UdtServer::resumeAccepting() {
+inline void UdtServer::resumeAccepting() {
     _pausePendingConn.store(0);
 }
 
-QAbstractSocket::SocketError UdtServer::serverError() const {
+inline QAbstractSocket::SocketError UdtServer::serverError() const {
     return _serverError;
 }
 
-void UdtServer::setAcceptFlags(AcceptFlags flags) {
+inline void UdtServer::setAcceptFlags(AcceptFlags flags) {
     _acceptFlags = flags;
 }
 
-void UdtServer::setListenReplayWindow(qint64 msecs) {
+inline void UdtServer::setListenReplayWindow(qint64 msecs) {
     _listenReplayWindow = msecs;
 }
 

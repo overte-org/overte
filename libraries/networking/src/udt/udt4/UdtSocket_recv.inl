@@ -15,7 +15,7 @@
 
 namespace udt4 {
 
-UdtSocket_receive::ReceivedPacket::ReceivedPacket(const Packet& p, const QElapsedTimer& t) : udtPacket(p), timeReceived(t) {
+inline UdtSocket_receive::ReceivedPacket::ReceivedPacket(const Packet& p, const QElapsedTimer& t) : udtPacket(p), timeReceived(t) {
 }
 
 }  // namespace udt4

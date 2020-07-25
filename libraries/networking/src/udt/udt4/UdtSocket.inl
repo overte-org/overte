@@ -16,51 +16,43 @@
 
 namespace udt4 {
 
-void UdtSocket::abort() {
+inline void UdtSocket::abort() {
     setState(UdtSocketState::Init);
 }
 
-bool UdtSocket::isInDatagramMode() const {
+inline bool UdtSocket::isInDatagramMode() const {
     return _isDatagram;
 }
 
-const QHostAddress& UdtSocket::peerAddress() const {
+inline const QHostAddress& UdtSocket::peerAddress() const {
     return _remoteAddr;
 }
 
-quint16 UdtSocket::peerPort() const {
+inline quint16 UdtSocket::peerPort() const {
     return _remotePort;
 }
 
-UdtSocketState UdtSocket::state() const {
+inline UdtSocketState UdtSocket::state() const {
     QMutexLocker locker(&_sockStateProtect);
     return _sockState;
 }
 
-QString UdtSocket::errorString() const {
+inline QString UdtSocket::errorString() const {
     return _errorString;
 }
 
-qint64 UdtSocket::writeDatagram(const QByteArray& datagram) {
-    return writeDatagram(datagram.constData(), datagram.size());
-}
-
-qint64 UdtSocket::writeDatagram(const ByteSlice& datagram) {
-    return writeDatagram(reinterpret_cast<const char*>(datagram.constData()), datagram.length());
-}
-
-bool UdtSocket::isValid() const {
+inline bool UdtSocket::isValid() const {
     return state() == UdtSocketState::Connected;
 }
 
-void UdtSocket::setLocalSocketID(quint32 socketID) {
+inline void UdtSocket::setLocalSocketID(quint32 socketID) {
     _socketID = socketID;
 }
 
 // search through the specified map for the first entry >= key but < limit
 template <class T>
-typename std::map<PacketID, T>::iterator findFirstEntry(std::map<PacketID, T>& map, const PacketID& key, const PacketID& limit) {
-    std::map<PacketID, T>::iterator lookup = map.lower_bound(key);
+inline typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::iterator findFirstEntry(std::map<PacketID, T, WrappedSequenceLess<PacketID>>& map, const PacketID& key, const PacketID& limit) {
+    std::map<PacketID, T, WrappedSequenceLess<PacketID>>::iterator lookup = map.lower_bound(key);
     if (key < limit) {
         if (lookup == map.end() || lookup->first >= limit) {
             return map.end();
@@ -81,8 +73,8 @@ typename std::map<PacketID, T>::iterator findFirstEntry(std::map<PacketID, T>& m
 
 // search through 
 template <class T>
-typename std::map<PacketID, T>::const_iterator findFirstEntry(const std::map<PacketID, T>& map, const PacketID& key, const PacketID& limit) {
-    std::map<PacketID, T>::const_iterator lookup = map.lower_bound(key);
+inline typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::const_iterator findFirstEntry(const std::map<PacketID, T, WrappedSequenceLess<PacketID>>& map, const PacketID& key, const PacketID& limit) {
+    std::map<PacketID, T, WrappedSequenceLess<PacketID>>::const_iterator lookup = map.lower_bound(key);
     if (key < limit) {
         if (lookup == map.end() || lookup->first >= limit) {
             return map.end();
