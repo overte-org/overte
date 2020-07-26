@@ -12,6 +12,8 @@
 #ifndef hifi_udt4_UdtSocket_recv_h
 #define hifi_udt4_UdtSocket_recv_h
 
+#include <list>
+#include <map>
 #include "Packet.h"
 #include "PacketID.h"
 #include <QtCore/QDeadlineTimer>
@@ -57,9 +59,10 @@ private: // private datatypes
         Packet        udtPacket;
         QElapsedTimer timeReceived;
 
+        inline ReceivedPacket(){};
         inline ReceivedPacket(const Packet& p, const QElapsedTimer& t);
     };
-    typedef QList<ReceivedPacket> ReceivedPacketList;
+    typedef std::list<ReceivedPacket> ReceivedPacketList;
 
     struct ACKHistoryEntry {
         SequenceNumber ackID;

@@ -16,6 +16,7 @@
 #include <chrono>
 #include "Packet.h"
 #include "PacketID.h"
+#include <QtCore/QElapsedTimer>
 #include <QtCore/QList>
 #include <QtCore/QSharedPointer>
 
@@ -47,8 +48,8 @@ public:
     virtual void onNAK(CongestionControlParms& parms, const QList<PacketID>& packetIDs) = 0;       // loss report is received
     virtual void onTimeout(CongestionControlParms& parms) = 0;                                     // a timeout event occurs
     virtual void onPacketSent(CongestionControlParms& parms, const Packet& packet) = 0;            // data is sent
-    virtual void onPacketReceived(CongestionControlParms& parms, const Packet& packet) = 0;        // data is received
-	virtual void onCustomMessageReceived(CongestionControlParms& parms, const Packet& packet) = 0; // user-defined packet is received
+    virtual void onPacketReceived(CongestionControlParms& parms, const Packet& packet, const QElapsedTimer& timeReceived) = 0;        // data is received
+	virtual void onCustomMessageReceived(CongestionControlParms& parms, const Packet& packet, const QElapsedTimer& timeReceived) = 0; // user-defined packet is received
 };
 typedef QSharedPointer<CongestionControl> CongestionControlPointer; 
 

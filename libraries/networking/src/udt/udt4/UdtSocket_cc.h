@@ -13,10 +13,15 @@
 #define hifi_udt4_UdtSocket_cc_h
 
 #include "CongestionControl.h"
+#include <list>
 #include "Packet.h"
 #include "PacketID.h"
 #include <QtCore/QAtomicInteger>
 #include <QtCore/QElapsedTimer>
+#include <QtCore/QList>
+#include <QtCore/QMutex>
+#include <QtCore/QThread>
+#include <QtCore/QWaitCondition>
 
 namespace udt4 {
 
@@ -24,18 +29,20 @@ class UdtSocket_private;
 class UdtSocket_receive;
 class UdtSocket_send;
 
-class UdtSocket_CongestionControl : private CongestionControlParms {
+class UdtSocket_CongestionControl : public QThread, private CongestionControlParms {
+    Q_OBJECT
 public:
     UdtSocket_CongestionControl(UdtSocket_private& socket);
+    ~UdtSocket_CongestionControl();
     void setCongestionControl(CongestionControlPointer congestionControl);
 
 public: // functions accessible to UdtSocket objects
     void init(const PacketID& packetID, unsigned mtu);
     void close();
     void onACK(const PacketID& lastPacketReceived);
-    void onNAK(const QList<PacketID>& packetIDs);
+    void onNAK(QList<PacketID>&& packetIDs);
     void onTimeout();
-    void onDataPktSent(const PacketID& packetID);
+    void onDataPacketSent(const PacketID& packetID);
     void onPacketSent(const Packet& udtPacket);
     void onPacketReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived);
     void onCustomMessageReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived);
@@ -54,6 +61,28 @@ private: // CongestionControlParms interface
 	virtual void setACKInterval(unsigned);                                        // sets the number of packets sent to the peer before sending an ACK (in packets)
 	virtual void setRTOPeriod(std::chrono::milliseconds);                         // overrides the default EXP timeout calculations waiting for data from the peer
 
+private: // internal structures
+    enum class EventType
+    {
+        unknown,
+        init,
+        close,
+        onACK,
+        onNAK,
+        onTimeout,
+        onPacketSent,
+        onPacketReceived,
+        onCustomMessageReceived,
+    };
+
+    struct Event {
+        EventType type{ EventType::unknown };
+        Packet udtPacket;
+        QList<PacketID> packetIDs;
+        QElapsedTimer timeReceived;
+    };
+    typedef std::list<Event> EventList;
+
 private: // internal variables
 	UdtSocket_private& _socket;                     // reference to top-level UDT socket private interface
     CongestionControlPointer _congestion;           // congestion control object for this socket
@@ -61,6 +90,16 @@ private: // internal variables
     QAtomicInteger<unsigned> _mtu{ 1500 };          // the MTU for the connection
     unsigned _congestionWindow{ 16 };               // size of congestion window (in packets)
     std::chrono::milliseconds _sndPeriod{ 0 };      // delay between sending packets
+
+    mutable QMutex _eventProtect;
+    QWaitCondition _eventCondition;
+    bool _inShutdown{ false };
+    EventList _events;
+
+private:  // internal implementation
+    virtual void run() override;
+    void submitEvent(Event&& event);
+    void handleEvent(const Event& event);
 
 private:
     Q_DISABLE_COPY(UdtSocket_CongestionControl)

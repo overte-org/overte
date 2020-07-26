@@ -13,6 +13,7 @@
 #define hifi_udt4_UdtSocket_send_h
 
 #include <chrono>
+#include <list>
 #include <map>
 #include "Packet.h"
 #include "PacketID.h"
@@ -44,7 +45,7 @@ public:
     UdtSocket_send(UdtSocket_private& socket);
 
     void setState(UdtSocketState newState);
-    void configureHandshake(const HandshakePacket& hsPacket, bool resetSequence, unsigned mtu);
+    void configureHandshake(const HandshakePacket& hsPacket, const PacketID& sendPacketID, bool resetSequence, unsigned mtu);
     void sendMessage(ByteSlice content, QDeadlineTimer expireTime);
     void packetReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived);
     void queueDisconnect();
@@ -92,9 +93,10 @@ private:
         Packet udtPacket;
         QElapsedTimer timeReceived;
 
+        inline ReceivedPacket() {}
         inline ReceivedPacket(const Packet& p, const QElapsedTimer& t);
     };
-    typedef QList<ReceivedPacket> ReceivedPacketList;
+    typedef std::list<ReceivedPacket> ReceivedPacketList;
 
     struct SendPacketEntry {
         DataPacket packet;

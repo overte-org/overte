@@ -184,14 +184,17 @@ void UdtSocket_receive::ACKevent() {
 void UdtSocket_receive::packetReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived) {
     ReceivedPacket packet(udtPacket, timeReceived);
     QMutexLocker guard(&_eventMutex);
-    _receivedPacketList.append(packet);
+    _receivedPacketList.push_back(std::move(packet));
     _eventCondition.notify_all();
 }
 
 // the main event loop for the "receive" side of the socket, this controls the behavior and permitted actions
 bool UdtSocket_receive::processEvent(QMutexLocker& eventGuard) {
-    if (!_receivedPacketList.isEmpty()) {
-        ReceivedPacket packet = _receivedPacketList.takeFirst();
+    if (!_receivedPacketList.empty()) {
+        ReceivedPacket packet;  // using std::swap so we can use move semantics here
+        std::swap(packet, _receivedPacketList.front());
+        _receivedPacketList.pop_front();
+
         switch (packet.udtPacket._type) {
             case PacketType::Ack2:
                 eventGuard.unlock();

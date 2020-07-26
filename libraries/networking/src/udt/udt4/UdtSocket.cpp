@@ -611,8 +611,9 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
         if(_mtu.load() > hsPacket._maxPktSize) {
             _mtu.store(hsPacket._maxPktSize);
         }
+        _congestion.init(_initialPacketSequence, _mtu.load());
         _recv.configureHandshake(hsPacket);
-        _send.configureHandshake(hsPacket, true, _mtu.load());
+        _send.configureHandshake(hsPacket, _initialPacketSequence, true, _mtu.load());
         _synCookie = hsPacket._synCookie;
         setState(UdtSocketState::Connected);
         sendHandshake(HandshakePacket::RequestType::Response, false);
@@ -714,9 +715,9 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
         if (_mtu.load() > hsPacket._maxPktSize) {
             _mtu.store(hsPacket._maxPktSize);
         }
-        _congestion.init(hsPacket._initPktSeq, _mtu.load());
+        _congestion.init(_initialPacketSequence, _mtu.load());
         _recv.configureHandshake(hsPacket);
-        _send.configureHandshake(hsPacket, _socketRole == SocketRole::Client, _mtu.load());
+        _send.configureHandshake(hsPacket, _initialPacketSequence, _socketRole == SocketRole::Client, _mtu.load());
         setState(UdtSocketState::Connected);
 
         if (_socketRole == SocketRole::Rendezvous) {

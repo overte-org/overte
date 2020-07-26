@@ -24,10 +24,10 @@ UdtSocket_send::UdtSocket_send(UdtSocket_private& socket) : _socket(socket), _so
     connect(&_EXPtimer, &QTimer::timeout, this, &UdtSocket_send::EXPevent);
 }
 
-void UdtSocket_send::configureHandshake(const HandshakePacket& hsPacket, bool resetSequence, unsigned mtu) {
+void UdtSocket_send::configureHandshake(const HandshakePacket& hsPacket, const PacketID& sendPacketID, bool resetSequence, unsigned mtu) {
     if (resetSequence) {
-        _lastAckPacketID = hsPacket._initPktSeq;
-        _sendPacketID = hsPacket._initPktSeq;
+        _lastAckPacketID = sendPacketID;
+        _sendPacketID = sendPacketID;
 	}
     _mtu = mtu;
     _isDatagram = hsPacket._sockType == SocketType::DGRAM;
@@ -119,7 +119,7 @@ void UdtSocket_send::sendMessage(ByteSlice content, QDeadlineTimer expireTime) {
 void UdtSocket_send::packetReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived) {
     ReceivedPacket packet(udtPacket, timeReceived);
     QMutexLocker guard(&_eventMutex);
-    _receivedPacketList.append(packet);
+    _receivedPacketList.push_back(std::move(packet));
     _eventCondition.notify_all();
 }
 
@@ -193,8 +193,11 @@ bool UdtSocket_send::processEvent(QMutexLocker& eventGuard) {
         }
     }
 
-    if (!_receivedPacketList.isEmpty()) {
-        ReceivedPacket recvPacket = _receivedPacketList.takeFirst();
+    if (!_receivedPacketList.empty()) {
+        ReceivedPacket recvPacket;  // using std::swap so we can use move semantics here
+        std::swap(recvPacket, _receivedPacketList.front());
+        _receivedPacketList.pop_front();
+
         switch (recvPacket.udtPacket._type) {
         case PacketType::Ack:
 			ingestAck(ACKPacket(recvPacket.udtPacket), recvPacket.timeReceived);
@@ -310,7 +313,7 @@ bool UdtSocket_send::processDataMsg(bool isFirst) {
 			_sendPacketID++;
 
             SendPacketEntryPointer dataPacketEntry = SendPacketEntryPointer::create();
-            dataPacketEntry->packet = dataPacket;
+            dataPacketEntry->packet = std::move(dataPacket);
             dataPacketEntry->sendTime = _msgPartialSend->sendTime;
             dataPacketEntry->expireTime = _msgPartialSend->expireTime;
 
@@ -371,7 +374,7 @@ bool UdtSocket_send::processDataMsg(bool isFirst) {
         _sendPacketID++;
 
         SendPacketEntryPointer dataPacketEntry = SendPacketEntryPointer::create();
-        dataPacketEntry->packet = dataPacket;
+        dataPacketEntry->packet = std::move(dataPacket);
         dataPacketEntry->sendTime = _msgPartialSend->sendTime;
         dataPacketEntry->expireTime = _msgPartialSend->expireTime;
 
@@ -473,7 +476,7 @@ bool UdtSocket_send::processSendExpire() {
 // we have a packed packet and a green light to send, so lets send this and mark it
 void UdtSocket_send::sendDataPacket(SendPacketEntryPointer dataPacketEntry, bool isResend) {
     _sendPktPend.insert(SendPacketEntryMap::value_type(dataPacketEntry->packet._packetID, dataPacketEntry));
-    _socket.getCongestionControl().onDataPktSent(dataPacketEntry->packet._packetID);
+    _socket.getCongestionControl().onDataPacketSent(dataPacketEntry->packet._packetID);
     _socket.sendPacket(dataPacketEntry->packet.toPacket());
 
 	// have we exceeded our recipient's window size?
@@ -615,7 +618,7 @@ void UdtSocket_send::ingestNak(const NAKPacket& nakPacket, const QElapsedTimer& 
 		}
 	}
 
-	_socket.getCongestionControl().onNAK(newLossList);
+	_socket.getCongestionControl().onNAK(std::move(newLossList));
 	_sendState = SendState::ProcessDrop; // immediately restart transmission
 }
 
