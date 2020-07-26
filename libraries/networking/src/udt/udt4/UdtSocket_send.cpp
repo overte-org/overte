@@ -170,14 +170,18 @@ bool UdtSocket_send::processEvent(QMutexLocker& eventGuard) {
     if (canSendPacket) {
         if (_msgPartialSend != nullptr) {  // we have a partial message waiting, try to send more of it now
             eventGuard.unlock();
-            processDataMsg(false);
-            return true;
+            if (processDataMsg(false)) {
+                return true;
+            }
+            eventGuard.relock();
         }
         if (!_pendingMessages.isEmpty()) {
             _msgPartialSend = _pendingMessages.takeFirst();
             eventGuard.unlock();
-            processDataMsg(true);
-            return true;
+            if (processDataMsg(true)) {
+                return true;
+            }
+            eventGuard.relock();
         }
         if (_flagSendDisconnect) {
             _flagSendDisconnect = false;
@@ -271,9 +275,10 @@ UdtSocket_send::SendState UdtSocket_send::reevalSendState() const {
 }
 
 // try to pack a new data packet and send it
-void UdtSocket_send::processDataMsg(bool isFirst) {
+bool UdtSocket_send::processDataMsg(bool isFirst) {
+    bool sentPacket = false;
 	while (_msgPartialSend != nullptr) {
-        MessageEntryPointer partialSend = _msgPartialSend;
+        QMutexLocker guard(&_sendMutex);
 		DataPacket::MessagePosition state = DataPacket::MessagePosition::Only;
         if (_isDatagram) {
 			if(isFirst) {
@@ -286,7 +291,7 @@ void UdtSocket_send::processDataMsg(bool isFirst) {
 			_messageSequence++;
 		}
 
-		unsigned msgLen = static_cast<unsigned>(partialSend->content.length());
+		unsigned msgLen = static_cast<unsigned>(_msgPartialSend->content.length());
 		if (msgLen >= _mtu) {
 			// we are full -- send what we can and leave the rest
 			DataPacket dataPacket;
@@ -295,22 +300,38 @@ void UdtSocket_send::processDataMsg(bool isFirst) {
             dataPacket._isOrdered = !_isDatagram;
             dataPacket._messageNumber = _messageSequence;
 			if (msgLen == _mtu) {
-                dataPacket._contents = partialSend->content;
+                dataPacket._contents = _msgPartialSend->content;
+                _msgPartialSend->fullySent = true;
 				_msgPartialSend.reset();
 			} else {
-                dataPacket._contents = partialSend->content.substring(0, _mtu);
-				_msgPartialSend->content = partialSend->content.substring(_mtu);
+                dataPacket._contents = _msgPartialSend->content.substring(0, _mtu);
+				_msgPartialSend->content = _msgPartialSend->content.substring(_mtu);
 			}
 			_sendPacketID++;
 
             SendPacketEntryPointer dataPacketEntry = SendPacketEntryPointer::create();
             dataPacketEntry->packet = dataPacket;
-            dataPacketEntry->sendTime = partialSend->sendTime;
-            dataPacketEntry->expireTime = partialSend->expireTime;
+            dataPacketEntry->sendTime = _msgPartialSend->sendTime;
+            dataPacketEntry->expireTime = _msgPartialSend->expireTime;
 
 			sendDataPacket(dataPacketEntry, false);
-			return;
+            sentPacket = true;
+            _sendCondition.wakeAll();
+            return sentPacket;
 		}
+
+        if (msgLen == 0) {
+            // assuming this is a "flush" marker, mark it as "completed" and carry on
+            _msgPartialSend->fullySent = true;
+            _msgPartialSend.reset();
+            _sendCondition.wakeAll();
+            QMutexLocker guard(&_eventMutex);
+            if (_pendingMessages.isEmpty()) {
+                return sentPacket;
+            }
+            _msgPartialSend = _pendingMessages.takeFirst();
+            continue;
+        }
 
 		// we are not full -- send only if this is a datagram or there's nothing obvious left
 		if (_isDatagram) {
@@ -323,29 +344,43 @@ void UdtSocket_send::processDataMsg(bool isFirst) {
             QMutexLocker guard(&_eventMutex);
             if(!_pendingMessages.isEmpty()) {
                 MessageEntryPointer morePartialSend = _pendingMessages.takeFirst();
-                _msgPartialSend->content = _msgPartialSend->content.concat(morePartialSend->content);
-				continue;
+                while (morePartialSend != nullptr && morePartialSend->content.empty()) {
+                    // assuming this is a "flush" marker, mark it as "completed" and carry on
+                    morePartialSend->fullySent = true;
+                    morePartialSend.reset();
+                    _sendCondition.wakeAll();
+                    if (!_pendingMessages.isEmpty()) {
+                        morePartialSend = _pendingMessages.takeFirst();
+                    }
+                }
+                if (morePartialSend != nullptr) {
+                    _msgPartialSend->content = _msgPartialSend->content.concat(morePartialSend->content);
+                    continue;
+                }
 			}
 		}
 
-		partialSend = _msgPartialSend;
 		DataPacket dataPacket;
         dataPacket._packetID = _sendPacketID;
-        dataPacket._contents = partialSend->content;
+        dataPacket._contents = _msgPartialSend->content;
         dataPacket._messagePosition = state;
         dataPacket._isOrdered = !_isDatagram;
         dataPacket._messageNumber = _messageSequence;
+        _msgPartialSend->fullySent = true;
         _msgPartialSend.reset();
         _sendPacketID++;
 
         SendPacketEntryPointer dataPacketEntry = SendPacketEntryPointer::create();
         dataPacketEntry->packet = dataPacket;
-        dataPacketEntry->sendTime = partialSend->sendTime;
-        dataPacketEntry->expireTime = partialSend->expireTime;
+        dataPacketEntry->sendTime = _msgPartialSend->sendTime;
+        dataPacketEntry->expireTime = _msgPartialSend->expireTime;
 
 		sendDataPacket(dataPacketEntry, false);
-		return;
+        sentPacket = true;
+        _sendCondition.wakeAll();
+        return sentPacket;
 	}
+    return sentPacket;
 }
 
 // If the sender's loss list is not empty, retransmit the first packet in the list and remove it from the list.
@@ -643,4 +678,59 @@ void UdtSocket_send::processExpEvent() {
 	_expCount++;
 	// Reset last response time since we just sent a heart-beat.
 	resetEXP();
+}
+
+qint64 UdtSocket_send::bytesToWrite() const {
+    QMutexLocker sendGuard(&_sendMutex);
+    QMutexLocker eventGuard(&_eventMutex);
+    qint64 numBytes = 0;
+    for (MessageEntryList::const_iterator iter = _pendingMessages.begin(); iter != _pendingMessages.end(); iter++) {
+        numBytes += (*iter)->content.length();
+    }
+    if (_msgPartialSend != nullptr) {
+        numBytes += _msgPartialSend->content.length();
+    }
+    return numBytes;
+}
+
+bool UdtSocket_send::waitForPacketSent(const QDeadlineTimer& timeout) const {
+    QMutexLocker sendGuard(&_sendMutex);
+    PacketID packetID = _sendPacketID;
+    for (;;) {
+        switch (_sendState) {
+        case SendState::Closed:
+        case SendState::Shutdown:
+            return false;
+        }
+        if (!_sendCondition.wait(&_sendMutex, timeout)) {
+            return false;
+        }
+        if (packetID != _sendPacketID) {
+            return true;
+        }
+    }
+}
+
+bool UdtSocket_send::flush() {
+    // this function ensures that everything in the queue at this point has been sent out.  It does this
+    // by sticking a zero-length message in the queue and returning when that message has been processed
+    MessageEntryPointer message = MessageEntryPointer::create(ByteSlice());
+
+    QMutexLocker sendGuard(&_sendMutex);
+    {
+        QMutexLocker guard(&_eventMutex);
+        _pendingMessages.append(message);
+        _eventCondition.notify_all();
+    }
+    for (;;) {
+        switch (_sendState) {
+            case SendState::Closed:
+            case SendState::Shutdown:
+                return false;
+        }
+        _sendCondition.wait(&_sendMutex);
+        if (message->fullySent) {
+            return true;
+        }
+    }
 }

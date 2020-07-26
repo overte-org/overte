@@ -52,6 +52,9 @@ public:
     void setCongestionWindow(unsigned pkt);
     void setPacketSendPeriod(std::chrono::milliseconds snd);
     void setRTOperiod(std::chrono::milliseconds rto);
+    qint64 bytesToWrite() const;
+    bool waitForPacketSent(const QDeadlineTimer& timeout) const;
+    bool flush();
 
 private slots:
     void SNDevent();
@@ -75,6 +78,7 @@ private:
         ByteSlice content;
         QElapsedTimer sendTime;
         QDeadlineTimer expireTime;
+        bool fullySent{ false };
 
         inline MessageEntry(const ByteSlice& c) : content(c) {
             sendTime.start();
@@ -106,7 +110,7 @@ private:  // called exclusively within our private thread
     void startupInit();
     virtual void run() override;
     bool processEvent(QMutexLocker& eventGuard);
-    void processDataMsg(bool isFirst);
+    bool processDataMsg(bool isFirst);
     SendState reevalSendState() const;
     bool processSendLoss();
     bool processSendExpire();
@@ -122,7 +126,7 @@ private:
     UdtSocket_private& _socket;  // private interface pointing back at the UdtSocket
 
     // this is a condition-based thread.  All the variables in this block can only be accessed while holding _eventMutex
-    QMutex         _eventMutex;
+    mutable QMutex _eventMutex;
     QWaitCondition _eventCondition;
     UdtSocketState _socketState;
     bool           _flagRecentReceivedPacket{ false }; // has a packet been recently received from our peer?
@@ -132,13 +136,16 @@ private:
     MessageEntryList _pendingMessages;                 // the list of messages queued but not yet sent
     ReceivedPacketList _receivedPacketList;            // list of packets we have not yet processed
 
+    mutable QMutex _sendMutex;             // held while we're assembling packets.  Sometimes interacts with _eventMutex, if you're grabbing both then GRAB THIS FIRST (i.e. avoid philosopher's dilemma)
+    mutable QWaitCondition _sendCondition; // triggers when a packet has finished processing or a packet has been sent
+
     // While the send thread is running these variables only to be accessed by that thread (can be initialized carefully by other threads)
     unsigned       _mtu{ 1500 };
     bool           _isDatagram{ true };
 	SendState      _sendState{SendState::Closed}; // current sender state
     SendPacketEntryMap  _sendPktPend;     // list of packets that have been sent but not yet acknowledged
 	PacketID       _sendPacketID;         // the current packet sequence number
-    MessageEntryPointer _msgPartialSend;  // when a message can only partially fit in a socket, this is the remainder
+    MessageEntryPointer _msgPartialSend;  // when a message can only partially fit in a packet, this is the remainder
     SequenceNumber _messageSequence;      // the current message sequence number
     unsigned       _expCount{ 1 };        // number of continuous EXP timeouts.
 	QElapsedTimer  _lastReceiveTime;      // the last time we've heard something from the remote system

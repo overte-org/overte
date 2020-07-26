@@ -1047,6 +1047,19 @@ qint64 UdtSocket::bytesToWrite() const {
     return _send.bytesToWrite() + QIODevice::bytesToWrite();
 }
 
+bool UdtSocket::waitForBytesWritten(int msecs) {
+    if (_isDatagram) {
+        return false;
+    }
+    QDeadlineTimer timeout(msecs);
+    return _send.waitForPacketSent(timeout);
+}
+
+bool UdtSocket::flush() {
+    return _send.flush();
+}
+
+
 /*******************************************************************************
  Private functions
 *******************************************************************************/
