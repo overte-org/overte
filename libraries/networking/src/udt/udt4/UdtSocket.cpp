@@ -1153,6 +1153,8 @@ UdtSocket_CongestionControl& UdtSocket::getCongestionControl() {
     return _congestion;
 }
 
+namespace udt4 {
+
 // search through the specified set for the first entry >= key but < limit
 std::set<PacketID, WrappedSequenceLess<PacketID>>::iterator findFirstEntry(std::set<PacketID, WrappedSequenceLess<PacketID>>& set, const PacketID& key, const PacketID& limit) {
     std::set<PacketID, WrappedSequenceLess<PacketID>>::iterator lookup = set.lower_bound(key);
@@ -1194,3 +1196,5 @@ std::set<PacketID, WrappedSequenceLess<PacketID>>::const_iterator findFirstEntry
         return lookup;
     }
 }
+
+}  // namespace udt4

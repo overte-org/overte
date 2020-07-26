@@ -170,7 +170,7 @@ private:
     Q_DISABLE_COPY(UdtSocket_send)
 };
 
-
 }  // namespace udt4
 
+#include "UdtSocket_send.inl"
 #endif /* hifi_udt4_UdtSocket_send_h */
