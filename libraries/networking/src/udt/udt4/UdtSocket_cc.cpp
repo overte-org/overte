@@ -163,13 +163,13 @@ unsigned UdtSocket_CongestionControl::getCongestionWindowSize() const {
     return _congestionWindow;
 }
 
-std::chrono::milliseconds UdtSocket_CongestionControl::getPacketSendPeriod() const {
+std::chrono::microseconds UdtSocket_CongestionControl::getPacketSendPeriod() const {
     return _sndPeriod;
 }
 
-void UdtSocket_CongestionControl::setPacketSendPeriod(std::chrono::milliseconds snd) {
+void UdtSocket_CongestionControl::setPacketSendPeriod(std::chrono::microseconds snd) {
     _sndPeriod = snd;
-	_socket.setPacketSendPeriod(snd);
+    _socket.setPacketSendPeriod(std::chrono::duration_cast<std::chrono::milliseconds>(snd));
 }
 
 unsigned UdtSocket_CongestionControl::getMaxFlowWindow() const {
@@ -190,14 +190,14 @@ unsigned UdtSocket_CongestionControl::getMSS() const {
     return _mtu.load();
 }
 
-void UdtSocket_CongestionControl::setACKPeriod(std::chrono::milliseconds ack) {
-    _socket.setACKperiod(ack);
+void UdtSocket_CongestionControl::setACKPeriod(std::chrono::microseconds ack) {
+    _socket.setACKperiod(std::chrono::duration_cast<std::chrono::milliseconds>(ack));
 }
 
 void UdtSocket_CongestionControl::setACKInterval(unsigned ack) {
     _socket.setACKinterval(ack);
 }
 
-void UdtSocket_CongestionControl::setRTOPeriod(std::chrono::milliseconds rto) {
-    _socket.setRTOperiod(rto);
+void UdtSocket_CongestionControl::setRTOPeriod(std::chrono::microseconds rto) {
+    _socket.setRTOperiod(std::chrono::duration_cast<std::chrono::milliseconds>(rto));
 }

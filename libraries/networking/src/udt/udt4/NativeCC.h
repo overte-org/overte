@@ -17,6 +17,7 @@
 #include "CongestionControl.h"
 #include "PacketID.h"
 #include <QtCore/QElapsedTimer>
+#include <QtCore/QRandomGenerator>
 
 namespace udt4 {
 
@@ -38,7 +39,8 @@ public: // implementation of CongestionControl
 private:
     static constexpr std::chrono::seconds ONE_SECOND{1};
 
-	std::chrono::microseconds _rcInterval;  // UDT Rate control interval
+    QRandomGenerator _random;
+    std::chrono::microseconds _rcInterval;     // UDT Rate control interval
 	QElapsedTimer  _lastRCTime;         // last rate increase time
 	bool           _slowStart{ true };  // if in slow start phase
 	PacketID       _lastAck;            // last ACKed seq no

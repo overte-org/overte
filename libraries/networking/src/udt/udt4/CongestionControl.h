@@ -28,15 +28,15 @@ public:
     virtual PacketID getSendCurrentPacketID() const = 0;                              // returns the most recently sent packet ID
 	virtual void setCongestionWindowSize(unsigned) = 0;                               // sets the size of the congestion window (in packets)
 	virtual unsigned getCongestionWindowSize() const = 0;                             // gets the size of the congestion window (in packets)
-	virtual std::chrono::milliseconds getPacketSendPeriod() const = 0;                // gets the current delay between sending packets
-	virtual void setPacketSendPeriod(std::chrono::milliseconds) = 0;                  // sets the current delay between sending packets
+	virtual std::chrono::microseconds getPacketSendPeriod() const = 0;                // gets the current delay between sending packets
+	virtual void setPacketSendPeriod(std::chrono::microseconds) = 0;                  // sets the current delay between sending packets
 	virtual unsigned getMaxFlowWindow() const = 0;                                    // returns the largest number of unacknowledged packets we can receive (in packets)
 	virtual void getReceiveRates(unsigned& recvSpeed, unsigned& bandwidth) const = 0; // returns the current calculated receive rate and bandwidth (in packets/sec)
 	virtual std::chrono::microseconds getRTT() const = 0;                             // returns the current calculated roundtrip time between peers
 	virtual unsigned getMSS() const = 0;                                              // returns the largest packet size we can currently send (in bytes)
-	virtual void setACKPeriod(std::chrono::milliseconds) = 0;                         // sets the time between ACKs sent to the peer
+	virtual void setACKPeriod(std::chrono::microseconds) = 0;                         // sets the time between ACKs sent to the peer
 	virtual void setACKInterval(unsigned) = 0;                                        // sets the number of packets sent to the peer before sending an ACK (in packets)
-	virtual void setRTOPeriod(std::chrono::milliseconds) = 0;                         // overrides the default EXP timeout calculations waiting for data from the peer
+	virtual void setRTOPeriod(std::chrono::microseconds) = 0;                         // overrides the default EXP timeout calculations waiting for data from the peer
 };
 
 // Interface to be implemented by UDT congestion control systems
