@@ -51,8 +51,8 @@ public:
     void queueDisconnect();
     void resetReceiveTimer();
     void setCongestionWindow(unsigned pkt);
-    void setPacketSendPeriod(std::chrono::milliseconds snd);
-    void setRTOperiod(std::chrono::milliseconds rto);
+    void setPacketSendPeriod(std::chrono::microseconds snd);
+    void setRTOperiod(std::chrono::microseconds rto);
     qint64 bytesToWrite() const;
     bool waitForPacketSent(const QDeadlineTimer& timeout) const;
     bool flush();
@@ -62,8 +62,8 @@ private slots:
     void EXPevent();
 
 private:
-    static constexpr std::chrono::milliseconds MIN_EXP_INTERVAL{ 300 };                             // factors into the minimum time we will wait before requesting packet resends
-    static constexpr std::chrono::milliseconds MIN_CONNECTION_TIMEOUT{ std::chrono::seconds{ 5 } }; // we will wait at minimum this time before dropping an inactive connection
+    static constexpr std::chrono::microseconds MIN_EXP_INTERVAL{ 300 };                             // factors into the minimum time we will wait before requesting packet resends
+    static constexpr std::chrono::microseconds MIN_CONNECTION_TIMEOUT{ std::chrono::seconds{ 5 } }; // we will wait at minimum this time before dropping an inactive connection
 
     enum class SendState
     {
@@ -157,13 +157,15 @@ private:
 	unsigned       _flowWindowSize{ 16 }; // negotiated maximum number of unacknowledged packets (in packets)
 
     // These variables may be set/adjusted by congestion control and therefore are controlled by QAtomicInteger
-    QAtomicInteger<unsigned> _sndPeriod;      // delay between sending packets (in milliseconds)
-    QAtomicInteger<unsigned> _rtoPeriod;      // override of EXP timer calculations (in milliseconds)
+    QAtomicInteger<quint64> _sndPeriod;      // delay between sending packets (in microseconds)
+    QAtomicInteger<quint64> _rtoPeriod;      // override of EXP timer calculations (in microseconds)
     QAtomicInteger<unsigned> _congestWindow;  // size of the current congestion window (in packets)
 
 	// timers
-	QTimer _SNDtimer;              // if a packet is recently sent, this timer fires when SND completes
-	QTimer _EXPtimer;              // Fires when we haven't heard from the peer in a while
+	QTimer         _SNDtimerEvent; // if a packet is recently sent, this timer fires when SND completes
+    QDeadlineTimer _SNDtimer;
+	QTimer         _EXPtimerEvent; // Fires when we haven't heard from the peer in a while
+    QDeadlineTimer _EXPtimer;
 	QDeadlineTimer _ACK2SentTimer; // if an ACK2 packet has recently sent, wait SYN before sending another one
 
 private:

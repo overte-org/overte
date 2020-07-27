@@ -11,12 +11,14 @@
 
 #include "UdtSocket_cc.h"
 
+#include "NativeCC.h"
 #include <QtCore/QMutexLocker>
 #include "UdtSocket.h"
 
 using namespace udt4;
 
 UdtSocket_CongestionControl::UdtSocket_CongestionControl(UdtSocket_private& socket):_socket(socket) {
+    _congestion = CongestionControlPointer(new NativeCongestionControl);
     start();
 }
 
@@ -169,7 +171,7 @@ std::chrono::microseconds UdtSocket_CongestionControl::getPacketSendPeriod() con
 
 void UdtSocket_CongestionControl::setPacketSendPeriod(std::chrono::microseconds snd) {
     _sndPeriod = snd;
-    _socket.setPacketSendPeriod(std::chrono::duration_cast<std::chrono::milliseconds>(snd));
+    _socket.setPacketSendPeriod(snd);
 }
 
 unsigned UdtSocket_CongestionControl::getMaxFlowWindow() const {
@@ -191,7 +193,7 @@ unsigned UdtSocket_CongestionControl::getMSS() const {
 }
 
 void UdtSocket_CongestionControl::setACKPeriod(std::chrono::microseconds ack) {
-    _socket.setACKperiod(std::chrono::duration_cast<std::chrono::milliseconds>(ack));
+    _socket.setACKperiod(ack);
 }
 
 void UdtSocket_CongestionControl::setACKInterval(unsigned ack) {
@@ -199,5 +201,5 @@ void UdtSocket_CongestionControl::setACKInterval(unsigned ack) {
 }
 
 void UdtSocket_CongestionControl::setRTOPeriod(std::chrono::microseconds rto) {
-    _socket.setRTOperiod(std::chrono::duration_cast<std::chrono::milliseconds>(rto));
+    _socket.setRTOperiod(rto);
 }

@@ -15,13 +15,13 @@
 using namespace udt4;
 
 UdtSocket_send::UdtSocket_send(UdtSocket_private& socket) : _socket(socket), _socketState(UdtSocketState::Init) {
-    _SNDtimer.setSingleShot(true);
-    _SNDtimer.setTimerType(Qt::PreciseTimer);
-    connect(&_SNDtimer, &QTimer::timeout, this, &UdtSocket_send::SNDevent);
+    _SNDtimerEvent.setSingleShot(true);
+    _SNDtimerEvent.setTimerType(Qt::PreciseTimer);
+    connect(&_SNDtimerEvent, &QTimer::timeout, this, &UdtSocket_send::SNDevent);
 
-    _EXPtimer.setSingleShot(true);
-    _EXPtimer.setTimerType(Qt::PreciseTimer);
-    connect(&_EXPtimer, &QTimer::timeout, this, &UdtSocket_send::EXPevent);
+    _EXPtimerEvent.setSingleShot(true);
+    _EXPtimerEvent.setTimerType(Qt::PreciseTimer);
+    connect(&_EXPtimerEvent, &QTimer::timeout, this, &UdtSocket_send::EXPevent);
 }
 
 void UdtSocket_send::configureHandshake(const HandshakePacket& hsPacket, const PacketID& sendPacketID, bool resetSequence, unsigned mtu) {
@@ -45,6 +45,8 @@ void UdtSocket_send::startupInit() {
     _messageSequence = 0UL;
     _sentAck2 = 0UL;
     _ACK2SentTimer.setRemainingTime(0); // default expired
+    _SNDtimer.setRemainingTime(0);       // default expired
+    _EXPtimer.setRemainingTime(0);      // default expired
     _receivedPacketList.clear();
     _sendLossList.clear();
     _sendPktPend.clear();
@@ -130,6 +132,10 @@ bool UdtSocket_send::processEvent(QMutexLocker& eventGuard) {
         _flagRecentReceivedPacket = false;
         _flagRecentEXPevent = false;
         eventGuard.unlock();
+        _EXPtimer.setRemainingTime(0);
+        if (_EXPtimerEvent.isActive()) {
+            _EXPtimerEvent.stop();
+        }
         _expCount = 1;
         resetEXP();
     }
@@ -156,8 +162,9 @@ bool UdtSocket_send::processEvent(QMutexLocker& eventGuard) {
             _sendState = SendState::Shutdown;
             _flagRecentEXPevent = false;
             eventGuard.unlock();
-            if (_EXPtimer.isActive()) {  // don't process EXP events if we're shutting down
-                _EXPtimer.stop();
+            _EXPtimer.setRemainingTime(0);
+            if (_EXPtimerEvent.isActive()) {  // don't process EXP events if we're shutting down
+                _EXPtimerEvent.stop();
             }
             return true;
         }
@@ -212,34 +219,43 @@ bool UdtSocket_send::processEvent(QMutexLocker& eventGuard) {
 		_sendState = reevalSendState();
     }
 
+    bool returnValue = false;
     if (_flagRecentEXPevent) {
-        _flagRecentEXPevent = false;
-        eventGuard.unlock();
-        processExpEvent();
-        return true;
+        if (!_EXPtimer.hasExpired()) {
+            returnValue = true;
+        } else {
+            _flagRecentEXPevent = false;
+            eventGuard.unlock();
+            processExpEvent();
+            return true;
+        }
     }
 
     if (_flagRecentSNDevent) {
-        _flagRecentSNDevent = false;
-        if (_sendState == SendState::Sending) {
-            eventGuard.unlock();
-            _sendState = reevalSendState();
-            if (!processSendLoss() || (static_cast<quint32>(_sendPacketID) % 16) == 0) {
-				processSendExpire();
-			}
-            return true;
+        if (!_SNDtimer.hasExpired()) {
+            returnValue = true;
+        } else {
+            _flagRecentSNDevent = false;
+            if (_sendState == SendState::Sending) {
+                eventGuard.unlock();
+                _sendState = reevalSendState();
+                if (!processSendLoss() || (static_cast<quint32>(_sendPacketID) % 16) == 0) {
+                    processSendExpire();
+                }
+                return true;
+            }
         }
 	}
 
     // no events seen to process
-    return false;
+    return returnValue;
 }
 
-void UdtSocket_send::setPacketSendPeriod(std::chrono::milliseconds snd) { // exported
+void UdtSocket_send::setPacketSendPeriod(std::chrono::microseconds snd) { // exported
 	// check to see if we have a bandwidth limit here
 	unsigned maxBandwidth = _socket.getMaxBandwidth();
 	if (maxBandwidth > 0) {
-		std::chrono::milliseconds minSP(static_cast<quint64>(std::chrono::milliseconds{ std::chrono::seconds{1} }.count() / (static_cast<double>(maxBandwidth)/_mtu)));
+		std::chrono::microseconds minSP(static_cast<quint64>(std::chrono::microseconds{ std::chrono::seconds{1} }.count() / (static_cast<double>(maxBandwidth)/_mtu)));
 		if (snd < minSP) {
 			snd = minSP;
 		}
@@ -254,12 +270,12 @@ void UdtSocket_send::setCongestionWindow(unsigned pkt) {
 }
 
 // generally set by congestion control
-void UdtSocket_send::setRTOperiod(std::chrono::milliseconds rto) {
+void UdtSocket_send::setRTOperiod(std::chrono::microseconds rto) {
     _rtoPeriod.store(rto.count());
 }
 
 UdtSocket_send::SendState UdtSocket_send::reevalSendState() const {
-    if (_SNDtimer.isActive()) {
+    if (!_SNDtimer.hasExpired()) {
 		return SendState::Sending;
 	}
 
@@ -490,9 +506,15 @@ void UdtSocket_send::sendDataPacket(SendPacketEntryPointer dataPacketEntry, bool
 		return;
 	}
 
-	std::chrono::milliseconds snd(_sndPeriod.load());
+	std::chrono::microseconds snd(_sndPeriod.load());
 	if (snd.count() > 0) {
-		_SNDtimer.start(snd);
+        _SNDtimer.setPreciseRemainingTime(snd.count()/1000, (snd.count()%1000)*1000, Qt::PreciseTimer);
+        if (snd >= std::chrono::milliseconds{ 2 }) {
+            _SNDtimerEvent.start(std::chrono::duration_cast<std::chrono::milliseconds>(snd) - std::chrono::milliseconds{ 1 });
+        } else {
+            QMutexLocker guard(&_eventMutex);
+            _flagRecentSNDevent = true;
+        }
 		_sendState = SendState::Sending;
 	}
 }
@@ -633,21 +655,28 @@ void UdtSocket_send::ingestCongestion(const Packet& udtPacket, const QElapsedTim
 void UdtSocket_send::resetEXP() {
     _lastReceiveTime.start();
 
-	std::chrono::milliseconds nextExpDurn;
-    std::chrono::milliseconds rtoPeriod(_rtoPeriod.load());
+	std::chrono::microseconds nextExpDurn;
+    std::chrono::microseconds rtoPeriod(_rtoPeriod.load());
 	if (rtoPeriod.count() > 0) {
 		nextExpDurn = rtoPeriod;
 	} else {
         std::chrono::microseconds rtt, rttVariance;
         _socket.getRTT(rtt, rttVariance);
 
-        nextExpDurn = std::chrono::milliseconds(_expCount * (rtt.count() + 4 * rttVariance.count()) / 1000) + UdtSocket::SYN;
-        std::chrono::milliseconds minExpTime(_expCount * MIN_EXP_INTERVAL);
+        nextExpDurn = std::chrono::microseconds(_expCount * (rtt.count() + 4 * rttVariance.count()) / 1000) + UdtSocket::SYN;
+        std::chrono::microseconds minExpTime(_expCount * MIN_EXP_INTERVAL);
 		if (nextExpDurn.count() < minExpTime.count()) {
 			nextExpDurn = minExpTime;
 		}
 	}
-	_EXPtimer.start(nextExpDurn);
+
+    _EXPtimer.setPreciseRemainingTime(nextExpDurn.count() / 1000, (nextExpDurn.count() % 1000) * 1000, Qt::PreciseTimer);
+    if (nextExpDurn >= std::chrono::milliseconds{ 2 }) {
+        _EXPtimerEvent.start(std::chrono::duration_cast<std::chrono::milliseconds>(nextExpDurn) - std::chrono::milliseconds{ 1 });
+    } else {
+        QMutexLocker guard(&_eventMutex);
+        _flagRecentEXPevent = true;
+    }
 }
 
 // we've just had the EXP timer expire, see what we can do to recover this
@@ -655,7 +684,7 @@ void UdtSocket_send::processExpEvent() {
 
 	// Haven't receive any information from the peer, is it dead?!
 	// timeout: at least 16 expirations and must be greater than 10 seconds
-    if ((_expCount > 16) && (std::chrono::milliseconds(_lastReceiveTime.elapsed()) > MIN_CONNECTION_TIMEOUT)) {
+    if ((_expCount > 16) && (std::chrono::nanoseconds(_lastReceiveTime.nsecsElapsed()) > MIN_CONNECTION_TIMEOUT)) {
 		// Connection is broken.
         _socket.requestShutdown(UdtSocketState::Timeout, QString("Timeout - last packet received %1 seconds ago").arg(_lastReceiveTime.elapsed() / 1000.0));
 		return;

@@ -49,6 +49,19 @@ UdtSocket::~UdtSocket() {
     setState(UdtSocketState::Init);
 }
 
+bool UdtSocket::setCongestionControl(CongestionControlPointer congestionControl) {
+    switch (state()) {
+    case UdtSocketState::HostLookup:
+    case UdtSocketState::Rendezvous:
+    case UdtSocketState::Connecting:
+    case UdtSocketState::HalfConnected:
+    case UdtSocketState::Connected:
+        return false;
+    };
+    _congestion.setCongestionControl(congestionControl);
+    return true;
+}
+
 QString UdtSocket::addressDebugString(const QHostAddress& address, quint16 port, quint32 socketID) {
     return QString("%1:%2[%3]").arg(address.toString()).arg(port).arg(socketID);
 }
@@ -1129,11 +1142,11 @@ void UdtSocket::setCongestionWindow(unsigned pkt) {
     _send.setCongestionWindow(pkt);
 }
 
-void UdtSocket::setPacketSendPeriod(std::chrono::milliseconds snd) {
+void UdtSocket::setPacketSendPeriod(std::chrono::microseconds snd) {
     _send.setPacketSendPeriod(snd);
 }
 
-void UdtSocket::setACKperiod(std::chrono::milliseconds ack) {
+void UdtSocket::setACKperiod(std::chrono::microseconds ack) {
     _recv.setACKperiod(ack);
 }
 
@@ -1141,7 +1154,7 @@ void UdtSocket::setACKinterval(unsigned ack) {
     _recv.setACKinterval(ack);
 }
 
-void UdtSocket::setRTOperiod(std::chrono::milliseconds rto) {
+void UdtSocket::setRTOperiod(std::chrono::microseconds rto) {
     _send.setRTOperiod(rto);
 }
 

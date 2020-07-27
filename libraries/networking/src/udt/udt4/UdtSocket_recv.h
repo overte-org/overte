@@ -46,7 +46,7 @@ public:
     void setState(UdtSocketState newState);
     void configureHandshake(const HandshakePacket& hsPacket);
     void packetReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived);
-    void setACKperiod(std::chrono::milliseconds ack);
+    void setACKperiod(std::chrono::microseconds ack);
     void setACKinterval(unsigned ack);
 
 private slots:
@@ -120,7 +120,7 @@ private:
     PacketID _recvACK2;                    // largest PacketID we've received an ACK2 from
     QElapsedTimer _recvLastArrival;        // time of the most recent data packet arrival
     QElapsedTimer _recvLastProbe;          // time of the most recent data packet probe packet
-    QAtomicInteger<quint32> _ackPeriod;    // (set by congestion control) delay between sending ACKs (in milliseconds)
+    QAtomicInteger<quint64> _ackPeriod;    // (set by congestion control) delay between sending ACKs (in microseconds)
     QAtomicInteger<unsigned> _ackInterval; // (set by congestion control) number of data packets to send before sending an ACK
     unsigned _unackPktCount{ 0 };          // number of packets we've received that we haven't sent an ACK for
 	unsigned _lightAckCount{ 0 };          // number of "light ACK" packets we've sent since the last ACK
@@ -128,9 +128,10 @@ private:
     QDurationList _recvPktPairHistory;     // probing packet window.
 
 	// timers
-    QDeadlineTimer  _ACKsentEvent2; // if an ACK packet has recently sent, don't include link information in the next one
-    QDeadlineTimer  _ACKsentEvent;  // if an ACK packet has recently sent, wait before resending it
-    QTimer          _ACKtimer;      // controls when to send an ACK to our peer
+    QDeadlineTimer _fullACKsentTimer; // if an ACK packet has recently sent, don't include link information in the next one
+    QDeadlineTimer _ACKsentTimer;     // if an ACK packet has recently sent, wait before resending it
+    QTimer         _ACKtimerEvent;    // controls when to send an ACK to our peer
+    QDeadlineTimer _ACKtimer;
 
 private:
     Q_DISABLE_COPY(UdtSocket_receive)

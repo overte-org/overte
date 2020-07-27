@@ -114,9 +114,9 @@ namespace floydRivest {
 }  // namespace FloydRivest
 
 UdtSocket_receive::UdtSocket_receive(UdtSocket_private& socket) : _socket(socket) {
-    _ACKtimer.setSingleShot(true);
-    _ACKtimer.setTimerType(Qt::PreciseTimer);
-    connect(&_ACKtimer, &QTimer::timeout, this, &UdtSocket_receive::ACKevent);
+    _ACKtimerEvent.setSingleShot(true);
+    _ACKtimerEvent.setTimerType(Qt::PreciseTimer);
+    connect(&_ACKtimerEvent, &QTimer::timeout, this, &UdtSocket_receive::ACKevent);
 }
 
 void UdtSocket_receive::configureHandshake(const HandshakePacket& hsPacket) {
@@ -155,13 +155,15 @@ void UdtSocket_receive::startupInit() {
     _unackPktCount = 0;
     _recvLastArrival.invalidate();
     _recvLastProbe.invalidate();
-    _ACKsentEvent.setRemainingTime(0); // default expired 
-    _ACKsentEvent2.setRemainingTime(0); // default expired
+    _ACKsentTimer.setRemainingTime(0);   // default expired 
+    _fullACKsentTimer.setRemainingTime(0);  // default expired
+    _ACKtimer.setRemainingTime(0);          // default expired
 }
 
 void UdtSocket_receive::run() {
     startupInit();
-    _ACKtimer.start(UdtSocket::SYN);
+    _ACKtimer.setRemainingTime(UdtSocket::SYN, Qt::PreciseTimer);
+    _ACKtimerEvent.start(UdtSocket::SYN);
 
     for (;;) {
         QMutexLocker guard(&_eventMutex);
@@ -219,13 +221,14 @@ bool UdtSocket_receive::processEvent(QMutexLocker& eventGuard) {
         }
     }
 
-	if (_flagRecentACKevent && !_flagListenerShutdown) {
+	if (_flagRecentACKevent && _ACKtimer.hasExpired() && !_flagListenerShutdown) {
+        _flagRecentACKevent = false;
         eventGuard.unlock();
 		ackEvent();
         return true;
 	}
 
-    return false;
+    return _flagRecentACKevent;
 }
 
 /*  Excerpt from the spec:
@@ -611,7 +614,7 @@ void UdtSocket_receive::sendACK() {
 	}
 
 	// only send out an ACK if we either are saying something new or the ackSentEvent has expired
-	if(packetID == _sentACK && !_ACKsentEvent.hasExpired()) {
+	if(packetID == _sentACK && !_ACKsentTimer.hasExpired()) {
 		return;
 	}
 	_sentACK = packetID;
@@ -639,18 +642,18 @@ void UdtSocket_receive::sendACK() {
     ackPacket._rttVariance = rttVariance;
     ackPacket._availBufferSize = availWindow;
 
-    if (_ACKsentEvent2.hasExpired()) {
+    if (_fullACKsentTimer.hasExpired()) {
         unsigned recvSpeed, bandwidth;
         getReceiveSpeeds(recvSpeed, bandwidth);
         ackPacket._ackType = ACKPacket::AckType::Full;
 		ackPacket._packetReceiveRate = recvSpeed;
 		ackPacket._estimatedLinkCapacity = bandwidth;
-		_ACKsentEvent2.setRemainingTime(UdtSocket::SYN, Qt::PreciseTimer);
+		_fullACKsentTimer.setRemainingTime(UdtSocket::SYN, Qt::PreciseTimer);
 	}
     _socket.sendPacket(ackPacket.toPacket());
 
     std::chrono::microseconds microsecs = rtt + 4 * rttVariance;
-	_ACKsentEvent.setPreciseRemainingTime(microsecs.count()/1000, (microsecs.count()%1000)*1000, Qt::PreciseTimer);
+    _ACKsentTimer.setPreciseRemainingTime(microsecs.count() / 1000, (microsecs.count() % 1000) * 1000, Qt::PreciseTimer);
 }
 
 void UdtSocket_receive::sendNAK(const ReceiveLossMap& receiveLoss) {
@@ -691,18 +694,24 @@ void UdtSocket_receive::sendNAK(const ReceiveLossMap& receiveLoss) {
 // assuming some condition has occured (ACK timer expired, ACK interval), send an ACK and reset the appropriate timer
 void UdtSocket_receive::ackEvent() {
     sendACK();
-    std::chrono::milliseconds ackTime = UdtSocket::SYN;
-    std::chrono::milliseconds ackPeriod(_ackPeriod.load());
+    std::chrono::microseconds ackTime = UdtSocket::SYN;
+    std::chrono::microseconds ackPeriod(_ackPeriod.load());
 	if(ackPeriod.count() > 0) {
 		ackTime = ackPeriod;
 	}
-	_ACKtimer.start(ackTime);
+    _ACKtimer.setPreciseRemainingTime(ackTime.count()/1000, (ackTime.count()%1000)*1000, Qt::PreciseTimer);
+    if (ackTime >= std::chrono::milliseconds{ 2 }) {
+        _ACKtimerEvent.start(std::chrono::duration_cast<std::chrono::milliseconds>(ackTime) - std::chrono::milliseconds{ 1 });
+    } else {
+        QMutexLocker guard(&_eventMutex);
+        _flagRecentACKevent = true;
+    }
 	_unackPktCount = 0;
 	_lightAckCount = 1;
 }
 
 // Generally called by congestion control to set the time between ACKs
-void UdtSocket_receive::setACKperiod(std::chrono::milliseconds ack) {
+void UdtSocket_receive::setACKperiod(std::chrono::microseconds ack) {
     _ackPeriod.store(ack.count());
 }
 

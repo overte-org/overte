@@ -81,10 +81,10 @@ public:
     virtual void ingestErrorPacket(const Packet& udtPacket) = 0;
     virtual void requestShutdown(UdtSocketState toState, QString error) = 0;
     virtual void setCongestionWindow(unsigned pkt) = 0;
-    virtual void setPacketSendPeriod(std::chrono::milliseconds snd) = 0;
-    virtual void setACKperiod(std::chrono::milliseconds ack) = 0;
+    virtual void setPacketSendPeriod(std::chrono::microseconds snd) = 0;
+    virtual void setACKperiod(std::chrono::microseconds ack) = 0;
     virtual void setACKinterval(unsigned ack) = 0;
-    virtual void setRTOperiod(std::chrono::milliseconds rto) = 0;
+    virtual void setRTOperiod(std::chrono::microseconds rto) = 0;
     virtual UdtSocket_CongestionControl& getCongestionControl() = 0;
 };
 
@@ -115,6 +115,7 @@ public:
 public:
     explicit UdtSocket(QObject* parent = nullptr);
     virtual ~UdtSocket();
+    bool setCongestionControl(CongestionControlPointer congestionControl);
 
 public: // from QUdpSocket
     bool isInDatagramMode() const;
@@ -185,10 +186,10 @@ private: // UdtSocket_private implementation
     virtual void ingestErrorPacket(const Packet& udtPacket);
     virtual void requestShutdown(UdtSocketState toState, QString error);
     virtual void setCongestionWindow(unsigned pkt);
-    virtual void setPacketSendPeriod(std::chrono::milliseconds snd);
-    virtual void setACKperiod(std::chrono::milliseconds ack);
+    virtual void setPacketSendPeriod(std::chrono::microseconds snd);
+    virtual void setACKperiod(std::chrono::microseconds ack);
     virtual void setACKinterval(unsigned ack);
-    virtual void setRTOperiod(std::chrono::milliseconds rto);
+    virtual void setRTOperiod(std::chrono::microseconds rto);
     virtual UdtSocket_CongestionControl& getCongestionControl();
 
 protected:
