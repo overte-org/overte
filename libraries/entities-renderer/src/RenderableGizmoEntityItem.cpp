@@ -265,7 +265,8 @@ void GizmoEntityRenderer::doRender(RenderArgs* args) {
 
         transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), _billboardMode,
             args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition(), true));
-        batch.setModelTransform(transform);
+        batch.setModelTransform(transform, _prevRenderTransform);
+        _prevRenderTransform = transform;
 
         Pipeline pipelineType = getPipelineType(materials);
         if (pipelineType == Pipeline::PROCEDURAL) {

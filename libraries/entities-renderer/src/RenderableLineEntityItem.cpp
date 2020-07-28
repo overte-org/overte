@@ -44,12 +44,15 @@ void LineEntityRenderer::doRender(RenderArgs* args) {
     PerformanceTimer perfTimer("RenderableLineEntityItem::render");
     Q_ASSERT(args->_batch);
     gpu::Batch& batch = *args->_batch;
+
     const auto& modelTransform = getModelTransform();
-    Transform transform = Transform();
+    Transform transform;
     transform.setTranslation(modelTransform.getTranslation());
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(modelTransform.getTranslation(), modelTransform.getRotation(), _billboardMode,
         args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
-    batch.setModelTransform(transform);
+    batch.setModelTransform(transform, _prevRenderTransform);
+    _prevRenderTransform = transform;
+
     if (_linePoints.size() > 1) {
         DependencyManager::get<GeometryCache>()->bindSimpleProgram(batch, false, false, false, false, true,
             _renderLayer != RenderLayer::WORLD || args->_renderMethod == Args::RenderMethod::FORWARD);

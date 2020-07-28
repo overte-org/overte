@@ -99,6 +99,7 @@ private:
     Transform _parentTransform;
     graphics::Box _localBound;
     graphics::Box _adjustedLocalBound;
+    //TODO: add     mutable Transform _previousModelTransform; ?
 };
 
 namespace render {

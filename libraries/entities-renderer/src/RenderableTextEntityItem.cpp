@@ -159,14 +159,17 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
 
     bool transparent;
     Transform transform;
+    Transform prevTransform;
     withReadLock([&] {
         transparent = isTransparent();
         transform = _renderTransform;
+        prevTransform = _prevRenderTransform;
+        transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), _billboardMode,
+        args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
+        _prevRenderTransform = transform;
     });
 
-    transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), _billboardMode,
-        args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
-    batch.setModelTransform(transform);
+    batch.setModelTransform(transform, prevTransform);
 
     Pipeline pipelineType = getPipelineType(materials);
     if (pipelineType == Pipeline::PROCEDURAL) {
@@ -359,6 +362,8 @@ void entities::TextPayload::render(RenderArgs* args) {
     transform.postTranslate(glm::vec3(-0.5, 0.5, 1.0f + EPSILON / dimensions.z));
     transform.setScale(scale);
     batch.setModelTransform(transform);
+    batch.setModelTransform(transform, _prevRenderTransform);
+    _prevRenderTransform = transform;
 
     glm::vec2 bounds = glm::vec2(dimensions.x - (textRenderable->_leftMargin + textRenderable->_rightMargin), dimensions.y - (textRenderable->_topMargin + textRenderable->_bottomMargin));
     textRenderer->draw(batch, textRenderable->_leftMargin / scale, -textRenderable->_topMargin / scale, bounds / scale, scale,

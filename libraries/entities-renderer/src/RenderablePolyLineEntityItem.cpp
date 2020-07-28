@@ -330,6 +330,8 @@ void PolyLineEntityRenderer::doRender(RenderArgs* args) {
     batch.setModelTransform(transform);
 
     batch.setPipeline(_pipelines[{args->_renderMethod, isTransparent()}]);
+    batch.setModelTransform(transform, _prevRenderTransform);
+    _prevRenderTransform = transform;
     batch.setResourceTexture(0, texture);
     batch.draw(gpu::TRIANGLE_STRIP, (gpu::uint32)(2 * _numVertices), 0);
 }
