@@ -60,12 +60,13 @@ class AntialiasingSetup {
 public:
 
     using Config = AntialiasingSetupConfig;
-    using JobModel = render::Job::Model<AntialiasingSetup, Config>;
+    using Output = int;
+    using JobModel = render::Job::ModelO<AntialiasingSetup, Output, Config>;
 
     AntialiasingSetup();
 
     void configure(const Config& config);
-    void run(const render::RenderContextPointer& renderContext);
+    void run(const render::RenderContextPointer& renderContext, Output& output);
 
 private:
 
@@ -128,6 +129,7 @@ public:
     void setDebugFXAA(bool debug) { debugFXAAX = (debug ? 0.0f : 1.0f); emit dirty();}
     bool debugFXAA() const { return (debugFXAAX == 0.0f ? true : false); }
 
+    // TODO: _mode appears in 2 different classes
     int _mode{ TAA }; // '_' prefix but not private?
 
     float blend { 0.2f };
@@ -197,7 +199,7 @@ using TAAParamsBuffer = gpu::StructBuffer<TAAParams>;
 
 class Antialiasing {
 public:
-    using Inputs = render::VaryingSet3<DeferredFrameTransformPointer, DeferredFramebufferPointer, LinearDepthFramebufferPointer>;
+    using Inputs = render::VaryingSet4<DeferredFrameTransformPointer, DeferredFramebufferPointer, LinearDepthFramebufferPointer, int>;
     using Outputs = gpu::TexturePointer;
     using Config = AntialiasingConfig;
     using JobModel = render::Job::ModelIO<Antialiasing, Inputs, Outputs, Config>;
@@ -228,8 +230,9 @@ private:
     TAAParamsBuffer _params;
     //TODO: check if it's used
     AntialiasingConfig::Mode _mode{ AntialiasingConfig::TAA };
-    float _sharpen{ 0.15f };
-    bool _isSharpenEnabled{ true };
+    float _sharpen { 0.15f };
+    bool _isSharpenEnabled { true };
+    float _debugFXAAX { 0.0f };
 };
 
 #endif // hifi_AntialiasingEffect_h
