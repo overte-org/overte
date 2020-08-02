@@ -12,6 +12,7 @@
 #ifndef hifi_udt4_UdtSocket_recv_h
 #define hifi_udt4_UdtSocket_recv_h
 
+#include "../../ByteSlice.h"
 #include <list>
 #include <map>
 #include "Packet.h"

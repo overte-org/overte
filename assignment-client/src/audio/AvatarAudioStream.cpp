@@ -11,7 +11,7 @@
 
 #include "AvatarAudioStream.h"
 
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 
 #include "AudioLogging.h"
 

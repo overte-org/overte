@@ -22,7 +22,7 @@
 #include <NodeList.h>
 #include <NumericalConstants.h>
 #include <OctreeUtils.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include <PerfStat.h>
 #include <Rig.h>
 #include <SharedUtil.h>

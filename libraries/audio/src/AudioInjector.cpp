@@ -15,7 +15,7 @@
 #include <QtCore/QDataStream>
 
 #include <NodeList.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include <SharedUtil.h>
 #include <UUID.h>
 

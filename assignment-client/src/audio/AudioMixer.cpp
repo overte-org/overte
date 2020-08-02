@@ -26,7 +26,7 @@
 #include <OctreeConstants.h>
 #include <plugins/PluginManager.h>
 #include <plugins/CodecPlugin.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include <SharedUtil.h>
 #include <StDev.h>
 #include <UUID.h>

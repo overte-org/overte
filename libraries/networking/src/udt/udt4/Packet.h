@@ -14,7 +14,7 @@
 #define hifi_udt4_Packet_h
 
 // Structure of packets and functions for writing/reading them
-#include "ByteSlice.h"
+#include "../../ByteSlice.h"
 #include <chrono>
 #include "PacketID.h"
 #include <QtNetwork/QHostAddress>

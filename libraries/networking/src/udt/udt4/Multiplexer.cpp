@@ -10,7 +10,7 @@
 //
 #include "Multiplexer.h"
 
-#include "ByteSlice.h"
+#include "../../ByteSlice.h"
 #include "../../NetworkLogging.h"
 #include <QtCore/QException>
 #include <QtCore/QLoggingCategory>

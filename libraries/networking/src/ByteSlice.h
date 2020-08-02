@@ -1,6 +1,6 @@
 //
 //  Byteslice.h
-//  libraries/networking/src/serialization
+//  libraries/networking/src
 //
 //  Created by Heather Anderson on 2020-05-01.
 //  Copyright 2020 Vircadia.

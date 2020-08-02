@@ -32,7 +32,7 @@
 #include <Transform.h>
 #include <NetworkAccessManager.h>
 #include <NodeList.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include <GLMHelpers.h>
 #include <StreamUtils.h>
 #include <UUID.h>

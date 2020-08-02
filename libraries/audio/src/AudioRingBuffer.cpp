@@ -18,7 +18,7 @@
 
 #include <QtCore/QDebug>
 
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include <LogHandler.h>
 
 #include "AudioLogging.h"

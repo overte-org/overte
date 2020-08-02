@@ -11,7 +11,7 @@
 #ifndef hifi_OctreeDataUtils_h
 #define hifi_OctreeDataUtils_h
 
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 
 #include <QJsonObject>
 #include <QUuid>

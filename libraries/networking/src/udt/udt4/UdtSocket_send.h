@@ -12,6 +12,7 @@
 #ifndef hifi_udt4_UdtSocket_send_h
 #define hifi_udt4_UdtSocket_send_h
 
+#include "../../ByteSlice.h"
 #include <chrono>
 #include <list>
 #include <map>

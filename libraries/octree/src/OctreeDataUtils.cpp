@@ -12,7 +12,7 @@
 #include "OctreeEntitiesFileParser.h"
 
 #include <Gzip.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 
 #include <QDebug>
 #include <QJsonObject>

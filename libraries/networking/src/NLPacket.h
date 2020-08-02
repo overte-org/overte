@@ -16,6 +16,7 @@
 #include <UUID.h>
 
 #include "udt/Packet.h"
+#include "PacketHeaders.h"
 
 class HMACAuth;
 

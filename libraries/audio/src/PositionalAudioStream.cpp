@@ -19,7 +19,7 @@
 
 #include <LogHandler.h>
 #include <Node.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include <UUID.h>
 
 PositionalAudioStream::PositionalAudioStream(PositionalAudioStream::Type type, bool isStereo, int numStaticJitterFrames) :

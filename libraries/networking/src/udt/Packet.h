@@ -18,7 +18,6 @@
 #include <QtCore/QIODevice>
 
 #include "BasePacket.h"
-#include "PacketHeaders.h"
 #include "SequenceNumber.h"
 
 namespace udt {

@@ -17,7 +17,7 @@
 #include <LogHandler.h>
 #include <MessagesClient.h>
 #include <NodeList.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 
 const QString MESSAGES_MIXER_LOGGING_NAME = "messages-mixer";
 const int MESSAGES_MIXER_RATE_LIMITER_INTERVAL = 1000; // 1 second
