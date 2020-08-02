@@ -303,14 +303,14 @@ void UdtSocket_receive::ingestMsgDropReq(const MessageDropRequestPacket& dropPac
 	// try to push any pending packets out, now that we have dropped any blocking packets
 	while(!_recvPktPend.empty() && stopSeq != _farNextPktSeq) {
         DataPacketMap::const_iterator nextPacketLookup = findFirstEntry(_recvPktPend, stopSeq, _farNextPktSeq);
-		if(nextPacketLookup == _recvPktPend.end() || !attemptProcessPacket(nextPacketLookup->second, false)) {
+		if(nextPacketLookup == _recvPktPend.end() || !attemptProcessPacket(nextPacketLookup->second)) {
 			break;
 		}
 	}
 }
 
 // ingestData is called to process a data packet
-void UdtSocket_receive::ingestData(const DataPacket& dataPacket, const QElapsedTimer& timeReceived) {
+void UdtSocket_receive::ingestData(DataPacket&& dataPacket, const QElapsedTimer& timeReceived) {
 	const PacketID& packetID = dataPacket._packetID;
 
 	/* If the sequence number of the current data packet is 16n + 1,
@@ -374,24 +374,30 @@ void UdtSocket_receive::ingestData(const DataPacket& dataPacket, const QElapsedT
 		}
 	}
 
-	attemptProcessPacket(dataPacket, true);
+    ReceivedDataPacket receivedDataPacket;
+    receivedDataPacket.dataPacket = std::move(dataPacket);
+    receivedDataPacket.timeReceived = timeReceived;
+    if (!attemptProcessPacket(receivedDataPacket)) {
+        _recvPktPend.insert(DataPacketMap::value_type(dataPacket._packetID, std::move(receivedDataPacket)));
+    }
 }
 
-bool UdtSocket_receive::attemptProcessPacket(const DataPacket& dataPacket, bool isNew) {
+bool UdtSocket_receive::attemptProcessPacket(const ReceivedDataPacket& receivedDataPacket) {
+    const DataPacket& dataPacket = receivedDataPacket.dataPacket;
     const PacketID& packetID = dataPacket._packetID;
 
 	// can we process this packet?
 	if(!_recvLossList.empty() && dataPacket._isOrdered && _farRecdPktSeq + 1 != packetID) {
 		// we're required to order these packets and we're missing prior packets, so push and return
-		if(isNew) {
-			_recvPktPend.insert(DataPacketMap::value_type(dataPacket._packetID, dataPacket));
-		}
 		return false;
 	}
 
 	// can we find the start of this message?
     typedef QList<DataPacket> DataPacketList;
 	DataPacketList pieces;
+    QElapsedTimer firstReceived = receivedDataPacket.timeReceived;
+    QElapsedTimer lastReceived = receivedDataPacket.timeReceived;
+
     size_t pieceLength = 0;
 	bool cannotContinue = false;
 	switch(dataPacket._messagePosition) {
@@ -414,7 +420,7 @@ bool UdtSocket_receive::attemptProcessPacket(const DataPacket& dataPacket, bool 
                                                            << "appears to be a broken fragment";
 					break;
 				}
-                const DataPacket& prevPiece = findPrevPiece->second;
+                const DataPacket& prevPiece = findPrevPiece->second.dataPacket;
 				if(prevPiece._messageNumber != dataPacket._messageNumber) {
 					// ...oops? previous piece isn't in the same message
                     qCInfo(networking) << _socket.localAddressDebugString() << ": Message with id " << static_cast<quint32>(dataPacket._messageNumber)
@@ -422,6 +428,7 @@ bool UdtSocket_receive::attemptProcessPacket(const DataPacket& dataPacket, bool 
 					break;
 				}
 				pieces.prepend(prevPiece);
+                firstReceived = findPrevPiece->second.timeReceived;
                 pieceLength += prevPiece._contents.length();
 				if(prevPiece._messagePosition == DataPacket::MessagePosition::First) {
 					break;
@@ -460,14 +467,15 @@ bool UdtSocket_receive::attemptProcessPacket(const DataPacket& dataPacket, bool 
 						// in any case we can't continue with this
 						break;
 					}
-                    const DataPacket& nextPiece = findNextPiece->second;
+                    const DataPacket& nextPiece = findNextPiece->second.dataPacket;
                     if (nextPiece._messageNumber != dataPacket._messageNumber) {
 						// ...oops? previous piece isn't in the same message
                         qCInfo(networking) << _socket.localAddressDebugString() << ": Message with id " << static_cast<quint32>(dataPacket._messageNumber)
                                                                 << "appears to be a broken fragment";
 						break;
 					}
-					pieces.append(nextPiece);
+                    pieces.append(nextPiece);
+                    lastReceived = findNextPiece->second.timeReceived;
                     pieceLength += nextPiece._contents.length();
 					if(nextPiece._messagePosition == DataPacket::MessagePosition::Last) {
 						break;
@@ -491,9 +499,6 @@ bool UdtSocket_receive::attemptProcessPacket(const DataPacket& dataPacket, bool 
 
 	if(cannotContinue) {
 		// we need to wait for more packets, store and return
-		if(isNew) {
-			_recvPktPend.insert(DataPacketMap::value_type(dataPacket._packetID, dataPacket));
-		}
 		return false;
 	}
 
@@ -504,14 +509,21 @@ bool UdtSocket_receive::attemptProcessPacket(const DataPacket& dataPacket, bool 
 		}
 	}
 
-    ByteSlice message;
-    quint8* messageBytes = static_cast<quint8*>(message.create(pieceLength));
+    ReceiveMessageEntryPointer message = ReceiveMessageEntryPointer::create();
+    message->messageNumber = dataPacket._messageNumber;
+    message->isOrdered = dataPacket._isOrdered;
+    message->firstReceived = firstReceived;
+    message->lastReceived = lastReceived;
+    message->numPackets = pieces.count();
+
+    quint8* messageBytes = static_cast<quint8*>(message->content.create(pieceLength));
     size_t offset = 0;
     for (DataPacketList::const_iterator trans; trans != pieces.end(); trans++) {
         size_t len = trans->_contents.length();
         memcpy(messageBytes + offset, trans->_contents.constData(), len);
         offset += len;
 	}
+
 	_socket.receivedMessage(message);
 	return true;
 }

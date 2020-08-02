@@ -162,6 +162,39 @@ bool UdtMultiplexer::create(quint16 port, const QHostAddress& localAddress) {
         }
     }
 #endif
+
+    for (int i = 0; i < 2; i++) {
+        QAbstractSocket::SocketOption bufferOpt;
+        QString bufferTypeString;
+
+        int numBytes = 0;
+
+        if (i == 0) {
+            bufferOpt = QAbstractSocket::SendBufferSizeSocketOption;
+            numBytes = UDP_SEND_BUFFER_SIZE_BYTES;
+            bufferTypeString = "send";
+
+        } else {
+            bufferOpt = QAbstractSocket::ReceiveBufferSizeSocketOption;
+            numBytes = UDP_RECEIVE_BUFFER_SIZE_BYTES;
+            bufferTypeString = "receive";
+        }
+
+        int oldBufferSize = _udpSocket.socketOption(bufferOpt).toInt();
+
+        if (oldBufferSize < numBytes) {
+            _udpSocket.setSocketOption(bufferOpt, QVariant(numBytes));
+            int newBufferSize = _udpSocket.socketOption(bufferOpt).toInt();
+
+            qCDebug(networking) << "Changed socket" << bufferTypeString << "buffer size from" << oldBufferSize << "to"
+                                << newBufferSize << "bytes";
+        } else {
+            // don't make the buffer smaller
+            qCDebug(networking) << "Did not change socket" << bufferTypeString << "buffer size from" << oldBufferSize
+                                << "since it is larger than desired size of" << numBytes;
+        }
+    }
+
     return true;
 }
 

@@ -22,14 +22,17 @@
 #include <QtCore/QList>
 #include <QtCore/QMutex>
 #include <QtCore/QMutexLocker>
+#include <QtCore/QSharedPointer>
 #include <QtCore/QThread>
 #include <QtCore/QTimer>
 #include <QtCore/QWaitCondition>
 
 namespace udt4 {
 
+class UdtSocket;
 class UdtSocket_private;
 enum class UdtSocketState;
+typedef QSharedPointer<UdtSocket> UdtSocketPointer;
 
 /* UdtSocket_receive
 
@@ -40,6 +43,18 @@ This class is private and not user-accessible
 */
 class UdtSocket_receive : public QThread {
     Q_OBJECT
+public:
+    struct ReceiveMessageEntry {
+        ByteSlice        content;
+        SequenceNumber   messageNumber;
+        bool             isOrdered{ false };
+        unsigned         numPackets{ 1 };
+        QElapsedTimer    firstReceived;
+        QElapsedTimer    lastReceived;
+        UdtSocketPointer socket;
+    };
+    typedef QSharedPointer<ReceiveMessageEntry> ReceiveMessageEntryPointer;
+
 public:
     UdtSocket_receive(UdtSocket_private& socket);
 
@@ -80,7 +95,11 @@ private: // private datatypes
     };
     typedef std::map<PacketID, ReceiveLossEntry, WrappedSequenceLess<PacketID>> ReceiveLossMap;
 
-    typedef std::map<PacketID, DataPacket, WrappedSequenceLess<PacketID>> DataPacketMap;
+    struct ReceivedDataPacket {
+        DataPacket dataPacket;
+        QElapsedTimer timeReceived;
+    };
+    typedef std::map<PacketID, ReceivedDataPacket, WrappedSequenceLess<PacketID>> DataPacketMap;
 
     typedef QList<std::chrono::microseconds> QDurationList;
 
@@ -90,8 +109,8 @@ private:  // called exclusively within our private thread
     bool processEvent(QMutexLocker& eventGuard);
     void ingestACK2(const Packet& udtPacket, const QElapsedTimer& timeReceived);
     void ingestMsgDropReq(const MessageDropRequestPacket& dropPacket, const QElapsedTimer& timeReceived);
-    void ingestData(const DataPacket& dataPacket, const QElapsedTimer& timeReceived);
-    bool attemptProcessPacket(const DataPacket& dataPacket, bool isNew);
+    void ingestData(DataPacket&& dataPacket, const QElapsedTimer& timeReceived);
+    bool attemptProcessPacket(const ReceivedDataPacket& receivedPacket);
     void sendLightACK();
     void getReceiveSpeeds(unsigned& recvSpeed, unsigned& bandwidth);
     void sendACK();

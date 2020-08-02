@@ -20,6 +20,7 @@
 #include <set>
 #include <QtCore/QDeadlineTimer>
 #include <QtCore/QElapsedTimer>
+#include <QtCore/QList>
 #include <QtCore/QMutex>
 #include <QtCore/QMutexLocker>
 #include <QtCore/QSharedPointer>
@@ -42,11 +43,23 @@ This class is private and not user-accessible
 class UdtSocket_send : public QThread {
     Q_OBJECT
 public:
+    struct SendMessageEntry {
+        ByteSlice content;
+        QElapsedTimer sendTime;
+        QDeadlineTimer expireTime;
+        bool isOrdered{ false };
+        bool fullySent{ false };
+
+        inline SendMessageEntry(const ByteSlice& c, const QDeadlineTimer& expireTime = QDeadlineTimer(QDeadlineTimer::Forever));
+    };
+    typedef QSharedPointer<SendMessageEntry> SendMessageEntryPointer;
+
+public:
     UdtSocket_send(UdtSocket_private& socket);
 
     void setState(UdtSocketState newState);
     void configureHandshake(const HandshakePacket& hsPacket, const PacketID& sendPacketID, bool resetSequence, unsigned mtu);
-    void sendMessage(ByteSlice content, QDeadlineTimer expireTime);
+    void sendMessage(const SendMessageEntryPointer& msg);
     void packetReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived);
     void queueDisconnect();
     void resetReceiveTimer();
@@ -75,19 +88,7 @@ private:
         Shutdown,    // Connection has been recently closed and is listening for packet-resend requests
     };
 
-    struct MessageEntry {
-        ByteSlice content;
-        QElapsedTimer sendTime;
-        QDeadlineTimer expireTime;
-        bool fullySent{ false };
-
-        inline MessageEntry(const ByteSlice& c) : content(c) {
-            sendTime.start();
-            expireTime.setRemainingTime(-1);
-        }
-    };
-    typedef QSharedPointer<MessageEntry> MessageEntryPointer;
-    typedef QList<MessageEntryPointer> MessageEntryList;
+    typedef QList<SendMessageEntryPointer> MessageEntryList;
 
     struct ReceivedPacket {
         Packet udtPacket;
@@ -147,7 +148,7 @@ private:
 	SendState      _sendState{SendState::Closed}; // current sender state
     SendPacketEntryMap  _sendPktPend;     // list of packets that have been sent but not yet acknowledged
 	PacketID       _sendPacketID;         // the current packet sequence number
-    MessageEntryPointer _msgPartialSend;  // when a message can only partially fit in a packet, this is the remainder
+    SendMessageEntryPointer _msgPartialSend;  // when a message can only partially fit in a packet, this is the remainder
     SequenceNumber _messageSequence;      // the current message sequence number
     unsigned       _expCount{ 1 };        // number of continuous EXP timeouts.
 	QElapsedTimer  _lastReceiveTime;      // the last time we've heard something from the remote system

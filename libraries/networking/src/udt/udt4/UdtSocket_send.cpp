@@ -109,10 +109,7 @@ void UdtSocket_send::queueDisconnect() {
     _eventCondition.notify_all();
 }
 
-void UdtSocket_send::sendMessage(ByteSlice content, QDeadlineTimer expireTime) {
-    MessageEntryPointer message = MessageEntryPointer::create(content);
-    message->expireTime = expireTime;
-
+void UdtSocket_send::sendMessage(const SendMessageEntryPointer& message) {
     QMutexLocker guard(&_eventMutex);
     _pendingMessages.append(message);
     _eventCondition.notify_all();
@@ -316,7 +313,7 @@ bool UdtSocket_send::processDataMsg(bool isFirst) {
 			DataPacket dataPacket;
             dataPacket._packetID = _sendPacketID;
             dataPacket._messagePosition = state;
-            dataPacket._isOrdered = !_isDatagram;
+            dataPacket._isOrdered = !_isDatagram || _msgPartialSend->isOrdered;
             dataPacket._messageNumber = _messageSequence;
 			if (msgLen == _mtu) {
                 dataPacket._contents = _msgPartialSend->content;
@@ -362,7 +359,7 @@ bool UdtSocket_send::processDataMsg(bool isFirst) {
 		} else {
             QMutexLocker guard(&_eventMutex);
             if(!_pendingMessages.isEmpty()) {
-                MessageEntryPointer morePartialSend = _pendingMessages.takeFirst();
+                SendMessageEntryPointer morePartialSend = _pendingMessages.takeFirst();
                 while (morePartialSend != nullptr && morePartialSend->content.empty()) {
                     // assuming this is a "flush" marker, mark it as "completed" and carry on
                     morePartialSend->fullySent = true;
@@ -383,7 +380,7 @@ bool UdtSocket_send::processDataMsg(bool isFirst) {
         dataPacket._packetID = _sendPacketID;
         dataPacket._contents = _msgPartialSend->content;
         dataPacket._messagePosition = state;
-        dataPacket._isOrdered = !_isDatagram;
+        dataPacket._isOrdered = !_isDatagram || _msgPartialSend->isOrdered;
         dataPacket._messageNumber = _messageSequence;
         _msgPartialSend->fullySent = true;
         _msgPartialSend.reset();
@@ -746,7 +743,7 @@ bool UdtSocket_send::waitForPacketSent(const QDeadlineTimer& timeout) const {
 bool UdtSocket_send::flush() {
     // this function ensures that everything in the queue at this point has been sent out.  It does this
     // by sticking a zero-length message in the queue and returning when that message has been processed
-    MessageEntryPointer message = MessageEntryPointer::create(ByteSlice());
+    SendMessageEntryPointer message = SendMessageEntryPointer::create(ByteSlice());
 
     QMutexLocker sendGuard(&_sendMutex);
     {

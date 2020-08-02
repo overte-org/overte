@@ -113,6 +113,8 @@ private:
     {
         MAX_SERVER_HANDSHAKE_AGE = 500000000, // age in nsecs before discarding a server handshake = 500msec
         MAX_RENDEZVOUS_HANDSHAKE_AGE = 500000000,  // age in nsecs before discarding a rendezvous handshake = 500msec
+        UDP_SEND_BUFFER_SIZE_BYTES = 1048576,
+        UDP_RECEIVE_BUFFER_SIZE_BYTES = 1048576,
     };
 
     QUdpSocket _udpSocket;  // the listening socket where we receive all our packets

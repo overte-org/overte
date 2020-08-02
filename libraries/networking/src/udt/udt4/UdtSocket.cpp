@@ -843,7 +843,7 @@ qint64 UdtSocket::writeDatagram(const char* data, quint64 len, const QDeadlineTi
     ByteSlice slice;
     void* newData = slice.create(len);
     memcpy(newData, data, len);
-    _send.sendMessage(slice, timeout);
+    _send.sendMessage(UdtSocket_send::SendMessageEntryPointer::create(slice, timeout));
     return len;
 }
 
@@ -855,7 +855,7 @@ qint64 UdtSocket::writeDatagram(const QByteArray& datagram, const QDeadlineTimer
     size_t len = datagram.size();
     void* newData = slice.create(len);
     memcpy(newData, datagram.constData(), len);
-    _send.sendMessage(slice, timeout);
+    _send.sendMessage(UdtSocket_send::SendMessageEntryPointer::create(slice, timeout));
     return len;
 }
 
@@ -863,8 +863,16 @@ qint64 UdtSocket::writeDatagram(const ByteSlice& datagram, const QDeadlineTimer&
     if (datagram.empty() || !_isDatagram || state() != UdtSocketState::Connected) {
         return -1;
     }
-    _send.sendMessage(datagram, timeout);
+    _send.sendMessage(UdtSocket_send::SendMessageEntryPointer::create(datagram, timeout));
     return datagram.length();
+}
+
+bool UdtSocket::writeDatagram(const SendNetworkMessagePointer& message) {
+    if (message == nullptr || message->content.empty() || !_isDatagram || state() != UdtSocketState::Connected) {
+        return false;
+    }
+    _send.sendMessage(message);
+    return true;
 }
 
 qint64 UdtSocket::writeData(const char* data, qint64 size) {
@@ -874,11 +882,12 @@ qint64 UdtSocket::writeData(const char* data, qint64 size) {
     ByteSlice slice;
     void* newData = slice.create(size);
     memcpy(newData, data, size);
-    _send.sendMessage(slice, QDeadlineTimer(QDeadlineTimer::Forever));
+    _send.sendMessage(UdtSocket_send::SendMessageEntryPointer::create(slice));
     return size;
 }
 
-void UdtSocket::receivedMessage(const ByteSlice& message) {
+void UdtSocket::receivedMessage(const ReceiveNetworkMessagePointer& message) {
+    message->socket = sharedFromThis();
     QMutexLocker guard(&_receivedMessageProtect);
     _receivedMessages.append(message);
     _receivedMessageCondition.wakeAll();
@@ -900,7 +909,7 @@ qint64 UdtSocket::pendingDatagramSize() const {
     if (_receivedMessages.empty()) {
         return -1;
     }
-    return _receivedMessages.first().length();
+    return _receivedMessages.first()->content.length();
 }
 
 qint64 UdtSocket::bytesAvailable() const {
@@ -910,7 +919,7 @@ qint64 UdtSocket::bytesAvailable() const {
     QMutexLocker guard(&_receivedMessageProtect);
     quint64 len = 0;
     for (MessageQueue::const_iterator iter = _receivedMessages.begin(); iter != _receivedMessages.end(); iter++) {
-        len += iter->length();
+        len += (*iter)->content.length();
     }
     return len;
 }
@@ -933,13 +942,13 @@ qint64 UdtSocket::readDatagram(char* data, qint64 maxlen) {
     return datagram.length();
 }
 
-ByteSlice UdtSocket::receiveMessage() {
+UdtSocket::ReceiveNetworkMessagePointer UdtSocket::receiveMessage() {
     QMutexLocker guard(&_receivedMessageProtect);
     while (_receivedMessages.empty() && state() == UdtSocketState::Connected) {
         _receivedMessageCondition.wait(&_receivedMessageProtect);
     }
     if (_receivedMessages.empty()) {
-        return ByteSlice();
+        return ReceiveNetworkMessagePointer();
     }
     return _receivedMessages.dequeue();
 }
@@ -947,6 +956,18 @@ ByteSlice UdtSocket::receiveMessage() {
 ByteSlice UdtSocket::receiveDatagram() {
     if (!_isDatagram) {
         return ByteSlice();
+    }
+    ReceiveNetworkMessagePointer message = receiveMessage();
+    if (message == nullptr) {
+        return ByteSlice();
+    } else {
+        return message->content;
+    }
+}
+
+UdtSocket::ReceiveNetworkMessagePointer UdtSocket::receiveNetworkMessage() {
+    if (!_isDatagram) {
+        return ReceiveNetworkMessagePointer();
     }
     return receiveMessage();
 }
@@ -957,7 +978,12 @@ qint64 UdtSocket::readData(char* data, qint64 maxSize) {
         return -1;
     }
     if (_currPartialRead.empty()) {
-        _currPartialRead = receiveMessage();
+        ReceiveNetworkMessagePointer message = receiveMessage();
+        if (message == nullptr) {
+            _currPartialRead.clear();
+        } else {
+            _currPartialRead = message->content;
+        }
         if (_currPartialRead.empty()) {
             return -1;
         }
@@ -988,7 +1014,12 @@ qint64 UdtSocket::readData(char* data, qint64 maxSize) {
         if (_receivedMessages.empty()) {
             return totalLen;
         }
-        _currPartialRead = _receivedMessages.dequeue();
+        ReceiveNetworkMessagePointer message = _receivedMessages.dequeue();
+        if (message == nullptr) {
+            _currPartialRead.clear();
+        } else {
+            _currPartialRead = message->content;
+        }
     }
 }
 
@@ -998,7 +1029,12 @@ qint64 UdtSocket::readLineData(char* data, qint64 maxSize) {
         return -1;
     }
     if (_currPartialRead.empty()) {
-        _currPartialRead = receiveMessage();
+        ReceiveNetworkMessagePointer message = receiveMessage();
+        if (message == nullptr) {
+            _currPartialRead.clear();
+        } else {
+            _currPartialRead = message->content;
+        }
         if (_currPartialRead.empty()) {
             return -1;
         }
@@ -1036,7 +1072,12 @@ qint64 UdtSocket::readLineData(char* data, qint64 maxSize) {
         if (_receivedMessages.empty()) {
             return totalLen;
         }
-        _currPartialRead = _receivedMessages.dequeue();
+        ReceiveNetworkMessagePointer message = _receivedMessages.dequeue();
+        if (message == nullptr) {
+            _currPartialRead.clear();
+        } else {
+            _currPartialRead = message->content;
+        }
     }
 }
 

@@ -15,6 +15,10 @@
 
 namespace udt4 {
 
+inline UdtSocket_send::SendMessageEntry::SendMessageEntry(const ByteSlice& c, const QDeadlineTimer& et) : content(c), expireTime(et) {
+    sendTime.start();
+}
+
 inline UdtSocket_send::ReceivedPacket::ReceivedPacket(const Packet& p, const QElapsedTimer& t) : udtPacket(p), timeReceived(t) {
 }
 

@@ -75,7 +75,7 @@ public:
     virtual void applyReceiveRates(unsigned deliveryRate, unsigned bandwidth) = 0;
     virtual unsigned getMaxBandwidth() const = 0;
     virtual void sendPacket(const Packet& udtPacket) = 0;
-    virtual void receivedMessage(const ByteSlice& message) = 0;
+    virtual void receivedMessage(const UdtSocket_receive::ReceiveMessageEntryPointer& message) = 0;
     virtual unsigned getMaxFlowWinSize() const = 0;
     virtual QString localAddressDebugString() const = 0;
     virtual void ingestErrorPacket(const Packet& udtPacket) = 0;
@@ -97,11 +97,6 @@ so that it can be used anywhere that a stream-oriented network connection
 class UdtSocket : public QIODevice, public QEnableSharedFromThis<UdtSocket>, protected UdtSocket_private {
     Q_OBJECT
 public:
-    enum TimeStuff
-    {
-        SECOND = 1000,
-    };
-
     static constexpr std::chrono::milliseconds CONNECT_TIMEOUT{ std::chrono::seconds{ 3 } };             // how long should a client -> server connection take, from start to connected?
     static constexpr std::chrono::milliseconds RENDEZVOUS_CONNECT_TIMEOUT{ std::chrono::seconds{ 30 } }; // how long should a client <-> client connection take, from start to connected?
     static constexpr std::chrono::milliseconds CONNECT_RETRY{ 250 };                                     // if we haven't received a response to a packet in this amount of time, resend it
@@ -111,6 +106,9 @@ public:
     static constexpr unsigned MTU_DROP_INTERVAL{ 3 };                     // if we're negotiating a connection and have sent this many retries, drop the MTU
     static constexpr unsigned MTU_DROP_INCREMENT{ 10 };                   // if we're negotiating a connection and think we may not be getting through, drop the MTU by this much
     static constexpr unsigned MTU_MINIMUM{ 1280 };                        // we should not drop the MTU below this point on our own
+
+    using SendNetworkMessagePointer = UdtSocket_send::SendMessageEntryPointer;
+    using ReceiveNetworkMessagePointer = UdtSocket_receive::ReceiveMessageEntryPointer;
 
 public:
     explicit UdtSocket(QObject* parent = nullptr);
@@ -122,10 +120,12 @@ public: // from QUdpSocket
     bool hasPendingDatagrams() const;
     qint64 pendingDatagramSize() const;
     ByteSlice receiveDatagram();
+    ReceiveNetworkMessagePointer receiveNetworkMessage();
     qint64 readDatagram(char* data, qint64 maxlen);
     qint64 writeDatagram(const char* data, quint64 len, const QDeadlineTimer& timeout = QDeadlineTimer(QDeadlineTimer::Forever));
     qint64 writeDatagram(const QByteArray& datagram, const QDeadlineTimer& timeout = QDeadlineTimer(QDeadlineTimer::Forever));
     qint64 writeDatagram(const ByteSlice& datagram, const QDeadlineTimer& timeout = QDeadlineTimer(QDeadlineTimer::Forever));
+    bool writeDatagram(const SendNetworkMessagePointer& message);
 
 public:  // from QAbstractSocket
     inline void abort();
@@ -181,7 +181,7 @@ private: // UdtSocket_private implementation
     virtual void getReceiveRates(unsigned& recvSpeed, unsigned& bandwidth) const;
     virtual void applyReceiveRates(unsigned deliveryRate, unsigned bandwidth);
     virtual void sendPacket(const Packet& udtPacket);
-    virtual void receivedMessage(const ByteSlice& message);
+    virtual void receivedMessage(const ReceiveNetworkMessagePointer& message);
     virtual unsigned getMaxFlowWinSize() const;
     virtual void ingestErrorPacket(const Packet& udtPacket);
     virtual void requestShutdown(UdtSocketState toState, QString error);
@@ -217,7 +217,7 @@ private:
     static QString addressDebugString(const QHostAddress& address, quint16 port, quint32 socketID);
     virtual QString localAddressDebugString() const;
     QString remoteAddressDebugString() const;
-    ByteSlice receiveMessage();
+    ReceiveNetworkMessagePointer receiveMessage();
 
 private:
     enum class SocketRole
@@ -228,7 +228,7 @@ private:
         Rendezvous
     };
 
-    typedef QQueue<ByteSlice> MessageQueue;
+    typedef QQueue<ReceiveNetworkMessagePointer> MessageQueue;
 
 private:
     // these variables are used during specific _sockState values and invalid on all other values
