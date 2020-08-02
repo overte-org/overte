@@ -16,14 +16,20 @@
 
 #include <QtCore/QByteArray>
 #include <QtCore/QSharedPointer>
+/* ByteSlice
 
+   This class represents an immutable string of bytes similar to what one could use std::string or QByteArray for.  The distinction
+   is the data is stored in a shared memory area and reallocations are avoided.  Copies do not involve dynamic memory allocations,
+   operations such as "substring" also refer to the original without reallocation.  The intent is to ease passing around byte strings
+   or pieces of byte strings that may be "sliced and diced" without worrying about memory thrashing.
+*/
 class ByteSlice {
 public:
     inline ByteSlice();
     inline ByteSlice(const QByteArray& data);
     inline ByteSlice(const std::string& data);
     inline ByteSlice(const ByteSlice& data);
-    void* create(size_t length); // create a new buffer and return a pointer to it
+    void* create(size_t length);  // create a new buffer and return a pointer to it
 
     inline size_t length() const;
     inline bool empty() const;
