@@ -14,6 +14,7 @@
 
 #include "../../ByteSlice.h"
 #include <chrono>
+#include "ConnectionStats.h"
 #include <list>
 #include <map>
 #include "Packet.h"
@@ -157,6 +158,7 @@ private:
     SequenceNumber _sentAck2;             // largest ACK2 packet we've sent
     PacketIDSet    _sendLossList;         // loss list
 	unsigned       _flowWindowSize{ 16 }; // negotiated maximum number of unacknowledged packets (in packets)
+    ConnectionStatsAtomicPointer _stats;  // reference to connection stats
 
     // These variables may be set/adjusted by congestion control and therefore are controlled by QAtomicInteger
     QAtomicInteger<quint64> _sndPeriod;      // delay between sending packets (in microseconds)

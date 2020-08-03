@@ -13,6 +13,7 @@
 #define hifi_udt4_UdtSocket_recv_h
 
 #include "../../ByteSlice.h"
+#include "ConnectionStats.h"
 #include <list>
 #include <map>
 #include "Packet.h"
@@ -146,6 +147,7 @@ private:
 	unsigned _lightAckCount{ 0 };          // number of "light ACK" packets we've sent since the last ACK
     QDurationList _recvPktHistory;         // list of recently received packets.
     QDurationList _recvPktPairHistory;     // probing packet window.
+    ConnectionStatsAtomicPointer _stats;   // reference to connection stats
 
 	// timers
     QDeadlineTimer _fullACKsentTimer; // if an ACK packet has recently sent, don't include link information in the next one

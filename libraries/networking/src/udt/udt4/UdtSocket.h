@@ -14,6 +14,7 @@
 
 #include "../../ByteSlice.h"
 #include <chrono>
+#include "ConnectionStats.h"
 #include <map>
 #include "Packet.h"
 #include "PacketID.h"
@@ -86,6 +87,7 @@ public:
     virtual void setACKinterval(unsigned ack) = 0;
     virtual void setRTOperiod(std::chrono::microseconds rto) = 0;
     virtual UdtSocket_CongestionControl& getCongestionControl() = 0;
+    virtual ConnectionStatsAtomicPointer getConnectionStatsPointer() const = 0;
 };
 
 /*
@@ -114,6 +116,7 @@ public:
     explicit UdtSocket(QObject* parent = nullptr);
     virtual ~UdtSocket();
     bool setCongestionControl(CongestionControlPointer congestionControl);
+    ConnectionStats getConnectionStats() const;
 
 public: // from QUdpSocket
     bool isInDatagramMode() const;
@@ -191,6 +194,7 @@ private: // UdtSocket_private implementation
     virtual void setACKinterval(unsigned ack);
     virtual void setRTOperiod(std::chrono::microseconds rto);
     virtual UdtSocket_CongestionControl& getCongestionControl();
+    virtual ConnectionStatsAtomicPointer getConnectionStatsPointer() const;
 
 protected:
     virtual bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, uint peerPort);
@@ -274,33 +278,10 @@ private:
 	unsigned _bandwidth{ 1 };                    // bandwidth reported from peer (packets/sec)
 
     // references to the sub-objects that handle the various tasks in this socket
-    UdtSocket_send              _send;       // the "outgoing" side of this UDT connection
-    UdtSocket_receive           _recv;       // the "incoming" side of this UDT connection
-    UdtSocket_CongestionControl _congestion; // connecting glue to the chosen congestion control algorighm
-
-	// performance metrics
-	//quint64 PktSent        // number of sent data packets, including retransmissions
-	//quint64 PktRecv        // number of received packets
-	//uint    PktSndLoss     // number of lost packets (sender side)
-	//uint    PktRcvLoss     // number of lost packets (receiver side)
-	//uint    PktRetrans     // number of retransmitted packets
-	//uint    PktSentACK     // number of sent ACK packets
-	//uint    PktRecvACK     // number of received ACK packets
-	//uint    PktSentNAK     // number of sent NAK packets
-	//uint    PktRecvNAK     // number of received NAK packets
-	//double  MbpsSendRate   // sending rate in Mb/s
-	//double  MbpsRecvRate   // receiving rate in Mb/s
-	//time.Duration SndDuration // busy sending time (i.e., idle time exclusive)
-
-	// instant measurements
-	//time.Duration PktSndPeriod        // packet sending period
-	//uint          PktFlowWindow       // flow window size, in number of packets
-	//uint          PktCongestionWindow // congestion window size, in number of packets
-	//uint          PktFlightSize       // number of packets on flight
-	//time.Duration MsRTT               // RTT
-	//double        MbpsBandwidth       // estimated bandwidth, in Mb/s
-	//uint          ByteAvailSndBuf     // available UDT sender buffer size
-	//uint          ByteAvailRcvBuf     // available UDT receiver buffer size
+    UdtSocket_send               _send;       // the "outgoing" side of this UDT connection
+    UdtSocket_receive            _recv;       // the "incoming" side of this UDT connection
+    UdtSocket_CongestionControl  _congestion; // connecting glue to the chosen congestion control algorithm
+    ConnectionStatsAtomicPointer _stats;      // reference to connection stats
 
 private:
     Q_DISABLE_COPY(UdtSocket)

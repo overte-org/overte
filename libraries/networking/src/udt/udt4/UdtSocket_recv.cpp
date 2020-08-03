@@ -120,6 +120,7 @@ UdtSocket_receive::UdtSocket_receive(UdtSocket_private& socket) : _socket(socket
 }
 
 void UdtSocket_receive::configureHandshake(const HandshakePacket& hsPacket) {
+    _stats = _socket.getConnectionStatsPointer();
     _farNextPktSeq = hsPacket._initPktSeq;
     _farRecdPktSeq = hsPacket._initPktSeq - 1;
     _sentACK = hsPacket._initPktSeq;
@@ -166,14 +167,19 @@ void UdtSocket_receive::run() {
     _ACKtimerEvent.start(UdtSocket::SYN);
 
     for (;;) {
+        QElapsedTimer cpuTime;
+        cpuTime.start();
+
         QMutexLocker guard(&_eventMutex);
         while (!processEvent(guard)) {
+            _stats->receivingCpuTime.store(_stats->receivingCpuTime.load() + std::chrono::nanoseconds(cpuTime.nsecsElapsed()));
             if (_flagListenerShutdown) {
                 // listener is closed, leave this thread
                 return;
             }
             _eventCondition.wait(&_eventMutex);
         }
+        _stats->receivingCpuTime.store(_stats->receivingCpuTime.load() + std::chrono::nanoseconds(cpuTime.nsecsElapsed()));
     }
 }
 
@@ -361,6 +367,8 @@ void UdtSocket_receive::ingestData(DataPacket&& dataPacket, const QElapsedTimer&
 		// If the sequence number is less than LRSN, remove it from the receiver's loss list.
         ReceiveLossMap::iterator lossLookup = _recvLossList.find(packetID);
 		if(lossLookup == _recvLossList.end()) {
+            _stats->duplicateReceivedPackets++;
+            _stats->duplicateDataBytes += dataPacket._contents.length();
 			return; // already previously received packet -- ignore
 		}
         _recvLossList.erase(lossLookup);
@@ -373,6 +381,9 @@ void UdtSocket_receive::ingestData(DataPacket&& dataPacket, const QElapsedTimer&
 			_farRecdPktSeq = nextLoss->first;
 		}
 	}
+
+    _stats->receivedDataPackets++;
+    _stats->receivedDataBytes += dataPacket._contents.length();
 
     ReceivedDataPacket receivedDataPacket;
     receivedDataPacket.dataPacket = std::move(dataPacket);
@@ -542,6 +553,8 @@ void UdtSocket_receive::sendLightACK() {
 	if (packetID != _recvACK2) {
 		// send out a lite ACK
 		// to save time on buffer processing and bandwidth/AS measurement, a lite ACK only feeds back an ACK number
+        _stats->sentACKpackets++;
+
 	    ACKPacket ackPacket;
         ackPacket._lastPacketReceived = packetID;
         ackPacket._ackType = ACKPacket::AckType::Light;
@@ -631,6 +644,7 @@ void UdtSocket_receive::sendACK() {
 	}
 	_sentACK = packetID;
 
+    _stats->sentACKpackets++;
 	_lastACK++;
     ACKHistoryEntry ackHistoryEntry;
     ackHistoryEntry.ackID = _lastACK;
@@ -680,6 +694,7 @@ void UdtSocket_receive::sendNAK(const ReceiveLossMap& receiveLoss) {
 
 		PacketID lastPacket = minPacketLookup->first;
 		for(;;) {
+            _stats->lostReceivedPackets++;
 			PacketID nextPacket = lastPacket + 1;
             ReceiveLossMap::const_iterator lookup = receiveLoss.find(nextPacket);
             if(lookup == receiveLoss.end()) {
@@ -698,6 +713,7 @@ void UdtSocket_receive::sendNAK(const ReceiveLossMap& receiveLoss) {
         currentPacket = lastPacket + 1;
 	}
 
+    _stats->sentNAKpackets++;
     NAKPacket packet;
     packet._lossData = lossInfo;
 	_socket.sendPacket(packet.toPacket());

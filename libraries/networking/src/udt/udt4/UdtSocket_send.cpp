@@ -29,6 +29,7 @@ void UdtSocket_send::configureHandshake(const HandshakePacket& hsPacket, const P
         _lastAckPacketID = sendPacketID;
         _sendPacketID = sendPacketID;
 	}
+    _stats = _socket.getConnectionStatsPointer();
     _mtu = mtu;
     _isDatagram = hsPacket._sockType == SocketType::DGRAM;
     _flowWindowSize = hsPacket._maxFlowWinSize;
@@ -57,14 +58,19 @@ void UdtSocket_send::startupInit() {
 void UdtSocket_send::run() {
     startupInit();
 	for(;;) {
+        QElapsedTimer cpuTime;
+        cpuTime.start();
+
         QMutexLocker guard(&_eventMutex);
         while (!processEvent(guard)) {
+            _stats->sendingCpuTime.store(_stats->sendingCpuTime.load() + std::chrono::nanoseconds(cpuTime.nsecsElapsed()));
             if (_sendState == SendState::Closed) {
                 // socket is closed, leave this thread
                 return;
             }
             _eventCondition.wait(&_eventMutex);
         }
+        _stats->sendingCpuTime.store(_stats->sendingCpuTime.load() + std::chrono::nanoseconds(cpuTime.nsecsElapsed()));
     }
 }
 
@@ -324,6 +330,8 @@ bool UdtSocket_send::processDataMsg(bool isFirst) {
 				_msgPartialSend->content = _msgPartialSend->content.substring(_mtu);
 			}
 			_sendPacketID++;
+            _stats->sentDataPackets ++;
+            _stats->sentDataBytes += dataPacket._contents.length();
 
             SendPacketEntryPointer dataPacketEntry = SendPacketEntryPointer::create();
             dataPacketEntry->packet = std::move(dataPacket);
@@ -386,6 +394,9 @@ bool UdtSocket_send::processDataMsg(bool isFirst) {
         _msgPartialSend.reset();
         _sendPacketID++;
 
+        _stats->sentDataPackets ++;
+        _stats->sentDataBytes += dataPacket._contents.length();
+
         SendPacketEntryPointer dataPacketEntry = SendPacketEntryPointer::create();
         dataPacketEntry->packet = std::move(dataPacket);
         dataPacketEntry->sendTime = _msgPartialSend->sendTime;
@@ -429,6 +440,8 @@ bool UdtSocket_send::processSendLoss() {
 		break;
 	}
 
+    _stats->retransmittedPackets++;
+    _stats->retransmittedDataBytes += dataPacketEntry->packet._contents.length();
 	sendDataPacket(dataPacketEntry, true);
 	return true;
 }
@@ -528,6 +541,9 @@ bool UdtSocket_send::assertValidSentPktID(const char* pktType, const PacketID& p
 
 // ingestAck is called to process an ACK packet
 void UdtSocket_send::ingestAck(const ACKPacket& ackPacket, const QElapsedTimer& timeReceived) {
+
+    _stats->receivedACKpackets++;
+
 	// Update the largest acknowledged sequence number.
 
     if (ackPacket._ackType == ACKPacket::AckType::Light) {
@@ -599,6 +615,8 @@ void UdtSocket_send::ingestAck(const ACKPacket& ackPacket, const QElapsedTimer& 
 
 // ingestNak is called to process an NAK packet
 void UdtSocket_send::ingestNak(const NAKPacket& nakPacket, const QElapsedTimer& timeReceived) {
+    _stats->receivedNAKpackets++;
+
     QList<PacketID> newLossList;
 	for (NAKPacket::IntegerList::const_iterator trans = nakPacket._lossData.begin(); trans != nakPacket._lossData.end(); trans++) {
 		quint32 thisEntry = *trans;
@@ -637,6 +655,7 @@ void UdtSocket_send::ingestNak(const NAKPacket& nakPacket, const QElapsedTimer& 
 		}
 	}
 
+    _stats->lostSentPackets += newLossList.count();
 	_socket.getCongestionControl().onNAK(std::move(newLossList));
 	_sendState = SendState::ProcessDrop; // immediately restart transmission
 }

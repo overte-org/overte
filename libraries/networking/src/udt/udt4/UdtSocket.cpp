@@ -62,6 +62,13 @@ bool UdtSocket::setCongestionControl(CongestionControlPointer congestionControl)
     return true;
 }
 
+ConnectionStats UdtSocket::getConnectionStats() const {
+    ConnectionStats stats(*_stats);
+    getRTT(stats.rtt, stats.rttVariance);
+    getReceiveRates(stats.receiveRate, stats.estimatedBandwith);
+    return stats;
+}
+
 QString UdtSocket::addressDebugString(const QHostAddress& address, quint16 port, quint32 socketID) {
     return QString("%1:%2[%3]").arg(address.toString()).arg(port).arg(socketID);
 }
@@ -341,6 +348,8 @@ bool UdtSocket::preConnect(const QHostAddress& address, quint16 port, quint16 lo
     // register ourselves with the multiplexer
     _multiplexer->newSocket(sharedFromThis());
     _createTime.start();
+    _stats = ConnectionStatsAtomicPointer::create();
+    _stats->startTime = _createTime;
 
     // setup an "off-axis" UDP socket that (hopefully) will inform us of Path-MTU issues for the destination
     createOffAxisSocket();
@@ -773,6 +782,8 @@ void UdtSocket::readPacket(const Packet& udtPacket, const QHostAddress& peerAddr
     }
 
     _send.resetReceiveTimer();
+    _stats->receivedPackets++;
+    _stats->receivedWireBytes += udtPacket.packetHeaderSize(peerAddress.protocol()) + udtPacket._contents.length();
 
     switch (udtPacket._type) {
     case PacketType::Handshake: { // sent by both peers
@@ -1122,6 +1133,9 @@ bool UdtSocket::flush() {
 void UdtSocket::sendPacket(const Packet& udtPacket) {
     std::chrono::microseconds ts(_createTime.nsecsElapsed() / 1000);
 	_congestion.onPacketSent(udtPacket);
+    _stats->sentPackets++;
+    _stats->sentWireBytes += udtPacket.packetHeaderSize(_remoteAddr.protocol()) + udtPacket._contents.length();
+
     qCDebug(networking) << localAddressDebugString() << ": sending " << udtPacket._type << " to " << remoteAddressDebugString();
     _multiplexer->sendPacket(_remoteAddr, _remotePort, _farSocketID, ts, udtPacket);
 }
@@ -1205,6 +1219,10 @@ void UdtSocket::requestShutdown(UdtSocketState toState, QString error) {
 
 UdtSocket_CongestionControl& UdtSocket::getCongestionControl() {
     return _congestion;
+}
+
+ConnectionStatsAtomicPointer UdtSocket::getConnectionStatsPointer() const {
+    return _stats;
 }
 
 namespace udt4 {
