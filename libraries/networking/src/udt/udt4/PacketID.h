@@ -83,6 +83,9 @@ static_assert(sizeof(PacketID) == sizeof(quint32), "PacketID invalid size");
 typedef WrappedSequence<29> SequenceNumber; // either an ACK number or a Message number
 static_assert(sizeof(SequenceNumber) == sizeof(quint32), "SequenceNumber invalid size");
 
+using MessageNumber = SequenceNumber;
+using ACKSequence = SequenceNumber;
+
 }  // namespace udt4
 
 #include "PacketID.inl"

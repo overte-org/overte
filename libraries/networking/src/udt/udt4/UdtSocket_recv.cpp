@@ -260,7 +260,7 @@ bool UdtSocket_receive::processEvent(QMutexLocker& eventGuard) {
 // ingestAck2 is called to process an ACK2 packet
 void UdtSocket_receive::ingestACK2(const Packet& udtPacket, const QElapsedTimer& timeReceived) {
 
-    SequenceNumber ackSeq(udtPacket._additionalInfo);
+    ACKSequence ackSeq(udtPacket._additionalInfo);
     ACKHistoryMap::iterator lookup = _ackHistory.find(ackSeq);
     if (lookup == _ackHistory.end()) {
         return;  // this ACK not found

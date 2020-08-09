@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <map>
 
@@ -213,6 +214,21 @@ public:
 };
 
 using PacketType = PacketTypeEnum::Value;
+
+enum class PacketObfuscationLevel
+{
+    None = 0x0,  // 00
+    L1 = 0x1,  // 01
+    L2 = 0x2,  // 10
+    L3 = 0x3,  // 11
+};
+
+static const std::array<uint64_t, 4> OBFUSCATION_KEYS{ {
+    0x0,
+    0x6362726973736574,
+    0x7362697261726461,
+    0x72687566666d616e,
+} };
 
 const int NUM_BYTES_MD5_HASH = 16;
 

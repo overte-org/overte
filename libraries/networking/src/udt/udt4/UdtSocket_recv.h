@@ -48,7 +48,7 @@ class UdtSocket_receive : public QThread {
 public:
     struct ReceiveMessageEntry {
         ByteSlice        content;
-        SequenceNumber   messageNumber;
+        MessageNumber    messageNumber;
         bool             isOrdered{ false };
         unsigned         numPackets{ 1 };
         QElapsedTimer    firstReceived;
@@ -82,11 +82,11 @@ private: // private datatypes
     typedef std::list<ReceivedPacket> ReceivedPacketList;
 
     struct ACKHistoryEntry {
-        SequenceNumber ackID;
+        ACKSequence ackID;
         PacketID       lastPacket;
         QElapsedTimer  sendTime;
     };
-    typedef QHash<SequenceNumber, ACKHistoryEntry> ACKHistoryMap;
+    typedef QHash<ACKSequence, ACKHistoryEntry> ACKHistoryMap;
     
     struct ReceiveLossEntry {
         PacketID      packetID;
@@ -132,8 +132,8 @@ private:
 private:
     PacketID _farNextPktSeq;               // the peer's next largest packet ID expected.
     PacketID _farRecdPktSeq;               // the peer's last "received" packet ID (before any loss events)
-    SequenceNumber _lastACK;               // last ACK packet we've sent
-    SequenceNumber _largestACK;            // largest ACK packet we've sent that has been acknowledged (by an ACK2).
+    ACKSequence _lastACK;                  // last ACK packet we've sent
+    ACKSequence _largestACK;               // largest ACK packet we've sent that has been acknowledged (by an ACK2).
     DataPacketMap _recvPktPend;            // list of packets that are waiting to be processed.
     ReceiveLossMap _recvLossList;          // loss list.
     ACKHistoryMap _ackHistory;             // list of sent ACKs.

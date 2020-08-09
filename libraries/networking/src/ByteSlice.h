@@ -11,8 +11,8 @@
 
 #pragma once
 
-#ifndef serialization_Byteslice_h
-#define serialization_Byteslice_h
+#ifndef networking_Byteslice_h
+#define networking_Byteslice_h
 
 #include <QtCore/QByteArray>
 #include <QtCore/QSharedPointer>
@@ -61,4 +61,4 @@ private:
 };
 
 #include "Byteslice.inl"
-#endif /* serialization_Byteslice_h */
+#endif /* networking_Byteslice_h */

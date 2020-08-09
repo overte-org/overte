@@ -151,11 +151,11 @@ private:
     SendPacketEntryMap  _sendPktPend;     // list of packets that have been sent but not yet acknowledged
 	PacketID       _sendPacketID;         // the current packet sequence number
     SendMessageEntryPointer _msgPartialSend;  // when a message can only partially fit in a packet, this is the remainder
-    SequenceNumber _messageSequence;      // the current message sequence number
+    MessageNumber  _messageSequence;      // the current message sequence number
     unsigned       _expCount{ 1 };        // number of continuous EXP timeouts.
 	QElapsedTimer  _lastReceiveTime;      // the last time we've heard something from the remote system
 	PacketID       _lastAckPacketID;      // largest packetID we've received an ACK from
-    SequenceNumber _sentAck2;             // largest ACK2 packet we've sent
+    ACKSequence    _sentAck2;             // largest ACK2 packet we've sent
     PacketIDSet    _sendLossList;         // loss list
 	unsigned       _flowWindowSize{ 16 }; // negotiated maximum number of unacknowledged packets (in packets)
     ConnectionStatsAtomicPointer _stats;  // reference to connection stats

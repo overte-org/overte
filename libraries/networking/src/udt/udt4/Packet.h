@@ -89,7 +89,7 @@ public:
     PacketID _packetID;
     MessagePosition _messagePosition{ MessagePosition::Only };
     bool _isOrdered{ false };
-    SequenceNumber _messageNumber;
+    MessageNumber _messageNumber;
     std::chrono::microseconds _timestamp{ 0 };
     quint32 _socketID{ 0 };
     ByteSlice _contents;
@@ -148,7 +148,7 @@ public:
 public:
     std::chrono::microseconds _timestamp{ 0 };
     quint32 _socketID{ 0 };
-    SequenceNumber _ackSequence;
+    ACKSequence _ackSequence;
     PacketID _lastPacketReceived;
     AckType _ackType{ AckType::Normal };
     std::chrono::microseconds _rtt{ 0 };
@@ -182,7 +182,7 @@ public:
     static uint packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol);
 
 public:
-    SequenceNumber _messageID;
+    MessageNumber _messageID;
     std::chrono::microseconds _timestamp{ 0 };
     quint32 _socketID{ 0 };
     PacketID _firstPacketID;

@@ -467,7 +467,7 @@ bool UdtSocket_send::processSendExpire() {
 		if (thisEntry->expireTime.hasExpired()) {
 
             // this message has expired, drop it
-            SequenceNumber messageNumber = thisEntry->packet._messageNumber;
+            MessageNumber messageNumber = thisEntry->packet._messageNumber;
 
             MessageDropRequestPacket dropMessage;
             dropMessage._messageID = messageNumber;

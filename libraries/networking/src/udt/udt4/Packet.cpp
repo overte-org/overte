@@ -80,7 +80,7 @@ DataPacket::DataPacket(const Packet& src) :
     assert(src._type == PacketType::Data);
     _messagePosition = static_cast<MessagePosition>((src._additionalInfo & 0xC0000000) >> 30);
     _isOrdered = (src._additionalInfo & 0x20000000) != 0;
-    _messageNumber = SequenceNumber(src._additionalInfo);
+    _messageNumber = MessageNumber(src._additionalInfo);
 }
 
 uint DataPacket::packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol) {

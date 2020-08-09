@@ -11,8 +11,8 @@
 
 #pragma once
 
-#ifndef serialization_Byteslice_inl
-#define serialization_Byteslice_inl
+#ifndef networking_Byteslice_inl
+#define networking_Byteslice_inl
 
 #include "Byteslice.h"
 
@@ -67,4 +67,4 @@ inline const quint8* ByteSlice::constData() const {
     }
 }
 
-#endif /* serialization_Byteslice_inl */
+#endif /* networking_Byteslice_inl */
