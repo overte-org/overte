@@ -16,7 +16,7 @@
 // Structure of packets and functions for writing/reading them
 #include "../../ByteSlice.h"
 #include <chrono>
-#include "PacketID.h"
+#include "WrappedSequence.h"
 #include <QtNetwork/QHostAddress>
 
 namespace udt4 {

@@ -13,7 +13,7 @@
 #define hifi_udt4_UdtServer_h
 
 #include "packet.h"
-#include "PacketID.h"
+#include "WrappedSequence.h"
 #include <QtCore/QAtomicInt>
 #include <QtCore/QCryptographicHash>
 #include <QtCore/QDeadlineTimer>

@@ -15,7 +15,7 @@
 #include "CongestionControl.h"
 #include <list>
 #include "Packet.h"
-#include "PacketID.h"
+#include "WrappedSequence.h"
 #include <QtCore/QAtomicInteger>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QList>

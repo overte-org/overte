@@ -1,8 +1,8 @@
 //
-//  PacketID.h
+//  WrappedSequence.h
 //  libraries/networking/src/udt/udt4
 //
-//  Created by Clement on 7/23/15.
+//  Created by Clement on 7/23/15; heavily restructured by Heather Anderson on 7/14/20.
 //  Copyright 2015 High Fidelity, Inc.
 //
 //  Distributed under the Apache License, Version 2.0.

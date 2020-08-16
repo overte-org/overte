@@ -17,7 +17,7 @@
 #include <list>
 #include <map>
 #include "Packet.h"
-#include "PacketID.h"
+#include "WrappedSequence.h"
 #include <QtCore/QDeadlineTimer>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QHash>
