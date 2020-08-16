@@ -36,13 +36,12 @@ UdtMultiplexerPointer UdtMultiplexer::getInstance(quint16 port,
                                                   const QHostAddress& localAddress /* = QHostAddress::Any */,
                                                   QAbstractSocket::SocketError* serverError /* = nullptr */,
                                                   QString* errorString /* = nullptr */) {
-
     UdtMultiplexerPointer multiplexer = lookupInstance(port, localAddress);
     if (!multiplexer.isNull() && multiplexer->isLive()) {
         return multiplexer;
     }
 
-	// No multiplexer, need to create connection
+    // No multiplexer, need to create connection
     multiplexer = UdtMultiplexerPointer(new UdtMultiplexer());
     if (!multiplexer->create(port, localAddress)) {
         // if we hit an exception trying to construct a multiplexer, check to see if we haven't hit a race condition
@@ -365,10 +364,10 @@ void UdtMultiplexer::sendPacket(const QHostAddress& destAddr,
                                 Packet packet) {
     packet._socketID = destSockID;
     packet._timestamp = timestamp;
-	if(destSockID == 0 && packet._type != PacketType::Handshake) {
+    if (destSockID == 0 && packet._type != PacketType::Handshake) {
         qCCritical(networking) << "Attempt to send non-handshake packet with destination socket = 0";
         return;
-	}
+    }
 
     QMutexLocker locker(&_sendPacketProtect);
     _sendPacket.enqueue(PacketEventPointer<Packet>::create(packet, destAddr, destPort));
@@ -384,7 +383,7 @@ PacketEventPointer<HandshakePacket> UdtMultiplexer::nextServerHandshake() {
     return _serverHandshakes.dequeue();
 }
 
-void UdtMultiplexer::pruneServerHandshakes() { // ASSUMES WE ARE HOLDING _serverHandshakesProtect
+void UdtMultiplexer::pruneServerHandshakes() {  // ASSUMES WE ARE HOLDING _serverHandshakesProtect
     while (!_serverHandshakes.isEmpty()) {
         const PacketEventPointer<HandshakePacket>& firstPacket = _serverHandshakes.head();
         if (firstPacket->age.nsecsElapsed() < MAX_SERVER_HANDSHAKE_AGE) {

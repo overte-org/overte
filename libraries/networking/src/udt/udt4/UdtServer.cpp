@@ -46,7 +46,7 @@ bool UdtServer::hasPendingConnections() const {
     return !_acceptedSockets.empty();
 }
 
-bool UdtServer::listen(quint16 port, const QHostAddress& address /* = QHostAddress::Any */ ) {
+bool UdtServer::listen(quint16 port, const QHostAddress& address /* = QHostAddress::Any */) {
     if (!_multiplexer.isNull()) {
         close();
     }
@@ -95,8 +95,7 @@ void UdtServer::setMaxPendingConnections(int numConnections) {
     _maxPendingConn.store(std::max(0, numConnections));
 }
 
-bool UdtServer::waitForNewConnection(int msec /* = 0 */ , bool* timedOut /* = nullptr */ ) {
-
+bool UdtServer::waitForNewConnection(int msec /* = 0 */, bool* timedOut /* = nullptr */) {
     if (isListening()) {
         QMutexLocker locker(&_acceptedSocketsProtect);
 
@@ -152,18 +151,18 @@ quint32 UdtServer::generateSynCookie(const QHostAddress& peerAddress, quint16 pe
     QByteArray hash_be = hasher.result();
     quint32 hash = qFromBigEndian<quint32>(hash_be.data());
 
-	return ((_synEpoch.load() & 0x1f) << 11) | (hash & 0x07ff);
+    return ((_synEpoch.load() & 0x1f) << 11) | (hash & 0x07ff);
 }
 
 bool UdtServer::checkSynCookie(quint32 cookie, const QHostAddress& peerAddress, quint16 peerPort) {
     quint32 newCookie = generateSynCookie(peerAddress, peerPort);
-	if((newCookie & 0x07ff) != (cookie & 0x07ff)) {
+    if ((newCookie & 0x07ff) != (cookie & 0x07ff)) {
         return false;
-	}
+    }
 
-	quint32 theirEpoch = (cookie & 0xf100) >> 11;
+    quint32 theirEpoch = (cookie & 0xf100) >> 11;
     quint32 ourEpoch = _synEpoch.load();
-	return (theirEpoch == (ourEpoch & 0x1f)) || (theirEpoch == ((ourEpoch - 1) & 0x1f));
+    return (theirEpoch == (ourEpoch & 0x1f)) || (theirEpoch == ((ourEpoch - 1) & 0x1f));
 }
 
 // checkValidHandshake checks to see if we want to accept a new connection with this handshake.
@@ -215,7 +214,6 @@ void UdtServer::rejectHandshake(const HandshakePacket& hsPacket, const QHostAddr
 
 void UdtServer::readHandshake() {
     for (;;) {
-
         PacketEventPointer<HandshakePacket> thisPacket = _multiplexer->nextServerHandshake();
         if (thisPacket.isNull()) {
             return;
@@ -239,7 +237,8 @@ void UdtServer::readHandshake() {
             hsResponse._synCookie = newCookie;
             hsResponse._sockAddr = _multiplexer->serverAddress();
 
-            _multiplexer->sendPacket(peerAddress, peerPort, hsPacket._farSocketID, std::chrono::microseconds(0), hsResponse.toPacket());
+            _multiplexer->sendPacket(peerAddress, peerPort, hsPacket._farSocketID, std::chrono::microseconds(0),
+                                     hsResponse.toPacket());
             return;
         }
 

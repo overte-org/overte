@@ -36,7 +36,7 @@ public:
     ~UdtSocket_CongestionControl();
     void setCongestionControl(CongestionControlPointer congestionControl);
 
-public: // functions accessible to UdtSocket objects
+public:  // functions accessible to UdtSocket objects
     void init(const PacketID& packetID, unsigned mtu);
     void close();
     void onACK(const PacketID& lastPacketReceived);
@@ -47,21 +47,21 @@ public: // functions accessible to UdtSocket objects
     void onPacketReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived);
     void onCustomMessageReceived(const Packet& udtPacket, const QElapsedTimer& timeReceived);
 
-private: // CongestionControlParms interface
-	virtual PacketID getSendCurrentPacketID() const;                              // returns the most recently sent packet ID
-	virtual void setCongestionWindowSize(unsigned);                               // sets the size of the congestion window (in packets)
-	virtual unsigned getCongestionWindowSize() const;                             // gets the size of the congestion window (in packets)
-	virtual std::chrono::microseconds getPacketSendPeriod() const;                // gets the current delay between sending packets
-	virtual void setPacketSendPeriod(std::chrono::microseconds);                  // sets the current delay between sending packets
-	virtual unsigned getMaxFlowWindow() const;                                    // returns the largest number of unacknowledged packets we can receive (in packets)
-	virtual void getReceiveRates(unsigned& recvSpeed, unsigned& bandwidth) const; // returns the current calculated receive rate and bandwidth (in packets/sec)
-	virtual std::chrono::microseconds getRTT() const;                             // returns the current calculated roundtrip time between peers
-	virtual unsigned getMSS() const;                                              // returns the largest packet size we can currently send (in bytes)
-	virtual void setACKPeriod(std::chrono::microseconds);                         // sets the time between ACKs sent to the peer
-	virtual void setACKInterval(unsigned);                                        // sets the number of packets sent to the peer before sending an ACK (in packets)
-	virtual void setRTOPeriod(std::chrono::microseconds);                         // overrides the default EXP timeout calculations waiting for data from the peer
+private:  // CongestionControlParms interface
+    virtual PacketID getSendCurrentPacketID() const;                               // returns the most recently sent packet ID
+    virtual void setCongestionWindowSize(unsigned);                                // sets the size of the congestion window (in packets)
+    virtual unsigned getCongestionWindowSize() const;                              // gets the size of the congestion window (in packets)
+    virtual std::chrono::microseconds getPacketSendPeriod() const;                 // gets the current delay between sending packets
+    virtual void setPacketSendPeriod(std::chrono::microseconds);                   // sets the current delay between sending packets
+    virtual unsigned getMaxFlowWindow() const;                                     // returns the largest number of unacknowledged packets we can receive (in packets)
+    virtual void getReceiveRates(unsigned& recvSpeed, unsigned& bandwidth) const;  // returns the current calculated receive rate and bandwidth (in packets/sec)
+    virtual std::chrono::microseconds getRTT() const;                              // returns the current calculated roundtrip time between peers
+    virtual unsigned getMSS() const;                                               // returns the largest packet size we can currently send (in bytes)
+    virtual void setACKPeriod(std::chrono::microseconds);                          // sets the time between ACKs sent to the peer
+    virtual void setACKInterval(unsigned);                                         // sets the number of packets sent to the peer before sending an ACK (in packets)
+    virtual void setRTOPeriod(std::chrono::microseconds);                          // overrides the default EXP timeout calculations waiting for data from the peer
 
-private: // internal structures
+private:  // internal structures
     enum class EventType
     {
         unknown,
@@ -83,13 +83,13 @@ private: // internal structures
     };
     typedef std::list<Event> EventList;
 
-private: // internal variables
-	UdtSocket_private& _socket;                     // reference to top-level UDT socket private interface
-    CongestionControlPointer _congestion;           // congestion control object for this socket
-    QAtomicInteger<quint32> _lastSentPacketID{ 0 }; // packetID of most recently sent packet
-    QAtomicInteger<unsigned> _mtu{ 1500 };          // the MTU for the connection
-    unsigned _congestionWindow{ 16 };               // size of congestion window (in packets)
-    std::chrono::microseconds _sndPeriod{ 0 };      // delay between sending packets
+private:  // internal variables
+    UdtSocket_private& _socket;                      // reference to top-level UDT socket private interface
+    CongestionControlPointer _congestion;            // congestion control object for this socket
+    QAtomicInteger<quint32> _lastSentPacketID{ 0 };  // packetID of most recently sent packet
+    QAtomicInteger<unsigned> _mtu{ 1500 };           // the MTU for the connection
+    unsigned _congestionWindow{ 16 };                // size of congestion window (in packets)
+    std::chrono::microseconds _sndPeriod{ 0 };       // delay between sending packets
 
     mutable QMutex _eventProtect;
     QWaitCondition _eventCondition;
@@ -104,7 +104,6 @@ private:  // internal implementation
 private:
     Q_DISABLE_COPY(UdtSocket_CongestionControl)
 };
-
 
 }  // namespace udt4
 

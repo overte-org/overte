@@ -47,12 +47,12 @@ class UdtSocket_receive : public QThread {
     Q_OBJECT
 public:
     struct ReceiveMessageEntry {
-        ByteSlice        content;
-        MessageNumber    messageNumber;
-        bool             isOrdered{ false };
-        unsigned         numPackets{ 1 };
-        QElapsedTimer    firstReceived;
-        QElapsedTimer    lastReceived;
+        ByteSlice content;
+        MessageNumber messageNumber;
+        bool isOrdered{ false };
+        unsigned numPackets{ 1 };
+        QElapsedTimer firstReceived;
+        QElapsedTimer lastReceived;
         UdtSocketPointer socket;
     };
     typedef QSharedPointer<ReceiveMessageEntry> ReceiveMessageEntryPointer;
@@ -69,11 +69,11 @@ public:
 private slots:
     void ACKevent();
 
-private: // private datatypes
-    static constexpr unsigned ACK_SELF_CLOCK_INTERVAL{ 64 }; // involved in figuring whether we should get away with a "light" ACK packet with minimal information
+private:  // private datatypes
+    static constexpr unsigned ACK_SELF_CLOCK_INTERVAL{ 64 };  // involved in figuring whether we should get away with a "light" ACK packet with minimal information
 
     struct ReceivedPacket {
-        Packet        udtPacket;
+        Packet udtPacket;
         QElapsedTimer timeReceived;
 
         inline ReceivedPacket(){};
@@ -83,15 +83,15 @@ private: // private datatypes
 
     struct ACKHistoryEntry {
         ACKSequence ackID;
-        PacketID       lastPacket;
-        QElapsedTimer  sendTime;
+        PacketID lastPacket;
+        QElapsedTimer sendTime;
     };
     typedef QHash<ACKSequence, ACKHistoryEntry> ACKHistoryMap;
-    
+
     struct ReceiveLossEntry {
-        PacketID      packetID;
+        PacketID packetID;
         QElapsedTimer lastFeedback;
-        unsigned      numNAK{ 0 };
+        unsigned numNAK{ 0 };
 
         inline ReceiveLossEntry(const PacketID& p) : packetID(p) {}
     };
@@ -125,34 +125,34 @@ private:
     // this is a condition-based thread.  All the variables in this block can only be accessed while holding _eventMutex
     QMutex _eventMutex;
     QWaitCondition _eventCondition;
-    bool _flagListenerShutdown{ false };      // are we wanting to shutdown this listener?
-    bool _flagRecentACKevent{ false };        // has the ACK timer fired recently?
-    ReceivedPacketList _receivedPacketList;   // list of packets we have not yet processed
+    bool _flagListenerShutdown{ false };     // are we wanting to shutdown this listener?
+    bool _flagRecentACKevent{ false };       // has the ACK timer fired recently?
+    ReceivedPacketList _receivedPacketList;  // list of packets we have not yet processed
 
 private:
-    PacketID _farNextPktSeq;               // the peer's next largest packet ID expected.
-    PacketID _farRecdPktSeq;               // the peer's last "received" packet ID (before any loss events)
-    ACKSequence _lastACK;                  // last ACK packet we've sent
-    ACKSequence _largestACK;               // largest ACK packet we've sent that has been acknowledged (by an ACK2).
-    DataPacketMap _recvPktPend;            // list of packets that are waiting to be processed.
-    ReceiveLossMap _recvLossList;          // loss list.
-    ACKHistoryMap _ackHistory;             // list of sent ACKs.
-    PacketID _sentACK;                     // largest PacketID we've sent an ACK regarding
-    PacketID _recvACK2;                    // largest PacketID we've received an ACK2 from
-    QElapsedTimer _recvLastArrival;        // time of the most recent data packet arrival
-    QElapsedTimer _recvLastProbe;          // time of the most recent data packet probe packet
-    QAtomicInteger<quint64> _ackPeriod;    // (set by congestion control) delay between sending ACKs (in microseconds)
-    QAtomicInteger<unsigned> _ackInterval; // (set by congestion control) number of data packets to send before sending an ACK
-    unsigned _unackPktCount{ 0 };          // number of packets we've received that we haven't sent an ACK for
-	unsigned _lightAckCount{ 0 };          // number of "light ACK" packets we've sent since the last ACK
-    QDurationList _recvPktHistory;         // list of recently received packets.
-    QDurationList _recvPktPairHistory;     // probing packet window.
-    ConnectionStatsAtomicPointer _stats;   // reference to connection stats
+    PacketID _farNextPktSeq;                // the peer's next largest packet ID expected.
+    PacketID _farRecdPktSeq;                // the peer's last "received" packet ID (before any loss events)
+    ACKSequence _lastACK;                   // last ACK packet we've sent
+    ACKSequence _largestACK;                // largest ACK packet we've sent that has been acknowledged (by an ACK2).
+    DataPacketMap _recvPktPend;             // list of packets that are waiting to be processed.
+    ReceiveLossMap _recvLossList;           // loss list.
+    ACKHistoryMap _ackHistory;              // list of sent ACKs.
+    PacketID _sentACK;                      // largest PacketID we've sent an ACK regarding
+    PacketID _recvACK2;                     // largest PacketID we've received an ACK2 from
+    QElapsedTimer _recvLastArrival;         // time of the most recent data packet arrival
+    QElapsedTimer _recvLastProbe;           // time of the most recent data packet probe packet
+    QAtomicInteger<quint64> _ackPeriod;     // (set by congestion control) delay between sending ACKs (in microseconds)
+    QAtomicInteger<unsigned> _ackInterval;  // (set by congestion control) number of data packets to send before sending an ACK
+    unsigned _unackPktCount{ 0 };           // number of packets we've received that we haven't sent an ACK for
+    unsigned _lightAckCount{ 0 };           // number of "light ACK" packets we've sent since the last ACK
+    QDurationList _recvPktHistory;          // list of recently received packets.
+    QDurationList _recvPktPairHistory;      // probing packet window.
+    ConnectionStatsAtomicPointer _stats;    // reference to connection stats
 
-	// timers
-    QDeadlineTimer _fullACKsentTimer; // if an ACK packet has recently sent, don't include link information in the next one
-    QDeadlineTimer _ACKsentTimer;     // if an ACK packet has recently sent, wait before resending it
-    QTimer         _ACKtimerEvent;    // controls when to send an ACK to our peer
+    // timers
+    QDeadlineTimer _fullACKsentTimer;  // if an ACK packet has recently sent, don't include link information in the next one
+    QDeadlineTimer _ACKsentTimer;      // if an ACK packet has recently sent, wait before resending it
+    QTimer _ACKtimerEvent;             // controls when to send an ACK to our peer
     QDeadlineTimer _ACKtimer;
 
 private:

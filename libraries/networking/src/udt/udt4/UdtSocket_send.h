@@ -77,17 +77,17 @@ private slots:
     void EXPevent();
 
 private:
-    static constexpr std::chrono::microseconds MIN_EXP_INTERVAL{ 300 };                             // factors into the minimum time we will wait before requesting packet resends
-    static constexpr std::chrono::microseconds MIN_CONNECTION_TIMEOUT{ std::chrono::seconds{ 5 } }; // we will wait at minimum this time before dropping an inactive connection
+    static constexpr std::chrono::microseconds MIN_EXP_INTERVAL{ 300 };                              // factors into the minimum time we will wait before requesting packet resends
+    static constexpr std::chrono::microseconds MIN_CONNECTION_TIMEOUT{ std::chrono::seconds{ 5 } };  // we will wait at minimum this time before dropping an inactive connection
 
     enum class SendState
     {
-        Closed,      // Connection is closed
-        Idle,        // Connection is open and waiting
-        Sending,     // Recently sent a packet
-        Waiting,     // Waiting for the peer to process a packet
-        ProcessDrop, // Dropping a lost packet
-        Shutdown,    // Connection has been recently closed and is listening for packet-resend requests
+        Closed,       // Connection is closed
+        Idle,         // Connection is open and waiting
+        Sending,      // Recently sent a packet
+        Waiting,      // Waiting for the peer to process a packet
+        ProcessDrop,  // Dropping a lost packet
+        Shutdown,     // Connection has been recently closed and is listening for packet-resend requests
     };
 
     typedef QList<SendMessageEntryPointer> MessageEntryList;
@@ -134,43 +134,43 @@ private:
     mutable QMutex _eventMutex;
     QWaitCondition _eventCondition;
     UdtSocketState _socketState;
-    bool           _flagRecentReceivedPacket{ false }; // has a packet been recently received from our peer?
-    bool           _flagRecentEXPevent{ false };       // has the EXP timer fired recently?
-    bool           _flagRecentSNDevent{ false };       // has the SND timer fired recently?
-    bool           _flagSendDisconnect{ false };       // are we being asked to send a Disconnect packet?
-    MessageEntryList _pendingMessages;                 // the list of messages queued but not yet sent
-    ReceivedPacketList _receivedPacketList;            // list of packets we have not yet processed
+    bool _flagRecentReceivedPacket{ false };  // has a packet been recently received from our peer?
+    bool _flagRecentEXPevent{ false };        // has the EXP timer fired recently?
+    bool _flagRecentSNDevent{ false };        // has the SND timer fired recently?
+    bool _flagSendDisconnect{ false };        // are we being asked to send a Disconnect packet?
+    MessageEntryList _pendingMessages;        // the list of messages queued but not yet sent
+    ReceivedPacketList _receivedPacketList;   // list of packets we have not yet processed
 
-    mutable QMutex _sendMutex;             // held while we're assembling packets.  Sometimes interacts with _eventMutex, if you're grabbing both then GRAB THIS FIRST (i.e. avoid philosopher's dilemma)
-    mutable QWaitCondition _sendCondition; // triggers when a packet has finished processing or a packet has been sent
+    mutable QMutex _sendMutex;              // held while we're assembling packets.  Sometimes interacts with _eventMutex, if you're grabbing both then GRAB THIS FIRST (i.e. avoid philosopher's dilemma)
+    mutable QWaitCondition _sendCondition;  // triggers when a packet has finished processing or a packet has been sent
 
     // While the send thread is running these variables only to be accessed by that thread (can be initialized carefully by other threads)
-    unsigned       _mtu{ 1500 };
-    bool           _isDatagram{ true };
-	SendState      _sendState{SendState::Closed}; // current sender state
-    SendPacketEntryMap  _sendPktPend;     // list of packets that have been sent but not yet acknowledged
-	PacketID       _sendPacketID;         // the current packet sequence number
-    SendMessageEntryPointer _msgPartialSend;  // when a message can only partially fit in a packet, this is the remainder
-    MessageNumber  _messageSequence;      // the current message sequence number
-    unsigned       _expCount{ 1 };        // number of continuous EXP timeouts.
-	QElapsedTimer  _lastReceiveTime;      // the last time we've heard something from the remote system
-	PacketID       _lastAckPacketID;      // largest packetID we've received an ACK from
-    ACKSequence    _sentAck2;             // largest ACK2 packet we've sent
-    PacketIDSet    _sendLossList;         // loss list
-	unsigned       _flowWindowSize{ 16 }; // negotiated maximum number of unacknowledged packets (in packets)
-    ConnectionStatsAtomicPointer _stats;  // reference to connection stats
+    unsigned _mtu{ 1500 };
+    bool _isDatagram{ true };
+    SendState _sendState{ SendState::Closed };  // current sender state
+    SendPacketEntryMap _sendPktPend;            // list of packets that have been sent but not yet acknowledged
+    PacketID _sendPacketID;                     // the current packet sequence number
+    SendMessageEntryPointer _msgPartialSend;    // when a message can only partially fit in a packet, this is the remainder
+    MessageNumber _messageSequence;             // the current message sequence number
+    unsigned _expCount{ 1 };                    // number of continuous EXP timeouts.
+    QElapsedTimer _lastReceiveTime;             // the last time we've heard something from the remote system
+    PacketID _lastAckPacketID;                  // largest packetID we've received an ACK from
+    ACKSequence _sentAck2;                      // largest ACK2 packet we've sent
+    PacketIDSet _sendLossList;                  // loss list
+    unsigned _flowWindowSize{ 16 };             // negotiated maximum number of unacknowledged packets (in packets)
+    ConnectionStatsAtomicPointer _stats;        // reference to connection stats
 
     // These variables may be set/adjusted by congestion control and therefore are controlled by QAtomicInteger
-    QAtomicInteger<quint64> _sndPeriod;      // delay between sending packets (in microseconds)
-    QAtomicInteger<quint64> _rtoPeriod;      // override of EXP timer calculations (in microseconds)
+    QAtomicInteger<quint64> _sndPeriod;       // delay between sending packets (in microseconds)
+    QAtomicInteger<quint64> _rtoPeriod;       // override of EXP timer calculations (in microseconds)
     QAtomicInteger<unsigned> _congestWindow;  // size of the current congestion window (in packets)
 
-	// timers
-	QTimer         _SNDtimerEvent; // if a packet is recently sent, this timer fires when SND completes
+    // timers
+    QTimer _SNDtimerEvent;          // if a packet is recently sent, this timer fires when SND completes
     QDeadlineTimer _SNDtimer;
-	QTimer         _EXPtimerEvent; // Fires when we haven't heard from the peer in a while
+    QTimer _EXPtimerEvent;          // Fires when we haven't heard from the peer in a while
     QDeadlineTimer _EXPtimer;
-	QDeadlineTimer _ACK2SentTimer; // if an ACK2 packet has recently sent, wait SYN before sending another one
+    QDeadlineTimer _ACK2SentTimer;  // if an ACK2 packet has recently sent, wait SYN before sending another one
 
 private:
     Q_DISABLE_COPY(UdtSocket_send)

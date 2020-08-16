@@ -17,7 +17,7 @@
 
 using namespace udt4;
 
-UdtSocket_CongestionControl::UdtSocket_CongestionControl(UdtSocket_private& socket):_socket(socket) {
+UdtSocket_CongestionControl::UdtSocket_CongestionControl(UdtSocket_private& socket) : _socket(socket) {
     _congestion = CongestionControlPointer(new NativeCongestionControl);
     start();
 }
@@ -53,30 +53,30 @@ void UdtSocket_CongestionControl::run() {
 
 void UdtSocket_CongestionControl::handleEvent(const Event& event) {
     switch (event.type) {
-    case EventType::init:
-        _congestion->init(*this);
-        break;
-    case EventType::close:
-        _congestion->close(*this);
-        break;
-    case EventType::onACK:
-        _congestion->onACK(*this, event.packetIDs.front());
-        break;
-    case EventType::onNAK:
-        _congestion->onNAK(*this, event.packetIDs);
-        break;
-    case EventType::onTimeout:
-        _congestion->onTimeout(*this);
-        break;
-    case EventType::onPacketSent:
-        _congestion->onPacketSent(*this, event.udtPacket);
-        break;
-    case EventType::onPacketReceived:
-        _congestion->onPacketReceived(*this, event.udtPacket, event.timeReceived);
-        break;
-    case EventType::onCustomMessageReceived:
-        _congestion->onCustomMessageReceived(*this, event.udtPacket, event.timeReceived);
-        break;
+        case EventType::init:
+            _congestion->init(*this);
+            break;
+        case EventType::close:
+            _congestion->close(*this);
+            break;
+        case EventType::onACK:
+            _congestion->onACK(*this, event.packetIDs.front());
+            break;
+        case EventType::onNAK:
+            _congestion->onNAK(*this, event.packetIDs);
+            break;
+        case EventType::onTimeout:
+            _congestion->onTimeout(*this);
+            break;
+        case EventType::onPacketSent:
+            _congestion->onPacketSent(*this, event.udtPacket);
+            break;
+        case EventType::onPacketReceived:
+            _congestion->onPacketReceived(*this, event.udtPacket, event.timeReceived);
+            break;
+        case EventType::onCustomMessageReceived:
+            _congestion->onCustomMessageReceived(*this, event.udtPacket, event.timeReceived);
+            break;
     }
 }
 
@@ -158,7 +158,7 @@ PacketID UdtSocket_CongestionControl::getSendCurrentPacketID() const {
 
 void UdtSocket_CongestionControl::setCongestionWindowSize(unsigned pkt) {
     _congestionWindow = pkt;
-	_socket.setCongestionWindow(pkt);
+    _socket.setCongestionWindow(pkt);
 }
 
 unsigned UdtSocket_CongestionControl::getCongestionWindowSize() const {

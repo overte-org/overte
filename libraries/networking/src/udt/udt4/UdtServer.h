@@ -99,8 +99,8 @@ private:
     UdtMultiplexerPointer _multiplexer;
     QAtomicInteger<quint8> _pausePendingConn{ 0 };
     QAbstractSocket::SocketError _serverError{ QAbstractSocket::SocketError::UnknownSocketError };
-    quint32 _synCookieSeed{ 0 };            // SYN cookie seed, randomized on socket open and used to generate a cookie based on peer port number
-    QAtomicInteger<quint32> _synEpoch{ 0 }; // 9-bit integer contributes to SYN cookie - randomized but incremented every 64 seconds
+    quint32 _synCookieSeed{ 0 };             // SYN cookie seed, randomized on socket open and used to generate a cookie based on peer port number
+    QAtomicInteger<quint32> _synEpoch{ 0 };  // 9-bit integer contributes to SYN cookie - randomized but incremented every 64 seconds
 
     mutable QMutex _acceptedHistoryProtect;
     AcceptSockInfoMap _acceptedHistory;

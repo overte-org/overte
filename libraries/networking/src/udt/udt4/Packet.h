@@ -46,8 +46,8 @@ Q_ENUM_NS(PacketType)
 enum class SocketType : quint16
 {
     Unknown = 0,
-    STREAM = 1, // reliable streaming protocol (e.g. TCP)
-    DGRAM = 2,  // partially-reliable messaging protocol
+    STREAM = 1,  // reliable streaming protocol (e.g. TCP)
+    DGRAM = 2,   // partially-reliable messaging protocol
 };
 
 class Packet {
@@ -72,10 +72,10 @@ class DataPacket {
 public:
     enum class MessagePosition
     {
-        Only = 3,   // this is the only packet in the message
-        First = 2,  // this is the first packet in a multi-packet message
-        Last = 1,   // this is the last packet in a multi-packet message
-        Middle = 0, // this is a middle packet in a multi-packet message
+        Only = 3,    // this is the only packet in the message
+        First = 2,   // this is the first packet in a multi-packet message
+        Last = 1,    // this is the last packet in a multi-packet message
+        Middle = 0,  // this is a middle packet in a multi-packet message
     };
 
 public:
@@ -117,15 +117,15 @@ public:
 public:
     std::chrono::microseconds _timestamp{ 0 };
     quint32 _socketID{ 0 };
-    quint32 _udtVer{ 0 };           // UDT version
-    SocketType _sockType{ SocketType::Unknown };  // Socket Type (1 = STREAM or 2 = DGRAM)
-    PacketID _initPktSeq;           // initial packet sequence number
-    quint32 _maxPktSize{ 0 };       // maximum packet size (including UDP/IP headers)
-    quint32 _maxFlowWinSize{ 0 };   // maximum flow window size
+    quint32 _udtVer{ 0 };                          // UDT version
+    SocketType _sockType{ SocketType::Unknown };   // Socket Type (1 = STREAM or 2 = DGRAM)
+    PacketID _initPktSeq;                          // initial packet sequence number
+    quint32 _maxPktSize{ 0 };                      // maximum packet size (including UDP/IP headers)
+    quint32 _maxFlowWinSize{ 0 };                  // maximum flow window size
     RequestType _reqType{ RequestType::Refused };  // connection type (regular(1), rendezvous(0), -1/-2 response)
-    quint32 _farSocketID{ 0 };      // socket ID
-    quint32 _synCookie{ 0 };        // SYN cookie
-	QHostAddress _sockAddr;         // the IP address of the UDP socket to which this packet is being sent
+    quint32 _farSocketID{ 0 };                     // socket ID
+    quint32 _synCookie{ 0 };                       // SYN cookie
+    QHostAddress _sockAddr;                        // the IP address of the UDP socket to which this packet is being sent
     ByteSlice _extra;
 };
 

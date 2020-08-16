@@ -109,7 +109,7 @@ HandshakePacket::HandshakePacket(const Packet& src, QAbstractSocket::NetworkLaye
     assert(src._type == PacketType::Handshake && src._contents.length() >= 48);
     if (src._contents.length() >= 48) {
         _udtVer = qFromBigEndian<quint32>(&src._contents[0]);
-        _sockType = static_cast <SocketType>(qFromBigEndian<quint32>(&src._contents[4]));
+        _sockType = static_cast<SocketType>(qFromBigEndian<quint32>(&src._contents[4]));
         _initPktSeq = PacketID(qFromBigEndian<quint32>(&src._contents[8]));
         _maxPktSize = qFromBigEndian<quint32>(&src._contents[12]);
         _maxFlowWinSize = qFromBigEndian<quint32>(&src._contents[16]);
@@ -148,7 +148,7 @@ Packet HandshakePacket::toPacket() const {
 
     switch (_sockAddr.protocol()) {
         case QAbstractSocket::IPv4Protocol: {
-            bool ok; // ignored anyhow, hopefully matching the protocol is enough
+            bool ok;  // ignored anyhow, hopefully matching the protocol is enough
             *reinterpret_cast<quint32*>(&buffer[32]) = _sockAddr.toIPv4Address(&ok);
             break;
         }
@@ -195,15 +195,15 @@ ACKPacket::ACKPacket(const Packet& src) :
 
 uint ACKPacket::packetSize(QAbstractSocket::NetworkLayerProtocol protocol) const {
     switch (_ackType) {
-    case AckType::Light:
-        return Packet::packetHeaderSize(protocol) + 4;
-        break;
-    case AckType::Normal:
-        return Packet::packetHeaderSize(protocol) + 16;
-        break;
-    case AckType::Full:
-        return Packet::packetHeaderSize(protocol) + 24;
-        break;
+        case AckType::Light:
+            return Packet::packetHeaderSize(protocol) + 4;
+            break;
+        case AckType::Normal:
+            return Packet::packetHeaderSize(protocol) + 16;
+            break;
+        case AckType::Full:
+            return Packet::packetHeaderSize(protocol) + 24;
+            break;
     }
     assert(false);
     return 0;
@@ -212,30 +212,30 @@ uint ACKPacket::packetSize(QAbstractSocket::NetworkLayerProtocol protocol) const
 Packet ACKPacket::toPacket() const {
     ByteSlice packetData;
     quint8* buffer;
-    
+
     switch (_ackType) {
-    case AckType::Light:
-        buffer = reinterpret_cast<quint8*>(packetData.create(4));
-        *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(static_cast<quint32>(_lastPacketReceived));
-        break;
+        case AckType::Light:
+            buffer = reinterpret_cast<quint8*>(packetData.create(4));
+            *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(static_cast<quint32>(_lastPacketReceived));
+            break;
 
-    case AckType::Normal:
-        buffer = reinterpret_cast<quint8*>(packetData.create(16));
-        *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(static_cast<quint32>(_lastPacketReceived));
-        *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(_rtt.count());
-        *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_rttVariance.count());
-        *reinterpret_cast<quint32*>(&buffer[12]) = qToBigEndian<quint32>(_availBufferSize);
-        break;
+        case AckType::Normal:
+            buffer = reinterpret_cast<quint8*>(packetData.create(16));
+            *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(static_cast<quint32>(_lastPacketReceived));
+            *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(_rtt.count());
+            *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_rttVariance.count());
+            *reinterpret_cast<quint32*>(&buffer[12]) = qToBigEndian<quint32>(_availBufferSize);
+            break;
 
-    case AckType::Full:
-        buffer = reinterpret_cast<quint8*>(packetData.create(24));
-        *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(static_cast<quint32>(_lastPacketReceived));
-        *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(_rtt.count());
-        *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_rttVariance.count());
-        *reinterpret_cast<quint32*>(&buffer[12]) = qToBigEndian<quint32>(_availBufferSize);
-        *reinterpret_cast<quint32*>(&buffer[16]) = qToBigEndian<quint32>(_packetReceiveRate);
-        *reinterpret_cast<quint32*>(&buffer[20]) = qToBigEndian<quint32>(_estimatedLinkCapacity);
-        break;
+        case AckType::Full:
+            buffer = reinterpret_cast<quint8*>(packetData.create(24));
+            *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(static_cast<quint32>(_lastPacketReceived));
+            *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(_rtt.count());
+            *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_rttVariance.count());
+            *reinterpret_cast<quint32*>(&buffer[12]) = qToBigEndian<quint32>(_availBufferSize);
+            *reinterpret_cast<quint32*>(&buffer[16]) = qToBigEndian<quint32>(_packetReceiveRate);
+            *reinterpret_cast<quint32*>(&buffer[20]) = qToBigEndian<quint32>(_estimatedLinkCapacity);
+            break;
     }
 
     Packet packet;

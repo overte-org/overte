@@ -18,7 +18,8 @@
 namespace udt4 {
 
 template <class P>
-inline PacketEvent<P>::PacketEvent(const P& p, const QHostAddress& address, quint32 port) : packet(p), peerAddress(address), peerPort(port) {
+inline PacketEvent<P>::PacketEvent(const P& p, const QHostAddress& address, quint32 port) :
+    packet(p), peerAddress(address), peerPort(port) {
     age.start();
 }
 

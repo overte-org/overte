@@ -33,7 +33,7 @@ template <int BITS>
 inline WrappedSequence<BITS>::operator UType() const {
     return static_cast<UType>(_value);
 }
-    
+
 template <int BITS>
 inline WrappedSequence<BITS>& WrappedSequence<BITS>::operator++() {
     _value = (_value + 1) & MAX;
@@ -59,7 +59,7 @@ inline WrappedSequence<BITS> WrappedSequence<BITS>::operator--(int) {
     --(*this);
     return before;
 }
-    
+
 template <int BITS>
 inline WrappedSequence<BITS>& WrappedSequence<BITS>::operator=(const WrappedSequence& other) {
     _value = other._value;
@@ -91,7 +91,7 @@ inline WrappedSequence<BITS>& WrappedSequence<BITS>::operator-=(Type dec) {
     _value = (_value - dec) & MAX;
     return *this;
 }
-    
+
 template <int BITS>
 inline bool WrappedSequence<BITS>::operator==(const WrappedSequence& other) const {
     return _value == other._value;
@@ -107,10 +107,10 @@ inline typename WrappedSequence<BITS>::Type WrappedSequence<BITS>::blindDifferen
     UType diff = (_value - rhs._value) & WrappedSequence::MAX;
     if ((diff & SIGN) != 0) {
         diff = diff | ~MAX;
-	}
-	return static_cast<Type>(diff);
+    }
+    return static_cast<Type>(diff);
 }
-    
+
 template <int BITS>
 inline bool WrappedSequence<BITS>::operator<(const WrappedSequence& rhs) const {
     return blindDifference(rhs) < 0;
@@ -130,7 +130,7 @@ template <int BITS>
 inline bool WrappedSequence<BITS>::operator>=(const WrappedSequence& rhs) const {
     return blindDifference(rhs) >= 0;
 }
-    
+
 template <int BITS>
 inline WrappedSequence<BITS> operator+(WrappedSequence<BITS> a, qint32 b) {
     a += b;
@@ -172,4 +172,4 @@ inline bool WrappedSequenceLess<T>::operator()(const T& lhs, const T& rhs) const
 
 }  // namespace udt4
 
-#endif // hifi_udt4_PacketID_inl
+#endif  // hifi_udt4_PacketID_inl

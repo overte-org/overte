@@ -36,10 +36,11 @@ typedef QSharedPointer<UdtMultiplexer> UdtMultiplexerPointer;
 typedef QWeakPointer<UdtMultiplexer> UdtMultiplexerWeakPointer;
 typedef QSharedPointer<UdtSocket> UdtSocketPointer;
 
-template<class P>
+template <class P>
 class PacketEvent {
 public:
     inline PacketEvent(const P& packet, const QHostAddress& address, quint32 port);
+
 public:
     P packet;
     QHostAddress peerAddress;
@@ -47,7 +48,7 @@ public:
     QElapsedTimer age;
 };
 
-template<class P>
+template <class P>
 using PacketEventPointer = QSharedPointer<PacketEvent<P>>;
 
 // UdtMultiplexer
@@ -69,7 +70,11 @@ public:
                                              QAbstractSocket::SocketError* serverError = nullptr,
                                              QString* errorString = nullptr);
     inline bool isLive() const;
-    void sendPacket(const QHostAddress& destAddr, quint32 destPort, quint32 destSockID, std::chrono::microseconds timestamp, Packet packet);
+    void sendPacket(const QHostAddress& destAddr,
+                    quint32 destPort,
+                    quint32 destSockID,
+                    std::chrono::microseconds timestamp,
+                    Packet packet);
     inline QHostAddress serverAddress() const;
     inline QAbstractSocket::SocketError serverError() const;
     inline quint16 serverPort() const;
@@ -98,7 +103,7 @@ private slots:
 signals:
     void readyRendezvousHandshake();
     void readyServerHandshake();
-signals: // private
+signals:  // private
     void readySendPacket(QPrivateSignal);
 
 private:
@@ -111,13 +116,13 @@ private:
 
     enum
     {
-        MAX_SERVER_HANDSHAKE_AGE = 500000000, // age in nsecs before discarding a server handshake = 500msec
+        MAX_SERVER_HANDSHAKE_AGE = 500000000,      // age in nsecs before discarding a server handshake = 500msec
         MAX_RENDEZVOUS_HANDSHAKE_AGE = 500000000,  // age in nsecs before discarding a rendezvous handshake = 500msec
         UDP_SEND_BUFFER_SIZE_BYTES = 1048576,
         UDP_RECEIVE_BUFFER_SIZE_BYTES = 1048576,
     };
 
-    QUdpSocket _udpSocket;  // the listening socket where we receive all our packets
+    QUdpSocket _udpSocket;                  // the listening socket where we receive all our packets
     QAtomicInteger<quint32> _nextSid{ 0 };  // the SockID for the next socket created -- set to a random number on construction
     QThread _readThread;
     QThread _writeThread;

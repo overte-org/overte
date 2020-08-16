@@ -51,7 +51,10 @@ inline void UdtSocket::setLocalSocketID(quint32 socketID) {
 
 // search through the specified map for the first entry >= key but < limit
 template <class T>
-inline typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::iterator findFirstEntry(std::map<PacketID, T, WrappedSequenceLess<PacketID>>& map, const PacketID& key, const PacketID& limit) {
+inline typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::iterator findFirstEntry(
+    std::map<PacketID, T, WrappedSequenceLess<PacketID>>& map,
+    const PacketID& key,
+    const PacketID& limit) {
     std::map<PacketID, T, WrappedSequenceLess<PacketID>>::iterator lookup = map.lower_bound(key);
     if (key < limit) {
         if (lookup == map.end() || lookup->first >= limit) {
@@ -71,9 +74,12 @@ inline typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::iterator f
     }
 }
 
-// search through 
+// search through
 template <class T>
-inline typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::const_iterator findFirstEntry(const std::map<PacketID, T, WrappedSequenceLess<PacketID>>& map, const PacketID& key, const PacketID& limit) {
+inline typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::const_iterator findFirstEntry(
+    const std::map<PacketID, T, WrappedSequenceLess<PacketID>>& map,
+    const PacketID& key,
+    const PacketID& limit) {
     std::map<PacketID, T, WrappedSequenceLess<PacketID>>::const_iterator lookup = map.lower_bound(key);
     if (key < limit) {
         if (lookup == map.end() || lookup->first >= limit) {
