@@ -41,8 +41,6 @@ public:                                                                         
                                          const QElapsedTimer& timeReceived);              // user-defined packet is received
 
 private:
-    static constexpr std::chrono::seconds ONE_SECOND{ 1 };
-
     QRandomGenerator _random;
     std::chrono::microseconds _rcInterval;     // UDT Rate control interval
     QElapsedTimer _lastRCTime;                 // last rate increase time

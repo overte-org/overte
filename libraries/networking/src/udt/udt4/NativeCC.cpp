@@ -13,6 +13,7 @@
 #include "UdtSocket.h"
 
 using namespace udt4;
+using namespace std::chrono_literals;
 
 NativeCongestionControl::NativeCongestionControl() : _rcInterval(UdtSocket::SYN) {
 }
@@ -28,13 +29,13 @@ void NativeCongestionControl::init(CongestionControlParms& parms) {
     _loss = false;
     _decCount = 0;
     _lastDecSeq = _lastAck - 1;
-    _lastDecPeriod = std::chrono::microseconds{ 1 };
+    _lastDecPeriod = 1us;
     _avgNAKNum = 0;
     _nakCount = 0;
     _decRandom = 1;
 
     parms.setCongestionWindowSize(16);
-    parms.setPacketSendPeriod(std::chrono::microseconds{ 1 });
+    parms.setPacketSendPeriod(1us);
 }
 
 // Close to be called when a UDT connection is closed.
@@ -63,8 +64,7 @@ void NativeCongestionControl::onACK(CongestionControlParms& parms, PacketID pack
         if (cWndSize > parms.getMaxFlowWindow()) {
             _slowStart = false;
             if (recvRate > 0) {
-                parms.setPacketSendPeriod(
-                    std::chrono::microseconds(std::chrono::microseconds{ ONE_SECOND }.count() / recvRate));
+                parms.setPacketSendPeriod(std::chrono::microseconds(std::chrono::microseconds{ 1s }.count() / recvRate));
             } else {
                 parms.setPacketSendPeriod(std::chrono::microseconds((rtt + _rcInterval).count() / cWndSize));
             }
@@ -75,9 +75,8 @@ void NativeCongestionControl::onACK(CongestionControlParms& parms, PacketID pack
         }
     } else {
         // Set the congestion window size (CWND) to: CWND = A * (RTT + SYN) + 16.
-        cWndSize = static_cast<unsigned>(static_cast<double>(recvRate) / std::chrono::microseconds{ ONE_SECOND }.count() *
-                                             (rtt + _rcInterval).count() +
-                                         16.0);
+        cWndSize = static_cast<unsigned>(
+            static_cast<double>(recvRate) / std::chrono::microseconds{ 1s }.count() * (rtt + _rcInterval).count() + 16.0);
     }
     if (_loss) {
         _loss = false;
@@ -104,7 +103,7 @@ void NativeCongestionControl::onACK(CongestionControlParms& parms, PacketID pack
     double inc;
     static constexpr double MIN_INC = 0.01;
 
-    quint64 B = bandwidth - std::chrono::microseconds{ ONE_SECOND }.count() / pktSendPeriod.count();
+    quint64 B = bandwidth - std::chrono::microseconds{ 1s }.count() / pktSendPeriod.count();
     quint64 bandwidth9 = bandwidth / 9;
     if ((pktSendPeriod > _lastDecPeriod) && (bandwidth9 < B)) {
         B = bandwidth9;
@@ -138,7 +137,7 @@ void NativeCongestionControl::onNAK(CongestionControlParms& parms, const QList<P
         parms.getReceiveRates(recvRate, bandwidth);
         if (recvRate > 0) {
             // Set the sending rate to the receiving rate.
-            parms.setPacketSendPeriod(std::chrono::microseconds(ONE_SECOND.count() / recvRate));
+            parms.setPacketSendPeriod(std::chrono::microseconds(std::chrono::microseconds{ 1s }.count() / recvRate));
             return;
         }
         // If no receiving rate is observed, we have to compute the sending
@@ -191,7 +190,7 @@ void NativeCongestionControl::onTimeout(CongestionControlParms& parms) {
         unsigned recvRate, bandwidth;
         parms.getReceiveRates(recvRate, bandwidth);
         if (recvRate > 0) {
-            parms.setPacketSendPeriod(std::chrono::microseconds(std::chrono::microseconds{ ONE_SECOND }.count() / recvRate));
+            parms.setPacketSendPeriod(std::chrono::microseconds(std::chrono::microseconds{ 1s }.count() / recvRate));
         } else {
             parms.setPacketSendPeriod(std::chrono::microseconds(static_cast<quint64>(
                 static_cast<double>(parms.getCongestionWindowSize()) / (parms.getRTT() + _rcInterval).count())));
