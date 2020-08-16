@@ -28,8 +28,8 @@
 
 using namespace udt4;
 
-QMutex UdtMultiplexer::gl_multiplexerMapProtect;
-UdtMultiplexer::TMultiplexerMap UdtMultiplexer::gl_multiplexerMap;
+QMutex UdtMultiplexer::_multiplexerMapProtect;
+UdtMultiplexer::TMultiplexerMap UdtMultiplexer::_multiplexerMap;
 
 // getInstance gets or creates a multiplexer for the given local address.
 UdtMultiplexerPointer UdtMultiplexer::getInstance(quint16 port,
@@ -62,8 +62,8 @@ UdtMultiplexerPointer UdtMultiplexer::getInstance(quint16 port,
 
     {
         TLocalPortPair resultLocalPort(multiplexer->serverPort(), multiplexer->serverAddress().toString());
-        QMutexLocker locker(&gl_multiplexerMapProtect);
-        gl_multiplexerMap.insert(resultLocalPort, multiplexer);
+        QMutexLocker locker(&_multiplexerMapProtect);
+        _multiplexerMap.insert(resultLocalPort, multiplexer);
     }
     return multiplexer;
 }
@@ -78,9 +78,9 @@ UdtMultiplexerPointer UdtMultiplexer::lookupInstance(quint16 port, const QHostAd
 
     {
         TLocalPortPair localPort(port, localAddress.toString());
-        QMutexLocker locker(&gl_multiplexerMapProtect);
-        TMultiplexerMap::const_iterator lookup = gl_multiplexerMap.find(localPort);
-        if (lookup != gl_multiplexerMap.end()) {
+        QMutexLocker locker(&_multiplexerMapProtect);
+        TMultiplexerMap::const_iterator lookup = _multiplexerMap.find(localPort);
+        if (lookup != _multiplexerMap.end()) {
             multiplexer = lookup.value().lock();
         }
     }
@@ -94,9 +94,9 @@ UdtMultiplexerPointer UdtMultiplexer::lookupInstance(quint16 port, const QHostAd
     {
         QHostAddress anyAddress(QHostAddress::Any);
         TLocalPortPair localPort(port, anyAddress.toString());
-        QMutexLocker locker(&gl_multiplexerMapProtect);
-        TMultiplexerMap::const_iterator lookup = gl_multiplexerMap.find(localPort);
-        if (lookup != gl_multiplexerMap.end()) {
+        QMutexLocker locker(&_multiplexerMapProtect);
+        TMultiplexerMap::const_iterator lookup = _multiplexerMap.find(localPort);
+        if (lookup != _multiplexerMap.end()) {
             multiplexer = lookup.value().lock();
         }
     }
@@ -116,10 +116,10 @@ UdtMultiplexer::~UdtMultiplexer() {
     // deregister this multiplexer
     TLocalPortPair localPort(_serverPort, _serverAddress.toString());
     {
-        QMutexLocker locker(&gl_multiplexerMapProtect);
-        TMultiplexerMap::iterator lookup = gl_multiplexerMap.find(localPort);
-        if (lookup != gl_multiplexerMap.end()) {
-            gl_multiplexerMap.erase(lookup);
+        QMutexLocker locker(&_multiplexerMapProtect);
+        TMultiplexerMap::iterator lookup = _multiplexerMap.find(localPort);
+        if (lookup != _multiplexerMap.end()) {
+            _multiplexerMap.erase(lookup);
         }
     }
 

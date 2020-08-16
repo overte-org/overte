@@ -49,6 +49,11 @@ UdtSocket::~UdtSocket() {
     setState(UdtSocketState::Init);
 }
 
+UdtSocketState UdtSocket::state() const {
+    QMutexLocker locker(&_sockStateProtect);
+    return _sockState;
+}
+
 bool UdtSocket::setCongestionControl(CongestionControlPointer congestionControl) {
     switch (state()) {
         case UdtSocketState::HostLookup:

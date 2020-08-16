@@ -47,22 +47,22 @@ public:
     explicit UdtServer(QObject* parent = nullptr);
     virtual ~UdtServer();
 
-    inline AcceptFlags acceptFlags() const;
+    inline AcceptFlags acceptFlags() const { return _acceptFlags; }
     void close();
-    inline QString errorString() const;
+    inline QString errorString() const { return _errorString; }
     virtual bool hasPendingConnections() const;
-    inline bool isListening() const;
+    inline bool isListening() const { return !_multiplexer.isNull(); }
     bool listen(quint16 port, const QHostAddress& address = QHostAddress::Any);
-    inline qint64 listenReplayWindow() const;
-    inline int maxPendingConnections() const;
+    inline qint64 listenReplayWindow() const { return _listenReplayWindow; }
+    inline int maxPendingConnections() const { return _maxPendingConn.load(); }
     virtual UdtSocketPointer nextPendingConnection();
-    inline void pauseAccepting();
-    inline void resumeAccepting();
+    inline void pauseAccepting() { _pausePendingConn.store(1); }
+    inline void resumeAccepting() { _pausePendingConn.store(0); }
     inline QHostAddress serverAddress() const;
-    QAbstractSocket::SocketError serverError() const;
+    QAbstractSocket::SocketError serverError() const { return _serverError; }
     quint16 serverPort() const;
-    inline void setAcceptFlags(AcceptFlags flags);
-    inline void setListenReplayWindow(qint64 msecs);
+    inline void setAcceptFlags(AcceptFlags flags) { _acceptFlags = flags; }
+    inline void setListenReplayWindow(qint64 msecs) { _listenReplayWindow = msecs; }
     void setMaxPendingConnections(int numConnections);
     bool waitForNewConnection(int msec = 0, bool* timedOut = nullptr);
 
@@ -114,5 +114,4 @@ private:
 
 }  // namespace udt4
 
-#include "UdtServer.inl"
 #endif /* hifi_udt4_UdtServer_h */

@@ -52,7 +52,9 @@ public:
         bool isOrdered{ false };
         bool fullySent{ false };
 
-        inline SendMessageEntry(const ByteSlice& c, const QDeadlineTimer& expireTime = QDeadlineTimer(QDeadlineTimer::Forever));
+        inline SendMessageEntry(const ByteSlice& c, const QDeadlineTimer& et = QDeadlineTimer(QDeadlineTimer::Forever)) : content(c), expireTime(et) {
+            sendTime.start();
+        };
     };
     typedef QSharedPointer<SendMessageEntry> SendMessageEntryPointer;
 
@@ -97,7 +99,7 @@ private:
         QElapsedTimer timeReceived;
 
         inline ReceivedPacket() {}
-        inline ReceivedPacket(const Packet& p, const QElapsedTimer& t);
+        inline ReceivedPacket(const Packet& p, const QElapsedTimer& t) : udtPacket(p), timeReceived(t) {}
     };
     typedef std::list<ReceivedPacket> ReceivedPacketList;
 
@@ -178,5 +180,4 @@ private:
 
 }  // namespace udt4
 
-#include "UdtSocket_send.inl"
 #endif /* hifi_udt4_UdtSocket_send_h */

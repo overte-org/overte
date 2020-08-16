@@ -77,7 +77,7 @@ private:  // private datatypes
         QElapsedTimer timeReceived;
 
         inline ReceivedPacket(){};
-        inline ReceivedPacket(const Packet& p, const QElapsedTimer& t);
+        inline ReceivedPacket(const Packet& p, const QElapsedTimer& t) : udtPacket(p), timeReceived(t) {}
     };
     typedef std::list<ReceivedPacket> ReceivedPacketList;
 
@@ -161,5 +161,4 @@ private:
 
 }  // namespace udt4
 
-#include "UdtSocket_recv.inl"
 #endif /* hifi_udt4_UdtSocket_recv_h */

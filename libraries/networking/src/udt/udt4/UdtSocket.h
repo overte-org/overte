@@ -119,7 +119,7 @@ public:
     ConnectionStats getConnectionStats() const;
 
 public:  // from QUdpSocket
-    bool isInDatagramMode() const;
+    inline bool isInDatagramMode() const { return _isDatagram; }
     bool hasPendingDatagrams() const;
     qint64 pendingDatagramSize() const;
     ByteSlice receiveDatagram();
@@ -133,20 +133,20 @@ public:  // from QUdpSocket
     bool writeDatagram(const SendNetworkMessagePointer& message);
 
 public:  // from QAbstractSocket
-    inline void abort();
+    inline void abort() { setState(UdtSocketState::Init); }
     virtual void connectToHost(const QString& hostName, quint16 port, quint16 localPort = 0, bool datagramMode = true);
     virtual void connectToHost(const QHostAddress& address, quint16 port, quint16 localPort = 0, bool datagramMode = true);
     virtual void rendezvousToHost(const QString& hostName, quint16 port, quint16 localPort = 0, bool datagramMode = true);
     virtual void rendezvousToHost(const QHostAddress& address, quint16 port, quint16 localPort = 0, bool datagramMode = true);
     virtual void disconnectFromHost();
-    inline QString errorString() const;
+    inline QString errorString() const { return _errorString; }
     bool flush();
-    bool isValid() const;
+    inline bool isValid() const { return state() == UdtSocketState::Connected; }
     QHostAddress localAddress() const;
     quint16 localPort() const;
-    inline const QHostAddress& peerAddress() const;
-    inline quint16 peerPort() const;
-    inline UdtSocketState state() const;
+    inline const QHostAddress& peerAddress() const { return _remoteAddr; }
+    inline quint16 peerPort() const { return _remotePort; }
+    UdtSocketState state() const;
     virtual bool waitForConnected(int msecs = 30000);
     virtual bool waitForDisconnected(int msecs = 30000);
 
@@ -179,7 +179,7 @@ public:  // internal implementation
                                             const QHostAddress& peerAddress,
                                             uint peerPort);
     void readPacket(const Packet& udtPacket, const QHostAddress& peerAddress, uint peerPort);
-    inline void setLocalSocketID(quint32 socketID);
+    inline void setLocalSocketID(quint32 socketID) { _socketID = socketID; }
 
 private:  // UdtSocket_private implementation
     virtual void getRTT(std::chrono::microseconds& rtt, std::chrono::microseconds& rttVariance) const;
@@ -294,18 +294,6 @@ private:
     Q_DISABLE_COPY(UdtSocket)
 };
 
-template <class T>
-typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::iterator findFirstEntry(
-    std::map<PacketID, T, WrappedSequenceLess<PacketID>>& map,
-    const PacketID& key,
-    const PacketID& limit);
-
-template <class T>
-typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::const_iterator findFirstEntry(
-    const std::map<PacketID, T, WrappedSequenceLess<PacketID>>& map,
-    const PacketID& key,
-    const PacketID& limit);
-
 std::set<PacketID, WrappedSequenceLess<PacketID>>::iterator findFirstEntry(
     std::set<PacketID, WrappedSequenceLess<PacketID>>& set,
     const PacketID& key,
@@ -316,6 +304,56 @@ std::set<PacketID, WrappedSequenceLess<PacketID>>::const_iterator findFirstEntry
     const PacketID& key,
     const PacketID& limit);
 
+// search through the specified map for the first entry >= key but < limit
+template <class T>
+inline typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::iterator findFirstEntry(
+    std::map<PacketID, T, WrappedSequenceLess<PacketID>>& map,
+    const PacketID& key,
+    const PacketID& limit) {
+    std::map<PacketID, T, WrappedSequenceLess<PacketID>>::iterator lookup = map.lower_bound(key);
+    if (key < limit) {
+        if (lookup == map.end() || lookup->first >= limit) {
+            return map.end();
+        } else {
+            return lookup;
+        }
+    }
+    if (lookup != map.end()) {
+        return lookup;
+    }
+    lookup = map.lower_bound(PacketID(0UL));
+    if (lookup == map.end() || lookup->first >= limit) {
+        return map.end();
+    } else {
+        return lookup;
+    }
+}
+
+// search through the specified map for the first entry >= key but < limit
+template <class T>
+inline typename std::map<PacketID, T, WrappedSequenceLess<PacketID>>::const_iterator findFirstEntry(
+    const std::map<PacketID, T, WrappedSequenceLess<PacketID>>& map,
+    const PacketID& key,
+    const PacketID& limit) {
+    std::map<PacketID, T, WrappedSequenceLess<PacketID>>::const_iterator lookup = map.lower_bound(key);
+    if (key < limit) {
+        if (lookup == map.end() || lookup->first >= limit) {
+            return map.end();
+        } else {
+            return lookup;
+        }
+    }
+    if (lookup != map.end()) {
+        return lookup;
+    }
+    lookup = map.lower_bound(PacketID(0UL));
+    if (lookup == map.end() || lookup->first >= limit) {
+        return map.end();
+    } else {
+        return lookup;
+    }
+}
+
 }  // namespace udt4
-#include "UdtSocket.inl"
+
 #endif /* hifi_udt4_UdtSocket_h */

@@ -48,13 +48,13 @@ struct ConnectionStatsAtomic {
     std::atomic<std::chrono::nanoseconds> sendingCpuTime;    // busy sending cpu time (i.e., idle time exclusive)
     std::atomic<std::chrono::nanoseconds> receivingCpuTime;  // busy receiving cpu time (i.e., idle time exclusive)
 
-    // instant measurements
-    //    std::atomic<std::chrono::microseconds> packetSendingPeriod;  // packet sending period (sending side)
-    //    std::atomic<unsigned> packetFlowWindow{ 0 };        // flow window size, in number of packets (sending side, from remote)
-    //    std::atomic<unsigned> packetCongestionWindow{ 0 };  // congestion window size, in number of packets (congestion control)
-    //    std::atomic<unsigned> packetFlightSize{ 0 };        // number of packets on flight (sending side)
-    //    std::atomic<std::chrono::microseconds> rtt;         // RTT
-    //    std::atomic<unsigned> MbpsBandwidth{ 0 };           // estimated bandwidth, in Mb/s
+// instant measurements
+//    std::atomic<std::chrono::microseconds> packetSendingPeriod;  // packet sending period (sending side)
+//    std::atomic<unsigned> packetFlowWindow{ 0 };        // flow window size, in number of packets (sending side, from remote)
+//    std::atomic<unsigned> packetCongestionWindow{ 0 };  // congestion window size, in number of packets (congestion control)
+//    std::atomic<unsigned> packetFlightSize{ 0 };        // number of packets on flight (sending side)
+//    std::atomic<std::chrono::microseconds> rtt;         // RTT
+//    std::atomic<unsigned> MbpsBandwidth{ 0 };           // estimated bandwidth, in Mb/s
 };
 typedef QSharedPointer<ConnectionStatsAtomic> ConnectionStatsAtomicPointer;
 
@@ -88,20 +88,20 @@ struct ConnectionStats {
     std::chrono::nanoseconds sendingCpuTime;    // busy sending cpu time (i.e., idle time exclusive)
     std::chrono::nanoseconds receivingCpuTime;  // busy receiving cpu time (i.e., idle time exclusive)
 
-    // instant measurements
-    //    std::chrono::microseconds packetSendingPeriod;  // packet sending period (sending side)
-    //    unsigned packetFlowWindow{ 0 };        // flow window size, in number of packets (sending side, from remote)
-    //    unsigned packetCongestionWindow{ 0 };  // congestion window size, in number of packets (congestion control)
-    //    unsigned packetFlightSize{ 0 };        // number of packets on flight (sending side)
-    std::chrono::microseconds rtt;
-    std::chrono::microseconds rttVariance;
-    unsigned receiveRate;
-    unsigned estimatedBandwith;
-    /*
-        // the following stats are trailing averages in the result, not totals
-        int sendRate { 0 };
-        int congestionWindowSize { 0 };
-        int packetSendPeriod { 0 };
+// instant measurements
+//    std::chrono::microseconds packetSendingPeriod;  // packet sending period (sending side)
+//    unsigned packetFlowWindow{ 0 };        // flow window size, in number of packets (sending side, from remote)
+//    unsigned packetCongestionWindow{ 0 };  // congestion window size, in number of packets (congestion control)
+//    unsigned packetFlightSize{ 0 };        // number of packets on flight (sending side)
+    std::chrono::microseconds rtt{ 0 };
+    std::chrono::microseconds rttVariance{ 0 };
+    unsigned receiveRate{ 0 };
+    unsigned estimatedBandwith{ 0 };
+/*
+    // the following stats are trailing averages in the result, not totals
+    int sendRate { 0 };
+    int congestionWindowSize { 0 };
+    int packetSendPeriod { 0 };
 
     virtual unsigned getMaxFlowWinSize() const;
     virtual void setCongestionWindow(unsigned pkt);

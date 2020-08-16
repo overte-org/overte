@@ -39,7 +39,7 @@ typedef QSharedPointer<UdtSocket> UdtSocketPointer;
 template <class P>
 class PacketEvent {
 public:
-    inline PacketEvent(const P& packet, const QHostAddress& address, quint32 port);
+    inline PacketEvent(const P& p, const QHostAddress& address, quint32 port) : packet(p), peerAddress(address), peerPort(port) { age.start(); }
 
 public:
     P packet;
@@ -69,22 +69,22 @@ public:
                                              const QHostAddress& localAddress = QHostAddress::Any,
                                              QAbstractSocket::SocketError* serverError = nullptr,
                                              QString* errorString = nullptr);
-    inline bool isLive() const;
+    inline bool isLive() const { return _udpSocket.isOpen(); }
     void sendPacket(const QHostAddress& destAddr,
                     quint32 destPort,
                     quint32 destSockID,
                     std::chrono::microseconds timestamp,
                     Packet packet);
-    inline QHostAddress serverAddress() const;
-    inline QAbstractSocket::SocketError serverError() const;
-    inline quint16 serverPort() const;
-    inline QString errorString() const;
+    inline QHostAddress serverAddress() const { return _serverAddress; }
+    inline QAbstractSocket::SocketError serverError() const { return _udpSocket.error(); }
+    inline quint16 serverPort() const { return _serverPort; }
+    inline QString errorString() const { return _udpSocket.errorString(); }
 
     void newSocket(UdtSocketPointer socket);
     bool closeSocket(quint32 sockID);
 
-    inline void moveToReadThread(QObject* object);
-    inline void moveToWriteThread(QObject* object);
+    inline void moveToReadThread(QObject* object) { object->moveToThread(&_readThread); }
+    inline void moveToWriteThread(QObject* object) { object->moveToThread(&_writeThread); }
 
     PacketEventPointer<HandshakePacket> nextServerHandshake();
     PacketEventPointer<HandshakePacket> nextRendezvousHandshake(const QHostAddress& peerAddress, quint32 peerPort);
@@ -141,14 +141,13 @@ private:
     mutable QMutex _sendPacketProtect;
     TPacketQueue _sendPacket;
 
-    static QMutex gl_multiplexerMapProtect;
-    static TMultiplexerMap gl_multiplexerMap;
+    static QMutex _multiplexerMapProtect;
+    static TMultiplexerMap _multiplexerMap;
 
 private:
     Q_DISABLE_COPY(UdtMultiplexer)
 };
 
 } /* namespace udt4 */
-#include "Multiplexer.inl"
 
 #endif /* hifi_udt4_Multiplexer_h */
