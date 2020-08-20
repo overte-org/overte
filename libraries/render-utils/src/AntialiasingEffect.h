@@ -30,7 +30,7 @@ class AntialiasingSetupConfig : public render::Job::Config {
 public:
     AntialiasingSetupConfig() : render::Job::Config(true) {}
 
-    float scale{ 1.0f };
+    float scale{ 0.75f };
     bool stop{ false };
     bool freeze{ false };
 
@@ -133,7 +133,7 @@ public:
     int _mode{ TAA }; // '_' prefix but not private?
 
     float blend { 0.2f };
-    float sharpen { 0.0f };
+    float sharpen { 0.1f };
 
     bool constrainColor { true };
     float covarianceGamma { 1.15f };
@@ -228,8 +228,6 @@ private:
     static gpu::PipelinePointer _debugBlendPipeline;
 
     TAAParamsBuffer _params;
-    //TODO: check if it's used
-    AntialiasingConfig::Mode _mode{ AntialiasingConfig::TAA };
     float _sharpen { 0.15f };
     bool _isSharpenEnabled { true };
     float _debugFXAAX { 0.0f };
