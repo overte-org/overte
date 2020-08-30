@@ -30,7 +30,6 @@
 #include "MainWindow.h"
 #include "Menu.h"
 #include "OffscreenUi.h"
-#include "commerce/QmlCommerce.h"
 #include "NetworkingConstants.h"
 
 static const QString DESKTOP_LOCATION = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
@@ -147,8 +146,6 @@ void WindowScriptingInterface::openUrl(const QUrl& url) {
         auto scheme = url.scheme();
         if (scheme == URL_SCHEME_OVERTE) {
             DependencyManager::get<AddressManager>()->handleLookupString(url.toString());
-        } else if (scheme == URL_SCHEME_OVERTEAPP) {
-            DependencyManager::get<QmlCommerce>()->openSystemApp(url.path());
         } else {
 #if defined(Q_OS_ANDROID)
             QMap<QString, QString> args;
