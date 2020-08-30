@@ -133,7 +133,7 @@ public:
     int _mode{ TAA }; // '_' prefix but not private?
 
     float blend { 0.2f };
-    float sharpen { 0.1f };
+    float sharpen { 0.05f };
 
     bool constrainColor { true };
     float covarianceGamma { 1.15f };

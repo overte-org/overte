@@ -56,10 +56,9 @@ void main(void) {
         posEye.x += _distanceFromCenter * vertex.binormalAndHalfWidth.w * binormalEye.x;
         posEye.y += _distanceFromCenter * vertex.binormalAndHalfWidth.w * binormalEye.y;
         posEye.z += _distanceFromCenter * vertex.binormalAndHalfWidth.w * binormalEye.z;
-<@if HIFI_USE_FORWARD@>
         <$transformEyeToClipPos(cam, posEye, gl_Position)$>
-<@else@>
-        <$transformEyeToClipPosAndPrevClipPos(cam, posEye, gl_Position, _prevPositionCS)$>
+<@if not HIFI_USE_FORWARD@>
+        <$transformEyeToPrevClipPos(cam, posEye, _prevPositionCS)$>
         <$transformEyeToWorldDir(cam, normalEye, _normalWS)$>
 <@endif@>
     } else {
