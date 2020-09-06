@@ -1,6 +1,7 @@
 //
 //  Created by Sam Gondelman 7/17/2018
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2020 Vircadia contributors.
 //  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.

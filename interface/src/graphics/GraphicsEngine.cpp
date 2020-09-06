@@ -3,6 +3,7 @@
 //
 //  Created by Sam Gateau on 29/6/2018.
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2020 Vircadia contributors.
 //  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
@@ -189,7 +190,7 @@ void GraphicsEngine::render_performFrame() {
 
     {
         PROFILE_RANGE(render, "/pluginBeginFrameRender");
-        // If a display plugin loses its underlying support, it
+        // If a display plugin loses it's underlying support, it
         // needs to be able to signal us to not use it
         if (!displayPlugin->beginFrameRender(_renderFrameCount)) {
             QMetaObject::invokeMethod(qApp, "updateDisplayMode");
@@ -269,7 +270,7 @@ void GraphicsEngine::render_performFrame() {
             PROFILE_RANGE(render, "/renderOverlay");
             PerformanceTimer perfTimer("renderOverlay");
             // NOTE: There is no batch associated with this renderArgs
-            // the ApplicationOverlay class assumes it's viewport is set up to be the device size
+            // the ApplicationOverlay class assumes its viewport is set up to be the device size
             renderArgs._viewport = glm::ivec4(0, 0, qApp->getDeviceSize());
             qApp->getApplicationOverlay().renderOverlay(&renderArgs);
         }

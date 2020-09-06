@@ -4,6 +4,7 @@
 //
 //  Created by Raffi Bedikian on 8/30/15
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2020 Vircadia contributors.
 //  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
