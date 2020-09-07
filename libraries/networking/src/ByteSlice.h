@@ -31,6 +31,7 @@ public:
     inline ByteSlice(const QByteArray& data) : _offset(0), _length(data.length()), _content(ByteStringPointer::create(reinterpret_cast<const quint8*>(data.constData()), data.length())) {}
     inline ByteSlice(const std::string& data) : _offset(0), _length(data.length()), _content(ByteStringPointer::create(reinterpret_cast<const quint8*>(data.c_str()), data.length())) {}
     inline ByteSlice(const ByteSlice& data) : _offset(data._offset), _length(data._length), _content(data._content) {}
+    inline ByteSlice(ByteSlice&& data) noexcept : _offset(data._offset), _length(data._length) { _content.swap(data._content); }
     void* create(size_t length);  // create a new buffer and return a pointer to it
 
     inline size_t length() const { return _length; }
@@ -38,6 +39,20 @@ public:
     void clear();
     inline const quint8* constData() const { return _content.isNull() ? nullptr : _content->_content + _offset; }
     inline const quint8& operator[](size_t idx) const { return (_content.isNull() || idx > _length) ? _fallback : _content->_content[idx + _offset]; }
+
+    inline ByteSlice& operator=(const ByteSlice& rhs) {
+        _content = rhs._content;
+        _offset = rhs._offset;
+        _length = rhs._length;
+        return *this;
+    }
+
+    inline ByteSlice& operator=(ByteSlice&& rhs) {
+        _content.swap(rhs._content);
+        _offset = rhs._offset;
+        _length = rhs._length;
+        return *this;
+    }
 
     quint8 pop_front();
     ByteSlice substring(size_t offset, size_t length = NPOS) const;
