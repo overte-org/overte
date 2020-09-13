@@ -197,57 +197,6 @@ bool UdtMultiplexer::create(quint16 port, const QHostAddress& localAddress) {
     return true;
 }
 
-/*
-// Adapted from https://github.com/hlandau/degoutils/blob/master/net/mtu.go
-const absMaxDatagramSize = 2147483646 // 2**31-2
-func discoverMTU(ourIP net.IP) (uint, error) {
-
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		return 65535, err
-	}
-
-	var filtered []net.Interface
-	for _, iface := range ifaces {
-		addrs, err := iface.Addrs()
-		if err != nil {
-			log.Printf("cannot retrieve iface addresses for %s: %s", iface.Name, err.Error())
-			continue
-		}
-		for _, a := range addrs {
-			var ipnet *net.IPNet
-			switch v := a.(type) {
-			case *net.IPAddr:
-				ipnet = &net.IPNet{IP: v.IP, Mask: v.IP.DefaultMask()}
-			case *net.IPNet:
-				ipnet = v
-			}
-			if ipnet == nil {
-				log.Printf("cannot retrieve IPNet from address %s on interface %s", a.String(), iface.Name)
-				continue
-			}
-			if ipnet.Contains(ourIP) {
-				filtered = append(filtered, iface)
-			}
-		}
-	}
-	if len(filtered) == 0 {
-		log.Printf("cannot identify interface(s) associated with %s, doing blind search", ourIP.String())
-		filtered = ifaces
-	}
-
-	var mtu int = 65535
-	for _, iface := range filtered {
-		if iface.Flags&(net.FlagUp|net.FlagLoopback) == net.FlagUp && iface.MTU > mtu {
-			mtu = iface.MTU
-		}
-	}
-	if mtu > absMaxDatagramSize {
-		mtu = absMaxDatagramSize
-	}
-	return uint(mtu), nil
-}
-*/
 void UdtMultiplexer::newSocket(UdtSocketPointer socket) {
     quint32 socketID = _nextSid.fetchAndSubRelaxed(1);
     socket->setLocalSocketID(socketID);
@@ -282,7 +231,11 @@ void UdtMultiplexer::onPacketReadReady() {  // executes from goRead thread
         // attempt to route the packet
         if (udtPacket._socketID == 0) {
             if (udtPacket._type != PacketType::Handshake) {
-                qCWarning(networking) << "Received non-handshake packet with destination socket = 0";
+                {
+                    QMutexLocker locker(&_undirectedPacketProtect);
+                    _undirectedPacket.append(PacketEventPointer<Packet>::create(udtPacket, peerAddress, peerPort));
+                }
+                emit readyUndirectedPacket();
                 continue;
             }
             HandshakePacket hsPacket(udtPacket, peerAddress.protocol());
@@ -312,7 +265,7 @@ void UdtMultiplexer::onPacketReadReady() {  // executes from goRead thread
                                        << static_cast<uint>(hsPacket._reqType);
                     break;
             }
-            return;
+            continue;
         }
 
         UdtSocket* destSocket = nullptr;
@@ -409,9 +362,53 @@ PacketEventPointer<HandshakePacket> UdtMultiplexer::nextRendezvousHandshake(cons
 void UdtMultiplexer::pruneRendezvousHandshakes() {  // ASSUMES WE ARE HOLDING _rendezvousHandshakesProtect
     while (!_rendezvousHandshakes.isEmpty()) {
         const PacketEventPointer<HandshakePacket>& firstPacket = _rendezvousHandshakes.front();
-        if (firstPacket->age.nsecsElapsed() < MAX_SERVER_HANDSHAKE_AGE) {
+        if (firstPacket->age.nsecsElapsed() < MAX_RENDEZVOUS_HANDSHAKE_AGE) {
             return;
         }
-        _serverHandshakes.pop_front();
+        _rendezvousHandshakes.pop_front();
     }
+}
+
+PacketEventPointer<Packet> UdtMultiplexer::nextUndirectedPacket(const QHostAddress& peerAddress, quint32 peerPort) {
+    QMutexLocker locker(&_undirectedPacketProtect);
+    pruneUndirectedPackets();
+    for (TPacketList::iterator trans = _undirectedPacket.begin(); trans != _undirectedPacket.end(); ++trans) {
+        PacketEventPointer<Packet> thisPacket = *trans;
+        if (thisPacket->peerAddress == peerAddress && thisPacket->peerPort == peerPort) {
+            _undirectedPacket.erase(trans);
+            return thisPacket;
+        }
+    }
+    return PacketEventPointer<Packet>();
+}
+
+PacketEventPointer<Packet> UdtMultiplexer::nextUndirectedPacket() {
+    QMutexLocker locker(&_undirectedPacketProtect);
+    pruneUndirectedPackets();
+    if (_undirectedPacket.isEmpty()) {
+        return PacketEventPointer<Packet>();
+    }
+    PacketEventPointer<Packet> thisPacket = _undirectedPacket.front();
+    _undirectedPacket.pop_front();
+    return thisPacket;
+}
+
+void UdtMultiplexer::pruneUndirectedPackets() {  // ASSUMES WE ARE HOLDING _undirectedPacketProtect
+    while (!_undirectedPacket.isEmpty()) {
+        const PacketEventPointer<Packet>& firstPacket = _undirectedPacket.front();
+        if (firstPacket->age.nsecsElapsed() < MAX_UNDIRECTED_PACKET_AGE) {
+            return;
+        }
+        _undirectedPacket.pop_front();
+    }
+}
+
+bool UdtMultiplexer::sendUndirectedPacket(const Packet& packet, const QHostAddress& peerAddress, quint32 peerPort) {
+    Q_ASSERT(packet._socketID == 0);
+    Q_ASSERT(packet._type != PacketType::Handshake);
+    if (!isLive()) {
+        return false;
+    }
+    sendPacket(peerAddress, peerPort, 0, std::chrono::microseconds{ 0 }, packet);
+    return true;
 }

@@ -196,7 +196,7 @@ void UdtSocket::setState(UdtSocketState newState) {
         }
     }
 
-    emit stateChanged(newState);
+    emit stateChanged(sharedFromThis(), newState);
     if (oldState == UdtSocketState::Connected) {
         emit disconnected();
     } else if (newState == UdtSocketState::Connected) {
@@ -639,6 +639,7 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
             _initialPacketSequence = hsPacket._initPktSeq;
             _farSocketID = hsPacket._socketID;
             _isDatagram = hsPacket._sockType == SocketType::DGRAM;
+            _localPublicAddr = hsPacket._sockAddr;
 
             if (_mtu.load() > hsPacket._maxPktSize) {
                 _mtu.store(hsPacket._maxPktSize);
@@ -686,12 +687,13 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
                 return false;  // not a request packet, ignore
             }
             /* not quite sure how to negotiate this, assuming split-brain for now
-        if(p.InitPktSeq != s.initPktSeq) {
-            s.sockState = sockStateCorrupted;
-        return false;
-        }
-        */
+            if(p.InitPktSeq != s.initPktSeq) {
+                s.sockState = sockStateCorrupted;
+            return false;
+            }
+            */
             _farSocketID = hsPacket._farSocketID;
+            _localPublicAddr = hsPacket._sockAddr;
 
             if (_mtu.load() > hsPacket._maxPktSize) {
                 _mtu.store(hsPacket._maxPktSize);
@@ -743,6 +745,7 @@ bool UdtSocket::processHandshake(const HandshakePacket& hsPacket) {
             }
             assert(_socketRole == SocketRole::Client || _farSocketID == hsPacket._farSocketID);
             _farSocketID = hsPacket._farSocketID;
+            _localPublicAddr = hsPacket._sockAddr;
 
             if (_mtu.load() > hsPacket._maxPktSize) {
                 _mtu.store(hsPacket._maxPktSize);
@@ -910,9 +913,16 @@ qint64 UdtSocket::writeData(const char* data, qint64 size) {
 
 void UdtSocket::receivedMessage(const ReceiveNetworkMessagePointer& message) {
     message->socket = sharedFromThis();
-    QMutexLocker guard(&_receivedMessageProtect);
-    _receivedMessages.append(message);
-    _receivedMessageCondition.wakeAll();
+    bool wasEmpty;
+    {
+        QMutexLocker guard(&_receivedMessageProtect);
+        wasEmpty = _receivedMessages.empty();
+        _receivedMessages.append(message);
+        _receivedMessageCondition.wakeAll();
+    }
+    if (wasEmpty) {
+        emit messagesReady(sharedFromThis());
+    }
 }
 
 bool UdtSocket::hasPendingDatagrams() const {

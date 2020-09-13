@@ -397,60 +397,64 @@ bool UdtSocket_receive::attemptProcessPacket(const ReceivedDataPacket& receivedD
     const DataPacket& dataPacket = receivedDataPacket.dataPacket;
     const PacketID& packetID = dataPacket._packetID;
 
-    // can we process this packet?
-    if (!_recvLossList.empty() && dataPacket._isOrdered && _farRecdPktSeq + 1 != packetID) {
-        // we're required to order these packets and we're missing prior packets, so push and return
-        return false;
-    }
-
-    // can we find the start of this message?
     typedef QList<DataPacket> DataPacketList;
     DataPacketList pieces;
     QElapsedTimer firstReceived = receivedDataPacket.timeReceived;
     QElapsedTimer lastReceived = receivedDataPacket.timeReceived;
-
     size_t pieceLength = 0;
+
     bool cannotContinue = false;
-    switch (dataPacket._messagePosition) {
-        case DataPacket::MessagePosition::Last:
-        case DataPacket::MessagePosition::Middle:
-            // we need prior packets, let's make sure we have them
-            if (!_recvPktPend.empty()) {
-                PacketID pieceSeq = packetID - 1;
-                for (;;) {
-                    DataPacketMap::const_iterator findPrevPiece = _recvPktPend.find(pieceSeq);
-                    if (findPrevPiece == _recvPktPend.end()) {
-                        // we don't have the previous piece, is it missing?
-                        ReceiveLossMap::const_iterator lossLookup = _recvLossList.find(pieceSeq);
-                        if (lossLookup != _recvLossList.end()) {
-                            // it's missing, stop processing
-                            cannotContinue = true;
+    for (;;) {  // executes once; gives an escape clause if the packet cannot be processed
+        // can we process this packet?
+        if (!_recvLossList.empty() && dataPacket._isOrdered && _farRecdPktSeq + 1 != packetID) {
+            // we're required to order these packets and we're missing prior packets, so push and return
+            cannotContinue = true;
+            break;
+        }
+
+        // can we find the start of this message?
+        switch (dataPacket._messagePosition) {
+            case DataPacket::MessagePosition::Last:
+            case DataPacket::MessagePosition::Middle:
+                // we need prior packets, let's make sure we have them
+                if (!_recvPktPend.empty()) {
+                    PacketID pieceSeq = packetID - 1;
+                    for (;;) {
+                        DataPacketMap::const_iterator findPrevPiece = _recvPktPend.find(pieceSeq);
+                        if (findPrevPiece == _recvPktPend.end()) {
+                            // we don't have the previous piece, is it missing?
+                            ReceiveLossMap::const_iterator lossLookup = _recvLossList.find(pieceSeq);
+                            if (lossLookup != _recvLossList.end()) {
+                                // it's missing, stop processing
+                                cannotContinue = true;
+                            }
+                            // in any case we can't continue with this
+                            qCInfo(networking)
+                                << _socket.localAddressDebugString() << ": Message with id "
+                                << static_cast<quint32>(dataPacket._messageNumber) << "appears to be a broken fragment";
+                            break;
                         }
-                        // in any case we can't continue with this
-                        qCInfo(networking) << _socket.localAddressDebugString() << ": Message with id "
-                                           << static_cast<quint32>(dataPacket._messageNumber)
-                                           << "appears to be a broken fragment";
-                        break;
+                        const DataPacket& prevPiece = findPrevPiece->second.dataPacket;
+                        if (prevPiece._messageNumber != dataPacket._messageNumber) {
+                            // ...oops? previous piece isn't in the same message
+                            qCInfo(networking)
+                                << _socket.localAddressDebugString() << ": Message with id "
+                                << static_cast<quint32>(dataPacket._messageNumber) << "appears to be a broken fragment";
+                            break;
+                        }
+                        pieces.prepend(prevPiece);
+                        firstReceived = findPrevPiece->second.timeReceived;
+                        pieceLength += prevPiece._contents.length();
+                        if (prevPiece._messagePosition == DataPacket::MessagePosition::First) {
+                            break;
+                        }
+                        pieceSeq--;
                     }
-                    const DataPacket& prevPiece = findPrevPiece->second.dataPacket;
-                    if (prevPiece._messageNumber != dataPacket._messageNumber) {
-                        // ...oops? previous piece isn't in the same message
-                        qCInfo(networking) << _socket.localAddressDebugString() << ": Message with id "
-                                           << static_cast<quint32>(dataPacket._messageNumber)
-                                           << "appears to be a broken fragment";
-                        break;
-                    }
-                    pieces.prepend(prevPiece);
-                    firstReceived = findPrevPiece->second.timeReceived;
-                    pieceLength += prevPiece._contents.length();
-                    if (prevPiece._messagePosition == DataPacket::MessagePosition::First) {
-                        break;
-                    }
-                    pieceSeq--;
                 }
-            }
-    }
-    if (!cannotContinue) {
+        }
+        if (!cannotContinue) {
+            break;
+        }
         pieces.append(dataPacket);
         pieceLength += dataPacket._contents.length();
 
@@ -474,9 +478,9 @@ bool UdtSocket_receive::attemptProcessPacket(const ReceivedDataPacket& receivedD
                                     cannotContinue = true;
                                 }
                             } else {
-                                qCInfo(networking)
-                                    << _socket.localAddressDebugString() << ": Message with id "
-                                    << static_cast<quint32>(dataPacket._messageNumber) << "appears to be a broken fragment";
+                                qCInfo(networking) << _socket.localAddressDebugString() << ": Message with id "
+                                                    << static_cast<quint32>(dataPacket._messageNumber)
+                                                    << "appears to be a broken fragment";
                             }
                             // in any case we can't continue with this
                             break;
@@ -498,6 +502,8 @@ bool UdtSocket_receive::attemptProcessPacket(const ReceivedDataPacket& receivedD
                     }
                 }
         }
+
+        break; // fall out, don't repeat this loop
     }
 
     // we've received a data packet, do we need to send an ACK for it?

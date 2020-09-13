@@ -12,6 +12,7 @@
 #ifndef hifi_udt4_UdtServer_h
 #define hifi_udt4_UdtServer_h
 
+#include "Multiplexer.h"
 #include "packet.h"
 #include "WrappedSequence.h"
 #include <QtCore/QAtomicInt>
@@ -65,10 +66,14 @@ public:
     inline void setListenReplayWindow(qint64 msecs) { _listenReplayWindow = msecs; }
     void setMaxPendingConnections(int numConnections);
     bool waitForNewConnection(int msec = 0, bool* timedOut = nullptr);
+    PacketEventPointer<Packet> nextUndirectedPacket(const QHostAddress& peerAddress, quint32 peerPort);
+    PacketEventPointer<Packet> nextUndirectedPacket();
+    bool sendUndirectedPacket(const Packet& packet, const QHostAddress& peerAddress, quint32 peerPort);
 
 signals:
     void acceptError(QAbstractSocket::SocketError socketError);
     void newConnection();
+    void readyUndirectedPacket();
 
 protected:
     virtual bool checkValidHandshake(const HandshakePacket& hsPacket, const QHostAddress& peerAddress, quint16 peerPort);
@@ -76,6 +81,7 @@ protected:
 private slots:
     void onEpochBump();
     void readHandshake();
+    void readUndirectedPacket();
 
 private:
     quint32 generateSynCookie(const QHostAddress& peerAddress, quint16 peerPort);

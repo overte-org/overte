@@ -61,6 +61,7 @@ bool UdtServer::listen(quint16 port, const QHostAddress& address /* = QHostAddre
 
     _multiplexer->moveToReadThread(this);
     connect(&*_multiplexer, &UdtMultiplexer::readyServerHandshake, this, &UdtServer::readHandshake);
+    connect(&*_multiplexer, &UdtMultiplexer::readyUndirectedPacket, this, &UdtServer::readUndirectedPacket);
 
     _epochBumper.start(64 * 1000);
 
@@ -73,6 +74,30 @@ UdtSocketPointer UdtServer::nextPendingConnection() {
         return UdtSocketPointer();
     }
     return _acceptedSockets.dequeue();
+}
+
+PacketEventPointer<Packet> UdtServer::nextUndirectedPacket(const QHostAddress& peerAddress, quint32 peerPort) {
+    if (_multiplexer.isNull()) {
+        return PacketEventPointer<Packet>();
+    } else {
+        return _multiplexer->nextUndirectedPacket(peerAddress, peerPort);
+    }
+}
+
+PacketEventPointer<Packet> UdtServer::nextUndirectedPacket() {
+    if (_multiplexer.isNull()) {
+        return PacketEventPointer<Packet>();
+    } else {
+        return _multiplexer->nextUndirectedPacket();
+    }
+}
+
+bool UdtServer::sendUndirectedPacket(const Packet& packet, const QHostAddress& peerAddress, quint32 peerPort) {
+    if (_multiplexer.isNull()) {
+        return false;
+    } else {
+        return _multiplexer->sendUndirectedPacket(packet, peerAddress, peerPort);
+    }
 }
 
 QHostAddress UdtServer::serverAddress() const {

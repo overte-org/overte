@@ -144,6 +144,7 @@ public:  // from QAbstractSocket
     inline bool isValid() const { return state() == UdtSocketState::Connected; }
     QHostAddress localAddress() const;
     quint16 localPort() const;
+    inline const QHostAddress& ourPublicAddress() const { return _localPublicAddr; }
     inline const QHostAddress& peerAddress() const { return _remoteAddr; }
     inline quint16 peerPort() const { return _remotePort; }
     UdtSocketState state() const;
@@ -161,8 +162,9 @@ signals:  // from QAbstractSocket
     void connected();
     void disconnected();
     void hostFound();
-    void stateChanged(UdtSocketState socketState);
+    void stateChanged(UdtSocketPointer,UdtSocketState);
     void customMessageReceived(Packet udtPacket, QElapsedTimer now);
+    void messagesReady(UdtSocketPointer);
 signals:  // private
     void handshakeReceived(HandshakePacket hsPacket, QElapsedTimer now, QPrivateSignal);
     void shutdownRequested(UdtSocketState toState, QString error, QPrivateSignal);
@@ -256,6 +258,7 @@ private:
     unsigned _connectionRetriesBeforeMTU{ 0 };      // the number of connection retry attempts we've made before adjusting the MTU
     PacketID _initialPacketSequence;                // initial packet sequence to start the connection with
     bool _isDatagram{ true };                       // if true then we're sending and receiving datagrams, otherwise we're a streaming socket
+    QHostAddress _localPublicAddr;                  // the address our peer is reporting for us
     QThread _monitorThread;                         // thread to monitor the state of the overall connection
     UdtMultiplexerPointer _multiplexer;             // the multiplexer that handles this socket
     QUdpSocket _offAxisUdpSocket;                   // a "connected" udp socket we only use for detecting MTU path (as otherwise the system won't tell us about ICMP packets)

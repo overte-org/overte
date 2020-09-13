@@ -145,4 +145,11 @@ using ACKSequence = SequenceNumber;
 
 }  // namespace udt4
 
+namespace std {
+    template <int BITS>
+    struct hash<udt4::WrappedSequence<BITS> > {
+        std::size_t operator()(const udt4::WrappedSequence<BITS>& s) const noexcept { return std::hash(static_cast<quint32>(s)); }
+    };
+}  // namespace std
+
 #endif  // hifi_udt4_PacketID_h

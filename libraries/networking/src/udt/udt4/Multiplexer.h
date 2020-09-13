@@ -41,6 +41,10 @@ class PacketEvent {
 public:
     inline PacketEvent(const P& p, const QHostAddress& address, quint32 port) : packet(p), peerAddress(address), peerPort(port) { age.start(); }
 
+    template <class BaseP>
+    inline explicit PacketEvent(const PacketEvent<BaseP>& src) :
+        packet(src.packet), peerAddresS(src.peerAddress), peerPort(src.peerPort), age(src.age) {}
+
 public:
     P packet;
     QHostAddress peerAddress;
@@ -88,6 +92,9 @@ public:
 
     PacketEventPointer<HandshakePacket> nextServerHandshake();
     PacketEventPointer<HandshakePacket> nextRendezvousHandshake(const QHostAddress& peerAddress, quint32 peerPort);
+    PacketEventPointer<Packet> nextUndirectedPacket(const QHostAddress& peerAddress, quint32 peerPort);
+    PacketEventPointer<Packet> nextUndirectedPacket();
+    bool sendUndirectedPacket(const Packet& packet, const QHostAddress& peerAddress, quint32 peerPort);
 
 private:
     UdtMultiplexer();
@@ -95,6 +102,7 @@ private:
     static UdtMultiplexerPointer lookupInstance(quint16 port, const QHostAddress& localAddress);
     void pruneServerHandshakes();
     void pruneRendezvousHandshakes();
+    void pruneUndirectedPackets();
 
 private slots:
     void onPacketReadReady();
@@ -103,6 +111,7 @@ private slots:
 signals:
     void readyRendezvousHandshake();
     void readyServerHandshake();
+    void readyUndirectedPacket();
 signals:  // private
     void readySendPacket(QPrivateSignal);
 
@@ -111,6 +120,7 @@ private:
     typedef QMap<TLocalPortPair, UdtMultiplexerWeakPointer> TMultiplexerMap;
     typedef QMap<quint32, UdtSocket*> TSocketMap;
     typedef QQueue<PacketEventPointer<Packet>> TPacketQueue;
+    typedef QList<PacketEventPointer<Packet>> TPacketList;
     typedef QQueue<PacketEventPointer<HandshakePacket>> THandshakeQueue;
     typedef QList<PacketEventPointer<HandshakePacket>> THandshakeList;
 
@@ -118,6 +128,7 @@ private:
     {
         MAX_SERVER_HANDSHAKE_AGE = 500000000,      // age in nsecs before discarding a server handshake = 500msec
         MAX_RENDEZVOUS_HANDSHAKE_AGE = 500000000,  // age in nsecs before discarding a rendezvous handshake = 500msec
+        MAX_UNDIRECTED_PACKET_AGE = 1000000000,     // age in nsecs before discarding an undirected packet = 1000msec
         UDP_SEND_BUFFER_SIZE_BYTES = 1048576,
         UDP_RECEIVE_BUFFER_SIZE_BYTES = 1048576,
     };
@@ -137,6 +148,9 @@ private:
 
     mutable QMutex _rendezvousHandshakesProtect;
     THandshakeList _rendezvousHandshakes;
+
+    mutable QMutex _undirectedPacketProtect;
+    TPacketList _undirectedPacket;
 
     mutable QMutex _sendPacketProtect;
     TPacketQueue _sendPacket;

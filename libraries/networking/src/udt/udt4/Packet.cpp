@@ -20,6 +20,7 @@ enum
     IPV4_HEADER_SIZE = 20,
     IPV6_HEADER_SIZE = 40,
     UDP_HEADER_SIZE = 8,
+    RFC_5389_MAGIC_COOKIE = 0x2112A442,
 };
 
 Packet::Packet(ByteSlice networkPacket) {
@@ -27,14 +28,22 @@ Packet::Packet(ByteSlice networkPacket) {
         quint32 sequence = qFromBigEndian<quint32>(&networkPacket[0]);
         _sequence = PacketID(sequence);
         _additionalInfo = qFromBigEndian<quint32>(&networkPacket[4]);
-        _timestamp = std::chrono::microseconds(qFromBigEndian<quint32>(&networkPacket[8]));
-        _socketID = qFromBigEndian<quint32>(&networkPacket[12]);
-        _contents = networkPacket.substring(16);
-        if ((sequence & 0x8000) == 0) {
-            // this is a data packet
-            _type = PacketType::Data;
+
+        if (_additionalInfo == RFC_5389_MAGIC_COOKIE) {
+            // yay this isn't a UDT packet at all but a STUN packet trying to sneak in
+            _additionalInfo = sequence;
+            _contents = networkPacket.substring(8);
+            _type = PacketType::Stun;
         } else {
-            _type = static_cast<PacketType>((sequence & 0x7F00) >> 16);
+            _timestamp = std::chrono::microseconds(qFromBigEndian<quint32>(&networkPacket[8]));
+            _socketID = qFromBigEndian<quint32>(&networkPacket[12]);
+            _contents = networkPacket.substring(16);
+            if ((sequence & 0x8000) == 0) {
+                // this is a data packet
+                _type = PacketType::Data;
+            } else {
+                _type = static_cast<PacketType>((sequence & 0x7F00) >> 16);
+            }
         }
     }
 }
@@ -55,9 +64,20 @@ uint Packet::packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol) {
 }
 
 ByteSlice Packet::toNetworkPacket() const {
+    if (_type == PacketType::Stun) {
+        ByteSlice packetData;
+        quint8* buffer = reinterpret_cast<quint8*>(packetData.create(_contents.length() + 8));
+        *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(_additionalInfo);
+        *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(RFC_5389_MAGIC_COOKIE);
+        if (_contents.length() != 0) {
+            memcpy(&buffer[8], &_contents[0], _contents.length());
+        }
+        return packetData;
+    }
+
     quint32 sequence;
     if (_type < PacketType::Data) {
-        sequence = 0x80000000 | (static_cast<quint32>(_type) << 16);
+        sequence = 0x80000000 | (static_cast<quint32>(_type) << 16) | (static_cast<quint32>(_sequence) & 0xff);
     } else {
         sequence = static_cast<quint32>(_sequence);
     }
@@ -65,7 +85,7 @@ ByteSlice Packet::toNetworkPacket() const {
     ByteSlice packetData;
     quint8* buffer = reinterpret_cast<quint8*>(packetData.create(_contents.length() + 16));
     *reinterpret_cast<quint32*>(&buffer[0]) = qToBigEndian<quint32>(sequence);
-    *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(static_cast<quint32>(_additionalInfo));
+    *reinterpret_cast<quint32*>(&buffer[4]) = qToBigEndian<quint32>(_additionalInfo);
     *reinterpret_cast<quint32*>(&buffer[8]) = qToBigEndian<quint32>(_timestamp.count());
     *reinterpret_cast<quint32*>(&buffer[12]) = qToBigEndian<quint32>(_socketID);
     if (_contents.length() != 0) {
@@ -73,6 +93,11 @@ ByteSlice Packet::toNetworkPacket() const {
     }
 
     return packetData;
+}
+
+void Packet::setUserDefinedPacketType(quint8 type) {
+    _type = PacketType::UserDefPkt;
+    _sequence = type;
 }
 
 DataPacket::DataPacket(const Packet& src) :

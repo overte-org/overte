@@ -17,6 +17,7 @@
 #include "../../ByteSlice.h"
 #include <chrono>
 #include "WrappedSequence.h"
+#include <QtCore/QByteArray>
 #include <QtNetwork/QHostAddress>
 
 namespace udt4 {
@@ -37,6 +38,7 @@ enum class PacketType : quint16
     SpecialErr = 0x8,  // undocumented but reference implementation seems to use it (additional info: error code)
     UserDefPkt = 0x7FFF,
     Data = 0x8000,     // not found in any control packet, but used to identify data packets
+    Stun = 0x8001,     // this is a RFC5389 STUN packet
     Invalid = 0x8001,
 };
 Q_ENUM_NS(PacketType)
@@ -58,6 +60,11 @@ public:
 
     static uint ipHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol);
     static uint packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol);
+    inline quint8 userDefinedPacketType() const { return static_cast<quint32>(_sequence) & 0xFF; }
+    void setUserDefinedPacketType(quint8 type);
+    inline QByteArray toByteArray() const {
+        return QByteArray(reinterpret_cast<const char*>(_contents.constData()), static_cast<int>(_contents.length()));
+    }
 
 public:
     PacketType _type{ PacketType::Invalid };
