@@ -167,7 +167,9 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
         prevTransform = _prevRenderTransform;
         transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), _billboardMode,
         args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
-        _prevRenderTransform = transform;
+        if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
+            _prevRenderTransform = modelTransform;
+        }
     });
 
     batch.setModelTransform(transform, prevTransform);
@@ -362,9 +364,10 @@ void entities::TextPayload::render(RenderArgs* args) {
     float scale = textRenderable->_lineHeight / textRenderer->getFontSize();
     transform.postTranslate(glm::vec3(-0.5, 0.5, 1.0f + EPSILON / dimensions.z));
     transform.setScale(scale);
-    batch.setModelTransform(transform);
     batch.setModelTransform(transform, _prevRenderTransform);
-    _prevRenderTransform = transform;
+    if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
+        _prevRenderTransform = transform;
+    }
 
     glm::vec2 bounds = glm::vec2(dimensions.x - (textRenderable->_leftMargin + textRenderable->_rightMargin), dimensions.y - (textRenderable->_topMargin + textRenderable->_bottomMargin));
     textRenderer->draw(batch, textRenderable->_leftMargin / scale, -textRenderable->_topMargin / scale, bounds / scale, scale,

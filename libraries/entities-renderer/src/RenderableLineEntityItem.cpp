@@ -52,7 +52,9 @@ void LineEntityRenderer::doRender(RenderArgs* args) {
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(modelTransform.getTranslation(), modelTransform.getRotation(), _billboardMode,
         args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
     batch.setModelTransform(transform, _prevRenderTransform);
-    _prevRenderTransform = transform;
+    if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
+        _prevRenderTransform = transform;
+    }
 
     if (_linePoints.size() > 1) {
         DependencyManager::get<GeometryCache>()->bindSimpleProgram(batch, false, false, false, false, true,

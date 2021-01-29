@@ -117,7 +117,9 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
     withReadLock([&] {
         transform = _renderTransform;
 	prevTransform = _prevRenderTransform;
-        _prevRenderTransform = _renderTransform;
+        if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
+            _prevRenderTransform = _renderTransform;
+        }
     });
 
     bool wireframe = render::ShapeKey(args->_globalShapeKey).isWireframe() || _primitiveMode == PrimitiveMode::LINES;
