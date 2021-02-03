@@ -1018,6 +1018,7 @@ void GLBackend::updatePresentFrame(const Mat4& correction) {
     // Update previous views of saved transforms
     for (auto& viewProjState : _transform._savedTransforms) {
         viewProjState._state._previousCorrectedView = viewProjState._state._correctedView;
+        viewProjState._state._previousProjection = viewProjState._state._projection;
     }
 }
 
