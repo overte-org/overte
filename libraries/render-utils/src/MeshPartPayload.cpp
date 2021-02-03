@@ -194,7 +194,9 @@ void ModelMeshPartPayload::bindTransform(gpu::Batch& batch, const Transform& tra
         batch.setUniformBuffer(graphics::slot::buffer::Skinning, _clusterBuffer);
     }
     batch.setModelTransform(transform, _previousModelTransform);
-    _previousModelTransform = _drawTransform;
+    if (renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
+        _prevRenderTransform = _drawTransform;
+    }
 }
 
 void ModelMeshPartPayload::drawCall(gpu::Batch& batch) const {
