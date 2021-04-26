@@ -18,7 +18,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include <qscriptengine.h>
+#include <QtScript/qscriptengine.h>
 
 /// [unused] Represents a spatial event to the scripting engine
 class SpatialEvent {
