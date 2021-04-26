@@ -19,9 +19,9 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QObject>
-#include <QScriptContext>
-#include <QScriptEngine>
-#include <QScriptValue>
+#include <QtScript/QScriptContext>
+#include <QtScript/QScriptEngine>
+#include <QtScript/QScriptValue>
 #include <QTimer>
 
 /*
