@@ -16,7 +16,7 @@
 #define hifi_KeyEvent_h
 
 #include <QKeyEvent>
-#include <QScriptValue>
+#include <QtScript/QScriptValue>
 
 /// Represents a keyboard event to the scripting engine. Exposed as <code><a href="https://apidocs.overte.org/global.html#KeyEvent">KeyEvent</a></code>
 class KeyEvent {
