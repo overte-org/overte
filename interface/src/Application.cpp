@@ -130,6 +130,7 @@
 #include <plugins/SteamClientPlugin.h>
 #include <plugins/OculusPlatformPlugin.h>
 #include <plugins/InputConfiguration.h>
+#include <Quat.h>
 #include <RecordingScriptingInterface.h>
 #include <render/EngineStats.h>
 #include <SecondaryCamera.h>
@@ -137,8 +138,11 @@
 #include <ResourceRequest.h>
 #include <SandboxUtils.h>
 #include <SceneScriptingInterface.h>
-#include <ScriptEngines.h>
 #include <ScriptCache.h>
+#include <ScriptEngines.h>
+#include <ScriptEngineCast.h>
+#include <ScriptManager.h>
+#include <ScriptUUID.h>
 #include <ShapeEntityItem.h>
 #include <SoundCacheScriptingInterface.h>
 #include <ui/TabletScriptingInterface.h>
@@ -166,6 +170,7 @@
 #include <procedural/ProceduralMaterialCache.h>
 #include <procedural/ReferenceMaterial.h>
 #include "recording/ClipCache.h"
+#include <Vec3.h>
 
 #include "AudioClient.h"
 #include "audio/AudioScope.h"
@@ -814,7 +819,7 @@ bool setupEssentials(int& argc, char** argv, const QCommandLineParser& parser, b
 #endif
     DependencyManager::set<DomainAccountManager>();
     DependencyManager::set<StatTracker>();
-    DependencyManager::set<ScriptEngines>(ScriptEngine::CLIENT_SCRIPT, defaultScriptsOverrideOption);
+    DependencyManager::set<ScriptEngines>(ScriptManager::CLIENT_SCRIPT, defaultScriptsOverrideOption);
     DependencyManager::set<Preferences>();
     DependencyManager::set<recording::Deck>();
     DependencyManager::set<recording::Recorder>();
@@ -1399,8 +1404,8 @@ Application::Application(
 
     {
         auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
-        scriptEngines->registerScriptInitializer([this](ScriptEnginePointer engine) {
-            registerScriptEngineWithApplicationServices(engine);
+        scriptEngines->registerScriptInitializer([this](ScriptManagerPointer manager) {
+            registerScriptEngineWithApplicationServices(manager);
         });
 
         connect(scriptEngines, &ScriptEngines::scriptCountChanged, this, [this] {
@@ -5857,7 +5862,7 @@ void Application::loadAvatarScripts(const QVector<QString>& urls) {
         if (index < 0) {
             auto scriptEnginePointer = scriptEngines->loadScript(url, false);
             if (scriptEnginePointer) {
-                scriptEnginePointer->setType(ScriptEngine::Type::AVATAR);
+                scriptEnginePointer->setType(ScriptManager::Type::AVATAR);
             }
         }
     }
@@ -5868,7 +5873,7 @@ void Application::unloadAvatarScripts() {
     auto urls = scriptEngines->getRunningScripts();
     for (auto url : urls) {
         auto scriptEngine = scriptEngines->getScriptEngine(url);
-        if (scriptEngine->getType() == ScriptEngine::Type::AVATAR) {
+        if (scriptEngine->getType() == ScriptManager::Type::AVATAR) {
             scriptEngines->stopScript(url, false);
         }
     }
@@ -7458,9 +7463,10 @@ void Application::addingEntityWithCertificate(const QString& certificateID, cons
     ledger->updateLocation(certificateID, placeName);
 }
 
-void Application::registerScriptEngineWithApplicationServices(const ScriptEnginePointer& scriptEngine) {
+void Application::registerScriptEngineWithApplicationServices(const ScriptManagerPointer& scriptManager) {
 
-    scriptEngine->setEmitScriptUpdatesFunction([this]() {
+    auto scriptEngine = scriptManager->engine();
+    scriptManager->setEmitScriptUpdatesFunction([this]() {
         SharedNodePointer entityServerNode = DependencyManager::get<NodeList>()->soloNodeOfType(NodeType::EntityServer);
         return !entityServerNode || isPhysicsEnabled();
     });
@@ -7492,13 +7498,13 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptEngine
 
     ClipboardScriptingInterface* clipboardScriptable = new ClipboardScriptingInterface();
     scriptEngine->registerGlobalObject("Clipboard", clipboardScriptable);
-    connect(scriptEngine.data(), &ScriptEngine::finished, clipboardScriptable, &ClipboardScriptingInterface::deleteLater);
+    connect(scriptManager.data(), &ScriptManager::finished, clipboardScriptable, &ClipboardScriptingInterface::deleteLater);
 
     scriptEngine->registerGlobalObject("Overlays", &_overlays);
-    qScriptRegisterMetaType(scriptEngine.data(), RayToOverlayIntersectionResultToScriptValue,
+    scriptRegisterMetaType(scriptEngine.data(), RayToOverlayIntersectionResultToScriptValue,
                             RayToOverlayIntersectionResultFromScriptValue);
 
-    bool clientScript = scriptEngine->isClientScript();
+    bool clientScript = scriptManager->isClientScript();
 
 #if !defined(DISABLE_QML)
     scriptEngine->registerGlobalObject("OffscreenFlags", getOffscreenUI()->getFlags());
@@ -7513,13 +7519,13 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptEngine
     }
 #endif
 
-    qScriptRegisterMetaType(scriptEngine.data(), wrapperToScriptValue<ToolbarProxy>, wrapperFromScriptValue<ToolbarProxy>);
-    qScriptRegisterMetaType(scriptEngine.data(),
+    scriptRegisterMetaType(scriptEngine.data(), wrapperToScriptValue<ToolbarProxy>, wrapperFromScriptValue<ToolbarProxy>);
+    scriptRegisterMetaType(scriptEngine.data(),
                             wrapperToScriptValue<ToolbarButtonProxy>, wrapperFromScriptValue<ToolbarButtonProxy>);
     scriptEngine->registerGlobalObject("Toolbars", DependencyManager::get<ToolbarScriptingInterface>().data());
 
-    qScriptRegisterMetaType(scriptEngine.data(), wrapperToScriptValue<TabletProxy>, wrapperFromScriptValue<TabletProxy>);
-    qScriptRegisterMetaType(scriptEngine.data(),
+    scriptRegisterMetaType(scriptEngine.data(), wrapperToScriptValue<TabletProxy>, wrapperFromScriptValue<TabletProxy>);
+    scriptRegisterMetaType(scriptEngine.data(),
                             wrapperToScriptValue<TabletButtonProxy>, wrapperFromScriptValue<TabletButtonProxy>);
     scriptEngine->registerGlobalObject("Tablet", DependencyManager::get<TabletScriptingInterface>().data());
     // FIXME remove these deprecated names for the tablet scripting interface
@@ -7570,12 +7576,12 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptEngine
     scriptEngine->registerGlobalObject("Account", AccountServicesScriptingInterface::getInstance()); // DEPRECATED - TO BE REMOVED
     scriptEngine->registerGlobalObject("GlobalServices", AccountServicesScriptingInterface::getInstance()); // DEPRECATED - TO BE REMOVED
     scriptEngine->registerGlobalObject("AccountServices", AccountServicesScriptingInterface::getInstance());
-    qScriptRegisterMetaType(scriptEngine.data(), DownloadInfoResultToScriptValue, DownloadInfoResultFromScriptValue);
+    scriptRegisterMetaType(scriptEngine.data(), DownloadInfoResultToScriptValue, DownloadInfoResultFromScriptValue);
 
     scriptEngine->registerGlobalObject("AvatarManager", DependencyManager::get<AvatarManager>().data());
 
     scriptEngine->registerGlobalObject("LODManager", DependencyManager::get<LODManager>().data());
-    qScriptRegisterMetaType(scriptEngine.data(), worldDetailQualityToScriptValue, worldDetailQualityFromScriptValue);
+    scriptRegisterMetaType(scriptEngine.data(), worldDetailQualityToScriptValue, worldDetailQualityFromScriptValue);
 
     scriptEngine->registerGlobalObject("Keyboard", DependencyManager::get<KeyboardScriptingInterface>().data());
     scriptEngine->registerGlobalObject("Performance", new PerformanceScriptingInterface());
@@ -7602,7 +7608,7 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptEngine
     scriptEngine->registerGlobalObject("GooglePoly", DependencyManager::get<GooglePolyScriptingInterface>().data());
 
     if (auto steamClient = PluginManager::getInstance()->getSteamClientPlugin()) {
-        scriptEngine->registerGlobalObject("Steam", new SteamScriptingInterface(scriptEngine.data(), steamClient.get()));
+        scriptEngine->registerGlobalObject("Steam", new SteamScriptingInterface(scriptManager.data(), steamClient.get()));
     }
     auto scriptingInterface = DependencyManager::get<controller::ScriptingInterface>();
     scriptEngine->registerGlobalObject("Controller", scriptingInterface.data());
@@ -7629,11 +7635,11 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptEngine
 
     // connect this script engines printedMessage signal to the global ScriptEngines these various messages
     auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
-    connect(scriptEngine.data(), &ScriptEngine::printedMessage, scriptEngines, &ScriptEngines::onPrintedMessage);
-    connect(scriptEngine.data(), &ScriptEngine::errorMessage, scriptEngines, &ScriptEngines::onErrorMessage);
-    connect(scriptEngine.data(), &ScriptEngine::warningMessage, scriptEngines, &ScriptEngines::onWarningMessage);
-    connect(scriptEngine.data(), &ScriptEngine::infoMessage, scriptEngines, &ScriptEngines::onInfoMessage);
-    connect(scriptEngine.data(), &ScriptEngine::clearDebugWindow, scriptEngines, &ScriptEngines::onClearDebugWindow);
+    connect(scriptManager.data(), &ScriptManager::printedMessage, scriptEngines, &ScriptEngines::onPrintedMessage);
+    connect(scriptManager.data(), &ScriptManager::errorMessage, scriptEngines, &ScriptEngines::onErrorMessage);
+    connect(scriptManager.data(), &ScriptManager::warningMessage, scriptEngines, &ScriptEngines::onWarningMessage);
+    connect(scriptManager.data(), &ScriptManager::infoMessage, scriptEngines, &ScriptEngines::onInfoMessage);
+    connect(scriptManager.data(), &ScriptManager::clearDebugWindow, scriptEngines, &ScriptEngines::onClearDebugWindow);
 
 }
 

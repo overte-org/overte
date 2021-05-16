@@ -27,7 +27,14 @@
 #include <QtCore/QDateTime>
 #include <QtCore/QList>
 #include <QtCore/QHash>
-#include <QtScript/QScriptable>
+#include <QtCore/QSharedPointer>
+
+#include "Scriptable.h"
+
+class ScriptContext;
+class ScriptEngine;
+class ScriptValue;
+using ScriptValuePointer = QSharedPointer<ScriptValue>;
 
 /*@jsdoc
  * The <code>console</code> API provides program logging facilities.
@@ -40,8 +47,8 @@
  * @hifi-server-entity
  * @hifi-assignment-client
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/console.html">console</a></code> scripting API
-class ConsoleScriptingInterface : public QObject, protected QScriptable {
+/// Provides the <code><a href="https://apidocs.overte.org/console.html">console</a></code> scripting API
+class ConsoleScriptingInterface : public QObject, protected Scriptable {
     Q_OBJECT
 public:
 
@@ -51,7 +58,7 @@ public:
      * @function console.info
      * @param {...*} [message] - The message values to log.
      */
-    static QScriptValue info(QScriptContext* context, QScriptEngine* engine);
+    static ScriptValuePointer info(ScriptContext* context, ScriptEngine* engine);
 
     /*@jsdoc
      * Logs a message to the program log and triggers {@link Script.printedMessage}.
@@ -69,7 +76,7 @@ public:
      * // string 7 true
      * // INFO - Console.log message: "string 7 true" in [console.js]
      */
-    static QScriptValue log(QScriptContext* context, QScriptEngine* engine);
+    static ScriptValuePointer log(ScriptContext* context, ScriptEngine* engine);
 
     /*@jsdoc
      * Logs a message to the program log and triggers {@link Script.printedMessage}.
@@ -77,7 +84,7 @@ public:
      * @function console.debug
      * @param {...*} [message] - The message values to log.
      */
-    static QScriptValue debug(QScriptContext* context, QScriptEngine* engine);
+    static ScriptValuePointer debug(ScriptContext* context, ScriptEngine* engine);
 
     /*@jsdoc
      * Logs a "WARNING" message to the program log and triggers {@link Script.warningMessage}.
@@ -85,7 +92,7 @@ public:
      * @function console.warn
      * @param {...*} [message] - The message values to log.
      */
-    static QScriptValue warn(QScriptContext* context, QScriptEngine* engine);
+    static ScriptValuePointer warn(ScriptContext* context, ScriptEngine* engine);
 
     /*@jsdoc
      * Logs an "ERROR" message to the program log and triggers {@link Script.errorMessage}.
@@ -93,7 +100,7 @@ public:
      * @function console.error
      * @param {...*} [message] - The message values to log.
      */
-    static QScriptValue error(QScriptContext* context, QScriptEngine* engine);
+    static ScriptValuePointer error(ScriptContext* context, ScriptEngine* engine);
 
     /*@jsdoc
      * A synonym of {@link console.error}.
@@ -102,7 +109,7 @@ public:
      * @function console.exception
      * @param {...*} [message] - The message values to log.
      */
-    static QScriptValue exception(QScriptContext* context, QScriptEngine* engine);
+    static ScriptValuePointer exception(ScriptContext* context, ScriptEngine* engine);
 
     /*@jsdoc
      * Logs an "ERROR" message to the program log and triggers {@link Script.errorMessage}, if a test condition fails.
@@ -125,7 +132,7 @@ public:
      * // INFO - Script continues running.
      */
     // Note: Is registered in the script engine as "assert"
-    static QScriptValue assertion(QScriptContext* context, QScriptEngine* engine);
+    static ScriptValuePointer assertion(ScriptContext* context, ScriptEngine* engine);
 
     /*@jsdoc
      * Logs a message to the program log and triggers {@link Script.printedMessage}, then starts indenting subsequent 
@@ -153,7 +160,7 @@ public:
      * //   Sentence 5
      * //Sentence 6
      */
-    static QScriptValue group(QScriptContext* context, QScriptEngine* engine);
+    static ScriptValuePointer group(ScriptContext* context, ScriptEngine* engine);
 
     /*@jsdoc
      * Has the same behavior as {@link console.group}.
@@ -162,13 +169,13 @@ public:
      * @function console.groupCollapsed
      * @param {*} message - The message value to log.
      */
-    static QScriptValue groupCollapsed(QScriptContext* context, QScriptEngine* engine);
+    static ScriptValuePointer groupCollapsed(ScriptContext* context, ScriptEngine* engine);
 
     /*@jsdoc
      * Finishes a group of indented {@link console.log} messages.
      * @function console.groupEnd
      */
-    static QScriptValue groupEnd(QScriptContext* context, QScriptEngine* engine);
+    static ScriptValuePointer groupEnd(ScriptContext* context, ScriptEngine* engine);
 
 public slots:
     
@@ -218,8 +225,8 @@ public slots:
 private:    
     QHash<QString, QDateTime> _timerDetails;
     static QList<QString> _groupDetails;
-    static void logGroupMessage(QString message, QScriptEngine* engine);
-    static QString appendArguments(QScriptContext* context);
+    static void logGroupMessage(QString message, ScriptEngine* engine);
+    static QString appendArguments(ScriptContext* context);
 };
 
 #endif // hifi_ConsoleScriptingInterface_h
