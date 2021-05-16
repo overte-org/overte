@@ -16,8 +16,13 @@
 #define hifi_ScriptAudioInjector_h
 
 #include <QtCore/QObject>
+#include <QtCore/QSharedPointer>
 
 #include <AudioInjectorManager.h>
+
+class ScriptEngine;
+class ScriptValue;
+using ScriptValuePointer = QSharedPointer<ScriptValue>;
 
 /*@jsdoc
  * Plays or "injects" the content of an audio file.
@@ -38,7 +43,7 @@
  *     <em>Read-only.</em>
  * @property {AudioInjector.AudioInjectorOptions} options - Configures how the injector plays the audio.
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/AudioInjector.html">AudioInjector</a></code> scripting interface
+/// Provides the <code><a href="https://apidocs.overte.org/AudioInjector.html">AudioInjector</a></code> scripting interface
 class ScriptAudioInjector : public QObject {
     Q_OBJECT
 
@@ -143,13 +148,13 @@ signals:
 private:
     QWeakPointer<AudioInjector> _injector;
 
-    friend QScriptValue injectorToScriptValue(QScriptEngine* engine, ScriptAudioInjector* const& in);
+    friend ScriptValuePointer injectorToScriptValue(ScriptEngine* engine, ScriptAudioInjector* const& in);
 };
 
 Q_DECLARE_METATYPE(ScriptAudioInjector*)
 
-QScriptValue injectorToScriptValue(QScriptEngine* engine, ScriptAudioInjector* const& in);
-void injectorFromScriptValue(const QScriptValue& object, ScriptAudioInjector*& out);
+ScriptValuePointer injectorToScriptValue(ScriptEngine* engine, ScriptAudioInjector* const& in);
+void injectorFromScriptValue(const ScriptValuePointer& object, ScriptAudioInjector*& out);
 
 #endif // hifi_ScriptAudioInjector_h
 
