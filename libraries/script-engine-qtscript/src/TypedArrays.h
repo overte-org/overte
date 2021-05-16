@@ -34,7 +34,7 @@ static const QString FLOAT_64_ARRAY_CLASS_NAME = "Float64Array";
 class TypedArray : public ArrayBufferViewClass {
     Q_OBJECT
 public:
-    TypedArray(ScriptEngine* scriptEngine, QString name);
+    TypedArray(ScriptEngineQtScript* scriptEngine, QString name);
     virtual QScriptValue newInstance(quint32 length);
     virtual QScriptValue newInstance(QScriptValue array);
     virtual QScriptValue newInstance(QScriptValue buffer, quint32 byteOffset, quint32 length);
@@ -71,7 +71,7 @@ protected:
 class Int8ArrayClass : public TypedArray {
     Q_OBJECT
 public:
-    Int8ArrayClass(ScriptEngine* scriptEngine);
+    Int8ArrayClass(ScriptEngineQtScript* scriptEngine);
 
     QScriptValue property(const QScriptValue& object, const QScriptString& name, uint id) override;
     void setProperty(QScriptValue& object, const QScriptString& name, uint id, const QScriptValue& value) override;
@@ -80,7 +80,7 @@ public:
 class Uint8ArrayClass : public TypedArray {
     Q_OBJECT
 public:
-    Uint8ArrayClass(ScriptEngine* scriptEngine);
+    Uint8ArrayClass(ScriptEngineQtScript* scriptEngine);
 
     QScriptValue property(const QScriptValue& object, const QScriptString& name, uint id) override;
     void setProperty(QScriptValue& object, const QScriptString& name, uint id, const QScriptValue& value) override;
@@ -89,7 +89,7 @@ public:
 class Uint8ClampedArrayClass : public TypedArray {
     Q_OBJECT
 public:
-    Uint8ClampedArrayClass(ScriptEngine* scriptEngine);
+    Uint8ClampedArrayClass(ScriptEngineQtScript* scriptEngine);
 
     QScriptValue property(const QScriptValue& object, const QScriptString& name, uint id) override;
     void setProperty(QScriptValue& object, const QScriptString& name, uint id, const QScriptValue& value) override;
@@ -98,7 +98,7 @@ public:
 class Int16ArrayClass : public TypedArray {
     Q_OBJECT
 public:
-    Int16ArrayClass(ScriptEngine* scriptEngine);
+    Int16ArrayClass(ScriptEngineQtScript* scriptEngine);
 
     QScriptValue property(const QScriptValue& object, const QScriptString& name, uint id) override;
     void setProperty(QScriptValue& object, const QScriptString& name, uint id, const QScriptValue& value) override;
@@ -107,7 +107,7 @@ public:
 class Uint16ArrayClass : public TypedArray {
     Q_OBJECT
 public:
-    Uint16ArrayClass(ScriptEngine* scriptEngine);
+    Uint16ArrayClass(ScriptEngineQtScript* scriptEngine);
 
     QScriptValue property(const QScriptValue& object, const QScriptString& name, uint id) override;
     void setProperty(QScriptValue& object, const QScriptString& name, uint id, const QScriptValue& value) override;
@@ -116,7 +116,7 @@ public:
 class Int32ArrayClass : public TypedArray {
     Q_OBJECT
 public:
-    Int32ArrayClass(ScriptEngine* scriptEngine);
+    Int32ArrayClass(ScriptEngineQtScript* scriptEngine);
 
     QScriptValue property(const QScriptValue& object, const QScriptString& name, uint id) override;
     void setProperty(QScriptValue& object, const QScriptString& name, uint id, const QScriptValue& value) override;
@@ -125,7 +125,7 @@ public:
 class Uint32ArrayClass : public TypedArray {
     Q_OBJECT
 public:
-    Uint32ArrayClass(ScriptEngine* scriptEngine);
+    Uint32ArrayClass(ScriptEngineQtScript* scriptEngine);
 
     QScriptValue property(const QScriptValue& object, const QScriptString& name, uint id) override;
     void setProperty(QScriptValue& object, const QScriptString& name, uint id, const QScriptValue& value) override;
@@ -134,7 +134,7 @@ public:
 class Float32ArrayClass : public TypedArray {
     Q_OBJECT
 public:
-    Float32ArrayClass(ScriptEngine* scriptEngine);
+    Float32ArrayClass(ScriptEngineQtScript* scriptEngine);
 
     QScriptValue property(const QScriptValue& object, const QScriptString& name, uint id) override;
     void setProperty(QScriptValue& object, const QScriptString& name, uint id, const QScriptValue& value) override;
@@ -143,7 +143,7 @@ public:
 class Float64ArrayClass : public TypedArray {
     Q_OBJECT
 public:
-    Float64ArrayClass(ScriptEngine* scriptEngine);
+    Float64ArrayClass(ScriptEngineQtScript* scriptEngine);
 
     QScriptValue property(const QScriptValue& object, const QScriptString& name, uint id) override;
     void setProperty(QScriptValue& object, const QScriptString& name, uint id, const QScriptValue& value) override;
