@@ -23,8 +23,6 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 
-#include <QtScript/QScriptEngine>
-
 #include <Extents.h>
 #include <PerfStat.h>
 #include <Profile.h>
@@ -2944,8 +2942,8 @@ bool EntityTree::writeToMap(QVariantMap& entityDescription, OctreeElementPointer
     }
     entityDescription["DataVersion"] = _persistDataVersion;
     entityDescription["Id"] = _persistID;
-    QScriptEngine scriptEngine;
-    RecurseOctreeToMapOperator theOperator(entityDescription, element, &scriptEngine, skipDefaultValues,
+    ScriptEnginePointer engine = newScriptEngine();
+    RecurseOctreeToMapOperator theOperator(entityDescription, element, engine.data(), skipDefaultValues,
                                             skipThoseWithBadParents, _myAvatar);
     withReadLock([&] {
         recurseTreeWithOperator(&theOperator);
@@ -3091,10 +3089,10 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
 
     // map will have a top-level list keyed as "Entities".  This will be extracted
     // and iterated over.  Each member of this list is converted to a QVariantMap, then
-    // to a QScriptValue, and then to EntityItemProperties.  These properties are used
+    // to a ScriptValuePointer, and then to EntityItemProperties.  These properties are used
     // to add the new entity to the EntityTree.
     QVariantList entitiesQList = map["Entities"].toList();
-    QScriptEngine scriptEngine;
+    ScriptEnginePointer scriptEngine = newScriptEngine();
 
     if (entitiesQList.length() == 0) {
         // Empty map or invalidly formed file.
@@ -3105,7 +3103,7 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
 
     bool success = true;
     foreach (QVariant entityVariant, entitiesQList) {
-        // QVariantMap --> QScriptValue --> EntityItemProperties --> Entity
+        // QVariantMap --> ScriptValuePointer --> EntityItemProperties --> Entity
         QVariantMap entityMap = entityVariant.toMap();
 
         // handle parentJointName for wearables
@@ -3118,7 +3116,7 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
                 " mapped it to parentJointIndex " << entityMap["parentJointIndex"].toInt();
         }
 
-        QScriptValue entityScriptValue = variantMapToScriptValue(entityMap, scriptEngine);
+        ScriptValuePointer entityScriptValue = variantMapToScriptValue(entityMap, *scriptEngine);
         EntityItemProperties properties;
         EntityItemPropertiesFromScriptValueIgnoreReadOnly(entityScriptValue, properties);
 
@@ -3269,8 +3267,8 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
 }
 
 bool EntityTree::writeToJSON(QString& jsonString, const OctreeElementPointer& element) {
-    QScriptEngine scriptEngine;
-    RecurseOctreeToJSONOperator theOperator(element, &scriptEngine, jsonString);
+    ScriptEnginePointer engine = newScriptEngine();
+    RecurseOctreeToJSONOperator theOperator(element, engine.data(), jsonString);
     withReadLock([&] {
         recurseTreeWithOperator(&theOperator);
     });
