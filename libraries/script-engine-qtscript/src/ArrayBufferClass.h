@@ -24,13 +24,13 @@
 #include <QtScript/QScriptValue>
 #include <QtCore/QDateTime>
 
-class ScriptEngine;
+class ScriptEngineQtScript;
 
 /// Implements the <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">ArrayBuffer</a></code> scripting class
 class ArrayBufferClass : public QObject, public QScriptClass {
     Q_OBJECT
 public:
-    ArrayBufferClass(ScriptEngine* scriptEngine);
+    ArrayBufferClass(ScriptEngineQtScript* scriptEngine);
     QScriptValue newInstance(qint32 size);
     QScriptValue newInstance(const QByteArray& ba);
 

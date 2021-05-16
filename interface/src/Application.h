@@ -23,11 +23,13 @@
 #include <QtCore/QSharedPointer>
 #include <QtCore/QStringList>
 #include <QtQuick/QQuickItem>
+#include <QtCore/QSharedPointer>
 
 #include <QtGui/QImage>
 
 #include <QtWidgets/QApplication>
 
+#include <AvatarHashMap.h>
 #include <ThreadHelpers.h>
 #include <AbstractScriptingServicesInterface.h>
 #include <AbstractViewStateInterface.h>
@@ -42,7 +44,6 @@
 #include <PhysicsEngine.h>
 #include <plugins/Forward.h>
 #include <ui-plugins/PluginContainer.h>
-#include <ScriptEngine.h>
 #include <ShapeManager.h>
 #include <SimpleMovingAverage.h>
 #include <StDev.h>
@@ -91,6 +92,8 @@ class MainWindow;
 class AssetUpload;
 class CompositorHelper;
 class AudioInjector;
+class ScriptEngine;
+using ScriptEnginePointer = QSharedPointer<ScriptEngine>;
 
 namespace controller {
     class StateController;
@@ -249,7 +252,7 @@ public:
     NodeToOctreeSceneStats* getOcteeSceneStats() { return &_octreeServerSceneStats; }
 
     virtual controller::ScriptingInterface* getControllerScriptingInterface() { return _controllerScriptingInterface; }
-    virtual void registerScriptEngineWithApplicationServices(const ScriptEnginePointer& scriptEngine) override;
+    virtual void registerScriptEngineWithApplicationServices(const ScriptManagerPointer& scriptManager) override;
 
     virtual void copyCurrentViewFrustum(ViewFrustum& viewOut) const override { copyDisplayViewFrustum(viewOut); }
     virtual QThread* getMainThread() override { return thread(); }
