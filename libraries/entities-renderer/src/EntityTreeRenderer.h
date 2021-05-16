@@ -33,6 +33,10 @@ class Model;
 class ScriptEngine;
 class ZoneEntityItem;
 class EntityItem;
+class ScriptEngine;
+class ScriptManager;
+using ScriptEnginePointer = QSharedPointer<ScriptEngine>;
+using ScriptManagerPointer = QSharedPointer<ScriptManager>;
 
 namespace render { namespace entities {
     class EntityRenderer;
@@ -176,7 +180,7 @@ private:
 
     void resetPersistentEntitiesScriptEngine();
     void resetNonPersistentEntitiesScriptEngine();
-    void setupEntityScriptEngineSignals(const ScriptEnginePointer& scriptEngine);
+    void setupEntityScriptEngineSignals(const ScriptManagerPointer& scriptManager);
 
     void findBestZoneAndMaybeContainingEntities(QSet<EntityItemID>& entitiesContainingAvatar);
 
@@ -188,7 +192,7 @@ private:
     EntityItemID _currentHoverOverEntityID;
     EntityItemID _currentClickingOnEntityID;
 
-    QScriptValueList createEntityArgs(const EntityItemID& entityID);
+    ScriptValueList createEntityArgs(const EntityItemID& entityID);
     void checkEnterLeaveEntities();
     void leaveDomainAndNonOwnedEntities();
     void leaveAllEntities();
@@ -199,8 +203,8 @@ private:
     QSet<EntityItemID> _currentEntitiesInside;
 
     bool _wantScripts;
-    ScriptEnginePointer _nonPersistentEntitiesScriptEngine; // used for domain + non-owned avatar entities, cleared on domain switch
-    ScriptEnginePointer _persistentEntitiesScriptEngine; // used for local + owned avatar entities, persists on domain switch, cleared on reload content
+    ScriptManagerPointer _nonPersistentEntitiesScriptManager; // used for domain + non-owned avatar entities, cleared on domain switch
+    ScriptManagerPointer _persistentEntitiesScriptManager; // used for local + owned avatar entities, persists on domain switch, cleared on reload content
 
     void playEntityCollisionSound(const EntityItemPointer& entity, const Collision& collision);
 
