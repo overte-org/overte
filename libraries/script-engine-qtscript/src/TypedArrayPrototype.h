@@ -15,7 +15,9 @@
 #ifndef hifi_TypedArrayPrototype_h
 #define hifi_TypedArrayPrototype_h
 
-#include "ArrayBufferViewClass.h"
+#include <QtCore/QObject>
+#include <QtScript/QScriptable>
+#include <QtScript/QScriptValue>
 
 /// The javascript functions associated with a <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a></code> instance prototype
 class TypedArrayPrototype : public QObject, public QScriptable {
