@@ -34,8 +34,9 @@ using ScriptEnginePointer = QSharedPointer<ScriptEngine>;
 using ScriptProgramPointer = QSharedPointer<ScriptProgram>;
 using ScriptValuePointer = QSharedPointer<ScriptValue>;
 
-Q_DECLARE_METATYPE(ScriptEnginePointer)
+Q_DECLARE_METATYPE(ScriptEnginePointer);
 
+/// [ScriptInterface] Provides an engine-independent interface for QScriptEngine
 class ScriptEngine {
 public:
     typedef ScriptValuePointer (*FunctionSignature)(ScriptContext*, ScriptEngine*);
@@ -128,7 +129,7 @@ public: // not for public use, but I don't like how Qt strings this along with p
     virtual bool convert(const ScriptValuePointer& value, int type, void* ptr) = 0;
     virtual void registerCustomType(int type, MarshalFunction mf, DemarshalFunction df, const ScriptValuePointer& prototype) = 0;
 };
-Q_DECLARE_OPERATORS_FOR_FLAGS(ScriptEngine::QObjectWrapOptions)
+Q_DECLARE_OPERATORS_FOR_FLAGS(ScriptEngine::QObjectWrapOptions);
 
 ScriptEnginePointer newScriptEngine(ScriptManager* manager = nullptr);
 
@@ -157,3 +158,5 @@ QThread* ScriptEngine::thread() const {
 */
 
 #endif  // hifi_ScriptEngine_h
+
+/// @}
