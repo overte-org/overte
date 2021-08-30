@@ -53,11 +53,9 @@
 #include <controllers/ScriptingInterface.h>
 #include <AnimationObject.h>
 
-#include "ArrayBufferViewClass.h"
 #include "AudioScriptingInterface.h"
 #include "AssetScriptingInterface.h"
 #include "BatchLoader.h"
-#include "DataViewClass.h"
 #include "EventTypes.h"
 #include "FileScriptingInterface.h" // unzip project
 #include "MenuItemProperties.h"
@@ -67,7 +65,6 @@
 #include "ScriptContext.h"
 #include "ScriptEngineCast.h"
 #include "ScriptEngineLogging.h"
-#include "TypedArrays.h"
 #include "XMLHttpRequestClass.h"
 #include "WebSocketClass.h"
 #include "RecordingScriptingInterface.h"
@@ -133,8 +130,10 @@ static ScriptValuePointer debugPrint(ScriptContext* context, ScriptEngine* engin
     AbstractLoggerInterface* loggerInterface = AbstractLoggerInterface::get();
     if (loggerInterface && loggerInterface->showSourceDebugging()) {
         ScriptContext* userContext = context;
+        ScriptContextPointer parentContext; // using this variable to maintain parent variable lifespan
         while (userContext && userContext->functionContext()->functionType() == ScriptFunctionContext::NativeFunction) {
-            userContext = userContext->parentContext();
+            parentContext = userContext->parentContext();
+            userContext = parentContext.data();
         }
         QString location;
         if (userContext) {
@@ -560,9 +559,10 @@ static ScriptValuePointer scriptableResourceToScriptValue(ScriptEngine* engine,
     // in that case it would be too difficult to tell which one should track the memory, and
     // this serves the common case (use in a single script).
     auto data = resource->getResource();
-    if (data && !resource->isInScript()) {
+    auto manager = engine->manager();
+    if (data && manager && !resource->isInScript()) {
         resource->setInScript(true);
-        QObject::connect(data.data(), SIGNAL(updateSize(qint64)), engine, SLOT(updateMemoryCost(qint64)));
+        QObject::connect(data.data(), SIGNAL(updateSize(qint64)), manager, SLOT(updateMemoryCost(qint64)));
     }
 
     auto object = engine->newQObject(
@@ -963,6 +963,11 @@ void ScriptManager::addEventHandler(const EntityItemID& entityID, const QString&
     handlersForEvent << handlerData; // Note that the same handler can be added many times. See removeEntityEventHandler().
 }
 
+bool ScriptManager::isStopped() const {
+    QSharedPointer<ScriptEngines> scriptEngines(_scriptEngines);
+    return !scriptEngines || scriptEngines->isStopped();
+}
+
 void ScriptManager::run() {
     if (QThread::currentThread() != qApp->thread() && _context == Context::CLIENT_SCRIPT) {
         // Flag that we're allowed to access local HTML files on UI created from C++ calls on this thread
@@ -974,8 +979,7 @@ void ScriptManager::run() {
     auto name = filenameParts.size() > 0 ? filenameParts[filenameParts.size() - 1] : "unknown";
     PROFILE_SET_THREAD_NAME("Script: " + name);
 
-    QSharedPointer<ScriptEngines> scriptEngines(_scriptEngines);
-    if (!scriptEngines || scriptEngines->isStopped()) {
+    if (isStopped()) {
         return; // bail early - avoid setting state in init(), as evaluate() will bail too
     }
 
@@ -1228,21 +1232,13 @@ void ScriptManager::callAnimationStateHandler(ScriptValuePointer callback, AnimV
 }
 
 void ScriptManager::updateMemoryCost(const qint64& deltaSize) {
-    if (deltaSize > 0) {
-        // We've patched qt to fix https://highfidelity.atlassian.net/browse/BUGZ-46 on mac and windows only.
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
-        reportAdditionalMemoryCost(deltaSize);
-#endif
-    }
+    _engine->updateMemoryCost(deltaSize);
 }
 
 void ScriptManager::timerFired() {
-    {
-        QSharedPointer<ScriptEngines> scriptEngines(_scriptEngines);
-        if (!scriptEngines || scriptEngines->isStopped()) {
-            scriptWarningMessage("Script.timerFired() while shutting down is ignored... parent script:" + getFilename());
-            return; // bail early
-        }
+    if (isStopped()) {
+        scriptWarningMessage("Script.timerFired() while shutting down is ignored... parent script:" + getFilename());
+        return; // bail early
     }
 
     QTimer* callingTimer = reinterpret_cast<QTimer*>(sender());
@@ -1292,8 +1288,7 @@ QObject* ScriptManager::setupTimerWithInterval(const ScriptValuePointer& functio
 }
 
 QObject* ScriptManager::setInterval(const ScriptValuePointer& function, int intervalMS) {
-    QSharedPointer<ScriptEngines> scriptEngines(_scriptEngines);
-    if (!scriptEngines || scriptEngines->isStopped()) {
+    if (isStopped()) {
         scriptWarningMessage("Script.setInterval() while shutting down is ignored... parent script:" + getFilename());
         return NULL; // bail early
     }
@@ -1302,8 +1297,7 @@ QObject* ScriptManager::setInterval(const ScriptValuePointer& function, int inte
 }
 
 QObject* ScriptManager::setTimeout(const ScriptValuePointer& function, int timeoutMS) {
-    QSharedPointer<ScriptEngines> scriptEngines(_scriptEngines);
-    if (!scriptEngines || scriptEngines->isStopped()) {
+    if (isStopped()) {
         scriptWarningMessage("Script.setTimeout() while shutting down is ignored... parent script:" + getFilename());
         return NULL; // bail early
     }
@@ -1335,10 +1329,12 @@ QUrl ScriptManager::resolvePath(const QString& include) const {
     // to the first absolute URL in the JS scope chain
     QUrl parentURL;
     auto context = _engine->currentContext();
+    ScriptContextPointer parentContext;  // using this variable to maintain parent variable lifespan
     do {
         auto contextInfo = context->functionContext();
         parentURL = QUrl(contextInfo->fileName());
-        context = context->parentContext();
+        parentContext = context->parentContext();
+        context = parentContext.data();
     } while (parentURL.isRelative() && context);
 
     if (parentURL.isRelative()) {
@@ -1478,8 +1474,9 @@ ScriptValuePointer ScriptManager::currentModule() {
     auto jsRequire = _engine->globalObject()->property("Script")->property("require");
     auto cache = jsRequire->property("cache");
     auto candidate = ScriptValuePointer();
-    for (auto c = _engine->currentContext(); c && !candidate->isObject(); c = c->parentContext()) {
-        auto contextInfo = c->functionContext();
+    ScriptContextPointer parentContext;  // using this variable to maintain parent variable lifespan
+    for (auto context = _engine->currentContext(); context && !candidate->isObject(); parentContext = context->parentContext(), context = parentContext.data()) {
+        auto contextInfo = context->functionContext();
         candidate = cache->property(contextInfo->fileName());
     }
     if (!candidate->isObject()) {
@@ -1737,8 +1734,7 @@ void ScriptManager::include(const QStringList& includeFiles, ScriptValuePointer 
     if (!_engine->IS_THREADSAFE_INVOCATION(__FUNCTION__)) {
         return;
     }
-    QSharedPointer<ScriptEngines> scriptEngines(_scriptEngines);
-    if (!scriptEngines || scriptEngines->isStopped()) {
+    if (isStopped()) {
         scriptWarningMessage("Script.include() while shutting down is ignored... includeFiles:"
                 + includeFiles.join(",") + "parent script:" + getFilename());
         return; // bail early
@@ -1832,8 +1828,7 @@ void ScriptManager::include(const QStringList& includeFiles, ScriptValuePointer 
 }
 
 void ScriptManager::include(const QString& includeFile, ScriptValuePointer callback) {
-    QSharedPointer<ScriptEngines> scriptEngines(_scriptEngines);
-    if (!scriptEngines || scriptEngines->isStopped()) {
+    if (isStopped()) {
         scriptWarningMessage("Script.include() while shutting down is ignored...  includeFile:"
                     + includeFile + "parent script:" + getFilename());
         return; // bail early
@@ -1851,8 +1846,7 @@ void ScriptManager::load(const QString& loadFile) {
     if (!_engine->IS_THREADSAFE_INVOCATION(__FUNCTION__)) {
         return;
     }
-    QSharedPointer<ScriptEngines> scriptEngines(_scriptEngines);
-    if (!scriptEngines || scriptEngines->isStopped()) {
+    if (isStopped()) {
         scriptWarningMessage("Script.load() while shutting down is ignored... loadFile:"
                 + loadFile + "parent script:" + getFilename());
         return; // bail early
@@ -2688,4 +2682,8 @@ QString ScriptManager::formatException(const ScriptValuePointer& exception, bool
         result += QString("\n[Backtrace]%1%2").arg(SCRIPT_BACKTRACE_SEP).arg(stacktrace);
     }
     return result;
+}
+
+ScriptValuePointer ScriptManager::evaluate(const QString& program, const QString& fileName) {
+    return _engine->evaluate(program, fileName);
 }
