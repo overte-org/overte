@@ -1,6 +1,6 @@
 //
 //  EntityScriptClient.h
-//  libraries/networking/src
+//  libraries/script-engine/src
 //
 //  Created by Ryan Huffman on 2017/01/13
 //  Copyright 2017 High Fidelity, Inc.
@@ -14,10 +14,10 @@
 
 #include <QtCore/QSharedPointer>
 
-#include "ClientServerUtils.h"
-#include "LimitedNodeList.h"
-#include "ReceivedMessage.h"
-#include "AssetUtils.h"
+#include <ClientServerUtils.h>
+#include <LimitedNodeList.h>
+#include <ReceivedMessage.h>
+#include <AssetUtils.h>
 #include "EntityScriptUtils.h"
 
 #include <DependencyManager.h>
