@@ -16,6 +16,7 @@
 #include <atomic>
 #include <chrono>
 #include <functional>
+#include <unordered_map>
 #include <mutex>
 
 #include <QtCore/QEnableSharedFromThis>
@@ -29,10 +30,9 @@
 #include <QtCore/QUrl>
 #include <QtCore/QVariant>
 
-#include <AnimVariant.h>
 #include "EntityItemID.h"
 #include "EntitiesScriptEngineProvider.h"
-#include <EntityScriptUtils.h>
+#include "EntityScriptUtils.h"
 #include <ExternalResource.h>
 #include <SettingHandle.h>
 
@@ -43,8 +43,6 @@
 #include "Quat.h"
 #include "ScriptUUID.h"
 #include "Vec3.h"
-
-class QScriptEngineDebugger;
 
 static const QString NO_SCRIPT("");
 
@@ -104,6 +102,10 @@ public:
     QUrl definingSandboxURL { QUrl("about:EntityScript") };
 };
 
+// declare a static script initializer
+#define STATIC_SCRIPT_INITIALIZER(init)                                     \
+    static ScriptManager::StaticInitializerNode static_script_initializer_(init);
+
 /**jsdoc
  * The <code>Script</code> API provides facilities for working with scripts.
  *
@@ -159,18 +161,26 @@ public:
         AGENT,
         AVATAR
     };
-    Q_ENUM(Type)
+    Q_ENUM(Type);
 
     static int processLevelMaxRetries;
     ScriptManager(Context context, const QString& scriptContents = NO_SCRIPT, const QString& fileNameString = QString("about:ScriptEngine"));
     ~ScriptManager();
 
+    // static initialization support
+    typedef void (*ScriptManagerInitializer)(ScriptManager*);
+    class StaticInitializerNode {
+    public:
+        ScriptManagerInitializer init;
+        StaticInitializerNode* prev;
+        inline StaticInitializerNode(ScriptManagerInitializer&& pInit) : init(std::move(pInit)),prev(nullptr) { registerNewStaticInitializer(this); }
+    };
+    static void registerNewStaticInitializer(StaticInitializerNode* dest);
+
     /// run the script in a dedicated thread. This will have the side effect of evalulating
     /// the current script contents and calling run(). Callers will likely want to register the script with external
     /// services before calling this.
     void runInThread();
-
-    void runDebuggable();
 
     /// run the script in the callers thread, exit when stop() is called.
     void run();
@@ -376,7 +386,7 @@ public:
 
     /**jsdoc
      * Provides access to methods or objects provided in an external JavaScript or JSON file. 
-     * See {@link https://docs.vircadia.dev/script/js-tips.html} for further details.
+     * See {@link https://docs.overte.org/script/js-tips.html} for further details.
      * @function Script.require
      * @param {string} module - The module to use. May be a JavaScript file, a JSON file, or the name of a system module such 
      *     as <code>"appUi"</code> (i.e., the "appUi.js" system module JavaScript file).
@@ -595,8 +605,6 @@ public:
     // this is used by code in ScriptEngines.cpp during the "reload all" operation
     bool isStopping() const { return _isStopping; }
 
-    bool isDebuggable() const { return _debuggable; }
-
     void disconnectNonEssentialSignals();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -621,6 +629,13 @@ public:
 
     void setScriptEngines(QSharedPointer<ScriptEngines>& scriptEngines) { _scriptEngines = scriptEngines; }
 
+    // call all the registered event handlers on an entity for the specified name.
+    void forwardHandlerCall(const EntityItemID& entityID, const QString& eventName, ScriptValueList eventHanderArgs);
+
+    // remove all event handlers for the specified entityID (i.e. the entity is being removed)
+    void removeAllEventHandlers(const EntityItemID& entityID);
+
+
     /**jsdoc
      * Gets the URL for an asset in an external resource bucket. (The location where the bucket is hosted may change over time
      * but this method will return the asset's current URL.)
@@ -639,17 +654,6 @@ public:
     Q_INVOKABLE QString getExternalPath(ExternalResource::Bucket bucket, const QString& path);
 
 public slots:
-
-    /**jsdoc
-     * @function Script.callAnimationStateHandler
-     * @param {function} callback - Callback function.
-     * @param {object} parameters - Parameters.
-     * @param {string[]} names - Names.
-     * @param {boolean} useNames - Use names.
-     * @param {function} resultHandler - Result handler.
-     * @deprecated This function is deprecated and will be removed.
-     */
-    void callAnimationStateHandler(ScriptValuePointer callback, AnimVariantMap parameters, QStringList names, bool useNames, AnimVariantResultHandler resultHandler);
 
     /**jsdoc
      * @function Script.updateMemoryCost
@@ -851,6 +855,14 @@ signals:
      */
     void unhandledException(const ScriptValuePointer& exception);
 
+    // Triggered once before the first call to Script.addEventHandler happens on this ScriptManager
+    // connections assumed to use Qt::DirectConnection; not for use by scripts
+    void attachDefaultEventHandlers();
+
+    // Triggered repeatedly in the scripting loop to ensure entity edit messages get processed properly
+    // connections assumed to use Qt::DirectConnection; not for use by scripts
+    void releaseEntityPacketSenderMessages(bool wait);
+
 protected:
     void init();
 
@@ -886,7 +898,6 @@ protected:
     void stopTimer(QTimer* timer);
 
     QHash<EntityItemID, RegisteredEventHandlers> _registeredHandlers;
-    void forwardHandlerCall(const EntityItemID& entityID, const QString& eventName, ScriptValueList eventHanderArgs);
 
     /**jsdoc
      * @function Script.entityScriptContentAvailable
@@ -921,8 +932,6 @@ protected:
     EntityScriptContentAvailableMap _contentAvailableQueue;
 
     bool _isThreaded { false };
-    QScriptEngineDebugger* _debugger { nullptr };
-    bool _debuggable { false };
     qint64 _lastUpdate;
 
     QString _fileNameString;
