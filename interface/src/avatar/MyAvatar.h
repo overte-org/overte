@@ -32,6 +32,7 @@
 #include <SettingHandle.h>
 #include <Sound.h>
 #include <shared/Camera.h>
+#include <ScriptValue.h>
 
 #include "AtRestDetector.h"
 #include "MyCharacterController.h"
@@ -42,8 +43,6 @@ class ModelItemID;
 class MyHead;
 class DetailedMotionState;
 class ScriptEngine;
-class ScriptValue;
-using ScriptValuePointer = QSharedPointer<ScriptValue>;
 using ScriptEnginePointer = QSharedPointer<ScriptEngine>;
 
 /*@jsdoc
@@ -874,7 +873,7 @@ public:
      *     MyAvatar.removeAnimationStateHandler(handler);
      * }, 100);
      */
-    Q_INVOKABLE ScriptValuePointer addAnimationStateHandler(ScriptValuePointer handler, ScriptValuePointer propertiesList) { return _skeletonModel->getRig().addAnimationStateHandler(handler, propertiesList); }
+    Q_INVOKABLE ScriptValue addAnimationStateHandler(const ScriptValue& handler, const ScriptValue& propertiesList) { return _skeletonModel->getRig().addAnimationStateHandler(handler, propertiesList); }
 
     /*@jsdoc
      * Removes an animation state handler function.
@@ -882,7 +881,7 @@ public:
      * @param {number} handler - The ID of the animation state handler function to remove.
      */
     // Removes a handler previously added by addAnimationStateHandler.
-    Q_INVOKABLE void removeAnimationStateHandler(ScriptValuePointer handler) { _skeletonModel->getRig().removeAnimationStateHandler(handler); }
+    Q_INVOKABLE void removeAnimationStateHandler(const ScriptValue& handler) { _skeletonModel->getRig().removeAnimationStateHandler(handler); }
 
 
     /*@jsdoc
@@ -3120,11 +3119,11 @@ private:
     QTimer _addAvatarEntitiesToTreeTimer;
 };
 
-ScriptValuePointer audioListenModeToScriptValue(ScriptEngine* engine, const AudioListenerMode& audioListenerMode);
-void audioListenModeFromScriptValue(const ScriptValuePointer& object, AudioListenerMode& audioListenerMode);
+ScriptValue audioListenModeToScriptValue(ScriptEngine* engine, const AudioListenerMode& audioListenerMode);
+void audioListenModeFromScriptValue(const ScriptValue& object, AudioListenerMode& audioListenerMode);
 
-ScriptValuePointer driveKeysToScriptValue(ScriptEngine* engine, const MyAvatar::DriveKeys& driveKeys);
-void driveKeysFromScriptValue(const ScriptValuePointer& object, MyAvatar::DriveKeys& driveKeys);
+ScriptValue driveKeysToScriptValue(ScriptEngine* engine, const MyAvatar::DriveKeys& driveKeys);
+void driveKeysFromScriptValue(const ScriptValue& object, MyAvatar::DriveKeys& driveKeys);
 
 bool isWearableEntity(const EntityItemPointer& entity);
 
