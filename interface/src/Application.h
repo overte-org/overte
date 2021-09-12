@@ -14,6 +14,7 @@
 #define hifi_Application_h
 
 #include <functional>
+#include <memory>
 
 #include <QtCore/QCommandLineParser>
 #include <QtCore/QHash>
@@ -92,7 +93,7 @@ class AssetUpload;
 class CompositorHelper;
 class AudioInjector;
 class ScriptEngine;
-using ScriptEnginePointer = QSharedPointer<ScriptEngine>;
+using ScriptEnginePointer = std::shared_ptr<ScriptEngine>;
 
 namespace controller {
     class StateController;
