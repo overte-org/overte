@@ -15,11 +15,11 @@
 #define hifi_MyAvatar_h
 
 #include <bitset>
+#include <memory>
 
 #include <glm/glm.hpp>
 
 #include <QUuid>
-#include <QtCore/QSharedPointer>
 
 #include <AvatarConstants.h>
 #include <avatars-renderer/Avatar.h>
@@ -43,7 +43,7 @@ class ModelItemID;
 class MyHead;
 class DetailedMotionState;
 class ScriptEngine;
-using ScriptEnginePointer = QSharedPointer<ScriptEngine>;
+using ScriptEnginePointer = std::shared_ptr<ScriptEngine>;
 
 /*@jsdoc
  * <p>Locomotion control types.</p>
