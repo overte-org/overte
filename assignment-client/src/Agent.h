@@ -37,8 +37,8 @@
 
 class ScriptEngine;
 class ScriptManager;
-using ScriptEnginePointer = QSharedPointer<ScriptEngine>;
-using ScriptManagerPointer = QSharedPointer<ScriptManager>;
+using ScriptEnginePointer = std::shared_ptr<ScriptEngine>;
+using ScriptManagerPointer = std::shared_ptr<ScriptManager>;
 
 class Agent : public ThreadedAssignment {
     Q_OBJECT

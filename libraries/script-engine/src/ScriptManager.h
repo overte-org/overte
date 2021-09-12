@@ -16,10 +16,10 @@
 #include <atomic>
 #include <chrono>
 #include <functional>
+#include <memory>
 #include <unordered_map>
 #include <mutex>
 
-#include <QtCore/QEnableSharedFromThis>
 #include <QtCore/QFuture>
 #include <QtCore/QHash>
 #include <QtCore/QObject>
@@ -54,8 +54,8 @@ static const int DEFAULT_ENTITY_PPS_PER_SCRIPT = 900;
 class ScriptEngine;
 class ScriptEngines;
 class ScriptManager;
-using ScriptEnginePointer = QSharedPointer<ScriptEngine>;
-using ScriptManagerPointer = QSharedPointer<ScriptManager>;
+using ScriptEnginePointer = std::shared_ptr<ScriptEngine>;
+using ScriptManagerPointer = std::shared_ptr<ScriptManager>;
 using ScriptValueList = QList<ScriptValue>;
 
 Q_DECLARE_METATYPE(ScriptManagerPointer)
@@ -137,7 +137,7 @@ public:
  *     <em>Read-only.</em>
  * @property {Script.ResourceBuckets} ExternalPaths - External resource buckets.
  */
-class ScriptManager : public QObject, public EntitiesScriptEngineProvider, public QEnableSharedFromThis<ScriptManager> {
+class ScriptManager : public QObject, public EntitiesScriptEngineProvider, public std::enable_shared_from_this<ScriptManager> {
     Q_OBJECT
     Q_PROPERTY(QString context READ getContext)
     Q_PROPERTY(QString type READ getTypeAsString)
