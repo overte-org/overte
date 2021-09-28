@@ -28,28 +28,39 @@ void ByteSliceReader::setContents(ByteSlice&& data) {
     }
 }
 
-bool ByteSliceReader::isSequential() const {
-    return false;
-}
-
-qint64 ByteSliceReader::size() const {
-    return _contents.length();
-}
-
-qint64 ByteSliceReader::writeData(const char*, qint64) {
-    // ByteSlice is read only.  Shouldn't get here unless someone re-open()ed the device as read-write
-    return -1;
-}
-
-qint64 ByteSliceReader::readData(char* data, qint64 maxSize) {
+qint64 ByteSliceReader::peek(char* data, qint64 maxSize) const {
     // we're either reading what is left from the current position or what was asked to be read
-    qint64 currentPosition = pos();
-    qint64 numBytesToRead = std::min(std::max(size() - currentPosition, 0LL), maxSize);
+    qint64 numBytesToRead = std::min(static_cast<qint64>(std::max(size() - _pos, 0ULL)), maxSize);
 
     if (numBytesToRead > 0) {
         // read out the data
-        memcpy(data, _contents.constData() + currentPosition, numBytesToRead);
+        memcpy(data, _contents.constData() + _pos, numBytesToRead);
     }
 
     return numBytesToRead;
+}
+
+qint64 ByteSliceReader::read(char* data, qint64 maxSize) {
+    qint64 numBytesToRead = peek(data, maxSize);
+    if (numBytesToRead > 0) {
+        _pos += numBytesToRead;
+    }
+    return numBytesToRead;
+}
+
+QByteArray ByteSliceReader::peekByteArrayRef(qint64 maxSize) const {
+    // we're either reading what is left from the current position or what was asked to be read
+    qint64 numBytesToRead = std::min(static_cast<qint64>(std::max(size() - _pos, 0ULL)), maxSize);
+
+    return QByteArray { QByteArray::fromRawData(reinterpret_cast<const char *>(_contents.constData() + _pos), numBytesToRead) };
+}
+
+QByteArray ByteSliceReader::readByteArrayRef(qint64 maxSize) {
+    QByteArray data = peekByteArrayRef(maxSize);
+    qint64 numBytesToRead = data.length();
+
+    if (numBytesToRead > 0) {
+        _pos += numBytesToRead;
+    }
+    return data;
 }

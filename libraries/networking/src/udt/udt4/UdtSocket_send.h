@@ -123,7 +123,7 @@ private:  // called exclusively within our private thread
     bool processSendExpire();
     void processExpEvent();
     void resetEXP();
-    void sendDataPacket(SendPacketEntryPointer dataPacket, bool isResend);
+    void sendDataPacket(const SendPacketEntryPointer& dataPacket, bool isResend);
     void ingestAck(const ACKPacket& ackPacket, const QElapsedTimer& timeReceived);
     void ingestNak(const NAKPacket& nakPacket, const QElapsedTimer& timeReceived);
     void ingestCongestion(const Packet& udtPacket, const QElapsedTimer& timeReceived);

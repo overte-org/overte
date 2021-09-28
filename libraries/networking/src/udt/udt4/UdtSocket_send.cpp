@@ -394,7 +394,6 @@ bool UdtSocket_send::processDataMsg(bool isFirst) {
         dataPacket._isOrdered = !_isDatagram || _msgPartialSend->isOrdered;
         dataPacket._messageNumber = _messageSequence;
         _msgPartialSend->fullySent = true;
-        _msgPartialSend.reset();
         _sendPacketID++;
 
         _stats->sentDataPackets++;
@@ -404,6 +403,7 @@ bool UdtSocket_send::processDataMsg(bool isFirst) {
         dataPacketEntry->packet = std::move(dataPacket);
         dataPacketEntry->sendTime = _msgPartialSend->sendTime;
         dataPacketEntry->expireTime = _msgPartialSend->expireTime;
+        _msgPartialSend.reset();
 
         sendDataPacket(dataPacketEntry, false);
         sentPacket = true;
@@ -466,7 +466,7 @@ bool UdtSocket_send::processSendExpire() {
             continue;
         }
 
-        SendPacketEntryPointer thisEntry = evalIterator->second;
+        const SendPacketEntryPointer& thisEntry = evalIterator->second;
         if (thisEntry->expireTime.hasExpired()) {
             // this message has expired, drop it
             MessageNumber messageNumber = thisEntry->packet._messageNumber;
@@ -477,8 +477,7 @@ bool UdtSocket_send::processSendExpire() {
             dropMessage._lastPacketID = evalIterator->first;
 
             // find the other packets in this message
-            for (SendPacketEntryMap::const_iterator collectIterator = ourSendPktPend.begin();
-                 collectIterator != ourSendPktPend.end(); collectIterator++) {
+            for (SendPacketEntryMap::const_iterator collectIterator = ourSendPktPend.begin(); collectIterator != ourSendPktPend.end(); collectIterator++) {
                 if (collectIterator->second->packet._messageNumber == messageNumber) {
                     const PacketID& packetID = collectIterator->first;
                     if (packetID < dropMessage._firstPacketID) {
@@ -503,7 +502,7 @@ bool UdtSocket_send::processSendExpire() {
 }
 
 // we have a packed packet and a green light to send, so lets send this and mark it
-void UdtSocket_send::sendDataPacket(SendPacketEntryPointer dataPacketEntry, bool isResend) {
+void UdtSocket_send::sendDataPacket(const SendPacketEntryPointer& dataPacketEntry, bool isResend) {
     _sendPktPend.insert(SendPacketEntryMap::value_type(dataPacketEntry->packet._packetID, dataPacketEntry));
     _socket.getCongestionControl().onDataPacketSent(dataPacketEntry->packet._packetID);
     _socket.sendPacket(dataPacketEntry->packet.toPacket());
@@ -772,11 +771,8 @@ bool UdtSocket_send::flush() {
     SendMessageEntryPointer message = SendMessageEntryPointer::create(ByteSlice());
 
     QMutexLocker sendGuard(&_sendMutex);
-    {
-        QMutexLocker guard(&_eventMutex);
-        _pendingMessages.append(message);
-        _eventCondition.notify_all();
-    }
+    sendMessage(message);
+
     for (;;) {
         switch (_sendState) {
             case SendState::Closed:
