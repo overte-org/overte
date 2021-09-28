@@ -15,7 +15,7 @@
 
 #include <chrono>
 #include "CongestionControl.h"
-#include "WrappedSequence.h"
+#include "Packet.h"
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QRandomGenerator>
 

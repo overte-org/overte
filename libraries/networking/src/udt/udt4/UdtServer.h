@@ -14,7 +14,6 @@
 
 #include "Multiplexer.h"
 #include "packet.h"
-#include "WrappedSequence.h"
 #include <QtCore/QAtomicInt>
 #include <QtCore/QCryptographicHash>
 #include <QtCore/QDeadlineTimer>

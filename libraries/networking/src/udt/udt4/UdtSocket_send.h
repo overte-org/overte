@@ -18,7 +18,6 @@
 #include <list>
 #include <map>
 #include "Packet.h"
-#include "WrappedSequence.h"
 #include <set>
 #include <QtCore/QDeadlineTimer>
 #include <QtCore/QElapsedTimer>
@@ -107,6 +106,9 @@ private:
         DataPacket packet;
         QElapsedTimer sendTime;
         QDeadlineTimer expireTime;
+#ifndef UDT_OBFUSCATION_DISABLED
+        unsigned resendCount{ 0 };
+#endif
     };
     typedef QSharedPointer<SendPacketEntry> SendPacketEntryPointer;
     typedef std::map<PacketID, SendPacketEntryPointer, WrappedSequenceLess<PacketID>> SendPacketEntryMap;

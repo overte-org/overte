@@ -15,7 +15,6 @@
 
 #include <chrono>
 #include "Packet.h"
-#include "WrappedSequence.h"
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QList>
 #include <QtCore/QSharedPointer>

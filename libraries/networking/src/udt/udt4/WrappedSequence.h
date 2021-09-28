@@ -134,15 +134,6 @@ struct WrappedSequenceLess : std::binary_function<T, T, bool> {
     inline bool operator()(const T& lhs, const T& rhs) const { return static_cast<quint32>(lhs) < static_cast<quint32>(rhs); }
 };
 
-typedef WrappedSequence<31> PacketID;
-static_assert(sizeof(PacketID) == sizeof(quint32), "PacketID invalid size");
-
-typedef WrappedSequence<29> SequenceNumber;  // either an ACK number or a Message number
-static_assert(sizeof(SequenceNumber) == sizeof(quint32), "SequenceNumber invalid size");
-
-using MessageNumber = SequenceNumber;
-using ACKSequence = SequenceNumber;
-
 }  // namespace udt4
 
 namespace std {

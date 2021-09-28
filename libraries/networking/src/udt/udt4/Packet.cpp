@@ -25,24 +25,23 @@ enum
 
 Packet::Packet(ByteSlice networkPacket) {
     if (networkPacket.length() >= 16) {
-        quint32 sequence = qFromBigEndian<quint32>(&networkPacket[0]);
-        _sequence = PacketID(sequence);
+        _sequence = qFromBigEndian<quint32>(&networkPacket[0]);
         _additionalInfo = qFromBigEndian<quint32>(&networkPacket[4]);
 
         if (_additionalInfo == RFC_5389_MAGIC_COOKIE) {
             // yay this isn't a UDT packet at all but a STUN packet trying to sneak in
-            _additionalInfo = sequence;
+            _additionalInfo = _sequence;
             _contents = networkPacket.substring(8);
             _type = PacketType::Stun;
         } else {
             _timestamp = std::chrono::microseconds(qFromBigEndian<quint32>(&networkPacket[8]));
             _socketID = qFromBigEndian<quint32>(&networkPacket[12]);
             _contents = networkPacket.substring(16);
-            if ((sequence & 0x8000) == 0) {
+            if ((_sequence & 0x8000) == 0) {
                 // this is a data packet
                 _type = PacketType::Data;
             } else {
-                _type = static_cast<PacketType>((sequence & 0x7F00) >> 16);
+                _type = static_cast<PacketType>((_sequence & 0x7F00) >> 16);
             }
         }
     }
@@ -77,9 +76,9 @@ ByteSlice Packet::toNetworkPacket() const {
 
     quint32 sequence;
     if (_type < PacketType::Data) {
-        sequence = 0x80000000 | (static_cast<quint32>(_type) << 16) | (static_cast<quint32>(_sequence) & 0xff);
+        sequence = 0x80000000 | (static_cast<quint32>(_type) << 16) | (_sequence & 0xff);
     } else {
-        sequence = static_cast<quint32>(_sequence);
+        sequence = _sequence;
     }
 
     ByteSlice packetData;
@@ -100,9 +99,34 @@ void Packet::setUserDefinedPacketType(quint8 type) {
     _sequence = type;
 }
 
+#ifndef UDT_OBFUSCATION_DISABLED
+static void xorHelper(quint8* start, size_t size, uint64_t key) {
+    auto current = start;
+    auto xorValue = reinterpret_cast<const quint8*>(&key);
+    for (size_t i = 0; i < size; ++i) {
+        *(current++) ^= *(xorValue + (i % sizeof(uint64_t)));
+    }
+}
+
+static ByteSlice deobfuscate(const ByteSlice& source, PacketObfuscationKey level) {
+    auto obfuscationKey = OBFUSCATION_KEYS[static_cast<int>(level)];  // Undo old and apply new one.
+    ByteSlice cleartext;
+    size_t len = source.length();
+    quint8* data = static_cast<quint8*>(cleartext.create(len));
+    xorHelper(data, len, obfuscationKey);
+    return cleartext;
+}
+#endif
+
 DataPacket::DataPacket(const Packet& src) :
     _timestamp(src._timestamp), _socketID(src._socketID), _packetID(src._sequence), _contents(src._contents) {
     assert(src._type == PacketType::Data);
+#ifndef UDT_OBFUSCATION_DISABLED
+    _obfuscationKey = static_cast<PacketObfuscationKey>((src._sequence & 0xC000) >> 30);
+    if (_obfuscationKey != PacketObfuscationKey::None) {
+        _contents = deobfuscate(_contents, _obfuscationKey);
+    }
+#endif
     _messagePosition = static_cast<MessagePosition>((src._additionalInfo & 0xC0000000) >> 30);
     _isOrdered = (src._additionalInfo & 0x20000000) != 0;
     _messageNumber = MessageNumber(src._additionalInfo);
@@ -123,9 +147,20 @@ Packet DataPacket::toPacket() const {
     Packet packet;
     packet._timestamp = _timestamp;
     packet._socketID = _socketID;
+    packet._additionalInfo = static_cast<quint32>(additionalInfo);
+
+#ifndef UDT_OBFUSCATION_DISABLED
+    ByteSlice contents = _contents;
+    if (_obfuscationKey != PacketObfuscationKey::None) {
+        contents = deobfuscate(contents, _obfuscationKey);
+    }
+    packet._sequence = static_cast<quint32>(_packetID) | (static_cast<quint32>(_obfuscationKey) << 30);
+    packet._contents = contents;
+#else
     packet._sequence = _packetID;
     packet._contents = _contents;
-    packet._additionalInfo = static_cast<quint32>(additionalInfo);
+#endif
+
     return packet;
 }
 

@@ -14,14 +14,31 @@
 #define hifi_udt4_Packet_h
 
 // Structure of packets and functions for writing/reading them
-#include "../../ByteSlice.h"
 #include <chrono>
-#include "WrappedSequence.h"
+#include <array>
+
 #include <QtCore/QByteArray>
 #include <QtNetwork/QHostAddress>
 
+#include "../../ByteSlice.h"
+#include "WrappedSequence.h"
+
 namespace udt4 {
 Q_NAMESPACE
+
+#ifndef UDT_OBFUSCATION_DISABLED
+  using PacketID = WrappedSequence<29>;
+#else
+  using PacketID = WrappedSequence<31>;
+#endif
+static_assert(sizeof(PacketID) == sizeof(quint32), "PacketID invalid size");
+
+using SequenceNumber = WrappedSequence<29>;  // either an ACK number or a Message number
+static_assert(sizeof(SequenceNumber) == sizeof(quint32), "SequenceNumber invalid size");
+
+using MessageNumber = SequenceNumber;
+using ACKSequence = SequenceNumber;
+
 
 // PacketType describes the type of UDP packet we're dealing with
 enum class PacketType : quint16
@@ -52,6 +69,31 @@ enum class SocketType : quint16
     DGRAM = 2,   // partially-reliable messaging protocol
 };
 
+#ifndef UDT_OBFUSCATION_DISABLED
+// This is hidden behind a #define in case it becomes "controversial", this appears to attempt to bypass
+// packet-loss caused by pattern-matching firewalls by obfuscating the contents if we have a packet that
+// just isn't making its way through
+
+static const std::array<uint64_t, 4> OBFUSCATION_KEYS{ {
+    0x0,
+    0x6362726973736574,
+    0x7362697261726461,
+    0x72687566666d616e,
+} };
+
+enum class PacketObfuscationKey
+{
+    None = 0x0,  // 00
+    K1 = 0x1,    // 01
+    K2 = 0x2,    // 10
+    K3 = 0x3,    // 11
+};
+enum
+{
+    OBFUSCATION_THRESHOLD = 2,
+};
+#endif
+
 class Packet {
 public:
     inline Packet() {}
@@ -60,7 +102,7 @@ public:
 
     static uint ipHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol);
     static uint packetHeaderSize(QAbstractSocket::NetworkLayerProtocol protocol);
-    inline quint8 userDefinedPacketType() const { return static_cast<quint32>(_sequence) & 0xFF; }
+    inline quint8 userDefinedPacketType() const { return _sequence & 0xFF; }
     void setUserDefinedPacketType(quint8 type);
     inline QByteArray toByteArray() const {
         return QByteArray(reinterpret_cast<const char*>(_contents.constData()), static_cast<int>(_contents.length()));
@@ -68,7 +110,7 @@ public:
 
 public:
     PacketType _type{ PacketType::Invalid };
-    PacketID _sequence;
+    quint32 _sequence{ 0 };
     quint32 _additionalInfo{ 0 };
     std::chrono::microseconds _timestamp{ 0 };
     quint32 _socketID{ 0 };
@@ -100,6 +142,9 @@ public:
     std::chrono::microseconds _timestamp{ 0 };
     quint32 _socketID{ 0 };
     ByteSlice _contents;
+#ifndef UDT_OBFUSCATION_DISABLED
+    PacketObfuscationKey _obfuscationKey{ PacketObfuscationKey::None };
+#endif
 };
 
 class HandshakePacket {

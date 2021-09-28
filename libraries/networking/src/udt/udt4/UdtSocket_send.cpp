@@ -435,6 +435,7 @@ bool UdtSocket_send::processSendLoss() {
             continue;
         }
 
+        dataPacketEntry = lookup->second;
         if (dataPacketEntry->expireTime.hasExpired()) {
             // this packet has expired, ignore
             continue;
@@ -443,6 +444,13 @@ bool UdtSocket_send::processSendLoss() {
         break;
     }
 
+    dataPacketEntry->messageEntry->events->onResend();
+#ifndef UDT_OBFUSCATION_DISABLED
+    unsigned resendCount = ++dataPacketEntry->resendCount;
+    dataPacketEntry->packet._obfuscationKey =
+        (resendCount < OBFUSCATION_THRESHOLD) ? PacketObfuscationKey::None
+                                              : static_cast<PacketObfuscationKey>((resendCount - OBFUSCATION_THRESHOLD) % 4);
+#endif
     _stats->retransmittedPackets++;
     _stats->retransmittedDataBytes += dataPacketEntry->packet._contents.length();
     sendDataPacket(dataPacketEntry, true);

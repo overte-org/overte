@@ -17,7 +17,6 @@
 #include "ConnectionStats.h"
 #include <map>
 #include "Packet.h"
-#include "WrappedSequence.h"
 #include <set>
 #include <QtCore/QIODevice>
 #include <QtCore/QAtomicInteger>
