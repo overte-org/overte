@@ -65,6 +65,9 @@ public:
     // note: this is FS-case-sensitive version of parentURL.isParentOf(childURL)
     static bool isDescendantOf(const QUrl& childURL, const QUrl& parentURL);
     static QUrl defaultScriptsLocation(const QString& newDefault = "");
+
+    static QString getSettingsDescriptionPath();
+    static QString getServerContentDirPath(const QString &dir_name);
 };
 
 QString fileNameWithoutExtension(const QString& fileName, const QVector<QString> possibleExtensions);
