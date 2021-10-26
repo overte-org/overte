@@ -199,8 +199,7 @@ bool DomainServer::forwardMetaverseAPIRequest(HTTPConnection* connection,
 DomainServer::DomainServer(int argc, char* argv[]) :
     QCoreApplication(argc, argv),
     _gatekeeper(this),
-    _httpManager(QHostAddress::AnyIPv4, DOMAIN_SERVER_HTTP_PORT,
-        QString("%1/resources/web/").arg(QCoreApplication::applicationDirPath()), this)
+    _httpManager(QHostAddress::AnyIPv4, DOMAIN_SERVER_HTTP_PORT, PathUtils::getServerContentDirPath("web"), this)
 {
     static const QString CRASH_REPORTER = "crash_reporting.enable_crash_reporter";
 
@@ -2118,6 +2117,7 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
 
         // don't handle if we don't have a matching node
         if (!matchingNode) {
+            qWarning() << "Matching node not found for node" << nodeUUID << "url" << url;
             connection->respond(HTTPConnection::StatusCode404, "Resource not found.");
             return true;
         }
@@ -2126,6 +2126,7 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
 
         // don't handle if we don't have node data for this node
         if (!nodeData) {
+            qWarning() << "No node data for node" << nodeUUID << "url" << url;
             connection->respond(HTTPConnection::StatusCode404, "Resource not found.");
             return true;
         }
@@ -2141,6 +2142,7 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
             if (it != _ephemeralACScripts.end()) {
                 connection->respond(HTTPConnection::StatusCode200, it->second, "application/javascript");
             } else {
+                qWarning() << "AC script not found, url" << url;
                 connection->respond(HTTPConnection::StatusCode404, "Resource not found.");
             }
 
@@ -2148,6 +2150,7 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
         }
 
         // request not handled
+        qWarning() << "Resource not found for url " << url;
         connection->respond(HTTPConnection::StatusCode404, "Resource not found.");
         return true;
     }
@@ -2190,6 +2193,7 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
             return true;
         } else if (url.path() == URI_WIZARD && completedOnce) {
             // Wizard already completed, return 404
+            qWarning() << "Wizard already completed, refusing to serve URL" << url;
             connection->respond(HTTPConnection::StatusCode404, "Resource not found.");
             return true;
         }
@@ -3194,7 +3198,8 @@ void DomainServer::initializeExporter() {
         (
             QHostAddress::Any,
             (quint16)exporterPort,
-            QString("%1/resources/prometheus_exporter/").arg(QCoreApplication::applicationDirPath()),
+            PathUtils::getServerContentDirPath("prometheus_exporter"),
+
             &_exporter
         );
     }
@@ -3220,7 +3225,7 @@ void DomainServer::initializeMetadataExporter() {
         (
             QHostAddress::Any,
             (quint16)metadataExporterPort,
-            QString("%1/resources/metadata_exporter/").arg(QCoreApplication::applicationDirPath()),
+            PathUtils::getServerContentDirPath("metadata_exporter"),
             _metadata
         );
     }
