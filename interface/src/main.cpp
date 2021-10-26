@@ -146,7 +146,7 @@ int main(int argc, const char* argv[]) {
     );
     QCommandLineOption systemCursorOption(
         "system-cursor",
-        "Needs clarification!"
+        "Probably prevents changing the cursor when application has focus."
     );
     QCommandLineOption concurrentDownloadsOption(
         "concurrent-downloads",
