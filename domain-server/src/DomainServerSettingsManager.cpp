@@ -39,6 +39,7 @@
 #include <FingerprintUtils.h>
 #include <ModerationFlags.h>
 
+#include <PathUtils.h>
 #include "DomainServerNodeData.h"
 
 const QString SETTINGS_DESCRIPTION_RELATIVE_PATH = "/resources/describe-settings.json";
@@ -63,9 +64,8 @@ const QString SETTINGS_VIEWPOINT_KEY = "viewpoint";
 
 DomainServerSettingsManager::DomainServerSettingsManager() {
     // load the description object from the settings description
-    qDebug() << "Application dir: " << QCoreApplication::applicationDirPath();
-    QString descriptionFilePath = QCoreApplication::applicationDirPath() + SETTINGS_DESCRIPTION_RELATIVE_PATH;
-    QFile descriptionFile(descriptionFilePath);
+
+    QFile descriptionFile(PathUtils::getSettingsDescriptionPath());
     descriptionFile.open(QIODevice::ReadOnly);
 
     QJsonParseError parseError;

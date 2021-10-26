@@ -108,6 +108,7 @@ const QString& PathUtils::resourcesUrl() {
     return staticResourcePath;
 }
 
+
 QUrl PathUtils::resourcesUrl(const QString& relativeUrl) {
     return QUrl(resourcesUrl() + relativeUrl);
 }
@@ -315,4 +316,58 @@ bool PathUtils::isDescendantOf(const QUrl& childURL, const QUrl& parentURL) {
     QString child = stripFilename(childURL);
     QString parent = stripFilename(parentURL);
     return child.startsWith(parent, PathUtils::getFSCaseSensitivity());
+}
+
+QString PathUtils::getSettingsDescriptionPath() {
+    static std::once_flag once;
+    static QString settings_description_path;
+
+    std::call_once(once, [&] {
+        QStringList search_paths;
+
+        // This works for Windows and source builds
+        search_paths.append( QCoreApplication::applicationDirPath() + "/resources/describe-settings.json" );
+
+#ifdef Q_OS_LINUX
+        search_paths.append("/usr/share/vircadia/resources/describe-settings.json");
+#endif
+
+        for( const auto& path : search_paths ) {
+            qDebug() << "Trying" << path;
+            QFileInfo fi(path);
+            if (fi.exists()) {
+                settings_description_path = path;
+                qInfo() << "Found settings description at" << path;
+                return;
+            }
+        }
+
+        qCritical() << "Failed to find settings description file (describe-settings.json)";
+    });
+
+    return settings_description_path;
+}
+
+QString PathUtils::getServerContentDirPath(const QString &dir_name) {
+
+    QStringList search_paths;
+
+    // This works for Windows and source builds
+    search_paths.append( QCoreApplication::applicationDirPath() + "/resources/" );
+
+#ifdef Q_OS_LINUX
+    search_paths.append("/usr/share/vircadia/resources/");
+#endif
+
+    for( const auto& path : search_paths ) {
+        QFileInfo fi(path, dir_name);
+        if ( fi.exists() && fi.isDir() ) {
+            qInfo() << "Found server content directory " << dir_name << ":" << fi.absoluteFilePath();
+            // URL must end with a / since other parts of the code will assume it's there.
+            return fi.absoluteFilePath() + "/";
+        }
+    }
+
+    qCritical() << "Failed to find server content directory " << dir_name;
+    return "";
 }
