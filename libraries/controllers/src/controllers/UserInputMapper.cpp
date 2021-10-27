@@ -1189,31 +1189,6 @@ Mapping::Pointer UserInputMapper::parseMapping(const QString& json) {
     return parseMapping(doc.object());
 }
 
-//Mapping::Pointer UserInputMapper::parseMappingFile(const QString& path) {
-//    Mapping::Pointer result;
-//    QFile file(path);
-//    if (!file.exists()) {
-//        qWarning(controllers) << "Path specified for parseMappingFile() does not exist.";
-//        return Mapping::Pointer();
-//    }
-//    file.open(QFile::ReadOnly);
-//    //QJsonObject obj; // Why is this in parseMapping()?
-//    QJsonParseError error;
-//    QJsonDocument doc(QJsonDocument::fromJson(file.readAll(), &error));
-//    // check validity of the document
-//    if (doc.isNull()) {
-//        qCDebug(controllers) << "Invalid JSON...\n";
-//        return Mapping::Pointer();
-//    }
-//
-//    if (!doc.isObject()) {
-//        qWarning(controllers) << "Mapping json Document is not an object" << Qt::endl;
-//        return Mapping::Pointer();
-//    }
-//    qCDebug(controllers) << "parseMappingFile() seems to have succeeded...";
-//    return parseMapping(doc.object());
-//}
-
 template <typename T>
 bool hasDebuggableRoute(const T& routes) {
     for (const auto& route : routes) {

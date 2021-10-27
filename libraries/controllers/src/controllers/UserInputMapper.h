@@ -110,8 +110,6 @@ namespace controller {
 
         MappingPointer newMapping(const QString& mappingName);
         MappingPointer parseMapping(const QString& json);
-        //MappingPointer parseMappingFile(const QString& file);
-        // If using above, consider renaming parseMapping to parseMappingJSON.
         MappingPointer loadMapping(const QString& jsonFile, bool enable = false);
         MappingPointer loadMappings(const QStringList& jsonFiles);
 

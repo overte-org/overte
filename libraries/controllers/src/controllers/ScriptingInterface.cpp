@@ -229,8 +229,7 @@ namespace controller {
     QObject* ScriptingInterface::loadMapping(const QString& path) {
         qCDebug(controllers) << "Attempting to loadMapping: " << path;
         auto userInputMapper = DependencyManager::get<UserInputMapper>();
-        //auto mapping = userInputMapper->parseMappingFile(path);
-        auto mapping = userInputMapper->loadMapping(path);
+        auto mapping = userInputMapper->loadMapping(path); // Not supporting second parameter.
         return new MappingBuilderProxy(*userInputMapper, mapping);
     }
 
