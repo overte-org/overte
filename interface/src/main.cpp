@@ -107,7 +107,7 @@ int main(int argc, const char* argv[]) {
     );
     QCommandLineOption scriptsOption(
         "scripts",
-        "Set path for defaultScripts.",
+        "Set path for defaultScripts. These are probably scripts that run automatically.",
         "dir"
     );
     QCommandLineOption allowMultipleInstancesOption(
