@@ -64,8 +64,6 @@ int main(int argc, const char* argv[]) {
 
     setupHifiApplication(BuildInfo::INTERFACE_NAME);
 
-    // grep -E 'getCmdOption|QCommandLineOption|cmdOptionExists' 'interface/src/Application.cpp'
-
     QCommandLineParser parser;
     parser.setApplicationDescription("Overte");
     QCommandLineOption helpOption = parser.addHelpOption();
@@ -178,11 +176,6 @@ int main(int argc, const char* argv[]) {
        "no-launcher",
        "Do not execute the launcher."
     );
-    /*QCommandLineOption overrideScriptsPathOption(
-       SCRIPTS_SWITCH,
-       "Set scripts <path>",
-       "path"
-    );*/
     QCommandLineOption defaultScriptOverrideOption(
        "defaultScriptsOverride",
        "Override defaultsScripts.js.",
@@ -204,12 +197,12 @@ int main(int argc, const char* argv[]) {
     );
     QCommandLineOption traceFileOption(
        "traceFile",
-       "Probably writes a trace to a file?",
+       "Probably writes a trace to a file? Only works if \"--traceDuration\" is specified.",
        "path"
     );
     QCommandLineOption traceDurationOption(
        "traceDuration",
-       "Only works if \"--traceFile\" is provided.",
+       "Probably a number of seconds? Only works if \"--traceFile\" is specified.",
        "value"
     );
     QCommandLineOption clockSkewOption(
@@ -230,7 +223,7 @@ int main(int argc, const char* argv[]) {
     QCommandLineOption quitWhenFinishedOption(
        "quitWhenFinished",
        "Only works if \"--testScript\" is provided."
-    ); // Should probably also work on testResultsLocationOption.
+    ); // Should probably also be made to work on testResultsLocationOption.
     QCommandLineOption fastHeartbeatOption(
        "fast-heartbeat",
        "Change stats polling interval from 10000ms to 1000ms."
@@ -306,6 +299,17 @@ int main(int argc, const char* argv[]) {
         parser.showHelp();
         Q_UNREACHABLE();
     }
+    if (parser.isSet(protocolVersionOption)) {
+        FILE* fp = fopen(parser.value(protocolVersionOption).toStdString().c_str(), "w");
+        if (fp) {
+            fputs(protocolVersionsSignatureBase64().toStdString().c_str(), fp);
+            fclose(fp);
+            return 0;
+        } else {
+            qWarning() << "Failed to open file specified for --protocolVersion.";
+            return 1;
+        }
+    }
 
     static const QString APPLICATION_CONFIG_FILENAME = "config.json";
     QDir applicationDir(applicationPath);
@@ -345,15 +349,16 @@ int main(int argc, const char* argv[]) {
     // Early check for --traceFile argument 
     auto tracer = DependencyManager::set<tracing::Tracer>();
     const char * traceFile = nullptr;
-    float traceDuration;
+    float traceDuration = 0.0f;
     if (parser.isSet(traceFileOption)) {
         traceFile = parser.value(traceFileOption).toStdString().c_str();
         if (parser.isSet(traceDurationOption)) {
             traceDuration = parser.value(traceDurationOption).toFloat();
+            tracer->startTracing();
         } else {
-            traceDuration = 0.0f;
+            qWarning() << "\"--traceDuration\" must be specified along with \"--traceFile\"...";
+            return 1;
         }
-        tracer->startTracing();
     }
    
     PROFILE_SYNC_BEGIN(startup, "main startup", "");
@@ -410,7 +415,7 @@ int main(int argc, const char* argv[]) {
         instanceMightBeRunning = false;
     }
     // this needs to be done here in main, as the mechanism for setting the
-    // scripts directory appears not to work.  See the bug report
+    // scripts directory appears not to work.  See the bug report (dead link)
     // https://highfidelity.fogbugz.com/f/cases/5759/Issues-changing-scripts-directory-in-ScriptsEngine
     // It is currently also done in "Application.cpp". Not sure if necessary.
     /*if (parser.isSet(overrideScriptsPathOption)) {
