@@ -110,6 +110,8 @@ namespace controller {
 
         MappingPointer newMapping(const QString& mappingName);
         MappingPointer parseMapping(const QString& json);
+        //MappingPointer parseMappingFile(const QString& file);
+        // If using above, consider renaming parseMapping to parseMappingJSON.
         MappingPointer loadMapping(const QString& jsonFile, bool enable = false);
         MappingPointer loadMappings(const QStringList& jsonFiles);
 
@@ -170,7 +172,7 @@ namespace controller {
         ConditionalPointer conditionalFor(const QScriptValue& endpoint);
         ConditionalPointer conditionalFor(const Input& endpoint) const;
 
-        MappingPointer parseMapping(const QJsonValue& json);
+        MappingPointer parseMapping(const QJsonValue& json); // Why is this not with the other(s)?
         RoutePointer parseRoute(const QJsonValue& value);
         EndpointPointer parseDestination(const QJsonValue& value);
         EndpointPointer parseSource(const QJsonValue& value);
