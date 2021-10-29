@@ -497,14 +497,8 @@ void setupPreferences() {
     {
         auto userInputMapper = DependencyManager::get<UserInputMapper>();
         auto actions = userInputMapper->getAllActions();
-        //qDebug() << "TEST: actions = " << actions;
         qDebug() << "TEST: actions :";
-        //auto actionNames = userInputMapper.getActionNames();
         for (auto action : actions) {
-            /*auto getter = []()->QShortcut { return Qt::Key_A; };
-            auto setter = [](QShortcut value) { return Qt::Key_A; };*/
-            /*auto getter = []()->Qt::Key { return Qt::Key_A; };
-            auto setter = [](Qt::Key value) { return Qt::Key_A; };*/
             auto actionName = userInputMapper->getActionName(action);
             if (actionName.isEmpty()) {
                 qDebug() << "Empty name for action \"" << controller::toInt(action) << "\". Ignoring...";
@@ -515,7 +509,6 @@ void setupPreferences() {
             auto getter = []()->QKeySequence { return QKeySequence(Qt::Key_A); };
             auto setter = [](QKeySequence value) { return QKeySequence(Qt::Key_A); };
             auto preference = new MapPreference(KEYBOARD, actionName, getter, setter);
-            //auto preference = new CheckPreference(KEYBOARD, actionName.toStdString().c_str(), getter, setter);
             preferences->addPreference(preference);
         }
     }
