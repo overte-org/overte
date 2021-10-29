@@ -11,27 +11,54 @@ import controlsUit 1.0
 
 Preference {
     id: root
-    //height: dataMapping.controlHeight + hifi.dimensions.controlInterlineHeight
+    property alias shortcut: shortcut
+    height: control.height + hifi.dimensions.controlInterlineHeight
 
     Component.onCompleted: {
-        dataMapping.sequence = preference.value;
+        shortcut.sequence = preference.value;
     }
 
     function save() {
-        preference.value = dataMapping.sequence;
+        //preference.value = shortcut.sequence;
+        preference.value = shortcut.postableText;
         preference.save();
     }
 
-    Shortcut {
-        id: dataMapping
-        //placeholderText: preference.placeholderText
-        //label: root.label
-        colorScheme: hifi.colorSchemes.dark
 
-        /*anchors {
+    Item {
+        id: control
+        anchors {
             left: parent.left
             right: parent.right
             bottom: parent.bottom
-        }*/
+        }
+        height: Math.max(labelText.height, shortcut.height)
+
+        Label {
+            id: labelText
+            text: root.label + ":"
+            colorScheme: hifi.colorSchemes.dark
+            anchors {
+                left: parent.left
+                right: shortcut.left
+                rightMargin: hifi.dimensions.labelPadding
+                verticalCenter: parent.verticalCenter
+            }
+            horizontalAlignment: Text.AlignRight
+            wrapMode: Text.Wrap
+        }
+
+        Shortcut {
+            id: shortcut
+            sequence: preference.value;
+            //placeholderText: preference.placeholderText
+            colorScheme: hifi.colorSchemes.dark
+
+            /*anchors {
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
+            }*/
+        }
     }
 }

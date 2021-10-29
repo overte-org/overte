@@ -123,6 +123,7 @@ Preference {
                 case Preference.Mapping:
                     checkBoxCount = 0;
                     builder = mappingBuilder;
+                    break;
 
                 case Preference.Slider:
                     checkBoxCount = 0;

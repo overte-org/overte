@@ -4,9 +4,8 @@
 //  Basically a copy of a file created by David Rowe on 17 Feb 2016
 //
 
-import QtQuick 2.5
-import QtQuick.Controls 1.4
-import QtQuick.Controls.Styles 1.4
+import QtQuick 2.7
+import QtQuick.Controls 2.2
 
 import "../stylesUit"
 import "." as HifiControls
@@ -16,10 +15,10 @@ Shortcut {
 
     property int colorScheme: hifi.colorSchemes.light
     readonly property bool isLightColorScheme: colorScheme == hifi.colorSchemes.light
-    readonly property bool isFaintGrayColorScheme: colorScheme == hifi.colorSchemes.faintGray
-    property bool isSearchField: false
+    //readonly property bool isFaintGrayColorScheme: colorScheme == hifi.colorSchemes.faintGray
+    //property bool isSearchField: false
     property string label: ""
-    //property real controlHeight: height + (shortcutLabel.visible ? shortcutLabel.height + 1 : 0)
+    property real controlHeight: height + (shortcutLabel.visible ? shortcutLabel.height + 1 : 0)
     property bool hasDefocusedBorder: true;
     property bool hasRoundedBorder: false
     property int roundedBorderRadius: 4
@@ -28,9 +27,10 @@ Shortcut {
     property string leftPermanentGlyph: "";
     property string centerPlaceholderGlyph: "";
     property int styleRenderType: Text.NativeRendering
+    /*property AnchorLine anchors.left
+    property AnchorLine anchors.right
+    property AnchorLine anchors.bottom*/
 
-    // workaround for https://bugreports.qt.io/browse/QTBUG-49297
-    // Not sure if still necessary.
     Keys.onPressed: {
         switch (event.key) {
             case Qt.Key_Return:
@@ -43,4 +43,14 @@ Shortcut {
                 }
         }
     }
+
+    /*HifiControls.Label {
+        id: shortcutLabel
+        text: shortcut.label
+        colorScheme: shortcut.colorScheme
+        anchors.left: parent.left
+        anchors.bottom: parent.top
+        anchors.bottomMargin: 2
+        visible: label != ""
+    }*/
 }

@@ -292,13 +292,15 @@ protected:
 class MapPreference : public Preference {
     Q_OBJECT
     Q_PROPERTY(QKeySequence value READ getValue WRITE setValue)
+    Q_PROPERTY(QKeySequence label READ getLabel)
 public:
     using Getter = std::function<QKeySequence()>;
     using Setter = std::function<void(const QKeySequence&)>;
     MapPreference(const QString& category, const QString& name, Getter getter, Setter setter)
-        //: Preference(category, name, getter, setter) { }
         : Preference(category, name), _getter(getter), _setter(setter) { }
     Type getType() override { return Mapping; }
+
+    QString getLabel() const { return _name; }
 
     QKeySequence getValue() const { return _value; }
     void setValue(const QKeySequence& value) { if (_value != value) { _value = value; } }
