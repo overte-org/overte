@@ -77,6 +77,7 @@ Preference {
         property var browsableBuilder: Component { TabletBrowsablePreference { } }
         property var spinnerBuilder: Component { SpinBoxPreference { } }
         property var checkboxBuilder: Component { CheckBoxPreference { } }
+        property var mappingBuilder: Component { MappingPreference { } }
         property var sliderBuilder: Component { SliderPreference { } }
         property var avatarBuilder: Component { AvatarPreference { } }
         property var buttonBuilder: Component { ButtonPreference { } }
@@ -118,6 +119,10 @@ Preference {
                     checkBoxCount = 0;
                     builder = spinnerBuilder;
                     break;
+
+                case Preference.Mapping:
+                    checkBoxCount = 0;
+                    builder = mappingBuilder;
 
                 case Preference.Slider:
                     checkBoxCount = 0;

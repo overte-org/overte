@@ -16,6 +16,8 @@
 #include <QtCore/QList>
 #include <QtCore/QString>
 #include <QtCore/QVariantMap>
+//#include <QtWidgets/QShortcut>
+#include <QKeySequence>
 
 #include "DependencyManager.h"
 
@@ -51,6 +53,7 @@ public:
         Invalid,
         Editable,
         Browsable,
+        Mapping,
         Slider,
         Spinner,
         SpinnerSlider,
@@ -282,6 +285,33 @@ protected:
     void emitValueChanged() override { emit valueChanged(); }
 
     QString _value;
+    const Getter _getter;
+    const Setter _setter;
+};
+
+class MapPreference : public Preference {
+    Q_OBJECT
+    Q_PROPERTY(QKeySequence value READ getValue WRITE setValue)
+public:
+    using Getter = std::function<QKeySequence()>;
+    using Setter = std::function<void(const QKeySequence&)>;
+    MapPreference(const QString& category, const QString& name, Getter getter, Setter setter)
+        //: Preference(category, name, getter, setter) { }
+        : Preference(category, name), _getter(getter), _setter(setter) { }
+    Type getType() override { return Mapping; }
+
+    QKeySequence getValue() const { return _value; }
+    void setValue(const QKeySequence& value) { if (_value != value) { _value = value; } }
+    void load() override { _value = _getter(); }
+    void save() const override {
+        QKeySequence oldValue = _getter();
+        if (_value != oldValue) {
+            _setter(_value);
+        }
+    }
+signals:
+protected:
+    QKeySequence _value;
     const Getter _getter;
     const Setter _setter;
 };
