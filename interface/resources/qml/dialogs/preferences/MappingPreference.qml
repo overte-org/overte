@@ -36,7 +36,7 @@ Preference {
         //label: root.label
         label: preference.name
         //colorScheme: hifi.colorSchemes.dark
-        //shortcut.sequence: preferences.value
+        //shortcut.sequence: preference.value
         //text: shortcut.sequence.nativeText
 
         anchors {

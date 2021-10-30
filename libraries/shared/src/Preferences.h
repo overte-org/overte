@@ -16,7 +16,6 @@
 #include <QtCore/QList>
 #include <QtCore/QString>
 #include <QtCore/QVariantMap>
-#include <QtWidgets/QShortcut>
 #include <QKeySequence>
 
 #include "DependencyManager.h"

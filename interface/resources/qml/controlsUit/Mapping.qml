@@ -37,7 +37,7 @@ HifiControls.TextField {
     height: implicitHeight + 3  // Make surrounding box higher so that highlight is vertically centered.
     property alias mappingLabel: mappingLabel
 
-    y: mappingLabel.visible ? mappingLabel.height + mappingLabel.anchors.bottomMargin : 0
+    y: mappingLabel.visible ? mappingLabel.height + mappingLabel.anchors.bottomMargin : 0*/
 
     Keys.onPressed: {
         switch (event.key) {
@@ -60,7 +60,7 @@ HifiControls.TextField {
         }
     }
 
-    style: TextFieldStyle {
+    /*style: TextFieldStyle {
         id: style;
         textColor: {
             if (isLightColorScheme) {
