@@ -33,6 +33,13 @@
 #include "SharedUtil.h"
 
 
+QString PathUtils::_resources_path{""};
+QString PathUtils::_server_name{"main"};
+bool PathUtils::_initialized{false};
+std::mutex PathUtils::_lock{};
+
+
+
 // Format: AppName-PID-Timestamp
 // Example: ...
 QString TEMP_DIR_FORMAT { "%1-%2-%3" };
@@ -318,56 +325,48 @@ bool PathUtils::isDescendantOf(const QUrl& childURL, const QUrl& parentURL) {
     return child.startsWith(parent, PathUtils::getFSCaseSensitivity());
 }
 
+void PathUtils::setResourceDirPath(const QString &dir) {
+    std::lock_guard<std::mutex> guard(_lock);
+    initialize();
+    _resources_path = dir;
+}
+
 QString PathUtils::getSettingsDescriptionPath() {
-    static std::once_flag once;
-    static QString settings_description_path;
-
-    std::call_once(once, [&] {
-        QStringList search_paths;
-
-        // This works for Windows and source builds
-        search_paths.append( QCoreApplication::applicationDirPath() + "/resources/describe-settings.json" );
-
-#ifdef Q_OS_LINUX
-        search_paths.append("/usr/share/vircadia/resources/describe-settings.json");
-#endif
-
-        for( const auto& path : search_paths ) {
-            qDebug() << "Trying" << path;
-            QFileInfo fi(path);
-            if (fi.exists()) {
-                settings_description_path = path;
-                qInfo() << "Found settings description at" << path;
-                return;
-            }
-        }
-
-        qCritical() << "Failed to find settings description file (describe-settings.json)";
-    });
-
-    return settings_description_path;
+    std::lock_guard<std::mutex> guard(_lock);
+    initialize();
+    return _resources_path;
 }
 
 QString PathUtils::getServerContentDirPath(const QString &dir_name) {
+    std::lock_guard<std::mutex> guard(_lock);
+    initialize();
+    return _resources_path + "/" + dir_name + "/";
+}
 
-    QStringList search_paths;
+void PathUtils::initialize() {
+    if (_initialized) {
+        return;
+    }
 
-    // This works for Windows and source builds
-    search_paths.append( QCoreApplication::applicationDirPath() + "/resources/" );
-
+    QStringList resource_paths;
+    resource_paths.append(QCoreApplication::applicationDirPath() + "/resources");
 #ifdef Q_OS_LINUX
-    search_paths.append("/usr/share/vircadia/resources/");
+    resource_paths.append("/usr/share/vircadia/resources");
 #endif
 
-    for( const auto& path : search_paths ) {
-        QFileInfo fi(path, dir_name);
+    _resources_path = findFirstDir(resource_paths, "resources");
+
+    _initialized = true;
+}
+
+QString PathUtils::findFirstDir(const QStringList &paths, const QString &description) {
+    for(const auto &path : paths ) {
+        QFileInfo fi(path);
         if ( fi.exists() && fi.isDir() ) {
-            qInfo() << "Found server content directory " << dir_name << ":" << fi.absoluteFilePath();
-            // URL must end with a / since other parts of the code will assume it's there.
+            qInfo() << "Found directory for" << description << ":" << fi.absoluteFilePath();
             return fi.absoluteFilePath() + "/";
         }
     }
 
-    qCritical() << "Failed to find server content directory " << dir_name;
-    return "";
+    qCritical() << "Failed to find directory for " << description << "; looked in" << paths;
 }
