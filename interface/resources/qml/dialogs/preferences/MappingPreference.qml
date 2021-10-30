@@ -11,12 +11,7 @@ import controlsUit 1.0
 
 Preference {
     id: root
-    //property alias shortcut: mapping.shortcut
     height: control.height + hifi.dimensions.controlInterlineHeight
-
-    /*mapping.onEditingFinished: {
-        mapping.shortcut.sequence = mapping.text;
-    }*/
 
     Component.onCompleted: {
         mapping.label = preference.label;
@@ -25,19 +20,13 @@ Preference {
     }
 
     function save() {
-        //preference.value = mapping.shortcut.sequence;
         preference.value = mapping.shortcut.portableText;
         preference.save();
     }
 
     Mapping {
         id: mapping
-        //placeholderText: preference.placeholderText
-        //label: root.label
-        label: preference.name
-        //colorScheme: hifi.colorSchemes.dark
-        //shortcut.sequence: preference.value
-        //text: shortcut.sequence.nativeText
+        label: preference.label
 
         anchors {
             left: parent.left
