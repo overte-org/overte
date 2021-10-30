@@ -66,8 +66,47 @@ public:
     static bool isDescendantOf(const QUrl& childURL, const QUrl& parentURL);
     static QUrl defaultScriptsLocation(const QString& newDefault = "");
 
+
+    static void setResourcesPath(const QString &resource_dir);
+
+    /**
+     * @brief Get the location of the describe-settings.json
+     *
+     * @return QString Location of describe-settings.json
+     */
     static QString getSettingsDescriptionPath();
+
+    /**
+     * @brief Get the location of a server content directory
+     *
+     * This finds resource directories like 'web' or 'prometheus_exporter'
+     * @param dir_name Directory being sought
+     * @return QString  Location of the directory
+     */
     static QString getServerContentDirPath(const QString &dir_name);
+
+private:
+    /**
+     * @brief Initializes the default values
+     *
+     * Sets the paths to the default ones detected for the system. This may be overriden later from code.
+     * Only runs once.
+     */
+    static void initialize();
+
+    /**
+     * @brief Given a list of paths, find the first one that exists
+     *
+     * @param paths Paths to check
+     * @param description Description of the kind of path being sought, for error messages
+     * @return QString Found path or empty string
+     */
+    static QString findFirstDir(const QStringList &paths, const QString &description);
+    static QString _server_name;
+    static QString _resources_path;
+    static bool _initialized;
+    static std::mutex _lock;
+
 };
 
 QString fileNameWithoutExtension(const QString& fileName, const QVector<QString> possibleExtensions);
