@@ -11,54 +11,38 @@ import controlsUit 1.0
 
 Preference {
     id: root
-    property alias shortcut: shortcut
+    //property alias shortcut: mapping.shortcut
     height: control.height + hifi.dimensions.controlInterlineHeight
 
+    /*mapping.onEditingFinished: {
+        mapping.shortcut.sequence = mapping.text;
+    }*/
+
     Component.onCompleted: {
-        shortcut.sequence = preference.value;
+        mapping.label = preference.label;
+        mapping.shortcut.sequence = preference.value;
+        mapping.text = mapping.shortcut.nativeText;
     }
 
     function save() {
-        //preference.value = shortcut.sequence;
-        preference.value = shortcut.postableText;
+        //preference.value = mapping.shortcut.sequence;
+        preference.value = mapping.shortcut.portableText;
         preference.save();
     }
 
+    Mapping {
+        id: mapping
+        //placeholderText: preference.placeholderText
+        //label: root.label
+        label: preference.name
+        //colorScheme: hifi.colorSchemes.dark
+        //shortcut.sequence: preferences.value
+        //text: shortcut.sequence.nativeText
 
-    Item {
-        id: control
         anchors {
             left: parent.left
             right: parent.right
             bottom: parent.bottom
-        }
-        height: Math.max(labelText.height, shortcut.height)
-
-        Label {
-            id: labelText
-            text: root.label + ":"
-            colorScheme: hifi.colorSchemes.dark
-            anchors {
-                left: parent.left
-                right: shortcut.left
-                rightMargin: hifi.dimensions.labelPadding
-                verticalCenter: parent.verticalCenter
-            }
-            horizontalAlignment: Text.AlignRight
-            wrapMode: Text.Wrap
-        }
-
-        Shortcut {
-            id: shortcut
-            sequence: preference.value;
-            //placeholderText: preference.placeholderText
-            colorScheme: hifi.colorSchemes.dark
-
-            /*anchors {
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-            }*/
         }
     }
 }

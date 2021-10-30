@@ -508,7 +508,7 @@ void setupPreferences() {
             }
             auto getter = []()->QKeySequence { return QKeySequence(Qt::Key_A); };
             auto setter = [](QKeySequence value) { return QKeySequence(Qt::Key_A); };
-            auto preference = new MapPreference(KEYBOARD, actionName, getter, setter);
+            auto preference = new MappingPreference(KEYBOARD, actionName, getter, setter);
             preferences->addPreference(preference);
         }
     }

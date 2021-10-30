@@ -14,13 +14,13 @@ ImageMessageBox 1.0 ImageMessageBox.qml
 Key 1.0 Key.qml
 Keyboard 1.0 Keyboard.qml
 Label 1.0 Label.qml
+Mapping 1.0 Mapping.qml
 QueuedButton 1.0 QueuedButton.qml
 PermissionPopup 1.0 PermissionPopup.qml
 PermissionPopupBackground 1.0 PermissionPopupBackground.qml
 RadioButton 1.0 RadioButton.qml
 ScrollBar 1.0 ScrollBar.qml
 Separator 1.0 Separator.qml
-Shortcut 1.0 Shortcut.qml
 Slider 1.0 Slider.qml
 SpinBox 1.0 SpinBox.qml
 Switch 1.0 Switch.qml
