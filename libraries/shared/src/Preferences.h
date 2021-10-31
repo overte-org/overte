@@ -290,8 +290,8 @@ protected:
 
 class MappingPreference : public Preference {
     Q_OBJECT
-    Q_PROPERTY(QKeySequence value READ getValue WRITE setValue)
-    Q_PROPERTY(QKeySequence label READ getLabel)
+    Q_PROPERTY(QKeySequence value READ getValue WRITE setValue NOTIFY valueChanged)
+    Q_PROPERTY(QKeySequence label READ getLabel CONSTANT)
 public:
     using Getter = std::function<QKeySequence()>;
     using Setter = std::function<void(const QKeySequence&)>;
@@ -311,7 +311,10 @@ public:
         }
     }
 signals:
+    void valueChanged();
 protected:
+    void emitValueChanged() override { emit valueChanged(); }
+
     QKeySequence _value;
     const Getter _getter;
     const Setter _setter;
