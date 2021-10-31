@@ -11,11 +11,12 @@ import controlsUit 1.0
 
 Preference {
     id: root
-    height: control.height + hifi.dimensions.controlInterlineHeight
+    height: mapping.height + hifi.dimensions.controlInterlineHeight
 
     Component.onCompleted: {
         mapping.label = preference.label;
         mapping.shortcut.sequence = preference.value;
+        //mapping.shortcut.sequence = "A";
         mapping.text = mapping.shortcut.nativeText;
     }
 
