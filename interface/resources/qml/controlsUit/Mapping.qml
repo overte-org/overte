@@ -162,7 +162,7 @@ HifiControls.TextField {
         padding.left: hasRoundedBorder ? mapping.height / 2 : ((isSearchField || mapping.leftPermanentGlyph !== "") ? mapping.height - 2 : 0) + hifi.dimensions.textPadding
         padding.right: (hasClearButton ? mapping.height - 2 : 0) + hifi.dimensions.textPadding
         renderType: mapping.styleRenderType
-    }
+    }*/
 
     HifiControls.Label {
         id: mappingLabel
@@ -182,7 +182,7 @@ HifiControls.TextField {
         anchors.bottom: parent.top
         anchors.bottomMargin: 3
         visible: label != ""
-    }*/
+    }
 
     Shortcut {
         id: shortcut

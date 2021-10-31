@@ -14,7 +14,6 @@ Preference {
     height: mapping.height + hifi.dimensions.controlInterlineHeight
 
     Component.onCompleted: {
-        mapping.label = preference.label;
         mapping.shortcut.sequence = preference.value;
         //mapping.shortcut.sequence = "A";
         mapping.text = mapping.shortcut.nativeText;
@@ -27,7 +26,8 @@ Preference {
 
     Mapping {
         id: mapping
-        label: preference.label
+        //label: preference.label
+        label: root.label
 
         anchors {
             left: parent.left
