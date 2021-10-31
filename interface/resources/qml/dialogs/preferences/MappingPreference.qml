@@ -15,8 +15,10 @@ Preference {
 
     Component.onCompleted: {
         mapping.shortcut.sequence = preference.value;
+        //mapping.shortcut.sequence = preference.value.portableText;
         //mapping.shortcut.sequence = "A";
-        mapping.text = mapping.shortcut.nativeText;
+        //mapping.text = mapping.shortcut.nativeText;
+        text: preference.value.nativeText;
     }
 
     function save() {
@@ -28,6 +30,7 @@ Preference {
         id: mapping
         //label: preference.label
         label: root.label
+        text: preference.value
 
         anchors {
             left: parent.left

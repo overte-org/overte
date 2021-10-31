@@ -13,6 +13,7 @@ import "." as HifiControls
 
 HifiControls.TextField {
     id: mapping
+    //anchors.left: mappingLabel.right
 
     Keys.onPressed: {
         switch (event.key) {
