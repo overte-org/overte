@@ -17,8 +17,10 @@ Preference {
         mapping.shortcut.sequence = preference.value;
         //mapping.shortcut.sequence = preference.value.portableText;
         //mapping.shortcut.sequence = "A";
+
         //mapping.text = mapping.shortcut.nativeText;
-        text: preference.value.nativeText;
+        mapping.text = preference.value;
+        //mapping.text = preference.value.nativeText;
     }
 
     function save() {
@@ -28,9 +30,10 @@ Preference {
 
     Mapping {
         id: mapping
-        //label: preference.label
-        label: root.label
+        //label: preference.label // Not sure why this doesn't work.
+        label: root.label // This must be assigned automatically?
         text: preference.value
+        //text: preference.value.nativeText // This does not work.
 
         anchors {
             left: parent.left
