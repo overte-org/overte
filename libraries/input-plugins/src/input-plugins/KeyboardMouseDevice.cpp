@@ -279,7 +279,7 @@ controller::Input KeyboardMouseDevice::InputDevice::makeInput(Qt::Key code) cons
     if (shortCode != code) {
        shortCode |= 0x0800; // add this bit instead of the way Qt::Key add a bit on the 3rd byte for some keys
     }
-    return controller::Input(_deviceID, shortCode, controller::ChannelType::BUTTON);
+    return controller::Input(_deviceID, shortCode, controller::ChannelType::BUTTON, QKeySequence(code).toString());
 }
 
 controller::Input KeyboardMouseDevice::InputDevice::makeInput(Qt::MouseButton code, bool clicked) const {

@@ -697,6 +697,49 @@ Endpoint::Pointer UserInputMapper::endpointFor(const Input& inputId) const {
     return iterator->second;
 }
 
+Input UserInputMapper::inputFor(const EndpointPointer endpoint) const {
+    Locker locker(_lock);
+    auto iterator = _inputsByEndpoint.find(endpoint);
+    if (_inputsByEndpoint.end() == iterator) {
+        qWarning() << "Unknown endpoint.";
+        return Input();
+    }
+    return iterator->second;
+}
+
+//EndpointPointer UserInputMapper::matchDeviceRouteEndpoint(const EndpointPointer IO, const InputDevice::Pointer device) const {
+EndpointPointer UserInputMapper::matchDeviceRouteEndpoint(const EndpointPointer IO) const {
+    //auto targetDevice = device->getDeviceID();
+    auto test = IO->getInput().id;
+    if (test == 0) {
+        qWarning() << "UserInputMapper::matchDeviceRouteEndpoint() supplied with uninitialised endpoint.";
+        return EndpointPointer();
+    }
+    for (auto route : _deviceRoutes) {
+        if (route->source->getInput().id == test) {
+            return route->destination;
+        } else if (route->destination->getInput().id == test) {
+            return route->source;
+        } else {
+            continue;
+        }
+    }
+    qWarning() << "Failed to matchDeviceRouteEndpoint().";
+    return EndpointPointer();
+}
+
+bool UserInputMapper::remap(const EndpointPointer input, const EndpointPointer action) const {
+    // Currently assumes no duplicate action mappings, even across devices.
+    for (auto route : _deviceRoutes) {
+        if (route->destination == action) {
+            route->source = input; // Not bothering to check if already equal.
+            return true;
+        }
+    }
+    qWarning() << "UserInputMapper::remap() failed.";
+    return false;
+}
+
 Endpoint::Pointer UserInputMapper::compositeEndpointFor(Endpoint::Pointer first, Endpoint::Pointer second) {
     EndpointPair pair(first, second);
     Endpoint::Pointer result;
@@ -1275,7 +1318,6 @@ bool UserInputMapper::getActionStateValid(Action action) const {
     qCDebug(controllers) << "UserInputMapper::getActionStateValid invalid action:" << index;
     return false;
 }
-
 
 }
 

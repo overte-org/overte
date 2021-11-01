@@ -75,7 +75,8 @@ struct Input {
     // where the default initializer (a C++-11ism) for the union data above is not applied.
     explicit Input() {}
     explicit Input(uint32_t id) : id(id) {}
-    explicit Input(uint16_t device, uint16_t channel, ChannelType type) : device(device), channel(channel), type(uint16_t(type)), padding(0) {}
+    explicit Input(uint16_t device, uint16_t channel, ChannelType type, QString displayValue = QString())
+	: device(device), channel(channel), type(uint16_t(type)), displayValue(displayValue), padding(0) {}
     Input(const Input& src) : id(src.id) {}
     Input& operator = (const Input& src) { id = src.id; return (*this); }
     bool operator ==(const Input& right) const { return INVALID_INPUT.id != id && INVALID_INPUT.id != right.id && id == right.id; }
@@ -91,6 +92,8 @@ struct Input {
     using NamedVector = QVector<NamedPair>;
 
     static const Input& invalidInput();
+
+    QString displayValue;
 };
 
 }

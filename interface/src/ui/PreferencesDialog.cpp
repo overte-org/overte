@@ -496,18 +496,34 @@ void setupPreferences() {
     static const QString KEYBOARD{ "Keyboard" };
     {
         auto userInputMapper = DependencyManager::get<UserInputMapper>();
-        auto actions = userInputMapper->getAllActions();
+        //auto actions = userInputMapper->getAllActions();
+        auto actions = userInputMapper->getActionInputs();
+        //auto targetDevice = userInputMapper->findDevice("Keyboard");
+        //Input::NamedVector inputs = userInputMapper->getAvailableInputs(targetDevice);
         qDebug() << "TEST: actions :";
         for (auto action : actions) {
-            auto actionName = userInputMapper->getActionName(action);
+            //auto actionName = userInputMapper->getActionName(action);
+            auto actionName = action.second;
             if (actionName.isEmpty()) {
-                qDebug() << "Empty name for action \"" << controller::toInt(action) << "\". Ignoring...";
+                //qDebug() << "Empty name for action \"" << controller::toInt(action) << "\". Ignoring...";
+                qDebug() << "Empty name for action. Ignoring...";
                 continue;
-            } else {
-                qDebug() << "action:    " << userInputMapper->getActionName(action);
             }
-            auto getter = []()->QKeySequence { return QKeySequence(Qt::Key_A); };
-            auto setter = [](QKeySequence value) { return QKeySequence(Qt::Key_A); };
+            qDebug() << "action:    " << actionName;
+
+            auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
+            auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);
+
+            //auto getter = []()->QKeySequence { return QKeySequence(input->first); };
+            //auto setter = [](QKeySequence value) { return QKeySequence(Qt::Key_A); };
+            QString displayValue = userInputMapper->inputFor(inPtr).displayValue;
+            auto getter = [displayValue]()->QKeySequence { return QKeySequence(displayValue); };
+            auto setter = [inPtr,outPtr](QKeySequence value) {
+                DependencyManager::get<UserInputMapper>()->remap(
+                    inPtr,
+                    outPtr
+                );
+            };
             auto preference = new MappingPreference(KEYBOARD, actionName, getter, setter);
             preferences->addPreference(preference);
         }
