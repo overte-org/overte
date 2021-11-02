@@ -88,6 +88,10 @@ public:
     static QString getServerName();
 
 
+    static QString getServerDataPath();
+    static QString getServerDataFilePath(const QString& filename);
+
+
     static void setResourcesPath(const QString &resource_dir);
 
     /**
