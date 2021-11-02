@@ -15,7 +15,7 @@
 #include <QtCore/QObject>
 #include <QtCore/QUrl>
 #include <QtCore/QDir>
-
+#include <mutex>
 #include "DependencyManager.h"
 
 /*@jsdoc
@@ -67,10 +67,42 @@ public:
     static QUrl defaultScriptsLocation(const QString& newDefault = "");
 
 
+    /**
+     * @brief Set the Server Name
+     *
+     * The server name is used as a component of paths to allow for multiple instances to run on the same machine.
+     * The default name is "main".
+     *
+     * For instance, by default the server-wide config files will be in "/etc/vircadia/main".
+     * Starting a second instance with a server name of "Bob" will result in a domain that loads the config from "/etc/vircadia/bob"
+     *
+     * @param server_name
+     */
+    static void setServerName(const QString& server_name);
+
+    /**
+     * @brief Get the Server Name
+     *
+     * @return QString Current server name
+     */
+    static QString getServerName();
+
+
     static void setResourcesPath(const QString &resource_dir);
 
     /**
+     * @brief Return the path to the config file
+     *
+     * On Linux this will return a path within /etc in system mode.
+     *
+     * @param filename Configuration filename
+     * @return QString
+     */
+    static QString getConfigFilePath(const QString &filename);
+
+    /**
      * @brief Get the location of the describe-settings.json
+     * The server name doesn't affect this function, this data is static and shared between instances.
      *
      * @return QString Location of describe-settings.json
      */
@@ -79,11 +111,21 @@ public:
     /**
      * @brief Get the location of a server content directory
      *
-     * This finds resource directories like 'web' or 'prometheus_exporter'
+     * This finds resource directories like 'web' or 'prometheus_exporter'.
+     * The server name doesn't affect this function, this data is static and shared between instances.
+     *
      * @param dir_name Directory being sought
      * @return QString  Location of the directory
      */
-    static QString getServerContentDirPath(const QString &dir_name);
+    static QString getServerContentPath(const QString &dir_name);
+
+
+    /**
+     * @brief Get the path of the plugins
+     *
+     * @return QString Path to the plugins directory
+     */
+    static QString getPluginsPath();
 
 private:
     /**
@@ -91,6 +133,12 @@ private:
      *
      * Sets the paths to the default ones detected for the system. This may be overriden later from code.
      * Only runs once.
+     *
+     * The priority order is:
+     * 1. Command-like argument (not handled here)
+     * 2. Environment variable
+     * 3. System-wide path (eg, /usr/share/vircadia). Linux only.
+     * 4. Path relative to the executable's location
      */
     static void initialize();
 
@@ -102,8 +150,25 @@ private:
      * @return QString Found path or empty string
      */
     static QString findFirstDir(const QStringList &paths, const QString &description);
+
+    // Name for our server instance. This allows us to run multiple instances on the same machine.
     static QString _server_name;
-    static QString _resources_path;
+
+    // Location of the static server resources directory. This is where the 'web' content is found.
+    static QString _server_resources_path;
+
+    // Location of the configuration. This may be written by the code
+    static QString _config_path;
+
+    // Location of the writable data files
+    static QString _appdata_path;
+
+    // Location of the local writable data files
+    static QString _local_appdata_path;
+
+    // Location of assignment client plugins
+    static QString _plugins_path;
+
     static bool _initialized;
     static std::mutex _lock;
 

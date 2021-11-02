@@ -39,6 +39,7 @@
 #include "BakeAssetTask.h"
 #include "SendAssetTask.h"
 #include "UploadAssetTask.h"
+#include "PathUtils.h"
 
 static const uint8_t MIN_CORES_FOR_MULTICORE = 4;
 static const uint8_t CPU_AFFINITY_COUNT_HIGH = 2;
