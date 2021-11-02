@@ -29,11 +29,42 @@
 #include <mach-o/dyld.h>
 #endif
 
+#ifdef Q_OS_LINUX
+#include <unistd.h>
+#include <sys/types.h>
+#endif
+
 #include "shared/GlobalAppProperties.h"
 #include "SharedUtil.h"
 
+// These are the default, system paths.
+//
+// The default values are only defined on Linux. On Windows and OSX the correct
+// procedure is to calculate the paths relative to where the binary is located.
+#ifdef Q_OS_LINUX
+#  ifndef VIRCADIA_DEFAULT_RESOURCES_PATH
+#    define VIRCADIA_DEFAULT_RESOURCES_PATH "/usr/share/vircadia/resources"
+#  endif
+#  ifndef VIRCADIA_DEFAULT_CONFIG_PATH
+#    define VIRCADIA_DEFAULT_CONFIG_PATH "/etc/vircadia"
+#  endif
+#  ifndef VIRCADIA_DEFAULT_APPDATA_PATH
+#    define VIRCADIA_DEFAULT_APPDATA_PATH "/var/lib/vircadia"
+#  endif
+#  ifndef VIRCADIA_DEFAULT_LOCAL_APPDATA_PATH
+#    define VIRCADIA_DEFAULT_LOCAL_APPDATA_PATH "/var/lib/vircadia"
+#  endif
+#  ifndef VIRCADIA_DEFAULT_PLUGINS_PATH
+#    define VIRCADIA_DEFAULT_PLUGINS_PATH "/usr/lib/vircadia/plugins"
+#  endif
+#endif
 
-QString PathUtils::_resources_path{""};
+
+QString PathUtils::_server_resources_path{""};
+QString PathUtils::_config_path{""};
+QString PathUtils::_appdata_path{""};
+QString PathUtils::_local_appdata_path{""};
+QString PathUtils::_plugins_path{""};
 QString PathUtils::_server_name{"main"};
 bool PathUtils::_initialized{false};
 std::mutex PathUtils::_lock{};
@@ -55,6 +86,40 @@ static bool USE_SOURCE_TREE_RESOURCES() {
     return result;
 }
 #endif
+
+/**
+ * @brief Whether the user we're running under is a system user
+ *
+ * This only applies on Linux systems. When running under a system account (uid < 1000),
+ * we're assuming the server is installed server-wide as a package. In that case we'll be
+ * looking for files in system paths like /usr/share/vircadia.
+ *
+ * When running as a normal user account we look for data relative to the binary's location,
+ * and storing data in user-local directories like ~/.local/share.
+ *
+ * @return true If it's a system user
+ * @return false Non-system user on Linux, or not a Linux system.
+ */
+static bool isSystemUser() {
+    if ( qgetenv("VIRCADIA_FORCE_SYSTEM_PATHS").length() > 0 ) {
+        // This is here to make debugging easier -- not intended as an useful setting for end-users.
+        qWarning() << "Forced usage of system paths through VIRCADIA_FORCE_SYSTEM_PATHS";
+        return true;
+    }
+
+#ifdef Q_OS_LINUX
+    // There doesn't appear to be an API to easily fetch SYS_UID_MAX from /etc/login.defs other than
+    // actually parsing it.
+    //
+    // systemd appears to have resulted in things having standardized on 1000 being the minimum UID
+    // that can be given to a normal user account. This applies both on Red Hat and Debian based
+    // distros. So it seems we can avoid doing any parsing and just make this assumption here.
+
+    return getuid() < 1000;
+#else
+    return false;
+#endif
+}
 
 const QString& PathUtils::getRccPath() {
     static QString rccLocation;
@@ -153,7 +218,10 @@ QUrl PathUtils::qmlUrl(const QString& relativeUrl) {
 }
 
 QString PathUtils::getAppDataPath() {
-    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/";
+    std::lock_guard<std::mutex> guard(_lock);
+    initialize();
+    return _appdata_path + "/";
+    //return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/";
 }
 
 QString PathUtils::getAppLocalDataPath() {
@@ -325,22 +393,45 @@ bool PathUtils::isDescendantOf(const QUrl& childURL, const QUrl& parentURL) {
     return child.startsWith(parent, PathUtils::getFSCaseSensitivity());
 }
 
-void PathUtils::setResourceDirPath(const QString &dir) {
+
+QString PathUtils::getServerName() {
+    std::lock_guard<std::mutex> guard(_lock);
+    return _server_name;
+}
+
+void PathUtils::setServerName(const QString &name) {
+    std::lock_guard<std::mutex> guard(_lock);
+    _server_name = name;
+}
+
+void PathUtils::setResourcesPath(const QString &dir) {
     std::lock_guard<std::mutex> guard(_lock);
     initialize();
-    _resources_path = dir;
+    _server_resources_path = dir;
+}
+
+QString PathUtils::getConfigFilePath(const QString &filename) {
+    std::lock_guard<std::mutex> guard(_lock);
+    initialize();
+    return QDir(_config_path + "/" + _server_name).absoluteFilePath(filename);
 }
 
 QString PathUtils::getSettingsDescriptionPath() {
     std::lock_guard<std::mutex> guard(_lock);
     initialize();
-    return _resources_path;
+    return _server_resources_path + "/describe-settings.json";
 }
 
-QString PathUtils::getServerContentDirPath(const QString &dir_name) {
+QString PathUtils::getServerContentPath(const QString &dir_name) {
     std::lock_guard<std::mutex> guard(_lock);
     initialize();
-    return _resources_path + "/" + dir_name + "/";
+    return _server_resources_path + "/" + dir_name + "/";
+}
+
+QString PathUtils::getPluginsPath() {
+    std::lock_guard<std::mutex> guard(_lock);
+    initialize();
+    return _plugins_path + "/";
 }
 
 void PathUtils::initialize() {
@@ -348,14 +439,64 @@ void PathUtils::initialize() {
         return;
     }
 
-    QStringList resource_paths;
-    resource_paths.append(QCoreApplication::applicationDirPath() + "/resources");
-#ifdef Q_OS_LINUX
-    resource_paths.append("/usr/share/vircadia/resources");
+    _server_resources_path = qgetenv("VIRCADIA_RESOURCES_PATH");
+    if ( _server_resources_path.isEmpty() ) {
+        if (isSystemUser()) {
+            _server_resources_path = VIRCADIA_DEFAULT_RESOURCES_PATH;
+        } else {
+            _server_resources_path = QCoreApplication::applicationDirPath() + "/resources";
+        }
+    }
+
+    _config_path = qgetenv("VIRCADIA_CONFIG_PATH");
+    if ( _config_path.isEmpty() ) {
+        if (isSystemUser()) {
+            _config_path = VIRCADIA_DEFAULT_CONFIG_PATH;
+        } else {
+            _config_path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
+        }
+    }
+
+    _appdata_path = qgetenv("VIRCADIA_APPDATA_PATH");
+    if ( _appdata_path.isEmpty()) {
+        if (isSystemUser()) {
+            _appdata_path = VIRCADIA_DEFAULT_APPDATA_PATH;
+        } else {
+            _appdata_path =  QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        }
+    }
+
+    _local_appdata_path = qgetenv("VIRCADIA_LOCAL_APPDATA_PATH");
+    if ( _local_appdata_path.isEmpty()) {
+        if (isSystemUser()) {
+            _local_appdata_path = VIRCADIA_DEFAULT_APPDATA_PATH;
+        } else {
+            _local_appdata_path =  QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+        }
+    }
+
+    _plugins_path = qgetenv("VIRCADIA_PLUGINS_PATH");
+    if ( _plugins_path.isEmpty()) {
+        if (isSystemUser()) {
+            _plugins_path = VIRCADIA_DEFAULT_PLUGINS_PATH;
+        } else {
+#if defined(Q_OS_ANDROID)
+            _plugins_path = QCoreApplication::applicationDirPath() + "/";
+#elif defined(Q_OS_MAC)
+            _plugins_path = QCoreApplication::applicationDirPath() + "/../PlugIns/";
+#else
+            _plugins_path = QCoreApplication::applicationDirPath() + "/plugins/";
 #endif
+        }
+    }
 
-    _resources_path = findFirstDir(resource_paths, "resources");
-
+    qInfo() << "Initialized default paths:";
+    qInfo() << "Running as system user:" << isSystemUser();
+    qInfo() << "Resource base path:" << _server_resources_path;
+    qInfo() << "Config base path:" << _config_path;
+    qInfo() << "Data base path:" << _appdata_path;
+    qInfo() << "Local data base path:" << _local_appdata_path;
+    qInfo() << "Plugins path:" << _plugins_path;
     _initialized = true;
 }
 
@@ -369,4 +510,5 @@ QString PathUtils::findFirstDir(const QStringList &paths, const QString &descrip
     }
 
     qCritical() << "Failed to find directory for " << description << "; looked in" << paths;
+    return "";
 }
