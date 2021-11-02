@@ -66,7 +66,10 @@ DomainServerSettingsManager::DomainServerSettingsManager() {
     // load the description object from the settings description
 
     QFile descriptionFile(PathUtils::getSettingsDescriptionPath());
-    descriptionFile.open(QIODevice::ReadOnly);
+    if (!descriptionFile.open(QIODevice::ReadOnly)) {
+        qCritical() << "Failed to read settings description file" << descriptionFile;
+        // Domain server will abort after failing on the attempt to parse the config below
+    }
 
     QJsonParseError parseError;
     QJsonDocument descriptionDocument = QJsonDocument::fromJson(descriptionFile.readAll(), &parseError);
