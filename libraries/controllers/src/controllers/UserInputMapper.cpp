@@ -710,17 +710,23 @@ Input UserInputMapper::inputFor(const EndpointPointer endpoint) const {
 //EndpointPointer UserInputMapper::matchDeviceRouteEndpoint(const EndpointPointer IO, const InputDevice::Pointer device) const {
 EndpointPointer UserInputMapper::matchDeviceRouteEndpoint(const EndpointPointer IO) const {
     //auto targetDevice = device->getDeviceID();
-    auto test = IO->getInput().id;
+    auto test = IO->getInput().id; // Slightly more efficient than comparing the objects.
     if (test == 0) {
         qWarning() << "UserInputMapper::matchDeviceRouteEndpoint() supplied with uninitialised endpoint.";
         return EndpointPointer();
     }
+    //qDebug() << "matchDeviceRouteEndpoint: IO->getInput().id == " << test;
+    qDebug() << "_deviceRoutes.size() == " << _deviceRoutes.size();
     for (auto route : _deviceRoutes) {
         if (route->source->getInput().id == test) {
+            //qDebug() << "\t== source (" << route->source->getInput().id << ")";
             return route->destination;
         } else if (route->destination->getInput().id == test) {
+            //qDebug() << "\t== destination (" << route->destination->getInput().id << ")";
             return route->source;
         } else {
+            //qDebug() << "\t!= source (" << route->source->getInput().id << ")";
+            //qDebug() << "\t!= destination (" << route->destination->getInput().id << ")";
             continue;
         }
     }

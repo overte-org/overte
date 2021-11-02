@@ -516,8 +516,11 @@ void setupPreferences() {
 
             //auto getter = []()->QKeySequence { return QKeySequence(input->first); };
             //auto setter = [](QKeySequence value) { return QKeySequence(Qt::Key_A); };
-            QString displayValue = userInputMapper->inputFor(inPtr).displayValue;
-            auto getter = [displayValue]()->QKeySequence { return QKeySequence(displayValue); };
+            /*QString displayValue = userInputMapper->inputFor(inPtr).displayValue;
+            auto getter = [displayValue]()->QKeySequence { return QKeySequence(displayValue); };*/
+            auto getter = [inPtr]()->QKeySequence {
+                return QKeySequence(DependencyManager::get<UserInputMapper>()->inputFor(inPtr).displayValue);
+            };
             auto setter = [inPtr,outPtr](QKeySequence value) {
                 DependencyManager::get<UserInputMapper>()->reroute(
                     inPtr,
