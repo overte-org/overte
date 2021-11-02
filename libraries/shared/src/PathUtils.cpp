@@ -410,6 +410,24 @@ void PathUtils::setResourcesPath(const QString &dir) {
     _server_resources_path = dir;
 }
 
+QString PathUtils::getServerDataPath() {
+    std::lock_guard<std::mutex> guard(_lock);
+    initialize();
+    return _appdata_path + "/" + _server_name;
+}
+
+QString PathUtils::getServerDataFilePath(const QString& filename) {
+    std::lock_guard<std::mutex> guard(_lock);
+    initialize();
+    return QDir(_appdata_path + "/" + _server_name).absoluteFilePath(filename);
+}
+
+QString PathUtils::getSettingsDescriptionPath() {
+    std::lock_guard<std::mutex> guard(_lock);
+    initialize();
+    return _server_resources_path + "/describe-settings.json";
+}
+
 QString PathUtils::getConfigFilePath(const QString &filename) {
     std::lock_guard<std::mutex> guard(_lock);
     initialize();
