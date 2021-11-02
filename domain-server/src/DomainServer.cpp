@@ -1920,15 +1920,15 @@ void DomainServer::processOctreeDataPersistMessage(QSharedPointer<ReceivedMessag
 }
 
 QString DomainServer::getContentBackupDir() {
-    return PathUtils::getAppDataFilePath("backups");
+    return PathUtils::getServerDataFilePath("backups");
 }
 
 QString DomainServer::getEntitiesDirPath() {
-    return PathUtils::getAppDataFilePath("entities");
+    return PathUtils::getServerDataFilePath("entities");
 }
 
 QString DomainServer::getEntitiesFilePath() {
-    return PathUtils::getAppDataFilePath("entities/models.json.gz");
+    return PathUtils::getServerDataFilePath("entities/models.json.gz");
 }
 
 QString DomainServer::getEntitiesReplacementFilePath() {
