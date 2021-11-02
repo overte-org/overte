@@ -38,6 +38,7 @@
 #include "NetworkLogging.h"
 #include "udt/Packet.h"
 #include "HMACAuth.h"
+#include "PathUtils.h"
 
 #if defined(Q_OS_WIN)
 #include <winsock.h>
@@ -1346,7 +1347,9 @@ void LimitedNodeList::sendPacketToIceServer(PacketType packetType, const SockAdd
 
 void LimitedNodeList::putLocalPortIntoSharedMemory(const QString key, QObject* parent, quint16 localPort) {
     // save our local port to shared memory so that assignment client children know how to talk to this parent
-    QSharedMemory* sharedPortMem = new QSharedMemory(key, parent);
+    QString server_name = PathUtils::getServerName();
+    QString full_key = key + "." + server_name;
+    QSharedMemory* sharedPortMem = new QSharedMemory(full_key, parent);
 
     // attempt to create the shared memory segment
     if (sharedPortMem->create(sizeof(localPort)) || sharedPortMem->attach()) {
@@ -1354,7 +1357,7 @@ void LimitedNodeList::putLocalPortIntoSharedMemory(const QString key, QObject* p
         memcpy(sharedPortMem->data(), &localPort, sizeof(localPort));
         sharedPortMem->unlock();
 
-        qCDebug(networking) << "Wrote local listening port" << localPort << "to shared memory at key" << key;
+        qCDebug(networking) << "Wrote local listening port" << localPort << "to shared memory at key" << full_key;
     } else {
         qWarning() << "ALERT: Failed to create and attach to shared memory to share local port with assignment-client children:"
             << sharedPortMem->errorString();
@@ -1363,9 +1366,13 @@ void LimitedNodeList::putLocalPortIntoSharedMemory(const QString key, QObject* p
 
 
 bool LimitedNodeList::getLocalServerPortFromSharedMemory(const QString key, quint16& localPort) {
-    QSharedMemory sharedMem(key);
+    QString server_name = PathUtils::getServerName();
+    QString full_key = key + "." + server_name;
+
+    QSharedMemory sharedMem(full_key);
+
     if (!sharedMem.attach(QSharedMemory::ReadOnly)) {
-        qCWarning(networking) << "Could not attach to shared memory at key" << key
+        qCWarning(networking) << "Could not attach to shared memory at key" << full_key
             << ":" << sharedMem.errorString();
         return false;
     } else {

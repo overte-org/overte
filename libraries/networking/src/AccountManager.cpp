@@ -184,7 +184,7 @@ void AccountManager::setAuthURL(const QUrl& authURL) {
 
             qCDebug(networking) << "Found directory services API account information for" << qPrintable(_authURL.toString());
         } else {
-            qCWarning(networking) << "Unable to load account file. No existing account settings will be loaded.";
+            qCWarning(networking) << "Unable to load account file" << accountsFile << ". No existing account settings will be loaded.";
         }
 
         if (_isAgent && !_accountInfo.getAccessToken().token.isEmpty() && !_accountInfo.hasProfile()) {
