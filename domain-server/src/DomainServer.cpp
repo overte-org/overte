@@ -199,7 +199,7 @@ bool DomainServer::forwardMetaverseAPIRequest(HTTPConnection* connection,
 DomainServer::DomainServer(int argc, char* argv[]) :
     QCoreApplication(argc, argv),
     _gatekeeper(this),
-    _httpManager(QHostAddress::AnyIPv4, DOMAIN_SERVER_HTTP_PORT, PathUtils::getServerContentDirPath("web"), this)
+    _httpManager(QHostAddress::AnyIPv4, DOMAIN_SERVER_HTTP_PORT, PathUtils::getServerContentPath("web"), this)
 {
     static const QString CRASH_REPORTER = "crash_reporting.enable_crash_reporter";
 
@@ -238,7 +238,7 @@ DomainServer::DomainServer(int argc, char* argv[]) :
     } else {
         // we weren't passed a user config path
         static const QString USER_CONFIG_FILE_NAME = "config.json";
-        userConfigFilename = PathUtils::getAppDataFilePath(USER_CONFIG_FILE_NAME);
+        userConfigFilename = PathUtils::getConfigFilePath(USER_CONFIG_FILE_NAME);
     }
     _settingsManager.setupConfigMap(userConfigFilename);
 
@@ -3198,7 +3198,7 @@ void DomainServer::initializeExporter() {
         (
             QHostAddress::Any,
             (quint16)exporterPort,
-            PathUtils::getServerContentDirPath("prometheus_exporter"),
+            PathUtils::getServerContentPath("prometheus_exporter"),
 
             &_exporter
         );
@@ -3225,7 +3225,7 @@ void DomainServer::initializeMetadataExporter() {
         (
             QHostAddress::Any,
             (quint16)metadataExporterPort,
-            PathUtils::getServerContentDirPath("metadata_exporter"),
+            PathUtils::getServerContentPath("metadata_exporter"),
             _metadata
         );
     }
