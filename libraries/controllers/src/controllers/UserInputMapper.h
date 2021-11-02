@@ -134,7 +134,7 @@ namespace controller {
         Input inputFor(const EndpointPointer endpoint) const;
         //EndpointPointer matchDeviceRouteEndpoint(const EndpointPointer IO, const int device);
         EndpointPointer matchDeviceRouteEndpoint(const EndpointPointer IO) const;
-        bool remap(const EndpointPointer input, const EndpointPointer action) const;
+        bool reroute(const EndpointPointer input, const EndpointPointer action) const;
 
     signals:
         void actionEvent(int action, float state);

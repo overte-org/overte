@@ -519,7 +519,7 @@ void setupPreferences() {
             QString displayValue = userInputMapper->inputFor(inPtr).displayValue;
             auto getter = [displayValue]()->QKeySequence { return QKeySequence(displayValue); };
             auto setter = [inPtr,outPtr](QKeySequence value) {
-                DependencyManager::get<UserInputMapper>()->remap(
+                DependencyManager::get<UserInputMapper>()->reroute(
                     inPtr,
                     outPtr
                 );

@@ -728,7 +728,7 @@ EndpointPointer UserInputMapper::matchDeviceRouteEndpoint(const EndpointPointer 
     return EndpointPointer();
 }
 
-bool UserInputMapper::remap(const EndpointPointer input, const EndpointPointer action) const {
+bool UserInputMapper::reroute(const EndpointPointer input, const EndpointPointer action) const {
     // Currently assumes no duplicate action mappings, even across devices.
     for (auto route : _deviceRoutes) {
         if (route->destination == action) {
@@ -736,7 +736,7 @@ bool UserInputMapper::remap(const EndpointPointer input, const EndpointPointer a
             return true;
         }
     }
-    qWarning() << "UserInputMapper::remap() failed.";
+    qWarning() << "UserInputMapper::reroute() failed.";
     return false;
 }
 
