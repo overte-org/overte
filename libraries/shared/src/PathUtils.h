@@ -112,6 +112,8 @@ public:
      */
     static QString getSettingsDescriptionPath();
 
+    static QString getAccountFileDirPath();
+
     /**
      * @brief Get the location of a server content directory
      *
@@ -139,10 +141,18 @@ private:
      * Only runs once.
      *
      * The priority order is:
-     * 1. Command-like argument (not handled here)
+     * 1. Command-like argument (not handled in this function)
      * 2. Environment variable
      * 3. System-wide path (eg, /usr/share/vircadia). Linux only.
      * 4. Path relative to the executable's location
+     *
+     * We can operate in one of 3 modes:
+     * 1. Everything is relative to the binary's position. This is used for running out of the source
+     *    tree and on Windows and MacOS.
+     * 2. Using Linux system paths for everything. Binary is in /usr/bin, data is in /var/lib/vircadia,
+     *    configuration is in /etc/vircadia. This is enabled when isSystemUser() is true.
+     * 3. Using Linux system paths for static data, home directory for user/dynamic data. This is used
+     *    for the interface. This is enabled when isSystemInstall() is true.
      */
     static void initialize();
 
