@@ -1947,14 +1947,14 @@ void DomainServerSettingsManager::persistToFile() {
         // If the path already exists when the `mkpath` method is
         // called, it will return true. It will only return false if the
         // path doesn't exist after the call returns.
-        qCritical("Could not create the settings file parent directory. Unable to persist settings.");
+        qCritical() << "Could not create the settings file parent directory" << QFileInfo(settingsFilename).absolutePath() << ". Unable to persist settings.";
         QWriteLocker locker(&_settingsLock);
         _configMap.loadConfig();
         return;
     }
     QSaveFile settingsFile(settingsFilename);
     if (!settingsFile.open(QIODevice::WriteOnly)) {
-        qCritical("Could not open the JSON settings file. Unable to persist settings.");
+        qCritical() << "Could not open the JSON settings file" << settingsFilename << ". Unable to persist settings.";
         QWriteLocker locker(&_settingsLock);
         _configMap.loadConfig();
         return;
