@@ -121,6 +121,30 @@ static bool isSystemUser() {
 #endif
 }
 
+/**
+ * @brief Whether our program is installed system-wide
+ *
+ * This only applies on Linux system. When running from a system location (/usr/bin or /usr/sbin),
+ * we're assuming the program is installing system-wide as a package. We'll be looking for static files
+ * in system paths like /usr/share/vircadia.
+ *
+ * @return true If system install
+ * @return false Non-system install on Linux, or not Linux
+ */
+static bool isSystemInstall() {
+    if ( qgetenv("VIRCADIA_FORCE_SYSTEM_INSTALL").length() > 0 ) {
+        // This is here to make debugging easier -- not intended as an useful setting for end-users.
+        qWarning() << "Forced usage of system install mode through VIRCADIA_FORCE_SYSTEM_INSTALL";
+        return true;
+    }
+#ifdef Q_OS_LINUX
+    QString app_dir = QCoreApplication::applicationDirPath();
+    return app_dir.startsWith("/usr/bin") || app_dir.startsWith("/usr/sbin");
+#else
+    return false;
+#endif
+}
+
 const QString& PathUtils::getRccPath() {
     static QString rccLocation;
     static std::once_flag once;
@@ -428,16 +452,21 @@ QString PathUtils::getSettingsDescriptionPath() {
     return _server_resources_path + "/describe-settings.json";
 }
 
+QString PathUtils::getAccountFileDirPath() {
+#if defined(Q_OS_ANDROID)
+    return QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/../files";
+#else
+    std::lock_guard<std::mutex> guard(_lock);
+    initialize();
+
+    return _appdata_path + "/" + _server_name;
+#endif
+}
+
 QString PathUtils::getConfigFilePath(const QString &filename) {
     std::lock_guard<std::mutex> guard(_lock);
     initialize();
     return QDir(_config_path + "/" + _server_name).absoluteFilePath(filename);
-}
-
-QString PathUtils::getSettingsDescriptionPath() {
-    std::lock_guard<std::mutex> guard(_lock);
-    initialize();
-    return _server_resources_path + "/describe-settings.json";
 }
 
 QString PathUtils::getServerContentPath(const QString &dir_name) {
@@ -459,7 +488,7 @@ void PathUtils::initialize() {
 
     _server_resources_path = qgetenv("VIRCADIA_RESOURCES_PATH");
     if ( _server_resources_path.isEmpty() ) {
-        if (isSystemUser()) {
+        if (isSystemInstall() || isSystemUser()) {
             _server_resources_path = VIRCADIA_DEFAULT_RESOURCES_PATH;
         } else {
             _server_resources_path = QCoreApplication::applicationDirPath() + "/resources";
@@ -495,7 +524,7 @@ void PathUtils::initialize() {
 
     _plugins_path = qgetenv("VIRCADIA_PLUGINS_PATH");
     if ( _plugins_path.isEmpty()) {
-        if (isSystemUser()) {
+        if (isSystemInstall()) {
             _plugins_path = VIRCADIA_DEFAULT_PLUGINS_PATH;
         } else {
 #if defined(Q_OS_ANDROID)
@@ -510,6 +539,7 @@ void PathUtils::initialize() {
 
     qInfo() << "Initialized default paths:";
     qInfo() << "Running as system user:" << isSystemUser();
+    qInfo() << "Running from system location: " << isSystemInstall();
     qInfo() << "Resource base path:" << _server_resources_path;
     qInfo() << "Config base path:" << _config_path;
     qInfo() << "Data base path:" << _appdata_path;
