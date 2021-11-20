@@ -65,7 +65,7 @@ QString PathUtils::_config_path{""};
 QString PathUtils::_appdata_path{""};
 QString PathUtils::_local_appdata_path{""};
 QString PathUtils::_plugins_path{""};
-QString PathUtils::_server_name{"main"};
+QString PathUtils::_instance_name{"main"};
 bool PathUtils::_initialized{false};
 std::mutex PathUtils::_lock{};
 
@@ -244,7 +244,7 @@ QUrl PathUtils::qmlUrl(const QString& relativeUrl) {
 QString PathUtils::getAppDataPath() {
     std::lock_guard<std::mutex> guard(_lock);
     initialize();
-    return _appdata_path + "/";
+    return _appdata_path + "/" + _instance_name + "/";
     //return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/";
 }
 
@@ -418,14 +418,16 @@ bool PathUtils::isDescendantOf(const QUrl& childURL, const QUrl& parentURL) {
 }
 
 
-QString PathUtils::getServerName() {
+QString PathUtils::getInstanceName() {
     std::lock_guard<std::mutex> guard(_lock);
-    return _server_name;
+    initialize();
+    return _instance_name;
 }
 
-void PathUtils::setServerName(const QString &name) {
+void PathUtils::setInstanceName(const QString &name) {
     std::lock_guard<std::mutex> guard(_lock);
-    _server_name = name;
+    qInfo() << "Instance name set to" << name;
+    _instance_name = name;
 }
 
 void PathUtils::setResourcesPath(const QString &dir) {
@@ -434,16 +436,25 @@ void PathUtils::setResourcesPath(const QString &dir) {
     _server_resources_path = dir;
 }
 
+QString PathUtils::getDataPath() {
+    std::lock_guard<std::mutex> guard(_lock);
+    initialize();
+    QDir data_dir(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
+    data_dir.mkdir(_instance_name);
+    qInfo() << "Returning: " << data_dir.absoluteFilePath(_instance_name) + "/";
+    return data_dir.absoluteFilePath(_instance_name) + "/";
+}
+
 QString PathUtils::getServerDataPath() {
     std::lock_guard<std::mutex> guard(_lock);
     initialize();
-    return _appdata_path + "/" + _server_name;
+    return _appdata_path + "/" + _instance_name;
 }
 
 QString PathUtils::getServerDataFilePath(const QString& filename) {
     std::lock_guard<std::mutex> guard(_lock);
     initialize();
-    return QDir(_appdata_path + "/" + _server_name).absoluteFilePath(filename);
+    return QDir(_appdata_path + "/" + _instance_name).absoluteFilePath(filename);
 }
 
 QString PathUtils::getSettingsDescriptionPath() {
@@ -459,14 +470,14 @@ QString PathUtils::getAccountFileDirPath() {
     std::lock_guard<std::mutex> guard(_lock);
     initialize();
 
-    return _appdata_path + "/" + _server_name;
+    return _appdata_path + "/" + _instance_name;
 #endif
 }
 
 QString PathUtils::getConfigFilePath(const QString &filename) {
     std::lock_guard<std::mutex> guard(_lock);
     initialize();
-    return QDir(_config_path + "/" + _server_name).absoluteFilePath(filename);
+    return QDir(_config_path + "/" + _instance_name).absoluteFilePath(filename);
 }
 
 QString PathUtils::getServerContentPath(const QString &dir_name) {

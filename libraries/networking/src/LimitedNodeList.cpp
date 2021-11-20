@@ -1347,7 +1347,7 @@ void LimitedNodeList::sendPacketToIceServer(PacketType packetType, const SockAdd
 
 void LimitedNodeList::putLocalPortIntoSharedMemory(const QString key, QObject* parent, quint16 localPort) {
     // save our local port to shared memory so that assignment client children know how to talk to this parent
-    QString server_name = PathUtils::getServerName();
+    QString server_name = PathUtils::getInstanceName();
     QString full_key = key + "." + server_name;
     QSharedMemory* sharedPortMem = new QSharedMemory(full_key, parent);
 
@@ -1366,7 +1366,7 @@ void LimitedNodeList::putLocalPortIntoSharedMemory(const QString key, QObject* p
 
 
 bool LimitedNodeList::getLocalServerPortFromSharedMemory(const QString key, quint16& localPort) {
-    QString server_name = PathUtils::getServerName();
+    QString server_name = PathUtils::getInstanceName();
     QString full_key = key + "." + server_name;
 
     QSharedMemory sharedMem(full_key);
