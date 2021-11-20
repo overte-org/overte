@@ -78,15 +78,22 @@ public:
      *
      * @param server_name
      */
-    static void setServerName(const QString& server_name);
+    static void setInstanceName(const QString& server_name);
 
     /**
-     * @brief Get the Server Name
+     * @brief Get the instance name
      *
-     * @return QString Current server name
+     * This allows running multiple clients or servers concurrently, by giving each instance a name.
+     * The name is purely descriptive and carries no meaning.
+     *
+     * The default instance name is 'main'.
+     *
+     * @return QString Current instance name
      */
-    static QString getServerName();
+    static QString getInstanceName();
 
+
+    static QString getDataPath();
 
     static QString getServerDataPath();
     static QString getServerDataFilePath(const QString& filename);
@@ -166,7 +173,7 @@ private:
     static QString findFirstDir(const QStringList &paths, const QString &description);
 
     // Name for our server instance. This allows us to run multiple instances on the same machine.
-    static QString _server_name;
+    static QString _instance_name;
 
     // Location of the static server resources directory. This is where the 'web' content is found.
     static QString _server_resources_path;
