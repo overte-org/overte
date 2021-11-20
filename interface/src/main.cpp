@@ -727,6 +727,7 @@ int main(int argc, const char* argv[]) {
     {
         RunningMarker runningMarker("Interface.running");
         bool runningMarkerExisted = runningMarker.fileExists();
+        qInfo() << "Running marker existed";
         runningMarker.writeRunningMarkerFile();
 
         bool noUpdater = parser.isSet(noUpdaterOption);
