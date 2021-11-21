@@ -5811,10 +5811,10 @@ void Application::resumeAfterLoginDialogActionTaken() {
 
         // if the --scripts command-line argument was used.
         if (_overrideDefaultScriptsLocation && _defaultScriptsLocation.exists()) {
-            scriptEngines->loadScripts();
+            scriptEngines->loadDefaultScripts();
             scriptEngines->defaultScriptsLocationOverridden(true);
         } else {
-            scriptEngines->loadDefaultScripts();
+            scriptEngines->loadScripts();
         }
     }
 
