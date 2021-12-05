@@ -509,7 +509,7 @@ void setupPreferences() {
                 qDebug() << "Empty name for action. Ignoring...";
                 continue;
             }
-            qDebug() << "action:    " << actionName;
+            qDebug() << "action: " << actionName;
 
             auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
             auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);
