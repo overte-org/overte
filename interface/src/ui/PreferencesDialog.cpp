@@ -510,6 +510,29 @@ void setupPreferences() {
                 continue;
             }
             qDebug() << "action: " << actionName;
+            switch (action.first.getType()) {
+                case controller::ChannelType::UNKNOWN :
+                    qDebug() << "ChannelType::UNKNOWN -- will be skipped.";
+                    continue;
+                case controller::ChannelType::BUTTON :
+                    qDebug() << "ChannelType::BUTTON -- will be processed.";
+                    break;
+                case controller::ChannelType::AXIS :
+                    qDebug() << "ChannelType::AXIS -- will be processed.";
+                    break;
+                case controller::ChannelType::POSE :
+                    qDebug() << "ChannelType::POSE -- will be skipped.";
+                    continue;
+                case controller::ChannelType::RUMBLE :
+                    qDebug() << "ChannelType::RUMBLE -- will be skipped.";
+                    continue;
+                case controller::ChannelType::INVALID :
+                    qDebug() << "ChannelType::INVALID -- will be skipped.";
+                    continue;
+                default :
+                    qWarning() << "Encountered super-invalid ChannelType. This should not happen.";
+                    break;
+            }
 
             /*auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
             auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);*/

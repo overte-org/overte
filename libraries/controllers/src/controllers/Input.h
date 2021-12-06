@@ -47,7 +47,7 @@ enum class ChannelType {
 };
 
 // Input is the unique identifier to find a n input channel of a particular device
-// Devices are responsible for registering to the UseInputMapper so their input channels can be sued and mapped
+// Devices are responsible for registering to the UserInputMapper so their input channels can be used and mapped
 // to the Action channels
 struct Input {
     union {
