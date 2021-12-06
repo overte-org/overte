@@ -14,7 +14,7 @@ Preference {
     height: mapping.height + hifi.dimensions.controlInterlineHeight
 
     Component.onCompleted: {
-        if (!preference.value.isEmpty()) {	// Not sure if necessary. Check in vircadia-log.txt after everything else is working.
+        //if (!preference.value.isEmpty()) {	// Not sure if necessary. Check in vircadia-log.txt after everything else is working.
             mapping.shortcut.sequence = preference.value;
             //mapping.shortcut.sequence = preference.value.portableText;
             //mapping.shortcut.sequence = "A";
@@ -22,7 +22,7 @@ Preference {
             //mapping.text = mapping.shortcut.nativeText;
             mapping.text = preference.value;
             //mapping.text = preference.value.nativeText;
-        }
+        //}
     }
 
     function save() {

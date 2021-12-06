@@ -511,22 +511,35 @@ void setupPreferences() {
             }
             qDebug() << "action: " << actionName;
 
-            auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
-            auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);
+            /*auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
+            auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);*/
 
             //auto getter = []()->QKeySequence { return QKeySequence(input->first); };
             //auto setter = [](QKeySequence value) { return QKeySequence(Qt::Key_A); };
             /*QString displayValue = userInputMapper->inputFor(inPtr).displayValue;
             auto getter = [displayValue]()->QKeySequence { return QKeySequence(displayValue); };*/
-            auto getter = [inPtr]()->QKeySequence {
-                return QKeySequence(DependencyManager::get<UserInputMapper>()->inputFor(inPtr).displayValue);
+            /*auto getter = [inPtr]()->QKeySequence {
+                return QKeySequence(DependencyManager::get<UserInputMapper>()->inputFor(inPtr).displayValue);*/
+            auto getter = [action]()->QKeySequence {
+                auto userInputMapper = DependencyManager::get<UserInputMapper>();
+                auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
+                auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);
+                return QKeySequence(userInputMapper->inputFor(inPtr).displayValue);
                 /*return QKeySequence(
                     DependencyManager::get<UserInputMapper>()->inputFor(inPtr).displayValue,
                     QKeySequence::SequenceFormat::PortableText
                 );*/
             };
-            auto setter = [inPtr,outPtr](QKeySequence value) {
+            /*auto setter = [inPtr,outPtr](QKeySequence value) {
                 DependencyManager::get<UserInputMapper>()->reroute(
+                    inPtr,
+                    outPtr
+                );*/
+            auto setter = [action](QKeySequence value) {
+                auto userInputMapper = DependencyManager::get<UserInputMapper>();
+                auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
+                auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);
+                userInputMapper->reroute(
                     inPtr,
                     outPtr
                 );
