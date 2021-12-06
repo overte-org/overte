@@ -33,8 +33,8 @@ Preference {
     Mapping {
         id: mapping
         //label: preference.label // Not sure why this doesn't work.
-        label: root.label // This must be assigned automatically?
-        text: preference.value
+        label: root.label
+        text: preference.value	// Needed?
         //text: preference.value.nativeText // This does not work.
 
         anchors {

@@ -1251,6 +1251,7 @@ bool hasDebuggableRoute(const T& routes) {
 
 void UserInputMapper::enableMapping(const Mapping::Pointer& mapping) {
     Locker locker(_lock);
+    qCDebug(controllers) << "Attempting to enable mapping (by pointer). Name is:" << mapping->name;
     // New routes for a device get injected IN FRONT of existing routes.  Routes
     // are processed in order so this ensures that the standard -> action processing
     // takes place after all of the hardware -> standard or hardware -> action processing
@@ -1274,6 +1275,7 @@ void UserInputMapper::enableMapping(const Mapping::Pointer& mapping) {
 
 void UserInputMapper::disableMapping(const Mapping::Pointer& mapping) {
     Locker locker(_lock);
+    qCDebug(controllers) << "Attempting to disable mapping (by pointer). Name is:" << mapping->name;
     const auto& deviceRoutes = mapping->routes;
     std::set<Route::Pointer> routeSet(deviceRoutes.begin(), deviceRoutes.end());
     _deviceRoutes.remove_if([&](const Route::Pointer& value){
