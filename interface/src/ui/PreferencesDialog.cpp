@@ -524,7 +524,10 @@ void setupPreferences() {
                 auto userInputMapper = DependencyManager::get<UserInputMapper>();
                 auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
                 auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);
-                return QKeySequence(userInputMapper->inputFor(inPtr).displayValue);
+                //return QKeySequence(userInputMapper->inputFor(inPtr).displayValue);
+                auto tmp = userInputMapper->inputFor(inPtr);
+                qDebug() << "input.displayValue:" << tmp.displayValue;
+                return QKeySequence(tmp.displayValue);
                 /*return QKeySequence(
                     DependencyManager::get<UserInputMapper>()->inputFor(inPtr).displayValue,
                     QKeySequence::SequenceFormat::PortableText
