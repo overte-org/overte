@@ -11,12 +11,15 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-<@include gpu/ShaderConstants.h@>
-INPUT(GPU_ATTR_POSITION, vec4, inPosition);
-INPUT(GPU_ATTR_NORMAL, vec4, inNormal);
-INPUT(GPU_ATTR_COLOR, vec4, inColor);
-INPUT(GPU_ATTR_TEXCOORD0, vec4, inTexCoord0);
-INPUT(GPU_ATTR_TEXCOORD1, vec4, inTexCoord1);
+//<@include gpu/Inputs.slh@>
+//<@include gpu/Color.slh@>
+//<@include gpu/ShaderConstants.h@>
+<@include render-utils/ShaderConstants.h@>
+//INPUT(GPU_ATTR_POSITION, vec4, inPosition);
+//INPUT(GPU_ATTR_NORMAL, vec4, inNormal);
+//INPUT(GPU_ATTR_COLOR, vec4, inColor);
+//INPUT(GPU_ATTR_TEXCOORD0, vec4, inTexCoord0);
+//INPUT(GPU_ATTR_TEXCOORD1, vec4, inTexCoord1);
 
 <@include gpu/Color.slh@>
 <@include render-utils/ShaderConstants.h@>
