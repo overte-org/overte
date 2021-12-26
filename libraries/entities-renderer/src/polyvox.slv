@@ -9,6 +9,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
+<@include render-utils/ShaderConstants.h@>
 <@include gpu/ShaderConstants.h@>
 INPUT(GPU_ATTR_POSITION, vec4, inPosition);
 INPUT(GPU_ATTR_NORMAL, vec4, inNormal);
