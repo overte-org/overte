@@ -15,6 +15,11 @@ INPUT(GPU_ATTR_POSITION, vec4, inPosition);
 INPUT(GPU_ATTR_NORMAL, vec4, inNormal);
 INPUT(GPU_ATTR_COLOR, vec4, inColor);
 INPUT(GPU_ATTR_TEXCOORD0, vec4, inTexCoord0);
+<@if HIFI_USE_FADE@>
+    INPUT(GPU_ATTR_TEXCOORD2, vec4, inTexCoord2);
+    INPUT(GPU_ATTR_TEXCOORD3, vec4, inTexCoord3);
+    INPUT(GPU_ATTR_TEXCOORD4, vec4, inTexCoord4);
+<@endif@>
 
 <@include gpu/Color.slh@>
 <@include gpu/Transform.slh@>
