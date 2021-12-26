@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <QtCore/qtextstream.h>
 #include <QtGui/QWindow>
 
 #include "Config.h"
