@@ -6,10 +6,16 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#include "VKWindow.h"
+#include <QtCore/QCoreApplication>
+#include <QGuiApplication>
+#include <QtGui/QWindow>
 #include <QtGui/qevent.h>
 #include <QtCore/QTimer>
+#include <QtCore/QDebug>
+#include <QtPlatformHeaders/QXcbWindowFunctions>
+#include <QtX11Extras/QX11Info>
 
+#include "VKWindow.h"
 #include "Config.h"
 #include "Swapchain.h"
 #include "Context.h"
@@ -23,7 +29,15 @@ VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
 }
 
 const vk::SurfaceKHR& VKWindow::createSurface() {
+#ifdef WIN32
     _surface = _context.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)winId() });
+#else
+    vk::XcbSurfaceCreateInfoKHR surfaceCreateInfo;
+    //dynamic_cast<QGuiApplication*>(QGuiApplication::instance())->platformNativeInterface()->connection();
+    surfaceCreateInfo.connection = QX11Info::connection();
+    surfaceCreateInfo.window = QX11Info::appRootWindow();
+    _surface = _context.instance.createXcbSurfaceKHR(surfaceCreateInfo);
+#endif
     _swapchain.setSurface(_surface);
     return _surface;
 }
@@ -35,7 +49,7 @@ void VKWindow::createSwapchain() {
 
     {
         auto qsize = size();
-        _extent = { (uint32_t)qsize.width(), (uint32_t)qsize.height() };
+        _extent = vk::Extent2D((uint32_t)qsize.width(), (uint32_t)qsize.height());
     }
     _swapchain.create(_extent, true);
 
@@ -168,14 +182,14 @@ void VKWindow::setupRenderPass() {
 void VKWindow::resizeEvent(QResizeEvent* event) {
     QWindow::resizeEvent(event);
     auto qsize = event->size();
-    if (qsize.width() != _extent.width || qsize.height() != _extent.height) {
+    if (qsize.width() != (int)(_extent.width) || qsize.height() != (int)(_extent.height)) {
         _resizeTimer->start();
     }
 }
 
 void VKWindow::resizeFramebuffer() {
     auto qsize = size();
-    _extent = { (uint32_t)qsize.width(), (uint32_t)qsize.height() };
+    _extent = vk::Extent2D((uint32_t)qsize.width(), (uint32_t)qsize.height());
     _swapchain.waitIdle();
     _swapchain.create(_extent, true);
     setupDepthStencil();

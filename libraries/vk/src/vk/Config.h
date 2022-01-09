@@ -26,7 +26,8 @@
 #define VK_USE_PLATFORM_ANDROID_KHR
 #elif defined(Q_OS_DARWIN)
 #else
-#define VK_USE_PLATFORM_XLIB_KHR
+//#define VK_USE_PLATFORM_XLIB_KHR
+#define VK_USE_PLATFORM_XCB_KHR
 #endif
 
 #define VKCPP_ENHANCED_MODE

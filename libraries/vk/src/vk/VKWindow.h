@@ -8,8 +8,11 @@
 
 #pragma once
 
-#include <QtCore/qtextstream.h>
+#include <QtCore/QCoreApplication>
 #include <QtGui/QWindow>
+#include <QtGui/qevent.h>
+#include <QtCore/QTimer>
+#include <QtCore/QDebug>
 
 #include "Config.h"
 #include "Context.h"
