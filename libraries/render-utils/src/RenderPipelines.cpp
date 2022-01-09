@@ -912,7 +912,7 @@ bool RenderPipelines::bindMaterials(graphics::MultiMaterial& multiMaterial, Batc
     static std::once_flag once;
     std::call_once(once, [textureCache] {
         graphics::MultiMaterial::Schema schema;
-        defaultMaterialSchema = BufferView(std::make_shared<Buffer>(sizeof(schema), (const Byte*) &schema, sizeof(schema)));
+        defaultMaterialSchema = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(schema), (const gpu::Byte*) &schema, sizeof(schema)));
 
         defaultMaterialTextures->setTexture(gr::Texture::MaterialAlbedo, textureCache->getWhiteTexture());
         defaultMaterialTextures->setTexture(gr::Texture::MaterialMetallic, textureCache->getBlackTexture());
@@ -985,3 +985,4 @@ bool RenderPipelines::bindMaterials(graphics::MultiMaterial& multiMaterial, Batc
         return false;
     }
 }
+

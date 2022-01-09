@@ -1,9 +1,10 @@
+#include <QtCore/QCoreApplication>
+#include <QtCore/QString>
+#include <QtCore/QFileInfo>
+
 #include "Helpers.h"
 
 #include <mutex>
-
-#include <QtCore/QString>
-#include <QtCore/QFileInfo>
 
 #include <gl/Config.h>
 #include <shared/FileUtils.h>
