@@ -9,6 +9,7 @@
 #pragma once
 
 #include <QtCore/QElapsedTimer>
+#include <QtGui/QWindow>
 
 #include <GenericThread.h>
 #include <shared/RateCounter.h>
@@ -22,6 +23,7 @@
 #include <gpu/gl/GLBackend.h>
 #else
 #include <gpu/vk/VKBackend.h>
+#include <vk/Swapchain.h>
 #endif
 
 class RenderThread : public GenericThread {
