@@ -32,12 +32,12 @@ PolyLineEntityRenderer::PolyLineEntityRenderer(const EntityItemPointer& entity) 
     _texture = DependencyManager::get<TextureCache>()->getTexture(DEFAULT_POLYLINE_TEXTURE);
 
     { // Initialize our buffers
-        _polylineDataBuffer = std::make_shared<gpu::Buffer>();
+        _polylineDataBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer);
         _polylineDataBuffer->resize(sizeof(PolylineData));
         PolylineData data { glm::vec2(_faceCamera, _glow), glm::vec2(0.0f) };
         _polylineDataBuffer->setSubData(0, data);
 
-        _polylineGeometryBuffer = std::make_shared<gpu::Buffer>();
+        _polylineGeometryBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer);
     }
 }
 

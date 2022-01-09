@@ -198,7 +198,9 @@ struct Cache {
 
         template <typename T>
         static std::string hex(T t) {
-            return (std::stringstream() << std::setw(sizeof(T)) << std::setfill('0') << std::hex << t).str();
+            std::stringstream sStream;
+            sStream << std::setw(sizeof(T)) << std::setfill('0') << std::hex << t;
+            return sStream.str();
         }
 
         void setPipeline(const gpu::PipelinePointer& pipeline) {

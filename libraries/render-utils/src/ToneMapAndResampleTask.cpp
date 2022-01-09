@@ -27,7 +27,7 @@ gpu::PipelinePointer ToneMapAndResample::_mirrorPipeline;
 
 ToneMapAndResample::ToneMapAndResample() {
     Parameters parameters;
-    _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Parameters), (const gpu::Byte*) &parameters));
+    _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Parameters), (const gpu::Byte*) &parameters));
 }
 
 void ToneMapAndResample::init() {
