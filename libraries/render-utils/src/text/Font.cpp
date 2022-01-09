@@ -585,7 +585,7 @@ void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const DrawPro
         gpuDrawParams.effectThickness = drawInfo.params.effectThickness;
         gpuDrawParams.effectColor = ColorUtils::sRGBToLinearVec3(drawInfo.params.effectColor);
         if (!drawInfo.paramsBuffer) {
-            drawInfo.paramsBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(GpuDrawParams), nullptr);
+            drawInfo.paramsBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(DrawParams), nullptr);
         }
         drawInfo.paramsBuffer->setSubData(0, sizeof(DrawParams), (const gpu::Byte*)&gpuDrawParams);
 

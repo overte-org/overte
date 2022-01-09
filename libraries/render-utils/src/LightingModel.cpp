@@ -20,7 +20,7 @@ gpu::TexturePointer LightingModel::_ambientFresnelLUT;
 
 LightingModel::LightingModel() {
     Parameters parameters;
-    _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Parameters), (const gpu::Byte*) &parameters, sizeof(Parameters)));
+    _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Parameters), (const gpu::Byte*) &parameters, sizeof(Parameters)));
 
 #if RENDER_UTILS_ENABLE_AMBIENT_FRESNEL_LUT
     if (!_ambientFresnelLUT) {

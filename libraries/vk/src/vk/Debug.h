@@ -1,7 +1,5 @@
 #pragma once
 
-#include <QtCore/qmetatype.h>
-#include <QtCore/qtextstream.h>
 #include "Config.h"
 
 namespace vks { namespace debug {

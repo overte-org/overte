@@ -126,7 +126,7 @@ void HmdDisplayPlugin::customizeContext() {
 
     VisionSqueezeParameters parameters;
     _visionSqueezeParametersBuffer =
-        gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(VisionSqueezeParameters), (const gpu::Byte*) &parameters));
+        gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(VisionSqueezeParameters), (const gpu::Byte*) &parameters));
 
     Parent::customizeContext();
     _hudRenderer.build();
