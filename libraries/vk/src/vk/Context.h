@@ -1,7 +1,5 @@
 #pragma once
 
-#include <QtCore/qmetatype.h>
-#include <QtCore/qtextstream.h>
 #include "Config.h"
 
 #include "Debug.h"
@@ -10,7 +8,6 @@
 #include "Helpers.h"
 #include "Device.h"
 #include <unordered_set>
-#include <QtCore/QDebug>
 
 namespace vks {
 using StringList = std::list<std::string>;
@@ -45,8 +42,8 @@ struct DeviceCreateInfo : public vk::DeviceCreateInfo {
 
     void update() {
         assert(deviceQueuesPriorities.size() == deviceQueues.size());
-        auto size = deviceQueues.size();
-        for (auto i = 0; i < size; ++i) {
+        size_t size = deviceQueues.size();
+        for (size_t i = 0; i < size; ++i) {
             auto& deviceQueue = deviceQueues[i];
             auto& deviceQueuePriorities = deviceQueuesPriorities[i];
             deviceQueue.queueCount = (uint32_t)deviceQueuePriorities.size();

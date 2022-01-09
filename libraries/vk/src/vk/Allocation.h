@@ -46,7 +46,7 @@ namespace vks {
         vk::DeviceSize allocSize{ 0 };
 
 #if VULKAN_USE_VMA
-        static VmaAllocator& Allocation::getAllocator();
+        static VmaAllocator& getAllocator();
 
         VmaAllocation allocation;
         /** @brief Memory propertys flags to be filled by external source at buffer creation (to query at some later point) */
