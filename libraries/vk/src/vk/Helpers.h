@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QtCore/qmetatype.h>
 #include "Config.h"
 #include <array>
 #include <vector>

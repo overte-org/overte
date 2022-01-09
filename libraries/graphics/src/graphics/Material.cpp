@@ -322,7 +322,7 @@ const glm::vec3 Material::DEFAULT_OUTLINE = glm::vec3(0.0f);
 
 MultiMaterial::MultiMaterial() {
     Schema schema;
-    _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
+    _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
     for (int i = 0; i < _textureTables.size(); i++) {
         _textureTables[i] = std::make_shared<gpu::TextureTable>();
     }

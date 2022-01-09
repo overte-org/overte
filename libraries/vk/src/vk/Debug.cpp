@@ -6,6 +6,8 @@
 * This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
 */
 
+#include <QtCore/QCoreApplication>
+#include <QtCore/QDebug>
 #include "Debug.h"
 
 #include <functional>
@@ -15,7 +17,6 @@
 #include <sstream>
 #include <mutex>
 
-#include <QtCore/QDebug>
 
 namespace vks { namespace debug {
 
