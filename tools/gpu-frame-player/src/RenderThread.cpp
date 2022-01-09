@@ -9,6 +9,7 @@
 #include "RenderThread.h"
 #include <QtGui/QWindow>
 #include <QtCore/QThreadPool>
+#include <QtX11Extras/QX11Info>
 #include <gl/OffscreenGLCanvas.h>
 #ifdef USE_GL
 #include <gl/QOpenGLContextWrapper.h>
@@ -71,13 +72,26 @@ void RenderThread::initialize(QWindow* window) {
     auto size = window->size();
     _extent = vk::Extent2D{ (uint32_t)size.width(), (uint32_t)size.height() };
 
+    _vkcontext.setValidationEnabled(true);
     _vkcontext.requireExtensions({
         std::string{ VK_KHR_SURFACE_EXTENSION_NAME },
+#ifdef WIN32
         std::string{ VK_KHR_WIN32_SURFACE_EXTENSION_NAME },
+#else
+        std::string{ VK_KHR_XCB_SURFACE_EXTENSION_NAME },
+#endif
     });
     _vkcontext.requireDeviceExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME });
     _vkcontext.createInstance();
+#ifdef WIN32
     _surface = _vkcontext.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)window->winId() });
+#else
+    vk::XcbSurfaceCreateInfoKHR surfaceCreateInfo;
+    //dynamic_cast<QGuiApplication*>(QGuiApplication::instance())->platformNativeInterface()->connection();
+    surfaceCreateInfo.connection = QX11Info::connection();
+    surfaceCreateInfo.window = QX11Info::appRootWindow();
+    _surface = _vkcontext.instance.createXcbSurfaceKHR(surfaceCreateInfo);
+#endif
     _vkcontext.createDevice(_surface);
     _swapchain.setSurface(_surface);
     _swapchain.create(_extent, true);
@@ -85,8 +99,8 @@ void RenderThread::initialize(QWindow* window) {
     setupRenderPass();
     setupFramebuffers();
 
-    acquireComplete = _context.device.createSemaphore(vk::SemaphoreCreateInfo{});
-    renderComplete = _context.device.createSemaphore(vk::SemaphoreCreateInfo{});
+    acquireComplete = _vkcontext.device.createSemaphore(vk::SemaphoreCreateInfo{});
+    renderComplete = _vkcontext.device.createSemaphore(vk::SemaphoreCreateInfo{});
 
     // GPU library init
     gpu::Context::init<gpu::vulkan::VKBackend>();
@@ -124,7 +138,11 @@ extern vk::CommandBuffer currentCommandBuffer;
 #endif
 
 void RenderThread::renderFrame(gpu::FramePointer& frame) {
+#ifdef USE_GL
     PROFILE_RANGE(render_gpu_gl, __FUNCTION__);
+#else
+    PROFILE_RANGE(render_gpu, __FUNCTION__);
+#endif
     ++_presentCount;
 #ifdef USE_GL
     _context.makeCurrent();
@@ -155,13 +173,13 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
 
     static const vk::Offset2D offset;
     static const std::array<vk::ClearValue, 2> clearValues{
-        vk::ClearColorValue(std::array<float, 4Ui64>{ { 0.2f, 0.2f, 0.2f, 0.2f } }),
-        vk::ClearDepthStencilValue({ 1.0f, 0 }),
+        vk::ClearColorValue(std::array<float, 4>{ { 0.2f, 0.2f, 0.2f, 0.2f } }),
+        vk::ClearDepthStencilValue( 1.0f, 0 ),
     };
 
     auto swapchainIndex = _swapchain.acquireNextImage(acquireComplete).value;
     auto framebuffer = _framebuffers[swapchainIndex];
-    const auto& commandBuffer = currentCommandBuffer = _context.createCommandBuffer();
+    const auto& commandBuffer = currentCommandBuffer = _vkcontext.createCommandBuffer();
 
     auto rect = vk::Rect2D{ offset, _extent };
     vk::RenderPassBeginInfo beginInfo{ _renderPass, framebuffer, rect, (uint32_t)clearValues.size(), clearValues.data() };
@@ -172,12 +190,14 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
 #endif
     auto& glbackend = (gpu::gl::GLBackend&)(*_backend);
     glm::uvec2 fboSize{ frame->framebuffer->getWidth(), frame->framebuffer->getHeight() };
+#ifdef USE_GL
     auto fbo = glbackend.getFramebufferID(frame->framebuffer);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
     glClearColor(0, 0, 0, 1);
     glClearDepth(0);
     glClear(GL_DEPTH_BUFFER_BIT);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+#endif
 
     //_gpuContext->enableStereo(true);
     if (frame && !frame->batches.empty()) {
@@ -202,9 +222,10 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     //glClear(GL_COLOR_BUFFER_BIT);
   /*  glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glBlitFramebuffer(0, 0, fboSize.x, fboSize.y, 0, 0, windowSize.width(), windowSize.height(), GL_COLOR_BUFFER_BIT,
-                      GL_NEAREST);
-
+    glBlitFramebuffer(
+        0, 0, fboSize.x, fboSize.y, 
+        0, 0, windowSize.width(), windowSize.height(),
+        GL_COLOR_BUFFER_BIT, GL_NEAREST);
 */
     (void)CHECK_GL_ERROR();
     _context.swapBuffers();
@@ -219,12 +240,12 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
 
     static const vk::PipelineStageFlags waitFlags{ vk::PipelineStageFlagBits::eBottomOfPipe };
     vk::SubmitInfo submitInfo{ 1, &acquireComplete, &waitFlags, 1, &commandBuffer, 1, &renderComplete };
-    vk::Fence frameFence = _context.device.createFence(vk::FenceCreateInfo{});
-    _context.queue.submit(submitInfo, frameFence);
+    vk::Fence frameFence = _vkcontext.device.createFence(vk::FenceCreateInfo{});
+    _vkcontext.queue.submit(submitInfo, frameFence);
     _swapchain.queuePresent(renderComplete);
-    _context.trashCommandBuffers({ commandBuffer });
-    _context.emptyDumpster(frameFence);
-    _context.recycle();
+    _vkcontext.trashCommandBuffers({ commandBuffer });
+    _vkcontext.emptyDumpster(frameFence);
+    _vkcontext.recycle();
 #endif
 }
 
@@ -247,7 +268,7 @@ bool RenderThread::process() {
     while (!pendingSize.empty()) {
 #ifndef USE_GL
         const auto& size = pendingSize.front();
-        _extent = { (uint32_t)size.width(), (uint32_t)size.height() };
+        _extent = vk::Extent2D( (uint32_t)size.width(), (uint32_t)size.height() );
 #endif
         pendingSize.pop();
     }
@@ -265,9 +286,9 @@ bool RenderThread::process() {
 
 void RenderThread::setupFramebuffers() {
     // Recreate the frame buffers
-    _context.trashAll<vk::Framebuffer>(_framebuffers, [this](const std::vector<vk::Framebuffer>& framebuffers) {
+    _vkcontext.trashAll<vk::Framebuffer>(_framebuffers, [this](const std::vector<vk::Framebuffer>& framebuffers) {
         for (const auto& framebuffer : framebuffers) {
-            _device.destroy(framebuffer);
+            _vkdevice.destroy(framebuffer);
         }
     });
 
@@ -286,7 +307,7 @@ void RenderThread::setupFramebuffers() {
 
 void RenderThread::setupRenderPass() {
     if (_renderPass) {
-        _device.destroy(_renderPass);
+        _vkdevice.destroy(_renderPass);
     }
 
     vk::AttachmentDescription attachment;
@@ -320,7 +341,7 @@ void RenderThread::setupRenderPass() {
     renderPassInfo.pSubpasses = &subpass;
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &subpassDependency;
-    _renderPass = _device.createRenderPass(renderPassInfo);
+    _renderPass = _vkdevice.createRenderPass(renderPassInfo);
 }
 #endif
 
@@ -388,7 +409,9 @@ struct VkBufferTransferItem {
         commandBuffer.end();
 
         {
+#ifdef USE_GL
             PROFILE_RANGE(render_gpu_gl, "vk_submitTranferCommandBuffer");
+#endif
             auto transferQueue = context.device.getQueue(context.queueIndices.transfer, 0);
             auto fence = context.device.createFence({});
             {
@@ -398,7 +421,9 @@ struct VkBufferTransferItem {
                 transferQueue.submit(submitInfo, fence);
             }
             {
+#ifdef USE_GL
                 PROFILE_RANGE(render_gpu_gl, "vk_submitTranferCommandBufferWait");
+#endif
                 transferQueue.waitIdle();
                 while (vk::Result::eSuccess != context.device.waitForFences(fence, VK_TRUE, UINT64_MAX)) {
                     QThread::msleep(1);
@@ -416,7 +441,9 @@ void RenderThread::testVkTransfer() {
 
     running = true;
     QThreadPool::globalInstance()->start(new QLambdaRunnable([this] {
+#ifdef USE_GL
         PROFILE_RANGE(render_gpu_gl, "vk_bufferCopyTest");
+#endif
         VkBufferTransferItem::Vector bufferTransfers;
         {
             std::unordered_set<gpu::BufferPointer> allBuffers;
@@ -428,7 +455,9 @@ void RenderThread::testVkTransfer() {
                 }
             }
             {
+#ifdef USE_GL
                 PROFILE_RANGE(render_gpu_gl, "vk_populateStagingBuffers");
+#endif
                 bufferTransfers.resize(allBuffers.size());
                 size_t i = 0;
                 for (const auto& buffer : allBuffers) {
@@ -445,19 +474,25 @@ void RenderThread::testVkTransfer() {
         //}
 
         {
+#ifdef USE_GL
             PROFILE_RANGE(render_gpu_gl, "vk_allocateDeviceBuffers");
+#endif
             for (auto& item : bufferTransfers) {
                 item.allocateDeviceBuffer(_vkcontext);
             }
         }
 
         {
+#ifdef USE_GL
             PROFILE_RANGE(render_gpu_gl, "vk_transferBuffers");
+#endif
             VkBufferTransferItem::transferBuffers(_vkcontext, _vkstagingBuffer, bufferTransfers);
         }
 
         {
+#ifdef USE_GL
             PROFILE_RANGE(render_gpu_gl, "vk_destroyTransferDeviceBuffers");
+#endif
             for (auto& item : bufferTransfers) {
                 item.deviceBuffer.destroy();
             }
@@ -467,6 +502,7 @@ void RenderThread::testVkTransfer() {
     }));
 }
 
+#ifdef USE_GL
 struct GlBufferTransferItem {
     using Vector = std::vector<GlBufferTransferItem>;
     gpu::BufferPointer gpuBuffer;
@@ -479,7 +515,9 @@ struct GlBufferTransferItem {
 
     void destroyDeviceBuffer() { glDeleteBuffers(1, &glbuffer); }
 };
+#endif
 
+#ifdef USE_GL
 void RenderThread::testGlTransfer() {
     static std::atomic<bool> running{ false };
     if (running) {
@@ -536,3 +574,4 @@ void RenderThread::testGlTransfer() {
         running = false;
 }));
 }
+#endif
