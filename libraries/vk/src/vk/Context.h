@@ -484,7 +484,7 @@ public:
     vk::Instance instance;
 
     std::vector<vk::PhysicalDevice> physicalDevices;
-    // Physical device (GPU) that Vulkan will ise
+    // Physical device (GPU) that Vulkan will use
     vk::PhysicalDevice physicalDevice;
     std::unordered_set<std::string> physicalDeviceExtensions;
 
