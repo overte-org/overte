@@ -46,7 +46,7 @@ void AudioScriptingInterface::setLocalAudioInterface(AbstractAudioInterface* aud
         disconnect(_localAudioInterface, &AbstractAudioInterface::isStereoInputChanged,
                    this, &AudioScriptingInterface::isStereoInputChanged);
     }
-    
+
     _localAudioInterface = audioInterface;
 
     if (_localAudioInterface) {
@@ -134,4 +134,37 @@ void AudioScriptingInterface::toggleLocalEcho() {
     if (_localAudioInterface) {
         QMetaObject::invokeMethod(_localAudioInterface, "toggleLocalEcho");
     }
+}
+
+QStringList AudioScriptingInterface::getCodecs() {
+    QStringList codecs;
+    if (_localAudioInterface) {
+        codecs = _localAudioInterface->getCodecs();
+    }
+
+    return codecs;
+}
+
+QString AudioScriptingInterface::getCodec() {
+    QString codec;
+    if (_localAudioInterface) {
+        codec = _localAudioInterface->getCodec();
+    }
+
+    return codec;
+}
+
+void AudioScriptingInterface::setAllowedCodecs(const QStringList &codecs) {
+    if (_localAudioInterface) {
+        _localAudioInterface->setAllowedCodecs(codecs);
+    }
+}
+
+QStringList AudioScriptingInterface::getAllowedCodecs() {
+    QStringList codecs;
+    if (_localAudioInterface) {
+        codecs = _localAudioInterface->getAllowedCodecs();
+    }
+
+    return codecs;
 }
