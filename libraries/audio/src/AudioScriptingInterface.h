@@ -157,6 +157,14 @@ public:
      */
     Q_INVOKABLE void toggleLocalEcho();
 
+    Q_INVOKABLE QStringList getCodecs();
+
+    Q_INVOKABLE QString getCodec();
+
+    Q_INVOKABLE void setAllowedCodecs(const QStringList &codecs);
+
+    Q_INVOKABLE QStringList getAllowedCodecs();
+
 
 protected:
     AudioScriptingInterface() = default;
