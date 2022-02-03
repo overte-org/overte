@@ -5,8 +5,9 @@
 //
 //  Created by Keb Helion, February 2020.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
-//  This script adds a "More Apps" selector to Vircadia to allow the user to add optional functionalities to the tablet.
+//  This script adds a "More Apps" selector to Overte to allow the user to add optional functionalities to the tablet.
 //  This application has been designed to work directly from the Github repository.
 //
 //  Distributed under the Apache License, Version 2.0.
@@ -56,7 +57,7 @@
         var runningScriptJson;
         for (var j = 0; j < currentlyRunningScripts.length; j++) {
             runningScriptJson = currentlyRunningScripts[j].url;
-            if (runningScriptJson.indexOf("https://cdn.vircadia.com/community-apps/applications") !== -1) {
+            if (runningScriptJson.indexOf("https://more.overte.org/applications") !== -1) {
                 newMessage += "_" + runningScriptJson;
             }
         }
