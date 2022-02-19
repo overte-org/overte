@@ -33,6 +33,6 @@ jobs:
         username: ${{ secrets.GHA_JSDOC_FTP_USER }}
         password: ${{ secrets.GHA_JSDOC_FTP_PASS }}
         local-dir: ./tools/jsdoc/output/
-        server-dir: overte/apidocs-overte.tuxfamily.org-web/htdocs/
+        server-dir: overte/apidocs.overte.org-web/htdocs/
         exclude: |
           **/staging/**
