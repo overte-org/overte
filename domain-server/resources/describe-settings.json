@@ -1981,7 +1981,7 @@
           "name": "provider",
           "label": "Provider",
           "help": "OAuth provider URL.",
-          "default": "https://overte.org/mvs",
+          "default": "https://mv.overte.org/server",
           "advanced":  true,
           "backup": false
         },

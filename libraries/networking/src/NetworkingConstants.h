@@ -29,8 +29,8 @@ namespace NetworkingConstants {
     const QString WEB_ENGINE_VERSION = "Chrome/83.0.4103.122";
 
     // For now we only have one Metaverse server.
-    const QUrl METAVERSE_SERVER_URL_STABLE { "https://overte.org/mvs" };
-    const QUrl METAVERSE_SERVER_URL_STAGING { "https://overte.org/mvs" };
+    const QUrl METAVERSE_SERVER_URL_STABLE { "https://mv.overte.org/server" };
+    const QUrl METAVERSE_SERVER_URL_STAGING { "https://mv.overte.org/server" };
 
     // Web Engine requests to this parent domain have an account authorization header added
     const QString AUTH_HOSTNAME_BASE = "overte.org";

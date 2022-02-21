@@ -279,6 +279,6 @@
     "toolbar/com.highfidelity.interface.toolbar.system/x": 655,
     "toolbar/com.highfidelity.interface.toolbar.system/y": 953,
     "toolbar/constrainToolbarToCenterX": true,
-    "private/selectedMetaverseURL": "https://overte.org/mvs",
+    "private/selectedMetaverseURL": "https://mv.overte.org/server",
     "wallet/autoLogout": true
 }
