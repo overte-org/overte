@@ -16,8 +16,8 @@ jobs:
     - name: Install dependencies
       working-directory: tools/jsdoc
       run: |
-        apt update
-        apt install npm nodejs
+        sudo apt update
+        sudo apt install npm nodejs
         npm install
 
     - name: Build API-docs
