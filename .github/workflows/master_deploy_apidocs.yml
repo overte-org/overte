@@ -18,6 +18,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install npm nodejs
+        npm install jsdoc -g
         npm install
 
     - name: Build API-docs
