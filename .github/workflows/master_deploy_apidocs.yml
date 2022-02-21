@@ -14,14 +14,14 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Install dependencies
-      working-directory: ${{GITHUB_WORKSPACE}}/tools/jsdoc
+      working-directory: $GITHUB_WORKSPACE/tools/jsdoc
       run: |
         apt update
         apt install npm nodejs
         npm install
 
     - name: Build API-docs
-      working-directory: ${{GITHUB_WORKSPACE}}/tools/jsdoc
+      working-directory: $GITHUB_WORKSPACE/tools/jsdoc
       shell: bash
       run: |
         jsdoc root.js -r api-mainpage.md -c config.json -d output
