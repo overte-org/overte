@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<!--
+//
+//  wizard.html
+//
+//  Created by Alezia Kurdis based on a concept from Kalila L. on February 18th 2022
+//  Copyright 2022 Overte. e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+-->
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Quick Configuration</title>
+    <style>
+        @font-face {
+            font-family: 'Roboto'
+            src: url('qrc:///serverless/Fonts/Roboto-Regular.ttf') format('truetype')
+            font-weight: normal
+            font-style: normal
+        }
+          
+        @font-face {
+            font-family: 'Roboto'
+            src: url('qrc:///serverless/Fonts/Roboto-Bold.ttf') format('truetype')
+            font-weight: bold
+            font-style: normal
+        }
+
+        @font-face {
+            font-family: 'Roboto';
+            src: url('qrc:///serverless/Fonts/Roboto-Italic.ttf');
+            font-weight: normal;
+            font-style: italic;
+        }
+
+        @font-face {
+            font-family: 'Roboto';
+            src: url('qrc:///serverless/Fonts/Roboto-BoldItalic.ttf');
+            font-weight: bold;
+            font-style: italic;
+        }
+
+        html, body {
+            font-family: Roboto;
+            font-size:140%;
+            color:#ffffff;
+            margin:2%;
+            padding:0%;
+            width:96%;
+            height:90%;
+            background-color:#433952;   
+        }
+        
+        h1 {
+            font-family: Roboto;
+            color:#ffffff;
+            font-size:200%;
+        }
+        
+        table.maintable {
+            width:100%; 
+            height:95%;
+            border-collapse:collapse;
+            padding:2%;
+        }
+
+        td {
+            vertical-align: top;
+        }
+
+        table.pagetable {
+            width:100%; 
+            height:100%;
+            border-collapse:collapse;
+        }
+
+        div.page {
+            width:100%; 
+            height:100%;  
+        }
+
+        .activeBtn {
+            font-family: Roboto;
+            font-size: 140%;
+            font-weight: bold;
+            background: #0033ff;
+            background-image: linear-gradient(to bottom, #0033ff, #002259);
+            border-radius: 18px;
+            box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5);
+            color: #ffffff;
+            border: 0px;
+            padding: 10px 20px 10px 20px;
+            text-decoration: none;
+        }
+
+        .activeBtn:hover {
+            font-family: Roboto;
+            font-size: 140%;
+            font-weight: bold;
+            background: #0599fc;
+            background-image: linear-gradient(to bottom, #0599fc, #003670);
+            text-decoration: none;
+            border: 0px;
+        }        
+
+        .completeBtn {
+            font-family: Roboto;
+            font-size: 140%;
+            font-weight: bold;
+            background: #00ff00;
+            background-image: linear-gradient(to bottom, #00ff00, #003600);
+            border-radius: 18px;
+            border: 0px;
+            box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5);
+            color: #ffffff;
+            padding: 10px 20px 10px 20px;
+            text-decoration: none;
+        }
+
+        .completeBtn:hover {
+            font-family: Roboto;
+            font-size: 140%;
+            font-weight: bold;
+            background: #59ffc2;
+            background-image: linear-gradient(to bottom, #59ffc2, #196144);
+            text-decoration: none;
+            border: 0px;
+        }
+        
+        .displayName {
+            font-family: Roboto;
+            font-size: 130%;
+            font-weight: bold;
+            color:#0000ff;
+        }
+        
+        .choice {
+            font-family: Roboto;
+            font-size: 130%;
+            font-weight: bold;
+        }
+        
+        .green {
+            color:#00ba1c;
+        }
+
+        
+        .orange {
+            color:#ff9900;
+        }
+        
+        .red {
+            color:#ff0000;
+        }
+        
+        .yellow {
+            color:#ffff00;
+        }
+
+        .blue {
+            color:#0096db;
+        }
+        
+        input[type="radio"] {
+            height:35px; 
+            width:35px;
+        }
+        
+        .stepper-wrapper {
+          margin-top: auto;
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 20px;
+        }
+        .stepper-item {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          flex: 1;
+
+          @media (max-width: 768px) {
+            font-size: 12px;
+          }
+        }
+
+        .stepper-item::before {
+          position: absolute;
+          content: "";
+          border-bottom: 2px solid #ccc;
+          width: 100%;
+          top: 20px;
+          left: -50%;
+          z-index: 2;
+        }
+
+        .stepper-item::after {
+          position: absolute;
+          content: "";
+          border-bottom: 2px solid #ccc;
+          width: 100%;
+          top: 20px;
+          left: 50%;
+          z-index: 2;
+        }
+
+        .stepper-item .step-counter {
+          position: relative;
+          z-index: 5;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: #ccc;
+          margin-bottom: 6px;
+        }
+
+        .stepper-item.active {
+          font-weight: bold;
+        }
+
+        .stepper-item.completed .step-counter {
+          background-color: #4bb543;
+        }
+
+        .stepper-item.completed::after {
+          position: absolute;
+          content: "";
+          border-bottom: 2px solid #4bb543;
+          width: 100%;
+          top: 20px;
+          left: 50%;
+          z-index: 3;
+        }
+
+        .stepper-item:first-child::before {
+          content: none;
+        }
+        .stepper-item:last-child::after {
+          content: none;
+        }
+        
+        #flowStatusBar {
+            background-color: #26202e;
+            border-radius: 3%;
+            padding: 1%;
+        }
+    </style>
+  </head>
+  <body>
+    <table class="maintable">
+        <tr>
+            <td style="height:10%;">
+                <div id='flowStatusBar'></div>
+            </td>
+        </tr>
+        <tr>
+            <td style="height:90%;">
+                <div id='page1' class='page'>
+                    <table class="pagetable">
+                        <tr>
+                            <td colspan='2' style="height:25%;">
+                                <h1>Welcome to Overte!</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan='2' style="height:65%;">
+                                Let's get you setup to experience the virtual world. <br/>
+                                First, we need to select some performance and graphics quality options. <br/><br/>
+                                Press <b style="color: #2e89ff;">Continue</b> when you are ready.<br/>
+                            </td>
+                        </tr>    
+                        <tr>
+                            <td align = 'left' style="height:10%;">                            
+                                &nbsp;
+                            </td>
+                            <td align='right'  style="height:10%;">
+                                <button class = 'activeBtn' onClick="movetoPage(2);">Continue &#x203A;</button>
+                            </td>
+                        </tr>
+                    </table>    
+                </div>
+                <div id='page2' class='page'>
+                    <table class="pagetable">
+                        <tr>
+                            <td colspan='2' style="height:25%;">                
+                                <h1>Quality</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan='2' style="height:65%;">
+                                What level of visual quality would you like?<br/>
+                                <b>Remember! If you do not have a powerful computer,<br/>you may want to set this to low or medium at most.</b>
+                                <br/><br/>  
+                                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="radio" name="performancePreset" value = "1" onClick="performancePreset = 1;"> <strong class="choice orange">Very Low Quality</strong> Slow Laptop / Very Slow Computer</div>        
+                                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="radio" name="performancePreset" value = "2" onClick="performancePreset = 2;"> <strong class="choice yellow">Low Quality</strong> Average Laptop / Slow Computer</div>
+                                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="radio" name="performancePreset" value = "3" onClick="performancePreset = 3;"> <strong class="choice green">Medium Quality</strong> Average Computer - <b><i class='green'>Recommended</i></b></div>
+                                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="radio" name="performancePreset" value = "4" onClick="performancePreset = 4;"> <strong class="choice blue">High Quality</strong> Gaming Computer</div>
+                            </td>
+                        </tr>    
+                        <tr>
+                            <td align = 'left' style="height:10%;">
+                                <button class = 'activeBtn' onClick="movetoPage(1);">&#x2039; Back</button>
+                            </td>
+                            <td align = 'right' style="height:10%;">                    
+                                <button class = 'activeBtn' onClick="movetoPage(3);">Continue &#x203A;</button>
+                            </td>
+                        </tr>
+                    </table>                     
+                </div>
+                <div id='page3' class='page'>
+                    <table class="pagetable">
+                        <tr>
+                            <td colspan='2' style="height:25%;">                
+                                <h1>Performance</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan='2' style="height:65%;">                    
+                                Do you want a smooth experience <i>(high refresh rate)</i><br/>or do you want to conserve power and resources <i>(low refresh rate)</i> on your computer?<br/>
+                                <b><i>Note: This does not apply to virtual reality headsets.</i></b>
+                                <br/><br/>
+                                <div class="text-h5">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="radio" name="refreshRateProfile" value = "0" onClick="refreshRateProfile = 0;"> <strong class="choice orange">Not Smooth (20 Hz)</strong> Conserve Power</div>
+                                <div class="text-h5">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="radio" name="refreshRateProfile" value = "1" onClick="refreshRateProfile = 1;"> <strong class="choice yellow">Smooth (30 Hz)</strong> Use Average Resources</div>
+                                <div class="text-h5">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="radio" name="refreshRateProfile" value = "2" onClick="refreshRateProfile = 2;"> <strong class="choice green">Very Smooth (60 Hz)</strong> Use Maximum Resources - <b><i class='green'>Recommended</i></b></div>
+                                <br/>
+                            </td>
+                        </tr>    
+                        <tr>
+                            <td align = 'left' style="height:10%;">                                
+                                <button class = 'activeBtn' onClick="movetoPage(2);">&#x2039; Back</button>
+                            </td>
+                            <td align = 'right' style="height:10%;">                    
+                                <button class = 'activeBtn' onClick="movetoPage(4);">Continue &#x203A;</button>
+                            </td>
+                        </tr>
+                    </table>                     
+                </div>
+                <div id='page4' class='page'>
+                    <table class="pagetable">
+                        <tr>
+                            <td colspan='2' style="height:25%;">
+                                <h1>Display Name</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan='2' style="height:65%;">
+                                What should people call you?<br/>
+                                This is simply a nickname, it will be shown in place of your username (if you have one).
+                                <br/><br/>
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NAME: <input class = 'displayName' type = "text" id='displayName' size='40' onChange = "displayName = this.value;">
+                                <br/>
+                            </td>
+                        </tr>    
+                        <tr>
+                            <td align = 'left' style="height:10%;">                    
+                                <button class = 'activeBtn' onClick="movetoPage(3);">&#x2039; Back</button>
+                            </td>
+                            <td align = 'right' style="height:10%;">                    
+                                <button class = 'activeBtn' onClick="movetoPage(5);">Continue &#x203A;</button>
+                            </td>
+                        </tr>
+                    </table> 
+                </div>
+                <div id='page5' class='page'>
+                    <table class="pagetable">
+                        <tr>
+                            <td colspan='2' style="height:25%;">                
+                                <h1>All done!</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan='2' style="height:65%;">                    
+                                Now you're almost ready to go!<br/>
+                                Press <b style="color: #1ee62e;">Complete</b> to save your setup.<br/>
+                                Then take a look at the other information kiosks after completing this wizard.<br/>                                
+                            </td>
+                        </tr>    
+                        <tr>
+                            <td align = 'left' style="height:10%;">                    
+                                <button class = 'activeBtn' onClick="movetoPage(4);">&#x2039; Back</button>
+                            </td>
+                            <td align = 'right' style="height:10%;">                    
+                                <button class = 'completeBtn' onClick = "completion();">Complete</button>        
+                            </td>
+                        </tr>
+                    </table> 
+                </div>
+            </td>
+        </tr>
+    </table>   
+    <script>
+        var performancePreset;
+        var refreshRateProfile;
+        var displayName = "";
+
+        EventBridge.scriptEventReceived.connect(function (message) {
+            var messageJSON = JSON.parse(message);
+            if (messageJSON.command === "script-to-web-initialize") {
+                performancePreset = messageJSON.data.performancePreset;
+                refreshRateProfile = messageJSON.data.refreshRateProfile;
+                displayName = messageJSON.data.displayName;
+                
+                document.getElementById("displayName").value = displayName;
+
+                var radioButtons = document.getElementsByName("performancePreset");
+                for (var j = 0; j < radioButtons.length; j++) {
+                    if ((j + 1) === performancePreset) {
+                        radioButtons[j].checked = true;
+                    } else {
+                        radioButtons[j].checked = false;
+                    }
+                }
+
+                radioButtons = document.getElementsByName("refreshRateProfile");
+                for (j = 0; j < radioButtons.length; j++) {
+                    if (j === refreshRateProfile) {
+                        radioButtons[j].checked = true;
+                    } else {
+                        radioButtons[j].checked = false;
+                    }
+                }                
+
+            }
+              
+        });
+
+        function completion() {
+            var completionMessage = {
+                    "command": "complete-wizard",
+                    "data": {
+                        "performancePreset": performancePreset,
+                        "refreshRateProfile": refreshRateProfile,
+                        "displayName": displayName
+                    }
+            };
+            EventBridge.emitWebEvent(JSON.stringify(completionMessage));
+        }
+        
+        function movetoPage(pageNo) {
+            for (var i=1; i < 6; i++) {
+                if (pageNo === i) {
+                    document.getElementById("page" + i.toString()).style.display = "block";                
+                    document.getElementById("page" + i.toString()).style.width = "100%";
+                } else {
+                    document.getElementById("page" + i.toString()).style.width = "0%";
+                    document.getElementById("page" + i.toString()).style.display = "none";                    
+                }
+            }
+            drawProgressBar(pageNo);
+        }
+        
+        function drawProgressBar(pageNo) {
+            var title = ["", "Welcome","Quality","Performance","Display Name","Completion"];
+            var bar = '<div class="stepper-wrapper">';
+            
+            for (var i=1;i < 6;i++) {
+                if (i < pageNo) {
+                    bar = bar + '<div class="stepper-item completed">';
+                } else {
+                    if (1 === pageNo) {
+                        bar = bar + '<div class="stepper-item active">';
+                    } else {
+                        bar = bar + '<div class="stepper-item">';
+                    }
+                }
+
+                bar = bar + '<div class="step-counter">' + i + '</div>';
+                bar = bar + '<div class="step-name">' + title[i] + '</div>';
+                bar = bar + "</div>";
+            }
+            
+            bar = bar + "</div>";
+            document.getElementById("flowStatusBar").innerHTML = bar;
+        }
+        
+        
+        movetoPage(1);
+        
+        var goSignal = {"command": "first-run-wizard-ready"};    
+        EventBridge.emitWebEvent(JSON.stringify(goSignal));        
+        
+    </script>
+  </body>
+</html>
