@@ -60,23 +60,23 @@ namespace NetworkingConstants {
     const QString VIRCADIA_CONTENT_CDN_URL = "https://cdn-1.vircadia.com/us-e-1/";
 
 #if USE_STABLE_GLOBAL_SERVICES
-    const QString ICE_SERVER_DEFAULT_HOSTNAME = "ice.overte.org:7337";
+    const QString ICE_SERVER_DEFAULT_HOSTNAME = "ice.overte.org";
 
     const QString STUN_SERVER_DEFAULT_HOSTNAME = "stun1.l.google.com";
     const unsigned short STUN_SERVER_DEFAULT_PORT = 19302;
 #else
-    const QString ICE_SERVER_DEFAULT_HOSTNAME = "ice.overte.org:7337";
+    const QString ICE_SERVER_DEFAULT_HOSTNAME = "ice.overte.org";
 
     const QString STUN_SERVER_DEFAULT_HOSTNAME = "stun2.l.google.com";
     const unsigned short STUN_SERVER_DEFAULT_PORT = 19302;
 #endif
 
-    const QUrl HELP_COMMUNITY_URL{ "https://vircadia.com/#community" };
-    const QUrl HELP_DOCS_URL{ "https://docs.vircadia.com" };
-    const QUrl HELP_FORUM_URL{ "https://forum.vircadia.com" };
-    const QUrl HELP_SCRIPTING_REFERENCE_URL{ "https://apidocs.vircadia.dev/" };
-    const QUrl HELP_RELEASE_NOTES_URL{ "https://docs.vircadia.com/release-notes.html" };
-    const QUrl HELP_BUG_REPORT_URL{ "https://github.com/vircadia/vircadia/issues" };
+    const QUrl HELP_COMMUNITY_URL{ "https://overte.org" };
+    const QUrl HELP_DOCS_URL{ "https://docs.overte.org" };
+    const QUrl HELP_FORUM_URL{ "https://overte.org" };
+    const QUrl HELP_SCRIPTING_REFERENCE_URL{ "https://apidocs.overte.org/" };
+    const QUrl HELP_RELEASE_NOTES_URL{ "https://docs.overte.org/en/latest/release-notes.html" };
+    const QUrl HELP_BUG_REPORT_URL{ "https://github.com/overte-org/overte/issues" };
 
     const QString DEFAULT_VIRCADIA_ADDRESS = "file:///~/serverless/tutorial.json";
     const QString DEFAULT_HOME_ADDRESS = "file:///~/serverless/tutorial.json";
