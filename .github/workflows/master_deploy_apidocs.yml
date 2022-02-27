@@ -28,7 +28,7 @@ jobs:
         jsdoc root.js -r api-mainpage.md -c config.json -d output
 
     - name: Deploy API-docs
-      uses: SamKirkland/FTP-Deploy-Action@4.2.0
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
         server: ftp.tuxfamily.org
         username: ${{ secrets.GHA_JSDOC_FTP_USER }}
