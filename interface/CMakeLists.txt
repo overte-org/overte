@@ -394,6 +394,12 @@ else()
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different
       "${PROJECT_SOURCE_DIR}/resources/serverless/redirect.json"
       "${RESOURCES_DEV_DIR}/serverless/redirect.json"
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory
+      "${PROJECT_SOURCE_DIR}/resources/serverless/Fonts"
+      "${RESOURCES_DEV_DIR}/serverless/Fonts"
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory
+      "${PROJECT_SOURCE_DIR}/resources/serverless/Scripts"
+      "${RESOURCES_DEV_DIR}/serverless/Scripts"
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different
       "${RESOURCES_RCC}"
       "${INTERFACE_EXEC_DIR}/resources.rcc"
