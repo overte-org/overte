@@ -13,7 +13,7 @@
 //
 
 (function() {
-    var CONFIG_WIZARD_URL = "qrc:///serverless/Scripts/wizard.html?v=" + Math.floor(Math.random() * 65000);
+    var CONFIG_WIZARD_URL = "file:///~/serverless/Scripts/wizard.html?v=" + Math.floor(Math.random() * 65000);
 
     var loaderEntityID;
     var configWizardEntityID;
