@@ -247,7 +247,7 @@ Item {
 
     Connections {
         target: loginDialog
-        onHandleLoginCompleted: {
+        function onHandleLoginCompleted() {
             console.log("Login Succeeded, linking steam account")
 
             if (loginDialog.isSteamRunning()) {
@@ -258,19 +258,19 @@ Item {
                 bodyLoader.item.height = root.pane.height
             }
         }
-        onHandleLoginFailed: {
+        function onHandleLoginFailed() {
             console.log("Login Failed")
             mainTextContainer.visible = true
             toggleLoading(false)
         }
-        onHandleLinkCompleted: {
+        function onHandleLinkCompleted() {
             console.log("Link Succeeded")
 
             bodyLoader.setSource("../WelcomeBody.qml", { "welcomeBack" : true })
             bodyLoader.item.width = root.pane.width
             bodyLoader.item.height = root.pane.height
         }
-        onHandleLinkFailed: {
+        function onHandleLinkFailed() {
             console.log("Link Failed")
             toggleLoading(false)
         }

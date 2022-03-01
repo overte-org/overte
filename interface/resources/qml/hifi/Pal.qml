@@ -84,7 +84,7 @@ Rectangle {
     }
     Connections {
         target: GlobalServices
-        onMyUsernameChanged: {
+        function onMyUsernameChanged() {
             myData.userName = Account.username;
             myDataChanged(); // Setting a property within an object isn't enough to update dependencies. This will do it.
         }
@@ -696,7 +696,7 @@ Rectangle {
 
             Connections {
                 target: nearbyTable
-                onTitlePaintedPosSignal: {
+                function onTitlePaintedPosSignal(column) {
                     if (column === 1) { // name column
                         questionRect.anchors.leftMargin = actionButtonWidth + nearbyTable.titlePaintedPos[column]
                     }
@@ -1395,6 +1395,6 @@ Rectangle {
     }
     Connections {
         target: nearbyTable.selection;
-        onSelectionChanged: pal.noticeSelection();
+        function onSelectionChanged() { pal.noticeSelection(); }
     }
 }
