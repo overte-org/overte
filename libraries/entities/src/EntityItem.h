@@ -559,6 +559,12 @@ public:
     BillboardMode getBillboardMode() const;
     virtual bool getRotateForPicking() const { return false; }
 
+    MirrorMode getMirrorMode() const;
+    void setMirrorMode(MirrorMode value);
+
+    QUuid getPortalExitID() const;
+    void setPortalExitID(const QUuid& value);
+
 signals:
     void spaceUpdate(std::pair<int32_t, glm::vec4> data);
 
@@ -739,6 +745,9 @@ protected:
     BillboardMode _billboardMode { BillboardMode::NONE };
 
     bool _cullWithParent { false };
+
+    MirrorMode _mirrorMode { MirrorMode::NONE };
+    QUuid _portalExitID;
 
     mutable bool _needsRenderUpdate { false };
 };

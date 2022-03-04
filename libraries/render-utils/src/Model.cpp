@@ -232,6 +232,8 @@ void Model::updateRenderItems() {
         auto renderWithZones = self->getRenderWithZones();
         auto renderItemKeyGlobalFlags = self->getRenderItemKeyGlobalFlags();
         bool cauterized = self->isCauterized();
+        auto mirrorMode = self->getMirrorMode();
+        const QUuid& portalExitID = self->getPortalExitID();
 
         render::Transaction transaction;
         for (int i = 0; i < (int) self->_modelMeshRenderItemIDs.size(); i++) {
@@ -246,7 +248,7 @@ void Model::updateRenderItems() {
 
             transaction.updateItem<ModelMeshPartPayload>(itemID, [modelTransform, meshState, useDualQuaternionSkinning,
                                                                   invalidatePayloadShapeKey, primitiveMode, billboardMode, renderItemKeyGlobalFlags,
-                                                                  cauterized, renderWithZones](ModelMeshPartPayload& data) {
+                                                                  cauterized, renderWithZones, mirrorMode, portalExitID](ModelMeshPartPayload& data) {
                 if (useDualQuaternionSkinning) {
                     data.updateClusterBuffer(meshState.clusterDualQuaternions);
                     data.computeAdjustedLocalBound(meshState.clusterDualQuaternions);
@@ -260,6 +262,8 @@ void Model::updateRenderItems() {
                 data.setCauterized(cauterized);
                 data.setRenderWithZones(renderWithZones);
                 data.setBillboardMode(billboardMode);
+                data.setMirrorMode(mirrorMode);
+                data.setPortalExitID(portalExitID);
                 data.updateKey(renderItemKeyGlobalFlags);
                 data.setShapeKey(invalidatePayloadShapeKey, primitiveMode, useDualQuaternionSkinning);
             });
@@ -1059,6 +1063,45 @@ void Model::setRenderWithZones(const QVector<QUuid>& renderWithZones, const rend
         for (auto item : _modelMeshRenderItemIDs) {
             transaction.updateItem<ModelMeshPartPayload>(item, [renderWithZones](ModelMeshPartPayload& data) {
                 data.setRenderWithZones(renderWithZones);
+            });
+        }
+        scene->enqueueTransaction(transaction);
+    }
+}
+
+void Model::setMirrorMode(MirrorMode mirrorMode, const render::ScenePointer& scene) {
+    if (_mirrorMode != mirrorMode) {
+        _mirrorMode = mirrorMode;
+        if (!scene) {
+            _needsFixupInScene = true;
+            return;
+        }
+
+        render::Transaction transaction;
+        auto renderItemsKey = _renderItemKeyGlobalFlags;
+        for (auto item : _modelMeshRenderItemIDs) {
+            transaction.updateItem<ModelMeshPartPayload>(item, [mirrorMode, renderItemsKey](ModelMeshPartPayload& data) {
+                data.setMirrorMode(mirrorMode);
+                data.updateKey(renderItemsKey);
+            });
+        }
+        scene->enqueueTransaction(transaction);
+    }
+}
+
+void Model::setPortalExitID(const QUuid& portalExitID, const render::ScenePointer& scene) {
+    if (_portalExitID != portalExitID) {
+        _portalExitID = portalExitID;
+        if (!scene) {
+            _needsFixupInScene = true;
+            return;
+        }
+
+        render::Transaction transaction;
+        auto renderItemsKey = _renderItemKeyGlobalFlags;
+        for (auto item : _modelMeshRenderItemIDs) {
+            transaction.updateItem<ModelMeshPartPayload>(item, [portalExitID, renderItemsKey](ModelMeshPartPayload& data) {
+                data.setPortalExitID(portalExitID);
             });
         }
         scene->enqueueTransaction(transaction);

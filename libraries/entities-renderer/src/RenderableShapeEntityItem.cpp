@@ -157,7 +157,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
             }
         }
     } else {
-        if (RenderPipelines::bindMaterials(materials, batch, args->_renderMode, args->_enableTexturing)) {
+        if (pipelineType == Pipeline::MATERIAL && RenderPipelines::bindMaterials(materials, batch, args->_renderMode, args->_enableTexturing)) {
             args->_details._materialSwitches++;
         }
 
