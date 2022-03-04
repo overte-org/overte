@@ -110,6 +110,8 @@ public:
         FIRST_LAYER_BIT, // 8 Exclusive Layers (encoded in 3 bits) available to organize the items in layers, an item can only belong to ONE layer
         LAST_LAYER_BIT = FIRST_LAYER_BIT + NUM_LAYER_BITS,
 
+        MIRROR,
+
         __SMALLER,        // Reserved bit for spatialized item to indicate that it is smaller than expected in the cell in which it belongs (probably because it overlaps over several smaller cells)
 
         NUM_FLAGS,      // Not a valid flag
@@ -162,6 +164,7 @@ public:
         Builder& withoutMetaCullGroup() { _flags.reset(META_CULL_GROUP); return (*this); }
         Builder& withSubMetaCulled() { _flags.set(SUB_META_CULLED); return (*this); }
         Builder& withoutSubMetaCulled() { _flags.reset(SUB_META_CULLED); return (*this); }
+        Builder& withMirror() { _flags.set(MIRROR); return (*this); }
 
         Builder& withTag(Tag tag) { _flags.set(FIRST_TAG_BIT + tag); return (*this); }
         // Set ALL the tags in one call using the Tag bits
@@ -204,6 +207,9 @@ public:
 
     bool isSubMetaCulled() const { return _flags[SUB_META_CULLED]; }
     void setSubMetaCulled(bool metaCulled) { (metaCulled ? _flags.set(SUB_META_CULLED) : _flags.reset(SUB_META_CULLED)); }
+
+    bool isNotMirror() const { return !_flags[MIRROR]; }
+    bool isMirror() const { return _flags[MIRROR]; }
 
     bool isTag(Tag tag) const { return _flags[FIRST_TAG_BIT + tag]; }
     uint8_t getTagBits() const { return ((_flags.to_ulong() & KEY_TAG_BITS_MASK) >> FIRST_TAG_BIT); }
@@ -274,7 +280,10 @@ public:
         Builder& withMetaCullGroup() { _value.set(ItemKey::META_CULL_GROUP);  _mask.set(ItemKey::META_CULL_GROUP); return (*this); }
 
         Builder& withoutSubMetaCulled() { _value.reset(ItemKey::SUB_META_CULLED); _mask.set(ItemKey::SUB_META_CULLED); return (*this); }
-        Builder& withSubMetaCulled() { _value.set(ItemKey::SUB_META_CULLED);  _mask.set(ItemKey::SUB_META_CULLED); return (*this); }
+        Builder& withSubMetaCulled()    { _value.set(ItemKey::SUB_META_CULLED);  _mask.set(ItemKey::SUB_META_CULLED); return (*this); }
+
+        Builder& withoutMirror()        { _value.reset(ItemKey::MIRROR); _mask.set(ItemKey::MIRROR); return (*this); }
+        Builder& withMirror()           { _value.set(ItemKey::MIRROR); _mask.set(ItemKey::MIRROR); return (*this); }
 
         Builder& withoutTag(ItemKey::Tag tagIndex)    { _value.reset(ItemKey::FIRST_TAG_BIT + tagIndex);  _mask.set(ItemKey::FIRST_TAG_BIT + tagIndex); return (*this); }
         Builder& withTag(ItemKey::Tag tagIndex)       { _value.set(ItemKey::FIRST_TAG_BIT + tagIndex);  _mask.set(ItemKey::FIRST_TAG_BIT + tagIndex); return (*this); }
@@ -292,6 +301,7 @@ public:
         static Builder transparentShape() { return Builder().withTypeShape().withTransparent().withWorldSpace(); }
         static Builder light() { return Builder().withTypeLight(); }
         static Builder meta() { return Builder().withTypeMeta(); }
+        static Builder mirror() { return Builder().withMirror(); }
         static Builder background() { return Builder().withViewSpace().withLayer(ItemKey::LAYER_BACKGROUND); }
         static Builder nothing() { return Builder().withNothing(); }
     };
@@ -440,6 +450,8 @@ public:
 
         virtual bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const = 0;
 
+        virtual void computeMirrorView(ViewFrustum& viewFrustum) const = 0;
+
         ~PayloadInterface() {}
 
         // Status interface is local to the base class
@@ -492,6 +504,8 @@ public:
     uint32_t fetchMetaSubItemBounds(ItemBounds& subItemBounds, Scene& scene, RenderArgs* args) const;
 
     bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const { return _payload->passesZoneOcclusionTest(containingZones); }
+
+    void computeMirrorView(ViewFrustum& viewFrustum) const { _payload->computeMirrorView(viewFrustum); }
 
     // Access the status
     const StatusPointer& getStatus() const { return _payload->getStatus(); }
@@ -547,6 +561,9 @@ template <class T> uint32_t metaFetchMetaSubItems(const std::shared_ptr<T>& payl
 // Allows payloads to determine if they should render or not, based on the zones that contain the current camera
 template <class T> bool payloadPassesZoneOcclusionTest(const std::shared_ptr<T>& payloadData, const std::unordered_set<QUuid>& containingZones) { return true; }
 
+// Mirror Interface
+template <class T> void payloadComputeMirrorView(const std::shared_ptr<T>& payloadData, ViewFrustum& viewFrustum) { return; }
+
 // THe Payload class is the real Payload to be used
 // THis allow anything to be turned into a Payload as long as the required interface functions are available
 // When creating a new kind of payload from a new "stuff" class then you need to create specialized version for "stuff"
@@ -572,6 +589,8 @@ public:
     virtual uint32_t fetchMetaSubItems(ItemIDs& subItems) const override { return metaFetchMetaSubItems<T>(_data, subItems); }
 
     virtual bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const override { return payloadPassesZoneOcclusionTest<T>(_data, containingZones); }
+
+    virtual void computeMirrorView(ViewFrustum& viewFrustum) const override { return payloadComputeMirrorView<T>(_data, viewFrustum); }
 
 protected:
     DataPointer _data;
@@ -628,6 +647,7 @@ public:
     virtual void render(RenderArgs* args) = 0;
     virtual uint32_t metaFetchMetaSubItems(ItemIDs& subItems) const = 0;
     virtual bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const = 0;
+    virtual void computeMirrorView(ViewFrustum& viewFrustum) const = 0;
 
     // FIXME: this isn't the best place for this since it's only used for ModelEntities, but currently all Entities use PayloadProxyInterface
     virtual void handleBlendedVertices(int blendshapeNumber, const QVector<BlendshapeOffset>& blendshapeOffsets,
@@ -640,6 +660,7 @@ template <> void payloadRender(const PayloadProxyInterface::Pointer& payload, Re
 template <> uint32_t metaFetchMetaSubItems(const PayloadProxyInterface::Pointer& payload, ItemIDs& subItems);
 template <> const ShapeKey shapeGetShapeKey(const PayloadProxyInterface::Pointer& payload);
 template <> bool payloadPassesZoneOcclusionTest(const PayloadProxyInterface::Pointer& payload, const std::unordered_set<QUuid>& containingZones);
+template <> void payloadComputeMirrorView(const PayloadProxyInterface::Pointer& payload, ViewFrustum& viewFrustum);
 
 typedef Item::PayloadPointer PayloadPointer;
 typedef std::vector<PayloadPointer> Payloads;

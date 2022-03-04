@@ -160,4 +160,11 @@ namespace render {
         }
         return payload->passesZoneOcclusionTest(containingZones);
     }
+
+    template <> void payloadComputeMirrorView(const PayloadProxyInterface::Pointer& payload, ViewFrustum& viewFrustum) {
+        if (!payload) {
+            return;
+        }
+        payload->computeMirrorView(viewFrustum);
+    }
 }

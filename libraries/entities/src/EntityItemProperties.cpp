@@ -420,6 +420,23 @@ void EntityItemProperties::setEntityHostTypeFromString(const QString& entityHost
     }
 }
 
+inline void addMirrorMode(QHash<QString, MirrorMode>& lookup, MirrorMode mirrorMode) { lookup[MirrorModeHelpers::getNameForMirrorMode(mirrorMode)] = mirrorMode; }
+const QHash<QString, MirrorMode> stringToMirrorModeLookup = [] {
+    QHash<QString, MirrorMode> toReturn;
+    addMirrorMode(toReturn, MirrorMode::NONE);
+    addMirrorMode(toReturn, MirrorMode::MIRROR);
+    addMirrorMode(toReturn, MirrorMode::PORTAL);
+    return toReturn;
+}();
+QString EntityItemProperties::getMirrorModeAsString() const { return MirrorModeHelpers::getNameForMirrorMode(_mirrorMode); }
+void EntityItemProperties::setMirrorModeFromString(const QString& mirrorMode) {
+    auto mirrorModeItr = stringToMirrorModeLookup.find(mirrorMode.toLower());
+    if (mirrorModeItr != stringToMirrorModeLookup.end()) {
+        _mirrorMode = mirrorModeItr.value();
+        _mirrorModeChanged = true;
+    }
+}
+
 EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     EntityPropertyFlags changedProperties;
 
@@ -451,6 +468,8 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_RENDER_WITH_ZONES, renderWithZones);
     CHECK_PROPERTY_CHANGE(PROP_BILLBOARD_MODE, billboardMode);
     changedProperties += _grab.getChangedProperties();
+    CHECK_PROPERTY_CHANGE(PROP_MIRROR_MODE, mirrorMode);
+    CHECK_PROPERTY_CHANGE(PROP_PORTAL_EXIT_ID, portalExitID);
 
     // Physics
     CHECK_PROPERTY_CHANGE(PROP_DENSITY, density);
@@ -834,6 +853,11 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     property to control which axis is facing you.
  *
  * @property {Entities.Grab} grab - The entity's grab-related properties.
+ *
+ * @property {MirrorMode} mirrorMode="none" - If this entity should render as a mirror (reflecting the view of the camera),
+ *     a portal (reflecting the view through its <code>portalExitID</code>), or normally.
+ * @property {Uuid} portalExitID=Uuid.NULL - The ID of the entity that should act as the portal exit if the <code>mirrorMode</code>
+ *     is set to <code>portal</code>.
  *
  * @property {string} itemName="" - Certifiable name of the Marketplace item.
  * @property {string} itemDescription="" - Certifiable description of the Marketplace item.
@@ -1640,6 +1664,8 @@ QScriptValue EntityItemProperties::copyToScriptValue(QScriptEngine* engine, bool
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_RENDER_WITH_ZONES, renderWithZones);
     COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_BILLBOARD_MODE, billboardMode, getBillboardModeAsString());
     _grab.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
+    COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_MIRROR_MODE, mirrorMode, getMirrorModeAsString());
+    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PORTAL_EXIT_ID, portalExitID);
 
     // Physics
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_DENSITY, density);
@@ -2062,6 +2088,8 @@ void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool 
     COPY_PROPERTY_FROM_QSCRIPTVALUE(renderWithZones, qVectorQUuid, setRenderWithZones);
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(billboardMode, BillboardMode);
     _grab.copyFromScriptValue(object, _defaultSettings);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(mirrorMode, MirrorMode);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(portalExitID, QUuid, setPortalExitID);
 
     // Physics
     COPY_PROPERTY_FROM_QSCRIPTVALUE(density, float, setDensity);
@@ -2362,6 +2390,8 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(renderWithZones);
     COPY_PROPERTY_IF_CHANGED(billboardMode);
     _grab.merge(other._grab);
+    COPY_PROPERTY_IF_CHANGED(mirrorMode);
+    COPY_PROPERTY_IF_CHANGED(portalExitID);
 
     // Physics
     COPY_PROPERTY_IF_CHANGED(density);
@@ -2682,6 +2712,8 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
             ADD_GROUP_PROPERTY_TO_MAP(PROP_GRAB_EQUIPPABLE_INDICATOR_OFFSET, Grab, grab,
                                       EquippableIndicatorOffset, equippableIndicatorOffset);
         }
+        ADD_PROPERTY_TO_MAP(PROP_MIRROR_MODE, MirrorMode, mirrorMode, MirrorMode);
+        ADD_PROPERTY_TO_MAP(PROP_PORTAL_EXIT_ID, PortalExitID, portalExitID, QUuid);
 
         // Physics
         ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_DENSITY, Density, density, float,
@@ -3158,6 +3190,8 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
             _staticGrab.setProperties(properties);
             _staticGrab.appendToEditPacket(packetData, requestedProperties, propertyFlags,
                                            propertiesDidntFit, propertyCount, appendState);
+            APPEND_ENTITY_PROPERTY(PROP_MIRROR_MODE, (uint32_t)properties.getMirrorMode());
+            APPEND_ENTITY_PROPERTY(PROP_PORTAL_EXIT_ID, properties.getPortalExitID());
 
             // Physics
             APPEND_ENTITY_PROPERTY(PROP_DENSITY, properties.getDensity());
@@ -3650,6 +3684,8 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
     READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_RENDER_WITH_ZONES, QVector<QUuid>, setRenderWithZones);
     READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_BILLBOARD_MODE, BillboardMode, setBillboardMode);
     properties.getGrab().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
+    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_MIRROR_MODE, MirrorMode, setMirrorMode);
+    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PORTAL_EXIT_ID, QUuid, setPortalExitID);
 
     // Physics
     READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_DENSITY, float, setDensity);
@@ -4072,6 +4108,8 @@ void EntityItemProperties::markAllChanged() {
     _renderWithZonesChanged = true;
     _billboardModeChanged = true;
     _grab.markAllChanged();
+    _mirrorModeChanged = true;
+    _portalExitIDChanged = true;
 
     // Physics
     _densityChanged = true;
@@ -4485,6 +4523,12 @@ QList<QString> EntityItemProperties::listChangedProperties() {
         out += "billboardMode";
     }
     getGrab().listChangedProperties(out);
+    if (mirrorModeChanged()) {
+        out += "mirrorMode";
+    }
+    if (portalExitIDChanged()) {
+        out += "portalExitID";
+    }
 
     // Physics
     if (densityChanged()) {

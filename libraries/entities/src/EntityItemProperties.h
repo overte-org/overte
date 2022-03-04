@@ -68,6 +68,7 @@
 #include "GizmoType.h"
 #include "TextEffect.h"
 #include "TextAlignment.h"
+#include "MirrorMode.h"
 
 const quint64 UNKNOWN_CREATED_TIME = 0;
 
@@ -200,6 +201,8 @@ public:
     DEFINE_PROPERTY_REF(PROP_RENDER_WITH_ZONES, RenderWithZones, renderWithZones, QVector<QUuid>, QVector<QUuid>());
     DEFINE_PROPERTY_REF_ENUM(PROP_BILLBOARD_MODE, BillboardMode, billboardMode, BillboardMode, BillboardMode::NONE);
     DEFINE_PROPERTY_GROUP(Grab, grab, GrabPropertyGroup);
+    DEFINE_PROPERTY_REF_ENUM(PROP_MIRROR_MODE, MirrorMode, mirrorMode, MirrorMode, MirrorMode::NONE);
+    DEFINE_PROPERTY_REF(PROP_PORTAL_EXIT_ID, PortalExitID, portalExitID, QUuid, UNKNOWN_ENTITY_ID);
 
     // Physics
     DEFINE_PROPERTY(PROP_DENSITY, Density, density, float, ENTITY_ITEM_DEFAULT_DENSITY);
