@@ -492,7 +492,7 @@ Item {
 
     Connections {
         target: loginDialog
-        function onHandleCreateCompleted90 {
+        function onHandleCreateCompleted() {
             console.log("Create Succeeded");
             if (completeProfileBody.withSteam) {
                 if (completeProfileBody.loginDialogPoppedUp) {
