@@ -1,0 +1,3 @@
+name = TELEPORTER
+filename = qrc:///serverless/Models/teleporter.fbx
+materialMap = [{"mat::EXO": {"materials":[{ "name": "MAIN", "albedo": [0.06, 0.06, 0.06], "roughness": 0.26, "metallic": 1.0, "normalMap": "qrc:///serverless/Textures/concreteNormal512.jpg", "cullFaceMode": "CULL_NONE", "model": "hifi_pbr"}]}}, {"mat::LIGHT": {"materials":[{ "name": "LIGHT", "albedo": [1, 1, 1], "roughness": 0.5, "metallic": 0.01, "emissive": [1.51466666, 0.879843137, 2.84], "cullFaceMode": "CULL_NONE", "model": "hifi_pbr"}]}}, {"mat::ENDO": {"materials":[{ "name": "ENDO", "albedo": [0.85, 0.85, 0.85], "roughness": 0.26, "metallic": 1.0, "normalMap": "qrc:///serverless/Textures/concreteNormal512.jpg", "cullFaceMode": "CULL_NONE", "model": "hifi_pbr"}]}}]
