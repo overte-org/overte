@@ -52,7 +52,7 @@ endif()
     def __init__(self, args):
         self.args = args
         self.configFilePath = os.path.join(args.build_root, 'qt.cmake')
-        self.version = os.getenv('VIRCADIA_USE_QT_VERSION', '5.15.2')
+        self.version = os.getenv('OVERTE_USE_QT_VERSION', '5.15.2')
         self.assets_url = hifi_utils.readEnviromentVariableFromFile(args.build_root, 'EXTERNAL_BUILD_ASSETS')
 
         # OS dependent information
@@ -62,7 +62,7 @@ endif()
         system_qt = False
 
         # Here we handle the 3 possible cases of dealing with Qt:
-        if os.getenv('VIRCADIA_USE_SYSTEM_QT', "") != "":
+        if os.getenv('OVERTE_USE_SYSTEM_QT', "") != "":
             # 1. Using the system provided Qt. This is only recommended for Qt 5.15.0 and above,
             # as it includes a required fix on Linux.
             #
@@ -78,11 +78,11 @@ endif()
             system_qt = True
             print("Using system Qt")
 
-        elif os.getenv('VIRCADIA_QT_PATH', "") != "":
+        elif os.getenv('OVERTE_QT_PATH', "") != "":
             # 2. Using an user-provided directory.
-            # VIRCADIA_QT_PATH must point to a directory with a Qt install in it.
+            # OVERTE_QT_PATH must point to a directory with a Qt install in it.
 
-            self.path = os.getenv('VIRCADIA_QT_PATH')
+            self.path = os.getenv('OVERTE_QT_PATH')
             self.fullPath = self.path
             self.cmakePath = os.path.join(self.fullPath, 'lib', 'cmake')
 
@@ -100,7 +100,7 @@ endif()
             # For a pre-built qt, however, we have to unpack it. The archive is required to contain
             # a qt5-install directory in it.
 
-            self.path = os.path.expanduser("~/vircadia-files/qt")
+            self.path = os.path.expanduser("~/overte-files/qt")
             self.fullPath = os.path.join(self.path, 'qt5-install')
             self.cmakePath = os.path.join(self.fullPath, 'lib', 'cmake')
 
@@ -193,7 +193,7 @@ endif()
         print("It's also possible to build Qt for your distribution, please see the documentation at:")
         print("https://github.com/overte-org/overte/tree/master/tools/qt-builder")
         print("")
-        print("Alternatively, you can try building against the system Qt by setting the VIRCADIA_USE_SYSTEM_QT environment variable.")
+        print("Alternatively, you can try building against the system Qt by setting the OVERTE_USE_SYSTEM_QT environment variable.")
         print("You'll need to install the development packages, and to have Qt 5.15.0 or later.")
 
     def writeConfig(self):
@@ -236,7 +236,7 @@ endif()
         print('')
         print("If this is a recent distribution, dating from 2021 or so, you can try building")
         print("against the system Qt by running this command, and trying again:")
-        print("    export VIRCADIA_USE_SYSTEM_QT=1")
+        print("    export OVERTE_USE_SYSTEM_QT=1")
         print("")
         hifi_utils.color('clear')
         print("If you'd like to try to build Qt from source either for building Overte, or")

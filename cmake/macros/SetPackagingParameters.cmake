@@ -5,6 +5,7 @@
 #  Created by Leonardo Murillo on 07/14/2015.
 #  Copyright 2015 High Fidelity, Inc.
 #  Copyright 2020 Vircadia contributors.
+#  Copyright (c) 2022, Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -39,7 +40,7 @@ macro(SET_PACKAGING_PARAMETERS)
   set(SERVER_COMPONENT server)
 
   if (APPLE)
-    set(INTERFACE_BUNDLE_NAME "Vircadia")
+    set(INTERFACE_BUNDLE_NAME "Overte")
   else()
     set(INTERFACE_BUNDLE_NAME "interface")
   endif()
@@ -188,7 +189,7 @@ macro(SET_PACKAGING_PARAMETERS)
       set(INTERFACE_SHORTCUT_NAME "Overte")
       set(CONSOLE_SHORTCUT_NAME "Console")
       set(SANDBOX_SHORTCUT_NAME "Server")
-      set(APP_USER_MODEL_ID "com.vircadia.console")
+      set(APP_USER_MODEL_ID "com.overte.console")
     else ()
       set(INTERFACE_SHORTCUT_NAME "Overte - ${BUILD_VERSION_NO_SHA}")
       set(CONSOLE_SHORTCUT_NAME "Console - ${BUILD_VERSION_NO_SHA}")

@@ -12,7 +12,7 @@ macro(SETUP_HIFI_CLIENT_SERVER_PLUGIN)
 
   if (BUILD_CLIENT)
     if (APPLE)
-      add_dependencies(Vircadia ${TARGET_NAME})
+      add_dependencies(Overte ${TARGET_NAME})
     else()
       add_dependencies(interface ${TARGET_NAME})
     endif()

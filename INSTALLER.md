@@ -70,7 +70,7 @@ For code signing to work, you will need to set the `HF_PFX_FILE` and `HF_PFX_PAS
 #### Creating the Installer
     
 1.  Perform a clean cmake from a new terminal.
-1.  Open the `vircadia.sln` solution with elevated (administrator) permissions on Visual Studio and select the **Release** configuration.
+1.  Open the `overte.sln` solution with elevated (administrator) permissions on Visual Studio and select the **Release** configuration.
 1.  Build the solution.
 1.  Build `packaged-server-console-npm-install` (found under **hidden/Server Console**)
 1.  Build `packaged-server-console` (found under **Server Console**)  
@@ -136,11 +136,11 @@ For code signing to work, you will need to set the `HF_PFX_FILE` and `HF_PFX_PAS
     ```
 3. Run Overte Builder.
     ```bash
-    ./vircadia-builder --build server
+    ./overte-builder --build server
     ```
 4. If Overte Builder needed to install dependencies and asks you to run it again then do so. Otherwise, skip to the next step.
     ```bash
-    ./vircadia-builder --build server
+    ./overte-builder --build server
     ```
 5. Overte Builder will ask you to configure it to build the server. The values will be prefilled with defaults, the following steps will explain what they are and what you might want to put. *Advanced users: See [here](BUILD.md#possible-environment-variables) for possible environment variables and settings.*
 6. This value is the Git repository of Overte. You can set this URL to your fork of the Overte repository if you need to.
@@ -169,7 +169,7 @@ For code signing to work, you will need to set the `HF_PFX_FILE` and `HF_PFX_PAS
     ```
 11. This value is the directory that Overte will get installed to. You should leave this as the default value unless you are an advanced user.
     ```text
-    Installation dir: /home/ubuntu/Vircadia
+    Installation dir: /home/ubuntu/Overte
     ```
 12. This value is the number of CPU cores that the Overte Builder will use to compile the Overte server. By default it will use all cores available on your build server. You should leave this as the default value it gives you for your build server.
     ```text
@@ -183,7 +183,7 @@ For code signing to work, you will need to set the `HF_PFX_FILE` and `HF_PFX_PAS
 15. Overte Builder will now run, it may take a while. See this [table](https://github.com/overte-org/overte-builder#how-long-does-it-take) for estimated times.
 16. Navigate to the `pkg-scripts` directory.
     ```bash
-    cd ../Vircadia/source/pkg-scripts/
+    cd ../Overte/source/pkg-scripts/
     ```
 17. Generate the .deb package. Set `DEBVERSION` to the same version you entered for the `Release number` on Overte Builder. Set `DEBEMAIL` and `DEBFULLNAME` to your own information to be packaged with the release. *The version cannot begin with a letter and cannot include underscores or dashes in it.*
     ```bash
@@ -213,11 +213,11 @@ For code signing to work, you will need to set the `HF_PFX_FILE` and `HF_PFX_PAS
     ```
 4. Run Overte Builder.
     ```bash
-    ./vircadia-builder --build server
+    ./overte-builder --build server
     ```
 5. If Overte Builder needed to install dependencies and asks you to run it again then do so. Otherwise, skip to the next step.
     ```bash
-    ./vircadia-builder --build server
+    ./overte-builder --build server
     ```
 6. Overte Builder will ask you to configure it to build the server. The values will be prefilled with defaults, the following steps will explain what they are and what you might want to put. *Advanced users: See [here](BUILD.md#possible-environment-variables) for possible environment variables and settings.*
 7. This value is the Git repository of Overte. You can set this URL to your fork of the Overte repository if you need to.
@@ -246,7 +246,7 @@ For code signing to work, you will need to set the `HF_PFX_FILE` and `HF_PFX_PAS
     ```
 12. This value is the directory that Overte will get installed to. You should leave this as the default value unless you are an advanced user.
     ```text
-    Installation dir: /root/Vircadia
+    Installation dir: /root/Overte
     ```
 13. This value is the number of CPU cores that the Overte Builder will use to compile the Overte server. By default it will use all cores available on your build server given you have enough memory. You should leave this as the default value it gives you for your build server.
     ```text
@@ -260,7 +260,7 @@ For code signing to work, you will need to set the `HF_PFX_FILE` and `HF_PFX_PAS
 16. Overte Builder will now run, it may take a while. See this [table](https://github.com/overte-org/overte-builder#how-long-does-it-take) for estimated times.
 17. Navigate to the `pkg-scripts` directory.
     ```bash
-    cd ../Vircadia/source/pkg-scripts/
+    cd ../Overte/source/pkg-scripts/
     ```
 18. Generate the .rpm package. Set `RPMVERSION` to the same version you entered for the `Release number` on Overte Builder. *The version cannot begin with a letter and cannot include underscores or dashes in it.*
     ```bash

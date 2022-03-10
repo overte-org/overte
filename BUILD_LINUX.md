@@ -1,6 +1,6 @@
 # Build Linux
 
-*Last Updated on January 6, 2022*
+*Last Updated on March 10, 2022*
 
 Please read the [general build guide](BUILD.md) for information on dependencies required for all platforms. Only Linux specific instructions are found in this file.
 
@@ -101,19 +101,19 @@ git tag
 ### Using a custom Qt build
 
 Qt binaries are only provided for Ubuntu. In order to build on other distributions, a Qt5 install
-needs to be provided by setting the `VIRCADIA_QT_PATH` environment variable to a directory containing
+needs to be provided by setting the `OVERTE_QT_PATH` environment variable to a directory containing
 a Qt install.
 
 ### Using the system's Qt
 
 The system's Qt can be used, if the development packages are installed, by setting the
-`VIRCADIA_USE_SYSTEM_QT` environment variable. The minimum recommended version is Qt 5.15.2, which is
+`OVERTE_USE_SYSTEM_QT` environment variable. The minimum recommended version is Qt 5.15.2, which is
 also the last version available in the Qt 5 branch. It is expected that Linux distributions will have
 Qt 5.15.2 available for a long time.
 
 ### Architecture support
 
-If the build is intended to be packaged for distribution, the `VIRCADIA_CPU_ARCHITECTURE`
+If the build is intended to be packaged for distribution, the `OVERTE_CPU_ARCHITECTURE`
 CMake variable needs to be set to an architecture specific value.
 
 By default, it is set to `-march=native -mtune=native`, which yields builds optimized for a particular
@@ -121,7 +121,7 @@ machine, but these builds will not work on machines lacking same CPU instruction
 
 For packaging, it is recommended to set it to a different value, for example `-msse3`. This will help ensure that the build will run on all reasonably modern CPUs.
 
-Setting `VIRCADIA_CPU_ARCHITECTURE` to an empty string will use the default compiler settings and yield maximum compatibility.
+Setting `OVERTE_CPU_ARCHITECTURE` to an empty string will use the default compiler settings and yield maximum compatibility.
 
 ### Compiling
 
@@ -137,7 +137,7 @@ Prepare makefiles:
 cmake ..
 ```
 
-If cmake fails with a vcpkg error, then delete `~/vircadia-files/vcpkg/`.  
+If cmake fails with a vcpkg error, then delete `~/overte-files/vcpkg/`.  
 
 #### Server
 
@@ -190,4 +190,4 @@ Go to "localhost" in the running Interface to visit your newly launched Domain s
 If your goal is to set up a development environment, it is desirable to set the directory that vcpkg builds into with the `HIFI_VCPKG_BASE` environment variable.
 For example, you might set `HIFI_VCPKG_BASE` to `/home/$USER/vcpkg`.
 
-By default, vcpkg will build in the `~/vircadia-files/vcpkg/` directory.
+By default, vcpkg will build in the `~/overte-files/vcpkg/` directory.

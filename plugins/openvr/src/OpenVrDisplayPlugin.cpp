@@ -2,13 +2,14 @@
 //  Created by Bradley Austin Davis on 2015/05/12
 //  Copyright 2015 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright (c) 2022, Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 #include "OpenVrDisplayPlugin.h"
 
-// Odd ordering of header is required to avoid 'macro redinition warnings'
+// Odd ordering of header is required to avoid 'macro redefinition warnings'
 #include <AudioClient.h>
 
 #include <QtCore/QThread>

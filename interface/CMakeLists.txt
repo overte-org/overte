@@ -1,6 +1,6 @@
 if (APPLE)
-  # Make the OSX DMG app be Vircadia.app.
-  set(TARGET_NAME Vircadia)
+  # Make the OSX DMG app be Overte.app.
+  set(TARGET_NAME Overte)
 else()
   set(TARGET_NAME interface)
 endif()
@@ -121,14 +121,14 @@ if (APPLE)
   # configure CMake to use a custom Info.plist
   set_target_properties(${this_target} PROPERTIES MACOSX_BUNDLE_INFO_PLIST MacOSXBundleInfo.plist.in)
 
-  set(MACOSX_BUNDLE_BUNDLE_NAME "Vircadia")
+  set(MACOSX_BUNDLE_BUNDLE_NAME "Overte")
   if (PRODUCTION_BUILD)
-    set(MACOSX_BUNDLE_GUI_IDENTIFIER com.vircadia.interface)
+    set(MACOSX_BUNDLE_GUI_IDENTIFIER com.overte.interface)
   else ()
     if (DEV_BUILD)
-      set(MACOSX_BUNDLE_GUI_IDENTIFIER com.vircadia.interface-dev)
+      set(MACOSX_BUNDLE_GUI_IDENTIFIER com.overte.interface-dev)
     elseif (PR_BUILD)
-      set(MACOSX_BUNDLE_GUI_IDENTIFIER com.vircadia.interface-pr)
+      set(MACOSX_BUNDLE_GUI_IDENTIFIER com.overte.interface-pr)
     endif ()
   endif ()
 
@@ -159,7 +159,7 @@ elseif (WIN32)
   set(CONFIGURE_ICON_RC_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/Icon.rc")
   configure_file("${HF_CMAKE_DIR}/templates/Icon.rc.in" ${CONFIGURE_ICON_RC_OUTPUT})
 
-  set(APP_FULL_NAME "Vircadia")
+  set(APP_FULL_NAME "Overte")
   set(CONFIGURE_VERSION_INFO_RC_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/VersionInfo.rc")
   configure_file("${HF_CMAKE_DIR}/templates/VersionInfo.rc.in" ${CONFIGURE_VERSION_INFO_RC_OUTPUT})
 
@@ -296,7 +296,7 @@ target_link_libraries(
   ${PLATFORM_QT_LIBRARIES}
 )
 
-if (UNIX AND NOT ANDROID AND NOT VIRCADIA_THREAD_DEBUGGING)
+if (UNIX AND NOT ANDROID AND NOT OVERTE_THREAD_DEBUGGING)
     if (CMAKE_SYSTEM_NAME MATCHES "Linux")
         # Linux
         target_link_libraries(${TARGET_NAME} pthread atomic)
@@ -435,7 +435,7 @@ else()
   endif()
 endif()
 
-if ("$ENV{VIRCADIA_USE_SYSTEM_QT}" STREQUAL "")
+if ("$ENV{OVERTE_USE_SYSTEM_QT}" STREQUAL "")
   if (DEV_BUILD AND (APPLE OR UNIX))
     # create a qt.conf file to override hard-coded search paths in Qt libs
     set(QT_LIB_PATH "${QT_CMAKE_PREFIX_PATH}/../..")

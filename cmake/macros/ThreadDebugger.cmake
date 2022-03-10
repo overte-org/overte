@@ -2,21 +2,22 @@
 #  MemoryDebugger.cmake
 #
 #  Copyright 2021 Vircadia Contributors
+#  Copyright (c) 2022, Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 #
 
 macro(SETUP_THREAD_DEBUGGER)
-if ("$ENV{VIRCADIA_THREAD_DEBUGGING}")
-  if (VIRCADIA_MEMORY_DEBUGGING )
+if ("$ENV{OVERTE_THREAD_DEBUGGING}")
+  if (OVERTE_MEMORY_DEBUGGING )
     message(FATAL_ERROR "Thread debugging and memory debugging can't be enabled at the same time." )
   endif ()
 
-  SET(VIRCADIA_THREAD_DEBUGGING true)
+  SET(OVERTE_THREAD_DEBUGGING true)
 endif ()
 
-if (VIRCADIA_THREAD_DEBUGGING)
+if (OVERTE_THREAD_DEBUGGING)
   if (UNIX)
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         # for clang on Linux

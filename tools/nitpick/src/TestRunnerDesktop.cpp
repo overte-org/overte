@@ -4,6 +4,8 @@
 //  Created by Nissim Hadar on 1 Sept 2018.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright (c) 2022, Overte e.V.
+//
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -78,9 +80,9 @@ void TestRunnerDesktop::setWorkingFolderAndEnableControls() {
     setWorkingFolder(_workingFolderLabel);
 
 #ifdef Q_OS_WIN
-    _installationFolder = _workingFolder + "/Vircadia";
+    _installationFolder = _workingFolder + "/Overte";
 #elif defined Q_OS_MAC
-    _installationFolder = _workingFolder + "/Vircadia";
+    _installationFolder = _workingFolder + "/Overte";
 #endif
 
     nitpick->enableRunTabControls();
@@ -261,7 +263,7 @@ void TestRunnerDesktop::runInstaller() {
     script.write("#!/bin/sh\n\n");
     script.write("VOLUME=`hdiutil attach \"$1\" | grep Volumes | awk '{print $3}'`\n");
 
-    QString folderName {"Vircadia"};
+    QString folderName {"Overte"};
     if (!_runLatest->isChecked()) {
         folderName += QString(" - ") + getPRNumberFromURL(_url->text());
     }
@@ -321,10 +323,10 @@ void TestRunnerDesktop::saveExistingHighFidelityAppDataFolder() {
     dataDirectory = QDir::homePath() + "/Library/Application Support";
 #endif
     if (_runLatest->isChecked()) {
-        _appDataFolder = dataDirectory + "/Vircadia";
+        _appDataFolder = dataDirectory + "/Overte";
     } else {
         // We are running a PR build
-        _appDataFolder = dataDirectory + "/Vircadia - " + getPRNumberFromURL(_url->text());
+        _appDataFolder = dataDirectory + "/Overte - " + getPRNumberFromURL(_url->text());
     }
 
     _savedAppDataFolder = dataDirectory + "/" + UNIQUE_FOLDER_NAME;

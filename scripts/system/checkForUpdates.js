@@ -2,6 +2,7 @@
 //
 //  Created by Kalila L. on 8/27/20
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -31,11 +32,11 @@ function retrieveMetadata() {
 }
 
 function checkForUpdates() {
-    var vircadiaMetadata = retrieveMetadata();
+    var overteMetadata = retrieveMetadata();
     
     // Don't check for updates on a dev build.
-    if (vircadiaMetadata && currentVersion !== "dev") {
-        var checkVersion = semanticVersionCompare(currentVersion, vircadiaMetadata[currentBuildType].version);
+    if (overteMetadata && currentVersion !== "dev") {
+        var checkVersion = semanticVersionCompare(currentVersion, overteMetadata[currentBuildType].version);
         
         // An update is available!
         if (checkVersion === -1) {
@@ -45,7 +46,7 @@ function checkForUpdates() {
                 channel: "Local",
                 position: MyAvatar.position,
                 colour: notificationColor,
-                message: notificationText + vircadiaMetadata[currentBuildType].version,
+                message: notificationText + overteMetadata[currentBuildType].version,
             }));
         }
     }

@@ -1,5 +1,6 @@
 #  Created by Bradley Austin Davis on 2017/09/02
 #  Copyright 2013-2017 High Fidelity, Inc.
+#  Copyright (c) 2022, Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -51,7 +52,7 @@ endfunction()
 # Sets the QT_CMAKE_PREFIX_PATH and QT_DIR variables
 # Also enables CMAKE_AUTOMOC and CMAKE_AUTORCC
 macro(setup_qt)
-    if ($ENV{VIRCADIA_USE_SYSTEM_QT})
+    if ($ENV{OVERTE_USE_SYSTEM_QT})
         message(STATUS "Using system Qt")
     else()
         # if we are in a development build and QT_CMAKE_PREFIX_PATH is specified

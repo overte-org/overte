@@ -2,21 +2,22 @@
 #  MemoryDebugger.cmake
 #
 #  Copyright 2015 High Fidelity, Inc.
+#  Copyright (c) 2022, Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 #
 
 macro(SETUP_MEMORY_DEBUGGER)
-if ("$ENV{VIRCADIA_MEMORY_DEBUGGING}")
-  if (VIRCADIA_THREAD_DEBUGGING)
+if ("$ENV{OVERTE_MEMORY_DEBUGGING}")
+  if (OVERTE_THREAD_DEBUGGING)
     message(FATAL_ERROR "Thread debugging and memory debugging can't be enabled at the same time." )
   endif()
 
-  SET( VIRCADIA_MEMORY_DEBUGGING true )
+  SET( OVERTE_MEMORY_DEBUGGING true )
 endif ()
 
-if (VIRCADIA_MEMORY_DEBUGGING)
+if (OVERTE_MEMORY_DEBUGGING)
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address -fsanitize-recover=address")
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined -fsanitize=address -fsanitize-recover=address")
