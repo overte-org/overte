@@ -11,9 +11,10 @@ def main():
     bucket_name = os.environ['UPLOAD_BUCKET']
     upload_prefix = os.environ['UPLOAD_PREFIX']
     release_number = os.environ['RELEASE_NUMBER']
-    full_prefix = upload_prefix + '/' + release_number
+    full_prefix = upload_prefix + release_number
     S3 = boto3.client('s3', region_name=os.environ['UPLOAD_REGION'], endpoint_url=os.environ['UPLOAD_ENDPOINT'])
     path = os.path.join(os.getcwd(), os.environ['ARTIFACT_PATTERN'])
+    print("Checking for files to upload in {}..".format(path))
     files = glob.glob(path, recursive=False)
     for archiveFile in files:
         filePath, fileName = os.path.split(archiveFile)
