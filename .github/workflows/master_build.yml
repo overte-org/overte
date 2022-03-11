@@ -97,7 +97,7 @@ jobs:
         echo "${{ steps.buildenv1.outputs.symbols_archive }}"
         echo "ARTIFACT_PATTERN=Overte-*.$INSTALLER_EXT" >> $GITHUB_ENV
         # Setting short commit SHA for use as RELEASE_NAME in generated installers.
-        echo "RELEASE_NAME=${{ steps.buildenv1.outputs.github_sha_short }}"
+        echo "RELEASE_NAME=${{ steps.buildenv1.outputs.github_sha_short }}" >> $GITHUB_ENV
         # Build type variables
         if [ "${{ matrix.build_type }}" = "full" ]; then
           echo "CLIENT_ONLY=FALSE" >> $GITHUB_ENV
