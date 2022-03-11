@@ -101,10 +101,10 @@ jobs:
         # Build type variables
         if [ "${{ matrix.build_type }}" = "full" ]; then
           echo "CLIENT_ONLY=FALSE" >> $GITHUB_ENV
-          echo "INSTALLER=Overte-$BUILD_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "INSTALLER=Overte-master$BUILD_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
         else
           echo "CLIENT_ONLY=TRUE" >> $GITHUB_ENV
-          echo "INSTALLER=Overte-Interface-$BUILD_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "INSTALLER=Overte-Interface-master$BUILD_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
     - name: Clear working directory
       if: startsWith(matrix.os, 'windows')
