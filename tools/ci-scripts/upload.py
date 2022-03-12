@@ -19,7 +19,7 @@ def main():
     for archiveFile in files:
         filePath, fileName = os.path.split(archiveFile)
         print("Uploading {}/{}..".format(full_prefix, fileName))
-        S3.upload_file(os.path.join(filePath, fileName), bucket_name, full_prefix + '/' + fileName, ACL=public-read)
+        S3.upload_file(os.path.join(filePath, fileName), bucket_name, full_prefix + '/' + fileName, ACL='public-read')
         print("Uploaded Artifact to S3: https://public.overte.org/{}/{}".format(full_prefix, fileName))
     print("Finished")
 
