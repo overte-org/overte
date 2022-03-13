@@ -70,18 +70,18 @@ jobs:
           echo "INSTALLER_EXT=*" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
           if [ "${{ matrix.os }}" = "self-hosted_debian-11_aarch64" ]; then
-            echo "VIRCADIA_USE_SYSTEM_QT=true" >> $GITHUB_ENV
+            echo "OVERTE_USE_SYSTEM_QT=true" >> $GITHUB_ENV
             echo "CI_WORKSPACE=${{runner.workspace}}" >> $GITHUB_ENV
             # Don't optimize builds to save build time.
-            echo "VIRCADIA_OPTIMIZE=false" >> $GITHUB_ENV
+            echo "OVERTE_OPTIMIZE=false" >> $GITHUB_ENV
           fi
           if [[ "${{ matrix.os }}" = *"aarch64" ]]; then
             echo "VCPKG_FORCE_SYSTEM_BINARIES=true" >> $GITHUB_ENV
           fi
           if [ "${{ matrix.build_type }}" = "full" ]; then
-            echo "CMAKE_EXTRA=-DVIRCADIA_CPU_ARCHITECTURE= -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+            echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
           else
-            echo "CMAKE_EXTRA=-DVIRCADIA_CPU_ARCHITECTURE= -DCLIENT_ONLY=1 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+            echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DCLIENT_ONLY=1 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
           fi
         fi
         # Mac build variables
@@ -89,11 +89,11 @@ jobs:
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=dmg" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
-            echo "CMAKE_EXTRA=-DVIRCADIA_CPU_ARCHITECTURE= -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
+            echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
           else
-            echo "CMAKE_EXTRA=-DVIRCADIA_CPU_ARCHITECTURE= -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCLIENT_ONLY=1 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
+            echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCLIENT_ONLY=1 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
           fi
-          echo "APP_TARGET_NAME=Vircadia" >> $GITHUB_ENV
+          echo "APP_TARGET_NAME=Overte" >> $GITHUB_ENV
         fi
         # Windows build variables
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
@@ -121,11 +121,11 @@ jobs:
         echo "GIT_COMMIT_SHORT=${{ steps.buildenv1.outputs.github_sha_short }}" >> $GITHUB_ENV
         if [[ "${{ matrix.build_type }}" != "android" ]]; then
           if [ "${{ matrix.build_type }}" = "full" ]; then
-            echo "ARTIFACT_PATTERN=Vircadia-PR${{ github.event.number }}-*.$INSTALLER_EXT" >> $GITHUB_ENV
-            echo "INSTALLER=Vircadia-$RELEASE_NUMBER-$GIT_COMMIT_SHORT.$INSTALLER_EXT" >> $GITHUB_ENV
+            echo "ARTIFACT_PATTERN=Overte-PR${{ github.event.number }}-*.$INSTALLER_EXT" >> $GITHUB_ENV
+            echo "INSTALLER=Overte-$RELEASE_NUMBER-$GIT_COMMIT_SHORT.$INSTALLER_EXT" >> $GITHUB_ENV
           else
-            echo "ARTIFACT_PATTERN=Vircadia-Interface-PR${{ github.event.number }}-*.$INSTALLER_EXT" >> $GITHUB_ENV
-            echo "INSTALLER=Vircadia-Interface-$RELEASE_NUMBER-$GIT_COMMIT_SHORT.$INSTALLER_EXT" >> $GITHUB_ENV
+            echo "ARTIFACT_PATTERN=Overte-Interface-PR${{ github.event.number }}-*.$INSTALLER_EXT" >> $GITHUB_ENV
+            echo "INSTALLER=Overte-Interface-$RELEASE_NUMBER-$GIT_COMMIT_SHORT.$INSTALLER_EXT" >> $GITHUB_ENV
           fi
         else
           echo "ARTIFACT_PATTERN=*.$INSTALLER_EXT" >> $GITHUB_ENV
@@ -195,9 +195,9 @@ jobs:
         fi
 
         if [ ${{ env.CI_WORKSPACE }} ]; then
-          find "$CI_WORKSPACE/vircadia-files/vcpkg" -name '*log' -type f -print0 | $TAR --null --force-local -T - -c --xz -v -f "${{ runner.workspace }}/cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz"
+          find "$CI_WORKSPACE/overte-files/vcpkg" -name '*log' -type f -print0 | $TAR --null --force-local -T - -c --xz -v -f "${{ runner.workspace }}/cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz"
         else
-          find "$HOME/vircadia-files/vcpkg" -name '*log' -type f -print0 | $TAR --null --force-local -T - -c --xz -v -f "${{ runner.workspace }}/cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz"
+          find "$HOME/overte-files/vcpkg" -name '*log' -type f -print0 | $TAR --null --force-local -T - -c --xz -v -f "${{ runner.workspace }}/cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz"
         fi
 
     - name: Archive cmake logs
@@ -267,14 +267,14 @@ jobs:
     - name: Nuke CMake 3.18.1-g262b901
       if: matrix.build_type == 'android'
       shell: bash
-      working-directory: ${{runner.workspace}}/vircadia
+      working-directory: ${{runner.workspace}}/overte
       run: |
         /usr/local/lib/android/sdk/tools/bin/sdkmanager --uninstall 'cmake;3.18.1'
 
     - name: Build for Android + Quest
       if: matrix.build_type == 'android'
       shell: bash
-      working-directory: ${{runner.workspace}}/vircadia
+      working-directory: ${{runner.workspace}}/overte
       run: |
         echo "Pre-cache the vcpkg managed dependencies"
         $PYTHON_EXEC prebuild.py --build-root ${{runner.workspace}}/build --android interface
