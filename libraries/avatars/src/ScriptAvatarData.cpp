@@ -13,6 +13,7 @@
 
 #include "ScriptAvatarData.h"
 
+#include <NodeList.h>
 #include <ScriptEngineCast.h>
 #include <ScriptManager.h>
 
@@ -204,7 +205,8 @@ bool ScriptAvatarData::getLookAtSnappingEnabled() const {
 //
 QString ScriptAvatarData::getSkeletonModelURLFromScript() const {
     if (AvatarSharedPointer sharedAvatarData = _avatarData.lock()) {
-        if (sharedAvatarData->isMyAvatar() && !sharedAvatarData->isMyAvatarURLProtected()) {
+        auto nodeList = DependencyManager::get<NodeList>();
+        if (sharedAvatarData->isMyAvatar() && !sharedAvatarData->isMyAvatarURLProtected() && nodeList->getThisNodeCanViewAssetURLs()) {
             return sharedAvatarData->getSkeletonModelURLFromScript();
         }
 
