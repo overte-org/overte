@@ -4,13 +4,14 @@
 //
 //  Created by Kalila L. on Mar 11 2021.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#ifndef vircadia_ModerationFlags_h
-#define vircadia_ModerationFlags_h
+#ifndef overte_ModerationFlags_h
+#define overte_ModerationFlags_h
 
 class ModerationFlags {
 public:
@@ -42,4 +43,4 @@ public:
     static constexpr unsigned int getDefaultBanFlags() { return (BanFlags::BAN_BY_USERNAME | BanFlags::BAN_BY_FINGERPRINT); };
 };
 
-#endif // vircadia_ModerationFlags_h
+#endif // overte_ModerationFlags_h

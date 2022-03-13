@@ -4,10 +4,11 @@
 //
 //  Created by David Rowe on 16 May 2021.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 
-#ifndef vircadia_WebRTCSignalingServer_h
-#define vircadia_WebRTCSignalingServer_h
+#ifndef overte_WebRTCSignalingServer_h
+#define overte_WebRTCSignalingServer_h
 
 #include <shared/WebRTC.h>
 
@@ -110,4 +111,4 @@ private:
 
 #endif // WEBRTC_DATA_CHANNELS
 
-#endif // vircadia_WebRTCSignalingServer_h
+#endif // overte_WebRTCSignalingServer_h

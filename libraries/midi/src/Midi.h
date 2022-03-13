@@ -6,6 +6,7 @@
 //  Modified by Bruce Brown
 //  Copyright 2015 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -24,7 +25,7 @@
 /*@jsdoc
  * The <code>Midi</code> API provides the ability to connect Interface with musical instruments and other external or virtual
  * devices via the MIDI protocol. For further information and examples, see the tutorial:
- * <a href="https://docs.vircadia.com/script/midi-tutorial.html">Use MIDI to Control Your Environment</a>.
+ * <a href="https://docs.overte.org/script/midi-tutorial.html">Use MIDI to Control Your Environment</a>.
  *
  * <p><strong>Note:</strong> Only works on Windows.</p>
  *

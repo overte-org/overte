@@ -5,6 +5,7 @@
 //  Created by Clement Brisset on 4/5/2017.
 //  Copyright 2017 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -34,7 +35,7 @@ namespace TextureUsage {
 /*@jsdoc
  * <p>Describes the type of texture.</p>
  * <p>See also: {@link Material} and
- * {@link https://docs.vircadia.com/create/3d-models/pbr-materials-guide.html|PBR Materials Guide}.</p>
+ * {@link https://docs.overte.org/create/3d-models/pbr-materials-guide.html|PBR Materials Guide}.</p>
  * <table>
  *   <thead>
  *     <tr><th>Value</th><th>Name</th><th>Description</th></tr>

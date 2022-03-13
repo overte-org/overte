@@ -4,6 +4,7 @@
 //
 //  Created by David Rowe on 17 May 2021.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Handles UDP and WebRTC sockets in parallel.
 //
@@ -11,8 +12,8 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#ifndef vircadia_SocketType_h
-#define vircadia_SocketType_h
+#ifndef overte_SocketType_h
+#define overte_SocketType_h
 
 /// @addtogroup Networking
 /// @{
@@ -38,4 +39,4 @@ public:
 
 /// @}
 
-#endif // vircadia_SocketType_h
+#endif // overte_SocketType_h

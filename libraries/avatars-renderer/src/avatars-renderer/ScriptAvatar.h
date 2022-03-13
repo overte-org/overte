@@ -5,6 +5,7 @@
 //  Created by Stephen Birarda on 4/10/17.
 //  Copyright 2017 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -88,7 +89,7 @@ public slots:
     /*@jsdoc
      * Gets the default rotation of a joint in the avatar relative to its parent.
      * <p>For information on the joint hierarchy used, see
-     * <a href="https://docs.vircadia.com/create/avatars/avatar-standards.html">Avatar Standards</a>.</p>
+     * <a href="https://docs.overte.org/create/avatars/avatar-standards.html">Avatar Standards</a>.</p>
      * @function ScriptAvatar.getDefaultJointRotation
      * @param {number} index - The joint index.
      * @returns {Quat} The default rotation of the joint if avatar data are available and the joint index is valid, otherwise
@@ -100,7 +101,7 @@ public slots:
      * Gets the default translation of a joint in the avatar relative to its parent, in model coordinates.
      * <p><strong>Warning:</strong> These coordinates are not necessarily in meters.</p>
      * <p>For information on the joint hierarchy used, see
-     * <a href="https://docs.vircadia.com/create/avatars/avatar-standards.html">Avatar Standards</a>.</p>
+     * <a href="https://docs.overte.org/create/avatars/avatar-standards.html">Avatar Standards</a>.</p>
      * @function ScriptAvatar.getDefaultJointTranslation
      * @param {number} index - The joint index.
      * @returns {Vec3} The default translation of the joint (in model coordinates) if avatar data are available and the joint

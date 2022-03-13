@@ -5,6 +5,7 @@
 //  Created by Zach Fox on 2017-04-10.
 //  Copyright 2017 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -118,7 +119,7 @@ public:
 
     /*@jsdoc
      * Gets the rotation of a joint relative to its parent. For information on the joint hierarchy used, see
-     * <a href="https://docs.vircadia.com/create/avatars/avatar-standards.html">Avatar Standards</a>.
+     * <a href="https://docs.overte.org/create/avatars/avatar-standards.html">Avatar Standards</a>.
      * @function ScriptAvatar.getJointRotation
      * @param {number} index - The index of the joint.
      * @returns {Quat} The rotation of the joint relative to its parent, or {@link Quat(0)|Quat.IDENTITY} if the avatar data
@@ -130,7 +131,7 @@ public:
      * Gets the translation of a joint relative to its parent, in model coordinates.
      * <p><strong>Warning:</strong> These coordinates are not necessarily in meters.</p>
      * <p>For information on the joint hierarchy used, see
-     * <a href="https://docs.vircadia.com/create/avatars/avatar-standards.html">Avatar Standards</a>.</p>
+     * <a href="https://docs.overte.org/create/avatars/avatar-standards.html">Avatar Standards</a>.</p>
      * @function ScriptAvatar.getJointTranslation
      * @param {number} index - The index of the joint.
      * @returns {Vec3} The translation of the joint relative to its parent, in model coordinates, or {@link Vec3(0)|Vec3.ZERO}
@@ -140,7 +141,7 @@ public:
 
     /*@jsdoc
      * Gets the rotation of a joint relative to its parent. For information on the joint hierarchy used, see
-     * <a href="https://docs.vircadia.com/create/avatars/avatar-standards.html">Avatar Standards</a>.
+     * <a href="https://docs.overte.org/create/avatars/avatar-standards.html">Avatar Standards</a>.
      * @function ScriptAvatar.getJointRotation
      * @param {string} name - The name of the joint.
      * @returns {Quat} The rotation of the joint relative to its parent, or {@link Quat(0)|Quat.IDENTITY} if the avatar data
@@ -152,7 +153,7 @@ public:
      * Gets the translation of a joint relative to its parent, in model coordinates.
      * <p><strong>Warning:</strong> These coordinates are not necessarily in meters.</p>
      * <p>For information on the joint hierarchy used, see
-     * <a href="https://docs.vircadia.com/create/avatars/avatar-standards.html">Avatar Standards</a>.</p>
+     * <a href="https://docs.overte.org/create/avatars/avatar-standards.html">Avatar Standards</a>.</p>
      * @function ScriptAvatar.getJointTranslation
      * @param {number} name - The name of the joint.
      * @returns {Vec3} The translation of the joint relative to its parent, in model coordinates, or {@link Vec3(0)|Vec3.ZERO}

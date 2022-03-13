@@ -5,6 +5,7 @@
 //  Created by Stephen Birarda on 2016-07-11.
 //  Copyright 2016 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -41,7 +42,7 @@
  * @property {BanFlags} BAN_BY_FINGERPRINT - Ban user by fingerprint. <em>Read-only.</em>
  * @property {BanFlags} BAN_BY_IP - Ban user by IP address. <em>Read-only.</em>
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/Users.html">Users</a></code> scripting interface
+/// Provides the <code><a href="https://apidocs.overte.org/Users.html">Users</a></code> scripting interface
 class UsersScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
     SINGLETON_DEPENDENCY
