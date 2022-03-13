@@ -15,12 +15,12 @@
 
 // Declare HiFi public bucket.
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 
 // Declare variables and set up new WebWindow.
 var stream;
 var volume = 1;
-var streamWindow = new WebWindow('Stream', VIRCADIA_PUBLIC_CDN + "examples/html/jsstreamplayer.html", 0, 0, false);
+var streamWindow = new WebWindow('Stream', OVERTE_PUBLIC_CDN + "examples/html/jsstreamplayer.html", 0, 0, false);
 
 // Set up toggleStreamURLButton overlay.
 var toggleStreamURLButton = Overlays.addOverlay("text", {

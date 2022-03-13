@@ -11,7 +11,7 @@
 //
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 
 function length(v) {
     return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
@@ -29,8 +29,8 @@ function vMinus(a, b) {
 
 //  First, load two percussion sounds to be used on the sticks
 
-var drum1 = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "sounds/Drums/RackTomHi.raw");
-var drum2 = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "sounds/Drums/RackTomLo.raw");
+var drum1 = SoundCache.getSound(OVERTE_PUBLIC_CDN + "sounds/Drums/RackTomHi.raw");
+var drum2 = SoundCache.getSound(OVERTE_PUBLIC_CDN + "sounds/Drums/RackTomLo.raw");
 
 //  State Machine:
 //  0 = not triggered 

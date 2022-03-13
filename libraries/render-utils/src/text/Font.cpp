@@ -97,7 +97,7 @@ Font::Pointer Font::load(const QString& family) {
 
             QNetworkRequest networkRequest;
             networkRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
-            networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::VIRCADIA_USER_AGENT);
+            networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
             networkRequest.setUrl(family);
 
             auto networkReply = networkAccessManager.get(networkRequest);

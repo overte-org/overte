@@ -1,6 +1,6 @@
 var 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
-var SOUND_PATH = VIRCADIA_PUBLIC_CDN + "sounds/Collisions-hitsandslaps/";
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var SOUND_PATH = OVERTE_PUBLIC_CDN + "sounds/Collisions-hitsandslaps/";
 var soundURLS = ["67LCollision01.wav", "67LCollision02.wav", "airhockey_hit1.wav"];
 var FLOOR_SIZE = 10;
 var center = Vec3.sum(MyAvatar.position, Vec3.multiply(FLOOR_SIZE * 1.5, Quat.getFront(Camera.getOrientation())));
@@ -44,7 +44,7 @@ var brownianButton = Overlays.addOverlay("image", {
   y: screenSize.y - (BUTTON_SIZE + PADDING),
   width: BUTTON_SIZE,
   height: BUTTON_SIZE,
-  imageURL: VIRCADIA_PUBLIC_CDN + "images/blocks.png",
+  imageURL: OVERTE_PUBLIC_CDN + "images/blocks.png",
   color: buttonOffColor,
   alpha: 1
 });

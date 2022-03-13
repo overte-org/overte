@@ -60,9 +60,9 @@ endif()
             self.path = args.vcpkg_root
             self.noClean = True
         else:
-            defaultBasePath = os.path.expanduser('~/vircadia-files/vcpkg')
+            defaultBasePath = os.path.expanduser('~/overte-files/vcpkg')
             if 'CI_WORKSPACE' in os.environ:
-                self.basePath = os.path.join(os.getenv('CI_WORKSPACE'), 'vircadia-files/vcpkg')
+                self.basePath = os.path.join(os.getenv('CI_WORKSPACE'), 'overte-files/vcpkg')
             else:
                 self.basePath = os.getenv('HIFI_VCPKG_BASE', defaultBasePath)
             if self.args.android:

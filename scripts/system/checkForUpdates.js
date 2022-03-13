@@ -31,11 +31,11 @@ function retrieveMetadata() {
 }
 
 function checkForUpdates() {
-    var vircadiaMetadata = retrieveMetadata();
+    var overteMetadata = retrieveMetadata();
     
     // Don't check for updates on a dev build.
-    if (vircadiaMetadata && currentVersion !== "dev") {
-        var checkVersion = semanticVersionCompare(currentVersion, vircadiaMetadata[currentBuildType].version);
+    if (overteMetadata && currentVersion !== "dev") {
+        var checkVersion = semanticVersionCompare(currentVersion, overteMetadata[currentBuildType].version);
         
         // An update is available!
         if (checkVersion === -1) {
@@ -45,7 +45,7 @@ function checkForUpdates() {
                 channel: "Local",
                 position: MyAvatar.position,
                 colour: notificationColor,
-                message: notificationText + vircadiaMetadata[currentBuildType].version,
+                message: notificationText + overteMetadata[currentBuildType].version,
             }));
         }
     }

@@ -9,8 +9,8 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
-#ifndef vircadia_ExternalResource_h
-#define vircadia_ExternalResource_h
+#ifndef overte_ExternalResource_h
+#define overte_ExternalResource_h
 
 #include <QObject>
 #include <QUrl>
@@ -133,7 +133,7 @@ private:
         { Bucket::HF_Public, QUrl(NetworkingConstants::HF_PUBLIC_CDN_URL) },
         { Bucket::HF_Content, QUrl(NetworkingConstants::HF_CONTENT_CDN_URL) },
         { Bucket::HF_Marketplace, QUrl(NetworkingConstants::HF_MPASSETS_CDN_URL) },
-        { Bucket::Assets, QUrl(NetworkingConstants::VIRCADIA_CONTENT_CDN_URL) }
+        { Bucket::Assets, QUrl(NetworkingConstants::OVERTE_CONTENT_CDN_URL) }
     };
 };
 

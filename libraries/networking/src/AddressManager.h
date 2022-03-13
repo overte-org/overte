@@ -5,6 +5,7 @@
 //  Created by Stephen Birarda on 2014-09-10.
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -24,7 +25,7 @@
 #include "AccountManager.h"
 
 extern const QString REDIRECT_HIFI_ADDRESS;
-extern const QString DEFAULT_VIRCADIA_ADDRESS;
+extern const QString DEFAULT_OVERTE_ADDRESS;
 extern const QString DEFAULT_HOME_ADDRESS;
 
 const QString SANDBOX_HIFI_ADDRESS = "hifi://localhost";

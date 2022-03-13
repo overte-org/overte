@@ -1,8 +1,8 @@
-#VIRCADIA=~/Vircadia rpmbuild --target x86_64 -bb vircadia-server.spec
+#OVERTE=~/Overte rpmbuild --target x86_64 -bb overte-server.spec
 %define version %{lua:print(os.getenv("VERSION"))}
 %define depends %{lua:print(os.getenv("DEPENDS"))}
 
-Name:           vircadia-server
+Name:           overte-server
 Version:        %{version}
 Release:        1%{?dist}
 Summary:        Overte platform, based on the High Fidelity Engine.
@@ -31,48 +31,48 @@ Overte allows creation and sharing of VR experiences.
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT/opt/vircadia
-install -m 0755 -t $RPM_BUILD_ROOT/opt/vircadia $VIRCADIA/build/assignment-client/assignment-client
-install -m 0755 -t $RPM_BUILD_ROOT/opt/vircadia $VIRCADIA/build/domain-server/domain-server
-install -m 0755 -t $RPM_BUILD_ROOT/opt/vircadia $VIRCADIA/build/tools/oven/oven
-#install -m 0755 -t $RPM_BUILD_ROOT/opt/vircadia $VIRCADIA/build/ice-server/ice-server
-strip --strip-all $RPM_BUILD_ROOT/opt/vircadia/*
-chrpath -d $RPM_BUILD_ROOT/opt/vircadia/*
-install -m 0755 -t $RPM_BUILD_ROOT/opt/vircadia $VIRCADIA/source/pkg-scripts/new-server
-install -d $RPM_BUILD_ROOT/opt/vircadia/lib
-install -m 0644 -t $RPM_BUILD_ROOT/opt/vircadia/lib $VIRCADIA/build/libraries/*/*.so
-strip --strip-all $RPM_BUILD_ROOT/opt/vircadia/lib/*
-chrpath -d $RPM_BUILD_ROOT/opt/vircadia/lib/*
-install -m 0644 -t $RPM_BUILD_ROOT/opt/vircadia/lib $VIRCADIA/qt5-install/lib/libQt5Network.so.*.*.*
-install -m 0644 -t $RPM_BUILD_ROOT/opt/vircadia/lib $VIRCADIA/qt5-install/lib/libQt5Core.so.*.*.*
-install -m 0644 -t $RPM_BUILD_ROOT/opt/vircadia/lib $VIRCADIA/qt5-install/lib/libQt5Widgets.so.*.*.*
-install -m 0644 -t $RPM_BUILD_ROOT/opt/vircadia/lib $VIRCADIA/qt5-install/lib/libQt5Gui.so.*.*.*
-install -m 0644 -t $RPM_BUILD_ROOT/opt/vircadia/lib $VIRCADIA/qt5-install/lib/libQt5Script.so.*.*.*
-install -m 0644 -t $RPM_BUILD_ROOT/opt/vircadia/lib $VIRCADIA/qt5-install/lib/libQt5WebSockets.so.*.*.*
-install -m 0644 -t $RPM_BUILD_ROOT/opt/vircadia/lib $VIRCADIA/qt5-install/lib/libQt5Qml.so.*.*.*
-install -m 0644 -t $RPM_BUILD_ROOT/opt/vircadia/lib $VIRCADIA/qt5-install/lib/libQt5Quick.so.*.*.*
-install -m 0644 -t $RPM_BUILD_ROOT/opt/vircadia/lib $VIRCADIA/qt5-install/lib/libQt5ScriptTools.so.*.*.*
+install -d $RPM_BUILD_ROOT/opt/overte
+install -m 0755 -t $RPM_BUILD_ROOT/opt/overte $OVERTE/build/assignment-client/assignment-client
+install -m 0755 -t $RPM_BUILD_ROOT/opt/overte $OVERTE/build/domain-server/domain-server
+install -m 0755 -t $RPM_BUILD_ROOT/opt/overte $OVERTE/build/tools/oven/oven
+#install -m 0755 -t $RPM_BUILD_ROOT/opt/overte $OVERTE/build/ice-server/ice-server
+strip --strip-all $RPM_BUILD_ROOT/opt/overte/*
+chrpath -d $RPM_BUILD_ROOT/opt/overte/*
+install -m 0755 -t $RPM_BUILD_ROOT/opt/overte $OVERTE/source/pkg-scripts/new-server
+install -d $RPM_BUILD_ROOT/opt/overte/lib
+install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $OVERTE/build/libraries/*/*.so
+strip --strip-all $RPM_BUILD_ROOT/opt/overte/lib/*
+chrpath -d $RPM_BUILD_ROOT/opt/overte/lib/*
+install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $OVERTE/qt5-install/lib/libQt5Network.so.*.*.*
+install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $OVERTE/qt5-install/lib/libQt5Core.so.*.*.*
+install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $OVERTE/qt5-install/lib/libQt5Widgets.so.*.*.*
+install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $OVERTE/qt5-install/lib/libQt5Gui.so.*.*.*
+install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $OVERTE/qt5-install/lib/libQt5Script.so.*.*.*
+install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $OVERTE/qt5-install/lib/libQt5WebSockets.so.*.*.*
+install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $OVERTE/qt5-install/lib/libQt5Qml.so.*.*.*
+install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $OVERTE/qt5-install/lib/libQt5Quick.so.*.*.*
+install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $OVERTE/qt5-install/lib/libQt5ScriptTools.so.*.*.*
 install -d $RPM_BUILD_ROOT/usr/lib/systemd/system
-install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $VIRCADIA/source/pkg-scripts/vircadia-assignment-client.service
-install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $VIRCADIA/source/pkg-scripts/vircadia-assignment-client@.service
-install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $VIRCADIA/source/pkg-scripts/vircadia-domain-server.service
-install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $VIRCADIA/source/pkg-scripts/vircadia-domain-server@.service
-#install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $VIRCADIA/source/pkg-scripts/vircadia-ice-server.service
-#install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $VIRCADIA/source/pkg-scripts/vircadia-ice-server@.service
-install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $VIRCADIA/source/pkg-scripts/vircadia-server.target
-install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $VIRCADIA/source/pkg-scripts/vircadia-server@.target
-cp -a $VIRCADIA/source/domain-server/resources $RPM_BUILD_ROOT/opt/vircadia
-cp -a $VIRCADIA/build/assignment-client/plugins $RPM_BUILD_ROOT/opt/vircadia
-chrpath -d $RPM_BUILD_ROOT/opt/vircadia/plugins/*.so
-chrpath -d $RPM_BUILD_ROOT/opt/vircadia/plugins/*/*.so
-strip --strip-all $RPM_BUILD_ROOT/opt/vircadia/plugins/*.so
-strip --strip-all $RPM_BUILD_ROOT/opt/vircadia/plugins/*/*.so
-find $RPM_BUILD_ROOT/opt/vircadia/resources -name ".gitignore" -delete
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/source/pkg-scripts/overte-assignment-client.service
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/source/pkg-scripts/overte-assignment-client@.service
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/source/pkg-scripts/overte-domain-server.service
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/source/pkg-scripts/overte-domain-server@.service
+#install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/source/pkg-scripts/overte-ice-server.service
+#install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/source/pkg-scripts/overte-ice-server@.service
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/source/pkg-scripts/overte-server.target
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/source/pkg-scripts/overte-server@.target
+cp -a $OVERTE/source/domain-server/resources $RPM_BUILD_ROOT/opt/overte
+cp -a $OVERTE/build/assignment-client/plugins $RPM_BUILD_ROOT/opt/overte
+chrpath -d $RPM_BUILD_ROOT/opt/overte/plugins/*.so
+chrpath -d $RPM_BUILD_ROOT/opt/overte/plugins/*/*.so
+strip --strip-all $RPM_BUILD_ROOT/opt/overte/plugins/*.so
+strip --strip-all $RPM_BUILD_ROOT/opt/overte/plugins/*/*.so
+find $RPM_BUILD_ROOT/opt/overte/resources -name ".gitignore" -delete
 
 
 %files
-%license $VIRCADIA/source/LICENSE
-/opt/vircadia
+%license $OVERTE/source/LICENSE
+/opt/overte
 /usr/lib/systemd/system
 
 
@@ -81,25 +81,25 @@ find $RPM_BUILD_ROOT/opt/vircadia/resources -name ".gitignore" -delete
 
 %post
 # create users
-getent passwd vircadia >/dev/null 2>&1 || useradd -r -c "Vircadia" -d /var/lib/vircadia -U -M vircadia
-#getent group vircadia >/dev/null 2>&1 || groupadd -r vircadia
+getent passwd overte >/dev/null 2>&1 || useradd -r -c "overte" -d /var/lib/overte -U -M overte
+#getent group overte >/dev/null 2>&1 || groupadd -r overte
 
 # create data folder
-mkdir -p /etc/opt/vircadia
-mkdir -p /var/lib/vircadia && chown vircadia:vircadia /var/lib/vircadia && chmod 775 /var/lib/vircadia
+mkdir -p /etc/opt/overte
+mkdir -p /var/lib/overte && chown overte:overte /var/lib/overte && chmod 775 /var/lib/overte
 
-ldconfig -n /opt/vircadia/lib
+ldconfig -n /opt/overte/lib
 
-%systemd_post vircadia-assignment-client.service
-%systemd_post vircadia-assignment-client@.service
-%systemd_post vircadia-domain-server.service
-%systemd_post vircadia-domain-server@.service
-#%systemd_post vircadia-ice-server.service
-#%systemd_post vircadia-ice-server@.service
-%systemd_post vircadia-server.target
-%systemd_post vircadia-server@.target
+%systemd_post overte-assignment-client.service
+%systemd_post overte-assignment-client@.service
+%systemd_post overte-domain-server.service
+%systemd_post overte-domain-server@.service
+#%systemd_post overte-ice-server.service
+#%systemd_post overte-ice-server@.service
+%systemd_post overte-server.target
+%systemd_post overte-server@.target
 
-if [ ! -d "/var/lib/vircadia/default" ]; then
+if [ ! -d "/var/lib/overte/default" ]; then
 	if [ -d "/var/lib/athena" ]; then
 		ATHENA_ACTIVE=`systemctl list-units \
 			| grep -P -o "(athena-assignment-client|athena-domain-server|athena-server)\S+" \
@@ -115,26 +115,26 @@ if [ ! -d "/var/lib/vircadia/default" ]; then
 		echo -n $ATHENA_ACTIVE | xargs -d'|' systemctl stop
 
 		# copy the server files over
-		cp /etc/opt/athena/* /etc/opt/vircadia
-		cp -R /var/lib/athena/* /var/lib/vircadia
-		chown -R vircadia:vircadia /var/lib/vircadia/*
-		find /var/lib/vircadia -maxdepth 3 -path "*\.local/share" -execdir sh -c 'cd share; ln -s ../.. "Vircadia - dev"' ';'
-		find /var/lib/vircadia -maxdepth 3 -path "*\.local/share" -execdir sh -c 'cd share; ln -s ../.. Vircadia' ';'
+		cp /etc/opt/athena/* /etc/opt/overte
+		cp -R /var/lib/athena/* /var/lib/overte
+		chown -R overte:overte /var/lib/overte/*
+		find /var/lib/overte -maxdepth 3 -path "*\.local/share" -execdir sh -c 'cd share; ln -s ../.. "overte - dev"' ';'
+		find /var/lib/overte -maxdepth 3 -path "*\.local/share" -execdir sh -c 'cd share; ln -s ../.. overte' ';'
 
-		VIRCADIA_ACTIVE=`echo -n $ATHENA_ACTIVE | sed 's/athena/vircadia/g'`
-		VIRCADIA_ENABLED=`echo -n $ATHENA_ENABLED | sed 's/athena/vircadia/g'`
+		OVERTE_ACTIVE=`echo -n $ATHENA_ACTIVE | sed 's/athena/overte/g'`
+		OVERTE_ENABLED=`echo -n $ATHENA_ENABLED | sed 's/athena/overte/g'`
 
 		echo -n $ATHENA_ENABLED | xargs -d'|' systemctl disable
-		echo -n $VIRCADIA_ENABLED | xargs -d'|' systemctl enable
-		echo -n $VIRCADIA_ACTIVE | xargs -d'|' systemctl start
+		echo -n $OVERTE_ENABLED | xargs -d'|' systemctl enable
+		echo -n $OVERTE_ACTIVE | xargs -d'|' systemctl start
 	else
-		/opt/vircadia/new-server default 40100
-		systemctl enable vircadia-server@default.target
-		systemctl start vircadia-server@default.target
+		/opt/overte/new-server default 40100
+		systemctl enable overte-server@default.target
+		systemctl start overte-server@default.target
 	fi
 else
 	systemctl list-units \
-		| grep -P -o "(vircadia-assignment-client|vircadia-domain-server|vircadia-server)\S+" \
+		| grep -P -o "(overte-assignment-client|overte-domain-server|overte-server)\S+" \
 		| xargs systemctl restart
 fi
 
@@ -143,26 +143,26 @@ fi
 
 if [ "$1" -eq 0 ]; then
 	systemctl list-units \
-		| grep -P -o "(vircadia-assignment-client|vircadia-domain-server|vircadia-server)\S+" \
+		| grep -P -o "(overte-assignment-client|overte-domain-server|overte-server)\S+" \
 		| xargs systemctl stop
 fi
 
-%systemd_preun vircadia-server.target
-%systemd_preun vircadia-server@.target
-%systemd_preun vircadia-assignment-client.service
-%systemd_preun vircadia-assignment-client@.service
-%systemd_preun vircadia-domain-server.service
-%systemd_preun vircadia-domain-server@.service
-#%systemd_preun vircadia-ice-server.service
-#%systemd_preun vircadia-ice-server@.service
+%systemd_preun overte-server.target
+%systemd_preun overte-server@.target
+%systemd_preun overte-assignment-client.service
+%systemd_preun overte-assignment-client@.service
+%systemd_preun overte-domain-server.service
+%systemd_preun overte-domain-server@.service
+#%systemd_preun overte-ice-server.service
+#%systemd_preun overte-ice-server@.service
 
 
 %postun
-%systemd_postun_with_restart vircadia-server.target
-%systemd_postun_with_restart vircadia-server@.target
-%systemd_postun_with_restart vircadia-assignment-client.service
-%systemd_postun_with_restart vircadia-assignment-client@.service
-%systemd_postun_with_restart vircadia-domain-server.service
-%systemd_postun_with_restart vircadia-domain-server@.service
-#%systemd_postun_with_restart vircadia-ice-server.service
-#%systemd_postun_with_restart vircadia-ice-server@.service
+%systemd_postun_with_restart overte-server.target
+%systemd_postun_with_restart overte-server@.target
+%systemd_postun_with_restart overte-assignment-client.service
+%systemd_postun_with_restart overte-assignment-client@.service
+%systemd_postun_with_restart overte-domain-server.service
+%systemd_postun_with_restart overte-domain-server@.service
+#%systemd_postun_with_restart overte-ice-server.service
+#%systemd_postun_with_restart overte-ice-server@.service

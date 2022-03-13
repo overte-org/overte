@@ -18,26 +18,26 @@
 	dh $@ --with=systemd
 
 override_dh_systemd_enable:
-	dh_systemd_enable --no-enable --name vircadia-assignment-client vircadia-assignment-client.service
-	dh_systemd_enable --no-enable --name vircadia-assignment-client@ vircadia-assignment-client@.service
-	dh_systemd_enable --no-enable --name vircadia-domain-server vircadia-domain-server.service
-	dh_systemd_enable --no-enable --name vircadia-domain-server@ vircadia-domain-server@.service
-	#dh_systemd_enable --no-enable --name vircadia-ice-server vircadia-ice-server.service
-	#dh_systemd_enable --no-enable --name vircadia-ice-server@ vircadia-ice-server@.service
-	dh_systemd_enable --no-enable --name vircadia-server vircadia-server.target
-	dh_systemd_enable --no-enable --name vircadia-server@ vircadia-server@.target
-	#dh_systemd_enable --name vircadia-server@default vircadia-server@default.target
+	dh_systemd_enable --no-enable --name overte-assignment-client overte-assignment-client.service
+	dh_systemd_enable --no-enable --name overte-assignment-client@ overte-assignment-client@.service
+	dh_systemd_enable --no-enable --name overte-domain-server overte-domain-server.service
+	dh_systemd_enable --no-enable --name overte-domain-server@ overte-domain-server@.service
+	#dh_systemd_enable --no-enable --name overte-ice-server overte-ice-server.service
+	#dh_systemd_enable --no-enable --name overte-ice-server@ overte-ice-server@.service
+	dh_systemd_enable --no-enable --name overte-server overte-server.target
+	dh_systemd_enable --no-enable --name overte-server@ overte-server@.target
+	#dh_systemd_enable --name overte-server@default overte-server@default.target
 
 override_dh_systemd_start:
-	dh_systemd_start --restart-after-upgrade --no-start vircadia-assignment-client.service
-	dh_systemd_start --restart-after-upgrade --no-start vircadia-assignment-client@.service
-	dh_systemd_start --restart-after-upgrade --no-start vircadia-domain-server.service
-	dh_systemd_start --restart-after-upgrade --no-start vircadia-domain-server@.service
-	#dh_systemd_start --restart-after-upgrade --no-start vircadia-ice-server.service
-	#dh_systemd_start --restart-after-upgrade --no-start vircadia-ice-server@.service
-	dh_systemd_start --restart-after-upgrade --no-start vircadia-server.target
-	dh_systemd_start --restart-after-upgrade --no-start vircadia-server@.target
-	#dh_systemd_start --restart-after-upgrade vircadia-server@default.target
+	dh_systemd_start --restart-after-upgrade --no-start overte-assignment-client.service
+	dh_systemd_start --restart-after-upgrade --no-start overte-assignment-client@.service
+	dh_systemd_start --restart-after-upgrade --no-start overte-domain-server.service
+	dh_systemd_start --restart-after-upgrade --no-start overte-domain-server@.service
+	#dh_systemd_start --restart-after-upgrade --no-start overte-ice-server.service
+	#dh_systemd_start --restart-after-upgrade --no-start overte-ice-server@.service
+	dh_systemd_start --restart-after-upgrade --no-start overte-server.target
+	dh_systemd_start --restart-after-upgrade --no-start overte-server@.target
+	#dh_systemd_start --restart-after-upgrade overte-server@default.target
 
 override_dh_installinit:
 	dh_installinit --noscripts

@@ -9,7 +9,7 @@
 
 var Camera, Vec3, Quat, Entities, Script; // Globals defined by HiFi, var'ed here to keep jslint happy.
 var 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 var SOUND_BUCKET = "http://public.highfidelity.io/sounds/Collisions-hitsandslaps/";
 var MAX_ANGULAR_SPEED = Math.PI;
 var N_EACH_OBJECTS = 3;
@@ -23,8 +23,8 @@ function makeAll() {
         right = Vec3.multiply(0.6, Quat.getRight(Camera.getOrientation())),
         currentDimensions,
         data = [
-            ["models/props/Dice/goldDie.fbx", VIRCADIA_PUBLIC_CDN + "sounds/dice/diceCollide.wav"],
-            ["models/props/Pool/ball_8.fbx", VIRCADIA_PUBLIC_CDN + "sounds/Collisions-ballhitsandcatches/billiards/collision1.wav"],
+            ["models/props/Dice/goldDie.fbx", OVERTE_PUBLIC_CDN + "sounds/dice/diceCollide.wav"],
+            ["models/props/Pool/ball_8.fbx", OVERTE_PUBLIC_CDN + "sounds/Collisions-ballhitsandcatches/billiards/collision1.wav"],
             ["eric/models/woodFloor.fbx", SOUND_BUCKET + "67LCollision05.wav"]
         ];
     currentPosition = Vec3.sum(currentPosition, Vec3.multiply(-1 * data.length * N_EACH_OBJECTS / 2, right));
@@ -36,7 +36,7 @@ function makeAll() {
         }
         thisEntity = Entities.addEntity({
             type: "Model",
-            modelURL: VIRCADIA_PUBLIC_CDN + model,
+            modelURL: OVERTE_PUBLIC_CDN + model,
             collisionSoundURL: sound,
             dynamic: true,
             shapeType: "box",

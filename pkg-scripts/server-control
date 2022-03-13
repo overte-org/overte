@@ -1,4 +1,4 @@
-Source: vircadia-server
+Source: overte-server
 Section: comm
 Priority: optional
 Maintainer: Heather Anderson <heath@odysseus.anderson.name>
@@ -8,7 +8,7 @@ Homepage: https://overte.org
 Vcs-Git: https://github.com/overte-org/overte.git
 Vcs-Browser: https://github.com/overte-org/overte
 
-Package: vircadia-server
+Package: overte-server
 Architecture: any
 Depends: adduser, {DEPENDS}
 Description: Overte allows creation and sharing of VR experiences.

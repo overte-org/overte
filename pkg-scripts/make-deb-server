@@ -1,28 +1,28 @@
 #!/bin/sh
 
-if [ "$VIRCADIA" = "" ]; then
-	VIRCADIA=`realpath ../..`
-	QT5_LIBS=`realpath ../../../vircadia-files/qt/qt5-install/lib`
+if [ "$OVERTE" = "" ]; then
+	OVERTE=`realpath ../..`
+	QT5_LIBS=`realpath ../../../overte-files/qt/qt5-install/lib`
 fi
 
-GITDATE=`git -C $VIRCADIA/source log -n 1 --format=raw | grep author | cut -d">" -f 2 | cut -d" " -f 2 | xargs -I {} date -d @{} +"%Y%m%d"`
-GITCOMMIT=`git -C $VIRCADIA/source rev-parse HEAD | cut -c 1-7`
+GITDATE=`git -C $OVERTE/source log -n 1 --format=raw | grep author | cut -d">" -f 2 | cut -d" " -f 2 | xargs -I {} date -d @{} +"%Y%m%d"`
+GITCOMMIT=`git -C $OVERTE/source rev-parse HEAD | cut -c 1-7`
 VERSION=$DEBVERSION-$GITDATE-$GITCOMMIT
 
 sudo apt-get install chrpath binutils dh-make
 
-DEB_BUILD_ROOT=temp-make-deb/vircadia-server_$VERSION-0ubuntu1
+DEB_BUILD_ROOT=temp-make-deb/overte-server_$VERSION-0ubuntu1
 rm -r temp-make-deb
 mkdir -p $DEB_BUILD_ROOT
 
 # copy the files over
-cp $VIRCADIA/build/assignment-client/assignment-client $DEB_BUILD_ROOT
-cp $VIRCADIA/build/domain-server/domain-server $DEB_BUILD_ROOT
-cp $VIRCADIA/build/tools/oven/oven $DEB_BUILD_ROOT
-cp $VIRCADIA/build/libraries/*/*.so $DEB_BUILD_ROOT
-#cp $VIRCADIA/build/ice-server/ice-server $DEB_BUILD_ROOT
+cp $OVERTE/build/assignment-client/assignment-client $DEB_BUILD_ROOT
+cp $OVERTE/build/domain-server/domain-server $DEB_BUILD_ROOT
+cp $OVERTE/build/tools/oven/oven $DEB_BUILD_ROOT
+cp $OVERTE/build/libraries/*/*.so $DEB_BUILD_ROOT
+#cp $OVERTE/build/ice-server/ice-server $DEB_BUILD_ROOT
 chrpath -d $DEB_BUILD_ROOT/*
-if [ "$VIRCADIA_USE_SYSTEM_QT" = "" ]; then
+if [ "$OVERTE_USE_SYSTEM_QT" = "" ]; then
 	cp $QT5_LIBS/libQt5Network.so.*.*.* $DEB_BUILD_ROOT
 	cp $QT5_LIBS/libQt5Core.so.*.*.* $DEB_BUILD_ROOT
 	cp $QT5_LIBS/libQt5Widgets.so.*.*.* $DEB_BUILD_ROOT
@@ -34,64 +34,64 @@ if [ "$VIRCADIA_USE_SYSTEM_QT" = "" ]; then
 	chmod +x $DEB_BUILD_ROOT/*.so.*.*.*
 fi
 strip --strip-all $DEB_BUILD_ROOT/*
-cp $VIRCADIA/source/pkg-scripts/new-server $DEB_BUILD_ROOT
-cp -a $VIRCADIA/source/domain-server/resources $DEB_BUILD_ROOT
+cp $OVERTE/source/pkg-scripts/new-server $DEB_BUILD_ROOT
+cp -a $OVERTE/source/domain-server/resources $DEB_BUILD_ROOT
 find $DEB_BUILD_ROOT/resources -name ".gitignore" -delete
 find $DEB_BUILD_ROOT/resources -type f -executable -exec sh -c 'chmod -x {}' \;
-cp $VIRCADIA/source/README.md $DEB_BUILD_ROOT
-cp $VIRCADIA/source/README_hifi.md $DEB_BUILD_ROOT
-cp -a $VIRCADIA/build/assignment-client/plugins $DEB_BUILD_ROOT
+cp $OVERTE/source/README.md $DEB_BUILD_ROOT
+cp $OVERTE/source/README_hifi.md $DEB_BUILD_ROOT
+cp -a $OVERTE/build/assignment-client/plugins $DEB_BUILD_ROOT
 strip --strip-all $DEB_BUILD_ROOT/plugins/*.so
 strip --strip-all $DEB_BUILD_ROOT/plugins/*/*.so
 
 #begin the debian package construction
 cd $DEB_BUILD_ROOT
-dh_make -p vircadia-server_$VERSION-0ubuntu1 -c apache -s --createorig -y
+dh_make -p overte-server_$VERSION-0ubuntu1 -c apache -s --createorig -y
 
-cp $VIRCADIA/source/pkg-scripts/vircadia-assignment-client.service debian
-cp $VIRCADIA/source/pkg-scripts/vircadia-assignment-client@.service debian
-cp $VIRCADIA/source/pkg-scripts/vircadia-domain-server.service debian
-cp $VIRCADIA/source/pkg-scripts/vircadia-domain-server@.service debian
-#cp $VIRCADIA/source/pkg-scripts/vircadia-ice-server.service debian
-#cp $VIRCADIA/source/pkg-scripts/vircadia-ice-server@.service debian
-cp $VIRCADIA/source/pkg-scripts/vircadia-server.target debian
-cp $VIRCADIA/source/pkg-scripts/vircadia-server@.target debian
+cp $OVERTE/source/pkg-scripts/overte-assignment-client.service debian
+cp $OVERTE/source/pkg-scripts/overte-assignment-client@.service debian
+cp $OVERTE/source/pkg-scripts/overte-domain-server.service debian
+cp $OVERTE/source/pkg-scripts/overte-domain-server@.service debian
+#cp $OVERTE/source/pkg-scripts/overte-ice-server.service debian
+#cp $OVERTE/source/pkg-scripts/overte-ice-server@.service debian
+cp $OVERTE/source/pkg-scripts/overte-server.target debian
+cp $OVERTE/source/pkg-scripts/overte-server@.target debian
 
-cp $VIRCADIA/source/pkg-scripts/server-control debian/control
-cp $VIRCADIA/source/pkg-scripts/server-prerm debian/prerm
-cp $VIRCADIA/source/pkg-scripts/server-postinst debian/postinst
-cp $VIRCADIA/source/pkg-scripts/server-postrm debian/postrm
-cp $VIRCADIA/source/LICENSE debian/copyright
+cp $OVERTE/source/pkg-scripts/server-control debian/control
+cp $OVERTE/source/pkg-scripts/server-prerm debian/prerm
+cp $OVERTE/source/pkg-scripts/server-postinst debian/postinst
+cp $OVERTE/source/pkg-scripts/server-postrm debian/postrm
+cp $OVERTE/source/LICENSE debian/copyright
 
-echo /etc/opt/vircadia > debian/dirs
-echo /var/lib/vircadia >> debian/dirs
+echo /etc/opt/overte > debian/dirs
+echo /var/lib/overte >> debian/dirs
 
 echo README.md > debian/docs
 echo README_hifi.md >> debian/docs
 
-echo assignment-client opt/vircadia > debian/install
-echo domain-server opt/vircadia >> debian/install
-echo oven opt/vircadia >> debian/install
-#echo ice-server opt/vircadia >> debian/install
-echo new-server opt/vircadia >> debian/install
-if [ "$VIRCADIA_USE_SYSTEM_QT" = "" ]; then
+echo assignment-client opt/overte > debian/install
+echo domain-server opt/overte >> debian/install
+echo oven opt/overte >> debian/install
+#echo ice-server opt/overte >> debian/install
+echo new-server opt/overte >> debian/install
+if [ "$OVERTE_USE_SYSTEM_QT" = "" ]; then
 	for so in *.so.*.*.*; do
-		echo $so opt/vircadia/lib >> debian/install
+		echo $so opt/overte/lib >> debian/install
 	done
 fi
 for so in *.so; do
-	echo $so opt/vircadia/lib >> debian/install
+	echo $so opt/overte/lib >> debian/install
 done
 #for service in *.service; do
-#	echo $service opt/vircadia/systemd >> debian/install
+#	echo $service opt/overte/systemd >> debian/install
 #done
 #for target in *.target; do
-#	echo $target opt/vircadia/systemd >> debian/install
+#	echo $target opt/overte/systemd >> debian/install
 #done
-find resources -type f -exec sh -c 'echo {} opt/vircadia/$(dirname "{}") >> debian/install' \;
-find plugins -type f -exec sh -c 'echo {} opt/vircadia/$(dirname "{}") >> debian/install' \;
+find resources -type f -exec sh -c 'echo {} opt/overte/$(dirname "{}") >> debian/install' \;
+find plugins -type f -exec sh -c 'echo {} opt/overte/$(dirname "{}") >> debian/install' \;
 
-if [ "$VIRCADIA_USE_SYSTEM_QT" = "" ]; then
+if [ "$OVERTE_USE_SYSTEM_QT" = "" ]; then
 	SOFILES=`ls *.so *.so.*.*.* | grep -Po '^(.+\.so(\.\d+)?)' | sed 's/\./\\\./g' | paste -d'|' -s`
 else
 	SOFILES=`ls *.so | grep -Po '^(.+\.so(\.\d+)?)' | sed 's/\./\\\./g' | paste -d'|' -s`
@@ -101,8 +101,8 @@ DEPENDS=`find * -path debian -prune -o -type f -executable -exec sh -c 'objdump 
 	| awk '{print $2}' | sort | uniq | egrep -v "^($SOFILES)$" \
 	| xargs -n 1 -I {} sh -c 'dpkg -S {} | head -n 1' | cut -d ':' -f 1 | sort | uniq | paste -d',' -s`
 
-cp $VIRCADIA/source/pkg-scripts/server-rules debian/rules
-sed "s/{DEPENDS}/$DEPENDS/" $VIRCADIA/source/pkg-scripts/server-control > debian/control
+cp $OVERTE/source/pkg-scripts/server-rules debian/rules
+sed "s/{DEPENDS}/$DEPENDS/" $OVERTE/source/pkg-scripts/server-control > debian/control
 
 dpkg-buildpackage -us -uc
 

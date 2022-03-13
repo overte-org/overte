@@ -14,9 +14,9 @@
 //
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 
-var sound = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "sounds/Animals/mexicanWhipoorwill.raw");
+var sound = SoundCache.getSound(OVERTE_PUBLIC_CDN + "sounds/Animals/mexicanWhipoorwill.raw");
 var CHANCE_OF_PLAYING_SOUND = 0.01;
 
 var FACTOR = 0.05;

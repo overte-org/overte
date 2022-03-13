@@ -1,5 +1,5 @@
 #!/bin/sh
-# postrm script for vircadia-server
+# postrm script for overte-server
 #
 # see: dh_installdeb(1)
 
@@ -20,8 +20,8 @@ set -e
 
 case "$1" in
     purge)
-	    rm -r /etc/opt/vircadia
-	    rm -r /var/lib/vircadia
+	    rm -r /etc/opt/overte
+	    rm -r /var/lib/overte
     ;;
 
     remove|upgrade|failed-upgrade|disappear|abort-install|abort-upgrade)

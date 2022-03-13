@@ -36,7 +36,7 @@ If Android Studio pops open the "Plugin Update Recommeded" dialog, do not click 
 ## Environment
 
 ### Create a keystore in Android Studio
-Follow the directions [here](https://developer.android.com/studio/publish/app-signing#generate-key) to create a keystore file. You can save it anywhere (preferably not in the `vircadia` folder).
+Follow the directions [here](https://developer.android.com/studio/publish/app-signing#generate-key) to create a keystore file. You can save it anywhere (preferably not in the `overte` folder).
 
 ### Set up machine specific Gradle properties
 
@@ -87,12 +87,12 @@ SUPPRESS_QUEST_FRAME_PLAYER
 
 * Open Android Studio
 * Choose _Open an existing Android Studio project_
-* Navigate to the `vircadia` repository that had you cloned and choose the `android` folder and select _OK_
+* Navigate to the `overte` repository that had you cloned and choose the `android` folder and select _OK_
 * Wait for Gradle to sync (this should take around 20 minutes the first time)
 * If a dialog pops open saying "Plugin Update Recommeded" dialog, do not click update, just click X on the top right to close.
 * In the _Project_ window click on the project you wish to build (i.e. "questInterface") then click _Build_ in the top menu and choose _Make Module 'questInterface'_
 * By default this will build the "debug" apk, you can change this by opening the _Build Variants_ window along the left side and select other build types such as "release".
-* Your newly build APK should reside in `vircadia\android\apps\questInterface\release` (if you chose release).
+* Your newly build APK should reside in `overte\android\apps\questInterface\release` (if you chose release).
 
 ### Running a Module
 
@@ -140,7 +140,7 @@ With your start menu, search for 'Edit the System Environment Variables' and ope
 
 Some things you can try if you want to do a clean build
  
-* Delete the `build` and `.externalNativeBuild` folders from the folder for each module you're building (for example, `vircadia/android/apps/interface`)
+* Delete the `build` and `.externalNativeBuild` folders from the folder for each module you're building (for example, `overte/android/apps/interface`)
 * If you have set your `HIFI_VCPKG_ROOT` environment variable, delete the contents of that directory; otherwise, delete `AppData/Local/Temp/hifi`
 * In Android Studio, click _File > Invalidate Caches / Restart_ and select _Invalidate and Restart_
 

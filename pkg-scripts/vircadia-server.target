@@ -1,11 +1,11 @@
 [Unit]
 Description=Overte virtual domain
-Wants=vircadia-assignment-client.service
-Wants=vircadia-domain-server.service
-#Wants=vircadia-ice-server.service
-After=vircadia-assignment-client.service
-After=vircadia-domain-server.service
-#After=vircadia-ice-server.service
+Wants=overte-assignment-client.service
+Wants=overte-domain-server.service
+#Wants=overte-ice-server.service
+After=overte-assignment-client.service
+After=overte-domain-server.service
+#After=overte-ice-server.service
 
 [Install]
 WantedBy=multi-user.target

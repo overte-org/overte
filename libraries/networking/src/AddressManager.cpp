@@ -36,14 +36,14 @@ const QString REDIRECT_HIFI_ADDRESS = NetworkingConstants::REDIRECT_HIFI_ADDRESS
 const QString ADDRESS_MANAGER_SETTINGS_GROUP = "AddressManager";
 const QString SETTINGS_CURRENT_ADDRESS_KEY = "address";
 
-const QString DEFAULT_VIRCADIA_ADDRESS = (!BuildInfo::PRELOADED_STARTUP_LOCATION.isEmpty())
+const QString DEFAULT_OVERTE_ADDRESS = (!BuildInfo::PRELOADED_STARTUP_LOCATION.isEmpty())
                                        ? BuildInfo::PRELOADED_STARTUP_LOCATION
-                                       : NetworkingConstants::DEFAULT_VIRCADIA_ADDRESS;
+                                       : NetworkingConstants::DEFAULT_OVERTE_ADDRESS;
 const QString DEFAULT_HOME_ADDRESS = (!BuildInfo::PRELOADED_STARTUP_LOCATION.isEmpty())
                                        ? BuildInfo::PRELOADED_STARTUP_LOCATION
-                                       : NetworkingConstants::DEFAULT_VIRCADIA_ADDRESS;
+                                       : NetworkingConstants::DEFAULT_OVERTE_ADDRESS;
 
-Setting::Handle<QUrl> currentAddressHandle(QStringList() << ADDRESS_MANAGER_SETTINGS_GROUP << "address", DEFAULT_VIRCADIA_ADDRESS);
+Setting::Handle<QUrl> currentAddressHandle(QStringList() << ADDRESS_MANAGER_SETTINGS_GROUP << "address", DEFAULT_OVERTE_ADDRESS);
 
 bool AddressManager::isConnected() {
     return DependencyManager::get<NodeList>()->getDomainHandler().isConnected();
@@ -56,7 +56,7 @@ QString AddressManager::getProtocol() const {
 QUrl AddressManager::currentAddress(bool domainOnly) const {
     QUrl hifiURL = _domainURL;
 
-    if (!domainOnly && hifiURL.scheme() == URL_SCHEME_VIRCADIA) {
+    if (!domainOnly && hifiURL.scheme() == URL_SCHEME_OVERTE) {
         hifiURL.setPath(currentPath());
     }
 
@@ -65,7 +65,7 @@ QUrl AddressManager::currentAddress(bool domainOnly) const {
 
 QUrl AddressManager::currentFacingAddress() const {
     auto hifiURL = currentAddress();
-    if (hifiURL.scheme() == URL_SCHEME_VIRCADIA) {
+    if (hifiURL.scheme() == URL_SCHEME_OVERTE) {
         hifiURL.setPath(currentFacingPath());
     }
 
@@ -77,7 +77,7 @@ QUrl AddressManager::currentShareableAddress(bool domainOnly) const {
         // if we have a shareable place name use that instead of whatever the current host is
         QUrl hifiURL;
 
-        hifiURL.setScheme(URL_SCHEME_VIRCADIA);
+        hifiURL.setScheme(URL_SCHEME_OVERTE);
         hifiURL.setHost(_shareablePlaceName);
 
         if (!domainOnly) {
@@ -94,7 +94,7 @@ QUrl AddressManager::currentPublicAddress(bool domainOnly) const {
     // return an address that can be used by others to visit this client's current location.  If
     // in a serverless domain (which can't be visited) return an empty URL.
     QUrl shareableAddress = currentShareableAddress(domainOnly);
-    if (shareableAddress.scheme() != URL_SCHEME_VIRCADIA) {
+    if (shareableAddress.scheme() != URL_SCHEME_OVERTE) {
         return QUrl(); // file: urls aren't public
     }
     return shareableAddress;
@@ -103,7 +103,7 @@ QUrl AddressManager::currentPublicAddress(bool domainOnly) const {
 
 QUrl AddressManager::currentFacingShareableAddress() const {
     auto hifiURL = currentShareableAddress();
-    if (hifiURL.scheme() == URL_SCHEME_VIRCADIA) {
+    if (hifiURL.scheme() == URL_SCHEME_OVERTE) {
         hifiURL.setPath(currentFacingPath());
     }
 
@@ -114,7 +114,7 @@ QUrl AddressManager::currentFacingPublicAddress() const {
     // return an address that can be used by others to visit this client's current location.  If
     // in a serverless domain (which can't be visited) return an empty URL.
     QUrl shareableAddress = currentFacingShareableAddress();
-    if (shareableAddress.scheme() != URL_SCHEME_VIRCADIA) {
+    if (shareableAddress.scheme() != URL_SCHEME_OVERTE) {
         return QUrl(); // file: urls aren't public
     }
     return shareableAddress;
@@ -165,7 +165,7 @@ void AddressManager::storeCurrentAddress() {
 
     if (url.scheme() == HIFI_URL_SCHEME_FILE ||
         url.scheme() == HIFI_URL_SCHEME_HTTP || url.scheme() == HIFI_URL_SCHEME_HTTPS ||
-        (url.scheme() == URL_SCHEME_VIRCADIA && !url.host().isEmpty())) {
+        (url.scheme() == URL_SCHEME_OVERTE && !url.host().isEmpty())) {
         // TODO -- once Octree::readFromURL no-longer takes over the main event-loop, serverless-domain urls can
         // be loaded over http(s)
         // url.scheme() == HIFI_URL_SCHEME_HTTP ||
@@ -258,23 +258,23 @@ bool AddressManager::handleUrl(const QUrl& lookupUrlIn, LookupTrigger trigger, c
     if (lookupUrl.scheme().isEmpty() && !lookupUrl.path().startsWith("/")) {
         // 'urls' without schemes are taken as domain names, as opposed to
         // simply a path portion of a url, so we need to set the scheme
-        lookupUrl.setScheme(URL_SCHEME_VIRCADIA);
+        lookupUrl.setScheme(URL_SCHEME_OVERTE);
     }
 
     static const QRegExp PORT_REGEX = QRegExp("\\d{1,5}(\\/.*)?");
     if(!lookupUrl.scheme().isEmpty() && lookupUrl.host().isEmpty() && PORT_REGEX.exactMatch(lookupUrl.path())) {
         // this is in the form somewhere:<port>, convert it to hifi://somewhere:<port>
-        lookupUrl = QUrl(URL_SCHEME_VIRCADIA + "://" + lookupUrl.toString());
+        lookupUrl = QUrl(URL_SCHEME_OVERTE + "://" + lookupUrl.toString());
     }
     // it should be noted that url's in the form
     // somewhere:<port> are not valid, as that
     // would indicate that the scheme is 'somewhere'
     // use hifi://somewhere:<port> instead
 
-    if (lookupUrl.scheme() == URL_SCHEME_VIRCADIA || lookupUrlInString.startsWith(URL_SCHEME_VIRCADIA + "://")) {
+    if (lookupUrl.scheme() == URL_SCHEME_OVERTE || lookupUrlInString.startsWith(URL_SCHEME_OVERTE + "://")) {
         QString lookupUrlString;
 
-        if (lookupUrlInString.startsWith(URL_SCHEME_VIRCADIA + "://")) {
+        if (lookupUrlInString.startsWith(URL_SCHEME_OVERTE + "://")) {
             lookupUrlString = lookupUrlInString;
         } else {
             lookupUrlString = lookupUrl.toString(QUrl::FullyEncoded);
@@ -282,8 +282,8 @@ bool AddressManager::handleUrl(const QUrl& lookupUrlIn, LookupTrigger trigger, c
 
         if (lookupUrl.host().isEmpty()) {
             // this was in the form hifi:/somewhere or hifi:somewhere.  Fix it by making it hifi://somewhere
-            static const QRegExp HIFI_SCHEME_REGEX = QRegExp(URL_SCHEME_VIRCADIA + ":\\/{0,2}", Qt::CaseInsensitive);
-            lookupUrl = QUrl(lookupUrl.toString().replace(HIFI_SCHEME_REGEX, URL_SCHEME_VIRCADIA + "://"));
+            static const QRegExp HIFI_SCHEME_REGEX = QRegExp(URL_SCHEME_OVERTE + ":\\/{0,2}", Qt::CaseInsensitive);
+            lookupUrl = QUrl(lookupUrl.toString().replace(HIFI_SCHEME_REGEX, URL_SCHEME_OVERTE + "://"));
         }
 
         DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::LookupAddress);
@@ -359,12 +359,12 @@ bool AddressManager::handleUrl(const QUrl& lookupUrlIn, LookupTrigger trigger, c
                 _previousAPILookup = lookupUrl;
 
                 // Let's convert this to a QString for processing in case there are spaces in it.
-                if (lookupUrlString.contains(URL_SCHEME_VIRCADIA + "://", Qt::CaseInsensitive)) {
-                    lookupUrlString = lookupUrlString.replace((URL_SCHEME_VIRCADIA + "://"), "");
-                } else if (lookupUrlString.contains(URL_SCHEME_VIRCADIA + ":/", Qt::CaseInsensitive)) {
-                    lookupUrlString = lookupUrlString.replace((URL_SCHEME_VIRCADIA + ":/"), "");
-                } else if (lookupUrlString.contains(URL_SCHEME_VIRCADIA + ":", Qt::CaseInsensitive)) {
-                    lookupUrlString = lookupUrlString.replace((URL_SCHEME_VIRCADIA + ":"), "");
+                if (lookupUrlString.contains(URL_SCHEME_OVERTE + "://", Qt::CaseInsensitive)) {
+                    lookupUrlString = lookupUrlString.replace((URL_SCHEME_OVERTE + "://"), "");
+                } else if (lookupUrlString.contains(URL_SCHEME_OVERTE + ":/", Qt::CaseInsensitive)) {
+                    lookupUrlString = lookupUrlString.replace((URL_SCHEME_OVERTE + ":/"), "");
+                } else if (lookupUrlString.contains(URL_SCHEME_OVERTE + ":", Qt::CaseInsensitive)) {
+                    lookupUrlString = lookupUrlString.replace((URL_SCHEME_OVERTE + ":"), "");
                 }
 
                 // Get the path and then strip it out.
@@ -520,7 +520,7 @@ void AddressManager::goToAddressFromObject(const QVariantMap& dataObject, const 
                     qCDebug(networking) << "Possible domain change required to connect to" << domainHostname
                         << "on" << domainPort;
                     QUrl domainURL;
-                    domainURL.setScheme(URL_SCHEME_VIRCADIA);
+                    domainURL.setScheme(URL_SCHEME_OVERTE);
                     domainURL.setHost(domainHostname);
                     if (domainPort > 0) {
                         domainURL.setPort(domainPort);
@@ -691,7 +691,7 @@ bool AddressManager::handleNetworkAddress(const QString& lookupString, LookupTri
 
         emit lookupResultsFinished();
         QUrl domainURL;
-        domainURL.setScheme(URL_SCHEME_VIRCADIA);
+        domainURL.setScheme(URL_SCHEME_OVERTE);
         domainURL.setHost(domainIPString);
         if (domainPort > 0) {
             domainURL.setPort(domainPort);
@@ -714,7 +714,7 @@ bool AddressManager::handleNetworkAddress(const QString& lookupString, LookupTri
 
         emit lookupResultsFinished();
         QUrl domainURL;
-        domainURL.setScheme(URL_SCHEME_VIRCADIA);
+        domainURL.setScheme(URL_SCHEME_OVERTE);
         domainURL.setHost(domainHostname);
         if (domainPort > 0) {
             domainURL.setPort(domainPort);
@@ -847,7 +847,7 @@ bool AddressManager::setHost(const QString& host, LookupTrigger trigger, quint16
         addCurrentAddressToHistory(trigger);
 
         _domainURL = QUrl();
-        _domainURL.setScheme(URL_SCHEME_VIRCADIA);
+        _domainURL.setScheme(URL_SCHEME_OVERTE);
         _domainURL.setHost(host);
         if (port > 0) {
             _domainURL.setPort(port);
@@ -884,7 +884,7 @@ bool AddressManager::setDomainInfo(const QUrl& domainURL, LookupTrigger trigger)
     // clear any current place information
     _rootPlaceID = QUuid();
 
-    if (_domainURL.scheme() == URL_SCHEME_VIRCADIA) {
+    if (_domainURL.scheme() == URL_SCHEME_OVERTE) {
         qCDebug(networking) << "Possible domain change required to connect to domain at" << hostname << "on" << port;
     } else {
         qCDebug(networking) << "Possible domain change required to serverless domain: " << domainURL.toString();
@@ -902,7 +902,7 @@ bool AddressManager::setDomainInfo(const QUrl& domainURL, LookupTrigger trigger)
 
 void AddressManager::goToEntry(LookupTrigger trigger) {
     resetConfirmConnectWithoutAvatarEntities();
-    handleUrl(DEFAULT_VIRCADIA_ADDRESS, trigger);
+    handleUrl(DEFAULT_OVERTE_ADDRESS, trigger);
 }
 
 void AddressManager::goToUser(const QString& username, bool shouldMatchOrientation) {

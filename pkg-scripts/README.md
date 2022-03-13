@@ -12,7 +12,7 @@ base folder/
 ```
 
 These scripts assume that the current directory is the pkg-scripts folder inside of the source directory
-and that the base folder can be reached by going to `../..`. This may not work if pkg-scripts is a symlink; adding an VIRCADIA=~/Vircadia to the beginning of the commandline will override where it looks for the base folder.
+and that the base folder can be reached by going to `../..`. This may not work if pkg-scripts is a symlink; adding an OVERTE=~/Overte to the beginning of the commandline will override where it looks for the base folder.
 
 ## Ubuntu
 ```
@@ -49,29 +49,29 @@ This script will attempt to create a docker container.
 
 The following directory structure is created for binaries:
 ```
-/opt/vircadia - executables
-/opt/vircadia/lib - private shared libraries required for executables
-/opt/vircadia/resources - files required by domain-server administrative website
-/opt/vircadia/plugins - files required by assignment-client, mainly for audio codecs
+/opt/overte - executables
+/opt/overte/lib - private shared libraries required for executables
+/opt/overte/resources - files required by domain-server administrative website
+/opt/overte/plugins - files required by assignment-client, mainly for audio codecs
 ```
 
 ### Services
 
 The following systemd services are installed in `/usr/lib/systemd/system`:
 ```
-vircadia-assignment-client.service
-vircadia-domain-server.service
-vircadia-server.target - used to launch/shutdown the two prior services
-vircadia-assignment-client@.service
-vircadia-domain-server@.service
-vircadia-server@.target - used to launch/shutdown the two prior services
+overte-assignment-client.service
+overte-domain-server.service
+overte-server.target - used to launch/shutdown the two prior services
+overte-assignment-client@.service
+overte-domain-server@.service
+overte-server@.target - used to launch/shutdown the two prior services
 ```
 
 The top three services in this list are the "normal" services that launch Overte
 in the typical fashion. The bottom three services are "template" services designed
 to permit multiple services to be installed and running on a single machine.
 
-The script `/opt/vircadia/new-server serverName basePort` will do the necessary
+The script `/opt/overte/new-server serverName basePort` will do the necessary
 setup for a new domain with the specified server name and port. Upon installation
 the package will create and launch a domain named "default" at base port 40100.
 The domain name here has nothing to do with the name people will use to find your
@@ -82,7 +82,7 @@ used to configure and run the domain on your server.
 
 The server stores its files in the following locations:
 ```
-/var/lib/vircadia/.local - "unnamed" services (the default location for Overte servers)
-/var/lib/vircadia/serverName - "named" (template) domains
-/etc/opt/vircadia - environment variables when launching named domains
+/var/lib/overte/.local - "unnamed" services (the default location for Overte servers)
+/var/lib/overte/serverName - "named" (template) domains
+/etc/opt/overte - environment variables when launching named domains
 ```

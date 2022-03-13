@@ -12,7 +12,7 @@
 //
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 
 var count = 0;
 var stopAfter = 1000;
@@ -27,7 +27,7 @@ var modelPropertiesA = {
                 y: 3.34,
                 z: 0.54
                 },
-    modelURL: VIRCADIA_PUBLIC_CDN + "meshes/Feisar_Ship.FBX",
+    modelURL: OVERTE_PUBLIC_CDN + "meshes/Feisar_Ship.FBX",
     lifetime: 20
 };
 

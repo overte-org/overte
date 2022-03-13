@@ -4,6 +4,7 @@
 //
 //  Created by David Rowe on 16 May 2021.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 
 #include "WebRTCSignalingServer.h"
@@ -31,9 +32,9 @@ WebRTCSignalingServer::WebRTCSignalingServer(QObject* parent, bool isWSSEnabled)
             this));
 
         auto dsDirPath = PathUtils::getAppLocalDataPath();
-        const QString KEY_FILENAME = "vircadia-cert.key";
-        const QString CRT_FILENAME = "vircadia-cert.crt";
-        const QString CA_CRT_FILENAME = "vircadia-cert-ca.crt";
+        const QString KEY_FILENAME = "overte-cert.key";
+        const QString CRT_FILENAME = "overte-cert.crt";
+        const QString CA_CRT_FILENAME = "overte-cert-ca.crt";
         qCDebug(networking_webrtc) << "WebSocket WSS key file:" << dsDirPath + KEY_FILENAME;
         qCDebug(networking_webrtc) << "WebSocket WSS cert file:" << dsDirPath + CRT_FILENAME;
         qCDebug(networking_webrtc) << "WebSocket WSS CA cert file:" << dsDirPath + CA_CRT_FILENAME;

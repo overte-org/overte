@@ -12,7 +12,7 @@
 //
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 
 var count = 0;
 var moveUntil = 2000;
@@ -38,7 +38,7 @@ type: "Model",
              green: 255,
              blue: 0 },
 
-    modelURL: VIRCADIA_PUBLIC_CDN + "meshes/Feisar_Ship.FBX",
+    modelURL: OVERTE_PUBLIC_CDN + "meshes/Feisar_Ship.FBX",
 
     
     rotation: rotation

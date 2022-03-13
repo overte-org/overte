@@ -1,17 +1,17 @@
 [Unit]
 Description=Domain Server service for Overte
 After=network.target
-PartOf=vircadia-server.target
+PartOf=overte-server.target
 
 [Service]
 Restart=on-failure
 
-WorkingDirectory=/opt/vircadia
-Environment="LD_LIBRARY_PATH=/opt/vircadia/lib"
-User=vircadia
-Group=vircadia
+WorkingDirectory=/opt/overte
+Environment="LD_LIBRARY_PATH=/opt/overte/lib"
+User=overte
+Group=overte
 #LimitCORE=infinity
-ExecStart=/opt/vircadia/domain-server
+ExecStart=/opt/overte/domain-server
 
 [Install]
 WantedBy=multi-user.target

@@ -1,42 +1,42 @@
 #!/bin/sh
 
-if [ "$VIRCADIA" = "" ]; then
-	        VIRCADIA=`realpath ../..`
+if [ "$OVERTE" = "" ]; then
+	        OVERTE=`realpath ../..`
 fi
-GITDATE=`git -C $VIRCADIA/source log -n 1 --format=raw | grep author | cut -d">" -f 2 | cut -d" " -f 2 | xargs -I {} date -d @{} +"%Y%m%d"`
-GITCOMMIT=`git -C $VIRCADIA/source rev-parse HEAD | cut -c 1-7`
+GITDATE=`git -C $OVERTE/source log -n 1 --format=raw | grep author | cut -d">" -f 2 | cut -d" " -f 2 | xargs -I {} date -d @{} +"%Y%m%d"`
+GITCOMMIT=`git -C $OVERTE/source rev-parse HEAD | cut -c 1-7`
 VERSION=${RPMVERSION}_${GITDATE}_${GITCOMMIT}
 
 SOFILES=`ls \
-		$VIRCADIA/build/libraries/*/*.so \
-		$VIRCADIA/qt5-install/lib/libQt5Network.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5Core.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5Widgets.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5Gui.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5Script.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5WebSockets.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5Qml.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5Quick.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5ScriptTools.so.*.*.* \
+		$OVERTE/build/libraries/*/*.so \
+		$OVERTE/qt5-install/lib/libQt5Network.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5Core.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5Widgets.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5Gui.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5Script.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5WebSockets.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5Qml.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5Quick.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5ScriptTools.so.*.*.* \
 	| sed 's/\./\\\./g' \
 	| paste -d'|' -s`
 
 DEPENDS=mesa-libGL,`ls \
-		$VIRCADIA/build/assignment-client/assignment-client \
-		$VIRCADIA/build/domain-server/domain-server \
-		$VIRCADIA/build/tools/oven/oven \
-		$VIRCADIA/build/libraries/*/*.so \
-		$VIRCADIA/qt5-install/lib/libQt5Network.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5Core.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5Widgets.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5Gui.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5Script.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5WebSockets.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5Qml.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5Quick.so.*.*.* \
-		$VIRCADIA/qt5-install/lib/libQt5ScriptTools.so.*.*.* \
-		$VIRCADIA/build/assignment-client/plugins/*.so \
-		$VIRCADIA/build/assignment-client/plugins/*/*.so \
+		$OVERTE/build/assignment-client/assignment-client \
+		$OVERTE/build/domain-server/domain-server \
+		$OVERTE/build/tools/oven/oven \
+		$OVERTE/build/libraries/*/*.so \
+		$OVERTE/qt5-install/lib/libQt5Network.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5Core.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5Widgets.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5Gui.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5Script.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5WebSockets.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5Qml.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5Quick.so.*.*.* \
+		$OVERTE/qt5-install/lib/libQt5ScriptTools.so.*.*.* \
+		$OVERTE/build/assignment-client/plugins/*.so \
+		$OVERTE/build/assignment-client/plugins/*/*.so \
 	| xargs -I {} sh -c 'objdump -p {} | grep NEEDED' \
 	| awk '{print $2}' \
 	| sort | uniq \
@@ -49,6 +49,6 @@ DEPENDS=mesa-libGL,`ls \
 
 sudo yum install chrpath
 
-export VERSION DEPENDS VIRCADIA
-rpmbuild --target x86_64 -bb ./vircadia-server.spec
+export VERSION DEPENDS OVERTE
+rpmbuild --target x86_64 -bb ./overte-server.spec
 mv ~/rpmbuild/RPMS/x86_64/*.rpm .

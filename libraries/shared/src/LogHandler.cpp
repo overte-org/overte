@@ -37,7 +37,7 @@ LogHandler& LogHandler::getInstance() {
 }
 
 LogHandler::LogHandler() {
-    QString logOptions = qgetenv("VIRCADIA_LOG_OPTIONS").toLower();
+    QString logOptions = qgetenv("OVERTE_LOG_OPTIONS").toLower();
 
 #ifdef Q_OS_UNIX
     // Enable color by default if we're on Unix, and output is a tty (so we're not being piped into something)
@@ -67,7 +67,7 @@ LogHandler::LogHandler() {
         } else if (option == "keep_repeats") {
             _keepRepeats = true;
         } else if (option != "") {
-            fprintf(stdout, "Unrecognized option in VIRCADIA_LOG_OPTIONS: '%s'\n", option.toUtf8().constData());
+            fprintf(stdout, "Unrecognized option in OVERTE_LOG_OPTIONS: '%s'\n", option.toUtf8().constData());
         }
     }
 }
