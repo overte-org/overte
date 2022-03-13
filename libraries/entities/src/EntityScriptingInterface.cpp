@@ -58,6 +58,7 @@ EntityScriptingInterface::EntityScriptingInterface(bool bidOnSimulationOwnership
     connect(nodeList.data(), &NodeList::canWriteAssetsChanged, this, &EntityScriptingInterface::canWriteAssetsChanged);
     connect(nodeList.data(), &NodeList::canGetAndSetPrivateUserDataChanged, this, &EntityScriptingInterface::canGetAndSetPrivateUserDataChanged);
     connect(nodeList.data(), &NodeList::canRezAvatarEntitiesChanged, this, &EntityScriptingInterface::canRezAvatarEntitiesChanged);
+    connect(nodeList.data(), &NodeList::canViewAssetURLsChanged, this, &EntityScriptingInterface::canViewAssetURLsChanged);
 
     auto& packetReceiver = nodeList->getPacketReceiver();
     packetReceiver.registerListener(PacketType::EntityScriptCallMethod,
@@ -118,6 +119,11 @@ bool EntityScriptingInterface::canGetAndSetPrivateUserData() {
 bool EntityScriptingInterface::canRezAvatarEntities() {
     auto nodeList = DependencyManager::get<NodeList>();
     return nodeList->getThisNodeCanRezAvatarEntities();
+}
+
+bool EntityScriptingInterface::canViewAssetURLs() {
+    auto nodeList = DependencyManager::get<NodeList>();
+    return nodeList->getThisNodeCanViewAssetURLs();
 }
 
 void EntityScriptingInterface::setEntityTree(EntityTreePointer elementTree) {

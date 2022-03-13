@@ -300,6 +300,14 @@ public slots:
     Q_INVOKABLE bool canRezAvatarEntities();
 
     /*@jsdoc
+     * Checks whether or not the script can view asset URLs
+     * @function Entities.canViewAssetURLs
+     * @returns {boolean} <code>true</code> if the domain server will allow the script to view asset URLs,
+     *     otherwise <code>false</code>.
+     */
+    Q_INVOKABLE bool canViewAssetURLs();
+
+    /*@jsdoc
      * <p>How an entity is hosted and sent to others for display.</p>
      * <table>
      *   <thead>
@@ -2279,6 +2287,14 @@ signals:
      */
     void canRezAvatarEntitiesChanged(bool canRezAvatarEntities);
 
+    /*@jsdoc
+     * Triggered when your ability to view asset URLs is changed.
+     * @function Entities.canViewAssetURLsChanged
+     * @param {boolean} canViewAssetURLs - <code>true</code> if the script can view asset URLs,
+     *     <code>false</code> if it can't.
+     * @returns {Signal}
+     */
+    void canViewAssetURLsChanged(bool canViewAssetURLs);
 
     /*@jsdoc
      * Triggered when a mouse button is clicked while the mouse cursor is on an entity, or a controller trigger is fully 
