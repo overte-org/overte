@@ -547,6 +547,29 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
 
         // No migration needed to version 2.6.
 
+        if (oldVersion < 2.7) {
+            // Default values for new canViewAssetURLs permission.
+            unpackPermissions();
+            std::list<std::unordered_map<NodePermissionsKey, NodePermissionsPointer>> permissionsSets{
+                _standardAgentPermissions.get(),
+                _agentPermissions.get(),
+                _ipPermissions.get(),
+                _macPermissions.get(),
+                _machineFingerprintPermissions.get(),
+                _groupPermissions.get(),
+                _groupForbiddens.get()
+            };
+            foreach (auto permissionsSet, permissionsSets) {
+                for (auto entry : permissionsSet) {
+                    const auto& userKey = entry.first;
+                    if (permissionsSet[userKey]->can(NodePermissions::Permission::canConnectToDomain)) {
+                        permissionsSet[userKey]->set(NodePermissions::Permission::canViewAssetURLs);
+                    }
+                }
+            }
+            packPermissions();
+        }
+
         // write the current description version to our settings
         *versionVariant = _descriptionVersion;
 

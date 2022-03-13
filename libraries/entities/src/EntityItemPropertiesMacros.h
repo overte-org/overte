@@ -218,6 +218,13 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return
         properties.setProperty(#P, V); \
     }
 
+#define COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(p, P)                                                                                                        \
+    if (nodeList->getThisNodeCanViewAssetURLs() && ((!returnNothingOnEmptyPropertyFlags && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
+        (!skipDefaults || defaultEntityProperties._##P != _##P)) {                                                                                                   \
+        ScriptValue V = convertScriptValue(engine, _##P);                                                                                                            \
+        properties.setProperty(#P, V);                                                                                                                               \
+    }
+
 typedef QVector<glm::vec3> qVectorVec3;
 typedef QVector<glm::quat> qVectorQuat;
 typedef QVector<bool> qVectorBool;

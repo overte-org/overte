@@ -1,5 +1,5 @@
 {
-  "version": 2.6,
+  "version": 2.7,
   "settings": [
     {
       "name": "metaverse",
@@ -479,6 +479,13 @@
               "type": "checkbox",
               "editable": true,
               "default": false
+            },
+            {
+              "name": "id_can_view_asset_urls",
+              "label": "View Asset URLs",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
             }
           ],
           "non-deletable-row-key": "permissions_id",
@@ -505,6 +512,7 @@
                 "id_can_rez_tmp": true,
                 "id_can_write_to_asset_server": true,
                 "id_can_get_and_set_private_user_data": true,
+                "id_can_view_asset_urls": true,
                 "permissions_id": "localhost"
             },
             {
@@ -633,6 +641,13 @@
               "type": "checkbox",
               "editable": true,
               "default": false
+            },
+            {
+              "name": "id_can_view_asset_urls",
+              "label": "View Asset URLs",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
             }
           ]
         },
@@ -752,6 +767,13 @@
               "type": "checkbox",
               "editable": true,
               "default": false
+            },
+            {
+              "name": "id_can_view_asset_urls",
+              "label": "View Asset URLs",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
             }
           ]
         },
@@ -841,6 +863,13 @@
             {
               "name": "id_can_get_and_set_private_user_data",
               "label": "Get and Set Private User Data",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
+            },
+            {
+              "name": "id_can_view_asset_urls",
+              "label": "View Asset URLs",
               "type": "checkbox",
               "editable": true,
               "default": false
@@ -936,6 +965,13 @@
               "type": "checkbox",
               "editable": true,
               "default": false
+            },
+            {
+              "name": "id_can_view_asset_urls",
+              "label": "View Asset URLs",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
             }
           ]
         },
@@ -1022,13 +1058,20 @@
               "editable": true,
               "default": false
             },
-              {
-                "name": "id_can_get_and_set_private_user_data",
-                "label": "Get and Set Private User Data",
-                "type": "checkbox",
-                "editable": true,
-                "default": false
-              }
+            {
+              "name": "id_can_get_and_set_private_user_data",
+              "label": "Get and Set Private User Data",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
+            },
+            {
+              "name": "id_can_view_asset_urls",
+              "label": "View Asset URLs",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
+            }
           ]
         },
         {
@@ -1117,6 +1160,13 @@
             {
               "name": "id_can_get_and_set_private_user_data",
               "label": "Get and Set Private User Data",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
+            },
+            {
+              "name": "id_can_view_asset_urls",
+              "label": "View Asset URLs",
               "type": "checkbox",
               "editable": true,
               "default": false
