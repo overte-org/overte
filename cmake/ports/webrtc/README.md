@@ -160,7 +160,7 @@ The following patches are needed even though SSL is excluded in the `gn gen` bui
 Do one of the following to provide OpenSSL for building against:
 a. If you have built Vircadia, find the **HIFI_VCPKG_BASE** subdirectory used in your build and make note of the path to and 
 including the *installed\x64-windows\include* directory (which includes an *openssl* directory).
-a. Follow https://github.com/vircadia/vcpkg to install *vcpkg* and then *openssl*. Make note of the path to and including the 
+a. Follow https://github.com/overte-org/vcpkg to install *vcpkg* and then *openssl*. Make note of the path to and including the 
 *packages\openssl-windows_x64-windows\include* directory (which includes an *openssl* directory).
 
 Copy the *\<path\>\openssl* directory to the following locations (i.e., add as *openssl* subdirectories):

@@ -51,7 +51,7 @@ endfunction()
 # Sets the QT_CMAKE_PREFIX_PATH and QT_DIR variables
 # Also enables CMAKE_AUTOMOC and CMAKE_AUTORCC
 macro(setup_qt)
-    if ($ENV{VIRCADIA_USE_SYSTEM_QT})
+    if ($ENV{OVERTE_USE_SYSTEM_QT})
         message(STATUS "Using system Qt")
     else()
         # if we are in a development build and QT_CMAKE_PREFIX_PATH is specified
