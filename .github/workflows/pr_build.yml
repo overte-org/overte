@@ -36,7 +36,7 @@ jobs:
     strategy:
         matrix:
           include:
-            - os: windows-latest
+            - os: windows-2019
               build_type: full
             - os: macOS-10.15
               build_type: full
@@ -61,13 +61,13 @@ jobs:
       id: buildenv1
       run: |
         echo ::set-output name=github_sha_short::`echo $GIT_COMMIT | cut -c1-7`
-        echo "JOB_NAME=build (${{matrix.os}}, ${{matrix.build_type}})" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
 
         # Linux build variables
         if [[ "${{ matrix.os }}" = "ubuntu-"* || "${{ matrix.os }}" = *"debian"* ]]; then
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=*" >> $GITHUB_ENV
+          echo "JOB_NAME=${{matrix.os}}![Ubuntu](https://data.moto9000.moe/remixicon/ubuntu-fill.svg), ${{matrix.build_type}}" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
           if [ "${{ matrix.os }}" = "self-hosted_debian-11_aarch64" ]; then
             echo "VIRCADIA_USE_SYSTEM_QT=true" >> $GITHUB_ENV
@@ -88,6 +88,7 @@ jobs:
         if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=dmg" >> $GITHUB_ENV
+          echo "JOB_NAME=${{matrix.os}}![macOS](https://data.moto9000.moe/remixicon/finder-fill.svg), ${{matrix.build_type}}" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
             echo "CMAKE_EXTRA=-DVIRCADIA_CPU_ARCHITECTURE= -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
           else
@@ -96,9 +97,10 @@ jobs:
           echo "APP_TARGET_NAME=Vircadia" >> $GITHUB_ENV
         fi
         # Windows build variables
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+        if [ "${{ matrix.os }}" = "windows-2019" ]; then
           echo "PYTHON_EXEC=python" >> $GITHUB_ENV
           echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
+          echo "JOB_NAME=${{matrix.os}}![Windows](https://data.moto9000.moe/remixicon/windows-fill.svg), ${{matrix.build_type}}" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
             echo "CMAKE_EXTRA=-A x64" >> $GITHUB_ENV
           else
@@ -111,6 +113,7 @@ jobs:
           echo "HIFI_ANDROID_PRECOMPILED=$HIFI_ANDROID_PRECOMPILED" >> $GITHUB_ENV
           mkdir $HIFI_ANDROID_PRECOMPILED
           echo "INSTALLER_EXT=apk" >> $GITHUB_ENV
+          echo "JOB_NAME=${{matrix.os}}![Android](https://data.moto9000.moe/remixicon/android-fill.svg), ${{matrix.build_type}}" >> $GITHUB_ENV
         fi
 
     # Configuration is broken into two steps because you can't set an env var and also reference it in the same step
@@ -227,7 +230,7 @@ jobs:
       run: cmake --build . --config $BUILD_TYPE --target assignment-client $CMAKE_BUILD_EXTRA
 
     - name: Build Console
-      if: matrix.build_type == 'full' || matrix.os == 'windows-latest'
+      if: matrix.build_type == 'full' || matrix.os == 'windows-2019'
       working-directory: ${{runner.workspace}}/build
       shell: bash
       run: cmake --build . --config $BUILD_TYPE --target packaged-server-console $CMAKE_BUILD_EXTRA
@@ -293,7 +296,7 @@ jobs:
         df -h
 
     - name: Output Installer Logs
-      if: failure() && matrix.os == 'windows-latest'
+      if: failure() && matrix.os == 'windows-2019'
       shell: bash
       working-directory: ${{runner.workspace}}/build
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
