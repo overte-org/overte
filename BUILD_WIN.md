@@ -1,11 +1,13 @@
 # Build Windows
 
-*Last Updated on 15 Apr 2021*
+*Last Updated on 12 Mar 2022*
 
 This is a stand-alone guide for creating your first Overte build for Windows 64-bit.
 
 Note: We are now using Visual Studio 2019 and Qt 5.15.2.
 If you are upgrading from previous versions, do a clean uninstall of those versions before going through this guide.
+
+Visual Studio 2022 currently will not work, as it fails compiling nvtt.
 
 **Note: The prerequisites will require about 10 GB of space on your drive. You will also need a system with at least 8GB of main memory.**
 
