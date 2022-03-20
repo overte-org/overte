@@ -56,7 +56,6 @@ headers = {
     "commit_hash": context["event"]["pull_request"]["head"]["sha"],
     "pull_number": context["event"]["number"],
     "job_name": os.environ["JOB_NAME"],
-    "job_post_name": os.environ["JOB_POST_NAME"],
     "run_id": context["run_id"],
     "file_sizes": ','.join(str(e) for e in file_sizes)
 }
