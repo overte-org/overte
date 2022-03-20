@@ -69,7 +69,7 @@ if (WIN32)
   set(OPENSSL_ROOT_DIR ${SSL_DIR})
   message("SSL dir is ${SSL_DIR}")
   set(OPENSSL_USE_STATIC_LIBS TRUE)
-  find_package(OpenSSL REQUIRED)
+  find_package(OpenSSL 1.1.0 REQUIRED)
 
   message("-- Found OpenSSL Libs ${OPENSSL_LIBRARIES}")
 
@@ -105,7 +105,7 @@ endif()
 
 if (APPLE)
   set(OPENSSL_USE_STATIC_LIBS TRUE)
-  find_package(OpenSSL REQUIRED)
+  find_package(OpenSSL 1.1.0 REQUIRED)
 endif()
 
 find_package(Qt5 COMPONENTS Core Gui Qml Quick QuickControls2 Network REQUIRED)
@@ -276,7 +276,7 @@ if (APPLE)
   include(CPackComponent)
 
   set(CPACK_PACKAGE_NAME "HQ Launcher")
-  set(CPACK_PACKAGE_VENDOR "Vircadia")
+  set(CPACK_PACKAGE_VENDOR "Overte")
   set(CPACK_PACKAGE_FILE_NAME "HQ Launcher")
 
   set(CPACK_NSIS_DISPLAY_NAME ${_DISPLAY_NAME})

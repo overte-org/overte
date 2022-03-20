@@ -405,9 +405,6 @@ Menu::Menu() {
     // Developer > Render >>>
     MenuWrapper* renderOptionsMenu = developerMenu->addMenu("Render");
 
-    addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::AntiAliasing, 0, RenderScriptingInterface::getInstance()->getAntialiasingEnabled(),
-        RenderScriptingInterface::getInstance(), SLOT(setAntialiasingEnabled(bool)));
-
     addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::Shadows, 0, RenderScriptingInterface::getInstance()->getShadowsEnabled(),
         RenderScriptingInterface::getInstance(), SLOT(setShadowsEnabled(bool)));
 
@@ -812,21 +809,21 @@ Menu::Menu() {
     // Help/Application menu ----------------------------------
     MenuWrapper * helpMenu = addMenu("Help");
 
-    // Help > About Vircadia
-    action = addActionToQMenuAndActionHash(helpMenu, "About Vircadia");
+    // Help > About Overte
+    action = addActionToQMenuAndActionHash(helpMenu, "About Overte");
     connect(action, &QAction::triggered, [] {
         qApp->showDialog(QString("hifi/dialogs/AboutDialog.qml"),
             QString("hifi/dialogs/TabletAboutDialog.qml"), "AboutDialog");
     });
     helpMenu->addSeparator();
 
-    // Help > Vircadia Docs
+    // Help > Overte Docs
     action = addActionToQMenuAndActionHash(helpMenu, "Online Documentation");
     connect(action, &QAction::triggered, qApp, [] {
         QDesktopServices::openUrl(NetworkingConstants::HELP_DOCS_URL);
     });
 
-    // Help > Vircadia Forum
+    // Help > Overte Forum
     action = addActionToQMenuAndActionHash(helpMenu, "Community Support");
     connect(action, &QAction::triggered, qApp, [] {
         QDesktopServices::openUrl(NetworkingConstants::HELP_COMMUNITY_URL);

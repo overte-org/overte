@@ -250,17 +250,17 @@ void setupPreferences() {
     {
         auto getter = []()->bool { return !Menu::getInstance()->isOptionChecked(MenuOption::DisableActivityLogger); };
         auto setter = [](bool value) { Menu::getInstance()->setIsOptionChecked(MenuOption::DisableActivityLogger, !value); };
-        preferences->addPreference(new CheckPreference("Privacy", "Send data - Vircadia uses information provided by your "
+        preferences->addPreference(new CheckPreference("Privacy", "Send data - Overte uses information provided by your "
                                 "client to improve the product through the logging of errors, tracking of usage patterns, "
-                                "installation and system details. By allowing Vircadia to collect this information "
+                                "installation and system details. By allowing Overte to collect this information "
                                 "you are helping to improve the product. ", getter, setter));
     }
 
     {
         auto getter = []()->bool { return !Menu::getInstance()->isOptionChecked(MenuOption::DisableCrashLogger); };
         auto setter = [](bool value) { Menu::getInstance()->setIsOptionChecked(MenuOption::DisableCrashLogger, !value); };
-        preferences->addPreference(new CheckPreference("Privacy", "Send crashes - Vircadia uses information provided by your "
-                                "client to improve the product through crash reports. By allowing Vircadia to collect "
+        preferences->addPreference(new CheckPreference("Privacy", "Send crashes - Overte uses information provided by your "
+                                "client to improve the product through crash reports. By allowing Overte to collect "
                                 "this information you are helping to improve the product. ", getter, setter));
     }
 
@@ -551,7 +551,7 @@ void setupPreferences() {
             auto getter = [nodeListWeak] {
                 auto nodeList = nodeListWeak.lock();
                 if (nodeList) {
-                    return static_cast<int>(nodeList->getSocketLocalPort());
+                    return static_cast<int>(nodeList->getSocketLocalPort(SocketType::UDP));
                 } else {
                     return -1;
                 }
@@ -559,7 +559,7 @@ void setupPreferences() {
             auto setter = [nodeListWeak](int preset) {
                 auto nodeList = nodeListWeak.lock();
                 if (nodeList) {
-                    nodeList->setSocketLocalPort(static_cast<quint16>(preset));
+                    nodeList->setSocketLocalPort(SocketType::UDP, static_cast<quint16>(preset));
                 }
             };
             auto preference = new IntSpinnerPreference(NETWORKING, "Listening Port", getter, setter);

@@ -1,0 +1,39 @@
+name: Master API-docs CI Build and Deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build_site:
+    runs-on: ubuntu-20.04
+
+    name: Build and deploy API-docs
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      working-directory: tools/jsdoc
+      run: |
+        sudo apt update
+        sudo apt install npm nodejs
+        npm install jsdoc -g
+        npm install
+
+    - name: Build API-docs
+      working-directory: tools/jsdoc
+      shell: bash
+      run: |
+        jsdoc root.js -r api-mainpage.md -c config.json -d output
+
+    - name: Deploy API-docs
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+      with:
+        server: ftp.tuxfamily.org
+        username: ${{ secrets.GHA_JSDOC_FTP_USER }}
+        password: ${{ secrets.GHA_JSDOC_FTP_PASS }}
+        local-dir: ./tools/jsdoc/output/
+        server-dir: overte/apidocs.overte.org-web/htdocs/
+        exclude: |
+          **/staging/**

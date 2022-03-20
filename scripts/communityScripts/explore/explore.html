@@ -326,7 +326,7 @@
                     if (placesData[i].domain.active && placesData[i].visibility == "open" && new Date(placesData[i].last_activity_update) > activeThresholdTime) {
                         joinedData.push({
                             "index": joinedData.length,
-                            "location": placesData[i].address,
+                            "location": placesData[i].name,
                             "name": placesData[i].name,
                             "owner": placesData[i].managers[0],
                             "userCount": placesData[i].current_attendance,
@@ -354,7 +354,7 @@
             // if metaverse data not loaded fire a request for it
             if (placesData == null) {
                 // fire off data get against the metaverse
-                axios.get("https://metaverse.vircadia.com/live/api/v1/places")
+                axios.get("https://mv.overte.org/server/api/v1/places")
                     .then((response) => {
                         placesData = response.data.data.places;
                         exploreComponent.updateData(blendedData());
