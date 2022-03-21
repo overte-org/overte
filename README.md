@@ -29,6 +29,7 @@ Overte is a 3D social software project seeking to incrementally bring about a tr
 ### Releases
 
 [View Releases here](https://github.com/overte-org/overte/releases/)
+[Pre-releases for testing are available here](https://public.overte.org/index.html#build/overte/)
 
 ### How to deploy a Server
 
