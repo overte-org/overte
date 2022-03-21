@@ -16,7 +16,9 @@ env:
   RELEASE_TYPE: PRODUCTION
   RELEASE_NUMBER: ${{ github.run_number }}
   STABLE_BUILD: 0
-  UPLOAD_BUCKET: athena-public
+  UPLOAD_BUCKET: overte-public
+  UPLOAD_REGION: fra1
+  UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
 
   # OSX-specific variables
   DEVELOPER_DIR: /Applications/Xcode_11.2.app/Contents/Developer
@@ -31,25 +33,29 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [windows-latest, macOS-10.15, ubuntu-18.04]
-        # build_type: [full, client]
-        build_type: [full]
         include:
+          - os: windows-2019
+            build_type: full
+          - os: macOS-10.15
+            build_type: full
           - os: ubuntu-18.04
             build_type: full
-            apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3
+            apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-github python3-distro
       fail-fast: false
     runs-on: ${{matrix.os}}
     steps:
     - name: Report Build Number
       shell: bash
       run: |
+
         echo "Build number: $BUILD_NUMBER"
+
     - name: Configure build environment 1
       shell: bash
       id: buildenv1
       run: |
-        echo "UPLOAD_PREFIX=master" >> $GITHUB_ENV
+
+        echo "UPLOAD_PREFIX=build/overte/master" >> $GITHUB_ENV
         echo ::set-output name=github_sha_short::`echo $GIT_COMMIT | cut -c1-7`
         echo "JOB_NAME=build (${{matrix.os}}, ${{matrix.build_type}})" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
@@ -57,7 +63,7 @@ jobs:
         if [[ "${{ matrix.os }}" = "ubuntu-"* ]]; then
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=tgz" >> $GITHUB_ENV
-          echo "CMAKE_BUILD_EXTRA=-- -j3" >> $GITHUB_ENV
+          echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DVIRCADIA_CPU_ARCHITECTURE= -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
         fi
         # Mac build variables
@@ -71,7 +77,7 @@ jobs:
           echo "APP_TARGET_NAME=Vircadia" >> $GITHUB_ENV
         fi
         # Windows build variables
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+        if [ "${{ matrix.os }}" = "windows-2019" ]; then
           echo "PYTHON_EXEC=python" >> $GITHUB_ENV
           echo "ZIP_COMMAND=7z" >> $GITHUB_ENV
           echo "ZIP_ARGS=a" >> $GITHUB_ENV
@@ -86,16 +92,18 @@ jobs:
     - name: Configure build environment 2
       shell: bash
       run: |
+
         echo "${{ steps.buildenv1.outputs.symbols_archive }}"
-        echo "ARTIFACT_PATTERN=Vircadia-*.$INSTALLER_EXT" >> $GITHUB_ENV
+        echo "ARTIFACT_PATTERN=Overte-*.$INSTALLER_EXT" >> $GITHUB_ENV
+        # Setting short commit SHA for use as RELEASE_NAME in generated installers.
+        echo "RELEASE_NAME=${{ steps.buildenv1.outputs.github_sha_short }}" >> $GITHUB_ENV
         # Build type variables
-        echo "GIT_COMMIT_SHORT=${{ steps.buildenv1.outputs.github_sha_short }}" >> $GITHUB_ENV
         if [ "${{ matrix.build_type }}" = "full" ]; then
           echo "CLIENT_ONLY=FALSE" >> $GITHUB_ENV
-          echo "INSTALLER=Vircadia-$BUILD_NUMBER-$GIT_COMMIT_SHORT.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "INSTALLER=Overte-master$BUILD_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
         else
           echo "CLIENT_ONLY=TRUE" >> $GITHUB_ENV
-          echo "INSTALLER=Vircadia-Interface-$BUILD_NUMBER-$GIT_COMMIT_SHORT.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "INSTALLER=Overte-Interface-master$BUILD_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
     - name: Clear working directory
       if: startsWith(matrix.os, 'windows')
@@ -112,14 +120,16 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu') || contains(matrix.os, 'debian') || startsWith(matrix.os, 'macOS')
       run: |
         if [[ "${{ matrix.os }}" =~ "ubuntu" || "${{ matrix.os }}" =~ "debian" ]]; then
-          echo "Installing Python Modules:"
-          pip3 install distro || exit 1
 
           echo "Updating apt repository index"
           sudo apt update || exit 1
 
           echo "Installing apt packages"
           sudo apt install -y ${{ matrix.apt-dependencies }} || exit 1
+
+          echo "Installing Python Modules"
+          pip3 install boto3 || exit 1
+
         else # macOS
           echo "Downloading MacOSX10.12 SDK.."
           curl --progress-bar -L -o macOS_SDK10.12.4.tar.xz "https://cloudflare-ipfs.com/ipfs/QmTDLEYdo616YgZKSYC2mySSw8EKQWTz7CH8UyMupMBpzK?filename=macOS_SDK10.12.4.tar.xz" || exit 1
@@ -223,12 +233,11 @@ jobs:
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
     - name: Upload artifact
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
       shell: bash
       working-directory: ${{runner.workspace}}/build
       env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.aws_access_key_id }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.aws_secret_access_key }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.s3_access_key_id }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.s3_secret_access_key }}
       run: $PYTHON_EXEC $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
 
     #- name: Archive symbols
