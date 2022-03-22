@@ -53,7 +53,7 @@ Rectangle {
     Connections {
         target: Settings
 
-        onValueChanged: {
+        function onValueChanged(setting, value) {
             if (setting === "simplifiedUI/allowEmoteDrawerExpansion") {
                 root.allowEmoteDrawerExpansion = value;
             }

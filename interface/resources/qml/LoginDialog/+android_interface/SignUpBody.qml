@@ -253,13 +253,13 @@ Item {
 
     Connections {
         target: loginDialog
-        onHandleSignupCompleted: {
+        function onHandleSignupCompleted() {
             console.log("Sign Up Succeeded");
 
             // now that we have an account, login with that username and password
             loginDialog.login(usernameField.text, passwordField.text)
         }
-        onHandleSignupFailed: {
+        function onHandleSignupFailed() {
             console.log("Sign Up Failed")
             toggleLoading(false)
 
@@ -268,12 +268,12 @@ Item {
 
             d.resize();
         }
-        onHandleLoginCompleted: {
+        function onHandleLoginCompleted() {
             bodyLoader.setSource("../WelcomeBody.qml", { "welcomeBack": false })
             bodyLoader.item.width = root.pane.width
             bodyLoader.item.height = root.pane.height
         }
-        onHandleLoginFailed: {
+        function onHandleLoginFailed() {
             // we failed to login, show the LoginDialog so the user will try again
             bodyLoader.setSource("LinkAccountBody.qml", { "failAfterSignUp": true })
             bodyLoader.item.width = root.pane.width

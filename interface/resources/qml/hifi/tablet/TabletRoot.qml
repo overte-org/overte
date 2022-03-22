@@ -199,7 +199,7 @@ Rectangle {
     Connections {
         id: eventBridgeConnection
         target: eventBridge
-        onWebEventReceived: {
+        function onWebEventReceived(message) {
             if (typeof message === "string" && message.slice(0, 17) === "CLARA.IO DOWNLOAD") {
                 ApplicationInterface.addAssetToWorldFromURL(message.slice(18));
             }

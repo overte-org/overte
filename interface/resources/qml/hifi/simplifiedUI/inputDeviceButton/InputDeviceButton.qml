@@ -41,11 +41,11 @@ Rectangle {
     Connections {
         target: AudioScriptingInterface
 
-        onNoiseGateOpened: {
+        function onNoiseGateOpened() {
             gated = false;
         }
 
-        onNoiseGateClosed: {
+        function onNoiseGateClosed() {
             gated = false;
         }
     }

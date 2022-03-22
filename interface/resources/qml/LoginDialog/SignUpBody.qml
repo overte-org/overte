@@ -455,7 +455,7 @@ Item {
     }
     Connections {
         target: loginDialog
-        onHandleSignupCompleted: {
+        function onHandleSignupCompleted() {
             console.log("Sign Up Completed");
 
             if (signUpBody.loginDialogPoppedUp) {
@@ -468,7 +468,7 @@ Item {
             loginDialog.login(usernameField.text, passwordField.text);
             bodyLoader.setSource("LoggingInBody.qml", { "loginDialog": loginDialog, "root": root, "bodyLoader": bodyLoader, "withSteam": false, "linkSteam": false });
         }
-        onHandleSignupFailed: {
+        function onHandleSignupFailed() {
             console.log("Sign Up Failed")
 
             if (signUpBody.loginDialogPoppedUp) {
@@ -495,14 +495,14 @@ Item {
                 errorContainer.anchors.left = usernameField.left;
             }
         }
-        onFocusEnabled: {
+        function onFocusEnabled() {
             if (!signUpBody.lostFocus) {
                 Qt.callLater(function() {
                     emailField.forceActiveFocus();
                 });
             }
         }
-        onFocusDisabled: {
+        function onFocusDisabled() {
             signUpBody.lostFocus = !root.isTablet && !root.isOverlay;
             if (signUpBody.lostFocus) {
                 Qt.callLater(function() {

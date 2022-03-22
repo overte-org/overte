@@ -49,7 +49,7 @@ Rectangle {
     Connections {
         target: MyAvatar
 
-        onSkeletonModelURLChanged: {
+        function onSkeletonModelURLChanged() {
             root.updatePreviewUrl();
 
             if ((MyAvatar.skeletonModelURL.indexOf("defaultAvatar") > -1 || MyAvatar.skeletonModelURL.indexOf("fst") === -1) &&

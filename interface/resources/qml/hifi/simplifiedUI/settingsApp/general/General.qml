@@ -145,7 +145,7 @@ Flickable {
                     Connections {
                         target: Settings
 
-                        onValueChanged: {
+                        function onValueChanged(setting, value) {
                             if (setting === "simplifiedUI/allowEmoteDrawerExpansion") {
                                 emoteSwitch.checked = value;
                             }
@@ -262,7 +262,7 @@ Flickable {
                 Connections {
                     target: Camera
 
-                    onModeUpdated: {
+                    function onModeUpdated() {
                         if (Camera.mode === "first person look at") {
                             firstPerson.checked = true
                         } else if (Camera.mode === "look at") {
@@ -276,7 +276,7 @@ Flickable {
                 Connections {
                     target: HMD
 
-                    onDisplayModeChanged: {
+                    function onDisplayModeChanged() {
                         selfie.visible = isHMDMode ? false : true
                     }
                 }

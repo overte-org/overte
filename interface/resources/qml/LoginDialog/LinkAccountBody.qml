@@ -724,14 +724,14 @@ Item {
 
     Connections {
         target: loginDialog
-        onFocusEnabled: {
+        function onFocusEnabled() {
             if (!linkAccountBody.lostFocus) {
                 Qt.callLater(function() {
                     displayNameField.forceActiveFocus();
                 });
             }
         }
-        onFocusDisabled: {
+        function onFocusDisabled() {
             linkAccountBody.lostFocus = !root.isTablet && !root.isOverlay;
             if (linkAccountBody.lostFocus) {
                 Qt.callLater(function() {

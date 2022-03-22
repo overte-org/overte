@@ -144,8 +144,9 @@ Rectangle {
 
     Connections {
         target: button
-        onClicked:
+        function onClicked() {
             sendMessage(JSON.stringify({type:"CMD",cmd:"Clicked"}));
+        }
     }
 
 }

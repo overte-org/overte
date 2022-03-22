@@ -262,7 +262,7 @@ Item {
 
     Connections {
         target: loginDialog
-        onHandleCreateCompleted: {
+        function onHandleCreateCompleted() {
             console.log("Create Succeeded");
             if (usernameCollisionBody.withOculus) {
                 if (usernameCollisionBody.loginDialogPoppedUp) {
@@ -284,7 +284,7 @@ Item {
             bodyLoader.setSource("LoggingInBody.qml", { "loginDialog": loginDialog, "root": root, "bodyLoader": bodyLoader, "withSteam": usernameCollisionBody.withSteam,
                 "withOculus": usernameCollisionBody.withOculus, "linkSteam": false, "linkOculus": false })
         }
-        onHandleCreateFailed: {
+        function onHandleCreateFailed() {
             console.log("Create Failed: " + error)
             if (usernameCollisionBody.loginDialogPoppedUp) {
                 var data = {
@@ -297,7 +297,7 @@ Item {
             mainTextContainer.visible = true
             mainTextContainer.text = "\"" + textField.text + qsTr("\" is invalid or already taken.");
         }
-        onHandleLoginCompleted: {
+        function onHandleLoginCompleted() {
             console.log("Login Succeeded");
             if (usernameCollisionBody.loginDialogPoppedUp) {
                 var data = {
@@ -310,7 +310,7 @@ Item {
             root.tryDestroy();
         }
 
-        onHandleLoginFailed: {
+        function onHandleLoginFailed() {
             console.log("Login Failed")
             if (usernameCollisionBody.loginDialogPoppedUp) {
                 var data = {
@@ -323,14 +323,14 @@ Item {
         }
 
 
-        onFocusEnabled: {
+        function onFocusEnabled() {
             if (!usernameCollisionBody.lostFocus) {
                 Qt.callLater(function() {
                     textField.forceActiveFocus();
                 });
             }
         }
-        onFocusDisabled: {
+        function onFocusDisabled() {
             usernameCollisionBody.lostFocus = !root.isTablet && !root.isOverlay;
             if (nusernameCollisionBody.lostFocus) {
                 Qt.callLater(function() {

@@ -30,7 +30,7 @@ Original.Button {
 
             Connections {
                 target: control
-                onActiveFocusChanged: {
+                function onActiveFocusChanged() {
                     if (control.activeFocus) {
                         pulseAnimation.restart();
                     } else {

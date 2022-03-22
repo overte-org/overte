@@ -151,7 +151,7 @@ Item {
 
             property string currentSelectionPath
             property bool currentSelectionIsFolder
-            property var tableViewConnection: Connections { target: assetTableView; onCurrentRowChanged: d.update(); }
+            property var tableViewConnection: Connections { target: assetTableView; function onCurrentRowChanged() { d.update(); } }
 
             function update() {
                 var row = assetTableView.currentRow;

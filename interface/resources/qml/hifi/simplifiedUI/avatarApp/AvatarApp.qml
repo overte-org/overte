@@ -49,7 +49,7 @@ Rectangle {
     Connections {
         target: MyAvatar
 
-        onSkeletonModelURLChanged: {
+        function onSkeletonModelURLChanged() {
             root.updatePreviewUrl();
         }
     }

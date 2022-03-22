@@ -53,7 +53,9 @@ Window {
 
             Connections {
                 target: proxy;
-                onPropertiesChanged: updateProperties();
+                function onPropertiesChanged() {
+                        updateProperties();
+                }
             }
             
             function updateProperties() {
