@@ -18,6 +18,10 @@ env:
   CMAKE_BACKTRACE_URL: ${{ secrets.MINIDUMP_TOKEN }}
   CMAKE_BACKTRACE_TOKEN: PR_${{ github.event.number }}_${{ github.sha }}
 
+  UPLOAD_BUCKET: overte-public
+  UPLOAD_REGION: fra1
+  UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
+
   # OSX specific variables
   DEVELOPER_DIR: /Applications/Xcode_11.2.app/Contents/Developer
   # We are using macOS SDK 10.12 to work around a lot of OpenGL issues in newer SDKs.
@@ -40,8 +44,6 @@ jobs:
               build_type: full
             - os: macOS-10.15
               build_type: full
-            #- os: macOS-10.15
-            #  build_type: client
             - os: ubuntu-18.04
               build_type: full
               apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-github python3-distro
@@ -178,6 +180,11 @@ jobs:
       shell: pwsh
       if: startsWith(matrix.os, 'windows')
       run: choco install nsis --version=3.06.1
+
+    - name: Install Python modules
+      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
+      shell: bash
+      run: $PYTHON_EXEC -m pip install boto3 PyGithub
 
     - name: Create Build Environment
       shell: bash
