@@ -120,7 +120,6 @@ jobs:
 
         echo "${{ steps.buildenv1.outputs.symbols_archive }}"
         # Setting short commit SHA for use as RELEASE_NAME in generated installers.
-        echo "RELEASE_NAME=${{ steps.buildenv1.outputs.github_sha_short }}" >> $GITHUB_ENV
         echo "GIT_COMMIT_SHORT=${{ steps.buildenv1.outputs.github_sha_short }}" >> $GITHUB_ENV
         if [[ "${{ matrix.build_type }}" != "android" ]]; then
           if [ "${{ matrix.build_type }}" = "full" ]; then
