@@ -303,8 +303,8 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ env.$ARTIFACT_PATTERN }}
-        path: ${{ runner.workspace }}/build/${{ env.$ARTIFACT_PATTERN }}
+        name: ${{ env.ARTIFACT_PATTERN }}
+        path: ${{ runner.workspace }}/build/${{ env.ARTIFACT_PATTERN }}
         if-no-files-found: error
 
     #~ - name: Upload Artifact
