@@ -117,15 +117,18 @@ jobs:
     - name: Configure Build Environment 2
       shell: bash
       run: |
+
         echo "${{ steps.buildenv1.outputs.symbols_archive }}"
+        # Setting short commit SHA for use as RELEASE_NAME in generated installers.
+        echo "RELEASE_NAME=${{ steps.buildenv1.outputs.github_sha_short }}" >> $GITHUB_ENV
         echo "GIT_COMMIT_SHORT=${{ steps.buildenv1.outputs.github_sha_short }}" >> $GITHUB_ENV
         if [[ "${{ matrix.build_type }}" != "android" ]]; then
           if [ "${{ matrix.build_type }}" = "full" ]; then
-            echo "ARTIFACT_PATTERN=Overte-PR${{ github.event.number }}-*.$INSTALLER_EXT" >> $GITHUB_ENV
-            echo "INSTALLER=Overte-$RELEASE_NUMBER-$GIT_COMMIT_SHORT.$INSTALLER_EXT" >> $GITHUB_ENV
+            echo "ARTIFACT_PATTERN=Overte-PR${{ github.event.number }}-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
+            echo "INSTALLER=Overte-$RELEASE_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
           else
-            echo "ARTIFACT_PATTERN=Overte-Interface-PR${{ github.event.number }}-*.$INSTALLER_EXT" >> $GITHUB_ENV
-            echo "INSTALLER=Overte-Interface-$RELEASE_NUMBER-$GIT_COMMIT_SHORT.$INSTALLER_EXT" >> $GITHUB_ENV
+            echo "ARTIFACT_PATTERN=Overte-Interface-PR${{ github.event.number }}-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
+            echo "INSTALLER=Overte-Interface-$RELEASE_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
           fi
         else
           echo "ARTIFACT_PATTERN=*.$INSTALLER_EXT" >> $GITHUB_ENV
@@ -298,12 +301,19 @@ jobs:
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
     - name: Upload Artifact
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-      run: |
-        if [[ "${{ matrix.build_type }}" == "android" ]]; then
-          cd $GITHUB_WORKSPACE/android
-        fi
-        $PYTHON_EXEC "$GITHUB_WORKSPACE/tools/ci-scripts/upload_to_publish_server.py"
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ ARTIFACT_PATTERN }}
+        path: ${{ runner.workspace }}/build/${{ ARTIFACT_PATTERN }}
+        if-no-files-found: error
+
+    #~ - name: Upload Artifact
+      #~ shell: bash
+      #~ working-directory: ${{runner.workspace}}/build
+      #~ env:
+        #~ GITHUB_CONTEXT: ${{ toJson(github) }}
+      #~ run: |
+        #~ if [[ "${{ matrix.build_type }}" == "android" ]]; then
+          #~ cd $GITHUB_WORKSPACE/android
+        #~ fi
+        #~ $PYTHON_EXEC "$GITHUB_WORKSPACE/tools/ci-scripts/upload_to_publish_server.py"
