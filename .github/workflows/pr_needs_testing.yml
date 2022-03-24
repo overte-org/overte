@@ -1,0 +1,19 @@
+name: Pull Request CI URL
+
+on:
+  pull_request:
+    types: [labeled]
+
+jobs:
+  post_PR_CI_URL:
+    name: Post CI packages info
+    runs-on: ubuntu-20.04
+    if: github.event.action != 'labeled' || github.event.label.name == 'needs testing'
+    steps:
+    - uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        GITHUB_TOKEN: ${{ secrets.pr_comment_token }}
+        message: |
+          This PR has been labelled as "needs testing".
+          Please see [public.overte.org](https://public.overte.org/index.html#build/overte/PR${{ github.event.number }}/) for pre-built packages.
+          The first builds should be available circa one hour after a commit has been pushed.
