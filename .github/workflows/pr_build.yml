@@ -311,7 +311,7 @@ jobs:
       shell: bash
       run: |
         mkdir build
-        echo "test" > $ARTIFACT_PATTERN
+        echo "test" >> $ARTIFACT_PATTERN
 
     - name: Upload Artifact
       shell: bash
