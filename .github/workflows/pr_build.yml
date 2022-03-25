@@ -71,7 +71,7 @@ jobs:
         # Linux build variables
         if [[ "${{ matrix.os }}" = "ubuntu-"* || "${{ matrix.os }}" = *"debian"* ]]; then
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=test" >> $GITHUB_ENV
+          echo "INSTALLER_EXT=*" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
           if [ "${{ matrix.os }}" = "self-hosted_debian-11_aarch64" ]; then
             echo "VIRCADIA_USE_SYSTEM_QT=true" >> $GITHUB_ENV
@@ -314,7 +314,6 @@ jobs:
       env:
         GITHUB_CONTEXT: ${{ toJson(github) }}
       run: |
-        tree
         if [[ "${{ matrix.build_type }}" == "android" ]]; then
           cd $GITHUB_WORKSPACE/android
         fi
