@@ -1,0 +1,2 @@
+# Require @JulianGro to review changed GitHub Actions workflows before they are run.
+/.github/workflows @JulianGro
