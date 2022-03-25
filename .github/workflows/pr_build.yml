@@ -310,8 +310,10 @@ jobs:
     - name: Create dummy file for testing
       shell: bash
       run: |
+        tree
         mkdir build
         echo "test" >> build/$ARTIFACT_PATTERN
+        tree
 
     - name: Upload Artifact
       shell: bash
