@@ -316,11 +316,12 @@ jobs:
         echo "test" > $ARTIFACT_PATTERN
 
     - name: Upload Artifact
-      # Do not upload Linux artifacts for now since they are empty.
-      #if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
       shell: bash
       working-directory: ${{runner.workspace}}/build
       env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.s3_access_key_id }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.s3_secret_access_key }}
-      run: $PYTHON_EXEC $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: |
+        if [[ "${{ matrix.build_type }}" == "android" ]]; then
+          cd $GITHUB_WORKSPACE/android
+        fi
+        $PYTHON_EXEC "$GITHUB_WORKSPACE/tools/ci-scripts/upload_to_publish_server.py"
