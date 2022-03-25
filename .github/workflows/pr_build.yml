@@ -47,7 +47,8 @@ jobs:
             #  build_type: full
             - os: ubuntu-18.04
               build_type: full
-              apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-distro
+              #apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-distro
+              apt-dependencies: python3-distro
             #- os: ubuntu-18.04
             #  build_type: android
             #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
@@ -142,10 +143,11 @@ jobs:
       shell: bash
       working-directory: ${{runner.workspace}}
       run: rm -rf ./*
-    - uses: actions/checkout@v1
-      with:
-        submodules: false
-        fetch-depth: 1
+
+#    - uses: actions/checkout@v1
+#      with:
+#        submodules: false
+#        fetch-depth: 1
 
     - name: Install dependencies
       shell: bash
@@ -310,10 +312,9 @@ jobs:
     - name: Create dummy file for testing
       shell: bash
       run: |
-        tree
         mkdir build
         echo "test" >> build/$ARTIFACT_PATTERN
-        tree
+        tree build/
 
     - name: Upload Artifact
       shell: bash
