@@ -36,7 +36,7 @@ env:
   XZ_OPT: -T0
 
 jobs:
-  build:
+  build_pr:
     name: "${{matrix.os}}, ${{matrix.build_type}}"
     strategy:
         matrix:
