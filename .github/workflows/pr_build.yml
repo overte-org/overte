@@ -310,6 +310,7 @@ jobs:
       #~ run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
     - name: Create dummy file for testing
+      working-directory: ${{runner.workspace}}
       shell: bash
       run: |
         mkdir build
