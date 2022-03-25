@@ -1,4 +1,5 @@
 name: Pull Request CI URL
+# Keep in mind that GitHub Actions does not allow reading secrets during PR builds.
 
 on:
   pull_request:
@@ -8,7 +9,7 @@ jobs:
   post_PR_CI_URL:
     name: Post CI packages info
     runs-on: ubuntu-20.04
-    if: github.event.action != 'labeled' || github.event.label.name == 'needs testing'
+    if: github.event.label.name == 'needs testing'
     steps:
     - uses: marocchino/sticky-pull-request-comment@v2
       with:

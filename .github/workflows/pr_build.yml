@@ -1,4 +1,5 @@
 name: Pull Request CI Build
+# Keep in mind that GitHub Actions does not allow reading secrets during PR builds.
 
 on:
   pull_request:
@@ -15,7 +16,7 @@ env:
   RELEASE_NUMBER: ${{ github.event.number }}
   VERSION_CODE: ${{ github.event.number }}
   # Sentry Crash Reporting
-  CMAKE_BACKTRACE_URL: ${{ secrets.MINIDUMP_TOKEN }}
+  CMAKE_BACKTRACE_URL:
   CMAKE_BACKTRACE_TOKEN: PR_${{ github.event.number }}_${{ github.sha }}
 
   UPLOAD_BUCKET: overte-public
@@ -40,20 +41,20 @@ jobs:
     strategy:
         matrix:
           include:
-            - os: windows-2019
-              build_type: full
-            - os: macOS-10.15
-              build_type: full
+            #- os: windows-2019
+            #  build_type: full
+            #- os: macOS-10.15
+            #  build_type: full
             - os: ubuntu-18.04
               build_type: full
-              apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-github python3-distro
-            - os: ubuntu-18.04
-              build_type: android
-              apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
+            #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-github python3-distro
+            #- os: ubuntu-18.04
+            #  build_type: android
+            #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
             # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
-            - os: self-hosted_debian-11_aarch64
-              build_type: full
-              apt-dependencies: qtbase5-dev qtbase5-private-dev qtwebengine5-dev qtwebengine5-dev-tools qtmultimedia5-dev libqt5opengl5-dev qtscript5-dev libqt5scripttools5 libqt5webchannel5-dev libqt5websockets5-dev qtxmlpatterns5-dev-tools qttools5-dev libqt5xmlpatterns5-dev libqt5svg5-dev qml-module-qtwebchannel build-essential cmake curl freeglut3-dev git libasound2 libasound2-dev libdouble-conversion-dev libdrm-dev libfontconfig1 libgl1-mesa-dev libglvnd-dev libharfbuzz-dev libjack-dev libjack0 libnspr4 libnss3 libpcre2-16-0 libpulse0 libsdl2-dev libssl-dev libudev-dev libxcb-xinerama0-dev libxcb-xinput0 libxcomposite1 libxcursor1 libxi-dev libxmu-dev libxrandr-dev libxslt1.1 libxtst6 make mesa-common-dev mesa-utils nodejs npm patchelf python2 python3 python3-distro xdg-user-dirs zlib1g-dev ninja-build zip python3-github python3-distro
+            #- os: self-hosted_debian-11_aarch64
+            #  build_type: full
+            #  apt-dependencies: qtbase5-dev qtbase5-private-dev qtwebengine5-dev qtwebengine5-dev-tools qtmultimedia5-dev libqt5opengl5-dev qtscript5-dev libqt5scripttools5 libqt5webchannel5-dev libqt5websockets5-dev qtxmlpatterns5-dev-tools qttools5-dev libqt5xmlpatterns5-dev libqt5svg5-dev qml-module-qtwebchannel build-essential cmake curl freeglut3-dev git libasound2 libasound2-dev libdouble-conversion-dev libdrm-dev libfontconfig1 libgl1-mesa-dev libglvnd-dev libharfbuzz-dev libjack-dev libjack0 libnspr4 libnss3 libpcre2-16-0 libpulse0 libsdl2-dev libssl-dev libudev-dev libxcb-xinerama0-dev libxcb-xinput0 libxcomposite1 libxcursor1 libxi-dev libxmu-dev libxrandr-dev libxslt1.1 libxtst6 make mesa-common-dev mesa-utils nodejs npm patchelf python2 python3 python3-distro xdg-user-dirs zlib1g-dev ninja-build zip python3-github python3-distro
         fail-fast: false
     runs-on: ${{matrix.os}}
     steps:
@@ -70,7 +71,7 @@ jobs:
         # Linux build variables
         if [[ "${{ matrix.os }}" = "ubuntu-"* || "${{ matrix.os }}" = *"debian"* ]]; then
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=*" >> $GITHUB_ENV
+          echo "INSTALLER_EXT=test" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
           if [ "${{ matrix.os }}" = "self-hosted_debian-11_aarch64" ]; then
             echo "VIRCADIA_USE_SYSTEM_QT=true" >> $GITHUB_ENV
@@ -190,127 +191,133 @@ jobs:
       shell: bash
       run: cmake -E make_directory "${{runner.workspace}}/build"
 
-    - name: Configure CMake
-      working-directory: ${{runner.workspace}}/build
-      shell: bash
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release $CMAKE_EXTRA
+    #~ - name: Configure CMake
+      #~ working-directory: ${{runner.workspace}}/build
+      #~ shell: bash
+      #~ run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release $CMAKE_EXTRA
 
-    - name: Compress cmake logs
-      if: always()
+    #~ - name: Compress cmake logs
+      #~ if: always()
+      #~ shell: bash
+      #~ run: |
+        #~ if [ "${{ matrix.os }}" == "macOS-10.15" ]; then
+          #~ TAR=gtar
+        #~ else
+          #~ TAR=tar
+        #~ fi
+
+        #~ if [ ${{ env.CI_WORKSPACE }} ]; then
+          #~ find "$CI_WORKSPACE/vircadia-files/vcpkg" -name '*log' -type f -print0 | $TAR --null --force-local -T - -c --xz -v -f "${{ runner.workspace }}/cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz"
+        #~ else
+          #~ find "$HOME/vircadia-files/vcpkg" -name '*log' -type f -print0 | $TAR --null --force-local -T - -c --xz -v -f "${{ runner.workspace }}/cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz"
+        #~ fi
+
+    #~ - name: Archive cmake logs
+      #~ if: always()
+      #~ uses: actions/upload-artifact@v2
+      #~ with:
+        #~ name: cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz
+        #~ path: ${{ runner.workspace }}/cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz
+        #~ if-no-files-found: error
+
+    #~ - name: Build Application
+      #~ if: matrix.build_type == 'full' || matrix.build_type == 'client'
+      #~ working-directory: ${{runner.workspace}}/build
+      #~ shell: bash
+      #~ run: cmake --build . --config $BUILD_TYPE --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
+
+    #~ - name: Build Domain Server
+      #~ if: matrix.build_type == 'full'
+      #~ working-directory: ${{runner.workspace}}/build
+      #~ shell: bash
+      #~ run: cmake --build . --config $BUILD_TYPE --target domain-server $CMAKE_BUILD_EXTRA
+
+    #~ - name: Build Assignment Client
+      #~ if: matrix.build_type == 'full'
+      #~ working-directory: ${{runner.workspace}}/build
+      #~ shell: bash
+      #~ run: cmake --build . --config $BUILD_TYPE --target assignment-client $CMAKE_BUILD_EXTRA
+
+    #~ - name: Build Console
+      #~ if: matrix.build_type == 'full' || startsWith(matrix.os, 'windows')
+      #~ working-directory: ${{runner.workspace}}/build
+      #~ shell: bash
+      #~ run: cmake --build . --config $BUILD_TYPE --target packaged-server-console $CMAKE_BUILD_EXTRA
+
+    #~ - name: Build Installer
+      #~ if: matrix.build_type != 'android'
+      #~ working-directory: ${{runner.workspace}}/build
+      #~ shell: bash
+      #~ run: |
+        #~ echo "Retry code from https://unix.stackexchange.com/a/137639"
+        #~ function fail {
+          #~ echo $1 >&2
+          #~ exit 1
+        #~ }
+
+        #~ function retry {
+          #~ local n=1
+          #~ local max=5
+          #~ local delay=15
+          #~ while true; do
+            #~ "$@" && break || {
+              #~ if [[ $n -lt $max ]]; then
+                #~ ((n++))
+                #~ echo "Command failed. Attempt $n/$max:"
+                #~ sleep $delay;
+              #~ else
+                #~ fail "The command has failed after $n attempts."
+              #~ fi
+            #~ }
+          #~ done
+        #~ }
+        #~ retry cmake --build . --config $BUILD_TYPE --target package $CMAKE_BUILD_EXTRA
+    #~ # As of 05/17/21 GitHub Virtual Environments changed their "Ubuntu 18.04.5 LTS" image to include two versions of CMake for Android
+    #~ # https://github.com/actions/virtual-environments/blob/ubuntu18/20210517.1/images/linux/Ubuntu1804-README.md
+    #~ # Removing 3.18.1 version of CMake as its not compatible with our Android build.
+    #~ # It will fall back to 3.10.2 which is already installed
+    #~ - name: Nuke CMake 3.18.1-g262b901
+      #~ if: matrix.build_type == 'android'
+      #~ shell: bash
+      #~ run: |
+        #~ /usr/local/lib/android/sdk/tools/bin/sdkmanager --uninstall 'cmake;3.18.1'
+
+    #~ - name: Build for Android + Quest
+      #~ if: matrix.build_type == 'android'
+      #~ shell: bash
+      #~ working-directory: ${{runner.workspace}}/overte
+      #~ run: |
+        #~ echo "Pre-cache the vcpkg managed dependencies"
+        #~ $PYTHON_EXEC prebuild.py --build-root ${{runner.workspace}}/build --android interface
+        #~ cd android
+        #~ # Pre-cache the gradle dependencies
+        #~ ./gradlew -m tasks -PHIFI_ANDROID_PRECOMPILED=$HIFI_ANDROID_PRECOMPILED
+        #~ # Build!
+        #~ ./build_android.sh
+
+    #~ - name: Output system stats
+      #~ if: ${{ always() }}
+      #~ working-directory: ${{runner.workspace}}/build
+      #~ shell: bash
+      #~ run: |
+        #~ echo "Disk usage:"
+        #~ df -h
+
+    #~ - name: Output Installer Logs
+      #~ if: failure() && startsWith(matrix.os, 'windows')
+      #~ shell: bash
+      #~ working-directory: ${{runner.workspace}}/build
+      #~ run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
+
+    - name: Create dummy file for testing
       shell: bash
       run: |
-        if [ "${{ matrix.os }}" == "macOS-10.15" ]; then
-          TAR=gtar
-        else
-          TAR=tar
-        fi
-
-        if [ ${{ env.CI_WORKSPACE }} ]; then
-          find "$CI_WORKSPACE/vircadia-files/vcpkg" -name '*log' -type f -print0 | $TAR --null --force-local -T - -c --xz -v -f "${{ runner.workspace }}/cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz"
-        else
-          find "$HOME/vircadia-files/vcpkg" -name '*log' -type f -print0 | $TAR --null --force-local -T - -c --xz -v -f "${{ runner.workspace }}/cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz"
-        fi
-
-    - name: Archive cmake logs
-      if: always()
-      uses: actions/upload-artifact@v2
-      with:
-        name: cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz
-        path: ${{ runner.workspace }}/cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz
-        if-no-files-found: error
-
-    - name: Build Application
-      if: matrix.build_type == 'full' || matrix.build_type == 'client'
-      working-directory: ${{runner.workspace}}/build
-      shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
-
-    - name: Build Domain Server
-      if: matrix.build_type == 'full'
-      working-directory: ${{runner.workspace}}/build
-      shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target domain-server $CMAKE_BUILD_EXTRA
-
-    - name: Build Assignment Client
-      if: matrix.build_type == 'full'
-      working-directory: ${{runner.workspace}}/build
-      shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target assignment-client $CMAKE_BUILD_EXTRA
-
-    - name: Build Console
-      if: matrix.build_type == 'full' || startsWith(matrix.os, 'windows')
-      working-directory: ${{runner.workspace}}/build
-      shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target packaged-server-console $CMAKE_BUILD_EXTRA
-
-    - name: Build Installer
-      if: matrix.build_type != 'android'
-      working-directory: ${{runner.workspace}}/build
-      shell: bash
-      run: |
-        echo "Retry code from https://unix.stackexchange.com/a/137639"
-        function fail {
-          echo $1 >&2
-          exit 1
-        }
-
-        function retry {
-          local n=1
-          local max=5
-          local delay=15
-          while true; do
-            "$@" && break || {
-              if [[ $n -lt $max ]]; then
-                ((n++))
-                echo "Command failed. Attempt $n/$max:"
-                sleep $delay;
-              else
-                fail "The command has failed after $n attempts."
-              fi
-            }
-          done
-        }
-        retry cmake --build . --config $BUILD_TYPE --target package $CMAKE_BUILD_EXTRA
-    # As of 05/17/21 GitHub Virtual Environments changed their "Ubuntu 18.04.5 LTS" image to include two versions of CMake for Android
-    # https://github.com/actions/virtual-environments/blob/ubuntu18/20210517.1/images/linux/Ubuntu1804-README.md
-    # Removing 3.18.1 version of CMake as its not compatible with our Android build.
-    # It will fall back to 3.10.2 which is already installed
-    - name: Nuke CMake 3.18.1-g262b901
-      if: matrix.build_type == 'android'
-      shell: bash
-      run: |
-        /usr/local/lib/android/sdk/tools/bin/sdkmanager --uninstall 'cmake;3.18.1'
-
-    - name: Build for Android + Quest
-      if: matrix.build_type == 'android'
-      shell: bash
-      working-directory: ${{runner.workspace}}/overte
-      run: |
-        echo "Pre-cache the vcpkg managed dependencies"
-        $PYTHON_EXEC prebuild.py --build-root ${{runner.workspace}}/build --android interface
-        cd android
-        # Pre-cache the gradle dependencies
-        ./gradlew -m tasks -PHIFI_ANDROID_PRECOMPILED=$HIFI_ANDROID_PRECOMPILED
-        # Build!
-        ./build_android.sh
-
-    - name: Output system stats
-      if: ${{ always() }}
-      working-directory: ${{runner.workspace}}/build
-      shell: bash
-      run: |
-        echo "Disk usage:"
-        df -h
-
-    - name: Output Installer Logs
-      if: failure() && startsWith(matrix.os, 'windows')
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
+        mkdir build
+        echo "test" > $ARTIFACT_PATTERN
 
     - name: Upload Artifact
       # Do not upload Linux artifacts for now since they are empty.
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
+      #if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
       shell: bash
       working-directory: ${{runner.workspace}}/build
       env:
