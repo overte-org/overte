@@ -15,7 +15,7 @@
     var isActive = false;
     var thisEntityID;
     var versioncall = Math.floor(Math.random()*50000);
-    var DopplegangerClass = Script.require('file:///~/serverless/Scripts/doppleganger.js?version=' + versioncall);
+    var DopplegangerClass = Script.require('https://more.overte.org/tutorial/doppleganger.js?version=' + versioncall);
 
     var doppleganger = new DopplegangerClass({
         avatar: MyAvatar,
