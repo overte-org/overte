@@ -5,6 +5,7 @@
 #  Created by Leonardo Murillo on 12/16/2015.
 #  Copyright 2015 High Fidelity, Inc.
 #  Copyright 2021 Vircadia contributors.
+#  Copyright 2022 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -19,25 +20,24 @@ macro(GENERATE_INSTALLERS)
   if (CLIENT_ONLY)
     set(_PACKAGE_NAME_EXTRA "-Interface")
     set(INSTALLER_TYPE "client_only")
-    string(REGEX REPLACE "Vircadia" "Vircadia Interface" _DISPLAY_NAME ${BUILD_ORGANIZATION})
+    string(REGEX REPLACE "Overte" "Overte Interface" _DISPLAY_NAME ${BUILD_ORGANIZATION})
   elseif (SERVER_ONLY)
     set(_PACKAGE_NAME_EXTRA "-Server")
     set(INSTALLER_TYPE "server_only")
-    string(REGEX REPLACE "Vircadia" "Vircadia Server" _DISPLAY_NAME ${BUILD_ORGANIZATION})
+    string(REGEX REPLACE "Overte" "Overte Server" _DISPLAY_NAME ${BUILD_ORGANIZATION})
   else ()
     set(_DISPLAY_NAME ${BUILD_ORGANIZATION})
     set(INSTALLER_TYPE "full")
   endif ()
 
   set(CPACK_PACKAGE_NAME ${_DISPLAY_NAME})
-  set(CPACK_PACKAGE_VENDOR "Vircadia")
+  set(CPACK_PACKAGE_VENDOR "Overte")
   set(CPACK_PACKAGE_VERSION ${BUILD_VERSION})
-  set(CPACK_PACKAGE_FILE_NAME "Vircadia${_PACKAGE_NAME_EXTRA}-${BUILD_VERSION}-${RELEASE_NAME}")
+  # There is some sort of bug which adds a "-" between the BUILD_VERSION and the RELEASE_NAME.
+  set(CPACK_PACKAGE_FILE_NAME "Overte${_PACKAGE_NAME_EXTRA}-${BUILD_VERSION}${RELEASE_NAME}")
   set(CPACK_NSIS_DISPLAY_NAME ${_DISPLAY_NAME})
   set(CPACK_NSIS_PACKAGE_NAME ${_DISPLAY_NAME})
-  if (PR_BUILD)
-    set(CPACK_NSIS_COMPRESSOR "bzip2")
-  endif ()
+  set(CPACK_NSIS_COMPRESSOR "LZMA")
   set(CPACK_PACKAGE_INSTALL_DIRECTORY ${_DISPLAY_NAME})
 
 
@@ -123,11 +123,11 @@ macro(GENERATE_INSTALLERS)
   set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 
   if (BUILD_CLIENT)
-    cpack_add_component(${CLIENT_COMPONENT} DISPLAY_NAME "Vircadia Interface")
+    cpack_add_component(${CLIENT_COMPONENT} DISPLAY_NAME "Overte Interface")
   endif ()
 
   if (BUILD_SERVER)
-    cpack_add_component(${SERVER_COMPONENT} DISPLAY_NAME "Vircadia Server")
+    cpack_add_component(${SERVER_COMPONENT} DISPLAY_NAME "Overte Server")
   endif ()
 
   include(CPack)
