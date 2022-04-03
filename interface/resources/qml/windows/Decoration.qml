@@ -68,18 +68,18 @@ Rectangle {
     }
     Connections {
         target: window
-        onMouseEntered: {
+        function onMouseEntered() {
             if (desktop.hmdHandMouseActive) {
                 root.inflateDecorations()
             }
         }
-        onMouseExited: {
+        function onMouseExited() {
             root.deflateDecorations();
         }
     }
     Connections {
         target: desktop
-        onHmdHandMouseActiveChanged: {
+        function onHmdHandMouseActiveChanged() {
             if (desktop.hmdHandMouseActive) {
                 if (decorationMouseArea.containsMouse) {
                     root.inflateDecorations();

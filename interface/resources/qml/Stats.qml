@@ -463,7 +463,7 @@ Item {
 
         Connections {
             target: root.parent
-            onWidthChanged: {
+            function onWidthChanged() {
                 root.x = root.parent.width - root.width;
             }
         }

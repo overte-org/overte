@@ -229,8 +229,8 @@ TabletModalWindow {
             readonly property string currentSelectionPath: helper.urlToPath(currentSelectionUrl);
             property bool currentSelectionIsFolder;
             property var backStack: []
-            property var tableViewConnection: Connections { target: fileTableView; onCurrentRowChanged: d.update(); }
-            property var modelConnection: Connections { target: fileTableModel; onFolderChanged: d.update(); }
+            property var tableViewConnection: Connections { target: fileTableView; function onCurrentRowChanged() { d.update(); } }
+            property var modelConnection: Connections { target: fileTableModel; function onFolderChanged() { d.update(); } }
             property var homeDestination: helper.home();
 
             function capitalizeDrive(path) {

@@ -4,9 +4,10 @@
 //
 //  Created by Keb Helion, February 2020.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
-//  App maintained in: https://github.com/vircadia/community-apps
-//  App copied to: https://github.com/vircadia/vircadia
+//  App maintained in: https://github.com/overte-org/community-apps
+//  App copied to: https://github.com/overte-org/overte
 //
 //
 //  Distributed under the Apache License, Version 2.0.
@@ -54,7 +55,7 @@
             var currentPath = window.location.protocol + "//" + window.location.host + window.location.pathname;
             var developmentMode = window.location.toString().split("?")[1];
             var rootPath;    
-            var metadataScriptSrc = "https://cdn.vircadia.com/community-apps/applications/metadata.js";
+            var metadataScriptSrc = "https://more.overte.org/applications/metadata.js";
             
             if (developmentMode === "dev") { // Development mode loads locally, if not, load from repo.
                 console.info("Setting applications to local.")
@@ -64,7 +65,7 @@
             } else {
                 console.info("Setting applications to remote URL.")
                 console.info("Loading metadata remotely.");
-                rootPath = "https://cdn.vircadia.com/community-apps/applications/";
+                rootPath = "https://more.overte.org/applications/";
             }
 
             //Search
@@ -168,7 +169,7 @@
         </div>
         <hr>
         <p class="mainDesc">Want to contribute and add your own app?<br>
-        Read the <a href="https://cdn.vircadia.com/community-apps/web/index.html">guide</a>!</p>
+        Read the <a href="https://overte-org.github.io/community-apps/web/index.html">guide</a>!</p>
         <script>        
              function monitorEnter(e) {
                 var code = (e.keyCode ? e.keyCode : e.which);

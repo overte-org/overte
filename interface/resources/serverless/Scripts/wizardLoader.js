@@ -1,10 +1,10 @@
 'use strict';
-
 //
 //  wizardLoader.js
 //
 //  Created by Kalila L. on Feb 19 2021.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  This script is used to load the onboarding wizard at the location of the entity it's on.
 //
@@ -13,7 +13,7 @@
 //
 
 (function() {
-    var CONFIG_WIZARD_WEB_URL = 'https://cdn-1.vircadia.com/us-e-1/DomainContent/Tutorial/Apps/configWizard/dist/index.html';
+    var CONFIG_WIZARD_URL = "https://more.overte.org/tutorial/wizard.html?v=" + Math.floor(Math.random() * 65000);
 
     var loaderEntityID;
     var configWizardEntityID;
@@ -22,20 +22,20 @@
         if (sendingEntityID === configWizardEntityID) {
             var eventJSON = JSON.parse(event);
 
-            if (eventJSON.command === 'first-run-wizard-ready') {
+            if (eventJSON.command === "first-run-wizard-ready") {
                 var objectToSend = {
-                    command: 'script-to-web-initialize',
-                    data: {
-                        performancePreset: Performance.getPerformancePreset(),
-                        refreshRateProfile: Performance.getRefreshRateProfile(),
-                        displayName: MyAvatar.displayName
+                    "command": "script-to-web-initialize",
+                    "data": {
+                        "performancePreset": Performance.getPerformancePreset(),
+                        "refreshRateProfile": Performance.getRefreshRateProfile(),
+                        "displayName": MyAvatar.displayName
                     }
                 };
                 
                 Entities.emitScriptEvent(configWizardEntityID, JSON.stringify(objectToSend));
             }
 
-            if (eventJSON.command === 'complete-wizard') {
+            if (eventJSON.command === "complete-wizard") {
                 Performance.setPerformancePreset(eventJSON.data.performancePreset);
                 Performance.setRefreshRateProfile(eventJSON.data.refreshRateProfile);
                 MyAvatar.displayName = eventJSON.data.displayName;
@@ -48,21 +48,25 @@
 
     this.preload = function (entityID) {
         loaderEntityID = entityID;
-        var loaderEntityProps = Entities.getEntityProperties(loaderEntityID, ['position', 'rotation']);
 
         configWizardEntityID = Entities.addEntity({
-            type: 'Web',
-            sourceUrl: CONFIG_WIZARD_WEB_URL,
-            maxFPS: 60,
-            dpi: 20,
-            useBackground: false,
-            grab: {
-                grabbable: false
+            "type": "Web",
+            "parentID": loaderEntityID,
+            "sourceUrl": CONFIG_WIZARD_URL,
+            "maxFPS": 60,
+            "dpi": 19,
+            "useBackground": true,
+            "grab": {
+                "grabbable": false
             },
-            position: loaderEntityProps.position,
-            rotation: loaderEntityProps.rotation,
-            dimensions: { x: 1.4, y: 0.75, z: 0 }
-        }, 'local');
+            "localPosition": {
+                "x": 0,
+                "y": 1.121,
+                "z": 0.33
+            },
+            "localRotation": Quat.fromVec3Degrees({"x": -58, "y": 0, "z": 0}),
+            "dimensions": { x: 2.6, y: 1.3, z: 0 }
+        }, "local");
 
         Entities.webEventReceived.connect(onWebAppEventReceived);
     }

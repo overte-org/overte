@@ -191,7 +191,7 @@ Item {
 
     Connections {
         target: root.uploader
-        onStateChanged: {
+        function onStateChanged(newState) {
             root.hasSuccessfullyUploaded = newState >= 4;
         }
     }

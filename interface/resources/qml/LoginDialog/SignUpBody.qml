@@ -23,7 +23,7 @@ Item {
     clip: true
     height: root.height
     width: root.width
-    readonly property string termsContainerText: qsTr("By signing up, you agree to Vircadia's Terms of Service")
+    readonly property string termsContainerText: qsTr("By signing up, you agree to Overte's Terms of Service")
     property int textFieldHeight: 31
     property string fontFamily: "Raleway"
     property int fontSize: 15
@@ -395,7 +395,7 @@ Item {
                     text: signUpBody.termsContainerText
                     Component.onCompleted: {
                         // with the link.
-                        termsText.text = qsTr("By signing up, you agree to <a href='https://vircadia.com/termsofservice'>Vircadia's Terms of Service</a>")
+                        termsText.text = qsTr("By signing up, you agree to <a href='https://overte.org/termsofservice'>Vircadia's Terms of Service</a>")
                     }
                 }
 
@@ -455,7 +455,7 @@ Item {
     }
     Connections {
         target: loginDialog
-        onHandleSignupCompleted: {
+        function onHandleSignupCompleted() {
             console.log("Sign Up Completed");
 
             if (signUpBody.loginDialogPoppedUp) {
@@ -468,7 +468,7 @@ Item {
             loginDialog.login(usernameField.text, passwordField.text);
             bodyLoader.setSource("LoggingInBody.qml", { "loginDialog": loginDialog, "root": root, "bodyLoader": bodyLoader, "withSteam": false, "linkSteam": false });
         }
-        onHandleSignupFailed: {
+        function onHandleSignupFailed() {
             console.log("Sign Up Failed")
 
             if (signUpBody.loginDialogPoppedUp) {
@@ -495,14 +495,14 @@ Item {
                 errorContainer.anchors.left = usernameField.left;
             }
         }
-        onFocusEnabled: {
+        function onFocusEnabled() {
             if (!signUpBody.lostFocus) {
                 Qt.callLater(function() {
                     emailField.forceActiveFocus();
                 });
             }
         }
-        onFocusDisabled: {
+        function onFocusDisabled() {
             signUpBody.lostFocus = !root.isTablet && !root.isOverlay;
             if (signUpBody.lostFocus) {
                 Qt.callLater(function() {

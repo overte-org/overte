@@ -38,7 +38,7 @@ Item {
 
     Connections {
         target: flickable
-        onMovingChanged: {
+        function onMovingChanged() {
             //when flick/move started, and hover is on, clean hove state
             if (flickable.moving && tabletButton.state.indexOf("hover") !== -1) {
                 tabletButton.state = (tabletButton.isActive) ? "active state" : "base state";

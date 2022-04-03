@@ -16,7 +16,7 @@ import io.highfidelity.hifiinterface.HifiUtils;
  */
 public class DownloadProfileImageTask extends AsyncTask<String, Void, String> {
     // Note: This should now be available in the API, correct?
-    private static final String BASE_PROFILE_URL = "https://metaverse.vircadia.com/live";
+    private static final String BASE_PROFILE_URL = "https://mv.overte.org/server";
     private static final String TAG = "Interface";
 
     private final DownloadProfileImageResultProcessor mResultProcessor;

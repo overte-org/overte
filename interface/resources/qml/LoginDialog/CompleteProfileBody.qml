@@ -492,7 +492,7 @@ Item {
 
     Connections {
         target: loginDialog
-        onHandleCreateCompleted: {
+        function onHandleCreateCompleted() {
             console.log("Create Succeeded");
             if (completeProfileBody.withSteam) {
                 if (completeProfileBody.loginDialogPoppedUp) {
@@ -506,7 +506,7 @@ Item {
             bodyLoader.setSource("LoggingInBody.qml", { "loginDialog": loginDialog, "root": root, "bodyLoader": bodyLoader, "withSteam": completeProfileBody.withSteam, "linkSteam": false,
                 "withOculus": completeProfileBody.withOculus, "linkOculus": false });
         }
-        onHandleCreateFailed: {
+        function onHandleCreateFailed() {
             console.log("Create Failed: " + error);
             if (completeProfileBody.withSteam || completeProfileBody.withOculus) {
                 if (completeProfileBody.loginDialogPoppedUp) {

@@ -614,7 +614,7 @@ Item {
     
     Connections {
         target: AudioScope
-        onPauseChanged: {
+        function onPauseChanged() {
             if (!AudioScope.getPause()) {
                 pauseButton.text = "Pause";
                 pauseButton.color = hifi.buttons.black;
@@ -625,7 +625,7 @@ Item {
                 pauseButton.color = hifi.buttons.blue;
             }           
         }
-        onTriggered: {
+        function onTriggered() {
             _triggered = true;
             collectTriggerData();
             AudioScope.setPause(true);

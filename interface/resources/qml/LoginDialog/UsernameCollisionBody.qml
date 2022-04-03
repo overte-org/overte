@@ -19,7 +19,7 @@ import TabletScriptingInterface 1.0
 Item {
     id: usernameCollisionBody
     clip: true
-    readonly property string termsContainerText: qsTr("By creating this user profile, you agree to Vircadia's Terms of Service")
+    readonly property string termsContainerText: qsTr("By creating this user profile, you agree to Overte's Terms of Service")
     width: root.width
     height: root.height
     readonly property string fontFamily: "Raleway"
@@ -218,7 +218,7 @@ Item {
                 text: usernameCollisionBody.termsContainerText
                 Component.onCompleted: {
                     // with the link.
-                    termsText.text = qsTr("By creating this user profile, you agree to <a href='https://vircadia.com/termsofservice'>Vircadia's Terms of Service</a>")
+                    termsText.text = qsTr("By creating this user profile, you agree to <a href='https://overte.org/termsofservice'>Overte's Terms of Service</a>")
                 }
             }
 
@@ -262,7 +262,7 @@ Item {
 
     Connections {
         target: loginDialog
-        onHandleCreateCompleted: {
+        function onHandleCreateCompleted() {
             console.log("Create Succeeded");
             if (usernameCollisionBody.withOculus) {
                 if (usernameCollisionBody.loginDialogPoppedUp) {
@@ -284,7 +284,7 @@ Item {
             bodyLoader.setSource("LoggingInBody.qml", { "loginDialog": loginDialog, "root": root, "bodyLoader": bodyLoader, "withSteam": usernameCollisionBody.withSteam,
                 "withOculus": usernameCollisionBody.withOculus, "linkSteam": false, "linkOculus": false })
         }
-        onHandleCreateFailed: {
+        function onHandleCreateFailed() {
             console.log("Create Failed: " + error)
             if (usernameCollisionBody.loginDialogPoppedUp) {
                 var data = {
@@ -297,7 +297,7 @@ Item {
             mainTextContainer.visible = true
             mainTextContainer.text = "\"" + textField.text + qsTr("\" is invalid or already taken.");
         }
-        onHandleLoginCompleted: {
+        function onHandleLoginCompleted() {
             console.log("Login Succeeded");
             if (usernameCollisionBody.loginDialogPoppedUp) {
                 var data = {
@@ -310,7 +310,7 @@ Item {
             root.tryDestroy();
         }
 
-        onHandleLoginFailed: {
+        function onHandleLoginFailed() {
             console.log("Login Failed")
             if (usernameCollisionBody.loginDialogPoppedUp) {
                 var data = {
@@ -323,14 +323,14 @@ Item {
         }
 
 
-        onFocusEnabled: {
+        function onFocusEnabled() {
             if (!usernameCollisionBody.lostFocus) {
                 Qt.callLater(function() {
                     textField.forceActiveFocus();
                 });
             }
         }
-        onFocusDisabled: {
+        function onFocusDisabled() {
             usernameCollisionBody.lostFocus = !root.isTablet && !root.isOverlay;
             if (nusernameCollisionBody.lostFocus) {
                 Qt.callLater(function() {

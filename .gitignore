@@ -112,3 +112,6 @@ server-console/package-lock.json
 vcpkg/
 /tools/nitpick/compiledResources
 qt/
+
+# Act local GitHub Actions
+.secret

@@ -89,7 +89,7 @@ Windows.ScrollingWindow {
 
     Connections {
         target: ScriptDiscoveryService
-        onScriptCountChanged: {
+        function onScriptCountChanged() {
             runningScriptsModel = listModelBuilder.createObject(root);
             refreshTimer.restart();
         }
@@ -397,7 +397,7 @@ Windows.ScrollingWindow {
 
                 Connections {
                     target: treeView.selection
-                    onCurrentIndexChanged: {
+                    function onCurrentIndexChanged() {
                         var path = scriptsModel.data(treeView.selection.currentIndex, 0x100)
                         if (path) {
                             selectedScript.text = path
