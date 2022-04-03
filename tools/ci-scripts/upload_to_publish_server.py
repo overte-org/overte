@@ -41,7 +41,8 @@ for archiveFile in files:
     file_contents.append(file_data)
     file.close()
 
-conn = http.client.HTTPSConnection("build-uploader.vircadia.com")
+# Connect to an instance of https://github.com/JulianGro/gha-artifact-uploader
+conn = http.client.HTTPConnection("artifact-uploader.overte.org:3000")
 
 context = json.loads(os.environ['GITHUB_CONTEXT'])
 
