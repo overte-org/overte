@@ -1,0 +1,37 @@
+name: Master Doxygen CI Build and Deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build_doxygen:
+    runs-on: ubuntu-20.04
+
+    name: Build and deploy Doxygen documentation
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install doxygen
+
+    - name: Build Doxygen
+      working-directory: tools/doxygen
+      shell: bash
+      run: |
+        mkdir -p ../../build/docs/html
+        doxygen Doxyfile
+
+    - name: Deploy Doxygen
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+      with:
+        server: ftp.tuxfamily.org
+        username: ${{ secrets.GHA_JSDOC_FTP_USER }}
+        password: ${{ secrets.GHA_JSDOC_FTP_PASS }}
+        local-dir: ./build/docs/html/
+        server-dir: overte/doxygen.overte.org-web/htdocs/
+        exclude: |
+          **/staging/**
