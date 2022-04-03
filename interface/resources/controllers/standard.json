@@ -6,6 +6,11 @@
 		  "to": "Actions.TranslateZ"
         },
 
+        { "from": "Standard.RY",
+		  "when": ["!Application.InHMD", "Application.RightHandDominant"],
+		  "to": "Actions.Pitch"
+        },
+
         { "from": "Standard.LX",
           "when": [
             "Application.InHMD", "!Application.AdvancedMovement", "Application.RightHandDominant",
@@ -55,6 +60,11 @@
         { "from": "Standard.RY",
 		  "when": ["Application.LeftHandDominant", "!Standard.LY"],
 		  "to": "Actions.TranslateZ"
+        },
+
+        { "from": "Standard.LY",
+		  "when": ["!Application.InHMD", "Application.LeftHandDominant"],
+		  "to": "Actions.Pitch"
         },
 
         { "from": "Standard.RX",
@@ -108,6 +118,9 @@
 
         { "from": "Standard.LT", "to": "Actions.LeftHandClick" },
         { "from": "Standard.RT", "to": "Actions.RightHandClick" },
+
+        { "from": "Standard.A", "to": "Actions.VERTICAL_UP" },
+        { "from": "Standard.B", "to": "Actions.VERTICAL_DOWN" },
 
         { "from": "Standard.LeftHand", "to": "Actions.LeftHand" },
         { "from": "Standard.LeftHandThumb1", "to": "Actions.LeftHandThumb1"},
