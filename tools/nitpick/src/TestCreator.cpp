@@ -11,7 +11,7 @@
 #include "TestCreator.h"
 
 #include <assert.h>
-#include "QtCompatibility.h"
+#include "../../../libraries/shared/src/QtCompatibility.h"
 #include <QtCore/QTextStream>
 #include <QDirIterator>
 #include <QHostInfo>
