@@ -119,8 +119,8 @@
         { "from": "Standard.LT", "to": "Actions.LeftHandClick" },
         { "from": "Standard.RT", "to": "Actions.RightHandClick" },
 
-        { "from": "Standard.A", "to": "Actions.VERTICAL_UP" },
-        { "from": "Standard.B", "to": "Actions.VERTICAL_DOWN" },
+        { "from": "Standard.A", "to": "Actions.Up" },
+        { "from": "Standard.B", "to": "Actions.Down" },
 
         { "from": "Standard.LeftHand", "to": "Actions.LeftHand" },
         { "from": "Standard.LeftHandThumb1", "to": "Actions.LeftHandThumb1"},
