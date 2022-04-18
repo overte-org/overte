@@ -23,6 +23,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include "QtCompatibility.h"
+
 #include <QByteArray>
 #include <QElapsedTimer>
 #include <QHash>

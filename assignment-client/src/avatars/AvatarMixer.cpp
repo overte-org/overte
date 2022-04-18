@@ -19,6 +19,8 @@
 #include <random>
 #include <thread>
 
+#include "QtCompatibility.h"
+
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDateTime>
 #include <QtCore/QJsonObject>
