@@ -4,6 +4,7 @@
 //
 //  Created by Sabrina Shanman on 2019/01/22.
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -29,7 +30,11 @@ void CalculateMeshTangentsTask::run(const baker::BakeContextPointer& context, co
         // Check if we already have tangents and therefore do not need to do any calculation
         // Otherwise confirm if we have the normals and texcoords needed
         if (!tangentsIn.empty()) {
+#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
+            tangentsOut = tangentsIn.toStdVector();
+#else
             tangentsOut = std::vector<glm::vec3>(tangentsIn.begin(), tangentsIn.end());
+#endif
         } else if (!normals.empty() && mesh.vertices.size() == mesh.texCoords.size()) {
             tangentsOut.resize(normals.size());
             baker::calculateTangents(mesh,

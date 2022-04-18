@@ -54,24 +54,24 @@ protected:
     virtual void setInitialSendSequenceNumber(SequenceNumber seqNum) = 0;
     void setSendCurrentSequenceNumber(SequenceNumber seqNum) { _sendCurrSeqNum = seqNum; }
     void setPacketSendPeriod(double newSendPeriod); // call this internally to ensure send period doesn't go past max bandwidth
-    
+
     double _packetSendPeriod { 1.0 }; // Packet sending period, in microseconds
     int _congestionWindowSize { 16 }; // Congestion window size, in packets
 
     std::atomic<int> _maxBandwidth { -1 }; // Maximum desired bandwidth, bits per second
-    
+
     int _mss { 0 }; // Maximum Packet Size, including all packet headers
     SequenceNumber _sendCurrSeqNum; // current maximum seq num sent out
-    
+
 private:
     Q_DISABLE_COPY(CongestionControl);
 };
-    
-    
+
+
 class CongestionControlVirtualFactory {
 public:
     virtual ~CongestionControlVirtualFactory() {}
-    
+
     virtual std::unique_ptr<CongestionControl> create() = 0;
 };
 

@@ -5,6 +5,7 @@
 //  Created by Stephen Birarda on 2/15/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -1237,7 +1238,12 @@ void LimitedNodeList::updateLocalSocket() {
     QTcpSocket* localIPTestSocket = new QTcpSocket;
 
     connect(localIPTestSocket, &QTcpSocket::connected, this, &LimitedNodeList::connectedForLocalSocketTest);
+#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
+    connect(localIPTestSocket, static_cast<void(QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),
+        this, &LimitedNodeList::errorTestingLocalSocket);
+#else
     connect(localIPTestSocket, &QTcpSocket::errorOccurred, this, &LimitedNodeList::errorTestingLocalSocket);
+#endif
 
     // attempt to connect to our reliable host
     localIPTestSocket->connectToHost(RELIABLE_LOCAL_IP_CHECK_HOST, RELIABLE_LOCAL_IP_CHECK_PORT);

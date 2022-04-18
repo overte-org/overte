@@ -5,12 +5,15 @@
 //  Created by Brad Hefta-Gaub on 12/4/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
 #include "EntityTree.h"
+
+#include "QtCompatibility.h"
 #include <QtCore/QDateTime>
 #include <QtCore/QQueue>
 #include <openssl/err.h>
@@ -67,8 +70,8 @@ EntityTree::~EntityTree() {
     //eraseAllOctreeElements(false); // KEEP THIS
 }
 
-void EntityTree::setEntityScriptSourceWhitelist(const QString& entityScriptSourceWhitelist) { 
-    _entityScriptSourceWhitelist = entityScriptSourceWhitelist.split(',', Qt::SkipEmptyParts);
+void EntityTree::setEntityScriptSourceWhitelist(const QString& entityScriptSourceWhitelist) {
+    _entityScriptSourceWhitelist = entityScriptSourceWhitelist.split(',', QTCOMPAT_SKIP_EMPTY_PARTS);
 }
 
 

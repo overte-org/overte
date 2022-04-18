@@ -4,6 +4,7 @@
 //
 //  Created by Andrew Meadows on 2014.11.24
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -15,6 +16,7 @@
 #include <limits>
 #include <unordered_set>
 
+#include "QtCompatibility.h"
 #include <QtCore/QObject>
 #include <QVector>
 
@@ -44,7 +46,11 @@ const int DIRTY_SIMULATION_FLAGS =
 
 class EntitySimulation : public QObject, public std::enable_shared_from_this<EntitySimulation> {
 public:
+#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
+    EntitySimulation() : _mutex(QMutex::Recursive), _nextExpiry(std::numeric_limits<uint64_t>::max()), _entityTree(nullptr) { }
+#else
     EntitySimulation() : _mutex(), _nextExpiry(std::numeric_limits<uint64_t>::max()), _entityTree(nullptr) { }
+#endif
     virtual ~EntitySimulation() { setEntityTree(nullptr); }
 
     inline EntitySimulationPointer getThisPointer() const {
@@ -90,7 +96,7 @@ protected:
     void callUpdateOnEntitiesThatNeedIt(uint64_t now);
     virtual void sortEntitiesThatMoved();
 
-    QRecursiveMutex _mutex;
+    QTCOMPAT_DECLARE_RECURSIVE_MUTEX(_mutex);
 
     SetOfEntities _entitiesToSort; // entities moved by simulation (and might need resort in EntityTree)
     SetOfEntities _simpleKinematicEntities; // entities undergoing non-colliding kinematic motion

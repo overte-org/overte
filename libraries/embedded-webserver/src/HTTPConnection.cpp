@@ -4,6 +4,7 @@
 //
 //  Created by Stephen Birarda on 1/16/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -124,9 +125,15 @@ HTTPConnection::HTTPConnection(QTcpSocket* socket, HTTPManager* parentManager) :
     _socket->setParent(this);
 
     // connect initial slots
+#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
+    connect(socket, SIGNAL(readyRead()), SLOT(readRequest()));
+    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), SLOT(deleteLater()));
+    connect(socket, SIGNAL(disconnected()), SLOT(deleteLater()));
+#else
     connect(socket, &QAbstractSocket::readyRead, this, &HTTPConnection::readRequest);
     connect(socket, &QAbstractSocket::errorOccurred, this, &HTTPConnection::deleteLater);
     connect(socket, &QAbstractSocket::disconnected, this, &HTTPConnection::deleteLater);
+#endif
 }
 
 HTTPConnection::~HTTPConnection() {

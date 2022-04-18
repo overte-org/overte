@@ -4,6 +4,7 @@
 //
 //  Created by Sabrina Shanman on 2019/01/22.
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -24,7 +25,11 @@ void CalculateMeshNormalsTask::run(const baker::BakeContextPointer& context, con
         auto& normalsOut = normalsPerMeshOut[normalsPerMeshOut.size()-1];
         // Only calculate normals if this mesh doesn't already have them
         if (!mesh.normals.empty()) {
+#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
+            normalsOut = mesh.normals.toStdVector();
+#else
             normalsOut = std::vector<glm::vec3>(mesh.normals.begin(), mesh.normals.end());
+#endif
         } else {
             normalsOut.resize(mesh.vertices.size());
             baker::calculateNormals(mesh,

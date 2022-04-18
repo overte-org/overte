@@ -3,6 +3,7 @@
 //
 //  Created by Angus Antley on 4/8/19.
 //  Copyright (c) 2019 High Fidelity, Inc. All rights reserved.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -120,7 +121,12 @@ protected:
         std::vector<Transition> _transitions;
 
     private:
+#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
+        RandomSwitchState(const RandomSwitchState&) = delete;
+        RandomSwitchState& operator=(const RandomSwitchState&) = delete;
+#else
         Q_DISABLE_COPY(RandomSwitchState)
+#endif
     };
 
 public:

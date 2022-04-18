@@ -4,6 +4,7 @@
 //
 //  Created by Ryan Huffman on 2015/07/23
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -11,6 +12,7 @@
 
 #include "AssetResourceRequest.h"
 
+#include "QtCompatibility.h"
 #include <QtCore/QLoggingCategory>
 
 #include <Trace.h>
@@ -59,7 +61,7 @@ void AssetResourceRequest::doSend() {
     // We'll either have a hash or an ATP path to a file (that maps to a hash)
     if (urlIsAssetHash(_url)) {
         // We've detected that this is a hash - simply use AssetClient to request that asset
-        auto parts = _url.path().split(".", Qt::SkipEmptyParts);
+        auto parts = _url.path().split(".", QTCOMPAT_SKIP_EMPTY_PARTS);
         auto hash = parts.length() > 0 ? parts[0] : "";
 
         requestHash(hash);

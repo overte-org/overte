@@ -4,6 +4,7 @@
 //
 //  Created by Sabrina Shanman on 2019/01/07.
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -31,7 +32,11 @@ void CalculateBlendshapeNormalsTask::run(const baker::BakeContextPointer& contex
             const auto& normalsIn = blendshape.normals;
             // Check if normals are already defined. Otherwise, calculate them from existing blendshape vertices.
             if (!normalsIn.empty()) {
+#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
+                normalsPerBlendshapeOut.push_back(normalsIn.toStdVector());
+#else
                 normalsPerBlendshapeOut.push_back(std::vector<glm::vec3>(normalsIn.begin(), normalsIn.end()));
+#endif
             } else {
                 // Create lookup to get index in blendshape from vertex index in mesh
                 std::vector<int> reverseIndices;

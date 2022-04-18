@@ -5,6 +5,7 @@
 //  Created by Andrzej Kapolka on 5/10/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -15,6 +16,7 @@
 
 #include <functional>
 
+#include "QtCompatibility.h"
 #include <QtCore/QHash>
 #include <QtCore/QPointer>
 #include <QtCore/QSet>
@@ -648,7 +650,7 @@ private:
 
     EntityTreePointer _entityClipboard;
 
-    mutable QRecursiveMutex _viewMutex;
+    mutable QTCOMPAT_DECLARE_RECURSIVE_MUTEX(_viewMutex);
     ViewFrustum _viewFrustum; // current state of view frustum, perspective, orientation, etc.
     ViewFrustum _displayViewFrustum;
 
@@ -774,7 +776,7 @@ private:
     bool _isMissingSequenceNumbers { false };
 
     void checkChangeCursor();
-    mutable QRecursiveMutex _changeCursorLock;
+    mutable QTCOMPAT_DECLARE_RECURSIVE_MUTEX(_changeCursorLock);
     Qt::CursorShape _desiredCursor{ Qt::BlankCursor };
     bool _cursorNeedsChanging { false };
 
