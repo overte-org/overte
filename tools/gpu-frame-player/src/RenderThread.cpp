@@ -11,6 +11,7 @@
 #include <QtCore/QThreadPool>
 #include <QtX11Extras/QX11Info>
 #include <gl/OffscreenGLCanvas.h>
+//#include <QVulkanInstance>
 #ifdef USE_GL
 #include <gl/QOpenGLContextWrapper.h>
 #endif
@@ -89,7 +90,7 @@ void RenderThread::initialize(QWindow* window) {
     vk::XcbSurfaceCreateInfoKHR surfaceCreateInfo;
     //dynamic_cast<QGuiApplication*>(QGuiApplication::instance())->platformNativeInterface()->connection();
     surfaceCreateInfo.connection = QX11Info::connection();
-    surfaceCreateInfo.window = QX11Info::appRootWindow();
+    surfaceCreateInfo.window = (xcb_window_t)(window->winId());
     _surface = _vkcontext.instance.createXcbSurfaceKHR(surfaceCreateInfo);
 #endif
     _vkcontext.createDevice(_surface);
