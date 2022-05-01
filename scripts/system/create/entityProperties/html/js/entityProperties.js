@@ -1327,6 +1327,48 @@ const GROUPS = [
         ]
     },
     {
+        id: "polyvox",
+        label: "POLYVOX",
+        properties: [
+            {
+                label: "Volume Size",
+                type: "vec3",
+                vec3Type: "xyz",
+                step: 1.0,
+                decimals: 0,
+                subLabels: [ "x", "y", "z" ],
+                unit: "",
+                propertyID: "voxelVolumeSize",
+            },
+            {
+                label: "Surface Style",
+                type: "dropdown",
+                options: { 0: "Marching cubes", 1: "Cubic", 
+                           2: "Edged cubic", 3: "Edged marching cubes" },
+                propertyID: "voxelSurfaceStyle",
+                propertyName: "voxelSurfaceStyle",
+            },
+            {
+                label: "X Texture URL",
+                type: "string",
+                propertyID: "xTextureURL",
+                propertyName: "xTextureURL",
+            },
+            {
+                label: "Y Texture URL",
+                type: "string",
+                propertyID: "yTextureURL",
+                propertyName: "yTextureURL",
+            },
+            {
+                label: "Z Texture URL",
+                type: "string",
+                propertyID: "zTextureURL",
+                propertyName: "zTextureURL",
+            },
+        ]
+    },
+    {
         id: "spatial",
         label: "SPATIAL",
         properties: [
@@ -1705,7 +1747,7 @@ const GROUPS_PER_TYPE = {
   ParticleEffect: [ 'base', 'particles', 'particles_emit', 'particles_size', 'particles_color', 
                     'particles_behavior', 'particles_constraints', 'spatial', 'behavior', 'scripts', 'physics' ],
   PolyLine: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
-  PolyVox: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
+  PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Grid: [ 'base', 'grid', 'spatial', 'behavior', 'scripts', 'physics' ],
   Multiple: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
 };

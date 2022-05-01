@@ -440,7 +440,7 @@ public:
             auto lastHeartbeatAge = (now > lastHeartbeat) ? now - lastHeartbeat : 0;
             auto elapsedMovingAverage = _movingAverage.getAverage();
 
-            if (elapsedMovingAverage > _maxElapsedAverage) {
+/*            if (elapsedMovingAverage > _maxElapsedAverage) {
 #if !defined(NDEBUG)
                 qCDebug(interfaceapp_deadlock) << "DEADLOCK WATCHDOG WARNING:"
                     << "lastHeartbeatAge:" << lastHeartbeatAge
@@ -474,7 +474,7 @@ public:
                     << "maxElapsedAverage:" << _maxElapsedAverage
                     << "samples:" << _movingAverage.getSamples();
             }
-#endif
+#endif*/
 
             if (lastHeartbeatAge > MAX_HEARTBEAT_AGE_USECS) {
                 qCDebug(interfaceapp_deadlock) << "DEADLOCK DETECTED -- "
