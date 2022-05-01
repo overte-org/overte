@@ -184,6 +184,18 @@ TabBar {
                                 editTabView.currentIndex = tabIndex.properties
                             }
                         }
+
+                        NewEntityButton {
+                            icon: "icons/voxels.svg"
+                            text: "VOXELS"
+                            onClicked: {
+                                editRoot.sendToScript({
+                                    method: "newEntityButtonClicked",
+                                    params: { buttonName: "newPolyVoxButton" }
+                                });
+                                editTabView.currentIndex = tabIndex.properties
+                            }
+                        }
                     }
 
                     HifiControls.Button {

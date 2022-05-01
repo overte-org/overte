@@ -4,6 +4,7 @@
 //  Persist toolbar by HRS 6/11/15.
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  This script allows you to edit entities with a new UI/UX for mouse and trackpad based editing
 //
@@ -971,6 +972,8 @@ var toolBar = (function () {
 
         addButton("newMaterialButton", createNewEntityDialogButtonCallback("Material"));
 
+        addButton("newPolyVoxButton", createNewEntityDialogButtonCallback("PolyVox"));
+        
         var deactivateCreateIfDesktopWindowsHidden = function() {
             if (!shouldUseEditTabletApp() && !entityListTool.isVisible() && !createToolsWindow.isVisible()) {
                 that.setActive(false);
