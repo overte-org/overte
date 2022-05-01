@@ -20,8 +20,8 @@
 
 PlayerWindow::PlayerWindow() {
     installEventFilter(this);
-    //setFlags(Qt::MSWindowsOwnDC | Qt::Window | Qt::Dialog | Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint);
-    setFlags(Qt::Window);
+    setFlags(Qt::MSWindowsOwnDC | Qt::Window | Qt::Dialog | Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint);
+    //setFlags(Qt::Window);
 
 #ifdef USE_GL
     setSurfaceType(QSurface::OpenGLSurface);
