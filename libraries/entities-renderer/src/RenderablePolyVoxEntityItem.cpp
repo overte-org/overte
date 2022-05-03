@@ -1025,7 +1025,18 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
             entity->setVoxelsFromData(QByteArray(1, 0), 1, 1, 1);
             return;
         }
-        int rawSize = voxelXSize * voxelYSize * voxelZSize;
+        
+        quint16 voxelXDataSize = voxelXSize;
+        quint16 voxelYDataSize = voxelYSize;
+        quint16 voxelZDataSize = voxelZSize;
+        
+        if(entity->isEdged()){
+            voxelXDataSize++;
+            voxelYDataSize++;
+            voxelZDataSize++;
+        }
+        
+        int rawSize = voxelXDataSize * voxelYDataSize * voxelZDataSize;
 
         QByteArray compressedData;
         reader >> compressedData;
@@ -1047,9 +1058,18 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
 void RenderablePolyVoxEntityItem::setVoxelsFromData(QByteArray uncompressedData,
                                                     quint16 voxelXSize, quint16 voxelYSize, quint16 voxelZSize) {
     // this accepts the payload from uncompressVolumeData
+    ivec3 low{ 0 };
+    int index = 0;
+    
     withWriteLock([&] {
-        loop3(ivec3(0), ivec3(voxelXSize, voxelYSize, voxelZSize), [&](const ivec3& v) {
-            int uncompressedIndex = (v.z * voxelYSize * voxelXSize) + (v.y * voxelZSize) + v.x;
+        if (isEdged()) {
+            low += 1;
+            voxelXSize += 2;
+            voxelYSize += 2;
+            voxelZSize += 2;
+        }
+        loop3(low, ivec3(voxelXSize, voxelYSize, voxelZSize), [&](const ivec3& v) {
+            int uncompressedIndex = (v.z * (voxelYSize - low.y) * (voxelXSize - low.x)) + (v.y * (voxelZSize - low.z)) + v.x;
             setVoxelInternal(v, uncompressedData[uncompressedIndex]);
         });
 
@@ -1083,6 +1103,10 @@ void RenderablePolyVoxEntityItem::compressVolumeDataAndSendEditPacket() {
 
         QByteArray compressedData = qCompress(uncompressedData, 9);
         writer << compressedData;
+        QByteArray decompressedData = qUncompress(compressedData);
+        qCDebug(entitiesrenderer) << "Uncompressed data size: " << uncompressedData.size() 
+            << " compressed data size: " << compressedData.size()
+            << "Decompressed data size:" << decompressedData.size();
 
         // make sure the compressed data can be sent over the wire-protocol
         if (newVoxelData.size() > 1150) {
