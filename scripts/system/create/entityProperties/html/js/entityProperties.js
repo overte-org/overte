@@ -1340,6 +1340,14 @@ const GROUPS = [
                 unit: "",
                 propertyID: "voxelVolumeSize",
             },
+            {
+                label: "Texture preset",
+                type: "dropdown",
+                options: { 0 : "None", 1 : "Grass + ground", 2 : "Bricks", 3 : "Stone", 
+                           4: "Concrete", 5 : "Rock"},
+                propertyID: "polyVoxPreset",
+                onDropdownChange: polyVoxPresetChanged,
+            },
             /*{
                 label: "Surface Style",
                 type: "dropdown",
@@ -2488,7 +2496,8 @@ function createStringProperty(property, elProperty) {
 
 
     elInput.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
-    if (propertyData.onChange !== undefined) {
+    if (propertyData.
+        onChange !== undefined) {
         elInput.addEventListener('change', propertyData.onChange);
     }
 
@@ -2922,6 +2931,10 @@ function createDropdownProperty(property, propertyID, elProperty) {
     }
 
     elInput.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
+    if (propertyData.
+        onDropdownChange !== undefined) {
+        elInput.addEventListener('change', propertyData.onDropdownChange(property));
+    }
 
     elProperty.appendChild(elInput);
 
@@ -3239,6 +3252,9 @@ function parentIDChanged() {
     }
 }
 
+function polyVoxPresetChanged() {
+    alert('PolyVox preset');
+}
 
 /**
  * BUTTON CALLBACKS
