@@ -1292,6 +1292,8 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     type: "PolyVox",
  *     position: position,
  *     dimensions: { x: 2, y: 2, z: 2 },
+ *     voxelVolumeSize: { x: 16, y: 16, z: 16 },
+ *     voxelSurfaceStyle: 2,
  *     xTextureURL: texture,
  *     yTextureURL: texture,
  *     zTextureURL: texture,

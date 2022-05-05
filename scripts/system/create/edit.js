@@ -751,6 +751,69 @@ var toolBar = (function () {
             }
         }
     }
+    
+    function handleNewPolyVoxDialogResult(result) {
+        if (result) {
+            var initialShape = result.initialShapeIndex;
+            var volumeSizeX = parseInt(result.volumeSizeX);
+            var volumeSizeY = parseInt(result.volumeSizeY);
+            var volumeSizeZ = parseInt(result.volumeSizeZ);
+            var voxelSurfaceStyle = parseInt(result.surfaceStyleIndex);
+            
+            var polyVoxID = createNewEntity({
+                type: "PolyVox",
+                name: "terrain",
+                voxelVolumeSize: {
+                    x: volumeSizeX,
+                    y: volumeSizeY,
+                    z: volumeSizeZ
+                },
+                xTextureURL: result.xTextureURL,
+                yTextureURL: result.yTextureURL,
+                zTextureURL: result.zTextureURL,
+                voxelSurfaceStyle: 3,
+                collisionless: !(result.collisions),
+                grab: {
+                    grabbable: result.grabbable
+                },
+            });
+            if (polyVoxID){
+                // var properties = Entities.getEntityProperties(polyVoxID, ["position", "localDimensions"]);
+                // var position = properties.position;
+                // var localDimensions = properties.localDimensions;
+                switch (initialShape) {
+                    // Sphere
+                    // case 0:
+                        // Entities.setVoxelSphere(polyVoxID, position, localDimensions/4, 255);
+                        // break;
+                    // Box
+                    case 0:
+                        Entities.setVoxelsInCuboid(polyVoxID, {
+                            x: Math.round(volumeSizeX/4),
+                            y: Math.round(volumeSizeY/4),
+                            z: Math.round(volumeSizeZ/4)
+                        }, {
+                            x: Math.round(volumeSizeX/2.0),
+                            y: Math.round(volumeSizeY/2.0),
+                            z: Math.round(volumeSizeZ/2.0)
+                        }, 255);
+                        break;
+                    // Plane
+                    case 1:
+                        Entities.setVoxelsInCuboid(polyVoxID, {
+                            x: 0,
+                            y: 0,
+                            z: 0
+                        }, {
+                            x: volumeSizeX,
+                            y: Math.round(volumeSizeY/4),
+                            z: volumeSizeZ
+                        }, 255);
+                        break;
+                }
+            }
+        }
+    }
 
     function handleNewMaterialDialogResult(result) {
         if (result) {
@@ -805,6 +868,13 @@ var toolBar = (function () {
                 closeExistingDialogWindow();
                 break;
             case "newMaterialDialogCancel":
+                closeExistingDialogWindow();
+                break;
+            case "newPolyVoxDialogAdd":
+                handleNewPolyVoxDialogResult(message.params);
+                closeExistingDialogWindow();
+                break;
+            case "newPolyVoxDialogCancel":
                 closeExistingDialogWindow();
                 break;
         }
@@ -913,6 +983,10 @@ var toolBar = (function () {
                     closeExistingDialogWindow();
                     var qmlPath = Script.resolvePath("qml/New" + entityType + "Window.qml");
                     var DIALOG_WINDOW_SIZE = { x: 500, y: 300 };
+                    if( entityType === "PolyVox" ){
+                        DIALOG_WINDOW_SIZE.x = 600;
+                        DIALOG_WINDOW_SIZE.y = 500;
+                    }
                     dialogWindow = Desktop.createWindow(qmlPath, {
                         title: "New " + entityType + " Entity",
                         additionalFlags: Desktop.ALWAYS_ON_TOP | Desktop.CLOSE_BUTTON_HIDES,

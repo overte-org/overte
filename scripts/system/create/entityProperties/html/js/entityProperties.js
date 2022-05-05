@@ -1340,14 +1340,14 @@ const GROUPS = [
                 unit: "",
                 propertyID: "voxelVolumeSize",
             },
-            {
+            /*{
                 label: "Surface Style",
                 type: "dropdown",
                 options: { 0: "Marching cubes", 1: "Cubic", 
                            2: "Edged cubic", 3: "Edged marching cubes" },
                 propertyID: "voxelSurfaceStyle",
                 propertyName: "voxelSurfaceStyle",
-            },
+            },*/
             {
                 label: "X Texture URL",
                 type: "string",
