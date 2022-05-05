@@ -53,9 +53,69 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: keyboard.top
+        
+        ComboBox {
+            id: texturePreset
+            currentIndex: 0
+
+            property var texturePresetArray: ["Material presets",
+                                            "Grass + ground",
+                                            "Bricks",
+                                            "Stone",
+                                            "Concrete",
+                                            "Rock"]
+
+            width: 200
+            z: 100
+            transformOrigin: Item.Center
+            model: texturePresetArray
+            
+            onCurrentIndexChanged: {
+                switch (currentIndex) {
+                    // Clear texture entries
+                    case 0:
+                        xTextureURL.text = ""
+                        yTextureURL.text = ""
+                        zTextureURL.text = ""
+                        break;
+                    // Grass + ground
+                    case 1:
+                        xTextureURL.text = "qrc:///serverless/Textures/ground_5-2K/2K-ground_5-diffuse.jpg"
+                        yTextureURL.text = "qrc:///serverless/Textures/ground_grass_gen_05.png"
+                        zTextureURL.text = "qrc:///serverless/Textures/ground_5-2K/2K-ground_5-diffuse.jpg"
+                        break;
+                    // Bricks
+                    case 2:
+                        xTextureURL.text = "qrc:///serverless/Textures/2K-wall_stone_2-diffuse_l.jpg"
+                        yTextureURL.text = "qrc:///serverless/Textures/2K-stone_floor_3-diffuse_l.jpg"
+                        zTextureURL.text = "qrc:///serverless/Textures/2K-wall_stone_2-diffuse_l.jpg"
+                        break;
+                    // Stone
+                    case 3:
+                        xTextureURL.text = "qrc:///serverless/Textures/wall_l.png"
+                        yTextureURL.text = "qrc:///serverless/Textures/floor_l.png"
+                        zTextureURL.text = "qrc:///serverless/Textures/wall_l.png"
+                        break;
+                    // Concrete
+                    case 4:
+                        xTextureURL.text = "qrc:///serverless/Textures/concrete_12-2K/2K-concrete_12-diffuse.jpg"
+                        yTextureURL.text = "qrc:///serverless/Textures/concrete_12-2K/2K-concrete_12-diffuse.jpg"
+                        zTextureURL.text = "qrc:///serverless/Textures/concrete_12-2K/2K-concrete_12-diffuse.jpg"
+                        break;
+                    // Rock
+                    case 5:
+                        xTextureURL.text = "qrc:///serverless/Textures/Rock026_2K-JPG/Rock026_2K_Color.jpg"
+                        yTextureURL.text = "qrc:///serverless/Textures/Rock026_2K-JPG/Rock026_2K_Color.jpg"
+                        zTextureURL.text = "qrc:///serverless/Textures/Rock026_2K-JPG/Rock026_2K_Color.jpg"
+                        break;
+                }
+            }
+        }
 
         Text {
             id: text1
+            anchors.top: texturePreset.bottom
+            anchors.topMargin: 5
             text: qsTr("X Texture URL")
             color: "#ffffff"
             font.pixelSize: 12
@@ -241,9 +301,10 @@ Rectangle {
                 width: 50
                 anchors.left: textVolumeSizeX.right
                 anchors.leftMargin: 3
-                text: qsTr("")
+                text: qsTr("16")
                 color: "white"
                 font.pixelSize: 12
+                validator: IntValidator{bottom: 8; top: 64;}
 
                 onAccepted: {
                     newPolyVoxDialog.keyboardEnabled = false;
@@ -282,9 +343,10 @@ Rectangle {
                 width: 50
                 anchors.left: textVolumeSizeY.right
                 anchors.leftMargin: 3
-                text: qsTr("")
+                text: qsTr("16")
                 color: "white"
                 font.pixelSize: 12
+                validator: IntValidator{bottom: 8; top: 64;}
 
                 onAccepted: {
                     newPolyVoxDialog.keyboardEnabled = false;
@@ -322,9 +384,10 @@ Rectangle {
                 width: 50
                 anchors.left: textVolumeSizeZ.right
                 anchors.leftMargin: 3
-                text: qsTr("")
+                text: qsTr("16")
                 color: "white"
                 font.pixelSize: 12
+                validator: IntValidator{bottom: 8; top: 64;}
 
                 onAccepted: {
                     newPolyVoxDialog.keyboardEnabled = false;
@@ -400,6 +463,7 @@ Rectangle {
 
                 ComboBox {
                     id: surfaceStyle
+                    currentIndex: 3
 
                     property var surfaceStyleArray: ["Marching Cubes",
                                                   "Cubic",
@@ -421,9 +485,9 @@ Rectangle {
 
                 ComboBox {
                     id: initialShape
+                    currentIndex: 0
 
-                    property var initialShapeArray: ["Sphere",
-                                                  "Box",
+                    property var initialShapeArray: ["Box",
                                                   "Plane"]
 
                     width: 200
@@ -439,7 +503,7 @@ Rectangle {
                     spacing: 5
 
                     anchors.horizontalCenter: column3.horizontalCenter
-                    anchors.horizontalCenterOffset: -surfaceStyleArray20
+                    anchors.horizontalCenterOffset: -20
 
                     Button {
                         id: button1
@@ -450,11 +514,16 @@ Rectangle {
                             newPolyVoxDialog.sendToScript({
                                 method: "newPolyVoxDialogAdd",
                                 params: {
-                                    url: xTextureURL.text,
-                                    dynamic: dynamic.checked,
-                                    collisionShapeIndex: surfaceStyle.currentIndex,
+                                    xTextureURL: xTextureURL.text,
+                                    yTextureURL: yTextureURL.text,
+                                    zTextureURL: zTextureURL.text,
+                                    volumeSizeX: volumeSizeX.text,
+                                    volumeSizeY: volumeSizeY.text,
+                                    volumeSizeZ: volumeSizeZ.text,
+                                    surfaceStyleIndex: surfaceStyle.currentIndex,
+                                    initialShapeIndex: initialShape.currentIndex,
                                     grabbable: grabbable.checked,
-                                    useOriginalPivot: useOriginalPivot.checked
+                                    collisions: collisions.checked,
                                 }
                             });
                         }

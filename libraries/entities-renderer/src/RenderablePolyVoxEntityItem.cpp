@@ -1103,10 +1103,6 @@ void RenderablePolyVoxEntityItem::compressVolumeDataAndSendEditPacket() {
 
         QByteArray compressedData = qCompress(uncompressedData, 9);
         writer << compressedData;
-        QByteArray decompressedData = qUncompress(compressedData);
-        qCDebug(entitiesrenderer) << "Uncompressed data size: " << uncompressedData.size() 
-            << " compressed data size: " << compressedData.size()
-            << "Decompressed data size:" << decompressedData.size();
 
         // make sure the compressed data can be sent over the wire-protocol
         if (newVoxelData.size() > 1150) {
