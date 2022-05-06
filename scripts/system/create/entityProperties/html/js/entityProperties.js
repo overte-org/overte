@@ -2344,6 +2344,7 @@ function updateMultiDiffProperties(propertiesMapToUpdate, onlyUpdateEntity) {
 
 function createEmitTextPropertyUpdateFunction(property) {
     return function() {
+        alert('event orig');
         property.elInput.classList.remove('multi-diff');
         updateProperty(property.name, this.value, property.isParticleProperty);
     };
@@ -2931,9 +2932,11 @@ function createDropdownProperty(property, propertyID, elProperty) {
     }
 
     //elInput.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
+    elInput.addEventListener('change', createPolyVoxPresetChangedFunction(property));
     if (propertyData.
         onDropdownChange !== undefined) {
-        elInput.addEventListener('change', propertyData.onDropdownChange);
+        alert("registered");
+        //elInput.addEventListener('change', propertyData.onDropdownChange);
     }
 
     elProperty.appendChild(elInput);
@@ -3252,13 +3255,23 @@ function parentIDChanged() {
     }
 }
 
+function createPolyVoxPresetChangedFunction(property) {
+    return function() {
+        alert('event');
+        property.elInput.classList.remove('multi-diff');
+        updateProperty(property.name, this.value, property.isParticleProperty);
+    };
+}
+
+
 /*function polyVoxPresetChanged(property) {
     return function() {
+        property.elInput.classList.remove('multi-diff');
         alert('PolyVox preset 2 ' + JSON.stringify(property));
         updateProperty("xTextureURL", "test", false);
         updateProperty("yTextureURL", "test", false);
         updateProperty("zTextureURL", "test", false);
-    }
+    };
 }*/
 
 function polyVoxPresetChanged() {
