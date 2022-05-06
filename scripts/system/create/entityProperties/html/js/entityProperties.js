@@ -2930,10 +2930,10 @@ function createDropdownProperty(property, propertyID, elProperty) {
         elInput.add(option);
     }
 
-    elInput.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
+    //elInput.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
     if (propertyData.
         onDropdownChange !== undefined) {
-        elInput.addEventListener('change', propertyData.onDropdownChange(property));
+        elInput.addEventListener('change', propertyData.onDropdownChange);
     }
 
     elProperty.appendChild(elInput);
@@ -3252,8 +3252,20 @@ function parentIDChanged() {
     }
 }
 
+/*function polyVoxPresetChanged(property) {
+    return function() {
+        alert('PolyVox preset 2 ' + JSON.stringify(property));
+        updateProperty("xTextureURL", "test", false);
+        updateProperty("yTextureURL", "test", false);
+        updateProperty("zTextureURL", "test", false);
+    }
+}*/
+
 function polyVoxPresetChanged() {
-    alert('PolyVox preset');
+    alert('PolyVox preset 2 ');
+    //updateProperty("xTextureURL", "test", false);
+    //updateProperty("yTextureURL", "test", false);
+    //updateProperty("zTextureURL", "test", false);
 }
 
 /**
