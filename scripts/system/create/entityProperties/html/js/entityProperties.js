@@ -1346,7 +1346,8 @@ const GROUPS = [
                 options: { 0 : "None", 1 : "Grass + ground", 2 : "Bricks", 3 : "Stone", 
                            4: "Concrete", 5 : "Rock"},
                 propertyID: "polyVoxPreset",
-                onDropdownChange: polyVoxPresetChanged,
+                onDropdownChange: createPolyVoxPresetChangedFunction,
+                skipPropertyUpdate: true,
             },
             /*{
                 label: "Surface Style",
@@ -2344,7 +2345,6 @@ function updateMultiDiffProperties(propertiesMapToUpdate, onlyUpdateEntity) {
 
 function createEmitTextPropertyUpdateFunction(property) {
     return function() {
-        alert('event orig');
         property.elInput.classList.remove('multi-diff');
         updateProperty(property.name, this.value, property.isParticleProperty);
     };
@@ -2931,13 +2931,7 @@ function createDropdownProperty(property, propertyID, elProperty) {
         elInput.add(option);
     }
 
-    //elInput.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
-    elInput.addEventListener('change', createPolyVoxPresetChangedFunction(property));
-    if (propertyData.
-        onDropdownChange !== undefined) {
-        alert("registered");
-        //elInput.addEventListener('change', propertyData.onDropdownChange);
-    }
+    elInput.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
 
     elProperty.appendChild(elInput);
 
@@ -3257,28 +3251,52 @@ function parentIDChanged() {
 
 function createPolyVoxPresetChangedFunction(property) {
     return function() {
-        alert('event');
         property.elInput.classList.remove('multi-diff');
-        updateProperty(property.name, this.value, property.isParticleProperty);
+        var xTextureURL = "";
+        var yTextureURL = "";
+        var zTextureURL = "";
+        switch (parseInt(this.value)) {
+            // Clear texture entries
+            case 0:
+                xTextureURL = "";
+                yTextureURL = "";
+                zTextureURL = "";
+                break;
+            // Grass + ground
+            case 1:
+                xTextureURL = "qrc:///serverless/Textures/ground_5-2K/2K-ground_5-diffuse.jpg";
+                yTextureURL = "qrc:///serverless/Textures/ground_grass_gen_05.png";
+                zTextureURL = "qrc:///serverless/Textures/ground_5-2K/2K-ground_5-diffuse.jpg";
+                break;
+            // Bricks
+            case 2:
+                xTextureURL = "qrc:///serverless/Textures/2K-wall_stone_2-diffuse_l.jpg";
+                yTextureURL = "qrc:///serverless/Textures/2K-stone_floor_3-diffuse_l.jpg";
+                zTextureURL = "qrc:///serverless/Textures/2K-wall_stone_2-diffuse_l.jpg";
+                break;
+            // Stone
+            case 3:
+                xTextureURL = "qrc:///serverless/Textures/wall_l.png";
+                yTextureURL = "qrc:///serverless/Textures/floor_l.png";
+                zTextureURL = "qrc:///serverless/Textures/wall_l.png";
+                break;
+            // Concrete
+            case 4:
+                xTextureURL = "qrc:///serverless/Textures/concrete_12-2K/2K-concrete_12-diffuse.jpg";
+                yTextureURL = "qrc:///serverless/Textures/concrete_12-2K/2K-concrete_12-diffuse.jpg";
+                zTextureURL = "qrc:///serverless/Textures/concrete_12-2K/2K-concrete_12-diffuse.jpg";
+                break;
+            // Rock
+            case 5:
+                xTextureURL = "qrc:///serverless/Textures/Rock026_2K-JPG/Rock026_2K_Color.jpg";
+                yTextureURL = "qrc:///serverless/Textures/Rock026_2K-JPG/Rock026_2K_Color.jpg";
+                zTextureURL = "qrc:///serverless/Textures/Rock026_2K-JPG/Rock026_2K_Color.jpg";
+                break;
+        }
+        updateProperty("xTextureURL", xTextureURL, false);
+        updateProperty("yTextureURL", yTextureURL, false);
+        updateProperty("zTextureURL", zTextureURL, false);
     };
-}
-
-
-/*function polyVoxPresetChanged(property) {
-    return function() {
-        property.elInput.classList.remove('multi-diff');
-        alert('PolyVox preset 2 ' + JSON.stringify(property));
-        updateProperty("xTextureURL", "test", false);
-        updateProperty("yTextureURL", "test", false);
-        updateProperty("zTextureURL", "test", false);
-    };
-}*/
-
-function polyVoxPresetChanged() {
-    alert('PolyVox preset 2 ');
-    //updateProperty("xTextureURL", "test", false);
-    //updateProperty("yTextureURL", "test", false);
-    //updateProperty("zTextureURL", "test", false);
 }
 
 /**
@@ -4839,7 +4857,16 @@ function loaded() {
             let propertyID = elDropdown.getAttribute("propertyID");
             let property = properties[propertyID];
             property.elInput = dt;
-            dt.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
+            
+            if (property.data.
+                skipPropertyUpdate !== true) {
+                    dt.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
+            }
+            
+            if (property.data.
+                onDropdownChange !== undefined) {
+                dt.addEventListener('change', property.data.onDropdownChange(property));
+            }
         }
 
         document.addEventListener('click', function(ev) { closeAllDropdowns() }, true);
