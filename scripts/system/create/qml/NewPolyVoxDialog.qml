@@ -74,39 +74,39 @@ Rectangle {
                 switch (currentIndex) {
                     // Clear texture entries
                     case 0:
-                        xTextureURL.text = ""
-                        yTextureURL.text = ""
-                        zTextureURL.text = ""
+                        xTextureURL.text = "";
+                        yTextureURL.text = "";
+                        zTextureURL.text = "";
                         break;
                     // Grass + ground
                     case 1:
-                        xTextureURL.text = "qrc:///serverless/Textures/ground_5-2K/2K-ground_5-diffuse.jpg"
-                        yTextureURL.text = "qrc:///serverless/Textures/ground_grass_gen_05.png"
-                        zTextureURL.text = "qrc:///serverless/Textures/ground_5-2K/2K-ground_5-diffuse.jpg"
+                        xTextureURL.text = "qrc:///serverless/Textures/ground_5-2K/2K-ground_5-diffuse.jpg";
+                        yTextureURL.text = "qrc:///serverless/Textures/ground_grass_gen_05.png";
+                        zTextureURL.text = "qrc:///serverless/Textures/ground_5-2K/2K-ground_5-diffuse.jpg";
                         break;
                     // Bricks
                     case 2:
-                        xTextureURL.text = "qrc:///serverless/Textures/2K-wall_stone_2-diffuse_l.jpg"
-                        yTextureURL.text = "qrc:///serverless/Textures/2K-stone_floor_3-diffuse_l.jpg"
-                        zTextureURL.text = "qrc:///serverless/Textures/2K-wall_stone_2-diffuse_l.jpg"
+                        xTextureURL.text = "qrc:///serverless/Textures/2K-wall_stone_2-diffuse_l.jpg";
+                        yTextureURL.text = "qrc:///serverless/Textures/2K-stone_floor_3-diffuse_l.jpg";
+                        zTextureURL.text = "qrc:///serverless/Textures/2K-wall_stone_2-diffuse_l.jpg";
                         break;
                     // Stone
                     case 3:
-                        xTextureURL.text = "qrc:///serverless/Textures/wall_l.png"
-                        yTextureURL.text = "qrc:///serverless/Textures/floor_l.png"
-                        zTextureURL.text = "qrc:///serverless/Textures/wall_l.png"
+                        xTextureURL.text = "qrc:///serverless/Textures/wall_l.png";
+                        yTextureURL.text = "qrc:///serverless/Textures/floor_l.png";
+                        zTextureURL.text = "qrc:///serverless/Textures/wall_l.png";
                         break;
                     // Concrete
                     case 4:
-                        xTextureURL.text = "qrc:///serverless/Textures/concrete_12-2K/2K-concrete_12-diffuse.jpg"
-                        yTextureURL.text = "qrc:///serverless/Textures/concrete_12-2K/2K-concrete_12-diffuse.jpg"
-                        zTextureURL.text = "qrc:///serverless/Textures/concrete_12-2K/2K-concrete_12-diffuse.jpg"
+                        xTextureURL.text = "qrc:///serverless/Textures/concrete_12-2K/2K-concrete_12-diffuse.jpg";
+                        yTextureURL.text = "qrc:///serverless/Textures/concrete_12-2K/2K-concrete_12-diffuse.jpg";
+                        zTextureURL.text = "qrc:///serverless/Textures/concrete_12-2K/2K-concrete_12-diffuse.jpg";
                         break;
                     // Rock
                     case 5:
-                        xTextureURL.text = "qrc:///serverless/Textures/Rock026_2K-JPG/Rock026_2K_Color.jpg"
-                        yTextureURL.text = "qrc:///serverless/Textures/Rock026_2K-JPG/Rock026_2K_Color.jpg"
-                        zTextureURL.text = "qrc:///serverless/Textures/Rock026_2K-JPG/Rock026_2K_Color.jpg"
+                        xTextureURL.text = "qrc:///serverless/Textures/Rock026_2K-JPG/Rock026_2K_Color.jpg";
+                        yTextureURL.text = "qrc:///serverless/Textures/Rock026_2K-JPG/Rock026_2K_Color.jpg";
+                        zTextureURL.text = "qrc:///serverless/Textures/Rock026_2K-JPG/Rock026_2K_Color.jpg";
                         break;
                 }
             }

@@ -286,7 +286,7 @@ TabBar {
     }
 
     EditTabButton {
-        title: "GRID"
+        title: "TOOLS"
         active: true
         enabled: true
         property string originalUrl: ""

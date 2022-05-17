@@ -3,6 +3,7 @@
 //
 //  Created by Ryan Huffman on 6 Nov 2014
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -20,7 +21,55 @@
         <script type="text/javascript" src="js/gridControls.js"></script>
     </head>
     <body onload='loaded();'>
+        <div id="mode-section" class="section">
+            <div class="property container">
+                <label for="create-app-mode">Create app mode </label>
+                <select name="create-app-mode" id="create-app-mode">
+                    <option value="object">Object mode</option>
+                    <option value="voxel">Voxel edit mode</option>
+                </select>
+            </div>
+        </div>
+        <div id="voxels-section" class="section">
+            <h2>Voxel edit settings</h2>
+            <div class="property container">
+                <label for="voxel-edit-mode">Voxel edit mode </label>
+                <select name="voxel-edit-mode" id="voxel-edit-mode">
+                    <option value="single">Single voxels</option>
+                    <option value="sphere">Spheres</option>
+                    <option value="cube">Cubes</option>
+                </select>
+                <label for="voxel-sphere-size">&nbsp;&nbsp;Sphere/cube size <span class="unit">m</span></label>
+                <div class="number">
+                    <input type="number" id="voxel-sphere-size" min="0.01" step="0.2" />
+                </div>
+            </div>
+            <div class="property container">
+                <label for="voxel-edit-dynamics">Voxel edit dynamics </label>
+                <select name="voxel-edit-dynamics" id="voxel-edit-dynamics">
+                    <option value="click">Modify on click</option>
+                    <option value="continuous">Continuous</option>
+                </select>
+                <label for="voxel-remove">&nbsp;&nbsp;Remove voxels</label>
+                <div style="width: 100%">
+                    <input type='checkbox' id="voxel-remove" style="width: 100%">
+                    <label for="voxel-remove">&nbsp;</label>
+                </div>
+            </div>
+            <div class="property container">
+                <label for="voxel-pointer-mode">VR pointer mode </label>
+                <select name="voxel-pointer-mode" id="voxel-pointer-mode">
+                    <option value="single">Laser pointer</option>
+                    <option value="sphere">Brush</option>
+                </select>
+                <label for="voxel-brush-length">&nbsp;&nbsp;Brush length <span class="unit">m</span></label>
+                <div class="number">
+                    <input type="number" id="voxel-brush-length" min="0.2" step="0.2" />
+                </div>
+            </div>
+        </div>
         <div id="grid-section" class="section">
+            <h2>Grid settings</h2>
             <div class="property container">
                 <label for="horiz-grid-visible">Visible</label>
                 <div style="width: 100%">
