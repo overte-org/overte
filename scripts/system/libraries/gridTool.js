@@ -3,6 +3,7 @@
 //  Created by Ryan Huffman on 6 Nov 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -196,8 +197,11 @@ Grid = function() {
     };
 
     that.update = function(data) {
+        var gridNeedsUpdate = false;
+        
         if (data.snapToGrid !== undefined) {
             snapToGrid = data.snapToGrid;
+            var gridNeedsUpdate = true;
         }
 
         if (data.origin) {
@@ -206,29 +210,37 @@ Grid = function() {
             pos.y = pos.y === undefined ? origin.y : parseFloat(pos.y);
             pos.z = pos.z === undefined ? origin.z : parseFloat(pos.z);
             that.setPosition(pos, true);
+            var gridNeedsUpdate = true;
         }
 
         if (data.minorGridEvery) {
             minorGridEvery = data.minorGridEvery;
+            var gridNeedsUpdate = true;
         }
 
         if (data.majorGridEvery) {
             majorGridEvery = data.majorGridEvery;
+            var gridNeedsUpdate = true;
         }
 
         if (data.gridColor) {
             gridColor = data.gridColor;
+            var gridNeedsUpdate = true;
         }
 
         if (data.gridSize) {
             halfSize = data.gridSize;
+            var gridNeedsUpdate = true;
         }
 
         if (data.visible !== undefined) {
             that.setVisible(data.visible, true);
+            var gridNeedsUpdate = true;
         }
 
-        updateGrid(true);
+        if (gridNeedsUpdate) {
+            updateGrid(true);
+        }
     };
 
     function updateGrid(noUpdate) {
