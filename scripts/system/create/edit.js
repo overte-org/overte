@@ -12,7 +12,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-/* global Script, SelectionDisplay, LightOverlayManager, CameraManager, Grid, GridTool, EditTools, EntityListTool, Vec3, SelectionManager,
+/* global Script, SelectionDisplay, LightOverlayManager, CameraManager, Grid, GridTool, EditTools, EditVoxels, EntityListTool, Vec3, SelectionManager,
    Overlays, OverlayWebWindow, UserActivityLogger, Settings, Entities, Tablet, Toolbars, Messages, Menu, Camera,
    progressDialog, tooltip, MyAvatar, Quat, Controller, Clipboard, HMD, UndoStack, OverlaySystemWindow,
    keyUpEventFromUIWindow:true */
@@ -38,7 +38,8 @@ Script.include([
     "entitySelectionTool/entitySelectionTool.js",
     "audioFeedback/audioFeedback.js",
     "modules/brokenURLReport.js",    
-    "editModes/editModes.js"    
+    "editModes/editModes.js",    
+    "editModes/editVoxels.js"    
 ]);
 
 var CreateWindow = Script.require('./modules/createWindow.js');
@@ -131,6 +132,10 @@ gridTool.setVisible(false);
 var editTools = new EditTools({
     createToolsWindow: createToolsWindow,
 });
+
+var editVoxels = new EditVoxels();
+
+editTools.addListener(editVoxels.updateEditSettings);
 
 var entityShapeVisualizerSessionName = "SHAPE_VISUALIZER_" + Uuid.generate();
 
