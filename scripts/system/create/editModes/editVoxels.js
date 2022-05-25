@@ -19,6 +19,7 @@ Script.include([
 ]);
 
 EditVoxels = function() {
+    var self = this;
     var that = {};
 
     var controlHeld = false;
@@ -33,9 +34,14 @@ EditVoxels = function() {
     var deletingCubes = false;
     var continuousPaint = false;
     var brushPointer = false;
+    var isActive = true;
 
     var editSphereRadius = 0.15;
     var brushLength = 0.5;
+    
+    that.setActive = function(active) {
+        isActive = (active === true);
+    }
     
     that.updateEditSettings = function(data) {
         
@@ -114,7 +120,7 @@ EditVoxels = function() {
             return false;
         }
         
-        if (!editEnabled) {
+        if (!editEnabled || !isActive) {
             return false;
         }
 
@@ -224,7 +230,9 @@ EditVoxels = function() {
     }
 
     function cleanup() {
-        toolBar.cleanup();
+        Controller.mousePressEvent.disconnect(self.mousePressEvent);
+        Controller.keyPressEvent.disconnect(self.keyPressEvent);
+        Controller.keyReleaseEvent.disconnect(self.keyReleaseEvent);
     }
 
     Controller.mousePressEvent.connect(mousePressEvent);

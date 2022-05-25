@@ -24,7 +24,7 @@ EditTools = function(options) {
     var voxelSphereSize = 0.3;
     var voxelEditDynamics = "click";
     var voxelRemove = false;
-    var voxelPointerMode = "single";
+    var voxelPointerMode = "laser";
     var voxelBrushLength = 0.5;
     var listeners = [];
     
