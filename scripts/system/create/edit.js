@@ -136,6 +136,7 @@ var editTools = new EditTools({
 var editVoxels = new EditVoxels();
 
 editTools.addListener(editVoxels.updateEditSettings);
+editTools.addListener(selectionManager.updateEditSettings);
 
 var entityShapeVisualizerSessionName = "SHAPE_VISUALIZER_" + Uuid.generate();
 
@@ -781,7 +782,7 @@ var toolBar = (function () {
                 xTextureURL: result.xTextureURL,
                 yTextureURL: result.yTextureURL,
                 zTextureURL: result.zTextureURL,
-                voxelSurfaceStyle: 3,
+                voxelSurfaceStyle: voxelSurfaceStyle,
                 collisionless: !(result.collisions),
                 grab: {
                     grabbable: result.grabbable
@@ -1103,6 +1104,8 @@ var toolBar = (function () {
         isActive = active;
         activeButton.editProperties({isActive: isActive});
         undoHistory.setEnabled(isActive);
+        
+        editVoxels.setActive(active);
 
         var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
@@ -1456,7 +1459,7 @@ function mouseClickEvent(event) {
         var sizeOK = (allowLargeModels || angularSize < MAX_ANGULAR_SIZE) &&
                      (allowSmallModels || angularSize > MIN_ANGULAR_SIZE);
 
-        if (0 < x && sizeOK) {
+        if (0 < x && sizeOK && selectionManager.editEnabled) {
             selectedEntityID = foundEntity;
             orientation = MyAvatar.orientation;
             intersection = rayPlaneIntersection(pickRay, P, Quat.getForward(orientation));

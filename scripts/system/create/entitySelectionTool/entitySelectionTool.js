@@ -187,6 +187,21 @@ SelectionManager = (function() {
     that.pointingAtDesktopWindowRight = false;
     that.pointingAtTabletLeft = false;
     that.pointingAtTabletRight = false;
+    that.editEnabled = true;
+    
+    that.updateEditSettings = function(data) {
+        
+        if (data.createAppMode) {
+            if (data.createAppMode === "object"){
+                that.editEnabled = true;
+            } else {
+                that.editEnabled = false;
+                if(that.hasSelection()){
+                    that.clearSelections();
+                }
+            }
+        }
+    }    
 
     that.saveProperties = function() {
         that.savedProperties = {};
@@ -1303,6 +1318,9 @@ SelectionDisplay = (function() {
     }
     function makeClickHandler(hand) {
         return function (clicked) {
+            if (!SelectionManager.editEnabled) {
+                return;
+            }
             // Don't allow both hands to trigger at the same time
             if (that.triggered() && hand !== that.triggeredHand) {
                 return;
@@ -1318,6 +1336,9 @@ SelectionDisplay = (function() {
     }
     function makePressHandler(hand) {
         return function (value) {
+            if (!SelectionManager.editEnabled) {
+                return;
+            }
             if (value >= TRIGGER_ON_VALUE && !that.triggered() && !pointingAtDesktopWindowOrTablet(hand)) {
                 that.pressedHand = hand;
                 that.updateHighlight({});
@@ -1412,6 +1433,9 @@ SelectionDisplay = (function() {
         var wantDebug = false;
         if (wantDebug) {
             print("=============== eST::MousePressEvent BEG =======================");
+        }
+        if (!SelectionManager.editEnabled) {
+            return;
         }
         if (!event.isLeftButton && !that.triggered()) {
             // EARLY EXIT-(if another mouse button than left is pressed ignore it)
