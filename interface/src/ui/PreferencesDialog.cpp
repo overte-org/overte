@@ -509,7 +509,7 @@ void setupPreferences() {
                 qDebug() << "Empty name for action. Ignoring...";
                 continue;
             }
-            qDebug() << "action: " << actionName;
+            qDebug() << "action: " << actionName << " (" << action.first.id << ")";
             switch (action.first.getType()) {
                 case controller::ChannelType::UNKNOWN :
                     qDebug() << "ChannelType::UNKNOWN -- will be skipped.";
@@ -546,10 +546,15 @@ void setupPreferences() {
             auto getter = [action]()->QKeySequence {
                 auto userInputMapper = DependencyManager::get<UserInputMapper>();
                 auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
-                auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);
+                //auto tmp = userInputMapper->inputFor(outPtr);
+                //qDebug() << "outPtr.getInput().id:" << outPtr.getInput().id;
+                auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);	// Not userInputMapper?
                 if (inPtr == controller::EndpointPointer()) return QKeySequence();	// Remove later.
                 //return QKeySequence(userInputMapper->inputFor(inPtr).displayValue);
                 auto tmp = userInputMapper->inputFor(inPtr);
+                // displayValue should be assigned by:
+                //   KeyboardMouseDevice.cpp:282
+                //     Input.h:78
                 qDebug() << "input.displayValue:" << tmp.displayValue;
                 //return QKeySequence(tmp.displayValue);
                 if (tmp.displayValue.isEmpty()) {	// Remove later.

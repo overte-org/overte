@@ -714,15 +714,17 @@ EndpointPointer UserInputMapper::matchDeviceRouteEndpoint(const EndpointPointer 
     if (test == 0) {
         qWarning() << "UserInputMapper::matchDeviceRouteEndpoint() supplied with uninitialised endpoint.";
         return EndpointPointer();
+    } else {
+        qDebug() << "UserInputMapper::matchDeviceRouteEndpoint() : test == " << test;
     }
     //qDebug() << "matchDeviceRouteEndpoint: IO->getInput().id == " << test;
-    qDebug() << "_deviceRoutes.size() == " << _deviceRoutes.size();
+    //qDebug() << "_deviceRoutes.size() == " << _deviceRoutes.size();
     for (auto route : _deviceRoutes) {
         if (route->source->getInput().id == test) {
-            //qDebug() << "\t== source (" << route->source->getInput().id << ")";
+            qDebug() << "\t== _deviceRoutes source (" << route->source->getInput().id << ")";
             return route->destination;
         } else if (route->destination->getInput().id == test) {
-            //qDebug() << "\t== destination (" << route->destination->getInput().id << ")";
+            qDebug() << "\t== _deviceRoutes destination (" << route->destination->getInput().id << ")";
             return route->source;
         } else {
             //qDebug() << "\t!= source (" << route->source->getInput().id << ")";
@@ -730,6 +732,20 @@ EndpointPointer UserInputMapper::matchDeviceRouteEndpoint(const EndpointPointer 
             continue;
         }
     }
+    /*//qDebug() << "_standardRoutes.size() == " << _deviceRoutes.size();
+    for (auto route : _standardRoutes) {
+        if (route->source->getInput().id == test) {
+            qDebug() << "\t== _standardRoutes source (" << route->source->getInput().id << ")";
+            return route->destination;
+        } else if (route->destination->getInput().id == test) {
+            qDebug() << "\t== _standardRoutes destination (" << route->destination->getInput().id << ")";
+            return route->source;
+        } else {
+            //qDebug() << "\t!= source (" << route->source->getInput().id << ")";
+            //qDebug() << "\t!= destination (" << route->destination->getInput().id << ")";
+            continue;
+        }
+    }*/
     qWarning() << "Failed to matchDeviceRouteEndpoint().";
     return EndpointPointer();
 }
