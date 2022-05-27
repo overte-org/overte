@@ -544,6 +544,19 @@ void setupPreferences() {
             /*auto getter = [inPtr]()->QKeySequence {
                 return QKeySequence(DependencyManager::get<UserInputMapper>()->inputFor(inPtr).displayValue);*/
             auto getter = [action]()->QKeySequence {
+                //QKeySequence tmp3(action.first.id);
+                QKeySequence tmp3(action.first.getDevice());
+                qDebug() << "input mapped to (1): " << tmp3.toString(QKeySequence::NativeText);
+                qDebug() << "input could be (2): " << (QKeySequence(action.first.id)).toString(QKeySequence::NativeText);
+                qDebug() << "input could be (3): " << (QKeySequence(action.first.id & 0x00FF)).toString(QKeySequence::NativeText);
+                qDebug() << "input could be (4): " << (QKeySequence(action.first.id | 0x00FF)).toString(QKeySequence::NativeText);
+                qDebug() << "input could be (5): " << (QKeySequence(action.first.getDevice())).toString(QKeySequence::NativeText);
+                qDebug() << "input could be (6): " << (QKeySequence(action.first.getDevice() & 0x00FF)).toString(QKeySequence::NativeText);
+                qDebug() << "input could be (7): " << (QKeySequence(action.first.getDevice() | 0x00FF)).toString(QKeySequence::NativeText);
+
+                qDebug() << "input could be (8): " << (QKeySequence(action.first.id + 0x1000000)).toString(QKeySequence::NativeText);
+                qDebug() << "input could be (9): " << (QKeySequence(action.first.getDevice() + 0x1000000)).toString(QKeySequence::NativeText);
+
                 auto userInputMapper = DependencyManager::get<UserInputMapper>();
                 auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
                 //auto tmp = userInputMapper->inputFor(outPtr);
@@ -555,13 +568,22 @@ void setupPreferences() {
                 // displayValue should be assigned by:
                 //   KeyboardMouseDevice.cpp:282
                 //     Input.h:78
-                qDebug() << "input.displayValue:" << tmp.displayValue;
-                //return QKeySequence(tmp.displayValue);
-                if (tmp.displayValue.isEmpty()) {	// Remove later.
-                    return QKeySequence();
-                } else {
-                    return QKeySequence(tmp.displayValue, QKeySequence::PortableText);
-                }
+                //qDebug() << "input.displayValue:" << tmp.displayValue;
+                QKeySequence tmp2(tmp.id);
+
+                //QKeySequence tmp2(action.first.id & 0x00FF);	// KEYBOARD_MASK
+                //QKeySequence tmp2(action.first.id | 0x00FF);	// KEYBOARD_MASK
+                qDebug() << "input could be (10): " << (QKeySequence(tmp.id)).toString(QKeySequence::NativeText);
+                qDebug() << "input could be (11): " << (QKeySequence(tmp.id & 0x00FF)).toString(QKeySequence::NativeText);
+                qDebug() << "input could be (12): " << (QKeySequence(tmp.id | 0x00FF)).toString(QKeySequence::NativeText);
+                qDebug() << "input could be (13): " << (QKeySequence(tmp.getDevice())).toString(QKeySequence::NativeText);
+                qDebug() << "input could be (14): " << (QKeySequence(tmp.getDevice() & 0x00FF)).toString(QKeySequence::NativeText);
+                qDebug() << "input could be (15): " << (QKeySequence(tmp.getDevice() | 0x00FF)).toString(QKeySequence::NativeText);
+                qDebug() << "input could be (16): " << (QKeySequence(action.first.id + 0x1000000)).toString(QKeySequence::NativeText);
+                qDebug() << "input could be (17): " << (QKeySequence(action.first.getDevice() + 0x1000000)).toString(QKeySequence::NativeText);
+                //QKeySequence tmp2(userInputMapper->inputFromAction(action).id);
+
+                return tmp3;
                 /*return QKeySequence(
                     DependencyManager::get<UserInputMapper>()->inputFor(inPtr).displayValue,
                     QKeySequence::SequenceFormat::PortableText
