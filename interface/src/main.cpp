@@ -77,7 +77,7 @@ int main(int argc, const char* argv[]) {
     QCommandLineOption protocolVersionOption(
         "protocolVersion",
         "Writes the protocol version base64 signature to a file?",
-        "path" // Why??
+        "path"
     );
     QCommandLineOption noUpdaterOption(
         "no-updater",
@@ -99,8 +99,8 @@ int main(int argc, const char* argv[]) {
     QCommandLineOption serverContentPathOption(
         "serverContentPath",
         "Path to find server content.", // What content??
-        "serverContentPath"
-    ); // This data type will not be familiar to users.
+        "path"
+    );
     QCommandLineOption overrideAppLocalDataPathOption(
         "cache",
         "Set test cache.",

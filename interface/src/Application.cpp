@@ -1474,9 +1474,6 @@ Application::Application(
     _glWidget->setFocusPolicy(Qt::StrongFocus);
     _glWidget->setFocus();
 
-    /*if (parser.isSet("system-cursor")) {	// This is now done above, since the conditional was needed anyway.
-        _preferredCursor.set(Cursor::Manager::getIconName(Cursor::Icon::SYSTEM));
-    }*/
     showCursor(Cursor::Manager::lookupIcon(_preferredCursor.get()));
 
     // enable mouse tracking; otherwise, we only get drag events
