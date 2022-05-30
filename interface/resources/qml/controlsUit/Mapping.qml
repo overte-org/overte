@@ -38,7 +38,6 @@ HifiControls.TextField {
                     keyval = bakkeyval;
                     mapping.text = baktext;
                 }
-                //mapping.text = keyval;
                 event.accepted = true;
                 break;
             default:
@@ -47,21 +46,21 @@ HifiControls.TextField {
                 if (event.text.length == 0) {
                     if (event.modifiers & Qt.ControlModifier) {
                         mapping.keyval = 0x01000021	// "COMMAND" on Mac...
-                        mapping.text = "Key_Control"
+                        mapping.text = "Control"
                         event.accepted = true;
                     }
                     if (event.modifiers & Qt.AltModifier) {
                         mapping.keyval = 0x01000023
-                        mapping.text = "Key_Alt"
+                        mapping.text = "Alt"
                         event.accepted = true;
                     }
                     if (event.modifiers & Qt.ShiftModifier) {
                         mapping.keyval = 0x01000020
-                        mapping.text = "Key_Shift"
+                        mapping.text = "Shift"
                         event.accepted = true;
                     }
                 } else {
-                    mapping.text = "Key_" + event.text.toUpperCase();
+                    mapping.text = event.text.toUpperCase();
                     event.accepted = true;
                 }
         }
