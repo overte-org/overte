@@ -16,14 +16,6 @@ Preference {
     Component.onCompleted: {
         mapping.keyval = preference.value;
         mapping.bakkeyval = mapping.keyval;
-
-        //mapping.text = mapping.keyval;
-        //mapping.text = valueToKey(mapping.keyval);
-        //mapping.text = preference.value.toString();
-        //mapping.text = preference.value.valueOf();
-        //mapping.text = Key(preference.value).toString();
-        //mapping.text = Qt.Key(mapping.keyval).toString();
-        //mapping.text = Qt.valueToKey(mapping.keyval);
         mapping.text = preference.displayValue.substring(4);
         mapping.baktext = mapping.text;
     }
@@ -39,9 +31,7 @@ Preference {
 
     Mapping {
         id: mapping
-        //label: preference.label // Not sure why this doesn't work.
         label: root.label
-        //text: keyval;	// Needed?
 
         anchors {
             left: parent.left
