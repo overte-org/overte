@@ -46,7 +46,7 @@ HifiControls.TextField {
                 if (event.text.length == 0) {
                     if (event.modifiers & Qt.ControlModifier) {
                         mapping.keyval = 0x01000021	// "COMMAND" on Mac...
-                        mapping.text = "Control"
+                        mapping.text = "Control / Command"
                         event.accepted = true;
                     }
                     if (event.modifiers & Qt.AltModifier) {
