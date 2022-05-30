@@ -502,10 +502,8 @@ void setupPreferences() {
         //Input::NamedVector inputs = userInputMapper->getAvailableInputs(targetDevice);
         qDebug() << "TEST: actions :";
         for (auto action : actions) {
-            //auto actionName = userInputMapper->getActionName(action);
             auto actionName = action.second;
             if (actionName.isEmpty()) {
-                //qDebug() << "Empty name for action \"" << controller::toInt(action) << "\". Ignoring...";
                 qDebug() << "Empty name for action. Ignoring...";
                 continue;
             }
@@ -534,62 +532,50 @@ void setupPreferences() {
                     break;
             }
 
-            /*auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
-            auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);*/
-
-            //auto getter = []()->QKeySequence { return QKeySequence(input->first); };
-            //auto setter = [](QKeySequence value) { return QKeySequence(Qt::Key_A); };
-            /*QString displayValue = userInputMapper->inputFor(inPtr).displayValue;
-            auto getter = [displayValue]()->QKeySequence { return QKeySequence(displayValue); };*/
-            /*auto getter = [inPtr]()->QKeySequence {
-                return QKeySequence(DependencyManager::get<UserInputMapper>()->inputFor(inPtr).displayValue);*/
-            auto getter = [action]()->QKeySequence {
-                /*QKeySequence tmp3(QKeySequence( static_cast<uint32_t>(action.first.channel & 0x00FF) | (action.first.channel & 0x0800 ? 0x01000000 : 0) ));
-                qDebug() << "input could be (a0): " << QKeySequence( static_cast<uint32_t>(action.first.channel & 0x00FF) ).toString(QKeySequence::NativeText);
-                qDebug() << "input could be (a1): " << tmp3.toString(QKeySequence::NativeText);
-                qDebug() << "input could be (a2): " << QKeySequence( static_cast<uint32_t>(action.first.channel & 0x00FF) + (action.first.channel & 0x0800 ? 0x01000000 : 0) ).toString(QKeySequence::NativeText);
-		if (action.first.channel & 0x0800) {
-                    qDebug() << "input could be (a3): " << QKeySequence( static_cast<uint32_t>(action.first.channel & 0x00FF) | 0x01000000 ).toString(QKeySequence::NativeText);
-                    qDebug() << "input could be (a4): " << QKeySequence( static_cast<uint32_t>(action.first.channel & 0x00FF) + 0x01000000 ).toString(QKeySequence::NativeText);
-                }*/
-
-
+            auto getter = [action]()->Qt::Key {
                 auto userInputMapper = DependencyManager::get<UserInputMapper>();
                 auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
                 //auto tmp = userInputMapper->inputFor(outPtr);
                 //qDebug() << "outPtr.getInput().id:" << outPtr.getInput().id;
                 auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);	// Not userInputMapper?
-                if (inPtr == controller::EndpointPointer()) return QKeySequence();	// Remove later.
                 auto tmp = userInputMapper->inputFor(inPtr);
-                QKeySequence tmp2(QKeySequence( static_cast<uint32_t>(tmp.channel & 0x00FF) | (tmp.channel & 0x0800 ? 0x01000000 : 0) ));
-                qDebug() << "input could be (b0): " << QKeySequence( static_cast<uint32_t>(tmp.channel & 0x00FF) ).toString(QKeySequence::NativeText);
-                qDebug() << "input could be (b1): " << tmp2.toString(QKeySequence::NativeText);
-                qDebug() << "input could be (b2): " << QKeySequence( (static_cast<uint32_t>(tmp.channel & 0x00FF)) + ( (tmp.channel & 0x0800) ? 0x01000000 : 0) ).toString(QKeySequence::NativeText);
-		if (tmp.channel & 0x0800) {
-                    qDebug() << "input could be (b3): " << QKeySequence( static_cast<uint32_t>(tmp.channel & 0x00FF) | 0x01000000 ).toString(QKeySequence::NativeText);
-                    qDebug() << "input could be (b4): " << QKeySequence( static_cast<uint32_t>(tmp.channel & 0x00FF) + 0x01000000 ).toString(QKeySequence::NativeText);
-                }
-                {
-                    uint32_t code = static_cast<uint32_t>(tmp.channel & 0x00FF);
-                    qDebug() << "input could be (b5): " << QKeySequence( code | (tmp.channel & 0x0800 ? 0x01000000 : 0) ).toString(QKeySequence::NativeText);
-                }
-
-
-                return QKeySequence( static_cast<uint32_t>(tmp.channel & 0x00FF) );
+                Qt::Key key = static_cast<Qt::Key>( static_cast<uint32_t>(tmp.channel & 0x00FF) | (tmp.channel & 0x0800 ? 0x01000000 : 0) );
+                qDebug() << "Qt::Key detected:" << key << "(" << Qt::hex << static_cast<uint32_t>(key) << ")";
+                return key;
             };
-            /*auto setter = [inPtr,outPtr](QKeySequence value) {
-                DependencyManager::get<UserInputMapper>()->reroute(
-                    inPtr,
-                    outPtr
-                );*/
-            auto setter = [action](QKeySequence value) {
+            auto setter = [action](Qt::Key value) {
+                qDebug() << "setter should set:" << value << "(" << Qt::hex << static_cast<uint32_t>(value) << ")";
                 auto userInputMapper = DependencyManager::get<UserInputMapper>();
                 auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
                 auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);
-                userInputMapper->reroute(
-                    inPtr,
+                //inputFor(inPtr).
+
+                //auto avail = userInputMapper->getAvailableInputs();
+                auto targetDevice = userInputMapper->findDevice("Keyboard");
+                //Input::NamedVector avail = userInputMapper->getAvailableInputs(targetDevice);
+                auto avail = userInputMapper->getAvailableInputs(targetDevice);
+                for (auto input : avail) {
+                    if (value == static_cast<Qt::Key>( static_cast<uint32_t>(input.first.channel & 0x00FF) | (input.first.channel & 0x0800 ? 0x01000000 : 0) ) ) {
+                        userInputMapper->reroute(
+                            userInputMapper->endpointFor(input.first),
+                            outPtr
+                        );
+                        return;
+                    }
+                }
+                qDebug() << "setter failed to find matching input.";
+                /*Route::Pointer newroute = std::make_shared<Route>();
+                newroute->destination = outPtr;
+                newroute->source = 
+                userInputMapper->applyRoute();*/
+                /*qDebug() << "inPtr was: " << &inPtr;
+                inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);
+                qDebug() << "inPtr is now: " << &inPtr;*/
+                //userInputMapper->inputFor(inPtr).channel = (static_cast<uint16_t>(value & 0x00FF) | (value & 0x01000000 ? 0x0800 : 0) );
+                /*userInputMapper->reroute(
+                    controller::Endpoint(KeyboardMouseDevice::makeInput(value)),
                     outPtr
-                );
+                );*/
             };
             auto preference = new MappingPreference(KEYBOARD, actionName, getter, setter);
             preferences->addPreference(preference);

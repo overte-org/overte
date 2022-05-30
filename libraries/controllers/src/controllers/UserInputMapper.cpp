@@ -715,16 +715,16 @@ EndpointPointer UserInputMapper::matchDeviceRouteEndpoint(const EndpointPointer 
         qWarning() << "UserInputMapper::matchDeviceRouteEndpoint() supplied with uninitialised endpoint.";
         return EndpointPointer();
     } else {
-        qDebug() << "UserInputMapper::matchDeviceRouteEndpoint() : test == " << test;
+        //qDebug() << "UserInputMapper::matchDeviceRouteEndpoint() : test == " << test;
     }
     //qDebug() << "matchDeviceRouteEndpoint: IO->getInput().id == " << test;
     //qDebug() << "_deviceRoutes.size() == " << _deviceRoutes.size();
     for (auto route : _deviceRoutes) {
         if (route->source->getInput().id == test) {
-            qDebug() << "\t== _deviceRoutes source (" << route->source->getInput().id << ")";
+            //qDebug() << "\t== _deviceRoutes source (" << route->source->getInput().id << ")";
             return route->destination;
         } else if (route->destination->getInput().id == test) {
-            qDebug() << "\t== _deviceRoutes destination (" << route->destination->getInput().id << ")";
+            //qDebug() << "\t== _deviceRoutes destination (" << route->destination->getInput().id << ")";
             return route->source;
         } else {
             //qDebug() << "\t!= source (" << route->source->getInput().id << ")";
@@ -751,13 +751,35 @@ EndpointPointer UserInputMapper::matchDeviceRouteEndpoint(const EndpointPointer 
 }
 
 bool UserInputMapper::reroute(const EndpointPointer input, const EndpointPointer action) const {
-    // Currently assumes no duplicate action mappings, even across devices.
+    auto test = action->getInput().id; // Slightly more efficient than comparing the objects.
+    if (test == 0) {
+        qWarning() << "UserInputMapper::reroute() supplied with uninitialised endpoint.";
+        return false;
+    }
     for (auto route : _deviceRoutes) {
-        if (route->destination == action) {
+        if (route->destination->getInput().id == test) {
+            auto tmp = route->source->getInput();
+            qDebug() << "UserInputMapper::reroute(): source was:"
+                << ( static_cast<uint32_t>(tmp.channel & 0x00FF) | (tmp.channel & 0x800 ? 0x01000000 : 0) );
+
             route->source = input; // Not bothering to check if already equal.
+
+            tmp = route->source->getInput();
+            qDebug() << "UserInputMapper::reroute(): source is now:"
+                << ( static_cast<uint32_t>(tmp.channel & 0x00FF) | (tmp.channel & 0x800 ? 0x01000000 : 0) );
+
             return true;
         }
     }
+    /*_standardRoutes.remove_if([test](const Route::Pointer& value) {
+        return (value->source->getInput().id == test);
+    });
+    Route::Pointer newrt = std::make_shared<Route>();
+    newrt->destination = action;
+    newrt->source = input;
+    //_standardRoutes.push_back(newrt);
+    _standardRoutes.insert(_standardRoutes.end(), newrt);*/
+
     qWarning() << "UserInputMapper::reroute() failed.";
     return false;
 }

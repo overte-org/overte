@@ -13,6 +13,9 @@ import "." as HifiControls
 
 HifiControls.TextField {
     id: mapping
+    property int keyval;
+    property int bakkeyval;
+    property string baktext;
     //anchors.left: mappingLabel.right
 
     Keys.onPressed: {
@@ -25,14 +28,42 @@ HifiControls.TextField {
                 if (acceptableInput) {
                     accepted();
                 }
+                save();
                 break;
             case Qt.Key_Escape:
-                shortcut.sequence = '';
-                mapping.text = '';
+                if (keyval == bakkeyval) {	// Clear mapping.
+                    keyval = 0;
+                    mapping.text = '';
+                } else {	// Reset to existing mapping.
+                    keyval = bakkeyval;
+                    mapping.text = baktext;
+                }
+                //mapping.text = keyval;
+                event.accepted = true;
                 break;
             default:
-                shortcut.sequence = event.key;
-                mapping.text = shortcut.nativeText;
+                keyval = event.key;
+
+                if (event.text.length == 0) {
+                    if (event.modifiers & Qt.ControlModifier) {
+                        mapping.keyval = 0x01000021	// "COMMAND" on Mac...
+                        mapping.text = "Key_Control"
+                        event.accepted = true;
+                    }
+                    if (event.modifiers & Qt.AltModifier) {
+                        mapping.keyval = 0x01000023
+                        mapping.text = "Key_Alt"
+                        event.accepted = true;
+                    }
+                    if (event.modifiers & Qt.ShiftModifier) {
+                        mapping.keyval = 0x01000020
+                        mapping.text = "Key_Shift"
+                        event.accepted = true;
+                    }
+                } else {
+                    mapping.text = "Key_" + event.text.toUpperCase();
+                    event.accepted = true;
+                }
         }
     }
 
@@ -54,10 +85,5 @@ HifiControls.TextField {
         anchors.bottom: parent.top
         anchors.bottomMargin: 3
         visible: label != ""
-    }
-
-    Shortcut {
-        id: shortcut
-        enabled: false
     }
 }

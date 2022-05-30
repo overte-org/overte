@@ -14,28 +14,34 @@ Preference {
     height: mapping.height + hifi.dimensions.controlInterlineHeight
 
     Component.onCompleted: {
-        //if (!preference.value.isEmpty()) {	// Not sure if necessary. Check in vircadia-log.txt after everything else is working.
-            mapping.shortcut.sequence = preference.value;
-            //mapping.shortcut.sequence = preference.value.portableText;
-            //mapping.shortcut.sequence = "A";
+        mapping.keyval = preference.value;
+        mapping.bakkeyval = mapping.keyval;
 
-            //mapping.text = mapping.shortcut.nativeText;
-            mapping.text = preference.value;
-            //mapping.text = preference.value.nativeText;
-        //}
+        //mapping.text = mapping.keyval;
+        //mapping.text = valueToKey(mapping.keyval);
+        //mapping.text = preference.value.toString();
+        //mapping.text = preference.value.valueOf();
+        //mapping.text = Key(preference.value).toString();
+        //mapping.text = Qt.Key(mapping.keyval).toString();
+        //mapping.text = Qt.valueToKey(mapping.keyval);
+        mapping.text = preference.displayValue;
+        mapping.baktext = mapping.text;
     }
 
     function save() {
-        preference.value = mapping.shortcut.portableText;
-        preference.save();
+        if (mapping.keyval != mapping.bakkeyval) {
+            preference.value = mapping.keyval;
+            preference.save();
+            mapping.bakkeyval = mapping.keyval;
+            mapping.baktext = mapping.text;
+        }
     }
 
     Mapping {
         id: mapping
         //label: preference.label // Not sure why this doesn't work.
         label: root.label
-        text: preference.value	// Needed?
-        //text: preference.value.nativeText // This does not work.
+        //text: keyval;	// Needed?
 
         anchors {
             left: parent.left

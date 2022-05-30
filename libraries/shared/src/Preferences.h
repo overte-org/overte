@@ -16,7 +16,7 @@
 #include <QtCore/QList>
 #include <QtCore/QString>
 #include <QtCore/QVariantMap>
-#include <QKeySequence>
+#include <QtCore/QMetaEnum>
 
 #include "DependencyManager.h"
 
@@ -290,22 +290,26 @@ protected:
 
 class MappingPreference : public Preference {
     Q_OBJECT
-    Q_PROPERTY(QKeySequence value READ getValue WRITE setValue NOTIFY valueChanged)
-    Q_PROPERTY(QKeySequence label READ getLabel CONSTANT)
+    Q_PROPERTY(Qt::Key value READ getValue WRITE setValue NOTIFY valueChanged)
+    Q_PROPERTY(QString displayValue READ getDisplayValue)
+    Q_PROPERTY(QString label READ getLabel CONSTANT)
 public:
-    using Getter = std::function<QKeySequence()>;
-    using Setter = std::function<void(const QKeySequence&)>;
+    using Getter = std::function<Qt::Key()>;
+    using Setter = std::function<void(const Qt::Key&)>;
     MappingPreference(const QString& category, const QString& name, Getter getter, Setter setter)
         : Preference(category, name), _getter(getter), _setter(setter) { }
     Type getType() override { return Mapping; }
 
     QString getLabel() const { return _name; }
 
-    QKeySequence getValue() const { return _value; }
-    void setValue(const QKeySequence& value) { if (_value != value) { _value = value; } }
+    Qt::Key getValue() const { return _value; }
+    //QString getDisplayValue() const { return qt_getQtMetaObject()->enumerator(qt_getQtMetaObject()->indexOfEnumerator("Key")).valueToKey(_value); }
+    int enum_index = qt_getQtMetaObject()->indexOfEnumerator("Key");
+    QString getDisplayValue() const { return qt_getQtMetaObject()->enumerator(enum_index).valueToKey(_value); }
+    void setValue(const Qt::Key& value) { if (_value != value) { _value = value; } }
     void load() override { _value = _getter(); }
     void save() const override {
-        QKeySequence oldValue = _getter();
+        Qt::Key oldValue = _getter();
         if (_value != oldValue) {
             _setter(_value);
         }
@@ -315,7 +319,7 @@ signals:
 protected:
     void emitValueChanged() override { emit valueChanged(); }
 
-    QKeySequence _value;
+    Qt::Key _value;
     const Getter _getter;
     const Setter _setter;
 };
