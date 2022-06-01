@@ -560,6 +560,17 @@ void setupPreferences() {
                             userInputMapper->endpointFor(input.first),
                             outPtr
                         );
+                        userInputMapper->saveMapping(
+                            QString("Keyboard/Mouse to Actions"),
+                            //QString("keyboardMouse.json")
+                            //userInputMapper->getDevice(input.first)->getDefaultMappingConfig()
+                            //userInputMapper->getDevices().at(targetDevice)->getDefaultMappingConfig()
+                            //targetDevice
+                            //PathUtils::resourcesPath() + "/controllers/keyboardMouse.json"
+                             //QDir::cleanPath(thisDir.absoluteFilePath("../../../interface/resources/controllers/keyboardMouse.json"))
+                             //"../../../interface/resources/controllers/keyboardMouse.json"
+                             "keyboardMouse.json"
+                        );
                         return;
                     }
                 }

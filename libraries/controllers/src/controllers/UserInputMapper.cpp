@@ -17,6 +17,8 @@
 #include <QtCore/QJsonObject>
 #include <QtCore/QJsonArray>
 
+#include <QtCore/QMetaEnum>
+
 #include <PathUtils.h>
 #include <NumericalConstants.h>
 
@@ -758,15 +760,77 @@ bool UserInputMapper::reroute(const EndpointPointer input, const EndpointPointer
     }
     for (auto route : _deviceRoutes) {
         if (route->destination->getInput().id == test) {
-            auto tmp = route->source->getInput();
+            /*auto tmp_input = route->source->getInput();
             qDebug() << "UserInputMapper::reroute(): source was:"
-                << ( static_cast<uint32_t>(tmp.channel & 0x00FF) | (tmp.channel & 0x800 ? 0x01000000 : 0) );
+                << ( static_cast<uint32_t>(tmp_input.channel & 0x00FF) | (tmp_input.channel & 0x800 ? 0x01000000 : 0) );*/
 
-            route->source = input; // Not bothering to check if already equal.
+            route->source = input;
 
-            tmp = route->source->getInput();
+            //qDebug() << "json was:" << route->json;
+
+            QJsonDocument doc = QJsonDocument::fromJson(route->json.toUtf8());
+            //qDebug() << "doc was:" << doc;
+            auto obj = doc.object();
+            //qDebug() << "obj was:" << obj;
+            // It would be good to reference JSON_CHANNEL_FROM instead of using the literals.
+            if (obj["from"].toString().isEmpty()) {
+                qWarning() << "UserInputMapper::reroute() could not find a \"from\" value in the detected route.";
+                return false;
+            }
+            //qDebug() << "obj[from] was:" << obj["from"];
+            //obj["from"] = static_cast<Qt::Key>( static_cast<uint32_t>(tmp_input.channel & 0x00FF) | (tmp_input.channel & 0x0800 ? 0x01000000 : 0) );
+            auto tmp_input = input->getInput();
+            int enum_index = qt_getQtMetaObject()->indexOfEnumerator("Key");
+            QString key = qt_getQtMetaObject()->enumerator(enum_index).valueToKey(
+                    static_cast<Qt::Key>( static_cast<uint32_t>(tmp_input.channel & 0x00FF) | (tmp_input.channel & 0x0800 ? 0x01000000 : 0) )
+            );
+            if (key.startsWith("Key_")) key = key.remove(0, 4);
+            obj["from"] = "Keyboard." + key;
+            //qDebug() << "obj[from] is now:" << obj["from"];
+            //qDebug() << "obj is now:" << obj;
+            route->json = QJsonDocument(obj).toJson(QJsonDocument::Compact);
+
+            /*QJsonValue json(route->json);
+            qDebug() << "json is:" << json;
+            qDebug() << "json value \"to\" is:" << json["to"];
+            json["from"] = static_cast<Qt::Key>( static_cast<uint32_t>(tmp_input.channel & 0x00FF) | (tmp_input.channel & 0x0800 ? 0x01000000 : 0) );
+            route->json = json.toString();*/
+
+            /*QJsonValue json(route->json);
+            qDebug() << "json is:" << json;
+            auto obj = json.toObject();
+            qDebug() << "obj is:" << obj;
+            QJsonObject from = obj["from"].toObject();
+            qDebug() << "from is:" << from;
+            auto it = obj.find("from");
+            if (it == obj.end()) {
+                qWarning() << "UserInputMapper::reroute() could not find a \"from\" value in the detected route.";
+                return false;
+            }
+            qDebug() << "json value \"to\" is:" << *it;
+            tmp_input = input->getInput();
+            *it = static_cast<Qt::Key>( static_cast<uint32_t>(tmp_input.channel & 0x00FF) | (tmp_input.channel & 0x0800 ? 0x01000000 : 0) );
+            route->json = QJsonValue(obj).toString();
+            //route->json = QJsonDocument(obj).toJson(QJsonDocument::Compact);*/
+
+            /*QJsonValue json(route->json);
+            qDebug() << "json is:" << json;
+            auto obj = json.toObject();
+            qDebug() << "obj is:" << obj;
+            QJsonObject from = obj["from"].toObject();
+            qDebug() << "from is:" << from;
+            from = static_cast<Qt::Key>( static_cast<uint32_t>(tmp_input.channel & 0x00FF) | (tmp_input.channel & 0x0800 ? 0x01000000 : 0) );
+            obj["from"] = from;
+            route->json = QJsonValue(obj).toString();
+            //route->json = QJsonDocument(obj).toJson(QJsonDocument::Compact);*/
+
+
+            qDebug() << "UserInputMapper::reroute() produced this route json:" << route->json;
+            /*tmp_input = route->source->getInput();
             qDebug() << "UserInputMapper::reroute(): source is now:"
-                << ( static_cast<uint32_t>(tmp.channel & 0x00FF) | (tmp.channel & 0x800 ? 0x01000000 : 0) );
+                << ( static_cast<uint32_t>(tmp_input.channel & 0x00FF) | (tmp_input.channel & 0x800 ? 0x01000000 : 0) );*/
+
+            // Handling to add if new route (i.e. not previously mapped action)?
 
             return true;
         }
@@ -930,6 +994,67 @@ void UserInputMapper::unloadMapping(const QString& jsonFile) {
     if (entry != _loadedRouteJsonFiles.end()) {
         _loadedRouteJsonFiles.erase(entry);
     }
+}
+
+bool UserInputMapper::saveMapping(const QString& mappingName, const QString& specifiedFile) {
+//bool UserInputMapper::saveMapping(const int deviceID, const QString& specifiedFile) {
+    //auto mapping = _mappingsByName[mappingName];
+    //QString jsonFile = specifiedFile.isEmpty() ? getStandardDevice()->getDefaultMappingConfig() : specifiedFile;
+    //QString jsonFile = specifiedFile.isEmpty() ? _registeredDevices[]->getDefaultMappingConfig() : specifiedFile;
+    QString jsonFile = specifiedFile;
+
+    Locker locker(_lock);	// Not sure if useful.
+    /*if (! _mappingsByName.count(mappingName)) {
+        qWarning() << "UserInputMapper::saveMapping() failed to initialise.";
+        return false;
+    }*/
+    /*if (jsonFile.isEmpty()) {
+        jsonFile = mappingName + ".json";
+    }*/
+
+    auto tester = _mappingsByName.find(mappingName);
+    if (tester == _mappingsByName.end()) {
+        qWarning() << "UserInputMapper::saveMapping() could not find mapping:" << mappingName;
+        return false;
+    }
+    auto mapping = tester->second;
+
+    QString json = "{\n    \"name\": \"Keyboard/Mouse to Actions\",\n    \"channels\": [\n";
+    for (auto route : mapping->routes) {
+        auto tmp = route->source->getInput();
+        // QString conversion to prevent spacing in mapping names from collapsing.
+        json += "        " + QString(QJsonDocument(QJsonDocument::fromJson(route->json.toUtf8())).toJson(QJsonDocument::Compact)) + ",\n";
+    }
+    if (! mapping->routes.empty()) json.chop(2);
+    json += "\n    ]\n}\n";
+
+    // Note: I had to recompile after `git restore`'ing the JSON file. Not sure why.
+    //qDebug() << "projectRootPath:" << PathUtils::projectRootPath();
+    //qDebug() << "resourcesPath:" << PathUtils::resourcesPath();
+    QFile file(PathUtils::projectRootPath() + "/interface/resources/controllers/" + jsonFile);
+    if (file.exists()) {
+        qDebug() << "UserInputMapper::saveMapping() attempting to open existing file:" << file.fileName();
+    } else {
+        qDebug() << "UserInputMapper::saveMapping() attempting to open new file:" << file.fileName();
+    }
+    if (!file.open(QFile::WriteOnly | QFile::Text)) {
+        qWarning() << "UserInputMapper::saveMapping() failed to open file.";
+        return false;
+    }
+    QTextStream out(&file);
+    out << json;
+    file.close();
+    if (! file.exists()) {
+        qWarning() << "UserInputMapper::saveMapping() failed to write file.";
+        return false;
+    }
+
+    if (! _loadedRouteJsonFiles.contains(jsonFile)) {
+        qDebug() << "UserInputMapper::saveMapping() added file to array.";
+        _loadedRouteJsonFiles.insert(jsonFile);
+    }
+
+    return true;
 }
 
 static const QString JSON_NAME = QStringLiteral("name");
