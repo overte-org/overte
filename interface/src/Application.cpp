@@ -3414,6 +3414,11 @@ void Application::initializeUi() {
     for(const auto& inputPlugin : PluginManager::getInstance()->getInputPlugins()) {
         if (KeyboardMouseDevice::NAME == inputPlugin->getName()) {
             _keyboardMouseDevice = std::dynamic_pointer_cast<KeyboardMouseDevice>(inputPlugin);
+            qDebug() << "Beginning test...";
+            _keyboardMouseDevice->loadSettings();
+            qDebug() << "Finished loadSettings(). Proceeding with saveSettings()...";
+            _keyboardMouseDevice->saveSettings();
+            qDebug() << "Test complete.";
         }
         if (TouchscreenDevice::NAME == inputPlugin->getName()) {
             _touchscreenDevice = std::dynamic_pointer_cast<TouchscreenDevice>(inputPlugin);

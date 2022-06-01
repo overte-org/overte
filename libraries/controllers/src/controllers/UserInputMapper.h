@@ -176,7 +176,7 @@ namespace controller {
         ConditionalPointer conditionalFor(const QScriptValue& endpoint);
         ConditionalPointer conditionalFor(const Input& endpoint) const;
 
-        MappingPointer parseMapping(const QJsonValue& json); // Why is this not with the other(s)?
+        MappingPointer parseMapping(const QJsonValue& json);
         RoutePointer parseRoute(const QJsonValue& value);
         EndpointPointer parseDestination(const QJsonValue& value);
         EndpointPointer parseSource(const QJsonValue& value);
