@@ -961,7 +961,9 @@ Mapping::Pointer UserInputMapper::loadMapping(const QString& jsonFile, bool enab
         file.close();
     }
     auto result = parseMapping(json);
-    if (enable) {
+    if (result == MappingPointer()) {
+        qWarning() << "UserInputMapper::loadMapping failed to load file:" << jsonFile;
+    } else if (enable) {
         enableMapping(result->name);
     }
     return result;
@@ -1004,13 +1006,6 @@ bool UserInputMapper::saveMapping(const QString& mappingName, const QString& spe
     QString jsonFile = specifiedFile;
 
     Locker locker(_lock);	// Not sure if useful.
-    /*if (! _mappingsByName.count(mappingName)) {
-        qWarning() << "UserInputMapper::saveMapping() failed to initialise.";
-        return false;
-    }*/
-    /*if (jsonFile.isEmpty()) {
-        jsonFile = mappingName + ".json";
-    }*/
 
     auto tester = _mappingsByName.find(mappingName);
     if (tester == _mappingsByName.end()) {
@@ -1028,10 +1023,7 @@ bool UserInputMapper::saveMapping(const QString& mappingName, const QString& spe
     if (! mapping->routes.empty()) json.chop(2);
     json += "\n    ]\n}\n";
 
-    // Note: I had to recompile after `git restore`'ing the JSON file. Not sure why.
-    //qDebug() << "projectRootPath:" << PathUtils::projectRootPath();
-    //qDebug() << "resourcesPath:" << PathUtils::resourcesPath();
-    QFile file(PathUtils::projectRootPath() + "/interface/resources/controllers/" + jsonFile);
+    QFile file(PathUtils::getAppConfigPath() + "Mappings/" + jsonFile);
     if (file.exists()) {
         qDebug() << "UserInputMapper::saveMapping() attempting to open existing file:" << file.fileName();
     } else {
