@@ -29,6 +29,7 @@ HifiControls.TextField {
                     accepted();
                 }
                 save();
+                focus = false;
                 break;
             case Qt.Key_Escape:
                 if (keyval == bakkeyval) {	// Clear mapping.
