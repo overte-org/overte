@@ -1961,6 +1961,31 @@ Application::Application(int& argc, char** argv, QElapsedTimer& startupTimer, bo
         userInputMapper->registerDevice(_touchscreenVirtualPadDevice->getInputDevice());
     }
 
+    {	// Load non-default mapping JSON files.
+        QDir mappingsDir(PathUtils::getAppConfigPath() + "Mappings/");
+        if (! mappingsDir.exists()) {
+            //if (! QDir::mkdir(mappingsDir.absolutePath())) {
+            QDir sysConfDir(PathUtils::getConfigPath());
+            auto tmp = sysConfDir.relativeFilePath(mappingsDir.absolutePath());
+            if (! sysConfDir.mkpath(tmp)) {
+                qWarning() << "Failed to create mappings directory:" << tmp;
+            } else {
+                qDebug() << "Created mappings directory:" << tmp;
+            }
+        }
+        // Non-recursive search.
+        auto files = mappingsDir.entryInfoList(QDir::Files | QDir::NoDotAndDotDot);
+        for (auto file : files) {
+            if (file.suffix().toLower() == "json") {
+                userInputMapper->loadMapping(mappingsDir.absoluteFilePath(
+                    file.fileName()),
+                    true	// Enable by default.
+                );
+            }
+        }
+    }
+
+
     QString scriptsSwitch = QString("--").append(SCRIPTS_SWITCH);
     _defaultScriptsLocation.setPath(getCmdOption(argc, constArgv, scriptsSwitch.toStdString().c_str()));
 
@@ -3414,6 +3439,11 @@ void Application::initializeUi() {
     for(const auto& inputPlugin : PluginManager::getInstance()->getInputPlugins()) {
         if (KeyboardMouseDevice::NAME == inputPlugin->getName()) {
             _keyboardMouseDevice = std::dynamic_pointer_cast<KeyboardMouseDevice>(inputPlugin);
+            qDebug() << "Beginning test...";
+            _keyboardMouseDevice->loadSettings();
+            qDebug() << "Finished loadSettings(). Proceeding with saveSettings()...";
+            _keyboardMouseDevice->saveSettings();
+            qDebug() << "Test complete.";
         }
         if (TouchscreenDevice::NAME == inputPlugin->getName()) {
             _touchscreenDevice = std::dynamic_pointer_cast<TouchscreenDevice>(inputPlugin);

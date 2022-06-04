@@ -492,6 +492,121 @@ void setupPreferences() {
         preferences->addPreference(preference);
     }
 
+    // InputMapperComponent.qml
+    static const QString KEYBOARD{ "Keyboard" };
+    {
+        auto userInputMapper = DependencyManager::get<UserInputMapper>();
+        //userInputMapper->enableMapping("Keyboard/Mouse to Actions", false);
+        //auto actions = userInputMapper->getAllActions();
+        auto actions = userInputMapper->getActionInputs();
+        //auto targetDevice = userInputMapper->findDevice("Keyboard");
+        //Input::NamedVector inputs = userInputMapper->getAvailableInputs(targetDevice);
+        qDebug() << "TEST: actions :";
+        for (auto action : actions) {
+            auto actionName = action.second;
+            if (actionName.isEmpty()) {
+                qDebug() << "Empty name for action. Ignoring...";
+                continue;
+            }
+            qDebug() << "action: " << actionName << " (" << action.first.id << ")";
+            switch (action.first.getType()) {
+                case controller::ChannelType::UNKNOWN :
+                    qDebug() << "ChannelType::UNKNOWN -- will be skipped.";
+                    continue;
+                case controller::ChannelType::BUTTON :
+                    qDebug() << "ChannelType::BUTTON -- will be processed.";
+                    break;
+                case controller::ChannelType::AXIS :
+                    qDebug() << "ChannelType::AXIS -- will be processed.";
+                    break;
+                case controller::ChannelType::POSE :
+                    qDebug() << "ChannelType::POSE -- will be skipped.";
+                    continue;
+                case controller::ChannelType::RUMBLE :
+                    qDebug() << "ChannelType::RUMBLE -- will be skipped.";
+                    continue;
+                case controller::ChannelType::INVALID :
+                    qDebug() << "ChannelType::INVALID -- will be skipped.";
+                    continue;
+                default :
+                    qWarning() << "Encountered super-invalid ChannelType. This should not happen.";
+                    break;
+            }
+
+            auto getter = [action]()->Qt::Key {
+                auto userInputMapper = DependencyManager::get<UserInputMapper>();
+                auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
+                //auto tmp = userInputMapper->inputFor(outPtr);
+                //qDebug() << "outPtr.getInput().id:" << outPtr.getInput().id;
+                auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);	// Not userInputMapper?
+                //auto inPtrs = userInputMapper->matchDeviceRouteEndpoint(outPtr);
+                auto tmp = userInputMapper->inputFor(inPtr);
+                Qt::Key key = static_cast<Qt::Key>( static_cast<uint32_t>(tmp.channel & 0x00FF) | (tmp.channel & 0x0800 ? 0x01000000 : 0) );
+                qDebug() << "Qt::Key detected:" << key << "(" << Qt::hex << static_cast<uint32_t>(key) << ")";
+                return key;
+            };
+            auto setter = [action](Qt::Key value) {
+                qDebug() << "setter should set:" << value << "(" << Qt::hex << static_cast<uint32_t>(value) << ")";
+                auto userInputMapper = DependencyManager::get<UserInputMapper>();
+                auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
+                /*auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);
+                //inputFor(inPtr).
+                if (inPtr == EndpointPointer()) {
+                    inPtr = userInputMapper->inputPairToScriptValue();
+                    inPtr = userInputMapper->endpointFor();
+                }*/
+
+                //auto avail = userInputMapper->getAvailableInputs();
+                auto targetDevice = userInputMapper->findDevice("Keyboard");
+                auto avail = userInputMapper->getAvailableInputs(targetDevice);
+                for (auto input : avail) {
+                    if (value == static_cast<Qt::Key>( static_cast<uint32_t>(input.first.channel & 0x00FF) | (input.first.channel & 0x0800 ? 0x01000000 : 0) ) ) {
+
+                        /*userInputMapper->reroute(
+                            userInputMapper->endpointFor(input.first),
+                            outPtr
+                        );*/
+                        userInputMapper->addRoute(
+                            input.first,
+                            action.first,
+                            "Keyboard/Mouse to Actions"
+                        );
+
+                        userInputMapper->saveMapping(
+                            "Keyboard/Mouse to Actions",
+                            //QString("CustomMapping"),
+                            //QString("keyboardMouse.json")
+                            //userInputMapper->getDevice(input.first)->getDefaultMappingConfig()
+                            //userInputMapper->getDevices().at(targetDevice)->getDefaultMappingConfig()
+                            //targetDevice
+                            //PathUtils::resourcesPath() + "/controllers/keyboardMouse.json"
+                             //QDir::cleanPath(thisDir.absoluteFilePath("../../../interface/resources/controllers/keyboardMouse.json"))
+                             //"../../../interface/resources/controllers/keyboardMouse.json"
+                             "keyboardMouse.json"
+                             //"CustomMapping.json"
+                        );
+                        return;
+                    }
+                }
+                qDebug() << "setter failed to find matching input.";
+                /*Route::Pointer newroute = std::make_shared<Route>();
+                newroute->destination = outPtr;
+                newroute->source = 
+                userInputMapper->applyRoute();*/
+                /*qDebug() << "inPtr was: " << &inPtr;
+                inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);
+                qDebug() << "inPtr is now: " << &inPtr;*/
+                //userInputMapper->inputFor(inPtr).channel = (static_cast<uint16_t>(value & 0x00FF) | (value & 0x01000000 ? 0x0800 : 0) );
+                /*userInputMapper->reroute(
+                    controller::Endpoint(KeyboardMouseDevice::makeInput(value)),
+                    outPtr
+                );*/
+            };
+            auto preference = new MappingPreference(KEYBOARD, actionName, getter, setter);
+            preferences->addPreference(preference);
+        }
+    }
+
     static const QString AUDIO_BUFFERS("Audio Buffers");
     {
         auto getter = []()->bool { return !DependencyManager::get<AudioClient>()->getReceivedAudioStream().dynamicJitterBufferEnabled(); };

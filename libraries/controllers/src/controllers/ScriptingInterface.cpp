@@ -226,9 +226,11 @@ namespace controller {
         return new MappingBuilderProxy(*userInputMapper, mapping);
     }
 
-    QObject* ScriptingInterface::loadMapping(const QString& jsonUrl) {
-        // FIXME: Implement. https://highfidelity.manuscript.com/f/cases/14188/Implement-Controller-loadMappping
-        return nullptr;
+    QObject* ScriptingInterface::loadMapping(const QString& path) {
+        qCDebug(controllers) << "Attempting to loadMapping: " << path;
+        auto userInputMapper = DependencyManager::get<UserInputMapper>();
+        auto mapping = userInputMapper->loadMapping(path); // Not supporting second parameter.
+        return new MappingBuilderProxy(*userInputMapper, mapping);
     }
 
 

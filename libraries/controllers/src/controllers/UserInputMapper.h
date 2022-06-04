@@ -112,6 +112,8 @@ namespace controller {
         MappingPointer parseMapping(const QString& json);
         MappingPointer loadMapping(const QString& jsonFile, bool enable = false);
         MappingPointer loadMappings(const QStringList& jsonFiles);
+        bool saveMapping(const QString& mappingName, const QString& jsonFile = QString());
+        //bool saveMapping(const int mappingName, const QString& jsonFile = QString());
 
         void loadDefaultMapping(uint16 deviceID);
         void enableMapping(const QString& mappingName, bool enable = true);
@@ -131,6 +133,14 @@ namespace controller {
         void withLock(F&& f) { Locker locker(_lock); f(); }
 
         EndpointPointer endpointFor(const Input& endpoint) const;
+        Input inputFor(const EndpointPointer endpoint) const;
+        //EndpointPointer matchDeviceRouteEndpoint(const EndpointPointer IO, const int device);
+        EndpointPointer matchDeviceRouteEndpoint(const EndpointPointer IO) const;
+        //bool reroute(const EndpointPointer input, const EndpointPointer action) const;
+        bool addRoute(const Input input, const Input action, const QString mappingName = QString());
+
+        /*std::list<Mapping::Pointer> getMappings();
+        std::list<Route::Pointer> getRoutes(const QString mappingName = QString());*/
 
     signals:
         void actionEvent(int action, float state);

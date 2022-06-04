@@ -51,6 +51,8 @@ public:
 
     static QString getAppDataPath();
     static QString getAppLocalDataPath();
+    static QString getConfigPath();	// I suspect there may be a way to avoid this.
+    static QString getAppConfigPath();
 
     static QString getAppDataFilePath(const QString& filename);
     static QString getAppLocalDataFilePath(const QString& filename);

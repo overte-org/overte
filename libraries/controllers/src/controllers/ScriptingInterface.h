@@ -329,8 +329,6 @@ namespace controller {
         /*@jsdoc
          * Creates a new controller mapping from a {@link Controller.MappingJSON|MappingJSON} JSON file at a URL. Use 
          * {@link Controller.enableMapping|enableMapping} to enable the mapping for it to take effect.
-         * <p><strong>Warning:</strong> This function is not yet implemented; it doesn't load a mapping and just returns 
-         * <code>null</code>.
          * @function Controller.loadMapping
          * @param {string} jsonURL - The URL the {@link Controller.MappingJSON|MappingJSON} JSON file.
          * @returns {MappingObject} A controller mapping object.

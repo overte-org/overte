@@ -17,6 +17,8 @@
 #include <QtCore/QJsonObject>
 #include <QtCore/QJsonArray>
 
+#include <QtCore/QMetaEnum>
+
 #include <PathUtils.h>
 #include <NumericalConstants.h>
 
@@ -697,6 +699,215 @@ Endpoint::Pointer UserInputMapper::endpointFor(const Input& inputId) const {
     return iterator->second;
 }
 
+Input UserInputMapper::inputFor(const EndpointPointer endpoint) const {
+    Locker locker(_lock);
+    auto iterator = _inputsByEndpoint.find(endpoint);
+    if (_inputsByEndpoint.end() == iterator) {
+        qWarning() << "Unknown endpoint.";
+        return Input();
+    }
+    return iterator->second;
+}
+
+//EndpointPointer UserInputMapper::matchDeviceRouteEndpoint(const EndpointPointer IO, const InputDevice::Pointer device) const {
+EndpointPointer UserInputMapper::matchDeviceRouteEndpoint(const EndpointPointer IO) const {
+    //auto targetDevice = device->getDeviceID();
+    auto test = IO->getInput().id; // Slightly more efficient than comparing the objects.
+    if (test == 0) {
+        qWarning() << "UserInputMapper::matchDeviceRouteEndpoint() supplied with uninitialised endpoint.";
+        return EndpointPointer();
+    } else {
+        //qDebug() << "UserInputMapper::matchDeviceRouteEndpoint() : test == " << test;
+    }
+    //qDebug() << "matchDeviceRouteEndpoint: IO->getInput().id == " << test;
+    //qDebug() << "_deviceRoutes.size() == " << _deviceRoutes.size();
+    for (auto route : _deviceRoutes) {
+        if (route->source->getInput().id == test) {
+            //qDebug() << "\t== _deviceRoutes source (" << route->source->getInput().id << ")";
+            return route->destination;
+        } else if (route->destination->getInput().id == test) {
+            //qDebug() << "\t== _deviceRoutes destination (" << route->destination->getInput().id << ")";
+            return route->source;
+        } else {
+            //qDebug() << "\t!= source (" << route->source->getInput().id << ")";
+            //qDebug() << "\t!= destination (" << route->destination->getInput().id << ")";
+            continue;
+        }
+    }
+    /*//qDebug() << "_standardRoutes.size() == " << _deviceRoutes.size();
+    for (auto route : _standardRoutes) {
+        if (route->source->getInput().id == test) {
+            qDebug() << "\t== _standardRoutes source (" << route->source->getInput().id << ")";
+            return route->destination;
+        } else if (route->destination->getInput().id == test) {
+            qDebug() << "\t== _standardRoutes destination (" << route->destination->getInput().id << ")";
+            return route->source;
+        } else {
+            //qDebug() << "\t!= source (" << route->source->getInput().id << ")";
+            //qDebug() << "\t!= destination (" << route->destination->getInput().id << ")";
+            continue;
+        }
+    }*/
+    qWarning() << "Failed to matchDeviceRouteEndpoint().";
+    return EndpointPointer();
+}
+
+/*bool UserInputMapper::reroute(const EndpointPointer input, const EndpointPointer action) const {
+    auto test = action->getInput().id; // Slightly more efficient than comparing the objects.
+    if (test == 0) {
+        qWarning() << "UserInputMapper::reroute() supplied with uninitialised endpoint.";
+        return false;
+    }
+    for (auto route : _deviceRoutes) {
+        if (route->destination->getInput().id == test) {
+
+            route->source = input;
+
+            //qDebug() << "json was:" << route->json;
+
+            QJsonDocument doc = QJsonDocument::fromJson(route->json.toUtf8());
+            //qDebug() << "doc was:" << doc;
+            auto obj = doc.object();
+            //qDebug() << "obj was:" << obj;
+            // It would be good to reference JSON_CHANNEL_FROM instead of using the literals.
+            if (obj["from"].toString().isEmpty()) {
+                qWarning() << "UserInputMapper::reroute() could not find a \"from\" value in the detected route.";
+                return false;
+            }
+            //qDebug() << "obj[from] was:" << obj["from"];
+            //obj["from"] = static_cast<Qt::Key>( static_cast<uint32_t>(tmp_input.channel & 0x00FF) | (tmp_input.channel & 0x0800 ? 0x01000000 : 0) );
+            auto tmp_input = input->getInput();
+            int enum_index = qt_getQtMetaObject()->indexOfEnumerator("Key");
+            QString key = qt_getQtMetaObject()->enumerator(enum_index).valueToKey(
+                    static_cast<Qt::Key>( static_cast<uint32_t>(tmp_input.channel & 0x00FF) | (tmp_input.channel & 0x0800 ? 0x01000000 : 0) )
+            );
+            if (key.startsWith("Key_")) key = key.remove(0, 4);
+            obj["from"] = "Keyboard." + key;
+            //qDebug() << "obj[from] is now:" << obj["from"];
+            //qDebug() << "obj is now:" << obj;
+            route->json = QJsonDocument(obj).toJson(QJsonDocument::Compact);
+
+            qDebug() << "UserInputMapper::reroute() produced this route json:" << route->json;
+
+            // Handling to add if new route (i.e. not previously mapped action)?
+
+            return true;
+        }
+    }
+}*/
+
+bool UserInputMapper::addRoute(const Input input, const Input action, const QString mappingName) {
+    Locker locker(_lock);
+    // Note: This function does not yet support route conditionals or filters!
+
+    if ((input.channel & 0x00FF) == 0) {	// Handle requests to unmap:
+        // Remove active routes to same action:
+        auto test = action.id;
+        _deviceRoutes.remove_if([&](const Route::Pointer& value) {
+            return (value->destination->getInput().id == test);
+        });
+        if (! mappingName.isEmpty()) {	// Remove routes to same action from mapping.
+            auto mappingIt = _mappingsByName.find(mappingName);
+            if (mappingIt != _mappingsByName.end()) {
+                mappingIt->second->routes.remove_if([&](const Route::Pointer& value) {
+                    return (value->destination->getInput().id == test);
+                });
+            }
+        }
+        return true;
+    }
+
+    // Remove active routes from same input:
+    auto test = input.id;
+    _deviceRoutes.remove_if([&](const Route::Pointer& value) {
+        return (value->source->getInput().id == test);
+    });
+
+    // Map route:
+    Route::Pointer newrt = std::make_shared<Route>();
+    newrt->destination = endpointFor(action);
+    newrt->source = endpointFor(input);
+
+    // Add JSON so route can be saved:
+    QJsonDocument doc;
+    auto obj = doc.object();
+    int enum_index = qt_getQtMetaObject()->indexOfEnumerator("Key");
+    QString key = qt_getQtMetaObject()->enumerator(enum_index).valueToKey(
+            static_cast<Qt::Key>( static_cast<uint32_t>(input.channel & 0x00FF) | (input.channel & 0x0800 ? 0x01000000 : 0) )
+    );
+    obj["from"] = "Keyboard." + key.remove(0, 4);	// remove "Key_" prefix.
+    obj["to"] = "Actions." + getActionName(static_cast<controller::Action>(action.channel));
+    //obj["filters"] = 
+    //obj["when"] = conditionalFor(action);
+    //obj["when"] = "[\"!Application.CameraSelfie\",\"!Keyboard.Control\"]";
+    /*// Add "global" conditional for mapping:
+    if (obj.contains(JSON_CHANNEL_WHEN)) {
+        auto conditionalsValue = mappingObj[JSON_CHANNEL_WHEN];
+        Conditional::Pointer globalConditional = parseConditional(conditionalsValue);
+        if (globalConditional) {
+            injectConditional(newrt, globalConditional);
+        }
+    }*/
+    newrt->json = QJsonDocument(obj).toJson(QJsonDocument::Compact);
+    qDebug() << "UserInputMapper::addRoute() produced this route json:" << newrt->json;
+
+    // Edit specified mapping:
+    if (! mappingName.isEmpty()) {
+        auto mappingIt = _mappingsByName.find(mappingName);
+        if (mappingIt == _mappingsByName.end()) {
+            newMapping(mappingName)->routes.push_back(newrt);
+        } else {
+            // Remove mapping routes from same input:
+            auto test = input.id;
+            mappingIt->second->routes.remove_if([&](const Route::Pointer& value) {
+                return (value->source->getInput().id == test);
+            });
+
+            // Remove mapping routes to same action:
+            test = action.id;
+            mappingIt->second->routes.remove_if([&](const Route::Pointer& value) {
+                return (value->destination->getInput().id == test);
+            });
+
+            // Append new route:
+            mappingIt->second->routes.push_back(newrt);
+        }
+    }
+    // Add route to controller:
+    _deviceRoutes.push_front(newrt);	// Front covers pre-existing routes in U.I.
+    //applyRoute(newrt);
+    return true;
+}
+
+/*std::list<Mapping::Pointer> UserInputMapper::getMappings() {
+    std::list<Mapping::Pointer> mappings = std::make_shared<std::list<Mapping::Pointer>>;
+    for (auto mapping : _mappingsByName) {
+        mappings.push_back(mapping);
+    }
+    return mappings;
+}
+
+std::list<Route::Pointer> UserInputMapper::getRoutes(const QString mappingName) {
+    std::list<Route::Pointer> routes = std::make_shared<std::list<Route::Pointer>>;
+    if (mappingName.isEmpty()) {
+        for (auto mapping : _deviceRoutes) {
+            routes.push_back(mapping);
+        }
+    } else {
+        auto mapIt = _mappingsByName.find(mappingName);
+        if (mapIt == _mappingsByName.end()) {
+            qWarning() << "UserInputMapper::getRoutes() failed to find mapping:" << mappingName;
+        } else {
+            for (auto mapping : mapIt->second->routes) {
+                routes.push_back(mapping);
+            }
+        }
+    }
+    return routes;
+}*/
+
+
+
 Endpoint::Pointer UserInputMapper::compositeEndpointFor(Endpoint::Pointer first, Endpoint::Pointer second) {
     EndpointPair pair(first, second);
     Endpoint::Pointer result;
@@ -747,10 +958,10 @@ Mapping::Pointer UserInputMapper::newMapping(const QString& mappingName) {
 
 void UserInputMapper::enableMapping(const QString& mappingName, bool enable) {
     Locker locker(_lock);
-    qCDebug(controllers) << "Attempting to " << (enable ? "enable" : "disable") << " mapping " << mappingName;
+    qCDebug(controllers) << "Attempting to" << (enable ? "enable" : "disable") << "mapping" << mappingName;
     auto iterator = _mappingsByName.find(mappingName);
     if (_mappingsByName.end() == iterator) {
-        qCWarning(controllers) << "Request to enable / disable unknown mapping " << mappingName;
+        qCWarning(controllers) << "Request to enable / disable unknown mapping " << mappingName;	// Check spacing.
         return;
     }
 
@@ -810,7 +1021,9 @@ Mapping::Pointer UserInputMapper::loadMapping(const QString& jsonFile, bool enab
         file.close();
     }
     auto result = parseMapping(json);
-    if (enable) {
+    if (result == MappingPointer()) {
+        qWarning() << "UserInputMapper::loadMapping failed to load file:" << jsonFile;
+    } else if (enable) {
         enableMapping(result->name);
     }
     return result;
@@ -843,6 +1056,58 @@ void UserInputMapper::unloadMapping(const QString& jsonFile) {
     if (entry != _loadedRouteJsonFiles.end()) {
         _loadedRouteJsonFiles.erase(entry);
     }
+}
+
+bool UserInputMapper::saveMapping(const QString& mappingName, const QString& specifiedFile) {
+//bool UserInputMapper::saveMapping(const int deviceID, const QString& specifiedFile) {
+    //auto mapping = _mappingsByName[mappingName];
+    //QString jsonFile = specifiedFile.isEmpty() ? getStandardDevice()->getDefaultMappingConfig() : specifiedFile;
+    //QString jsonFile = specifiedFile.isEmpty() ? _registeredDevices[]->getDefaultMappingConfig() : specifiedFile;
+    QString jsonFile = specifiedFile;
+
+    Locker locker(_lock);	// Not sure if useful.
+
+    auto tester = _mappingsByName.find(mappingName);
+    if (tester == _mappingsByName.end()) {
+        qWarning() << "UserInputMapper::saveMapping() could not find mapping:" << mappingName;
+        return false;
+    }
+    auto mapping = tester->second;
+
+    //QString json = "{\n    \"name\": \"Keyboard/Mouse to Actions\",\n    \"channels\": [\n";
+    QString json = "{\n    \"name\": \"" + mappingName + "\",\n    \"channels\": [\n";
+    for (auto route : mapping->routes) {
+        auto tmp = route->source->getInput();
+        // QString conversion to prevent spacing in mapping names from collapsing.
+        json += "        " + QString(QJsonDocument(QJsonDocument::fromJson(route->json.toUtf8())).toJson(QJsonDocument::Compact)) + ",\n";
+    }
+    if (! mapping->routes.empty()) json.chop(2);
+    json += "\n    ]\n}\n";
+
+    QFile file(PathUtils::getAppConfigPath() + "Mappings/" + jsonFile);
+    if (file.exists()) {
+        qDebug() << "UserInputMapper::saveMapping() attempting to open existing file:" << file.fileName();
+    } else {
+        qDebug() << "UserInputMapper::saveMapping() attempting to open new file:" << file.fileName();
+    }
+    if (!file.open(QFile::WriteOnly | QFile::Text)) {
+        qWarning() << "UserInputMapper::saveMapping() failed to open file.";
+        return false;
+    }
+    QTextStream out(&file);
+    out << json;
+    file.close();
+    if (! file.exists()) {
+        qWarning() << "UserInputMapper::saveMapping() failed to write file.";
+        return false;
+    }
+
+    if (! _loadedRouteJsonFiles.contains(jsonFile)) {
+        qDebug() << "UserInputMapper::saveMapping() added file to array.";
+        _loadedRouteJsonFiles.insert(jsonFile);
+    }
+
+    return true;
 }
 
 static const QString JSON_NAME = QStringLiteral("name");
@@ -1202,6 +1467,7 @@ bool hasDebuggableRoute(const T& routes) {
 
 void UserInputMapper::enableMapping(const Mapping::Pointer& mapping) {
     Locker locker(_lock);
+    qCDebug(controllers) << "Attempting to enable mapping (by pointer). Name is:" << mapping->name;
     // New routes for a device get injected IN FRONT of existing routes.  Routes
     // are processed in order so this ensures that the standard -> action processing
     // takes place after all of the hardware -> standard or hardware -> action processing
@@ -1225,6 +1491,7 @@ void UserInputMapper::enableMapping(const Mapping::Pointer& mapping) {
 
 void UserInputMapper::disableMapping(const Mapping::Pointer& mapping) {
     Locker locker(_lock);
+    qCDebug(controllers) << "Attempting to disable mapping (by pointer). Name is:" << mapping->name;
     const auto& deviceRoutes = mapping->routes;
     std::set<Route::Pointer> routeSet(deviceRoutes.begin(), deviceRoutes.end());
     _deviceRoutes.remove_if([&](const Route::Pointer& value){
@@ -1275,7 +1542,6 @@ bool UserInputMapper::getActionStateValid(Action action) const {
     qCDebug(controllers) << "UserInputMapper::getActionStateValid invalid action:" << index;
     return false;
 }
-
 
 }
 

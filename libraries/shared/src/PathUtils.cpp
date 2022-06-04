@@ -88,7 +88,9 @@ const QString& PathUtils::resourcesPath() {
         if (USE_SOURCE_TREE_RESOURCES()) {
             // For dev builds, optionally load content from the Git source tree
             staticResourcePath = projectRootPath() + "/interface/resources/";
-        }
+        }/* else {	// This seems to be "~/.local/share/Overte - dev/Interface/".
+            staticResourcePath = getAppDataPath();
+        }*/
 #endif
     });
     return staticResourcePath;
@@ -161,6 +163,14 @@ QString PathUtils::getAppLocalDataPath() {
 #else
     return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/";
 #endif
+}
+
+QString PathUtils::getConfigPath() {
+    return QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/";
+}
+
+QString PathUtils::getAppConfigPath() {
+    return QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + "/";
 }
 
 QString PathUtils::getAppDataFilePath(const QString& filename) {

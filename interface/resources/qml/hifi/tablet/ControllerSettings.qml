@@ -49,6 +49,14 @@ Item {
         }
         TabButton {
             height: parent.height
+            text: qsTr("Mapping")
+            onClicked: {
+                stackView.clear();
+                stackView.push(inputMapperComponent);
+            }
+        }
+        TabButton {
+            height: parent.height
             text: qsTr("Calibration")
             onClicked: {
                 stackView.clear();
@@ -328,6 +336,15 @@ Item {
         }
     }
 
+    Component {
+        id: inputMapperComponent
+        TabletPreferencesDialog {
+            anchors.fill: stackView
+            id: inputMapperPreferences
+            objectName: "inputMapperPreferences"
+            showCategories: ["Keyboard"]
+        }
+    }
 
     Component {
         id: controllerPreferencesComponent
