@@ -496,6 +496,7 @@ void setupPreferences() {
     static const QString KEYBOARD{ "Keyboard" };
     {
         auto userInputMapper = DependencyManager::get<UserInputMapper>();
+        //userInputMapper->enableMapping("Keyboard/Mouse to Actions", false);
         //auto actions = userInputMapper->getAllActions();
         auto actions = userInputMapper->getActionInputs();
         //auto targetDevice = userInputMapper->findDevice("Keyboard");
@@ -538,6 +539,7 @@ void setupPreferences() {
                 //auto tmp = userInputMapper->inputFor(outPtr);
                 //qDebug() << "outPtr.getInput().id:" << outPtr.getInput().id;
                 auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);	// Not userInputMapper?
+                //auto inPtrs = userInputMapper->matchDeviceRouteEndpoint(outPtr);
                 auto tmp = userInputMapper->inputFor(inPtr);
                 Qt::Key key = static_cast<Qt::Key>( static_cast<uint32_t>(tmp.channel & 0x00FF) | (tmp.channel & 0x0800 ? 0x01000000 : 0) );
                 qDebug() << "Qt::Key detected:" << key << "(" << Qt::hex << static_cast<uint32_t>(key) << ")";
@@ -547,21 +549,32 @@ void setupPreferences() {
                 qDebug() << "setter should set:" << value << "(" << Qt::hex << static_cast<uint32_t>(value) << ")";
                 auto userInputMapper = DependencyManager::get<UserInputMapper>();
                 auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
-                auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);
+                /*auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);
                 //inputFor(inPtr).
+                if (inPtr == EndpointPointer()) {
+                    inPtr = userInputMapper->inputPairToScriptValue();
+                    inPtr = userInputMapper->endpointFor();
+                }*/
 
                 //auto avail = userInputMapper->getAvailableInputs();
                 auto targetDevice = userInputMapper->findDevice("Keyboard");
-                //Input::NamedVector avail = userInputMapper->getAvailableInputs(targetDevice);
                 auto avail = userInputMapper->getAvailableInputs(targetDevice);
                 for (auto input : avail) {
                     if (value == static_cast<Qt::Key>( static_cast<uint32_t>(input.first.channel & 0x00FF) | (input.first.channel & 0x0800 ? 0x01000000 : 0) ) ) {
-                        userInputMapper->reroute(
+
+                        /*userInputMapper->reroute(
                             userInputMapper->endpointFor(input.first),
                             outPtr
+                        );*/
+                        userInputMapper->addRoute(
+                            input.first,
+                            action.first,
+                            "Keyboard/Mouse to Actions"
                         );
+
                         userInputMapper->saveMapping(
-                            QString("Keyboard/Mouse to Actions"),
+                            "Keyboard/Mouse to Actions",
+                            //QString("CustomMapping"),
                             //QString("keyboardMouse.json")
                             //userInputMapper->getDevice(input.first)->getDefaultMappingConfig()
                             //userInputMapper->getDevices().at(targetDevice)->getDefaultMappingConfig()
@@ -570,6 +583,7 @@ void setupPreferences() {
                              //QDir::cleanPath(thisDir.absoluteFilePath("../../../interface/resources/controllers/keyboardMouse.json"))
                              //"../../../interface/resources/controllers/keyboardMouse.json"
                              "keyboardMouse.json"
+                             //"CustomMapping.json"
                         );
                         return;
                     }

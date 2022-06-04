@@ -136,7 +136,11 @@ namespace controller {
         Input inputFor(const EndpointPointer endpoint) const;
         //EndpointPointer matchDeviceRouteEndpoint(const EndpointPointer IO, const int device);
         EndpointPointer matchDeviceRouteEndpoint(const EndpointPointer IO) const;
-        bool reroute(const EndpointPointer input, const EndpointPointer action) const;
+        //bool reroute(const EndpointPointer input, const EndpointPointer action) const;
+        bool addRoute(const Input input, const Input action, const QString mappingName = QString());
+
+        /*std::list<Mapping::Pointer> getMappings();
+        std::list<Route::Pointer> getRoutes(const QString mappingName = QString());*/
 
     signals:
         void actionEvent(int action, float state);
