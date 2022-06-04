@@ -290,6 +290,7 @@ private:
 
     std::atomic<size_t> _numTotalResources { 0 };
     std::atomic<qint64> _totalResourcesSize { 0 };
+    void validateCache();
 
     // Cached resources
     QMap<int, QSharedPointer<Resource>> _unusedResources;

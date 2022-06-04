@@ -278,6 +278,7 @@ void ResourceCache::clearATPAssets() {
                         // Make sure the resource won't reinsert itself
                         strongRef->setCache(nullptr);
                         _totalResourcesSize -= strongRef->getBytes();
+                        validateCache();
                     }
                 }
             }
@@ -506,13 +507,36 @@ void ResourceCache::removeResource(const QUrl& url, size_t extraHash, qint64 siz
         _resources.remove(url);
     }
     _totalResourcesSize -= size;
+    validateCache();
+}
+
+void ResourceCache::validateCache() {
+    QHashIterator<QUrl, QMultiHash<size_t, QWeakPointer<Resource>>> i1(_resources);
+    qint64 cacheSize = 0;
+    size_t numResources = 0;
+    while (i1.hasNext()) {
+        i1.next();
+        
+        auto resourceList = i1.value().values();
+        for(auto i2 = resourceList.begin(); i2 < resourceList.end(); i2++){
+            auto resourcePointer = i2->toStrongRef();
+            if(resourcePointer){
+                numResources++;
+                cacheSize += resourcePointer->getBytes();
+            }
+        }
+    }
+    //assert(numResources == _numTotalResources);
+    qDebug() << "Cache size " << cacheSize << " " << _totalResourcesSize << " " << numResources << " " << _numTotalResources;
+    //assert(cacheSize == _totalResourcesSize);
 }
 
 void ResourceCache::updateTotalSize(const qint64& deltaSize) {
     _totalResourcesSize += deltaSize;
+    validateCache();
 
     // Sanity checks
-    assert(_totalResourcesSize >= 0);
+    //assert(_totalResourcesSize >= 0);
     assert(_totalResourcesSize < (1024 * BYTES_PER_GIGABYTES));
 
     emit dirty();
@@ -727,8 +751,9 @@ void Resource::finishedLoading(bool success) {
 }
 
 void Resource::setSize(const qint64& bytes) {
-    emit updateSize(bytes - _bytes);
+    qint64 oldBytes = _bytes;
     _bytes = bytes;
+    emit updateSize(bytes - oldBytes);
 }
 
 void Resource::reinsert() {
