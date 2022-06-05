@@ -709,46 +709,67 @@ Input UserInputMapper::inputFor(const EndpointPointer endpoint) const {
     return iterator->second;
 }
 
-//EndpointPointer UserInputMapper::matchDeviceRouteEndpoint(const EndpointPointer IO, const InputDevice::Pointer device) const {
 EndpointPointer UserInputMapper::matchDeviceRouteEndpoint(const EndpointPointer IO) const {
-    //auto targetDevice = device->getDeviceID();
     auto test = IO->getInput().id; // Slightly more efficient than comparing the objects.
     if (test == 0) {
         qWarning() << "UserInputMapper::matchDeviceRouteEndpoint() supplied with uninitialised endpoint.";
         return EndpointPointer();
-    } else {
-        //qDebug() << "UserInputMapper::matchDeviceRouteEndpoint() : test == " << test;
     }
-    //qDebug() << "matchDeviceRouteEndpoint: IO->getInput().id == " << test;
-    //qDebug() << "_deviceRoutes.size() == " << _deviceRoutes.size();
     for (auto route : _deviceRoutes) {
         if (route->source->getInput().id == test) {
-            //qDebug() << "\t== _deviceRoutes source (" << route->source->getInput().id << ")";
             return route->destination;
         } else if (route->destination->getInput().id == test) {
-            //qDebug() << "\t== _deviceRoutes destination (" << route->destination->getInput().id << ")";
             return route->source;
-        } else {
-            //qDebug() << "\t!= source (" << route->source->getInput().id << ")";
-            //qDebug() << "\t!= destination (" << route->destination->getInput().id << ")";
-            continue;
         }
     }
-    /*//qDebug() << "_standardRoutes.size() == " << _deviceRoutes.size();
-    for (auto route : _standardRoutes) {
-        if (route->source->getInput().id == test) {
-            qDebug() << "\t== _standardRoutes source (" << route->source->getInput().id << ")";
-            return route->destination;
-        } else if (route->destination->getInput().id == test) {
-            qDebug() << "\t== _standardRoutes destination (" << route->destination->getInput().id << ")";
-            return route->source;
-        } else {
-            //qDebug() << "\t!= source (" << route->source->getInput().id << ")";
-            //qDebug() << "\t!= destination (" << route->destination->getInput().id << ")";
-            continue;
-        }
-    }*/
     qWarning() << "Failed to matchDeviceRouteEndpoint().";
+    return EndpointPointer();
+}
+EndpointPointer UserInputMapper::matchDeviceRouteAction(const EndpointPointer IO, const QString mappingName) const {
+//EndpointPointer UserInputMapper::matchDeviceRouteAction(const EndpointPointer IO, const QString conditional) const {
+//EndpointPointer UserInputMapper::matchDeviceRouteAction(const EndpointPointer IO, const QJsonValue conditional) const {
+    auto test = IO->getInput().id; // Slightly more efficient than comparing the objects.
+    if (test == 0) {
+        qWarning() << "UserInputMapper::matchDeviceRouteAction() supplied with uninitialised endpoint.";
+        return EndpointPointer();
+    }
+
+    const RouteList *routeList;
+    if (! mappingName.isEmpty()) {
+        auto mapIt = _mappingsByName.find(mappingName);
+        if (mapIt == _mappingsByName.end()) {
+            qWarning() << "UserInputMapper::matchDeviceRouteAction() supplied with unregistered mapping name.";
+            return EndpointPointer();
+        }
+        routeList = &(mapIt->second->routes);
+    } else {
+        routeList = &_deviceRoutes;
+    }
+    for (auto route : *routeList) {
+        if (route->destination->getInput().id == test) {
+            QJsonValue when = QJsonDocument::fromJson(route->json.toUtf8()).object()["when"];
+            qDebug() << "UserInputMapper::matchDeviceRouteAction() \"when\":" << when;
+            bool apply = true;
+            if (when.isArray()) {
+                for ( auto conditional : when.toArray() ) {
+                    qDebug() << "\tCondition:" << conditional.toString();
+                    if (conditional.toString().startsWith("App")) {
+                        apply = false;
+                    }
+                }
+            } else {
+                qDebug() << "\tCondition:" << when.toString();
+                if (when.toString().startsWith("App")) {
+                    apply = false;
+                }
+            }
+            if (apply) {
+                qDebug() << "\t\tAPPLIED";
+                return route->source;
+            }
+        }
+    }
+    qWarning() << "Failed to matchDeviceRouteAction().";
     return EndpointPointer();
 }
 
@@ -839,7 +860,7 @@ bool UserInputMapper::addRoute(const Input input, const Input action, const QStr
     obj["to"] = "Actions." + getActionName(static_cast<controller::Action>(action.channel));
     //obj["filters"] = 
     //obj["when"] = conditionalFor(action);
-    //obj["when"] = "[\"!Application.CameraSelfie\",\"!Keyboard.Control\"]";
+    //obj["when"] = QJsonArray() << "!Application.CameraSelfie" << "!Keyboard.Control";	// Normal user mode.
     /*// Add "global" conditional for mapping:
     if (obj.contains(JSON_CHANNEL_WHEN)) {
         auto conditionalsValue = mappingObj[JSON_CHANNEL_WHEN];

@@ -511,25 +511,25 @@ void setupPreferences() {
             qDebug() << "action: " << actionName << " (" << action.first.id << ")";
             switch (action.first.getType()) {
                 case controller::ChannelType::UNKNOWN :
-                    qDebug() << "ChannelType::UNKNOWN -- will be skipped.";
+                    qDebug() << "\tChannelType::UNKNOWN -- will be skipped.";
                     continue;
                 case controller::ChannelType::BUTTON :
-                    qDebug() << "ChannelType::BUTTON -- will be processed.";
+                    qDebug() << "\tChannelType::BUTTON -- will be processed.";
                     break;
                 case controller::ChannelType::AXIS :
-                    qDebug() << "ChannelType::AXIS -- will be processed.";
+                    qDebug() << "\tChannelType::AXIS -- will be processed.";
                     break;
                 case controller::ChannelType::POSE :
-                    qDebug() << "ChannelType::POSE -- will be skipped.";
+                    qDebug() << "\tChannelType::POSE -- will be skipped.";
                     continue;
                 case controller::ChannelType::RUMBLE :
-                    qDebug() << "ChannelType::RUMBLE -- will be skipped.";
+                    qDebug() << "\tChannelType::RUMBLE -- will be skipped.";
                     continue;
                 case controller::ChannelType::INVALID :
-                    qDebug() << "ChannelType::INVALID -- will be skipped.";
+                    qDebug() << "\tChannelType::INVALID -- will be skipped.";
                     continue;
                 default :
-                    qWarning() << "Encountered super-invalid ChannelType. This should not happen.";
+                    qWarning() << "\tEncountered super-invalid ChannelType. This should not happen.";
                     break;
             }
 
@@ -538,7 +538,13 @@ void setupPreferences() {
                 auto outPtr = userInputMapper->endpointFor(static_cast<controller::Input>(action.first));
                 //auto tmp = userInputMapper->inputFor(outPtr);
                 //qDebug() << "outPtr.getInput().id:" << outPtr.getInput().id;
-                auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);	// Not userInputMapper?
+                //auto inPtr = userInputMapper->matchDeviceRouteEndpoint(outPtr);
+                auto inPtr = userInputMapper->matchDeviceRouteAction(outPtr, "Keyboard/Mouse to Actions");
+                //auto inPtr = userInputMapper->matchDeviceRouteAction(outPtr, QJsonValue(QJsonArray() << "!Application.CameraSelfie" << "!Keyboard.Control"));
+                /*auto inPtr = userInputMapper->matchDeviceRouteAction(
+                    static_cast<controller::Input>(action.first),
+
+                );*/
                 //auto inPtrs = userInputMapper->matchDeviceRouteEndpoint(outPtr);
                 auto tmp = userInputMapper->inputFor(inPtr);
                 Qt::Key key = static_cast<Qt::Key>( static_cast<uint32_t>(tmp.channel & 0x00FF) | (tmp.channel & 0x0800 ? 0x01000000 : 0) );
