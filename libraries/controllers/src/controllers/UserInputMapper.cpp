@@ -735,15 +735,15 @@ EndpointPointer UserInputMapper::matchDeviceRouteAction(const EndpointPointer IO
     }
 
     const RouteList *routeList;
-    if (! mappingName.isEmpty()) {
+    if (mappingName.isEmpty()) {
+        routeList = &_deviceRoutes;
+    } else {
         auto mapIt = _mappingsByName.find(mappingName);
         if (mapIt == _mappingsByName.end()) {
             qWarning() << "UserInputMapper::matchDeviceRouteAction() supplied with unregistered mapping name.";
             return EndpointPointer();
         }
         routeList = &(mapIt->second->routes);
-    } else {
-        routeList = &_deviceRoutes;
     }
     for (auto route : *routeList) {
         if (route->destination->getInput().id == test) {
