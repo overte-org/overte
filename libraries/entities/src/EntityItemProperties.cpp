@@ -811,8 +811,8 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     unnecessary entity server updates. Scripts should not change this property's value.
  *
  * @property {string} actionData="" - Base-64 encoded compressed dump of the actions associated with the entity. This property
- *     is typically not used in scripts directly; rather, functions that manipulate an entity's actions update it, e.g., 
- *     {@link Entities.addAction}. The size of this property increases with the number of actions. Because this property value 
+ *     is typically not used in scripts directly; rather, functions that manipulate an entity's actions update it, e.g.,
+ *     {@link Entities.addAction}. The size of this property increases with the number of actions. Because this property value
  *     has to fit within a Overte datagram packet, there is a limit to the number of actions that an entity can have;
  *     edits which would result in overflow are rejected. <em>Read-only.</em>
  * @property {Entities.RenderInfo} renderInfo - Information on the cost of rendering the entity. Currently information is only
@@ -1262,8 +1262,8 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @property {string} voxelData="ABAAEAAQAAAAHgAAEAB42u3BAQ0AAADCoPdPbQ8HFAAAAPBuEAAAAQ==" - Base-64 encoded compressed dump of
  *     the PolyVox data. This property is typically not used in scripts directly; rather, functions that manipulate a PolyVox
  *     entity update it.
- *     <p>The size of this property increases with the size and complexity of the PolyVox entity, with the size depending on how 
- *     the particular entity's voxels compress. Because this property value has to fit within a Overte datagram packet, 
+ *     <p>The size of this property increases with the size and complexity of the PolyVox entity, with the size depending on how
+ *     the particular entity's voxels compress. Because this property value has to fit within a Overte datagram packet,
  *     there is a limit to the size and complexity of a PolyVox entity; edits which would result in an overflow are rejected.</p>
  * @property {Entities.PolyVoxSurfaceStyle} voxelSurfaceStyle=2 - The style of rendering the voxels' surface and how
  *     neighboring PolyVox entities are joined.
@@ -1414,7 +1414,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     <code>false</code> if the web entity's background should be transparent. The webpage must have CSS properties for transparency set
  *     on the <code>background-color</code> for this property to have an effect.
  * @property {string} userAgent - The user agent for the web entity to use when visiting web pages.
- *     Default value: <code>Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) 
+ *     Default value: <code>Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko)
  *     Chrome/69.0.3497.113 Mobile Safari/537.36</code>
  * @example <caption>Create a Web entity displaying at 1920 x 1080 resolution.</caption>
  * var METERS_TO_INCHES = 39.3701;
