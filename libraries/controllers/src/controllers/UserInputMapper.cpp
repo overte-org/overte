@@ -1099,8 +1099,81 @@ bool UserInputMapper::saveMapping(const QString& mappingName, const QString& spe
     QString json = "{\n    \"name\": \"" + mappingName + "\",\n    \"channels\": [\n";
     for (auto route : mapping->routes) {
         auto tmp = route->source->getInput();
+        // Efficient printing:
         // QString conversion to prevent spacing in mapping names from collapsing.
-        json += "        " + QString(QJsonDocument(QJsonDocument::fromJson(route->json.toUtf8())).toJson(QJsonDocument::Compact)) + ",\n";
+        //json += "        " + QString(QJsonDocument(QJsonDocument::fromJson(route->json.toUtf8())).toJson(QJsonDocument::Compact)) + ",\n";
+        //
+        // Pretty printing:
+        auto obj = QJsonDocument(QJsonDocument::fromJson(route->json.toUtf8())).object();
+        json += "        {\n";
+        if (obj.find("comment") != obj.end()) {
+            json += "            \"comment\" : \"" + obj["comment"].toString() + "\",\n";
+        }
+        if (obj["from"].isObject()) {
+            if (obj.value("from")["makeAxis"].isArray()) {
+                json += "               \"from\" : { \"makeAxis\" : [\n";
+                for (auto axis : obj.value("from")["makeAxis"].toArray()) {
+                    //qDebug() << "testing makeAxis axis:" << axis;
+                    if (axis.isArray()) {
+                        for (auto val : axis.toArray()) {
+                            json += "                        [\"" + val.toString() + "\"],\n";
+                        }
+                    } else {
+                        json += "                        [\"" + axis.toString() + "\"],\n";
+                    }
+                }
+                json.chop(2);
+                json += "\n               ]},\n";
+            }
+        } else {
+            json += "               \"from\" : \"" + obj["from"].toString() + "\",\n";
+        }
+        if (obj.find("when") != obj.end()) {
+            if (obj["when"].isArray()) {
+                json += "               \"when\" : [\n";
+                for (auto val : obj["when"].toArray()) {
+                    json += "                        \"" + val.toString() + "\",\n";
+                }
+                json.chop(2);
+                json += "\n               ],\n";
+            } else {
+                json += "               \"when\" : \"" + obj["when"].toString() + "\",\n";
+            }
+        }
+        json += "                 \"to\" : \"" + obj["to"].toString() + "\",\n";
+        if (obj.find("filters") != obj.end()) {
+            //qDebug() << "testing filters:" << obj["filters"];
+            if (obj["filters"].isArray()) {
+                json += "            \"filters\" : [\n";
+                for (auto filterItem : obj["filters"].toArray()) {
+                    if (filterItem.isObject()) {
+                        const auto filterObj = filterItem.toObject();
+                        const auto typeIt = filterObj.find("type");
+                        if (typeIt == filterObj.end()) {
+                            qWarning() << "UserInputMapper::saveMapping() encountered route filter without type. Aborting save.";
+                            return false;
+                        }
+                        json += "                        { \"type\" : \"" + typeIt->toString() + "\", ";
+                        for (auto objIt = filterObj.begin(); objIt != filterObj.end(); objIt++) {
+                            if (objIt.key() == "type") continue;
+                            json += "\"" + objIt.key() + "\" : \"" + objIt->toVariant().toString() + "\", ";
+                        }
+                        json.chop(2);
+                        json += " },\n";
+                    } else if (filterItem.isString()) {
+                        json += "                        \"" + filterItem.toString() + "\",\n";
+                    } else {
+                        qWarning() << "UserInputMapper::saveMapping() encountered filter format. Skipping route.";
+                    }
+                }
+                json.chop(2);
+                json += "\n            ],\n";
+            } else {
+                json += "            \"filters\" : \"" + obj["filters"].toString() + "\",\n";
+            }
+        }
+        json.chop(2);
+        json += "\n        },\n";
     }
     if (! mapping->routes.empty()) json.chop(2);
     json += "\n    ]\n}\n";
