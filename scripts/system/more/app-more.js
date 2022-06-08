@@ -25,7 +25,7 @@
             "action": "",
             "script": ""
         };
-    
+
     var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
     tablet.screenChanged.connect(onScreenChanged);
     var button = tablet.addButton({
@@ -48,7 +48,7 @@
             isActive: appStatus
         });
     }
-    
+
     button.clicked.connect(clicked);
 
     function sendRunningScriptList() {
