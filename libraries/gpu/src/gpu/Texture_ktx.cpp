@@ -18,6 +18,7 @@
 #include <ktx/KTX.h>
 
 #include "GPULogging.h"
+#include "SerDes.h"
 
 using namespace gpu;
 
@@ -41,6 +42,44 @@ struct GPUKTXPayload {
     Texture::Usage _usage;
     TextureUsageType _usageType;
     glm::ivec2 _originalSize { 0, 0 };
+
+    void serialize2(SerDes &ser) {
+        ser << CURRENT_VERSION;
+        ser << _samplerDesc;
+
+        uint32 usageData = _usage._flags.to_ulong();
+        ser << usageData;
+
+        ser << (char)_usageType;
+        ser << _originalSize;
+        ser.addPadding(PADDING);
+    }
+
+    bool unserialize2(SerDes &dsr) {
+        Version version = 0;
+        uint32 usageData;
+        uint8_t usagetype = 0;
+
+        dsr >> version;
+
+        if (version > CURRENT_VERSION) {
+            // If we try to load a version that we don't know how to parse,
+            // it will render incorrectly
+            return false;
+        }
+
+        dsr >> _samplerDesc;
+        dsr >> usageData;
+        dsr >> usagetype;
+        _usageType = (TextureUsageType)usagetype;
+
+        if (version >= 2) {
+            dsr >> _originalSize;
+        }
+
+        return true;
+    }
+
 
     Byte* serialize(Byte* data) const {
         *(Version*)data = CURRENT_VERSION;
@@ -103,7 +142,9 @@ struct GPUKTXPayload {
         auto found = std::find_if(keyValues.begin(), keyValues.end(), isGPUKTX);
         if (found != keyValues.end()) {
             auto value = found->_value;
-            return payload.unserialize(value.data(), value.size());
+            SerDes dsr(value.data(), value.size());
+            return payload.unserialize2(dsr);
+            //return payload.unserialize(value.data(), value.size());
         }
         return false;
     }
@@ -467,7 +508,9 @@ ktx::KTXUniquePointer Texture::serialize(const Texture& texture, const glm::ivec
     gpuKeyval._originalSize = originalSize;
 
     Byte keyvalPayload[GPUKTXPayload::SIZE];
-    gpuKeyval.serialize(keyvalPayload);
+    SerDes ser(keyvalPayload, sizeof(keyvalPayload));
+
+    gpuKeyval.serialize2(ser);
 
     ktx::KeyValues keyValues;
     keyValues.emplace_back(GPUKTXPayload::KEY, (uint32)GPUKTXPayload::SIZE, (ktx::Byte*) &keyvalPayload);
