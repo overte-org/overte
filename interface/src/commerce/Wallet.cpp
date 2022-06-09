@@ -957,3 +957,4 @@ void Wallet::getWalletStatus() {
 }
 
 OVERTE_IGNORE_DEPRECATED_END
+

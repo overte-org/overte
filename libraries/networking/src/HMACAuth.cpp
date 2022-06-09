@@ -123,3 +123,4 @@ bool HMACAuth::calculateHash(HMACHash& hashResult, const char* data, int dataLen
 }
 
 OVERTE_IGNORE_DEPRECATED_END
+
