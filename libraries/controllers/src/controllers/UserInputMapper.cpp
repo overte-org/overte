@@ -1101,9 +1101,9 @@ bool UserInputMapper::saveMapping(const QString& mappingName, const QString& spe
         auto tmp = route->source->getInput();
         // Efficient printing:
         // QString conversion to prevent spacing in mapping names from collapsing.
-        //json += "        " + QString(QJsonDocument(QJsonDocument::fromJson(route->json.toUtf8())).toJson(QJsonDocument::Indented)) + ",\n";
+        json += "        " + QString(QJsonDocument(QJsonDocument::fromJson(route->json.toUtf8())).toJson(QJsonDocument::Compact)) + ",\n";
         //
-        // Pretty printing:
+        /*// Pretty printing:
         auto obj = QJsonDocument(QJsonDocument::fromJson(route->json.toUtf8())).object();
         json += "        {\n";
         if (obj.find("comment") != obj.end()) {
@@ -1173,7 +1173,7 @@ bool UserInputMapper::saveMapping(const QString& mappingName, const QString& spe
             }
         }
         json.chop(2);
-        json += "\n        },\n";
+        json += "\n        },\n";*/
     }
     if (! mapping->routes.empty()) json.chop(2);
     json += "\n    ]\n}\n";
