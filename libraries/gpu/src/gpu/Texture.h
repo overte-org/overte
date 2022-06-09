@@ -24,6 +24,7 @@
 #include "Forward.h"
 #include "Resource.h"
 #include "Metric.h"
+#include "SerDes.h"
 
 const int ABSOLUTE_MAX_TEXTURE_NUM_PIXELS = 8192 * 8192;
 
@@ -136,7 +137,7 @@ public:
         uint8 _wrapModeU = WRAP_REPEAT;
         uint8 _wrapModeV = WRAP_REPEAT;
         uint8 _wrapModeW = WRAP_REPEAT;
-            
+
         uint8 _mipOffset = 0;
         uint8 _minMip = 0;
         uint8 _maxMip = MAX_MIP_LEVEL;
@@ -156,7 +157,23 @@ public:
                 _minMip == other._minMip &&
                 _maxMip == other._maxMip;
         }
+
+        SerDes &operator<<(SerDes &dsd) {
+            dsd << _borderColor;
+            dsd << _maxAnisotropy;
+            dsd << _filter;
+            dsd << _comparisonFunc;
+            dsd << _wrapModeU;
+            dsd << _wrapModeV;
+            dsd << _wrapModeW;
+            dsd << _mipOffset;
+            dsd << _minMip;
+            dsd << _maxMip;
+            return dsd;
+        }
     };
+
+
 
     Sampler() {}
     Sampler(const Filter filter, const WrapMode wrap = WRAP_REPEAT) : _desc(filter, wrap) {}
@@ -193,6 +210,33 @@ protected:
     friend class Deserializer;
 };
 
+inline SerDes &operator<<(SerDes &ser, const Sampler::Desc &d) {
+    ser << d._borderColor;
+    ser << d._maxAnisotropy;
+    ser << d._filter;
+    ser << d._comparisonFunc;
+    ser << d._wrapModeU;
+    ser << d._wrapModeV;
+    ser << d._wrapModeW;
+    ser << d._mipOffset;
+    ser << d._minMip;
+    ser << d._maxMip;
+    return ser;
+}
+
+inline SerDes &operator>>(SerDes &dsr, Sampler::Desc &d) {
+    dsr >> d._borderColor;
+    dsr >> d._maxAnisotropy;
+    dsr >> d._filter;
+    dsr >> d._comparisonFunc;
+    dsr >> d._wrapModeU;
+    dsr >> d._wrapModeV;
+    dsr >> d._wrapModeW;
+    dsr >> d._mipOffset;
+    dsr >> d._minMip;
+    dsr >> d._maxMip;
+    return dsr;
+}
 enum class TextureUsageType : uint8 {
     RENDERBUFFER,       // Used as attachments to a framebuffer
     RESOURCE,           // Resource textures, like materials... subject to memory manipulation
@@ -230,7 +274,7 @@ public:
             NORMAL,      // Texture is a normal map
             ALPHA,      // Texture has an alpha channel
             ALPHA_MASK,       // Texture alpha channel is a Mask 0/1
-            NUM_FLAGS,  
+            NUM_FLAGS,
         };
 
         typedef std::bitset<NUM_FLAGS> Flags;
@@ -478,7 +522,7 @@ public:
     uint16 evalMipDepth(uint16 level) const { return std::max(_depth >> level, 1); }
 
     // The true size of an image line or surface depends on the format, tiling and padding rules
-    // 
+    //
     // Here are the static function to compute the different sizes from parametered dimensions and format
     // Tile size must be a power of 2
     static uint16 evalTiledPadding(uint16 length, int tile) { int tileMinusOne = (tile - 1); return (tileMinusOne - (length + tileMinusOne) % tile); }
@@ -507,7 +551,7 @@ public:
     uint32 evalMipFaceNumTexels(uint16 level) const { return evalMipWidth(level) * evalMipHeight(level) * evalMipDepth(level); }
     uint32 evalMipNumTexels(uint16 level) const { return evalMipFaceNumTexels(level) * getNumFaces(); }
 
-    // For convenience assign a source name 
+    // For convenience assign a source name
     const std::string& source() const { return _source; }
     void setSource(const std::string& source) { _source = source; }
     const std::string& sourceHash() const { return _sourceHash; }
@@ -633,7 +677,7 @@ protected:
     uint16 _maxMipLevel { 0 };
 
     uint16 _minMip { 0 };
- 
+
     Type _type { TEX_1D };
 
     Usage _usage;
@@ -643,7 +687,7 @@ protected:
     bool _isIrradianceValid = false;
     bool _defined = false;
     bool _important = false;
-   
+
     static TexturePointer create(TextureUsageType usageType, Type type, const Element& texelFormat, uint16 width, uint16 height, uint16 depth, uint16 numSamples, uint16 numSlices, uint16 numMips, const Sampler& sampler);
 
     Size resize(Type type, const Element& texelFormat, uint16 width, uint16 height, uint16 depth, uint16 numSamples, uint16 numSlices, uint16 numMips);
