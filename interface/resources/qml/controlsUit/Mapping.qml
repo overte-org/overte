@@ -32,6 +32,7 @@ HifiControls.TextField {
                 focus = false;
                 break;
             case Qt.Key_Escape:
+            case Qt.Key_Backspace:
                 if (keyval == bakkeyval) {	// Clear mapping.
                     keyval = 0;
                     mapping.text = '';

@@ -1101,7 +1101,7 @@ bool UserInputMapper::saveMapping(const QString& mappingName, const QString& spe
         auto tmp = route->source->getInput();
         // Efficient printing:
         // QString conversion to prevent spacing in mapping names from collapsing.
-        //json += "        " + QString(QJsonDocument(QJsonDocument::fromJson(route->json.toUtf8())).toJson(QJsonDocument::Compact)) + ",\n";
+        //json += "        " + QString(QJsonDocument(QJsonDocument::fromJson(route->json.toUtf8())).toJson(QJsonDocument::Indented)) + ",\n";
         //
         // Pretty printing:
         auto obj = QJsonDocument(QJsonDocument::fromJson(route->json.toUtf8())).object();
