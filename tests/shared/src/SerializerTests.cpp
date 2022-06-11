@@ -60,13 +60,19 @@ void SerializerTests::testAdd() {
 
 void SerializerTests::testAddAndRead() {
     SerDes s;
-    glm::vec3 v{1.f, 3.1415f, 2.71828f};
-    glm::vec3 v2;
+    glm::vec3 v3_a{1.f, 3.1415f, 2.71828f};
+    glm::vec3 v3_b;
+    glm::vec4 v4_a{3.1415f, 2.71828f, 1.4142f, 1.6180f};
+    glm::vec4 v4_b;
+    glm::ivec2 iv2_a{10, 24};
+    glm::ivec2 iv2_b;
 
     s << (qint8)1;
     s << (qint16)0xaabb;
     s << (qint32)0xccddeeff;
-    s << v;
+    s << v3_a;
+    s << v4_a;
+    s << iv2_a;
 
     qint8 i8;
     qint16 i16;
@@ -77,14 +83,18 @@ void SerializerTests::testAddAndRead() {
     s >> i8;
     s >> i16;
     s >> i32;
-    s >> v2;
+    s >> v3_b;
+    s >> v4_b;
+    s >> iv2_b;
 
     qDebug() << s;
 
     QCOMPARE(i8, (qint8)1);
     QCOMPARE(i16, (qint16)0xaabb);
     QCOMPARE(i32, (qint32)0xccddeeff);
-    QCOMPARE(v, v2);
+    QCOMPARE(v3_a, v3_b);
+    QCOMPARE(v4_a, v4_b);
+    QCOMPARE(iv2_a, iv2_b);
 }
 
 void SerializerTests::testReadPastEnd() {
