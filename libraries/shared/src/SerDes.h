@@ -235,7 +235,7 @@ class SerDes {
             memcpy(&_store[_pos + sz*2], (char*)&val.z, sz);
             memcpy(&_store[_pos + sz*3], (char*)&val.w, sz);
 
-            _pos += sz*3;
+            _pos += sz*4;
             return *this;
         }
 
@@ -248,7 +248,7 @@ class SerDes {
                 memcpy((char*)&val.z, &_store[_pos + sz*2], sz);
                 memcpy((char*)&val.w, &_store[_pos + sz*3], sz);
 
-                _pos += sz*3;
+                _pos += sz*4;
             } else {
                 _overflow = true;
                 qCritical() << "Deserializer trying to read past end of input, reading glm::vec3 from position " << _pos << ", length " << _length;
