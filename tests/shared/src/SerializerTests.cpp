@@ -111,6 +111,79 @@ void SerializerTests::testReadPastEnd() {
     QCOMPARE(s.pos(), 0);
 }
 
+void SerializerTests::benchmarkEncodingDynamicAlloc() {
+    QBENCHMARK {
+        SerDes s;
+        glm::vec3 v3_a{1.f, 3.1415f, 2.71828f};
+        glm::vec3 v3_b;
+        glm::vec4 v4_a{3.1415f, 2.71828f, 1.4142f, 1.6180f};
+        glm::vec4 v4_b;
+        glm::ivec2 iv2_a{10, 24};
+        glm::ivec2 iv2_b;
+
+        s << (qint8)1;
+        s << (qint16)0xaabb;
+        s << (qint32)0xccddeeff;
+        s << v3_a;
+        s << v4_a;
+        s << iv2_a;
+    }
+}
+
+void SerializerTests::benchmarkEncodingStaticAlloc() {
+    char buf[1024];
+
+    QBENCHMARK {
+        SerDes s(buf, sizeof(buf));
+        glm::vec3 v3_a{1.f, 3.1415f, 2.71828f};
+        glm::vec3 v3_b;
+        glm::vec4 v4_a{3.1415f, 2.71828f, 1.4142f, 1.6180f};
+        glm::vec4 v4_b;
+        glm::ivec2 iv2_a{10, 24};
+        glm::ivec2 iv2_b;
+
+        s << (qint8)1;
+        s << (qint16)0xaabb;
+        s << (qint32)0xccddeeff;
+        s << v3_a;
+        s << v4_a;
+        s << iv2_a;
+    }
+}
+
+
+void SerializerTests::benchmarkDecoding() {
+    SerDes s;
+    qint8 q8 = 1;
+    qint16 q16 = 0xaabb;
+    qint32 q32 = 0xccddeeff;
+
+    glm::vec3 v3_a{1.f, 3.1415f, 2.71828f};
+    glm::vec3 v3_b;
+    glm::vec4 v4_a{3.1415f, 2.71828f, 1.4142f, 1.6180f};
+    glm::vec4 v4_b;
+    glm::ivec2 iv2_a{10, 24};
+    glm::ivec2 iv2_b;
+
+    s << q8;
+    s << q16;
+    s << q32;
+    s << v3_a;
+    s << v4_a;
+    s << iv2_a;
+
+
+    QBENCHMARK {
+        s.rewind();
+        s >> q8;
+        s >> q16;
+        s >> q32;
+        s >> v3_a;
+        s >> v4_a;
+        s >> iv2_a;
+    }
+}
+
 
 void SerializerTests::cleanupTestCase() {
 }

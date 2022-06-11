@@ -21,6 +21,9 @@ private slots:
     void testAdd();
     void testAddAndRead();
     void testReadPastEnd();
+    void benchmarkEncodingDynamicAlloc();
+    void benchmarkEncodingStaticAlloc();
+    void benchmarkDecoding();
     void cleanupTestCase();
 private:
 
