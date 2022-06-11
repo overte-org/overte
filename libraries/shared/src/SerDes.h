@@ -24,19 +24,79 @@
  * correctly reversed if variable-length or optional fields are used.
  *
  * It can operate both on an internal, dynamically-allocated buffer, or an externally provided, fixed-size one.
- *
  * If an external store is used, the class will refuse to add data once capacity is reached and set the overflow flag.
- *
  * When decoding, this class operates on a fixed size buffer. If an attempt to read past the end is made, the read fails,
  * and the overflow flag is set.
  *
  * The class was written for the maximum simplicity possible and inline friendliness.
+ *
+ * Example of encoding:
+ *
+ * @code {.cpp}
+ * uint8_t version = 1;
+ * uint16_t count = 1;
+ * glm::vec3 pos{1.5, 2.0, 9.0};
+ *
+ * SerDes ser;
+ * ser << version;
+ * ser << count;
+ * ser << pos;
+ *
+ * // Serialized data is in ser.buffer(), ser.length() long.
+ * @endcode
+ *
+ * Example of decoding:
+ *
+ * @code {.cpp}
+ * // Incoming data has been placed in:
+ * // char buffer[1024];
+ *
+ * uint8_t version;
+ * uint16_t count;
+ * glm::vec3 pos;
+ *
+ * SerDes des(buffer, sizeof(buffer));
+ * des >> version;
+ * des >> count;
+ * des >> pos;
+ * @endcode
+ *
+ * This object should be modified directly to add support for any primitive and common datatypes in the code. To support serializing/deserializing
+ * classes and structures, implement a `operator<<` and `operator>>` functions for that object, eg:
+ *
+ * @code {.cpp}
+ * SerDes &operator<<(SerDes &ser, const Object &o) {
+ *  ser << o._borderColor;
+ *  ser << o._maxAnisotropy;
+ *  ser << o._filter;
+ *  return ser;
+ * }
+ *
+ * SerDes &operator>>(SerDes &des, Object &o) {
+ *  des >> o._borderColor;
+ *  des >> o._maxAnisotropy;
+ *  des >> o._filter;
+ *  return des;
+ * }
+ *
+ * @endcode
+ *
  */
 class SerDes {
     public:
-        // This class is aimed at network serialization, so we assume we're going to deal
-        // with something MTU-sized by default.
+        /**
+         * @brief Default size for a dynamically allocated buffer.
+         *
+         * Since this is mostly intended to be used for networking, we default to the largest probable MTU here.
+         */
         static const int  DEFAULT_SIZE = 1500;
+
+        /**
+         * @brief Character to use for padding.
+         *
+         * Padding should be ignored, so it doesn't matter what we go with here, but it can be useful to set it
+         * to something that would be distinctive in a dump.
+         */
         static const char PADDING_CHAR = 0xAA;
 
         /**
@@ -44,8 +104,7 @@ class SerDes {
          *
          * If constructed this way, an internal buffer will be dynamically allocated and grown as needed.
          *
-         * The default buffer size is 1500 bytes, based on the assumption that it will be used to construct
-         * network packets.
+         * The buffer is SerDes::DEFAULT_SIZE bytes by default, and doubles in size every time the limit is reached.
          */
         SerDes() {
             _capacity = DEFAULT_SIZE;
@@ -58,7 +117,8 @@ class SerDes {
          * @brief Construct a statically allocated serializer
          *
          * If constructed this way, the external buffer will be used to store data. The class will refuse to
-         * keep adding data if the maximum length is reached, and set the overflow flag.
+         * keep adding data if the maximum length is reached, write a critical message to the log, and set
+         * the overflow flag.
          *
          * The flag can be read with isOverflow()
          *
@@ -73,6 +133,17 @@ class SerDes {
             _store = externalStore;
         }
 
+        /**
+         * @brief Construct a statically allocated serializer
+         *
+         * If constructed this way, the external buffer will be used to store data. The class will refuse to
+         * keep adding data if the maximum length is reached, and set the overflow flag.
+         *
+         * The flag can be read with isOverflow()
+         *
+         * @param externalStore External data store
+         * @param storeLength Length of the data store
+         */
         SerDes(uint8_t *externalStore, size_t storeLength) : SerDes((char*)externalStore, storeLength) {
 
         }
@@ -88,6 +159,15 @@ class SerDes {
             }
         }
 
+        /**
+         * @brief Adds padding to the output
+         *
+         * The bytes will be set to SerDes::PADDING_CHAR, which is a constant in the source code.
+         * Since padding isn't supposed to be read, it can be any value and is intended to
+         * be set to something that can be easily recognized in a dump.
+         *
+         * @param bytes Number of bytes to add
+         */
         void addPadding(size_t bytes) {
             if (!extendBy(bytes)) {
                 return;
@@ -98,10 +178,22 @@ class SerDes {
             _pos += bytes;
         }
 
+        /**
+         * @brief Add an uint8_t to the output
+         *
+         * @param c  Character to add
+         * @return SerDes& This object
+         */
         SerDes &operator<<(uint8_t c) {
             return *this << int8_t(c);
         }
 
+        /**
+         * @brief Add an int8_t to the output
+         *
+         * @param c  Character to add
+         * @return SerDes& This object
+         */
         SerDes &operator<<(int8_t c) {
             if (!extendBy(1)) {
                 return *this;
@@ -111,10 +203,22 @@ class SerDes {
             return *this;
         }
 
+        /**
+         * @brief Read an uint8_t from the buffer
+         *
+         * @param c Character to read
+         * @return SerDes& This object
+         */
         SerDes &operator>>(uint8_t &c) {
             return *this >> reinterpret_cast<int8_t&>(c);
         }
 
+        /**
+         * @brief Read an int8_t from the buffer
+         *
+         * @param c Character to read
+         * @return SerDes& This object
+         */
         SerDes &operator>>(int8_t &c) {
             if ( _pos < _length ) {
                 c = _store[_pos++];
@@ -128,10 +232,22 @@ class SerDes {
 
         ///////////////////////////////////////////////////////////
 
+        /**
+         * @brief Add an uint16_t to the output
+         *
+         * @param val  Value to add
+         * @return SerDes& This object
+         */
         SerDes &operator<<(uint16_t val) {
             return *this << int16_t(val);
         }
 
+        /**
+         * @brief Add an int16_t to the output
+         *
+         * @param val  Value to add
+         * @return SerDes& This object
+         */
         SerDes &operator<<(int16_t val) {
             if (!extendBy(sizeof(val))) {
                 return *this;
@@ -142,10 +258,22 @@ class SerDes {
             return *this;
         }
 
+        /**
+         * @brief Read an uint16_t from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
         SerDes &operator>>(uint16_t &val) {
             return *this >> reinterpret_cast<int16_t&>(val);
         }
 
+        /**
+         * @brief Read an int16_t from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
         SerDes &operator>>(int16_t &val) {
             if ( _pos + sizeof(val) <= _length ) {
                 memcpy((char*)&val, &_store[_pos], sizeof(val));
@@ -160,10 +288,22 @@ class SerDes {
 
         ///////////////////////////////////////////////////////////
 
+        /**
+         * @brief Add an uint32_t to the output
+         *
+         * @param val  Value to add
+         * @return SerDes& This object
+         */
         SerDes &operator<<(uint32_t val) {
             return *this << int32_t(val);
         }
 
+        /**
+         * @brief Add an int32_t to the output
+         *
+         * @param val  Value to add
+         * @return SerDes& This object
+         */
         SerDes &operator<<(int32_t val) {
             if (!extendBy(sizeof(val))) {
                 return *this;
@@ -174,10 +314,22 @@ class SerDes {
             return *this;
         }
 
+        /**
+         * @brief Read an uint32_t from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
         SerDes &operator>>(uint32_t &val) {
             return *this >> reinterpret_cast<int32_t&>(val);
         }
 
+        /**
+         * @brief Read an int32_t from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
         SerDes &operator>>(int32_t &val) {
             if ( _pos + sizeof(val) <= _length ) {
                 memcpy((char*)&val, &_store[_pos], sizeof(val));
@@ -192,6 +344,12 @@ class SerDes {
 
         ///////////////////////////////////////////////////////////
 
+        /**
+         * @brief Add an glm::vec3 to the output
+         *
+         * @param val  Value to add
+         * @return SerDes& This object
+         */
         SerDes &operator<<(glm::vec3 val) {
             size_t sz = sizeof(val.x);
             if (!extendBy(sz*3)) {
@@ -206,6 +364,12 @@ class SerDes {
             return *this;
         }
 
+        /**
+         * @brief Read a glm::vec3 from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
         SerDes &operator>>(glm::vec3 &val) {
             size_t sz = sizeof(val.x);
 
@@ -224,6 +388,12 @@ class SerDes {
 
         ///////////////////////////////////////////////////////////
 
+        /**
+         * @brief Add a glm::vec4 to the output
+         *
+         * @param val  Value to add
+         * @return SerDes& This object
+         */
         SerDes &operator<<(glm::vec4 val) {
             size_t sz = sizeof(val.x);
             if (!extendBy(sz*4)) {
@@ -239,6 +409,12 @@ class SerDes {
             return *this;
         }
 
+        /**
+         * @brief Read a glm::vec4 from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
         SerDes &operator>>(glm::vec4 &val) {
             size_t sz = sizeof(val.x);
 
@@ -258,6 +434,12 @@ class SerDes {
 
         ///////////////////////////////////////////////////////////
 
+        /**
+         * @brief Add a glm::ivec2 to the output
+         *
+         * @param val  Value to add
+         * @return SerDes& This object
+         */
         SerDes &operator<<(glm::ivec2 val) {
             size_t sz = sizeof(val.x);
             if (!extendBy(sz*2)) {
@@ -271,6 +453,12 @@ class SerDes {
             return *this;
         }
 
+        /**
+         * @brief Read a glm::ivec2 from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
         SerDes &operator>>(glm::ivec2 &val) {
             size_t sz = sizeof(val.x);
 
@@ -287,6 +475,14 @@ class SerDes {
         }
         ///////////////////////////////////////////////////////////
 
+        /**
+         * @brief Write a null-terminated string into the buffer
+         *
+         * The `\0` at the end of the string is also written.
+         *
+         * @param val Value to write
+         * @return SerDes& This object
+         */
         SerDes &operator<<(const char *val) {
             size_t len = strlen(val)+1;
             extendBy(len);
@@ -295,12 +491,31 @@ class SerDes {
             return *this;
         }
 
+        /**
+         * @brief Write a QString into the buffer
+         *
+         * The string is encoded in UTF-8 and the `\0` at the end of the string is also written.
+         *
+         * @param val Value to write
+         * @return SerDes& This object
+         */
         SerDes &operator<<(const QString &val) {
             return *this << val.toUtf8().constData();
         }
 
 
         ///////////////////////////////////////////////////////////
+
+        /**
+         * @brief Pointer to the start of the internal buffer.
+         *
+         * The allocated amount can be found with capacity().
+         *
+         * The end of the stored data can be found with length().
+         *
+         * @return Pointer to buffer
+         */
+        char *buffer() const { return _store; }
 
         /**
          * @brief Current position in the buffer. Starts at 0.
@@ -351,6 +566,16 @@ class SerDes {
          */
         void rewind() { _pos = 0; _overflow = false; }
 
+        /**
+         * @brief Dump the contents of this object into QDebug
+         *
+         * This produces a dump of the internal state, and an ASCII/hex dump of
+         * the contents, for debugging.
+         *
+         * @param debug Qt QDebug stream
+         * @param ds  This object
+         * @return QDebug
+         */
         friend QDebug operator<<(QDebug debug, const SerDes &ds);
 
     private:
