@@ -54,6 +54,9 @@ void SerializerTests::testAdd() {
     s << v;
     QCOMPARE(s.length(), 40);
 
+    s << 1.2345f;
+    QCOMPARE(s.length(), 44);
+
 
     qDebug() << s;
 }
@@ -66,6 +69,8 @@ void SerializerTests::testAddAndRead() {
     glm::vec4 v4_b;
     glm::ivec2 iv2_a{10, 24};
     glm::ivec2 iv2_b;
+    float f_a = 1.2345f;
+    float f_b;
 
     s << (qint8)1;
     s << (qint16)0xaabb;
@@ -73,6 +78,7 @@ void SerializerTests::testAddAndRead() {
     s << v3_a;
     s << v4_a;
     s << iv2_a;
+    s << f_a;
 
     qint8 i8;
     qint16 i16;
@@ -86,6 +92,7 @@ void SerializerTests::testAddAndRead() {
     s >> v3_b;
     s >> v4_b;
     s >> iv2_b;
+    s >> f_b;
 
     qDebug() << s;
 
@@ -95,6 +102,7 @@ void SerializerTests::testAddAndRead() {
     QCOMPARE(v3_a, v3_b);
     QCOMPARE(v4_a, v4_b);
     QCOMPARE(iv2_a, iv2_b);
+    QCOMPARE(f_a, f_b);
 }
 
 void SerializerTests::testReadPastEnd() {

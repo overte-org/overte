@@ -92,6 +92,33 @@ public:
 };
 typedef std::shared_ptr< SphericalHarmonics > SHPointer;
 
+
+inline SerDes &operator<<(SerDes &ser, const SphericalHarmonics &h) {
+    ser << h.L00  << h.spare0;
+    ser << h.L1m1 << h.spare1;
+    ser << h.L10  << h.spare2;
+    ser << h.L11  << h.spare3;
+    ser << h.L2m2 << h.spare4;
+    ser << h.L2m1 << h.spare5;
+    ser << h.L20  << h.spare6;
+    ser << h.L21  << h.spare7;
+    ser << h.L22  << h.spare8;
+    return ser;
+}
+
+inline SerDes &operator>>(SerDes &des, SphericalHarmonics &h) {
+    des >> h.L00  >> h.spare0;
+    des >> h.L1m1 >> h.spare1;
+    des >> h.L10  >> h.spare2;
+    des >> h.L11  >> h.spare3;
+    des >> h.L2m2 >> h.spare4;
+    des >> h.L2m1 >> h.spare5;
+    des >> h.L20  >> h.spare6;
+    des >> h.L21  >> h.spare7;
+    des >> h.L22  >> h.spare8;
+    return des;
+}
+
 class Sampler {
 public:
 
