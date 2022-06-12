@@ -345,6 +345,42 @@ class SerDes {
         ///////////////////////////////////////////////////////////
 
         /**
+         * @brief Add an float to the output
+         *
+         * @param val  Value to add
+         * @return SerDes& This object
+         */
+        SerDes &operator<<(float val) {
+            if (!extendBy(sizeof(val))) {
+                return *this;
+            }
+
+            memcpy(&_store[_pos], (char*)&val, sizeof(val));
+            _pos += sizeof(val);
+            return *this;
+        }
+
+        /**
+         * @brief Read an float from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
+        SerDes &operator>>(float &val) {
+            if ( _pos + sizeof(val) <= _length ) {
+                memcpy((char*)&val, &_store[_pos], sizeof(val));
+                _pos += sizeof(val);
+            } else {
+                _overflow = true;
+                qCritical() << "Deserializer trying to read past end of input, reading float from position " << _pos << ", length " << _length;
+            }
+            return *this;
+        }
+
+        ///////////////////////////////////////////////////////////
+
+
+        /**
          * @brief Add an glm::vec3 to the output
          *
          * @param val  Value to add
