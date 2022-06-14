@@ -890,9 +890,9 @@ void DomainServerSettingsManager::processNodeKickRequestPacket(QSharedPointer<Re
 
         bool hasOptionalBanParameters = false;
         int banParameters;
-        bool banByUsername;
-        bool banByFingerprint;
-        bool banByIP;
+        bool banByUsername = false;
+        bool banByFingerprint = false;
+        bool banByIP = false;
         // pull optional ban parameters from the packet
         if (message.data()->getSize() == (NUM_BYTES_RFC4122_UUID + sizeof(int))) {
             hasOptionalBanParameters = true;
