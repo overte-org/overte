@@ -43,7 +43,7 @@ void BakerCLI::bakeFile(QUrl inputUrl, const QString& outputPath, const QString&
     static const QString MATERIAL_EXTENSION { "material" };
     static const QString SCRIPT_EXTENSION { "js" };
 
-    _outputPath = outputPath;
+    _outputPath.setPath(outputPath);
 
     // create our appropiate baker
     if (type == MODEL_EXTENSION || type == FBX_EXTENSION) {
