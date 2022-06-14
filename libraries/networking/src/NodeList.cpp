@@ -43,6 +43,7 @@
 #include "SharedUtil.h"
 #include <Trace.h>
 #include <ModerationFlags.h>
+#include "WarningsSuppression.h"
 
 using namespace std::chrono;
 
@@ -187,7 +188,11 @@ qint64 NodeList::sendStats(QJsonObject statsObject, SockAddr destination) {
     auto statsPacketList = NLPacketList::create(PacketType::NodeJsonStats, QByteArray(), true, true);
 
     QJsonDocument jsonDocument(statsObject);
+
+    OVERTE_IGNORE_DEPRECATED_BEGIN
+    // Can't use CBOR yet, will break protocol.
     statsPacketList->write(jsonDocument.toBinaryData());
+    OVERTE_IGNORE_DEPRECATED_END
 
     sendPacketList(std::move(statsPacketList), destination);
     return 0;
@@ -496,8 +501,8 @@ void NodeList::sendDomainServerCheckIn() {
 
         // pack our data to send to the domain-server including
         // the hostname information (so the domain-server can see which place name we came in on)
-        packetStream << _ownerType.load() << publicSockAddr.getType() << publicSockAddr << localSockAddr.getType() 
-            << localSockAddr << _nodeTypesOfInterest.toList();
+        packetStream << _ownerType.load() << publicSockAddr.getType() << publicSockAddr << localSockAddr.getType()
+            << localSockAddr << _nodeTypesOfInterest.values();
         packetStream << DependencyManager::get<AddressManager>()->getPlaceName();
 
         if (!domainIsConnected) {
@@ -828,7 +833,7 @@ void NodeList::processDomainList(QSharedPointer<ReceivedMessage> message) {
 
     // FIXME: Remove this call to requestDomainSettings() and reinstate the one in DomainHandler::setIsConnected(), in version
     // 2021.2.0. (New protocol version implies a domain server upgrade.)
-    if (!_domainHandler.isConnected() 
+    if (!_domainHandler.isConnected()
             && _domainHandler.getScheme() == URL_SCHEME_VIRCADIA && !_domainHandler.getHostname().isEmpty()) {
         // We're about to connect but we need the domain settings (in particular, the node permissions) in order to adjust the
         // canRezAvatarEntities permission above before using the permissions in determining whether or not to connect without
@@ -1422,7 +1427,7 @@ bool NodeList::adjustCanRezAvatarEntitiesPermissions(const QJsonObject& domainSe
 
     const double CANREZAVATARENTITIES_INTRODUCED_VERSION = 2.5;
     auto version = domainSettingsObject.value("version");
-    if (version.isUndefined() || version.isDouble() && version.toDouble() < CANREZAVATARENTITIES_INTRODUCED_VERSION) {
+    if (version.isUndefined() || (version.isDouble() && version.toDouble() < CANREZAVATARENTITIES_INTRODUCED_VERSION)) {
         // On domains without the canRezAvatarEntities permission available, set it to the same as canConnectToDomain.
         if (permissions.can(NodePermissions::Permission::canConnectToDomain)) {
             if (!permissions.can(NodePermissions::Permission::canRezAvatarEntities)) {
