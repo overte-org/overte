@@ -1247,7 +1247,7 @@ void DomainServer::processListRequestPacket(QSharedPointer<ReceivedMessage> mess
     }
 
     // guard against patched agents asking to hear about other agents
-    auto safeInterestSet = nodeRequestData.interestList.toSet();
+    auto safeInterestSet = QSet<NodeType_t>(nodeRequestData.interestList.begin(), nodeRequestData.interestList.end());
     if (sendingNode->getType() == NodeType::Agent) {
         safeInterestSet.remove(NodeType::Agent);
     }
@@ -3460,7 +3460,7 @@ void DomainServer::addStaticAssignmentsToQueue() {
     auto sharedAssignments = _allAssignments.values();
 
     // sort the assignments to put the server/mixer assignments first
-    qSort(sharedAssignments.begin(), sharedAssignments.end(), [](SharedAssignmentPointer a, SharedAssignmentPointer b){
+    std::sort(sharedAssignments.begin(), sharedAssignments.end(), [](SharedAssignmentPointer a, SharedAssignmentPointer b){
         if (a->getType() == b->getType()) {
             return true;
         } else if (a->getType() != Assignment::AgentType && b->getType() != Assignment::AgentType) {

@@ -25,7 +25,7 @@ bool HFMModelLessThan(const HFMMesh& e1, const HFMMesh& e2) {
     return e1.meshIndex < e2.meshIndex;
 }
 void reSortHFMModelMeshes(HFMModel& hfmModel) {
-    qSort(hfmModel.meshes.begin(), hfmModel.meshes.end(), HFMModelLessThan);
+    std::sort(hfmModel.meshes.begin(), hfmModel.meshes.end(), HFMModelLessThan);
 }
 
 

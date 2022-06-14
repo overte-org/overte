@@ -134,7 +134,7 @@ void DomainGatekeeper::processConnectRequestPacket(QSharedPointer<ReceivedMessag
         nodeData->setSendingSockAddr(message->getSenderSockAddr());
 
         // guard against patched agents asking to hear about other agents
-        auto safeInterestSet = nodeConnection.interestList.toSet();
+        auto safeInterestSet = QSet<NodeType_t>(nodeConnection.interestList.begin(), nodeConnection.interestList.end());
         if (nodeConnection.nodeType == NodeType::Agent) {
             safeInterestSet.remove(NodeType::Agent);
         }
@@ -1039,7 +1039,7 @@ void DomainGatekeeper::getGroupMemberships(const QString& username) {
         return;
     }
 
-    QJsonArray groupIDs = QJsonArray::fromStringList(groupIDSet.toList());
+    QJsonArray groupIDs = QJsonArray::fromStringList(groupIDSet.values());
     json["groups"] = groupIDs;
 
     // if we've already asked, wait for the answer before asking again
