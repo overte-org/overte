@@ -12,6 +12,7 @@
 #include "VHACDUtil.h"
 
 #include <unordered_map>
+#include <algorithm>
 #include <QVector>
 
 #include <NumericalConstants.h>
