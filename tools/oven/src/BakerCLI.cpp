@@ -26,7 +26,7 @@
 #include "MaterialBaker.h"
 
 BakerCLI::BakerCLI(OvenCLIApplication* parent) : QObject(parent) {
-    
+
 }
 
 void BakerCLI::bakeFile(QUrl inputUrl, const QString& outputPath, const QString& type) {

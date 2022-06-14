@@ -486,7 +486,7 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
             QVariant* client_id = _configMap.valueForKeyPath(OAUTH_CLIENT_ID);
             if (client_id) {
                 QVariant* oauthEnable = _configMap.valueForKeyPath(OAUTH_ENABLE, true);
-                
+
                 *oauthEnable = QVariant(true);
             }
 
@@ -970,7 +970,7 @@ void DomainServerSettingsManager::processNodeKickRequestPacket(QSharedPointer<Re
                         banByIP = true;
                     }
                 }
-                
+
                 if (banByIP) {
                     auto& kickAddress = matchingNode->getActiveSocket()
                         ? matchingNode->getActiveSocket()->getAddress()

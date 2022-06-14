@@ -123,7 +123,7 @@ void DomainGatekeeper::processConnectRequestPacket(QSharedPointer<ReceivedMessag
             }
         }
 
-        node = processAgentConnectRequest(nodeConnection, username, usernameSignature, 
+        node = processAgentConnectRequest(nodeConnection, username, usernameSignature,
                                           domainUsername, domainTokens.value(0), domainTokens.value(1));
     }
 
@@ -142,11 +142,11 @@ void DomainGatekeeper::processConnectRequestPacket(QSharedPointer<ReceivedMessag
         nodeData->setPlaceName(nodeConnection.placeName);
 
         QMetaEnum metaEnum = QMetaEnum::fromType<LimitedNodeList::ConnectReason>();
-        qDebug() << "Allowed connection from node" << uuidStringWithoutCurlyBraces(node->getUUID()) 
-            << "on" << message->getSenderSockAddr() 
-            << "with MAC" << nodeConnection.hardwareAddress 
-            << "and machine fingerprint" << nodeConnection.machineFingerprint 
-            << "user" << username 
+        qDebug() << "Allowed connection from node" << uuidStringWithoutCurlyBraces(node->getUUID())
+            << "on" << message->getSenderSockAddr()
+            << "with MAC" << nodeConnection.hardwareAddress
+            << "and machine fingerprint" << nodeConnection.machineFingerprint
+            << "user" << username
             << "reason" << QString(metaEnum.valueToKey(nodeConnection.connectReason))
             << "previous connection uptime" << nodeConnection.previousConnectionUpTime/USECS_PER_MSEC << "msec"
             << "sysinfo" << nodeConnection.SystemInfo;
@@ -163,7 +163,7 @@ void DomainGatekeeper::processConnectRequestPacket(QSharedPointer<ReceivedMessag
 }
 
 NodePermissions DomainGatekeeper::setPermissionsForUser(bool isLocalUser, QString verifiedUsername,
-                                                        QString verifiedDomainUserName, const QHostAddress& senderAddress, 
+                                                        QString verifiedDomainUserName, const QHostAddress& senderAddress,
                                                         const QString& hardwareAddress, const QUuid& machineFingerprint) {
     NodePermissions userPerms;
 
@@ -182,7 +182,7 @@ NodePermissions DomainGatekeeper::setPermissionsForUser(bool isLocalUser, QStrin
         auto userGroups = _domainGroupMemberships[verifiedDomainUserName];
         foreach (QString userGroup, userGroups) {
             // A domain group is signified by a leading special character, "@".
-            // Multiple domain groups may be specified in one domain server setting as a comma- and/or space-separated lists of 
+            // Multiple domain groups may be specified in one domain server setting as a comma- and/or space-separated lists of
             // domain group names. For example, "@silver @Gold, @platinum".
             auto domainGroups = _server->_settingsManager.getDomainServerGroupNames()
                 .filter(QRegularExpression("^(.*[\\s,])?" + QRegularExpression::escape(userGroup) + "([\\s,].*)?$",
@@ -303,7 +303,7 @@ NodePermissions DomainGatekeeper::setPermissionsForUser(bool isLocalUser, QStrin
         auto userGroups = _domainGroupMemberships[verifiedDomainUserName];
         foreach(QString userGroup, userGroups) {
             // A domain group is signified by a leading special character, "@".
-            // Multiple domain groups may be specified in one domain server setting as a comma- and/or space-separated lists of 
+            // Multiple domain groups may be specified in one domain server setting as a comma- and/or space-separated lists of
             // domain group names. For example, "@silver @Gold, @platinum".
             auto domainGroups = _server->_settingsManager.getDomainServerBlacklistGroupNames()
                 .filter(QRegularExpression("^(.*[\\s,])?" + QRegularExpression::escape(userGroup) + "([\\s,].*)?$",
@@ -374,7 +374,7 @@ void DomainGatekeeper::updateNodePermissions() {
                                sendingAddress == QHostAddress::LocalHost);
             }
 
-            userPerms = setPermissionsForUser(isLocalUser, verifiedUsername, verifiedDomainUserName, 
+            userPerms = setPermissionsForUser(isLocalUser, verifiedUsername, verifiedDomainUserName,
                                               connectingAddr.getAddress(), hardwareAddress, machineFingerprint);
         }
 
@@ -531,7 +531,7 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
             qDebug() << "Stalling login because we haven't authenticated user yet:" << domainUsername;
 #endif
 
-        } else if (verifyDomainUserIdentity(domainUsername, domainAccessToken, domainRefreshToken, 
+        } else if (verifyDomainUserIdentity(domainUsername, domainAccessToken, domainRefreshToken,
                                             nodeConnection.senderSockAddr)) {
             // User's domain identity is confirmed.
             verifiedDomainUsername = domainUsername;
@@ -564,7 +564,7 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
             }
 
             sendConnectionDeniedPacket("You lack the required domain permissions to connect to this domain.",
-                nodeConnection.senderSockAddr, DomainHandler::ConnectionRefusedReason::NotAuthorizedDomain, 
+                nodeConnection.senderSockAddr, DomainHandler::ConnectionRefusedReason::NotAuthorizedDomain,
                     domainAuthURL + "|" + domainAuthClientID);
         } else {
             sendConnectionDeniedPacket("You lack the required metaverse permissions to connect to this domain.",
@@ -766,7 +766,7 @@ bool DomainGatekeeper::verifyUserSignature(const QString& username,
 }
 
 
-bool DomainGatekeeper::needToVerifyDomainUserIdentity(const QString& username, const QString& accessToken, 
+bool DomainGatekeeper::needToVerifyDomainUserIdentity(const QString& username, const QString& accessToken,
                                                       const QString& refreshToken) {
     return !_verifiedDomainUserIdentities.contains(username)
         || _verifiedDomainUserIdentities.value(username) != QPair<QString, QString>(accessToken, refreshToken);
@@ -1298,7 +1298,7 @@ void DomainGatekeeper::requestDomainUserFinished() {
 
     } else {
         // Failure.
-        qDebug() << "Error in response for user details -" << httpStatus << requestReply->error() 
+        qDebug() << "Error in response for user details -" << httpStatus << requestReply->error()
             << "-" << rootObject["error"].toString() << rootObject["error_description"].toString();
 
         _inFlightDomainUserIdentityRequests.clear();

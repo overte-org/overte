@@ -44,7 +44,7 @@ IceServer::IceServer(int argc, char* argv[]) :
 
     // set processPacket as the verified packet callback for the udt::Socket
     _serverSocket.setPacketHandler([this](std::unique_ptr<udt::Packet> packet) { processPacket(std::move(packet));  });
-    
+
     // set packetVersionMatch as the verify packet operator for the udt::Socket
     using std::placeholders::_1;
     _serverSocket.setPacketFilterOperator(std::bind(&IceServer::packetVersionMatch, this, _1));
@@ -62,7 +62,7 @@ IceServer::IceServer(int argc, char* argv[]) :
 bool IceServer::packetVersionMatch(const udt::Packet& packet) {
     PacketType headerType = NLPacket::typeInHeader(packet);
     PacketVersion headerVersion = NLPacket::versionInHeader(packet);
-    
+
     if (headerVersion == versionForPacketType(headerType)) {
         return true;
     } else {
@@ -73,10 +73,10 @@ bool IceServer::packetVersionMatch(const udt::Packet& packet) {
 void IceServer::processPacket(std::unique_ptr<udt::Packet> packet) {
 
     auto nlPacket = NLPacket::fromBase(std::move(packet));
-    
+
     // make sure that this packet at least looks like something we can read
     if (nlPacket->getPayloadSize() >= NLPacket::localHeaderSize(PacketType::ICEServerHeartbeat)) {
-        
+
         if (nlPacket->getType() == PacketType::ICEServerHeartbeat) {
             SharedNetworkPeer peer = addOrUpdateHeartbeatingPeer(*nlPacket);
             if (peer) {
@@ -94,31 +94,31 @@ void IceServer::processPacket(std::unique_ptr<udt::Packet> packet) {
             }
         } else if (nlPacket->getType() == PacketType::ICEServerQuery) {
             QDataStream heartbeatStream(nlPacket.get());
-            
+
             // this is a node hoping to connect to a heartbeating peer - do we have the heartbeating peer?
             QUuid senderUUID;
             heartbeatStream >> senderUUID;
-            
+
             // pull the public and private sock addrs for this peer
             SockAddr publicSocket, localSocket;
             heartbeatStream >> publicSocket >> localSocket;
-            
+
             // check if this node also included a UUID that they would like to connect to
             QUuid connectRequestID;
             heartbeatStream >> connectRequestID;
-            
+
             SharedNetworkPeer matchingPeer = _activePeers.value(connectRequestID);
-            
+
             if (matchingPeer) {
-                
+
                 qDebug() << "Sending information for peer" << connectRequestID << "to peer" << senderUUID;
-                
+
                 // we have the peer they want to connect to - send them pack the information for that peer
                 sendPeerInformationPacket(*matchingPeer, &nlPacket->getSenderSockAddr());
-                
+
                 // we also need to send them to the active peer they are hoping to connect to
                 // create a dummy peer object we can pass to sendPeerInformationPacket
-                
+
                 NetworkPeer dummyPeer(senderUUID, publicSocket, localSocket);
                 sendPeerInformationPacket(dummyPeer, matchingPeer->getActiveSocket());
             } else {
@@ -160,7 +160,7 @@ SharedNetworkPeer IceServer::addOrUpdateHeartbeatingPeer(NLPacket& packet) {
 
         // update our last heard microstamp for this network peer to now
         matchingPeer->setLastHeardMicrostamp(usecTimestampNow());
-        
+
         return matchingPeer;
     } else {
         // not verified, return the empty peer object
@@ -296,7 +296,7 @@ void IceServer::sendPeerInformationPacket(const NetworkPeer& peer, const SockAdd
 
     // get the byte array for this peer
     peerPacket->write(peer.toByteArray());
-    
+
     // write the current packet
     _serverSocket.writePacket(*peerPacket, *destinationSockAddr);
 }

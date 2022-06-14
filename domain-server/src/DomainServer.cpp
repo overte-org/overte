@@ -910,7 +910,7 @@ void DomainServer::setUpWebRTCSignalingServer() {
     auto limitedNodeList = DependencyManager::get<LimitedNodeList>();
 
     // Route inbound WebRTC signaling messages received from user clients.
-    connect(_webrtcSignalingServer.get(), &WebRTCSignalingServer::messageReceived, 
+    connect(_webrtcSignalingServer.get(), &WebRTCSignalingServer::messageReceived,
         this, &DomainServer::routeWebRTCSignalingMessage);
 
     // Route domain server signaling messages.
@@ -922,9 +922,9 @@ void DomainServer::setUpWebRTCSignalingServer() {
     // Forward signaling messages received from assignment clients to user client.
     PacketReceiver& packetReceiver = limitedNodeList->getPacketReceiver();
     packetReceiver.registerListener(PacketType::WebRTCSignaling,
-        PacketReceiver::makeUnsourcedListenerReference<DomainServer>(this, 
+        PacketReceiver::makeUnsourcedListenerReference<DomainServer>(this,
             &DomainServer::forwardAssignmentClientSignalingMessageToUserClient));
-    connect(this, &DomainServer::webrtcSignalingMessageForUserClient, 
+    connect(this, &DomainServer::webrtcSignalingMessageForUserClient,
         _webrtcSignalingServer.get(), &WebRTCSignalingServer::sendMessage);
 }
 

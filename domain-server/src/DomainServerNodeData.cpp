@@ -36,7 +36,7 @@ QJsonObject DomainServerNodeData::overrideValuesIfNeeded(const QJsonObject& newS
     for (auto it = newStats.constBegin(); it != newStats.constEnd(); ++it) {
         const auto& key = it.key();
         const auto& value = it.value();
-        
+
         auto overrideIt = value.isString() ? _overrideHash.find({key, value.toString()}) : _overrideHash.end();
         if (overrideIt != _overrideHash.end()) {
             // We have a match, override the value
