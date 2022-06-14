@@ -28,6 +28,7 @@
 #include <MetaverseAPI.h>
 #include <udt/PacketHeaders.h>
 #include <SharedUtil.h>
+#include "WarningsSuppression.h"
 
 const int CLEAR_INACTIVE_PEERS_INTERVAL_MSECS = 1 * 1000;
 const int PEER_SILENCE_THRESHOLD_MSECS = 5 * 1000;
@@ -179,6 +180,8 @@ bool IceServer::isVerifiedHeartbeat(const QUuid& domainID, const QByteArray& pla
             const auto rsaPublicKey = it->second.get();
 
             if (rsaPublicKey) {
+                OVERTE_IGNORE_DEPRECATED_BEGIN
+
                 auto hashedPlaintext = QCryptographicHash::hash(plaintext, QCryptographicHash::Sha256);
                 int verificationResult = RSA_verify(NID_sha256,
                                                     reinterpret_cast<const unsigned char*>(hashedPlaintext.constData()),
@@ -187,6 +190,7 @@ bool IceServer::isVerifiedHeartbeat(const QUuid& domainID, const QByteArray& pla
                                                     signature.size(),
                                                     rsaPublicKey);
 
+                OVERTE_IGNORE_DEPRECATED_END
                 if (verificationResult == 1) {
                     // this is the only success case - we return true here to indicate that the heartbeat is verified
                     return true;
@@ -262,6 +266,7 @@ void IceServer::publicKeyReplyFinished(QNetworkReply* reply) {
                 // convert the downloaded public key to an RSA struct, if possible
                 const unsigned char* publicKeyData = reinterpret_cast<const unsigned char*>(apiPublicKey.constData());
 
+                OVERTE_IGNORE_DEPRECATED_BEGIN
                 RSA* rsaPublicKey = d2i_RSA_PUBKEY(NULL, &publicKeyData, apiPublicKey.size());
 
                 if (rsaPublicKey) {
@@ -270,6 +275,7 @@ void IceServer::publicKeyReplyFinished(QNetworkReply* reply) {
                     qWarning() << "Could not convert in-memory public key for" << domainID << "to usable RSA public key.";
                     qWarning() << "Public key will be re-requested on next heartbeat.";
                 }
+                OVERTE_IGNORE_DEPRECATED_END
 
             } else {
                 qWarning() << "There was no public key present in response for domain with ID" << domainID;

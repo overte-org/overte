@@ -18,6 +18,8 @@
 #include <QtCore/QVariant>
 
 #include <udt/PacketHeaders.h>
+#include "WarningsSuppression.h"
+
 
 DomainServerNodeData::StringPairHash DomainServerNodeData::_overrideHash;
 
@@ -26,9 +28,11 @@ DomainServerNodeData::DomainServerNodeData() {
 }
 
 void DomainServerNodeData::updateJSONStats(QByteArray statsByteArray) {
+    OVERTE_IGNORE_DEPRECATED_BEGIN
     auto document = QJsonDocument::fromBinaryData(statsByteArray);
     Q_ASSERT(document.isObject());
     _statsJSONObject = overrideValuesIfNeeded(document.object());
+    OVERTE_IGNORE_DEPRECATED_END
 }
 
 QJsonObject DomainServerNodeData::overrideValuesIfNeeded(const QJsonObject& newStats) {

@@ -25,6 +25,7 @@
 
 #include "DomainServer.h"
 #include "DomainServerNodeData.h"
+#include "WarningsSuppression.h"
 
 using SharedAssignmentPointer = QSharedPointer<Assignment>;
 
@@ -705,6 +706,8 @@ bool DomainGatekeeper::verifyUserSignature(const QString& username,
 
         const unsigned char* publicKeyData = reinterpret_cast<const unsigned char*>(publicKeyArray.constData());
 
+        OVERTE_IGNORE_DEPRECATED_BEGIN
+
         // first load up the public key into an RSA struct
         RSA* rsaPublicKey = d2i_RSA_PUBKEY(NULL, &publicKeyData, publicKeyArray.size());
 
@@ -745,6 +748,8 @@ bool DomainGatekeeper::verifyUserSignature(const QString& username,
                 // free up the public key, we don't need it anymore
                 RSA_free(rsaPublicKey);
             }
+
+            OVERTE_IGNORE_DEPRECATED_END
 
         } else {
 
