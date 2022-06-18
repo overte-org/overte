@@ -532,9 +532,9 @@ const std::map<QString, ProfileCategory> propertyToProfileCategory = [](){
 }();
 
 TestFilter::TestFilter(const QString& filterString) {
-    auto filterParts = filterString.split(".", QString::SkipEmptyParts);
+    auto filterParts = filterString.split(".", Qt::SkipEmptyParts);
     for (const auto& filterPart : filterParts) {
-        QList<QString> allowedVariants = filterPart.split(",", QString::SkipEmptyParts);
+        QList<QString> allowedVariants = filterPart.split(",", Qt::SkipEmptyParts);
         if (allowedVariants.empty()) {
             continue;
         }

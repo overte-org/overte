@@ -43,7 +43,7 @@ void AWSInterface::createWebPageFromResults(const QString& testResults,
     QStringList parts = testResults.split('/');
     QString zipFilename = parts[parts.length() - 1];
 
-    QStringList zipFolderNameParts = zipFilename.split(QRegExp("[\\(\\)\\[\\]]"), QString::SkipEmptyParts);
+    QStringList zipFolderNameParts = zipFilename.split(QRegExp("[\\(\\)\\[\\]]"), Qt::SkipEmptyParts);
 
     if (!QRegularExpression("TestResults--\\d{4}(-\\d\\d){2}_\\d\\d(-\\d\\d){2}").match(zipFolderNameParts[0]).hasMatch() ||
         !QRegularExpression("\\w").match(zipFolderNameParts[1]).hasMatch() ||                                                 // build (local, build number or PR number)
