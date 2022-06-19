@@ -32,6 +32,9 @@
  * @property {string} buildVersion - The build version of Interface that is currently running. <em>Read-only.</em>
  * @property {string} releaseName - The release codename of the version that Interface is currently running. <em>Read-only.</em>
  * @property {string} qtVersion - The Qt version used in Interface that is currently running. <em>Read-only.</em>
+ * @property {string} qtWebEngineVersion - The Qt WebEngine version used in Interface that is currently running. <em>Read-only.</em>
+ * @property {string} qtChromiumVersion - The Qt Chromium version used in Interface that is currently running. <em>Read-only.</em>
+ *
  *
  * @example <caption>Report information on the version of Interface currently running.</caption>
  * print("Interface platform: " + About.platform);
@@ -70,6 +73,9 @@ class AboutUtil : public QObject {
     Q_PROPERTY(QString buildVersion READ getBuildVersion CONSTANT)
     Q_PROPERTY(QString releaseName READ getReleaseName CONSTANT)
     Q_PROPERTY(QString qtVersion READ getQtVersion CONSTANT)
+    Q_PROPERTY(QString qtWebEngineVersion READ getQtWebEngineVersion CONSTANT)
+    Q_PROPERTY(QString qtChromiumVersion READ getQtChromiumVersion CONSTANT)
+
 public:
     static AboutUtil* getInstance();
     ~AboutUtil() {}
@@ -79,6 +85,8 @@ public:
     QString getBuildVersion() const;
     QString getReleaseName() const;
     QString getQtVersion() const;
+    QString getQtWebEngineVersion() const;
+    QString getQtChromiumVersion() const;
 
 public slots:
 

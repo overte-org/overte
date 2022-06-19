@@ -16,6 +16,8 @@
 
 #include <ui/TabletScriptingInterface.h>
 #include <OffscreenQmlDialog.h>
+#include <qtwebenginecoreversion.h>
+#include <QWebEngineProfile>
 
 #include "BuildInfo.h"
 #include "DependencyManager.h"
@@ -47,6 +49,26 @@ QString AboutUtil::getReleaseName() const {
 
 QString AboutUtil::getQtVersion() const {
     return qVersion();
+}
+
+QString AboutUtil::getQtWebEngineVersion() const {
+    return QTWEBENGINECORE_VERSION_STR;
+}
+
+QString AboutUtil::getQtChromiumVersion() const {
+    // Qt unfortunately doesn't provide a conventient way of getting the Chromium version,
+    // and it seems internally it gets it from a constant specified on the compiler's command-line.
+    //
+    // It does include this constant into the default user agent though, so we can extract it from there.
+    QString version;
+    QString user_agent = QWebEngineProfile::defaultProfile()->httpUserAgent();
+    for(const QString & text : user_agent.split(" ")){
+        if(text.startsWith(QStringLiteral("Chrome/"))){
+            version = text.mid(QStringLiteral("Chrome/").length());
+        }
+    }
+
+    return version;
 }
 
 void AboutUtil::openUrl(const QString& url) const {
