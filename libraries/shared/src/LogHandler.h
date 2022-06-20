@@ -56,6 +56,24 @@ public:
 
     void setupRepeatedMessageFlusher();
 
+    /**
+     * @brief Break when a message that contains the specified string is logged
+     *
+     * This is a function intended to be invoked from inside a debugger. It should be of help when it's hard to put a breakpoint
+     * on the generating line because it comes from inlined code, or the interesting text is generated at runtime.
+     *
+     * Example usage:
+     *
+     * @code {.cpp}
+     * LogHandler::breakOnMessage("No instance available for");
+     * @endcode
+     *
+     * Then the debugger should be triggered as soon as a message containing that string is logged. Backtracking
+     * through the call stack should lead back to the source.
+     *
+     * @param str Text to match
+     */
+    static void breakOnMessage(const char *str);
 private:
     LogHandler();
     ~LogHandler() = default;
@@ -79,6 +97,8 @@ private:
         QString repeatString;
     };
     std::vector<RepeatedMessageRecord> _repeatedMessageRecords;
+
+    QStringList _breakMessages;
     static QRecursiveMutex _mutex;
 };
 

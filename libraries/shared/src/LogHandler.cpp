@@ -11,6 +11,7 @@
 //
 
 #include "LogHandler.h"
+#include "Breakpoint.h"
 
 #include <mutex>
 
@@ -216,6 +217,13 @@ QString LogHandler::printMessage(LogMsgType type, const QMessageLogContext& cont
         _repeatCount++;
     }
 
+    if ( !_breakMessages.empty() ) {
+        for(const auto &str : _breakMessages) {
+            if (logMessage.contains(str)) {
+                BREAKPOINT
+            }
+        }
+    }
     _previousMessage = message;
 #ifdef Q_OS_WIN
     // On windows, this will output log lines into the Visual Studio "output" tab
@@ -261,4 +269,10 @@ void LogHandler::printRepeatedMessage(int messageID, LogMsgType type, const QMes
     }
 
     ++_repeatedMessageRecords[messageID].repeatCount;
+}
+
+
+void LogHandler::breakOnMessage(const char *message) {
+    QMutexLocker lock(&_mutex);
+    LogHandler::getInstance()._breakMessages.append(QString::fromUtf8(message));
 }
