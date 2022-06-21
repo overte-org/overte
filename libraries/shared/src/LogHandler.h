@@ -71,6 +71,9 @@ public:
      * Then the debugger should be triggered as soon as a message containing that string is logged. Backtracking
      * through the call stack should lead back to the source.
      *
+     * @note Support for creating a breakpoint in software is compiler and OS specific. If there's no support for
+     * creating a breakpoint on the current compiler/OS, then an abort will be triggered instead.
+     *
      * @param str Text to match
      */
     static void breakOnMessage(const char *str);
