@@ -38,7 +38,7 @@ void KTXCache::initialize() {
 
 
 std::unique_ptr<File> KTXCache::createFile(Metadata&& metadata, const std::string& filepath) {
-    qCInfo(file_cache) << "Wrote KTX" << metadata.key.c_str();
+    qCDebug(file_cache) << "Wrote KTX" << metadata.key.c_str();
     return FileCache::createFile(std::move(metadata), filepath);
 }
 
