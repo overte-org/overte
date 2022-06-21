@@ -21,7 +21,7 @@ set(CUSTOM_INTERFACE_QRC_PATHS "")
 
 find_package(
   Qt5 COMPONENTS
-  Gui Widgets Multimedia Network Qml Quick Script Svg
+  Gui Widgets Multimedia Network Qml Quick Script Svg WebEngineCore WebEngineWidgets
   ${PLATFORM_QT_COMPONENTS}
   WebChannel WebSockets
 )
@@ -292,7 +292,7 @@ target_link_libraries(
   ${TARGET_NAME}
   Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::Widgets
   Qt5::Qml Qt5::Quick Qt5::Script Qt5::Svg
-  Qt5::WebChannel
+  Qt5::WebChannel Qt5::WebEngineCore Qt5::WebEngineWidgets
   ${PLATFORM_QT_LIBRARIES}
 )
 

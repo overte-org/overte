@@ -99,6 +99,47 @@ Rectangle {
             }
             Item { height: 1; width: 15 }
             Image {
+                sourceSize.width: 34
+                sourceSize.height: 25
+                source: "../../../images/about-qt.png"
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        About.openUrl("https://www.qt.io/");
+                    }
+                }
+            }
+            RalewayRegular {
+                color: "white"
+                text: "Qt WebEngine " + About.qtWebEngineVersion
+                size: 12
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+        Row {
+            spacing: 5
+            Image {
+                sourceSize.width: 25
+                sourceSize.height: 25
+                source: "../../../images/about-chromium.svg"
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        About.openUrl("https://www.chromium.org/");
+                    }
+                }
+            }
+            RalewayRegular {
+                color: "white"
+                text: "Chromium " + About.qtChromiumVersion
+                size: 12
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+        Row {
+            spacing: 5
+
+            Image {
                 sourceSize.width: 70
                 sourceSize.height: 26
                 source: "../../../images/about-physics.png"
@@ -109,9 +150,7 @@ Rectangle {
                 size: 12
                 anchors.verticalCenter: parent.verticalCenter
             }
-        }
-        Row {
-            spacing: 5
+
             Image {
                 sourceSize.width: 34
                 sourceSize.height: 25
