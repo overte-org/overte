@@ -91,7 +91,7 @@ function unload() {
     Window.domainChanged.disconnect(onDomainChange);
     AvatarManager.avatarRemovedEvent.disconnect(onAvatarRemoved);
     AvatarManager.avatarAddedEvent.disconnect(onAvatarAdded);
-    Controller.keyPressEvent.disconnect(blockedsKeyPressed);
+    Controller.keyPressEvent.disconnect(blockedKeysPressed);
     Controller.keyReleaseEvent.disconnect(blockedKeysReleased);
 }
 
