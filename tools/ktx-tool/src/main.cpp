@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
         if (!destFolder.exists() && !destFolder.mkpath(".")) {
             throw std::runtime_error("failed to create output directory");
         }
-        for (const auto ktxFile : SOURCE_FOLDER.entryInfoList(QStringList() << "*.ktx")) {
+        for (const auto &ktxFile : SOURCE_FOLDER.entryInfoList(QStringList() << "*.ktx")) {
             processKtxFile(ktxFile);
         }
         qDebug() << "Done";

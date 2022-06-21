@@ -486,7 +486,7 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
             QVariant* client_id = _configMap.valueForKeyPath(OAUTH_CLIENT_ID);
             if (client_id) {
                 QVariant* oauthEnable = _configMap.valueForKeyPath(OAUTH_ENABLE, true);
-                
+
                 *oauthEnable = QVariant(true);
             }
 
@@ -890,9 +890,9 @@ void DomainServerSettingsManager::processNodeKickRequestPacket(QSharedPointer<Re
 
         bool hasOptionalBanParameters = false;
         int banParameters;
-        bool banByUsername;
-        bool banByFingerprint;
-        bool banByIP;
+        bool banByUsername = false;
+        bool banByFingerprint = false;
+        bool banByIP = false;
         // pull optional ban parameters from the packet
         if (message.data()->getSize() == (NUM_BYTES_RFC4122_UUID + sizeof(int))) {
             hasOptionalBanParameters = true;
@@ -970,7 +970,7 @@ void DomainServerSettingsManager::processNodeKickRequestPacket(QSharedPointer<Re
                         banByIP = true;
                     }
                 }
-                
+
                 if (banByIP) {
                     auto& kickAddress = matchingNode->getActiveSocket()
                         ? matchingNode->getActiveSocket()->getAddress()
@@ -1976,7 +1976,7 @@ QStringList DomainServerSettingsManager::getAllKnownGroupNames() {
         result += entry.first.first;
     }
 
-    return result.toList();
+    return result.values();
 }
 
 bool DomainServerSettingsManager::setGroupID(const QString& groupName, const QUuid& groupID) {
@@ -2225,7 +2225,7 @@ QList<QUuid> DomainServerSettingsManager::getGroupIDs() {
             result += _groupPermissions[groupKey]->getGroupID();
         }
     }
-    return result.toList();
+    return result.values();
 }
 
 QList<QUuid> DomainServerSettingsManager::getBlacklistGroupIDs() {
@@ -2235,7 +2235,7 @@ QList<QUuid> DomainServerSettingsManager::getBlacklistGroupIDs() {
             result += _groupForbiddens[groupKey]->getGroupID();
         }
     }
-    return result.toList();
+    return result.values();
 }
 
 QStringList DomainServerSettingsManager::getDomainServerGroupNames() {
@@ -2244,7 +2244,7 @@ QStringList DomainServerSettingsManager::getDomainServerGroupNames() {
     foreach(NodePermissionsKey groupKey, _groupPermissions.keys()) {
         result += _groupPermissions[groupKey]->getID();
     }
-    return result.toList();
+    return result.values();
 }
 
 QStringList DomainServerSettingsManager::getDomainServerBlacklistGroupNames() {
@@ -2253,7 +2253,7 @@ QStringList DomainServerSettingsManager::getDomainServerBlacklistGroupNames() {
     foreach (NodePermissionsKey groupKey, _groupForbiddens.keys()) {
         result += _groupForbiddens[groupKey]->getID();
     }
-    return result.toList();
+    return result.values();
 }
 
 void DomainServerSettingsManager::debugDumpGroupsState() {

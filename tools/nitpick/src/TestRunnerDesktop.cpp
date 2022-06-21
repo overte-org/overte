@@ -321,13 +321,13 @@ void TestRunnerDesktop::saveExistingHighFidelityAppDataFolder() {
     dataDirectory = QDir::homePath() + "/Library/Application Support";
 #endif
     if (_runLatest->isChecked()) {
-        _appDataFolder = dataDirectory + "/Vircadia";
+        _appDataFolder.setPath(dataDirectory + "/Vircadia");
     } else {
         // We are running a PR build
-        _appDataFolder = dataDirectory + "/Vircadia - " + getPRNumberFromURL(_url->text());
+        _appDataFolder.setPath(dataDirectory + "/Vircadia - " + getPRNumberFromURL(_url->text()));
     }
 
-    _savedAppDataFolder = dataDirectory + "/" + UNIQUE_FOLDER_NAME;
+    _savedAppDataFolder.setPath(dataDirectory + "/" + UNIQUE_FOLDER_NAME);
     if (QDir(_savedAppDataFolder).exists()) {
         _savedAppDataFolder.removeRecursively();
     }

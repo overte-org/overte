@@ -154,7 +154,7 @@ bool MixerAvatar::validateFSTHash(const QString& publicKey) const {
 }
 
 QByteArray MixerAvatar::canonicalJson(const QString fstFile) {
-    QStringList fstLines = fstFile.split("\n", QString::SkipEmptyParts);
+    QStringList fstLines = fstFile.split("\n", Qt::SkipEmptyParts);
     static const QString fstKeywordsReg {
         "(marketplaceID|itemDescription|itemCategories|itemArtist|itemLicenseUrl|limitedRun|itemName|"
         "filename|texdir|script|editionNumber|certificateID)"

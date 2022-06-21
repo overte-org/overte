@@ -724,8 +724,6 @@ extern InputPluginList getInputPlugins();
 extern void saveInputPluginSettings(const InputPluginList& plugins);
 
 bool setupEssentials(int& argc, char** argv, const QCommandLineParser& parser, bool runningMarkerExisted) {
-    const char** constArgv = const_cast<const char**>(argv);
-
     qInstallMessageHandler(messageHandler);
 
 

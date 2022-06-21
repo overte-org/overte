@@ -15,6 +15,7 @@
 #include <QTimer>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QRandomGenerator>
 
 #include <EntityTree.h>
 #include <ResourceCache.h>
@@ -412,8 +413,8 @@ QString EntityServer::serverSubclassStats() {
 
     // display memory usage stats
     statsString += "<b>Entity Server Memory Statistics</b>\r\n";
-    statsString += QString().sprintf("EntityTreeElement size... %ld bytes\r\n", sizeof(EntityTreeElement));
-    statsString += QString().sprintf("       EntityItem size... %ld bytes\r\n", sizeof(EntityItem));
+    statsString += QString("EntityTreeElement size... %1 bytes\r\n").arg(sizeof(EntityTreeElement));
+    statsString += QString("       EntityItem size... %1 bytes\r\n").arg(sizeof(EntityItem));
     statsString += "\r\n\r\n";
 
     statsString += "<b>Entity Server Sending to Viewer Statistics</b>\r\n";
@@ -475,7 +476,7 @@ void EntityServer::startDynamicDomainVerification() {
     EntityTreePointer tree = std::static_pointer_cast<EntityTree>(_tree);
     tree->startDynamicDomainVerificationOnServer((float) _MAXIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS / MSECS_PER_SECOND);
 
-    int nextInterval = qrand() % ((_MAXIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS + 1) - _MINIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS) + _MINIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS;
+    int nextInterval = QRandomGenerator::global()->bounded(((_MAXIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS + 1) - _MINIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS) + _MINIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS);
     qCDebug(entities) << "Restarting Dynamic Domain Verification timer for" << nextInterval / 1000 << "seconds";
     _dynamicDomainVerificationTimer.start(nextInterval);
 }

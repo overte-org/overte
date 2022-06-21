@@ -910,7 +910,7 @@ void DomainServer::setUpWebRTCSignalingServer() {
     auto limitedNodeList = DependencyManager::get<LimitedNodeList>();
 
     // Route inbound WebRTC signaling messages received from user clients.
-    connect(_webrtcSignalingServer.get(), &WebRTCSignalingServer::messageReceived, 
+    connect(_webrtcSignalingServer.get(), &WebRTCSignalingServer::messageReceived,
         this, &DomainServer::routeWebRTCSignalingMessage);
 
     // Route domain server signaling messages.
@@ -922,9 +922,9 @@ void DomainServer::setUpWebRTCSignalingServer() {
     // Forward signaling messages received from assignment clients to user client.
     PacketReceiver& packetReceiver = limitedNodeList->getPacketReceiver();
     packetReceiver.registerListener(PacketType::WebRTCSignaling,
-        PacketReceiver::makeUnsourcedListenerReference<DomainServer>(this, 
+        PacketReceiver::makeUnsourcedListenerReference<DomainServer>(this,
             &DomainServer::forwardAssignmentClientSignalingMessageToUserClient));
-    connect(this, &DomainServer::webrtcSignalingMessageForUserClient, 
+    connect(this, &DomainServer::webrtcSignalingMessageForUserClient,
         _webrtcSignalingServer.get(), &WebRTCSignalingServer::sendMessage);
 }
 
@@ -1247,7 +1247,7 @@ void DomainServer::processListRequestPacket(QSharedPointer<ReceivedMessage> mess
     }
 
     // guard against patched agents asking to hear about other agents
-    auto safeInterestSet = nodeRequestData.interestList.toSet();
+    auto safeInterestSet = QSet<NodeType_t>(nodeRequestData.interestList.begin(), nodeRequestData.interestList.end());
     if (sendingNode->getType() == NodeType::Agent) {
         safeInterestSet.remove(NodeType::Agent);
     }
@@ -3460,7 +3460,7 @@ void DomainServer::addStaticAssignmentsToQueue() {
     auto sharedAssignments = _allAssignments.values();
 
     // sort the assignments to put the server/mixer assignments first
-    qSort(sharedAssignments.begin(), sharedAssignments.end(), [](SharedAssignmentPointer a, SharedAssignmentPointer b){
+    std::sort(sharedAssignments.begin(), sharedAssignments.end(), [](SharedAssignmentPointer a, SharedAssignmentPointer b){
         if (a->getType() == b->getType()) {
             return true;
         } else if (a->getType() != Assignment::AgentType && b->getType() != Assignment::AgentType) {
