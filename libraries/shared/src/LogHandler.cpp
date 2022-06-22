@@ -76,6 +76,8 @@ LogHandler::LogHandler() {
             _shouldDisplayMilliseconds = true;
         } else if (option == "keep_repeats") {
             _keepRepeats = true;
+        } else if (option == "journald") {
+            _useJournald = true;
         } else if (option == "nojournald") {
             _useJournald = false;
         } else if (option != "") {
