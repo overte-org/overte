@@ -35,3 +35,4 @@ jobs:
         server-dir: overte/doxygen.overte.org-web/htdocs/
         exclude: |
           **/staging/**
+          .htaccess
