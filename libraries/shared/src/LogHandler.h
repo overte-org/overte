@@ -31,24 +31,82 @@ enum LogMsgType {
     LogSuppressed = 100
 };
 
-/// Handles custom message handling and sending of stats/logs to Logstash instance
+///
+
+/**
+ * @brief Handles custom message handling and sending of stats/logs to Logstash instance
+ *
+ */
 class LogHandler : public QObject {
     Q_OBJECT
 public:
+    /**
+     * @brief Returns the one instance of the LogHandler object
+     *
+     * @return LogHandler&
+     */
     static LogHandler& getInstance();
 
-    /// sets the target name to output via the verboseMessageHandler, called once before logging begins
-    /// \param targetName the desired target name to output in logs
+    /**
+     * @brief Set the Target Name to output via the verboseMessageHandler
+     *
+     * Called once before logging begins
+     *
+     * @param targetName the desired target name to output in logs
+     */
     void setTargetName(const QString& targetName);
 
+    /**
+     * @brief Set whether to output the process ID
+     *
+     * @note This has no effect when logging with journald, the PID is always logged
+     *
+     * @param shouldOutputProcessID Whether to output the PID
+     */
     void setShouldOutputProcessID(bool shouldOutputProcessID);
+
+    /**
+     * @brief Set whether to output the thread ID
+     *
+     * @param shouldOutputThreadID
+     */
     void setShouldOutputThreadID(bool shouldOutputThreadID);
+
+    /**
+     * @brief Set whether to display timestamps with milliseconds
+     *
+     * @param shouldDisplayMilliseconds
+     */
     void setShouldDisplayMilliseconds(bool shouldDisplayMilliseconds);
+
+    /**
+     * @brief Set whether to use Journald, if it's available
+     *
+     * @param shouldUseJournald Whether to use journald
+     */
+    void setShouldUseJournald(bool shouldUseJournald);
+
+    /**
+     * @brief Whether Journald is available on this version/system.
+     *
+     * Support is available depending on compile options and only on Linux.
+     *
+     * @return true Journald is available
+     * @return false Journald is not available
+     */
+    bool isJournaldAvailable() const;
 
     QString printMessage(LogMsgType type, const QMessageLogContext& context, const QString &message);
 
-    /// a qtMessageHandler that can be hooked up to a target that links to Qt
-    /// prints various process, message type, and time information
+    /**
+     * @brief A qtMessageHandler that can be hooked up to a target that links to Qt
+     *
+     * Prints various process, message type, and time information
+     *
+     * @param type  Log message type
+     * @param context Context of the log message (source file, line, function)
+     * @param message Log message
+     */
     static void verboseMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString &message);
 
     int newRepeatedMessageID();
@@ -89,6 +147,7 @@ private:
     bool _shouldDisplayMilliseconds { false };
     bool _useColor { false };
     bool _keepRepeats { false };
+    bool _useJournald { false };
 
     QString _previousMessage;
     int _repeatCount { 0 };

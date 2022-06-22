@@ -31,6 +31,10 @@
 #include <QtCore/QTimer>
 #include <QRecursiveMutex>
 
+#ifdef HAS_JOURNALD
+#include <systemd/sd-journal.h>
+#endif
+
 QRecursiveMutex LogHandler::_mutex;
 
 LogHandler& LogHandler::getInstance() {
@@ -51,6 +55,10 @@ LogHandler::LogHandler() {
     }
 #endif
 
+#ifdef HAS_JOURNALD
+    _useJournald = true;
+#endif
+
     auto optionList = logOptions.split(",");
 
     for (auto option : optionList) {
@@ -68,6 +76,8 @@ LogHandler::LogHandler() {
             _shouldDisplayMilliseconds = true;
         } else if (option == "keep_repeats") {
             _keepRepeats = true;
+        } else if (option == "nojournald") {
+            _useJournald = false;
         } else if (option != "") {
             fprintf(stdout, "Unrecognized option in VIRCADIA_LOG_OPTIONS: '%s'\n", option.toUtf8().constData());
         }
@@ -142,6 +152,13 @@ void LogHandler::setShouldDisplayMilliseconds(bool shouldDisplayMilliseconds) {
     _shouldDisplayMilliseconds = shouldDisplayMilliseconds;
 }
 
+bool LogHandler::isJournaldAvailable() const {
+#ifdef HAS_JOURNALD
+    return true;
+#else
+    return false;
+#endif
+}
 
 void LogHandler::flushRepeatedMessages() {
     QMutexLocker lock(&_mutex);
@@ -163,6 +180,7 @@ QString LogHandler::printMessage(LogMsgType type, const QMessageLogContext& cont
     if (message.isEmpty()) {
         return QString();
     }
+
     QMutexLocker lock(&_mutex);
 
     // log prefix is in the following format
@@ -196,25 +214,73 @@ QString LogHandler::printMessage(LogMsgType type, const QMessageLogContext& cont
         }
     }
 
+    // This is returned from this function and wanted by the LogEntityServer,
+    // so we have to have it even when using journald.
     QString logMessage = QString("%1 %2\n").arg(prefixString, message.split('\n').join('\n' + prefixString + " "));
 
-    const char* color = "";
-    const char* resetColor = "";
-
-    if (_useColor) {
-        color = colorForLogType(type);
-        resetColor = colorReset();
-    }
-
-    if (_keepRepeats || _previousMessage != message) {
-        if (_repeatCount > 0) {
-            fprintf(stdout, "[Previous message was repeated %i times]\n", _repeatCount);
+    if ( _useJournald ) {
+#ifdef HAS_JOURNALD
+        int priority = LOG_NOTICE;
+        switch(type) {
+            case LogMsgType::LogFatal: priority = LOG_EMERG; break;
+            case LogMsgType::LogCritical: priority = LOG_CRIT; break;
+            case LogMsgType::LogWarning: priority = LOG_WARNING; break;
+            case LogMsgType::LogInfo: priority = LOG_INFO; break;
+            case LogMsgType::LogDebug: priority = LOG_DEBUG; break;
+            case LogMsgType::LogSuppressed: priority = LOG_DEBUG; break;
+            default:
+                fprintf(stderr, "Unrecognized log type: %i", (int)type);
         }
 
-        fprintf(stdout, "%s%s%s", color, qPrintable(logMessage), resetColor);
-        _repeatCount = 0;
+        size_t threadID = (size_t)QThread::currentThreadId();
+        QString sd_file = QString("CODE_FILE=%1").arg(context.file);
+        QString sd_line = QString("CODE_LINE=%1").arg(context.line);
+
+        int retval = sd_journal_send_with_location(sd_file.toUtf8().constData(),
+                                                   sd_line.toUtf8().constData(),
+                                                   context.function == NULL ? "(unknown)" : context.function,
+                                                   "MESSAGE=%s", message.toUtf8().constData(),
+                                                   "PRIORITY=%i", priority,
+                                                   "CATEGORY=%s", context.category,
+                                                   "TID=%i", threadID,
+                                                   NULL);
+
+        if ( retval != 0 ) {
+            fprintf(stderr, "Failed to log message, error %i: ", retval);
+            fprintf(stderr, "file=%s, line=%i, func=%s, prio=%i, msg=%s\n",
+                            context.file,
+                            context.line,
+                            context.function,
+                            priority,
+                            message.toUtf8().constData()
+            );
+        }
+#endif
     } else {
-        _repeatCount++;
+            const char* color = "";
+            const char* resetColor = "";
+
+            if (_useColor) {
+                color = colorForLogType(type);
+                resetColor = colorReset();
+            }
+
+            if (_keepRepeats || _previousMessage != message) {
+                if (_repeatCount > 0) {
+                    fprintf(stdout, "[Previous message was repeated %i times]\n", _repeatCount);
+                }
+
+                fprintf(stdout, "%s%s%s", color, qPrintable(logMessage), resetColor);
+                _repeatCount = 0;
+            } else {
+                _repeatCount++;
+            }
+
+            _previousMessage = message;
+        #ifdef Q_OS_WIN
+            // On windows, this will output log lines into the Visual Studio "output" tab
+            OutputDebugStringA(qPrintable(logMessage));
+        #endif
     }
 
     if ( !_breakMessages.empty() ) {
@@ -229,6 +295,7 @@ QString LogHandler::printMessage(LogMsgType type, const QMessageLogContext& cont
     // On windows, this will output log lines into the Visual Studio "output" tab
     OutputDebugStringA(qPrintable(logMessage));
 #endif
+
     return logMessage;
 }
 
