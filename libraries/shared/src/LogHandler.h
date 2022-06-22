@@ -48,8 +48,20 @@ public:
     static LogHandler& getInstance();
 
     /**
-     * @brief Set the Target Name to output via the verboseMessageHandler
+     * @brief Parse logging options
      *
+     * This parses the logging settings in the environment variable, or from the commandline
+     *
+     * @param options Option list
+     * @return true Option list was parsed successfully
+     * @return false There was an error
+     */
+    bool parseOptions(QString options);
+
+    /**
+     * @brief Set the name of the component that's producing log output
+     *
+     * For instance, "assignment-client", "audio-mixer", etc.
      * Called once before logging begins
      *
      * @param targetName the desired target name to output in logs
@@ -96,6 +108,16 @@ public:
      */
     bool isJournaldAvailable() const;
 
+    /**
+     * @brief Process a log message
+     *
+     * This writes it to a file, logs it to the console, or sends it to journald.
+     *
+     * @param type  Log message type
+     * @param context Context of the log message (source file, line, function)
+     * @param message Log message
+     * @return QString The log message's text with added severity and timestamp
+     */
     QString printMessage(LogMsgType type, const QMessageLogContext& context, const QString &message);
 
     /**

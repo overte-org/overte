@@ -30,9 +30,11 @@
 #include <QtCore/QThread>
 #include <QtCore/QTimer>
 #include <QRecursiveMutex>
+#include <vector>
 
 #ifdef HAS_JOURNALD
 #include <systemd/sd-journal.h>
+#include <sys/uio.h>
 #endif
 
 QRecursiveMutex LogHandler::_mutex;
@@ -59,31 +61,7 @@ LogHandler::LogHandler() {
     _useJournald = true;
 #endif
 
-    auto optionList = logOptions.split(",");
-
-    for (auto option : optionList) {
-        option = option.trimmed();
-
-        if (option == "color") {
-            _useColor = true;
-        } else if (option == "nocolor") {
-            _useColor = false;
-        } else if (option == "process_id") {
-            _shouldOutputProcessID = true;
-        } else if (option == "thread_id") {
-            _shouldOutputThreadID = true;
-        } else if (option == "milliseconds") {
-            _shouldDisplayMilliseconds = true;
-        } else if (option == "keep_repeats") {
-            _keepRepeats = true;
-        } else if (option == "journald") {
-            _useJournald = true;
-        } else if (option == "nojournald") {
-            _useJournald = false;
-        } else if (option != "") {
-            fprintf(stdout, "Unrecognized option in VIRCADIA_LOG_OPTIONS: '%s'\n", option.toUtf8().constData());
-        }
-    }
+    parseOptions(logOptions);
 }
 
 const char* stringForLogType(LogMsgType msgType) {
@@ -128,11 +106,52 @@ const char* colorReset() {
     return "\u001b[0m";
 }
 
+
+#ifdef HAS_JOURNALD
+void addString(std::vector<struct iovec>&list, const QByteArray &str) {
+    auto data = str.constData();
+    struct iovec iov{(void*)data, strlen(data)};
+    list.emplace_back(iov);
+}
+#endif
+
 // the following will produce 11/18 13:55:36
 const QString DATE_STRING_FORMAT = "MM/dd hh:mm:ss";
 
 // the following will produce 11/18 13:55:36.999
 const QString DATE_STRING_FORMAT_WITH_MILLISECONDS = "MM/dd hh:mm:ss.zzz";
+
+bool LogHandler::parseOptions(QString logOptions) {
+    QMutexLocker lock(&_mutex);
+    auto optionList = logOptions.split(",");
+
+    for (auto option : optionList) {
+        option = option.trimmed();
+
+        if (option == "color") {
+            _useColor = true;
+        } else if (option == "nocolor") {
+            _useColor = false;
+        } else if (option == "process_id") {
+            _shouldOutputProcessID = true;
+        } else if (option == "thread_id") {
+            _shouldOutputThreadID = true;
+        } else if (option == "milliseconds") {
+            _shouldDisplayMilliseconds = true;
+        } else if (option == "keep_repeats") {
+            _keepRepeats = true;
+        } else if (option == "journald") {
+            _useJournald = true;
+        } else if (option == "nojournald") {
+            _useJournald = false;
+        } else if (option != "") {
+            fprintf(stdout, "Unrecognized option in VIRCADIA_LOG_OPTIONS: '%s'\n", option.toUtf8().constData());
+            return false;
+        }
+    }
+
+    return true;
+}
 
 void LogHandler::setTargetName(const QString& targetName) {
     QMutexLocker lock(&_mutex);
@@ -152,6 +171,17 @@ void LogHandler::setShouldOutputThreadID(bool shouldOutputThreadID) {
 void LogHandler::setShouldDisplayMilliseconds(bool shouldDisplayMilliseconds) {
     QMutexLocker lock(&_mutex);
     _shouldDisplayMilliseconds = shouldDisplayMilliseconds;
+}
+
+void LogHandler::setShouldUseJournald(bool shouldUseJournald) {
+    QMutexLocker lock(&_mutex);
+#ifdef HAS_JOURNALD
+    _useJournald = shouldUseJournald;
+#else
+    if (shouldUseJournald) {
+        fprintf(stderr, "Journald is not supported on this system or was not compiled in.\n");
+    }
+#endif
 }
 
 bool LogHandler::isJournaldAvailable() const {
@@ -231,13 +261,30 @@ QString LogHandler::printMessage(LogMsgType type, const QMessageLogContext& cont
             case LogMsgType::LogDebug: priority = LOG_DEBUG; break;
             case LogMsgType::LogSuppressed: priority = LOG_DEBUG; break;
             default:
-                fprintf(stderr, "Unrecognized log type: %i", (int)type);
+                fprintf(stderr, "Unrecognized log type: %i\n", (int)type);
         }
 
-        size_t threadID = (size_t)QThread::currentThreadId();
-        QString sd_file = QString("CODE_FILE=%1").arg(context.file);
-        QString sd_line = QString("CODE_LINE=%1").arg(context.line);
+        QByteArray sd_file = QString("CODE_FILE=%1").arg(context.file).toUtf8();
+        QByteArray sd_line = QString("CODE_LINE=%1").arg(context.line).toUtf8();
 
+        QByteArray sd_message = QString("MESSAGE=%1").arg(message).toUtf8();
+        QByteArray sd_priority = QString("PRIORITY=%1").arg(priority).toUtf8();
+        QByteArray sd_category = QString("CATEGORY=%1").arg(context.category).toUtf8();
+        QByteArray sd_tid = QString("TID=%1").arg((qlonglong)QThread::currentThreadId()).toUtf8();
+        QByteArray sd_target = QString("TARGET=%1").arg(_targetName).toUtf8();
+
+        std::vector<struct iovec> fields;
+        addString(fields, sd_message);
+        addString(fields, sd_priority);
+        addString(fields, sd_category);
+        addString(fields, sd_tid);
+
+        if (!_targetName.isEmpty()) {
+            addString(fields, sd_target);
+        }
+
+
+/*
         int retval = sd_journal_send_with_location(sd_file.toUtf8().constData(),
                                                    sd_line.toUtf8().constData(),
                                                    context.function == NULL ? "(unknown)" : context.function,
@@ -246,6 +293,12 @@ QString LogHandler::printMessage(LogMsgType type, const QMessageLogContext& cont
                                                    "CATEGORY=%s", context.category,
                                                    "TID=%i", threadID,
                                                    NULL);
+*/
+        int retval = sd_journal_sendv_with_location(sd_file.constData(),
+                                                    sd_line.constData(),
+                                                    context.function == NULL ? "(unknown)" : context.function,
+                                                    fields.data(),
+                                                    fields.size());
 
         if ( retval != 0 ) {
             fprintf(stderr, "Failed to log message, error %i: ", retval);
