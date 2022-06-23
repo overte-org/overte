@@ -17,7 +17,7 @@
 #include <glm/glm.hpp>
 
 /**
- * @brief Data serializer/deserializer
+ * @brief Data serializer
  *
  * When encoding, this class takes in data and encodes it into a buffer. No attempt is made to store version numbers, lengths,
  * or any other metadata. It's entirely up to the user to use the class in such a way that the process can be
@@ -37,7 +37,7 @@
  * uint16_t count = 1;
  * glm::vec3 pos{1.5, 2.0, 9.0};
  *
- * SerDes ser;
+ * Serializer ser;
  * ser << version;
  * ser << count;
  * ser << pos;
@@ -45,44 +45,20 @@
  * // Serialized data is in ser.buffer(), ser.length() long.
  * @endcode
  *
- * Example of decoding:
- *
- * @code {.cpp}
- * // Incoming data has been placed in:
- * // char buffer[1024];
- *
- * uint8_t version;
- * uint16_t count;
- * glm::vec3 pos;
- *
- * SerDes des(buffer, sizeof(buffer));
- * des >> version;
- * des >> count;
- * des >> pos;
- * @endcode
- *
  * This object should be modified directly to add support for any primitive and common datatypes in the code. To support serializing/deserializing
  * classes and structures, implement a `operator<<` and `operator>>` functions for that object, eg:
  *
  * @code {.cpp}
- * SerDes &operator<<(SerDes &ser, const Object &o) {
+ * Serializer &operator<<(Serializer &ser, const Object &o) {
  *  ser << o._borderColor;
  *  ser << o._maxAnisotropy;
  *  ser << o._filter;
  *  return ser;
  * }
- *
- * SerDes &operator>>(SerDes &des, Object &o) {
- *  des >> o._borderColor;
- *  des >> o._maxAnisotropy;
- *  des >> o._filter;
- *  return des;
- * }
- *
  * @endcode
  *
  */
-class SerDes {
+class DataSerializer {
     public:
         /**
          * @brief Default size for a dynamically allocated buffer.
@@ -106,7 +82,7 @@ class SerDes {
          *
          * The buffer is SerDes::DEFAULT_SIZE bytes by default, and doubles in size every time the limit is reached.
          */
-        SerDes() {
+        DataSerializer() {
             _capacity = DEFAULT_SIZE;
             _pos = 0;
             _length = 0;
@@ -125,7 +101,7 @@ class SerDes {
          * @param externalStore External data store
          * @param storeLength Length of the data store
          */
-        SerDes(char *externalStore, size_t storeLength) {
+        DataSerializer(char *externalStore, size_t storeLength) {
             _capacity = storeLength;
             _length = storeLength;
             _pos = 0;
@@ -144,16 +120,16 @@ class SerDes {
          * @param externalStore External data store
          * @param storeLength Length of the data store
          */
-        SerDes(uint8_t *externalStore, size_t storeLength) : SerDes((char*)externalStore, storeLength) {
+        DataSerializer(uint8_t *externalStore, size_t storeLength) : DataSerializer((char*)externalStore, storeLength) {
 
         }
 
-        SerDes(const SerDes &) = delete;
-        SerDes &operator=(const SerDes &) = delete;
+        DataSerializer(const DataSerializer &) = delete;
+        DataSerializer &operator=(const DataSerializer &) = delete;
 
 
 
-        ~SerDes() {
+        ~DataSerializer() {
             if (!_storeIsExternal) {
                 delete[] _store;
             }
@@ -169,7 +145,7 @@ class SerDes {
          * @param bytes Number of bytes to add
          */
         void addPadding(size_t bytes) {
-            if (!extendBy(bytes)) {
+            if (!extendBy(bytes, "padding")) {
                 return;
             }
 
@@ -184,7 +160,7 @@ class SerDes {
          * @param c  Character to add
          * @return SerDes& This object
          */
-        SerDes &operator<<(uint8_t c) {
+        DataSerializer &operator<<(uint8_t c) {
             return *this << int8_t(c);
         }
 
@@ -194,8 +170,8 @@ class SerDes {
          * @param c  Character to add
          * @return SerDes& This object
          */
-        SerDes &operator<<(int8_t c) {
-            if (!extendBy(1)) {
+        DataSerializer &operator<<(int8_t c) {
+            if (!extendBy(1, "int8_t")) {
                 return *this;
             }
 
@@ -203,32 +179,6 @@ class SerDes {
             return *this;
         }
 
-        /**
-         * @brief Read an uint8_t from the buffer
-         *
-         * @param c Character to read
-         * @return SerDes& This object
-         */
-        SerDes &operator>>(uint8_t &c) {
-            return *this >> reinterpret_cast<int8_t&>(c);
-        }
-
-        /**
-         * @brief Read an int8_t from the buffer
-         *
-         * @param c Character to read
-         * @return SerDes& This object
-         */
-        SerDes &operator>>(int8_t &c) {
-            if ( _pos < _length ) {
-                c = _store[_pos++];
-            } else {
-                _overflow = true;
-                qCritical() << "Deserializer trying to read past end of input, reading 8 bits from position " << _pos << ", length " << _length;
-            }
-
-            return *this;
-        }
 
         ///////////////////////////////////////////////////////////
 
@@ -238,7 +188,7 @@ class SerDes {
          * @param val  Value to add
          * @return SerDes& This object
          */
-        SerDes &operator<<(uint16_t val) {
+        DataSerializer &operator<<(uint16_t val) {
             return *this << int16_t(val);
         }
 
@@ -248,8 +198,8 @@ class SerDes {
          * @param val  Value to add
          * @return SerDes& This object
          */
-        SerDes &operator<<(int16_t val) {
-            if (!extendBy(sizeof(val))) {
+        DataSerializer &operator<<(int16_t val) {
+            if (!extendBy(sizeof(val), "int16_t")) {
                 return *this;
             }
 
@@ -258,33 +208,7 @@ class SerDes {
             return *this;
         }
 
-        /**
-         * @brief Read an uint16_t from the buffer
-         *
-         * @param val Value to read
-         * @return SerDes& This object
-         */
-        SerDes &operator>>(uint16_t &val) {
-            return *this >> reinterpret_cast<int16_t&>(val);
-        }
 
-        /**
-         * @brief Read an int16_t from the buffer
-         *
-         * @param val Value to read
-         * @return SerDes& This object
-         */
-        SerDes &operator>>(int16_t &val) {
-            if ( _pos + sizeof(val) <= _length ) {
-                memcpy((char*)&val, &_store[_pos], sizeof(val));
-                _pos += sizeof(val);
-            } else {
-                _overflow = true;
-                qCritical() << "Deserializer trying to read past end of input, reading 16 bits from position " << _pos << ", length " << _length;
-            }
-
-            return *this;
-        }
 
         ///////////////////////////////////////////////////////////
 
@@ -294,7 +218,7 @@ class SerDes {
          * @param val  Value to add
          * @return SerDes& This object
          */
-        SerDes &operator<<(uint32_t val) {
+        DataSerializer &operator<<(uint32_t val) {
             return *this << int32_t(val);
         }
 
@@ -304,40 +228,13 @@ class SerDes {
          * @param val  Value to add
          * @return SerDes& This object
          */
-        SerDes &operator<<(int32_t val) {
-            if (!extendBy(sizeof(val))) {
+        DataSerializer &operator<<(int32_t val) {
+            if (!extendBy(sizeof(val), "int32_t")) {
                 return *this;
             }
 
             memcpy(&_store[_pos], (char*)&val, sizeof(val));
             _pos += sizeof(val);
-            return *this;
-        }
-
-        /**
-         * @brief Read an uint32_t from the buffer
-         *
-         * @param val Value to read
-         * @return SerDes& This object
-         */
-        SerDes &operator>>(uint32_t &val) {
-            return *this >> reinterpret_cast<int32_t&>(val);
-        }
-
-        /**
-         * @brief Read an int32_t from the buffer
-         *
-         * @param val Value to read
-         * @return SerDes& This object
-         */
-        SerDes &operator>>(int32_t &val) {
-            if ( _pos + sizeof(val) <= _length ) {
-                memcpy((char*)&val, &_store[_pos], sizeof(val));
-                _pos += sizeof(val);
-            } else {
-                _overflow = true;
-                qCritical() << "Deserializer trying to read past end of input, reading 32 bits from position " << _pos << ", length " << _length;
-            }
             return *this;
         }
 
@@ -350,32 +247,14 @@ class SerDes {
          * @param val  Value to add
          * @return SerDes& This object
          */
-        SerDes &operator<<(float val) {
-            if (!extendBy(sizeof(val))) {
-                return *this;
-            }
-
-            memcpy(&_store[_pos], (char*)&val, sizeof(val));
-            _pos += sizeof(val);
-            return *this;
-        }
-
-        /**
-         * @brief Read an float from the buffer
-         *
-         * @param val Value to read
-         * @return SerDes& This object
-         */
-        SerDes &operator>>(float &val) {
-            if ( _pos + sizeof(val) <= _length ) {
-                memcpy((char*)&val, &_store[_pos], sizeof(val));
+        DataSerializer &operator<<(float val) {
+            if (extendBy(sizeof(val), "float")) {
+                memcpy(&_store[_pos], (char*)&val, sizeof(val));
                 _pos += sizeof(val);
-            } else {
-                _overflow = true;
-                qCritical() << "Deserializer trying to read past end of input, reading float from position " << _pos << ", length " << _length;
             }
             return *this;
         }
+
 
         ///////////////////////////////////////////////////////////
 
@@ -386,38 +265,14 @@ class SerDes {
          * @param val  Value to add
          * @return SerDes& This object
          */
-        SerDes &operator<<(glm::vec3 val) {
+        DataSerializer &operator<<(glm::vec3 val) {
             size_t sz = sizeof(val.x);
-            if (!extendBy(sz*3)) {
-                return *this;
-            }
-
-            memcpy(&_store[_pos       ], (char*)&val.x, sz);
-            memcpy(&_store[_pos + sz  ], (char*)&val.y, sz);
-            memcpy(&_store[_pos + sz*2], (char*)&val.z, sz);
-
-            _pos += sz*3;
-            return *this;
-        }
-
-        /**
-         * @brief Read a glm::vec3 from the buffer
-         *
-         * @param val Value to read
-         * @return SerDes& This object
-         */
-        SerDes &operator>>(glm::vec3 &val) {
-            size_t sz = sizeof(val.x);
-
-            if ( _pos + sz*3 <= _length ) {
-                memcpy((char*)&val.x, &_store[_pos       ], sz);
-                memcpy((char*)&val.y, &_store[_pos + sz  ], sz);
-                memcpy((char*)&val.z, &_store[_pos + sz*2], sz);
+            if (extendBy(sz*3, "glm::vec3")) {
+                memcpy(&_store[_pos       ], (char*)&val.x, sz);
+                memcpy(&_store[_pos + sz  ], (char*)&val.y, sz);
+                memcpy(&_store[_pos + sz*2], (char*)&val.z, sz);
 
                 _pos += sz*3;
-            } else {
-                _overflow = true;
-                qCritical() << "Deserializer trying to read past end of input, reading glm::vec3 from position " << _pos << ", length " << _length;
             }
             return *this;
         }
@@ -430,40 +285,15 @@ class SerDes {
          * @param val  Value to add
          * @return SerDes& This object
          */
-        SerDes &operator<<(glm::vec4 val) {
+        DataSerializer &operator<<(glm::vec4 val) {
             size_t sz = sizeof(val.x);
-            if (!extendBy(sz*4)) {
-                return *this;
-            }
-
-            memcpy(&_store[_pos       ], (char*)&val.x, sz);
-            memcpy(&_store[_pos + sz  ], (char*)&val.y, sz);
-            memcpy(&_store[_pos + sz*2], (char*)&val.z, sz);
-            memcpy(&_store[_pos + sz*3], (char*)&val.w, sz);
-
-            _pos += sz*4;
-            return *this;
-        }
-
-        /**
-         * @brief Read a glm::vec4 from the buffer
-         *
-         * @param val Value to read
-         * @return SerDes& This object
-         */
-        SerDes &operator>>(glm::vec4 &val) {
-            size_t sz = sizeof(val.x);
-
-            if ( _pos + sz*4 <= _length ) {
-                memcpy((char*)&val.x, &_store[_pos       ], sz);
-                memcpy((char*)&val.y, &_store[_pos + sz  ], sz);
-                memcpy((char*)&val.z, &_store[_pos + sz*2], sz);
-                memcpy((char*)&val.w, &_store[_pos + sz*3], sz);
+            if (extendBy(sz*4, "glm::vec4")) {
+                memcpy(&_store[_pos       ], (char*)&val.x, sz);
+                memcpy(&_store[_pos + sz  ], (char*)&val.y, sz);
+                memcpy(&_store[_pos + sz*2], (char*)&val.z, sz);
+                memcpy(&_store[_pos + sz*3], (char*)&val.w, sz);
 
                 _pos += sz*4;
-            } else {
-                _overflow = true;
-                qCritical() << "Deserializer trying to read past end of input, reading glm::vec3 from position " << _pos << ", length " << _length;
             }
             return *this;
         }
@@ -476,39 +306,18 @@ class SerDes {
          * @param val  Value to add
          * @return SerDes& This object
          */
-        SerDes &operator<<(glm::ivec2 val) {
+        DataSerializer &operator<<(glm::ivec2 val) {
             size_t sz = sizeof(val.x);
-            if (!extendBy(sz*2)) {
-                return *this;
-            }
-
-            memcpy(&_store[_pos       ], (char*)&val.x, sz);
-            memcpy(&_store[_pos + sz  ], (char*)&val.y, sz);
-
-            _pos += sz*2;
-            return *this;
-        }
-
-        /**
-         * @brief Read a glm::ivec2 from the buffer
-         *
-         * @param val Value to read
-         * @return SerDes& This object
-         */
-        SerDes &operator>>(glm::ivec2 &val) {
-            size_t sz = sizeof(val.x);
-
-            if ( _pos + sz*2 <= _length ) {
-                memcpy((char*)&val.x, &_store[_pos       ], sz);
-                memcpy((char*)&val.y, &_store[_pos + sz  ], sz);
+            if (extendBy(sz*2, "glm::ivec2")) {
+                memcpy(&_store[_pos       ], (char*)&val.x, sz);
+                memcpy(&_store[_pos + sz  ], (char*)&val.y, sz);
 
                 _pos += sz*2;
-            } else {
-                _overflow = true;
-                qCritical() << "Deserializer trying to read past end of input, reading glm::ivec2 from position " << _pos << ", length " << _length;
             }
             return *this;
         }
+
+
         ///////////////////////////////////////////////////////////
 
         /**
@@ -519,11 +328,12 @@ class SerDes {
          * @param val Value to write
          * @return SerDes& This object
          */
-        SerDes &operator<<(const char *val) {
+        DataSerializer &operator<<(const char *val) {
             size_t len = strlen(val)+1;
-            extendBy(len);
-            memcpy(&_store[_pos], val, len);
-            _pos += len;
+            if (extendBy(len, "string")) {
+                memcpy(&_store[_pos], val, len);
+                _pos += len;
+            }
             return *this;
         }
 
@@ -535,7 +345,7 @@ class SerDes {
          * @param val Value to write
          * @return SerDes& This object
          */
-        SerDes &operator<<(const QString &val) {
+        DataSerializer &operator<<(const QString &val) {
             return *this << val.toUtf8().constData();
         }
 
@@ -612,14 +422,15 @@ class SerDes {
          * @param ds  This object
          * @return QDebug
          */
-        friend QDebug operator<<(QDebug debug, const SerDes &ds);
+        friend QDebug operator<<(QDebug debug, const DataSerializer &ds);
 
     private:
-        bool extendBy(size_t bytes) {
+        bool extendBy(size_t bytes, const QString &type_name) {
             //qDebug() << "Extend by" << bytes;
 
             if ( _capacity < _length + bytes) {
                 if ( _storeIsExternal ) {
+                    qCritical() << "Serializer trying to write past end of input, writing" << bytes << "bytes for" << type_name << " from position " << _pos << ", length " << _length;
                     _overflow = true;
                     return false;
                 }
@@ -638,6 +449,339 @@ class SerDes {
         bool _storeIsExternal = false;
         bool _overflow = false;
         size_t _capacity = 0;
+        size_t _length = 0;
+        size_t _pos = 0;
+};
+
+/**
+ * @brief Data deserializer
+ *
+ * This class operates on a fixed size buffer. If an attempt to read past the end is made, the read fails,
+ * and the overflow flag is set.
+ *
+ * The class was written for the maximum simplicity possible and inline friendliness.
+ *
+ * Example of decoding:
+ *
+ * @code {.cpp}
+ * // Incoming data has been placed in:
+ * // char buffer[1024];
+ *
+ * uint8_t version;
+ * uint16_t count;
+ * glm::vec3 pos;
+ *
+ * Deserializer des(buffer, sizeof(buffer));
+ * des >> version;
+ * des >> count;
+ * des >> pos;
+ * @endcode
+ *
+ * This object should be modified directly to add support for any primitive and common datatypes in the code. To support deserializing
+ * classes and structures, implement an `operator>>` function for that object, eg:
+ *
+ * @code {.cpp}
+ * Deserializer &operator>>(Deserializer &des, Object &o) {
+ *  des >> o._borderColor;
+ *  des >> o._maxAnisotropy;
+ *  des >> o._filter;
+ *  return des;
+ * }
+ * @endcode
+ *
+ */
+class DataDeserializer {
+    public:
+        /**
+         * @brief Construct a Deserializer
+         *         *
+         * @param externalStore External data store
+         * @param storeLength Length of the data store
+         */
+        DataDeserializer(const char *externalStore, size_t storeLength) {
+            _length = storeLength;
+            _pos = 0;
+            _store = externalStore;
+        }
+
+        /**
+         * @brief Construct a Deserializer
+         *
+         * @param externalStore External data store
+         * @param storeLength Length of the data store
+         */
+        DataDeserializer(const uint8_t *externalStore, size_t storeLength) : DataDeserializer((const char*)externalStore, storeLength) {
+
+        }
+
+        /**
+         * @brief Construct a new Deserializer reading data from a Serializer
+         *
+         * This is a convenience function for testing.
+         *
+         * @param serializer Serializer with data
+         */
+        DataDeserializer(const DataSerializer &serializer) : DataDeserializer(serializer.buffer(), serializer.length()) {
+
+        }
+
+        /**
+         * @brief Skips padding in the input
+         *
+         * @param bytes Number of bytes to skip
+         */
+        void skipPadding(size_t bytes) {
+            if (!canAdvanceBy(bytes, "padding")) {
+                return;
+            }
+
+            _pos += bytes;
+        }
+
+
+        /**
+         * @brief Read an uint8_t from the buffer
+         *
+         * @param c Character to read
+         * @return SerDes& This object
+         */
+        DataDeserializer &operator>>(uint8_t &c) {
+            return *this >> reinterpret_cast<int8_t&>(c);
+        }
+
+        /**
+         * @brief Read an int8_t from the buffer
+         *
+         * @param c Character to read
+         * @return SerDes& This object
+         */
+        DataDeserializer &operator>>(int8_t &c) {
+            if ( canAdvanceBy(1, "int8_t") ) {
+                c = _store[_pos++];
+            }
+
+            return *this;
+        }
+
+        ///////////////////////////////////////////////////////////
+
+        /**
+         * @brief Read an uint16_t from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
+        DataDeserializer &operator>>(uint16_t &val) {
+            return *this >> reinterpret_cast<int16_t&>(val);
+        }
+
+        /**
+         * @brief Read an int16_t from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
+        DataDeserializer &operator>>(int16_t &val) {
+            if ( canAdvanceBy(sizeof(val), "int16_t") ) {
+                memcpy((char*)&val, &_store[_pos], sizeof(val));
+                _pos += sizeof(val);
+            }
+
+            return *this;
+        }
+
+        ///////////////////////////////////////////////////////////
+
+        /**
+         * @brief Read an uint32_t from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
+        DataDeserializer &operator>>(uint32_t &val) {
+            return *this >> reinterpret_cast<int32_t&>(val);
+        }
+
+        /**
+         * @brief Read an int32_t from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
+        DataDeserializer &operator>>(int32_t &val) {
+            if ( canAdvanceBy(sizeof(val), "int32_t") ) {
+                memcpy((char*)&val, &_store[_pos], sizeof(val));
+                _pos += sizeof(val);
+            }
+            return *this;
+        }
+
+
+        ///////////////////////////////////////////////////////////
+
+
+        /**
+         * @brief Read an float from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
+        DataDeserializer &operator>>(float &val) {
+            if ( canAdvanceBy(sizeof(val), "float") ) {
+                memcpy((char*)&val, &_store[_pos], sizeof(val));
+                _pos += sizeof(val);
+            }
+            return *this;
+        }
+
+        ///////////////////////////////////////////////////////////
+
+
+
+
+        /**
+         * @brief Read a glm::vec3 from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
+        DataDeserializer &operator>>(glm::vec3 &val) {
+            size_t sz = sizeof(val.x);
+
+            if ( canAdvanceBy(sz*3, "glm::vec3") ) {
+                memcpy((char*)&val.x, &_store[_pos       ], sz);
+                memcpy((char*)&val.y, &_store[_pos + sz  ], sz);
+                memcpy((char*)&val.z, &_store[_pos + sz*2], sz);
+
+                _pos += sz*3;
+            }
+
+            return *this;
+        }
+
+        ///////////////////////////////////////////////////////////
+
+
+        /**
+         * @brief Read a glm::vec4 from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
+        DataDeserializer &operator>>(glm::vec4 &val) {
+            size_t sz = sizeof(val.x);
+
+            if ( canAdvanceBy(sz*4, "glm::vec4")) {
+                memcpy((char*)&val.x, &_store[_pos       ], sz);
+                memcpy((char*)&val.y, &_store[_pos + sz  ], sz);
+                memcpy((char*)&val.z, &_store[_pos + sz*2], sz);
+                memcpy((char*)&val.w, &_store[_pos + sz*3], sz);
+
+                _pos += sz*4;
+            }
+            return *this;
+        }
+
+        ///////////////////////////////////////////////////////////
+
+
+        /**
+         * @brief Read a glm::ivec2 from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
+        DataDeserializer &operator>>(glm::ivec2 &val) {
+            size_t sz = sizeof(val.x);
+
+            if ( canAdvanceBy(sz*2, "glm::ivec2") ) {
+                memcpy((char*)&val.x, &_store[_pos       ], sz);
+                memcpy((char*)&val.y, &_store[_pos + sz  ], sz);
+
+                _pos += sz*2;
+            }
+
+            return *this;
+        }
+
+        ///////////////////////////////////////////////////////////
+
+        /**
+         * @brief Pointer to the start of the internal buffer.
+         *
+         * The allocated amount can be found with capacity().
+         *
+         * The end of the stored data can be found with length().
+         *
+         * @return Pointer to buffer
+         */
+        const char *buffer() const { return _store; }
+
+        /**
+         * @brief Current position in the buffer. Starts at 0.
+         *
+         * @return size_t
+         */
+        size_t pos() const { return _pos; }
+
+        /**
+         * @brief Last position that was written to in the buffer. Starts at 0.
+         *
+         * @return size_t
+         */
+        size_t length() const { return _length; }
+
+        /**
+         * @brief Whether there's any data in the buffer
+         *
+         * @return true Something has been written
+         * @return false The buffer is empty
+         */
+        bool isEmpty() const { return _length == 0; }
+
+        /**
+         * @brief The buffer size limit has been reached
+         *
+         * This can only return true for a statically allocated buffer.
+         *
+         * @return true Limit reached
+         * @return false There is still room
+         */
+        bool isOverflow() const { return _overflow; }
+
+        /**
+         * @brief Reset the serializer to the start, clear overflow bit.
+         *
+         */
+        void rewind() { _pos = 0; _overflow = false; }
+
+        /**
+         * @brief Dump the contents of this object into QDebug
+         *
+         * This produces a dump of the internal state, and an ASCII/hex dump of
+         * the contents, for debugging.
+         *
+         * @param debug Qt QDebug stream
+         * @param ds  This object
+         * @return QDebug
+         */
+        friend QDebug operator<<(QDebug debug, const DataDeserializer &ds);
+
+    private:
+        bool canAdvanceBy(size_t bytes, const QString &type_name) {
+            //qDebug() << "Checking advance by" << bytes;
+
+            if ( _length < _pos + bytes) {
+                qCritical() << "Deserializer trying to read past end of input, reading" << bytes << "bytes for" << type_name << "from position " << _pos << ". Max length " << _length;
+                _overflow = true;
+                return false;
+            }
+
+            return true;
+        }
+
+        const char *_store;
+        bool _overflow = false;
         size_t _length = 0;
         size_t _pos = 0;
 };

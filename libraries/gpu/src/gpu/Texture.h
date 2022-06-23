@@ -93,7 +93,7 @@ public:
 typedef std::shared_ptr< SphericalHarmonics > SHPointer;
 
 
-inline SerDes &operator<<(SerDes &ser, const SphericalHarmonics &h) {
+inline DataSerializer &operator<<(DataSerializer &ser, const SphericalHarmonics &h) {
     ser << h.L00  << h.spare0;
     ser << h.L1m1 << h.spare1;
     ser << h.L10  << h.spare2;
@@ -106,7 +106,7 @@ inline SerDes &operator<<(SerDes &ser, const SphericalHarmonics &h) {
     return ser;
 }
 
-inline SerDes &operator>>(SerDes &des, SphericalHarmonics &h) {
+inline DataDeserializer &operator>>(DataDeserializer &des, SphericalHarmonics &h) {
     des >> h.L00  >> h.spare0;
     des >> h.L1m1 >> h.spare1;
     des >> h.L10  >> h.spare2;
@@ -185,7 +185,7 @@ public:
                 _maxMip == other._maxMip;
         }
 
-        SerDes &operator<<(SerDes &dsd) {
+        DataSerializer &operator<<(DataSerializer &dsd) {
             dsd << _borderColor;
             dsd << _maxAnisotropy;
             dsd << _filter;
@@ -237,7 +237,7 @@ protected:
     friend class Deserializer;
 };
 
-inline SerDes &operator<<(SerDes &ser, const Sampler::Desc &d) {
+inline DataSerializer &operator<<(DataSerializer &ser, const Sampler::Desc &d) {
     ser << d._borderColor;
     ser << d._maxAnisotropy;
     ser << d._filter;
@@ -251,7 +251,7 @@ inline SerDes &operator<<(SerDes &ser, const Sampler::Desc &d) {
     return ser;
 }
 
-inline SerDes &operator>>(SerDes &dsr, Sampler::Desc &d) {
+inline DataDeserializer &operator>>(DataDeserializer &dsr, Sampler::Desc &d) {
     dsr >> d._borderColor;
     dsr >> d._maxAnisotropy;
     dsr >> d._filter;
