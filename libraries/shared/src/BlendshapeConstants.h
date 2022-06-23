@@ -122,6 +122,25 @@ struct BlendshapeOffsetUnpacked {
     float positionOffsetX, positionOffsetY, positionOffsetZ;
     float normalOffsetX, normalOffsetY, normalOffsetZ;
     float tangentOffsetX, tangentOffsetY, tangentOffsetZ;
+
+    /**
+     * @brief Set all components of all the offsets to zero
+     *
+     * @note glm::vec3 is not trivially copyable, so it's not correct to clear it with memset.
+     */
+    void clear() {
+        positionOffsetX = 0.0f;
+        positionOffsetY = 0.0f;
+        positionOffsetZ = 0.0f;
+
+        normalOffsetX = 0.0f;
+        normalOffsetY = 0.0f;
+        normalOffsetZ = 0.0f;
+
+        tangentOffsetX = 0.0f;
+        tangentOffsetY = 0.0f;
+        tangentOffsetZ = 0.0f;
+    }
 };
 
 using BlendshapeOffset = BlendshapeOffsetPacked;

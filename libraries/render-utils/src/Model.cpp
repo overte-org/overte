@@ -1949,7 +1949,9 @@ void Blender::run() {
         blendedMeshSizes.push_back(numVertsInMesh);
 
         // initialize offsets to zero
-        memset(unpackedBlendshapeOffsets.data(), 0, numVertsInMesh * sizeof(BlendshapeOffsetUnpacked));
+        for(BlendshapeOffsetUnpacked &bou : unpackedBlendshapeOffsets) {
+            bou.clear();
+        }
 
         // for each blendshape in this mesh, accumulate the offsets into unpackedBlendshapeOffsets.
         const float NORMAL_COEFFICIENT_SCALE = 0.01f;
