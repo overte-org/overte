@@ -283,17 +283,6 @@ QString LogHandler::printMessage(LogMsgType type, const QMessageLogContext& cont
             addString(fields, sd_target);
         }
 
-
-/*
-        int retval = sd_journal_send_with_location(sd_file.toUtf8().constData(),
-                                                   sd_line.toUtf8().constData(),
-                                                   context.function == NULL ? "(unknown)" : context.function,
-                                                   "MESSAGE=%s", message.toUtf8().constData(),
-                                                   "PRIORITY=%i", priority,
-                                                   "CATEGORY=%s", context.category,
-                                                   "TID=%i", threadID,
-                                                   NULL);
-*/
         int retval = sd_journal_sendv_with_location(sd_file.constData(),
                                                     sd_line.constData(),
                                                     context.function == NULL ? "(unknown)" : context.function,
