@@ -12,10 +12,10 @@
 #include <cctype>
 
 #include "SerDes.h"
-const int  SerDes::DEFAULT_SIZE;
-const char SerDes::PADDING_CHAR;
+const int  DataSerializer::DEFAULT_SIZE;
+const char DataSerializer::PADDING_CHAR;
 
-QDebug operator<<(QDebug debug, const SerDes &ds) {
+QDebug operator<<(QDebug debug, const DataSerializer &ds) {
     debug << "{ capacity =" << ds.capacity() << "; length = " << ds.length() << "; pos = " << ds.pos() << "}";
     debug << "\n";
 
@@ -54,7 +54,7 @@ QDebug operator<<(QDebug debug, const SerDes &ds) {
 }
 
 
-void SerDes::changeAllocation(size_t new_size) {
+void DataSerializer::changeAllocation(size_t new_size) {
     while ( _capacity < new_size) {
         _capacity *= 2;
     }
