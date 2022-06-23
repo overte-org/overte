@@ -43,7 +43,7 @@ struct GPUKTXPayload {
     TextureUsageType _usageType;
     glm::ivec2 _originalSize { 0, 0 };
 
-    void serialize(SerDes &ser) {
+    void serialize(DataSerializer &ser) {
         ser << CURRENT_VERSION;
         ser << _samplerDesc;
 
@@ -55,7 +55,7 @@ struct GPUKTXPayload {
         ser.addPadding(PADDING);
     }
 
-    bool unserialize(SerDes &dsr) {
+    bool unserialize(DataDeserializer &dsr) {
         Version version = 0;
         uint32 usageData;
         uint8_t usagetype = 0;
@@ -88,7 +88,7 @@ struct GPUKTXPayload {
         auto found = std::find_if(keyValues.begin(), keyValues.end(), isGPUKTX);
         if (found != keyValues.end()) {
             auto value = found->_value;
-            SerDes dsr(value.data(), value.size());
+            DataDeserializer dsr(value.data(), value.size());
             return payload.unserialize(dsr);
         }
         return false;
@@ -109,13 +109,13 @@ struct IrradianceKTXPayload {
 
     SphericalHarmonics _irradianceSH;
 
-    void serialize(SerDes &ser) const {
+    void serialize(DataSerializer &ser) const {
         ser << CURRENT_VERSION;
         ser << _irradianceSH;
         ser.addPadding(PADDING);
     }
 
-    bool unserialize(SerDes &des) {
+    bool unserialize(DataDeserializer &des) {
         Version version;
         if (des.length() != SIZE) {
             return false;
@@ -138,7 +138,7 @@ struct IrradianceKTXPayload {
         auto found = std::find_if(keyValues.begin(), keyValues.end(), isIrradianceKTX);
         if (found != keyValues.end()) {
             auto value = found->_value;
-            SerDes des(value.data(), value.size());
+            DataDeserializer des(value.data(), value.size());
             return payload.unserialize(des);
         }
         return false;
@@ -449,7 +449,7 @@ ktx::KTXUniquePointer Texture::serialize(const Texture& texture, const glm::ivec
     gpuKeyval._originalSize = originalSize;
 
     Byte keyvalPayload[GPUKTXPayload::SIZE];
-    SerDes ser(keyvalPayload, sizeof(keyvalPayload));
+    DataSerializer ser(keyvalPayload, sizeof(keyvalPayload));
 
     gpuKeyval.serialize(ser);
 
@@ -461,7 +461,7 @@ ktx::KTXUniquePointer Texture::serialize(const Texture& texture, const glm::ivec
         irradianceKeyval._irradianceSH = *texture.getIrradiance();
 
         Byte irradianceKeyvalPayload[IrradianceKTXPayload::SIZE];
-        SerDes ser(irradianceKeyvalPayload, sizeof(irradianceKeyvalPayload));
+        DataSerializer ser(irradianceKeyvalPayload, sizeof(irradianceKeyvalPayload));
         irradianceKeyval.serialize(ser);
 
         keyValues.emplace_back(IrradianceKTXPayload::KEY, (uint32)IrradianceKTXPayload::SIZE, (ktx::Byte*) &irradianceKeyvalPayload);
