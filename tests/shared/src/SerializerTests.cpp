@@ -20,14 +20,18 @@ void SerializerTests::initTestCase() {
 }
 
 void SerializerTests::testCreate() {
-    SerDes s;
+    DataSerializer s;
     QCOMPARE(s.length(), 0);
-    QCOMPARE(s.capacity(), SerDes::DEFAULT_SIZE);
+    QCOMPARE(s.capacity(), DataSerializer::DEFAULT_SIZE);
     QCOMPARE(s.isEmpty(), true);
+
+
+    DataDeserializer d(s);
+    QCOMPARE(d.length(), 0);
 }
 
 void SerializerTests::testAdd() {
-    SerDes s;
+    DataSerializer s;
     s << (qint8)1;
     QCOMPARE(s.length(), 1);
     QCOMPARE(s.isEmpty(), false);
@@ -62,7 +66,7 @@ void SerializerTests::testAdd() {
 }
 
 void SerializerTests::testAddAndRead() {
-    SerDes s;
+    DataSerializer s;
     glm::vec3 v3_a{1.f, 3.1415f, 2.71828f};
     glm::vec3 v3_b;
     glm::vec4 v4_a{3.1415f, 2.71828f, 1.4142f, 1.6180f};
@@ -84,17 +88,17 @@ void SerializerTests::testAddAndRead() {
     qint16 i16;
     qint32 i32;
 
-    s.rewind();
+    DataDeserializer d(s);
 
-    s >> i8;
-    s >> i16;
-    s >> i32;
-    s >> v3_b;
-    s >> v4_b;
-    s >> iv2_b;
-    s >> f_b;
+    d >> i8;
+    d >> i16;
+    d >> i32;
+    d >> v3_b;
+    d >> v4_b;
+    d >> iv2_b;
+    d >> f_b;
 
-    qDebug() << s;
+    qDebug() << d;
 
     QCOMPARE(i8, (qint8)1);
     QCOMPARE(i16, (qint16)0xaabb);
@@ -106,22 +110,23 @@ void SerializerTests::testAddAndRead() {
 }
 
 void SerializerTests::testReadPastEnd() {
-    SerDes s;
+    DataSerializer s;
     qint8 i8;
     qint16 i16;
     s << (qint8)1;
-    s.rewind();
-    s >> i8;
-    QCOMPARE(s.pos(), 1);
 
-    s.rewind();
-    s >> i16;
-    QCOMPARE(s.pos(), 0);
+    DataDeserializer d(s);
+    d >> i8;
+    QCOMPARE(d.pos(), 1);
+
+    d.rewind();
+    d >> i16;
+    QCOMPARE(d.pos(), 0);
 }
 
 void SerializerTests::benchmarkEncodingDynamicAlloc() {
     QBENCHMARK {
-        SerDes s;
+        DataSerializer s;
         glm::vec3 v3_a{1.f, 3.1415f, 2.71828f};
         glm::vec3 v3_b;
         glm::vec4 v4_a{3.1415f, 2.71828f, 1.4142f, 1.6180f};
@@ -142,7 +147,7 @@ void SerializerTests::benchmarkEncodingStaticAlloc() {
     char buf[1024];
 
     QBENCHMARK {
-        SerDes s(buf, sizeof(buf));
+        DataSerializer s(buf, sizeof(buf));
         glm::vec3 v3_a{1.f, 3.1415f, 2.71828f};
         glm::vec3 v3_b;
         glm::vec4 v4_a{3.1415f, 2.71828f, 1.4142f, 1.6180f};
@@ -161,7 +166,7 @@ void SerializerTests::benchmarkEncodingStaticAlloc() {
 
 
 void SerializerTests::benchmarkDecoding() {
-    SerDes s;
+    DataSerializer s;
     qint8 q8 = 1;
     qint16 q16 = 0xaabb;
     qint32 q32 = 0xccddeeff;
@@ -182,13 +187,13 @@ void SerializerTests::benchmarkDecoding() {
 
 
     QBENCHMARK {
-        s.rewind();
-        s >> q8;
-        s >> q16;
-        s >> q32;
-        s >> v3_a;
-        s >> v4_a;
-        s >> iv2_a;
+        DataDeserializer d(s);
+        d >> q8;
+        d >> q16;
+        d >> q32;
+        d >> v3_a;
+        d >> v4_a;
+        d >> iv2_a;
     }
 }
 

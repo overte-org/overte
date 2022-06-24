@@ -15,15 +15,13 @@
 const int  DataSerializer::DEFAULT_SIZE;
 const char DataSerializer::PADDING_CHAR;
 
-QDebug operator<<(QDebug debug, const DataSerializer &ds) {
-    debug << "{ capacity =" << ds.capacity() << "; length = " << ds.length() << "; pos = " << ds.pos() << "}";
-    debug << "\n";
 
-    QString literal;
+static void dumpHex(QDebug &debug, const char*buf, size_t len) {
+  QString literal;
     QString hex;
 
-    for(size_t i=0;i<ds.length();i++) {
-        char c = ds._store[i];
+    for(size_t i=0;i<len;i++) {
+        char c = buf[i];
 
         if (std::isalnum(c)) {
             literal.append(c);
@@ -38,7 +36,7 @@ QDebug operator<<(QDebug debug, const DataSerializer &ds) {
 
         hex.append(hnum  + " ");
 
-        if ( literal.length() == 16 || (i+1 == ds.length()) ) {
+        if ( literal.length() == 16 || (i+1 == len) ) {
             while( literal.length() < 16 ) {
                 literal.append(" ");
                 hex.append("   ");
@@ -49,7 +47,24 @@ QDebug operator<<(QDebug debug, const DataSerializer &ds) {
             hex.clear();
         }
     }
+}
 
+
+QDebug operator<<(QDebug debug, const DataSerializer &ser) {
+    debug << "{ capacity =" << ser.capacity() << "; length = " << ser.length() << "; pos = " << ser.pos() << "}";
+    debug << "\n";
+
+    dumpHex(debug, ser.buffer(), ser.length());
+    return debug;
+}
+
+
+QDebug operator<<(QDebug debug, const DataDeserializer &des) {
+    debug << "{ length = " << des.length() << "; pos = " << des.pos() << "}";
+    debug << "\n";
+
+
+    dumpHex(debug, des.buffer(), des.length());
     return debug;
 }
 

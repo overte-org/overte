@@ -103,7 +103,7 @@ class DataSerializer {
          */
         DataSerializer(char *externalStore, size_t storeLength) {
             _capacity = storeLength;
-            _length = storeLength;
+            _length = 0;
             _pos = 0;
             _storeIsExternal = true;
             _store = externalStore;
@@ -430,7 +430,7 @@ class DataSerializer {
 
             if ( _capacity < _length + bytes) {
                 if ( _storeIsExternal ) {
-                    qCritical() << "Serializer trying to write past end of input, writing" << bytes << "bytes for" << type_name << " from position " << _pos << ", length " << _length;
+                    qCritical() << "Serializer trying to write past end of output buffer, writing" << bytes << "bytes for" << type_name << " from position " << _pos << ", length " << _length;
                     _overflow = true;
                     return false;
                 }
