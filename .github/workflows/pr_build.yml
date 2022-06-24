@@ -334,6 +334,13 @@ jobs:
         fi
         $PYTHON_EXEC "$GITHUB_WORKSPACE/tools/ci-scripts/upload_to_publish_server.py"
 
+    # Frees up memory on the self-hosted runner
+    - name: Clear Working Directory
+      if: contains(matrix.os, 'self-hosted')
+      shell: bash
+      working-directory: ${{runner.workspace}}
+      run: rm -rf ./*
+
 
   build_docker_server:
     name: "${{matrix.os}}, Debian Docker"
@@ -428,3 +435,10 @@ jobs:
         GITHUB_CONTEXT: ${{ toJson(github) }}
       run: |
         python3 "$GITHUB_WORKSPACE/tools/ci-scripts/upload_to_publish_server.py"
+
+    # Frees up memory on the self-hosted runner
+    - name: Clear Working Directory
+      if: contains(matrix.os, 'self-hosted')
+      shell: bash
+      working-directory: ${{runner.workspace}}
+      run: rm -rf ./*
