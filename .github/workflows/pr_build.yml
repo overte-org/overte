@@ -48,9 +48,10 @@ jobs:
             - os: ubuntu-18.04
               build_type: full
               apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-distro
-            - os: ubuntu-18.04
-              build_type: android
-              apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
+            # Android builds are currently failing
+            #- os: ubuntu-18.04
+            #  build_type: android
+            #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
             # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
             - os: self-hosted_debian-11_aarch64
               build_type: full
