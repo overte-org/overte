@@ -24,47 +24,71 @@
         <div id="mode-section" class="section">
             <div class="property container">
                 <label for="create-app-mode">Create app mode </label>
-                <select name="create-app-mode" id="create-app-mode">
+                <!-- <select name="create-app-mode" id="create-app-mode">
                     <option value="object">Object mode</option>
                     <option value="voxel">Voxel edit mode</option>
-                </select>
+                </select> -->
+                <div class="property container">
+                    <input name="create-app-mode" type="button" class="entity-list-menutitle" id="create-app-mode" value="Create app mode&#9662;" />
+                </div>
             </div>
-        </div>
+        <div class="tools-select-menu" id="edit-mode-menu" >
+            <button class="menu-button" id="edit-mode-object" >
+                <div class = "menu-item">
+                    <div class = "menu-item-caption">Object mode</div>
+                    <div class = "menu-item-shortcut"></div>
+                </div>
+            </button>
+            <button class="menu-button" id="edit-mode-voxel" >
+                <div class = "menu-item">
+                    <div class = "menu-item-caption">Voxel edit mode</div>
+                    <div class = "menu-item-shortcut"></div>
+                </div>
+            </button>
+        </div>        
+    </div>
         <div id="voxels-section" class="section">
             <h2>Voxel edit settings</h2>
             <div class="property container">
                 <label for="voxel-edit-mode">Voxel edit mode </label>
-                <select name="voxel-edit-mode" id="voxel-edit-mode">
+                <!-- <select name="voxel-edit-mode" id="voxel-edit-mode">
                     <option value="single">Single voxels</option>
                     <option value="sphere">Spheres</option>
                     <option value="cube">Cubes</option>
-                </select>
+                </select> -->
+                <div class="property container">
+                    <input name="voxel-edit-mode" type="button" class="entity-list-menutitle" id="voxel-edit-mode" value="Voxel edit mode&#9662;" />
+                </div>
                 <label for="voxel-sphere-size">&nbsp;&nbsp;Sphere/cube size <span class="unit">m</span></label>
                 <div class="number">
                     <input type="number" id="voxel-sphere-size" min="0.01" step="0.2" />
                 </div>
             </div>
+            <div class="tools-select-menu" id="voxel-edit-mode-menu" >
+                <button class="menu-button" id="voxel-edit-mode-single" >
+                    <div class = "menu-item">
+                        <div class = "menu-item-caption">Single voxels</div>
+                        <div class = "menu-item-shortcut"></div>
+                    </div>
+                </button>
+                <button class="menu-button" id="voxel-edit-mode-sphere" >
+                    <div class = "menu-item">
+                        <div class = "menu-item-caption">Spheres</div>
+                        <div class = "menu-item-shortcut"></div>
+                    </div>
+                </button>
+                <button class="menu-button" id="voxel-edit-mode-cube" >
+                    <div class = "menu-item">
+                        <div class = "menu-item-caption">Cubes</div>
+                        <div class = "menu-item-shortcut"></div>
+                    </div>
+                </button>
+            </div>
             <div class="property container">
-                <label for="voxel-edit-dynamics">Voxel edit dynamics </label>
-                <select name="voxel-edit-dynamics" id="voxel-edit-dynamics">
-                    <option value="click">Modify on click</option>
-                    <option value="continuous">Continuous</option>
-                </select>
                 <label for="voxel-remove">&nbsp;&nbsp;Remove voxels</label>
                 <div style="width: 100%">
                     <input type='checkbox' id="voxel-remove" style="width: 100%">
                     <label for="voxel-remove">&nbsp;</label>
-                </div>
-            </div>
-            <div class="property container">
-                <label for="voxel-pointer-mode">VR pointer mode </label>
-                <select name="voxel-pointer-mode" id="voxel-pointer-mode">
-                    <option value="laser">Laser pointer</option>
-                    <option value="brush">Brush</option>
-                </select>
-                <label for="voxel-brush-length">&nbsp;&nbsp;Brush length <span class="unit">m</span></label>
-                <div class="number">
-                    <input type="number" id="voxel-brush-length" min="0.2" step="0.2" />
                 </div>
             </div>
         </div>
@@ -116,5 +140,6 @@
                 </div>
             </div>
         </div>
+        <div id="menuBackgroundOverlay" ></div>
     </body>
 </html>

@@ -111,6 +111,8 @@ EditTools = function(options) {
         if (data.type !== "update-edit-tools") {
             return;
         }
+
+        print(JSON.stringify(data));
         
         var needsUpdate = false;
         
