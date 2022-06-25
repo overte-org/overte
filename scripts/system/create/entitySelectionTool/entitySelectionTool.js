@@ -99,6 +99,9 @@ SelectionManager = (function() {
         }
 
         if (messageParsed.method === "selectEntity") {
+            if (!that.editEnabled) {
+                return;
+            }
             if (!SelectionDisplay.triggered() || SelectionDisplay.triggeredHand === messageParsed.hand) {
                 if (wantDebug) {
                     print("setting selection to " + messageParsed.entityID);
