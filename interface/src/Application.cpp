@@ -1453,8 +1453,8 @@ Application::Application(
     // If someone specifies both --avatarURL and --replaceAvatarURL,
     // the replaceAvatarURL wins.  So only set the _overrideUrl if this
     // does have a non-empty string.
-    if (parser.isSet("replace-avatar-url")) {
-        QString replaceURL = parser.value("replace-avatar-url");
+    if (parser.isSet("replaceAvatarURL")) {
+        QString replaceURL = parser.value("replaceAvatarURL");
         _avatarOverrideUrl = QUrl::fromUserInput(replaceURL);
         _saveAvatarOverrideUrl = true;
     }

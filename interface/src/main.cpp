@@ -161,7 +161,7 @@ int main(int argc, const char* argv[]) {
         "url"
     );
     QCommandLineOption replaceAvatarURLOption(
-        "replace-avatar-url",
+        "replaceAvatarURL",
         "Replaces the avatar U.R.L. When used with --avatarURL, this takes precedence.",
         "url"
     );
