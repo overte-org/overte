@@ -3212,7 +3212,7 @@ void Application::showLoginScreen() {
 #endif
 }
 
-static const QUrl AUTHORIZED_EXTERNAL_QML_SOURCE { "https://cdn.vircadia.com/community-apps/applications" };
+static const QUrl AUTHORIZED_EXTERNAL_QML_SOURCE { "https://more.overte.org/applications" };
 
 void Application::initializeUi() {
 
