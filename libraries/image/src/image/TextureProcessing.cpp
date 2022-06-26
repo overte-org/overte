@@ -353,7 +353,7 @@ std::pair<gpu::TexturePointer, glm::ivec2> processImage(std::shared_ptr<QIODevic
     // Validate that the image loaded
     if (imageWidth == 0 || imageHeight == 0 || image.getFormat() == Image::Format_Invalid) {
         QString reason(image.getFormat() == Image::Format_Invalid ? "(Invalid Format)" : "(Size is invalid)");
-        qCWarning(imagelogging) << "Failed to load:" << qPrintable(reason);
+        qCWarning(imagelogging) << "Failed to load"  << QString::fromStdString(filename) << ":" << qPrintable(reason);
         return { nullptr, { imageWidth, imageHeight } };
     }
 
