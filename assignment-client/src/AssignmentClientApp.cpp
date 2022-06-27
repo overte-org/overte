@@ -130,6 +130,7 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
     auto &logHandler = LogHandler::getInstance();
     if (parser.isSet(logOption)) {
         if (!logHandler.parseOptions(parser.value(logOption).toUtf8())) {
+            QCoreApplication mockApp(argc, const_cast<char**>(argv)); // required for call to showHelp()
             parser.showHelp();
             Q_UNREACHABLE();
         }
