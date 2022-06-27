@@ -61,7 +61,7 @@ LogHandler::LogHandler() {
     _useJournald = true;
 #endif
 
-    parseOptions(logOptions);
+    parseOptions(logOptions, "VIRCADIA_LOG_OPTIONS");
 }
 
 const char* stringForLogType(LogMsgType msgType) {
@@ -121,7 +121,7 @@ const QString DATE_STRING_FORMAT = "MM/dd hh:mm:ss";
 // the following will produce 11/18 13:55:36.999
 const QString DATE_STRING_FORMAT_WITH_MILLISECONDS = "MM/dd hh:mm:ss.zzz";
 
-bool LogHandler::parseOptions(QString logOptions) {
+bool LogHandler::parseOptions(const QString& logOptions, const QString& paramName) {
     QMutexLocker lock(&_mutex);
     auto optionList = logOptions.split(",");
 
@@ -145,7 +145,7 @@ bool LogHandler::parseOptions(QString logOptions) {
         } else if (option == "nojournald") {
             _useJournald = false;
         } else if (option != "") {
-            fprintf(stdout, "Unrecognized option in VIRCADIA_LOG_OPTIONS: '%s'\n", option.toUtf8().constData());
+            fprintf(stderr, "Unrecognized option in %s: '%s'\n", paramName.toUtf8().constData(), option.toUtf8().constData());
             return false;
         }
     }

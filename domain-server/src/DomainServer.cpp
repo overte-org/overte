@@ -442,7 +442,7 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
     // We want to configure the logging system as early as possible
     auto &logHandler = LogHandler::getInstance();
     if (parser.isSet(logOption)) {
-        if (!logHandler.parseOptions(parser.value(logOption).toUtf8())) {
+        if (!logHandler.parseOptions(parser.value(logOption).toUtf8(), logOption.names().first())) {
             QCoreApplication mockApp(argc, const_cast<char**>(argv)); // required for call to showHelp()
             parser.showHelp();
             Q_UNREACHABLE();

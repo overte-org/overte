@@ -53,10 +53,11 @@ public:
      * This parses the logging settings in the environment variable, or from the commandline
      *
      * @param options Option list
+     * @param paramName Name of the log option, for error reporting.
      * @return true Option list was parsed successfully
      * @return false There was an error
      */
-    bool parseOptions(QString options);
+    bool parseOptions(const QString& options, const QString &paramName);
 
     /**
      * @brief Set the name of the component that's producing log output
