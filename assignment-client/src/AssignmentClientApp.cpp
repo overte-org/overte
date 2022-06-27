@@ -107,6 +107,9 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
     const QCommandLineOption parentPIDOption(PARENT_PID_OPTION, "PID of the parent process", "parent-pid");
     parser.addOption(parentPIDOption);
 
+    const QCommandLineOption logOption("logOptions", "Logging options, comma separated: color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald", "options");
+    parser.addOption(logOption);
+
     if (!parser.parse(QCoreApplication::arguments())) {
         std::cout << parser.errorText().toStdString() << std::endl; // Avoid Qt log spam
         parser.showHelp();
@@ -121,6 +124,15 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
     if (parser.isSet(helpOption)) {
         parser.showHelp();
         Q_UNREACHABLE();
+    }
+
+    // We want to configure the logging system as early as possible
+    auto &logHandler = LogHandler::getInstance();
+    if (parser.isSet(logOption)) {
+        if (!logHandler.parseOptions(parser.value(logOption).toUtf8())) {
+            parser.showHelp();
+            Q_UNREACHABLE();
+        }
     }
 
     const QVariantMap argumentVariantMap = HifiConfigVariantMap::mergeCLParametersWithJSONConfig(arguments());
