@@ -271,7 +271,7 @@ QString LogHandler::printMessage(LogMsgType type, const QMessageLogContext& cont
         QByteArray sd_priority = QString("PRIORITY=%1").arg(priority).toUtf8();
         QByteArray sd_category = QString("CATEGORY=%1").arg(context.category).toUtf8();
         QByteArray sd_tid = QString("TID=%1").arg((qlonglong)QThread::currentThreadId()).toUtf8();
-        QByteArray sd_target = QString("TARGET=%1").arg(_targetName).toUtf8();
+        QByteArray sd_target = QString("COMPONENT=%1").arg(_targetName).toUtf8();
 
         std::vector<struct iovec> fields;
         addString(fields, sd_message);
