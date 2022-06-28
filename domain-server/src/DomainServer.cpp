@@ -414,6 +414,9 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
     const QCommandLineOption parentPIDOption(PARENT_PID_OPTION, "PID of the parent process", "parent-pid");
     parser.addOption(parentPIDOption);
 
+    const QCommandLineOption logOption("logOptions", "Logging options, comma separated: color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald", "options");
+    parser.addOption(logOption);
+
 
     QStringList arguments;
     for (int i = 0; i < argc; ++i) {
@@ -434,6 +437,16 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
         QCoreApplication mockApp(argc, argv); // required for call to showHelp()
         parser.showHelp();
         Q_UNREACHABLE();
+    }
+
+    // We want to configure the logging system as early as possible
+    auto &logHandler = LogHandler::getInstance();
+    if (parser.isSet(logOption)) {
+        if (!logHandler.parseOptions(parser.value(logOption).toUtf8(), logOption.names().first())) {
+            QCoreApplication mockApp(argc, const_cast<char**>(argv)); // required for call to showHelp()
+            parser.showHelp();
+            Q_UNREACHABLE();
+        }
     }
 
     if (parser.isSet(iceServerAddressOption)) {

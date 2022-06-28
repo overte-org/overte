@@ -30,8 +30,8 @@
 #include "InterfaceLogging.h"
 #include "UserActivityLogger.h"
 #include "MainWindow.h"
-
 #include "Profile.h"
+#include "LogHandler.h"
 
 #ifdef Q_OS_WIN
 #include <Windows.h>
@@ -45,7 +45,7 @@ int main(int argc, const char* argv[]) {
     auto format = getDefaultOpenGLSurfaceFormat();
     // Deal with some weirdness in the chromium context sharing on Mac.
     // The primary share context needs to be 3.2, so that the Chromium will
-    // succeed in it's creation of it's command stub contexts.  
+    // succeed in it's creation of it's command stub contexts.
     format.setVersion(3, 2);
     // This appears to resolve the issues with corrupted fonts on OSX.  No
     // idea why.
@@ -54,8 +54,8 @@ int main(int argc, const char* argv[]) {
     QSurfaceFormat::setDefaultFormat(format);
 #endif
 
-#if defined(Q_OS_WIN) 
-    // Check the minimum version of 
+#if defined(Q_OS_WIN)
+    // Check the minimum version of
     if (gl::getAvailableVersion() < gl::getRequiredVersion()) {
         MessageBoxA(nullptr, "Interface requires OpenGL 4.1 or higher", "Unsupported", MB_OK);
         return -1;
@@ -63,6 +63,9 @@ int main(int argc, const char* argv[]) {
 #endif
 
     setupHifiApplication(BuildInfo::INTERFACE_NAME);
+
+    // Journald by default in user applications is probably a bit too modern still.
+    LogHandler::getInstance().setShouldUseJournald(false);
 
     QCommandLineParser parser;
     parser.setApplicationDescription("Overte -- A free/libre and open-source metaverse client");
@@ -237,6 +240,11 @@ int main(int argc, const char* argv[]) {
        "fast-heartbeat",
        "Change stats polling interval from 10000ms to 1000ms."
     );
+    QCommandLineOption logOption(
+        "logOptions",
+        "Logging options, comma separated: color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald",
+        "options"
+    );
     // "--qmljsdebugger", which appears in output from "--help-all".
     // Those below don't seem to be optional.
     //     --ignore-gpu-blacklist
@@ -277,6 +285,7 @@ int main(int argc, const char* argv[]) {
     parser.addOption(testResultsLocationOption);
     parser.addOption(quitWhenFinishedOption);
     parser.addOption(fastHeartbeatOption);
+    parser.addOption(logOption);
 
     QString applicationPath;
     // A temporary application instance is needed to get the location of the running executable
@@ -297,6 +306,16 @@ int main(int argc, const char* argv[]) {
 #else
         applicationPath = QCoreApplication::applicationDirPath();
 #endif
+    }
+
+    // We want to configure the logging system as early as possible
+    auto &logHandler = LogHandler::getInstance();
+    if (parser.isSet(logOption)) {
+        if (!logHandler.parseOptions(parser.value(logOption).toUtf8(), logOption.names().first())) {
+            QCoreApplication mockApp(argc, const_cast<char**>(argv)); // required for call to showHelp()
+            parser.showHelp();
+            Q_UNREACHABLE();
+        }
     }
 
     // Act on arguments for early termination.
@@ -356,7 +375,7 @@ int main(int argc, const char* argv[]) {
         }
     }
 
-    // Early check for --traceFile argument 
+    // Early check for --traceFile argument
     auto tracer = DependencyManager::set<tracing::Tracer>();
     const char * traceFile = nullptr;
     float traceDuration = 0.0f;
@@ -370,7 +389,7 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
     }
-   
+
     PROFILE_SYNC_BEGIN(startup, "main startup", "");
 
 #ifdef Q_OS_LINUX
@@ -378,8 +397,8 @@ int main(int argc, const char* argv[]) {
 #endif
 
 #if defined(USE_GLES) && defined(Q_OS_WIN)
-    // When using GLES on Windows, we can't create normal GL context in Qt, so 
-    // we force Qt to use angle.  This will cause the QML to be unable to be used 
+    // When using GLES on Windows, we can't create normal GL context in Qt, so
+    // we force Qt to use angle.  This will cause the QML to be unable to be used
     // in the output window, so QML should be disabled.
     qputenv("QT_ANGLE_PLATFORM", "d3d11");
     QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);

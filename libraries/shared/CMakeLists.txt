@@ -21,6 +21,16 @@ if (APPLE)
     target_link_libraries(${TARGET_NAME} ${FRAMEWORK_IOKIT} ${CORE_FOUNDATION} ${OpenGL})
 endif()
 
+if (UNIX AND NOT APPLE)
+    find_package(Journald)
+
+    if (${JOURNALD_FOUND})
+        target_link_libraries(${TARGET_NAME} ${JOURNALD_LIBRARIES})
+        target_include_directories(${TARGET_NAME} PRIVATE ${JOURNALD_INCLUDE_DIR})
+        target_compile_definitions(${TARGET_NAME} PUBLIC HAS_JOURNALD)
+    endif()
+endif()
+
 target_zlib()
 target_nsight()
 target_json()
