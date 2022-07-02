@@ -11,7 +11,7 @@ if (POLICY CMP0042)
 endif ()
 
 if (POLICY CMP0074)
-  cmake_policy(SET CMP0074 OLD)
+  cmake_policy(SET CMP0074 NEW)
 endif ()
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
