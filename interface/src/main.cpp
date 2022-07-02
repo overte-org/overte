@@ -569,7 +569,7 @@ int main(int argc, const char* argv[]) {
 
         // Extend argv to enable WebGL rendering
         std::vector<const char*> argvExtended(&argv[0], &argv[argc]);
-        argvExtended.push_back("--ignore-gpu-blacklist");
+        argvExtended.push_back("--ignore-gpu-blocklist");
 #ifdef Q_OS_ANDROID
         argvExtended.push_back("--suppress-settings-reset");
 #endif
