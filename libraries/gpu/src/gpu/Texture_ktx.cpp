@@ -18,6 +18,7 @@
 #include <ktx/KTX.h>
 
 #include "GPULogging.h"
+#include "SerDes.h"
 
 using namespace gpu;
 
@@ -42,31 +43,24 @@ struct GPUKTXPayload {
     TextureUsageType _usageType;
     glm::ivec2 _originalSize { 0, 0 };
 
-    Byte* serialize(Byte* data) const {
-        *(Version*)data = CURRENT_VERSION;
-        data += sizeof(Version);
+    void serialize(DataSerializer &ser) {
+        ser << CURRENT_VERSION;
+        ser << _samplerDesc;
 
-        memcpy(data, &_samplerDesc, sizeof(Sampler::Desc));
-        data += sizeof(Sampler::Desc);
-
-        // We can't copy the bitset in Texture::Usage in a crossplateform manner
-        // So serialize it manually
         uint32 usageData = _usage._flags.to_ulong();
-        memcpy(data, &usageData, sizeof(uint32));
-        data += sizeof(uint32);
+        ser << usageData;
 
-        memcpy(data, &_usageType, sizeof(TextureUsageType));
-        data += sizeof(TextureUsageType);
-
-        memcpy(data, glm::value_ptr(_originalSize), sizeof(glm::ivec2));
-        data += sizeof(glm::ivec2);
-
-        return data + PADDING;
+        ser << (char)_usageType;
+        ser << _originalSize;
+        ser.addPadding(PADDING);
     }
 
-    bool unserialize(const Byte* data, size_t size) {
-        Version version = *(const Version*)data;
-        data += sizeof(Version);
+    bool unserialize(DataDeserializer &dsr) {
+        Version version = 0;
+        uint32 usageData;
+        uint8_t usagetype = 0;
+
+        dsr >> version;
 
         if (version > CURRENT_VERSION) {
             // If we try to load a version that we don't know how to parse,
@@ -74,22 +68,13 @@ struct GPUKTXPayload {
             return false;
         }
 
-        memcpy(&_samplerDesc, data, sizeof(Sampler::Desc));
-        data += sizeof(Sampler::Desc);
-
-        // We can't copy the bitset in Texture::Usage in a crossplateform manner
-        // So unserialize it manually
-        uint32 usageData;
-        memcpy(&usageData, data, sizeof(uint32));
-        _usage = Texture::Usage(usageData);
-        data += sizeof(uint32);
-
-        memcpy(&_usageType, data, sizeof(TextureUsageType));
-        data += sizeof(TextureUsageType);
+        dsr >> _samplerDesc;
+        dsr >> usageData;
+        dsr >> usagetype;
+        _usageType = (TextureUsageType)usagetype;
 
         if (version >= 2) {
-            memcpy(&_originalSize, data, sizeof(glm::ivec2));
-            data += sizeof(glm::ivec2);
+            dsr >> _originalSize;
         }
 
         return true;
@@ -103,7 +88,8 @@ struct GPUKTXPayload {
         auto found = std::find_if(keyValues.begin(), keyValues.end(), isGPUKTX);
         if (found != keyValues.end()) {
             auto value = found->_value;
-            return payload.unserialize(value.data(), value.size());
+            DataDeserializer dsr(value.data(), value.size());
+            return payload.unserialize(dsr);
         }
         return false;
     }
@@ -123,29 +109,24 @@ struct IrradianceKTXPayload {
 
     SphericalHarmonics _irradianceSH;
 
-    Byte* serialize(Byte* data) const {
-        *(Version*)data = CURRENT_VERSION;
-        data += sizeof(Version);
-
-        memcpy(data, &_irradianceSH, sizeof(SphericalHarmonics));
-        data += sizeof(SphericalHarmonics);
-
-        return data + PADDING;
+    void serialize(DataSerializer &ser) const {
+        ser << CURRENT_VERSION;
+        ser << _irradianceSH;
+        ser.addPadding(PADDING);
     }
 
-    bool unserialize(const Byte* data, size_t size) {
-        if (size != SIZE) {
+    bool unserialize(DataDeserializer &des) {
+        Version version;
+        if (des.length() != SIZE) {
             return false;
         }
 
-        Version version = *(const Version*)data;
+        des >> version;
         if (version != CURRENT_VERSION) {
             return false;
         }
-        data += sizeof(Version);
 
-        memcpy(&_irradianceSH, data, sizeof(SphericalHarmonics));
-
+        des >> _irradianceSH;
         return true;
     }
 
@@ -157,7 +138,8 @@ struct IrradianceKTXPayload {
         auto found = std::find_if(keyValues.begin(), keyValues.end(), isIrradianceKTX);
         if (found != keyValues.end()) {
             auto value = found->_value;
-            return payload.unserialize(value.data(), value.size());
+            DataDeserializer des(value.data(), value.size());
+            return payload.unserialize(des);
         }
         return false;
     }
@@ -467,7 +449,9 @@ ktx::KTXUniquePointer Texture::serialize(const Texture& texture, const glm::ivec
     gpuKeyval._originalSize = originalSize;
 
     Byte keyvalPayload[GPUKTXPayload::SIZE];
-    gpuKeyval.serialize(keyvalPayload);
+    DataSerializer ser(keyvalPayload, sizeof(keyvalPayload));
+
+    gpuKeyval.serialize(ser);
 
     ktx::KeyValues keyValues;
     keyValues.emplace_back(GPUKTXPayload::KEY, (uint32)GPUKTXPayload::SIZE, (ktx::Byte*) &keyvalPayload);
@@ -477,7 +461,8 @@ ktx::KTXUniquePointer Texture::serialize(const Texture& texture, const glm::ivec
         irradianceKeyval._irradianceSH = *texture.getIrradiance();
 
         Byte irradianceKeyvalPayload[IrradianceKTXPayload::SIZE];
-        irradianceKeyval.serialize(irradianceKeyvalPayload);
+        DataSerializer ser(irradianceKeyvalPayload, sizeof(irradianceKeyvalPayload));
+        irradianceKeyval.serialize(ser);
 
         keyValues.emplace_back(IrradianceKTXPayload::KEY, (uint32)IrradianceKTXPayload::SIZE, (ktx::Byte*) &irradianceKeyvalPayload);
     }
