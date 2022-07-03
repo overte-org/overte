@@ -35,18 +35,28 @@ EditVoxels = function() {
     var shiftHeld = false;
 
     var editEnabled = false;
-    var addingVoxels = false;
-    var deletingVoxels = false;
-    var addingSpheres = false;
-    var deletingSpheres = false;
-    var addingCubes = false;
-    var deletingCubes = false;
-    var continuousPaint = false;
+    var editSingleVoxels = false;
+    var editSpheres = false;
+    var editAdd = true; // Remove voxels if false
     var brushPointer = false;
     var isActive = true;
-
+    
     var editSphereRadius = 0.15;
     var brushLength = 0.5;
+    
+    // Local plane for continuous voxel editing
+    // 0 - plane parallel to YZ plane
+    // 1 - plane parallel to XZ plane
+    // 2 - plane parallel to YZ plane
+    var editPlane = 0;
+    // Is true when mouse button is pressed
+    var isEditing = false;
+    var editedVoxelEntity = null;
+    // Position of last edit in voxel space
+    var oldEditPosition = null;
+    // True when original operation added voxels, false otherwise
+    var lastEditValue = 255;
+    var isOnUpdateConnected = false;
 
     that.triggerClickMapping = Controller.newMapping(Script.resolvePath('') + '-click-voxels');
     that.triggerPressMapping = Controller.newMapping(Script.resolvePath('') + '-press-voxels');
@@ -68,41 +78,21 @@ EditVoxels = function() {
         }
         
         if (data.voxelEditMode) {
-            addingVoxels = false;
-            deletingVoxels = false;
-            addingSpheres = false;
-            deletingSpheres = false;
-            addingCubes = false;
-            deletingCubes = false;
+            editAdd = true;
             if (data.voxelRemove) {
-                if (data.voxelEditMode === "single") {
-                    deletingVoxels = true;
-                } else if (data.voxelEditMode === "sphere") {
-                    deletingSpheres = true;
-                } else if (data.voxelEditMode === "cube") {
-                    deletingCubes = true;
-                }
-            } else {
-                if (data.voxelEditMode === "single") {
-                    addingVoxels = true;
-                } else if (data.voxelEditMode === "sphere") {
-                    addingSpheres = true;
-                } else if (data.voxelEditMode === "cube") {
-                    addingCubes = true;
-                }
+                editAdd = false;
+            }
+            if (data.voxelEditMode === "single") {
+                editSpheres = false;
+                editSingleVoxels = true;
+            } else if (data.voxelEditMode === "sphere") {
+                editSpheres = true;
+                editSingleVoxels = false;
             }
         }
         
         if (data.voxelSphereSize) {
             editSphereRadius = parseFloat(data.voxelSphereSize) / 2.0;
-        }
-        
-        if (data.voxelEditDynamics) {
-            if (data.voxelEditDynamics === "continuous"){
-                continuousPaint = true;
-            } else {
-                continuousPaint = false;
-            }
         }
         
         if (data.voxelPointerMode) {
@@ -142,7 +132,7 @@ EditVoxels = function() {
             return false;
         }
 
-        if (addingVoxels == false && deletingVoxels == false && addingSpheres == false && deletingSpheres == false) {
+        if (editSingleVoxels === false && editSpheres === false) {
             return false;
         }
 
@@ -150,71 +140,50 @@ EditVoxels = function() {
         var voxelPosition = Entities.worldCoordsToVoxelCoords(entityID, intersectionLocation);
         var pickRayDirInVoxelSpace = Vec3.subtract(voxelPosition, voxelOrigin);
         pickRayDirInVoxelSpace = Vec3.normalize(pickRayDirInVoxelSpace);
+        
+        var absX = Math.abs(pickRayDirInVoxelSpace.x);
+        var absY = Math.abs(pickRayDirInVoxelSpace.y);
+        var absZ = Math.abs(pickRayDirInVoxelSpace.z);
+        if(absX >= absY && absX >= absZ){
+            editPlane = 0;
+        }else if(absY >= absX && absY >= absZ){
+            editPlane = 1;
+        }else if(absZ >= absX && absZ >= absY){
+            editPlane = 2;
+        }
 
         if (wantDebug) {
             print("voxelOrigin: " + JSON.stringify(voxelOrigin));
             print("voxelPosition: " + JSON.stringify(voxelPosition));
             print("pickRayDirInVoxelSpace: " + JSON.stringify(pickRayDirInVoxelSpace));
         }
-
-        var doAdd = addingVoxels;
-        var doDelete = deletingVoxels;
-        var doAddSphere = addingSpheres;
-        var doDeleteSphere = deletingSpheres;
-
-        if (controlHeld) {
-            if (doAdd) {
-                doAdd = false;
-                doDelete = true;
-            } else if (doDelete) {
-                doDelete = false;
-                doAdd = true;
-            } else if (doAddSphere) {
-                doAddSphere = false;
-                doDeleteSphere = true;
-            } else if (doDeleteSphere) {
-                doDeleteSphere = false;
-                doAddSphere = true;
-            }
+        
+        lastEditValue = 0;
+        if(editAdd){
+            lastEditValue = 255;
         }
 
-        if (doDelete) {
-            var toErasePosition = Vec3.sum(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, 0.1));
-            if (wantDebug) {
-                print("Calling setVoxel to delete");
-                print("entityID: " + JSON.stringify(entityID));
-                print("floorVector(toErasePosition): " + JSON.stringify(floorVector(toErasePosition)));
-            }
-            return Entities.setVoxel(entityID, floorVector(toErasePosition), 0);
-        }
-        if (doAdd) {
+        if (editSingleVoxels) {
             var toDrawPosition = Vec3.subtract(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, 0.1));
             if (wantDebug) {
-                print("Calling setVoxel to add");
+                print("Calling setVoxel");
                 print("entityID: " + JSON.stringify(entityID));
                 print("floorVector(toDrawPosition): " + JSON.stringify(floorVector(toDrawPosition)));
             }
-            return Entities.setVoxel(entityID, floorVector(toDrawPosition), 255);
+            oldEditPosition = floorVector(toDrawPosition);
+            return Entities.setVoxel(entityID, oldEditPosition, lastEditValue);
         }
-        if (doDeleteSphere) {
-            var toErasePosition = intersectionLocation;
-            if (wantDebug) {
-                print("Calling setVoxelSphere to delete");
-                print("entityID: " + JSON.stringify(entityID));
-                print("editSphereRadius: " + JSON.stringify(editSphereRadius));
-                print("floorVector(toErasePosition): " + JSON.stringify(floorVector(toErasePosition)));
-            }
-            return Entities.setVoxelSphere(entityID, floorVector(toErasePosition), editSphereRadius, 0);
-        }
-        if (doAddSphere) {
+        if (editSpheres) {
             var toDrawPosition = intersectionLocation;
             if (wantDebug) {
-                print("Calling setVoxelSphere to add");
+                print("Calling setVoxelSphere");
                 print("entityID: " + JSON.stringify(entityID));
                 print("editSphereRadius: " + JSON.stringify(editSphereRadius));
                 print("floorVector(toDrawPosition): " + JSON.stringify(floorVector(toDrawPosition)));
+                oldEditPosition = floorVector(Vec3.sum(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, 0.1)));
             }
-            return Entities.setVoxelSphere(entityID, floorVector(toDrawPosition), editSphereRadius, 255);
+            oldEditPosition = floorVector(Vec3.sum(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, 0.1)));
+            return Entities.setVoxelSphere(entityID, floorVector(toDrawPosition), editSphereRadius, lastEditValue);
         }
     }
 
@@ -242,7 +211,7 @@ EditVoxels = function() {
         }
         return success;
     }
-
+    
     function controllerComputePickRay() {
         var hand = triggered() ? that.triggeredHand : that.pressedHand;
         var controllerPose = getControllerWorldLocation(hand, true);
@@ -259,7 +228,7 @@ EditVoxels = function() {
     }
 
     function mousePressEvent(event) {
-        var wantDebug = false;
+        var wantDebug = true;
         if (!editEnabled || !isActive) {
             return false;
         }
@@ -281,7 +250,14 @@ EditVoxels = function() {
         }
 
         if (intersection.intersects) {
-            if (attemptVoxelChange(pickRay.direction, intersection)) {
+            if (attemptVoxelChangeForEntity(intersection.entityID, pickRay.direction, intersection.intersection)) {
+                Script.update.connect(onUpdateHandler);
+                isOnUpdateConnected = true;
+                isEditing = true;
+                editedVoxelEntity = intersection.entityID;
+                if (wantDebug) {
+                    print("onUpdateHandler connected");
+                }
                 return;
             }
         }
@@ -290,11 +266,28 @@ EditVoxels = function() {
         // bounding box, instead.
         intersection = Entities.findRayIntersection(pickRay, false); // bounding box picking
         if (intersection.intersects) {
-            attemptVoxelChange(pickRay.direction, intersection);
+            if(attemptVoxelChange(pickRay.direction, intersection)){
+                Script.update.connect(onUpdateHandler);
+                isOnUpdateConnected = true;
+                if (wantDebug) {
+                    print("onUpdateHandler connected");
+                }
+            }
         }
     }
 
     function mouseReleaseEvent(event) {
+        var wantDebug = true;
+
+        if (wantDebug) {
+            print("=============== eV::mouseReleaseEvent BEG =======================");
+        }
+        if(isOnUpdateConnected){
+            Script.update.disconnect(onUpdateHandler);
+            isOnUpdateConnected = false;
+            isEditing = false;
+            editedVoxelEntity = null;
+        }
         return;
     }
 
@@ -358,8 +351,94 @@ EditVoxels = function() {
                 that.pressedHand = hand;
             } else {
                 that.pressedHand = NO_HAND;
+                if(isOnUpdateConnected){
+                    Script.update.disconnect(onUpdateHandler);
+                    isOnUpdateConnected = false;
+                }
             }
         }
+    }
+    
+    function onUpdateHandler(delta){
+        var wantDebug = true;
+        //if (wantDebug) {
+            //print("=============== eV::onUpdateHandler BEG =======================");
+        //}
+
+        
+        if(isEditing === false || editedVoxelEntity === null){
+            return;
+        }
+
+        // Get pick ray origin and direction
+        
+        var pickRay = null;
+        var hand = triggered() ? that.triggeredHand : that.pressedHand;
+        
+        if(hand === NO_HAND){
+            pickRay = Camera.computePickRay(Controller.getValue(Controller.Hardware.Keyboard.MouseX), Controller.getValue(Controller.Hardware.Keyboard.MouseY));
+        }else{
+            pickRay = controllerComputePickRay();
+        }
+        
+        if(pickRay === null){
+            return;
+        }
+        
+        // Compute intersection of pick ray with given plane in local coordinates
+        
+        var globalOriginInVoxelSpace = Entities.worldCoordsToVoxelCoords(editedVoxelEntity, { x: 0, y: 0, z: 0 });
+        var pickRayDirInVoxelSpace = Vec3.subtract(Entities.worldCoordsToVoxelCoords(editedVoxelEntity, pickRay.direction), globalOriginInVoxelSpace);
+        var voxelPickRayOrigin = Entities.worldCoordsToVoxelCoords(editedVoxelEntity, pickRay.origin);
+        //var pickRayDirInVoxelSpace = Vec3.subtract(voxelPickRayOrigin, voxelPickRayDirection);
+        pickRayDirInVoxelSpace = Vec3.normalize(pickRayDirInVoxelSpace);
+        var directionMultiplier = 1.0;
+        var offsetVector = { x: 0, y: 0, z: 0 };
+        switch(editPlane){
+            // 0 - plane parallel to YZ plane
+            case 0:
+                //var dirSign = (pickRayDirInVoxelSpace.x > 0) ? 1 : -1;
+                offsetVector.x = 0.5;
+                directionMultiplier = (oldEditPosition.x - voxelPickRayOrigin.x) / pickRayDirInVoxelSpace.x;
+                break;
+            // 1 - plane parallel to XZ plane
+            case 1:
+                //var dirSign = (pickRayDirInVoxelSpace.x > 0) ? 1 : -1;
+                offsetVector.y = 0.5;
+                directionMultiplier = (oldEditPosition.y - voxelPickRayOrigin.y) / pickRayDirInVoxelSpace.y;
+                break;
+            // 2 - plane parallel to XY plane
+            case 2:
+                //var dirSign = (pickRayDirInVoxelSpace.x > 0) ? 1 : -1;
+                offsetVector.z = 0.5;
+                directionMultiplier = (oldEditPosition.z - voxelPickRayOrigin.z) / pickRayDirInVoxelSpace.z;
+                break;
+            default:
+                return;
+        }
+        //directionMultiplier = 0.1;
+        intersectionPoint = Vec3.sum(Vec3.multiply(pickRayDirInVoxelSpace, directionMultiplier), voxelPickRayOrigin);
+        newEditPosition = floorVector(Vec3.sum(intersectionPoint, offsetVector));
+
+        if(newEditPosition === oldEditPosition){
+            return;
+        }
+
+        if(wantDebug){
+            print("Old edit position: " + JSON.stringify(oldEditPosition));
+            print("New edit position: " + JSON.stringify(newEditPosition));
+            print("directionMultiplier: " + JSON.stringify(directionMultiplier) + " pickRay.direction: " + JSON.stringify(pickRay.direction) + " pickRayDirInVoxelSpace: " + JSON.stringify(pickRayDirInVoxelSpace) + " voxelPickRayOrigin: " + JSON.stringify(voxelPickRayOrigin) + " editPlane: " + JSON.stringify(editPlane));
+        }
+
+        if(Entities.setVoxel(editedVoxelEntity, newEditPosition, lastEditValue)){
+            oldEditPosition = newEditPosition;
+        }
+        //TODO: add spheres
+
+        /*if(attemptVoxelChangeForEntity(entityID, pickRay.direction, intersection.intersection)){
+            oldEditPosition = newEditPosition;
+        }*/
+
     }
 
     function cleanup() {
@@ -386,6 +465,7 @@ EditVoxels = function() {
         that.triggerPressMapping.disable();
     };
     that.enableTriggerMapping();
+    
     Script.scriptEnding.connect(cleanup);
     Script.scriptEnding.connect(that.disableTriggerMapping);
 
