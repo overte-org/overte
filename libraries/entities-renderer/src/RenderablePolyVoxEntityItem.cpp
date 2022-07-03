@@ -272,11 +272,11 @@ QByteArray RenderablePolyVoxEntityItem::volDataToArray(quint16 voxelXSize, quint
     withReadLock([&] {
         if (isEdged()) {
             low += 1;
-            voxelSize += 2;
+            //voxelSize += 2;
         }
 
-        loop3(low, voxelSize, [&](const ivec3& v){
-            result[index++] = _volData->getVoxelAt(v.x, v.y, v.z);
+        loop3(ivec3(0), voxelSize, [&](const ivec3& v){
+            result[index++] = _volData->getVoxelAt(v.x + low.x, v.y + low.y, v.z + low.z);
         });
     });
 
@@ -1030,11 +1030,11 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
         quint16 voxelYDataSize = voxelYSize;
         quint16 voxelZDataSize = voxelZSize;
         
-        if(entity->isEdged()){
+        /*if(entity->isEdged()){
             voxelXDataSize++;
             voxelYDataSize++;
             voxelZDataSize++;
-        }
+        }*/
         
         int rawSize = voxelXDataSize * voxelYDataSize * voxelZDataSize;
 
@@ -1064,12 +1064,12 @@ void RenderablePolyVoxEntityItem::setVoxelsFromData(QByteArray uncompressedData,
     withWriteLock([&] {
         if (isEdged()) {
             low += 1;
-            voxelXSize += 2;
-            voxelYSize += 2;
-            voxelZSize += 2;
+            //voxelXSize += 2;
+            //voxelYSize += 2;
+            //voxelZSize += 2;
         }
-        loop3(low, ivec3(voxelXSize, voxelYSize, voxelZSize), [&](const ivec3& v) {
-            int uncompressedIndex = (v.z * (voxelYSize - low.y) * (voxelXSize - low.x)) + (v.y * (voxelZSize - low.z)) + v.x;
+        loop3(ivec3(0), ivec3(voxelXSize, voxelYSize, voxelZSize), [&](const ivec3& v) {
+            int uncompressedIndex = (v.z * (voxelYSize) * (voxelXSize)) + (v.y * (voxelZSize)) + v.x;
             setVoxelInternal(v, uncompressedData[uncompressedIndex]);
         });
 
