@@ -64,6 +64,9 @@ EditVoxels = function() {
     that.triggeredHand = NO_HAND;
     that.pressedHand = NO_HAND;
     
+    var soundAdd = SoundCache.getSound(Script.resourcesPath() + "sounds/Button05.wav");
+    var soundDelete = SoundCache.getSound(Script.resourcesPath() + "sounds/Tab03.wav");
+    
     that.setActive = function(active) {
         isActive = (active === true);
     }
@@ -177,7 +180,12 @@ EditVoxels = function() {
                 print("floorVector(toDrawPosition): " + JSON.stringify(floorVector(toDrawPosition)));
             }
             oldEditPosition = floorVector(toDrawPosition);
-            return Entities.setVoxel(entityID, oldEditPosition, lastEditValue);
+            if (Entities.setVoxel(entityID, oldEditPosition, lastEditValue)){
+                Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
+                return true;
+            }else{
+                return false;
+            }
         }
         if (editSpheres) {
             var toDrawPosition = intersectionLocation;
@@ -189,7 +197,12 @@ EditVoxels = function() {
                 oldEditPosition = floorVector(Vec3.sum(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, 0.1)));
             }
             oldEditPosition = floorVector(Vec3.sum(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, 0.1)));
-            return Entities.setVoxelSphere(entityID, floorVector(toDrawPosition), editSphereRadius, lastEditValue);
+            if (Entities.setVoxelSphere(entityID, floorVector(toDrawPosition), editSphereRadius, lastEditValue)){
+                Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
+                return true;
+            }else{
+                return false;
+            }
         }
     }
 
@@ -247,11 +260,21 @@ EditVoxels = function() {
             return;
         }
         
-        if (event.isMiddleButton){
-            inverseOperation = true;
+        if (event.isLeftButton || event.isMiddleButton){
+            if (event.isMiddleButton){
+                inverseOperation = true;
+            }else{
+                inverseOperation = false;
+            }
         }else{
             inverseOperation = false;
-        }
+            if(that.triggeredHand === Controller.Standard.RightHand && Controller.getValue(Controller.Standard.RightGrip) > 0.5){
+                inverseOperation = true;
+            }
+            if(that.triggeredHand === Controller.Standard.LeftHand && Controller.getValue(Controller.Standard.LeftGrip) > 0.5){
+                inverseOperation = true;
+            }
+       }
 
         var pickRay = generalComputePickRay(event.x, event.y);
         var intersection = Entities.findRayIntersection(pickRay, true); // accurate picking
@@ -387,13 +410,13 @@ EditVoxels = function() {
         var pickRay = null;
         var hand = triggered() ? that.triggeredHand : that.pressedHand;
         
-        if(hand === NO_HAND){
+        if (hand === NO_HAND){
             pickRay = Camera.computePickRay(Controller.getValue(Controller.Hardware.Keyboard.MouseX), Controller.getValue(Controller.Hardware.Keyboard.MouseY));
         }else{
             pickRay = controllerComputePickRay();
         }
         
-        if(pickRay === null){
+        if (pickRay === null){
             return;
         }
         
@@ -406,7 +429,7 @@ EditVoxels = function() {
         pickRayDirInVoxelSpace = Vec3.normalize(pickRayDirInVoxelSpace);
         var directionMultiplier = 1.0;
         var offsetVector = { x: 0, y: 0, z: 0 };
-        switch(editPlane){
+        switch (editPlane){
             // 0 - plane parallel to YZ plane
             case 0:
                 //var dirSign = (pickRayDirInVoxelSpace.x > 0) ? 1 : -1;
@@ -432,18 +455,26 @@ EditVoxels = function() {
         intersectionPoint = Vec3.sum(Vec3.multiply(pickRayDirInVoxelSpace, directionMultiplier), voxelPickRayOrigin);
         newEditPosition = floorVector(Vec3.sum(intersectionPoint, offsetVector));
 
-        if(newEditPosition === oldEditPosition){
+        if (newEditPosition === oldEditPosition){
             return;
         }
 
-        if(wantDebug){
+        if (wantDebug){
             print("Old edit position: " + JSON.stringify(oldEditPosition));
             print("New edit position: " + JSON.stringify(newEditPosition));
             print("directionMultiplier: " + JSON.stringify(directionMultiplier) + " pickRay.direction: " + JSON.stringify(pickRay.direction) + " pickRayDirInVoxelSpace: " + JSON.stringify(pickRayDirInVoxelSpace) + " voxelPickRayOrigin: " + JSON.stringify(voxelPickRayOrigin) + " editPlane: " + JSON.stringify(editPlane));
         }
 
-        if(Entities.setVoxel(editedVoxelEntity, newEditPosition, lastEditValue)){
-            oldEditPosition = newEditPosition;
+        if (editSingleVoxels) {
+            if (Entities.setVoxel(editedVoxelEntity, newEditPosition, lastEditValue)){
+                oldEditPosition = newEditPosition;
+                Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
+            }
+        }else if (editSpheres){
+            if (Entities.setVoxel(editedVoxelEntity, newEditPosition, lastEditValue)){
+                oldEditPosition = newEditPosition;
+                Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
+            }
         }
         //TODO: add spheres
 
