@@ -38,6 +38,7 @@ EditVoxels = function() {
     var editSingleVoxels = false;
     var editSpheres = false;
     var editAdd = true; // Remove voxels if false
+    var inverseOperation = false; // True when middle mouse button or grip is pressed
     var brushPointer = false;
     var isActive = true;
     
@@ -159,12 +160,17 @@ EditVoxels = function() {
         }
         
         lastEditValue = 0;
-        if(editAdd){
+        if((editAdd && !inverseOperation) || (!editAdd && inverseOperation)){
             lastEditValue = 255;
         }
 
         if (editSingleVoxels) {
-            var toDrawPosition = Vec3.subtract(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, 0.1));
+            var toDrawPosition = null;
+            if(lastEditValue === 255){
+                toDrawPosition = Vec3.subtract(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, 0.1));
+            }else{
+                toDrawPosition = Vec3.subtract(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, -0.1));
+            }
             if (wantDebug) {
                 print("Calling setVoxel");
                 print("entityID: " + JSON.stringify(entityID));
@@ -237,8 +243,14 @@ EditVoxels = function() {
             print("=============== eV::mousePressEvent BEG =======================");
         }
 
-        if (!event.isLeftButton && !triggered()) {
+        if (!(event.isLeftButton || event.isMiddleButton) && !triggered()) {
             return;
+        }
+        
+        if (event.isMiddleButton){
+            inverseOperation = true;
+        }else{
+            inverseOperation = false;
         }
 
         var pickRay = generalComputePickRay(event.x, event.y);
