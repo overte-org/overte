@@ -306,7 +306,7 @@ static const uint32_t MAX_CONCURRENT_RESOURCE_DOWNLOADS = 4;
 // we will never drop below the 'min' value
 static const int MIN_PROCESSING_THREAD_POOL_SIZE = 2;
 
-static const QString SNAPSHOT_EXTENSION = ".jpg";
+static const QString SNAPSHOT_EXTENSION = ".png";
 static const QString JPG_EXTENSION = ".jpg";
 static const QString PNG_EXTENSION = ".png";
 static const QString SVO_EXTENSION = ".svo";

@@ -42,9 +42,9 @@
 #include "Snapshot.h"
 #include "SnapshotUploader.h"
 
-// filename format: overte-snap-by-%username%-on-%date%_%time%_@-%location%.jpg
+// filename format: overte-snap-by-%username%-on-%date%_%time%_@-%location%.png
 // %1 <= username, %2 <= date and time, %3 <= current location
-const QString FILENAME_PATH_FORMAT = "overte-snap-by-%1-on-%2.jpg";
+const QString FILENAME_PATH_FORMAT = "overte-snap-by-%1-on-%2.png";
 const QString DATETIME_FORMAT = "yyyy-MM-dd_hh-mm-ss";
 const QString SNAPSHOTS_DIRECTORY = "Snapshots";
 const QString URL = "overte_url";
@@ -385,11 +385,19 @@ QFile* Snapshot::savedFileForSnapshot(QImage& shot,
                 imageQuality = 50;
             }
         } else {
-            filename = userSelectedFilename + ".jpg";
+            filename = userSelectedFilename + ".png";
+            imageQuality = 50;
         }
     } else {
         filename = FILENAME_PATH_FORMAT.arg(username, now.toString(DATETIME_FORMAT));
+        QFileInfo snapshotFileInfo(filename);
+        QString filenameSuffix = snapshotFileInfo.suffix();
+        filenameSuffix = filenameSuffix.toLower();
+        if (filenameSuffix == "png") {
+            imageQuality = 50;
+        }
     }
+    
 
     if (!isTemporary) {
         // If user has requested specific path then use it, else use the application value
