@@ -770,10 +770,16 @@ var toolBar = (function () {
             var volumeSizeY = parseInt(result.volumeSizeY);
             var volumeSizeZ = parseInt(result.volumeSizeZ);
             var voxelSurfaceStyle = parseInt(result.surfaceStyleIndex);
+            var voxelPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: volumeSizeZ * -1.6 }));
             
             var polyVoxID = createNewEntity({
                 type: "PolyVox",
                 name: "terrain",
+                dimensions: {
+                    x: volumeSizeX,
+                    y: volumeSizeY,
+                    z: volumeSizeZ
+                },
                 voxelVolumeSize: {
                     x: volumeSizeX,
                     y: volumeSizeY,
@@ -788,28 +794,25 @@ var toolBar = (function () {
                     grabbable: result.grabbable
                 },
             });
+            
+            Entities.editEntity(polyVoxID, {
+                position: voxelPosition
+            });
+            
             if (polyVoxID){
-                // var properties = Entities.getEntityProperties(polyVoxID, ["position", "localDimensions"]);
-                // var position = properties.position;
-                // var localDimensions = properties.localDimensions;
                 switch (initialShape) {
-                    // Sphere
-                    // case 0:
-                        // Entities.setVoxelSphere(polyVoxID, position, localDimensions/4, 255);
-                        // break;
-                    // Box
                     case 0:
                         Entities.setVoxelsInCuboid(polyVoxID, {
-                            x: Math.round(volumeSizeX/4),
-                            y: Math.round(volumeSizeY/4),
-                            z: Math.round(volumeSizeZ/4)
+                            x: Math.round(volumeSizeX / 4),
+                            y: Math.round(volumeSizeY / 4),
+                            z: Math.round(volumeSizeZ / 4)
                         }, {
-                            x: Math.round(volumeSizeX/2.0),
-                            y: Math.round(volumeSizeY/2.0),
-                            z: Math.round(volumeSizeZ/2.0)
+                            x: Math.round(volumeSizeX / 2.0),
+                            y: Math.round(volumeSizeY / 2.0),
+                            z: Math.round(volumeSizeZ / 2.0)
                         }, 255);
                         break;
-                    // Plane
+                    // Plane 1/4
                     case 1:
                         Entities.setVoxelsInCuboid(polyVoxID, {
                             x: 0,
@@ -817,8 +820,28 @@ var toolBar = (function () {
                             z: 0
                         }, {
                             x: volumeSizeX,
-                            y: Math.round(volumeSizeY/4),
+                            y: Math.round(volumeSizeY / 4),
                             z: volumeSizeZ
+                        }, 255);
+                        break;
+                    // Plane 3/4
+                    case 2:
+                        Entities.setVoxelsInCuboid(polyVoxID, {
+                            x: 0,
+                            y: 0,
+                            z: 0
+                        }, {
+                            x: volumeSizeX,
+                            y: Math.round(3 * volumeSizeY / 4),
+                            z: volumeSizeZ
+                        }, 255);
+                        break;
+                    // Single voxel at center
+                    case 3:
+                        Entities.setVoxel(polyVoxID, {
+                            x: Math.round(volumeSizeX / 2),
+                            y: Math.round(volumeSizeY / 2),
+                            z: Math.round(volumeSizeZ / 2)
                         }, 255);
                         break;
                 }
