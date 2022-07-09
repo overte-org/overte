@@ -1045,8 +1045,8 @@ Flickable {
                 var hmdDesktopPosition = settings["hmdDesktopTracking"];
                 var eyeTrackingEnabled = settings["eyeTrackingEnabled"];
 
-                armCircumference.realValue = settings.armCircumference;
-                shoulderWidth.realValue = settings.shoulderWidth;
+                armCircumference.realValue = settings["armCircumference"];
+                shoulderWidth.realValue = settings["shoulderWidth"];
 
                 if (HmdHead) {
                     headBox.checked = true;

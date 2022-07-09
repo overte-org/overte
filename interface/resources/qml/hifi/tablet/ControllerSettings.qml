@@ -27,7 +27,7 @@ Item {
     width: parent.width
 
     property string title: "Controls"
-    property var openVRDevices: ["HTC Vive", "Valve Index", "Valve HMD", "Valve"]
+    property var openVRDevices: ["HTC Vive", "Valve Index", "Valve HMD", "Valve", "WindowsMR"]
 
     HifiConstants { id: hifi }
 
