@@ -1,7 +1,7 @@
 //
 //  editModes.js
 //
-//  Created by Karol Suprynowicz on 2022.05.17.
+//  Created by dr Karol Suprynowicz on 2022.05.17.
 //  Copyright 2022 Overte e.V.
 //
 //  Based on voxels.js
@@ -23,7 +23,10 @@
 
 Script.include([
     "./libraries/utils.js",
+    "entitySelectionTool/entitySelectionTool.js",
 ]);
+
+var selectionManager = SelectionManager;
 
 EditVoxels = function() {
     var self = this;
@@ -66,6 +69,12 @@ EditVoxels = function() {
     
     var soundAdd = SoundCache.getSound(Script.resourcesPath() + "sounds/Button05.wav");
     var soundDelete = SoundCache.getSound(Script.resourcesPath() + "sounds/Tab03.wav");
+    
+    // Continuous start timer prevents activating continuous mode on short button presses
+    // and adding multiple voxels when only one was intended
+    
+    var continuousStartTimerMax = 0.200;
+    var continuousStartTimer = 0.0;
     
     that.setActive = function(active) {
         isActive = (active === true);
@@ -260,6 +269,10 @@ EditVoxels = function() {
             return;
         }
         
+        if (triggered() && selectionManager.pointingAtDesktopWindowOrTablet(that.triggeredHand)) {
+            return;
+        }
+        
         if (event.isLeftButton || event.isMiddleButton){
             if (event.isMiddleButton){
                 inverseOperation = true;
@@ -274,7 +287,9 @@ EditVoxels = function() {
             if(that.triggeredHand === Controller.Standard.LeftHand && Controller.getValue(Controller.Standard.LeftGrip) > 0.5){
                 inverseOperation = true;
             }
-       }
+        }
+
+        continuousStartTimer = 0;
 
         var pickRay = generalComputePickRay(event.x, event.y);
         var intersection = Entities.findRayIntersection(pickRay, true); // accurate picking
@@ -401,27 +416,34 @@ EditVoxels = function() {
         //}
 
         
-        if(isEditing === false || editedVoxelEntity === null){
+        if (isEditing === false || editedVoxelEntity === null){
+            return;
+        }
+
+        continuousStartTimer += delta;
+        
+        if (continuousStartTimer < continuousStartTimerMax) {
             return;
         }
 
         // Get pick ray origin and direction
-        
+
         var pickRay = null;
         var hand = triggered() ? that.triggeredHand : that.pressedHand;
         
-        if (hand === NO_HAND){
+        if (hand === NO_HAND) {
             pickRay = Camera.computePickRay(Controller.getValue(Controller.Hardware.Keyboard.MouseX), Controller.getValue(Controller.Hardware.Keyboard.MouseY));
         }else{
             pickRay = controllerComputePickRay();
         }
-        
-        if (pickRay === null){
+
+        if (pickRay === null) {
             return;
         }
-        
+
+
         // Compute intersection of pick ray with given plane in local coordinates
-        
+
         var globalOriginInVoxelSpace = Entities.worldCoordsToVoxelCoords(editedVoxelEntity, { x: 0, y: 0, z: 0 });
         var pickRayDirInVoxelSpace = Vec3.subtract(Entities.worldCoordsToVoxelCoords(editedVoxelEntity, pickRay.direction), globalOriginInVoxelSpace);
         var voxelPickRayOrigin = Entities.worldCoordsToVoxelCoords(editedVoxelEntity, pickRay.origin);
@@ -429,23 +451,29 @@ EditVoxels = function() {
         pickRayDirInVoxelSpace = Vec3.normalize(pickRayDirInVoxelSpace);
         var directionMultiplier = 1.0;
         var offsetVector = { x: 0, y: 0, z: 0 };
-        switch (editPlane){
+        switch (editPlane) {
             // 0 - plane parallel to YZ plane
             case 0:
                 //var dirSign = (pickRayDirInVoxelSpace.x > 0) ? 1 : -1;
                 offsetVector.x = 0.5;
+                offsetVector.y = (offsetVector.x / pickRayDirInVoxelSpace.x) * pickRayDirInVoxelSpace.y;
+                offsetVector.z = (offsetVector.x / pickRayDirInVoxelSpace.x) * pickRayDirInVoxelSpace.z;
                 directionMultiplier = (oldEditPosition.x - voxelPickRayOrigin.x) / pickRayDirInVoxelSpace.x;
                 break;
             // 1 - plane parallel to XZ plane
             case 1:
                 //var dirSign = (pickRayDirInVoxelSpace.x > 0) ? 1 : -1;
                 offsetVector.y = 0.5;
+                offsetVector.x = (offsetVector.y / pickRayDirInVoxelSpace.y) * pickRayDirInVoxelSpace.x;
+                offsetVector.z = (offsetVector.y / pickRayDirInVoxelSpace.y) * pickRayDirInVoxelSpace.z;
                 directionMultiplier = (oldEditPosition.y - voxelPickRayOrigin.y) / pickRayDirInVoxelSpace.y;
                 break;
             // 2 - plane parallel to XY plane
             case 2:
                 //var dirSign = (pickRayDirInVoxelSpace.x > 0) ? 1 : -1;
                 offsetVector.z = 0.5;
+                offsetVector.x = (offsetVector.z / pickRayDirInVoxelSpace.z) * pickRayDirInVoxelSpace.x;
+                offsetVector.y = (offsetVector.z / pickRayDirInVoxelSpace.z) * pickRayDirInVoxelSpace.y;
                 directionMultiplier = (oldEditPosition.z - voxelPickRayOrigin.z) / pickRayDirInVoxelSpace.z;
                 break;
             default:
@@ -455,11 +483,11 @@ EditVoxels = function() {
         intersectionPoint = Vec3.sum(Vec3.multiply(pickRayDirInVoxelSpace, directionMultiplier), voxelPickRayOrigin);
         newEditPosition = floorVector(Vec3.sum(intersectionPoint, offsetVector));
 
-        if (newEditPosition === oldEditPosition){
+        if (newEditPosition === oldEditPosition) {
             return;
         }
 
-        if (wantDebug){
+        if (wantDebug) {
             print("Old edit position: " + JSON.stringify(oldEditPosition));
             print("New edit position: " + JSON.stringify(newEditPosition));
             print("directionMultiplier: " + JSON.stringify(directionMultiplier) + " pickRay.direction: " + JSON.stringify(pickRay.direction) + " pickRayDirInVoxelSpace: " + JSON.stringify(pickRayDirInVoxelSpace) + " voxelPickRayOrigin: " + JSON.stringify(voxelPickRayOrigin) + " editPlane: " + JSON.stringify(editPlane));
@@ -470,7 +498,7 @@ EditVoxels = function() {
                 oldEditPosition = newEditPosition;
                 Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
             }
-        }else if (editSpheres){
+        } else if (editSpheres) {
             if (Entities.setVoxel(editedVoxelEntity, newEditPosition, lastEditValue)){
                 oldEditPosition = newEditPosition;
                 Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);

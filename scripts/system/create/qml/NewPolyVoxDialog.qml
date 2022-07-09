@@ -1,5 +1,6 @@
 //
 //  NewPolyVoxDialog.qml
+//  Created by dr Karol Suprynowicz on 2022.05.17.
 //  based on NewModelDialog.qml
 //  qml/hifi
 //
@@ -488,7 +489,10 @@ Rectangle {
                     currentIndex: 0
 
                     property var initialShapeArray: ["Box",
-                                                  "Plane"]
+                                                  "Plane, 1/4 full",
+                                                  "Plane, 3/4 full",
+                                                  "Single voxel",
+                                                     ]
 
                     width: 200
                     z: 100
