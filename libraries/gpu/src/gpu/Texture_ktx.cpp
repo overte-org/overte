@@ -47,12 +47,15 @@ struct GPUKTXPayload {
         ser << CURRENT_VERSION;
         ser << _samplerDesc;
 
+        qCWarning(gpulogging) << "Offsets: " << offsetof(struct GPUKTXPayload, _samplerDesc) << offsetof(struct GPUKTXPayload, _usage) << offsetof(struct GPUKTXPayload, _usageType) << offsetof(struct GPUKTXPayload, _originalSize);
         uint32 usageData = _usage._flags.to_ulong();
         ser << usageData;
 
         ser << (char)_usageType;
         ser << _originalSize;
         ser.addPadding(PADDING);
+
+        assert(ser.length() == GPUKTXPayload::SIZE);
     }
 
     bool unserialize(DataDeserializer &dsr) {
@@ -65,6 +68,9 @@ struct GPUKTXPayload {
         if (version > CURRENT_VERSION) {
             // If we try to load a version that we don't know how to parse,
             // it will render incorrectly
+            qCWarning(gpulogging) << "KTX version" << version << "is newer than our own," << CURRENT_VERSION;
+            qCWarning(gpulogging) << "Offsets: " << offsetof(struct GPUKTXPayload, _samplerDesc) << offsetof(struct GPUKTXPayload, _usage) << offsetof(struct GPUKTXPayload, _usageType) << offsetof(struct GPUKTXPayload, _originalSize);
+            qCWarning(gpulogging) << dsr;
             return false;
         }
 
