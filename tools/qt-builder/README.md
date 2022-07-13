@@ -281,7 +281,7 @@ find . -name \*.prl -exec sed -i -e '/^QMAKE_PRL_BUILD_DIR/d' {} \;
 ```bash
 tar -Jcvf qt5-install-5.15.2-ubuntu-18.04-amd64.tar.xz qt5-install
 ```
-2.  Upload qt5-install-5.15.2-ubuntu-18.04-amd64.tar.xz to https://athena-public.s3.amazonaws.com/dependencies/vcpkg/
+2.  Upload qt5-install-5.15.2-ubuntu-18.04-amd64.tar.xz to https://build-deps.overte.org/dependencies/vcpkg/
 
 
 
