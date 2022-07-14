@@ -45,6 +45,7 @@ void SnapshotAnimated::saveSnapshotAnimated(QString pathStill, float aspectRatio
         SnapshotAnimated::snapshotStillPath = pathStill;
         SnapshotAnimated::snapshotAnimatedPath = pathStill;
         SnapshotAnimated::snapshotAnimatedPath.replace("jpg", "gif");
+        SnapshotAnimated::snapshotAnimatedPath.replace("png", "gif");
 
         // Ensure the snapshot timer is Precise (attempted millisecond precision)
         SnapshotAnimated::snapshotAnimatedTimer->setTimerType(Qt::PreciseTimer);
@@ -148,7 +149,7 @@ void SnapshotAnimated::processFrames() {
     GifEnd(&(SnapshotAnimated::snapshotAnimatedGifWriter));
 
     SnapshotAnimated::clearTempVariables();
-    
+
     // Update the "Share" dialog with the processed GIF.
     emit SnapshotAnimated::snapshotAnimatedDM->processingGifCompleted(SnapshotAnimated::snapshotAnimatedPath);
 }
