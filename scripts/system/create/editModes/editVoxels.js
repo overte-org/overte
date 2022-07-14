@@ -40,6 +40,7 @@ EditVoxels = function() {
     var editEnabled = false;
     var editSingleVoxels = false;
     var editSpheres = false;
+    var editCubes = false;
     var editAdd = true; // Remove voxels if false
     var inverseOperation = false; // True when middle mouse button or grip is pressed
     var brushPointer = false;
@@ -47,6 +48,8 @@ EditVoxels = function() {
     
     var editSphereRadius = 0.15;
     var brushLength = 0.5;
+    // Vector calculated from editSphereRadius for adding/remiving cubes
+    var cubeSize = null;
     
     // Local plane for continuous voxel editing
     // 0 - plane parallel to YZ plane
@@ -98,9 +101,15 @@ EditVoxels = function() {
             if (data.voxelEditMode === "single") {
                 editSpheres = false;
                 editSingleVoxels = true;
+                editCubes = false;
             } else if (data.voxelEditMode === "sphere") {
                 editSpheres = true;
                 editSingleVoxels = false;
+                editCubes = false;
+            } else if (data.voxelEditMode === "cube") {
+                editSpheres = false;
+                editSingleVoxels = false;
+                editCubes = true;
             }
         }
         
@@ -129,6 +138,14 @@ EditVoxels = function() {
             z: Math.floor(v.z)
         };
     }
+    
+    function ceilVector(v) {
+        return {
+            x: Math.ceil(v.x),
+            y: Math.ceil(v.y),
+            z: Math.ceil(v.z)
+        };
+    }
 
     function attemptVoxelChangeForEntity(entityID, pickRayDir, intersectionLocation) {
         var wantDebug = false;
@@ -145,7 +162,7 @@ EditVoxels = function() {
             return false;
         }
 
-        if (editSingleVoxels === false && editSpheres === false) {
+        if (editSingleVoxels === false && editSpheres === false && editCubes === false) {
             return false;
         }
 
@@ -176,13 +193,15 @@ EditVoxels = function() {
             lastEditValue = 255;
         }
 
+        var toDrawPosition = null;
+
+        if(lastEditValue === 255){
+            toDrawPosition = Vec3.subtract(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, 0.1));
+        }else{
+            toDrawPosition = Vec3.subtract(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, -0.1));
+        }
+
         if (editSingleVoxels) {
-            var toDrawPosition = null;
-            if(lastEditValue === 255){
-                toDrawPosition = Vec3.subtract(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, 0.1));
-            }else{
-                toDrawPosition = Vec3.subtract(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, -0.1));
-            }
             if (wantDebug) {
                 print("Calling setVoxel");
                 print("entityID: " + JSON.stringify(entityID));
@@ -197,16 +216,39 @@ EditVoxels = function() {
             }
         }
         if (editSpheres) {
-            var toDrawPosition = intersectionLocation;
             if (wantDebug) {
                 print("Calling setVoxelSphere");
                 print("entityID: " + JSON.stringify(entityID));
                 print("editSphereRadius: " + JSON.stringify(editSphereRadius));
                 print("floorVector(toDrawPosition): " + JSON.stringify(floorVector(toDrawPosition)));
-                oldEditPosition = floorVector(Vec3.sum(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, 0.1)));
             }
-            oldEditPosition = floorVector(Vec3.sum(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, 0.1)));
-            if (Entities.setVoxelSphere(entityID, floorVector(toDrawPosition), editSphereRadius, lastEditValue)){
+            oldEditPosition = floorVector(toDrawPosition);
+            var toDrawPositionWorld = Entities.voxelCoordsToWorldCoords(entityID, oldEditPosition);
+            if (Entities.setVoxelSphere(entityID, toDrawPositionWorld, editSphereRadius, lastEditValue)){
+                Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
+                return true;
+            }else{
+                return false;
+            }
+        }
+        if (editCubes) {
+            if (wantDebug) {
+                print("Calling setVoxelsInCuboid");
+                print("entityID: " + JSON.stringify(entityID));
+                print("editSphereRadius: " + JSON.stringify(editSphereRadius));
+                print("floorVector(toDrawPosition): " + JSON.stringify(floorVector(toDrawPosition)));
+            }
+            oldEditPosition = floorVector(toDrawPosition);
+            // TODO? Convert sphere radius from world to local
+            //var cubeDimension = Math.round(editSphereRadius);
+            var cubeSizeWorld = {x : editSphereRadius * 2, y : editSphereRadius * 2, z : editSphereRadius * 2};
+            var zeroVecWorld = {x : 0, y: 0, z: 0};
+            var zeroVecLocal = Entities.worldCoordsToVoxelCoords(entityID, zeroVecWorld);
+            var cubeSizeVecLocal = Entities.worldCoordsToVoxelCoords(entityID, cubeSizeWorld);
+            cubeSize = ceilVector(Vec3.subtract(cubeSizeVecLocal, zeroVecLocal));
+            //cubeDimension += (cubeDimension > 0) ? 0 : 1;
+            var lowPosition = Vec3.subtract(oldEditPosition, Vec3.multiply(cubeSize, 0.5));
+            if (Entities.setVoxelsInCuboid(entityID, lowPosition, cubeSize, lastEditValue)){
                 Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
                 return true;
             }else{
@@ -269,9 +311,9 @@ EditVoxels = function() {
             return;
         }
         
-        if (triggered() && selectionManager.pointingAtDesktopWindowOrTablet(that.triggeredHand)) {
+        /*if (triggered() && selectionManager.pointingAtDesktopWindowOrTablet(that.triggeredHand)) {
             return;
-        }
+        }*/
         
         if (event.isLeftButton || event.isMiddleButton){
             if (event.isMiddleButton){
@@ -499,16 +541,18 @@ EditVoxels = function() {
                 Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
             }
         } else if (editSpheres) {
-            if (Entities.setVoxel(editedVoxelEntity, newEditPosition, lastEditValue)){
+            var toDrawPositionWorld = Entities.voxelCoordsToWorldCoords(editedVoxelEntity, newEditPosition);
+            if (Entities.setVoxelSphere(editedVoxelEntity, toDrawPositionWorld, editSphereRadius, lastEditValue)){
+                oldEditPosition = newEditPosition;
+                Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
+            }
+        } else if (editCubes) {
+            var lowPosition = Vec3.subtract(newEditPosition, Vec3.multiply(cubeSize, 0.5));
+            if (Entities.setVoxelsInCuboid(editedVoxelEntity, lowPosition, cubeSize, lastEditValue)){
                 oldEditPosition = newEditPosition;
                 Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
             }
         }
-        //TODO: add spheres
-
-        /*if(attemptVoxelChangeForEntity(entityID, pickRay.direction, intersection.intersection)){
-            oldEditPosition = newEditPosition;
-        }*/
 
     }
 
