@@ -2080,6 +2080,25 @@ div.tools-select-menu {
     cursor: pointer;
 }
 
+div.tools-help-popup {
+    font-family: FiraSans-SemiBold;
+    font-size: 15px;
+    position: relative;
+    display: none;
+    width: 690px;
+    height: auto;
+    top: 0px;
+    left: 8px;
+    right: 0;
+    bottom: 0;
+    border-style: solid;
+    border-color: #505050;
+    border-width: 1px;
+    background-color: #404040;
+    z-index: 2;
+    cursor: pointer;
+}
+
 div.menu-separator{
     width: 100%;
     height: 2px;

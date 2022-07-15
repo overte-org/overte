@@ -20,6 +20,8 @@ function loaded() {
         elVoxelEditModeSphere = document.getElementById("voxel-edit-mode-sphere");
         elVoxelEditModeCube = document.getElementById("voxel-edit-mode-cube");
         elMenuBackgroundOverlay = document.getElementById("menuBackgroundOverlay");
+        elVoxelHelpButton = document.getElementById("voxel-help-button");
+        elVoxelHelpPopup = document.getElementById("voxel-help-popup");
 
         elVoxelSphereSize = document.getElementById("voxel-sphere-size");
         //elVoxelEditDynamics = document.getElementById("voxel-edit-dynamics");
@@ -43,6 +45,11 @@ function loaded() {
         elVoxelEditModeMenu.onclick = function() {
             document.getElementById("menuBackgroundOverlay").style.display = "block";
             document.getElementById("voxel-edit-mode-menu").style.display = "block";
+        };
+
+        elVoxelHelpButton.onclick = function() {
+            document.getElementById("menuBackgroundOverlay").style.display = "block";
+            document.getElementById("voxel-help-popup").style.display = "block";
         };
 
         elMenuBackgroundOverlay.onclick = function() {
@@ -81,6 +88,10 @@ function loaded() {
             voxelEditModeValue = "cube";
             elVoxelEditModeMenu.value = "Cubes\u25BE";
             emitUpdateEditTools();
+            closeAllEntityListMenu();
+        };
+
+        elVoxelHelpPopup.onclick = function() {
             closeAllEntityListMenu();
         };
 
@@ -278,6 +289,7 @@ function loaded() {
         document.getElementById("menuBackgroundOverlay").style.display = "none";
         document.getElementById("edit-mode-menu").style.display = "none";
         document.getElementById("voxel-edit-mode-menu").style.display = "none";
+        document.getElementById("voxel-help-popup").style.display = "none";
     }
 
     // Disable right-click context menu which is not visible in the HMD and makes it seem like the app has locked
