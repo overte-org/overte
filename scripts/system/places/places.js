@@ -106,8 +106,19 @@
                 d = new Date();
                 timestamp = d.getTime();
                 metaverseServers[messageObj.metaverseIndex].fetch = messageObj.value;
-                saveMetaverseToFetchSetting();                
-                
+                saveMetaverseToFetchSetting();
+            } else if (messageObj.action === "ADD_MS" && (n - timestamp) > INTERCALL_DELAY) {
+                d = new Date();
+                timestamp = d.getTime();
+                var newMs = {
+                    "url": messageObj.metaverseUrl,
+                    "region": "external",
+                    "fetch": false,
+                    "pinned": true,
+                    "order": "Z"
+                }
+                metaverseServers.push(newMs);
+                savePinnedMetaverseSetting();
             }
         }
     }

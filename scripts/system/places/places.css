@@ -487,6 +487,41 @@ div.placeEntry {
     text-align: center;
 }
 
+div.addMsEntry {
+    width: 85%;
+    height: 38px;
+    background: #292929;
+    border: 0px;
+    border-radius: 6px;
+    box-shadow: 3px 3px 5px rgba(0,0,0,0.8);
+    margin: 6px 0px 9px 6px;
+    text-align: left;
+}
+
+#addMS {
+    margin: 8px;
+    width: 85%;
+}
+
+#addMsBtn {
+  background: #bababa;
+  background-image: linear-gradient(to bottom, #bababa, #424242);
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 18px;
+  padding: 1px 5px 1px 5px;
+  border: 0px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+#addMsBtn:hover {
+  background: #e0e0e0;
+  background-image: linear-gradient(to bottom, #e0e0e0, #737373);
+  text-decoration: none;
+  font-weight: 700;
+}
+
 div.placeEntryHighlighter {
     width: 85%;
     height: 80px;
@@ -847,7 +882,7 @@ td.warningTitle {
     font-size: 10px;
     font-style: none;
     color: #ffffff;
-    text-align: left;    
+    text-align: left;
 }
 
 .region-LOCAL {
@@ -912,4 +947,11 @@ button.federationFilterOn:hover {
 
 button.externalFilterOn:hover {
     border: solid #00e2ff 1px;
+}
+
+#reloading {
+    width: 80%;
+    color: #ffffff;
+    font-size: 18px;
+    text-align: center;
 }

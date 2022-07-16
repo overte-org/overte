@@ -245,11 +245,14 @@
                         metaverseCounter++;
                         
                     }
-                    
+
+                    formattedMetaverseList = formattedMetaverseList + "<div class = 'addMsEntry'><input type = 'text' id='addMS'> <button id='addMsBtn' onclick='addMS();'>&plus;</button></div>";
+                    formattedMetaverseList = formattedMetaverseList + "<div id='reloading'></div>";
+
                     document.getElementById("searchFiltersBar").style.display = "none";
-                    
+
                     document.getElementById("list_content").innerHTML = formattedMetaverseList;
-                    
+
                     var metaversePageInfo = " nodes";
                     if (metaverseCounter <= 1) {
                         metaversePageInfo = " node";
@@ -261,11 +264,11 @@
                     if (currentListFormat === "DOMAINS") {
                         placeRecords.sort(sortDomainsOrder);
                     }
-                    
+
                     var currentDomain = "";
                     var counter = 0;
                     var formatedList = "";
-                    
+
                     if (warning !== "") {
                         formatedList = formatedList + "<div class='warningEntry'>";
                         formatedList = formatedList + "<table class='warningTable'>";
@@ -276,14 +279,14 @@
                         formatedList = formatedList + "</table>";
                         formatedList = formatedList + "</div>";                    
                     }
-                                    
+
                     for (var i = 0; i < placeRecords.length; i++) {
                         if (counter === loadRecordsUpTo) {
                             //Display Load More button
                             formatedList = formatedList + "<div id='loadMore'><button id='loadMoreBtn' onClick='loadMore();'>LOAD MORE...</button></div>";
                             break;
                         }
-                        
+
 
                         /*
                         Here's where you generate the list.
@@ -337,7 +340,7 @@
                                 
                             placeRecords[i].capacity
                                 Number (Would be the max number of user allowed in the targetted domain.)
-
+                                
                             placeRecords[i].tags
                                 String: Preformated list of tags
                                 
@@ -364,7 +367,7 @@
                         } else {
                             document.getElementById("searchFiltersBar").style.display = "none";
                         }
-                        
+
                         var lowerCasePlaceName = placeRecords[i].name.toLowerCase();
                         var lowerCasePlaceDescription = placeRecords[i].description.toLowerCase();
                         var lowerCasePlaceManagers = placeRecords[i].managers.toLowerCase();
@@ -380,12 +383,12 @@
                                         (lowerCasePlaceTags.indexOf(searchedText.toLowerCase()) !== -1 && seachedFieldsFilter.indexOf("tags") !== -1) ) { 
                                         
                                         if (currentListFormat === "DOMAINS" && currentDomain !== placeRecords[i].domain) {
-                                            
+
                                             var capacity = "?";
                                             if (placeRecords[i].capacity !== 0) {
                                                 capacity = placeRecords[i].capacity;
                                             }
-                                            
+
                                             //display Domain section
                                             formatedList = formatedList + "<div id='domainEntry' class='domainEntry'>";
                                             formatedList = formatedList + "<table class='domainTable'>";
@@ -400,7 +403,7 @@
 
                                             currentDomain = placeRecords[i].domain;
                                         }
-                                        
+
                                         var moreStyle = "";
                                         if (placeRecords[i].category === "A") {
                                             moreStyle = " style='background-image: url(" + placeRecords[i].thumbnail + "); background-repeat: no-repeat; background-position: 50% 50%; background-size: cover;'";
@@ -409,21 +412,21 @@
                                         } else if (placeRecords[i].category === "U") { //TO REMOVE ONCE BEACONS GET REMOVED
                                             moreStyle = " style='background-color: #38130f;'";
                                         }
-                                        
+
                                         var shortenedDescription = placeRecords[i].description.substr(0, 55);
                                         if (shortenedDescription.slice(-1) !== ".") {
                                             shortenedDescription = shortenedDescription + "...";
                                         }
-                                        
+
                                         var placeUrl = "hifi://" + placeRecords[i].name;
                                         if (placeRecords[i].category === "U") {  //TO REMOVE ONCE BEACONS GET REMOVED
                                             placeUrl = placeRecords[i].address;
                                         } else if (placeRecords[i].metaverseRegion !== "local") {
                                             placeUrl = "hifi://" + placeRecords[i].address;
                                         }
-                                        
+
                                         //Add the place to the list
-                                        
+
                                         formatedList = formatedList + "<div class = 'placeEntry' id='place-" + placeRecords[i].id + "'" + moreStyle + "><div class = 'blur'>";
                                         formatedList = formatedList + "<table class='placeTable'>";
                                         formatedList = formatedList + "    <tr valign = 'top'>";
@@ -460,12 +463,12 @@
                     document.getElementById("listInfo").innerHTML = counter + placeInfo + " of " + placeRecords.length + ".";
                 }
             }
-            
+
             function loadMore() {
                 loadRecordsUpTo = loadRecordsUpTo + NUMBER_OF_RECORDS_PER_LOAD;
                 generateContent();
             }
-            
+
             function teleport(placeID, address) {
                 var teleportOrder = {
                     "channel": channel,
@@ -476,7 +479,7 @@
                 EventBridge.emitWebEvent(JSON.stringify(teleportOrder));
                 
             }
-            
+
             function goHome() {
                 var message = {
                     "channel": channel,
@@ -484,7 +487,7 @@
                     };
                 EventBridge.emitWebEvent(JSON.stringify(message));            
             }
-            
+
             function goBack() {
                 var message = {
                     "channel": channel,
@@ -492,7 +495,7 @@
                     };
                 EventBridge.emitWebEvent(JSON.stringify(message));             
             }
-            
+
             function goForward() {
                 var message = {
                     "channel": channel,
@@ -509,8 +512,9 @@
                     "value": pinned
                     };
                 EventBridge.emitWebEvent(JSON.stringify(message));
-                sleepFor(210);                
-                reload();                
+                document.getElementById("reloading").innerHTML = "RELOADING...";
+                sleepFor(210);
+                reload();
             }
 
             function fetchMetaverse(metaverseIndex, fetch) {
@@ -521,10 +525,11 @@
                     "value": fetch
                     };
                 EventBridge.emitWebEvent(JSON.stringify(message));
+                document.getElementById("reloading").innerHTML = "RELOADING...";
                 sleepFor(210);                
                 reload();                
             }
-            
+
             function filterLifeOnly() {
                 if (lifeOnlyFilter) {
                     lifeOnlyFilter = false;
@@ -569,7 +574,7 @@
                 loadRecordsUpTo = NUMBER_OF_RECORDS_PER_LOAD;
                 generateContent();
             }
-            
+
             function filterMaturity(targeted) {
                 if (maturityFilter.indexOf(targeted) === -1) {
                     maturityFilter.push(targeted);
@@ -591,7 +596,7 @@
                 displaySearchFieldsFilter();
                 generateContent();            
             }
-            
+
             function arrayRemove(arr, value) {
                 return arr.filter(function(ele){
                     return ele != value;
@@ -656,13 +661,13 @@
                 }
 
             }
-            
+
             function filterSearch() {
                 document.getElementById("clearBtn").style.display = "block";
                 loadRecordsUpTo = NUMBER_OF_RECORDS_PER_LOAD;
                 generateContent();
             }
-            
+
             function teleportUsingAddressBarValue(url) {
                 var finalizedUrl = url;
                 if (url.substr(0, 7).toLocaleLowerCase() !== "http://" && 
@@ -679,7 +684,7 @@
                 loadRecordsUpTo = NUMBER_OF_RECORDS_PER_LOAD;
                 generateContent();
             }
-            
+
             function displayTab(tab) {
                 currentListFormat = tab;
                 if (tab === "PLACES") {
@@ -695,11 +700,11 @@
                     document.getElementById("listFormatDomains").disabled = false;
                     document.getElementById("listFormatMetaverse").disabled = true;
                 }
-            
+
                 loadRecordsUpTo = NUMBER_OF_RECORDS_PER_LOAD;
                 generateContent();
             }
-            
+
 
             function openDetail(placeId) {
                 for (var k=0; k < placeList.length; k++) {
@@ -718,7 +723,7 @@
                 document.getElementById("placeDetail-placeName").innerHTML = placeDetail.name;
                 document.getElementById("placeDetail-managers").innerHTML = "By <br>&nbsp;&nbsp;&nbsp;&nbsp;" + placeDetail.managers;
                 document.getElementById("placeDetail-description").innerHTML = placeDetail.description;
-                
+
                 var placeUrl = "hifi://" + placeDetail.name;
                 if (placeDetail.category === "U") {  //TO REMOVE ONCE BEACONS GET REMOVED
                     placeUrl = placeDetail.address;
@@ -737,7 +742,7 @@
                 document.getElementById("placeDetail-capacity").innerHTML = "CAPACITY: <b>" + capacity + "</b>";
                 document.getElementById("placeDetail-metaverse").innerHTML = "<font class='region-" + placeDetail.metaverseRegion.toUpperCase() + "'>" + placeDetail.metaverseServer + "</font>";
                 document.getElementById("placeDetail-region").innerHTML = "<font class='region-" + placeDetail.metaverseRegion.toUpperCase() + "'>" + placeDetail.metaverseRegion.toUpperCase() + "</font>";
-  
+
                 document.getElementById("placeDetail").style.width = "100%";
             }
 
@@ -750,6 +755,21 @@
                 while(new Date().getTime() < now + milliseconds){ /* do nothing */ } 
             }                      
 
+            function addMS() {
+                var msUrlToAdd = document.getElementById("addMS").value;
+                if (msUrlToAdd.substr(0, 4).toLocaleLowerCase() === "http") {
+                    var message = {
+                        "channel": channel,
+                        "action": "ADD_MS",
+                        "metaverseUrl": msUrlToAdd
+                        };
+                    EventBridge.emitWebEvent(JSON.stringify(message));
+                    document.getElementById("reloading").innerHTML = "RELOADING...";
+                    sleepFor(210);
+                    reload();
+                }
+            }
+            
             displayMaturityFilter();
             document.getElementById("clearBtn").style.display = "none";
             document.getElementById("searchFiltersBar").style.display = "none";
