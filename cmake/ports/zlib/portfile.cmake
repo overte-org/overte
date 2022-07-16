@@ -1,11 +1,11 @@
 include(vcpkg_common_functions)
 
-set(VERSION 1.2.11)
+set(VERSION 1.2.12)
 
 vcpkg_download_distfile(ARCHIVE_FILE
-    URLS "http://www.zlib.net/zlib-${VERSION}.tar.gz" "https://downloads.sourceforge.net/project/libpng/zlib/${VERSION}/zlib-${VERSION}.tar.gz"
-    FILENAME "zlib1211.tar.gz"
-    SHA512 73fd3fff4adeccd4894084c15ddac89890cd10ef105dd5e1835e1e9bbb6a49ff229713bd197d203edfa17c2727700fce65a2a235f07568212d820dca88b528ae
+    URLS "http://www.zlib.net/zlib-${VERSION}.tar.xz" "https://downloads.sourceforge.net/project/libpng/zlib/${VERSION}/zlib-${VERSION}.tar.xz" "https://build-deps.overte.org/dependencies/zlib-${VERSION}.tar.xz"
+    FILENAME "zlib1212.tar.xz"
+    SHA512 12940e81e988f7661da52fa20bdc333314ae86a621fdb748804a20840b065a1d6d984430f2d41f3a057de0effc6ff9bcf42f9ee9510b88219085f59cbbd082bd
 )
 
 vcpkg_extract_source_archive_ex(
