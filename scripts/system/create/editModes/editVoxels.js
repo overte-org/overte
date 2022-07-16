@@ -21,8 +21,6 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-//const { TRIGGER_ON_VALUE } = require("../../libraries/controllerDispatcherUtils");
-
 Script.include([
     "./libraries/utils.js",
     "entitySelectionTool/entitySelectionTool.js"
@@ -249,14 +247,11 @@ EditVoxels = function() {
                 print("floorVector(toDrawPosition): " + JSON.stringify(floorVector(toDrawPosition)));
             }
             oldEditPosition = floorVector(toDrawPosition);
-            // TODO? Convert sphere radius from world to local
-            //var cubeDimension = Math.round(editSphereRadius);
             var cubeSizeWorld = {x : editSphereRadius * 2, y : editSphereRadius * 2, z : editSphereRadius * 2};
             var zeroVecWorld = {x : 0, y: 0, z: 0};
             var zeroVecLocal = Entities.worldCoordsToVoxelCoords(entityID, zeroVecWorld);
             var cubeSizeVecLocal = Entities.worldCoordsToVoxelCoords(entityID, cubeSizeWorld);
             cubeSize = ceilVector(Vec3.subtract(cubeSizeVecLocal, zeroVecLocal));
-            //cubeDimension += (cubeDimension > 0) ? 0 : 1;
             var lowPosition = Vec3.subtract(oldEditPosition, Vec3.multiply(cubeSize, 0.5));
             if (Entities.setVoxelsInCuboid(entityID, lowPosition, cubeSize, lastEditValue)){
                 Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
@@ -321,10 +316,6 @@ EditVoxels = function() {
         if (!(event.isLeftButton || event.isMiddleButton) && !triggered()) {
             return;
         }
-        
-        /*if (triggered() && selectionManager.pointingAtDesktopWindowOrTablet(that.triggeredHand)) {
-            return;
-        }*/
         
         if (event.isLeftButton || event.isMiddleButton){
             if (event.isMiddleButton){
@@ -566,11 +557,7 @@ EditVoxels = function() {
     
     function onUpdateHandler(delta){
         var wantDebug = false;
-        //if (wantDebug) {
-            //print("=============== eV::onUpdateHandler BEG =======================");
-        //}
 
-        
         if (isEditing === false || editedVoxelEntity === null){
             return;
         }
@@ -602,14 +589,12 @@ EditVoxels = function() {
         var globalOriginInVoxelSpace = Entities.worldCoordsToVoxelCoords(editedVoxelEntity, { x: 0, y: 0, z: 0 });
         var pickRayDirInVoxelSpace = Vec3.subtract(Entities.worldCoordsToVoxelCoords(editedVoxelEntity, pickRay.direction), globalOriginInVoxelSpace);
         var voxelPickRayOrigin = Entities.worldCoordsToVoxelCoords(editedVoxelEntity, pickRay.origin);
-        //var pickRayDirInVoxelSpace = Vec3.subtract(voxelPickRayOrigin, voxelPickRayDirection);
         pickRayDirInVoxelSpace = Vec3.normalize(pickRayDirInVoxelSpace);
         var directionMultiplier = 1.0;
         var offsetVector = { x: 0, y: 0, z: 0 };
         switch (editPlane) {
             // 0 - plane parallel to YZ plane
             case 0:
-                //var dirSign = (pickRayDirInVoxelSpace.x > 0) ? 1 : -1;
                 offsetVector.x = 0.5;
                 offsetVector.y = (offsetVector.x / pickRayDirInVoxelSpace.x) * pickRayDirInVoxelSpace.y;
                 offsetVector.z = (offsetVector.x / pickRayDirInVoxelSpace.x) * pickRayDirInVoxelSpace.z;
@@ -617,7 +602,6 @@ EditVoxels = function() {
                 break;
             // 1 - plane parallel to XZ plane
             case 1:
-                //var dirSign = (pickRayDirInVoxelSpace.x > 0) ? 1 : -1;
                 offsetVector.y = 0.5;
                 offsetVector.x = (offsetVector.y / pickRayDirInVoxelSpace.y) * pickRayDirInVoxelSpace.x;
                 offsetVector.z = (offsetVector.y / pickRayDirInVoxelSpace.y) * pickRayDirInVoxelSpace.z;
@@ -625,7 +609,6 @@ EditVoxels = function() {
                 break;
             // 2 - plane parallel to XY plane
             case 2:
-                //var dirSign = (pickRayDirInVoxelSpace.x > 0) ? 1 : -1;
                 offsetVector.z = 0.5;
                 offsetVector.x = (offsetVector.z / pickRayDirInVoxelSpace.z) * pickRayDirInVoxelSpace.x;
                 offsetVector.y = (offsetVector.z / pickRayDirInVoxelSpace.z) * pickRayDirInVoxelSpace.y;
@@ -634,7 +617,6 @@ EditVoxels = function() {
             default:
                 return;
         }
-        //directionMultiplier = 0.1;
         intersectionPoint = Vec3.sum(Vec3.multiply(pickRayDirInVoxelSpace, directionMultiplier), voxelPickRayOrigin);
         newEditPosition = floorVector(Vec3.sum(intersectionPoint, offsetVector));
 

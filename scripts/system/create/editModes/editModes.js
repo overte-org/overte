@@ -150,6 +150,7 @@ EditTools = function(options) {
         try {
             data = JSON.parse(data);
         } catch (e) {
+            console.log("editModes.js, EditTools.webEventReceived: Cannot parse received JSON data");
             return;
         }
 

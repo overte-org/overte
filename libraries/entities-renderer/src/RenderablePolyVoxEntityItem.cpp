@@ -273,7 +273,6 @@ QByteArray RenderablePolyVoxEntityItem::volDataToArray(quint16 voxelXSize, quint
     withReadLock([&] {
         if (isEdged()) {
             low += 1;
-            //voxelSize += 2;
         }
 
         loop3(ivec3(0), voxelSize, [&](const ivec3& v){
@@ -1027,11 +1026,7 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
             return;
         }
         
-        quint16 voxelXDataSize = voxelXSize;
-        quint16 voxelYDataSize = voxelYSize;
-        quint16 voxelZDataSize = voxelZSize;
-        
-        int rawSize = voxelXDataSize * voxelYDataSize * voxelZDataSize;
+        int rawSize = voxelXSize * voxelYSize * voxelZSize;
 
         QByteArray compressedData;
         reader >> compressedData;
