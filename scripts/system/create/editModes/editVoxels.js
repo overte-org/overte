@@ -308,7 +308,8 @@ EditVoxels = function() {
     }
 
     function mousePressEvent(event) {
-        var wantDebug = true;
+        var wantDebug = false;
+        var attemptChangeOnEmpty = false;
         if (!editEnabled || !isActive) {
             return false;
         }
@@ -366,20 +367,22 @@ EditVoxels = function() {
 
         // if the PolyVox entity is empty, we can't pick against its "on" voxels.  try picking against its
         // bounding box, instead.
-        intersection = Entities.findRayIntersection(pickRay, false); // bounding box picking
-        if (intersection.intersects) {
-            if(attemptVoxelChange(pickRay.direction, intersection)){
-                Script.update.connect(onUpdateHandler);
-                isOnUpdateConnected = true;
-                if (wantDebug) {
-                    print("onUpdateHandler connected");
+        if (attemptChangeOnEmpty) {
+            intersection = Entities.findRayIntersection(pickRay, false); // bounding box picking
+            if (intersection.intersects) {
+                if(attemptVoxelChange(pickRay.direction, intersection)){
+                    Script.update.connect(onUpdateHandler);
+                    isOnUpdateConnected = true;
+                    if (wantDebug) {
+                        print("onUpdateHandler connected");
+                    }
                 }
             }
         }
     }
 
     function mouseReleaseEvent(event) {
-        var wantDebug = true;
+        var wantDebug = false;
 
         if (wantDebug) {
             print("=============== eV::mouseReleaseEvent BEG =======================");
@@ -474,7 +477,7 @@ EditVoxels = function() {
     }
 
     function updateSphereResizing(delta) {
-        var wantDebug = true;
+        var wantDebug = false;
         var newDistance = getDistanceBetweenControllers();
         var newRadius = (sphereInitialRadius / sphereResizingInitialHandDistance) * newDistance;
         var newPosition = getEditSpherePosition(newRadius);
@@ -496,7 +499,7 @@ EditVoxels = function() {
     }
 
     function startSphereResizing() {
-        var wantDebug = true;
+        var wantDebug = false;
         if (wantDebug) {
             print("=============== eV::startSphereResizing BEG =======================");
         }
@@ -518,7 +521,7 @@ EditVoxels = function() {
     }
 
     function stopSphereResizing() {
-        var wantDebug = true;
+        var wantDebug = false;
         if (wantDebug) {
             print("=============== eV::stopSphereResizing BEG =======================");
         }
@@ -562,7 +565,7 @@ EditVoxels = function() {
     }
     
     function onUpdateHandler(delta){
-        var wantDebug = true;
+        var wantDebug = false;
         //if (wantDebug) {
             //print("=============== eV::onUpdateHandler BEG =======================");
         //}
