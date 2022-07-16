@@ -3,6 +3,7 @@
 //  Created by Ryan Huffman on 13 Nov 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -1349,14 +1350,14 @@ const GROUPS = [
                 onDropdownChange: createPolyVoxPresetChangedFunction,
                 skipPropertyUpdate: true,
             },
-            /*{
+            {
                 label: "Surface Style",
                 type: "dropdown",
                 options: { 0: "Marching cubes", 1: "Cubic", 
                            2: "Edged cubic", 3: "Edged marching cubes" },
                 propertyID: "voxelSurfaceStyle",
                 propertyName: "voxelSurfaceStyle",
-            },*/
+            },
             {
                 label: "X Texture URL",
                 type: "string",

@@ -24,10 +24,7 @@ function loaded() {
         elVoxelHelpPopup = document.getElementById("voxel-help-popup");
 
         elVoxelSphereSize = document.getElementById("voxel-sphere-size");
-        //elVoxelEditDynamics = document.getElementById("voxel-edit-dynamics");
         elVoxelRemove = document.getElementById("voxel-remove");
-        //elVoxelPointerMode = document.getElementById("voxel-pointer-mode");
-        //elVoxelBrushLength = document.getElementById("voxel-brush-length");
         
         elPosY = document.getElementById("horiz-y");
         elMinorSpacing = document.getElementById("minor-spacing");
@@ -179,19 +176,13 @@ function loaded() {
                     createAppMode: createAppModeValue,
                     voxelEditMode: voxelEditModeValue,
                     voxelSphereSize: elVoxelSphereSize.value,
-                    //voxelEditDynamics: elVoxelEditDynamics.value,
                     voxelRemove: elVoxelRemove.checked,
-                    //voxelPointerMode: elVoxelPointerMode.value,
-                    //voxelBrushLength: elVoxelBrushLength.value,
                 }));
             }
         }
 
         elVoxelSphereSize.addEventListener("change", emitUpdateEditTools);
-        //elVoxelEditDynamics.addEventListener("change", emitUpdateEditTools);
         elVoxelRemove.addEventListener("change", emitUpdateEditTools);
-        //elVoxelPointerMode.addEventListener("change", emitUpdateEditTools);
-        //elVoxelBrushLength.addEventListener("change", emitUpdateEditTools);
         
         elPosY.addEventListener("change", emitUpdate);
         elMinorSpacing.addEventListener("change", emitUpdate);

@@ -6,6 +6,7 @@
 //    Modified by David Back on 1/9/2018
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors
+//  Copyright 2022 Overte e.V.
 //
 //  This script implements a class useful for building tools for editing entities.
 //

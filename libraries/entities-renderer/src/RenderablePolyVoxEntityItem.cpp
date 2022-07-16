@@ -4,6 +4,7 @@
 //
 //  Created by Seth Alves on 5/19/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -1030,12 +1031,6 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
         quint16 voxelYDataSize = voxelYSize;
         quint16 voxelZDataSize = voxelZSize;
         
-        /*if(entity->isEdged()){
-            voxelXDataSize++;
-            voxelYDataSize++;
-            voxelZDataSize++;
-        }*/
-        
         int rawSize = voxelXDataSize * voxelYDataSize * voxelZDataSize;
 
         QByteArray compressedData;
@@ -1064,9 +1059,6 @@ void RenderablePolyVoxEntityItem::setVoxelsFromData(QByteArray uncompressedData,
     withWriteLock([&] {
         if (isEdged()) {
             low += 1;
-            //voxelXSize += 2;
-            //voxelYSize += 2;
-            //voxelZSize += 2;
         }
         loop3(ivec3(0), ivec3(voxelXSize, voxelYSize, voxelZSize), [&](const ivec3& v) {
             int uncompressedIndex = (v.z * (voxelYSize) * (voxelXSize)) + (v.y * (voxelZSize)) + v.x;
