@@ -21,12 +21,15 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
+//const { TRIGGER_ON_VALUE } = require("../../libraries/controllerDispatcherUtils");
+
 Script.include([
     "./libraries/utils.js",
-    "entitySelectionTool/entitySelectionTool.js",
+    "entitySelectionTool/entitySelectionTool.js"
 ]);
 
 var selectionManager = SelectionManager;
+
 
 EditVoxels = function() {
     var self = this;
@@ -36,6 +39,8 @@ EditVoxels = function() {
 
     var controlHeld = false;
     var shiftHeld = false;
+    var isLeftGripPressed = false;
+    var isRightGripPressed = false;
 
     var editEnabled = false;
     var editSingleVoxels = false;
@@ -64,9 +69,14 @@ EditVoxels = function() {
     // True when original operation added voxels, false otherwise
     var lastEditValue = 255;
     var isOnUpdateConnected = false;
+    var isSphereResizingStarted = true;
+    var sphereResizingInitialHandDistance = 0.1;
+    var sphereInitialRadius = editSphereRadius;
+    var sphereEntityID = null;
 
     that.triggerClickMapping = Controller.newMapping(Script.resolvePath('') + '-click-voxels');
     that.triggerPressMapping = Controller.newMapping(Script.resolvePath('') + '-press-voxels');
+    that.gripPressMapping = Controller.newMapping(Script.resolvePath('') + '-grip-voxels');
     that.triggeredHand = NO_HAND;
     that.pressedHand = NO_HAND;
     
@@ -450,6 +460,106 @@ EditVoxels = function() {
             }
         }
     }
+
+    function getDistanceBetweenControllers(){
+        var poseLeft = getControllerWorldLocation(Controller.Standard.LeftHand, true);
+        var poseRight = getControllerWorldLocation(Controller.Standard.RightHand, true);
+        return Vec3.distance(poseLeft.translation, poseRight.translation);
+    }
+    function getEditSpherePosition( radius ){
+        var poseLeft = getControllerWorldLocation(Controller.Standard.LeftHand, true);
+        var poseRight = getControllerWorldLocation(Controller.Standard.RightHand, true);
+        var handsPosition = Vec3.multiply(Vec3.sum(poseLeft.translation, poseRight.translation), 0.5);
+        return Vec3.sum(handsPosition, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: radius * -2.0 }));
+    }
+
+    function updateSphereResizing(delta) {
+        var wantDebug = true;
+        var newDistance = getDistanceBetweenControllers();
+        var newRadius = (sphereInitialRadius / sphereResizingInitialHandDistance) * newDistance;
+        var newPosition = getEditSpherePosition(newRadius);
+        var newDimensions = Vec3.multiply({ x: 1.0, y: 1.0, z: 1.0 }, newRadius * 2.0);
+        if (wantDebug) {
+            print("newDistance: " + JSON.stringify(newDistance));
+            print("newRadius: " + JSON.stringify(newRadius));
+            print("newPosition: " + JSON.stringify(newPosition));
+            print("newDimensions: " + JSON.stringify(newDimensions));
+        }
+        Entities.editEntity(sphereEntityID, {
+            position: newPosition,
+            dimensions: newDimensions
+        });
+        if( that.editTools ) {
+            editTools.setVoxelSphereSize(newRadius * 2);
+        }
+        editSphereRadius = newRadius;
+    }
+
+    function startSphereResizing() {
+        var wantDebug = true;
+        if (wantDebug) {
+            print("=============== eV::startSphereResizing BEG =======================");
+        }
+        Script.update.connect(updateSphereResizing);
+        sphereResizingInitialHandDistance = getDistanceBetweenControllers();
+        sphereInitialRadius = editSphereRadius;
+        var spherePosition = getEditSpherePosition(sphereInitialRadius);
+        var sphereDimensions = Vec3.multiply({ x: 1.0, y: 1.0, z: 1.0 }, sphereInitialRadius * 2.0);
+        sphereEntityID = Entities.addEntity({
+            type: "Shape",
+            shape: "Sphere",
+            name: "voxelEditSphere",
+            position: spherePosition,
+            color: { r: 60, g: 100, b: 60 },
+            alpha: 0.5,
+            dimensions: sphereDimensions,
+            collisionless: true,
+        },"world");
+    }
+
+    function stopSphereResizing() {
+        var wantDebug = true;
+        if (wantDebug) {
+            print("=============== eV::stopSphereResizing BEG =======================");
+        }
+        Script.update.disconnect(updateSphereResizing);
+        if (sphereEntityID !== null) {
+            Entities.deleteEntity(sphereEntityID);
+        }
+        sphereEntityID = null;
+    }
+
+    function makeGripPressHandler(hand) {
+        return function (value) {
+            if (!editEnabled) {
+                return;
+            }
+            if (value > 0.5) {
+                if (hand === Controller.Standard.LeftHand) {
+                    isLeftGripPressed = true;
+                } else if (hand === Controller.Standard.RightHand) {
+                    isRightGripPressed = true;
+                }
+            } else if (value < 0.4){
+                if (hand === Controller.Standard.LeftHand) {
+                    isLeftGripPressed = false;
+                } else if (hand === Controller.Standard.RightHand) {
+                    isRightGripPressed = false;
+                }
+            }
+            if ( isLeftGripPressed && isRightGripPressed) {
+                if( !isSphereResizingStarted ) {
+                    isSphereResizingStarted = true;
+                    startSphereResizing();
+                }
+            } else {
+                if( isSphereResizingStarted ) {
+                    isSphereResizingStarted = false;
+                    stopSphereResizing();
+                }
+            }
+        }
+    }
     
     function onUpdateHandler(delta){
         var wantDebug = true;
@@ -571,13 +681,17 @@ EditVoxels = function() {
     that.triggerClickMapping.from(Controller.Standard.LTClick).peek().to(makeClickHandler(Controller.Standard.LeftHand));
     that.triggerPressMapping.from(Controller.Standard.RT).peek().to(makePressHandler(Controller.Standard.RightHand));
     that.triggerPressMapping.from(Controller.Standard.LT).peek().to(makePressHandler(Controller.Standard.LeftHand));
+    that.gripPressMapping.from(Controller.Standard.LeftGrip).peek().to(makeGripPressHandler(Controller.Standard.LeftHand));
+    that.gripPressMapping.from(Controller.Standard.RightGrip).peek().to(makeGripPressHandler(Controller.Standard.RightHand));
     that.enableTriggerMapping = function() {
         that.triggerClickMapping.enable();
         that.triggerPressMapping.enable();
+        that.gripPressMapping.enable();
     };
     that.disableTriggerMapping = function() {
         that.triggerClickMapping.disable();
         that.triggerPressMapping.disable();
+        that.gripPressMapping.disable();
     };
     that.enableTriggerMapping();
     

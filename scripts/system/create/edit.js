@@ -134,6 +134,7 @@ var editTools = new EditTools({
 });
 
 var editVoxels = new EditVoxels();
+editVoxels.editTools = editTools;
 
 editTools.addListener(editVoxels.updateEditSettings);
 editTools.addListener(selectionManager.updateEditSettings);
