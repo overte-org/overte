@@ -1,0 +1,78 @@
+# Docker file for building Overte Qt5 packages for Ubuntu 18.04
+
+# Some steps for actually using this:
+# - Check which commit you are building https://invent.kde.org/qt/qt/qt5/-/tree/kde/5.15
+# - Adjust this file to include the commit hash you are building, the date, the number of threads you want to use (-j10), and the Qt and QtWebEngine versions.
+#     Keep in mind that building Qt requires a lot of memory. You should have over 1.2GiB of system memory available per thread.
+# - Run the build process with something like `PROGRESS_NO_TRUNC=1 DOCKER_BUILDKIT=1 BUILDKIT_STEP_LOG_MAX_SIZE=-1 docker build --progress plain -t overte-qt5:5.15.5-2022.07.13-kde_ea4efc067b47c11b1aac61668afd8578a6834f5b -f Dockerfile_Ubuntu_18.04_Qt5 .`
+#     Buildkit is used to cache intermittent steps in case you need to modify something afterwards.
+# - Once the build has completed, create a container from the image and export the created Qt package.
+#     `docker create --name extract overte-qt5:5.15.5-2022.07.13-kde_ea4efc067b47c11b1aac61668afd8578a6834f5b`
+#     `docker cp extract:qt5-install-5.15.5-2022.07.13-kde_ea4efc067b47c11b1aac61668afd8578a6834f5b-ubuntu-18.04-amd64.tar.xz /path/on/host`
+#     `docker rm extract`
+
+FROM ubuntu:18.04
+LABEL maintainer="Julian Groß (julian.gro@overte.org)"
+LABEL description="Development image for Overte Qt5 packages for Ubuntu 18.04."
+
+# Don't use any frontend when installalling packages during the creation of this container
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN echo UTC >/etc/timezone
+
+# Enable source repositories for apt
+RUN sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list
+
+# Update package list
+RUN apt-get update
+
+# Upgrade packages
+RUN apt-get -y upgrade
+
+RUN apt-get -y install git
+
+# Clone and enter single branch of Qt5
+RUN git clone --recursive https://invent.kde.org/qt/qt/qt5.git -b kde/5.15
+# Note: We don't need to update QtWebengine because KDE has already done this.
+
+# Adjust QMAKE_LIBDIR_X11 and QMAKE_LIBDIR_OPENGL
+RUN sed -i qt5/qtbase/mkspecs/linux-g++-64/qmake.conf -e 's/\/usr\/X11R6\/lib64/\/usr\/lib\/x86_64-linux-gnu/g'
+
+# Install Qt5 system build dependencies
+RUN apt-get -y build-dep qt5-default
+
+# Install build dependencies
+RUN apt-get -y install git python gperf flex bison pkg-config mesa-utils libgl1-mesa-dev make g++ libdbus-glib-1-dev libnss3-dev nodejs libxkbfile-dev libx11-dev
+
+
+RUN mkdir qt5-install && mkdir qt5-build
+WORKDIR qt5-build
+RUN ../qt5/configure -force-debug-info -release -opensource -confirm-license -platform linux-g++-64 -recheck-all -nomake tests -nomake examples -skip qttranslations -skip qtserialport -skip qt3d -skip qtlocation -skip qtwayland -skip qtsensors -skip qtgamepad -skip qtcharts -skip qtx11extras -skip qtmacextras -skip qtvirtualkeyboard -skip qtpurchasing -skip qtdatavis3d -skip qtlottie -skip qtquick3d -skip qtpim -skip qtdocgallery -no-warnings-are-errors -no-pch -no-icu -prefix ../qt5-install
+
+RUN NINJAFLAGS='-j10' make -j10
+
+RUN make -j10 module-qtscript
+
+RUN make -j10 install
+
+WORKDIR ./qtscript
+RUN make -j10 install
+
+WORKDIR ../../qt5-install
+RUN find . -name \*.prl -exec sed -i -e '/^QMAKE_PRL_BUILD_DIR/d' {} \;
+
+# Overwrite QtWebengine version to work around version conflicts
+RUN find . -name \Qt5WebEngine*Config.cmake -exec sed -i '' -e 's/5\.15\.10/5\.15\.5/g' {} \;
+RUN cp lib/libQt5WebEngine.so.5.15.10 lib/libQt5WebEngine.so.5.15.5
+RUN cp lib/libQt5WebEngineCore.so.5.15.10 lib/libQt5WebEngineCore.so.5.15.5
+RUN cp lib/libQt5WebEngineWidgets.so.5.15.10 lib/libQt5WebEngineWidgets.so.5.15.5
+RUN cp lib/libQt5Pdf.so.5.15.10 lib/libQt5Pdf.so.5.15.5
+RUN cp lib/libQt5PdfWidgets.so.5.15.10 lib/libQt5PdfWidgets.so.5.15.5
+
+
+COPY ./qt.conf ./bin/
+
+RUN cp ../qt5-build/config.summary ./
+
+WORKDIR ..
+RUN XZ_OPT='-T0' tar -Jcvf qt5-install-5.15.5-2022.07.13-kde_ea4efc067b47c11b1aac61668afd8578a6834f5b-ubuntu-18.04-amd64.tar.xz qt5-install
