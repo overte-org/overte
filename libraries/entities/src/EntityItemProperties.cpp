@@ -5,6 +5,7 @@
 //  Created by Brad Hefta-Gaub on 12/4/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -1292,6 +1293,8 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     type: "PolyVox",
  *     position: position,
  *     dimensions: { x: 2, y: 2, z: 2 },
+ *     voxelVolumeSize: { x: 16, y: 16, z: 16 },
+ *     voxelSurfaceStyle: 2,
  *     xTextureURL: texture,
  *     yTextureURL: texture,
  *     zTextureURL: texture,

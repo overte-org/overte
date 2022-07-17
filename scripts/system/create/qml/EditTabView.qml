@@ -178,6 +178,18 @@ TabBar {
                                 editTabView.currentIndex = 2
                             }
                         }
+
+                        NewEntityButton {
+                            icon: "icons/voxels.svg"
+                            text: "VOXELS"
+                            onClicked: {
+                                editRoot.sendToScript({
+                                    method: "newEntityButtonClicked",
+                                    params: { buttonName: "newPolyVoxButton" }
+                                });
+                                editTabView.currentIndex = 2
+                            }
+                        }
                     }
 
                     HifiControls.Button {
@@ -274,7 +286,7 @@ TabBar {
     }
 
     EditTabButton {
-        title: "GRID"
+        title: "TOOLS"
         active: true
         enabled: true
         property string originalUrl: ""

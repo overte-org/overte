@@ -4,6 +4,7 @@
 //
 //  Created by Seth Alves on 5/19/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -272,11 +273,10 @@ QByteArray RenderablePolyVoxEntityItem::volDataToArray(quint16 voxelXSize, quint
     withReadLock([&] {
         if (isEdged()) {
             low += 1;
-            voxelSize += 2;
         }
 
-        loop3(low, voxelSize, [&](const ivec3& v){
-            result[index++] = _volData->getVoxelAt(v.x, v.y, v.z);
+        loop3(ivec3(0), voxelSize, [&](const ivec3& v){
+            result[index++] = _volData->getVoxelAt(v.x + low.x, v.y + low.y, v.z + low.z);
         });
     });
 
@@ -1025,6 +1025,7 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
             entity->setVoxelsFromData(QByteArray(1, 0), 1, 1, 1);
             return;
         }
+        
         int rawSize = voxelXSize * voxelYSize * voxelZSize;
 
         QByteArray compressedData;
@@ -1047,9 +1048,15 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
 void RenderablePolyVoxEntityItem::setVoxelsFromData(QByteArray uncompressedData,
                                                     quint16 voxelXSize, quint16 voxelYSize, quint16 voxelZSize) {
     // this accepts the payload from uncompressVolumeData
+    ivec3 low{ 0 };
+    int index = 0;
+    
     withWriteLock([&] {
+        if (isEdged()) {
+            low += 1;
+        }
         loop3(ivec3(0), ivec3(voxelXSize, voxelYSize, voxelZSize), [&](const ivec3& v) {
-            int uncompressedIndex = (v.z * voxelYSize * voxelXSize) + (v.y * voxelZSize) + v.x;
+            int uncompressedIndex = (v.z * (voxelYSize) * (voxelXSize)) + (v.y * (voxelZSize)) + v.x;
             setVoxelInternal(v, uncompressedData[uncompressedIndex]);
         });
 

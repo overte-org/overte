@@ -4,6 +4,7 @@
 //  Persist toolbar by HRS 6/11/15.
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  This script allows you to edit entities with a new UI/UX for mouse and trackpad based editing
 //
@@ -11,7 +12,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-/* global Script, SelectionDisplay, LightOverlayManager, CameraManager, Grid, GridTool, EntityListTool, Vec3, SelectionManager,
+/* global Script, SelectionDisplay, LightOverlayManager, CameraManager, Grid, GridTool, EditTools, EditVoxels, EntityListTool, Vec3, SelectionManager,
    Overlays, OverlayWebWindow, UserActivityLogger, Settings, Entities, Tablet, Toolbars, Messages, Menu, Camera,
    progressDialog, tooltip, MyAvatar, Quat, Controller, Clipboard, HMD, UndoStack, OverlaySystemWindow,
    keyUpEventFromUIWindow:true */
@@ -36,7 +37,9 @@ Script.include([
     "entityList/entityList.js",
     "entitySelectionTool/entitySelectionTool.js",
     "audioFeedback/audioFeedback.js",
-    "modules/brokenURLReport.js"    
+    "modules/brokenURLReport.js",    
+    "editModes/editModes.js",    
+    "editModes/editVoxels.js"    
 ]);
 
 var CreateWindow = Script.require('./modules/createWindow.js');
@@ -125,6 +128,16 @@ var gridTool = new GridTool({
     shouldUseEditTabletApp: shouldUseEditTabletApp
 });
 gridTool.setVisible(false);
+
+var editTools = new EditTools({
+    createToolsWindow: createToolsWindow,
+});
+
+var editVoxels = new EditVoxels();
+editVoxels.editTools = editTools;
+
+editTools.addListener(editVoxels.updateEditSettings);
+editTools.addListener(selectionManager.updateEditSettings);
 
 var entityShapeVisualizerSessionName = "SHAPE_VISUALIZER_" + Uuid.generate();
 
@@ -750,6 +763,92 @@ var toolBar = (function () {
             }
         }
     }
+    
+    function handleNewPolyVoxDialogResult(result) {
+        if (result) {
+            var initialShape = result.initialShapeIndex;
+            var volumeSizeX = parseInt(result.volumeSizeX);
+            var volumeSizeY = parseInt(result.volumeSizeY);
+            var volumeSizeZ = parseInt(result.volumeSizeZ);
+            var voxelSurfaceStyle = parseInt(result.surfaceStyleIndex);
+            var voxelPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: volumeSizeZ * -1.6 }));
+            
+            var polyVoxID = createNewEntity({
+                type: "PolyVox",
+                name: "terrain",
+                dimensions: {
+                    x: volumeSizeX,
+                    y: volumeSizeY,
+                    z: volumeSizeZ
+                },
+                voxelVolumeSize: {
+                    x: volumeSizeX,
+                    y: volumeSizeY,
+                    z: volumeSizeZ
+                },
+                xTextureURL: result.xTextureURL,
+                yTextureURL: result.yTextureURL,
+                zTextureURL: result.zTextureURL,
+                voxelSurfaceStyle: voxelSurfaceStyle,
+                collisionless: !(result.collisions),
+                grab: {
+                    grabbable: result.grabbable
+                },
+            });
+            
+            Entities.editEntity(polyVoxID, {
+                position: voxelPosition
+            });
+            
+            if (polyVoxID){
+                switch (initialShape) {
+                    case 0:
+                        Entities.setVoxelsInCuboid(polyVoxID, {
+                            x: Math.round(volumeSizeX / 4),
+                            y: Math.round(volumeSizeY / 4),
+                            z: Math.round(volumeSizeZ / 4)
+                        }, {
+                            x: Math.round(volumeSizeX / 2.0),
+                            y: Math.round(volumeSizeY / 2.0),
+                            z: Math.round(volumeSizeZ / 2.0)
+                        }, 255);
+                        break;
+                    // Plane 1/4
+                    case 1:
+                        Entities.setVoxelsInCuboid(polyVoxID, {
+                            x: 0,
+                            y: 0,
+                            z: 0
+                        }, {
+                            x: volumeSizeX,
+                            y: Math.round(volumeSizeY / 4),
+                            z: volumeSizeZ
+                        }, 255);
+                        break;
+                    // Plane 3/4
+                    case 2:
+                        Entities.setVoxelsInCuboid(polyVoxID, {
+                            x: 0,
+                            y: 0,
+                            z: 0
+                        }, {
+                            x: volumeSizeX,
+                            y: Math.round(3 * volumeSizeY / 4),
+                            z: volumeSizeZ
+                        }, 255);
+                        break;
+                    // Single voxel at center
+                    case 3:
+                        Entities.setVoxel(polyVoxID, {
+                            x: Math.round(volumeSizeX / 2),
+                            y: Math.round(volumeSizeY / 2),
+                            z: Math.round(volumeSizeZ / 2)
+                        }, 255);
+                        break;
+                }
+            }
+        }
+    }
 
     function handleNewMaterialDialogResult(result) {
         if (result) {
@@ -804,6 +903,13 @@ var toolBar = (function () {
                 closeExistingDialogWindow();
                 break;
             case "newMaterialDialogCancel":
+                closeExistingDialogWindow();
+                break;
+            case "newPolyVoxDialogAdd":
+                handleNewPolyVoxDialogResult(message.params);
+                closeExistingDialogWindow();
+                break;
+            case "newPolyVoxDialogCancel":
                 closeExistingDialogWindow();
                 break;
         }
@@ -912,6 +1018,10 @@ var toolBar = (function () {
                     closeExistingDialogWindow();
                     var qmlPath = Script.resolvePath("qml/New" + entityType + "Window.qml");
                     var DIALOG_WINDOW_SIZE = { x: 500, y: 300 };
+                    if( entityType === "PolyVox" ){
+                        DIALOG_WINDOW_SIZE.x = 600;
+                        DIALOG_WINDOW_SIZE.y = 500;
+                    }
                     dialogWindow = Desktop.createWindow(qmlPath, {
                         title: "New " + entityType + " Entity",
                         additionalFlags: Desktop.ALWAYS_ON_TOP | Desktop.CLOSE_BUTTON_HIDES,
@@ -971,6 +1081,8 @@ var toolBar = (function () {
 
         addButton("newMaterialButton", createNewEntityDialogButtonCallback("Material"));
 
+        addButton("newPolyVoxButton", createNewEntityDialogButtonCallback("PolyVox"));
+        
         var deactivateCreateIfDesktopWindowsHidden = function() {
             if (!shouldUseEditTabletApp() && !entityListTool.isVisible() && !createToolsWindow.isVisible()) {
                 that.setActive(false);
@@ -1016,6 +1128,8 @@ var toolBar = (function () {
         isActive = active;
         activeButton.editProperties({isActive: isActive});
         undoHistory.setEnabled(isActive);
+        
+        editVoxels.setActive(active);
 
         var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
@@ -1369,7 +1483,7 @@ function mouseClickEvent(event) {
         var sizeOK = (allowLargeModels || angularSize < MAX_ANGULAR_SIZE) &&
                      (allowSmallModels || angularSize > MIN_ANGULAR_SIZE);
 
-        if (0 < x && sizeOK) {
+        if (0 < x && sizeOK && selectionManager.editEnabled) {
             selectedEntityID = foundEntity;
             orientation = MyAvatar.orientation;
             intersection = rayPlaneIntersection(pickRay, P, Quat.getForward(orientation));
