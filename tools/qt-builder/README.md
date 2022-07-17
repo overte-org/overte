@@ -56,6 +56,8 @@ https://wiki.qt.io/Jom
 Install in C:\Jom and add directory to PATH.
 
 ### Linux
+**Note: For Ubuntu 18.04 you may also build a Qt package via the accompanying Dockerfile.**
+
 1.  qt5 requirements
 On Ubuntu based systems you can just have apt install the dependencies for the qt5-default package:
 Edit /etc/apt/sources.list (edit as root) and uncomment all source repositories by replacing all `# deb-src` with `deb-src`.
@@ -225,7 +227,7 @@ amd64:
 ```bash
 ../qt5/configure -force-debug-info -release -opensource -confirm-license -platform linux-g++-64 -recheck-all -nomake tests -nomake examples -skip qttranslations -skip qtserialport -skip qt3d -skip qtlocation -skip qtwayland -skip qtsensors -skip qtgamepad -skip qtcharts -skip qtx11extras -skip qtmacextras -skip qtvirtualkeyboard -skip qtpurchasing -skip qtdatavis3d -skip qtlottie -skip qtquick3d -skip qtpim -skip qtdocgallery -no-warnings-are-errors -no-pch -no-egl -no-icu -prefix ../qt5-install
 ```
-If libX11 or libGL aren't found, you will need to manually provide those locations. Search for `libX11.so` and `libGL.so` respectively and provide paths to their folders inside `qt5/qtbase/mkdspecs/linux-g++-64/qmake.conf`.
+Make sure libX11 or libGL are found, you will need to manually provide their locations. Search for `libX11.so` and `libGL.so` respectively and provide paths to their folders inside `qt5/qtbase/mkdspecs/linux-g++-64/qmake.conf`.
 On Ubuntu 18.04 both are in `/usr/lib/x86_64-linux-gnu`
 
 aarch64:

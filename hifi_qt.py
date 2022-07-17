@@ -146,7 +146,7 @@ endif()
                 u_minor = int( distro.minor_version() )
                 if distro.id() == 'ubuntu' or distro.id() == 'linuxmint':
                     if (distro.id() == 'ubuntu' and u_major == 18) or distro.id() == 'linuxmint' and u_major == 19:
-                        self.qtUrl = self.assets_url + '/dependencies/vcpkg/qt5-install-5.15.2-ubuntu-18.04-amd64.tar.xz'
+                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.5-2022.07.17-kde_ea4efc067b47c11b1aac61668afd8578a6834f5b-ubuntu-18.04-amd64.tar.xz'
                     elif (distro.id() == 'ubuntu' and u_major > 18) or (distro.id() == 'linuxmint' and u_major > 19):
                         self.__no_qt_package_error()
                     else:
@@ -205,7 +205,7 @@ endif()
 
     def installQt(self):
         if not os.path.isdir(self.fullPath):
-            print ('Downloading Qt from AWS')
+            print ('Downloading Qt package')
             print('Extracting ' + self.qtUrl + ' to ' + self.path)
             hifi_utils.downloadAndExtract(self.qtUrl, self.path)
         else:
