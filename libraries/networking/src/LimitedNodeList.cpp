@@ -205,6 +205,10 @@ void LimitedNodeList::setPermissions(const NodePermissions& newPermissions) {
         newPermissions.can(NodePermissions::Permission::canRezAvatarEntities)) {
         emit canRezAvatarEntitiesChanged(_permissions.can(NodePermissions::Permission::canRezAvatarEntities));
     }
+    if (originalPermissions.can(NodePermissions::Permission::canViewAssetURLs) !=
+        newPermissions.can(NodePermissions::Permission::canViewAssetURLs)) {
+        emit canViewAssetURLsChanged(_permissions.can(NodePermissions::Permission::canViewAssetURLs));
+    }
 }
 
 void LimitedNodeList::setSocketLocalPort(SocketType socketType, quint16 socketLocalPort) {
