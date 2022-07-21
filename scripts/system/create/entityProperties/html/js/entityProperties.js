@@ -878,10 +878,10 @@ const GROUPS = [
             {
                 label: "Material Data",
                 type: "textarea",
-                buttons: [ { id: "clear", label: "Clear Material", className: "red", onClick: clearMaterialData }, 
-                           { id: "edit", label: "Edit as JSON", className: "blue", onClick: newJSONMaterialEditor },
-                           { id: "save", label: "Save Material", className: "black", onClick: saveMaterialData },
-                           { id: "materialAssistant", label: "s", className: "glyph black", onClick: openMaterialAssistant }],
+                buttons: [ { id: "materialAssistant", label: "Assistant...", className: "secondary_blue blue", onClick: openMaterialAssistant },
+                           { id: "clear", label: "Clear Material", className: "secondary_red red", onClick: clearMaterialData }, 
+                           { id: "edit", label: "Edit as JSON", className: "secondary", onClick: newJSONMaterialEditor },
+                           { id: "save", label: "Save Material", className: "secondary", onClick: saveMaterialData }],
                 propertyID: "materialData",
             },
             {
