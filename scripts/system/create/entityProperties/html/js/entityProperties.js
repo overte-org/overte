@@ -878,9 +878,10 @@ const GROUPS = [
             {
                 label: "Material Data",
                 type: "textarea",
-                buttons: [ { id: "clear", label: "Clear Material Data", className: "red", onClick: clearMaterialData }, 
-                           { id: "edit", label: "Edit as JSON", className: "blue", onClick: newJSONMaterialEditor },
-                           { id: "save", label: "Save Material Data", className: "black", onClick: saveMaterialData } ],
+                buttons: [ { id: "materialAssistant", label: "Assistant...", className: "secondary_blue blue", onClick: openMaterialAssistant },
+                           { id: "clear", label: "Clear Material", className: "secondary_red red", onClick: clearMaterialData }, 
+                           { id: "edit", label: "Edit as JSON", className: "secondary", onClick: newJSONMaterialEditor },
+                           { id: "save", label: "Save Material", className: "secondary", onClick: saveMaterialData }],
                 propertyID: "materialData",
             },
             {
@@ -2498,8 +2499,7 @@ function createStringProperty(property, elProperty) {
 
 
     elInput.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
-    if (propertyData.
-        onChange !== undefined) {
+    if (propertyData.onChange !== undefined) {
         elInput.addEventListener('change', propertyData.onChange);
     }
 
@@ -3580,6 +3580,21 @@ function saveMaterialData() {
     saveJSONMaterialData(true);
 }
 
+function openMaterialAssistant() {
+    if (materialEditor === null) {
+        loadDataInMaUi({});
+    } else {
+        loadDataInMaUi(materialEditor.getText());
+    }
+    $('#uiMaterialAssistant').show();
+    $('#properties-list').hide();
+}
+
+function closeMaterialAssistant() {
+    $('#uiMaterialAssistant').hide();
+    $('#properties-list').show();
+}
+
 /**
  * @param {boolean} noUpdate - don't update the UI, but do send a property update.
  * @param {Set.<string>} [entityIDsToUpdate] - Entity IDs to update materialData for.
@@ -3611,6 +3626,8 @@ function setMaterialDataFromEditor(noUpdate, entityIDsToUpdate) {
     } else {
         updateProperty('materialData', text, false);
     }
+    
+    maGetMaterialDataAssistantAvailability(text);
 }
 
 let materialEditor = null;
@@ -3667,6 +3684,14 @@ function hideMaterialDataTextArea() {
 
 function hideMaterialDataSaved() {
     $('#property-materialData-saved').hide();
+}
+
+function showMaterialAssistantButton() {
+    $('#property-materialData-button-materialAssistant').show();
+}
+
+function hideMaterialAssistantButton() {
+    $('#property-materialData-button-materialAssistant').hide();
 }
 
 function setMaterialEditorJSON(json) {
@@ -4145,6 +4170,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
     const multipleSelections = currentSelections.length > 1;
     const hasSelectedEntityChanged = !areSetsEqual(selectedEntityIDs, previouslySelectedEntityIDs);
 
+    closeMaterialAssistant();
     requestZoneList();
     
     if (selections.length === 0) {
@@ -4446,20 +4472,20 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
 
         let materialDataMultiValue = getMultiplePropertyValue("materialData");
         let materialDataTextArea = getPropertyInputElement("materialData");
-        let materialJson = null;
+        let materialJSON = null;
         if (!materialDataMultiValue.isMultiDiffValue) {
             try {
-                materialJson = JSON.parse(materialDataMultiValue.value);
+                materialJSON = JSON.parse(materialDataMultiValue.value);
             } catch (e) {
 
             }
         }
-        if (materialJson !== null && !lockedMultiValue.isMultiDiffValue && !lockedMultiValue.value) {
+        if (materialJSON !== null && !lockedMultiValue.isMultiDiffValue && !lockedMultiValue.value) {
             if (materialEditor === null) {
                 createJSONMaterialEditor();
             }
             materialDataTextArea.classList.remove('multi-diff');
-            setMaterialEditorJSON(materialJson);
+            setMaterialEditorJSON(materialJSON);
             showSaveMaterialDataButton();
             hideMaterialDataTextArea();
             hideNewJSONMaterialEditorButton();
@@ -4474,6 +4500,8 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
             hideSaveMaterialDataButton();
             hideMaterialDataSaved();
         }
+
+        maGetMaterialDataAssistantAvailability(materialJSON);
 
         if (hasSelectedEntityChanged && selections.length === 1 && entityTypes[0] === "Material") {
             requestMaterialTarget();
