@@ -257,7 +257,7 @@ function initiateMaUi() {
     };
     maMetallicSlider.oninput = function() {
         maMetallic.value = maMetallicSlider.value/1000;
-        maMaterialData.metallic = maMetallic.value;
+        maMaterialData.metallic = parseFloat(maMetallic.value);
         maGenerateJsonAndSave();
     };
     maMetallicMap.oninput = function() {
@@ -266,7 +266,7 @@ function initiateMaUi() {
     };
     maRoughnessSlider.oninput = function() {
         maRoughness.value = maRoughnessSlider.value/1000;
-        maMaterialData.roughness = maRoughness.value;
+        maMaterialData.roughness = parseFloat(maRoughness.value);
         maGenerateJsonAndSave();
     };
     maRoughnessMap.oninput = function() {
@@ -279,7 +279,7 @@ function initiateMaUi() {
     };
     maOpacitySlider.oninput = function() {
         maOpacity.value = maOpacitySlider.value/1000;
-        maMaterialData.opacity = maOpacity.value;
+        maMaterialData.opacity = parseFloat(maOpacity.value);
         maGenerateJsonAndSave();
     };
     maOpacityMapModeDont.oninput = function() {
@@ -296,12 +296,12 @@ function initiateMaUi() {
     };    
     maOpacityCutoffSlider.oninput = function() {
         maOpacityCutoff.value = maOpacityCutoffSlider.value/1000;
-        maMaterialData.opacityCutoff = maOpacityCutoff.value;
+        maMaterialData.opacityCutoff = parseFloat(maOpacityCutoff.value);
         maGenerateJsonAndSave();
     };
     maBloomSlider.oninput = function() {
         maBloom.value = maBloomSlider.value/100;
-        maMaterialData.bloom = maBloom.value;
+        maMaterialData.bloom = parseFloat(maBloom.value);
         maGenerateJsonAndSave();
     };
     maUnlit.oninput = function() {
@@ -314,7 +314,7 @@ function initiateMaUi() {
     };
     maScatteringSlider.oninput = function() {
         maScattering.value = maScatteringSlider.value/1000;
-        maMaterialData.scattering = maScattering.value;
+        maMaterialData.scattering = parseFloat(maScattering.value);
         maGenerateJsonAndSave();
     };
     maScatteringMap.oninput = function() {
