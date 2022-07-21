@@ -904,19 +904,19 @@ function maGetRGB(colorArray){
  * @param {string or object} materialData - json of the materialData as a string or as an object.
  */
 function maGetMaterialDataAssistantAvailability(materialData) {
-    var materialDataJson, materialDataString;
+    var materialDataJSON, materialDataString;
     if (typeof materialData === "string") {
-        materialDataJson = JSON.parse(materialData);
+        materialDataJSON = JSON.parse(materialData);
         materialDataString = materialData;
     } else {
-        materialDataJson = materialData;
+        materialDataJSON = materialData;
         materialDataString = JSON.stringify(materialData);
     }
     if (getPropertyInputElement("materialURL").value === "materialData" && materialDataString.indexOf("hifi_shader_simple") === -1 &&
             materialDataString.indexOf("glossMap") === -1 && materialDataString.indexOf("specularMap") === -1 && 
             materialDataString.indexOf("bumpMap") === -1 && materialDataString.indexOf("lightMap") === -1 && 
             materialDataString.indexOf("texCoordTransform0") === -1 && materialDataString.indexOf("texCoordTransform1") === -1 &&
-            (materialDataJson.materials === undefined || materialDataJson.materials.length <= 1 || typeof materialDataJson.materials === "object")) {
+            (materialDataJSON.materials === undefined || materialDataJSON.materials.length <= 1 || typeof materialDataJSON.materials === "object")) {
         showMaterialAssistantButton();
     } else {
         hideMaterialAssistantButton();

@@ -4472,20 +4472,20 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
 
         let materialDataMultiValue = getMultiplePropertyValue("materialData");
         let materialDataTextArea = getPropertyInputElement("materialData");
-        let materialJson = null;
+        let materialJSON = null;
         if (!materialDataMultiValue.isMultiDiffValue) {
             try {
-                materialJson = JSON.parse(materialDataMultiValue.value);
+                materialJSON = JSON.parse(materialDataMultiValue.value);
             } catch (e) {
 
             }
         }
-        if (materialJson !== null && !lockedMultiValue.isMultiDiffValue && !lockedMultiValue.value) {
+        if (materialJSON !== null && !lockedMultiValue.isMultiDiffValue && !lockedMultiValue.value) {
             if (materialEditor === null) {
                 createJSONMaterialEditor();
             }
             materialDataTextArea.classList.remove('multi-diff');
-            setMaterialEditorJSON(materialJson);
+            setMaterialEditorJSON(materialJSON);
             showSaveMaterialDataButton();
             hideMaterialDataTextArea();
             hideNewJSONMaterialEditorButton();
@@ -4501,7 +4501,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
             hideMaterialDataSaved();
         }
 
-        maGetMaterialDataAssistantAvailability(materialJson);
+        maGetMaterialDataAssistantAvailability(materialJSON);
 
         if (hasSelectedEntityChanged && selections.length === 1 && entityTypes[0] === "Material") {
             requestMaterialTarget();
