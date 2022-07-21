@@ -496,6 +496,22 @@ input[type=button].secondary_red, button.hifi-edit-button.secondary_red {
     background: linear-gradient(#d42043 20%, #94132e 100%);
     cursor: pointer;
 }
+input[type=button].secondary_blue, button.hifi-edit-button.secondary_blue {
+    font-family: Raleway-Bold;
+    font-size: 10px;
+    text-transform: uppercase;
+    vertical-align: top;
+    height: 18px;
+    min-width: 60px;
+    padding: 0 14px;
+    margin-right: 6px;
+    border-radius: 4px;
+    border: none;
+    color: #fff;
+    background-color: #1080b8;
+    background: linear-gradient(#00b4ef 20%, #1080b8 100%);
+    cursor: pointer;
+}
 input[type=button]:enabled:hover, button.hifi-edit-button:enabled:hover {
     background: linear-gradient(#000, #000);
     border: none;
