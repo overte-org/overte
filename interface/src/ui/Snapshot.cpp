@@ -531,7 +531,6 @@ QString Snapshot::getSnapshotFormat(){
 void Snapshot::setSnapshotFormat(const QString& format){
     if (getAvailableSnapshotFormats().contains(format)) {
         _snapshotFormat.set(format);
-        qDebug() << "Snapshot format set: " << format;
     } else {
         qDebug() << "Snapshot format not supported: " << format;
     }
@@ -544,7 +543,6 @@ QString Snapshot::getAnimatedSnapshotFormat(){
 void Snapshot::setAnimatedSnapshotFormat(const QString& format){
     if (getAvailableAnimatedSnapshotFormats().contains(format)) {
         _animatedSnapshotFormat.set(format);
-        qDebug() << "Snapshot format set: " << format;
     } else {
         qDebug() << "Snapshot format not supported: " << format;
     }
