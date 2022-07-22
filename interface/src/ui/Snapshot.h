@@ -4,6 +4,7 @@
 //
 //  Created by Stojce Slavkovski on 1/26/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -63,6 +64,8 @@ public:
     SnapshotMetaData* parseSnapshotData(QString snapshotPath);
 
     Setting::Handle<QString> _snapshotsLocation{ "snapshotsLocation" };
+    Setting::Handle<QString> _snapshotFormat{ "snapshotFormat" };
+    Setting::Handle<QString> _animatedSnapshotFormat{ "animatedSnapshotFormat" };
     void uploadSnapshot(const QString& filename, const QUrl& href = QUrl(""));
 
 signals:
@@ -95,6 +98,50 @@ public slots:
      * @param {String} location - The path to save snapshots to.
      */
     Q_INVOKABLE void setSnapshotsLocation(const QString& location);
+    
+    /*@jsdoc
+     * Gets the currently selected snapshot format.
+     * @function Snapshot.getSnapshotFormat
+     * @returns {string} Currently selected snapshot format.
+     */
+    Q_INVOKABLE QString getSnapshotFormat();
+
+    /*@jsdoc
+     * Sets the snapshot format.
+     * @function Snapshot.setSnapshotFormat
+     * @param {String} format - one of the format names returned by Snapshot.getAvailableSnapshotFormats().
+     */
+    Q_INVOKABLE void setSnapshotFormat(const QString& format);
+
+    /*@jsdoc
+     * Gets the currently selected animated snapshot format.
+     * @function Snapshot.getAnimatedSnapshotFormat
+     * @returns {Array.<string>} Currently selected snapshot format.
+     */
+    Q_INVOKABLE QString getAnimatedSnapshotFormat();
+
+    /*@jsdoc
+     * Sets the snapshot format.
+     * @function Snapshot.setAnimatedSnapshotFormat
+     * @param {String} format - one of the format names returned by Snapshot.getAvailableSnapshotFormats().
+     */
+    Q_INVOKABLE void setAnimatedSnapshotFormat(const QString& format);
+
+    /*@jsdoc
+     * Returns a list of supported snapshot formats.
+     * @function Snapshot.getAvailableSnapshotFormats
+     * @returns {Array.<string>} List of supported snapshot formats.
+     */
+    Q_INVOKABLE QStringList getAvailableSnapshotFormats();
+
+    /*@jsdoc
+     * Returns a list of supported animated snapshot formats.
+     * @function Snapshot.getAvailableAnimatedSnapshotFormats
+     * @returns {Array.<string>} List of supported animated snapshot formats.
+     */
+    Q_INVOKABLE QStringList getAvailableAnimatedSnapshotFormats();
+    
+    
 
 private slots:
     void takeNextSnapshot();
