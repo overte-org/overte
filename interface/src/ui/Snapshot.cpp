@@ -4,6 +4,7 @@
 //
 //  Created by Stojce Slavkovski on 1/26/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -44,12 +45,13 @@
 
 // filename format: overte-snap-by-%username%-on-%date%_%time%_@-%location%.png
 // %1 <= username, %2 <= date and time, %3 <= current location
-const QString FILENAME_PATH_FORMAT = "overte-snap-by-%1-on-%2.png";
+const QString FILENAME_PATH_FORMAT = "overte-snap-by-%1-on-%2";
+const QString DEFAULT_FORMAT = "png";
 const QString DATETIME_FORMAT = "yyyy-MM-dd_hh-mm-ss";
 const QString SNAPSHOTS_DIRECTORY = "Snapshots";
 const QString URL = "overte_url";
 static const int SNAPSHOT_360_TIMER_INTERVAL = 350;
-static const QList<QString> SUPPORTED_IMAGE_FORMATS = { "jpg", "jpeg", "png" };
+static const QList<QString> SUPPORTED_IMAGE_FORMATS = { "jpg", "jpeg", "png", "webp" };
 
 Snapshot::Snapshot() {
     _snapshotTimer.setSingleShot(false);
@@ -109,6 +111,7 @@ QString Snapshot::saveSnapshot(QImage image, const QString& filename, const QStr
 
     return "";
 }
+
 
 static const float CUBEMAP_SIDE_PIXEL_DIMENSION = 2048.0f;
 static const float SNAPSHOT_360_FOV = 90.0f;
@@ -389,7 +392,11 @@ QFile* Snapshot::savedFileForSnapshot(QImage& shot,
             imageQuality = 50;
         }
     } else {
-        filename = FILENAME_PATH_FORMAT.arg(username, now.toString(DATETIME_FORMAT));
+        QString selectedFormat(DEFAULT_FORMAT);
+        if (_snapshotFormat.get() != "") {
+            selectedFormat = _snapshotFormat.get();
+        }
+        filename = FILENAME_PATH_FORMAT.arg(username, now.toString(DATETIME_FORMAT)) + "." + selectedFormat;
         QFileInfo snapshotFileInfo(filename);
         QString filenameSuffix = snapshotFileInfo.suffix();
         filenameSuffix = filenameSuffix.toLower();
@@ -515,4 +522,38 @@ QString Snapshot::getSnapshotsLocation() {
 
 void Snapshot::setSnapshotsLocation(const QString& location) {
     _snapshotsLocation.set(location);
+}
+
+QString Snapshot::getSnapshotFormat(){
+    return _snapshotFormat.get();
+}
+
+void Snapshot::setSnapshotFormat(const QString& format){
+    if (getAvailableSnapshotFormats().contains(format)) {
+        _snapshotFormat.set(format);
+        qDebug() << "Snapshot format set: " << format;
+    } else {
+        qDebug() << "Snapshot format not supported: " << format;
+    }
+}
+
+QString Snapshot::getAnimatedSnapshotFormat(){
+    return _animatedSnapshotFormat.get();
+}
+
+void Snapshot::setAnimatedSnapshotFormat(const QString& format){
+    if (getAvailableAnimatedSnapshotFormats().contains(format)) {
+        _animatedSnapshotFormat.set(format);
+        qDebug() << "Snapshot format set: " << format;
+    } else {
+        qDebug() << "Snapshot format not supported: " << format;
+    }
+}
+
+QStringList Snapshot::getAvailableSnapshotFormats() {
+    return QStringList({"png", "jpg", "webp"});
+}
+
+QStringList Snapshot::getAvailableAnimatedSnapshotFormats() {
+    return QStringList({"gif"});
 }

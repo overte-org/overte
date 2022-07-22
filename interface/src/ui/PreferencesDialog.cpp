@@ -259,6 +259,28 @@ void setupPreferences() {
     }
 
     {
+        auto getter = []()->int { return DependencyManager::get<Snapshot>()->getAvailableSnapshotFormats().indexOf(DependencyManager::get<Snapshot>()->getSnapshotFormat()); };
+        auto setter = [](int value) { DependencyManager::get<Snapshot>()->setSnapshotFormat(DependencyManager::get<Snapshot>()->getAvailableSnapshotFormats()[value]); };
+        auto preference = new RadioButtonsPreference(SNAPSHOTS, "Snapshot format", getter, setter);
+        QStringList items;
+        items << DependencyManager::get<Snapshot>()->getAvailableSnapshotFormats();
+        preference->setHeading("Snapshot format");
+        preference->setItems(items);
+        preferences->addPreference(preference);
+    }
+
+    {
+        auto getter = []()->int { return DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormats().indexOf(DependencyManager::get<Snapshot>()->getAnimatedSnapshotFormat()); };
+        auto setter = [](int value) { DependencyManager::get<Snapshot>()->setAnimatedSnapshotFormat(DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormats()[value]); };
+        auto preference = new RadioButtonsPreference(SNAPSHOTS, "Animated snapshot format", getter, setter);
+        QStringList items;
+        items << DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormats();
+        preference->setHeading("Animated snapshot format");
+        preference->setItems(items);
+        preferences->addPreference(preference);
+    }
+    
+    {
         auto getter = []()->bool { return !Menu::getInstance()->isOptionChecked(MenuOption::DisableActivityLogger); };
         auto setter = [](bool value) { Menu::getInstance()->setIsOptionChecked(MenuOption::DisableActivityLogger, !value); };
         preferences->addPreference(new CheckPreference("Privacy", "Send data - Overte uses information provided by your "
