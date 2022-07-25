@@ -252,41 +252,10 @@ public:
     // term strategy is to get rid of any GL calls in favor of the HIFI GPU API
     // For now, instead of calling the raw gl Call, use the equivalent call on the batch so the call is beeing recorded
     // THe implementation of these functions is in GLBackend.cpp
-    void _glUniform1i(int location, int v0);
     void _glUniform1f(int location, float v0);
     void _glUniform2f(int location, float v0, float v1);
     void _glUniform3f(int location, float v0, float v1, float v2);
     void _glUniform4f(int location, float v0, float v1, float v2, float v3);
-    void _glUniform3fv(int location, int count, const float* value);
-    void _glUniform4fv(int location, int count, const float* value);
-    void _glUniform4iv(int location, int count, const int* value);
-    void _glUniformMatrix3fv(int location, int count, unsigned char transpose, const float* value);
-    void _glUniformMatrix4fv(int location, int count, unsigned char transpose, const float* value);
-
-    void _glUniform(int location, int v0) {
-        _glUniform1i(location, v0);
-    }
-
-    void _glUniform(int location, float v0) {
-        _glUniform1f(location, v0);
-    }
-
-    void _glUniform(int location, const glm::vec2& v) {
-        _glUniform2f(location, v.x, v.y);
-    }
-
-    void _glUniform(int location, const glm::vec3& v) {
-        _glUniform3f(location, v.x, v.y, v.z);
-    }
-
-    void _glUniform(int location, const glm::vec4& v) {
-        _glUniform4f(location, v.x, v.y, v.z, v.w);
-    }
-
-    void _glUniform(int location, const glm::mat3& v) {
-        _glUniformMatrix3fv(location, 1, false, glm::value_ptr(v));
-    }
-
     void _glColor4f(float red, float green, float blue, float alpha);
 
     // Maybe useful but shoudln't be public. Please convince me otherwise
@@ -352,16 +321,10 @@ public:
         // TODO: As long as we have gl calls explicitely issued from interface
         // code, we need to be able to record and batch these calls. THe long 
         // term strategy is to get rid of any GL calls in favor of the HIFI GPU API
-        COMMAND_glUniform1i,
         COMMAND_glUniform1f,
         COMMAND_glUniform2f,
         COMMAND_glUniform3f,
         COMMAND_glUniform4f,
-        COMMAND_glUniform3fv,
-        COMMAND_glUniform4fv,
-        COMMAND_glUniform4iv,
-        COMMAND_glUniformMatrix3fv,
-        COMMAND_glUniformMatrix4fv,
 
         COMMAND_glColor4f,
 
@@ -508,6 +471,9 @@ public:
     TransformObjects _objects;
     static size_t _objectsMax;
 
+    Stream::FormatPointer _currentStreamFormat;
+    PipelinePointer _currentPipeline;
+
     BufferCaches _buffers;
     TextureCaches _textures;
     TextureTableCaches _textureTables;
@@ -544,6 +510,8 @@ protected:
     // MUST only be called on the render thread
     // MUST only be called on batches created on the render thread
     void flush();
+
+    void validateDrawState() const;
 
     void startNamedCall(const std::string& name);
     void stopNamedCall();

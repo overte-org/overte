@@ -76,7 +76,7 @@ public:
             };
 
             ParabolaData _parabolaData;
-            gpu::BufferPointer _uniformBuffer { std::make_shared<gpu::Buffer>() };
+            gpu::BufferPointer _uniformBuffer { std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer) };
         };
 
         RenderState() {}

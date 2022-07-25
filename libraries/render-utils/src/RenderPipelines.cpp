@@ -326,7 +326,7 @@ void batchSetter(const ShapePipeline& pipeline, gpu::Batch& batch, RenderArgs* a
             schema._key = (uint32_t)schemaKey._flags.to_ulong();
 
             auto schemaSize = sizeof(graphics::MultiMaterial::Schema);
-            schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(schemaSize, (const gpu::Byte*) &schema, schemaSize));
+            schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, schemaSize, (const gpu::Byte*) &schema, schemaSize));
         });
 
         batch.setUniformBuffer(gr::Buffer::Material, schemaBuffer);
@@ -786,7 +786,7 @@ bool RenderPipelines::bindMaterials(graphics::MultiMaterial& multiMaterial, gpu:
     static std::once_flag once;
     std::call_once(once, [textureCache] {
         graphics::MultiMaterial::Schema schema;
-        defaultMaterialSchema = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(schema), (const gpu::Byte*) &schema, sizeof(schema)));
+        defaultMaterialSchema = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(schema), (const gpu::Byte*) &schema, sizeof(schema)));
 
         defaultMaterialTextures->setTexture(gr::Texture::MaterialAlbedo, textureCache->getWhiteTexture());
         defaultMaterialTextures->setTexture(gr::Texture::MaterialMetallic, textureCache->getBlackTexture());

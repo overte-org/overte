@@ -205,8 +205,8 @@ bool scriptable::ScriptableMeshPart::dedupeVertices(float epsilon) {
         }
     }
 
-    mesh->setIndexBuffer(buffer_helpers::newFromVector(newIndices, { gpu::SCALAR, gpu::UINT32, gpu::INDEX }));
-    mesh->setVertexBuffer(buffer_helpers::newFromVector(uniqueVerts, gpu::Element::VEC3F_XYZ));
+    mesh->setIndexBuffer(buffer_helpers::newFromVector(gpu::Buffer::IndexBuffer, newIndices, { gpu::SCALAR, gpu::UINT32, gpu::INDEX }));
+    mesh->setVertexBuffer(buffer_helpers::newFromVector(gpu::Buffer::VertexBuffer, uniqueVerts, gpu::Element::VEC3F_XYZ));
 
     auto attributeViews = buffer_helpers::mesh::getAllBufferViews(mesh);
     glm::uint32 numUniqueVerts = uniqueVerts.size();

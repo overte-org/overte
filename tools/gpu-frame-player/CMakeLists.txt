@@ -17,15 +17,21 @@ endif()
 # link in the shared libraries
 link_hifi_libraries(
     shared ktx shaders gpu
-#    vk gpu-vk 
+    vk gpu-vk 
     gl ${PLATFORM_GL_BACKEND}
 )
 
-target_compile_definitions(${TARGET_NAME} PRIVATE USE_GL)
+# target_compile_definitions(${TARGET_NAME} PRIVATE USE_GL)
 
 set(OpenGL_GL_PREFERENCE "GLVND")
 target_opengl()
-#target_vulkan()
+target_vulkan()
+
+#option(BUILD_FRAME_PLAYER_GL "Use OpenGL backend for frame player" ON)
+
+#if (BUILD_FRAME_PLAYER_GL)
+#    target_compile_definitions(${TARGET_NAME} PRIVATE USE_GL)
+#endif()
 
 package_libraries_for_deployment()
 

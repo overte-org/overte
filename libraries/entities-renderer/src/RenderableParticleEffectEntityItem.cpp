@@ -50,7 +50,7 @@ using GpuParticles = std::vector<GpuParticle>;
 
 ParticleEffectEntityRenderer::ParticleEffectEntityRenderer(const EntityItemPointer& entity) : Parent(entity) {
     ParticleUniforms uniforms;
-    _uniformBuffer = std::make_shared<Buffer>(sizeof(ParticleUniforms), (const gpu::Byte*) &uniforms);
+    _uniformBuffer = std::make_shared<Buffer>(gpu::Buffer::UniformBuffer, sizeof(ParticleUniforms), (const gpu::Byte*) &uniforms);
 
     static std::once_flag once;
     std::call_once(once, [] {

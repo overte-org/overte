@@ -9,17 +9,21 @@
 #pragma once
 
 #include <QtCore/QElapsedTimer>
+#include <QtGui/QWindow>
 
 #include <GenericThread.h>
 #include <shared/RateCounter.h>
+
+#include <vk/Config.h>
+#include <vk/Context.h>
 
 #ifdef USE_GL
 #include <gl/Config.h>
 #include <gl/Context.h>
 #include <gpu/gl/GLBackend.h>
 #else
-#include <vk/VKWindow.h>
 #include <gpu/vk/VKBackend.h>
+#include <vk/Swapchain.h>
 #endif
 
 class RenderThread : public GenericThread {
@@ -27,11 +31,13 @@ class RenderThread : public GenericThread {
 public:
     QWindow* _window{ nullptr };
 
+    vks::Context& _vkcontext{ vks::Context::get() };
+    const vk::Device& _vkdevice{ _vkcontext.device };
+    vks::Buffer _vkstagingBuffer;
+
 #ifdef USE_GL
     gl::Context _context;
 #else
-    vks::Context& _context{ vks::Context::get() };
-    const vk::Device& _device{ _context.device };
 
     vk::SurfaceKHR _surface;
     vk::RenderPass _renderPass;
@@ -63,6 +69,8 @@ public:
     void setup() override;
     bool process() override;
     void shutdown() override;
+    void testVkTransfer();
+    void testGlTransfer();
 
     void submitFrame(const gpu::FramePointer& frame);
     void initialize(QWindow* window);

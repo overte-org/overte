@@ -318,6 +318,7 @@ public:
 
         Flags flags;
     };
+    std::string getKey() const;
 
     // The unique default values for all the fields
     static const Data DEFAULT;

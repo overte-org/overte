@@ -116,6 +116,7 @@ void ProceduralData::parse(const QJsonObject& proceduralData) {
 std::function<void(gpu::StatePointer)> Procedural::opaqueStencil = [](gpu::StatePointer state) {};
 std::function<void(gpu::StatePointer)> Procedural::transparentStencil = [](gpu::StatePointer state) {};
 
+
 Procedural::Procedural() {
     _opaqueState->setCullMode(gpu::State::CULL_NONE);
     _opaqueState->setDepthTest(true, true, gpu::LESS_EQUAL);
@@ -131,7 +132,7 @@ Procedural::Procedural() {
         gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
     transparentStencil(_transparentState);
 
-    _standardInputsBuffer = std::make_shared<gpu::Buffer>(sizeof(StandardInputs), nullptr);
+    _standardInputsBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(StandardInputs), nullptr);
 }
 
 void Procedural::setProceduralData(const ProceduralData& proceduralData) {

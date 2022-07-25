@@ -1,6 +1,5 @@
 <@include gpu/Config.slh@>
 <$VERSION_HEADER$>
-//  <$_SCRIBE_FILENAME$>
 //  Generated on <$_SCRIBE_DATE$>
 //
 //  Created by Andrzej Kapolka on 9/15/14.
@@ -10,7 +9,17 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-<@include gpu/Inputs.slh@>
+<@include gpu/ShaderConstants.h@>
+INPUT(GPU_ATTR_POSITION, vec4, inPosition);
+INPUT(GPU_ATTR_NORMAL, vec4, inNormal);
+INPUT(GPU_ATTR_COLOR, vec4, inColor);
+INPUT(GPU_ATTR_TEXCOORD0, vec4, inTexCoord0);
+<@if HIFI_USE_FADE@>
+    INPUT(GPU_ATTR_TEXCOORD2, vec4, inTexCoord2);
+    INPUT(GPU_ATTR_TEXCOORD3, vec4, inTexCoord3);
+    INPUT(GPU_ATTR_TEXCOORD4, vec4, inTexCoord4);
+<@endif@>
+
 <@include gpu/Color.slh@>
 <@include gpu/Transform.slh@>
 <$declareStandardTransform()$>
@@ -21,17 +30,17 @@
     <@include Fade.slh@>
     <$declareFadeVertexInstanced()$>
 
-    layout(location=RENDER_UTILS_ATTR_POSITION_WS) out vec4 _positionWS;
+    OUTPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
 <@endif@>
 
 <@if not HIFI_USE_UNLIT@>
     <@if HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
-        layout(location=RENDER_UTILS_ATTR_POSITION_ES) out vec4 _positionES;
+        OUTPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
     <@endif@>
 <@endif@>
-layout(location=RENDER_UTILS_ATTR_NORMAL_WS) out vec3 _normalWS;
-layout(location=RENDER_UTILS_ATTR_COLOR) out vec4 _color;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
+OUTPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
+OUTPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);
+OUTPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 
 void main(void) {
     _color = color_sRGBAToLinear(inColor);

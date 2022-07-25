@@ -38,7 +38,7 @@ const gpu::PipelinePointer DrawSceneOctree::getDrawCellBoundsPipeline() {
         _drawCellBoundsPipeline = gpu::Pipeline::create(program, state);
         _cellBoundsFormat = std::make_shared<gpu::Stream::Format>();
         _cellBoundsFormat->setAttribute(0, 0, gpu::Element(gpu::VEC4, gpu::INT32, gpu::XYZW), 0, gpu::Stream::PER_INSTANCE);
-        _cellBoundsBuffer = std::make_shared<gpu::Buffer>();
+        _cellBoundsBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
     }
     return _drawCellBoundsPipeline;
 }
@@ -164,16 +164,16 @@ void DrawItemSelection::run(const RenderContextPointer& renderContext, const Ite
     auto& scene = renderContext->_scene;
 
     if (!_boundsBufferInside) {
-        _boundsBufferInside = std::make_shared<gpu::Buffer>(sizeof(render::ItemBound));
+        _boundsBufferInside = std::make_shared<gpu::Buffer>(gpu::Buffer::ResourceBuffer, sizeof(render::ItemBound));
     }
     if (!_boundsBufferInsideSubcell) {
-        _boundsBufferInsideSubcell = std::make_shared<gpu::Buffer>(sizeof(render::ItemBound));
+        _boundsBufferInsideSubcell = std::make_shared<gpu::Buffer>(gpu::Buffer::ResourceBuffer, sizeof(render::ItemBound));
     }
     if (!_boundsBufferPartial) {
-        _boundsBufferPartial = std::make_shared<gpu::Buffer>(sizeof(render::ItemBound));
+        _boundsBufferPartial = std::make_shared<gpu::Buffer>(gpu::Buffer::ResourceBuffer, sizeof(render::ItemBound));
     }
     if (!_boundsBufferPartialSubcell) {
-        _boundsBufferPartialSubcell = std::make_shared<gpu::Buffer>(sizeof(render::ItemBound));
+        _boundsBufferPartialSubcell = std::make_shared<gpu::Buffer>(gpu::Buffer::ResourceBuffer, sizeof(render::ItemBound));
     }
 
     gpu::doInBatch("DrawItemSelection::run", args->_context, [&](gpu::Batch& batch) {
