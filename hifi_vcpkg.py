@@ -119,7 +119,7 @@ endif()
             self.exe = os.path.join(self.path, 'vcpkg')
             self.bootstrapCmds = [ os.path.join(self.path, 'bootstrap-vcpkg.sh'), '-disableMetrics' ]
             self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/builds/vcpkg-linux-client.tgz%3FversionId=y7mct0gFicEXz5hJy3KROBugcLR56YWf'
-            self.vcpkgHash = '6a1ce47ef6621e699a4627e8821ad32528c82fce62a6939d35b205da2d299aaa405b5f392df4a9e5343dd6a296516e341105fbb2dd8b48864781d129d7fba10d'
+            self.vcpkgHash = '4f5f1b78d5ddb7aeb5b5212f0b77b5d2e8ba11e82518aaf8a777298f8f781948028afc4e4e9fb236c3e510b2d8ba6333deb16119dce1286d90edd006a68e5625'
             self.hostTriplet = 'x64-linux'
 
         if self.args.android:
@@ -207,7 +207,7 @@ endif()
                 hifi_utils.executeSubprocess(self.bootstrapCmds, folder=self.path, env=self.bootstrapEnv)
             else:
                 print("Fetching vcpkg from {} to {}".format(self.vcpkgUrl, self.path))
-                hifi_utils.downloadAndExtract(self.vcpkgUrl, self.path)
+                hifi_utils.downloadAndExtract(self.vcpkgUrl, self.path, self.vcpkgHash)
 
         print("Replacing port files")
         portsPath = os.path.join(self.path, 'ports')
