@@ -983,7 +983,6 @@ void RenderablePolyVoxEntityItem::setVoxelMarkNeighbors(int x, int y, int z, uin
 
 bool RenderablePolyVoxEntityItem::setVoxelInternal(const ivec3& v, uint8_t toValue) {
     // set a voxel without recompressing the voxel data.  This assumes that the caller has write-locked the entity.
-    // TODO: could be made much more performant by moving startUpdates() to another function
     bool result = updateOnCount(v, toValue);
     if (result) {
         if (isEdged()) {
