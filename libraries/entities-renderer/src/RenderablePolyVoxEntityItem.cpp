@@ -198,7 +198,7 @@ bool isEdged(PolyVoxEntityItem::PolyVoxSurfaceStyle surfaceStyle) {
 
 void RenderablePolyVoxEntityItem::setVoxelData(const QByteArray& voxelData) {
     // accept compressed voxel information from the entity-server
-    bool is_updated = false;
+    bool changed = false;
     withWriteLock([&] {
         if (_voxelData != voxelData) {
             _voxelData = voxelData;
