@@ -43,7 +43,7 @@ jobs:
           include:
             - os: windows-2019
               build_type: full
-            - os: macOS-10.15
+            - os: macOS-11
               build_type: full
             - os: ubuntu-18.04
               build_type: full
@@ -102,7 +102,7 @@ jobs:
         fi
 
         # Mac build variables
-        if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
+        if [ "${{ matrix.os }}" = "macOS-11" ]; then
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=dmg" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
@@ -212,7 +212,7 @@ jobs:
       if: always()
       shell: bash
       run: |
-        if [ "${{ matrix.os }}" == "macOS-10.15" ]; then
+        if [ "${{ matrix.os }}" == "macOS-11" ]; then
           TAR=gtar
         else
           TAR=tar
