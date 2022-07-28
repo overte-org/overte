@@ -27,6 +27,7 @@
 #define GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS 4
 #define GRAPHICS_TEXTURE_MATERIAL_OCCLUSION 5
 #define GRAPHICS_TEXTURE_MATERIAL_SCATTERING 6
+#define GRAPHICS_TEXTURE_MATERIAL_MIRROR 1 // Mirrors use albedo textures, but nothing else
 
 // Make sure these match the ones in render-utils/ShaderConstants.h
 #define GRAPHICS_TEXTURE_SKYBOX 11
@@ -59,6 +60,7 @@ enum Texture {
     MaterialRoughness = GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS,
     MaterialOcclusion = GRAPHICS_TEXTURE_MATERIAL_OCCLUSION,
     MaterialScattering = GRAPHICS_TEXTURE_MATERIAL_SCATTERING,
+    MaterialMirror = GRAPHICS_TEXTURE_MATERIAL_MIRROR,
     Skybox = GRAPHICS_TEXTURE_SKYBOX
 };
 } // namespace texture

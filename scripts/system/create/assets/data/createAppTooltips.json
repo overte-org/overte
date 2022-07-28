@@ -215,7 +215,7 @@
     },
     "imageAlpha": {
         "tooltip": "The opacity of the image between 0.0 fully transparent and 1.0 completely opaque."
-    },    
+    },
     "emissive": {
         "tooltip": "If enabled, the image will display at full brightness."
     },
@@ -236,7 +236,7 @@
     },
     "showKeyboardFocusHighlight": {
         "tooltip": "If enabled, highlights when it has keyboard focus."
-    },    
+    },
     "isEmitting": {
         "tooltip": "If enabled, then particles are emitted."
     },
@@ -503,6 +503,12 @@
     "grab.triggerable": {
         "tooltip": "If enabled, the collider on this entity is used for triggering events."
     },
+    "mirrorMode": {
+        "tooltip": "If this entity should render normally, or as a  \"Mirror\" or  \"Portal\""
+    },
+    "portalExitID": {
+        "tooltip": "If this entity is a portal, what entity it should use as its exit."
+    },
     "cloneable": {
         "tooltip": "If enabled, this entity can be duplicated."
     },
@@ -606,7 +612,7 @@
     },
     "useBackground": {
         "tooltip": "If disabled, this web entity will support a transparent background for the webpage and its elements if the CSS property of 'background-color' on the 'body' is set with transparency."
-    },    
+    },
     "maxFPS": {
         "tooltip": "The FPS at which to render the web entity. Higher values will have a performance impact."
     },

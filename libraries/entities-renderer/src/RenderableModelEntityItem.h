@@ -170,6 +170,8 @@ protected:
     void setIsVisibleInSecondaryCamera(bool value) override;
     void setRenderLayer(RenderLayer value) override;
     void setCullWithParent(bool value) override;
+    void setMirrorMode(MirrorMode value) override;
+    void setPortalExitID(const QUuid& value) override;
 
 private:
     void animate(const TypedEntityPointer& entity, const ModelPointer& model);

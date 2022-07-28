@@ -131,6 +131,21 @@ const GROUPS = [
                 label: "Render With Zones",
                 type: "multipleZonesSelection",
                 propertyID: "renderWithZones",
+            },
+            {
+                label: "Mirror Mode",
+                type: "dropdown",
+                options: {
+                    none: "None",
+                    mirror: "Mirror",
+                    portal: "Portal"
+                },
+                propertyID: "mirrorMode",
+            },
+            {
+                label: "Portal Exit",
+                type: "string",
+                propertyID: "portalExitID",
             }
         ]
     },
