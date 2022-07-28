@@ -4168,7 +4168,7 @@ void Application::loadErrorDomain(QUrl domainURL) {
 bool Application::importImage(const QString& urlString) {
     qCDebug(interfaceapp) << "An image file has been dropped in";
     QString filepath(urlString);
-    filepath.remove("file:///");
+    filepath.remove("file://");
     addAssetToWorld(filepath, "", false, false);
     return true;
 }
@@ -9530,7 +9530,7 @@ void Application::openDirectory(const QString& path) {
     }
 
     QString dirPath = path;
-    const QString FILE_SCHEME = "file:///";
+    const QString FILE_SCHEME = "file://";
     if (dirPath.startsWith(FILE_SCHEME)) {
         dirPath.remove(0, FILE_SCHEME.length());
     }
