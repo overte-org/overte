@@ -22,7 +22,7 @@
           "name": "automatic_networking",
           "label": "Automatic Networking",
           "help": "This defines how other nodes in the Metaverse will be able to reach your domain-server.<br/>If you don't want to deal with any network settings, use full automatic networking.",
-          "default": "disabled",
+          "default": "full",
           "type": "select",
           "options": [
             {
