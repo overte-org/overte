@@ -2089,7 +2089,7 @@ void MyAvatar::loadData() {
     setDriveGear3(firstRunVal.get() ? DEFAULT_GEAR_3 : _driveGear3Setting.get());
     setDriveGear4(firstRunVal.get() ? DEFAULT_GEAR_4 : _driveGear4Setting.get());
     setDriveGear5(firstRunVal.get() ? DEFAULT_GEAR_5 : _driveGear5Setting.get());
-    setControlSchemeIndex(firstRunVal.get() ? LocomotionControlsMode::CONTROLS_DEFAULT : _controlSchemeIndexSetting.get());
+    setControlSchemeIndex(firstRunVal.get() ? LocomotionControlsMode::CONTROLS_ANALOG : _controlSchemeIndexSetting.get());
     setAnalogWalkSpeed(firstRunVal.get() ? ANALOG_AVATAR_MAX_WALKING_SPEED : _analogWalkSpeedSetting.get());
     setAnalogPlusWalkSpeed(firstRunVal.get() ? ANALOG_PLUS_AVATAR_MAX_WALKING_SPEED : _analogPlusWalkSpeedSetting.get());
     setFlyingEnabled(getFlyingEnabled());
