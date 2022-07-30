@@ -2763,7 +2763,7 @@ private:
     float _driveGear3 { DEFAULT_GEAR_3 };
     float _driveGear4 { DEFAULT_GEAR_4 };
     float _driveGear5 { DEFAULT_GEAR_5 };
-    int _controlSchemeIndex { CONTROLS_DEFAULT };
+    int _controlSchemeIndex { CONTROLS_ANALOG };
     int _movementReference{ 0 };
 
     glm::vec3 _thrust { 0.0f };  // impulse accumulator for outside sources
