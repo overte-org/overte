@@ -36,7 +36,7 @@ jobs:
         include:
           - os: windows-2019
             build_type: full
-          - os: macOS-10.15
+          - os: macOS-11
             build_type: full
           - os: ubuntu-18.04
             build_type: full
@@ -67,7 +67,7 @@ jobs:
           echo "CMAKE_EXTRA=-DVIRCADIA_CPU_ARCHITECTURE=-msse3 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
         fi
         # Mac build variables
-        if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
+        if [ "${{ matrix.os }}" = "macOS-11" ]; then
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "ZIP_COMMAND=zip" >> $GITHUB_ENV
           echo "ZIP_ARGS=-r" >> $GITHUB_ENV
