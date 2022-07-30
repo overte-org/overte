@@ -203,7 +203,7 @@ void RenderablePolyVoxEntityItem::setVoxelData(const QByteArray& voxelData) {
         if (_voxelData != voxelData) {
             _voxelData = voxelData;
             _voxelDataDirty = true;
-            is_updated = true;
+            changed = true;
         }
     });
     if (is_updated) {
