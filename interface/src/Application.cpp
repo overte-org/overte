@@ -4168,7 +4168,7 @@ void Application::loadErrorDomain(QUrl domainURL) {
 bool Application::importImage(const QString& urlString) {
     qCDebug(interfaceapp) << "An image file has been dropped in";
     QString filepath(urlString);
-    filepath.remove("file://");
+    filepath.remove("file:///");
     addAssetToWorld(filepath, "", false, false);
     return true;
 }
