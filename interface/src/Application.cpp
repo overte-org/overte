@@ -9530,7 +9530,7 @@ void Application::openDirectory(const QString& path) {
     }
 
     QString dirPath = path;
-    const QString FILE_SCHEME = "file:///";
+    const QString FILE_SCHEME = "file://";
     if (dirPath.startsWith(FILE_SCHEME)) {
         dirPath.remove(0, FILE_SCHEME.length());
     }
