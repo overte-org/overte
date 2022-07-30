@@ -198,13 +198,17 @@ bool isEdged(PolyVoxEntityItem::PolyVoxSurfaceStyle surfaceStyle) {
 
 void RenderablePolyVoxEntityItem::setVoxelData(const QByteArray& voxelData) {
     // accept compressed voxel information from the entity-server
+    bool changed = false;
     withWriteLock([&] {
         if (_voxelData != voxelData) {
             _voxelData = voxelData;
             _voxelDataDirty = true;
-            startUpdates();
+            changed = true;
         }
     });
+    if (changed) {
+        startUpdates();
+    }
 }
 
 void RenderablePolyVoxEntityItem::setVoxelSurfaceStyle(PolyVoxSurfaceStyle voxelSurfaceStyle) {
@@ -249,6 +253,9 @@ bool RenderablePolyVoxEntityItem::setVoxel(const ivec3& v, uint8_t toValue) {
     withWriteLock([&] {
         result = setVoxelInternal(v, toValue);
     });
+    if (result) {
+        startUpdates();
+    }
 
     return result;
 }
@@ -294,9 +301,11 @@ bool RenderablePolyVoxEntityItem::setAll(uint8_t toValue) {
             result |= setVoxelInternal(v, toValue);
         });
     });
+    if (result) {
+        startUpdates();
+    }
     return result;
 }
-
 
 bool RenderablePolyVoxEntityItem::setCuboid(const glm::vec3& lowPosition, const glm::vec3& cuboidSize, int toValue) {
     bool result = false;
@@ -316,10 +325,11 @@ bool RenderablePolyVoxEntityItem::setCuboid(const glm::vec3& lowPosition, const 
             result |= setVoxelInternal(v, toValue);
         });
     });
+    if (result) {
+        startUpdates();
+    }
     return result;
 }
-
-
 
 bool RenderablePolyVoxEntityItem::setVoxelInVolume(const vec3& position, uint8_t toValue) {
     if (_locked) {
@@ -350,6 +360,9 @@ bool RenderablePolyVoxEntityItem::setSphereInVolume(const vec3& center, float ra
             }
         });
     });
+    if (result) {
+        startUpdates();
+    }
 
     return result;
 }
@@ -407,6 +420,9 @@ bool RenderablePolyVoxEntityItem::setSphere(const vec3& centerWorldCoords, float
             // }
         });
     });
+    if (result) {
+        startUpdates();
+    }
 
     return result;
 }
@@ -452,6 +468,9 @@ bool RenderablePolyVoxEntityItem::setCapsule(const vec3& startWorldCoords, const
             }
         });
     });
+    if (result) {
+        startUpdates();
+    }
 
     return result;
 }
@@ -718,7 +737,7 @@ void RenderablePolyVoxEntityItem::changeUpdates(bool value) {
             EntitySimulationPointer simulation = entityTree->getSimulation();
             if (simulation) {
                 _updateNeeded = value;
-                _flags |= Simulation::DIRTY_UPDATEABLE;
+                markDirtyFlags(Simulation::DIRTY_UPDATEABLE);
                 simulation->changeEntity(getThisPointer());
             }
         }
@@ -972,9 +991,7 @@ bool RenderablePolyVoxEntityItem::setVoxelInternal(const ivec3& v, uint8_t toVal
             setVoxelMarkNeighbors(v.x, v.y, v.z, toValue);
         }
         _volDataDirty = true;
-        startUpdates();
     }
-
     return result;
 }
 
@@ -1049,7 +1066,7 @@ void RenderablePolyVoxEntityItem::setVoxelsFromData(QByteArray uncompressedData,
                                                     quint16 voxelXSize, quint16 voxelYSize, quint16 voxelZSize) {
     // this accepts the payload from uncompressVolumeData
     ivec3 low{ 0 };
-    int index = 0;
+    bool result = false;
     
     withWriteLock([&] {
         if (isEdged()) {
@@ -1057,11 +1074,14 @@ void RenderablePolyVoxEntityItem::setVoxelsFromData(QByteArray uncompressedData,
         }
         loop3(ivec3(0), ivec3(voxelXSize, voxelYSize, voxelZSize), [&](const ivec3& v) {
             int uncompressedIndex = (v.z * (voxelYSize) * (voxelXSize)) + (v.y * (voxelZSize)) + v.x;
-            setVoxelInternal(v, uncompressedData[uncompressedIndex]);
+            result |= setVoxelInternal(v, uncompressedData[uncompressedIndex]);
         });
 
         _state = PolyVoxState::UncompressingFinished;
     });
+    if (result) {
+        startUpdates();
+    }
 }
 
 void RenderablePolyVoxEntityItem::compressVolumeDataAndSendEditPacket() {
