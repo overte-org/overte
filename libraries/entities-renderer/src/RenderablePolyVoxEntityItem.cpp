@@ -206,7 +206,7 @@ void RenderablePolyVoxEntityItem::setVoxelData(const QByteArray& voxelData) {
             changed = true;
         }
     });
-    if (is_updated) {
+    if (changed) {
         startUpdates();
     }
 }
