@@ -238,15 +238,6 @@ void setupPreferences() {
         auto preference = new BrowsePreference(SNAPSHOTS, "Put my snapshots here", getter, setter);
         preferences->addPreference(preference);
     }
-    {
-        auto getter = []()->float { return SnapshotAnimated::snapshotAnimatedDuration.get(); };
-        auto setter = [](float value) { SnapshotAnimated::snapshotAnimatedDuration.set(value); };
-        auto preference = new SpinnerPreference(SNAPSHOTS, "Animated Snapshot Duration", getter, setter);
-        preference->setMin(1);
-        preference->setMax(5);
-        preference->setStep(1);
-        preferences->addPreference(preference);
-    }
     
     {
         auto getter = []()->bool { 
@@ -280,6 +271,16 @@ void setupPreferences() {
         preferences->addPreference(preference);
     }
     
+    {
+        auto getter = []()->float { return SnapshotAnimated::snapshotAnimatedDuration.get(); };
+        auto setter = [](float value) { SnapshotAnimated::snapshotAnimatedDuration.set(value); };
+        auto preference = new SpinnerPreference(SNAPSHOTS, "Animated Snapshot Duration", getter, setter);
+        preference->setMin(1);
+        preference->setMax(5);
+        preference->setStep(1);
+        preferences->addPreference(preference);
+    }
+
     {
         auto getter = []()->bool { return !Menu::getInstance()->isOptionChecked(MenuOption::DisableActivityLogger); };
         auto setter = [](bool value) { Menu::getInstance()->setIsOptionChecked(MenuOption::DisableActivityLogger, !value); };
