@@ -1,6 +1,7 @@
 //
 //  Re-created Bradley Austin Davis on 2016/01/22
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -237,6 +238,29 @@ void setupPreferences() {
         auto preference = new BrowsePreference(SNAPSHOTS, "Put my snapshots here", getter, setter);
         preferences->addPreference(preference);
     }
+
+    {
+        auto getter = []()->int { return DependencyManager::get<Snapshot>()->getAvailableSnapshotFormats().indexOf(DependencyManager::get<Snapshot>()->getSnapshotFormat()); };
+        auto setter = [](int value) { DependencyManager::get<Snapshot>()->setSnapshotFormat(DependencyManager::get<Snapshot>()->getAvailableSnapshotFormats()[value]); };
+        auto preference = new RadioButtonsPreference(SNAPSHOTS, "Snapshot format", getter, setter);
+        QStringList items;
+        items << DependencyManager::get<Snapshot>()->getAvailableSnapshotFormats();
+        preference->setHeading("Snapshot format");
+        preference->setItems(items);
+        preferences->addPreference(preference);
+    }
+
+    {
+        auto getter = []()->int { return DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormats().indexOf(DependencyManager::get<Snapshot>()->getAnimatedSnapshotFormat()); };
+        auto setter = [](int value) { DependencyManager::get<Snapshot>()->setAnimatedSnapshotFormat(DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormats()[value]); };
+        auto preference = new RadioButtonsPreference(SNAPSHOTS, "Animated snapshot format", getter, setter);
+        QStringList items;
+        items << DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormats();
+        preference->setHeading("Animated snapshot format");
+        preference->setItems(items);
+        preferences->addPreference(preference);
+    }
+    
     {
         auto getter = []()->float { return SnapshotAnimated::snapshotAnimatedDuration.get(); };
         auto setter = [](float value) { SnapshotAnimated::snapshotAnimatedDuration.set(value); };
