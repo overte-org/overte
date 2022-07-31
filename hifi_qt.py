@@ -134,7 +134,7 @@ endif()
             return
 
         if 'Windows' == system:
-            self.qtUrl = self.assets_url + '/dependencies/vcpkg/qt5-install-5.15.2-windows.tar.gz'
+            self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.5-qtwebengine-5.15.11-rel-deb-windows.tar.gz'
         elif 'Darwin' == system:
             self.qtUrl = self.assets_url + '/dependencies/vcpkg/qt5-install-5.15.2-macos.tar.gz'
         elif 'Linux' == system:
