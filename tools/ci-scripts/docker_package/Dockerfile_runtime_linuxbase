@@ -1,0 +1,15 @@
+# Docker file for overte_server_base:1.0
+# Example build: docker build -t overte-org/overte_server_base:1.0 -f tools/ci-scripts/docker_package/Dockerfile_runtime_linuxbase .
+FROM debian:bullseye-slim
+LABEL maintainer="Julian Groß (julian.gro@overte.org)"
+LABEL description="Runtime base-image for Overte Domain server and assignment clients."
+
+RUN echo UTC >/etc/timezone
+# Installing via dependency causes interactive hang:
+RUN apt-get -y install tzdata
+
+# Update package cache
+RUN apt-get update
+
+#  Install domain-server and assingment-client runtime dependencies
+RUN apt-get -y install libqt5network5 libqt5script5 libqt5core5a libstdc++6 libc6 libgcc-s1 zlib1g libgssapi-krb5-2 libdouble-conversion3 libicu67 libpcre2-16-0 libzstd1 libglib2.0-0 libkrb5-3 libk5crypto3 libcom-err2 libkrb5support0 libpcre3 libkeyutils1 libssl1.1 libqt5gui5 libgl1 libpng16-16 libharfbuzz0b libmd4c0 libglvnd0 libglx0 libfreetype6 libgraphite2-3 libx11-6 libbrotli1 libxcb1 libxau6 libxdmcp6 libqt5websockets5 libbsd0 libmd0 libqt5qml5

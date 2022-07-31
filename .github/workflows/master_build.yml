@@ -232,6 +232,8 @@ jobs:
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
     - name: Upload artifact
+      # Linux archives are currently dummies
+      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS') || matrix.build_type == 'android'
       shell: bash
       working-directory: ${{runner.workspace}}/build
       env:
@@ -267,3 +269,96 @@ jobs:
     #  with:
     #    name: symbols
     #    path: ${{runner.workspace}}/${{ steps.buildenv1.outputs.symbols_archive }}
+
+  build_docker_server:
+    name: "${{matrix.os}}, Debian Docker"
+    container: docker.io/juliangro/overte-server-build:0.1
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-20.04
+          # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
+          - os: self-hosted_debian-11_aarch64
+      fail-fast: false
+    runs-on: ${{matrix.os}}
+    steps:
+    - name: Report Build Number
+      shell: bash
+      run: |
+        echo "Build number: $BUILD_NUMBER"
+
+    - uses: actions/checkout@v1
+      with:
+        submodules: false
+        fetch-depth: 1
+
+    - name: Configure Build Environment
+      shell: bash
+      id: env1
+      run: |
+        echo "UPLOAD_PREFIX=build/overte/master" >> $GITHUB_ENV
+        echo ::set-output name=github_sha_short::`echo $GIT_COMMIT | cut -c1-7`
+        echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
+        echo "VIRCADIA_USE_SYSTEM_QT=true" >> $GITHUB_ENV
+        if [[ "${{ matrix.os }}" = *"aarch64" ]]; then
+          echo "VCPKG_FORCE_SYSTEM_BINARIES=true" >> $GITHUB_ENV
+        fi
+
+    - name: Create build environment
+      shell: bash
+      run: |
+        mkdir build
+
+    - name: Configure CMake
+      working-directory: ./build
+      run: |
+        if [ "$(uname -m)" = "x86_64" ]; then
+          VIRCADIA_USE_SYSTEM_QT=1 STABLE_BUILD=0 cmake .. -DSERVER_ONLY=1 -DBUILD_TOOLS=0 -DVIRCADIA_CPU_ARCHITECTURE=-msse3 -DCMAKE_BUILD_TYPE=Release -DVCPKG_BUILD_TYPE=release
+        else
+          VIRCADIA_USE_SYSTEM_QT=1 STABLE_BUILD=0 cmake .. -DSERVER_ONLY=1 -DBUILD_TOOLS=0 -DVIRCADIA_CPU_ARCHITECTURE= -DCMAKE_BUILD_TYPE=Release -DVCPKG_BUILD_TYPE=release
+        fi
+
+    - name: Build Domain Server
+      working-directory: ./build
+      shell: bash
+      run: make -j$(nproc) domain-server
+
+    - name: Build Assignment Client
+      working-directory: ./build
+      shell: bash
+      run: make -j$(nproc) assignment-client
+
+    - name: Create Docker runtime image
+      run: docker build -t overte-org/overte-server:"$GIT_COMMIT"_"$BUILD_NUMBER" -f tools/ci-scripts/docker_package/Dockerfile_runtime .
+
+    - name: Export Docker runtime image
+      run : |
+        if [ "$(uname -m)" = "x86_64" ]; then
+          echo "Exporting image.."
+          docker image save -o overte-server-master${{ github.event.number }}-${{ steps.env1.outputs.github_sha_short }}-amd64.tar overte-org/overte-server:"$GIT_COMMIT"_"$BUILD_NUMBER"
+          echo "Compressing with xz..
+          xz -z -T0 overte-server-master${{ github.event.number }}-${{ steps.env1.outputs.github_sha_short }}-amd64.tar
+          echo "Done."
+          echo "ARTIFACT_PATTERN=overte-server-master${{ github.event.number }}-${{ steps.env1.outputs.github_sha_short }}-amd64.tar.xz" >> $GITHUB_ENV
+        else
+          echo "Exporting image.."
+          docker image save -o overte-server-master${{ github.event.number }}-${{ steps.env1.outputs.github_sha_short }}-aarch64.tar overte-org/overte-server:"$GIT_COMMIT"_"$BUILD_NUMBER"
+          echo "Compressing with xz..
+          xz -z -T0 overte-server-master${{ github.event.number }}-${{ steps.env1.outputs.github_sha_short }}-aarch64.tar
+          echo "Done."
+          echo "ARTIFACT_PATTERN=overte-server-master${{ github.event.number }}-${{ steps.env1.outputs.github_sha_short }}-aarch64.tar.xz" >> $GITHUB_ENV
+        fi
+
+    - name: Output system stats
+      if: ${{ always() }}
+      shell: bash
+      run: |
+        echo "Disk usage:"
+        df -h
+
+    - name: Upload artifact
+      shell: bash
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.s3_access_key_id }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.s3_secret_access_key }}
+      run: python3 ./tools/ci-scripts/upload.py

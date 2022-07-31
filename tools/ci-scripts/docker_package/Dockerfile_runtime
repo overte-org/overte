@@ -1,0 +1,29 @@
+# Docker file for overte_server
+# Example build: docker build -t overte-org/overte_server -f tools/ci-scripts/docker_package/Dockerfile_runtime .
+FROM docker.io/juliangro/overte-server-base:0.1
+LABEL maintainer="Julian Groß (julian.gro@overte.org)"
+LABEL description="Overte Domain server and assignment client image."
+
+EXPOSE 40100 40101 40102
+EXPOSE 40100/udp 40101/udp 40102/udp
+EXPOSE 48000/udp 48001/udp 48002/udp 48003/udp 48004/udp 48005/udp 48006/udp
+
+RUN mkdir -p /opt/overte/server/plugins /opt/overte/server/resources
+COPY ./build/assignment-client/assignment-client /opt/overte/server/
+COPY ./build/domain-server/domain-server /opt/overte/server/
+COPY ./build/assignment-client/plugins/* /opt/overte/server/plugins/
+
+COPY ./build/libraries/*/*.so /lib/
+COPY ./build/domain-server/resources/ /opt/overte/server/resources/
+COPY ./tools/ci-scripts/docker_package/overte.conf /etc/supervisor/conf.d/overte.conf
+
+RUN chmod +x /opt/overte/server/domain-server
+RUN chmod +x /opt/overte/server/assignment-client
+
+# Ensure `domain-server` and `assignment-client` execute.
+RUN /opt/overte/server/domain-server --version > /opt/overte/server/version && \
+    /opt/overte/server/assignment-client --version >> /opt/overte/server/version
+
+RUN apt-get update && apt-get install -y supervisor
+
+ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/overte.conf"]
