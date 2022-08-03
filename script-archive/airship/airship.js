@@ -29,9 +29,9 @@
         lightTimeoutID = undefined,
         audioInjector = null;
  
-    var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
-    var cannonSound = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "philip/cannonShot.wav");
-    var explosionSound = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "philip/explosion.wav");
+    var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+    var cannonSound = SoundCache.getSound(OVERTE_PUBLIC_CDN + "philip/cannonShot.wav");
+    var explosionSound = SoundCache.getSound(OVERTE_PUBLIC_CDN + "philip/explosion.wav");
 
     var NO_SHOOT_COLOR = { red: 100, green: 100, blue: 100 };
 

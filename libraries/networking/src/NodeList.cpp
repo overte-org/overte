@@ -834,7 +834,7 @@ void NodeList::processDomainList(QSharedPointer<ReceivedMessage> message) {
     // FIXME: Remove this call to requestDomainSettings() and reinstate the one in DomainHandler::setIsConnected(), in version
     // 2021.2.0. (New protocol version implies a domain server upgrade.)
     if (!_domainHandler.isConnected()
-            && _domainHandler.getScheme() == URL_SCHEME_VIRCADIA && !_domainHandler.getHostname().isEmpty()) {
+            && _domainHandler.getScheme() == URL_SCHEME_OVERTE && !_domainHandler.getHostname().isEmpty()) {
         // We're about to connect but we need the domain settings (in particular, the node permissions) in order to adjust the
         // canRezAvatarEntities permission above before using the permissions in determining whether or not to connect without
         // avatar entities rezzing below.

@@ -45,9 +45,9 @@ const unsigned short DEFAULT_DOMAIN_SERVER_PORT =
 
 const unsigned short DEFAULT_DOMAIN_SERVER_WS_PORT =
     QProcessEnvironment::systemEnvironment()
-    .contains("VIRCADIA_DOMAIN_SERVER_WS_PORT")
+    .contains("OVERTE_DOMAIN_SERVER_WS_PORT")
         ? QProcessEnvironment::systemEnvironment()
-            .value("VIRCADIA_DOMAIN_SERVER_WS_PORT")
+            .value("OVERTE_DOMAIN_SERVER_WS_PORT")
             .toUShort()
         : 40102;  // TCP
 
@@ -77,17 +77,17 @@ const quint16 DOMAIN_SERVER_HTTPS_PORT =
 
 const quint16 DOMAIN_SERVER_EXPORTER_PORT =
     QProcessEnvironment::systemEnvironment()
-    .contains("VIRCADIA_DOMAIN_SERVER_EXPORTER_PORT")
+    .contains("OVERTE_DOMAIN_SERVER_EXPORTER_PORT")
         ? QProcessEnvironment::systemEnvironment()
-            .value("VIRCADIA_DOMAIN_SERVER_EXPORTER_PORT")
+            .value("OVERTE_DOMAIN_SERVER_EXPORTER_PORT")
             .toUInt()
         : 9703;
         
 const quint16 DOMAIN_SERVER_METADATA_EXPORTER_PORT =
     QProcessEnvironment::systemEnvironment()
-    .contains("VIRCADIA_DOMAIN_SERVER_METADATA_EXPORTER_PORT")
+    .contains("OVERTE_DOMAIN_SERVER_METADATA_EXPORTER_PORT")
         ? QProcessEnvironment::systemEnvironment()
-            .value("VIRCADIA_DOMAIN_SERVER_METADATA_EXPORTER_PORT")
+            .value("OVERTE_DOMAIN_SERVER_METADATA_EXPORTER_PORT")
             .toUInt()
         : 9704;
 
@@ -146,7 +146,7 @@ public:
     void setCanConnectWithoutAvatarEntities(bool canConnect);
     bool canConnectWithoutAvatarEntities();
 
-    bool isServerless() const { return _domainURL.scheme() != URL_SCHEME_VIRCADIA; }
+    bool isServerless() const { return _domainURL.scheme() != URL_SCHEME_OVERTE; }
     bool getInterstitialModeEnabled() const;
     void setInterstitialModeEnabled(bool enableInterstitialMode);
 

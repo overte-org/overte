@@ -66,7 +66,7 @@ To package the installation, you can simply run `make package` afterwards.
 
 ## Architecture Support
 
-If the build is intended to be packaged for distribution, the `VIRCADIA_CPU_ARCHITECTURE`
+If the build is intended to be packaged for distribution, the `OVERTE_CPU_ARCHITECTURE`
 CMake variable needs to be set to an architecture specific value.
 
 By default, it is set to `-march=native -mtune=native`, which yields builds optimized for a particular
@@ -74,7 +74,7 @@ machine, but these builds will not work on machines lacking same CPU instruction
 
 For packaging, it is recommended to set it to a different value, for example `-msse3`. This will help ensure that the build will run on all reasonably modern CPUs.
 
-Setting `VIRCADIA_CPU_ARCHITECTURE` to an empty string will use the default compiler settings and yield
+Setting `OVERTE_CPU_ARCHITECTURE` to an empty string will use the default compiler settings and yield
 maximum compatibility.
 
 ## FAQ

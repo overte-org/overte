@@ -12,7 +12,7 @@
 //
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 
 var iteration = 0;
 
@@ -94,13 +94,13 @@ var maxInvaderRowOffset=stepsToGround;
 var myMissile;
 
 // sounds
-var hitSound = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "sounds/Space%20Invaders/hit.raw");
-var shootSound = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "sounds/Space%20Invaders/shoot.raw");
+var hitSound = SoundCache.getSound(OVERTE_PUBLIC_CDN + "sounds/Space%20Invaders/hit.raw");
+var shootSound = SoundCache.getSound(OVERTE_PUBLIC_CDN + "sounds/Space%20Invaders/shoot.raw");
 var moveSounds = new Array();
-moveSounds[0] = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "sounds/Space%20Invaders/Lo1.raw");
-moveSounds[1] = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "sounds/Space%20Invaders/Lo2.raw");
-moveSounds[2] = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "sounds/Space%20Invaders/Lo3.raw");
-moveSounds[3] = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "sounds/Space%20Invaders/Lo4.raw");
+moveSounds[0] = SoundCache.getSound(OVERTE_PUBLIC_CDN + "sounds/Space%20Invaders/Lo1.raw");
+moveSounds[1] = SoundCache.getSound(OVERTE_PUBLIC_CDN + "sounds/Space%20Invaders/Lo2.raw");
+moveSounds[2] = SoundCache.getSound(OVERTE_PUBLIC_CDN + "sounds/Space%20Invaders/Lo3.raw");
+moveSounds[3] = SoundCache.getSound(OVERTE_PUBLIC_CDN + "sounds/Space%20Invaders/Lo4.raw");
 var currentMoveSound = 0;
 var numberOfSounds = 4;
 var stepsPerSound = invaderStepsPerCycle / numberOfSounds;
@@ -111,36 +111,36 @@ var soundInMyHead = true;
 // models...
 var invaderModels = new Array();
 invaderModels[0] = {
-        modelURL: VIRCADIA_PUBLIC_CDN + "meshes/space_invader.fbx",
+        modelURL: OVERTE_PUBLIC_CDN + "meshes/space_invader.fbx",
         modelScale: 450,
         modelTranslation: { x: -1.3, y: -1.3, z: -1.3 },
     };
 invaderModels[1] = {
-        modelURL: VIRCADIA_PUBLIC_CDN + "meshes/space_invader.fbx",
+        modelURL: OVERTE_PUBLIC_CDN + "meshes/space_invader.fbx",
         modelScale: 450,
         modelTranslation: { x: -1.3, y: -1.3, z: -1.3 },
     };
 invaderModels[2] = {
-        modelURL: VIRCADIA_PUBLIC_CDN + "meshes/space_invader.fbx",
+        modelURL: OVERTE_PUBLIC_CDN + "meshes/space_invader.fbx",
         modelScale: 450,
         modelTranslation: { x: -1.3, y: -1.3, z: -1.3 },
     };
 invaderModels[3] = {
-        modelURL: VIRCADIA_PUBLIC_CDN + "meshes/space_invader.fbx",
+        modelURL: OVERTE_PUBLIC_CDN + "meshes/space_invader.fbx",
         modelScale: 450,
         modelTranslation: { x: -1.3, y: -1.3, z: -1.3 },
     };
 invaderModels[4] = {
-        modelURL: VIRCADIA_PUBLIC_CDN + "meshes/space_invader.fbx",
+        modelURL: OVERTE_PUBLIC_CDN + "meshes/space_invader.fbx",
         modelScale: 450,
         modelTranslation: { x: -1.3, y: -1.3, z: -1.3 },
     };
     
     
 
-//modelURL: VIRCADIA_PUBLIC_CDN + "meshes/Feisar_Ship.FBX",
-//modelURL: VIRCADIA_PUBLIC_CDN + "meshes/invader.svo",
-// VIRCADIA_PUBLIC_CDN + "meshes/spaceInvader3.fbx"
+//modelURL: OVERTE_PUBLIC_CDN + "meshes/Feisar_Ship.FBX",
+//modelURL: OVERTE_PUBLIC_CDN + "meshes/invader.svo",
+// OVERTE_PUBLIC_CDN + "meshes/spaceInvader3.fbx"
 
 function initializeMyShip() {
     myShipProperties = {
@@ -151,7 +151,7 @@ function initializeMyShip() {
             damping: 0,
             dimensions: { x: shipSize * 2, y: shipSize * 2, z: shipSize * 2 },
             color: { red: 0, green: 255, blue: 0 },
-            modelURL: VIRCADIA_PUBLIC_CDN + "meshes/space_invader.fbx",
+            modelURL: OVERTE_PUBLIC_CDN + "meshes/space_invader.fbx",
             lifetime: itemLifetimes
         };
     myShip = Entities.addEntity(myShipProperties);

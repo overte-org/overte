@@ -24,7 +24,7 @@
 #include "AccountManager.h"
 
 extern const QString REDIRECT_HIFI_ADDRESS;
-extern const QString DEFAULT_VIRCADIA_ADDRESS;
+extern const QString DEFAULT_OVERTE_ADDRESS;
 extern const QString DEFAULT_HOME_ADDRESS;
 
 const QString SANDBOX_HIFI_ADDRESS = "hifi://localhost";

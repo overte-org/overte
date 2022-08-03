@@ -74,62 +74,62 @@ if ((NOT "${RELEASE_TYPE}" STREQUAL "PRODUCTION") AND (NOT "${RELEASE_TYPE}" STR
     set(RELEASE_TYPE "DEV")
 endif()
 
-# VIRCADIA_OPTIMIZE
+# OVERTE_OPTIMIZE
 # Variable determining Overte optimization. If not set, it defaults to true.
 # It's used to determine build flags for main codebase and for VCPKG dependencies.
 # Should be set to false to get completely unoptimized build for easier line-by-line debugging
 
 if( NOT WIN32 )
-    if(NOT DEFINED VIRCADIA_OPTIMIZE)
+    if(NOT DEFINED OVERTE_OPTIMIZE)
         message("Enabling code optimization for Overte and compiled dependencies")
-        set(VIRCADIA_OPTIMIZE true CACHE BOOL "Enable code optimization for Overte and compiled dependencies")
+        set(OVERTE_OPTIMIZE true CACHE BOOL "Enable code optimization for Overte and compiled dependencies")
     endif()
 
     #compiler needs to be detected before building VCPKG dependencies
     set(CMAKE_PLATFORM_INFO_DIR "${CMAKE_CURRENT_BINARY_DIR}")
     include(CMakeDetermineCXXCompiler)
 
-    set(VIRCADIA_OPTIMIZE_FLAGS "")
+    set(OVERTE_OPTIMIZE_FLAGS "")
 
-    if(VIRCADIA_OPTIMIZE)
+    if(OVERTE_OPTIMIZE)
 
-        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/_env/VIRCADIA_OPTIMIZE.txt" "${VIRCADIA_OPTIMIZE}")
+        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/_env/OVERTE_OPTIMIZE.txt" "${OVERTE_OPTIMIZE}")
         if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
             message("Clang compiler detected, adding -O3 -fPIC -g flags")
-            set(VIRCADIA_OPTIMIZE_FLAGS "-O3 -fPIC -g")
+            set(OVERTE_OPTIMIZE_FLAGS "-O3 -fPIC -g")
         elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
             message("GCC compiler detected, adding -O3 -fPIC -ggdb flags")
-            set(VIRCADIA_OPTIMIZE_FLAGS "-O3 -fPIC -ggdb")
+            set(OVERTE_OPTIMIZE_FLAGS "-O3 -fPIC -ggdb")
         else()
             message("No predefined optimization flags for compiler ${CMAKE_CXX_COMPILER_ID}")
         endif()
     endif()
-    MESSAGE(STATUS "VIRCADIA_OPTIMIZE: ${VIRCADIA_OPTIMIZE}")
+    MESSAGE(STATUS "OVERTE_OPTIMIZE: ${OVERTE_OPTIMIZE}")
 
-    # VIRCADIA_CPU_ARCHITECTURE
+    # OVERTE_CPU_ARCHITECTURE
     # Variable determining CPU architecture for which Overte will be built.
     # If defined, it's appended to CXXFLAGS and CFLAGS for both Overte and VCPKG dependencies
 
     #Assume -march=native for compilers that allow it if architecture is not specified
-    if(NOT DEFINED VIRCADIA_CPU_ARCHITECTURE)
-        if(VIRCADIA_OPTIMIZE AND ( (CMAKE_CXX_COMPILER_ID MATCHES "Clang") OR (CMAKE_CXX_COMPILER_ID MATCHES "GNU") ) )
+    if(NOT DEFINED OVERTE_CPU_ARCHITECTURE)
+        if(OVERTE_OPTIMIZE AND ( (CMAKE_CXX_COMPILER_ID MATCHES "Clang") OR (CMAKE_CXX_COMPILER_ID MATCHES "GNU") ) )
             message("Optimization is enabled, but architecture is not specified. Assuming native build")
-            set(VIRCADIA_CPU_ARCHITECTURE "-march=native -mtune=native" CACHE STRING "Specify architecture dependent compiler flags here")
+            set(OVERTE_CPU_ARCHITECTURE "-march=native -mtune=native" CACHE STRING "Specify architecture dependent compiler flags here")
         endif()
     endif()
 
-    if(DEFINED VIRCADIA_CPU_ARCHITECTURE)
-        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/_env/VIRCADIA_CPU_ARCHITECTURE.txt" "${VIRCADIA_CPU_ARCHITECTURE}")
-        set(VIRCADIA_OPTIMIZE_FLAGS "${VIRCADIA_OPTIMIZE_FLAGS} ${VIRCADIA_CPU_ARCHITECTURE}")
-        message("Adding CPU architecture flags: ${VIRCADIA_CPU_ARCHITECTURE}")
-        MESSAGE(STATUS "VIRCADIA_CPU_ARCHITECTURE: ${VIRCADIA_CPU_ARCHITECTURE}")
+    if(DEFINED OVERTE_CPU_ARCHITECTURE)
+        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/_env/OVERTE_CPU_ARCHITECTURE.txt" "${OVERTE_CPU_ARCHITECTURE}")
+        set(OVERTE_OPTIMIZE_FLAGS "${OVERTE_OPTIMIZE_FLAGS} ${OVERTE_CPU_ARCHITECTURE}")
+        message("Adding CPU architecture flags: ${OVERTE_CPU_ARCHITECTURE}")
+        MESSAGE(STATUS "OVERTE_CPU_ARCHITECTURE: ${OVERTE_CPU_ARCHITECTURE}")
     endif()
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VIRCADIA_OPTIMIZE_FLAGS}")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${VIRCADIA_OPTIMIZE_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OVERTE_OPTIMIZE_FLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OVERTE_OPTIMIZE_FLAGS}")
 
-    set(ENV{CXXFLAGS} "$ENV{CXXFLAGS} ${VIRCADIA_OPTIMIZE_FLAGS}")
-    set(ENV{CFLAGS} "$ENV{CFLAGS} ${VIRCADIA_OPTIMIZE_FLAGS}")
+    set(ENV{CXXFLAGS} "$ENV{CXXFLAGS} ${OVERTE_OPTIMIZE_FLAGS}")
+    set(ENV{CFLAGS} "$ENV{CFLAGS} ${OVERTE_OPTIMIZE_FLAGS}")
     message($ENV{CXXFLAGS})
 endif()
 
@@ -207,7 +207,7 @@ include("${CMAKE_BINARY_DIR}/vcpkg.cmake")
 if (HIFI_ANDROID)
   set(QT_CMAKE_PREFIX_PATH "$ENV{HIFI_ANDROID_PRECOMPILED}/qt/lib/cmake")
 else()
-  if ("$ENV{VIRCADIA_USE_SYSTEM_QT}" STREQUAL "")
+  if ("$ENV{OVERTE_USE_SYSTEM_QT}" STREQUAL "")
      if(NOT EXISTS "${CMAKE_BINARY_DIR}/qt.cmake")
         message(FATAL_ERROR "qt configuration missing.")
     endif()
@@ -413,7 +413,7 @@ set_packaging_parameters()
 # Locate the required Qt build on the filesystem
 setup_qt()
 
-if ("$ENV{VIRCADIA_USE_SYSTEM_QT}" STREQUAL "")
+if ("$ENV{OVERTE_USE_SYSTEM_QT}" STREQUAL "")
   list(APPEND CMAKE_PREFIX_PATH "${QT_CMAKE_PREFIX_PATH}")
 endif()
 

@@ -11,15 +11,15 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
-Script.include(VIRCADIA_PUBLIC_CDN + "scripts/libraries/toolBars.js");
-Script.include(VIRCADIA_PUBLIC_CDN + "scripts/libraries/utils.js");
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+Script.include(OVERTE_PUBLIC_CDN + "scripts/libraries/toolBars.js");
+Script.include(OVERTE_PUBLIC_CDN + "scripts/libraries/utils.js");
 
 var rotation = Quat.safeEulerAngles(Camera.getOrientation());
 rotation = Quat.fromPitchYawRollDegrees(0, rotation.y, 0);
 var center = Vec3.sum(MyAvatar.position, Vec3.multiply(1, Quat.getFront(rotation)));
 
-var TOOL_ICON_URL = VIRCADIA_PUBLIC_CDN + "images/tools/";
+var TOOL_ICON_URL = OVERTE_PUBLIC_CDN + "images/tools/";
 var ALPHA_ON = 1.0;
 var ALPHA_OFF = 0.7;
 var COLOR_TOOL_BAR = { red: 0, green: 0, blue: 0 };

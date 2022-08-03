@@ -11,7 +11,7 @@
 //
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 
 var tableParts = []; 
 var balls = [];
@@ -34,18 +34,18 @@ var cuePosition;
 var startStroke = 0;
 
 // Sounds to use 
-var hitSound = VIRCADIA_PUBLIC_CDN + "sounds/Collisions-ballhitsandcatches/billiards/collision1.wav";
+var hitSound = OVERTE_PUBLIC_CDN + "sounds/Collisions-ballhitsandcatches/billiards/collision1.wav";
 SoundCache.getSound(hitSound);
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 var screenSize = Controller.getViewportDimensions();
 var reticle = Overlays.addOverlay("image", {
     x: screenSize.x / 2 - 16,
     y: screenSize.y / 2 - 16,
     width: 32,
     height: 32,
-    imageURL: VIRCADIA_PUBLIC_CDN + "images/billiardsReticle.png",
+    imageURL: OVERTE_PUBLIC_CDN + "images/billiardsReticle.png",
     color: { red: 255, green: 255, blue: 255},
     alpha: 1
 });

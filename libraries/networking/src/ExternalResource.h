@@ -133,7 +133,7 @@ private:
         { Bucket::HF_Public, QUrl(NetworkingConstants::HF_PUBLIC_CDN_URL) },
         { Bucket::HF_Content, QUrl(NetworkingConstants::HF_CONTENT_CDN_URL) },
         { Bucket::HF_Marketplace, QUrl(NetworkingConstants::HF_MPASSETS_CDN_URL) },
-        { Bucket::Assets, QUrl(NetworkingConstants::VIRCADIA_CONTENT_CDN_URL) }
+        { Bucket::Assets, QUrl(NetworkingConstants::OVERTE_CONTENT_CDN_URL) }
     };
 };
 

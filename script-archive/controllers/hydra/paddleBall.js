@@ -11,11 +11,11 @@
 //
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 
-hitSound = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "sounds/Collisions-ballhitsandcatches/billiards/collision1.wav");
-var rightHandAnimation = VIRCADIA_PUBLIC_CDN + "animations/RightHandAnimPhilip.fbx";
-var leftHandAnimation = VIRCADIA_PUBLIC_CDN + "animations/LeftHandAnimPhilip.fbx";
+hitSound = SoundCache.getSound(OVERTE_PUBLIC_CDN + "sounds/Collisions-ballhitsandcatches/billiards/collision1.wav");
+var rightHandAnimation = OVERTE_PUBLIC_CDN + "animations/RightHandAnimPhilip.fbx";
+var leftHandAnimation = OVERTE_PUBLIC_CDN + "animations/LeftHandAnimPhilip.fbx";
 
 var BALL_SIZE = 0.08;
 var PADDLE_SIZE = 0.20;
@@ -44,7 +44,7 @@ var offButton = Overlays.addOverlay("image", {
                     y: 96,
                     width: 32,
                     height: 32,
-                    imageURL: VIRCADIA_PUBLIC_CDN + "images/close.png",
+                    imageURL: OVERTE_PUBLIC_CDN + "images/close.png",
                     color: { red: 255, green: 255, blue: 255},
                     alpha: 1
                 });

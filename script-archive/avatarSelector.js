@@ -12,7 +12,7 @@
 //
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 
 var panelWall = false;
 var orbShell = false;
@@ -48,16 +48,16 @@ var panelsCenterShift = Vec3.subtract(panelsCenter, orbCenter);
 
 var ORB_SHIFT = { x: 0, y: -1.4, z: -0.8 };
 
-var LOBBY_PANEL_WALL_URL = VIRCADIA_PUBLIC_CDN + "models/sets/Lobby/PanelWallForInterface.fbx";
-var LOBBY_BLANK_PANEL_TEXTURE_URL = VIRCADIA_PUBLIC_CDN + "models/sets/Lobby/Texture.jpg";
-var LOBBY_SHELL_URL = VIRCADIA_PUBLIC_CDN + "models/sets/Lobby/LobbyShellForInterface.fbx";
+var LOBBY_PANEL_WALL_URL = OVERTE_PUBLIC_CDN + "models/sets/Lobby/PanelWallForInterface.fbx";
+var LOBBY_BLANK_PANEL_TEXTURE_URL = OVERTE_PUBLIC_CDN + "models/sets/Lobby/Texture.jpg";
+var LOBBY_SHELL_URL = OVERTE_PUBLIC_CDN + "models/sets/Lobby/LobbyShellForInterface.fbx";
 
-var droneSound = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "sounds/Lobby/drone.stereo.raw")
+var droneSound = SoundCache.getSound(OVERTE_PUBLIC_CDN + "sounds/Lobby/drone.stereo.raw")
 var currentDrone = null;
 
-var latinSound = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "sounds/Lobby/latin.stereo.raw")
+var latinSound = SoundCache.getSound(OVERTE_PUBLIC_CDN + "sounds/Lobby/latin.stereo.raw")
 var latinInjector = null;
-var elevatorSound = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "sounds/Lobby/elevator.stereo.raw")
+var elevatorSound = SoundCache.getSound(OVERTE_PUBLIC_CDN + "sounds/Lobby/elevator.stereo.raw")
 var elevatorInjector = null;
 var currentMuzakInjector = null;
 var currentSound = null;

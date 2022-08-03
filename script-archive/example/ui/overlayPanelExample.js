@@ -14,9 +14,9 @@ Script.include([
     "../../libraries/overlayManager.js",
 ]);
 
-var BG_IMAGE_URL = VIRCADIA_PUBLIC_CDN + "images/card-bg.svg";
-var RED_DOT_IMAGE_URL = VIRCADIA_PUBLIC_CDN + "images/red-dot.svg";
-var BLUE_SQUARE_IMAGE_URL = VIRCADIA_PUBLIC_CDN + "images/blue-square.svg";
+var BG_IMAGE_URL = OVERTE_PUBLIC_CDN + "images/card-bg.svg";
+var RED_DOT_IMAGE_URL = OVERTE_PUBLIC_CDN + "images/red-dot.svg";
+var BLUE_SQUARE_IMAGE_URL = OVERTE_PUBLIC_CDN + "images/blue-square.svg";
 
 var mainPanel = new OverlayPanel({
     anchorPositionBinding: { avatar: "MyAvatar" },

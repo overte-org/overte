@@ -139,9 +139,9 @@ void WindowScriptingInterface::disconnectedFromDomain() {
 void WindowScriptingInterface::openUrl(const QUrl& url) {
     if (!url.isEmpty()) {
         auto scheme = url.scheme();
-        if (scheme == URL_SCHEME_VIRCADIA) {
+        if (scheme == URL_SCHEME_OVERTE) {
             DependencyManager::get<AddressManager>()->handleLookupString(url.toString());
-        } else if (scheme == URL_SCHEME_VIRCADIAAPP) {
+        } else if (scheme == URL_SCHEME_OVERTEAPP) {
             DependencyManager::get<QmlCommerce>()->openSystemApp(url.path());
         } else {
 #if defined(Q_OS_ANDROID)
@@ -413,7 +413,7 @@ QString WindowScriptingInterface::checkVersion() {
 }
 
 QString WindowScriptingInterface::getUserAgent() {
-    return NetworkingConstants::VIRCADIA_USER_AGENT;
+    return NetworkingConstants::OVERTE_USER_AGENT;
 }
 
 QString WindowScriptingInterface::protocolSignature() {

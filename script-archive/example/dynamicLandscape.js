@@ -11,8 +11,8 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
-Script.include(VIRCADIA_PUBLIC_CDN + 'scripts/utilities.js')
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+Script.include(OVERTE_PUBLIC_CDN + 'scripts/utilities.js')
 
 var NUM_ROWS = 10;
 var CUBE_SIZE = 1;

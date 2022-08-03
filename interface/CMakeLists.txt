@@ -296,7 +296,7 @@ target_link_libraries(
   ${PLATFORM_QT_LIBRARIES}
 )
 
-if (UNIX AND NOT ANDROID AND NOT VIRCADIA_THREAD_DEBUGGING)
+if (UNIX AND NOT ANDROID AND NOT OVERTE_THREAD_DEBUGGING)
     if (CMAKE_SYSTEM_NAME MATCHES "Linux")
         # Linux
         target_link_libraries(${TARGET_NAME} pthread atomic)
@@ -429,7 +429,7 @@ else()
   endif()
 endif()
 
-if ("$ENV{VIRCADIA_USE_SYSTEM_QT}" STREQUAL "")
+if ("$ENV{OVERTE_USE_SYSTEM_QT}" STREQUAL "")
   if (DEV_BUILD AND (APPLE OR UNIX))
     # create a qt.conf file to override hard-coded search paths in Qt libs
     set(QT_LIB_PATH "${QT_CMAKE_PREFIX_PATH}/../..")

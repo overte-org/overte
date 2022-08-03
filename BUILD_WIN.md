@@ -89,18 +89,18 @@ To create this variable:
 ## Step 7. Running CMake to Generate Build Files
 
 Run Command Prompt from Start and run the following commands:
-`cd "%VIRCADIA_DIR%"`
+`cd "%OVERTE_DIR%"`
 `mkdir build`
 `cd build`
 
 ### Visual Studio 2019
 Run `cmake .. -G "Visual Studio 16 2019" -A x64`.
 
-Where `%VIRCADIA_DIR%` is the directory for the Overte repository.
+Where `%OVERTE_DIR%` is the directory for the Overte repository.
 
 ## Step 8. Making a Build
 
-Open `%VIRCADIA_DIR%\build\overte.sln` using Visual Studio.
+Open `%OVERTE_DIR%\build\overte.sln` using Visual Studio.
 
 Change the Solution Configuration (menu ribbon under the menu bar, next to the green play button) from "Debug" to "Release" for best performance.
 
@@ -118,7 +118,7 @@ In Visual Studio, right-click "interface" under the Apps folder in Solution Expl
 
 Now, you should have a full build of Overte and be able to run the Interface using Visual Studio.
 
-Note: You can also run Interface by launching it from command line or File Explorer from `%VIRCADIA_DIR%\build\interface\Release\interface.exe`
+Note: You can also run Interface by launching it from command line or File Explorer from `%OVERTE_DIR%\build\interface\Release\interface.exe`
 
 # Troubleshooting
 
@@ -130,8 +130,8 @@ For any problems after Step #7, first try this:
 
 ## CMake gives you the same error message repeatedly after the build fails
 
-Remove `CMakeCache.txt` found in the `%VIRCADIA_DIR%\build` directory.
+Remove `CMakeCache.txt` found in the `%OVERTE_DIR%\build` directory.
 
 ## CMake can't find OpenSSL
 
-Remove `CMakeCache.txt` found in the `%VIRCADIA_DIR%\build` directory.  Verify that your HIFI_VCPKG_BASE environment variable is set and pointing to the correct location. Verify that the file `${HIFI_VCPKG_BASE}/installed/x64-windows/include/openssl/ssl.h` exists.
+Remove `CMakeCache.txt` found in the `%OVERTE_DIR%\build` directory.  Verify that your HIFI_VCPKG_BASE environment variable is set and pointing to the correct location. Verify that the file `${HIFI_VCPKG_BASE}/installed/x64-windows/include/openssl/ssl.h` exists.

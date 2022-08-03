@@ -1,51 +1,51 @@
 #!/bin/sh
 
-if [ "$VIRCADIA" = "" ]; then
-	VIRCADIA=`realpath ../..`
+if [ "$OVERTE" = "" ]; then
+	OVERTE=`realpath ../..`
 fi
 
-GITSRC=`git -C $VIRCADIA/source config --get remote.origin.url | cut -d':' -f 2`
-GITDATE=`git -C $VIRCADIA/source log -n 1 --format=raw | grep author | cut -d">" -f 2 | cut -d" " -f 2 | xargs -I {} date -d @{} +"%Y%m%d"`
-GITCOMMIT=`git -C $VIRCADIA/source rev-parse HEAD | cut -c 1-7`
+GITSRC=`git -C $OVERTE/source config --get remote.origin.url | cut -d':' -f 2`
+GITDATE=`git -C $OVERTE/source log -n 1 --format=raw | grep author | cut -d">" -f 2 | cut -d" " -f 2 | xargs -I {} date -d @{} +"%Y%m%d"`
+GITCOMMIT=`git -C $OVERTE/source rev-parse HEAD | cut -c 1-7`
 
 sudo apt-get install chrpath binutils
 
 DOCK_BUILD_ROOT=temp-make-dock
 rm -r temp-make-dock
 mkdir -p $DOCK_BUILD_ROOT
-cp $VIRCADIA/source/pkg-scripts/Dockerfile.templ $DOCK_BUILD_ROOT/Dockerfile
-cp $VIRCADIA/source/pkg-scripts/docker-entrypoint.sh $DOCK_BUILD_ROOT/entrypoint.sh
-cp $VIRCADIA/source/pkg-scripts/docker-overte-supervisor.conf $DOCK_BUILD_ROOT/overte.conf
+cp $OVERTE/source/pkg-scripts/Dockerfile.templ $DOCK_BUILD_ROOT/Dockerfile
+cp $OVERTE/source/pkg-scripts/docker-entrypoint.sh $DOCK_BUILD_ROOT/entrypoint.sh
+cp $OVERTE/source/pkg-scripts/docker-overte-supervisor.conf $DOCK_BUILD_ROOT/overte.conf
 
 # copy the files over
 mkdir -p $DOCK_BUILD_ROOT/opt
-cp $VIRCADIA/build/assignment-client/assignment-client $DOCK_BUILD_ROOT/opt
-cp $VIRCADIA/build/domain-server/domain-server $DOCK_BUILD_ROOT/opt
-cp $VIRCADIA/build/tools/oven/oven $DOCK_BUILD_ROOT/opt
-#cp $VIRCADIA/build/ice-server/ice-server $DOCK_BUILD_ROOT/opt
+cp $OVERTE/build/assignment-client/assignment-client $DOCK_BUILD_ROOT/opt
+cp $OVERTE/build/domain-server/domain-server $DOCK_BUILD_ROOT/opt
+cp $OVERTE/build/tools/oven/oven $DOCK_BUILD_ROOT/opt
+#cp $OVERTE/build/ice-server/ice-server $DOCK_BUILD_ROOT/opt
 strip --strip-all $DOCK_BUILD_ROOT/opt/*
 chrpath -d $DOCK_BUILD_ROOT/opt/*
 
-cp -a $VIRCADIA/build/assignment-client/plugins $DOCK_BUILD_ROOT/opt
+cp -a $OVERTE/build/assignment-client/plugins $DOCK_BUILD_ROOT/opt
 strip --strip-all $DOCK_BUILD_ROOT/opt/plugins/*.so
 chrpath -d $DOCK_BUILD_ROOT/opt/plugins/*.so
 strip --strip-all $DOCK_BUILD_ROOT/opt/plugins/*/*.so
 chrpath -d $DOCK_BUILD_ROOT/opt/plugins/*/*.so
 
-cp -a $VIRCADIA/source/domain-server/resources $DOCK_BUILD_ROOT/opt
+cp -a $OVERTE/source/domain-server/resources $DOCK_BUILD_ROOT/opt
 find $DOCK_BUILD_ROOT/opt/resources -name ".gitignore" -delete
 find $DOCK_BUILD_ROOT/opt/resources -type f -executable -exec sh -c 'chmod -x {}' \;
 
 mkdir -p $DOCK_BUILD_ROOT/lib
-cp $VIRCADIA/build/libraries/*/*.so $DOCK_BUILD_ROOT/lib
-cp $VIRCADIA/qt5-install/lib/libQt5Network.so.*.*.* $DOCK_BUILD_ROOT/lib
-cp $VIRCADIA/qt5-install/lib/libQt5Core.so.*.*.* $DOCK_BUILD_ROOT/lib
-cp $VIRCADIA/qt5-install/lib/libQt5Widgets.so.*.*.* $DOCK_BUILD_ROOT/lib
-cp $VIRCADIA/qt5-install/lib/libQt5Gui.so.*.*.* $DOCK_BUILD_ROOT/lib
-cp $VIRCADIA/qt5-install/lib/libQt5Script.so.*.*.* $DOCK_BUILD_ROOT/lib
-cp $VIRCADIA/qt5-install/lib/libQt5WebSockets.so.*.*.* $DOCK_BUILD_ROOT/lib
-cp $VIRCADIA/qt5-install/lib/libQt5Qml.so.*.*.* $DOCK_BUILD_ROOT/lib
-cp $VIRCADIA/qt5-install/lib/libQt5ScriptTools.so.*.*.* $DOCK_BUILD_ROOT/lib
+cp $OVERTE/build/libraries/*/*.so $DOCK_BUILD_ROOT/lib
+cp $OVERTE/qt5-install/lib/libQt5Network.so.*.*.* $DOCK_BUILD_ROOT/lib
+cp $OVERTE/qt5-install/lib/libQt5Core.so.*.*.* $DOCK_BUILD_ROOT/lib
+cp $OVERTE/qt5-install/lib/libQt5Widgets.so.*.*.* $DOCK_BUILD_ROOT/lib
+cp $OVERTE/qt5-install/lib/libQt5Gui.so.*.*.* $DOCK_BUILD_ROOT/lib
+cp $OVERTE/qt5-install/lib/libQt5Script.so.*.*.* $DOCK_BUILD_ROOT/lib
+cp $OVERTE/qt5-install/lib/libQt5WebSockets.so.*.*.* $DOCK_BUILD_ROOT/lib
+cp $OVERTE/qt5-install/lib/libQt5Qml.so.*.*.* $DOCK_BUILD_ROOT/lib
+cp $OVERTE/qt5-install/lib/libQt5ScriptTools.so.*.*.* $DOCK_BUILD_ROOT/lib
 chmod +x $DOCK_BUILD_ROOT/lib/*
 strip --strip-all $DOCK_BUILD_ROOT/lib/*
 chrpath -d $DOCK_BUILD_ROOT/lib/*

@@ -16,7 +16,7 @@
 //
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 
 // maybe we should make these constants...
 var LEFT_PALM = 0;
@@ -41,7 +41,7 @@ var rightHandEntity = false;
 
 var newSound = SoundCache.getSound("https://dl.dropboxusercontent.com/u/1864924/hifi-sounds/throw.raw");
 var catchSound = SoundCache.getSound("https://dl.dropboxusercontent.com/u/1864924/hifi-sounds/catch.raw");
-var throwSound = SoundCache.getSound(VIRCADIA_PUBLIC_CDN + "sounds/Switches%20and%20sliders/slider%20-%20whoosh1.raw");
+var throwSound = SoundCache.getSound(OVERTE_PUBLIC_CDN + "sounds/Switches%20and%20sliders/slider%20-%20whoosh1.raw");
 var targetRadius = 0.25;
 
 

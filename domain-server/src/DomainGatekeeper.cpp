@@ -1250,7 +1250,7 @@ void DomainGatekeeper::requestDomainUser(const QString& username, const QString&
 
     QNetworkRequest request;
 
-    request.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::VIRCADIA_USER_AGENT);
+    request.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     request.setRawHeader(QByteArray("Authorization"), QString("Bearer " + accessToken).toUtf8());
 

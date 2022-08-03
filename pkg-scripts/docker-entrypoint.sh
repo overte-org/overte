@@ -8,17 +8,17 @@ set -x
 # group in container to match the docker.sock GID mounted from the host.
 if [ -f /var/lib/overte/.local -a "$(id -u)" = "0" ]; then
 	# realign gid
-	THIS_VIRCADIA_GID=`ls -ngd /var/lib/overte/.local | cut -f3 -d' '`
-	CUR_VIRCADIA_GID=`getent group overte | cut -f3 -d: || true`
-	if [ ! -z "$THIS_VIRCADIA_GID" -a "$THIS_VIRCADIA_GID" != "$CUR_VIRCADIA_GID" ]; then
-		groupmod -g ${THIS_VIRCADIA_GID} -o overte
+	THIS_OVERTE_GID=`ls -ngd /var/lib/overte/.local | cut -f3 -d' '`
+	CUR_OVERTE_GID=`getent group overte | cut -f3 -d: || true`
+	if [ ! -z "$THIS_OVERTE_GID" -a "$THIS_OVERTE_GID" != "$CUR_OVERTE_GID" ]; then
+		groupmod -g ${THIS_OVERTE_GID} -o overte
 	fi
 
 	# realign pid
-	THIS_VIRCADIA_PID=`ls -nd /var/lib/overte/.local | cut -f3 -d' '`
-	CUR_VIRCADIA_PID=`getent passwd overte | cut -f3 -d: || true`
-	if [ ! -z "$THIS_VIRCADIA_PID" -a "$THIS_VIRCADIA_PID" != "$CUR_VIRCADIA_PID" ]; then
-		usermod -u ${THIS_VIRCADIA_PID} -o overte
+	THIS_OVERTE_PID=`ls -nd /var/lib/overte/.local | cut -f3 -d' '`
+	CUR_OVERTE_PID=`getent passwd overte | cut -f3 -d: || true`
+	if [ ! -z "$THIS_OVERTE_PID" -a "$THIS_OVERTE_PID" != "$CUR_OVERTE_PID" ]; then
+		usermod -u ${THIS_OVERTE_PID} -o overte
 	fi
 
 	if ! groups overte | grep -q overte; then

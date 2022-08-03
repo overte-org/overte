@@ -2645,7 +2645,7 @@ QString Application::getUserAgent() {
         return userAgent;
     }
 
-    QString userAgent = NetworkingConstants::VIRCADIA_USER_AGENT + "/" + BuildInfo::VERSION + "; "
+    QString userAgent = NetworkingConstants::OVERTE_USER_AGENT + "/" + BuildInfo::VERSION + "; "
         + QSysInfo::productType() + " " + QSysInfo::productVersion() + ")";
 
     auto formatPluginName = [](QString name) -> QString { return name.trimmed().replace(" ", "-");  };
@@ -3983,7 +3983,7 @@ void Application::handleSandboxStatus(QNetworkReply* reply) {
 
     // when --url in command line, teleport to location
     if (!_urlParam.isEmpty()) { // Not sure if format supported by isValid().
-        if (_urlParam.scheme() == URL_SCHEME_VIRCADIAAPP) {
+        if (_urlParam.scheme() == URL_SCHEME_OVERTEAPP) {
             Setting::Handle<QVariant>("startUpApp").set(_urlParam.path());
         } else {
             addressLookupString = _urlParam.toString();
@@ -3998,7 +3998,7 @@ void Application::handleSandboxStatus(QNetworkReply* reply) {
     // If this is a first run we short-circuit the address passed in
     if (_firstRun.get()) {
         if (!BuildInfo::PRELOADED_STARTUP_LOCATION.isEmpty()) {
-            DependencyManager::get<LocationBookmarks>()->setHomeLocationToAddress(NetworkingConstants::DEFAULT_VIRCADIA_ADDRESS);
+            DependencyManager::get<LocationBookmarks>()->setHomeLocationToAddress(NetworkingConstants::DEFAULT_OVERTE_ADDRESS);
             Menu::getInstance()->triggerOption(MenuOption::HomeLocation);
         }
 
@@ -7268,7 +7268,7 @@ void Application::clearDomainOctreeDetails(bool clearAll) {
 
 void Application::domainURLChanged(QUrl domainURL) {
     // disable physics until we have enough information about our new location to not cause craziness.
-    setIsServerlessMode(domainURL.scheme() != URL_SCHEME_VIRCADIA);
+    setIsServerlessMode(domainURL.scheme() != URL_SCHEME_OVERTE);
     if (isServerlessMode()) {
         loadServerlessDomain(domainURL);
     }
@@ -7277,7 +7277,7 @@ void Application::domainURLChanged(QUrl domainURL) {
 
 void Application::goToErrorDomainURL(QUrl errorDomainURL) {
     // disable physics until we have enough information about our new location to not cause craziness.
-    setIsServerlessMode(errorDomainURL.scheme() != URL_SCHEME_VIRCADIA);
+    setIsServerlessMode(errorDomainURL.scheme() != URL_SCHEME_OVERTE);
     if (isServerlessMode()) {
         loadErrorDomain(errorDomainURL);
     }
@@ -7641,7 +7641,7 @@ bool Application::canAcceptURL(const QString& urlString) const {
     QUrl url(urlString);
     if (url.query().contains(WEB_VIEW_TAG)) {
         return false;
-    } else if (urlString.startsWith(URL_SCHEME_VIRCADIA)) {
+    } else if (urlString.startsWith(URL_SCHEME_OVERTE)) {
         return true;
     }
     QString lowerPath = url.path().toLower();
@@ -7656,7 +7656,7 @@ bool Application::canAcceptURL(const QString& urlString) const {
 bool Application::acceptURL(const QString& urlString, bool defaultUpload) {
     QUrl url(urlString);
 
-    if (url.scheme() == URL_SCHEME_VIRCADIA) {
+    if (url.scheme() == URL_SCHEME_OVERTE) {
         // this is a hifi URL - have the AddressManager handle it
         QMetaObject::invokeMethod(DependencyManager::get<AddressManager>().data(), "handleLookupString",
                                   Qt::AutoConnection, Q_ARG(const QString&, urlString));
@@ -7787,7 +7787,7 @@ bool Application::askToWearAvatarAttachmentUrl(const QString& url) {
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
     QNetworkRequest networkRequest = QNetworkRequest(url);
     networkRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
-    networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::VIRCADIA_USER_AGENT);
+    networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
     QNetworkReply* reply = networkAccessManager.get(networkRequest);
     int requestNumber = ++_avatarAttachmentRequest;
     connect(reply, &QNetworkReply::finished, [this, reply, url, requestNumber]() {

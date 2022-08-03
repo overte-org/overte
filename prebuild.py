@@ -128,7 +128,7 @@ def main():
                     qt.installQt()
                     qt.writeConfig()
         else:
-            if (os.environ["VIRCADIA_USE_SYSTEM_QT"]):
+            if (os.environ["OVERTE_USE_SYSTEM_QT"]):
                 print("System Qt selected")
             else:
                 raise Exception("Internal error: System Qt not selected, but hifi_qt.py failed to return a cmake path")
