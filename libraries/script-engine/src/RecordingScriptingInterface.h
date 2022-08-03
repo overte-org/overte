@@ -38,7 +38,7 @@ class QScriptValue;
  * @hifi-avatar
  * @hifi-assignment-client
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/Recording.html">Recording</a></code> scripting interface
+/// Provides the <code><a href="https://apidocs.overte.org/Recording.html">Recording</a></code> scripting interface
 class RecordingScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
 

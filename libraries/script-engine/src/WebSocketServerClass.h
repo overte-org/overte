@@ -76,7 +76,7 @@
  *     webSocket.send(TEST_MESSAGE);
  * };
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/WebSocketServer.html">WebSocketServer</a></code> scripting interface
+/// Provides the <code><a href="https://apidocs.overte.org/WebSocketServer.html">WebSocketServer</a></code> scripting interface
 class WebSocketServerClass : public QObject {
     Q_OBJECT
     Q_PROPERTY(QString url READ getURL)

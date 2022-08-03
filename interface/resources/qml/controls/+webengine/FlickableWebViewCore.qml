@@ -147,7 +147,7 @@ Item {
                 webViewCore.profile.offTheRecord = false;
                 webViewCore.profile.storageName = "qmlWebEngine";
             } else {
-                webViewCore.profile.httpUserAgent += " (VircadiaInterface)";
+                webViewCore.profile.httpUserAgent += " (OverteInterface)";
             }
             // Ensure the JS from the web-engine makes it to our logging
             webViewCore.javaScriptConsoleMessage.connect(function(level, message, lineNumber, sourceID) {

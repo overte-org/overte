@@ -100,7 +100,7 @@ Where `%VIRCADIA_DIR%` is the directory for the Overte repository.
 
 ## Step 8. Making a Build
 
-Open `%VIRCADIA_DIR%\build\vircadia.sln` using Visual Studio.
+Open `%VIRCADIA_DIR%\build\overte.sln` using Visual Studio.
 
 Change the Solution Configuration (menu ribbon under the menu bar, next to the green play button) from "Debug" to "Release" for best performance.
 

@@ -22,7 +22,7 @@
 
 class ScriptAudioInjector;
 
-/// Provides the <code><a href="https://apidocs.vircadia.dev/Audio.html">Audio</a></code> scripting API
+/// Provides the <code><a href="https://apidocs.overte.org/Audio.html">Audio</a></code> scripting API
 class AudioScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
     SINGLETON_DEPENDENCY

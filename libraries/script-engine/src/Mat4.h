@@ -38,7 +38,7 @@
  * @hifi-server-entity
  * @hifi-assignment-client
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/Mat4.html">Mat4</a></code> scripting interface
+/// Provides the <code><a href="https://apidocs.overte.org/Mat4.html">Mat4</a></code> scripting interface
 class Mat4 : public QObject, protected QScriptable {
     Q_OBJECT
 

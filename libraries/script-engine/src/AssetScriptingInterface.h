@@ -44,7 +44,7 @@
  * @hifi-server-entity
  * @hifi-assignment-client
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/Assets.html">Assets</a></code> scripting API
+/// Provides the <code><a href="https://apidocs.overte.org/Assets.html">Assets</a></code> scripting API
 class AssetScriptingInterface : public BaseAssetScriptingInterface, QScriptable {
     Q_OBJECT
 public:

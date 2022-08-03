@@ -1133,7 +1133,7 @@ Function HandlePostInstallOptions
       ClearErrors
 
       ; copy the data from production build to this PR build
-      CopyFiles "$APPDATA\Vircadia\*" $0
+      CopyFiles "$APPDATA\Overte\*" $0
 
       ; handle an error in copying files
       IfErrors 0 NoError

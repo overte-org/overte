@@ -13,7 +13,7 @@
 
 #include "CrashHandler.h"
 
-Q_LOGGING_CATEGORY(crash_handler, "vircadia.crash_handler")
+Q_LOGGING_CATEGORY(crash_handler, "overte.crash_handler")
 
 #include <assert.h>
 

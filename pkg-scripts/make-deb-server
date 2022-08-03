@@ -2,7 +2,7 @@
 
 if [ "$OVERTE" = "" ]; then
 	OVERTE=`realpath ..`
-	QT5_LIBS=`realpath ~/vircadia-files/qt/qt5-install/lib`
+	QT5_LIBS=`realpath ~/overte-files/qt/qt5-install/lib`
 fi
 
 sudo apt-get install chrpath binutils dh-make

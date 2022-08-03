@@ -12,8 +12,8 @@
 /// @addtogroup ScriptEngine
 /// @{
 
-#ifndef vircadia_ScriptGatekeeper_h
-#define vircadia_ScriptGatekeeper_h
+#ifndef overte_ScriptGatekeeper_h
+#define overte_ScriptGatekeeper_h
 
 #include <QtCore/QObject>
 
@@ -30,6 +30,6 @@ private:
     bool _initialized { false };
 };
 
-#endif // vircadia_ScriptGatekeeper_h
+#endif // overte_ScriptGatekeeper_h
 
 /// @}

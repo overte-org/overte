@@ -13,7 +13,7 @@
 #include <QDebug>
 #include <QLoggingCategory>
 
-Q_LOGGING_CATEGORY(external_resource, "vircadia.networking.external_resource")
+Q_LOGGING_CATEGORY(external_resource, "overte.networking.external_resource")
 
 ExternalResource::ExternalResource(QObject* parent) : QObject(parent) {
 }

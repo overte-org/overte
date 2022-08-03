@@ -18,7 +18,7 @@
 #include <QKeyEvent>
 #include <QScriptValue>
 
-/// Represents a keyboard event to the scripting engine. Exposed as <code><a href="https://apidocs.vircadia.dev/global.html#KeyEvent">KeyEvent</a></code>
+/// Represents a keyboard event to the scripting engine. Exposed as <code><a href="https://apidocs.overte.org/global.html#KeyEvent">KeyEvent</a></code>
 class KeyEvent {
 public:
     KeyEvent();

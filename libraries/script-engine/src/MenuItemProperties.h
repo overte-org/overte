@@ -20,7 +20,7 @@
 #include "KeyEvent.h"
 
 
-/// Represents a menu item a script may declare and bind events to. Exposed as <code><a href="https://apidocs.vircadia.dev/Menu.html#.MenuItemProperties">MenuItemProperties</a></code>
+/// Represents a menu item a script may declare and bind events to. Exposed as <code><a href="https://apidocs.overte.org/Menu.html#.MenuItemProperties">MenuItemProperties</a></code>
 class MenuItemProperties {
 public:
     MenuItemProperties() {}

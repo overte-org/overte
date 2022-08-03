@@ -100,7 +100,7 @@ endif()
             # For a pre-built qt, however, we have to unpack it. The archive is required to contain
             # a qt5-install directory in it.
 
-            self.path = os.path.expanduser("~/vircadia-files/qt")
+            self.path = os.path.expanduser("~/overte-files/qt")
             self.fullPath = os.path.join(self.path, 'qt5-install')
             self.cmakePath = os.path.join(self.fullPath, 'lib', 'cmake')
 

@@ -862,7 +862,7 @@ public:
 
     /*@jsdoc
      * Gets the rotation of a joint relative to its parent. For information on the joint hierarchy used, see
-     * <a href="https://docs.vircadia.com/create/avatars/avatar-standards.html">Avatar Standards</a>.
+     * <a href="https://docs.overte.org/create/avatars/avatar-standards.html">Avatar Standards</a>.
      * @function Avatar.getJointRotation
      * @param {number} index - The index of the joint.
      * @returns {Quat} The rotation of the joint relative to its parent.
@@ -873,7 +873,7 @@ public:
      * Gets the translation of a joint relative to its parent, in model coordinates.
      * <p><strong>Warning:</strong> These coordinates are not necessarily in meters.</p>
      * <p>For information on the joint hierarchy used, see
-     * <a href="https://docs.vircadia.com/create/avatars/avatar-standards.html">Avatar Standards</a>.</p>
+     * <a href="https://docs.overte.org/create/avatars/avatar-standards.html">Avatar Standards</a>.</p>
      * @function Avatar.getJointTranslation
      * @param {number} index - The index of the joint.
      * @returns {Vec3} The translation of the joint relative to its parent, in model coordinates.
@@ -983,7 +983,7 @@ public:
 
     /*@jsdoc
      * Gets the rotation of a joint relative to its parent. For information on the joint hierarchy used, see
-     * <a href="https://docs.vircadia.com/create/avatars/avatar-standards.html">Avatar Standards</a>.
+     * <a href="https://docs.overte.org/create/avatars/avatar-standards.html">Avatar Standards</a>.
      * @function Avatar.getJointRotation
      * @param {string} name - The name of the joint.
      * @returns {Quat} The rotation of the joint relative to its parent.
@@ -998,7 +998,7 @@ public:
      * Gets the translation of a joint relative to its parent, in model coordinates.
      * <p><strong>Warning:</strong> These coordinates are not necessarily in meters.</p>
      * <p>For information on the joint hierarchy used, see
-     * <a href="https://docs.vircadia.com/create/avatars/avatar-standards.html">Avatar Standards</a>.</p>
+     * <a href="https://docs.overte.org/create/avatars/avatar-standards.html">Avatar Standards</a>.</p>
      * @function Avatar.getJointTranslation
      * @param {number} name - The name of the joint.
      * @returns {Vec3} The translation of the joint relative to its parent, in model coordinates.
@@ -1140,7 +1140,7 @@ public:
      * set <code>hasScriptedBlendshapes</code> back to <code>false</code> when the animation is complete.
      * @function Avatar.setBlendshape
      * @param {string} name - The name of the blendshape, per the
-     *     {@link https://docs.vircadia.com/create/avatars/avatar-standards.html#blendshapes Avatar Standards}.
+     *     {@link https://docs.overte.org/create/avatars/avatar-standards.html#blendshapes Avatar Standards}.
      * @param {number} value - A value between <code>0.0</code> and <code>1.0</code>.
      * @example <caption>Open your avatar's mouth wide.</caption>
      * MyAvatar.hasScriptedBlendshapes = true;

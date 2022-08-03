@@ -137,7 +137,7 @@ public:
  *     <em>Read-only.</em>
  * @property {Script.ResourceBuckets} ExternalPaths - External resource buckets.
  */
-/// The main class managing a scripting engine.  Also provides the <code><a href="https://apidocs.vircadia.dev/Script.html">Script</a></code> scripting interface
+/// The main class managing a scripting engine.  Also provides the <code><a href="https://apidocs.overte.org/Script.html">Script</a></code> scripting interface
 class ScriptEngine : public BaseScriptEngine, public EntitiesScriptEngineProvider {
     Q_OBJECT
     Q_PROPERTY(QString context READ getContext)
@@ -444,7 +444,7 @@ public:
 
     /*@jsdoc
      * Provides access to methods or objects provided in an external JavaScript or JSON file.
-     * See {@link https://docs.vircadia.com/script/js-tips.html} for further details.
+     * See {@link https://docs.overte.org/script/js-tips.html} for further details.
      * @function Script.require
      * @param {string} module - The module to use. May be a JavaScript file, a JSON file, or the name of a system module such
      *     as <code>"appUi"</code> (i.e., the "appUi.js" system module JavaScript file).

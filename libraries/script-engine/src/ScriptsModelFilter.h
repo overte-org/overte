@@ -74,7 +74,7 @@
  * print("Edit scripts:");
  * printDirectory(null, 0, "");  // null index for the root directory.
  */
-/// Provides script file information available from the <code><a href="https://apidocs.vircadia.dev/ScriptDiscoveryService.html">ScriptDiscoveryService</a></code> scripting interface
+/// Provides script file information available from the <code><a href="https://apidocs.overte.org/ScriptDiscoveryService.html">ScriptDiscoveryService</a></code> scripting interface
 class ScriptsModelFilter : public QSortFilterProxyModel {
     Q_OBJECT
 public:

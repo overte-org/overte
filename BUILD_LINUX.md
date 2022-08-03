@@ -137,7 +137,7 @@ Prepare makefiles:
 cmake ..
 ```
 
-If cmake fails with a vcpkg error, then delete `~/vircadia-files/vcpkg/`.  
+If cmake fails with a vcpkg error, then delete `~/overte-files/vcpkg/`.  
 
 #### Server
 
@@ -190,4 +190,4 @@ Go to "localhost" in the running Interface to visit your newly launched Domain s
 If your goal is to set up a development environment, it is desirable to set the directory that vcpkg builds into with the `HIFI_VCPKG_BASE` environment variable.
 For example, you might set `HIFI_VCPKG_BASE` to `/home/$USER/vcpkg`.
 
-By default, vcpkg will build in the `~/vircadia-files/vcpkg/` directory.
+By default, vcpkg will build in the `~/overte-files/vcpkg/` directory.

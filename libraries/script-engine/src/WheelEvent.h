@@ -21,7 +21,7 @@
 class QScriptValue;
 class QScriptEngine;
 
-/// Represents a mouse wheel event to the scripting engine. Exposed as <code><a href="https://apidocs.vircadia.dev/global.html#WheelEvent">WheelEvent</a></code>
+/// Represents a mouse wheel event to the scripting engine. Exposed as <code><a href="https://apidocs.overte.org/global.html#WheelEvent">WheelEvent</a></code>
 class WheelEvent {
 public:
     WheelEvent();

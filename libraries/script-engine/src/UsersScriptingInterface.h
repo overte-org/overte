@@ -41,7 +41,7 @@
  * @property {BanFlags} BAN_BY_FINGERPRINT - Ban user by fingerprint. <em>Read-only.</em>
  * @property {BanFlags} BAN_BY_IP - Ban user by IP address. <em>Read-only.</em>
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/Users.html">Users</a></code> scripting interface
+/// Provides the <code><a href="https://apidocs.overte.org/Users.html">Users</a></code> scripting interface
 class UsersScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
     SINGLETON_DEPENDENCY

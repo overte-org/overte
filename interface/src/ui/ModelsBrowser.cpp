@@ -34,7 +34,7 @@
 const char* MODEL_TYPE_NAMES[] = { "entities", "heads", "skeletons", "skeletons", "attachments" };
 
 static const QString S3_URL = NetworkingConstants::HF_PUBLIC_CDN_URL;
-static const QString PUBLIC_URL = "http://public.vircadia.com"; // Changed to Vircadia but not entirely sure what to do with this yet.
+static const QString PUBLIC_URL = "http://public.overte.org"; // Changed to Overte but not entirely sure what to do with this yet.
 static const QString MODELS_LOCATION = "models/";
 
 static const QString PREFIX_PARAMETER_NAME = "prefix";

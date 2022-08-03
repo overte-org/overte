@@ -19,25 +19,25 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 	apt-get install -y tzdata supervisor ${DEPENDS} && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* && \
-	mkdir -p /var/lib/vircadia
-RUN groupadd -r vircadia ; \
-	useradd -Nr vircadia -d /var/lib/vircadia ; \
-	usermod -aG vircadia vircadia ; \
-	chown vircadia.vircadia /var/lib/vircadia ; \
+	mkdir -p /var/lib/overte
+RUN groupadd -r overte ; \
+	useradd -Nr overte -d /var/lib/overte ; \
+	usermod -aG overte overte ; \
+	chown overte.overte /var/lib/overte ; \
 	exit 0
 
-VOLUME /var/lib/vircadia
+VOLUME /var/lib/overte
 
 RUN mkdir -p /var/run ; chmod 777 /var/run
-COPY vircadia.conf /etc/supervisor/conf.d/vircadia.conf
+COPY overte.conf /etc/supervisor/conf.d/overte.conf
 
 COPY entrypoint.sh /
-COPY opt /opt/vircadia
-COPY lib /opt/vircadia/lib
+COPY opt /opt/overte
+COPY lib /opt/overte/lib
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/vircadia.conf"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/overte.conf"]
 LABEL \
-	net.vircadia.gitsrc="${GITSRC}" \
-	net.vircadia.gitdate="${GITDATE}" \
-	net.vircadia.gitcommit="${GITCOMMIT}"
+	net.overte.gitsrc="${GITSRC}" \
+	net.overte.gitdate="${GITDATE}" \
+	net.overte.gitcommit="${GITCOMMIT}"

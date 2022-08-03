@@ -54,7 +54,7 @@
  * print(JSON.stringify(Quat.IDENTITY)); // { x: 0, y: 0, z: 0, w: 1 }
  * print(JSON.stringify(Quat.safeEulerAngles(Quat.IDENTITY))); // { x: 0, y: 0, z: 0 }
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/Quat.html">Quat</a></code> scripting interface
+/// Provides the <code><a href="https://apidocs.overte.org/Quat.html">Quat</a></code> scripting interface
 class Quat : public QObject, protected QScriptable {
     Q_OBJECT
     Q_PROPERTY(glm::quat IDENTITY READ IDENTITY CONSTANT)

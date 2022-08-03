@@ -86,7 +86,7 @@ def parse_args():
     if True:
         args = parser.parse_args()
     else:
-        args = parser.parse_args(['--android', 'questInterface', '--build-root', 'C:/git/vircadia/android/apps/questInterface/.externalNativeBuild/cmake/debug/arm64-v8a'])
+        args = parser.parse_args(['--android', 'questInterface', '--build-root', 'C:/git/overte/android/apps/questInterface/.externalNativeBuild/cmake/debug/arm64-v8a'])
     return args
 
 def main():

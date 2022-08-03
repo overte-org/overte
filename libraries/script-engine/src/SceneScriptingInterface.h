@@ -31,7 +31,7 @@
  * @property {boolean} shouldRenderEntities - <code>true</code> if entities (domain, avatar, and local) are rendered, 
  *     <code>false</code> if they aren't.
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/Scene.html">Scene</a></code> scripting interface
+/// Provides the <code><a href="https://apidocs.overte.org/Scene.html">Scene</a></code> scripting interface
 class SceneScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
     SINGLETON_DEPENDENCY

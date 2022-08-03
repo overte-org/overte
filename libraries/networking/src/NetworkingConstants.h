@@ -37,7 +37,7 @@ namespace NetworkingConstants {
     const QStringList IS_AUTHABLE_HOSTNAME = { "overte.org" };
 
     // Use a custom User-Agent to avoid ModSecurity filtering, e.g. by hosting providers.
-    const QByteArray VIRCADIA_USER_AGENT = "Mozilla/5.0 (VircadiaInterface)";
+    const QByteArray VIRCADIA_USER_AGENT = "Mozilla/5.0 (OverteInterface)";
 
     const QString WEB_ENGINE_USER_AGENT = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) " + WEB_ENGINE_VERSION + " Mobile Safari/537.36";
     const QString MOBILE_USER_AGENT = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) " + WEB_ENGINE_VERSION + " Mobile Safari/537.36";

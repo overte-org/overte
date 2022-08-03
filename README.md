@@ -43,20 +43,20 @@ Overte is a 3D social software project seeking to incrementally bring about a tr
 - [For Windows](https://github.com/overte-org/overte/blob/master/BUILD_WIN.md)
 - [For Mac](https://github.com/overte-org/overte/blob/master/BUILD_OSX.md)
 - [For Linux](https://github.com/overte-org/overte/blob/master/BUILD_LINUX.md)
-- [For Linux - Vircadia Builder](https://github.com/overte-org/overte-builder)
+- [For Linux - Overte Builder](https://github.com/overte-org/overte-builder)
 
 #### How to build a Server
 
 - [For Windows](https://github.com/overte-org/overte/blob/master/BUILD_WIN.md)
 - [For Linux](https://github.com/overte-org/overte/blob/master/BUILD_LINUX.md)
-- [For Linux - Vircadia Builder](https://github.com/overte-org/overte-builder)
+- [For Linux - Overte Builder](https://github.com/overte-org/overte-builder)
 
 #### How to generate an Installer
 
 - [For Windows - Interface & Server](https://github.com/overte-org/overte/blob/master/INSTALLER.md)
 - [For Mac - Interface](https://github.com/overte-org/overte/blob/master/INSTALLER.md#os-x)
-- [For Linux - Server .deb - Vircadia Builder](INSTALLER.md#ubuntu-1804--deb)
-- [For Linux - Interface AppImage - Vircadia Builder](https://github.com/overte-org/overte-builder/blob/master/README.md#building-appimages)
+- [For Linux - Server .deb - Overte Builder](INSTALLER.md#ubuntu-1804--deb)
+- [For Linux - Interface AppImage - Overte Builder](https://github.com/overte-org/overte-builder/blob/master/README.md#building-appimages)
 
 ### Boot to Metaverse: The Goal
 

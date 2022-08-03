@@ -6,23 +6,23 @@ set -x
 # allowing the container to be run directly as Jenkins. In Dev, or on unknown
 # environments, run the container as root to automatically correct docker
 # group in container to match the docker.sock GID mounted from the host.
-if [ -f /var/lib/vircadia/.local -a "$(id -u)" = "0" ]; then
+if [ -f /var/lib/overte/.local -a "$(id -u)" = "0" ]; then
 	# realign gid
-	THIS_VIRCADIA_GID=`ls -ngd /var/lib/vircadia/.local | cut -f3 -d' '`
-	CUR_VIRCADIA_GID=`getent group vircadia | cut -f3 -d: || true`
+	THIS_VIRCADIA_GID=`ls -ngd /var/lib/overte/.local | cut -f3 -d' '`
+	CUR_VIRCADIA_GID=`getent group overte | cut -f3 -d: || true`
 	if [ ! -z "$THIS_VIRCADIA_GID" -a "$THIS_VIRCADIA_GID" != "$CUR_VIRCADIA_GID" ]; then
-		groupmod -g ${THIS_VIRCADIA_GID} -o vircadia
+		groupmod -g ${THIS_VIRCADIA_GID} -o overte
 	fi
 
 	# realign pid
-	THIS_VIRCADIA_PID=`ls -nd /var/lib/vircadia/.local | cut -f3 -d' '`
-	CUR_VIRCADIA_PID=`getent passwd vircadia | cut -f3 -d: || true`
+	THIS_VIRCADIA_PID=`ls -nd /var/lib/overte/.local | cut -f3 -d' '`
+	CUR_VIRCADIA_PID=`getent passwd overte | cut -f3 -d: || true`
 	if [ ! -z "$THIS_VIRCADIA_PID" -a "$THIS_VIRCADIA_PID" != "$CUR_VIRCADIA_PID" ]; then
-		usermod -u ${THIS_VIRCADIA_PID} -o vircadia
+		usermod -u ${THIS_VIRCADIA_PID} -o overte
 	fi
 
-	if ! groups vircadia | grep -q vircadia; then
-		usermod -aG vircadia vircadia
+	if ! groups overte | grep -q overte; then
+		usermod -aG overte overte
 	fi
 fi
 

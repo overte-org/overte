@@ -27,7 +27,7 @@
 /*@jsdoc
  * The <code>Vec3</code> API provides facilities for generating and manipulating 3-dimensional vectors. Overte uses a 
  * right-handed Cartesian coordinate system where the y-axis is the "up" and the negative z-axis is the "front" direction.
- * <img alt="Overte coordinate system" src="https://apidocs.vircadia.dev/images/opengl-coord-system.jpg" />
+ * <img alt="Overte coordinate system" src="https://apidocs.overte.org/images/opengl-coord-system.jpg" />
  *
  * @namespace Vec3
  * @variation 0
@@ -74,7 +74,7 @@
  * @property {Vec3} FRONT - <code>{ x: 0, y: 0, z: -1 }</code> : Unit vector in the "front" direction. Synonym for 
  *     <code>UNIT_NEG_Z</code>. <em>Read-only.</em>
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/Vec3.html">Vec3</a></code> scripting interface
+/// Provides the <code><a href="https://apidocs.overte.org/Vec3.html">Vec3</a></code> scripting interface
 class Vec3 : public QObject, protected QScriptable {
     Q_OBJECT
     Q_PROPERTY(glm::vec3 UNIT_X READ UNIT_X CONSTANT)

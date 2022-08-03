@@ -78,9 +78,9 @@ void TestRunnerDesktop::setWorkingFolderAndEnableControls() {
     setWorkingFolder(_workingFolderLabel);
 
 #ifdef Q_OS_WIN
-    _installationFolder = _workingFolder + "/Vircadia";
+    _installationFolder = _workingFolder + "/Overte";
 #elif defined Q_OS_MAC
-    _installationFolder = _workingFolder + "/Vircadia";
+    _installationFolder = _workingFolder + "/Overte";
 #endif
 
     nitpick->enableRunTabControls();
@@ -261,7 +261,7 @@ void TestRunnerDesktop::runInstaller() {
     script.write("#!/bin/sh\n\n");
     script.write("VOLUME=`hdiutil attach \"$1\" | grep Volumes | awk '{print $3}'`\n");
 
-    QString folderName {"Vircadia"};
+    QString folderName {"Overte"};
     if (!_runLatest->isChecked()) {
         folderName += QString(" - ") + getPRNumberFromURL(_url->text());
     }
@@ -321,10 +321,10 @@ void TestRunnerDesktop::saveExistingHighFidelityAppDataFolder() {
     dataDirectory = QDir::homePath() + "/Library/Application Support";
 #endif
     if (_runLatest->isChecked()) {
-        _appDataFolder.setPath(dataDirectory + "/Vircadia");
+        _appDataFolder.setPath(dataDirectory + "/Overte");
     } else {
         // We are running a PR build
-        _appDataFolder.setPath(dataDirectory + "/Vircadia - " + getPRNumberFromURL(_url->text()));
+        _appDataFolder.setPath(dataDirectory + "/Overte - " + getPRNumberFromURL(_url->text()));
     }
 
     _savedAppDataFolder.setPath(dataDirectory + "/" + UNIQUE_FOLDER_NAME);

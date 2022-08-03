@@ -18,7 +18,7 @@
 #include <QDebug>
 
 
-Q_LOGGING_CATEGORY(crash_handler, "vircadia.crash_handler")
+Q_LOGGING_CATEGORY(crash_handler, "overte.crash_handler")
 
 bool startCrashHandler(std::string appPath) {
     qCWarning(crash_handler) << "No crash handler available.";

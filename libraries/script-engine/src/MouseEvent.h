@@ -20,7 +20,7 @@
 
 class QScriptEngine;
 
-/// Represents a mouse event to the scripting engine. Exposed as <code><a href="https://apidocs.vircadia.dev/global.html#MouseEvent">MouseEvent</a></code>
+/// Represents a mouse event to the scripting engine. Exposed as <code><a href="https://apidocs.overte.org/global.html#MouseEvent">MouseEvent</a></code>
 class MouseEvent {
 public:
     MouseEvent();

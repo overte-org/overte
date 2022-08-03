@@ -48,7 +48,7 @@ sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
 cmake ../ -DCMAKE_OSX_SYSROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.12 -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -G Xcode -DOSX_SDK=10.12  ..
 ```
 
-After running CMake, you will have the make files or Xcode project file necessary to build all of the components. Open the `vircadia.xcodeproj` file, choose `ALL_BUILD` from the Product > Scheme menu (or target drop down), and click Run.
+After running CMake, you will have the make files or Xcode project file necessary to build all of the components. Open the `overte.xcodeproj` file, choose `ALL_BUILD` from the Product > Scheme menu (or target drop down), and click Run.
 
 If the build completes successfully, you will have built targets for all components located in the `build/${target_name}/Debug` directories.
 

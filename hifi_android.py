@@ -10,7 +10,7 @@ import zipfile
 
 print = functools.partial(print, flush=True)
 
-ANDROID_PACKAGE_URL = 'https://cdn-1.vircadia.com/eu-c-1/vircadia-public/dependencies/android/'
+ANDROID_PACKAGE_URL = 'https://build-deps.overte.org/dependencies/android/'
 
 ANDROID_PACKAGES = {
     'qt' : {

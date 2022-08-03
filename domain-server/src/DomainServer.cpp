@@ -66,7 +66,7 @@ using namespace std::chrono;
 
 Q_LOGGING_CATEGORY(domain_server, "hifi.domain_server")
 Q_LOGGING_CATEGORY(domain_server_ice, "hifi.domain_server.ice")
-Q_LOGGING_CATEGORY(domain_server_auth, "vircadia.domain_server.auth")
+Q_LOGGING_CATEGORY(domain_server_auth, "overte.domain_server.auth")
 
 const QString ACCESS_TOKEN_KEY_PATH = "metaverse.access_token";
 const QString DomainServer::REPLACEMENT_FILE_EXTENSION = ".replace";

@@ -6,8 +6,8 @@
 //  Copyright 2021 Vircadia contributors.
 //
 
-#ifndef vircadia_NetworkSocket_h
-#define vircadia_NetworkSocket_h
+#ifndef overte_NetworkSocket_h
+#define overte_NetworkSocket_h
 
 #include <QObject>
 #include <QUdpSocket>
@@ -167,4 +167,4 @@ private:
 
 /// @}
 
-#endif // vircadia_NetworkSocket_h
+#endif // overte_NetworkSocket_h
