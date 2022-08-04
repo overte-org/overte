@@ -2092,7 +2092,7 @@
         {
           "name": "cloud_domain",
           "type": "checkbox",
-          "default": false
+          "default": true
         },
         {
           "name": "steps_completed",

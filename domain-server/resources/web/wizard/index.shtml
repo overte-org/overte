@@ -1,9 +1,9 @@
 <!--#include virtual="wizard/header.html"-->
-<div class="wizard-step desktop-only col-md-6 col-centered" style="display: none;">
+<div class="wizard-step col-md-6 col-centered" style="display: none;">
   <h4 class="step-title"></h4>
   <dl class="row">
     <dd class="col-md-12">
-      <span class='step-description'>By connecting your Metaverse Account you will be granting access to your account information.</span>
+      <span class='step-description'>Connect your Metaverse account to be able to make your domain discoverable and add account based authentication. You can always do this later.</span>
     </dd>
   </dl>
   <dl class="row">
@@ -78,14 +78,14 @@
     <div class="col-md-12">
       <p id="connect-question" class="step-info">
         Who can <a href='#' class='wizard-link  perms-link'>connect</a> to your domain?
-        <span class='glyphicon glyphicon-info-sign' data-toggle='tooltip' title='You can set this to allow a user to connect to this domain.'></span>
+        <span class='glyphicon glyphicon-info-sign' data-toggle='tooltip' title='Allows users to join this domain.'></span>
       </p>
     </div>
   </div>
   <div class="row">
     <p class="col-md-2">
       <label>
-        <input id="connect-none" name="connect-radio" type="radio" value="none" checked> None
+        <input id="connect-none" name="connect-radio" type="radio" value="none"> None
       </label>
     </p>
     <p class="col-md-3">
@@ -100,7 +100,7 @@
     </p>
     <p class="col-md-2">
       <label>
-        <input id="connect-everyone" name="connect-radio" type="radio" value="everyone"> Everyone
+        <input id="connect-everyone" name="connect-radio" type="radio" value="everyone" checked> Everyone
       </label>
     </p>
   </div>
@@ -109,19 +109,19 @@
     <div class="col-md-12">
       <p class="step-info">
         Who can <a href='#' class='wizard-link perms-link'>rez items</a> in your domain?
-        <span class='glyphicon glyphicon-info-sign' data-toggle='tooltip' title='You can set this to allow a user to create entities in this domain.'></span>
+        <span class='glyphicon glyphicon-info-sign' data-toggle='tooltip' title='Allows users to create entities in this domain.'></span>
       </p>
     </div>
   </div>
   <div id="rez-options-row" class="row">
     <p class="col-md-2">
       <label>
-        <input id="rez-none" name="rez-radio" type="radio" value="none" checked> None
+        <input id="rez-none" name="rez-radio" type="radio" value="none" disabled> None
       </label>
     </p>
     <p class="col-md-3">
       <label>
-        <input id="rez-friends" name="rez-radio" type="radio" value="friends" disabled> Friends
+        <input id="rez-friends" name="rez-radio" type="radio" value="friends" checked> Friends
       </label>
     </p>
     <p class="col-md-5">
@@ -197,8 +197,8 @@
     <div class="col-md-12">
       <span class='step-description'>
         Would you like use automatic threading for your server's avatars and audio?
-        If you are hosting this server on your local computer and it is not very powerful, then consider leaving this off because the server will use more resources if it is being utilized extensively, thereby slowing down your computer.
-        If you are running this server on a powerful system and intend to have a large audience, then turn this setting on.
+        If you are hosting this server on your local computer and have limited resources, consider turning this off or the server may slow down your computer when the server is used extensively.
+        If you are running this server on a powerful system, or cloud server, and intend to have a large audience keep this setting turned on.
       </span>
     </div>
   </div>
@@ -206,7 +206,7 @@
   <div id="automatic-threading-options-row" class="row">
     <p class="col-md-12">
       <label>
-        <input id="enable-automatic-threading" name="threading-checkbox" type="checkbox" value="true"> Enable Automatic Threading
+        <input id="enable-automatic-threading" name="threading-checkbox" type="checkbox" value="true" checked> Enable Automatic Threading
       </label>
     </p>
   </div>
@@ -260,7 +260,6 @@
         <b>Go to your Domain:</b>
       </div>
       <ul>
-        <li class="step-info">Browse environments in the Marketplace to select the perfect content set for your VR world.</li>
         <li class="step-info">Invite people to your domain right now.</li>
         <li class="step-info">Meet new people and explore other domains.</li>
       </ul>
