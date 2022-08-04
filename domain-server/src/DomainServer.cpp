@@ -2254,17 +2254,15 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
 
     // Check if we should redirect/prevent access to the wizard
     if (connection->requestOperation() == QNetworkAccessManager::GetOperation) {
-        const QString URI_WIZARD_PATH = "/web-new/dist/spa/index.html";
-        const QString URI_WIZARD_FRAG = "wizard";
+        const QString URI_WIZARD = "/wizard/";
         const QString WIZARD_COMPLETED_ONCE_KEY_PATH = "wizard.completed_once";
         QVariant wizardCompletedOnce = _settingsManager.valueForKeyPath(WIZARD_COMPLETED_ONCE_KEY_PATH);
         const bool completedOnce = wizardCompletedOnce.isValid() && wizardCompletedOnce.toBool();
 
-        if (url.path() != URI_WIZARD_PATH && url.path().endsWith('/') && !completedOnce) {
+        if (url.path() != URI_WIZARD && url.path().endsWith('/') && !completedOnce) {
             // First visit, redirect to the wizard
             QUrl redirectedURL = url;
-            redirectedURL.setPath(URI_WIZARD_PATH);
-            redirectedURL.setFragment(URI_WIZARD_FRAG);
+            redirectedURL.setPath(URI_WIZARD);
 
             Headers redirectHeaders;
             redirectHeaders.insert("Location", redirectedURL.toEncoded(QUrl::None));
@@ -2272,7 +2270,7 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
             connection->respond(HTTPConnection::StatusCode302,
                                 QByteArray(), HTTPConnection::DefaultContentType, redirectHeaders);
             return true;
-        } else if (url.path() == URI_WIZARD_PATH && completedOnce) {
+        } else if (url.path() == URI_WIZARD && completedOnce) {
             // Wizard already completed, return 404
             connection->respond(HTTPConnection::StatusCode404, "Resource not found.");
             return true;
