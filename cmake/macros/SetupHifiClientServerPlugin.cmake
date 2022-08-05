@@ -1,6 +1,7 @@
 #
 #  Created by Brad Hefta-Gaub on 2016/07/07
 #  Copyright 2016 High Fidelity, Inc.
+#  Copyright 2022 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http:#www.apache.org/licenses/LICENSE-2.0.html
@@ -12,7 +13,7 @@ macro(SETUP_HIFI_CLIENT_SERVER_PLUGIN)
 
   if (BUILD_CLIENT)
     if (APPLE)
-      add_dependencies(Vircadia ${TARGET_NAME})
+      add_dependencies(Overte ${TARGET_NAME})
     else()
       add_dependencies(interface ${TARGET_NAME})
     endif()

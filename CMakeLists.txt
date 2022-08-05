@@ -65,8 +65,9 @@ endif()
 # set our OS X deployment target
 # (needs to be set before first project() call and before prebuild.py)
 # Will affect VCPKG dependencies
+# This is the lowest version supported by our Qt package
 if (APPLE)
-  set(ENV{MACOSX_DEPLOYMENT_TARGET} 10.11)
+  set(ENV{MACOSX_DEPLOYMENT_TARGET} 10.13)
 endif()
 
 set(RELEASE_TYPE "$ENV{RELEASE_TYPE}")
@@ -220,7 +221,7 @@ endif()
 
 option(VCPKG_APPLOCAL_DEPS OFF)
 
-project(vircadia)
+project(overte)
 include("cmake/init.cmake")
 include("cmake/compiler.cmake")
 option(VCPKG_APPLOCAL_DEPS OFF)
@@ -471,7 +472,7 @@ endif()
 if (BUILD_CLIENT)
   add_subdirectory(interface)
   if (APPLE)
-    set_target_properties(Vircadia PROPERTIES FOLDER "Apps")
+    set_target_properties(Overte PROPERTIES FOLDER "Apps")
   else()
     set_target_properties(interface PROPERTIES FOLDER "Apps")
   endif()

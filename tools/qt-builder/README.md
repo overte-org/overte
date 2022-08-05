@@ -1,5 +1,5 @@
 # General
-This document describes the process to build Qt 5.15.2.
+This document describes the process to build Qt 5.15.5.
 
 Reference: https://doc.qt.io/qt-5/build-sources.html
 
@@ -80,9 +80,8 @@ sudo apt build-dep qt5-default
 
 On Ubuntu based systems you can install all these dependencies with:
 ```bash
-sudo apt install git python gperf flex bison pkg-config mesa-utils libgl1-mesa-dev make g++ libdbus-glib-1-dev libnss3-dev
+sudo apt install git python gperf flex bison pkg-config mesa-utils libgl1-mesa-dev make g++ libdbus-glib-1-dev libnss3-dev nodejs libxkbfile-dev libx11-dev
 ```
-Make sure that python 2.7.x is the system standard by checking if `python --version` returns python 2.7.x
 
 Qt also provides a dependency list for some major Linux distributions here: https://wiki.qt.io/Building_Qt_5_from_Git#Linux.2FX11
 
@@ -213,7 +212,7 @@ Zip up this directory and upload it to Backtrace or other crash log handlng tool
 ### Linux
 #### Preparing source files
 ```bash
-git clone --recursive git://code.qt.io/qt/qt5.git -b 5.15.2 --single-branch
+git clone --recursive https://invent.kde.org/qt/qt/qt5.git -b kde/5.15 --single-branch
 ```
 
 #### Configuring
@@ -278,19 +277,29 @@ find . -name \*.prl -exec sed -i -e '/^QMAKE_PRL_BUILD_DIR/d' {} \;
 ```
 2.   Copy *qt.conf* to *qt5-install\bin*
 
+3. The KDE Qt patchset contains a newer QtWebEngine version. We need to change some version numbers to work around conflicts:
+```bash
+find . -name \Qt5WebEngine*Config.cmake -exec sed -i '' -e 's/5\.15\.10/5\.15\.5/g' {} \;
+cp lib/libQt5WebEngine.so.5.15.10 lib/libQt5WebEngine.so.5.15.5
+cp lib/libQt5WebEngineCore.so.5.15.10 lib/libQt5WebEngineCore.so.5.15.5
+cp lib/libQt5WebEngineWidgets.so.5.15.10 lib/libQt5WebEngineWidgets.so.5.15.5
+cp lib/libQt5Pdf.so.5.15.10 lib/libQt5Pdf.so.5.15.5
+cp lib/libQt5PdfWidgets.so.5.15.10 lib/libQt5PdfWidgets.so.5.15.5
+```
+
 #### Uploading
 1.  Tar and xz qt5-install to create the package. Replace `ubuntu-18.04` with the relevant system and `amd64` with the relevant architecture.
 ```bash
-tar -Jcvf qt5-install-5.15.2-ubuntu-18.04-amd64.tar.xz qt5-install
+tar -Jcvf qt5-install-5.15.5-2022.07.13-kde_ea4efc067b47c11b1aac61668afd8578a6834f5b-ubuntu-18.04-amd64.tar.xz qt5-install
 ```
-2.  Upload qt5-install-5.15.2-ubuntu-18.04-amd64.tar.xz to https://build-deps.overte.org/dependencies/vcpkg/
+2.  Upload qt5-install-5.15.5-2022.07.13-kde_ea4efc067b47c11b1aac61668afd8578a6834f5b-ubuntu-18.04-amd64.tar.xz to https://build-deps.overte.org/dependencies/qt5/
 
 
 
 ### Mac
 #### Preparing source files
 ```bash
-git clone --recursive git://code.qt.io/qt/qt5.git -b 5.15.2 --single-branch
+git clone --recursive https://invent.kde.org/qt/qt/qt5.git -b kde/5.15 --single-branch
 ```
 
 Plain Qt 5.15.2 cannot actually be built on most supported configurations. To fix this, we will use QtWebEngine from Qt 5.15.7.
@@ -331,7 +340,7 @@ make -j1 install
 1.  Building with newer QtWebEngine will fail by standard. To fix this we need to change the relevant cmake files in `qt5-install`. (See https://www.qt.io/blog/building-qt-webengine-against-other-qt-versions and https://github.com/macports/macports-ports/pull/12595/files )
     - `cd` to the `qt5-install` directory.
     - Enter `bash` since zsh cannot run the following command.
-    - `find . -name \Qt5WebEngine*Config.cmake -exec sed -i '' -e 's/5\.15\.7/5\.15\.2/g' {} \;`
+    - `find . -name \Qt5WebEngine*Config.cmake -exec sed -i '' -e 's/5\.15\.11/5\.15\.5/g' {} \;`
     - `exit` bash to got back to zsh.
     - `cd ..`
 
@@ -347,9 +356,9 @@ Add a *qt.conf* file.
 
 #### Uploading
 ```bash
-tar -Jcvf qt5-install-5.15.2-qtwebengine-5.15.7-macOSXSDK10.14-macos.tar.xz qt5-install
+tar -Jcvf qt5-install-5.15.5-2022.07.29-kde_1832429ff1e4e224389c7cfa592d50a2fab31e29-macOS-SDK12.3-amd64.tar.xz qt5-install
 ```
-Upload qt5-install-5.15.2-qtwebengine-5.15.7-macOSXSDK10.14-macos.tar.xz to our Amazon S3 vircadia-public bucket, under the dependencies/vckpg directory
+Upload qt5-install-5.15.5-2022.07.29-kde_1832429ff1e4e224389c7cfa592d50a2fab31e29-macOS-SDK12.3-amd64.tar.xz to https://build-deps.overte.org/ under the dependencies/qt5 directory
 
 #### Creating symbols (optional)
 Run `python3 prepare-mac-symbols-for-backtrace.py qt5-install` to scan the qt5-build directory for any dylibs and execute dsymutil to create dSYM bundles.  After running this command the backtrace directory will be created.  Zip this directory up, but make sure that all dylibs and dSYM fiels are in the root of the zip file, not under a sub-directory.  This file can then be uploaded to backtrace or other crash log handling tool.

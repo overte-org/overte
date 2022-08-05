@@ -4,6 +4,7 @@
 //
 //  Created by Brad hefta-Gaub on 11/16/2015.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -57,14 +58,14 @@ public:
      * @function Messages.sendMessage
      * @param {string} channel - The channel to send the message on.
      * @param {string} message - The message to send.
-     * @param {boolean} [localOnly=false] - If <code>false</code> then the message is sent to all Interface, client entity, 
+     * @param {boolean} [localOnly=false] - If <code>false</code> then the message is sent to all Interface, client entity,
      *     server entity, and assignment client scripts in the domain.
-     *     <p>If <code>true</code> then: if sent from an Interface or client entity script it is received by all Interface and 
-     *     client entity scripts; if sent from a server entity script it is received by all entity server scripts; and if sent 
+     *     <p>If <code>true</code> then: if sent from an Interface or client entity script it is received by all Interface and
+     *     client entity scripts; if sent from a server entity script it is received by all entity server scripts; and if sent
      *     from an assignment client script it is received only by that same assignment client script.</p>
      * @example <caption>Send and receive a message.</caption>
      * // Receiving script.
-     * var channelName = "com.vircadia.example.messages-example";
+     * var channelName = "org.overte.example.messages-example";
      *
      * function onMessageReceived(channel, message, sender, localOnly) {
      *     print("Message received:");
@@ -84,7 +85,7 @@ public:
      *
      *
      * // Sending script.
-     * var channelName = "com.vircadia.example.messages-example";
+     * var channelName = "org.overte.example.messages-example";
      * var message = "Hello";
      * Messages.sendMessage(channelName, message);
      */
@@ -112,7 +113,7 @@ public:
      *     from an assignment client script it is received only by that same assignment client script.</p>
      * @example <caption>Send and receive data.</caption>
      * // Receiving script.
-     * var channelName = "com.vircadia.example.messages-example";
+     * var channelName = "org.overte.example.messages-example";
      *
      * function onDataReceived(channel, data, sender, localOnly) {
      *     var int8data = new Int8Array(data);
@@ -140,15 +141,15 @@ public:
      *
      *
      * // Sending script.
-     * var channelName = "com.vircadia.example.messages-example";
+     * var channelName = "org.overte.example.messages-example";
      * var int8data = new Int8Array([1, 1, 2, 3, 5, 8, 13]);
      * Messages.sendData(channelName, int8data.buffer);
      */
     Q_INVOKABLE void sendData(QString channel, QByteArray data, bool localOnly = false);
-    
+
     /*@jsdoc
-     * Subscribes the scripting environment &mdash; Interface, the entity script server, or assignment client instance &mdash; 
-     * to receive messages on a specific channel. This means, for example, that if there are two Interface scripts that 
+     * Subscribes the scripting environment &mdash; Interface, the entity script server, or assignment client instance &mdash;
+     * to receive messages on a specific channel. This means, for example, that if there are two Interface scripts that
      * subscribe to different channels, both scripts will receive messages on both channels.
      * @function Messages.subscribe
      * @param {string} channel - The channel to subscribe to.

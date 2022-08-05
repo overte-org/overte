@@ -32,7 +32,7 @@ RUN apt-get -y upgrade
 RUN apt-get -y install git
 
 # Clone and enter single branch of Qt5
-RUN git clone --recursive https://invent.kde.org/qt/qt/qt5.git -b kde/5.15
+RUN git clone --recursive https://invent.kde.org/qt/qt/qt5.git -b kde/5.15 --single-branch
 # Note: We don't need to update QtWebengine because KDE has already done this.
 
 # Adjust QMAKE_LIBDIR_X11 and QMAKE_LIBDIR_OPENGL

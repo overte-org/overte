@@ -1,6 +1,7 @@
 //
 //  Created by Bradley Austin Davis 2015/10/09
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -82,15 +83,15 @@ class RouteBuilderProxy : public QObject {
         Q_INVOKABLE QObject* whenQml(const QJSValue& expression);
 
         /*@jsdoc
-         * Terminates the route with a standard control, an action, or a script function. The output value from the route is 
+         * Terminates the route with a standard control, an action, or a script function. The output value from the route is
          * sent to the specified destination.
          * @function RouteObject#to
-         * @param {Controller.Standard|Controller.Actions|function} destination - The standard control, action, or JavaScript 
-         * function that the route output is mapped to. For a function, the parameter can be either the name of the function or 
+         * @param {Controller.Standard|Controller.Actions|function} destination - The standard control, action, or JavaScript
+         * function that the route output is mapped to. For a function, the parameter can be either the name of the function or
          * an in-line function definition.
          *
          * @example <caption>Make the right trigger move your avatar up.</caption>
-         * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+         * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
          * var mapping = Controller.newMapping(MAPPING_NAME);
          *
          * mapping.from(Controller.Standard.RT).to(Controller.Actions.TranslateY);
@@ -105,7 +106,7 @@ class RouteBuilderProxy : public QObject {
          *     print("Trigger value: " + value);
          * }
          *
-         * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+         * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
          * var mapping = Controller.newMapping(MAPPING_NAME);
          *
          * mapping.from(Controller.Standard.RT).to(onRightTrigger);
@@ -120,11 +121,11 @@ class RouteBuilderProxy : public QObject {
         /*@jsdoc
          * Enables or disables writing debug information for a route to the program log.
          * @function RouteObject#debug
-         * @param {boolean} [enable=true] - If <code>true</code> then writing debug information is enabled for the route, 
+         * @param {boolean} [enable=true] - If <code>true</code> then writing debug information is enabled for the route,
          *     otherwise it is disabled.
          * @returns {RouteObject} The <code>RouteObject</code> with debug output enabled or disabled.
          * @example <caption>Write debug information to the program log for a right trigger mapping.</caption>
-         * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+         * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
          * var mapping = Controller.newMapping(MAPPING_NAME);
          *
          * mapping.from(Controller.Standard.RT).debug().to(function (value) {
@@ -148,34 +149,34 @@ class RouteBuilderProxy : public QObject {
         Q_INVOKABLE QObject* debug(bool enable = true);
 
         /*@jsdoc
-         * Processes the route without marking the controller output as having been read, so that other routes from the same 
+         * Processes the route without marking the controller output as having been read, so that other routes from the same
          * controller output can also process.
          * @function RouteObject#peek
-         * @param {boolean} [enable=true] - If <code>true</code> then the route is processed without marking the route's 
+         * @param {boolean} [enable=true] - If <code>true</code> then the route is processed without marking the route's
          *     controller source as having been read.
          * @returns {RouteObject} The <code>RouteObject</code> with the peek feature enabled.
          */
         Q_INVOKABLE QObject* peek(bool enable = true);
 
         /*@jsdoc
-         * Processes the route only if a condition is satisfied. The condition is evaluated before the route input is read, and 
-         * the input is read only if the condition is <code>true</code>. Thus, if the condition is not met then subsequent 
+         * Processes the route only if a condition is satisfied. The condition is evaluated before the route input is read, and
+         * the input is read only if the condition is <code>true</code>. Thus, if the condition is not met then subsequent
          * routes using the same input are processed.
          * @function RouteObject#when
          * @param {condition|condition[]} expression - <p>A <code>condition</code> may be a:</p>
          *     <ul>
          *         <li>A numeric {@link Controller.Hardware} property, which is evaluated as a boolean.</li>
-         *         <li><code>!</code> followed by a {@link Controller.Hardware} property to use the logical NOT of the property 
+         *         <li><code>!</code> followed by a {@link Controller.Hardware} property to use the logical NOT of the property
          *         value.</li>
-         *         <li>A script function returning a boolean value. This can be either the name of the function or an in-line 
+         *         <li>A script function returning a boolean value. This can be either the name of the function or an in-line
          *         definition.</li>
          *     </ul>
          * <p>If an array of conditions is provided, their values are ANDed together.</p>
-         * <p><strong>Warning:</strong> The use of <code>!</code> is not currently supported in JavaScript <code>.when()</code> 
+         * <p><strong>Warning:</strong> The use of <code>!</code> is not currently supported in JavaScript <code>.when()</code>
          * calls.</p>
          * @returns {RouteObject} The <code>RouteObject</code> with the condition added.
          * @example <caption>Process the right trigger differently in HMD and desktop modes.</caption>
-         * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+         * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
          * var mapping = Controller.newMapping(MAPPING_NAME);
          *
          * // Processed only if in HMD mode.
@@ -196,14 +197,14 @@ class RouteBuilderProxy : public QObject {
         Q_INVOKABLE QObject* when(const QScriptValue& expression);
 
         /*@jsdoc
-         * Filters numeric route values to lie between two values; values outside this range are not passed on through the 
+         * Filters numeric route values to lie between two values; values outside this range are not passed on through the
          * route.
          * @function RouteObject#clamp
          * @param {number} min - The minimum value to pass through.
          * @param {number} max - The maximum value to pass through.
          * @returns {RouteObject} The route object with the clamp filter added.
          * @example <caption>Clamp right trigger values to between 0.3 and 0.7.</caption>
-         * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+         * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
          * var mapping = Controller.newMapping(MAPPING_NAME);
          * mapping.from(Controller.Standard.RT).clamp(0.3, 0.7).to(function (value) {
          *     print("Value: " + value);
@@ -217,15 +218,15 @@ class RouteBuilderProxy : public QObject {
         Q_INVOKABLE QObject* clamp(float min, float max);
 
         /*@jsdoc
-         * Filters numeric route values such that they are rounded to <code>0</code> or <code>1</code> without output values 
-         * flickering when the input value hovers around <code>0.5</code>. For example, this enables you to use an analog input 
+         * Filters numeric route values such that they are rounded to <code>0</code> or <code>1</code> without output values
+         * flickering when the input value hovers around <code>0.5</code>. For example, this enables you to use an analog input
          * as if it were a toggle.
          * @function RouteObject#hysteresis
          * @param {number} min - When the input value drops below this value the output value changes to <code>0</code>.
          * @param {number} max - When the input value rises above this value the output value changes to <code>1</code>.
          * @returns {RouteObject} The <code>RouteObject</code> with the filter applied.
          * @example <caption>Round the right joystick forward/back values to 0 or 1 with hysteresis.</caption>
-         * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+         * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
          * var mapping = Controller.newMapping(MAPPING_NAME);
          * mapping.from(Controller.Standard.RY).peek().to(function (value) {
          *     print("Raw value: " + value);  // 0.0 - 1.0.
@@ -247,7 +248,7 @@ class RouteBuilderProxy : public QObject {
          * @param {number} interval - The interval between sending values, in seconds.
          * @returns {RouteObject} The <code>RouteObject</code> with the filter applied.
          * @example <caption>Send right trigger values every half second.</caption>
-         * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+         * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
          * var mapping = Controller.newMapping(MAPPING_NAME);
          * mapping.from(Controller.Standard.RT).pulse(0.5).to(function (value) {
          *     print("Value: " + value);
@@ -266,7 +267,7 @@ class RouteBuilderProxy : public QObject {
          * @param {number} multiplier - The scale to multiply the value by.
          * @returns {RouteObject} The <code>RouteObject</code> with the filter applied.
          * @example <caption>Scale the value of the right joystick forward/back values by 10.</caption>
-         * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+         * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
          * var mapping = Controller.newMapping(MAPPING_NAME);
          * mapping.from(Controller.Standard.LY).to(function (value) {
          *     print("L value: " + value);  // -1.0 to 1.0 values.
@@ -283,12 +284,12 @@ class RouteBuilderProxy : public QObject {
         Q_INVOKABLE QObject* scale(float multiplier);
 
         /*@jsdoc
-         * Filters numeric and {@link Pose} route values to have the opposite sign, e.g., <code>0.5</code> is changed to 
+         * Filters numeric and {@link Pose} route values to have the opposite sign, e.g., <code>0.5</code> is changed to
          * <code>-0.5</code>.
          * @function RouteObject#invert
          * @returns {RouteObject} The <code>RouteObject</code> with the filter applied.
          * @example <caption>Invert the value of the right joystick forward/back values.</caption>
-         * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+         * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
          * var mapping = Controller.newMapping(MAPPING_NAME);
          * mapping.from(Controller.Standard.LY).to(function (value) {
          *     print("L value: " + value);  // -1.0 to 1.0 values, forward to back.
@@ -305,15 +306,15 @@ class RouteBuilderProxy : public QObject {
         Q_INVOKABLE QObject* invert();
 
         /*@jsdoc
-         * Filters numeric route values such that they're sent only when the input value is outside a dead-zone. When the input 
-         * passes the dead-zone value, output is sent starting at <code>0.0</code> and catching up with the input value. As the 
+         * Filters numeric route values such that they're sent only when the input value is outside a dead-zone. When the input
+         * passes the dead-zone value, output is sent starting at <code>0.0</code> and catching up with the input value. As the
          * input returns toward the dead-zone value, output values reduce to <code>0.0</code> at the dead-zone value.
          * @function RouteObject#deadZone
-         * @param {number} min - The minimum input value at which to start sending output. For negative input values, the 
+         * @param {number} min - The minimum input value at which to start sending output. For negative input values, the
          *    negative of this value is used.
          * @returns {RouteObject} The <code>RouteObject</code> with the filter applied.
          * @example <caption>Apply a dead-zone to the right joystick forward/back values.</caption>
-         * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+         * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
          * var mapping = Controller.newMapping(MAPPING_NAME);
          * mapping.from(Controller.Standard.RY).deadZone(0.2).to(function (value) {
          *     print("Value: " + value);  // 0.0 - 1.0 values once outside the dead-zone.
@@ -328,13 +329,13 @@ class RouteBuilderProxy : public QObject {
 
         /*@jsdoc
          * Filters numeric route values such that they are rounded to <code>-1</code>, <code>0</code>, or <code>1</code>.
-         * For example, this enables you to use an analog input as if it were a toggle or, in the case of a bidirectional axis, 
+         * For example, this enables you to use an analog input as if it were a toggle or, in the case of a bidirectional axis,
          * a tri-state switch.
          * @function RouteObject#constrainToInteger
          * @returns {RouteObject} The <code>RouteObject</code> with the filter applied.
-         * @example <caption>Round the right joystick forward/back values to <code>-1</code>, <code>0</code>, or 
+         * @example <caption>Round the right joystick forward/back values to <code>-1</code>, <code>0</code>, or
          *     <code>1</code>.</caption>
-         * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+         * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
          * var mapping = Controller.newMapping(MAPPING_NAME);
          * mapping.from(Controller.Standard.RY).constrainToInteger().to(function (value) {
          *     print("Value: " + value);  // -1, 0, or 1
@@ -348,12 +349,12 @@ class RouteBuilderProxy : public QObject {
         Q_INVOKABLE QObject* constrainToInteger();
 
         /*@jsdoc
-         * Filters numeric route values such that they are rounded to <code>0</code> or <code>1</code>. For example, this 
+         * Filters numeric route values such that they are rounded to <code>0</code> or <code>1</code>. For example, this
          * enables you to use an analog input as if it were a toggle.
          * @function RouteObject#constrainToPositiveInteger
          * @returns {RouteObject} The <code>RouteObject</code> with the filter applied.
          * @example <caption>Round the right joystick forward/back values to <code>0</code> or <code>1</code>.</caption>
-         * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+         * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
          * var mapping = Controller.newMapping(MAPPING_NAME);
          * mapping.from(Controller.Standard.RY).constrainToPositiveInteger().to(function (value) {
          *     print("Value: " + value);  // 0, or 1
@@ -431,14 +432,14 @@ class RouteBuilderProxy : public QObject {
         Q_INVOKABLE QObject* exponentialSmoothing(float rotationConstant, float translationConstant);
 
         /*@jsdoc
-         * Filters numeric route values such that a value of <code>0.0</code> is changed to <code>1.0</code>, and other values 
+         * Filters numeric route values such that a value of <code>0.0</code> is changed to <code>1.0</code>, and other values
          * are changed to <code>0.0</code>.
          * @function RouteObject#logicalNot
          * @returns {RouteObject} The <code>RouteObject</code> with the filter applied.
          * @example <caption>Logical NOT of LSTouch value.</caption>
-         * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+         * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
          * var mapping = Controller.newMapping(MAPPING_NAME);
-         * 
+         *
          * mapping.from(Controller.Standard.RSTouch).peek().to(function (value) {
          *     print("RSTouch: " + value);
          * });

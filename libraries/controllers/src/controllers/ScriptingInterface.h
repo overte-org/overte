@@ -4,6 +4,7 @@
 //
 //  Created by Brad Hefta-Gaub on 12/17/13.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -268,15 +269,15 @@ namespace controller {
         Q_INVOKABLE bool triggerShortHapticPulseOnDevice(unsigned int device, float strength, uint16_t index = 2) const;
 
         /*@jsdoc
-         * Creates a new controller mapping. Routes can then be added to the mapping using {@link MappingObject} methods and 
-         * routed to <code>Standard</code> controls, <code>Actions</code>, or script functions using {@link RouteObject} 
+         * Creates a new controller mapping. Routes can then be added to the mapping using {@link MappingObject} methods and
+         * routed to <code>Standard</code> controls, <code>Actions</code>, or script functions using {@link RouteObject}
          * methods. The mapping can then be enabled using {@link Controller.enableMapping|enableMapping} for it to take effect.
          * @function Controller.newMapping
-         * @param {string} [mappingName=Uuid.generate()] - A unique name for the mapping. If not specified a new UUID generated 
+         * @param {string} [mappingName=Uuid.generate()] - A unique name for the mapping. If not specified a new UUID generated
          *     by {@link Uuid(0).generate|Uuid.generate} is used.
          * @returns {MappingObject} A controller mapping object.
          * @example <caption>Create a simple mapping that makes the right trigger move your avatar up.</caption>
-         * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+         * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
          * var mapping = Controller.newMapping(MAPPING_NAME);
          *
          * mapping.from(Controller.Standard.RT).to(Controller.Actions.TranslateY);
@@ -304,14 +305,14 @@ namespace controller {
         Q_INVOKABLE void disableMapping(const QString& mappingName) { enableMapping(mappingName, false); }
 
         /*@jsdoc
-         * Creates a new controller mapping from a {@link Controller.MappingJSON|MappingJSON} string. Use 
+         * Creates a new controller mapping from a {@link Controller.MappingJSON|MappingJSON} string. Use
          * {@link Controller.enableMapping|enableMapping} to enable the mapping for it to take effect.
          * @function Controller.parseMapping
          * @param {string} jsonString - A JSON string of the {@link Controller.MappingJSON|MappingJSON}.
          * @returns {MappingObject} A controller mapping object.
          * @example <caption>Create a simple mapping that makes the right trigger move your avatar up.</caption>
          * var mappingJSON = {
-         *     "name": "com.vircadia.controllers.example.jsonMapping",
+         *     "name": "org.overte.controllers.example.jsonMapping",
          *     "channels": [
          *         { "from": "Standard.RT", "to": "Actions.TranslateY" }
          *     ]

@@ -1,6 +1,7 @@
 //
 //  Created by Bradley Austin Davis 2015/10/09
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyrgith 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -71,10 +72,10 @@ class UserInputMapper;
  * @property {Controller.MappingJSONRoute[]} channels - An array of routes.
  * @example <caption>A simple mapping JSON that makes the right trigger move your avatar up after a dead zone.</caption>
  * {
- *     "name": "com.vircadia.controllers.example.jsonMapping",
+ *     "name": "org.overte.controllers.example.jsonMapping",
  *     "channels": [
- *         { 
- *             "from": "Standard.RT", 
+ *         {
+ *             "from": "Standard.RT",
  *             "filters": { "type": "deadZone", "min": 0.05 },
  *             "to": "Actions.TranslateY"
  *         }
@@ -146,37 +147,37 @@ public:
     Q_INVOKABLE QObject* fromQml(const QJSValue& source);
 
     /*@jsdoc
-     * Creates a new {@link RouteObject} from two numeric {@link Controller.Hardware} outputs, one applied in the negative 
+     * Creates a new {@link RouteObject} from two numeric {@link Controller.Hardware} outputs, one applied in the negative
      * direction and the other in the positive direction, ready to be mapped to a standard control, action, or function.
      * <p>This is a QML-specific version of {@link MappingObject#makeAxis|makeAxis}: use this version in QML files.</p>
      * @function MappingObject#makeAxisQml
      * @param {Controller.Hardware} source1 - The first, negative-direction controller output.
      * @param {Controller.Hardware} source2 - The second, positive-direction controller output.
-     * @returns {RouteObject} A route ready for mapping to an action or function using {@link RouteObject} methods. The data 
+     * @returns {RouteObject} A route ready for mapping to an action or function using {@link RouteObject} methods. The data
      *     value passed to the route is the combined value of <code>source2 - source1</code>.
      */
     Q_INVOKABLE QObject* makeAxisQml(const QJSValue& source1, const QJSValue& source2);
 
     /*@jsdoc
-     * Creates a new {@link RouteObject} from a controller output, ready to be mapped to a standard control, action, or 
+     * Creates a new {@link RouteObject} from a controller output, ready to be mapped to a standard control, action, or
      * function.
      * @function MappingObject#from
-     * @param {Controller.Standard|Controller.Hardware|function} source - The controller output or function that is the source 
+     * @param {Controller.Standard|Controller.Hardware|function} source - The controller output or function that is the source
      *     of the route data. If a function, it must return a number or a {@link Pose} value as the route data.
      * @returns {RouteObject} A route ready for mapping to an action or function using {@link RouteObject} methods.
      */
     Q_INVOKABLE QObject* from(const QScriptValue& source);
 
     /*@jsdoc
-     * Creates a new {@link RouteObject} from two numeric {@link Controller.Hardware} outputs, one applied in the negative 
+     * Creates a new {@link RouteObject} from two numeric {@link Controller.Hardware} outputs, one applied in the negative
      * direction and the other in the positive direction, ready to be mapped to a standard control, action, or function.
      * @function MappingObject#makeAxis
      * @param {Controller.Hardware} source1 - The first, negative-direction controller output.
      * @param {Controller.Hardware} source2 - The second, positive-direction controller output.
      * @returns {RouteObject} A route ready for mapping to an action or function using {@link RouteObject} methods. The data
-     *     value passed to the route is the combined value of <code>source2 - source1</code>. 
+     *     value passed to the route is the combined value of <code>source2 - source1</code>.
      * @example <caption>Make the Oculus Touch triggers move your avatar up and down.</caption>
-     * var MAPPING_NAME = "com.vircadia.controllers.example.newMapping";
+     * var MAPPING_NAME = "org.overte.controllers.example.newMapping";
      * var mapping = Controller.newMapping(MAPPING_NAME);
      * mapping
      *     .makeAxis(Controller.Hardware.OculusTouch.LT, Controller.Hardware.OculusTouch.RT)

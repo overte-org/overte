@@ -1,6 +1,6 @@
 # Build macOS
 
-*Last Updated on December 1, 2021*
+*Last Updated on August 5, 2022*
 
 Please read the [general build guide](BUILD.md) for information on dependencies required for all platforms. This will include the necessary environment variables to customize your build. Only macOS specific instructions are found in this document.
 
@@ -54,6 +54,8 @@ If the build completes successfully, you will have built targets for all compone
 
 ### make
 
+**Note:** Using make currently fails at linking time.
+
 Run CMake.
 
 ```bash
@@ -73,6 +75,8 @@ By default, it is set to `-march=native -mtune=native`, which yields builds opti
 machine, but these builds will not work on machines lacking same CPU instructions.
 
 For packaging, it is recommended to set it to a different value, for example `-msse3`. This will help ensure that the build will run on all reasonably modern CPUs.
+For Intel machines running High Sierra or above (what out current builds support): `-msse3 -mssse3 -msse4.1`
+For Intel machines running Catalina or above: `-msse3 -mssse3 -msse4.1 -msse4.2 -mavx`
 
 Setting `VIRCADIA_CPU_ARCHITECTURE` to an empty string will use the default compiler settings and yield
 maximum compatibility.
