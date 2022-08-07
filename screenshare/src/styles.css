@@ -1,7 +1,7 @@
 body {
   background-color: black;
   box-sizing: border-box;
-  font-family: "Graphik";
+  font-family: "FiraSans";
   margin: 0px 22px 10px 22px;
   }
 
@@ -77,8 +77,8 @@ yes:hover + #yes_background {
 }
 
 @font-face {
-  font-family: "Graphik";
-  src: url("./resources/Graphik-Regular.ttf");
+  font-family: "FiraSans";
+  src: url("./resources/FiraSans-Regular.ttf");
 }
 
 #title {
@@ -203,7 +203,7 @@ img {
   width: 9px;
   overflow: scroll;
   overflow-x: hidden;
-} 
+}
 
 #style-1::-webkit-scrollbar-thumb {
   background-color: #0198CB;

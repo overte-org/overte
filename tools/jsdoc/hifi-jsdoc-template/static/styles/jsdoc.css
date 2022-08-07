@@ -4,12 +4,12 @@
 ********************************************************************/
 
 @font-face{
-	font-family: 'Graphik Semibold';
+	font-family: 'FiraSans Semibold';
 	src: url('../fonts/Graphik-SemiBold.otf') format('opentype');
 }
 
 @font-face{
-	font-family: 'Graphik Regular';
+	font-family: 'FiraSans Regular';
 	src: url('../fonts/Graphik-Regular.otf') format('opentype');
 }
 
@@ -34,12 +34,12 @@ html
 
 body
 {
-	font-family: 'Graphik Regular', 'Proxima Nova', arial, sans-serif;
-	font-weight: 400; 
+	font-family: 'FiraSans Regular', 'Proxima Nova', arial, sans-serif;
+	font-weight: 400;
     color: #000000;
-    letter-spacing: 0.5px;  
+    letter-spacing: 0.5px;
     font-size: 0.95rem;
-    line-height: 20px;    
+    line-height: 20px;
 }
 
 p {
@@ -59,7 +59,7 @@ section
 ********************************************************************/
 
 h1, h2, h3, h4 {
-	font-family: "Graphik Semibold", Helvetica, sans-serif;
+	font-family: "FiraSans Semibold", Helvetica, sans-serif;
 }
 
 h1
@@ -83,7 +83,7 @@ h3
 
 h4
 {
-    font-family: 'Graphik Regular';
+    font-family: 'FiraSans Regular';
 	font-size: 1.03rem;
 }
 
@@ -237,11 +237,11 @@ nav #nav-search {
     background-color: #27343B;
     color: #FFFFFF;
     text-align: center;
-    margin-top: 0px;    
+    margin-top: 0px;
 }
 
 .nav-header p {
-    padding-top: 8px;    
+    padding-top: 8px;
 }
 
 .nav-header a {
@@ -251,7 +251,7 @@ nav #nav-search {
 }
 
 nav h3 {
-    font-family: "Graphik Regular", sans-serif;
+    font-family: "FiraSans Regular", sans-serif;
     font-size: 0.9rem;
     color: #FFFFFF;
     text-transform: uppercase;
@@ -288,11 +288,11 @@ nav ul ul li:first-child
     padding-top: 0;
 }
 
-nav li 
+nav li
 {
     margin-top: 14px;
 }
- 
+
 
 nav a:hover {
     font-weight: bold;
@@ -373,11 +373,11 @@ nav > h2 > a {
 
 .search-input
 {
-    font-family: 'Graphik Regular', sans-serif;
-    font-size: 90%;    
+    font-family: 'FiraSans Regular', sans-serif;
+    font-size: 90%;
     border: 1px solid #ddd;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
-    border-radius: 0;    
+    border-radius: 0;
 	background: rgba(76,76,76,0.47) !important;
 	color: white;
     width: 70%;
@@ -429,7 +429,7 @@ header {
   padding: 0px 4px;
 }
 
-.apiLinks 
+.apiLinks
 {
     display: block;
     text-align: center;
@@ -459,7 +459,7 @@ header {
    color: #999 !important;
 }
 
-#main p.availableIn 
+#main p.availableIn
 {
     font-size: 0.8rem;
 }

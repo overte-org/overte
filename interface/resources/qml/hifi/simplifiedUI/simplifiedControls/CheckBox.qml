@@ -77,7 +77,7 @@ Original.CheckBox {
         id: checkBoxLabel
         text: root.text
         color: root.color
-        font.family: "Graphik"
+        font.family: "FiraSans"
         font.pixelSize: 14
         font.weight: Font.DemiBold
         x: 2

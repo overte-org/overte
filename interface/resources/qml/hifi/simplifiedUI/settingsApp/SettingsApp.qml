@@ -27,8 +27,8 @@ Rectangle {
     SimplifiedConstants.SimplifiedConstants {
         id: simplifiedUI
     }
-            
-    focus: true        
+
+    focus: true
     Keys.onPressed: {
         if ((event.key == Qt.Key_D) && (event.modifiers & Qt.ControlModifier && event.modifiers & Qt.AltModifier && event.modifiers & Qt.ShiftModifier)) {
             var currentSetting = Settings.getValue("simplifiedUI/developerModeEnabled", false);
@@ -128,7 +128,7 @@ Rectangle {
                 width: tabTitleText.paintedWidth + 32
                 height: parent.height
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     id: tabTitleText
                     color: simplifiedUI.colors.text.white
                     anchors.fill: parent

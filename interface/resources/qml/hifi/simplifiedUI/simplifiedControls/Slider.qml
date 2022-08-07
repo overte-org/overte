@@ -33,7 +33,7 @@ Item {
     property alias pressed: sliderControl.pressed
     property real defaultValue: 0.0
 
-    HifiStylesUit.GraphikRegular {
+    HifiStylesUit.FiraSansRegular {
         id: sliderText
         text: ""
         anchors.right: sliderControl.left

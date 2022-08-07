@@ -1,5 +1,5 @@
 //
-//  GraphikMedium.qml
+//  FiraSansMedium.qml
 //
 //  Created by Wayne Chen on 3 May 2019
 //  Copyright 2019 High Fidelity, Inc.
@@ -16,6 +16,6 @@ Text {
     font.pixelSize: size
     verticalAlignment: Text.AlignVCenter
     horizontalAlignment: Text.AlignLeft
-    font.family: "Graphik"
+    font.family: "FiraSans"
     font.weight: Font.Medium
 }

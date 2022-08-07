@@ -65,14 +65,14 @@ Flickable {
         anchors.rightMargin: 26
         anchors.top: parent.top
         spacing: 0
-        
+
         ColumnLayout {
             id: platformInfoContainer
             Layout.preferredWidth: parent.width
             Layout.bottomMargin: 24
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.FiraSansSemiBold {
                 text: "About Your Configuration"
                 Layout.preferredWidth: parent.width
                 Layout.topMargin: 16
@@ -83,7 +83,7 @@ Flickable {
                 wrapMode: Text.Wrap
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "Use the button below to get a copy to share with us."
                 Layout.preferredWidth: parent.width
                 Layout.bottomMargin: 8
@@ -93,7 +93,7 @@ Flickable {
                 wrapMode: Text.Wrap
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "Version " + Window.checkVersion()
                 Layout.preferredWidth: parent.width
                 Layout.topMargin: 8
@@ -104,7 +104,7 @@ Flickable {
                 wrapMode: Text.Wrap
             }
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.FiraSansSemiBold {
                 text: "Platform Info"
                 Layout.preferredWidth: parent.width
                 Layout.topMargin: 8
@@ -115,7 +115,7 @@ Flickable {
                 wrapMode: Text.Wrap
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "<b>Computer Vendor/Model:</b>"
                 Layout.preferredWidth: parent.width
                 height: paintedHeight
@@ -138,7 +138,7 @@ Flickable {
                 }
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "<b>Profiled Platform Tier:</b> " + PlatformInfo.getTierProfiled()
                 Layout.preferredWidth: parent.width
                 height: paintedHeight
@@ -147,7 +147,7 @@ Flickable {
                 wrapMode: Text.Wrap
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "<b>OS Type:</b> " + PlatformInfo.getOperatingSystemType()
                 Layout.preferredWidth: parent.width
                 height: paintedHeight
@@ -156,14 +156,14 @@ Flickable {
                 wrapMode: Text.Wrap
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "<b>CPU:</b>"
                 Layout.preferredWidth: parent.width
                 height: paintedHeight
                 size: 16
                 color: simplifiedUI.colors.text.white
                 wrapMode: Text.Wrap
-                
+
                 Component.onCompleted: {
                     var cpu = JSON.parse(PlatformInfo.getCPU(0));
                     var cpuModel = cpu.model;
@@ -175,7 +175,7 @@ Flickable {
                 }
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "<b># CPUs:</b> " + PlatformInfo.getNumCPUs()
                 Layout.preferredWidth: parent.width
                 height: paintedHeight
@@ -184,7 +184,7 @@ Flickable {
                 wrapMode: Text.Wrap
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "<b># CPU Cores:</b> " + PlatformInfo.getNumLogicalCores()
                 Layout.preferredWidth: parent.width
                 height: paintedHeight
@@ -193,7 +193,7 @@ Flickable {
                 wrapMode: Text.Wrap
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "<b>RAM:</b> " + PlatformInfo.getTotalSystemMemoryMB() + " MB"
                 Layout.preferredWidth: parent.width
                 height: paintedHeight
@@ -202,14 +202,14 @@ Flickable {
                 wrapMode: Text.Wrap
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "<b>GPU:</b> "
                 Layout.preferredWidth: parent.width
                 height: paintedHeight
                 size: 16
                 color: simplifiedUI.colors.text.white
                 wrapMode: Text.Wrap
-                
+
                 Component.onCompleted: {
                     var gpu = JSON.parse(PlatformInfo.getGPU(PlatformInfo.getMasterGPU()));
                     var gpuModel = gpu.model;
@@ -221,7 +221,7 @@ Flickable {
                 }
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "<b>VR Hand Controllers:</b> " + (PlatformInfo.hasRiftControllers() ? "Rift" : (PlatformInfo.hasViveControllers() ? "Vive" : "None"))
                 Layout.preferredWidth: parent.width
                 height: paintedHeight
@@ -251,7 +251,7 @@ Flickable {
                 }
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "<b>Audio Input:</b> " + audioInputDevices.selectedInputDeviceName
                 Layout.preferredWidth: parent.width
                 height: paintedHeight
@@ -282,7 +282,7 @@ Flickable {
                 }
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "<b>Audio Output:</b> " + audioOutputDevices.selectedOutputDeviceName
                 Layout.preferredWidth: parent.width
                 height: paintedHeight
@@ -335,7 +335,7 @@ Flickable {
         textToCopy += "# CPUs: " + PlatformInfo.getNumCPUs() + "\n";
         textToCopy += "# CPU Cores: " + PlatformInfo.getNumLogicalCores() + "\n";
         textToCopy += "RAM: " + PlatformInfo.getTotalSystemMemoryMB() + " MB\n";
-        
+
         var gpu = JSON.parse(PlatformInfo.getGPU(PlatformInfo.getMasterGPU()));
         var gpuModel = gpu.model;
         if (!gpuModel || gpuModel.length === 0) {
@@ -346,7 +346,7 @@ Flickable {
         textToCopy += "VR Hand Controllers: " + (PlatformInfo.hasRiftControllers() ? "Rift" : (PlatformInfo.hasViveControllers() ? "Vive" : "None")) + "\n";
         textToCopy += "Audio Input: " + audioInputDevices.selectedInputDeviceName + "\n";
         textToCopy += "Audio Output: " + audioOutputDevices.selectedOutputDeviceName + "\n";
-        
+
         textToCopy += "\n**All Platform Info**\n";
         textToCopy += JSON.stringify(JSON.parse(PlatformInfo.getPlatform()), null, 4);
 
