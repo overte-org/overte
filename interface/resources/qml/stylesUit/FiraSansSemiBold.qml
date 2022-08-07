@@ -1,5 +1,5 @@
 //
-//  FiraSansMedium.qml
+//  FiraSansSemiBold.qml
 //
 //  Created by Dale Glass on 7 Aug 2022
 //  Copyright 2022 Overte e.V.
