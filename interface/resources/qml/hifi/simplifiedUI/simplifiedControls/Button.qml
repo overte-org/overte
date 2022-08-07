@@ -98,7 +98,7 @@ Original.Button {
 
     contentItem:  HifiStylesUit.RalewayMedium {
         id: buttonText
-        topPadding: -2 // Necessary for proper alignment using Graphik Medium
+        //topPadding: -2 // Necessary for proper alignment using Graphik Medium
         wrapMode: Text.Wrap
         color: enabled ? simplifiedUI.colors.controls.button.text.enabled : simplifiedUI.colors.controls.button.text.disabled
         size: simplifiedUI.sizes.controls.button.textSize

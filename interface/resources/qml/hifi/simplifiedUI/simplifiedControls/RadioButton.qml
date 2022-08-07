@@ -98,6 +98,6 @@ RadioButton {
         enabled: root.enabled
         verticalAlignment: Text.AlignVCenter
         leftPadding: radioButtonIndicator.width + root.labelLeftMargin
-        topPadding: -3 // For perfect alignment when using Raleway
+        //topPadding: -3 // For perfect alignment when using Graphik
     }
 }
