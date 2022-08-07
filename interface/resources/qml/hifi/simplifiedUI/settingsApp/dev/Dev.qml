@@ -57,7 +57,7 @@ Flickable {
         anchors.rightMargin: 26
         anchors.top: parent.top
         spacing: simplifiedUI.margins.settings.spacingBetweenSettings
-        
+
         ColumnLayout {
             id: uiControlsContainer
             Layout.preferredWidth: parent.width
@@ -65,7 +65,7 @@ Flickable {
             Layout.bottomMargin: 24
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.RalewaySemiBold {
                 id: uiControlsTitle
                 text: "User Interface"
                 Layout.preferredWidth: parent.width
@@ -74,7 +74,7 @@ Flickable {
                 color: simplifiedUI.colors.text.white
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.RalewayRegular {
                 id: uiControlsSubtitle
                 text: "You'll have to restart Interface after changing either of these settings. If you don't get any Toolbar apps back after restarting, run defaultScripts.js manually."
                 Layout.preferredWidth: parent.width

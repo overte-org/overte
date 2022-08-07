@@ -88,7 +88,7 @@ RadioButton {
     contentItem: Text {
         id: radioButtonLabel
         font.pixelSize: 14
-        font.family: "Graphik"
+        font.family: "Raleway"
         font.weight: Font.Normal
         text: root.text
         color: simplifiedUI.colors.text.white
@@ -98,6 +98,6 @@ RadioButton {
         enabled: root.enabled
         verticalAlignment: Text.AlignVCenter
         leftPadding: radioButtonIndicator.width + root.labelLeftMargin
-        topPadding: -3 // For perfect alignment when using Graphik
+        topPadding: -3 // For perfect alignment when using Raleway
     }
 }

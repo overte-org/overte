@@ -69,7 +69,7 @@ Item {
         anchors.leftMargin: 21
         anchors.verticalCenter: parent.verticalCenter
 
-        HifiStylesUit.GraphikRegular {
+        HifiStylesUit.RalewayRegular {
             id: displayNameLabel
             text: "Display Name"
             color: simplifiedUI.colors.text.lightGrey

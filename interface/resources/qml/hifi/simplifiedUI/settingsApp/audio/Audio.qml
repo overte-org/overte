@@ -67,14 +67,14 @@ Flickable {
         anchors.rightMargin: 26
         anchors.top: parent.top
         spacing: simplifiedUI.margins.settings.spacingBetweenSettings
-        
+
         ColumnLayout {
             id: volumeControlsContainer
             Layout.preferredWidth: parent.width
             Layout.topMargin: 24
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.RalewaySemiBold {
                 id: volumeControlsTitle
                 text: "Volume Controls"
                 Layout.preferredWidth: parent.width
@@ -165,13 +165,13 @@ Flickable {
                 }
             }
         }
-        
+
         ColumnLayout {
             id: micControlsContainer
             Layout.preferredWidth: parent.width
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.RalewaySemiBold {
                 id: micControlsTitle
                 text: "Default Mute Controls"
                 Layout.preferredWidth: parent.width
@@ -241,7 +241,7 @@ Flickable {
             Layout.preferredWidth: parent.width
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.RalewaySemiBold {
                 id: inputDeviceTitle
                 text: "Which input device?"
                 Layout.preferredWidth: parent.width
@@ -293,7 +293,7 @@ Flickable {
             SimplifiedControls.Button {
                 id: audioLoopbackButton
                 property bool audioLoopedBack: AudioScriptingInterface.getLocalEcho()
-                
+
                 function startAudioLoopback() {
                     if (!audioLoopedBack) {
                         audioLoopedBack = true;
@@ -336,7 +336,7 @@ Flickable {
             Layout.bottomMargin: 24
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.RalewaySemiBold {
                 id: outputDeviceTitle
                 text: "Which output device?"
                 Layout.preferredWidth: parent.width

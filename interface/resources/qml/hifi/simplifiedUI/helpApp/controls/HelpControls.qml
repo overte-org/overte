@@ -57,7 +57,7 @@ Flickable {
         anchors.top: parent.top
         spacing: 0
 
-        HifiStylesUit.GraphikSemiBold {
+        HifiStylesUit.RalewaySemiBold {
             text: "HQ Controls"
             Layout.preferredWidth: parent.width
             Layout.topMargin: 16
@@ -66,7 +66,7 @@ Flickable {
             color: simplifiedUI.colors.text.white
         }
 
-        HifiStylesUit.GraphikRegular {
+        HifiStylesUit.RalewayRegular {
             text: "You can use the following controls to move your avatar around your HQ:"
             Layout.preferredWidth: parent.width
             wrapMode: Text.Wrap

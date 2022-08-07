@@ -28,7 +28,7 @@ TextField {
     property bool blankPlaceholderTextOnFocus: true
 
     color: simplifiedUI.colors.text.white
-    font.family: "Graphik Medium"
+    font.family: "Raleway Medium"
     font.pixelSize: 22
     selectionColor: simplifiedUI.colors.text.white
     selectedTextColor: simplifiedUI.colors.text.darkGrey

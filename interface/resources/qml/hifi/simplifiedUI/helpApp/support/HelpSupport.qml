@@ -49,7 +49,7 @@ Item {
         anchors.top: parent.top
         spacing: 0
 
-        HifiStylesUit.GraphikSemiBold {
+        HifiStylesUit.RalewaySemiBold {
             text: "Support"
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: paintedHeight
@@ -58,7 +58,7 @@ Item {
             color: simplifiedUI.colors.text.white
         }
 
-        HifiStylesUit.GraphikRegular {
+        HifiStylesUit.RalewayRegular {
             text: "You can quickly get the support that you need by clicking the button below."
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: paintedHeight

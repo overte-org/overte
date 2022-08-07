@@ -72,7 +72,7 @@ Original.Button {
             anchors.centerIn: parent
             width: parent.width - parent.border.width * 2
             height: parent.height - parent.border.width * 2
-            
+
             Rectangle {
                 z: -1
                 clip: true
@@ -96,7 +96,7 @@ Original.Button {
         }
     }
 
-    contentItem:  HifiStylesUit.GraphikMedium {
+    contentItem:  HifiStylesUit.RalewayMedium {
         id: buttonText
         topPadding: -2 // Necessary for proper alignment using Graphik Medium
         wrapMode: Text.Wrap

@@ -255,7 +255,7 @@ Rectangle {
                     opacity: 0.8
                     radius: 4
 
-                    HifiStylesUit.GraphikSemiBold {
+                    HifiStylesUit.RalewaySemiBold {
                         id: toolTipText
                         anchors.left: parent.left
                         anchors.leftMargin: 2

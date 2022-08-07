@@ -27,7 +27,7 @@ Rectangle {
     SimplifiedConstants.SimplifiedConstants {
         id: simplifiedUI
     }
-            
+
     focus: true
 
     Component.onCompleted: {
@@ -110,7 +110,7 @@ Rectangle {
                 width: tabTitleText.paintedWidth + 32
                 height: parent.height
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.RalewayRegular {
                     id: tabTitleText
                     color: simplifiedUI.colors.text.white
                     anchors.fill: parent

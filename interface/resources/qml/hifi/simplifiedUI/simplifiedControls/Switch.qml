@@ -147,7 +147,7 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
 
-        HifiStylesUit.GraphikRegular {
+        HifiStylesUit.RalewayRegular {
             id: labelOff
             text: ""
             size: simplifiedUI.sizes.controls.simplifiedSwitch.labelTextSize
@@ -195,7 +195,7 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
 
-        HifiStylesUit.GraphikRegular {
+        HifiStylesUit.RalewayRegular {
             id: labelOn
             text: ""
             size: simplifiedUI.sizes.controls.simplifiedSwitch.labelTextSize
@@ -230,7 +230,7 @@ Item {
                 } else {
                     originalSwitch.checked = true;
                 }
-                
+
                 root.clicked();
             }
         }

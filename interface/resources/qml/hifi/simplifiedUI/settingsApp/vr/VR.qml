@@ -74,7 +74,7 @@ Flickable {
             Layout.topMargin: 24
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.RalewaySemiBold {
                 id: controlsTitle
                 text: "VR Movement Controls"
                 Layout.preferredWidth: parent.width
@@ -159,7 +159,7 @@ Flickable {
             Layout.preferredWidth: parent.width
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.RalewaySemiBold {
                 text: "VR Rotation Mode"
                 Layout.preferredWidth: parent.width
                 height: paintedHeight
@@ -193,13 +193,13 @@ Flickable {
                 }
             }
         }
-        
+
         ColumnLayout {
             id: micControlsContainer
             Layout.preferredWidth: parent.width
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.RalewaySemiBold {
                 id: micControlsTitle
                 text: "Default Mute Controls"
                 Layout.preferredWidth: parent.width
@@ -242,7 +242,7 @@ Flickable {
             Layout.preferredWidth: parent.width
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.RalewaySemiBold {
                 id: inputDeviceTitle
                 text: "Which input device?"
                 Layout.preferredWidth: parent.width
@@ -265,7 +265,7 @@ Flickable {
                     width:   parent.width
                     height:  model.type != "desktop" ? inputDeviceCheckbox.height + simplifiedUI.margins.settings.spacingBetweenRadiobuttons : 0
                     visible: model.type != "desktop"
-                     
+
                     SimplifiedControls.RadioButton {
                         id: inputDeviceCheckbox
                         anchors.left: parent.left
@@ -295,7 +295,7 @@ Flickable {
             SimplifiedControls.Button {
                 id: audioLoopbackButton
                 property bool audioLoopedBack: AudioScriptingInterface.getLocalEcho()
-                
+
                 function startAudioLoopback() {
                     if (!audioLoopedBack) {
                         audioLoopedBack = true;
@@ -338,7 +338,7 @@ Flickable {
             Layout.bottomMargin: 24
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.RalewaySemiBold {
                 id: outputDeviceTitle
                 text: "Which output device?"
                 Layout.preferredWidth: parent.width
