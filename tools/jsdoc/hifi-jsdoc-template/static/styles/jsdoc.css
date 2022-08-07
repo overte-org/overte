@@ -5,12 +5,12 @@
 
 @font-face{
 	font-family: 'Raleway Semibold';
-	src: url('../fonts/Graphik-SemiBold.otf') format('opentype');
+	src: url('../fonts/Raleway-SemiBold.ttf') format('truetype');
 }
 
 @font-face{
 	font-family: 'Raleway Regular';
-	src: url('../fonts/Graphik-Regular.otf') format('opentype');
+	src: url('../fonts/Raleway-Regular.ttf') format('truetype');
 }
 
 @font-face{
