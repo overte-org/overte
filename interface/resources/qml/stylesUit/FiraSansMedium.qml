@@ -17,4 +17,5 @@ Text {
     verticalAlignment: Text.AlignVCenter
     horizontalAlignment: Text.AlignLeft
     font.family: "Fira Sans"
+    font.weight: Font.Medium
 }
