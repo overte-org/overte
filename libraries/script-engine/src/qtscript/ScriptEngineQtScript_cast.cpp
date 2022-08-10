@@ -4,6 +4,7 @@
 //
 //  Created by Heather Anderson 12/9/2021
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -278,17 +279,26 @@ bool ScriptEngineQtScript::castValueToVariant(const QScriptValue& val, QVariant&
                 break;
             case QMetaType::UInt:
             case QMetaType::ULong:
+                if ( val.isArray() || val.isObject() ){
+                    return false;
+                }
                 dest = QVariant::fromValue(val.toUInt32());
                 break;
             case QMetaType::Int:
             case QMetaType::Long:
             case QMetaType::Short:
+                if ( val.isArray() || val.isObject() ){
+                    return false;
+                }
                 dest = QVariant::fromValue(val.toInt32());
                 break;
             case QMetaType::Double:
             case QMetaType::Float:
             case QMetaType::ULongLong:
             case QMetaType::LongLong:
+                if ( val.isArray() || val.isObject() ){
+                    return false;
+                }
                 dest = QVariant::fromValue(val.toNumber());
                 break;
             case QMetaType::QString:
@@ -296,6 +306,9 @@ bool ScriptEngineQtScript::castValueToVariant(const QScriptValue& val, QVariant&
                 dest = QVariant::fromValue(val.toString());
                 break;
             case QMetaType::UShort:
+                if ( val.isArray() || val.isObject() ){
+                    return false;
+                }
                 dest = QVariant::fromValue(val.toUInt16());
                 break;
             case QMetaType::QObjectStar:
