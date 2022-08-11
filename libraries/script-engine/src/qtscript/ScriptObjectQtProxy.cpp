@@ -4,6 +4,7 @@
 //
 //  Created by Heather Anderson on 12/5/21.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -588,12 +589,19 @@ int ScriptSignalQtProxy::qt_metacall(QMetaObject::Call call, int id, void** argu
         QVariant argValue(methodArgTypeId, arguments[arg+1]);
         args.append(_engine->castVariantToValue(argValue));
     }
-
-    for (ConnectionList::iterator iter = _connections.begin(); iter != _connections.end(); ++iter) {
+    
+    QList<Connection> connections;
+    withReadLock([&]{
+        for (ConnectionList::iterator iter = _connections.begin(); iter != _connections.end(); ++iter) {
+            connections.push_back(*iter);
+        }
+    });
+    
+    for (ConnectionList::iterator iter = connections.begin(); iter != connections.end(); ++iter) {
         Connection& conn = *iter;
-        conn.callback.call(conn.thisValue, args);
+            conn.callback.call(conn.thisValue, args);
     }
-
+    
     return -1;
 }
 
@@ -602,15 +610,17 @@ int ScriptSignalQtProxy::discoverMetaCallIdx() {
     return ourMeta->methodCount();
 }
 
-ScriptSignalQtProxy::ConnectionList::iterator ScriptSignalQtProxy::findConnection(QScriptValue thisObject,
-                                                                                  QScriptValue callback) {
-    for (ConnectionList::iterator iter = _connections.begin(); iter != _connections.end(); ++iter) {
-        Connection& conn = *iter;
-        if (conn.callback.strictlyEquals(callback) && conn.thisValue.strictlyEquals(thisObject)) {
-            return iter;
+ScriptSignalQtProxy::ConnectionList::iterator ScriptSignalQtProxy::findConnection(QScriptValue thisObject, QScriptValue callback) {
+    ConnectionList::iterator iter;
+    withReadLock([&]{
+        for (iter = _connections.begin(); iter != _connections.end(); ++iter) {
+            Connection& conn = *iter;
+            if (conn.callback.strictlyEquals(callback) && conn.thisValue.strictlyEquals(thisObject)) {
+                break;
+            }
         }
-    }
-    return _connections.end();
+    });
+    return iter;
 }
 
 
@@ -660,7 +670,10 @@ void ScriptSignalQtProxy::connect(QScriptValue arg0, QScriptValue arg1) {
     Connection newConn;
     newConn.callback = callback;
     newConn.thisValue = callbackThis;
-    _connections.append(newConn);
+    
+    withWriteLock([&]{
+        _connections.append(newConn);
+    });
 
     // inform Qt that we're connecting to this signal
     if (!_isConnected) {
@@ -700,7 +713,9 @@ void ScriptSignalQtProxy::disconnect(QScriptValue arg0, QScriptValue arg1) {
     }
 
     // remove it from our internal list of connections
-    _connections.erase(lookup);
+    withReadLock([&]{
+        _connections.erase(lookup);
+    });
 
     // remove a reference to ourselves from the destination callback
     QScriptValue destData = callback.data();

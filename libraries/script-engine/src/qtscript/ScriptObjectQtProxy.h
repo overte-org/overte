@@ -4,6 +4,7 @@
 //
 //  Created by Heather Anderson on 12/5/21.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -27,6 +28,8 @@
 
 #include "../ScriptEngine.h"
 #include "ScriptEngineQtScript.h"
+
+#include <shared/ReadWriteLockable.h>
 
 class ScriptEngineQtScript;
 class ScriptSignalQtProxy;
@@ -171,7 +174,7 @@ public:  // API
     Q_INVOKABLE virtual void disconnect(QScriptValue arg0, QScriptValue arg1 = QScriptValue()) = 0;
 };
 
-class ScriptSignalQtProxy final : public ScriptSignalQtProxyBase {
+class ScriptSignalQtProxy final : public ScriptSignalQtProxyBase, public ReadWriteLockable {
 private:  // storage
     struct Connection {
         QScriptValue thisValue;
