@@ -1,8 +1,8 @@
 //
-//  GraphikRegular.qml
+//  FiraSansMedium.qml
 //
-//  Created by Wayne Chen on 2 May 2019
-//  Copyright 2019 High Fidelity, Inc.
+//  Created by Dale Glass on 7 Aug 2022
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -16,5 +16,6 @@ Text {
     font.pixelSize: size
     verticalAlignment: Text.AlignVCenter
     horizontalAlignment: Text.AlignLeft
-    font.family: "Graphik"
+    font.family: "Fira Sans"
+    font.weight: Font.Medium
 }

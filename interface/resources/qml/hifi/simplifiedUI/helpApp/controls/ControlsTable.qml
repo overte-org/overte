@@ -22,7 +22,7 @@ Item {
     property int subTextSize: 14
     property color separatorColor: "#CCCCCC"
     Layout.preferredHeight: controlsTableColumnLayout.height
-        
+
     // Top separator
     Rectangle {
         anchors.top: controlsTableColumnLayout.top
@@ -59,7 +59,7 @@ Item {
         height: controlsTableColumnLayout.height
         color: controlsTableRoot.separatorColor
     }
-    
+
     ColumnLayout {
         id: controlsTableColumnLayout
         anchors.left: parent.left
@@ -104,7 +104,7 @@ Item {
                 height: parent.height
                 spacing: controlsTableRoot.rowPadding
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     id: cameraText
                     text: "Camera"
                     width: paintedWidth
@@ -115,7 +115,7 @@ Item {
                     color: simplifiedUI.colors.text.white
                 }
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "Right-click and drag to look around"
                     width: parent.width - cameraText.width - parent.spacing - controlsTableRoot.rowPadding
                     height: parent.height
@@ -134,11 +134,11 @@ Item {
             Layout.preferredHeight: 1
             color: controlsTableRoot.separatorColor
         }
-        
 
 
 
-        
+
+
         Row {
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: controlsTableRoot.rowHeight
@@ -147,7 +147,7 @@ Item {
                 width: controlsTableRoot.column1Width
                 height: parent.height
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "W / ↑"
                     anchors.fill: parent
                     horizontalAlignment: Text.AlignHCenter
@@ -171,7 +171,7 @@ Item {
                 height: parent.height
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "Walk Forward"
                 width: controlsTableRoot.column2Width - controlsTableRoot.rowPadding * 2
                 height: parent.height
@@ -188,11 +188,11 @@ Item {
             Layout.preferredHeight: 1
             color: controlsTableRoot.separatorColor
         }
-        
 
-        
 
-        
+
+
+
         Row {
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: controlsTableRoot.rowHeight
@@ -201,7 +201,7 @@ Item {
                 width: controlsTableRoot.column1Width
                 height: parent.height
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "S / ↓"
                     anchors.fill: parent
                     horizontalAlignment: Text.AlignHCenter
@@ -225,7 +225,7 @@ Item {
                 height: parent.height
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "Walk Backward"
                 width: controlsTableRoot.column2Width - controlsTableRoot.rowPadding * 2
                 height: parent.height
@@ -242,11 +242,11 @@ Item {
             Layout.preferredHeight: 1
             color: controlsTableRoot.separatorColor
         }
-        
 
-        
 
-        
+
+
+
         Row {
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: controlsTableRoot.rowHeight
@@ -255,7 +255,7 @@ Item {
                 width: controlsTableRoot.column1Width
                 height: parent.height
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "A / ←"
                     anchors.fill: parent
                     horizontalAlignment: Text.AlignHCenter
@@ -279,7 +279,7 @@ Item {
                 height: parent.height
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "Turn Left"
                 width: controlsTableRoot.column2Width - controlsTableRoot.rowPadding * 2
                 height: parent.height
@@ -296,11 +296,11 @@ Item {
             Layout.preferredHeight: 1
             color: controlsTableRoot.separatorColor
         }
-        
 
-        
 
-        
+
+
+
         Row {
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: controlsTableRoot.rowHeight
@@ -309,7 +309,7 @@ Item {
                 width: controlsTableRoot.column1Width
                 height: parent.height
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "D / →"
                     anchors.fill: parent
                     horizontalAlignment: Text.AlignHCenter
@@ -333,7 +333,7 @@ Item {
                 height: parent.height
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "Turn Right"
                 width: controlsTableRoot.column2Width - controlsTableRoot.rowPadding * 2
                 height: parent.height
@@ -350,11 +350,11 @@ Item {
             Layout.preferredHeight: 1
             color: controlsTableRoot.separatorColor
         }
-        
 
-        
 
-        
+
+
+
         Row {
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: controlsTableRoot.rowHeight
@@ -363,7 +363,7 @@ Item {
                 width: controlsTableRoot.column1Width
                 height: parent.height
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "Q"
                     anchors.fill: parent
                     horizontalAlignment: Text.AlignHCenter
@@ -387,7 +387,7 @@ Item {
                 height: parent.height
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "Sidestep Left"
                 width: controlsTableRoot.column2Width - controlsTableRoot.rowPadding * 2
                 height: parent.height
@@ -404,11 +404,11 @@ Item {
             Layout.preferredHeight: 1
             color: controlsTableRoot.separatorColor
         }
-        
 
-        
 
-        
+
+
+
         Row {
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: controlsTableRoot.rowHeight
@@ -417,7 +417,7 @@ Item {
                 width: controlsTableRoot.column1Width
                 height: parent.height
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "E"
                     anchors.fill: parent
                     horizontalAlignment: Text.AlignHCenter
@@ -441,7 +441,7 @@ Item {
                 height: parent.height
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "Sidestep Right"
                 width: controlsTableRoot.column2Width - controlsTableRoot.rowPadding * 2
                 height: parent.height
@@ -458,11 +458,11 @@ Item {
             Layout.preferredHeight: 1
             color: controlsTableRoot.separatorColor
         }
-        
 
-        
 
-        
+
+
+
         Row {
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: controlsTableRoot.rowHeight
@@ -471,7 +471,7 @@ Item {
                 width: controlsTableRoot.column1Width
                 height: parent.height
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "Shift"
                     anchors.fill: parent
                     horizontalAlignment: Text.AlignHCenter
@@ -500,7 +500,7 @@ Item {
                 height: parent.height
                 spacing: controlsTableRoot.rowPadding
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     id: runText
                     text: "Hold + Direction to Run"
                     width: paintedWidth
@@ -511,7 +511,7 @@ Item {
                     color: simplifiedUI.colors.text.white
                 }
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "Example: Shift + W"
                     width: parent.width - runText.width - parent.spacing - controlsTableRoot.rowPadding
                     height: parent.height
@@ -530,11 +530,11 @@ Item {
             Layout.preferredHeight: 1
             color: controlsTableRoot.separatorColor
         }
-        
 
-        
 
-        
+
+
+
         Row {
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: controlsTableRoot.rowHeight
@@ -543,7 +543,7 @@ Item {
                 width: controlsTableRoot.column1Width
                 height: parent.height
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "Space"
                     anchors.fill: parent
                     horizontalAlignment: Text.AlignHCenter
@@ -572,7 +572,7 @@ Item {
                 height: parent.height
                 spacing: controlsTableRoot.rowPadding
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     id: jumpText
                     text: "Jump / Stand Up"
                     width: paintedWidth
@@ -583,7 +583,7 @@ Item {
                     color: simplifiedUI.colors.text.white
                 }
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "Stand Up only while seated"
                     width: parent.width - jumpText.width - parent.spacing - controlsTableRoot.rowPadding
                     height: parent.height
@@ -602,11 +602,11 @@ Item {
             Layout.preferredHeight: 1
             color: controlsTableRoot.separatorColor
         }
-        
 
-        
 
-        
+
+
+
         Row {
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: controlsTableRoot.rowHeight
@@ -615,7 +615,7 @@ Item {
                 width: controlsTableRoot.column1Width
                 height: parent.height
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "1"
                     anchors.fill: parent
                     horizontalAlignment: Text.AlignHCenter
@@ -639,7 +639,7 @@ Item {
                 height: parent.height
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "1st Person View"
                 width: controlsTableRoot.column2Width - controlsTableRoot.rowPadding * 2
                 height: parent.height
@@ -656,11 +656,11 @@ Item {
             Layout.preferredHeight: 1
             color: controlsTableRoot.separatorColor
         }
-        
 
-        
 
-        
+
+
+
         Row {
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: controlsTableRoot.rowHeight
@@ -669,7 +669,7 @@ Item {
                 width: controlsTableRoot.column1Width
                 height: parent.height
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "2"
                     anchors.fill: parent
                     horizontalAlignment: Text.AlignHCenter
@@ -698,7 +698,7 @@ Item {
                 height: parent.height
                 spacing: controlsTableRoot.rowPadding
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     id: selfieText
                     text: "Selfie"
                     width: paintedWidth
@@ -709,7 +709,7 @@ Item {
                     color: simplifiedUI.colors.text.white
                 }
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "Look at self"
                     width: parent.width - selfieText.width - parent.spacing - controlsTableRoot.rowPadding
                     height: parent.height
@@ -728,11 +728,11 @@ Item {
             Layout.preferredHeight: 1
             color: controlsTableRoot.separatorColor
         }
-        
 
-        
 
-        
+
+
+
         Row {
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: controlsTableRoot.rowHeight
@@ -741,7 +741,7 @@ Item {
                 width: controlsTableRoot.column1Width
                 height: parent.height
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "3"
                     anchors.fill: parent
                     horizontalAlignment: Text.AlignHCenter
@@ -765,7 +765,7 @@ Item {
                 height: parent.height
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "3rd Person View"
                 width: controlsTableRoot.column2Width - controlsTableRoot.rowPadding * 2
                 height: parent.height

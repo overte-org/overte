@@ -143,7 +143,7 @@ Rectangle {
                 anchors.rightMargin: 26
                 spacing: 0
 
-                HifiStylesUit.GraphikSemiBold {
+                HifiStylesUit.FiraSansSemiBold {
                     text: "Stand out from the crowd!"
                     Layout.preferredWidth: parent.width
                     Layout.preferredHeight: paintedHeight
@@ -154,7 +154,7 @@ Rectangle {
                     wrapMode: Text.Wrap
                 }
 
-                HifiStylesUit.GraphikRegular {
+                HifiStylesUit.FiraSansRegular {
                     text: "Create your custom avatar."
                     Layout.preferredWidth: parent.width
                     Layout.preferredHeight: paintedHeight
@@ -185,7 +185,7 @@ Rectangle {
                     fillMode: Image.PreserveAspectFit
                 }
 
-                HifiStylesUit.GraphikSemiBold {
+                HifiStylesUit.FiraSansSemiBold {
                     text: "Scan for Mobile App"
                     Layout.preferredWidth: parent.width
                     Layout.preferredHeight: paintedHeight
@@ -216,7 +216,7 @@ Rectangle {
         anchors.right: parent.right
         anchors.rightMargin: 24
 
-        HifiStylesUit.GraphikRegular {
+        HifiStylesUit.FiraSansRegular {
             id: yourAvatarsTitle
             text: "Your Avatars"
             anchors.top: parent.top
@@ -225,7 +225,7 @@ Rectangle {
             color: simplifiedUI.colors.text.white
             size: 22
         }
-        HifiStylesUit.GraphikRegular {
+        HifiStylesUit.FiraSansRegular {
             id: yourAvatarsSubtitle
             text: "These are the avatars that you've created and uploaded via the Avatar Creator."
             width: parent.width
@@ -274,7 +274,7 @@ Rectangle {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         visible: !emptyInventoryContainer.visible
-            
+
         AnimatedImage {
             visible: !(inventoryContentsList.visible || errorText.visible)
             anchors.centerIn: parent
@@ -301,14 +301,14 @@ Rectangle {
             }
         }
 
-        HifiStylesUit.GraphikRegular {
+        HifiStylesUit.FiraSansRegular {
             id: errorText
             text: ""
             visible: text !== ""
             anchors.fill: parent
             size: 22
             color: simplifiedUI.colors.text.white
-            wrapMode: Text.Wrap 
+            wrapMode: Text.Wrap
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
         }
@@ -337,7 +337,7 @@ Rectangle {
                 return;
             }
         }
-        
+
         root.avatarPreviewUrl = "../../images/defaultAvatar.svg";
     }
 

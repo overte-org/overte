@@ -51,7 +51,7 @@ Item {
         anchors.top: parent.top
         spacing: 0
 
-        HifiStylesUit.GraphikSemiBold {
+        HifiStylesUit.FiraSansSemiBold {
             text: "FAQ"
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: paintedHeight
@@ -60,7 +60,7 @@ Item {
             color: simplifiedUI.colors.text.white
         }
 
-        HifiStylesUit.GraphikRegular {
+        HifiStylesUit.FiraSansRegular {
             text: "You can find answers to all of our frequently asked questions by clicking the button below."
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: paintedHeight
@@ -82,7 +82,7 @@ Item {
             }
         }
 
-        HifiStylesUit.GraphikSemiBold {
+        HifiStylesUit.FiraSansSemiBold {
             text: "Having problems with your audio?"
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: paintedHeight
@@ -91,7 +91,7 @@ Item {
             color: simplifiedUI.colors.text.white
         }
 
-        HifiStylesUit.GraphikRegular {
+        HifiStylesUit.FiraSansRegular {
             text: "Quickly check your audio configuration and make changes to resolve any audio input/output issues."
             Layout.preferredWidth: parent.width
             Layout.preferredHeight: paintedHeight

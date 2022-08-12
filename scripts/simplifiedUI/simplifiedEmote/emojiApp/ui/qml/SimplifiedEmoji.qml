@@ -22,7 +22,7 @@ Rectangle {
     id: root
     color: simplifiedUI.colors.darkBackground
     anchors.fill: parent
-    
+
     // Used for the indicator picture
     readonly property string emojiBaseURL: "../../resources/images/emojis/512px/"
     readonly property string emoji52BaseURL: "../../resources/images/emojis/52px/"
@@ -57,7 +57,7 @@ Rectangle {
         emojiSearchTextField.forceActiveFocus();
         EmojiList.emojiList
             .filter(emoji => {
-                return emoji.mainCategory === "Smileys & Emotion" || 
+                return emoji.mainCategory === "Smileys & Emotion" ||
                 emoji.mainCategory === "People & Body" ||
                 emoji.mainCategory === "Animals & Nature" ||
                 emoji.mainCategory === "Food & Drink";
@@ -78,7 +78,7 @@ Rectangle {
                 mainModel.append(item);
                 filteredModel.append(item);
             });
-            
+
         root.currentCode = filteredModel.get(0).code.utf;
     }
 
@@ -88,7 +88,7 @@ Rectangle {
         visible: false
         color: Qt.rgba(0, 0, 0, 0.8)
         anchors.fill: parent
-            
+
         MouseArea {
             hoverEnabled: false
             anchors.fill: parent
@@ -96,7 +96,7 @@ Rectangle {
                 popupContainer.visible = false;
             }
         }
-            
+
         MouseArea {
             hoverEnabled: false
             anchors.fill: popupContentContainer
@@ -117,7 +117,7 @@ Rectangle {
                 width: 50
                 height: width
 
-                HifiStylesUit.GraphikSemiBold {
+                HifiStylesUit.FiraSansSemiBold {
                     text: "X"
                     anchors.fill: parent
                     horizontalAlignment: Text.AlignHCenter
@@ -126,7 +126,7 @@ Rectangle {
                     opacity: closeButtonMouseArea.containsMouse ? 1.0 : 0.8
                     size: 22
                 }
-            
+
                 MouseArea {
                     id: closeButtonMouseArea
                     hoverEnabled: true
@@ -137,7 +137,7 @@ Rectangle {
                 }
             }
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.FiraSansSemiBold {
                 id: popupHeader1
                 text: "Emoji Reactions"
                 anchors.top: parent.top
@@ -154,7 +154,7 @@ Rectangle {
                 size: 22
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 id: popupText1
                 text: "Click an emoji and it will appear above your head!\nUse Emoji Reactions to express yourself without saying a word.\n\n" +
                     "Try using the search bar to search for an emoji directly. You can use your arrow keys to navigate the results."
@@ -172,7 +172,7 @@ Rectangle {
                 size: 18
             }
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.FiraSansSemiBold {
                 id: popupHeader2
                 text: "Attributions"
                 anchors.top: popupText1.bottom
@@ -188,7 +188,7 @@ Rectangle {
                 size: 22
             }
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 id: popupText2
                 textFormat: Text.RichText
                 text: "<style>a:link { color: #FFF; }</style>" +
@@ -214,7 +214,7 @@ Rectangle {
             }
         }
     }
-    
+
     // If this MouseArea is hit, the user is clicking on an area not handled
     // by any other MouseArea
     MouseArea {
@@ -372,7 +372,7 @@ Rectangle {
             width: 22
             height: width
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 text: "?"
                 anchors.fill: parent
                 horizontalAlignment: Text.AlignHCenter
@@ -381,7 +381,7 @@ Rectangle {
                 opacity: attributionMouseArea.containsMouse ? 1.0 : 0.8
                 size: 22
             }
-        
+
             MouseArea {
                 id: attributionMouseArea
                 hoverEnabled: enabled
@@ -412,7 +412,7 @@ Rectangle {
                         propagateComposedEvents: false
                         onEntered: {
                             grid.currentIndex = index;
-                            // don't allow a hover image change of the main emoji image 
+                            // don't allow a hover image change of the main emoji image
                             if (root.isSelected) {
                                 return;
                             }
@@ -459,7 +459,7 @@ Rectangle {
             anchors.rightMargin: -grid.anchors.rightMargin + 2
         }
 
-        HifiStylesUit.GraphikRegular {
+        HifiStylesUit.FiraSansRegular {
             readonly property var cantFindEmojiList: ["😣", "😭", "😖", "😢", "🤔"]
             onVisibleChanged: {
                 if (visible) {

@@ -72,7 +72,7 @@ Original.Button {
             anchors.centerIn: parent
             width: parent.width - parent.border.width * 2
             height: parent.height - parent.border.width * 2
-            
+
             Rectangle {
                 z: -1
                 clip: true
@@ -96,9 +96,9 @@ Original.Button {
         }
     }
 
-    contentItem:  HifiStylesUit.GraphikMedium {
+    contentItem:  HifiStylesUit.FiraSansMedium {
         id: buttonText
-        topPadding: -2 // Necessary for proper alignment using Graphik Medium
+        //topPadding: -2 // Necessary for proper alignment using Graphik Medium
         wrapMode: Text.Wrap
         color: enabled ? simplifiedUI.colors.controls.button.text.enabled : simplifiedUI.colors.controls.button.text.disabled
         size: simplifiedUI.sizes.controls.button.textSize

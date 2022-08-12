@@ -69,7 +69,7 @@ Flickable {
             Layout.topMargin: 24
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.FiraSansSemiBold {
                 id: avatarNameTagsTitle
                 text: "Avatar Name Tags"
                 Layout.preferredWidth: parent.width
@@ -117,7 +117,7 @@ Flickable {
             Layout.preferredWidth: parent.width
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.FiraSansSemiBold {
                     id: emoteTitle
                     text: "Emote UI"
                     Layout.maximumWidth: parent.width
@@ -140,7 +140,7 @@ Flickable {
                     onClicked: {
                         var currentSetting = Settings.getValue("simplifiedUI/allowEmoteDrawerExpansion", true);
                         Settings.setValue("simplifiedUI/allowEmoteDrawerExpansion", !currentSetting);
-                    }                    
+                    }
 
                     Connections {
                         target: Settings
@@ -160,7 +160,7 @@ Flickable {
             Layout.preferredWidth: parent.width
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.FiraSansSemiBold {
                 id: performanceTitle
                 text: "Graphics Settings"
                 Layout.preferredWidth: parent.width
@@ -217,7 +217,7 @@ Flickable {
             Layout.preferredWidth: parent.width
             spacing: 0
 
-            HifiStylesUit.GraphikSemiBold {
+            HifiStylesUit.FiraSansSemiBold {
                 id: cameraTitle
                 text: "Camera View"
                 Layout.preferredWidth: parent.width
@@ -258,7 +258,7 @@ Flickable {
                         Camera.mode = "selfie"
                     }
                 }
-                
+
                 Connections {
                     target: Camera
 
@@ -289,7 +289,7 @@ Flickable {
             Layout.bottomMargin: 24
             spacing: 0
 
-            HifiStylesUit.GraphikRegular {
+            HifiStylesUit.FiraSansRegular {
                 id: logoutText
                 text: (AccountServices.username === "Unknown user" ? "Log In" : "Logout " + AccountServices.username)
                 wrapMode: Text.Wrap

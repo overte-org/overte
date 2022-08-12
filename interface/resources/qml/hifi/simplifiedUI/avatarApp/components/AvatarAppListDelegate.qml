@@ -16,7 +16,7 @@ import QtGraphicalEffects 1.0
 
 Rectangle {
     id: root
-    
+
     SimplifiedConstants.SimplifiedConstants {
         id: simplifiedUI
     }
@@ -33,7 +33,7 @@ Rectangle {
     height: 102
     width: parent.width
     color: root.isHovering ? simplifiedUI.colors.darkBackgroundHighlight : "transparent"
-    
+
 
     Rectangle {
         id: borderMask
@@ -75,7 +75,7 @@ Rectangle {
         }
     }
 
-    HifiStylesUit.GraphikRegular {
+    HifiStylesUit.FiraSansRegular {
         id: avatarName
         text: root.itemName
         anchors.left: itemPreviewImage.right

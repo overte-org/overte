@@ -36,8 +36,8 @@ static COLORREF COLOR_LIGHTER_GREY = RGB(230, 230, 230);
 static COLORREF COLOR_LIGHT_GREY = RGB(200, 200, 200);
 static COLORREF COLOR_BLUE = RGB(50, 160, 200);
 
-static CString GRAPHIK_REGULAR = _T("Graphik-Regular");
-static CString GRAPHIK_SEMIBOLD = _T("Graphik-Semibold");
+static CString FIRASANS_REGULAR = _T("FiraSans-Regular");
+static CString FIRASANS_SEMIBOLD = _T("FiraSans-SemiBold");
 
 static CString TROUBLE_URL = _T("https://www.highfidelity.com/hq-support");
 static CString TERMS_URL = _T("https://www.highfidelity.com/termsofservice");
@@ -91,13 +91,13 @@ BOOL CLauncherDlg::OnInitDialog() {
     SetIcon(m_hIcon, FALSE);        // Set small icon
 
     CFont editFont;
-    if (LauncherUtils::getFont(GRAPHIK_REGULAR, FIELDS_FONT_SIZE, true, editFont)) {
+    if (LauncherUtils::getFont(FIRASANS_REGULAR, FIELDS_FONT_SIZE, true, editFont)) {
         m_orgname.SetFont(&editFont);
         m_username.SetFont(&editFont);
         m_password.SetFont(&editFont);
     }
     CFont buttonFont;
-    if (LauncherUtils::getFont(_T("Graphik-Bold"), BUTTON_FONT_SIZE, true, buttonFont)) {
+    if (LauncherUtils::getFont(_T("FiraSans-Bold"), BUTTON_FONT_SIZE, true, buttonFont)) {
         m_btnNext.SetFont(&editFont);
     }
 
@@ -127,7 +127,7 @@ BOOL CLauncherDlg::OnInitDialog() {
     m_pRenderTarget = GetRenderTarget();
 
     SetTimer(1, 2, NULL);
-    
+
     return TRUE;
 }
 
@@ -201,7 +201,7 @@ BOOL CLauncherDlg::PreTranslateMessage(MSG* pMsg) {
 }
 
 void CLauncherDlg::setCustomDialog() {
-    
+
     LONG lStyle = GetWindowLong(GetSafeHwnd(), GWL_STYLE);
     lStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
     SetWindowLong(GetSafeHwnd(), GWL_STYLE, lStyle);
@@ -282,8 +282,8 @@ afx_msg void CLauncherDlg::OnNextClicked() {
         startProcess();
     } else if (_drawStep == DrawStep::DrawError) {
         theApp._manager.restartLauncher();
-    } else if (_drawStep == DrawStep::DrawLoginLogin || 
-               _drawStep == DrawStep::DrawLoginErrorCred || 
+    } else if (_drawStep == DrawStep::DrawLoginLogin ||
+               _drawStep == DrawStep::DrawLoginErrorCred ||
                _drawStep == DrawStep::DrawLoginErrorOrg) {
         CString token;
         CString username, password, orgname;
@@ -377,7 +377,7 @@ void CLauncherDlg::drawProgress(CHwndRenderTarget* pRenderTarget, float progress
         return;
     } else {
         progress = min(1.0f, progress);
-    }    
+    }
     CRect winRec;
     float fullHeight = (float)size.height;
     float halfHeight = 0.5f * (float)size.height;
@@ -468,7 +468,7 @@ void CLauncherDlg::prepareProcess(DrawStep step) {
     m_progress->ShowWindow(SW_SHOW);
     CString actionText = _T("");
     CString messageText = _T("");
-    
+
     switch (step) {
     case DrawStep::DrawProcessSetup:
         actionText = _T("We're building your virtual HQ");
@@ -515,7 +515,7 @@ BOOL CLauncherDlg::getTextFormat(int resID, TextFormat& formatOut) {
     formatOut.isButton = false;
     formatOut.size = MESSAGE_FONT_SIZE;
     formatOut.underlined = false;
-    
+
     switch (resID) {
     case IDC_VOXEL:
     case IDD_LAUNCHER_DIALOG:
@@ -568,7 +568,7 @@ HBRUSH CLauncherDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
         pDC->SetTextColor(textFormat.color);
         pDC->SetBkMode(TRANSPARENT);
         CFont textFont;
-        CString fontFamily = textFormat.isBold ? GRAPHIK_SEMIBOLD : GRAPHIK_REGULAR;
+        CString fontFamily = textFormat.isBold ? FIRASANS_SEMIBOLD : FIRASANS_REGULAR;
         if (LauncherUtils::getFont(fontFamily, textFormat.size, textFormat.isBold, textFont)) {
             pDC->SelectObject(&textFont);
         }
@@ -580,9 +580,9 @@ HBRUSH CLauncherDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
             CRect lineRect = CRect(rect.left + padding, rect.bottom, rect.right - padding, rect.bottom + borderThick);
             lineRect.MoveToY(lineRect.bottom + 1);
             pDC->FillSolidRect(lineRect, COLOR_GREY);
-            
+
         }
-    } 
+    }
     return (HBRUSH)GetStockObject(BLACK_BRUSH);
 }
 
@@ -613,7 +613,7 @@ void CLauncherDlg::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
         dc.SetTextColor(COLOR_WHITE);
 
         CFont buttonFont;
-        if (LauncherUtils::getFont(GRAPHIK_SEMIBOLD, BUTTON_FONT_SIZE, true, buttonFont)) {
+        if (LauncherUtils::getFont(FIRASANS_SEMIBOLD, BUTTON_FONT_SIZE, true, buttonFont)) {
             dc.SelectObject(buttonFont);
         }
         dc.DrawText(btnName, CRect(rect.left, rect.top + 4, rect.right, rect.bottom - 8), DT_CENTER | DT_VCENTER | DT_SINGLELINE);
@@ -622,7 +622,7 @@ void CLauncherDlg::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
         dc.FillSolidRect(rect, COLOR_BLACK);
         dc.SetTextColor(COLOR_BLUE);
         CFont buttonFont;
-        if (LauncherUtils::getFont(GRAPHIK_SEMIBOLD, TROUBLE_FONT_SIZE, true, buttonFont)) {
+        if (LauncherUtils::getFont(FIRASANS_SEMIBOLD, TROUBLE_FONT_SIZE, true, buttonFont)) {
             dc.SelectObject(buttonFont);
         }
         dc.DrawText(_T("Having Trouble"), CRect(rect.left, rect.top, rect.right, rect.bottom), DT_CENTER | DT_VCENTER | DT_SINGLELINE);
@@ -630,7 +630,7 @@ void CLauncherDlg::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
         dc.FillSolidRect(rect, COLOR_BLACK);
         dc.SetTextColor(COLOR_LIGHT_GREY);
         CFont buttonFont;
-        if (LauncherUtils::getFont(GRAPHIK_SEMIBOLD, TERMS_FONT_SIZE, true, buttonFont)) {
+        if (LauncherUtils::getFont(FIRASANS_SEMIBOLD, TERMS_FONT_SIZE, true, buttonFont)) {
             dc.SelectObject(buttonFont);
         }
         dc.DrawText(_T("Terms of Service"), CRect(rect.left, rect.top, rect.right, rect.bottom), DT_LEFT | DT_TOP | DT_SINGLELINE);
@@ -695,7 +695,7 @@ void CLauncherDlg::OnTimer(UINT_PTR nIDEvent) {
                     if (theApp._manager.willContinueUpdating()) {
                         progress = CONTINUE_UPDATING_GLOBAL_OFFSET * progress;
                         progress = min(progress, CONTINUE_UPDATING_GLOBAL_OFFSET);
-                    }                    
+                    }
                     theApp._manager.updateProgress(LauncherManager::ProcessType::Uninstall, progress);
                     _splashStep++;
                 }
@@ -836,7 +836,7 @@ void CLauncherDlg::setDrawDialog(DrawStep step, BOOL isUpdate) {
     case DrawStep::DrawProcessFinishUpdate:
     case DrawStep::DrawProcessUpdate:
     case DrawStep::DrawProcessUninstall:
-    case DrawStep::DrawProcessSetup:    
+    case DrawStep::DrawProcessSetup:
         if (!isUpdate) {
             m_voxelRenderTarget->BeginDraw();
             m_voxelRenderTarget->Clear(D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
@@ -847,7 +847,7 @@ void CLauncherDlg::setDrawDialog(DrawStep step, BOOL isUpdate) {
             drawSmallLogo(m_pRenderTarget);
             m_pRenderTarget->EndDraw();
             RedrawWindow();
-        }        
+        }
         m_progressRenderTarget->BeginDraw();
         m_progressRenderTarget->Clear(D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
         drawProgress(m_progressRenderTarget, 1.0f, D2D1::ColorF(0.2f, 0.2f, 0.2f));
@@ -855,7 +855,7 @@ void CLauncherDlg::setDrawDialog(DrawStep step, BOOL isUpdate) {
         m_progressRenderTarget->EndDraw();
         m_voxelRenderTarget->BeginDraw();
         drawVoxel(m_voxelRenderTarget);
-        m_voxelRenderTarget->EndDraw();     
+        m_voxelRenderTarget->EndDraw();
         break;
     default:
         break;
