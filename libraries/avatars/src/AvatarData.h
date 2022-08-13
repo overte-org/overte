@@ -5,6 +5,7 @@
 //  Created by Stephen Birarda on 4/9/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -797,7 +798,7 @@ public:
      * @param {Quat} rotation - The rotation of the joint relative to its parent.
      * @param {Vec3} translation - The translation of the joint relative to its parent, in model coordinates.
      * @example <caption>Set your avatar to it's default T-pose for a while.<br />
-     * <img alt="Avatar in T-pose" src="https://apidocs.vircadia.dev/images/t-pose.png" /></caption>
+     * <img alt="Avatar in T-pose" src="https://apidocs.overte.org/examples/t-pose.png" /></caption>
      * // Set all joint translations and rotations to defaults.
      * var i, length, rotation, translation;
      * for (i = 0, length = MyAvatar.getJointNames().length; i < length; i++) {
@@ -905,7 +906,7 @@ public:
      * @param {string} name - The name of the joint.
      * @param {Quat} rotation - The rotation of the joint relative to its parent.
      * @example <caption>Set your avatar to its default T-pose then rotate its right arm.<br />
-     * <img alt="Avatar in T-pose with arm rotated" src="https://apidocs.vircadia.dev/images/armpose.png" /></caption>
+     * <img alt="Avatar in T-pose with arm rotated" src="https://apidocs.overte.org/examples/armpose.png" /></caption>
      * // Set all joint translations and rotations to defaults.
      * var i, length, rotation, translation;
      * for (i = 0, length = MyAvatar.getJointNames().length; i < length; i++) {
@@ -940,7 +941,7 @@ public:
      * @param {Vec3} translation - The translation of the joint relative to its parent, in model coordinates.
      * @example <caption>Stretch your avatar's neck. Depending on the avatar you are using, you will either see a gap between
      * the head and body or you will see the neck stretched.<br />
-     * <img alt="Avatar with neck stretched" src="https://apidocs.vircadia.dev/images/stretched-neck.png" /></caption>
+     * <img alt="Avatar with neck stretched" src="https://apidocs.overte.org/examples/stretched-neck.png" /></caption>
      * // Stretch your avatar's neck.
      * MyAvatar.setJointTranslation("Neck", Vec3.multiply(2, MyAvatar.getJointTranslation("Neck")));
      *
@@ -1042,7 +1043,7 @@ public:
      * @param {Quat[]} jointRotations - The rotations for all joints in the avatar. The values are in the same order as the
      * array returned by {@link MyAvatar.getJointNames}, or {@link Avatar.getJointNames} if using the <code>Avatar</code> API.
      * @example <caption>Set your avatar to its default T-pose then rotate its right arm.<br />
-     * <img alt="Avatar in T-pose" src="https://apidocs.vircadia.dev/images/armpose.png" /></caption>
+     * <img alt="Avatar in T-pose" src="https://apidocs.overte.org/examples/armpose.png" /></caption>
      * // Set all joint translations and rotations to defaults.
      * var i, length, rotation, translation;
      * for (i = 0, length = MyAvatar.getJointNames().length; i < length; i++) {
@@ -1282,7 +1283,7 @@ public:
      *     <code>null</code> to remove all attachments.
      * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
      * @example <caption>Remove a hat attachment if your avatar is wearing it.</caption>
-     * var hatURL = "https://apidocs.vircadia.dev/models/cowboy-hat.fbx";
+     * var hatURL = "https://apidocs.overte.org/examples/cowboy-hat.fbx";
      * var attachments = MyAvatar.getAttachmentData();
      *
      * for (var i = 0; i < attachments.length; i++) {
@@ -1319,7 +1320,7 @@ public:
      * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
      * @example <caption>Attach a cowboy hat to your avatar's head.</caption>
      * var attachment = {
-     *     modelURL: "https://apidocs.vircadia.dev/models/cowboy-hat.fbx",
+     *     modelURL: "https://apidocs.overte.org/examples/cowboy-hat.fbx",
      *     jointName: "Head",
      *     translation: {"x": 0, "y": 0.25, "z": 0},
      *     rotation: {"x": 0, "y": 0, "z": 0, "w": 1},
