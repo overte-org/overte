@@ -147,7 +147,9 @@ endif()
                 if distro.id() == 'ubuntu' or distro.id() == 'linuxmint':
                     if (distro.id() == 'ubuntu' and u_major == 18) or distro.id() == 'linuxmint' and u_major == 19:
                         self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.5-2022.07.17-kde_ea4efc067b47c11b1aac61668afd8578a6834f5b-ubuntu-18.04-amd64.tar.xz'
-                    elif (distro.id() == 'ubuntu' and u_major > 18) or (distro.id() == 'linuxmint' and u_major > 19):
+                    elif (distro.id() == 'ubuntu' and u_major == 20) or distro.id() == 'linuxmint' and u_major == 20:
+                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.5-2022.08.12-kde_0b4d44f2ff1103349bac22b9b207cfcc1f50a53a-ubuntu-20.04-amd64.tar.xz'
+                    elif (distro.id() == 'ubuntu' and u_major > 20) or (distro.id() == 'linuxmint' and u_major > 20):
                         self.__no_qt_package_error()
                     else:
                         self.__unsupported_error()
