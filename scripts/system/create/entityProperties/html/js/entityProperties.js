@@ -3973,30 +3973,6 @@ function setZonesSelectionData(element, isEditable) {
     displaySelectedZones(element.id, isEditable);
 }
 
-function updateAllZoneSelect() {
-    let allZoneSelects = document.querySelectorAll(".zoneSelectList");
-    let i, j, name, propId, btnList;
-    for (i = 0; i < allZoneSelects.length; i++) {
-        btnList = "";
-        for (j = 0; j < zonesList.length; j++) {
-            if (zonesList[j].name === "") {
-                name = zonesList[j].id;
-            } else {
-                name = zonesList[j].name;
-            }
-            btnList += "<button class='menu-button' onClick='addZoneToZonesSelection(";
-            btnList += '"' + element.id + '"' + ", " + '"' + zonesList[j].id + '"' + ");'>" + name + "</button><br>";            
-        }
-        allZoneSelects[i].innerHTML = btnList;
-        propId = allZoneSelects[i].id.replace("zones-select-", "");
-        if (document.getElementById("multiZoneSelTools-" + propId).style.display === "block") {
-            displaySelectedZones(propId, true);
-        } else {
-            displaySelectedZones(propId, false);
-        }
-    }
-}
-
 /**
  * MATERIAL TARGET FUNCTIONS
  */
@@ -4741,7 +4717,6 @@ function loaded() {
                     }
                 } else if (data.type === 'zoneListRequest') {
                     zonesList = data.zones;
-                    updateAllZoneSelect();
                 }
             });
 
