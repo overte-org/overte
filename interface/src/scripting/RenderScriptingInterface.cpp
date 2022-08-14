@@ -23,6 +23,7 @@ RenderScriptingInterface::RenderScriptingInterface() {
     std::call_once(registry_flag, [] {
         qmlRegisterType<RenderScriptingInterface>("RenderEnums", 1, 0, "RenderEnums");
         qRegisterMetaType<RenderScriptingInterface::RenderMethod>("RenderScriptingInterface::RenderMethod");
+        qDebug() << "qRegisterMetaType<RenderScriptingInterface::RenderMethod>(\"RenderScriptingInterface::RenderMethod\")";
     });
 }
 
