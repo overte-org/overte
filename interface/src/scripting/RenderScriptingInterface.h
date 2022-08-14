@@ -61,7 +61,8 @@ public:
      * @typedef {number} Render.RenderMethod
      */
     // RenderMethod enum type
-    enum class RenderMethod {
+    //enum class RenderMethod {
+    enum RenderMethod {
         DEFERRED = render::Args::RenderMethod::DEFERRED,
         FORWARD = render::Args::RenderMethod::FORWARD,
     };
