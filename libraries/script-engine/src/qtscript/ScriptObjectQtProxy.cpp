@@ -185,6 +185,8 @@ void ScriptObjectQtProxy::investigate() {
                     continue;
                 }
                 break;
+            default:
+                ;
         }
 
         QScriptString name = _engine->toStringHandle(QString::fromLatin1(szName));
@@ -207,6 +209,13 @@ void ScriptObjectQtProxy::investigate() {
             }
         } else {
             int parameterCount = method.parameterCount();
+            if (name.toString() == "getRenderMethod"){
+                qDebug() << name << " " << QMetaType(method.returnType()).name();
+                if(method.returnType() == QMetaType::UnknownType) {
+                    qDebug() << "Method with QMetaType::UnknownType";
+                }
+                printf("getRenderMethod");
+            }
             if (nameLookup == methodNames.end()) {
                 MethodDef& methodDef = _methods.insert(idx, MethodDef()).value();
                 methodDef.name = name;
@@ -317,6 +326,13 @@ QScriptValue ScriptObjectQtProxy::property(const QScriptValue& object, const QSc
             MethodDefMap::const_iterator lookup = _methods.find(methodId);
             if (lookup == _methods.cend()) return QScriptValue();
             const MethodDef& methodDef = lookup.value();
+            for (auto iter = methodDef.methods.begin(); iter != methodDef.methods.end(); iter++ ) {
+                //qDebug() << (*iter).returnType();
+                if((*iter).returnType() == QMetaType::UnknownType) {
+                    qDebug() << "Method with QMetaType::UnknownType " << metaObject->className() << " " << (*iter).name();
+                    printf("Method with QMetaType::UnknownType");
+                }
+            }
             return static_cast<QScriptEngine*>(_engine)->newObject(
                 new ScriptMethodQtProxy(_engine, qobject, object, methodDef.methods, methodDef.numMaxParms));
         }
@@ -589,19 +605,17 @@ int ScriptSignalQtProxy::qt_metacall(QMetaObject::Call call, int id, void** argu
         QVariant argValue(methodArgTypeId, arguments[arg+1]);
         args.append(_engine->castVariantToValue(argValue));
     }
-    
+
     QList<Connection> connections;
     withReadLock([&]{
-        for (ConnectionList::iterator iter = _connections.begin(); iter != _connections.end(); ++iter) {
-            connections.push_back(*iter);
-        }
+        connections = _connections;
     });
-    
+
     for (ConnectionList::iterator iter = connections.begin(); iter != connections.end(); ++iter) {
         Connection& conn = *iter;
             conn.callback.call(conn.thisValue, args);
     }
-    
+
     return -1;
 }
 
@@ -713,7 +727,7 @@ void ScriptSignalQtProxy::disconnect(QScriptValue arg0, QScriptValue arg1) {
     }
 
     // remove it from our internal list of connections
-    withReadLock([&]{
+    withWriteLock([&]{
         _connections.erase(lookup);
     });
 
