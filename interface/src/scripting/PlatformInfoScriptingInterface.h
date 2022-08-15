@@ -1,6 +1,7 @@
 //
 //  Created by Nissim Hadar on 2018/12/28
 //  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -45,7 +46,7 @@ public:
      * @typedef {number} PlatformInfo.PlatformTier
      */
     // Platform tier enum type
-    enum PlatformTier {
+    enum class PlatformTier {
         UNKNOWN = platform::Profiler::Tier::UNKNOWN,
         LOW = platform::Profiler::Tier::LOW,
         MID = platform::Profiler::Tier::MID,
