@@ -209,12 +209,13 @@ void ScriptObjectQtProxy::investigate() {
             }
         } else {
             int parameterCount = method.parameterCount();
-            if (name.toString() == "getRenderMethod"){
-                qDebug() << name << " " << QMetaType(method.returnType()).name();
-                if(method.returnType() == QMetaType::UnknownType) {
-                    qDebug() << "Method with QMetaType::UnknownType";
+            if(method.returnType() == QMetaType::UnknownType) {
+                qCritical() << "Method " << metaObject->className() << "::" << name << " has QMetaType::UnknownType return value";
+            }
+            for (int i = 0; i < method.parameterCount(); i++) {
+                if (method.parameterType(i) == QMetaType::UnknownType) {
+                    qCritical() << "Parameter " << i << "in method " << metaObject->className() << "::" << name << " is of type QMetaType::UnknownType";
                 }
-                printf("getRenderMethod");
             }
             if (nameLookup == methodNames.end()) {
                 MethodDef& methodDef = _methods.insert(idx, MethodDef()).value();
