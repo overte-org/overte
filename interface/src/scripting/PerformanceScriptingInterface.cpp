@@ -1,6 +1,7 @@
 //
 //  Created by Bradley Austin Davis on 2019/05/14
 //  Copyright 2013-2019 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -9,15 +10,24 @@
 
 #include "PerformanceScriptingInterface.h"
 
+#include <ScriptEngineCast.h>
+
 #include "../Application.h"
+
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<PerformanceScriptingInterface::PerformancePreset>, scriptValueToEnumClass<PerformanceScriptingInterface::PerformancePreset>, "PerformancePreset");
+    scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<PerformanceScriptingInterface::RefreshRateProfile>, scriptValueToEnumClass<PerformanceScriptingInterface::RefreshRateProfile>, "RefreshRateProfile");
+});
 
 std::once_flag PerformanceScriptingInterface::registry_flag;
 
 PerformanceScriptingInterface::PerformanceScriptingInterface() {
     std::call_once(registry_flag, [] {
         qmlRegisterType<PerformanceScriptingInterface>("PerformanceEnums", 1, 0, "PerformanceEnums");
-        qRegisterMetaType<PerformanceScriptingInterface::PerformancePreset>("PerformanceScriptingInterface::PerformancePreset");
-        qRegisterMetaType<PerformanceScriptingInterface::RefreshRateProfile>("PerformanceScriptingInterface::RefreshRateProfile");
+        //qRegisterMetaType<PerformanceScriptingInterface::PerformancePreset>("PerformanceScriptingInterface::PerformancePreset");
+        //qRegisterMetaType<PerformanceScriptingInterface::RefreshRateProfile>("PerformanceScriptingInterface::RefreshRateProfile");
     });
 }
 
