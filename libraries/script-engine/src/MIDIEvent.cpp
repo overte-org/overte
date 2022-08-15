@@ -4,6 +4,7 @@
 //
 //  Created by Stephen Birarda on 2014-06-30.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -18,7 +19,7 @@
 #include "ScriptValue.h"
 
 void registerMIDIMetaTypes(ScriptEngine* engine) {
-    scriptRegisterMetaType(engine, midiEventToScriptValue, midiEventFromScriptValue);
+    scriptRegisterMetaType(engine, midiEventToScriptValue, midiEventFromScriptValue, "MIDIEvent");
 }
 
 const QString MIDI_DELTA_TIME_PROP_NAME = "deltaTime";
