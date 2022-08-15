@@ -160,10 +160,11 @@ def main():
         with timer('Setting up dependencies'):
             pm.setupDependencies(qt=qtInstallPath)
 
-        # wipe out the build directories (after writing the tag, since failure 
+        # wipe out the build directories (after writing the tag, since failure
         # here shouldn't invalidate the vcpkg install)
-        with timer('Cleaning builds'):
-            pm.cleanBuilds()
+        if not args.vcpkg_skip_clean:
+            with timer('Cleaning builds'):
+                pm.cleanBuilds()
 
         # If we're running in android mode, we also need to grab a bunch of additional binaries
         # (this logic is all migrated from the old setupDependencies tasks in gradle)
