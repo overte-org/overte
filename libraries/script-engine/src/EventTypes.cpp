@@ -4,6 +4,7 @@
 //
 //  Created by Brad Hefta-Gaub on 1/28/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -21,10 +22,10 @@
 #include "WheelEvent.h"
 
 void registerEventTypes(ScriptEngine* engine) {
-    scriptRegisterMetaType(engine, KeyEvent::toScriptValue, KeyEvent::fromScriptValue);
-    scriptRegisterMetaType(engine, MouseEvent::toScriptValue, MouseEvent::fromScriptValue);
-    scriptRegisterMetaType(engine, PointerEvent::toScriptValue, PointerEvent::fromScriptValue);
-    scriptRegisterMetaType(engine, TouchEvent::toScriptValue, TouchEvent::fromScriptValue);
-    scriptRegisterMetaType(engine, WheelEvent::toScriptValue, WheelEvent::fromScriptValue);
-    scriptRegisterMetaType(engine, SpatialEvent::toScriptValue, SpatialEvent::fromScriptValue);
+    scriptRegisterMetaType(engine, KeyEvent::toScriptValue, KeyEvent::fromScriptValue, "KeyEvent");
+    scriptRegisterMetaType(engine, MouseEvent::toScriptValue, MouseEvent::fromScriptValue, "MouseEvent");
+    scriptRegisterMetaType(engine, PointerEvent::toScriptValue, PointerEvent::fromScriptValue, "PointerEvent");
+    scriptRegisterMetaType(engine, TouchEvent::toScriptValue, TouchEvent::fromScriptValue, "TouchEvent");
+    scriptRegisterMetaType(engine, WheelEvent::toScriptValue, WheelEvent::fromScriptValue, "WheelEvent");
+    scriptRegisterMetaType(engine, SpatialEvent::toScriptValue, SpatialEvent::fromScriptValue, "SpatialEvent");
 }
