@@ -1,4 +1,3 @@
-include(vcpkg_common_functions)
 set(WEBRTC_VERSION 20210105)
 set(MASTER_COPY_SOURCE_PATH ${CURRENT_BUILDTREES_DIR}/src)
 
@@ -30,7 +29,7 @@ else ()
     )
 endif ()
 
-vcpkg_extract_source_archive(${WEBRTC_SOURCE_ARCHIVE})
+vcpkg_extract_source_archive(MASTER_COPY_SOURCE_PATH ARCHIVE ${WEBRTC_SOURCE_ARCHIVE} NO_REMOVE_ONE_LEVEL)
 
 file(COPY ${MASTER_COPY_SOURCE_PATH}/webrtc/include DESTINATION ${CURRENT_PACKAGES_DIR})
 file(COPY ${MASTER_COPY_SOURCE_PATH}/webrtc/lib DESTINATION ${CURRENT_PACKAGES_DIR})

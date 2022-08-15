@@ -1,5 +1,3 @@
-include(vcpkg_common_functions)
-
 file(READ "${VCPKG_ROOT_DIR}/_env/EXTERNAL_BUILD_ASSETS.txt" EXTERNAL_BUILD_ASSETS)
 
 # else Linux desktop

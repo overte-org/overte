@@ -1,4 +1,3 @@
-include(vcpkg_common_functions)
 set(ARISTO_VERSION 0.8.1)
 set(MASTER_COPY_SOURCE_PATH ${CURRENT_BUILDTREES_DIR}/src)
 

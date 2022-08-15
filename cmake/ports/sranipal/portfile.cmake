@@ -1,4 +1,3 @@
-include(vcpkg_common_functions)
 set(SRANIPAL_VERSION 1.1.0.1)
 set(MASTER_COPY_SOURCE_PATH ${CURRENT_BUILDTREES_DIR}/src)
 

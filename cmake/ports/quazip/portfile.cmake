@@ -1,5 +1,3 @@
-include(vcpkg_common_functions)
-
 if(EXISTS "${VCPKG_ROOT_DIR}/_env/QT_CMAKE_PREFIX_PATH.txt")
     # This environment var file only exists if we're overridding the default Qt location,
     # which happens when using Qt from vcpkg, or using Qt from custom location
