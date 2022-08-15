@@ -1,6 +1,7 @@
 //
 //  Created by Nissim Hadar on 2018/12/28
 //  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -12,12 +13,19 @@
 
 #include <platform/Platform.h>
 #include <platform/Profiler.h>
+#include <ScriptEngineCast.h>
 
 #ifdef Q_OS_WIN
 #include <Windows.h>
 #elif defined Q_OS_MAC
 #include <sstream>
 #endif
+
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<PlatformInfoScriptingInterface::PlatformTier>, scriptValueToEnumClass<PlatformInfoScriptingInterface::PlatformTier>, "PlatformTier");
+});
 
 PlatformInfoScriptingInterface* PlatformInfoScriptingInterface::getInstance() {
     static PlatformInfoScriptingInterface sharedInstance;
