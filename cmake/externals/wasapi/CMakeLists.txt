@@ -12,13 +12,14 @@ if (WIN32)
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
     LOG_DOWNLOAD 1
+    DOWNLOAD_EXTRACT_TIMESTAMP 1
   )
-    
+
   # Hide this external target (for ide users)
   set_target_properties(${EXTERNAL_NAME} PROPERTIES FOLDER "hidden/externals")
-    
+
   ExternalProject_Get_Property(${EXTERNAL_NAME} SOURCE_DIR)
-    
+
   set(${EXTERNAL_NAME_UPPER}_DLL_PATH ${SOURCE_DIR} CACHE FILEPATH "Location of wasapi DLL")
 
 endif()

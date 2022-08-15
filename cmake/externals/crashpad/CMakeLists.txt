@@ -12,6 +12,7 @@ if (WIN32)
       BUILD_COMMAND ""
       INSTALL_COMMAND ""
       LOG_DOWNLOAD 1
+      DOWNLOAD_EXTRACT_TIMESTAMP 1
     )
 
     ExternalProject_Get_Property(${EXTERNAL_NAME} SOURCE_DIR)
@@ -31,6 +32,7 @@ elseif (APPLE)
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
     LOG_DOWNLOAD 1
+    DOWNLOAD_EXTRACT_TIMESTAMP 1
   )
 
   ExternalProject_Get_Property(${EXTERNAL_NAME} SOURCE_DIR)
@@ -50,6 +52,7 @@ elseif (UNIX)
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
     LOG_DOWNLOAD 1
+    DOWNLOAD_EXTRACT_TIMESTAMP 1
   )
 
   ExternalProject_Get_Property(${EXTERNAL_NAME} SOURCE_DIR)
