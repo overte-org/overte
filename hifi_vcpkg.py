@@ -94,31 +94,27 @@ endif()
         if 'Windows' == system:
             self.exe = os.path.join(self.path, 'vcpkg.exe')
             self.bootstrapCmds = [ os.path.join(self.path, 'bootstrap-vcpkg.bat'), '-disableMetrics' ]
-            self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/vcpkg-win32-client-20210122.zip'
+            self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/vcpkg-windows_x86_64_2022.07.25.zip'
             self.vcpkgHash = '3df86b7d58c827bf08b3b7744f456f414b86a6d9bd58a507924103bc5a88f01ee495ce1f0fbf2f5b27f1ef6bfb1526e580ec13d3b9f87a89a462b3c50589fd6a'
             self.hostTriplet = 'x64-windows'
             if usePrebuilt:
                 self.prebuiltArchive = self.assets_url + "/dependencies/vcpkg/builds/vcpkg-win32.zip%3FversionId=3SF3mDC8dkQH1JP041m88xnYmWNzZflx"
         elif 'Darwin' == system:
             self.exe = os.path.join(self.path, 'vcpkg')
-            self.bootstrapCmds = [ os.path.join(self.path, 'bootstrap-vcpkg.sh'), '--allowAppleClang', '-disableMetrics' ]
-            self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/builds/vcpkg-osx-client.tgz%3FversionId=j0b4azo_zTlH_Q9DElEWOz1UMYZ2nqQw'
-            self.vcpkgHash = '519d666d02ef22b87c793f016ca412e70f92e1d55953c8f9bd4ee40f6d9f78c1df01a6ee293907718f3bbf24075cc35492fb216326dfc50712a95858e9cbcb4d'
+            self.bootstrapCmds = [ os.path.join(self.path, 'bootstrap-vcpkg.sh'), '-disableMetrics' ]
+            self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/vcpkg-osx-x86_64-2022.06.16.1.tar.xz'
+            self.vcpkgHash = '4dfdb3d8c40440330d50b54073e59218334379d0cb3ca437252a29d3c8674c0eeeec9acd3927488a5ce96cbcdf411632d3576baf1e279181233209ec01761d1d'
             self.hostTriplet = 'x64-osx'
-            # Potential fix for a vcpkg build issue on OSX (see https://github.com/microsoft/vcpkg/issues/9029)
-            self.bootstrapEnv['CXXFLAGS'] = '-D_CTERMID_H_'
-            if usePrebuilt:
-                self.prebuiltArchive = self.assets_url + "/dependencies/vcpkg/builds/vcpkg-osx.tgz%3FversionId=6JrIMTdvpBF3MAsjA92BMkO79Psjzs6Z"
         elif 'Linux' == system and 'aarch64' == machine:
             self.exe = os.path.join(self.path, 'vcpkg')
             self.bootstrapCmds = [ os.path.join(self.path, 'bootstrap-vcpkg.sh'), '-disableMetrics' ]
-            self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/vcpkg-linux_aarch64_2021.05.12.tar.xz'
+            self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/vcpkg-linux_aarch64_2022.07.25.tar.xz'
             self.vcpkgHash = '7abb7aa96200e3cb5a6d0ec1c6ee63aa7886df2d1fecf8f9ee41ebe4d2cea0d4143274222c4941cb7aca61e4048229fdfe9eb2cd36dd559dd26db871a3b3ed61'
             self.hostTriplet = 'arm64-linux'
         else:
             self.exe = os.path.join(self.path, 'vcpkg')
             self.bootstrapCmds = [ os.path.join(self.path, 'bootstrap-vcpkg.sh'), '-disableMetrics' ]
-            self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/builds/vcpkg-linux-client.tgz%3FversionId=y7mct0gFicEXz5hJy3KROBugcLR56YWf'
+            self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/vcpkg-linux_amd64_2022.07.25.tar.xz'
             self.vcpkgHash = '6a1ce47ef6621e699a4627e8821ad32528c82fce62a6939d35b205da2d299aaa405b5f392df4a9e5343dd6a296516e341105fbb2dd8b48864781d129d7fba10d'
             self.hostTriplet = 'x64-linux'
 
