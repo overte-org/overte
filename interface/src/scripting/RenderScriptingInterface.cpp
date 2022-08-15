@@ -1,14 +1,22 @@
 //
 //  Created by Sam Gondelman on 5/16/19
 //  Copyright 2013-2019 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 #include "RenderScriptingInterface.h"
 
+#include <ScriptEngineCast.h>
+
 #include "LightingModel.h"
 
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<RenderScriptingInterface::RenderMethod>, scriptValueToEnumClass<RenderScriptingInterface::RenderMethod>, "RenderMethod");
+});
 
 RenderScriptingInterface* RenderScriptingInterface::getInstance() {
     static RenderScriptingInterface sharedInstance;
@@ -20,8 +28,6 @@ std::once_flag RenderScriptingInterface::registry_flag;
 RenderScriptingInterface::RenderScriptingInterface() {
     std::call_once(registry_flag, [] {
         qmlRegisterType<RenderScriptingInterface>("RenderEnums", 1, 0, "RenderEnums");
-        qRegisterMetaType<RenderScriptingInterface::RenderMethod>("RenderScriptingInterface::RenderMethod");
-        qDebug() << "qRegisterMetaType<RenderScriptingInterface::RenderMethod>(\"RenderScriptingInterface::RenderMethod\")";
     });
 }
 
