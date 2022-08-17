@@ -344,7 +344,7 @@ Grabber.prototype.pressEvent = function(event) {
     this.computeNewGrabPlane();
     this.moveEvent(event);
 
-    var args = "mouse";
+    var args = ["mouse"];
     Entities.callEntityMethod(this.entityID, "startDistanceGrab", args);
 
     Messages.sendLocalMessage('Hifi-Object-Manipulation', JSON.stringify({
@@ -378,7 +378,7 @@ Grabber.prototype.releaseEvent = function(event) {
         Pointers.setRenderState(this.mouseRayEntities, "");
         Pointers.setLockEndUUID(this.mouseRayEntities, null, false);
 
-        var args = "mouse";
+        var args = ["mouse"];
         Entities.callEntityMethod(this.entityID, "releaseGrab", args);
 
         Messages.sendLocalMessage('Hifi-Object-Manipulation', JSON.stringify({
