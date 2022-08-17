@@ -1958,6 +1958,7 @@ public:
 };
 
 void registerAvatarTypes(ScriptEngine* engine);
+void registerAvatarPrototypes(ScriptEngine* engine);
 
 class RayToAvatarIntersectionResult {
 public:

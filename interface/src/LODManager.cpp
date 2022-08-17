@@ -5,6 +5,7 @@
 //  Created by Clement on 1/16/15.
 //  Copyright 2015 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -15,10 +16,17 @@
 #include <SettingHandle.h>
 #include <Util.h>
 #include <shared/GlobalAppProperties.h>
+#include <ScriptEngineCast.h>
 
 #include "Application.h"
 #include "ui/DialogsManager.h"
 #include "InterfaceLogging.h"
+
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType(scriptEngine, worldDetailQualityToScriptValue, worldDetailQualityFromScriptValue);
+});
 
 const QString LOD_SETTINGS_PREFIX { "lodManager/" };
 

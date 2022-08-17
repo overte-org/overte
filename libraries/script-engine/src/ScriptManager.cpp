@@ -4,6 +4,7 @@
 //
 //  Created by Brad Hefta-Gaub on 12/14/13.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -88,6 +89,7 @@ Q_DECLARE_METATYPE(ScriptValue);
 // --- Static script initialization registry
 
 static ScriptManager::StaticInitializerNode* rootInitializer = nullptr;
+static ScriptManager::StaticTypesInitializerNode* rootTypesInitializer = nullptr;
 
 void ScriptManager::registerNewStaticInitializer(StaticInitializerNode* dest) {
     // this function is assumed to be called on LoadLibrary, where we are explicitly operating in single-threaded mode
@@ -97,6 +99,19 @@ void ScriptManager::registerNewStaticInitializer(StaticInitializerNode* dest) {
 }
 static void runStaticInitializers(ScriptManager* manager) {
     ScriptManager::StaticInitializerNode* here = rootInitializer;
+    while (here != nullptr) {
+        (*here->init)(manager);
+        here = here->prev;
+    }
+}
+void ScriptManager::registerNewStaticTypesInitializer(StaticTypesInitializerNode* dest) {
+    // this function is assumed to be called on LoadLibrary, where we are explicitly operating in single-threaded mode
+    // Therefore there is no mutex or threadsafety here and the structure is assumed not to change after loading
+    dest->prev = rootTypesInitializer;
+    rootTypesInitializer = dest;
+}
+static void runStaticTypesInitializers(ScriptManager* manager) {
+    ScriptManager::StaticTypesInitializerNode* here = rootTypesInitializer;
     while (here != nullptr) {
         (*here->init)(manager);
         here = here->prev;
@@ -210,12 +225,11 @@ ScriptManagerPointer newScriptManager(ScriptManager::Context context,
                                       const QString& fileNameString) {
     ScriptManagerPointer manager(new ScriptManager(context, scriptContents, fileNameString),
                                  [](ScriptManager* obj) { obj->deleteLater(); });
-    ScriptEnginePointer engine = newScriptEngine(manager.get());
-    manager->_engine = engine;
     return manager;
 }
 
 int ScriptManager::processLevelMaxRetries { ScriptRequest::MAX_RETRIES };
+
 ScriptManager::ScriptManager(Context context, const QString& scriptContents, const QString& fileNameString) :
     QObject(),
     _context(context),
@@ -267,6 +281,10 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
             }
         });
     }
+    
+    if (!_areMetaTypesInitialized) {
+        initMetaTypes();
+    }    
 }
 
 QString ScriptManager::getTypeAsString() const {
@@ -615,17 +633,13 @@ void ScriptManager::resetModuleCache(bool deleteScriptCache) {
     jsRequire.setProperty("cache", cache, READONLY_PROP_FLAGS);
 }
 
-void ScriptManager::init() {
-    if (_isInitialized) {
-        return; // only initialize once
+void ScriptManager::initMetaTypes() {
+    if (_areMetaTypesInitialized) {
+        return;
     }
-
-    _isInitialized = true;
-    runStaticInitializers(this);
-
+    _areMetaTypesInitialized = true;
     auto scriptEngine = _engine.get();
-
-    // register various meta-types
+    runStaticTypesInitializers(this);
     registerMIDIMetaTypes(scriptEngine);
     registerEventTypes(scriptEngine);
     registerMenuItemProperties(scriptEngine);
@@ -636,6 +650,29 @@ void ScriptManager::init() {
     scriptRegisterSequenceMetaType<QVector<glm::vec2>>(scriptEngine);
     scriptRegisterSequenceMetaType<QVector<glm::quat>>(scriptEngine);
     scriptRegisterSequenceMetaType<QVector<QString>>(scriptEngine);
+    
+    scriptRegisterMetaType(scriptEngine, animationDetailsToScriptValue, animationDetailsFromScriptValue);
+    scriptRegisterMetaType(scriptEngine, webSocketToScriptValue, webSocketFromScriptValue);
+    scriptRegisterMetaType(scriptEngine, qWSCloseCodeToScriptValue, qWSCloseCodeFromScriptValue);
+    scriptRegisterMetaType(scriptEngine, wscReadyStateToScriptValue, wscReadyStateFromScriptValue);
+
+    scriptRegisterMetaType(scriptEngine, externalResourceBucketToScriptValue, externalResourceBucketFromScriptValue);
+
+    scriptRegisterMetaType(scriptEngine, scriptableResourceToScriptValue, scriptableResourceFromScriptValue);
+
+    scriptRegisterMetaType(scriptEngine, meshToScriptValue, meshFromScriptValue);
+    scriptRegisterMetaType(scriptEngine, meshesToScriptValue, meshesFromScriptValue);
+}
+
+void ScriptManager::init() {
+    if (_isInitialized) {
+        return; // only initialize once
+    }
+
+    _isInitialized = true;
+    runStaticInitializers(this);
+
+    auto scriptEngine = _engine.get();
 
     ScriptValue xmlHttpRequestConstructorValue = scriptEngine->newFunction(XMLHttpRequestClass::constructor);
     scriptEngine->globalObject().setProperty("XMLHttpRequest", xmlHttpRequestConstructorValue);
@@ -652,11 +689,6 @@ void ScriptManager::init() {
      */
     scriptEngine->globalObject().setProperty("print", scriptEngine->newFunction(debugPrint));
 
-    scriptRegisterMetaType(scriptEngine, animationDetailsToScriptValue, animationDetailsFromScriptValue);
-    scriptRegisterMetaType(scriptEngine, webSocketToScriptValue, webSocketFromScriptValue);
-    scriptRegisterMetaType(scriptEngine, qWSCloseCodeToScriptValue, qWSCloseCodeFromScriptValue);
-    scriptRegisterMetaType(scriptEngine, wscReadyStateToScriptValue, wscReadyStateFromScriptValue);
-
     // NOTE: You do not want to end up creating new instances of singletons here. They will be on the ScriptManager thread
     // and are likely to be unusable if we "reset" the ScriptManager by creating a new one (on a whole new thread).
 
@@ -671,7 +703,6 @@ void ScriptManager::init() {
         resetModuleCache();
     }
 
-    scriptRegisterMetaType(scriptEngine, externalResourceBucketToScriptValue, externalResourceBucketFromScriptValue);
     scriptEngine->registerEnum("Script.ExternalPaths", QMetaEnum::fromType<ExternalResource::Bucket>());
 
     scriptEngine->registerGlobalObject("Quat", &_quatLibrary);
@@ -696,7 +727,6 @@ void ScriptManager::init() {
     auto resourcePrototype = createScriptableResourcePrototype(shared_from_this());
     scriptEngine->globalObject().setProperty("Resource", resourcePrototype);
     scriptEngine->setDefaultPrototype(qMetaTypeId<ScriptableResource*>(), resourcePrototype);
-    scriptRegisterMetaType(scriptEngine, scriptableResourceToScriptValue, scriptableResourceFromScriptValue);
 
     // constants
     scriptEngine->globalObject().setProperty("TREE_SCALE", scriptEngine->newValue(TREE_SCALE));
@@ -705,9 +735,6 @@ void ScriptManager::init() {
     scriptEngine->registerGlobalObject("Resources", DependencyManager::get<ResourceScriptingInterface>().data());
 
     scriptEngine->registerGlobalObject("DebugDraw", &DebugDraw::getInstance());
-
-    scriptRegisterMetaType(scriptEngine, meshToScriptValue, meshFromScriptValue);
-    scriptRegisterMetaType(scriptEngine, meshesToScriptValue, meshesFromScriptValue);
 
     scriptEngine->registerGlobalObject("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
 

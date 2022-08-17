@@ -584,7 +584,8 @@ public:
     virtual ~MyAvatar();
 
     void instantiableAvatar() override {};
-    void registerMetaTypes(ScriptEnginePointer engine);
+    static void registerMetaTypes(ScriptEnginePointer engine);
+    void registerProperties(ScriptEnginePointer engine);
 
     virtual void simulateAttachments(float deltaTime) override;
 

@@ -1,6 +1,7 @@
 //
 //  Created by Sam Gondelman 10/20/2017
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -31,6 +32,12 @@
 #include <ScriptEngine.h>
 #include <ScriptEngineCast.h>
 #include <ScriptValueUtils.h>
+
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    PickScriptingInterface::registerMetaTypes(scriptEngine);
+});
 
 static const float WEB_TOUCH_Y_OFFSET = 0.105f;  // how far forward (or back with a negative number) to slide stylus in hand
 static const glm::vec3 TIP_OFFSET = glm::vec3(0.0f, StylusPick::WEB_STYLUS_LENGTH - WEB_TOUCH_Y_OFFSET, 0.0f);
@@ -457,14 +464,16 @@ bool pickTypesFromScriptValue(const ScriptValue& object, PickQuery::PickType& pi
 }
 
 void PickScriptingInterface::registerMetaTypes(ScriptEngine* engine) {
+    scriptRegisterMetaType(engine, pickTypesToScriptValue, pickTypesFromScriptValue);
+}
+
+void PickScriptingInterface::registerProperties(ScriptEngine* engine) {
     ScriptValue pickTypes = engine->newObject();
     auto metaEnum = QMetaEnum::fromType<PickQuery::PickType>();
     for (int i = 0; i < PickQuery::PickType::NUM_PICK_TYPES; ++i) {
         pickTypes.setProperty(metaEnum.key(i), metaEnum.value(i));
     }
     engine->globalObject().setProperty("PickType", pickTypes);
-
-    scriptRegisterMetaType(engine, pickTypesToScriptValue, pickTypesFromScriptValue);
 }
 
 unsigned int PickScriptingInterface::getPerFrameTimeBudget() const {
