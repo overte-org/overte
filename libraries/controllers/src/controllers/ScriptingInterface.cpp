@@ -1,6 +1,7 @@
 ﻿//
 //  Created by Bradley Austin Davis 2015/10/09
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -40,7 +41,7 @@ bool inputControllerFromScriptValue(const ScriptValue& object, controller::Input
     return true;
 }
 
-STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager) {
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager) {
     auto scriptEngine = manager->engine().get();
 
     scriptRegisterMetaType(scriptEngine, inputControllerToScriptValue, inputControllerFromScriptValue);

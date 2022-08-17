@@ -4,6 +4,7 @@
 //
 //  Created by Andrzej Kapolka on 4/17/14.
 //  Copyright (c) 2014 High Fidelity, Inc. All rights reserved.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -18,8 +19,12 @@
 
 #include "AnimationCache.h"
 
-STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager) {
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager) {
     registerAnimationTypes(manager->engine().get());
+});
+
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager) {
+    registerAnimationPrototypes(manager->engine().get());
 });
 
 QStringList AnimationObject::getJointNames() const {
@@ -36,9 +41,11 @@ QVector<glm::quat> AnimationFrameObject::getRotations() const {
 
 void registerAnimationTypes(ScriptEngine* engine) {
     scriptRegisterSequenceMetaType<QVector<HFMAnimationFrame> >(engine);
+}
+
+void registerAnimationPrototypes(ScriptEngine* engine) {
     engine->setDefaultPrototype(qMetaTypeId<HFMAnimationFrame>(), engine->newQObject(
         new AnimationFrameObject(), ScriptEngine::ScriptOwnership));
     engine->setDefaultPrototype(qMetaTypeId<AnimationPointer>(), engine->newQObject(
         new AnimationObject(), ScriptEngine::ScriptOwnership));
 }
-

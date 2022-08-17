@@ -5,6 +5,7 @@
 //  Created by Mark Peng on 8/16/13.
 //  Copyright 2012 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -583,7 +584,8 @@ public:
     virtual ~MyAvatar();
 
     void instantiableAvatar() override {};
-    void registerMetaTypes(ScriptEnginePointer engine);
+    static void registerMetaTypes(ScriptEnginePointer engine);
+    void registerProperties(ScriptEnginePointer engine);
 
     virtual void simulateAttachments(float deltaTime) override;
 

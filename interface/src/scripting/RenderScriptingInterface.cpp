@@ -12,10 +12,11 @@
 
 #include "LightingModel.h"
 
-STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
     scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<RenderScriptingInterface::RenderMethod>, scriptValueToEnumClass<RenderScriptingInterface::RenderMethod>, "RenderMethod");
+    scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<AntialiasingConfig::Mode>, scriptValueToEnumClass<AntialiasingConfig::Mode>, "Mode");
 });
 
 RenderScriptingInterface* RenderScriptingInterface::getInstance() {

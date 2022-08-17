@@ -4,6 +4,7 @@
 //
 //  Created by Brad Hefta-Gaub on 12/6/13.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -48,12 +49,8 @@
 const QString GRABBABLE_USER_DATA = "{\"grabbableKey\":{\"grabbable\":true}}";
 const QString NOT_GRABBABLE_USER_DATA = "{\"grabbableKey\":{\"grabbable\":false}}";
 
-void staticEntityScriptInitializer(ScriptManager* manager) {
+void staticEntityScriptTypesInitializer(ScriptManager* manager) {
     auto scriptEngine = manager->engine().get();
-
-    auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
-    entityScriptingInterface->init();
-    auto interfacePtr = entityScriptingInterface.data();  // using this when we don't want to leak a reference
 
     registerMetaTypes(scriptEngine);
 
@@ -62,6 +59,15 @@ void staticEntityScriptInitializer(ScriptManager* manager) {
     scriptRegisterMetaType(scriptEngine, EntityPropertyInfoToScriptValue, EntityPropertyInfoFromScriptValue);
     scriptRegisterMetaType(scriptEngine, EntityItemIDtoScriptValue, EntityItemIDfromScriptValue);
     scriptRegisterMetaType(scriptEngine, RayToEntityIntersectionResultToScriptValue, RayToEntityIntersectionResultFromScriptValue);
+}
+STATIC_SCRIPT_TYPES_INITIALIZER(staticEntityScriptTypesInitializer);
+
+void staticEntityScriptInitializer(ScriptManager* manager) {
+    auto scriptEngine = manager->engine().get();
+
+    auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
+    entityScriptingInterface->init();
+    auto interfacePtr = entityScriptingInterface.data();  // using this when we don't want to leak a reference
 
     scriptEngine->registerGlobalObject("Entities", entityScriptingInterface.data());
     scriptEngine->registerFunction("Entities", "getMultipleEntityProperties", EntityScriptingInterface::getMultipleEntityProperties);

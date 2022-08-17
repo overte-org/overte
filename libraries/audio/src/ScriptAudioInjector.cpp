@@ -4,6 +4,7 @@
 //
 //  Created by Stephen Birarda on 2015-02-11.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -17,7 +18,7 @@
 #include <ScriptManager.h>
 #include <ScriptValue.h>
 
-STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager) {
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager) {
     auto scriptEngine = manager->engine().get();
 
     scriptRegisterMetaType(scriptEngine, injectorToScriptValue, injectorFromScriptValue);
