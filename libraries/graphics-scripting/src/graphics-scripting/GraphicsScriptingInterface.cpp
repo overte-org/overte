@@ -3,6 +3,7 @@
 //  libraries/graphics-scripting/src
 //
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -19,12 +20,20 @@
 #include <QUuid>
 #include <ScriptEngine.h>
 #include <ScriptEngineCast.h>
+#include <ScriptManager.h>
 #include <ScriptValue.h>
 #include <ScriptValueUtils.h>
 #include <graphics/BufferViewHelpers.h>
 #include <graphics/GpuHelpers.h>
 #include <shared/QtHelpers.h>
 #include <SpatiallyNestable.h>
+
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    GraphicsScriptingInterface::registerMetaTypes(scriptEngine);
+});
+
 
 GraphicsScriptingInterface::GraphicsScriptingInterface(QObject* parent) : QObject(parent), Scriptable() {
 }

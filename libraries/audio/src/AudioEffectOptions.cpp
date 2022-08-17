@@ -3,6 +3,7 @@
 //  libraries/audio/src
 //
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -14,13 +15,30 @@
 #include <ScriptEngine.h>
 #include <ScriptManager.h>
 #include <ScriptValue.h>
+#include <ScriptEngineCast.h>
+
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager) {
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType(scriptEngine, audioEffectOptionsToScriptValue, audioEffectOptionsFromScriptValue);
+});
 
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager) {
-    auto scriptEngine = manager->engine();
+    auto scriptEngine = manager->engine().get();
 
     ScriptValue audioEffectOptionsConstructorValue = scriptEngine->newFunction(AudioEffectOptions::constructor);
     scriptEngine->globalObject().setProperty("AudioEffectOptions", audioEffectOptionsConstructorValue);
 });
+
+ScriptValue audioEffectOptionsToScriptValue(ScriptEngine* scriptEngine, const AudioEffectOptions& audioEffectOptions) {
+    qCritical() << "Conversion of AudioEffectOptions to ScriptValue should never happen.";
+    return ScriptValue();
+}
+
+bool audioEffectOptionsFromScriptValue(const ScriptValue& scriptValue, AudioEffectOptions& audioEffectOptions) {
+    audioEffectOptions = AudioEffectOptions(scriptValue);
+    return true;
+}
 
 static const QString BANDWIDTH_HANDLE = "bandwidth";
 static const QString PRE_DELAY_HANDLE = "preDelay";

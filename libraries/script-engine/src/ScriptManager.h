@@ -5,6 +5,7 @@
 //  Created by Brad Hefta-Gaub on 12/14/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -104,7 +105,10 @@ public:
     QUrl definingSandboxURL { QUrl("about:EntityScript") };
 };
 
-// declare a static script initializer
+// declare a static script initializers
+#define STATIC_SCRIPT_TYPES_INITIALIZER(init)                                     \
+    static ScriptManager::StaticTypesInitializerNode static_script_types_initializer_(init);
+
 #define STATIC_SCRIPT_INITIALIZER(init)                                     \
     static ScriptManager::StaticInitializerNode static_script_initializer_(init);
 
@@ -179,6 +183,13 @@ public:
     };
     static void registerNewStaticInitializer(StaticInitializerNode* dest);
 
+    class StaticTypesInitializerNode {
+    public:
+        ScriptManagerInitializer init;
+        StaticTypesInitializerNode* prev;
+        inline StaticTypesInitializerNode(ScriptManagerInitializer&& pInit) : init(std::move(pInit)),prev(nullptr) { registerNewStaticTypesInitializer(this); }
+    };
+    static void registerNewStaticTypesInitializer(StaticTypesInitializerNode* dest);
     /// run the script in a dedicated thread. This will have the side effect of evalulating
     /// the current script contents and calling run(). Callers will likely want to register the script with external
     /// services before calling this.
@@ -874,6 +885,9 @@ signals:
     void releaseEntityPacketSenderMessages(bool wait);
 
 protected:
+    // Is called by the constructor, bceause all types need to be registered before method discovery with ScriptObjectQtProxy::investigate()
+    void initMetaTypes();
+    
     void init();
 
     /**jsdoc
@@ -934,6 +948,7 @@ protected:
     std::atomic<bool> _isFinished { false };
     std::atomic<bool> _isRunning { false };
     std::atomic<bool> _isStopping { false };
+    bool _areMetaTypesInitialized { false };
     bool _isInitialized { false };
     QHash<QTimer*, CallbackData> _timerFunctionMap;
     QSet<QUrl> _includedURLs;

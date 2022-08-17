@@ -42,6 +42,7 @@ void ScriptEngineQtScript::registerCustomType(int type,
     CustomMarshal& customType = _customTypes.insert(type, CustomMarshal()).value();
     customType.demarshalFunc = demarshalFunc;
     customType.marshalFunc = marshalFunc;
+    qDebug() << "registerCustomType: " << QMetaType(type).name() << " type: " << type << " map size: " << _customTypes.size();
 }
 
 Q_DECLARE_METATYPE(ScriptValue);
@@ -209,6 +210,13 @@ bool ScriptEngineQtScript::castValueToVariant(const QScriptValue& val, QVariant&
             }
         }
     }
+/*    if (QMetaType(destTypeId).name() == "MenuItemProperties") {
+        qDebug() << "castValueToVariant MenuItemProperties " << destTypeId << "map size: " << _customTypes.size();
+        for (auto iter = _customTypes.keyBegin(); iter != _customTypes.keyEnd(); iter++){
+            qDebug() << (*iter);
+        }
+        printf("castValueToVariant MenuItemProperties");
+    }*/
 
     if (destTypeId == qMetaTypeId<ScriptValue>()) {
         dest = QVariant::fromValue(ScriptValue(new ScriptValueQtWrapper(this, val)));

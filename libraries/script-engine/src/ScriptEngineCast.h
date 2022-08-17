@@ -76,12 +76,12 @@ int scriptRegisterMetaType(ScriptEngine* eng,
     if (strlen(name) > 0) { // make sure it's registered
         id = qRegisterMetaType<T>(name);
     } else {
-        if (!QMetaType::fromType<T>().name().isNull()) {
-            qDebug() << "scriptRegisterMetaType: " << QMetaType::fromType<T>().name();
-            id = qRegisterMetaType<T>(QMetaType::fromType<T>().name());
-        }else{
+        //if (!QMetaType::fromType<T>().name().isNull()) {
+            //qDebug() << "scriptRegisterMetaType: " << QMetaType::fromType<T>().name();
+            //id = qRegisterMetaType<T>(QMetaType::fromType<T>().name());
+        //}else{
             id = qRegisterMetaType<T>();
-        }
+        //}
     }
     eng->registerCustomType(id, reinterpret_cast<ScriptEngine::MarshalFunction>(toScriptValue),
                             reinterpret_cast<ScriptEngine::DemarshalFunction>(fromScriptValue));

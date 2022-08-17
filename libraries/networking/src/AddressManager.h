@@ -214,6 +214,7 @@ public:
         Suggestions,
         VisitUserFromPAL
     };
+    Q_ENUM(LookupTrigger)
 
     bool isConnected();
     QString getProtocol() const;
