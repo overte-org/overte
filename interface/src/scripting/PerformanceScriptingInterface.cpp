@@ -14,7 +14,7 @@
 
 #include "../Application.h"
 
-STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
     scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<PerformanceScriptingInterface::PerformancePreset>, scriptValueToEnumClass<PerformanceScriptingInterface::PerformancePreset>, "PerformancePreset");
