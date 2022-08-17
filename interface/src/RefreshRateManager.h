@@ -4,6 +4,7 @@
 //
 //  Created by Dante Ruiz on 2019-04-15.
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -19,9 +20,12 @@
 #include <QTimer>
 
 #include <SettingHandle.h>
+#include <ScriptEngineCast.h>
+#include <ScriptManager.h>
 #include <shared/ReadWriteLockable.h>
 
-class RefreshRateManager {
+class RefreshRateManager : QObject {
+    Q_OBJECT
 public:
     enum RefreshRateProfile {
         ECO = 0,
@@ -29,6 +33,7 @@ public:
         REALTIME,
         PROFILE_NUM
     };
+    Q_ENUM(RefreshRateProfile)
     static bool isValidRefreshRateProfile(RefreshRateProfile value) { return (value >= RefreshRateProfile::ECO && value <= RefreshRateProfile::REALTIME); }
 
     /*@jsdoc
@@ -57,6 +62,7 @@ public:
         SHUTDOWN,
         REGIME_NUM
     };
+    Q_ENUM(RefreshRateRegime)
     static bool isValidRefreshRateRegime(RefreshRateRegime value) { return (value >= RefreshRateRegime::FOCUS_ACTIVE && value <= RefreshRateRegime::SHUTDOWN); }
 
     /*@jsdoc
@@ -77,6 +83,7 @@ public:
         VR,
         UX_NUM
     };
+    Q_ENUM(UXMode)
     static bool isValidUXMode(UXMode value) { return (value >= UXMode::DESKTOP && value <= UXMode::VR); }
 
     RefreshRateManager();

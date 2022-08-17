@@ -4,6 +4,7 @@
 //
 //  Created by Stephen Birarda on 4/9/13.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -68,12 +69,18 @@ static const float DEFAULT_AVATAR_DENSITY = 1000.0f; // density of water
 
 #define ASSERT(COND)  do { if (!(COND)) { abort(); } } while(0)
 
-STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager) {
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager) {
     auto scriptEngine = manager->engine().get();
 
     registerAvatarTypes(scriptEngine);
     scriptRegisterMetaType(scriptEngine, RayToAvatarIntersectionResultToScriptValue, RayToAvatarIntersectionResultFromScriptValue);
     scriptRegisterMetaType(scriptEngine, AvatarEntityMapToScriptValue, AvatarEntityMapFromScriptValue);
+});
+
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager) {
+    auto scriptEngine = manager->engine().get();
+
+    registerAvatarPrototypes(scriptEngine);
 });
 
 size_t AvatarDataPacket::maxFaceTrackerInfoSize(size_t numBlendshapeCoefficients) {
@@ -2609,6 +2616,9 @@ bool AttachmentDataObject::getIsSoft() const {
 
 void registerAvatarTypes(ScriptEngine* engine) {
     scriptRegisterSequenceMetaType<QVector<AttachmentData> >(engine);
+}
+
+void registerAvatarPrototypes(ScriptEngine* engine) {
     engine->setDefaultPrototype(qMetaTypeId<AttachmentData>(), engine->newQObject(
         new AttachmentDataObject(), ScriptEngine::ScriptOwnership));
 }

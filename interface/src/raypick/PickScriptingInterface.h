@@ -1,6 +1,7 @@
 //
 //  Created by Sam Gondelman 10/20/2017
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -106,7 +107,8 @@ class PickScriptingInterface : public QObject, public Dependency {
     SINGLETON_DEPENDENCY
 
 public:
-    void registerMetaTypes(ScriptEngine* engine);
+    static void registerMetaTypes(ScriptEngine* engine);
+    void registerProperties(ScriptEngine* engine);
 
     /*@jsdoc
      * Creates a new pick. Different {@link PickType}s use different properties, and within one PickType the properties you 

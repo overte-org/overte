@@ -3,6 +3,7 @@
 //  libraries/audio/src
 //
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -181,5 +182,11 @@ private:
 
     float _wetDryMix;        // [0, 100] percent
 };
+
+Q_DECLARE_METATYPE(AudioEffectOptions);
+
+ScriptValue audioEffectOptionsToScriptValue(ScriptEngine* scriptEngine, const AudioEffectOptions& audioEffectOptions);
+
+bool audioEffectOptionsFromScriptValue(const ScriptValue& scriptValue, AudioEffectOptions& audioEffectOptions);
 
 #endif // hifi_AudioEffectOptions_h

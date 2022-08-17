@@ -4,6 +4,7 @@
 //
 //  Created by Thijs Wenker on 9/10/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -11,10 +12,18 @@
 
 #include "AccountServicesScriptingInterface.h"
 
+#include <ScriptEngineCast.h>
+
 #include "AccountManager.h"
 #include "Application.h"
 #include "DiscoverabilityManager.h"
 #include "ResourceCache.h"
+
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType(scriptEngine, DownloadInfoResultToScriptValue, DownloadInfoResultFromScriptValue);
+});
 
 AccountServicesScriptingInterface::AccountServicesScriptingInterface() {
     auto accountManager = DependencyManager::get<AccountManager>();

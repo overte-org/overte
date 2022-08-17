@@ -5,6 +5,7 @@
 //  Created by Mark Peng on 8/16/13.
 //  Copyright 2012 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -111,6 +112,12 @@ const QString POINT_BLEND_DIRECTIONAL_ALPHA_NAME = "pointAroundAlpha";
 const QString POINT_BLEND_LINEAR_ALPHA_NAME = "pointBlendAlpha";
 const QString POINT_REF_JOINT_NAME = "RightShoulder";
 const float POINT_ALPHA_BLENDING = 1.0f;
+
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    registerMetaTypes(scriptEngine);
+});
 
 const std::array<QString, static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count)>
     MyAvatar::allowAvatarStandingPreferenceStrings = {
@@ -439,6 +446,11 @@ void MyAvatar::enableHandTouchForID(const QUuid& entityID) {
 }
 
 void MyAvatar::registerMetaTypes(ScriptEnginePointer engine) {
+    scriptRegisterMetaType(engine.get(), audioListenModeToScriptValue, audioListenModeFromScriptValue);
+    scriptRegisterMetaType(engine.get(), driveKeysToScriptValue, driveKeysFromScriptValue);
+}
+
+void MyAvatar::registerProperties(ScriptEnginePointer engine) {
     ScriptValue value = engine->newQObject(this, ScriptEngine::QtOwnership);
     engine->globalObject().setProperty("MyAvatar", value);
 
@@ -448,10 +460,8 @@ void MyAvatar::registerMetaTypes(ScriptEnginePointer engine) {
         driveKeys.setProperty(metaEnum.key(i), metaEnum.value(i));
     }
     engine->globalObject().setProperty("DriveKeys", driveKeys);
-
-    scriptRegisterMetaType(engine.get(), audioListenModeToScriptValue, audioListenModeFromScriptValue);
-    scriptRegisterMetaType(engine.get(), driveKeysToScriptValue, driveKeysFromScriptValue);
 }
+
 
 void MyAvatar::setOrientationVar(const QVariant& newOrientationVar) {
     Avatar::setWorldOrientation(quatFromVariant(newOrientationVar));

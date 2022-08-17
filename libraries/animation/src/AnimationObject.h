@@ -4,6 +4,7 @@
 //
 //  Created by Andrzej Kapolka on 4/17/14.
 //  Copyright (c) 2014 High Fidelity, Inc. All rights reserved.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -87,5 +88,6 @@ public:
 };
 
 void registerAnimationTypes(ScriptEngine* engine);
+void registerAnimationPrototypes(ScriptEngine* engine);
 
 #endif // hifi_AnimationObject_h
