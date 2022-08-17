@@ -1,6 +1,7 @@
 //
 //  Created by Anthony J. Thibault on 2016-12-12
 //  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -17,6 +18,8 @@
 #include <DependencyManager.h>
 #include <AccountManager.h>
 #include <RegisteredMetaTypes.h>
+#include <ScriptManager.h>
+#include <ScriptEngineCast.h>
 
 #include "../QmlWindowClass.h"
 #include "../OffscreenUi.h"
@@ -27,6 +30,14 @@
 #include <AudioInjectorManager.h>
 
 #include "SettingHandle.h"
+
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType(scriptEngine, wrapperToScriptValue<TabletProxy>, wrapperFromScriptValue<TabletProxy>);
+    scriptRegisterMetaType(scriptEngine,
+                            wrapperToScriptValue<TabletButtonProxy>, wrapperFromScriptValue<TabletButtonProxy>);
+});
 
 // FIXME move to global app properties
 const QString SYSTEM_TOOLBAR = "com.highfidelity.interface.toolbar.system";

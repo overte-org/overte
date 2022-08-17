@@ -3,6 +3,7 @@
 //  interface/src/ui/overlays
 //
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -41,6 +42,13 @@ Q_LOGGING_CATEGORY(trace_render_overlays, "trace.render.overlays")
 
 std::unordered_map<QString, QString> Overlays::_entityToOverlayTypes;
 std::unordered_map<QString, QString> Overlays::_overlayToEntityTypes;
+
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType(scriptEngine, RayToOverlayIntersectionResultToScriptValue,
+                            RayToOverlayIntersectionResultFromScriptValue);
+});
 
 Overlays::Overlays() : _scriptEngine(newScriptEngine()) {
     ADD_TYPE_MAP(Box, cube);

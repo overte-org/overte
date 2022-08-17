@@ -4,6 +4,7 @@
 //
 //  Created by Zach Fox on 2017-04-10.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -25,7 +26,7 @@ bool avatarDataFromScriptValue(const ScriptValue& object, ScriptAvatarData*& out
     return false;
 }
 
-STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager) {
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager) {
     auto scriptEngine = manager->engine().get();
 
     scriptRegisterMetaType(scriptEngine, avatarDataToScriptValue, avatarDataFromScriptValue);

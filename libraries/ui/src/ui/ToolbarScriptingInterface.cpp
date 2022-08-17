@@ -1,6 +1,7 @@
 //
 //  Created by Bradley Austin Davis on 2016-06-16
 //  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -12,9 +13,19 @@
 #include <QtQuick/QQuickItem>
 #include <ScriptValue.h>
 #include <ScriptEngine.h>
+#include <ScriptEngineCast.h>
+#include <ScriptManager.h>
 
 #include <shared/QtHelpers.h>
 #include "../OffscreenUi.h"
+
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType(scriptEngine, wrapperToScriptValue<ToolbarProxy>, wrapperFromScriptValue<ToolbarProxy>);
+    scriptRegisterMetaType(scriptEngine,
+                            wrapperToScriptValue<ToolbarButtonProxy>, wrapperFromScriptValue<ToolbarButtonProxy>);
+});
 
 ScriptValue toolbarToScriptValue(ScriptEngine* engine, ToolbarProxy* const &in) {
     if (!in) {

@@ -4,6 +4,7 @@
 //
 //  Created by Dante Ruiz on 2019-04-15.
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -13,7 +14,15 @@
 #include "RefreshRateManager.h"
 
 #include <array>
+#include <ScriptEngineCast.h>
+#include <ScriptManager.h>
 
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<RefreshRateManager::RefreshRateRegime>, scriptValueToEnumClass<RefreshRateManager::RefreshRateRegime>, "RefreshRateRegime");
+    scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<RefreshRateManager::UXMode>, scriptValueToEnumClass<RefreshRateManager::UXMode>, "UXMode");
+});
 
 static const int VR_TARGET_RATE = 90;
 
