@@ -4,6 +4,7 @@
 //
 //  Created by Thijs Wenker on 2018-06-25
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -34,6 +35,12 @@
 #ifdef Q_OS_WIN
 #include <WinUser.h>
 #endif
+
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    registerInteractiveWindowMetaType(scriptEngine);
+});
 
 static auto CONTENT_WINDOW_QML = QUrl("InteractiveWindow.qml");
 
