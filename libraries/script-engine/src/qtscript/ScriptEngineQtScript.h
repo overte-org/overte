@@ -181,7 +181,7 @@ protected:
 
     QPointer<ScriptManager> _scriptManager;
 
-    mutable QMutex _customTypeProtect;
+    mutable QReadWriteLock _customTypeProtect { QReadWriteLock::Recursive };
     CustomMarshalMap _customTypes;
     CustomPrototypeMap _customPrototypes;
     ScriptValue _nullValue;
