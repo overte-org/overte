@@ -119,6 +119,12 @@ STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
     registerMetaTypes(scriptEngine);
 });
 
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine();
+
+    DependencyManager::get<AvatarManager>()->getMyAvatar()->registerProperties(scriptEngine);
+});
+
 const std::array<QString, static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count)>
     MyAvatar::allowAvatarStandingPreferenceStrings = {
     QStringLiteral("WhenUserIsStanding"),
