@@ -27,8 +27,9 @@ void ScriptEngineQtScript::setDefaultPrototype(int metaTypeId, const ScriptValue
     ScriptValueQtWrapper* unwrappedPrototype = ScriptValueQtWrapper::unwrap(prototype);
     if (unwrappedPrototype) {
         const QScriptValue& scriptPrototype = unwrappedPrototype->toQtValue();
-        QMutexLocker guard(&_customTypeProtect);
+        _customTypeProtect.lockForWrite();
         _customPrototypes.insert(metaTypeId, scriptPrototype);
+        _customTypeProtect.unlock();
     }
 }
 
@@ -36,12 +37,13 @@ void ScriptEngineQtScript::registerCustomType(int type,
                                               ScriptEngine::MarshalFunction marshalFunc,
                                               ScriptEngine::DemarshalFunction demarshalFunc)
 {
-    QMutexLocker guard(&_customTypeProtect);
+    _customTypeProtect.lockForWrite();
 
     // storing it in a map for our own benefit
     CustomMarshal& customType = _customTypes.insert(type, CustomMarshal()).value();
     customType.demarshalFunc = demarshalFunc;
     customType.marshalFunc = marshalFunc;
+    _customTypeProtect.unlock();
 }
 
 Q_DECLARE_METATYPE(ScriptValue);
@@ -225,11 +227,12 @@ bool ScriptEngineQtScript::castValueToVariant(const QScriptValue& val, QVariant&
     // do we have a registered handler for this type?
     ScriptEngine::DemarshalFunction demarshalFunc = nullptr;
     {
-        QMutexLocker guard(&_customTypeProtect);
+        _customTypeProtect.lockForRead();
         CustomMarshalMap::const_iterator lookup = _customTypes.find(destTypeId);
         if (lookup != _customTypes.cend()) {
             demarshalFunc = lookup.value().demarshalFunc;
         }
+        _customTypeProtect.unlock();
     }
     if (demarshalFunc) {
         dest = QVariant(destTypeId, static_cast<void*>(NULL));
@@ -400,11 +403,12 @@ QScriptValue ScriptEngineQtScript::castVariantToValue(const QVariant& val) {
     // do we have a registered handler for this type?
     ScriptEngine::MarshalFunction marshalFunc = nullptr;
     {
-        QMutexLocker guard(&_customTypeProtect);
+        _customTypeProtect.lockForRead();
         CustomMarshalMap::const_iterator lookup = _customTypes.find(valTypeId);
         if (lookup != _customTypes.cend()) {
             marshalFunc = lookup.value().marshalFunc;
         }
+        _customTypeProtect.unlock();
     }
     if (marshalFunc) {
         ScriptValue wrappedVal = marshalFunc(this, val.constData());
@@ -455,11 +459,12 @@ QScriptValue ScriptEngineQtScript::castVariantToValue(const QVariant& val) {
             }
             // have we set a prototype'd variant?
             {
-                QMutexLocker guard(&_customTypeProtect);
+                _customTypeProtect.lockForRead();
                 CustomPrototypeMap::const_iterator lookup = _customPrototypes.find(valTypeId);
                 if (lookup != _customPrototypes.cend()) {
                     return ScriptVariantQtProxy::newVariant(this, val, lookup.value());
                 }
+                _customTypeProtect.unlock();
             }
             // just do a generic variant
             return QScriptEngine::newVariant(val);
