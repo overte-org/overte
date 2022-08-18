@@ -575,17 +575,13 @@ static ScriptValue createScriptableResourcePrototype(ScriptManagerPointer manage
     auto engine = manager->engine();
     auto prototype = engine->newObject();
 
-    // Expose enum State to JS/QML via properties
-    QObject* state = new QObject(manager.get());
-    state->setObjectName("ResourceState");
+    auto state = engine->newObject();
     auto metaEnum = QMetaEnum::fromType<ScriptableResource::State>();
     for (int i = 0; i < metaEnum.keyCount(); ++i) {
-        state->setProperty(metaEnum.key(i), metaEnum.value(i));
+        state.setProperty(metaEnum.key(i), metaEnum.value(i));
     }
 
-    auto prototypeState = engine->newQObject(state, ScriptEngine::QtOwnership,
-       ScriptEngine::ExcludeSlots | ScriptEngine::ExcludeSuperClassMethods);
-    prototype.setProperty("State", prototypeState);
+    prototype.setProperty("State", state);
 
     return prototype;
 }

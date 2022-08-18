@@ -21,7 +21,16 @@ STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
     scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<RefreshRateManager::RefreshRateRegime>, scriptValueToEnumClass<RefreshRateManager::RefreshRateRegime>, "RefreshRateRegime");
+    
     scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<RefreshRateManager::UXMode>, scriptValueToEnumClass<RefreshRateManager::UXMode>, "UXMode");
+});
+
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptEngine->registerEnum("RefreshRateRegime",QMetaEnum::fromType<RefreshRateManager::RefreshRateRegime>());
+    
+    scriptEngine->registerEnum("UXMode",QMetaEnum::fromType<RefreshRateManager::UXMode>());
 });
 
 static const int VR_TARGET_RATE = 90;

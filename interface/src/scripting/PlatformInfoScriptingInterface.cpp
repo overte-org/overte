@@ -27,6 +27,12 @@ STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
     scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<PlatformInfoScriptingInterface::PlatformTier>, scriptValueToEnumClass<PlatformInfoScriptingInterface::PlatformTier>, "PlatformTier");
 });
 
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptEngine->registerEnum("PlatformInfo.PlatformTier",QMetaEnum::fromType<PlatformInfoScriptingInterface::PlatformTier>());
+});
+
 PlatformInfoScriptingInterface* PlatformInfoScriptingInterface::getInstance() {
     static PlatformInfoScriptingInterface sharedInstance;
     return &sharedInstance;
