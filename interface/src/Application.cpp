@@ -7484,9 +7484,6 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptManage
     scriptEngine->registerGlobalObject("PlatformInfo", PlatformInfoScriptingInterface::getInstance());
     scriptEngine->registerGlobalObject("Rates", new RatesScriptingInterface(this));
 
-    // hook our avatar and avatar hash map object into this script engine
-    getMyAvatar()->registerProperties(scriptEngine);
-
     scriptEngine->registerGlobalObject("AvatarList", DependencyManager::get<AvatarManager>().data());
 
     scriptEngine->registerGlobalObject("Camera", &_myCamera);
