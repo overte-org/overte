@@ -42,7 +42,6 @@ void ScriptEngineQtScript::registerCustomType(int type,
     CustomMarshal& customType = _customTypes.insert(type, CustomMarshal()).value();
     customType.demarshalFunc = demarshalFunc;
     customType.marshalFunc = marshalFunc;
-    qDebug() << "registerCustomType: " << QMetaType(type).name() << " type: " << type << " map size: " << _customTypes.size();
 }
 
 Q_DECLARE_METATYPE(ScriptValue);

@@ -19,6 +19,13 @@ STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
     scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<AntialiasingConfig::Mode>, scriptValueToEnumClass<AntialiasingConfig::Mode>, "Mode");
 });
 
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptEngine->registerEnum("Render.RenderMethod",QMetaEnum::fromType<RenderScriptingInterface::RenderMethod>());
+    scriptEngine->registerEnum("AntialiasingMode",QMetaEnum::fromType<AntialiasingConfig::Mode>());
+});
+
 RenderScriptingInterface* RenderScriptingInterface::getInstance() {
     static RenderScriptingInterface sharedInstance;
     return &sharedInstance;

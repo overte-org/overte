@@ -21,6 +21,13 @@ STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
     scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<PerformanceScriptingInterface::RefreshRateProfile>, scriptValueToEnumClass<PerformanceScriptingInterface::RefreshRateProfile>, "RefreshRateProfile");
 });
 
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptEngine->registerEnum("Performance.PerformancePreset",QMetaEnum::fromType<PerformanceScriptingInterface::PerformancePreset>());
+    scriptEngine->registerEnum("Performance.RefreshRateProfile",QMetaEnum::fromType<PerformanceScriptingInterface::RefreshRateProfile>());
+});
+
 std::once_flag PerformanceScriptingInterface::registry_flag;
 
 PerformanceScriptingInterface::PerformanceScriptingInterface() {
