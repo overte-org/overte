@@ -134,7 +134,6 @@ void ScriptObjectQtProxy::investigate() {
     if (!qobject) return;
 
     const QMetaObject* metaObject = qobject->metaObject();
-    qDebug() << "ScriptObjectQtProxy::investigate: " << metaObject->className();
 
     // discover properties
     int startIdx = _wrapOptions & ScriptEngine::ExcludeSuperClassProperties ? metaObject->propertyOffset() : 0;
