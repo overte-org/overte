@@ -148,14 +148,14 @@ public slots:
     /*@jsdoc
      * Gets the active anti-aliasing mode.
      * @function Render.getAntialiasingMode
-     * @returns {integer} the active anti-aliasing mode.
+     * @returns {AntialiasingMode} the active anti-aliasing mode.
      */
     AntialiasingConfig::Mode getAntialiasingMode() const;
 
     /*@jsdoc
      * Sets the active anti-aliasing mode.
      * @function Render.setAntialiasingMode
-     * @param {integer} the active anti-aliasing mode.
+     * @param {AntialiasingMode} the active anti-aliasing mode.
      */
     void setAntialiasingMode(AntialiasingConfig::Mode mode);
 
