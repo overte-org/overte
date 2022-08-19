@@ -19,11 +19,11 @@
 #include "DiscoverabilityManager.h"
 #include "ResourceCache.h"
 
-STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
-    scriptRegisterMetaType(scriptEngine, DownloadInfoResultToScriptValue, DownloadInfoResultFromScriptValue);
-});
+    scriptRegisterMetaType<DownloadInfoResult, DownloadInfoResultToScriptValue, DownloadInfoResultFromScriptValue>(scriptEngine);
+}));
 
 AccountServicesScriptingInterface::AccountServicesScriptingInterface() {
     auto accountManager = DependencyManager::get<AccountManager>();

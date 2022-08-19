@@ -17,11 +17,11 @@
 #include <ScriptValue.h>
 #include <ScriptEngineCast.h>
 
-STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager) {
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager) {
     auto scriptEngine = manager->engine().get();
 
-    scriptRegisterMetaType(scriptEngine, audioEffectOptionsToScriptValue, audioEffectOptionsFromScriptValue);
-});
+    scriptRegisterMetaType<AudioEffectOptions, audioEffectOptionsToScriptValue, audioEffectOptionsFromScriptValue>(scriptEngine);
+}));
 
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager) {
     auto scriptEngine = manager->engine().get();

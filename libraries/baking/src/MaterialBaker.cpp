@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gondelman on 2/26/2019
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -30,12 +31,12 @@ std::function<QThread*()> MaterialBaker::_getNextOvenWorkerThreadOperator;
 static int materialNum = 0;
 
 MaterialBaker::MaterialBaker(const QString& materialData, bool isURL, const QString& bakedOutputDir, QUrl destinationPath) :
-    _scriptEngine(newScriptEngine()),
     _materialData(materialData),
     _isURL(isURL),
     _destinationPath(destinationPath),
     _bakedOutputDir(bakedOutputDir),
-    _textureOutputDir(bakedOutputDir + "/materialTextures/" + QString::number(materialNum++))
+    _textureOutputDir(bakedOutputDir + "/materialTextures/" + QString::number(materialNum++)),
+    _scriptEngine(newScriptEngine())
 {
 }
 

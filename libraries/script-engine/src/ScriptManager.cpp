@@ -233,11 +233,11 @@ int ScriptManager::processLevelMaxRetries { ScriptRequest::MAX_RETRIES };
 ScriptManager::ScriptManager(Context context, const QString& scriptContents, const QString& fileNameString) :
     QObject(),
     _context(context),
+    _engine(newScriptEngine(this)),
     _scriptContents(scriptContents),
     _timerFunctionMap(),
     _fileNameString(fileNameString),
-    _assetScriptingInterface(new AssetScriptingInterface(this)),
-    _engine(newScriptEngine(this))
+    _assetScriptingInterface(new AssetScriptingInterface(this))
 {
     switch (_context) {
         case Context::CLIENT_SCRIPT:
@@ -647,17 +647,17 @@ void ScriptManager::initMetaTypes() {
     scriptRegisterSequenceMetaType<QVector<glm::quat>>(scriptEngine);
     scriptRegisterSequenceMetaType<QVector<QString>>(scriptEngine);
     
-    scriptRegisterMetaType(scriptEngine, animationDetailsToScriptValue, animationDetailsFromScriptValue);
-    scriptRegisterMetaType(scriptEngine, webSocketToScriptValue, webSocketFromScriptValue);
-    scriptRegisterMetaType(scriptEngine, qWSCloseCodeToScriptValue, qWSCloseCodeFromScriptValue);
-    scriptRegisterMetaType(scriptEngine, wscReadyStateToScriptValue, wscReadyStateFromScriptValue);
+    scriptRegisterMetaType<AnimationDetails, animationDetailsToScriptValue, animationDetailsFromScriptValue>(scriptEngine);
+    scriptRegisterMetaType<WebSocketClass*, webSocketToScriptValue, webSocketFromScriptValue>(scriptEngine);
+    scriptRegisterMetaType<QWebSocketProtocol::CloseCode, qWSCloseCodeToScriptValue, qWSCloseCodeFromScriptValue>(scriptEngine);
+    scriptRegisterMetaType<WebSocketClass::ReadyState, wscReadyStateToScriptValue, wscReadyStateFromScriptValue>(scriptEngine);
 
-    scriptRegisterMetaType(scriptEngine, externalResourceBucketToScriptValue, externalResourceBucketFromScriptValue);
+    scriptRegisterMetaType<ExternalResource::Bucket, externalResourceBucketToScriptValue, externalResourceBucketFromScriptValue>(scriptEngine);
 
-    scriptRegisterMetaType(scriptEngine, scriptableResourceToScriptValue, scriptableResourceFromScriptValue);
+    scriptRegisterMetaType<ScriptableResourceRawPtr, scriptableResourceToScriptValue, scriptableResourceFromScriptValue>(scriptEngine);
 
-    scriptRegisterMetaType(scriptEngine, meshToScriptValue, meshFromScriptValue);
-    scriptRegisterMetaType(scriptEngine, meshesToScriptValue, meshesFromScriptValue);
+    scriptRegisterMetaType<MeshProxy*, meshToScriptValue, meshFromScriptValue>(scriptEngine);
+    scriptRegisterMetaType<MeshProxyList, meshesToScriptValue, meshesFromScriptValue>(scriptEngine);
 }
 
 void ScriptManager::init() {

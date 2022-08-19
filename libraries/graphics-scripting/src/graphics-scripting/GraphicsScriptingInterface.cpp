@@ -326,7 +326,7 @@ namespace {
 namespace scriptable {
     template <typename T> int registerQPointerMetaType(ScriptEngine* engine) {
         scriptRegisterSequenceMetaType<QVector<QPointer<T>>>(engine);
-        return scriptRegisterMetaType<QPointer<T>>(
+        return scriptRegisterMetaTypeWithLambdas<QPointer<T>>(
             engine,
             [](ScriptEngine* engine, const QPointer<T>& object) -> ScriptValue {
                 if (!object) {
@@ -668,7 +668,7 @@ namespace scriptable {
 
     template <typename T> int registerDebugEnum(ScriptEngine* engine, const DebugEnums<T>& debugEnums) {
         static const DebugEnums<T>& instance = debugEnums;
-        return scriptRegisterMetaType<T>(
+        return scriptRegisterMetaTypeWithLambdas<T>(
             engine,
             [](ScriptEngine* engine, const T& topology) -> ScriptValue {
                 return engine->newValue(instance.value(topology));
@@ -678,6 +678,16 @@ namespace scriptable {
                 return true;
             }
         );
+        //return scriptRegisterMetaType<T>(
+        //    engine,
+        //    [](ScriptEngine* engine, const T& topology) -> ScriptValue {
+        //        return engine->newValue(instance.value(topology));
+        //    },
+        //    [](const ScriptValue& value, T& topology) -> bool {
+        //        topology = instance.key(value.toString());
+        //        return true;
+        //    }
+        //);
     }
 }
 
@@ -693,10 +703,10 @@ void GraphicsScriptingInterface::registerMetaTypes(ScriptEngine* engine) {
     scriptable::registerDebugEnum<gpu::Semantic>(engine, gpu::SEMANTICS);
     scriptable::registerDebugEnum<gpu::Dimension>(engine, gpu::DIMENSIONS);
 
-    scriptRegisterMetaType(engine, scriptable::scriptableMaterialToScriptValue, scriptable::scriptableMaterialFromScriptValue);
-    scriptRegisterMetaType(engine, scriptable::scriptableMaterialLayerToScriptValue, scriptable::scriptableMaterialLayerFromScriptValue);
-    scriptRegisterMetaType(engine, scriptable::qVectorScriptableMaterialLayerToScriptValue, scriptable::qVectorScriptableMaterialLayerFromScriptValue);
-    scriptRegisterMetaType(engine, scriptable::multiMaterialMapToScriptValue, scriptable::multiMaterialMapFromScriptValue);
+    scriptRegisterMetaType<scriptable::ScriptableMaterial, scriptable::scriptableMaterialToScriptValue, scriptable::scriptableMaterialFromScriptValue>(engine);
+    scriptRegisterMetaType<scriptable::ScriptableMaterialLayer, scriptable::scriptableMaterialLayerToScriptValue, scriptable::scriptableMaterialLayerFromScriptValue>(engine);
+    scriptRegisterMetaType<QVector< scriptable::ScriptableMaterialLayer >, scriptable::qVectorScriptableMaterialLayerToScriptValue, scriptable::qVectorScriptableMaterialLayerFromScriptValue>(engine);
+    scriptRegisterMetaType<scriptable::MultiMaterialMap, scriptable::multiMaterialMapToScriptValue, scriptable::multiMaterialMapFromScriptValue>(engine);
 
     Q_UNUSED(metaTypeIds);
 }
