@@ -17,13 +17,13 @@
 #include <ScriptEngineCast.h>
 #include <ScriptManager.h>
 
-STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
-    scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<RefreshRateManager::RefreshRateRegime>, scriptValueToEnumClass<RefreshRateManager::RefreshRateRegime>, "RefreshRateRegime");
+    scriptRegisterMetaType<RefreshRateManager::RefreshRateRegime, scriptValueFromEnumClass<RefreshRateManager::RefreshRateRegime>, scriptValueToEnumClass<RefreshRateManager::RefreshRateRegime> >(scriptEngine, "RefreshRateRegime");
     
-    scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<RefreshRateManager::UXMode>, scriptValueToEnumClass<RefreshRateManager::UXMode>, "UXMode");
-});
+    scriptRegisterMetaType<RefreshRateManager::UXMode, scriptValueFromEnumClass<RefreshRateManager::UXMode>, scriptValueToEnumClass<RefreshRateManager::UXMode> >(scriptEngine, "UXMode");
+}));
 
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();

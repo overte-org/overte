@@ -45,7 +45,7 @@ MenuItemProperties::MenuItemProperties(const QString& menuName, const QString& m
 }
 
 void registerMenuItemProperties(ScriptEngine* engine) {
-    scriptRegisterMetaType(engine, menuItemPropertiesToScriptValue, menuItemPropertiesFromScriptValue, "MenuItemProperties");
+    scriptRegisterMetaType<MenuItemProperties, menuItemPropertiesToScriptValue, menuItemPropertiesFromScriptValue>(engine, "MenuItemProperties");
 }
 
 ScriptValue menuItemPropertiesToScriptValue(ScriptEngine* engine, const MenuItemProperties& properties) {
