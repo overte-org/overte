@@ -22,10 +22,10 @@
 #include "WheelEvent.h"
 
 void registerEventTypes(ScriptEngine* engine) {
-    scriptRegisterMetaType(engine, KeyEvent::toScriptValue, KeyEvent::fromScriptValue, "KeyEvent");
-    scriptRegisterMetaType(engine, MouseEvent::toScriptValue, MouseEvent::fromScriptValue, "MouseEvent");
-    scriptRegisterMetaType(engine, PointerEvent::toScriptValue, PointerEvent::fromScriptValue, "PointerEvent");
-    scriptRegisterMetaType(engine, TouchEvent::toScriptValue, TouchEvent::fromScriptValue, "TouchEvent");
-    scriptRegisterMetaType(engine, WheelEvent::toScriptValue, WheelEvent::fromScriptValue, "WheelEvent");
-    scriptRegisterMetaType(engine, SpatialEvent::toScriptValue, SpatialEvent::fromScriptValue, "SpatialEvent");
+    scriptRegisterMetaType<KeyEvent, KeyEvent::toScriptValue, KeyEvent::fromScriptValue>(engine, "KeyEvent");
+    scriptRegisterMetaType<MouseEvent, MouseEvent::toScriptValue, MouseEvent::fromScriptValue>(engine, "MouseEvent");
+    scriptRegisterMetaType<PointerEvent, PointerEvent::toScriptValue, PointerEvent::fromScriptValue>(engine, "PointerEvent");
+    scriptRegisterMetaType<TouchEvent, TouchEvent::toScriptValue, TouchEvent::fromScriptValue>(engine, "TouchEvent");
+    scriptRegisterMetaType<WheelEvent, WheelEvent::toScriptValue, WheelEvent::fromScriptValue>(engine, "WheelEvent");
+    scriptRegisterMetaType<SpatialEvent, SpatialEvent::toScriptValue, SpatialEvent::fromScriptValue>(engine, "SpatialEvent");
 }

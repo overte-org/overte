@@ -186,13 +186,13 @@ static bool JsonArrayFromScriptValue(const ScriptValue& src, QJsonArray& dest) {
 void ScriptEngineQtScript::registerSystemTypes() {
     qScriptRegisterMetaType(this, ScriptValueToQScriptValue, ScriptValueFromQScriptValue);
 
-    scriptRegisterMetaType(this, StringListToScriptValue, StringListFromScriptValue);
-    scriptRegisterMetaType(this, VariantListToScriptValue, VariantListFromScriptValue);
-    scriptRegisterMetaType(this, VariantMapToScriptValue, VariantMapFromScriptValue);
-    scriptRegisterMetaType(this, VariantHashToScriptValue, VariantHashFromScriptValue);
-    scriptRegisterMetaType(this, JsonValueToScriptValue, JsonValueFromScriptValue);
-    scriptRegisterMetaType(this, JsonObjectToScriptValue, JsonObjectFromScriptValue);
-    scriptRegisterMetaType(this, JsonArrayToScriptValue, JsonArrayFromScriptValue);
+    scriptRegisterMetaType<QStringList, StringListToScriptValue, StringListFromScriptValue>(this);
+    scriptRegisterMetaType<QVariantList, VariantListToScriptValue, VariantListFromScriptValue>(this);
+    scriptRegisterMetaType<QVariantMap, VariantMapToScriptValue, VariantMapFromScriptValue>(this);
+    scriptRegisterMetaType<QVariantHash, VariantHashToScriptValue, VariantHashFromScriptValue>(this);
+    scriptRegisterMetaType<QJsonValue, JsonValueToScriptValue, JsonValueFromScriptValue>(this);
+    scriptRegisterMetaType<QJsonObject, JsonObjectToScriptValue, JsonObjectFromScriptValue>(this);
+    scriptRegisterMetaType<QJsonArray, JsonArrayToScriptValue, JsonArrayFromScriptValue>(this);
 }
 
 bool ScriptEngineQtScript::castValueToVariant(const QScriptValue& val, QVariant& dest, int destTypeId) {

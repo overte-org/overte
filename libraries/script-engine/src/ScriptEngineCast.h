@@ -66,8 +66,39 @@ inline QVariant scriptvalue_cast<QVariant>(const ScriptValue& value) {
     return value.toVariant();
 }
 
+//#define MARSHAL_MACRO(FUNCTION, TYPE) +[FUNCTION](ScriptEngine* engine, const void* p) -> ScriptValue { FUNCTION(engine, *(static_cast<const TYPE*>(p)) ); } 
+
+template <typename T, ScriptValue (*f)(ScriptEngine*, const T&)>
+ScriptValue toScriptValueWrapper(ScriptEngine* engine, const void *p) {
+    Q_ASSERT(p != NULL);
+    auto &src = *(reinterpret_cast<const T*>(p));
+    return f(engine, src);
+}
+
+template <typename T, bool (*f)(const ScriptValue&, T&)>
+bool fromScriptValueWrapper(const ScriptValue& val, void* p) {
+    Q_ASSERT(p != NULL);
+    auto &dest = *(reinterpret_cast<T*>(p));
+    return f(val, dest);
+}
+
+template <typename T, ScriptValue (*toScriptValue)(ScriptEngine*, const T&), bool (*fromScriptValue)(const ScriptValue&, T&)>
+int scriptRegisterMetaType(ScriptEngine* eng, const char* name = "",
+                           T* = 0)
+{
+    int id;
+    if (strlen(name) > 0) { // make sure it's registered
+        id = qRegisterMetaType<T>(name);
+    } else {
+        id = qRegisterMetaType<T>();
+    }
+    eng->registerCustomType(id, toScriptValueWrapper<T, toScriptValue>,
+                            fromScriptValueWrapper<T, fromScriptValue>);
+    return id;
+}
+
 template <typename T>
-int scriptRegisterMetaType(ScriptEngine* eng,
+int scriptRegisterMetaTypeWithLambdas(ScriptEngine* eng,
                            ScriptValue (*toScriptValue)(ScriptEngine*, const T& t),
                            bool (*fromScriptValue)(const ScriptValue&, T& t), const char* name = "",
                            T* = 0)
@@ -76,12 +107,7 @@ int scriptRegisterMetaType(ScriptEngine* eng,
     if (strlen(name) > 0) { // make sure it's registered
         id = qRegisterMetaType<T>(name);
     } else {
-        //if (!QMetaType::fromType<T>().name().isNull()) {
-            //qDebug() << "scriptRegisterMetaType: " << QMetaType::fromType<T>().name();
-            //id = qRegisterMetaType<T>(QMetaType::fromType<T>().name());
-        //}else{
-            id = qRegisterMetaType<T>();
-        //}
+        id = qRegisterMetaType<T>();
     }
     eng->registerCustomType(id, reinterpret_cast<ScriptEngine::MarshalFunction>(toScriptValue),
                             reinterpret_cast<ScriptEngine::DemarshalFunction>(fromScriptValue));
@@ -148,7 +174,7 @@ bool scriptValueToEnumClass(const ScriptValue& value, T& enumValue) {
 template <typename T>
 int scriptRegisterSequenceMetaType(ScriptEngine* engine,
                                    T* = 0) {
-    return scriptRegisterMetaType<T>(engine, scriptValueFromSequence, scriptValueToSequence);
+    return scriptRegisterMetaType<T, scriptValueFromSequence, scriptValueToSequence>(engine);
 }
 
 #endif // hifi_ScriptEngineCast_h

@@ -4,6 +4,7 @@
 //
 //  Created by Seth Alves on 2017-1-27.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -28,8 +29,8 @@ ModelScriptingInterface::ModelScriptingInterface(QObject* parent) : QObject(pare
     _modelScriptEngine = qobject_cast<ScriptManager*>(parent)->engine();
 
     scriptRegisterSequenceMetaType<QList<MeshProxy*>>(_modelScriptEngine.get());
-    scriptRegisterMetaType(_modelScriptEngine.get(), meshFaceToScriptValue, meshFaceFromScriptValue);
-    scriptRegisterMetaType(_modelScriptEngine.get(), qVectorMeshFaceToScriptValue, qVectorMeshFaceFromScriptValue);
+    scriptRegisterMetaType<MeshFace, meshFaceToScriptValue, meshFaceFromScriptValue>(_modelScriptEngine.get());
+    scriptRegisterMetaType<QVector< MeshFace >, qVectorMeshFaceToScriptValue, qVectorMeshFaceFromScriptValue>(_modelScriptEngine.get());
 }
 
 QString ModelScriptingInterface::meshToOBJ(MeshProxyList in) {

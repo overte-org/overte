@@ -19,7 +19,7 @@
 #include "ScriptValue.h"
 
 void registerMIDIMetaTypes(ScriptEngine* engine) {
-    scriptRegisterMetaType(engine, midiEventToScriptValue, midiEventFromScriptValue, "MIDIEvent");
+    scriptRegisterMetaType<MIDIEvent, midiEventToScriptValue, midiEventFromScriptValue>(engine, "MIDIEvent");
 }
 
 const QString MIDI_DELTA_TIME_PROP_NAME = "deltaTime";
