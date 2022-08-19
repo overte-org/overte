@@ -41,11 +41,11 @@ bool inputControllerFromScriptValue(const ScriptValue& object, controller::Input
     return true;
 }
 
-STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager) {
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager) {
     auto scriptEngine = manager->engine().get();
 
-    scriptRegisterMetaType(scriptEngine, inputControllerToScriptValue, inputControllerFromScriptValue);
-});
+    scriptRegisterMetaType<controller::InputController*, inputControllerToScriptValue, inputControllerFromScriptValue>(scriptEngine);
+}));
 
 static QRegularExpression SANITIZE_NAME_EXPRESSION{ "[\\(\\)\\.\\s]" };
 

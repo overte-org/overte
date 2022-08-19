@@ -26,11 +26,11 @@ bool avatarDataFromScriptValue(const ScriptValue& object, ScriptAvatarData*& out
     return false;
 }
 
-STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager) {
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager) {
     auto scriptEngine = manager->engine().get();
 
-    scriptRegisterMetaType(scriptEngine, avatarDataToScriptValue, avatarDataFromScriptValue);
-});
+    scriptRegisterMetaType<ScriptAvatarData*, avatarDataToScriptValue, avatarDataFromScriptValue>(scriptEngine);
+}));
 
 ScriptAvatarData::ScriptAvatarData(AvatarSharedPointer avatarData) :
     _avatarData(avatarData)

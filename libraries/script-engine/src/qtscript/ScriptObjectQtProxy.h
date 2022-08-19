@@ -63,7 +63,7 @@ private:  // implementation
 
 public:  // construction
     inline ScriptObjectQtProxy(ScriptEngineQtScript* engine, QObject* object, bool ownsObject, const ScriptEngine::QObjectWrapOptions& options) :
-        QScriptClass(engine), _engine(engine), _object(object), _wrapOptions(options), _ownsObject(ownsObject) {
+        QScriptClass(engine), _engine(engine), _wrapOptions(options), _ownsObject(ownsObject), _object(object) {
         investigate();
     }
     virtual ~ScriptObjectQtProxy();
@@ -144,7 +144,7 @@ public:  // construction
     inline ScriptMethodQtProxy(ScriptEngineQtScript* engine, QObject* object, QScriptValue lifetime,
                                const QList<QMetaMethod>& metas, int numMaxParms) :
         QScriptClass(engine),
-        _engine(engine), _object(object), _objectLifetime(lifetime), _metas(metas), _numMaxParms(numMaxParms) {}
+        _numMaxParms(numMaxParms), _engine(engine), _object(object), _objectLifetime(lifetime), _metas(metas) {}
 
 public:  // QScriptClass implementation
     virtual QString name() const override { return fullName(); }
@@ -187,7 +187,7 @@ public:  // construction
         _engine(engine), _object(object), _objectLifetime(lifetime), _meta(meta), _metaCallId(discoverMetaCallIdx()) {}
 
 private:  // implementation
-    virtual int qt_metacall(QMetaObject::Call call, int id, void** arguments);
+    virtual int qt_metacall(QMetaObject::Call call, int id, void** arguments) override;
     int discoverMetaCallIdx();
     ConnectionList::iterator findConnection(QScriptValue thisObject, QScriptValue callback);
     QString fullName() const;

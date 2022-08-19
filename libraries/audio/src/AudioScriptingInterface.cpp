@@ -35,8 +35,8 @@ STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
 });
 
 void registerAudioMetaTypes(ScriptEngine* engine) {
-    scriptRegisterMetaType(engine, injectorOptionsToScriptValue, injectorOptionsFromScriptValue);
-    scriptRegisterMetaType(engine, soundSharedPointerToScriptValue, soundSharedPointerFromScriptValue);
+    scriptRegisterMetaType<AudioInjectorOptions, injectorOptionsToScriptValue, injectorOptionsFromScriptValue>(engine);
+    scriptRegisterMetaType<SharedSoundPointer, soundSharedPointerToScriptValue, soundSharedPointerFromScriptValue>(engine);
 }
 
 
