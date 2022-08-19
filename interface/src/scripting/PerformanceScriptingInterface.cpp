@@ -14,12 +14,12 @@
 
 #include "../Application.h"
 
-STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
-    scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<PerformanceScriptingInterface::PerformancePreset>, scriptValueToEnumClass<PerformanceScriptingInterface::PerformancePreset>, "PerformancePreset");
-    scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<PerformanceScriptingInterface::RefreshRateProfile>, scriptValueToEnumClass<PerformanceScriptingInterface::RefreshRateProfile>, "RefreshRateProfile");
-});
+    scriptRegisterMetaType<PerformanceScriptingInterface::PerformancePreset, scriptValueFromEnumClass<PerformanceScriptingInterface::PerformancePreset>, scriptValueToEnumClass<PerformanceScriptingInterface::PerformancePreset> >(scriptEngine, "PerformancePreset");
+    scriptRegisterMetaType<PerformanceScriptingInterface::RefreshRateProfile, scriptValueFromEnumClass<PerformanceScriptingInterface::RefreshRateProfile>, scriptValueToEnumClass<PerformanceScriptingInterface::RefreshRateProfile> >(scriptEngine, "RefreshRateProfile");
+}));
 
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();

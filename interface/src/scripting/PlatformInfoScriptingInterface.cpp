@@ -21,11 +21,11 @@
 #include <sstream>
 #endif
 
-STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
-    scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<PlatformInfoScriptingInterface::PlatformTier>, scriptValueToEnumClass<PlatformInfoScriptingInterface::PlatformTier>, "PlatformTier");
-});
+    scriptRegisterMetaType<PlatformInfoScriptingInterface::PlatformTier, scriptValueFromEnumClass<PlatformInfoScriptingInterface::PlatformTier>, scriptValueToEnumClass<PlatformInfoScriptingInterface::PlatformTier> >(scriptEngine, "PlatformTier");
+}));
 
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();

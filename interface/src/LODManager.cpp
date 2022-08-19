@@ -22,11 +22,11 @@
 #include "ui/DialogsManager.h"
 #include "InterfaceLogging.h"
 
-STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
-    scriptRegisterMetaType(scriptEngine, worldDetailQualityToScriptValue, worldDetailQualityFromScriptValue);
-});
+    scriptRegisterMetaType<WorldDetailQuality, worldDetailQualityToScriptValue, worldDetailQualityFromScriptValue>(scriptEngine);
+}));
 
 const QString LOD_SETTINGS_PREFIX { "lodManager/" };
 

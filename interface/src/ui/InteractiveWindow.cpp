@@ -101,7 +101,7 @@ static void dockWidgetDeleter(DockWidget* dockWidget) {
 }
 
 void registerInteractiveWindowMetaType(ScriptEngine* engine) {
-    scriptRegisterMetaType(engine, interactiveWindowPointerToScriptValue, interactiveWindowPointerFromScriptValue);
+    scriptRegisterMetaType<InteractiveWindowPointer, interactiveWindowPointerToScriptValue, interactiveWindowPointerFromScriptValue>(engine);
 }
 
 ScriptValue interactiveWindowPointerToScriptValue(ScriptEngine* engine, const InteractiveWindowPointer& in) {

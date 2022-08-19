@@ -43,12 +43,12 @@ Q_LOGGING_CATEGORY(trace_render_overlays, "trace.render.overlays")
 std::unordered_map<QString, QString> Overlays::_entityToOverlayTypes;
 std::unordered_map<QString, QString> Overlays::_overlayToEntityTypes;
 
-STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
-    scriptRegisterMetaType(scriptEngine, RayToOverlayIntersectionResultToScriptValue,
-                            RayToOverlayIntersectionResultFromScriptValue);
-});
+    scriptRegisterMetaType<RayToOverlayIntersectionResult, RayToOverlayIntersectionResultToScriptValue,
+                            RayToOverlayIntersectionResultFromScriptValue>(scriptEngine);
+}));
 
 Overlays::Overlays() : _scriptEngine(newScriptEngine()) {
     ADD_TYPE_MAP(Box, cube);

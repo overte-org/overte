@@ -77,6 +77,10 @@ QScriptValue ScriptObjectQtProxy::newQObject(ScriptEngineQtScript* engine, QObje
         case ScriptEngine::AutoOwnership:
             ownsObject = !object->parent();
             break;
+        default:
+            ownsObject = false;
+            qCritical() << "Wrong ScriptEngine::ValueOwnership value: " << ownership;
+            break;
     }
 
     // create the wrapper
@@ -312,7 +316,6 @@ QScriptValue ScriptObjectQtProxy::property(const QScriptValue& object, const QSc
             int propId = id & ~TYPE_MASK;
             PropertyDefMap::const_iterator lookup = _props.find(propId);
             if (lookup == _props.cend()) return QScriptValue();
-            const PropertyDef& propDef = lookup.value();
 
             QMetaProperty prop = metaObject->property(propId);
             ScriptValue scriptThis = ScriptValue(new ScriptValueQtWrapper(_engine, object));

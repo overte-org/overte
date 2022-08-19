@@ -31,13 +31,12 @@
 
 #include "SettingHandle.h"
 
-STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
-    scriptRegisterMetaType(scriptEngine, wrapperToScriptValue<TabletProxy>, wrapperFromScriptValue<TabletProxy>);
-    scriptRegisterMetaType(scriptEngine,
-                            wrapperToScriptValue<TabletButtonProxy>, wrapperFromScriptValue<TabletButtonProxy>);
-});
+    scriptRegisterMetaType<TabletProxy*, wrapperToScriptValue<TabletProxy>, wrapperFromScriptValue<TabletProxy> >(scriptEngine);
+    scriptRegisterMetaType<TabletButtonProxy*, wrapperToScriptValue<TabletButtonProxy>, wrapperFromScriptValue<TabletButtonProxy> >(scriptEngine);
+}));
 
 // FIXME move to global app properties
 const QString SYSTEM_TOOLBAR = "com.highfidelity.interface.toolbar.system";
