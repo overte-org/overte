@@ -4,6 +4,7 @@
 //
 //  Created by Anthony Thibault on 4/15/16.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Utilities for working with QtScriptValues
 //
@@ -49,35 +50,35 @@ bool isListOfStrings(const ScriptValue& arg) {
 }
 
 void registerMetaTypes(ScriptEngine* engine) {
-    scriptRegisterMetaType(engine, vec2ToScriptValue, vec2FromScriptValue);
-    scriptRegisterMetaType(engine, vec3ToScriptValue, vec3FromScriptValue);
-    scriptRegisterMetaType(engine, u8vec3ToScriptValue, u8vec3FromScriptValue);
-    scriptRegisterMetaType(engine, vec4toScriptValue, vec4FromScriptValue);
-    scriptRegisterMetaType(engine, quatToScriptValue, quatFromScriptValue);
-    scriptRegisterMetaType(engine, mat4toScriptValue, mat4FromScriptValue);
+    scriptRegisterMetaType<glm::vec2, vec2ToScriptValue, vec2FromScriptValue>(engine);
+    scriptRegisterMetaType<glm::vec3, vec3ToScriptValue, vec3FromScriptValue>(engine);
+    scriptRegisterMetaType<glm::u8vec3, u8vec3ToScriptValue, u8vec3FromScriptValue>(engine);
+    scriptRegisterMetaType<glm::vec4, vec4toScriptValue, vec4FromScriptValue>(engine);
+    scriptRegisterMetaType<glm::quat, quatToScriptValue, quatFromScriptValue>(engine);
+    scriptRegisterMetaType<glm::mat4, mat4toScriptValue, mat4FromScriptValue>(engine);
 
-    scriptRegisterMetaType(engine, qVectorVec3ToScriptValue, qVectorVec3FromScriptValue);
-    scriptRegisterMetaType(engine, qVectorQuatToScriptValue, qVectorQuatFromScriptValue);
-    scriptRegisterMetaType(engine, qVectorBoolToScriptValue, qVectorBoolFromScriptValue);
-    scriptRegisterMetaType(engine, qVectorFloatToScriptValue, qVectorFloatFromScriptValue);
-    scriptRegisterMetaType(engine, qVectorIntToScriptValue, qVectorIntFromScriptValue);
-    scriptRegisterMetaType(engine, qVectorQUuidToScriptValue, qVectorQUuidFromScriptValue);
+    scriptRegisterMetaType<QVector< glm::vec3 >, qVectorVec3ToScriptValue, qVectorVec3FromScriptValue>(engine);
+    scriptRegisterMetaType<QVector< glm::quat >, qVectorQuatToScriptValue, qVectorQuatFromScriptValue>(engine);
+    scriptRegisterMetaType<QVector< bool >, qVectorBoolToScriptValue, qVectorBoolFromScriptValue>(engine);
+    scriptRegisterMetaType<QVector< float >, qVectorFloatToScriptValue, qVectorFloatFromScriptValue>(engine);
+    scriptRegisterMetaType<QVector< uint32_t >, qVectorIntToScriptValue, qVectorIntFromScriptValue>(engine);
+    scriptRegisterMetaType<QVector< QUuid >, qVectorQUuidToScriptValue, qVectorQUuidFromScriptValue>(engine);
 
-    scriptRegisterMetaType(engine, qSizeFToScriptValue, qSizeFFromScriptValue);
-    scriptRegisterMetaType(engine, qRectToScriptValue, qRectFromScriptValue);
-    scriptRegisterMetaType(engine, qURLToScriptValue, qURLFromScriptValue);
-    scriptRegisterMetaType(engine, qColorToScriptValue, qColorFromScriptValue);
+    scriptRegisterMetaType<QSizeF, qSizeFToScriptValue, qSizeFFromScriptValue>(engine);
+    scriptRegisterMetaType<QRect, qRectToScriptValue, qRectFromScriptValue>(engine);
+    scriptRegisterMetaType<QUrl, qURLToScriptValue, qURLFromScriptValue>(engine);
+    scriptRegisterMetaType<QColor, qColorToScriptValue, qColorFromScriptValue>(engine);
 
-    scriptRegisterMetaType(engine, pickRayToScriptValue, pickRayFromScriptValue);
-    scriptRegisterMetaType(engine, collisionToScriptValue, collisionFromScriptValue);
-    scriptRegisterMetaType(engine, quuidToScriptValue, quuidFromScriptValue);
-    scriptRegisterMetaType(engine, aaCubeToScriptValue, aaCubeFromScriptValue);
+    scriptRegisterMetaType<PickRay, pickRayToScriptValue, pickRayFromScriptValue>(engine);
+    scriptRegisterMetaType<Collision, collisionToScriptValue, collisionFromScriptValue>(engine);
+    scriptRegisterMetaType<QUuid, quuidToScriptValue, quuidFromScriptValue>(engine);
+    scriptRegisterMetaType<AACube, aaCubeToScriptValue, aaCubeFromScriptValue>(engine);
 
-    scriptRegisterMetaType(engine, stencilMaskModeToScriptValue, stencilMaskModeFromScriptValue);
+    scriptRegisterMetaType<StencilMaskMode, stencilMaskModeToScriptValue, stencilMaskModeFromScriptValue>(engine);
 
-    scriptRegisterMetaType(engine, promiseToScriptValue, promiseFromScriptValue);
+    scriptRegisterMetaType<std::shared_ptr< MiniPromise >, promiseToScriptValue, promiseFromScriptValue>(engine);
 
-    scriptRegisterSequenceMetaType<QVector<unsigned int>>(engine);
+    scriptRegisterSequenceMetaType<QVector<unsigned int> >(engine);
 }
 
 ScriptValue vec2ToScriptValue(ScriptEngine* engine, const glm::vec2& vec2) {

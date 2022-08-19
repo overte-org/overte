@@ -17,8 +17,8 @@
 #include "ScriptEngineCast.h"
 #include "ScriptManager.h"
 
-STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
-    scriptRegisterMetaType(scriptEngine, scriptValueFromEnumClass<ScriptableResource::State>, scriptValueToEnumClass<ScriptableResource::State>, "State");
-});
+    scriptRegisterMetaType<ScriptableResource::State, scriptValueFromEnumClass<ScriptableResource::State>, scriptValueToEnumClass<ScriptableResource::State> >(scriptEngine, "State");
+}));
