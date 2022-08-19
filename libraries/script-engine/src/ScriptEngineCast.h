@@ -97,6 +97,25 @@ int scriptRegisterMetaType(ScriptEngine* eng, const char* name = "",
     return id;
 }
 
+// This can be safely removed and replaced with scriptRegisterMetaType once we use C++20 everywhere
+template <typename T>
+int scriptRegisterMetaTypeWithLambdas(ScriptEngine* eng,
+                           ScriptValue (*toScriptValue)(ScriptEngine*, const void *),
+                           bool (*fromScriptValue)(const ScriptValue&, void *), const char* name = "",
+                           T* = 0)
+{
+    int id;
+    if (strlen(name) > 0) { // make sure it's registered
+        id = qRegisterMetaType<T>(name);
+    } else {
+        id = qRegisterMetaType<T>();
+    }
+    eng->registerCustomType(id, toScriptValue,
+                            fromScriptValue);
+    return id;
+}
+
+/*
 template <typename T>
 int scriptRegisterMetaTypeWithLambdas(ScriptEngine* eng,
                            ScriptValue (*toScriptValue)(ScriptEngine*, const T& t),
@@ -112,7 +131,7 @@ int scriptRegisterMetaTypeWithLambdas(ScriptEngine* eng,
     eng->registerCustomType(id, reinterpret_cast<ScriptEngine::MarshalFunction>(toScriptValue),
                             reinterpret_cast<ScriptEngine::DemarshalFunction>(fromScriptValue));
     return id;
-}
+}*/
 
 template <class Container>
 ScriptValue scriptValueFromSequence(ScriptEngine* eng, const Container& cont) {
