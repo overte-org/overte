@@ -453,12 +453,12 @@ bool handFromScriptValue(const ScriptValue& object, controller::Hand& hand) {
 void UserInputMapper::registerControllerTypes(ScriptEngine* engine) {
     scriptRegisterSequenceMetaType<QVector<Action> >(engine);
     scriptRegisterSequenceMetaType<Input::NamedVector>(engine);
-    scriptRegisterMetaType(engine, actionToScriptValue, actionFromScriptValue);
-    scriptRegisterMetaType(engine, inputToScriptValue, inputFromScriptValue);
-    scriptRegisterMetaType(engine, inputPairToScriptValue, inputPairFromScriptValue);
-    scriptRegisterMetaType(engine, handToScriptValue, handFromScriptValue);
+    scriptRegisterMetaType<controller::Action, actionToScriptValue, actionFromScriptValue>(engine);
+    scriptRegisterMetaType<controller::Input, inputToScriptValue, inputFromScriptValue>(engine);
+    scriptRegisterMetaType<controller::Input::NamedPair, inputPairToScriptValue, inputPairFromScriptValue>(engine);
+    scriptRegisterMetaType<controller::Hand, handToScriptValue, handFromScriptValue>(engine);
 
-    scriptRegisterMetaType(engine, Pose::toScriptValue, Pose::fromScriptValue);
+    scriptRegisterMetaType<Pose, Pose::toScriptValue, Pose::fromScriptValue>(engine);
 }
 
 Input UserInputMapper::makeStandardInput(controller::StandardButtonChannel button) {

@@ -18,11 +18,11 @@
 #include <ScriptManager.h>
 #include <ScriptValue.h>
 
-STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager) {
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager) {
     auto scriptEngine = manager->engine().get();
 
-    scriptRegisterMetaType(scriptEngine, injectorToScriptValue, injectorFromScriptValue);
-});
+    scriptRegisterMetaType<ScriptAudioInjector*, injectorToScriptValue, injectorFromScriptValue>(scriptEngine);
+}));
 
 ScriptValue injectorToScriptValue(ScriptEngine* engine, ScriptAudioInjector* const& in) {
     // The AudioScriptingInterface::playSound method can return null, so we need to account for that.

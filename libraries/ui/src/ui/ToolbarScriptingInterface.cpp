@@ -19,13 +19,12 @@
 #include <shared/QtHelpers.h>
 #include "../OffscreenUi.h"
 
-STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
-    scriptRegisterMetaType(scriptEngine, wrapperToScriptValue<ToolbarProxy>, wrapperFromScriptValue<ToolbarProxy>);
-    scriptRegisterMetaType(scriptEngine,
-                            wrapperToScriptValue<ToolbarButtonProxy>, wrapperFromScriptValue<ToolbarButtonProxy>);
-});
+    scriptRegisterMetaType<ToolbarProxy*, wrapperToScriptValue<ToolbarProxy>, wrapperFromScriptValue<ToolbarProxy> >(scriptEngine);
+    scriptRegisterMetaType<ToolbarButtonProxy*, wrapperToScriptValue<ToolbarButtonProxy>, wrapperFromScriptValue<ToolbarButtonProxy> >(scriptEngine);
+}));
 
 ScriptValue toolbarToScriptValue(ScriptEngine* engine, ToolbarProxy* const &in) {
     if (!in) {

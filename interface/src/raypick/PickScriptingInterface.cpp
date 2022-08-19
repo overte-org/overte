@@ -464,7 +464,7 @@ bool pickTypesFromScriptValue(const ScriptValue& object, PickQuery::PickType& pi
 }
 
 void PickScriptingInterface::registerMetaTypes(ScriptEngine* engine) {
-    scriptRegisterMetaType(engine, pickTypesToScriptValue, pickTypesFromScriptValue);
+    scriptRegisterMetaType<PickQuery::PickType, pickTypesToScriptValue, pickTypesFromScriptValue>(engine);
 }
 
 void PickScriptingInterface::registerProperties(ScriptEngine* engine) {

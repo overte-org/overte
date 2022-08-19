@@ -4,6 +4,7 @@
 //
 //  Created by Stephen Birarda on 2016-03-08.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -34,12 +35,15 @@
 #include <future>
 
 using Promise = MiniPromise::Promise;
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType<std::shared_ptr< MiniPromise >, promiseToScriptValue, promiseFromScriptValue>(scriptEngine);
+}));
+
 
 AssetScriptingInterface::AssetScriptingInterface(QObject* parent) : BaseAssetScriptingInterface(parent) {
     qCDebug(scriptengine) << "AssetScriptingInterface::AssetScriptingInterface" << parent;
-
-    auto scriptManager = qobject_cast<ScriptManager*>(parent);
-    scriptRegisterMetaType(scriptManager->engine().get(), promiseToScriptValue, promiseFromScriptValue);
 }
 
 #define JS_VERIFY(cond, error) { if (!this->jsVerify(cond, error)) { return; } }

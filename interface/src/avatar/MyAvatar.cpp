@@ -452,8 +452,8 @@ void MyAvatar::enableHandTouchForID(const QUuid& entityID) {
 }
 
 void MyAvatar::registerMetaTypes(ScriptEnginePointer engine) {
-    scriptRegisterMetaType(engine.get(), audioListenModeToScriptValue, audioListenModeFromScriptValue);
-    scriptRegisterMetaType(engine.get(), driveKeysToScriptValue, driveKeysFromScriptValue);
+    scriptRegisterMetaType<AudioListenerMode, audioListenModeToScriptValue, audioListenModeFromScriptValue>(engine.get());
+    scriptRegisterMetaType<MyAvatar::DriveKeys, driveKeysToScriptValue, driveKeysFromScriptValue>(engine.get());
 }
 
 void MyAvatar::registerProperties(ScriptEnginePointer engine) {

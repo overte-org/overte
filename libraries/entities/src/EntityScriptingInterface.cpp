@@ -54,11 +54,11 @@ void staticEntityScriptTypesInitializer(ScriptManager* manager) {
 
     registerMetaTypes(scriptEngine);
 
-    scriptRegisterMetaType(scriptEngine, EntityPropertyFlagsToScriptValue, EntityPropertyFlagsFromScriptValue);
-    scriptRegisterMetaType(scriptEngine, EntityItemPropertiesToScriptValue, EntityItemPropertiesFromScriptValueHonorReadOnly);
-    scriptRegisterMetaType(scriptEngine, EntityPropertyInfoToScriptValue, EntityPropertyInfoFromScriptValue);
-    scriptRegisterMetaType(scriptEngine, EntityItemIDtoScriptValue, EntityItemIDfromScriptValue);
-    scriptRegisterMetaType(scriptEngine, RayToEntityIntersectionResultToScriptValue, RayToEntityIntersectionResultFromScriptValue);
+    scriptRegisterMetaType<EntityPropertyFlags, EntityPropertyFlagsToScriptValue, EntityPropertyFlagsFromScriptValue>(scriptEngine);
+    scriptRegisterMetaType<EntityItemProperties, EntityItemPropertiesToScriptValue, EntityItemPropertiesFromScriptValueHonorReadOnly>(scriptEngine);
+    scriptRegisterMetaType<EntityPropertyInfo, EntityPropertyInfoToScriptValue, EntityPropertyInfoFromScriptValue>(scriptEngine);
+    scriptRegisterMetaType<EntityItemID, EntityItemIDtoScriptValue, EntityItemIDfromScriptValue>(scriptEngine);
+    scriptRegisterMetaType<RayToEntityIntersectionResult, RayToEntityIntersectionResultToScriptValue, RayToEntityIntersectionResultFromScriptValue>(scriptEngine);
 }
 STATIC_SCRIPT_TYPES_INITIALIZER(staticEntityScriptTypesInitializer);
 
