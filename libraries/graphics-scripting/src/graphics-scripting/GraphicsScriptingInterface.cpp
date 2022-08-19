@@ -328,13 +328,17 @@ namespace scriptable {
         scriptRegisterSequenceMetaType<QVector<QPointer<T>>>(engine);
         return scriptRegisterMetaTypeWithLambdas<QPointer<T>>(
             engine,
-            [](ScriptEngine* engine, const QPointer<T>& object) -> ScriptValue {
+            [](ScriptEngine* engine, const void* p) -> ScriptValue {
+                Q_ASSERT(p != NULL);
+                const QPointer<T>& object = *(reinterpret_cast<const QPointer<T>* >(p));
                 if (!object) {
                     return engine->nullValue();
                 }
                 return engine->newQObject(object, ScriptEngine::QtOwnership, ScriptEngine::AutoCreateDynamicProperties);
             },
-            [](const ScriptValue& value, QPointer<T>& out) -> bool {
+            [](const ScriptValue& value, void* p) -> bool {
+                Q_ASSERT(p != NULL);
+                QPointer<T>& out = *(reinterpret_cast<QPointer<T>* >(p));
                 auto obj = value.toQObject();
 #ifdef SCRIPTABLE_MESH_DEBUG
                 qCInfo(graphics_scripting) << "qpointer_qobject_cast" << obj << value.toString();
@@ -670,24 +674,18 @@ namespace scriptable {
         static const DebugEnums<T>& instance = debugEnums;
         return scriptRegisterMetaTypeWithLambdas<T>(
             engine,
-            [](ScriptEngine* engine, const T& topology) -> ScriptValue {
+            [](ScriptEngine* engine, const void* p) -> ScriptValue {
+                Q_ASSERT(p != NULL);
+                const T& topology = *(reinterpret_cast<const T*>(p));
                 return engine->newValue(instance.value(topology));
             },
-            [](const ScriptValue& value, T& topology) -> bool {
+            [](const ScriptValue& value, void* p) -> bool {
+                Q_ASSERT(p != NULL);
+                T& topology = *(reinterpret_cast<T*>(p));
                 topology = instance.key(value.toString());
                 return true;
             }
         );
-        //return scriptRegisterMetaType<T>(
-        //    engine,
-        //    [](ScriptEngine* engine, const T& topology) -> ScriptValue {
-        //        return engine->newValue(instance.value(topology));
-        //    },
-        //    [](const ScriptValue& value, T& topology) -> bool {
-        //        topology = instance.key(value.toString());
-        //        return true;
-        //    }
-        //);
     }
 }
 
