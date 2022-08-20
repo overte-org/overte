@@ -6039,7 +6039,8 @@ void Application::reloadResourceCaches() {
     getEntities()->clear();
 
     DependencyManager::get<AssetClient>()->clearCache();
-    DependencyManager::get<ScriptCache>()->clearCache();
+    //It's already cleared in reloadAllScripts so I'm not sure this is necessary.
+    //DependencyManager::get<ScriptCache>()->clearCache();
 
     // Clear all the resource caches
     DependencyManager::get<ResourceCacheSharedItems>()->clear();
