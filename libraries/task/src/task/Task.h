@@ -559,7 +559,7 @@ protected:
     class className : public PerformanceTimer { \
     public: \
         className(const std::string& label) : PerformanceTimer(label.c_str()), profileRange(category(), label.c_str()) {} \
-        Duration profileRange; \
+        ProfileDuration profileRange; \
     };
 
 #endif // hifi_task_Task_h
