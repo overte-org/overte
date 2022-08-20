@@ -3,6 +3,7 @@
 //  interface/src
 //
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -125,12 +126,12 @@ int main(int argc, const char* argv[]) {
     );
     QCommandLineOption disableDisplaysOption(
         "disable-displays",
-        "Displays to disable.",
+        "Displays to disable. Valid options include \"OpenVR (Vive)\" and \"Oculus Rift\"",
         "string"
     );
     QCommandLineOption disableInputsOption(
         "disable-inputs",
-        "Inputs to disable.",
+        "Inputs to disable. Valid options include \"OpenVR (Vive)\" and \"Oculus Rift\"",
         "string"
     );
     QCommandLineOption suppressSettingsResetOption(
