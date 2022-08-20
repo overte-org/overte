@@ -4,6 +4,7 @@
 //
 //  Created by Heather Anderson on 4/25/21.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -22,6 +23,7 @@
 #include <QtCore/QList>
 #include <QtCore/QString>
 #include <QtCore/QVariant>
+#include <QtCore/QDebug>
 
 class ScriptEngine;
 class ScriptValue;
@@ -199,6 +201,11 @@ ScriptValue& ScriptValue::operator=(const ScriptValue& other) {
 
 ScriptValue ScriptValue::call(const ScriptValue& thisObject, const ScriptValueList& args) const {
     Q_ASSERT(_proxy != nullptr);
+    ScriptEnginePointer scriptEngine = _proxy->engine();
+    if (scriptEngine == nullptr) {
+        qDebug() << "Call to deleted or non-existing script engine";
+        return ScriptValue();
+    }
     return _proxy->call(thisObject, args);
 }
 
