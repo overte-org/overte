@@ -5,6 +5,7 @@
 //  Created by Andrzej Kapolka on 5/10/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -8793,13 +8794,13 @@ void Application::initPlugins(const QCommandLineParser& parser) {
     }
 
     if (parser.isSet("disable-displays")) {
-        auto disabledDisplays = parser.value("disableDisplays").split(',', Qt::SkipEmptyParts);
+        auto disabledDisplays = parser.value("disable-displays").split(',', Qt::SkipEmptyParts);
         qInfo() << "Disabling following display plugins:"  << disabledDisplays;
         PluginManager::getInstance()->disableDisplays(disabledDisplays);
     }
 
     if (parser.isSet("disable-inputs")) {
-        auto disabledInputs = parser.value("disableInputs").split(',', Qt::SkipEmptyParts);
+        auto disabledInputs = parser.value("disable-inputs").split(',', Qt::SkipEmptyParts);
         qInfo() << "Disabling following input plugins:" << disabledInputs;
         PluginManager::getInstance()->disableInputs(disabledInputs);
     }
