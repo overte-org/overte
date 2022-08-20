@@ -1032,6 +1032,7 @@ void ScriptManager::stop(bool marshal) {
         QMetaObject::invokeMethod(this, "stop");
         return;
     }
+
     if (!_isFinished) {
         _isFinished = true;
         emit runningStateChanged();

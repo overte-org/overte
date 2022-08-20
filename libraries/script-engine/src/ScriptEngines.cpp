@@ -609,6 +609,7 @@ void ScriptEngines::onScriptFinished(const QString& rawScriptURL, ScriptManagerP
         }
     }
 
+    manager->waitTillDoneRunning();
     removeScriptEngine(manager);
 
     if (removed && !_isReloading) {
