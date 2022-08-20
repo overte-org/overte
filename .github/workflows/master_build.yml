@@ -38,7 +38,7 @@ jobs:
             build_type: full
           - os: macOS-10.15
             build_type: full
-          - os: ubuntu-18.04
+          - os: ubuntu-20.04
             build_type: full
             apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-github python3-distro
       fail-fast: false
@@ -232,6 +232,7 @@ jobs:
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
     - name: Upload artifact
+      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')  # Automatic Linux packaging is not implemented
       shell: bash
       working-directory: ${{runner.workspace}}/build
       env:
