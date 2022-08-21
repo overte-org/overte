@@ -1217,8 +1217,6 @@ public:
      * @function MyAvatar.getTargetAvatar
      * @returns {ScriptAvatar} Information on the avatar being looked at, <code>null</code> if no avatar is being looked at.
      */
-    // FIXME: The return type doesn't have a conversion to a script value so the function always returns undefined in
-    // JavaScript. Note: When fixed, JSDoc is needed for the return type.
     Q_INVOKABLE ScriptAvatarData* getTargetAvatar() const;
 
 
