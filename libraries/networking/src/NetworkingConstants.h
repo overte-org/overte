@@ -75,7 +75,7 @@ namespace NetworkingConstants {
     const QUrl HELP_DOCS_URL{ "https://docs.overte.org" };
     const QUrl HELP_FORUM_URL{ "https://overte.org" };
     const QUrl HELP_SCRIPTING_REFERENCE_URL{ "https://apidocs.overte.org/" };
-    const QUrl HELP_RELEASE_NOTES_URL{ "https://docs.overte.org/en/latest/release-notes.html" };
+    const QUrl HELP_RELEASE_NOTES_URL{ "https://docs.overte.org/release-notes.html" };
     const QUrl HELP_BUG_REPORT_URL{ "https://github.com/overte-org/overte/issues" };
 
     const QString DEFAULT_OVERTE_ADDRESS = "file:///~/serverless/tutorial.json";
