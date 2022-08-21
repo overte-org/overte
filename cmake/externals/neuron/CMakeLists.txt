@@ -7,13 +7,16 @@ string(TOUPPER ${EXTERNAL_NAME} EXTERNAL_NAME_UPPER)
 set(NEURON_URL "${EXTERNAL_BUILD_ASSETS}/dependencies/neuron_datareader_b.12.2.zip")
 set(NEURON_URL_MD5 "84273ad2200bf86a9279d1f412a822ca")
 
-ExternalProject_Add(${EXTERNAL_NAME}
-                    URL ${NEURON_URL}
-                    URL_MD5 ${NEURON_URL_MD5}
-                    CONFIGURE_COMMAND ""
-                    BUILD_COMMAND ""
-                    INSTALL_COMMAND ""
-                    LOG_DOWNLOAD 1)
+ExternalProject_Add(
+    ${EXTERNAL_NAME}
+    URL ${NEURON_URL}
+    URL_MD5 ${NEURON_URL_MD5}
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+    LOG_DOWNLOAD 1
+    DOWNLOAD_EXTRACT_TIMESTAMP 1
+)
 
 ExternalProject_Get_Property(${EXTERNAL_NAME} SOURCE_DIR)
 

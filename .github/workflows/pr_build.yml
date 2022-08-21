@@ -188,6 +188,13 @@ jobs:
           sudo cp -rp MacOSX10.12.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/ || exit 0
           echo "  done"
         fi
+        if [[ "${{ matrix.os }}" =~ "debian-11" ]]; then
+          echo "Installing CMake from Debian Backports"
+          echo deb http://deb.debian.org/debian bullseye-backports main > /etc/apt/sources.list.d/bullseye-backports.list
+          sudo apt update
+          sudo apt-get -t bullseye-backports install -y cmake
+        fi
+
 
     - name: Override NSIS
       shell: pwsh

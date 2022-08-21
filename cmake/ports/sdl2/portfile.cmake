@@ -1,5 +1,3 @@
-include(vcpkg_common_functions)
-
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO SDL-Mirror/SDL
@@ -31,8 +29,9 @@ vcpkg_configure_cmake(
         -DSDL_STATIC=${SDL_STATIC}
         -DSDL_SHARED=${SDL_SHARED}
         -DVIDEO_VULKAN=${VULKAN_VIDEO}
-        -DFORCE_STATIC_VCRT=${FORCE_STATIC_VCRT}
         -DLIBC=ON
+    MAYBE_UNUSED_VARIABLES
+        -DFORCE_STATIC_VCRT=${FORCE_STATIC_VCRT}  # Only available on MSVC
 )
 
 vcpkg_install_cmake()

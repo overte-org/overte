@@ -1,5 +1,3 @@
-include(vcpkg_common_functions)
-
 set(SOURCE_VERSION 3.3.0)
 
 vcpkg_download_distfile(HEADER

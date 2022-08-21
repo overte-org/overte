@@ -2,7 +2,6 @@ if(VCPKG_CMAKE_SYSTEM_NAME)
     message(FATAL_ERROR "This port is only for building openssl on Windows Desktop")
 endif()
 
-include(vcpkg_common_functions)
 set(OPENSSL_VERSION 1.1.1h)
 set(MASTER_COPY_SOURCE_PATH ${CURRENT_BUILDTREES_DIR}/src/openssl-${OPENSSL_VERSION})
 

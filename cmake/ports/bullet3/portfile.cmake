@@ -13,8 +13,6 @@
 #   VCPKG_TARGET_ARCHITECTURE = target architecture (x64, x86, arm)
 #
 
-include(vcpkg_common_functions)
-
 
 if (VCPKG_LIBRARY_LINKAGE STREQUAL dynamic)
     message(WARNING "Dynamic not supported, building static")
@@ -31,40 +29,12 @@ vcpkg_from_github(
     PATCHES "bullet-git-fix-build-clang-8.patch"
 )
 
-if(WIN32)
-    set(VIRCADIA_BULLET_OPTIONS "")
-else()
-    if(EXISTS "${VCPKG_ROOT_DIR}/_env/VIRCADIA_OPTIMIZE.txt")
-        file(READ "${VCPKG_ROOT_DIR}/_env/VIRCADIA_OPTIMIZE.txt" VIRCADIA_OPTIMIZE)
-    endif()
-    if(EXISTS "${VCPKG_ROOT_DIR}/_env/VIRCADIA_CPU_ARCHITECTURE.txt")
-        file(READ "${VCPKG_ROOT_DIR}/_env/VIRCADIA_CPU_ARCHITECTURE.txt" VIRCADIA_CPU_ARCHITECTURE)
-    endif()
-
-
-    if(VIRCADIA_OPTIMIZE)
-        set(VIRCADIA_BULLET_OPTIONS "-DCMAKE_BUILD_TYPE=Release")
-    else()
-        set(VIRCADIA_BULLET_OPTIONS "-DCMAKE_BUILD_TYPE=RelWithDebInfo")
-    endif()
-
-    set(VIRCADIA_BULLET_OPTIONS "${VIRCADIA_BULLET_OPTIONS}")
-
-    if(DEFINED VIRCADIA_CPU_ARCHITECTURE)
-        set(VIRCADIA_BULLET_OPTIONS "${VIRCADIA_BULLET_OPTIONS} -DCMAKE_CXX_FLAGS=\"${VIRCADIA_CPU_ARCHITECTURE}\" -DCMAKE_C_FLAGS=\"${VIRCADIA_CPU_ARCHITECTURE}\" ")
-    endif()
-endif()
-
-message("Optimization options for Bullet: ${VIRCADIA_BULLET_OPTIONS}")
 
 vcpkg_configure_cmake(
     SOURCE_PATH ${SOURCE_PATH}
     OPTIONS
-        -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
         -DUSE_MSVC_RUNTIME_LIBRARY_DLL=ON
         -DUSE_GLUT=0
-        -DUSE_DX11=0
-        -DBUILD_DEMOS=OFF
         -DBUILD_OPENGL3_DEMOS=OFF
         -DBUILD_BULLET3=OFF
         -DBUILD_BULLET2_DEMOS=OFF
@@ -73,7 +43,10 @@ vcpkg_configure_cmake(
         -DBUILD_UNIT_TESTS=OFF
         -DBUILD_SHARED_LIBS=ON
         -DINSTALL_LIBS=ON
-        ${VIRCADIA_BULLET_OPTIONS}
+    MAYBE_UNUSED_VARIABLES
+        -DBUILD_DEMOS=OFF
+        -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
+        -DUSE_DX11=0
 )
 
 vcpkg_install_cmake()

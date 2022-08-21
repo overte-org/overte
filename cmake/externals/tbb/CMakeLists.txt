@@ -21,6 +21,7 @@ ExternalProject_Add(
   CONFIGURE_COMMAND ""
   INSTALL_COMMAND ""
   LOG_DOWNLOAD ON
+  DOWNLOAD_EXTRACT_TIMESTAMP 1
 )
 
 # Hide this external target (for ide users)
