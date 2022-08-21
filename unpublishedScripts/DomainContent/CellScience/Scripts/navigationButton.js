@@ -14,7 +14,7 @@
     Script.include(utilsScript);
 
     var self = this;
-    var baseURL = "https://cdn-1.vircadia.com/us-e-1/DomainContent/CellScience/";
+    var baseURL = "https://hifi-content/DomainContent/CellScience/";
 
     this.preload = function(entityId) {
         this.entityId = entityId;

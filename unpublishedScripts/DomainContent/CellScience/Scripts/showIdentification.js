@@ -8,7 +8,7 @@
 (function() {
 
     var self = this;
-    var baseURL = "https://cdn-1.vircadia.com/us-e-1/DomainContent/CellScience/";
+    var baseURL = "https://hifi-content/DomainContent/CellScience/";
 
     var version = 3;
     this.preload = function(entityId) {

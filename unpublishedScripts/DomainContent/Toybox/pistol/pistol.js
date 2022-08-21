@@ -27,8 +27,8 @@
         this.forceMultiplier = 1;
         this.laserLength = 100;
 
-        this.fireSound = SoundCache.getSound("https://cdn-1.vircadia.com/us-e-1/DomainContent/Toybox/pistol/GUN-SHOT2.raw");
-        this.ricochetSound = SoundCache.getSound("https://cdn-1.vircadia.com/us-e-1/DomainContent/Toybox/pistol/Ricochet.L.wav");
+        this.fireSound = SoundCache.getSound("https://hifi-content/DomainContent/Toybox/pistol/GUN-SHOT2.raw");
+        this.ricochetSound = SoundCache.getSound("https://hifi-content/DomainContent/Toybox/pistol/Ricochet.L.wav");
         this.playRichochetSoundChance = 0.1;
         this.fireVolume = 0.2;
         this.bulletForce = 10;
@@ -216,7 +216,7 @@
                 "alphaStart": 0,
                 "alphaFinish": 0,
                 "additiveBlending": true,
-                "textures": "https://cdn-1.vircadia.com/us-e-1/DomainContent/Toybox/pistol/star.png"
+                "textures": "https://hifi-content/DomainContent/Toybox/pistol/star.png"
             });
 
             Script.setTimeout(function() {

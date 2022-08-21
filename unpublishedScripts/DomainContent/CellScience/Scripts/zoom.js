@@ -44,7 +44,7 @@
                 volume: 0.5
             };
 
-            self.teleportSound = SoundCache.getSound("https://cdn-1.vircadia.com/us-e-1/DomainContent/CellScience/Audio/whoosh.wav");
+            self.teleportSound = SoundCache.getSound("https://hifi-content/DomainContent/CellScience/Audio/whoosh.wav");
             // print(" portal destination is " + self.portalDestination);
         }
     }
