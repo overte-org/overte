@@ -86,13 +86,13 @@ function addButterfly() {
         dimensions: dimensions,
         color: color,
         animation: { 
-            url: "https://cdn-1.vircadia.com/us-e-1/Developer/Tutorials/butterflies/butterfly.fbx",
+            url: "https://content.overte.org/Developer/Tutorials/butterflies/butterfly.fbx",
             fps: newFrameRate,
             loop: true,
             running: true,
             startAutomatically:false
         },
-        modelURL: "https://cdn-1.vircadia.com/us-e-1/Developer/Tutorials/butterflies/butterfly.fbx"
+        modelURL: "https://content.overte.org/Developer/Tutorials/butterflies/butterfly.fbx"
     };
     butterflies.push(Entities.addEntity(properties));
 }

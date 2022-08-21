@@ -76,7 +76,7 @@ var particleProperties = {
     alphaStart: 1,
     alphaFinish: 0,
     emitterShouldTrail: true,
-    textures: 'https://cdn-1.vircadia.com/us-e-1/Developer/Tutorials/particleFingers/smoke.png',
+    textures: 'https://content.overte.org/Developer/Tutorials/particleFingers/smoke.png',
     lifetime: 3600
 };
 
