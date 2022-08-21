@@ -47,16 +47,16 @@ namespace NetworkingConstants {
     const QString WEB_ENTITY_DEFAULT_USER_AGENT = WEB_ENGINE_USER_AGENT;
 
     // Builds URLs
-    const QUrl BUILDS_XML_URL("https://highfidelity.com/builds.xml");
-    const QUrl MASTER_BUILDS_XML_URL("https://highfidelity.com/dev-builds.xml");
+    const QUrl BUILDS_XML_URL("");
+    const QUrl MASTER_BUILDS_XML_URL("");
 
     const QString DEFAULT_AVATAR_COLLISION_SOUND_URL = "https://hifi-public.s3.amazonaws.com/sounds/Collisions-otherorganic/Body_Hits_Impact.wav";
 
     // CDN URLs
-    const QString HF_CONTENT_CDN_URL = "https://cdn-1.vircadia.com/eu-c-1/vircadia-content/";
-    const QString HF_MPASSETS_CDN_URL = "https://cdn-1.vircadia.com/eu-c-1/vircadia-mpassets/";
-    const QString HF_PUBLIC_CDN_URL = "https://cdn-1.vircadia.com/eu-c-1/vircadia-public/";
-    const QString HF_MARKETPLACE_CDN_HOSTNAME = "mpassets.highfidelity.com";
+    const QString HF_CONTENT_CDN_URL = "";
+    const QString HF_MPASSETS_CDN_URL = "";
+    const QString HF_PUBLIC_CDN_URL = "";
+    const QString HF_MARKETPLACE_CDN_HOSTNAME = "";
     const QString OVERTE_CONTENT_CDN_URL = "https://content.overte.org/";
 
 #if USE_STABLE_GLOBAL_SERVICES
