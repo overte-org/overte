@@ -555,6 +555,7 @@ ScriptManagerPointer ScriptEngines::getScriptEngine(const QUrl& rawScriptURL) {
 void ScriptEngines::onScriptEngineLoaded(const QString& rawScriptURL) {
     UserActivityLogger::getInstance().loadedScript(rawScriptURL);
     ScriptManagerPointer scriptEngine = qobject_cast<ScriptManager*>(sender())->shared_from_this();
+    Q_ASSERT(scriptEngine != nullptr);
 
     launchScriptEngine(scriptEngine);
 

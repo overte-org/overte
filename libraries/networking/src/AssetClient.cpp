@@ -78,8 +78,10 @@ void AssetClient::initCaching() {
                  << "(size:" << MAXIMUM_CACHE_SIZE / BYTES_PER_GIGABYTES << "GB)";
     } else {
         auto cache = qobject_cast<QNetworkDiskCache*>(networkAccessManager.cache());
-        qInfo() << "ResourceManager disk cache already setup at" << cache->cacheDirectory()
-                << "(size:" << cache->maximumCacheSize() / BYTES_PER_GIGABYTES << "GB)";
+        if (cache) {
+            qInfo() << "ResourceManager disk cache already setup at" << cache->cacheDirectory()
+                    << "(size:" << cache->maximumCacheSize() / BYTES_PER_GIGABYTES << "GB)";
+        }
     }
 
 }
@@ -293,7 +295,6 @@ void AssetClient::cacheInfoRequest(QObject* reciever, QString slot) {
                                   Q_ARG(QObject*, reciever), Q_ARG(QString, slot));
         return;
     }
-
 
     if (auto* cache = qobject_cast<QNetworkDiskCache*>(NetworkAccessManager::getInstance().cache())) {
         QMetaObject::invokeMethod(reciever, slot.toStdString().data(), Qt::QueuedConnection,
