@@ -73,6 +73,7 @@ QString LocationBookmarks::getAddress(const QString& bookmarkName) {
 
 void LocationBookmarks::teleportToBookmark() {
     QAction* action = qobject_cast<QAction*>(sender());
+    Q_ASSERT(action != nullptr);
     QString address = action->data().toString();
     DependencyManager::get<AddressManager>()->handleLookupString(address);
 }

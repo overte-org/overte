@@ -37,8 +37,7 @@ ScriptValue inputControllerToScriptValue(ScriptEngine* engine, controller::Input
 }
 
 bool inputControllerFromScriptValue(const ScriptValue& object, controller::InputController*& out) {
-    out = qobject_cast<controller::InputController*>(object.toQObject());
-    return true;
+    return (out = qobject_cast<controller::InputController*>(object.toQObject())) != nullptr;
 }
 
 STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager) {

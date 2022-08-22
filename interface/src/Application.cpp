@@ -8011,6 +8011,7 @@ void Application::addAssetToWorldFromURL(QString url) {
 
 void Application::addAssetToWorldFromURLRequestFinished() {
     auto request = qobject_cast<ResourceRequest*>(sender());
+    Q_ASSERT(request != nullptr);
     auto url = request->getUrl().toString();
     auto result = request->getResult();
 
@@ -9379,6 +9380,7 @@ void Application::setActiveDisplayPlugin(const QString& pluginName) {
 
 void Application::handleLocalServerConnection() const {
     auto server = qobject_cast<QLocalServer*>(sender());
+    Q_ASSERT(server != nullptr);
 
     qCDebug(interfaceapp) << "Got connection on local server from additional instance - waiting for parameters";
 
@@ -9392,6 +9394,7 @@ void Application::handleLocalServerConnection() const {
 
 void Application::readArgumentsFromLocalSocket() const {
     auto socket = qobject_cast<QLocalSocket*>(sender());
+    Q_ASSERT(socket != nullptr);
 
     auto message = socket->readAll();
     socket->deleteLater();

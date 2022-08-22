@@ -77,6 +77,7 @@ void JSBaker::loadScript() {
 
 void JSBaker::handleScriptNetworkReply() {
     auto requestReply = qobject_cast<QNetworkReply*>(sender());
+    Q_ASSERT(requestReply != nullptr);
 
     if (requestReply->error() == QNetworkReply::NoError) {
         qCDebug(js_baking) << "Downloaded script" << _jsURL;
