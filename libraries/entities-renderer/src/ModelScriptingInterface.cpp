@@ -27,6 +27,7 @@ STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager) {
 
 ModelScriptingInterface::ModelScriptingInterface(QObject* parent) : QObject(parent) {
     _modelScriptEngine = qobject_cast<ScriptManager*>(parent)->engine();
+    Q_ASSERT(_modelScriptEngine != nullptr);
 
     scriptRegisterSequenceMetaType<QList<MeshProxy*>>(_modelScriptEngine.get());
     scriptRegisterMetaType<MeshFace, meshFaceToScriptValue, meshFaceFromScriptValue>(_modelScriptEngine.get());

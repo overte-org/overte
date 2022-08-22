@@ -74,6 +74,7 @@ void CloseEventSender::handleQuitEventFinished() {
     _hasFinishedQuitEvent = true;
 
     auto reply = qobject_cast<QNetworkReply*>(sender());
+    Q_ASSERT(reply != nullptr);
     if (reply->error() == QNetworkReply::NoError) {
         qCDebug(networking) << "Quit event sent successfully";
     } else {

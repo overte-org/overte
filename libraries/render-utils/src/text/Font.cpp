@@ -124,6 +124,7 @@ Font::Pointer Font::load(const QString& family) {
 
 void Font::handleFontNetworkReply() {
     auto requestReply = qobject_cast<QNetworkReply*>(sender());
+    Q_ASSERT(requestReply != nullptr);
 
     if (requestReply->error() == QNetworkReply::NoError) {
         setLoaded(true);

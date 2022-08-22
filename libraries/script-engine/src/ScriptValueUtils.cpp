@@ -19,6 +19,7 @@
 #include <QtCore/QRect>
 #include <QtCore/QUrl>
 #include <QtCore/QUuid>
+#include <QtCore/QTimer>
 
 #include <AACube.h>
 #include <shared/MiniPromises.h>
@@ -68,6 +69,7 @@ void registerMetaTypes(ScriptEngine* engine) {
     scriptRegisterMetaType<QRect, qRectToScriptValue, qRectFromScriptValue>(engine);
     scriptRegisterMetaType<QUrl, qURLToScriptValue, qURLFromScriptValue>(engine);
     scriptRegisterMetaType<QColor, qColorToScriptValue, qColorFromScriptValue>(engine);
+    scriptRegisterMetaType<QTimer*, qTimerToScriptValue, qTimerFromScriptValue>(engine, "QTimer*");
 
     scriptRegisterMetaType<PickRay, pickRayToScriptValue, pickRayFromScriptValue>(engine);
     scriptRegisterMetaType<Collision, collisionToScriptValue, collisionFromScriptValue>(engine);
@@ -665,6 +667,14 @@ bool aaCubeFromScriptValue(const ScriptValue& object, AACube& aaCube) {
     return true;
 }
 
+ScriptValue qTimerToScriptValue(ScriptEngine* engine, QTimer* const &in) {
+    return engine->newQObject(in, ScriptEngine::QtOwnership);
+}
+
+bool qTimerFromScriptValue(const ScriptValue& object, QTimer* &out) {
+    return (out = qobject_cast<QTimer*>(object.toQObject())) != nullptr;
+}
+
 bool qColorFromScriptValue(const ScriptValue& object, QColor& color) {
     if (object.isNumber()) {
         color.setRgb(object.toUInt32());
@@ -834,8 +844,7 @@ ScriptValue meshToScriptValue(ScriptEngine* engine, MeshProxy* const& in) {
 }
 
 bool meshFromScriptValue(const ScriptValue& value, MeshProxy*& out) {
-    out = qobject_cast<MeshProxy*>(value.toQObject());
-    return true;
+    return (out = qobject_cast<MeshProxy*>(value.toQObject())) != nullptr;
 }
 
 ScriptValue meshesToScriptValue(ScriptEngine* engine, const MeshProxyList& in) {
