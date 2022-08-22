@@ -475,6 +475,8 @@ public:
      * }, 10000);
      */
     Q_INVOKABLE void clearInterval(QTimer* timer) { stopTimer(timer); }
+    // Overloaded version is needed in case the timer has expired
+    Q_INVOKABLE void clearInterval(QVariantMap timer) { ; }
 
     /**jsdoc
      * Stops a timeout timer set by {@link Script.setTimeout|setTimeout}.
@@ -490,6 +492,8 @@ public:
      * //Script.clearTimeout(timer);
      */
     Q_INVOKABLE void clearTimeout(QTimer* timer) { stopTimer(timer); }
+    // Overloaded version is needed in case the timer has expired
+    Q_INVOKABLE void clearTimeout(QVariantMap timer) { ; }
 
     /**jsdoc
      * Prints a message to the program log and emits {@link Script.printedMessage}.
