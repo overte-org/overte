@@ -174,6 +174,11 @@ class QColor;
 ScriptValue qColorToScriptValue(ScriptEngine* engine, const QColor& color);
 bool qColorFromScriptValue(const ScriptValue& object, QColor& color);
 
+//QTimer
+class QTimer;
+ScriptValue qTimerToScriptValue(ScriptEngine* engine,  QTimer* const &in);
+bool qTimerFromScriptValue(const ScriptValue& object, QTimer* &out);
+
 class QUrl;
 ScriptValue qURLToScriptValue(ScriptEngine* engine, const QUrl& url);
 bool qURLFromScriptValue(const ScriptValue& object, QUrl& url);

@@ -58,6 +58,7 @@ void AutoUpdater::getLatestVersionData() {
 
 void AutoUpdater::parseLatestVersionData() {
     QNetworkReply* sender = qobject_cast<QNetworkReply*>(QObject::sender());
+    Q_ASSERT(sender != nullptr);
     
     QXmlStreamReader xml(sender);
 
