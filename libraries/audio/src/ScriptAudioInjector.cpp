@@ -34,8 +34,7 @@ ScriptValue injectorToScriptValue(ScriptEngine* engine, ScriptAudioInjector* con
 }
 
 bool injectorFromScriptValue(const ScriptValue& object, ScriptAudioInjector*& out) {
-    out = qobject_cast<ScriptAudioInjector*>(object.toQObject());
-    return true;
+    return (out = qobject_cast<ScriptAudioInjector*>(object.toQObject())) != nullptr;
 }
 
 ScriptAudioInjector::ScriptAudioInjector(const AudioInjectorPointer& injector) :

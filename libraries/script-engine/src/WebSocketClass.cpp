@@ -218,8 +218,7 @@ ScriptValue webSocketToScriptValue(ScriptEngine* engine, WebSocketClass* const &
 }
 
 bool webSocketFromScriptValue(const ScriptValue &object, WebSocketClass* &out) {
-    out = qobject_cast<WebSocketClass*>(object.toQObject());
-    return true;
+    return (out = qobject_cast<WebSocketClass*>(object.toQObject())) != nullptr;
 }
 
 ScriptValue wscReadyStateToScriptValue(ScriptEngine* engine, const WebSocketClass::ReadyState& readyState) {
