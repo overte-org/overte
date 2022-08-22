@@ -134,6 +134,7 @@ void ScriptCache::scriptContentAvailable(int maxRetries) {
     qCDebug(scriptengine) << "ScriptCache::scriptContentAvailable() on thread [" << QThread::currentThread() << "] expected thread [" << thread() << "]";
     #endif
     ResourceRequest* req = qobject_cast<ResourceRequest*>(sender());
+    Q_ASSERT(req != nullptr);
     QUrl url = req->getUrl();
 
     QString scriptContent;

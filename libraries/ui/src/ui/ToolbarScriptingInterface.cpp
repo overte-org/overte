@@ -35,6 +35,7 @@ ScriptValue toolbarToScriptValue(ScriptEngine* engine, ToolbarProxy* const &in) 
 
 void toolbarFromScriptValue(const ScriptValue& value, ToolbarProxy* &out) {
     out = qobject_cast<ToolbarProxy*>(value.toQObject());
+    Q_ASSERT(out != nullptr);
 }
 
 ScriptValue toolbarButtonToScriptValue(ScriptEngine* engine, ToolbarButtonProxy* const &in) {
@@ -46,6 +47,7 @@ ScriptValue toolbarButtonToScriptValue(ScriptEngine* engine, ToolbarButtonProxy*
 
 void toolbarButtonFromScriptValue(const ScriptValue& value, ToolbarButtonProxy* &out) {
     out = qobject_cast<ToolbarButtonProxy*>(value.toQObject());
+    Q_ASSERT(out != nullptr);
 }
 
 

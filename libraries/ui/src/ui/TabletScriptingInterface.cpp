@@ -321,6 +321,7 @@ void TabletScriptingInterface::processTabletEvents(QObject* object, const QKeyEv
 void TabletScriptingInterface::processEvent(const QKeyEvent* event) {
     Q_ASSERT(QThread::currentThread() == qApp->thread());
     TabletProxy* tablet = qobject_cast<TabletProxy*>(getTablet(SYSTEM_TABLET));
+    Q_ASSERT(tablet != nullptr);
     QObject* qmlTablet = tablet->getQmlTablet();
     QObject* qmlMenu = tablet->getQmlMenu();
 
