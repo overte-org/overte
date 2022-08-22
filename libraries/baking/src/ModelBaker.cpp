@@ -177,6 +177,7 @@ void ModelBaker::saveSourceModel() {
 
 void ModelBaker::handleModelNetworkReply() {
     auto requestReply = qobject_cast<QNetworkReply*>(sender());
+    Q_ASSERT(requestReply != nullptr);
 
     if (requestReply->error() == QNetworkReply::NoError) {
         qCDebug(model_baking) << "Downloaded" << _modelURL;

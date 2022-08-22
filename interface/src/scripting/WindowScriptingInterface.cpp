@@ -604,6 +604,7 @@ void WindowScriptingInterface::closeMessageBox(int id) {
 
 void WindowScriptingInterface::onMessageBoxSelected(int button) {
     auto messageBox = qobject_cast<QQuickItem*>(sender());
+    Q_ASSERT(messageBox != nullptr);
     auto keys = _messageBoxes.keys(messageBox);
     if (keys.length() > 0) {
         auto id = keys[0];  // Should be just one message box.
