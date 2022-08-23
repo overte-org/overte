@@ -4,6 +4,7 @@
 //
 //  Created by Seth Alves on 3/7/15.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -59,7 +60,11 @@ const hifi::ByteArray OBJTokenizer::getLineAsDatum() {
 }
 
 float OBJTokenizer::getFloat() {
-    return std::stof((nextToken() != OBJTokenizer::DATUM_TOKEN) ? nullptr : getDatum().data());
+    std::istringstream ss((nextToken() != OBJTokenizer::DATUM_TOKEN) ? nullptr : getDatum().data());
+    ss.imbue(std::locale::classic());
+    float f;
+    ss >> f;
+    return f;
 }
 
 int OBJTokenizer::nextToken(bool allowSpaceChar /*= false*/) {
