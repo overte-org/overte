@@ -195,6 +195,87 @@ void ScriptEngineQtScript::registerSystemTypes() {
     scriptRegisterMetaType<QJsonArray, JsonArrayToScriptValue, JsonArrayFromScriptValue>(this);
 }
 
+int ScriptEngineQtScript::computeCastPenalty(QScriptValue& val, int destTypeId) {
+    if (val.isNumber()) {
+        switch (destTypeId){
+            case QMetaType::Bool:
+                return 5;
+                break;
+            case QMetaType::UInt:
+            case QMetaType::ULong:
+            case QMetaType::Int:
+            case QMetaType::Long:
+            case QMetaType::Short:
+            case QMetaType::Double:
+            case QMetaType::Float:
+            case QMetaType::ULongLong:
+            case QMetaType::LongLong:
+            case QMetaType::UShort:
+                return 0;
+                break;
+            case QMetaType::QString:
+            case QMetaType::QByteArray:
+            case QMetaType::QDateTime:
+            case QMetaType::QDate:
+                return 100;
+                break;
+            default:
+                return 5;
+        }
+    } else if (val.isString() || val.isDate() || val.isRegExp()) {
+        switch (destTypeId){
+            case QMetaType::Bool:
+                return 100;
+            case QMetaType::UInt:
+            case QMetaType::ULong:
+            case QMetaType::Int:
+            case QMetaType::Long:
+            case QMetaType::Short:
+            case QMetaType::Double:
+            case QMetaType::Float:
+            case QMetaType::ULongLong:
+            case QMetaType::LongLong:
+            case QMetaType::UShort:
+                return 100;
+            case QMetaType::QString:
+                return 0;
+            case QMetaType::QByteArray:
+            case QMetaType::QDateTime:
+            case QMetaType::QDate:
+                return 5;
+            default:
+                return 5;
+        }
+    } else if (val.isBool() || val.isBoolean()) {
+        switch (destTypeId){
+            case QMetaType::Bool:
+                return 0;
+                break;
+            case QMetaType::UInt:
+            case QMetaType::ULong:
+            case QMetaType::Int:
+            case QMetaType::Long:
+            case QMetaType::Short:
+            case QMetaType::Double:
+            case QMetaType::Float:
+            case QMetaType::ULongLong:
+            case QMetaType::LongLong:
+            case QMetaType::UShort:
+                return 5;
+                break;
+            case QMetaType::QString:
+            case QMetaType::QByteArray:
+            case QMetaType::QDateTime:
+            case QMetaType::QDate:
+                return 50;
+                break;
+            default:
+                return 5;
+        }
+    }
+    return 0;
+}
+
 bool ScriptEngineQtScript::castValueToVariant(const QScriptValue& val, QVariant& dest, int destTypeId) {
 
     // if we're not particularly interested in a specific type, try to detect if we're dealing with a registered type
