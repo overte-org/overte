@@ -462,38 +462,51 @@ QVariant ScriptMethodQtProxy::extension(Extension extension, const QVariant& arg
     int parameterConversionFailureId = 0;
     int parameterConversionFailureCount = 0;
 
-    for (auto iter = _metas.cbegin(); iter != _metas.end(); ++iter) {
-        const QMetaMethod& meta = *iter;
+    int num_metas = _metas.size();
+    QVector< QList<ScriptValue> > qScriptArgLists;
+    QVector< QVector <QGenericArgument> > qGenArgsVectors;
+    QVector< QList<QVariant> > qVarArgLists;
+    int conversionPenaltyScore[num_metas];
+    bool isMetaRejected[num_metas];
+    qScriptArgLists.resize(num_metas);
+    qGenArgsVectors.resize(num_metas);
+    qVarArgLists.resize(num_metas);
+
+    for (int i = 0; i < num_metas; i++) {
+        const QMetaMethod& meta = _metas[i];
+        isMetaRejected[i] = false;
         int methodNumArgs = meta.parameterCount();
         if (methodNumArgs != numArgs) {
+            isMetaRejected[i] = true;
             continue;
         }
 
-        QList<ScriptValue> qScriptArgList;
-        QList<QVariant> qVarArgList;
-        QGenericArgument qGenArgs[10];
+        qGenArgsVectors[i].resize(10);
+        conversionPenaltyScore[i] = 0;
         int conversionFailures = 0;
+
         for (int arg = 0; arg < numArgs; ++arg) {
             int methodArgTypeId = meta.parameterType(arg);
             Q_ASSERT(methodArgTypeId != QMetaType::UnknownType);
             QScriptValue argVal = context->argument(arg);
             if (methodArgTypeId == scriptValueTypeId) {
-                qScriptArgList.append(ScriptValue(new ScriptValueQtWrapper(_engine, argVal)));
-                qGenArgs[arg] = Q_ARG(ScriptValue, qScriptArgList.back());
+                qScriptArgLists[i].append(ScriptValue(new ScriptValueQtWrapper(_engine, argVal)));
+                qGenArgsVectors[i][arg] = Q_ARG(ScriptValue, qScriptArgLists[i].back());
             } else if (methodArgTypeId == QMetaType::QVariant) {
-                qVarArgList.append(argVal.toVariant());
-                qGenArgs[arg] = Q_ARG(QVariant, qVarArgList.back());
+                qVarArgLists[i].append(argVal.toVariant());
+                qGenArgsVectors[i][arg] = Q_ARG(QVariant, qVarArgLists[i].back());
             } else {
                 QVariant varArgVal;
                 if (!_engine->castValueToVariant(argVal, varArgVal, methodArgTypeId)) {
                     conversionFailures++;
                 } else {
-                    qVarArgList.append(varArgVal);
-                    const QVariant& converted = qVarArgList.back();
+                    qVarArgLists[i].append(varArgVal);
+                    const QVariant& converted = qVarArgLists[i].back();
+                    conversionPenaltyScore[i] = _engine->computeCastPenalty(argVal, methodArgTypeId);
 
                     // a lot of type conversion assistance thanks to https://stackoverflow.com/questions/28457819/qt-invoke-method-with-qvariant
                     // A const_cast is needed because calling data() would detach the QVariant.
-                    qGenArgs[arg] =
+                    qGenArgsVectors[i][arg] =
                         QGenericArgument(QMetaType::typeName(converted.userType()), const_cast<void*>(converted.constData()));
                 }
             }
@@ -503,13 +516,30 @@ QVariant ScriptMethodQtProxy::extension(Extension extension, const QVariant& arg
                 parameterConversionFailureCount = conversionFailures;
                 parameterConversionFailureId = meta.methodIndex();
             }
+            isMetaRejected[i] = true;
             continue;
         }
 
         ScriptContextQtWrapper ourContext(_engine, context);
         ScriptContextGuard guard(&ourContext);
+    }
 
+    bool isValidMetaSelected = false;
+    int bestMeta = 0;
+    for (int i = 0; i < num_metas; i++) {
+        if (!isValidMetaSelected && !isMetaRejected[i]) {
+            isValidMetaSelected = true;
+            bestMeta = i;
+        }
+        if (isValidMetaSelected && !isMetaRejected[i] && conversionPenaltyScore[bestMeta] > conversionPenaltyScore[i]) {
+            bestMeta = i;
+        }
+    }
+
+    if (isValidMetaSelected) {
+        const QMetaMethod& meta = _metas[bestMeta];
         int returnTypeId = meta.returnType();
+        QVector <QGenericArgument> &qGenArgs = qGenArgsVectors[bestMeta];
 
         // The Qt MOC engine will automatically call qRegisterMetaType on invokable parameters and properties, but there's
         // nothing in there for return values so these need to be explicitly runtime-registered!
@@ -579,9 +609,9 @@ QVariant ScriptMethodQtProxy::extension(Extension extension, const QVariant& arg
         }
     }
 
+    context->throwError(QString("Native call of %1 failed: could not locate an overload with the requested arguments").arg(fullName()));
     Q_ASSERT(false); // really shouldn't have gotten here -- it didn't work before and it's working now?
     return QVariant();
-    context->throwError(QString("Native call of %1 failed: could not locate an overload with the requested arguments").arg(fullName()));
 }
 
 QString ScriptSignalQtProxy::fullName() const {
