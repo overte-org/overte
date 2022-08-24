@@ -7,8 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased] 2022.08.21
+## [Unreleased] 2022.08.24
 ### Fixes
+- Fixed OBJ-Serializer using wrong decimal separator on some systems (PR172)
 - Fixed "disable-displays" and "disable-inputs" command line arguments (PR169)
 - Fixed warnings during Create app usage (PR161)
 - Fixed various issues with voxels (PR140)
@@ -20,7 +21,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Fixed issues with command line arguments (PR66)
 - Fixed a lot of miscellaneous warnings (PR31)
 
-### Changed
+### Changes
 - Replaced non-free Graphik font with Fira Sans (PR155)
 - Updated Qt for Windows, and Linux (PR146,PR125)
 - Changed VR Keyboard appearance (PR147)
@@ -37,7 +38,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Changed default Metaverse server (PR26)
 - Changed default More app repository (PR8)
 
-### Added
+### Additions
 - Added Material Data Assistant to Create App (PR131)
 - Added body tracking support for Windows Mixed Reality (PR111)
 - Added Journald logging support (PR104)
@@ -46,28 +47,32 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Added version of Qt WebEngine and Chromium to About screen (PR93)
 - Added user interface for voxels to Create app (PR60)
 
-### Removed
+### Removals
 - Removed unused Inventory app
 
 ### Build system
-- Added Ubuntu 20.04 Qt pre-built package
-- Updated to zlib 1.2.12
-- Moved dependency hosting
+- Disabled VCPKG logs being removed after completion (PR162)
+- Updated VCPKG (PR162)
+	This bumps the minimum CMake version to 3.21
+- Updated NVTT (PR165)
+- Added Ubuntu 20.04 Qt pre-built package (PR159)
+- Updated to zlib 1.2.12 (PR123)
+- Moved dependency hosting (PR121)
 - Added Journald as optional dependency (PR104)
-- Fixed tricial CMake warning (PR102)
+- Fixed trivial CMake warning (PR102)
 - Fixed a lot of warnings during build (PR86)
 - Fixed WebRTC OpenSSL 3 linking issue (PR68)
 - Fixed SDL2 linking issues on Wayland (PR47)
 
 
 ## [2022.02.1] 2022-02-23
-### Added
+### Additions
 - Allow switching Metaverse servers (PR2)
 
-### Changed
+### Changes
 - Rebranding (PR13)
 - Changed default Metaverse server (PR5)
 - Replaced the Explore app with a new Places app (PR3)
 
-### Removed
+### Removals
 - Removed proprietary HiFi audio codec (PR1)
