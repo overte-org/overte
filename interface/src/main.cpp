@@ -68,7 +68,7 @@ int main(int argc, const char* argv[]) {
     LogHandler::getInstance().setShouldUseJournald(false);
 
     QCommandLineParser parser;
-    parser.setApplicationDescription("Overte -- A free/libre and open-source metaverse client");
+    parser.setApplicationDescription("Overte -- A free/libre and open-source virtual worlds client");
     QCommandLineOption helpOption = parser.addHelpOption();
     QCommandLineOption versionOption = parser.addVersionOption();
 

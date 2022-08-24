@@ -152,6 +152,7 @@ public: // not for public use, but I don't like how Qt strings this along with p
     virtual QVariant convert(const ScriptValue& value, int typeId) override;
     virtual void registerCustomType(int type, ScriptEngine::MarshalFunction marshalFunc,
                                     ScriptEngine::DemarshalFunction demarshalFunc) override;
+    int computeCastPenalty(QScriptValue& val, int destTypeId);
     bool castValueToVariant(const QScriptValue& val, QVariant& dest, int destTypeId);
     QScriptValue castVariantToValue(const QVariant& val);
     static QString valueType(const QScriptValue& val);
