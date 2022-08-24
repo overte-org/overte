@@ -4,6 +4,14 @@ FROM rockylinux:9
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
 
+# Add required Rocky Linux tools
+RUN dnf -y install dnf-utils
+
+# Add "Extra Packages for Enterprise Linux" repository
+RUN dnf -y install epel-release
+# Add "Code Ready Builder" repository
+RUN dnf config-manager --enable crb
+
 # Install Overte domain-server and assignment-client build dependencies
 RUN dnf -y install curl ninja-build git cmake gcc-c++ openssl-devel qt5-qtwebsockets-devel qt5-qtscript-devel qt5-qtmultimedia-devel unzip libXext-devel qt5-qtwebchannel-devel qt5-qtwebengine-devel qt5-qtxmlpatterns-devel
 
