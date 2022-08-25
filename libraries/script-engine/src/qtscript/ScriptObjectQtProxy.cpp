@@ -466,11 +466,13 @@ QVariant ScriptMethodQtProxy::extension(Extension extension, const QVariant& arg
     QVector< QList<ScriptValue> > qScriptArgLists;
     QVector< QVector <QGenericArgument> > qGenArgsVectors;
     QVector< QList<QVariant> > qVarArgLists;
-    int conversionPenaltyScore[num_metas];
-    bool isMetaRejected[num_metas];
+    QVector<int> conversionPenaltyScore;
+    QVector<bool> isMetaRejected;
     qScriptArgLists.resize(num_metas);
     qGenArgsVectors.resize(num_metas);
     qVarArgLists.resize(num_metas);
+    conversionPenaltyScore.resize(num_metas);
+    isMetaRejected.resize(num_metas);
 
     for (int i = 0; i < num_metas; i++) {
         const QMetaMethod& meta = _metas[i];
