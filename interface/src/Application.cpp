@@ -7613,9 +7613,6 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptManage
     scriptEngine->registerGlobalObject("HifiAbout", AboutUtil::getInstance());  // Deprecated.
     scriptEngine->registerGlobalObject("ResourceRequestObserver", DependencyManager::get<ResourceRequestObserver>().data());
 
-    auto pickScriptingInterface = DependencyManager::get<PickScriptingInterface>();
-    pickScriptingInterface->registerProperties(scriptEngine.get());
-
     // connect this script engines printedMessage signal to the global ScriptEngines these various messages
     auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
     connect(scriptManager.get(), &ScriptManager::printedMessage, scriptEngines, &ScriptEngines::onPrintedMessage);

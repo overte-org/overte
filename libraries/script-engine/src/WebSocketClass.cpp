@@ -19,6 +19,15 @@
 #include "ScriptEngineCast.h"
 #include "ScriptEngineLogging.h"
 #include "ScriptValue.h"
+#include "ScriptManager.h"
+
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType<WebSocketClass*, webSocketToScriptValue, webSocketFromScriptValue>(scriptEngine);
+    scriptRegisterMetaType<QWebSocketProtocol::CloseCode, qWSCloseCodeToScriptValue, qWSCloseCodeFromScriptValue>(scriptEngine);
+    scriptRegisterMetaType<WebSocketClass::ReadyState, wscReadyStateToScriptValue, wscReadyStateFromScriptValue>(scriptEngine);
+}));
 
 WebSocketClass::WebSocketClass(ScriptEngine* engine, QString url) :
     _webSocket(new QWebSocket()),

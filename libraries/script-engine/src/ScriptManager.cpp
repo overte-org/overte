@@ -91,6 +91,21 @@ Q_DECLARE_METATYPE(ScriptValue);
 static ScriptManager::StaticInitializerNode* rootInitializer = nullptr;
 static ScriptManager::StaticTypesInitializerNode* rootTypesInitializer = nullptr;
 
+
+using ScriptableResourceRawPtr = ScriptableResource*;
+ScriptValue externalResourceBucketToScriptValue(ScriptEngine* engine, ExternalResource::Bucket const& in);
+bool externalResourceBucketFromScriptValue(const ScriptValue& object, ExternalResource::Bucket& out);
+static ScriptValue scriptableResourceToScriptValue(ScriptEngine* engine,
+                                                    const ScriptableResourceRawPtr& resource);
+static bool scriptableResourceFromScriptValue(const ScriptValue& value, ScriptableResourceRawPtr& resource);
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType<ExternalResource::Bucket, externalResourceBucketToScriptValue, externalResourceBucketFromScriptValue>(scriptEngine);
+
+    scriptRegisterMetaType<ScriptableResourceRawPtr, scriptableResourceToScriptValue, scriptableResourceFromScriptValue>(scriptEngine);
+}));
+
 void ScriptManager::registerNewStaticInitializer(StaticInitializerNode* dest) {
     // this function is assumed to be called on LoadLibrary, where we are explicitly operating in single-threaded mode
     // Therefore there is no mutex or threadsafety here and the structure is assumed not to change after loading
@@ -634,30 +649,7 @@ void ScriptManager::initMetaTypes() {
         return;
     }
     _areMetaTypesInitialized = true;
-    auto scriptEngine = _engine.get();
     runStaticTypesInitializers(this);
-    registerMIDIMetaTypes(scriptEngine);
-    registerEventTypes(scriptEngine);
-    registerMenuItemProperties(scriptEngine);
-
-    scriptRegisterSequenceMetaType<QVector<QUuid>>(scriptEngine);
-    scriptRegisterSequenceMetaType<QVector<EntityItemID>>(scriptEngine);
-
-    scriptRegisterSequenceMetaType<QVector<glm::vec2>>(scriptEngine);
-    scriptRegisterSequenceMetaType<QVector<glm::quat>>(scriptEngine);
-    scriptRegisterSequenceMetaType<QVector<QString>>(scriptEngine);
-    
-    scriptRegisterMetaType<AnimationDetails, animationDetailsToScriptValue, animationDetailsFromScriptValue>(scriptEngine);
-    scriptRegisterMetaType<WebSocketClass*, webSocketToScriptValue, webSocketFromScriptValue>(scriptEngine);
-    scriptRegisterMetaType<QWebSocketProtocol::CloseCode, qWSCloseCodeToScriptValue, qWSCloseCodeFromScriptValue>(scriptEngine);
-    scriptRegisterMetaType<WebSocketClass::ReadyState, wscReadyStateToScriptValue, wscReadyStateFromScriptValue>(scriptEngine);
-
-    scriptRegisterMetaType<ExternalResource::Bucket, externalResourceBucketToScriptValue, externalResourceBucketFromScriptValue>(scriptEngine);
-
-    scriptRegisterMetaType<ScriptableResourceRawPtr, scriptableResourceToScriptValue, scriptableResourceFromScriptValue>(scriptEngine);
-
-    scriptRegisterMetaType<MeshProxy*, meshToScriptValue, meshFromScriptValue>(scriptEngine);
-    scriptRegisterMetaType<MeshProxyList, meshesToScriptValue, meshesFromScriptValue>(scriptEngine);
 }
 
 void ScriptManager::init() {

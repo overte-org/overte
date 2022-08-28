@@ -29,6 +29,7 @@
 #include "ScriptEngine.h"
 #include "ScriptEngineCast.h"
 #include "ScriptValueIterator.h"
+#include "ScriptEngineLogging.h"
 
 bool isListOfStrings(const ScriptValue& arg) {
     if (!arg.isArray()) {
@@ -78,9 +79,18 @@ void registerMetaTypes(ScriptEngine* engine) {
 
     scriptRegisterMetaType<StencilMaskMode, stencilMaskModeToScriptValue, stencilMaskModeFromScriptValue>(engine);
 
-    scriptRegisterMetaType<std::shared_ptr< MiniPromise >, promiseToScriptValue, promiseFromScriptValue>(engine);
+    scriptRegisterMetaType<AnimationDetails, animationDetailsToScriptValue, animationDetailsFromScriptValue>(engine);
+
+    scriptRegisterMetaType<MeshProxy*, meshToScriptValue, meshFromScriptValue>(engine);
+    scriptRegisterMetaType<MeshProxyList, meshesToScriptValue, meshesFromScriptValue>(engine);
 
     scriptRegisterSequenceMetaType<QVector<unsigned int> >(engine);
+    scriptRegisterSequenceMetaType<QVector<QUuid>>(engine);
+    scriptRegisterSequenceMetaType<QVector<EntityItemID>>(engine);
+
+    scriptRegisterSequenceMetaType<QVector<glm::vec2>>(engine);
+    scriptRegisterSequenceMetaType<QVector<glm::quat>>(engine);
+    scriptRegisterSequenceMetaType<QVector<QString>>(engine);
 }
 
 ScriptValue vec2ToScriptValue(ScriptEngine* engine, const glm::vec2& vec2) {
@@ -858,7 +868,7 @@ ScriptValue meshesToScriptValue(ScriptEngine* engine, const MeshProxyList& in) {
 bool meshesFromScriptValue(const ScriptValue& value, MeshProxyList& out) {
     ScriptValueIteratorPointer itr(value.newIterator());
 
-    qDebug() << "in meshesFromScriptValue, value.length =" << value.property("length").toInt32();
+    qDebug(scriptengine) << "in meshesFromScriptValue, value.length =" << value.property("length").toInt32();
 
     while (itr->hasNext()) {
         itr->next();
@@ -866,7 +876,7 @@ bool meshesFromScriptValue(const ScriptValue& value, MeshProxyList& out) {
         if (meshProxy) {
             out.append(meshProxy);
         } else {
-            qDebug() << "null meshProxy";
+            qDebug(scriptengine) << "null meshProxy";
         }
     }
     return true;
