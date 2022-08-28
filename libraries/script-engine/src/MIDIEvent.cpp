@@ -17,10 +17,13 @@
 #include "ScriptEngine.h"
 #include "ScriptEngineCast.h"
 #include "ScriptValue.h"
+#include "ScriptManager.h"
 
-void registerMIDIMetaTypes(ScriptEngine* engine) {
-    scriptRegisterMetaType<MIDIEvent, midiEventToScriptValue, midiEventFromScriptValue>(engine, "MIDIEvent");
-}
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType<MIDIEvent, midiEventToScriptValue, midiEventFromScriptValue>(scriptEngine, "MIDIEvent");
+}));
 
 const QString MIDI_DELTA_TIME_PROP_NAME = "deltaTime";
 const QString MIDI_EVENT_TYPE_PROP_NAME = "type";

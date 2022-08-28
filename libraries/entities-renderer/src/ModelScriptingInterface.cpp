@@ -19,6 +19,14 @@
 #include <ScriptValueUtils.h>
 #include <OBJWriter.h>
 
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterSequenceMetaType<QList<MeshProxy*>>(scriptEngine);
+    scriptRegisterMetaType<MeshFace, meshFaceToScriptValue, meshFaceFromScriptValue>(scriptEngine);
+    scriptRegisterMetaType<QVector< MeshFace >, qVectorMeshFaceToScriptValue, qVectorMeshFaceFromScriptValue>(scriptEngine);
+}));
+
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager) {
     auto scriptEngine = manager->engine();
 
@@ -26,12 +34,6 @@ STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager) {
 });
 
 ModelScriptingInterface::ModelScriptingInterface(QObject* parent) : QObject(parent) {
-    _modelScriptEngine = qobject_cast<ScriptManager*>(parent)->engine();
-    Q_ASSERT(_modelScriptEngine != nullptr);
-
-    scriptRegisterSequenceMetaType<QList<MeshProxy*>>(_modelScriptEngine.get());
-    scriptRegisterMetaType<MeshFace, meshFaceToScriptValue, meshFaceFromScriptValue>(_modelScriptEngine.get());
-    scriptRegisterMetaType<QVector< MeshFace >, qVectorMeshFaceToScriptValue, qVectorMeshFaceFromScriptValue>(_modelScriptEngine.get());
 }
 
 QString ModelScriptingInterface::meshToOBJ(MeshProxyList in) {
