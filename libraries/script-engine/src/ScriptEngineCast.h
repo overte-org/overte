@@ -115,24 +115,6 @@ int scriptRegisterMetaTypeWithLambdas(ScriptEngine* eng,
     return id;
 }
 
-/*
-template <typename T>
-int scriptRegisterMetaTypeWithLambdas(ScriptEngine* eng,
-                           ScriptValue (*toScriptValue)(ScriptEngine*, const T& t),
-                           bool (*fromScriptValue)(const ScriptValue&, T& t), const char* name = "",
-                           T* = 0)
-{
-    int id;
-    if (strlen(name) > 0) { // make sure it's registered
-        id = qRegisterMetaType<T>(name);
-    } else {
-        id = qRegisterMetaType<T>();
-    }
-    eng->registerCustomType(id, reinterpret_cast<ScriptEngine::MarshalFunction>(toScriptValue),
-                            reinterpret_cast<ScriptEngine::DemarshalFunction>(fromScriptValue));
-    return id;
-}*/
-
 template <class Container>
 ScriptValue scriptValueFromSequence(ScriptEngine* eng, const Container& cont) {
     ScriptValue a = eng->newArray();
