@@ -46,6 +46,7 @@
 #include <PerfStat.h>
 #include <ScriptEngine.h>
 #include <ScriptEngineCast.h>
+#include <ScriptEngineLogging.h>
 #include <SharedUtil.h>
 #include <SoundCache.h>
 #include <ModelEntityItem.h>
@@ -122,7 +123,12 @@ STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
     auto scriptEngine = manager->engine();
 
-    DependencyManager::get<AvatarManager>()->getMyAvatar()->registerProperties(scriptEngine);
+    auto avatarManager = DependencyManager::get<AvatarManager>();
+    if (avatarManager) {
+        avatarManager->getMyAvatar()->registerProperties(scriptEngine);
+    } else {
+        qWarning(scriptengine) << "Cannot register MyAvatar with script engine, AvatarManager instance not available";
+    }
 });
 
 const std::array<QString, static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count)>

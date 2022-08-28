@@ -17,6 +17,8 @@
 
 #include <QtScript/QScriptContext>
 
+#include "../ScriptEngineLogging.h"
+
 #include "ScriptContextQtWrapper.h"
 #include "ScriptValueQtWrapper.h"
 
@@ -190,7 +192,7 @@ void ScriptObjectQtProxy::investigate() {
                 }
                 break;
             default:
-                ;
+                break;
         }
 
         QScriptString name = _engine->toStringHandle(QString::fromLatin1(szName));
@@ -214,11 +216,11 @@ void ScriptObjectQtProxy::investigate() {
         } else {
             int parameterCount = method.parameterCount();
             if(method.returnType() == QMetaType::UnknownType) {
-                qCritical() << "Method " << metaObject->className() << "::" << name << " has QMetaType::UnknownType return value";
+                qCritical(scriptengine) << "Method " << metaObject->className() << "::" << name << " has QMetaType::UnknownType return value";
             }
             for (int i = 0; i < method.parameterCount(); i++) {
                 if (method.parameterType(i) == QMetaType::UnknownType) {
-                    qCritical() << "Parameter " << i << "in method " << metaObject->className() << "::" << name << " is of type QMetaType::UnknownType";
+                    qCritical(scriptengine) << "Parameter " << i << "in method " << metaObject->className() << "::" << name << " is of type QMetaType::UnknownType";
                 }
             }
             if (nameLookup == methodNames.end()) {
@@ -331,10 +333,8 @@ QScriptValue ScriptObjectQtProxy::property(const QScriptValue& object, const QSc
             if (lookup == _methods.cend()) return QScriptValue();
             const MethodDef& methodDef = lookup.value();
             for (auto iter = methodDef.methods.begin(); iter != methodDef.methods.end(); iter++ ) {
-                //qDebug() << (*iter).returnType();
                 if((*iter).returnType() == QMetaType::UnknownType) {
-                    qDebug() << "Method with QMetaType::UnknownType " << metaObject->className() << " " << (*iter).name();
-                    printf("Method with QMetaType::UnknownType");
+                    qDebug(scriptengine) << "Method with QMetaType::UnknownType " << metaObject->className() << " " << (*iter).name();
                 }
             }
             return static_cast<QScriptEngine*>(_engine)->newObject(
@@ -466,25 +466,22 @@ QVariant ScriptMethodQtProxy::extension(Extension extension, const QVariant& arg
     QVector< QList<ScriptValue> > qScriptArgLists;
     QVector< QVector <QGenericArgument> > qGenArgsVectors;
     QVector< QList<QVariant> > qVarArgLists;
-    QVector<int> conversionPenaltyScore;
-    QVector<bool> isMetaRejected;
     qScriptArgLists.resize(num_metas);
     qGenArgsVectors.resize(num_metas);
     qVarArgLists.resize(num_metas);
-    conversionPenaltyScore.resize(num_metas);
-    isMetaRejected.resize(num_metas);
+    bool isValidMetaSelected = false;
+    int bestMeta = 0;
+    int bestConversionPenaltyScore = 0;
 
     for (int i = 0; i < num_metas; i++) {
         const QMetaMethod& meta = _metas[i];
-        isMetaRejected[i] = false;
         int methodNumArgs = meta.parameterCount();
         if (methodNumArgs != numArgs) {
-            isMetaRejected[i] = true;
             continue;
         }
 
         qGenArgsVectors[i].resize(10);
-        conversionPenaltyScore[i] = 0;
+        int conversionPenaltyScore = 0;
         int conversionFailures = 0;
 
         for (int arg = 0; arg < numArgs; ++arg) {
@@ -504,7 +501,7 @@ QVariant ScriptMethodQtProxy::extension(Extension extension, const QVariant& arg
                 } else {
                     qVarArgLists[i].append(varArgVal);
                     const QVariant& converted = qVarArgLists[i].back();
-                    conversionPenaltyScore[i] = _engine->computeCastPenalty(argVal, methodArgTypeId);
+                    conversionPenaltyScore = _engine->computeCastPenalty(argVal, methodArgTypeId);
 
                     // a lot of type conversion assistance thanks to https://stackoverflow.com/questions/28457819/qt-invoke-method-with-qvariant
                     // A const_cast is needed because calling data() would detach the QVariant.
@@ -518,27 +515,23 @@ QVariant ScriptMethodQtProxy::extension(Extension extension, const QVariant& arg
                 parameterConversionFailureCount = conversionFailures;
                 parameterConversionFailureId = meta.methodIndex();
             }
-            isMetaRejected[i] = true;
             continue;
         }
 
-        ScriptContextQtWrapper ourContext(_engine, context);
-        ScriptContextGuard guard(&ourContext);
-    }
-
-    bool isValidMetaSelected = false;
-    int bestMeta = 0;
-    for (int i = 0; i < num_metas; i++) {
-        if (!isValidMetaSelected && !isMetaRejected[i]) {
+        if (!isValidMetaSelected) {
             isValidMetaSelected = true;
             bestMeta = i;
+            bestConversionPenaltyScore = conversionPenaltyScore;
         }
-        if (isValidMetaSelected && !isMetaRejected[i] && conversionPenaltyScore[bestMeta] > conversionPenaltyScore[i]) {
+        if (isValidMetaSelected && bestConversionPenaltyScore > conversionPenaltyScore) {
             bestMeta = i;
+            bestConversionPenaltyScore = conversionPenaltyScore;
         }
     }
 
     if (isValidMetaSelected) {
+        ScriptContextQtWrapper ourContext(_engine, context);
+        ScriptContextGuard guard(&ourContext);
         const QMetaMethod& meta = _metas[bestMeta];
         int returnTypeId = meta.returnType();
         QVector <QGenericArgument> &qGenArgs = qGenArgsVectors[bestMeta];
@@ -649,7 +642,7 @@ int ScriptSignalQtProxy::qt_metacall(QMetaObject::Call call, int id, void** argu
 
     for (ConnectionList::iterator iter = connections.begin(); iter != connections.end(); ++iter) {
         Connection& conn = *iter;
-            conn.callback.call(conn.thisValue, args);
+        conn.callback.call(conn.thisValue, args);
     }
 
     return -1;
@@ -662,6 +655,15 @@ int ScriptSignalQtProxy::discoverMetaCallIdx() {
 
 ScriptSignalQtProxy::ConnectionList::iterator ScriptSignalQtProxy::findConnection(QScriptValue thisObject, QScriptValue callback) {
     ConnectionList::iterator iter;
+/*    resultWithReadLock<ScriptSignalQtProxy::ConnectionList::iterator>([&]{
+        for (iter = _connections.begin(); iter != _connections.end(); ++iter) {
+            Connection& conn = *iter;
+            if (conn.callback.strictlyEquals(callback) && conn.thisValue.strictlyEquals(thisObject)) {
+                break;
+            }
+        }
+        return iter;
+    });*/
     withReadLock([&]{
         for (iter = _connections.begin(); iter != _connections.end(); ++iter) {
             Connection& conn = *iter;
@@ -698,9 +700,11 @@ void ScriptSignalQtProxy::connect(QScriptValue arg0, QScriptValue arg1) {
     }
 
     // are we already connected?
-    ConnectionList::iterator lookup = findConnection(callbackThis, callback);
-    if (lookup != _connections.end()) {
-        return; // already exists
+    {
+        ConnectionList::iterator lookup = findConnection(callbackThis, callback);
+        if (lookup != _connections.end()) {
+            return; // already exists
+        }
     }
 
     // add a reference to ourselves to the destination callback
@@ -757,15 +761,17 @@ void ScriptSignalQtProxy::disconnect(QScriptValue arg0, QScriptValue arg1) {
     }
 
     // locate this connection in our list of connections
-    ConnectionList::iterator lookup = findConnection(callbackThis, callback);
-    if (lookup == _connections.end()) {
-        return;  // not here
-    }
+    {
+        ConnectionList::iterator lookup = findConnection(callbackThis, callback);
+        if (lookup == _connections.end()) {
+            return;  // not here
+        }
 
-    // remove it from our internal list of connections
-    withWriteLock([&]{
-        _connections.erase(lookup);
-    });
+        // remove it from our internal list of connections
+        withWriteLock([&]{
+            _connections.erase(lookup);
+        });
+    }
 
     // remove a reference to ourselves from the destination callback
     QScriptValue destData = callback.data();
