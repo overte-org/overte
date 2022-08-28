@@ -18,6 +18,12 @@
 #include "ScriptEngine.h"
 #include "ScriptEngineCast.h"
 #include "ScriptValue.h"
+#include "ScriptManager.h"
+
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+    scriptRegisterMetaType<MenuItemProperties, menuItemPropertiesToScriptValue, menuItemPropertiesFromScriptValue>(scriptEngine, "MenuItemProperties");
+}));
 
 MenuItemProperties::MenuItemProperties(const QString& menuName, const QString& menuItemName,
                         const QString& shortcutKey, bool checkable, bool checked, bool separator) :
@@ -42,10 +48,6 @@ MenuItemProperties::MenuItemProperties(const QString& menuName, const QString& m
     isChecked(checked),
     isSeparator(separator)
 {
-}
-
-void registerMenuItemProperties(ScriptEngine* engine) {
-    scriptRegisterMetaType<MenuItemProperties, menuItemPropertiesToScriptValue, menuItemPropertiesFromScriptValue>(engine, "MenuItemProperties");
 }
 
 ScriptValue menuItemPropertiesToScriptValue(ScriptEngine* engine, const MenuItemProperties& properties) {

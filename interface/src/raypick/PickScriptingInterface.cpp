@@ -31,12 +31,24 @@
 
 #include <ScriptEngine.h>
 #include <ScriptEngineCast.h>
+#include <ScriptEngineLogging.h>
 #include <ScriptValueUtils.h>
 
 STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
     PickScriptingInterface::registerMetaTypes(scriptEngine);
+});
+
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    auto pickScriptingInterface = DependencyManager::get<PickScriptingInterface>();
+    if (pickScriptingInterface) {
+        pickScriptingInterface->registerProperties(scriptEngine);
+    } else {
+        qWarning(scriptengine) << "Cannot register PickScriptingInterface properties with script engine, PickScriptingInterface instance not available";
+    }
 });
 
 static const float WEB_TOUCH_Y_OFFSET = 0.105f;  // how far forward (or back with a negative number) to slide stylus in hand
