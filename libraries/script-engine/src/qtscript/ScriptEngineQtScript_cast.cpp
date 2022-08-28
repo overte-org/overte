@@ -199,6 +199,7 @@ int ScriptEngineQtScript::computeCastPenalty(QScriptValue& val, int destTypeId) 
     if (val.isNumber()) {
         switch (destTypeId){
             case QMetaType::Bool:
+                // Conversion to bool is acceptable, but numbers are preferred
                 return 5;
                 break;
             case QMetaType::UInt:
@@ -211,20 +212,24 @@ int ScriptEngineQtScript::computeCastPenalty(QScriptValue& val, int destTypeId) 
             case QMetaType::ULongLong:
             case QMetaType::LongLong:
             case QMetaType::UShort:
+                // Perfect case. JS doesn't have separate integer and floating point type
                 return 0;
                 break;
             case QMetaType::QString:
             case QMetaType::QByteArray:
             case QMetaType::QDateTime:
             case QMetaType::QDate:
+                // Conversion to string should be avoided, it's probably not what we want
                 return 100;
                 break;
             default:
+                // Other, not predicted cases
                 return 5;
         }
     } else if (val.isString() || val.isDate() || val.isRegExp()) {
         switch (destTypeId){
             case QMetaType::Bool:
+                // Conversion from to bool should be avoided if possible, it's probably not what we want
                 return 100;
             case QMetaType::UInt:
             case QMetaType::ULong:
@@ -236,12 +241,15 @@ int ScriptEngineQtScript::computeCastPenalty(QScriptValue& val, int destTypeId) 
             case QMetaType::ULongLong:
             case QMetaType::LongLong:
             case QMetaType::UShort:
+                // Conversion from to number should be avoided if possible, it's probably not what we want
                 return 100;
             case QMetaType::QString:
+                // Perfect case
                 return 0;
             case QMetaType::QByteArray:
             case QMetaType::QDateTime:
             case QMetaType::QDate:
+                // String to string should be slightly preferred
                 return 5;
             default:
                 return 5;
@@ -249,6 +257,7 @@ int ScriptEngineQtScript::computeCastPenalty(QScriptValue& val, int destTypeId) 
     } else if (val.isBool() || val.isBoolean()) {
         switch (destTypeId){
             case QMetaType::Bool:
+                // Perfect case
                 return 0;
                 break;
             case QMetaType::UInt:
@@ -261,12 +270,14 @@ int ScriptEngineQtScript::computeCastPenalty(QScriptValue& val, int destTypeId) 
             case QMetaType::ULongLong:
             case QMetaType::LongLong:
             case QMetaType::UShort:
+                // Using function with bool parameter should be preferred over converted bool to nimber
                 return 5;
                 break;
             case QMetaType::QString:
             case QMetaType::QByteArray:
             case QMetaType::QDateTime:
             case QMetaType::QDate:
+                // Bool probably shouldn't be converted to string if there are better alternatives
                 return 50;
                 break;
             default:
@@ -292,13 +303,6 @@ bool ScriptEngineQtScript::castValueToVariant(const QScriptValue& val, QVariant&
             }
         }
     }
-/*    if (QMetaType(destTypeId).name() == "MenuItemProperties") {
-        qDebug() << "castValueToVariant MenuItemProperties " << destTypeId << "map size: " << _customTypes.size();
-        for (auto iter = _customTypes.keyBegin(); iter != _customTypes.keyEnd(); iter++){
-            qDebug() << (*iter);
-        }
-        printf("castValueToVariant MenuItemProperties");
-    }*/
 
     if (destTypeId == qMetaTypeId<ScriptValue>()) {
         dest = QVariant::fromValue(ScriptValue(new ScriptValueQtWrapper(this, val)));
