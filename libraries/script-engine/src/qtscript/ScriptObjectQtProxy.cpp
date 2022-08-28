@@ -654,8 +654,8 @@ int ScriptSignalQtProxy::discoverMetaCallIdx() {
 }
 
 ScriptSignalQtProxy::ConnectionList::iterator ScriptSignalQtProxy::findConnection(QScriptValue thisObject, QScriptValue callback) {
-    ConnectionList::iterator iter;
-/*    resultWithReadLock<ScriptSignalQtProxy::ConnectionList::iterator>([&]{
+    auto iterOut = resultWithReadLock<ScriptSignalQtProxy::ConnectionList::iterator>([&]{
+        ConnectionList::iterator iter;
         for (iter = _connections.begin(); iter != _connections.end(); ++iter) {
             Connection& conn = *iter;
             if (conn.callback.strictlyEquals(callback) && conn.thisValue.strictlyEquals(thisObject)) {
@@ -663,16 +663,8 @@ ScriptSignalQtProxy::ConnectionList::iterator ScriptSignalQtProxy::findConnectio
             }
         }
         return iter;
-    });*/
-    withReadLock([&]{
-        for (iter = _connections.begin(); iter != _connections.end(); ++iter) {
-            Connection& conn = *iter;
-            if (conn.callback.strictlyEquals(callback) && conn.thisValue.strictlyEquals(thisObject)) {
-                break;
-            }
-        }
     });
-    return iter;
+    return iterOut;
 }
 
 
