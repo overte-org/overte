@@ -17,15 +17,18 @@
 #include "PointerEvent.h"
 #include "ScriptEngine.h"
 #include "ScriptEngineCast.h"
+#include "ScriptManager.h"
 #include "SpatialEvent.h"
 #include "TouchEvent.h"
 #include "WheelEvent.h"
 
-void registerEventTypes(ScriptEngine* engine) {
-    scriptRegisterMetaType<KeyEvent, KeyEvent::toScriptValue, KeyEvent::fromScriptValue>(engine, "KeyEvent");
-    scriptRegisterMetaType<MouseEvent, MouseEvent::toScriptValue, MouseEvent::fromScriptValue>(engine, "MouseEvent");
-    scriptRegisterMetaType<PointerEvent, PointerEvent::toScriptValue, PointerEvent::fromScriptValue>(engine, "PointerEvent");
-    scriptRegisterMetaType<TouchEvent, TouchEvent::toScriptValue, TouchEvent::fromScriptValue>(engine, "TouchEvent");
-    scriptRegisterMetaType<WheelEvent, WheelEvent::toScriptValue, WheelEvent::fromScriptValue>(engine, "WheelEvent");
-    scriptRegisterMetaType<SpatialEvent, SpatialEvent::toScriptValue, SpatialEvent::fromScriptValue>(engine, "SpatialEvent");
-}
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+    
+    scriptRegisterMetaType<KeyEvent, KeyEvent::toScriptValue, KeyEvent::fromScriptValue>(scriptEngine, "KeyEvent");
+    scriptRegisterMetaType<MouseEvent, MouseEvent::toScriptValue, MouseEvent::fromScriptValue>(scriptEngine, "MouseEvent");
+    scriptRegisterMetaType<PointerEvent, PointerEvent::toScriptValue, PointerEvent::fromScriptValue>(scriptEngine, "PointerEvent");
+    scriptRegisterMetaType<TouchEvent, TouchEvent::toScriptValue, TouchEvent::fromScriptValue>(scriptEngine, "TouchEvent");
+    scriptRegisterMetaType<WheelEvent, WheelEvent::toScriptValue, WheelEvent::fromScriptValue>(scriptEngine, "WheelEvent");
+    scriptRegisterMetaType<SpatialEvent, SpatialEvent::toScriptValue, SpatialEvent::fromScriptValue>(scriptEngine, "SpatialEvent");
+}));
