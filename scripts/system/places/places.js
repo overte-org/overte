@@ -17,6 +17,7 @@
     var metaverseServers = [];
     var SETTING_METAVERSE_TO_FETCH = "placesAppMetaverseToFetch";
     var SETTING_PINNED_METAVERSE = "placesAppPinnedMetaverse";
+    var REQUEST_TIMEOUT = 10000; //10 seconds
          
     var httpRequest = null;
     var placesData;
@@ -183,6 +184,11 @@
         for (var i = 0; i < metaverseServers.length; i++ ) {
             if (metaverseServers[i].fetch === true) {
                 extractedData = getContent(metaverseServers[i].url + "/api/v1/places?status=online" + "&acash=" + Math.floor(Math.random() * 999999));
+                if (extractedData === "") {
+                    metaverseServers[i].error = true;
+                } else {
+                    metaverseServers[i].error = false;
+                }
                 try {
                     placesData = JSON.parse(extractedData);
                     processData(metaverseServers[i]);
@@ -326,6 +332,10 @@
     function getContent(url) {
         httpRequest = new XMLHttpRequest();
         httpRequest.open("GET", url, false); // false for synchronous request
+        httpRequest.timeout = REQUEST_TIMEOUT;
+        httpRequest.ontimeout=function(){ 
+            return ""; 
+        };        
         httpRequest.send( null );
         return httpRequest.responseText;
     }
