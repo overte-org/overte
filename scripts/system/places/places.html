@@ -215,11 +215,16 @@
                             regionStyle = " style='background-color: #004d57;'";
                         }
 
+                        var serverInError = "";
+                        if (metaverseList[m].error) {
+                            serverInError = "&#128128; ";
+                        }
+
                         formattedMetaverseList = formattedMetaverseList + "<div class = 'placeEntry' id='place-" + metaverseList[m].url + "'" + regionStyle + "><div class = 'blur'>";
                         formattedMetaverseList = formattedMetaverseList + "<table class='placeTable'>";
                         formattedMetaverseList = formattedMetaverseList + "    <tr valign = 'top'>";
                         formattedMetaverseList = formattedMetaverseList + "        <td width='2%'></td>";                                
-                        formattedMetaverseList = formattedMetaverseList + "        <td align='left' width='75%' ><font class= 'metaverseTitle region-" + metaverseList[m].region.toUpperCase() + "' >" + metaverseList[m].url + "</font></td>";
+                        formattedMetaverseList = formattedMetaverseList + "        <td align='left' width='75%' ><font class= 'metaverseTitle region-" + metaverseList[m].region.toUpperCase() + "' >" + serverInError + metaverseList[m].url + "</font></td>";
                         if (!metaverseList[m].pinned) {
                             formattedMetaverseList = formattedMetaverseList + "        <td align='right' ><span style='padding: 0%; cursor: pointer;' onclick='pinMetaverse(" + m + ", true);'><img src='icons/notpinned.png' width='26' height='26' draggable='false'></span></td>";
                         } else {
