@@ -3,6 +3,7 @@ set(TARGET_NAME script-engine)
 setup_hifi_library(Network Script WebSockets)
 
 target_zlib()
+target_v8()
 if (NOT ANDROID)
   target_quazip()
 endif ()
