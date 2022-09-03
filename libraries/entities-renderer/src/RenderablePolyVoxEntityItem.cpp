@@ -1099,6 +1099,10 @@ void RenderablePolyVoxEntityItem::compressVolumeDataAndSendEditPacket() {
         voxelZSize = _voxelVolumeSize.z;
     });
 
+#ifdef WANT_DEBUG
+    qDebug() << "Compressing voxel and sending data packet";
+#endif
+
     QtConcurrent::run([voxelXSize, voxelYSize, voxelZSize, entity] {
         auto polyVoxEntity = std::static_pointer_cast<RenderablePolyVoxEntityItem>(entity);
         QByteArray uncompressedData = polyVoxEntity->volDataToArray(voxelXSize, voxelYSize, voxelZSize);
@@ -1386,7 +1390,11 @@ void RenderablePolyVoxEntityItem::setMesh(graphics::MeshPointer mesh) {
         }
         _shapeReady = false;
         _mesh = mesh;
-        _state = PolyVoxState::BakingMeshFinished;
+        if (_state == PolyVoxState::BakingMeshNoCompress) {
+            _state = PolyVoxState::BakingMeshNoCompressFinished;
+        } else {
+            _state = PolyVoxState::BakingMeshFinished;
+        }
         _meshReady = true;
         startUpdates();
     });
