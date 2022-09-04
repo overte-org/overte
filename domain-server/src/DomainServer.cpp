@@ -86,10 +86,10 @@ bool DomainServer::_getTempName { false };
 QString DomainServer::_userConfigFilename;
 int DomainServer::_parentPID { -1 };
 
-/// @brief The Domain server can proxy requests to the Metaverse server, this function handles those forwarding requests.
+/// @brief The Domain server can proxy requests to the Directory Server, this function handles those forwarding requests.
 /// @param connection The HTTP connection object.
 /// @param requestUrl The full URL of the request. e.g. https://google.com/api/v1/test
-/// @param metaversePath The path on the Metaverse server to route to.
+/// @param metaversePath The path on the Directory Server to route to.
 /// @param requestSubobjectKey (Optional) The parent object key that any data will be inserted into for the forwarded request.
 /// @param requiredData (Optional) This data is required to be present for the request.
 /// @param optionalData (Optional) If provided, this optional data will be forwarded with the request.
@@ -180,7 +180,7 @@ bool DomainServer::forwardMetaverseAPIRequest(HTTPConnection* connection,
     connect(reply, &QNetworkReply::finished, this, [reply, connection]() {
         if (reply->error() != QNetworkReply::NoError) {
             auto data = reply->readAll();
-            qDebug() << "Got error response from metaverse server (" << reply->url() << "): " << data << reply->errorString();
+            qDebug() << "Got error response from directory server (" << reply->url() << "): " << data << reply->errorString();
             connection->respond(HTTPConnection::StatusCode400, data);
             return;
         }
@@ -298,14 +298,14 @@ DomainServer::DomainServer(int argc, char* argv[]) :
 #endif
 
     if (_type != NonMetaverse) {
-        // if we have a metaverse domain, we'll use an access token for API calls
+        // if we have a directory services domain, we'll use an access token for API calls
         resetAccountManagerAccessToken();
 
         setupAutomaticNetworking();
     }
 
     if (!getID().isNull() && _type != NonMetaverse) {
-        // setup periodic heartbeats to metaverse API
+        // setup periodic heartbeats to directory services API
         setupHeartbeatToMetaverse();
 
         // send the first heartbeat immediately
@@ -988,7 +988,7 @@ bool DomainServer::resetAccountManagerAccessToken() {
             if (accessTokenVariant.canConvert(QMetaType::QString)) {
                 accessToken = accessTokenVariant.toString();
             } else {
-                qWarning() << "No access token is present. Some operations that use the metaverse API will fail.";
+                qWarning() << "No access token is present. Some operations that use the directory services API will fail.";
                 qDebug() << "Set an access token via the web interface, in your user config"
                     << "at keypath metaverse.access_token or in your ENV at key DOMAIN_SERVER_ACCESS_TOKEN";
 
@@ -1799,7 +1799,7 @@ void DomainServer::sendICEServerAddressToMetaverseAPI() {
     callbackParameters.errorCallbackMethod = "handleFailedICEServerAddressUpdate";
     callbackParameters.jsonCallbackMethod = "handleSuccessfulICEServerAddressUpdate";
 
-    qCDebug(domain_server_ice) << "Updating ice-server address in Metaverse API to"
+    qCDebug(domain_server_ice) << "Updating ice-server address in Directory Services API to"
         << (_iceServerSocket.isNull() ? "" : _iceServerSocket.getAddress().toString());
 
     static const QString DOMAIN_ICE_ADDRESS_UPDATE = "/api/v1/domains/%1/ice_server_address";
@@ -1814,11 +1814,11 @@ void DomainServer::sendICEServerAddressToMetaverseAPI() {
 void DomainServer::handleSuccessfulICEServerAddressUpdate(QNetworkReply* requestReply) {
     _sendICEServerAddressToMetaverseAPIInProgress = false;
     if (_sendICEServerAddressToMetaverseAPIRedo) {
-        qCDebug(domain_server_ice) << "ice-server address (" << _iceServerSocket << ") updated with metaverse, but has since changed.  redoing update...";
+        qCDebug(domain_server_ice) << "ice-server address (" << _iceServerSocket << ") updated with directory server, but has since changed.  redoing update...";
         _sendICEServerAddressToMetaverseAPIRedo = false;
         sendICEServerAddressToMetaverseAPI();
     } else {
-        qCDebug(domain_server_ice) << "ice-server address (" << _iceServerSocket << ") updated with metaverse.";
+        qCDebug(domain_server_ice) << "ice-server address (" << _iceServerSocket << ") updated with directory server.";
     }
 }
 
@@ -1832,7 +1832,7 @@ void DomainServer::handleFailedICEServerAddressUpdate(QNetworkReply* requestRepl
         const int ICE_SERVER_UPDATE_RETRY_MS = 2 * 1000;
 
         qCWarning(domain_server_ice) << "PAGE: Failed to update ice-server address (" << _iceServerSocket <<
-            ") with Metaverse (" << requestReply->url() << ") (critical error for auto-networking) error:" <<
+            ") with Directory Server (" << requestReply->url() << ") (critical error for auto-networking) error:" <<
             requestReply->errorString();
         qCWarning(domain_server_ice) << "\tRe-attempting in" << ICE_SERVER_UPDATE_RETRY_MS / 1000 << "seconds";
 
@@ -2655,9 +2655,9 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
 
             connect(reply, &QNetworkReply::finished, this, [reply, connection]() {
                 if (reply->error() != QNetworkReply::NoError) {
-                    qDebug() << "Got error response from metaverse server: " << reply->readAll();
+                    qDebug() << "Got error response from Directory Server: " << reply->readAll();
                     connection->respond(HTTPConnection::StatusCode500,
-                                        "Error communicating with Metaverse");
+                                        "Error communicating with Directory Server");
                     return;
                 }
 
@@ -3761,7 +3761,7 @@ void DomainServer::randomizeICEServerAddress(bool shouldTriggerHostLookup) {
     // immediately fire an ICE heartbeat once we've picked a candidate ice-server
     sendHeartbeatToIceServer();
 
-    // immediately send an update to the metaverse API when our ice-server changes
+    // immediately send an update to the directory services API when our ice-server changes
     sendICEServerAddressToMetaverseAPI();
 }
 

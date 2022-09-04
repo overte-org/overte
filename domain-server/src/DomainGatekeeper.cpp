@@ -178,7 +178,7 @@ NodePermissions DomainGatekeeper::setPermissionsForUser(bool isLocalUser, QStrin
     }
 
     // If this user is a known member of a domain group, give them the implied permissions.
-    // Do before processing verifiedUsername in case user is logged into the metaverse and is a member of a blacklist group.
+    // Do before processing verifiedUsername in case user is logged into the Directory Services and is a member of a blacklist group.
     if (!verifiedDomainUserName.isEmpty()) {
         auto userGroups = _domainGroupMemberships[verifiedDomainUserName];
         foreach (QString userGroup, userGroups) {
@@ -249,10 +249,10 @@ NodePermissions DomainGatekeeper::setPermissionsForUser(bool isLocalUser, QStrin
             qDebug() << "|  user-permissions: specific IP matches, so:" << userPerms;
 #endif
         } else {
-            // they are logged into metaverse, but we don't have specific permissions for them.
+            // they are logged into Directory Services, but we don't have specific permissions for them.
             userPerms |= _server->_settingsManager.getStandardPermissionsForName(NodePermissions::standardNameLoggedIn);
 #ifdef WANT_DEBUG
-            qDebug() << "|  user-permissions: user is logged-into metaverse, so:" << userPerms;
+            qDebug() << "|  user-permissions: user is logged-into Directory Services, so:" << userPerms;
 #endif
 
             // if this user is a friend of the domain-owner, give them friend's permissions
@@ -568,7 +568,7 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
                 nodeConnection.senderSockAddr, DomainHandler::ConnectionRefusedReason::NotAuthorizedDomain,
                     domainAuthURL + "|" + domainAuthClientID);
         } else {
-            sendConnectionDeniedPacket("You lack the required metaverse permissions to connect to this domain.",
+            sendConnectionDeniedPacket("You lack the required Directory Services permissions to connect to this domain.",
                 nodeConnection.senderSockAddr, DomainHandler::ConnectionRefusedReason::NotAuthorizedMetaverse);
         }
 #ifdef WANT_DEBUG
@@ -737,11 +737,11 @@ bool DomainGatekeeper::verifyUserSignature(const QString& username,
                 // (a key that we hoped would work but is probably stale)
 
                 if (!senderSockAddr.isNull() && !isOptimisticKey) {
-                    qDebug() << "Error decrypting metaverse username signature for" << username << "- denying connection.";
+                    qDebug() << "Error decrypting directory services username signature for" << username << "- denying connection.";
                     sendConnectionDeniedPacket("Error decrypting username signature.", senderSockAddr,
                         DomainHandler::ConnectionRefusedReason::LoginErrorMetaverse);
                 } else if (!senderSockAddr.isNull()) {
-                    qDebug() << "Error decrypting metaverse username signature for" << username << "with optimistic key -"
+                    qDebug() << "Error decrypting directory services username signature for" << username << "with optimistic key -"
                         << "re-requesting public key and delaying connection";
                 }
 
@@ -1291,7 +1291,7 @@ void DomainGatekeeper::requestDomainUserFinished() {
             QStringList domainUserGroups;
             auto userRoles = rootObject.value("roles").toArray();
             foreach (auto role, userRoles) {
-                // Distinguish domain groups from metaverse groups by adding a leading special character.
+                // Distinguish domain groups from directory services groups by adding a leading special character.
                 domainUserGroups.append(DOMAIN_GROUP_CHAR + role.toString().toLower());
             }
             _domainGroupMemberships[username] = domainUserGroups;

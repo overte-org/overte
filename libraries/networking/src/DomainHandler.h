@@ -200,12 +200,12 @@ public:
      *     <tr>
      *       <td><strong>LoginErrorMetaverse</strong></td>
      *       <td><code>2</code></td>
-     *       <td>You could not be logged into the domain per your metaverse login.</td>
+     *       <td>You could not be logged into the domain per your Directory Services login.</td>
      *     </tr>
      *     <tr>
      *       <td><strong>NotAuthorizedMetaverse</strong></td>
      *       <td><code>3</code></td>
-     *       <td>You are not authorized to connect to the domain per your metaverse login.</td>
+     *       <td>You are not authorized to connect to the domain per your Directory Services login.</td>
      *     </tr>
      *     <tr>
      *       <td><strong>TooManyUsers</strong></td>

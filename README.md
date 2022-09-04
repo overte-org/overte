@@ -16,10 +16,11 @@
 
 ### What is this?
 
-Overte is a 3D social software project seeking to incrementally bring about a truly free and open metaverse.
+Overte is a free and open source 3D social virtual worlds software.
 
 * Desktop and VR use
 * Hundreds of users simultaneously
+* Collaborative in-game creation
 * Full-body avatars
 * FBX, glTF, and OBJ support
 * JavaScript scripting engine
@@ -58,18 +59,18 @@ Overte is a 3D social software project seeking to incrementally bring about a tr
 - [For Linux - Server .deb - Overte Builder](INSTALLER.md#ubuntu-1804--deb)
 - [For Linux - Interface AppImage - Overte Builder](https://github.com/overte-org/overte-builder/blob/master/README.md#building-appimages)
 
-### Boot to Metaverse: The Goal
+### Mission statement
 
-Having a place to experience adventure, a place to relax with calm breath, that's a world to live in. An engine to support infinite combinations and possibilities of worlds without censorship and interruption, that's metaverse. Finding a way to make infinite realities our reality is the dream.
+Overte aims to provide social virtual worlds experience with entitely free and open source infrastructure.
 
-### Boot to Metaverse: The Technicals
+### Technical details
 
-Overte consists of many projects and codebases with its unifying structure's goal being a decentralized metaverse.
+Overte consists of many projects and codebases with its unifying structure's goal being free and open source self-hosted virtual worlds.
 
 - The Interface - You are here!
 - The Server - You are also here!
-- [The Metaverse Server (Codename Iamus)](https://github.com/overte/Iamus/)
-- [The Metaverse Server Dashboard (Codename Iamus)](https://github.com/overte/project-iamus-dashboard/)
+- [The Directory Server (Codename Iamus)](https://github.com/overte/Iamus/)
+- [The Directory Server Dashboard (Codename Iamus)](https://github.com/overte/project-iamus-dashboard/)
 - [The Launcher (Codename Pantheon)](https://github.com/overte/pantheon-launcher/) - Currently Windows only.
 
 #### Tools

@@ -61,7 +61,7 @@ var Strings = {
 
   CHOOSE_DOMAIN_BUTTON: "Choose from my domains",
   CREATE_DOMAIN_BUTTON: "Create new domain ID",
-  CREATE_DOMAIN_SUCCESS_JUST_CONNECTED: "We connnected your Metaverse account and created a new domain ID for this machine.",
+  CREATE_DOMAIN_SUCCESS_JUST_CONNECTED: "We connected your Directory Services account and created a new domain ID for this machine.",
   CREATE_DOMAIN_SUCCESS: "We created a new domain ID for this machine.",
 
   // When a place modification fails, they will be brought back to the previous
@@ -92,7 +92,7 @@ var Strings = {
   ADD_PLACE_LOADING_DIALOG: "Loading your places...",
 
   ADD_PLACE_NOT_CONNECTED_TITLE: "Access token required",
-  ADD_PLACE_NOT_CONNECTED_MESSAGE: "You must have an access token to query your Metaverse places.<br><br>Please follow the instructions on the settings page to add an access token.",
+  ADD_PLACE_NOT_CONNECTED_MESSAGE: "You must have an access token to query your Directory Services places.<br><br>Please follow the instructions on the settings page to add an access token.",
 };
 
 var DOMAIN_ID_TYPE_NONE = 0;
@@ -428,7 +428,7 @@ function chooseFromMetaversePlaces(accessToken, forcePathTo, onSuccessfullyAdded
             loadPlaces();
           } else {
             loadingDialog.modal('hide');
-            bootbox.confirm("We were not able to load your domain information from the Metaverse. Would you like to retry?", function(response) {
+            bootbox.confirm("We were not able to load your domain information from the Directory Services. Would you like to retry?", function(response) {
               if (response) {
                 chooseFromMetaversePlaces(accessToken, forcePathTo, onSuccessfullyAdded);
               }

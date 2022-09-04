@@ -20,9 +20,9 @@ $(document).ready(function(){
     $('.perms-link').on('click', function() {
       var modal_body = '<div>';
       modal_body += '<b>None</b> - No one will have permissions. Only you and the users your have given administrator privileges to will have permissions.</br></br>';
-      modal_body += '<b>Friends</b> - Users who are your Friends in the Metaverse.</br></br>';
-      modal_body += '<b>Users logged into the Metaverse</b> - Users who are currently logged into the Metaverse.</br></br>';
-      modal_body += '<b>Everyone</b> - Anyone who uses the Metaverse.';
+      modal_body += '<b>Friends</b> - Users who are your Friends in the Directory Services.</br></br>';
+      modal_body += '<b>Users logged into the Directory Services</b> - Users who are currently logged into the Directory Services.</br></br>';
+      modal_body += '<b>Everyone</b> - Any user, both logged in and not logged in.';
       modal_body += '</div>';
 
       dialog = bootbox.dialog({
@@ -153,7 +153,7 @@ function setupWizardSteps() {
     });
 
     $('#permissions-description').html('You <span id="username-display"></span>have been assigned administrator privileges to this domain.');
-    $('#admin-description').html('Add more Metaverse usernames');
+    $('#admin-description').html('Add more Directory Services usernames');
   } else {
     $('.cloud-only').remove();
     $('#save-threading-settings').text("Finish");
@@ -207,7 +207,7 @@ function promptToCreateDomainID() {
         if (data && data.status === "failure") {
           swal.showInputError("Error: " + data.error);
         } else {
-          swal.showInputError("Error: Failed to post to metaverse.");
+          swal.showInputError("Error: Failed to post to directory server.");
         }
         console.log("Failed to create domain ID...");
       });
@@ -250,7 +250,7 @@ function updatePlaceNameDisplay() {
       console.warn('Request Failed');
     });
   } else {
-    console.warn('No metaverse domain ID!');
+    console.warn('No Directory Services domain ID!');
   }
 }
 

@@ -85,7 +85,7 @@ class AccountServicesScriptingInterface : public QObject {
      *         <li><code>"connections"</code> &mdash; user is visible to friends and connections.</li>
      *         <li><code>"all"</code> &mdash; user is visible to everyone.</li>
      *     </ul>
-     * @property {string} metaverseServerURL - The metaverse server that the user is authenticated against when logged in
+     * @property {string} metaverseServerURL - The directory server that the user is authenticated against when logged in
      *     &mdash; typically <code>"https://metaverse.highfidelity.com"</code>. <em>Read-only.</em>
      *
      * @borrows AccountServices.getDownloadInfo as getDownloadInfo
@@ -125,7 +125,7 @@ class AccountServicesScriptingInterface : public QObject {
      *         <li><code>"connections"</code> &mdash; user is visible to friends and connections.</li>
      *         <li><code>"all"</code> &mdash; user is visible to everyone.</li>
      *     </ul>
-     * @property {string} metaverseServerURL - The metaverse server that the user is authenticated against when logged in
+     * @property {string} metaverseServerURL - The directory server that the user is authenticated against when logged in
      *     &mdash; typically <code>"https://metaverse.highfidelity.com"</code>. <em>Read-only.</em>
      *
      * @borrows AccountServices.getDownloadInfo as getDownloadInfo
@@ -194,7 +194,7 @@ public slots:
     void logOut();
 
     /*@jsdoc
-     * Updates Metaverse Server URL in AccountManager. It's called by Login window after Metaverse Server URL is changed.
+     * Updates Directory Server URL in AccountManager. It's called by Login window after Directory Server URL is changed.
      * @function AccountServices.updateAuthURLFromMetaverseServerURL
      */
     void updateAuthURLFromMetaverseServerURL();

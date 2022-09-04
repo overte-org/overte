@@ -118,7 +118,7 @@ void DiscoverabilityManager::updateLocation() {
                                    callbackParameters, QJsonDocument(rootObject).toJson());
 
     } else if (UserActivityLogger::getInstance().isEnabled()) {
-        // we still send a heartbeat to the metaverse server for stats collection
+        // we still send a heartbeat to the directory server for stats collection
 
         JSONCallbackParameters callbackParameters;
         callbackParameters.callbackReceiver = this;

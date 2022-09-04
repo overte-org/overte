@@ -128,7 +128,7 @@ PRODUCTION_BUILD=0|1
 PR_BUILD=0|1
 STABLE_BUILD=0|1
 
-// Determine if to utilize testing or stable Metaverse URLs
+// Determine if to utilize testing or stable directory services URLs
 USE_STABLE_GLOBAL_SERVICES=1
 BUILD_GLOBAL_SERVICES=STABLE
 ```

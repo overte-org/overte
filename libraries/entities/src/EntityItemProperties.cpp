@@ -768,7 +768,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     if it isn't.
  * @property {boolean} collisionsWillMove - A synonym for <code>dynamic</code>.
  *
- * @property {string} href="" - A "hifi://" metaverse address that a user is teleported to when they click on the entity.
+ * @property {string} href="" - A "hifi://" directory services address that a user is teleported to when they click on the entity.
  * @property {string} description="" - A description of the <code>href</code> property value.
  *
  * @property {string} userData="" - Used to store extra data about the entity in JSON format.

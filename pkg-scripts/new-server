@@ -4,7 +4,7 @@ if [ -z "$1" ] || [ -z "$2" ]; then
 	echo
 	echo "Sets up a new Overte server with the specified name and base port number"
 	echo "  {name} - a simple name used to identify the server to scripts (not used in the server configuration)"
-	echo "  {base-port} - the base port number (default server is 40100).  The metaverse port will be {base-port}+2"
+	echo "  {base-port} - the base port number (default server is 40100).  The domain server port will be {base-port}+2"
 	echo "                Four contiguous port numbers are allocated, these must not overlap with other running services on this machine"
 	echo
 	echo "Launching a server created by this script is done with:"

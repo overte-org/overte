@@ -14,7 +14,7 @@ var OVERLAY = null;
 location.hostChanged.connect(function(host) {
     print('Detected host change:', host);
 
-    // Fetch the domain ID from the metaverse
+    // Fetch the domain ID from the directory server
     var placeData = request(SERVER + '/places/' + host);
     if (!placeData) {
         print('Cannot find place name - abandoning metadata request for', host);
@@ -24,7 +24,7 @@ location.hostChanged.connect(function(host) {
     var domainID = placeData.data.place.domain.id;
     print('Domain ID:', domainID);
 
-    // Fetch the domain metadata from the metaverse
+    // Fetch the domain metadata from the directory server
     var domainData = request(SERVER + '/domains/' + domainID);
     print(SERVER + '/domains/' + domainID);
     if (!domainData) {

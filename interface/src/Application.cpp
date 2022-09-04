@@ -1273,7 +1273,7 @@ Application::Application(
     // to has gone down and switched to a new content set, so when you reconnect the cached ATP assets will no longer be valid.
     connect(&domainHandler, &DomainHandler::disconnectedFromDomain, DependencyManager::get<ScriptCache>().data(), &ScriptCache::clearATPScriptsFromCache);
 
-    // update our location every 5 seconds in the metaverse server, assuming that we are authenticated with one
+    // update our location every 5 seconds in the directory server, assuming that we are authenticated with one
     const qint64 DATA_SERVER_LOCATION_CHANGE_UPDATE_MSECS = 5 * MSECS_PER_SECOND;
 
     auto discoverabilityManager = DependencyManager::get<DiscoverabilityManager>();
@@ -1282,7 +1282,7 @@ Application::Application(
         DependencyManager::get<AddressManager>().data(), &AddressManager::storeCurrentAddress);
     locationUpdateTimer.start(DATA_SERVER_LOCATION_CHANGE_UPDATE_MSECS);
 
-    // if we get a domain change, immediately attempt update location in metaverse server
+    // if we get a domain change, immediately attempt update location in directory server
     connect(&nodeList->getDomainHandler(), &DomainHandler::connectedToDomain,
         discoverabilityManager.data(), &DiscoverabilityManager::updateLocation);
 
@@ -2571,7 +2571,7 @@ Application::Application(
     _pendingIdleEvent = false;
     _graphicsEngine.startup();
 
-    qCDebug(interfaceapp) << "Metaverse session ID is" << uuidStringWithoutCurlyBraces(accountManager->getSessionID());
+    qCDebug(interfaceapp) << "Directory Service session ID is" << uuidStringWithoutCurlyBraces(accountManager->getSessionID());
 
 #if defined(Q_OS_ANDROID)
     connect(&AndroidHelper::instance(), &AndroidHelper::beforeEnterBackground, this, &Application::beforeEnterBackground);
@@ -7210,9 +7210,9 @@ void Application::updateWindowTitle() const {
 
     QString metaverseDetails;
     if (isMetaverseLoggedIn) {
-        metaverseDetails = " (Metaverse: Connected to " + MetaverseAPI::getCurrentMetaverseServerURL().toString() + " as " + metaverseUsername + ")";
+        metaverseDetails = " (Directory Services: Connected to " + MetaverseAPI::getCurrentMetaverseServerURL().toString() + " as " + metaverseUsername + ")";
     } else {
-        metaverseDetails = " (Metaverse: Not Logged In)";
+        metaverseDetails = " (Directory Services: Not Logged In)";
     }
 
     QString domainDetails;

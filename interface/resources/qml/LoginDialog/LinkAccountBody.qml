@@ -45,7 +45,7 @@ Item {
     property bool lostFocus: false
 
     readonly property bool loginDialogPoppedUp: loginDialog.getLoginDialogPoppedUp()
-    // If not logging into domain, then we must be logging into the metaverse...
+    // If not logging into domain, then we must be logging into the directory services...
     readonly property bool isLoggingInToDomain: loginDialog.getDomainLoginRequested()
     readonly property string domainLoginDomain: loginDialog.getDomainLoginDomain()
 
@@ -74,7 +74,7 @@ Item {
     }
 
     function login() {
-        // make sure the metaverse server is set so we don't send your password to the wrong place!
+        // make sure the directory server is set so we don't send your password to the wrong place!
         if (!isLoggingInToDomain) {
             Settings.setValue("private/selectedMetaverseURL", metaverseServerField.text);
         }
@@ -120,9 +120,9 @@ Item {
             errorContainer.height = (loginErrorMessageTextMetrics.width / displayNameField.width) * loginErrorMessageTextMetrics.height;
         }
         var domainLoginText = "Log In to Domain\n" + domainLoginDomain;
-        loginDialogText.text = (!isLoggingInToDomain) ? "Log In to Metaverse" : domainLoginText;
+        loginDialogText.text = (!isLoggingInToDomain) ? "Log In to Directory Service" : domainLoginText;
         loginButton.text = (!linkAccountBody.linkSteam && !linkAccountBody.linkOculus) ? "Log In" : "Link Account";
-        loginButton.text = (!isLoggingInToDomain) ? "Log In to Metaverse" : "Log In to Domain";
+        loginButton.text = (!isLoggingInToDomain) ? "Log In to Directory Service" : "Log In to Domain";
         loginButton.color = hifi.buttons.blue;
         displayNameField.placeholderText = "Display Name (optional)";
         var savedDisplayName = Settings.getValue("Avatar/displayName", "");
@@ -133,7 +133,7 @@ Item {
             emailField.text = keepMeLoggedInCheckbox.checked ? savedUsername === "Unknown user" ? "" : savedUsername : "";
 
             var metaverseServer = Settings.getValue("private/selectedMetaverseURL", "");
-            console.log("Saved metaverse server:", metaverseServer);
+            console.log("Saved directory server:", metaverseServer);
             metaverseServerField.text = metaverseServer;
         } else {
             // ####### TODO
@@ -388,7 +388,7 @@ Item {
                     top: passwordField.bottom
                     topMargin: 1.5 * hifi.dimensions.contentSpacing.y
                 }
-                placeholderText: "Metaverse Server (optional)"
+                placeholderText: "Directory Server (optional)"
                 activeFocusOnPress: true
                 Keys.onPressed: {
                     switch (event.key) {
@@ -405,7 +405,7 @@ Item {
                             event.accepted = true;
                             if (!isLoggingInToDomain) {
                                 var url = metaverseServerField.text;
-                                console.log("Setting metaverse server to", url);
+                                console.log("Setting directory server to", url);
                                 Settings.setValue("private/selectedMetaverseURL", url);
                                 if(AccountServices.isLoggedIn()){
                                     AccountServices.logOut();
@@ -424,7 +424,7 @@ Item {
                         var url = metaverseServerField.text;
                         if(!(url == Settings.getValue("private/selectedMetaverseURL")) && !(url == "")){
                             if (!isLoggingInToDomain) {
-                                console.log("Setting metaverse server to", url);
+                                console.log("Setting directory server to", url);
                                 Settings.setValue("private/selectedMetaverseURL", url);
                                 if(AccountServices.isLoggedIn()){
                                     AccountServices.logOut();

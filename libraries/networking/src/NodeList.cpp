@@ -507,7 +507,7 @@ void NodeList::sendDomainServerCheckIn() {
 
         if (!domainIsConnected) {
 
-            // Metaverse account.
+            // Directory services account.
             DataServerAccountInfo& accountInfo = accountManager->getAccountInfo();
             packetStream << accountInfo.getUsername();
             // if this is a connect request, and we can present a username signature, send it along

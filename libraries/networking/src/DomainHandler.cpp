@@ -600,7 +600,7 @@ void DomainHandler::processDomainServerConnectionDeniedPacket(QSharedPointer<Rec
 
     // Some connection refusal reasons imply that a login is required. If so, suggest a new login.
     if (reasonSuggestsMetaverseLogin(reasonCode)) {
-        qCWarning(networking) << "Make sure you are logged in to the metaverse.";
+        qCWarning(networking) << "Make sure you are logged in to the directory server.";
 
         auto accountManager = DependencyManager::get<AccountManager>();
 
@@ -617,7 +617,7 @@ void DomainHandler::processDomainServerConnectionDeniedPacket(QSharedPointer<Rec
             _connectionDenialsSinceKeypairRegen = 0;
         }
 
-        // Server with domain login will prompt for domain login, not metaverse, so reset domain values if asked for metaverse.
+        // Server with domain login will prompt for domain login, not directory server, so reset domain values if asked for directory server.
         auto domainAccountManager = DependencyManager::get<DomainAccountManager>();
         domainAccountManager->setAuthURL(QUrl());
         domainAccountManager->setClientID(QString());
@@ -641,7 +641,7 @@ void DomainHandler::processDomainServerConnectionDeniedPacket(QSharedPointer<Rec
             _hasCheckedForDomainAccessToken = true;
         }
 
-        // ####### TODO: regenerate key-pair after several failed connection attempts, similar to metaverse login code?
+        // ####### TODO: regenerate key-pair after several failed connection attempts, similar to Directory Services login code?
 
     }
 }

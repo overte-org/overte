@@ -181,7 +181,7 @@ void AccountManager::setAuthURL(const QUrl& authURL) {
             // pull out the stored account info and store it in memory
             _accountInfo = accountsMap[_authURL.toString()].value<DataServerAccountInfo>();
 
-            qCDebug(networking) << "Found metaverse API account information for" << qPrintable(_authURL.toString());
+            qCDebug(networking) << "Found directory services API account information for" << qPrintable(_authURL.toString());
         } else {
             qCWarning(networking) << "Unable to load account file. No existing account settings will be loaded.";
         }
@@ -211,7 +211,7 @@ void AccountManager::updateAuthURLFromMetaverseServerURL() {
 
 void AccountManager::setSessionID(const QUuid& sessionID) {
     if (_sessionID != sessionID) {
-        qCDebug(networking) << "Metaverse session ID changed to" << uuidStringWithoutCurlyBraces(sessionID);
+        qCDebug(networking) << "Directory Services session ID changed to" << uuidStringWithoutCurlyBraces(sessionID);
         _sessionID = sessionID;
     }
 }
@@ -381,7 +381,7 @@ void AccountManager::sendRequest(const QString& path,
                         }
                     } else {
                         if (VERBOSE_HTTP_REQUEST_DEBUGGING) {
-                            qCDebug(networking) << "Received JSON response from metaverse API that has no matching callback.";
+                            qCDebug(networking) << "Received JSON response from directory services API that has no matching callback.";
                             qCDebug(networking) << QJsonDocument::fromJson(networkReply->readAll());
                         }
                     }
@@ -409,7 +409,7 @@ void AccountManager::sendRequest(const QString& path,
 
                     } else {
                         if (VERBOSE_HTTP_REQUEST_DEBUGGING) {
-                            qCDebug(networking) << "Received error response from metaverse API that has no matching callback.";
+                            qCDebug(networking) << "Received error response from directory services API that has no matching callback.";
                             qCDebug(networking) << "Error" << networkReply->error() << "-" << networkReply->errorString();
                             qCDebug(networking) << networkReply->readAll();
                         }
@@ -840,7 +840,7 @@ void AccountManager::requestAccountSettings() {
         return;
     }
 
-    qCDebug(networking) << "Requesting the Account Settings from the Metaverse API";
+    qCDebug(networking) << "Requesting the Account Settings from the Directory Services API";
 
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
 
@@ -870,7 +870,7 @@ void AccountManager::requestAccountSettingsFinished() {
             _settings.unpack(rootObject["data"].toObject());
             _lastSuccessfulSyncTimestamp = _settings.lastChangeTimestamp();
 
-            qCDebug(networking) << "Received the Account Settings from the Metaverse API";
+            qCDebug(networking) << "Received the Account Settings from the Directory Services API";
 
             emit accountSettingsLoaded();
         } else {
@@ -911,7 +911,7 @@ void AccountManager::postAccountSettings() {
         return;
     }
 
-    qCDebug(networking) << "Account Settings have changed, pushing them to the Metaverse API";
+    qCDebug(networking) << "Account Settings have changed, pushing them to the Directory Services API";
 
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
 
@@ -1000,7 +1000,7 @@ void AccountManager::processGeneratedKeypair(QByteArray publicKey, QByteArray pr
 
     qCDebug(networking) << "Generated 2048-bit RSA keypair.";
 
-    // hold the private key to later set our metaverse API account info if upload succeeds
+    // hold the private key to later set our directory services API account info if upload succeeds
     _pendingPublicKey = publicKey;
     _pendingPrivateKey = privateKey;
     uploadPublicKey();
@@ -1058,7 +1058,7 @@ void AccountManager::uploadPublicKey() {
 }
 
 void AccountManager::publicKeyUploadSucceeded(QNetworkReply* reply) {
-    qCDebug(networking) << "Uploaded public key to Metaverse API. RSA keypair generation is completed.";
+    qCDebug(networking) << "Uploaded public key to Directory Services API. RSA keypair generation is completed.";
 
     // public key upload complete - store the matching private key and persist the account to settings
     _accountInfo.setPrivateKey(_pendingPrivateKey);

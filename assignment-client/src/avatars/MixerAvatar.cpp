@@ -230,7 +230,7 @@ void MixerAvatar::ownerRequestComplete() {
 }
 
 void MixerAvatar::requestCurrentOwnership() {
-    // Get registered owner's public key from metaverse.
+    // Get registered owner's public key from directory server.
     static const QString POP_MARKETPLACE_API { "/api/v1/commerce/proof_of_purchase_status/transfer" };
     auto& networkAccessManager = NetworkAccessManager::getInstance();
     QNetworkRequest networkRequest;

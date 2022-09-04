@@ -19,7 +19,7 @@
 namespace NetworkingConstants {
     // If you want to use STAGING instead of STABLE,
     // links from the Domain Server web interface (like the connect account token generation)
-    // will still point at stable unless you ALSO change the Domain Server Metaverse Server URL inside of:
+    // will still point at stable unless you ALSO change the Domain Server Directory Services URL inside of:
     // <Overte repo>\domain-server\resources\web\js\shared.js
 
     // You can avoid changing that and still effectively use a connected domain on staging
@@ -28,7 +28,7 @@ namespace NetworkingConstants {
 
     const QString WEB_ENGINE_VERSION = "Chrome/83.0.4103.122";
 
-    // For now we only have one Metaverse server.
+    // For now we only have one directory server.
     const QUrl METAVERSE_SERVER_URL_STABLE { "https://mv.overte.org/server" };
     const QUrl METAVERSE_SERVER_URL_STAGING { "https://mv.overte.org/server" };
 
