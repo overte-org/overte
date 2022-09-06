@@ -149,7 +149,7 @@ function setupWizardSteps() {
 
     steps = $('.wizard-step');
     $(steps).each(function(i) {
-      $(this).children(".step-title").text("Step " + (i + 1) + " of " + (steps.length - 1));
+      $(this).children(".step-title").text("Step " + (i + 1) + " of " + (steps.length));
     });
 
     $('#permissions-description').html('You <span id="username-display"></span>have been assigned administrator privileges to this domain.');
