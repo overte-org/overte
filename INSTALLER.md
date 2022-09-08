@@ -165,7 +165,7 @@ DEBVERSION="1-experimental-ubuntu-18.04" DEBEMAIL="julian.gro@overte.org" DEBFUL
 
 ###### Building Overte server RPM packages using Docker
 
-1. Build Docker image as instructed in the relevant Dockerfile in [tools/ci-scripts/deb_package/](tools/ci-scripts/rpm_package/)
+1. Build Docker image as instructed in the relevant Dockerfile in [tools/ci-scripts/rpm_package/](tools/ci-scripts/rpm_package/)
 
 2. Create/Start container
 	Example: `docker run -v $(pwd)/../../..:/overte -it juliangro/overte-server-build:0.1.1-fedora-36`
