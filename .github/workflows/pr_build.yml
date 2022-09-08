@@ -329,7 +329,7 @@ jobs:
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
     - name: Upload Artifact
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')  # Automatic Linux packaging is not implemented
+      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS') || matrix.build_type == 'android'  # Automatic Linux packaging is not implemented
       shell: bash
       working-directory: ${{runner.workspace}}/build
       env:

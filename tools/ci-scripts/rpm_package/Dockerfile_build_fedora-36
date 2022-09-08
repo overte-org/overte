@@ -1,0 +1,14 @@
+# Docker file for building Overte Server
+# Example build: docker build -t juliangro/overte-server-build:0.1.1-fedora-36 -f Dockerfile_build_fedora-36 .
+FROM fedora:36
+LABEL maintainer="Julian Groß (julian.gro@overte.org)"
+LABEL description="Development image for Overte Domain server and assignment clients."
+
+# Install Overte domain-server and assignment-client build dependencies
+RUN dnf -y install curl ninja-build git cmake gcc-c++ openssl-devel qt5-qtwebsockets-devel qt5-qtscript-devel qt5-qtmultimedia-devel unzip libXext-devel qt5-qtwebchannel-devel qt5-qtwebengine-devel qt5-qtxmlpatterns-devel
+
+# Install additional build tools
+RUN dnf -y install zip unzip
+
+# Install tools for package creation
+RUN dnf -y install chrpath rpmdevtools

@@ -1,15 +1,16 @@
-Source: vircadia-server
+Source: overte-server
 Section: comm
 Priority: optional
-Maintainer: Heather Anderson <heath@odysseus.anderson.name>
+Maintainer: Julian Groß <julian.gro@overte.org>
 Build-Depends: debhelper (>= 10)
 Standards-Version: 4.1.2
 Homepage: https://overte.org
 Vcs-Git: https://github.com/overte-org/overte.git
 Vcs-Browser: https://github.com/overte-org/overte
 
-Package: vircadia-server
+Package: overte-server
 Architecture: any
 Depends: adduser, {DEPENDS}
 Description: Overte allows creation and sharing of VR experiences.
-  The Overte provides built-in social features, including avatar interactions, spatialized audio and interactive physics. Additionally, you have the ability to import any 3D object into your virtual environment.
+ The Overte provides built-in social features, including avatar interactions, spatialized audio and interactive physics.
+ Additionally, you have the ability to import any 3D object into your virtual environment.

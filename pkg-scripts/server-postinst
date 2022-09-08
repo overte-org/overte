@@ -1,5 +1,5 @@
 #!/bin/sh
-# postinst script for vircadia-server
+# postinst script for overte-server
 #
 # see: dh_installdeb(1)
 
@@ -19,12 +19,12 @@ set -e
 
 case "$1" in
     configure)
-	ldconfig -n /opt/vircadia/lib
-	adduser --system --quiet --gecos "Vircadia" --home /var/lib/vircadia --group --no-create-home vircadia
-	mkdir -p /var/lib/vircadia
-	chown vircadia:vircadia /var/lib/vircadia
-	chmod 775 /var/lib/vircadia
-	if [ ! -d "/var/lib/vircadia/default" ]; then
+	ldconfig -n /opt/overte/lib
+	adduser --system --quiet --gecos "Overte" --home /var/lib/overte --group --no-create-home overte
+	mkdir -p /var/lib/overte
+	chown overte:overte /var/lib/overte
+	chmod 775 /var/lib/overte
+	if [ ! -d "/var/lib/overte/default" ]; then
 		if [ -d "/var/lib/athena" ]; then
 			ATHENA_ACTIVE=`systemctl list-units \
 				| grep -P -o "(athena-assignment-client|athena-domain-server|athena-server)\S+" \
@@ -40,32 +40,32 @@ case "$1" in
 			echo -n $ATHENA_ACTIVE | xargs -d'|' systemctl stop
 
 			# copy the server files over
-			cp /etc/opt/athena/* /etc/opt/vircadia
-			cp -R /var/lib/athena/* /var/lib/vircadia
-			chown -R vircadia:vircadia /var/lib/vircadia/*
-			find /var/lib/vircadia -maxdepth 3 -path "*\.local/share" -execdir sh -c 'cd share; ln -s ../.. "Vircadia - dev"' ';'
-			find /var/lib/vircadia -maxdepth 3 -path "*\.local/share" -execdir sh -c 'cd share; ln -s ../.. Vircadia' ';'
+			cp /etc/opt/athena/* /etc/opt/overte
+			cp -R /var/lib/athena/* /var/lib/overte
+			chown -R overte:overte /var/lib/overte/*
+			find /var/lib/overte -maxdepth 3 -path "*\.local/share" -execdir sh -c 'cd share; ln -s ../.. "Overte - dev"' ';'
+			find /var/lib/overte -maxdepth 3 -path "*\.local/share" -execdir sh -c 'cd share; ln -s ../.. Overte' ';'
 
-			VIRCADIA_ACTIVE=`echo -n $ATHENA_ACTIVE | sed 's/athena/vircadia/g'`
-			VIRCADIA_ENABLED=`echo -n $ATHENA_ENABLED | sed 's/athena/vircadia/g'`
+			OVERTE_ACTIVE=`echo -n $ATHENA_ACTIVE | sed 's/athena/overte/g'`
+			OVERTE_ENABLED=`echo -n $ATHENA_ENABLED | sed 's/athena/overte/g'`
 
 			echo -n $ATHENA_ENABLED | xargs -d'|' systemctl disable
-			echo -n $VIRCADIA_ENABLED | xargs -d'|' systemctl enable
-			echo -n $VIRCADIA_ACTIVE | xargs -d'|' systemctl start
+			echo -n $OVERTE_ENABLED | xargs -d'|' systemctl enable
+			echo -n $OVERTE_ACTIVE | xargs -d'|' systemctl start
 		else
-			/opt/vircadia/new-server default 40100
-			systemctl enable vircadia-server@default.target
-			systemctl start vircadia-server@default.target
+			/opt/overte/new-server default 40100
+			systemctl enable overte-server@default.target
+			systemctl start overte-server@default.target
 		fi
 	else
 		systemctl list-units \
-			| grep -P -o "(vircadia-assignment-client|vircadia-domain-server|vircadia-server)\S+" \
+			| grep -P -o "(overte-assignment-client|overte-domain-server|overte-server)\S+" \
 			| xargs systemctl restart
 	fi
     ;;
 
     abort-remove|abort-deconfigure)
-	ldconfig -n /opt/vircadia/lib
+	ldconfig -n /opt/overte/lib
     ;;
 
     abort-upgrade)

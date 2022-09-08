@@ -1,0 +1,17 @@
+[Unit]
+Description=Domain Server service for Overte
+After=network.target
+PartOf=overte-server.target
+
+[Service]
+Restart=on-failure
+
+WorkingDirectory=/opt/overte
+Environment="LD_LIBRARY_PATH=/opt/overte/lib"
+User=overte
+Group=overte
+#LimitCORE=infinity
+ExecStart=/opt/overte/domain-server
+
+[Install]
+WantedBy=multi-user.target

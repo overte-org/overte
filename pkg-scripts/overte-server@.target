@@ -1,0 +1,11 @@
+[Unit]
+Description=Overte virtual domain
+Wants=overte-assignment-client@%i.service
+Wants=overte-domain-server@%i.service
+#Wants=overte-ice-server@%i.service
+After=overte-assignment-client@%i.service
+After=overte-domain-server@%i.service
+#After=overte-ice-server@%i.service
+
+[Install]
+WantedBy=multi-user.target
