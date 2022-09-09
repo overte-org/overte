@@ -20,7 +20,7 @@ Overte is a free and open source 3D social virtual worlds software.
 
 * Desktop and VR use
 * Hundreds of users simultaneously
-* Collaborative in-game creation
+* Collaborative in-world creation
 * Full-body avatars
 * FBX, glTF, and OBJ support
 * JavaScript scripting engine
