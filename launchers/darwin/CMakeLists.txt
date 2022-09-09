@@ -149,7 +149,7 @@ set(CPACK_PACKAGE_FILE_NAME "HQ Launcher")
 
 set(CPACK_NSIS_DISPLAY_NAME ${_DISPLAY_NAME})
 
-set(DMG_SUBFOLDER_NAME "Vircadia")
+set(DMG_SUBFOLDER_NAME "Overte")
 set(ESCAPED_DMG_SUBFOLDER_NAME "")
 set(DMG_SUBFOLDER_ICON "${CMAKE_SOURCE_DIR}/cmake/installer/install-folder.rsrc")
 

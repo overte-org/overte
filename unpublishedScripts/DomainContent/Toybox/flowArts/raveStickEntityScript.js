@@ -30,7 +30,7 @@
             green: 10,
             blue: 40
         }];
-        var texture = "https://cdn-1.vircadia.com/us-e-1/DomainContent/Toybox/flowArts/trails.png";
+        var texture = "https://hifi-content/DomainContent/Toybox/flowArts/trails.png";
         this.trail = Entities.addEntity({
             type: "PolyLine",
             dimensions: {

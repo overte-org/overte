@@ -1273,7 +1273,7 @@ Application::Application(
     // to has gone down and switched to a new content set, so when you reconnect the cached ATP assets will no longer be valid.
     connect(&domainHandler, &DomainHandler::disconnectedFromDomain, DependencyManager::get<ScriptCache>().data(), &ScriptCache::clearATPScriptsFromCache);
 
-    // update our location every 5 seconds in the metaverse server, assuming that we are authenticated with one
+    // update our location every 5 seconds in the directory server, assuming that we are authenticated with one
     const qint64 DATA_SERVER_LOCATION_CHANGE_UPDATE_MSECS = 5 * MSECS_PER_SECOND;
 
     auto discoverabilityManager = DependencyManager::get<DiscoverabilityManager>();
@@ -1282,7 +1282,7 @@ Application::Application(
         DependencyManager::get<AddressManager>().data(), &AddressManager::storeCurrentAddress);
     locationUpdateTimer.start(DATA_SERVER_LOCATION_CHANGE_UPDATE_MSECS);
 
-    // if we get a domain change, immediately attempt update location in metaverse server
+    // if we get a domain change, immediately attempt update location in directory server
     connect(&nodeList->getDomainHandler(), &DomainHandler::connectedToDomain,
         discoverabilityManager.data(), &DiscoverabilityManager::updateLocation);
 
@@ -2571,7 +2571,7 @@ Application::Application(
     _pendingIdleEvent = false;
     _graphicsEngine.startup();
 
-    qCDebug(interfaceapp) << "Metaverse session ID is" << uuidStringWithoutCurlyBraces(accountManager->getSessionID());
+    qCDebug(interfaceapp) << "Directory Service session ID is" << uuidStringWithoutCurlyBraces(accountManager->getSessionID());
 
 #if defined(Q_OS_ANDROID)
     connect(&AndroidHelper::instance(), &AndroidHelper::beforeEnterBackground, this, &Application::beforeEnterBackground);
@@ -2645,7 +2645,7 @@ QString Application::getUserAgent() {
         return userAgent;
     }
 
-    QString userAgent = NetworkingConstants::VIRCADIA_USER_AGENT + "/" + BuildInfo::VERSION + "; "
+    QString userAgent = NetworkingConstants::OVERTE_USER_AGENT + "/" + BuildInfo::VERSION + "; "
         + QSysInfo::productType() + " " + QSysInfo::productVersion() + ")";
 
     auto formatPluginName = [](QString name) -> QString { return name.trimmed().replace(" ", "-");  };
@@ -3983,7 +3983,7 @@ void Application::handleSandboxStatus(QNetworkReply* reply) {
 
     // when --url in command line, teleport to location
     if (!_urlParam.isEmpty()) { // Not sure if format supported by isValid().
-        if (_urlParam.scheme() == URL_SCHEME_VIRCADIAAPP) {
+        if (_urlParam.scheme() == URL_SCHEME_OVERTEAPP) {
             Setting::Handle<QVariant>("startUpApp").set(_urlParam.path());
         } else {
             addressLookupString = _urlParam.toString();
@@ -3998,7 +3998,7 @@ void Application::handleSandboxStatus(QNetworkReply* reply) {
     // If this is a first run we short-circuit the address passed in
     if (_firstRun.get()) {
         if (!BuildInfo::PRELOADED_STARTUP_LOCATION.isEmpty()) {
-            DependencyManager::get<LocationBookmarks>()->setHomeLocationToAddress(NetworkingConstants::DEFAULT_VIRCADIA_ADDRESS);
+            DependencyManager::get<LocationBookmarks>()->setHomeLocationToAddress(NetworkingConstants::DEFAULT_OVERTE_ADDRESS);
             Menu::getInstance()->triggerOption(MenuOption::HomeLocation);
         }
 
@@ -7210,9 +7210,9 @@ void Application::updateWindowTitle() const {
 
     QString metaverseDetails;
     if (isMetaverseLoggedIn) {
-        metaverseDetails = " (Metaverse: Connected to " + MetaverseAPI::getCurrentMetaverseServerURL().toString() + " as " + metaverseUsername + ")";
+        metaverseDetails = " (Directory Services: Connected to " + MetaverseAPI::getCurrentMetaverseServerURL().toString() + " as " + metaverseUsername + ")";
     } else {
-        metaverseDetails = " (Metaverse: Not Logged In)";
+        metaverseDetails = " (Directory Services: Not Logged In)";
     }
 
     QString domainDetails;
@@ -7268,7 +7268,7 @@ void Application::clearDomainOctreeDetails(bool clearAll) {
 
 void Application::domainURLChanged(QUrl domainURL) {
     // disable physics until we have enough information about our new location to not cause craziness.
-    setIsServerlessMode(domainURL.scheme() != URL_SCHEME_VIRCADIA);
+    setIsServerlessMode(domainURL.scheme() != URL_SCHEME_OVERTE);
     if (isServerlessMode()) {
         loadServerlessDomain(domainURL);
     }
@@ -7277,7 +7277,7 @@ void Application::domainURLChanged(QUrl domainURL) {
 
 void Application::goToErrorDomainURL(QUrl errorDomainURL) {
     // disable physics until we have enough information about our new location to not cause craziness.
-    setIsServerlessMode(errorDomainURL.scheme() != URL_SCHEME_VIRCADIA);
+    setIsServerlessMode(errorDomainURL.scheme() != URL_SCHEME_OVERTE);
     if (isServerlessMode()) {
         loadErrorDomain(errorDomainURL);
     }
@@ -7641,7 +7641,7 @@ bool Application::canAcceptURL(const QString& urlString) const {
     QUrl url(urlString);
     if (url.query().contains(WEB_VIEW_TAG)) {
         return false;
-    } else if (urlString.startsWith(URL_SCHEME_VIRCADIA)) {
+    } else if (urlString.startsWith(URL_SCHEME_OVERTE)) {
         return true;
     }
     QString lowerPath = url.path().toLower();
@@ -7656,7 +7656,7 @@ bool Application::canAcceptURL(const QString& urlString) const {
 bool Application::acceptURL(const QString& urlString, bool defaultUpload) {
     QUrl url(urlString);
 
-    if (url.scheme() == URL_SCHEME_VIRCADIA) {
+    if (url.scheme() == URL_SCHEME_OVERTE) {
         // this is a hifi URL - have the AddressManager handle it
         QMetaObject::invokeMethod(DependencyManager::get<AddressManager>().data(), "handleLookupString",
                                   Qt::AutoConnection, Q_ARG(const QString&, urlString));
@@ -7787,7 +7787,7 @@ bool Application::askToWearAvatarAttachmentUrl(const QString& url) {
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
     QNetworkRequest networkRequest = QNetworkRequest(url);
     networkRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
-    networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::VIRCADIA_USER_AGENT);
+    networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
     QNetworkReply* reply = networkAccessManager.get(networkRequest);
     int requestNumber = ++_avatarAttachmentRequest;
     connect(reply, &QNetworkReply::finished, [this, reply, url, requestNumber]() {
@@ -7884,7 +7884,7 @@ bool Application::askToReplaceDomainContent(const QString& url) {
             static const QString infoText = simpleWordWrap("Your domain's content will be replaced with a new content set. "
                 "If you want to save what you have now, create a backup before proceeding. For more information about backing up "
                 "and restoring content, visit the documentation page at: ", MAX_CHARACTERS_PER_LINE) +
-                "\nhttps://docs.vircadia.com/host/maintain-domain/backup-domain.html";
+                "\nhttps://docs.overte.org/host/maintain-domain/backup-domain.html";
 
             ModalDialogListener* dig = OffscreenUi::asyncQuestion("Are you sure you want to replace this domain's content set?",
                                                                   infoText, QMessageBox::Yes | QMessageBox::No, QMessageBox::No);

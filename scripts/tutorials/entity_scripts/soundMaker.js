@@ -8,7 +8,7 @@
 
 (function(){ 
 
-    var soundURL ='https://cdn-1.vircadia.com/us-e-1/Developer/Tutorials/soundMaker/bell.wav';
+    var soundURL ='https://content.overte.org/Developer/Tutorials/soundMaker/bell.wav';
     var ringSound;
 
     this.preload = function(entityID) { 

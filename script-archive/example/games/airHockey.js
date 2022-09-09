@@ -61,7 +61,7 @@ var paddleModel = "https://hifi-public.s3.amazonaws.com/ozan/props/airHockeyTabl
 var paddleCollisionModel = "http://headache.hungry.com/~seth/hifi/paddle-hull.obj"
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 var screenSize = Controller.getViewportDimensions();
 var BUTTON_SIZE = 32;
 var PADDING = 3;
@@ -114,7 +114,7 @@ var deleteButton = Overlays.addOverlay("image", {
   y: screenSize.y - (BUTTON_SIZE * 2 + PADDING),
   width: BUTTON_SIZE,
   height: BUTTON_SIZE,
-  imageURL: VIRCADIA_PUBLIC_CDN + "images/delete.png",
+  imageURL: OVERTE_PUBLIC_CDN + "images/delete.png",
   color: {
     red: 255,
     green: 255,
@@ -128,7 +128,7 @@ var spawnButton = Overlays.addOverlay("image", {
   y: screenSize.y - (BUTTON_SIZE * 2 + PADDING),
   width: BUTTON_SIZE,
   height: BUTTON_SIZE,
-  imageURL: VIRCADIA_PUBLIC_CDN + "images/puck.png",
+  imageURL: OVERTE_PUBLIC_CDN + "images/puck.png",
   color: {
     red: 255,
     green: 255,

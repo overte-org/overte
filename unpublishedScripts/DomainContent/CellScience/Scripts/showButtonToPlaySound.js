@@ -6,7 +6,7 @@
 //
 
 (function() {
-    var baseURL = "https://cdn-1.vircadia.com/us-e-1/DomainContent/CellScience/";
+    var baseURL = "https://hifi-content/DomainContent/CellScience/";
     var self = this;
     this.buttonImageURL = baseURL + "GUI/play_audio.svg?2";
 

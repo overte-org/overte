@@ -229,7 +229,7 @@ Item {
         }
 
         function openDocs() {
-            Qt.openUrlExternally("https://docs.vircadia.com/create/avatars/package-avatar.html");
+            Qt.openUrlExternally("https://docs.overte.org/create/avatars/package-avatar.html");
         }
 
         function openVideo() {

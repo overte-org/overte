@@ -6,8 +6,8 @@
 //  Copyright 2021 Vircadia contributors.
 //
 
-#ifndef vircadia_WebRTCSocket_h
-#define vircadia_WebRTCSocket_h
+#ifndef overte_WebRTCSocket_h
+#define overte_WebRTCSocket_h
 
 #include <shared/WebRTC.h>
 
@@ -168,4 +168,4 @@ private:
 
 #endif // WEBRTC_DATA_CHANNELS
 
-#endif // vircadia_WebRTCSocket_h
+#endif // overte_WebRTCSocket_h

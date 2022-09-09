@@ -122,7 +122,7 @@ public:
  * print("Scripts:");
  * printDirectory(null, 0, "");  // null index for the root directory.
  */
-/// Provides script file information available from the <code><a href="https://apidocs.vircadia.dev/ScriptDiscoveryService.html">ScriptDiscoveryService</a></code> scripting interface
+/// Provides script file information available from the <code><a href="https://apidocs.overte.org/ScriptDiscoveryService.html">ScriptDiscoveryService</a></code> scripting interface
 class ScriptsModel : public QAbstractItemModel {
     Q_OBJECT
 public:

@@ -13,7 +13,7 @@
 
     // QML has its own XMLHttpRequest, but:
     // - npm request is easier to use.
-    // - It is not easy to hack QML's XMLHttpRequest to use our MetaverseServer, and to supply the user's auth when contacting it.
+    // - It is not easy to hack QML's XMLHttpRequest to use our Directory Services, and to supply the user's auth when contacting it.
     //   a. Our custom XMLHttpRequestClass object only works with QScriptEngine, not QML's javascript.
     //   b. We have hacked profiles that intercept requests to our MetavserseServer (providing the correct auth), but those
     //      only work in QML WebEngineView. Setting up communication between ordinary QML and a hiddent WebEngineView is
@@ -24,7 +24,7 @@
     //    We will then asynchonously call fromScript({id: theSameString, method: 'http.response', error: errorOrFalsey, response: body})
     //    on that root object.  
     //    RootHttpRequest.qml does this.
-    // 2. If the uri used (computed from byNameOptions, see request.js) is to our metaverse, we will use the appropriate auth.
+    // 2. If the uri used (computed from byNameOptions, see request.js) is to our Directory Services, we will use the appropriate auth.
 
     var request = Script.require('request').request;
     var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");

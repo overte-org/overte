@@ -43,7 +43,7 @@
  *     <em>Read-only.</em>
  * @property {boolean} interstitialModeEnabled=false - <code>true</code> if the interstitial graphics are displayed when a 
  *     domain is loading, otherwise <code>false</code>.
- * @property {location} location - Provides facilities for working with your current metaverse location.
+ * @property {location} location - Provides facilities for working with your current directory services location.
  */
 
 class WindowScriptingInterface : public QObject, public Dependency {
@@ -305,7 +305,7 @@ public slots:
     /*@jsdoc
      * Gets the signature for Interface's protocol version.
      * @function Window.protocolSignature
-     * @returns {string} A string uniquely identifying the version of the metaverse protocol that Interface is using.
+     * @returns {string} A string uniquely identifying the version of the directory services protocol that Interface is using.
      */
     QString protocolSignature();
 
@@ -429,7 +429,7 @@ public slots:
      * has been prepared.
      * @function Window.shareSnapshot
      * @param {string} path - The path and name of the image file to share.
-     * @param {string} [href=""] - The metaverse location where the snapshot was taken.
+     * @param {string} [href=""] - The directory services location where the snapshot was taken.
      */
     void shareSnapshot(const QString& path, const QUrl& href = QUrl(""));
 

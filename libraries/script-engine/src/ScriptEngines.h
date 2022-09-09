@@ -53,7 +53,7 @@ class ScriptEngine;
  *     scripts directory of the Interface installation.
  *     <em>Read-only.</em>
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/ScriptDiscoveryService.html">ScriptDiscoveryService</a></code> scripting interface
+/// Provides the <code><a href="https://apidocs.overte.org/ScriptDiscoveryService.html">ScriptDiscoveryService</a></code> scripting interface
 class ScriptEngines : public QObject, public Dependency, public ScriptInitializerMixin<ScriptEnginePointer> {
     Q_OBJECT
 

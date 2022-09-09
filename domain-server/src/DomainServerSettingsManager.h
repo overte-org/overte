@@ -110,7 +110,7 @@ public:
     QStringList getDomainServerGroupNames();
     QStringList getDomainServerBlacklistGroupNames();
 
-    // these are used to locally cache the result of calling "/api/v1/groups/.../is_member/..." on metaverse's api
+    // these are used to locally cache the result of calling "/api/v1/groups/.../is_member/..." on Directory Services api
     void clearGroupMemberships(const QString& name) { _groupMembership[name.toLower()].clear(); }
     void recordGroupMembership(const QString& name, const QUuid groupID, QUuid rankID);
     QUuid isGroupMember(const QString& name, const QUuid& groupID); // returns rank or -1 if not a member
@@ -177,7 +177,7 @@ private:
     // is done with the returned QVariant*
     HifiConfigVariantMap _configMap;
 
-    // these cause calls to metaverse's group api
+    // these cause calls to directory services group api
     void apiGetGroupID(const QString& groupName);
     void apiGetGroupRanks(const QUuid& groupID);
 

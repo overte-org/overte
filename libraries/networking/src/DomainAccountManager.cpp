@@ -82,7 +82,7 @@ void DomainAccountManager::requestAccessToken(const QString& username, const QSt
 
     QNetworkRequest request;
 
-    request.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::VIRCADIA_USER_AGENT);
+    request.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
 
     // miniOrange WordPress API Authentication plugin:

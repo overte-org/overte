@@ -20,7 +20,7 @@ var blocks = [];
 var blockSpawner;
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 
 
 var floorPos = Vec3.sum(MyAvatar.position, {
@@ -62,7 +62,7 @@ var offButton = Overlays.addOverlay("image", {
   y: screenSize.y - (BUTTON_SIZE + PADDING),
   width: BUTTON_SIZE,
   height: BUTTON_SIZE,
-  imageURL: VIRCADIA_PUBLIC_CDN + "images/close.png",
+  imageURL: OVERTE_PUBLIC_CDN + "images/close.png",
   color: {
     red: 255,
     green: 255,
@@ -76,7 +76,7 @@ var deleteButton = Overlays.addOverlay("image", {
   y: screenSize.y - (BUTTON_SIZE + PADDING),
   width: BUTTON_SIZE,
   height: BUTTON_SIZE,
-  imageURL: VIRCADIA_PUBLIC_CDN + "images/delete.png",
+  imageURL: OVERTE_PUBLIC_CDN + "images/delete.png",
   color: {
     red: 255,
     green: 255,

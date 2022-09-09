@@ -18,7 +18,7 @@
 
 /*@jsdoc
  * The <code>LocationBookmarks</code> API provides facilities for working with location bookmarks. A location bookmark 
- * associates a name with a metaverse address.
+ * associates a name with a directory services address.
  *
  * @namespace LocationBookmarks
  *
@@ -38,11 +38,11 @@ public:
     static const QString HOME_BOOKMARK;
 
     /*@jsdoc
-     * Gets the metaverse address associated with a bookmark.
+     * Gets the directory services address associated with a bookmark.
      * @function LocationBookmarks.getAddress
-     * @param {string} bookmarkName - Name of the bookmark to get the metaverse address for (case sensitive).
-     * @returns {string} The metaverse address for the bookmark. If the bookmark does not exist, <code>""</code> is returned.
-     * @example <caption>Report the "Home" bookmark's metaverse address.</caption>
+     * @param {string} bookmarkName - Name of the bookmark to get the directory services address for (case sensitive).
+     * @returns {string} The directory services address for the bookmark. If the bookmark does not exist, <code>""</code> is returned.
+     * @example <caption>Report the "Home" bookmark's directory services address.</caption>
      * print("Home bookmark's address: " + LocationBookmarks.getAddress("Home"));
      */
     Q_INVOKABLE QString getAddress(const QString& bookmarkName);
@@ -57,16 +57,16 @@ public slots:
     void addBookmark();
 
     /*@jsdoc
-     * Sets the metaverse address associated with the "Home" bookmark.
+     * Sets the directory services address associated with the "Home" bookmark.
      * @function LocationBookmarks.setHomeLocationToAddress
-     * @param {string} address - The metaverse address to set the "Home" bookmark to.
+     * @param {string} address - The directory services address to set the "Home" bookmark to.
      */
     void setHomeLocationToAddress(const QVariant& address);
 
     /*@jsdoc
-     * Gets the metaverse address associated with the "Home" bookmark.
+     * Gets the directory services address associated with the "Home" bookmark.
      * @function LocationBookmarks.getHomeLocationAddress
-     * @returns {string} The metaverse address for the "Home" bookmark.
+     * @returns {string} The directory services address for the "Home" bookmark.
      */
     QString getHomeLocationAddress();
 

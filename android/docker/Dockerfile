@@ -62,8 +62,8 @@ RUN echo "gha ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 USER gha
 WORKDIR /home/gha
 
-# Vircadia dependencies
-ENV HIFI_BASE="/home/gha/vircadia_android"
+# Overte dependencies
+ENV HIFI_BASE="/home/gha/overte_android"
 ENV HIFI_ANDROID_PRECOMPILED="$HIFI_BASE/dependencies"    
 ENV HIFI_VCPKG_BASE="$HIFI_BASE/vcpkg"
 
@@ -72,17 +72,17 @@ RUN mkdir "$HIFI_BASE" && \
     mkdir "$HIFI_ANDROID_PRECOMPILED"
 
 # Download the repo
-RUN git clone https://github.com/vircadia/vircadia.git
+RUN git clone https://github.com/overte-org/overte.git
 
-WORKDIR /home/gha/vircadia
+WORKDIR /home/gha/overte
 
 RUN mkdir build
 
 # Pre-cache the vcpkg managed dependencies
-WORKDIR /home/gha/vircadia/build
+WORKDIR /home/gha/overte/build
 RUN python3 ../prebuild.py --build-root `pwd` --android interface
 
 # Pre-cache the gradle dependencies
-WORKDIR /home/gha/vircadia/android
+WORKDIR /home/gha/overte/android
 RUN ./gradlew -m tasks -PHIFI_ANDROID_PRECOMPILED=$HIFI_ANDROID_PRECOMPILED
 #RUN ./gradlew extractDependencies -PHIFI_ANDROID_PRECOMPILED=$HIFI_ANDROID_PRECOMPILED 

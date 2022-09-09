@@ -395,7 +395,7 @@ Item {
                     text: signUpBody.termsContainerText
                     Component.onCompleted: {
                         // with the link.
-                        termsText.text = qsTr("By signing up, you agree to <a href='https://overte.org/termsofservice'>Vircadia's Terms of Service</a>")
+                        termsText.text = qsTr("By signing up, you agree to <a href='https://overte.org/legal/privacy/'>Overte Terms of Service</a>")
                     }
                 }
 

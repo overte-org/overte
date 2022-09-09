@@ -35,7 +35,7 @@ class QScriptEngine;
  *
  * @deprecated This API is deprecated. Use the {@link Graphics} API instead.
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/Model.html">Model</a></code> scripting interface
+/// Provides the <code><a href="https://apidocs.overte.org/Model.html">Model</a></code> scripting interface
 class ModelScriptingInterface : public QObject {
     Q_OBJECT
 

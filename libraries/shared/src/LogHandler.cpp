@@ -45,7 +45,7 @@ LogHandler& LogHandler::getInstance() {
 }
 
 LogHandler::LogHandler() {
-    QString logOptions = qgetenv("VIRCADIA_LOG_OPTIONS").toLower();
+    QString logOptions = qgetenv("OVERTE_LOG_OPTIONS").toLower();
 
 #ifdef Q_OS_UNIX
     // Enable color by default if we're on Unix, and output is a tty (so we're not being piped into something)
@@ -61,7 +61,7 @@ LogHandler::LogHandler() {
     _useJournald = true;
 #endif
 
-    parseOptions(logOptions, "VIRCADIA_LOG_OPTIONS");
+    parseOptions(logOptions, "OVERTE_LOG_OPTIONS");
 }
 
 const char* stringForLogType(LogMsgType msgType) {

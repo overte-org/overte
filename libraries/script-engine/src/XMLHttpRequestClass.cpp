@@ -62,7 +62,7 @@ void XMLHttpRequestClass::abort() {
 }
 
 void XMLHttpRequestClass::setRequestHeader(const QString& name, const QString& value) {
-    _request.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::VIRCADIA_USER_AGENT);
+    _request.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
     _request.setRawHeader(QByteArray(name.toLatin1()), QByteArray(value.toLatin1()));
 }
 

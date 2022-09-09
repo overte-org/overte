@@ -40,7 +40,7 @@
  * @hifi-server-entity
  * @hifi-assignment-client
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/console.html">console</a></code> scripting API
+/// Provides the <code><a href="https://apidocs.overte.org/console.html">console</a></code> scripting API
 class ConsoleScriptingInterface : public QObject, protected QScriptable {
     Q_OBJECT
 public:

@@ -1,7 +1,7 @@
 //
 //  hotPlaces.js 
 //
-//  Press the number keys to jump to different places in the metaverse!
+//  Press the number keys to jump to different places!
 //  
 //  Created by Philip Rosedale on November 20, 2014
 //  Copyright 2014 High Fidelity, Inc.

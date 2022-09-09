@@ -38,7 +38,7 @@ function transformToSmallerWorld(vector) {
 }
 
 var cellLayout;
-var baseLocation = "https://cdn-1.vircadia.com/us-e-1/DomainContent/CellScience/";
+var baseLocation = "https://hifi-content/DomainContent/CellScience/";
 
 var utilsScript = Script.resolvePath('Scripts/utils.js');
 Script.include(utilsScript);

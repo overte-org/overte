@@ -81,7 +81,7 @@
  *     webSocket.send("Test message");
  * };
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/WebSocket.html">WebSocket</a></code> scripting interface
+/// Provides the <code><a href="https://apidocs.overte.org/WebSocket.html">WebSocket</a></code> scripting interface
 class WebSocketClass : public QObject {
     Q_OBJECT
         Q_PROPERTY(QString binaryType READ getBinaryType WRITE setBinaryType)

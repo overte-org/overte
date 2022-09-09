@@ -1,5 +1,5 @@
 #!/bin/sh
-# postrm script for vircadia-server
+# postrm script for overte-server
 #
 # see: dh_installdeb(1)
 

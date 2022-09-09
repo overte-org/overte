@@ -70,7 +70,7 @@ For code signing to work, you will need to set the `HF_PFX_FILE` and `HF_PFX_PAS
 #### Creating the Installer
     
 1.  Perform a clean cmake from a new terminal.
-1.  Open the `vircadia.sln` solution with elevated (administrator) permissions on Visual Studio and select the **Release** configuration.
+1.  Open the `overte.sln` solution with elevated (administrator) permissions on Visual Studio and select the **Release** configuration.
 1.  Build the solution.
 1.  Build `packaged-server-console-npm-install` (found under **hidden/Server Console**)
 1.  Build `packaged-server-console` (found under **Server Console**)  
@@ -140,7 +140,7 @@ rm -rf *
 ```
 Add `PRODUCTION_BUILD=1` to below command for release and release candidate builds.
 ```bash
-VIRCADIA_USE_SYSTEM_QT=true cmake .. -DVIRCADIA_CPU_ARCHITECTURE=-msse3 -DVCPKG_BUILD_TYPE=release -DSERVER_ONLY=true -DBUILD_TOOLS=true
+OVERTE_USE_SYSTEM_QT=true cmake .. -DOVERTE_CPU_ARCHITECTURE=-msse3 -DVCPKG_BUILD_TYPE=release -DSERVER_ONLY=true -DBUILD_TOOLS=true
 ```
 
 4. Build
@@ -179,7 +179,7 @@ rm -rf *
 ```
 Add `PRODUCTION_BUILD=1` to below command for release and release candidate builds.
 ```bash
-VIRCADIA_USE_SYSTEM_QT=true cmake .. -DVIRCADIA_CPU_ARCHITECTURE=-msse3 -DVCPKG_BUILD_TYPE=release -DSERVER_ONLY=true -DBUILD_TOOLS=true
+OVERTE_USE_SYSTEM_QT=true cmake .. -DOVERTE_CPU_ARCHITECTURE=-msse3 -DVCPKG_BUILD_TYPE=release -DSERVER_ONLY=true -DBUILD_TOOLS=true
 ```
 
 4. Build

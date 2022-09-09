@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -xeuo pipefail
 
-DOCKER_IMAGE_NAME="vircadia_androidbuild"
+DOCKER_IMAGE_NAME="overte_androidbuild"
 
 docker build --build-arg BUILD_UID=`id -u` -t "${DOCKER_IMAGE_NAME}" -f ./android/docker/Dockerfile ./android/docker
 
@@ -17,7 +17,7 @@ test -z "$STABLE_BUILD" && export STABLE_BUILD=0
 docker run \
    --rm \
    --security-opt seccomp:unconfined \
-   -v "${WORKSPACE}":/home/gha/vircadia \
+   -v "${WORKSPACE}":/home/gha/overte \
    -e RELEASE_NUMBER \
    -e RELEASE_TYPE \
    -e ANDROID_APP \

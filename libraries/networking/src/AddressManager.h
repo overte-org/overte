@@ -24,7 +24,7 @@
 #include "AccountManager.h"
 
 extern const QString REDIRECT_HIFI_ADDRESS;
-extern const QString DEFAULT_VIRCADIA_ADDRESS;
+extern const QString DEFAULT_OVERTE_ADDRESS;
 extern const QString DEFAULT_HOME_ADDRESS;
 
 const QString SANDBOX_HIFI_ADDRESS = "hifi://localhost";
@@ -33,10 +33,10 @@ const QString INDEX_PATH = "/";
 const QString GET_PLACE = "/api/v1/places/%1";
 
 /*@jsdoc
- * The <code>location</code> API provides facilities related to your current location in the metaverse.
+ * The <code>location</code> API provides facilities related to your current location in the directory services.
  *
  * <h3>Getter/Setter</h3>
- * <p>You can get and set your current metaverse address by directly reading a string value from and writing a string value to
+ * <p>You can get and set your current directory services address by directly reading a string value from and writing a string value to
  * the <code>location</code> object. This is an alternative to using the <code>location.href</code> property or other object
  * functions.</p>
  *
@@ -50,27 +50,27 @@ const QString GET_PLACE = "/api/v1/places/%1";
  * @property {Uuid} domainID - A UUID uniquely identifying the domain you're visiting. Is {@link Uuid(0)|Uuid.NULL} if you're not
  *     connected to the domain or are in a serverless domain.
  *     <em>Read-only.</em>
- * @property {string} hostname - The name of the domain for your current metaverse address (e.g., <code>"DomainName"</code>,
+ * @property {string} hostname - The name of the domain for your current directory services address (e.g., <code>"DomainName"</code>,
  *     <code>localhost</code>, or an IP address). Is blank if you're in a serverless domain.
  *     <em>Read-only.</em>
- * @property {string} href - Your current metaverse address (e.g., <code>"hifi://domainname/15,-10,26/0,0,0,1"</code>)
+ * @property {string} href - Your current directory services address (e.g., <code>"hifi://domainname/15,-10,26/0,0,0,1"</code>)
  *     regardless of whether or not you're connected to the domain. Starts with <code>"file:///"</code> if you're in a
  *     serverless domain.
  *     <em>Read-only.</em>
  * @property {boolean} isConnected - <code>true</code> if you're connected to the domain in your current <code>href</code>
- *     metaverse address, otherwise <code>false</code>.
- * @property {string} pathname - The location and orientation in your current <code>href</code> metaverse address
+ *     directory services address, otherwise <code>false</code>.
+ * @property {string} pathname - The location and orientation in your current <code>href</code> directory services address
  *     (e.g., <code>"/15,-10,26/0,0,0,1"</code>).
  *     <em>Read-only.</em>
- * @property {string} placename - The place name in your current <code>href</code> metaverse address
+ * @property {string} placename - The place name in your current <code>href</code> directory services address
  *     (e.g., <code>"DomainName"</code>). Is blank if your <code>hostname</code> is an IP address.
  *     <em>Read-only.</em>
- * @property {string} protocol - The protocol of your current <code>href</code> metaverse address (e.g., <code>"hifi"</code>).
+ * @property {string} protocol - The protocol of your current <code>href</code> directory services address (e.g., <code>"hifi"</code>).
  *     <em>Read-only.</em>
  */
 
 /*@jsdoc
- * The <code>AddressManager</code> API provides facilities related to your current location in the metaverse.
+ * The <code>AddressManager</code> API provides facilities related to your current location in the directory services.
  *
  * @namespace AddressManager
  *
@@ -84,22 +84,22 @@ const QString GET_PLACE = "/api/v1/places/%1";
  * @property {Uuid} domainID - A UUID uniquely identifying the domain you're visiting. Is {@link Uuid(0)|Uuid.NULL} if you're not
  *     connected to the domain or are in a serverless domain.
  *     <em>Read-only.</em>
- * @property {string} hostname - The name of the domain for your current metaverse address (e.g., <code>"DomainName"</code>,
+ * @property {string} hostname - The name of the domain for your current directory services address (e.g., <code>"DomainName"</code>,
  *     <code>localhost</code>, or an IP address). Is blank if you're in a serverless domain.
  *     <em>Read-only.</em>
- * @property {string} href - Your current metaverse address (e.g., <code>"hifi://domainname/15,-10,26/0,0,0,1"</code>)
+ * @property {string} href - Your current directory services address (e.g., <code>"hifi://domainname/15,-10,26/0,0,0,1"</code>)
  *     regardless of whether or not you're connected to the domain. Starts with <code>"file:///"</code> if you're in a
  *     serverless domain.
  *     <em>Read-only.</em>
  * @property {boolean} isConnected - <code>true</code> if you're connected to the domain in your current <code>href</code>
- *     metaverse address, otherwise <code>false</code>.
- * @property {string} pathname - The location and orientation in your current <code>href</code> metaverse address
+ *     directory services address, otherwise <code>false</code>.
+ * @property {string} pathname - The location and orientation in your current <code>href</code> directory services address
  *     (e.g., <code>"/15,-10,26/0,0,0,1"</code>).
  *     <em>Read-only.</em>
- * @property {string} placename - The place name in your current <code>href</code> metaverse address
+ * @property {string} placename - The place name in your current <code>href</code> directory services address
  *     (e.g., <code>"DomainName"</code>). Is blank if your <code>hostname</code> is an IP address.
  *     <em>Read-only.</em>
- * @property {string} protocol - The protocol of your current <code>href</code> metaverse address (e.g., <code>"hifi"</code>).
+ * @property {string} protocol - The protocol of your current <code>href</code> directory services address (e.g., <code>"hifi"</code>).
  *     <em>Read-only.</em>
  *
  * @borrows location.handleLookupString as handleLookupString
@@ -144,7 +144,7 @@ public:
     using OrientationGetter = std::function<glm::quat()>;
 
     /*@jsdoc
-     * <p>The reasons for an address lookup via the metaverse API are defined by numeric values:</p>
+     * <p>The reasons for an address lookup via the Directory Services API are defined by numeric values:</p>
      * <table>
      *   <thead>
      *     <tr>
@@ -247,7 +247,7 @@ public:
 
 public slots:
     /*@jsdoc
-     * Takes you to a specified metaverse address.
+     * Takes you to a specified directory services address.
      * @function location.handleLookupString
      * @param {string} address - The address to go to: a <code>"hifi://"</code> address, an IP address (e.g.,
      *     <code>"127.0.0.1"</code> or <code>"localhost"</code>), a <code>file:///</code> address, a domain name, a named path
@@ -297,7 +297,7 @@ public slots:
     }
 
     /*@jsdoc
-     * Takes you to the default "welcome" metaverse address.
+     * Takes you to the default "welcome" directory services address.
      * @function location.goToEntry
      * @param {location.LookupTrigger} trigger=StartupFromSettings - The reason for the function call. Helps ensure that user's
      *     location history is correctly maintained.
@@ -336,20 +336,20 @@ public slots:
     void refreshPreviousLookup();
 
     /*@jsdoc
-     * Updates your current metaverse location in Interface's {@link Settings} file as your last-known address. This can be used
+     * Updates your current directory services location in Interface's {@link Settings} file as your last-known address. This can be used
      * to ensure that you start up at that address if you exit Interface without a later address automatically being saved.
      * @function location.storeCurrentAddress
      */
     void storeCurrentAddress();
 
     /*@jsdoc
-     * Copies your current metaverse address (i.e., <code>location.href</code> property value) to the OS clipboard.
+     * Copies your current directory services address (i.e., <code>location.href</code> property value) to the OS clipboard.
      * @function location.copyAddress
      */
     void copyAddress();
 
     /*@jsdoc
-     * Copies your current metaverse location and orientation (i.e., <code>location.pathname</code> property value) to the OS
+     * Copies your current directory services location and orientation (i.e., <code>location.pathname</code> property value) to the OS
      * clipboard.
      * @function location.copyPath
      */
@@ -367,7 +367,7 @@ public slots:
 
 signals:
     /*@jsdoc
-     * Triggered when looking up the details of a metaverse user or location to go to has completed (successfully or
+     * Triggered when looking up the details of a directory services user or location to go to has completed (successfully or
      * unsuccessfully).
      * @function location.lookupResultsFinished
      * @returns {Signal}
@@ -375,7 +375,7 @@ signals:
     void lookupResultsFinished();
 
     /*@jsdoc
-     * Triggered when looking up the details of a metaverse user or location to go to has completed and the domain or user is
+     * Triggered when looking up the details of a directory services user or location to go to has completed and the domain or user is
      * offline.
      * @function location.lookupResultIsOffline
      * @returns {Signal}
@@ -383,7 +383,7 @@ signals:
     void lookupResultIsOffline();
 
     /*@jsdoc
-     * Triggered when looking up the details of a metaverse user or location to go to has completed and the domain or user could
+     * Triggered when looking up the details of a directory services user or location to go to has completed and the domain or user could
      * not be found.
      * @function location.lookupResultIsNotFound
      * @returns {Signal}

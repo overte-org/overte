@@ -206,7 +206,7 @@ bool IceServer::isVerifiedHeartbeat(const QUuid& domainID, const QByteArray& pla
         }
 
         // we could not verify this heartbeat (missing public key, could not load public key, bad actor)
-        // ask the metaverse API for the right public key and return false to indicate that this is not verified
+        // ask the directory services API for the right public key and return false to indicate that this is not verified
         requestDomainPublicKey(domainID);
     }
 
@@ -214,7 +214,7 @@ bool IceServer::isVerifiedHeartbeat(const QUuid& domainID, const QByteArray& pla
 }
 
 void IceServer::requestDomainPublicKey(const QUuid& domainID) {
-    // send a request to the metaverse API for the public key for this domain
+    // send a request to the directory services API for the public key for this domain
     auto& networkAccessManager = NetworkAccessManager::getInstance();
 
     QUrl publicKeyURL{ MetaverseAPI::getCurrentMetaverseServerURL() };
@@ -281,7 +281,7 @@ void IceServer::publicKeyReplyFinished(QNetworkReply* reply) {
                 qWarning() << "There was no public key present in response for domain with ID" << domainID;
             }
         } else {
-            qWarning() << "The metaverse API did not return success for public key request for domain with ID" << domainID;
+            qWarning() << "The directory services API did not return success for public key request for domain with ID" << domainID;
         }
 
     } else {

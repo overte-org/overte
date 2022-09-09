@@ -69,7 +69,7 @@ int main(int argc, const char* argv[]) {
     LogHandler::getInstance().setShouldUseJournald(false);
 
     QCommandLineParser parser;
-    parser.setApplicationDescription("Overte -- A free/libre and open-source metaverse client");
+    parser.setApplicationDescription("Overte -- A free/libre and open-source virtual worlds client");
     QCommandLineOption helpOption = parser.addHelpOption();
     QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -466,7 +466,7 @@ int main(int argc, const char* argv[]) {
         if (socket.waitForConnected(LOCAL_SERVER_TIMEOUT_MS)) {
             if (parser.isSet(urlOption)) {
                 QUrl url = QUrl(parser.value(urlOption));
-                if (url.isValid() && (url.scheme() == URL_SCHEME_VIRCADIA || url.scheme() == URL_SCHEME_VIRCADIAAPP
+                if (url.isValid() && (url.scheme() == URL_SCHEME_OVERTE || url.scheme() == URL_SCHEME_OVERTEAPP
                         || url.scheme() == HIFI_URL_SCHEME_HTTP || url.scheme() == HIFI_URL_SCHEME_HTTPS
                         || url.scheme() == HIFI_URL_SCHEME_FILE)) {
                     qDebug() << "Writing URL to local socket";

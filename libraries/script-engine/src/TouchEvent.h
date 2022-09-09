@@ -23,7 +23,7 @@
 class QScriptValue;
 class QScriptEngine;
 
-/// Represents a display or device event to the scripting engine. Exposed as <code><a href="https://apidocs.vircadia.dev/global.html#TouchEvent">TouchEvent</a></code>
+/// Represents a display or device event to the scripting engine. Exposed as <code><a href="https://apidocs.overte.org/global.html#TouchEvent">TouchEvent</a></code>
 class TouchEvent {
 public:
     TouchEvent();

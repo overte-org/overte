@@ -254,7 +254,7 @@ hifi::VariantMultiHash FSTReader::downloadMapping(const QString& url) {
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
     QNetworkRequest networkRequest = QNetworkRequest(url);
     networkRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
-    networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::VIRCADIA_USER_AGENT);
+    networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
     QNetworkReply* reply = networkAccessManager.get(networkRequest);
     QEventLoop loop;
     QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);

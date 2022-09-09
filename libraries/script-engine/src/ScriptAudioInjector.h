@@ -38,7 +38,7 @@
  *     <em>Read-only.</em>
  * @property {AudioInjector.AudioInjectorOptions} options - Configures how the injector plays the audio.
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/AudioInjector.html">AudioInjector</a></code> scripting interface
+/// Provides the <code><a href="https://apidocs.overte.org/AudioInjector.html">AudioInjector</a></code> scripting interface
 class ScriptAudioInjector : public QObject {
     Q_OBJECT
 

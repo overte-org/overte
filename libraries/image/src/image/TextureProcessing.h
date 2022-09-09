@@ -34,7 +34,7 @@ namespace TextureUsage {
 /*@jsdoc
  * <p>Describes the type of texture.</p>
  * <p>See also: {@link Material} and
- * {@link https://docs.vircadia.com/create/3d-models/pbr-materials-guide.html|PBR Materials Guide}.</p>
+ * {@link https://docs.overte.org/create/3d-models/pbr-materials-guide.html|PBR Materials Guide}.</p>
  * <table>
  *   <thead>
  *     <tr><th>Value</th><th>Name</th><th>Description</th></tr>

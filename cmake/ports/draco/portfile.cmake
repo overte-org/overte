@@ -17,7 +17,7 @@ endif()
 
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
-    REPO vircadia/draco
+    REPO overte-org/draco
     REF 1.3.5-fixed
     SHA512 68bb15de013093077946d431ab1f4080b84a66d45d20873f2c0dc44aa28034fb4ec1f6e24f9300fde563da53943b73d47163b9c6acf2667312128c50c6d075bd
     HEAD_REF master

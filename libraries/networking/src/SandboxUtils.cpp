@@ -30,7 +30,7 @@ QNetworkReply* getStatus() {
     auto& networkAccessManager = NetworkAccessManager::getInstance();
     QNetworkRequest sandboxStatus(SANDBOX_STATUS_URL);
     sandboxStatus.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
-    sandboxStatus.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::VIRCADIA_USER_AGENT);
+    sandboxStatus.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
     return networkAccessManager.get(sandboxStatus);
 }
 

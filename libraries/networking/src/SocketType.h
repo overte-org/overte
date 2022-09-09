@@ -11,8 +11,8 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#ifndef vircadia_SocketType_h
-#define vircadia_SocketType_h
+#ifndef overte_SocketType_h
+#define overte_SocketType_h
 
 /// @addtogroup Networking
 /// @{
@@ -38,4 +38,4 @@ public:
 
 /// @}
 
-#endif // vircadia_SocketType_h
+#endif // overte_SocketType_h

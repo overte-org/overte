@@ -76,7 +76,7 @@ public slots:
 private slots:
     void handlePeerPingTimeout();
 
-    // Login and groups for domain, separate from metaverse.
+    // Login and groups for domain, separate from directory services.
     void requestDomainUserFinished();
 
 private:
@@ -153,7 +153,7 @@ private:
     Node::LocalID _currentLocalID;
     Node::LocalID _idIncrement;
 
-    // Login and groups for domain, separate from metaverse.
+    // Login and groups for domain, separate from directory services.
     bool domainHasLogin();
     void requestDomainUser(const QString& username, const QString& accessToken, const QString& refreshToken);
     

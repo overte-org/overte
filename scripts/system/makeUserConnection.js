@@ -696,8 +696,8 @@
         requestBody = {'node_id': cleanId(MyAvatar.sessionUUID), 'proposed_node_id': cleanId(id)}; // for use when repeating
 
         // It would be "simpler" to skip this and just look at the response, but:
-        // 1. We don't want to bother the metaverse with request that we know will fail.
-        // 2. We don't want our code here to be dependent on precisely how the metaverse responds (400, 401, etc.)
+        // 1. We don't want to bother the directory server with request that we know will fail.
+        // 2. We don't want our code here to be dependent on precisely how the directory server responds (400, 401, etc.)
         // 3. We also don't want to connect to someone who is anonymous _now_, but was not earlier and still has
         //    the same node id.  Since the messaging doesn't say _who_ isn't logged in, fail the same as if we are
         //    not logged in.

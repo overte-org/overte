@@ -192,7 +192,7 @@ void ScriptsModel::requestDefaultFiles(QString marker) {
             QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
             QNetworkRequest request(url);
             request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
-            request.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::VIRCADIA_USER_AGENT);
+            request.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
             QNetworkReply* reply = networkAccessManager.get(request);
             connect(reply, SIGNAL(finished()), SLOT(downloadFinished()));
         }

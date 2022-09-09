@@ -8,15 +8,15 @@
 #
 
 macro(SETUP_THREAD_DEBUGGER)
-if ("$ENV{VIRCADIA_THREAD_DEBUGGING}")
-  if (VIRCADIA_MEMORY_DEBUGGING )
+if ("$ENV{OVERTE_THREAD_DEBUGGING}")
+  if (OVERTE_MEMORY_DEBUGGING )
     message(FATAL_ERROR "Thread debugging and memory debugging can't be enabled at the same time." )
   endif ()
 
-  SET(VIRCADIA_THREAD_DEBUGGING true)
+  SET(OVERTE_THREAD_DEBUGGING true)
 endif ()
 
-if (VIRCADIA_THREAD_DEBUGGING)
+if (OVERTE_THREAD_DEBUGGING)
   if (UNIX)
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         # for clang on Linux

@@ -10,10 +10,10 @@
 //
 
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 
-var modelURL = VIRCADIA_PUBLIC_CDN + "models/entities/radio/Speakers.fbx";
-var soundURL = VIRCADIA_PUBLIC_CDN + "sounds/family.stereo.raw";
+var modelURL = OVERTE_PUBLIC_CDN + "models/entities/radio/Speakers.fbx";
+var soundURL = OVERTE_PUBLIC_CDN + "sounds/family.stereo.raw";
 
 var AudioRotationOffset = Quat.fromPitchYawRollDegrees(0, -90, 0);
 var audioOptions = {

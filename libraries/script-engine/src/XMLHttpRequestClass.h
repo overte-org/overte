@@ -152,7 +152,7 @@ XMlHttpRequest.getResponseHeader(QString) function
  * req.open("GET", URL);
  * req.send();
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/XMLHttpRequest.html">XMLHttpRequest</a></code> scripting interface
+/// Provides the <code><a href="https://apidocs.overte.org/XMLHttpRequest.html">XMLHttpRequest</a></code> scripting interface
 class XMLHttpRequestClass : public QObject {
     Q_OBJECT
     Q_PROPERTY(QScriptValue response READ getResponse)

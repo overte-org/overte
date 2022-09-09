@@ -85,7 +85,7 @@
             tablet.emitScriptEvent(JSON.stringify(object));
         }
         if (event.type === "manage-friends") {
-            // open a web overlay to metaverse friends page
+            // open a web overlay to directory services friends page
             var friendsWindow = new OverlayWebWindow({
                 title: FRIENDS_WINDOW_TITLE,
                 width: FRIENDS_WINDOW_WIDTH,

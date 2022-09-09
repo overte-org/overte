@@ -30,7 +30,7 @@
  * @hifi-server-entity
  * @hifi-assignment-client
  */
-/// Provides the <code><a href="https://apidocs.vircadia.dev/File.html">File</a></code> scripting API
+/// Provides the <code><a href="https://apidocs.overte.org/File.html">File</a></code> scripting API
 class FileScriptingInterface : public QObject {
     Q_OBJECT
 

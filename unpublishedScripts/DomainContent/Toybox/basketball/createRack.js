@@ -11,10 +11,10 @@
 
 Script.include("../libraries/utils.js");
 
-var basketballURL ="https://cdn-1.vircadia.com/us-e-1/DomainContent/Toybox/basketball/basketball2.fbx";
-var collisionSoundURL = "https://cdn-1.vircadia.com/us-e-1/DomainContent/Toybox/basketball/basketball.wav";
-var rackURL = "https://cdn-1.vircadia.com/us-e-1/DomainContent/Toybox/basketball/basketball_rack.fbx";
-var rackCollisionHullURL ="https://cdn-1.vircadia.com/us-e-1/DomainContent/Toybox/basketball/rack_collision_hull.obj";
+var basketballURL ="https://hifi-content/DomainContent/Toybox/basketball/basketball2.fbx";
+var collisionSoundURL = "https://hifi-content/DomainContent/Toybox/basketball/basketball.wav";
+var rackURL = "https://hifi-content/DomainContent/Toybox/basketball/basketball_rack.fbx";
+var rackCollisionHullURL ="https://hifi-content/DomainContent/Toybox/basketball/rack_collision_hull.obj";
 var NUMBER_OF_BALLS = 4;
 var DIAMETER = 0.30;
 var RESET_DISTANCE = 1;

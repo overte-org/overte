@@ -15,14 +15,14 @@
 /*jslint vars: true*/
 var Overlays, Entities, Controller, Script, MyAvatar, Vec3; // Referenced globals provided by High Fidelity.
 
-var VIRCADIA_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
+var OVERTE_PUBLIC_CDN = networkingConstants.PUBLIC_BUCKET_CDN_URL;
 
 var rezButton = Overlays.addOverlay("image", {
     x: 100,
     y: 350,
     width: 32,
     height: 32,
-    imageURL: VIRCADIA_PUBLIC_CDN + "images/close.png",
+    imageURL: OVERTE_PUBLIC_CDN + "images/close.png",
     color: {
         red: 255,
         green: 255,
