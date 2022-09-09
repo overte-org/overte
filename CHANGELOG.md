@@ -7,8 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased] 2022.08.24
+## [Unreleased] 2022.09.09
 ### Fixes
+- Fixed buggy voxel synchronization (PR184)
+- Added a timeout to the Places app in case a directory server is unreachable (PR183)
 - Fixed OBJ-Serializer using wrong decimal separator on some systems (PR172)
 - Fixed "disable-displays" and "disable-inputs" command line arguments (PR169)
 - Fixed warnings during Create app usage (PR161)
@@ -25,6 +27,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Replaced non-free Graphik font with Fira Sans (PR155)
 - Updated Qt for Windows, and Linux (PR146,PR125)
 - Changed VR Keyboard appearance (PR147)
+- Moved to new URL for hosted assets and did some rebranding (PR149)
 - Changed default control scheme in VR to analog (PR144)
 - Changed default domain-server networking setting (PR143)
 - Changed default screenshot format to PNG (PR112,PR120)
@@ -51,11 +54,13 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Removed unused Inventory app
 
 ### Build system
+- Added helper scripts for building server packages (PR174)
 - Disabled VCPKG logs being removed after completion (PR162)
 - Updated VCPKG (PR162)
 	This bumps the minimum CMake version to 3.21
 - Updated NVTT (PR165)
 - Added Ubuntu 20.04 Qt pre-built package (PR159)
+- Changed a lot of Vircadia optons to Overte ones (PR149)
 - Updated to zlib 1.2.12 (PR123)
 - Moved dependency hosting (PR121)
 - Added Journald as optional dependency (PR104)
