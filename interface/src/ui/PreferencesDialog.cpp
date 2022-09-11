@@ -1,6 +1,7 @@
 //
 //  Re-created Bradley Austin Davis on 2016/01/22
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -245,6 +246,16 @@ void setupPreferences() {
         preference->setMax(5);
         preference->setStep(1);
         preferences->addPreference(preference);
+    }
+    
+    {
+        auto getter = []()->bool { 
+            if (!DependencyManager::get<Snapshot>()->_snapshotNotifications.isSet()){
+                DependencyManager::get<Snapshot>()->_snapshotNotifications.set(true);
+            }
+            return DependencyManager::get<Snapshot>()->_snapshotNotifications.get(); };
+        auto setter = [](bool value) { DependencyManager::get<Snapshot>()->_snapshotNotifications.set(value); };
+        preferences->addPreference(new CheckPreference(SNAPSHOTS, "Display snapshot notifications", getter, setter));
     }
 
     {
