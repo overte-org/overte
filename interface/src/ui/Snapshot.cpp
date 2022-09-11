@@ -552,6 +552,14 @@ QStringList Snapshot::getAvailableSnapshotFormats() {
     return QStringList({"png", "jpg", "webp"});
 }
 
+QStringList Snapshot::getAvailableSnapshotFormatsWithDescriptions() {
+    return QStringList({"PNG - lossless, large file size", "JPG - lossy, fast compression", "WEBP - lossy, higher quality and file size than JPG"});
+}
+
 QStringList Snapshot::getAvailableAnimatedSnapshotFormats() {
     return QStringList({"gif"});
+}
+
+QStringList Snapshot::getAvailableAnimatedSnapshotFormatsWithDescriptions() {
+    return QStringList({"GIF"});
 }

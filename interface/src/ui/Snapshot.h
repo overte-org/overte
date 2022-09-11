@@ -136,11 +136,25 @@ public slots:
     Q_INVOKABLE QStringList getAvailableSnapshotFormats();
 
     /*@jsdoc
+     * Returns a list of supported snapshot formats with short descriptions.
+     * @function Snapshot.getAvailableSnapshotFormatsWithDescriptions
+     * @returns {Array.<string>} List of supported snapshot formats with short descriptions.
+     */
+    Q_INVOKABLE QStringList getAvailableSnapshotFormatsWithDescriptions();
+
+    /*@jsdoc
      * Returns a list of supported animated snapshot formats.
      * @function Snapshot.getAvailableAnimatedSnapshotFormats
      * @returns {Array.<string>} List of supported animated snapshot formats.
      */
     Q_INVOKABLE QStringList getAvailableAnimatedSnapshotFormats();
+
+    /*@jsdoc
+     * Returns a list of supported animated snapshot formats with short descriptions.
+     * @function Snapshot.getAvailableAnimatedSnapshotFormatsWithDescriptions
+     * @returns {Array.<string>} List of supported animated snapshot formats with short descriptions.
+     */
+    Q_INVOKABLE QStringList getAvailableAnimatedSnapshotFormatsWithDescriptions();
     
     
 

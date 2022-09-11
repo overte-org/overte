@@ -250,22 +250,30 @@ void setupPreferences() {
     }
 
     {
-        auto getter = []()->int { return DependencyManager::get<Snapshot>()->getAvailableSnapshotFormats().indexOf(DependencyManager::get<Snapshot>()->getSnapshotFormat()); };
+        auto getter = []()->int {
+            if (!DependencyManager::get<Snapshot>()->_snapshotFormat.isSet()) {
+                DependencyManager::get<Snapshot>()->setSnapshotFormat(DependencyManager::get<Snapshot>()->getAvailableSnapshotFormats()[0]);
+            }
+            return DependencyManager::get<Snapshot>()->getAvailableSnapshotFormats().indexOf(DependencyManager::get<Snapshot>()->getSnapshotFormat()); };
         auto setter = [](int value) { DependencyManager::get<Snapshot>()->setSnapshotFormat(DependencyManager::get<Snapshot>()->getAvailableSnapshotFormats()[value]); };
         auto preference = new RadioButtonsPreference(SNAPSHOTS, "Snapshot format", getter, setter);
         QStringList items;
-        items << DependencyManager::get<Snapshot>()->getAvailableSnapshotFormats();
+        items << DependencyManager::get<Snapshot>()->getAvailableSnapshotFormatsWithDescriptions();
         preference->setHeading("Snapshot format");
         preference->setItems(items);
         preferences->addPreference(preference);
     }
 
     {
-        auto getter = []()->int { return DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormats().indexOf(DependencyManager::get<Snapshot>()->getAnimatedSnapshotFormat()); };
+        auto getter = []()->int {
+            if (!DependencyManager::get<Snapshot>()->_animatedSnapshotFormat.isSet()) {
+                DependencyManager::get<Snapshot>()->setAnimatedSnapshotFormat(DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormats()[0]);
+            }
+            return DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormats().indexOf(DependencyManager::get<Snapshot>()->getAnimatedSnapshotFormat()); };
         auto setter = [](int value) { DependencyManager::get<Snapshot>()->setAnimatedSnapshotFormat(DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormats()[value]); };
         auto preference = new RadioButtonsPreference(SNAPSHOTS, "Animated snapshot format", getter, setter);
         QStringList items;
-        items << DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormats();
+        items << DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormatsWithDescriptions();
         preference->setHeading("Animated snapshot format");
         preference->setItems(items);
         preferences->addPreference(preference);
