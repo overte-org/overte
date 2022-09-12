@@ -4,6 +4,7 @@
 //
 //  Created by Stojce Slavkovski on 1/26/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -63,6 +64,7 @@ public:
     SnapshotMetaData* parseSnapshotData(QString snapshotPath);
 
     Setting::Handle<QString> _snapshotsLocation{ "snapshotsLocation" };
+    Setting::Handle<bool> _snapshotNotifications{ "snapshotNotifications", true };
     void uploadSnapshot(const QString& filename, const QUrl& href = QUrl(""));
 
 signals:
