@@ -22,8 +22,8 @@
 //
 
 Script.include([
-    "./libraries/utils.js",
-    "entitySelectionTool/entitySelectionTool.js"
+    "../../libraries/utils.js",
+    "../entitySelectionTool/entitySelectionTool.js"
 ]);
 
 var selectionManager = SelectionManager;
@@ -337,6 +337,7 @@ EditVoxels = function() {
 
         var pickRay = generalComputePickRay(event.x, event.y);
         var intersection = Entities.findRayIntersection(pickRay, true); // accurate picking
+        var overlaysIntersection = Overlays.findRayIntersection(pickRay, true); // accurate picking
 
         if (wantDebug) {
             print("Pick ray: " + JSON.stringify(pickRay));
@@ -344,6 +345,17 @@ EditVoxels = function() {
         }
 
         if (intersection.intersects) {
+            if (overlaysIntersection.intersects) {
+                var overlaysIntersectionDistance = Vec3.distance(overlaysIntersection.intersection, pickRay.origin);
+                var intersectionDistance = Vec3.distance(intersection.intersection, pickRay.origin);
+                if (wantDebug) {
+                    print("overlaysIntersectionDistance: " + overlaysIntersectionDistance);
+                    print("intersectionDistance: " + intersectionDistance);
+                }
+                if (overlaysIntersectionDistance < intersectionDistance) {
+                    return;
+                }
+            }
             if (attemptVoxelChangeForEntity(intersection.entityID, pickRay.direction, intersection.intersection)) {
                 Script.update.connect(onUpdateHandler);
                 isOnUpdateConnected = true;
@@ -409,16 +421,6 @@ EditVoxels = function() {
         return that.triggeredHand !== NO_HAND;
     };
     
-    function pointingAtDesktopWindowOrTablet(hand) {
-        var pointingAtDesktopWindow = (hand === Controller.Standard.RightHand && 
-                                       SelectionManager.pointingAtDesktopWindowRight) ||
-                                      (hand === Controller.Standard.LeftHand && 
-                                       SelectionManager.pointingAtDesktopWindowLeft);
-        var pointingAtTablet = (hand === Controller.Standard.RightHand && SelectionManager.pointingAtTabletRight) ||
-                               (hand === Controller.Standard.LeftHand && SelectionManager.pointingAtTabletLeft);
-        return pointingAtDesktopWindow || pointingAtTablet;
-    }
-
     function makeClickHandler(hand) {
         return function (clicked) {
             if (!editEnabled) {
@@ -428,7 +430,7 @@ EditVoxels = function() {
             if (triggered() && hand !== that.triggeredHand) {
                 return;
             }
-            if (!triggered() && clicked && !pointingAtDesktopWindowOrTablet(hand)) {
+            if (!triggered() && clicked) {
                 that.triggeredHand = hand;
                 mousePressEvent({});
             } else if (triggered() && !clicked) {
@@ -443,7 +445,7 @@ EditVoxels = function() {
             if (!editEnabled) {
                 return;
             }
-            if (value >= TRIGGER_ON_VALUE && !triggered() && !pointingAtDesktopWindowOrTablet(hand)) {
+            if (value >= TRIGGER_ON_VALUE && !triggered()) {
                 that.pressedHand = hand;
             } else {
                 that.pressedHand = NO_HAND;

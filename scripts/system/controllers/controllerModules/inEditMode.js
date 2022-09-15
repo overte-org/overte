@@ -80,6 +80,7 @@ Script.include("/~/system/libraries/utils.js");
                         }));
                     } else {
                         if (this.selectedTarget.type === Picks.INTERSECTED_ENTITY) {
+                            print("selectEntity message")
                             Messages.sendLocalMessage(this.ENTITY_TOOL_UPDATES_CHANNEL, JSON.stringify({
                                 method: "selectEntity",
                                 entityID: this.selectedTarget.objectID,
@@ -88,6 +89,7 @@ Script.include("/~/system/libraries/utils.js");
                                 intersection: this.selectedTarget.intersection
                             }));
                         } else if (this.selectedTarget.type === Picks.INTERSECTED_OVERLAY) {
+                            print("selectOverlay message")
                             Messages.sendLocalMessage(this.ENTITY_TOOL_UPDATES_CHANNEL, JSON.stringify({
                                 method: "selectOverlay",
                                 overlayID: this.selectedTarget.objectID,

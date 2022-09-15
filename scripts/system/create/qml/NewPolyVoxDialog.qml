@@ -302,7 +302,7 @@ Rectangle {
                 width: 50
                 anchors.left: textVolumeSizeX.right
                 anchors.leftMargin: 3
-                text: qsTr("16")
+                text: qsTr("20")
                 color: "white"
                 font.pixelSize: 12
                 validator: IntValidator{bottom: 8; top: 64;}
@@ -344,7 +344,7 @@ Rectangle {
                 width: 50
                 anchors.left: textVolumeSizeY.right
                 anchors.leftMargin: 3
-                text: qsTr("16")
+                text: qsTr("20")
                 color: "white"
                 font.pixelSize: 12
                 validator: IntValidator{bottom: 8; top: 64;}
@@ -385,7 +385,7 @@ Rectangle {
                 width: 50
                 anchors.left: textVolumeSizeZ.right
                 anchors.leftMargin: 3
-                text: qsTr("16")
+                text: qsTr("20")
                 color: "white"
                 font.pixelSize: 12
                 validator: IntValidator{bottom: 8; top: 64;}
