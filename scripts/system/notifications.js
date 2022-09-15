@@ -1,444 +1,255 @@
 "use strict";
-/*jslint vars:true, plusplus:true, forin:true*/
-/*global Script, Settings, Window, Controller, Overlays, SoundArray, MyAvatar, Tablet, Camera, HMD, Menu, Quat, Vec3*/
 //
 //  notifications.js
-//  Version 0.801
 //
-//  Created by Adrian McCarlie October 8th, 2014
+//  Created by Adrian McCarlie on October 8th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2022 Overte e.V.
 //
-//  This script demonstrates on-screen overlay type notifications.
+//  Display notifications to the user for some specific events.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
-//
-//  ############################################################################
-//  This script generates notifications created via a number of ways, such as:
-//  keystroke:
-//
-//  CTRL/s for snapshot.
-//
-//  System generated notifications:
-//  Connection refused.
-//
-//  To add a new System notification type:
-//
-//  1. Set the Event Connector at the bottom of the script.
-//  example:
-//  Audio.mutedChanged.connect(onMuteStateChanged);
-//
-//  2. Create a new function to produce a text string, do not include new line returns.
-//  example:
-//  function onMuteStateChanged() {
-//     var muteState,
-//         muteString;
-//
-//     muteState = Audio.muted ? "muted" : "unmuted";
-//     muteString = "Microphone is now " + muteState;
-//     createNotification(muteString, NotificationType.MUTE_TOGGLE);
-//  }
-//
-//  This new function must call wordWrap(text) if the length of message is longer than 42 chars or unknown.
-//  wordWrap() will format the text to fit the notifications overlay and return it
-//  after that we will send it to createNotification(text).
-//  If the message is 42 chars or less you should bypass wordWrap() and call createNotification() directly.
 
-//  To add a keypress driven notification:
-//
-//  1. Add a key to the keyPressEvent(key).
-//  2. Declare a text string.
-//  3. Call createNotifications(text, NotificationType) parsing the text.
-//  example:
-//  if (key.text === "o") {
-//      if (ctrlIsPressed === true) {
-//          noteString = "Open script";
-//          createNotification(noteString, NotificationType.OPEN_SCRIPT);
-//      }
-//  }
-
-
-(function () { // BEGIN LOCAL_SCOPE
-
-    Script.include("./libraries/soundArray.js");
-
-    var width = 340.0; //width of notification overlay
-    var windowDimensions = Controller.getViewportDimensions(); // get the size of the interface window
-    var overlayLocationX = (windowDimensions.x - (width + 20.0)); // positions window 20px from the right of the interface window
-    var buttonLocationX = overlayLocationX + (width - 28.0);
-    var locationY = 20.0; // position down from top of interface window
-    var topMargin = 13.0;
-    var leftMargin = 10.0;
-    var textColor =  { red: 228, green: 228, blue: 228}; // text color
-    var backColor =  { red: 2, green: 2, blue: 2}; // background color was 38,38,38
-    var backgroundAlpha = 0;
-    var fontSize = 12.0;
-    var PERSIST_TIME_2D = 10.0;  // Time in seconds before notification fades
-    var PERSIST_TIME_3D = 12.0;
-    var persistTime = PERSIST_TIME_2D;
-    var frame = 0;
-    var ctrlIsPressed = false;
-    var ready = true;
-    var NOTIFICATION_MENU_ITEM_POST = " Notifications";
+(function () {
     var NOTIFICATIONS_MESSAGE_CHANNEL = "Hifi-Notifications";
-    var NOTIFICATION_ALPHA = 9.0; // On a scale of 10.
-
-    var NotificationType = {
-        UNKNOWN: 0,
-        SNAPSHOT: 1,
-        CONNECTION_REFUSED: 2,
-        EDIT_ERROR: 3,
-        TABLET: 4,
-        CONNECTION: 5,
-        WALLET: 6,
-        properties: [
-            { text: "Snapshot" },
-            { text: "Connection Refused" },
-            { text: "Edit error" },
-            { text: "Tablet" },
-            { text: "Connection" },
-            { text: "Wallet" }
-        ],
-        getTypeFromMenuItem: function (menuItemName) {
-            var type;
-            if (menuItemName.substr(menuItemName.length - NOTIFICATION_MENU_ITEM_POST.length) !== NOTIFICATION_MENU_ITEM_POST) {
-                return NotificationType.UNKNOWN;
-            }
-            var preMenuItemName = menuItemName.substr(0, menuItemName.length - NOTIFICATION_MENU_ITEM_POST.length);
-            for (type in this.properties) {
-                if (this.properties[type].text === preMenuItemName) {
-                    return parseInt(type, 10) + 1;
-                }
-            }
-            return NotificationType.UNKNOWN;
-        },
-        getMenuString: function (type) {
-            return this.properties[type - 1].text + NOTIFICATION_MENU_ITEM_POST;
-        }
-    };
-
-    var randomSounds = new SoundArray({ localOnly: true }, true);
-    var numberOfSounds = 2;
-    var soundIndex;
-    for (soundIndex = 1; soundIndex <= numberOfSounds; soundIndex++) {
-        randomSounds.addSound(Script.resolvePath("assets/sounds/notification-general" + soundIndex + ".raw"));
-    }
-
+    var SETTING_ACTIVATION_SNAPSHOT_NOTIFICATIONS = "snapshotNotifications";
+    var NOTIFICATION_LIFE_DURATION = 10000; //10 seconds (in millisecond) before expiration.
+    var FADE_OUT_DURATION = 1000; //1 seconds (in millisecond) to fade out.
+    var NOTIFICATION_ALPHA = 0.9; // a value between: 0.0 (transparent) and 1.0 (fully opaque).
+    var MAX_LINE_LENGTH = 42;
     var notifications = [];
-    var buttons = [];
-    var times = [];
-    var heights = [];
-    var myAlpha = [];
-    var arrays = [];
+    var newEventDetected = false;
+    var isOnHMD = HMD.active;
 
-    var isOnHMD = false,
-        NOTIFICATIONS_3D_DIRECTION = -45.0,  // Degrees from avatar orientation.
-        NOTIFICATIONS_3D_DISTANCE = 1.2,  // Horizontal distance from avatar position.
-        NOTIFICATIONS_3D_ELEVATION = 0.5,  // Height of top middle of top notification relative to avatar eyes.
-        NOTIFICATIONS_3D_YAW = 10.0,  // Degrees relative to notifications direction.
-        NOTIFICATIONS_3D_PITCH = 0.0,  // Degrees from vertical.
-        NOTIFICATION_3D_SCALE = 0.0025,  // Multiplier that converts 2D overlay dimensions to 3D overlay dimensions.
-        NOTIFICATION_3D_BUTTON_WIDTH = 40 * NOTIFICATION_3D_SCALE,  // Need a little more room for button in 3D.
-        overlay3DDetails = [];
+    var textColor =  { "red": 228, "green": 228, "blue": 228};
+    var backColor =  { "red": 2, "green": 2, "blue": 2}; 
 
-    //  push data from above to the 2 dimensional array
-    function createArrays(notice, button, createTime, height, myAlpha) {
-        arrays.push([notice, button, createTime, height, myAlpha]);
-    }
+    //DESKTOP OVERLAY PROPERTIES
+    var overlayWidth = 340.0; //width in pixel of notification overlay in desktop
+    var windowDimensions = Controller.getViewportDimensions(); // get the size of the interface window
+    var overlayLocationX = (windowDimensions.x - (overlayWidth + 20.0)); // positions window 20px from the right of the interface window
+    var overlayLocationY = 20.0; // position down from top of interface window
+    var overlayTopMargin = 13.0;
+    var overlayLeftMargin = 10.0;
+    var overlayFontSize = 12.0;
+    var TEXT_OVERLAY_FONT_SIZE_IN_PIXELS = 18.0; // taken from TextOverlay::textSize
+    var DESKTOP_INTER_SPACE_NOTIFICATION = 5; //5 px
+    
+    //HMD NOTIFICATION PANEL PROPERTIES
+    var HMD_UI_SCALE_FACTOR = 1.0; //This define the size of all the notification system in HMD.
+    var hmdPanelLocalPosition = {"x": 1.2, "y": 2, "z": -1.0};
+    var hmdPanelLocalRotation = Quat.fromVec3Degrees({"x": 0, "y": -15, "z": 0});
+    var mainHMDnotificationContainerID = Uuid.NULL;
+    
+    //HMD LOCAL ENTITY PROPERTIES
+    var entityWidth = 0.8; //in meter
+    var HMD_LINE_HEIGHT = 0.03;
+    var entityTopMargin = 0.02;
+    var entityLeftMargin = 0.02;
+    var HMD_INTER_SPACE_NOTIFICATION = 0.05;
 
-    //  This handles the final dismissal of a notification after fading
-    function dismiss(firstNoteOut, firstButOut, firstOut) {
-        Overlays.deleteOverlay(firstNoteOut);
-        Overlays.deleteOverlay(firstButOut);
-        notifications.splice(firstOut, 1);
-        buttons.splice(firstOut, 1);
-        times.splice(firstOut, 1);
-        heights.splice(firstOut, 1);
-        myAlpha.splice(firstOut, 1);
-        overlay3DDetails.splice(firstOut, 1);
-    }
-
-    function fadeIn(noticeIn, buttonIn) {
-        var q = 0,
-            qFade,
-            pauseTimer = null;
-
-        pauseTimer = Script.setInterval(function () {
-            q += 1;
-            qFade = q / 10.0;
-            Overlays.editOverlay(noticeIn, { "alpha": qFade, "backgroundAlpha": qFade, "textAlpha": qFade });
-            Overlays.editOverlay(buttonIn, { "alpha": qFade });
-            if (q >= NOTIFICATION_ALPHA) {
-                Script.clearInterval(pauseTimer);
-            }
-        }, 10);
-    }
-
-    //  this fades the notification ready for dismissal, and removes it from the arrays
-    function fadeOut(noticeOut, buttonOut, arraysOut) {
-        var r = NOTIFICATION_ALPHA,
-            rFade,
-            pauseTimer = null;
-
-        pauseTimer = Script.setInterval(function () {
-            r -= 1;
-            rFade = Math.max(0.0, r / 10.0);
-            Overlays.editOverlay(noticeOut, { "alpha": rFade, "backgroundAlpha": rFade, "textAlpha": rFade });
-            Overlays.editOverlay(buttonOut, { "alpha": rFade });
-            if (r <= 0) {
-                dismiss(noticeOut, buttonOut, arraysOut);
-                arrays.splice(arraysOut, 1);
-                ready = true;
-                Script.clearInterval(pauseTimer);
-            }
-        }, 20);
-    }
-
-    function calculate3DOverlayPositions(noticeWidth, noticeHeight, y) {
-        // Calculates overlay positions and orientations in avatar coordinates.
-        var noticeY,
-            originOffset,
-            notificationOrientation,
-            notificationPosition,
-            buttonPosition;
-        var sensorScaleFactor = isOnHMD ? MyAvatar.sensorToWorldScale : 1.0;
-        // Notification plane positions
-        noticeY = -sensorScaleFactor * (y * NOTIFICATION_3D_SCALE + 0.5 * noticeHeight);
-        notificationPosition = { x: 0, y: noticeY, z: 0 };
-        buttonPosition = { x: sensorScaleFactor * (noticeWidth - NOTIFICATION_3D_BUTTON_WIDTH), y: noticeY, z: 0.001 };
-
-        // Rotate plane
-        notificationOrientation = Quat.fromPitchYawRollDegrees(NOTIFICATIONS_3D_PITCH, NOTIFICATIONS_3D_DIRECTION + NOTIFICATIONS_3D_YAW, 0);
-        notificationPosition = Vec3.multiplyQbyV(notificationOrientation, notificationPosition);
-        buttonPosition = Vec3.multiplyQbyV(notificationOrientation, buttonPosition);
-
-        // Translate plane
-        originOffset = Vec3.multiplyQbyV(Quat.fromPitchYawRollDegrees(0, NOTIFICATIONS_3D_DIRECTION, 0), { x: 0, y: 0, z: -NOTIFICATIONS_3D_DISTANCE * sensorScaleFactor});
-        originOffset.y += NOTIFICATIONS_3D_ELEVATION * sensorScaleFactor;
-        notificationPosition = Vec3.sum(originOffset, notificationPosition);
-        buttonPosition = Vec3.sum(originOffset, buttonPosition);
-
-        return {
-            notificationOrientation: notificationOrientation,
-            notificationPosition: notificationPosition,
-            buttonPosition: buttonPosition
-        };
-    }
-
-    //  Pushes data to each array and sets up data for 2nd dimension array
-    //  to handle auxiliary data not carried by the overlay class
-    //  specifically notification "heights", "times" of creation, and .
-    function notify(notice, button, height, imageProperties, image) {
-        var notificationText,
-            noticeWidth,
-            noticeHeight,
-            positions,
-            last;
-        var sensorScaleFactor = isOnHMD ? MyAvatar.sensorToWorldScale : 1.0;
-        if (isOnHMD) {
-            // Calculate 3D values from 2D overlay properties.
-
-            noticeWidth = notice.width * NOTIFICATION_3D_SCALE + NOTIFICATION_3D_BUTTON_WIDTH;
-            noticeHeight = notice.height * NOTIFICATION_3D_SCALE;
-
-            notice.dimensions = { "x": noticeWidth * sensorScaleFactor, "y": noticeHeight * sensorScaleFactor, "z": 0.01 };
-
-            positions = calculate3DOverlayPositions(noticeWidth, noticeHeight, notice.y);   
-            notice.parentID = MyAvatar.sessionUUID;
-            notice.parentJointIndex = -2;
-            notice.isVisibleInSecondaryCamera = false;
-            
-            if (!image) {
-                notice.topMargin = 0.75 * notice.topMargin * NOTIFICATION_3D_SCALE * sensorScaleFactor;
-                notice.leftMargin = 2 * notice.leftMargin * NOTIFICATION_3D_SCALE * sensorScaleFactor;
-                notice.bottomMargin = 0;
-                notice.rightMargin = 0;
-                notice.lineHeight = 10.0 * (fontSize * sensorScaleFactor / 12.0) * NOTIFICATION_3D_SCALE;
-                notice.billboardMode = "none";
-                notice.type = "Text";
-                notice.unlit = true;
-                
-                notificationText = Entities.addEntity(notice, "local");
-                notifications.push(notificationText);
-            } else {
-                notice.type = "Image";
-                notice.emissive = true;
-                
-                notifications.push(Entities.addEntity(notice, "local"));
-            }
-
-            button.url = button.imageURL;
-            button.scale = button.width * NOTIFICATION_3D_SCALE;
-            button.isFacingAvatar = false;
-            button.parentID = MyAvatar.sessionUUID;
-            button.parentJointIndex = -2;
-            button.visible = false;
-            button.type = "Image";
-            button.emissive = true;
-            button.isVisibleInSecondaryCamera = false;
-
-            buttons.push(Entities.addEntity(button, "local"));
-            overlay3DDetails.push({
-                "notificationOrientation": positions.notificationOrientation,
-                "notificationPosition": positions.notificationPosition,
-                "buttonPosition": positions.buttonPosition,
-                "width": noticeWidth * sensorScaleFactor,
-                "height": noticeHeight * sensorScaleFactor
-            });
-
-
-            var defaultEyePosition,
-                avatarOrientation,
-                notificationPosition,
-                buttonPosition,
-                notificationIndex;
-
-            if (isOnHMD && notifications.length > 0) {
-                // Update 3D overlays to maintain positions relative to avatar
-                defaultEyePosition = MyAvatar.getDefaultEyePosition();
-                avatarOrientation = MyAvatar.orientation;
-
-                for (notificationIndex = 0; notificationIndex < notifications.length; notificationIndex += 1) {
-                    notificationPosition = Vec3.sum(defaultEyePosition, Vec3.multiplyQbyV(avatarOrientation, overlay3DDetails[notificationIndex].notificationPosition));
-                    buttonPosition = Vec3.sum(defaultEyePosition, Vec3.multiplyQbyV(avatarOrientation, overlay3DDetails[notificationIndex].buttonPosition));
-
-                    Overlays.editOverlay(notifications[notificationIndex], { "position": notificationPosition, "localRotation": overlay3DDetails[notificationIndex].notificationOrientation, "velocity": Vec3.ZERO });
-
-                    Overlays.editOverlay(buttons[notificationIndex], { "position": buttonPosition, "localRotation": overlay3DDetails[notificationIndex].notificationOrientation });
+    //ACTIONS
+    // handles clicks on notifications overlays to delete notifications. (DESKTOP only)
+    function mousePressEvent(event) {
+        if (!isOnHMD) {
+            var clickedOverlay = Overlays.getOverlayAtPoint({ x: event.x, y: event.y });
+            for (i = 0; i < notifications.length; i += 1) {
+                if (clickedOverlay === notifications[i].overlayID || clickedOverlay === notifications[i].imageOverlayID) {
+                    deleteSpecificNotification(i);
+                    notifications.splice(i, 1);
+                    newEventDetected = true;
                 }
             }
-
-        } else {
-            if (!image) {
-                notificationText = Overlays.addOverlay("text", notice);
-                notifications.push(notificationText);
-            } else {
-                notifications.push(Overlays.addOverlay("image", notice));
-            }
-            buttons.push(Overlays.addOverlay("image", button));
         }
-        
-        if (isOnHMD) {
-            height = height + 6.0;
-        } else {
-            height = height + 1.0;
-        }
-        heights.push(height);
-        times.push(new Date().getTime() / 1000);
-        last = notifications.length - 1;
-        myAlpha.push(notifications[last].alpha);
-        createArrays(notifications[last], buttons[last], times[last], heights[last], myAlpha[last]);
-        fadeIn(notifications[last], buttons[last]);
+    }
 
-        if (imageProperties && !image) {
-            var imageHeight = notice.width / imageProperties.aspectRatio;
-            if (isOnHMD) {
-                imageHeight = (notice.width + (NOTIFICATION_3D_BUTTON_WIDTH / NOTIFICATION_3D_SCALE)) / imageProperties.aspectRatio;
+    //DISPLAY
+    function renderNotifications(remainingTime) {
+        var alpha = NOTIFICATION_ALPHA;
+        if (remainingTime < FADE_OUT_DURATION) {
+            alpha = NOTIFICATION_ALPHA * (remainingTime/FADE_OUT_DURATION);
+        }
+        var properties, count, extraline, breaks, height;
+        var breakPoint = MAX_LINE_LENGTH + 1;
+        var level = overlayLocationY;
+        var entityLevel = 0;
+        if (notifications.length > 0) {
+            for (var i = 0; i < notifications.length; i++) {
+                count = (notifications[i].dataText.match(/\n/g) || []).length,
+                extraLine = 0;
+                breaks = 0;
+                if (notifications[i].dataText.length >= breakPoint) {
+                    breaks = count;
+                }                
+                if (isOnHMD) {
+                    //use HMD local entities
+                    var sensorScaleFactor = MyAvatar.sensorToWorldScale * HMD_UI_SCALE_FACTOR;
+                    var lineHeight = HMD_LINE_HEIGHT;
+                    height = lineHeight + (2 * entityTopMargin);
+                    extraLine = breaks * lineHeight;
+                    height = (height + extraLine) * HMD_UI_SCALE_FACTOR;
+                    entityLevel = entityLevel - (height/2);
+                    properties = {
+                        "type": "Text",
+                        "parentID": mainHMDnotificationContainerID,
+                        "localPosition": {"x": 0, "y": entityLevel, "z": 0},
+                        "dimensions": {"x": (entityWidth * HMD_UI_SCALE_FACTOR), "y": height, "z": 0.01},
+                        "isVisibleInSecondaryCamera": false,
+                        "lineHeight": lineHeight * sensorScaleFactor,
+                        "textColor": textColor,
+                        "textAlpha": alpha,
+                        "backgroundColor": backColor,
+                        "backgroundAlpha": alpha,
+                        "leftMargin": entityLeftMargin * sensorScaleFactor,
+                        "topMargin": entityTopMargin * sensorScaleFactor,
+                        "unlit": true,
+                        "renderLayer": "hud"
+                    };
+                    if (notifications[i].entityID === Uuid.NULL){
+                        properties.text =  notifications[i].dataText;
+                        notifications[i].entityID = Entities.addEntity(properties, "local");
+                    } else {
+                        Entities.editEntity(notifications[i].entityID, properties);
+                    }
+                    if (notifications[i].dataImage !== null) {
+                        entityLevel = entityLevel - (height/2);
+                        height = (entityWidth / notifications[i].dataImage.aspectRatio) * HMD_UI_SCALE_FACTOR;
+                        entityLevel = entityLevel - (height/2);
+                        properties = {
+                            "type": "Image",
+                            "parentID": mainHMDnotificationContainerID,
+                            "localPosition": {"x": 0, "y": entityLevel, "z": 0},
+                            "dimensions":  {"x": (entityWidth * HMD_UI_SCALE_FACTOR), "y": height, "z": 0.01},
+                            "isVisibleInSecondaryCamera": false,
+                            "emissive": true,
+                            "visible": true,
+                            "alpha": alpha,
+                            "renderLayer": "hud"
+                        };                        
+                        if (notifications[i].imageEntityID === Uuid.NULL){
+                            properties.imageURL = notifications[i].dataImage.path;
+                            notifications[i].imageEntityID = Entities.addEntity(properties, "local");
+                        } else {
+                            Entities.editEntity(notifications[i].imageEntityID, properties);
+                        }
+                    }
+                    entityLevel = entityLevel - (height/2) - (HMD_INTER_SPACE_NOTIFICATION * HMD_UI_SCALE_FACTOR);
+                } else {
+                    //use Desktop overlays
+                    height = 40.0;
+                    extraLine = breaks * TEXT_OVERLAY_FONT_SIZE_IN_PIXELS;
+                    height = height + extraLine;
+                    properties = {
+                        "x": overlayLocationX,
+                        "y": level,
+                        "width": overlayWidth,
+                        "height": height,
+                        "color": textColor,
+                        "backgroundColor": backColor,
+                        "alpha": alpha,
+                        "topMargin": overlayTopMargin,
+                        "leftMargin": overlayLeftMargin,
+                        "font": {"size": overlayFontSize}
+                    };
+                    if (notifications[i].overlayID === Uuid.NULL){
+                        properties.text =  notifications[i].dataText;
+                        notifications[i].overlayID = Overlays.addOverlay("text", properties);
+                    } else {
+                        Overlays.editOverlay(notifications[i].overlayID, properties);
+                    }
+                    if (notifications[i].dataImage !== null) {
+                        level = level + height;
+                        height = overlayWidth / notifications[i].dataImage.aspectRatio;
+                        properties = {
+                            "x": overlayLocationX,
+                            "y": level,
+                            "width": overlayWidth,
+                            "height": height,
+                            "subImage": { "x": 0, "y": 0 },
+                            "visible": true,
+                            "alpha": alpha
+                        };                        
+                        if (notifications[i].imageOverlayID === Uuid.NULL){
+                            properties.imageURL = notifications[i].dataImage.path;
+                            notifications[i].imageOverlayID = Overlays.addOverlay("image", properties);
+                        } else {
+                            Overlays.editOverlay(notifications[i].imageOverlayID, properties);
+                        }
+                    }
+                    level = level + height + DESKTOP_INTER_SPACE_NOTIFICATION;
+                }
             }
-            notice = {
-                "x": notice.x,
-                "y": notice.y + height,
-                "width": notice.width,
-                "height": imageHeight,
-                "subImage": { "x": 0, "y": 0 },
-                "color": { "red": 255, "green": 255, "blue": 255},
-                "visible": true,
-                "imageURL": imageProperties.path,
-                "alpha": backgroundAlpha
+        }
+    }
+
+    function deleteAllExistingNotificationsDisplayed() {
+        if (notifications.length > 0) {
+            for (var i = 0; i < notifications.length; i++) {
+                deleteSpecificNotification(i);
+            }
+        }
+    }
+    
+    function deleteSpecificNotification(indexNotification) {
+        if (notifications[indexNotification].entityID !== Uuid.NULL){
+            Entities.deleteEntity(notifications[indexNotification].entityID);
+            notifications[indexNotification].entityID = Uuid.NULL;
+        }
+        if (notifications[indexNotification].overlayID !== Uuid.NULL){
+            Overlays.deleteOverlay(notifications[indexNotification].overlayID);
+            notifications[indexNotification].overlayID = Uuid.NULL;
+        }
+        if (notifications[indexNotification].imageEntityID !== Uuid.NULL){
+            Entities.deleteEntity(notifications[indexNotification].imageEntityID);
+            notifications[indexNotification].imageEntityID = Uuid.NULL;
+        }
+        if (notifications[indexNotification].imageOverlayID !== Uuid.NULL){
+            Overlays.deleteOverlay(notifications[indexNotification].imageOverlayID);
+            notifications[indexNotification].imageOverlayID = Uuid.NULL;
+        }
+    }
+    
+    function createMainHMDnotificationContainer() {
+        if (mainHMDnotificationContainerID === Uuid.NULL) {
+            var properties = {
+                "type": "Shape",
+                "shape": "Cube",
+                "visible": false,
+                "dimensions": {"x": 0.1, "y": 0.1, "z":0.1},
+                "parentID": MyAvatar.sessionUUID,
+                "parentJointIndex": -2,
+                "localPosition": hmdPanelLocalPosition,
+                "localRotation": hmdPanelLocalRotation
             };
-            notify(notice, button, imageHeight, imageProperties, true);
+            mainHMDnotificationContainerID = Entities.addEntity(properties, "local");
         }
-
-        return notificationText;
     }
-
-    var CLOSE_NOTIFICATION_ICON = Script.resolvePath("assets/images/close-small-light.svg");
-    var TEXT_OVERLAY_FONT_SIZE_IN_PIXELS = 18.0; // taken from TextOverlay::textSize
-
-    //  This function creates and sizes the overlays
-    function createNotification(text, notificationType, imageProperties) {
-        var count = (text.match(/\n/g) || []).length,
-            breakPoint = 43.0, // length when new line is added
-            extraLine = 0,
-            breaks = 0,
-            height = 40.0,
-            stack = 0,
-            level,
-            noticeProperties,
-            bLevel,
-            buttonProperties,
-            i;
-
-        var sensorScaleFactor = isOnHMD ? MyAvatar.sensorToWorldScale : 1.0;
-        if (text.length >= breakPoint) {
-            breaks = count;
+    
+    function deleteMainHMDnotificationContainer() {
+        if (mainHMDnotificationContainerID !== Uuid.NULL) {
+            Entities.deleteEntity(mainHMDnotificationContainerID);
+            mainHMDnotificationContainerID = Uuid.NULL;
         }
-        extraLine = breaks * TEXT_OVERLAY_FONT_SIZE_IN_PIXELS;
-        for (i = 0; i < heights.length; i += 1) {
-            stack = stack + heights[i];
-        }
+    }    
+    //UTILITY FUNCTIONS
 
-        level = (stack + 20.0);
-        height = height + extraLine;
+    // Trims extra whitespace and breaks into lines of length no more 
+    // than MAX_LINE_LENGTH, breaking at spaces. Trims extra whitespace.
 
-        noticeProperties = {
-            "x": overlayLocationX,
-            "y": level,
-            "width": width,
-            "height": height,
-            "color": textColor,
-            "backgroundColor": backColor,
-            "alpha": backgroundAlpha,
-            "backgroundAlpha": backgroundAlpha,
-            "textAlpha": backgroundAlpha,
-            "topMargin": topMargin,
-            "leftMargin": leftMargin,
-            "font": {"size": fontSize * sensorScaleFactor},
-            "text": text
-        };
-
-        bLevel = level + 12.0;
-        buttonProperties = {
-            "x": buttonLocationX,
-            "y": bLevel,
-            "width": 10.0,
-            "height": 10.0,
-            "subImage": { "x": 0, "y": 0, "width": 10, "height": 10 },
-            "imageURL": CLOSE_NOTIFICATION_ICON,
-            "color": { "red": 255, "green": 255, "blue": 255},
-            "visible": true,
-            "alpha": backgroundAlpha
-        };
-
-        return notify(noticeProperties, buttonProperties, height, imageProperties);
-    }
-
-    function deleteNotification(index) {
-        var notificationTextID = notifications[index];
-        Overlays.deleteOverlay(notificationTextID);
-        Overlays.deleteOverlay(buttons[index]);
-        notifications.splice(index, 1);
-        buttons.splice(index, 1);
-        times.splice(index, 1);
-        heights.splice(index, 1);
-        myAlpha.splice(index, 1);
-        overlay3DDetails.splice(index, 1);
-        arrays.splice(index, 1);
-    }
-
-
-    // Trims extra whitespace and breaks into lines of length no more than MAX_LENGTH, breaking at spaces. Trims extra whitespace.
-    var MAX_LENGTH = 42;
     function wordWrap(string) {
         var finishedLines = [], currentLine = '';
         string.split(/\s/).forEach(function (word) {
             var tail = currentLine ? ' ' + word : word;
-            if ((currentLine.length + tail.length) <= MAX_LENGTH) {
+            if ((currentLine.length + tail.length) <= MAX_LINE_LENGTH) {
                 currentLine += tail;
             } else {
                 finishedLines.push(currentLine);
                 currentLine = word;
+                if (currentLine.length > MAX_LINE_LENGTH) {
+                    finishedLines.push(currentLine.substring(0,MAX_LINE_LENGTH));
+                    currentLine = currentLine.substring(MAX_LINE_LENGTH, currentLine.length);
+                }
             }
         });
         if (currentLine) {
@@ -447,200 +258,143 @@
         return finishedLines.join('\n');
     }
 
-    function updateNotificationsTexts() {
-        var sensorScaleFactor = isOnHMD ? MyAvatar.sensorToWorldScale : 1.0;
-        for (var i = 0; i < notifications.length; i++) {
-            var overlayType = Overlays.getOverlayType(notifications[i]);
-            if (overlayType === "text3d") {
-                var props = {
-                    "lineHeight": 10.0 * (fontSize * sensorScaleFactor / 12.0) * NOTIFICATION_3D_SCALE
-                };
-                Overlays.editOverlay(notifications[i], props);
-            }
+    //NOTIFICATION STACK MANAGEMENT
+    
+    function addNotification (dataText, dataImage) {
+        var d = new Date();
+        var notification = {
+            "dataText": dataText,
+            "dataImage": dataImage,
+            "timestamp": d.getTime(),
+            "entityID": Uuid.NULL,
+            "imageEntityID": Uuid.NULL,
+            "overlayID": Uuid.NULL,
+            "imageOverlayID": Uuid.NULL
+        };
+        notifications.push(notification);
+        newEventDetected = true;
+        
+        if (notifications.length === 1) {
+            createMainHMDnotificationContainer();
+            Script.update.connect(update);
+            Controller.mousePressEvent.connect(mousePressEvent);
         }
+        
     }
 
-    function update() {
-        updateNotificationsTexts();
-        var noticeOut,
-            buttonOut,
-            arraysOut,
-            positions,
-            i,
-            j,
-            k;
-
-        if (isOnHMD !== HMD.active) {
-            while (arrays.length > 0) {
-                deleteNotification(0);
-            }
-            isOnHMD = !isOnHMD;
-            persistTime = isOnHMD ? PERSIST_TIME_3D : PERSIST_TIME_2D;
-            return;
-        }
-
-        frame += 1;
-        if ((frame % 60.0) === 0) { // only update once a second
-            locationY = 20.0;
-            for (i = 0; i < arrays.length; i += 1) { //repositions overlays as others fade
-                if (isOnHMD) {
-                    positions = calculate3DOverlayPositions(overlay3DDetails[i].width, overlay3DDetails[i].height, locationY);
-                    overlay3DDetails[i].notificationOrientation = positions.notificationOrientation;
-                    overlay3DDetails[i].notificationPosition = positions.notificationPosition;
-                    overlay3DDetails[i].buttonPosition = positions.buttonPosition;
-                    //We don't reposition in HMD, because it is very annoying.
+    function update(deltaTime) {
+        if (notifications.length === 0 && !newEventDetected) {
+            Script.update.disconnect(update);
+            Controller.mousePressEvent.disconnect(mousePressEvent);
+            deleteMainHMDnotificationContainer();
+        } else {
+            if (isOnHMD !== HMD.active) {
+                deleteAllExistingNotificationsDisplayed();
+                isOnHMD = HMD.active;
+            }            
+            var d = new Date();
+            var immediatly = d.getTime();
+            var mostRecentRemainingTime = NOTIFICATION_LIFE_DURATION;
+            var expirationDetected = false;
+            for (var i = 0; i < notifications.length; i++) {
+                if ((immediatly - notifications[i].timestamp) > NOTIFICATION_LIFE_DURATION){
+                    deleteSpecificNotification(i);
+                    notifications.splice(i, 1);
+                    expirationDetected = true;
                 } else {
-                    Overlays.editOverlay(notifications[i], { x: overlayLocationX, y: locationY });
-                    Overlays.editOverlay(buttons[i], { x: buttonLocationX, y: locationY + 12.0 });
-                }
-                locationY = locationY + arrays[i][3];
-            }
-        }
-
-        //  This checks the age of the notification and prepares to fade it after 9.0 seconds (var persistTime - 1)
-        for (i = 0; i < arrays.length; i += 1) {
-            if (ready) {
-                j = arrays[i][2];
-                k = j + persistTime;
-                if (k < (new Date().getTime() / 1000)) {
-                    ready = false;
-                    noticeOut = arrays[i][0];
-                    buttonOut = arrays[i][1];
-                    arraysOut = i;
-                    fadeOut(noticeOut, buttonOut, arraysOut);
+                    mostRecentRemainingTime = NOTIFICATION_LIFE_DURATION - (immediatly - notifications[i].timestamp);
                 }
             }
-        }
-    }
-
-    var STARTUP_TIMEOUT = 500,  // ms
-        startingUp = true,
-        startupTimer = null;
-
-    function finishStartup() {
-        startingUp = false;
-        Script.clearTimeout(startupTimer);
-    }
-
-    function isStartingUp() {
-        // Is starting up until get no checks that it is starting up for STARTUP_TIMEOUT
-        if (startingUp) {
-            if (startupTimer) {
-                Script.clearTimeout(startupTimer);
+            if (newEventDetected || expirationDetected || mostRecentRemainingTime < FADE_OUT_DURATION) {
+                renderNotifications(mostRecentRemainingTime);
+                newEventDetected = false;
             }
-            startupTimer = Script.setTimeout(finishStartup, STARTUP_TIMEOUT);
         }
-        return startingUp;
     }
 
+    //NOTIFICATION EVENTS FUNCTIONS
     function onDomainConnectionRefused(reason, reasonCode) {
         // the "login error" reason means that the DS couldn't decrypt the username signature
         // since this eventually resolves itself for good actors we don't need to show a notification for it
-        var LOGIN_ERROR_REASON_CODE = 2;
-
-        if (reasonCode != LOGIN_ERROR_REASON_CODE) {
-            createNotification("Connection refused: " + reason, NotificationType.CONNECTION_REFUSED);
+        var LoginErrorMetaverse_REASON_CODE = 2;
+        if (reasonCode !== LoginErrorMetaverse_REASON_CODE) {
+            addNotification("Connection refused: " + reason, null);
         }
     }
 
     function onEditError(msg) {
-        createNotification(wordWrap(msg), NotificationType.EDIT_ERROR);
+        addNotification(wordWrap(msg), null);
     }
 
     function onNotify(msg) {
-        createNotification(wordWrap(msg), NotificationType.UNKNOWN); // Needs a generic notification system for user feedback, thus using this
+         // Generic notification system for user feedback, thus using this
+        addNotification(wordWrap(msg), null);
     }
 
     function onMessageReceived(channel, message) {
         if (channel === NOTIFICATIONS_MESSAGE_CHANNEL) {
             message = JSON.parse(message);
-            createNotification(wordWrap(message.message), message.notificationType);
+            addNotification(wordWrap(message.message), null);
         }
     }
 
     function onSnapshotTaken(pathStillSnapshot, notify) {
-        if (Settings.getValue("snapshotNotifications", true)) {
+        if (Settings.getValue(SETTING_ACTIVATION_SNAPSHOT_NOTIFICATIONS, true)) {
             if (notify) {
                 var imageProperties = {
-                    path: "file:///" + pathStillSnapshot,
-                    aspectRatio: Window.innerWidth / Window.innerHeight
+                    "path": "file:///" + pathStillSnapshot,
+                    "aspectRatio": Window.innerWidth / Window.innerHeight
                 };
-                createNotification(wordWrap("Snapshot saved to " + pathStillSnapshot), NotificationType.SNAPSHOT, imageProperties);
+                addNotification(wordWrap("Snapshot saved to " + pathStillSnapshot), imageProperties);
             }
         }
     }
 
     function tabletNotification() {
-        createNotification("Tablet needs your attention", NotificationType.TABLET);
+        addNotification("Tablet needs your attention", null);
     }
 
     function processingGif() {
-        if (Settings.getValue("snapshotNotifications", true)) {
-            createNotification("Processing GIF snapshot...", NotificationType.SNAPSHOT);
+        if (Settings.getValue(SETTING_ACTIVATION_SNAPSHOT_NOTIFICATIONS, true)) {
+            addNotification("Processing GIF snapshot...", null);
         }
-    }
-
-    function walletNotSetup() {
-        createNotification("Your wallet isn't activated yet. Open the WALLET app.", NotificationType.WALLET);
     }
 
     function connectionAdded(connectionName) {
-        createNotification(connectionName, NotificationType.CONNECTION);
+        addNotification(connectionName, null);
     }
 
     function connectionError(error) {
-        createNotification(wordWrap("Error trying to make connection: " + error), NotificationType.CONNECTION);
+        addNotification(wordWrap("Error trying to make connection: " + error), null);
     }
 
-    //  handles mouse clicks on buttons
-    function mousePressEvent(event) {
-        var pickRay,
-            clickedOverlay,
-            i;
-
-        if (isOnHMD) {
-            pickRay = Camera.computePickRay(event.x, event.y);
-            clickedOverlay = Overlays.findRayIntersection(pickRay).overlayID;
-        } else {
-            clickedOverlay = Overlays.getOverlayAtPoint({ x: event.x, y: event.y });
-        }
-
-        for (i = 0; i < buttons.length; i += 1) {
-            if (clickedOverlay === buttons[i]) {
-                deleteNotification(i);
-            }
-        }
-    }
-
-    //  Control key remains active only while key is held down
-    function keyReleaseEvent(key) {
-        if (key.key === 16777249) {
-            ctrlIsPressed = false;
-        }
-    }
-
-    //  Triggers notification on specific key driven events
-    function keyPressEvent(key) {
-        if (key.key === 16777249) {
-            ctrlIsPressed = true;
-        }
-    }
-
-    //  When our script shuts down, we should clean up all of our overlays
+    //STARTING AND ENDING
+    
     function scriptEnding() {
-        var notificationIndex;
-        for (notificationIndex = 0; notificationIndex < notifications.length; notificationIndex++) {
-            Overlays.deleteOverlay(notifications[notificationIndex]);
-            Overlays.deleteOverlay(buttons[notificationIndex]);
+        //cleanup
+        deleteAllExistingNotificationsDisplayed();
+        
+        //disconnecting
+        if (notifications.length > 0) {
+            Script.update.disconnect(update);
+            Controller.mousePressEvent.disconnect(mousePressEvent);
         }
+        Script.scriptEnding.disconnect(scriptEnding);        
         Messages.unsubscribe(NOTIFICATIONS_MESSAGE_CHANNEL);
+        Window.domainConnectionRefused.disconnect(onDomainConnectionRefused);
+        Window.stillSnapshotTaken.disconnect(onSnapshotTaken);
+        Window.snapshot360Taken.disconnect(onSnapshotTaken);
+        Window.processingGifStarted.disconnect(processingGif);
+        Window.connectionAdded.disconnect(connectionAdded);
+        Window.connectionError.disconnect(connectionError);
+        Window.announcement.disconnect(onNotify);
+        Tablet.tabletNotification.disconnect(tabletNotification);
+        Messages.messageReceived.disconnect(onMessageReceived);
     }
 
-    Controller.keyPressEvent.connect(keyPressEvent);
-    Controller.mousePressEvent.connect(mousePressEvent);
-    Controller.keyReleaseEvent.connect(keyReleaseEvent);
-    Script.update.connect(update);
     Script.scriptEnding.connect(scriptEnding);
+    
+    //EVENTS TO NOTIFY
     Window.domainConnectionRefused.connect(onDomainConnectionRefused);
     Window.stillSnapshotTaken.connect(onSnapshotTaken);
     Window.snapshot360Taken.connect(onSnapshotTaken);
@@ -651,8 +405,6 @@
     Window.notifyEditError = onEditError;
     Window.notify = onNotify;
     Tablet.tabletNotification.connect(tabletNotification);
-    WalletScriptingInterface.walletNotSetup.connect(walletNotSetup);
-
     Messages.subscribe(NOTIFICATIONS_MESSAGE_CHANNEL);
     Messages.messageReceived.connect(onMessageReceived);
-}()); // END LOCAL_SCOPE
+}());
