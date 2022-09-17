@@ -12,6 +12,10 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
 (function () {
+    Script.include([
+        "create/audioFeedback/audioFeedback.js"
+    ]);
+    
     var NOTIFICATIONS_MESSAGE_CHANNEL = "Hifi-Notifications";
     var SETTING_ACTIVATION_SNAPSHOT_NOTIFICATIONS = "snapshotNotifications";
     var NOTIFICATION_LIFE_DURATION = 10000; //10 seconds (in millisecond) before expiration.
@@ -54,13 +58,26 @@
     function mousePressEvent(event) {
         if (!isOnHMD) {
             var clickedOverlay = Overlays.getOverlayAtPoint({ x: event.x, y: event.y });
-            for (i = 0; i < notifications.length; i += 1) {
+            for (var i = 0; i < notifications.length; i += 1) {
                 if (clickedOverlay === notifications[i].overlayID || clickedOverlay === notifications[i].imageOverlayID) {
                     deleteSpecificNotification(i);
                     notifications.splice(i, 1);
                     newEventDetected = true;
                 }
             }
+        }
+    }
+
+    function checkHands() {
+        var myLeftHand = Controller.getPoseValue(Controller.Standard.LeftHand);
+        var myRightHand = Controller.getPoseValue(Controller.Standard.RightHand);
+        var eyesPosition = MyAvatar.getEyePosition();
+        var hipsPosition = MyAvatar.getJointPosition("Hips");
+        var eyesRelativeHeight = eyesPosition.y - hipsPosition.y;
+        if (myLeftHand.translation.y > eyesRelativeHeight || myRightHand.translation.y > eyesRelativeHeight) {
+            deleteAllExistingNotificationsDisplayed();
+            notifications = [];
+            audioFeedback.action();
         }
     }
 
@@ -309,6 +326,9 @@
                 renderNotifications(mostRecentRemainingTime);
                 newEventDetected = false;
             }
+        }
+        if (isOnHMD) {
+            checkHands();
         }
     }
 
