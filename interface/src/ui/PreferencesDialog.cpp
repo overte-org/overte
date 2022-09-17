@@ -238,15 +238,6 @@ void setupPreferences() {
         auto preference = new BrowsePreference(SNAPSHOTS, "Put my snapshots here", getter, setter);
         preferences->addPreference(preference);
     }
-    {
-        auto getter = []()->float { return SnapshotAnimated::snapshotAnimatedDuration.get(); };
-        auto setter = [](float value) { SnapshotAnimated::snapshotAnimatedDuration.set(value); };
-        auto preference = new SpinnerPreference(SNAPSHOTS, "Animated Snapshot Duration", getter, setter);
-        preference->setMin(1);
-        preference->setMax(5);
-        preference->setStep(1);
-        preferences->addPreference(preference);
-    }
     
     {
         auto getter = []()->bool { 
@@ -256,6 +247,46 @@ void setupPreferences() {
             return DependencyManager::get<Snapshot>()->_snapshotNotifications.get(); };
         auto setter = [](bool value) { DependencyManager::get<Snapshot>()->_snapshotNotifications.set(value); };
         preferences->addPreference(new CheckPreference(SNAPSHOTS, "Display snapshot notifications", getter, setter));
+    }
+
+    {
+        auto getter = []()->int {
+            if (!DependencyManager::get<Snapshot>()->_snapshotFormat.isSet()) {
+                DependencyManager::get<Snapshot>()->setSnapshotFormat(DependencyManager::get<Snapshot>()->getAvailableSnapshotFormats()[0]);
+            }
+            return DependencyManager::get<Snapshot>()->getAvailableSnapshotFormats().indexOf(DependencyManager::get<Snapshot>()->getSnapshotFormat()); };
+        auto setter = [](int value) { DependencyManager::get<Snapshot>()->setSnapshotFormat(DependencyManager::get<Snapshot>()->getAvailableSnapshotFormats()[value]); };
+        auto preference = new RadioButtonsPreference(SNAPSHOTS, "Snapshot format", getter, setter);
+        QStringList items;
+        items << DependencyManager::get<Snapshot>()->getAvailableSnapshotFormatsWithDescriptions();
+        preference->setHeading("Snapshot format");
+        preference->setItems(items);
+        preferences->addPreference(preference);
+    }
+
+    {
+        auto getter = []()->int {
+            if (!DependencyManager::get<Snapshot>()->_animatedSnapshotFormat.isSet()) {
+                DependencyManager::get<Snapshot>()->setAnimatedSnapshotFormat(DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormats()[0]);
+            }
+            return DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormats().indexOf(DependencyManager::get<Snapshot>()->getAnimatedSnapshotFormat()); };
+        auto setter = [](int value) { DependencyManager::get<Snapshot>()->setAnimatedSnapshotFormat(DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormats()[value]); };
+        auto preference = new RadioButtonsPreference(SNAPSHOTS, "Animated snapshot format", getter, setter);
+        QStringList items;
+        items << DependencyManager::get<Snapshot>()->getAvailableAnimatedSnapshotFormatsWithDescriptions();
+        preference->setHeading("Animated snapshot format");
+        preference->setItems(items);
+        preferences->addPreference(preference);
+    }
+    
+    {
+        auto getter = []()->float { return SnapshotAnimated::snapshotAnimatedDuration.get(); };
+        auto setter = [](float value) { SnapshotAnimated::snapshotAnimatedDuration.set(value); };
+        auto preference = new SpinnerPreference(SNAPSHOTS, "Animated Snapshot Duration", getter, setter);
+        preference->setMin(1);
+        preference->setMax(5);
+        preference->setStep(1);
+        preferences->addPreference(preference);
     }
 
     {

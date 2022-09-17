@@ -334,9 +334,9 @@ public slots:
      *     dimensions is adjusted in order to match the aspect ratio.
      * @param {string} [filename=""] - If a filename is not provided, the image is saved as "overte-snap-by-&lt;user 
      *     name&gt;-on-YYYY-MM-DD_HH-MM-SS".
-     *     <p>Still images are saved in JPEG or PNG format according to the extension provided &mdash; <code>".jpg"</code>, 
-     *     <code>".jpeg"</code>, or <code>".png"</code> &mdash; or if not provided then in JPEG format with an extension of 
-     *     <code>".jpg"</code>. Animated images are saved in GIF format.</p>
+     *     <p>Still images are saved in JPEG, PNG or WEBP format according to the extension provided &mdash; <code>".jpg"</code>, 
+     *     <code>".jpeg"</code>, <code>".png"</code>, or <code>".webp"</code> &mdash; or if not provided then in the format chosen in general settings, 
+     *     Default is PNG. Animated images are saved in GIF format.</p>
      *
      * @example <caption>Using the snapshot function and signals.</caption>
      * function onStillSnapshotTaken(path, notify) {
@@ -371,11 +371,11 @@ public slots:
      * @function Window.takeSecondaryCameraSnapshot
      * @param {boolean} [notify=true] - This value is passed on through the {@link Window.stillSnapshotTaken|stillSnapshotTaken}
      *     signal.
-     * @param {string} [filename=""] - If a filename is not provided, the image is saved as "overte-snap-by-&lt;user
+     * @param {string} [filename=""] - If a filename is not provided, the image is saved as "overte-snap-by-&lt;user 
      *     name&gt;-on-YYYY-MM-DD_HH-MM-SS".
-     *     <p>Images are saved in JPEG or PNG format according to the extension provided &mdash; <code>".jpg"</code>,
-     *     <code>".jpeg"</code>, or <code>".png"</code> &mdash; or if not provided then in JPEG format with an extension of
-     *     <code>".jpg"</code>.</p>
+     *     <p>Still images are saved in JPEG, PNG or WEBP format according to the extension provided &mdash; <code>".jpg"</code>, 
+     *     <code>".jpeg"</code>, <code>".png"</code>, or <code>".webp"</code> &mdash; or if not provided then in the format chosen in general settings, 
+     *     Default is PNG. Animated images are saved in GIF format.</p>
      */
     void takeSecondaryCameraSnapshot(const bool& notify = true, const QString& filename = QString());
 
@@ -390,11 +390,11 @@ public slots:
      *     otherwise it is saved as an equirectangular image.
      * @param {boolean} [notify=true] - This value is passed on through the {@link Window.stillSnapshotTaken|stillSnapshotTaken}
      *     signal.
-     * @param {string} [filename=""] - If a filename is not provided, the image is saved as "overte-snap-by-&lt;user
+     * @param {string} [filename=""] - If a filename is not provided, the image is saved as "overte-snap-by-&lt;user 
      *     name&gt;-on-YYYY-MM-DD_HH-MM-SS".
-     *     <p>Images are saved in JPEG or PNG format according to the extension provided &mdash; <code>".jpg"</code>,
-     *     <code>".jpeg"</code>, or <code>".png"</code> &mdash; or if not provided then in JPEG format with an extension of
-     *     <code>".jpg"</code>.</p>
+     *     <p>Still images are saved in JPEG, PNG or WEBP format according to the extension provided &mdash; <code>".jpg"</code>, 
+     *     <code>".jpeg"</code>, <code>".png"</code>, or <code>".webp"</code> &mdash; or if not provided then in the format chosen in general settings, 
+     *     Default is PNG. Animated images are saved in GIF format.</p>
      */
     void takeSecondaryCamera360Snapshot(const glm::vec3& cameraPosition, const bool& cubemapOutputFormat = false, const bool& notify = true, const QString& filename = QString());
 
