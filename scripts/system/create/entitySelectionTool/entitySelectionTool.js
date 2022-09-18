@@ -130,6 +130,11 @@ SelectionManager = (function() {
                         audioFeedback.action();
                     }
                 } else {
+                    var pickRay = SelectionDisplay.controllerComputePickRay();
+                    var intersectObj = SelectionDisplay.testRayIntersect(pickRay, SelectionDisplay.allToolEntities);
+                    if (intersectObj.intersects) {
+                        return;
+                    }
                     if (hmdMultiSelectMode) {
                         that.addEntity(messageParsed.entityID, true, that);
                     } else {
@@ -1253,6 +1258,8 @@ SelectionDisplay = (function() {
         zRailToolEntity
     ];
 
+    that.allToolEntities = allToolEntities;
+
     const nonLayeredToolEntities = [selectionBox, iconSelectionBox];
 
     var maximumHandleInAllToolEntities = handleDuplicator;
@@ -1418,6 +1425,8 @@ SelectionDisplay = (function() {
         }
         return intersectObj;
     }
+
+    that.testRayIntersect = testRayIntersect;
 
     function isPointInsideBox(point, box) {
         var position = Vec3.subtract(point, box.position);
@@ -1783,6 +1792,8 @@ SelectionDisplay = (function() {
             return {origin: controllerPosition, direction: controllerDirection};
         }
     }
+
+    that.controllerComputePickRay = controllerComputePickRay;
 
     function generalComputePickRay(x, y) {
         return controllerComputePickRay() || Camera.computePickRay(x, y);
