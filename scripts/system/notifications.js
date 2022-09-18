@@ -75,9 +75,9 @@
         var hipsPosition = MyAvatar.getJointPosition("Hips");
         var eyesRelativeHeight = eyesPosition.y - hipsPosition.y;
         if (myLeftHand.translation.y > eyesRelativeHeight || myRightHand.translation.y > eyesRelativeHeight) {
+            audioFeedback.action();
             deleteAllExistingNotificationsDisplayed();
             notifications = [];
-            audioFeedback.action();
         }
     }
 
