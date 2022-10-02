@@ -7,8 +7,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased] 2022.09.09
+## [Unreleased] 2022.10.02
 ### Fixes
+-
+
+### Changes
+- Improved the notification system (PR189)
+
+### Additions
+- Added a setting to disable snapshot notifications (PR189)
+- Added a setting to switch between screenshot formats (PR134)
+
+### Removals
+-
+
+### Build system
+-
+
+
+## [2022.09.1] 2022.10.02
+### Fixes
+- Fixed misbehaving entity selection in VR (PR191)
+- Fixed unintended voxel editing when using the tablet (PR191)
 - Fixed buggy voxel synchronization (PR184)
 - Added a timeout to the Places app in case a directory server is unreachable (PR183)
 - Fixed OBJ-Serializer using wrong decimal separator on some systems (PR172)
@@ -24,6 +44,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Fixed a lot of miscellaneous warnings (PR31)
 
 ### Changes
+- Increased default voxel resolution (PR191)
 - Replaced non-free Graphik font with Fira Sans (PR155)
 - Updated Qt for Windows, and Linux (PR146,PR125)
 - Changed VR Keyboard appearance (PR147)
