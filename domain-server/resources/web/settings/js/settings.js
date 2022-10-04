@@ -65,19 +65,8 @@ $(document).ready(function(){
         $('#' + Settings.GET_TEMPORARY_NAME_BTN_ID).show();
       }
 
-      if (Settings.data.values.wizard.cloud_domain) {
-        $('#manage-cloud-domains-link').show();
-
-        var cloudWizardExit = qs["cloud-wizard-exit"];
-        if (cloudWizardExit != undefined) {
-          $('#cloud-domains-alert').show();
-        }
-
-        $(Settings.DOMAIN_ID_SELECTOR).siblings('span').append("</br><strong>Changing the domain ID for a Cloud Domain may result in an incorrect status for the domain on your Cloud Domains page.</strong>");
-      } else {
-        // append the domain selection modal
-        appendDomainIDButtons();
-      }
+      // append the domain selection modal
+      appendDomainIDButtons();
 
       handleAction();
     });
