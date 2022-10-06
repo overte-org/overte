@@ -25,8 +25,9 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 -
 
 
-## [2022.09.1] 2022.10.02
+## [2022.09.1] 2022.10.06
 ### Fixes
+- Fixed missing buttons in domain server UI (PR209)
 - Fixed misbehaving entity selection in VR (PR191)
 - Fixed unintended voxel editing when using the tablet (PR191)
 - Fixed buggy voxel synchronization (PR184)
