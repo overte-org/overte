@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [2022.09.1] 2022.10.02
+## [2022.09.1] 2022.10.06
 ### Fixes
 - Fixed missing buttons in domain server UI (PR209)
 - Fixed misbehaving entity selection in VR (PR191)
