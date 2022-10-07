@@ -183,7 +183,7 @@
         
         for (var i = 0; i < metaverseServers.length; i++ ) {
             if (metaverseServers[i].fetch === true) {
-                extractedData = getContent(metaverseServers[i].url + "/api/v1/places?status=online" + "&acash=" + Math.floor(Math.random() * 999999));
+                extractedData = getContent(metaverseServers[i].url + "/api/v1/places?status=online&per_page=1000");
                 if (extractedData === "") {
                     metaverseServers[i].error = true;
                 } else {
@@ -332,6 +332,7 @@
     function getContent(url) {
         httpRequest = new XMLHttpRequest();
         httpRequest.open("GET", url, false); // false for synchronous request
+        httpRequest.setRequestHeader("Cache-Control", "no-cache");
         httpRequest.timeout = REQUEST_TIMEOUT;
         httpRequest.ontimeout=function(){ 
             return ""; 
