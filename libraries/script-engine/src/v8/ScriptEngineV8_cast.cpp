@@ -1,8 +1,9 @@
 //
-//  ScriptEngineQtScript_cast.cpp
-//  libraries/script-engine/src/qtscript
+//  ScriptEngineV8_cast.cpp
+//  libraries/script-engine/src/v8
 //
 //  Created by Heather Anderson 12/9/2021
+//  Modified for V8 by dr Karol Suprynowicz on 2022/10/08
 //  Copyright 2021 Vircadia contributors.
 //  Copyright 2022 Overte e.V.
 //
@@ -10,30 +11,31 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#include "ScriptEngineQtScript.h"
+#include "ScriptEngineV8.h"
 
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonObject>
 #include <QtCore/QJsonValue>
-#include <QtScript/QScriptEngine>
+#include "libplatform/libplatform.h"
+#include "v8.h"
 
 #include "../ScriptEngineCast.h"
 #include "../ScriptValueIterator.h"
 
-#include "ScriptObjectQtProxy.h"
-#include "ScriptValueQtWrapper.h"
+#include "ScriptObjectV8Proxy.h"
+#include "ScriptValueV8Wrapper.h"
 
-void ScriptEngineQtScript::setDefaultPrototype(int metaTypeId, const ScriptValue& prototype) {
-    ScriptValueQtWrapper* unwrappedPrototype = ScriptValueQtWrapper::unwrap(prototype);
+void ScriptEngineV8::setDefaultPrototype(int metaTypeId, const ScriptValue& prototype) {
+    ScriptValueV8Wrapper* unwrappedPrototype = ScriptValueV8Wrapper::unwrap(prototype);
     if (unwrappedPrototype) {
-        const QScriptValue& scriptPrototype = unwrappedPrototype->toQtValue();
+        const V8ScriptValue& scriptPrototype = unwrappedPrototype->toV8Value();
         _customTypeProtect.lockForWrite();
         _customPrototypes.insert(metaTypeId, scriptPrototype);
         _customTypeProtect.unlock();
     }
 }
 
-void ScriptEngineQtScript::registerCustomType(int type,
+void ScriptEngineV8::registerCustomType(int type,
                                               ScriptEngine::MarshalFunction marshalFunc,
                                               ScriptEngine::DemarshalFunction demarshalFunc)
 {
@@ -48,13 +50,13 @@ void ScriptEngineQtScript::registerCustomType(int type,
 
 Q_DECLARE_METATYPE(ScriptValue);
 
-static QScriptValue ScriptValueToQScriptValue(QScriptEngine* engine, const ScriptValue& src) {
-    return ScriptValueQtWrapper::fullUnwrap(static_cast<ScriptEngineQtScript*>(engine), src);
+static V8ScriptValue ScriptValueToV8ScriptValue(ScriptEngineV8* engine, const ScriptValue& src) {
+    return ScriptValueV8Wrapper::fullUnwrap(static_cast<ScriptEngineV8*>(engine), src);
 }
 
-static void ScriptValueFromQScriptValue(const QScriptValue& src, ScriptValue& dest) {
-    ScriptEngineQtScript* engine = static_cast<ScriptEngineQtScript*>(src.engine());
-    dest = ScriptValue(new ScriptValueQtWrapper(engine, src));
+static void ScriptValueFromV8ScriptValue(ScriptEngineV8* engine, const V8ScriptValue& src, ScriptValue& dest) {
+    //ScriptEngineV8* engine = static_cast<ScriptEngineV8*>(src.engine());
+    dest = ScriptValue(new ScriptValueV8Wrapper(engine, src));
 }
 
 static ScriptValue StringListToScriptValue(ScriptEngine* engine, const QStringList& src) {
@@ -183,10 +185,10 @@ static bool JsonArrayFromScriptValue(const ScriptValue& src, QJsonArray& dest) {
 
 // QMetaType::QJsonArray
 
-void ScriptEngineQtScript::registerSystemTypes() {
-    qScriptRegisterMetaType(this, ScriptValueToQScriptValue, ScriptValueFromQScriptValue);
+void ScriptEngineV8::registerSystemTypes() {
+    //qScriptRegisterMetaType(this, ScriptValueToV8ScriptValue, ScriptValueFromV8ScriptValue);
 
-    scriptRegisterMetaType<QStringList, StringListToScriptValue, StringListFromScriptValue>(this);
+    scriptRegisterMetaType<QStringList, StringListToScriptValue, StringListFromScriptValue>(static_cast<ScriptEngine*>(this));
     scriptRegisterMetaType<QVariantList, VariantListToScriptValue, VariantListFromScriptValue>(this);
     scriptRegisterMetaType<QVariantMap, VariantMapToScriptValue, VariantMapFromScriptValue>(this);
     scriptRegisterMetaType<QVariantHash, VariantHashToScriptValue, VariantHashFromScriptValue>(this);
@@ -195,8 +197,9 @@ void ScriptEngineQtScript::registerSystemTypes() {
     scriptRegisterMetaType<QJsonArray, JsonArrayToScriptValue, JsonArrayFromScriptValue>(this);
 }
 
-int ScriptEngineQtScript::computeCastPenalty(QScriptValue& val, int destTypeId) {
-    if (val.isNumber()) {
+int ScriptEngineV8::computeCastPenalty(const V8ScriptValue& v8Val, int destTypeId) {
+    const v8::Local<v8::Value> val = v8Val.constGet();
+    if (val->IsNumber()) {
         switch (destTypeId){
             case QMetaType::Bool:
                 // Conversion to bool is acceptable, but numbers are preferred
@@ -226,7 +229,7 @@ int ScriptEngineQtScript::computeCastPenalty(QScriptValue& val, int destTypeId) 
                 // Other, not predicted cases
                 return 5;
         }
-    } else if (val.isString() || val.isDate() || val.isRegExp()) {
+    } else if (val->IsString() || val->IsDate() || val->IsRegExp()) {
         switch (destTypeId){
             case QMetaType::Bool:
                 // Conversion from to bool should be avoided if possible, it's probably not what we want
@@ -254,7 +257,7 @@ int ScriptEngineQtScript::computeCastPenalty(QScriptValue& val, int destTypeId) 
             default:
                 return 5;
         }
-    } else if (val.isBool() || val.isBoolean()) {
+    } else if (val->IsBoolean()) {
         switch (destTypeId){
             case QMetaType::Bool:
                 // Perfect case
@@ -287,11 +290,12 @@ int ScriptEngineQtScript::computeCastPenalty(QScriptValue& val, int destTypeId) 
     return 0;
 }
 
-bool ScriptEngineQtScript::castValueToVariant(const QScriptValue& val, QVariant& dest, int destTypeId) {
+bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& dest, int destTypeId) {
+    const v8::Local<v8::Value> val = v8Val.constGet();
 
     // if we're not particularly interested in a specific type, try to detect if we're dealing with a registered type
     if (destTypeId == QMetaType::UnknownType) {
-        QObject* obj = ScriptObjectQtProxy::unwrap(val);
+        QObject* obj = ScriptObjectV8Proxy::unwrap(v8Val);
         if (obj) {
             for (const QMetaObject* metaObject = obj->metaObject(); metaObject; metaObject = metaObject->superClass()) {
                 QByteArray typeName = QByteArray(metaObject->className()) + "*";
@@ -305,7 +309,7 @@ bool ScriptEngineQtScript::castValueToVariant(const QScriptValue& val, QVariant&
     }
 
     if (destTypeId == qMetaTypeId<ScriptValue>()) {
-        dest = QVariant::fromValue(ScriptValue(new ScriptValueQtWrapper(this, val)));
+        dest = QVariant::fromValue(ScriptValue(new ScriptValueV8Wrapper(this, v8Val)));
         return true;
     }
 
@@ -321,93 +325,111 @@ bool ScriptEngineQtScript::castValueToVariant(const QScriptValue& val, QVariant&
     }
     if (demarshalFunc) {
         dest = QVariant(destTypeId, static_cast<void*>(NULL));
-        ScriptValue wrappedVal(new ScriptValueQtWrapper(this, val));
+        ScriptValue wrappedVal(new ScriptValueV8Wrapper(this, v8Val));
         bool success = demarshalFunc(wrappedVal, const_cast<void*>(dest.constData()));
         if(!success) dest = QVariant();
         return success;
     } else {
         switch (destTypeId) {
             case QMetaType::UnknownType:
-                if (val.isUndefined()) {
+                if (val->IsUndefined()) {
                     dest = QVariant();
                     break;
                 }
-                if (val.isNull()) {
+                if (val->IsNull()) {
                     dest = QVariant::fromValue(nullptr);
                     break;
                 }
-                if (val.isBool()) {
-                    dest = QVariant::fromValue(val.toBool());
+                if (val->IsBoolean()) {
+                    //V8TODO is it right isolate? What if value from different script engine is used here
+                    dest = QVariant::fromValue(val->ToBoolean(_v8Isolate)->Value());
                     break;
                 }
-                if (val.isString()) {
-                    dest = QVariant::fromValue(val.toString());
+                if (val->IsString()) {
+                    //V8TODO is it right context? What if value from different script engine is used here
+                    v8::String::Utf8Value string(_v8Isolate, val);
+                    Q_ASSERT(*string != nullptr);
+                    dest = QVariant::fromValue(QString(*string));
+                    //dest = QVariant::fromValue(val->ToString(_v8Context.Get(_v8Isolate)).ToLocalChecked()->);
                     break;
                 }
-                if (val.isNumber()) {
-                    dest = QVariant::fromValue(val.toNumber());
+                if (val->IsNumber()) {
+                    dest = QVariant::fromValue(val->ToNumber(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value());
                     break;
                 }
                 {
-                    QObject* obj = ScriptObjectQtProxy::unwrap(val);
+                    QObject* obj = ScriptObjectV8Proxy::unwrap(v8Val);
                     if (obj) {
                         dest = QVariant::fromValue(obj);
                         break;
                     }
                 }
                 {
-                    QVariant var = ScriptVariantQtProxy::unwrap(val);
+                    QVariant var = ScriptVariantV8Proxy::unwrap(v8Val);
                     if (var.isValid()) {
                         dest = var;
                         break;
                     }
                 }
-                dest = val.toVariant();
+                // V8TODO
+                Q_ASSERT(false);
+                //dest = val->ToVariant();
                 break;
             case QMetaType::Bool:
-                dest = QVariant::fromValue(val.toBool());
+                dest = QVariant::fromValue(val->ToBoolean(_v8Isolate)->Value());
                 break;
             case QMetaType::QDateTime:
             case QMetaType::QDate:
-                Q_ASSERT(val.isDate());
-                dest = QVariant::fromValue(val.toDateTime());
+                if (val->IsDate()){
+                    double timeMs = v8::Date::Cast(*val)->NumberValue(_v8Context.Get(_v8Isolate)).ToChecked();
+                    dest = QVariant::fromValue(QDateTime::fromMSecsSinceEpoch(timeMs));
+                } else if (val->IsNumber()) {
+                    //V8TODO should we automatically cast numbers to datetime?
+                    dest = QVariant::fromValue(QDateTime::fromMSecsSinceEpoch(val->ToNumber(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value()));
+                } else {
+                    return false;
+                }
                 break;
             case QMetaType::UInt:
             case QMetaType::ULong:
-                if ( val.isArray() || val.isObject() ){
+                if ( val->IsArray() || val->IsObject() ){
                     return false;
                 }
-                dest = QVariant::fromValue(val.toUInt32());
+                dest = QVariant::fromValue(val->ToUint32(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value());
                 break;
             case QMetaType::Int:
             case QMetaType::Long:
             case QMetaType::Short:
-                if ( val.isArray() || val.isObject() ){
+                if ( val->IsArray() || val->IsObject() ){
                     return false;
                 }
-                dest = QVariant::fromValue(val.toInt32());
+                dest = QVariant::fromValue(val->ToInt32(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value());
                 break;
             case QMetaType::Double:
             case QMetaType::Float:
             case QMetaType::ULongLong:
             case QMetaType::LongLong:
-                if ( val.isArray() || val.isObject() ){
+                if ( val->IsArray() || val->IsObject() ){
                     return false;
                 }
-                dest = QVariant::fromValue(val.toNumber());
+                dest = QVariant::fromValue(val->ToNumber(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value());
                 break;
             case QMetaType::QString:
             case QMetaType::QByteArray:
-                dest = QVariant::fromValue(val.toString());
+                {
+                    v8::String::Utf8Value string(_v8Isolate, val);
+                    Q_ASSERT(*string != nullptr);
+                    dest = QVariant::fromValue(QString(*string));
+                }
                 break;
             case QMetaType::UShort:
-                if ( val.isArray() || val.isObject() ){
+                if ( val->IsArray() || val->IsObject() ){
                     return false;
                 }
-                dest = QVariant::fromValue(val.toUInt16());
+                dest = QVariant::fromValue(static_cast<uint16_t>(val->ToUint32(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value()));
                 break;
             case QMetaType::QObjectStar:
-                dest = QVariant::fromValue(ScriptObjectQtProxy::unwrap(val));
+                dest = QVariant::fromValue(ScriptObjectV8Proxy::unwrap(v8Val));
                 break;
             default:
                 // check to see if this is a pointer to a QObject-derived object
@@ -417,7 +439,7 @@ bool ScriptEngineQtScript::castValueToVariant(const QScriptValue& val, QVariant&
                         dest = QVariant::fromValue(nullptr);
                         break;
                     }*/
-                    QObject* obj = ScriptObjectQtProxy::unwrap(val);
+                    QObject* obj = ScriptObjectV8Proxy::unwrap(v8Val);
                     if (!obj) return false;
                     const QMetaObject* destMeta = QMetaType::metaObjectForType(destTypeId);
                     Q_ASSERT(destMeta);
@@ -428,14 +450,16 @@ bool ScriptEngineQtScript::castValueToVariant(const QScriptValue& val, QVariant&
                 }
                 // check to see if we have a registered prototype
                 {
-                    QVariant var = ScriptVariantQtProxy::unwrap(val);
+                    QVariant var = ScriptVariantV8Proxy::unwrap(v8Val);
                     if (var.isValid()) {
                         dest = var;
                         break;
                     }
                 }
                 // last chance, just convert it to a variant
-                dest = val.toVariant();
+                // V8TODO
+                Q_ASSERT(false);
+                //dest = val->ToVariant();
                 break;
         }
     }
@@ -443,24 +467,26 @@ bool ScriptEngineQtScript::castValueToVariant(const QScriptValue& val, QVariant&
     return destTypeId == QMetaType::UnknownType || dest.userType() == destTypeId || dest.convert(destTypeId);
 }
 
-QString ScriptEngineQtScript::valueType(const QScriptValue& val) {
-    if (val.isUndefined()) {
+QString ScriptEngineV8::valueType(const V8ScriptValue& v8Val) {
+    const v8::Local<v8::Value> val = v8Val.constGet();
+    
+    if (val->IsUndefined()) {
         return "undefined";
     }
-    if (val.isNull()) {
+    if (val->IsNull()) {
         return "null";
     }
-    if (val.isBool()) {
+    if (val->IsBoolean()) {
         return "boolean";
     }
-    if (val.isString()) {
+    if (val->IsString()) {
         return "string";
     }
-    if (val.isNumber()) {
+    if (val->IsNumber()) {
         return "number";
     }
     {
-        QObject* obj = ScriptObjectQtProxy::unwrap(val);
+        QObject* obj = ScriptObjectV8Proxy::unwrap(v8Val);
         if (obj) {
             QString objectName = obj->objectName();
             if (!objectName.isEmpty()) return objectName;
@@ -468,21 +494,24 @@ QString ScriptEngineQtScript::valueType(const QScriptValue& val) {
         }
     }
     {
-        QVariant var = ScriptVariantQtProxy::unwrap(val);
+        QVariant var = ScriptVariantV8Proxy::unwrap(v8Val);
         if (var.isValid()) {
             return var.typeName();
         }
     }
-    return val.toVariant().typeName();
+    //V8TODO
+    Q_ASSERT(false);
+    //return val->toVariant().typeName();
+    return "undefined";
 }
 
-QScriptValue ScriptEngineQtScript::castVariantToValue(const QVariant& val) {
+V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
     int valTypeId = val.userType();
 
     if (valTypeId == qMetaTypeId<ScriptValue>()) {
         // this is a wrapped ScriptValue, so just unwrap it and call it good
         ScriptValue innerVal = val.value<ScriptValue>();
-        return ScriptValueQtWrapper::fullUnwrap(this, innerVal);
+        return ScriptValueV8Wrapper::fullUnwrap(this, innerVal);
     }
 
     // do we have a registered handler for this type?
@@ -497,61 +526,72 @@ QScriptValue ScriptEngineQtScript::castVariantToValue(const QVariant& val) {
     }
     if (marshalFunc) {
         ScriptValue wrappedVal = marshalFunc(this, val.constData());
-        return ScriptValueQtWrapper::fullUnwrap(this, wrappedVal);
+        return ScriptValueV8Wrapper::fullUnwrap(this, wrappedVal);
     }
 
     switch (valTypeId) {
         case QMetaType::UnknownType:
         case QMetaType::Void:
-            return QScriptValue(this, QScriptValue::UndefinedValue);
+            return V8ScriptValue(_v8Isolate, v8::Undefined(_v8Isolate));
         case QMetaType::Nullptr:
-            return QScriptValue(this, QScriptValue::NullValue);
+            return V8ScriptValue(_v8Isolate, v8::Null(_v8Isolate));
         case QMetaType::Bool:
-            return QScriptValue(this, val.toBool());
+            return V8ScriptValue(_v8Isolate, v8::Boolean::New(_v8Isolate, val.toBool()));
         case QMetaType::Int:
         case QMetaType::Long:
         case QMetaType::Short:
-            return QScriptValue(this, val.toInt());
+            return V8ScriptValue(_v8Isolate, v8::Integer::New(_v8Isolate, val.toInt()));
         case QMetaType::UInt:
-        case QMetaType::ULong:
         case QMetaType::UShort:
-            return QScriptValue(this, val.toUInt());
-        case QMetaType::Float:
-        case QMetaType::LongLong:
+        case QMetaType::ULong:
+            return V8ScriptValue(_v8Isolate, v8::Uint32::New(_v8Isolate, val.toUInt()));
         case QMetaType::ULongLong:
+            return V8ScriptValue(_v8Isolate, v8::Number::New(_v8Isolate, val.toULongLong()));
+        case QMetaType::LongLong:
+            return V8ScriptValue(_v8Isolate, v8::Number::New(_v8Isolate, val.toLongLong()));
+        case QMetaType::Float:
         case QMetaType::Double:
-            return QScriptValue(this, val.toFloat());
+            return V8ScriptValue(_v8Isolate, v8::Number::New(_v8Isolate, val.toDouble()));
         case QMetaType::QString:
         case QMetaType::QByteArray:
-            return QScriptValue(this, val.toString());
+            return V8ScriptValue(_v8Isolate, v8::String::NewFromUtf8(_v8Isolate, val.toString().toStdString().c_str()).ToLocalChecked());
         case QMetaType::QVariant:
             return castVariantToValue(val.value<QVariant>());
         case QMetaType::QObjectStar: {
             QObject* obj = val.value<QObject*>();
-            if (obj == nullptr) return QScriptValue(this, QScriptValue::NullValue);
-            return ScriptObjectQtProxy::newQObject(this, obj);
+            if (obj == nullptr) return V8ScriptValue(_v8Isolate, v8::Null(_v8Isolate));
+            return ScriptObjectV8Proxy::newQObject(this, obj);
         }
         case QMetaType::QDateTime:
-            return static_cast<QScriptEngine*>(this)->newDate(val.value<QDateTime>());
+            {
+                double timeMs = val.value<QDateTime>().currentMSecsSinceEpoch();
+                return V8ScriptValue(_v8Isolate, v8::Date::New(_v8Context.Get(_v8Isolate), timeMs).ToLocalChecked());
+            }
         case QMetaType::QDate:
-            return static_cast<QScriptEngine*>(this)->newDate(val.value<QDate>().startOfDay());
+            {
+                double timeMs = val.value<QDate>().startOfDay().currentMSecsSinceEpoch();
+                return V8ScriptValue(_v8Isolate, v8::Date::New(_v8Context.Get(_v8Isolate), timeMs).ToLocalChecked());
+            }
         default:
             // check to see if this is a pointer to a QObject-derived object
             if (QMetaType::typeFlags(valTypeId) & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
                 QObject* obj = val.value<QObject*>();
-                if (obj == nullptr) return QScriptValue(this, QScriptValue::NullValue);
-                return ScriptObjectQtProxy::newQObject(this, obj);
+                if (obj == nullptr) return V8ScriptValue(_v8Isolate, v8::Null(_v8Isolate));
+                return ScriptObjectV8Proxy::newQObject(this, obj);
             }
             // have we set a prototype'd variant?
             {
                 _customTypeProtect.lockForRead();
                 CustomPrototypeMap::const_iterator lookup = _customPrototypes.find(valTypeId);
                 if (lookup != _customPrototypes.cend()) {
-                    return ScriptVariantQtProxy::newVariant(this, val, lookup.value());
+                    return ScriptVariantV8Proxy::newVariant(this, val, lookup.value());
                 }
                 _customTypeProtect.unlock();
             }
             // just do a generic variant
-            return QScriptEngine::newVariant(val);
+            //V8TODO
+            Q_ASSERT(false);
+            return V8ScriptValue(_v8Isolate, v8::Undefined(_v8Isolate));
+            //return QScriptEngine::newVariant(val);
     }
 }

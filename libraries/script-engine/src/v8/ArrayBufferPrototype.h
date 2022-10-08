@@ -15,11 +15,13 @@
 #ifndef hifi_ArrayBufferPrototype_h
 #define hifi_ArrayBufferPrototype_h
 
-#include <QtCore/QObject>
-#include <QtScript/QScriptable>
+// V8TODO
+/*#include <QtCore/QObject>
 
-/// [QtScript] The javascript functions associated with an <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">ArrayBuffer</a></code> instance prototype
-class ArrayBufferPrototype : public QObject, public QScriptable {
+#include "../Scriptable.h"
+
+/// [V8] The javascript functions associated with an <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">ArrayBuffer</a></code> instance prototype
+class ArrayBufferPrototype : public QObject, public Scriptable {
     Q_OBJECT
 public:
     ArrayBufferPrototype(QObject* parent = NULL);
@@ -33,7 +35,7 @@ public slots:
 private:
     QByteArray* thisArrayBuffer() const;
 };
-
+*/
 #endif // hifi_ArrayBufferPrototype_h
 
 /// @}
