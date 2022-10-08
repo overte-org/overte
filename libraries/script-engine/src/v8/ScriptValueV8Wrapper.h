@@ -1,9 +1,11 @@
 //
-//  ScriptValueQtWrapper.h
-//  libraries/script-engine/src/qtscript
+//  ScriptValueV8Wrapper.h
+//  libraries/script-engine/src/v8
 //
 //  Created by Heather Anderson on 5/16/21.
+//  Modified for V8 by dr Karol Suprynowicz on 2022/10/08
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -12,27 +14,27 @@
 /// @addtogroup ScriptEngine
 /// @{
 
-#ifndef hifi_ScriptValueQtWrapper_h
-#define hifi_ScriptValueQtWrapper_h
+#ifndef hifi_ScriptValueV8Wrapper_h
+#define hifi_ScriptValueV8Wrapper_h
 
 #include <QtCore/QPointer>
-#include <QtScript/QScriptValue>
 
 #include <utility>
 
 #include "../ScriptValue.h"
-#include "ScriptEngineQtScript.h"
+#include "ScriptEngineV8.h"
 
-/// [QtScript] Implements ScriptValue for QtScript and translates calls for QScriptValue
-class ScriptValueQtWrapper final : public ScriptValueProxy {
+/// [V8] Implements ScriptValue for V8 and translates calls for V8ScriptValue
+class ScriptValueV8Wrapper final : public ScriptValueProxy {
 public: // construction
-    inline ScriptValueQtWrapper(ScriptEngineQtScript* engine, const QScriptValue& value) :
+    inline ScriptValueV8Wrapper(ScriptEngineV8* engine, const V8ScriptValue& value) :
         _engine(engine), _value(value) {}
-    inline ScriptValueQtWrapper(ScriptEngineQtScript* engine, QScriptValue&& value) :
+//        _engine(engine), _value(std::move(value.copy())) {}
+    inline ScriptValueV8Wrapper(ScriptEngineV8* engine, V8ScriptValue&& value) :
         _engine(engine), _value(std::move(value)) {}
-    static ScriptValueQtWrapper* unwrap(const ScriptValue& val);
-    inline const QScriptValue& toQtValue() const { return _value; }
-    static QScriptValue fullUnwrap(ScriptEngineQtScript* engine, const ScriptValue& value);
+    static ScriptValueV8Wrapper* unwrap(const ScriptValue& val);
+    inline const V8ScriptValue& toV8Value() const { return _value; }
+    static V8ScriptValue fullUnwrap(ScriptEngineV8* engine, const ScriptValue& value);
 
 public:
     virtual void release() override;
@@ -84,13 +86,13 @@ public:  // ScriptValue implementation
     virtual QObject* toQObject() const override;
 
 private: // helper functions
-    QScriptValue fullUnwrap(const ScriptValue& value) const;
+    V8ScriptValue fullUnwrap(const ScriptValue& value) const;
 
 private: // storage
-    QPointer<ScriptEngineQtScript> _engine;
-    QScriptValue _value;
+    ScriptEngineV8 *_engine;
+    V8ScriptValue _value;
 };
 
-#endif  // hifi_ScriptValueQtWrapper_h
+#endif  // hifi_ScriptValueV8Wrapper_h
 
 /// @}

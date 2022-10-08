@@ -15,21 +15,22 @@
 
 #include "ArrayBufferPrototype.h"
 #include "DataViewClass.h"
-#include "ScriptEngineQtScript.h"
+#include "ScriptEngineV8.h"
 #include "TypedArrays.h"
 
 
-static const QString CLASS_NAME = "ArrayBuffer";
+// V8TODO
+/*static const QString CLASS_NAME = "ArrayBuffer";
 
 // FIXME: Q_DECLARE_METATYPE is global and really belongs in a shared header file, not per .cpp like this
 // (see DataViewClass.cpp, etc. which would also have to be updated to resolve)
 Q_DECLARE_METATYPE(QByteArray*)
 
-ArrayBufferClass::ArrayBufferClass(ScriptEngineQtScript* scriptEngine) :
+ArrayBufferClass::ArrayBufferClass(ScriptEngineV8* scriptEngine) :
 QObject(scriptEngine),
 QScriptClass(scriptEngine) {
     qScriptRegisterMetaType<QByteArray>(engine(), toScriptValue, fromScriptValue);
-    QScriptValue global = engine()->globalObject();
+    V8ScriptValue global = engine()->globalObject();
 
     // Save string handles for quick lookup
     _name = engine()->toStringHandle(CLASS_NAME.toLatin1());
@@ -63,15 +64,15 @@ QScriptClass(scriptEngine) {
     new Float64ArrayClass(scriptEngine);
 }
 
-QScriptValue ArrayBufferClass::newInstance(qint32 size) {
+V8ScriptValue ArrayBufferClass::newInstance(qint32 size) {
     const qint32 MAX_LENGTH = 100000000;
     if (size < 0) {
         engine()->evaluate("throw \"ArgumentError: negative length\"");
-        return QScriptValue();
+        return V8ScriptValue();
     }
     if (size > MAX_LENGTH) {
         engine()->evaluate("throw \"ArgumentError: absurd length\"");
-        return QScriptValue();
+        return V8ScriptValue();
     }
     // We've patched qt to fix https://highfidelity.atlassian.net/browse/BUGZ-46 on mac and windows only.
 #if defined(Q_OS_WIN) || defined(Q_OS_MAC)
@@ -79,29 +80,29 @@ QScriptValue ArrayBufferClass::newInstance(qint32 size) {
 #endif
     QScriptEngine* eng = engine();
     QVariant variant = QVariant::fromValue(QByteArray(size, 0));
-    QScriptValue data =  eng->newVariant(variant);
+    V8ScriptValue data =  eng->newVariant(variant);
     return engine()->newObject(this, data);
 }
 
-QScriptValue ArrayBufferClass::newInstance(const QByteArray& ba) {
+V8ScriptValue ArrayBufferClass::newInstance(const QByteArray& ba) {
     QScriptEngine* eng = engine();
-    QScriptValue data = eng->newVariant(QVariant::fromValue(ba));
+    V8ScriptValue data = eng->newVariant(QVariant::fromValue(ba));
     return eng->newObject(this, data);
 }
 
-QScriptValue ArrayBufferClass::construct(QScriptContext* context, QScriptEngine* engine) {
+V8ScriptValue ArrayBufferClass::construct(V8ScriptContext* context, QScriptEngine* engine) {
     ArrayBufferClass* cls = qscriptvalue_cast<ArrayBufferClass*>(context->callee().data());
     if (!cls) {
         // return if callee (function called) is not of type ArrayBuffer
-        return QScriptValue();
+        return V8ScriptValue();
     }
-    QScriptValue arg = context->argument(0);
+    V8ScriptValue arg = context->argument(0);
     if (!arg.isValid() || !arg.isNumber()) {
-        return QScriptValue();
+        return V8ScriptValue();
     }
 
     quint32 size = arg.toInt32();
-    QScriptValue newObject = cls->newInstance(size);
+    V8ScriptValue newObject = cls->newInstance(size);
 
     if (context->isCalledAsConstructor()) {
         // if called with keyword new, replace this object.
@@ -112,59 +113,59 @@ QScriptValue ArrayBufferClass::construct(QScriptContext* context, QScriptEngine*
     return newObject;
 }
 
-QScriptClass::QueryFlags ArrayBufferClass::queryProperty(const QScriptValue& object,
-                                                    const QScriptString& name,
+ScriptObjectV8Proxy::QueryFlags ArrayBufferClass::queryProperty(const V8ScriptValue& object,
+                                                    const V8ScriptString& name,
                                                     QueryFlags flags, uint* id) {
     QByteArray* ba = qscriptvalue_cast<QByteArray*>(object.data());
     if (ba && name == _byteLength) {
         // if the property queried is byteLength, only handle read access
         return flags &= HandlesReadAccess;
     }
-    return QScriptClass::QueryFlags(); // No access
+    return ScriptObjectV8Proxy::QueryFlags(); // No access
 }
 
-QScriptValue ArrayBufferClass::property(const QScriptValue& object,
-                                   const QScriptString& name, uint id) {
+V8ScriptValue ArrayBufferClass::property(const V8ScriptValue& object,
+                                   const V8ScriptString& name, uint id) {
     QByteArray* ba = qscriptvalue_cast<QByteArray*>(object.data());
     if (ba && name == _byteLength) {
         return ba->length();
     }
-    return QScriptValue();
+    return V8ScriptValue();
 }
 
-QScriptValue::PropertyFlags ArrayBufferClass::propertyFlags(const QScriptValue& object,
-                                                       const QScriptString& name, uint id) {
-    return QScriptValue::Undeletable;
+V8ScriptValue::PropertyFlags ArrayBufferClass::propertyFlags(const V8ScriptValue& object,
+                                                       const V8ScriptString& name, uint id) {
+    return V8ScriptValue::Undeletable;
 }
 
 QString ArrayBufferClass::name() const {
     return _name.toString();
 }
 
-QScriptValue ArrayBufferClass::prototype() const {
+V8ScriptValue ArrayBufferClass::prototype() const {
     return _proto;
 }
 
-QScriptValue ArrayBufferClass::toScriptValue(QScriptEngine* engine, const QByteArray& ba) {
-    QScriptValue ctor = engine->globalObject().property(CLASS_NAME);
+V8ScriptValue ArrayBufferClass::toScriptValue(QScriptEngine* engine, const QByteArray& ba) {
+    V8ScriptValue ctor = engine->globalObject().property(CLASS_NAME);
     ArrayBufferClass* cls = qscriptvalue_cast<ArrayBufferClass*>(ctor.data());
     if (!cls) {
         if (engine->currentContext()) {
             engine->currentContext()->throwError("arrayBufferClass::toScriptValue -- could not get " + CLASS_NAME + " class constructor");
         }
-        return QScriptValue::NullValue;
+        return V8ScriptValue::NullValue;
     }
     return cls->newInstance(ba);
 }
 
-void ArrayBufferClass::fromScriptValue(const QScriptValue& object, QByteArray& byteArray) {
+void ArrayBufferClass::fromScriptValue(const V8ScriptValue& object, QByteArray& byteArray) {
     if (object.isString()) {
         // UTF-8 encoded String
         byteArray = object.toString().toUtf8();
     } else if (object.isArray()) {
         // Array of uint8s eg: [ 128, 3, 25, 234 ]
         auto Uint8Array = object.engine()->globalObject().property("Uint8Array");
-        auto typedArray = Uint8Array.construct(QScriptValueList{object});
+        auto typedArray = Uint8Array.construct(V8ScriptValueList{object});
         if (QByteArray* buffer = qscriptvalue_cast<QByteArray*>(typedArray.property("buffer"))) {
             byteArray = *buffer;
         }
@@ -175,4 +176,4 @@ void ArrayBufferClass::fromScriptValue(const QScriptValue& object, QByteArray& b
         }
     }
 }
-
+*/

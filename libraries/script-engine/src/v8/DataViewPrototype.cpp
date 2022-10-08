@@ -13,8 +13,8 @@
 
 #include <QDebug>
 #include <QtCore/QDataStream>
-#include <QtScript/QScriptEngine>
-#include <QtScript/QScriptValue>
+#include "libplatform/libplatform.h"
+#include "v8.h"
 
 #include <glm/glm.hpp>
 
@@ -22,13 +22,14 @@
 
 #include "ArrayBufferViewClass.h"
 
-Q_DECLARE_METATYPE(QByteArray*)
+// V8TODO
+/*Q_DECLARE_METATYPE(QByteArray*)
 
 DataViewPrototype::DataViewPrototype(QObject* parent) : QObject(parent) {
 }
 
 QByteArray* DataViewPrototype::thisArrayBuffer() const {
-    QScriptValue bufferObject = thisObject().data().property(BUFFER_PROPERTY_NAME);
+    V8ScriptValue bufferObject = thisObject().data().property(BUFFER_PROPERTY_NAME);
     return qscriptvalue_cast<QByteArray*>(bufferObject.data());
 }
 
@@ -124,7 +125,7 @@ quint32 DataViewPrototype::getUint32(qint32 byteOffset, bool littleEndian) {
     return 0;
 }
 
-QScriptValue DataViewPrototype::getFloat32(qint32 byteOffset, bool littleEndian) {
+V8ScriptValue DataViewPrototype::getFloat32(qint32 byteOffset, bool littleEndian) {
     if (realOffset(byteOffset, sizeof(float))) {
         QDataStream stream(*thisArrayBuffer());
         stream.skipRawData(byteOffset);
@@ -134,16 +135,16 @@ QScriptValue DataViewPrototype::getFloat32(qint32 byteOffset, bool littleEndian)
         float result;
         stream >> result;
         if (isNaN(result)) {
-            return QScriptValue();
+            return V8ScriptValue();
         }
         
-        return QScriptValue(result);
+        return V8ScriptValue(result);
     }
     thisObject().engine()->evaluate("throw \"RangeError: byteOffset out of range\"");
-    return QScriptValue();
+    return V8ScriptValue();
 }
 
-QScriptValue DataViewPrototype::getFloat64(qint32 byteOffset, bool littleEndian) {
+V8ScriptValue DataViewPrototype::getFloat64(qint32 byteOffset, bool littleEndian) {
     if (realOffset(byteOffset, sizeof(double))) {
         QDataStream stream(*thisArrayBuffer());
         stream.skipRawData(byteOffset);
@@ -153,13 +154,13 @@ QScriptValue DataViewPrototype::getFloat64(qint32 byteOffset, bool littleEndian)
         double result;
         stream >> result;
         if (isNaN(result)) {
-            return QScriptValue();
+            return V8ScriptValue();
         }
         
         return result;
     }
     thisObject().engine()->evaluate("throw \"RangeError: byteOffset out of range\"");
-    return QScriptValue();
+    return V8ScriptValue();
 }
 
 void DataViewPrototype::setInt8(qint32 byteOffset, qint32 value) {
@@ -257,5 +258,5 @@ void DataViewPrototype::setFloat64(qint32 byteOffset, double value, bool littleE
         thisObject().engine()->evaluate("throw \"RangeError: byteOffset out of range\"");
     }
 }
-
+*/
 

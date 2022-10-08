@@ -15,12 +15,14 @@
 
 #include <QtCore/QBuffer>
 #include <QtGui/QImage>
-#include <QtScript/QScriptEngine>
+#include "libplatform/libplatform.h"
+#include "v8.h"
 
 static const int QCOMPRESS_HEADER_POSITION = 0;
 static const int QCOMPRESS_HEADER_SIZE = 4;
 
-Q_DECLARE_METATYPE(QByteArray*)
+// V8TODO
+/*Q_DECLARE_METATYPE(QByteArray*)
 
 ArrayBufferPrototype::ArrayBufferPrototype(QObject* parent) : QObject(parent) {
 }
@@ -86,4 +88,4 @@ QByteArray ArrayBufferPrototype::recodeImage(const QString& sourceFormat, const 
 
 QByteArray* ArrayBufferPrototype::thisArrayBuffer() const {
     return qscriptvalue_cast<QByteArray*>(thisObject().data());
-}
+}*/
