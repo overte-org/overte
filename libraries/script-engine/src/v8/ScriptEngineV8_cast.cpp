@@ -198,6 +198,7 @@ void ScriptEngineV8::registerSystemTypes() {
 }
 
 int ScriptEngineV8::computeCastPenalty(const V8ScriptValue& v8Val, int destTypeId) {
+    v8::HandleScope handleScope(_v8Isolate);
     const v8::Local<v8::Value> val = v8Val.constGet();
     if (val->IsNumber()) {
         switch (destTypeId){
@@ -291,6 +292,7 @@ int ScriptEngineV8::computeCastPenalty(const V8ScriptValue& v8Val, int destTypeI
 }
 
 bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& dest, int destTypeId) {
+    v8::HandleScope handleScope(_v8Isolate);
     const v8::Local<v8::Value> val = v8Val.constGet();
 
     // if we're not particularly interested in a specific type, try to detect if we're dealing with a registered type
@@ -468,6 +470,8 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
 }
 
 QString ScriptEngineV8::valueType(const V8ScriptValue& v8Val) {
+    // V8TODO
+    v8::HandleScope handleScope(const_cast<v8::Isolate*>(v8Val.constGetIsolate()));
     const v8::Local<v8::Value> val = v8Val.constGet();
     
     if (val->IsUndefined()) {
