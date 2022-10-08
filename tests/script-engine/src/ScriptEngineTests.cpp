@@ -68,6 +68,30 @@ void ScriptEngineTests::initTestCase() {
         qCritical() << "Error from engine" << engineName << ": " << message;
     });
 
+
+    QSharedPointer<ScriptEngines> ac = DependencyManager::get<ScriptEngines>();
+    QVERIFY(!ac.isNull());
+
+    connect(ac.get(), &ScriptEngines::scriptLoadError, [](const QString& filename, const QString& error){
+        qWarning() << "Failed to load script" << filename << ":" << error;
+    });
+
+    connect(ac.get(), &ScriptEngines::printedMessage, [](const QString& message, const QString& engineName){
+        qDebug() << "Printed message from engine" << engineName << ": " << message;
+    });
+
+    connect(ac.get(), &ScriptEngines::infoMessage, [](const QString& message, const QString& engineName){
+        qInfo() << "Info message from engine" << engineName << ": " << message;
+    });
+
+    connect(ac.get(), &ScriptEngines::warningMessage, [](const QString& message, const QString& engineName){
+        qWarning() << "Warning from engine" << engineName << ": " << message;
+    });
+
+    connect(ac.get(), &ScriptEngines::errorMessage, [](const QString& message, const QString& engineName){
+        qCritical() << "Error from engine" << engineName << ": " << message;
+    });
+
 }
 
 void ScriptEngineTests::scriptTest() {
