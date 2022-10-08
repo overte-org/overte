@@ -11,14 +11,15 @@
 
 #include "DataViewClass.h"
 
-#include "DataViewPrototype.h"
+// V8TODO
+/*#include "DataViewPrototype.h"
 
 Q_DECLARE_METATYPE(QByteArray*)
 
 static const QString DATA_VIEW_NAME = "DataView";
 
-DataViewClass::DataViewClass(ScriptEngineQtScript* scriptEngine) : ArrayBufferViewClass(scriptEngine) {
-    QScriptValue global = engine()->globalObject();
+DataViewClass::DataViewClass(ScriptEngineV8* scriptEngine) : ArrayBufferViewClass(scriptEngine) {
+    V8ScriptValue global = engine()->globalObject();
     
     // Save string handles for quick lookup
     _name = engine()->toStringHandle(DATA_VIEW_NAME.toLatin1());
@@ -37,8 +38,8 @@ DataViewClass::DataViewClass(ScriptEngineQtScript* scriptEngine) : ArrayBufferVi
     engine()->globalObject().setProperty(name(), _ctor);
 }
 
-QScriptValue DataViewClass::newInstance(QScriptValue buffer, quint32 byteOffset, quint32 byteLentgh) {
-    QScriptValue data = engine()->newObject();
+V8ScriptValue DataViewClass::newInstance(V8ScriptValue buffer, quint32 byteOffset, quint32 byteLentgh) {
+    V8ScriptValue data = engine()->newObject();
     data.setProperty(_bufferName, buffer);
     data.setProperty(_byteOffsetName, byteOffset);
     data.setProperty(_byteLengthName, byteLentgh);
@@ -46,36 +47,36 @@ QScriptValue DataViewClass::newInstance(QScriptValue buffer, quint32 byteOffset,
     return engine()->newObject(this, data);
 }
 
-QScriptValue DataViewClass::construct(QScriptContext* context, QScriptEngine* engine) {
+V8ScriptValue DataViewClass::construct(V8ScriptContext* context, QScriptEngine* engine) {
     DataViewClass* cls = qscriptvalue_cast<DataViewClass*>(context->callee().data());
     if (!cls || context->argumentCount() < 1) {
-        return QScriptValue();
+        return V8ScriptValue();
     }
     
-    QScriptValue bufferArg = context->argument(0);
-    QScriptValue byteOffsetArg = (context->argumentCount() >= 2) ? context->argument(1) : QScriptValue();
-    QScriptValue byteLengthArg = (context->argumentCount() >= 3) ? context->argument(2) : QScriptValue();
+    V8ScriptValue bufferArg = context->argument(0);
+    V8ScriptValue byteOffsetArg = (context->argumentCount() >= 2) ? context->argument(1) : V8ScriptValue();
+    V8ScriptValue byteLengthArg = (context->argumentCount() >= 3) ? context->argument(2) : V8ScriptValue();
     
     QByteArray* arrayBuffer = (bufferArg.isValid()) ? qscriptvalue_cast<QByteArray*>(bufferArg.data()) :NULL;
     if (!arrayBuffer) {
         engine->evaluate("throw \"TypeError: 1st argument not a ArrayBuffer\"");
-        return QScriptValue();
+        return V8ScriptValue();
     }
     if (byteOffsetArg.isNumber() &&
         (byteOffsetArg.toInt32() < 0 ||
          byteOffsetArg.toInt32() > arrayBuffer->size())) {
             engine->evaluate("throw \"RangeError: byteOffset out of range\"");
-            return QScriptValue();
+            return V8ScriptValue();
         }
     if (byteLengthArg.isNumber() &&
         (byteLengthArg.toInt32() < 0 ||
          byteOffsetArg.toInt32() + byteLengthArg.toInt32() > arrayBuffer->size())) {
             engine->evaluate("throw \"RangeError: byteLength out of range\"");
-            return QScriptValue();
+            return V8ScriptValue();
         }
     quint32 byteOffset = (byteOffsetArg.isNumber()) ? byteOffsetArg.toInt32() : 0;
     quint32 byteLength = (byteLengthArg.isNumber()) ? byteLengthArg.toInt32() : arrayBuffer->size() - byteOffset;
-    QScriptValue newObject = cls->newInstance(bufferArg, byteOffset, byteLength);
+    V8ScriptValue newObject = cls->newInstance(bufferArg, byteOffset, byteLength);
     
     if (context->isCalledAsConstructor()) {
         context->setThisObject(newObject);
@@ -89,6 +90,7 @@ QString DataViewClass::name() const {
     return _name.toString();
 }
 
-QScriptValue DataViewClass::prototype() const {
+V8ScriptValue DataViewClass::prototype() const {
     return _proto;
 }
+*/

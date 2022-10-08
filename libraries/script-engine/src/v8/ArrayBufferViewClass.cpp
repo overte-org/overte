@@ -10,11 +10,12 @@
 //
 
 #include "ArrayBufferViewClass.h"
-#include "ScriptEngineQtScript.h"
+#include "ScriptEngineV8.h"
 
 Q_DECLARE_METATYPE(QByteArray*)
 
-ArrayBufferViewClass::ArrayBufferViewClass(ScriptEngineQtScript* scriptEngine) :
+// V8TODO
+/*ArrayBufferViewClass::ArrayBufferViewClass(ScriptEngineV8* scriptEngine) :
     QObject(scriptEngine),
     QScriptClass(scriptEngine),
     _scriptEngine(scriptEngine)
@@ -25,8 +26,8 @@ ArrayBufferViewClass::ArrayBufferViewClass(ScriptEngineQtScript* scriptEngine) :
     _byteLengthName = engine()->toStringHandle(BYTE_LENGTH_PROPERTY_NAME.toLatin1());
 }
 
-QScriptClass::QueryFlags ArrayBufferViewClass::queryProperty(const QScriptValue& object,
-                                                             const QScriptString& name,
+QScriptClass::QueryFlags ArrayBufferViewClass::queryProperty(const V8ScriptValue& object,
+                                                             const V8ScriptString& name,
                                                              QueryFlags flags, uint* id) {
     if (name == _bufferName || name == _byteOffsetName || name == _byteLengthName) {
         return flags &= HandlesReadAccess; // Only keep read access flags
@@ -34,8 +35,8 @@ QScriptClass::QueryFlags ArrayBufferViewClass::queryProperty(const QScriptValue&
     return QScriptClass::QueryFlags(); // No access
 }
 
-QScriptValue ArrayBufferViewClass::property(const QScriptValue& object,
-                                            const QScriptString& name, uint id) {
+V8ScriptValue ArrayBufferViewClass::property(const V8ScriptValue& object,
+                                            const V8ScriptString& name, uint id) {
     if (name == _bufferName) {
         return object.data().property(_bufferName);
     }
@@ -45,10 +46,10 @@ QScriptValue ArrayBufferViewClass::property(const QScriptValue& object,
     if (name == _byteLengthName) {
         return object.data().property(_byteLengthName);
     }
-    return QScriptValue();
+    return V8ScriptValue();
 }
 
-QScriptValue::PropertyFlags ArrayBufferViewClass::propertyFlags(const QScriptValue& object,
-                                                                const QScriptString& name, uint id) {
-    return QScriptValue::Undeletable;
-}
+V8ScriptValue::PropertyFlags ArrayBufferViewClass::propertyFlags(const V8ScriptValue& object,
+                                                                const V8ScriptString& name, uint id) {
+    return V8ScriptValue::Undeletable;
+}*/

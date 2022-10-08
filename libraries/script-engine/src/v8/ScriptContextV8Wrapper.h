@@ -1,9 +1,11 @@
 //
-//  ScriptContextQtWrapper.h
-//  libraries/script-engine/src/qtscript
+//  ScriptContextV8Wrapper.h
+//  libraries/script-engine/src/v8
 //
 //  Created by Heather Anderson on 5/22/21.
+//  Modified for V8 by dr Karol Suprynowicz on 2022/10/08
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -12,24 +14,27 @@
 /// @addtogroup ScriptEngine
 /// @{
 
-#ifndef hifi_ScriptContextQtWrapper_h
-#define hifi_ScriptContextQtWrapper_h
+#ifndef hifi_ScriptContextV8Wrapper_h
+#define hifi_ScriptContextV8Wrapper_h
 
 #include <QtCore/QString>
-#include <QtScript/QScriptContextInfo>
 
 #include "../ScriptContext.h"
 #include "../ScriptValue.h"
 
-class QScriptContext;
-class ScriptEngineQtScript;
+#include <libplatform/libplatform.h>
+#include <v8.h>
 
-/// [QtScript] Implements ScriptContext for QtScript and translates calls for QScriptContextInfo
-class ScriptContextQtWrapper final : public ScriptContext {
+//class V8ScriptContext;
+class ScriptEngineV8;
+
+/// [V8] Implements ScriptContext for V8 and translates calls for V8ScriptContextInfo
+class ScriptContextV8Wrapper final : public ScriptContext {
 public: // construction
-    inline ScriptContextQtWrapper(ScriptEngineQtScript* engine, QScriptContext* context) : _context(context) , _engine(engine) {}
-    static ScriptContextQtWrapper* unwrap(ScriptContext* val);
-    inline QScriptContext* toQtValue() const { return _context; }
+    ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::Local<v8::Context> context);
+    ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::Local<v8::Context> context, std::shared_ptr<v8::FunctionCallbackInfo<v8::Value>> functionCallbackInfo);
+    static ScriptContextV8Wrapper* unwrap(ScriptContext* val);
+    v8::Local<v8::Context> toV8Value() const;
 
 public: // ScriptContext implementation
     virtual int argumentCount() const override;
@@ -44,13 +49,14 @@ public: // ScriptContext implementation
     virtual ScriptValue throwValue(const ScriptValue& value) override;
 
 private: // storage
-    QScriptContext* _context;
-    ScriptEngineQtScript* _engine;
+    v8::Persistent<v8::Context> _context;
+    std::shared_ptr<v8::FunctionCallbackInfo<v8::Value>> _functionCallbackInfo;
+    ScriptEngineV8* _engine;
 };
 
-class ScriptFunctionContextQtWrapper final : public ScriptFunctionContext {
+class ScriptFunctionContextV8Wrapper final : public ScriptFunctionContext {
 public:  // construction
-    inline ScriptFunctionContextQtWrapper(QScriptContext* context) : _value(context) {}
+    inline ScriptFunctionContextV8Wrapper(v8::Local<v8::Context> context) { }
 
 public:  // ScriptFunctionContext implementation
     virtual QString fileName() const override;
@@ -58,10 +64,10 @@ public:  // ScriptFunctionContext implementation
     virtual FunctionType functionType() const override;
     virtual int lineNumber() const override;
 
-private: // storage
-    QScriptContextInfo _value;
+//private: // storage
+    //V8ScriptContextInfo _value;
 };
 
-#endif  // hifi_ScriptContextQtWrapper_h
+#endif  // hifi_ScriptContextV8Wrapper_h
 
 /// @}
