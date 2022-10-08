@@ -32,29 +32,32 @@ ScriptSyntaxCheckResultPointer ScriptProgramV8Wrapper::checkSyntax() {
 }
 
 bool ScriptProgramV8Wrapper::compile() {
+    auto isolate = _engine->getIsolate();
+    v8::HandleScope handleScope(isolate);
+    auto context = _engine->getContext();
     int errorColumnNumber = 0;
     int errorLineNumber = 0;
     QString errorMessage = "";
     QString errorBacktrace = "";
     ScriptSyntaxCheckResult::State state;
-    v8::TryCatch tryCatch(_engine->getIsolate());
-    v8::ScriptOrigin scriptOrigin(_engine->getIsolate(), v8::String::NewFromUtf8(_engine->getIsolate(), _url.toStdString().c_str()).ToLocalChecked());
+    v8::TryCatch tryCatch(isolate);
+    v8::ScriptOrigin scriptOrigin(isolate, v8::String::NewFromUtf8(isolate, _url.toStdString().c_str()).ToLocalChecked());
     v8::Local<v8::Script> script;
-    if (v8::Script::Compile(_engine->getContext(), v8::String::NewFromUtf8(_engine->getIsolate(), _source.toStdString().c_str()).ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
+    if (v8::Script::Compile(context, v8::String::NewFromUtf8(isolate, _source.toStdString().c_str()).ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
         _compileResult = ScriptSyntaxCheckResultV8Wrapper(ScriptSyntaxCheckResult::Valid);
-        _value = V8ScriptProgram(_engine->getIsolate(), script);
+        _value = V8ScriptProgram(isolate, script);
         return true;
     }
-    v8::String::Utf8Value utf8Value(_engine->getIsolate(), tryCatch.Exception());
+    v8::String::Utf8Value utf8Value(isolate, tryCatch.Exception());
     errorMessage = QString(*utf8Value);
     v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
     if (!exceptionMessage.IsEmpty()) {
-        errorLineNumber = exceptionMessage->GetLineNumber(_engine->getContext()).FromJust();
-        errorColumnNumber = exceptionMessage->GetStartColumn(_engine->getContext()).FromJust();
+        errorLineNumber = exceptionMessage->GetLineNumber(context).FromJust();
+        errorColumnNumber = exceptionMessage->GetStartColumn(context).FromJust();
         v8::Local<v8::Value> backtraceV8String;
-        if (tryCatch.StackTrace(_engine->getContext()).ToLocal(&backtraceV8String) && backtraceV8String->IsString() &&
+        if (tryCatch.StackTrace(context).ToLocal(&backtraceV8String) && backtraceV8String->IsString() &&
                 v8::Local<v8::String>::Cast(backtraceV8String)->Length() > 0) {
-            v8::String::Utf8Value backtraceUtf8Value(_engine->getIsolate(), backtraceV8String);
+            v8::String::Utf8Value backtraceUtf8Value(isolate, backtraceV8String);
             errorBacktrace = *backtraceUtf8Value;
         }
     }

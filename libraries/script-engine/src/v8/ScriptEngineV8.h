@@ -175,7 +175,10 @@ public: // not for public use, but I don't like how Qt strings this along with p
         v8::EscapableHandleScope handleScope(_v8Isolate);
         return handleScope.Escape(_v8Context.Get(_v8Isolate));
     }
-    const v8::Local<v8::Context> getConstContext() const {return _v8Context.Get(_v8Isolate);}
+    const v8::Local<v8::Context> getConstContext() const {
+        v8::EscapableHandleScope handleScope(_v8Isolate);
+        return handleScope.Escape(_v8Context.Get(_v8Isolate));
+    }
 
     using ObjectWrapperMap = QMap<QObject*, QWeakPointer<ScriptObjectV8Proxy>>;
     mutable QMutex _qobjectWrapperMapProtect;

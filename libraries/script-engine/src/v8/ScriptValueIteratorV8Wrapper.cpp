@@ -14,15 +14,17 @@
 #include "ScriptValueIteratorV8Wrapper.h"
 
 V8ScriptValueIterator::V8ScriptValueIterator(ScriptEngineV8* engine, v8::Local<v8::Value> object) : _engine(engine)  {
-    _context.Reset(_engine->getIsolate(), _engine->getContext());
-    auto context = _context.Get(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    v8::HandleScope handleScope(isolate);
+    _context.Reset(isolate, _engine->getContext());
+    auto context = _context.Get(isolate);
     v8::Local<v8::Object> v8Object;
     if (!object->ToObject(context).ToLocal(&v8Object)) {
         Q_ASSERT(false);
     }
-    _object.Reset(_engine->getIsolate(), v8Object);
-    _propertyNames.Reset(_engine->getIsolate(), v8Object->GetOwnPropertyNames(context).ToLocalChecked());
-    _length = _propertyNames.Get(_engine->getIsolate())->Length();
+    _object.Reset(isolate, v8Object);
+    _propertyNames.Reset(isolate, v8Object->GetOwnPropertyNames(context).ToLocalChecked());
+    _length = _propertyNames.Get(isolate)->Length();
     _currentIndex = 0;
 }
 
@@ -31,12 +33,14 @@ bool V8ScriptValueIterator::hasNext() const {
 }
 
 QString V8ScriptValueIterator::name() const {
-    auto context = _context.Get(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    v8::HandleScope handleScope(isolate);
+    auto context = _context.Get(isolate);
     v8::Local<v8::Value> propertyName;
-    if (!_propertyNames.Get(_engine->getIsolate())->Get(context, _length).ToLocal(&propertyName)) {
+    if (!_propertyNames.Get(isolate)->Get(context, _length).ToLocal(&propertyName)) {
         Q_ASSERT(false);
     }
-    return QString(*v8::String::Utf8Value(_engine->getIsolate(), propertyName));
+    return QString(*v8::String::Utf8Value(isolate, propertyName));
 }
 
 void V8ScriptValueIterator::next() {
@@ -46,16 +50,18 @@ void V8ScriptValueIterator::next() {
 }
 
 V8ScriptValue V8ScriptValueIterator::value() {
-    auto context = _context.Get(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    v8::HandleScope handleScope(isolate);
+    auto context = _context.Get(isolate);
     v8::Local<v8::Value> v8Value;
     v8::Local<v8::Value> propertyName;
-    if (!_propertyNames.Get(_engine->getIsolate())->Get(context, _length).ToLocal(&propertyName)) {
+    if (!_propertyNames.Get(isolate)->Get(context, _length).ToLocal(&propertyName)) {
         Q_ASSERT(false);
     }
-    if (!_object.Get(_engine->getIsolate())->Get(context, propertyName->ToString(context).ToLocalChecked()).ToLocal(&v8Value)) {
+    if (!_object.Get(isolate)->Get(context, propertyName->ToString(context).ToLocalChecked()).ToLocal(&v8Value)) {
         Q_ASSERT(false);
     }
-    return V8ScriptValue(_engine->getIsolate(), v8Value);
+    return V8ScriptValue(isolate, v8Value);
 }
 
 ScriptValue::PropertyFlags ScriptValueIteratorV8Wrapper::flags() const {
