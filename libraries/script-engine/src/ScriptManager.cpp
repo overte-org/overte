@@ -825,7 +825,9 @@ void ScriptManager::run() {
         // (because we're a client script)
         hifi::scripting::setLocalAccessSafeThread(true);
     }
-
+    
+    _engine->enterIsolateOnThisThread();
+    
     auto filenameParts = _fileNameString.split("/");
     auto name = filenameParts.size() > 0 ? filenameParts[filenameParts.size() - 1] : "unknown";
     PROFILE_SET_THREAD_NAME("Script: " + name);
