@@ -60,6 +60,7 @@ V8ScriptValue ScriptValueV8Wrapper::fullUnwrap(ScriptEngineV8* engine, const Scr
 }
 
 ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const ScriptValueList& args) {
+    v8::HandleScope handleScope(_engine->getIsolate());
     V8ScriptValue v8This = fullUnwrap(thisObject);
     //V8ScriptValueList qArgs;
     Q_ASSERT(args.length() <= Q_METAMETHOD_INVOKE_MAX_ARGS);
@@ -84,6 +85,7 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
 }
 
 ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const ScriptValue& arguments) {
+    v8::HandleScope handleScope(_engine->getIsolate());
     V8ScriptValue v8This = fullUnwrap(thisObject);
     V8ScriptValue v8Args = fullUnwrap(arguments);
     // V8TODO should there be a v8 try-catch here?
@@ -104,6 +106,7 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
 }
 
 ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
+    v8::HandleScope handleScope(_engine->getIsolate());
     Q_ASSERT(args.length() <= Q_METAMETHOD_INVOKE_MAX_ARGS);
     //V8TODO I'm not sure how else to do this since v8::Local should probably be on stack, not heap
     v8::Local<v8::Value> v8Args[Q_METAMETHOD_INVOKE_MAX_ARGS];
@@ -126,6 +129,7 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
 }
 
 ScriptValue ScriptValueV8Wrapper::construct(const ScriptValue& arguments) {
+    v8::HandleScope handleScope(_engine->getIsolate());
     // V8TODO I'm not sure in what format arguments are yet, backtrace will show how it is used
     Q_ASSERT(false);
     return _engine->undefinedValue();
@@ -153,6 +157,7 @@ ScriptValueIteratorPointer ScriptValueV8Wrapper::newIterator() const {
 }
 
 ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValue::ResolveFlags& mode) const {
+    v8::HandleScope handleScope(_engine->getIsolate());
     if (!_value.constGet()->IsObject()) {
     //V8TODO: what about flags?
             v8::Local<v8::Value> resultLocal;
@@ -171,6 +176,7 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
 }
 
 ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue::ResolveFlags& mode) const {
+    v8::HandleScope handleScope(_engine->getIsolate());
     if (!_value.constGet()->IsObject()) {
     //V8TODO: what about flags?
             v8::Local<v8::Value> resultLocal;
@@ -191,6 +197,7 @@ void ScriptValueV8Wrapper::setData(const ScriptValue& value) {
 }
 
 void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& value, const ScriptValue::PropertyFlags& flags) {
+    v8::HandleScope handleScope(_engine->getIsolate());
     V8ScriptValue unwrapped = fullUnwrap(value);
     if(_value.constGet()->IsObject()) {
         v8::Local<v8::String> key = v8::String::NewFromUtf8(_engine->getIsolate(), name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
@@ -237,47 +244,65 @@ void ScriptValueV8Wrapper::setPrototype(const ScriptValue& prototype) {
 }
 
 bool ScriptValueV8Wrapper::strictlyEquals(const ScriptValue& other) const {
+    v8::HandleScope handleScope(_engine->getIsolate());
     ScriptValueV8Wrapper* unwrappedOther = unwrap(other);
     return unwrappedOther ? _value.constGet()->StrictEquals(unwrappedOther->toV8Value().constGet()) : false;
 }
 
 bool ScriptValueV8Wrapper::toBool() const {
+    v8::HandleScope handleScope(_engine->getIsolate());
     return _value.constGet()->ToBoolean(_engine->getIsolate())->Value();
 }
 
 qint32 ScriptValueV8Wrapper::toInt32() const {
+    v8::HandleScope handleScope(_engine->getIsolate());
     v8::Local<v8::Integer> *integer;
-    Q_ASSERT(_value.constGet()->ToInteger(_value.constGetContext()).ToLocal(integer));
+    if (!_value.constGet()->ToInteger(_value.constGetContext()).ToLocal(integer)) {
+        Q_ASSERT(false);
+    }
     return static_cast<int32_t>((*integer)->Value());
 }
 
 double ScriptValueV8Wrapper::toInteger() const {
+    v8::HandleScope handleScope(_engine->getIsolate());
     v8::Local<v8::Integer> *integer;
-    Q_ASSERT(_value.constGet()->ToInteger(_value.constGetContext()).ToLocal(integer));
+    if (!_value.constGet()->ToInteger(_value.constGetContext()).ToLocal(integer)) {
+        Q_ASSERT(false);
+    }
     return (*integer)->Value();
 }
 
 double ScriptValueV8Wrapper::toNumber() const {
+    v8::HandleScope handleScope(_engine->getIsolate());
     v8::Local<v8::Number> *number;
-    Q_ASSERT(_value.constGet()->ToNumber(_value.constGetContext()).ToLocal(number));
+    if (!_value.constGet()->ToNumber(_value.constGetContext()).ToLocal(number)) {
+        Q_ASSERT(false);
+    }
     return (*number)->Value();
 }
 
 QString ScriptValueV8Wrapper::toString() const {
+    v8::HandleScope handleScope(_engine->getIsolate());
     v8::String::Utf8Value string(_engine->getIsolate(), _value.constGet());
     Q_ASSERT(*string != nullptr);
     return QString(*string);
 }
 
 quint16 ScriptValueV8Wrapper::toUInt16() const {
+    v8::HandleScope handleScope(_engine->getIsolate());
     v8::Local<v8::Uint32> *integer;
-    Q_ASSERT(_value.constGet()->ToUint32(_value.constGetContext()).ToLocal(integer));
+    if (!_value.constGet()->ToUint32(_value.constGetContext()).ToLocal(integer)) {
+        Q_ASSERT(false);
+    }
     return static_cast<uint16_t>((*integer)->Value());
 }
 
 quint32 ScriptValueV8Wrapper::toUInt32() const {
+    v8::HandleScope handleScope(_engine->getIsolate());
     v8::Local<v8::Uint32> *integer;
-    Q_ASSERT(_value.constGet()->ToUint32(_value.constGetContext()).ToLocal(integer));
+    if (!_value.constGet()->ToUint32(_value.constGetContext()).ToLocal(integer)) {
+        Q_ASSERT(false);
+    }
     return (*integer)->Value();
 }
 
@@ -302,6 +327,7 @@ QObject* ScriptValueV8Wrapper::toQObject() const {
 }
 
 bool ScriptValueV8Wrapper::equals(const ScriptValue& other) const {
+    v8::HandleScope handleScope(_engine->getIsolate());
     ScriptValueV8Wrapper* unwrappedOther = unwrap(other);
     //V8TODO: does this work with different contexts/isolates?
     // in such case conversion will probably be necessary
