@@ -27,18 +27,21 @@ public:
     V8ScriptValueTemplate(v8::Isolate *isolate, const v8::Local<T> value) : _isolate(isolate) {
         //_value.reset(_isolate, value);
         v8::HandleScope handleScope(_isolate);
+        Q_ASSERT(isolate->IsCurrent());
+        Q_ASSERT(!isolate->GetCurrentContext().IsEmpty());
         _context.Reset(isolate, isolate->GetCurrentContext());
         _value.reset(new v8::UniquePersistent<T>(_isolate, std::move(value)));
     };
     v8::Local<T> get() {
         v8::EscapableHandleScope handleScope(_isolate);
-        return _value.get()->Get(_isolate);
+        return handleScope.Escape(_value.get()->Get(_isolate));
     };
     const v8::Local<T> constGet() const {
         v8::EscapableHandleScope handleScope(_isolate);
-        return _value.get()->Get(_isolate);
+        return handleScope.Escape(_value.get()->Get(_isolate));
     };
     V8ScriptValueTemplate<T>&& copy() const {
+        Q_ASSERT(_isolate->IsCurrent());
         v8::HandleScope handleScope(_isolate);
         return new V8ScriptValueTemplate(_isolate, v8::Local<T>::New(_isolate, constGet()));};
     const v8::Local<v8::Context> constGetContext() const {
@@ -72,6 +75,8 @@ public:
     V8ScriptString() = delete;
     V8ScriptString(v8::Isolate *isolate, const v8::Local<v8::String> value) : V8ScriptValueTemplate<v8::String>(isolate, value) {};
     const QString toQString() const {
+        Q_ASSERT(constGet()->IsString());
+        Q_ASSERT(constGetIsolate()->IsCurrent());
         return QString(*v8::String::Utf8Value(const_cast<v8::Isolate*>(constGetIsolate()), constGet()));
     };
     bool operator==(const V8ScriptString& string) const {
