@@ -16,10 +16,13 @@
 #define hifi_DataViewPrototype_h
 
 #include <QtCore/QObject>
-#include <QtScript/QScriptable>
 
-/// [QtScript] The javascript functions associated with a <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a></code> instance prototype
-class DataViewPrototype : public QObject, public QScriptable {
+#include "V8Types.h"
+#include "../Scriptable.h"
+
+// V8TODO
+/*/// [V8] The javascript functions associated with a <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a></code> instance prototype
+class DataViewPrototype : public QObject, public Scriptable {
     Q_OBJECT
 public:
     DataViewPrototype(QObject* parent = NULL);
@@ -41,8 +44,8 @@ public slots:
     quint32 getUint16(qint32 byteOffset, bool littleEndian = false);
     qint32 getInt32(qint32 byteOffset, bool littleEndian = false);
     quint32 getUint32(qint32 byteOffset, bool littleEndian = false);
-    QScriptValue getFloat32(qint32 byteOffset, bool littleEndian = false);
-    QScriptValue getFloat64(qint32 byteOffset, bool littleEndian = false);
+    V8ScriptValue getFloat32(qint32 byteOffset, bool littleEndian = false);
+    V8ScriptValue getFloat64(qint32 byteOffset, bool littleEndian = false);
     
     // Stores a value of the given type at the specified byte offset
     // from the start of the view. There is no alignment constraint;
@@ -68,7 +71,7 @@ private:
     QByteArray* thisArrayBuffer() const;
     bool realOffset(qint32& offset, size_t size) const;
 };
-
+*/
 #endif // hifi_DataViewPrototype_h
 
 /// @}
