@@ -50,9 +50,11 @@ public:
         SkipInEnumeration = 0x00000004,
         PropertyGetter = 0x00000008,
         PropertySetter = 0x00000010,
+        QObjectMember = 0x00000020,
         KeepExistingFlags = 0x00000800,
     };
     Q_DECLARE_FLAGS(PropertyFlags, PropertyFlag);
+
 
 public:
     ScriptValue();
@@ -112,6 +114,8 @@ public:
     inline QObject* toQObject() const;
 
 protected:
+    //V8TODO
+    //Won't a regular pointer cause memory leak?
     ScriptValueProxy* _proxy;
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(ScriptValue::PropertyFlags);

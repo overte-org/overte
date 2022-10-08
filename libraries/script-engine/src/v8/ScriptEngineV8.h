@@ -50,7 +50,7 @@ const double GARBAGE_COLLECTION_TIME_LIMIT_S = 1.0;
 Q_DECLARE_METATYPE(ScriptEngine::FunctionSignature)
 
 /// [V8] Implements ScriptEngine for V8 and translates calls for QScriptEngine
-class ScriptEngineV8 final : public ScriptEngine,
+class ScriptEngineV8 final : public QObject, public ScriptEngine,
                                    public std::enable_shared_from_this<ScriptEngineV8> {
     Q_OBJECT
 
@@ -115,7 +115,7 @@ public:  // ScriptEngine implementation
     Q_INVOKABLE virtual void registerGlobalObject(const QString& name, QObject* object) override;
     virtual void setDefaultPrototype(int metaTypeId, const ScriptValue& prototype) override;
     // Already implemented by QObject
-    //virtual void setObjectName(const QString& name) override;
+    virtual void setObjectName(const QString& name) override;
     virtual bool setProperty(const char* name, const QVariant& value) override;
     virtual void setProcessEventsInterval(int interval) override;
     virtual QThread* thread() const override;
