@@ -24,13 +24,23 @@ public:
     //V8ScriptValueTemplate(v8::Isolate *isolate, v8::Local<T> value) : _isolate(isolate) {
         //_value.reset(v8::UniquePersistent<T>::New(_isolate, value));
     //};
-    V8ScriptValueTemplate(v8::Isolate *isolate, const v8::Local<T> value) : _isolate(isolate), _context(isolate, isolate->GetCurrentContext()) {
+    V8ScriptValueTemplate(v8::Isolate *isolate, const v8::Local<T> value) : _isolate(isolate) {
         //_value.reset(_isolate, value);
+        v8::HandleScope handleScope(_isolate);
+        _context.Reset(isolate, isolate->GetCurrentContext());
         _value.reset(new v8::UniquePersistent<T>(_isolate, std::move(value)));
     };
-    v8::Local<T> get() {return _value.get()->Get(_isolate);};
-    const v8::Local<T> constGet() const {return _value.get()->Get(_isolate);};
-    V8ScriptValueTemplate<T>&& copy() const {return new V8ScriptValueTemplate(_isolate, v8::Local<T>::New(_isolate, constGet()));};
+    v8::Local<T> get() {
+        v8::EscapableHandleScope handleScope(_isolate);
+        return _value.get()->Get(_isolate);
+    };
+    const v8::Local<T> constGet() const {
+        v8::EscapableHandleScope handleScope(_isolate);
+        return _value.get()->Get(_isolate);
+    };
+    V8ScriptValueTemplate<T>&& copy() const {
+        v8::HandleScope handleScope(_isolate);
+        return new V8ScriptValueTemplate(_isolate, v8::Local<T>::New(_isolate, constGet()));};
     const v8::Local<v8::Context> constGetContext() const {
         v8::EscapableHandleScope handleScope(_isolate);
         return handleScope.Escape(_context.Get(_isolate));
