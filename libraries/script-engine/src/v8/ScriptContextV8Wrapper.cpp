@@ -38,12 +38,23 @@ v8::Local<v8::Context> ScriptContextV8Wrapper::toV8Value() const {
 }
 
 int ScriptContextV8Wrapper::argumentCount() const {
-    Q_ASSERT(_functionCallbackInfo);
-    return _functionCallbackInfo->Length();
+    /*auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());*/
+    //Q_ASSERT(_functionCallbackInfo);A
+    // V8TODO
+    return Q_METAMETHOD_INVOKE_MAX_ARGS;
+    // This was wrong, in function registration it seems to be used as maximum number od arguments instead?
+    // Is it also used for something else?
+    //return _functionCallbackInfo->Length();
 }
 
 ScriptValue ScriptContextV8Wrapper::argument(int index) const {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     Q_ASSERT(_functionCallbackInfo);
     v8::Local<v8::Value> result = (*_functionCallbackInfo)[index];
     //V8ScriptValue result = _context->argument(index);
@@ -52,7 +63,9 @@ ScriptValue ScriptContextV8Wrapper::argument(int index) const {
 
 QStringList ScriptContextV8Wrapper::backtrace() const {
     auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(isolate, 40);
     QStringList backTrace;
     //V8TODO nicer formatting
@@ -93,20 +106,29 @@ ScriptContextPointer ScriptContextV8Wrapper::parentContext() const {
 
 ScriptValue ScriptContextV8Wrapper::thisObject() const {
     Q_ASSERT(_functionCallbackInfo);
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Value> result = _functionCallbackInfo->This();
     return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine->getIsolate(), result)));
     return ScriptValue();
 }
 
 ScriptValue ScriptContextV8Wrapper::throwError(const QString& text) {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue result(_engine->getIsolate(), _engine->getIsolate()->ThrowError(v8::String::NewFromUtf8(_engine->getIsolate(), text.toStdString().c_str()).ToLocalChecked()));
     return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
 }
 
 ScriptValue ScriptContextV8Wrapper::throwValue(const ScriptValue& value) {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(value);
     if (!unwrapped) {
         return _engine->undefinedValue();

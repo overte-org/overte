@@ -7506,8 +7506,9 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptManage
     scriptEngine->registerGetterSetter("location", LocationScriptingInterface::locationGetter,
                         LocationScriptingInterface::locationSetter, "Window");
     // register `location` on the global object.
-    scriptEngine->registerGetterSetter("location", LocationScriptingInterface::locationGetter,
-                                       LocationScriptingInterface::locationSetter);
+    //V8TODO causes a crash
+    //scriptEngine->registerGetterSetter("location", LocationScriptingInterface::locationGetter,
+    //                                   LocationScriptingInterface::locationSetter);
 
     scriptEngine->registerFunction("OverlayWindow", clientScript ? QmlWindowClass::constructor : QmlWindowClass::restricted_constructor);
 #if !defined(Q_OS_ANDROID) && !defined(DISABLE_QML)
