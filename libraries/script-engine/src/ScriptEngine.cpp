@@ -14,10 +14,10 @@
 
 #include "ScriptEngineLogging.h"
 #include "ScriptValue.h"
-#include "qtscript/ScriptEngineQtScript.h"
+#include "v8/ScriptEngineV8.h"
 
 ScriptEnginePointer newScriptEngine(ScriptManager* manager) {
-    return std::make_shared<ScriptEngineQtScript>(manager);
+    return std::make_shared<ScriptEngineV8>(manager);
 }
 
 ScriptValue makeScopedHandlerObject(const ScriptValue& scopeOrCallback, const ScriptValue& methodOrName) {

@@ -53,6 +53,7 @@
 #include "ScriptEngines.h"
 #include "StackTestScriptingInterface.h"
 #include "ScriptValue.h"
+#include "ScriptProgram.h"
 #include "ScriptValueIterator.h"
 #include "ScriptValueUtils.h"
 
@@ -1935,18 +1936,21 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
     }
 
     // SYNTAX ERRORS
-    auto syntaxError = _engine->lintScript(contents, fileName);
-    if (syntaxError.isError()) {
-        auto message = syntaxError.property("formatted").toString();
-        if (message.isEmpty()) {
-            message = syntaxError.toString();
-        }
+    //auto syntaxError = _engine->lintScript(contents, fileName);
+    auto program = _engine->newProgram( contents, fileName );
+    auto syntaxCheck = program->checkSyntax();
+    if (syntaxCheck->state() != ScriptSyntaxCheckResult::Valid) {
+        auto message = syntaxCheck->errorMessage();
+        //syntaxError.property("formatted").toString();
+        //if (message.isEmpty()) {
+        //    message = syntaxError.toString();
+        //}
         setError(QString("Bad syntax (%1)").arg(message), EntityScriptStatus::ERROR_RUNNING_SCRIPT);
-        syntaxError.setProperty("detail", entityID.toString());
-        emit unhandledException(syntaxError);
+        //syntaxError.setProperty("detail", entityID.toString());
+        //V8TODO
+        //emit unhandledException(syntaxError);
         return;
     }
-    auto program = _engine->newProgram( contents, fileName );
     if (!program) {
         setError("Bad program (isNull)", EntityScriptStatus::ERROR_RUNNING_SCRIPT);
         emit unhandledException(_engine->makeError(_engine->newValue("program.isNull")));
