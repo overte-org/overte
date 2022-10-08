@@ -475,16 +475,16 @@ void ScriptEngineV8::registerGlobalObject(const QString& name, QObject* object) 
 #ifdef THREAD_DEBUGGING
     qCDebug(scriptengine) << "ScriptEngineV8::registerGlobalObject() called on thread [" << QThread::currentThread() << "] name:" << name;
 #endif*/
-    v8::Local<v8::Object> globalObject = getContext()->Global();
+    v8::Local<v8::Object> v8GlobalObject = getContext()->Global();
     v8::Local<v8::String> v8Name = v8::String::NewFromUtf8(_v8Isolate, name.toStdString().c_str()).ToLocalChecked();
 
     // V8TODO: Is IsEmpty check enough or IsValid is needed too?
-    if (!globalObject->Get(getContext(), v8Name).IsEmpty()) {
+    if (!v8GlobalObject->Get(getContext(), v8Name).IsEmpty()) {
         if (object) {
             V8ScriptValue value = ScriptObjectV8Proxy::newQObject(this, object, ScriptEngine::QtOwnership);
-            globalObject->Set(getContext(), v8Name, value.get());
+            v8GlobalObject->Set(getContext(), v8Name, value.get());
         } else {
-            globalObject->Set(getContext(), v8Name, v8::Null(_v8Isolate));
+            v8GlobalObject->Set(getContext(), v8Name, v8::Null(_v8Isolate));
         }
     }
 }
@@ -1018,9 +1018,9 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
 }
 
 //V8TODO
-/*void ScriptEngineV8::setObjectName(const QString& name) {
-    QScriptEngine::setObjectName(name);
-}*/
+void ScriptEngineV8::setObjectName(const QString& name) {
+    QObject::setObjectName(name);
+}
 
 //V8TODO
 bool ScriptEngineV8::setProperty(const char* name, const QVariant& value) {

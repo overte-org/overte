@@ -12,7 +12,7 @@
 #ifndef hifi_BaseScriptEngine_h
 #define hifi_BaseScriptEngine_h
 
-#include <functional>
+/*#include <functional>
 #include <QtCore/QDebug>
 #include <QtCore/QSharedPointer>
 #include <QtScript/QScriptEngine>
@@ -29,23 +29,23 @@ public:
 
     BaseScriptEngine() {}
 
-    /*@jsdoc
+    *@jsdoc
      * @function Script.lintScript
      * @param {string} sourceCode - Source code.
      * @param {string} fileName - File name.
      * @param {number} [lineNumber=1] - Line number.
      * @returns {object} Object.
      * @deprecated This function is deprecated and will be removed.
-     */
+     *
     Q_INVOKABLE QScriptValue lintScript(const QString& sourceCode, const QString& fileName, const int lineNumber = 1);
 
-    /*@jsdoc
+    *@jsdoc
      * @function Script.makeError
      * @param {object} [other] - Other.
      * @param {string} [type="Error"] - Error.
      * @returns {object} Object.
      * @deprecated This function is deprecated and will be removed.
-     */
+     *
     Q_INVOKABLE QScriptValue makeError(const QScriptValue& other = QScriptValue(), const QString& type = "Error");
     
     QScriptValue cloneUncaughtException(const QString& detail = QString());
@@ -61,12 +61,12 @@ public:
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
     static bool IS_THREADSAFE_INVOCATION(const QThread *thread, const QString& method);
 signals:
-    /*@jsdoc
+    *@jsdoc
      * @function Script.signalHandlerException
      * @param {object} exception - Exception.
      * @returns {Signal}
      * @deprecated This signal is deprecated and will be removed.
-     */
+     *
     // Script.signalHandlerException is exposed by QScriptEngine.
     
 protected:
@@ -95,6 +95,6 @@ private:
     QScriptEngine* engine;
     std::function<QScriptValue(QScriptContext *context, QScriptEngine* engine)> operation;
     QScriptValue data;
-};
+};*/
 
 #endif // hifi_BaseScriptEngine_h

@@ -78,16 +78,23 @@ public:
     virtual ScriptValue evaluate(const QString& program, const QString& fileName = QString()) = 0;
     virtual ScriptValue evaluate(const ScriptProgramPointer &program) = 0;
     virtual ScriptValue evaluateInClosure(const ScriptValue& locals, const ScriptProgramPointer& program) = 0;
-    virtual ScriptValue globalObject() const = 0;
+    virtual ScriptValue globalObject() const {
+        Q_ASSERT(false);
+        return ScriptValue();
+    }
     virtual bool hasUncaughtException() const = 0;
     virtual bool isEvaluating() const = 0;
-    virtual ScriptValue lintScript(const QString& sourceCode, const QString& fileName, const int lineNumber = 1) = 0;
+    //virtual ScriptValue lintScript(const QString& sourceCode, const QString& fileName, const int lineNumber = 1) = 0;
+    virtual ScriptValue cheskScriptSyntax(ScriptProgramPointer program) = 0;    
     virtual ScriptValue makeError(const ScriptValue& other = ScriptValue(), const QString& type = "Error") = 0;
     virtual ScriptManager* manager() const = 0;
     virtual bool maybeEmitUncaughtException(const QString& debugHint = QString()) = 0;
     virtual ScriptValue newArray(uint length = 0) = 0;
     virtual ScriptValue newArrayBuffer(const QByteArray& message) = 0;
-    virtual ScriptValue newFunction(FunctionSignature fun, int length = 0) = 0;
+    virtual ScriptValue newFunction(FunctionSignature fun, int length = 0) {
+        Q_ASSERT(false);
+        return ScriptValue();
+    }
     virtual ScriptValue newObject() = 0;
     virtual ScriptProgramPointer newProgram(const QString& sourceCode, const QString& fileName) = 0;
     virtual ScriptValue newQObject(QObject *object, ValueOwnership ownership = QtOwnership, const QObjectWrapOptions &options = QObjectWrapOptions()) = 0;
