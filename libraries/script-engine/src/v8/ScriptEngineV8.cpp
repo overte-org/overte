@@ -113,6 +113,8 @@ ScriptValue ScriptEngineV8::makeError(const ScriptValue& _other, const QString& 
     if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
         return nullValue();
     }
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     return nullValue();
     
     //V8TODO
@@ -136,6 +138,8 @@ ScriptValue ScriptEngineV8::cheskScriptSyntax(ScriptProgramPointer program) {
     if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
         return nullValue();
     }
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     ScriptSyntaxCheckResultPointer syntaxCheck = program->checkSyntax();
     //V8TODO
     if (syntaxCheck->state() != ScriptSyntaxCheckResult::Valid) {
@@ -190,6 +194,8 @@ ScriptValue ScriptEngineV8::cloneUncaughtException(const QString& extraDetail) {
     if (!hasUncaughtException()) {
         return nullValue();
     }
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     return nullValue();
     //V8TODO
     /*
@@ -284,6 +290,8 @@ bool ScriptEngineV8::maybeEmitUncaughtException(const QString& debugHint) {
 ScriptValue ScriptEngineV8::newLambdaFunction(std::function<V8ScriptValue(V8ScriptContext*, ScriptEngineV8*)> operation,
                                                  const V8ScriptValue& data,
                                                  const ValueOwnership& ownership) {
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     auto lambda = new Lambda(this, operation, data);
     auto object = newQObject(lambda, ownership);
     //V8TODO?
@@ -294,6 +302,7 @@ ScriptValue ScriptEngineV8::newLambdaFunction(std::function<V8ScriptValue(V8Scri
 }
 QString Lambda::toString() const {
     v8::HandleScope handleScope(_engine->getIsolate());
+    v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::String> string;
     QString qString("");
     if (_data.constGet()->ToString(_engine->getContext()).ToLocal(&string)) {
@@ -373,29 +382,13 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
     v8::Isolate::CreateParams isolateParams;
     isolateParams.array_buffer_allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
     _v8Isolate = v8::Isolate::New(isolateParams);
+    _v8Isolate->Enter();
     v8::HandleScope handleScope(_v8Isolate);
     v8::Local<v8::Context> context = v8::Context::New(_v8Isolate);
+    Q_ASSERT(!context.IsEmpty());
     _v8Context = v8::UniquePersistent<v8::Context>(_v8Isolate, context);
 
     registerSystemTypes();
-
-    _currentThread = QThread::currentThread();
-    // V8TODO: port to V8
-    /*
-    if (_scriptManager) {
-        connect(this, &QScriptEngine::signalHandlerException, this, [this](const V8ScriptValue& exception) {
-            if (hasUncaughtException()) {
-                // the engine's uncaughtException() seems to produce much better stack traces here
-                emit _scriptManager->unhandledException(cloneUncaughtException("signalHandlerException"));
-                clearExceptions();
-            } else {
-                // ... but may not always be available -- so if needed we fallback to the passed exception
-                V8ScriptValue thrown = makeError(exception);
-                emit _scriptManager->unhandledException(ScriptValue(new ScriptValueV8Wrapper(this, std::move(thrown))));
-            }
-        }, Qt::DirectConnection);
-        moveToThread(scriptManager->thread());
-    }*/
 
     // V8TODO: dispose of isolate on ScriptEngineV8 destruction
     //v8::UniquePersistent<v8::Value> null = v8::UniquePersistent<v8::Value>(_v8Isolate, v8::Null(_v8Isolate));
@@ -410,6 +403,25 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
 
     // V8TODO: 
     //QScriptEngine::setProcessEventsInterval(MSECS_PER_SECOND);
+
+    //_currentThread = QThread::currentThread();
+
+    if (_scriptManager) {
+        // V8TODO: port to V8
+        /*connect(this, &QScriptEngine::signalHandlerException, this, [this](const V8ScriptValue& exception) {
+            if (hasUncaughtException()) {
+                // the engine's uncaughtException() seems to produce much better stack traces here
+                emit _scriptManager->unhandledException(cloneUncaughtException("signalHandlerException"));
+                clearExceptions();
+            } else {
+                // ... but may not always be available -- so if needed we fallback to the passed exception
+                V8ScriptValue thrown = makeError(exception);
+                emit _scriptManager->unhandledException(ScriptValue(new ScriptValueV8Wrapper(this, std::move(thrown))));
+            }
+        }, Qt::DirectConnection);*/
+        //moveToThread(scriptManager->thread());
+        setThread(scriptManager->thread());
+    }
 }
 
 void ScriptEngineV8::registerEnum(const QString& enumName, QMetaEnum newEnum) {
@@ -417,6 +429,8 @@ void ScriptEngineV8::registerEnum(const QString& enumName, QMetaEnum newEnum) {
         qCCritical(scriptengine) << "registerEnum called on invalid enum with name " << enumName;
         return;
     }
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
 
     for (int i = 0; i < newEnum.keyCount(); i++) {
         const char* keyName = newEnum.key(i);
@@ -426,8 +440,7 @@ void ScriptEngineV8::registerEnum(const QString& enumName, QMetaEnum newEnum) {
 }
 
 void ScriptEngineV8::registerValue(const QString& valueName, V8ScriptValue value) {
-    //V8TODO
-    /*if (QThread::currentThread() != QScriptEngine::thread()) {
+    if (QThread::currentThread() != thread()) {
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine) << "*** WARNING *** ScriptEngineV8::registerValue() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]";
 #endif
@@ -435,8 +448,9 @@ void ScriptEngineV8::registerValue(const QString& valueName, V8ScriptValue value
                                   Q_ARG(const QString&, valueName),
                                   Q_ARG(V8ScriptValue, value));
         return;
-    }*/
+    }
     v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     QStringList pathToValue = valueName.split(".");
     int partsToGo = pathToValue.length();
     v8::Local<v8::Object> partObject = _v8Context.Get(_v8Isolate)->Global();
@@ -470,8 +484,7 @@ void ScriptEngineV8::registerValue(const QString& valueName, V8ScriptValue value
 }
 
 void ScriptEngineV8::registerGlobalObject(const QString& name, QObject* object) {
-    //V8TODO
-    /*if (QThread::currentThread() != QScriptEngine::thread()) {
+    if (QThread::currentThread() != thread()) {
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine) << "*** WARNING *** ScriptEngineV8::registerGlobalObject() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]  name:" << name;
 #endif
@@ -482,8 +495,10 @@ void ScriptEngineV8::registerGlobalObject(const QString& name, QObject* object) 
     }
 #ifdef THREAD_DEBUGGING
     qCDebug(scriptengine) << "ScriptEngineV8::registerGlobalObject() called on thread [" << QThread::currentThread() << "] name:" << name;
-#endif*/
+#endif
     v8::HandleScope handleScope(_v8Isolate);
+    Q_ASSERT(_v8Isolate->IsCurrent());
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     v8::Local<v8::Object> v8GlobalObject = getContext()->Global();
     v8::Local<v8::String> v8Name = v8::String::NewFromUtf8(_v8Isolate, name.toStdString().c_str()).ToLocalChecked();
 
@@ -499,22 +514,23 @@ void ScriptEngineV8::registerGlobalObject(const QString& name, QObject* object) 
 }
 
 void ScriptEngineV8::registerFunction(const QString& name, ScriptEngine::FunctionSignature functionSignature, int numArguments) {
-    //V8TODO
-    /*if (QThread::currentThread() != QScriptEngine::thread()) {
+    if (QThread::currentThread() != thread()) {
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine) << "*** WARNING *** ScriptEngineV8::registerFunction() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] name:" << name;
 #endif
         QMetaObject::invokeMethod(this, "registerFunction",
                                   Q_ARG(const QString&, name),
-                                  Q_ARG(QScriptEngine::FunctionSignature, functionSignature),
+                                  Q_ARG(ScriptEngine::FunctionSignature, functionSignature),
                                   Q_ARG(int, numArguments));
         return;
     }
 #ifdef THREAD_DEBUGGING
     qCDebug(scriptengine) << "ScriptEngineV8::registerFunction() called on thread [" << QThread::currentThread() << "] name:" << name;
-#endif*/
+#endif
 
     //auto scriptFun = static_cast<ScriptValueV8Wrapper*>(newFunction(functionSignature, numArguments).ptr())->toV8Value().constGet();
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     auto scriptFun = newFunction(functionSignature, numArguments);
     
     //getContext()->Global().Set();
@@ -522,21 +538,22 @@ void ScriptEngineV8::registerFunction(const QString& name, ScriptEngine::Functio
 }
 
 void ScriptEngineV8::registerFunction(const QString& parent, const QString& name, ScriptEngine::FunctionSignature functionSignature, int numArguments) {
-    //V8TODO
-    /*if (QThread::currentThread() != QScriptEngine::thread()) {
+    if (QThread::currentThread() != thread()) {
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine) << "*** WARNING *** ScriptEngineV8::registerFunction() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] parent:" << parent << "name:" << name;
 #endif
         QMetaObject::invokeMethod(this, "registerFunction",
                                   Q_ARG(const QString&, name),
-                                  Q_ARG(QScriptEngine::FunctionSignature, functionSignature),
+                                  Q_ARG(ScriptEngine::FunctionSignature, functionSignature),
                                   Q_ARG(int, numArguments));
         return;
     }
 #ifdef THREAD_DEBUGGING
     qCDebug(scriptengine) << "ScriptEngineV8::registerFunction() called on thread [" << QThread::currentThread() << "] parent:" << parent << "name:" << name;
-#endif*/
+#endif
 
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     ScriptValue object = globalObject().property(parent);
     if (object.isValid()) {
         ScriptValue scriptFun = ScriptEngine::newFunction(functionSignature, numArguments);
@@ -546,8 +563,7 @@ void ScriptEngineV8::registerFunction(const QString& parent, const QString& name
 
 void ScriptEngineV8::registerGetterSetter(const QString& name, ScriptEngine::FunctionSignature getter,
                                         ScriptEngine::FunctionSignature setter, const QString& parent) {
-    //V8TODO
-    /*if (QThread::currentThread() != QScriptEngine::thread()) {
+    if (QThread::currentThread() != thread()) {
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine) << "*** WARNING *** ScriptEngineV8::registerGetterSetter() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] "
             " name:" << name << "parent:" << parent;
@@ -561,7 +577,10 @@ void ScriptEngineV8::registerGetterSetter(const QString& name, ScriptEngine::Fun
     }
 #ifdef THREAD_DEBUGGING
     qCDebug(scriptengine) << "ScriptEngineV8::registerGetterSetter() called on thread [" << QThread::currentThread() << "] name:" << name << "parent:" << parent;
-#endif*/
+#endif
+
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
 
     ScriptValue setterFunction = newFunction(setter, 1);
     ScriptValue getterFunction = newFunction(getter);
@@ -585,6 +604,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
         return nullValue();
     }
     v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     ScriptProgramV8Wrapper* unwrappedProgram = ScriptProgramV8Wrapper::unwrap(_program);
     if (unwrappedProgram == nullptr) {
         return nullValue();
@@ -684,7 +704,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
         setGlobalObject(oldGlobal);
     }*/
 
-    _v8Context.Get(_v8Isolate)->Enter();
+    //_v8Context.Get(_v8Isolate)->Enter();
     return result;
 }
 
@@ -695,7 +715,7 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
     
     //V8TODO
 
-    /*if (QThread::currentThread() != QScriptEngine::thread()) {
+    if (QThread::currentThread() != thread()) {
         ScriptValue result;
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine) << "*** WARNING *** ScriptEngineV8::evaluate() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] "
@@ -706,10 +726,11 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
                                   Q_ARG(const QString&, sourceCode),
                                   Q_ARG(const QString&, fileName));
         return result;
-    }*/
+    }
     // Compile and check syntax
     // V8TODO: Could these all be replaced with checkSyntax function from wrapper?
     v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     v8::TryCatch tryCatch(getIsolate());
     v8::ScriptOrigin scriptOrigin(getIsolate(), v8::String::NewFromUtf8(getIsolate(), fileName.toStdString().c_str()).ToLocalChecked());
     v8::Local<v8::Script> script;
@@ -775,8 +796,7 @@ Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& pro
         return undefinedValue(); // bail early
     }
 
-    //V8TODO
-    /*if (QThread::currentThread() != QScriptEngine::thread()) {
+    if (QThread::currentThread() != thread()) {
         ScriptValue result;
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine) << "*** WARNING *** ScriptEngineV8::evaluate() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] "
@@ -786,8 +806,9 @@ Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& pro
                                   Q_RETURN_ARG(ScriptValue, result),
                                   Q_ARG(const ScriptProgramPointer&, program));
         return result;
-    }*/
+    }
     v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     ScriptProgramV8Wrapper* unwrapped = ScriptProgramV8Wrapper::unwrap(program);
     if (!unwrapped) {
         auto err = makeError(newValue("could not unwrap program"));
@@ -843,6 +864,7 @@ void ScriptEngineV8::updateMemoryCost(const qint64& deltaSize) {
 
 ScriptValue ScriptEngineV8::globalObject() const {
     v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     V8ScriptValue global(_v8Isolate, getConstContext()->Global());// = QScriptEngine::globalObject(); // can't cache the value as it may change
     return ScriptValue(new ScriptValueV8Wrapper(const_cast<ScriptEngineV8*>(this), std::move(global)));
 }
@@ -852,12 +874,15 @@ ScriptManager* ScriptEngineV8::manager() const {
 }
 
 ScriptValue ScriptEngineV8::newArray(uint length) {
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     V8ScriptValue result(_v8Isolate, v8::Array::New(_v8Isolate, static_cast<int>(length)));
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
 
 ScriptValue ScriptEngineV8::newArrayBuffer(const QByteArray& message) {
     v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     //V8TODO: this will leak memory
     std::shared_ptr<v8::BackingStore> backingStore(v8::ArrayBuffer::NewBackingStore(_v8Isolate, message.size()));
     std::memcpy(backingStore.get()->Data(), message.constData(), message.size());
@@ -873,12 +898,16 @@ ScriptValue ScriptEngineV8::newArrayBuffer(const QByteArray& message) {
 }
 
 ScriptValue ScriptEngineV8::newObject() {
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     V8ScriptValue result(_v8Isolate, v8::Object::New(_v8Isolate));
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
 
 ScriptValue ScriptEngineV8::newMethod(QObject* object, V8ScriptValue lifetime,
                                const QList<QMetaMethod>& metas, int numMaxParams) {
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     V8ScriptValue result(ScriptMethodV8Proxy::newMethod(this, object, lifetime, metas, numMaxParams));
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
@@ -893,33 +922,43 @@ ScriptProgramPointer ScriptEngineV8::newProgram(const QString& sourceCode, const
 ScriptValue ScriptEngineV8::newQObject(QObject* object,
                                                     ScriptEngine::ValueOwnership ownership,
                                                     const ScriptEngine::QObjectWrapOptions& options) {
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     V8ScriptValue result = ScriptObjectV8Proxy::newQObject(this, object, ownership, options);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
 
 ScriptValue ScriptEngineV8::newValue(bool value) {
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     V8ScriptValue result(_v8Isolate, v8::Boolean::New(_v8Isolate, value));
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
 
 ScriptValue ScriptEngineV8::newValue(int value) {
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     V8ScriptValue result(_v8Isolate, v8::Integer::New(_v8Isolate, value));
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
 
 ScriptValue ScriptEngineV8::newValue(uint value) {
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     V8ScriptValue result(_v8Isolate, v8::Uint32::New(_v8Isolate, value));
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
 
 ScriptValue ScriptEngineV8::newValue(double value) {
     v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     V8ScriptValue result(_v8Isolate, v8::Number::New(_v8Isolate, value));
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
 
 ScriptValue ScriptEngineV8::newValue(const QString& value) {
     v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     v8::Local<v8::String> valueV8 = v8::String::NewFromUtf8(_v8Isolate, value.toStdString().c_str(), v8::NewStringType::kNormal).ToLocalChecked();
     V8ScriptValue result(_v8Isolate, valueV8);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
@@ -927,6 +966,7 @@ ScriptValue ScriptEngineV8::newValue(const QString& value) {
 
 ScriptValue ScriptEngineV8::newValue(const QLatin1String& value) {
     v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     v8::Local<v8::String> valueV8 = v8::String::NewFromUtf8(_v8Isolate, value.latin1(), v8::NewStringType::kNormal).ToLocalChecked();
     V8ScriptValue result(_v8Isolate, valueV8);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
@@ -934,12 +974,15 @@ ScriptValue ScriptEngineV8::newValue(const QLatin1String& value) {
 
 ScriptValue ScriptEngineV8::newValue(const char* value) {
     v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     v8::Local<v8::String> valueV8 = v8::String::NewFromUtf8(_v8Isolate, value, v8::NewStringType::kNormal).ToLocalChecked();
     V8ScriptValue result(_v8Isolate, valueV8);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
 
 ScriptValue ScriptEngineV8::newVariant(const QVariant& value) {
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     V8ScriptValue result = castVariantToValue(value);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
@@ -1005,12 +1048,14 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
         //V8TODO: is using GetCurrentContext ok, or context wrapper needs to be added?
         v8::HandleScope handleScope(info.GetIsolate());
         auto context = info.GetIsolate()->GetCurrentContext();
+        v8::Context::Scope contextScope(context);
+        auto object = v8::Local<v8::Object>::Cast(info.Data());
         auto function = reinterpret_cast<ScriptEngine::FunctionSignature>
-            (info.Data()->ToObject(context).ToLocalChecked()->GetAlignedPointerFromInternalField(0));
+            (object->GetAlignedPointerFromInternalField(0));
         ScriptContext *scriptContext = reinterpret_cast<ScriptContext*>
-            (info.Data()->ToObject(context).ToLocalChecked()->GetAlignedPointerFromInternalField(1));;
+            (object->GetAlignedPointerFromInternalField(1));;
         ScriptEngineV8 *scriptEngine = reinterpret_cast<ScriptEngineV8*>
-            (info.Data()->ToObject(context).ToLocalChecked()->GetAlignedPointerFromInternalField(2));;
+            (object->GetAlignedPointerFromInternalField(2));;
         ScriptValue result = function(scriptContext, scriptEngine);
         ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(result);
         info.GetReturnValue().Set(unwrapped->toV8Value().constGet());
@@ -1019,6 +1064,7 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
     //auto functionData = v8::Object::New(_v8Isolate);
     //functionData->setIn
     v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     auto functionDataTemplate = v8::ObjectTemplate::New(_v8Isolate);
     functionDataTemplate->SetInternalFieldCount(3);
     auto functionData = functionDataTemplate->NewInstance(getContext()).ToLocalChecked();
@@ -1044,6 +1090,7 @@ void ScriptEngineV8::setObjectName(const QString& name) {
 //V8TODO
 bool ScriptEngineV8::setProperty(const char* name, const QVariant& value) {
     v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     v8::Local<v8::Object> global = getContext()->Global();
     auto v8Name = v8::String::NewFromUtf8(getIsolate(), name).ToLocalChecked();
     V8ScriptValue v8Value = castVariantToValue(value);
@@ -1056,12 +1103,22 @@ void ScriptEngineV8::setProcessEventsInterval(int interval) {
 }
 
 QThread* ScriptEngineV8::thread() const {
-    return _currentThread;
+    return QObject::thread();
 }
 
 void ScriptEngineV8::setThread(QThread* thread) {
+    qDebug() << "Moved script engine " << objectName() << " to different thread";
+    _v8Isolate->Exit();
     moveToThread(thread);
+    QMetaObject::invokeMethod(this, "enterIsolateOnThisThread");
 }
+
+void ScriptEngineV8::enterIsolateOnThisThread() {
+    Q_ASSERT(thread() == QThread::currentThread());
+    _v8Isolate->Enter();
+    qDebug() << "Script engine " << objectName() << " entered isolate on a new thread";
+}
+
 
 ScriptValue ScriptEngineV8::uncaughtException() const {
     //V8TODO
@@ -1088,12 +1145,16 @@ bool ScriptEngineV8::raiseException(const ScriptValue& exception) {
 }
 
 ScriptValue ScriptEngineV8::create(int type, const void* ptr) {
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     QVariant variant(type, ptr);
     V8ScriptValue scriptValue = castVariantToValue(variant);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(scriptValue)));
 }
 
 QVariant ScriptEngineV8::convert(const ScriptValue& value, int typeId) {
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(value);
     if (unwrapped == nullptr) {
         return QVariant();

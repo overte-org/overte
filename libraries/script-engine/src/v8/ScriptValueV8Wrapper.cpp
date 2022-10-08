@@ -60,7 +60,10 @@ V8ScriptValue ScriptValueV8Wrapper::fullUnwrap(ScriptEngineV8* engine, const Scr
 }
 
 ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const ScriptValueList& args) {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue v8This = fullUnwrap(thisObject);
     //V8ScriptValueList qArgs;
     Q_ASSERT(args.length() <= Q_METAMETHOD_INVOKE_MAX_ARGS);
@@ -85,7 +88,10 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
 }
 
 ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const ScriptValue& arguments) {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue v8This = fullUnwrap(thisObject);
     V8ScriptValue v8Args = fullUnwrap(arguments);
     // V8TODO should there be a v8 try-catch here?
@@ -106,7 +112,10 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
 }
 
 ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     Q_ASSERT(args.length() <= Q_METAMETHOD_INVOKE_MAX_ARGS);
     //V8TODO I'm not sure how else to do this since v8::Local should probably be on stack, not heap
     v8::Local<v8::Value> v8Args[Q_METAMETHOD_INVOKE_MAX_ARGS];
@@ -129,7 +138,10 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
 }
 
 ScriptValue ScriptValueV8Wrapper::construct(const ScriptValue& arguments) {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     // V8TODO I'm not sure in what format arguments are yet, backtrace will show how it is used
     Q_ASSERT(false);
     return _engine->undefinedValue();
@@ -157,13 +169,17 @@ ScriptValueIteratorPointer ScriptValueV8Wrapper::newIterator() const {
 }
 
 ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValue::ResolveFlags& mode) const {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     if (!_value.constGet()->IsObject()) {
     //V8TODO: what about flags?
-            v8::Local<v8::Value> resultLocal;
-            v8::Local<v8::String> key = v8::String::NewFromUtf8(_engine->getIsolate(), name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
-            if (_value.constGet()->ToObject(_value.constGetContext()).ToLocalChecked()
-                ->Get(_value.constGetContext(), key).ToLocal(&resultLocal)) {
+        v8::Local<v8::Value> resultLocal;
+        v8::Local<v8::String> key = v8::String::NewFromUtf8(_engine->getIsolate(), name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
+        Q_ASSERT(_value.constGet()->IsObject());
+        const v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(_value.constGet());
+        if (object->Get(_value.constGetContext(), key).ToLocal(&resultLocal)) {
             V8ScriptValue result(_engine->getIsolate(), resultLocal);
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
         }
@@ -176,12 +192,16 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
 }
 
 ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue::ResolveFlags& mode) const {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     if (!_value.constGet()->IsObject()) {
     //V8TODO: what about flags?
-            v8::Local<v8::Value> resultLocal;
-            if (_value.constGet()->ToObject(_value.constGetContext()).ToLocalChecked()
-                ->Get(_value.constGetContext(), arrayIndex).ToLocal(&resultLocal)) {
+        v8::Local<v8::Value> resultLocal;
+        Q_ASSERT(_value.constGet()->IsObject());
+        const v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(_value.constGet());
+        if (object->Get(_value.constGetContext(), arrayIndex).ToLocal(&resultLocal)) {
             V8ScriptValue result(_engine->getIsolate(), resultLocal);
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
         }
@@ -192,17 +212,28 @@ ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue
 }
 
 void ScriptValueV8Wrapper::setData(const ScriptValue& value) {
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue unwrapped = fullUnwrap(value);
     (**_value.get()) = (**unwrapped.get());
 }
 
 void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& value, const ScriptValue::PropertyFlags& flags) {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue unwrapped = fullUnwrap(value);
     if(_value.constGet()->IsObject()) {
-        v8::Local<v8::String> key = v8::String::NewFromUtf8(_engine->getIsolate(), name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
-        v8::Maybe<bool> retVal = _value.get()->ToObject(_value.getContext()).ToLocalChecked()
-            ->Set(_value.getContext(), key, unwrapped.constGet());
+        v8::Local<v8::String> key = v8::String::NewFromUtf8(isolate, name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
+        Q_ASSERT(_value.get()->IsObject());
+        auto object = v8::Local<v8::Object>::Cast(_value.get());
+        // V8TODO: What if velue context and current context is different?
+        //v8::Maybe<bool> retVal = object->Set(_value.getContext(), key, unwrapped.constGet());
+        //v8::Maybe<bool> retVal = object->Set(_engine->getContext(), key, unwrapped.constGet());
+        v8::Maybe<bool> retVal = object->Set(isolate->GetCurrentContext(), key, unwrapped.constGet());
         if (retVal.IsJust() ? !retVal.FromJust() : true){
             qDebug(scriptengine) << "Failed to set property";
         }
@@ -214,10 +245,14 @@ void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& v
 }
 
 void ScriptValueV8Wrapper::setProperty(quint32 arrayIndex, const ScriptValue& value, const ScriptValue::PropertyFlags& flags) {
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue unwrapped = fullUnwrap(value);
     if(_value.constGet()->IsObject()) {
-        v8::Maybe<bool> retVal(_value.get()->ToObject(_value.getContext()).ToLocalChecked()
-            ->Set(_value.getContext(), arrayIndex, unwrapped.constGet()));
+        auto object = v8::Local<v8::Object>::Cast(_value.get());
+        v8::Maybe<bool> retVal(object->Set(_value.getContext(), arrayIndex, unwrapped.constGet()));
         if (retVal.IsJust() ? !retVal.FromJust() : true){
             qDebug(scriptengine) << "Failed to set property";
         }
@@ -229,11 +264,15 @@ void ScriptValueV8Wrapper::setProperty(quint32 arrayIndex, const ScriptValue& va
 }
 
 void ScriptValueV8Wrapper::setPrototype(const ScriptValue& prototype) {
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     ScriptValueV8Wrapper* unwrappedPrototype = unwrap(prototype);
     if (unwrappedPrototype) {
         if(unwrappedPrototype->toV8Value().constGet()->IsObject() && _value.constGet()->IsObject()) {
-            v8::Maybe<bool> retVal = _value.get()->ToObject(_value.getContext()).ToLocalChecked()
-                ->SetPrototype(_value.getContext(), unwrappedPrototype->toV8Value().constGet());
+            auto object = v8::Local<v8::Object>::Cast(_value.get());
+            v8::Maybe<bool> retVal = object->SetPrototype(_value.getContext(), unwrappedPrototype->toV8Value().constGet());
             if (retVal.IsJust() ? !retVal.FromJust() : true){
                 qDebug(scriptengine) << "Failed to assign prototype";
             }
@@ -244,18 +283,27 @@ void ScriptValueV8Wrapper::setPrototype(const ScriptValue& prototype) {
 }
 
 bool ScriptValueV8Wrapper::strictlyEquals(const ScriptValue& other) const {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     ScriptValueV8Wrapper* unwrappedOther = unwrap(other);
     return unwrappedOther ? _value.constGet()->StrictEquals(unwrappedOther->toV8Value().constGet()) : false;
 }
 
 bool ScriptValueV8Wrapper::toBool() const {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->ToBoolean(_engine->getIsolate())->Value();
 }
 
 qint32 ScriptValueV8Wrapper::toInt32() const {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Integer> *integer;
     if (!_value.constGet()->ToInteger(_value.constGetContext()).ToLocal(integer)) {
         Q_ASSERT(false);
@@ -264,7 +312,10 @@ qint32 ScriptValueV8Wrapper::toInt32() const {
 }
 
 double ScriptValueV8Wrapper::toInteger() const {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Integer> *integer;
     if (!_value.constGet()->ToInteger(_value.constGetContext()).ToLocal(integer)) {
         Q_ASSERT(false);
@@ -273,7 +324,10 @@ double ScriptValueV8Wrapper::toInteger() const {
 }
 
 double ScriptValueV8Wrapper::toNumber() const {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Number> *number;
     if (!_value.constGet()->ToNumber(_value.constGetContext()).ToLocal(number)) {
         Q_ASSERT(false);
@@ -282,14 +336,20 @@ double ScriptValueV8Wrapper::toNumber() const {
 }
 
 QString ScriptValueV8Wrapper::toString() const {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     v8::String::Utf8Value string(_engine->getIsolate(), _value.constGet());
     Q_ASSERT(*string != nullptr);
     return QString(*string);
 }
 
 quint16 ScriptValueV8Wrapper::toUInt16() const {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Uint32> *integer;
     if (!_value.constGet()->ToUint32(_value.constGetContext()).ToLocal(integer)) {
         Q_ASSERT(false);
@@ -298,7 +358,10 @@ quint16 ScriptValueV8Wrapper::toUInt16() const {
 }
 
 quint32 ScriptValueV8Wrapper::toUInt32() const {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Uint32> *integer;
     if (!_value.constGet()->ToUint32(_value.constGetContext()).ToLocal(integer)) {
         Q_ASSERT(false);
@@ -327,7 +390,10 @@ QObject* ScriptValueV8Wrapper::toQObject() const {
 }
 
 bool ScriptValueV8Wrapper::equals(const ScriptValue& other) const {
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     ScriptValueV8Wrapper* unwrappedOther = unwrap(other);
     //V8TODO: does this work with different contexts/isolates?
     // in such case conversion will probably be necessary
@@ -343,51 +409,95 @@ bool ScriptValueV8Wrapper::equals(const ScriptValue& other) const {
 }
 
 bool ScriptValueV8Wrapper::isArray() const {
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsArray();
 }
 
 bool ScriptValueV8Wrapper::isBool() const {
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsBoolean();
 }
 
 bool ScriptValueV8Wrapper::isError() const {
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     //V8TODO
     return false;
     //return _value.constGet()->IsError();
 }
 
 bool ScriptValueV8Wrapper::isFunction() const {
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsFunction();
 }
 
 bool ScriptValueV8Wrapper::isNumber() const {
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsNumber();
 }
 
 bool ScriptValueV8Wrapper::isNull() const {
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsNull();
 }
 
 bool ScriptValueV8Wrapper::isObject() const {
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsObject();
 }
 
 bool ScriptValueV8Wrapper::isString() const {
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsString();
 }
 
 bool ScriptValueV8Wrapper::isUndefined() const {
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsUndefined();
 }
 
 bool ScriptValueV8Wrapper::isValid() const {
     //V8TODO
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     return true;
     //return _value.constGet()->IsValid();
 }
 
 bool ScriptValueV8Wrapper::isVariant() const {
     //V8TODO
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
     return false;
     //return _value.isVariant();
 }
