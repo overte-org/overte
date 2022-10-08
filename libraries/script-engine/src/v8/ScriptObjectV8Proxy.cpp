@@ -139,7 +139,7 @@ ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(const V8ScriptValue& val) 
     if (!v8Value->IsObject()) {
         return nullptr;
     }
-    v8::Local<v8::Object> v8Object = v8Value->ToObject(val.constGetContext()).ToLocalChecked();
+    v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(v8Value);
     if (v8Object->InternalFieldCount() != 2) {
         return nullptr;
     }
@@ -167,6 +167,7 @@ void ScriptObjectV8Proxy::investigate() {
     if (!qobject) return;
     
     v8::HandleScope handleScope(_engine->getIsolate());
+    v8::Context::Scope contextScope(_engine->getContext());
     
     auto objectTemplate = _v8ObjectTemplate.Get(_engine->getIsolate());
     objectTemplate->SetInternalFieldCount(3);
@@ -228,13 +229,17 @@ void ScriptObjectV8Proxy::investigate() {
                 break;
         }
 
-        V8ScriptString name(_engine->getIsolate(), v8::String::NewFromUtf8(_engine->getIsolate(), szName.data(), v8::NewStringType::kNormal, szName.length()).ToLocalChecked());
+        auto nameString = v8::String::NewFromUtf8(_engine->getIsolate(), szName.data(), v8::NewStringType::kNormal, szName.length()).ToLocalChecked();
+        V8ScriptString name(_engine->getIsolate(), nameString);
         auto nameLookup = methodNames.find(name);
         if (isSignal) {
             if (nameLookup == methodNames.end()) {
                 SignalDef& signalDef = _signals.insert(idx, SignalDef(_engine->getIsolate(), name.get())).value();
                 signalDef.name = name;
                 signalDef.signal = method;
+                qDebug(scriptengine) << "Utf8Value 1: " << QString(*v8::String::Utf8Value(const_cast<v8::Isolate*>(_engine->getIsolate()), nameString));
+                qDebug(scriptengine) << "Utf8Value 2: " << QString(*v8::String::Utf8Value(const_cast<v8::Isolate*>(_engine->getIsolate()), name.constGet()));
+                qDebug(scriptengine) << "toQString: " << name.toQString();
                 methodNames.insert(name, idx);
             } else {
                 int originalMethodId = nameLookup.value();
@@ -474,7 +479,7 @@ ScriptVariantV8Proxy* ScriptVariantV8Proxy::unwrapProxy(const V8ScriptValue& val
     if (!v8Value->IsObject()) {
         return nullptr;
     }
-    v8::Local<v8::Object> v8Object = v8Value->ToObject(val.constGetContext()).ToLocalChecked();
+    v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(v8Value);
     if (v8Object->InternalFieldCount() != 2) {
         return nullptr;
     }
