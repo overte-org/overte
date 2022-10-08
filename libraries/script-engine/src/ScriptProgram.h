@@ -25,7 +25,7 @@ using ScriptSyntaxCheckResultPointer = std::shared_ptr<ScriptSyntaxCheckResult>;
 /// [ScriptInterface] Provides an engine-independent interface for QScriptProgram
 class ScriptProgram {
 public:
-    virtual ScriptSyntaxCheckResultPointer checkSyntax() const = 0;
+    virtual ScriptSyntaxCheckResultPointer checkSyntax() = 0; //It cannot be const anymore because V8 doesn't have separate syntax checking function
     virtual QString fileName() const = 0;
     virtual QString sourceCode() const = 0;
 
@@ -47,6 +47,7 @@ public:
     virtual int errorColumnNumber() const = 0;
     virtual int errorLineNumber() const = 0;
     virtual QString errorMessage() const = 0;
+    virtual QString errorBacktrace() const = 0;
     virtual State state() const = 0;
 
 protected:

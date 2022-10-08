@@ -889,7 +889,7 @@ signals:
     void releaseEntityPacketSenderMessages(bool wait);
 
 protected:
-    // Is called by the constructor, bceause all types need to be registered before method discovery with ScriptObjectQtProxy::investigate()
+    // Is called by the constructor, bceause all types need to be registered before method discovery with ScriptObjectV8Proxy::investigate()
     void initMetaTypes();
     
     void init();
