@@ -18,10 +18,8 @@ V8ScriptValueIterator::V8ScriptValueIterator(ScriptEngineV8* engine, v8::Local<v
     v8::HandleScope handleScope(isolate);
     _context.Reset(isolate, _engine->getContext());
     auto context = _context.Get(isolate);
-    v8::Local<v8::Object> v8Object;
-    if (!object->ToObject(context).ToLocal(&v8Object)) {
-        Q_ASSERT(false);
-    }
+    Q_ASSERT(object->IsObject());
+    v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(object);
     _object.Reset(isolate, v8Object);
     _propertyNames.Reset(isolate, v8Object->GetOwnPropertyNames(context).ToLocalChecked());
     _length = _propertyNames.Get(isolate)->Length();

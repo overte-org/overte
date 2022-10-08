@@ -119,6 +119,7 @@ public:
     virtual void setProcessEventsInterval(int interval) = 0;
     virtual QThread* thread() const = 0;
     virtual void setThread(QThread* thread) = 0;
+    Q_INVOKABLE virtual void enterIsolateOnThisThread() = 0;
     virtual ScriptValue undefinedValue() = 0;
     virtual ScriptValue uncaughtException() const = 0;
     virtual QStringList uncaughtExceptionBacktrace() const = 0;

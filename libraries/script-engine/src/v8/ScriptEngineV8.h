@@ -114,12 +114,12 @@ public:  // ScriptEngine implementation
                                                   const QString& parent = QString("")) override;
     Q_INVOKABLE virtual void registerGlobalObject(const QString& name, QObject* object) override;
     virtual void setDefaultPrototype(int metaTypeId, const ScriptValue& prototype) override;
-    // Already implemented by QObject
     virtual void setObjectName(const QString& name) override;
     virtual bool setProperty(const char* name, const QVariant& value) override;
     virtual void setProcessEventsInterval(int interval) override;
     virtual QThread* thread() const override;
     virtual void setThread(QThread* thread) override;
+    Q_INVOKABLE virtual void enterIsolateOnThisThread() override;
     virtual ScriptValue undefinedValue() override;
     virtual ScriptValue uncaughtException() const override;
     virtual QStringList uncaughtExceptionBacktrace() const override;
@@ -219,7 +219,7 @@ protected:
     ScriptValue _nullValue;
     ScriptValue _undefinedValue;
     mutable ScriptContextQtPointer _currContext;
-    QThread *_currentThread;
+    //QThread *_currentThread;
 
     //V8TODO
     //ArrayBufferClass* _arrayBufferClass;
