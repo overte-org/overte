@@ -15,27 +15,29 @@
 #ifndef hifi_DataViewClass_h
 #define hifi_DataViewClass_h
 
+// V8TODO
+/*
 #include "ArrayBufferViewClass.h"
 
-/// [QtScript] Implements the <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a></code> scripting class
+/// [V8] Implements the <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a></code> scripting class
 class DataViewClass : public ArrayBufferViewClass {
     Q_OBJECT
 public:
-    DataViewClass(ScriptEngineQtScript* scriptEngine);
-    QScriptValue newInstance(QScriptValue buffer, quint32 byteOffset, quint32 byteLength);
+    DataViewClass(ScriptEngineV8* scriptEngine);
+    V8ScriptValue newInstance(V8ScriptValue buffer, quint32 byteOffset, quint32 byteLength);
 
     QString name() const override;
-    QScriptValue prototype() const override;
+    V8ScriptValue prototype() const override;
 
 private:
-    static QScriptValue construct(QScriptContext* context, QScriptEngine* engine);
+    static V8ScriptValue construct(V8ScriptContext* context, QScriptEngine* engine);
 
-    QScriptValue _proto;
-    QScriptValue _ctor;
+    V8ScriptValue _proto;
+    V8ScriptValue _ctor;
 
-    QScriptString _name;
+    V8ScriptString _name;
 };
-
+*/
 
 #endif // hifi_DataViewClass_h
 

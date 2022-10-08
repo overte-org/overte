@@ -15,17 +15,18 @@
 
 #include "TypedArrays.h"
 
-Q_DECLARE_METATYPE(QByteArray*)
+// V8TODO
+/*Q_DECLARE_METATYPE(QByteArray*)
 
 TypedArrayPrototype::TypedArrayPrototype(QObject* parent) : QObject(parent) {
 }
 
 QByteArray* TypedArrayPrototype::thisArrayBuffer() const {
-    QScriptValue bufferObject = thisObject().data().property(BUFFER_PROPERTY_NAME);
+    V8ScriptValue bufferObject = thisObject().data().property(BUFFER_PROPERTY_NAME);
     return qscriptvalue_cast<QByteArray*>(bufferObject.data());
 }
 
-void TypedArrayPrototype::set(QScriptValue array, qint32 offset) {
+void TypedArrayPrototype::set(V8ScriptValue array, qint32 offset) {
     TypedArray* typedArray = static_cast<TypedArray*>(parent());
     if (array.isArray() || typedArray) {
         if (offset < 0) {
@@ -44,9 +45,9 @@ void TypedArrayPrototype::set(QScriptValue array, qint32 offset) {
     }
 }
 
-QScriptValue TypedArrayPrototype::subarray(qint32 begin) {
+V8ScriptValue TypedArrayPrototype::subarray(qint32 begin) {
     TypedArray* typedArray = static_cast<TypedArray*>(parent());
-    QScriptValue arrayBuffer = thisObject().data().property(typedArray->_bufferName);
+    V8ScriptValue arrayBuffer = thisObject().data().property(typedArray->_bufferName);
     qint32 byteOffset = thisObject().data().property(typedArray->_byteOffsetName).toInt32();
     qint32 length = thisObject().data().property(typedArray->_lengthName).toInt32();
     qint32 bytesPerElement = typedArray->_bytesPerElement;
@@ -61,9 +62,9 @@ QScriptValue TypedArrayPrototype::subarray(qint32 begin) {
     return typedArray->newInstance(arrayBuffer, byteOffset, length - begin);
 }
 
-QScriptValue TypedArrayPrototype::subarray(qint32 begin, qint32 end) {
+V8ScriptValue TypedArrayPrototype::subarray(qint32 begin, qint32 end) {
     TypedArray* typedArray = static_cast<TypedArray*>(parent());
-    QScriptValue arrayBuffer = thisObject().data().property(typedArray->_bufferName);
+    V8ScriptValue arrayBuffer = thisObject().data().property(typedArray->_bufferName);
     qint32 byteOffset = thisObject().data().property(typedArray->_byteOffsetName).toInt32();
     qint32 length = thisObject().data().property(typedArray->_lengthName).toInt32();
     qint32 bytesPerElement = typedArray->_bytesPerElement;
@@ -83,9 +84,9 @@ QScriptValue TypedArrayPrototype::subarray(qint32 begin, qint32 end) {
     return typedArray->newInstance(arrayBuffer, byteOffset, length);
 }
 
-QScriptValue TypedArrayPrototype::get(quint32 index) {
+V8ScriptValue TypedArrayPrototype::get(quint32 index) {
     TypedArray* typedArray = static_cast<TypedArray*>(parent());
-    QScriptString name = engine()->toStringHandle(QString::number(index));
+    V8ScriptString name = engine()->toStringHandle(QString::number(index));
     uint id;
     QScriptClass::QueryFlags flags = typedArray->queryProperty(thisObject(),
                                                                name,
@@ -93,13 +94,13 @@ QScriptValue TypedArrayPrototype::get(quint32 index) {
     if (QScriptClass::HandlesReadAccess & flags) {
         return typedArray->property(thisObject(), name, id);
     }
-    return QScriptValue();
+    return V8ScriptValue();
 }
 
-void TypedArrayPrototype::set(quint32 index, QScriptValue& value) {
+void TypedArrayPrototype::set(quint32 index, V8ScriptValue& value) {
     TypedArray* typedArray = static_cast<TypedArray*>(parent());
-    QScriptValue object = thisObject();
-    QScriptString name = engine()->toStringHandle(QString::number(index));
+    V8ScriptValue object = thisObject();
+    V8ScriptString name = engine()->toStringHandle(QString::number(index));
     uint id;
     QScriptClass::QueryFlags flags = typedArray->queryProperty(object,
                                                                name,
@@ -108,3 +109,4 @@ void TypedArrayPrototype::set(quint32 index, QScriptValue& value) {
         typedArray->setProperty(object, name, id, value);
     }
 }
+*/
