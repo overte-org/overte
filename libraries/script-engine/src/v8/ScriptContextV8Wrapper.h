@@ -31,8 +31,9 @@ class ScriptEngineV8;
 /// [V8] Implements ScriptContext for V8 and translates calls for V8ScriptContextInfo
 class ScriptContextV8Wrapper final : public ScriptContext {
 public: // construction
-    ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::Local<v8::Context> context);
-    ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::Local<v8::Context> context, std::shared_ptr<v8::FunctionCallbackInfo<v8::Value>> functionCallbackInfo);
+    ScriptContextV8Wrapper(ScriptEngineV8* engine);
+    ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::FunctionCallbackInfo<v8::Value> *functionCallbackInfo);
+    ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::PropertyCallbackInfo<v8::Value> *propertyCallbackInfo);
     static ScriptContextV8Wrapper* unwrap(ScriptContext* val);
     v8::Local<v8::Context> toV8Value() const;
 
@@ -49,8 +50,8 @@ public: // ScriptContext implementation
     virtual ScriptValue throwValue(const ScriptValue& value) override;
 
 private: // storage
-    v8::Persistent<v8::Context> _context;
-    std::shared_ptr<v8::FunctionCallbackInfo<v8::Value>> _functionCallbackInfo;
+    const v8::FunctionCallbackInfo<v8::Value> *_functionCallbackInfo;
+    const v8::PropertyCallbackInfo<v8::Value> *_propertyCallbackInfo;
     ScriptEngineV8* _engine;
 };
 
