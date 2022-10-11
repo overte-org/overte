@@ -237,9 +237,9 @@ void ScriptObjectV8Proxy::investigate() {
                 SignalDef& signalDef = _signals.insert(idx, SignalDef(_engine->getIsolate(), name.get())).value();
                 signalDef.name = name;
                 signalDef.signal = method;
-                qDebug(scriptengine) << "Utf8Value 1: " << QString(*v8::String::Utf8Value(const_cast<v8::Isolate*>(_engine->getIsolate()), nameString));
-                qDebug(scriptengine) << "Utf8Value 2: " << QString(*v8::String::Utf8Value(const_cast<v8::Isolate*>(_engine->getIsolate()), name.constGet()));
-                qDebug(scriptengine) << "toQString: " << name.toQString();
+                //qDebug(scriptengine) << "Utf8Value 1: " << QString(*v8::String::Utf8Value(const_cast<v8::Isolate*>(_engine->getIsolate()), nameString));
+                //qDebug(scriptengine) << "Utf8Value 2: " << QString(*v8::String::Utf8Value(const_cast<v8::Isolate*>(_engine->getIsolate()), name.constGet()));
+                //qDebug(scriptengine) << "toQString: " << name.toQString();
                 methodNames.insert(name, idx);
             } else {
                 int originalMethodId = nameLookup.value();
