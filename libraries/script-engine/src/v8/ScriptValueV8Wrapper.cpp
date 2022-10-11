@@ -168,25 +168,26 @@ ScriptValueIteratorPointer ScriptValueV8Wrapper::newIterator() const {
     return std::make_shared<ScriptValueIteratorV8Wrapper>(_engine, _value);
 }
 
-ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValue::ResolveFlags& mode) const {
+ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValue::ResolveFlags &mode) const {
     auto isolate = _engine->getIsolate();
     Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
-    if (!_value.constGet()->IsObject()) {
+    if (_value.constGet()->IsObject()) {
     //V8TODO: what about flags?
         v8::Local<v8::Value> resultLocal;
         v8::Local<v8::String> key = v8::String::NewFromUtf8(_engine->getIsolate(), name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
-        Q_ASSERT(_value.constGet()->IsObject());
         const v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(_value.constGet());
         if (object->Get(_value.constGetContext(), key).ToLocal(&resultLocal)) {
             V8ScriptValue result(_engine->getIsolate(), resultLocal);
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
         }
     }
-    v8::Local<v8::Value> nullValue = v8::Null(_engine->getIsolate());
+    qCritical() << "Failed to get property, parent of value: " << name << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
+    return _engine->undefinedValue();
+    /*v8::Local<v8::Value> nullValue = v8::Null(_engine->getIsolate());
     V8ScriptValue nullScriptValue(_engine->getIsolate(), std::move(nullValue));
-    return ScriptValue(new ScriptValueV8Wrapper(_engine, nullScriptValue));
+    return ScriptValue(new ScriptValueV8Wrapper(_engine, nullScriptValue));*/
     //V8ScriptValue result = _value.property(name, (V8ScriptValue::ResolveFlags)(int)mode);
     //return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
 }
@@ -196,19 +197,20 @@ ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue
     Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
-    if (!_value.constGet()->IsObject()) {
+    if (_value.constGet()->IsObject()) {
     //V8TODO: what about flags?
         v8::Local<v8::Value> resultLocal;
-        Q_ASSERT(_value.constGet()->IsObject());
         const v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(_value.constGet());
         if (object->Get(_value.constGetContext(), arrayIndex).ToLocal(&resultLocal)) {
             V8ScriptValue result(_engine->getIsolate(), resultLocal);
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
         }
     }
-    v8::Local<v8::Value> nullValue = v8::Null(_engine->getIsolate());
+    qCritical() << "Failed to get property, parent of value: " << arrayIndex << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
+    return _engine->undefinedValue();
+    /*v8::Local<v8::Value> nullValue = v8::Null(_engine->getIsolate());
     V8ScriptValue nullScriptValue(_engine->getIsolate(), std::move(nullValue));
-    return ScriptValue(new ScriptValueV8Wrapper(_engine, nullScriptValue));
+    return ScriptValue(new ScriptValueV8Wrapper(_engine, nullScriptValue));*/
 }
 
 void ScriptValueV8Wrapper::setData(const ScriptValue& value) {
@@ -221,6 +223,7 @@ void ScriptValueV8Wrapper::setData(const ScriptValue& value) {
 }
 
 void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& value, const ScriptValue::PropertyFlags& flags) {
+    Q_ASSERT(flags != ScriptValue::PropertyGetter || flags != ScriptValue::PropertySetter);
     auto isolate = _engine->getIsolate();
     Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
@@ -304,11 +307,11 @@ qint32 ScriptValueV8Wrapper::toInt32() const {
     Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
-    v8::Local<v8::Integer> *integer;
-    if (!_value.constGet()->ToInteger(_value.constGetContext()).ToLocal(integer)) {
+    v8::Local<v8::Integer> integer;
+    if (!_value.constGet()->ToInteger(_value.constGetContext()).ToLocal(&integer)) {
         Q_ASSERT(false);
     }
-    return static_cast<int32_t>((*integer)->Value());
+    return static_cast<int32_t>((integer)->Value());
 }
 
 double ScriptValueV8Wrapper::toInteger() const {
@@ -316,11 +319,11 @@ double ScriptValueV8Wrapper::toInteger() const {
     Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
-    v8::Local<v8::Integer> *integer;
-    if (!_value.constGet()->ToInteger(_value.constGetContext()).ToLocal(integer)) {
+    v8::Local<v8::Integer> integer;
+    if (!_value.constGet()->ToInteger(_value.constGetContext()).ToLocal(&integer)) {
         Q_ASSERT(false);
     }
-    return (*integer)->Value();
+    return (integer)->Value();
 }
 
 double ScriptValueV8Wrapper::toNumber() const {
@@ -328,11 +331,11 @@ double ScriptValueV8Wrapper::toNumber() const {
     Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
-    v8::Local<v8::Number> *number;
-    if (!_value.constGet()->ToNumber(_value.constGetContext()).ToLocal(number)) {
+    v8::Local<v8::Number> number;
+    if (!_value.constGet()->ToNumber(_value.constGetContext()).ToLocal(&number)) {
         Q_ASSERT(false);
     }
-    return (*number)->Value();
+    return number->Value();
 }
 
 QString ScriptValueV8Wrapper::toString() const {
@@ -350,11 +353,11 @@ quint16 ScriptValueV8Wrapper::toUInt16() const {
     Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
-    v8::Local<v8::Uint32> *integer;
-    if (!_value.constGet()->ToUint32(_value.constGetContext()).ToLocal(integer)) {
+    v8::Local<v8::Uint32> integer;
+    if (!_value.constGet()->ToUint32(_value.constGetContext()).ToLocal(&integer)) {
         Q_ASSERT(false);
     }
-    return static_cast<uint16_t>((*integer)->Value());
+    return static_cast<uint16_t>(integer->Value());
 }
 
 quint32 ScriptValueV8Wrapper::toUInt32() const {
@@ -362,11 +365,11 @@ quint32 ScriptValueV8Wrapper::toUInt32() const {
     Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
-    v8::Local<v8::Uint32> *integer;
-    if (!_value.constGet()->ToUint32(_value.constGetContext()).ToLocal(integer)) {
+    v8::Local<v8::Uint32> integer;
+    if (!_value.constGet()->ToUint32(_value.constGetContext()).ToLocal(&integer)) {
         Q_ASSERT(false);
     }
-    return (*integer)->Value();
+    return integer->Value();
 }
 
 QVariant ScriptValueV8Wrapper::toVariant() const {
