@@ -669,6 +669,15 @@ public:
     void removeAllEventHandlers(const EntityItemID& entityID);
 
 
+    /**
+     * @brief Return value of the script that finished running
+     *
+     * This should only be used after the script terminates.
+     *
+     * @return ScriptValue
+     */
+    ScriptValue getReturnValue() const { return _returnValue; }
+
     /**jsdoc
      * Gets the URL for an asset in an external resource bucket. (The location where the bucket is hosted may change over time
      * but this method will return the asset's current URL.)
