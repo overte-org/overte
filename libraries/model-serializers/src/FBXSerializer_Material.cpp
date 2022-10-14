@@ -236,7 +236,12 @@ void FBXSerializer::consolidateHFMMaterials() {
         material._material->setAlbedo(diffuse);
 
         if (material.isPBSMaterial) {
-            material._material->setRoughness(material.roughness);
+            // Blender sets shininess for PBS
+            if (material.roughness > 0.0f) {
+                material._material->setRoughness(material.roughness);
+            } else {
+                material._material->setRoughness(graphics::Material::shininessToRoughness(material.shininess));
+            }
             material._material->setMetallic(material.metallic);
         } else {
             material._material->setRoughness(graphics::Material::shininessToRoughness(material.shininess));

@@ -4,6 +4,7 @@
 //
 //  Created by Andrzej Kapolka on 9/18/13.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -859,6 +860,7 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
 
                         if (properties) {
                             std::vector<std::string> unknowns;
+                            // Blender
                             static const QVariant DIFFUSE_COLOR = hifi::ByteArray("DiffuseColor");
                             static const QVariant DIFFUSE_FACTOR = hifi::ByteArray("DiffuseFactor");
                             static const QVariant DIFFUSE = hifi::ByteArray("Diffuse");
@@ -871,6 +873,9 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
                             static const QVariant AMBIENT_FACTOR = hifi::ByteArray("AmbientFactor");
                             static const QVariant SHININESS = hifi::ByteArray("Shininess");
                             static const QVariant OPACITY = hifi::ByteArray("Opacity");
+                            static const QVariant REFLECTION_FACTOR = hifi::ByteArray("ReflectionFactor");
+
+                            // Maya Stingray
                             static const QVariant MAYA_USE_NORMAL_MAP = hifi::ByteArray("Maya|use_normal_map");
                             static const QVariant MAYA_BASE_COLOR = hifi::ByteArray("Maya|base_color");
                             static const QVariant MAYA_USE_COLOR_MAP = hifi::ByteArray("Maya|use_color_map");
@@ -921,12 +926,14 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
 
                                     } else if (property.properties.at(0) == AMBIENT_FACTOR) {
                                         material.ambientFactor = property.properties.at(index).value<double>();
-                                        // Detected just for BLender AO vs lightmap
+                                        // Detected just for Blender AO vs lightmap
                                     } else if (property.properties.at(0) == SHININESS) {
                                         material.shininess = property.properties.at(index).value<double>();
-
                                     } else if (property.properties.at(0) == OPACITY) {
                                         material.opacity = property.properties.at(index).value<double>();
+                                    } else if (property.properties.at(0) == REFLECTION_FACTOR) {
+                                        material.isPBSMaterial = true;
+                                        material.metallic = property.properties.at(index).value<double>();
                                     }
 
                                     // Sting Ray Material Properties!!!!
