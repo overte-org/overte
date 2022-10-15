@@ -85,7 +85,7 @@ public:
     virtual bool hasUncaughtException() const = 0;
     virtual bool isEvaluating() const = 0;
     //virtual ScriptValue lintScript(const QString& sourceCode, const QString& fileName, const int lineNumber = 1) = 0;
-    virtual ScriptValue cheskScriptSyntax(ScriptProgramPointer program) = 0;    
+    virtual ScriptValue checkScriptSyntax(ScriptProgramPointer program) = 0;    
     virtual ScriptValue makeError(const ScriptValue& other = ScriptValue(), const QString& type = "Error") = 0;
     virtual ScriptManager* manager() const = 0;
     virtual bool maybeEmitUncaughtException(const QString& debugHint = QString()) = 0;
@@ -126,6 +126,7 @@ public:
     virtual int uncaughtExceptionLineNumber() const = 0;
     virtual void updateMemoryCost(const qint64& deltaSize) = 0;
     virtual void requestCollectGarbage() = 0;
+    virtual void compileTest() = 0;
 
 public:
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways

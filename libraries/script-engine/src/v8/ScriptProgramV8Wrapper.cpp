@@ -44,10 +44,12 @@ bool ScriptProgramV8Wrapper::compile() {
     v8::ScriptOrigin scriptOrigin(isolate, v8::String::NewFromUtf8(isolate, _url.toStdString().c_str()).ToLocalChecked());
     v8::Local<v8::Script> script;
     if (v8::Script::Compile(context, v8::String::NewFromUtf8(isolate, _source.toStdString().c_str()).ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
+        qDebug() << "Script compilation succesful: " << _url;
         _compileResult = ScriptSyntaxCheckResultV8Wrapper(ScriptSyntaxCheckResult::Valid);
         _value = V8ScriptProgram(isolate, script);
         return true;
     }
+    qDebug() << "Script compilation failed: " << _url;
     v8::String::Utf8Value utf8Value(isolate, tryCatch.Exception());
     errorMessage = QString(*utf8Value);
     v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
