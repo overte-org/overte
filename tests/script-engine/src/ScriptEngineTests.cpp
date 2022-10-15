@@ -76,15 +76,20 @@ void ScriptEngineTests::scriptTest() {
     QVERIFY(!ac.isNull());
 
 
-    ac->loadOneScript("test-missing.js");
-    ac->loadOneScript("test-hello.js");
-    ac->loadOneScript("test-divide-by-zero.js");
+    ac->loadOneScript("test1.js");
+    //ac->loadOneScript("test-missing.js");
+    //ac->loadOneScript("test-hello.js");
+    //ac->loadOneScript("test-divide-by-zero.js");
     qDebug() << ac->getRunning();
 
 
-    QSignalSpy spy(ac.get(), SIGNAL(scriptCountChanged));
-    spy.wait(5000);
-    ac->shutdownScripting();
+    while (true) {
+        QSignalSpy spy(ac.get(), SIGNAL(scriptCountChanged));
+        spy.wait(3000000);
+        qDebug() << "Signal happened";
+    }
+    //spy.wait(5000);
+    //ac->shutdownScripting();
 
 
 }
