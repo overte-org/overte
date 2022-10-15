@@ -201,6 +201,7 @@ protected:
     static QMutex _v8InitMutex;
     static std::once_flag _v8InitOnceFlag;
     static v8::Platform* getV8Platform();
+    QString formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch);
     
     v8::Isolate* _v8Isolate;
     v8::UniquePersistent<v8::Context> _v8Context;
@@ -221,6 +222,7 @@ protected:
     ScriptValue _undefinedValue;
     mutable ScriptContextQtPointer _currContext;
     //QThread *_currentThread;
+    std::unique_ptr<v8::Locker> _v8Locker;
 
     //V8TODO
     //ArrayBufferClass* _arrayBufferClass;
