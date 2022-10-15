@@ -827,9 +827,10 @@ void ScriptManager::run() {
         hifi::scripting::setLocalAccessSafeThread(true);
     }
     
-    _engine->compileTest();
 
     _engine->enterIsolateOnThisThread();
+
+    _engine->compileTest();
 
     auto filenameParts = _fileNameString.split("/");
     auto name = filenameParts.size() > 0 ? filenameParts[filenameParts.size() - 1] : "unknown";
