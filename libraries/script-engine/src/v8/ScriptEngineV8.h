@@ -73,7 +73,7 @@ public:  // ScriptEngine implementation
     virtual bool hasUncaughtException() const override;
     virtual bool isEvaluating() const override;
     //virtual ScriptValue lintScript(const QString& sourceCode, const QString& fileName, const int lineNumber = 1) override;
-    virtual ScriptValue cheskScriptSyntax(ScriptProgramPointer program) override;
+    virtual ScriptValue checkScriptSyntax(ScriptProgramPointer program) override;
     virtual ScriptValue makeError(const ScriptValue& other, const QString& type = "Error") override;
     virtual ScriptManager* manager() const override;
 
@@ -126,6 +126,7 @@ public:  // ScriptEngine implementation
     virtual int uncaughtExceptionLineNumber() const override;
     virtual void updateMemoryCost(const qint64& deltaSize) override;
     virtual void requestCollectGarbage() override { while(!_v8Isolate->IdleNotificationDeadline(getV8Platform()->MonotonicallyIncreasingTime() + GARBAGE_COLLECTION_TIME_LIMIT_S)) {}; }
+    virtual void compileTest() override;
 
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
     inline bool IS_THREADSAFE_INVOCATION(const QString& method) { return ScriptEngine::IS_THREADSAFE_INVOCATION(method); }
