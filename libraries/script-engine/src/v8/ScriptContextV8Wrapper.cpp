@@ -50,9 +50,9 @@ int ScriptContextV8Wrapper::argumentCount() const {
     //Q_ASSERT(_functionCallbackInfo);A
     // V8TODO
     if (_functionCallbackInfo) {
-        return _functionCallbackInfo->kArgsLength;
+        return _functionCallbackInfo->Length();
     } else if (_propertyCallbackInfo) {
-        return _propertyCallbackInfo->kArgsLength;
+        return 0;
     } else {
         return Q_METAMETHOD_INVOKE_MAX_ARGS;
     }

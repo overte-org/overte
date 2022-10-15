@@ -1157,7 +1157,9 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
         //V8TODO: this scriptContext needs to have FunctionCallbackInfo added
         ScriptValue result = function(&scriptContext, scriptEngine);
         ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(result);
-        info.GetReturnValue().Set(unwrapped->toV8Value().constGet());
+        if (unwrapped) {
+            info.GetReturnValue().Set(unwrapped->toV8Value().constGet());
+        }
     };
     //auto functionTemplate = v8::FunctionTemplate::New(_v8Isolate, v8FunctionCallback, v8::Local<v8::Value>(), v8::Local<v8::Signature>(), length);
     //auto functionData = v8::Object::New(_v8Isolate);
