@@ -134,7 +134,7 @@ ScriptValue ScriptEngineV8::makeError(const ScriptValue& _other, const QString& 
 }
 
 // check syntax and when there are issues returns an actual "SyntaxError" with the details
-ScriptValue ScriptEngineV8::cheskScriptSyntax(ScriptProgramPointer program) {
+ScriptValue ScriptEngineV8::checkScriptSyntax(ScriptProgramPointer program) {
     if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
         return nullValue();
     }
@@ -375,10 +375,13 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
     //_arrayBufferClass(new ArrayBufferClass(this))
 {
     _v8InitMutex.lock();
-    std::call_once ( _v8InitOnceFlag, [ ]{ 
+    std::call_once ( _v8InitOnceFlag, [ ]{
+        v8::V8::InitializeExternalStartupData("");
+        //V8TODO might cause crashes if it's too much
+        v8::V8::SetFlagsFromString("--stack-size=900000");
         v8::Platform* platform = getV8Platform();
         v8::V8::InitializePlatform(platform);
-        v8::V8::Initialize();
+        v8::V8::Initialize(); qCDebug(scriptengine) << "V8 platform initialized";
     } );
     _v8InitMutex.unlock();
     {
@@ -391,7 +394,8 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
         Q_ASSERT(!context.IsEmpty());
         v8::Context::Scope contextScope(context);
         _v8Context = v8::UniquePersistent<v8::Context>(_v8Isolate, context);
-
+        
+    
         V8ScriptValue nullScriptValue(_v8Isolate, v8::Null(_v8Isolate));
         _nullValue = ScriptValue(new ScriptValueV8Wrapper(this, nullScriptValue));
 
@@ -427,7 +431,7 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
             }
         }, Qt::DirectConnection);*/
         //moveToThread(scriptManager->thread());
-        setThread(scriptManager->thread());
+        //setThread(scriptManager->thread());
     }
 }
 
@@ -789,6 +793,7 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
     }
     // Compile and check syntax
     // V8TODO: Could these all be replaced with checkSyntax function from wrapper?
+    Q_ASSERT(!_v8Isolate->IsDead());
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     v8::TryCatch tryCatch(getIsolate());
@@ -799,7 +804,8 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
         int errorLineNumber = 0;
         QString errorMessage = "";
         QString errorBacktrace = "";
-        v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Exception());
+        //v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Exception());
+        v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Message()->Get());
         errorMessage = QString(*utf8Value);
         v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
         if (!exceptionMessage.IsEmpty()) {
@@ -811,12 +817,14 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
                 v8::String::Utf8Value backtraceUtf8Value(getIsolate(), backtraceV8String);
                 errorBacktrace = *backtraceUtf8Value;
             }
+            qCDebug(scriptengine) << "Compiling script \"" << fileName << "\" failed on line " << errorLineNumber << " column " << errorColumnNumber << " with message: \"" << errorMessage <<"\" backtrace: " << errorBacktrace;
         }
         auto err = makeError(newValue(errorMessage));
         raiseException(err);
         maybeEmitUncaughtException("compile");
         return err;
     }
+    qCDebug(scriptengine) << "Script compilation succesful: " << fileName;
     
     //V8TODO
     /*auto syntaxError = lintScript(sourceCode, fileName);
@@ -1170,16 +1178,20 @@ QThread* ScriptEngineV8::thread() const {
 }
 
 void ScriptEngineV8::setThread(QThread* thread) {
-    qDebug() << "Moved script engine " << objectName() << " to different thread";
-    _v8Isolate->Exit();
+    if (_v8Isolate->IsCurrent()) {
+        _v8Isolate->Exit();
+        qDebug() << "Script engine " << objectName() << " exited isolate";
+    }
     moveToThread(thread);
-    QMetaObject::invokeMethod(this, "enterIsolateOnThisThread");
+    qDebug() << "Moved script engine " << objectName() << " to different thread";
 }
 
 void ScriptEngineV8::enterIsolateOnThisThread() {
     Q_ASSERT(thread() == QThread::currentThread());
-    _v8Isolate->Enter();
-    qDebug() << "Script engine " << objectName() << " entered isolate on a new thread";
+    if (!_v8Isolate->IsCurrent()) {
+        _v8Isolate->Enter();
+        qDebug() << "Script engine " << objectName() << " entered isolate on a new thread";
+    }
 }
 
 
@@ -1237,4 +1249,19 @@ QVariant ScriptEngineV8::convert(const ScriptValue& value, int typeId) {
 
     return var;
     return QVariant();
+}
+
+void ScriptEngineV8::compileTest() {
+    v8::Locker locker(_v8Isolate);
+    v8::Isolate::Scope isolateScope(_v8Isolate);
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Local<v8::Script> script;
+    v8::ScriptOrigin scriptOrigin(getIsolate(), v8::String::NewFromUtf8(getIsolate(),"test").ToLocalChecked());
+    if (v8::Script::Compile(getContext(), v8::String::NewFromUtf8(getIsolate(), "print(\"hello world\");").ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
+        qCDebug(scriptengine) << "Compile test succesful";
+    } else {
+        qCDebug(scriptengine) << "Compile test failed";
+        Q_ASSERT(false);
+    }
 }

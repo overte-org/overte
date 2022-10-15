@@ -826,6 +826,8 @@ void ScriptManager::run() {
         // (because we're a client script)
         hifi::scripting::setLocalAccessSafeThread(true);
     }
+    
+    _engine->compileTest();
 
     _engine->enterIsolateOnThisThread();
 
