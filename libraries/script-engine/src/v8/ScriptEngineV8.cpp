@@ -800,6 +800,7 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
     v8::ScriptOrigin scriptOrigin(getIsolate(), v8::String::NewFromUtf8(getIsolate(), fileName.toStdString().c_str()).ToLocalChecked());
     v8::Local<v8::Script> script;
     if (!v8::Script::Compile(getContext(), v8::String::NewFromUtf8(getIsolate(), sourceCode.toStdString().c_str()).ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
+        //V8TODO replace this with external function
         int errorColumnNumber = 0;
         int errorLineNumber = 0;
         QString errorMessage = "";
@@ -851,6 +852,7 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
         Q_ASSERT(tryCatchRun.HasCaught());
         auto runError = tryCatchRun.Message();
         ScriptValue errorValue(new ScriptValueV8Wrapper(this, V8ScriptValue(_v8Isolate, runError->Get())));
+        qCDebug(scriptengine) << "Running script: \"" << fileName << "\" " << formatErrorMessageFromTryCatch(tryCatchRun);
         //V8TODO
         //raiseException(errorValue);
         //maybeEmitUncaughtException("evaluate");
@@ -858,6 +860,31 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
     }
     V8ScriptValue resultValue(_v8Isolate, result);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(resultValue)));
+}
+
+QString ScriptEngineV8::formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch) {
+    QString result("");
+    int errorColumnNumber = 0;
+    int errorLineNumber = 0;
+    QString errorMessage = "";
+    QString errorBacktrace = "";
+    //v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Exception());
+    v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Message()->Get());
+    errorMessage = QString(*utf8Value);
+    v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
+    if (!exceptionMessage.IsEmpty()) {
+        errorLineNumber = exceptionMessage->GetLineNumber(getContext()).FromJust();
+        errorColumnNumber = exceptionMessage->GetStartColumn(getContext()).FromJust();
+        v8::Local<v8::Value> backtraceV8String;
+        if (tryCatch.StackTrace(getContext()).ToLocal(&backtraceV8String) && backtraceV8String->IsString() &&
+                v8::Local<v8::String>::Cast(backtraceV8String)->Length() > 0) {
+            v8::String::Utf8Value backtraceUtf8Value(getIsolate(), backtraceV8String);
+            errorBacktrace = *backtraceUtf8Value;
+        }
+        QTextStream resultStream(&result);
+        resultStream << "failed on line " << errorLineNumber << " column " << errorColumnNumber << " with message: \"" << errorMessage <<"\" backtrace: " << errorBacktrace;
+    }
+    return result;
 }
 
 Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& program) {
@@ -1182,12 +1209,18 @@ void ScriptEngineV8::setThread(QThread* thread) {
         _v8Isolate->Exit();
         qDebug() << "Script engine " << objectName() << " exited isolate";
     }
+    Q_ASSERT(QObject::thread() == QThread::currentThread());
+    if (_v8Locker) {
+        _v8Locker.reset();
+    }
     moveToThread(thread);
     qDebug() << "Moved script engine " << objectName() << " to different thread";
 }
 
 void ScriptEngineV8::enterIsolateOnThisThread() {
     Q_ASSERT(thread() == QThread::currentThread());
+    Q_ASSERT(!_v8Locker);
+    _v8Locker.reset(new v8::Locker(_v8Isolate));
     if (!_v8Isolate->IsCurrent()) {
         _v8Isolate->Enter();
         qDebug() << "Script engine " << objectName() << " entered isolate on a new thread";
@@ -1252,8 +1285,8 @@ QVariant ScriptEngineV8::convert(const ScriptValue& value, int typeId) {
 }
 
 void ScriptEngineV8::compileTest() {
-    v8::Locker locker(_v8Isolate);
-    v8::Isolate::Scope isolateScope(_v8Isolate);
+    //v8::Locker locker(_v8Isolate);
+    //v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     v8::Local<v8::Script> script;
