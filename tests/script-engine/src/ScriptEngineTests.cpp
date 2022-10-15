@@ -76,10 +76,16 @@ void ScriptEngineTests::scriptTest() {
     QVERIFY(!ac.isNull());
 
 
-    ac->loadOneScript("test1.js");
-    //ac->loadOneScript("test-missing.js");
-    //ac->loadOneScript("test-hello.js");
-    //ac->loadOneScript("test-divide-by-zero.js");
+    QDir testScriptsDir("tests");
+    QStringList testScripts = testScriptsDir.entryList(QStringList() << "*.js", QDir::Files);
+    testScripts.sort();
+
+    for(QString script : testScripts) {
+        script = "tests/" + script;
+        qInfo() << "Running test script: " << script;
+        ac->loadOneScript(script);
+    }
+
     qDebug() << ac->getRunning();
 
 
