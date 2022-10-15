@@ -13,7 +13,7 @@
 
 #include "ScriptEngineLogging.h"
 
-
+//V8TODO name is misleading, it's actually undefined
 class ScriptValueProxyNull final : public ScriptValueProxy {
 public:
     virtual void release() override;
