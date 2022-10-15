@@ -12,6 +12,8 @@ else()
   cmake_minimum_required(VERSION 3.2)
 endif()
 
+# 3.14 is the minimum version that supports symlinks on Windows
+cmake_minimum_required(VERSION 3.14)
 
 # Passing of variables to vcpkg
 #
