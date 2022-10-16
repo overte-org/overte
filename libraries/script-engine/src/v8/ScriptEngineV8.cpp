@@ -116,7 +116,7 @@ ScriptValue ScriptEngineV8::makeError(const ScriptValue& _other, const QString& 
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     return nullValue();
-    
+
     //V8TODO
     //what does makeError actually do?
     /*ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(_other);
@@ -377,8 +377,15 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
     _v8InitMutex.lock();
     std::call_once ( _v8InitOnceFlag, [ ]{
         v8::V8::InitializeExternalStartupData("");
-        //V8TODO might cause crashes if it's too much
-        v8::V8::SetFlagsFromString("--stack-size=900000");
+
+        // Experimentally determined that the maximum size that works on Linux with a stack size of 8192K is 8182.
+        // That would seem to be the overhead of our code and V8.
+        //
+        // Windows stacks are 1MB.
+        //
+        // Based on that, going with 256K for stacks for now. That seems like a reasonable value.
+        // We'll probably need a more complex system on the longer term, with configurable limits.
+        v8::V8::SetFlagsFromString("--stack-size=256");
         v8::Platform* platform = getV8Platform();
         v8::V8::InitializePlatform(platform);
         v8::V8::Initialize(); qCDebug(scriptengine) << "V8 platform initialized";
@@ -394,8 +401,8 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
         Q_ASSERT(!context.IsEmpty());
         v8::Context::Scope contextScope(context);
         _v8Context = v8::UniquePersistent<v8::Context>(_v8Isolate, context);
-        
-    
+
+
         V8ScriptValue nullScriptValue(_v8Isolate, v8::Null(_v8Isolate));
         _nullValue = ScriptValue(new ScriptValueV8Wrapper(this, nullScriptValue));
 
@@ -411,7 +418,7 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
         //V8ScriptValue undefined = v8::UniquePersistent<v8::Value>(_v8Isolate,v8::Undefined(_v8Isolate));
         //_undefinedValue = ScriptValue(new ScriptValueV8Wrapper(this, std::move(undefined)));
 
-        // V8TODO: 
+        // V8TODO:
         //QScriptEngine::setProcessEventsInterval(MSECS_PER_SECOND);
     }
 
@@ -545,7 +552,7 @@ void ScriptEngineV8::registerFunction(const QString& name, ScriptEngine::Functio
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     auto scriptFun = newFunction(functionSignature, numArguments);
-    
+
     //getContext()->Global().Set();
     globalObject().setProperty(name, scriptFun);
 }
@@ -594,7 +601,7 @@ void ScriptEngineV8::registerGetterSetter(const QString& name, ScriptEngine::Fun
 
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(getContext());
-    
+
     /*auto getterFunction = [](v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
         //V8TODO: is using GetCurrentContext ok, or context wrapper needs to be added?
         v8::HandleScope handleScope(info.GetIsolate());
@@ -693,12 +700,12 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
     if (!closureObject->Get(closure.constGetContext() ,v8::String::NewFromUtf8(_v8Isolate, "global").ToLocalChecked()).ToLocal(&closureGlobal)) {
         return nullValue();
     }
-    
+
     _v8Context.Get(_v8Isolate)->Exit();
     _v8Context.Get(_v8Isolate)->DetachGlobal();
     oldGlobal = _v8Context.Get(_v8Isolate)->Global();
     v8::Local<v8::Context> closureContext;
-    
+
     if (closureGlobal->IsObject()) {
 #ifdef DEBUG_JS
         qCDebug(shared) << " setting global = closure.global" << shortName;
@@ -776,7 +783,7 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
     if (_scriptManager && _scriptManager->isStopped()) {
         return undefinedValue(); // bail early
     }
-    
+
     //V8TODO
 
     if (QThread::currentThread() != thread()) {
@@ -826,7 +833,7 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
         return err;
     }
     qCDebug(scriptengine) << "Script compilation succesful: " << fileName;
-    
+
     //V8TODO
     /*auto syntaxError = lintScript(sourceCode, fileName);
     if (syntaxError.isError()) {
@@ -1141,7 +1148,7 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
         ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(result);
         return unwrapped ? unwrapped->toV8Value() : V8ScriptValue();
     };*/
-    
+
     auto v8FunctionCallback = [](const v8::FunctionCallbackInfo<v8::Value>& info) {
         //V8TODO: is using GetCurrentContext ok, or context wrapper needs to be added?
         v8::HandleScope handleScope(info.GetIsolate());
@@ -1174,7 +1181,7 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
     //functionData->SetInternalField(3, v8::Null(_v8Isolate));
     auto v8Function = v8::Function::New(getContext(), v8FunctionCallback, functionData, length).ToLocalChecked();
     //auto functionObjectTemplate = functionTemplate->InstanceTemplate();
-    //auto function = 
+    //auto function =
     V8ScriptValue result(_v8Isolate, v8Function); // = QScriptEngine::newFunction(innerFunc, length);
     //auto funAddr = QScriptEngine::newVariant(QVariant(reinterpret_cast<qulonglong>(fun)));
     // V8TODO
