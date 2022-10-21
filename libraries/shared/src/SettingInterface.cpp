@@ -52,6 +52,7 @@ namespace Setting {
         QThread* thread = new QThread(qApp);
         Q_CHECK_PTR(thread);
         thread->setObjectName("Settings Thread");
+        globalManager->_qSettings.moveToThread(thread);
 
         // Setup setting periodical save timer
         QObject::connect(thread, &QThread::started, globalManager.data(), [globalManager] {
@@ -71,6 +72,7 @@ namespace Setting {
 
             // Move manager back to the main thread (has to be done on owning thread)
             globalManager->moveToThread(qApp->thread());
+            globalManager->_qSettings.moveToThread(qApp->thread());
         });
 
         // Start the settings save thread
