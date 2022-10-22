@@ -45,6 +45,7 @@ namespace Setting {
         void setArrayIndex(int i);
         void setValue(const QString &key, const QVariant &value);
         QVariant value(const QString &key, const QVariant &defaultValue = QVariant()) const;
+        void forceSave();
 
     protected:
         ~Manager();
