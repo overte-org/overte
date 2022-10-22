@@ -11,15 +11,32 @@
 
 #include <QtCore/QObject>
 
+
+class SettingsTestThread : public QObject {
+    Q_OBJECT
+
+public slots:
+    void saveSettings();
+};
+
+
 class SettingsTests : public QObject {
     Q_OBJECT
 private slots:
     void initTestCase();
     void loadSettings();
     void saveSettings();
+
+    void benchmarkSetValue();
     void benchmarkSaveSettings();
+    void benchmarkSetValueConcurrent();
 
     void cleanupTestCase();
+
+private:
+    QThread *_settingsThread = nullptr;
+    SettingsTestThread *_settingsThreadObj = nullptr;
+
 };
 
 #endif // overte_SettingsTests_h

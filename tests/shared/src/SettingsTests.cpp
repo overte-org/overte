@@ -20,6 +20,24 @@
 
 QTEST_MAIN(SettingsTests)
 
+void SettingsTestThread::saveSettings() {
+    auto sm = DependencyManager::get<Setting::Manager>();
+    QThread *thread = QThread::currentThread();
+
+    while(! thread->isInterruptionRequested() ) {
+        //qDebug() << "Thread is saving config";
+        sm->forceSave();
+
+        // Not having any wait here for some reason locks up the benchmark.
+        // Logging a message also does the trick.
+        //
+        // This looks like a bug somewhere and needs investigating.
+        thread->yieldCurrentThread();
+    }
+
+    thread->exit(0);
+}
+
 void SettingsTests::initTestCase() {
     QCoreApplication::setOrganizationName("OverteTest");
 
@@ -49,6 +67,18 @@ void SettingsTests::saveSettings() {
     qDebug() << "Wrote" << s.fileName();
 }
 
+void SettingsTests::benchmarkSetValue() {
+    auto sm = DependencyManager::get<Setting::Manager>();
+    int i = 0;
+
+    QBENCHMARK {
+        sm->setValue("BenchmarkSetValue", ++i);
+    }
+
+    sm->forceSave();
+}
+
+
 void SettingsTests::benchmarkSaveSettings() {
     auto sm = DependencyManager::get<Setting::Manager>();
     int i = 0;
@@ -59,3 +89,29 @@ void SettingsTests::benchmarkSaveSettings() {
     }
 
 }
+
+
+void SettingsTests::benchmarkSetValueConcurrent() {
+    auto sm = DependencyManager::get<Setting::Manager>();
+    int i = 0;
+
+    _settingsThread = new QThread(qApp);
+    _settingsThreadObj = new SettingsTestThread;
+
+    _settingsThread->setObjectName("Save thread");
+    _settingsThreadObj->moveToThread(_settingsThread);
+
+    QObject::connect(_settingsThread, &QThread::started, _settingsThreadObj, &SettingsTestThread::saveSettings, Qt::QueuedConnection );
+
+    _settingsThread->start();
+    QBENCHMARK {
+        sm->setValue("BenchmarkSetValue", ++i);
+    }
+
+    _settingsThread->requestInterruption();
+    _settingsThread->wait();
+
+    delete _settingsThreadObj;
+    delete _settingsThread;
+}
+
