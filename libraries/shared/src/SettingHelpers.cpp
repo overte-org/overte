@@ -11,6 +11,7 @@
 
 #include "SettingHelpers.h"
 
+#include <QtWidgets/QApplication>
 #include <QDataStream>
 #include <QDebug>
 #include <QJsonDocument>
@@ -20,6 +21,7 @@
 #include <QSettings>
 #include <QSize>
 #include <QStringList>
+#include <QThread>
 
 #include "SharedLogging.h"
 
@@ -33,6 +35,7 @@ QString settingsFilename() {
 }
 
 bool readJSONFile(QIODevice& device, QSettings::SettingsMap& map) {
+    qDebug() << "Settings readJSONFile";
     QJsonParseError jsonParseError;
 
     auto bytesRead = device.readAll();
@@ -49,6 +52,11 @@ bool readJSONFile(QIODevice& device, QSettings::SettingsMap& map) {
 }
 
 bool writeJSONFile(QIODevice& device, const QSettings::SettingsMap& map) {
+    if (QThread::currentThread() == QApplication::instance()->thread()) {
+        qDebug() << "Settings writeJSONFile (application thread)";
+    } else {
+        qDebug() << "Settings writeJSONFile (secondary thread)";
+    }
     auto document = variantMapToJsonDocument(map);
     auto jsonByteArray = document.toJson(QJsonDocument::Indented);
     auto bytesWritten = device.write(jsonByteArray);

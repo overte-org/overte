@@ -37,6 +37,9 @@ namespace Setting {
         settingsManagerThread->quit();
         settingsManagerThread->wait();
 
+        // Sync, destroy and reconstruct QSettings on main thread;
+        globalManager->moveQSettingsToThisThread();
+
         // [IMPORTANT] Save all settings when the QApplication goes down
         globalManager->saveAll();
 
@@ -52,11 +55,13 @@ namespace Setting {
         QThread* thread = new QThread(qApp);
         Q_CHECK_PTR(thread);
         thread->setObjectName("Settings Thread");
-        globalManager->_qSettings.moveToThread(thread);
+        globalManager->_qSettings->moveToThread(thread);
+        qDebug() << "Moved _qSettings to settings thread";
 
         // Setup setting periodical save timer
         QObject::connect(thread, &QThread::started, globalManager.data(), [globalManager] {
             setThreadName("Settings Save Thread");
+            globalManager->moveQSettingsToThisThread();
             globalManager->startTimer();
         });
         QObject::connect(thread, &QThread::finished, globalManager.data(), &Manager::stopTimer);
@@ -72,7 +77,7 @@ namespace Setting {
 
             // Move manager back to the main thread (has to be done on owning thread)
             globalManager->moveToThread(qApp->thread());
-            globalManager->_qSettings.moveToThread(qApp->thread());
+            globalManager->_qSettings->moveToThread(qApp->thread());
         });
 
         // Start the settings save thread

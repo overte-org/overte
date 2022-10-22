@@ -19,6 +19,10 @@
 
 namespace Setting {
 
+    Manager::Manager() {
+        _qSettings.reset(new QSettings);
+    }
+
     Manager::~Manager() {
         // Cleanup timer
         stopTimer();
@@ -28,6 +32,14 @@ namespace Setting {
 
     // Custom deleter does nothing, because we need to shutdown later than the dependency manager
     void Manager::customDeleter() { }
+
+    void Manager::moveQSettingsToThisThread() {
+        withWriteLock([&] {
+            _qSettings->sync();
+            _qSettings.reset(new QSettings);
+            _qSettings->sync();
+        });
+    }
 
     void Manager::registerHandle(Interface* handle) {
         const QString& key = handle->getKey();
@@ -52,7 +64,7 @@ namespace Setting {
             if (_pendingChanges.contains(key) && _pendingChanges[key] != UNSET_VALUE) {
                 loadedValue = _pendingChanges[key];
             } else {
-                loadedValue = _qSettings.value(key);
+                loadedValue = _qSettings->value(key);
             }
             if (loadedValue.isValid()) {
                 handle->setVariant(loadedValue);
@@ -96,21 +108,21 @@ namespace Setting {
             bool forceSync = false;
             for (auto key : _pendingChanges.keys()) {
                 auto newValue = _pendingChanges[key];
-                auto savedValue = _qSettings.value(key, UNSET_VALUE);
+                auto savedValue = _qSettings->value(key, UNSET_VALUE);
                 if (newValue == savedValue) {
                     continue;
                 }
                 forceSync = true;
                 if (newValue == UNSET_VALUE || !newValue.isValid()) {
-                    _qSettings.remove(key);
+                    _qSettings->remove(key);
                 } else {
-                    _qSettings.setValue(key, newValue);
+                    _qSettings->setValue(key, newValue);
                 }
             }
             _pendingChanges.clear();
 
             if (forceSync) {
-                _qSettings.sync();
+                //_qSettings->sync();
             }
         });
 
@@ -122,85 +134,85 @@ namespace Setting {
 
     QString Manager::fileName() const {
         return resultWithReadLock<QString>([&] {
-            return _qSettings.fileName();
+            return _qSettings->fileName();
         });
     }
 
     void Manager::remove(const QString &key) {
         withWriteLock([&] {
-            _qSettings.remove(key);
+            _qSettings->remove(key);
         });
     }
 
     QStringList Manager::childGroups() const {
         return resultWithReadLock<QStringList>([&] {
-            return _qSettings.childGroups();
+            return _qSettings->childGroups();
         });
     }
 
     QStringList Manager::childKeys() const {
         return resultWithReadLock<QStringList>([&] {
-            return _qSettings.childKeys();
+            return _qSettings->childKeys();
         });
     }
 
     QStringList Manager::allKeys() const {
         return resultWithReadLock<QStringList>([&] {
-            return _qSettings.allKeys();
+            return _qSettings->allKeys();
         });
     }
 
     bool Manager::contains(const QString &key) const {
         return resultWithReadLock<bool>([&] {
-            return _qSettings.contains(key);
+            return _qSettings->contains(key);
         });
     }
 
     int Manager::beginReadArray(const QString &prefix) {
         return resultWithReadLock<int>([&] {
-            return _qSettings.beginReadArray(prefix);
+            return _qSettings->beginReadArray(prefix);
         });
     }
 
     void Manager::beginGroup(const QString &prefix) {
         withWriteLock([&] {
-            _qSettings.beginGroup(prefix);
+            _qSettings->beginGroup(prefix);
         });
     }
 
     void Manager::beginWriteArray(const QString &prefix, int size) {
         withWriteLock([&] {
-            _qSettings.beginWriteArray(prefix, size);
+            _qSettings->beginWriteArray(prefix, size);
         });
     }
 
     void Manager::endArray() {
         withWriteLock([&] {
-            _qSettings.endArray();
+            _qSettings->endArray();
         });
     }
 
     void Manager::endGroup() {
         withWriteLock([&] {
-            _qSettings.endGroup();
+            _qSettings->endGroup();
         });
     }
 
     void Manager::setArrayIndex(int i) {
         withWriteLock([&] {
-            _qSettings.setArrayIndex(i);
+            _qSettings->setArrayIndex(i);
         });
     }
 
     void Manager::setValue(const QString &key, const QVariant &value) {
         withWriteLock([&] {
-            _qSettings.setValue(key, value);
+            _qSettings->setValue(key, value);
         });
     }
 
     QVariant Manager::value(const QString &key, const QVariant &defaultValue) const {
         return resultWithReadLock<QVariant>([&] {
-            return _qSettings.value(key, defaultValue);
+            return _qSettings->value(key, defaultValue);
         });
     }
 }

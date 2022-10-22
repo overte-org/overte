@@ -27,6 +27,7 @@ namespace Setting {
         Q_OBJECT
 
     public:
+        Manager();
         void customDeleter() override;
 
         // thread-safe proxies into QSettings
@@ -64,13 +65,13 @@ namespace Setting {
         QPointer<QTimer> _saveTimer = nullptr;
         const QVariant UNSET_VALUE { QUuid::createUuid() };
         QHash<QString, QVariant> _pendingChanges;
+        void moveQSettingsToThisThread();
 
         friend class Interface;
         friend void cleanupSettingsSaveThread();
         friend void setupSettingsSaveThread();
 
-
-        QSettings _qSettings;
+        std::unique_ptr<QSettings> _qSettings;
     };
 }
 
