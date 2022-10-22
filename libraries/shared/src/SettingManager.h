@@ -20,6 +20,12 @@
 #include "DependencyManager.h"
 #include "shared/ReadWriteLockable.h"
 
+
+// This is for the testing system.
+class SettingsTests;
+
+
+
 namespace Setting {
     class Interface;
 
@@ -67,6 +73,8 @@ namespace Setting {
         QHash<QString, QVariant> _pendingChanges;
 
         friend class Interface;
+        friend class SettingsTests;
+
         friend void cleanupSettingsSaveThread();
         friend void setupSettingsSaveThread();
 
