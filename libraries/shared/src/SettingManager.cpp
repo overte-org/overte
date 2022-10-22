@@ -120,6 +120,17 @@ namespace Setting {
         }
     }
 
+    /**
+     * @brief Forces saving the current configuration
+     *
+     * @warning This function is for testing only, should only be called from the test suite.
+     */
+    void Manager::forceSave() {
+        withWriteLock([&] {
+             _qSettings.sync();
+        });
+    }
+
     QString Manager::fileName() const {
         return resultWithReadLock<QString>([&] {
             return _qSettings.fileName();
