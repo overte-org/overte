@@ -34,13 +34,11 @@ void Settings::remove(const QString& key) {
     _manager->remove(key);
 }
 
-QStringList Settings::childGroups() const {
-    return _manager->childGroups();
-}
+// QStringList Settings::childGroups() const {
+// }
 
-QStringList Settings::childKeys() const {
-    return _manager->childKeys();
-}
+// QStringList Settings::childKeys() const {
+// }
 
 QStringList Settings::allKeys() const {
     return _manager->allKeys();
@@ -52,37 +50,56 @@ bool Settings::contains(const QString& key) const {
 }
 
 int Settings::beginReadArray(const QString& prefix) {
-    return _manager->beginReadArray(prefix);
+    _groups.push(Group(prefix));
+    _groupPrefix = getGroupPrefix();
+    int size = _manager->value(_groupPrefix + "/size", -1).toInt();
+    _groups.top().setSize(size);
+    return size;
 }
 
 void Settings::beginWriteArray(const QString& prefix, int size) {
-    _manager->beginWriteArray(prefix, size);
+    _groups.push(Group(prefix));
+    _groupPrefix = getGroupPrefix();
+    _manager->setValue(_groupPrefix + "/size", size);
+
+    _groups.top().setSize(size);
+    _groups.top().setIndex(0);
+
+    _groupPrefix = getGroupPrefix();
 }
 
 void Settings::endArray() {
-    _manager->endArray();
-}
-
-void Settings::setArrayIndex(int i) {
-    _manager->setArrayIndex(i);
-}
-
-void Settings::beginGroup(const QString& prefix) {
-    _manager->beginGroup(prefix);
-}
-
-void Settings::endGroup() {
-    _manager->endGroup();
-}
-
-void Settings::setValue(const QString& name, const QVariant& value) {
-    if (_manager->value(name) != value) {
-        _manager->setValue(name, value);
+    if (!_groups.empty()) {
+        _groups.pop();
+        _groupPrefix = getGroupPrefix();
     }
 }
 
+void Settings::setArrayIndex(int i) {
+    if (!_groups.empty()) {
+        _groups.top().setIndex(i);
+        _groupPrefix = getGroupPrefix();
+    }
+}
+
+void Settings::beginGroup(const QString& prefix) {
+    _groups.push(Group(prefix));
+    _groupPrefix = getGroupPrefix();
+}
+
+void Settings::endGroup() {
+    _groups.pop();
+    _groupPrefix = getGroupPrefix();
+}
+
+void Settings::setValue(const QString& name, const QVariant& value) {
+    QString fullPath = getPath(name);
+    _manager->setValue(fullPath, value);
+}
+
 QVariant Settings::value(const QString& name, const QVariant& defaultValue) const {
-    return _manager->value(name, defaultValue);
+    QString fullPath = getPath(name);
+    return _manager->value(fullPath, defaultValue);
 }
 
 
@@ -153,3 +170,31 @@ void Settings::getQuatValueIfValid(const QString& name, glm::quat& quatValue) {
     endGroup();
 }
 
+QString Settings::getGroupPrefix() const {
+    QString ret;
+
+    for(Group g : _groups) {
+        if (!ret.isEmpty()) {
+            ret.append("/");
+        }
+
+        ret.append(g.name());
+
+        if ( g.isArray() ) {
+            // QSettings indexes arrays from 1
+            ret.append(QString("/%1").arg(g.index() + 1));
+        }
+    }
+
+    return ret;
+}
+
+QString Settings::getPath(const QString &key) const {
+    QString ret = _groupPrefix;
+    if (!ret.isEmpty() ) {
+        ret.append("/");
+    }
+
+    ret.append(key);
+    return ret;
+}

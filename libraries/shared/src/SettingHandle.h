@@ -27,17 +27,63 @@
 #include "SettingInterface.h"
 
 
-// TODO: remove
+/**
+ * @brief QSettings analog
+ *
+ * This class emulates the interface of QSettings, and forwards all reads and writes to the global Setting::Manager.
+ *
+ * It should be used in the same manner as QSettings -- created only wherever it happens to be needed.
+ * It's not thread safe, and each thread should have their own.
+ *
+ * Unlike QSettings, destruction doesn't cause the config to be saved, instead Config::Manager is in
+ * charge of taking care of that.
+ *
+ * @note childGroups and childKeys are unimplemented because nothing in the code needs them so far.
+ */
 class Settings {
 public:
+
+    class Group {
+        public:
+
+        Group(const QString &groupName = QString()) {
+            _name = groupName;
+        }
+
+        QString name() const { return _name; }
+
+        bool isArray() const { return _arraySize != -1; }
+
+        void setIndex(int i) {
+            if ( _arraySize < i+1) {
+                _arraySize = i+1;
+            }
+
+            _arrayIndex = i;
+        }
+
+        int index() const { return _arrayIndex; }
+        int size() const { return _arraySize; }
+        void setSize(int sz) { _arraySize = sz; }
+
+        private:
+
+        QString _name;
+        int _arrayIndex{0};
+        int _arraySize{-1};
+    };
+
     static const QString firstRun;
     Settings();
 
     QString fileName() const;
 
     void remove(const QString& key);
-    QStringList childGroups() const;
-    QStringList childKeys() const;
+
+    // These are not currently being used
+    // QStringList childGroups() const;
+    // QStringList childKeys() const;
+
     QStringList allKeys() const;
     bool contains(const QString& key) const;
     int    beginReadArray(const QString & prefix);
@@ -61,7 +107,12 @@ public:
     void getQuatValueIfValid(const QString& name, glm::quat& quatValue);
 
 private:
+    QString getGroupPrefix() const;
+    QString getPath(const QString &value) const;
+
     QSharedPointer<Setting::Manager> _manager;
+    QStack<Group> _groups;
+    QString _groupPrefix;
 };
 
 namespace Setting {

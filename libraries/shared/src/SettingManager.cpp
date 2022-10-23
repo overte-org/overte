@@ -19,11 +19,60 @@
 
 namespace Setting {
 
+
+    void WriteWorker::start() {
+        // QSettings seems to have some issues with moving to a new thread.
+        // Make sure the object is only created once the thread is already up and running.
+        init();
+    }
+
+    void WriteWorker::setValue(const QString &key, const QVariant &value) {
+        //qDebug() << "Setting config " << key << "to" << value;
+        init();
+        _qSettings->setValue(key, value);
+    }
+
+    void WriteWorker::removeKey(const QString &key) {
+        init();
+        _qSettings->remove(key);
+    }
+
+    void WriteWorker::sync() {
+        //qDebug() << "Forcing settings sync";
+        init();
+        _qSettings->sync();
+    }
+
+    Manager::Manager(QObject *parent) {
+        WriteWorker *worker = new WriteWorker();
+
+        // We operate purely from memory, and forward all changes to a thread that has writing the
+        // settings as its only job.
+
+        qDebug() << "Initializing settings write thread";
+
+        _workerThread.setObjectName("Settings Writer");
+        worker->moveToThread(&_workerThread);
+        connect(&_workerThread, &QThread::started, worker, &WriteWorker::start, Qt::QueuedConnection);
+        connect(&_workerThread, &QThread::finished, worker, &QObject::deleteLater, Qt::QueuedConnection);
+        connect(this, &Manager::valueChanged, worker, &WriteWorker::setValue, Qt::QueuedConnection);
+        connect(this, &Manager::keyRemoved, worker, &WriteWorker::removeKey, Qt::QueuedConnection);
+        connect(this, &Manager::syncRequested, worker, &WriteWorker::sync, Qt::QueuedConnection);
+        _workerThread.start();
+
+        // Load all current settings
+        QSettings settings;
+        _fileName = settings.fileName();
+
+        for(QString key : settings.allKeys()) {
+            qDebug() << "Loaded key" << key << "with value" << settings.value(key);
+            _settings[key] = settings.value(key);
+        }
+    }
+
+
     Manager::~Manager() {
-        // Cleanup timer
-        stopTimer();
-        delete _saveTimer;
-        _saveTimer = nullptr;
+
     }
 
     // Custom deleter does nothing, because we need to shutdown later than the dependency manager
@@ -48,12 +97,8 @@ namespace Setting {
     void Manager::loadSetting(Interface* handle) {
         const auto& key = handle->getKey();
         withWriteLock([&] {
-            QVariant loadedValue;
-            if (_pendingChanges.contains(key) && _pendingChanges[key] != UNSET_VALUE) {
-                loadedValue = _pendingChanges[key];
-            } else {
-                loadedValue = _qSettings.value(key);
-            }
+            QVariant loadedValue = _settings[key];
+
             if (loadedValue.isValid()) {
                 handle->setVariant(loadedValue);
             }
@@ -69,56 +114,10 @@ namespace Setting {
         }
 
         withWriteLock([&] {
-            _pendingChanges[key] = handleValue;
+            _settings[key] = handleValue;
         });
     }
 
-    static const int SAVE_INTERVAL_MSEC = 5 * 1000; // 5 sec
-    void Manager::startTimer() {
-        if (!_saveTimer) {
-            _saveTimer = new QTimer(this);
-            Q_CHECK_PTR(_saveTimer);
-            _saveTimer->setSingleShot(true); // We will restart it once settings are saved.
-            _saveTimer->setInterval(SAVE_INTERVAL_MSEC); // 5s, Qt::CoarseTimer acceptable
-            connect(_saveTimer, SIGNAL(timeout()), this, SLOT(saveAll()));
-        }
-        _saveTimer->start();
-    }
-
-    void Manager::stopTimer() {
-        if (_saveTimer) {
-            _saveTimer->stop();
-        }
-    }
-
-    void Manager::saveAll() {
-        withWriteLock([&] {
-            bool forceSync = false;
-            for (auto key : _pendingChanges.keys()) {
-                auto newValue = _pendingChanges[key];
-                auto savedValue = _qSettings.value(key, UNSET_VALUE);
-                if (newValue == savedValue) {
-                    continue;
-                }
-                forceSync = true;
-                if (newValue == UNSET_VALUE || !newValue.isValid()) {
-                    _qSettings.remove(key);
-                } else {
-                    _qSettings.setValue(key, newValue);
-                }
-            }
-            _pendingChanges.clear();
-
-            if (forceSync) {
-                _qSettings.sync();
-            }
-        });
-
-        // Restart timer
-        if (_saveTimer) {
-            _saveTimer->start();
-        }
-    }
 
     /**
      * @brief Forces saving the current configuration
@@ -126,92 +125,46 @@ namespace Setting {
      * @warning This function is for testing only, should only be called from the test suite.
      */
     void Manager::forceSave() {
-        withWriteLock([&] {
-             _qSettings.sync();
-        });
+        emit syncRequested();
     }
 
     QString Manager::fileName() const {
         return resultWithReadLock<QString>([&] {
-            return _qSettings.fileName();
+            return _fileName;
         });
     }
 
     void Manager::remove(const QString &key) {
         withWriteLock([&] {
-            _qSettings.remove(key);
+            _settings.remove(key);
         });
-    }
 
-    QStringList Manager::childGroups() const {
-        return resultWithReadLock<QStringList>([&] {
-            return _qSettings.childGroups();
-        });
-    }
-
-    QStringList Manager::childKeys() const {
-        return resultWithReadLock<QStringList>([&] {
-            return _qSettings.childKeys();
-        });
+        emit keyRemoved(key);
     }
 
     QStringList Manager::allKeys() const {
         return resultWithReadLock<QStringList>([&] {
-            return _qSettings.allKeys();
+            return _settings.keys();
         });
     }
 
     bool Manager::contains(const QString &key) const {
         return resultWithReadLock<bool>([&] {
-            return _qSettings.contains(key);
-        });
-    }
-
-    int Manager::beginReadArray(const QString &prefix) {
-        return resultWithReadLock<int>([&] {
-            return _qSettings.beginReadArray(prefix);
-        });
-    }
-
-    void Manager::beginGroup(const QString &prefix) {
-        withWriteLock([&] {
-            _qSettings.beginGroup(prefix);
-        });
-    }
-
-    void Manager::beginWriteArray(const QString &prefix, int size) {
-        withWriteLock([&] {
-            _qSettings.beginWriteArray(prefix, size);
-        });
-    }
-
-    void Manager::endArray() {
-        withWriteLock([&] {
-            _qSettings.endArray();
-        });
-    }
-
-    void Manager::endGroup() {
-        withWriteLock([&] {
-            _qSettings.endGroup();
-        });
-    }
-
-    void Manager::setArrayIndex(int i) {
-        withWriteLock([&] {
-            _qSettings.setArrayIndex(i);
+            return _settings.contains(key);
         });
     }
 
     void Manager::setValue(const QString &key, const QVariant &value) {
         withWriteLock([&] {
-            _qSettings.setValue(key, value);
+            _settings[key] = value;
         });
+
+        emit valueChanged(key, value);
     }
 
     QVariant Manager::value(const QString &key, const QVariant &defaultValue) const {
         return resultWithReadLock<QVariant>([&] {
-            return _qSettings.value(key, defaultValue);
+            return _settings.value(key, defaultValue);
         });
     }
 }

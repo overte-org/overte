@@ -29,6 +29,12 @@ private slots:
     void loadSettings();
     void saveSettings();
 
+    void testSettings();
+    void testGroups();
+    void testArray();
+    void testArrayInGroup();
+
+
     void benchmarkSetValue();
     void benchmarkSaveSettings();
     void benchmarkSetValueConcurrent();

@@ -17,6 +17,9 @@
 #include <QtCore/QTimer>
 #include <QtCore/QUuid>
 
+#include <QSettings>
+#include <QThread>
+
 #include "DependencyManager.h"
 #include "shared/ReadWriteLockable.h"
 
@@ -30,25 +33,86 @@ class SettingsTestsWorker;
 namespace Setting {
     class Interface;
 
+    /**
+     * @brief Settings write worker
+     *
+     * This class is used by Setting::Manager to write settings to permanent storage
+     * without blocking anything else. It receives setting updates, and writes them
+     * to disk whenever convenient.
+     *
+     * All communication to this class must be done over queued connections.
+     *
+     * This class is purely an implementation detail and shouldn't be used outside of Setting::Manager.
+     *
+     */
+    class WriteWorker : public QObject {
+        Q_OBJECT
+
+        public slots:
+
+        /**
+         * @brief Initialize anything that needs initializing, called on thread start.
+         *
+         */
+        void start();
+
+        /**
+         * @brief Sets a configuration value
+         *
+         * @param key Configuration key
+         * @param value Configuration value
+         */
+        void setValue(const QString &key, const QVariant &value);
+
+        /**
+         * @brief Remove a value from the configuration
+         *
+         * @param key Key to remove
+         */
+        void removeKey(const QString &key);
+
+        /**
+         * @brief Force writing the config to disk
+         *
+         */
+        void sync();
+
+        private:
+
+        void init() {
+            if (!_qSettings) {
+                _qSettings = new QSettings();
+            }
+        }
+
+        QSettings* _qSettings = nullptr;
+    };
+
+    /**
+     * @brief Settings manager
+     *
+     * This class is the main implementation of the settings system, and the container
+     * of the current configuration.
+     *
+     * Most users should either use the Setting::Handle or the Settings classes instead,
+     * both of which talk to the single global instance of this class.
+     *
+     * The class is thread-safe, and delegates config writing to a separate thread. It
+     * is safe to change settings as often as it might be needed.
+     *
+     */
     class Manager : public QObject, public ReadWriteLockable, public Dependency {
         Q_OBJECT
 
     public:
+        Manager(QObject *parent = nullptr);
+
         void customDeleter() override;
 
-        // thread-safe proxies into QSettings
         QString fileName() const;
         void remove(const QString &key);
-        QStringList childGroups() const;
-        QStringList childKeys() const;
         QStringList allKeys() const;
         bool contains(const QString &key) const;
-        int beginReadArray(const QString &prefix);
-        void beginGroup(const QString &prefix);
-        void beginWriteArray(const QString &prefix, int size = -1);
-        void endArray();
-        void endGroup();
-        void setArrayIndex(int i);
         void setValue(const QString &key, const QVariant &value);
         QVariant value(const QString &key, const QVariant &defaultValue = QVariant()) const;
 
@@ -61,17 +125,15 @@ namespace Setting {
         void saveSetting(Interface* handle);
         void forceSave();
 
-    private slots:
-        void startTimer();
-        void stopTimer();
-
-        void saveAll();
+    signals:
+        void valueChanged(const QString &key, const QVariant &value);
+        void keyRemoved(const QString &key);
+        void syncRequested();
 
     private:
         QHash<QString, Interface*> _handles;
-        QPointer<QTimer> _saveTimer = nullptr;
         const QVariant UNSET_VALUE { QUuid::createUuid() };
-        QHash<QString, QVariant> _pendingChanges;
+
 
         friend class Interface;
         friend class ::SettingsTests;
@@ -81,7 +143,9 @@ namespace Setting {
         friend void setupSettingsSaveThread();
 
 
-        QSettings _qSettings;
+        QHash<QString, QVariant> _settings;
+        QString _fileName;
+        QThread _workerThread;
     };
 }
 
