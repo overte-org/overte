@@ -12,16 +12,18 @@
 #include <QtCore/QObject>
 
 
-class SettingsTestThread : public QObject {
+
+
+class SettingsTestsWorker : public QObject {
     Q_OBJECT
 
 public slots:
     void saveSettings();
 };
 
-
 class SettingsTests : public QObject {
     Q_OBJECT
+
 private slots:
     void initTestCase();
     void loadSettings();
@@ -35,7 +37,7 @@ private slots:
 
 private:
     QThread *_settingsThread = nullptr;
-    SettingsTestThread *_settingsThreadObj = nullptr;
+    SettingsTestsWorker *_testWorker = nullptr;
 
 };
 
