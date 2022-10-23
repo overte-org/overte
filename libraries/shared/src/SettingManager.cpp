@@ -127,7 +127,7 @@ namespace Setting {
      */
     void Manager::forceSave() {
         withWriteLock([&] {
-             _qSettings.sync();
+             _qSettings->sync();
         });
     }
 

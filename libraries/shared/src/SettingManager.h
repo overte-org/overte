@@ -23,6 +23,7 @@
 
 // This is for the testing system.
 class SettingsTests;
+class SettingsTestsWorker;
 
 
 
@@ -50,7 +51,6 @@ namespace Setting {
         void setArrayIndex(int i);
         void setValue(const QString &key, const QVariant &value);
         QVariant value(const QString &key, const QVariant &defaultValue = QVariant()) const;
-        void forceSave();
 
     protected:
         ~Manager();
@@ -59,6 +59,7 @@ namespace Setting {
 
         void loadSetting(Interface* handle);
         void saveSetting(Interface* handle);
+        void forceSave();
 
     private slots:
         void startTimer();
@@ -73,7 +74,8 @@ namespace Setting {
         QHash<QString, QVariant> _pendingChanges;
 
         friend class Interface;
-        friend class SettingsTests;
+        friend class ::SettingsTests;
+        friend class ::SettingsTestsWorker;
 
         friend void cleanupSettingsSaveThread();
         friend void setupSettingsSaveThread();

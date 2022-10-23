@@ -20,7 +20,7 @@
 
 QTEST_MAIN(SettingsTests)
 
-void SettingsTestThread::saveSettings() {
+void SettingsTestsWorker::saveSettings() {
     auto sm = DependencyManager::get<Setting::Manager>();
     QThread *thread = QThread::currentThread();
 
@@ -75,7 +75,6 @@ void SettingsTests::benchmarkSetValue() {
         sm->setValue("BenchmarkSetValue", ++i);
     }
 
-    sm->forceSave();
 }
 
 
@@ -84,7 +83,7 @@ void SettingsTests::benchmarkSaveSettings() {
     int i = 0;
 
     QBENCHMARK {
-        sm->setValue("Benchmark", ++i);
+        sm->setValue("BenchmarkSave", ++i);
         sm->forceSave();
     }
 
@@ -96,22 +95,22 @@ void SettingsTests::benchmarkSetValueConcurrent() {
     int i = 0;
 
     _settingsThread = new QThread(qApp);
-    _settingsThreadObj = new SettingsTestThread;
+    _testWorker = new SettingsTestsWorker();
 
     _settingsThread->setObjectName("Save thread");
-    _settingsThreadObj->moveToThread(_settingsThread);
+    _testWorker->moveToThread(_settingsThread);
 
-    QObject::connect(_settingsThread, &QThread::started, _settingsThreadObj, &SettingsTestThread::saveSettings, Qt::QueuedConnection );
+    QObject::connect(_settingsThread, &QThread::started, _testWorker, &SettingsTestsWorker::saveSettings, Qt::QueuedConnection );
 
     _settingsThread->start();
     QBENCHMARK {
-        sm->setValue("BenchmarkSetValue", ++i);
+        sm->setValue("BenchmarkSetValueConcurrent", ++i);
     }
 
     _settingsThread->requestInterruption();
     _settingsThread->wait();
 
-    delete _settingsThreadObj;
+    delete _testWorker;
     delete _settingsThread;
 }
 
