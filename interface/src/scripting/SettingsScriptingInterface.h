@@ -4,6 +4,7 @@
 //
 //  Created by Brad Hefta-Gaub on 3/22/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -37,7 +38,7 @@ public slots:
      * @function Settings.getValue
      * @param {string} key - The name of the setting.
      * @param {string|number|boolean|object} [defaultValue=""] - The value to return if the setting doesn't exist.
-     * @returns {string|number|boolean|object} The value stored in the named setting if it exists, otherwise the 
+     * @returns {string|number|boolean|object} The value stored in the named setting if it exists, otherwise the
      *     <code>defaultValue</code>.
      * @example <caption>Retrieve non-existent setting values.</caption>
      * var value1 = Settings.getValue("Script Example/Nonexistent Key");
@@ -50,11 +51,11 @@ public slots:
     QVariant getValue(const QString& setting, const QVariant& defaultValue);
 
     /*@jsdoc
-     * Stores a value in a named setting. If the setting already exists, its value is overwritten. If the value is 
+     * Stores a value in a named setting. If the setting already exists, its value is overwritten. If the value is
      * <code>null</code> or <code>undefined</code>, the setting is deleted.
      * @function Settings.setValue
      * @param {string} key - The name of the setting. Be sure to use a unique name if creating a new setting.
-     * @param {string|number|boolean|object|undefined} value - The value to store in the setting. If <code>null</code> or 
+     * @param {string|number|boolean|object|undefined} value - The value to store in the setting. If <code>null</code> or
      *     <code>undefined</code> is specified, the setting is deleted.
      * @example <caption>Store and retrieve an object value.</caption>
      * Settings.setValue("Script Example/My Key", { x: 0, y: 10, z: 0 });
