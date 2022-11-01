@@ -155,12 +155,6 @@ namespace Setting {
 
     }
 
-
-    /**
-     * @brief Forces saving the current configuration
-     *
-     * @warning This function is for testing only, should only be called from the test suite.
-     */
     void Manager::forceSave() {
         emit syncRequested();
     }
