@@ -29,13 +29,14 @@ namespace Setting {
         init();
     }
 
-    void WriteWorker::setValue(const QString &key, const QVariant &value) {
-        //qDebug() << "Setting config " << key << "to" << value;
+    void WriteWorker::setValue(const QString key, const QVariant value) {
+       //qCDebug(settings_writer) << "Setting config " << key << "to" << value;
+
         init();
         _qSettings->setValue(key, value);
     }
 
-    void WriteWorker::removeKey(const QString &key) {
+    void WriteWorker::removeKey(const QString key) {
         init();
         _qSettings->remove(key);
     }

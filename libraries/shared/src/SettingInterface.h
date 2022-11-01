@@ -28,11 +28,11 @@ namespace Setting {
     class Interface {
     public:
         const QString& getKey() const { return _key; }
-        bool isSet() const { return _isSet; } 
+        bool isSet() const { return _isSet; }
 
         virtual void setVariant(const QVariant& variant) = 0;
         virtual QVariant getVariant() = 0;
-        
+
     protected:
         Interface(const QString& key) : _key(key) {}
         virtual ~Interface() = default;

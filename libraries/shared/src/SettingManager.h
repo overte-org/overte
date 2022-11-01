@@ -65,14 +65,14 @@ namespace Setting {
          * @param key Configuration key
          * @param value Configuration value
          */
-        void setValue(const QString &key, const QVariant &value);
+        void setValue(const QString key, const QVariant value);
 
         /**
          * @brief Remove a value from the configuration
          *
          * @param key Key to remove
          */
-        void removeKey(const QString &key);
+        void removeKey(const QString key);
 
         /**
          * @brief Force writing the config to disk
@@ -191,8 +191,8 @@ namespace Setting {
         void terminateThread();
 
     signals:
-        void valueChanged(const QString &key, const QVariant &value);
-        void keyRemoved(const QString &key);
+        void valueChanged(const QString key, QVariant value);
+        void keyRemoved(const QString key);
         void syncRequested();
 
     private:
