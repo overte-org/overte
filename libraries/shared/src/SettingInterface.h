@@ -16,6 +16,9 @@
 #include <QtCore/QWeakPointer>
 #include <QtCore/QString>
 #include <QtCore/QVariant>
+#include <QLoggingCategory>
+
+Q_DECLARE_LOGGING_CATEGORY(settings_interface)
 
 namespace Setting {
     class Manager;
@@ -37,7 +40,7 @@ namespace Setting {
         void init();
         void maybeInit() const;
         void deinit();
-        
+
         void save();
         void load();
 
@@ -46,7 +49,7 @@ namespace Setting {
 
     private:
         mutable bool _isInitialized = false;
-        
+
         friend class Manager;
         mutable QWeakPointer<Manager> _manager;
     };

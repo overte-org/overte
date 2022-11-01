@@ -65,7 +65,7 @@ namespace Setting {
         _fileName = settings.fileName();
 
         for(QString key : settings.allKeys()) {
-            qDebug() << "Loaded key" << key << "with value" << settings.value(key);
+            //qCDebug(settings_manager) << "Loaded key" << key << "with value" << settings.value(key);
             _settings[key] = settings.value(key);
         }
     }
@@ -82,7 +82,7 @@ namespace Setting {
         const QString& key = handle->getKey();
         withWriteLock([&] {
             if (_handles.contains(key)) {
-                qWarning() << "Setting::Manager::registerHandle(): Key registered more than once, overriding: " << key;
+                qCWarning(settings_manager) << "Setting::Manager::registerHandle(): Key registered more than once, overriding: " << key;
             }
             _handles.insert(key, handle);
         });
@@ -96,6 +96,7 @@ namespace Setting {
 
     void Manager::loadSetting(Interface* handle) {
         const auto& key = handle->getKey();
+
         withWriteLock([&] {
             QVariant loadedValue = _settings[key];
 

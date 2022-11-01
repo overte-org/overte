@@ -15,6 +15,7 @@
 #include <math.h>
 
 
+Q_LOGGING_CATEGORY(settings_handle, "settings.handle")
 
 const QString Settings::firstRun { "firstRun" };
 

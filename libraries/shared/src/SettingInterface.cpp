@@ -74,7 +74,7 @@ namespace Setting {
             // in an assignment-client - the QSettings backing we use for this means persistence of these
             // settings from an AC (when there can be multiple terminating at same time on one machine)
             // is currently not supported
-            qWarning() << "Setting::Interface::init() for key" << _key << "- Manager not yet created." <<
+            qCWarning(settings_interface) << "Setting::Interface::init() for key" << _key << "- Manager not yet created." <<
                 "Settings persistence disabled.";
         } else {
             _manager = DependencyManager::get<Manager>();
@@ -84,11 +84,12 @@ namespace Setting {
                 manager->registerHandle(this);
                 _isInitialized = true;
             } else {
-                qWarning() << "Settings interface used after manager destroyed";
+                qCWarning(settings_interface) << "Settings interface used after manager destroyed";
             }
 
             // Load value from disk
             load();
+            //qCDebug(settings_interface) << "Setting" << this->getKey() << "initialized to" << getVariant();
         }
     }
 
@@ -106,6 +107,7 @@ namespace Setting {
 
     void Interface::maybeInit() const {
         if (!_isInitialized) {
+            //qCDebug(settings_interface) << "Initializing setting" << this->getKey();
             const_cast<Interface*>(this)->init();
         }
     }

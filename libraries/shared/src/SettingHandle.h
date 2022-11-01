@@ -20,12 +20,15 @@
 #include <QtCore/QReadWriteLock>
 #include <QtCore/QSharedPointer>
 #include <QtCore/QDebug>
+#include <QLoggingCategory>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 #include "SettingInterface.h"
 
+
+Q_DECLARE_LOGGING_CATEGORY(settings_handle)
 
 /**
  * @brief QSettings analog
@@ -309,7 +312,7 @@ namespace Setting {
         void deprecate() {
             if (_isSet) {
                 if (get() != getDefault()) {
-                    qInfo().nospace() << "[DEPRECATION NOTICE] " << _key << "(" << get() << ") has been deprecated, and has no effect";
+                    qCInfo(settings_handle).nospace() << "[DEPRECATION NOTICE] " << _key << "(" << get() << ") has been deprecated, and has no effect";
                 } else {
                     remove();
                 }

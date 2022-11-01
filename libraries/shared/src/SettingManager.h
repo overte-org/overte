@@ -19,10 +19,13 @@
 
 #include <QSettings>
 #include <QThread>
+#include <QLoggingCategory>
 
 #include "DependencyManager.h"
 #include "shared/ReadWriteLockable.h"
 
+Q_DECLARE_LOGGING_CATEGORY(settings_manager)
+Q_DECLARE_LOGGING_CATEGORY(settings_writer)
 
 // This is for the testing system.
 class SettingsTests;
