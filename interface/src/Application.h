@@ -719,8 +719,6 @@ private:
 
     bool _notifiedPacketVersionMismatchThisDomain;
 
-    ConditionalGuard _settingsGuard;
-
     GLCanvas* _glWidget{ nullptr };
 
     typedef bool (Application::* AcceptURLMethod)(const QString &);
