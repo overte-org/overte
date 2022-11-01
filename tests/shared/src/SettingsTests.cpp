@@ -75,6 +75,10 @@ void SettingsTests::testSettings() {
 
     s.setValue("settingsTest", 1);
     QVERIFY(sm->value("settingsTest") == 1);
+
+    QVERIFY(!sm->contains("nonExistingKey"));
+    QVERIFY(sm->value("nonExistingKey") == QVariant());
+
 }
 
 void SettingsTests::testGroups() {
@@ -141,6 +145,37 @@ void SettingsTests::testArrayInGroup() {
     QVERIFY(sm->value("groupWithArray/arrayInGroup/2/X") == 20);
     QVERIFY(sm->value("valueNotInArrayOrGroup") == 8);
 }
+
+void SettingsTests::testHandleUnused() {
+
+    {
+        Setting::Handle<int> testHandle("unused_handle", -1);
+    }
+}
+
+void SettingsTests::testHandle() {
+    auto sm = DependencyManager::get<Setting::Manager>();
+    Setting::Handle<int> testHandle("integer_value", -1);
+
+    QVERIFY(!testHandle.isSet());
+    QVERIFY(testHandle.get() == -1);
+    QVERIFY(testHandle.get(-5) == -5);
+    QVERIFY(testHandle.getDefault() == -1);
+
+    testHandle.set(42);
+    QVERIFY(testHandle.get() == 42);
+    QVERIFY(testHandle.isSet());
+    QVERIFY(sm->value("integer_value") == 42);
+
+    testHandle.reset();
+    QVERIFY(testHandle.get() == -1);
+    QVERIFY(testHandle.isSet());
+    QVERIFY(sm->value("integer_value") == -1);
+
+    testHandle.remove();
+    QVERIFY(!testHandle.isSet());
+}
+
 
 void SettingsTests::benchmarkSetValue() {
     auto sm = DependencyManager::get<Setting::Manager>();

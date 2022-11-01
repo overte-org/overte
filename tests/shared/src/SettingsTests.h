@@ -34,6 +34,9 @@ private slots:
     void testArray();
     void testArrayInGroup();
 
+    void testHandleUnused();
+    void testHandle();
+
 
     void benchmarkSetValue();
     void benchmarkSaveSettings();
