@@ -33,7 +33,10 @@ namespace Setting {
        //qCDebug(settings_writer) << "Setting config " << key << "to" << value;
 
         init();
-        _qSettings->setValue(key, value);
+
+        if (!_qSettings->contains(key) || _qSettings->value(key) != value) {
+            _qSettings->setValue(key, value);
+        }
     }
 
     void WriteWorker::removeKey(const QString key) {
