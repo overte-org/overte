@@ -109,21 +109,83 @@ namespace Setting {
 
         void customDeleter() override;
 
+        /**
+         * @brief Returns the filename where the config file will be written
+         *
+         * @return QString Path to the config file
+         */
         QString fileName() const;
+
+        /**
+         * @brief Remove a configuration key
+         *
+         * @param key Key to remove
+         */
         void remove(const QString &key);
+
+        /**
+         * @brief Lists all keys in the configuration
+         *
+         * @return QStringList List of keys
+         */
         QStringList allKeys() const;
+
+        /**
+         * @brief Returns whether a key is part of the configuration
+         *
+         * @param key Key to look for
+         * @return true Key is in the configuration
+         * @return false Key isn't in the configuration
+         */
         bool contains(const QString &key) const;
+
+        /**
+         * @brief Set a setting to a value
+         *
+         * @param key Setting to set
+         * @param value Value
+         */
         void setValue(const QString &key, const QVariant &value);
+
+        /**
+         * @brief Returns the value of a setting
+         *
+         * @param key Setting to look for
+         * @param defaultValue Default value to return, if the setting has no value
+         * @return QVariant Current value of the setting, of defaultValue.
+         */
         QVariant value(const QString &key, const QVariant &defaultValue = QVariant()) const;
 
     protected:
+        /**
+         * @brief How long to wait for writer thread termination
+         *
+         * We probably want a timeout here since we don't want to block shutdown indefinitely in case of
+         * any weirdness.
+         */
+        const int THREAD_TERMINATION_TIMEOUT = 2000;
+
         ~Manager();
         void registerHandle(Interface* handle);
         void removeHandle(const QString& key);
 
         void loadSetting(Interface* handle);
         void saveSetting(Interface* handle);
+
+
+        /**
+         * @brief Force saving the config to disk.
+         *
+         * Normally unnecessary to use. Asynchronous.
+         */
         void forceSave();
+
+        /**
+         * @brief Write config to disk and terminate the writer thread
+         *
+         * This is part of the shutdown process.
+         */
+        void terminateThread();
 
     signals:
         void valueChanged(const QString &key, const QVariant &value);

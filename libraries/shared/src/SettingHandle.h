@@ -116,29 +116,99 @@ private:
 };
 
 namespace Setting {
+
+    /**
+     * @brief Handle to a setting of type T.
+     *
+     * This creates an object that manipulates a setting in the settings system. Changes will be written
+     * to the configuration file at some point controlled by Setting::Manager.
+     *
+     * @tparam T Type of the setting.
+     */
     template <typename T>
     class Handle : public Interface {
     public:
+
+        /**
+         * @brief Construct handle to a setting
+         *
+         * @param key The key corresponding to the setting in the settings file. Eg, 'shadowsEnabled'
+         */
         Handle(const QString& key) : Interface(key) {}
+
+        /**
+         * @brief Construct a handle to a setting
+         *
+         * @param path Path to the key corresponding to the setting in the settings file. Eg, QStringList() << group << key
+         */
         Handle(const QStringList& path) : Interface(path.join("/")) {}
 
+        /**
+         * @brief Construct handle to a setting with a default value
+         *
+         * @param key The key corresponding to the setting in the settings file. Eg, 'shadowsEnabled'
+         * @param defaultValue Default value for this setting
+         */
         Handle(const QString& key, const T& defaultValue) : Interface(key), _defaultValue(defaultValue) {}
+
+        /**
+         * @brief Construct a handle to a setting with a default value
+         *
+         * @param path Path to the key corresponding to the setting in the settings file. Eg, QStringList() << group << key
+         * @param defaultValue Default value for this setting
+         */
         Handle(const QStringList& path, const T& defaultValue) : Handle(path.join("/"), defaultValue) {}
 
+        /**
+         * @brief Construct a handle to a deprecated setting
+         *
+         * If used, a warning will written to the log.
+         *
+         * @param key The key corresponding to the setting in the settings file. Eg, 'shadowsEnabled'
+         * @return Handle The handle object
+         */
         static Handle Deprecated(const QString& key) {
             Handle handle = Handle(key);
             handle.deprecate();
             return handle;
         }
+
+        /**
+         * @brief Construct a handle to a deprecated setting
+         *
+         * If used, a warning will written to the log.
+         *
+         * @param path Path to the key corresponding to the setting in the settings file. Eg, QStringList() << group << key
+         * @return Handle The handle object
+         */
         static Handle Deprecated(const QStringList& path) {
             return Deprecated(path.join("/"));
         }
 
+        /**
+         * @brief Construct a handle to a deprecated setting with a default value
+         *
+         * If used, a warning will written to the log.
+         *
+         * @param key The key corresponding to the setting in the settings file. Eg, 'shadowsEnabled'
+         * @param defaultValue Default value for this setting
+         * @return Handle The handle object
+         */
         static Handle Deprecated(const QString& key, const T& defaultValue) {
             Handle handle = Handle(key, defaultValue);
             handle.deprecate();
             return handle;
         }
+
+        /**
+         * @brief Construct a handle to a deprecated setting with a default value
+         *
+         * If used, a warning will written to the log.
+         *
+         * @param path Path to the key corresponding to the setting in the settings file. Eg, QStringList() << group << key
+         * @param defaultValue Default value for this setting
+         * @return Handle The handle object
+         */
         static Handle Deprecated(const QStringList& path, const T& defaultValue) {
             return Deprecated(path.join("/"), defaultValue);
         }
@@ -147,32 +217,66 @@ namespace Setting {
             deinit();
         }
 
-        // Returns setting value, returns its default value if not found
+        /**
+         * @brief Returns the value of the setting, or the default value if not found
+         *
+         * @return T Value of the associated setting
+         */
         T get() const {
             return get(_defaultValue);
         }
 
-        // Returns setting value, returns other if not found
+        /**
+         * @brief Returns the value of the setting, or 'other' if not found.
+         *
+         * @param other Value to return if the setting is not set
+         * @return T  Value of the associated setting
+         */
         T get(const T& other) const {
             maybeInit();
             return (_isSet) ? _value : other;
         }
 
+        /**
+         * @brief Returns whether the setting is set to a value
+         *
+         * @return true The setting has a value
+         * @return false The setting has no value
+         */
         bool isSet() const {
             maybeInit();
             return _isSet;
         }
 
+        /**
+         * @brief Returns the default value for this setting
+         *
+         * @return const T& Default value for this setting
+         */
         const T& getDefault() const {
             return _defaultValue;
         }
 
+        /**
+         * @brief Sets the value to the default
+         *
+         */
         void reset() {
             set(_defaultValue);
         }
 
+        /**
+         * @brief Set the setting to the specified value.
+         *
+         * The value will be stored in the configuration file.
+         *
+         * @param value Value to set the setting to.
+         */
         void set(const T& value) {
             maybeInit();
+
+            // qCDebug(settings_handle) << "Setting" << this->getKey() << "to" << value;
+
             if ((!_isSet && (value != _defaultValue)) || _value != value) {
                 _value = value;
                 _isSet = true;
@@ -183,6 +287,12 @@ namespace Setting {
             }
         }
 
+        /**
+         * @brief Remove the value from the setting
+         *
+         * This returns the setting to an unset state. If read, it will be read as the default value.
+         *
+         */
         void remove() {
             maybeInit();
             if (_isSet) {
