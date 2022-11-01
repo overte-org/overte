@@ -23,13 +23,15 @@
 #include "SharedUtil.h"
 #include "ThreadHelpers.h"
 
+Q_LOGGING_CATEGORY(settings_interface, "settings.interface")
+
 namespace Setting {
     // This should only run as a post-routine in the QCoreApplication destructor
     void cleanupSettingsSaveThread() {
         auto globalManager = DependencyManager::get<Manager>();
         Q_ASSERT(qApp && globalManager);
 
-        globalManager->forceSave();
+        globalManager->terminateThread();
         qCDebug(shared) << "Settings thread stopped.";
     }
 
