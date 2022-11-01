@@ -17,6 +17,9 @@
 
 #include "SettingInterface.h"
 
+Q_LOGGING_CATEGORY(settings_manager, "settings.manager")
+Q_LOGGING_CATEGORY(settings_writer, "settings.manager.writer")
+
 namespace Setting {
 
 
