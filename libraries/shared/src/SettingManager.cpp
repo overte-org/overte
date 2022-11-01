@@ -45,9 +45,22 @@ namespace Setting {
     }
 
     void WriteWorker::sync() {
-        //qDebug() << "Forcing settings sync";
+        //qCDebug(settings_writer) << "Forcing settings sync";
         init();
         _qSettings->sync();
+    }
+
+    void WriteWorker::threadFinished() {
+        qCDebug(settings_writer) << "Settings write worker syncing and terminating";
+        sync();
+        this->deleteLater();
+    }
+
+    void WriteWorker::terminate() {
+        qCDebug(settings_writer) << "Settings write worker being asked to terminate. Syncing and terminating.";
+        sync();
+        this->deleteLater();
+        QThread::currentThread()->exit(0);
     }
 
     Manager::Manager(QObject *parent) {
@@ -56,15 +69,22 @@ namespace Setting {
         // We operate purely from memory, and forward all changes to a thread that has writing the
         // settings as its only job.
 
-        qDebug() << "Initializing settings write thread";
+        qCDebug(settings_manager) << "Initializing settings write thread";
 
         _workerThread.setObjectName("Settings Writer");
         worker->moveToThread(&_workerThread);
-        connect(&_workerThread, &QThread::started, worker, &WriteWorker::start, Qt::QueuedConnection);
-        connect(&_workerThread, &QThread::finished, worker, &QObject::deleteLater, Qt::QueuedConnection);
+        // connect(&_workerThread, &QThread::started, worker, &WriteWorker::start, Qt::QueuedConnection);
+
+        // All normal connections are queued, so that we're sure they happen asynchronously.
+        connect(&_workerThread, &QThread::finished, worker, &WriteWorker::threadFinished, Qt::QueuedConnection);
         connect(this, &Manager::valueChanged, worker, &WriteWorker::setValue, Qt::QueuedConnection);
         connect(this, &Manager::keyRemoved, worker, &WriteWorker::removeKey, Qt::QueuedConnection);
         connect(this, &Manager::syncRequested, worker, &WriteWorker::sync, Qt::QueuedConnection);
+
+        // This one is blocking because we want to wait until it's actually processed.
+        connect(this, &Manager::terminationRequested, worker, &WriteWorker::terminate, Qt::BlockingQueuedConnection);
+
+
         _workerThread.start();
 
         // Load all current settings
@@ -134,6 +154,16 @@ namespace Setting {
      */
     void Manager::forceSave() {
         emit syncRequested();
+    }
+
+    void Manager::terminateThread() {
+        qCDebug(settings_manager) << "Terminating settings writer thread";
+
+        emit terminationRequested(); // This blocks
+
+        _workerThread.exit();
+        _workerThread.wait(THREAD_TERMINATION_TIMEOUT);
+        qCDebug(settings_manager) << "Settings writer terminated";
     }
 
     QString Manager::fileName() const {

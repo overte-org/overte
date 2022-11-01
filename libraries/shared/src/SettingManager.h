@@ -80,6 +80,18 @@ namespace Setting {
          */
         void sync();
 
+        /**
+         * @brief Called when the thread is terminating
+         *
+         */
+        void threadFinished();
+
+        /**
+         * @brief Thread is being asked to finish work and quit
+         *
+         */
+        void terminate();
+
         private:
 
         void init() {
@@ -194,6 +206,7 @@ namespace Setting {
         void valueChanged(const QString key, QVariant value);
         void keyRemoved(const QString key);
         void syncRequested();
+        void terminationRequested();
 
     private:
         QHash<QString, Interface*> _handles;
