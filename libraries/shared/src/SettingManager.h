@@ -210,8 +210,6 @@ namespace Setting {
 
     private:
         QHash<QString, Interface*> _handles;
-        const QVariant UNSET_VALUE { QUuid::createUuid() };
-
 
         friend class Interface;
         friend class ::SettingsTests;

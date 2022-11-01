@@ -136,14 +136,23 @@ namespace Setting {
 
     void Manager::saveSetting(Interface* handle) {
         const auto& key = handle->getKey();
-        QVariant handleValue = UNSET_VALUE;
+
         if (handle->isSet()) {
-            handleValue = handle->getVariant();
+            QVariant handleValue = handle->getVariant();
+
+            withWriteLock([&] {
+                _settings[key] = handleValue;
+            });
+
+            emit valueChanged(key, handleValue);
+        } else {
+            withWriteLock([&] {
+                _settings.remove(key);
+            });
+
+            emit keyRemoved(key);
         }
 
-        withWriteLock([&] {
-            _settings[key] = handleValue;
-        });
     }
 
 
