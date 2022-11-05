@@ -663,5 +663,24 @@
     "importNewEntity": {
         "tooltip": "Import a local or hosted file that can be used across domains.",
         "skipJSProperty": true
+    },
+    "voxelVolumeSize": {
+        "tooltip": "Number of voxels along each axis of the entity."
+    },
+    "polyVoxPreset": {
+        "tooltip": "Apply a predefined set of textures to the PolyVox entity, replacing the url of the properties: X Texture URL, Y Texture URL, Z Texture URL.",
+        "skipJSProperty": true
+    },
+    "voxelSurfaceStyle": {
+        "tooltip": "The style of rendering the voxels' surface and how neighboring PolyVox entities are joined."
+    },
+    "xTextureURL": {
+        "tooltip": "The URL of the texture to map to surfaces perpendicular to the entity's local x-axis. JPG or PNG format."
+    },
+    "yTextureURL": {
+        "tooltip": "The URL of the texture to map to surfaces perpendicular to the entity's local y-axis. JPG or PNG format."
+    },
+    "zTextureURL": {
+        "tooltip": "The URL of the texture to map to surfaces perpendicular to the entity's local z-axis. JPG or PNG format."
     }
 }

@@ -1343,6 +1343,14 @@ const GROUPS = [
                 propertyID: "voxelVolumeSize",
             },
             {
+                label: "Surface Style",
+                type: "dropdown",
+                options: { 0: "Marching cubes", 1: "Cubic", 
+                           2: "Edged cubic", 3: "Edged marching cubes" },
+                propertyID: "voxelSurfaceStyle",
+                propertyName: "voxelSurfaceStyle",
+            },
+            {
                 label: "Texture preset",
                 type: "dropdown",
                 options: { 0 : "None", 1 : "Grass + ground", 2 : "Bricks", 3 : "Stone", 
@@ -1350,14 +1358,6 @@ const GROUPS = [
                 propertyID: "polyVoxPreset",
                 onDropdownChange: createPolyVoxPresetChangedFunction,
                 skipPropertyUpdate: true,
-            },
-            {
-                label: "Surface Style",
-                type: "dropdown",
-                options: { 0: "Marching cubes", 1: "Cubic", 
-                           2: "Edged cubic", 3: "Edged marching cubes" },
-                propertyID: "voxelSurfaceStyle",
-                propertyName: "voxelSurfaceStyle",
             },
             {
                 label: "X Texture URL",
