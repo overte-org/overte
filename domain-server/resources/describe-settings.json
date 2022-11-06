@@ -59,7 +59,7 @@
           "name": "enable_metadata_exporter",
           "label": "Enable Metadata HTTP Availability",
           "help": "Allows your domain's metadata to be accessible on the public internet via direct HTTP connection to the domain server.",
-          "default": true,
+          "default": false,
           "type": "checkbox",
           "advanced":  true
         },
