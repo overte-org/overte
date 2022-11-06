@@ -4,6 +4,7 @@
 //
 //  Created by Clement on 2/2/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -16,6 +17,9 @@
 #include <QtCore/QWeakPointer>
 #include <QtCore/QString>
 #include <QtCore/QVariant>
+#include <QLoggingCategory>
+
+Q_DECLARE_LOGGING_CATEGORY(settings_interface)
 
 namespace Setting {
     class Manager;
@@ -25,11 +29,11 @@ namespace Setting {
     class Interface {
     public:
         const QString& getKey() const { return _key; }
-        bool isSet() const { return _isSet; } 
+        bool isSet() const { return _isSet; }
 
         virtual void setVariant(const QVariant& variant) = 0;
         virtual QVariant getVariant() = 0;
-        
+
     protected:
         Interface(const QString& key) : _key(key) {}
         virtual ~Interface() = default;
@@ -37,7 +41,7 @@ namespace Setting {
         void init();
         void maybeInit() const;
         void deinit();
-        
+
         void save();
         void load();
 
@@ -46,7 +50,7 @@ namespace Setting {
 
     private:
         mutable bool _isInitialized = false;
-        
+
         friend class Manager;
         mutable QWeakPointer<Manager> _manager;
     };

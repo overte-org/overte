@@ -5,6 +5,7 @@
 //  Created by Andrzej Kapolka on 5/10/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -481,7 +482,7 @@ public slots:
     void setIsInterstitialMode(bool interstitialMode);
 
     void updateVerboseLogging();
-    
+
     void setCachebustRequire();
 
     void changeViewAsNeeded(float boomLength);
@@ -718,8 +719,6 @@ private:
     quint64 _lastSendDownstreamAudioStats;
 
     bool _notifiedPacketVersionMismatchThisDomain;
-
-    ConditionalGuard _settingsGuard;
 
     GLCanvas* _glWidget{ nullptr };
 

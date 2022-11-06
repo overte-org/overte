@@ -1933,29 +1933,14 @@ Application::Application(
 
     // Make sure we don't time out during slow operations at startup
     updateHeartbeat();
-    QTimer* settingsTimer = new QTimer();
-    moveToNewNamedThread(settingsTimer, "Settings Thread", [this, settingsTimer]{
-        // This needs to run on the settings thread, so we need to pass the `settingsTimer` as the
-        // receiver object, otherwise it will run on the application thread and trigger a warning
-        // about trying to kill the timer on the main thread.
-        connect(qApp, &Application::beforeAboutToQuit, settingsTimer, [this, settingsTimer]{
-            // Disconnect the signal from the save settings
-            QObject::disconnect(settingsTimer, &QTimer::timeout, this, &Application::saveSettings);
-            // Stop the settings timer
-            settingsTimer->stop();
-            // Delete it (this will trigger the thread destruction
-            settingsTimer->deleteLater();
-            // Mark the settings thread as finished, so we know we can safely save in the main application
-            // shutdown code
-            _settingsGuard.trigger();
-        });
 
-        int SAVE_SETTINGS_INTERVAL = 10 * MSECS_PER_SECOND; // Let's save every seconds for now
-        settingsTimer->setSingleShot(false);
-        settingsTimer->setInterval(SAVE_SETTINGS_INTERVAL); // 10s, Qt::CoarseTimer acceptable
-        QObject::connect(settingsTimer, &QTimer::timeout, this, &Application::saveSettings);
-        settingsTimer->start();
-    }, QThread::LowestPriority);
+
+    QTimer* settingsTimer = new QTimer();
+    int SAVE_SETTINGS_INTERVAL = 10 * MSECS_PER_SECOND; // Let's save every seconds for now
+    settingsTimer->setSingleShot(false);
+    settingsTimer->setInterval(SAVE_SETTINGS_INTERVAL); // 10s, Qt::CoarseTimer acceptable
+    QObject::connect(settingsTimer, &QTimer::timeout, this, &Application::saveSettings);
+    settingsTimer->start();
 
     if (Menu::getInstance()->isOptionChecked(MenuOption::FirstPersonLookAt)) {
         getMyAvatar()->setBoomLength(MyAvatar::ZOOM_MIN);  // So that camera doesn't auto-switch to third person.
@@ -2845,13 +2830,6 @@ void Application::cleanupBeforeQuit() {
     locationUpdateTimer.stop();
     identityPacketTimer.stop();
     pingTimer.stop();
-
-    // Wait for the settings thread to shut down, and save the settings one last time when it's safe
-    if (_settingsGuard.wait()) {
-        // save state
-        saveSettings();
-    }
-
     _window->saveGeometry();
 
     // Destroy third party processes after scripts have finished using them.

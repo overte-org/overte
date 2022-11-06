@@ -4,6 +4,7 @@
 //
 //  Created by Clement on 2/2/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -23,23 +24,15 @@
 #include "SharedUtil.h"
 #include "ThreadHelpers.h"
 
+Q_LOGGING_CATEGORY(settings_interface, "settings.interface")
+
 namespace Setting {
     // This should only run as a post-routine in the QCoreApplication destructor
     void cleanupSettingsSaveThread() {
         auto globalManager = DependencyManager::get<Manager>();
         Q_ASSERT(qApp && globalManager);
 
-        // Grab the settings thread to shut it down
-        QThread* settingsManagerThread = globalManager->thread();
-
-        // Quit the settings manager thread and wait for it so we
-        // don't get concurrent accesses when we save all settings below
-        settingsManagerThread->quit();
-        settingsManagerThread->wait();
-
-        // [IMPORTANT] Save all settings when the QApplication goes down
-        globalManager->saveAll();
-
+        globalManager->terminateThread();
         qCDebug(shared) << "Settings thread stopped.";
     }
 
@@ -48,37 +41,6 @@ namespace Setting {
         auto globalManager = DependencyManager::get<Manager>();
         Q_ASSERT(qApp && globalManager);
 
-        // Let's set up the settings private instance on its own thread
-        QThread* thread = new QThread(qApp);
-        Q_CHECK_PTR(thread);
-        thread->setObjectName("Settings Thread");
-
-        // Setup setting periodical save timer
-        QObject::connect(thread, &QThread::started, globalManager.data(), [globalManager] {
-            setThreadName("Settings Save Thread");
-            globalManager->startTimer();
-        });
-        QObject::connect(thread, &QThread::finished, globalManager.data(), &Manager::stopTimer);
-
-        // Setup manager threading affinity
-        // This makes the timer fire on the settings thread so we don't block the main
-        // thread with a lot of file I/O.
-        // We bring back the manager to the main thread when the QApplication goes down
-        globalManager->moveToThread(thread);
-        QObject::connect(thread, &QThread::finished, globalManager.data(), [] {
-            auto globalManager = DependencyManager::get<Manager>();
-            Q_ASSERT(qApp && globalManager);
-
-            // Move manager back to the main thread (has to be done on owning thread)
-            globalManager->moveToThread(qApp->thread());
-        });
-
-        // Start the settings save thread
-        thread->start();
-        qCDebug(shared) << "Settings thread started.";
-
-        // Register cleanupSettingsSaveThread to run inside QCoreApplication's destructor.
-        // This will cleanup the settings thread and save all settings before shut down.
         qAddPostRoutine(cleanupSettingsSaveThread);
     }
 
@@ -115,7 +77,7 @@ namespace Setting {
             // in an assignment-client - the QSettings backing we use for this means persistence of these
             // settings from an AC (when there can be multiple terminating at same time on one machine)
             // is currently not supported
-            qWarning() << "Setting::Interface::init() for key" << _key << "- Manager not yet created." << 
+            qCWarning(settings_interface) << "Setting::Interface::init() for key" << _key << "- Manager not yet created." <<
                 "Settings persistence disabled.";
         } else {
             _manager = DependencyManager::get<Manager>();
@@ -125,11 +87,12 @@ namespace Setting {
                 manager->registerHandle(this);
                 _isInitialized = true;
             } else {
-                qWarning() << "Settings interface used after manager destroyed";
+                qCWarning(settings_interface) << "Settings interface used after manager destroyed";
             }
-        
+
             // Load value from disk
             load();
+            //qCDebug(settings_interface) << "Setting" << this->getKey() << "initialized to" << getVariant();
         }
     }
 
@@ -144,20 +107,21 @@ namespace Setting {
         }
     }
 
-    
+
     void Interface::maybeInit() const {
         if (!_isInitialized) {
+            //qCDebug(settings_interface) << "Initializing setting" << this->getKey();
             const_cast<Interface*>(this)->init();
         }
     }
-    
+
     void Interface::save() {
         auto manager = _manager.lock();
         if (manager) {
             manager->saveSetting(this);
         }
     }
-    
+
     void Interface::load() {
         auto manager = _manager.lock();
         if (manager) {
