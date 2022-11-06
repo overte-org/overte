@@ -137,16 +137,12 @@ jobs:
         echo "${{ steps.buildenv1.outputs.symbols_archive }}"
         # Setting short commit SHA for use as RELEASE_NAME in generated installers.
         echo "GIT_COMMIT_SHORT=${{ steps.buildenv1.outputs.github_sha_short }}" >> $GITHUB_ENV
-        if [[ "${{ matrix.build_type }}" != "android" ]]; then
-          if [ "${{ matrix.build_type }}" = "full" ]; then
-            echo "ARTIFACT_PATTERN=Overte-PR${{ github.event.number }}-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
-            echo "INSTALLER=Overte-$RELEASE_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
-          else
-            echo "ARTIFACT_PATTERN=Overte-Interface-PR${{ github.event.number }}-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
-            echo "INSTALLER=Overte-Interface-$RELEASE_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
-          fi
+        if [ "${{ matrix.build_type }}" = "full" ]; then
+          echo "ARTIFACT_PATTERN=Overte-PR${{ github.event.number }}-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "INSTALLER=Overte-$RELEASE_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
         else
-          echo "ARTIFACT_PATTERN=*.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "ARTIFACT_PATTERN=Overte-Interface-PR${{ github.event.number }}-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "INSTALLER=Overte-Interface-$RELEASE_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
 
     - name: Clear Working Directory
