@@ -64,7 +64,6 @@ jobs:
       id: buildenv1
       run: |
 
-        echo "UPLOAD_PREFIX=build/overte/PR" >> $GITHUB_ENV
         echo ::set-output name=github_sha_short::`echo $GIT_COMMIT | cut -c1-7`
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
@@ -329,13 +328,9 @@ jobs:
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
     - name: Upload Artifact
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS') || matrix.build_type == 'android'  # Automatic Linux packaging is not implemented
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-      run: |
-        if [[ "${{ matrix.build_type }}" == "android" ]]; then
-          cd $GITHUB_WORKSPACE/android
-        fi
-        $PYTHON_EXEC "$GITHUB_WORKSPACE/tools/ci-scripts/upload_to_publish_server.py"
+      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.ARTIFACT_PATTERN }}
+        path: ${{ runner.workspace }}/build/${{ env.ARTIFACT_PATTERN }}
+        if-no-files-found: error
