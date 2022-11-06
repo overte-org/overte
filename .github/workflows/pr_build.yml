@@ -328,14 +328,14 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
-    - name: Upload Artifact
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS') || matrix.build_type == 'android'  # Automatic Linux packaging is not implemented
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-      run: |
-        if [[ "${{ matrix.build_type }}" == "android" ]]; then
-          cd $GITHUB_WORKSPACE/android
-        fi
-        $PYTHON_EXEC "$GITHUB_WORKSPACE/tools/ci-scripts/upload_to_publish_server.py"
+#    - name: Upload Artifact
+#      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS') || matrix.build_type == 'android'  # Automatic Linux packaging is not implemented
+#      shell: bash
+#      working-directory: ${{runner.workspace}}/build
+#      env:
+#        GITHUB_CONTEXT: ${{ toJson(github) }}
+#      run: |
+#        if [[ "${{ matrix.build_type }}" == "android" ]]; then
+#          cd $GITHUB_WORKSPACE/android
+#        fi
+#        $PYTHON_EXEC "$GITHUB_WORKSPACE/tools/ci-scripts/upload_to_publish_server.py"
