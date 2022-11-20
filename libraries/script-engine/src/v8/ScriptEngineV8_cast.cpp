@@ -460,7 +460,8 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                 }
                 // last chance, just convert it to a variant
                 // V8TODO
-                Q_ASSERT(false);
+                qDebug() << "Converting: " << *v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked())
+                         << "to variant. Destination type: " << QMetaType::typeName(destTypeId);
                 //dest = val->ToVariant();
                 break;
         }
