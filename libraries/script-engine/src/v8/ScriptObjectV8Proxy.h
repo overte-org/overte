@@ -114,6 +114,7 @@ private:  // storage
     v8::UniquePersistent<v8::ObjectTemplate> _v8ObjectTemplate;
     // V8TODO Maybe it doesn't really need to point to itsef?
     v8::UniquePersistent<v8::Object> _v8Object;
+    int pointerCorruptionTest = 12345678;
 
     Q_DISABLE_COPY(ScriptObjectV8Proxy)
 };
@@ -167,7 +168,8 @@ private:  // storage
 class ScriptMethodV8Proxy final {
 public:  // construction
     ScriptMethodV8Proxy(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime,
-                               const QList<QMetaMethod>& metas, int numMaxParms);
+                               const QList<QMetaMethod>& metas, int numMaxParams);
+    virtual ~ScriptMethodV8Proxy();
 
 public:  // QScriptClass implementation
     virtual QString name() const { return fullName(); }
@@ -182,7 +184,7 @@ private:
     QString fullName() const;
 
 private:  // storage
-    const int _numMaxParms;
+    const int _numMaxParams;
     ScriptEngineV8* _engine;
     QPointer<QObject> _object;
     V8ScriptValue _objectLifetime;

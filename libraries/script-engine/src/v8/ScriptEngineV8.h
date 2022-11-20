@@ -184,7 +184,9 @@ public: // not for public use, but I don't like how Qt strings this along with p
     using ObjectWrapperMap = QMap<QObject*, QWeakPointer<ScriptObjectV8Proxy>>;
     mutable QMutex _qobjectWrapperMapProtect;
     ObjectWrapperMap _qobjectWrapperMap;
-    
+    // Second map, from which wrappers are removed by script engine upon deletion
+    // V8TODO add a V8 callback that removes pointer from the map so that it gets deleted
+    QMap<QObject*, QSharedPointer<ScriptObjectV8Proxy>> _qobjectWrapperMapV8;
 
 protected:
     // like `newFunction`, but allows mapping inline C++ lambdas with captures as callable V8ScriptValues
