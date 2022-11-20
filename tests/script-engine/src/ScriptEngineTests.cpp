@@ -12,6 +12,8 @@
 #include "StatTracker.h"
 
 #include "NodeList.h"
+#include "../../../libraries/entities/src/EntityScriptingInterface.h"
+//#include "../../../libraries/entities/src/EntityScriptingInterface.h"
 
 QTEST_MAIN(ScriptEngineTests)
 
@@ -43,7 +45,7 @@ void ScriptEngineTests::initTestCase() {
     DependencyManager::set<ResourceRequestObserver>();
     DependencyManager::set<StatTracker>();
     DependencyManager::set<ScriptInitializers>();
-
+    DependencyManager::set<EntityScriptingInterface>(true);
 
     QSharedPointer<ScriptEngines> ac = DependencyManager::get<ScriptEngines>();
     QVERIFY(!ac.isNull());
@@ -75,8 +77,8 @@ void ScriptEngineTests::scriptTest() {
     QSharedPointer<ScriptEngines> ac = DependencyManager::get<ScriptEngines>();
     QVERIFY(!ac.isNull());
 
-
-    QDir testScriptsDir("tests");
+    // TODO: can we execute test scripts in serial way rather than parallel
+    /*QDir testScriptsDir("tests");
     QStringList testScripts = testScriptsDir.entryList(QStringList() << "*.js", QDir::Files);
     testScripts.sort();
 
@@ -84,14 +86,15 @@ void ScriptEngineTests::scriptTest() {
         script = "tests/" + script;
         qInfo() << "Running test script: " << script;
         ac->loadOneScript(script);
-    }
+    }*/
+    ac->loadOneScript("tests/script-engine/tests/003_vector_math.js");
 
     qDebug() << ac->getRunning();
 
-
-    while (true) {
+    // TODO: if I don't have infinite loop here, it exits before scripts finish. It also reports: QSignalSpy: No such signal: 'scriptCountChanged'
+    for (int n = 0; n > -1; n++) {
         QSignalSpy spy(ac.get(), SIGNAL(scriptCountChanged));
-        spy.wait(3000000);
+        spy.wait(1000);
         qDebug() << "Signal happened";
     }
     //spy.wait(5000);
