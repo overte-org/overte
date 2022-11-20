@@ -661,8 +661,8 @@ class AvatarExporter : MonoBehaviour {
         // write out joint mappings to fst file
         foreach (var userBoneInfo in userBoneInfos) {
             if (userBoneInfo.Value.HasHumanMapping()) {
-                string vircJointName = HUMANOID_TO_OVERTE_JOINT_NAME[userBoneInfo.Value.humanName];
-                File.AppendAllText(exportFstPath, "jointMap = " + vircJointName + " = " + removeTypeFromJointname(userBoneInfo.Key) + "\n");
+                string overteJointName = HUMANOID_TO_OVERTE_JOINT_NAME[userBoneInfo.Value.humanName];
+                File.AppendAllText(exportFstPath, "jointMap = " + overteJointName + " = " + removeTypeFromJointname(userBoneInfo.Key) + "\n");
             }
         }
 
@@ -760,10 +760,10 @@ class AvatarExporter : MonoBehaviour {
         foreach (HumanBone bone in boneMap) {
             string humanName = bone.humanName;
             string userBoneName = bone.boneName;
-            string vircJointName;
+            string overteJointName;
             if (userBoneInfos.ContainsKey(userBoneName)) {
                 ++userBoneInfos[userBoneName].mappingCount;
-                if (HUMANOID_TO_OVERTE_JOINT_NAME.TryGetValue(humanName, out vircJointName)) {
+                if (HUMANOID_TO_OVERTE_JOINT_NAME.TryGetValue(humanName, out overteJointName)) {
                     userBoneInfos[userBoneName].humanName = humanName;
                     humanoidToUserBoneMappings.Add(humanName, userBoneName);
                 }

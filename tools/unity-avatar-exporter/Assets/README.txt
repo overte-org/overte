@@ -22,4 +22,4 @@ To update an existing avatar project:
 * WARNING *
 If you are using any external textures as part of your .fbx model, be sure they are copied into the textures folder that is created in the project folder after exporting a new avatar.
 
-For further details including troubleshooting tips, see the full documentation at https://docs.highfidelity.com/create-and-explore/avatars/create-avatars/unity-extension
+For further details including troubleshooting tips, see the full documentation at https://docs.overte.org/create/avatars/find-avatars.html#overte-avatar-exporter-for-unity
