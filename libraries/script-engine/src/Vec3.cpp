@@ -23,6 +23,10 @@
 #include "ScriptEngineLogging.h"
 #include "ScriptManager.h"
 
+Vec3::~Vec3() {
+    qDebug(scriptengine) << "ScriptMethodV8Proxy destroyed";
+    printf("ScriptMethodV8Proxy destroyed");
+}
 
 float Vec3::orientedAngle(const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3) {
     float radians = glm::orientedAngle(glm::normalize(v1), glm::normalize(v2), glm::normalize(v3));
