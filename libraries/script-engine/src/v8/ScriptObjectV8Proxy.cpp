@@ -33,7 +33,7 @@ Q_DECLARE_METATYPE(QSharedPointer<ScriptVariantV8Proxy>)
 static const void *internalPointsToQObjectProxy = (void *)0x13370000;
 static const void *internalPointsToQVariantProxy = (void *)0x13371000;
 static const void *internalPointsToSignalProxy = (void *)0x13372000;
-static const void *internalPointsToMethodProxy = (void *)0x13372000;
+static const void *internalPointsToMethodProxy = (void *)0x13373000;
 
 // Used strictly to replace the "this" object value for property access.  May expand to a full context element
 // if we find it necessary to, but hopefully not needed
@@ -114,9 +114,10 @@ V8ScriptValue ScriptObjectV8Proxy::newQObject(ScriptEngineV8* engine, QObject* o
                 return V8ScriptValue(engine->getIsolate(), proxy.get()->toV8Value());
             }
         }
-
+        // V8TODO add a V8 callback that removes pointer from the map so that it gets deleted
         // register the wrapper with the engine and make sure it cleans itself up
         engine->_qobjectWrapperMap.insert(object, proxy);
+        engine->_qobjectWrapperMapV8.insert(object, proxy);
         QPointer<ScriptEngineV8> enginePtr = engine;
         object->connect(object, &QObject::destroyed, engine, [enginePtr, object]() {
             if (!enginePtr) return;
@@ -137,13 +138,16 @@ ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(const V8ScriptValue& val) 
     v8::HandleScope handleScope(const_cast<v8::Isolate*>(val.constGetIsolate()));
     auto v8Value = val.constGet();
     if (!v8Value->IsObject()) {
+        qDebug(scriptengine) << "Cannot unwrap proxy - value is not an object";
         return nullptr;
     }
     v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(v8Value);
     if (v8Object->InternalFieldCount() != 2) {
+        qDebug(scriptengine) << "Cannot unwrap proxy - wrong number of internal fields";
         return nullptr;
     }
-    if (v8Object->GetAlignedPointerFromInternalField(0) == internalPointsToQObjectProxy) {
+    if (v8Object->GetAlignedPointerFromInternalField(0) != internalPointsToQObjectProxy) {
+        qDebug(scriptengine) << "Cannot unwrap proxy - internal fields don't point to object proxy";
         return nullptr;
     }
     return reinterpret_cast<ScriptObjectV8Proxy*>(v8Object->GetAlignedPointerFromInternalField(1));
@@ -155,6 +159,7 @@ QObject* ScriptObjectV8Proxy::unwrap(const V8ScriptValue& val) {
 }
 
 ScriptObjectV8Proxy::~ScriptObjectV8Proxy() {
+    qDebug(scriptengine) << "Deleting object proxy: " << name();
     if (_ownsObject) {
         QObject* qobject = _object;
         if(qobject) qobject->deleteLater();
@@ -170,11 +175,18 @@ void ScriptObjectV8Proxy::investigate() {
     v8::Context::Scope contextScope(_engine->getContext());
     
     auto objectTemplate = _v8ObjectTemplate.Get(_engine->getIsolate());
-    objectTemplate->SetInternalFieldCount(3);
+    objectTemplate->SetInternalFieldCount(2);
     objectTemplate->SetHandler(v8::NamedPropertyHandlerConfiguration(v8Get, v8Set));
     
     const QMetaObject* metaObject = qobject->metaObject();
 
+    qDebug(scriptengine) << "Investigate: " << metaObject->className();
+    if (QString("Vec3") == metaObject->className()) {
+        printf("Vec3");
+    }
+    if (QString("ConsoleScriptingInterface") == metaObject->className()) {
+        printf("ConsoleScriptingInterface");
+    }
     // discover properties
     int startIdx = _wrapOptions & ScriptEngine::ExcludeSuperClassProperties ? metaObject->propertyOffset() : 0;
     int num = metaObject->propertyCount();
@@ -182,6 +194,7 @@ void ScriptObjectV8Proxy::investigate() {
         QMetaProperty prop = metaObject->property(idx);
         if (!prop.isScriptable()) continue;
 
+        qDebug(scriptengine) << "Investigate: " << metaObject->className() << " Property: " << prop.name();
         // always exclude child objects (at least until we decide otherwise)
         int metaTypeId = prop.userType();
         if (metaTypeId != QMetaType::UnknownType) {
@@ -204,6 +217,7 @@ void ScriptObjectV8Proxy::investigate() {
     QHash<V8ScriptString, int> methodNames;
     for (int idx = startIdx; idx < num; ++idx) {
         QMetaMethod method = metaObject->method(idx);
+        qDebug(scriptengine) << "Investigate: " << metaObject->className() << " Method: " << method.name();
         
         // perhaps keep this comment?  Calls (like AudioScriptingInterface::playSound) seem to expect non-public methods to be script-accessible
         /* if (method.access() != QMetaMethod::Public) continue;*/
@@ -281,7 +295,7 @@ void ScriptObjectV8Proxy::investigate() {
     v8::Local<v8::Object> v8Object = objectTemplate->NewInstance(_engine->getContext()).ToLocalChecked();
     v8Object->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToQObjectProxy));
     v8Object->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(this));
-    
+
     _v8Object.Reset(_engine->getIsolate(), v8Object);
 }
 
@@ -295,24 +309,31 @@ QString ScriptObjectV8Proxy::name() const {
 }
 
 ScriptObjectV8Proxy::QueryFlags ScriptObjectV8Proxy::queryProperty(const V8ScriptValue& object, const V8ScriptString& name, QueryFlags flags, uint* id) {
-    // check for properties
-    for (PropertyDefMap::const_iterator trans = _props.cbegin(); trans != _props.cend(); ++trans) {
-        const PropertyDef& propDef = trans.value();
-        if (propDef.name.constGet() != name.constGet()) continue;
-        *id = trans.key() | PROPERTY_TYPE;
-        return flags & (HandlesReadAccess | HandlesWriteAccess);
-    }
+    v8::HandleScope handleScope(_engine->getIsolate());
+    // V8TODO: this might be inefficient when there's large number of properties
+    v8::Local<v8::Context> context = _engine->getContext();
+    v8::String::Utf8Value nameStr(_engine->getIsolate(), name.constGet());
 
     // check for methods
     for (MethodDefMap::const_iterator trans = _methods.cbegin(); trans != _methods.cend(); ++trans) {
-        if (trans.value().name.constGet() != name.constGet()) continue;
+        v8::String::Utf8Value methodNameStr(_engine->getIsolate(), trans.value().name.constGet());
+        qDebug(scriptengine) << "queryProperty : " << *nameStr << " method: " << *methodNameStr;
+        if (!(trans.value().name == name)) continue;
         *id = trans.key() | METHOD_TYPE;
+        return flags & (HandlesReadAccess | HandlesWriteAccess);
+    }
+
+    // check for properties
+    for (PropertyDefMap::const_iterator trans = _props.cbegin(); trans != _props.cend(); ++trans) {
+        const PropertyDef& propDef = trans.value();
+        if (!(propDef.name == name)) continue;
+        *id = trans.key() | PROPERTY_TYPE;
         return flags & (HandlesReadAccess | HandlesWriteAccess);
     }
 
     // check for signals
     for (SignalDefMap::const_iterator trans = _signals.cbegin(); trans != _signals.cend(); ++trans) {
-        if (trans.value().name.constGet() != name.constGet()) continue;
+        if (!(trans.value().name == name)) continue;
         *id = trans.key() | SIGNAL_TYPE;
         return flags & (HandlesReadAccess | HandlesWriteAccess);
     }
@@ -348,17 +369,51 @@ ScriptValue::PropertyFlags ScriptObjectV8Proxy::propertyFlags(const V8ScriptValu
 }
 
 void ScriptObjectV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    // V8TODO
-    //info.GetReturnValue().Set();
+    v8::HandleScope handleScope(info.GetIsolate());
+    v8::String::Utf8Value utf8Value(info.GetIsolate(), name);
+    qDebug(scriptengine) << "Get: " << *utf8Value;
+    V8ScriptValue object(info.GetIsolate(), info.This());
+    ScriptObjectV8Proxy *proxy = ScriptObjectV8Proxy::unwrapProxy(object);
+    if (!proxy) {
+        qDebug(scriptengine) << "Proxy object not found when getting: " << *utf8Value;
+        return;
+    }
+    V8ScriptString nameString(info.GetIsolate(), v8::Local<v8::String>::Cast(name));
+    uint id;
+    QueryFlags flags = proxy->queryProperty(object, nameString, HandlesReadAccess, &id);
+    if (flags) {
+        V8ScriptValue value = proxy->property(object, nameString, id);
+        info.GetReturnValue().Set(value.get());
+    } else {
+        qDebug(scriptengine) << "Value not found: " << *utf8Value;
+    }
 }
 
 void ScriptObjectV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    // V8TODO
-    info.GetReturnValue().Set(value);
+    v8::HandleScope handleScope(info.GetIsolate());
+    v8::String::Utf8Value utf8Value(info.GetIsolate(), name);
+    qDebug(scriptengine) << "Set: " << *utf8Value;
+    V8ScriptValue object(info.GetIsolate(), info.This());
+    ScriptObjectV8Proxy *proxy = ScriptObjectV8Proxy::unwrapProxy(object);
+    if (!proxy) {
+        qDebug(scriptengine) << "Proxy object not found when setting: " << *utf8Value;
+        return;
+    }
+    V8ScriptString nameString(info.GetIsolate(), v8::Local<v8::String>::Cast(name));
+    //V8ScriptString nameString(info.GetIsolate(), name->ToString(proxy->_engine->getContext()).ToLocalChecked());
+    uint id;
+    QueryFlags flags = proxy->queryProperty(object, nameString, HandlesWriteAccess, &id);
+    if (flags) {
+        proxy->setProperty(object, nameString, id, V8ScriptValue(info.GetIsolate(), value));
+        info.GetReturnValue().Set(value);
+    } else {
+        qDebug(scriptengine) << "Value not found: " << *utf8Value;
+    }
 }
 
 
 V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V8ScriptString& name, uint id) {
+    v8::HandleScope handleScope(_engine->getIsolate());
     QObject* qobject = _object;
     if (!qobject) {
         _engine->getIsolate()->ThrowError("Referencing deleted native object");
@@ -390,7 +445,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
                 if((*iter).returnType() == QMetaType::UnknownType) {
                     qDebug(scriptengine) << "Method with QMetaType::UnknownType " << metaObject->className() << " " << (*iter).name();
                 }
-            }
+            } //V8TODO: is new method created during every call? It needs to be cached instead
             return ScriptMethodV8Proxy::newMethod(_engine, qobject, object, methodDef.methods, methodDef.numMaxParms);
         }
         case SIGNAL_TYPE: {
@@ -417,6 +472,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
 }
 
 void ScriptObjectV8Proxy::setProperty(V8ScriptValue& object, const V8ScriptString& name, uint id, const V8ScriptValue& value) {
+    v8::HandleScope handleScope(_engine->getIsolate());
     if (!(id & PROPERTY_TYPE)) return;
     QObject* qobject = _object;
     if (!qobject) {
@@ -483,7 +539,7 @@ ScriptVariantV8Proxy* ScriptVariantV8Proxy::unwrapProxy(const V8ScriptValue& val
     if (v8Object->InternalFieldCount() != 2) {
         return nullptr;
     }
-    if (v8Object->GetAlignedPointerFromInternalField(0) == internalPointsToQVariantProxy) {
+    if (v8Object->GetAlignedPointerFromInternalField(0) != internalPointsToQVariantProxy) {
         return nullptr;
     }
     return reinterpret_cast<ScriptVariantV8Proxy*>(v8Object->GetAlignedPointerFromInternalField(1));
@@ -495,8 +551,13 @@ QVariant ScriptVariantV8Proxy::unwrap(const V8ScriptValue& val) {
 }
 
 ScriptMethodV8Proxy::ScriptMethodV8Proxy(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime,
-                               const QList<QMetaMethod>& metas, int numMaxParms) :
-        _numMaxParms(numMaxParms), _engine(engine), _object(object), _objectLifetime(lifetime), _metas(metas) {
+                               const QList<QMetaMethod>& metas, int numMaxParams) :
+    _numMaxParams(numMaxParams), _engine(engine), _object(object), _objectLifetime(lifetime), _metas(metas) {
+}
+
+ScriptMethodV8Proxy::~ScriptMethodV8Proxy() {
+    qDebug(scriptengine) << "ScriptMethodV8Proxy destroyed";
+    printf("ScriptMethodV8Proxy destroyed");
 }
 
 V8ScriptValue ScriptMethodV8Proxy::newMethod(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime,
@@ -534,23 +595,25 @@ QString ScriptMethodV8Proxy::fullName() const {
 }*/
 
 void ScriptMethodV8Proxy::callback(const v8::FunctionCallbackInfo<v8::Value>& arguments) {
-    if (!arguments.This()->IsObject()) {
+    v8::HandleScope handleScope(arguments.GetIsolate());
+    if (!arguments.Data()->IsObject()) {
         arguments.GetIsolate()->ThrowError("Method value is not an object");
         return;
     }
-    if (!arguments.This()->IsCallable()) {
+    v8::Local<v8::Object> data = v8::Local<v8::Object>::Cast(arguments.Data());
+    /*if (!arguments.Data()->IsCallable()) {
         arguments.GetIsolate()->ThrowError("Method value is not callable");
         return;
-    }
-    if (arguments.This()->InternalFieldCount() != 2) {
+    }*/
+    if (data->InternalFieldCount() != 2) {
         arguments.GetIsolate()->ThrowError("Incorrect number of internal fields during method call");
         return;
     }
-    if (arguments.This()->GetAlignedPointerFromInternalField(0) == internalPointsToMethodProxy) {
+    if (data->GetAlignedPointerFromInternalField(0) != internalPointsToMethodProxy) {
         arguments.GetIsolate()->ThrowError("Internal field 0 of ScriptMethodV8Proxy V8 object has wrong value");
         return;
     }
-    ScriptMethodV8Proxy *proxy = reinterpret_cast<ScriptMethodV8Proxy*>(arguments.This()->GetAlignedPointerFromInternalField(1));
+    ScriptMethodV8Proxy *proxy = reinterpret_cast<ScriptMethodV8Proxy*>(data->GetAlignedPointerFromInternalField(1));
     proxy->call(arguments);
 }
 
@@ -565,7 +628,7 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
     v8::HandleScope handleScope(_engine->getIsolate());
 
     int scriptNumArgs = arguments.Length();
-    int numArgs = std::min(scriptNumArgs, _numMaxParms);
+    int numArgs = std::min(scriptNumArgs, _numMaxParams);
     
     const int scriptValueTypeId = qMetaTypeId<ScriptValue>();
 
@@ -739,7 +802,7 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
     }
 
     int scriptNumArgs = context->argumentCount();
-    int numArgs = std::min(scriptNumArgs, _numMaxParms);
+    int numArgs = std::min(scriptNumArgs, _numMaxParams);
     
     const int scriptValueTypeId = qMetaTypeId<ScriptValue>();
 
