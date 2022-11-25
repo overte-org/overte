@@ -1,3 +1,9 @@
+<!--
+Copyright 2013-2019 High Fidelity, Inc.
+Copyright 2022 Overte e.V.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 [VCPKG](https://github.com/Microsoft/vcpkg) is an open source package management system created by Microsoft, intially just for Windows based system, but eventually extended to cover Linux and OSX as well, and in theory extensible enough to cover additional operating systems.
 
 VCPKG is now our primary mechanism for managing the external libraries and tools on which we rely to build our applications.

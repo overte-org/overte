@@ -1,3 +1,9 @@
+# https://www.git-scm.com/docs/gitattributes
+#
+# Copyright 2013-2019 High Fidelity, Inc.
+# Copyright 2022 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 *.cfg text
 *.cpp text
 *.css text

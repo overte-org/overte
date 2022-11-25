@@ -1,3 +1,10 @@
+// https://eslint.org
+//
+// Copyright 2013-2019 High Fidelity, Inc.
+// Copyright 2020 Vircadia contirbutors
+// Copyright 2022 Overte e.V.
+// SPDX-License-Identifier: Apache-2.0
+
 module.exports = {
     "root": true,
     "extends": "eslint:recommended",

@@ -1,3 +1,8 @@
+rem Copyright 2013-2019 High Fidelity, Inc.
+rem Copyright 2021 Vircadia contributors
+rem Copyright 2022 Overte e.V.
+rem SPDX-License-Identifier: Apache-2.0
+
 rem Copy this file to a directory above the WebRTC \src directory and run it from there in a command window.
 set WEBRTC_SRC_DIR=src
 set RELEASE_LIB_DIR=%WEBRTC_SRC_DIR%\out\Release\obj

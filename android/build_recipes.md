@@ -1,3 +1,9 @@
+<!--
+Copyright 2013-2019 High Fidelity, Inc.
+Copyright 2022 Overte e.V.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 Different libraries require different mechanism for building.  Some are easiest with the standalone toolchain. Some are easiest with the ndk-build tool.  Some can rely on CMake to do the right thing.
 
 ## Setup

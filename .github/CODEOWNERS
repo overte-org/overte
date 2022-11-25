@@ -1,2 +1,5 @@
+# Copyright 2022 Overte e.V.
+# SPDX-License-Identifier: MIT
+
 # Require @JulianGro to review changed GitHub Actions workflows before they are run.
 /.github/workflows @JulianGro

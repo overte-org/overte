@@ -1,3 +1,10 @@
+<!--
+Copyright 2013-2019 High Fidelity, Inc.
+Copyright 2019-2021 Vircadia contributors
+Copyright 2021-2022 Overte e.V.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 <p align="center"><a href="https://overte.org/"><picture><source srcset="interface/resources/images/brand-banner.svg" alt="Overte" width="350" media="(prefers-color-scheme: dark)"><img src="interface/resources/images/brand-banner-black.svg" alt="Overte" width="350"></picture></a></p>
 
 <h3 align="center"><a href="https://overte.org/">Website</a> | <a href="https://matrix.to/#/#overte:matrix.org">Matrix</a> | <a href="https://overte.org/#download">Download</a></h3>
@@ -12,6 +19,7 @@
 <p align="center">
     <a href="https://github.com/overte-org/overte/actions/workflows/master_build.yml"><img alt="Master CI Build" src="https://github.com/overte-org/overte/actions/workflows/master_build.yml/badge.svg"></a>
     <a href="https://github.com/overte-org/overte/actions/workflows/master_deploy_apidocs.yml"><img alt="API-docs CI Build & Deploy" src="https://github.com/overte-org/overte/actions/workflows/master_deploy_apidocs.yml/badge.svg"></a>
+    <a href="https://api.reuse.software/info/github.com/overte-org/overte"><img alt="REUSE status" src="https://api.reuse.software/badge/github.com/overte-org/overte"></a>
 </p>
 
 ### What is this?
