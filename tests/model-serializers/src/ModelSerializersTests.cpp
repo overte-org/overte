@@ -1,13 +1,13 @@
 //
-//  AABoxCubeTests.h
-//  tests/octree/src
+//  ModelSerializersTests.cpp
+//  tests/model-serializers/src
 //
-//  Created by Brad Hefta-Gaub on 06/04/2014.
-//  Copyright 2014 High Fidelity, Inc.
+//  Created by Dale Glass on 20/11/2022.
+//  Copyright 2022 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
-//
+
 
 #include "ModelSerializersTests.h"
 #include "GLTFSerializer.h"
