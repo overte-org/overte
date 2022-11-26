@@ -153,6 +153,7 @@ void ModelSerializersTests::loadGLTF() {
     QVERIFY(!model->joints.empty());
 
     qInfo() << "Model was loaded with" << model->meshes.count() << "meshes and" << model->joints.count() << "joints. Found" << model->loadWarningCount << "warnings and" << model->loadErrorCount << "errors";
+    qInfo() << "Application" <<  model->applicationName << "; author" << model->author;
 
     // Some models we test are expected to be broken. We're testing that we can load the model without blowing up,
     // so loading it with errors is still a successful test.

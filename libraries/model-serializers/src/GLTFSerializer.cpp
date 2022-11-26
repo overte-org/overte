@@ -1756,6 +1756,9 @@ HFMModel::Pointer GLTFSerializer::read(const hifi::ByteArray& data, const hifi::
         HFMModel& hfmModel = *hfmModelPtr;
         buildGeometry(hfmModel, mapping, _url);
 
+        hfmModel.author = _file.asset.copyright;
+        hfmModel.applicationName = _file.asset.generator;
+
         //hfmModel.debugDump();
         //glTFDebugDump();
 
