@@ -1,4 +1,9 @@
 #!/usr/bin/make -f
+
+# Copyright 2020-2021 Vircadia contributors.
+# Copyright 2022 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 # See debhelper(7) (uncomment to enable)
 # output every command that modifies files on the build system.
 #export DH_VERBOSE = 1

@@ -1,5 +1,8 @@
+# Copyright 2022 Overte e.V.
+# SPDX-License-Identifier: MIT
+
 # Docker file for building Overte Server
-# Example build: docker build -t juliangro/overte-server-build:0.1.1-ubuntu-18.04 -f Dockerfile_build_ubuntu-18.04 .
+# Example build: docker build -t overte/overte-server-build:0.1.1-ubuntu-18.04 -f Dockerfile_build_ubuntu-18.04 .
 FROM ubuntu:18.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."

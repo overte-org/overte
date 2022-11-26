@@ -1,5 +1,8 @@
+# Copyright 2022 Overte e.V.
+# SPDX-License-Identifier: MIT
+
 # Docker file for building Overte Server
-# Example build: docker build -t juliangro/overte-server-build:0.1.1-rockylinux-9 -f Dockerfile_build_rockylinux-9 .
+# Example build: docker build -t overte/overte-server-build:0.1.2-rockylinux-9 -f Dockerfile_build_rockylinux-9 .
 FROM rockylinux:9
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
@@ -20,3 +23,6 @@ RUN dnf -y install zip unzip
 
 # Install tools for package creation
 RUN dnf -y install chrpath rpmdevtools
+
+# Install tools needed for our Github Actions Workflow
+Run dnf -y install python3-boto3 python3-github

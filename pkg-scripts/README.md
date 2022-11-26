@@ -1,3 +1,9 @@
+<!--
+Copyright 2021 Vircadia contributors.
+Copyright 2022 Overte e.V.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Overte Server Packaging Scripts
 
 Collection of scripts to create server distribution packages. Most of these scripts assume

@@ -1,14 +1,22 @@
 #!/bin/sh
 
+# Copyright 2020-2021 Vircadia contributors.
+# Copyright 2022 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 if [ "$OVERTE" = "" ]; then
 	OVERTE=`realpath ..`
-	QT5_LIBS=`realpath ~/overte-files/qt/qt5-install/lib`
+	if [ ! "$OVERTE_USE_SYSTEM_QT" ]; then
+		QT5_LIBS=`realpath ~/overte-files/qt/qt5-install/lib`
+	fi
 fi
 
 sudo apt-get install chrpath binutils dh-make
 
 DEB_BUILD_ROOT=temp-make-deb/overte-server_$DEBVERSION
-rm -r temp-make-deb
+if [ -d temp-make-deb ]; then
+	rm -r temp-make-deb
+fi
 mkdir -p $DEB_BUILD_ROOT
 
 # copy the files over
@@ -18,7 +26,7 @@ cp $OVERTE/build/tools/oven/oven $DEB_BUILD_ROOT  # Oven is required for pre-bak
 cp $OVERTE/build/libraries/*/*.so $DEB_BUILD_ROOT
 #cp $OVERTE/build/ice-server/ice-server $DEB_BUILD_ROOT
 chrpath -d $DEB_BUILD_ROOT/*
-if [ "$OVERTE_USE_SYSTEM_QT" = "" ]; then
+if [ ! "$OVERTE_USE_SYSTEM_QT" ]; then
 	cp $QT5_LIBS/libQt5Network.so.*.*.* $DEB_BUILD_ROOT
 	cp $QT5_LIBS/libQt5Core.so.*.*.* $DEB_BUILD_ROOT
 	cp $QT5_LIBS/libQt5Widgets.so.*.*.* $DEB_BUILD_ROOT
@@ -69,7 +77,7 @@ echo domain-server opt/overte >> debian/install
 echo oven opt/overte >> debian/install
 #echo ice-server opt/overte >> debian/install
 echo new-server opt/overte >> debian/install
-if [ "$OVERTE_USE_SYSTEM_QT" = "" ]; then
+if [ ! "$OVERTE_USE_SYSTEM_QT" ]; then
 	for so in *.so.*.*.*; do
 		echo $so opt/overte/lib >> debian/install
 	done
@@ -86,7 +94,7 @@ done
 find resources -type f -exec sh -c 'echo {} opt/overte/$(dirname "{}") >> debian/install' \;
 find plugins -type f -exec sh -c 'echo {} opt/overte/$(dirname "{}") >> debian/install' \;
 
-if [ "$OVERTE_USE_SYSTEM_QT" = "" ]; then
+if [ ! "$OVERTE_USE_SYSTEM_QT" ]; then
 	SOFILES=`ls *.so *.so.*.*.* | grep -Po '^(.+\.so(\.\d+)?)' | sed 's/\./\\\./g' | paste -d'|' -s`
 else
 	SOFILES=`ls *.so | grep -Po '^(.+\.so(\.\d+)?)' | sed 's/\./\\\./g' | paste -d'|' -s`
@@ -101,3 +109,4 @@ sed "s/{DEPENDS}/$DEPENDS/" $OVERTE/pkg-scripts/server-control > debian/control
 
 dpkg-buildpackage -us -uc
 
+mv $OVERTE/pkg-scripts/temp-make-deb/*.deb $OVERTE/pkg-scripts/  # move package out of temp-make-deb

@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 
 # Docker file for building Overte Server
-# Example build: docker build -t overte/overte-server-build:0.1.2-fedora-36 -f Dockerfile_build_fedora-36 .
-FROM fedora:36
+# Example build: docker build -t overte/overte-server-build:0.1.2-fedora-37 -f Dockerfile_build_fedora-37 .
+FROM fedora:37
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
 

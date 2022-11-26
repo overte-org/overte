@@ -1,3 +1,8 @@
+# Copyright 2013-2019 High Fidelity, Inc.
+# Copyright 2020 Vircadia contributors.
+# Copyright 2022 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 # Post build script
 import os
 import sys

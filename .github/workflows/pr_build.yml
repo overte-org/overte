@@ -14,7 +14,7 @@ env:
   APP_NAME: interface
   BUILD_TYPE: Release
   CI_BUILD: Github
-  GIT_COMMIT: ${{ github.sha }}
+  GIT_COMMIT: ${{ github.event.pull_request.head.sha }}
   # VCPKG did not build well on OSX disabling HIFI_VCPKG_BOOTSTRAP, which invokes a download to a working version of vcpkg
   # HIFI_VCPKG_BOOTSTRAP: true
   RELEASE_TYPE: PR
@@ -69,7 +69,8 @@ jobs:
       id: buildenv1
       run: |
 
-        echo "{github_sha_short}={`echo $GIT_COMMIT | cut -c1-7`}" >> $GITHUB_OUTPUT
+        # Setting short commit SHA for use as RELEASE_NAME in generated installers.
+        echo "GIT_COMMIT_SHORT=`echo $GIT_COMMIT | cut -c1-7`" >> $GITHUB_ENV
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
 
@@ -78,12 +79,12 @@ jobs:
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=*" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
+          # Don't optimize builds to save build time.
+          echo "OVERTE_OPTIMIZE=false" >> $GITHUB_ENV
           # Variables specific to our aarch64 runner
           if [ "${{ matrix.os }}" = "self-hosted_debian-11_aarch64" ]; then
             echo "OVERTE_USE_SYSTEM_QT=true" >> $GITHUB_ENV
             echo "CI_WORKSPACE=${{runner.workspace}}" >> $GITHUB_ENV
-            # Don't optimize builds to save build time.
-            echo "OVERTE_OPTIMIZE=false" >> $GITHUB_ENV
           fi
 
           if [[ "${{ matrix.os }}" = *"aarch64" ]]; then
@@ -140,14 +141,12 @@ jobs:
       run: |
 
         echo "${{ steps.buildenv1.outputs.symbols_archive }}"
-        # Setting short commit SHA for use as RELEASE_NAME in generated installers.
-        echo "GIT_COMMIT_SHORT=${{ steps.buildenv1.outputs.github_sha_short }}" >> $GITHUB_ENV
         if [ "${{ matrix.build_type }}" = "full" ]; then
-          echo "ARTIFACT_PATTERN=Overte-PR${{ github.event.number }}-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
-          echo "INSTALLER=Overte-$RELEASE_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "ARTIFACT_PATTERN=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "INSTALLER=Overte-$RELEASE_NUMBER-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
         else
-          echo "ARTIFACT_PATTERN=Overte-Interface-PR${{ github.event.number }}-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
-          echo "INSTALLER=Overte-Interface-$RELEASE_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "ARTIFACT_PATTERN=Overte-Interface-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "INSTALLER=Overte-Interface-$RELEASE_NUMBER-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
 
     - name: Clear Working Directory

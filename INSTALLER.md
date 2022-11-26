@@ -136,7 +136,7 @@ For code signing to work, you will need to set the `HF_PFX_FILE` and `HF_PFX_PAS
 1. Build Docker image as instructed in the relevant Dockerfile in [tools/ci-scripts/deb_package/](tools/ci-scripts/deb_package/)
 
 2. Create/Start container
-	Example: `docker run -v $(pwd)/../../..:/overte -it juliangro/overte-server-build:0.1.1-debian-11`
+	Example: `docker run -v $(pwd)/../../..:/overte -it overte/overte-server-build:0.1.2-debian-11-amd64`
 
 3. Prepare build environment
 ```bash
@@ -175,7 +175,7 @@ DEBVERSION="1-experimental-ubuntu-18.04" DEBEMAIL="julian.gro@overte.org" DEBFUL
 1. Build Docker image as instructed in the relevant Dockerfile in [tools/ci-scripts/rpm_package/](tools/ci-scripts/rpm_package/)
 
 2. Create/Start container
-	Example: `docker run -v $(pwd)/../../..:/overte -it juliangro/overte-server-build:0.1.1-fedora-36`
+	Example: `docker run -v $(pwd)/../../..:/overte -it overte/overte-server-build:0.1.2-fedora-36-amd64`
 
 3. Prepare build environment
 ```bash
