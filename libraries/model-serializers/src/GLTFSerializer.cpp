@@ -1063,6 +1063,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
 
                 if (indicesAccessorIdx > _file.accessors.size()) {
                     qWarning(modelformat) << "Indices accessor index is out of bounds for model " << _url;
+                    hfmModel.loadErrorCount++;
                     continue;
                 }
 
@@ -1091,6 +1092,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
 
                 if (!success) {
                     qWarning(modelformat) << "There was a problem reading glTF INDICES data for model " << _url;
+                    hfmModel.loadErrorCount++;
                     continue;
                 }
 
@@ -1106,6 +1108,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
 
                     if (accessorIdx > _file.accessors.size()) {
                         qWarning(modelformat) << "Accessor index is out of bounds for model " << _url;
+                        hfmModel.loadErrorCount++;
                         continue;
                     }
 
@@ -1114,23 +1117,27 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                     if (key == "POSITION") {
                         if (accessor.type != GLTFAccessorType::VEC3) {
                             qWarning(modelformat) << "Invalid accessor type on glTF POSITION data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
 
                         success = addArrayFromAccessor(accessor, vertices);
                         if (!success) {
                             qWarning(modelformat) << "There was a problem reading glTF POSITION data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
                     } else if (key == "NORMAL") {
                         if (accessor.type != GLTFAccessorType::VEC3) {
                             qWarning(modelformat) << "Invalid accessor type on glTF NORMAL data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
 
                         success = addArrayFromAccessor(accessor, normals);
                         if (!success) {
                             qWarning(modelformat) << "There was a problem reading glTF NORMAL data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
                     } else if (key == "TANGENT") {
@@ -1140,12 +1147,14 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             tangentStride = 3;
                         } else {
                             qWarning(modelformat) << "Invalid accessor type on glTF TANGENT data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
 
                         success = addArrayFromAccessor(accessor, tangents);
                         if (!success) {
                             qWarning(modelformat) << "There was a problem reading glTF TANGENT data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             tangentStride = 0;
                             continue;
                         }
@@ -1153,22 +1162,26 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                         success = addArrayFromAccessor(accessor, texcoords);
                         if (!success) {
                             qWarning(modelformat) << "There was a problem reading glTF TEXCOORD_0 data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
 
                         if (accessor.type != GLTFAccessorType::VEC2) {
                             qWarning(modelformat) << "Invalid accessor type on glTF TEXCOORD_0 data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
                     } else if (key == "TEXCOORD_1") {
                         success = addArrayFromAccessor(accessor, texcoords2);
                         if (!success) {
                             qWarning(modelformat) << "There was a problem reading glTF TEXCOORD_1 data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
 
                         if (accessor.type != GLTFAccessorType::VEC2) {
                             qWarning(modelformat) << "Invalid accessor type on glTF TEXCOORD_1 data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
                     } else if (key == "COLOR_0") {
@@ -1178,12 +1191,14 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             colorStride = 3;
                         } else {
                             qWarning(modelformat) << "Invalid accessor type on glTF COLOR_0 data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
 
                         success = addArrayFromAccessor(accessor, colors);
                         if (!success) {
                             qWarning(modelformat) << "There was a problem reading glTF COLOR_0 data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
                     } else if (key == "JOINTS_0") {
@@ -1197,12 +1212,14 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             jointStride = 1;
                         } else {
                             qWarning(modelformat) << "Invalid accessor type on glTF JOINTS_0 data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
 
                         success = addArrayFromAccessor(accessor, joints);
                         if (!success) {
                             qWarning(modelformat) << "There was a problem reading glTF JOINTS_0 data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
                     } else if (key == "WEIGHTS_0") {
@@ -1216,12 +1233,14 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             weightStride = 1;
                         } else {
                             qWarning(modelformat) << "Invalid accessor type on glTF WEIGHTS_0 data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
 
                         success = addArrayFromAccessor(accessor, weights);
                         if (!success) {
                             qWarning(modelformat) << "There was a problem reading glTF WEIGHTS_0 data for model " << _url;
+                            hfmModel.loadErrorCount++;
                             continue;
                         }
                     }
@@ -1230,10 +1249,12 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                 // Validation stage
                 if (indices.count() == 0) {
                     qWarning(modelformat) << "Missing indices for model " << _url;
+                    hfmModel.loadErrorCount++;
                     continue;
                 }
                 if (vertices.count() == 0) {
                     qWarning(modelformat) << "Missing vertices for model " << _url;
+                    hfmModel.loadErrorCount++;
                     continue;
                 }
 
@@ -1257,6 +1278,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
 
                         if (v1_index + 2 >= vertices.size() || v2_index + 2 >= vertices.size() || v3_index + 2 >= vertices.size()) {
                             qWarning(modelformat) << "Indices out of range for model " << _url;
+                            hfmModel.loadErrorCount++;
                             break;
                         }
 
@@ -1355,6 +1377,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
 
                 if (validatedIndices.size() == 0) {
                     qWarning(modelformat) << "No valid indices for model " << _url;
+                    hfmModel.loadErrorCount++;
                     continue;
                 }
 
