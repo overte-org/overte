@@ -142,7 +142,7 @@ ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(const V8ScriptValue& val) 
         return nullptr;
     }
     v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(v8Value);
-    if (v8Object->InternalFieldCount() != 2) {
+    if (v8Object->InternalFieldCount() != 3) {
         qDebug(scriptengine) << "Cannot unwrap proxy - wrong number of internal fields";
         return nullptr;
     }
@@ -175,7 +175,7 @@ void ScriptObjectV8Proxy::investigate() {
     v8::Context::Scope contextScope(_engine->getContext());
     
     auto objectTemplate = _v8ObjectTemplate.Get(_engine->getIsolate());
-    objectTemplate->SetInternalFieldCount(2);
+    objectTemplate->SetInternalFieldCount(3);
     objectTemplate->SetHandler(v8::NamedPropertyHandlerConfiguration(v8Get, v8Set));
     
     const QMetaObject* metaObject = qobject->metaObject();
@@ -295,6 +295,7 @@ void ScriptObjectV8Proxy::investigate() {
     v8::Local<v8::Object> v8Object = objectTemplate->NewInstance(_engine->getContext()).ToLocalChecked();
     v8Object->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToQObjectProxy));
     v8Object->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(this));
+    v8Object->SetInternalField(2, v8::Object::New(_engine->getIsolate()));
 
     _v8Object.Reset(_engine->getIsolate(), v8Object);
 }
@@ -385,7 +386,12 @@ void ScriptObjectV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCall
         V8ScriptValue value = proxy->property(object, nameString, id);
         info.GetReturnValue().Set(value.get());
     } else {
-        qDebug(scriptengine) << "Value not found: " << *utf8Value;
+        v8::Local<v8::Value> property;
+        if(info.This()->GetInternalField(2).As<v8::Object>()->Get(proxy->_engine->getContext(), name).ToLocal(&property)) {
+            info.GetReturnValue().Set(property);
+        } else {
+            qDebug(scriptengine) << "Value not found: " << *utf8Value;
+        }
     }
 }
 
@@ -407,7 +413,12 @@ void ScriptObjectV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> v
         proxy->setProperty(object, nameString, id, V8ScriptValue(info.GetIsolate(), value));
         info.GetReturnValue().Set(value);
     } else {
-        qDebug(scriptengine) << "Value not found: " << *utf8Value;
+        // V8TODO: Should it be v8::Object or v8::Local<v8::Object>?
+        if (info.This()->GetInternalField(2).As<v8::Object>()->Set(proxy->_engine->getContext(), name, value).FromMaybe(false)) {
+            info.GetReturnValue().Set(value);
+        } else {
+            qDebug(scriptengine) << "Set failed: " << *utf8Value;
+        }
     }
 }
 
