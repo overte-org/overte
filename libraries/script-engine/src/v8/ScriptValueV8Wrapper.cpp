@@ -233,7 +233,7 @@ void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& v
         v8::Local<v8::String> key = v8::String::NewFromUtf8(isolate, name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
         Q_ASSERT(_value.get()->IsObject());
         auto object = v8::Local<v8::Object>::Cast(_value.get());
-        // V8TODO: What if velue context and current context is different?
+        // V8TODO: What if value context and current context is different?
         //v8::Maybe<bool> retVal = object->Set(_value.getContext(), key, unwrapped.constGet());
         //v8::Maybe<bool> retVal = object->Set(_engine->getContext(), key, unwrapped.constGet());
         v8::Maybe<bool> retVal = object->Set(isolate->GetCurrentContext(), key, unwrapped.constGet());
