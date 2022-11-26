@@ -1498,6 +1498,32 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                     }
 
                     for (int c = 0; c < clusterJoints.size(); ++c) {
+                        if (mesh.clusterIndices.length() <= prevMeshClusterIndexCount + c) {
+                            qCWarning(modelformat) << "Trying to write past end of clusterIndices at" <<  prevMeshClusterIndexCount + c;
+                            hfmModel.loadErrorCount++;
+                            continue;
+                        }
+
+                        if ( clusterJoints.length() <= c) {
+                            qCWarning(modelformat) << "Trying to read past end of clusterJoints at" << c;
+                            hfmModel.loadErrorCount++;
+                            continue;
+                        }
+
+                        if ( _file.skins.length() <= node.skin ) {
+                            qCWarning(modelformat) << "Trying to read past end of _file.skins at" << node.skin;
+                            hfmModel.loadErrorCount++;
+                            continue;
+                        }
+
+                        if ( _file.skins[node.skin].joints.length() <= clusterJoints[c]) {
+                            qCWarning(modelformat) << "Trying to read past end of _file.skins[node.skin].joints at" << clusterJoints[c]
+                                                   << "; there are only" << _file.skins[node.skin].joints.length() << "for skin" << node.skin;
+                            hfmModel.loadErrorCount++;
+                            continue;
+                        }
+
+
                         mesh.clusterIndices[prevMeshClusterIndexCount + c] =
                             originalToNewNodeIndexMap[_file.skins[node.skin].joints[clusterJoints[c]]];
                     }
