@@ -1,4 +1,7 @@
 
+include(ExternalProject)
+
+
 
 # Declare dependencies
 macro (setup_testcase_dependencies)
@@ -70,6 +73,15 @@ macro (setup_testcase_dependencies)
       DOWNLOAD_NO_EXTRACT true CONFIGURE_COMMAND "" BUILD_COMMAND "" INSTALL_COMMAND ""
     )
 
+    ExternalProject_Add(
+      gltf_samples
+      PREFIX "models"
+      GIT_REPOSITORY "https://github.com/KhronosGroup/glTF-Sample-models"
+      GIT_TAG "master"
+      DOWNLOAD_NO_EXTRACT true CONFIGURE_COMMAND "" BUILD_COMMAND "" INSTALL_COMMAND ""
+    )
+
+
 
     add_dependencies(${TARGET_NAME} ukr_franny)
     add_dependencies(${TARGET_NAME} dragon_franny)
@@ -77,6 +89,7 @@ macro (setup_testcase_dependencies)
     add_dependencies(${TARGET_NAME} madders1)
     add_dependencies(${TARGET_NAME} madders2)
     add_dependencies(${TARGET_NAME} broken)
+    add_dependencies(${TARGET_NAME} gltf_samples)
   endif()
 
 
