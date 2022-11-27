@@ -300,11 +300,9 @@ void AnimTests::testAccumulateTime() {
     QString id = "testNode";
     AnimVariantMap triggers;
     float loopFlag = true;
-    float resultFrame = accumulateTime(startFrame, endFrame, timeScale, startFrame, dt, loopFlag, id, triggers);
+    accumulateTime(startFrame, endFrame, timeScale, startFrame, dt, loopFlag, id, triggers);
     // a one frame looping animation should NOT trigger onLoop events
     QVERIFY(!triggers.hasKey("testNodeOnLoop"));
-
-    const uint32_t MAX_TRIGGER_COUNT = 3;
 
     startFrame = 0.0f;
     endFrame = 1.1f;
@@ -312,7 +310,7 @@ void AnimTests::testAccumulateTime() {
     dt = 10.0f;
     triggers.clearMap();
     loopFlag = true;
-    resultFrame = accumulateTime(startFrame, endFrame, timeScale, startFrame, dt, loopFlag, id, triggers);
+    accumulateTime(startFrame, endFrame, timeScale, startFrame, dt, loopFlag, id, triggers);
     // a short animation with a large dt & a large timescale, should generate a onLoop event.
     QVERIFY(triggers.hasKey("testNodeOnLoop"));
 }

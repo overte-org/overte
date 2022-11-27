@@ -307,7 +307,7 @@ inline QString getTestResource(const QString& relativePath) {
         QFileInfo fileInfo(__FILE__);
         auto parentDir = fileInfo.absoluteDir();
         auto rootDir = parentDir.absoluteFilePath("..");
-        dir = QDir::cleanPath(rootDir);
+        dir.setPath(QDir::cleanPath(rootDir));
     });
 
     return QDir::cleanPath(dir.absoluteFilePath(relativePath));

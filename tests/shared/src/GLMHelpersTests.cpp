@@ -239,7 +239,7 @@ void GLMHelpersTests::roundPerf() {
     auto manualTime = std::chrono::high_resolution_clock::now() - start;
 
     bool identical = true;
-    for (int i = 0; i < vecs.size(); i++) {
+    for (decltype(vecs)::size_type i = 0; i < vecs.size(); i++) {
         identical &= vecs[i] == vecs2[i];
         if (vecs[i] != vecs2[i]) {
             qDebug() << "glm: " << vecs[i].x << vecs[i].y << vecs[i].z << ", manual: " << vecs2[i].x << vecs2[i].y << vecs2[i].z;
