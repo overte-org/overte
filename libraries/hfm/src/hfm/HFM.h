@@ -342,6 +342,26 @@ public:
     FlowData flowData;
 
     void debugDump();
+
+    /**
+     * @brief Get the number of warnings that were generated when loading this model.
+     *
+     * These may indicate non-compliance with the spec, or usage of deprecated functionality.
+     * This function is intended to be used for testing.
+     *
+     * @return Count
+     */
+    int loadWarningCount = 0;
+
+    /**
+     * @brief Get the number of errors that were generated when loading this model.
+     *
+     * Errors indicate the model is probably broken and unusable.
+     *
+     * @return Count
+     */
+    int loadErrorCount = 0;
+
 };
 
 };
