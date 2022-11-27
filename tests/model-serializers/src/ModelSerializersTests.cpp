@@ -56,8 +56,12 @@ void ModelSerializersTests::loadGLTF_data() {
     QTest::addColumn<bool>("expectWarnings");
     QTest::addColumn<bool>("expectErrors");
 
-    QTest::newRow("crash1") << "635d84711260644e7e393e0b.glb.gz" << false << true;
-    QTest::newRow("crash2") << "dude.glb.gz" << false << true;
+    QTest::newRow("ready-player-me-good1")   << "models/src/DragonAvatar1.glb.gz" << false << false;
+    QTest::newRow("ready-player-me-good2")   << "models/src/UkraineFranny.glb.gz" << false << false;
+    QTest::newRow("ready-player-me-good3")   << "models/src/Franny.glb.gz" << false << false;
+    QTest::newRow("ready-player-me-good4")   << "models/src/womanInTShirt.glb.gz" << false << false;
+    QTest::newRow("ready-player-me-good5")   << "models/src/female-avatar-with-swords.glb.gz" << false << false;
+    QTest::newRow("ready-player-me-broken1") << "models/src/broken-2022-11-27.glb.gz" << false << true;
 
 }
 
