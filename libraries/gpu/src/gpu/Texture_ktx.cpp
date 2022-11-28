@@ -32,11 +32,8 @@ struct GPUKTXPayload {
     using Version = uint8;
 
     static const std::string KEY;
-    static const Version CURRENT_VERSION { 2 };
-    static const size_t PADDING { 2 };
-    static const size_t SIZE { sizeof(Version) + sizeof(Sampler::Desc) + sizeof(uint32) + sizeof(TextureUsageType) + sizeof(glm::ivec2) + PADDING };
-    static_assert(GPUKTXPayload::SIZE == 44, "Packing size may differ between platforms");
-    static_assert(GPUKTXPayload::SIZE % 4 == 0, "GPUKTXPayload is not 4 bytes aligned");
+    static const Version CURRENT_VERSION { 3 };
+    static const size_t SIZE { sizeof(Version) + sizeof(Sampler::Desc) + sizeof(uint64_t) + sizeof(TextureUsageType) + sizeof(glm::ivec2) };
 
     Sampler::Desc _samplerDesc;
     Texture::Usage _usage;
@@ -44,38 +41,43 @@ struct GPUKTXPayload {
     glm::ivec2 _originalSize { 0, 0 };
 
     void serialize(DataSerializer &ser) {
+
         ser << CURRENT_VERSION;
+
+
         ser << _samplerDesc;
 
-        qCWarning(gpulogging) << "Offsets: " << offsetof(struct GPUKTXPayload, _samplerDesc) << offsetof(struct GPUKTXPayload, _usage) << offsetof(struct GPUKTXPayload, _usageType) << offsetof(struct GPUKTXPayload, _originalSize);
-        uint32 usageData = _usage._flags.to_ulong();
+        uint64_t usageData = _usage._flags.to_ulong();
         ser << usageData;
-
-        ser << (char)_usageType;
+        ser << ((uint8_t)_usageType);
         ser << _originalSize;
-        ser.addPadding(PADDING);
 
+
+        // The +1 is here because we're adding the CURRENT_VERSION at the top, but since it's declared as a static
+        // const, it's not actually part of the class' size.
         assert(ser.length() == GPUKTXPayload::SIZE);
     }
 
     bool unserialize(DataDeserializer &dsr) {
         Version version = 0;
-        uint32 usageData;
+        uint64_t usageData = 0;
         uint8_t usagetype = 0;
 
         dsr >> version;
 
-        if (version > CURRENT_VERSION) {
+        if (version != CURRENT_VERSION) {
             // If we try to load a version that we don't know how to parse,
             // it will render incorrectly
-            qCWarning(gpulogging) << "KTX version" << version << "is newer than our own," << CURRENT_VERSION;
-            qCWarning(gpulogging) << "Offsets: " << offsetof(struct GPUKTXPayload, _samplerDesc) << offsetof(struct GPUKTXPayload, _usage) << offsetof(struct GPUKTXPayload, _usageType) << offsetof(struct GPUKTXPayload, _originalSize);
+            qCWarning(gpulogging) << "KTX version" << version << "is different than our own," << CURRENT_VERSION;
             qCWarning(gpulogging) << dsr;
             return false;
         }
 
         dsr >> _samplerDesc;
+
         dsr >> usageData;
+        _usage._flags = gpu::Texture::Usage::Flags(usageData);
+
         dsr >> usagetype;
         _usageType = (TextureUsageType)usagetype;
 

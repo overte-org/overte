@@ -238,6 +238,33 @@ class DataSerializer {
             return *this;
         }
 
+        ///////////////////////////////////////////////////////////
+
+        /**
+         * @brief Add an uint64_t to the output
+         *
+         * @param val  Value to add
+         * @return SerDes& This object
+         */
+        DataSerializer &operator<<(uint64_t val) {
+            return *this << int64_t(val);
+        }
+
+        /**
+         * @brief Add an int64_t to the output
+         *
+         * @param val  Value to add
+         * @return SerDes& This object
+         */
+        DataSerializer &operator<<(int64_t val) {
+            if (!extendBy(sizeof(val), "int64_t")) {
+                return *this;
+            }
+
+            memcpy(&_store[_pos], (char*)&val, sizeof(val));
+            _pos += sizeof(val);
+            return *this;
+        }
 
         ///////////////////////////////////////////////////////////
 
@@ -410,7 +437,18 @@ class DataSerializer {
          * @brief Reset the serializer to the start, clear overflow bit.
          *
          */
-        void rewind() { _pos = 0; _overflow = false; }
+        void rewind() { _pos = 0; _overflow = false; _lastAdvance = 0; }
+
+
+        /**
+         * @brief Size of the last advance
+         *
+         * This can be used to get how many bytes were added in the last operation.
+         * It is reset on rewind()
+         *
+         * @return size_t
+         */
+        size_t lastAdvance() const { return _lastAdvance; }
 
         /**
          * @brief Dump the contents of this object into QDebug
@@ -430,7 +468,7 @@ class DataSerializer {
 
             if ( _capacity < _length + bytes) {
                 if ( _storeIsExternal ) {
-                    qCritical() << "Serializer trying to write past end of output buffer, writing" << bytes << "bytes for" << type_name << " from position " << _pos << ", length " << _length;
+                    qCritical() << "Serializer trying to write past end of output buffer of" << _capacity << "bytes. Error writing" << bytes << "bytes for" << type_name << " from position " << _pos << ", length " << _length;
                     _overflow = true;
                     return false;
                 }
@@ -439,6 +477,7 @@ class DataSerializer {
             }
 
             _length += bytes;
+            _lastAdvance = bytes;
             return true;
         }
 
@@ -451,6 +490,7 @@ class DataSerializer {
         size_t _capacity = 0;
         size_t _length = 0;
         size_t _pos = 0;
+        size_t _lastAdvance = 0;
 };
 
 /**
@@ -502,6 +542,7 @@ class DataDeserializer {
             _length = storeLength;
             _pos = 0;
             _store = externalStore;
+            _lastAdvance = 0;
         }
 
         /**
@@ -536,6 +577,7 @@ class DataDeserializer {
             }
 
             _pos += bytes;
+            _lastAdvance = bytes;
         }
 
 
@@ -558,6 +600,7 @@ class DataDeserializer {
         DataDeserializer &operator>>(int8_t &c) {
             if ( canAdvanceBy(1, "int8_t") ) {
                 c = _store[_pos++];
+                _lastAdvance = sizeof(c);
             }
 
             return *this;
@@ -585,6 +628,7 @@ class DataDeserializer {
             if ( canAdvanceBy(sizeof(val), "int16_t") ) {
                 memcpy((char*)&val, &_store[_pos], sizeof(val));
                 _pos += sizeof(val);
+                _lastAdvance = sizeof(val);
             }
 
             return *this;
@@ -612,10 +656,37 @@ class DataDeserializer {
             if ( canAdvanceBy(sizeof(val), "int32_t") ) {
                 memcpy((char*)&val, &_store[_pos], sizeof(val));
                 _pos += sizeof(val);
+                _lastAdvance = sizeof(val);
             }
             return *this;
         }
 
+        ///////////////////////////////////////////////////////////
+
+        /**
+         * @brief Read an uint64_t from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
+        DataDeserializer &operator>>(uint64_t &val) {
+            return *this >> reinterpret_cast<int64_t&>(val);
+        }
+
+        /**
+         * @brief Read an int64_t from the buffer
+         *
+         * @param val Value to read
+         * @return SerDes& This object
+         */
+        DataDeserializer &operator>>(int64_t &val) {
+            if ( canAdvanceBy(sizeof(val), "int64_t") ) {
+                memcpy((char*)&val, &_store[_pos], sizeof(val));
+                _pos += sizeof(val);
+                _lastAdvance = sizeof(val);
+            }
+            return *this;
+        }
 
         ///////////////////////////////////////////////////////////
 
@@ -630,6 +701,7 @@ class DataDeserializer {
             if ( canAdvanceBy(sizeof(val), "float") ) {
                 memcpy((char*)&val, &_store[_pos], sizeof(val));
                 _pos += sizeof(val);
+                _lastAdvance = sizeof(val);
             }
             return *this;
         }
@@ -654,6 +726,7 @@ class DataDeserializer {
                 memcpy((char*)&val.z, &_store[_pos + sz*2], sz);
 
                 _pos += sz*3;
+                _lastAdvance = sz * 3;
             }
 
             return *this;
@@ -678,6 +751,7 @@ class DataDeserializer {
                 memcpy((char*)&val.w, &_store[_pos + sz*3], sz);
 
                 _pos += sz*4;
+                _lastAdvance = sz*4;
             }
             return *this;
         }
@@ -699,6 +773,7 @@ class DataDeserializer {
                 memcpy((char*)&val.y, &_store[_pos + sz  ], sz);
 
                 _pos += sz*2;
+                _lastAdvance = sz * 2;
             }
 
             return *this;
@@ -753,7 +828,17 @@ class DataDeserializer {
          * @brief Reset the serializer to the start, clear overflow bit.
          *
          */
-        void rewind() { _pos = 0; _overflow = false; }
+        void rewind() { _pos = 0; _overflow = false; _lastAdvance = 0; }
+
+        /**
+         * @brief Size of the last advance
+         *
+         * This can be used to get how many bytes were added in the last operation.
+         * It is reset on rewind()
+         *
+         * @return size_t
+         */
+        size_t lastAdvance() const { return _lastAdvance; }
 
         /**
          * @brief Dump the contents of this object into QDebug
@@ -772,7 +857,7 @@ class DataDeserializer {
             //qDebug() << "Checking advance by" << bytes;
 
             if ( _length < _pos + bytes) {
-                qCritical() << "Deserializer trying to read past end of input, reading" << bytes << "bytes for" << type_name << "from position " << _pos << ". Max length " << _length;
+                qCritical() << "Deserializer trying to read past end of input buffer of" << _length << "bytes, reading" << bytes << "bytes for" << type_name << "from position " << _pos;
                 _overflow = true;
                 return false;
             }
@@ -784,4 +869,5 @@ class DataDeserializer {
         bool _overflow = false;
         size_t _length = 0;
         size_t _pos = 0;
+        size_t _lastAdvance = 0;
 };
