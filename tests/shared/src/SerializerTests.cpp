@@ -124,6 +124,35 @@ void SerializerTests::testReadPastEnd() {
     QCOMPARE(d.pos(), 0);
 }
 
+void SerializerTests::testWritePastEnd() {
+    qint8 i8 = 255;
+    qint16 i16 = 65535;
+
+
+    char buf[16];
+
+
+    // 1 byte buffer, we can write 1 byte
+    memset(buf, 0, sizeof(buf));
+    DataSerializer s1(buf, 1);
+    s1 << i8;
+    QCOMPARE(s1.pos(), 1);
+    QCOMPARE(s1.isOverflow(), false);
+    QCOMPARE(buf[0], i8);
+
+    // 1 byte buffer, we can't write 2 bytes
+    memset(buf, 0, sizeof(buf));
+    DataSerializer s2(buf, 1);
+    s2 << i16;
+    QCOMPARE(s2.pos(), 0);
+    QCOMPARE(s2.isOverflow(), true);
+    QCOMPARE(buf[0], 0); // We didn't write
+    QCOMPARE(buf[1], 0);
+}
+
+
+
+
 void SerializerTests::benchmarkEncodingDynamicAlloc() {
     QBENCHMARK {
         DataSerializer s;
