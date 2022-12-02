@@ -94,6 +94,8 @@ typedef std::shared_ptr< SphericalHarmonics > SHPointer;
 
 
 inline DataSerializer &operator<<(DataSerializer &ser, const SphericalHarmonics &h) {
+    DataSerializer::SizeTracker tracker(ser);
+
     ser << h.L00  << h.spare0;
     ser << h.L1m1 << h.spare1;
     ser << h.L10  << h.spare2;
@@ -107,6 +109,8 @@ inline DataSerializer &operator<<(DataSerializer &ser, const SphericalHarmonics 
 }
 
 inline DataDeserializer &operator>>(DataDeserializer &des, SphericalHarmonics &h) {
+    DataDeserializer::SizeTracker tracker(des);
+
     des >> h.L00  >> h.spare0;
     des >> h.L1m1 >> h.spare1;
     des >> h.L10  >> h.spare2;
@@ -238,6 +242,7 @@ protected:
 };
 
 inline DataSerializer &operator<<(DataSerializer &ser, const Sampler::Desc &d) {
+    DataSerializer::SizeTracker tracker(ser);
     ser << d._borderColor;
     ser << d._maxAnisotropy;
     ser << d._filter;
@@ -252,6 +257,7 @@ inline DataSerializer &operator<<(DataSerializer &ser, const Sampler::Desc &d) {
 }
 
 inline DataDeserializer &operator>>(DataDeserializer &dsr, Sampler::Desc &d) {
+    DataDeserializer::SizeTracker tracker(dsr);
     dsr >> d._borderColor;
     dsr >> d._maxAnisotropy;
     dsr >> d._filter;
