@@ -46,7 +46,7 @@ void RotationConstraintTests::testElbowConstraint() {
     { // test reference rotation -- should be unconstrained
         glm::quat inputRotation = referenceRotation;
         glm::quat outputRotation = inputRotation;
-        bool updated = elbow.apply(outputRotation);
+        elbow.apply(outputRotation);
         glm::quat expectedRotation = referenceRotation;
         QCOMPARE_WITH_ABS_ERROR(expectedRotation, outputRotation, EPSILON);
     }
@@ -60,7 +60,7 @@ void RotationConstraintTests::testElbowConstraint() {
         for (float angle = startAngle; angle < endAngle + 0.5f * deltaAngle; angle += deltaAngle) {
             glm::quat inputRotation = glm::angleAxis(angle, hingeAxis) * referenceRotation;
             glm::quat outputRotation = inputRotation;
-            bool updated = elbow.apply(outputRotation);
+            elbow.apply(outputRotation);
             QCOMPARE_WITH_ABS_ERROR(inputRotation, outputRotation, EPSILON);
         }
     }
@@ -69,7 +69,7 @@ void RotationConstraintTests::testElbowConstraint() {
         float angle = minAngle - smallAngle;
         glm::quat inputRotation = glm::angleAxis(angle, hingeAxis) * referenceRotation;
         glm::quat outputRotation = inputRotation;
-        bool updated = elbow.apply(outputRotation);
+        elbow.apply(outputRotation);
         glm::quat expectedRotation = glm::angleAxis(minAngle, hingeAxis) * referenceRotation;
         QCOMPARE_WITH_ABS_ERROR(expectedRotation, outputRotation, EPSILON);
     }
@@ -78,7 +78,7 @@ void RotationConstraintTests::testElbowConstraint() {
         float angle = maxAngle + smallAngle;
         glm::quat inputRotation = glm::angleAxis(angle, hingeAxis) * referenceRotation;
         glm::quat outputRotation = inputRotation;
-        bool updated = elbow.apply(outputRotation);
+        elbow.apply(outputRotation);
         glm::quat expectedRotation = glm::angleAxis(maxAngle, hingeAxis) * referenceRotation;
         QCOMPARE_WITH_ABS_ERROR(expectedRotation, outputRotation, EPSILON);
     }
@@ -89,7 +89,7 @@ void RotationConstraintTests::testElbowConstraint() {
         float someAngle = 0.789f;
         glm::quat inputRotation = glm::angleAxis(someAngle, twistVector) * referenceRotation;
         glm::quat outputRotation = inputRotation;
-        bool updated = elbow.apply(outputRotation);
+        elbow.apply(outputRotation);
         glm::quat expectedRotation = referenceRotation;
         QCOMPARE_WITH_ABS_ERROR(expectedRotation, outputRotation, EPSILON);
     }

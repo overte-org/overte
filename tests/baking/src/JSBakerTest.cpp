@@ -83,7 +83,7 @@ void JSBakerTest::setTestCases() {
 
 void JSBakerTest::testJSBaking() {
 
-    for (int i = 0;i < _testCases.size();i++) {
+    for (decltype(_testCases)::size_type i = 0;i < _testCases.size();i++) {
         QByteArray output;
         auto input = _testCases.at(i).first;
         JSBaker::bakeJS(input, output);
