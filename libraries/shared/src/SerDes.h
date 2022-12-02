@@ -49,7 +49,7 @@
  * classes and structures, implement a `operator<<` and `operator>>` functions for that object, eg:
  *
  * @code {.cpp}
- * Serializer &operator<<(Serializer &ser, const Object &o) {
+ * DataSerializer &operator<<(DataSerializer &ser, const Object &o) {
  *  ser << o._borderColor;
  *  ser << o._maxAnisotropy;
  *  ser << o._filter;
@@ -60,6 +60,46 @@
  */
 class DataSerializer {
     public:
+
+        /**
+         * @brief RAII tracker of advance position
+         *
+         * When a custom operator<< is implemented for DataSserializer,
+         * this class allows to easily keep track of how much data has been added and
+         * adjust the parent's lastAdvance() count on this class' destruction.
+         *
+         * @code {.cpp}
+         * DataSerializer &operator<<(DataSerializer &ser, const Object &o) {
+         *  DataSerializer::SizeTracker tracker(ser);
+         *
+         *  ser << o._borderColor;
+         *  ser << o._maxAnisotropy;
+         *  ser << o._filter;
+         *  return ser;
+         * }
+         * @endcode
+         */
+        class SizeTracker {
+            public:
+            SizeTracker(DataSerializer &parent) : _parent(parent) {
+                _start_pos = _parent.pos();
+            }
+
+            ~SizeTracker() {
+                size_t cur_pos = _parent.pos();
+
+                if ( cur_pos >= _start_pos ) {
+                    _parent._lastAdvance = cur_pos - _start_pos;
+                } else {
+                    _parent._lastAdvance = 0;
+                }
+            }
+
+            private:
+            DataSerializer &_parent;
+            size_t _start_pos = 0;
+        };
+
         /**
          * @brief Default size for a dynamically allocated buffer.
          *
@@ -511,7 +551,7 @@ class DataSerializer {
  * uint16_t count;
  * glm::vec3 pos;
  *
- * Deserializer des(buffer, sizeof(buffer));
+ * DataDeserializer des(buffer, sizeof(buffer));
  * des >> version;
  * des >> count;
  * des >> pos;
@@ -521,7 +561,7 @@ class DataSerializer {
  * classes and structures, implement an `operator>>` function for that object, eg:
  *
  * @code {.cpp}
- * Deserializer &operator>>(Deserializer &des, Object &o) {
+ * DataDeserializer &operator>>(DataDeserializer &des, Object &o) {
  *  des >> o._borderColor;
  *  des >> o._maxAnisotropy;
  *  des >> o._filter;
@@ -532,6 +572,46 @@ class DataSerializer {
  */
 class DataDeserializer {
     public:
+
+        /**
+         * @brief RAII tracker of advance position
+         *
+         * When a custom operator>> is implemented for DataDeserializer,
+         * this class allows to easily keep track of how much data has been added and
+         * adjust the parent's lastAdvance() count on this class' destruction.
+         *
+         * @code {.cpp}
+         * DataDeserializer &operator>>(Deserializer &des, Object &o) {
+         *  DataDeserializer::SizeTracker tracker(des);
+         *
+         *  des >> o._borderColor;
+         *  des >> o._maxAnisotropy;
+         *  des >> o._filter;
+         *  return des;
+         * }
+         * @endcode
+         */
+        class SizeTracker {
+            public:
+            SizeTracker(DataDeserializer &parent) : _parent(parent) {
+                _start_pos = _parent.pos();
+            }
+
+            ~SizeTracker() {
+                size_t cur_pos = _parent.pos();
+
+                if ( cur_pos >= _start_pos ) {
+                    _parent._lastAdvance = cur_pos - _start_pos;
+                } else {
+                    _parent._lastAdvance = 0;
+                }
+            }
+
+            private:
+            DataDeserializer &_parent;
+            size_t _start_pos = 0;
+        };
+
         /**
          * @brief Construct a Deserializer
          *         *
