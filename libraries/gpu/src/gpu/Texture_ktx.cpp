@@ -28,12 +28,25 @@ using KtxStorage = Texture::KtxStorage;
 std::vector<std::pair<std::shared_ptr<storage::FileStorage>, std::shared_ptr<std::mutex>>> KtxStorage::_cachedKtxFiles;
 std::mutex KtxStorage::_cachedKtxFilesMutex;
 
+
+/**
+ * @brief Payload for a KTX (texture)
+ *
+ * This contains a ready to use texture. This is both used for the local cache, and for baked textures.
+ *
+ * @note The usage for textures means breaking compatibility is a bad idea, and that the implementation
+ * should just keep on adding extra data at the bottom of the structure, and remain able to read old
+ * formats. In fact, version 1 KTX can be found in older baked assets.
+ */
 struct GPUKTXPayload {
     using Version = uint8;
 
     static const std::string KEY;
-    static const Version CURRENT_VERSION { 3 };
-    static const size_t SIZE { sizeof(Version) + sizeof(Sampler::Desc) + sizeof(uint64_t) + sizeof(TextureUsageType) + sizeof(glm::ivec2) };
+    static const Version CURRENT_VERSION { 2 };
+    static const size_t PADDING { 2 };
+    static const size_t SIZE { sizeof(Version) + sizeof(Sampler::Desc) + sizeof(uint32_t) + sizeof(TextureUsageType) + sizeof(glm::ivec2) + PADDING };
+
+    static_assert(GPUKTXPayload::SIZE == 44, "Packing size may differ between platforms");
 
     Sampler::Desc _samplerDesc;
     Texture::Usage _usage;
@@ -43,13 +56,14 @@ struct GPUKTXPayload {
     void serialize(DataSerializer &ser) {
 
         ser << CURRENT_VERSION;
-
+        ser.addPadding(1);
 
         ser << _samplerDesc;
 
-        uint64_t usageData = _usage._flags.to_ulong();
+        uint32_t usageData = (uint32_t)_usage._flags.to_ulong();
         ser << usageData;
         ser << ((uint8_t)_usageType);
+        ser.addPadding(1);
         ser << _originalSize;
 
 
@@ -60,15 +74,16 @@ struct GPUKTXPayload {
 
     bool unserialize(DataDeserializer &dsr) {
         Version version = 0;
-        uint64_t usageData = 0;
+        uint32_t usageData = 0;
         uint8_t usagetype = 0;
 
         dsr >> version;
+        dsr.skipPadding(1);
 
-        if (version != CURRENT_VERSION) {
+        if (version > CURRENT_VERSION) {
             // If we try to load a version that we don't know how to parse,
             // it will render incorrectly
-            qCWarning(gpulogging) << "KTX version" << version << "is different than our own," << CURRENT_VERSION;
+            qCWarning(gpulogging) << "KTX version" << version << "is newer than our own," << CURRENT_VERSION;
             qCWarning(gpulogging) << dsr;
             return false;
         }
@@ -79,6 +94,7 @@ struct GPUKTXPayload {
         _usage._flags = gpu::Texture::Usage::Flags(usageData);
 
         dsr >> usagetype;
+        dsr.skipPadding(1);
         _usageType = (TextureUsageType)usagetype;
 
         if (version >= 2) {
