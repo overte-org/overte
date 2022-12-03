@@ -1,3 +1,8 @@
+<!--
+Copyright 2022 Overte e.V.
+SPDX-License-Identifier: MIT
+-->
+
 # Changelog
 All notable changes to this project will be documented in this file.
 This does not include changes to unrelated to the software or its packaging,

@@ -1,3 +1,10 @@
+<!--
+Copyright 2013-2019 High Fidelity, Inc.
+Copyright 2020-2021 Vircadia contributors
+Copyright 2022 Overte e.V.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Coding Standards
 
 Note that the current code base does not necessarily follow this with 100% consistency. It will be an ongoing process to try and sanitize the existing code to match these guidelines.

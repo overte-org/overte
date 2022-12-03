@@ -1,6 +1,13 @@
+<!--
+Copyright 2013-2019 High Fidelity, Inc.
+Copyright 2020-2021 Vircadia contributors
+Copyright 2020-2022 Overte e.V.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Build macOS
 
-*Last Updated on December 1, 2021*
+*Last Updated on September 8, 2022*
 
 Please read the [general build guide](BUILD.md) for information on dependencies required for all platforms. This will include the necessary environment variables to customize your build. Only macOS specific instructions are found in this document.
 

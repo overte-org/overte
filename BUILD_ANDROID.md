@@ -1,3 +1,10 @@
+<!--
+Copyright 2013-2019 High Fidelity, Inc.
+Copyright 2019-2021 Vircadia contributors
+Copyright 2021-2022 Overte e.V.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Build Android
 
 *Last Updated on December 15, 2020*

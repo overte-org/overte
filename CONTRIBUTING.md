@@ -1,3 +1,9 @@
+<!--
+Copyright 2013-2019 High Fidelity, Inc.
+Copyright 2020 Vircadia contributors
+Copyright 2022 Overte e.V.
+SPDX-License-Identifier: Apache-2.0
+-->
 
 The project embraces distributed development and if you'd like to help, it would be greatly appreciated. Just open a pull request with the revisions.
 
