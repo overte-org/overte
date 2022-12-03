@@ -304,10 +304,11 @@ bool Model::updateGeometry() {
             // initJointStates() to fail to make _rig.jointStatesEmpty() false, causing things to end up here twice.
             //
             // In any case it appears to be safe to simply clear _meshStates here, even though this shouldn't happen.
-            _meshStates.clear();
+
             qCWarning(renderutils) << "_meshStates has" << _meshStates.size() << "items when it should have none. Model with URL "
                                    << _url.toString() << "; translation" << _translation << "; rotation" << _rotation << "; scale" << _scale
                                    << "; joint state count" << _rig.getJointStateCount() << "; type" << (modelProviderType == NestableType::Avatar ? "Avatar" : "Entity");
+            _meshStates.clear();
         }
 
         const HFMModel& hfmModel = getHFMModel();
