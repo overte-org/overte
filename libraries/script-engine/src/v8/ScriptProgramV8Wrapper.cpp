@@ -35,6 +35,7 @@ bool ScriptProgramV8Wrapper::compile() {
     auto isolate = _engine->getIsolate();
     v8::HandleScope handleScope(isolate);
     auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     int errorColumnNumber = 0;
     int errorLineNumber = 0;
     QString errorMessage = "";
