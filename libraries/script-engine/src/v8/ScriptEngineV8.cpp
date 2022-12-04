@@ -370,7 +370,7 @@ v8::Platform* ScriptEngineV8::getV8Platform() {
 }
 
 ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
-    _scriptManager(scriptManager)
+    _scriptManager(scriptManager), _isEvaluating(false)
     //V8TODO
     //_arrayBufferClass(new ArrayBufferClass(this))
 {
@@ -514,20 +514,33 @@ void ScriptEngineV8::registerGlobalObject(const QString& name, QObject* object) 
 #ifdef THREAD_DEBUGGING
     qCDebug(scriptengine) << "ScriptEngineV8::registerGlobalObject() called on thread [" << QThread::currentThread() << "] name:" << name;
 #endif
-    v8::HandleScope handleScope(_v8Isolate);
-    Q_ASSERT(_v8Isolate->IsCurrent());
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
-    v8::Local<v8::Object> v8GlobalObject = getContext()->Global();
-    v8::Local<v8::String> v8Name = v8::String::NewFromUtf8(_v8Isolate, name.toStdString().c_str()).ToLocalChecked();
+    bool is_isolate_exit_needed = false;
+    if(!_v8Isolate->IsCurrent() && !_v8Locker) {
+        // V8TODO: Theoretically only script thread should access this, so it should be safe
+        _v8Locker.reset(new v8::Locker(_v8Isolate));
+        _v8Isolate->Enter();
+        is_isolate_exit_needed = true;
+    }
+    {
+        v8::HandleScope handleScope(_v8Isolate);
+        Q_ASSERT(_v8Isolate->IsCurrent());
+        v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+        v8::Local<v8::Object> v8GlobalObject = getContext()->Global();
+        v8::Local<v8::String> v8Name = v8::String::NewFromUtf8(_v8Isolate, name.toStdString().c_str()).ToLocalChecked();
 
-    // V8TODO: Is IsEmpty check enough or IsValid is needed too?
-    if (!v8GlobalObject->Get(getContext(), v8Name).IsEmpty()) {
-        if (object) {
-            V8ScriptValue value = ScriptObjectV8Proxy::newQObject(this, object, ScriptEngine::QtOwnership);
-            v8GlobalObject->Set(getContext(), v8Name, value.get());
-        } else {
-            v8GlobalObject->Set(getContext(), v8Name, v8::Null(_v8Isolate));
+        // V8TODO: Is IsEmpty check enough or IsValid is needed too?
+        if (!v8GlobalObject->Get(getContext(), v8Name).IsEmpty()) {
+            if (object) {
+                V8ScriptValue value = ScriptObjectV8Proxy::newQObject(this, object, ScriptEngine::QtOwnership);
+                v8GlobalObject->Set(getContext(), v8Name, value.get());
+            } else {
+                v8GlobalObject->Set(getContext(), v8Name, v8::Null(_v8Isolate));
+            }
         }
+    }
+    if (is_isolate_exit_needed) {
+        _v8Isolate->Exit();
+        _v8Locker.reset(nullptr);
     }
 }
 
@@ -548,13 +561,26 @@ void ScriptEngineV8::registerFunction(const QString& name, ScriptEngine::Functio
     qCDebug(scriptengine) << "ScriptEngineV8::registerFunction() called on thread [" << QThread::currentThread() << "] name:" << name;
 #endif
 
-    //auto scriptFun = static_cast<ScriptValueV8Wrapper*>(newFunction(functionSignature, numArguments).ptr())->toV8Value().constGet();
-    v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
-    auto scriptFun = newFunction(functionSignature, numArguments);
+    bool is_isolate_exit_needed = false;
+    if(!_v8Isolate->IsCurrent() && !_v8Locker) {
+        // V8TODO: Theoretically only script thread should access this, so it should be safe
+        _v8Locker.reset(new v8::Locker(_v8Isolate));
+        _v8Isolate->Enter();
+        is_isolate_exit_needed = true;
+    }
+    {
+        //auto scriptFun = static_cast<ScriptValueV8Wrapper*>(newFunction(functionSignature, numArguments).ptr())->toV8Value().constGet();
+        v8::HandleScope handleScope(_v8Isolate);
+        v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+        auto scriptFun = newFunction(functionSignature, numArguments);
 
-    //getContext()->Global().Set();
-    globalObject().setProperty(name, scriptFun);
+        //getContext()->Global().Set();
+        globalObject().setProperty(name, scriptFun);
+    }
+    if (is_isolate_exit_needed) {
+        _v8Isolate->Exit();
+        _v8Locker.reset(nullptr);
+    }
 }
 
 void ScriptEngineV8::registerFunction(const QString& parent, const QString& name, ScriptEngine::FunctionSignature functionSignature, int numArguments) {
@@ -572,12 +598,25 @@ void ScriptEngineV8::registerFunction(const QString& parent, const QString& name
     qCDebug(scriptengine) << "ScriptEngineV8::registerFunction() called on thread [" << QThread::currentThread() << "] parent:" << parent << "name:" << name;
 #endif
 
-    v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
-    ScriptValue object = globalObject().property(parent);
-    if (object.isValid()) {
-        ScriptValue scriptFun = newFunction(functionSignature, numArguments);
-        object.setProperty(name, scriptFun);
+    bool is_isolate_exit_needed = false;
+    if(!_v8Isolate->IsCurrent() && !_v8Locker) {
+        // V8TODO: Theoretically only script thread should access this, so it should be safe
+        _v8Locker.reset(new v8::Locker(_v8Isolate));
+        _v8Isolate->Enter();
+        is_isolate_exit_needed = true;
+    }
+    {
+        v8::HandleScope handleScope(_v8Isolate);
+        v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+        ScriptValue object = globalObject().property(parent);
+        if (object.isValid()) {
+            ScriptValue scriptFun = newFunction(functionSignature, numArguments);
+            object.setProperty(name, scriptFun);
+        }
+    }
+    if (is_isolate_exit_needed) {
+        _v8Isolate->Exit();
+        _v8Locker.reset(nullptr);
     }
 }
 
@@ -599,10 +638,18 @@ void ScriptEngineV8::registerGetterSetter(const QString& name, ScriptEngine::Fun
     qCDebug(scriptengine) << "ScriptEngineV8::registerGetterSetter() called on thread [" << QThread::currentThread() << "] name:" << name << "parent:" << parent;
 #endif
 
-    v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(getContext());
+    bool is_isolate_exit_needed = false;
+    if(!_v8Isolate->IsCurrent() && !_v8Locker) {
+        // V8TODO: Theoretically only script thread should access this, so it should be safe
+        _v8Locker.reset(new v8::Locker(_v8Isolate));
+        _v8Isolate->Enter();
+        is_isolate_exit_needed = true;
+    }
+    {
+        v8::HandleScope handleScope(_v8Isolate);
+        v8::Context::Scope contextScope(getContext());
 
-    /*auto getterFunction = [](v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+        /*auto getterFunction = [](v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
         //V8TODO: is using GetCurrentContext ok, or context wrapper needs to be added?
         v8::HandleScope handleScope(info.GetIsolate());
         auto context = info.GetIsolate()->GetCurrentContext();
@@ -636,35 +683,44 @@ void ScriptEngineV8::registerGetterSetter(const QString& name, ScriptEngine::Fun
         ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(result);
     };*/
 
-    ScriptValue setterFunction = newFunction(setter, 1);
-    ScriptValue getterFunction = newFunction(getter);
-    V8ScriptValue unwrappedGetter = ScriptValueV8Wrapper::fullUnwrap(this, setterFunction);
-    V8ScriptValue unwrappedSetter = ScriptValueV8Wrapper::fullUnwrap(this, getterFunction);
-    v8::PropertyDescriptor propertyDescriptor(unwrappedGetter.get(), unwrappedSetter.get());
+        ScriptValue setterFunction = newFunction(setter, 1);
+        ScriptValue getterFunction = newFunction(getter);
+        V8ScriptValue unwrappedGetter = ScriptValueV8Wrapper::fullUnwrap(this, setterFunction);
+        V8ScriptValue unwrappedSetter = ScriptValueV8Wrapper::fullUnwrap(this, getterFunction);
+        v8::PropertyDescriptor propertyDescriptor(unwrappedGetter.get(), unwrappedSetter.get());
 
-    //V8TODO: Getters/setters are probably done in a different way in V8. Maybe object template is needed?
-    if (!parent.isNull() && !parent.isEmpty()) {
-        ScriptValue object = globalObject().property(parent);
-        if (object.isValid()) {
-            V8ScriptValue v8parent = ScriptValueV8Wrapper::fullUnwrap(this, object);
-            Q_ASSERT(v8parent.get()->IsObject());
-            v8::Local<v8::Object> v8object = v8::Local<v8::Object>::Cast(v8parent.get());
-            v8::Local<v8::String> v8propertyName = v8::String::NewFromUtf8(_v8Isolate, name.toStdString().c_str()).ToLocalChecked();
-            if(!v8object->DefineProperty(getContext(), v8propertyName, propertyDescriptor).FromMaybe(false)) {
-                qCDebug(scriptengine) << "DefineProperty failed for registerGetterSetter \"" << name << "\" for parent: \"" << parent << "\"";
+        //V8TODO: Getters/setters are probably done in a different way in V8. Maybe object template is needed?
+        if (!parent.isNull() && !parent.isEmpty()) {
+            ScriptValue object = globalObject().property(parent);
+            if (object.isValid()) {
+                V8ScriptValue v8parent = ScriptValueV8Wrapper::fullUnwrap(this, object);
+                Q_ASSERT(v8parent.get()->IsObject());
+                v8::Local<v8::Object> v8object = v8::Local<v8::Object>::Cast(v8parent.get());
+                v8::Local<v8::String> v8propertyName =
+                    v8::String::NewFromUtf8(_v8Isolate, name.toStdString().c_str()).ToLocalChecked();
+                if (!v8object->DefineProperty(getContext(), v8propertyName, propertyDescriptor).FromMaybe(false)) {
+                    qCDebug(scriptengine) << "DefineProperty failed for registerGetterSetter \"" << name << "\" for parent: \""
+                                          << parent << "\"";
+                }
+                //object.setProperty(name, setterFunction, ScriptValue::PropertySetter);
+                //object.setProperty(name, getterFunction, ScriptValue::PropertyGetter);
+            } else {
+                qCDebug(scriptengine) << "Parent object \"" << parent << "\" for registerGetterSetter \"" << name
+                                      << "\" is not valid: ";
             }
-            //object.setProperty(name, setterFunction, ScriptValue::PropertySetter);
-            //object.setProperty(name, getterFunction, ScriptValue::PropertyGetter);
         } else {
-            qCDebug(scriptengine) << "Parent object \"" << parent << "\" for registerGetterSetter \"" << name << "\" is not valid: ";
+            v8::Local<v8::String> v8propertyName =
+                v8::String::NewFromUtf8(_v8Isolate, name.toStdString().c_str()).ToLocalChecked();
+            if (!getContext()->Global()->DefineProperty(getContext(), v8propertyName, propertyDescriptor).FromMaybe(false)) {
+                qCDebug(scriptengine) << "DefineProperty failed for registerGetterSetter \"" << name << "\" for global object";
+            }
+            //globalObject().setProperty(name, setterFunction, ScriptValue::PropertySetter);
+            //globalObject().setProperty(name, getterFunction, ScriptValue::PropertyGetter);
         }
-    } else {
-        v8::Local<v8::String> v8propertyName = v8::String::NewFromUtf8(_v8Isolate, name.toStdString().c_str()).ToLocalChecked();
-        if(!getContext()->Global()->DefineProperty(getContext(), v8propertyName, propertyDescriptor).FromMaybe(false)) {
-            qCDebug(scriptengine) << "DefineProperty failed for registerGetterSetter \"" << name << "\" for global object";
-        }
-        //globalObject().setProperty(name, setterFunction, ScriptValue::PropertySetter);
-        //globalObject().setProperty(name, getterFunction, ScriptValue::PropertyGetter);
+    }
+    if (is_isolate_exit_needed) {
+        _v8Isolate->Exit();
+        _v8Locker.reset(nullptr);
     }
 }
 
@@ -674,10 +730,13 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
     if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
         return nullValue();
     }
+    Q_ASSERT(!isEvaluating());
+    _isEvaluating = true;
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     ScriptProgramV8Wrapper* unwrappedProgram = ScriptProgramV8Wrapper::unwrap(_program);
     if (unwrappedProgram == nullptr) {
+        _isEvaluating = false;
         return nullValue();
     }
     const V8ScriptProgram& program = unwrappedProgram->toV8Value();
@@ -687,10 +746,12 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
 
     ScriptValueV8Wrapper* unwrappedClosure = ScriptValueV8Wrapper::unwrap(_closure);
     if (unwrappedClosure == nullptr) {
+        _isEvaluating = false;
         return nullValue();
     }
     const V8ScriptValue& closure = unwrappedClosure->toV8Value();
     if (!closure.constGet()->IsObject()) {
+        _isEvaluating = false;
         return nullValue();
     }
     const v8::Local<v8::Object> closureObject = v8::Local<v8::Object>::Cast(closure.constGet());
@@ -698,6 +759,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
     v8::Local<v8::Value> oldGlobal;
     v8::Local<v8::Value> closureGlobal;
     if (!closureObject->Get(closure.constGetContext() ,v8::String::NewFromUtf8(_v8Isolate, "global").ToLocalChecked()).ToLocal(&closureGlobal)) {
+        _isEvaluating = false;
         return nullValue();
     }
 
@@ -721,6 +783,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
     v8::Local<v8::Value> thiz;
     // V8TODO: not sure if "this" doesn't exist or is empty in some cases
     if (!closureObject->Get(closure.constGetContext() ,v8::String::NewFromUtf8(_v8Isolate, "this").ToLocalChecked()).ToLocal(&thiz)) {
+        _isEvaluating = false;
         return nullValue();
     }
     //thiz = closure.property("this");
@@ -776,6 +839,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
     }*/
 
     //_v8Context.Get(_v8Isolate)->Enter();
+    _isEvaluating = false;
     return result;
 }
 
@@ -801,6 +865,8 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
     // Compile and check syntax
     // V8TODO: Could these all be replaced with checkSyntax function from wrapper?
     Q_ASSERT(!_v8Isolate->IsDead());
+    Q_ASSERT(!isEvaluating());
+    _isEvaluating = true;
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     v8::TryCatch tryCatch(getIsolate());
@@ -830,6 +896,7 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
         auto err = makeError(newValue(errorMessage));
         raiseException(err);
         maybeEmitUncaughtException("compile");
+        _isEvaluating = false;
         return err;
     }
     qCDebug(scriptengine) << "Script compilation succesful: " << fileName;
@@ -863,9 +930,11 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
         //V8TODO
         //raiseException(errorValue);
         //maybeEmitUncaughtException("evaluate");
+        _isEvaluating = false;
         return errorValue;
     }
     V8ScriptValue resultValue(_v8Isolate, result);
+    _isEvaluating = false;
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(resultValue)));
 }
 
@@ -910,6 +979,8 @@ Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& pro
                                   Q_ARG(const ScriptProgramPointer&, program));
         return result;
     }
+    Q_ASSERT(!isEvaluating());
+    _isEvaluating = true;
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     ScriptProgramV8Wrapper* unwrapped = ScriptProgramV8Wrapper::unwrap(program);
@@ -917,6 +988,7 @@ Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& pro
         auto err = makeError(newValue("could not unwrap program"));
         raiseException(err);
         maybeEmitUncaughtException("compile");
+        _isEvaluating = false;
         return err;
     }
     ScriptSyntaxCheckResultPointer syntaxCheck = unwrapped->checkSyntax();
@@ -924,6 +996,7 @@ Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& pro
         auto err = makeError(newValue(syntaxCheck->errorMessage()));
         raiseException(err);
         maybeEmitUncaughtException("compile");
+        _isEvaluating = false;
         return err;
     }
 
@@ -945,9 +1018,11 @@ Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& pro
         ScriptValue errorValue(new ScriptValueV8Wrapper(this, V8ScriptValue(_v8Isolate, runError->Get())));
         raiseException(errorValue);
         maybeEmitUncaughtException("evaluate");
+        _isEvaluating = false;
         return errorValue;
     }
     V8ScriptValue resultValue(_v8Isolate, result);
+    _isEvaluating = false;
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(resultValue)));
 }
 
@@ -1019,6 +1094,8 @@ ScriptProgramPointer ScriptEngineV8::newProgram(const QString& sourceCode, const
     //V8TODO: is it used between isolates?
     //V8TODO: should it be compiled on creation?
     //V8ScriptProgram result(sourceCode, fileName);
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     return std::make_shared<ScriptProgramV8Wrapper>(this, sourceCode, fileName);
 }
 
@@ -1132,8 +1209,8 @@ bool ScriptEngineV8::hasUncaughtException() const {
 }
 
 bool ScriptEngineV8::isEvaluating() const {
-    //V8TODO
     //return QScriptEngine::isEvaluating();
+    return _isEvaluating;
     return false;
 }
 
