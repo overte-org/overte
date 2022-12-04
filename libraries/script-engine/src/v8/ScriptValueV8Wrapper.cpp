@@ -183,7 +183,7 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
         }
     }
-    qCritical() << "Failed to get property, parent of value: " << name << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
+    qDebug() << "Failed to get property, parent of value: " << name << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
     return _engine->undefinedValue();
     /*v8::Local<v8::Value> nullValue = v8::Null(_engine->getIsolate());
     V8ScriptValue nullScriptValue(_engine->getIsolate(), std::move(nullValue));

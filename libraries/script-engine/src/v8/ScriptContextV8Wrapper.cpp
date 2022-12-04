@@ -147,11 +147,18 @@ ScriptValue ScriptContextV8Wrapper::thisObject() const {
 
 ScriptValue ScriptContextV8Wrapper::throwError(const QString& text) {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
-    v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
-    V8ScriptValue result(_engine->getIsolate(), _engine->getIsolate()->ThrowError(v8::String::NewFromUtf8(_engine->getIsolate(), text.toStdString().c_str()).ToLocalChecked()));
-    return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
+    // V8TODO: I have no idea how to do this yet because it happens on another thread
+    if(isolate->IsCurrent()) {
+        v8::HandleScope handleScope(isolate);
+        v8::Context::Scope contextScope(_engine->getContext());
+        V8ScriptValue result(_engine->getIsolate(),
+                             _engine->getIsolate()->ThrowError(
+                                 v8::String::NewFromUtf8(_engine->getIsolate(), text.toStdString().c_str()).ToLocalChecked()));
+        return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
+    } else {
+        qWarning() << "throwError on a different thread not implemented yet, error value: " << text;
+        return _engine->undefinedValue();
+    }
 }
 
 ScriptValue ScriptContextV8Wrapper::throwValue(const ScriptValue& value) {
