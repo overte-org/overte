@@ -433,6 +433,48 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
             case QMetaType::QObjectStar:
                 dest = QVariant::fromValue(ScriptObjectV8Proxy::unwrap(v8Val));
                 break;
+            case QMetaType::QVariant:
+                if (val->IsUndefined()) {
+                    dest = QVariant();
+                    break;
+                }
+                if (val->IsNull()) {
+                    dest = QVariant::fromValue(nullptr);
+                    break;
+                }
+                if (val->IsBoolean()) {
+                    //V8TODO is it right isolate? What if value from different script engine is used here
+                    dest = QVariant::fromValue(val->BooleanValue(_v8Isolate));
+                    break;
+                }
+                if (val->IsString()) {
+                    //V8TODO is it right context? What if value from different script engine is used here
+                    v8::String::Utf8Value string(_v8Isolate, val);
+                    Q_ASSERT(*string != nullptr);
+                    dest = QVariant::fromValue(QString(*string));
+                    //dest = QVariant::fromValue(val->ToString(_v8Context.Get(_v8Isolate)).ToLocalChecked()->);
+                    break;
+                }
+                if (val->IsNumber()) {
+                    dest = QVariant::fromValue(val->ToNumber(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value());
+                    break;
+                }
+                {
+                    QObject* obj = ScriptObjectV8Proxy::unwrap(v8Val);
+                    if (obj) {
+                        dest = QVariant::fromValue(obj);
+                        break;
+                    }
+                }
+                {
+                    QVariant var = ScriptVariantV8Proxy::unwrap(v8Val);
+                    if (var.isValid()) {
+                        dest = var;
+                        break;
+                    }
+                }
+                // V8TODO maybe export as JSON and then convert from JSON to QVariant?
+                Q_ASSERT(false);
             default:
                 // check to see if this is a pointer to a QObject-derived object
                 if (QMetaType::typeFlags(destTypeId) & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
@@ -458,10 +500,14 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                         break;
                     }
                 }
-                // last chance, just convert it to a variant
+                // last chance, just convert it to a variant (impossible on V8)
                 // V8TODO
-                qDebug() << "Converting: " << *v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked())
-                         << "to variant. Destination type: " << QMetaType::typeName(destTypeId);
+                QString errorMessage = QString() + "Converting: " + QString(*v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked()))
+                         + "to variant. Destination type: " + QMetaType::typeName(destTypeId);
+                qDebug() << errorMessage;
+                if(destTypeId == QMetaType::QVariant) {
+                    Q_ASSERT(false);
+                }
                 //dest = val->ToVariant();
                 break;
         }

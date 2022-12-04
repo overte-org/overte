@@ -657,6 +657,10 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
     int bestMeta = 0;
     int bestConversionPenaltyScore = 0;
 
+    if(fullName() == "SettingsScriptingInterface::getValue") {
+        printf("SettingsScriptingInterface::getValue");
+    }
+
     for (int i = 0; i < num_metas; i++) {
         const QMetaMethod& meta = _metas[i];
         int methodNumArgs = meta.parameterCount();
@@ -783,21 +787,25 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
         int methodArgTypeId = meta.parameterType(arg);
         Q_ASSERT(methodArgTypeId != QMetaType::UnknownType);
         v8::Local<v8::Value> argVal = arguments[arg];
-        if (methodArgTypeId != scriptValueTypeId && methodArgTypeId != QMetaType::QVariant) {
+        if (methodArgTypeId != scriptValueTypeId) {
             QVariant varArgVal;
             if (!_engine->castValueToVariant(V8ScriptValue(isolate, argVal), varArgVal, methodArgTypeId)) {
                 QByteArray methodTypeName = QMetaType(methodArgTypeId).name();
                 QByteArray argTypeName = _engine->valueType(V8ScriptValue(isolate, argVal)).toLatin1();
-                isolate->ThrowError(v8::String::NewFromUtf8(isolate, QString("Native call of %1 failed: Cannot convert parameter %2 from %3 to %4")
-                                            .arg(fullName()).arg(arg+1).arg(argTypeName, methodTypeName).toStdString().c_str()).ToLocalChecked());
+                QString errorMessage = QString("Native call of %1 failed: Cannot convert parameter %2 from %3 to %4")
+                    .arg(fullName()).arg(arg+1).arg(argTypeName, methodTypeName);
+                qDebug(scriptengine) << errorMessage;
+                isolate->ThrowError(v8::String::NewFromUtf8(isolate, errorMessage.toStdString().c_str()).ToLocalChecked());
                 //context->throwError(V8ScriptContext::TypeError, QString("Native call of %1 failed: Cannot convert parameter %2 from %3 to %4")
                 //                                                   .arg(fullName()).arg(arg+1).arg(argTypeName, methodTypeName));
                 return;
             }
         }
     }
-
-    isolate->ThrowError(v8::String::NewFromUtf8(isolate, QString("Native call of %1 failed: could not locate an overload with the requested arguments").arg(fullName()).toStdString().c_str()).ToLocalChecked());
+    QString errorMessage = QString("Native call of %1 failed: could not locate an overload with the requested arguments").arg(fullName());
+    qDebug(scriptengine) << errorMessage;
+    isolate->ThrowError(v8::String::NewFromUtf8(isolate, errorMessage.toStdString().c_str()).ToLocalChecked());
+    // V8TODO: it happens sometimes for some reason
     Q_ASSERT(false); // really shouldn't have gotten here -- it didn't work before and it's working now?
     return;
 }

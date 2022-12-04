@@ -228,6 +228,7 @@ protected:
 
     //V8TODO
     //ArrayBufferClass* _arrayBufferClass;
+    bool _isEvaluating;
 };
 
 // Lambda helps create callable V8ScriptValues out of std::functions:
