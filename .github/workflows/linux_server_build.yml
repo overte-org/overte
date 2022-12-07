@@ -254,23 +254,6 @@ jobs:
         echo "Disk usage:"
         df -h
 
-    - name: tree
-      if: always()
-      shell: bash
-      run: |
-        if [[ "${{ matrix.os }}" =~ "ubuntu" || "${{ matrix.os }}" =~ "debian" ]]; then
-
-          echo "Updating apt repository index"
-          sudo apt update || exit 1
-
-          echo "Installing apt packages"
-          sudo apt -y install tree || exit 1
-
-        else #  RPM
-          dnf -y install tree || exit 1
-        fi
-        tree -f /
-
     - name: Upload artifact to GitHub
       if: github.event_name == 'pull_request'
       # upload-artifact v2 and v3 are currently broken on our Docker configuration
