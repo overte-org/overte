@@ -1572,7 +1572,8 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             glm::vec3 globalMeshScale = extractScale(globalTransforms[nodeIndex]);
                             const glm::mat4 meshToJoint = glm::scale(glm::mat4(), globalMeshScale) * jointInverseBindTransforms[clusterIndex];
 
-                            const float EXPANSION_WEIGHT_THRESHOLD = 0.25f;
+                            // TODO: The entire clustering is probably broken and detailed collision shapes fail to generate due to it.
+                            const uint16_t EXPANSION_WEIGHT_THRESHOLD = UINT16_MAX/4; // Equivalent of 0.25f?
                             if (mesh.clusterWeights[j] >= EXPANSION_WEIGHT_THRESHOLD) {
                                 // TODO: fix transformed vertices being pushed back
                                 auto& vertex = mesh.vertices[i];
