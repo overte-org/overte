@@ -210,6 +210,7 @@ MultiSphereShape::CollapsingMode MultiSphereShape::computeSpheres(ExtractionMode
     auto& diff = data._diff;
     auto& epsilon = data._epsilon;
     auto& dimensions = data._dimensions;
+    const float DIMENSIONS_EPSILON = 0.000001f;
 
     if (_mode == ExtractionMode::Automatic) {
         if (diff.xy < 0.5f * epsilon.xy && diff.xz < 0.5f * epsilon.xz && diff.yz < 0.5f * epsilon.yz) {
@@ -243,7 +244,7 @@ MultiSphereShape::CollapsingMode MultiSphereShape::computeSpheres(ExtractionMode
         break;
     case ExtractionMode::SphereCollapse:
         sphere._radius = 0.5f * glm::min(glm::min(dimensions.x, dimensions.y), dimensions.z);
-        if (sphere._radius > 0.0f) {
+        if (sphere._radius > DIMENSIONS_EPSILON) {
             sphere._position = glm::vec3(0.0f);
             _spheres.push_back(sphere);
         } else {
