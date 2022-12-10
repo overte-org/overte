@@ -123,7 +123,7 @@ public:
     void overrideAnimation(const QString& url, float fps, bool loop, float firstFrame, float lastFrame);
     bool isPlayingOverrideAnimation() const { return _userAnimState.clipNodeEnum != UserAnimState::None; };
     void restoreAnimation();
-    
+
     void overrideHandAnimation(bool isLeft, const QString& url, float fps, bool loop, float firstFrame, float lastFrame);
     void restoreHandAnimation(bool isLeft);
 
@@ -371,7 +371,7 @@ protected:
         };
         NetworkAnimState() : clipNodeEnum(NetworkAnimState::None), fps(30.0f), loop(false), firstFrame(0.0f), lastFrame(0.0f), blendTime(FLT_MAX) {}
         NetworkAnimState(ClipNodeEnum clipNodeEnumIn, const QString& urlIn, float fpsIn, bool loopIn, float firstFrameIn, float lastFrameIn) :
-            clipNodeEnum(clipNodeEnumIn), url(urlIn), fps(fpsIn), loop(loopIn), firstFrame(firstFrameIn), lastFrame(lastFrameIn) {}
+            clipNodeEnum(clipNodeEnumIn), url(urlIn), fps(fpsIn), loop(loopIn), firstFrame(firstFrameIn), lastFrame(lastFrameIn), blendTime(FLT_MAX) {}
 
         ClipNodeEnum clipNodeEnum;
         QString url;
