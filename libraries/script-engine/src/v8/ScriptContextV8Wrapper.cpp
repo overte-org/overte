@@ -119,7 +119,7 @@ ScriptFunctionContextPointer ScriptContextV8Wrapper::functionContext() const {
 
 ScriptContextPointer ScriptContextV8Wrapper::parentContext() const {
     //V8TODO
-    Q_ASSERT(false);
+    //Q_ASSERT(false);
     //V8ScriptContext* result = _context->parentContext();
     //return result ? std::make_shared<ScriptContextV8Wrapper>(_engine, result) : ScriptContextPointer();
     return ScriptContextPointer();
