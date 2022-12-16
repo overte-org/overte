@@ -170,7 +170,7 @@ public: // not for public use, but I don't like how Qt strings this along with p
     int computeCastPenalty(const V8ScriptValue& val, int destTypeId);
     bool castValueToVariant(const V8ScriptValue& val, QVariant& dest, int destTypeId);
     V8ScriptValue castVariantToValue(const QVariant& val);
-    static QString valueType(const V8ScriptValue& val);
+    QString valueType(const V8ScriptValue& val);
     v8::Isolate* getIsolate() {return _v8Isolate;}
     v8::Local<v8::Context> getContext() {
         v8::EscapableHandleScope handleScope(_v8Isolate);

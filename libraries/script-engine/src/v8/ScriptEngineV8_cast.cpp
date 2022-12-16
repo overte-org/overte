@@ -315,6 +315,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
         return true;
     }
 
+    QString errorMessage("");
     // do we have a registered handler for this type?
     ScriptEngine::DemarshalFunction demarshalFunc = nullptr;
     {
@@ -473,8 +474,10 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                         break;
                     }
                 }
-                // V8TODO maybe export as JSON and then convert from JSON to QVariant?
-                Q_ASSERT(false);
+                errorMessage = QString() + "Conversion to variant failed: " + QString(*v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked()))
+                                       + " Destination type: " + QMetaType::typeName(destTypeId);
+                qDebug() << errorMessage;
+                break;
             default:
                 // check to see if this is a pointer to a QObject-derived object
                 if (QMetaType::typeFlags(destTypeId) & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
@@ -502,7 +505,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                 }
                 // last chance, just convert it to a variant (impossible on V8)
                 // V8TODO
-                QString errorMessage = QString() + "Converting: " + QString(*v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked()))
+                errorMessage = QString() + "Conversion failure: " + QString(*v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked()))
                          + "to variant. Destination type: " + QMetaType::typeName(destTypeId);
                 qDebug() << errorMessage;
                 if(destTypeId == QMetaType::QVariant) {
@@ -550,9 +553,12 @@ QString ScriptEngineV8::valueType(const V8ScriptValue& v8Val) {
             return var.typeName();
         }
     }
-    //V8TODO
-    Q_ASSERT(false);
-    //return val->toVariant().typeName();
+    QVariant dest;
+    if (castValueToVariant(v8Val, dest, QMetaType::QVariant)) {
+        return dest.typeName();
+    }
+    qDebug() << "Cast to variant failed";
+    // V8TODO: what to return here?
     return "undefined";
 }
 

@@ -114,7 +114,7 @@ V8ScriptValue ScriptObjectV8Proxy::newQObject(ScriptEngineV8* engine, QObject* o
                 return V8ScriptValue(engine->getIsolate(), proxy.get()->toV8Value());
             }
         }
-        // V8TODO add a V8 callback that removes pointer from the map so that it gets deleted
+        // V8TODO add a V8 callback that removes pointer for the script engine owned ob from the map so that it gets deleted
         // register the wrapper with the engine and make sure it cleans itself up
         engine->_qobjectWrapperMap.insert(object, proxy);
         engine->_qobjectWrapperMapV8.insert(object, proxy);
@@ -125,6 +125,10 @@ V8ScriptValue ScriptObjectV8Proxy::newQObject(ScriptEngineV8* engine, QObject* o
             ScriptEngineV8::ObjectWrapperMap::iterator lookup = enginePtr->_qobjectWrapperMap.find(object);
             if (lookup != enginePtr->_qobjectWrapperMap.end()) {
                 enginePtr->_qobjectWrapperMap.erase(lookup);
+            }
+            auto lookupV8 = enginePtr->_qobjectWrapperMapV8.find(object);
+            if (lookupV8 != enginePtr->_qobjectWrapperMapV8.end()) {
+                enginePtr->_qobjectWrapperMapV8.erase(lookupV8);
             }
         });
     }
@@ -138,7 +142,7 @@ ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(const V8ScriptValue& val) 
     v8::HandleScope handleScope(const_cast<v8::Isolate*>(val.constGetIsolate()));
     auto v8Value = val.constGet();
     if (!v8Value->IsObject()) {
-        qDebug(scriptengine) << "Cannot unwrap proxy - value is not an object";
+        //qDebug(scriptengine) << "Cannot unwrap proxy - value is not an object";
         return nullptr;
     }
     v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(v8Value);
@@ -159,7 +163,7 @@ QObject* ScriptObjectV8Proxy::unwrap(const V8ScriptValue& val) {
 }
 
 ScriptObjectV8Proxy::~ScriptObjectV8Proxy() {
-    qDebug(scriptengine) << "Deleting object proxy: " << name();
+    if(_object) qDebug(scriptengine) << "Deleting object proxy: " << name();
     if (_ownsObject) {
         QObject* qobject = _object;
         if(qobject) qobject->deleteLater();
@@ -180,7 +184,7 @@ void ScriptObjectV8Proxy::investigate() {
     
     const QMetaObject* metaObject = qobject->metaObject();
 
-    qDebug(scriptengine) << "Investigate: " << metaObject->className();
+    //qDebug(scriptengine) << "Investigate: " << metaObject->className();
     if (QString("Vec3") == metaObject->className()) {
         printf("Vec3");
     }
@@ -194,7 +198,7 @@ void ScriptObjectV8Proxy::investigate() {
         QMetaProperty prop = metaObject->property(idx);
         if (!prop.isScriptable()) continue;
 
-        qDebug(scriptengine) << "Investigate: " << metaObject->className() << " Property: " << prop.name();
+        //qDebug(scriptengine) << "Investigate: " << metaObject->className() << " Property: " << prop.name();
         // always exclude child objects (at least until we decide otherwise)
         int metaTypeId = prop.userType();
         if (metaTypeId != QMetaType::UnknownType) {
@@ -217,7 +221,7 @@ void ScriptObjectV8Proxy::investigate() {
     QHash<V8ScriptString, int> methodNames;
     for (int idx = startIdx; idx < num; ++idx) {
         QMetaMethod method = metaObject->method(idx);
-        qDebug(scriptengine) << "Investigate: " << metaObject->className() << " Method: " << method.name();
+        //qDebug(scriptengine) << "Investigate: " << metaObject->className() << " Method: " << method.name();
         
         // perhaps keep this comment?  Calls (like AudioScriptingInterface::playSound) seem to expect non-public methods to be script-accessible
         /* if (method.access() != QMetaMethod::Public) continue;*/
@@ -318,7 +322,7 @@ ScriptObjectV8Proxy::QueryFlags ScriptObjectV8Proxy::queryProperty(const V8Scrip
     // check for methods
     for (MethodDefMap::const_iterator trans = _methods.cbegin(); trans != _methods.cend(); ++trans) {
         v8::String::Utf8Value methodNameStr(_engine->getIsolate(), trans.value().name.constGet());
-        qDebug(scriptengine) << "queryProperty : " << *nameStr << " method: " << *methodNameStr;
+        //qDebug(scriptengine) << "queryProperty : " << *nameStr << " method: " << *methodNameStr;
         if (!(trans.value().name == name)) continue;
         *id = trans.key() | METHOD_TYPE;
         return flags & (HandlesReadAccess | HandlesWriteAccess);
