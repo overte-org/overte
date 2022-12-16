@@ -1968,7 +1968,9 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
     }
 
     // SANITY/PERFORMANCE CHECK USING SANDBOX
-    const int SANDBOX_TIMEOUT = 0.25 * MSECS_PER_SECOND;
+    // V8TODO: can be skipped for now but needs to be implemented before release
+
+    /*const int SANDBOX_TIMEOUT = 0.25 * MSECS_PER_SECOND;
     ScriptEnginePointer sandbox = newScriptEngine();
     sandbox->setProcessEventsInterval(SANDBOX_TIMEOUT);
     ScriptValue testConstructor, exception;
@@ -2104,7 +2106,7 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
         setError("Could not find constructor (" + testConstructorType + ")", EntityScriptStatus::ERROR_RUNNING_SCRIPT);
         emit unhandledException(err);
         return; // done processing script
-    }
+    }*/
 
     // (this feeds into refreshFileScript)
     int64_t lastModified = 0;

@@ -981,28 +981,42 @@ Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& pro
     }
     Q_ASSERT(!isEvaluating());
     _isEvaluating = true;
-    v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
-    ScriptProgramV8Wrapper* unwrapped = ScriptProgramV8Wrapper::unwrap(program);
-    if (!unwrapped) {
-        auto err = makeError(newValue("could not unwrap program"));
-        raiseException(err);
-        maybeEmitUncaughtException("compile");
-        _isEvaluating = false;
-        return err;
+    bool is_isolate_exit_needed = false;
+    if(!_v8Isolate->IsCurrent() && !_v8Locker) {
+        // V8TODO: Theoretically only script thread should access this, so it should be safe
+        _v8Locker.reset(new v8::Locker(_v8Isolate));
+        _v8Isolate->Enter();
+        is_isolate_exit_needed = true;
     }
-    ScriptSyntaxCheckResultPointer syntaxCheck = unwrapped->checkSyntax();
-    if (syntaxCheck->state() == ScriptSyntaxCheckResult::Error) {
-        auto err = makeError(newValue(syntaxCheck->errorMessage()));
-        raiseException(err);
-        maybeEmitUncaughtException("compile");
-        _isEvaluating = false;
-        return err;
-    }
+    ScriptValue errorValue;
+    ScriptValue resultValue;
+    bool hasFailed = false;
+    {
+        v8::HandleScope handleScope(_v8Isolate);
+        v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+        ScriptProgramV8Wrapper* unwrapped = ScriptProgramV8Wrapper::unwrap(program);
+        if (!unwrapped) {
+            errorValue = makeError(newValue("could not unwrap program"));
+            raiseException(errorValue);
+            maybeEmitUncaughtException("compile");
+            hasFailed = true;
+        }
 
-    const V8ScriptProgram& v8Program = unwrapped->toV8Value();
-    // V8TODO
-    /*if (qProgram.isNull()) {
+        if(!hasFailed) {
+            ScriptSyntaxCheckResultPointer syntaxCheck = unwrapped->checkSyntax();
+            if (syntaxCheck->state() == ScriptSyntaxCheckResult::Error) {
+                errorValue = makeError(newValue(syntaxCheck->errorMessage()));
+                raiseException(errorValue);
+                maybeEmitUncaughtException("compile");
+                hasFailed = true;
+            }
+        }
+
+        v8::Local<v8::Value> result;
+        if(!hasFailed) {
+            const V8ScriptProgram& v8Program = unwrapped->toV8Value();
+            // V8TODO
+            /*if (qProgram.isNull()) {
         // can this happen?
         auto err = makeError(newValue("requested program is empty"));
         raiseException(err);
@@ -1010,20 +1024,31 @@ Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& pro
         return err;
     }*/
 
-    v8::Local<v8::Value> result;
-    v8::TryCatch tryCatchRun(getIsolate());
-    if (!v8Program.constGet()->Run(getContext()).ToLocal(&result)) {
-        Q_ASSERT(tryCatchRun.HasCaught());
-        auto runError = tryCatchRun.Message();
-        ScriptValue errorValue(new ScriptValueV8Wrapper(this, V8ScriptValue(_v8Isolate, runError->Get())));
-        raiseException(errorValue);
-        maybeEmitUncaughtException("evaluate");
-        _isEvaluating = false;
-        return errorValue;
+            v8::TryCatch tryCatchRun(getIsolate());
+            if (!v8Program.constGet()->Run(getContext()).ToLocal(&result)) {
+                Q_ASSERT(tryCatchRun.HasCaught());
+                auto runError = tryCatchRun.Message();
+                errorValue = ScriptValue(new ScriptValueV8Wrapper(this, V8ScriptValue(_v8Isolate, runError->Get())));
+                raiseException(errorValue);
+                maybeEmitUncaughtException("evaluate");
+                hasFailed = true;
+            }
+        }
+        if(!hasFailed) {
+            V8ScriptValue resultValueV8(_v8Isolate, result);
+            resultValue = ScriptValue(new ScriptValueV8Wrapper(this, std::move(resultValueV8)));
+        }
     }
-    V8ScriptValue resultValue(_v8Isolate, result);
     _isEvaluating = false;
-    return ScriptValue(new ScriptValueV8Wrapper(this, std::move(resultValue)));
+    if (is_isolate_exit_needed) {
+        _v8Isolate->Exit();
+        _v8Locker.reset(nullptr);
+    }
+    if (hasFailed) {
+        return errorValue;
+    } else {
+        return resultValue;
+    }
 }
 
 
@@ -1094,6 +1119,7 @@ ScriptProgramPointer ScriptEngineV8::newProgram(const QString& sourceCode, const
     //V8TODO: is it used between isolates?
     //V8TODO: should it be compiled on creation?
     //V8ScriptProgram result(sourceCode, fileName);
+
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     return std::make_shared<ScriptProgramV8Wrapper>(this, sourceCode, fileName);
