@@ -187,7 +187,7 @@ void GraphicsEngine::render_performFrame() {
 
     {
         PROFILE_RANGE(render, "/pluginBeginFrameRender");
-        // If a display plugin loses it's underlying support, it
+        // If a display plugin loses its underlying support, it
         // needs to be able to signal us to not use it
         if (!displayPlugin->beginFrameRender(_renderFrameCount)) {
             QMetaObject::invokeMethod(qApp, "updateDisplayMode");
@@ -267,7 +267,7 @@ void GraphicsEngine::render_performFrame() {
             PROFILE_RANGE(render, "/renderOverlay");
             PerformanceTimer perfTimer("renderOverlay");
             // NOTE: There is no batch associated with this renderArgs
-            // the ApplicationOverlay class assumes it's viewport is setup to be the device size
+            // the ApplicationOverlay class assumes it's viewport is set up to be the device size
             renderArgs._viewport = glm::ivec4(0, 0, qApp->getDeviceSize());
             qApp->getApplicationOverlay().renderOverlay(&renderArgs);
         }

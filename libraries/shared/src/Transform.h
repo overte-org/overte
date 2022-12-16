@@ -27,7 +27,9 @@ class QJsonValue;
 inline bool isValidScale(glm::vec3 scale) {
     bool result = scale.x != 0.0f && scale.y != 0.0f && scale.z != 0.0f;
     // V8TODO: commented out for now
-    qWarning() << "Scale is equal to 0";
+    if(!result){
+        qWarning() << "Scale is equal to 0";
+    }
     // assert(result);
     return result;
 }
