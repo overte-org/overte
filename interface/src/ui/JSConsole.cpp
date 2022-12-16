@@ -351,12 +351,12 @@ void JSConsole::executeCommand(const QString& command) {
 
     std::weak_ptr<ScriptManager> weakScriptManager = _scriptManager;
     auto consoleFileName = _consoleFileName;
-    QFuture<ScriptValue> future = QtConcurrent::run([weakScriptManager, consoleFileName, command]() -> ScriptValue {
-        ScriptValue result;
+    QFuture<QVariant> future = QtConcurrent::run([weakScriptManager, consoleFileName, command]() -> QVariant {
+        QVariant result;
         auto scriptManager = weakScriptManager.lock();
         if (scriptManager) {
             BLOCKING_INVOKE_METHOD(scriptManager.get(), [&scriptManager, &consoleFileName, &command, &result]() -> void {
-                result = scriptManager->evaluate(command, consoleFileName);
+                result = scriptManager->evaluate(command, consoleFileName).toVariant();
             });
         }
         return result;
@@ -365,7 +365,7 @@ void JSConsole::executeCommand(const QString& command) {
 }
 
 void JSConsole::commandFinished() {
-    ScriptValue result = _executeWatcher.result();
+    QVariant result = _executeWatcher.result();
 
     _ui->promptTextEdit->setDisabled(false);
 
@@ -374,9 +374,12 @@ void JSConsole::commandFinished() {
         _ui->promptTextEdit->setFocus();
     }
 
-    bool error = (_scriptManager->engine()->hasUncaughtException() || result.isError());
-    QString gutter = error ? GUTTER_ERROR : GUTTER_PREVIOUS_COMMAND;
-    QString resultColor = error ? RESULT_ERROR_STYLE : RESULT_SUCCESS_STYLE;
+    // V8TODO:
+    //bool error = (_scriptManager->engine()->hasUncaughtException() || result.isError());
+    //QString gutter = error ? GUTTER_ERROR : GUTTER_PREVIOUS_COMMAND;
+    //QString resultColor = error ? RESULT_ERROR_STYLE : RESULT_SUCCESS_STYLE;
+    QString gutter = GUTTER_PREVIOUS_COMMAND;
+    QString resultColor = RESULT_SUCCESS_STYLE;
     QString resultStr = "<span style='" + resultColor + "'>" + result.toString().toHtmlEscaped() + "</span>";
     appendMessage(gutter, resultStr);
 
