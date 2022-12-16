@@ -448,38 +448,38 @@ public:
 
             if (elapsedMovingAverage > _maxElapsedAverage * 1.1f) {
 #if !defined(NDEBUG)
-                qCDebug(interfaceapp_deadlock) << "DEADLOCK WATCHDOG WARNING:"
+/*                qCDebug(interfaceapp_deadlock) << "DEADLOCK WATCHDOG WARNING:"
                     << "lastHeartbeatAge:" << lastHeartbeatAge
                     << "elapsedMovingAverage:" << elapsedMovingAverage
                     << "maxElapsed:" << _maxElapsed
                     << "PREVIOUS maxElapsedAverage:" << _maxElapsedAverage
                     << "NEW maxElapsedAverage:" << elapsedMovingAverage << "** NEW MAX ELAPSED AVERAGE **"
-                    << "samples:" << _movingAverage.getSamples();
+                    << "samples:" << _movingAverage.getSamples();*/
 #endif
                 _maxElapsedAverage = elapsedMovingAverage;
             }
             if (lastHeartbeatAge > _maxElapsed) {
 #if !defined(NDEBUG)
-                qCDebug(interfaceapp_deadlock) << "DEADLOCK WATCHDOG WARNING:"
+/*                qCDebug(interfaceapp_deadlock) << "DEADLOCK WATCHDOG WARNING:"
                     << "lastHeartbeatAge:" << lastHeartbeatAge
                     << "elapsedMovingAverage:" << elapsedMovingAverage
                     << "PREVIOUS maxElapsed:" << _maxElapsed
                     << "NEW maxElapsed:" << lastHeartbeatAge << "** NEW MAX ELAPSED **"
                     << "maxElapsedAverage:" << _maxElapsedAverage
-                    << "samples:" << _movingAverage.getSamples();
+                    << "samples:" << _movingAverage.getSamples();*/
 #endif
                 _maxElapsed = lastHeartbeatAge;
             }
 
 #if !defined(NDEBUG)
-            if (elapsedMovingAverage > WARNING_ELAPSED_HEARTBEAT) {
+/*            if (elapsedMovingAverage > WARNING_ELAPSED_HEARTBEAT) {
                 qCDebug(interfaceapp_deadlock) << "DEADLOCK WATCHDOG WARNING:"
                     << "lastHeartbeatAge:" << lastHeartbeatAge
                     << "elapsedMovingAverage:" << elapsedMovingAverage << "** OVER EXPECTED VALUE **"
                     << "maxElapsed:" << _maxElapsed
                     << "maxElapsedAverage:" << _maxElapsedAverage
                     << "samples:" << _movingAverage.getSamples();
-            }
+            }*/
 #endif
 
             if (lastHeartbeatAge > MAX_HEARTBEAT_AGE_USECS) {
