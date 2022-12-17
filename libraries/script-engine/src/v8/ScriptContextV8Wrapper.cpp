@@ -114,7 +114,7 @@ ScriptEnginePointer ScriptContextV8Wrapper::engine() const {
 }
 
 ScriptFunctionContextPointer ScriptContextV8Wrapper::functionContext() const {
-    return std::make_shared<ScriptFunctionContextV8Wrapper>(_engine->getContext());
+    return std::make_shared<ScriptFunctionContextV8Wrapper>(_engine);
 }
 
 ScriptContextPointer ScriptContextV8Wrapper::parentContext() const {
@@ -176,15 +176,21 @@ ScriptValue ScriptContextV8Wrapper::throwValue(const ScriptValue& value) {
 
 
 QString ScriptFunctionContextV8Wrapper::fileName() const {
-    //V8TODO
-    //return _value.fileName();
-    return QString("");
+    //V8TODO: It's not exactly like in QtScript, because there's no such context object in V8, let's return the current one for now
+    //Maybe fetch data on creation or store stack frame?
+    v8::Local<v8::String> name = v8::StackTrace::CurrentScriptNameOrSourceURL(_engine->getIsolate());
+    v8::String::Utf8Value nameUTF(_engine->getIsolate(), name);
+    return QString(*nameUTF);
 }
 
 QString ScriptFunctionContextV8Wrapper::functionName() const {
-    //V8TODO
-    //return _value.functionName();
-    return QString("");
+    //V8TODO: It's not exactly like in QtScript, because there's no such context object in V8, let's return the current one for now
+    //Maybe fetch data on creation?
+    v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(_engine->getIsolate(), 1);
+    v8::Local<v8::StackFrame> stackFrame = stackTrace->GetFrame(_engine->getIsolate(), 0);
+    v8::Local<v8::String> name = stackFrame->GetFunctionName();
+    v8::String::Utf8Value nameUTF(_engine->getIsolate(), name);
+    return QString(*nameUTF);
 }
 
 ScriptFunctionContext::FunctionType ScriptFunctionContextV8Wrapper::functionType() const {
@@ -194,7 +200,9 @@ ScriptFunctionContext::FunctionType ScriptFunctionContextV8Wrapper::functionType
 }
 
 int ScriptFunctionContextV8Wrapper::lineNumber() const {
-    //V8TODO
-    //return _value.lineNumber();
-    return 0;
+    //V8TODO: It's not exactly like in QtScript, because there's no such context object in V8, let's return the current one for now
+    //Maybe fetch data on creation?
+    v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(_engine->getIsolate(), 1);
+    v8::Local<v8::StackFrame> stackFrame = stackTrace->GetFrame(_engine->getIsolate(), 0);
+    return stackFrame->GetLineNumber();
 }
