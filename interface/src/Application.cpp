@@ -441,7 +441,7 @@ public:
             auto lastHeartbeatAge = (now > lastHeartbeat) ? now - lastHeartbeat : 0;
             auto elapsedMovingAverage = _movingAverage.getAverage();
 
-            if (elapsedMovingAverage > _maxElapsedAverage) {
+            if (elapsedMovingAverage > _maxElapsedAverage * 1.1f) {
 #if !defined(NDEBUG)
                 qCDebug(interfaceapp_deadlock) << "DEADLOCK WATCHDOG WARNING:"
                     << "lastHeartbeatAge:" << lastHeartbeatAge
