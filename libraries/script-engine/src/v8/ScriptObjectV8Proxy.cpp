@@ -376,7 +376,7 @@ ScriptValue::PropertyFlags ScriptObjectV8Proxy::propertyFlags(const V8ScriptValu
 void ScriptObjectV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info) {
     v8::HandleScope handleScope(info.GetIsolate());
     v8::String::Utf8Value utf8Value(info.GetIsolate(), name);
-    qDebug(scriptengine) << "Get: " << *utf8Value;
+    //qDebug(scriptengine) << "Get: " << *utf8Value;
     V8ScriptValue object(info.GetIsolate(), info.This());
     ScriptObjectV8Proxy *proxy = ScriptObjectV8Proxy::unwrapProxy(object);
     if (!proxy) {
