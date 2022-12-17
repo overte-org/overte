@@ -58,7 +58,7 @@ private: // storage
 class ScriptFunctionContextV8Wrapper final : public ScriptFunctionContext {
 public:  // construction
     //V8TODO
-    inline ScriptFunctionContextV8Wrapper(v8::Local<v8::Context> context) { }
+    inline ScriptFunctionContextV8Wrapper(ScriptEngineV8* engine) : _engine(engine) { }
 
 public:  // ScriptFunctionContext implementation
     virtual QString fileName() const override;
@@ -66,7 +66,8 @@ public:  // ScriptFunctionContext implementation
     virtual FunctionType functionType() const override;
     virtual int lineNumber() const override;
 
-//private: // storage
+private: // storage
+    ScriptEngineV8* _engine;
     //V8ScriptContextInfo _value;
 };
 
