@@ -180,6 +180,8 @@ public: // not for public use, but I don't like how Qt strings this along with p
         v8::EscapableHandleScope handleScope(_v8Isolate);
         return handleScope.Escape(_v8Context.Get(_v8Isolate));
     }
+    // Useful for debugging
+    //QStringList getCurrentStackTrace();
 
     using ObjectWrapperMap = QMap<QObject*, QWeakPointer<ScriptObjectV8Proxy>>;
     mutable QMutex _qobjectWrapperMapProtect;
