@@ -12,14 +12,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased] 2022.10.02
+## [Unreleased] 2022.12.18
 ### Fixes
--
+- Fixed a bug in the glTF Serializer that caused the physics engine to crash (PR278)
+- Fixed a crash when reading FST files with clothing information (PR270)
+- Fixed a crash in the glTF Serializer (PR263)
+	This fixes a crash in conjunction with ReadyPlayerMe avatars.
+- Fixed stutters caused by the settings system (PR236)
+	This was causing terrible stuttering on Linux systems using hard drives.
+- Fixed Places app compatibility with Vircadia Metaverse version 2 (PR211)
 
 ### Changes
-- Improved the notification system (PR189)
+- Made the deadlock watchdog less spammy (PR288)
+- Domain Server Metadata exporter by default is now disabled by default (PR247)
+	This avoids port conflicts when running multiple Domain Servers on one machine.
+- Improved the notification system (PR190,PR189)
+	Notifications can be closed by just clicking them now.
+	Snapshot notifications can now be turned off.
+	VR notifications are now unlit and have been slightly moved.
+	The notification system is generally more stable.
+
 
 ### Additions
+- Added partial Blender FBX metallic support (PR221)
+- Added tooltips for PolyVox/Voxel properties to Create App (PR244)
 - Added a setting to disable snapshot notifications (PR189)
 - Added a setting to switch between screenshot formats (PR134)
 
@@ -27,7 +43,13 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 -
 
 ### Build system
--
+- Fixed "may be used uninitialized" warning for blendtime (PR269)
+- Updated SPIRV-Cross to sdk-1.3.231.1 (PR271)
+- Started working towards REUSE compliance (PR262)
+- Fixed a bunch of test warnings (PR268)
+- Added texture benchmark test (PR84)
+- Updated SPIR-V to 2022.4 (PR267)
+- Added basic Audio and Codec tests (PR177)
 
 
 ## [2022.09.1] 2022.10.06
