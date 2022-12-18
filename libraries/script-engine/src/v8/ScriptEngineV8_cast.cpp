@@ -375,6 +375,9 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                     }
                 }
                 // V8TODO
+                errorMessage = QString() + "Conversion failure: " + QString(*v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked()))
+                               + "to variant. Destination type: " + QMetaType::typeName(destTypeId);
+                qDebug() << errorMessage;
                 Q_ASSERT(false);
                 //dest = val->ToVariant();
                 break;
