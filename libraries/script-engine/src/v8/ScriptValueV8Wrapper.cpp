@@ -206,7 +206,7 @@ ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
         }
     }
-    qCritical() << "Failed to get property, parent of value: " << arrayIndex << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
+    qDebug() << "Failed to get property, parent of value: " << arrayIndex << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
     return _engine->undefinedValue();
     /*v8::Local<v8::Value> nullValue = v8::Null(_engine->getIsolate());
     V8ScriptValue nullScriptValue(_engine->getIsolate(), std::move(nullValue));
@@ -241,7 +241,14 @@ void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& v
             qDebug(scriptengine) << "Failed to set property";
         }
     } else {
-        qDebug(scriptengine) << "Failed to set property - parent is not an object";
+        v8::Local<v8::String> details;
+        QString detailsString("");
+        if(_value.get()->ToDetailString(_engine->getContext()).ToLocal(&details)) {
+            v8::String::Utf8Value utf8Value(isolate,details);
+            detailsString = *utf8Value;
+        }
+        qDebug(scriptengine) << "Failed to set property:" + name + " - parent is not an object. Parent details: " + " Type: " + QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
+        qDebug(scriptengine) << _engine->currentContext()->backtrace();
     }
     //V8TODO: what about flags?
     //_value.setProperty(name, unwrapped, (V8ScriptValue::PropertyFlags)(int)flags);
@@ -260,7 +267,7 @@ void ScriptValueV8Wrapper::setProperty(quint32 arrayIndex, const ScriptValue& va
             qDebug(scriptengine) << "Failed to set property";
         }
     } else {
-        qDebug(scriptengine) << "Failed to set property - parent is not an object";
+        qDebug(scriptengine) << "Failed to set property: " + QString(arrayIndex) + " - parent is not an object";
     }
     //V8TODO: what about flags?
     //_value.setProperty(arrayIndex, unwrapped, (V8ScriptValue::PropertyFlags)(int)flags);

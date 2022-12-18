@@ -1410,3 +1410,12 @@ void ScriptEngineV8::compileTest() {
         Q_ASSERT(false);
     }
 }
+
+/*QStringList ScriptEngineV8::getCurrentStackTrace() {
+    v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(_v8Isolate, 100);
+    QStringList backtrace;
+    for (int n = 0; n < stackTrace->GetFrameCount(); n++) {
+        v8::Local<v8::StackFrame> stackFrame = stackTrace->GetFrame(_v8Isolate, n);
+
+    }
+}*/
