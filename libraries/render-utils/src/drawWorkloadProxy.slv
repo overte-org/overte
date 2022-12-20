@@ -51,7 +51,12 @@ void main(void) {
     vec3 dirX = normalize(cross(vec3(0.0, 1.0, 0.0), dirZ));
     vec3 dirY = vec3(0.0, 1.0, 0.0);
 
-    vec4 pos = vec4(proxyPosEye.xyz + proxy.sphere.w * ( dirX * spriteVert.x + dirY * spriteVert.y /* + dirZ * spriteVert.z*/), 1.0);
+    //vec4 pos = vec4(proxyPosEye.xyz + proxy.sphere.w * ( dirX * spriteVert.x + dirY * spriteVert.y + dirZ * spriteVert.z), 1.0);
+    //Nvidia driver workaround
+    vec4 pos = vec4(1.0, 1.0, 1.0, 1.0);
+    pos.x = proxyPosEye.x + proxy.sphere.w * ( dirX.x * spriteVert.x + dirY.x * spriteVert.y + dirZ.x * spriteVert.z);
+    pos.y = proxyPosEye.y + proxy.sphere.w * ( dirX.y * spriteVert.x + dirY.y * spriteVert.y + dirZ.y * spriteVert.z);
+    pos.z = proxyPosEye.z + proxy.sphere.w * ( dirX.z * spriteVert.x + dirY.z * spriteVert.y + dirZ.z * spriteVert.z);
     varEyePos = pos.xyz;
     varTexcoord = spriteVert.xyz;
     <$transformEyeToClipPos(cam, pos, gl_Position)$>
