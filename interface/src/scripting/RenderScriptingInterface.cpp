@@ -132,36 +132,49 @@ void RenderScriptingInterface::setAntialiasingMode(AntialiasingConfig::Mode mode
     }
 }
 
+void setAntialiasingModeForView(AntialiasingConfig::Mode mode, JitterSampleConfig *jitterCamConfig, AntialiasingConfig *antialiasingConfig) {
+    switch (mode) {
+        case AntialiasingConfig::Mode::NONE:
+            jitterCamConfig->none();
+            antialiasingConfig->blend = 1;
+            antialiasingConfig->setDebugFXAA(false);
+            break;
+        case AntialiasingConfig::Mode::TAA:
+            jitterCamConfig->play();
+            antialiasingConfig->blend = 0.25;
+            antialiasingConfig->setDebugFXAA(false);
+            break;
+        case AntialiasingConfig::Mode::FXAA:
+            jitterCamConfig->none();
+            antialiasingConfig->blend = 0.25;
+            antialiasingConfig->setDebugFXAA(true);
+            break;
+        default:
+            jitterCamConfig->none();
+            antialiasingConfig->blend = 1;
+            antialiasingConfig->setDebugFXAA(false);
+            break;
+    }
+}
+
 void RenderScriptingInterface::forceAntialiasingMode(AntialiasingConfig::Mode mode) {
     _renderSettingLock.withWriteLock([&] {
         _antialiasingMode = mode;
 
         auto mainViewJitterCamConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<JitterSample>("RenderMainView.JitterCam");
         auto mainViewAntialiasingConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<Antialiasing>("RenderMainView.Antialiasing");
+        auto secondViewJitterCamConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<JitterSample>("RenderSecondView.JitterCam");
+        auto secondViewAntialiasingConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<Antialiasing>("RenderSecondView.Antialiasing");
+        if (mode != AntialiasingConfig::Mode::NONE
+                && mode != AntialiasingConfig::Mode::TAA
+                && mode != AntialiasingConfig::Mode::FXAA) {
+            _antialiasingMode = AntialiasingConfig::Mode::NONE;
+        }
         if (mainViewJitterCamConfig && mainViewAntialiasingConfig) {
-	    switch (mode) {
-                case AntialiasingConfig::Mode::NONE:
-                    mainViewJitterCamConfig->none();
-                    mainViewAntialiasingConfig->blend = 1;
-                    mainViewAntialiasingConfig->setDebugFXAA(false);
-                    break;
-                case AntialiasingConfig::Mode::TAA:
-                    mainViewJitterCamConfig->play();
-                    mainViewAntialiasingConfig->blend = 0.25;
-                    mainViewAntialiasingConfig->setDebugFXAA(false);
-                    break;
-                case AntialiasingConfig::Mode::FXAA:
-                    mainViewJitterCamConfig->none();
-                    mainViewAntialiasingConfig->blend = 0.25;
-                    mainViewAntialiasingConfig->setDebugFXAA(true);
-                    break;
-                default:
-                    _antialiasingMode = AntialiasingConfig::Mode::NONE;
-                    mainViewJitterCamConfig->none();
-                    mainViewAntialiasingConfig->blend = 1;
-                    mainViewAntialiasingConfig->setDebugFXAA(false);
-                    break;
-            }
+            setAntialiasingModeForView( mode, mainViewJitterCamConfig, mainViewAntialiasingConfig);
+        }
+        if (secondViewJitterCamConfig && secondViewAntialiasingConfig) {
+            setAntialiasingModeForView( mode, secondViewJitterCamConfig, secondViewAntialiasingConfig);
         }
 
         _antialiasingModeSetting.set(_antialiasingMode);
