@@ -12,8 +12,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased] 2022.12.18
+<!-- ## [Unreleased] 2022.12.24 -->
+
+## [2022.12.1] 2022.12.24
 ### Fixes
+- Work around broken Nvidia driver (PR291)
 - Fixed a bug in the glTF Serializer that caused the physics engine to crash (PR278)
 - Fixed a crash when reading FST files with clothing information (PR270)
 - Fixed a crash in the glTF Serializer (PR263)
