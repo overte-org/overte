@@ -48,7 +48,10 @@ void main(void) {
         vec3 normalEye = normalize(posEye.xyz);
 
         vec3 binormalEye = normalize(cross(normalEye, tangentEye));
-        posEye.xyz += _distanceFromCenter * vertex.binormalAndHalfWidth.w * binormalEye;
+        // Workaround for Nvidia driver bug
+        posEye.x += _distanceFromCenter * vertex.binormalAndHalfWidth.w * binormalEye.x;
+        posEye.y += _distanceFromCenter * vertex.binormalAndHalfWidth.w * binormalEye.y;
+        posEye.z += _distanceFromCenter * vertex.binormalAndHalfWidth.w * binormalEye.z;
         <$transformEyeToClipPos(cam, posEye, gl_Position)$>
 <@if not HIFI_USE_FORWARD@>
         <$transformEyeToWorldDir(cam, normalEye, _normalWS)$>
