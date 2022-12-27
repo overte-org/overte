@@ -194,7 +194,7 @@ private:
     int  _renderMethod{ RENDER_FORWARD ? render::Args::RenderMethod::FORWARD : render::Args::RenderMethod::DEFERRED };
     bool _shadowsEnabled{ true };
     bool _ambientOcclusionEnabled{ false };
-    AntialiasingConfig::Mode _antialiasingMode{ AntialiasingConfig::Mode::TAA };
+    AntialiasingConfig::Mode _antialiasingMode{ AntialiasingConfig::Mode::NONE };
     float _viewportResolutionScale{ 1.0f };
 
     // Actual settings saved on disk
@@ -202,7 +202,7 @@ private:
     Setting::Handle<bool> _shadowsEnabledSetting { "shadowsEnabled", true };
     Setting::Handle<bool> _ambientOcclusionEnabledSetting { "ambientOcclusionEnabled", false };
     //Setting::Handle<AntialiasingConfig::Mode> _antialiasingModeSetting { "antialiasingMode", AntialiasingConfig::Mode::TAA };
-    Setting::Handle<int> _antialiasingModeSetting { "antialiasingMode", AntialiasingConfig::Mode::TAA };
+    Setting::Handle<int> _antialiasingModeSetting { "antialiasingMode", AntialiasingConfig::Mode::NONE };
     Setting::Handle<float> _viewportResolutionScaleSetting { "viewportResolutionScale", 1.0f };
 
     // Force assign both setting AND runtime value to the parameter value
