@@ -16,6 +16,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 
 ## [2022.12.1] 2022.12.24
 ### Fixes
+- Secondary camera now uses same anti-aliasing setting as primary camera (PR294)
 - Work around broken Nvidia driver (PR291)
 - Fixed a bug in the glTF Serializer that caused the physics engine to crash (PR278)
 - Fixed a crash when reading FST files with clothing information (PR270)
@@ -26,6 +27,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Fixed Places app compatibility with Vircadia Metaverse version 2 (PR211)
 
 ### Changes
+- Disable anti-aliasing by default (PR294)
 - Made the deadlock watchdog less spammy (PR288)
 - Domain Server Metadata exporter by default is now disabled by default (PR247)
 	This avoids port conflicts when running multiple Domain Servers on one machine.
