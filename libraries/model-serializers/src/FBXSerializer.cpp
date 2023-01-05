@@ -932,8 +932,11 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
                                     } else if (property.properties.at(0) == OPACITY) {
                                         material.opacity = property.properties.at(index).value<double>();
                                     } else if (property.properties.at(0) == REFLECTION_FACTOR) {
-                                        material.isPBSMaterial = true;
                                         material.metallic = property.properties.at(index).value<double>();
+
+                                        if (material.metallic != 0.0f) {
+                                            material.isPBSMaterial = true;
+                                        }
                                     }
 
                                     // Sting Ray Material Properties!!!!
