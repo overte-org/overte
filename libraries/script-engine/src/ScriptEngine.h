@@ -119,7 +119,7 @@ public:
     virtual void setProcessEventsInterval(int interval) = 0;
     virtual QThread* thread() const = 0;
     virtual void setThread(QThread* thread) = 0;
-    Q_INVOKABLE virtual void enterIsolateOnThisThread() = 0;
+    //Q_INVOKABLE virtual void enterIsolateOnThisThread() = 0;
     virtual ScriptValue undefinedValue() = 0;
     virtual ScriptValue uncaughtException() const = 0;
     virtual QStringList uncaughtExceptionBacktrace() const = 0;
@@ -127,6 +127,7 @@ public:
     virtual void updateMemoryCost(const qint64& deltaSize) = 0;
     virtual void requestCollectGarbage() = 0;
     virtual void compileTest() = 0;
+    virtual QString scriptValueDebugDetails(ScriptValue &value) = 0;
 
 public:
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
