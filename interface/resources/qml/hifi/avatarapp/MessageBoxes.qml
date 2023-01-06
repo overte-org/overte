@@ -56,24 +56,6 @@ MessageBox {
         popup.inputText.forceActiveFocus();
     }
 
-    function showGetWearables(callback, linkCallback) {
-        popup.dialogButtons.yesButton.visible = false;
-        popup.button1text = 'CANCEL'
-        popup.titleText = 'Get Wearables'
-        popup.bodyText = 'Get wearables from <b><a href="app://marketplace">Marketplace.</a></b>' + '<br/>' +
-                'Wear wearable from <b><a href="app://purchases">Inventory.</a></b>'
-
-        popup.onLinkClicked = function(link) {
-            popup.close();
-
-            if (linkCallback) {
-                linkCallback(link);
-            }
-        }
-
-        popup.open();
-    }
-
     function showDeleteFavorite(favoriteName, callback) {
         popup.titleText = 'Delete Favorite: {AvatarName}'.replace('{AvatarName}', favoriteName)
         popup.bodyText = 'This will delete your favorite. You will retain access to the wearables and avatar that made up the favorite from Inventory.'

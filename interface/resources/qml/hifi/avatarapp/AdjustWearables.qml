@@ -235,22 +235,6 @@ Rectangle {
                     Layout.alignment: Qt.AlignVCenter
                 }
 
-                spacing: 10
-
-                RalewayBold {
-                    size: 15;
-                    lineHeightMode: Text.FixedHeight
-                    lineHeight: 18;
-                    text: "<a href='#'>Get more</a>"
-                    linkColor: hifi.colors.blueHighlight
-                    Layout.alignment: Qt.AlignVCenter
-                    onLinkActivated: {
-                        popup.showGetWearables(null, function(link) {
-                            emitSendToScript({'method' : 'navigate', 'url' : link})
-                        });
-                    }
-                }
-
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
