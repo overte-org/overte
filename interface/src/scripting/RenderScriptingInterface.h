@@ -14,7 +14,7 @@
 
 #include "RenderForward.h"
 #include "AntialiasingEffect.h"
-
+#include <QScreen>
 
 /*@jsdoc
  * The <code>Render</code> API enables you to configure the graphics engine.
@@ -73,6 +73,10 @@ public:
     // Synchronize the runtime value to the actual setting
     // Need to be called on start up to re-initialize the runtime to the saved setting states
     void loadSettings();
+
+    static QString getNameForScreen(QScreen *screen) {
+         return screen->model() + " (" + screen->name() + ", " + screen->serialNumber() + ")";
+    }
 
 public slots:
     /*@jsdoc

@@ -208,7 +208,7 @@ QStringList RenderScriptingInterface::getScreens() const {
     QStringList screens;
 
     for(QScreen *screen : qApp->screens()) {
-        screens << screen->model();
+        screens << getNameForScreen(screen);
     }
 
     return screens;
