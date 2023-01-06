@@ -119,7 +119,7 @@ public:  // ScriptEngine implementation
     virtual void setProcessEventsInterval(int interval) override;
     virtual QThread* thread() const override;
     virtual void setThread(QThread* thread) override;
-    Q_INVOKABLE virtual void enterIsolateOnThisThread() override;
+    //Q_INVOKABLE virtual void enterIsolateOnThisThread() override;
     virtual ScriptValue undefinedValue() override;
     virtual ScriptValue uncaughtException() const override;
     virtual QStringList uncaughtExceptionBacktrace() const override;
@@ -127,6 +127,8 @@ public:  // ScriptEngine implementation
     virtual void updateMemoryCost(const qint64& deltaSize) override;
     virtual void requestCollectGarbage() override { while(!_v8Isolate->IdleNotificationDeadline(getV8Platform()->MonotonicallyIncreasingTime() + GARBAGE_COLLECTION_TIME_LIMIT_S)) {}; }
     virtual void compileTest() override;
+    virtual QString scriptValueDebugDetails(ScriptValue &value) override;
+    QString scriptValueDebugDetailsV8(const V8ScriptValue &value);
 
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
     inline bool IS_THREADSAFE_INVOCATION(const QString& method) { return ScriptEngine::IS_THREADSAFE_INVOCATION(method); }
@@ -226,11 +228,13 @@ protected:
     ScriptValue _undefinedValue;
     mutable ScriptContextQtPointer _currContext;
     //QThread *_currentThread;
-    std::unique_ptr<v8::Locker> _v8Locker;
+    //V8TODO: probably should be removed and its occurrences replaced with local locker
+    //std::unique_ptr<v8::Locker> _v8Locker;
 
     //V8TODO
     //ArrayBufferClass* _arrayBufferClass;
-    bool _isEvaluating;
+    // Counts how many nested evaluate calls are there at a given point
+    int _evaluatingCounter;
 };
 
 // Lambda helps create callable V8ScriptValues out of std::functions:

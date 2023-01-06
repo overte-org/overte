@@ -32,7 +32,14 @@ ScriptSyntaxCheckResultPointer ScriptProgramV8Wrapper::checkSyntax() {
 }
 
 bool ScriptProgramV8Wrapper::compile() {
+    if (_isCompiled) {
+        // V8TODO is there a case where source code changes later and needs to be compiled again?
+        // V8TODO is same program used from multiple isolates
+        return true;
+    }
     auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     auto context = _engine->getContext();
     v8::Context::Scope contextScope(context);
@@ -48,6 +55,7 @@ bool ScriptProgramV8Wrapper::compile() {
         qDebug() << "Script compilation succesful: " << _url;
         _compileResult = ScriptSyntaxCheckResultV8Wrapper(ScriptSyntaxCheckResult::Valid);
         _value = V8ScriptProgram(isolate, script);
+        _isCompiled = true;
         return true;
     }
     qDebug() << "Script compilation failed: " << _url;
