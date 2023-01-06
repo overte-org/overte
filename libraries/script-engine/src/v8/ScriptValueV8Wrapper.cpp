@@ -61,7 +61,8 @@ V8ScriptValue ScriptValueV8Wrapper::fullUnwrap(ScriptEngineV8* engine, const Scr
 
 ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const ScriptValueList& args) {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue v8This = fullUnwrap(thisObject);
@@ -89,7 +90,8 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
 
 ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const ScriptValue& arguments) {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue v8This = fullUnwrap(thisObject);
@@ -113,7 +115,8 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
 
 ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     Q_ASSERT(args.length() <= Q_METAMETHOD_INVOKE_MAX_ARGS);
@@ -139,7 +142,8 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
 
 ScriptValue ScriptValueV8Wrapper::construct(const ScriptValue& arguments) {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     // V8TODO I'm not sure in what format arguments are yet, backtrace will show how it is used
@@ -170,7 +174,8 @@ ScriptValueIteratorPointer ScriptValueV8Wrapper::newIterator() const {
 
 ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValue::ResolveFlags &mode) const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(_engine->getIsolate());
+    v8::Isolate::Scope isolateScope(_engine->getIsolate());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     if (_value.constGet()->IsObject()) {
@@ -181,6 +186,13 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
         if (object->Get(_value.constGetContext(), key).ToLocal(&resultLocal)) {
             V8ScriptValue result(_engine->getIsolate(), resultLocal);
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
+        } else {
+            QString parentValueQString("");
+            v8::Local<v8::String> parentValueString;
+            if (_value.constGet()->ToDetailString(_engine->getContext()).ToLocal(&parentValueString)) {
+                QString(*v8::String::Utf8Value(isolate, parentValueString));
+            }
+            qDebug() << "Failed to get property, parent of value: " << name << ", parent type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate))) << " parent value: " << parentValueQString;
         }
     }
     qDebug() << "Failed to get property, parent of value: " << name << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
@@ -194,7 +206,8 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
 
 ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue::ResolveFlags& mode) const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     if (_value.constGet()->IsObject()) {
@@ -215,7 +228,8 @@ ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue
 
 void ScriptValueV8Wrapper::setData(const ScriptValue& value) {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue unwrapped = fullUnwrap(value);
@@ -225,7 +239,8 @@ void ScriptValueV8Wrapper::setData(const ScriptValue& value) {
 void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& value, const ScriptValue::PropertyFlags& flags) {
     Q_ASSERT(flags != ScriptValue::PropertyGetter || flags != ScriptValue::PropertySetter);
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(_engine->getIsolate());
+    v8::Isolate::Scope isolateScope(_engine->getIsolate());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue unwrapped = fullUnwrap(value);
@@ -256,7 +271,8 @@ void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& v
 
 void ScriptValueV8Wrapper::setProperty(quint32 arrayIndex, const ScriptValue& value, const ScriptValue::PropertyFlags& flags) {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue unwrapped = fullUnwrap(value);
@@ -275,7 +291,8 @@ void ScriptValueV8Wrapper::setProperty(quint32 arrayIndex, const ScriptValue& va
 
 void ScriptValueV8Wrapper::setPrototype(const ScriptValue& prototype) {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     ScriptValueV8Wrapper* unwrappedPrototype = unwrap(prototype);
@@ -294,7 +311,8 @@ void ScriptValueV8Wrapper::setPrototype(const ScriptValue& prototype) {
 
 bool ScriptValueV8Wrapper::strictlyEquals(const ScriptValue& other) const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     ScriptValueV8Wrapper* unwrappedOther = unwrap(other);
@@ -303,7 +321,8 @@ bool ScriptValueV8Wrapper::strictlyEquals(const ScriptValue& other) const {
 
 bool ScriptValueV8Wrapper::toBool() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->ToBoolean(_engine->getIsolate())->Value();
@@ -311,7 +330,8 @@ bool ScriptValueV8Wrapper::toBool() const {
 
 qint32 ScriptValueV8Wrapper::toInt32() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Integer> integer;
@@ -323,7 +343,8 @@ qint32 ScriptValueV8Wrapper::toInt32() const {
 
 double ScriptValueV8Wrapper::toInteger() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Integer> integer;
@@ -335,7 +356,8 @@ double ScriptValueV8Wrapper::toInteger() const {
 
 double ScriptValueV8Wrapper::toNumber() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Number> number;
@@ -347,7 +369,8 @@ double ScriptValueV8Wrapper::toNumber() const {
 
 QString ScriptValueV8Wrapper::toString() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     v8::String::Utf8Value string(_engine->getIsolate(), _value.constGet());
@@ -357,7 +380,8 @@ QString ScriptValueV8Wrapper::toString() const {
 
 quint16 ScriptValueV8Wrapper::toUInt16() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Uint32> integer;
@@ -369,7 +393,8 @@ quint16 ScriptValueV8Wrapper::toUInt16() const {
 
 quint32 ScriptValueV8Wrapper::toUInt32() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Uint32> integer;
@@ -401,7 +426,8 @@ QObject* ScriptValueV8Wrapper::toQObject() const {
 
 bool ScriptValueV8Wrapper::equals(const ScriptValue& other) const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     ScriptValueV8Wrapper* unwrappedOther = unwrap(other);
@@ -420,7 +446,8 @@ bool ScriptValueV8Wrapper::equals(const ScriptValue& other) const {
 
 bool ScriptValueV8Wrapper::isArray() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsArray();
@@ -428,7 +455,8 @@ bool ScriptValueV8Wrapper::isArray() const {
 
 bool ScriptValueV8Wrapper::isBool() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsBoolean();
@@ -446,7 +474,8 @@ bool ScriptValueV8Wrapper::isError() const {
 
 bool ScriptValueV8Wrapper::isFunction() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsFunction();
@@ -454,7 +483,8 @@ bool ScriptValueV8Wrapper::isFunction() const {
 
 bool ScriptValueV8Wrapper::isNumber() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsNumber();
@@ -462,7 +492,8 @@ bool ScriptValueV8Wrapper::isNumber() const {
 
 bool ScriptValueV8Wrapper::isNull() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsNull();
@@ -470,7 +501,8 @@ bool ScriptValueV8Wrapper::isNull() const {
 
 bool ScriptValueV8Wrapper::isObject() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsObject();
@@ -478,7 +510,8 @@ bool ScriptValueV8Wrapper::isObject() const {
 
 bool ScriptValueV8Wrapper::isString() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsString();
@@ -486,26 +519,30 @@ bool ScriptValueV8Wrapper::isString() const {
 
 bool ScriptValueV8Wrapper::isUndefined() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     return _value.constGet()->IsUndefined();
 }
 
 bool ScriptValueV8Wrapper::isValid() const {
-    //V8TODO
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
+    if (_value.constGet()->IsNullOrUndefined()) {
+        return false;
+    }
     return true;
-    //return _value.constGet()->IsValid();
 }
 
 bool ScriptValueV8Wrapper::isVariant() const {
     //V8TODO
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     return false;

@@ -828,7 +828,7 @@ void ScriptManager::run() {
     }
     
 
-    _engine->enterIsolateOnThisThread();
+    //_engine->enterIsolateOnThisThread();
 
     _engine->compileTest();
 
