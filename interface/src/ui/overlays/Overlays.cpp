@@ -642,6 +642,7 @@ EntityItemProperties Overlays::convertOverlayToEntityProperties(QVariantMap& ove
 
     ScriptEnginePointer scriptEngine = newScriptEngine();
     ScriptValue props = variantMapToScriptValue(overlayProps, *scriptEngine);
+    qDebug() << "Overlay props: " << scriptEngine->scriptValueDebugDetails(props);
     EntityItemProperties toReturn;
     EntityItemPropertiesFromScriptValueHonorReadOnly(props, toReturn);
     return toReturn;
