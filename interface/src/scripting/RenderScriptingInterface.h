@@ -27,7 +27,7 @@
  *
  * @property {Render.RenderMethod} renderMethod - The render method being used.
  * @property {boolean} shadowsEnabled - <code>true</code> if shadows are enabled, <code>false</code> if they're disabled.
- * @property {boolean} ambientOcclusionEnabled - <code>true</code> if ambient occlusion is enabled, <code>false</code> if it's 
+ * @property {boolean} ambientOcclusionEnabled - <code>true</code> if ambient occlusion is enabled, <code>false</code> if it's
  *     disabled.
  * @property {integer} antialiasingMode - The active anti-aliasing mode.
  * @property {number} viewportResolutionScale - The view port resolution scale, <code>&gt; 0.0</code>.
@@ -52,9 +52,9 @@ public:
      *     <tr><th>Value</th><th>Name</th><th>Description</th>
      *   </thead>
      *   <tbody>
-     *     <tr><td><code>0</code></td><td>DEFERRED</td><td>More complex rendering pipeline where lighting is applied to the 
+     *     <tr><td><code>0</code></td><td>DEFERRED</td><td>More complex rendering pipeline where lighting is applied to the
      *       scene as a whole after all objects have been rendered.</td></tr>
-     *     <tr><td><code>1</code></td><td>FORWARD</td><td>Simpler rendering pipeline where each object in the scene, in turn, 
+     *     <tr><td><code>1</code></td><td>FORWARD</td><td>Simpler rendering pipeline where each object in the scene, in turn,
      *       is rendered and has lighting applied.</td></tr>
      *   </tbody>
      * </table>
@@ -172,8 +172,32 @@ public slots:
      */
     void setViewportResolutionScale(float resolutionScale);
 
+    /*@jsdoc
+     * Returns the list of screens
+     * @function Render.getScreens
+     * @returns {string[]} The names of the available screens
+     */
+    QStringList getScreens() const;
+
+    /*@jsdoc
+     * Gets the screen used when switching to full screen mode
+     * @function Render.getFullScreenScreen
+     * @returns {string} The name of the screen used for full screen mode
+     */
+    QString getFullScreenScreen() const;
+
+    /*@jsdoc
+     * Sets the screen used when switching to full screen mode
+     * This function will only succeed if the name passed is one of the entries from Render.getScreens.
+     * Otherwise, it will return False and have no effect.
+     *
+     * @function Render.setFullScreenScreen
+     * @returns {bool} True if the setting was successful
+     */
+    bool setFullScreenScreen(QString name);
+
 signals:
-    
+
     /*@jsdoc
      * Triggered when one of the <code>Render</code> API's properties changes.
      * @function Render.settingsChanged
@@ -196,6 +220,8 @@ private:
     bool _ambientOcclusionEnabled{ false };
     AntialiasingConfig::Mode _antialiasingMode{ AntialiasingConfig::Mode::NONE };
     float _viewportResolutionScale{ 1.0f };
+    QString _fullScreenScreen;
+
 
     // Actual settings saved on disk
     Setting::Handle<int> _renderMethodSetting { "renderMethod", RENDER_FORWARD ? render::Args::RenderMethod::FORWARD : render::Args::RenderMethod::DEFERRED };
@@ -204,6 +230,7 @@ private:
     //Setting::Handle<AntialiasingConfig::Mode> _antialiasingModeSetting { "antialiasingMode", AntialiasingConfig::Mode::TAA };
     Setting::Handle<int> _antialiasingModeSetting { "antialiasingMode", AntialiasingConfig::Mode::NONE };
     Setting::Handle<float> _viewportResolutionScaleSetting { "viewportResolutionScale", 1.0f };
+    Setting::Handle<QString> _fullScreenScreenSetting { "fullScreenScreen", "" };
 
     // Force assign both setting AND runtime value to the parameter value
     void forceRenderMethod(RenderMethod renderMethod);

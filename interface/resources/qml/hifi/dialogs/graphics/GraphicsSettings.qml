@@ -155,7 +155,7 @@ Item {
                             text: "Full World Detail"
                         }
                     }
-                
+
                     HifiControlsUit.ComboBox {
                         id: worldDetailDropdown
                         enabled: performanceCustom.checked
@@ -175,7 +175,7 @@ Item {
                         Component.onCompleted: {
                             worldDetailDropdown.refreshWorldDetailDropdown();
                         }
-                        
+
                         onCurrentIndexChanged: {
                             LODManager.worldDetailQuality = currentIndex;
                             worldDetailDropdown.displayText = model.get(currentIndex).text;
@@ -337,7 +337,7 @@ Item {
                             refreshRatePreset: 2 // RefreshRateProfile::REALTIME
                         }
                     }
-                
+
                     HifiControlsUit.ComboBox {
                         id: refreshRateDropdown
                         enabled: performanceCustom.checked
@@ -363,7 +363,7 @@ Item {
                         Component.onCompleted: {
                             refreshRateDropdown.refreshRefreshRateDropdownDisplay();
                         }
-                        
+
                         onCurrentIndexChanged: {
                             Performance.setRefreshRateProfile(model.get(currentIndex).refreshRatePreset);
                             refreshRateDropdown.displayText = model.get(currentIndex).text;
@@ -386,14 +386,14 @@ Item {
                         size: 16
                         color: "#FFFFFF"
                     }
-                
+
                     HifiControlsUit.Slider {
                         id: resolutionScaleSlider
                         enabled: performanceCustom.checked
                         anchors.left: resolutionHeader.right
                         anchors.leftMargin: 57
                         anchors.top: parent.top
-                        width: 150 
+                        width: 150
                         height: parent.height
                         colorScheme: hifi.colorSchemes.dark
                         minimumValue: 0.25
@@ -424,11 +424,11 @@ Item {
                 Layout.topMargin: 20
                 Layout.preferredWidth: parent.width
                 spacing: 0
-    
+
                 Item {
                     Layout.preferredWidth: parent.width
                     Layout.preferredHeight: 35
-    
+
                     HifiStylesUit.RalewayRegular {
                         id: antialiasingHeader
                         text: "Anti-aliasing"
@@ -454,7 +454,7 @@ Item {
                             text: "FXAA"
                         }
                     }
-    
+
                     HifiControlsUit.ComboBox {
                         id: antialiasingDropdown
                         anchors.left: antialiasingHeader.right
@@ -465,15 +465,15 @@ Item {
                         colorScheme: hifi.colorSchemes.dark
                         model: antialiasingModel
                         currentIndex: -1
-    
+
                         function refreshAntialiasingDropdown() {
                             antialiasingDropdown.currentIndex = Render.antialiasingMode;
                         }
-    
+
                         Component.onCompleted: {
                             antialiasingDropdown.refreshAntialiasingDropdown();
                         }
-    
+
                         onCurrentIndexChanged: {
                             Render.antialiasingMode = currentIndex;
                             antialiasingDropdown.displayText = model.get(currentIndex).text;
@@ -481,6 +481,106 @@ Item {
                     }
                 }
             }
+
+            ColumnLayout {
+                Layout.topMargin: 20
+                Layout.preferredWidth: parent.width
+                spacing: 0
+
+                Item {
+                    Layout.preferredWidth: parent.width
+                    Layout.preferredHeight: 35
+
+                    HifiStylesUit.RalewayRegular {
+                        id: fullScreenDisplayHeader
+                        text: "Full screen display"
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        width: 130
+                        height: parent.height
+                        size: 16
+                        color: "#FFFFFF"
+                    }
+
+                    ListModel {
+                        id: fullScreenDisplayModel
+
+                        ListElement {
+                            text: "Screen 1"
+                        }
+
+                        function refreshScreens() {
+                            fullScreenDisplayModel.clear();
+                            Render.getScreens().forEach(function(screen) {
+                                fullScreenDisplayModel.append({"text" : screen});
+                            });
+                        }
+
+                        Component.onCompleted: {
+                            fullScreenDisplayModel.refreshScreens();
+                        }
+                    }
+
+                    HifiControlsUit.ComboBox {
+                        id: fullScreenDisplayDropdown
+                        anchors.left: fullScreenDisplayHeader.right
+                        anchors.leftMargin: 20
+                        anchors.top: parent.top
+                        width: 280
+                        height: parent.height
+                        colorScheme: hifi.colorSchemes.dark
+                        model: fullScreenDisplayModel
+                        currentIndex: 0
+
+                        function refreshFullScreenDisplayDropdown() {
+                            var screens = Render.getScreens();
+                            var selected = Render.getFullScreenScreen();
+
+                            for(let idx = 0; idx < screens.length; idx++) {
+                                if (screens[idx] == selected) {
+                                    fullScreenDisplayDropdown.currentIndex = idx;
+                                    return;
+                                }
+                            }
+
+                            console.log("Selected full screen screen", selected, "not found, falling back to primary screen");
+                            console.log("List of screens is:", screens);
+                            fullScreenDisplayDropdown.currentIndex = 0;
+                        }
+
+                        Component.onCompleted: {
+                            model.refreshScreens();
+                            fullScreenDisplayDropdown.refreshFullScreenDisplayDropdown();
+                            fullScreenDisplayDropdown.displayText = model.get(currentIndex).text;
+                        }
+
+                        onCurrentIndexChanged: {
+                            if (currentIndex >= 0) {
+                                // Somehow, we end up going through here twice on every change of the combo box.
+                                // The first one is with the new selected index, and the second one is with the
+                                // index at -1.
+                                //
+                                // The first one comes from a sensible stack of:
+                                //     onCurrentIndexChanged (qrc:/qml/hifi/dialogs/graphics/GraphicsSettings.qml:559)
+                                //     refreshScreens (qrc:/qml/hifi/dialogs/graphics/GraphicsSettings.qml:514)
+                                //     onCompleted (qrc:/qml/hifi/dialogs/graphics/GraphicsSettings.qml:553)
+                                //     load (qrc:/qml/hifi/tablet/WindowRoot.qml:170)
+                                //     loadSource (qrc:/qml/hifi/tablet/WindowRoot.qml:63)
+                                //
+                                // The second seems to be called out of nowhere. This likely indicates some sort of bug.
+                                // Might be related to Wayland?
+
+                                Render.setFullScreenScreen(model.get(currentIndex).text);
+                                fullScreenDisplayDropdown.displayText = model.get(currentIndex).text;
+                            } else {
+                                console.log("Called with currentIndex =", currentIndex);
+                                console.trace();
+                            }
+                        }
+                    }
+                }
+            }
+
         }
     }
 
