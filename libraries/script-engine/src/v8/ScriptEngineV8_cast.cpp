@@ -292,8 +292,17 @@ int ScriptEngineV8::computeCastPenalty(const V8ScriptValue& v8Val, int destTypeI
 }
 
 bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& dest, int destTypeId) {
+    v8::Locker locker(_v8Isolate);
+    v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
     const v8::Local<v8::Value> val = v8Val.constGet();
+
+    // Conversion debugging:
+    if (destTypeId == QMetaType::QVariant && val->IsBoolean()) {
+        //It's for placing breakpoint here
+        qDebug() << "Conversion Debug: " << scriptValueDebugDetailsV8(v8Val);
+    }
 
     // if we're not particularly interested in a specific type, try to detect if we're dealing with a registered type
     if (destTypeId == QMetaType::UnknownType) {
@@ -376,9 +385,10 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                 }
                 // V8TODO
                 errorMessage = QString() + "Conversion failure: " + QString(*v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked()))
-                               + "to variant. Destination type: " + QMetaType::typeName(destTypeId);
+                               + "to variant. Destination type: " + QMetaType::typeName(destTypeId) +" details: "+ scriptValueDebugDetailsV8(v8Val);
                 qDebug() << errorMessage;
-                Q_ASSERT(false);
+
+                //Q_ASSERT(false);
                 //dest = val->ToVariant();
                 break;
             case QMetaType::Bool:
@@ -440,16 +450,16 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
             case QMetaType::QVariant:
                 if (val->IsUndefined()) {
                     dest = QVariant();
-                    break;
+                    return true;
                 }
                 if (val->IsNull()) {
                     dest = QVariant::fromValue(nullptr);
-                    break;
+                    return true;
                 }
                 if (val->IsBoolean()) {
                     //V8TODO is it right isolate? What if value from different script engine is used here
                     dest = QVariant::fromValue(val->BooleanValue(_v8Isolate));
-                    break;
+                    return true;
                 }
                 if (val->IsString()) {
                     //V8TODO is it right context? What if value from different script engine is used here
@@ -457,30 +467,30 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                     Q_ASSERT(*string != nullptr);
                     dest = QVariant::fromValue(QString(*string));
                     //dest = QVariant::fromValue(val->ToString(_v8Context.Get(_v8Isolate)).ToLocalChecked()->);
-                    break;
+                    return true;
                 }
                 if (val->IsNumber()) {
                     dest = QVariant::fromValue(val->ToNumber(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value());
-                    break;
+                    return true;
                 }
                 {
                     QObject* obj = ScriptObjectV8Proxy::unwrap(v8Val);
                     if (obj) {
                         dest = QVariant::fromValue(obj);
-                        break;
+                        return true;
                     }
                 }
                 {
                     QVariant var = ScriptVariantV8Proxy::unwrap(v8Val);
                     if (var.isValid()) {
                         dest = var;
-                        break;
+                        return true;
                     }
                 }
                 errorMessage = QString() + "Conversion to variant failed: " + QString(*v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked()))
-                                       + " Destination type: " + QMetaType::typeName(destTypeId);
+                                       + " Destination type: " + QMetaType::typeName(destTypeId) + " Value details: " + scriptValueDebugDetailsV8(v8Val);
                 qDebug() << errorMessage;
-                break;
+                return false;
             default:
                 // check to see if this is a pointer to a QObject-derived object
                 if (QMetaType::typeFlags(destTypeId) & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
