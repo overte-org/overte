@@ -1,6 +1,6 @@
 //
 //  Created by Dale Glass on 7/01/2023
-//  Copyright 2022 Overte e.V.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
