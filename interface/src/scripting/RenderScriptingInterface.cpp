@@ -9,6 +9,7 @@
 
 #include "LightingModel.h"
 #include <QScreen>
+#include "ScreenName.h"
 
 
 RenderScriptingInterface* RenderScriptingInterface::getInstance() {
@@ -23,6 +24,7 @@ RenderScriptingInterface::RenderScriptingInterface() {
         qmlRegisterType<RenderScriptingInterface>("RenderEnums", 1, 0, "RenderEnums");
     });
 }
+
 
 void RenderScriptingInterface::loadSettings() {
     _renderSettingLock.withReadLock([&] {
@@ -208,7 +210,7 @@ QStringList RenderScriptingInterface::getScreens() const {
     QStringList screens;
 
     for(QScreen *screen : qApp->screens()) {
-        screens << getNameForScreen(screen);
+        screens << ScreenName::getNameForScreen(screen);
     }
 
     return screens;

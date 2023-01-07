@@ -74,9 +74,6 @@ public:
     // Need to be called on start up to re-initialize the runtime to the saved setting states
     void loadSettings();
 
-    static QString getNameForScreen(QScreen *screen) {
-         return screen->model() + " (" + screen->name() + ", " + screen->serialNumber() + ")";
-    }
 
 public slots:
     /*@jsdoc

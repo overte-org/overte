@@ -19,6 +19,7 @@
 #include <ui-plugins/PluginContainer.h>
 #include <PathUtils.h>
 #include "SettingHandle.h"
+#include "ScreenName.h"
 
 
 const QString Basic2DWindowOpenGLDisplayPlugin::NAME("Desktop");
@@ -167,17 +168,12 @@ bool Basic2DWindowOpenGLDisplayPlugin::isThrottled() const {
     return _isThrottled;
 }
 
-
-static QString getNameForScreen(QScreen *screen) {
-        return screen->model() + " (" + screen->name() + ", " + screen->serialNumber() + ")";
-}
-
 QScreen* Basic2DWindowOpenGLDisplayPlugin::getFullscreenTarget() {
     Setting::Handle<QString> _fullScreenScreenSetting { "fullScreenScreen", "" };
     QString selectedModel = _fullScreenScreenSetting.get();
 
     for(QScreen *screen : qApp->screens()) {
-        if (getNameForScreen(screen) == selectedModel) {
+        if (ScreenName::getNameForScreen(screen) == selectedModel) {
             return screen;
         }
     }
