@@ -1,3 +1,8 @@
+# Copyright 2013-2019 High Fidelity, Inc.
+# Copyright 2020-2022 Vircadia contributors.
+# Copyright 2020-2022 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 import hifi_utils
 import hifi_android
 import hashlib
@@ -62,7 +67,7 @@ endif()
         system_qt = False
 
         # Here we handle the 3 possible cases of dealing with Qt:
-        if os.getenv('OVERTE_USE_SYSTEM_QT', "") != "":
+        if bool(os.getenv('OVERTE_USE_SYSTEM_QT', False)):
             # 1. Using the system provided Qt. This is only recommended for Qt 5.15.0 and above,
             # as it includes a required fix on Linux.
             #

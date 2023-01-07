@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# Copyright 2020-2021 Vircadia contributors.
+# Copyright 2022 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 if [ "$OVERTE" = "" ]; then
 	        OVERTE=`realpath ..`
 	        QT5_LIBS=`realpath ~/overte-files/qt/qt5-install/lib`
@@ -76,5 +80,5 @@ fi
 sudo yum install chrpath
 
 export VERSION DEPENDS OVERTE
-rpmbuild --target x86_64 -bb ./overte-server.spec
-mv ~/rpmbuild/RPMS/x86_64/*.rpm .
+rpmbuild --target $(uname -m) -bb ./overte-server.spec
+mv ~/rpmbuild/RPMS/$(uname -m)/*.rpm .

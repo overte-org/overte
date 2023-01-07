@@ -1,3 +1,7 @@
+# Copyright 2020-2021 Vircadia contributors.
+# Copyright 2022 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 #OVERTE=~/Overte rpmbuild --target x86_64 -bb overte-server.spec
 %define version %{lua:print(os.getenv("VERSION"))}
 %define depends %{lua:print(os.getenv("DEPENDS"))}
@@ -14,7 +18,10 @@ Source0:        https://github.com/overte-org/overte
 #BuildRequires:  systemd-rpm-macros
 BuildRequires:  chrpath
 Requires:       %{depends}
-BuildArch:      x86_64
+
+BuildArch:      %_target_cpu
+
+
 AutoReq:        no
 AutoProv:       no
 

@@ -1,3 +1,7 @@
+# Copyright 2020-2021 Vircadia contributors.
+# Copyright 2022 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 Source: overte-server
 Section: comm
 Priority: optional

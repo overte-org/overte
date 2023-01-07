@@ -1,5 +1,8 @@
+# Copyright 2022 Overte e.V.
+# SPDX-License-Identifier: MIT
+
 # Docker file for building Overte Server
-# Example build: docker build -t juliangro/overte-server-build:0.1.1-debian-11 -f Dockerfile_build_debian-11 .
+# Example build: docker build -t overte/overte-server-build:0.1.2-debian-11 -f Dockerfile_build_debian-11 .
 FROM debian:bullseye
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
@@ -12,7 +15,12 @@ RUN echo UTC >/etc/timezone
 RUN apt-get update && apt-get -y install tzdata
 
 # Install Overte domain-server and assignment-client build dependencies
-RUN apt-get -y install curl ninja-build git cmake g++ libssl-dev libqt5websockets5-dev qtscript5-dev qtdeclarative5-dev qtmultimedia5-dev python3-distutils python3-distro mesa-common-dev libgl1-mesa-dev
+RUN apt-get -y install curl ninja-build git g++ libssl-dev libqt5websockets5-dev qtscript5-dev qtdeclarative5-dev qtmultimedia5-dev python3-distutils python3-distro mesa-common-dev libgl1-mesa-dev
+
+# Install CMake from Debian Backports
+RUN echo deb http://deb.debian.org/debian bullseye-backports main > /etc/apt/sources.list.d/bullseye-backports.list
+RUN apt-get update && apt-get -y -t bullseye-backports install -y cmake
+
 # Install Overte tools build dependencies
 RUN apt-get -y install libqt5webchannel5-dev qtwebengine5-dev libqt5xmlpatterns5-dev
 
@@ -30,9 +38,6 @@ RUN locale-gen
 RUN echo "export LC_ALL=en_US.UTF-8" >> ~/.bashrc
 RUN echo "export LANG=en_US.UTF-8" >> ~/.bashrc
 RUN echo "export LANGUAGE=en_US.UTF-8" >> ~/.bashrc
-
-# Install tools for creating the server image
-RUN apt-get -y install docker.io xz-utils
 
 # Install tools needed for our Github Actions Workflow
 Run apt-get -y install python3-boto3 python3-github zip

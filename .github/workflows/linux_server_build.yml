@@ -1,0 +1,272 @@
+# Copyright 2013-2019 High Fidelity, Inc.
+# Copyright 2020-2022 Vircadia contributors.
+# Copyright 2021-2022 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Linux Server CI Build
+# Keep in mind that GitHub Actions does not allow reading secrets during PR builds.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches:
+      - master
+
+env:
+  BUILD_TYPE: Release
+
+  UPLOAD_BUCKET: overte-public
+  UPLOAD_REGION: fra1
+  UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
+
+jobs:
+  build:
+    # Only run master or tagged builds, or PRs if labeled as "server"
+    if: contains( github.event.pull_request.labels.*.name, 'server') || github.event_name != 'pull_request'
+    name: "${{matrix.os}}, ${{matrix.arch}}"
+    strategy:
+      matrix:
+        include:
+          - os: debian-11
+            image: docker.io/overte/overte-server-build:0.1.2-debian-11-amd64
+            arch: amd64
+            runner: ubuntu-latest
+
+          - os: debian-11
+            image: docker.io/overte/overte-server-build:0.1.2-debian-11-aarch64
+            arch: aarch64
+            runner: linux_aarch64
+
+          - os: ubuntu-18.04
+            image: docker.io/overte/overte-server-build:0.1.1-ubuntu-18.04-amd64
+            arch: amd64
+            runner: ubuntu-latest
+
+          - os: ubuntu-20.04
+            image: docker.io/overte/overte-server-build:0.1.1-ubuntu-20.04-amd64
+            arch: amd64
+            runner: ubuntu-latest
+
+          - os: ubuntu-22.04
+            image: docker.io/overte/overte-server-build:0.1.1-ubuntu-22.04-amd64
+            arch: amd64
+            runner: ubuntu-latest
+
+          - os: ubuntu-22.04
+            image: docker.io/overte/overte-server-build:0.1.1-ubuntu-22.04-aarch64
+            arch: aarch64
+            runner: linux_aarch64
+
+          - os: fedora-36
+            image: docker.io/overte/overte-server-build:0.1.2-fedora-36-amd64
+            arch: amd64
+            runner: ubuntu-latest
+
+          - os: fedora-36
+            image: docker.io/overte/overte-server-build:0.1.2-fedora-36-aarch64
+            arch: aarch64
+            runner: linux_aarch64
+
+          - os: fedora-37
+            image: docker.io/overte/overte-server-build:0.1.2-fedora-37-amd64
+            arch: amd64
+            runner: ubuntu-latest
+
+          - os: fedora-37
+            image: docker.io/overte/overte-server-build:0.1.2-fedora-37-aarch64
+            arch: aarch64
+            runner: linux_aarch64
+
+          - os: rockylinux-9
+            image: docker.io/overte/overte-server-build:0.1.2-rockylinux-9-amd64
+            arch: amd64
+            runner: ubuntu-latest
+
+      fail-fast: false
+
+    runs-on: ${{matrix.runner}}
+    container: ${{matrix.image}}
+
+    steps:
+    - name: Configure Build Environment 1
+      shell: bash
+      run: |
+
+        # Get git commit
+        if [ "${{github.event_name}}" = "pull_request" ]; then
+          echo "GIT_COMMIT_SHORT=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-7`" >> $GITHUB_ENV
+        else # master or tagged
+          echo "GIT_COMMIT_SHORT=`echo ${{ github.sha }} | cut -c1-7`" >> $GITHUB_ENV
+        fi
+
+        echo "JOB_NAME=${{matrix.os}}, ${{matrix.arch}}" >> $GITHUB_ENV
+
+        echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
+
+        if [[ "${{ matrix.os }}" =~ "ubuntu" || "${{ matrix.os }}" =~ "debian" ]]; then
+          echo "INSTALLER_EXT=deb" >> $GITHUB_ENV
+          echo "DEBEMAIL=julian.gro@overte.org" >> $GITHUB_ENV
+          echo "DEBFULLNAME=GitHub Actions CI" >> $GITHUB_ENV
+        else  # RPM
+          if [ "${{ matrix.arch }}" == "amd64" ]; then
+            echo "INSTALLER_EXT=x86_64.rpm" >> $GITHUB_ENV
+          else
+            echo "INSTALLER_EXT=aarch64.rpm" >> $GITHUB_ENV
+          fi
+        fi
+
+        # Tagged builds. E.g. release or release candidate builds.
+        if [ "${{github.event_name}}" != "pull_request" ]; then
+          echo "PRODUCTION_BUILD=true" >> $GITHUB_ENV
+        fi
+
+        # Systems requiring our prebuilt Qt package
+        if [[ "${{ matrix.os }}" = "ubuntu-18.04" || "${{ matrix.os }}" = "ubuntu-20.04" ]]; then
+          echo  # false
+        else
+          echo "OVERTE_USE_SYSTEM_QT=true" >> $GITHUB_ENV
+        fi
+
+        # Architecture specific variables
+        if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
+          echo "VCPKG_FORCE_SYSTEM_BINARIES=true" >> $GITHUB_ENV
+          echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DSERVER_ONLY=true -DBUILD_TOOLS=true" >> $GITHUB_ENV
+        else # amd64
+          echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DSERVER_ONLY=true -DBUILD_TOOLS=true" >> $GITHUB_ENV
+        fi
+
+    # Configuration is broken into multiple steps because you can't set an env var and also reference it in the same step
+    - name: Configure Build Environment 2
+      shell: bash
+      run: |
+
+        # Versioning
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "DEBVERSION=${{ github.event.number }}PR-$GIT_COMMIT_SHORT-${{ matrix.os }}" >> $GITHUB_ENV
+          echo "RPMVERSION=PR${{ github.event.number }}.$GIT_COMMIT_SHORT" >> $GITHUB_ENV
+        elif [ "${{ github.ref_name }}" = "master" ]; then
+          echo "DEBVERSION=${{ github.run_number }}master-$GIT_COMMIT_SHORT-${{ matrix.os }}" >> $GITHUB_ENV
+          echo "RPMVERSION=master${{ github.run_number }}.$GIT_COMMIT_SHORT" >> $GITHUB_ENV
+          echo "UPLOAD_PREFIX=build/overte/master" >> $GITHUB_ENV
+          echo "RELEASE_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
+        else # tagged
+          echo "DEBVERSION=${{ github.run_number }}-${{ github.ref_name }}-$GIT_COMMIT_SHORT-${{ matrix.os }}" >> $GITHUB_ENV
+          echo "RPMVERSION=${${{ github.ref_name }}//-/.}.${{ github.run_number }}.$GIT_COMMIT_SHORT" >> $GITHUB_ENV
+        fi
+
+        if [[ "${{ github.ref_name }}" != "master" && "${{ github.ref_name }}" != "pull_request" ]]; then  # tagged
+          echo "RELEASE_NUMBER=/${{ github.ref_name }}" >> $GITHUB_ENV
+          if [ "${{ github.ref_name }}" == *"rc"* ]; then  # release candidate
+            echo "UPLOAD_PREFIX=build/overte/release-candidate" >> $GITHUB_ENV
+          else  # release
+            echo "UPLOAD_PREFIX=build/overte/release" >> $GITHUB_ENV
+          fi
+        fi
+
+    - name: Configure Build Environment 3
+      shell: bash
+      run: |
+
+        if [[ "${{ matrix.os }}" =~ "ubuntu" || "${{ matrix.os }}" =~ "debian" ]]; then
+          if [ "${{ matrix.arch }}" == "aarch64" ]; then
+            echo "ARTIFACT_PATTERN=overte-server_${DEBVERSION}-1_arm64.$INSTALLER_EXT" >> $GITHUB_ENV
+          else # amd64
+            echo "ARTIFACT_PATTERN=overte-server_${DEBVERSION}-1_amd64.$INSTALLER_EXT" >> $GITHUB_ENV
+          fi
+        else  # RPM
+          if [ "${{ matrix.os }}" == "rockylinux-9" ]; then
+            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.el9.$INSTALLER_EXT" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "fedora-36" ]; then
+            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc36.$INSTALLER_EXT" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "fedora-37" ]; then
+            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc37.$INSTALLER_EXT" >> $GITHUB_ENV
+          else
+            echo "Error! ARTIFACT_PATTERN not set!"
+            exit 1  # Fail
+          fi
+        fi
+
+
+    # Checkout v2 and v3 are currently broken on our Docker configuration
+    - uses: actions/checkout@v1
+      with:
+        submodules: false
+        fetch-depth: 1
+
+    - name: Create Build Environment
+      shell: bash
+      run: mkdir build
+
+    - name: Configure CMake
+      working-directory: build
+      shell: bash
+      run: cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release $CMAKE_EXTRA
+
+    - name: Compress cmake logs
+      if: always()
+      shell: bash
+      run: |
+
+        if [ ${{ env.CI_WORKSPACE }} ]; then
+          find "$CI_WORKSPACE/overte-files/vcpkg" -name '*log' -type f -print0 | tar --null --force-local -T - -c --xz -v -f "cmake-logs-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.number }}.tar.xz"
+        else
+          find "$HOME/overte-files/vcpkg" -name '*log' -type f -print0 | tar --null --force-local -T - -c --xz -v -f "cmake-logs-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.number }}.tar.xz"
+        fi
+
+    - name: Archive cmake logs
+      if: always()
+      # upload-artifact v2 and v3 are currently broken on our Docker configuration
+      uses: actions/upload-artifact@v1
+      with:
+        name: cmake-logs-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.number }}.tar.xz
+        path: cmake-logs-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.number }}.tar.xz
+
+    - name: Build Domain Server
+      working-directory: build
+      shell: bash
+      run: cmake --build . --config $BUILD_TYPE --target domain-server $CMAKE_BUILD_EXTRA
+
+    - name: Build Assignment Client
+      working-directory: build
+      shell: bash
+      run: cmake --build . --config $BUILD_TYPE --target assignment-client $CMAKE_BUILD_EXTRA
+
+    - name: Build Oven
+      working-directory: build
+      shell: bash
+      run: cmake --build . --config $BUILD_TYPE --target oven $CMAKE_BUILD_EXTRA
+
+    - name: Package
+      working-directory: pkg-scripts
+      shell: bash
+      run: |
+        if [[ "${{ matrix.os }}" = "ubuntu"* || "${{ matrix.os }}" = "debian"* ]]; then # Debian
+          ./make-deb-server
+        else # RPM
+          ./make-rpm-server
+        fi
+
+    - name: Output system stats
+      if: ${{ always() }}
+      shell: bash
+      run: |
+        echo "Disk usage:"
+        df -h
+
+    - name: Upload artifact to GitHub
+      if: github.event_name == 'pull_request'
+      # upload-artifact v2 and v3 are currently broken on our Docker configuration
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{ env.ARTIFACT_PATTERN }}
+        path: pkg-scripts/${{ env.ARTIFACT_PATTERN }}
+
+    - name: Upload artifact to S3
+      if: github.event_name != 'pull_request'  # PR builds cannot be uploaded to S3
+      shell: bash
+      working-directory: pkg-scripts
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.s3_access_key_id }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.s3_secret_access_key }}
+      run: python3 $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
