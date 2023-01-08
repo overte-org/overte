@@ -800,20 +800,24 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             Q_ASSERT(false);
             return nullValue();
         }
+        //qDebug() << "Closure global details:" << scriptValueDebugDetailsV8(V8ScriptValue(_v8Isolate, closureGlobal));
     }
     //_v8Context.Get(_v8Isolate)->DetachGlobal();
     //oldGlobal = _v8Context.Get(_v8Isolate)->Global();
     v8::Local<v8::Context> closureContext;
 
-    if (closureGlobal->IsObject()) {
+    // V8TODO
+    /*if (closureGlobal->IsObject()) {
 #ifdef DEBUG_JS
         qCDebug(shared) << " setting global = closure.global" << shortName;
 #endif
         closureContext = v8::Context::New(_v8Isolate, nullptr, v8::Local<v8::ObjectTemplate>(), closureGlobal);
+        closureContext = v8::Context::New(_v8Isolate, nullptr, v8::Local<v8::ObjectTemplate>(), closureGlobal);
         //setGlobalObject(global);
     } else {
         closureContext = v8::Context::New(_v8Isolate);
-    }
+    }*/
+    closureContext = v8::Context::New(_v8Isolate, nullptr, v8::Local<v8::ObjectTemplate>(), closureObject);
 
     ScriptValue result;
     //auto context = pushContext();
@@ -828,23 +832,25 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
         const V8ScriptProgram& program = unwrappedProgram->toV8Value();
 
         v8::Local<v8::Value> thiz;
-        // V8TODO: not sure if "this" doesn't exist or is empty in some cases
-        if (!closureObject->Get(closure.constGetContext(), v8::String::NewFromUtf8(_v8Isolate, "this").ToLocalChecked())
+        // V8TODO: not sure if "this" is used at all here
+        /*if (!closureObject->Get(closure.constGetContext(), v8::String::NewFromUtf8(_v8Isolate, "this").ToLocalChecked())
                  .ToLocal(&thiz)) {
             _evaluatingCounter--;
             qDebug(scriptengine) << "Empty this object in closure";
             Q_ASSERT(false);
             return nullValue();
-        }
+        }*/
         //thiz = closure.property("this");
-        if (thiz->IsObject()) {
+        //qDebug() << "Closure this details:" << scriptValueDebugDetailsV8(V8ScriptValue(_v8Isolate, thiz));
+        // V8TODO:
+        /*if (thiz->IsObject()) {
 #ifdef DEBUG_JS
             qCDebug(shared) << " setting this = closure.this" << shortName;
 #endif
             //V8TODO I don't know how to do this in V8, will adding "this" to global object work?
             closureContext->Global()->Set(closureContext, v8::String::NewFromUtf8(_v8Isolate, "this").ToLocalChecked(), thiz);
             //context->setThisObject(thiz);
-        }
+        }*/
 
         //context->pushScope(closure);
 #ifdef DEBUG_JS
@@ -852,12 +858,15 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
 #endif
         {
             v8::TryCatch tryCatch(getIsolate());
+            //qDebug(scriptengine) << "Closure before run:" << scriptValueDebugDetailsV8(closure);
             auto maybeResult = program.constGet()->Run(closureContext);
+            //qDebug(scriptengine) << "Closure after run:" << scriptValueDebugDetailsV8(closure);
             v8::Local<v8::Value> v8Result;
             if (!maybeResult.ToLocal(&v8Result)) {
                 v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Exception());
                 QString errorMessage = QString(*utf8Value);
                 qWarning(scriptengine) << __FUNCTION__ << "---------- hasCaught:" << errorMessage;
+                qWarning(scriptengine) << __FUNCTION__ << "---------- tryCatch details:" << formatErrorMessageFromTryCatch(tryCatch);
                 //V8TODO: better error reporting
             }
 
@@ -1513,7 +1522,7 @@ void ScriptEngineV8::compileTest() {
     }
 }
 
-QString ScriptEngineV8::scriptValueDebugDetails(ScriptValue &value) {
+QString ScriptEngineV8::scriptValueDebugDetails(const ScriptValue &value) {
     V8ScriptValue v8Value = ScriptValueV8Wrapper::fullUnwrap(this, value);
     return scriptValueDebugDetailsV8(v8Value);
 }
