@@ -147,8 +147,9 @@ endif()
             cpu_architecture = platform.machine()
 
             if 'x86_64' == cpu_architecture:
-                u_major = int( distro.major_version() )
-                u_minor = int( distro.minor_version() )
+                # `major_version()` can return blank string on rolling release distros like arch 
+                # The `or 0` conditional assignment prevents the int parsing error from hiding the useful Qt package error 
+                u_major = int( distro.major_version() or '0' )
                 if distro.id() == 'ubuntu' or distro.id() == 'linuxmint':
                     if (distro.id() == 'ubuntu' and u_major == 18) or distro.id() == 'linuxmint' and u_major == 19:
                         self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.5-2022.07.17-kde_ea4efc067b47c11b1aac61668afd8578a6834f5b-ubuntu-18.04-amd64.tar.xz'
@@ -165,7 +166,6 @@ endif()
             elif 'aarch64' == cpu_architecture:
                 if distro.id() == 'ubuntu':
                     u_major = int( distro.major_version() )
-                    u_minor = int( distro.minor_version() )
 
                     if u_major == 18:
                         self.qtUrl = 'http://motofckr9k.ddns.net/vircadia_packages/qt5-install-5.15.2-ubuntu-18.04-aarch64_test.tar.xz'
