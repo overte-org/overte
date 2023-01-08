@@ -127,7 +127,7 @@ public:  // ScriptEngine implementation
     virtual void updateMemoryCost(const qint64& deltaSize) override;
     virtual void requestCollectGarbage() override { while(!_v8Isolate->IdleNotificationDeadline(getV8Platform()->MonotonicallyIncreasingTime() + GARBAGE_COLLECTION_TIME_LIMIT_S)) {}; }
     virtual void compileTest() override;
-    virtual QString scriptValueDebugDetails(ScriptValue &value) override;
+    virtual QString scriptValueDebugDetails(const ScriptValue &value) override;
     QString scriptValueDebugDetailsV8(const V8ScriptValue &value);
 
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
@@ -171,6 +171,9 @@ public: // not for public use, but I don't like how Qt strings this along with p
                                     ScriptEngine::DemarshalFunction demarshalFunc) override;
     int computeCastPenalty(const V8ScriptValue& val, int destTypeId);
     bool castValueToVariant(const V8ScriptValue& val, QVariant& dest, int destTypeId);
+
+    // Converts JS objects created in V8 to variants. Iterates over all properties and converts them to variants.
+    bool convertJSObjectToVariant(v8::Local<v8::Object> object, QVariant &dest);
     V8ScriptValue castVariantToValue(const QVariant& val);
     QString valueType(const V8ScriptValue& val);
     v8::Isolate* getIsolate() {return _v8Isolate;}

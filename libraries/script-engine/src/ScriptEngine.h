@@ -127,7 +127,7 @@ public:
     virtual void updateMemoryCost(const qint64& deltaSize) = 0;
     virtual void requestCollectGarbage() = 0;
     virtual void compileTest() = 0;
-    virtual QString scriptValueDebugDetails(ScriptValue &value) = 0;
+    virtual QString scriptValueDebugDetails(const ScriptValue &value) = 0;
 
 public:
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
