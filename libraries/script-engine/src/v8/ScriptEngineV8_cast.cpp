@@ -383,6 +383,12 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                         break;
                     }
                 }
+                // This is for generic JS objects
+                if (val->IsObject()) {
+                    if (convertJSObjectToVariant(v8::Local<v8::Object>::Cast(val), dest)) {
+                        break;
+                    }
+                }
                 // V8TODO
                 errorMessage = QString() + "Conversion failure: " + QString(*v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked()))
                                + "to variant. Destination type: " + QMetaType::typeName(destTypeId) +" details: "+ scriptValueDebugDetailsV8(v8Val);
@@ -487,6 +493,12 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                         return true;
                     }
                 }
+                if (val->IsObject()) {
+                    if (convertJSObjectToVariant(v8::Local<v8::Object>::Cast(val), dest)) {
+                        return true;
+                    }
+                }
+                //V8TODO is v8::Array to QVariant conversion used anywhere?
                 errorMessage = QString() + "Conversion to variant failed: " + QString(*v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked()))
                                        + " Destination type: " + QMetaType::typeName(destTypeId) + " Value details: " + scriptValueDebugDetailsV8(v8Val);
                 qDebug() << errorMessage;
@@ -530,6 +542,34 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
     }
 
     return destTypeId == QMetaType::UnknownType || dest.userType() == destTypeId || dest.convert(destTypeId);
+}
+
+bool ScriptEngineV8::convertJSObjectToVariant(v8::Local<v8::Object> object, QVariant &dest) {
+    auto context = getContext();
+    v8::Local<v8::Array> names;
+    if(object->GetPropertyNames(context).ToLocal(&names)) {
+        qDebug() << "ScriptEngineV8::convertJSObjectToVariant could not get property names";
+        return false;
+    }
+    int length = names->Length();
+    QHash<QString, QVariant> properties;
+    for (int i = 0; i < length; i++) {
+        v8::Local<v8::Value> v8Property;
+        QString name = *v8::String::Utf8Value(_v8Isolate, names->Get(context, i).ToLocalChecked());
+        if (!object->Get(context, names->Get(context, i).ToLocalChecked()).ToLocal(&v8Property)) {
+            qDebug() << "ScriptEngineV8::convertJSObjectToVariant could not get property: " + name;
+            continue;
+        }
+        QVariant property;
+        // Maybe QMetaType::QVariant?
+        if (castValueToVariant(V8ScriptValue(_v8Isolate, v8Property), property, QMetaType::UnknownType)) {
+            properties.insert( name, property);
+        } else {
+            qDebug() << "ScriptEngineV8::convertJSObjectToVariant could cast property to variant: " + name;
+            ;
+        }
+    }
+    dest = QVariant(properties);
 }
 
 QString ScriptEngineV8::valueType(const V8ScriptValue& v8Val) {
