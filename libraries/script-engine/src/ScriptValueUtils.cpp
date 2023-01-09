@@ -140,7 +140,7 @@ bool vec2FromScriptValue(const ScriptValue& object, glm::vec2& vec2) {
 
 ScriptValue vec3ToScriptValue(ScriptEngine* engine, const glm::vec3& vec3) {
     auto prototype = engine->globalObject().property("__hifi_vec3__");
-    if (!prototype.property("defined").toBool()) {
+    if (!prototype.hasProperty("defined") || !prototype.property("defined").toBool()) {
         prototype = engine->evaluate(
             "__hifi_vec3__ = Object.defineProperties({}, { "
             "defined: { value: true },"
@@ -648,7 +648,7 @@ ScriptValue qColorToScriptValue(ScriptEngine* engine, const QColor& color) {
 }
 
 /**jsdoc
- * An axis-aligned cube, defined as the bottom right near (minimum axes values) corner of the cube plus the dimension of its 
+ * An axis-aligned cube, defined as the bottom right near (minimum axes values) corner of the cube plus the dimension of its
  * sides.
  * @typedef {object} AACube
  * @property {number} x - X coordinate of the brn corner of the cube.
@@ -812,8 +812,8 @@ bool qSizeFFromScriptValue(const ScriptValue& object, QSizeF& qSizeF) {
  * The details of an animation that is playing.
  * @typedef {object} Avatar.AnimationDetails
  * @property {string} role - <em>Not used.</em>
- * @property {string} url - The URL to the animation file. Animation files need to be in glTF or FBX format but only need to 
- *     contain the avatar skeleton and animation data. glTF models may be in JSON or binary format (".gltf" or ".glb" URLs 
+ * @property {string} url - The URL to the animation file. Animation files need to be in glTF or FBX format but only need to
+ *     contain the avatar skeleton and animation data. glTF models may be in JSON or binary format (".gltf" or ".glb" URLs
  *     respectively).
  *     <p><strong>Warning:</strong> glTF animations currently do not always animate correctly.</p>
  * @property {number} fps - The frames per second(FPS) rate for the animation playback. 30 FPS is normal speed.

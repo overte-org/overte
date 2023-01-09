@@ -88,6 +88,7 @@ public:
     inline ScriptValue property(const QString& name, const ResolveFlags& mode = ResolvePrototype) const;
     inline ScriptValue property(quint32 arrayIndex, const ResolveFlags& mode = ResolvePrototype) const;
     inline void setData(const ScriptValue& val);
+    inline bool hasProperty(const QString &name) const;
     inline void setProperty(const QString& name,
                              const ScriptValue& value,
                              const PropertyFlags& flags = KeepExistingFlags);
@@ -152,6 +153,7 @@ public:
     virtual ScriptValue property(quint32 arrayIndex,
                                  const ScriptValue::ResolveFlags& mode = ScriptValue::ResolvePrototype) const = 0;
     virtual void setData(const ScriptValue& val) = 0;
+    virtual bool hasProperty(const QString &name) const = 0;
     virtual void setProperty(const QString& name,
                              const ScriptValue& value,
                              const ScriptValue::PropertyFlags& flags = ScriptValue::KeepExistingFlags) = 0;
@@ -316,6 +318,12 @@ ScriptValue ScriptValue::property(quint32 arrayIndex, const ResolveFlags& mode) 
 void ScriptValue::setData(const ScriptValue& val) {
     Q_ASSERT(_proxy != nullptr);
     return _proxy->setData(val);
+}
+
+
+bool ScriptValue::hasProperty(const QString& name) const {
+    Q_ASSERT(_proxy != nullptr);
+    return _proxy->hasProperty(name);
 }
 
 void ScriptValue::setProperty(const QString& name, const ScriptValue& value, const PropertyFlags& flags) {
