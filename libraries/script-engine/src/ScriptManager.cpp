@@ -1342,7 +1342,7 @@ ScriptValue ScriptManager::newModule(const QString& modulePath, const ScriptValu
     // module.require is a bound version of require that always resolves relative to that module's path
     auto boundRequire = _engine->evaluate("(function(id) { return Script.require(Script.require.resolve(id, this.filename)); })", "(boundRequire)");
     module.setProperty("require", boundRequire, READONLY_PROP_FLAGS);
-
+    qDebug() << "Module object contents" << _engine->scriptValueDebugListMembers(module);
     return module;
 }
 
