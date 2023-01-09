@@ -821,6 +821,9 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
 
     ScriptValue result;
     //auto context = pushContext();
+
+    // V8TODO: a lot of functions rely on _v8Context, which was not updated here
+    // It might cause trouble
     {
         v8::Context::Scope contextScope(closureContext);
         const V8ScriptValue& closure = unwrappedClosure->toV8Value();
@@ -1525,6 +1528,32 @@ void ScriptEngineV8::compileTest() {
 QString ScriptEngineV8::scriptValueDebugDetails(const ScriptValue &value) {
     V8ScriptValue v8Value = ScriptValueV8Wrapper::fullUnwrap(this, value);
     return scriptValueDebugDetailsV8(v8Value);
+}
+
+QString ScriptEngineV8::scriptValueDebugListMembers(const ScriptValue &value) {
+    V8ScriptValue v8Value = ScriptValueV8Wrapper::fullUnwrap(this, value);
+    return scriptValueDebugDetailsV8(v8Value);
+}
+
+QString ScriptEngineV8::scriptValueDebugListMembersV8(const V8ScriptValue &v8Value) {
+    v8::Locker locker(_v8Isolate);
+    v8::Isolate::Scope isolateScope(_v8Isolate);
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(getContext());
+
+    QString membersString("");
+    if (v8Value.constGet()->IsObject()) {
+        v8::Local<v8::String> membersStringV8;
+        v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(v8Value.constGet());
+        auto names = object->GetPropertyNames(getContext()).ToLocalChecked();
+        if (v8::JSON::Stringify(getContext(), object).ToLocal(&membersStringV8)) {
+            membersString = QString(*v8::String::Utf8Value(_v8Isolate, membersStringV8));
+        }
+        membersString = QString(*v8::String::Utf8Value(_v8Isolate, membersStringV8));
+    } else {
+        membersString = QString(" Is not an object");
+    }
+    return membersString;
 }
 
 QString ScriptEngineV8::scriptValueDebugDetailsV8(const V8ScriptValue &v8Value) {
