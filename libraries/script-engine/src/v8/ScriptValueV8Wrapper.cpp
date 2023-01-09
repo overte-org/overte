@@ -172,6 +172,28 @@ ScriptValueIteratorPointer ScriptValueV8Wrapper::newIterator() const {
     return std::make_shared<ScriptValueIteratorV8Wrapper>(_engine, _value);
 }
 
+bool ScriptValueV8Wrapper::hasProperty(const QString& name) const {
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(_engine->getIsolate());
+    v8::Isolate::Scope isolateScope(_engine->getIsolate());
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
+    if (_value.constGet()->IsObject()) {
+    //V8TODO: what about flags?
+        v8::Local<v8::Value> resultLocal;
+        v8::Local<v8::String> key = v8::String::NewFromUtf8(_engine->getIsolate(), name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
+        const v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(_value.constGet());
+        if (object->Get(_value.constGetContext(), key).ToLocal(&resultLocal)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    return false;
+}
+
+
+
 ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValue::ResolveFlags &mode) const {
     auto isolate = _engine->getIsolate();
     v8::Locker locker(_engine->getIsolate());

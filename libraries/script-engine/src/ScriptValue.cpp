@@ -44,6 +44,7 @@ public:
     virtual ScriptValue property(quint32 arrayIndex,
                                  const ScriptValue::ResolveFlags& mode = ScriptValue::ResolvePrototype) const override;
     virtual void setData(const ScriptValue& val) override;
+    virtual bool hasProperty(const QString &name) const override;
     virtual void setProperty(const QString& name,
                              const ScriptValue& value,
                              const ScriptValue::PropertyFlags& flags = ScriptValue::KeepExistingFlags) override;
@@ -177,6 +178,13 @@ void ScriptValueProxyNull::setData(const ScriptValue& val) {
     Q_ASSERT(false);
     qCWarning(scriptengine_script, "ScriptValue::setData called on empty value");
 }
+
+bool ScriptValueProxyNull::hasProperty(const QString& name) const {
+    Q_ASSERT(false);
+    qCWarning(scriptengine_script, "ScriptValue::hasProperty called on empty value");
+    return false;
+}
+
 
 void ScriptValueProxyNull::setProperty(const QString& name,
                          const ScriptValue& value, const ScriptValue::PropertyFlags& flags) {
