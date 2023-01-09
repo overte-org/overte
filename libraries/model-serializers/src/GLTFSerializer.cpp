@@ -1886,7 +1886,8 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const GLTFMaterial& mat
     }
 
     if (material.defined["emissiveFactor"] && material.emissiveFactor.size() == 3) {
-        glm::vec3 emissive = glm::vec3(material.emissiveFactor[0], material.emissiveFactor[1], material.emissiveFactor[2]);
+        glm::vec3 emissiveLinear = glm::vec3(material.emissiveFactor[0], material.emissiveFactor[1], material.emissiveFactor[2]);
+        glm::vec3 emissive = ColorUtils::tosRGBVec3(emissiveLinear);
         hfmMat._material->setEmissive(emissive);
     }
 
@@ -1930,9 +1931,9 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const GLTFMaterial& mat
         }
         if (material.pbrMetallicRoughness.defined["baseColorFactor"] &&
             material.pbrMetallicRoughness.baseColorFactor.size() == 4) {
-            glm::vec3 dcolor =
-                glm::vec3(material.pbrMetallicRoughness.baseColorFactor[0], material.pbrMetallicRoughness.baseColorFactor[1],
-                          material.pbrMetallicRoughness.baseColorFactor[2]);
+            glm::vec3 lcolor = glm::vec3(material.pbrMetallicRoughness.baseColorFactor[0], material.pbrMetallicRoughness.baseColorFactor[1],
+                                         material.pbrMetallicRoughness.baseColorFactor[2]);
+            glm::vec3 dcolor = ColorUtils::tosRGBVec3(lcolor);
             hfmMat.diffuseColor = dcolor;
             hfmMat._material->setAlbedo(dcolor);
             hfmMat._material->setOpacity(material.pbrMetallicRoughness.baseColorFactor[3]);
