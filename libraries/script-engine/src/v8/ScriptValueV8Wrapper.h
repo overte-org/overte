@@ -55,7 +55,7 @@ public:  // ScriptValue implementation
                                  const ScriptValue::ResolveFlags& mode = ScriptValue::ResolvePrototype) const override;
     virtual void setData(const ScriptValue& val) override;
 
-    virtual bool hasProperty(const QString &name) const;
+    virtual bool hasProperty(const QString &name) const override;
 
     virtual void setProperty(const QString& name,
                              const ScriptValue& value,
