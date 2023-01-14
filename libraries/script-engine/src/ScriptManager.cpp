@@ -683,15 +683,14 @@ void ScriptManager::init() {
 
     scriptEngine->registerGlobalObject("Script", this);
 
-    //V8TODO: V8 has no such global object?
-    /*{
+    {
         // set up Script.require.resolve and Script.require.cache
         auto Script = scriptEngine->globalObject().property("Script");
         auto require = Script.property("require");
         auto resolve = Script.property("_requireResolve");
         require.setProperty("resolve", resolve, READONLY_PROP_FLAGS);
         resetModuleCache();
-    }*/
+    }
 
     scriptEngine->registerEnum("Script.ExternalPaths", QMetaEnum::fromType<ExternalResource::Bucket>());
 
