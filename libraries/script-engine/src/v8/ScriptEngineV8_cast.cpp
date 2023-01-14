@@ -547,7 +547,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
 bool ScriptEngineV8::convertJSObjectToVariant(v8::Local<v8::Object> object, QVariant &dest) {
     auto context = getContext();
     v8::Local<v8::Array> names;
-    if(object->GetPropertyNames(context).ToLocal(&names)) {
+    if(!object->GetPropertyNames(context).ToLocal(&names)) {
         qDebug() << "ScriptEngineV8::convertJSObjectToVariant could not get property names";
         return false;
     }
