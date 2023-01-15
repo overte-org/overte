@@ -297,11 +297,23 @@ void ScriptObjectV8Proxy::investigate() {
     }
 
     v8::Local<v8::Object> v8Object = objectTemplate->NewInstance(_engine->getContext()).ToLocalChecked();
+
     v8Object->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToQObjectProxy));
     v8Object->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(this));
-    v8Object->SetInternalField(2, v8::Object::New(_engine->getIsolate()));
-
+    // Properties added later will be stored in this object
+    v8::Local<v8::Object> propertiesObject = v8::Object::New(_engine->getIsolate());
+    v8Object->SetInternalField(2, propertiesObject);
     _v8Object.Reset(_engine->getIsolate(), v8Object);
+
+    // Add all the methods objects as properties - this allows adding properties to a given method later. Is used by Script.request.
+    // V8TODO: Should these be deleted when the script-owned object is destroyed? It needs checking if script-owned objects will be garbage-collected, or will self-referencing prevent it.
+    for (auto i = _methods.begin(); i != _methods.end(); i++) {
+        V8ScriptValue method = ScriptMethodV8Proxy::newMethod(_engine, qobject, V8ScriptValue(_engine->getIsolate(), v8Object), i.value().methods, i.value().numMaxParms);
+        if(!propertiesObject->Set(_engine->getContext(), i.value().name.constGet(), method.get()).FromMaybe(false)) {
+            Q_ASSERT(false);
+        }
+    }
+
 }
 
 QString ScriptObjectV8Proxy::name() const {
@@ -461,6 +473,16 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
                     qDebug(scriptengine) << "Method with QMetaType::UnknownType " << metaObject->className() << " " << (*iter).name();
                 }
             } //V8TODO: is new method created during every call? It needs to be cached instead
+            bool isMethodDefined = false;
+            v8::Local<v8::Value> property;
+            if(_v8Object.Get(_engine->getIsolate())->GetInternalField(2).As<v8::Object>()->Get(_engine->getContext(), name.constGet()).ToLocal(&property)) {
+                if (!property->IsUndefined()) {
+                    qDebug() << "Using existing method object";
+                    return V8ScriptValue(_engine->getIsolate(), property);
+                }
+            }
+            Q_ASSERT(false);
+            qDebug(scriptengine) << "(This should not happen) Creating new method object for " << metaObject->className() << " " << name.toQString();
             return ScriptMethodV8Proxy::newMethod(_engine, qobject, object, methodDef.methods, methodDef.numMaxParms);
         }
         case SIGNAL_TYPE: {
@@ -479,6 +501,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
             ScriptEngine::QObjectWrapOptions options = ScriptEngine::ExcludeSuperClassContents |
                                                         //V8TODO ScriptEngine::ExcludeDeleteLater |
                                                         ScriptEngine::PreferExistingWrapperObject;
+            //V8TODO: why is it returning new object every time?
             return ScriptObjectV8Proxy::newQObject(_engine, proxy, ScriptEngine::ScriptOwnership, options);
             //return _engine->newQObject(proxy, ScriptEngine::ScriptOwnership, options);
         }

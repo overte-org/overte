@@ -155,6 +155,39 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValue& arguments) {
 }
 
 ScriptValue ScriptValueV8Wrapper::data() const {
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
+    // Private properties are an experimental feature for now on V8, so we are using regular value for now
+    if (_value.constGet()->IsObject()) {
+        auto v8Object = v8::Local<v8::Object>::Cast(_value.constGet());
+         v8::Local<v8::Value> data;
+         //bool createData = false;
+         if (!v8Object->Get(_engine->getContext(), v8::String::NewFromUtf8(isolate, "__data").ToLocalChecked()).ToLocal(&data)) {
+             data = v8::Undefined(isolate);
+             //createData = true;
+         } /*else {
+             if (data->IsUndefined()) {
+                 createData = true;
+             }
+         }
+         if (createData) {
+             qDebug() << "ScriptValueV8Wrapper::data(): Data object doesn't exist, creating new one";
+             // Create data object if it's non-existent or invalid
+             data = v8::Object::New(isolate);
+             if( !v8Object->Set(_engine->getContext(), v8::String::NewFromUtf8(isolate, "__data").ToLocalChecked(), data).FromMaybe(false)) {
+                 qDebug() << "ScriptValueV8Wrapper::data(): Data object couldn't be created";
+                 Q_ASSERT(false);
+             }
+         }*/
+         V8ScriptValue result(isolate, data);
+         return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
+    } else {
+        qDebug() << "ScriptValueV8Wrapper::data() was called on a value that is not an object";
+        Q_ASSERT(false);
+    }
     //V8TODO I'm not sure how this would work in V8
     //V8ScriptValue result = _value.data();
     //return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
@@ -255,7 +288,18 @@ void ScriptValueV8Wrapper::setData(const ScriptValue& value) {
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue unwrapped = fullUnwrap(value);
-    (**_value.get()) = (**unwrapped.get());
+    // V8TODO Check if it uses same isolate. Would pointer check be enough?
+    // Private properties are an experimental feature for now on V8, so we are using regular value for now
+    if (_value.constGet()->IsObject()) {
+        auto v8Object = v8::Local<v8::Object>::Cast(_value.constGet());
+        if( !v8Object->Set(_engine->getContext(), v8::String::NewFromUtf8(isolate, "__data").ToLocalChecked(), unwrapped.constGet()).FromMaybe(false)) {
+            qDebug() << "ScriptValueV8Wrapper::data(): Data object couldn't be created";
+            Q_ASSERT(false);
+        }
+    } else {
+        qDebug() << "ScriptValueV8Wrapper::data() was called on a value that is not an object";
+        Q_ASSERT(false);
+    }
 }
 
 void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& value, const ScriptValue::PropertyFlags& flags) {

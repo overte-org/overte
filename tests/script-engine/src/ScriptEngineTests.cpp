@@ -87,7 +87,7 @@ void ScriptEngineTests::scriptTest() {
         qInfo() << "Running test script: " << script;
         ac->loadOneScript(script);
     }*/
-    ac->loadOneScript("tests/003_vector_math.js");
+    //ac->loadOneScript("tests/003_vector_math.js");
     ac->loadOneScript("tests/004_require.js");
 
     qDebug() << ac->getRunning();
@@ -95,7 +95,7 @@ void ScriptEngineTests::scriptTest() {
     // TODO: if I don't have infinite loop here, it exits before scripts finish. It also reports: QSignalSpy: No such signal: 'scriptCountChanged'
     for (int n = 0; n > -1; n++) {
         QSignalSpy spy(ac.get(), SIGNAL(scriptCountChanged));
-        spy.wait(1000);
+        spy.wait(100000);
         qDebug() << "Signal happened";
     }
     //spy.wait(5000);

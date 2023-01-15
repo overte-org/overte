@@ -112,7 +112,7 @@ private:  // storage
     QPointer<QObject> _object;
     // V8TODO Is this necessary?
     v8::UniquePersistent<v8::ObjectTemplate> _v8ObjectTemplate;
-    // V8TODO Maybe it doesn't really need to point to itsef?
+    // Handle for its own object
     v8::UniquePersistent<v8::Object> _v8Object;
     int pointerCorruptionTest = 12345678;
 
