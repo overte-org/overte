@@ -1341,7 +1341,7 @@ ScriptValue ScriptManager::newModule(const QString& modulePath, const ScriptValu
     // module.require is a bound version of require that always resolves relative to that module's path
     auto boundRequire = _engine->evaluate("(function(id) { return Script.require(Script.require.resolve(id, this.filename)); })", "(boundRequire)");
     module.setProperty("require", boundRequire, READONLY_PROP_FLAGS);
-    qDebug() << "Module object contents" << _engine->scriptValueDebugListMembers(module);
+    //qDebug() << "Module object contents" << _engine->scriptValueDebugListMembers(module);
     return module;
 }
 
@@ -1421,7 +1421,7 @@ ScriptValue ScriptManager::instantiateModule(const ScriptValue& module, const QS
         closure.setProperty("require", module.property("require"));
         closure.setProperty("__filename", modulePath, READONLY_HIDDEN_PROP_FLAGS);
         closure.setProperty("__dirname", QString(modulePath).replace(QRegExp("/[^/]*$"), ""), READONLY_HIDDEN_PROP_FLAGS);
-        _engine->scriptValueDebugDetails(module);
+        //_engine->scriptValueDebugDetails(module);
         result = _engine->evaluateInClosure(closure, _engine->newProgram( sourceCode, modulePath ));
     }
     _engine->maybeEmitUncaughtException(__FUNCTION__);
@@ -1531,6 +1531,7 @@ ScriptValue ScriptManager::require(const QString& moduleId) {
     qCDebug(scriptengine_module) << "//ScriptManager::require(" << moduleId << ")";
 
     _engine->maybeEmitUncaughtException(__FUNCTION__);
+    qCDebug(scriptengine_module) << "Exports: " << _engine->scriptValueDebugDetails(module.property("exports"));
     return module.property("exports");
 }
 
