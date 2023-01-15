@@ -760,6 +760,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
     v8::Local<v8::Value> closureGlobal;
     ScriptValueV8Wrapper* unwrappedClosure;
     ScriptProgramV8Wrapper* unwrappedProgram;
+    v8::Local<v8::Context> oldContext = getContext();
 
     {
         v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
@@ -792,6 +793,10 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             return nullValue();
         }
         closureObject = v8::Local<v8::Object>::Cast(closure.constGet());
+        qDebug() << "Closure object members:" << scriptValueDebugListMembersV8(closure);
+        v8::Local<v8::Object> testObject = v8::Object::New(_v8Isolate);
+        testObject->Set(getContext(), v8::String::NewFromUtf8(_v8Isolate, "test_value").ToLocalChecked(), closureObject);
+        qDebug() << "Test object members:" << scriptValueDebugListMembersV8(V8ScriptValue(_v8Isolate, testObject));
 
         if (!closureObject->Get(closure.constGetContext(), v8::String::NewFromUtf8(_v8Isolate, "global").ToLocalChecked())
                  .ToLocal(&closureGlobal)) {
@@ -806,7 +811,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
     //oldGlobal = _v8Context.Get(_v8Isolate)->Global();
     v8::Local<v8::Context> closureContext;
 
-    // V8TODO
+    // V8TODO V8 cannot use arbitrary objects as global objects
     /*if (closureGlobal->IsObject()) {
 #ifdef DEBUG_JS
         qCDebug(shared) << " setting global = closure.global" << shortName;
@@ -817,7 +822,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
     } else {
         closureContext = v8::Context::New(_v8Isolate);
     }*/
-    closureContext = v8::Context::New(_v8Isolate, nullptr, v8::Local<v8::ObjectTemplate>(), closureObject);
+    closureContext = v8::Context::New(_v8Isolate);
 
     ScriptValue result;
     //auto context = pushContext();
@@ -861,8 +866,33 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
 #endif
         {
             v8::TryCatch tryCatch(getIsolate());
-            //qDebug(scriptengine) << "Closure before run:" << scriptValueDebugDetailsV8(closure);
-            auto maybeResult = program.constGet()->Run(closureContext);
+            // Since V8 cannot use arbitrary object as global object, objects from main global need to be copied to closure's global object
+            auto oldGlobalMemberNames = oldContext->Global()->GetPropertyNames(oldContext).ToLocalChecked();
+            for (int i = 0; i < oldGlobalMemberNames->Length(); i++) {
+                auto name = oldGlobalMemberNames->Get(closureContext, i).ToLocalChecked();
+                closureContext->Global()->Set(closureContext, name, oldContext->Global()->Get(oldContext, name).ToLocalChecked());
+            }
+            // Objects from closure need to be copied to global object too
+            auto closureMemberNames = closureObject->GetPropertyNames(closureContext).ToLocalChecked();
+            for (int i = 0; i < closureMemberNames->Length(); i++) {
+                auto name = closureMemberNames->Get(closureContext, i).ToLocalChecked();
+                closureContext->Global()->Set(closureContext, name, closureObject->Get(closureContext, name).ToLocalChecked());
+            }
+            // List members of closure global object
+            QString membersString("");
+            if (closureContext->Global()->IsObject()) {
+                v8::Local<v8::String> membersStringV8;
+                v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(closureContext->Global());
+                auto names = object->GetPropertyNames(closureContext).ToLocalChecked();
+                if (v8::JSON::Stringify(closureContext, names).ToLocal(&membersStringV8)) {
+                    membersString = QString(*v8::String::Utf8Value(_v8Isolate, membersStringV8));
+                }
+                membersString = QString(*v8::String::Utf8Value(_v8Isolate, membersStringV8));
+            } else {
+                membersString = QString(" Is not an object");
+            }
+            qDebug(scriptengine) << "Closure global before run:" << membersString;
+            auto maybeResult = program.constGet()->GetUnboundScript()->BindToCurrentContext()->Run(closureContext);
             //qDebug(scriptengine) << "Closure after run:" << scriptValueDebugDetailsV8(closure);
             v8::Local<v8::Value> v8Result;
             if (!maybeResult.ToLocal(&v8Result)) {
@@ -897,7 +927,6 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
         setGlobalObject(oldGlobal);
     }*/
 
-    closureContext->DetachGlobal();
     _evaluatingCounter--;
     return result;
 }
@@ -1546,7 +1575,7 @@ QString ScriptEngineV8::scriptValueDebugListMembersV8(const V8ScriptValue &v8Val
         v8::Local<v8::String> membersStringV8;
         v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(v8Value.constGet());
         auto names = object->GetPropertyNames(getContext()).ToLocalChecked();
-        if (v8::JSON::Stringify(getContext(), object).ToLocal(&membersStringV8)) {
+        if (v8::JSON::Stringify(getContext(), names).ToLocal(&membersStringV8)) {
             membersString = QString(*v8::String::Utf8Value(_v8Isolate, membersStringV8));
         }
         membersString = QString(*v8::String::Utf8Value(_v8Isolate, membersStringV8));
