@@ -202,7 +202,12 @@ ScriptEnginePointer ScriptValueV8Wrapper::engine() const {
 }
 
 ScriptValueIteratorPointer ScriptValueV8Wrapper::newIterator() const {
-    return std::make_shared<ScriptValueIteratorV8Wrapper>(_engine, _value);
+    v8::Locker locker(_engine->getIsolate());
+    v8::Isolate::Scope isolateScope(_engine->getIsolate());
+    v8::HandleScope handleScope(_engine->getIsolate());
+    v8::Context::Scope contextScope(_engine->getContext());
+    ScriptValueIteratorPointer iterator = std::make_shared<ScriptValueIteratorV8Wrapper>(_engine, _value);
+    return iterator;
 }
 
 bool ScriptValueV8Wrapper::hasProperty(const QString& name) const {
