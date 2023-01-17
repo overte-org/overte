@@ -15,15 +15,19 @@
 
 V8ScriptValueIterator::V8ScriptValueIterator(ScriptEngineV8* engine, v8::Local<v8::Value> object) : _engine(engine)  {
     auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
+    // V8TODO Is this necessary?
     _context.Reset(isolate, _engine->getContext());
     auto context = _context.Get(isolate);
+    v8::Context::Scope contextScope(context);
     Q_ASSERT(object->IsObject());
     v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(object);
     _object.Reset(isolate, v8Object);
     _propertyNames.Reset(isolate, v8Object->GetOwnPropertyNames(context).ToLocalChecked());
     _length = _propertyNames.Get(isolate)->Length();
-    _currentIndex = 0;
+    _currentIndex = -1;
 }
 
 bool V8ScriptValueIterator::hasNext() const {
@@ -31,29 +35,37 @@ bool V8ScriptValueIterator::hasNext() const {
 }
 
 QString V8ScriptValueIterator::name() const {
+    Q_ASSERT(_currentIndex >= 0);
     auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     auto context = _context.Get(isolate);
+    v8::Context::Scope contextScope(context);
     v8::Local<v8::Value> propertyName;
-    if (!_propertyNames.Get(isolate)->Get(context, _length).ToLocal(&propertyName)) {
+    if (!_propertyNames.Get(isolate)->Get(context, _currentIndex).ToLocal(&propertyName)) {
         Q_ASSERT(false);
     }
     return QString(*v8::String::Utf8Value(isolate, propertyName));
 }
 
 void V8ScriptValueIterator::next() {
-    if (_length < _currentIndex - 1) {
-        _length++;
+    if (_currentIndex < _length - 1) {
+        _currentIndex++;
     }
 }
 
 V8ScriptValue V8ScriptValueIterator::value() {
+    Q_ASSERT(_currentIndex >= 0);
     auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     auto context = _context.Get(isolate);
+    v8::Context::Scope contextScope(context);
     v8::Local<v8::Value> v8Value;
     v8::Local<v8::Value> propertyName;
-    if (!_propertyNames.Get(isolate)->Get(context, _length).ToLocal(&propertyName)) {
+    if (!_propertyNames.Get(isolate)->Get(context, _currentIndex).ToLocal(&propertyName)) {
         Q_ASSERT(false);
     }
     if (!_object.Get(isolate)->Get(context, propertyName->ToString(context).ToLocalChecked()).ToLocal(&v8Value)) {
