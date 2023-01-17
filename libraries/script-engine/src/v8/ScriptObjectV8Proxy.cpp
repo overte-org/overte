@@ -477,7 +477,6 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
             v8::Local<v8::Value> property;
             if(_v8Object.Get(_engine->getIsolate())->GetInternalField(2).As<v8::Object>()->Get(_engine->getContext(), name.constGet()).ToLocal(&property)) {
                 if (!property->IsUndefined()) {
-                    qDebug() << "Using existing method object";
                     return V8ScriptValue(_engine->getIsolate(), property);
                 }
             }
@@ -1021,7 +1020,12 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
         return id;
     }
     
-    v8::HandleScope handleScope(_engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
 
     //V8ScriptValueList args(isolate, v8::Null(isolate));
     v8::Local<v8::Value> args[Q_METAMETHOD_INVOKE_MAX_ARGS];
@@ -1073,8 +1077,11 @@ ScriptSignalV8Proxy::ConnectionList::iterator ScriptSignalV8Proxy::findConnectio
     return iterOut;
 }
 
+/*void ScriptSignalV8Proxy::connect(ScriptValue arg0) {
+    connect(arg0, ScriptValue(_engine->getIsolate(), v8::Undefined(_engine->getIsolate())));
+}*/
 
-void ScriptSignalV8Proxy::connect(V8ScriptValue arg0, V8ScriptValue arg1) {
+void ScriptSignalV8Proxy::connect(ScriptValue arg0, ScriptValue arg1) {
     QObject* qobject = _object;
     v8::Isolate *isolate = _engine->getIsolate();
     if (!qobject) {
@@ -1087,11 +1094,22 @@ void ScriptSignalV8Proxy::connect(V8ScriptValue arg0, V8ScriptValue arg1) {
     // untangle the arguments
     V8ScriptValue callback(isolate, v8::Null(isolate));
     V8ScriptValue callbackThis(isolate, v8::Null(isolate));
-    if (arg1.get()->IsFunction()) {
-        callbackThis = arg0;
-        callback = arg1;
+    if (arg1.isFunction()) {
+        auto unwrappedArg0 = ScriptValueV8Wrapper::unwrap(arg0);
+        auto unwrappedArg1 = ScriptValueV8Wrapper::unwrap(arg1);
+        if (!unwrappedArg0 || !unwrappedArg1) {
+            Q_ASSERT(false);
+            return;
+        }
+        callbackThis = unwrappedArg0->toV8Value();
+        callback = unwrappedArg1->toV8Value();
     } else {
-        callback = arg0;
+        auto unwrappedArg0 = ScriptValueV8Wrapper::unwrap(arg0);
+        if (!unwrappedArg0) {
+            Q_ASSERT(false);
+            return;
+        }
+        callback = unwrappedArg0->toV8Value();
     }
     if (!callback.get()->IsFunction()) {
         isolate->ThrowError("Function expected as argument to 'connect'");
@@ -1154,7 +1172,11 @@ void ScriptSignalV8Proxy::connect(V8ScriptValue arg0, V8ScriptValue arg1) {
     }
 }
 
-void ScriptSignalV8Proxy::disconnect(V8ScriptValue arg0, V8ScriptValue arg1) {
+/*void ScriptSignalV8Proxy::disconnect(ScriptValue arg0) {
+    disconnect(arg0, V8ScriptValue(_engine->getIsolate(), v8::Undefined(_engine->getIsolate())));
+}*/
+
+void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
     QObject* qobject = _object;
     v8::Isolate *isolate = _engine->getIsolate();
     if (!qobject) {
@@ -1166,11 +1188,22 @@ void ScriptSignalV8Proxy::disconnect(V8ScriptValue arg0, V8ScriptValue arg1) {
     // untangle the arguments
     V8ScriptValue callback(isolate, v8::Null(isolate));
     V8ScriptValue callbackThis(isolate, v8::Null(isolate));
-    if (arg1.get()->IsFunction()) {
-        callbackThis = arg0;
-        callback = arg1;
+    if (arg1.isFunction()) {
+        auto unwrappedArg0 = ScriptValueV8Wrapper::unwrap(arg0);
+        auto unwrappedArg1 = ScriptValueV8Wrapper::unwrap(arg1);
+        if (!unwrappedArg0 || !unwrappedArg1) {
+            Q_ASSERT(false);
+            return;
+        }
+        callbackThis = unwrappedArg0->toV8Value();
+        callback = unwrappedArg1->toV8Value();
     } else {
-        callback = arg0;
+        auto unwrappedArg0 = ScriptValueV8Wrapper::unwrap(arg0);
+        if (!unwrappedArg0) {
+            Q_ASSERT(false);
+            return;
+        }
+        callback = unwrappedArg0->toV8Value();
     }
     if (!callback.get()->IsFunction()) {
         isolate->ThrowError("Function expected as argument to 'disconnect'");

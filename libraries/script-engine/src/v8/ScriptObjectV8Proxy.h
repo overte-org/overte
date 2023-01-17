@@ -200,8 +200,10 @@ class ScriptSignalV8ProxyBase : public QObject, protected Scriptable {
     Q_OBJECT
 public:  // API
     // arg1 was had Null default value, but that needs isolate pointer in V8
-    Q_INVOKABLE virtual void connect(V8ScriptValue arg0, V8ScriptValue arg1) = 0;
-    Q_INVOKABLE virtual void disconnect(V8ScriptValue arg0, V8ScriptValue arg1) = 0;
+    Q_INVOKABLE virtual void connect(ScriptValue arg0, ScriptValue arg1 = ScriptValue()) = 0;
+    Q_INVOKABLE virtual void disconnect(ScriptValue arg0, ScriptValue arg1 = ScriptValue()) = 0;
+    //Q_INVOKABLE virtual void connect(ScriptValue arg0) = 0;
+    //Q_INVOKABLE virtual void disconnect(ScriptValue arg0) = 0;
 };
 
 class ScriptSignalV8Proxy final : public ScriptSignalV8ProxyBase, public ReadWriteLockable {
@@ -226,9 +228,12 @@ private:  // implementation
     QString fullName() const;
 
 public:  // API
-    // arg1 was had Null default value, but that needs isolate pointer to cerate Null in V8
-    virtual void connect(V8ScriptValue arg0, V8ScriptValue arg1) override;
-    virtual void disconnect(V8ScriptValue arg0, V8ScriptValue arg1) override;
+    // arg1 was had Null default value, but that needs isolate pointer to create Null in V8
+    virtual void connect(ScriptValue arg0, ScriptValue arg1 = ScriptValue()) override;
+    virtual void disconnect(ScriptValue arg0, ScriptValue arg1 = ScriptValue()) override;
+
+    //virtual void connect(V8ScriptValue arg0) override;
+    //virtual void disconnect(V8ScriptValue arg0) override;
 
 private:  // storage
     ScriptEngineV8* _engine;

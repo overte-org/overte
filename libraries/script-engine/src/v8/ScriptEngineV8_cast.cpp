@@ -570,6 +570,7 @@ bool ScriptEngineV8::convertJSObjectToVariant(v8::Local<v8::Object> object, QVar
         }
     }
     dest = QVariant(properties);
+    return true;
 }
 
 QString ScriptEngineV8::valueType(const V8ScriptValue& v8Val) {

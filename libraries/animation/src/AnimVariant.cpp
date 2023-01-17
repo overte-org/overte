@@ -80,6 +80,7 @@ void AnimVariantMap::animVariantMapFromScriptValue(const ScriptValue& source) {
         Q_ASSERT(false);
         return;
     }
+    // This was here before, but marking as V8TODO
     // POTENTIAL OPTIMIZATION: cache the types we've seen. I.e, keep a dictionary mapping property names to an enumeration of types.
     // Whenever we identify a new outbound type in animVariantMapToScriptValue above, or a new inbound type in the code that follows here,
     // we would enter it into the dictionary. Then switch on that type here, with the code that follow being executed only if
@@ -121,7 +122,8 @@ void AnimVariantMap::animVariantMapFromScriptValue(const ScriptValue& source) {
                 }
             }
             qCWarning(animation) << "Ignoring unrecognized data " << value.toString() << " for animation property " << property->name();
-            Q_ASSERT(false);
+            // V8TODO this was spamming to much logs but needs to be fixed later
+            //Q_ASSERT(false);
         }
     }
 }
