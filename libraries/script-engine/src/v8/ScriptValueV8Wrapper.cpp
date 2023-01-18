@@ -534,7 +534,7 @@ bool ScriptValueV8Wrapper::isBool() const {
 }
 
 bool ScriptValueV8Wrapper::isError() const {
-    auto isolate = _engine->getIsolate();
+    //auto isolate = _engine->getIsolate();
     // Q_ASSERT(isolate->IsCurrent());
     // v8::HandleScope handleScope(isolate);
     // v8::Context::Scope contextScope(_engine->getContext());

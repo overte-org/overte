@@ -32,7 +32,7 @@ Q_DECLARE_METATYPE(QSharedPointer<ScriptVariantV8Proxy>)
 // Value of internal field with index 0 when object contains ScriptObjectV8Proxy pointer in internal field 1
 static const void *internalPointsToQObjectProxy = (void *)0x13370000;
 static const void *internalPointsToQVariantProxy = (void *)0x13371000;
-static const void *internalPointsToSignalProxy = (void *)0x13372000;
+//static const void *internalPointsToSignalProxy = (void *)0x13372000;
 static const void *internalPointsToMethodProxy = (void *)0x13373000;
 
 // Used strictly to replace the "this" object value for property access.  May expand to a full context element
@@ -328,7 +328,7 @@ QString ScriptObjectV8Proxy::name() const {
 ScriptObjectV8Proxy::QueryFlags ScriptObjectV8Proxy::queryProperty(const V8ScriptValue& object, const V8ScriptString& name, QueryFlags flags, uint* id) {
     v8::HandleScope handleScope(_engine->getIsolate());
     // V8TODO: this might be inefficient when there's large number of properties
-    v8::Local<v8::Context> context = _engine->getContext();
+    //v8::Local<v8::Context> context = _engine->getContext();
     v8::String::Utf8Value nameStr(_engine->getIsolate(), name.constGet());
 
     // check for methods
@@ -473,7 +473,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
                     qDebug(scriptengine) << "Method with QMetaType::UnknownType " << metaObject->className() << " " << (*iter).name();
                 }
             } //V8TODO: is new method created during every call? It needs to be cached instead
-            bool isMethodDefined = false;
+            //bool isMethodDefined = false;
             v8::Local<v8::Value> property;
             if(_v8Object.Get(_engine->getIsolate())->GetInternalField(2).As<v8::Object>()->Get(_engine->getContext(), name.constGet()).ToLocal(&property)) {
                 if (!property->IsUndefined()) {
@@ -1140,14 +1140,24 @@ void ScriptSignalV8Proxy::connect(ScriptValue arg0, ScriptValue arg1) {
         bool foundIt = false;
         for (int idx = 0; idx < length && !foundIt; ++idx) {
             v8::Local<v8::Value> entry = destArray->Get(destFunctionContext, idx).ToLocalChecked();
-            newArray->Set(destFunctionContext, idx, entry);
+            if (!newArray->Set(destFunctionContext, idx, entry).FromMaybe(false)) {
+                Q_ASSERT(false);
+            }
         }
-        newArray->Set(destFunctionContext, length, v8ThisObject.get());
-        destFunction->Set(destFunctionContext, destDataName, newArray);
+        if (!newArray->Set(destFunctionContext, length, v8ThisObject.get()).FromMaybe(false)) {
+            Q_ASSERT(false);
+        }
+        if (!destFunction->Set(destFunctionContext, destDataName, newArray).FromMaybe(false)) {
+            Q_ASSERT(false);
+        }
     } else {
         v8::Local<v8::Array> newArray = v8::Array::New(isolate, 1);
-        newArray->Set(destFunctionContext, 0, v8ThisObject.get());
-        destFunction->Set(destFunctionContext, destDataName, newArray);
+        if (!newArray->Set(destFunctionContext, 0, v8ThisObject.get()).FromMaybe(false)) {
+            Q_ASSERT(false);
+        }
+        if (destFunction->Set(destFunctionContext, destDataName, newArray).FromMaybe(false)) {
+            Q_ASSERT(false);
+        }
     }
     /*{
         V8ScriptValueList args;
@@ -1245,12 +1255,16 @@ void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
                 //args << idx << 1;
                 //destData.property("splice").call(destData, args);
             } else {
-                newArray->Set(destFunctionContext, newIndex, entry);
+                if (!newArray->Set(destFunctionContext, newIndex, entry).FromMaybe(false)) {
+                    Q_ASSERT(false);
+                }
                 newIndex++;
             }
         }
         Q_ASSERT(foundIt);
-        destFunction->Set(destFunctionContext, destDataName, newArray);
+        if (!destFunction->Set(destFunctionContext, destDataName, newArray).FromMaybe(false)) {
+            Q_ASSERT(false);
+        }
     } else {
         Q_ASSERT(false);
     }
