@@ -47,7 +47,7 @@ bool ScriptProgramV8Wrapper::compile() {
     int errorLineNumber = 0;
     QString errorMessage = "";
     QString errorBacktrace = "";
-    ScriptSyntaxCheckResult::State state;
+    //ScriptSyntaxCheckResult::State state;
     v8::TryCatch tryCatch(isolate);
     v8::ScriptOrigin scriptOrigin(isolate, v8::String::NewFromUtf8(isolate, _url.toStdString().c_str()).ToLocalChecked());
     v8::Local<v8::Script> script;
