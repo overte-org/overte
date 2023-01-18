@@ -50,14 +50,14 @@ void ScriptEngineV8::registerCustomType(int type,
 
 Q_DECLARE_METATYPE(ScriptValue);
 
-static V8ScriptValue ScriptValueToV8ScriptValue(ScriptEngineV8* engine, const ScriptValue& src) {
+/*static V8ScriptValue ScriptValueToV8ScriptValue(ScriptEngineV8* engine, const ScriptValue& src) {
     return ScriptValueV8Wrapper::fullUnwrap(static_cast<ScriptEngineV8*>(engine), src);
-}
+}*/
 
-static void ScriptValueFromV8ScriptValue(ScriptEngineV8* engine, const V8ScriptValue& src, ScriptValue& dest) {
+/*static void ScriptValueFromV8ScriptValue(ScriptEngineV8* engine, const V8ScriptValue& src, ScriptValue& dest) {
     //ScriptEngineV8* engine = static_cast<ScriptEngineV8*>(src.engine());
     dest = ScriptValue(new ScriptValueV8Wrapper(engine, src));
-}
+}*/
 
 static ScriptValue StringListToScriptValue(ScriptEngine* engine, const QStringList& src) {
     int len = src.length();

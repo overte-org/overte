@@ -77,7 +77,7 @@ V8ScriptValue V8ScriptValueIterator::value() {
 ScriptValue::PropertyFlags ScriptValueIteratorV8Wrapper::flags() const {
     //V8TODO
     //return (ScriptValue::PropertyFlags)(int)_value.flags();
-    return (ScriptValue::PropertyFlags)(0);
+    return ScriptValue::PropertyFlags();
 }
 
 bool ScriptValueIteratorV8Wrapper::hasNext() const {
