@@ -20,13 +20,21 @@
     _context.Reset(_engine->getIsolate(), context);
 }*/
 
-ScriptContextV8Wrapper::ScriptContextV8Wrapper(ScriptEngineV8* engine) : _functionCallbackInfo(nullptr), _propertyCallbackInfo(nullptr), _engine(engine) {
+ScriptContextV8Wrapper::ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::Local<v8::Context> context, ScriptContextPointer parent) :
+    _functionCallbackInfo(nullptr), _propertyCallbackInfo(nullptr), _engine(engine),
+    _context(engine->getIsolate(), context), _parentContext(parent) {
 }
 
-ScriptContextV8Wrapper::ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::FunctionCallbackInfo<v8::Value> *functionCallbackInfo) : _functionCallbackInfo(functionCallbackInfo), _propertyCallbackInfo(nullptr), _engine(engine)  {
+ScriptContextV8Wrapper::ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::FunctionCallbackInfo<v8::Value> *functionCallbackInfo,
+                                               const v8::Local<v8::Context> context, ScriptContextPointer parent) :
+    _functionCallbackInfo(functionCallbackInfo), _propertyCallbackInfo(nullptr), _engine(engine),
+    _context(engine->getIsolate(), context), _parentContext(parent)  {
 }
 
-ScriptContextV8Wrapper::ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::PropertyCallbackInfo<v8::Value> *propertyCallbackInfo) : _functionCallbackInfo(nullptr), _propertyCallbackInfo(propertyCallbackInfo), _engine(engine)  {
+ScriptContextV8Wrapper::ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::PropertyCallbackInfo<v8::Value> *propertyCallbackInfo,
+                                               const v8::Local<v8::Context> context, ScriptContextPointer parent) :
+    _functionCallbackInfo(nullptr), _propertyCallbackInfo(propertyCallbackInfo), _engine(engine),
+    _context(engine->getIsolate(), context), _parentContext(parent)   {
 }
 
 ScriptContextV8Wrapper* ScriptContextV8Wrapper::unwrap(ScriptContext* val) {
@@ -39,7 +47,7 @@ ScriptContextV8Wrapper* ScriptContextV8Wrapper::unwrap(ScriptContext* val) {
 
 v8::Local<v8::Context> ScriptContextV8Wrapper::toV8Value() const {
     v8::EscapableHandleScope handleScope(_engine->getIsolate());
-    return handleScope.Escape(_engine->getContext());
+    return handleScope.Escape(_context.Get(_engine->getIsolate()));
 }
 
 int ScriptContextV8Wrapper::argumentCount() const {
@@ -122,7 +130,7 @@ ScriptContextPointer ScriptContextV8Wrapper::parentContext() const {
     //Q_ASSERT(false);
     //V8ScriptContext* result = _context->parentContext();
     //return result ? std::make_shared<ScriptContextV8Wrapper>(_engine, result) : ScriptContextPointer();
-    return ScriptContextPointer();
+    return _parentContext;
 }
 
 ScriptValue ScriptContextV8Wrapper::thisObject() const {
