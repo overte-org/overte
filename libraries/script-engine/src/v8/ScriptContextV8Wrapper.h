@@ -31,11 +31,12 @@ class ScriptEngineV8;
 /// [V8] Implements ScriptContext for V8 and translates calls for V8ScriptContextInfo
 class ScriptContextV8Wrapper final : public ScriptContext {
 public: // construction
-    ScriptContextV8Wrapper(ScriptEngineV8* engine);
-    ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::FunctionCallbackInfo<v8::Value> *functionCallbackInfo);
-    ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::PropertyCallbackInfo<v8::Value> *propertyCallbackInfo);
+    ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::Local<v8::Context> context, ScriptContextPointer parent);
+    ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::FunctionCallbackInfo<v8::Value> *functionCallbackInfo,
+                           const v8::Local<v8::Context> context, ScriptContextPointer parent);
+    ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::PropertyCallbackInfo<v8::Value> *propertyCallbackInfo,
+                           const v8::Local<v8::Context> context, ScriptContextPointer parent);
     static ScriptContextV8Wrapper* unwrap(ScriptContext* val);
-    v8::Local<v8::Context> toV8Value() const;
 
 public: // ScriptContext implementation
     virtual int argumentCount() const override;
@@ -49,10 +50,15 @@ public: // ScriptContext implementation
     virtual ScriptValue throwError(const QString& text) override;
     virtual ScriptValue throwValue(const ScriptValue& value) override;
 
+public: // For use by V8-related functions
+    v8::Local<v8::Context> toV8Value() const;
+
 private: // storage
     const v8::FunctionCallbackInfo<v8::Value> *_functionCallbackInfo;
     const v8::PropertyCallbackInfo<v8::Value> *_propertyCallbackInfo;
     ScriptEngineV8* _engine;
+    v8::Persistent<v8::Context> _context;
+    ScriptContextPointer _parentContext;
 };
 
 class ScriptFunctionContextV8Wrapper final : public ScriptFunctionContext {

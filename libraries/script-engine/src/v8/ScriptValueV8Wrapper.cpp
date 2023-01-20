@@ -24,7 +24,14 @@ void ScriptValueV8Wrapper::release() {
 
 ScriptValueProxy* ScriptValueV8Wrapper::copy() const {
     //V8TODO: check if the value needs to be copied or just wrapper
-    return new ScriptValueV8Wrapper(_engine, _value);
+    v8::Isolate *isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    // V8TODO: I'm not sure if this part is right:
+    v8::Context::Scope contextScope(_engine->getContext());
+    ScriptValueV8Wrapper *copiedWrapper = new ScriptValueV8Wrapper(_engine, _value);
+    return copiedWrapper;
 }
 
 ScriptValueV8Wrapper* ScriptValueV8Wrapper::unwrap(const ScriptValue& val) {

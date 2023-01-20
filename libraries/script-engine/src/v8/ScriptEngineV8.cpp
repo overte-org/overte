@@ -116,7 +116,7 @@ ScriptValue ScriptEngineV8::makeError(const ScriptValue& _other, const QString& 
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     return nullValue();
 
     //V8TODO
@@ -143,7 +143,7 @@ ScriptValue ScriptEngineV8::checkScriptSyntax(ScriptProgramPointer program) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     ScriptSyntaxCheckResultPointer syntaxCheck = program->checkSyntax();
     //V8TODO
     if (syntaxCheck->state() != ScriptSyntaxCheckResult::Valid) {
@@ -201,7 +201,7 @@ ScriptValue ScriptEngineV8::cloneUncaughtException(const QString& extraDetail) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     return nullValue();
     //V8TODO
     /*
@@ -297,7 +297,7 @@ ScriptValue ScriptEngineV8::newLambdaFunction(std::function<V8ScriptValue(V8Scri
                                                  const V8ScriptValue& data,
                                                  const ValueOwnership& ownership) {
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     auto lambda = new Lambda(this, operation, data);
     auto object = newQObject(lambda, ownership);
     //V8TODO - I'm not sure if this works
@@ -408,7 +408,7 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
         v8::Local<v8::Context> context = v8::Context::New(_v8Isolate);
         Q_ASSERT(!context.IsEmpty());
         v8::Context::Scope contextScope(context);
-        _v8Context = v8::UniquePersistent<v8::Context>(_v8Isolate, context);
+        _contexts.append(std::make_shared<ScriptContextV8Wrapper>(this,context, ScriptContextPointer()));
 
 
         V8ScriptValue nullScriptValue(_v8Isolate, v8::Null(_v8Isolate));
@@ -458,7 +458,7 @@ void ScriptEngineV8::registerEnum(const QString& enumName, QMetaEnum newEnum) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
 
     for (int i = 0; i < newEnum.keyCount(); i++) {
         const char* keyName = newEnum.key(i);
@@ -480,34 +480,35 @@ void ScriptEngineV8::registerValue(const QString& valueName, V8ScriptValue value
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Local<v8::Context> context = getContext();
+    v8::Context::Scope contextScope(getContext());
     QStringList pathToValue = valueName.split(".");
     int partsToGo = pathToValue.length();
-    v8::Local<v8::Object> partObject = _v8Context.Get(_v8Isolate)->Global();
+    v8::Local<v8::Object> partObject = context->Global();
 
     for (const auto& pathPart : pathToValue) {
         partsToGo--;
         v8::Local<v8::String> pathPartV8 = v8::String::NewFromUtf8(_v8Isolate, pathPart.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
         v8::Local<v8::Value> currentPath;
-        if (!partObject->Get(_v8Context.Get(_v8Isolate), pathPartV8).ToLocal(&currentPath)) {
+        if (!partObject->Get(context, pathPartV8).ToLocal(&currentPath)) {
             if (partsToGo > 0) {
                 //This was commented out
                 //QObject *object = new QObject;
                 v8::Local<v8::Object> partValue = v8::Object::New(_v8Isolate);  //newQObject(object, QScriptEngine::ScriptOwnership);
                 //V8ScriptValue partValue = QScriptEngine::newArray();  //newQObject(object, QScriptEngine::ScriptOwnership);
-                if (!partObject->Set(_v8Context.Get(_v8Isolate), pathPartV8, partValue).FromMaybe(false)) {
+                if (!partObject->Set(context, pathPartV8, partValue).FromMaybe(false)) {
                     Q_ASSERT(false);
                 }
             } else {
                 //partObject = currentPath->ToObject();
                 //V8TODO: do these still happen if asserts are disabled?
-                if (!partObject->Set(_v8Context.Get(_v8Isolate), pathPartV8, value.constGet()).FromMaybe(false)) {
+                if (!partObject->Set(context, pathPartV8, value.constGet()).FromMaybe(false)) {
                     Q_ASSERT(false);
                 }
             }
         }
         v8::Local<v8::Value> child;
-        if (!partObject->Get(_v8Context.Get(_v8Isolate), pathPartV8).ToLocal(&child)) {
+        if (!partObject->Get(context, pathPartV8).ToLocal(&child)) {
             Q_ASSERT(false);
         }
     }
@@ -538,7 +539,8 @@ void ScriptEngineV8::registerGlobalObject(const QString& name, QObject* object) 
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
     Q_ASSERT(_v8Isolate->IsCurrent());
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Local<v8::Context> context = getContext();
+    v8::Context::Scope contextScope(context);
     v8::Local<v8::Object> v8GlobalObject = getContext()->Global();
     v8::Local<v8::String> v8Name = v8::String::NewFromUtf8(_v8Isolate, name.toStdString().c_str()).ToLocalChecked();
 
@@ -591,7 +593,7 @@ void ScriptEngineV8::registerFunction(const QString& name, ScriptEngine::Functio
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     auto scriptFun = newFunction(functionSignature, numArguments);
 
     //getContext()->Global().Set();
@@ -629,7 +631,7 @@ void ScriptEngineV8::registerFunction(const QString& parent, const QString& name
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     ScriptValue object = globalObject().property(parent);
     if (object.isValid()) {
         ScriptValue scriptFun = newFunction(functionSignature, numArguments);
@@ -748,6 +750,17 @@ void ScriptEngineV8::registerGetterSetter(const QString& name, ScriptEngine::Fun
     }*/
 }
 
+v8::Local<v8::Context> ScriptEngineV8::getContext() {
+    v8::EscapableHandleScope handleScope(_v8Isolate);
+    Q_ASSERT(!_contexts.isEmpty());
+    return handleScope.Escape(_contexts.last().get()->toV8Value());
+}
+
+const v8::Local<v8::Context> ScriptEngineV8::getConstContext() const {
+    v8::EscapableHandleScope handleScope(_v8Isolate);
+    Q_ASSERT(!_contexts.isEmpty());
+    return handleScope.Escape(_contexts.last().get()->toV8Value());
+}
 ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
                                                            const ScriptProgramPointer& _program) {
     PROFILE_RANGE(script, "evaluateInClosure");
@@ -767,7 +780,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
     v8::Local<v8::Context> oldContext = getContext();
 
     {
-        v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+        v8::Context::Scope contextScope(getContext());
         unwrappedProgram = ScriptProgramV8Wrapper::unwrap(_program);
         if (unwrappedProgram == nullptr) {
             _evaluatingCounter--;
@@ -813,7 +826,6 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
         }
         //qDebug() << "Closure global details:" << scriptValueDebugDetailsV8(V8ScriptValue(_v8Isolate, closureGlobal));
     }
-    //_v8Context.Get(_v8Isolate)->DetachGlobal();
     //oldGlobal = _v8Context.Get(_v8Isolate)->Global();
     v8::Local<v8::Context> closureContext;
 
@@ -829,6 +841,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
         closureContext = v8::Context::New(_v8Isolate);
     }*/
     closureContext = v8::Context::New(_v8Isolate);
+    pushContext(closureContext);
 
     ScriptValue result;
     //auto context = pushContext();
@@ -927,7 +940,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
 #ifdef DEBUG_JS
         qCDebug(shared) << QString("[%1] //evaluateInClosure %2").arg(isEvaluating()).arg(shortName);
 #endif
-        //popContext();
+        popContext();
     }
     //This is probably unnecessary in V8
     /*if (oldGlobal.isValid()) {
@@ -967,7 +980,7 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     v8::TryCatch tryCatch(getIsolate());
     v8::ScriptOrigin scriptOrigin(getIsolate(), v8::String::NewFromUtf8(getIsolate(), fileName.toStdString().c_str()).ToLocalChecked());
     v8::Local<v8::Script> script;
@@ -1038,6 +1051,10 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
 }
 
 QString ScriptEngineV8::formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch) {
+    v8::Locker locker(_v8Isolate);
+    v8::Isolate::Scope isolateScope(_v8Isolate);
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(getContext());
     QString result("");
     int errorColumnNumber = 0;
     int errorLineNumber = 0;
@@ -1060,6 +1077,18 @@ QString ScriptEngineV8::formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch) {
         resultStream << "failed on line " << errorLineNumber << " column " << errorColumnNumber << " with message: \"" << errorMessage <<"\" backtrace: " << errorBacktrace;
     }
     return result;
+}
+
+ScriptContextV8Pointer ScriptEngineV8::pushContext(v8::Local<v8::Context> &context) {
+    Q_ASSERT(!_contexts.isEmpty());
+    ScriptContextPointer parent = _contexts.last();
+    _contexts.append(std::make_shared<ScriptContextV8Wrapper>(this, context, ScriptContextPointer()));
+    return _contexts.last();
+}
+
+void ScriptEngineV8::popContext() {
+    Q_ASSERT(!_contexts.isEmpty());
+    _contexts.pop_back();
 }
 
 Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& program) {
@@ -1093,7 +1122,7 @@ Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& pro
         v8::Locker locker(_v8Isolate);
         v8::Isolate::Scope isolateScope(_v8Isolate);
         v8::HandleScope handleScope(_v8Isolate);
-        v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+        v8::Context::Scope contextScope(getContext());
         ScriptProgramV8Wrapper* unwrapped = ScriptProgramV8Wrapper::unwrap(program);
         if (!unwrapped) {
             errorValue = makeError(newValue("could not unwrap program"));
@@ -1169,7 +1198,7 @@ ScriptValue ScriptEngineV8::globalObject() const {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getConstContext());
     V8ScriptValue global(_v8Isolate, getConstContext()->Global());// = QScriptEngine::globalObject(); // can't cache the value as it may change
     return ScriptValue(new ScriptValueV8Wrapper(const_cast<ScriptEngineV8*>(this), std::move(global)));
 }
@@ -1182,7 +1211,7 @@ ScriptValue ScriptEngineV8::newArray(uint length) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     V8ScriptValue result(_v8Isolate, v8::Array::New(_v8Isolate, static_cast<int>(length)));
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
@@ -1191,7 +1220,7 @@ ScriptValue ScriptEngineV8::newArrayBuffer(const QByteArray& message) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     //V8TODO: this will leak memory
     std::shared_ptr<v8::BackingStore> backingStore(v8::ArrayBuffer::NewBackingStore(_v8Isolate, message.size()));
     std::memcpy(backingStore.get()->Data(), message.constData(), message.size());
@@ -1219,7 +1248,7 @@ ScriptValue ScriptEngineV8::newObject() {
         v8::Locker locker(_v8Isolate);
         v8::Isolate::Scope isolateScope(_v8Isolate);
         v8::HandleScope handleScope(_v8Isolate);
-        v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+        v8::Context::Scope contextScope(getContext());
         V8ScriptValue resultV8 = V8ScriptValue(_v8Isolate, v8::Object::New(_v8Isolate));
         result = ScriptValue(new ScriptValueV8Wrapper(this, std::move(resultV8)));
     }
@@ -1235,7 +1264,7 @@ ScriptValue ScriptEngineV8::newMethod(QObject* object, V8ScriptValue lifetime,
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     V8ScriptValue result(ScriptMethodV8Proxy::newMethod(this, object, lifetime, metas, numMaxParams));
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
@@ -1248,7 +1277,7 @@ ScriptProgramPointer ScriptEngineV8::newProgram(const QString& sourceCode, const
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     return std::make_shared<ScriptProgramV8Wrapper>(this, sourceCode, fileName);
 }
 
@@ -1258,7 +1287,7 @@ ScriptValue ScriptEngineV8::newQObject(QObject* object,
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     V8ScriptValue result = ScriptObjectV8Proxy::newQObject(this, object, ownership, options);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
@@ -1267,7 +1296,7 @@ ScriptValue ScriptEngineV8::newValue(bool value) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     V8ScriptValue result(_v8Isolate, v8::Boolean::New(_v8Isolate, value));
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
@@ -1276,7 +1305,7 @@ ScriptValue ScriptEngineV8::newValue(int value) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     V8ScriptValue result(_v8Isolate, v8::Integer::New(_v8Isolate, value));
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
@@ -1285,7 +1314,7 @@ ScriptValue ScriptEngineV8::newValue(uint value) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     V8ScriptValue result(_v8Isolate, v8::Uint32::New(_v8Isolate, value));
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
@@ -1294,7 +1323,7 @@ ScriptValue ScriptEngineV8::newValue(double value) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     V8ScriptValue result(_v8Isolate, v8::Number::New(_v8Isolate, value));
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
@@ -1303,7 +1332,7 @@ ScriptValue ScriptEngineV8::newValue(const QString& value) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     v8::Local<v8::String> valueV8 = v8::String::NewFromUtf8(_v8Isolate, value.toStdString().c_str(), v8::NewStringType::kNormal).ToLocalChecked();
     V8ScriptValue result(_v8Isolate, valueV8);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
@@ -1313,7 +1342,7 @@ ScriptValue ScriptEngineV8::newValue(const QLatin1String& value) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     v8::Local<v8::String> valueV8 = v8::String::NewFromUtf8(_v8Isolate, value.latin1(), v8::NewStringType::kNormal).ToLocalChecked();
     V8ScriptValue result(_v8Isolate, valueV8);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
@@ -1323,7 +1352,7 @@ ScriptValue ScriptEngineV8::newValue(const char* value) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     v8::Local<v8::String> valueV8 = v8::String::NewFromUtf8(_v8Isolate, value, v8::NewStringType::kNormal).ToLocalChecked();
     V8ScriptValue result(_v8Isolate, valueV8);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
@@ -1333,7 +1362,7 @@ ScriptValue ScriptEngineV8::newVariant(const QVariant& value) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     V8ScriptValue result = castVariantToValue(value);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));
 }
@@ -1366,11 +1395,11 @@ ScriptContext* ScriptEngineV8::currentContext() const {
         _currContext = std::make_shared<ScriptContextV8Wrapper>(const_cast<ScriptEngineV8*>(this), localCtx);
     }*/
     //_currContext = std::make_shared<ScriptContextV8Wrapper>(const_cast<ScriptEngineV8*>(this), localCtx);
-    if (!_currContext) {
+    /*if (!_currContext) {
         // I'm not sure how to do this without discarding const
         _currContext = std::make_shared<ScriptContextV8Wrapper>(const_cast<ScriptEngineV8*>(this));
-    }
-    return _currContext.get();
+    }*/
+    return _contexts.last().get();
 }
 
 bool ScriptEngineV8::hasUncaughtException() const {
@@ -1386,6 +1415,7 @@ bool ScriptEngineV8::isEvaluating() const {
 }
 
 ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int length) {
+    //V8TODO is callee() used for anything?
     /*auto innerFunc = [](V8ScriptContext* _context, QScriptEngine* _engine) -> V8ScriptValue {
         auto callee = _context->callee();
         QVariant funAddr = callee.property("_func").toVariant();
@@ -1408,7 +1438,7 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
             (object->GetAlignedPointerFromInternalField(0));
         ScriptEngineV8 *scriptEngine = reinterpret_cast<ScriptEngineV8*>
             (object->GetAlignedPointerFromInternalField(1));
-        ScriptContextV8Wrapper scriptContext(scriptEngine, &info);
+        ScriptContextV8Wrapper scriptContext(scriptEngine, &info, scriptEngine->getContext(), scriptEngine->currentContext()->parentContext());
         //V8TODO: this scriptContext needs to have FunctionCallbackInfo added
         ScriptValue result = function(&scriptContext, scriptEngine);
         ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(result);
@@ -1422,7 +1452,7 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     auto functionDataTemplate = v8::ObjectTemplate::New(_v8Isolate);
     functionDataTemplate->SetInternalFieldCount(2);
     auto functionData = functionDataTemplate->NewInstance(getContext()).ToLocalChecked();
@@ -1449,7 +1479,7 @@ bool ScriptEngineV8::setProperty(const char* name, const QVariant& value) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     v8::Local<v8::Object> global = getContext()->Global();
     auto v8Name = v8::String::NewFromUtf8(getIsolate(), name).ToLocalChecked();
     V8ScriptValue v8Value = castVariantToValue(value);
@@ -1522,7 +1552,7 @@ ScriptValue ScriptEngineV8::create(int type, const void* ptr) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     QVariant variant(type, ptr);
     V8ScriptValue scriptValue = castVariantToValue(variant);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(scriptValue)));
@@ -1532,7 +1562,7 @@ QVariant ScriptEngineV8::convert(const ScriptValue& value, int typeId) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(value);
     if (unwrapped == nullptr) {
         return QVariant();
@@ -1556,7 +1586,7 @@ void ScriptEngineV8::compileTest() {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Context::Scope contextScope(getContext());
     v8::Local<v8::Script> script;
     v8::ScriptOrigin scriptOrigin(getIsolate(), v8::String::NewFromUtf8(getIsolate(),"test").ToLocalChecked());
     if (v8::Script::Compile(getContext(), v8::String::NewFromUtf8(getIsolate(), "print(\"hello world\");").ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
