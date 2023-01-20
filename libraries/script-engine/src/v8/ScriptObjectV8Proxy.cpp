@@ -1155,7 +1155,7 @@ void ScriptSignalV8Proxy::connect(ScriptValue arg0, ScriptValue arg1) {
         if (!newArray->Set(destFunctionContext, 0, v8ThisObject.get()).FromMaybe(false)) {
             Q_ASSERT(false);
         }
-        if (destFunction->Set(destFunctionContext, destDataName, newArray).FromMaybe(false)) {
+        if (!destFunction->Set(destFunctionContext, destDataName, newArray).FromMaybe(false)) {
             Q_ASSERT(false);
         }
     }
