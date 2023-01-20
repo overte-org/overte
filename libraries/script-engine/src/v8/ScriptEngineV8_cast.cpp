@@ -198,7 +198,12 @@ void ScriptEngineV8::registerSystemTypes() {
 }
 
 int ScriptEngineV8::computeCastPenalty(const V8ScriptValue& v8Val, int destTypeId) {
+    v8::Locker locker(_v8Isolate);
+    v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
+    v8::Local<v8::Context> context = getContext();
+    v8::Context::Scope contextScope(context);
+
     const v8::Local<v8::Value> val = v8Val.constGet();
     if (val->IsNumber()) {
         switch (destTypeId){
@@ -295,7 +300,8 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(_v8Context.Get(_v8Isolate));
+    v8::Local<v8::Context> context = getContext();
+    v8::Context::Scope contextScope(context);
     const v8::Local<v8::Value> val = v8Val.constGet();
 
     // Conversion debugging:
@@ -366,7 +372,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                     break;
                 }
                 if (val->IsNumber()) {
-                    dest = QVariant::fromValue(val->ToNumber(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value());
+                    dest = QVariant::fromValue(val->ToNumber(context).ToLocalChecked()->Value());
                     break;
                 }
                 {
@@ -403,11 +409,11 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
             case QMetaType::QDateTime:
             case QMetaType::QDate:
                 if (val->IsDate()){
-                    double timeMs = v8::Date::Cast(*val)->NumberValue(_v8Context.Get(_v8Isolate)).ToChecked();
+                    double timeMs = v8::Date::Cast(*val)->NumberValue(context).ToChecked();
                     dest = QVariant::fromValue(QDateTime::fromMSecsSinceEpoch(timeMs));
                 } else if (val->IsNumber()) {
                     //V8TODO should we automatically cast numbers to datetime?
-                    dest = QVariant::fromValue(QDateTime::fromMSecsSinceEpoch(val->ToNumber(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value()));
+                    dest = QVariant::fromValue(QDateTime::fromMSecsSinceEpoch(val->ToNumber(context).ToLocalChecked()->Value()));
                 } else {
                     return false;
                 }
@@ -417,7 +423,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                 if ( val->IsArray() || val->IsObject() ){
                     return false;
                 }
-                dest = QVariant::fromValue(val->ToUint32(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value());
+                dest = QVariant::fromValue(val->ToUint32(context).ToLocalChecked()->Value());
                 break;
             case QMetaType::Int:
             case QMetaType::Long:
@@ -425,7 +431,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                 if ( val->IsArray() || val->IsObject() ){
                     return false;
                 }
-                dest = QVariant::fromValue(val->ToInt32(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value());
+                dest = QVariant::fromValue(val->ToInt32(context).ToLocalChecked()->Value());
                 break;
             case QMetaType::Double:
             case QMetaType::Float:
@@ -434,7 +440,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                 if ( val->IsArray() || val->IsObject() ){
                     return false;
                 }
-                dest = QVariant::fromValue(val->ToNumber(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value());
+                dest = QVariant::fromValue(val->ToNumber(context).ToLocalChecked()->Value());
                 break;
             case QMetaType::QString:
             case QMetaType::QByteArray:
@@ -448,7 +454,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                 if ( val->IsArray() || val->IsObject() ){
                     return false;
                 }
-                dest = QVariant::fromValue(static_cast<uint16_t>(val->ToUint32(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value()));
+                dest = QVariant::fromValue(static_cast<uint16_t>(val->ToUint32(context).ToLocalChecked()->Value()));
                 break;
             case QMetaType::QObjectStar:
                 dest = QVariant::fromValue(ScriptObjectV8Proxy::unwrap(v8Val));
@@ -476,7 +482,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                     return true;
                 }
                 if (val->IsNumber()) {
-                    dest = QVariant::fromValue(val->ToNumber(_v8Context.Get(_v8Isolate)).ToLocalChecked()->Value());
+                    dest = QVariant::fromValue(val->ToNumber(context).ToLocalChecked()->Value());
                     return true;
                 }
                 {
@@ -545,6 +551,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
 }
 
 bool ScriptEngineV8::convertJSObjectToVariant(v8::Local<v8::Object> object, QVariant &dest) {
+    v8::HandleScope handleScope(_v8Isolate);
     auto context = getContext();
     v8::Local<v8::Array> names;
     if(!object->GetPropertyNames(context).ToLocal(&names)) {
@@ -574,8 +581,14 @@ bool ScriptEngineV8::convertJSObjectToVariant(v8::Local<v8::Object> object, QVar
 }
 
 QString ScriptEngineV8::valueType(const V8ScriptValue& v8Val) {
-    // V8TODO
-    v8::HandleScope handleScope(const_cast<v8::Isolate*>(v8Val.constGetIsolate()));
+    // V8TODO I'm not sure why is there a TODO here
+    v8::Locker locker(_v8Isolate);
+    v8::Isolate::Scope isolateScope(_v8Isolate);
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Local<v8::Context> context = getContext();
+    v8::Context::Scope contextScope(context);
+
+    //v8::HandleScope handleScope(const_cast<v8::Isolate*>(v8Val.constGetIsolate()));
     const v8::Local<v8::Value> val = v8Val.constGet();
     
     if (val->IsUndefined()) {
@@ -617,6 +630,12 @@ QString ScriptEngineV8::valueType(const V8ScriptValue& v8Val) {
 }
 
 V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
+    v8::Locker locker(_v8Isolate);
+    v8::Isolate::Scope isolateScope(_v8Isolate);
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Local<v8::Context> context = getContext();
+    v8::Context::Scope contextScope(context);
+
     int valTypeId = val.userType();
 
     if (valTypeId == qMetaTypeId<ScriptValue>()) {
@@ -676,12 +695,12 @@ V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
         case QMetaType::QDateTime:
             {
                 double timeMs = val.value<QDateTime>().currentMSecsSinceEpoch();
-                return V8ScriptValue(_v8Isolate, v8::Date::New(_v8Context.Get(_v8Isolate), timeMs).ToLocalChecked());
+                return V8ScriptValue(_v8Isolate, v8::Date::New(getContext(), timeMs).ToLocalChecked());
             }
         case QMetaType::QDate:
             {
                 double timeMs = val.value<QDate>().startOfDay().currentMSecsSinceEpoch();
-                return V8ScriptValue(_v8Isolate, v8::Date::New(_v8Context.Get(_v8Isolate), timeMs).ToLocalChecked());
+                return V8ScriptValue(_v8Isolate, v8::Date::New(getContext(), timeMs).ToLocalChecked());
             }
         default:
             // check to see if this is a pointer to a QObject-derived object

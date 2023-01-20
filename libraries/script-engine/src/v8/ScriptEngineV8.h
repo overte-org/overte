@@ -43,7 +43,7 @@ class ScriptEngineV8;
 class ScriptManager;
 class ScriptObjectV8Proxy;
 class ScriptMethodV8Proxy;
-using ScriptContextQtPointer = std::shared_ptr<ScriptContextV8Wrapper>;
+using ScriptContextV8Pointer = std::shared_ptr<ScriptContextV8Wrapper>;
 
 const double GARBAGE_COLLECTION_TIME_LIMIT_S = 1.0;
 
@@ -179,14 +179,8 @@ public: // not for public use, but I don't like how Qt strings this along with p
     V8ScriptValue castVariantToValue(const QVariant& val);
     QString valueType(const V8ScriptValue& val);
     v8::Isolate* getIsolate() {return _v8Isolate;}
-    v8::Local<v8::Context> getContext() {
-        v8::EscapableHandleScope handleScope(_v8Isolate);
-        return handleScope.Escape(_v8Context.Get(_v8Isolate));
-    }
-    const v8::Local<v8::Context> getConstContext() const {
-        v8::EscapableHandleScope handleScope(_v8Isolate);
-        return handleScope.Escape(_v8Context.Get(_v8Isolate));
-    }
+    v8::Local<v8::Context> getContext();
+    const v8::Local<v8::Context> getConstContext() const;
     // Useful for debugging
     //QStringList getCurrentStackTrace();
 
@@ -213,9 +207,12 @@ protected:
     static std::once_flag _v8InitOnceFlag;
     static v8::Platform* getV8Platform();
     QString formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch);
-    
+    ScriptContextV8Pointer pushContext(v8::Local<v8::Context> &context);
+    void popContext();
+
+    // V8TODO: clean up isolate when script engine is destroyed?
     v8::Isolate* _v8Isolate;
-    v8::UniquePersistent<v8::Context> _v8Context;
+    //v8::UniquePersistent<v8::Context> _v8Context;
     
     struct CustomMarshal {
         ScriptEngine::MarshalFunction marshalFunc;
@@ -231,10 +228,9 @@ protected:
     CustomPrototypeMap _customPrototypes;
     ScriptValue _nullValue;
     ScriptValue _undefinedValue;
-    mutable ScriptContextQtPointer _currContext;
-    //QThread *_currentThread;
-    //V8TODO: probably should be removed and its occurrences replaced with local locker
-    //std::unique_ptr<v8::Locker> _v8Locker;
+    //mutable ScriptContextV8Pointer _currContext;
+    // Current context stack. Main context is first on the list and current one is last.
+    QList<ScriptContextV8Pointer> _contexts;
 
     //V8TODO
     //ArrayBufferClass* _arrayBufferClass;
