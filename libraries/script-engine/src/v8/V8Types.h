@@ -44,6 +44,7 @@ public:
         Q_ASSERT(_isolate->IsCurrent());
         v8::HandleScope handleScope(_isolate);
         return new V8ScriptValueTemplate(_isolate, v8::Local<T>::New(_isolate, constGet()));};
+
     const v8::Local<v8::Context> constGetContext() const {
         v8::EscapableHandleScope handleScope(_isolate);
         return handleScope.Escape(_context.Get(_isolate));
@@ -75,11 +76,13 @@ public:
     V8ScriptString() = delete;
     V8ScriptString(v8::Isolate *isolate, const v8::Local<v8::String> value) : V8ScriptValueTemplate<v8::String>(isolate, value) {};
     const QString toQString() const {
-        Q_ASSERT(constGet()->IsString());
         Q_ASSERT(constGetIsolate()->IsCurrent());
+        Q_ASSERT(constGet()->IsString());
         return QString(*v8::String::Utf8Value(const_cast<v8::Isolate*>(constGetIsolate()), constGet()));
     };
     bool operator==(const V8ScriptString& string) const {
+        Q_ASSERT(constGetIsolate()->IsCurrent());
+        Q_ASSERT(constGet()->IsString());
         return constGet()->StringEquals(string.constGet());
     }
 };
