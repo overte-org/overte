@@ -30,7 +30,7 @@ const PROFILE = !PROFILING_ENABLED ? PROFILE_NOOP : function(name, fn, args) {
     console.log("PROFILE-Script " + profileIndent + "(" + name + ") End " + delta + "ms");
 };
 
-EntityListTool = function(shouldUseEditTabletApp) {
+var EntityListTool = function(shouldUseEditTabletApp) {
     var that = {};
 
     var CreateWindow = Script.require('../modules/createWindow.js');

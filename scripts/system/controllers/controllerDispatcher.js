@@ -15,8 +15,8 @@
    PointerManager, print, Keyboard
 */
 
-controllerDispatcherPlugins = {};
-controllerDispatcherPluginsNeedSort = false;
+var controllerDispatcherPlugins = {};
+var controllerDispatcherPluginsNeedSort = false;
 
 Script.include("/~/system/libraries/utils.js");
 Script.include("/~/system/libraries/controllers.js");

@@ -414,7 +414,7 @@ void ScriptObjectV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCall
 void ScriptObjectV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<v8::Value>& info) {
     v8::HandleScope handleScope(info.GetIsolate());
     v8::String::Utf8Value utf8Value(info.GetIsolate(), name);
-    qDebug(scriptengine) << "Set: " << *utf8Value;
+    //qDebug(scriptengine) << "Set: " << *utf8Value;
     V8ScriptValue object(info.GetIsolate(), info.This());
     ScriptObjectV8Proxy *proxy = ScriptObjectV8Proxy::unwrapProxy(object);
     if (!proxy) {
@@ -682,10 +682,6 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
     bool isValidMetaSelected = false;
     int bestMeta = 0;
     int bestConversionPenaltyScore = 0;
-
-    if(fullName() == "SettingsScriptingInterface::getValue") {
-        printf("SettingsScriptingInterface::getValue");
-    }
 
     for (int i = 0; i < num_metas; i++) {
         const QMetaMethod& meta = _metas[i];

@@ -31,14 +31,14 @@ if (typeof Object.assign !== 'function') {
     };
 }
 
-entityIsCloneable = function(props) {
+var entityIsCloneable = function(props) {
     if (props) {
         return props.cloneable;
     }
     return false;
 };
 
-propsAreCloneDynamic = function(props) {
+var propsAreCloneDynamic = function(props) {
     var cloneable = entityIsCloneable(props);
     if (cloneable) {
         return props.cloneDynamic;
@@ -46,7 +46,7 @@ propsAreCloneDynamic = function(props) {
     return false;
 };
 
-cloneEntity = function(props) {
+var cloneEntity = function(props) {
     var entityIDToClone = props.id;
     if (entityIsCloneable(props) &&
         (Uuid.isNull(props.certificateID) || props.certificateType.indexOf('domainUnlimited') >= 0)) {
