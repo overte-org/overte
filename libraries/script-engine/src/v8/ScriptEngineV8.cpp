@@ -490,7 +490,14 @@ void ScriptEngineV8::registerValue(const QString& valueName, V8ScriptValue value
         partsToGo--;
         v8::Local<v8::String> pathPartV8 = v8::String::NewFromUtf8(_v8Isolate, pathPart.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
         v8::Local<v8::Value> currentPath;
+        bool createProperty = false;
         if (!partObject->Get(context, pathPartV8).ToLocal(&currentPath)) {
+            createProperty = true;
+        }
+        if (currentPath->IsUndefined()) {
+            createProperty = true;
+        }
+        if (createProperty) {
             if (partsToGo > 0) {
                 //This was commented out
                 //QObject *object = new QObject;
@@ -507,9 +514,18 @@ void ScriptEngineV8::registerValue(const QString& valueName, V8ScriptValue value
                 }
             }
         }
+
         v8::Local<v8::Value> child;
         if (!partObject->Get(context, pathPartV8).ToLocal(&child)) {
             Q_ASSERT(false);
+        }
+        if (partsToGo > 0) {
+            if (!child->IsObject()) {
+                QString details = *v8::String::Utf8Value(_v8Isolate, child->ToDetailString(context).ToLocalChecked());
+                qCDebug(scriptengine) << "ScriptEngineV8::registerValue: Part of path is not an object: " << pathPart << " details: " << details;
+                Q_ASSERT(false);
+            }
+            partObject = v8::Local<v8::Object>::Cast(child);
         }
     }
 }
