@@ -1558,6 +1558,7 @@ void ScriptManager::include(const QStringList& includeFiles, const ScriptValue& 
             thisURL = expandScriptUrl(QUrl::fromLocalFile(expandScriptPath(file)));
             QUrl defaultScriptsLoc = PathUtils::defaultScriptsLocation();
             if (!defaultScriptsLoc.isParentOf(thisURL)) {
+                //V8TODO this probably needs to be done per context, otherwise file cannot be included again in a module
                 scriptWarningMessage("Script.include() -- skipping" + file + "-- outside of standard libraries");
                 continue;
             }

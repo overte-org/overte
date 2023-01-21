@@ -12,17 +12,17 @@
    getControllerWorldLocation:true
  */
 
-var GRAB_COMMUNICATIONS_SETTING = "io.highfidelity.isFarGrabbing";
-setGrabCommunications = function setFarGrabCommunications(on) {
+const GRAB_COMMUNICATIONS_SETTING = "io.highfidelity.isFarGrabbing";
+const setGrabCommunications = function setFarGrabCommunications(on) {
     Settings.setValue(GRAB_COMMUNICATIONS_SETTING, on ? "on" : "");
 };
-getGrabCommunications = function getFarGrabCommunications() {
+const getGrabCommunications = function getFarGrabCommunications() {
     return !!Settings.getValue(GRAB_COMMUNICATIONS_SETTING, "");
 };
 
 // this offset needs to match the one in libraries/display-plugins/src/display-plugins/hmd/HmdDisplayPlugin.cpp:378
 
-getGrabPointSphereOffset = function(handController, ignoreSensorToWorldScale) {
+const getGrabPointSphereOffset = function(handController, ignoreSensorToWorldScale) {
     var GRAB_POINT_SPHERE_OFFSET = { x: 0.04, y: 0.13, z: 0.039 };  // x = upward, y = forward, z = lateral
     var offset = GRAB_POINT_SPHERE_OFFSET;
     if (handController === Controller.Standard.LeftHand) {
@@ -40,7 +40,7 @@ getGrabPointSphereOffset = function(handController, ignoreSensorToWorldScale) {
 };
 
 // controllerWorldLocation is where the controller would be, in-world, with an added offset
-getControllerWorldLocation = function (handController, doOffset) {
+const getControllerWorldLocation = function (handController, doOffset) {
     var orientation;
     var position;
     var valid = false;
