@@ -133,11 +133,12 @@ QJsonDocument variantMapToJsonDocument(const QSettings::SettingsMap& map) {
         }
 
         switch (variantType) {
-            case QVariant::Hash: {
+            // V8TODO: why was this here? It seems that it supported
+            /*case QVariant::Hash: {
                 qCritical() << "Unsupported variant type" << variant.typeName() << ";" << key << variant;
                 Q_ASSERT(false);
                 break;
-            }
+            }*/
 
             case QVariant::Invalid:
                 object.insert(key, QJsonValue());
@@ -149,6 +150,7 @@ QJsonDocument variantMapToJsonDocument(const QSettings::SettingsMap& map) {
             case QVariant::Bool:
             case QVariant::Double:
             case QVariant::Map:
+            case QVariant::Hash:
             case QVariant::List:
                 object.insert(key, QJsonValue::fromVariant(variant));
                 break;

@@ -567,13 +567,13 @@
     }
 
     //####### seed random library ################
-    Math.seed = 75;
+    var seed = 75;
 
-    Math.seededRandom = function(max, min) {
+    var seededRandom = function(max, min) {
         max = max || 1;
         min = min || 0;
-        Math.seed = (Math.seed * 9301 + 49297) % 233280;
-        var rnd = Math.seed / 233280;
+        seed = (seed * 9301 + 49297) % 233280;
+        var rnd = seed / 233280;
         return min + rnd * (max - min);
     }
 
@@ -590,8 +590,8 @@
         var d = new Date();
         var n = d.getTime();
         var currentSeed = Math.floor(n / PERSISTENCE_ORDERING_CYCLE);
-        Math.seed = score * currentSeed;
-        return zeroPad(Math.floor(Math.seededRandom() * 100000),5);
+        seed = score * currentSeed;
+        return zeroPad(Math.floor(seededRandom() * 100000),5);
     }
     //####### END of seed random library ################
 
