@@ -14,7 +14,7 @@
 */
 
 Script.include("/~/system/libraries/controllerDispatcherUtils.js");
-Pointer = function(hudLayer, pickType, pointerData) {
+var Pointer = function(hudLayer, pickType, pointerData) {
     this.SEARCH_SPHERE_SIZE = 0.0132;
     this.dim = {x: this.SEARCH_SPHERE_SIZE, y: this.SEARCH_SPHERE_SIZE, z: this.SEARCH_SPHERE_SIZE};
     this.halfPath = {
@@ -158,7 +158,7 @@ Pointer = function(hudLayer, pickType, pointerData) {
 };
 
 
-PointerManager = function() {
+var PointerManager = function() {
     this.pointers = [];
 
     this.createPointer = function(hudLayer, pickType, pointerData) {
