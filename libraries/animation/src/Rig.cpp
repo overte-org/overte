@@ -1693,7 +1693,9 @@ void Rig::updateAnimationStateHandlers() { // called on avatar update thread (wh
 
         // Gather results in (likely from an earlier update).
         // Note: the behavior is undefined if a handler (re-)sets a trigger. Scripts should not be doing that.
-        _animVars.copyVariantsFrom(value.results); // If multiple handlers write the same anim var, the last registgered wins. (_map preserves order).
+
+        // V8TODO: This causes a deadlock right now, and in any case will cause stutters. Probably should be done on script thread instead
+        _animVars.copyVariantsFrom(value.results); // If multiple handlers write the same anim var, the last registered wins. (_map preserves order).
     }
 }
 
@@ -1708,7 +1710,8 @@ void Rig::updateAnimations(float deltaTime, const glm::mat4& rootTransform, cons
 
         ++_evaluationCount;
 
-        updateAnimationStateHandlers();
+        // V8TODO: this causes a deadlock right now
+        //updateAnimationStateHandlers();
         _animVars.setRigToGeometryTransform(_rigToGeometryTransform);
         if (_networkNode) {
             _networkVars.setRigToGeometryTransform(_rigToGeometryTransform);
