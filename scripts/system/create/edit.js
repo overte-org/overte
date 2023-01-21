@@ -3077,7 +3077,7 @@ mapping.from([Controller.Hardware.Keyboard.P])
     .when([Controller.Hardware.Keyboard.Control, !Controller.Hardware.Keyboard.Shift])
     .to(whenReleased(function() { parentSelectedEntities(); }));
 
-keyUpEventFromUIWindow = function(keyUpEvent) {
+var keyUpEventFromUIWindow = function(keyUpEvent) {
     var WANT_DEBUG_MISSING_SHORTCUTS = false;
 
     var pressedValue = 0.0;

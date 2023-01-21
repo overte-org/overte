@@ -305,10 +305,10 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
     const v8::Local<v8::Value> val = v8Val.constGet();
 
     // Conversion debugging:
-    if (destTypeId == QMetaType::QVariant && val->IsBoolean()) {
+    /*if (destTypeId == QMetaType::QVariant && val->IsBoolean()) {
         //It's for placing breakpoint here
         qDebug() << "Conversion Debug: " << scriptValueDebugDetailsV8(v8Val);
-    }
+    }*/
 
     // if we're not particularly interested in a specific type, try to detect if we're dealing with a registered type
     if (destTypeId == QMetaType::UnknownType) {
