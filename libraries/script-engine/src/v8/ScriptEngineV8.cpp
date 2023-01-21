@@ -727,8 +727,8 @@ void ScriptEngineV8::registerGetterSetter(const QString& name, ScriptEngine::Fun
 
         ScriptValue setterFunction = newFunction(setter, 1);
         ScriptValue getterFunction = newFunction(getter);
-        V8ScriptValue unwrappedGetter = ScriptValueV8Wrapper::fullUnwrap(this, setterFunction);
-        V8ScriptValue unwrappedSetter = ScriptValueV8Wrapper::fullUnwrap(this, getterFunction);
+        V8ScriptValue unwrappedGetter = ScriptValueV8Wrapper::fullUnwrap(this, getterFunction);
+        V8ScriptValue unwrappedSetter = ScriptValueV8Wrapper::fullUnwrap(this, setterFunction);
         v8::PropertyDescriptor propertyDescriptor(unwrappedGetter.get(), unwrappedSetter.get());
 
         //V8TODO: Getters/setters are probably done in a different way in V8. Maybe object template is needed?
