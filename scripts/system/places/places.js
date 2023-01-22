@@ -80,7 +80,7 @@
                 transmitPortalList();
 
                 sendCurrentLocationToUI();
-                
+
             } else if (messageObj.action === "TELEPORT" && (n - timestamp) > INTERCALL_DELAY) {
                 d = new Date();
                 timestamp = d.getTime();
