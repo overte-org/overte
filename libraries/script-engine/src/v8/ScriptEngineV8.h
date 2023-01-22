@@ -175,6 +175,7 @@ public: // not for public use, but I don't like how Qt strings this along with p
     bool castValueToVariant(const V8ScriptValue& val, QVariant& dest, int destTypeId);
 
     // Converts JS objects created in V8 to variants. Iterates over all properties and converts them to variants.
+    bool convertJSArrayToVariant(v8::Local<v8::Array> array, QVariant &dest);
     bool convertJSObjectToVariant(v8::Local<v8::Object> object, QVariant &dest);
     V8ScriptValue castVariantToValue(const QVariant& val);
     QString valueType(const V8ScriptValue& val);
