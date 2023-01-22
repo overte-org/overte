@@ -182,6 +182,7 @@ public: // not for public use, but I don't like how Qt strings this along with p
     v8::Isolate* getIsolate() {return _v8Isolate;}
     v8::Local<v8::Context> getContext();
     const v8::Local<v8::Context> getConstContext() const;
+    QString formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch);
     // Useful for debugging
     //QStringList getCurrentStackTrace();
 
@@ -207,7 +208,6 @@ protected:
     static QMutex _v8InitMutex;
     static std::once_flag _v8InitOnceFlag;
     static v8::Platform* getV8Platform();
-    QString formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch);
     ScriptContextV8Pointer pushContext(v8::Local<v8::Context> &context);
     void popContext();
 
