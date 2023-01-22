@@ -737,10 +737,18 @@ void ScriptEngineV8::registerGetterSetter(const QString& name, ScriptEngine::Fun
             if (object.isValid()) {
                 V8ScriptValue v8parent = ScriptValueV8Wrapper::fullUnwrap(this, object);
                 Q_ASSERT(v8parent.get()->IsObject());
-                v8::Local<v8::Object> v8object = v8::Local<v8::Object>::Cast(v8parent.get());
+                v8::Local<v8::Object> v8ParentObject = v8::Local<v8::Object>::Cast(v8parent.get());
                 v8::Local<v8::String> v8propertyName =
                     v8::String::NewFromUtf8(_v8Isolate, name.toStdString().c_str()).ToLocalChecked();
-                if (!v8object->DefineProperty(getContext(), v8propertyName, propertyDescriptor).FromMaybe(false)) {
+                v8::Local<v8::Object> v8ObjectToSetProperty;
+                ScriptObjectV8Proxy *proxy = ScriptObjectV8Proxy::unwrapProxy(V8ScriptValue(_v8Isolate, v8ParentObject));
+                // If object is ScriptObjectV8Proxy, then setting property needs to be handled differently
+                if (proxy) {
+                    v8ObjectToSetProperty = v8ParentObject->GetInternalField(2).As<v8::Object>();
+                } else {
+                    v8ObjectToSetProperty = v8ParentObject;
+                }
+                    if (!v8ObjectToSetProperty->DefineProperty(getContext(), v8propertyName, propertyDescriptor).FromMaybe(false)) {
                     qCDebug(scriptengine) << "DefineProperty failed for registerGetterSetter \"" << name << "\" for parent: \""
                                           << parent << "\"";
                 }
