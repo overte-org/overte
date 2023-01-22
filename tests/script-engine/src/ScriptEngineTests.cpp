@@ -88,7 +88,7 @@ void ScriptEngineTests::scriptTest() {
         ac->loadOneScript(script);
     }*/
     //ac->loadOneScript("tests/003_vector_math.js");
-    ac->loadOneScript("tests/004_require.js");
+    ac->loadOneScript("tests/005_include.js");
 
     qDebug() << ac->getRunning();
 
