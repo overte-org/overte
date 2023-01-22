@@ -593,7 +593,7 @@ bool ScriptEngineV8::convertJSObjectToVariant(v8::Local<v8::Object> object, QVar
         return false;
     }
     int length = names->Length();
-    QHash<QString, QVariant> properties;
+    QMap<QString, QVariant> properties;
     for (int i = 0; i < length; i++) {
         v8::Local<v8::Value> v8Property;
         QString name = *v8::String::Utf8Value(_v8Isolate, names->Get(context, i).ToLocalChecked());
