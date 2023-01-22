@@ -297,6 +297,7 @@ var EntityListTool = function(shouldUseEditTabletApp) {
     }
 
     var onWebEventReceived = function(data) {
+        print("entityList.js onWebEventReceived: " + data);
         try {
             data = JSON.parse(data);
         } catch(e) {

@@ -188,6 +188,7 @@ ScriptValue vec3ColorToScriptValue(ScriptEngine* engine, const glm::vec3& vec3) 
     return value;
 }
 
+// V8TODO: add similar checks to rest of the conversions
 bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3) {
     if (object.isNumber()) {
         vec3 = glm::vec3(object.toVariant().toFloat());
@@ -197,6 +198,8 @@ bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3) {
             vec3.x = qColor.red();
             vec3.y = qColor.green();
             vec3.z = qColor.blue();
+        } else {
+            return false;
         }
     } else if (object.isArray()) {
         QVariantList list = object.toVariant().toList();
@@ -204,8 +207,10 @@ bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3) {
             vec3.x = list[0].toFloat();
             vec3.y = list[1].toFloat();
             vec3.z = list[2].toFloat();
+        } else {
+            return false;
         }
-    } else {
+    } else if (object.isObject()) {
         ScriptValue x = object.property("x");
         if (!x.isValid()) {
             x = object.property("r");
@@ -230,9 +235,15 @@ bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3) {
             z = object.property("blue");
         }
 
+        if (!x.isValid() || !y.isValid() || !z.isValid()) {
+            return false;
+        }
+
         vec3.x = x.toVariant().toFloat();
         vec3.y = y.toVariant().toFloat();
         vec3.z = z.toVariant().toFloat();
+    } else {
+        return false;
     }
     return true;
 }
@@ -446,7 +457,18 @@ ScriptValue quatToScriptValue(ScriptEngine* engine, const glm::quat& quat) {
     return obj;
 }
 
+// V8TODO: add similar check to other conversions
 bool quatFromScriptValue(const ScriptValue& object, glm::quat& quat) {
+    if (!object.isObject()) {
+        return false;
+    }
+    QVariant x = object.property("x").toVariant();
+    QVariant y = object.property("y").toVariant();
+    QVariant z = object.property("z").toVariant();
+    QVariant w = object.property("w").toVariant();
+    if (!x.isValid() || !y.isValid() || !z.isValid() || !w.isValid()) {
+        return false;
+    }
     quat.x = object.property("x").toVariant().toFloat();
     quat.y = object.property("y").toVariant().toFloat();
     quat.z = object.property("z").toVariant().toFloat();

@@ -816,7 +816,7 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
                 QByteArray argTypeName = _engine->valueType(V8ScriptValue(isolate, argVal)).toLatin1();
                 QString errorMessage = QString("Native call of %1 failed: Cannot convert parameter %2 from %3 to %4")
                     .arg(fullName()).arg(arg+1).arg(argTypeName, methodTypeName);
-                qDebug(scriptengine) << errorMessage;
+                qDebug(scriptengine) << errorMessage << "\n Backtrace:" << _engine->currentContext()->backtrace();
                 isolate->ThrowError(v8::String::NewFromUtf8(isolate, errorMessage.toStdString().c_str()).ToLocalChecked());
                 //context->throwError(V8ScriptContext::TypeError, QString("Native call of %1 failed: Cannot convert parameter %2 from %3 to %4")
                 //                                                   .arg(fullName()).arg(arg+1).arg(argTypeName, methodTypeName));
@@ -1042,13 +1042,18 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
         Connection& conn = *iter;
         v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(conn.callback.get());
         v8::Local<v8::Value> v8This;
-        if (conn.thisValue.get()->IsNull()) {
-            v8This = _engine->getContext()->Global();
-        } else {
+        if (conn.thisValue.get()->IsObject()) {
             v8This = conn.thisValue.get();
+        } else {
+            v8This = _engine->getContext()->Global();
         }
-        //V8TODO: should there be a trycatch here?
+
+        v8::TryCatch tryCatch(isolate);
         callback->Call(_engine->getContext(), v8This, numArgs, args);
+        if (tryCatch.HasCaught()) {
+            qCDebug(scriptengine) << "Signal proxy " << fullName() << " connection call failed: \""
+                                  << _engine->formatErrorMessageFromTryCatch(tryCatch) << "This: " << conn.thisValue.get()->IsObject();
+        }
     }
 
     return -1;

@@ -106,6 +106,10 @@ Script.include("/~/system/libraries/utils.js");
         this.sendPointingAtData = function(controllerData) {
             var rayPick = controllerData.rayPicks[this.hand];
             var hudRayPick = controllerData.hudRayPicks[this.hand];
+            // V8TODO: this needs to be checked if it works correctly
+            if (!hudRayPick.intersects) {
+                return;
+            }
             var point2d = this.calculateNewReticlePosition(hudRayPick.intersection);
             var desktopWindow = Window.isPointOnDesktopWindow(point2d);
             var tablet = this.pointingAtTablet(rayPick.objectID);
