@@ -389,6 +389,11 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                         break;
                     }
                 }
+                if (val->IsArray()) {
+                    if (convertJSArrayToVariant(v8::Local<v8::Array>::Cast(val), dest)) {
+                        return true;
+                    }
+                }
                 // This is for generic JS objects
                 if (val->IsObject()) {
                     if (convertJSObjectToVariant(v8::Local<v8::Object>::Cast(val), dest)) {
@@ -499,6 +504,11 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                         return true;
                     }
                 }
+                if (val->IsArray()) {
+                    if (convertJSArrayToVariant(v8::Local<v8::Array>::Cast(val), dest)) {
+                        return true;
+                    }
+                }
                 if (val->IsObject()) {
                     if (convertJSObjectToVariant(v8::Local<v8::Object>::Cast(val), dest)) {
                         return true;
@@ -548,6 +558,30 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
     }
 
     return destTypeId == QMetaType::UnknownType || dest.userType() == destTypeId || dest.convert(destTypeId);
+}
+
+bool ScriptEngineV8::convertJSArrayToVariant(v8::Local<v8::Array> array, QVariant &dest) {
+    v8::HandleScope handleScope(_v8Isolate);
+    auto context = getContext();
+    int length = array->Length();
+    QList<QVariant> properties;
+    for (int i = 0; i < length; i++) {
+        v8::Local<v8::Value> v8Property;
+        if (!array->Get(context, i).ToLocal(&v8Property)) {
+            qDebug() << "ScriptEngineV8::convertJSArrayToVariant could not get property: " + QString(i);
+            continue;
+        }
+        QVariant property;
+        // Maybe QMetaType::QVariant?
+        if (castValueToVariant(V8ScriptValue(_v8Isolate, v8Property), property, QMetaType::UnknownType)) {
+            properties.append(property);
+        } else {
+            qDebug() << "ScriptEngineV8::convertJSArrayToVariant could cast property to variant: " + QString(i);
+            ;
+        }
+    }
+    dest = QVariant(properties);
+    return true;
 }
 
 bool ScriptEngineV8::convertJSObjectToVariant(v8::Local<v8::Object> object, QVariant &dest) {
