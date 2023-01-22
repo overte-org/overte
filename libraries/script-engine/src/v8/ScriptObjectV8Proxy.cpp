@@ -147,7 +147,7 @@ ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(const V8ScriptValue& val) 
     }
     v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(v8Value);
     if (v8Object->InternalFieldCount() != 3) {
-        qDebug(scriptengine) << "Cannot unwrap proxy - wrong number of internal fields";
+        //qDebug(scriptengine) << "Cannot unwrap proxy - wrong number of internal fields";
         return nullptr;
     }
     if (v8Object->GetAlignedPointerFromInternalField(0) != internalPointsToQObjectProxy) {
