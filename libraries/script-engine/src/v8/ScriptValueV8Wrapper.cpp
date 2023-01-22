@@ -71,7 +71,8 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     V8ScriptValue v8This = fullUnwrap(thisObject);
     //V8ScriptValueList qArgs;
     Q_ASSERT(args.length() <= Q_METAMETHOD_INVOKE_MAX_ARGS);
@@ -81,10 +82,23 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     for (ScriptValueList::const_iterator iter = args.begin(); iter != args.end(); ++iter) {
         v8Args[argIndex++] = fullUnwrap(*iter).get();
     }
-    //V8TODO should there be a v8 try-catch here?
-    // IsFunction check should be here probably
+    // V8TODO: IsFunction check should be here probably
     v8::Local<v8::Function> v8Function = v8::Local<v8::Function>::Cast(_value.get());
-    auto maybeResult = v8Function->Call(_engine->getContext(), v8This.get(), args.length(), v8Args);
+    v8::TryCatch tryCatch(isolate);
+    v8::Local<v8::Value> recv;
+    if (v8This.get()->IsObject()) {
+        recv = v8This.get();
+        //qDebug() << "V8 This: " << _engine->scriptValueDebugDetailsV8(v8This);
+    }else{
+        recv = _engine->getContext()->Global();
+        //qDebug() << "global";
+    }
+    //qDebug() << "V8 Call: " << *v8::String::Utf8Value(isolate, v8This.get()->TypeOf(isolate));
+    auto maybeResult = v8Function->Call(_engine->getContext(), recv, args.length(), v8Args);
+    // V8TODO: Exceptions don't seem to actually be caught here?
+    if (tryCatch.HasCaught()) {
+        qCDebug(scriptengine) << "Function call failed: \"" << _engine->formatErrorMessageFromTryCatch(tryCatch);
+    }
     v8::Local<v8::Value> result;
     if (maybeResult.ToLocal(&result)) {
         return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine->getIsolate(), result)));
@@ -262,7 +276,11 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
             qDebug() << "Failed to get property, parent of value: " << name << ", parent type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate))) << " parent value: " << parentValueQString;
         }
     }
+    if (name == QString("x")) {
+        printf("x");
+    }
     qDebug() << "Failed to get property, parent of value: " << name << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
+    qDebug() << "Backtrace: " << _engine->currentContext()->backtrace();
     return _engine->undefinedValue();
     /*v8::Local<v8::Value> nullValue = v8::Null(_engine->getIsolate());
     V8ScriptValue nullScriptValue(_engine->getIsolate(), std::move(nullValue));

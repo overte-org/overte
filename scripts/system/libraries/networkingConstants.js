@@ -7,7 +7,8 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
 // Interface Metadata Source
-var INTERFACE_METADATA_SOURCE = "https://cdn.vircadia.com/dist/launcher/vircadiaMeta.json";
+//var INTERFACE_METADATA_SOURCE = "https://cdn.vircadia.com/dist/launcher/vircadiaMeta.json";
+var INTERFACE_METADATA_SOURCE = "";
 
 // Base CDN URLs
 var CONTENT_CDN_URL = Script.getExternalPath(Script.ExternalPaths.HF_Content, "/");

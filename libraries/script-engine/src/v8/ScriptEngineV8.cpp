@@ -1185,6 +1185,9 @@ Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& pro
                 raiseException(errorValue);
                 maybeEmitUncaughtException("evaluate");
                 hasFailed = true;
+            } else {
+                // V8TODO this is just to check if run will always return false for uncaught exception
+                Q_ASSERT(!tryCatchRun.HasCaught());
             }
         }
         if(!hasFailed) {

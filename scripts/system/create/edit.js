@@ -1682,8 +1682,8 @@ Script.scriptEnding.connect(function () {
     createButton = null;
 });
 
-var lastOrientation = null;
-var lastPosition = null;
+var lastOrientation = Camera.orientation;
+var lastPosition = Camera.position;
 
 // Do some stuff regularly, like check for placement of various overlays
 Script.update.connect(function (deltaTime) {
