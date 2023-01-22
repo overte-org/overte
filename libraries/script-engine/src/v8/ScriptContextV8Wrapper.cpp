@@ -99,10 +99,10 @@ QStringList ScriptContextV8Wrapper::backtrace() const {
     for (int i = 0; i < stackTrace->GetFrameCount(); i++) {
         v8::Local<v8::StackFrame> stackFrame = stackTrace->GetFrame(isolate, i);
         backTrace.append(QString(*v8::String::Utf8Value(isolate, stackFrame->GetScriptNameOrSourceURL())) +
-            QString(" ") +
-            QString(*v8::String::Utf8Value(isolate, stackFrame->GetFunctionName())) +
-            QString(":") +
-            QString(stackFrame->GetLineNumber())
+                        QString(" ") +
+                        QString(*v8::String::Utf8Value(isolate, stackFrame->GetFunctionName())) +
+                        QString(":") +
+                        QStringLiteral("%1").arg(stackFrame->GetLineNumber())
         );
     }
     return backTrace;
