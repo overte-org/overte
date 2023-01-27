@@ -32,6 +32,11 @@ public:
         _context.Reset(isolate, isolate->GetCurrentContext());
         _value.reset(new v8::UniquePersistent<T>(_isolate, std::move(value)));
     };
+
+    /*V8ScriptValueTemplate(const V8ScriptValueTemplate &copied) {
+        ;
+    }*/
+
     v8::Local<T> get() {
         v8::EscapableHandleScope handleScope(_isolate);
         return handleScope.Escape(_value.get()->Get(_isolate));
@@ -47,14 +52,18 @@ public:
 
     const v8::Local<v8::Context> constGetContext() const {
         v8::EscapableHandleScope handleScope(_isolate);
-        return handleScope.Escape(_context.Get(_isolate));
+        Q_ASSERT(!_isolate->GetCurrentContext().IsEmpty());
+        return handleScope.Escape(_isolate->GetCurrentContext());
+        //return handleScope.Escape(_context.Get(_isolate));
     };
     const v8::Isolate* constGetIsolate() const { return _isolate;};
     v8::Isolate* getIsolate() { return _isolate;};
     //v8::Persistent<v8::Context, v8::CopyablePersistentTraits<v8::Context>>& getContext() { return _context;};
     v8::Local<v8::Context> getContext() {
         v8::EscapableHandleScope handleScope(_isolate);
-        return handleScope.Escape(_context.Get(_isolate));
+        Q_ASSERT(!_isolate->GetCurrentContext().IsEmpty());
+        return handleScope.Escape(_isolate->GetCurrentContext());
+        //return handleScope.Escape(_context.Get(_isolate));
     };
     void reset(v8::Isolate *isolate, v8::Local<T>) {};
 private:
