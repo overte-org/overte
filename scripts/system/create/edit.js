@@ -11,15 +11,14 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
+"use strict";
 
 /* global Script, SelectionDisplay, LightOverlayManager, CameraManager, Grid, GridTool, EditTools, EditVoxels, EntityListTool, Vec3, SelectionManager,
    Overlays, OverlayWebWindow, UserActivityLogger, Settings, Entities, Tablet, Toolbars, Messages, Menu, Camera,
    progressDialog, tooltip, MyAvatar, Quat, Controller, Clipboard, HMD, UndoStack, OverlaySystemWindow,
    keyUpEventFromUIWindow:true */
 
-(function() { // BEGIN LOCAL_SCOPE
-
-"use strict";
+//(function() { // BEGIN LOCAL_SCOPE
 
 var EDIT_TOGGLE_BUTTON = "com.highfidelity.interface.system.editButton";
 
@@ -3181,6 +3180,7 @@ function zoneSortOrder(a, b) {
     return 0;
 }
 
+//print("getParentState added");
 function getParentState(id) {
     var state = "NONE";
     var properties = Entities.getEntityProperties(id, ["parentID"]);
@@ -3198,6 +3198,8 @@ function getParentState(id) {
     }
     return state;
 }
+
+//print("Global object after getParentState" + JSON.stringify(globalThis));
 
 function getDomainOnlyChildrenIDs(id) {
     var allChildren = Entities.getChildrenIDs(id);
@@ -3264,4 +3266,4 @@ function rotateAsNextClickedSurface() {
     }
 }
 
-}()); // END LOCAL_SCOPE
+//}()); // END LOCAL_SCOPE
