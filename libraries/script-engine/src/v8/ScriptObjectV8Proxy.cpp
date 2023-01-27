@@ -440,7 +440,10 @@ void ScriptObjectV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> v
 
 
 V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V8ScriptString& name, uint id) {
+    v8::Locker locker(_engine->getIsolate());
+    v8::Isolate::Scope isolateScope(_engine->getIsolate());
     v8::HandleScope handleScope(_engine->getIsolate());
+    v8::Context::Scope contextScope(_engine->getContext());
     QObject* qobject = _object;
     if (!qobject) {
         _engine->getIsolate()->ThrowError("Referencing deleted native object");
@@ -509,7 +512,10 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
 }
 
 void ScriptObjectV8Proxy::setProperty(V8ScriptValue& object, const V8ScriptString& name, uint id, const V8ScriptValue& value) {
+    v8::Locker locker(_engine->getIsolate());
+    v8::Isolate::Scope isolateScope(_engine->getIsolate());
     v8::HandleScope handleScope(_engine->getIsolate());
+    v8::Context::Scope contextScope(_engine->getContext());
     if (!(id & PROPERTY_TYPE)) return;
     QObject* qobject = _object;
     if (!qobject) {
@@ -548,6 +554,10 @@ ScriptVariantV8Proxy::ScriptVariantV8Proxy(ScriptEngineV8* engine, const QVarian
 }
 
 V8ScriptValue ScriptVariantV8Proxy::newVariant(ScriptEngineV8* engine, const QVariant& variant, V8ScriptValue proto) {
+    v8::Locker locker(engine->getIsolate());
+    v8::Isolate::Scope isolateScope(engine->getIsolate());
+    v8::HandleScope handleScope(engine->getIsolate());
+    v8::Context::Scope contextScope(engine->getContext());
     ScriptObjectV8Proxy* protoProxy = ScriptObjectV8Proxy::unwrapProxy(proto);
     if (!protoProxy) {
         Q_ASSERT(protoProxy);
@@ -566,7 +576,7 @@ V8ScriptValue ScriptVariantV8Proxy::newVariant(ScriptEngineV8* engine, const QVa
 }
 
 ScriptVariantV8Proxy* ScriptVariantV8Proxy::unwrapProxy(const V8ScriptValue& val) {
-    // V8TODO
+    // V8TODO V8ScriptValue should have link to engine instead maybe?
     v8::HandleScope handleScope(const_cast<v8::Isolate*>(val.constGetIsolate()));
     auto v8Value = val.constGet();
     if (!v8Value->IsObject()) {
@@ -599,6 +609,10 @@ ScriptMethodV8Proxy::~ScriptMethodV8Proxy() {
 
 V8ScriptValue ScriptMethodV8Proxy::newMethod(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime,
                                const QList<QMetaMethod>& metas, int numMaxParams) {
+    v8::Locker locker(engine->getIsolate());
+    v8::Isolate::Scope isolateScope(engine->getIsolate());
+    v8::HandleScope handleScope(engine->getIsolate());
+    v8::Context::Scope contextScope(engine->getContext());
     auto methodDataTemplate = v8::ObjectTemplate::New(engine->getIsolate());
     methodDataTemplate->SetInternalFieldCount(2);
     auto methodData = methodDataTemplate->NewInstance(engine->getContext()).ToLocalChecked();
@@ -632,7 +646,11 @@ QString ScriptMethodV8Proxy::fullName() const {
 }*/
 
 void ScriptMethodV8Proxy::callback(const v8::FunctionCallbackInfo<v8::Value>& arguments) {
+    v8::Locker locker(arguments.GetIsolate());
+    v8::Isolate::Scope isolateScope(arguments.GetIsolate());
     v8::HandleScope handleScope(arguments.GetIsolate());
+    Q_ASSERT(!arguments.GetIsolate()->GetCurrentContext().IsEmpty());
+    v8::Context::Scope contextScope(arguments.GetIsolate()->GetCurrentContext());
     if (!arguments.Data()->IsObject()) {
         arguments.GetIsolate()->ThrowError("Method value is not an object");
         return;
@@ -655,14 +673,19 @@ void ScriptMethodV8Proxy::callback(const v8::FunctionCallbackInfo<v8::Value>& ar
 }
 
 void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& arguments) {
+    v8::Locker locker(_engine->getIsolate());
+    v8::Isolate::Scope isolateScope(_engine->getIsolate());
+    v8::HandleScope handleScope(_engine->getIsolate());
+    v8::Context::Scope contextScope(_engine->getContext());
     QObject* qobject = _object;
     v8::Isolate *isolate = arguments.GetIsolate();
+    Q_ASSERT(isolate == _engine->getIsolate());
     if (!qobject) {
         isolate->ThrowError("Referencing deleted native object");
         return;
     }
     
-    v8::HandleScope handleScope(_engine->getIsolate());
+    //v8::HandleScope handleScope(_engine->getIsolate());
 
     int scriptNumArgs = arguments.Length();
     int numArgs = std::min(scriptNumArgs, _numMaxParams);
@@ -1052,7 +1075,8 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
         callback->Call(_engine->getContext(), v8This, numArgs, args);
         if (tryCatch.HasCaught()) {
             qCDebug(scriptengine) << "Signal proxy " << fullName() << " connection call failed: \""
-                                  << _engine->formatErrorMessageFromTryCatch(tryCatch) << "This: " << conn.thisValue.get()->IsObject();
+                                  << _engine->formatErrorMessageFromTryCatch(tryCatch)
+                                  << "\nThis provided: " << conn.thisValue.get()->IsObject();
         }
     }
 
@@ -1065,6 +1089,10 @@ int ScriptSignalV8Proxy::discoverMetaCallIdx() {
 }
 
 ScriptSignalV8Proxy::ConnectionList::iterator ScriptSignalV8Proxy::findConnection(V8ScriptValue thisObject, V8ScriptValue callback) {
+    v8::Locker locker(_engine->getIsolate());
+    v8::Isolate::Scope isolateScope(_engine->getIsolate());
+    v8::HandleScope handleScope(_engine->getIsolate());
+    v8::Context::Scope contextScope(_engine->getContext());
     auto iterOut = resultWithReadLock<ScriptSignalV8Proxy::ConnectionList::iterator>([&]{
         ConnectionList::iterator iter;
         for (iter = _connections.begin(); iter != _connections.end(); ++iter) {
@@ -1083,14 +1111,18 @@ ScriptSignalV8Proxy::ConnectionList::iterator ScriptSignalV8Proxy::findConnectio
 }*/
 
 void ScriptSignalV8Proxy::connect(ScriptValue arg0, ScriptValue arg1) {
-    QObject* qobject = _object;
     v8::Isolate *isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
+    QObject* qobject = _object;
     if (!qobject) {
         isolate->ThrowError("Referencing deleted native object");
         return;
     }
     
-    v8::HandleScope handleScope(isolate);
+    //v8::HandleScope handleScope(isolate);
 
     // untangle the arguments
     V8ScriptValue callback(isolate, v8::Null(isolate));
@@ -1194,7 +1226,10 @@ void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
         isolate->ThrowError("Referencing deleted native object");
         return;
     }
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
 
     // untangle the arguments
     V8ScriptValue callback(isolate, v8::Null(isolate));
