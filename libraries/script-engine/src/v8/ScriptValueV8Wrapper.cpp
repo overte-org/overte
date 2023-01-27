@@ -242,7 +242,8 @@ bool ScriptValueV8Wrapper::hasProperty(const QString& name) const {
         v8::Local<v8::Value> resultLocal;
         v8::Local<v8::String> key = v8::String::NewFromUtf8(_engine->getIsolate(), name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
         const v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(_value.constGet());
-        if (object->Get(_value.constGetContext(), key).ToLocal(&resultLocal)) {
+        //V8TODO: Which context?
+        if (object->Get(_engine->getContext(), key).ToLocal(&resultLocal)) {
             return true;
         } else {
             return false;
@@ -264,7 +265,9 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
         v8::Local<v8::Value> resultLocal;
         v8::Local<v8::String> key = v8::String::NewFromUtf8(_engine->getIsolate(), name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
         const v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(_value.constGet());
-        if (object->Get(_value.constGetContext(), key).ToLocal(&resultLocal)) {
+        //V8TODO: Which context?
+        if (object->Get(_engine->getContext(), key).ToLocal(&resultLocal)) {
+        //if (object->Get(_value.constGetContext(), key).ToLocal(&resultLocal)) {
             V8ScriptValue result(_engine->getIsolate(), resultLocal);
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
         } else {
@@ -374,7 +377,9 @@ void ScriptValueV8Wrapper::setProperty(quint32 arrayIndex, const ScriptValue& va
     V8ScriptValue unwrapped = fullUnwrap(value);
     if(_value.constGet()->IsObject()) {
         auto object = v8::Local<v8::Object>::Cast(_value.get());
-        v8::Maybe<bool> retVal(object->Set(_value.getContext(), arrayIndex, unwrapped.constGet()));
+        //V8TODO: I don't know which context to use here
+        v8::Maybe<bool> retVal(object->Set(_engine->getContext(), arrayIndex, unwrapped.constGet()));
+        //v8::Maybe<bool> retVal(object->Set(_value.getContext(), arrayIndex, unwrapped.constGet()));
         if (retVal.IsJust() ? !retVal.FromJust() : true){
             qDebug(scriptengine) << "Failed to set property";
         }
@@ -395,7 +400,9 @@ void ScriptValueV8Wrapper::setPrototype(const ScriptValue& prototype) {
     if (unwrappedPrototype) {
         if(unwrappedPrototype->toV8Value().constGet()->IsObject() && _value.constGet()->IsObject()) {
             auto object = v8::Local<v8::Object>::Cast(_value.get());
-            v8::Maybe<bool> retVal = object->SetPrototype(_value.getContext(), unwrappedPrototype->toV8Value().constGet());
+            //V8TODO: I don't know which context to use here
+            v8::Maybe<bool> retVal = object->SetPrototype(_engine->getContext(), unwrappedPrototype->toV8Value().constGet());
+            //v8::Maybe<bool> retVal = object->SetPrototype(_value.getContext(), unwrappedPrototype->toV8Value().constGet());
             if (retVal.IsJust() ? !retVal.FromJust() : true){
                 qDebug(scriptengine) << "Failed to assign prototype";
             }
@@ -431,7 +438,7 @@ qint32 ScriptValueV8Wrapper::toInt32() const {
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Integer> integer;
-    if (!_value.constGet()->ToInteger(_value.constGetContext()).ToLocal(&integer)) {
+    if (!_value.constGet()->ToInteger(_engine->getContext()).ToLocal(&integer)) {
         Q_ASSERT(false);
     }
     return static_cast<int32_t>((integer)->Value());
@@ -444,7 +451,7 @@ double ScriptValueV8Wrapper::toInteger() const {
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Integer> integer;
-    if (!_value.constGet()->ToInteger(_value.constGetContext()).ToLocal(&integer)) {
+    if (!_value.constGet()->ToInteger(_engine->getContext()).ToLocal(&integer)) {
         Q_ASSERT(false);
     }
     return (integer)->Value();
@@ -457,7 +464,7 @@ double ScriptValueV8Wrapper::toNumber() const {
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Number> number;
-    if (!_value.constGet()->ToNumber(_value.constGetContext()).ToLocal(&number)) {
+    if (!_value.constGet()->ToNumber(_engine->getContext()).ToLocal(&number)) {
         Q_ASSERT(false);
     }
     return number->Value();
@@ -481,7 +488,7 @@ quint16 ScriptValueV8Wrapper::toUInt16() const {
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Uint32> integer;
-    if (!_value.constGet()->ToUint32(_value.constGetContext()).ToLocal(&integer)) {
+    if (!_value.constGet()->ToUint32(_engine->getContext()).ToLocal(&integer)) {
         Q_ASSERT(false);
     }
     return static_cast<uint16_t>(integer->Value());
@@ -494,7 +501,7 @@ quint32 ScriptValueV8Wrapper::toUInt32() const {
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::Uint32> integer;
-    if (!_value.constGet()->ToUint32(_value.constGetContext()).ToLocal(&integer)) {
+    if (!_value.constGet()->ToUint32(_engine->getContext()).ToLocal(&integer)) {
         Q_ASSERT(false);
     }
     return integer->Value();
@@ -532,11 +539,17 @@ bool ScriptValueV8Wrapper::equals(const ScriptValue& other) const {
     if (!unwrappedOther) {
         return false;
     }else{
-        if (_value.constGet()->Equals(unwrappedOther->toV8Value().constGetContext(), unwrappedOther->toV8Value().constGet()).IsNothing()) {
+        // V8TODO: which context needs to be used here?
+        if (_value.constGet()->Equals(_engine->getContext(), unwrappedOther->toV8Value().constGet()).IsNothing()) {
+            return false;
+        } else {
+            return _value.constGet()->Equals(_engine->getContext(), unwrappedOther->toV8Value().constGet()).FromJust();
+        }
+        /*if (_value.constGet()->Equals(unwrappedOther->toV8Value().constGetContext(), unwrappedOther->toV8Value().constGet()).IsNothing()) {
             return false;
         } else {
             return _value.constGet()->Equals(unwrappedOther->toV8Value().constGetContext(), unwrappedOther->toV8Value().constGet()).FromJust();
-        }
+        }*/
     }
 }
 

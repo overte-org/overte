@@ -217,7 +217,7 @@ var EntityListTool = function(shouldUseEditTabletApp) {
                         } else if (properties.type === "Image") {
                             url = properties.imageURL;
                         }
-                        
+                        //print("Global object before getParentState call: " + JSON.stringify(globalThis));
                         var parentStatus = getParentState(ids[i]);
                         var parentState = "";
                         if (parentStatus === "PARENT") {
@@ -297,7 +297,7 @@ var EntityListTool = function(shouldUseEditTabletApp) {
     }
 
     var onWebEventReceived = function(data) {
-        print("entityList.js onWebEventReceived: " + data);
+        //print("entityList.js onWebEventReceived: " + data);
         try {
             data = JSON.parse(data);
         } catch(e) {
