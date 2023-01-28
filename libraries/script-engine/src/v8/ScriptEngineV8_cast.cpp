@@ -573,7 +573,7 @@ bool ScriptEngineV8::convertJSArrayToVariant(v8::Local<v8::Array> array, QVarian
         }
         QVariant property;
         // Maybe QMetaType::QVariant?
-        if (castValueToVariant(V8ScriptValue(_v8Isolate, v8Property), property, QMetaType::UnknownType)) {
+        if (castValueToVariant(V8ScriptValue(this, v8Property), property, QMetaType::UnknownType)) {
             properties.append(property);
         } else {
             qDebug() << "ScriptEngineV8::convertJSArrayToVariant could cast property to variant: " + QString(i);
@@ -603,7 +603,7 @@ bool ScriptEngineV8::convertJSObjectToVariant(v8::Local<v8::Object> object, QVar
         }
         QVariant property;
         // Maybe QMetaType::QVariant?
-        if (castValueToVariant(V8ScriptValue(_v8Isolate, v8Property), property, QMetaType::UnknownType)) {
+        if (castValueToVariant(V8ScriptValue(this, v8Property), property, QMetaType::UnknownType)) {
             properties.insert( name, property);
         } else {
             qDebug() << "ScriptEngineV8::convertJSObjectToVariant could cast property to variant: " + name;
@@ -696,51 +696,51 @@ V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
     switch (valTypeId) {
         case QMetaType::UnknownType:
         case QMetaType::Void:
-            return V8ScriptValue(_v8Isolate, v8::Undefined(_v8Isolate));
+            return V8ScriptValue(this, v8::Undefined(_v8Isolate));
         case QMetaType::Nullptr:
-            return V8ScriptValue(_v8Isolate, v8::Null(_v8Isolate));
+            return V8ScriptValue(this, v8::Null(_v8Isolate));
         case QMetaType::Bool:
-            return V8ScriptValue(_v8Isolate, v8::Boolean::New(_v8Isolate, val.toBool()));
+            return V8ScriptValue(this, v8::Boolean::New(_v8Isolate, val.toBool()));
         case QMetaType::Int:
         case QMetaType::Long:
         case QMetaType::Short:
-            return V8ScriptValue(_v8Isolate, v8::Integer::New(_v8Isolate, val.toInt()));
+            return V8ScriptValue(this, v8::Integer::New(_v8Isolate, val.toInt()));
         case QMetaType::UInt:
         case QMetaType::UShort:
         case QMetaType::ULong:
-            return V8ScriptValue(_v8Isolate, v8::Uint32::New(_v8Isolate, val.toUInt()));
+            return V8ScriptValue(this, v8::Uint32::New(_v8Isolate, val.toUInt()));
         case QMetaType::ULongLong:
-            return V8ScriptValue(_v8Isolate, v8::Number::New(_v8Isolate, val.toULongLong()));
+            return V8ScriptValue(this, v8::Number::New(_v8Isolate, val.toULongLong()));
         case QMetaType::LongLong:
-            return V8ScriptValue(_v8Isolate, v8::Number::New(_v8Isolate, val.toLongLong()));
+            return V8ScriptValue(this, v8::Number::New(_v8Isolate, val.toLongLong()));
         case QMetaType::Float:
         case QMetaType::Double:
-            return V8ScriptValue(_v8Isolate, v8::Number::New(_v8Isolate, val.toDouble()));
+            return V8ScriptValue(this, v8::Number::New(_v8Isolate, val.toDouble()));
         case QMetaType::QString:
         case QMetaType::QByteArray:
-            return V8ScriptValue(_v8Isolate, v8::String::NewFromUtf8(_v8Isolate, val.toString().toStdString().c_str()).ToLocalChecked());
+            return V8ScriptValue(this, v8::String::NewFromUtf8(_v8Isolate, val.toString().toStdString().c_str()).ToLocalChecked());
         case QMetaType::QVariant:
             return castVariantToValue(val.value<QVariant>());
         case QMetaType::QObjectStar: {
             QObject* obj = val.value<QObject*>();
-            if (obj == nullptr) return V8ScriptValue(_v8Isolate, v8::Null(_v8Isolate));
+            if (obj == nullptr) return V8ScriptValue(this, v8::Null(_v8Isolate));
             return ScriptObjectV8Proxy::newQObject(this, obj);
         }
         case QMetaType::QDateTime:
             {
                 double timeMs = val.value<QDateTime>().currentMSecsSinceEpoch();
-                return V8ScriptValue(_v8Isolate, v8::Date::New(getContext(), timeMs).ToLocalChecked());
+                return V8ScriptValue(this, v8::Date::New(getContext(), timeMs).ToLocalChecked());
             }
         case QMetaType::QDate:
             {
                 double timeMs = val.value<QDate>().startOfDay().currentMSecsSinceEpoch();
-                return V8ScriptValue(_v8Isolate, v8::Date::New(getContext(), timeMs).ToLocalChecked());
+                return V8ScriptValue(this, v8::Date::New(getContext(), timeMs).ToLocalChecked());
             }
         default:
             // check to see if this is a pointer to a QObject-derived object
             if (QMetaType::typeFlags(valTypeId) & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
                 QObject* obj = val.value<QObject*>();
-                if (obj == nullptr) return V8ScriptValue(_v8Isolate, v8::Null(_v8Isolate));
+                if (obj == nullptr) return V8ScriptValue(this, v8::Null(_v8Isolate));
                 return ScriptObjectV8Proxy::newQObject(this, obj);
             }
             // have we set a prototype'd variant?
@@ -755,7 +755,7 @@ V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
             // just do a generic variant
             //V8TODO
             Q_ASSERT(false);
-            return V8ScriptValue(_v8Isolate, v8::Undefined(_v8Isolate));
+            return V8ScriptValue(this, v8::Undefined(_v8Isolate));
             //return QScriptEngine::newVariant(val);
     }
 }

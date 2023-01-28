@@ -25,6 +25,7 @@
 #include "../ScriptEngine.h"
 #include "../Scriptable.h"
 #include "ScriptEngineV8.h"
+#include "V8Types.h"
 
 #include <shared/ReadWriteLockable.h>
 
@@ -37,20 +38,20 @@ class ScriptObjectV8Proxy final {
 private:  // implementation
     class PropertyDef {
     public:
-        PropertyDef(v8::Isolate *isolate, v8::Local<v8::String> string) : name(isolate, string) {};
+        PropertyDef(ScriptEngineV8 *engine, v8::Local<v8::String> string) : name(engine, string) {};
         V8ScriptString name;
         ScriptValue::PropertyFlags flags;
     };
     class MethodDef {
     public:
-        MethodDef(v8::Isolate *isolate, v8::Local<v8::String> string) : name(isolate, string) {};
+        MethodDef(ScriptEngineV8 *engine, v8::Local<v8::String> string) : name(engine, string) {};
         V8ScriptString name;
         int numMaxParms;
         QList<QMetaMethod> methods;
     };
     class SignalDef {
     public:
-        SignalDef(v8::Isolate *isolate, v8::Local<v8::String> string) : name(isolate, string) {};
+        SignalDef(ScriptEngineV8 *engine, v8::Local<v8::String> string) : name(engine, string) {};
         V8ScriptString name;
         QMetaMethod signal;
     };
@@ -73,6 +74,7 @@ public:  // construction
                                    ScriptEngine::ValueOwnership ownership = ScriptEngine::QtOwnership,
                                    const ScriptEngine::QObjectWrapOptions& options = ScriptEngine::QObjectWrapOptions());
     static ScriptObjectV8Proxy* unwrapProxy(const V8ScriptValue& val);
+    static ScriptObjectV8Proxy* unwrapProxy(v8::Isolate* isolate, v8::Local<v8::Value>& value);
     static QObject* unwrap(const V8ScriptValue& val);
     inline QObject* toQObject() const { return _object; }
     inline v8::Local<v8::Object> toV8Value() const {

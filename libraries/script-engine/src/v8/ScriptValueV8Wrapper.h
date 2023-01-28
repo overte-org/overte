@@ -23,6 +23,7 @@
 
 #include "../ScriptValue.h"
 #include "ScriptEngineV8.h"
+#include "V8Types.h"
 
 /// [V8] Implements ScriptValue for V8 and translates calls for V8ScriptValue
 class ScriptValueV8Wrapper final : public ScriptValueProxy {
