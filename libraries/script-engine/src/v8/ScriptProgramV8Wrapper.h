@@ -21,6 +21,7 @@
 
 #include "../ScriptProgram.h"
 #include "ScriptEngineV8.h"
+#include "V8Types.h"
 
 class ScriptSyntaxCheckResultV8Wrapper final : public ScriptSyntaxCheckResult {
 public: // construction
@@ -51,7 +52,7 @@ public: // construction
     //inline ScriptProgramV8Wrapper(ScriptEngineV8* engine, V8ScriptProgram&& value) :
     //    _engine(engine), _value(std::move(value)) {}
     inline ScriptProgramV8Wrapper(ScriptEngineV8* engine, QString source, QString url) :
-    _engine(engine), _source(source), _url(url), _value(engine->getIsolate(), v8::Local<v8::Script>()) {}
+    _engine(engine), _source(source), _url(url), _value(engine, v8::Local<v8::Script>()) {}
     static ScriptProgramV8Wrapper* unwrap(ScriptProgramPointer val);
     bool compile();
     inline const V8ScriptProgram& toV8Value() const { return _value; }

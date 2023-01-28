@@ -17,6 +17,8 @@
 #include <libplatform/libplatform.h>
 #include <v8.h>
 
+#include "ScriptEngineV8.h"
+
 template <typename T>
 class V8ScriptValueTemplate {
 public:
@@ -24,66 +26,83 @@ public:
     //V8ScriptValueTemplate(v8::Isolate *isolate, v8::Local<T> value) : _isolate(isolate) {
         //_value.reset(v8::UniquePersistent<T>::New(_isolate, value));
     //};
-    V8ScriptValueTemplate(v8::Isolate *isolate, const v8::Local<T> value) : _isolate(isolate) {
-        //_value.reset(_isolate, value);
-        v8::HandleScope handleScope(_isolate);
-        Q_ASSERT(isolate->IsCurrent());
-        Q_ASSERT(!isolate->GetCurrentContext().IsEmpty());
-        _context.Reset(isolate, isolate->GetCurrentContext());
-        _value.reset(new v8::UniquePersistent<T>(_isolate, std::move(value)));
+    V8ScriptValueTemplate(ScriptEngineV8 *engine, const v8::Local<T> value) : _engine(engine) {
+        v8::Locker locker(_engine->getIsolate());
+        v8::Isolate::Scope isolateScope(_engine->getIsolate());
+        v8::HandleScope handleScope(_engine->getIsolate());
+        v8::Context::Scope(_engine->getContext());
+        _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), std::move(value)));
     };
 
-    /*V8ScriptValueTemplate(const V8ScriptValueTemplate &copied) {
-        ;
-    }*/
+    V8ScriptValueTemplate(const V8ScriptValueTemplate &copied) : _engine(copied.getEngine()) {
+        v8::Locker locker(_engine->getIsolate());
+        v8::Isolate::Scope isolateScope(_engine->getIsolate());
+        v8::HandleScope handleScope(_engine->getIsolate());
+        v8::Context::Scope(_engine->getContext());
+        _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), std::move(copied.constGet())));
+    }
 
     v8::Local<T> get() {
-        v8::EscapableHandleScope handleScope(_isolate);
-        return handleScope.Escape(_value.get()->Get(_isolate));
+        Q_ASSERT(_engine->getIsolate()->IsCurrent());
+        v8::EscapableHandleScope handleScope(_engine->getIsolate());
+        return handleScope.Escape(_value.get()->Get(_engine->getIsolate()));
     };
+
     const v8::Local<T> constGet() const {
-        v8::EscapableHandleScope handleScope(_isolate);
-        return handleScope.Escape(_value.get()->Get(_isolate));
+        Q_ASSERT(_engine->getIsolate()->IsCurrent());
+        v8::EscapableHandleScope handleScope(_engine->getIsolate());
+        return handleScope.Escape(_value.get()->Get(_engine->getIsolate()));
     };
-    V8ScriptValueTemplate<T>&& copy() const {
-        Q_ASSERT(_isolate->IsCurrent());
-        v8::HandleScope handleScope(_isolate);
-        return new V8ScriptValueTemplate(_isolate, v8::Local<T>::New(_isolate, constGet()));};
+
+    /*V8ScriptValueTemplate<T>&& copy() const {
+        Q_ASSERT(_engine->getIsolate()->IsCurrent());
+        v8::HandleScope handleScope(_engine->getIsolate());
+        return new V8ScriptValueTemplate(_engine->getIsolate(), v8::Local<T>::New(_engine->getIsolate(), constGet()));
+    };*/
 
     const v8::Local<v8::Context> constGetContext() const {
-        v8::EscapableHandleScope handleScope(_isolate);
-        Q_ASSERT(!_isolate->GetCurrentContext().IsEmpty());
-        return handleScope.Escape(_isolate->GetCurrentContext());
+        Q_ASSERT(_engine->getIsolate()->IsCurrent());
+        v8::EscapableHandleScope handleScope(_engine->getIsolate());
+        return handleScope.Escape(_engine->getIsolate()->GetCurrentContext());
         //return handleScope.Escape(_context.Get(_isolate));
     };
-    const v8::Isolate* constGetIsolate() const { return _isolate;};
-    v8::Isolate* getIsolate() { return _isolate;};
+
+    const v8::Isolate* constGetIsolate() const { return _engine->getIsolate(); };
+    v8::Isolate* getIsolate() { return _engine->getIsolate();};
+
     //v8::Persistent<v8::Context, v8::CopyablePersistentTraits<v8::Context>>& getContext() { return _context;};
+
+    ScriptEngineV8* getEngine() const { return _engine; };
+
     v8::Local<v8::Context> getContext() {
-        v8::EscapableHandleScope handleScope(_isolate);
-        Q_ASSERT(!_isolate->GetCurrentContext().IsEmpty());
-        return handleScope.Escape(_isolate->GetCurrentContext());
+        Q_ASSERT(_engine->getIsolate()->IsCurrent());
+        v8::EscapableHandleScope handleScope(_engine->getIsolate());
+        return handleScope.Escape(_engine->getIsolate()->GetCurrentContext());
         //return handleScope.Escape(_context.Get(_isolate));
     };
-    void reset(v8::Isolate *isolate, v8::Local<T>) {};
+
+    void reset(v8::Isolate *isolate, v8::Local<T>) {
+        Q_ASSERT(false);
+    };
 private:
     std::shared_ptr<v8::UniquePersistent<T>> _value;
     // V8TODO: maybe make it weak
     // does it need , CopyablePersistentTraits<Value>?
     // V8TODO: is context needed at all?
-    v8::Isolate *_isolate;
-    v8::Persistent<v8::Context, v8::CopyablePersistentTraits<v8::Context>> _context;
+    //v8::Isolate *_isolate;
+    ScriptEngineV8 *_engine;
+    //v8::Persistent<v8::Context, v8::CopyablePersistentTraits<v8::Context>> _context;
 };
 
-typedef V8ScriptValueTemplate<v8::Value> V8ScriptValue;
-typedef V8ScriptValueTemplate<v8::Script> V8ScriptProgram;
+//typedef V8ScriptValueTemplate<v8::Value> V8ScriptValue;
+//typedef V8ScriptValueTemplate<v8::Script> V8ScriptProgram;
 // V8TODO: Maybe weak?
 typedef v8::Persistent<v8::Context> V8ScriptContext;
 
 class V8ScriptString : public V8ScriptValueTemplate<v8::String> {
 public:
     V8ScriptString() = delete;
-    V8ScriptString(v8::Isolate *isolate, const v8::Local<v8::String> value) : V8ScriptValueTemplate<v8::String>(isolate, value) {};
+    V8ScriptString(ScriptEngineV8 *engine, const v8::Local<v8::String> value) : V8ScriptValueTemplate<v8::String>(engine, value) {};
     const QString toQString() const {
         Q_ASSERT(constGetIsolate()->IsCurrent());
         Q_ASSERT(constGet()->IsString());

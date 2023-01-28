@@ -71,7 +71,7 @@ V8ScriptValue V8ScriptValueIterator::value() {
     if (!_object.Get(isolate)->Get(context, propertyName->ToString(context).ToLocalChecked()).ToLocal(&v8Value)) {
         Q_ASSERT(false);
     }
-    return V8ScriptValue(isolate, v8Value);
+    return V8ScriptValue(_engine, v8Value);
 }
 
 ScriptValue::PropertyFlags ScriptValueIteratorV8Wrapper::flags() const {

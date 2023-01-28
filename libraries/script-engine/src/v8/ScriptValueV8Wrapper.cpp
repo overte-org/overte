@@ -82,7 +82,7 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     for (ScriptValueList::const_iterator iter = args.begin(); iter != args.end(); ++iter) {
         v8Args[argIndex++] = fullUnwrap(*iter).get();
     }
-    // V8TODO: IsFunction check should be here probably
+    Q_ASSERT(_value.get()->IsFunction());
     v8::Local<v8::Function> v8Function = v8::Local<v8::Function>::Cast(_value.get());
     v8::TryCatch tryCatch(isolate);
     v8::Local<v8::Value> recv;
@@ -101,7 +101,7 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     }
     v8::Local<v8::Value> result;
     if (maybeResult.ToLocal(&result)) {
-        return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine->getIsolate(), result)));
+        return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
     } else {
         //V8TODO Add more details
         qWarning("JS function call failed");
@@ -135,6 +135,7 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
 }
 
 ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
+    //V8TODO: there is CallAsContructor in V8
     auto isolate = _engine->getIsolate();
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
@@ -148,12 +149,12 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
         v8Args[argIndex++] = fullUnwrap(*iter).get();
     }
     //V8TODO should there be a v8 try-catch here?
-    // IsFunction check should be here probably
+    Q_ASSERT(_value.get()->IsFunction());
     v8::Local<v8::Function> v8Function = v8::Local<v8::Function>::Cast(_value.get());
     auto maybeResult = v8Function->NewInstance(_engine->getContext(), args.length(), v8Args);
     v8::Local<v8::Object> result;
     if (maybeResult.ToLocal(&result)) {
-        return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine->getIsolate(), result)));
+        return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
     } else {
         //V8TODO Add more details
         qWarning("JS function call failed");
@@ -203,7 +204,7 @@ ScriptValue ScriptValueV8Wrapper::data() const {
                  Q_ASSERT(false);
              }
          }*/
-         V8ScriptValue result(isolate, data);
+         V8ScriptValue result(_engine, data);
          return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
     } else {
         qDebug() << "ScriptValueV8Wrapper::data() was called on a value that is not an object";
@@ -268,7 +269,7 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
         //V8TODO: Which context?
         if (object->Get(_engine->getContext(), key).ToLocal(&resultLocal)) {
         //if (object->Get(_value.constGetContext(), key).ToLocal(&resultLocal)) {
-            V8ScriptValue result(_engine->getIsolate(), resultLocal);
+            V8ScriptValue result(_engine, resultLocal);
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
         } else {
             QString parentValueQString("");
@@ -303,7 +304,7 @@ ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue
         v8::Local<v8::Value> resultLocal;
         const v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(_value.constGet());
         if (object->Get(_value.constGetContext(), arrayIndex).ToLocal(&resultLocal)) {
-            V8ScriptValue result(_engine->getIsolate(), resultLocal);
+            V8ScriptValue result(_engine, resultLocal);
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
         }
     }

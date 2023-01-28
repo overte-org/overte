@@ -78,7 +78,7 @@ public:
     virtual ScriptValue evaluate(const QString& program, const QString& fileName = QString()) = 0;
     virtual ScriptValue evaluate(const ScriptProgramPointer &program) = 0;
     virtual ScriptValue evaluateInClosure(const ScriptValue& locals, const ScriptProgramPointer& program) = 0;
-    virtual ScriptValue globalObject() const {
+    virtual ScriptValue globalObject() {
         Q_ASSERT(false);
         return ScriptValue();
     }
@@ -148,6 +148,7 @@ public: // not for public use, but I don't like how Qt strings this along with p
     virtual ScriptValue create(int type, const void* ptr) = 0;
     virtual QVariant convert(const ScriptValue& value, int type) = 0;
     virtual void registerCustomType(int type, MarshalFunction mf, DemarshalFunction df) = 0;
+    virtual QStringList getCurrentScriptURLs() const = 0;
 
 protected:
     ~ScriptEngine() {}  // prevent explicit deletion of base class

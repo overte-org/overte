@@ -1139,6 +1139,7 @@ QUrl ScriptManager::resolvePath(const QString& include) const {
     do {
         auto contextInfo = context->functionContext();
         parentURL = QUrl(contextInfo->fileName());
+        qDebug(scriptengine) << "ScriptManager::resolvePath: URL get: " << parentURL << " backtrace: " << context->backtrace() << " " << _engine->getCurrentScriptURLs();
         parentContext = context->parentContext();
         context = parentContext.get();
     } while (parentURL.isRelative() && context);
