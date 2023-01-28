@@ -52,9 +52,9 @@ bool ScriptProgramV8Wrapper::compile() {
     v8::ScriptOrigin scriptOrigin(isolate, v8::String::NewFromUtf8(isolate, _url.toStdString().c_str()).ToLocalChecked());
     v8::Local<v8::Script> script;
     if (v8::Script::Compile(context, v8::String::NewFromUtf8(isolate, _source.toStdString().c_str()).ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
-        qDebug() << "Script compilation succesful: " << _url;
+        qDebug() << "Script compilation successful: " << _url;
         _compileResult = ScriptSyntaxCheckResultV8Wrapper(ScriptSyntaxCheckResult::Valid);
-        _value = V8ScriptProgram(isolate, script);
+        _value = V8ScriptProgram(_engine, script);
         _isCompiled = true;
         return true;
     }
@@ -66,10 +66,13 @@ bool ScriptProgramV8Wrapper::compile() {
         errorLineNumber = exceptionMessage->GetLineNumber(context).FromJust();
         errorColumnNumber = exceptionMessage->GetStartColumn(context).FromJust();
         v8::Local<v8::Value> backtraceV8String;
-        if (tryCatch.StackTrace(context).ToLocal(&backtraceV8String) && backtraceV8String->IsString() &&
-                v8::Local<v8::String>::Cast(backtraceV8String)->Length() > 0) {
-            v8::String::Utf8Value backtraceUtf8Value(isolate, backtraceV8String);
-            errorBacktrace = *backtraceUtf8Value;
+        if (tryCatch.StackTrace(context).ToLocal(&backtraceV8String)) {
+            if (backtraceV8String->IsString()) {
+                if (v8::Local<v8::String>::Cast(backtraceV8String)->Length() > 0) {
+                    v8::String::Utf8Value backtraceUtf8Value(isolate, backtraceV8String);
+                    errorBacktrace = *backtraceUtf8Value;
+                }
+            }
         }
     }
     //V8TODO

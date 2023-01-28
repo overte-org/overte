@@ -76,7 +76,7 @@ V8ScriptValue ScriptObjectV8Proxy::newQObject(ScriptEngineV8* engine, QObject* o
             QSharedPointer<ScriptObjectV8Proxy> proxy = lookup.value().lock();
             // V8TODO: is conversion to QVariant and back needed?
             if (proxy) {
-                return V8ScriptValue(engine->getIsolate(), proxy.get()->toV8Value());
+                return V8ScriptValue(engine, proxy.get()->toV8Value());
             }
             //if (proxy) return engine->newObject(proxy.get(), engine->newVariant(QVariant::fromValue(proxy)));;
         }
@@ -111,7 +111,7 @@ V8ScriptValue ScriptObjectV8Proxy::newQObject(ScriptEngineV8* engine, QObject* o
             QSharedPointer<ScriptObjectV8Proxy> proxy = lookup.value().lock();
             //if (proxy) return qengine->newObject(proxy.get(), qengine->newVariant(QVariant::fromValue(proxy)));;
             if (proxy) {
-                return V8ScriptValue(engine->getIsolate(), proxy.get()->toV8Value());
+                return V8ScriptValue(engine, proxy.get()->toV8Value());
             }
         }
         // V8TODO add a V8 callback that removes pointer for the script engine owned ob from the map so that it gets deleted
@@ -133,7 +133,7 @@ V8ScriptValue ScriptObjectV8Proxy::newQObject(ScriptEngineV8* engine, QObject* o
         });
     }
 
-    return V8ScriptValue(engine->getIsolate(), proxy.get()->toV8Value());
+    return V8ScriptValue(engine, proxy.get()->toV8Value());
     //return qengine->newObject(proxy.get(), qengine->newVariant(QVariant::fromValue(proxy)));
 }
 
@@ -146,6 +146,25 @@ ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(const V8ScriptValue& val) 
         return nullptr;
     }
     v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(v8Value);
+    if (v8Object->InternalFieldCount() != 3) {
+        //qDebug(scriptengine) << "Cannot unwrap proxy - wrong number of internal fields";
+        return nullptr;
+    }
+    if (v8Object->GetAlignedPointerFromInternalField(0) != internalPointsToQObjectProxy) {
+        qDebug(scriptengine) << "Cannot unwrap proxy - internal fields don't point to object proxy";
+        return nullptr;
+    }
+    return reinterpret_cast<ScriptObjectV8Proxy*>(v8Object->GetAlignedPointerFromInternalField(1));
+}
+
+ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(v8::Isolate* isolate, v8::Local<v8::Value> &value) {
+    //V8TODO This shouldn't cause problems but I'm not sure if it's ok
+    v8::HandleScope handleScope(isolate);
+    if (!value->IsObject()) {
+        //qDebug(scriptengine) << "Cannot unwrap proxy - value is not an object";
+        return nullptr;
+    }
+    v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(value);
     if (v8Object->InternalFieldCount() != 3) {
         //qDebug(scriptengine) << "Cannot unwrap proxy - wrong number of internal fields";
         return nullptr;
@@ -209,7 +228,7 @@ void ScriptObjectV8Proxy::investigate() {
         }
 
         auto v8Name = v8::String::NewFromUtf8(_engine->getIsolate(), prop.name()).ToLocalChecked();
-        PropertyDef& propDef = _props.insert(idx, PropertyDef(_engine->getIsolate(), v8Name)).value();
+        PropertyDef& propDef = _props.insert(idx, PropertyDef(_engine, v8Name)).value();
         propDef.flags = ScriptValue::Undeletable | ScriptValue::PropertyGetter | ScriptValue::PropertySetter |
                         ScriptValue::QObjectMember;
         if (prop.isConstant()) propDef.flags |= ScriptValue::ReadOnly;
@@ -248,11 +267,11 @@ void ScriptObjectV8Proxy::investigate() {
         }
 
         auto nameString = v8::String::NewFromUtf8(_engine->getIsolate(), szName.data(), v8::NewStringType::kNormal, szName.length()).ToLocalChecked();
-        V8ScriptString name(_engine->getIsolate(), nameString);
+        V8ScriptString name(_engine, nameString);
         auto nameLookup = methodNames.find(name);
         if (isSignal) {
             if (nameLookup == methodNames.end()) {
-                SignalDef& signalDef = _signals.insert(idx, SignalDef(_engine->getIsolate(), name.get())).value();
+                SignalDef& signalDef = _signals.insert(idx, SignalDef(_engine, name.get())).value();
                 signalDef.name = name;
                 signalDef.signal = method;
                 //qDebug(scriptengine) << "Utf8Value 1: " << QString(*v8::String::Utf8Value(const_cast<v8::Isolate*>(_engine->getIsolate()), nameString));
@@ -280,7 +299,7 @@ void ScriptObjectV8Proxy::investigate() {
                 }
             }
             if (nameLookup == methodNames.end()) {
-                MethodDef& methodDef = _methods.insert(idx, MethodDef(_engine->getIsolate(), name.get())).value();
+                MethodDef& methodDef = _methods.insert(idx, MethodDef(_engine, name.get())).value();
                 methodDef.name = name;
                 methodDef.numMaxParms = parameterCount;
                 methodDef.methods.append(method);
@@ -308,7 +327,8 @@ void ScriptObjectV8Proxy::investigate() {
     // Add all the methods objects as properties - this allows adding properties to a given method later. Is used by Script.request.
     // V8TODO: Should these be deleted when the script-owned object is destroyed? It needs checking if script-owned objects will be garbage-collected, or will self-referencing prevent it.
     for (auto i = _methods.begin(); i != _methods.end(); i++) {
-        V8ScriptValue method = ScriptMethodV8Proxy::newMethod(_engine, qobject, V8ScriptValue(_engine->getIsolate(), v8Object), i.value().methods, i.value().numMaxParms);
+        V8ScriptValue method = ScriptMethodV8Proxy::newMethod(_engine, qobject, V8ScriptValue(_engine, v8Object),
+                                                              i.value().methods, i.value().numMaxParms);
         if(!propertiesObject->Set(_engine->getContext(), i.value().name.constGet(), method.get()).FromMaybe(false)) {
             Q_ASSERT(false);
         }
@@ -389,13 +409,15 @@ void ScriptObjectV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCall
     v8::HandleScope handleScope(info.GetIsolate());
     v8::String::Utf8Value utf8Value(info.GetIsolate(), name);
     //qDebug(scriptengine) << "Get: " << *utf8Value;
-    V8ScriptValue object(info.GetIsolate(), info.This());
-    ScriptObjectV8Proxy *proxy = ScriptObjectV8Proxy::unwrapProxy(object);
+    v8::Local<v8::Value> objectV8 = info.This();
+    ScriptObjectV8Proxy *proxy = ScriptObjectV8Proxy::unwrapProxy(info.GetIsolate(), objectV8);
     if (!proxy) {
         qDebug(scriptengine) << "Proxy object not found when getting: " << *utf8Value;
         return;
     }
-    V8ScriptString nameString(info.GetIsolate(), v8::Local<v8::String>::Cast(name));
+    V8ScriptValue object(proxy->_engine, objectV8);
+    Q_ASSERT(name->IsString());
+    V8ScriptString nameString(proxy->_engine, v8::Local<v8::String>::Cast(name));
     uint id;
     QueryFlags flags = proxy->queryProperty(object, nameString, HandlesReadAccess, &id);
     if (flags) {
@@ -415,18 +437,20 @@ void ScriptObjectV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> v
     v8::HandleScope handleScope(info.GetIsolate());
     v8::String::Utf8Value utf8Value(info.GetIsolate(), name);
     //qDebug(scriptengine) << "Set: " << *utf8Value;
-    V8ScriptValue object(info.GetIsolate(), info.This());
-    ScriptObjectV8Proxy *proxy = ScriptObjectV8Proxy::unwrapProxy(object);
+    v8::Local<v8::Value> objectV8 = info.This();
+    ScriptObjectV8Proxy *proxy = ScriptObjectV8Proxy::unwrapProxy(info.GetIsolate(), objectV8);
     if (!proxy) {
         qDebug(scriptengine) << "Proxy object not found when setting: " << *utf8Value;
         return;
     }
-    V8ScriptString nameString(info.GetIsolate(), v8::Local<v8::String>::Cast(name));
+    V8ScriptValue object(proxy->_engine, objectV8);
+    Q_ASSERT(name->IsString());
+    V8ScriptString nameString(proxy->_engine, v8::Local<v8::String>::Cast(name));
     //V8ScriptString nameString(info.GetIsolate(), name->ToString(proxy->_engine->getContext()).ToLocalChecked());
     uint id;
     QueryFlags flags = proxy->queryProperty(object, nameString, HandlesWriteAccess, &id);
     if (flags) {
-        proxy->setProperty(object, nameString, id, V8ScriptValue(info.GetIsolate(), value));
+        proxy->setProperty(object, nameString, id, V8ScriptValue(proxy->_engine, value));
         info.GetReturnValue().Set(value);
     } else {
         // V8TODO: Should it be v8::Object or v8::Local<v8::Object>?
@@ -447,7 +471,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
     QObject* qobject = _object;
     if (!qobject) {
         _engine->getIsolate()->ThrowError("Referencing deleted native object");
-        return V8ScriptValue(_engine->getIsolate(), v8::Null(_engine->getIsolate()));
+        return V8ScriptValue(_engine, v8::Null(_engine->getIsolate()));
     }
 
     const QMetaObject* metaObject = qobject->metaObject();
@@ -456,7 +480,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
         case PROPERTY_TYPE: {
             int propId = id & ~TYPE_MASK;
             PropertyDefMap::const_iterator lookup = _props.find(propId);
-            if (lookup == _props.cend()) return V8ScriptValue(_engine->getIsolate(), v8::Null(_engine->getIsolate()));
+            if (lookup == _props.cend()) return V8ScriptValue(_engine, v8::Null(_engine->getIsolate()));
 
             QMetaProperty prop = metaObject->property(propId);
             ScriptValue scriptThis = ScriptValue(new ScriptValueV8Wrapper(_engine, object));
@@ -469,7 +493,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
         case METHOD_TYPE: {
             int methodId = id & ~TYPE_MASK;
             MethodDefMap::const_iterator lookup = _methods.find(methodId);
-            if (lookup == _methods.cend()) return V8ScriptValue(_engine->getIsolate(), v8::Null(_engine->getIsolate()));
+            if (lookup == _methods.cend()) return V8ScriptValue(_engine, v8::Null(_engine->getIsolate()));
             const MethodDef& methodDef = lookup.value();
             for (auto iter = methodDef.methods.begin(); iter != methodDef.methods.end(); iter++ ) {
                 if((*iter).returnType() == QMetaType::UnknownType) {
@@ -480,7 +504,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
             v8::Local<v8::Value> property;
             if(_v8Object.Get(_engine->getIsolate())->GetInternalField(2).As<v8::Object>()->Get(_engine->getContext(), name.constGet()).ToLocal(&property)) {
                 if (!property->IsUndefined()) {
-                    return V8ScriptValue(_engine->getIsolate(), property);
+                    return V8ScriptValue(_engine, property);
                 }
             }
             Q_ASSERT(false);
@@ -490,7 +514,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
         case SIGNAL_TYPE: {
             int signalId = id & ~TYPE_MASK;
             SignalDefMap::const_iterator defLookup = _signals.find(signalId);
-            if (defLookup == _signals.cend()) return V8ScriptValue(_engine->getIsolate(), v8::Null(_engine->getIsolate()));
+            if (defLookup == _signals.cend()) return V8ScriptValue(_engine, v8::Null(_engine->getIsolate()));
 
             InstanceMap::const_iterator instLookup = _signalInstances.find(signalId);
             if (instLookup == _signalInstances.cend() || instLookup.value().isNull()) {
@@ -508,7 +532,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
             //return _engine->newQObject(proxy, ScriptEngine::ScriptOwnership, options);
         }
     }
-    return V8ScriptValue(_engine->getIsolate(), v8::Null(_engine->getIsolate()));
+    return V8ScriptValue(_engine, v8::Null(_engine->getIsolate()));
 }
 
 void ScriptObjectV8Proxy::setProperty(V8ScriptValue& object, const V8ScriptString& name, uint id, const V8ScriptValue& value) {
@@ -562,7 +586,7 @@ V8ScriptValue ScriptVariantV8Proxy::newVariant(ScriptEngineV8* engine, const QVa
     if (!protoProxy) {
         Q_ASSERT(protoProxy);
         //return engine->newVariant(variant);
-        return V8ScriptValue(engine->getIsolate(), v8::Undefined(engine->getIsolate()));
+        return V8ScriptValue(engine, v8::Undefined(engine->getIsolate()));
     }
     // V8TODO probably needs connection to be deleted
     // V8TODO what to do with proto variable?
@@ -572,7 +596,7 @@ V8ScriptValue ScriptVariantV8Proxy::newVariant(ScriptEngineV8* engine, const QVa
     auto variantData = variantDataTemplate->NewInstance(engine->getContext()).ToLocalChecked();
     variantData->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToQVariantProxy));
     variantData->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(proxy));
-    return V8ScriptValue(engine->getIsolate(), variantData);
+    return V8ScriptValue(engine, variantData);
 }
 
 ScriptVariantV8Proxy* ScriptVariantV8Proxy::unwrapProxy(const V8ScriptValue& val) {
@@ -620,7 +644,7 @@ V8ScriptValue ScriptMethodV8Proxy::newMethod(ScriptEngineV8* engine, QObject* ob
     // V8TODO it needs to be deleted somehow on object destruction
     methodData->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(new ScriptMethodV8Proxy(engine, object, lifetime, metas, numMaxParams)));
     auto v8Function = v8::Function::New(engine->getContext(), callback, methodData, numMaxParams).ToLocalChecked();
-    return V8ScriptValue(engine->getIsolate(), v8Function);
+    return V8ScriptValue(engine, v8Function);
 }
 
 QString ScriptMethodV8Proxy::fullName() const {
@@ -722,11 +746,11 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
             Q_ASSERT(methodArgTypeId != QMetaType::UnknownType);
             v8::Local<v8::Value> argVal = arguments[arg];
             if (methodArgTypeId == scriptValueTypeId) {
-                qScriptArgLists[i].append(ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(isolate, argVal))));
+                qScriptArgLists[i].append(ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, argVal))));
                 qGenArgsVectors[i][arg] = Q_ARG(ScriptValue, qScriptArgLists[i].back());
             } else if (methodArgTypeId == QMetaType::QVariant) {
                 QVariant varArgVal;
-                if (!_engine->castValueToVariant(V8ScriptValue(isolate, argVal), varArgVal, methodArgTypeId)) {
+                if (!_engine->castValueToVariant(V8ScriptValue(_engine, argVal), varArgVal, methodArgTypeId)) {
                     conversionFailures++;
                 } else {
                     qVarArgLists[i].append(varArgVal);
@@ -734,12 +758,12 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
                 }
             } else {
                 QVariant varArgVal;
-                if (!_engine->castValueToVariant(V8ScriptValue(isolate, argVal), varArgVal, methodArgTypeId)) {
+                if (!_engine->castValueToVariant(V8ScriptValue(_engine, argVal), varArgVal, methodArgTypeId)) {
                     conversionFailures++;
                 } else {
                     qVarArgLists[i].append(varArgVal);
                     const QVariant& converted = qVarArgLists[i].back();
-                    conversionPenaltyScore = _engine->computeCastPenalty(V8ScriptValue(isolate, argVal), methodArgTypeId);
+                    conversionPenaltyScore = _engine->computeCastPenalty(V8ScriptValue(_engine, argVal), methodArgTypeId);
 
                     // a lot of type conversion assistance thanks to https://stackoverflow.com/questions/28457819/qt-invoke-method-with-qvariant
                     // A const_cast is needed because calling data() would detach the QVariant.
@@ -834,9 +858,9 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
         v8::Local<v8::Value> argVal = arguments[arg];
         if (methodArgTypeId != scriptValueTypeId) {
             QVariant varArgVal;
-            if (!_engine->castValueToVariant(V8ScriptValue(isolate, argVal), varArgVal, methodArgTypeId)) {
+            if (!_engine->castValueToVariant(V8ScriptValue(_engine, argVal), varArgVal, methodArgTypeId)) {
                 QByteArray methodTypeName = QMetaType(methodArgTypeId).name();
-                QByteArray argTypeName = _engine->valueType(V8ScriptValue(isolate, argVal)).toLatin1();
+                QByteArray argTypeName = _engine->valueType(V8ScriptValue(_engine, argVal)).toLatin1();
                 QString errorMessage = QString("Native call of %1 failed: Cannot convert parameter %2 from %3 to %4")
                     .arg(fullName()).arg(arg+1).arg(argTypeName, methodTypeName);
                 qDebug(scriptengine) << errorMessage << "\n Backtrace:" << _engine->currentContext()->backtrace();
@@ -1043,6 +1067,8 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
+    // V8TODO: should we use function creation context, or context in which connect happened?
+
     auto context = _engine->getContext();
     v8::Context::Scope contextScope(context);
 
@@ -1063,20 +1089,29 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
 
     for (ConnectionList::iterator iter = connections.begin(); iter != connections.end(); ++iter) {
         Connection& conn = *iter;
-        v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(conn.callback.get());
-        v8::Local<v8::Value> v8This;
-        if (conn.thisValue.get()->IsObject()) {
-            v8This = conn.thisValue.get();
-        } else {
-            v8This = _engine->getContext()->Global();
-        }
+        Q_ASSERT(!conn.callback.get().IsEmpty());
+        Q_ASSERT(!conn.callback.get()->IsUndefined());
+        Q_ASSERT(conn.callback.get()->IsFunction());
+        {
+            v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(conn.callback.get());
+            auto functionContext = callback->CreationContext();
+            _engine->pushContext(functionContext);
+            v8::Context::Scope functionContextScope(functionContext);
+            v8::Local<v8::Value> v8This;
+            if (conn.thisValue.get()->IsObject()) {
+                v8This = conn.thisValue.get();
+            } else {
+                v8This = _engine->getContext()->Global();
+            }
 
-        v8::TryCatch tryCatch(isolate);
-        callback->Call(_engine->getContext(), v8This, numArgs, args);
-        if (tryCatch.HasCaught()) {
-            qCDebug(scriptengine) << "Signal proxy " << fullName() << " connection call failed: \""
-                                  << _engine->formatErrorMessageFromTryCatch(tryCatch)
-                                  << "\nThis provided: " << conn.thisValue.get()->IsObject();
+            v8::TryCatch tryCatch(isolate);
+            callback->Call(_engine->getContext(), v8This, numArgs, args);
+            if (tryCatch.HasCaught()) {
+                qCDebug(scriptengine) << "Signal proxy " << fullName() << " connection call failed: \""
+                                      << _engine->formatErrorMessageFromTryCatch(tryCatch)
+                                      << "\nThis provided: " << conn.thisValue.get()->IsObject();
+            }
+            _engine->popContext();
         }
     }
 
@@ -1125,8 +1160,8 @@ void ScriptSignalV8Proxy::connect(ScriptValue arg0, ScriptValue arg1) {
     //v8::HandleScope handleScope(isolate);
 
     // untangle the arguments
-    V8ScriptValue callback(isolate, v8::Null(isolate));
-    V8ScriptValue callbackThis(isolate, v8::Null(isolate));
+    V8ScriptValue callback(_engine, v8::Null(isolate));
+    V8ScriptValue callbackThis(_engine, v8::Null(isolate));
     if (arg1.isFunction()) {
         auto unwrappedArg0 = ScriptValueV8Wrapper::unwrap(arg0);
         auto unwrappedArg1 = ScriptValueV8Wrapper::unwrap(arg1);
@@ -1158,6 +1193,9 @@ void ScriptSignalV8Proxy::connect(ScriptValue arg0, ScriptValue arg1) {
     }
 
     // add a reference to ourselves to the destination callback
+    Q_ASSERT(!callback.get().IsEmpty());
+    Q_ASSERT(!callback.get()->IsUndefined());
+    Q_ASSERT(callback.get()->IsFunction());
     v8::Local<v8::Function> destFunction = v8::Local<v8::Function>::Cast(callback.get());
     v8::Local<v8::String> destDataName = v8::String::NewFromUtf8(isolate, "__data__").ToLocalChecked();
     v8::Local<v8::Value> destData;
@@ -1166,7 +1204,10 @@ void ScriptSignalV8Proxy::connect(ScriptValue arg0, ScriptValue arg1) {
     //Q_ASSERT(destFunction->InternalFieldCount() == 4);
     //Q_ASSERT(destData.get()->IsArray());
     //v8::Local<v8::Value> destData = destFunction->GetInternalField(3);
-    if (destFunction->Get(destFunctionContext, destDataName).ToLocal(&destData) && destData->IsArray()) {
+    if (!destFunction->Get(destFunctionContext, destDataName).ToLocal(&destData)) {
+        Q_ASSERT(false);
+    }
+    if (destData->IsArray()) {
         v8::Local<v8::Array> destArray = v8::Local<v8::Array>::Cast(destData);
         int length = destArray->Length();//destData.property("length").toInteger();
         v8::Local<v8::Array> newArray = v8::Array::New(isolate, length + 1);
@@ -1232,8 +1273,8 @@ void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
     v8::Context::Scope contextScope(_engine->getContext());
 
     // untangle the arguments
-    V8ScriptValue callback(isolate, v8::Null(isolate));
-    V8ScriptValue callbackThis(isolate, v8::Null(isolate));
+    V8ScriptValue callback(_engine, v8::Null(isolate));
+    V8ScriptValue callbackThis(_engine, v8::Null(isolate));
     if (arg1.isFunction()) {
         auto unwrappedArg0 = ScriptValueV8Wrapper::unwrap(arg0);
         auto unwrappedArg1 = ScriptValueV8Wrapper::unwrap(arg1);
@@ -1277,7 +1318,10 @@ void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
     V8ScriptValue v8ThisObject = ScriptValueV8Wrapper::fullUnwrap(_engine, thisObject());
     //V8ScriptValue destData = callback.data();
     //Q_ASSERT(destData->IsArray());
-    if (destFunction->Get(destFunctionContext, destDataName).ToLocal(&destData) && destData->IsArray()) {
+    if (!destFunction->Get(destFunctionContext, destDataName).ToLocal(&destData)) {
+        Q_ASSERT(false);
+    }
+    if (destData->IsArray()) {
         v8::Local<v8::Array> destArray = v8::Local<v8::Array>::Cast(destData);
         int length = destArray->Length();//destData.property("length").toInteger();
         v8::Local<v8::Array> newArray = v8::Array::New(isolate, length - 1);

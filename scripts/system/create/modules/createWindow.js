@@ -1,4 +1,4 @@
-"use strict";
+"no use strict";
 
 //  createWindow.js
 //
@@ -71,6 +71,7 @@ var CallableEvent = (function() {
 module.exports = (function() {
     function CreateWindow(qmlPath, title, settingsKey, defaultRect, createOnStartup) {
         this.qmlPath = qmlPath;
+        print("QML path: " + qmlPath);
         this.title = title;
         this.settingsKey = settingsKey;
         this.defaultRect = defaultRect;

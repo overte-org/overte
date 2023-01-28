@@ -1,4 +1,4 @@
-"use strict";
+"no use strict";
 
 //  inVREditMode.js
 //
