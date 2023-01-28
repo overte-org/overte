@@ -199,7 +199,7 @@ public: // not for public use, but I don't like how Qt strings this along with p
     // V8TODO add a V8 callback that removes pointer from the map so that it gets deleted
     QMap<QObject*, QSharedPointer<ScriptObjectV8Proxy>> _qobjectWrapperMapV8;
 
-    ScriptContextV8Pointer pushContext(v8::Local<v8::Context> &context);
+    ScriptContextV8Pointer pushContext(v8::Local<v8::Context> context);
     void popContext();
 
 protected:
