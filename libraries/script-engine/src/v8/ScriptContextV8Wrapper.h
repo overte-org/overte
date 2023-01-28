@@ -57,6 +57,7 @@ private: // storage
     const v8::FunctionCallbackInfo<v8::Value> *_functionCallbackInfo;
     const v8::PropertyCallbackInfo<v8::Value> *_propertyCallbackInfo;
     ScriptEngineV8* _engine;
+    // V8TODO: Is custom copy constructor needed for thread safety?
     v8::Persistent<v8::Context> _context;
     ScriptContextPointer _parentContext;
 };
@@ -64,7 +65,7 @@ private: // storage
 class ScriptFunctionContextV8Wrapper final : public ScriptFunctionContext {
 public:  // construction
     //V8TODO
-    inline ScriptFunctionContextV8Wrapper(ScriptEngineV8* engine) : _engine(engine) { }
+    ScriptFunctionContextV8Wrapper(ScriptEngineV8* engine, const v8::Local<v8::Context> context);
 
 public:  // ScriptFunctionContext implementation
     virtual QString fileName() const override;
@@ -74,6 +75,8 @@ public:  // ScriptFunctionContext implementation
 
 private: // storage
     ScriptEngineV8* _engine;
+    // V8TODO: Is custom copy constructor needed for thread safety?
+    v8::Persistent<v8::Context> _context;
     //V8ScriptContextInfo _value;
 };
 

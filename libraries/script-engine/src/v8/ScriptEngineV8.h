@@ -34,7 +34,7 @@
 
 #include "../ScriptEngine.h"
 #include "../ScriptManager.h"
-#include "V8Types.h"
+//#include "V8Types.h"
 
 #include "ArrayBufferClass.h"
 
@@ -43,6 +43,11 @@ class ScriptEngineV8;
 class ScriptManager;
 class ScriptObjectV8Proxy;
 class ScriptMethodV8Proxy;
+
+template <typename T> class V8ScriptValueTemplate;
+typedef V8ScriptValueTemplate<v8::Value> V8ScriptValue;
+typedef V8ScriptValueTemplate<v8::Script> V8ScriptProgram;
+
 using ScriptContextV8Pointer = std::shared_ptr<ScriptContextV8Wrapper>;
 
 const double GARBAGE_COLLECTION_TIME_LIMIT_S = 1.0;
@@ -69,7 +74,7 @@ public:  // ScriptEngine implementation
     Q_INVOKABLE virtual ScriptValue evaluate(const QString& program, const QString& fileName = QString()) override;
     Q_INVOKABLE virtual ScriptValue evaluate(const ScriptProgramPointer& program) override;
     Q_INVOKABLE virtual ScriptValue evaluateInClosure(const ScriptValue& locals, const ScriptProgramPointer& program) override;
-    virtual ScriptValue globalObject() const override;
+    virtual ScriptValue globalObject() override;
     virtual bool hasUncaughtException() const override;
     virtual bool isEvaluating() const override;
     //virtual ScriptValue lintScript(const QString& sourceCode, const QString& fileName, const int lineNumber = 1) override;
@@ -185,6 +190,7 @@ public: // not for public use, but I don't like how Qt strings this along with p
     QString formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch);
     // Useful for debugging
     //QStringList getCurrentStackTrace();
+    virtual QStringList getCurrentScriptURLs() const override;
 
     using ObjectWrapperMap = QMap<QObject*, QWeakPointer<ScriptObjectV8Proxy>>;
     mutable QMutex _qobjectWrapperMapProtect;
@@ -193,14 +199,17 @@ public: // not for public use, but I don't like how Qt strings this along with p
     // V8TODO add a V8 callback that removes pointer from the map so that it gets deleted
     QMap<QObject*, QSharedPointer<ScriptObjectV8Proxy>> _qobjectWrapperMapV8;
 
+    ScriptContextV8Pointer pushContext(v8::Local<v8::Context> &context);
+    void popContext();
+
 protected:
     // like `newFunction`, but allows mapping inline C++ lambdas with captures as callable V8ScriptValues
     // even though the context/engine parameters are redundant in most cases, the function signature matches `newFunction`
     // anyway so that newLambdaFunction can be used to rapidly prototype / test utility APIs and then if becoming
     // permanent more easily promoted into regular static newFunction scenarios.
-    ScriptValue newLambdaFunction(std::function<V8ScriptValue(V8ScriptContext* context, ScriptEngineV8* engine)> operation,
+    /*ScriptValue newLambdaFunction(std::function<V8ScriptValue(V8ScriptContext* context, ScriptEngineV8* engine)> operation,
                                    const V8ScriptValue& data,
-                                   const ValueOwnership& ownership = AutoOwnership);
+                                   const ValueOwnership& ownership = AutoOwnership);*/
 
     void registerSystemTypes();
 
@@ -208,8 +217,6 @@ protected:
     static QMutex _v8InitMutex;
     static std::once_flag _v8InitOnceFlag;
     static v8::Platform* getV8Platform();
-    ScriptContextV8Pointer pushContext(v8::Local<v8::Context> &context);
-    void popContext();
 
     // V8TODO: clean up isolate when script engine is destroyed?
     v8::Isolate* _v8Isolate;
@@ -239,24 +246,7 @@ protected:
     int _evaluatingCounter;
 };
 
-// Lambda helps create callable V8ScriptValues out of std::functions:
-// (just meant for use from within the script engine itself)
-class Lambda : public QObject {
-    Q_OBJECT
-public:
-    Lambda(ScriptEngineV8* engine,
-           std::function<V8ScriptValue(V8ScriptContext* context, ScriptEngineV8* engine)> operation,
-           V8ScriptValue data);
-    ~Lambda();
-public slots:
-    V8ScriptValue call();
-    QString toString() const;
-
-private:
-    ScriptEngineV8* _engine;
-    std::function<V8ScriptValue(V8ScriptContext* context, ScriptEngineV8* engine)> _operation;
-    V8ScriptValue _data;
-};
+#include "V8Types.h"
 
 #endif  // hifi_ScriptEngineV8_h
 

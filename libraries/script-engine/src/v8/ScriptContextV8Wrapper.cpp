@@ -57,6 +57,11 @@ int ScriptContextV8Wrapper::argumentCount() const {
     v8::Context::Scope contextScope(_engine->getContext());*/
     //Q_ASSERT(_functionCallbackInfo);A
     // V8TODO
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_context.Get(isolate));
     if (_functionCallbackInfo) {
         return _functionCallbackInfo->Length();
     } else if (_propertyCallbackInfo) {
@@ -72,12 +77,13 @@ int ScriptContextV8Wrapper::argumentCount() const {
 ScriptValue ScriptContextV8Wrapper::argument(int index) const {
     if (_functionCallbackInfo) {
         auto isolate = _engine->getIsolate();
-        Q_ASSERT(isolate->IsCurrent());
+        v8::Locker locker(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
         v8::HandleScope handleScope(isolate);
-        v8::Context::Scope contextScope(_engine->getContext());
+        v8::Context::Scope contextScope(_context.Get(isolate));
         v8::Local<v8::Value> result = (*_functionCallbackInfo)[index];
         if (index < _functionCallbackInfo->kArgsLength) {
-            return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine->getIsolate(), result)));
+            return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
         } else {
             return _engine->undefinedValue();
         }
@@ -90,9 +96,10 @@ ScriptValue ScriptContextV8Wrapper::argument(int index) const {
 
 QStringList ScriptContextV8Wrapper::backtrace() const {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    v8::Context::Scope contextScope(_context.Get(isolate));
     v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(isolate, 40);
     QStringList backTrace;
     //V8TODO nicer formatting
@@ -122,32 +129,36 @@ ScriptEnginePointer ScriptContextV8Wrapper::engine() const {
 }
 
 ScriptFunctionContextPointer ScriptContextV8Wrapper::functionContext() const {
-    return std::make_shared<ScriptFunctionContextV8Wrapper>(_engine);
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_context.Get(isolate));
+    auto scriptFunctionContextPointer = std::make_shared<ScriptFunctionContextV8Wrapper>(_engine, _context.Get(_engine->getIsolate()));
+    return scriptFunctionContextPointer;
 }
 
 ScriptContextPointer ScriptContextV8Wrapper::parentContext() const {
-    //V8TODO
-    //Q_ASSERT(false);
-    //V8ScriptContext* result = _context->parentContext();
-    //return result ? std::make_shared<ScriptContextV8Wrapper>(_engine, result) : ScriptContextPointer();
     return _parentContext;
 }
 
 ScriptValue ScriptContextV8Wrapper::thisObject() const {
     if (_functionCallbackInfo) {
         auto isolate = _engine->getIsolate();
-        Q_ASSERT(isolate->IsCurrent());
+        v8::Locker locker(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
         v8::HandleScope handleScope(isolate);
-        v8::Context::Scope contextScope(_engine->getContext());
+        v8::Context::Scope contextScope(_context.Get(isolate));
         v8::Local<v8::Value> result = _functionCallbackInfo->This();
-        return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine->getIsolate(), result)));
+        return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
     } else if (_propertyCallbackInfo) {
         auto isolate = _engine->getIsolate();
-        Q_ASSERT(isolate->IsCurrent());
+        v8::Locker locker(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
         v8::HandleScope handleScope(isolate);
-        v8::Context::Scope contextScope(_engine->getContext());
+        v8::Context::Scope contextScope(_context.Get(isolate));
         v8::Local<v8::Value> result = _propertyCallbackInfo->This();
-        return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine->getIsolate(), result)));
+        return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
     } else {
         return _engine->undefinedValue();
     }
@@ -157,9 +168,11 @@ ScriptValue ScriptContextV8Wrapper::throwError(const QString& text) {
     auto isolate = _engine->getIsolate();
     // V8TODO: I have no idea how to do this yet because it happens on another thread
     if(isolate->IsCurrent()) {
+        v8::Locker locker(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
         v8::HandleScope handleScope(isolate);
-        v8::Context::Scope contextScope(_engine->getContext());
-        V8ScriptValue result(_engine->getIsolate(),
+        v8::Context::Scope contextScope(_context.Get(isolate));
+        V8ScriptValue result(_engine,
                              _engine->getIsolate()->ThrowError(
                                  v8::String::NewFromUtf8(_engine->getIsolate(), text.toStdString().c_str()).ToLocalChecked()));
         return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
@@ -171,21 +184,34 @@ ScriptValue ScriptContextV8Wrapper::throwError(const QString& text) {
 
 ScriptValue ScriptContextV8Wrapper::throwValue(const ScriptValue& value) {
     auto isolate = _engine->getIsolate();
-    Q_ASSERT(isolate->IsCurrent());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    v8::Context::Scope contextScope(_context.Get(isolate));
     ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(value);
     if (!unwrapped) {
         return _engine->undefinedValue();
     }
-    V8ScriptValue result(_engine->getIsolate(), _engine->getIsolate()->ThrowException(unwrapped->toV8Value().constGet()));
+    V8ScriptValue result(_engine, _engine->getIsolate()->ThrowException(unwrapped->toV8Value().constGet()));
     return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
 }
 
+ScriptFunctionContextV8Wrapper::ScriptFunctionContextV8Wrapper(ScriptEngineV8* engine, const v8::Local<v8::Context> context) : _engine(engine) {
+    v8::Locker locker();
+    v8::Isolate::Scope isolateScope(engine->getIsolate());
+    v8::HandleScope handleScope(engine->getIsolate());
+    _context.Reset(engine->getIsolate(), context);
+}
 
 QString ScriptFunctionContextV8Wrapper::fileName() const {
     //V8TODO: It's not exactly like in QtScript, because there's no such context object in V8, let's return the current one for now
     //Maybe fetch data on creation or store stack frame?
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_context.Get(isolate));
+    // V8TODO: does this work for context selected with contextScope?
     v8::Local<v8::String> name = v8::StackTrace::CurrentScriptNameOrSourceURL(_engine->getIsolate());
     v8::String::Utf8Value nameUTF(_engine->getIsolate(), name);
     return QString(*nameUTF);
@@ -194,6 +220,12 @@ QString ScriptFunctionContextV8Wrapper::fileName() const {
 QString ScriptFunctionContextV8Wrapper::functionName() const {
     //V8TODO: It's not exactly like in QtScript, because there's no such context object in V8, let's return the current one for now
     //Maybe fetch data on creation?
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_context.Get(isolate));
+    // V8TODO: does this work for context selected with contextScope?
     v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(_engine->getIsolate(), 1);
     v8::Local<v8::StackFrame> stackFrame = stackTrace->GetFrame(_engine->getIsolate(), 0);
     v8::Local<v8::String> name = stackFrame->GetFunctionName();
@@ -210,6 +242,11 @@ ScriptFunctionContext::FunctionType ScriptFunctionContextV8Wrapper::functionType
 int ScriptFunctionContextV8Wrapper::lineNumber() const {
     //V8TODO: It's not exactly like in QtScript, because there's no such context object in V8, let's return the current one for now
     //Maybe fetch data on creation?
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_context.Get(isolate));
     v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(_engine->getIsolate(), 1);
     v8::Local<v8::StackFrame> stackFrame = stackTrace->GetFrame(_engine->getIsolate(), 0);
     return stackFrame->GetLineNumber();
