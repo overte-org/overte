@@ -1111,7 +1111,7 @@ QString ScriptEngineV8::formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch) {
     return result;
 }
 
-ScriptContextV8Pointer ScriptEngineV8::pushContext(v8::Local<v8::Context> &context) {
+ScriptContextV8Pointer ScriptEngineV8::pushContext(v8::Local<v8::Context> context) {
     Q_ASSERT(!_contexts.isEmpty());
     ScriptContextPointer parent = _contexts.last();
     _contexts.append(std::make_shared<ScriptContextV8Wrapper>(this, context, ScriptContextPointer()));

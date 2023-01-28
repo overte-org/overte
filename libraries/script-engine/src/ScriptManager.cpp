@@ -1122,6 +1122,7 @@ void ScriptManager::stopTimer(QTimer *timer) {
 }
 
 QUrl ScriptManager::resolvePath(const QString& include) const {
+    //qDebug(scriptengine) << "ScriptManager::resolvePath: getCurrentScriptURLs: " << _engine->getCurrentScriptURLs();
     QUrl url(include);
     // first lets check to see if it's already a full URL -- or a Windows path like "c:/"
     if (include.startsWith("/") || url.scheme().length() == 1) {
@@ -1139,7 +1140,7 @@ QUrl ScriptManager::resolvePath(const QString& include) const {
     do {
         auto contextInfo = context->functionContext();
         parentURL = QUrl(contextInfo->fileName());
-        qDebug(scriptengine) << "ScriptManager::resolvePath: URL get: " << parentURL << " backtrace: " << context->backtrace() << " " << _engine->getCurrentScriptURLs();
+        //qDebug(scriptengine) << "ScriptManager::resolvePath: URL get: " << parentURL << " backtrace: " << context->backtrace() << " " << _engine->getCurrentScriptURLs();
         parentContext = context->parentContext();
         context = parentContext.get();
     } while (parentURL.isRelative() && context);
