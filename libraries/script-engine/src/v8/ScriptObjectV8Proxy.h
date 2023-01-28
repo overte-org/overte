@@ -221,7 +221,13 @@ private:  // storage
 
 public:  // construction
     inline ScriptSignalV8Proxy(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime, const QMetaMethod& meta) :
-        _engine(engine), _object(object), _objectLifetime(lifetime), _meta(meta), _metaCallId(discoverMetaCallIdx()) {}
+        _engine(engine), _object(object), _objectLifetime(lifetime), _meta(meta), _metaCallId(discoverMetaCallIdx()) {
+        v8::Locker locker(_engine->getIsolate());
+        v8::Isolate::Scope isolateScope(_engine->getIsolate());
+        v8::HandleScope handleScope(_engine->getIsolate());
+        v8::Context::Scope contextScope(_engine->getContext());
+        _v8Context.Reset(_engine->getIsolate(), _engine->getContext());
+    }
 
 private:  // implementation
     virtual int qt_metacall(QMetaObject::Call call, int id, void** arguments) override;
@@ -245,6 +251,8 @@ private:  // storage
     const int _metaCallId;
     ConnectionList _connections;
     bool _isConnected{ false };
+    // Context in which it was created
+    v8::UniquePersistent<v8::Context> _v8Context;
 
     Q_DISABLE_COPY(ScriptSignalV8Proxy)
 };

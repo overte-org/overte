@@ -1094,9 +1094,11 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
         Q_ASSERT(conn.callback.get()->IsFunction());
         {
             v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(conn.callback.get());
-            auto functionContext = callback->CreationContext();
-            _engine->pushContext(functionContext);
-            v8::Context::Scope functionContextScope(functionContext);
+            //auto functionContext = callback->CreationContext();
+            //_engine->pushContext(functionContext);
+            _engine->pushContext(_v8Context.Get(_engine->getIsolate()));
+            //v8::Context::Scope functionContextScope(functionContext);
+            v8::Context::Scope functionContextScope(_v8Context.Get(_engine->getIsolate()));
             v8::Local<v8::Value> v8This;
             if (conn.thisValue.get()->IsObject()) {
                 v8This = conn.thisValue.get();
