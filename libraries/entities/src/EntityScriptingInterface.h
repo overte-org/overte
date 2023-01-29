@@ -86,8 +86,8 @@ public:
     QUuid entityID;
     float distance { 0.0f };
     BoxFace face { UNKNOWN_FACE };
-    glm::vec3 intersection;
-    glm::vec3 surfaceNormal;
+    glm::vec3 intersection { glm::vec3(0.0f, 0.0f, 0.0f) };
+    glm::vec3 surfaceNormal { glm::vec3(0.0f, 1.0f, 0.0f) };
     QVariantMap extraInfo;
 };
 Q_DECLARE_METATYPE(RayToEntityIntersectionResult)

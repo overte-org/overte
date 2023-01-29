@@ -861,6 +861,7 @@ RayToAvatarIntersectionResult AvatarManager::findRayIntersectionVector(const Pic
                 result.avatarID = rayAvatarResult._intersectWithAvatar;
                 result.distance = rayAvatarResult._distance;
                 result.face = face;
+                Q_ASSERT(face < 7);
                 result.intersection = ray.origin + rayAvatarResult._distance * rayDirection;
                 result.surfaceNormal = rayAvatarResult._intersectionNormal;
                 result.jointIndex = rayAvatarResult._intersectWithJoint;
@@ -954,6 +955,7 @@ ParabolaToAvatarIntersectionResult AvatarManager::findParabolaIntersectionVector
                 result.avatarID = sortedAvatar.second->getID();
                 result.parabolicDistance = parabolicDistance;
                 result.face = face;
+                Q_ASSERT(face < 7);
                 result.surfaceNormal = surfaceNormal;
                 result.extraInfo = extraInfo;
             }

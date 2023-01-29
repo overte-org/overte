@@ -422,9 +422,9 @@ struct GLTFMaterial {
     int emissiveTexture;
     int normalTexture;
     int occlusionTexture;
-    graphics::MaterialKey::OpacityMapMode alphaMode;
+    graphics::MaterialKey::OpacityMapMode alphaMode { graphics::MaterialKey::OPACITY_MAP_OPAQUE };
     double alphaCutoff;
-    bool doubleSided;
+    bool doubleSided { false };
     GLTFpbrMetallicRoughness pbrMetallicRoughness;
     QMap<QString, bool> defined;
     void dump() {

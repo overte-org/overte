@@ -103,9 +103,9 @@ private:
     QVector<glm::vec3> _colors;
     QVector<float> _widths;
     QString _textures;
-    bool _isUVModeStretch;
-    bool _glow;
-    bool _faceCamera;
+    bool _isUVModeStretch { false };
+    bool _glow { false };
+    bool _faceCamera { false };
 
     bool _pointsChanged { false };
     bool _normalsChanged { false };

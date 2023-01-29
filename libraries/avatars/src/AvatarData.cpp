@@ -3175,6 +3175,7 @@ ScriptValue RayToAvatarIntersectionResultToScriptValue(ScriptEngine* engine, con
     ScriptValue avatarIDValue = quuidToScriptValue(engine, value.avatarID);
     obj.setProperty("avatarID", avatarIDValue);
     obj.setProperty("distance", value.distance);
+    Q_ASSERT(value.face < 7);
     obj.setProperty("face", boxFaceToString(value.face));
     ScriptValue intersection = vec3ToScriptValue(engine, value.intersection);
 
@@ -3192,6 +3193,7 @@ bool RayToAvatarIntersectionResultFromScriptValue(const ScriptValue& object, Ray
     quuidFromScriptValue(avatarIDValue, value.avatarID);
     value.distance = object.property("distance").toVariant().toFloat();
     value.face = boxFaceFromString(object.property("face").toVariant().toString());
+    Q_ASSERT(value.face < 7);
 
     ScriptValue intersection = object.property("intersection");
     if (intersection.isValid()) {

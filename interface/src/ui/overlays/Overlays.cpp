@@ -1008,7 +1008,7 @@ QUuid Overlays::getOverlayAtPoint(const glm::vec2& point) {
 }
 
 QVariant Overlays::getProperty(const QUuid& id, const QString& property) {
-    Overlay::Pointer overlay = get2DOverlay(id);
+    /*Overlay::Pointer overlay = get2DOverlay(id);
     if (overlay) {
         // We don't support getting properties from QML Overlays right now
         return QVariant();
@@ -1018,12 +1018,13 @@ QVariant Overlays::getProperty(const QUuid& id, const QString& property) {
     auto propIter = overlayProperties.find(property);
     if (propIter != overlayProperties.end()) {
         return propIter.value();
-    }
+    }*/
+    qDebug() << "Overlays::getProperty is not supported anymore";
     return QVariant();
 }
 
 QVariantMap Overlays::getProperties(const QUuid& id, const QStringList& properties) {
-    Overlay::Pointer overlay = get2DOverlay(id);
+    /*Overlay::Pointer overlay = get2DOverlay(id);
     QVariantMap result;
     if (overlay) {
         // We don't support getting properties from QML Overlays right now
@@ -1036,7 +1037,9 @@ QVariantMap Overlays::getProperties(const QUuid& id, const QStringList& properti
         if (propIter != overlayProperties.end()) {
             result.insert(property, propIter.value());
         }
-    }
+    }*/
+    qDebug() << "Overlays::getProperties is not supported anymore";
+    QVariantMap result;
     return result;
 }
 
