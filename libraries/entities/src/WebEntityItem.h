@@ -92,8 +92,8 @@ protected:
     QString _scriptURL;
     uint8_t _maxFPS;
     WebInputMode _inputMode;
-    bool _showKeyboardFocusHighlight;
-    bool _useBackground;
+    bool _showKeyboardFocusHighlight { false };
+    bool _useBackground { false };
     QString _userAgent;
     bool _localSafeContext { false };
 };
