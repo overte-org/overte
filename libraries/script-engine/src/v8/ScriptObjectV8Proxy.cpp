@@ -673,7 +673,7 @@ void ScriptMethodV8Proxy::callback(const v8::FunctionCallbackInfo<v8::Value>& ar
     v8::Locker locker(arguments.GetIsolate());
     v8::Isolate::Scope isolateScope(arguments.GetIsolate());
     v8::HandleScope handleScope(arguments.GetIsolate());
-    Q_ASSERT(!arguments.GetIsolate()->GetCurrentContext().IsEmpty());
+    //Q_ASSERT(!arguments.GetIsolate()->GetCurrentContext().IsEmpty());
     v8::Context::Scope contextScope(arguments.GetIsolate()->GetCurrentContext());
     if (!arguments.Data()->IsObject()) {
         arguments.GetIsolate()->ThrowError("Method value is not an object");
@@ -1082,40 +1082,50 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
         args[arg] = _engine->castVariantToValue(argValue).get();
     }
 
-    QList<Connection> connections;
+    /*QList<Connection> connections;
     withReadLock([&]{
         connections = _connections;
-    });
+    });*/
 
-    for (ConnectionList::iterator iter = connections.begin(); iter != connections.end(); ++iter) {
-        Connection& conn = *iter;
-        Q_ASSERT(!conn.callback.get().IsEmpty());
-        Q_ASSERT(!conn.callback.get()->IsUndefined());
-        Q_ASSERT(conn.callback.get()->IsFunction());
-        {
-            v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(conn.callback.get());
-            //auto functionContext = callback->CreationContext();
-            auto functionContext = _v8Context.Get(_engine->getIsolate());
-            _engine->pushContext(functionContext);
-            v8::Context::Scope functionContextScope(functionContext);
+    withReadLock([&]{
+        //for (ConnectionList::iterator iter = connections.begin(); iter != connections.end(); ++iter) {
+        for (ConnectionList::iterator iter = _connections.begin(); iter != _connections.end(); ++iter) {
+            Connection& conn = *iter;
+            {
+                //auto functionContext = callback->CreationContext();
+                auto functionContext = _v8Context.Get(_engine->getIsolate());
+                _engine->pushContext(functionContext);
+                v8::Context::Scope functionContextScope(functionContext);
 
-            v8::Local<v8::Value> v8This;
-            if (conn.thisValue.get()->IsObject()) {
-                v8This = conn.thisValue.get();
-            } else {
-                v8This = functionContext->Global();
+                Q_ASSERT(!conn.callback.get().IsEmpty());
+                Q_ASSERT(!conn.callback.get()->IsUndefined());
+                Q_ASSERT(!conn.callback.get()->IsNull());
+                if (!conn.callback.get()->IsFunction()) {
+                    auto stringV8 = conn.callback.get()->ToDetailString(functionContext).ToLocalChecked();
+                    QString error = *v8::String::Utf8Value(_engine->getIsolate(), stringV8);
+                    qDebug() << error;
+                    Q_ASSERT(false);
+                }
+                v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(conn.callback.get());
+
+                v8::Local<v8::Value> v8This;
+                if (conn.thisValue.get()->IsObject()) {
+                    v8This = conn.thisValue.get();
+                } else {
+                    v8This = functionContext->Global();
+                }
+
+                v8::TryCatch tryCatch(isolate);
+                callback->Call(functionContext, v8This, numArgs, args);
+                if (tryCatch.HasCaught()) {
+                    qCDebug(scriptengine) << "Signal proxy " << fullName() << " connection call failed: \""
+                                          << _engine->formatErrorMessageFromTryCatch(tryCatch)
+                                          << "\nThis provided: " << conn.thisValue.get()->IsObject();
+                }
+                _engine->popContext();
             }
-
-            v8::TryCatch tryCatch(isolate);
-            callback->Call(functionContext, v8This, numArgs, args);
-            if (tryCatch.HasCaught()) {
-                qCDebug(scriptengine) << "Signal proxy " << fullName() << " connection call failed: \""
-                                      << _engine->formatErrorMessageFromTryCatch(tryCatch)
-                                      << "\nThis provided: " << conn.thisValue.get()->IsObject();
-            }
-            _engine->popContext();
         }
-    }
+    });
 
     return -1;
 }
