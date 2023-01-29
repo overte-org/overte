@@ -928,8 +928,8 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
                 }
             }
             // List members of closure global object
-            QString membersString("");
-            if (closureContext->Global()->IsObject()) {
+            //QString membersString("");
+            /*if (closureContext->Global()->IsObject()) {
                 v8::Local<v8::String> membersStringV8;
                 v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(closureContext->Global());
                 auto names = object->GetPropertyNames(closureContext).ToLocalChecked();
@@ -939,8 +939,8 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
                 membersString = QString(*v8::String::Utf8Value(_v8Isolate, membersStringV8));
             } else {
                 membersString = QString(" Is not an object");
-            }
-            qDebug(scriptengine) << "Closure global before run:" << membersString;
+            }*/
+            //qDebug(scriptengine) << "Closure global before run:" << membersString;
             auto maybeResult = program.constGet()->GetUnboundScript()->BindToCurrentContext()->Run(closureContext);
             //qDebug(scriptengine) << "Closure after run:" << scriptValueDebugDetailsV8(closure);
             v8::Local<v8::Value> v8Result;

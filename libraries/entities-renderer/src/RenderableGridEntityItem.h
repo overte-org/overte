@@ -37,9 +37,9 @@ private:
     float _alpha { NAN };
     PulsePropertyGroup _pulseProperties;
 
-    bool _followCamera;
+    bool _followCamera { false };
     uint32_t _majorGridEvery;
-    float _minorGridEvery;
+    float _minorGridEvery { false };
 
     glm::vec3 _dimensions;
 

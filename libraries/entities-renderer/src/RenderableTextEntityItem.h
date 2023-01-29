@@ -57,7 +57,7 @@ private:
     float _lineHeight;
     glm::vec3 _textColor;
     float _textAlpha;
-    bool _unlit;
+    bool _unlit { false };
 
     std::shared_ptr<graphics::ProceduralMaterial> _material { std::make_shared<graphics::ProceduralMaterial>() };
     glm::vec3 _backgroundColor { NAN };

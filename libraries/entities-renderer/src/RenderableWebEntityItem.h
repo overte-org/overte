@@ -98,9 +98,9 @@ private:
     uint16_t _dpi;
     QString _scriptURL;
     uint8_t _maxFPS;
-    bool _useBackground;
+    bool _useBackground { false };
     QString _userAgent;
-    WebInputMode _inputMode;
+    WebInputMode _inputMode { WebInputMode::TOUCH };
 
     glm::vec3 _contextPosition;
 
