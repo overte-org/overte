@@ -1965,9 +1965,9 @@ public:
     bool intersects { false };
     QUuid avatarID;
     float distance { FLT_MAX };
-    BoxFace face;
-    glm::vec3 intersection;
-    glm::vec3 surfaceNormal;
+    BoxFace face { UNKNOWN_FACE };
+    glm::vec3 intersection { glm::vec3(0.0f, 0.0f, 0.0f) };
+    glm::vec3 surfaceNormal { glm::vec3(0.0f, 1.0f, 0.0f) };
     int jointIndex { -1 };
     QVariantMap extraInfo;
 };

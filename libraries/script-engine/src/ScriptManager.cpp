@@ -1533,7 +1533,7 @@ ScriptValue ScriptManager::require(const QString& moduleId) {
     qCDebug(scriptengine_module) << "//ScriptManager::require(" << moduleId << ")";
 
     _engine->maybeEmitUncaughtException(__FUNCTION__);
-    qCDebug(scriptengine_module) << "Exports: " << _engine->scriptValueDebugDetails(module.property("exports"));
+    //qCDebug(scriptengine_module) << "Exports: " << _engine->scriptValueDebugDetails(module.property("exports"));
     return module.property("exports");
 }
 

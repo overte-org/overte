@@ -238,6 +238,7 @@ bool ScriptValueV8Wrapper::hasProperty(const QString& name) const {
     v8::Isolate::Scope isolateScope(_engine->getIsolate());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
+    //V8TODO: does function return true on IsObject too?
     if (_value.constGet()->IsObject()) {
     //V8TODO: what about flags?
         v8::Local<v8::Value> resultLocal;

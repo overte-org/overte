@@ -21,6 +21,7 @@ EntityItemPointer GizmoEntityItem::factory(const EntityItemID& entityID, const E
 // our non-pure virtual subclass for now...
 GizmoEntityItem::GizmoEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
     _type = EntityTypes::Gizmo;
+    _gizmoType = GizmoType::UNSET_GIZMO_TYPE;
 }
 
 void GizmoEntityItem::setUnscaledDimensions(const glm::vec3& value) {
