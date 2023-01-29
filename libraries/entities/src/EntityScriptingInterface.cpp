@@ -1687,6 +1687,7 @@ ScriptValue RayToEntityIntersectionResultToScriptValue(ScriptEngine* engine, con
     obj.setProperty("entityID", entityItemValue);
     obj.setProperty("distance", value.distance);
     obj.setProperty("face", boxFaceToString(value.face));
+    Q_ASSERT(value.face < 7);
 
     ScriptValue intersection = vec3ToScriptValue(engine, value.intersection);
     obj.setProperty("intersection", intersection);
@@ -1703,6 +1704,7 @@ bool RayToEntityIntersectionResultFromScriptValue(const ScriptValue& object, Ray
     quuidFromScriptValue(entityIDValue, value.entityID);
     value.distance = object.property("distance").toVariant().toFloat();
     value.face = boxFaceFromString(object.property("face").toVariant().toString());
+    Q_ASSERT(value.face < 7);
 
     ScriptValue intersection = object.property("intersection");
     if (intersection.isValid()) {

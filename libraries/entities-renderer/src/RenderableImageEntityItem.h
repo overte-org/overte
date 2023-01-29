@@ -42,8 +42,8 @@ private:
     NetworkTexturePointer _texture;
     bool _textureIsLoaded { false };
 
-    bool _emissive;
-    bool _keepAspectRatio;
+    bool _emissive { false };
+    bool _keepAspectRatio { false };
     QRect _subImage;
 
     std::shared_ptr<graphics::ProceduralMaterial> _material { std::make_shared<graphics::ProceduralMaterial>() };

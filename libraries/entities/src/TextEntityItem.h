@@ -116,7 +116,7 @@ private:
     float _rightMargin;
     float _topMargin;
     float _bottomMargin;
-    bool _unlit;
+    bool _unlit { false };
 
     QString _font;
     TextAlignment _alignment;

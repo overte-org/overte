@@ -57,9 +57,9 @@ namespace render {
         const gpu::TexturePointer getStatusIconMap() const;
 
     protected:
-        bool _showDisplay; // initialized by Config
-        bool _showNetwork; // initialized by Config
-        bool _showFade; // initialized by Config
+        bool _showDisplay { false }; // initialized by Config
+        bool _showNetwork { false }; // initialized by Config
+        bool _showFade { false }; // initialized by Config
 
         gpu::Stream::FormatPointer _drawItemFormat;
         gpu::PipelinePointer _drawItemBoundsPipeline;
