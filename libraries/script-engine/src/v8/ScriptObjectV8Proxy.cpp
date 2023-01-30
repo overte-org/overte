@@ -1087,6 +1087,8 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
         connections = _connections;
     });*/
 
+    // V8TODO: this may cause deadlocks on connect/disconnect, so the connect/disconnect procedure needs to be reworked.
+    // It should probably add events to a separate list that would be processed before and after all the events for the signal.
     withReadLock([&]{
         //for (ConnectionList::iterator iter = connections.begin(); iter != connections.end(); ++iter) {
         for (ConnectionList::iterator iter = _connections.begin(); iter != _connections.end(); ++iter) {
@@ -1099,7 +1101,11 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
 
                 Q_ASSERT(!conn.callback.get().IsEmpty());
                 Q_ASSERT(!conn.callback.get()->IsUndefined());
-                Q_ASSERT(!conn.callback.get()->IsNull());
+                if(conn.callback.get()->IsNull()) {
+                    qDebug() << "ScriptSignalV8Proxy::qt_metacall: Connection callback is Null";
+                    _engine->popContext();
+                    continue;
+                }
                 if (!conn.callback.get()->IsFunction()) {
                     auto stringV8 = conn.callback.get()->ToDetailString(functionContext).ToLocalChecked();
                     QString error = *v8::String::Utf8Value(_engine->getIsolate(), stringV8);
