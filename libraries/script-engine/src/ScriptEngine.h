@@ -49,7 +49,7 @@ class ScriptEngine {
 public:
     typedef ScriptValue (*FunctionSignature)(ScriptContext*, ScriptEngine*);
     typedef ScriptValue (*MarshalFunction)(ScriptEngine*, const void*);
-    typedef bool (*DemarshalFunction)(const ScriptValue&, void*);
+    typedef bool (*DemarshalFunction)(const ScriptValue&, QVariant &dest);
 
     enum ValueOwnership {
         QtOwnership = 0,
