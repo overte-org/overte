@@ -344,9 +344,8 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
     if (demarshalFunc) {
         dest = QVariant(destTypeId, static_cast<void*>(NULL));
         ScriptValue wrappedVal(new ScriptValueV8Wrapper(this, v8Val));
-        Q_ASSERT(dest.constData() != nullptr);
-        //V8TODO: Data should never be written to dest.constData() according to Qt documentation.
-        bool success = demarshalFunc(wrappedVal, const_cast<void*>(dest.constData()));
+        //Q_ASSERT(dest.constData() != nullptr);
+        bool success = demarshalFunc(wrappedVal, dest);
         if(!success) dest = QVariant();
         return success;
     } else {
