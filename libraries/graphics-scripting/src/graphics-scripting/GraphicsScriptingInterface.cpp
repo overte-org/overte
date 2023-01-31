@@ -336,15 +336,16 @@ namespace scriptable {
                 }
                 return engine->newQObject(object, ScriptEngine::QtOwnership, ScriptEngine::AutoCreateDynamicProperties);
             },
-            [](const ScriptValue& value, void* p) -> bool {
-                Q_ASSERT(p != NULL);
-                QPointer<T>& out = *(reinterpret_cast<QPointer<T>* >(p));
+            [](const ScriptValue& value, QVariant &dest) -> bool {
+                //Q_ASSERT(p != NULL);
+                //QPointer<T>& out = *(reinterpret_cast<QPointer<T>* >(p));
                 auto obj = value.toQObject();
 #ifdef SCRIPTABLE_MESH_DEBUG
                 qCInfo(graphics_scripting) << "qpointer_qobject_cast" << obj << value.toString();
 #endif
                 if (auto tmp = qobject_cast<T*>(obj)) {
-                    out = QPointer<T>(tmp);
+                    //out = QPointer<T>(tmp);
+                    dest.template setValue(QPointer<T>(tmp));
                     return true;
                 }
 #if 0
@@ -356,7 +357,7 @@ namespace scriptable {
                     return true;
                 }
 #endif
-                out = nullptr;
+                //out = nullptr;
                 return false;
             }
         );
@@ -676,13 +677,14 @@ namespace scriptable {
             engine,
             [](ScriptEngine* engine, const void* p) -> ScriptValue {
                 Q_ASSERT(p != NULL);
+                // V8TODO: I'm not sure if this is safe
                 const T& topology = *(reinterpret_cast<const T*>(p));
                 return engine->newValue(instance.value(topology));
             },
-            [](const ScriptValue& value, void* p) -> bool {
-                Q_ASSERT(p != NULL);
-                T& topology = *(reinterpret_cast<T*>(p));
-                topology = instance.key(value.toString());
+            [](const ScriptValue& value, QVariant &dest) -> bool {
+                //Q_ASSERT(p != NULL);
+                //T& topology = *(reinterpret_cast<T*>(p));
+                dest.setValue(instance.key(value.toString()));
                 return true;
             }
         );

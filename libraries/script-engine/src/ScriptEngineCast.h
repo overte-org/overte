@@ -76,10 +76,12 @@ ScriptValue toScriptValueWrapper(ScriptEngine* engine, const void *p) {
 }
 
 template <typename T, bool (*f)(const ScriptValue&, T&)>
-bool fromScriptValueWrapper(const ScriptValue& val, void* p) {
-    Q_ASSERT(p != NULL);
-    auto &dest = *(reinterpret_cast<T*>(p));
-    return f(val, dest);
+bool fromScriptValueWrapper(const ScriptValue& val, QVariant &destV) {
+    //auto &dest = *(reinterpret_cast<T*>(p));
+    T dest;
+    bool result = f(val, dest);
+    destV.setValue(dest);
+    return result;
 }
 
 template <typename T, ScriptValue (*toScriptValue)(ScriptEngine*, const T&), bool (*fromScriptValue)(const ScriptValue&, T&)>
@@ -101,7 +103,7 @@ int scriptRegisterMetaType(ScriptEngine* eng, const char* name = "",
 template <typename T>
 int scriptRegisterMetaTypeWithLambdas(ScriptEngine* eng,
                            ScriptValue (*toScriptValue)(ScriptEngine*, const void *),
-                           bool (*fromScriptValue)(const ScriptValue&, void *), const char* name = "",
+                           bool (*fromScriptValue)(const ScriptValue&, QVariant &dest), const char* name = "",
                            T* = 0)
 {
     int id;
