@@ -73,8 +73,16 @@ bool ScriptEngineV8::IS_THREADSAFE_INVOCATION(const QThread* thread, const QStri
 // engine-aware JS Error copier and factory
 V8ScriptValue ScriptEngineV8::makeError(const V8ScriptValue& _other, const QString& type) {
     if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
+        v8::Locker locker(_v8Isolate);
+        v8::Isolate::Scope isolateScope(_v8Isolate);
+        v8::HandleScope handleScope(_v8Isolate);
+        v8::Context::Scope contextScope(getContext());
         return V8ScriptValue(this, v8::Null(_v8Isolate));
     }
+    v8::Locker locker(_v8Isolate);
+    v8::Isolate::Scope isolateScope(_v8Isolate);
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(getContext());
     return V8ScriptValue(this, v8::Null(_v8Isolate));
     //V8TODO
     /*
@@ -308,6 +316,8 @@ bool ScriptEngineV8::maybeEmitUncaughtException(const QString& debugHint) {
     return call;
 }*/
 QString Lambda::toString() const {
+    v8::Locker locker(_engine->getIsolate());
+    v8::Isolate::Scope isolateScope(_engine->getIsolate());
     v8::HandleScope handleScope(_engine->getIsolate());
     v8::Context::Scope contextScope(_engine->getContext());
     v8::Local<v8::String> string;
@@ -1118,6 +1128,7 @@ QString ScriptEngineV8::formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch) {
 }
 
 ScriptContextV8Pointer ScriptEngineV8::pushContext(v8::Local<v8::Context> context) {
+    v8::HandleScope handleScope(_v8Isolate);
     Q_ASSERT(!_contexts.isEmpty());
     ScriptContextPointer parent = _contexts.last();
     _contexts.append(std::make_shared<ScriptContextV8Wrapper>(this, context, ScriptContextPointer()));
@@ -1472,6 +1483,11 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
         return unwrapped ? unwrapped->toV8Value() : V8ScriptValue();
     };*/
 
+    v8::Locker locker(_v8Isolate);
+    v8::Isolate::Scope isolateScope(_v8Isolate);
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(getContext());
+
     auto v8FunctionCallback = [](const v8::FunctionCallbackInfo<v8::Value>& info) {
         //V8TODO: is using GetCurrentContext ok, or context wrapper needs to be added?
         v8::HandleScope handleScope(info.GetIsolate());
@@ -1495,10 +1511,6 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
     //auto functionTemplate = v8::FunctionTemplate::New(_v8Isolate, v8FunctionCallback, v8::Local<v8::Value>(), v8::Local<v8::Signature>(), length);
     //auto functionData = v8::Object::New(_v8Isolate);
     //functionData->setIn
-    v8::Locker locker(_v8Isolate);
-    v8::Isolate::Scope isolateScope(_v8Isolate);
-    v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(getContext());
     auto functionDataTemplate = v8::ObjectTemplate::New(_v8Isolate);
     functionDataTemplate->SetInternalFieldCount(2);
     auto functionData = functionDataTemplate->NewInstance(getContext()).ToLocalChecked();

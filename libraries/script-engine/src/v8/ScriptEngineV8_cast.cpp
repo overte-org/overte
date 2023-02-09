@@ -186,6 +186,7 @@ static bool JsonArrayFromScriptValue(const ScriptValue& src, QJsonArray& dest) {
 // QMetaType::QJsonArray
 
 void ScriptEngineV8::registerSystemTypes() {
+    // V8TODO: why is this commented out?
     //qScriptRegisterMetaType(this, ScriptValueToV8ScriptValue, ScriptValueFromV8ScriptValue);
 
     scriptRegisterMetaType<QStringList, StringListToScriptValue, StringListFromScriptValue>(static_cast<ScriptEngine*>(this));
@@ -564,6 +565,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
 bool ScriptEngineV8::convertJSArrayToVariant(v8::Local<v8::Array> array, QVariant &dest) {
     v8::HandleScope handleScope(_v8Isolate);
     auto context = getContext();
+    v8::Context::Scope contextScope(context);
     int length = array->Length();
     QList<QVariant> properties;
     for (int i = 0; i < length; i++) {
@@ -588,6 +590,7 @@ bool ScriptEngineV8::convertJSArrayToVariant(v8::Local<v8::Array> array, QVarian
 bool ScriptEngineV8::convertJSObjectToVariant(v8::Local<v8::Object> object, QVariant &dest) {
     v8::HandleScope handleScope(_v8Isolate);
     auto context = getContext();
+    v8::Context::Scope contextScope(context);
     v8::Local<v8::Array> names;
     if(!object->GetPropertyNames(context).ToLocal(&names)) {
         qDebug() << "ScriptEngineV8::convertJSObjectToVariant could not get property names";

@@ -176,6 +176,7 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValue& arguments) {
     //return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
 }
 
+// V8TODO: check how data() is used and if it needs fixing
 ScriptValue ScriptValueV8Wrapper::data() const {
     auto isolate = _engine->getIsolate();
     v8::Locker locker(isolate);
@@ -189,8 +190,10 @@ ScriptValue ScriptValueV8Wrapper::data() const {
          //bool createData = false;
          if (!v8Object->Get(_engine->getContext(), v8::String::NewFromUtf8(isolate, "__data").ToLocalChecked()).ToLocal(&data)) {
              data = v8::Undefined(isolate);
+             Q_ASSERT(false);
              //createData = true;
-         } /*else {
+         }
+         /*else {
              if (data->IsUndefined()) {
                  createData = true;
              }
@@ -284,8 +287,9 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
     if (name == QString("x")) {
         printf("x");
     }
-    qDebug() << "Failed to get property, parent of value: " << name << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
-    qDebug() << "Backtrace: " << _engine->currentContext()->backtrace();
+    //This displays too many messages during correct operation, but is useful for debugging
+    //qDebug() << "Failed to get property, parent of value: " << name << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
+    //qDebug() << "Backtrace: " << _engine->currentContext()->backtrace();
     return _engine->undefinedValue();
     /*v8::Local<v8::Value> nullValue = v8::Null(_engine->getIsolate());
     V8ScriptValue nullScriptValue(_engine->getIsolate(), std::move(nullValue));
@@ -536,8 +540,9 @@ bool ScriptValueV8Wrapper::equals(const ScriptValue& other) const {
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     ScriptValueV8Wrapper* unwrappedOther = unwrap(other);
-    //V8TODO: does this work with different contexts/isolates?
+    //V8TODO: is this used with different isolates?
     // in such case conversion will probably be necessary
+    Q_ASSERT(_engine->getIsolate() == unwrappedOther->_engine->getIsolate());
     if (!unwrappedOther) {
         return false;
     }else{
@@ -656,6 +661,7 @@ bool ScriptValueV8Wrapper::isVariant() const {
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
+    Q_ASSERT(false);
     return false;
     //return _value.isVariant();
 }
