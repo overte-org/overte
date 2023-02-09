@@ -34,6 +34,14 @@ public:
         _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), std::move(value)));
     };
 
+    V8ScriptValueTemplate(ScriptEngineV8 *engine) : _engine(engine) {
+        v8::Locker locker(_engine->getIsolate());
+        v8::Isolate::Scope isolateScope(_engine->getIsolate());
+        v8::HandleScope handleScope(_engine->getIsolate());
+        v8::Context::Scope(_engine->getContext());
+        _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), v8::Local<T>()));
+    };
+
     V8ScriptValueTemplate(const V8ScriptValueTemplate &copied) : _engine(copied.getEngine()) {
         v8::Locker locker(_engine->getIsolate());
         v8::Isolate::Scope isolateScope(_engine->getIsolate());
