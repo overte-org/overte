@@ -52,7 +52,18 @@ public: // construction
     //inline ScriptProgramV8Wrapper(ScriptEngineV8* engine, V8ScriptProgram&& value) :
     //    _engine(engine), _value(std::move(value)) {}
     inline ScriptProgramV8Wrapper(ScriptEngineV8* engine, QString source, QString url) :
-    _engine(engine), _source(source), _url(url), _value(engine, v8::Local<v8::Script>()) {}
+    _engine(engine), _source(source), _url(url), _value(_engine) {
+        auto isolate = _engine->getIsolate();
+        v8::Locker locker(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
+        v8::HandleScope handleScope(isolate);
+        v8::Context::Scope contextScope(_engine->getContext());
+        // V8TODO: In implicit copy assignment operator for 'V8ScriptValueTemplate<v8::Script>'
+        // first required here /home/ksuprynowicz/overte/overte_v8/libraries/script-engine/src/v8/V8Types.h:45:5:
+        // warning: definition of implicit copy assignment operator for 'V8ScriptValueTemplate<v8::Script>' is deprecated
+        // because it has a user-provided copy constructor
+        _value = V8ScriptProgram(engine, v8::Local<v8::Script>());
+    }
     static ScriptProgramV8Wrapper* unwrap(ScriptProgramPointer val);
     bool compile();
     inline const V8ScriptProgram& toV8Value() const { return _value; }
