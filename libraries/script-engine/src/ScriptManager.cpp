@@ -1322,7 +1322,7 @@ ScriptValue ScriptManager::newModule(const QString& modulePath, const ScriptValu
     auto closure = _engine->newObject();
     auto exports = _engine->newObject();
     auto module = _engine->newObject();
-    qCDebug(scriptengine_module) << "newModule" << parent.property("filename").toString();
+    //qCDebug(scriptengine_module) << "newModule" << parent.property("filename").toString();
 
     closure.setProperty("module", module, READONLY_PROP_FLAGS);
 
@@ -1530,7 +1530,7 @@ ScriptValue ScriptManager::require(const QString& moduleId) {
     // set up a new reference point for detecting cache key deletion
     cacheMeta.setProperty(modulePath, module);
 
-    qCDebug(scriptengine_module) << "//ScriptManager::require(" << moduleId << ")";
+    //qCDebug(scriptengine_module) << "//ScriptManager::require(" << moduleId << ")";
 
     _engine->maybeEmitUncaughtException(__FUNCTION__);
     //qCDebug(scriptengine_module) << "Exports: " << _engine->scriptValueDebugDetails(module.property("exports"));

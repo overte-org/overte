@@ -178,7 +178,8 @@ ScriptValue ScriptContextV8Wrapper::throwError(const QString& text) {
         return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
     } else {
         qWarning() << "throwError on a different thread not implemented yet, error value: " << text;
-        return _engine->undefinedValue();
+        //return _engine->undefinedValue();
+        return ScriptValue();
     }
 }
 
@@ -197,7 +198,7 @@ ScriptValue ScriptContextV8Wrapper::throwValue(const ScriptValue& value) {
 }
 
 ScriptFunctionContextV8Wrapper::ScriptFunctionContextV8Wrapper(ScriptEngineV8* engine, const v8::Local<v8::Context> context) : _engine(engine) {
-    v8::Locker locker();
+    v8::Locker locker(engine->getIsolate());
     v8::Isolate::Scope isolateScope(engine->getIsolate());
     v8::HandleScope handleScope(engine->getIsolate());
     _context.Reset(engine->getIsolate(), context);

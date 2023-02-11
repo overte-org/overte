@@ -339,7 +339,7 @@ Lambda::~Lambda() {
 }
 
 Lambda::Lambda(ScriptEngineV8* engine,
-               std::function<V8ScriptValue(V8ScriptContext*, ScriptEngineV8*)> operation,
+               std::function<V8ScriptValue(ScriptEngineV8*)> operation,
                V8ScriptValue data) :
     _engine(engine),
     _operation(operation), _data(data) {
@@ -1056,7 +1056,7 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
         _evaluatingCounter--;
         return err;
     }
-    qCDebug(scriptengine) << "Script compilation succesful: " << fileName;
+    //qCDebug(scriptengine) << "Script compilation succesful: " << fileName;
 
     //V8TODO
     /*auto syntaxError = lintScript(sourceCode, fileName);
@@ -1599,7 +1599,7 @@ int ScriptEngineV8::uncaughtExceptionLineNumber() const {
 bool ScriptEngineV8::raiseException(const ScriptValue& exception) {
     //V8TODO
     //Q_ASSERT(false);
-    qCritical() << "Script exception occured: " << exception.toString();
+    qCritical() << "Script exception occurred: " << exception.toString();
     /*ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(exception);
     V8ScriptValue qException = unwrapped ? unwrapped->toV8Value() : QScriptEngine::newVariant(exception.toVariant());
     return raiseException(qException);*/

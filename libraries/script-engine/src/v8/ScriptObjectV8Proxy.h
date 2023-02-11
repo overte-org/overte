@@ -113,7 +113,7 @@ private:  // storage
     const bool _ownsObject;
     QPointer<QObject> _object;
     // V8TODO Is this necessary?
-    v8::UniquePersistent<v8::ObjectTemplate> _v8ObjectTemplate;
+    // v8::UniquePersistent<v8::ObjectTemplate> _v8ObjectTemplate;
     // Handle for its own object
     v8::UniquePersistent<v8::Object> _v8Object;
     int pointerCorruptionTest = 12345678;

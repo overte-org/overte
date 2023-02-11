@@ -459,6 +459,9 @@ ScriptValue quatToScriptValue(ScriptEngine* engine, const glm::quat& quat) {
 
 // V8TODO: add similar check to other conversions
 bool quatFromScriptValue(const ScriptValue& object, glm::quat& quat) {
+    if (!object.isValid()) {
+        return false;
+    }
     if (!object.isObject()) {
         return false;
     }

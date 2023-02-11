@@ -343,7 +343,8 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
         _customTypeProtect.unlock();
     }
     if (demarshalFunc) {
-        dest = QVariant(destTypeId, static_cast<void*>(NULL));
+        //dest = QVariant(destTypeId, static_cast<void*>(NULL));
+        dest = QVariant();
         ScriptValue wrappedVal(new ScriptValueV8Wrapper(this, v8Val));
         //Q_ASSERT(dest.constData() != nullptr);
         bool success = demarshalFunc(wrappedVal, dest);
@@ -464,6 +465,14 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                 dest = QVariant::fromValue(static_cast<uint16_t>(val->ToUint32(context).ToLocalChecked()->Value()));
                 break;
             case QMetaType::QObjectStar:
+                {
+                    // V8TODO: this is to diagnose a really weird segfault where it looks like only half of the QPointer is set to null upon object deletion
+                    uint64_t ptrVal = (uint64_t)(ScriptObjectV8Proxy::unwrap(v8Val));
+                    if ((uint32_t)(ptrVal) == 0 && ptrVal != 0) {
+                        printf("break");
+                        Q_ASSERT(false);
+                    }
+                }
                 dest = QVariant::fromValue(ScriptObjectV8Proxy::unwrap(v8Val));
                 break;
             case QMetaType::QVariant:
