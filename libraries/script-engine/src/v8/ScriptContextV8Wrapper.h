@@ -60,6 +60,7 @@ private: // storage
     // V8TODO: Is custom copy constructor needed for thread safety?
     v8::Persistent<v8::Context> _context;
     ScriptContextPointer _parentContext;
+    Q_DISABLE_COPY(ScriptContextV8Wrapper)
 };
 
 class ScriptFunctionContextV8Wrapper final : public ScriptFunctionContext {
@@ -78,6 +79,7 @@ private: // storage
     // V8TODO: Is custom copy constructor needed for thread safety?
     v8::Persistent<v8::Context> _context;
     //V8ScriptContextInfo _value;
+    Q_DISABLE_COPY(ScriptFunctionContextV8Wrapper)
 };
 
 #endif  // hifi_ScriptContextV8Wrapper_h
