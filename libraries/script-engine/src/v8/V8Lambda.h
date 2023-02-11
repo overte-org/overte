@@ -25,7 +25,7 @@ class Lambda : public QObject {
     Q_OBJECT
 public:
     Lambda(ScriptEngineV8* engine,
-           std::function<V8ScriptValue(V8ScriptContext* context, ScriptEngineV8* engine)> operation,
+           std::function<V8ScriptValue(ScriptEngineV8* engine)> operation,
            V8ScriptValue data);
     ~Lambda();
 public slots:
@@ -34,7 +34,7 @@ public slots:
 
 private:
     ScriptEngineV8* _engine;
-    std::function<V8ScriptValue(V8ScriptContext* context, ScriptEngineV8* engine)> _operation;
+    std::function<V8ScriptValue(ScriptEngineV8* engine)> _operation;
     V8ScriptValue _data;
 };
 

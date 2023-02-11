@@ -21,9 +21,11 @@
 #include "ScriptContextV8Wrapper.h"
 #include "ScriptValueV8Wrapper.h"
 
-Q_DECLARE_METATYPE(V8ScriptContext*)
+//V8TODO: is this needed for anything? It could cause trouble with multithreading if V8ScriptContext is v8::Persistent
+//Q_DECLARE_METATYPE(V8ScriptContext*)
+
 Q_DECLARE_METATYPE(ScriptValue)
-//V8TODO?
+//V8TODO: default constructor would be needed
 //Q_DECLARE_METATYPE(V8ScriptValue)
 
 Q_DECLARE_METATYPE(QSharedPointer<ScriptObjectV8Proxy>)
@@ -60,8 +62,8 @@ private:  // storage
 };
 
 ScriptObjectV8Proxy::ScriptObjectV8Proxy(ScriptEngineV8* engine, QObject* object, bool ownsObject, const ScriptEngine::QObjectWrapOptions& options) :
-    _engine(engine), _wrapOptions(options), _ownsObject(ownsObject), _object(object),
-    _v8ObjectTemplate(engine->getIsolate(), v8::ObjectTemplate::New(engine->getIsolate())) {
+    _engine(engine), _wrapOptions(options), _ownsObject(ownsObject), _object(object) {
+    //_v8ObjectTemplate(engine->getIsolate(), v8::ObjectTemplate::New(engine->getIsolate())
     investigate();
 }
 
@@ -147,6 +149,9 @@ ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(const V8ScriptValue& val) 
     //V8TODO This shouldn't cause problems but I'm not sure if it's ok
     //v8::HandleScope handleScope(const_cast<v8::Isolate*>(val.constGetIsolate()));
     auto v8Value = val.constGet();
+    if (v8Value->IsNullOrUndefined()) {
+        return nullptr;
+    }
     if (!v8Value->IsObject()) {
         //qDebug(scriptengine) << "Cannot unwrap proxy - value is not an object";
         return nullptr;
@@ -170,6 +175,10 @@ ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(v8::Isolate* isolate, v8::
     //V8TODO: shouldn't there be context scope here?
     //v8::Local<v8::Context> context = val.constGetContext();
     //v8::Context::Scope contextScope(context);
+    if (value->IsNullOrUndefined()) {
+        //qDebug(scriptengine) << "Cannot unwrap proxy - value is not an object";
+        return nullptr;
+    }
     if (!value->IsObject()) {
         //qDebug(scriptengine) << "Cannot unwrap proxy - value is not an object";
         return nullptr;
@@ -201,7 +210,10 @@ ScriptObjectV8Proxy::~ScriptObjectV8Proxy() {
 
 void ScriptObjectV8Proxy::investigate() {
     QObject* qobject = _object;
-    Q_ASSERT(qobject);
+    if (!qobject) {
+        QStringList backtrace = _engine->currentContext()->backtrace();
+        qDebug(scriptengine) << "ScriptObjectV8Proxy::investigate: Object pointer is NULL, " << backtrace;
+    }
     if (!qobject) return;
 
     auto isolate = _engine->getIsolate();
@@ -210,7 +222,8 @@ void ScriptObjectV8Proxy::investigate() {
     v8::HandleScope handleScope(_engine->getIsolate());
     v8::Context::Scope contextScope(_engine->getContext());
     
-    auto objectTemplate = _v8ObjectTemplate.Get(_engine->getIsolate());
+    //auto objectTemplate = _v8ObjectTemplate.Get(_engine->getIsolate());
+    auto objectTemplate = v8::ObjectTemplate::New(_engine->getIsolate());
     objectTemplate->SetInternalFieldCount(3);
     objectTemplate->SetHandler(v8::NamedPropertyHandlerConfiguration(v8Get, v8Set));
     
