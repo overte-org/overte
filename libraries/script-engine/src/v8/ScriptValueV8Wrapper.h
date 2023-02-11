@@ -30,7 +30,6 @@ class ScriptValueV8Wrapper final : public ScriptValueProxy {
 public: // construction
     inline ScriptValueV8Wrapper(ScriptEngineV8* engine, const V8ScriptValue& value) :
         _engine(engine), _value(value) {}
-//        _engine(engine), _value(std::move(value.copy())) {}
     inline ScriptValueV8Wrapper(ScriptEngineV8* engine, V8ScriptValue&& value) :
         _engine(engine), _value(std::move(value)) {}
     static ScriptValueV8Wrapper* unwrap(const ScriptValue& val);

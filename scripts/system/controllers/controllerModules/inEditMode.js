@@ -72,14 +72,17 @@ Script.include("/~/system/libraries/utils.js");
             if (controllerData.triggerClicks[this.hand]) {
                 var hand = this.hand === RIGHT_HAND ? Controller.Standard.RightHand : Controller.Standard.LeftHand;
                 if (!this.triggerClicked) {
+                    print("inEditMode click");
                     this.selectedTarget = controllerData.rayPicks[this.hand];
                     if (!this.selectedTarget.intersects) {
+                        print("inEditMode no intersect");
                         Messages.sendLocalMessage(this.ENTITY_TOOL_UPDATES_CHANNEL, JSON.stringify({
                             method: "clearSelection",
                             hand: hand
                         }));
                     } else {
                         if (this.selectedTarget.type === Picks.INTERSECTED_ENTITY) {
+                            print("inEditMode select entity");
                             Messages.sendLocalMessage(this.ENTITY_TOOL_UPDATES_CHANNEL, JSON.stringify({
                                 method: "selectEntity",
                                 entityID: this.selectedTarget.objectID,
@@ -88,6 +91,7 @@ Script.include("/~/system/libraries/utils.js");
                                 intersection: this.selectedTarget.intersection
                             }));
                         } else if (this.selectedTarget.type === Picks.INTERSECTED_OVERLAY) {
+                            print("inEditMode select overlay");
                             Messages.sendLocalMessage(this.ENTITY_TOOL_UPDATES_CHANNEL, JSON.stringify({
                                 method: "selectOverlay",
                                 overlayID: this.selectedTarget.objectID,

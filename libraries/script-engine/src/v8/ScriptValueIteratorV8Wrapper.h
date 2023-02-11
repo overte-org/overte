@@ -37,6 +37,7 @@ private:
     int _length;
     int _currentIndex;
     ScriptEngineV8 *_engine;
+    Q_DISABLE_COPY(V8ScriptValueIterator)
 };
 
 /// [V8] Implements ScriptValueIterator for V8 and translates calls for V8ScriptValueIterator

@@ -237,15 +237,15 @@ ScriptValueIteratorPointer ScriptValueV8Wrapper::newIterator() const {
 
 bool ScriptValueV8Wrapper::hasProperty(const QString& name) const {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(_engine->getIsolate());
-    v8::Isolate::Scope isolateScope(_engine->getIsolate());
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     //V8TODO: does function return true on IsObject too?
     if (_value.constGet()->IsObject()) {
     //V8TODO: what about flags?
         v8::Local<v8::Value> resultLocal;
-        v8::Local<v8::String> key = v8::String::NewFromUtf8(_engine->getIsolate(), name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
+        v8::Local<v8::String> key = v8::String::NewFromUtf8(isolate, name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
         const v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(_value.constGet());
         //V8TODO: Which context?
         if (object->Get(_engine->getContext(), key).ToLocal(&resultLocal)) {
@@ -265,6 +265,9 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
     v8::Isolate::Scope isolateScope(_engine->getIsolate());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
+    if (_value.constGet()->IsNullOrUndefined()) {
+        return _engine->undefinedValue();
+    }
     if (_value.constGet()->IsObject()) {
     //V8TODO: what about flags?
         v8::Local<v8::Value> resultLocal;
@@ -304,6 +307,10 @@ ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
+    if (_value.constGet()->IsNullOrUndefined()) {
+        qDebug() << "Failed to get property, parent of value: " << arrayIndex << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
+        return _engine->undefinedValue();
+    }
     if (_value.constGet()->IsObject()) {
     //V8TODO: what about flags?
         v8::Local<v8::Value> resultLocal;
@@ -315,9 +322,6 @@ ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue
     }
     qDebug() << "Failed to get property, parent of value: " << arrayIndex << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
     return _engine->undefinedValue();
-    /*v8::Local<v8::Value> nullValue = v8::Null(_engine->getIsolate());
-    V8ScriptValue nullScriptValue(_engine->getIsolate(), std::move(nullValue));
-    return ScriptValue(new ScriptValueV8Wrapper(_engine, nullScriptValue));*/
 }
 
 void ScriptValueV8Wrapper::setData(const ScriptValue& value) {
@@ -329,6 +333,10 @@ void ScriptValueV8Wrapper::setData(const ScriptValue& value) {
     V8ScriptValue unwrapped = fullUnwrap(value);
     // V8TODO Check if it uses same isolate. Would pointer check be enough?
     // Private properties are an experimental feature for now on V8, so we are using regular value for now
+    if (_value.constGet()->IsNullOrUndefined()) {
+        qDebug() << "ScriptValueV8Wrapper::setData() was called on a value that is null or undefined";
+        return;
+    }
     if (_value.constGet()->IsObject()) {
         auto v8Object = v8::Local<v8::Object>::Cast(_value.constGet());
         if( !v8Object->Set(_engine->getContext(), v8::String::NewFromUtf8(isolate, "__data").ToLocalChecked(), unwrapped.constGet()).FromMaybe(false)) {
@@ -349,6 +357,10 @@ void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& v
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue unwrapped = fullUnwrap(value);
+    if (_value.constGet()->IsNullOrUndefined()) {
+        qDebug() << "ScriptValueV8Wrapper::setProperty() was called on a value that is null or undefined";
+        return;
+    }
     if(_value.constGet()->IsObject()) {
         v8::Local<v8::String> key = v8::String::NewFromUtf8(isolate, name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
         Q_ASSERT(_value.get()->IsObject());
@@ -381,6 +393,10 @@ void ScriptValueV8Wrapper::setProperty(quint32 arrayIndex, const ScriptValue& va
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue unwrapped = fullUnwrap(value);
+    if (_value.constGet()->IsNullOrUndefined()) {
+        qDebug() << "ScriptValueV8Wrapper::setProperty() was called on a value that is null or undefined";
+        return;
+    }
     if(_value.constGet()->IsObject()) {
         auto object = v8::Local<v8::Object>::Cast(_value.get());
         //V8TODO: I don't know which context to use here
@@ -404,6 +420,9 @@ void ScriptValueV8Wrapper::setPrototype(const ScriptValue& prototype) {
     v8::Context::Scope contextScope(_engine->getContext());
     ScriptValueV8Wrapper* unwrappedPrototype = unwrap(prototype);
     if (unwrappedPrototype) {
+        if(unwrappedPrototype->toV8Value().constGet()->IsNullOrUndefined() && _value.constGet()->IsNullOrUndefined()) {
+            qDebug(scriptengine) << "Failed to assign prototype - one of values is null or undefined";
+        }
         if(unwrappedPrototype->toV8Value().constGet()->IsObject() && _value.constGet()->IsObject()) {
             auto object = v8::Local<v8::Object>::Cast(_value.get());
             //V8TODO: I don't know which context to use here
@@ -526,7 +545,11 @@ QVariant ScriptValueV8Wrapper::toVariant() const {
 QObject* ScriptValueV8Wrapper::toQObject() const {
     QVariant dest;
     if (_engine->castValueToVariant(_value, dest, QMetaType::QObjectStar)) {
-        return dest.value<QObject*>();
+        if (dest.canConvert<QObject*>()) {
+            return dest.value<QObject*>();
+        } else {
+            Q_ASSERT(false);
+        }
     } else {
         Q_ASSERT(false);
         return nullptr;
