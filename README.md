@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 <p align="center">
     <a href="https://github.com/overte-org/overte/actions/workflows/master_build.yml"><img alt="Master CI Build" src="https://github.com/overte-org/overte/actions/workflows/master_build.yml/badge.svg"></a>
     <a href="https://github.com/overte-org/overte/actions/workflows/master_deploy_apidocs.yml"><img alt="API-docs CI Build & Deploy" src="https://github.com/overte-org/overte/actions/workflows/master_deploy_apidocs.yml/badge.svg"></a>
+    <a href="https://github.com/overte-org/overte/actions/workflows/master_deploy_doxygen.yml"><img alt="Doxygen CI Build & Deploy" src="https://github.com/overte-org/overte/actions/workflows/master_deploy_doxygen.yml/badge.svg"></a>
     <a href="https://api.reuse.software/info/github.com/overte-org/overte"><img alt="REUSE status" src="https://api.reuse.software/badge/github.com/overte-org/overte"></a>
 </p>
 
