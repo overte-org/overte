@@ -236,7 +236,8 @@ bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3) {
         }
 
         if (!x.isValid() || !y.isValid() || !z.isValid()) {
-            return false;
+            // V8TODO: This breaks the sit script for some reason
+            //return false;
         }
 
         vec3.x = x.toVariant().toFloat();
