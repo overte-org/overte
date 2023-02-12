@@ -49,6 +49,7 @@ void ScriptEngineV8::registerCustomType(int type,
 }
 
 Q_DECLARE_METATYPE(ScriptValue);
+Q_DECLARE_METATYPE(QVariantMap);
 
 /*static V8ScriptValue ScriptValueToV8ScriptValue(ScriptEngineV8* engine, const ScriptValue& src) {
     return ScriptValueV8Wrapper::fullUnwrap(static_cast<ScriptEngineV8*>(engine), src);

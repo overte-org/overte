@@ -218,7 +218,7 @@ var EntityListTool = function(shouldUseEditTabletApp) {
                             url = properties.imageURL;
                         }
                         //print("Global object before getParentState call: " + JSON.stringify(globalThis));
-                        var parentStatus = getParentState(ids[i]);
+                        var parentStatus = that.createApp.getParentState(ids[i]);
                         var parentState = "";
                         if (parentStatus === "PARENT") {
                             parentState = "A";

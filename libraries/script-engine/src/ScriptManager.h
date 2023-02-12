@@ -564,6 +564,13 @@ public:
      */
     Q_INVOKABLE void requestGarbageCollection();
 
+    /**jsdoc
+     * Prints out current backtrace to the log.
+     * @function Script.logBacktrace
+     * @param {string} title - Title added to the printed out backtrace.
+     */
+    Q_INVOKABLE void logBacktrace(const QString &title);
+
     /*@jsdoc
      * @function Script.loadEntityScript
      * @param {Uuid} entityID - Entity ID.

@@ -83,12 +83,15 @@ SelectionManager = (function() {
 
     // FUNCTION: HANDLE ENTITY SELECTION TOOL UPDATES
     function handleEntitySelectionToolUpdates(channel, message, sender) {
+        //print("Channel: " + channel + " Sender: " + sender + " Message: " + JSON.stringify(message));
         if (channel !== 'entityToolUpdates') {
             return;
         }
+        print("handleEntitySelectionToolUpdates entityToolUpdates");
         if (sender !== MyAvatar.sessionUUID) {
             return;
         }
+        print("handleEntitySelectionToolUpdates MyAvatar.sessionUUID");
 
         var wantDebug = false;
         var messageParsed;
@@ -99,6 +102,7 @@ SelectionManager = (function() {
             return;
         }
 
+        print("handleEntitySelectionToolUpdates JSON.parse(message): " + messageParsed.method);
         if (messageParsed.method === "selectEntity") {
             if (!that.editEnabled) {
                 return;
@@ -125,7 +129,7 @@ SelectionManager = (function() {
                         }
                         selectionDisplay.moveSelection(Vec3.sum(messageParsed.intersection, Vec3.multiplyQbyV( normalRotation, {"x": 0.0, "y":0.0, "z": distanceFromSurface})));
                         that._update(false, this);
-                        pushCommandForSelections();
+                        that.createApp.pushCommandForSelections();
                         expectingRotateAsClickedSurface = false;
                         audioFeedback.action();
                     }
@@ -147,6 +151,7 @@ SelectionManager = (function() {
                 that.clearSelections();
             }
         } else if (messageParsed.method === "pointingAt") {
+            print("handleEntitySelectionToolUpdates pointingAt");
             if (messageParsed.hand === Controller.Standard.RightHand) {
                 that.pointingAtDesktopWindowRight = messageParsed.desktopWindow;
                 that.pointingAtTabletRight = messageParsed.tablet;
@@ -232,6 +237,8 @@ SelectionManager = (function() {
     };
 
     that.setSelections = function(entityIDs, caller) {
+        print("setSelections: " + JSON.stringify(entityIDs));
+        Script.logBacktrace("setSelections");
         that.selections = [];
         for (var i = 0; i < entityIDs.length; i++) {
             var entityID = entityIDs[i];
@@ -723,7 +730,7 @@ SelectionManager = (function() {
                 var newPosition = Vec3.sum(relativePosition, targetPosition);
                 Entities.editEntity(id, { "position": newPosition });
             }
-            pushCommandForSelections();
+            that.createApp.pushCommandForSelections();
             that._update(false, this);
         } else {
             audioFeedback.rejection();
@@ -2002,7 +2009,7 @@ SelectionDisplay = (function() {
             
             var handleBoundingBoxColor = COLOR_BOUNDING_EDGE;
             if (SelectionManager.selections.length === 1) {
-                var parentState = getParentState(SelectionManager.selections[0]);
+                var parentState = that.createApp.getParentState(SelectionManager.selections[0]);
                 if (parentState === "CHILDREN") {
                     handleBoundingBoxColor = COLOR_BOUNDING_EDGE_CHILDREN;
                 } else if (parentState === "PARENT") {
@@ -2504,7 +2511,7 @@ SelectionDisplay = (function() {
                 }
             updateSelectionsRotation(axisRotation, SelectionManager.worldPosition);
             SelectionManager._update(false, this);
-            pushCommandForSelections();
+            that.createApp.pushCommandForSelections();
             audioFeedback.action();
         }
     };
@@ -2585,7 +2592,7 @@ SelectionDisplay = (function() {
                     print("    starting elevation: " + startingElevation);
                 }
 
-                initialPick = rayPlaneIntersection(pickRay, pickPlanePosition, pickPlaneNormal);
+                initialPick = that.createApp.rayPlaneIntersection(pickRay, pickPlanePosition, pickPlaneNormal);
                 
                 if (debugPickPlaneEnabled) {
                     that.showDebugPickPlane(pickPlanePosition, pickPlaneNormal);
@@ -2598,7 +2605,7 @@ SelectionDisplay = (function() {
                 }
             },
             onEnd: function(event, reason) {
-                pushCommandForSelections(duplicatedEntityIDs);
+                that.createApp.pushCommandForSelections(duplicatedEntityIDs);
                 if (isConstrained) {
                     Entities.editEntity(xRailToolEntity, {
                         visible: false,
@@ -2617,7 +2624,7 @@ SelectionDisplay = (function() {
                 var wantDebug = false;
                 var pickRay = generalComputePickRay(event.x, event.y);
 
-                var newPick = rayPlaneIntersection2(pickRay, pickPlanePosition, pickPlaneNormal);
+                var newPick = that.createApp.rayPlaneIntersection2(pickRay, pickPlanePosition, pickPlaneNormal);
 
                 // If the pick ray doesn't hit the pick plane in this direction, do nothing.
                 // this will happen when someone drags across the horizon from the side they started on.
@@ -2722,7 +2729,7 @@ SelectionDisplay = (function() {
                 var negateAndHalve = -0.5;
                 var cornerPosition = Vec3.sum(startPosition, Vec3.multiply(negateAndHalve, SelectionManager.worldDimensions));
                 vector = Vec3.subtract(
-                    grid.snapToGrid(Vec3.sum(cornerPosition, vector), constrainMajorOnly),
+                    that.grid.snapToGrid(Vec3.sum(cornerPosition, vector), constrainMajorOnly),
                     cornerPosition);
 
                 // editing a parent will cause all the children to automatically follow along, so don't
@@ -2801,7 +2808,7 @@ SelectionDisplay = (function() {
                 axisVector = Vec3.multiplyQbyV(rotation, axisVector);
                 pickPlaneNormal = Vec3.cross(Vec3.cross(pickRay.direction, axisVector), axisVector);
                 pickPlanePosition = SelectionManager.worldPosition;
-                initialPick = rayPlaneIntersection(pickRay, pickPlanePosition, pickPlaneNormal);
+                initialPick = that.createApp.rayPlaneIntersection(pickRay, pickPlanePosition, pickPlaneNormal);
     
                 SelectionManager.saveProperties();
                 that.resetPreviousHandleColor();
@@ -2822,7 +2829,7 @@ SelectionDisplay = (function() {
                 }
             },
             onEnd: function(event, reason) {
-                pushCommandForSelections(duplicatedEntityIDs);
+                that.createApp.pushCommandForSelections(duplicatedEntityIDs);
             },
             onMove: function(event) {
                 var pickRay = generalComputePickRay(event.x, event.y);
@@ -2832,7 +2839,7 @@ SelectionDisplay = (function() {
                     pickRay = previousPickRay;
                 }
     
-                var newPick = rayPlaneIntersection(pickRay, pickPlanePosition, pickPlaneNormal);
+                var newPick = that.createApp.rayPlaneIntersection(pickRay, pickPlanePosition, pickPlaneNormal);
                 if (debugPickPlaneEnabled) {
                     that.showDebugPickPlaneHit(newPick);
                 }
@@ -2850,8 +2857,8 @@ SelectionDisplay = (function() {
 
                 var dotVector = Vec3.dot(vector, projectionVector);
                 vector = Vec3.multiply(dotVector, projectionVector);
-                var gridOrigin = grid.getOrigin();
-                vector = Vec3.subtract(grid.snapToGrid(Vec3.sum(vector, gridOrigin)), gridOrigin);
+                var gridOrigin = that.grid.getOrigin();
+                vector = Vec3.subtract(that.grid.snapToGrid(Vec3.sum(vector, gridOrigin)), gridOrigin);
                 
                 var wantDebug = false;
                 if (wantDebug) {
@@ -2962,7 +2969,7 @@ SelectionDisplay = (function() {
                 
                 pickPlaneNormal = Vec3.cross(Vec3.cross(pickRay.direction, axisVector), axisVector);
                 pickPlanePosition = Vec3.sum(initialPosition, Vec3.multiplyQbyV(rotation, scaledOffsetWorld));
-                initialPick = rayPlaneIntersection(pickRay, pickPlanePosition, pickPlaneNormal);
+                initialPick = that.createApp.rayPlaneIntersection(pickRay, pickPlanePosition, pickPlaneNormal);
 
                 that.setHandleTranslateVisible(false);
                 that.setHandleRotateVisible(false);
@@ -3008,8 +3015,8 @@ SelectionDisplay = (function() {
                     Entities.editEntity(stretchPanel, { visible: false, ignorePickIntersection: true });
                 }
                 activeStretchCubePanelOffset = null;
-                
-                pushCommandForSelections();
+
+                that.createApp.pushCommandForSelections();
             },
             onMove: function(event) {            
                 var pickRay = generalComputePickRay(event.x, event.y);
@@ -3019,7 +3026,7 @@ SelectionDisplay = (function() {
                     pickRay = previousPickRay;
                 }
                 
-                var newPick = rayPlaneIntersection(pickRay, pickPlanePosition, pickPlaneNormal);
+                var newPick = that.createApp.rayPlaneIntersection(pickRay, pickPlanePosition, pickPlaneNormal);
                 if (debugPickPlaneEnabled) {
                     that.showDebugPickPlaneHit(newPick);
                 }
@@ -3029,7 +3036,7 @@ SelectionDisplay = (function() {
                 changeInDimensions = Vec3.multiply(dotVector, axisVector);
                 changeInDimensions = Vec3.multiplyQbyV(Quat.inverse(rotation), changeInDimensions);
                 changeInDimensions = Vec3.multiplyVbyV(mask, changeInDimensions);
-                changeInDimensions = grid.snapToSpacing(changeInDimensions);
+                changeInDimensions = that.grid.snapToSpacing(changeInDimensions);
                 changeInDimensions = Vec3.multiply(NEGATE_VECTOR, Vec3.multiplyVbyV(signs, changeInDimensions));    
 
                 var newDimensions = Vec3.sum(initialDimensions, changeInDimensions);
@@ -3088,7 +3095,7 @@ SelectionDisplay = (function() {
                 
                 pickPlanePosition = initialPosition;                
                 pickPlaneNormal = Vec3.subtract(pickRay.origin, pickPlanePosition);
-                initialPick = rayPlaneIntersection(pickRay, pickPlanePosition, pickPlaneNormal);
+                initialPick = that.createApp.rayPlaneIntersection(pickRay, pickPlanePosition, pickPlaneNormal);
 
                 that.setHandleTranslateVisible(false);
                 that.setHandleRotateVisible(false);
@@ -3120,8 +3127,8 @@ SelectionDisplay = (function() {
                     Entities.editEntity(SelectionManager.selections[0], {collidesWith: newCollidesWith});
                     that.replaceCollisionsAfterStretch = false;
                 }
-                
-                pushCommandForSelections();
+
+                that.createApp.pushCommandForSelections();
             },
             onMove: function(event) {            
                 var pickRay = generalComputePickRay(event.x, event.y);
@@ -3131,7 +3138,7 @@ SelectionDisplay = (function() {
                     pickRay = previousPickRay;
                 }
                 
-                var newPick = rayPlaneIntersection(pickRay, pickPlanePosition, pickPlaneNormal);
+                var newPick = that.createApp.rayPlaneIntersection(pickRay, pickPlanePosition, pickPlaneNormal);
                 if (debugPickPlaneEnabled) {
                     that.showDebugPickPlaneHit(newPick);
                 }
@@ -3140,7 +3147,7 @@ SelectionDisplay = (function() {
                 var dimensionsMultiple = toCameraDistance * SCALE_DIMENSIONS_CAMERA_DISTANCE_MULTIPLE;
                 var changeInDimensions = Vec3.subtract(newPick, initialPick);                   
                 changeInDimensions = Vec3.multiplyQbyV(Quat.inverse(Camera.orientation), changeInDimensions);
-                changeInDimensions = grid.snapToSpacing(changeInDimensions);
+                changeInDimensions = that.grid.snapToSpacing(changeInDimensions);
                 changeInDimensions = Vec3.multiply(changeInDimensions, dimensionsMultiple);
                 
                 var averageDimensionChange = (changeInDimensions.x + changeInDimensions.y + changeInDimensions.z) / 3;
@@ -3309,7 +3316,7 @@ SelectionDisplay = (function() {
 
                 // editOverlays may not have committed rotation changes.
                 // Compute zero position based on where the toolEntity will be eventually.
-                var initialPick = rayPlaneIntersection(pickRay, rotationCenter, rotationNormal);
+                var initialPick = that.createApp.rayPlaneIntersection(pickRay, rotationCenter, rotationNormal);
                 // In case of a parallel ray, this will be null, which will cause early-out
                 // in the onMove helper.
                 rotationZero = initialPick;
@@ -3343,7 +3350,7 @@ SelectionDisplay = (function() {
                     }
                 });
                 Entities.editEntity(handleRotateCurrentRing, { visible: false, ignorePickIntersection: true });
-                pushCommandForSelections();
+                that.createApp.pushCommandForSelections();
                 if (wantDebug) {
                     print("================== " + getMode() + "(addHandleRotateTool onEnd) <- =======================");
                 }
@@ -3364,7 +3371,7 @@ SelectionDisplay = (function() {
                 }
 
                 var pickRay = generalComputePickRay(event.x, event.y);
-                var result = rayPlaneIntersection(pickRay, rotationCenter, rotationNormal);
+                var result = that.createApp.rayPlaneIntersection(pickRay, rotationCenter, rotationNormal);
                 if (result) {
                     var centerToZero = Vec3.subtract(rotationZero, rotationCenter);
                     var centerToIntersect = Vec3.subtract(result, rotationCenter);
