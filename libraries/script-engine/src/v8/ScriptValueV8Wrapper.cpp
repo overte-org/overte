@@ -91,6 +91,7 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
         //qDebug() << "V8 This: " << _engine->scriptValueDebugDetailsV8(v8This);
     }else{
         recv = _engine->getContext()->Global();
+        //recv = v8::Null(isolate);
         //qDebug() << "global";
     }
     //qDebug() << "V8 Call: " << *v8::String::Utf8Value(isolate, v8This.get()->TypeOf(isolate));

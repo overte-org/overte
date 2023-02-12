@@ -292,8 +292,8 @@ GridTool = function(opts) {
         var dataString = JSON.stringify(data);
         webView.emitScriptEvent(dataString);
         createToolsWindow.emitScriptEvent(dataString);
-        if (selectionDisplay) {
-            selectionDisplay.updateHandles();
+        if (that.selectionDisplay) {
+            that.selectionDisplay.updateHandles();
         }
     });
 
