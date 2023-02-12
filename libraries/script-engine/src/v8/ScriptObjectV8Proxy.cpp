@@ -1144,10 +1144,20 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
         for (ConnectionList::iterator iter = _connections.begin(); iter != _connections.end(); ++iter) {
             Connection& conn = *iter;
             {
-                //auto functionContext = callback->CreationContext();
-                auto functionContext = _v8Context.Get(_engine->getIsolate());
-                _engine->pushContext(functionContext);
+                /*if (!conn.callback.get()->IsFunction()) {
+                    auto stringV8 = conn.callback.get()->ToDetailString(context).ToLocalChecked();
+                    QString error = *v8::String::Utf8Value(_engine->getIsolate(), stringV8);
+                    qDebug() << error;
+                    Q_ASSERT(false);
+                }
+                v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(conn.callback.get());
+                auto functionContext = callback->CreationContext();
                 v8::Context::Scope functionContextScope(functionContext);
+                _engine->pushContext(functionContext);*/
+                /*auto functionContext = _v8Context.Get(_engine->getIsolate());
+                _engine->pushContext(functionContext);
+                v8::Context::Scope functionContextScope(functionContext);*/
+                auto functionContext = context;
 
                 Q_ASSERT(!conn.callback.get().IsEmpty());
                 Q_ASSERT(!conn.callback.get()->IsUndefined());
@@ -1178,7 +1188,7 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
                                           << _engine->formatErrorMessageFromTryCatch(tryCatch)
                                           << "\nThis provided: " << conn.thisValue.get()->IsObject();
                 }
-                _engine->popContext();
+                //_engine->popContext();
             }
         }
     });

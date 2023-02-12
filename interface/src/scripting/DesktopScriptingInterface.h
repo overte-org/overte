@@ -45,6 +45,7 @@
  *     {@link InteractiveWindow}: none, top left, top right, bottom right, or bottom left of the Interface window. 
  *     <em>Read-only.</em>
  */
+
 class DesktopScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
     Q_PROPERTY(int width READ getWidth)  // Physical width of screen(s) including task bars and system menus
