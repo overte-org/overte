@@ -129,6 +129,7 @@ public:
     virtual void compileTest() = 0;
     virtual QString scriptValueDebugDetails(const ScriptValue &value) = 0;
     virtual QString scriptValueDebugListMembers(const ScriptValue &value) = 0;
+    virtual void logBacktrace(const QString &title) = 0;
 public:
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
     bool IS_THREADSAFE_INVOCATION(const QString& method);

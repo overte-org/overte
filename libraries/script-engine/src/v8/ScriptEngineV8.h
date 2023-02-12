@@ -136,6 +136,7 @@ public:  // ScriptEngine implementation
     QString scriptValueDebugDetailsV8(const V8ScriptValue &value);
     virtual QString scriptValueDebugListMembers(const ScriptValue &value) override;
     QString scriptValueDebugListMembersV8(const V8ScriptValue &v8Value);
+    virtual void logBacktrace(const QString &title) override;
 
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
     inline bool IS_THREADSAFE_INVOCATION(const QString& method) { return ScriptEngine::IS_THREADSAFE_INVOCATION(method); }
