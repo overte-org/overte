@@ -1714,6 +1714,14 @@ QString ScriptEngineV8::scriptValueDebugDetailsV8(const V8ScriptValue &v8Value) 
     }
 }*/
 
+void ScriptEngineV8::logBacktrace(const QString &title) {
+    QStringList backtrace = currentContext()->backtrace();
+    qDebug(scriptengine) << title;
+    for (int n = 0; n < backtrace.length(); n++) {
+        qDebug(scriptengine) << backtrace[n];
+    }
+}
+
 QStringList ScriptEngineV8::getCurrentScriptURLs() const {
     auto isolate = _v8Isolate;
     v8::Locker locker(isolate);

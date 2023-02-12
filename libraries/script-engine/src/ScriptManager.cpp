@@ -2508,3 +2508,7 @@ ScriptValue ScriptManager::evaluate(const QString& program, const QString& fileN
 void ScriptManager::requestGarbageCollection() {
     _engine->requestCollectGarbage();
 }
+
+void ScriptManager::logBacktrace(const QString &title) {
+    _engine->logBacktrace(title);
+}
