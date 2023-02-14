@@ -769,7 +769,9 @@ V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
             }
             // just do a generic variant
             //V8TODO
-            Q_ASSERT(false);
+            qDebug() << "ScriptEngineV8::castVariantToValue failed for " << QMetaType::typeName(valTypeId);
+            logBacktrace("ScriptEngineV8::castVariantToValue failed");
+            //Q_ASSERT(false);
             return V8ScriptValue(this, v8::Undefined(_v8Isolate));
             //return QScriptEngine::newVariant(val);
     }

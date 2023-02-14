@@ -25,8 +25,12 @@
 class PlatformInfoScriptingInterface : public QObject {
     Q_OBJECT
 
+private:
+    static PlatformInfoScriptingInterface* getInstance();
+    friend class Application;
 
 public:
+
     PlatformInfoScriptingInterface();
     virtual ~PlatformInfoScriptingInterface();
 
@@ -55,11 +59,10 @@ public:
     Q_ENUM(PlatformTier);
 
 public slots:
-    /*@jsdoc
+    /*
      * @function PlatformInfo.getInstance
      * @deprecated This function is deprecated and will be removed.
      */
-    static PlatformInfoScriptingInterface* getInstance();
 
     /*@jsdoc
      * Gets the operating system type.
