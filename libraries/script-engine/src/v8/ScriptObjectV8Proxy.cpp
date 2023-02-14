@@ -225,14 +225,11 @@ void ScriptObjectV8Proxy::investigate() {
     //auto objectTemplate = _v8ObjectTemplate.Get(_engine->getIsolate());
     auto objectTemplate = v8::ObjectTemplate::New(_engine->getIsolate());
     objectTemplate->SetInternalFieldCount(3);
-    objectTemplate->SetHandler(v8::NamedPropertyHandlerConfiguration(v8Get, v8Set));
+    objectTemplate->SetHandler(v8::NamedPropertyHandlerConfiguration(v8Get, v8Set, nullptr, nullptr, v8GetPropertyNames));
     
     const QMetaObject* metaObject = qobject->metaObject();
 
     //qDebug(scriptengine) << "Investigate: " << metaObject->className();
-    if (QString("Vec3") == metaObject->className()) {
-        printf("Vec3");
-    }
     if (QString("ConsoleScriptingInterface") == metaObject->className()) {
         printf("ConsoleScriptingInterface");
     }
@@ -492,6 +489,60 @@ void ScriptObjectV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> v
             qDebug(scriptengine) << "Set failed: " << *utf8Value;
         }
     }
+}
+
+void ScriptObjectV8Proxy::v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::Array>& info) {
+    qDebug(scriptengine) << "ScriptObjectV8Proxy::v8GetPropertyNames called";
+    v8::HandleScope handleScope(info.GetIsolate());
+    auto context = info.GetIsolate()->GetCurrentContext();
+    v8::Context::Scope contextScope(context);
+    v8::Local<v8::Value> objectV8 = info.This();
+    ScriptObjectV8Proxy *proxy = ScriptObjectV8Proxy::unwrapProxy(info.GetIsolate(), objectV8);
+    if (!proxy) {
+        qDebug(scriptengine) << "ScriptObjectV8Proxy::v8GetPropertyNames: Proxy object not found when listing";
+        return;
+    }
+    V8ScriptValue object(proxy->_engine, objectV8);
+    uint id;
+    v8::Local<v8::Array> properties = proxy->getPropertyNames();
+    v8::Local<v8::Array> objectProperties;
+    uint32_t propertiesLength = properties->Length();
+    if (info.This()->GetInternalField(2).As<v8::Object>()->GetPropertyNames(context).ToLocal(&objectProperties)) {
+        for (int n = 0; n < objectProperties->Length(); n++) {
+            if(!properties->Set(context, propertiesLength+n, objectProperties->Get(context, n).ToLocalChecked()).FromMaybe(false)) {
+                qDebug(scriptengine) << "ScriptObjectV8Proxy::v8GetPropertyNames: Cannot add member name";
+            }
+        }
+    }
+    info.GetReturnValue().Set(properties);
+}
+
+v8::Local<v8::Array> ScriptObjectV8Proxy::getPropertyNames() {
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::EscapableHandleScope handleScope(_engine->getIsolate());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(_engine->getContext());
+
+    v8::Local<v8::Array> properties = v8::Array::New(isolate, _props.size() + _methods.size() + _signals.size());
+    uint32_t position = 0;
+    for (PropertyDefMap::const_iterator i = _props.begin(); i != _props.end(); i++){
+        if(!properties->Set(context, position++, i.value().name.constGet()).FromMaybe(false)) {
+            qDebug(scriptengine) << "ScriptObjectV8Proxy::getPropertyNames: Cannot add property member name";
+        }
+    }
+    for (MethodDefMap::const_iterator i = _methods.begin(); i != _methods.end(); i++){
+        if(!properties->Set(context, position++, i.value().name.constGet()).FromMaybe(false)) {
+            qDebug(scriptengine) << "ScriptObjectV8Proxy::getPropertyNames: Cannot add property member name";
+        }
+    }
+    for (SignalDefMap::const_iterator i = _signals.begin(); i != _signals.end(); i++){
+        if(!properties->Set(context, position++, i.value().name.constGet()).FromMaybe(false)) {
+            qDebug(scriptengine) << "ScriptObjectV8Proxy::getPropertyNames: Cannot add property member name";
+        }
+    }
+    return handleScope.Escape(properties);
 }
 
 
@@ -840,7 +891,12 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
 
         // The Qt MOC engine will automatically call qRegisterMetaType on invokable parameters and properties, but there's
         // nothing in there for return values so these need to be explicitly runtime-registered!
-        Q_ASSERT(returnTypeId != QMetaType::UnknownType);
+        if (returnTypeId == QMetaType::UnknownType) {
+            QString methodName = fullName();
+            qDebug(scriptengine) << "returnTypeId == QMetaType::UnknownType for method " << methodName;
+            _engine->logBacktrace("");
+            //Q_ASSERT(false);
+        }
         if (returnTypeId == QMetaType::UnknownType) {
             isolate->ThrowError(v8::String::NewFromUtf8(isolate, QString("Cannot call native function %1, its return value has not been registered with Qt").arg(fullName()).toStdString().c_str()).ToLocalChecked());
             return;
