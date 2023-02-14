@@ -97,8 +97,10 @@ public:
     //V8TODO
     virtual QueryFlags queryProperty(const V8ScriptValue& object, const V8ScriptString& name, QueryFlags flags, uint* id);
     virtual void setProperty(V8ScriptValue& object, const V8ScriptString& name, uint id, const V8ScriptValue& value);
+    v8::Local<v8::Array> getPropertyNames();
     static void v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info);
     static void v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value_obj, const v8::PropertyCallbackInfo<v8::Value>& info);
+    static void v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::Array>& info);
 
 private:  // implementation
     void investigate();

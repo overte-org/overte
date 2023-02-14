@@ -90,6 +90,7 @@
         
         var keys = Object.keys(object);
         for (var i = 0; i < keys.length; ++i) {
+            print("key: " + keys[i]);
             if (string === "") {
                 listKeys(keys[i], object[keys[i]]);
             } else if (keys[i] !== "parent") {
