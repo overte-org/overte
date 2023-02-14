@@ -16,6 +16,8 @@
 
 #include <QtCore/QVariant>
 #include <QtGui/QColor>
+#include <QtGui/QVector2D>
+#include <QtGui/QVector3D>
 #include <QtCore/QRect>
 #include <QtCore/QUrl>
 #include <QtCore/QUuid>
@@ -52,6 +54,9 @@ bool isListOfStrings(const ScriptValue& arg) {
 }
 
 void registerMetaTypes(ScriptEngine* engine) {
+    scriptRegisterMetaType<QVector2D, qVector2DToScriptValue, qVector2DFromScriptValue>(engine);
+    scriptRegisterMetaType<QVector3D, qVector3DToScriptValue, qVector3DFromScriptValue>(engine);
+
     scriptRegisterMetaType<glm::vec2, vec2ToScriptValue, vec2FromScriptValue>(engine);
     scriptRegisterMetaType<glm::vec3, vec3ToScriptValue, vec3FromScriptValue>(engine);
     scriptRegisterMetaType<glm::u8vec3, u8vec3ToScriptValue, u8vec3FromScriptValue>(engine);
@@ -91,6 +96,39 @@ void registerMetaTypes(ScriptEngine* engine) {
     scriptRegisterSequenceMetaType<QVector<glm::vec2>>(engine);
     scriptRegisterSequenceMetaType<QVector<glm::quat>>(engine);
     scriptRegisterSequenceMetaType<QVector<QString>>(engine);
+}
+
+ScriptValue qVector2DToScriptValue(ScriptEngine* engine, const QVector2D& qVector2D) {
+    glm::vec2 vec2(qVector2D.x(), qVector2D.y());
+    return vec2ToScriptValue(engine, vec2);
+}
+
+bool qVector2DFromScriptValue(const ScriptValue& object, QVector2D& qVector2D) {
+    glm::vec2 vec2;
+    if (vec2FromScriptValue(object, vec2)) {
+        qVector2D.setX(vec2.x);
+        qVector2D.setY(vec2.y);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+ScriptValue qVector3DToScriptValue(ScriptEngine* engine, const QVector3D& qVector3D) {
+    glm::vec3 vec3(qVector3D.x(), qVector3D.y(), qVector3D.z());
+    return vec3ToScriptValue(engine, vec3);
+}
+
+bool qVector3DFromScriptValue(const ScriptValue& object, QVector3D& qVector3D) {
+    glm::vec3 vec3;
+    if (vec3FromScriptValue(object, vec3)) {
+        qVector3D.setX(vec3.x);
+        qVector3D.setY(vec3.y);
+        qVector3D.setZ(vec3.z);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 ScriptValue vec2ToScriptValue(ScriptEngine* engine, const glm::vec2& vec2) {

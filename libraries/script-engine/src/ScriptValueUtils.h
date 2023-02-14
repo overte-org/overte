@@ -161,6 +161,14 @@ bool quatFromScriptValue(const ScriptValue& object, glm::quat& quat);
  * @property {number} width - Width of the rectangle.
  * @property {number} height - Height of the rectangle.
  */
+class QVector2D;
+ScriptValue qVector2DToScriptValue(ScriptEngine* engine, const QVector2D& qVector2D);
+bool qVector2DFromScriptValue(const ScriptValue& object, QVector2D& qVector2D);
+
+class QVector3D;
+ScriptValue qVector3DToScriptValue(ScriptEngine* engine, const QVector3D& qVector3D);
+bool qVector3DFromScriptValue(const ScriptValue& object, QVector3D& qVector3D);
+
 class QRect;
 ScriptValue qRectToScriptValue(ScriptEngine* engine, const QRect& rect);
 bool qRectFromScriptValue(const ScriptValue& object, QRect& rect);
