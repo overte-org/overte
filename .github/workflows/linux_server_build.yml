@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2020-2022 Vircadia contributors.
-# Copyright 2021-2022 Overte e.V.
+# Copyright 2021-2023 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 name: Linux Server CI Build
@@ -188,8 +188,7 @@ jobs:
         fi
 
 
-    # Checkout v2 and v3 are currently broken on our Docker configuration
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
       with:
         submodules: false
         fetch-depth: 1
@@ -216,8 +215,7 @@ jobs:
 
     - name: Archive cmake logs
       if: always()
-      # upload-artifact v2 and v3 are currently broken on our Docker configuration
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v3
       with:
         name: cmake-logs-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.number }}.tar.xz
         path: cmake-logs-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.number }}.tar.xz
@@ -256,8 +254,7 @@ jobs:
 
     - name: Upload artifact to GitHub
       if: github.event_name == 'pull_request'
-      # upload-artifact v2 and v3 are currently broken on our Docker configuration
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ env.ARTIFACT_PATTERN }}
         path: pkg-scripts/${{ env.ARTIFACT_PATTERN }}
