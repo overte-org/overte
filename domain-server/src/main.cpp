@@ -25,9 +25,16 @@
 int main(int argc, char* argv[]) {
     setupHifiApplication(BuildInfo::DOMAIN_SERVER_NAME);
 
-    DomainServer::parseCommandLine(argc, argv);
+    QVariantMap settingsToSet;
+
+    DomainServer::parseCommandLine(argc, argv, settingsToSet);
 
     Setting::init();
+
+    for(auto i = settingsToSet.begin(); i != settingsToSet.end(); i++) {
+        Setting::Handle<QVariant> settings(i.key(), i.value());
+        settings.set(i.value());
+    }
 
     int currentExitCode = 0;
 
