@@ -393,7 +393,7 @@ DomainServer::DomainServer(int argc, char* argv[]) :
     initializeMetadataExporter();
 }
 
-void DomainServer::parseCommandLine(int argc, char* argv[]) {
+void DomainServer::parseCommandLine(int argc, char* argv[], QVariantMap &settingsToSet) {
     QCommandLineParser parser;
     parser.setApplicationDescription("Overte Domain Server");
     const QCommandLineOption versionOption = parser.addVersionOption();
@@ -417,6 +417,8 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
     const QCommandLineOption logOption("logOptions", "Logging options, comma separated: color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald", "options");
     parser.addOption(logOption);
 
+    const QCommandLineOption SetMetaverseverseURL("mv", "Set your metaverse api (Default: https://mv.overte.org/server)", "DIRECTORY_SERVER_HOSTNAME");
+    parser.addOption(SetMetaverseverseURL);
 
     QStringList arguments;
     for (int i = 0; i < argc; ++i) {
@@ -487,6 +489,17 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
             _parentPID = parentPID;
             qDebug() << "Parent process PID is" << _parentPID;
         }
+    }
+
+    if(parser.isSet(SetMetaverseverseURL)) {
+        qDebug() << parser.value(SetMetaverseverseURL);
+
+        settingsToSet.insert("private/selectedMetaverseURL", parser.value(SetMetaverseverseURL));
+
+
+        //Setting::Handle<QUrl> selectedMetaverseURLSetting("private/selectedMetaverseURL",
+                                                         // NetworkingConstants::METAVERSE_SERVER_URL_STABLE);
+        //selectedMetaverseURLSetting.set(parser.value(SetMetaverseverseURL));
     }
 }
 

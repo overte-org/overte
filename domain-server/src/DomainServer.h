@@ -66,7 +66,7 @@ public:
     DomainServer(int argc, char* argv[]);
     ~DomainServer();
 
-    static void parseCommandLine(int argc, char* argv[]);
+    static void parseCommandLine(int argc, char* argv[], QVariantMap &settingsToSet);
 
     enum DomainType {
         NonMetaverse,
