@@ -121,6 +121,7 @@ void MessagesMixer::domainSettingsRequestComplete() {
 }
 
 void MessagesMixer::parseDomainServerSettings(const QJsonObject& domainSettings) {
+    qDebug() << "[configuration_dump]" << domainSettings;
     const QString MESSAGES_MIXER_SETTINGS_KEY = "messages_mixer";
     QJsonObject messagesMixerGroupObject = domainSettings[MESSAGES_MIXER_SETTINGS_KEY].toObject();
 

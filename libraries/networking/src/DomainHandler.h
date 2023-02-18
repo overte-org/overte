@@ -296,6 +296,7 @@ private:
     QUuid _uuid;
     Node::LocalID _localID;
     QUrl _domainURL;
+    QUrl _metaverseURL; //TODO: This needs to be changed at some point.
     QUrl _errorDomainURL;
     SockAddr _sockAddr;
     QUuid _assignmentUUID;
