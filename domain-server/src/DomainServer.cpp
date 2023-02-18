@@ -491,7 +491,9 @@ void DomainServer::parseCommandLine(int argc, char* argv[], QVariantMap &setting
         }
     }
 
-    if(parser.isSet(SetMetaverseverseURL)) settingsToSet.insert("private/selectedMetaverseURL", parser.value(SetMetaverseverseURL));
+    if(parser.isSet(SetMetaverseverseURL)) {
+        settingsToSet.insert("private/selectedMetaverseURL", parser.value(SetMetaverseverseURL));
+    }
 }
 
 DomainServer::~DomainServer() {

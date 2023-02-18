@@ -11,11 +11,18 @@
 
 #include <BuildInfo.h>
 #include <SharedUtil.h>
+#include "SettingManager.h"
+#include "SettingHelpers.h"
 
 #include "AssignmentClientApp.h"
+#include <SettingInterface.h>
 
 int main(int argc, char* argv[]) {
     setupHifiApplication(BuildInfo::ASSIGNMENT_CLIENT_NAME);
+
+    //QVariantMap settingsToSet;
+
+    Setting::init();
 
     AssignmentClientApp app(argc, argv);
     

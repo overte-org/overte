@@ -30,9 +30,11 @@ namespace MetaverseAPI {
         const QString HIFI_METAVERSE_URL_ENV = "HIFI_METAVERSE_URL";
 
         if (QProcessEnvironment::systemEnvironment().contains(HIFI_METAVERSE_URL_ENV)) {
+            qDebug() << "[metaverseAPI_DUMP - HIFI_METAVERSE_URL_ENV]" << QUrl(QProcessEnvironment::systemEnvironment().value(HIFI_METAVERSE_URL_ENV));;
             return QUrl(QProcessEnvironment::systemEnvironment().value(HIFI_METAVERSE_URL_ENV));
         }
 
+        qDebug() << "[metaverseAPI_DUMP - selectedMetaverseURL]" << selectedMetaverseURL.toString();
         return selectedMetaverseURL;
     };
 

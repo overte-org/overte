@@ -42,6 +42,7 @@ signals:
 
 protected:
     void commonInit(const QString& targetName, NodeType_t nodeType);
+    void parseCommonServerSettings();
     void setFinished(bool isFinished);
 
     bool _isFinished;

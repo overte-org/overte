@@ -104,6 +104,36 @@ void ThreadedAssignment::commonInit(const QString& targetName, NodeType_t nodeTy
 
     // stop sending stats if we disconnect
     connect(&nodeList->getDomainHandler(), &DomainHandler::disconnectedFromDomain, &_statsTimer, &QTimer::stop);
+
+    // Parsing extra settings to assignment client to update the directory server
+    connect(&nodeList->getDomainHandler(), &DomainHandler::settingsReceived, this, &ThreadedAssignment::parseCommonServerSettings);
+}
+
+void ThreadedAssignment::parseCommonServerSettings(){
+
+    auto nodeList = DependencyManager::get<NodeList>();
+
+    const QJsonObject& domainSettings = nodeList->getDomainHandler().getSettingsObject();
+
+    Setting::Handle<QUrl> selectedMetaverseURLSetting("private/selectedMetaverseURL",
+                                                          NetworkingConstants::METAVERSE_SERVER_URL_STABLE);
+
+    const QString METAVERSE_SETTINGS_KEY = "metaverse";
+    QJsonObject metaverseObject = domainSettings[METAVERSE_SETTINGS_KEY].toObject();
+
+    qDebug() << "[configuration_dump]" << domainSettings;
+    //QJsonObject metaverseObject = domainSettings.begin()->toObject();
+
+    qDebug() << "[METAVERSEOBJ_DUMP]" << metaverseObject;
+
+    const QString DIRECTORY_KEY = "directory_server";
+    QJsonValue directoryURLValue = metaverseObject.value(DIRECTORY_KEY);
+
+    qDebug() << "[ThreadedAssignment_dump]" << directoryURLValue.toString();
+
+    if(directoryURLValue.toString() != QString("")) {
+        selectedMetaverseURLSetting.set(directoryURLValue.toString());
+    }
 }
 
 void ThreadedAssignment::addPacketStatsAndSendStatsPacket(QJsonObject statsObject) {
