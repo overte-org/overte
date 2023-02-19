@@ -77,6 +77,7 @@ WindowScriptingInterface::~WindowScriptingInterface() {
 }
 
 ScriptValue WindowScriptingInterface::hasFocus() {
+    Q_ASSERT(engine);
     return engine()->newValue(qApp->hasFocus());
 }
 
@@ -105,6 +106,7 @@ void WindowScriptingInterface::alert(const QString& message) {
 /// \param const QString& message message to display
 /// \return ScriptValue `true` if 'Yes' was clicked, `false` otherwise
 ScriptValue WindowScriptingInterface::confirm(const QString& message) {
+    Q_ASSERT(engine);
     return engine()->newValue((QMessageBox::Yes == OffscreenUi::question("", message, QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)));
 }
 
@@ -114,6 +116,7 @@ ScriptValue WindowScriptingInterface::confirm(const QString& message) {
 /// \return ScriptValue string text value in text box if the dialog was accepted, `null` otherwise.
 ScriptValue WindowScriptingInterface::prompt(const QString& message, const QString& defaultText) {
     QString result = OffscreenUi::getText(nullptr, "", message, QLineEdit::Normal, defaultText);
+    Q_ASSERT(engine);
     auto sResult = engine()->newValue(result);
     if (sResult.equals(engine()->newValue(""))) {
         return engine()->nullValue();
@@ -232,6 +235,7 @@ ScriptValue WindowScriptingInterface::browseDir(const QString& title, const QStr
     if (!result.isEmpty()) {
         setPreviousBrowseLocation(QFileInfo(result).absolutePath());
     }
+    Q_ASSERT(engine);
     return result.isEmpty() ? engine()->nullValue() : engine()->newValue(result);
 }
 
@@ -276,6 +280,7 @@ ScriptValue WindowScriptingInterface::browse(const QString& title, const QString
     if (!result.isEmpty()) {
         setPreviousBrowseLocation(QFileInfo(result).absolutePath());
     }
+    Q_ASSERT(engine);
     return result.isEmpty() ? engine()->nullValue() : engine()->newValue(result);
 }
 
@@ -323,6 +328,7 @@ ScriptValue WindowScriptingInterface::save(const QString& title, const QString& 
     if (!result.isEmpty()) {
         setPreviousBrowseLocation(QFileInfo(result).absolutePath());
     }
+    Q_ASSERT(engine);
     return result.isEmpty() ? engine()->nullValue() : engine()->newValue(result);
 }
 
@@ -373,6 +379,7 @@ ScriptValue WindowScriptingInterface::browseAssets(const QString& title, const Q
     if (!result.isEmpty()) {
         setPreviousBrowseAssetLocation(QFileInfo(result).absolutePath());
     }
+    Q_ASSERT(engine);
     return result.isEmpty() ? engine()->nullValue() : engine()->newValue(result);
 }
 

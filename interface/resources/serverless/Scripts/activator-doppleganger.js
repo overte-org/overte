@@ -1,4 +1,4 @@
-'use strict';
+'no use strict';
 //
 //  activator-doppleganger.js
 //
@@ -23,6 +23,8 @@
         autoUpdate: true
     });
 
+    // V8TODO: does this need to be fixed? Right now it refers to global object in non-strict mode,
+    // and in strict mode it's undefined
     this.preload = function(entityID) {
        thisEntityID = entityID;
     }

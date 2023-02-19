@@ -202,6 +202,8 @@ public: // not for public use, but I don't like how Qt strings this along with p
 
     ScriptContextV8Pointer pushContext(v8::Local<v8::Context> context);
     void popContext();
+    // V8TODO: call this after initializing global object
+    void storeGlobalObjectContents();
 
 protected:
     // like `newFunction`, but allows mapping inline C++ lambdas with captures as callable V8ScriptValues
@@ -240,6 +242,8 @@ protected:
     //mutable ScriptContextV8Pointer _currContext;
     // Current context stack. Main context is first on the list and current one is last.
     QList<ScriptContextV8Pointer> _contexts;
+    v8::Persistent<v8::Object> _globalObjectContents;
+    bool areGlobalObjectContentsStored {false};
 
     //V8TODO
     //ArrayBufferClass* _arrayBufferClass;

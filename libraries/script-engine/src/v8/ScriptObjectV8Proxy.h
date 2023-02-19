@@ -235,12 +235,14 @@ private:  // implementation
     virtual int qt_metacall(QMetaObject::Call call, int id, void** arguments) override;
     int discoverMetaCallIdx();
     ConnectionList::iterator findConnection(V8ScriptValue thisObject, V8ScriptValue callback);
-    QString fullName() const;
+    //QString fullName() const;
 
 public:  // API
     // arg1 was had Null default value, but that needs isolate pointer to create Null in V8
     virtual void connect(ScriptValue arg0, ScriptValue arg1 = ScriptValue()) override;
     virtual void disconnect(ScriptValue arg0, ScriptValue arg1 = ScriptValue()) override;
+    //Moved to public temporarily for debugging:
+    QString fullName() const;
 
     //virtual void connect(V8ScriptValue arg0) override;
     //virtual void disconnect(V8ScriptValue arg0) override;
