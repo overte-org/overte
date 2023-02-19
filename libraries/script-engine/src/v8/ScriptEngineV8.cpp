@@ -427,7 +427,6 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
         v8::Context::Scope contextScope(context);
         _contexts.append(std::make_shared<ScriptContextV8Wrapper>(this,context, ScriptContextPointer()));
 
-
         V8ScriptValue nullScriptValue(this, v8::Null(_v8Isolate));
         _nullValue = ScriptValue(new ScriptValueV8Wrapper(this, nullScriptValue));
 
@@ -802,6 +801,32 @@ const v8::Local<v8::Context> ScriptEngineV8::getConstContext() const {
     Q_ASSERT(!_contexts.isEmpty());
     return handleScope.Escape(_contexts.last().get()->toV8Value());
 }
+
+// Stored objects are used to create global objects for evaluateInClosure
+void ScriptEngineV8::storeGlobalObjectContents() {
+    if (areGlobalObjectContentsStored) {
+        return;
+    }
+    v8::Locker locker(_v8Isolate);
+    v8::Isolate::Scope isolateScope(_v8Isolate);
+    v8::HandleScope handleScope(_v8Isolate);
+    auto context = getContext();
+    v8::Context::Scope contextScope(context);
+    v8::Local<v8::Object> globalMemberObjects = v8::Object::New(_v8Isolate);
+
+    auto globalMemberNames = context->Global()->GetPropertyNames(context).ToLocalChecked();
+    for (size_t i = 0; i < globalMemberNames->Length(); i++) {
+        auto name = globalMemberNames->Get(context, i).ToLocalChecked();
+        if(!globalMemberObjects->Set(context, name, context->Global()->Get(context, name).ToLocalChecked()).FromMaybe(false)) {
+            Q_ASSERT(false);
+        }
+    }
+
+    _globalObjectContents.Reset(_v8Isolate, globalMemberObjects);
+    qDebug() << "ScriptEngineV8::storeGlobalObjectContents: " << globalMemberNames->Length() << " objects stored";
+    areGlobalObjectContentsStored = true;
+}
+
 ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
                                                            const ScriptProgramPointer& _program) {
     PROFILE_RANGE(script, "evaluateInClosure");
@@ -812,6 +837,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
+    storeGlobalObjectContents();
 
     v8::Local<v8::Object> closureObject;
     //v8::Local<v8::Value> oldGlobal;
@@ -896,6 +922,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
         if (!unwrappedProgram->compile()) {
             qDebug(scriptengine) << "Can't compile script for evaluating in closure";
             Q_ASSERT(false);
+            popContext();
             return nullValue();
         }
         const V8ScriptProgram& program = unwrappedProgram->toV8Value();
@@ -928,18 +955,35 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
         {
             v8::TryCatch tryCatch(getIsolate());
             // Since V8 cannot use arbitrary object as global object, objects from main global need to be copied to closure's global object
-            auto oldGlobalMemberNames = oldContext->Global()->GetPropertyNames(oldContext).ToLocalChecked();
-            for (size_t i = 0; i < oldGlobalMemberNames->Length(); i++) {
-                auto name = oldGlobalMemberNames->Get(closureContext, i).ToLocalChecked();
-                if(!closureContext->Global()->Set(closureContext, name, oldContext->Global()->Get(oldContext, name).ToLocalChecked()).FromMaybe(false)) {
+            auto globalObjectContents = _globalObjectContents.Get(_v8Isolate);
+            auto globalMemberNames = globalObjectContents->GetPropertyNames(globalObjectContents->CreationContext()).ToLocalChecked();
+            for (size_t i = 0; i < globalMemberNames->Length(); i++) {
+                auto name = globalMemberNames->Get(closureContext, i).ToLocalChecked();
+                if(!closureContext->Global()->Set(closureContext, name, globalObjectContents->Get(globalObjectContents->CreationContext(), name).ToLocalChecked()).FromMaybe(false)) {
                     Q_ASSERT(false);
                 }
             }
+            qDebug() << "ScriptEngineV8::evaluateInClosure: " << globalMemberNames->Length() << " objects added to global";
+
+            /*auto oldGlobalMemberNames = oldContext->Global()->GetPropertyNames(oldContext).ToLocalChecked();
+            //auto oldGlobalMemberNames = oldContext->Global()->GetPropertyNames(closureContext).ToLocalChecked();
+            for (size_t i = 0; i < oldGlobalMemberNames->Length(); i++) {
+                auto name = oldGlobalMemberNames->Get(closureContext, i).ToLocalChecked();
+                //auto name = oldGlobalMemberNames->Get(oldContext, i).ToLocalChecked();
+                if(!closureContext->Global()->Set(closureContext, name, oldContext->Global()->Get(oldContext, name).ToLocalChecked()).FromMaybe(false)) {
+                //if(!closureContext->Global()->Set(closureContext, name, oldContext->Global()->Get(closureContext, name).ToLocalChecked()).FromMaybe(false)) {
+                    Q_ASSERT(false);
+                }
+            }*/
             // Objects from closure need to be copied to global object too
+            // V8TODO: I'm not sure which context to use with Get
             auto closureMemberNames = closureObject->GetPropertyNames(closureContext).ToLocalChecked();
+            //auto closureMemberNames = closureObject->GetPropertyNames(oldContext).ToLocalChecked();
             for (size_t i = 0; i < closureMemberNames->Length(); i++) {
                 auto name = closureMemberNames->Get(closureContext, i).ToLocalChecked();
+                //auto name = closureMemberNames->Get(oldContext, i).ToLocalChecked();
                 if(!closureContext->Global()->Set(closureContext, name, closureObject->Get(closureContext, name).ToLocalChecked()).FromMaybe(false)) {
+                //if(!closureContext->Global()->Set(closureContext, name, closureObject->Get(oldContext, name).ToLocalChecked()).FromMaybe(false)) {
                     Q_ASSERT(false);
                 }
             }
@@ -1455,6 +1499,7 @@ ScriptContext* ScriptEngineV8::currentContext() const {
         // I'm not sure how to do this without discarding const
         _currContext = std::make_shared<ScriptContextV8Wrapper>(const_cast<ScriptEngineV8*>(this));
     }*/
+    // V8TODO: add FunctionCallbackInfo or PropertyCallbackInfo when necessary
     return _contexts.last().get();
 }
 
@@ -1501,7 +1546,7 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
         ScriptEngineV8 *scriptEngine = reinterpret_cast<ScriptEngineV8*>
             (object->GetAlignedPointerFromInternalField(1));
         ScriptContextV8Wrapper scriptContext(scriptEngine, &info, scriptEngine->getContext(), scriptEngine->currentContext()->parentContext());
-        //V8TODO: this scriptContext needs to have FunctionCallbackInfo added
+        ScriptContextGuard scriptContextGuard(&scriptContext);
         ScriptValue result = function(&scriptContext, scriptEngine);
         ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(result);
         if (unwrapped) {
