@@ -43,6 +43,7 @@ void ScriptUUID::print(const QString& label, const QUuid& id) {
     QString message = QString("%1 %2").arg(qPrintable(label));
     message = message.arg(id.toString());
     qCDebug(scriptengine) << message;
+    Q_ASSERT(engine);
     if (ScriptManager* scriptManager = engine()->manager()) {
         scriptManager->print(message);
     }

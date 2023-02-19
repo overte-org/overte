@@ -39,9 +39,9 @@ static const void *internalPointsToMethodProxy = (void *)0x13373000;
 
 // Used strictly to replace the "this" object value for property access.  May expand to a full context element
 // if we find it necessary to, but hopefully not needed
-class ScriptPropertyContextQtWrapper final : public ScriptContext {
+class ScriptPropertyContextV8Wrapper final : public ScriptContext {
 public:  // construction
-    inline ScriptPropertyContextQtWrapper(const ScriptValue& object, ScriptContext* parentContext) :
+    inline ScriptPropertyContextV8Wrapper(const ScriptValue& object, ScriptContext* parentContext) :
         _parent(parentContext), _object(object) {}
 
 public:  // ScriptContext implementation
@@ -568,7 +568,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
 
             QMetaProperty prop = metaObject->property(propId);
             ScriptValue scriptThis = ScriptValue(new ScriptValueV8Wrapper(_engine, object));
-            ScriptPropertyContextQtWrapper ourContext(scriptThis, _engine->currentContext());
+            ScriptPropertyContextV8Wrapper ourContext(scriptThis, _engine->currentContext());
             ScriptContextGuard guard(&ourContext);
 
             QVariant varValue = prop.read(qobject);
@@ -611,7 +611,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
             ScriptEngine::QObjectWrapOptions options = ScriptEngine::ExcludeSuperClassContents |
                                                         //V8TODO ScriptEngine::ExcludeDeleteLater |
                                                         ScriptEngine::PreferExistingWrapperObject;
-            //V8TODO: why is it returning new object every time?
+            // It's not necessarily new, newQObject looks for it first in object wrapper map
             return ScriptObjectV8Proxy::newQObject(_engine, proxy, ScriptEngine::ScriptOwnership, options);
             //return _engine->newQObject(proxy, ScriptEngine::ScriptOwnership, options);
         }
@@ -642,7 +642,7 @@ void ScriptObjectV8Proxy::setProperty(V8ScriptValue& object, const V8ScriptStrin
     QMetaProperty prop = metaObject->property(propId);
 
     ScriptValue scriptThis = ScriptValue(new ScriptValueV8Wrapper(_engine, object));
-    ScriptPropertyContextQtWrapper ourContext(scriptThis, _engine->currentContext());
+    ScriptPropertyContextV8Wrapper ourContext(scriptThis, _engine->currentContext());
     ScriptContextGuard guard(&ourContext);
 
     int propTypeId = prop.userType();
@@ -883,8 +883,10 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
     }
 
     if (isValidMetaSelected) {
-        //ScriptContextV8Wrapper ourContext(_engine, context);
-        //ScriptContextGuard guard(&ourContext);
+        // V8TODO: is this the correct wrapper?
+        ScriptContextV8Wrapper ourContext(_engine, &arguments, _engine->getContext(),
+                                          _engine->currentContext()->parentContext());
+        ScriptContextGuard guard(&ourContext);
         const QMetaMethod& meta = _metas[bestMeta];
         int returnTypeId = meta.returnType();
         QVector <QGenericArgument> &qGenArgs = qGenArgsVectors[bestMeta];
@@ -1333,8 +1335,15 @@ void ScriptSignalV8Proxy::connect(ScriptValue arg0, ScriptValue arg1) {
     v8::Local<v8::Function> destFunction = v8::Local<v8::Function>::Cast(callback.get());
     v8::Local<v8::String> destDataName = v8::String::NewFromUtf8(isolate, "__data__").ToLocalChecked();
     v8::Local<v8::Value> destData;
-    auto destFunctionContext = destFunction->CreationContext();
+    // V8TODO: I'm not sure which context to use here
+    //auto destFunctionContext = destFunction->CreationContext();
+    auto destFunctionContext = _engine->getContext();
+    Q_ASSERT(thisObject().isObject());
     V8ScriptValue v8ThisObject = ScriptValueV8Wrapper::fullUnwrap(_engine, thisObject());
+    Q_ASSERT(ScriptObjectV8Proxy::unwrapProxy(v8ThisObject));
+    ScriptSignalV8Proxy* thisProxy = dynamic_cast<ScriptSignalV8Proxy*>(ScriptObjectV8Proxy::unwrapProxy(v8ThisObject)->toQObject());
+    Q_ASSERT(thisProxy);
+    qDebug(scriptengine) << "ScriptSignalV8Proxy::connect: " << thisProxy->fullName() << " fullName: " << fullName();
     //Q_ASSERT(destFunction->InternalFieldCount() == 4);
     //Q_ASSERT(destData.get()->IsArray());
     //v8::Local<v8::Value> destData = destFunction->GetInternalField(3);
@@ -1344,15 +1353,27 @@ void ScriptSignalV8Proxy::connect(ScriptValue arg0, ScriptValue arg1) {
     if (destData->IsArray()) {
         v8::Local<v8::Array> destArray = v8::Local<v8::Array>::Cast(destData);
         int length = destArray->Length();//destData.property("length").toInteger();
+        // V8TODO: Maybe copying array is unnecessary?
         v8::Local<v8::Array> newArray = v8::Array::New(isolate, length + 1);
         bool foundIt = false;
         for (int idx = 0; idx < length && !foundIt; ++idx) {
             v8::Local<v8::Value> entry = destArray->Get(destFunctionContext, idx).ToLocalChecked();
+            {
+                qDebug() << "ScriptSignalV8Proxy::connect: entry details: " << _engine->scriptValueDebugDetailsV8(V8ScriptValue(_engine, entry));
+                Q_ASSERT(entry->IsObject());
+                V8ScriptValue v8EntryObject(_engine, entry);
+                Q_ASSERT(ScriptObjectV8Proxy::unwrapProxy(v8EntryObject));
+                // For debugging
+                ScriptSignalV8Proxy* entryProxy = dynamic_cast<ScriptSignalV8Proxy*>(ScriptObjectV8Proxy::unwrapProxy(v8EntryObject)->toQObject());
+                Q_ASSERT(thisProxy);
+                qDebug(scriptengine) << "ScriptSignalV8Proxy::connect: entry proxy: " << entryProxy->fullName();
+            }
             if (!newArray->Set(destFunctionContext, idx, entry).FromMaybe(false)) {
                 Q_ASSERT(false);
             }
         }
         if (!newArray->Set(destFunctionContext, length, v8ThisObject.get()).FromMaybe(false)) {
+        //if (!newArray->Set(destFunctionContext, length, v8ThisObject.get()).FromMaybe(false)) {
             Q_ASSERT(false);
         }
         if (!destFunction->Set(destFunctionContext, destDataName, newArray).FromMaybe(false)) {
@@ -1448,8 +1469,16 @@ void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
     v8::Local<v8::Function> destFunction = v8::Local<v8::Function>::Cast(callback.get());
     v8::Local<v8::String> destDataName = v8::String::NewFromUtf8(isolate, "__data__").ToLocalChecked();
     v8::Local<v8::Value> destData;
-    auto destFunctionContext = destFunction->CreationContext();
+
+    //auto destFunctionContext = destFunction->CreationContext();
+    auto destFunctionContext = _engine->getContext();
+    Q_ASSERT(thisObject().isObject());
     V8ScriptValue v8ThisObject = ScriptValueV8Wrapper::fullUnwrap(_engine, thisObject());
+    Q_ASSERT(ScriptObjectV8Proxy::unwrapProxy(v8ThisObject));
+    // For debugging
+    ScriptSignalV8Proxy* thisProxy = dynamic_cast<ScriptSignalV8Proxy*>(ScriptObjectV8Proxy::unwrapProxy(v8ThisObject)->toQObject());
+    Q_ASSERT(thisProxy);
+    qDebug(scriptengine) << "ScriptSignalV8Proxy::disconnect: " << thisProxy->fullName() << " fullName: " << fullName();
     //V8ScriptValue destData = callback.data();
     //Q_ASSERT(destData->IsArray());
     if (!destFunction->Get(destFunctionContext, destDataName).ToLocal(&destData)) {
@@ -1463,8 +1492,22 @@ void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
         int newIndex = 0;
         for (int idx = 0; idx < length && !foundIt; ++idx) {
             v8::Local<v8::Value> entry = destArray->Get(destFunctionContext, idx).ToLocalChecked();
+            // For debugging:
+            {
+                _engine->logBacktrace("ScriptSignalV8Proxy::disconnect");
+                qDebug() << "ScriptSignalV8Proxy::disconnect: entry details: " << _engine->scriptValueDebugDetailsV8(V8ScriptValue(_engine, entry));
+                Q_ASSERT(entry->IsObject());
+                V8ScriptValue v8EntryObject(_engine, entry);
+                Q_ASSERT(ScriptObjectV8Proxy::unwrapProxy(v8EntryObject));
+                // For debugging
+                ScriptSignalV8Proxy* entryProxy = dynamic_cast<ScriptSignalV8Proxy*>(ScriptObjectV8Proxy::unwrapProxy(v8EntryObject)->toQObject());
+                Q_ASSERT(thisProxy);
+                qDebug(scriptengine) << "ScriptSignalV8Proxy::disconnect: entry proxy: " << entryProxy->fullName();
+            }
             if (entry->StrictEquals(v8ThisObject.get())) {
+                //V8TODO: compare proxies instead?
                 foundIt = true;
+                qDebug() << "ScriptSignalV8Proxy::disconnect foundIt";
                 //V8ScriptValueList args;
                 //args << idx << 1;
                 //destData.property("splice").call(destData, args);
