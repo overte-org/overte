@@ -415,6 +415,7 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
         v8::V8::Initialize(); qCDebug(scriptengine) << "V8 platform initialized";
     } );
     _v8InitMutex.unlock();
+    qDebug() << "Creating new script engine";
     {
         v8::Isolate::CreateParams isolateParams;
         isolateParams.array_buffer_allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
