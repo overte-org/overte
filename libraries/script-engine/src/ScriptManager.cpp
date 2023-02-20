@@ -1049,6 +1049,14 @@ void ScriptManager::timerFired() {
         return; // bail early
     }
 
+    _timerCallCounter++;
+    if (_timerCallCounter % 100 == 0) {
+        qDebug() << "Script engine: " << _engine->manager()->getFilename()
+                 << "timer call count: " << _timerCallCounter << " total time: " << _totalTimeInTimerEvents_s;
+    }
+    QElapsedTimer callTimer;
+    callTimer.start();
+
     QTimer* callingTimer = reinterpret_cast<QTimer*>(sender());
     CallbackData timerData = _timerFunctionMap.value(callingTimer);
 
@@ -1069,6 +1077,8 @@ void ScriptManager::timerFired() {
     } else {
         qCWarning(scriptengine) << "timerFired -- invalid function" << timerData.function.toVariant().toString();
     }
+
+    _totalTimeInTimerEvents_s += callTimer.elapsed() / 1000.0;
 }
 
 QTimer* ScriptManager::setupTimerWithInterval(const ScriptValue& function, int intervalMS, bool isSingleShot) {
