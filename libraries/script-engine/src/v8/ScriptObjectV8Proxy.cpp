@@ -13,6 +13,7 @@
 
 #include "ScriptObjectV8Proxy.h"
 
+#include <QElapsedTimer>
 #include <QtCore/QList>
 #include <QtCore/QSharedPointer>
 
@@ -1161,7 +1162,15 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
     if (id != 0 || call != QMetaObject::InvokeMetaMethod) {
         return id;
     }
-    
+
+    _callCounter++;
+    if (_callCounter % 10 == 0) {
+        qDebug() << "Script engine: " << _engine->manager()->getFilename() << " Signal proxy " << fullName()
+                 << " call count: " << _callCounter << " total time: " << _totalCallTime_s;
+    }
+    QElapsedTimer callTimer;
+    callTimer.start();
+
     auto isolate = _engine->getIsolate();
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
@@ -1250,6 +1259,8 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
             }
         }
     });
+
+    _totalCallTime_s += callTimer.elapsed() / 1000.0;
 
     return -1;
 }

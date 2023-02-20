@@ -257,6 +257,9 @@ private:  // storage
     bool _isConnected{ false };
     // Context in which it was created
     v8::UniquePersistent<v8::Context> _v8Context;
+    // Call counter for debugging purposes. It can be used to determine which signals are overwhelming script engine.
+    int _callCounter{0};
+    float _totalCallTime_s{ 0.0 };
 
     Q_DISABLE_COPY(ScriptSignalV8Proxy)
 };
