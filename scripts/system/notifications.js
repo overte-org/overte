@@ -87,7 +87,7 @@
         if (remainingTime < FADE_OUT_DURATION) {
             alpha = NOTIFICATION_ALPHA * (remainingTime/FADE_OUT_DURATION);
         }
-        var properties, count, extraline, breaks, height;
+        var properties, count, extraLine, breaks, height;
         var breakPoint = MAX_LINE_LENGTH + 1;
         var level = overlayLocationY;
         var entityLevel = 0;
