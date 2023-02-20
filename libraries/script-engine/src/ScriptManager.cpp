@@ -432,17 +432,18 @@ void ScriptManager::waitTillDoneRunning(bool shutdown) {
         while (workerThread->isRunning()) {
             // If the final evaluation takes too long, then tell the script engine to stop running
             auto elapsedUsecs = usecTimestampNow() - startedWaiting;
+            // V8TODO: temporarily increased script timeout. Maybe use different timeouts for release and unoptimized debug?
             static const auto MAX_SCRIPT_EVALUATION_TIME = USECS_PER_SECOND;
             if (elapsedUsecs > MAX_SCRIPT_EVALUATION_TIME) {
                 workerThread->quit();
 
                 if (_engine->isEvaluating()) {
-                    qCWarning(scriptengine) << "Script Engine has been running too long, aborting:" << getFilename();
+                    qCWarning(scriptengine) << "Script Engine has been running too long (evaluation), aborting:" << getFilename();
                     _engine->abortEvaluation();
                 } else {
                     auto context = _engine->currentContext();
                     if (context) {
-                        qCWarning(scriptengine) << "Script Engine has been running too long, throwing:" << getFilename();
+                        qCWarning(scriptengine) << "Script Engine has been running too long (event loop), throwing:" << getFilename();
                         context->throwError("Timed out during shutdown");
                     }
                 }
@@ -451,6 +452,7 @@ void ScriptManager::waitTillDoneRunning(bool shutdown) {
                 // flooding it with aborts/exceptions will persist it longer
                 static const auto MAX_SCRIPT_QUITTING_TIME = 0.5 * MSECS_PER_SECOND;
                 if (!workerThread->wait(MAX_SCRIPT_QUITTING_TIME)) {
+                    Q_ASSERT(false);
                     workerThread->terminate();
                 }
             }
