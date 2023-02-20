@@ -408,7 +408,7 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
         // --jitless - might improve debugging performance due to no JIT?
         // --assert-types
 
-        v8::V8::SetFlagsFromString("--stack-size=256");
+        v8::V8::SetFlagsFromString("--stack-size=256 --verify-heap");
         //v8::V8::SetFlagsFromString("--stack-size=256 --single-threaded");
         v8::Platform* platform = getV8Platform();
         v8::V8::InitializePlatform(platform);
