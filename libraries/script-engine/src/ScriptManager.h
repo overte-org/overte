@@ -1005,6 +1005,10 @@ protected:
 
     QWeakPointer<ScriptEngines> _scriptEngines;
 
+    // For debugging performance issues
+    int _timerCallCounter{ 0 };
+    double _totalTimeInTimerEvents_s{ 0.0 };
+
     friend ScriptManagerPointer newScriptManager(Context context, const QString& scriptContents, const QString& fileNameString);
 };
 
