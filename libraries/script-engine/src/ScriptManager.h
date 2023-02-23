@@ -112,6 +112,8 @@ public:
 #define STATIC_SCRIPT_INITIALIZER(init)                                     \
     static ScriptManager::StaticInitializerNode static_script_initializer_(init);
 
+
+
 /**jsdoc
  * The <code>Script</code> API provides facilities for working with scripts.
  *
@@ -144,6 +146,21 @@ public:
  *     <em>Read-only.</em>
  * @property {Script.ResourceBuckets} ExternalPaths - External resource buckets.
  */
+
+/**
+ * @brief Manages a single scripting engine
+ *
+ * This class manages and sets up a single scripting engine to make it execute scripts.
+ *
+ * It passes the objects needed to expose the public API, provides console access and error
+ * reporting and event management.
+ *
+ * This manipulates a single underlying instance of ScriptEngine.
+ *
+ * TODO: Split this class apart, create a ScriptManagerScriptingInterface to handle the JS API
+ * side separately.
+ *
+ */
 class ScriptManager : public QObject, public EntitiesScriptEngineProvider, public std::enable_shared_from_this<ScriptManager> {
     Q_OBJECT
     Q_PROPERTY(QString context READ getContext)
@@ -153,6 +170,10 @@ public:
     static const QString SCRIPT_EXCEPTION_FORMAT;
     static const QString SCRIPT_BACKTRACE_SEP;
 
+    /**
+     * @brief Context of the script
+     *
+     */
     enum Context {
         CLIENT_SCRIPT,
         ENTITY_CLIENT_SCRIPT,
@@ -190,16 +211,34 @@ public:
         inline StaticTypesInitializerNode(ScriptManagerInitializer&& pInit) : init(std::move(pInit)),prev(nullptr) { registerNewStaticTypesInitializer(this); }
     };
     static void registerNewStaticTypesInitializer(StaticTypesInitializerNode* dest);
-    /// run the script in a dedicated thread. This will have the side effect of evalulating
-    /// the current script contents and calling run(). Callers will likely want to register the script with external
-    /// services before calling this.
+
+    /**
+     * @brief Run the script in a dedicated thread
+     *
+     * This will have the side effect of evaluating the current script contents and calling run().
+     * Callers will likely want to register the script with external services before calling this.
+     */
     void runInThread();
 
-    /// run the script in the callers thread, exit when stop() is called.
+    /**
+     * @brief Run the script in the caller's thread, exit when stop() is called.
+     *
+     */
     void run();
 
+
+    /**
+     * @brief Get the filename of the running script
+     *
+     * @return QString Filename
+     */
     QString getFilename() const;
 
+    /**
+     * @brief Underlying scripting engine
+     *
+     * @return ScriptEnginePointer Scripting engine
+     */
     inline ScriptEnginePointer engine() { return _engine; }
 
     QList<EntityItemID> getListOfEntityScriptIDs();
@@ -225,16 +264,29 @@ public:
     // NOTE - this is intended to be a public interface for Agent scripts, and local scripts, but not for EntityScripts
     Q_INVOKABLE void stop(bool marshal = false);
 
-    // Stop any evaluating scripts and wait for the scripting thread to finish.
+    /**
+     * @brief Stop any evaluating scripts and wait for the scripting thread to finish.
+     *
+     * @param shutdown True if we are currently shutting down
+     */
     void waitTillDoneRunning(bool shutdown = false);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // NOTE - these are NOT intended to be public interfaces available to scripts, the are only Q_INVOKABLE so we can
     //        properly ensure they are only called on the correct thread
 
-    /// if the script engine is not already running, this will download the URL and start the process of seting it up
-    /// to run... NOTE - this is used by Application currently to load the url. We don't really want it to be exposed
-    /// to scripts. we may not need this to be invokable
+
+    /**
+     * @brief Load a script from a given URL
+     *
+     * If the script engine is not already running, this will download the URL and start the process of seting it up
+     * to run.
+     * @note This is used by Application currently to load the url. We don't really want it to be exposed
+     * to scripts. we may not need this to be invokable
+     *
+     * @param scriptURL URL where to load the script from
+     * @param reload
+     */
     void loadURL(const QUrl& scriptURL, bool reload);
     bool hasValidScriptSuffix(const QString& scriptFileName);
 
@@ -648,9 +700,26 @@ public:
     void disconnectNonEssentialSignals();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // These are currently used by Application to track if a script is user loaded or not. Consider finding a solution
-    // inside of Application so that the ScriptManager class is not polluted by this notion
+
+    /**
+     * @brief Set whether this script was user-loaded
+     *
+     * This is used by Application to track if a script is user loaded or not.
+     * @note Consider finding a solution inside of Application so that the ScriptManager class is not polluted by this notion
+     *
+     * @param isUserLoaded Script is user-loaded.
+     */
     void setUserLoaded(bool isUserLoaded) { _isUserLoaded = isUserLoaded; }
+
+    /**
+     * @brief Whether the script was user-loaded.
+     *
+     * This is used by Application to track if a script is user loaded or not.
+     * @note Consider finding a solution inside of Application so that the ScriptManager class is not polluted by this notion
+     *
+     * @return true
+     * @return false
+     */
     bool isUserLoaded() const { return _isUserLoaded; }
 
     void setQuitWhenFinished(const bool quitWhenFinished) { _quitWhenFinished = quitWhenFinished; }
@@ -669,10 +738,21 @@ public:
 
     void setScriptEngines(QSharedPointer<ScriptEngines>& scriptEngines) { _scriptEngines = scriptEngines; }
 
-    // call all the registered event handlers on an entity for the specified name.
+
+    /**
+     * @brief Call all the registered event handlers on an entity for the specified name.
+     *
+     * @param entityID
+     * @param eventName
+     * @param eventHanderArgs
+     */
     void forwardHandlerCall(const EntityItemID& entityID, const QString& eventName, const ScriptValueList& eventHanderArgs);
 
-    // remove all event handlers for the specified entityID (i.e. the entity is being removed)
+    /**
+     * @brief Remove all event handlers for the specified entityID (i.e. the entity is being removed)
+     *
+     * @param entityID
+     */
     void removeAllEventHandlers(const EntityItemID& entityID);
 
 
