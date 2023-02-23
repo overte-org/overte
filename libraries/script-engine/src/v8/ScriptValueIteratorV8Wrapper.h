@@ -31,6 +31,7 @@ public:
     void next();
     V8ScriptValue value();
 private:
+    // V8TODO: maybe these should be WeakPersistent?
     v8::UniquePersistent<v8::Array> _propertyNames;
     v8::UniquePersistent<v8::Object> _object;
     v8::UniquePersistent<v8::Context> _context;
