@@ -23,6 +23,9 @@
 #include "ScriptEngineV8.h"
 #include "V8Types.h"
 
+
+// V8TODO: This class is likely unnecessary, and it'd be enough
+// to just use a non-abstract version of ScriptSyntaxCheckResult instead.
 class ScriptSyntaxCheckResultV8Wrapper final : public ScriptSyntaxCheckResult {
 public: // construction
     inline ScriptSyntaxCheckResultV8Wrapper() : _errorColumnNumber(0), _errorLineNumber(0), _errorMessage("Not compiled"), _state(ScriptSyntaxCheckResult::Error) {}
