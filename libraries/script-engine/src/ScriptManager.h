@@ -230,6 +230,29 @@ public:
  *
  * The script-facing interface is in ScriptManagerScriptingInterface and documented in JSDoc
  * as the <a href="https://apidocs.overte.org/Script.html">Script</a> class.
+ *
+ * The ScriptManager provides the following functionality to scripts:
+ *
+ * * A math library: Quat, Vec3, Mat4
+ * * UUID generation: Uuid
+ * * Filesystem access: File
+ * * Console access: console, print
+ * * Resource access: Resource, Asset, Resources, ExternalPaths
+ * * Scripting system management: Script
+ * * Module loading: require
+ * * Web access: XMLHttpRequest, WebSocket
+ * * Other miscellaneous functionality.
+ *
+ * @note
+ * Technically, the ScriptManager isn't generic enough -- it implements things that imitate
+ * Node.js for examine in the module loading code, which makes it JS specific. This code
+ * should probably be moved into the JS ScriptEngine class instead.
+ *
+ * The EntityScript functionality might also benefit from being split off into a separate
+ * class, for better organization.
+ *
+ * Some more functionality can be shifted to ScriptManagerScriptingInterface, since
+ * it only provides services to scripts and isn't called from C++.
  */
 class ScriptManager : public QObject, public EntitiesScriptEngineProvider, public std::enable_shared_from_this<ScriptManager> {
     Q_OBJECT
@@ -536,13 +559,23 @@ public:
     /**
      * @brief Includes JavaScript from other files in the current script.
      *
-     * @param includeFiles
-     * @param callback
+     * If a callback is specified, the included files will be loaded asynchronously and the callback will be called
+     * when all of the files have finished loading.
+     * If no callback is specified, the included files will be loaded synchronously and will block execution until
+     * all of the files have finished loading.
+     *
+     * @param includeFiles List of files to include
+     * @param callback Callback to call when the files have finished loading.
      */
     Q_INVOKABLE void include(const QStringList& includeFiles, const ScriptValue& callback = ScriptValue());
 
     /**
      * @brief Includes JavaScript from another file in the current script.
+     *
+     * If a callback is specified, the included files will be loaded asynchronously and the callback will be called
+     * when all of the files have finished loading.
+     * If no callback is specified, the included files will be loaded synchronously and will block execution until
+     * all of the files have finished loading.
      *
      * @param includeFile
      * @param callback
@@ -650,9 +683,11 @@ public:
    /**
     * @brief Calls a function repeatedly, at a set interval.
     *
-    * @param function
-    * @param intervalMS
-    * @return QTimer*
+    * @note This is a JS API service.
+    *
+    * @param function Function to call
+    * @param intervalMS Interval at which to call the function, in ms
+    * @return QTimer* A pointer to the timer
     */
     Q_INVOKABLE QTimer* setInterval(const ScriptValue& function, int intervalMS);
 
@@ -660,16 +695,18 @@ public:
     /**
      * @brief  Calls a function once, after a delay.
      *
-     * @param function
-     * @param timeoutMS
-     * @return QTimer*
+     * @note This is a JS API service.
+     *
+     * @param function Function to call
+     * @param timeoutMS How long to wait before calling the function, in ms
+     * @return QTimer* A pointer to the timer
      */
     Q_INVOKABLE QTimer* setTimeout(const ScriptValue& function, int timeoutMS);
 
     /**
      * @brief Stops an interval timer
      *
-     * @param timer
+     * @param timer Timer to stop
      */
     Q_INVOKABLE void clearInterval(QTimer* timer) { stopTimer(timer); }
 
@@ -677,14 +714,15 @@ public:
      * @brief Stops an interval timer
      *
      * Overloaded version is needed in case the timer has expired
-     * @param timer
+     *
+     * @param timer Timer to stop
      */
     Q_INVOKABLE void clearInterval(QVariantMap timer) { ; }
 
     /**
      * @brief Stops a timeout timer
      *
-     * @param timer
+     * @param timer Timer to stop
      */
     Q_INVOKABLE void clearTimeout(QTimer* timer) { stopTimer(timer); }
 
@@ -692,7 +730,7 @@ public:
      * @brief Stops a timeout timer
      * Overloaded version is needed in case the timer has expired
      *
-     * @param timer
+     * @param timer Timer to stop
      */
 
     Q_INVOKABLE void clearTimeout(QVariantMap timer) { ; }
@@ -1265,6 +1303,11 @@ protected:
     // Is called by the constructor, bceause all types need to be registered before method discovery with ScriptObjectV8Proxy::investigate()
     void initMetaTypes();
 
+    /**
+     * @brief Initializes the underlying scripting engine
+     *
+     * This sets up the scripting engine with the default APIs
+     */
     void init();
 
     /**
@@ -1460,9 +1503,29 @@ protected:
 
 };
 
+/**
+ * @brief Creates a new ScriptManager
+ *
+ * @param context Context in which scripts will run
+ * @param scriptContents Contents of the script to run
+ * @param fileNameString Filename for the script
+ * @return ScriptManagerPointer
+ */
 ScriptManagerPointer newScriptManager(ScriptManager::Context context,
                                       const QString& scriptContents,
                                       const QString& fileNameString);
+
+/**
+ * @brief Creates a new ScriptManager and adds it to ScriptEngines
+ *
+ * Same as newScriptManager, but it additionally registers the new
+ * ScriptManager with ScriptEngines.
+ *
+ * @param context Context in which scripts will run
+ * @param scriptContents Contents of the script
+ * @param fileNameString Filename of the script
+ * @return ScriptManagerPointer
+ */
 ScriptManagerPointer scriptManagerFactory(ScriptManager::Context context,
                                         const QString& scriptContents,
                                         const QString& fileNameString);
