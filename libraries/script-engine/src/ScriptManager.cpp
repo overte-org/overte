@@ -56,6 +56,7 @@
 #include "ScriptProgram.h"
 #include "ScriptValueIterator.h"
 #include "ScriptValueUtils.h"
+#include "ScriptManagerScriptingInterface.h"
 
 #include <Profile.h>
 
@@ -269,6 +270,8 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
             _type = Type::AGENT;
             break;
     }
+
+    _scriptingInterface = std::make_shared<ScriptManagerScriptingInterface>(this);
 
     if (isEntityServerScript()) {
         qCDebug(scriptengine) << "isEntityServerScript() -- limiting maxRetries to 1";
@@ -683,7 +686,7 @@ void ScriptManager::init() {
     // NOTE: You do not want to end up creating new instances of singletons here. They will be on the ScriptManager thread
     // and are likely to be unusable if we "reset" the ScriptManager by creating a new one (on a whole new thread).
 
-    scriptEngine->registerGlobalObject("Script", this);
+    scriptEngine->registerGlobalObject("Script", _scriptingInterface.get());
 
     {
         // set up Script.require.resolve and Script.require.cache
@@ -827,7 +830,7 @@ void ScriptManager::run() {
         // (because we're a client script)
         hifi::scripting::setLocalAccessSafeThread(true);
     }
-    
+
 
     //_engine->enterIsolateOnThisThread();
 
@@ -1878,32 +1881,6 @@ void ScriptManager::loadEntityScript(const EntityItemID& entityID, const QString
     }, forceRedownload);
 }
 
-/*@jsdoc
- * Triggered when the script starts for a user. See also, {@link Script.entityScriptPreloadFinished}.
- * <p>Note: Can only be connected to via <code>this.preload = function (...) { ... }</code> in the entity script.</p>
- * <p class="availableIn"><strong>Supported Script Types:</strong> Client Entity Scripts &bull; Server Entity Scripts</p>
- * @function Entities.preload
- * @param {Uuid} entityID - The ID of the entity that the script is running in.
- * @returns {Signal}
- * @example <caption>Get the ID of the entity that a client entity script is running in.</caption>
- * var entityScript = (function () {
- *     this.entityID = Uuid.NULL;
- *
- *     this.preload = function (entityID) {
- *         this.entityID = entityID;
- *         print("Entity ID: " + this.entityID);
- *     };
- * });
- *
- * var entityID = Entities.addEntity({
- *     type: "Box",
- *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: -5 })),
- *     dimensions: { x: 0.5, y: 0.5, z: 0.5 },
- *     color: { red: 255, green: 0, blue: 0 },
- *     script: "(" + entityScript + ")",  // Could host the script on a Web server instead.
- *     lifetime: 300  // Delete after 5 minutes.
- * });
- */
 // The JSDoc is for the callEntityScriptMethod() call in this method.
 // since all of these operations can be asynch we will always do the actual work in the response handler
 // for the download
