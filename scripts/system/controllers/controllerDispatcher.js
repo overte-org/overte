@@ -259,7 +259,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             // find 3d overlays near each hand
             var nearbyOverlayIDs = [];
             var h;
-            for (h = LEFT_HAND; h <= RIGHT_HAND; h++) {
+            /*for (h = LEFT_HAND; h <= RIGHT_HAND; h++) {
                 if (controllerLocations[h].valid) {
                     var nearbyOverlays =
                         Overlays.findOverlays(controllerLocations[h].position, NEAR_MAX_RADIUS * sensorScaleFactor);
@@ -293,7 +293,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
                 } else {
                     nearbyOverlayIDs.push([]);
                 }
-            }
+            }*/
 
             // find entities near each hand
             var nearbyEntityProperties = [[], []];
