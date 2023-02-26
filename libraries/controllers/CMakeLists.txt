@@ -1,3 +1,7 @@
+# Copyright 2013-2017, High Fidelity, Inc.
+# Copyright 2023 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 set(TARGET_NAME controllers)
 
 # set a default root dir for each of our optional externals if it was not passed

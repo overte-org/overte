@@ -4,10 +4,11 @@
 //
 //  Created by Thijs Wenker on 2018-06-25
 //  Copyright 2018 High Fidelity, Inc.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "InteractiveWindow.h"
