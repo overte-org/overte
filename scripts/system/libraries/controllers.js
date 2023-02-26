@@ -2,9 +2,13 @@
 //
 //  Created by Seth Alves on 2016-9-7
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
 /* global MyAvatar, Vec3, HMD, Controller, Camera, Quat, Settings,
    getGrabPointSphereOffset:true,
    setGrabCommunications:true,

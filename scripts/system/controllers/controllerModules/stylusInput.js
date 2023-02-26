@@ -2,8 +2,13 @@
 
 //  stylusInput.js
 //
+//  Copyright 2017-2020 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
 
 /* global Script, MyAvatar, Controller, Uuid, RIGHT_HAND, LEFT_HAND, enableDispatcherModule, disableDispatcherModule,
    makeRunningValues, Vec3, makeDispatcherModuleParameters, Overlays, HMD, Settings, getEnabledModuleByName, Pointers,
