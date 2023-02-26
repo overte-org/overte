@@ -269,6 +269,9 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
         case Context::AGENT_SCRIPT:
             _type = Type::AGENT;
             break;
+        case Context::NETWORKLESS_TEST_SCRIPT:
+            _type = Type::NETWORKLESS_TEST;
+            break;
     }
 
     _scriptingInterface = std::make_shared<ScriptManagerScriptingInterface>(this);
@@ -321,6 +324,8 @@ QString ScriptManager::getContext() const {
             return "entity_server";
         case AGENT_SCRIPT:
             return "agent";
+        case NETWORKLESS_TEST_SCRIPT:
+            return "networkless_test";
         default:
             return "unknown";
     }
@@ -664,15 +669,25 @@ void ScriptManager::init() {
     }
 
     _isInitialized = true;
-    runStaticInitializers(this);
+
+    if (_context != NETWORKLESS_TEST_SCRIPT) {
+        // This initializes a bunch of systems that want network access. We
+        // want to avoid it in test script mode.
+        runStaticInitializers(this);
+    }
 
     auto scriptEngine = _engine.get();
 
-    ScriptValue xmlHttpRequestConstructorValue = scriptEngine->newFunction(XMLHttpRequestClass::constructor);
-    scriptEngine->globalObject().setProperty("XMLHttpRequest", xmlHttpRequestConstructorValue);
+    if (_context != NETWORKLESS_TEST_SCRIPT) {
+        // For test scripts we want to minimize the amount of functionality available, for the least
+        // amount of dependencies and faster test system startup.
 
-    ScriptValue webSocketConstructorValue = scriptEngine->newFunction(WebSocketClass::constructor);
-    scriptEngine->globalObject().setProperty("WebSocket", webSocketConstructorValue);
+        ScriptValue xmlHttpRequestConstructorValue = scriptEngine->newFunction(XMLHttpRequestClass::constructor);
+        scriptEngine->globalObject().setProperty("XMLHttpRequest", xmlHttpRequestConstructorValue);
+
+        ScriptValue webSocketConstructorValue = scriptEngine->newFunction(WebSocketClass::constructor);
+        scriptEngine->globalObject().setProperty("WebSocket", webSocketConstructorValue);
+    }
 
     /*@jsdoc
      * Prints a message to the program log and emits {@link Script.printedMessage}.
@@ -703,7 +718,12 @@ void ScriptManager::init() {
     scriptEngine->registerGlobalObject("Vec3", &_vec3Library);
     scriptEngine->registerGlobalObject("Mat4", &_mat4Library);
     scriptEngine->registerGlobalObject("Uuid", &_uuidLibrary);
-    scriptEngine->registerGlobalObject("Messages", DependencyManager::get<MessagesClient>().data());
+
+    if (_context != NETWORKLESS_TEST_SCRIPT) {
+        // This requires networking, we want to avoid the need for it in test scripts
+        scriptEngine->registerGlobalObject("Messages", DependencyManager::get<MessagesClient>().data());
+    }
+
     scriptEngine->registerGlobalObject("File", new FileScriptingInterface(this));
     scriptEngine->registerGlobalObject("console", &_consoleScriptingInterface);
     scriptEngine->registerFunction("console", "info", ConsoleScriptingInterface::info, scriptEngine->currentContext()->argumentCount());
@@ -717,25 +737,28 @@ void ScriptManager::init() {
     scriptEngine->registerFunction("console", "groupCollapsed", ConsoleScriptingInterface::groupCollapsed, 1);
     scriptEngine->registerFunction("console", "groupEnd", ConsoleScriptingInterface::groupEnd, 0);
 
-    // Scriptable cache access
-    auto resourcePrototype = createScriptableResourcePrototype(shared_from_this());
-    scriptEngine->globalObject().setProperty("Resource", resourcePrototype);
-    scriptEngine->setDefaultPrototype(qMetaTypeId<ScriptableResource*>(), resourcePrototype);
-
     // constants
     scriptEngine->globalObject().setProperty("TREE_SCALE", scriptEngine->newValue(TREE_SCALE));
 
-    scriptEngine->registerGlobalObject("Assets", _assetScriptingInterface);
-    scriptEngine->registerGlobalObject("Resources", DependencyManager::get<ResourceScriptingInterface>().data());
+    if (_context != NETWORKLESS_TEST_SCRIPT) {
+        // Scriptable cache access
+        auto resourcePrototype = createScriptableResourcePrototype(shared_from_this());
+        scriptEngine->globalObject().setProperty("Resource", resourcePrototype);
+        scriptEngine->setDefaultPrototype(qMetaTypeId<ScriptableResource*>(), resourcePrototype);
 
-    scriptEngine->registerGlobalObject("DebugDraw", &DebugDraw::getInstance());
+        scriptEngine->registerGlobalObject("Assets", _assetScriptingInterface);
+        scriptEngine->registerGlobalObject("Resources", DependencyManager::get<ResourceScriptingInterface>().data());
 
-    scriptEngine->registerGlobalObject("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
+        scriptEngine->registerGlobalObject("DebugDraw", &DebugDraw::getInstance());
+
+        scriptEngine->registerGlobalObject("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
+    }
 
 #if DEV_BUILD || PR_BUILD
     scriptEngine->registerGlobalObject("StackTest", new StackTestScriptingInterface(this));
 #endif
 
+    qCDebug(scriptengine) << "Engine initialized";
 }
 
 // registers a global object by name
@@ -820,6 +843,10 @@ void ScriptManager::addEventHandler(const EntityItemID& entityID, const QString&
 }
 
 bool ScriptManager::isStopped() const {
+    if (_context == NETWORKLESS_TEST_SCRIPT) {
+        return false;
+    }
+
     QSharedPointer<ScriptEngines> scriptEngines(_scriptEngines);
     return !scriptEngines || scriptEngines->isStopped();
 }
@@ -841,6 +868,7 @@ void ScriptManager::run() {
     PROFILE_SET_THREAD_NAME("Script: " + name);
 
     if (isStopped()) {
+        qCCritical(scriptengine) << "ScriptManager is stopped or ScriptEngines is not available, refusing to run script";
         return; // bail early - avoid setting state in init(), as evaluate() will bail too
     }
 
@@ -873,8 +901,12 @@ void ScriptManager::run() {
 
     std::chrono::microseconds totalUpdates(0);
 
+    qCDebug(scriptengine) << "Waiting for finish";
+
     // TODO: Integrate this with signals/slots instead of reimplementing throttling for ScriptManager
     while (!_isFinished) {
+        qCDebug(scriptengine) << "In script event loop";
+
         auto beforeSleep = clock::now();
 
         // Throttle to SCRIPT_FPS

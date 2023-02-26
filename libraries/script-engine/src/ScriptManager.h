@@ -243,6 +243,29 @@ public:
  * * Web access: XMLHttpRequest, WebSocket
  * * Other miscellaneous functionality.
  *
+ * Example:
+ *
+ * @code {.cpp}
+ * #include "ScriptManager.h"
+ *
+ * // Scripts only stop running when Script.stop() is called.
+ * // In the normal environment this isn't needed, but for things like unit tests we need
+ * // to use it to make the ScriptManager return from run().
+ *
+ * QString scriptSource = "print(\"Hello, world!\"); Script.stop(true);";
+ * QString scriptFilename = "test.js";
+ *
+ * ScriptManagerPointer sm = newScriptManager(ScriptManager::NETWORKLESS_TEST_SCRIPT, scriptSource, scriptFilename);
+ * connect(sm.get(), &ScriptManager::printedMessage, [](const QString& message, const QString& engineName){
+ *     qDebug() << "Printed message from engine" << engineName << ": " << message;
+ * });
+ *
+ * qInfo() << "Running script!";
+ * sm->run();
+ * qInfo() << "Done!"
+ * @endcode
+ *
+ *
  * @note
  * Technically, the ScriptManager isn't generic enough -- it implements things that imitate
  * Node.js for examine in the module loading code, which makes it JS specific. This code
@@ -291,7 +314,20 @@ public:
          * @brief Agent script
          *
          */
-        AGENT_SCRIPT
+        AGENT_SCRIPT,
+
+        /**
+         * @brief Network-less test system context.
+         * This is used for the QTest self-tests, and minimizes the API that is made available to
+         * the running script. It removes the need for network access, which makes for much faster
+         * test execution.
+         *
+         *
+         * @warning This is a development-targeted bit of functionality.
+         *
+         * @warning This is going to break functionality like loadURL and require
+         */
+        NETWORKLESS_TEST_SCRIPT
     };
 
     /**
@@ -328,7 +364,18 @@ public:
          * @brief Avatar script
          *
          */
-        AVATAR
+        AVATAR,
+
+        /**
+         * @brief Test system script
+         *
+         * This is used for the QTest self-tests, and minimizes the API that is made available to
+         * the running script. It removes the need for network access, which makes for much faster
+         * test execution.
+         *
+         * @warning This is a development-targeted bit of functionality.
+         */
+        NETWORKLESS_TEST
     };
     Q_ENUM(Type);
 
@@ -368,8 +415,9 @@ public:
     void runInThread();
 
     /**
-     * @brief Run the script in the caller's thread, exit when stop() is called.
+     * @brief Run the script in the caller's thread, exit when Script.stop() is called.
      *
+     * Most scripts never stop running, so this function will never return for them.
      */
     void run();
 
