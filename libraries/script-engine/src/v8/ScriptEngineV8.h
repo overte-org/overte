@@ -136,7 +136,7 @@ public:  // ScriptEngine implementation
     QString scriptValueDebugDetailsV8(const V8ScriptValue &value);
     virtual QString scriptValueDebugListMembers(const ScriptValue &value) override;
     QString scriptValueDebugListMembersV8(const V8ScriptValue &v8Value);
-    virtual void logBacktrace(const QString &title) override;
+    virtual void logBacktrace(const QString &title = QString("")) override;
 
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
     inline bool IS_THREADSAFE_INVOCATION(const QString& method) { return ScriptEngine::IS_THREADSAFE_INVOCATION(method); }
@@ -185,7 +185,9 @@ public: // not for public use, but I don't like how Qt strings this along with p
     bool convertJSObjectToVariant(v8::Local<v8::Object> object, QVariant &dest);
     V8ScriptValue castVariantToValue(const QVariant& val);
     QString valueType(const V8ScriptValue& val);
-    v8::Isolate* getIsolate() {return _v8Isolate;}
+    v8::Isolate* getIsolate() {
+        Q_ASSERT(_v8Isolate != nullptr);
+        return _v8Isolate;}
     v8::Local<v8::Context> getContext();
     const v8::Local<v8::Context> getConstContext() const;
     QString formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch);
