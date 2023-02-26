@@ -759,14 +759,14 @@ public:
     Q_INVOKABLE QUrl resourcesPath() const;
 
     /**
-     * @brief Starts timing a section of code in order to send usage data about it to Vircadia. Shouldn't be used outside of the
+     * @brief Starts timing a section of code in order to send usage data about it to Overte. Shouldn't be used outside of the
      * standard scripts.
      * @param label
      */
     Q_INVOKABLE void beginProfileRange(const QString& label) const;
 
     /**
-     * @brief Finishes timing a section of code in order to send usage data about it to Vircadia. Shouldn't be used outside of
+     * @brief Finishes timing a section of code in order to send usage data about it to Overte. Shouldn't be used outside of
      * the standard scripts
      * @param label
      */
