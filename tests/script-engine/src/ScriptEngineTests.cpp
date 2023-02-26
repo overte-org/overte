@@ -1,5 +1,8 @@
 #include <QSignalSpy>
 #include <QDebug>
+#include <QFile>
+#include <QTextStream>
+
 
 #include "ScriptEngineTests.h"
 #include "DependencyManager.h"
@@ -7,6 +10,8 @@
 #include "ScriptEngines.h"
 #include "ScriptEngine.h"
 #include "ScriptCache.h"
+#include "ScriptManager.h"
+
 #include "ResourceManager.h"
 #include "ResourceRequestObserver.h"
 #include "StatTracker.h"
@@ -18,34 +23,21 @@
 QTEST_MAIN(ScriptEngineTests)
 
 
-// script factory generates scriptmanager -- singleton
-//
-// default scripts -- all in one thread, but chat spawns a separate thread
-// // https://apidocs.overte.org/Script.html#.executeOnScriptThread
-//
-// scriptmanager
-// every thread has a manager, and its own engine
-// provides non-qt interface?
-//
-// special threads for entity scripts -- 12 (fixed? dynamic?)
-
-
-
 
 void ScriptEngineTests::initTestCase() {
     // AudioClient starts networking, but for the purposes of the tests here we don't care,
     // so just got to use some port.
-    int listenPort = 10000;
+    //int listenPort = 10000;
 
-    DependencyManager::registerInheritance<LimitedNodeList, NodeList>();
-    DependencyManager::set<NodeList>(NodeType::Agent, listenPort);
-    DependencyManager::set<ScriptEngines>(ScriptManager::CLIENT_SCRIPT, QUrl(""));
+    //DependencyManager::registerInheritance<LimitedNodeList, NodeList>();
+    //DependencyManager::set<NodeList>(NodeType::Agent, listenPort);
+    DependencyManager::set<ScriptEngines>(ScriptManager::NETWORKLESS_TEST_SCRIPT, QUrl(""));
     DependencyManager::set<ScriptCache>();
-    DependencyManager::set<ResourceManager>();
-    DependencyManager::set<ResourceRequestObserver>();
+   // DependencyManager::set<ResourceManager>();
+   // DependencyManager::set<ResourceRequestObserver>();
     DependencyManager::set<StatTracker>();
     DependencyManager::set<ScriptInitializers>();
-    DependencyManager::set<EntityScriptingInterface>(true);
+   // DependencyManager::set<EntityScriptingInterface>(true);
 
     QSharedPointer<ScriptEngines> ac = DependencyManager::get<ScriptEngines>();
     QVERIFY(!ac.isNull());
@@ -77,31 +69,71 @@ void ScriptEngineTests::scriptTest() {
     QSharedPointer<ScriptEngines> ac = DependencyManager::get<ScriptEngines>();
     QVERIFY(!ac.isNull());
 
-    // TODO: can we execute test scripts in serial way rather than parallel
-    /*QDir testScriptsDir("tests");
+
+    QDir testScriptsDir("tests");
     QStringList testScripts = testScriptsDir.entryList(QStringList() << "*.js", QDir::Files);
     testScripts.sort();
 
-    for(QString script : testScripts) {
-        script = "tests/" + script;
-        qInfo() << "Running test script: " << script;
-        ac->loadOneScript(script);
-    }*/
-    //ac->loadOneScript("tests/003_vector_math.js");
-    ac->loadOneScript("tests/005_include.js");
+    for(QString scriptFilename : testScripts) {
+        scriptFilename = "tests/" + scriptFilename;
+        qInfo() << "Running test script: " << scriptFilename;
 
-    qDebug() << ac->getRunning();
+        QString scriptSource;
 
-    // TODO: if I don't have infinite loop here, it exits before scripts finish. It also reports: QSignalSpy: No such signal: 'scriptCountChanged'
-    for (int n = 0; n > -1; n++) {
-        QSignalSpy spy(ac.get(), SIGNAL(scriptCountChanged));
-        spy.wait(100000);
-        qDebug() << "Signal happened";
+        {
+            QFile scriptFile(scriptFilename);
+            scriptFile.open(QIODevice::ReadOnly);
+            QTextStream scriptStream(&scriptFile);
+            scriptSource.append(scriptStream.readAll());
+
+            // Scripts keep on running until Script.stop() is called. For our tests here,
+            // that's not desirable, so we append an automatic stop at the end of every
+            // script.
+            scriptSource.append("\nScript.stop(true);\n");
+        }
+
+
+        //qDebug() << "Source: " << scriptSource;
+
+        ScriptManagerPointer sm = newScriptManager(ScriptManager::NETWORKLESS_TEST_SCRIPT, scriptSource, scriptFilename);
+
+
+        connect(sm.get(), &ScriptManager::scriptLoaded, [](const QString& filename){
+            qWarning() << "Loaded script" << filename;
+        });
+
+
+        connect(sm.get(), &ScriptManager::errorLoadingScript, [](const QString& filename){
+            qWarning() << "Failed to load script" << filename;
+        });
+
+        connect(sm.get(), &ScriptManager::printedMessage, [](const QString& message, const QString& engineName){
+            qDebug() << "Printed message from engine" << engineName << ": " << message;
+        });
+
+        connect(sm.get(), &ScriptManager::infoMessage, [](const QString& message, const QString& engineName){
+            qInfo() << "Info message from engine" << engineName << ": " << message;
+        });
+
+        connect(sm.get(), &ScriptManager::warningMessage, [](const QString& message, const QString& engineName){
+            qWarning() << "Warning from engine" << engineName << ": " << message;
+        });
+
+        connect(sm.get(), &ScriptManager::errorMessage, [](const QString& message, const QString& engineName){
+            qCritical() << "Error from engine" << engineName << ": " << message;
+        });
+
+        connect(sm.get(), &ScriptManager::finished, [](const QString& fileNameString, ScriptManagerPointer smp){
+            qInfo() << "Finished running script" << fileNameString;
+        });
+
+        connect(sm.get(), &ScriptManager::runningStateChanged, [sm](){
+            qInfo() << "Running state changed. Running = " << sm->isRunning() << "; Stopped = " << sm->isStopped() << "; Finished = " << sm->isFinished();
+        });
+
+
+        sm->run();
     }
-    //spy.wait(5000);
-    //ac->shutdownScripting();
-
-
 
     //TODO: Add a test for Script.require(JSON)
 }
