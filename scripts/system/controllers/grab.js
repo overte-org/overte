@@ -5,6 +5,7 @@
 //
 //  Created by Eric Levin on May 1, 2015
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Grab's physically moveable entities with the mouse, by applying a spring force.
 //
@@ -12,6 +13,7 @@
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /* global MyAvatar, Entities, Script, HMD, Camera, Vec3, Reticle, Overlays, Messages, Quat, Controller,

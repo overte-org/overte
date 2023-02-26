@@ -1,9 +1,11 @@
 //
 //  Created by Sam Gondelman 7/17/2018
 //  Copyright 2018 High Fidelity, Inc.
+//  copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #include "PathPointer.h"
 
