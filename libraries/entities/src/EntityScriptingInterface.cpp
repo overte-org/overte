@@ -1645,8 +1645,11 @@ bool EntityScriptingInterface::getServerScriptStatus(const QUuid& entityID, cons
     }
 
     connect(request, &GetScriptStatusRequest::finished, manager, [callback](GetScriptStatusRequest* request) mutable {
-        QString statusString = EntityScriptStatus_::valueToKey(request->getStatus());
         auto engine = callback.engine();
+        // V8TODO: it seems to sometimes be called on a wrong thread, reading to script engine crashes. I added an assert for now
+        Q_ASSERT(QThread::currentThread() == engine->thread());
+        Q_ASSERT(QThread::currentThread() == engine->manager()->thread());
+        QString statusString = EntityScriptStatus_::valueToKey(request->getStatus());
         ScriptValueList args { engine->newValue(request->getResponseReceived()), engine->newValue(request->getIsRunning()), engine->newValue(statusString.toLower()), engine->newValue(request->getErrorInfo()) };
         callback.call(ScriptValue(), args);
         request->deleteLater();

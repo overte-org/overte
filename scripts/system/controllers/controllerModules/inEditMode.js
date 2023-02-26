@@ -203,12 +203,13 @@ Script.include("/~/system/libraries/utils.js");
 
             if ((controllerData.triggerClicks[this.hand] === 0 && controllerData.secondaryValues[this.hand] === 0)) {
                 var stopRunning = false;
-                controllerData.nearbyOverlayIDs[this.hand].forEach(function(overlayID) {
+                // V8TODO: check if this doesn't break anything
+                /*controllerData.nearbyOverlayIDs[this.hand].forEach(function(overlayID) {
                     var overlayName = Overlays.getProperty(overlayID, "name");
                     if (overlayName === "KeyboardAnchor") {
                         stopRunning = true;
                     }
-                });
+                });*/
 
                 if (stopRunning) {
                     return this.exitModule();

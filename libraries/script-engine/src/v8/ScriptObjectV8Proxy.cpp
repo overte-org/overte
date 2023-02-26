@@ -504,12 +504,12 @@ void ScriptObjectV8Proxy::v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::
         return;
     }
     V8ScriptValue object(proxy->_engine, objectV8);
-    uint id;
+    //uint id;
     v8::Local<v8::Array> properties = proxy->getPropertyNames();
     v8::Local<v8::Array> objectProperties;
     uint32_t propertiesLength = properties->Length();
     if (info.This()->GetInternalField(2).As<v8::Object>()->GetPropertyNames(context).ToLocal(&objectProperties)) {
-        for (int n = 0; n < objectProperties->Length(); n++) {
+        for (uint32_t n = 0; n < objectProperties->Length(); n++) {
             if(!properties->Set(context, propertiesLength+n, objectProperties->Get(context, n).ToLocalChecked()).FromMaybe(false)) {
                 qDebug(scriptengine) << "ScriptObjectV8Proxy::v8GetPropertyNames: Cannot add member name";
             }
@@ -1262,7 +1262,7 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
     }
     //});
 
-    _totalCallTime_s += callTimer.elapsed() / 1000.0;
+    _totalCallTime_s += callTimer.elapsed() / 1000.0f;
 
     return -1;
 }
