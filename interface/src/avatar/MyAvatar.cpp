@@ -5,10 +5,11 @@
 //  Created by Mark Peng on 8/16/13.
 //  Copyright 2012 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "MyAvatar.h"

@@ -1,12 +1,14 @@
 "use strict";
 //
-// request-service.js
+//  request-service.js
 //
-// Created by Howard Stearns on May 22, 2018
-// Copyright 2018 High Fidelity, Inc
+//  Created by Howard Stearns on May 22, 2018
+//  Copyright 2018 High Fidelity, Inc
+//  Copyright 2023 Overte e.V.
 //
-// Distributed under the Apache License, Version 2.0
-// See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  Distributed under the Apache License, Version 2.0
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 (function() { // BEGIN LOCAL_SCOPE

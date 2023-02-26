@@ -4,12 +4,13 @@
 //  Persist toolbar by HRS 6/11/15.
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  This script allows you to edit entities with a new UI/UX for mouse and trackpad based editing
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 "use strict";
 

@@ -4,9 +4,11 @@
 //
 //  Created by Brad Hefta-Gaub on 2015/9/30.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 
