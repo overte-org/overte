@@ -1186,14 +1186,15 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
         args[arg] = _engine->castVariantToValue(argValue).get();
     }*/
 
-    /*QList<Connection> connections;
+    QList<Connection> connections;
     withReadLock([&]{
         connections = _connections;
-    });*/
+    });
 
     // V8TODO: this may cause deadlocks on connect/disconnect, so the connect/disconnect procedure needs to be reworked.
     // It should probably add events to a separate list that would be processed before and after all the events for the signal.
-    withReadLock([&]{
+    //withReadLock([&]{
+    {
         // V8TODO: check all other lambda functions to make sure they have handle scope - could they cause crashes otherwise?
         v8::HandleScope handleScope(isolate);
         // V8TODO: should we use function creation context, or context in which connect happened?
@@ -1201,14 +1202,14 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
         v8::Context::Scope contextScope(context);
         v8::Local<v8::Value> args[Q_METAMETHOD_INVOKE_MAX_ARGS];
         int numArgs = _meta.parameterCount();
-        //for (ConnectionList::iterator iter = connections.begin(); iter != connections.end(); ++iter) {
         for (int arg = 0; arg < numArgs; ++arg) {
             int methodArgTypeId = _meta.parameterType(arg);
             Q_ASSERT(methodArgTypeId != QMetaType::UnknownType);
-            QVariant argValue(methodArgTypeId, arguments[arg+1]);
+            QVariant argValue(methodArgTypeId, arguments[arg + 1]);
             args[arg] = _engine->castVariantToValue(argValue).get();
         }
-        for (ConnectionList::iterator iter = _connections.begin(); iter != _connections.end(); ++iter) {
+        //for (ConnectionList::iterator iter = _connections.begin(); iter != _connections.end(); ++iter) {
+        for (ConnectionList::iterator iter = connections.begin(); iter != connections.end(); ++iter) {
             Connection& conn = *iter;
             {
                 /*if (!conn.callback.get()->IsFunction()) {
@@ -1228,7 +1229,7 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
 
                 Q_ASSERT(!conn.callback.get().IsEmpty());
                 Q_ASSERT(!conn.callback.get()->IsUndefined());
-                if(conn.callback.get()->IsNull()) {
+                if (conn.callback.get()->IsNull()) {
                     qDebug() << "ScriptSignalV8Proxy::qt_metacall: Connection callback is Null";
                     _engine->popContext();
                     continue;
@@ -1258,7 +1259,8 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
                 //_engine->popContext();
             }
         }
-    });
+    }
+    //});
 
     _totalCallTime_s += callTimer.elapsed() / 1000.0;
 
