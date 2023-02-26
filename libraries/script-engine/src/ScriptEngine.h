@@ -66,9 +66,23 @@ public:
      *
      */
     enum ValueOwnership {
-        QtOwnership = 0, /** Object is managed by Qt */
-        ScriptOwnership = 1, /** Object is managed by the script */
-        AutoOwnership = 2, /** Ownership is determined automatically */
+        /**
+         * @brief Object is managed by Qt
+         *
+         */
+        QtOwnership = 0,
+
+        /**
+         * @brief Object is managed by the script
+         *
+         */
+        ScriptOwnership = 1,
+
+        /**
+         * @brief Ownership is determined automatically
+         *
+         */
+        AutoOwnership = 2,
     };
 
     /**
@@ -76,15 +90,56 @@ public:
      *
      */
     enum QObjectWrapOption {
-        //ExcludeChildObjects	= 0x0001,	/** The script object will not expose child objects as properties. */
-        ExcludeSuperClassMethods = 0x0002,	/** The script object will not expose signals and slots inherited from the superclass. */
-        ExcludeSuperClassProperties	= 0x0004,	/** The script object will not expose properties inherited from the superclass. */
+
+        /**
+         * @brief The script object will not expose child objects as properties.
+         *
+         */
+        //ExcludeChildObjects	= 0x0001,
+
+        /**
+         * @brief The script object will not expose signals and slots inherited from the superclass.
+         *
+         */
+        ExcludeSuperClassMethods = 0x0002,
+
+        /**
+         * @brief The script object will not expose properties inherited from the superclass.
+         *
+         */
+        ExcludeSuperClassProperties	= 0x0004,
+
+        /**
+         * @brief The script object will not expose the QObject::deleteLater() slot.
+         *
+         */
         ExcludeSuperClassContents = ExcludeSuperClassMethods | ExcludeSuperClassProperties,
-        //ExcludeDeleteLater = 0x0010,	/** The script object will not expose the QObject::deleteLater() slot. */
-        ExcludeSlots = 0x0020,	/** The script object will not expose the QObject's slots. */
-        AutoCreateDynamicProperties = 0x0100,	/** Properties that don't already exist in the QObject will be created as dynamic properties of that object, rather than as properties of the script object. */
-        PreferExistingWrapperObject = 0x0200,	/** If a wrapper object with the requested configuration already exists, return that object. */
-        SkipMethodsInEnumeration = 0x0008,	/** Don't include methods (signals and slots) when enumerating the object's properties. */
+
+        //ExcludeDeleteLater = 0x0010,
+
+        /**
+         * @brief The script object will not expose the QObject's slots.
+         *
+         */
+        ExcludeSlots = 0x0020,
+
+        /**
+         * @brief Properties that don't already exist in the QObject will be created as dynamic properties of that object, rather than as properties of the script object.
+         *
+         */
+        AutoCreateDynamicProperties = 0x0100,
+
+        /**
+         * @brief If a wrapper object with the requested configuration already exists, return that object.
+         *
+         */
+        PreferExistingWrapperObject = 0x0200,
+
+        /**
+         * @brief Don't include methods (signals and slots) when enumerating the object's properties.
+         *
+         */
+        SkipMethodsInEnumeration = 0x0008,
     };
     Q_DECLARE_FLAGS(QObjectWrapOptions, QObjectWrapOption);
 
@@ -101,6 +156,12 @@ public:
      */
     virtual void clearExceptions() = 0;
 
+    /**
+     * @brief Creates a clone of the current exception
+     *
+     * @param detail Additional text to add to the report
+     * @return ScriptValue Result
+     */
     virtual ScriptValue cloneUncaughtException(const QString& detail = QString()) = 0;
 
     /**
@@ -145,14 +206,24 @@ public:
     virtual ScriptValue evaluateInClosure(const ScriptValue& locals, const ScriptProgramPointer& program) = 0;
 
     /**
-     * @brief Global namespace, containing all the public APIs
+     * @brief Global object which holds all the functions and variables available everywhere
      *
-     * @return ScriptValue
+     * This is a JavaScript concept, https://javascript.info/global-object
+     *
+     * @note This may not belong in the base class.
+     * @return ScriptValue Global Object
      */
     virtual ScriptValue globalObject() {
         Q_ASSERT(false);
         return ScriptValue();
     }
+
+    /**
+     * @brief Whether the script has an uncaught exception
+     *
+     * @return true There is an uncaught exception
+     * @return false There's no exception
+     */
     virtual bool hasUncaughtException() const = 0;
 
     /**
@@ -164,8 +235,36 @@ public:
     virtual bool isEvaluating() const = 0;
     //virtual ScriptValue lintScript(const QString& sourceCode, const QString& fileName, const int lineNumber = 1) = 0;
 
+    /**
+     * @brief Check a program for syntax errors
+     *
+     * Returns an object with at least the following properties:
+     * * fileName
+     * * lineNumber
+     * * stack
+     * * formatted
+     *
+     * @param program Program to check
+     * @return ScriptValue Result
+     *
+     * @note It could be a good improvement to redo this to return a struct instead.
+     */
     virtual ScriptValue checkScriptSyntax(ScriptProgramPointer program) = 0;
+
+    /**
+     * @brief Creates a ScriptValue that contains an error
+     *
+     * @param other
+     * @param type
+     * @return ScriptValue
+     */
     virtual ScriptValue makeError(const ScriptValue& other = ScriptValue(), const QString& type = "Error") = 0;
+
+    /**
+     * @brief Pointer to the ScriptManager that controls this scripting engine
+     *
+     * @return ScriptManager* ScriptManager
+     */
     virtual ScriptManager* manager() const = 0;
     virtual bool maybeEmitUncaughtException(const QString& debugHint = QString()) = 0;
     virtual ScriptValue newArray(uint length = 0) = 0;
