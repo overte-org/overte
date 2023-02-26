@@ -4,12 +4,14 @@
 //
 //  Created by Ryan Huffman on 5/2/14.
 //  Copyright (c) 2014 High Fidelity, Inc. All rights reserved.
+//  Copyright 2023 Overte e.V.
 //
 //  This class is an implementation of the XMLHttpRequest object for scripting use.  It provides a near-complete implementation
 //  of the class described in the Mozilla docs: https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "XMLHttpRequestClass.h"

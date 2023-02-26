@@ -4,18 +4,20 @@
 //
 //  Created by Adrian McCarlie on October 8th, 2014
 //  Copyright 2014 High Fidelity, Inc.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Display notifications to the user for some specific events.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
 
 (function () {
     Script.include([
         "create/audioFeedback/audioFeedback.js"
     ]);
-    
+
     var NOTIFICATIONS_MESSAGE_CHANNEL = "Hifi-Notifications";
     var SETTING_ACTIVATION_SNAPSHOT_NOTIFICATIONS = "snapshotNotifications";
     var NOTIFICATION_LIFE_DURATION = 10000; //10 seconds (in millisecond) before expiration.

@@ -18,7 +18,8 @@
 #
 
 #   Modified by dr Karol Suprynowicz on 2022/09/03
-#   Copyright 2022 Overte e.V.
+#   Copyright 2022-2023 Overte e.V.
+#   SPDX-License-Identifier: Apache-2.0
 
 # Find V8 library and include paths
 #
