@@ -1,3 +1,5 @@
+# Copyright 2023 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
 
 # Declare dependencies
 macro (setup_testcase_dependencies)

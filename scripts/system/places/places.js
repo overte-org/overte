@@ -3,35 +3,37 @@
 //  places.js
 //
 //  Created by Alezia Kurdis, January 1st, 2022.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Generate an explore app based on the differents source of placename data.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
+
 (function() {
     var jsMainFileName = "places.js";
     var ROOT = Script.resolvePath('').split(jsMainFileName)[0];
-       
+
     var metaverseServers = [];
     var SETTING_METAVERSE_TO_FETCH = "placesAppMetaverseToFetch";
     var SETTING_PINNED_METAVERSE = "placesAppPinnedMetaverse";
     var REQUEST_TIMEOUT = 10000; //10 seconds
-         
+
     var httpRequest = null;
     var placesData;
     var portalList = [];
 
     var nbrPlacesNoProtocolMatch = 0;
     var nbrPlaceProtocolKnown = 0;
-    
+
     var APP_NAME = "PLACES";
     var APP_URL = ROOT + "places.html";
     var APP_ICON_INACTIVE = ROOT + "icons/appicon_i.png";
     var APP_ICON_ACTIVE = ROOT + "icons/appicon_a.png";
     var appStatus = false;
-    var channel = "com.overte.places";    
+    var channel = "com.overte.places";
 
     var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 

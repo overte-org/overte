@@ -1,3 +1,7 @@
+# Copyright 2013-2019, High Fidelity, Inc.
+# Copyright 2021-2023 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 set(TARGET_NAME script-engine)
 # FIXME Move undo scripting interface to application and remove Widgets
 setup_hifi_library(Network Script WebSockets)

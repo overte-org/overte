@@ -1,3 +1,6 @@
+# Copyright 2014-2018, High Fidelity, Inc.
+# Copyright 2022-2023 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
 
 # Declare dependencies
 macro (setup_testcase_dependencies)
