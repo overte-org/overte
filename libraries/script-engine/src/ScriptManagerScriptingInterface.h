@@ -51,26 +51,11 @@
 class ScriptManagerScriptingInterface : public QObject {
     Q_OBJECT
 public:
-    ScriptManagerScriptingInterface(ScriptManager *parent) : QObject(parent), _manager(parent) {
+    ScriptManagerScriptingInterface(ScriptManager *parent);
 
-        connect(_manager, &ScriptManager::scriptLoaded, this, &ScriptManagerScriptingInterface::scriptLoaded);
-        connect(_manager, &ScriptManager::errorLoadingScript, this, &ScriptManagerScriptingInterface::errorLoadingScript);
-        connect(_manager, &ScriptManager::update, this, &ScriptManagerScriptingInterface::update);
-        connect(_manager, &ScriptManager::scriptEnding, this, &ScriptManagerScriptingInterface::scriptEnding);
-        connect(_manager, &ScriptManager::finished, this, &ScriptManagerScriptingInterface::finished);
-        connect(_manager, &ScriptManager::printedMessage, this, &ScriptManagerScriptingInterface::printedMessage);
-        connect(_manager, &ScriptManager::errorMessage, this, &ScriptManagerScriptingInterface::errorMessage);
-        connect(_manager, &ScriptManager::warningMessage, this, &ScriptManagerScriptingInterface::warningMessage);
-        connect(_manager, &ScriptManager::infoMessage, this, &ScriptManagerScriptingInterface::infoMessage);
-        connect(_manager, &ScriptManager::runningStateChanged, this, &ScriptManagerScriptingInterface::runningStateChanged);
-        connect(_manager, &ScriptManager::clearDebugWindow, this, &ScriptManagerScriptingInterface::clearDebugWindow);
-        connect(_manager, &ScriptManager::loadScript, this, &ScriptManagerScriptingInterface::loadScript);
-        connect(_manager, &ScriptManager::doneRunning, this, &ScriptManagerScriptingInterface::doneRunning);
-        connect(_manager, &ScriptManager::entityScriptDetailsUpdated, this, &ScriptManagerScriptingInterface::entityScriptDetailsUpdated);
-        connect(_manager, &ScriptManager::entityScriptPreloadFinished, this, &ScriptManagerScriptingInterface::entityScriptPreloadFinished);
-        connect(_manager, &ScriptManager::unhandledException, this, &ScriptManagerScriptingInterface::unhandledException);
+    virtual ~ScriptManagerScriptingInterface() {
+
     }
-
     /**jsdoc
      * Stops and unloads the current script.
      * <p><strong>Warning:</strong> If an assignment client script, the script gets restarted after stopping.</p>
@@ -709,7 +694,8 @@ protected:
      * @param {string} status - Status.
      * @deprecated This function is deprecated and will be removed.
      */
-    Q_INVOKABLE void entityScriptContentAvailable(const EntityItemID& entityID, const QString& scriptOrURL, const QString& contents, bool isURL, bool success, const QString& status);
+    Q_INVOKABLE void entityScriptContentAvailable(const EntityItemID& entityID, const QString& scriptOrURL, const QString& contents, bool isURL, bool success, const QString& status)
+        { _manager->entityScriptContentAvailable(entityID, scriptOrURL, contents, isURL, success, status); }
 
 
 private:
