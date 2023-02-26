@@ -846,7 +846,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
     v8::Local<v8::Value> closureGlobal;
     ScriptValueV8Wrapper* unwrappedClosure;
     ScriptProgramV8Wrapper* unwrappedProgram;
-    v8::Local<v8::Context> oldContext = getContext();
+    //v8::Local<v8::Context> oldContext = getContext();
 
     {
         v8::Context::Scope contextScope(getContext());
@@ -1180,7 +1180,9 @@ ScriptContextV8Pointer ScriptEngineV8::pushContext(v8::Local<v8::Context> contex
     _contexts.append(std::make_shared<ScriptContextV8Wrapper>(this, context, ScriptContextPointer()));
     v8::Context::Scope contextScope(context);
     static volatile int debug_context_id = 1;
-    context->Global()->Set(context, v8::String::NewFromUtf8(_v8Isolate, "debug_context_id").ToLocalChecked(), v8::Integer::New(_v8Isolate, debug_context_id));
+    if (!context->Global()->Set(context, v8::String::NewFromUtf8(_v8Isolate, "debug_context_id").ToLocalChecked(), v8::Integer::New(_v8Isolate, debug_context_id)).FromMaybe(false)) {
+        Q_ASSERT(false);
+    }
     debug_context_id++;
     return _contexts.last();
 }

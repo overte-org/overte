@@ -550,6 +550,7 @@ QObject* ScriptValueV8Wrapper::toQObject() const {
             return dest.value<QObject*>();
         } else {
             Q_ASSERT(false);
+            return nullptr;
         }
     } else {
         Q_ASSERT(false);
