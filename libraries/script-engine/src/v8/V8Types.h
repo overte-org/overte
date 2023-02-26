@@ -23,16 +23,30 @@ template <typename T>
 class V8ScriptValueTemplate {
 public:
     V8ScriptValueTemplate() = delete;
+
+    /*enum class Ownership {
+        Script = 0,
+        Value = 1
+    };*/
     //V8ScriptValueTemplate(v8::Isolate *isolate, v8::Local<T> value) : _isolate(isolate) {
         //_value.reset(v8::UniquePersistent<T>::New(_isolate, value));
     //};
-    V8ScriptValueTemplate(ScriptEngineV8 *engine, const v8::Local<T> value) : _engine(engine) {
+    // V8TODO: Persistent handles need to be constructed and destructed in the same thread
+    // Adding asserts might be a good idea
+    V8ScriptValueTemplate(ScriptEngineV8 *engine, const v8::Local<T> value/*, V8ScriptValueTemplate::Ownership ownership*/) : _engine(engine) {
         v8::Locker locker(_engine->getIsolate());
         v8::Isolate::Scope isolateScope(_engine->getIsolate());
         v8::HandleScope handleScope(_engine->getIsolate());
         v8::Context::Scope(_engine->getContext());
-        _value.reset(new v8::Persistent<T>(_engine->getIsolate(), value));
-        //_value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), value));
+        /*if (ownership == V8ScriptValueTemplate::Ownership::Script) {
+            _value.reset(new v8::WeakPersistent<T>(_engine->getIsolate(), value));
+            return;
+        } else if (ownership == V8ScriptValueTemplate::Ownership::Value) {
+            _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), value));
+            return;
+        }
+        Q_ASSERT(false);*/
+        _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), value));
     };
 
     V8ScriptValueTemplate& operator= (const V8ScriptValueTemplate &source) {
@@ -41,7 +55,7 @@ public:
         v8::HandleScope handleScope(_engine->getIsolate());
         v8::Context::Scope(_engine->getContext());
         _engine = source.getEngine();
-        _value.reset(new v8::Persistent<T>(_engine->getIsolate(), source.constGet()));
+        _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), source.constGet()));
         //_value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), source.constGet()));
         return *this;
     };
@@ -52,7 +66,7 @@ public:
         v8::HandleScope handleScope(_engine->getIsolate());
         v8::Context::Scope(_engine->getContext());
         //_value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), v8::Local<T>()));
-        _value.reset(new v8::Persistent<T>(_engine->getIsolate(), v8::Local<T>()));
+        _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), v8::Local<T>()));
     };
 
     V8ScriptValueTemplate(const V8ScriptValueTemplate &copied) : _engine(copied.getEngine()) {
@@ -61,7 +75,7 @@ public:
         v8::HandleScope handleScope(_engine->getIsolate());
         v8::Context::Scope(_engine->getContext());
         //_value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), copied.constGet()));
-        _value.reset(new v8::Persistent<T>(_engine->getIsolate(), copied.constGet()));
+        _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), copied.constGet()));
     }
 
     v8::Local<T> get() {
@@ -106,11 +120,19 @@ public:
     void reset(v8::Isolate *isolate, v8::Local<T>) {
         Q_ASSERT(false);
     };
+    // V8TODO: add thread safe destructors to all objects that have persistent handles
+    ~V8ScriptValueTemplate() {
+        v8::Locker locker(_engine->getIsolate());
+        v8::Isolate::Scope isolateScope(_engine->getIsolate());
+        v8::HandleScope handleScope(_engine->getIsolate());
+        //v8::Context::Scope(_engine->getContext());
+        _value->Reset();
+    }
 
 private:
     // std::shared_ptr<v8::UniquePersistent<T>> _value;
     // V8TODO: Persistent needs reset to release object? It may cause memory leaks here
-    std::shared_ptr<v8::Persistent<T>> _value;
+    std::shared_ptr<v8::UniquePersistent<T>> _value;
     // V8TODO: maybe make it weak
     // does it need , CopyablePersistentTraits<Value>?
     // V8TODO: is context needed at all?
