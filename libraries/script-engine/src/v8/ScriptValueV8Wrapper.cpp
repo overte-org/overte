@@ -20,6 +20,8 @@
 
 
 void ScriptValueV8Wrapper::release() {
+    // V8TODO: maybe add an assert to check if it happens on script engine thread?
+    // With v8::Locker in V8ScriptValue such requirement shouldn't be necessary but deleting on different threadwww can cause deadlocks sometimes
     delete this;
 }
 

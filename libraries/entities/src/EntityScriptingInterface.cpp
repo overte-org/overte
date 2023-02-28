@@ -21,6 +21,7 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QJsonArray>
+#include <QtWidgets/QApplication>
 
 #include <shared/QtHelpers.h>
 #include <VariantMapToScriptValue.h>
@@ -1633,12 +1634,15 @@ bool EntityScriptingInterface::queryPropertyMetadata(const QUuid& entityID,
     }
 }
 
-bool EntityScriptingInterface::getServerScriptStatus(const QUuid& entityID, const ScriptValue& callback) {
+//bool EntityScriptingInterface::getServerScriptStatus(const QUuid& entityID, const ScriptValue& callback) {
+bool EntityScriptingInterface::getServerScriptStatus(const QUuid& entityID, ScriptValue callback) {
     auto client = DependencyManager::get<EntityScriptClient>();
     auto request = client->createScriptStatusRequest(entityID);
 
     auto engine = callback.engine();
     auto manager = engine->manager();
+    Q_ASSERT(QThread::currentThread() == engine->thread());
+    Q_ASSERT(QThread::currentThread() == engine->manager()->thread());
     if (!manager) {
         engine->raiseException(engine->makeError(engine->newValue("This script does not belong to a ScriptManager")));
         engine->maybeEmitUncaughtException(__FUNCTION__);
@@ -1647,13 +1651,16 @@ bool EntityScriptingInterface::getServerScriptStatus(const QUuid& entityID, cons
 
     connect(request, &GetScriptStatusRequest::finished, manager, [callback](GetScriptStatusRequest* request) mutable {
         auto engine = callback.engine();
-        // V8TODO: it seems to sometimes be called on a wrong thread, reading to script engine crashes. I added an assert for now
+        // V8TODO: it seems to sometimes be called on a wrong thread, reading to script engine crashes. I added an assert for now.
+        // V8TODO: somehow the asserts are not happening here, but destructor still runs on main thread sometimes and deadlocks.
         Q_ASSERT(QThread::currentThread() == engine->thread());
         Q_ASSERT(QThread::currentThread() == engine->manager()->thread());
         QString statusString = EntityScriptStatus_::valueToKey(request->getStatus());
         ScriptValueList args { engine->newValue(request->getResponseReceived()), engine->newValue(request->getIsRunning()), engine->newValue(statusString.toLower()), engine->newValue(request->getErrorInfo()) };
         callback.call(ScriptValue(), args);
         request->deleteLater();
+        // This causes ScriptValueProxy to be released, and thus its destructor is called on script engine thread and not main thread
+        callback = ScriptValue();
     });
     request->start();
     return true;
