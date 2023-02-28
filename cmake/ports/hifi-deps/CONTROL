@@ -2,7 +2,6 @@
 # Copyright 2020 Vircadia contributors
 # Copyright 2021-2023 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
-
 Source: hifi-deps
 Version: 0.1.5-github-actions
 Description: Collected dependencies for High Fidelity applications
