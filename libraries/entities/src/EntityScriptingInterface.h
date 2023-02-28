@@ -871,7 +871,8 @@ public slots:
      * @param {string} errorInfo - <code>""</code> if there is a server entity script running, otherwise it may contain extra 
      *     information on the error.
      */
-    Q_INVOKABLE bool getServerScriptStatus(const QUuid& entityID, const ScriptValue& callback);
+    //Q_INVOKABLE bool getServerScriptStatus(const QUuid& entityID, const ScriptValue& callback);
+    Q_INVOKABLE bool getServerScriptStatus(const QUuid& entityID, ScriptValue callback);
 
     /*@jsdoc
      * Gets metadata for certain entity properties such as <code>script</code> and <code>serverScripts</code>.
