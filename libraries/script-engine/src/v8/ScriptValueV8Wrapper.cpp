@@ -70,6 +70,7 @@ V8ScriptValue ScriptValueV8Wrapper::fullUnwrap(ScriptEngineV8* engine, const Scr
 }
 
 ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const ScriptValueList& args) {
+    Q_ASSERT(_engine == _value.getEngine());
     auto isolate = _engine->getIsolate();
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
@@ -104,6 +105,7 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
         qCDebug(scriptengine) << "Function call failed: \"" << _engine->formatErrorMessageFromTryCatch(tryCatch);
     }
     v8::Local<v8::Value> result;
+    Q_ASSERT(_engine == _value.getEngine());
     if (maybeResult.ToLocal(&result)) {
         return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
     } else {
