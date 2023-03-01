@@ -203,6 +203,11 @@ QObject* ScriptObjectV8Proxy::unwrap(const V8ScriptValue& val) {
 }
 
 ScriptObjectV8Proxy::~ScriptObjectV8Proxy() {
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    _v8Object.Reset();
     if(_object) qDebug(scriptengine) << "Deleting object proxy: " << name();
     if (_ownsObject) {
         QObject* qobject = _object;
@@ -662,6 +667,15 @@ void ScriptObjectV8Proxy::setProperty(V8ScriptValue& object, const V8ScriptStrin
 ScriptVariantV8Proxy::ScriptVariantV8Proxy(ScriptEngineV8* engine, const QVariant& variant, V8ScriptValue scriptProto, ScriptObjectV8Proxy* proto) :
     _engine(engine), _variant(variant), _scriptProto(scriptProto), _proto(proto) {
     _name = QString::fromLatin1(variant.typeName());
+}
+
+ScriptVariantV8Proxy::~ScriptVariantV8Proxy() {
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    _v8ObjectTemplate.Reset();
+    _v8Object.Reset();
 }
 
 V8ScriptValue ScriptVariantV8Proxy::newVariant(ScriptEngineV8* engine, const QVariant& variant, V8ScriptValue proto) {
@@ -1146,6 +1160,14 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
     Q_ASSERT(false); // really shouldn't have gotten here -- it didn't work before and it's working now?
     return QVariant();
 }*/
+
+ScriptSignalV8Proxy::~ScriptSignalV8Proxy() {
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    _v8Context.Reset();
+}
 
 QString ScriptSignalV8Proxy::fullName() const {
     Q_ASSERT(_object);

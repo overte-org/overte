@@ -31,6 +31,16 @@ V8ScriptValueIterator::V8ScriptValueIterator(ScriptEngineV8* engine, v8::Local<v
     _currentIndex = -1;
 }
 
+V8ScriptValueIterator::~V8ScriptValueIterator() {
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    _propertyNames.Reset();
+    _object.Reset();
+    _context.Reset();
+}
+
 bool V8ScriptValueIterator::hasNext() const {
     return _currentIndex < _length - 1;
 }
