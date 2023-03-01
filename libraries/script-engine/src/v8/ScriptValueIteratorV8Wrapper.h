@@ -27,6 +27,7 @@
 class V8ScriptValueIterator {
 public:
     V8ScriptValueIterator(ScriptEngineV8* engine, v8::Local<v8::Value> object);
+    ~V8ScriptValueIterator();
     bool hasNext() const;
     QString name() const;
     void next();
