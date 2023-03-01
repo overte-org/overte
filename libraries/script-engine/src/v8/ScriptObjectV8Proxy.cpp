@@ -1526,12 +1526,14 @@ void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
         v8::Local<v8::Array> newArray = v8::Array::New(isolate, length - 1);
         bool foundIt = false;
         int newIndex = 0;
-        for (int idx = 0; idx < length && !foundIt; ++idx) {
+        //for (int idx = 0; idx < length && !foundIt; ++idx) {
+        for (int idx = 0; idx < length; ++idx) {
             v8::Local<v8::Value> entry = destArray->Get(destFunctionContext, idx).ToLocalChecked();
             // For debugging:
             {
                 _engine->logBacktrace("ScriptSignalV8Proxy::disconnect");
-                qDebug() << "ScriptSignalV8Proxy::disconnect: entry details: " << _engine->scriptValueDebugDetailsV8(V8ScriptValue(_engine, entry));
+                qDebug() << "ScriptSignalV8Proxy::disconnect: entry details: " << _engine->scriptValueDebugDetailsV8(V8ScriptValue(_engine, entry))
+                         << " Array: " << _engine->scriptValueDebugDetailsV8(V8ScriptValue(_engine, destArray));
                 Q_ASSERT(entry->IsObject());
                 V8ScriptValue v8EntryObject(_engine, entry);
                 Q_ASSERT(ScriptObjectV8Proxy::unwrapProxy(v8EntryObject));
