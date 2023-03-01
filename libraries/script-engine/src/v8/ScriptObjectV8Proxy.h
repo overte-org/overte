@@ -129,6 +129,7 @@ private:  // storage
 class ScriptVariantV8Proxy final {
 public:  // construction
     ScriptVariantV8Proxy(ScriptEngineV8* engine, const QVariant& variant, V8ScriptValue scriptProto, ScriptObjectV8Proxy* proto);
+    ~ScriptVariantV8Proxy();
 
     static V8ScriptValue newVariant(ScriptEngineV8* engine, const QVariant& variant, V8ScriptValue proto);
     static ScriptVariantV8Proxy* unwrapProxy(const V8ScriptValue& val);
@@ -231,6 +232,8 @@ public:  // construction
         v8::Context::Scope contextScope(_engine->getContext());
         _v8Context.Reset(_engine->getIsolate(), _engine->getContext());
     }
+
+    ~ScriptSignalV8Proxy();
 
 private:  // implementation
     virtual int qt_metacall(QMetaObject::Call call, int id, void** arguments) override;
