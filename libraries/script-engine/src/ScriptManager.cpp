@@ -906,7 +906,7 @@ void ScriptManager::run() {
 
     // TODO: Integrate this with signals/slots instead of reimplementing throttling for ScriptManager
     while (!_isFinished) {
-        qCDebug(scriptengine) << "In script event loop";
+        //qCDebug(scriptengine) << "In script event loop";
 
         auto beforeSleep = clock::now();
 
