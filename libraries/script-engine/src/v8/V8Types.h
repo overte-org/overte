@@ -131,8 +131,6 @@ public:
     }
 
 private:
-    // std::shared_ptr<v8::UniquePersistent<T>> _value;
-    // V8TODO: Persistent needs reset to release object? It may cause memory leaks here
     std::shared_ptr<v8::UniquePersistent<T>> _value;
     // V8TODO: maybe make it weak
     // does it need , CopyablePersistentTraits<Value>?

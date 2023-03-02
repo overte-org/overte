@@ -66,6 +66,7 @@ private:  // storage
 ScriptObjectV8Proxy::ScriptObjectV8Proxy(ScriptEngineV8* engine, QObject* object, bool ownsObject, const ScriptEngine::QObjectWrapOptions& options) :
     _engine(engine), _wrapOptions(options), _ownsObject(ownsObject), _object(object) {
     //_v8ObjectTemplate(engine->getIsolate(), v8::ObjectTemplate::New(engine->getIsolate())
+    Q_ASSERT(_engine != nullptr);
     investigate();
 }
 
@@ -451,20 +452,39 @@ void ScriptObjectV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCall
         return;
     }
     V8ScriptValue object(proxy->_engine, objectV8);
-    Q_ASSERT(name->IsString());
-    V8ScriptString nameString(proxy->_engine, v8::Local<v8::String>::Cast(name));
-    uint id;
-    QueryFlags flags = proxy->queryProperty(object, nameString, HandlesReadAccess, &id);
-    if (flags) {
-        V8ScriptValue value = proxy->property(object, nameString, id);
-        info.GetReturnValue().Set(value.get());
+    if (!name->IsString() && !name->IsSymbol()) {
+        QString notStringMessage("ScriptObjectV8Proxy::v8Get: " + proxy->_engine->scriptValueDebugDetailsV8(V8ScriptValue(proxy->_engine, name)));
+        qDebug(scriptengine) << notStringMessage;
+        Q_ASSERT(false);
+    }
+    v8::Local<v8::String> v8NameString;
+    /*if (name->IsString()) {
+        v8NameString = v8::Local<v8::String>::Cast(name);
     } else {
-        v8::Local<v8::Value> property;
-        if(info.This()->GetInternalField(2).As<v8::Object>()->Get(proxy->_engine->getContext(), name).ToLocal(&property)) {
-            info.GetReturnValue().Set(property);
-        } else {
-            qDebug(scriptengine) << "Value not found: " << *utf8Value;
+        if (!name->ToString(info.GetIsolate()->GetCurrentContext()).ToLocal(&v8NameString)) {
+            Q_ASSERT(false);
         }
+    }
+
+    if (name->IsSymbol()) {
+        qDebug(scriptengine) << "ScriptObjectV8Proxy::v8Set: symbol: " + nameString.toQString();
+    }*/
+    if (name->IsString()) {
+        V8ScriptString nameString(proxy->_engine, v8::Local<v8::String>::Cast(name));
+        uint id;
+        QueryFlags flags = proxy->queryProperty(object, nameString, HandlesReadAccess, &id);
+        if (flags) {
+            V8ScriptValue value = proxy->property(object, nameString, id);
+            info.GetReturnValue().Set(value.get());
+            return;
+        }
+    }
+
+    v8::Local<v8::Value> property;
+    if(info.This()->GetInternalField(2).As<v8::Object>()->Get(proxy->_engine->getContext(), name).ToLocal(&property)) {
+        info.GetReturnValue().Set(property);
+    } else {
+        qDebug(scriptengine) << "Value not found: " << *utf8Value;
     }
 }
 
@@ -480,21 +500,38 @@ void ScriptObjectV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> v
         return;
     }
     V8ScriptValue object(proxy->_engine, objectV8);
-    Q_ASSERT(name->IsString());
-    V8ScriptString nameString(proxy->_engine, v8::Local<v8::String>::Cast(name));
+    if (!name->IsString() && !name->IsSymbol()) {
+        QString notStringMessage("ScriptObjectV8Proxy::v8Set: " + proxy->_engine->scriptValueDebugDetailsV8(V8ScriptValue(proxy->_engine, name)));
+        qDebug(scriptengine) << notStringMessage;
+        Q_ASSERT(false);
+    }
+    /*v8::Local<v8::String> v8NameString;
+    if (name->IsString()) {
+        v8NameString = v8::Local<v8::String>::Cast(name);
+    } else {
+        if (!name->ToString(info.GetIsolate()->GetCurrentContext()).ToLocal(&v8NameString)) {
+            Q_ASSERT(false);
+        }
+    }
+    if (name->IsSymbol()) {
+        qDebug(scriptengine) << "ScriptObjectV8Proxy::v8Set: symbol: " + nameString.toQString();
+    }*/
     //V8ScriptString nameString(info.GetIsolate(), name->ToString(proxy->_engine->getContext()).ToLocalChecked());
-    uint id;
-    QueryFlags flags = proxy->queryProperty(object, nameString, HandlesWriteAccess, &id);
-    if (flags) {
-        proxy->setProperty(object, nameString, id, V8ScriptValue(proxy->_engine, value));
+    if (name->IsString()) {
+        V8ScriptString nameString(proxy->_engine, v8::Local<v8::String>::Cast(name));
+        uint id;
+        QueryFlags flags = proxy->queryProperty(object, nameString, HandlesWriteAccess, &id);
+        if (flags) {
+            proxy->setProperty(object, nameString, id, V8ScriptValue(proxy->_engine, value));
+            info.GetReturnValue().Set(value);
+            return;
+        }
+    }
+    // V8TODO: Should it be v8::Object or v8::Local<v8::Object>?
+    if (info.This()->GetInternalField(2).As<v8::Object>()->Set(proxy->_engine->getContext(), name, value).FromMaybe(false)) {
         info.GetReturnValue().Set(value);
     } else {
-        // V8TODO: Should it be v8::Object or v8::Local<v8::Object>?
-        if (info.This()->GetInternalField(2).As<v8::Object>()->Set(proxy->_engine->getContext(), name, value).FromMaybe(false)) {
-            info.GetReturnValue().Set(value);
-        } else {
-            qDebug(scriptengine) << "Set failed: " << *utf8Value;
-        }
+        qDebug(scriptengine) << "Set failed: " << *utf8Value;
     }
 }
 
