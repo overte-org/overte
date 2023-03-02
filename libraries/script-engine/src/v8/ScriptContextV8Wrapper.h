@@ -58,7 +58,7 @@ private: // storage
     const v8::FunctionCallbackInfo<v8::Value> *_functionCallbackInfo;
     const v8::PropertyCallbackInfo<v8::Value> *_propertyCallbackInfo;
     ScriptEngineV8* _engine;
-    // V8TODO: Is custom copy constructor needed for thread safety?
+    // V8TODO: custom destructor is needed for v8::Persistent
     v8::Persistent<v8::Context> _context;
     ScriptContextPointer _parentContext;
     Q_DISABLE_COPY(ScriptContextV8Wrapper)
@@ -77,7 +77,7 @@ public:  // ScriptFunctionContext implementation
 
 private: // storage
     ScriptEngineV8* _engine;
-    // V8TODO: Is custom copy constructor needed for thread safety?
+    // V8TODO: custom destructor is needed for v8::Persistent (check is all other classes using different types of persistent handles have custom destructors too)
     v8::Persistent<v8::Context> _context;
     //V8ScriptContextInfo _value;
     Q_DISABLE_COPY(ScriptFunctionContextV8Wrapper)
