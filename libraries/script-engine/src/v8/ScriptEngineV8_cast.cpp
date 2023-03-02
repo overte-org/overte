@@ -471,8 +471,9 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                     // V8TODO: this is to diagnose a really weird segfault where it looks like only half of the QPointer is set to null upon object deletion
                     uint64_t ptrVal = (uint64_t)(ScriptObjectV8Proxy::unwrap(v8Val));
                     if ((uint32_t)(ptrVal) == 0 && ptrVal != 0) {
-                        printf("break");
-                        Q_ASSERT(false);
+                        qDebug() << "ScriptEngineV8::castValueToVariant pointer bug happened";
+                        //Q_ASSERT(false);
+                        return false;
                     }
                 }
                 dest = QVariant::fromValue(ScriptObjectV8Proxy::unwrap(v8Val));
@@ -754,7 +755,9 @@ V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
             }
         default:
             // check to see if this is a pointer to a QObject-derived object
-            if (QMetaType::typeFlags(valTypeId) & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
+            // V8TODO: I added WeakPointerToQObject and SharedPointerToQObject here, but maybe they need different object ownership?
+            if (QMetaType::typeFlags(valTypeId) & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject
+                                                   | QMetaType::WeakPointerToQObject | QMetaType::SharedPointerToQObject)) {
                 QObject* obj = val.value<QObject*>();
                 if (obj == nullptr) return V8ScriptValue(this, v8::Null(_v8Isolate));
                 return ScriptObjectV8Proxy::newQObject(this, obj);
