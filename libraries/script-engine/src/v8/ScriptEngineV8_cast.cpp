@@ -755,9 +755,8 @@ V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
             }
         default:
             // check to see if this is a pointer to a QObject-derived object
-            // V8TODO: I added WeakPointerToQObject and SharedPointerToQObject here, but maybe they need different object ownership?
-            if (QMetaType::typeFlags(valTypeId) & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject
-                                                   | QMetaType::WeakPointerToQObject | QMetaType::SharedPointerToQObject)) {
+            // V8TODO: WeakPointerToQObject and SharedPointerToQObject were causing trouble here because some values are handled by custom prototypes instead
+            if (QMetaType::typeFlags(valTypeId) & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
                 QObject* obj = val.value<QObject*>();
                 if (obj == nullptr) return V8ScriptValue(this, v8::Null(_v8Isolate));
                 return ScriptObjectV8Proxy::newQObject(this, obj);
