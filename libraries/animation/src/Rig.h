@@ -42,7 +42,7 @@ public:
     struct StateHandler {
         AnimVariantMap results;
         QStringList propertyNames;
-        ScriptValue function;
+        std::shared_ptr<ScriptValue> function;
         bool useNames;
     };
 

@@ -1598,7 +1598,7 @@ ScriptValue Rig::addAnimationStateHandler(const ScriptValue& handler, const Scri
             _nextStateHandlerId++;
         }
         StateHandler& data = _stateHandlers[_nextStateHandlerId];
-        data.function = handler;
+        data.function = std::make_shared<ScriptValue>(handler);
         data.useNames = propertiesList.isArray();
         if (data.useNames) {
             data.propertyNames = propertiesList.toVariant().toStringList();
@@ -1639,7 +1639,7 @@ void Rig::updateAnimationStateHandlers() { // called on avatar update thread (wh
         // call out:
         int identifier = data.key();
         StateHandler& value = data.value();
-        ScriptValue& function = value.function;
+        std::shared_ptr<ScriptValue> function = value.function;
         int rigId = _rigId;
         auto handleResult = [rigId, identifier](const ScriptValue& result) { // called in script thread to get the result back to us.
             // Hold the rigRegistryMutex to ensure thread-safe access to the rigRegistry, but
@@ -1660,7 +1660,7 @@ void Rig::updateAnimationStateHandlers() { // called on avatar update thread (wh
             // Copies of AnimVariantMap do copy the underlying map, so this will correctly capture
             // the state of _animVars and allow continued changes to _animVars in this thread without conflict.
             const AnimVariantMap& animVars = _animVars;
-            ScriptEnginePointer engine = function.engine();
+            ScriptEnginePointer engine = function->engine();
             const QStringList& names = value.propertyNames;
             bool useNames = value.useNames;
 
@@ -1670,7 +1670,7 @@ void Rig::updateAnimationStateHandlers() { // called on avatar update thread (wh
                     ScriptValue javascriptParameters = animVars.animVariantMapToScriptValue(engine.get(), names, useNames);
                     ScriptValueList callingArguments;
                     callingArguments << javascriptParameters;
-                    ScriptValue result = function.call(ScriptValue(), callingArguments);
+                    ScriptValue result = function->call(ScriptValue(), callingArguments);
 
                     // validate result from callback function.
                     if (result.isValid() && result.isObject()) {
@@ -1678,7 +1678,7 @@ void Rig::updateAnimationStateHandlers() { // called on avatar update thread (wh
                     } else {
                         qCWarning(animation) << "Rig::updateAnimationStateHandlers invalid return argument from "
                                                 "callback, expected an object";
-                    }
+                    } //V8TODO: std::shared_ptr<ScriptValue> function should probably be reset here if it's a local copy?
                 },
                 Qt::QueuedConnection);
         }
@@ -1713,7 +1713,7 @@ void Rig::updateAnimations(float deltaTime, const glm::mat4& rootTransform, cons
         ++_evaluationCount;
 
         // V8TODO: this causes a deadlock right now
-        //updateAnimationStateHandlers();
+        updateAnimationStateHandlers();
         _animVars.setRigToGeometryTransform(_rigToGeometryTransform);
         if (_networkNode) {
             _networkVars.setRigToGeometryTransform(_rigToGeometryTransform);
