@@ -285,7 +285,12 @@ glm::uint32 scriptable::ScriptableMesh::forEachVertex(const ScriptValue& _callba
     buffer_helpers::mesh::forEachVertex(mesh, [&](glm::uint32 index, const QVariantMap& values) {
         auto result = callback.call(scope, { js->toScriptValue(values), js->newValue(index), meshPart });
         if (js->hasUncaughtException()) {
-            js->currentContext()->throwValue(js->uncaughtException());
+            // TODO: I think the idea here is that toScriptValue or toValue might throw an exception
+            // in the script engine, which we're then propagating to the running script. This got broken
+            // by the scripting engine changes, needs fixing.
+
+            qCCritical(graphics_scripting) << "Uncaught exception, handling broken, FIX ME: " << js->uncaughtException();
+            //js->currentContext()->throwValue(js->uncaughtException());
             return false;
         }
         numProcessed++;
@@ -295,13 +300,13 @@ glm::uint32 scriptable::ScriptableMesh::forEachVertex(const ScriptValue& _callba
 }
 
 /*@jsdoc
- * Called for each vertex when {@link GraphicsMesh.updateVertexAttributes} is called. The value returned by the script function 
+ * Called for each vertex when {@link GraphicsMesh.updateVertexAttributes} is called. The value returned by the script function
  * should be the modified attributes to update the vertex with, or <code>false</code> to not update the particular vertex.
  * @callback GraphicsMesh~updateVertexAttributesCallback
  * @param {Object<Graphics.BufferTypeName, Graphics.BufferType>} attributes - The attributes  of the vertex.
  * @param {number} index - The vertex index.
  * @param {object} properties - The properties of the mesh, per {@link GraphicsMesh}.
- * @returns {Object<Graphics.BufferTypeName, Graphics.BufferType>|boolean} The attribute values to update the vertex with, or 
+ * @returns {Object<Graphics.BufferTypeName, Graphics.BufferType>|boolean} The attribute values to update the vertex with, or
  *     <code>false</code> to not update the vertex.
  */
 glm::uint32 scriptable::ScriptableMesh::updateVertexAttributes(const ScriptValue& _callback) {
@@ -325,7 +330,8 @@ glm::uint32 scriptable::ScriptableMesh::updateVertexAttributes(const ScriptValue
         auto obj = js->toScriptValue(values);
         auto result = callback.call(scope, { obj, js->newValue(index), meshPart });
         if (js->hasUncaughtException()) {
-            js->currentContext()->throwValue(js->uncaughtException());
+            qCCritical(graphics_scripting) << "Uncaught exception, handling broken, FIX ME: " << js->uncaughtException();
+            //js->currentContext()->throwValue(js->uncaughtException());
             return false;
         }
         if (result.isBool() && !result.toBool()) {
