@@ -284,10 +284,16 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
 
     // this is where all unhandled exceptions end up getting logged
     connect(this, &ScriptManager::unhandledException, this, [this](const ScriptValue& err) {
+        qCCritical(scriptengine) << "Caught exception";
+
         auto output = err.engine() == _engine ? err : _engine->makeError(err);
         if (!output.property("detail").isValid()) {
             output.setProperty("detail", "UnhandledException");
         }
+
+        // Unhandled exception kills the running script
+        stop(false);
+
         logException(output);
     });
 
@@ -886,6 +892,14 @@ void ScriptManager::run() {
         PROFILE_RANGE(script, _fileNameString);
         _returnValue = _engine->evaluate(_scriptContents, _fileNameString);
         _engine->maybeEmitUncaughtException(__FUNCTION__);
+
+        if (_engine->hasUncaughtException()) {
+
+            qCWarning(scriptengine) << "Engine has uncaught exception, stopping";
+            stop();
+            emit unhandledException(_engine->cloneUncaughtException(__FUNCTION__));
+            _engine->clearExceptions();
+        }
     }
 #ifdef _WIN32
     // VS13 does not sleep_until unless it uses the system_clock, see:
@@ -1008,7 +1022,7 @@ void ScriptManager::run() {
         // only clear exceptions if we are not in the middle of evaluating
         if (!_engine->isEvaluating() && _engine->hasUncaughtException()) {
             qCWarning(scriptengine) << __FUNCTION__ << "---------- UNCAUGHT EXCEPTION --------";
-            qCWarning(scriptengine) << "runInThread" << _engine->uncaughtException().toString();
+            qCWarning(scriptengine) << "runInThread" << _engine->uncaughtException();
             emit unhandledException(_engine->cloneUncaughtException(__FUNCTION__));
             _engine->clearExceptions();
         }
