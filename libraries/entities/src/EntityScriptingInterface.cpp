@@ -132,7 +132,7 @@ void EntityScriptingInterface::releaseEntityPacketSenderMessages(bool wait) {
 void EntityScriptingInterface::attachDefaultEventHandlers(ScriptManager* manager) {
     // Connect up ALL the handlers to the global entities object's signals.
     // (We could go signal by signal, or even handler by handler, but I don't think the efficiency is worth the complexity.)
-    
+
     // Bug? These handlers are deleted when entityID is deleted, which is nice.
     // But if they are created by an entity script on a different entity, should they also be deleted when the entity script unloads?
     // E.g., suppose a bow has an entity script that causes arrows to be created with a potential lifetime greater than the bow,
@@ -194,7 +194,7 @@ void EntityScriptingInterface::attachDefaultEventHandlers(ScriptManager* manager
     };
 
     /*@jsdoc
-         * <p>The name of an entity event. When the entity event occurs, any function that has been registered for that event 
+         * <p>The name of an entity event. When the entity event occurs, any function that has been registered for that event
          * via {@link Script.addEventHandler} is called with parameters per the entity event.</p>
          * <table>
          *   <thead>
@@ -782,7 +782,7 @@ QUuid EntityScriptingInterface::cloneEntity(const QUuid& entityIDToClone) {
     } else if (cloneAvatarEntity) {
         return addEntityInternal(properties, entity::HostType::AVATAR);
     } else {
-        // setLastEdited timestamp to 0 to ensure this entity gets updated with the properties 
+        // setLastEdited timestamp to 0 to ensure this entity gets updated with the properties
         // from the server-created entity, don't change this unless you know what you are doing
         properties.setLastEdited(0);
         bool success = addLocalEntityCopy(properties, newEntityID, true);
@@ -1255,7 +1255,7 @@ void EntityScriptingInterface::setNonPersistentEntitiesScriptEngine(std::shared_
 
 void EntityScriptingInterface::callEntityMethod(const QUuid& id, const QString& method, const QStringList& params) {
     PROFILE_RANGE(script_entities, __FUNCTION__);
-    
+
     auto entity = getEntityTree()->findEntityByEntityItemID(id);
     if (entity) {
         std::lock_guard<std::recursive_mutex> lock(_entitiesScriptEngineLock);
@@ -1605,7 +1605,7 @@ bool EntityScriptingInterface::queryPropertyMetadata(const QUuid& entityID,
 #endif
     if (!handler.property("callback").isFunction()) {
         qDebug() << "!handler.callback.isFunction" << manager;
-        engine->raiseException(engine->makeError(engine->newValue("callback is not a function"), "TypeError"));
+        engine->raiseException("callback is not a function", "TypeError");
         return false;
     }
 
@@ -1628,8 +1628,7 @@ bool EntityScriptingInterface::queryPropertyMetadata(const QUuid& entityID,
     } else if (name == "serverScripts") {
         return request.serverScripts(entityID, handler);
     } else {
-        engine->raiseException(engine->makeError(engine->newValue("metadata for property " + name + " is not yet queryable")));
-        engine->maybeEmitUncaughtException(__FUNCTION__);
+        engine->raiseException("metadata for property " + name + " is not yet queryable");
         return false;
     }
 }
@@ -1644,8 +1643,7 @@ bool EntityScriptingInterface::getServerScriptStatus(const QUuid& entityID, Scri
     Q_ASSERT(QThread::currentThread() == engine->thread());
     Q_ASSERT(QThread::currentThread() == engine->manager()->thread());
     if (!manager) {
-        engine->raiseException(engine->makeError(engine->newValue("This script does not belong to a ScriptManager")));
-        engine->maybeEmitUncaughtException(__FUNCTION__);
+        engine->raiseException("This script does not belong to a ScriptManager");
         return false;
     }
 
@@ -2015,17 +2013,17 @@ EntityItemPointer EntityScriptingInterface::checkForTreeEntityAndTypeMatch(const
     if (!_entityTree) {
         return EntityItemPointer();
     }
-    
+
     EntityItemPointer entity = _entityTree->findEntityByEntityItemID(entityID);
     if (!entity) {
         qCDebug(entities) << "EntityScriptingInterface::checkForTreeEntityAndTypeMatch - no entity with ID" << entityID;
         return entity;
     }
-    
+
     if (entityType != EntityTypes::Unknown && entity->getType() != entityType) {
         return EntityItemPointer();
     }
-    
+
     return entity;
 }
 

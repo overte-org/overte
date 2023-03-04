@@ -282,6 +282,11 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
         processLevelMaxRetries = 1;
     }
 
+
+#if 0
+    // V8TODO: Is this actually needed? Exceptions will already be logged on the
+    // script engine side.
+
     // this is where all unhandled exceptions end up getting logged
     connect(this, &ScriptManager::unhandledException, this, [this](const ScriptValue& err) {
         qCCritical(scriptengine) << "Caught exception";
@@ -296,6 +301,7 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
 
         logException(output);
     });
+#endif
 
     if (_type == Type::ENTITY_CLIENT || _type == Type::ENTITY_SERVER) {
         QObject::connect(this, &ScriptManager::update, this, [this]() {
@@ -891,13 +897,11 @@ void ScriptManager::run() {
     {
         PROFILE_RANGE(script, _fileNameString);
         _returnValue = _engine->evaluate(_scriptContents, _fileNameString);
-        _engine->maybeEmitUncaughtException(__FUNCTION__);
 
         if (_engine->hasUncaughtException()) {
 
             qCWarning(scriptengine) << "Engine has uncaught exception, stopping";
             stop();
-            emit unhandledException(_engine->cloneUncaughtException(__FUNCTION__));
             _engine->clearExceptions();
         }
     }
@@ -1023,7 +1027,7 @@ void ScriptManager::run() {
         if (!_engine->isEvaluating() && _engine->hasUncaughtException()) {
             qCWarning(scriptengine) << __FUNCTION__ << "---------- UNCAUGHT EXCEPTION --------";
             qCWarning(scriptengine) << "runInThread" << _engine->uncaughtException();
-            emit unhandledException(_engine->cloneUncaughtException(__FUNCTION__));
+            emit unhandledException(_engine->uncaughtException());
             _engine->clearExceptions();
         }
     }
@@ -1258,9 +1262,8 @@ QString ScriptManager::_requireResolve(const QString& moduleId, const QString& r
     }
     auto message = QString("Cannot find module '%1' (%2)").arg(displayId);
 
-    auto throwResolveError = [&](const ScriptValue& error) -> QString {
-        _engine->raiseException(error);
-        _engine->maybeEmitUncaughtException("require.resolve");
+    auto throwResolveError = [&](const QString& error, const QString &details = QString()) -> QString {
+        _engine->raiseException(error, "require.resolve: " + details);
         return QString();
     };
 
@@ -1269,7 +1272,7 @@ QString ScriptManager::_requireResolve(const QString& moduleId, const QString& r
     if (idLength < 1 || idLength > MAX_MODULE_ID_LENGTH) {
         auto details = QString("rejecting invalid module id size (%1 chars [1,%2])")
             .arg(idLength).arg(MAX_MODULE_ID_LENGTH);
-        return throwResolveError(_engine->makeError(_engine->newValue(message.arg(details)), "RangeError"));
+        return throwResolveError(details, "RangeError");
     }
 
     // this regex matches: absolute, dotted or path-like URLs
@@ -1296,15 +1299,15 @@ QString ScriptManager::_requireResolve(const QString& moduleId, const QString& r
                 if (QFileInfo(unanchoredUrl.toLocalFile()).isFile()) {
                     auto msg = QString("relative module ids must be anchored; use './%1' instead")
                         .arg(moduleId);
-                    return throwResolveError(_engine->makeError(_engine->newValue(message.arg(msg))));
+                    return throwResolveError(message.arg(msg));
                 }
             }
-            return throwResolveError(_engine->makeError(_engine->newValue(message.arg("system module not found"))));
+            return throwResolveError(message.arg("system module not found"));
         }
     }
 
     if (url.isRelative()) {
-        return throwResolveError(_engine->makeError(_engine->newValue(message.arg("could not resolve module id"))));
+        return throwResolveError(message.arg("could not resolve module id"));
     }
 
     // if it looks like a local file, verify that it's an allowed path and really a file
@@ -1317,22 +1320,21 @@ QString ScriptManager::_requireResolve(const QString& moduleId, const QString& r
 
         bool disallowOutsideFiles = !PathUtils::defaultScriptsLocation().isParentOf(canonical) && !currentSandboxURL.isLocalFile();
         if (disallowOutsideFiles && !PathUtils::isDescendantOf(canonical, currentSandboxURL)) {
-            return throwResolveError(_engine->makeError(_engine->newValue(message.arg(
+            return throwResolveError(message.arg(
                 QString("path '%1' outside of origin script '%2' '%3'")
                     .arg(PathUtils::stripFilename(url))
                     .arg(PathUtils::stripFilename(currentSandboxURL))
                     .arg(canonical.toString())
-            ))));
+            ));
         }
         if (!file.exists()) {
-            return throwResolveError(_engine->makeError(_engine->newValue(message.arg("path does not exist: " + url.toLocalFile()))));
+            return throwResolveError(message.arg("path does not exist: " + url.toLocalFile()));
         }
         if (!file.isFile()) {
-            return throwResolveError(_engine->makeError(_engine->newValue(message.arg("path is not a file: " + url.toLocalFile()))));
+            return throwResolveError(message.arg("path is not a file: " + url.toLocalFile()));
         }
     }
 
-    _engine->maybeEmitUncaughtException(__FUNCTION__);
     return url.toString();
 }
 
@@ -1488,7 +1490,7 @@ ScriptValue ScriptManager::instantiateModule(const ScriptValue& module, const QS
         //_engine->scriptValueDebugDetails(module);
         result = _engine->evaluateInClosure(closure, _engine->newProgram( sourceCode, modulePath ));
     }
-    _engine->maybeEmitUncaughtException(__FUNCTION__);
+
     return result;
 }
 
@@ -1510,9 +1512,8 @@ ScriptValue ScriptManager::require(const QString& moduleId) {
 #ifdef DEBUG_JS_MODULES
             qCWarning(scriptengine_module) << "throwing module error:" << error.toString() << modulePath << error.property("stack").toString();
 #endif
-            _engine->raiseException(error);
+            _engine->raiseException(error, "module error");
         }
-        _engine->maybeEmitUncaughtException("module");
         return _engine->nullValue();
     };
 
@@ -1520,7 +1521,6 @@ ScriptValue ScriptManager::require(const QString& moduleId) {
     QString modulePath = _requireResolve(moduleId);
     if (modulePath.isNull() || _engine->hasUncaughtException()) {
         // the resolver already threw an exception -- bail early
-        _engine->maybeEmitUncaughtException(__FUNCTION__);
         return _engine->nullValue();
     }
 
@@ -1546,7 +1546,6 @@ ScriptValue ScriptManager::require(const QString& moduleId) {
         qCDebug(scriptengine_module) << QString("require - using cached module for '%1' (loaded: %2)")
             .arg(moduleId).arg(module.property("loaded").toString());
         registerModuleWithParent(module, parent);
-        _engine->maybeEmitUncaughtException("cached module");
         return exports;
     }
 
@@ -1594,7 +1593,6 @@ ScriptValue ScriptManager::require(const QString& moduleId) {
 
     //qCDebug(scriptengine_module) << "//ScriptManager::require(" << moduleId << ")";
 
-    _engine->maybeEmitUncaughtException(__FUNCTION__);
     //qCDebug(scriptengine_module) << "Exports: " << _engine->scriptValueDebugDetails(module.property("exports"));
     return module.property("exports");
 }
@@ -1670,7 +1668,9 @@ void ScriptManager::include(const QStringList& includeFiles, const ScriptValue& 
 
                     doWithEnvironment(capturedEntityIdentifier, capturedSandboxURL, operation);
                     if(_engine->hasUncaughtException()) {
-                        emit unhandledException(_engine->cloneUncaughtException("evaluateInclude"));
+                        auto ex = _engine->uncaughtException();
+                        ex->additionalInfo += "; evaluateInClosure";
+                        emit unhandledException(ex);
                         _engine->clearExceptions();
                     }
                 } else {
@@ -1995,11 +1995,14 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
         //syntaxError.setProperty("detail", entityID.toString());
         //V8TODO
         //emit unhandledException(syntaxError);
+
         return;
     }
     if (!program) {
         setError("Bad program (isNull)", EntityScriptStatus::ERROR_RUNNING_SCRIPT);
-        emit unhandledException(_engine->makeError(_engine->newValue("program.isNull")));
+        std::shared_ptr<ScriptException> ex = std::make_shared<ScriptEngineException>("Program is Null", "Bad program in entityScriptContentAvailable");
+        emit unhandledException(ex);
+
         return; // done processing script
     }
 
@@ -2163,7 +2166,10 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
         entityScriptObject = entityScriptConstructor.construct();
 
         if (_engine->hasUncaughtException()) {
-            entityScriptObject = _engine->cloneUncaughtException("(construct " + entityID.toString() + ")");
+            // V8TODO: Why were we copying the uncaught exception here? Does anything
+            // actually make use of that?
+            //  entityScriptObject = _engine->cloneUncaughtException("(construct " + entityID.toString() + ")");
+            entityScriptObject = _engine->nullValue();
             _engine->clearExceptions();
         }
     };
@@ -2171,9 +2177,10 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
     doWithEnvironment(entityID, sandboxURL, initialization);
 
     if (entityScriptObject.isError()) {
-        auto exception = entityScriptObject;
-        setError(formatException(exception, _enableExtendedJSExceptions.get()), EntityScriptStatus::ERROR_RUNNING_SCRIPT);
-        emit unhandledException(exception);
+       // auto exception = entityScriptObject;
+       // setError(formatException(exception, _enableExtendedJSExceptions.get()), EntityScriptStatus::ERROR_RUNNING_SCRIPT);
+       // emit unhandledException(exception);
+       // V8TODO: Is this needed? Wouldn't the ScriptManager have already emitted the exception?
         return;
     }
 
@@ -2340,7 +2347,6 @@ void ScriptManager::doWithEnvironment(const EntityItemID& entityID, const QUrl& 
 #else
     operation();
 #endif
-    _engine->maybeEmitUncaughtException(!entityID.isNull() ? entityID.toString() : __FUNCTION__);
     currentEntityIdentifier = oldIdentifier;
     currentSandboxURL = oldSandboxURL;
 }
