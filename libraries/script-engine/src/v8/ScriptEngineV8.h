@@ -35,6 +35,7 @@
 
 #include "../ScriptEngine.h"
 #include "../ScriptManager.h"
+#include "../ScriptException.h"
 //#include "V8Types.h"
 
 #include "ArrayBufferClass.h"
@@ -61,7 +62,7 @@ class ScriptEngineV8 final : public QObject, public ScriptEngine,
     Q_OBJECT
 
 public:  // construction
-    ScriptEngineV8(ScriptManager* scriptManager = nullptr);
+    ScriptEngineV8(ScriptManager *manager = nullptr);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // NOTE - these are NOT intended to be public interfaces available to scripts, the are only Q_INVOKABLE so we can
@@ -81,7 +82,7 @@ public:  // ScriptEngine implementation
     //virtual ScriptValue lintScript(const QString& sourceCode, const QString& fileName, const int lineNumber = 1) override;
     virtual ScriptValue checkScriptSyntax(ScriptProgramPointer program) override;
     virtual ScriptValue makeError(const ScriptValue& other, const QString& type = "Error") override;
-    virtual ScriptManager* manager() const override;
+
 
     // if there is a pending exception and we are at the top level (non-recursive) stack frame, this emits and resets it
     virtual bool maybeEmitUncaughtException(const QString& debugHint = QString()) override;
@@ -127,9 +128,7 @@ public:  // ScriptEngine implementation
     virtual void setThread(QThread* thread) override;
     //Q_INVOKABLE virtual void enterIsolateOnThisThread() override;
     virtual ScriptValue undefinedValue() override;
-    virtual ScriptValue uncaughtException() const override;
-    virtual QStringList uncaughtExceptionBacktrace() const override;
-    virtual int uncaughtExceptionLineNumber() const override;
+    virtual ScriptException uncaughtException() const override;
     virtual void updateMemoryCost(const qint64& deltaSize) override;
     virtual void requestCollectGarbage() override { while(!_v8Isolate->IdleNotificationDeadline(getV8Platform()->MonotonicallyIncreasingTime() + GARBAGE_COLLECTION_TIME_LIMIT_S)) {}; }
     virtual void compileTest() override;
@@ -218,24 +217,34 @@ protected:
                                    const ValueOwnership& ownership = AutoOwnership);*/
 
     void registerSystemTypes();
+signals:
+    /**
+     * @brief The script being run threw an exception
+     *
+     * @param exception Exception that was thrown
+     */
+    void exception(const ScriptException &exception);
 
 protected:
     static QMutex _v8InitMutex;
     static std::once_flag _v8InitOnceFlag;
     static v8::Platform* getV8Platform();
 
+    void setUncaughtException(const v8::TryCatch &tryCatch, const QString& info = QString());
+
+    ScriptException _uncaughtException;
+
+
     // V8TODO: clean up isolate when script engine is destroyed?
     v8::Isolate* _v8Isolate;
     //v8::UniquePersistent<v8::Context> _v8Context;
-    
+
     struct CustomMarshal {
         ScriptEngine::MarshalFunction marshalFunc;
         ScriptEngine::DemarshalFunction demarshalFunc;
     };
     using CustomMarshalMap = QHash<int, CustomMarshal>;
     using CustomPrototypeMap = QHash<int, V8ScriptValue>;
-
-    QPointer<ScriptManager> _scriptManager;
 
     mutable QReadWriteLock _customTypeProtect { QReadWriteLock::Recursive };
     CustomMarshalMap _customTypes;

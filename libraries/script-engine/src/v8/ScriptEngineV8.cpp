@@ -291,14 +291,18 @@ bool ScriptEngineV8::raiseException(const V8ScriptValue& exception) {
 }
 
 bool ScriptEngineV8::maybeEmitUncaughtException(const QString& debugHint) {
+
+    /*
     if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
         return false;
     }
-    if (!isEvaluating() && hasUncaughtException() && _scriptManager) {
-        emit _scriptManager->unhandledException(cloneUncaughtException(debugHint));
+    if (!isEvaluating() && hasUncaughtException()) {
+        emit exception(cloneUncaughtException(debugHint));
         clearExceptions();
         return true;
     }
+
+    */
     return false;
 }
 
@@ -388,8 +392,7 @@ v8::Platform* ScriptEngineV8::getV8Platform() {
     return platform.get();
 }
 
-ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
-    _scriptManager(scriptManager), _evaluatingCounter(0)
+ScriptEngineV8::ScriptEngineV8(ScriptManager *manager) : ScriptEngine(manager), _evaluatingCounter(0)
     //V8TODO
     //_arrayBufferClass(new ArrayBufferClass(this))
 {
@@ -451,7 +454,7 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
 
     //_currentThread = QThread::currentThread();
 
-    if (_scriptManager) {
+    //if (_scriptManager) {
         // V8TODO: port to V8
         /*connect(this, &QScriptEngine::signalHandlerException, this, [this](const V8ScriptValue& exception) {
             if (hasUncaughtException()) {
@@ -466,7 +469,7 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
         }, Qt::DirectConnection);*/
         //moveToThread(scriptManager->thread());
         //setThread(scriptManager->thread());
-    }
+    //}
 }
 
 void ScriptEngineV8::registerEnum(const QString& enumName, QMetaEnum newEnum) {
@@ -1044,10 +1047,6 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
 }
 
 ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& fileName) {
-    if (_scriptManager && _scriptManager->isStopped()) {
-        return undefinedValue(); // bail early
-    }
-
     //V8TODO
 
     if (QThread::currentThread() != thread()) {
@@ -1132,8 +1131,12 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
         ScriptValue errorValue(new ScriptValueV8Wrapper(this, V8ScriptValue(this, runError->Get())));
         qCDebug(scriptengine) << "Running script: \"" << fileName << "\" " << formatErrorMessageFromTryCatch(tryCatchRun);
         //V8TODO
+
+
         //raiseException(errorValue);
         //maybeEmitUncaughtException("evaluate");
+        setUncaughtException(tryCatchRun, "script evaluation");
+
         _evaluatingCounter--;
         return errorValue;
     }
@@ -1141,6 +1144,53 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
     _evaluatingCounter--;
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(resultValue)));
 }
+
+void ScriptEngineV8::setUncaughtException(const v8::TryCatch &tryCatch, const QString& info) {
+    if (!tryCatch.HasCaught()) {
+        qCWarning(scriptengine) << "setUncaughtException called without exception";
+        clearExceptions();
+        return;
+    }
+
+    ScriptException ex;
+    ex.additionalInfo = info;
+
+    v8::Locker locker(_v8Isolate);
+    v8::Isolate::Scope isolateScope(_v8Isolate);
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(getContext());
+    QString result("");
+
+    QString errorMessage = "";
+    QString errorBacktrace = "";
+    //v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Exception());
+    v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Message()->Get());
+
+    ex.errorMessage = QString(*utf8Value);
+
+    v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
+    if (!exceptionMessage.IsEmpty()) {
+        ex.errorLine = exceptionMessage->GetLineNumber(getContext()).FromJust();
+        ex.errorColumn = exceptionMessage->GetStartColumn(getContext()).FromJust();
+        v8::Local<v8::Value> backtraceV8String;
+        if (tryCatch.StackTrace(getContext()).ToLocal(&backtraceV8String)) {
+            if (backtraceV8String->IsString()) {
+                if (v8::Local<v8::String>::Cast(backtraceV8String)->Length() > 0) {
+                    v8::String::Utf8Value backtraceUtf8Value(getIsolate(), backtraceV8String);
+                    QString errorBacktrace = *backtraceUtf8Value;
+                    ex.backtrace = errorBacktrace.split("\n");
+
+                }
+            }
+        }
+    }
+
+    qCDebug(scriptengine) << "Emitting exception:" << ex;
+    _uncaughtException = ex;
+    emit exception(ex);
+}
+
+
 
 QString ScriptEngineV8::formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch) {
     v8::Locker locker(_v8Isolate);
@@ -1194,9 +1244,6 @@ void ScriptEngineV8::popContext() {
 }
 
 Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& program) {
-    if (_scriptManager && _scriptManager->isStopped()) {
-        return undefinedValue(); // bail early
-    }
 
     if (QThread::currentThread() != thread()) {
         ScriptValue result;
@@ -1306,10 +1353,6 @@ ScriptValue ScriptEngineV8::globalObject() {
     v8::Context::Scope contextScope(getConstContext());
     V8ScriptValue global(this, getConstContext()->Global());// = QScriptEngine::globalObject(); // can't cache the value as it may change
     return ScriptValue(new ScriptValueV8Wrapper(const_cast<ScriptEngineV8*>(this), std::move(global)));
-}
-
-ScriptManager* ScriptEngineV8::manager() const {
-    return _scriptManager;
 }
 
 ScriptValue ScriptEngineV8::newArray(uint length) {
@@ -1486,8 +1529,7 @@ void ScriptEngineV8::abortEvaluation() {
 }
 
 void ScriptEngineV8::clearExceptions() {
-    //V8TODO
-    //QScriptEngine::clearExceptions();
+    _uncaughtException = ScriptException();
 }
 
 ScriptContext* ScriptEngineV8::currentContext() const {
@@ -1509,9 +1551,7 @@ ScriptContext* ScriptEngineV8::currentContext() const {
 }
 
 bool ScriptEngineV8::hasUncaughtException() const {
-    //V8TODO
-    //return QScriptEngine::hasUncaughtException();
-    return false;
+    return !_uncaughtException.isEmpty();
 }
 
 bool ScriptEngineV8::isEvaluating() const {
@@ -1627,32 +1667,20 @@ void ScriptEngineV8::setThread(QThread* thread) {
 }*/
 
 
-ScriptValue ScriptEngineV8::uncaughtException() const {
-    //V8TODO
-    //V8ScriptValue result = QScriptEngine::uncaughtException();
-    //return ScriptValue(new ScriptValueV8Wrapper(const_cast<ScriptEngineV8*>(this), std::move(result)));
-    return ScriptValue();
-}
-
-QStringList ScriptEngineV8::uncaughtExceptionBacktrace() const {
-    //V8TODO
-    //return QScriptEngine::uncaughtExceptionBacktrace();
-    return QStringList();
-}
-
-int ScriptEngineV8::uncaughtExceptionLineNumber() const {
-    //V8TODO
-    //return QScriptEngine::uncaughtExceptionLineNumber();
-    return 0;
+ScriptException ScriptEngineV8::uncaughtException() const {
+    return _uncaughtException;
 }
 
 bool ScriptEngineV8::raiseException(const ScriptValue& exception) {
     //V8TODO
     //Q_ASSERT(false);
-    qCritical() << "Script exception occurred: " << exception.toString();
-    /*ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(exception);
-    V8ScriptValue qException = unwrapped ? unwrapped->toV8Value() : QScriptEngine::newVariant(exception.toVariant());
-    return raiseException(qException);*/
+//    qCritical() << "Script exception occurred: " << exception.toString();
+//    ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(exception);
+//    V8ScriptValue qException = unwrapped ? unwrapped->toV8Value() : QScriptEngine::newVariant(exception.toVariant());
+
+  //  emit
+    //return raiseException(qException);
+
     return false;
 }
 
