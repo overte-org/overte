@@ -24,6 +24,7 @@
 #include <QtCore/QObject>
 
 #include "ScriptValue.h"
+#include "ScriptException.h"
 
 class QByteArray;
 class QLatin1String;
@@ -55,9 +56,28 @@ inline T scriptvalue_cast(const ScriptValue& value);
  * provide the full environment needed to execute scripts.
  *
  * To execute scripts that have access to the API, use ScriptManager.
+ *
+ * Exception handling
+ * ==================
+ *
+ * Exceptions are handled in two directions: exceptions thrown by the code executing in the scripting
+ * engine, but not captured by the running code are caught by this object and can be inspected.
+ *
+ * If an exception in the running code occurs, then the exception() signal is emitted. Also,
+ * hasUncaughtException() returns true, and uncaughException() returns the ScriptException with the
+ * details. Both the signal and uncaughtException() return the same information, and either can
+ * be used depending on what best fits the program.
+ *
+ * To inject an exception into the running script, use raiseException(). This may result in the script
+ * not capturing it and an uncaughtException happening as a result.
  */
 class ScriptEngine {
 public:
+
+    ScriptEngine(ScriptManager *manager = nullptr) : _manager(manager) {
+
+    }
+
     typedef ScriptValue (*FunctionSignature)(ScriptContext*, ScriptEngine*);
     typedef ScriptValue (*MarshalFunction)(ScriptEngine*, const void*);
     typedef bool (*DemarshalFunction)(const ScriptValue&, QVariant &dest);
@@ -80,7 +100,9 @@ public:
         ScriptOwnership = 1,
 
         /**
-         * @brief Ownership is determined automatically
+         * @brief Ownership is determined automatically.
+         * If the object has a parent, it's deemed QtOwnership.
+         * If the object has no parent, it's deemed ScriptOwnership.
          *
          */
         AutoOwnership = 2,
@@ -266,7 +288,20 @@ public:
      *
      * @return ScriptManager* ScriptManager
      */
-    virtual ScriptManager* manager() const = 0;
+    ScriptManager* manager() const { return _manager; }
+
+    /**
+     * @brief Emit the current uncaught exception if there is one
+     *
+     * If there's an uncaught exception, emit it, and clear the exception status.
+     *
+     * This fails if there's no uncaught exception, there's no ScriptManager,
+     * or the engine is evaluating.
+     *
+     * @param debugHint A debugging hint to be added to the error message
+     * @return true There was an uncaught exception, and it was emitted
+     * @return false There was no uncaught exception
+     */
     virtual bool maybeEmitUncaughtException(const QString& debugHint = QString()) = 0;
     virtual ScriptValue newArray(uint length = 0) = 0;
     virtual ScriptValue newArrayBuffer(const QByteArray& message) = 0;
@@ -291,9 +326,9 @@ public:
     /**
      * @brief Causes an exception to be raised in the currently executing script
      *
-     * @param exception
-     * @return true
-     * @return false
+     * @param exception Exception to be thrown in the script
+     * @return true Exception was successfully thrown
+     * @return false Exception couldn't be thrown because no script is running
      */
     virtual bool raiseException(const ScriptValue& exception) = 0;
     virtual void registerEnum(const QString& enumName, QMetaEnum newEnum) = 0;
@@ -309,14 +344,36 @@ public:
     virtual void setThread(QThread* thread) = 0;
     //Q_INVOKABLE virtual void enterIsolateOnThisThread() = 0;
     virtual ScriptValue undefinedValue() = 0;
-    virtual ScriptValue uncaughtException() const = 0;
-    virtual QStringList uncaughtExceptionBacktrace() const = 0;
-    virtual int uncaughtExceptionLineNumber() const = 0;
+
+    /**
+     * @brief Last uncaught exception, if any
+     *
+     * @return ScriptValue Uncaught exception from the script
+     */
+    virtual ScriptException uncaughtException() const = 0;
+
     virtual void updateMemoryCost(const qint64& deltaSize) = 0;
     virtual void requestCollectGarbage() = 0;
+
+    /**
+     * @brief Test the underlying scripting engine
+     *
+     * This compiles, executes and verifies the execution of a trivial test program
+     * to make sure the underlying scripting engine actually works.
+     *
+     * @deprecated Test function, not part of the API, can be removed
+     */
     virtual void compileTest() = 0;
     virtual QString scriptValueDebugDetails(const ScriptValue &value) = 0;
     virtual QString scriptValueDebugListMembers(const ScriptValue &value) = 0;
+
+    /**
+     * @brief Log the current backtrace
+     *
+     * Logs the current backtrace for debugging
+     *
+     * @param title Informative title for the backtrace
+     */
     virtual void logBacktrace(const QString &title) = 0;
 public:
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
@@ -339,8 +396,19 @@ public: // not for public use, but I don't like how Qt strings this along with p
     virtual void registerCustomType(int type, MarshalFunction mf, DemarshalFunction df) = 0;
     virtual QStringList getCurrentScriptURLs() const = 0;
 
+
+signals:
+    /**
+     * @brief The script being run threw an exception
+     *
+     * @param exception Exception that was thrown
+     */
+    void exception(const ScriptException &exception);
+
 protected:
     ~ScriptEngine() {}  // prevent explicit deletion of base class
+
+    ScriptManager *_manager;
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(ScriptEngine::QObjectWrapOptions);
 
