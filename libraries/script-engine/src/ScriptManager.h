@@ -46,6 +46,7 @@
 #include "Quat.h"
 #include "ScriptUUID.h"
 #include "ScriptValue.h"
+#include "ScriptException.h"
 #include "Vec3.h"
 
 static const QString NO_SCRIPT("");
@@ -1326,7 +1327,7 @@ signals:
      *
      * @param exception
      */
-    void unhandledException(const ScriptValue& exception);
+    void unhandledException(std::shared_ptr<ScriptException> exception);
 
     ///@}
 
