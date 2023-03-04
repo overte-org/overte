@@ -30,7 +30,7 @@ QList<EntityItemID> EntityEditFilters::getZonesByPosition(glm::vec3& position) {
     for (auto id : zoneIDs) {
         if (!id.isInvalidID()) {
             // for now, look it up in the tree (soon we need to cache or similar?)
-            EntityItemPointer itemPtr = _tree->findEntityByEntityItemID(id); 
+            EntityItemPointer itemPtr = _tree->findEntityByEntityItemID(id);
             auto zone = std::dynamic_pointer_cast<ZoneEntityItem>(itemPtr);
             if (!zone) {
                 // TODO: maybe remove later?
@@ -39,7 +39,7 @@ QList<EntityItemID> EntityEditFilters::getZonesByPosition(glm::vec3& position) {
                 zones.append(id);
             }
         } else {
-            // the null id is the global filter we put in the domain server's 
+            // the null id is the global filter we put in the domain server's
             // advanced entity server settings
             zones.append(id);
         }
@@ -49,7 +49,7 @@ QList<EntityItemID> EntityEditFilters::getZonesByPosition(glm::vec3& position) {
 
 bool EntityEditFilters::filter(glm::vec3& position, EntityItemProperties& propertiesIn, EntityItemProperties& propertiesOut,
         bool& wasChanged, EntityTree::FilterType filterType, EntityItemID& itemID, const EntityItemPointer& existingEntity) {
-    
+
     // get the ids of all the zones (plus the global entity edit filter) that the position
     // lies within
     auto zoneIDs = getZonesByPosition(position);
@@ -57,12 +57,12 @@ bool EntityEditFilters::filter(glm::vec3& position, EntityItemProperties& proper
         if (!itemID.isInvalidID() && id == itemID) {
             continue;
         }
-        
-        // get the filter pair, etc...  
+
+        // get the filter pair, etc...
         _lock.lockForRead();
         FilterData filterData = _filterDataMap.value(id);
         _lock.unlock();
-    
+
         if (filterData.valid()) {
             if (filterData.rejectAll) {
                 return false;
@@ -159,13 +159,13 @@ bool EntityEditFilters::filter(glm::vec3& position, EntityItemProperties& proper
                 // otherwise, assume it wants to pass all properties
                 propertiesOut = propertiesIn;
                 wasChanged = false;
-                
+
             } else {
                 return false;
             }
         }
     }
-    // if we made it here, 
+    // if we made it here,
     return true;
 }
 
@@ -177,23 +177,23 @@ void EntityEditFilters::removeFilter(EntityItemID entityID) {
 void EntityEditFilters::addFilter(EntityItemID entityID, QString filterURL) {
 
     QUrl scriptURL(filterURL);
-    
-    // setting it to an empty string is same as removing 
+
+    // setting it to an empty string is same as removing
     if (filterURL.size() == 0) {
         removeFilter(entityID);
         return;
     }
-   
+
     // The following should be abstracted out for use in Agent.cpp (and maybe later AvatarMixer.cpp)
     if (scriptURL.scheme().isEmpty() || (scriptURL.scheme() == HIFI_URL_SCHEME_FILE)) {
         qWarning() << "Cannot load script from local filesystem, because assignment may be on a different computer.";
         scriptRequestFinished(entityID);
         return;
     }
-   
+
     // first remove any existing info for this entity
     removeFilter(entityID);
-    
+
     // reject all edits until we load the script
     FilterData filterData;
     filterData.rejectAll = true;
@@ -201,7 +201,7 @@ void EntityEditFilters::addFilter(EntityItemID entityID, QString filterURL) {
     _lock.lockForWrite();
     _filterDataMap.insert(entityID, filterData);
     _lock.unlock();
-   
+
     auto scriptRequest = DependencyManager::get<ResourceManager>()->createResourceRequest(
         this, scriptURL, true, -1, "EntityEditFilters::addFilter");
     if (!scriptRequest) {
@@ -232,18 +232,19 @@ static bool hasCorrectSyntax(const ScriptProgramPointer& program) {
 }
 static bool hadUncaughtExceptions(ScriptEngine& engine, const QString& fileName) {
     if (engine.hasUncaughtException()) {
-        const auto backtrace = engine.uncaughtExceptionBacktrace();
-        const auto exception = engine.uncaughtException().toString();
-        const auto line = QString::number(engine.uncaughtExceptionLineNumber());
+        //const auto backtrace = engine.uncaughtException().backtrace;
+        //const auto exception = engine.uncaughtException().toString();
+        //const auto line = QString::number(engine.uncaughtExceptionLineNumber());
+        qCritical() << engine.uncaughtException();
         engine.clearExceptions();
 
-        static const QString SCRIPT_EXCEPTION_FORMAT = "[UncaughtException] %1 in %2:%3";
-        auto message = QString(SCRIPT_EXCEPTION_FORMAT).arg(exception, fileName, line);
-        if (!backtrace.empty()) {
-            static const auto lineSeparator = "\n    ";
-            message += QString("\n[Backtrace]%1%2").arg(lineSeparator, backtrace.join(lineSeparator));
-        }
-        qCritical() << qPrintable(message);
+        //static const QString SCRIPT_EXCEPTION_FORMAT = "[UncaughtException] %1 in %2:%3";
+        //auto message = QString(SCRIPT_EXCEPTION_FORMAT).arg(exception, fileName, line);
+        //if (!backtrace.empty()) {
+        //    static const auto lineSeparator = "\n    ";
+        //    message += QString("\n[Backtrace]%1%2").arg(lineSeparator, backtrace.join(lineSeparator));
+        //}
+        //qCritical() << qPrintable(message);
         return true;
     }
     return false;
@@ -273,7 +274,7 @@ void EntityEditFilters::scriptRequestFinished(EntityItemID entityID) {
                 FilterData filterData;
                 filterData.engine = engine;
                 filterData.rejectAll = false;
-                
+
                 // define the uncaughtException function
                 ScriptEngine& engineRef = *engine;
                 filterData.uncaughtExceptions = [&engineRef, urlString]() { return hadUncaughtExceptions(engineRef, urlString); };
@@ -377,11 +378,11 @@ void EntityEditFilters::scriptRequestFinished(EntityItemID entityID) {
                 _lock.unlock();
 
                 qDebug() << "script request filter processed for entity id " << entityID;
-                
+
                 emit filterAdded(entityID, true);
                 return;
             }
-        } 
+        }
     } else if (scriptRequest) {
         const QString urlString = scriptRequest->getUrl().toString();
         qCritical() << "Failed to download script";

@@ -266,7 +266,6 @@ public:
  * qInfo() << "Done!"
  * @endcode
  *
- *
  * @note
  * Technically, the ScriptManager isn't generic enough -- it implements things that imitate
  * Node.js for examine in the module loading code, which makes it JS specific. This code
