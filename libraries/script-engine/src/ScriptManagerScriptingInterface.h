@@ -698,7 +698,11 @@ protected:
     Q_INVOKABLE void entityScriptContentAvailable(const EntityItemID& entityID, const QString& scriptOrURL, const QString& contents, bool isURL, bool success, const QString& status)
         { _manager->entityScriptContentAvailable(entityID, scriptOrURL, contents, isURL, success, status); }
 
+private slots:
+    void scriptManagerException(std::shared_ptr<ScriptException> exception);
+
 
 private:
+
     ScriptManager *_manager;
 };

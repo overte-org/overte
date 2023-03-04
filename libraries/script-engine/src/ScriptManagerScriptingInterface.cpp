@@ -30,5 +30,12 @@
         connect(_manager, &ScriptManager::doneRunning, this, &ScriptManagerScriptingInterface::doneRunning);
         connect(_manager, &ScriptManager::entityScriptDetailsUpdated, this, &ScriptManagerScriptingInterface::entityScriptDetailsUpdated);
         connect(_manager, &ScriptManager::entityScriptPreloadFinished, this, &ScriptManagerScriptingInterface::entityScriptPreloadFinished);
-        connect(_manager, &ScriptManager::unhandledException, this, &ScriptManagerScriptingInterface::unhandledException);
+        connect(_manager, &ScriptManager::unhandledException, this, &ScriptManagerScriptingInterface::scriptManagerException);
+    }
+
+    void ScriptManagerScriptingInterface::scriptManagerException(std::shared_ptr<ScriptException> exception) {
+        // V8TODO: What should we actually handle here?
+
+
+        // emit unhandledException(exception.thrownValue);
     }

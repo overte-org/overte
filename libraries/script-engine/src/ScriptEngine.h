@@ -180,14 +180,6 @@ public:
     virtual void clearExceptions() = 0;
 
     /**
-     * @brief Creates a clone of the current exception
-     *
-     * @param detail Additional text to add to the report
-     * @return ScriptValue Result
-     */
-    virtual ScriptValue cloneUncaughtException(const QString& detail = QString()) = 0;
-
-    /**
      * @brief Context of the currently running script
      *
      * This allows getting a backtrace, the local variables of the currently running function, etc.
@@ -275,34 +267,12 @@ public:
     virtual ScriptValue checkScriptSyntax(ScriptProgramPointer program) = 0;
 
     /**
-     * @brief Creates a ScriptValue that contains an error
-     *
-     * @param other
-     * @param type
-     * @return ScriptValue
-     */
-    virtual ScriptValue makeError(const ScriptValue& other = ScriptValue(), const QString& type = "Error") = 0;
-
-    /**
      * @brief Pointer to the ScriptManager that controls this scripting engine
      *
      * @return ScriptManager* ScriptManager
      */
     ScriptManager* manager() const { return _manager; }
 
-    /**
-     * @brief Emit the current uncaught exception if there is one
-     *
-     * If there's an uncaught exception, emit it, and clear the exception status.
-     *
-     * This fails if there's no uncaught exception, there's no ScriptManager,
-     * or the engine is evaluating.
-     *
-     * @param debugHint A debugging hint to be added to the error message
-     * @return true There was an uncaught exception, and it was emitted
-     * @return false There was no uncaught exception
-     */
-    virtual bool maybeEmitUncaughtException(const QString& debugHint = QString()) = 0;
     virtual ScriptValue newArray(uint length = 0) = 0;
     virtual ScriptValue newArrayBuffer(const QByteArray& message) = 0;
     virtual ScriptValue newFunction(FunctionSignature fun, int length = 0) {
@@ -324,13 +294,38 @@ public:
 
 
     /**
+     * @brief Make a ScriptValue that contains an error
+     *
+     * This is used to throw an error inside the running script
+     *
+     * @param other
+     * @param type
+     * @return ScriptValue ScriptValue containing error
+     */
+    virtual ScriptValue makeError(const ScriptValue& other, const QString& type = "Error") = 0;
+
+
+    /**
      * @brief Causes an exception to be raised in the currently executing script
      *
      * @param exception Exception to be thrown in the script
+     * @param reason Explanatory text about why the exception happened, for logging
      * @return true Exception was successfully thrown
      * @return false Exception couldn't be thrown because no script is running
      */
-    virtual bool raiseException(const ScriptValue& exception) = 0;
+    virtual bool raiseException(const ScriptValue& exception, const QString &reason = QString()) = 0;
+
+    /**
+     * @brief Causes an exception to be raised in the currently executing script
+     *
+     * @param error Exception to be thrown in the script
+     * @param reason Explanatory text about why the exception happened, for logging
+     * @return true Exception was successfully thrown
+     * @return false Exception couldn't be thrown because no script is running
+     */
+    virtual bool raiseException(const QString& error, const QString &reason = QString()) = 0;
+
+
     virtual void registerEnum(const QString& enumName, QMetaEnum newEnum) = 0;
     virtual void registerFunction(const QString& name, FunctionSignature fun, int numArguments = -1) = 0;
     virtual void registerFunction(const QString& parent, const QString& name, FunctionSignature fun, int numArguments = -1) = 0;
@@ -346,11 +341,14 @@ public:
     virtual ScriptValue undefinedValue() = 0;
 
     /**
-     * @brief Last uncaught exception, if any
+     * @brief Last uncaught exception, if any.
      *
-     * @return ScriptValue Uncaught exception from the script
+     * The returned shared pointer is newly allocated by the function,
+     * and modifying it has no effect on the internal state of the ScriptEngine.
+     *
+     * @return std::shared_ptr<ScriptValue> Uncaught exception from the script
      */
-    virtual ScriptException uncaughtException() const = 0;
+    virtual std::shared_ptr<ScriptException> uncaughtException() const = 0;
 
     virtual void updateMemoryCost(const qint64& deltaSize) = 0;
     virtual void requestCollectGarbage() = 0;
@@ -403,7 +401,7 @@ signals:
      *
      * @param exception Exception that was thrown
      */
-    void exception(const ScriptException &exception);
+    void exception(std::shared_ptr<ScriptException> exception);
 
 protected:
     ~ScriptEngine() {}  // prevent explicit deletion of base class
