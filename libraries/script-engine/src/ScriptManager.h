@@ -1172,6 +1172,14 @@ public:
      */
     Q_INVOKABLE QString getExternalPath(ExternalResource::Bucket bucket, const QString& path);
 
+
+    /**
+     * @brief Get the uncaught exception from the underlying script engine
+     *
+     * @return std::shared_ptr<ScriptException> Exception
+     */
+    std::shared_ptr<ScriptException> getUncaughtException() const;
+
 public slots:
 
     /**
