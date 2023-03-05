@@ -305,9 +305,10 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
         }
 
         // Unhandled exception kills the running script
-        stop(false);
-
-        logException(output);
+        if (_abortOnUncaughtException) {
+            stop(false);
+            logException(output);
+        }
     });
 #endif
 
@@ -909,7 +910,7 @@ void ScriptManager::run() {
         PROFILE_RANGE(script, _fileNameString);
         _returnValue = _engine->evaluate(_scriptContents, _fileNameString);
 
-        if (_engine->hasUncaughtException()) {
+        if (_engine->hasUncaughtException() && _abortOnUncaughtException) {
 
             qCWarning(scriptengine) << "Engine has uncaught exception, stopping";
             stop();
