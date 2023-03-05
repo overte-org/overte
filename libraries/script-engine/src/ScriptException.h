@@ -175,3 +175,12 @@ inline QDebug operator<<(QDebug debug, std::shared_ptr<ScriptException> e) {
     debug << *e.get();
     return debug;
 }
+
+Q_DECLARE_METATYPE(ScriptException)
+Q_DECLARE_METATYPE(ScriptEngineException)
+Q_DECLARE_METATYPE(ScriptRuntimeException)
+
+Q_DECLARE_METATYPE(std::shared_ptr<ScriptException>)
+Q_DECLARE_METATYPE(std::shared_ptr<ScriptEngineException>)
+Q_DECLARE_METATYPE(std::shared_ptr<ScriptRuntimeException>)
+
