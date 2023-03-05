@@ -32,6 +32,9 @@ QTEST_MAIN(ScriptEngineTests)
 
 
 
+
+
+
 void ScriptEngineTests::initTestCase() {
     // AudioClient starts networking, but for the purposes of the tests here we don't care,
     // so just got to use some port.
@@ -174,6 +177,47 @@ void ScriptEngineTests::testJSThrow() {
     QVERIFY(runtime_ex);
     QVERIFY(runtime_ex && runtime_ex->thrownValue.toInt32() == 42);
 }
+
+void ScriptEngineTests::testRegisterClass() {
+    QString printed;
+    auto sm = makeManager("print(testClass.invokableFunc(4)); Script.stop(true);", "testClass.js");
+    connect(sm.get(), &ScriptManager::printedMessage, [&printed](const QString& message, const QString& engineName){
+        printed.append(message);
+    });
+
+    sm->engine()->registerGlobalObject("testClass", new TestClass());
+
+    sm->run();
+
+    auto ex = sm->getUncaughtException();
+
+    QVERIFY(!ex);
+    QVERIFY(printed == "14");
+
+}
+
+void ScriptEngineTests::testInvokeNonInvokable() {
+    auto sm = makeManager("print(testClass.nonInvokableFunc(4)); Script.stop(true);", "testClass.js");
+    sm->engine()->registerGlobalObject("testClass", new TestClass());
+
+    sm->run();
+    auto ex = sm->getUncaughtException();
+
+    QVERIFY(ex);
+    QVERIFY(ex && ex->errorMessage.contains("TypeError"));
+}
+
+void ScriptEngineTests::testRaiseException() {
+    auto sm = makeManager("testClass.doRaiseTest(); Script.stop(true);", "testRaise.js");
+    sm->engine()->registerGlobalObject("testClass", new TestClass(sm->engine()));
+
+    sm->run();
+    auto ex = sm->getUncaughtException();
+
+    QVERIFY(ex);
+    QVERIFY(ex && ex->errorMessage.contains("Exception test"));
+}
+
 
 void ScriptEngineTests::scriptTest() {
     return;
