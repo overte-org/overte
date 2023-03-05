@@ -25,6 +25,8 @@ private slots:
     void scriptTest();
     void testTrivial();
     void testSyntaxError();
+    void testRuntimeError();
+    void testJSThrow();
 
 
 private:
