@@ -38,6 +38,9 @@ static const void *internalPointsToQObjectProxy = (void *)0x13370000;
 static const void *internalPointsToQVariantProxy = (void *)0x13371000;
 //static const void *internalPointsToSignalProxy = (void *)0x13372000;
 static const void *internalPointsToMethodProxy = (void *)0x13373000;
+// This is used to pass object in ScriptVariantV8Proxy to methods of prototype object, for example passing AnimationPointer to AnimationObject
+// Object is then converted using scriptvalue_cast for use inside the prototype
+static const void *internalPointsToQVariant = (void *)0x13374000;
 
 // Used strictly to replace the "this" object value for property access.  May expand to a full context element
 // if we find it necessary to, but hopefully not needed
@@ -703,6 +706,17 @@ void ScriptObjectV8Proxy::setProperty(V8ScriptValue& object, const V8ScriptStrin
 
 ScriptVariantV8Proxy::ScriptVariantV8Proxy(ScriptEngineV8* engine, const QVariant& variant, V8ScriptValue scriptProto, ScriptObjectV8Proxy* proto) :
     _engine(engine), _variant(variant), _scriptProto(scriptProto), _proto(proto) {
+    auto isolate = engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(engine->getContext());
+    auto variantDataTemplate = v8::ObjectTemplate::New(isolate);
+    variantDataTemplate->SetInternalFieldCount(2);
+    auto variantData = variantDataTemplate->NewInstance(engine->getContext()).ToLocalChecked();
+    variantData->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToQVariant));
+    variantData->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(&_variant));
+    _v8Object.Reset(isolate, v8::Local<v8::Object>::Cast(variantData));
     _name = QString::fromLatin1(variant.typeName());
 }
 
@@ -711,7 +725,7 @@ ScriptVariantV8Proxy::~ScriptVariantV8Proxy() {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    _v8ObjectTemplate.Reset();
+    //_v8ObjectTemplate.Reset();
     _v8Object.Reset();
 }
 
@@ -728,14 +742,15 @@ V8ScriptValue ScriptVariantV8Proxy::newVariant(ScriptEngineV8* engine, const QVa
         return V8ScriptValue(engine, v8::Undefined(isolate));
     }
     // V8TODO probably needs connection to be deleted
-    // V8TODO what to do with proto variable?
     auto proxy = new ScriptVariantV8Proxy(engine, variant, proto, protoProxy);
-    auto variantDataTemplate = v8::ObjectTemplate::New(isolate);
-    variantDataTemplate->SetInternalFieldCount(2);
-    auto variantData = variantDataTemplate->NewInstance(engine->getContext()).ToLocalChecked();
-    variantData->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToQVariantProxy));
-    variantData->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(proxy));
-    return V8ScriptValue(engine, variantData);
+
+    auto variantProxyTemplate = v8::ObjectTemplate::New(isolate);
+    variantProxyTemplate->SetInternalFieldCount(2);
+    variantProxyTemplate->SetHandler(v8::NamedPropertyHandlerConfiguration(v8Get, v8Set, nullptr, nullptr, v8GetPropertyNames));
+    auto variantProxy = variantProxyTemplate->NewInstance(engine->getContext()).ToLocalChecked();
+    variantProxy->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToQVariantProxy));
+    variantProxy->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(proxy));
+    return V8ScriptValue(engine, variantProxy);
 }
 
 ScriptVariantV8Proxy* ScriptVariantV8Proxy::unwrapProxy(const V8ScriptValue& val) {
@@ -759,9 +774,141 @@ ScriptVariantV8Proxy* ScriptVariantV8Proxy::unwrapProxy(const V8ScriptValue& val
     return reinterpret_cast<ScriptVariantV8Proxy*>(v8Object->GetAlignedPointerFromInternalField(1));
 }
 
+ScriptVariantV8Proxy* ScriptVariantV8Proxy::unwrapProxy(v8::Isolate* isolate, v8::Local<v8::Value> &value) {
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+
+    if (!value->IsObject()) {
+        return nullptr;
+    }
+    v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(value);
+    if (v8Object->InternalFieldCount() != 2) {
+        return nullptr;
+    }
+    if (v8Object->GetAlignedPointerFromInternalField(0) != internalPointsToQVariantProxy) {
+        return nullptr;
+    }
+    return reinterpret_cast<ScriptVariantV8Proxy*>(v8Object->GetAlignedPointerFromInternalField(1));
+}
+
+QVariant* ScriptVariantV8Proxy::unwrapQVariantPointer(v8::Isolate* isolate, const v8::Local<v8::Value> &value) {
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+
+    if (!value->IsObject()) {
+        return nullptr;
+    }
+    v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(value);
+    if (v8Object->InternalFieldCount() != 2) {
+        return nullptr;
+    }
+    if (v8Object->GetAlignedPointerFromInternalField(0) != internalPointsToQVariant) {
+        return nullptr;
+    }
+    return reinterpret_cast<QVariant*>(v8Object->GetAlignedPointerFromInternalField(1));
+}
+
+
+void ScriptVariantV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info) {
+    v8::HandleScope handleScope(info.GetIsolate());
+    v8::String::Utf8Value utf8Name(info.GetIsolate(), name);
+    v8::Local<v8::Value> objectV8 = info.This();
+    ScriptVariantV8Proxy *proxy = ScriptVariantV8Proxy::unwrapProxy(info.GetIsolate(), objectV8);
+    if (!proxy) {
+        qDebug(scriptengine) << "Proxy object not found when getting: " << *utf8Name;
+        return;
+    }
+    V8ScriptValue object(proxy->_engine, proxy->_v8Object.Get(info.GetIsolate()));
+
+    if (name->IsString()) {
+        V8ScriptString nameString(proxy->_engine, v8::Local<v8::String>::Cast(name));
+        uint id;
+        ScriptObjectV8Proxy::QueryFlags flags = proxy->_proto->queryProperty(object, nameString, ScriptObjectV8Proxy::HandlesReadAccess, &id);
+        if (flags) {
+            V8ScriptValue value = proxy->property(object, nameString, id);
+            info.GetReturnValue().Set(value.get());
+            return;
+        }
+    }
+
+    qDebug(scriptengine) << "Value not found: " << *utf8Name;
+    // V8TODO: this is done differently for variant proxy - use internal field of _v8Object instead?
+    /*v8::Local<v8::Value> property;
+    if(info.This()->GetInternalField(2).As<v8::Object>()->Get(proxy->_engine->getContext(), name).ToLocal(&property)) {
+        info.GetReturnValue().Set(property);
+    } else {
+        qDebug(scriptengine) << "Value not found: " << *utf8Value;
+    }*/
+}
+
+void ScriptVariantV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<v8::Value>& info) {
+    v8::HandleScope handleScope(info.GetIsolate());
+    v8::String::Utf8Value utf8Name(info.GetIsolate(), name);
+    v8::Local<v8::Value> objectV8 = info.This();
+    ScriptVariantV8Proxy *proxy = ScriptVariantV8Proxy::unwrapProxy(info.GetIsolate(), objectV8);
+    if (!proxy) {
+        qDebug(scriptengine) << "Proxy object not found when getting: " << *utf8Name;
+        return;
+    }
+
+    V8ScriptValue object(proxy->_engine, objectV8);
+    if (!name->IsString() && !name->IsSymbol()) {
+        QString notStringMessage("ScriptObjectV8Proxy::v8Set: " + proxy->_engine->scriptValueDebugDetailsV8(V8ScriptValue(proxy->_engine, name)));
+        qDebug(scriptengine) << notStringMessage;
+        Q_ASSERT(false);
+    }
+
+    if (name->IsString()) {
+        V8ScriptString nameString(proxy->_engine, v8::Local<v8::String>::Cast(name));
+        uint id;
+        ScriptObjectV8Proxy::QueryFlags flags = proxy->_proto->queryProperty(object, nameString, ScriptObjectV8Proxy::HandlesWriteAccess, &id);
+        if (flags) {
+            proxy->setProperty(object, nameString, id, V8ScriptValue(proxy->_engine, value));
+            info.GetReturnValue().Set(value);
+            return;
+        }
+    }
+    // V8TODO: this is done differently for variant proxy - use internal field of _v8Object instead?
+    /*if (info.This()->GetInternalField(2).As<v8::Object>()->Set(proxy->_engine->getContext(), name, value).FromMaybe(false)) {
+        info.GetReturnValue().Set(value);
+    } else {
+        qDebug(scriptengine) << "Set failed: " << *utf8Name;
+    }*/
+    qDebug(scriptengine) << "Set failed: " << *utf8Name;
+}
+
+void ScriptVariantV8Proxy::v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::Array>& info) {
+    qDebug(scriptengine) << "ScriptObjectV8Proxy::v8GetPropertyNames called";
+    v8::HandleScope handleScope(info.GetIsolate());
+    auto context = info.GetIsolate()->GetCurrentContext();
+    v8::Context::Scope contextScope(context);
+    v8::Local<v8::Value> objectV8 = info.This();
+    ScriptVariantV8Proxy *proxy = ScriptVariantV8Proxy::unwrapProxy(info.GetIsolate(), objectV8);
+    if (!proxy) {
+        qDebug(scriptengine) << "ScriptObjectV8Proxy::v8GetPropertyNames: Proxy object not found when listing";
+        return;
+    }
+    V8ScriptValue object(proxy->_engine, objectV8);
+    v8::Local<v8::Array> properties = proxy->_proto->getPropertyNames();
+    v8::Local<v8::Array> objectProperties;
+    // V8TODO: this is done differently for variant proxy - use internal field of _v8Object instead?
+    /*uint32_t propertiesLength = properties->Length();
+    if (info.This()->GetInternalField(2).As<v8::Object>()->GetPropertyNames(context).ToLocal(&objectProperties)) {
+        for (uint32_t n = 0; n < objectProperties->Length(); n++) {
+            if(!properties->Set(context, propertiesLength+n, objectProperties->Get(context, n).ToLocalChecked()).FromMaybe(false)) {
+                qDebug(scriptengine) << "ScriptObjectV8Proxy::v8GetPropertyNames: Cannot add member name";
+            }
+        }
+    }*/
+    info.GetReturnValue().Set(properties);
+}
+
 QVariant ScriptVariantV8Proxy::unwrap(const V8ScriptValue& val) {
     ScriptVariantV8Proxy* proxy = unwrapProxy(val);
     return proxy ? proxy->toQVariant() : QVariant();
+    // V8TODO
 }
 
 ScriptMethodV8Proxy::ScriptMethodV8Proxy(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime,
