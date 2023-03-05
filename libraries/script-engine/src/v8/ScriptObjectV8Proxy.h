@@ -115,17 +115,29 @@ private:  // storage
     InstanceMap _signalInstances;
     const bool _ownsObject;
     QPointer<QObject> _object;
-    // V8TODO Is this necessary?
-    // v8::UniquePersistent<v8::ObjectTemplate> _v8ObjectTemplate;
     // Handle for its own object
+    // V8TODO Maybe depending on object ownership it should be different type of handles? For example weak persistent would allow
+    // script engine-owned objects to be garbage collected. This will also need adding a garbage collector callback from V8
+    // to let proxy know that it is not valid anymore
     v8::UniquePersistent<v8::Object> _v8Object;
     int pointerCorruptionTest = 12345678;
 
     Q_DISABLE_COPY(ScriptObjectV8Proxy)
 };
 
-/// [V8] (re-)implements the translation layer between ScriptValue and QVariant where a prototype is set.
-/// This object depends on a ScriptObjectV8Proxy to provide the prototype's behavior
+/**
+ * @brief [V8] (re-)implements the translation layer between ScriptValue and QVariant where a prototype is set.
+ *
+ * This object depends on a ScriptObjectV8Proxy to provide the prototype's behavior.
+ * ScriptVariantV8Proxy uses prototype class which provides methods which operate on QVariant.
+ * Typically it's used for class with larger number of methods which has a simplified JS API.
+ * For example it's used to provide JS scripting interface to AnimationPointer by using methods of AnimationObject.
+ * To use this functionality, given type has to be registered with script engine together with its prototype:
+ *
+ * engine->setDefaultPrototype(qMetaTypeId<AnimationPointer>(), engine->newQObject(
+        new AnimationObject(), ScriptEngine::ScriptOwnership));
+ *
+ */
 class ScriptVariantV8Proxy final {
 public:  // construction
     ScriptVariantV8Proxy(ScriptEngineV8* engine, const QVariant& variant, V8ScriptValue scriptProto, ScriptObjectV8Proxy* proto);
@@ -134,6 +146,10 @@ public:  // construction
     static V8ScriptValue newVariant(ScriptEngineV8* engine, const QVariant& variant, V8ScriptValue proto);
     static ScriptVariantV8Proxy* unwrapProxy(const V8ScriptValue& val);
     static ScriptVariantV8Proxy* unwrapProxy(v8::Isolate* isolate, v8::Local<v8::Value> &value);
+    /**
+     * @brief Used to retrieve QVariant pointer contained inside script value. This is indirectly used by ScriptVariantV8Proxy
+     * getters and setters through scriptvalue_cast and ScriptEngineV8::castValueToVariant.
+     */
     static QVariant* unwrapQVariantPointer(v8::Isolate* isolate, const v8::Local<v8::Value> &value);
     static QVariant unwrap(const V8ScriptValue& val);
     inline QVariant toQVariant() const { return _variant; }

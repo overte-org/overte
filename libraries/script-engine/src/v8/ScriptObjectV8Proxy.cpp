@@ -33,8 +33,15 @@ Q_DECLARE_METATYPE(ScriptValue)
 Q_DECLARE_METATYPE(QSharedPointer<ScriptObjectV8Proxy>)
 Q_DECLARE_METATYPE(QSharedPointer<ScriptVariantV8Proxy>)
 
+
+// These values are put into internal fields of V8 objects, to signalize what kind of data is the pointer in another
+// internal field pointing to. Proxy unwrapping functions recognize proxies by checking for these values in internal field 0
+// of V8 object.
+
 // Value of internal field with index 0 when object contains ScriptObjectV8Proxy pointer in internal field 1
 static const void *internalPointsToQObjectProxy = (void *)0x13370000;
+// Internal field value of object pointing to ScriptObjectV8Proxy is changed to this value upon proxy's deletion
+static const void *internalPointsToDeletedQObjectProxy = (void *)0x13370008;
 static const void *internalPointsToQVariantProxy = (void *)0x13371000;
 //static const void *internalPointsToSignalProxy = (void *)0x13372000;
 static const void *internalPointsToMethodProxy = (void *)0x13373000;
@@ -211,8 +218,12 @@ ScriptObjectV8Proxy::~ScriptObjectV8Proxy() {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    _v8Object.Reset();
     if(_object) qDebug(scriptengine) << "Deleting object proxy: " << name();
+    // V8TODO: once WeakPersistent pointer is added we should check if it's valid before deleting
+    Q_ASSERT(!_v8Object.Get(isolate)->IsNullOrUndefined());
+    // This prevents unwrap function from unwrapping proxy that was deleted
+    _v8Object.Get(isolate)->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToDeletedQObjectProxy));
+    _v8Object.Reset();
     if (_ownsObject) {
         QObject* qobject = _object;
         if(qobject) qobject->deleteLater();
@@ -880,6 +891,7 @@ void ScriptVariantV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> 
 }
 
 void ScriptVariantV8Proxy::v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::Array>& info) {
+    //V8TODO: Only methods from the prototype should be listed.
     qDebug(scriptengine) << "ScriptObjectV8Proxy::v8GetPropertyNames called";
     v8::HandleScope handleScope(info.GetIsolate());
     auto context = info.GetIsolate()->GetCurrentContext();
