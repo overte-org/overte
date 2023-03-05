@@ -133,6 +133,8 @@ public:  // construction
 
     static V8ScriptValue newVariant(ScriptEngineV8* engine, const QVariant& variant, V8ScriptValue proto);
     static ScriptVariantV8Proxy* unwrapProxy(const V8ScriptValue& val);
+    static ScriptVariantV8Proxy* unwrapProxy(v8::Isolate* isolate, v8::Local<v8::Value> &value);
+    static QVariant* unwrapQVariantPointer(v8::Isolate* isolate, const v8::Local<v8::Value> &value);
     static QVariant unwrap(const V8ScriptValue& val);
     inline QVariant toQVariant() const { return _variant; }
     //inline QVariant toV8Value() const { return _variant; }
@@ -158,14 +160,17 @@ public:  // QScriptClass implementation
     virtual void setProperty(V8ScriptValue& object, const V8ScriptString& name, uint id, const V8ScriptValue& value) {
         return _proto->setProperty(object, name, id, value);
     }
+    static void v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info);
+    static void v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value_obj, const v8::PropertyCallbackInfo<v8::Value>& info);
+    static void v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::Array>& info);
 
-private:  // storage
+private:
     ScriptEngineV8* _engine;
     QVariant _variant;
     V8ScriptValue _scriptProto;
     ScriptObjectV8Proxy* _proto;
     QString _name;
-    v8::UniquePersistent<v8::ObjectTemplate> _v8ObjectTemplate;
+    //v8::UniquePersistent<v8::ObjectTemplate> _v8ObjectTemplate;
     v8::UniquePersistent<v8::Object> _v8Object;
 
     Q_DISABLE_COPY(ScriptVariantV8Proxy)
