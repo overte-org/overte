@@ -63,6 +63,8 @@ private slots:
     void testInvokeNonInvokable();
     void testRaiseException();
     void testRaiseExceptionAndCatch();
+    void testSignal();
+
 
 
 private:
