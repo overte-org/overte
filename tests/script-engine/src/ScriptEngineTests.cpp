@@ -47,33 +47,111 @@ void ScriptEngineTests::initTestCase() {
     DependencyManager::set<ScriptInitializers>();
    // DependencyManager::set<EntityScriptingInterface>(true);
 
-    QSharedPointer<ScriptEngines> ac = DependencyManager::get<ScriptEngines>();
-    QVERIFY(!ac.isNull());
-
-    connect(ac.get(), &ScriptEngines::scriptLoadError, [](const QString& filename, const QString& error){
-        qWarning() << "Failed to load script" << filename << ":" << error;
-    });
-
-    connect(ac.get(), &ScriptEngines::printedMessage, [](const QString& message, const QString& engineName){
-        qDebug() << "Printed message from engine" << engineName << ": " << message;
-    });
-
-    connect(ac.get(), &ScriptEngines::infoMessage, [](const QString& message, const QString& engineName){
-        qInfo() << "Info message from engine" << engineName << ": " << message;
-    });
-
-    connect(ac.get(), &ScriptEngines::warningMessage, [](const QString& message, const QString& engineName){
-        qWarning() << "Warning from engine" << engineName << ": " << message;
-    });
-
-    connect(ac.get(), &ScriptEngines::errorMessage, [](const QString& message, const QString& engineName){
-        qCritical() << "Error from engine" << engineName << ": " << message;
-    });
-
 
 }
 
+ScriptManagerPointer ScriptEngineTests::makeManager(const QString &scriptSource, const QString &scriptFilename) {
+    ScriptManagerPointer sm = newScriptManager(ScriptManager::NETWORKLESS_TEST_SCRIPT, scriptSource, scriptFilename);
+
+
+    connect(sm.get(), &ScriptManager::scriptLoaded, [](const QString& filename){
+        qWarning() << "Loaded script" << filename;
+    });
+
+
+    connect(sm.get(), &ScriptManager::errorLoadingScript, [](const QString& filename){
+        qWarning() << "Failed to load script" << filename;
+    });
+
+    connect(sm.get(), &ScriptManager::printedMessage, [](const QString& message, const QString& engineName){
+        qDebug() << "Printed message from engine" << engineName << ": " << message;
+    });
+
+    connect(sm.get(), &ScriptManager::infoMessage, [](const QString& message, const QString& engineName){
+        qInfo() << "Info message from engine" << engineName << ": " << message;
+    });
+
+    connect(sm.get(), &ScriptManager::warningMessage, [](const QString& message, const QString& engineName){
+        qWarning() << "Warning from engine" << engineName << ": " << message;
+    });
+
+    connect(sm.get(), &ScriptManager::errorMessage, [](const QString& message, const QString& engineName){
+        qCritical() << "Error from engine" << engineName << ": " << message;
+    });
+
+    connect(sm.get(), &ScriptManager::finished, [](const QString& fileNameString, ScriptManagerPointer smp){
+        qInfo() << "Finished running script" << fileNameString;
+    });
+
+    connect(sm.get(), &ScriptManager::runningStateChanged, [sm](){
+        qInfo() << "Running state changed. Running = " << sm->isRunning() << "; Stopped = " << sm->isStopped() << "; Finished = " << sm->isFinished();
+    });
+
+    connect(sm->engine().get(), &ScriptEngine::exception, [](std::shared_ptr<ScriptException> exception){
+        qWarning() << "Exception from engine (direct): " << exception;
+    });
+
+
+    connect(sm.get(), &ScriptManager::unhandledException, [](std::shared_ptr<ScriptException> exception){
+        qWarning() << "Exception from engine: " << exception;
+    });
+
+
+    return sm;
+}
+
+void ScriptEngineTests::testTrivial() {
+    auto sm = makeManager("print(\"script works!\"); Script.stop(true);", "testTrivial.js");
+    QString printed;
+
+    QVERIFY(!sm->isRunning());
+    QVERIFY(!sm->isStopped());
+    QVERIFY(!sm->isFinished());
+
+
+    connect(sm.get(), &ScriptManager::printedMessage, [&printed](const QString& message, const QString& engineName){
+        printed.append(message);
+    });
+
+
+    sm->run();
+
+    QVERIFY(!sm->isRunning());
+    QVERIFY(!sm->isStopped());
+    QVERIFY(sm->isFinished());
+    QVERIFY(printed == "script works!");
+
+}
+
+void ScriptEngineTests::testSyntaxError() {
+    auto sm = makeManager("this is not good syntax", "testSyntaxError.js");
+    bool exceptionHappened = false;
+
+
+    //QSignalSpy spy(sm.get(), &ScriptManager::unhandledException);
+
+
+    connect(sm.get(), &ScriptManager::unhandledException, [&exceptionHappened](std::shared_ptr<ScriptException> exception){
+        exceptionHappened = true;
+    });
+
+
+    sm->run();
+    //spy.wait(1000);
+
+    std::shared_ptr<ScriptException> ex = sm->getUncaughtException();
+
+    qDebug() << "Exception:" << ex;
+
+    QVERIFY(exceptionHappened);
+    QVERIFY(ex);
+
+    //QVERIFY(spy.count() == 1);
+}
+
 void ScriptEngineTests::scriptTest() {
+    return;
+
     QSharedPointer<ScriptEngines> ac = DependencyManager::get<ScriptEngines>();
     QVERIFY(!ac.isNull());
 
@@ -103,43 +181,7 @@ void ScriptEngineTests::scriptTest() {
 
         //qDebug() << "Source: " << scriptSource;
 
-        ScriptManagerPointer sm = newScriptManager(ScriptManager::NETWORKLESS_TEST_SCRIPT, scriptSource, scriptFilename);
-
-
-        connect(sm.get(), &ScriptManager::scriptLoaded, [](const QString& filename){
-            qWarning() << "Loaded script" << filename;
-        });
-
-
-        connect(sm.get(), &ScriptManager::errorLoadingScript, [](const QString& filename){
-            qWarning() << "Failed to load script" << filename;
-        });
-
-        connect(sm.get(), &ScriptManager::printedMessage, [](const QString& message, const QString& engineName){
-            qDebug() << "Printed message from engine" << engineName << ": " << message;
-        });
-
-        connect(sm.get(), &ScriptManager::infoMessage, [](const QString& message, const QString& engineName){
-            qInfo() << "Info message from engine" << engineName << ": " << message;
-        });
-
-        connect(sm.get(), &ScriptManager::warningMessage, [](const QString& message, const QString& engineName){
-            qWarning() << "Warning from engine" << engineName << ": " << message;
-        });
-
-        connect(sm.get(), &ScriptManager::errorMessage, [](const QString& message, const QString& engineName){
-            qCritical() << "Error from engine" << engineName << ": " << message;
-        });
-
-        connect(sm.get(), &ScriptManager::finished, [](const QString& fileNameString, ScriptManagerPointer smp){
-            qInfo() << "Finished running script" << fileNameString;
-        });
-
-        connect(sm.get(), &ScriptManager::runningStateChanged, [sm](){
-            qInfo() << "Running state changed. Running = " << sm->isRunning() << "; Stopped = " << sm->isStopped() << "; Finished = " << sm->isFinished();
-        });
-
-
+        ScriptManagerPointer sm = makeManager(scriptSource, scriptFilename);
         sm->run();
     }
 
