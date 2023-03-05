@@ -14,14 +14,22 @@
 #define overte_ScriptingEngineTests_h
 
 #include <QtTest/QtTest>
+#include "ScriptManager.h"
 
-
+using ScriptManagerPointer = std::shared_ptr<ScriptManager>;
 
 class ScriptEngineTests : public QObject {
     Q_OBJECT
 private slots:
     void initTestCase();
     void scriptTest();
+    void testTrivial();
+    void testSyntaxError();
+
+
+private:
+    ScriptManagerPointer makeManager(const QString &source, const QString &filename);
+
 };
 
 #endif // overte_ScriptingEngineTests_h
