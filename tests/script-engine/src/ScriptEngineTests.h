@@ -15,8 +15,40 @@
 
 #include <QtTest/QtTest>
 #include "ScriptManager.h"
+#include "ScriptEngine.h"
 
 using ScriptManagerPointer = std::shared_ptr<ScriptManager>;
+
+
+class TestClass : public QObject {
+    Q_OBJECT
+
+    public:
+        TestClass() {};
+
+        TestClass(ScriptEnginePointer ptr) : _engine(ptr) {};
+
+        Q_INVOKABLE int invokableFunc(int val) {
+            qDebug() << "invokableFunc called with value" << val;
+            return val + 10;
+        }
+
+        Q_INVOKABLE void doRaiseTest() {
+            qDebug() << "About to raise an exception";
+            _engine->raiseException("Exception test!");
+        }
+
+
+        int nonInvokableFunc(int val) {
+            qCritical() << "nonInvokableFunc called with value" << val;
+            return val + 20;
+        }
+
+    private:
+        ScriptEnginePointer _engine;
+
+};
+
 
 class ScriptEngineTests : public QObject {
     Q_OBJECT
@@ -27,6 +59,9 @@ private slots:
     void testSyntaxError();
     void testRuntimeError();
     void testJSThrow();
+    void testRegisterClass();
+    void testInvokeNonInvokable();
+    void testRaiseException();
 
 
 private:
