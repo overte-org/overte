@@ -1180,6 +1180,23 @@ public:
      */
     std::shared_ptr<ScriptException> getUncaughtException() const;
 
+    /**
+     * @brief Whether this engine will abort on an uncaught exception
+     *
+     * @warning This probably should be refactored into a more comprehensive per-script flags system
+     * @return true
+     * @return false
+     */
+    bool getAbortOnUncaughtException() const { return _abortOnUncaughtException; }
+
+    /**
+     * @brief Whether to abort on an uncaught exception
+     *
+     * @warning This probably should be refactored into a more comprehensive per-script flags system
+     * @param value
+     */
+    void setAbortOnUncaughtException(bool value) { _abortOnUncaughtException = value; }
+
 public slots:
 
     /**
@@ -1554,6 +1571,8 @@ protected:
     double _totalTimeInTimerEvents_s{ 0.0 };
 
     ScriptManagerScriptingInterfacePointer _scriptingInterface;
+
+    bool _abortOnUncaughtException{ false };
 
     friend ScriptManagerPointer newScriptManager(Context context, const QString& scriptContents, const QString& fileNameString);
     friend class ScriptManagerScriptingInterface;
