@@ -62,6 +62,7 @@ private slots:
     void testRegisterClass();
     void testInvokeNonInvokable();
     void testRaiseException();
+    void testRaiseExceptionAndCatch();
 
 
 private:
