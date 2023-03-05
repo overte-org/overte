@@ -261,6 +261,7 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
     _fileNameString(fileNameString),
     _assetScriptingInterface(new AssetScriptingInterface(this))
 {
+
     switch (_context) {
         case Context::CLIENT_SCRIPT:
             _type = Type::CLIENT;
@@ -278,6 +279,9 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
             _type = Type::NETWORKLESS_TEST;
             break;
     }
+
+    qRegisterMetaType<ScriptValue>();
+    qRegisterMetaType<std::function<void()>>();
 
     _scriptingInterface = std::make_shared<ScriptManagerScriptingInterface>(this);
 
