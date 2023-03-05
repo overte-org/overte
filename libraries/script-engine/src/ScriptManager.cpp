@@ -228,6 +228,10 @@ QString ScriptManager::logException(const ScriptValue& exception) {
     return message;
 }
 
+std::shared_ptr<ScriptException> ScriptManager::getUncaughtException() const {
+    return _engine->uncaughtException();
+}
+
 ScriptManagerPointer scriptManagerFactory(ScriptManager::Context context,
                                                  const QString& scriptContents,
                                                  const QString& fileNameString) {
@@ -302,6 +306,9 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
         logException(output);
     });
 #endif
+
+    // Forward exceptions from the scripting engine
+    connect(_engine.get(), &ScriptEngine::exception, this, &ScriptManager::unhandledException);
 
     if (_type == Type::ENTITY_CLIENT || _type == Type::ENTITY_SERVER) {
         QObject::connect(this, &ScriptManager::update, this, [this]() {
@@ -902,7 +909,8 @@ void ScriptManager::run() {
 
             qCWarning(scriptengine) << "Engine has uncaught exception, stopping";
             stop();
-            _engine->clearExceptions();
+            // V8TODO: Is clearing needed here?
+            //_engine->clearExceptions();
         }
     }
 #ifdef _WIN32
