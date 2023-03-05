@@ -250,7 +250,25 @@ void ScriptEngineTests::testRaiseExceptionAndCatch() {
 
 
 void ScriptEngineTests::testSignal() {
+    QString script =
+        "var count = 0;"
+        "Script.update.connect(function(deltaTime) {"
+        "    count++;"
+        "    print(deltaTime);"
+        "    if (count >= 10) {"
+        "        Script.stop(true);"
+        "    }"
+        "});";
 
+    QStringList printed;
+    auto sm = makeManager(script, "testSignal.js");
+
+    connect(sm.get(), &ScriptManager::printedMessage, [&printed](const QString& message, const QString& engineName){
+        printed.append(message);
+    });
+
+    sm->run();
+    QVERIFY(printed.length() >= 10);
 }
 
 
