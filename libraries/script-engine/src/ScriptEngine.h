@@ -71,7 +71,8 @@ inline T scriptvalue_cast(const ScriptValue& value);
  * To inject an exception into the running script, use raiseException(). This may result in the script
  * not capturing it and an uncaughtException happening as a result.
  */
-class ScriptEngine {
+class ScriptEngine : public QObject {
+    Q_OBJECT
 public:
 
     ScriptEngine(ScriptManager *manager = nullptr) : _manager(manager) {

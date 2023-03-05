@@ -57,7 +57,7 @@ const double GARBAGE_COLLECTION_TIME_LIMIT_S = 1.0;
 Q_DECLARE_METATYPE(ScriptEngine::FunctionSignature)
 
 /// [V8] Implements ScriptEngine for V8 and translates calls for QScriptEngine
-class ScriptEngineV8 final : public QObject, public ScriptEngine,
+class ScriptEngineV8 final : public ScriptEngine,
                                    public std::enable_shared_from_this<ScriptEngineV8> {
     Q_OBJECT
 
@@ -215,13 +215,6 @@ protected:
                                    const ValueOwnership& ownership = AutoOwnership);*/
 
     void registerSystemTypes();
-signals:
-    /**
-     * @brief The script being run threw an exception
-     *
-     * @param exception Exception that was thrown
-     */
-    void exception(std::shared_ptr<ScriptException> exception);
 
 protected:
     static QMutex _v8InitMutex;
