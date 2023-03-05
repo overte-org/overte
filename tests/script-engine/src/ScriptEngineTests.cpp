@@ -57,6 +57,8 @@ ScriptManagerPointer ScriptEngineTests::makeManager(const QString &scriptSource,
     ScriptManagerPointer sm = newScriptManager(ScriptManager::NETWORKLESS_TEST_SCRIPT, scriptSource, scriptFilename);
 
 
+    sm->setAbortOnUncaughtException(true);
+
     connect(sm.get(), &ScriptManager::scriptLoaded, [](const QString& filename){
         qWarning() << "Loaded script" << filename;
     });
@@ -227,8 +229,7 @@ void ScriptEngineTests::testRaiseExceptionAndCatch() {
         "        print(\"Caught!\");"
         "    }"
         "}"
-        "Script.stop(true);"
-        ;
+        "Script.stop(true);";
 
     QString printed;
     auto sm = makeManager(script, "testRaiseCatch.js");
@@ -245,6 +246,11 @@ void ScriptEngineTests::testRaiseExceptionAndCatch() {
 
     QVERIFY(!ex);
     QVERIFY(printed == "Caught!");
+}
+
+
+void ScriptEngineTests::testSignal() {
+
 }
 
 
