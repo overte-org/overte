@@ -218,6 +218,35 @@ void ScriptEngineTests::testRaiseException() {
     QVERIFY(ex && ex->errorMessage.contains("Exception test"));
 }
 
+void ScriptEngineTests::testRaiseExceptionAndCatch() {
+    QString script =
+        "try {"
+        "    testClass.doRaiseTest();"
+        "} catch (err) {"
+        "    if (err === \"Exception test!\") {"
+        "        print(\"Caught!\");"
+        "    }"
+        "}"
+        "Script.stop(true);"
+        ;
+
+    QString printed;
+    auto sm = makeManager(script, "testRaiseCatch.js");
+
+    connect(sm.get(), &ScriptManager::printedMessage, [&printed](const QString& message, const QString& engineName){
+        printed.append(message);
+    });
+
+
+    sm->engine()->registerGlobalObject("testClass", new TestClass(sm->engine()));
+
+    sm->run();
+    auto ex = sm->getUncaughtException();
+
+    QVERIFY(!ex);
+    QVERIFY(printed == "Caught!");
+}
+
 
 void ScriptEngineTests::scriptTest() {
     return;
