@@ -1540,7 +1540,11 @@ void ScriptEngineV8::setThread(QThread* thread) {
 
 
 std::shared_ptr<ScriptException> ScriptEngineV8::uncaughtException() const {
-    return _uncaughtException->clone();
+    if (_uncaughtException) {
+        return _uncaughtException->clone();
+    } else {
+        return std::shared_ptr<ScriptException>();
+    }
 }
 
 bool ScriptEngineV8::raiseException(const QString& error, const QString &reason) {
