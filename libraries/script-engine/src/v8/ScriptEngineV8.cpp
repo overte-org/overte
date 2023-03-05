@@ -172,27 +172,7 @@ ScriptValue ScriptEngineV8::checkScriptSyntax(ScriptProgramPointer program) {
     return undefinedValue();
 }*/
 
-bool ScriptEngineV8::raiseException(const V8ScriptValue& exception) {
-    if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
-        return false;
-    }
-    //V8TODO
-    // _v8Isolate->ThrowException(makeError(exception).get());
 
-
-    /*if (QScriptEngine::currentContext()) {
-        // we have an active context / JS stack frame so throw the exception per usual
-        QScriptEngine::currentContext()->throwValue(makeError(exception));
-        return true;
-    } else if (_scriptManager) {
-        // we are within a pure C++ stack frame (ie: being called directly by other C++ code)
-        // in this case no context information is available so just emit the exception for reporting
-        V8ScriptValue thrown = makeError(exception);
-        emit _scriptManager->unhandledException(ScriptValue(new ScriptValueV8Wrapper(this, std::move(thrown))));
-    }*/
-    //emit _scriptManager->unhandledException(ScriptValue(new ScriptValueV8Wrapper(this, std::move(thrown))));
-    return false;
-}
 
 // Lambda
 /*ScriptValue ScriptEngineV8::newLambdaFunction(std::function<V8ScriptValue(V8ScriptContext*, ScriptEngineV8*)> operation,
@@ -1548,7 +1528,7 @@ std::shared_ptr<ScriptException> ScriptEngineV8::uncaughtException() const {
 }
 
 bool ScriptEngineV8::raiseException(const QString& error, const QString &reason) {
-    return raiseException(ScriptValue(), reason);
+    return raiseException(newValue(error), reason);
 }
 
 bool ScriptEngineV8::raiseException(const ScriptValue& exception, const QString &reason) {
@@ -1561,9 +1541,37 @@ bool ScriptEngineV8::raiseException(const ScriptValue& exception, const QString 
   //  emit
     //return raiseException(qException);
 
-    qCCritical(scriptengine) << "Raise exception for reason" << reason << "NOT IMPLEMENTED!";
+//    qCCritical(scriptengine) << "Raise exception for reason" << reason << "NOT IMPLEMENTED!";
+//    return false;
+
+    return raiseException(ScriptValueV8Wrapper::fullUnwrap(this, exception));
+}
+
+
+
+bool ScriptEngineV8::raiseException(const V8ScriptValue& exception) {
+    if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
+        return false;
+    }
+
+
+    _v8Isolate->ThrowException(exception.constGet());
+
+
+    /*if (QScriptEngine::currentContext()) {
+        // we have an active context / JS stack frame so throw the exception per usual
+        QScriptEngine::currentContext()->throwValue(makeError(exception));
+        return true;
+    } else if (_scriptManager) {
+        // we are within a pure C++ stack frame (ie: being called directly by other C++ code)
+        // in this case no context information is available so just emit the exception for reporting
+        V8ScriptValue thrown = makeError(exception);
+        emit _scriptManager->unhandledException(ScriptValue(new ScriptValueV8Wrapper(this, std::move(thrown))));
+    }*/
+    //emit _scriptManager->unhandledException(ScriptValue(new ScriptValueV8Wrapper(this, std::move(thrown))));
     return false;
 }
+
 
 ScriptValue ScriptEngineV8::create(int type, const void* ptr) {
     v8::Locker locker(_v8Isolate);
