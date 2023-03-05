@@ -1020,7 +1020,7 @@ void ScriptEngineV8::setUncaughtException(const v8::TryCatch &tryCatch, const QS
         return;
     }
 
-    auto ex = std::make_shared<ScriptException>();
+    auto ex = std::make_shared<ScriptRuntimeException>();
     ex->additionalInfo = info;
 
     v8::Locker locker(_v8Isolate);
@@ -1035,6 +1035,10 @@ void ScriptEngineV8::setUncaughtException(const v8::TryCatch &tryCatch, const QS
     v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Message()->Get());
 
     ex->errorMessage = QString(*utf8Value);
+
+    auto exceptionValue = tryCatch.Exception();
+    ex->thrownValue =  ScriptValue(new ScriptValueV8Wrapper(this, V8ScriptValue(this, exceptionValue)));
+
 
     v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
     if (!exceptionMessage.IsEmpty()) {
