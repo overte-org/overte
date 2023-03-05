@@ -672,7 +672,11 @@ protected:
      * @param {ConnectionType} [type=2] - Connection type.
      * @deprecated This function is deprecated and will be removed.
      */
-    Q_INVOKABLE void executeOnScriptThread(std::function<void()> function, const Qt::ConnectionType& type = Qt::QueuedConnection ) { _manager->executeOnScriptThread(function, type);}
+    // V8TODO: Nothing seems to be using this, and it generates:
+    // hifi.scriptengine: Parameter  1 in method  ScriptManagerScriptingInterface :: "executeOnScriptThread"  is of type QMetaType::UnknownType
+    // so removing for now.
+    //
+    // Q_INVOKABLE void executeOnScriptThread(std::function<void()> function, const Qt::ConnectionType& type = Qt::QueuedConnection ) { _manager->executeOnScriptThread(function, type);}
 
     /**jsdoc
      * @function Script._requireResolve
