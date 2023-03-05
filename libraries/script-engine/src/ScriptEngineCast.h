@@ -44,6 +44,8 @@ inline ScriptValue scriptValueFromValue<QVariant>(ScriptEngine* engine, const QV
     return engine->create(v.userType(), v.data());
 }
 
+// V8TODO: check if it's typesafe
+// V8TODO: run through debugger for AnimationPointer/AnimationObject
 template <typename T>
 inline T scriptvalue_cast(const ScriptValue& value) {
     const int id = qMetaTypeId<T>();
@@ -62,6 +64,7 @@ inline T scriptvalue_cast(const ScriptValue& value) {
     return T();
 }
 
+// V8TODO: check if it's typesafe
 template <>
 inline QVariant scriptvalue_cast<QVariant>(const ScriptValue& value) {
     return value.toVariant();
