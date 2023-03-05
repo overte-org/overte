@@ -87,11 +87,6 @@ ScriptManagerPointer ScriptEngineTests::makeManager(const QString &scriptSource,
         qInfo() << "Running state changed. Running = " << sm->isRunning() << "; Stopped = " << sm->isStopped() << "; Finished = " << sm->isFinished();
     });
 
-    connect(sm->engine().get(), &ScriptEngine::exception, [](std::shared_ptr<ScriptException> exception){
-        qWarning() << "Exception from engine (direct): " << exception;
-    });
-
-
     connect(sm.get(), &ScriptManager::unhandledException, [](std::shared_ptr<ScriptException> exception){
         qWarning() << "Exception from engine: " << exception;
     });
@@ -127,17 +122,12 @@ void ScriptEngineTests::testSyntaxError() {
     auto sm = makeManager("this is not good syntax", "testSyntaxError.js");
     bool exceptionHappened = false;
 
-
-    //QSignalSpy spy(sm.get(), &ScriptManager::unhandledException);
-
-
     connect(sm.get(), &ScriptManager::unhandledException, [&exceptionHappened](std::shared_ptr<ScriptException> exception){
         exceptionHappened = true;
     });
 
 
     sm->run();
-    //spy.wait(1000);
 
     std::shared_ptr<ScriptException> ex = sm->getUncaughtException();
 
@@ -145,8 +135,44 @@ void ScriptEngineTests::testSyntaxError() {
 
     QVERIFY(exceptionHappened);
     QVERIFY(ex);
+    QVERIFY(ex && ex->errorMessage.contains("SyntaxError"));
+}
 
-    //QVERIFY(spy.count() == 1);
+
+void ScriptEngineTests::testRuntimeError() {
+    auto sm = makeManager("nonexisting();", "testRuntimeError.js");
+    bool exceptionHappened = false;
+
+    connect(sm.get(), &ScriptManager::unhandledException, [&exceptionHappened](std::shared_ptr<ScriptException> exception){
+        exceptionHappened = true;
+    });
+
+
+    sm->run();
+
+    std::shared_ptr<ScriptException> ex = sm->getUncaughtException();
+
+    qDebug() << "Exception:" << ex;
+
+    QVERIFY(exceptionHappened);
+    QVERIFY(ex);
+    QVERIFY(ex && ex->errorMessage.contains("ReferenceError"));
+
+}
+
+void ScriptEngineTests::testJSThrow() {
+    auto sm = makeManager("throw(42);", "testThrow.js");
+    sm->run();
+
+    std::shared_ptr<ScriptException> ex = sm->getUncaughtException();
+
+    qDebug() << "Exception:" << ex;
+
+    auto runtime_ex = std::dynamic_pointer_cast<ScriptRuntimeException>(ex);
+
+    QVERIFY(ex);
+    QVERIFY(runtime_ex);
+    QVERIFY(runtime_ex && runtime_ex->thrownValue.toInt32() == 42);
 }
 
 void ScriptEngineTests::scriptTest() {
