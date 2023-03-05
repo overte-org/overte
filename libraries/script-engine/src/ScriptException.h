@@ -167,15 +167,11 @@ inline QDebug operator<<(QDebug debug, const ScriptException& e) {
 
 // Is this a bad practice?
 inline QDebug operator<<(QDebug debug, std::shared_ptr<ScriptException> e) {
-    debug << "Exception:"
-        << e->errorMessage
-        << (e->additionalInfo.isEmpty() ? QString("") : "[" + e->additionalInfo + "]")
-        << " at line " << e->errorLine << ", column " << e->errorColumn;
-
-    if (e->backtrace.length()) {
-        debug << "Backtrace:";
-        debug << e->backtrace;
+    if (!e) {
+        debug << "[Null ScriptException]";
+        return debug;
     }
 
+    debug << *e.get();
     return debug;
 }
