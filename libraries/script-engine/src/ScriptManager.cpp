@@ -1118,7 +1118,7 @@ void ScriptManager::timerFired() {
 
     _timerCallCounter++;
     if (_timerCallCounter % 100 == 0) {
-        qDebug() << "Script engine: " << _engine->manager()->getFilename()
+        qCDebug(scriptengine) << "Script engine: " << _engine->manager()->getFilename()
                  << "timer call count: " << _timerCallCounter << " total time: " << _totalTimeInTimerEvents_s;
     }
     QElapsedTimer callTimer;
@@ -1201,7 +1201,7 @@ void ScriptManager::stopTimer(QTimer *timer) {
 }
 
 QUrl ScriptManager::resolvePath(const QString& include) const {
-    //qDebug(scriptengine) << "ScriptManager::resolvePath: getCurrentScriptURLs: " << _engine->getCurrentScriptURLs();
+    //qCDebug(scriptengine) << "ScriptManager::resolvePath: getCurrentScriptURLs: " << _engine->getCurrentScriptURLs();
     QUrl url(include);
     // first lets check to see if it's already a full URL -- or a Windows path like "c:/"
     if (include.startsWith("/") || url.scheme().length() == 1) {
@@ -1219,7 +1219,7 @@ QUrl ScriptManager::resolvePath(const QString& include) const {
     do {
         auto contextInfo = context->functionContext();
         parentURL = QUrl(contextInfo->fileName());
-        //qDebug(scriptengine) << "ScriptManager::resolvePath: URL get: " << parentURL << " backtrace: " << context->backtrace() << " " << _engine->getCurrentScriptURLs();
+        //qCDebug(scriptengine) << "ScriptManager::resolvePath: URL get: " << parentURL << " backtrace: " << context->backtrace() << " " << _engine->getCurrentScriptURLs();
         parentContext = context->parentContext();
         context = parentContext.get();
     } while (parentURL.isRelative() && context);
@@ -1420,7 +1420,7 @@ ScriptValue ScriptManager::newModule(const QString& modulePath, const ScriptValu
     // module.require is a bound version of require that always resolves relative to that module's path
     auto boundRequire = _engine->evaluate("(function(id) { return Script.require(Script.require.resolve(id, this.filename)); })", "(boundRequire)");
     module.setProperty("require", boundRequire, READONLY_PROP_FLAGS);
-    //qDebug() << "Module object contents" << _engine->scriptValueDebugListMembers(module);
+    //qCDebug(scriptengine) << "Module object contents" << _engine->scriptValueDebugListMembers(module);
     return module;
 }
 
@@ -1818,12 +1818,12 @@ QVariant ScriptManager::cloneEntityScriptDetails(const EntityItemID& entityID) {
         map["errorInfo"] = "Error: getEntityScriptDetails -- invalid entityID";
     } else {
 #ifdef DEBUG_ENTITY_STATES
-        qDebug() << "cloneEntityScriptDetails" << entityID << QThread::currentThread();
+        qCDebug(scriptengine) << "cloneEntityScriptDetails" << entityID << QThread::currentThread();
 #endif
         EntityScriptDetails scriptDetails;
         if (getEntityScriptDetails(entityID, scriptDetails)) {
 #ifdef DEBUG_ENTITY_STATES
-            qDebug() << "gotEntityScriptDetails" << scriptDetails.status << QThread::currentThread();
+            qCDebug(scriptengine) << "gotEntityScriptDetails" << scriptDetails.status << QThread::currentThread();
 #endif
             map["isRunning"] = isEntityScriptRunning(entityID);
             map["status"] = EntityScriptStatus_::valueToKey(scriptDetails.status).toLower();
@@ -1841,7 +1841,7 @@ QVariant ScriptManager::cloneEntityScriptDetails(const EntityItemID& entityID) {
 #endif
         } else {
 #ifdef DEBUG_ENTITY_STATES
-            qDebug() << "!gotEntityScriptDetails" <<  QThread::currentThread();
+            qCDebug(scriptengine) << "!gotEntityScriptDetails" <<  QThread::currentThread();
 #endif
             map["isError"] = true;
             map["errorInfo"] = "Entity script details unavailable";
@@ -2130,7 +2130,7 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
         }
       // ENTITY SCRIPT WHITELIST ENDS HERE, uncomment below for original full disabling.
 
-      // qDebug() << "(disabled entity script)" << entityID.toString() << scriptOrURL;
+      // qCDebug(scriptengine) << "(disabled entity script)" << entityID.toString() << scriptOrURL;
       // exception = makeError("UNSAFE_ENTITY_SCRIPTS == 0");
     }
 
@@ -2421,7 +2421,7 @@ void ScriptManager::callEntityScriptMethod(const EntityItemID& entityID, const Q
                 }
             }
             if (!callAllowed) {
-                qDebug() << "Method [" << methodName << "] not remotely callable.";
+                qCDebug(scriptengine) << "Method [" << methodName << "] not remotely callable.";
             }
         }
 

@@ -360,7 +360,7 @@ void ScriptEngines::loadScripts() {
 void ScriptEngines::saveScripts() {
     // Do not save anything if we are in the process of shutting down
     if (qApp->closingDown()) {
-        qWarning() << "Trying to save scripts during shutdown.";
+        qCWarning(scriptengine) << "Trying to save scripts during shutdown.";
         return;
     }
 

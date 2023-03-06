@@ -259,7 +259,7 @@ public:
  *
  * ScriptManagerPointer sm = newScriptManager(ScriptManager::NETWORKLESS_TEST_SCRIPT, scriptSource, scriptFilename);
  * connect(sm.get(), &ScriptManager::printedMessage, [](const QString& message, const QString& engineName){
- *     qDebug() << "Printed message from engine" << engineName << ": " << message;
+ *     qCDebug(scriptengine) << "Printed message from engine" << engineName << ": " << message;
  * });
  *
  * qInfo() << "Running script!";
