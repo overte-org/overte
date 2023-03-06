@@ -96,7 +96,7 @@ V8ScriptValue ScriptObjectV8Proxy::newQObject(ScriptEngineV8* engine, QObject* o
             //if (proxy) return engine->newObject(proxy.get(), engine->newVariant(QVariant::fromValue(proxy)));;
         }
     }
-    
+
     bool ownsObject;
     switch (ownership) {
         case ScriptEngine::QtOwnership:
@@ -243,12 +243,12 @@ void ScriptObjectV8Proxy::investigate() {
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(_engine->getIsolate());
     v8::Context::Scope contextScope(_engine->getContext());
-    
+
     //auto objectTemplate = _v8ObjectTemplate.Get(_engine->getIsolate());
     auto objectTemplate = v8::ObjectTemplate::New(_engine->getIsolate());
     objectTemplate->SetInternalFieldCount(3);
     objectTemplate->SetHandler(v8::NamedPropertyHandlerConfiguration(v8Get, v8Set, nullptr, nullptr, v8GetPropertyNames));
-    
+
     const QMetaObject* metaObject = qobject->metaObject();
 
     //qDebug(scriptengine) << "Investigate: " << metaObject->className();
@@ -286,7 +286,7 @@ void ScriptObjectV8Proxy::investigate() {
     for (int idx = startIdx; idx < num; ++idx) {
         QMetaMethod method = metaObject->method(idx);
         //qDebug(scriptengine) << "Investigate: " << metaObject->className() << " Method: " << method.name();
-        
+
         // perhaps keep this comment?  Calls (like AudioScriptingInterface::playSound) seem to expect non-public methods to be script-accessible
         /* if (method.access() != QMetaMethod::Public) continue;*/
 
@@ -1011,12 +1011,12 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
         isolate->ThrowError("Referencing deleted native object");
         return;
     }
-    
+
     //v8::HandleScope handleScope(_engine->getIsolate());
 
     int scriptNumArgs = arguments.Length();
     int numArgs = std::min(scriptNumArgs, _numMaxParams);
-    
+
     const int scriptValueTypeId = qMetaTypeId<ScriptValue>();
 
     int parameterConversionFailureId = 0;
@@ -1202,7 +1202,7 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
 
     int scriptNumArgs = context->argumentCount();
     int numArgs = std::min(scriptNumArgs, _numMaxParams);
-    
+
     const int scriptValueTypeId = qMetaTypeId<ScriptValue>();
 
     int parameterConversionFailureId = 0;
@@ -1474,6 +1474,8 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
                     qCDebug(scriptengine) << "Signal proxy " << fullName() << " connection call failed: \""
                                           << _engine->formatErrorMessageFromTryCatch(tryCatch)
                                           << "\nThis provided: " << conn.thisValue.get()->IsObject();
+
+                    _engine->setUncaughtException(tryCatch, "Error in signal proxy");
                 }
                 //_engine->popContext();
             }
@@ -1524,7 +1526,7 @@ void ScriptSignalV8Proxy::connect(ScriptValue arg0, ScriptValue arg1) {
         isolate->ThrowError("Referencing deleted native object");
         return;
     }
-    
+
     //v8::HandleScope handleScope(isolate);
 
     // untangle the arguments
@@ -1630,7 +1632,7 @@ void ScriptSignalV8Proxy::connect(ScriptValue arg0, ScriptValue arg1) {
     Connection newConnection(callbackThis, callback);
     //newConn.callback = callback;
     //newConn.thisValue = callbackThis;
-    
+
     withWriteLock([&]{
         _connections.append(newConnection);
     });
