@@ -71,20 +71,17 @@ bool ScriptEngineV8::IS_THREADSAFE_INVOCATION(const QThread* thread, const QStri
     return false;
 }
 
-// engine-aware JS Error copier and factory
-V8ScriptValue ScriptEngineV8::makeError(const V8ScriptValue& _other, const QString& type) {
+ScriptValue ScriptEngineV8::makeError(const ScriptValue& _other, const QString& type) {
     if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
-        v8::Locker locker(_v8Isolate);
-        v8::Isolate::Scope isolateScope(_v8Isolate);
-        v8::HandleScope handleScope(_v8Isolate);
-        v8::Context::Scope contextScope(getContext());
-        return V8ScriptValue(this, v8::Null(_v8Isolate));
+        return nullValue();
     }
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(getContext());
-    return V8ScriptValue(this, v8::Null(_v8Isolate));
+    return nullValue();
+}
+
     //V8TODO
     /*
     auto other = _other;
@@ -117,33 +114,8 @@ V8ScriptValue ScriptEngineV8::makeError(const V8ScriptValue& _other, const QStri
         err.setProperty(it.name(), it.value());
     }
     return err;*/
-}
+//}
 
-ScriptValue ScriptEngineV8::makeError(const ScriptValue& _other, const QString& type) {
-    if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
-        return nullValue();
-    }
-    v8::Locker locker(_v8Isolate);
-    v8::Isolate::Scope isolateScope(_v8Isolate);
-    v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(getContext());
-    return nullValue();
-
-    //V8TODO
-    //what does makeError actually do?
-    /*ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(_other);
-    V8ScriptValue other;
-    if (_other.isString()) {
-        other = QScriptEngine::newObject();
-        other.setProperty("message", _other.toString());
-    } else if (unwrapped) {
-        other = unwrapped->toV8Value();
-    } else {
-        other = QScriptEngine::newVariant(_other.toVariant());
-    }
-    V8ScriptValue result = makeError(other, type);
-    return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));*/
-}
 
 // check syntax and when there are issues returns an actual "SyntaxError" with the details
 ScriptValue ScriptEngineV8::checkScriptSyntax(ScriptProgramPointer program) {
@@ -200,107 +172,7 @@ ScriptValue ScriptEngineV8::checkScriptSyntax(ScriptProgramPointer program) {
     return undefinedValue();
 }*/
 
-// this pulls from the best available information to create a detailed snapshot of the current exception
-ScriptValue ScriptEngineV8::cloneUncaughtException(const QString& extraDetail) {
-    if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
-        return nullValue();
-    }
-    if (!hasUncaughtException()) {
-        return nullValue();
-    }
-    v8::Locker locker(_v8Isolate);
-    v8::Isolate::Scope isolateScope(_v8Isolate);
-    v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(getContext());
-    return nullValue();
-    //V8TODO
-    /*
-    auto exception = uncaughtException();
-    // ensure the error object is engine-local
-    auto err = makeError(exception);
 
-    // not sure why Qt does't offer uncaughtExceptionFileName -- but the line number
-    // on its own is often useless/wrong if arbitrarily married to a filename.
-    // when the error object already has this info, it seems to be the most reliable
-    auto fileName = exception.property("fileName").toString();
-    auto lineNumber = exception.property("lineNumber").toInt32();
-
-    // the backtrace, on the other hand, seems most reliable taken from uncaughtExceptionBacktrace
-    auto backtrace = uncaughtExceptionBacktrace();
-    if (backtrace.isEmpty()) {
-        // fallback to the error object
-        backtrace = exception.property("stack").toString().split(ScriptManager::SCRIPT_BACKTRACE_SEP);
-    }
-    // the ad hoc "detail" property can be used now to embed additional clues
-    auto detail = exception.property("detail").toString();
-    if (detail.isEmpty()) {
-        detail = extraDetail;
-    } else if (!extraDetail.isEmpty()) {
-        detail += "(" + extraDetail + ")";
-    }
-    if (lineNumber <= 0) {
-        lineNumber = uncaughtExceptionLineNumber();
-    }
-    if (fileName.isEmpty()) {
-        // climb the stack frames looking for something useful to display
-        for (auto c = QScriptEngine::currentContext(); c && fileName.isEmpty(); c = c->parentContext()) {
-            V8ScriptContextInfo info{ c };
-            if (!info.fileName().isEmpty()) {
-                // take fileName:lineNumber as a pair
-                fileName = info.fileName();
-                lineNumber = info.lineNumber();
-                if (backtrace.isEmpty()) {
-                    backtrace = c->backtrace();
-                }
-                break;
-            }
-        }
-    }
-    err.setProperty("fileName", fileNlintame);
-    err.setProperty("lineNumber", lineNumber);
-    err.setProperty("detail", detail);
-    err.setProperty("stack", backtrace.join(ScriptManager::SCRIPT_BACKTRACE_SEP));
-
-#ifdef DEBUG_JS_EXCEPTIONS
-    err.setProperty("_fileName", exception.property("fileName").toString());
-    err.setProperty("_stack", uncaughtExceptionBacktrace().join(SCRIPT_BACKTRACE_SEP));
-    err.setProperty("_lineNumber", uncaughtExceptionLineNumber());
-#endif
-    return err;
-    */
-}
-
-bool ScriptEngineV8::raiseException(const V8ScriptValue& exception) {
-    if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
-        return false;
-    }
-    //V8TODO
-    _v8Isolate->ThrowException(makeError(exception).get());
-    /*if (QScriptEngine::currentContext()) {
-        // we have an active context / JS stack frame so throw the exception per usual
-        QScriptEngine::currentContext()->throwValue(makeError(exception));
-        return true;
-    } else if (_scriptManager) {
-        // we are within a pure C++ stack frame (ie: being called directly by other C++ code)
-        // in this case no context information is available so just emit the exception for reporting
-        V8ScriptValue thrown = makeError(exception);
-        emit _scriptManager->unhandledException(ScriptValue(new ScriptValueV8Wrapper(this, std::move(thrown))));
-    }*/
-    //emit _scriptManager->unhandledException(ScriptValue(new ScriptValueV8Wrapper(this, std::move(thrown))));
-    return false;
-}
-
-bool ScriptEngineV8::maybeEmitUncaughtException(const QString& debugHint) {
-    if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
-        return false;
-    }
-    if (!isEvaluating() && hasUncaughtException() && _scriptManager) {
-        emit _scriptManager->unhandledException(cloneUncaughtException(debugHint));
-        clearExceptions();
-        return true;
-    }
-    return false;
-}
 
 // Lambda
 /*ScriptValue ScriptEngineV8::newLambdaFunction(std::function<V8ScriptValue(V8ScriptContext*, ScriptEngineV8*)> operation,
@@ -388,8 +260,7 @@ v8::Platform* ScriptEngineV8::getV8Platform() {
     return platform.get();
 }
 
-ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
-    _scriptManager(scriptManager), _evaluatingCounter(0)
+ScriptEngineV8::ScriptEngineV8(ScriptManager *manager) : ScriptEngine(manager), _evaluatingCounter(0)
     //V8TODO
     //_arrayBufferClass(new ArrayBufferClass(this))
 {
@@ -451,7 +322,7 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
 
     //_currentThread = QThread::currentThread();
 
-    if (_scriptManager) {
+    //if (_scriptManager) {
         // V8TODO: port to V8
         /*connect(this, &QScriptEngine::signalHandlerException, this, [this](const V8ScriptValue& exception) {
             if (hasUncaughtException()) {
@@ -466,7 +337,7 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager* scriptManager) :
         }, Qt::DirectConnection);*/
         //moveToThread(scriptManager->thread());
         //setThread(scriptManager->thread());
-    }
+    //}
 }
 
 void ScriptEngineV8::registerEnum(const QString& enumName, QMetaEnum newEnum) {
@@ -1016,12 +887,11 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             }
 
             if (hasUncaughtException()) {
-                auto err = cloneUncaughtException(__FUNCTION__);
 #ifdef DEBUG_JS_EXCEPTIONS
                 qCWarning(shared) << __FUNCTION__ << "---------- hasCaught:" << err.toString() << result.toString();
                 err.setProperty("_result", result);
 #endif
-                result = err;
+                result = nullValue();
             } else {
                 result = ScriptValue(new ScriptValueV8Wrapper(this, V8ScriptValue(this, v8Result)));
             }
@@ -1044,10 +914,6 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
 }
 
 ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& fileName) {
-    if (_scriptManager && _scriptManager->isStopped()) {
-        return undefinedValue(); // bail early
-    }
-
     //V8TODO
 
     if (QThread::currentThread() != thread()) {
@@ -1074,34 +940,9 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
     v8::ScriptOrigin scriptOrigin(getIsolate(), v8::String::NewFromUtf8(getIsolate(), fileName.toStdString().c_str()).ToLocalChecked());
     v8::Local<v8::Script> script;
     if (!v8::Script::Compile(getContext(), v8::String::NewFromUtf8(getIsolate(), sourceCode.toStdString().c_str()).ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
-        //V8TODO replace this with external function
-        int errorColumnNumber = 0;
-        int errorLineNumber = 0;
-        QString errorMessage = "";
-        QString errorBacktrace = "";
-        //v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Exception());
-        v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Message()->Get());
-        errorMessage = QString(*utf8Value);
-        v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
-        if (!exceptionMessage.IsEmpty()) {
-            errorLineNumber = exceptionMessage->GetLineNumber(getContext()).FromJust();
-            errorColumnNumber = exceptionMessage->GetStartColumn(getContext()).FromJust();
-            v8::Local<v8::Value> backtraceV8String;
-            if (tryCatch.StackTrace(getContext()).ToLocal(&backtraceV8String)) {
-                if (backtraceV8String->IsString()) {
-                    if (v8::Local<v8::String>::Cast(backtraceV8String)->Length() > 0) {
-                        v8::String::Utf8Value backtraceUtf8Value(getIsolate(), backtraceV8String);
-                        errorBacktrace = *backtraceUtf8Value;
-                    }
-                }
-            }
-            qCDebug(scriptengine) << "Compiling script \"" << fileName << "\" failed on line " << errorLineNumber << " column " << errorColumnNumber << " with message: \"" << errorMessage <<"\" backtrace: " << errorBacktrace;
-        }
-        auto err = makeError(newValue(errorMessage));
-        raiseException(err);
-        maybeEmitUncaughtException("compile");
+        setUncaughtException(tryCatch, "Error while compiling script");
         _evaluatingCounter--;
-        return err;
+        return nullValue();
     }
     //qCDebug(scriptengine) << "Script compilation succesful: " << fileName;
 
@@ -1132,8 +973,12 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
         ScriptValue errorValue(new ScriptValueV8Wrapper(this, V8ScriptValue(this, runError->Get())));
         qCDebug(scriptengine) << "Running script: \"" << fileName << "\" " << formatErrorMessageFromTryCatch(tryCatchRun);
         //V8TODO
+
+
         //raiseException(errorValue);
         //maybeEmitUncaughtException("evaluate");
+        setUncaughtException(tryCatchRun, "script evaluation");
+
         _evaluatingCounter--;
         return errorValue;
     }
@@ -1141,6 +986,68 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
     _evaluatingCounter--;
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(resultValue)));
 }
+
+
+void ScriptEngineV8::setUncaughtEngineException(const QString &reason, const QString& info) {
+    auto ex = std::make_shared<ScriptEngineException>(reason, info);
+    setUncaughtException(ex);
+}
+
+void ScriptEngineV8::setUncaughtException(const v8::TryCatch &tryCatch, const QString& info) {
+    if (!tryCatch.HasCaught()) {
+        qCWarning(scriptengine) << "setUncaughtException called without exception";
+        clearExceptions();
+        return;
+    }
+
+    auto ex = std::make_shared<ScriptRuntimeException>();
+    ex->additionalInfo = info;
+
+    v8::Locker locker(_v8Isolate);
+    v8::Isolate::Scope isolateScope(_v8Isolate);
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(getContext());
+    QString result("");
+
+    QString errorMessage = "";
+    QString errorBacktrace = "";
+    //v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Exception());
+    v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Message()->Get());
+
+    ex->errorMessage = QString(*utf8Value);
+
+    auto exceptionValue = tryCatch.Exception();
+    ex->thrownValue =  ScriptValue(new ScriptValueV8Wrapper(this, V8ScriptValue(this, exceptionValue)));
+
+
+    v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
+    if (!exceptionMessage.IsEmpty()) {
+        ex->errorLine = exceptionMessage->GetLineNumber(getContext()).FromJust();
+        ex->errorColumn = exceptionMessage->GetStartColumn(getContext()).FromJust();
+        v8::Local<v8::Value> backtraceV8String;
+        if (tryCatch.StackTrace(getContext()).ToLocal(&backtraceV8String)) {
+            if (backtraceV8String->IsString()) {
+                if (v8::Local<v8::String>::Cast(backtraceV8String)->Length() > 0) {
+                    v8::String::Utf8Value backtraceUtf8Value(getIsolate(), backtraceV8String);
+                    QString errorBacktrace = *backtraceUtf8Value;
+                    ex->backtrace = errorBacktrace.split("\n");
+
+                }
+            }
+        }
+    }
+
+    setUncaughtException(ex);
+}
+
+void ScriptEngineV8::setUncaughtException(std::shared_ptr<ScriptException> uncaughtException) {
+    qCDebug(scriptengine) << "Emitting exception:" << uncaughtException;
+    _uncaughtException = uncaughtException;
+
+    auto copy = uncaughtException->clone();
+    emit exception(copy);
+}
+
 
 QString ScriptEngineV8::formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch) {
     v8::Locker locker(_v8Isolate);
@@ -1194,9 +1101,6 @@ void ScriptEngineV8::popContext() {
 }
 
 Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& program) {
-    if (_scriptManager && _scriptManager->isStopped()) {
-        return undefinedValue(); // bail early
-    }
 
     if (QThread::currentThread() != thread()) {
         ScriptValue result;
@@ -1227,18 +1131,14 @@ Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& pro
         v8::Context::Scope contextScope(getContext());
         ScriptProgramV8Wrapper* unwrapped = ScriptProgramV8Wrapper::unwrap(program);
         if (!unwrapped) {
-            errorValue = makeError(newValue("could not unwrap program"));
-            raiseException(errorValue);
-            maybeEmitUncaughtException("compile");
+            setUncaughtEngineException("Could not unwrap program", "Compile error");
             hasFailed = true;
         }
 
         if(!hasFailed) {
             ScriptSyntaxCheckResultPointer syntaxCheck = unwrapped->checkSyntax();
             if (syntaxCheck->state() == ScriptSyntaxCheckResult::Error) {
-                errorValue = makeError(newValue(syntaxCheck->errorMessage()));
-                raiseException(errorValue);
-                maybeEmitUncaughtException("compile");
+                setUncaughtEngineException(syntaxCheck->errorMessage(), "Compile error");
                 hasFailed = true;
             }
         }
@@ -1260,8 +1160,7 @@ Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& pro
                 Q_ASSERT(tryCatchRun.HasCaught());
                 auto runError = tryCatchRun.Message();
                 errorValue = ScriptValue(new ScriptValueV8Wrapper(this, V8ScriptValue(this, runError->Get())));
-                raiseException(errorValue);
-                maybeEmitUncaughtException("evaluate");
+                raiseException(errorValue, "evaluation error");
                 hasFailed = true;
             } else {
                 // V8TODO this is just to check if run will always return false for uncaught exception
@@ -1306,10 +1205,6 @@ ScriptValue ScriptEngineV8::globalObject() {
     v8::Context::Scope contextScope(getConstContext());
     V8ScriptValue global(this, getConstContext()->Global());// = QScriptEngine::globalObject(); // can't cache the value as it may change
     return ScriptValue(new ScriptValueV8Wrapper(const_cast<ScriptEngineV8*>(this), std::move(global)));
-}
-
-ScriptManager* ScriptEngineV8::manager() const {
-    return _scriptManager;
 }
 
 ScriptValue ScriptEngineV8::newArray(uint length) {
@@ -1486,8 +1381,7 @@ void ScriptEngineV8::abortEvaluation() {
 }
 
 void ScriptEngineV8::clearExceptions() {
-    //V8TODO
-    //QScriptEngine::clearExceptions();
+    _uncaughtException.reset();
 }
 
 ScriptContext* ScriptEngineV8::currentContext() const {
@@ -1509,9 +1403,7 @@ ScriptContext* ScriptEngineV8::currentContext() const {
 }
 
 bool ScriptEngineV8::hasUncaughtException() const {
-    //V8TODO
-    //return QScriptEngine::hasUncaughtException();
-    return false;
+    return _uncaughtException != nullptr;
 }
 
 bool ScriptEngineV8::isEvaluating() const {
@@ -1627,34 +1519,59 @@ void ScriptEngineV8::setThread(QThread* thread) {
 }*/
 
 
-ScriptValue ScriptEngineV8::uncaughtException() const {
-    //V8TODO
-    //V8ScriptValue result = QScriptEngine::uncaughtException();
-    //return ScriptValue(new ScriptValueV8Wrapper(const_cast<ScriptEngineV8*>(this), std::move(result)));
-    return ScriptValue();
+std::shared_ptr<ScriptException> ScriptEngineV8::uncaughtException() const {
+    if (_uncaughtException) {
+        return _uncaughtException->clone();
+    } else {
+        return std::shared_ptr<ScriptException>();
+    }
 }
 
-QStringList ScriptEngineV8::uncaughtExceptionBacktrace() const {
-    //V8TODO
-    //return QScriptEngine::uncaughtExceptionBacktrace();
-    return QStringList();
+bool ScriptEngineV8::raiseException(const QString& error, const QString &reason) {
+    return raiseException(newValue(error), reason);
 }
 
-int ScriptEngineV8::uncaughtExceptionLineNumber() const {
-    //V8TODO
-    //return QScriptEngine::uncaughtExceptionLineNumber();
-    return 0;
-}
-
-bool ScriptEngineV8::raiseException(const ScriptValue& exception) {
+bool ScriptEngineV8::raiseException(const ScriptValue& exception, const QString &reason) {
     //V8TODO
     //Q_ASSERT(false);
-    qCritical() << "Script exception occurred: " << exception.toString();
-    /*ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(exception);
-    V8ScriptValue qException = unwrapped ? unwrapped->toV8Value() : QScriptEngine::newVariant(exception.toVariant());
-    return raiseException(qException);*/
+//    qCritical() << "Script exception occurred: " << exception.toString();
+//    ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(exception);
+//    V8ScriptValue qException = unwrapped ? unwrapped->toV8Value() : QScriptEngine::newVariant(exception.toVariant());
+
+  //  emit
+    //return raiseException(qException);
+
+//    qCCritical(scriptengine) << "Raise exception for reason" << reason << "NOT IMPLEMENTED!";
+//    return false;
+
+    return raiseException(ScriptValueV8Wrapper::fullUnwrap(this, exception));
+}
+
+
+
+bool ScriptEngineV8::raiseException(const V8ScriptValue& exception) {
+    if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
+        return false;
+    }
+
+
+    _v8Isolate->ThrowException(exception.constGet());
+
+
+    /*if (QScriptEngine::currentContext()) {
+        // we have an active context / JS stack frame so throw the exception per usual
+        QScriptEngine::currentContext()->throwValue(makeError(exception));
+        return true;
+    } else if (_scriptManager) {
+        // we are within a pure C++ stack frame (ie: being called directly by other C++ code)
+        // in this case no context information is available so just emit the exception for reporting
+        V8ScriptValue thrown = makeError(exception);
+        emit _scriptManager->unhandledException(ScriptValue(new ScriptValueV8Wrapper(this, std::move(thrown))));
+    }*/
+    //emit _scriptManager->unhandledException(ScriptValue(new ScriptValueV8Wrapper(this, std::move(thrown))));
     return false;
 }
+
 
 ScriptValue ScriptEngineV8::create(int type, const void* ptr) {
     v8::Locker locker(_v8Isolate);

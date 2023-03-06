@@ -35,6 +35,7 @@
 
 #include "../ScriptEngine.h"
 #include "../ScriptManager.h"
+#include "../ScriptException.h"
 //#include "V8Types.h"
 
 #include "ArrayBufferClass.h"
@@ -56,12 +57,12 @@ const double GARBAGE_COLLECTION_TIME_LIMIT_S = 1.0;
 Q_DECLARE_METATYPE(ScriptEngine::FunctionSignature)
 
 /// [V8] Implements ScriptEngine for V8 and translates calls for QScriptEngine
-class ScriptEngineV8 final : public QObject, public ScriptEngine,
+class ScriptEngineV8 final : public ScriptEngine,
                                    public std::enable_shared_from_this<ScriptEngineV8> {
     Q_OBJECT
 
 public:  // construction
-    ScriptEngineV8(ScriptManager* scriptManager = nullptr);
+    ScriptEngineV8(ScriptManager *manager = nullptr);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // NOTE - these are NOT intended to be public interfaces available to scripts, the are only Q_INVOKABLE so we can
@@ -70,7 +71,6 @@ public:  // construction
 public:  // ScriptEngine implementation
     virtual void abortEvaluation() override;
     virtual void clearExceptions() override;
-    virtual ScriptValue cloneUncaughtException(const QString& detail = QString()) override;
     virtual ScriptContext* currentContext() const override;
     Q_INVOKABLE virtual ScriptValue evaluate(const QString& program, const QString& fileName = QString()) override;
     Q_INVOKABLE virtual ScriptValue evaluate(const ScriptProgramPointer& program) override;
@@ -80,11 +80,6 @@ public:  // ScriptEngine implementation
     virtual bool isEvaluating() const override;
     //virtual ScriptValue lintScript(const QString& sourceCode, const QString& fileName, const int lineNumber = 1) override;
     virtual ScriptValue checkScriptSyntax(ScriptProgramPointer program) override;
-    virtual ScriptValue makeError(const ScriptValue& other, const QString& type = "Error") override;
-    virtual ScriptManager* manager() const override;
-
-    // if there is a pending exception and we are at the top level (non-recursive) stack frame, this emits and resets it
-    virtual bool maybeEmitUncaughtException(const QString& debugHint = QString()) override;
 
     virtual ScriptValue newArray(uint length = 0) override;
     virtual ScriptValue newArrayBuffer(const QByteArray& message) override;
@@ -105,7 +100,11 @@ public:  // ScriptEngine implementation
     virtual ScriptValue newValue(const char* value) override;
     virtual ScriptValue newVariant(const QVariant& value) override;
     virtual ScriptValue nullValue() override;
-    virtual bool raiseException(const ScriptValue& exception) override;
+
+    virtual ScriptValue makeError(const ScriptValue& other, const QString& type = "Error") override;
+
+    virtual bool raiseException(const QString& exception, const QString &reason = QString()) override;
+    virtual bool raiseException(const ScriptValue& exception, const QString &reason = QString()) override;
     Q_INVOKABLE virtual void registerEnum(const QString& enumName, QMetaEnum newEnum) override;
     Q_INVOKABLE virtual void registerFunction(const QString& name,
                                               ScriptEngine::FunctionSignature fun,
@@ -127,9 +126,7 @@ public:  // ScriptEngine implementation
     virtual void setThread(QThread* thread) override;
     //Q_INVOKABLE virtual void enterIsolateOnThisThread() override;
     virtual ScriptValue undefinedValue() override;
-    virtual ScriptValue uncaughtException() const override;
-    virtual QStringList uncaughtExceptionBacktrace() const override;
-    virtual int uncaughtExceptionLineNumber() const override;
+    virtual std::shared_ptr<ScriptException> uncaughtException() const override;
     virtual void updateMemoryCost(const qint64& deltaSize) override;
     virtual void requestCollectGarbage() override { while(!_v8Isolate->IdleNotificationDeadline(getV8Platform()->MonotonicallyIncreasingTime() + GARBAGE_COLLECTION_TIME_LIMIT_S)) {}; }
     virtual void compileTest() override;
@@ -143,7 +140,7 @@ public:  // ScriptEngine implementation
     inline bool IS_THREADSAFE_INVOCATION(const QString& method) { return ScriptEngine::IS_THREADSAFE_INVOCATION(method); }
 
 protected: // brought over from BaseScriptEngine
-    V8ScriptValue makeError(const V8ScriptValue& other, const QString& type = "Error");
+
 
     // if the currentContext() is valid then throw the passed exception; otherwise, immediately emit it.
     // note: this is used in cases where C++ code might call into JS API methods directly
@@ -224,18 +221,25 @@ protected:
     static std::once_flag _v8InitOnceFlag;
     static v8::Platform* getV8Platform();
 
+    void setUncaughtEngineException(const QString &message, const QString& info = QString());
+    void setUncaughtException(const v8::TryCatch &tryCatch, const QString& info = QString());
+    void setUncaughtException(std::shared_ptr<ScriptException> exception);
+
+    friend class ScriptSignalV8Proxy;
+
+    std::shared_ptr<ScriptException> _uncaughtException;
+
+
     // V8TODO: clean up isolate when script engine is destroyed?
     v8::Isolate* _v8Isolate;
     //v8::UniquePersistent<v8::Context> _v8Context;
-    
+
     struct CustomMarshal {
         ScriptEngine::MarshalFunction marshalFunc;
         ScriptEngine::DemarshalFunction demarshalFunc;
     };
     using CustomMarshalMap = QHash<int, CustomMarshal>;
     using CustomPrototypeMap = QHash<int, V8ScriptValue>;
-
-    QPointer<ScriptManager> _scriptManager;
 
     mutable QReadWriteLock _customTypeProtect { QReadWriteLock::Recursive };
     CustomMarshalMap _customTypes;

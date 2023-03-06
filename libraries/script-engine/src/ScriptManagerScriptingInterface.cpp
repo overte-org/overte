@@ -12,9 +12,21 @@
 
 #include "ScriptManager.h"
 #include "ScriptManagerScriptingInterface.h"
+#include <QMetaType>
+
 
 
  ScriptManagerScriptingInterface::ScriptManagerScriptingInterface(ScriptManager *parent): QObject(parent), _manager(parent) {
+
+        qRegisterMetaType<ScriptException>();
+        qRegisterMetaType<ScriptEngineException>();
+        qRegisterMetaType<ScriptRuntimeException>();
+
+        qRegisterMetaType<std::shared_ptr<ScriptException>>();
+        qRegisterMetaType<std::shared_ptr<ScriptEngineException>>();
+        qRegisterMetaType<std::shared_ptr<ScriptRuntimeException>>();
+
+
         connect(_manager, &ScriptManager::scriptLoaded, this, &ScriptManagerScriptingInterface::scriptLoaded);
         connect(_manager, &ScriptManager::errorLoadingScript, this, &ScriptManagerScriptingInterface::errorLoadingScript);
         connect(_manager, &ScriptManager::update, this, &ScriptManagerScriptingInterface::update);
@@ -30,5 +42,12 @@
         connect(_manager, &ScriptManager::doneRunning, this, &ScriptManagerScriptingInterface::doneRunning);
         connect(_manager, &ScriptManager::entityScriptDetailsUpdated, this, &ScriptManagerScriptingInterface::entityScriptDetailsUpdated);
         connect(_manager, &ScriptManager::entityScriptPreloadFinished, this, &ScriptManagerScriptingInterface::entityScriptPreloadFinished);
-        connect(_manager, &ScriptManager::unhandledException, this, &ScriptManagerScriptingInterface::unhandledException);
+        connect(_manager, &ScriptManager::unhandledException, this, &ScriptManagerScriptingInterface::scriptManagerException);
+    }
+
+    void ScriptManagerScriptingInterface::scriptManagerException(std::shared_ptr<ScriptException> exception) {
+        // V8TODO: What should we actually handle here?
+
+
+        // emit unhandledException(exception.thrownValue);
     }

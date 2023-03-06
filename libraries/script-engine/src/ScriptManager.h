@@ -46,6 +46,7 @@
 #include "Quat.h"
 #include "ScriptUUID.h"
 #include "ScriptValue.h"
+#include "ScriptException.h"
 #include "Vec3.h"
 
 static const QString NO_SCRIPT("");
@@ -265,7 +266,6 @@ public:
  * sm->run();
  * qInfo() << "Done!"
  * @endcode
- *
  *
  * @note
  * Technically, the ScriptManager isn't generic enough -- it implements things that imitate
@@ -1172,6 +1172,31 @@ public:
      */
     Q_INVOKABLE QString getExternalPath(ExternalResource::Bucket bucket, const QString& path);
 
+
+    /**
+     * @brief Get the uncaught exception from the underlying script engine
+     *
+     * @return std::shared_ptr<ScriptException> Exception
+     */
+    std::shared_ptr<ScriptException> getUncaughtException() const;
+
+    /**
+     * @brief Whether this engine will abort on an uncaught exception
+     *
+     * @warning This probably should be refactored into a more comprehensive per-script flags system
+     * @return true
+     * @return false
+     */
+    bool getAbortOnUncaughtException() const { return _abortOnUncaughtException; }
+
+    /**
+     * @brief Whether to abort on an uncaught exception
+     *
+     * @warning This probably should be refactored into a more comprehensive per-script flags system
+     * @param value
+     */
+    void setAbortOnUncaughtException(bool value) { _abortOnUncaughtException = value; }
+
 public slots:
 
     /**
@@ -1327,7 +1352,7 @@ signals:
      *
      * @param exception
      */
-    void unhandledException(const ScriptValue& exception);
+    void unhandledException(std::shared_ptr<ScriptException> exception);
 
     ///@}
 
@@ -1546,6 +1571,8 @@ protected:
     double _totalTimeInTimerEvents_s{ 0.0 };
 
     ScriptManagerScriptingInterfacePointer _scriptingInterface;
+
+    bool _abortOnUncaughtException{ false };
 
     friend ScriptManagerPointer newScriptManager(Context context, const QString& scriptContents, const QString& fileNameString);
     friend class ScriptManagerScriptingInterface;
