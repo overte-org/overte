@@ -41,7 +41,7 @@ Q_DECLARE_METATYPE(QSharedPointer<ScriptVariantV8Proxy>)
 // Value of internal field with index 0 when object contains ScriptObjectV8Proxy pointer in internal field 1
 static const void *internalPointsToQObjectProxy = (void *)0x13370000;
 // Internal field value of object pointing to ScriptObjectV8Proxy is changed to this value upon proxy's deletion
-static const void *internalPointsToDeletedQObjectProxy = (void *)0x13370008;
+static const void *internalPointsToDeletedQObjectProxy = (void *)0x13370010;
 static const void *internalPointsToQVariantProxy = (void *)0x13371000;
 //static const void *internalPointsToSignalProxy = (void *)0x13372000;
 static const void *internalPointsToMethodProxy = (void *)0x13373000;
