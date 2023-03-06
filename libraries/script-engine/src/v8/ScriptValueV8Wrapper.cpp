@@ -17,7 +17,7 @@
 #include "ScriptValueIteratorV8Wrapper.h"
 
 #include "../ScriptEngineLogging.h"
-
+#include "ScriptEngineLoggingV8.h"
 
 void ScriptValueV8Wrapper::release() {
     // V8TODO: maybe add an assert to check if it happens on script engine thread?
@@ -92,17 +92,17 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     v8::Local<v8::Value> recv;
     if (v8This.get()->IsObject()) {
         recv = v8This.get();
-        //qDebug() << "V8 This: " << _engine->scriptValueDebugDetailsV8(v8This);
+        //qCDebug(scriptengine_v8) << "V8 This: " << _engine->scriptValueDebugDetailsV8(v8This);
     }else{
         recv = _engine->getContext()->Global();
         //recv = v8::Null(isolate);
-        //qDebug() << "global";
+        //qCDebug(scriptengine_v8) << "global";
     }
-    //qDebug() << "V8 Call: " << *v8::String::Utf8Value(isolate, v8This.get()->TypeOf(isolate));
+    //qCDebug(scriptengine_v8) << "V8 Call: " << *v8::String::Utf8Value(isolate, v8This.get()->TypeOf(isolate));
     auto maybeResult = v8Function->Call(_engine->getContext(), recv, args.length(), v8Args);
     // V8TODO: Exceptions don't seem to actually be caught here?
     if (tryCatch.HasCaught()) {
-        qCDebug(scriptengine) << "Function call failed: \"" << _engine->formatErrorMessageFromTryCatch(tryCatch);
+        qCDebug(scriptengine_v8) << "Function call failed: \"" << _engine->formatErrorMessageFromTryCatch(tryCatch);
     }
     v8::Local<v8::Value> result;
     Q_ASSERT(_engine == _value.getEngine());
@@ -110,7 +110,7 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
         return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
     } else {
         //V8TODO Add more details
-        qWarning("JS function call failed");
+        qCWarning(scriptengine_v8) << "JS function call failed";
         return _engine->undefinedValue();
     }
 }
@@ -135,7 +135,7 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
         return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine->getContext(), result)));
     } else {
         //V8TODO Add more details
-        qWarning("JS function call failed");
+        qCWarning(scriptengine_v8) << "JS function call failed";
         return _engine->undefinedValue();
     }*/
 }
@@ -163,7 +163,7 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
         return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
     } else {
         //V8TODO Add more details
-        qWarning("JS function call failed");
+        qCWarning(scriptengine_v8) << "JS function call failed";
         return _engine->undefinedValue();
     }
 }
@@ -205,18 +205,18 @@ ScriptValue ScriptValueV8Wrapper::data() const {
              }
          }
          if (createData) {
-             qDebug() << "ScriptValueV8Wrapper::data(): Data object doesn't exist, creating new one";
+             qCDebug(scriptengine_v8) << "ScriptValueV8Wrapper::data(): Data object doesn't exist, creating new one";
              // Create data object if it's non-existent or invalid
              data = v8::Object::New(isolate);
              if( !v8Object->Set(_engine->getContext(), v8::String::NewFromUtf8(isolate, "__data").ToLocalChecked(), data).FromMaybe(false)) {
-                 qDebug() << "ScriptValueV8Wrapper::data(): Data object couldn't be created";
+                 qCDebug(scriptengine_v8) << "ScriptValueV8Wrapper::data(): Data object couldn't be created";
                  Q_ASSERT(false);
              }
          }*/
          V8ScriptValue result(_engine, data);
          return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
     } else {
-        qDebug() << "ScriptValueV8Wrapper::data() was called on a value that is not an object";
+        qCDebug(scriptengine_v8) << "ScriptValueV8Wrapper::data() was called on a value that is not an object";
         Q_ASSERT(false);
     }
     //V8TODO I'm not sure how this would work in V8
@@ -290,15 +290,15 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
             if (_value.constGet()->ToDetailString(_engine->getContext()).ToLocal(&parentValueString)) {
                 QString(*v8::String::Utf8Value(isolate, parentValueString));
             }
-            qDebug() << "Failed to get property, parent of value: " << name << ", parent type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate))) << " parent value: " << parentValueQString;
+            qCDebug(scriptengine_v8) << "Failed to get property, parent of value: " << name << ", parent type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate))) << " parent value: " << parentValueQString;
         }
     }
     if (name == QString("x")) {
         printf("x");
     }
     //This displays too many messages during correct operation, but is useful for debugging
-    //qDebug() << "Failed to get property, parent of value: " << name << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
-    //qDebug() << "Backtrace: " << _engine->currentContext()->backtrace();
+    //qCDebug(scriptengine_v8) << "Failed to get property, parent of value: " << name << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
+    //qCDebug(scriptengine_v8) << "Backtrace: " << _engine->currentContext()->backtrace();
     return _engine->undefinedValue();
     /*v8::Local<v8::Value> nullValue = v8::Null(_engine->getIsolate());
     V8ScriptValue nullScriptValue(_engine->getIsolate(), std::move(nullValue));
@@ -314,7 +314,7 @@ ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     if (_value.constGet()->IsNullOrUndefined()) {
-        qDebug() << "Failed to get property, parent of value: " << arrayIndex << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
+        qCDebug(scriptengine_v8) << "Failed to get property, parent of value: " << arrayIndex << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
         return _engine->undefinedValue();
     }
     if (_value.constGet()->IsObject()) {
@@ -326,7 +326,7 @@ ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
         }
     }
-    qDebug() << "Failed to get property, parent of value: " << arrayIndex << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
+    qCDebug(scriptengine_v8) << "Failed to get property, parent of value: " << arrayIndex << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
     return _engine->undefinedValue();
 }
 
@@ -340,17 +340,17 @@ void ScriptValueV8Wrapper::setData(const ScriptValue& value) {
     // V8TODO Check if it uses same isolate. Would pointer check be enough?
     // Private properties are an experimental feature for now on V8, so we are using regular value for now
     if (_value.constGet()->IsNullOrUndefined()) {
-        qDebug() << "ScriptValueV8Wrapper::setData() was called on a value that is null or undefined";
+        qCDebug(scriptengine_v8) << "ScriptValueV8Wrapper::setData() was called on a value that is null or undefined";
         return;
     }
     if (_value.constGet()->IsObject()) {
         auto v8Object = v8::Local<v8::Object>::Cast(_value.constGet());
         if( !v8Object->Set(_engine->getContext(), v8::String::NewFromUtf8(isolate, "__data").ToLocalChecked(), unwrapped.constGet()).FromMaybe(false)) {
-            qDebug() << "ScriptValueV8Wrapper::data(): Data object couldn't be created";
+            qCDebug(scriptengine_v8) << "ScriptValueV8Wrapper::data(): Data object couldn't be created";
             Q_ASSERT(false);
         }
     } else {
-        qDebug() << "ScriptValueV8Wrapper::data() was called on a value that is not an object";
+        qCDebug(scriptengine_v8) << "ScriptValueV8Wrapper::data() was called on a value that is not an object";
         Q_ASSERT(false);
     }
 }
@@ -364,7 +364,7 @@ void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& v
     v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue unwrapped = fullUnwrap(value);
     if (_value.constGet()->IsNullOrUndefined()) {
-        qDebug() << "ScriptValueV8Wrapper::setProperty() was called on a value that is null or undefined";
+        qCDebug(scriptengine_v8) << "ScriptValueV8Wrapper::setProperty() was called on a value that is null or undefined";
         return;
     }
     if(_value.constGet()->IsObject()) {
@@ -376,7 +376,7 @@ void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& v
         //v8::Maybe<bool> retVal = object->Set(_engine->getContext(), key, unwrapped.constGet());
         v8::Maybe<bool> retVal = object->Set(isolate->GetCurrentContext(), key, unwrapped.constGet());
         if (retVal.IsJust() ? !retVal.FromJust() : true){
-            qDebug(scriptengine) << "Failed to set property";
+            qCDebug(scriptengine_v8) << "Failed to set property";
         }
     } else {
         v8::Local<v8::String> details;
@@ -385,8 +385,8 @@ void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& v
             v8::String::Utf8Value utf8Value(isolate,details);
             detailsString = *utf8Value;
         }
-        qDebug(scriptengine) << "Failed to set property:" + name + " - parent is not an object. Parent details: " + " Type: " + QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
-        qDebug(scriptengine) << _engine->currentContext()->backtrace();
+        qCDebug(scriptengine_v8) << "Failed to set property:" + name + " - parent is not an object. Parent details: " + " Type: " + QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
+        qCDebug(scriptengine_v8) << _engine->currentContext()->backtrace();
     }
     //V8TODO: what about flags?
     //_value.setProperty(name, unwrapped, (V8ScriptValue::PropertyFlags)(int)flags);
@@ -400,7 +400,7 @@ void ScriptValueV8Wrapper::setProperty(quint32 arrayIndex, const ScriptValue& va
     v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue unwrapped = fullUnwrap(value);
     if (_value.constGet()->IsNullOrUndefined()) {
-        qDebug() << "ScriptValueV8Wrapper::setProperty() was called on a value that is null or undefined";
+        qCDebug(scriptengine_v8) << "ScriptValueV8Wrapper::setProperty() was called on a value that is null or undefined";
         return;
     }
     if(_value.constGet()->IsObject()) {
@@ -409,10 +409,10 @@ void ScriptValueV8Wrapper::setProperty(quint32 arrayIndex, const ScriptValue& va
         v8::Maybe<bool> retVal(object->Set(_engine->getContext(), arrayIndex, unwrapped.constGet()));
         //v8::Maybe<bool> retVal(object->Set(_value.getContext(), arrayIndex, unwrapped.constGet()));
         if (retVal.IsJust() ? !retVal.FromJust() : true){
-            qDebug(scriptengine) << "Failed to set property";
+            qCDebug(scriptengine_v8) << "Failed to set property";
         }
     } else {
-        qDebug(scriptengine) << "Failed to set property: " + QString(arrayIndex) + " - parent is not an object";
+        qCDebug(scriptengine_v8) << "Failed to set property: " + QString(arrayIndex) + " - parent is not an object";
     }
     //V8TODO: what about flags?
     //_value.setProperty(arrayIndex, unwrapped, (V8ScriptValue::PropertyFlags)(int)flags);
@@ -427,7 +427,7 @@ void ScriptValueV8Wrapper::setPrototype(const ScriptValue& prototype) {
     ScriptValueV8Wrapper* unwrappedPrototype = unwrap(prototype);
     if (unwrappedPrototype) {
         if(unwrappedPrototype->toV8Value().constGet()->IsNullOrUndefined() && _value.constGet()->IsNullOrUndefined()) {
-            qDebug(scriptengine) << "Failed to assign prototype - one of values is null or undefined";
+            qCDebug(scriptengine_v8) << "Failed to assign prototype - one of values is null or undefined";
         }
         if(unwrappedPrototype->toV8Value().constGet()->IsObject() && _value.constGet()->IsObject()) {
             auto object = v8::Local<v8::Object>::Cast(_value.get());
@@ -435,10 +435,10 @@ void ScriptValueV8Wrapper::setPrototype(const ScriptValue& prototype) {
             v8::Maybe<bool> retVal = object->SetPrototype(_engine->getContext(), unwrappedPrototype->toV8Value().constGet());
             //v8::Maybe<bool> retVal = object->SetPrototype(_value.getContext(), unwrappedPrototype->toV8Value().constGet());
             if (retVal.IsJust() ? !retVal.FromJust() : true){
-                qDebug(scriptengine) << "Failed to assign prototype";
+                qCDebug(scriptengine_v8) << "Failed to assign prototype";
             }
         } else {
-            qDebug(scriptengine) << "Failed to assign prototype - one of values is not an object";
+            qCDebug(scriptengine_v8) << "Failed to assign prototype - one of values is not an object";
         }
     }
 }
