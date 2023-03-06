@@ -26,6 +26,8 @@
 #include <QtCore/QVariant>
 #include <QtCore/QDebug>
 
+#include "ScriptEngineLogging.h"
+
 class ScriptEngine;
 class ScriptValue;
 class ScriptValueIterator;
@@ -210,7 +212,7 @@ ScriptValue ScriptValue::call(const ScriptValue& thisObject, const ScriptValueLi
     Q_ASSERT(_proxy != nullptr);
     ScriptEnginePointer scriptEngine = _proxy->engine();
     if (scriptEngine == nullptr) {
-        qDebug() << "Call to deleted or non-existing script engine";
+        qCDebug(scriptengine) << "Call to deleted or non-existing script engine";
         return ScriptValue();
     }
     return _proxy->call(thisObject, args);
