@@ -26,7 +26,7 @@
 #include "ScriptManager.h"
 
 Vec3::~Vec3() {
-    qDebug(scriptengine) << "ScriptMethodV8Proxy destroyed";
+    qCDebug(scriptengine) << "ScriptMethodV8Proxy destroyed";
     printf("ScriptMethodV8Proxy destroyed");
 }
 
@@ -55,14 +55,14 @@ glm::vec3 Vec3::toPolar(const glm::vec3& v) {
     if (glm::abs(radius) < EPSILON) {
         return glm::vec3(0.0f, 0.0f, 0.0f);
     }
-    
+
     glm::vec3 u = v / radius;
-    
+
     float elevation, azimuth;
-    
+
     elevation = glm::asin(-u.y);
     azimuth = atan2(v.x, v.z);
-    
+
     // Round off small decimal values
     if (glm::abs(elevation) < EPSILON) {
         elevation = 0.0f;

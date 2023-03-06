@@ -70,7 +70,7 @@ inline QVariant scriptvalue_cast<QVariant>(const ScriptValue& value) {
     return value.toVariant();
 }
 
-//#define MARSHAL_MACRO(FUNCTION, TYPE) +[FUNCTION](ScriptEngine* engine, const void* p) -> ScriptValue { FUNCTION(engine, *(static_cast<const TYPE*>(p)) ); } 
+//#define MARSHAL_MACRO(FUNCTION, TYPE) +[FUNCTION](ScriptEngine* engine, const void* p) -> ScriptValue { FUNCTION(engine, *(static_cast<const TYPE*>(p)) ); }
 
 template <typename T, ScriptValue (*f)(ScriptEngine*, const T&)>
 ScriptValue toScriptValueWrapper(ScriptEngine* engine, const void *p) {
@@ -153,12 +153,12 @@ ScriptValue scriptValueFromEnumClass(ScriptEngine* eng, const T& enumValue) {
 template <class T>
 bool scriptValueToEnumClass(const ScriptValue& value, T& enumValue) {
     if(!value.isNumber()){
-        qDebug() << "ScriptValue \"" << value.toQObject()->metaObject()->className() << "\" is not a number";
+        qCDebug(scriptengine) << "ScriptValue \"" << value.toQObject()->metaObject()->className() << "\" is not a number";
         return false;
     }
     QMetaEnum metaEnum = QMetaEnum::fromType<T>();
     if (!metaEnum.isValid()) {
-        qDebug() << "Invalid QMetaEnum";
+        qCDebug(scriptengine) << "Invalid QMetaEnum";
         return false;
     }
     bool isValid = false;
@@ -173,7 +173,7 @@ bool scriptValueToEnumClass(const ScriptValue& value, T& enumValue) {
         enumValue = static_cast<T>(enumInteger);
         return true;
     } else {
-        qDebug() << "ScriptValue has invalid value " << value.toInteger() << " for enum" << metaEnum.name();
+        qCDebug(scriptengine) << "ScriptValue has invalid value " << value.toInteger() << " for enum" << metaEnum.name();
         return false;
     }
 }

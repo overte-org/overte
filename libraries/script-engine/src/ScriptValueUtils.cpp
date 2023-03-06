@@ -933,7 +933,7 @@ ScriptValue meshesToScriptValue(ScriptEngine* engine, const MeshProxyList& in) {
 bool meshesFromScriptValue(const ScriptValue& value, MeshProxyList& out) {
     ScriptValueIteratorPointer itr(value.newIterator());
 
-    qDebug(scriptengine) << "in meshesFromScriptValue, value.length =" << value.property("length").toInt32();
+    qCDebug(scriptengine) << "in meshesFromScriptValue, value.length =" << value.property("length").toInt32();
 
     while (itr->hasNext()) {
         itr->next();
@@ -941,7 +941,7 @@ bool meshesFromScriptValue(const ScriptValue& value, MeshProxyList& out) {
         if (meshProxy) {
             out.append(meshProxy);
         } else {
-            qDebug(scriptengine) << "null meshProxy";
+            qCDebug(scriptengine) << "null meshProxy";
         }
     }
     return true;
