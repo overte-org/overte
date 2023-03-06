@@ -16,6 +16,8 @@
 
 #include "ScriptEngineV8.h"
 #include "ScriptValueV8Wrapper.h"
+#include "ScriptEngineLoggingV8.h"
+
 
 /*ScriptContextV8Wrapper::ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::Local<v8::Context> context) : _functionCallbackInfo(nullptr), _propertyCallbackInfo(nullptr), _engine(engine) {
     _context.Reset(_engine->getIsolate(), context);
@@ -178,7 +180,7 @@ ScriptValue ScriptContextV8Wrapper::throwError(const QString& text) {
                                  v8::String::NewFromUtf8(_engine->getIsolate(), text.toStdString().c_str()).ToLocalChecked()));
         return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
     } else {
-        qWarning() << "throwError on a different thread not implemented yet, error value: " << text;
+        qCWarning(scriptengine_v8) << "throwError on a different thread not implemented yet, error value: " << text;
         //return _engine->undefinedValue();
         return ScriptValue();
     }
