@@ -225,6 +225,8 @@ protected:
     void setUncaughtException(const v8::TryCatch &tryCatch, const QString& info = QString());
     void setUncaughtException(std::shared_ptr<ScriptException> exception);
 
+    friend class ScriptSignalV8Proxy;
+
     std::shared_ptr<ScriptException> _uncaughtException;
 
 
