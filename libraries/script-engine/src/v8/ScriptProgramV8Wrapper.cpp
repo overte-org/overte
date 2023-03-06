@@ -16,6 +16,7 @@
 
 #include "ScriptEngineV8.h"
 #include "ScriptValueV8Wrapper.h"
+#include "ScriptEngineLoggingV8.h"
 
 ScriptProgramV8Wrapper* ScriptProgramV8Wrapper::unwrap(ScriptProgramPointer val) {
     if (!val) {
@@ -53,13 +54,13 @@ bool ScriptProgramV8Wrapper::compile() {
     v8::ScriptOrigin scriptOrigin(isolate, v8::String::NewFromUtf8(isolate, _url.toStdString().c_str()).ToLocalChecked());
     v8::Local<v8::Script> script;
     if (v8::Script::Compile(context, v8::String::NewFromUtf8(isolate, _source.toStdString().c_str()).ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
-        qDebug() << "Script compilation successful: " << _url;
+        qCDebug(scriptengine_v8) << "Script compilation successful: " << _url;
         _compileResult = ScriptSyntaxCheckResultV8Wrapper(ScriptSyntaxCheckResult::Valid);
         _value = V8ScriptProgram(_engine, script);
         _isCompiled = true;
         return true;
     }
-    qDebug() << "Script compilation failed: " << _url;
+    qCDebug(scriptengine_v8) << "Script compilation failed: " << _url;
     v8::String::Utf8Value utf8Value(isolate, tryCatch.Exception());
     errorMessage = QString(*utf8Value);
     v8::Local<v8::Message> exceptionMessage = tryCatch.Message();

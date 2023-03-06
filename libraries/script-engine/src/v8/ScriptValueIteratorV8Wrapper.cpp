@@ -13,6 +13,7 @@
 //
 
 #include "ScriptValueIteratorV8Wrapper.h"
+#include "ScriptEngineLoggingV8.h"
 
 V8ScriptValueIterator::V8ScriptValueIterator(ScriptEngineV8* engine, v8::Local<v8::Value> object) : _engine(engine)  {
     auto isolate = _engine->getIsolate();
