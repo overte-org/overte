@@ -271,6 +271,37 @@ void ScriptEngineTests::testSignal() {
     QVERIFY(printed.length() >= 10);
 }
 
+void ScriptEngineTests::testSignalWithException() {
+    QString script =
+        "var count = 0;"
+        "Script.update.connect(function(deltaTime) {"
+        "    count++;"
+        "    print(deltaTime);"
+        "    if (count >= 3) {"
+        "        Script.stop(true);"
+        "    }"
+        "    nonExist();"
+        "});";
+
+    QStringList printed;
+    int exceptionCount = 0;
+
+    auto sm = makeManager(script, "testSignalWithException.js");
+
+    connect(sm.get(), &ScriptManager::printedMessage, [&printed](const QString& message, const QString& engineName){
+        printed.append(message);
+    });
+
+    connect(sm.get(), &ScriptManager::unhandledException, [&exceptionCount](std::shared_ptr<ScriptException> exception){
+        exceptionCount++;
+    });
+
+
+    sm->run();
+    QVERIFY(printed.length() >= 3);
+    QVERIFY(exceptionCount >= 3);
+}
+
 
 void ScriptEngineTests::scriptTest() {
     return;
