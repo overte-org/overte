@@ -16,8 +16,7 @@
 
 /* global Script, SelectionDisplay, LightOverlayManager, CameraManager, Grid, GridTool, EditTools, EditVoxels, EntityListTool, Vec3, SelectionManager,
    Overlays, OverlayWebWindow, UserActivityLogger, Settings, Entities, Tablet, Toolbars, Messages, Menu, Camera,
-   progressDialog, tooltip, MyAvatar, Quat, Controller, Clipboard, HMD, UndoStack, OverlaySystemWindow,
-   keyUpEventFromUIWindow:true */
+   progressDialog, tooltip, MyAvatar, Quat, Controller, Clipboard, HMD, UndoStack, OverlaySystemWindow */
 
 (function() { // BEGIN LOCAL_SCOPE
     //var CreateApp = function() { // BEGIN LOCAL_SCOPE
@@ -132,6 +131,7 @@
         shouldUseEditTabletApp: shouldUseEditTabletApp
     });
     gridTool.selectionDisplay = selectionDisplay;
+    gridTool.createApp = createApp;
     gridTool.setVisible(false);
 
     var editTools = new EditTools({
@@ -149,8 +149,10 @@
     var EntityShapeVisualizer = Script.require('./modules/entityShapeVisualizer.js');
     var entityShapeVisualizer = new EntityShapeVisualizer(["Zone"], entityShapeVisualizerSessionName);
 
-    var entityListTool = new EntityListTool(shouldUseEditTabletApp);
+    var entityListTool = new EntityListTool(shouldUseEditTabletApp, selectionManager);
     entityListTool.createApp = createApp;
+    entityListTool.cameraManager = cameraManager;
+    entityListTool.selectionDisplay = selectionDisplay;
 
     selectionManager.addEventListener(function () {
         selectionDisplay.updateHandles();
@@ -192,9 +194,9 @@
     var SETTING_AUTO_FOCUS_ON_SELECT = "autoFocusOnSelect";
     var SETTING_EASE_ON_FOCUS = "cameraEaseOnFocus";
     var SETTING_SHOW_LIGHTS_AND_PARTICLES_IN_EDIT_MODE = "showLightsAndParticlesInEditMode";
-    var SETTING_SHOW_ZONES_IN_EDIT_MODE = "showZonesInEditMode";
-    var SETTING_EDITOR_COLUMNS_SETUP = "editorColumnsSetup";
-    var SETTING_ENTITY_LIST_DEFAULT_RADIUS = "entityListDefaultRadius";
+    createApp.SETTING_SHOW_ZONES_IN_EDIT_MODE = "showZonesInEditMode";
+    createApp.SETTING_EDITOR_COLUMNS_SETUP = "editorColumnsSetup";
+    createApp.SETTING_ENTITY_LIST_DEFAULT_RADIUS = "entityListDefaultRadius";
 
     var SETTING_EDIT_PREFIX = "Edit/";
 
@@ -1004,11 +1006,11 @@
             });
 
             addButton("importEntitiesButton", function() {
-                importEntitiesFromFile();
+                createApp.importEntitiesFromFile();
             });
 
             addButton("importEntitiesFromUrlButton", function() {
-                importEntitiesFromUrl();
+                createApp.importEntitiesFromUrl();
             });
 
             addButton("openAssetBrowserButton", function() {
@@ -1134,7 +1136,7 @@
             print("Setting isActive: " + active);
             isActive = active;
             activeButton.editProperties({isActive: isActive});
-            undoHistory.setEnabled(isActive);
+            createApp.undoHistory.setEnabled(isActive);
 
             editVoxels.setActive(active);
 
@@ -1722,7 +1724,7 @@
                (Math.abs(point.z - center.z) <= (dimensions.z / 2.0));
     }
 
-    function selectAllEntitiesInCurrentSelectionBox(keepIfTouching) {
+     createApp.selectAllEntitiesInCurrentSelectionBox = function(keepIfTouching) {
         if (selectionManager.hasSelection()) {
             // Get all entities touching the bounding box of the current selection
             var boundingBoxCorner = Vec3.subtract(selectionManager.worldPosition,
@@ -1814,7 +1816,7 @@
         }
     }
 
-    function unparentSelectedEntities() {
+     createApp.unparentSelectedEntities = function() {
         if (SelectionManager.hasSelection() && SelectionManager.hasUnlockedSelection()) {
             var selectedEntities = selectionManager.selections;
             var parentCheck = false;
@@ -1855,7 +1857,7 @@
             Window.notifyEditError("You have nothing selected or the selection has locked entities.");
         }
     }
-    function parentSelectedEntities() {
+     createApp.parentSelectedEntities = function() {
         if (SelectionManager.hasSelection() && SelectionManager.hasUnlockedSelection()) {
             var selectedEntities = selectionManager.selections;
             if (selectedEntities.length <= 1) {
@@ -1890,7 +1892,7 @@
             Window.notifyEditError("You have nothing selected or the selection has locked entities.");
         }
     }
-    function deleteSelectedEntities() {
+    createApp.deleteSelectedEntities = function() {
         if (SelectionManager.hasSelection() && SelectionManager.hasUnlockedSelection()) {
             var deletedIDs = [];
 
@@ -1928,7 +1930,7 @@
         }
     }
 
-    function toggleSelectedEntitiesLocked() {
+     createApp.toggleSelectedEntitiesLocked = function() {
         if (SelectionManager.hasSelection()) {
             var locked = !Entities.getEntityProperties(SelectionManager.selections[0], ["locked"]).locked;
             for (var i = 0; i < selectionManager.selections.length; i++) {
@@ -1942,7 +1944,7 @@
         }
     }
 
-    function toggleSelectedEntitiesVisible() {
+     createApp.toggleSelectedEntitiesVisible = function() {
         if (SelectionManager.hasSelection()) {
             var visible = !Entities.getEntityProperties(SelectionManager.selections[0], ["visible"]).visible;
             for (var i = 0; i < selectionManager.selections.length; i++) {
@@ -2007,7 +2009,7 @@
             if (radius < 0 || isNaN(radius)){
                 radius = 100;
             }
-            Settings.setValue(SETTING_ENTITY_LIST_DEFAULT_RADIUS, radius);
+            Settings.setValue(createApp.SETTING_ENTITY_LIST_DEFAULT_RADIUS, radius);
         }
     }
 
@@ -2019,22 +2021,22 @@
         } else if (menuItem === MENU_ALLOW_SELECTION_LIGHTS) {
             Entities.setLightsArePickable(Menu.isOptionChecked(MENU_ALLOW_SELECTION_LIGHTS));
         } else if (menuItem === "Delete") {
-            deleteSelectedEntities();
+            createApp.deleteSelectedEntities();
         } else if (menuItem === "Undo") {
-            undoHistory.undo();
+            createApp.undoHistory.undo();
         } else if (menuItem === "Redo") {
-            undoHistory.redo();
+            createApp.undoHistory.redo();
         } else if (menuItem === MENU_SHOW_ICONS_IN_CREATE_MODE) {
             entityIconOverlayManager.setVisible(isActive && Menu.isOptionChecked(MENU_SHOW_ICONS_IN_CREATE_MODE));
         } else if (menuItem === MENU_CREATE_ENTITIES_GRABBABLE) {
             Settings.setValue(SETTING_EDIT_PREFIX + menuItem, Menu.isOptionChecked(menuItem));
         } else if (menuItem === MENU_ENTITY_LIST_DEFAULT_RADIUS) {
             Window.promptTextChanged.connect(onPromptTextChangedDefaultRadiusUserPref);
-            Window.promptAsync("Entity List Default Radius (in meters)", "" + Settings.getValue(SETTING_ENTITY_LIST_DEFAULT_RADIUS, 100));
+            Window.promptAsync("Entity List Default Radius (in meters)", "" + Settings.getValue(createApp.SETTING_ENTITY_LIST_DEFAULT_RADIUS, 100));
         } else if (menuItem === MENU_IMPORT_FROM_FILE) {
-            importEntitiesFromFile();
+            createApp.importEntitiesFromFile();
         } else if (menuItem === MENU_IMPORT_FROM_URL) {
-            importEntitiesFromUrl();
+            createApp.importEntitiesFromUrl();
         }
         tooltip.show(false);
     }
@@ -2177,7 +2179,7 @@
 
     function deleteKey(value) {
         if (value === 0) { // on release
-            deleteSelectedEntities();
+            createApp.deleteSelectedEntities();
         }
     }
     function deselectKey(value) {
@@ -2192,17 +2194,17 @@
     }
     function focusKey(value) {
         if (value === 0) { // on release
-            setCameraFocusToSelection();
+            createApp.setCameraFocusToSelection();
         }
     }
     function gridKey(value) {
         if (value === 0) { // on release
-            alignGridToSelection();
+            createApp.alignGridToSelection();
         }
     }
     function viewGridKey(value) {
         if (value === 0) { // on release
-            toggleGridVisibility();
+            createApp.toggleGridVisibility();
         }
     }
     function snapKey(value) {
@@ -2212,12 +2214,12 @@
     }
     function gridToAvatarKey(value) {
         if (value === 0) { // on release
-            alignGridToAvatar();
+            createApp.alignGridToAvatar();
         }
     }
-    function rotateAsNextClickedSurfaceKey(value) {
+     createApp.rotateAsNextClickedSurfaceKey = function(value) {
         if (value === 0) { // on release
-            rotateAsNextClickedSurface();
+            createApp.rotateAsNextClickedSurface();
         }
     }
     function quickRotate90xKey(value) {
@@ -2321,10 +2323,10 @@
     };
 
     function updateUndoRedoMenuItems() {
-        Menu.setMenuEnabled("Edit > Undo", undoHistory.canUndo());
-        Menu.setMenuEnabled("Edit > Redo", undoHistory.canRedo());
+        Menu.setMenuEnabled("Edit > Undo", createApp.undoHistory.canUndo());
+        Menu.setMenuEnabled("Edit > Redo", createApp.undoHistory.canRedo());
     }
-    var undoHistory = new UndoHistory(updateUndoRedoMenuItems);
+    createApp.undoHistory = new UndoHistory(updateUndoRedoMenuItems);
     updateUndoRedoMenuItems();
 
     // When an entity has been deleted we need a way to "undo" this deletion.  Because it's not currently
@@ -2421,7 +2423,7 @@
                 properties: currentProperties
             });
         }
-        undoHistory.pushCommand(applyEntityProperties, undoData, applyEntityProperties, redoData);
+        createApp.undoHistory.pushCommand(applyEntityProperties, undoData, applyEntityProperties, redoData);
     }
 
     var ServerScriptStatusMonitor = function(entityID, statusCallback) {
@@ -3060,7 +3062,7 @@
     mapping.from([Controller.Hardware.Keyboard.G]).to(viewGridKey);
     mapping.from([Controller.Hardware.Keyboard.H]).to(snapKey);
     mapping.from([Controller.Hardware.Keyboard.K]).to(gridToAvatarKey);
-    mapping.from([Controller.Hardware.Keyboard["0"]]).to(rotateAsNextClickedSurfaceKey);
+    mapping.from([Controller.Hardware.Keyboard["0"]]).to(createApp.rotateAsNextClickedSurfaceKey);
     mapping.from([Controller.Hardware.Keyboard["7"]]).to(quickRotate90xKey);
     mapping.from([Controller.Hardware.Keyboard["8"]]).to(quickRotate90yKey);
     mapping.from([Controller.Hardware.Keyboard["9"]]).to(quickRotate90zKey);
@@ -3080,18 +3082,18 @@
     // Bind undo to ctrl-shift-z to maintain backwards-compatibility
     mapping.from([Controller.Hardware.Keyboard.Z])
         .when([Controller.Hardware.Keyboard.Control, Controller.Hardware.Keyboard.Shift])
-        .to(whenPressed(function() { undoHistory.redo() }));
+        .to(whenPressed(function() { createApp.undoHistory.redo() }));
 
 
     mapping.from([Controller.Hardware.Keyboard.P])
         .when([Controller.Hardware.Keyboard.Control, Controller.Hardware.Keyboard.Shift])
-        .to(whenReleased(function() { unparentSelectedEntities(); }));
+        .to(whenReleased(function() { createApp.unparentSelectedEntities(); }));
 
     mapping.from([Controller.Hardware.Keyboard.P])
         .when([Controller.Hardware.Keyboard.Control, !Controller.Hardware.Keyboard.Shift])
-        .to(whenReleased(function() { parentSelectedEntities(); }));
+        .to(whenReleased(function() { createApp.parentSelectedEntities(); }));
 
-    var keyUpEventFromUIWindow = function(keyUpEvent) {
+    createApp.keyUpEventFromUIWindow = function(keyUpEvent) {
         var WANT_DEBUG_MISSING_SHORTCUTS = false;
 
         var pressedValue = 0.0;
@@ -3113,7 +3115,7 @@
         } else if (keyUpEvent.keyCodeString === "K") {
             gridToAvatarKey(pressedValue);
         } else if (keyUpEvent.keyCodeString === "0") {
-            rotateAsNextClickedSurfaceKey(pressedValue);
+            createApp.rotateAsNextClickedSurfaceKey(pressedValue);
         } else if (keyUpEvent.keyCodeString === "7") {
             quickRotate90xKey(pressedValue);
         } else if (keyUpEvent.keyCodeString === "8") {
@@ -3129,15 +3131,15 @@
         } else if (keyUpEvent.controlKey && keyUpEvent.keyCodeString === "D") {
             selectionManager.duplicateSelection();
         } else if (!isOnMacPlatform && keyUpEvent.controlKey && !keyUpEvent.shiftKey && keyUpEvent.keyCodeString === "Z") {
-            undoHistory.undo(); // undo is only handled via handleMenuItem on Mac
+            createApp.undoHistory.undo(); // undo is only handled via handleMenuItem on Mac
         } else if (keyUpEvent.controlKey && !keyUpEvent.shiftKey && keyUpEvent.keyCodeString === "P") {
-            parentSelectedEntities();
+            createApp.parentSelectedEntities();
         } else if (keyUpEvent.controlKey && keyUpEvent.shiftKey && keyUpEvent.keyCodeString === "P") {
-            unparentSelectedEntities();
+            createApp.unparentSelectedEntities();
         } else if (!isOnMacPlatform &&
                   ((keyUpEvent.controlKey && keyUpEvent.shiftKey && keyUpEvent.keyCodeString === "Z") ||
                    (keyUpEvent.controlKey && keyUpEvent.keyCodeString === "Y"))) {
-            undoHistory.redo(); // redo is only handled via handleMenuItem on Mac
+            createApp.undoHistory.redo(); // redo is only handled via handleMenuItem on Mac
         } else if (WANT_DEBUG_MISSING_SHORTCUTS) {
             console.warn("unhandled key event: " + JSON.stringify(keyUpEvent))
         }
@@ -3230,17 +3232,17 @@
         return realChildren;
     }
 
-    function importEntitiesFromFile() {
+     createApp.importEntitiesFromFile = function() {
         Window.browseChanged.connect(onFileOpenChanged);
         Window.browseAsync("Select .json to Import", "", "*.json");
     }
 
-    function importEntitiesFromUrl() {
+    createApp.importEntitiesFromUrl = function() {
         Window.promptTextChanged.connect(onPromptTextChanged);
         Window.promptAsync("URL of a .json to import", "");
     }
 
-    function setCameraFocusToSelection() {
+    createApp.setCameraFocusToSelection = function() {
         cameraManager.enable();
         if (selectionManager.hasSelection()) {
             cameraManager.focus(selectionManager.worldPosition, selectionManager.worldDimensions,
@@ -3248,7 +3250,7 @@
         }
     }
 
-    function alignGridToSelection() {
+    createApp.alignGridToSelection = function() {
         if (selectionManager.hasSelection()) {
             if (!grid.getVisible()) {
                 grid.setVisible(true, true);
@@ -3257,14 +3259,14 @@
         }
     }
 
-    function alignGridToAvatar() {
+    createApp.alignGridToAvatar = function() {
         if (!grid.getVisible()) {
             grid.setVisible(true, true);
         }
         grid.moveToAvatar();
     }
 
-    function toggleGridVisibility() {
+    createApp.toggleGridVisibility = function() {
         if (!grid.getVisible()) {
             grid.setVisible(true, true);
         } else {
@@ -3272,7 +3274,7 @@
         }
     }
 
-    function rotateAsNextClickedSurface() {
+     createApp.rotateAsNextClickedSurface = function() {
         if (!SelectionManager.hasSelection() || !SelectionManager.hasUnlockedSelection()) {
             audioFeedback.rejection();
             Window.notifyEditError("You have nothing selected, or the selection is locked.");
