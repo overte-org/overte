@@ -11,9 +11,9 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-/* global EntityListTool, Tablet, selectionManager, Entities, Camera, MyAvatar, Vec3, Menu, Messages,
-   cameraManager, MENU_EASE_ON_FOCUS, deleteSelectedEntities, toggleSelectedEntitiesLocked, toggleSelectedEntitiesVisible,
-   keyUpEventFromUIWindow, Script, SelectionDisplay, SelectionManager, Clipboard */
+/* global EntityListTool, Tablet, Entities, Camera, MyAvatar, Vec3, Menu, Messages,
+   MENU_EASE_ON_FOCUS,
+   Script, Clipboard */
 
 var PROFILING_ENABLED = false;
 var profileIndent = '';
@@ -32,8 +32,9 @@ const PROFILE = !PROFILING_ENABLED ? PROFILE_NOOP : function(name, fn, args) {
     console.log("PROFILE-Script " + profileIndent + "(" + name + ") End " + delta + "ms");
 };
 
-var EntityListTool = function(shouldUseEditTabletApp) {
+var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
     var that = {};
+    that.selectionManager = selectionManager;
 
     var CreateWindow = Script.require('../modules/createWindow.js');
 
@@ -110,8 +111,8 @@ var EntityListTool = function(shouldUseEditTabletApp) {
         }
         var selectedIDs = [];
 
-        for (var i = 0; i < selectionManager.selections.length; i++) {
-            selectedIDs.push(selectionManager.selections[i]);
+        for (var i = 0; i < that.selectionManager.selections.length; i++) {
+            selectedIDs.push(that.selectionManager.selections[i]);
         }
 
         emitJSONScriptEvent({
@@ -259,8 +260,8 @@ var EntityListTool = function(shouldUseEditTabletApp) {
             });
 
             var selectedIDs = [];
-            for (var j = 0; j < selectionManager.selections.length; j++) {
-                selectedIDs.push(selectionManager.selections[j]);
+            for (var j = 0; j < that.selectionManager.selections.length; j++) {
+                selectedIDs.push(that.selectionManager.selections[j]);
             }
 
             emitJSONScriptEvent({
@@ -291,7 +292,7 @@ var EntityListTool = function(shouldUseEditTabletApp) {
     function onFileSaveChanged(filename) {
         Window.saveFileChanged.disconnect(onFileSaveChanged);
         if (filename !== "") {
-            var success = Clipboard.exportEntities(filename, selectionManager.selections);
+            var success = Clipboard.exportEntities(filename, that.selectionManager.selections);
             if (!success) {
                 Window.notifyEditError("Export failed.");
             }
@@ -313,113 +314,113 @@ var EntityListTool = function(shouldUseEditTabletApp) {
             for (var i = 0; i < ids.length; i++) {
                 entityIDs.push(ids[i]);
             }
-            selectionManager.setSelections(entityIDs, that);
+            that.selectionManager.setSelections(entityIDs, that);
             if (data.focus) {
-                cameraManager.enable();
-                cameraManager.focus(selectionManager.worldPosition,
-                                    selectionManager.worldDimensions,
+                that.cameraManager.enable();
+                that.cameraManager.focus(that.selectionManager.worldPosition,
+                                    that.selectionManager.worldDimensions,
                                     Menu.isOptionChecked(MENU_EASE_ON_FOCUS));
             }
         } else if (data.type === "refresh") {
             that.sendUpdate();
         } else if (data.type === "teleport") {
-            if (selectionManager.hasSelection()) {
-                MyAvatar.position = selectionManager.worldPosition;
+            if (that.selectionManager.hasSelection()) {
+                MyAvatar.position = that.selectionManager.worldPosition;
             }
         } else if (data.type === "export") {
-            if (!selectionManager.hasSelection()) {
+            if (!that.selectionManager.hasSelection()) {
                 Window.notifyEditError("No entities have been selected.");
             } else {
                 Window.saveFileChanged.connect(onFileSaveChanged);
                 Window.saveAsync("Select Where to Save", "", "*.json");
             }
         } else if (data.type === "delete") {
-            deleteSelectedEntities();
+            that.createApp.deleteSelectedEntities();
         } else if (data.type === "toggleLocked") {
-            toggleSelectedEntitiesLocked();
+            that.createApp.toggleSelectedEntitiesLocked();
         } else if (data.type === "toggleVisible") {
-            toggleSelectedEntitiesVisible();
+            that.createApp.toggleSelectedEntitiesVisible();
         } else if (data.type === "filterInView") {
             filterInView = data.filterInView === true;
         } else if (data.type === "radius") {
             searchRadius = data.radius;
         } else if (data.type === "cut") {
-            SelectionManager.cutSelectedEntities();
+            that.selectionManager.cutSelectedEntities();
         } else if (data.type === "copy") {
-            SelectionManager.copySelectedEntities();
+            that.selectionManager.copySelectedEntities();
         } else if (data.type === "paste") {
-            SelectionManager.pasteEntities();
+            that.selectionManager.pasteEntities();
         } else if (data.type === "duplicate") {
-            SelectionManager.duplicateSelection();
+            that.selectionManager.duplicateSelection();
             that.sendUpdate();
         } else if (data.type === "rename") {
             Entities.editEntity(data.entityID, {name: data.name});
             // make sure that the name also gets updated in the properties window
-            SelectionManager._update();
+            that.selectionManager._update();
         } else if (data.type === "toggleSpaceMode") {
             SelectionDisplay.toggleSpaceMode();
         } else if (data.type === 'keyUpEvent') {
-            keyUpEventFromUIWindow(data.keyUpEvent);
+            that.createApp.keyUpEventFromUIWindow(data.keyUpEvent);
         } else if (data.type === 'undo') {
-            undoHistory.undo();
+            that.createApp.undoHistory.undo();
         } else if (data.type === 'redo') {
-            undoHistory.redo();
+            that.createApp.undoHistory.redo();
         } else if (data.type === 'parent') {
-            parentSelectedEntities();
+            that.createApp.parentSelectedEntities();
         } else if (data.type === 'unparent') {
-            unparentSelectedEntities();
+            that.createApp.unparentSelectedEntities();
         } else if (data.type === 'hmdMultiSelectMode') {
             hmdMultiSelectMode = data.value;
         } else if (data.type === 'selectAllInBox') {
-            selectAllEntitiesInCurrentSelectionBox(false);
+            that.createApp.selectAllEntitiesInCurrentSelectionBox(false);
         } else if (data.type === 'selectAllTouchingBox') {
-            selectAllEntitiesInCurrentSelectionBox(true);
+            that.createApp.selectAllEntitiesInCurrentSelectionBox(true);
         } else if (data.type === 'selectParent') {
-            SelectionManager.selectParent();
+            that.selectionManager.selectParent();
         } else if (data.type === 'selectTopParent') {
-            SelectionManager.selectTopParent();
+            that.selectionManager.selectTopParent();
         } else if (data.type === 'addChildrenToSelection') {
-            SelectionManager.addChildrenToSelection();
+            that.selectionManager.addChildrenToSelection();
         } else if (data.type === 'selectFamily') {
-            SelectionManager.selectFamily();
+            that.selectionManager.selectFamily();
         } else if (data.type === 'selectTopFamily') {
-            SelectionManager.selectTopFamily();
+            that.selectionManager.selectTopFamily();
         } else if (data.type === 'teleportToEntity') {
-            SelectionManager.teleportToEntity();
+            that.selectionManager.teleportToEntity();
         } else if (data.type === 'rotateAsTheNextClickedSurface') {
-            rotateAsNextClickedSurface();
+            that.createApp.rotateAsNextClickedSurface();
         } else if (data.type === 'quickRotate90x') {
-            selectionDisplay.rotate90degreeSelection("X");
+            that.selectionDisplay.rotate90degreeSelection("X");
         } else if (data.type === 'quickRotate90y') {
-            selectionDisplay.rotate90degreeSelection("Y");
+            that.selectionDisplay.rotate90degreeSelection("Y");
         } else if (data.type === 'quickRotate90z') {
-            selectionDisplay.rotate90degreeSelection("Z");
+            that.selectionDisplay.rotate90degreeSelection("Z");
         } else if (data.type === 'moveEntitySelectionToAvatar') {
-            SelectionManager.moveEntitiesSelectionToAvatar();
+            that.selectionManager.moveEntitiesSelectionToAvatar();
         } else if (data.type === 'loadConfigSetting') {
-            var columnsData = Settings.getValue(SETTING_EDITOR_COLUMNS_SETUP, "NO_DATA");
-            var defaultRadius = Settings.getValue(SETTING_ENTITY_LIST_DEFAULT_RADIUS, 100);
+            var columnsData = Settings.getValue(that.createApp.SETTING_EDITOR_COLUMNS_SETUP, "NO_DATA");
+            var defaultRadius = Settings.getValue(that.createApp.SETTING_ENTITY_LIST_DEFAULT_RADIUS, 100);
             emitJSONScriptEvent({
                 "type": "loadedConfigSetting",
                 "columnsData": columnsData,
                 "defaultRadius": defaultRadius
             });
         } else if (data.type === 'saveColumnsConfigSetting') {
-            Settings.setValue(SETTING_EDITOR_COLUMNS_SETUP, data.columnsData);
+            Settings.setValue(that.createApp.SETTING_EDITOR_COLUMNS_SETUP, data.columnsData);
         } else if (data.type === 'importFromFile') {
-            importEntitiesFromFile();
+            that.createApp.importEntitiesFromFile();
         } else if (data.type === 'importFromUrl') {
-            importEntitiesFromUrl();
+            that.createApp.importEntitiesFromUrl();
         } else if (data.type === 'setCameraFocusToSelection') {
-            setCameraFocusToSelection();
+            that.createApp.setCameraFocusToSelection();
         } else if (data.type === 'alignGridToSelection') {
-            alignGridToSelection();
+            that.createApp.alignGridToSelection();
         } else if (data.type === 'alignGridToAvatar') {
-            alignGridToAvatar();
+            that.createApp.alignGridToAvatar();
         } else if (data.type === 'brokenURLReport') {
-            brokenURLReport(selectionManager.selections);
+            brokenURLReport(that.selectionManager.selections);
         } else if (data.type === 'toggleGridVisibility') {
-            toggleGridVisibility();
+            that.createApp.toggleGridVisibility();
         } else if (data.type === 'toggleSnapToGrid') {
             that.toggleSnapToGrid();
         }
