@@ -495,7 +495,7 @@ SelectionManager = (function() {
 
     that.cutSelectedEntities = function() {
         that.copySelectedEntities();
-        deleteSelectedEntities();
+        that.createApp.deleteSelectedEntities();
     };
 
     that.copySelectedEntities = function() {
@@ -624,7 +624,7 @@ SelectionManager = (function() {
         }
 
         redo(copiedProperties);
-        undoHistory.pushCommand(undo, copiedProperties, redo, copiedProperties);
+        that.createApp.undoHistory.pushCommand(undo, copiedProperties, redo, copiedProperties);
     };
 
     that._update = function(selectionUpdated, caller) {
