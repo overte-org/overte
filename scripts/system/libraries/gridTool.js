@@ -10,8 +10,6 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-/* global keyUpEventFromUIWindow */
-
 var GRID_CONTROLS_HTML_URL = Script.resolvePath('../html/gridControls.html');
 
 Grid = function() {
@@ -321,7 +319,7 @@ GridTool = function(opts) {
                 horizontalGrid.moveToSelection();
             }
         } else if (data.type === 'keyUpEvent') {
-            keyUpEventFromUIWindow(data.keyUpEvent);
+            that.createApp.keyUpEventFromUIWindow(data.keyUpEvent);
         }
     };
 
