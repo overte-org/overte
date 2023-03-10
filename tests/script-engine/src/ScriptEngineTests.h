@@ -65,7 +65,7 @@ private slots:
     void testRaiseExceptionAndCatch();
     void testSignal();
     void testSignalWithException();
-
+    void testQuat();
 
 
 private:
