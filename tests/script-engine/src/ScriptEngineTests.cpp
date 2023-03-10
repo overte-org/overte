@@ -302,6 +302,37 @@ void ScriptEngineTests::testSignalWithException() {
     QVERIFY(exceptionCount >= 3);
 }
 
+void ScriptEngineTests::testQuat() {
+    QString script =
+        "var x;\n"
+        "print(JSON.stringify(Quat.IDENTITY));\n"
+        "print(JSON.stringify(Quat.safeEulerAngles(Quat.IDENTITY)));\n"
+        "print(JSON.stringify(Quat.getUp(Quat.IDENTITY)));\n"
+        "print(JSON.stringify(Quat.getUp(x)));\n"
+        "Script.stop(true);\n";
+
+    int printCount = 0;
+    QStringList answers{
+        "{\"x\":0,\"y\":0,\"z\":0,\"w\":1}",
+        "{\"x\":0,\"y\":0,\"z\":0}",
+        "{\"x\":0,\"y\":1,\"z\":0}",
+        ""
+    };
+
+    auto sm = makeManager(script, "testQuat.js");
+
+    connect(sm.get(), &ScriptManager::printedMessage, [&printCount, answers](const QString& message, const QString& engineName){
+        QCOMPARE(message, answers[printCount++]);
+    });
+
+    connect(sm.get(), &ScriptManager::unhandledException, [](std::shared_ptr<ScriptException> exception){
+        QVERIFY(exception->errorMessage.contains("undefined to glm::quat"));
+    });
+
+
+    sm->run();
+}
+
 
 void ScriptEngineTests::scriptTest() {
     return;
