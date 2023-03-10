@@ -54,7 +54,6 @@ class ScriptEngineTests : public QObject {
     Q_OBJECT
 private slots:
     void initTestCase();
-    void scriptTest();
     void testTrivial();
     void testSyntaxError();
     void testRuntimeError();
