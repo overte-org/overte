@@ -8,7 +8,8 @@ Reference: https://github.com/nodejs/node/blob/main/BUILDING.md
 
 ## Requirements
 ### Windows
-TODO
+1. git
+2. nasm-2.16.01-installer-x64.exe
 
 ### Linux
 1. git
@@ -28,6 +29,13 @@ Before running configure, make sure that the node-build folder is empty.
 ### Windows
 Make sure that the directory you are using to build Node is not deeply nested.  It is quite possible to run into the windows MAX_PATH limit when building Node.  For example: `c:\msys64\home\ajt\code\hifi\tools\node-builder\node-build` is too long.  `c:\n\node-build\` is a better choice.
 
+Build:
+'.\vcbuild.bat release package dll nonpm'
+
+Rename the installation directory to 'node-build'
+
+After building copy 'deps\v8\include\cppgc' and 'deps\v8\include\libplatform' to 'node-build\include'.
+Copy 'libnode.lib' and 'v8_libplatform.lib' to 'node-build'
 
 #### Preparing source files
 Get the source:
@@ -41,7 +49,7 @@ TODO
 
 #### Uploading
 
-Create an xz tar file called node-install-18.14.2-windows-release.tar.gz from the node-install folder.
+Create a xz tar file called node-install-18.14.2-windows-release.tar.gz from the node-install folder.
 
 Using 7-Zip:
 * `cd` to the *qt5* folder.

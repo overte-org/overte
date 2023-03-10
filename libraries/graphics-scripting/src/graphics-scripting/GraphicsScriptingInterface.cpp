@@ -346,7 +346,12 @@ namespace scriptable {
 #endif
                 if (auto tmp = qobject_cast<T*>(obj)) {
                     //out = QPointer<T>(tmp);
-                    dest.template setValue(QPointer<T>(tmp));
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+                    dest.setValue(QPointer<T>(tmp));
+#else
+                    //V8TODO: works on Linux but not Windows?
+                    //dest.template setValue(QPointer<T>(tmp));
+#endif
                     return true;
                 }
 #if 0
