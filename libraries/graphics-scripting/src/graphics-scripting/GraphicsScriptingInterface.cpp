@@ -350,7 +350,7 @@ namespace scriptable {
                     dest.setValue(QPointer<T>(tmp));
 #else
                     //V8TODO: works on Linux but not Windows?
-                    //dest.template setValue(QPointer<T>(tmp));
+                    dest.template setValue(QPointer<T>(tmp));
 #endif
                     return true;
                 }
