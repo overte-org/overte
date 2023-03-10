@@ -104,6 +104,7 @@ static bool scriptableResourceFromScriptValue(const ScriptValue& value, Scriptab
 STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
+    registerEventTypes(scriptEngine);
     scriptRegisterMetaType<ExternalResource::Bucket, externalResourceBucketToScriptValue, externalResourceBucketFromScriptValue>(scriptEngine);
 
     scriptRegisterMetaType<ScriptableResourceRawPtr, scriptableResourceToScriptValue, scriptableResourceFromScriptValue>(scriptEngine);
