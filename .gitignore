@@ -122,3 +122,4 @@ qt/
 
 # Act local GitHub Actions
 .secret
+cmake-build-debug-visual-studio/
