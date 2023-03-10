@@ -1384,7 +1384,7 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
     }
 
     _callCounter++;
-    if (_callCounter % 10 == 0) {
+    if (_callCounter % 1000 == 0) {
         qCDebug(scriptengine_v8) << "Script engine: " << _engine->manager()->getFilename() << " Signal proxy " << fullName()
                  << " call count: " << _callCounter << " total time: " << _totalCallTime_s;
     }

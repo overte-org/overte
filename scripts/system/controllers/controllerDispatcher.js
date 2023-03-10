@@ -369,28 +369,30 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             for (h = LEFT_HAND; h <= RIGHT_HAND; h++) {
 
                 // XXX find a way to extract searchRay from samuel's stuff
-                rayPicks[h].searchRay = {
-                    origin: controllerLocations[h].position,
-                    direction: Quat.getUp(controllerLocations[h].orientation),
-                    length: 1000
-                };
+                if (controllerLocations[h].valid) {
+                    rayPicks[h].searchRay = {
+                        origin: controllerLocations[h].position,
+                        direction: Quat.getUp(controllerLocations[h].orientation),
+                        length: 1000
+                    };
 
-                if (rayPicks[h].type === Picks.INTERSECTED_ENTITY) {
-                    // XXX check to make sure this one isn't already in nearbyEntityProperties?
-                    if (rayPicks[h].distance < NEAR_GRAB_PICK_RADIUS * sensorScaleFactor) {
-                        var nearEntityID = rayPicks[h].objectID;
-                        var nearbyProps = Entities.getEntityProperties(nearEntityID, DISPATCHER_PROPERTIES);
-                        nearbyProps.id = nearEntityID;
-                        nearbyProps.distance = rayPicks[h].distance;
-                        nearbyEntityPropertiesByID[nearEntityID] = nearbyProps;
-                        nearbyEntityProperties[h].push(nearbyProps);
+                    if (rayPicks[h].type === Picks.INTERSECTED_ENTITY) {
+                        // XXX check to make sure this one isn't already in nearbyEntityProperties?
+                        if (rayPicks[h].distance < NEAR_GRAB_PICK_RADIUS * sensorScaleFactor) {
+                            var nearEntityID = rayPicks[h].objectID;
+                            var nearbyProps = Entities.getEntityProperties(nearEntityID, DISPATCHER_PROPERTIES);
+                            nearbyProps.id = nearEntityID;
+                            nearbyProps.distance = rayPicks[h].distance;
+                            nearbyEntityPropertiesByID[nearEntityID] = nearbyProps;
+                            nearbyEntityProperties[h].push(nearbyProps);
+                        }
                     }
-                }
 
-                // sort by distance from each hand
-                nearbyEntityProperties[h].sort(function (a, b) {
-                    return a.distance - b.distance;
-                });
+                    // sort by distance from each hand
+                    nearbyEntityProperties[h].sort(function (a, b) {
+                        return a.distance - b.distance;
+                    });
+                }
             }
 
             // sometimes, during a HMD snap-turn, an equipped or held item wont be near
