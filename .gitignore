@@ -1,7 +1,7 @@
 # https://www.git-scm.com/docs/gitignore
 #
 # Copyright 2013-2019 High Fidelity, Inc.
-# Copyright 2022 Overte e.V.
+# Copyright 2022-2023 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 VideoDecodeStats
@@ -65,6 +65,10 @@ profile
 *.moved-aside
 DerivedData
 .idea/
+
+# KDevelop
+*~
+*.kdev4
 
 *.hmap
 
