@@ -879,7 +879,7 @@ void AudioClient::handleAudioDataPacket(QSharedPointer<ReceivedMessage> message)
             emit receivedFirstPacket();
         }
 
-#if DEV_BUILD || PR_BUILD
+#if defined(DEV_BUILD) || defined(PR_BUILD)
         _gate.insert(message);
 #else
         // Audio output must exist and be correctly set up if we're going to process received audio
