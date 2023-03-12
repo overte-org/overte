@@ -2,22 +2,28 @@
   "version": 2.6,
   "settings": [
     {
+      "name": "private",
+      "label": "Directory Server",
+      "settings": [
+        {
+          "name": "selectedMetaverseURL",
+          "label": "Directory Server URL",
+          "assignment-types": [ 0, 1, 2, 3, 4, 5, 6],
+          "settings": [
+            {
+              "name": "dict_url",
+              "label": "Set Directory server.",
+              "placeholder": "Optional (Default: https://mv.overte.org/server)",
+              "advanced": true
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "metaverse",
       "label": "Networking / Directory Services",
       "settings": [
-            {
-        "name": "directory_server",
-        "label": "Networking / Directory Server",
-        "assignment-types": [ 0, 1, 2, 3, 4, 5, 6],
-        "settings": [
-            {
-            "name": "dict_url",
-            "label": "Set Directory server.",
-            "placeholder": "Optional (Default: https://mv.overte.org/server)",
-            "advanced": true
-            }
-        ]
-        },
         {
           "name": "access_token",
           "label": "Access Token",

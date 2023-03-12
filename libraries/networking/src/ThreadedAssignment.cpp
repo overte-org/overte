@@ -118,7 +118,8 @@ void ThreadedAssignment::parseCommonServerSettings(){
     Setting::Handle<QUrl> selectedMetaverseURLSetting("private/selectedMetaverseURL",
                                                           NetworkingConstants::METAVERSE_SERVER_URL_STABLE);
 
-    const QString METAVERSE_SETTINGS_KEY = "metaverse";
+    //const QString METAVERSE_SETTINGS_KEY = "metaverse";
+    const QString METAVERSE_SETTINGS_KEY = "private";
     QJsonObject metaverseObject = domainSettings[METAVERSE_SETTINGS_KEY].toObject();
 
     qDebug() << "[configuration_dump]" << domainSettings;
@@ -126,7 +127,7 @@ void ThreadedAssignment::parseCommonServerSettings(){
 
     qDebug() << "[METAVERSEOBJ_DUMP]" << metaverseObject;
 
-    const QString DIRECTORY_KEY = "directory_server";
+    const QString DIRECTORY_KEY = "selectedMetaverseURL";
     QJsonValue directoryURLValue = metaverseObject.value(DIRECTORY_KEY);
 
     qDebug() << "[ThreadedAssignment_dump]" << directoryURLValue.toString();
