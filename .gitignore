@@ -7,18 +7,12 @@
 VideoDecodeStats
 
 # CMake
-CMakeCache.txt
-CMakeFiles/
-CMakeScripts/
-cmake_install.cmake
 build*/
 cmake-build-relwithdebinfo-visual-studio/
 release*/
 debug*/
 gprof*/
 valgrind*/
-ext/
-Makefile
 *.user
 
 # Android Studio
