@@ -41,11 +41,10 @@
 // WEBRTC_AUDIO causes:
 // overte/libraries/audio-client/src/AudioClient.cpp:1258:36: runtime error: member call on address 0x61b000006980 which does not point to an object of type 'AudioProcessing'
 // 0x61b000006980: note: object has invalid vptr
-// Should be investigated before doing a release with it uncommented
-//#  define WEBRTC_AUDIO 1
+#  define WEBRTC_AUDIO 1
 #  define WEBRTC_POSIX 1
 //V8TODO: temporarily disabled, because linker failed for memory debugging
-//#  define WEBRTC_DATA_CHANNELS 1
+#  define WEBRTC_DATA_CHANNELS 1
 #elif defined(Q_OS_LINUX) && defined(Q_PROCESSOR_ARM)
 // WebRTC is basically impossible to build on aarch64 Linux.
 // I am looking at https://gitlab.freedesktop.org/pulseaudio/webrtc-audio-processing for an alternative.
