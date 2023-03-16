@@ -19,6 +19,7 @@ Script.include("/~/system/libraries/controllers.js");
 
 var isShowingOverlays = true;
 var debugOverlays = {};
+//V8TODO: change to local entity
 var textSizeOverlay = Overlays.addOverlay("text3d", {
     position: MyAvatar.position,
     lineHeight: 0.1,

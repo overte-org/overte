@@ -134,6 +134,7 @@ function updateOverlays() {
                 modOverlays[avatarID]=[newKickOverlay];
 
                 if (Users.canKick) {
+                    //V8TODO: change to local entity
                     var newMuteOverlay = Overlays.addOverlay("image3d", {
                         url: muteOverlayURL(),
                         position: muteOverlayPosition,

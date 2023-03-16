@@ -12,6 +12,7 @@
 //  OverlayGroup provides a way to create composite overlays and control their
 //  position relative to a settable rootPosition and rootRotation.
 //
+//V8TODO: check if it uses 3D overlays
 OverlayGroup = function(opts) {
     var that = {};
 

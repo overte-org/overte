@@ -89,6 +89,7 @@ function stopAwayAnimation() {
 
 // OVERLAY
 var overlay = Overlays.addOverlay("image", OVERLAY_DATA);
+//V8TODO: change to local entity
 var overlayHMD = Overlays.addOverlay("image3d", OVERLAY_DATA_HMD);
 
 function showOverlay() {

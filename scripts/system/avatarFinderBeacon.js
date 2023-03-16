@@ -27,6 +27,7 @@ var POSSIBLE_AC_AVATARS = [
 AvatarFinderBeacon = function(avatar) {
     var visible = false;
     var avatarSessionUUID = avatar.sessionUUID;
+    //V8TODO: change to local entity
     this.overlay = Overlays.addOverlay('line3d', {
         color: BEAM_COLOR,
         dashed: false,
