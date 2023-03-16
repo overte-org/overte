@@ -11,6 +11,7 @@ var JOINT_NAME = HMD.active ? HAND_JOINT : 'Mouse';
 var UPDATE_MS = 1000/30;
 
 // create tect3d overlay to display hover results
+//V8TODO: change to local entity
 var overlayID = Overlays.addOverlay('text3d', {
     text: 'hover',
     visible: false,

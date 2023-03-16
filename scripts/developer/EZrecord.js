@@ -48,6 +48,7 @@
 
             if (HMD.active) {
                 // 3D overlay attached to avatar.
+                //V8TODO: change to local entity
                 hmdOverlay = Overlays.addOverlay("text3d", {
                     text: recordingText,
                     dimensions: { x: 3 * HMD_FONT_SIZE, y: HMD_FONT_SIZE },

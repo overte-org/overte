@@ -465,6 +465,7 @@
         }
 
         function create() {
+            //V8TODO: change to local entity
             miniOverlay = Overlays.addOverlay("model", {
                 url: MINI_MODEL,
                 dimensions: Vec3.multiply(MyAvatar.sensorToWorldScale, MINI_DIMENSIONS),
@@ -474,6 +475,7 @@
                 drawInFront: false,
                 visible: false
             });
+            //V8TODO: change to local entity
             miniUIOverlay = Overlays.addOverlay("web3d", {
                 url: handsAreTracked() ? MINI_HAND_UI_HTML : MINI_UI_HTML,
                 parentID: miniOverlay,

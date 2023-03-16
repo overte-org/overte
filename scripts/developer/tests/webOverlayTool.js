@@ -23,7 +23,8 @@ SPAWNER = function (properties) {
     }
 
     function makeObject(properties) {
-        
+
+        //V8TODO: change to local entity
         var overlay = Overlays.addOverlay("web3d", {
             name: "Web",
             url: "https://www.reddit.com/r/random",

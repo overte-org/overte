@@ -172,6 +172,7 @@ createControllerDisplay = function(config) {
             controller.naturalPosition = { x: 0, y: 0, z: 0 };
         }
 
+        //V8TODO: change to local entity
         var baseOverlayID = Overlays.addOverlay("model", {
             url: controller.modelURL,
             dimensions: Vec3.multiply(sensorScaleFactor, controller.dimensions),
@@ -206,6 +207,7 @@ createControllerDisplay = function(config) {
                     properties.textures = textures;
                 }
 
+                //V8TODO: change to local entity
                 var overlayID = Overlays.addOverlay("model", properties);
 
                 if (part.type === "rotational") {

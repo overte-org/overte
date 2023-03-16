@@ -77,6 +77,7 @@ function ExtendedOverlay(key, type, properties, selected, hasModel) { // A wrapp
     this.key = key;
     this.selected = selected || false; // not undefined
     this.hovering = false;
+    //V8TODO: check if it uses 3d overlays
     this.activeOverlay = Overlays.addOverlay(type, properties); // We could use different overlays for (un)selected...
 }
 // Instance methods:
@@ -183,6 +184,7 @@ ExtendedOverlay.applyPickRay = function (pickRay, hit, noHit) {
 //
 function HighlightedEntity(id, entityProperties) {
     this.id = id;
+    //V8TODO: change to local entity
     this.overlay = Overlays.addOverlay('cube', {
         position: entityProperties.position,
         rotation: entityProperties.rotation,

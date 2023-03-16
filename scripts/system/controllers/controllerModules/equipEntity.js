@@ -74,6 +74,7 @@ EquipHotspotBuddy.prototype.updateHotspot = function(hotspot, timestamp) {
         }
 
         // override default sphere with a user specified model, if it exists.
+        //V8TODO: change to local entity
         overlayInfoSet.overlays.push(Overlays.addOverlay("model", {
             name: "hotspot overlay",
             url: hotspot.indicatorURL ? hotspot.indicatorURL : DEFAULT_SPHERE_MODEL_URL,

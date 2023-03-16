@@ -38,6 +38,7 @@
 
     var oopsDimensions = {x: 4.2, y: 0.8};
 
+    //V8TODO: change to local entity
     var redirectOopsText = Overlays.addOverlay("text3d", {
         name: "oopsText",
         position: {x: 0, y: 1.6763916015625, z: 1.45927095413208},
@@ -55,6 +56,7 @@
         grabbable: false,
     });
 
+    //V8TODO: change to local entity
     var tryAgainImageNeutral = Overlays.addOverlay("image3d", {
         name: "tryAgainImage",
         localPosition: {x: -0.6, y: -0.6, z: 0.0},
@@ -68,6 +70,7 @@
         parentID: redirectOopsText
     });
 
+    //V8TODO: change to local entity
     var tryAgainImageHover = Overlays.addOverlay("image3d", {
         name: "tryAgainImageHover",
         localPosition: {x: -0.6, y: -0.6, z: 0.0},
@@ -81,6 +84,7 @@
         parentID: redirectOopsText
     });
 
+    //V8TODO: change to local entity
     var tryAgainText = Overlays.addOverlay("text3d", {
         name: "tryAgainText",
         localPosition: {x: -0.6, y: -0.962, z: 0.0},
@@ -96,6 +100,7 @@
         parentID: redirectOopsText
     });
 
+    //V8TODO: change to local entity
     var backImageNeutral = Overlays.addOverlay("image3d", {
         name: "backImage",
         localPosition: {x: 0.6, y: -0.6, z: 0.0},
@@ -109,6 +114,7 @@
         parentID: redirectOopsText
     });
 
+    //V8TODO: change to local entity
     var backImageHover = Overlays.addOverlay("image3d", {
         name: "backImageHover",
         localPosition: {x: 0.6, y: -0.6, z: 0.0},
@@ -122,6 +128,7 @@
         parentID: redirectOopsText
     });
 
+    //V8TODO: change to local entity
     var backText = Overlays.addOverlay("text3d", {
         name: "backText",
         localPosition: {x: 0.6, y: -0.962, z: 0.0},
