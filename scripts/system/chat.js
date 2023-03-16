@@ -45,6 +45,7 @@
     var speechBubbleLineHeight = 0.05; // The height of a line of text in the speech bubble.
     var SPEECH_BUBBLE_MAX_WIDTH = 1; // meters
 
+    //V8TODO: change to local entity
     var textSizeOverlay = Overlays.addOverlay("text3d", {
         position: MyAvatar.position,
         lineHeight: speechBubbleLineHeight,

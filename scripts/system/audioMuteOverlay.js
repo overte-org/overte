@@ -41,6 +41,7 @@
         }
 
         if (HMD.active) {
+            //V8TODO: change to local entity
             warningOverlayID = Overlays.addOverlay("text3d", {
                 name: "Muted-Warning",
                 localPosition: { x: 0.0, y: -0.45, z: -1.0 },

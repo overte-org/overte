@@ -249,6 +249,7 @@
                     tabletShown = false;
 
                     // also cause the stylus model to be loaded
+                    //V8TODO: change to local entity
                     var tmpStylusID = Overlays.addOverlay("model", {
                                                name: "stylus",
                                                url: Script.resourcesPath() + "meshes/tablet-stylus-fat.fbx",

@@ -31,6 +31,7 @@ function updateOverlay(entityID, queryAACube) {
             size: queryAACube.scale
         });
     } else {
+        //V8TODO: change to local entity
         overlays[entityID] = Overlays.addOverlay("cube", {
             position: cubeCenter,
             size: queryAACube.scale,

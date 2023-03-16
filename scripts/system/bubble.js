@@ -21,6 +21,7 @@
     // Affects bubble height
     var BUBBLE_HEIGHT_SCALE = 0.15;
     // The bubble model itself
+    //V8TODO: change to local entity
     var bubbleOverlay = Overlays.addOverlay("model", {
         url: Script.resolvePath("assets/models/Bubble-v14.fbx"), // If you'd like to change the model, modify this line (and the dimensions below)
         dimensions: { x: MyAvatar.sensorToWorldScale, y: 0.75 * MyAvatar.sensorToWorldScale, z: MyAvatar.sensorToWorldScale },
