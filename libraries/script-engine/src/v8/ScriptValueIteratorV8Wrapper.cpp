@@ -83,6 +83,11 @@ V8ScriptValue V8ScriptValueIterator::value() {
     if (!_object.Get(isolate)->Get(context, propertyName->ToString(context).ToLocalChecked()).ToLocal(&v8Value)) {
         Q_ASSERT(false);
     }
+    //V8TODO: sometimes no value gets written to v8Value. This needs to be investigated and fixed.
+    if (v8Value.IsEmpty()) {
+        qDebug() << "V8ScriptValueIterator::value: value handle is empty for key: " << *v8::String::Utf8Value(isolate, propertyName->ToString(context).ToLocalChecked());
+        v8Value = v8::Undefined(isolate);
+    }
     return V8ScriptValue(_engine, v8Value);
 }
 
