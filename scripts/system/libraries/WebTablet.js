@@ -142,6 +142,7 @@ WebTablet = function (url, width, dpi, hand, location, visible) {
     this.cleanUpOldTablets();
     cleanUpOldMaterialEntities();
 
+    //V8TODO: change to local entity
     this.tabletEntityID = Overlays.addOverlay("model", tabletProperties);
 
     if (this.webOverlayID) {
@@ -152,6 +153,7 @@ WebTablet = function (url, width, dpi, hand, location, visible) {
     var WEB_ENTITY_Y_OFFSET = 1.25 * tabletScaleFactor;
     var screenWidth = 0.9367 * tabletWidth;
     var screenHeight = 0.9000 * tabletHeight;
+    //V8TODO: change to local entity
     this.webOverlayID = Overlays.addOverlay("web3d", {
         name: "WebTablet Web",
         url: url,
@@ -172,6 +174,7 @@ WebTablet = function (url, width, dpi, hand, location, visible) {
     var HOME_BUTTON_X_OFFSET = 0.00079 * sensorScaleFactor;
     var HOME_BUTTON_Y_OFFSET = -1 * ((tabletHeight / 2) - (4.0 * tabletScaleFactor / 2));
     var HOME_BUTTON_Z_OFFSET = (tabletDepth / 1.9) * sensorScaleFactor;
+    //V8TODO: change to local entity
     this.homeButtonID = Overlays.addOverlay("circle3d", {
         name: "homeButton",
         localPosition: { x: HOME_BUTTON_X_OFFSET, y: HOME_BUTTON_Y_OFFSET, z: -HOME_BUTTON_Z_OFFSET },
@@ -185,6 +188,7 @@ WebTablet = function (url, width, dpi, hand, location, visible) {
         parentJointIndex: -1
     });
 
+    //V8TODO: change to local entity
     this.homeButtonHighlightID = Overlays.addOverlay("circle3d", {
         name: "homeButtonHighlight",
         localPosition: { x: -HOME_BUTTON_X_OFFSET, y: HOME_BUTTON_Y_OFFSET, z: -HOME_BUTTON_Z_OFFSET },

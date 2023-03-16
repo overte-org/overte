@@ -313,6 +313,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
                             Overlays.editOverlay(this.grabSphereOverlays[h], { position: controllerLocations[h].position });
                         } else {
                             var grabSphereSize = findRadius * 2;
+                            //V8TODO: change to local entity
                             this.grabSphereOverlays[h] = Overlays.addOverlay("sphere", {
                                 position: controllerLocations[h].position,
                                 dimensions: { x: grabSphereSize, y: grabSphereSize, z: grabSphereSize },

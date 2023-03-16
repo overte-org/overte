@@ -46,6 +46,7 @@ var entitySphere = Entities.addEntity({
 });
 
 var overlaySpherePosition = Vec3.sum(tablePosition, {x: sphereDimensions.x, y: tableDimensions.y/2 + sphereDimensions.y/2, z: 0});
+//V8TODO: change to local entity
 var overlaySphere = Overlays.addOverlay("sphere", {
     position: overlaySpherePosition,
     size: 0.01,
