@@ -163,6 +163,7 @@ ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(const V8ScriptValue& val) 
     //V8TODO This shouldn't cause problems but I'm not sure if it's ok
     //v8::HandleScope handleScope(const_cast<v8::Isolate*>(val.constGetIsolate()));
     auto v8Value = val.constGet();
+    Q_ASSERT(!v8Value.IsEmpty());
     if (v8Value->IsNullOrUndefined()) {
         return nullptr;
     }
