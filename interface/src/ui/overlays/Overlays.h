@@ -123,7 +123,8 @@ public:
 
     void cleanupAllOverlays();
 
-    mutable ScriptEnginePointer _scriptEngine;
+    // V8TODO: This can be safely removed as soon as 3D overlays are not used anymore by default scripts
+    //mutable ScriptEnginePointer _scriptEngine;
 
 public slots:
     /*@jsdoc
@@ -762,13 +763,15 @@ private:
         QMouseEvent* event, PointerEvent::EventType eventType);
 
     static QString entityToOverlayType(const QString& type);
-    static QString overlayToEntityType(const QString& type);
+    // V8TODO: This can be safely removed as soon as 3D overlays are not used anymore by default scripts
+    //static QString overlayToEntityType(const QString& type);
     static std::unordered_map<QString, QString> _entityToOverlayTypes;
     static std::unordered_map<QString, QString> _overlayToEntityTypes;
 
-    QVariantMap convertEntityToOverlayProperties(const EntityItemProperties& entityProps);
+    // V8TODO: This can be safely removed as soon as 3D overlays are not used anymore by default scripts
+    /*QVariantMap convertEntityToOverlayProperties(const EntityItemProperties& entityProps);
     EntityItemProperties convertOverlayToEntityProperties(QVariantMap& overlayProps, const QString& type, bool add, const QUuid& id);
-    EntityItemProperties convertOverlayToEntityProperties(QVariantMap& overlayProps, std::pair<glm::quat, bool>& rotationToSave, const QString& type, bool add, const QUuid& id = QUuid());
+    EntityItemProperties convertOverlayToEntityProperties(QVariantMap& overlayProps, std::pair<glm::quat, bool>& rotationToSave, const QString& type, bool add, const QUuid& id = QUuid());*/
 
 private slots:
     void mousePressOnPointerEvent(const QUuid& id, const PointerEvent& event);
