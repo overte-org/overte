@@ -2944,6 +2944,7 @@ bool EntityTree::writeToMap(QVariantMap& entityDescription, OctreeElementPointer
     }
     entityDescription["DataVersion"] = _persistDataVersion;
     entityDescription["Id"] = _persistID;
+    // V8TODO: Creating new script engine each time is very inefficient
     ScriptEnginePointer engine = newScriptEngine();
     RecurseOctreeToMapOperator theOperator(entityDescription, element, engine.get(), skipDefaultValues,
                                             skipThoseWithBadParents, _myAvatar);
@@ -3094,6 +3095,7 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
     // to a ScriptValue, and then to EntityItemProperties.  These properties are used
     // to add the new entity to the EntityTree.
     QVariantList entitiesQList = map["Entities"].toList();
+    // V8TODO: Creating new script engine each time is very inefficient
     ScriptEnginePointer scriptEngine = newScriptEngine();
 
     if (entitiesQList.length() == 0) {
@@ -3269,6 +3271,7 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
 }
 
 bool EntityTree::writeToJSON(QString& jsonString, const OctreeElementPointer& element) {
+    // V8TODO: Creating new script engine each time is very inefficient
     ScriptEnginePointer engine = newScriptEngine();
     RecurseOctreeToJSONOperator theOperator(element, engine.get(), jsonString);
     withReadLock([&] {

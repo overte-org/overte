@@ -51,7 +51,8 @@ STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
                             RayToOverlayIntersectionResultFromScriptValue>(scriptEngine);
 }));
 
-Overlays::Overlays() : _scriptEngine(newScriptEngine()) {
+// V8TODO: _scriptEngine can be safely removed as soon as 3D overlays are not used anymore by default scripts
+Overlays::Overlays() /*: _scriptEngine(newScriptEngine())*/ {
     ADD_TYPE_MAP(Box, cube);
     ADD_TYPE_MAP(Sphere, sphere);
     _overlayToEntityTypes["rectangle3d"] = "Shape";
@@ -195,13 +196,13 @@ QString Overlays::entityToOverlayType(const QString& type) {
     return "unknown";
 }
 
-QString Overlays::overlayToEntityType(const QString& type) {
+/*QString Overlays::overlayToEntityType(const QString& type) {
     auto iter = _overlayToEntityTypes.find(type);
     if (iter != _overlayToEntityTypes.end()) {
         return iter->second;
     }
     return "Unknown";
-}
+}*/
 
 #define SET_OVERLAY_PROP_DEFAULT(o, d)                      \
     {                                                       \
@@ -309,12 +310,14 @@ QString Overlays::overlayToEntityType(const QString& type) {
 
 static QHash<QUuid, std::pair<glm::quat, bool>> savedRotations = QHash<QUuid, std::pair<glm::quat, bool>>();
 
-EntityItemProperties Overlays::convertOverlayToEntityProperties(QVariantMap& overlayProps, const QString& type, bool add, const QUuid& id) {
+// V8TODO: This can be safely removed as soon as 3D overlays are not used anymore by default scripts
+/*EntityItemProperties Overlays::convertOverlayToEntityProperties(QVariantMap& overlayProps, const QString& type, bool add, const QUuid& id) {
     std::pair<glm::quat, bool> rotation;
     return convertOverlayToEntityProperties(overlayProps, rotation, type, add, id);
-}
+}*/
 
-EntityItemProperties Overlays::convertOverlayToEntityProperties(QVariantMap& overlayProps, std::pair<glm::quat, bool>& rotationToSave, const QString& type, bool add, const QUuid& id) {
+// V8TODO: This can be safely removed as soon as 3D overlays are not used anymore by default scripts
+/*EntityItemProperties Overlays::convertOverlayToEntityProperties(QVariantMap& overlayProps, std::pair<glm::quat, bool>& rotationToSave, const QString& type, bool add, const QUuid& id) {
     overlayProps["type"] = type;
 
     SET_OVERLAY_PROP_DEFAULT(alpha, 0.7);
@@ -647,9 +650,10 @@ EntityItemProperties Overlays::convertOverlayToEntityProperties(QVariantMap& ove
     EntityItemProperties toReturn;
     EntityItemPropertiesFromScriptValueHonorReadOnly(props, toReturn);
     return toReturn;
-}
+}*/
 
-QVariantMap Overlays::convertEntityToOverlayProperties(const EntityItemProperties& properties) {
+// V8TODO: This can be safely removed once scripts don't use 3D overlays
+/*QVariantMap Overlays::convertEntityToOverlayProperties(const EntityItemProperties& properties) {
     ScriptEnginePointer scriptEngine = newScriptEngine();
     QVariantMap overlayProps = EntityItemPropertiesToScriptValue(scriptEngine.get(), properties).toVariant().toMap();
 
@@ -778,7 +782,7 @@ QVariantMap Overlays::convertEntityToOverlayProperties(const EntityItemPropertie
     RENAME_PROP(localRotation, localOrientation);
 
     return overlayProps;
-}
+}*/
 
 QUuid Overlays::addOverlay(const QString& type, const QVariant& properties) {
     if (_shuttingDown) {
@@ -810,7 +814,9 @@ QUuid Overlays::addOverlay(const QString& type, const QVariant& properties) {
         return QUuid();
     }
 
-    QString entityType = overlayToEntityType(type);
+    return UNKNOWN_ENTITY_ID;
+    // V8TODO: This can be safely removed as soon as 3D overlays are not used anymore by default scripts
+    /*QString entityType = overlayToEntityType(type);
     if (entityType == "Unknown") {
         return UNKNOWN_ENTITY_ID;
     }
@@ -824,7 +830,7 @@ QUuid Overlays::addOverlay(const QString& type, const QVariant& properties) {
     if (entityType == "Text" || entityType == "Image" || entityType == "Grid" || entityType == "Web") {
         savedRotations[id] = rotationToSave;
     }
-    return id;
+    return id;*/
 }
 
 QUuid Overlays::add2DOverlay(const Overlay::Pointer& overlay) {
@@ -882,10 +888,14 @@ bool Overlays::editOverlay(const QUuid& id, const QVariant& properties) {
         return true;
     }
 
+    return false;
+
+    // V8TODO: This can be safely removed as soon as 3D overlays are not used anymore by default scripts
+    /*
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
     auto propertyMap = properties.toMap();
     EntityItemProperties entityProperties = convertOverlayToEntityProperties(propertyMap, entityScriptingInterface->getEntityType(id), false, id);
-    return !entityScriptingInterface->editEntity(id, entityProperties).isNull();
+    return !entityScriptingInterface->editEntity(id, entityProperties).isNull();*/
 }
 
 bool Overlays::editOverlays(const QVariant& propertiesById) {
@@ -897,7 +907,7 @@ bool Overlays::editOverlays(const QVariant& propertiesById) {
 
     QVariantMap deferred;
     const QVariantMap map = propertiesById.toMap();
-    auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
+    //auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
     for (const auto& key : map.keys()) {
         QUuid id = QUuid(key);
         const QVariant& properties = map[key];
@@ -910,8 +920,10 @@ bool Overlays::editOverlays(const QVariant& propertiesById) {
             }
             overlay->setProperties(properties.toMap());
         } else {
-            auto propertyMap = properties.toMap();
-            entityScriptingInterface->editEntity(id, convertOverlayToEntityProperties(propertyMap, entityScriptingInterface->getEntityType(id), false, id));
+            qDebug() << "Overlays::editOverlays doesn't support editing entities anymore";
+            // V8TODO: This can be safely removed as soon as 3D overlays are not used anymore by default scripts
+            /*auto propertyMap = properties.toMap();
+            entityScriptingInterface->editEntity(id, convertOverlayToEntityProperties(propertyMap, entityScriptingInterface->getEntityType(id), false, id));*/
         }
     }
 
