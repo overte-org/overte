@@ -52,6 +52,7 @@ void addAvatarEntities(const QVariantList& avatarEntities) {
     EntitySimulationPointer entitySimulation = entityTree->getSimulation();
     PhysicalEntitySimulationPointer physicalEntitySimulation = std::static_pointer_cast<PhysicalEntitySimulation>(entitySimulation);
     EntityEditPacketSender* entityPacketSender = physicalEntitySimulation->getPacketSender();
+    // V8TODO: Creating new script engine each time is very inefficient
     ScriptEnginePointer scriptEngine = newScriptEngine();
     for (int index = 0; index < avatarEntities.count(); index++) {
         const QVariantMap& avatarEntityProperties = avatarEntities.at(index).toMap();
@@ -304,6 +305,7 @@ QVariantMap AvatarBookmarks::getAvatarDataToBookmark() {
     EntityTreePointer entityTree = treeRenderer ? treeRenderer->getTree() : nullptr;
 
     if (entityTree) {
+        // V8TODO: Creating new script engine each time is very inefficient
         ScriptEnginePointer scriptEngine = newScriptEngine();
         auto avatarEntities = myAvatar->getAvatarEntityDataNonDefault();
         for (auto entityID : avatarEntities.keys()) {
