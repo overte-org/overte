@@ -1,13 +1,15 @@
 //
 //  AudioClient.cpp
-//  interface/src
+//  libraries/audio-client/src
 //
 //  Created by Stephen Birarda on 1/22/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "AudioClient.h"
@@ -118,7 +120,7 @@ QList<HifiAudioDeviceInfo> getAvailableDevices(QAudio::Mode mode, const QString&
             newDevices.push_front(HifiAudioDeviceInfo(devices.first(), true, mode, HifiAudioDeviceInfo::desktop));
         } else {
             //current audio list is empty for some reason.
-            qCDebug(audioclient) << __FUNCTION__ << "Default device not found in list no alternative selection available";
+            qCWarning(audioclient) << __FUNCTION__ << "Default device not found in list and no alternative selection available";
         }
     } else {
         newDevices.push_front(defaultDesktopDevice);
@@ -877,7 +879,7 @@ void AudioClient::handleAudioDataPacket(QSharedPointer<ReceivedMessage> message)
             emit receivedFirstPacket();
         }
 
-#if DEV_BUILD || PR_BUILD
+#if defined(DEV_BUILD) || defined(PR_BUILD)
         _gate.insert(message);
 #else
         // Audio output must exist and be correctly set up if we're going to process received audio
