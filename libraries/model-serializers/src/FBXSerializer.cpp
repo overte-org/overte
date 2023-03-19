@@ -454,6 +454,40 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
     unsigned int meshIndex = 0;
     haveReportedUnhandledRotationOrder = false;
     int fbxVersionNumber = -1;
+
+    foreach (const FBXNode& child, node.children) {
+        if (child.name == "Creator") {
+            printf("Hello this is what we want to look at.");
+        }
+    }
+
+    const FBXNode* materialDefinition = nullptr;
+    foreach (const FBXNode& child, node.children) {
+        if (child.name == "Definitions") {
+            foreach (const FBXNode& definition, child.children) {
+                if (definition.name == "ObjectType") {
+                    bool isMaterial = false;
+                    foreach (const FBXNode& objectTypeChild , definition.children) {
+                        if (objectTypeChild.name == "Material") {
+                            isMaterial = true;
+                        }
+                    }
+                    if (isMaterial == true) {
+                        foreach (const FBXNode& propertyTemplate, definition.children) {
+                            if (propertyTemplate.name == "PropertyTemplate") {
+                                foreach (const FBXNode& properties, propertyTemplate.children) {
+                                    if (properties.name == "Properties70") {
+                                        materialDefinition = &properties;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     foreach (const FBXNode& child, node.children) {
 
         if (child.name == "FBXHeaderExtension") {
@@ -932,6 +966,11 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
                                     } else if (property.properties.at(0) == OPACITY) {
                                         material.opacity = property.properties.at(index).value<double>();
                                     } else if (property.properties.at(0) == REFLECTION_FACTOR) {
+                                        // Blender 2.79 and below set REFLECTION_FACTOR, but there is no way to actually set that value in their UI,
+                                        // so we are falling back to non-PBS material.
+                                        // if (blender version is lower than 2.80) {
+                                        //     material.isPBSMaterial = true;
+                                        // }
                                         material.isPBSMaterial = true;
                                         material.metallic = property.properties.at(index).value<double>();
                                     }
@@ -1191,16 +1230,15 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
                 }
             }
         }
+
 #if defined(DEBUG_FBXSERIALIZER)
         else {
             QString objectname = child.name.data();
             if ( objectname == "Pose"
                 || objectname == "CreationTime"
                 || objectname == "FileId"
-                || objectname == "Creator"
                 || objectname == "Documents"
                 || objectname == "References"
-                || objectname == "Definitions"
                 || objectname == "Takes"
                 || objectname == "AnimationStack"
                 || objectname == "AnimationLayer"
