@@ -116,9 +116,9 @@ const QString POINT_REF_JOINT_NAME = "RightShoulder";
 const float POINT_ALPHA_BLENDING = 1.0f;
 
 STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
-    auto scriptEngine = manager->engine().get();
+    auto scriptEngine = manager->engine();
 
-    registerMetaTypes(scriptEngine);
+    MyAvatar::registerMetaTypes(scriptEngine);
 });
 
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
