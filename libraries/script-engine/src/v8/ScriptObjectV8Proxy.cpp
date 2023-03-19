@@ -48,7 +48,7 @@ static const void *internalPointsToQVariantProxy = (void *)0x13371000;
 static const void *internalPointsToMethodProxy = (void *)0x13373000;
 // This is used to pass object in ScriptVariantV8Proxy to methods of prototype object, for example passing AnimationPointer to AnimationObject
 // Object is then converted using scriptvalue_cast for use inside the prototype
-static const void *internalPointsToQVariant = (void *)0x13374000;
+static const void *internalPointsToQVariantInProxy = (void *)0x13374000;
 
 // Used strictly to replace the "this" object value for property access.  May expand to a full context element
 // if we find it necessary to, but hopefully not needed
@@ -727,8 +727,9 @@ ScriptVariantV8Proxy::ScriptVariantV8Proxy(ScriptEngineV8* engine, const QVarian
     auto variantDataTemplate = v8::ObjectTemplate::New(isolate);
     variantDataTemplate->SetInternalFieldCount(2);
     auto variantData = variantDataTemplate->NewInstance(engine->getContext()).ToLocalChecked();
-    variantData->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToQVariant));
-    variantData->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(&_variant));
+    variantData->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToQVariantInProxy));
+    // Internal field doesn't point directly to QVariant, because then alignment would need to be guaranteed in all compilers
+    variantData->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(this));
     _v8Object.Reset(isolate, v8::Local<v8::Object>::Cast(variantData));
     _name = QString::fromLatin1(variant.typeName());
 }
@@ -738,6 +739,7 @@ ScriptVariantV8Proxy::~ScriptVariantV8Proxy() {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
+    // V8TODO: Add similar deletion handling as for object proxy
     //_v8ObjectTemplate.Reset();
     _v8Object.Reset();
 }
@@ -817,10 +819,11 @@ QVariant* ScriptVariantV8Proxy::unwrapQVariantPointer(v8::Isolate* isolate, cons
     if (v8Object->InternalFieldCount() != 2) {
         return nullptr;
     }
-    if (v8Object->GetAlignedPointerFromInternalField(0) != internalPointsToQVariant) {
+    if (v8Object->GetAlignedPointerFromInternalField(0) != internalPointsToQVariantInProxy) {
         return nullptr;
     }
-    return reinterpret_cast<QVariant*>(v8Object->GetAlignedPointerFromInternalField(1));
+    auto proxy = reinterpret_cast<ScriptVariantV8Proxy*>(v8Object->GetAlignedPointerFromInternalField(1));
+    return &(proxy->_variant);
 }
 
 
