@@ -1,4 +1,9 @@
-// webSpawnTool.js
+//
+// webOverlayTool.js
+//
+//  Created by Bradley Austin Davis on March 16th, 2018.
+//  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 // Stress tests the rendering of web surfaces over time
 //
@@ -24,23 +29,24 @@ SPAWNER = function (properties) {
 
     function makeObject(properties) {
         
-        var overlay = Overlays.addOverlay("web3d", {
-            name: "Web",
-            url: "https://www.reddit.com/r/random",
-            localPosition: randomPositionXZ( { x: 0, y: 0, z: -1 }, 1),
-            localRotation: Quat.angleAxis(180, Vec3.Y_AXIS),
-            dimensions: {x: .8, y: .45, z: 0.1},
-            color: { red: 255, green: 255, blue: 255 },
-            alpha: 1.0,
-            showKeyboardFocusHighlight: false,
-            visible: true
-        });
+        var overlay = Entities.addEntity({
+            "type": "Web",
+            "name": "Web",
+            "sourceUrl": "https://www.reddit.com/r/random",
+            "localPosition": randomPositionXZ( { "x": 0, "y": 0, "z": -1 }, 1),
+            "localRotation": Quat.angleAxis(180, Vec3.Y_AXIS),
+            "dimensions": {"x": 0.8, "y": 0.45, "z": 0.1},
+            "color": { "red": 255, "green": 255, "blue": 255 },
+            "alpha": 1.0,
+            "showKeyboardFocusHighlight": false,
+            "visible": true
+        }, "local");
         
         var now = Date.now();
 
         return {
             destroy: function () {
-                Overlays.deleteOverlay(overlay)
+                Entities.deleteEntity(overlay);
             },
             getAge: function () {
                 return (Date.now() - now) / 1000.0;

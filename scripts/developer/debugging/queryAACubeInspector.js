@@ -2,8 +2,9 @@
 //  grabInspector.js
 //  examples/debugging/
 //
-//  Created by Seth Alves on 2015-12-19.
+//  Created by Seth Alves on December 19th, 2015.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -26,23 +27,27 @@ function updateOverlay(entityID, queryAACube) {
 
     if (entityID in overlays) {
         var overlay = overlays[entityID];
-        Overlays.editOverlay(overlay, {
-            position: cubeCenter,
-            size: queryAACube.scale
+        Entities.editEntity(overlay, {
+            "position": cubeCenter,
+            "size": queryAACube.scale
         });
     } else {
-        overlays[entityID] = Overlays.addOverlay("cube", {
-            position: cubeCenter,
-            size: queryAACube.scale,
-            color: {
-                red: 0,
-                green: 0,
-                blue: 255
+        overlays[entityID] = Entities.addEntity({
+            "type": "Shape",
+            "shape": "Cube",
+            "position": cubeCenter,
+            "size": queryAACube.scale,
+            "color": {
+                "red": 0,
+                "green": 0,
+                "blue": 255
             },
-            alpha: 1,
-            solid: false,
-            grabbable: false
-        });
+            "alpha": 1,
+            "primitiveMode": "lines",
+            "grab": {
+                "grabbable": false
+            }
+        }, "local");
     }
 }
 
@@ -57,7 +62,7 @@ Script.setInterval(function() {
 
 function cleanup() {
     for (var entityID in overlays) {
-        Overlays.deleteOverlay(overlays[entityID]);
+        Entities.deleteEntity((overlays[entityID]);
     }
 }
 
