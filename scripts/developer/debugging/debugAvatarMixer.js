@@ -4,13 +4,14 @@
 //  debugAvatarMixer.js
 //  scripts/developer/debugging
 //
-//  Created by Brad Hefta-Gaub on 01/09/2017
+//  Created by Brad Hefta-Gaub on January 9th, 2017.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
-/* global Toolbars, Script, Users, Overlays, AvatarList, Controller, Camera, getControllerWorldLocation */
+/* global Toolbars, Script, Users, Entities, AvatarList, Controller, Camera, getControllerWorldLocation */
 
 
 (function() { // BEGIN LOCAL_SCOPE
@@ -19,12 +20,12 @@ Script.include("/~/system/libraries/controllers.js");
 
 var isShowingOverlays = true;
 var debugOverlays = {};
-//V8TODO: change to local entity
-var textSizeOverlay = Overlays.addOverlay("text3d", {
-    position: MyAvatar.position,
-    lineHeight: 0.1,
-    visible: false
-});
+var textSizeOverlay = Entities.addEntity({
+    "type": "Text",
+    "position": MyAvatar.position,
+    "lineHeight": 0.1,
+    "visible": false
+}, "local");
 
 function removeOverlays() {
     // enumerate the overlays and remove them
@@ -33,11 +34,11 @@ function removeOverlays() {
     for (var i = 0; i < overlayKeys.length; ++i) {
         var avatarID = overlayKeys[i];
         for (var j = 0; j < debugOverlays[avatarID].length; ++j) {
-            Overlays.deleteOverlay(debugOverlays[avatarID][j]);
+            Entities.deleteEntity(debugOverlays[avatarID][j]);
         }
     }
 
-    Overlays.deleteOverlay(textSizeOverlay);
+    Entities.deleteEntity(textSizeOverlay);
 
     debugOverlays = {};
 }
@@ -91,27 +92,28 @@ function updateOverlays() {
                        //+" SM: " + AvatarManager.getAvatarSimulationRate(avatarID,"skeletonModel").toFixed(2) + "hz \n"
                        +" JD: " + AvatarManager.getAvatarSimulationRate(avatarID,"jointData").toFixed(2) + "hz \n"
 
-            var dimensions = Overlays.textSize(textSizeOverlay, text);
+            var dimensions = Entities.textSize(textSizeOverlay, text);
             if (avatarID in debugOverlays) {
                 // keep the overlay above the current position of this avatar
-                Overlays.editOverlay(debugOverlays[avatarID][0], {
-                    dimensions: { x: 1.1 * dimensions.width, y: 0.6 * dimensions.height },
-                    position: overlayPosition,
-                    text: text
+                Entities.editEntity(debugOverlays[avatarID][0], {
+                    "dimensions": { "x": 1.1 * dimensions.width, "y": 0.6 * dimensions.height },
+                    "position": overlayPosition,
+                    "text": text
                 });
             } else {
                 // add the overlay above this avatar
-                var newOverlay = Overlays.addOverlay("text3d", {
-                    position: overlayPosition,
-                    dimensions: { x: 1.1 * dimensions.width, y: 0.6 * dimensions.height },
-                    lineHeight: 0.1,
-                    text: text,
-                    color: { red: 255, green: 255, blue: 255},
-                    alpha: 1,
-                    solid: true,
-                    isFacingAvatar: true,
-                    drawInFront: true
-                });
+                var newOverlay = Entities.addEntity({
+                    "type": "Text",
+                    "position": overlayPosition,
+                    "dimensions": { "x": 1.1 * dimensions.width, "y": 0.6 * dimensions.height },
+                    "lineHeight": 0.1,
+                    "text": text,
+                    "color": { "red": 255, "green": 255, "blue": 255},
+                    "alpha": 1,
+                    "primitiveMode": "solid",
+                    "billboardMode": "full",
+                    "renderLayer": "front"
+                }, "local");
 
                 debugOverlays[avatarID]=[newOverlay];
             }
@@ -127,7 +129,7 @@ AvatarList.avatarRemovedEvent.connect(function(avatarID){
 
         // first remove the rendered overlays
         for (var j = 0; j < debugOverlays[avatarID].length; ++j) {
-            Overlays.deleteOverlay(debugOverlays[avatarID][j]);
+            Entities.deleteEntity(debugOverlays[avatarID][j]);
         }
         
         // delete the saved ID of the overlay from our mod overlays object
