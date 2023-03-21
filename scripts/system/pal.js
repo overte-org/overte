@@ -1,18 +1,20 @@
 "use strict";
+//
+// pal.js
+//
+// Created by Howard Stearns on December 9th, 2016
+//  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+// Distributed under the Apache License, Version 2.0
+// See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
 /* jslint vars:true, plusplus:true, forin:true */
 /* global Tablet, Settings, Script, AvatarList, Users, Entities,
     MyAvatar, Camera, Overlays, Vec3, Quat, HMD, Controller, Account,
     UserActivityLogger, Messages, Window, XMLHttpRequest, print, location, getControllerWorldLocation
 */
 /* eslint indent: ["error", 4, { "outerIIFEBody": 0 }] */
-//
-// pal.js
-//
-// Created by Howard Stearns on December 9, 2016
-// Copyright 2016 High Fidelity, Inc
-//
-// Distributed under the Apache License, Version 2.0
-// See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
 (function () { // BEGIN LOCAL_SCOPE
@@ -62,14 +64,15 @@ function angleBetweenVectorsInPlane(from, to, normal) {
 //
 var overlays = {}; // Keeps track of all our extended overlay data objects, keyed by target identifier.
 
-function ExtendedOverlay(key, type, properties, selected, hasModel) { // A wrapper around overlays to store the key it is associated with.
+function ExtendedOverlay(key, properties, selected, hasModel) { // A wrapper around overlays to store the key it is associated with.
     overlays[key] = this;
     if (hasModel) {
         var modelKey = key + "-m";
-        this.model = new ExtendedOverlay(modelKey, "model", {
-            url: Script.resolvePath("./assets/models/Avatar-Overlay-v1.fbx"),
-            textures: textures(selected),
-            ignoreRayIntersection: true
+        this.model = new ExtendedOverlay(modelKey, {
+            "type": "Model",
+            "modelURL": Script.resolvePath("./assets/models/Avatar-Overlay-v1.fbx"),
+            "textures": textures(selected),
+            "ignorePickIntersection": true
         }, false, false);
     } else {
         this.model = undefined;
@@ -77,16 +80,16 @@ function ExtendedOverlay(key, type, properties, selected, hasModel) { // A wrapp
     this.key = key;
     this.selected = selected || false; // not undefined
     this.hovering = false;
-    this.activeOverlay = Overlays.addOverlay(type, properties); // We could use different overlays for (un)selected...
+    this.activeOverlay = Entities.addEntity(properties, "local"); // We could use different overlays for (un)selected...
 }
 // Instance methods:
 ExtendedOverlay.prototype.deleteOverlay = function () { // remove display and data of this overlay
-    Overlays.deleteOverlay(this.activeOverlay);
+    Entities.deleteEntity(this.activeOverlay);
     delete overlays[this.key];
 };
 
 ExtendedOverlay.prototype.editOverlay = function (properties) { // change display of this overlay
-    Overlays.editOverlay(this.activeOverlay, properties);
+    Entities.editEntity(this.activeOverlay, properties);
 };
 
 function color(selected, hovering, level) {
@@ -183,35 +186,37 @@ ExtendedOverlay.applyPickRay = function (pickRay, hit, noHit) {
 //
 function HighlightedEntity(id, entityProperties) {
     this.id = id;
-    this.overlay = Overlays.addOverlay('cube', {
-        position: entityProperties.position,
-        rotation: entityProperties.rotation,
-        dimensions: entityProperties.dimensions,
-        solid: false,
-        color: {
-            red: 0xF3,
-            green: 0x91,
-            blue: 0x29
+    this.overlay = Entities.addEntity({
+        "type": "Shape",
+        "shape": "Cube",
+        "position": entityProperties.position,
+        "rotation": entityProperties.rotation,
+        "dimensions": entityProperties.dimensions,
+        "primitiveMode": "solid",
+        "color": {
+            "red": 0xF3,
+            "green": 0x91,
+            "blue": 0x29
         },
-        ignoreRayIntersection: true,
-        drawInFront: false // Arguable. For now, let's not distract with mysterious wires around the scene.
-    });
+        "ignorePickIntersection": true,
+        "renderLayer": "world" // Arguable. For now, let's not distract with mysterious wires around the scene.
+    }, "local");
     HighlightedEntity.overlays.push(this);
 }
 HighlightedEntity.overlays = [];
 HighlightedEntity.clearOverlays = function clearHighlightedEntities() {
     HighlightedEntity.overlays.forEach(function (highlighted) {
-        Overlays.deleteOverlay(highlighted.overlay);
+        Entities.deleteEntity(highlighted.overlay);
     });
     HighlightedEntity.overlays = [];
 };
 HighlightedEntity.updateOverlays = function updateHighlightedEntities() {
     HighlightedEntity.overlays.forEach(function (highlighted) {
         var properties = Entities.getEntityProperties(highlighted.id, ['position', 'rotation', 'dimensions']);
-        Overlays.editOverlay(highlighted.overlay, {
-            position: properties.position,
-            rotation: properties.rotation,
-            dimensions: properties.dimensions
+        Entities.editEntity(highlighted.overlay, {
+            "position": properties.position,
+            "rotation": properties.rotation,
+            "dimensions": properties.dimensions
         });
     });
 };
@@ -432,12 +437,14 @@ function getConnectionData(specificUsername, domain) { // Update all the usernam
 //
 function addAvatarNode(id) {
     var selected = ExtendedOverlay.isSelected(id);
-    return new ExtendedOverlay(id, "sphere", {
-        drawInFront: true,
-        solid: true,
-        alpha: 0.8,
-        color: color(selected, false, 0.0),
-        ignoreRayIntersection: false
+    return new ExtendedOverlay(id, {
+        "type": "Shape",
+        "shape": "Sphere",
+        "renderLayer": "front",
+        "primitiveMode": "solid",
+        "alpha": 0.8,
+        "color": color(selected, false, 0.0),
+        "ignorePickIntersection": false
     }, selected, true);
 }
 // Each open/refresh will capture a stable set of avatarsOfInterest, within the specified filter.

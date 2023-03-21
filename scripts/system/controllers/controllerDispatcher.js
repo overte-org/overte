@@ -2,6 +2,10 @@
 
 //  controllerDispatcher.js
 //
+//  Created by Seth Alves, July 27th, 2017.
+//  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023, Overte e.V.
+//
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
@@ -256,7 +260,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
                 _this.dataGatherers.rightControllerLocation()
             ];
 
-            // find 3d overlays near each hand
+            // find 3d overlays/Local Entities near each hand
             var nearbyOverlayIDs = [];
             var h;
             for (h = LEFT_HAND; h <= RIGHT_HAND; h++) {
@@ -282,9 +286,9 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
                     }
 
                     nearbyOverlays.sort(function (a, b) {
-                        var aPosition = Overlays.getProperty(a, "position");
+                        var aPosition = Entities.getEntityProperties(a, ["position"]).position;
                         var aDistance = Vec3.distance(aPosition, controllerLocations[h].position);
-                        var bPosition = Overlays.getProperty(b, "position");
+                        var bPosition = Entities.getEntityProperties(b, ["position"]).position;
                         var bDistance = Vec3.distance(bPosition, controllerLocations[h].position);
                         return aDistance - bDistance;
                     });
@@ -305,20 +309,31 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 
                     if (SHOW_GRAB_SPHERE) {
                         if (this.grabSphereOverlays[h]) {
-                            Overlays.editOverlay(this.grabSphereOverlays[h], { position: controllerLocations[h].position });
+                            Entities.editEntity(this.grabSphereOverlays[h], { "position": controllerLocations[h].position });
                         } else {
                             var grabSphereSize = findRadius * 2;
-                            this.grabSphereOverlays[h] = Overlays.addOverlay("sphere", {
-                                position: controllerLocations[h].position,
-                                dimensions: { x: grabSphereSize, y: grabSphereSize, z: grabSphereSize },
-                                color: { red: 30, green: 30, blue: 255 },
-                                alpha: 0.3,
-                                solid: true,
-                                visible: true,
-                                // lineWidth: 2.0,
-                                drawInFront: false,
-                                grabbable: false
-                            });
+                            this.grabSphereOverlays[h] = Entities.addEntity({
+                                "type": "Shape",
+                                "shape": "Sphere",
+                                "position": controllerLocations[h].position,
+                                "dimensions": { 
+                                    "x": grabSphereSize, 
+                                    "y": grabSphereSize, 
+                                    "z": grabSphereSize 
+                                },
+                                "color": { 
+                                    "red": 30, 
+                                    "green": 30, 
+                                    "blue": 255 
+                                },
+                                "alpha": 0.3,
+                                "primitiveMode": "solid",
+                                "visible": true,
+                                "renderLayer": "front",
+                                "grab": {
+                                    "grabbable": false
+                                }
+                            }, "local");
                         }
                     }
 
@@ -648,8 +663,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             Controller.disableMapping(MAPPING_NAME);
             _this.pointerManager.removePointers();
             Pointers.removePointer(this.mouseRayPointer);
-            Overlays.mouseReleaseOnOverlay.disconnect(mouseReleaseOnOverlay);
-            Overlays.mousePressOnOverlay.disconnect(mousePress);
+            Entities.mouseReleaseOnEntity.disconnect(mouseReleaseOn);
             Entities.mousePressOnEntity.disconnect(mousePress);
             Messages.messageReceived.disconnect(controllerDispatcher.handleMessage);
             if (_this.debugPanelID) {
@@ -660,30 +674,30 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 
         if (DEBUG) {
             this.debugPanelID = Entities.addEntity({
-                name: "controllerDispatcher debug panel",
-                type: "Text",
-                dimensions: { x: 1.0, y: 0.3, z: 0.01 },
-                parentID: MyAvatar.sessionUUID,
+                "name": "controllerDispatcher debug panel",
+                "type": "Text",
+                "dimensions": { "x": 1.0, "y": 0.3, "z": 0.01 },
+                "parentID": MyAvatar.sessionUUID,
                 // parentJointIndex: MyAvatar.getJointIndex("_CAMERA_MATRIX"),
-                parentJointIndex: -1,
-                localPosition: { x: -0.25, y: 0.8, z: -1.2 },
-                textColor: { red: 255, green: 255, blue: 255},
-                backgroundColor: { red: 0, green: 0, blue: 0},
-                text: "",
-                lineHeight: 0.03,
-                leftMargin: 0.015,
-                topMargin: 0.01,
-                backgroundAlpha: 0.7,
-                textAlpha: 1.0,
-                unlit: true,
-                ignorePickIntersection: true
+                "parentJointIndex": -1,
+                "localPosition": { "x": -0.25, "y": 0.8, "z": -1.2 },
+                "textColor": { "red": 255, "green": 255, "blue": 255},
+                "backgroundColor": { "red": 0, "green": 0, "blue": 0},
+                "text": "",
+                "lineHeight": 0.03,
+                "leftMargin": 0.015,
+                "topMargin": 0.01,
+                "backgroundAlpha": 0.7,
+                "textAlpha": 1.0,
+                "unlit": true,
+                "ignorePickIntersection": true
             }, "local");
         }
     }
 
-    function mouseReleaseOnOverlay(overlayID, event) {
-        if (HMD.homeButtonID && overlayID === HMD.homeButtonID && event.button === "Primary") {
-            Messages.sendLocalMessage("home", overlayID);
+    function mouseReleaseOn(id, event) {
+        if (HMD.homeButtonID && id === HMD.homeButtonID && event.button === "Primary") {
+            Messages.sendLocalMessage("home", id);
         }
     }
 
@@ -700,8 +714,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
         }
     }
 
-    Overlays.mouseReleaseOnOverlay.connect(mouseReleaseOnOverlay);
-    Overlays.mousePressOnOverlay.connect(mousePress);
+    Entities.mouseReleaseOnEntity.connect(mouseReleaseOn);
     Entities.mousePressOnEntity.connect(mousePress);
 
     var controllerDispatcher = new ControllerDispatcher();

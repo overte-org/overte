@@ -1,15 +1,16 @@
 //
 //  miniTablet.js
 //
-//  Created by David Rowe on 9 Aug 2018.
+//  Created by David Rowe on August 9th, 2018.
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
 /* global getTabletWidthFromSettings, handsAreTracked, TRIGGER_OFF_VALUE, Controller, Script, Camera, Tablet, MyAvatar,
-   Quat, SoundCache, HMD, Overlays, Vec3, Uuid, Messages */
+   Quat, SoundCache, HMD, Vec3, Uuid, Messages */
 
 (function () {
 
@@ -265,7 +266,7 @@
         }
 
         function getMiniTabletProperties() {
-            var properties = Overlays.getProperties(miniOverlay, ["position", "orientation"]);
+            var properties = Entities.getEntityProperties(miniOverlay, ["position", "orientation"]);
             return {
                 position: properties.position,
                 orientation: properties.orientation
@@ -282,22 +283,24 @@
 
             uiHand = hand;
 
-            Overlays.editOverlay(miniOverlay, {
-                parentID: MyAvatar.SELF_ID,
-                parentJointIndex: handJointIndex(hand),
-                localPosition: Vec3.multiply(MyAvatar.sensorToWorldScale, MINI_POSITIONS[hand]),
-                localRotation: MINI_ROTATIONS[hand],
-                dimensions: Vec3.multiply(initialScale, MINI_DIMENSIONS),
-                grabbable: true,
-                visible: true
+            Entities.editEntity(miniOverlay, {
+                "parentID": MyAvatar.SELF_ID,
+                "parentJointIndex": handJointIndex(hand),
+                "localPosition": Vec3.multiply(MyAvatar.sensorToWorldScale, MINI_POSITIONS[hand]),
+                "localRotation": MINI_ROTATIONS[hand],
+                "dimensions": Vec3.multiply(initialScale, MINI_DIMENSIONS),
+                "grab": {
+                    "grabbable": true
+                },
+                "visible": true
             });
-            Overlays.editOverlay(miniUIOverlay, {
-                url: handsAreTracked() ? MINI_HAND_UI_HTML : MINI_UI_HTML,
-                localPosition: Vec3.multiply(MyAvatar.sensorToWorldScale, MINI_UI_LOCAL_POSITION),
-                localRotation: MINI_UI_LOCAL_ROTATION,
-                dimensions: Vec3.multiply(initialScale, MINI_UI_DIMENSIONS),
-                dpi: MINI_UI_DPI / initialScale,
-                visible: true
+            Entities.editEntity(miniUIOverlay, {
+                "sourceUrl": handsAreTracked() ? MINI_HAND_UI_HTML : MINI_UI_HTML,
+                "localPosition": Vec3.multiply(MyAvatar.sensorToWorldScale, MINI_UI_LOCAL_POSITION),
+                "localRotation": MINI_UI_LOCAL_ROTATION,
+                "dimensions": Vec3.multiply(initialScale, MINI_UI_DIMENSIONS),
+                "dpi": MINI_UI_DPI / initialScale,
+                "visible": true
             });
 
             updateMiniTabletID();
@@ -306,20 +309,20 @@
                 // Overlay content is created the first time it is visible to the user. The initial creation displays artefacts.
                 // Delay showing UI overlay until after giving it time for its content to be created.
                 Script.setTimeout(function () {
-                    Overlays.editOverlay(miniUIOverlay, { alpha: 1.0 });
+                    Entities.editEntity(miniUIOverlay, { "alpha": 1.0 });
                 }, MINI_UI_OVERLAY_ENABLED_DELAY);
             }
         }
 
         function size(scaleFactor) {
             // Scale UI in place.
-            Overlays.editOverlay(miniOverlay, {
-                dimensions: Vec3.multiply(scaleFactor, MINI_DIMENSIONS)
+            Entities.editEntity(miniOverlay, {
+                "dimensions": Vec3.multiply(scaleFactor, MINI_DIMENSIONS)
             });
-            Overlays.editOverlay(miniUIOverlay, {
-                localPosition: Vec3.multiply(scaleFactor, MINI_UI_LOCAL_POSITION),
-                dimensions: Vec3.multiply(scaleFactor, MINI_UI_DIMENSIONS),
-                dpi: MINI_UI_DPI / scaleFactor
+            Entities.editEntity(miniUIOverlay, {
+                "localPosition": Vec3.multiply(scaleFactor, MINI_UI_LOCAL_POSITION),
+                "dimensions": Vec3.multiply(scaleFactor, MINI_UI_DIMENSIONS),
+                "dpi": MINI_UI_DPI / scaleFactor
             });
             updateRotation();
         }
@@ -335,7 +338,7 @@
             }
 
             // Grab details.
-            var properties = Overlays.getProperties(miniOverlay, ["localPosition", "localRotation"]);
+            var properties = Entities.getEntityProperties(miniOverlay, ["localPosition", "localRotation"]);
             miniExpandHand = hand;
             miniExpandLocalRotation = properties.localRotation;
             miniExpandLocalPosition = Vec3.sum(properties.localPosition,
@@ -369,19 +372,19 @@
                 Vec3.multiplyQbyV(miniExpandLocalRotation, { x: 0, y: 0.5 * -dimensions.y, z: 0 }));
             localPosition = Vec3.sum(localPosition,
                 Vec3.multiplyQbyV(localRotation, { x: 0, y: 0.5 * dimensions.y, z: 0 }));
-            Overlays.editOverlay(miniOverlay, {
-                localPosition: localPosition,
-                localRotation: localRotation,
-                dimensions: dimensions
+            Entities.editEntity(miniOverlay, {
+                "localPosition": localPosition,
+                "localRotation": localRotation,
+                "dimensions": dimensions
             });
             // FIXME: Temporary code change to try not displaying UI when mini tablet is expanding to become the tablet proper.
-            Overlays.editOverlay(miniUIOverlay, {
+            Entities.editEntity(miniUIOverlay, {
                 /*
-                localPosition: Vec3.multiply(tabletScaleFactor, MINI_UI_LOCAL_POSITION),
-                dimensions: Vec3.multiply(tabletScaleFactor, MINI_UI_DIMENSIONS),
-                dpi: MINI_UI_DPI / tabletScaleFactor
+                "localPosition": Vec3.multiply(tabletScaleFactor, MINI_UI_LOCAL_POSITION),
+                "dimensions": Vec3.multiply(tabletScaleFactor, MINI_UI_DIMENSIONS),
+                "dpi": MINI_UI_DPI / tabletScaleFactor
                 */
-                visible: false
+                "visible": false
             });
         }
 
@@ -402,7 +405,7 @@
                 deltaRotation,
                 localRotation;
 
-            if (Overlays.getProperty(miniOverlay, "parentJointIndex") !== handJointIndex(uiHand)) {
+            if (Entities.getEntityProperties(miniOverlay, ["parentJointIndex"]).parentJointIndex !== handJointIndex(uiHand)) {
                 // Overlay has been grabbed by other hand but this script hasn't received notification yet.
                 return;
             }
@@ -430,24 +433,26 @@
                 deltaRotation = Quat.angleAxis(deltaAngle, Vec3.multiplyQbyV(defaultLocalRotation, Vec3.UNIT_Z));
                 localRotation = Quat.multiply(deltaRotation, defaultLocalRotation);
             }
-            Overlays.editOverlay(miniOverlay, {
-                localRotation: localRotation
+            Entities.editEntity(miniOverlay, {
+                "localRotation": localRotation
             });
         }
 
         function release() {
-            Overlays.editOverlay(miniOverlay, {
-                parentID: Uuid.NULL, // Release hold so that hand can grab tablet proper.
-                grabbable: false
+            Entities.editEntity(miniOverlay, {
+                "parentID": Uuid.NULL, // Release hold so that hand can grab tablet proper.
+                "grab": {
+                    "grabbable": false
+                }
             });
         }
 
         function hide() {
-            Overlays.editOverlay(miniOverlay, {
-                visible: false
+            Entities.editEntity(miniOverlay, {
+                "visible": false
             });
-            Overlays.editOverlay(miniUIOverlay, {
-                visible: false
+            Entities.editEntity(miniUIOverlay, {
+                "visible": false
             });
         }
 
@@ -458,35 +463,40 @@
                 return;
             }
 
-            miniOverlayObject = Overlays.getOverlayObject(miniUIOverlay);
+            miniOverlayObject = Entities.getEntityObject(miniUIOverlay);
             if (miniOverlayObject) {
                 miniOverlayObject.webEventReceived.connect(onWebEventReceived);
             }
         }
 
         function create() {
-            miniOverlay = Overlays.addOverlay("model", {
-                url: MINI_MODEL,
-                dimensions: Vec3.multiply(MyAvatar.sensorToWorldScale, MINI_DIMENSIONS),
-                solid: true,
-                grabbable: true,
-                showKeyboardFocusHighlight: false,
-                drawInFront: false,
-                visible: false
-            });
-            miniUIOverlay = Overlays.addOverlay("web3d", {
-                url: handsAreTracked() ? MINI_HAND_UI_HTML : MINI_UI_HTML,
-                parentID: miniOverlay,
-                localPosition: Vec3.multiply(MyAvatar.sensorToWorldScale, MINI_UI_LOCAL_POSITION),
-                localRotation: MINI_UI_LOCAL_ROTATION,
-                dimensions: Vec3.multiply(MyAvatar.sensorToWorldScale, MINI_UI_DIMENSIONS),
-                dpi: MINI_UI_DPI / MyAvatar.sensorToWorldScale,
-                alpha: 0, // Hide overlay while its content is being created.
-                grabbable: false,
-                showKeyboardFocusHighlight: false,
-                drawInFront: false,
-                visible: false
-            });
+            miniOverlay = Entities.addEntity({
+                "type": "Model",
+                "modelURL": MINI_MODEL,
+                "dimensions": Vec3.multiply(MyAvatar.sensorToWorldScale, MINI_DIMENSIONS),
+                "primitiveMode": "solid",
+                "grab": {
+                    "grabbable": true
+                },
+                "renderLayer": "world",
+                "visible": false
+            }, "local");
+            miniUIOverlay = Entities.addEntity({
+                "type": "Web",
+                "sourceUrl": handsAreTracked() ? MINI_HAND_UI_HTML : MINI_UI_HTML,
+                "parentID": miniOverlay,
+                "localPosition": Vec3.multiply(MyAvatar.sensorToWorldScale, MINI_UI_LOCAL_POSITION),
+                "localRotation": MINI_UI_LOCAL_ROTATION,
+                "dimensions": Vec3.multiply(MyAvatar.sensorToWorldScale, MINI_UI_DIMENSIONS),
+                "dpi": MINI_UI_DPI / MyAvatar.sensorToWorldScale,
+                "alpha": 0, // Hide overlay while its content is being created.
+                "grab": {
+                    "grabbable": false
+                },
+                "showKeyboardFocusHighlight": false,
+                "renderLayer": "world",
+                "visible": false
+            }, "local");
 
             miniUIOverlayEnabled = false; // This and alpha = 0 hides overlay while its content is being created.
 
@@ -496,8 +506,8 @@
         function destroy() {
             if (miniOverlayObject) {
                 miniOverlayObject.webEventReceived.disconnect(onWebEventReceived);
-                Overlays.deleteOverlay(miniUIOverlay);
-                Overlays.deleteOverlay(miniOverlay);
+                Entities.deleteEntity(miniUIOverlay);
+                Entities.deleteEntity(miniOverlay);
                 miniOverlayObject = null;
                 miniUIOverlay = null;
                 miniOverlay = null;
@@ -915,9 +925,9 @@
             ui.release();
             miniTabletProperties = ui.getMiniTabletProperties();
 
-            Overlays.editOverlay(HMD.tabletID, {
-                position: miniTabletProperties.position,
-                orientation: miniTabletProperties.orientation
+            Entities.editEntity(HMD.tabletID, {
+                "position": miniTabletProperties.position,
+                "orientation": miniTabletProperties.orientation
             });
 
             HMD.openTablet(true);

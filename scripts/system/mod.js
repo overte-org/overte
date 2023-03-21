@@ -1,17 +1,16 @@
 "use strict";
-
 //
 //  mod.js
 //  scripts/system/
 //
-//  Created by Stephen Birarda on 07/11/2016
+//  Created by Stephen Birarda on July 11th, 2016
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 /* global Toolbars, Script, Users, Overlays, AvatarList, Controller, Camera, getControllerWorldLocation */
-
 
 (function() { // BEGIN LOCAL_SCOPE
 
@@ -48,7 +47,7 @@ function removeOverlays() {
     for (var i = 0; i < modOverlayKeys.length; ++i) {
         var avatarID = modOverlayKeys[i];
         for (var j = 0; j < modOverlays[avatarID].length; ++j) {
-            Overlays.deleteOverlay(modOverlays[avatarID][j]);
+            Entities.deleteEntity(modOverlays[avatarID][j]);
         }
     }
 
@@ -107,44 +106,44 @@ function updateOverlays() {
 
             if (avatarID in modOverlays) {
                 // keep the overlay above the current position of this avatar
-                Overlays.editOverlay(modOverlays[avatarID][0], {
-                    position: kickOverlayPosition,
-                    url: kickOverlayURL()
+                Entities.editEntity(modOverlays[avatarID][0], {
+                    "position": kickOverlayPosition,
+                    "imageURL": kickOverlayURL()
                 });
                 if (Users.canKick) {
-                    Overlays.editOverlay(modOverlays[avatarID][1], {
-                        position: muteOverlayPosition,
-                        url: muteOverlayURL()
+                    Entities.editEntity(modOverlays[avatarID][1], {
+                        "position": muteOverlayPosition,
+                        "imageURL": muteOverlayURL()
                     });
                 }
             } else {
                 // add the overlay above this avatar
-                var newKickOverlay = Overlays.addOverlay("image3d", {
-                    url: kickOverlayURL(),
-                    position: kickOverlayPosition,
-                    size: 1,
-                    scale: 0.4,
-                    color: { red: 255, green: 255, blue: 255},
-                    alpha: 1,
-                    solid: true,
-                    isFacingAvatar: true,
-                    drawInFront: true
-                });
+                var newKickOverlay = Entities.addEntity({
+                    "type": "Image",
+                    "imageURL": kickOverlayURL(),
+                    "position": kickOverlayPosition,
+                    "dimensions": { "x": 0.4, "y": 0.4, "z": 0.4},
+                    "color": { "red": 255, "green": 255, "blue": 255},
+                    "alpha": 1,
+                    "primitiveMode": "solid",
+                    "billboardMode": "full",
+                    "renderLayer": "front"
+                }, "local");
 
                 modOverlays[avatarID]=[newKickOverlay];
 
                 if (Users.canKick) {
-                    var newMuteOverlay = Overlays.addOverlay("image3d", {
-                        url: muteOverlayURL(),
-                        position: muteOverlayPosition,
-                        size: 1,
-                        scale: 0.4,
-                        color: { red: 255, green: 255, blue: 255},
-                        alpha: 1,
-                        solid: true,
-                        isFacingAvatar: true,
-                        drawInFront: true
-                    });
+                    var newMuteOverlay = Entities.addEntity({
+                        "type": "Image",
+                        "imageURL": muteOverlayURL(),
+                        "position": muteOverlayPosition,
+                        "dimensions": { "x": 0.4, "y": 0.4, "z": 0.4},
+                        "color": { "red": 255, "green": 255, "blue": 255},
+                        "alpha": 1,
+                        "primitiveMode": "solid",
+                        "billboardMode": "full",
+                        "renderLayer": "front"
+                    }, "local");
                     // push this overlay to our array of overlays
                     modOverlays[avatarID].push(newMuteOverlay);
                 }
@@ -161,7 +160,7 @@ AvatarList.avatarRemovedEvent.connect(function(avatarID){
 
         // first remove the rendered overlays
         for (var j = 0; j < modOverlays[avatarID].length; ++j) {
-            Overlays.deleteOverlay(modOverlays[avatarID][j]);
+            Entities.deleteEntity(modOverlays[avatarID][j]);
         }
         
         // delete the saved ID of the overlay from our mod overlays object

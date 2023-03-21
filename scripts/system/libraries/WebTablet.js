@@ -1,8 +1,9 @@
 //
 //  WebTablet.js
 //
-//  Created by Anthony J. Thibault on 8/8/2016
+//  Created by Anthony J. Thibault on August 8th, 2016
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023, Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -119,17 +120,16 @@ WebTablet = function (url, width, dpi, hand, location, visible) {
 
     var modelURL = LOCAL_TABLET_MODEL_PATH;
     var tabletProperties = {
-        name: "WebTablet Tablet",
-        type: "Model",
-        modelURL: modelURL,
-        url: modelURL, // for overlay
-        grabbable: true, // for overlay
-        loadPriority: 10.0, // for overlay
-        grab: { grabbable: true },
-        dimensions: { x: tabletWidth, y: tabletHeight, z: tabletDepth },
-        parentID: MyAvatar.SELF_ID,
-        visible: visible,
-        isGroupCulled: true
+        "name": "WebTablet Tablet",
+        "type": "Model",
+        "modelURL": modelURL,
+        "grab": { 
+            "grabbable": true 
+        },
+        "dimensions": { "x": tabletWidth, "y": tabletHeight, "z": tabletDepth },
+        "parentID": MyAvatar.SELF_ID,
+        "visible": visible,
+        "groupCulled": true
     };
 
     // compute position, rotation & parentJointIndex of the tablet
@@ -142,64 +142,87 @@ WebTablet = function (url, width, dpi, hand, location, visible) {
     this.cleanUpOldTablets();
     cleanUpOldMaterialEntities();
 
-    this.tabletEntityID = Overlays.addOverlay("model", tabletProperties);
+    this.tabletEntityID = Entities.addEntity(tabletProperties, "local");
 
     if (this.webOverlayID) {
-        Overlays.deleteOverlay(this.webOverlayID);
+        Entities.deleteEntity(this.webOverlayID);
     }
 
     var WEB_ENTITY_Z_OFFSET = (tabletDepth / 2.5) * sensorScaleFactor;
     var WEB_ENTITY_Y_OFFSET = 1.25 * tabletScaleFactor;
     var screenWidth = 0.9367 * tabletWidth;
     var screenHeight = 0.9000 * tabletHeight;
-    this.webOverlayID = Overlays.addOverlay("web3d", {
-        name: "WebTablet Web",
-        url: url,
-        localPosition: { x: 0, y: WEB_ENTITY_Y_OFFSET, z: -WEB_ENTITY_Z_OFFSET },
-        localRotation: Quat.angleAxis(180, Y_AXIS),
-        dimensions: {x: screenWidth, y: screenHeight, z: 1.0},
-        dpi: tabletDpi,
-        color: { red: 255, green: 255, blue: 255 },
-        alpha: 1.0,
-        parentID: this.tabletEntityID,
-        parentJointIndex: -1,
-        showKeyboardFocusHighlight: false,
-        grabbable: false,
-        visible: visible
-    });
+    this.webOverlayID = Entities.addEntity({
+        "type": "Web",
+        "name": "WebTablet Web",
+        "sourceUrl": url,
+        "localPosition": { "x": 0, "y": WEB_ENTITY_Y_OFFSET, "z": -WEB_ENTITY_Z_OFFSET },
+        "localRotation": Quat.angleAxis(180, Y_AXIS),
+        "dimensions": {"x": screenWidth, "y": screenHeight, "z": 1.0},
+        "dpi": tabletDpi,
+        "color": { "red": 255, "green": 255, "blue": 255 },
+        "alpha": 1.0,
+        "parentID": this.tabletEntityID,
+        "showKeyboardFocusHighlight": false,
+        "grab": {
+            "grabbable": false
+        },
+        "visible": visible
+    }, "local");
 
     var homeButtonDim = 4.0 * tabletScaleFactor / 1.5;
     var HOME_BUTTON_X_OFFSET = 0.00079 * sensorScaleFactor;
     var HOME_BUTTON_Y_OFFSET = -1 * ((tabletHeight / 2) - (4.0 * tabletScaleFactor / 2));
     var HOME_BUTTON_Z_OFFSET = (tabletDepth / 1.9) * sensorScaleFactor;
-    this.homeButtonID = Overlays.addOverlay("circle3d", {
-        name: "homeButton",
-        localPosition: { x: HOME_BUTTON_X_OFFSET, y: HOME_BUTTON_Y_OFFSET, z: -HOME_BUTTON_Z_OFFSET },
-        localRotation: Quat.fromVec3Degrees({ x: 180, y: 180, z: 0}),
-        dimensions: { x: homeButtonDim, y: homeButtonDim, z: homeButtonDim },
-        solid: true,
-        alpha: 0.0,
-        visible: visible,
-        drawInFront: false,
-        parentID: this.tabletEntityID,
-        parentJointIndex: -1
-    });
+    this.homeButtonID = Entities.addEntity({
+        "type": "Gizmo",
+        "gizmoType": "ring",
+        "name": "homeButton",
+        "localPosition": { "x": HOME_BUTTON_X_OFFSET, "y": HOME_BUTTON_Y_OFFSET, "z": -HOME_BUTTON_Z_OFFSET },
+        "localRotation": Quat.fromVec3Degrees({ "x": 90, "y": 0, "z": 0}),
+        "dimensions": { "x": homeButtonDim, "y": homeButtonDim, "z": homeButtonDim },
+        "primitiveMode": "solid",
+        "ring": {
+            "innerStartAlpha": 0.0,
+            "innerEndAlpha": 0.0,
+            "outerStartAlpha": 0.0,
+            "outerEndAlpha": 0.0,
+        },
+        "visible": visible,
+        "renderLayer": "world",
+        "grab": { 
+            "grabbable": false
+        },
+        "parentID": this.tabletEntityID
+    }, "local");
 
-    this.homeButtonHighlightID = Overlays.addOverlay("circle3d", {
-        name: "homeButtonHighlight",
-        localPosition: { x: -HOME_BUTTON_X_OFFSET, y: HOME_BUTTON_Y_OFFSET, z: -HOME_BUTTON_Z_OFFSET },
-        localRotation: Quat.fromVec3Degrees({ x: 180, y: 180, z: 0}),
-        dimensions: { x: homeButtonDim, y: homeButtonDim, z: homeButtonDim },
-        color: {red: 255, green: 255, blue: 255},
-        solid: true,
-        innerRadius: 0.9,
-        ignorePickIntersection: true,
-        alpha: 0.0,
-        visible: visible,
-        drawInFront: false,
-        parentID: this.tabletEntityID,
-        parentJointIndex: -1
-    });
+    this.homeButtonHighlightID = Entities.addEntity({
+        "type": "Gizmo",
+        "gizmoType": "ring",
+        "name": "homeButtonHighlight",
+        "localPosition": { "x": -HOME_BUTTON_X_OFFSET, "y": HOME_BUTTON_Y_OFFSET, "z": -HOME_BUTTON_Z_OFFSET },
+        "localRotation": Quat.fromVec3Degrees({ "x": 90, "y": 0, "z": 0}),
+        "dimensions": { "x": homeButtonDim, "y": homeButtonDim, "z": homeButtonDim },
+        "primitiveMode": "solid",
+        "ring": {
+            "innerStartColor": {"red": 255, "green": 255, "blue": 255},
+            "innerEndColor": {"red": 255, "green": 255, "blue": 255},
+            "outerStartColor": {"red": 255, "green": 255, "blue": 255},
+            "outerEndColor": {"red": 255, "green": 255, "blue": 255},
+            "innerStartAlpha": 0.0,
+            "innerEndAlpha": 0.0,
+            "outerStartAlpha": 0.0,
+            "outerEndAlpha": 0.0,
+            "innerRadius": 0.9,
+        },
+        "ignorePickIntersection": true,
+        "visible": visible,
+        "renderLayer": "world",
+        "grab": { 
+            "grabbable": false
+        },        
+        "parentID": this.tabletEntityID
+    }, "local");
 
     this.receive = function (channel, senderID, senderUUID, localOnly) {
         if (_this.homeButtonID === senderID) {
@@ -285,8 +308,8 @@ WebTablet.prototype.setLandscape = function(newLandscapeValue) {
     this.landscape = newLandscapeValue;
     var cameraOrientation = Quat.cancelOutRollAndPitch(Camera.orientation);
     var tabletRotation = Quat.multiply(cameraOrientation, this.landscape ? ROT_LANDSCAPE : ROT_Y_180);
-    Overlays.editOverlay(this.tabletEntityID, {
-        rotation: tabletRotation
+    Entities.editEntity(this.tabletEntityID, {
+        "rotation": tabletRotation
     });
 
     var tabletWidth = getTabletWidthFromSettings() * MyAvatar.sensorToWorldScale;
@@ -295,18 +318,18 @@ WebTablet.prototype.setLandscape = function(newLandscapeValue) {
     var screenWidth = 0.9275 * tabletWidth;
     var screenHeight = 0.8983 * tabletHeight;
     var screenRotation = Quat.angleAxis(180, Vec3.UP);
-    Overlays.editOverlay(this.webOverlayID, {
-        localRotation: this.landscape ? Quat.multiply(screenRotation, Quat.angleAxis(-90, Vec3.FRONT)) : screenRotation,
-        dimensions: {x: this.landscape ? screenHeight : screenWidth, y: this.landscape ? screenWidth : screenHeight, z: 0.1}
+    Entities.editEntity(this.webOverlayID, {
+        "localRotation": this.landscape ? Quat.multiply(screenRotation, Quat.angleAxis(-90, Vec3.FRONT)) : screenRotation,
+        "dimensions": {"x": this.landscape ? screenHeight : screenWidth, "y": this.landscape ? screenWidth : screenHeight, "z": 0.1}
     });
 };
 
 WebTablet.prototype.getLocation = function() {
-    var location = Overlays.getProperty(this.tabletEntityID, "localPosition");
-    var orientation = Overlays.getProperty(this.tabletEntityID, "localOrientation");
+    var location = Entities.getEntityProperties(this.tabletEntityID, ["localPosition"]).localPosition;
+    var orientation = Entities.getEntityProperties(this.tabletEntityID, ["localRotation"]).localRotation;
     return {
-        localPosition: location,
-        localRotation: orientation
+        "localPosition": location,
+        "localRotation": orientation
     };
 };
 
@@ -316,11 +339,11 @@ WebTablet.prototype.setHomeButtonTexture = function() {
 };
 
 WebTablet.prototype.setURL = function (url) {
-    Overlays.editOverlay(this.webOverlayID, { url: url });
+    Entities.editEntity(this.webOverlayID, { "sourceUrl": url });
 };
 
 WebTablet.prototype.setScriptURL = function (scriptURL) {
-    Overlays.editOverlay(this.webOverlayID, { scriptURL: scriptURL });
+    Entities.editEntity(this.webOverlayID, { "scriptURL": scriptURL });
 };
 
 WebTablet.prototype.getOverlayObject = function () {
@@ -333,10 +356,10 @@ WebTablet.prototype.setWidth = function (width) {
 };
 
 WebTablet.prototype.destroy = function () {
-    Overlays.deleteOverlay(this.webOverlayID);
-    Overlays.deleteOverlay(this.tabletEntityID);
-    Overlays.deleteOverlay(this.homeButtonID);
-    Overlays.deleteOverlay(this.homeButtonHighlightID);
+    Entities.deleteEntity(this.webOverlayID);
+    Entities.deleteEntity(this.tabletEntityID);
+    Entities.deleteEntity(this.homeButtonID);
+    Entities.deleteEntity(this.homeButtonHighlightID);
     HMD.displayModeChanged.disconnect(this.myOnHmdChanged);
 
     Controller.mousePressEvent.disconnect(this.myMousePressEvent);
@@ -352,7 +375,7 @@ WebTablet.prototype.geometryChanged = function (geometry) {
         var tabletProperties = {};
         // compute position, rotation & parentJointIndex of the tablet
         this.calculateTabletAttachmentProperties(NO_HANDS, false, tabletProperties);
-        Overlays.editOverlay(HMD.tabletID, tabletProperties);
+        Entities.editEntity(HMD.tabletID, tabletProperties);
     }
 };
 
@@ -464,7 +487,7 @@ WebTablet.prototype.onHmdChanged = function () {
     var tabletProperties = {};
     // compute position, rotation & parentJointIndex of the tablet
     this.calculateTabletAttachmentProperties(NO_HANDS, false, tabletProperties);
-    Overlays.editOverlay(HMD.tabletID, tabletProperties);
+    Entities.editEntity(HMD.tabletID, tabletProperties);
 };
 
 WebTablet.prototype.pickle = function () {
@@ -510,7 +533,7 @@ WebTablet.unpickle = function (string) {
 };
 
 WebTablet.prototype.getPosition = function () {
-    return Overlays.getProperty(this.webOverlayID, "position");
+    return Entities.getEntityProperties(this.webOverlayID, ["position"]).position;
 };
 
 WebTablet.prototype.mousePressEvent = function (event) {
@@ -523,7 +546,7 @@ WebTablet.prototype.mousePressEvent = function (event) {
                 this.dragging = true;
                 var invCameraXform = new Xform(Camera.orientation, Camera.position).inv();
                 this.initialLocalIntersectionPoint = invCameraXform.xformPoint(tabletBackPickResults.intersection);
-                this.initialLocalPosition = Overlays.getProperty(this.tabletEntityID, "localPosition");
+                this.initialLocalPosition = Entities.getEntityProperties(this.tabletEntityID, ["localPosition"]).localPosition;
             }
         }
     }
@@ -557,7 +580,15 @@ WebTablet.prototype.scheduleMouseMoveProcessor = function() {
 WebTablet.prototype.handleHomeButtonHover = function(x, y) {
     var pickRay = Camera.computePickRay(x, y);
     var homePickResult = Overlays.findRayIntersection(pickRay, true, [this.homeButtonID]);
-    Overlays.editOverlay(this.homeButtonHighlightID, { alpha: homePickResult.intersects ? 1.0 : 0.0 });
+    var alpha = homePickResult.intersects ? 1.0 : 0.0;
+    Entities.editEntity(this.homeButtonHighlightID, {
+        "ring": {
+            "innerStartAlpha": alpha,
+            "innerEndAlpha": alpha,
+            "outerStartAlpha": alpha,
+            "outerEndAlpha": alpha
+        }
+    });
 };
 
 WebTablet.prototype.mouseMoveEvent = function (event) {
@@ -590,8 +621,8 @@ WebTablet.prototype.mouseMoveProcessor = function () {
             var localIntersectionPoint = Vec3.sum(localPickRay.origin, Vec3.multiply(localPickRay.direction, result.distance));
             var localOffset = Vec3.subtract(localIntersectionPoint, this.initialLocalIntersectionPoint);
             var localPosition = Vec3.sum(this.initialLocalPosition, localOffset);
-            Overlays.editOverlay(this.tabletEntityID, {
-                localPosition: localPosition
+            Entities.editEntity(this.tabletEntityID, {
+                "localPosition": localPosition
             });
         }
         this.scheduleMouseMoveProcessor();
