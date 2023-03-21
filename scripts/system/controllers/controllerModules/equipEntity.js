@@ -2,6 +2,10 @@
 
 //  equipEntity.js
 //
+//  Created by Seth Alves, August 14th, 2017.
+//  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023, Overte e.V.
+//
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
@@ -74,20 +78,20 @@ EquipHotspotBuddy.prototype.updateHotspot = function(hotspot, timestamp) {
         }
 
         // override default sphere with a user specified model, if it exists.
-        //V8TODO: change to local entity
-        overlayInfoSet.overlays.push(Overlays.addOverlay("model", {
-            name: "hotspot overlay",
-            url: hotspot.indicatorURL ? hotspot.indicatorURL : DEFAULT_SPHERE_MODEL_URL,
-            position: hotspot.worldPosition,
-            rotation: {
-                x: 0,
-                y: 0,
-                z: 0,
-                w: 1
+        overlayInfoSet.overlays.push(Entities.addEntity({
+            "type": "Model",
+            "name": "hotspot overlay",
+            "modelURL": hotspot.indicatorURL ? hotspot.indicatorURL : DEFAULT_SPHERE_MODEL_URL,
+            "position": hotspot.worldPosition,
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
             },
-            dimensions: dimensions,
-            ignoreRayIntersection: true
-        }));
+            "dimensions": dimensions,
+            "ignorePickIntersection": true
+        }, "local"));
         overlayInfoSet.type = "model";
         this.map[hotspot.key] = overlayInfoSet;
     } else {
@@ -132,7 +136,7 @@ EquipHotspotBuddy.prototype.update = function(deltaTime, timestamp, controllerDa
 
         if (overlayInfoSet.timestamp !== timestamp && overlayInfoSet.currentSize <= 0.05) {
             // this is an old overlay, that has finished fading out, delete it!
-            overlayInfoSet.overlays.forEach(Overlays.deleteOverlay);
+            overlayInfoSet.overlays.forEach(Entities.deleteEntity);
             delete this.map[keys[i]];
         } else {
             // update overlay position, rotation to follow the object it's attached to.
@@ -154,14 +158,14 @@ EquipHotspotBuddy.prototype.update = function(deltaTime, timestamp, controllerDa
                 }
 
                 overlayInfoSet.overlays.forEach(function(overlay) {
-                    Overlays.editOverlay(overlay, {
-                        position: position,
-                        rotation: props.rotation,
-                        dimensions: dimensions
+                    Entities.editEntity(overlay, {
+                        "position": position,
+                        "rotation": props.rotation,
+                        "dimensions": dimensions
                     });
                 });
             } else {
-                overlayInfoSet.overlays.forEach(Overlays.deleteOverlay);
+                overlayInfoSet.overlays.forEach(Entities.deleteEntity);
                 delete this.map[keys[i]];
             }
         }

@@ -1,19 +1,19 @@
+"use strict";
 //
 // audioMuteOverlay.js
 //
-// client script that creates an overlay to provide mute feedback
-//
-// Created by Triplelexx on 17/03/09
-// Reworked by Seth Alves on 2019-2-17
+// Created by Triplelexx on March 9th, 2017
+// Reworked by Seth Alves on February 17th, 2019
 // Copyright 2017 High Fidelity, Inc.
+// Copyright 2023 Overte e.V.
+//
+// client script that creates an overlay to provide mute feedback
 //
 // Distributed under the Apache License, Version 2.0.
 // See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-"use strict";
-
-/* global Audio, Script, Overlays, Quat, MyAvatar, HMD */
+/* global Audio, Script, Entities, Quat, MyAvatar, HMD */
 
 (function() { // BEGIN LOCAL_SCOPE
 
@@ -41,24 +41,27 @@
         }
 
         if (HMD.active) {
-            //V8TODO: change to local entity
-            warningOverlayID = Overlays.addOverlay("text3d", {
-                name: "Muted-Warning",
-                localPosition: { x: 0.0, y: -0.45, z: -1.0 },
-                localOrientation: Quat.fromVec3Degrees({ x: 0.0, y: 0.0, z: 0.0, w: 1.0 }),
-                text: warningText,
-                textAlpha: 1,
-                textColor: { red: 226, green: 51, blue: 77 },
-                backgroundAlpha: 0,
-                lineHeight: 0.042,
-                dimensions: { x: 0.11, y: 0.05 },
-                visible: true,
-                ignoreRayIntersection: true,
-                drawInFront: true,
-                grabbable: false,
-                parentID: MyAvatar.SELF_ID,
-                parentJointIndex: MyAvatar.getJointIndex("_CAMERA_MATRIX")
-            });
+            warningOverlayID = Entities.addEntity({
+                "type": "Text",
+                "name": "Muted-Warning",
+                "localPosition": { "x": 0.0, "y": -0.45, "z": -1.0 },
+                "localRotation": Quat.fromVec3Degrees({ "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 }),
+                "text": warningText,
+                "unlit": true,
+                "textAlpha": 1.0,
+                "textColor": { "red": 245, "green": 44, "blue": 74 },
+                "backgroundAlpha": 0.0,
+                "lineHeight": 0.042,
+                "dimensions": {"x": 0.11, "y": 0.05, "z": 0.01 },
+                "visible": true,
+                "ignorePickIntersection": true,
+                "renderLayer": "front",
+                "grab": {
+                    "grabbable": false
+                },
+                "parentID": MyAvatar.SELF_ID,
+                "parentJointIndex": MyAvatar.getJointIndex("_CAMERA_MATRIX")
+            }, "local");
         }
     }
 
@@ -66,7 +69,7 @@
         if (!warningOverlayID) {
             return;
         }
-        Overlays.deleteOverlay(warningOverlayID);
+        Entities.deleteEntity(warningOverlayID);
         warningOverlayID = null;
     }
 
