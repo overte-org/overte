@@ -3,11 +3,13 @@
 //
 //  Created by Anthony J. Thibault on 10/20/16
 //  Originally created by Ryan Huffman on 9/21/2016
+//  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023, Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
-/* globals createControllerDisplay:true, deleteControllerDisplay:true, Controller, Overlays, Vec3, MyAvatar, Quat */
+/* globals createControllerDisplay:true, deleteControllerDisplay:true, Controller, Entities, Vec3, MyAvatar, Quat */
 
 function clamp(value, min, max) {
     if (value < min) {
@@ -51,8 +53,8 @@ createControllerDisplay = function(config) {
 
         setVisible: function(visible) {
             for (var i = 0; i < this.overlays.length; ++i) {
-                Overlays.editOverlay(this.overlays[i], {
-                    visible: visible
+                Entities.editEntity(this.overlays[i], {
+                    "visible": visible
                 });
             }
         },
@@ -62,8 +64,8 @@ createControllerDisplay = function(config) {
             /*
             if (partName in this.partOverlays) {
                 for (var i = 0; i < this.partOverlays[partName].length; ++i) {
-                    Overlays.editOverlay(this.partOverlays[partName][i], {
-                        //visible: visible
+                    Entities.editEntity(this.partOverlays[partName][i], {
+                        //"visible": visible
                     });
                 }
             }
@@ -80,8 +82,8 @@ createControllerDisplay = function(config) {
                         textures[part.textureName] = layer.defaultTextureURL;
                     }
                     for (var i = 0; i < this.partOverlays[partName].length; ++i) {
-                        Overlays.editOverlay(this.partOverlays[partName][i], {
-                            textures: textures
+                        Entities.editEntity(this.partOverlays[partName][i], {
+                            "textures": textures
                         });
                     }
                 }
@@ -93,14 +95,14 @@ createControllerDisplay = function(config) {
                 var controller = config.controllers[0];
                 var position = controller.position;
 
-                // first overlay is main body.
+                // first overlay/Local Entity is main body.
                 var overlayID = this.overlays[0];
                 var localPosition = Vec3.multiply(sensorScaleFactor, Vec3.sum(Vec3.multiplyQbyV(controller.rotation, controller.naturalPosition), position));
                 var dimensions = Vec3.multiply(sensorScaleFactor, controller.dimensions);
 
-                Overlays.editOverlay(overlayID, {
-                    dimensions: dimensions,
-                    localPosition: localPosition
+                Entities.editEntity(overlayID, {
+                    "dimensions": dimensions,
+                    "localPosition": localPosition
                 });
 
                 if (controller.parts) {
@@ -143,15 +145,15 @@ createControllerDisplay = function(config) {
                             }
                         }
                         if (localRotation !== undefined) {
-                            Overlays.editOverlay(overlayID, {
-                                dimensions: Vec3.multiply(sensorScaleFactor, part.naturalDimensions),
-                                localPosition: Vec3.multiply(sensorScaleFactor, localPosition),
-                                localRotation: localRotation
+                            Entities.editEntity(overlayID, {
+                                "dimensions": Vec3.multiply(sensorScaleFactor, part.naturalDimensions),
+                                "localPosition": Vec3.multiply(sensorScaleFactor, localPosition),
+                                "localRotation": localRotation
                             });
                         } else {
-                            Overlays.editOverlay(overlayID, {
-                                dimensions: Vec3.multiply(sensorScaleFactor, part.naturalDimensions),
-                                localPosition: Vec3.multiply(sensorScaleFactor, localPosition)
+                            Entities.editEntity(overlayID, {
+                                "dimensions": Vec3.multiply(sensorScaleFactor, part.naturalDimensions),
+                                "localPosition": Vec3.multiply(sensorScaleFactor, localPosition)
                             });
                         }
                     }
@@ -172,16 +174,16 @@ createControllerDisplay = function(config) {
             controller.naturalPosition = { x: 0, y: 0, z: 0 };
         }
 
-        //V8TODO: change to local entity
-        var baseOverlayID = Overlays.addOverlay("model", {
-            url: controller.modelURL,
-            dimensions: Vec3.multiply(sensorScaleFactor, controller.dimensions),
-            localRotation: controller.rotation,
-            localPosition: Vec3.multiply(sensorScaleFactor, position),
-            parentID: MyAvatar.SELF_ID,
-            parentJointIndex: controller.jointIndex,
-            ignoreRayIntersection: true
-        });
+        var baseOverlayID = Entities.addEntity({
+            "type": "Model",
+            "modelURL": controller.modelURL,
+            "dimensions": Vec3.multiply(sensorScaleFactor, controller.dimensions),
+            "localRotation": controller.rotation,
+            "localPosition": Vec3.multiply(sensorScaleFactor, position),
+            "parentID": MyAvatar.SELF_ID,
+            "parentJointIndex": controller.jointIndex,
+            "ignorePickIntersection": true
+        }, "local");
 
         controllerDisplay.overlays.push(baseOverlayID);
 
@@ -194,11 +196,12 @@ createControllerDisplay = function(config) {
                 controllerDisplay.parts[partName] = controller.parts[partName];
 
                 var properties = {
-                    url: part.modelURL,
-                    localPosition: localPosition,
-                    localRotation: localRotation,
-                    parentID: baseOverlayID,
-                    ignoreRayIntersection: true
+                    "type": "Model",
+                    "modelURL": part.modelURL,
+                    "localPosition": localPosition,
+                    "localRotation": localRotation,
+                    "parentID": baseOverlayID,
+                    "ignorePickIntersection": true
                 };
 
                 if (part.defaultTextureLayer) {
@@ -207,8 +210,7 @@ createControllerDisplay = function(config) {
                     properties.textures = textures;
                 }
 
-                //V8TODO: change to local entity
-                var overlayID = Overlays.addOverlay("model", properties);
+                var overlayID = Entities.addEntity(properties, "local");
 
                 if (part.type === "rotational") {
                     var input = resolveHardware(part.input);
@@ -288,7 +290,7 @@ createControllerDisplay = function(config) {
 
 deleteControllerDisplay = function(controllerDisplay) {
     for (var i = 0; i < controllerDisplay.overlays.length; ++i) {
-        Overlays.deleteOverlay(controllerDisplay.overlays[i]);
+        Entities.deleteEntity(controllerDisplay.overlays[i]);
     }
     Controller.disableMapping(controllerDisplay.mappingName);
 };

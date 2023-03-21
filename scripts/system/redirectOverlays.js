@@ -1,4 +1,16 @@
 "use strict";
+//
+//  redirectOverlays.js
+//
+//  Created by Wayne Chen on September 25th, 2018
+//  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Overlays
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+
 (function() {
 
     var ERROR_MESSAGE_MAP = [
@@ -38,126 +50,140 @@
 
     var oopsDimensions = {x: 4.2, y: 0.8};
 
-    //V8TODO: change to local entity
-    var redirectOopsText = Overlays.addOverlay("text3d", {
-        name: "oopsText",
-        position: {x: 0, y: 1.6763916015625, z: 1.45927095413208},
-        rotation: {x: -4.57763671875e-05, y: 0.4957197904586792, z: -7.62939453125e-05, w: 0.8684672117233276},
-        text: getOopsText(),
-        textAlpha: 1,
-        backgroundColor: {x: 0, y: 0, z:0},
-        backgroundAlpha: 0,
-        lineHeight: 0.10,
-        leftMargin: 0.538373570564886,
-        visible: false,
-        emissive: true,
-        ignoreRayIntersection: true,
-        dimensions: oopsDimensions,
-        grabbable: false,
-    });
+    var redirectOopsText = Entities.addEntity({
+        "type": "Text",
+        "name": "oopsText",
+        "position": {"x": 0, "y": 1.6763916015625, "z": 1.45927095413208},
+        "rotation": {"x": -4.57763671875e-05, "y": 0.4957197904586792, "z": -7.62939453125e-05, "w": 0.8684672117233276},
+        "text": getOopsText(),
+        "textAlpha": 1,
+        "backgroundColor": {"x": 0, "y": 0, "z":0},
+        "backgroundAlpha": 0,
+        "lineHeight": 0.10,
+        "leftMargin": 0.538373570564886,
+        "visible": false,
+        "unlit": true,
+        "ignorePickIntersection": true,
+        "dimensions": oopsDimensions,
+        "grab": {
+            "grabbable": false
+        }
+    }, "local");
 
-    //V8TODO: change to local entity
-    var tryAgainImageNeutral = Overlays.addOverlay("image3d", {
-        name: "tryAgainImage",
-        localPosition: {x: -0.6, y: -0.6, z: 0.0},
-        url: Script.resourcesPath() + "images/interstitialPage/button.png",
-        alpha: 1,
-        visible: false,
-        emissive: true,
-        ignoreRayIntersection: false,
-        grabbable: false,
-        orientation: Overlays.getProperty(redirectOopsText, "orientation"),
-        parentID: redirectOopsText
-    });
+    var tryAgainImageNeutral = Entities.addEntity({
+        "type": "Image",
+        "name": "tryAgainImage",
+        "localPosition": {"x": -0.6, "y": -0.6, "z": 0.0},
+        "imageURL": Script.resourcesPath() + "images/interstitialPage/button.png",
+        "alpha": 1,
+        "visible": false,
+        "emissive": true,
+        "ignorePickIntersection": false,
+        "grab": {
+            "grabbable": false
+        },
+        "rotation": Entities.getEntityProperties(redirectOopsText, ["rotation"]).rotation,
+        "parentID": redirectOopsText
+    }, "local");
 
-    //V8TODO: change to local entity
-    var tryAgainImageHover = Overlays.addOverlay("image3d", {
-        name: "tryAgainImageHover",
-        localPosition: {x: -0.6, y: -0.6, z: 0.0},
-        url: Script.resourcesPath() + "images/interstitialPage/button_hover.png",
-        alpha: 1,
-        visible: false,
-        emissive: true,
-        ignoreRayIntersection: false,
-        grabbable: false,
-        orientation: Overlays.getProperty(redirectOopsText, "orientation"),
-        parentID: redirectOopsText
-    });
+    var tryAgainImageHover = Entities.addEntity({
+        "type": "Image",
+        "name": "tryAgainImageHover",
+        "localPosition": {"x": -0.6, "y": -0.6, "z": 0.0},
+        "imageURL": Script.resourcesPath() + "images/interstitialPage/button_hover.png",
+        "alpha": 1,
+        "visible": false,
+        "emissive": true,
+        "ignorePickIntersection": false,
+        "grab": {
+            "grabbable": false
+        },
+        "rotation": Entities.getEntityProperties(redirectOopsText, ["rotation"]).rotation,
+        "parentID": redirectOopsText
+    }, "local");
 
-    //V8TODO: change to local entity
-    var tryAgainText = Overlays.addOverlay("text3d", {
-        name: "tryAgainText",
-        localPosition: {x: -0.6, y: -0.962, z: 0.0},
-        text: "Try Again",
-        textAlpha: 1,
-        backgroundAlpha: 0.00393,
-        lineHeight: 0.08,
-        visible: false,
-        emissive: true,
-        ignoreRayIntersection: true,
-        grabbable: false,
-        orientation: Overlays.getProperty(redirectOopsText, "orientation"),
-        parentID: redirectOopsText
-    });
+    var tryAgainText = Entities.addEntity({
+        "type": "Text",
+        "name": "tryAgainText",
+        "localPosition": {"x": -0.6, "y": -0.962, "z": 0.0},
+        "text": "Try Again",
+        "textAlpha": 1,
+        "backgroundAlpha": 0.00393,
+        "lineHeight": 0.08,
+        "visible": false,
+        "unlit": true,
+        "ignorePickIntersection": true,
+        "grab": {
+            "grabbable": false
+        },
+        "rotation": Entities.getEntityProperties(redirectOopsText, ["rotation"]).rotation,
+        "parentID": redirectOopsText
+    }, "local");
 
-    //V8TODO: change to local entity
-    var backImageNeutral = Overlays.addOverlay("image3d", {
-        name: "backImage",
-        localPosition: {x: 0.6, y: -0.6, z: 0.0},
-        url: Script.resourcesPath() + "images/interstitialPage/button.png",
-        alpha: 1,
-        visible: false,
-        emissive: true,
-        ignoreRayIntersection: false,
-        grabbable: false,
-        orientation: Overlays.getProperty(redirectOopsText, "orientation"),
-        parentID: redirectOopsText
-    });
+    var backImageNeutral = Entities.addEntity({
+        "type": "Image",
+        "name": "backImage",
+        "localPosition": {"x": 0.6, "y": -0.6, "z": 0.0},
+        "imageURL": Script.resourcesPath() + "images/interstitialPage/button.png",
+        "alpha": 1,
+        "visible": false,
+        "emissive": true,
+        "ignorePickIntersection": false,
+        "grab": {
+            "grabbable": false
+        },
+        "rotation": Entities.getEntityProperties(redirectOopsText, ["rotation"]).rotation,
+        "parentID": redirectOopsText
+    }, "local");
 
-    //V8TODO: change to local entity
-    var backImageHover = Overlays.addOverlay("image3d", {
-        name: "backImageHover",
-        localPosition: {x: 0.6, y: -0.6, z: 0.0},
-        url: Script.resourcesPath() + "images/interstitialPage/button_hover.png",
-        alpha: 1,
-        visible: false,
-        emissive: true,
-        ignoreRayIntersection: false,
-        grabbable: false,
-        orientation: Overlays.getProperty(redirectOopsText, "orientation"),
-        parentID: redirectOopsText
-    });
+    var backImageHover = Entities.addEntity({
+        "type": "Image",
+        "name": "backImageHover",
+        "localPosition": {"x": 0.6, "y": -0.6, "z": 0.0},
+        "imageURL": Script.resourcesPath() + "images/interstitialPage/button_hover.png",
+        "alpha": 1,
+        "visible": false,
+        "emissive": true,
+        "ignorePickIntersection": false,
+        "grab": {
+            "grabbable": false
+        },
+        "rotation": Entities.getEntityProperties(redirectOopsText, ["rotation"]).rotation,
+        "parentID": redirectOopsText
+    }, "local");
 
-    //V8TODO: change to local entity
-    var backText = Overlays.addOverlay("text3d", {
-        name: "backText",
-        localPosition: {x: 0.6, y: -0.962, z: 0.0},
-        text: "Back",
-        textAlpha: 1,
-        backgroundAlpha: 0.00393,
-        lineHeight: 0.08,
-        visible: false,
-        emissive: true,
-        ignoreRayIntersection: true,
-        grabbable: false,
-        orientation: Overlays.getProperty(redirectOopsText, "orientation"),
-        parentID: redirectOopsText
-    });
+    var backText = Entities.addEntity({
+        "type": "Text",
+        "name": "backText",
+        "localPosition": {"x": 0.6, "y": -0.962, "z": 0.0},
+        "text": "Back",
+        "textAlpha": 1,
+        "backgroundAlpha": 0.00393,
+        "lineHeight": 0.08,
+        "visible": false,
+        "unlit": true,
+        "ignorePickIntersection": true,
+        "grab": {
+            "grabbable": false
+        },
+        "rotation": Entities.getEntityProperties(redirectOopsText, ["rotation"]).rotation,
+        "parentID": redirectOopsText
+    }, "local");
 
     function toggleOverlays(isInErrorState) {
         isErrorState = isInErrorState;
         if (!isInErrorState) {
             var properties = {
-                visible: false
+                "visible": false
             };
 
-            Overlays.editOverlay(redirectOopsText, properties);
-            Overlays.editOverlay(tryAgainImageNeutral, properties);
-            Overlays.editOverlay(tryAgainImageHover, properties);
-            Overlays.editOverlay(backImageNeutral, properties);
-            Overlays.editOverlay(backImageHover, properties);
-            Overlays.editOverlay(tryAgainText, properties);
-            Overlays.editOverlay(backText, properties);
+            Entities.editEntity(redirectOopsText, properties);
+            Entities.editEntity(tryAgainImageNeutral, properties);
+            Entities.editEntity(tryAgainImageHover, properties);
+            Entities.editEntity(backImageNeutral, properties);
+            Entities.editEntity(backImageHover, properties);
+            Entities.editEntity(tryAgainText, properties);
+            Entities.editEntity(backText, properties);
             return;
         }
         var oopsText = getOopsText();
@@ -166,44 +192,44 @@
         // for catching init or if error state were to be different.
         isErrorState = overlaysVisible;
         var properties = {
-            visible: overlaysVisible
+            "visible": overlaysVisible
         };
 
-        var textWidth = Overlays.textSize(redirectOopsText, oopsText).width;
+        var textWidth = Entities.textSize(redirectOopsText, oopsText).width;
         var textOverlayWidth = oopsDimensions.x;
 
         var oopsTextProperties = {
-            visible: overlaysVisible,
-            text: oopsText,
-            textAlpha: overlaysVisible,
+            "visible": overlaysVisible,
+            "text": oopsText,
+            "textAlpha": overlaysVisible,
             // either visible or invisible. 0 doesn't work in Mac.
-            backgroundAlpha: overlaysVisible * 0.00393,
-            leftMargin: (textOverlayWidth - textWidth) / 2
+            "backgroundAlpha": overlaysVisible * 0.00393,
+            "leftMargin": (textOverlayWidth - textWidth) / 2
         };
 
-        var tryAgainTextWidth = Overlays.textSize(tryAgainText, "Try Again").width;
-        var tryAgainImageWidth = Overlays.getProperty(tryAgainImageNeutral, "dimensions").x;
+        var tryAgainTextWidth = Entities.textSize(tryAgainText, "Try Again").width;
+        var tryAgainImageWidth = Entities.getEntityProperties(tryAgainImageNeutral, ["dimensions"]).dimensions.x;
 
         var tryAgainTextProperties = {
-            visible: overlaysVisible,
-            leftMargin: (tryAgainImageWidth - tryAgainTextWidth) / 2
+            "visible": overlaysVisible,
+            "leftMargin": (tryAgainImageWidth - tryAgainTextWidth) / 2
         };
 
-        var backTextWidth = Overlays.textSize(backText, "Back").width;
-        var backImageWidth = Overlays.getProperty(backImageNeutral, "dimensions").x;
+        var backTextWidth = Entities.textSize(backText, "Back").width;
+        var backImageWidth = Entities.getEntityProperties(backImageNeutral, ["dimensions"]).dimensions.x;
 
         var backTextProperties = {
-            visible: overlaysVisible,
-            leftMargin: (backImageWidth - backTextWidth) / 2
+            "visible": overlaysVisible,
+            "leftMargin": (backImageWidth - backTextWidth) / 2
         };
 
-        Overlays.editOverlay(redirectOopsText, oopsTextProperties);
-        Overlays.editOverlay(tryAgainImageNeutral, properties);
-        Overlays.editOverlay(backImageNeutral, properties);
-        Overlays.editOverlay(tryAgainImageHover, {visible: false});
-        Overlays.editOverlay(backImageHover, {visible: false});
-        Overlays.editOverlay(tryAgainText, tryAgainTextProperties);
-        Overlays.editOverlay(backText, backTextProperties);
+        Entities.editEntity(redirectOopsText, oopsTextProperties);
+        Entities.editEntity(tryAgainImageNeutral, properties);
+        Entities.editEntity(backImageNeutral, properties);
+        Entities.editEntity(tryAgainImageHover, {"visible": false});
+        Entities.editEntity(backImageHover, {"visible": false});
+        Entities.editEntity(tryAgainText, tryAgainTextProperties);
+        Entities.editEntity(backText, backTextProperties);
 
     }
 
@@ -222,13 +248,13 @@
     function cleanup() {
         Script.clearInterval(timer);
         timer = null;
-        Overlays.deleteOverlay(redirectOopsText);
-        Overlays.deleteOverlay(tryAgainImageNeutral);
-        Overlays.deleteOverlay(backImageNeutral);
-        Overlays.deleteOverlay(tryAgainImageHover);
-        Overlays.deleteOverlay(backImageHover);
-        Overlays.deleteOverlay(tryAgainText);
-        Overlays.deleteOverlay(backText);
+        Entities.deleteEntity(redirectOopsText);
+        Entities.deleteEntity(tryAgainImageNeutral);
+        Entities.deleteEntity(backImageNeutral);
+        Entities.deleteEntity(tryAgainImageHover);
+        Entities.deleteEntity(backImageHover);
+        Entities.deleteEntity(tryAgainText);
+        Entities.deleteEntity(backText);
     }
 
     toggleOverlays(true);
@@ -240,12 +266,12 @@
             return;
         }
         if (overlayID === backImageNeutral && location.canGoBack()) {
-            Overlays.editOverlay(backImageNeutral, {visible: false});
-            Overlays.editOverlay(backImageHover, {visible: true});
+            Entities.editEntity(backImageNeutral, {"visible": false});
+            Entities.editEntity(backImageHover, {"visible": true});
         }
         if (overlayID === tryAgainImageNeutral) {
-            Overlays.editOverlay(tryAgainImageNeutral, {visible: false});
-            Overlays.editOverlay(tryAgainImageHover, {visible: true});
+            Entities.editEntity(tryAgainImageNeutral, {"visible": false});
+            Entities.editEntity(tryAgainImageHover, {"visible": true});
         }
     });
 
@@ -255,12 +281,12 @@
             return;
         }
         if (overlayID === backImageHover) {
-            Overlays.editOverlay(backImageHover, {visible: false});
-            Overlays.editOverlay(backImageNeutral, {visible: true});
+            Entities.editEntity(backImageHover, {"visible": false});
+            Entities.editEntity(backImageNeutral, {"visible": true});
         }
         if (overlayID === tryAgainImageHover) {
-            Overlays.editOverlay(tryAgainImageHover, {visible: false});
-            Overlays.editOverlay(tryAgainImageNeutral, {visible: true});
+            Entities.editEntity(tryAgainImageHover, {"visible": false});
+            Entities.editEntity(tryAgainImageNeutral, {"visible": true});
         }
     });
 
