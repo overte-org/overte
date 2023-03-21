@@ -1,4 +1,9 @@
+//
 // raypickTester.js
+//
+//  Created by Humbletim on June 18th, 2018.
+//  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 // display intersection details (including material) when hovering over entities/avatars/overlays
 //
@@ -11,17 +16,18 @@ var JOINT_NAME = HMD.active ? HAND_JOINT : 'Mouse';
 var UPDATE_MS = 1000/30;
 
 // create tect3d overlay to display hover results
-//V8TODO: change to local entity
-var overlayID = Overlays.addOverlay('text3d', {
-    text: 'hover',
-    visible: false,
-    backgroundAlpha: 0,
-    isFacingAvatar: true,
-    lineHeight: 0.05,
-    dimensions: Vec3.HALF,
-});
+var overlayID = Entities.addEntity({
+    "type": "Text",
+    "text": "hover",
+    "visible": false,
+    "backgroundAlpha": 0,
+    "billboardMode": "full",
+    "lineHeight": 0.05,
+    "dimensions": Vec3.HALF,
+}, "local");
+
 Script.scriptEnding.connect(function() {
-    Overlays.deleteOverlay(overlayID);
+    Entities.deleteEntity(overlayID);
 });
 
 // create raycast picker
@@ -60,10 +66,10 @@ function updateOverlay(overlayID, result) {
         ['submesh: ' + extraInfo.subMeshIndex, 'part: '+extraInfo.partIndex, 'shape: '+extraInfo.shapeID].join(' | '),
     ].filter(Boolean).join('\n');
 
-    Overlays.editOverlay(overlayID, {
-        text: text,
-        position: position,
-        visible: result.intersects,
+    Entities.editEntity(overlayID, {
+        "text": text,
+        "position": position,
+        "visible": result.intersects
     });
 }
 
