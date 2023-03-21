@@ -2,9 +2,10 @@
 //  sphereLodTest.js
 //  examples/tests
 //
-//  Created by Eric Levin on 1/21/16.
+//  Created by Eric Levin on January 21st, 2016.
 //  Copyright 2016 High Fidelity, Inc.
-
+//  Copyright 2023 Overte e.V.
+//
 //  A test script for testing LODing of sphere entities and sphere overlays
 //
 //  Distributed under the Apache License, Version 2.0.
@@ -46,21 +47,20 @@ var entitySphere = Entities.addEntity({
 });
 
 var overlaySpherePosition = Vec3.sum(tablePosition, {x: sphereDimensions.x, y: tableDimensions.y/2 + sphereDimensions.y/2, z: 0});
-//V8TODO: change to local entity
-var overlaySphere = Overlays.addOverlay("sphere", {
-    position: overlaySpherePosition,
-    size: 0.01,
-    color: { red: 20, green: 200, blue: 0},
-    alpha: 1.0,
-    solid: true,
-});
+var overlaySphere = Entities.addEntity({
+    "type": "Sphere",
+    "position": overlaySpherePosition,
+    "dimensions": sphereDimensions,
+    "color": { "red": 20, "green": 200, "blue": 0},
+    "alpha": 1.0
+}, "local");
 
 
 
 function cleanup() {
     Entities.deleteEntity(table);
     Entities.deleteEntity(entitySphere);
-    Overlays.deleteOverlay(overlaySphere);
+    Entities.deleteEntity(overlaySphere);
 
 
 }
