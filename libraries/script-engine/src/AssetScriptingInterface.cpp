@@ -43,7 +43,7 @@ STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
 }));
 
 
-AssetScriptingInterface::AssetScriptingInterface(QObject* parent) : BaseAssetScriptingInterface(parent) {
+AssetScriptingInterface::AssetScriptingInterface(ScriptManager* parent) : BaseAssetScriptingInterface(parent), _scriptManager(parent) {
     qCDebug(scriptengine) << "AssetScriptingInterface::AssetScriptingInterface" << parent;
 }
 
@@ -246,7 +246,7 @@ void AssetScriptingInterface::jsCallback(const ScriptValue& handler,
     Q_ASSERT(thread() == QThread::currentThread());
     Q_ASSERT(engine);
     //V8TODO: which kind of script context guard needs to be used here?
-    ScriptContextGuard scriptContextGuard(engine()->currentContext());
+    ScriptContextGuard scriptContextGuard(_scriptManager->engine()->currentContext());
     auto errorValue = !error.toBool() ? engine()->nullValue() : error;
     JS_VERIFY(handler.isObject() && handler.property("callback").isFunction(),
               QString("jsCallback -- .callback is not a function (%1)")
