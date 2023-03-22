@@ -245,6 +245,8 @@ void AssetScriptingInterface::jsCallback(const ScriptValue& handler,
                                          const ScriptValue& error, const ScriptValue& result) {
     Q_ASSERT(thread() == QThread::currentThread());
     Q_ASSERT(engine);
+    //V8TODO: which kind of script context guard needs to be used here?
+    ScriptContextGuard scriptContextGuard(engine()->currentContext());
     auto errorValue = !error.toBool() ? engine()->nullValue() : error;
     JS_VERIFY(handler.isObject() && handler.property("callback").isFunction(),
               QString("jsCallback -- .callback is not a function (%1)")
@@ -257,6 +259,7 @@ void AssetScriptingInterface::jsCallback(const ScriptValue& handler,
     Q_ASSERT(thread() == QThread::currentThread());
     Q_ASSERT(handler.engine());
     auto engine = handler.engine();
+
     jsCallback(handler, error, engine->toScriptValue(result));
 }
 
