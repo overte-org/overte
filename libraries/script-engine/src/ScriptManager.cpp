@@ -394,6 +394,7 @@ void ScriptManager::runInThread() {
     workerThread->setObjectName(name);
     _engine->setThread(workerThread);
     moveToThread(workerThread);
+    _assetScriptingInterface->moveToThread(workerThread);
 
     // NOTE: If you connect any essential signals for proper shutdown or cleanup of
     // the script engine, make sure to add code to "reconnect" them to the
@@ -884,10 +885,9 @@ void ScriptManager::run() {
         hifi::scripting::setLocalAccessSafeThread(true);
     }
 
-
-    //_engine->enterIsolateOnThisThread();
-
-    _engine->compileTest();
+    if (QThread::currentThread() != _assetScriptingInterface->thread()) {
+        _assetScriptingInterface->moveToThread(QThread::currentThread());
+    }
 
     auto filenameParts = _fileNameString.split("/");
     auto name = filenameParts.size() > 0 ? filenameParts[filenameParts.size() - 1] : "unknown";
