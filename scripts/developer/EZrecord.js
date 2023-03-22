@@ -3,8 +3,9 @@
 //
 //  EZrecord.js
 //
-//  Created by David Rowe on 24 Jun 2017.
+//  Created by David Rowe on June 24th, 2017.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -48,22 +49,23 @@
 
             if (HMD.active) {
                 // 3D overlay attached to avatar.
-                //V8TODO: change to local entity
-                hmdOverlay = Overlays.addOverlay("text3d", {
-                    text: recordingText,
-                    dimensions: { x: 3 * HMD_FONT_SIZE, y: HMD_FONT_SIZE },
-                    parentID: MyAvatar.sessionUUID,
-                    parentJointIndex: CAMERA_JOINT_INDEX,
-                    localPosition: { x: 0.95, y: 0.95, z: -2.0 },
-                    color: { red: 255, green: 0, blue: 0 },
-                    alpha: 0.9,
-                    lineHeight: HMD_FONT_SIZE,
-                    backgroundAlpha: 0,
-                    ignoreRayIntersection: true,
-                    isFacingAvatar: true,
-                    drawInFront: true,
-                    visible: true
-                });
+                hmdOverlay = Entities.addEntity({
+                    "type": "Text",
+                    "text": recordingText,
+                    "dimensions": { "x": 3 * HMD_FONT_SIZE, "y": HMD_FONT_SIZE, "z": 0.01 },
+                    "parentID": MyAvatar.sessionUUID,
+                    "parentJointIndex": CAMERA_JOINT_INDEX,
+                    "localPosition": { "x": 0.95, "y": 0.95, "z": -2.0 },
+                    "color": { "red": 255, "green": 0, "blue": 0 },
+                    "alpha": 0.9,
+                    "unlit": true,
+                    "lineHeight": HMD_FONT_SIZE,
+                    "backgroundAlpha": 0,
+                    "ignorePickIntersection": true,
+                    "billboardMode": "full",
+                    "renderLayer": "front",
+                    "visible": true
+                },"local");
             } else {
                 // 2D overlay on desktop.
                 desktopOverlay = Overlays.addOverlay("text", {
@@ -86,7 +88,7 @@
                 Overlays.deleteOverlay(desktopOverlay);
             }
             if (hmdOverlay) {
-                Overlays.deleteOverlay(hmdOverlay);
+                Entities.deleteEntity(hmdOverlay);
             }
         }
 

@@ -1,11 +1,11 @@
 "use strict";
-
 //
 //  away.js
 //
-//  Created by Howard Stearns 11/3/15
+//  Created by Howard Stearns November, 3rd, 2015
 //  Copyright 2015 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -21,31 +21,31 @@ var BASIC_TIMER_INTERVAL = 50; // 50ms = 20hz
 var OVERLAY_WIDTH = 1920;
 var OVERLAY_HEIGHT = 1080;
 var OVERLAY_DATA = {
-    width: OVERLAY_WIDTH,
-    height: OVERLAY_HEIGHT,
-    imageURL: Script.resolvePath("assets/images/Overlay-Viz-blank.png"),
-    emissive: true,
-    drawInFront: true,
-    alpha: 1
+    "width": OVERLAY_WIDTH,
+    "height": OVERLAY_HEIGHT,
+    "imageURL": Script.resolvePath("assets/images/Overlay-Viz-blank.png"),
+    "emissive": true,
+    "drawInFront": true,
+    "alpha": 1.0
 };
 var AVATAR_MOVE_FOR_ACTIVE_DISTANCE = 0.8; // meters -- no longer away if avatar moves this far while away
 
 var CAMERA_MATRIX = -7;
 
 var OVERLAY_DATA_HMD = {
-    localPosition: {x: 0, y: 0, z: -1 * MyAvatar.sensorToWorldScale},
-    localRotation: {x: 0, y: 0, z: 0, w: 1},
-    width: OVERLAY_WIDTH,
-    height: OVERLAY_HEIGHT,
-    url: Script.resolvePath("assets/images/Overlay-Viz-blank.png"),
-    color: {red: 255, green: 255, blue: 255},
-    alpha: 1,
-    scale: 2 * MyAvatar.sensorToWorldScale,
-    emissive: true,
-    drawInFront: true,
-    parentID: MyAvatar.SELF_ID,
-    parentJointIndex: CAMERA_MATRIX,
-    ignorePickIntersection: true
+    "type": "Image",
+    "localPosition": {"x": 0, "y": 0, "z": -1 * MyAvatar.sensorToWorldScale},
+    "localRotation": {"x": 0, "y": 0, "z": 0, "w": 1},
+    "keepAspectRatio": true,
+    "imageURL": Script.resolvePath("assets/images/Overlay-Viz-blank.png"),
+    "color": {"red": 255, "green": 255, "blue": 255},
+    "alpha": 1.0,
+    "dimensions": Vec3.multiply({"x": 2, "y": 2, "z": 2}, MyAvatar.sensorToWorldScale),
+    "emissive": true,
+    "renderLayer": "front",
+    "parentID": MyAvatar.SELF_ID,
+    "parentJointIndex": CAMERA_MATRIX,
+    "ignorePickIntersection": true
 };
 
 var AWAY_INTRO = {
@@ -89,33 +89,32 @@ function stopAwayAnimation() {
 
 // OVERLAY
 var overlay = Overlays.addOverlay("image", OVERLAY_DATA);
-//V8TODO: change to local entity
-var overlayHMD = Overlays.addOverlay("image3d", OVERLAY_DATA_HMD);
+var overlayHMD = Entities.addEntity(OVERLAY_DATA_HMD, "local");
 
 function showOverlay() {
     if (HMD.active) {
         // make sure desktop version is hidden
-        Overlays.editOverlay(overlay, { visible: false });
-        Overlays.editOverlay(overlayHMD, { visible: true });
+        Overlays.editOverlay(overlay, { "visible": false });
+        Entities.editEntity(overlayHMD, { "visible": true });
     } else {
         // make sure HMD is hidden
-        Overlays.editOverlay(overlayHMD, { visible: false });
+        Entities.editEntity(overlayHMD, { "visible": false });
 
         // Update for current screen size, keeping overlay proportions constant.
         var screen = Controller.getViewportDimensions();
 
         // keep the overlay it's natural size and always center it...
         Overlays.editOverlay(overlay, {
-            visible: true,
-            x: ((screen.x - OVERLAY_WIDTH) / 2),
-            y: ((screen.y - OVERLAY_HEIGHT) / 2)
+            "visible": true,
+            "x": ((screen.x - OVERLAY_WIDTH) / 2),
+            "y": ((screen.y - OVERLAY_HEIGHT) / 2)
         });
     }
 }
 
 function hideOverlay() {
-    Overlays.editOverlay(overlay, {visible: false});
-    Overlays.editOverlay(overlayHMD, {visible: false});
+    Overlays.editOverlay(overlay, {"visible": false});
+    Entities.editEntity(overlayHMD, {"visible": false});
 }
 
 hideOverlay();
@@ -132,10 +131,10 @@ function maybeMoveOverlay() {
 
             var sensorScaleFactor = MyAvatar.sensorToWorldScale;
             var localPosition = {x: 0, y: 0, z: -1 * sensorScaleFactor};
-            Overlays.editOverlay(overlayHMD, { visible: true, localPosition: localPosition, scale: 2 * sensorScaleFactor });
+            Entities.editEntity(overlayHMD, { "visible": true, "localPosition": localPosition, "dimensions": Vec3.multiply({"x": 2, "y": 2, "z": 2}, MyAvatar.sensorToWorldScale )});
 
             // make sure desktop version is hidden
-            Overlays.editOverlay(overlay, { visible: false });
+            Overlays.editOverlay(overlay, { "visible": false });
 
             // also remember avatar position
             avatarPosition = MyAvatar.position;

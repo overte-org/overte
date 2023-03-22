@@ -1,16 +1,16 @@
 "use strict";
-
 //
 //  bubble.js
 //  scripts/system/
 //
-//  Created by Brad Hefta-Gaub on 11/18/2016
+//  Created by Brad Hefta-Gaub on November 18th, 2016
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
-/* global Script, Users, Overlays, AvatarList, Controller, Camera, getControllerWorldLocation, UserActivityLogger */
+/* global Script, Users, Entities, AvatarList, Controller, Camera, getControllerWorldLocation, UserActivityLogger */
 
 (function () { // BEGIN LOCAL_SCOPE
     var button;
@@ -21,16 +21,19 @@
     // Affects bubble height
     var BUBBLE_HEIGHT_SCALE = 0.15;
     // The bubble model itself
-    //V8TODO: change to local entity
-    var bubbleOverlay = Overlays.addOverlay("model", {
-        url: Script.resolvePath("assets/models/Bubble-v14.fbx"), // If you'd like to change the model, modify this line (and the dimensions below)
-        dimensions: { x: MyAvatar.sensorToWorldScale, y: 0.75 * MyAvatar.sensorToWorldScale, z: MyAvatar.sensorToWorldScale },
-        position: { x: MyAvatar.position.x, y: -MyAvatar.scale * 2 + MyAvatar.position.y + MyAvatar.scale * BUBBLE_HEIGHT_SCALE, z: MyAvatar.position.z },
-        rotation: Quat.multiply(MyAvatar.orientation, Quat.fromVec3Degrees({x: 0.0, y: 180.0, z: 0.0})),
-        scale: { x: 2 , y: MyAvatar.scale * 0.5 + 0.5, z: 2  },
-        visible: false,
-        ignoreRayIntersection: true
-    });
+    var bubbleOverlay = Entities.addEntity({
+        "type": "Model",
+        "modelURL": Script.resolvePath("assets/models/Bubble-v14.fbx"), // If you'd like to change the model, modify this line (and the dimensions below)
+        "dimensions": { 
+            "x": MyAvatar.sensorToWorldScale * 2,
+            "y": (0.75 * MyAvatar.sensorToWorldScale) * ((MyAvatar.scale * 0.5) + 0.5),
+            "z": MyAvatar.sensorToWorldScale * 2
+        },
+        "position": { "x": MyAvatar.position.x, "y": -MyAvatar.scale * 2 + MyAvatar.position.y + MyAvatar.scale * BUBBLE_HEIGHT_SCALE, "z": MyAvatar.position.z },
+        "rotation": Quat.multiply(MyAvatar.orientation, Quat.fromVec3Degrees({"x": 0.0, "y": 180.0, "z": 0.0})),
+        "visible": false,
+        "ignorePickIntersection": true
+    }, "local");
     // The bubble activation sound
     var bubbleActivateSound = SoundCache.getSound(Script.resolvePath("assets/sounds/bubble.wav"));
     // Is the update() function connected?
@@ -42,8 +45,8 @@
 
     // Hides the bubble model overlay
     function hideOverlays() {
-        Overlays.editOverlay(bubbleOverlay, {
-            visible: false
+        Entities.editEntity(bubbleOverlay, {
+            "visible": false
         });
     }
 
@@ -85,24 +88,19 @@
             Script.update.disconnect(update);
         }
 
-        Overlays.editOverlay(bubbleOverlay, {
-            dimensions: { 
-                x: MyAvatar.sensorToWorldScale, 
-                y: 0.75 * MyAvatar.sensorToWorldScale, 
-                z: MyAvatar.sensorToWorldScale 
+        Entities.editEntity(bubbleOverlay, {
+            "dimensions": { 
+                "x": MyAvatar.sensorToWorldScale * 2, 
+                "y": (0.75 * MyAvatar.sensorToWorldScale) * ((MyAvatar.scale * 0.5)  + 0.5), 
+                "z": MyAvatar.sensorToWorldScale * 2 
             },
-            position: { 
-                x: MyAvatar.position.x, 
-                y: -MyAvatar.scale * 2 + MyAvatar.position.y + MyAvatar.scale * BUBBLE_HEIGHT_SCALE, 
-                z: MyAvatar.position.z 
+            "position": { 
+                "x": MyAvatar.position.x, 
+                "y": -MyAvatar.scale * 2 + MyAvatar.position.y + MyAvatar.scale * BUBBLE_HEIGHT_SCALE, 
+                "z": MyAvatar.position.z 
             },
-            rotation: Quat.multiply(MyAvatar.orientation, Quat.fromVec3Degrees({x: 0.0, y: 180.0, z: 0.0})),
-            scale: { 
-                x: 2 , 
-                y: MyAvatar.scale * 0.5  + 0.5 , 
-                z: 2  
-            },
-            visible: true
+            "rotation": Quat.multiply(MyAvatar.orientation, Quat.fromVec3Degrees({"x": 0.0, "y": 180.0, "z": 0.0})),
+            "visible": true
         });
         bubbleOverlayTimestamp = nowTimestamp;
         Script.update.connect(update);
@@ -127,44 +125,34 @@
         var overlayAlpha = 1.0 - (delay / BUBBLE_VISIBLE_DURATION_MS);
         if (overlayAlpha > 0) {
             if (delay < BUBBLE_RAISE_ANIMATION_DURATION_MS) {
-                Overlays.editOverlay(bubbleOverlay, {
-                    dimensions: { 
-                        x: MyAvatar.sensorToWorldScale, 
-                        y: 0.75 * MyAvatar.sensorToWorldScale, 
-                        z: MyAvatar.sensorToWorldScale 
+                Entities.editEntity(bubbleOverlay, {
+                    "dimensions": { 
+                        "x": MyAvatar.sensorToWorldScale * 2,
+                        "y": (0.75 * MyAvatar.sensorToWorldScale) * ((1 - ((BUBBLE_RAISE_ANIMATION_DURATION_MS - delay) / BUBBLE_RAISE_ANIMATION_DURATION_MS)) * MyAvatar.scale * 0.5 + 0.5),
+                        "z": MyAvatar.sensorToWorldScale * 2
                     },
                     // Quickly raise the bubble from the ground up
-                    position: {
-                        x: MyAvatar.position.x,
-                        y: (-((BUBBLE_RAISE_ANIMATION_DURATION_MS - delay) / BUBBLE_RAISE_ANIMATION_DURATION_MS)) * MyAvatar.scale * 2 + MyAvatar.position.y + MyAvatar.scale * BUBBLE_HEIGHT_SCALE,
-                        z: MyAvatar.position.z
+                    "position": {
+                        "x": MyAvatar.position.x,
+                        "y": (-((BUBBLE_RAISE_ANIMATION_DURATION_MS - delay) / BUBBLE_RAISE_ANIMATION_DURATION_MS)) * MyAvatar.scale * 2 + MyAvatar.position.y + MyAvatar.scale * BUBBLE_HEIGHT_SCALE,
+                        "z": MyAvatar.position.z
                     },
-                    rotation: Quat.multiply(MyAvatar.orientation, Quat.fromVec3Degrees({x: 0.0, y: 180.0, z: 0.0})),
-                    scale: {
-                        x: 2 ,
-                        y: ((1 - ((BUBBLE_RAISE_ANIMATION_DURATION_MS - delay) / BUBBLE_RAISE_ANIMATION_DURATION_MS)) * MyAvatar.scale * 0.5 + 0.5),
-                        z: 2 
-                    }
+                    "rotation": Quat.multiply(MyAvatar.orientation, Quat.fromVec3Degrees({"x": 0.0, "y": 180.0, "z": 0.0}))
                 });
             } else {
                 // Keep the bubble in place for a couple seconds
-                Overlays.editOverlay(bubbleOverlay, {
-                    dimensions: { 
-                        x: MyAvatar.sensorToWorldScale, 
-                        y: 0.75 * MyAvatar.sensorToWorldScale, 
-                        z: MyAvatar.sensorToWorldScale 
+                Entities.editEntity(bubbleOverlay, {
+                    "dimensions": { 
+                        "x": MyAvatar.sensorToWorldScale * 2,
+                        "y": (0.75 * MyAvatar.sensorToWorldScale) * ((MyAvatar.scale * 0.5) + 0.5),
+                        "z": MyAvatar.sensorToWorldScale * 2
                     },            
-                    position: {
-                        x: MyAvatar.position.x,
-                        y: MyAvatar.position.y + MyAvatar.scale * BUBBLE_HEIGHT_SCALE,
-                        z: MyAvatar.position.z
+                    "position": {
+                        "x": MyAvatar.position.x,
+                        "y": MyAvatar.position.y + MyAvatar.scale * BUBBLE_HEIGHT_SCALE,
+                        "z": MyAvatar.position.z
                     },
-                    rotation: Quat.multiply(MyAvatar.orientation, Quat.fromVec3Degrees({x: 0.0, y: 180.0, z: 0.0})),
-                    scale: {
-                        x: 2,
-                        y: MyAvatar.scale * 0.5  + 0.5 ,
-                        z: 2 
-                    }
+                    "rotation": Quat.multiply(MyAvatar.orientation, Quat.fromVec3Degrees({"x": 0.0, "y": 180.0, "z": 0.0}))
                 });
             }
         } else {
@@ -222,7 +210,7 @@
         }
         Users.ignoreRadiusEnabledChanged.disconnect(onBubbleToggled);
         Users.enteredIgnoreRadius.disconnect(enteredIgnoreRadius);
-        Overlays.deleteOverlay(bubbleOverlay);
+        Entities.deleteEntity(bubbleOverlay);
         if (updateConnected === true) {
             Script.update.disconnect(update);
         }
