@@ -46,12 +46,15 @@
  * @hifi-server-entity
  * @hifi-assignment-client
  */
+
+class ScriptManager;
+
 /// Provides the <code><a href="https://apidocs.overte.org/Assets.html">Assets</a></code> scripting API
 class AssetScriptingInterface : public BaseAssetScriptingInterface, Scriptable {
     Q_OBJECT
 public:
     using Parent = BaseAssetScriptingInterface;
-    AssetScriptingInterface(QObject* parent = nullptr);
+    AssetScriptingInterface(ScriptManager* parent);
 
     /*@jsdoc
      * Called when an {@link Assets.uploadData} call is complete.
@@ -547,6 +550,7 @@ protected:
     void jsCallback(const ScriptValue& handler, const ScriptValue& error, const QVariantMap& result);
     void jsCallback(const ScriptValue& handler, const ScriptValue& error, const ScriptValue& result);
     bool jsVerify(bool condition, const QString& error);
+    ScriptManager *_scriptManager;
 };
 
 #endif // hifi_AssetScriptingInterface_h
