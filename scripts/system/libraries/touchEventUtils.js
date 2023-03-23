@@ -152,13 +152,13 @@ function composeTouchTargetFromIntersection(intersection) {
 
 // will return undefined if overlayID does not exist.
 function calculateTouchTargetFromOverlay(touchTip, overlayID) {
-    var overlayPosition = Overlays.getProperty(overlayID, "position");
+    var overlayPosition = Entities.getEntityProperties(overlayID, ["position"]).position;
     if (overlayPosition === undefined) {
         return;
     }
 
     // project touchTip onto overlay plane.
-    var overlayRotation = Overlays.getProperty(overlayID, "rotation");
+    var overlayRotation = Entities.getEntityProperties(overlayID, ["rotation"]).rotation;
     if (overlayRotation === undefined) {
         return;
     }
@@ -170,7 +170,8 @@ function calculateTouchTargetFromOverlay(touchTip, overlayID) {
     var invRot = Quat.inverse(overlayRotation);
     var localPos = Vec3.multiplyQbyV(invRot, Vec3.subtract(position, overlayPosition));
 
-    var dimensions = Overlays.getProperty(overlayID, "dimensions");
+    // V8TODO: check if this is correct for entities
+    var dimensions = Entities.getEntityProperties(overlayID, ["dimensions"]).dimensions;
     if (dimensions === undefined) {
         return;
     }

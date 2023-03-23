@@ -552,7 +552,7 @@ void ScriptObjectV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> v
 }
 
 void ScriptObjectV8Proxy::v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::Array>& info) {
-    qCDebug(scriptengine_v8) << "ScriptObjectV8Proxy::v8GetPropertyNames called";
+    //qCDebug(scriptengine_v8) << "ScriptObjectV8Proxy::v8GetPropertyNames called";
     v8::HandleScope handleScope(info.GetIsolate());
     auto context = info.GetIsolate()->GetCurrentContext();
     v8::Context::Scope contextScope(context);
@@ -897,7 +897,7 @@ void ScriptVariantV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> 
 
 void ScriptVariantV8Proxy::v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::Array>& info) {
     //V8TODO: Only methods from the prototype should be listed.
-    qCDebug(scriptengine_v8) << "ScriptObjectV8Proxy::v8GetPropertyNames called";
+    //qCDebug(scriptengine_v8) << "ScriptObjectV8Proxy::v8GetPropertyNames called";
     v8::HandleScope handleScope(info.GetIsolate());
     auto context = info.GetIsolate()->GetCurrentContext();
     v8::Context::Scope contextScope(context);
@@ -1387,6 +1387,7 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
         return id;
     }
 
+#ifdef SCRIPT_EVENT_PERFORMANCE_STATISTICS
     _callCounter++;
     if (_callCounter % 1000 == 0) {
         qCDebug(scriptengine_v8) << "Script engine: " << _engine->manager()->getFilename() << " Signal proxy " << fullName()
@@ -1394,6 +1395,7 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
     }
     QElapsedTimer callTimer;
     callTimer.start();
+#endif
 
     auto isolate = _engine->getIsolate();
     v8::Locker locker(isolate);
@@ -1488,8 +1490,9 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
     }
     //});
 
+#ifdef SCRIPT_EVENT_PERFORMANCE_STATISTICS
     _totalCallTime_s += callTimer.elapsed() / 1000.0f;
-
+#endif
     return -1;
 }
 
