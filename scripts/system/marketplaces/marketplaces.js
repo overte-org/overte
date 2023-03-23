@@ -115,7 +115,7 @@ function setTabletVisibleInSecondaryCamera(visibleInSecondaryCam) {
         }
     } else {
         // if we're hiding the tablet, check to see if it was visible in the first place
-        tabletShouldBeVisibleInSecondaryCamera = Overlays.getProperty(HMD.tabletID, "isVisibleInSecondaryCamera");
+        tabletShouldBeVisibleInSecondaryCamera = Entities.getEntityProperties(HMD.tabletID, ["isVisibleInSecondaryCamera"]).isVisibleInSecondaryCamera;
     }
 
     Overlays.editOverlay(HMD.tabletID, { isVisibleInSecondaryCamera: visibleInSecondaryCam });

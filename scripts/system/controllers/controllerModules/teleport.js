@@ -215,7 +215,7 @@ Script.include("/~/system/libraries/controllers.js");
                 var avatarSensorPosition = Mat4.transformPoint(worldToSensorMatrix, MyAvatar.position);
                 avatarSensorPosition.y = 0;
 
-                var targetRotation = Overlays.getProperty(_this.targetOverlayID, "rotation");
+                var targetRotation = Entities.getEntityProperties(_this.targetOverlayID, ["rotation"]).rotation;
                 var relativePlayAreaCenterOffset =
                     Vec3.sum(_this.playAreaCenterOffset, { x: 0, y: -TARGET_MODEL_DIMENSIONS.y / 2, z: 0 });
                 var localPosition = Vec3.multiplyQbyV(Quat.inverse(targetRotation),
@@ -507,7 +507,7 @@ Script.include("/~/system/libraries/controllers.js");
                 });
             } else {
                 // Set play area position and rotation in local coordinates with parenting.
-                var targetRotation = Overlays.getProperty(_this.targetOverlayID, "rotation");
+                var targetRotation = Entities.getEntityProperties(_this.targetOverlayID, ["rotation"]).rotation;
                 var sensorToTargetRotation = Quat.multiply(Quat.inverse(targetRotation), sensorToWorldRotation);
                 var relativePlayAreaCenterOffset =
                     Vec3.sum(_this.playAreaCenterOffset, { x: 0, y: -TARGET_MODEL_DIMENSIONS.y / 2, z: 0 });
