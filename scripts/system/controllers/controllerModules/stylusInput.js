@@ -31,7 +31,7 @@ Script.include("/~/system/libraries/controllers.js");
     }
 
     function getOverlayDistance(controllerPosition, overlayID) {
-        var position = Overlays.getProperty(overlayID, "position");
+        var position = Entities.getEntityProperties(overlayID, ["position"]).position;
         return {
             id: overlayID,
             distance: Vec3.distance(position, controllerPosition)
@@ -98,7 +98,7 @@ Script.include("/~/system/libraries/controllers.js");
 
             for (i = 0; i < candidateOverlays.length; i++) {
                 if (!(HMD.tabletID && candidateOverlays[i] === HMD.tabletID) &&
-                    Overlays.getProperty(candidateOverlays[i], "visible")) {
+                    Entities.getEntityProperties(candidateOverlays[i], ["visible"]).visible) {
                     stylusTarget = getOverlayDistance(controllerPosition, candidateOverlays[i]);
                     if (stylusTarget) {
                         stylusTargets.push(stylusTarget);
@@ -108,7 +108,7 @@ Script.include("/~/system/libraries/controllers.js");
 
             // add the tabletScreen, if it is valid
             if (HMD.tabletScreenID && HMD.tabletScreenID !== Uuid.NULL &&
-                Overlays.getProperty(HMD.tabletScreenID, "visible")) {
+                Entities.getEntityProperties(HMD.tabletScreenID, ["visible"]).visible) {
                 stylusTarget = getOverlayDistance(controllerPosition, HMD.tabletScreenID);
                 if (stylusTarget) {
                     stylusTargets.push(stylusTarget);
@@ -117,7 +117,7 @@ Script.include("/~/system/libraries/controllers.js");
 
             // add the tablet home button.
             if (HMD.homeButtonID && HMD.homeButtonID !== Uuid.NULL &&
-                Overlays.getProperty(HMD.homeButtonID, "visible")) {
+                Entities.getEntityProperties(HMD.homeButtonID, ["visible"]).visible) {
                 stylusTarget = getOverlayDistance(controllerPosition, HMD.homeButtonID);
                 if (stylusTarget) {
                     stylusTargets.push(stylusTarget);
@@ -125,7 +125,7 @@ Script.include("/~/system/libraries/controllers.js");
             }
 
             // Add the mini tablet.
-            if (HMD.miniTabletScreenID && Overlays.getProperty(HMD.miniTabletScreenID, "visible") &&
+            if (HMD.miniTabletScreenID && Entities.getEntityProperties(HMD.miniTabletScreenID, ["visible"]).visible &&
                 this.hand != HMD.miniTabletHand) {
                 stylusTarget = getOverlayDistance(controllerPosition, HMD.miniTabletScreenID);
                 if (stylusTarget) {

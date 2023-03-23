@@ -237,8 +237,8 @@
     var connectionToDomainFailed = false;
 
     function getAnchorLocalYOffset() {
-        var loadingSpherePosition = Overlays.getProperty(loadingSphereID, "position");
-        var loadingSphereOrientation = Overlays.getProperty(loadingSphereID, "rotation");
+        var loadingSpherePosition = Entities.getEntityProperties(loadingSphereID, ["position"]).position;
+        var loadingSphereOrientation = Entities.getEntityProperties(loadingSphereID, ["rotation"]).rotation;
         var overlayXform = new Xform(loadingSphereOrientation, loadingSpherePosition);
         var worldToOverlayXform = overlayXform.inv();
         var headPosition = MyAvatar.getHeadPosition();

@@ -47,7 +47,7 @@ Script.include("/~/system/libraries/utils.js");
         };
 
         this.isGrabbedThingVisible = function() {
-            return Overlays.getProperty(this.grabbedThingID, "visible");
+            return Entities.getEntityProperties(this.grabbedThingID, ["visible"]).visible;
         };
 
         this.thisHandIsParent = function(props) {
@@ -78,10 +78,10 @@ Script.include("/~/system/libraries/utils.js");
 
         this.getGrabbedProperties = function() {
             return {
-                position: Overlays.getProperty(this.grabbedThingID, "position"),
-                rotation: Overlays.getProperty(this.grabbedThingID, "rotation"),
-                parentID: Overlays.getProperty(this.grabbedThingID, "parentID"),
-                parentJointIndex: Overlays.getProperty(this.grabbedThingID, "parentJointIndex"),
+                position: Entities.getEntityProperties(this.grabbedThingID, ["position"]).position,
+                rotation: Entities.getEntityProperties(this.grabbedThingID, ["rotation"]).rotation,
+                parentID: Entities.getEntityProperties(this.grabbedThingID, ["parentID"]).parentID,
+                parentJointIndex: Entities.getEntityProperties(this.grabbedThingID, ["parentJointIndex"]).parentJointIndex,
                 dynamic: false,
                 shapeType: "none"
             };
@@ -164,7 +164,7 @@ Script.include("/~/system/libraries/utils.js");
         this.getTargetID = function(overlays, controllerData) {
             var sensorScaleFactor = MyAvatar.sensorToWorldScale;
             for (var i = 0; i < overlays.length; i++) {
-                var overlayPosition = Overlays.getProperty(overlays[i], "position");
+                var overlayPosition = Entities.getEntityProperties(overlays[i], ["position"]).position;
                 var handPosition = controllerData.controllerLocations[this.hand].position;
                 var distance = Vec3.distance(overlayPosition, handPosition);
                 if (distance <= NEAR_GRAB_RADIUS * sensorScaleFactor) {
@@ -202,7 +202,8 @@ Script.include("/~/system/libraries/utils.js");
 
             var candidateOverlays = controllerData.nearbyOverlayIDs[this.hand];
             var grabbableOverlays = candidateOverlays.filter(function(overlayID) {
-                return Overlays.getProperty(overlayID, "grabbable");
+                // V8TODO: check if this works
+                return Entities.getEntityProperties(overlayID, ["grab"]).grab.grabbable;
             });
 
             var targetID = this.getTargetID(grabbableOverlays, controllerData);

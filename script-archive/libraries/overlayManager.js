@@ -65,6 +65,7 @@
         properties.forEach(function(prop) {
             Object.defineProperty(that.prototype, prop, {
                 get: function() {
+                    //V8TODO:
                     return Overlays.getProperty(this._id, prop);
                 },
                 set: function(newValue) {
