@@ -58,7 +58,8 @@ Script.include("/~/system/libraries/controllers.js");
                 if (nearGrabModule) {
                     var candidateOverlays = controllerData.nearbyOverlayIDs[this.hand];
                     var grabbableOverlays = candidateOverlays.filter(function(overlayID) {
-                        return Overlays.getProperty(overlayID, "grabbable");
+                        //V8TODO: this needs to be checked if it works
+                        return Entities.getEntityProperties(overlayID, ["grab"]).grab.grabbable;
                     });
                     var target = nearGrabModule.getTargetID(grabbableOverlays, controllerData);
                     if (target) {
@@ -105,7 +106,7 @@ Script.include("/~/system/libraries/controllers.js");
                 if (intersection.type === Picks.INTERSECTED_OVERLAY) {
                     var overlayIndex = this.ignoredObjects.indexOf(objectID);
 
-                    var overlayName = Overlays.getProperty(objectID, "name");
+                    var overlayName = Entities.getEntityProperties(objectID, ["name"]).name;
                     if (overlayName !== "Loading-Destination-Card-Text" && overlayName !== "Loading-Destination-Card-GoTo-Image" &&
                         overlayName !== "Loading-Destination-Card-GoTo-Image-Hover") {
                         var data = {
