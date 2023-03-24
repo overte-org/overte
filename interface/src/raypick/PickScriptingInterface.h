@@ -297,8 +297,6 @@ public:
 
     static constexpr unsigned int PICK_BYPASS_IGNORE() { return PickFilter::getBitMask(PickFilter::FlagBit::PICK_BYPASS_IGNORE); }
 
-public slots:
-
     /*@jsdoc
      * @function Picks.PICK_ENTITIES
      * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_DOMAIN_ENTITIES | 
