@@ -89,7 +89,7 @@ unsigned int PickScriptingInterface::createPick(const PickQuery::PickType type, 
 
 PickFilter getPickFilter(unsigned int filter) {
     // FIXME: Picks always intersect visible and collidable things right now
-    filter = filter | (PickScriptingInterface::PICK_INCLUDE_VISIBLE() | PickScriptingInterface::PICK_INCLUDE_COLLIDABLE());
+    filter = filter | (PickScriptingInterface::getPickIncludeVisible() | PickScriptingInterface::getPickIncludeCollidable());
     return PickFilter(filter);
 }
 
