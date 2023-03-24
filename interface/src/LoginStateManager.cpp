@@ -170,7 +170,7 @@ void LoginStateManager::setUp() {
     const unsigned int leftHand = 0;
     QVariantMap leftPointerProperties {
         { "joint", "_CAMERA_RELATIVE_CONTROLLER_LEFTHAND" },
-        { "filter", PickScriptingInterface::PICK_LOCAL_ENTITIES() },
+        { "filter", PickScriptingInterface::getPickLocalEntities() },
         { "triggers", leftPointerTriggerProperties },
         { "posOffset", vec3toVariant(grabPointSphereOffsetLeft + malletOffset) },
         { "hover", true },
@@ -197,7 +197,7 @@ void LoginStateManager::setUp() {
     rightPointerTriggerProperties = QList<QVariant>({rtClick1, rtClick2});
     QVariantMap rightPointerProperties{
         { "joint", "_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND" },
-        { "filter", PickScriptingInterface::PICK_LOCAL_ENTITIES() },
+        { "filter", PickScriptingInterface::getPickLocalEntities() },
         { "triggers", rightPointerTriggerProperties },
         { "posOffset", vec3toVariant(grabPointSphereOffsetRight + malletOffset) },
         { "hover", true },
