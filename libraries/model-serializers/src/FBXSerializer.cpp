@@ -966,7 +966,7 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
                                     } else if (property.properties.at(0) == OPACITY) {
                                         material.opacity = property.properties.at(index).value<double>();
                                     } else if (property.properties.at(0) == REFLECTION_FACTOR) {
-                                        // Blender 2.79 and below set REFLECTION_FACTOR, but there is no way to actually set that value in their UI,
+                                        // Blender 2.79 and below set REFLECTION_FACTOR, but there is no way to actually change that value in their UI,
                                         // so we are falling back to non-PBS material.
                                         // if (blender version is lower than 2.80) {
                                         //     material.isPBSMaterial = true;
