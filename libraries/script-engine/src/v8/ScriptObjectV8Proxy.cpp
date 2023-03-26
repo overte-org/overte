@@ -1051,7 +1051,11 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
 
         for (int arg = 0; arg < numArgs; ++arg) {
             int methodArgTypeId = meta.parameterType(arg);
-            Q_ASSERT(methodArgTypeId != QMetaType::UnknownType);
+            if (methodArgTypeId == QMetaType::UnknownType) {
+                QString methodName = fullName();
+                qCDebug(scriptengine_v8) << "One of the arguments is QMetaType::UnknownType for method " << methodName;
+                Q_ASSERT(false);
+            }
             v8::Local<v8::Value> argVal = arguments[arg];
             if (methodArgTypeId == scriptValueTypeId) {
                 qScriptArgLists[i].append(ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, argVal))));

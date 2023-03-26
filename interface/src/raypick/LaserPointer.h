@@ -13,6 +13,8 @@
 
 #include "PathPointer.h"
 
+#include<EntityItemProperties.h>
+
 class LaserPointer : public PathPointer {
     using Parent = PathPointer;
 public:
@@ -46,7 +48,7 @@ public:
 
     QVariantMap toVariantMap() const override;
 
-    static std::shared_ptr<StartEndRenderState> buildRenderState(const QVariantMap& propMap);
+    static std::shared_ptr<StartEndRenderState> buildRenderState(const QVariantMap& propMap, const QList<EntityItemProperties> &entityProperties);
 
 protected:
     PickResultPointer getPickResultCopy(const PickResultPointer& pickResult) const override;
