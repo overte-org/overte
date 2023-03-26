@@ -14,14 +14,15 @@
 
 #include "DependencyManager.h"
 #include "RegisteredMetaTypes.h"
+#include <EntityItemProperties.h>
 #include <PointerManager.h>
 #include <Pick.h>
 
 class ScriptValue;
 
 /*@jsdoc
- * The <code>Pointers</code> API lets you create, manage, and visually represent objects for repeatedly calculating 
- * intersections with avatars, entities, and overlays. Pointers can also be configured to generate events on entities and 
+ * The <code>Pointers</code> API lets you create, manage, and visually represent objects for repeatedly calculating
+ * intersections with avatars, entities, and overlays. Pointers can also be configured to generate events on entities and
  * overlays intersected.
  *
  * @namespace Pointers
@@ -31,11 +32,33 @@ class ScriptValue;
  * @hifi-avatar
  */
 
+class PointerProperties {
+public:
+    QVariantMap properties;
+    QList<EntityItemProperties> entityProperties;
+};
+
+class RayPointerProperties : public PointerProperties {
+};
+
+class ParabolaPointerProperties : public PointerProperties {
+};
+
+class StylusPointerProperties : public PointerProperties {
+};
+
+Q_DECLARE_METATYPE(RayPointerProperties);
+Q_DECLARE_METATYPE(PointerProperties);
+
 class PointerScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
     SINGLETON_DEPENDENCY
 
 public:
+
+
+    // The purpose of registering different classes is to let the script engine know what data structure it has to
+    // expect in JS object that will be converted to PointerProperties
 
     /*@jsdoc
      * Specifies that a {@link Controller} action or function should trigger events on the entity or overlay currently 
@@ -133,7 +156,9 @@ public:
      * });
      */
     // TODO: expand Pointers to be able to be fully configurable with PickFilters
-    Q_INVOKABLE unsigned int createPointer(const PickQuery::PickType& type, const QVariant& properties);
+
+    // V8TODO: add documentation
+    Q_INVOKABLE unsigned int createRayPointer(RayPointerProperties properties);
 
     /*@jsdoc
      * Enables and shows a pointer. Enabled pointers update their pick results and generate events.
@@ -479,9 +504,15 @@ public:
     Q_INVOKABLE QVariantMap getPointerProperties(unsigned int uid) const;
 
 protected:
-    static std::shared_ptr<Pointer> buildLaserPointer(const QVariant& properties);
-    static std::shared_ptr<Pointer> buildStylus(const QVariant& properties);
-    static std::shared_ptr<Pointer> buildParabolaPointer(const QVariant& properties);
+    static std::shared_ptr<Pointer> buildLaserPointer(const PointerProperties& properties);
+    static std::shared_ptr<Pointer> buildStylus(const PointerProperties& properties);
+    static std::shared_ptr<Pointer> buildParabolaPointer(const PointerProperties& properties);
+private:
+    Q_INVOKABLE unsigned int createPointerInternal(const PickQuery::PickType& type, const PointerProperties& properties);
 };
+
+ScriptValue rayPointerPropertiesToScriptValue(ScriptEngine* engine, const RayPointerProperties& in);
+
+bool rayPointerPropertiesFromScriptValue(const ScriptValue& value, RayPointerProperties& out);
 
 #endif // hifi_PointerScriptingInterface_h

@@ -10,6 +10,8 @@
 
 #include "PathPointer.h"
 
+#include<EntityItemProperties.h>
+
 #include <render/Item.h>
 
 class ParabolaPointer : public PathPointer {
@@ -105,7 +107,7 @@ public:
 
     QVariantMap toVariantMap() const override;
 
-    static std::shared_ptr<StartEndRenderState> buildRenderState(const QVariantMap& propMap);
+    static std::shared_ptr<StartEndRenderState> buildRenderState(const QVariantMap& propMap, const QList<EntityItemProperties> &entityProperties);
 
 protected:
     virtual PickResultPointer getPickResultCopy(const PickResultPointer& pickResult) const override;
