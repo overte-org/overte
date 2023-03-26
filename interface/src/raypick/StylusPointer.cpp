@@ -49,7 +49,7 @@ PickQuery::PickType StylusPointer::getType() const {
 
 QUuid StylusPointer::buildStylus(const QVariantMap& properties) {
     // FIXME: we have to keep using the Overlays interface here, because existing scripts use overlay properties to define pointers
-    QVariantMap propertiesMap;
+    /*QVariantMap propertiesMap;
 
     QString modelUrl = DEFAULT_STYLUS_MODEL_URL;
 
@@ -69,7 +69,30 @@ QUuid StylusPointer::buildStylus(const QVariantMap& properties) {
     propertiesMap["ignorePickIntersection"] = true;
     propertiesMap["drawInFront"] = false;
 
-    return qApp->getOverlays().addOverlay("model", propertiesMap);
+    return qApp->getOverlays().addOverlay("model", propertiesMap);*/
+
+    EntityItemProperties entityProperties;
+    QString modelURL = DEFAULT_STYLUS_MODEL_URL;
+
+    if (properties["model"].isValid()) {
+        QVariantMap modelData = properties["model"].toMap();
+
+        if (modelData["url"].isValid()) {
+            modelURL = modelData["url"].toString();
+        }
+    }
+    // TODO: make these configurable per pointer
+    entityProperties.setType(EntityTypes::Model);
+    entityProperties.setName("stylus");
+    entityProperties.setModelURL(modelURL);
+    // V8TODO: I can't find equivalent for entities
+    //propertiesMap["loadPriority"] = 10.0f;
+    entityProperties.setPrimitiveMode(PrimitiveMode::SOLID);
+    entityProperties.setVisible(true);
+    entityProperties.setIgnorePickIntersection(true);
+    // V8TODO: I can't find equivalent for entities but shouldn't be necessary
+    //propertiesMap["drawInFront"] = false;
+    return DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(entityProperties, entity::HostType::LOCAL);
 }
 
 void StylusPointer::updateVisuals(const PickResultPointer& pickResult) {
