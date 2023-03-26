@@ -23,58 +23,62 @@ var Pointer = function(hudLayer, pickType, pointerData) {
     this.SEARCH_SPHERE_SIZE = 0.0132;
     this.dim = {x: this.SEARCH_SPHERE_SIZE, y: this.SEARCH_SPHERE_SIZE, z: this.SEARCH_SPHERE_SIZE};
     this.halfPath = {
-        type: "line3d",
+        type: "PolyLine",
         color: COLORS_GRAB_SEARCHING_HALF_SQUEEZE,
         visible: true,
         alpha: 1,
         solid: true,
-        glow: 1.0,
-        ignoreRayIntersection: true, // always ignore this
-        drawInFront: !hudLayer, // Even when burried inside of something, show it.
+        glow: true,
+        billboardMode: "yaw",
+        ignorePickIntersection: true, // always ignore this
+        //V8TODO
+        drawInFront: !hudLayer, // Even when buried inside of something, show it.
         drawHUDLayer: hudLayer,
     };
     this.halfEnd = {
-        type: "sphere",
+        type: "Sphere",
         dimensions: this.dim,
         solid: true,
         color: COLORS_GRAB_SEARCHING_HALF_SQUEEZE,
         alpha: 0.9,
-        ignoreRayIntersection: true,
-        drawInFront: !hudLayer, // Even when burried inside of something, show it.
+        ignorePickIntersection: true,
+        drawInFront: !hudLayer, // Even when buried inside of something, show it.
         drawHUDLayer: hudLayer,
         visible: true
     };
     this.fullPath = {
-        type: "line3d",
+        type: "PolyLine",
         color: COLORS_GRAB_SEARCHING_FULL_SQUEEZE,
         visible: true,
         alpha: 1,
         solid: true,
-        glow: 1.0,
-        ignoreRayIntersection: true, // always ignore this
-        drawInFront: !hudLayer, // Even when burried inside of something, show it.
+        glow: true,
+        billboardMode: "yaw",
+        ignorePickIntersection: true, // always ignore this
+        drawInFront: !hudLayer, // Even when buried inside of something, show it.
         drawHUDLayer: hudLayer,
     };
     this.fullEnd = {
-        type: "sphere",
+        type: "Sphere",
         dimensions: this.dim,
         solid: true,
         color: COLORS_GRAB_SEARCHING_FULL_SQUEEZE,
         alpha: 0.9,
-        ignoreRayIntersection: true,
-        drawInFront: !hudLayer, // Even when burried inside of something, show it.
+        ignorePickIntersection: true,
+        drawInFront: !hudLayer, // Even when buried inside of something, show it.
         drawHUDLayer: hudLayer,
         visible: true
     };
     this.holdPath = {
-        type: "line3d",
+        type: "PolyLine",
         color: COLORS_GRAB_DISTANCE_HOLD,
         visible: true,
         alpha: 1,
         solid: true,
-        glow: 1.0,
-        ignoreRayIntersection: true, // always ignore this
-        drawInFront: !hudLayer, // Even when burried inside of something, show it.
+        glow: true,
+        billboardMode: "yaw",
+        ignorePickIntersection: true, // always ignore this
+        drawInFront: !hudLayer, // Even when buried inside of something, show it.
         drawHUDLayer: hudLayer,
     };
 
@@ -99,6 +103,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
     delete pointerData.hand;
 
     function createPointer(pickType, pointerData) {
+        //V8TODO
         var pointerID = Pointers.createPointer(pickType, pointerData);
         Pointers.setRenderState(pointerID, "");
         Pointers.enablePointer(pointerID);
