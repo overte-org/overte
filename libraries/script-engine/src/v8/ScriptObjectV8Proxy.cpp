@@ -275,7 +275,8 @@ void ScriptObjectV8Proxy::investigate() {
         }
 
         auto v8Name = v8::String::NewFromUtf8(_engine->getIsolate(), prop.name()).ToLocalChecked();
-        PropertyDef& propDef = _props.insert(idx, PropertyDef(_engine, v8Name)).value();
+        PropertyDef& propDef = _props.insert(idx, PropertyDef(_engine, v8Name, idx)).value();
+        _propNameMap.insert(V8ScriptString(_engine, v8Name), &propDef);
         propDef.flags = ScriptValue::Undeletable | ScriptValue::PropertyGetter | ScriptValue::PropertySetter |
                         ScriptValue::QObjectMember;
         if (prop.isConstant()) propDef.flags |= ScriptValue::ReadOnly;
@@ -318,9 +319,10 @@ void ScriptObjectV8Proxy::investigate() {
         auto nameLookup = methodNames.find(name);
         if (isSignal) {
             if (nameLookup == methodNames.end()) {
-                SignalDef& signalDef = _signals.insert(idx, SignalDef(_engine, name.get())).value();
+                SignalDef& signalDef = _signals.insert(idx, SignalDef(_engine, name.get(), idx)).value();
                 signalDef.name = name;
                 signalDef.signal = method;
+                _signalNameMap.insert(name, &signalDef);
                 //qCDebug(scriptengine_v8) << "Utf8Value 1: " << QString(*v8::String::Utf8Value(const_cast<v8::Isolate*>(_engine->getIsolate()), nameString));
                 //qCDebug(scriptengine_v8) << "Utf8Value 2: " << QString(*v8::String::Utf8Value(const_cast<v8::Isolate*>(_engine->getIsolate()), name.constGet()));
                 //qCDebug(scriptengine_v8) << "toQString: " << name.toQString();
@@ -346,10 +348,11 @@ void ScriptObjectV8Proxy::investigate() {
                 }
             }
             if (nameLookup == methodNames.end()) {
-                MethodDef& methodDef = _methods.insert(idx, MethodDef(_engine, name.get())).value();
+                MethodDef& methodDef = _methods.insert(idx, MethodDef(_engine, name.get(), idx)).value();
                 methodDef.name = name;
                 methodDef.numMaxParms = parameterCount;
                 methodDef.methods.append(method);
+                _methodNameMap.insert(name, &methodDef);
                 methodNames.insert(name, idx);
             } else {
                 int originalMethodId = nameLookup.value();
@@ -403,19 +406,33 @@ ScriptObjectV8Proxy::QueryFlags ScriptObjectV8Proxy::queryProperty(const V8Scrip
     v8::String::Utf8Value nameStr(isolate, name.constGet());
 
     // check for methods
-    for (MethodDefMap::const_iterator trans = _methods.cbegin(); trans != _methods.cend(); ++trans) {
+    /*for (MethodDefMap::const_iterator trans = _methods.cbegin(); trans != _methods.cend(); ++trans) {
         v8::String::Utf8Value methodNameStr(isolate, trans.value().name.constGet());
         //qCDebug(scriptengine_v8) << "queryProperty : " << *nameStr << " method: " << *methodNameStr;
         if (!(trans.value().name == name)) continue;
         *id = trans.key() | METHOD_TYPE;
         return flags & (HandlesReadAccess | HandlesWriteAccess);
+    }*/
+    MethodNameMap::const_iterator method = _methodNameMap.find(name);
+    if (method != _methodNameMap.cend()) {
+        //v8::String::Utf8Value methodNameStr(isolate, trans.value().name.constGet());
+        //qCDebug(scriptengine_v8) << "queryProperty : " << *nameStr << " method: " << *methodNameStr;
+        const MethodDef* methodDef = method.value();
+        *id = methodDef->_id | METHOD_TYPE;
+        return flags & (HandlesReadAccess | HandlesWriteAccess);
     }
 
     // check for properties
-    for (PropertyDefMap::const_iterator trans = _props.cbegin(); trans != _props.cend(); ++trans) {
+    /*for (PropertyDefMap::const_iterator trans = _props.cbegin(); trans != _props.cend(); ++trans) {
         const PropertyDef& propDef = trans.value();
         if (!(propDef.name == name)) continue;
         *id = trans.key() | PROPERTY_TYPE;
+        return flags & (HandlesReadAccess | HandlesWriteAccess);
+    }*/
+    PropertyNameMap::const_iterator prop = _propNameMap.find(name);
+    if (prop != _propNameMap.cend()) {
+        const PropertyDef* propDef = prop.value();
+        *id = propDef->_id | PROPERTY_TYPE;
         return flags & (HandlesReadAccess | HandlesWriteAccess);
     }
 
@@ -585,6 +602,7 @@ v8::Local<v8::Array> ScriptObjectV8Proxy::getPropertyNames() {
     auto context = _engine->getContext();
     v8::Context::Scope contextScope(_engine->getContext());
 
+    //V8TODO: this is really slow. It could be cached if this is called often.
     v8::Local<v8::Array> properties = v8::Array::New(isolate, _props.size() + _methods.size() + _signals.size());
     uint32_t position = 0;
     for (PropertyDefMap::const_iterator i = _props.begin(); i != _props.end(); i++){
