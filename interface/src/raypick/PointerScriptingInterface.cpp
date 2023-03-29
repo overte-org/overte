@@ -569,42 +569,47 @@ bool rayPointerPropertiesFromScriptValue(const ScriptValue& value, RayPointerPro
     // This copies properties from script value, but also converts entity properties of entities used in render states
     // from JS objects into EntityItemProperties
     out.properties = value.engine()->fromScriptValue<QVariantMap>(value);
-    if (out.properties["renderStates"].canConvert<QVariantList>()) {
-        QVariantList renderStates = out.properties["renderStates"].value<QVariantList>();
-        for( int i = 0; i < renderStates.length(); i++) {
-            if (renderStates[i].canConvert<QVariantMap>()) {
-                QVariantMap stateMap = renderStates[i].value<QVariantMap>();
-                if (stateMap["name"].canConvert<QString>()) {
-                    stateMap["name"].value<QString>();
-                }
-                if (stateMap["start"].isValid()) {
-                    ScriptValue start = value.property("renderStates").property(i).property("start");
-                    EntityItemProperties startProperties;
-                    startProperties.copyFromScriptValue(start, false);
-                    stateMap.insert("startPropertyIndex", QVariant(out.entityProperties.length()));
-                    out.entityProperties.append(startProperties);
-                }
+    QList<QString> renderStatesNames;
+    renderStatesNames.append("renderStates");
+    renderStatesNames.append("defaultRenderStates");
+    for (auto renderStatesName = renderStatesNames.cbegin(); renderStatesName!=renderStatesNames.cend(); renderStatesName++) {
+        if (out.properties[*renderStatesName].canConvert<QVariantList>()) {
+            QVariantList renderStates = out.properties[*renderStatesName].value<QVariantList>();
+            for (int i = 0; i < renderStates.length(); i++) {
+                if (renderStates[i].canConvert<QVariantMap>()) {
+                    QVariantMap stateMap = renderStates[i].value<QVariantMap>();
+                    if (stateMap["name"].canConvert<QString>()) {
+                        stateMap["name"].value<QString>();
+                    }
+                    if (stateMap["start"].isValid()) {
+                        ScriptValue start = value.property(*renderStatesName).property(i).property("start");
+                        EntityItemProperties startProperties;
+                        startProperties.copyFromScriptValue(start, false);
+                        stateMap.insert("startPropertyIndex", QVariant(out.entityProperties.length()));
+                        out.entityProperties.append(startProperties);
+                    }
 
-                if (stateMap["path"].isValid()) {
-                    ScriptValue path = value.property("renderStates").property(i).property("path");
-                    EntityItemProperties pathProperties;
-                    pathProperties.copyFromScriptValue(path, false);
-                    stateMap.insert("pathPropertyIndex", QVariant(out.entityProperties.length()));
-                    out.entityProperties.append(pathProperties);
-                }
+                    if (stateMap["path"].isValid()) {
+                        ScriptValue path = value.property(*renderStatesName).property(i).property("path");
+                        EntityItemProperties pathProperties;
+                        pathProperties.copyFromScriptValue(path, false);
+                        stateMap.insert("pathPropertyIndex", QVariant(out.entityProperties.length()));
+                        out.entityProperties.append(pathProperties);
+                    }
 
-                if (stateMap["end"].isValid()) {
-                    ScriptValue end = value.property("renderStates").property(i).property("end");
-                    EntityItemProperties endProperties;
-                    endProperties.copyFromScriptValue(end, false);
-                    stateMap.insert("endPropertyIndex", QVariant(out.entityProperties.length()));
-                    out.entityProperties.append(endProperties);
+                    if (stateMap["end"].isValid()) {
+                        ScriptValue end = value.property(*renderStatesName).property(i).property("end");
+                        EntityItemProperties endProperties;
+                        endProperties.copyFromScriptValue(end, false);
+                        stateMap.insert("endPropertyIndex", QVariant(out.entityProperties.length()));
+                        out.entityProperties.append(endProperties);
+                    }
+                    // V8TODO: Check if path is a polyline and if values are valid
+                    renderStates[i].setValue(stateMap);
                 }
-                // V8TODO: Check if path is a polyline and if values are valid
-                renderStates[i].setValue(stateMap);
             }
+            out.properties[*renderStatesName].setValue(renderStates);
         }
-        out.properties["renderStates"].setValue(renderStates);
     }
     qDebug() << "rayPointerPropertiesFromScriptValue" << out.properties;
     return true;
