@@ -39,27 +39,33 @@ class ScriptObjectV8Proxy final {
 private:  // implementation
     class PropertyDef {
     public:
-        PropertyDef(ScriptEngineV8 *engine, v8::Local<v8::String> string) : name(engine, string) {};
+        PropertyDef(ScriptEngineV8 *engine, v8::Local<v8::String> string, uint id) : name(engine, string), _id(id) {};
         V8ScriptString name;
         ScriptValue::PropertyFlags flags;
+        uint _id;
     };
     class MethodDef {
     public:
-        MethodDef(ScriptEngineV8 *engine, v8::Local<v8::String> string) : name(engine, string) {};
+        MethodDef(ScriptEngineV8 *engine, v8::Local<v8::String> string, uint id) : name(engine, string), _id(id) {};
         V8ScriptString name;
         int numMaxParms;
         QList<QMetaMethod> methods;
+        uint _id;
     };
     class SignalDef {
     public:
-        SignalDef(ScriptEngineV8 *engine, v8::Local<v8::String> string) : name(engine, string) {};
+        SignalDef(ScriptEngineV8 *engine, v8::Local<v8::String> string, uint id) : name(engine, string), _id(id) {};
         V8ScriptString name;
         QMetaMethod signal;
+        uint _id;
     };
     using PropertyDefMap = QHash<uint, PropertyDef>;
     using MethodDefMap = QHash<uint, MethodDef>;
     using SignalDefMap = QHash<uint, SignalDef>;
     using InstanceMap = QHash<uint, QPointer<ScriptSignalV8Proxy> >;
+    using PropertyNameMap = QHash<V8ScriptString, PropertyDef*>;
+    using MethodNameMap = QHash<V8ScriptString, MethodDef*>;
+    using SignalNameMap = QHash<V8ScriptString, SignalDef*>;
 
     static constexpr uint PROPERTY_TYPE = 0x1000;
     static constexpr uint METHOD_TYPE = 0x2000;
@@ -112,6 +118,10 @@ private:  // storage
     PropertyDefMap _props;
     MethodDefMap _methods;
     SignalDefMap _signals;
+    // These are used for property lookups from V8 callbacks
+    PropertyNameMap _propNameMap;
+    MethodNameMap _methodNameMap;
+    SignalNameMap _signalNameMap;
     InstanceMap _signalInstances;
     const bool _ownsObject;
     QPointer<QObject> _object;
