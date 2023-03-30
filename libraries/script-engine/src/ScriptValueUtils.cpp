@@ -34,6 +34,12 @@
 #include "ScriptValueIterator.h"
 #include "ScriptEngineLogging.h"
 
+#define CONVERSIONS_OPTIMIZED_FOR_V8
+
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+#include "v8/FastScriptValueUtils.h"
+#endif
+
 bool isListOfStrings(const ScriptValue& arg) {
     if (!arg.isArray()) {
         return false;
@@ -59,7 +65,11 @@ void registerMetaTypes(ScriptEngine* engine) {
     scriptRegisterMetaType<QVector3D, qVector3DToScriptValue, qVector3DFromScriptValue>(engine);
 
     scriptRegisterMetaType<glm::vec2, vec2ToScriptValue, vec2FromScriptValue>(engine);
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+    scriptRegisterMetaType<glm::vec3, vec3ToScriptValueFast, vec3FromScriptValueFast>(engine);
+#else
     scriptRegisterMetaType<glm::vec3, vec3ToScriptValue, vec3FromScriptValue>(engine);
+#endif
     scriptRegisterMetaType<glm::u8vec3, u8vec3ToScriptValue, u8vec3FromScriptValue>(engine);
     scriptRegisterMetaType<glm::vec4, vec4toScriptValue, vec4FromScriptValue>(engine);
     scriptRegisterMetaType<glm::quat, quatToScriptValue, quatFromScriptValue>(engine);
@@ -117,7 +127,11 @@ bool qVector2DFromScriptValue(const ScriptValue& object, QVector2D& qVector2D) {
 
 ScriptValue qVector3DToScriptValue(ScriptEngine* engine, const QVector3D& qVector3D) {
     glm::vec3 vec3(qVector3D.x(), qVector3D.y(), qVector3D.z());
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+    return vec3ToScriptValueFast(engine, vec3);
+#else
     return vec3ToScriptValue(engine, vec3);
+#endif
 }
 
 bool qVector3DFromScriptValue(const ScriptValue& object, QVector3D& qVector3D) {
@@ -456,7 +470,11 @@ ScriptValue qVectorVec3ColorToScriptValue(ScriptEngine* engine, const QVector<gl
 ScriptValue qVectorVec3ToScriptValue(ScriptEngine* engine, const QVector<glm::vec3>& vector) {
     ScriptValue array = engine->newArray();
     for (int i = 0; i < vector.size(); i++) {
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+        array.setProperty(i, vec3ToScriptValueFast(engine, vector.at(i)));
+#else
         array.setProperty(i, vec3ToScriptValue(engine, vector.at(i)));
+#endif
     }
     return array;
 }
@@ -776,9 +794,17 @@ bool qURLFromScriptValue(const ScriptValue& object, QUrl& url) {
 
 ScriptValue pickRayToScriptValue(ScriptEngine* engine, const PickRay& pickRay) {
     ScriptValue obj = engine->newObject();
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+    ScriptValue origin = vec3ToScriptValueFast(engine, pickRay.origin);
+#else
     ScriptValue origin = vec3ToScriptValue(engine, pickRay.origin);
+#endif
     obj.setProperty("origin", origin);
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+    ScriptValue direction = vec3ToScriptValueFast(engine, pickRay.direction);
+#else
     ScriptValue direction = vec3ToScriptValue(engine, pickRay.direction);
+#endif
     obj.setProperty("direction", direction);
     return obj;
 }
@@ -824,9 +850,15 @@ ScriptValue collisionToScriptValue(ScriptEngine* engine, const Collision& collis
     obj.setProperty("type", collision.type);
     obj.setProperty("idA", quuidToScriptValue(engine, collision.idA));
     obj.setProperty("idB", quuidToScriptValue(engine, collision.idB));
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+    obj.setProperty("penetration", vec3ToScriptValueFast(engine, collision.penetration));
+    obj.setProperty("contactPoint", vec3ToScriptValueFast(engine, collision.contactPoint));
+    obj.setProperty("velocityChange", vec3ToScriptValueFast(engine, collision.velocityChange));
+#else
     obj.setProperty("penetration", vec3ToScriptValue(engine, collision.penetration));
     obj.setProperty("contactPoint", vec3ToScriptValue(engine, collision.contactPoint));
     obj.setProperty("velocityChange", vec3ToScriptValue(engine, collision.velocityChange));
+#endif
     return obj;
 }
 

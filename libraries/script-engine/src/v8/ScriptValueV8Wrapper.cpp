@@ -423,7 +423,8 @@ void ScriptValueV8Wrapper::setPrototype(const ScriptValue& prototype) {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     ScriptValueV8Wrapper* unwrappedPrototype = unwrap(prototype);
     if (unwrappedPrototype) {
         if(unwrappedPrototype->toV8Value().constGet()->IsNullOrUndefined() && _value.constGet()->IsNullOrUndefined()) {
@@ -432,7 +433,7 @@ void ScriptValueV8Wrapper::setPrototype(const ScriptValue& prototype) {
         if(unwrappedPrototype->toV8Value().constGet()->IsObject() && _value.constGet()->IsObject()) {
             auto object = v8::Local<v8::Object>::Cast(_value.get());
             //V8TODO: I don't know which context to use here
-            v8::Maybe<bool> retVal = object->SetPrototype(_engine->getContext(), unwrappedPrototype->toV8Value().constGet());
+            v8::Maybe<bool> retVal = object->SetPrototype(context, unwrappedPrototype->toV8Value().constGet());
             //v8::Maybe<bool> retVal = object->SetPrototype(_value.getContext(), unwrappedPrototype->toV8Value().constGet());
             if (retVal.IsJust() ? !retVal.FromJust() : true){
                 qCDebug(scriptengine_v8) << "Failed to assign prototype";
