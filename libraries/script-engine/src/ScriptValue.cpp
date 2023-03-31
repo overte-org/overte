@@ -55,6 +55,7 @@ public:
                              const ScriptValue::PropertyFlags& flags = ScriptValue::KeepExistingFlags) override;
     virtual void setPrototype(const ScriptValue& prototype) override;
     virtual bool strictlyEquals(const ScriptValue& other) const override;
+    virtual inline QList<QString> getPropertyNames() const;
 
     virtual bool toBool() const override;
     virtual qint32 toInt32() const override;
@@ -207,6 +208,10 @@ void ScriptValueProxyNull::setPrototype(const ScriptValue& prototype) {
 
 bool ScriptValueProxyNull::strictlyEquals(const ScriptValue& other) const {
     return !other.isValid();
+}
+
+QList<QString> ScriptValueProxyNull::getPropertyNames() const {
+    return QList<QString>();
 }
 
 bool ScriptValueProxyNull::toBool() const {
