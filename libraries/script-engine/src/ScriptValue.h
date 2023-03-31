@@ -106,6 +106,7 @@ public:
                              const PropertyFlags& flags = KeepExistingFlags);
     inline void setPrototype(const ScriptValue& prototype);
     inline bool strictlyEquals(const ScriptValue& other) const;
+    inline QList<QString> getPropertyNames() const;
 
     inline bool toBool() const;
     inline qint32 toInt32() const;
@@ -165,6 +166,7 @@ public:
                              const ScriptValue::PropertyFlags& flags = ScriptValue::KeepExistingFlags) = 0;
     virtual void setPrototype(const ScriptValue& prototype) = 0;
     virtual bool strictlyEquals(const ScriptValue& other) const = 0;
+    virtual QList<QString> getPropertyNames() const = 0;
 
     virtual bool toBool() const = 0;
     virtual qint32 toInt32() const = 0;
@@ -348,6 +350,11 @@ bool ScriptValue::strictlyEquals(const ScriptValue& other) const {
     Q_ASSERT(_proxy != nullptr);
     return _proxy->strictlyEquals(other);
 }
+
+inline QList<QString> ScriptValue::getPropertyNames() const {
+    Q_ASSERT(_proxy != nullptr);
+    return _proxy->getPropertyNames();
+};
 
 bool ScriptValue::toBool() const {
     Q_ASSERT(_proxy != nullptr);
