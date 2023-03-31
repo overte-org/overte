@@ -454,6 +454,33 @@ bool ScriptValueV8Wrapper::strictlyEquals(const ScriptValue& other) const {
     return unwrappedOther ? _value.constGet()->StrictEquals(unwrappedOther->toV8Value().constGet()) : false;
 }
 
+inline QList<QString> ScriptValueV8Wrapper::getPropertyNames() const {
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
+    v8::Local<v8::Value> value = _value.constGet();
+    if (value->IsNullOrUndefined()) {
+        return QList<QString>();
+    }
+    if (!value->IsObject()) {
+        return QList<QString>();
+    }
+    v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(value);
+    v8::Local<v8::Array> array;
+    if (!object->GetPropertyNames(context).ToLocal(&array)) {
+        return QList<QString>();
+    }
+    QList<QString> names;
+    for (uint32_t n = 0; n < array->Length(); n++) {
+        v8::Local<v8::String> name = array->Get(context, n).ToLocalChecked()->ToString(context).ToLocalChecked();
+        names.append(*v8::String::Utf8Value(isolate, name));
+    }
+    return names;
+}
+
 bool ScriptValueV8Wrapper::toBool() const {
     auto isolate = _engine->getIsolate();
     v8::Locker locker(isolate);
