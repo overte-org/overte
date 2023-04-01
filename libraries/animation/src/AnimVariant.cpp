@@ -17,6 +17,7 @@
 #include <QThread>
 #include <ScriptValueIterator.h>
 #include <ScriptValueUtils.h>
+#include <v8/FastScriptValueUtils.h>
 
 const AnimVariant AnimVariant::False = AnimVariant();
 
@@ -42,7 +43,11 @@ ScriptValue AnimVariantMap::animVariantMapToScriptValue(ScriptEngine* engine, co
                 target.setProperty(name, value.getString());
                 break;
             case AnimVariant::Type::Vec3:
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+                target.setProperty(name, vec3ToScriptValueFast(engine, value.getVec3()));
+#else
                 target.setProperty(name, vec3ToScriptValue(engine, value.getVec3()));
+#endif
                 break;
             case AnimVariant::Type::Quat:
                 target.setProperty(name, quatToScriptValue(engine, value.getQuat()));
