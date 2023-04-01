@@ -32,7 +32,6 @@
 #include <PickManager.h>
 #include <ScriptEngine.h>
 #include <ScriptEngineCast.h>
-#include <v8/FastScriptValueUtils.h>
 
 #include <RenderableWebEntityItem.h>
 #include "VariantMapToScriptValue.h"
@@ -1144,14 +1143,9 @@ ScriptValue RayToOverlayIntersectionResultToScriptValue(ScriptEngine* engine, co
     obj.setProperty("distance", value.distance);
     obj.setProperty("face", boxFaceToString(value.face));
 
-#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
-    ScriptValue intersection = vec3ToScriptValueFast(engine, value.intersection);
-    ScriptValue surfaceNormal = vec3ToScriptValueFast(engine, value.surfaceNormal);
-#else
     ScriptValue intersection = vec3ToScriptValue(engine, value.intersection);
-    ScriptValue surfaceNormal = vec3ToScriptValue(engine, value.surfaceNormal);
-#endif
     obj.setProperty("intersection", intersection);
+    ScriptValue surfaceNormal = vec3ToScriptValue(engine, value.surfaceNormal);
     obj.setProperty("surfaceNormal", surfaceNormal);
     obj.setProperty("extraInfo", engine->toScriptValue(value.extraInfo));
     return obj;
@@ -1166,19 +1160,11 @@ bool RayToOverlayIntersectionResultFromScriptValue(const ScriptValue& object, Ra
 
     ScriptValue intersection = object.property("intersection");
     if (intersection.isValid()) {
-#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
-        vec3FromScriptValueFast(intersection, value.intersection);
-#else
         vec3FromScriptValue(intersection, value.intersection);
-#endif
     }
     ScriptValue surfaceNormal = object.property("surfaceNormal");
     if (surfaceNormal.isValid()) {
-#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
-        vec3FromScriptValueFast(surfaceNormal, value.surfaceNormal);
-#else
-        vec3FromScriptValue(intersection, value.intersection);
-#endif
+        vec3FromScriptValue(surfaceNormal, value.surfaceNormal);
     }
     value.extraInfo = object.property("extraInfo").toVariant().toMap();
     return true;

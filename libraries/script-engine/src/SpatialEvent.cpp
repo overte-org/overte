@@ -17,7 +17,6 @@
 #include "ScriptEngine.h"
 #include "ScriptValueUtils.h"
 #include "ScriptValue.h"
-#include "v8/FastScriptValueUtils.h"
 
 SpatialEvent::SpatialEvent() :
     locTranslation(0.0f),
@@ -39,20 +38,11 @@ SpatialEvent::SpatialEvent(const SpatialEvent& event) {
 ScriptValue SpatialEvent::toScriptValue(ScriptEngine* engine, const SpatialEvent& event) {
     ScriptValue obj = engine->newObject();
     
-#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
-    obj.setProperty("locTranslation", vec3ToScriptValueFast(engine, event.locTranslation) );
-    //V8TODO: optimize
-    obj.setProperty("locRotation", quatToScriptValue(engine, event.locRotation) );
-    obj.setProperty("absTranslation", vec3ToScriptValueFast(engine, event.absTranslation));
-    //V8TODO: optimize
-    obj.setProperty("absRotation", quatToScriptValue(engine, event.absRotation));
-#else
     obj.setProperty("locTranslation", vec3ToScriptValue(engine, event.locTranslation) );
     obj.setProperty("locRotation", quatToScriptValue(engine, event.locRotation) );
     obj.setProperty("absTranslation", vec3ToScriptValue(engine, event.absTranslation));
     obj.setProperty("absRotation", quatToScriptValue(engine, event.absRotation));
-#endif
-
+    
     return obj;
 }
 

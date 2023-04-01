@@ -33,7 +33,12 @@
 #include "ScriptEngineCast.h"
 #include "ScriptValueIterator.h"
 #include "ScriptEngineLogging.h"
+
+#define CONVERSIONS_OPTIMIZED_FOR_V8
+
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
 #include "v8/FastScriptValueUtils.h"
+#endif
 
 bool isListOfStrings(const ScriptValue& arg) {
     if (!arg.isArray()) {
@@ -131,11 +136,7 @@ ScriptValue qVector3DToScriptValue(ScriptEngine* engine, const QVector3D& qVecto
 
 bool qVector3DFromScriptValue(const ScriptValue& object, QVector3D& qVector3D) {
     glm::vec3 vec3;
-#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
-    if (vec3FromScriptValueFast(object, vec3)) {
-#else
     if (vec3FromScriptValue(object, vec3)) {
-#endif
         qVector3D.setX(vec3.x);
         qVector3D.setY(vec3.y);
         qVector3D.setZ(vec3.z);
@@ -484,11 +485,7 @@ QVector<glm::vec3> qVectorVec3FromScriptValue(const ScriptValue& array) {
 
     for (int i = 0; i < length; i++) {
         glm::vec3 newVec3 = glm::vec3();
-#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
-        vec3FromScriptValueFast(array.property(i), newVec3);
-#else
         vec3FromScriptValue(array.property(i), newVec3);
-#endif
         newVector << newVec3;
     }
     return newVector;
@@ -499,11 +496,7 @@ bool qVectorVec3FromScriptValue(const ScriptValue& array, QVector<glm::vec3>& ve
 
     for (int i = 0; i < length; i++) {
         glm::vec3 newVec3 = glm::vec3();
-#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
-        vec3FromScriptValueFast(array.property(i), newVec3);
-#else
         vec3FromScriptValue(array.property(i), newVec3);
-#endif
         vector << newVec3;
     }
     return true;
