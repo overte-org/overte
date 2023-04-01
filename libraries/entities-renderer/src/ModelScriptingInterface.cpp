@@ -18,7 +18,6 @@
 #include <ScriptEngineLogging.h>
 #include <ScriptManager.h>
 #include <ScriptValueUtils.h>
-#include <v8/FastScriptValueUtils.h>
 #include <OBJWriter.h>
 
 STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
@@ -204,11 +203,7 @@ ScriptValue ModelScriptingInterface::getVertex(MeshProxy* meshProxy, int vertexI
     }
 
     glm::vec3 pos = vertexBufferView.get<glm::vec3>(vertexIndex);
-#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
-    return vec3ToScriptValueFast(_modelScriptEngine.get(), pos);
-#else
     return vec3ToScriptValue(_modelScriptEngine.get(), pos);
-#endif
 }
 
 
