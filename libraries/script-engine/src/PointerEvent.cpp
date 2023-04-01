@@ -17,6 +17,7 @@
 #include "ScriptEngine.h"
 #include "ScriptValue.h"
 #include "ScriptValueUtils.h"
+#include "v8/FastScriptValueUtils.h"
 
 static bool areFlagsSet(uint32_t flags, uint32_t mask) {
     return (flags & mask) != 0;
@@ -231,10 +232,18 @@ bool PointerEvent::fromScriptValue(const ScriptValue& object, PointerEvent& even
         ScriptValue id = object.property("id");
         event._id = id.isNumber() ? (uint32_t)id.toNumber() : 0;
 
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+        //V8TODO: optimize
+        vec2FromScriptValue(object.property("pos2D"), event._pos2D);
+        vec3FromScriptValueFast(object.property("pos3D"), event._pos3D);
+        vec3FromScriptValueFast(object.property("normal"), event._normal);
+        vec3FromScriptValueFast(object.property("direction"), event._direction);
+#else
         vec2FromScriptValue(object.property("pos2D"), event._pos2D);
         vec3FromScriptValue(object.property("pos3D"), event._pos3D);
         vec3FromScriptValue(object.property("normal"), event._normal);
         vec3FromScriptValue(object.property("direction"), event._direction);
+#endif
 
         ScriptValue button = object.property("button");
         QString buttonStr = type.isString() ? button.toString() : "NoButtons";

@@ -16,6 +16,7 @@
 #include <ScriptValueIterator.h>
 #include <ScriptValueUtils.h>
 #include <ScriptEngine.h>
+#include <v8/FastScriptValueUtils.h>
 
 #include "AudioLogging.h"
 
@@ -37,7 +38,11 @@ AudioInjectorOptions::AudioInjectorOptions() :
 ScriptValue injectorOptionsToScriptValue(ScriptEngine* engine, const AudioInjectorOptions& injectorOptions) {
     ScriptValue obj = engine->newObject();
     if (injectorOptions.positionSet) {
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+        obj.setProperty("position", vec3ToScriptValueFast(engine, injectorOptions.position));
+#else
         obj.setProperty("position", vec3ToScriptValue(engine, injectorOptions.position));
+#endif
     }
     obj.setProperty("volume", injectorOptions.volume);
     obj.setProperty("loop", injectorOptions.loop);
@@ -84,7 +89,11 @@ bool injectorOptionsFromScriptValue(const ScriptValue& object, AudioInjectorOpti
         it->next();
 
         if (it->name() == "position") {
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+            vec3FromScriptValueFast(object.property("position"), injectorOptions.position);
+#else
             vec3FromScriptValue(object.property("position"), injectorOptions.position);
+#endif
             injectorOptions.positionSet = true;
         } else if (it->name() == "orientation") {
             quatFromScriptValue(object.property("orientation"), injectorOptions.orientation);

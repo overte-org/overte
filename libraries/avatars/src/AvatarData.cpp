@@ -42,6 +42,7 @@
 #include <ScriptManager.h>
 #include <ScriptValueIterator.h>
 #include <ScriptValueUtils.h>
+#include <v8/FastScriptValueUtils.h>
 #include <ShapeInfo.h>
 #include <AudioHelpers.h>
 #include <Profile.h>
@@ -3184,10 +3185,18 @@ ScriptValue RayToAvatarIntersectionResultToScriptValue(ScriptEngine* engine, con
     obj.setProperty("distance", value.distance);
     Q_ASSERT(value.face < 7);
     obj.setProperty("face", boxFaceToString(value.face));
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+    ScriptValue intersection = vec3ToScriptValueFast(engine, value.intersection);
+#else
     ScriptValue intersection = vec3ToScriptValue(engine, value.intersection);
+#endif
 
     obj.setProperty("intersection", intersection);
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+    ScriptValue surfaceNormal = vec3ToScriptValueFast(engine, value.surfaceNormal);
+#else
     ScriptValue surfaceNormal = vec3ToScriptValue(engine, value.surfaceNormal);
+#endif
     obj.setProperty("surfaceNormal", surfaceNormal);
     obj.setProperty("jointIndex", value.jointIndex);
     obj.setProperty("extraInfo", engine->toScriptValue(value.extraInfo));
@@ -3204,11 +3213,19 @@ bool RayToAvatarIntersectionResultFromScriptValue(const ScriptValue& object, Ray
 
     ScriptValue intersection = object.property("intersection");
     if (intersection.isValid()) {
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+        vec3FromScriptValueFast(intersection, value.intersection);
+#else
         vec3FromScriptValue(intersection, value.intersection);
+#endif
     }
     ScriptValue surfaceNormal = object.property("surfaceNormal");
     if (surfaceNormal.isValid()) {
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+        vec3FromScriptValueFast(surfaceNormal, value.surfaceNormal);
+#else
         vec3FromScriptValue(surfaceNormal, value.surfaceNormal);
+#endif
     }
     value.jointIndex = object.property("jointIndex").toInt32();
     value.extraInfo = object.property("extraInfo").toVariant().toMap();

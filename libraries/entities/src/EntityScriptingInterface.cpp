@@ -1698,9 +1698,14 @@ ScriptValue RayToEntityIntersectionResultToScriptValue(ScriptEngine* engine, con
     obj.setProperty("face", boxFaceToString(value.face));
     Q_ASSERT(value.face < 7);
 
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+    ScriptValue intersection = vec3ToScriptValueFast(engine, value.intersection);
+    ScriptValue surfaceNormal = vec3ToScriptValueFast(engine, value.surfaceNormal);
+#else
     ScriptValue intersection = vec3ToScriptValue(engine, value.intersection);
-    obj.setProperty("intersection", intersection);
     ScriptValue surfaceNormal = vec3ToScriptValue(engine, value.surfaceNormal);
+#endif
+    obj.setProperty("intersection", intersection);
     obj.setProperty("surfaceNormal", surfaceNormal);
     obj.setProperty("extraInfo", engine->toScriptValue(value.extraInfo));
     return obj;
@@ -1717,11 +1722,19 @@ bool RayToEntityIntersectionResultFromScriptValue(const ScriptValue& object, Ray
 
     ScriptValue intersection = object.property("intersection");
     if (intersection.isValid()) {
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+        vec3FromScriptValueFast(intersection, value.intersection);
+#else
         vec3FromScriptValue(intersection, value.intersection);
+#endif
     }
     ScriptValue surfaceNormal = object.property("surfaceNormal");
     if (surfaceNormal.isValid()) {
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+        vec3FromScriptValueFast(surfaceNormal, value.surfaceNormal);
+#else
         vec3FromScriptValue(surfaceNormal, value.surfaceNormal);
+#endif
     }
     value.extraInfo = object.property("extraInfo").toVariant().toMap();
     return true;
