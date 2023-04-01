@@ -15,7 +15,6 @@
 
 #include <RegisteredMetaTypes.h>
 #include <ScriptValueUtils.h>
-#include <v8/FastScriptValueUtils.h>
 
 namespace controller {
 
@@ -45,18 +44,10 @@ namespace controller {
      */
     ScriptValue Pose::toScriptValue(ScriptEngine* engine, const Pose& pose) {
         ScriptValue obj = engine->newObject();
-#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
-        obj.setProperty("translation", vec3ToScriptValueFast(engine, pose.translation));
-        //V8TODO: Optimize
-        obj.setProperty("rotation", quatToScriptValue(engine, pose.rotation));
-        obj.setProperty("velocity", vec3ToScriptValueFast(engine, pose.velocity));
-        obj.setProperty("angularVelocity", vec3ToScriptValueFast(engine, pose.angularVelocity));
-#else
         obj.setProperty("translation", vec3ToScriptValue(engine, pose.translation));
         obj.setProperty("rotation", quatToScriptValue(engine, pose.rotation));
         obj.setProperty("velocity", vec3ToScriptValue(engine, pose.velocity));
         obj.setProperty("angularVelocity", vec3ToScriptValue(engine, pose.angularVelocity));
-#endif
         obj.setProperty("valid", pose.valid);
         return obj;
     }
@@ -70,18 +61,10 @@ namespace controller {
                 rotation.isValid() &&
                 velocity.isValid() &&
                 angularVelocity.isValid()) {
-#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
-            vec3FromScriptValueFast(translation, pose.translation);
-            //V8TODO: optimize
-            quatFromScriptValue(rotation, pose.rotation);
-            vec3FromScriptValueFast(velocity, pose.velocity);
-            vec3FromScriptValueFast(angularVelocity, pose.angularVelocity);
-#else
             vec3FromScriptValue(translation, pose.translation);
             quatFromScriptValue(rotation, pose.rotation);
             vec3FromScriptValue(velocity, pose.velocity);
             vec3FromScriptValue(angularVelocity, pose.angularVelocity);
-#endif
             pose.valid = true;
         } else {
             pose.valid = false;
