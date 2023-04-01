@@ -45,7 +45,7 @@ void GrabPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProp
 
 }
 
-void GrabPropertyGroup::copyFromScriptValue(const ScriptValue& object, bool& _defaultSettings) {
+void GrabPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(grab, grabbable, bool, setGrabbable);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(grab, grabKinematic, bool, setGrabKinematic);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(grab, grabFollowsController, bool, setGrabFollowsController);

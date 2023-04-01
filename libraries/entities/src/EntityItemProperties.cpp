@@ -2030,6 +2030,14 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
 }
 
 void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool honorReadOnly) {
+    //qDebug() << "EntityItemProperties::copyFromScriptValue: properties: " << object.getPropertyNames();
+    QList<QString> namesList = object.getPropertyNames();
+
+    QSet<QString> namesSet;
+    for (auto name = namesList.cbegin(); name != namesList.cend(); name++) {
+        namesSet.insert(*name);
+    }
+
     ScriptValue typeScriptValue = object.property("type");
     if (typeScriptValue.isValid()) {
         setType(typeScriptValue.toVariant().toString());
@@ -2067,7 +2075,7 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE(ignorePickIntersection, bool, setIgnorePickIntersection);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(renderWithZones, qVectorQUuid, setRenderWithZones);
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(billboardMode, BillboardMode);
-    _grab.copyFromScriptValue(object, _defaultSettings);
+    _grab.copyFromScriptValue(object, namesSet, _defaultSettings);
 
     // Physics
     COPY_PROPERTY_FROM_QSCRIPTVALUE(density, float, setDensity);
@@ -2130,7 +2138,7 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE(compoundShapeURL, QString, setCompoundShapeURL);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(color, u8vec3Color, setColor);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(alpha, float, setAlpha);
-    _pulse.copyFromScriptValue(object, _defaultSettings);
+    _pulse.copyFromScriptValue(object, namesSet, _defaultSettings);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(textures, QString, setTextures);
 
     // Particles
@@ -2177,7 +2185,7 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE(groupCulled, bool, setGroupCulled);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(blendshapeCoefficients, QString, setBlendshapeCoefficients);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(useOriginalPivot, bool, setUseOriginalPivot);
-    _animation.copyFromScriptValue(object, _defaultSettings);
+    _animation.copyFromScriptValue(object, namesSet, _defaultSettings);
 
     // Light
     COPY_PROPERTY_FROM_QSCRIPTVALUE(isSpotlight, bool, setIsSpotlight);
@@ -2205,11 +2213,11 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(alignment, Alignment);
 
     // Zone
-    _keyLight.copyFromScriptValue(object, _defaultSettings);
-    _ambientLight.copyFromScriptValue(object, _defaultSettings);
-    _skybox.copyFromScriptValue(object, _defaultSettings);
-    _haze.copyFromScriptValue(object, _defaultSettings);
-    _bloom.copyFromScriptValue(object, _defaultSettings);
+    _keyLight.copyFromScriptValue(object, namesSet, _defaultSettings);
+    _ambientLight.copyFromScriptValue(object, namesSet, _defaultSettings);
+    _skybox.copyFromScriptValue(object, namesSet, _defaultSettings);
+    _haze.copyFromScriptValue(object, namesSet, _defaultSettings);
+    _bloom.copyFromScriptValue(object, namesSet, _defaultSettings);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(flyingAllowed, bool, setFlyingAllowed);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(ghostingAllowed, bool, setGhostingAllowed);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(filterURL, QString, setFilterURL);
@@ -2281,10 +2289,10 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
 
     // Gizmo
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(gizmoType, GizmoType);
-    _ring.copyFromScriptValue(object, _defaultSettings);
+    _ring.copyFromScriptValue(object, namesSet, _defaultSettings);
 
     // Handle conversions from old 'textures' property to "imageURL"
-    {
+    if (namesSet.contains("textures")) {
         ScriptValue V = object.property("textures");
         if (_type == EntityTypes::Image && V.isValid() && !object.property("imageURL").isValid()) {
             bool isValid = false;
@@ -2303,7 +2311,7 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     }
 
     // Handle old "faceCamera" and "isFacingAvatar" props
-    if (_type != EntityTypes::PolyLine) {
+    if (_type != EntityTypes::PolyLine && namesSet.contains("textures")) {
         ScriptValue P = object.property("faceCamera");
         if (P.isValid() && !object.property("billboardMode").isValid()) {
             bool newValue = P.toVariant().toBool();
@@ -2313,7 +2321,7 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
             }
         }
     }
-    {
+    if (namesSet.contains("isFacingAvatar")) {
         ScriptValue P = object.property("isFacingAvatar");
         if (P.isValid() && !object.property("billboardMode").isValid() && !object.property("faceCamera").isValid()) {
             bool newValue = P.toVariant().toBool();

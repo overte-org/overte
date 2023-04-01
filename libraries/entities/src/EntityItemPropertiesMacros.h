@@ -344,47 +344,10 @@ inline QRect QRect_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
 
 
 
-#define COPY_PROPERTY_FROM_QSCRIPTVALUE(P, T, S)                     \
-    {                                                                \
-        ScriptValue V = object.property(#P);                         \
-        if (V.isValid()) {                                           \
-            bool isValid = false;                                    \
-            T newValue = T##_convertFromScriptValue(V, isValid);     \
-            if (isValid && (_defaultSettings || newValue != _##P)) { \
-                S(newValue);                                         \
-            }                                                        \
-        }                                                            \
-    }
-
-#define COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(P, T, S, G)      \
-{                                                               \
-    ScriptValue V = object.property(#P);                        \
-    if (V.isValid()) {                                          \
-        bool isValid = false;                                   \
-        T newValue = T##_convertFromScriptValue(V, isValid);    \
-        if (isValid && (_defaultSettings || newValue != G())) { \
-            S(newValue);                                        \
-        }                                                       \
-    }                                                           \
-}
-
-#define COPY_PROPERTY_FROM_QSCRIPTVALUE_NOCHECK(P, T, S)     \
-{                                                            \
-    ScriptValue V = object.property(#P);                     \
-    if (V.isValid()) {                                       \
-        bool isValid = false;                                \
-        T newValue = T##_convertFromScriptValue(V, isValid); \
-        if (isValid && (_defaultSettings)) {                 \
-            S(newValue);                                     \
-        }                                                    \
-    }                                                        \
-}
-
-#define COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(G, P, T, S)                \
+#define COPY_PROPERTY_FROM_QSCRIPTVALUE(P, T, S)                         \
     {                                                                    \
-        ScriptValue G = object.property(#G);                             \
-        if (G.isValid()) {                                               \
-            ScriptValue V = G.property(#P);                              \
+        if (namesSet.contains(#P)) {                                     \
+            ScriptValue V = object.property(#P);                         \
             if (V.isValid()) {                                           \
                 bool isValid = false;                                    \
                 T newValue = T##_convertFromScriptValue(V, isValid);     \
@@ -395,22 +358,55 @@ inline QRect QRect_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
         }                                                                \
     }
 
-#define COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(P, S)                    \
-    {                                                                 \
-        ScriptValue P = object.property(#P);                          \
-        if (P.isValid()) {                                            \
-            QString newValue = P.toVariant().toString();              \
-            if (_defaultSettings || newValue != get##S##AsString()) { \
-                set##S##FromString(newValue);                         \
-            }                                                         \
-        }                                                             \
+#define COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(P, T, S, G)          \
+{                                                                   \
+    if (namesSet.contains(#P)) {                                    \
+        ScriptValue V = object.property(#P);                        \
+        if (V.isValid()) {                                          \
+            bool isValid = false;                                   \
+            T newValue = T##_convertFromScriptValue(V, isValid);    \
+            if (isValid && (_defaultSettings || newValue != G())) { \
+                S(newValue);                                        \
+            }                                                       \
+        }                                                           \
+    }                                                               \
+}
+
+#define COPY_PROPERTY_FROM_QSCRIPTVALUE_NOCHECK(P, T, S)         \
+{                                                                \
+    if (namesSet.contains(#P)) {                                 \
+        ScriptValue V = object.property(#P);                     \
+        if (V.isValid()) {                                       \
+            bool isValid = false;                                \
+            T newValue = T##_convertFromScriptValue(V, isValid); \
+            if (isValid && (_defaultSettings)) {                 \
+                S(newValue);                                     \
+            }                                                    \
+        }                                                        \
+    }                                                            \
+}
+
+#define COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(G, P, T, S)                    \
+    {                                                                        \
+        if (namesSet.contains(#G)) {                                         \
+            ScriptValue G = object.property(#G);                             \
+            if (G.isValid()) {                                               \
+                ScriptValue V = G.property(#P);                              \
+                if (V.isValid()) {                                           \
+                    bool isValid = false;                                    \
+                    T newValue = T##_convertFromScriptValue(V, isValid);     \
+                    if (isValid && (_defaultSettings || newValue != _##P)) { \
+                        S(newValue);                                         \
+                    }                                                        \
+                }                                                            \
+            }                                                                \
+        }                                                                    \
     }
 
-#define COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE_ENUM(G, P, S)               \
+#define COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(P, S)                        \
     {                                                                     \
-        ScriptValue G = object.property(#G);                              \
-        if (G.isValid()) {                                                \
-            ScriptValue P = G.property(#P);                               \
+        if (namesSet.contains(#P)) {                                      \
+            ScriptValue P = object.property(#P);                          \
             if (P.isValid()) {                                            \
                 QString newValue = P.toVariant().toString();              \
                 if (_defaultSettings || newValue != get##S##AsString()) { \
@@ -418,6 +414,22 @@ inline QRect QRect_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
                 }                                                         \
             }                                                             \
         }                                                                 \
+    }
+
+#define COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE_ENUM(G, P, S)                   \
+    {                                                                         \
+        if (namesSet.contains(#G)) {                                          \
+            ScriptValue G = object.property(#G);                              \
+            if (G.isValid()) {                                                \
+                ScriptValue P = G.property(#P);                               \
+                if (P.isValid()) {                                            \
+                    QString newValue = P.toVariant().toString();              \
+                    if (_defaultSettings || newValue != get##S##AsString()) { \
+                        set##S##FromString(newValue);                         \
+                    }                                                         \
+                }                                                             \
+            }                                                                 \
+        }                                                                     \
     }
 
 #define DEFINE_PROPERTY_GROUP(N, n, T)           \

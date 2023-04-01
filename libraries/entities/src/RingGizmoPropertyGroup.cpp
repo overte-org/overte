@@ -48,7 +48,7 @@ void RingGizmoPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desire
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_MINOR_TICK_MARKS_COLOR, Ring, ring, MinorTickMarksColor, minorTickMarksColor, u8vec3Color);
 }
 
-void RingGizmoPropertyGroup::copyFromScriptValue(const ScriptValue& object, bool& _defaultSettings) {
+void RingGizmoPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(ring, startAngle, float, setStartAngle);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(ring, endAngle, float, setEndAngle);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(ring, innerRadius, float, setInnerRadius);
