@@ -38,7 +38,7 @@ void KeyLightPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desired
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_KEYLIGHT_SHADOW_MAX_DISTANCE, KeyLight, keyLight, ShadowMaxDistance, shadowMaxDistance);
 }
 
-void KeyLightPropertyGroup::copyFromScriptValue(const ScriptValue& object, bool& _defaultSettings) {
+void KeyLightPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(keyLight, color, u8vec3Color, setColor);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(keyLight, intensity, float, setIntensity);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(keyLight, direction, vec3, setDirection);

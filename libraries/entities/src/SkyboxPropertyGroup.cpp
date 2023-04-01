@@ -25,7 +25,7 @@ void SkyboxPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredPr
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_SKYBOX_URL, Skybox, skybox, URL, url);
 }
 
-void SkyboxPropertyGroup::copyFromScriptValue(const ScriptValue& object, bool& _defaultSettings) {
+void SkyboxPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(skybox, color, u8vec3Color, setColor);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(skybox, url, QString, setURL);
 }
