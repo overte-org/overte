@@ -17,9 +17,11 @@
 #include "V8Types.h"
 #include "ScriptValueV8Wrapper.h"
 
-ScriptValue vec3ToScriptValueFast(ScriptEngine* engine, const glm::vec3& vec3) {
-    auto prototype = engine->globalObject().property("__hifi_vec3__");
-    if (!prototype.hasProperty("defined") || !prototype.property("defined").toBool()) {
+#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+
+ScriptValue vec3ToScriptValue(ScriptEngine* engine, const glm::vec3& vec3) {
+    //auto prototype = engine->globalObject().property("__hifi_vec3__");
+    /*if (!prototype.hasProperty("defined") || !prototype.property("defined").toBool()) {
         prototype = engine->evaluate(
             "__hifi_vec3__ = Object.defineProperties({}, { "
             "defined: { value: true },"
@@ -33,7 +35,7 @@ ScriptValue vec3ToScriptValueFast(ScriptEngine* engine, const glm::vec3& vec3) {
             "green: { set: function(nv) { return this.y = nv; }, get: function() { return this.y; } },"
             "blue: { set: function(nv) { return this.z = nv; }, get: function() { return this.z; } }"
             "})");
-    }
+    }*/
     ScriptValue value = engine->newObject();
 
     ScriptValueV8Wrapper *proxy = ScriptValueV8Wrapper::unwrap(value);
@@ -49,6 +51,51 @@ ScriptValue vec3ToScriptValueFast(ScriptEngine* engine, const glm::vec3& vec3) {
     V8ScriptValue v8ScriptValue = proxy->toV8Value();
     v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(v8ScriptValue.get());
 
+    v8::Local<v8::Value> prototype;
+    bool hasPrototype = false;
+
+    if (context->Global()->Get(context, v8::String::NewFromUtf8(isolate, "__hifi_vec3__").ToLocalChecked()).ToLocal(&prototype)) {
+        if (!prototype->IsNullOrUndefined() && prototype->IsObject()) {
+            v8::Local<v8::Object> prototypeObject = v8::Local<v8::Object>::Cast(prototype);
+            v8::Local<v8::Value> isDefined;
+            if (prototypeObject->Get(context, v8::String::NewFromUtf8(isolate, "defined").ToLocalChecked()).ToLocal(&isDefined)) {
+                if ((!isDefined->IsNullOrUndefined()) && isDefined->BooleanValue(isolate)) {
+                    hasPrototype = true;
+                }
+            }
+        }
+    }
+
+    if (!hasPrototype) {
+        QString sourceCode("globalThis.__hifi_vec3__ = Object.defineProperties({}, { "
+        "defined: { value: true },"
+        "0: { set: function(nv) { return this.x = nv; }, get: function() { return this.x; } },"
+        "1: { set: function(nv) { return this.y = nv; }, get: function() { return this.y; } },"
+        "2: { set: function(nv) { return this.z = nv; }, get: function() { return this.z; } },"
+        "r: { set: function(nv) { return this.x = nv; }, get: function() { return this.x; } },"
+        "g: { set: function(nv) { return this.y = nv; }, get: function() { return this.y; } },"
+        "b: { set: function(nv) { return this.z = nv; }, get: function() { return this.z; } },"
+        "red: { set: function(nv) { return this.x = nv; }, get: function() { return this.x; } },"
+        "green: { set: function(nv) { return this.y = nv; }, get: function() { return this.y; } },"
+        "blue: { set: function(nv) { return this.z = nv; }, get: function() { return this.z; } }"
+        "})");
+        v8::TryCatch tryCatch(isolate);
+        v8::ScriptOrigin scriptOrigin(isolate, v8::String::NewFromUtf8(isolate, "Vec3prototype").ToLocalChecked());
+        v8::Local<v8::Script> script;
+        if (!v8::Script::Compile(context, v8::String::NewFromUtf8(isolate, sourceCode.toStdString().c_str()).ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
+            Q_ASSERT(false);
+        }
+        v8::Local<v8::Value> result;
+        if (!script->Run(context).ToLocal(&result)) {
+            Q_ASSERT(false);
+        }
+        if (!context->Global()->Get(context, v8::String::NewFromUtf8(isolate, "__hifi_vec3__").ToLocalChecked()).ToLocal(&prototype)) {
+            Q_ASSERT(false);
+        }
+        Q_ASSERT(!tryCatch.HasCaught());
+        qDebug() <<"vec3ToScriptValue: creating prototype";
+    }
+
     if (!v8Object->Set(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), v8::Number::New(isolate, vec3.x)).FromMaybe(false)) {
         Q_ASSERT(false);
     }
@@ -59,15 +106,15 @@ ScriptValue vec3ToScriptValueFast(ScriptEngine* engine, const glm::vec3& vec3) {
         Q_ASSERT(false);
     }
 
-    auto v8Prototype = ScriptValueV8Wrapper::fullUnwrap(engineV8, prototype);
-    if (!v8Object->SetPrototype(context, v8Prototype.get()).FromMaybe(false)) {
+    //auto v8Prototype = ScriptValueV8Wrapper::fullUnwrap(engineV8, prototype);
+    if (!v8Object->SetPrototype(context, prototype).FromMaybe(false)) {
         Q_ASSERT(false);
     }
-    value.setPrototype(prototype);
+    //value.setPrototype(prototype);
     return value;
 }
 
-bool vec3FromScriptValueFast(const ScriptValue& object, glm::vec3& vec3) {
+bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3) {
     ScriptValueV8Wrapper *proxy = ScriptValueV8Wrapper::unwrap(object);
 
     auto engineV8 = proxy->getV8Engine();
@@ -185,3 +232,5 @@ bool vec3FromScriptValueFast(const ScriptValue& object, glm::vec3& vec3) {
     }
     return true;
 }
+
+#endif
