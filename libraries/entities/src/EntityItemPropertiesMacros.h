@@ -20,7 +20,6 @@
 #include <ScriptEngine.h>
 #include <ScriptValue.h>
 #include <ScriptValueUtils.h>
-#include <v8/FastScriptValueUtils.h>
 
 #define APPEND_ENTITY_PROPERTY(P,V) \
         if (requestedProperties.getHasProperty(P)) {                \
@@ -106,11 +105,7 @@
     }
 
 inline ScriptValue convertScriptValue(ScriptEngine* e, const glm::vec2& v) { return vec2ToScriptValue(e, v); }
-#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
-inline ScriptValue convertScriptValue(ScriptEngine* e, const glm::vec3& v) { return vec3ToScriptValueFast(e, v); }
-#else
 inline ScriptValue convertScriptValue(ScriptEngine* e, const glm::vec3& v) { return vec3ToScriptValue(e, v); }
-#endif
 inline ScriptValue vec3Color_convertScriptValue(ScriptEngine* e, const glm::vec3& v) { return vec3ColorToScriptValue(e, v); }
 inline ScriptValue convertScriptValue(ScriptEngine* e, const glm::u8vec3& v) { return u8vec3ToScriptValue(e, v); }
 inline ScriptValue u8vec3Color_convertScriptValue(ScriptEngine* e, const glm::u8vec3& v) { return u8vec3ColorToScriptValue(e, v); }
@@ -260,22 +255,14 @@ inline glm::vec2 vec2_convertFromScriptValue(const ScriptValue& v, bool& isValid
 inline glm::vec3 vec3_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
     isValid = true;
     glm::vec3 vec3;
-#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
-    vec3FromScriptValueFast(v, vec3);
-#else
     vec3FromScriptValue(v, vec3);
-#endif
     return vec3;
 }
 
 inline glm::vec3 vec3Color_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
     isValid = true;
     glm::vec3 vec3;
-#ifdef CONVERSIONS_OPTIMIZED_FOR_V8
-    vec3FromScriptValueFast(v, vec3);
-#else
     vec3FromScriptValue(v, vec3);
-#endif
     return vec3;
 }
 
