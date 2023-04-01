@@ -80,7 +80,7 @@ void AnimationPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desire
 }
 
 
-void AnimationPropertyGroup::copyFromScriptValue(const ScriptValue& object, bool& _defaultSettings) {
+void AnimationPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
 
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, url, QString, setURL);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, allowTranslation, bool, setAllowTranslation);

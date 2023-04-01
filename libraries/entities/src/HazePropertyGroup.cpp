@@ -36,7 +36,7 @@ void HazePropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProp
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_HAZE_KEYLIGHT_ALTITUDE, Haze, haze, HazeKeyLightAltitude, hazeKeyLightAltitude);
 }
 
-void HazePropertyGroup::copyFromScriptValue(const ScriptValue& object, bool& _defaultSettings) {
+void HazePropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(haze, hazeRange, float, setHazeRange);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(haze, hazeColor, u8vec3Color, setHazeColor);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(haze, hazeGlareColor, u8vec3Color, setHazeGlareColor);

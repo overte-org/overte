@@ -28,7 +28,7 @@ void AmbientLightPropertyGroup::copyToScriptValue(const EntityPropertyFlags& des
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_AMBIENT_LIGHT_URL, AmbientLight, ambientLight, AmbientURL, ambientURL);
 }
 
-void AmbientLightPropertyGroup::copyFromScriptValue(const ScriptValue& object, bool& _defaultSettings) {
+void AmbientLightPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(ambientLight, ambientIntensity, float, setAmbientIntensity);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(ambientLight, ambientURL, QString, setAmbientURL);
     
