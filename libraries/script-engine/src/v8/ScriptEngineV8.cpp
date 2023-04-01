@@ -937,13 +937,15 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(getContext());
-    v8::TryCatch tryCatch(getIsolate());
     v8::ScriptOrigin scriptOrigin(getIsolate(), v8::String::NewFromUtf8(getIsolate(), fileName.toStdString().c_str()).ToLocalChecked());
     v8::Local<v8::Script> script;
-    if (!v8::Script::Compile(getContext(), v8::String::NewFromUtf8(getIsolate(), sourceCode.toStdString().c_str()).ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
-        setUncaughtException(tryCatch, "Error while compiling script");
-        _evaluatingCounter--;
-        return nullValue();
+    {
+        v8::TryCatch tryCatch(getIsolate());
+        if (!v8::Script::Compile(getContext(), v8::String::NewFromUtf8(getIsolate(), sourceCode.toStdString().c_str()).ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
+            setUncaughtException(tryCatch, "Error while compiling script");
+            _evaluatingCounter--;
+            return nullValue();
+        }
     }
     //qCDebug(scriptengine_v8) << "Script compilation succesful: " << fileName;
 
