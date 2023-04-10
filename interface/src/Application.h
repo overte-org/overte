@@ -562,6 +562,7 @@ private slots:
 
 private:
     void init();
+    bool initMenu();
     void pauseUntilLoginDetermined();
     void resumeAfterLoginDialogActionTaken();
     bool handleKeyEventForFocusedEntity(QEvent* event);
@@ -626,6 +627,10 @@ private:
     void userKickConfirmation(const QUuid& nodeID, unsigned int banFlags = ModerationFlags::getDefaultBanFlags());
 
     MainWindow* _window;
+
+    // _isMenuInitialized: used to initialize menu early enough before it's needed by other
+    // initializers. Fixes a deadlock issue with recent Qt versions.
+    bool _isMenuInitialized;
     QElapsedTimer& _sessionRunTimer;
 
     bool _aboutToQuit { false };

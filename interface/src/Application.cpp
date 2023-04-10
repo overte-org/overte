@@ -977,6 +977,12 @@ QSharedPointer<OffscreenUi> getOffscreenUI() {
 #endif
 }
 
+bool Application::initMenu() {
+    _isMenuInitialized = false;
+    qApp->getWindow()->menuBar();
+    return true;
+}
+
 Application::Application(
     int& argc, char** argv,
     const QCommandLineParser& parser,
@@ -985,6 +991,8 @@ Application::Application(
 ) :
     QApplication(argc, argv),
     _window(new MainWindow(desktop())),
+    // Menu needs to be initialized before other initializers. Otherwise deadlock happens on qApp->getWindow()->menuBar().
+    _isMenuInitialized(initMenu()),
     _sessionRunTimer(startupTimer),
 #ifndef Q_OS_ANDROID
     _logger(new FileLogger(this)),
@@ -1017,7 +1025,6 @@ Application::Application(
     _snapshotSound(nullptr),
     _sampleSound(nullptr)
 {
-
     auto steamClient = PluginManager::getInstance()->getSteamClientPlugin();
     setProperty(hifi::properties::STEAM, (steamClient && steamClient->isRunning()));
     setProperty(hifi::properties::CRASHED, _previousSessionCrashed);
@@ -4223,6 +4230,11 @@ bool Application::event(QEvent* event) {
 
     if (_aboutToQuit) {
         return false;
+    }
+
+    // This helps avoid deadlock issue early during Application initialization
+    if (!_isMenuInitialized) {
+        return QApplication::event(event);
     }
 
     if (!Menu::getInstance()) {
