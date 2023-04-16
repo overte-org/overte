@@ -104,10 +104,14 @@ var Pointer = function(hudLayer, pickType, pointerData) {
 
     function createPointer(pickType, pointerData) {
         //V8TODO
-        var pointerID = Pointers.createPointer(pickType, pointerData);
-        Pointers.setRenderState(pointerID, "");
-        Pointers.enablePointer(pointerID);
-        return pointerID;
+        if (pickType == PickType.Ray) {
+            var pointerID = Pointers.createRayPointer(pointerData);
+            Pointers.setRenderState(pointerID, "");
+            Pointers.enablePointer(pointerID);
+            return pointerID;
+        } else {
+            print("pointerUtils.js createPointer: ray type not supported yet on V8 branch");
+        }
     }
 
     this.enable = function() {

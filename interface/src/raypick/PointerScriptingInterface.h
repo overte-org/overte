@@ -48,6 +48,8 @@ class StylusPointerProperties : public PointerProperties {
 };
 
 Q_DECLARE_METATYPE(RayPointerProperties);
+Q_DECLARE_METATYPE(StylusPointerProperties);
+Q_DECLARE_METATYPE(ParabolaPointerProperties);
 Q_DECLARE_METATYPE(PointerProperties);
 
 class PointerScriptingInterface : public QObject, public Dependency {
@@ -159,6 +161,8 @@ public:
 
     // V8TODO: add documentation
     Q_INVOKABLE unsigned int createRayPointer(RayPointerProperties properties);
+    Q_INVOKABLE unsigned int createStylusPointer(StylusPointerProperties properties);
+    Q_INVOKABLE unsigned int createParabolaPointer(ParabolaPointerProperties properties);
 
     /*@jsdoc
      * Enables and shows a pointer. Enabled pointers update their pick results and generate events.
@@ -512,7 +516,11 @@ private:
 };
 
 ScriptValue rayPointerPropertiesToScriptValue(ScriptEngine* engine, const RayPointerProperties& in);
+ScriptValue stylusPointerPropertiesToScriptValue(ScriptEngine* engine, const StylusPointerProperties& in);
+ScriptValue parabolaPointerPropertiesToScriptValue(ScriptEngine* engine, const ParabolaPointerProperties& in);
 
 bool rayPointerPropertiesFromScriptValue(const ScriptValue& value, RayPointerProperties& out);
+bool stylusPointerPropertiesFromScriptValue(const ScriptValue& value, StylusPointerProperties& out);
+bool parabolaPointerPropertiesFromScriptValue(const ScriptValue& value, ParabolaPointerProperties& out);
 
 #endif // hifi_PointerScriptingInterface_h
