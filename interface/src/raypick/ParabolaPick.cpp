@@ -23,6 +23,8 @@ ParabolaPick::ParabolaPick(const glm::vec3& position, const glm::vec3& direction
     _speed(speed) {
 }
 
+//V8TODO: needs to be fixed due to 3D overlay support removal
+
 PickParabola ParabolaPick::getMathematicalPick() const {
     if (!parentTransform) {
         PickParabola mathPick = _mathPick;
