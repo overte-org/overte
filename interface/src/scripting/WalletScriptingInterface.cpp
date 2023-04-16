@@ -34,7 +34,7 @@ void WalletScriptingInterface::setWalletStatus(const uint& status) {
 
 void WalletScriptingInterface::proveAvatarEntityOwnershipVerification(const QUuid& entityID) {
     QSharedPointer<ContextOverlayInterface> contextOverlayInterface = DependencyManager::get<ContextOverlayInterface>();
-    EntityItemProperties entityProperties = DependencyManager::get<EntityScriptingInterface>()->getEntityProperties(entityID,
+    EntityItemProperties entityProperties = DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(entityID,
         contextOverlayInterface->getEntityPropertyFlags());
     if (entityProperties.getEntityHostType() == entity::HostType::AVATAR) {
         if (!entityID.isNull() && entityProperties.getCertificateID().length() > 0) {

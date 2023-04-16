@@ -1,5 +1,5 @@
 //
-//  EntityPsuedoPropertyFlags.h
+//  EntityPseudoPropertyFlags.h
 //  libraries/entities/src
 //
 //  Created by Thijs Wenker on 9/18/18.
@@ -11,13 +11,13 @@
 
 #pragma once
 
-#ifndef hifi_EntityPsuedoPropertyFlag_h
-#define hifi_EntityPsuedoPropertyFlag_h
+#ifndef hifi_EntityPseudoPropertyFlag_h
+#define hifi_EntityPseudoPropertyFlag_h
 
 #include <bitset>
 #include <type_traits>
 
-namespace EntityPsuedoPropertyFlag {
+namespace EntityPseudoPropertyFlag {
     enum {
         None = 0,
         FlagsActive,
@@ -38,6 +38,6 @@ namespace EntityPsuedoPropertyFlag {
         NumFlags
     };
 }
-typedef std::bitset<EntityPsuedoPropertyFlag::NumFlags> EntityPsuedoPropertyFlags;
+typedef std::bitset<EntityPseudoPropertyFlag::NumFlags> EntityPseudoPropertyFlags;
 
-#endif // hifi_EntityPsuedoPropertyFlag_h
+#endif // hifi_EntityPseudoPropertyFlag_h

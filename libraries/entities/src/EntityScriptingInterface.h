@@ -413,7 +413,9 @@ public slots:
      * print("Entity color: " + JSON.stringify(properties.color));
      */
     Q_INVOKABLE EntityItemProperties getEntityProperties(const QUuid& entityID);
-    Q_INVOKABLE EntityItemProperties getEntityProperties(const QUuid& entityID, EntityPropertyFlags desiredProperties);
+    Q_INVOKABLE ScriptValue getEntityProperties(const QUuid& entityID, const ScriptValue &desiredProperties);
+    Q_INVOKABLE EntityItemProperties getEntityPropertiesInternal(const QUuid& entityID, EntityPropertyFlags desiwredProperties);
+    //Q_INVOKABLE EntityItemProperties getEntityProperties(const QUuid& entityID, EntityPropertyFlags desiredProperties);
 
     /*@jsdoc
      * Edits an entity, changing one or more of its property values.
@@ -2562,6 +2564,8 @@ private:
     bool setPoints(QUuid entityID, std::function<bool(LineEntityItem&)> actor);
     void queueEntityMessage(PacketType packetType, EntityItemID entityID, const EntityItemProperties& properties);
     bool addLocalEntityCopy(EntityItemProperties& propertiesWithSimID, EntityItemID& id, bool isClone = false);
+    static void readExtendedPropertyStringValue(const ScriptValue& extendedProperty,
+                                         EntityPseudoPropertyFlags &pseudoPropertyFlags);
 
     EntityItemPointer checkForTreeEntityAndTypeMatch(const QUuid& entityID,
                                                      EntityTypes::EntityType entityType = EntityTypes::Unknown);

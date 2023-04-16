@@ -254,7 +254,7 @@ StartEndRenderState::StartEndRenderState(const QUuid& startID, const QUuid& endI
         EntityPropertyFlags desiredProperties;
         desiredProperties += PROP_DIMENSIONS;
         desiredProperties += PROP_IGNORE_PICK_INTERSECTION;
-        auto properties = entityScriptingInterface->getEntityProperties(_startID, desiredProperties);
+        auto properties = entityScriptingInterface->getEntityPropertiesInternal(_startID, desiredProperties);
         _startDim = properties.getDimensions();
         _startIgnorePicks = properties.getIgnorePickIntersection();
     }
@@ -263,7 +263,7 @@ StartEndRenderState::StartEndRenderState(const QUuid& startID, const QUuid& endI
         desiredProperties += PROP_DIMENSIONS;
         desiredProperties += PROP_ROTATION;
         desiredProperties += PROP_IGNORE_PICK_INTERSECTION;
-        auto properties = entityScriptingInterface->getEntityProperties(_endID, desiredProperties);
+        auto properties = entityScriptingInterface->getEntityPropertiesInternal(_endID, desiredProperties);
         _endDim = properties.getDimensions();
         _endRot = properties.getRotation();
         _endIgnorePicks = properties.getIgnorePickIntersection();
