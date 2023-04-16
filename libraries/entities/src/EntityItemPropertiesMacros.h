@@ -174,10 +174,10 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return
     }
 
 #define COPY_PROPERTY_TO_QSCRIPTVALUE(p,P) \
-    if (((!psuedoPropertyFlagsButDesiredEmpty && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
+    if (((!pseudoPropertyFlagsButDesiredEmpty && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
         (!skipDefaults || defaultEntityProperties._##P != _##P)) { \
         ScriptValue V = convertScriptValue(engine, _##P); \
-        properties.setProperty(#P, V); \
+        properties.setProperty(#P, V);     \
     }
 
 #define COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(p,P,T) \
@@ -191,7 +191,7 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return
     properties.setProperty(#P, G);
 
 #define COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(p, P, G) \
-    if (((!psuedoPropertyFlagsButDesiredEmpty && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
+    if (((!pseudoPropertyFlagsButDesiredEmpty && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
         (!skipDefaults || defaultEntityProperties._##P != _##P)) { \
         ScriptValue V = convertScriptValue(engine, G); \
         properties.setProperty(#P, V); \
@@ -206,7 +206,7 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return
 
 // same as COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER but uses #X instead of #P in the setProperty() step
 #define COPY_PROXY_PROPERTY_TO_QSCRIPTVALUE_GETTER(p, P, X, G) \
-    if (((!psuedoPropertyFlagsButDesiredEmpty && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
+    if (((!pseudoPropertyFlagsButDesiredEmpty && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
         (!skipDefaults || defaultEntityProperties._##P != _##P)) { \
         ScriptValue V = convertScriptValue(engine, G); \
         properties.setProperty(#X, V); \

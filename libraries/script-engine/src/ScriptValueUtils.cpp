@@ -183,7 +183,7 @@ ScriptValue vec3ToScriptValue(ScriptEngine* engine, const glm::vec3& vec3) {
     auto prototype = engine->globalObject().property("__hifi_vec3__");
     if (!prototype.hasProperty("defined") || !prototype.property("defined").toBool()) {
         prototype = engine->evaluate(
-            "__hifi_vec3__ = Object.defineProperties({}, { "
+            "globalThis.__hifi_vec3__ = Object.defineProperties({}, { "
             "defined: { value: true },"
             "0: { set: function(nv) { return this.x = nv; }, get: function() { return this.x; } },"
             "1: { set: function(nv) { return this.y = nv; }, get: function() { return this.y; } },"
@@ -209,7 +209,7 @@ ScriptValue vec3ColorToScriptValue(ScriptEngine* engine, const glm::vec3& vec3) 
     auto prototype = engine->globalObject().property("__hifi_vec3_color__");
     if (!prototype.property("defined").toBool()) {
         prototype = engine->evaluate(
-            "__hifi_vec3_color__ = Object.defineProperties({}, { "
+            "globalThis.__hifi_vec3_color__ = Object.defineProperties({}, { "
             "defined: { value: true },"
             "0: { set: function(nv) { return this.red = nv; }, get: function() { return this.red; } },"
             "1: { set: function(nv) { return this.green = nv; }, get: function() { return this.green; } },"

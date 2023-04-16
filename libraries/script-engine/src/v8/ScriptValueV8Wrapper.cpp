@@ -162,6 +162,7 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
     }
 
     v8::Local<v8::Function> v8Function = v8::Local<v8::Function>::Cast(_value.get());
+    //V8TODO: I'm not sure if this is correct, maybe use CallAsContructor instead?
     auto maybeResult = v8Function->NewInstance(_engine->getContext(), args.length(), v8Args);
     v8::Local<v8::Object> result;
     if (maybeResult.ToLocal(&result)) {

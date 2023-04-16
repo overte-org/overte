@@ -40,7 +40,7 @@ PickResultPointer RayPick::getEntityIntersection(const PickRay& pick) {
         if (getFilter().doesPickLocalEntities()) {
             EntityPropertyFlags desiredProperties;
             desiredProperties += PROP_ENTITY_HOST_TYPE;
-            if (DependencyManager::get<EntityScriptingInterface>()->getEntityProperties(entityRes.entityID, desiredProperties).getEntityHostType() == entity::HostType::LOCAL) {
+            if (DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(entityRes.entityID, desiredProperties).getEntityHostType() == entity::HostType::LOCAL) {
                 type = IntersectionType::LOCAL_ENTITY;
             }
         }
@@ -123,6 +123,6 @@ glm::vec2 RayPick::projectOntoEntityXYPlane(const QUuid& entityID, const glm::ve
     desiredProperties += PROP_ROTATION;
     desiredProperties += PROP_DIMENSIONS;
     desiredProperties += PROP_REGISTRATION_POINT;
-    auto props = DependencyManager::get<EntityScriptingInterface>()->getEntityProperties(entityID, desiredProperties);
+    auto props = DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(entityID, desiredProperties);
     return projectOntoXYPlane(worldPos, props.getPosition(), props.getRotation(), props.getDimensions(), props.getRegistrationPoint(), unNormalized);
 }
