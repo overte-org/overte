@@ -47,7 +47,8 @@ Script.include("/~/system/libraries/controllers.js");
             [],
             100);
 
-        this.pointer = Pointers.createPointer(PickType.Stylus, {
+        //V8TODO
+        this.pointer = Pointers.createStylusPointer({
             hand: this.hand,
             filter: Picks.PICK_OVERLAYS,
             hover: true,
