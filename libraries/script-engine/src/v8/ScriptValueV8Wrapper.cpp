@@ -154,8 +154,13 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
     for (ScriptValueList::const_iterator iter = args.begin(); iter != args.end(); ++iter) {
         v8Args[argIndex++] = fullUnwrap(*iter).get();
     }
-    //V8TODO should there be a v8 try-catch here?
-    Q_ASSERT(_value.get()->IsFunction());
+    //V8TODO: should there be a v8 try-catch here?
+    //V8TODO: Can something else than a function be callable in this way in JS?
+    if (!_value.get()->IsFunction()) {
+        qCWarning(scriptengine_v8) << "ScriptValueV8Wrapper::construct: value is not a function";
+        return _engine->undefinedValue();
+    }
+
     v8::Local<v8::Function> v8Function = v8::Local<v8::Function>::Cast(_value.get());
     auto maybeResult = v8Function->NewInstance(_engine->getContext(), args.length(), v8Args);
     v8::Local<v8::Object> result;
