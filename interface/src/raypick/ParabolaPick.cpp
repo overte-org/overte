@@ -71,7 +71,7 @@ PickResultPointer ParabolaPick::getEntityIntersection(const PickParabola& pick) 
             if (getFilter().doesPickLocalEntities()) {
                 EntityPropertyFlags desiredProperties;
                 desiredProperties += PROP_ENTITY_HOST_TYPE;
-                if (DependencyManager::get<EntityScriptingInterface>()->getEntityProperties(entityRes.entityID, desiredProperties).getEntityHostType() == entity::HostType::LOCAL) {
+                if (DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(entityRes.entityID, desiredProperties).getEntityHostType() == entity::HostType::LOCAL) {
                     type = IntersectionType::LOCAL_ENTITY;
                 }
             }

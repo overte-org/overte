@@ -2181,6 +2181,8 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
     QUrl sandboxURL = currentSandboxURL.isEmpty() ? scriptOrURL : currentSandboxURL;
     auto initialization = [&]{
         entityScriptConstructor = _engine->evaluate(contents, fileName);
+        //V8TODO: check if entityScriptConstructor is a function or not
+        //Throw V8 exception if it's not?
         entityScriptObject = entityScriptConstructor.construct();
 
         if (_engine->hasUncaughtException()) {
