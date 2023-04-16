@@ -148,7 +148,7 @@ Mouse.prototype.restoreRotateCursor = function() {
 var mouse = new Mouse();
 
 var beacon = {
-    type: "cube",
+    type: "Box",
     dimensions: {
         x: 0.01,
         y: 0,
@@ -160,8 +160,7 @@ var beacon = {
         blue: 200
     },
     alpha: 1,
-    solid: true,
-    ignoreRayIntersection: true,
+    ignorePickIntersection: true,
     visible: true
 };
 
@@ -213,7 +212,7 @@ function Grabber() {
         Picks.setIncludeItems(this.mouseRayOverlays, tabletItems);
     }
     var renderStates = [{name: "grabbed", end: beacon}];
-    this.mouseRayEntities = Pointers.createPointer(PickType.Ray, {
+    this.mouseRayEntities = Pointers.createRayPointer({
         joint: "Mouse",
         filter: Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
         faceAvatar: true,

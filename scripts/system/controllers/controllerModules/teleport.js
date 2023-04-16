@@ -295,7 +295,8 @@ Script.include("/~/system/libraries/controllers.js");
                 _this.cleanup();
             }
 
-            _this.teleportParabolaHandVisuals = Pointers.createPointer(PickType.Parabola, {
+            //V8TODO
+            _this.teleportParabolaHandVisuals = Pointers.createParabolaPointer({
                 joint: (_this.hand === RIGHT_HAND) ? "_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND" : "_CAMERA_RELATIVE_CONTROLLER_LEFTHAND",
                 dirOffset: { x: 0, y: 1, z: 0.1 },
                 posOffset: { x: (_this.hand === RIGHT_HAND) ? 0.03 : -0.03, y: 0.2, z: 0.02 },
@@ -311,7 +312,8 @@ Script.include("/~/system/libraries/controllers.js");
                 maxDistance: 8.0
             });
 
-            _this.teleportParabolaHandCollisions = Pointers.createPointer(PickType.Parabola, {
+            //V8TODO
+            _this.teleportParabolaHandCollisions = Pointers.createParabolaPointer({
                 joint: (_this.hand === RIGHT_HAND) ? "_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND" : "_CAMERA_RELATIVE_CONTROLLER_LEFTHAND",
                 dirOffset: { x: 0, y: 1, z: 0.1 },
                 posOffset: { x: (_this.hand === RIGHT_HAND) ? 0.03 : -0.03, y: 0.2, z: 0.02 },
@@ -326,7 +328,8 @@ Script.include("/~/system/libraries/controllers.js");
                 maxDistance: 8.0
             });
 
-            _this.teleportParabolaHeadVisuals = Pointers.createPointer(PickType.Parabola, {
+            //V8TODO
+            _this.teleportParabolaHeadVisuals = Pointers.createParabolaPointer({
                 joint: "Avatar",
                 filter: Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_INVISIBLE,
                 faceAvatar: true,
@@ -340,7 +343,8 @@ Script.include("/~/system/libraries/controllers.js");
                 maxDistance: 8.0
             });
 
-            _this.teleportParabolaHeadCollisions = Pointers.createPointer(PickType.Parabola, {
+            //V8TODO
+            _this.teleportParabolaHeadCollisions = Pointers.createParabolaPointer({
                 joint: "Avatar",
                 filter: Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_INVISIBLE,
                 faceAvatar: true,
