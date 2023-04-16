@@ -30,7 +30,7 @@
         color: COLOR2,
         ignorePickIntersection: true
     }
-    var laser = Pointers.createPointer(PickType.Ray, {
+    var laser = Pointers.createRayPointer({
         joint: "Mouse",
         filter: Picks.PICK_ENTITIES | Picks.PICK_BYPASS_IGNORE | Picks.PICK_INCLUDE_COLLIDABLE | Picks.PICK_INCLUDE_NONCOLLIDABLE,
         renderStates: [{name: "one", end: end1}],
@@ -40,7 +40,7 @@
     Pointers.setRenderState(laser, "one");
     var hoveredObject = undefined;
 
-    var SelectionListName = "DebugWorkloadSelection"; // sekret undocumented selection list (hard coded in C++)
+    var SelectionListName = "DebugWorkloadSelection"; // secret undocumented selection list (hard coded in C++)
     var selectionStyle = {
         isOutlineSmooth: true,
         outlineWidth: 5,

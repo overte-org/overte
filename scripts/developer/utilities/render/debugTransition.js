@@ -78,18 +78,18 @@
         type: "sphere",
         dimensions: END_DIMENSIONS,
         color: COLOR1,
-        ignoreRayIntersection: true
+        ignorePickIntersection: true
     }
     var end2 = {
-        type: "sphere",
+        type: "Sphere",
         dimensions: END_DIMENSIONS,
         color: COLOR2,
-        ignoreRayIntersection: true
+        ignorePickIntersection: true
     }
     var laser
 
     function enablePointer() {
-        laser = Pointers.createPointer(PickType.Ray, {
+        laser = Pointers.createRayPointer({
             joint: "Mouse",
             filter: Picks.PICK_ENTITIES,
             renderStates: [{name: "one", end: end1}],

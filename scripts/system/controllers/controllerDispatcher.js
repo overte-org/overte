@@ -618,7 +618,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             hand: RIGHT_HAND
         });
 
-        this.mouseRayPointer = Pointers.createPointer(PickType.Ray, {
+        this.mouseRayPointer = Pointers.createRayPointer({
             joint: "Mouse",
             filter: Picks.PICK_OVERLAYS | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
             enabled: true
