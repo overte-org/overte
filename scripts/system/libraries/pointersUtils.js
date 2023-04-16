@@ -29,7 +29,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
         alpha: 1,
         solid: true,
         glow: true,
-        billboardMode: "yaw",
+        faceCamera: true,
         ignorePickIntersection: true, // always ignore this
         //V8TODO
         drawInFront: !hudLayer, // Even when buried inside of something, show it.
@@ -53,7 +53,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
         alpha: 1,
         solid: true,
         glow: true,
-        billboardMode: "yaw",
+        faceCamera: true,
         ignorePickIntersection: true, // always ignore this
         drawInFront: !hudLayer, // Even when buried inside of something, show it.
         drawHUDLayer: hudLayer,
@@ -76,7 +76,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
         alpha: 1,
         solid: true,
         glow: true,
-        billboardMode: "yaw",
+        faceCamera: true,
         ignorePickIntersection: true, // always ignore this
         drawInFront: !hudLayer, // Even when buried inside of something, show it.
         drawHUDLayer: hudLayer,
