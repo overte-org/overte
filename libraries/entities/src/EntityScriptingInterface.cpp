@@ -797,10 +797,38 @@ QUuid EntityScriptingInterface::cloneEntity(const QUuid& entityIDToClone) {
 
 EntityItemProperties EntityScriptingInterface::getEntityProperties(const QUuid& entityID) {
     const EntityPropertyFlags noSpecificProperties;
-    return getEntityProperties(entityID, noSpecificProperties);
+    return getEntityPropertiesInternal(entityID, noSpecificProperties);
 }
 
-EntityItemProperties EntityScriptingInterface::getEntityProperties(const QUuid& entityID, EntityPropertyFlags desiredProperties) {
+ScriptValue EntityScriptingInterface::getEntityProperties(const QUuid& entityID, const ScriptValue& extendedDesiredProperties) {
+    EntityPropertyFlags desiredProperties;
+    EntityItemProperties::entityPropertyFlagsFromScriptValue(extendedDesiredProperties, desiredProperties);
+    EntityPseudoPropertyFlags desiredPseudoPropertyFlags;
+
+    if (extendedDesiredProperties.isString()) {
+        readExtendedPropertyStringValue(extendedDesiredProperties, desiredPseudoPropertyFlags);
+        desiredPseudoPropertyFlags.set(EntityPseudoPropertyFlag::FlagsActive);
+    } else if (extendedDesiredProperties.isArray()) {
+        const quint32 length = extendedDesiredProperties.property("length").toInt32();
+        for (quint32 i = 0; i < length; i++) {
+            readExtendedPropertyStringValue(extendedDesiredProperties.property(i), desiredPseudoPropertyFlags);
+        }
+        desiredPseudoPropertyFlags.set(EntityPseudoPropertyFlag::FlagsActive);
+    }
+
+    if (_entityTree) {
+        if (desiredPseudoPropertyFlags.none() && desiredProperties.isEmpty()) {
+            desiredPseudoPropertyFlags.set();
+        }
+    }
+
+    EntityItemProperties properties = getEntityPropertiesInternal(entityID, desiredProperties);
+
+    return properties.copyToScriptValue(extendedDesiredProperties.engine().get(), false, false, false, desiredPseudoPropertyFlags);
+}
+
+EntityItemProperties EntityScriptingInterface::getEntityPropertiesInternal(const QUuid& entityID, EntityPropertyFlags desiredProperties) {
+
     PROFILE_RANGE(script_entities, __FUNCTION__);
 
     bool scalesWithParent { false };
@@ -864,50 +892,51 @@ ScriptValue EntityScriptingInterface::getMultipleEntityProperties(ScriptContext*
     return entityScriptingInterface->getMultipleEntityPropertiesInternal(engine, entityIDs, context->argument(ARGUMENT_EXTENDED_DESIRED_PROPERTIES));
 }
 
+void EntityScriptingInterface::readExtendedPropertyStringValue(const ScriptValue& extendedProperty, EntityPseudoPropertyFlags& pseudoPropertyFlags) {
+    const auto extendedPropertyString = extendedProperty.toString();
+    if (extendedPropertyString == "id") {
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::ID);
+    } else if (extendedPropertyString == "type") {
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::Type);
+    } else if (extendedPropertyString == "age") {
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::Age);
+    } else if (extendedPropertyString == "ageAsText") {
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::AgeAsText);
+    } else if (extendedPropertyString == "lastEdited") {
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::LastEdited);
+    } else if (extendedPropertyString == "boundingBox") {
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::BoundingBox);
+    } else if (extendedPropertyString == "originalTextures") {
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::OriginalTextures);
+    } else if (extendedPropertyString == "renderInfo") {
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::RenderInfo);
+    } else if (extendedPropertyString == "clientOnly") {
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::ClientOnly);
+    } else if (extendedPropertyString == "avatarEntity") {
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::AvatarEntity);
+    } else if (extendedPropertyString == "localEntity") {
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::LocalEntity);
+    } else if (extendedPropertyString == "faceCamera") {
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::FaceCamera);
+    } else if (extendedPropertyString == "isFacingAvatar") {
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::IsFacingAvatar);
+    }
+}
+
 ScriptValue EntityScriptingInterface::getMultipleEntityPropertiesInternal(ScriptEngine* engine, QVector<QUuid> entityIDs, const ScriptValue& extendedDesiredProperties) {
     PROFILE_RANGE(script_entities, __FUNCTION__);
 
-    EntityPsuedoPropertyFlags psuedoPropertyFlags;
-    const auto readExtendedPropertyStringValue = [&](ScriptValue extendedProperty) {
-        const auto extendedPropertyString = extendedProperty.toString();
-        if (extendedPropertyString == "id") {
-            psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::ID);
-        } else if (extendedPropertyString == "type") {
-            psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::Type);
-        } else if (extendedPropertyString == "age") {
-            psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::Age);
-        } else if (extendedPropertyString == "ageAsText") {
-            psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::AgeAsText);
-        } else if (extendedPropertyString == "lastEdited") {
-            psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::LastEdited);
-        } else if (extendedPropertyString == "boundingBox") {
-            psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::BoundingBox);
-        } else if (extendedPropertyString == "originalTextures") {
-            psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::OriginalTextures);
-        } else if (extendedPropertyString == "renderInfo") {
-            psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::RenderInfo);
-        } else if (extendedPropertyString == "clientOnly") {
-            psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::ClientOnly);
-        } else if (extendedPropertyString == "avatarEntity") {
-            psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::AvatarEntity);
-        } else if (extendedPropertyString == "localEntity") {
-            psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::LocalEntity);
-        } else if (extendedPropertyString == "faceCamera") {
-            psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::FaceCamera);
-        } else if (extendedPropertyString == "isFacingAvatar") {
-            psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::IsFacingAvatar);
-        }
-    };
+    EntityPseudoPropertyFlags pseudoPropertyFlags;
 
     if (extendedDesiredProperties.isString()) {
-        readExtendedPropertyStringValue(extendedDesiredProperties);
-        psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::FlagsActive);
+        readExtendedPropertyStringValue(extendedDesiredProperties, pseudoPropertyFlags);
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::FlagsActive);
     } else if (extendedDesiredProperties.isArray()) {
         const quint32 length = extendedDesiredProperties.property("length").toInt32();
         for (quint32 i = 0; i < length; i++) {
-            readExtendedPropertyStringValue(extendedDesiredProperties.property(i));
+            readExtendedPropertyStringValue(extendedDesiredProperties.property(i), pseudoPropertyFlags);
         }
-        psuedoPropertyFlags.set(EntityPsuedoPropertyFlag::FlagsActive);
+        pseudoPropertyFlags.set(EntityPseudoPropertyFlag::FlagsActive);
     }
 
     EntityPropertyFlags desiredProperties = scriptvalue_cast<EntityPropertyFlags>(extendedDesiredProperties);
@@ -935,7 +964,7 @@ ScriptValue EntityScriptingInterface::getMultipleEntityPropertiesInternal(Script
                     const auto& entityID = entityIDs.at(i);
                     const EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
                     if (entity) {
-                        if (psuedoPropertyFlags.none() && desiredProperties.isEmpty()) {
+                        if (pseudoPropertyFlags.none() && desiredProperties.isEmpty()) {
                             // these are left out of EntityItem::getEntityProperties so that localPosition and localRotation
                             // don't end up in json saves, etc.  We still want them here, though.
                             EncodeBitstreamParams params; // unknown
@@ -945,7 +974,7 @@ ScriptValue EntityScriptingInterface::getMultipleEntityPropertiesInternal(Script
                             desiredProperties.setHasProperty(PROP_LOCAL_VELOCITY);
                             desiredProperties.setHasProperty(PROP_LOCAL_ANGULAR_VELOCITY);
                             desiredProperties.setHasProperty(PROP_LOCAL_DIMENSIONS);
-                            psuedoPropertyFlags.set();
+                            pseudoPropertyFlags.set();
                             needsScriptSemantics = true;
                         }
 
@@ -963,12 +992,12 @@ ScriptValue EntityScriptingInterface::getMultipleEntityPropertiesInternal(Script
         PROFILE_RANGE(script_entities, "EntityScriptingInterface::getMultipleEntityProperties>Script Semantics");
         foreach(const auto& result, resultProperties) {
             finalResult.setProperty(i++, convertPropertiesToScriptSemantics(result.properties, result.scalesWithParent)
-                .copyToScriptValue(engine, false, false, false, psuedoPropertyFlags));
+                .copyToScriptValue(engine, false, false, false, pseudoPropertyFlags));
         }
     } else {
         PROFILE_RANGE(script_entities, "EntityScriptingInterface::getMultipleEntityProperties>Skip Script Semantics");
         foreach(const auto& result, resultProperties) {
-            finalResult.setProperty(i++, result.properties.copyToScriptValue(engine, false, false, false, psuedoPropertyFlags));
+            finalResult.setProperty(i++, result.properties.copyToScriptValue(engine, false, false, false, pseudoPropertyFlags));
         }
     }
     return finalResult;

@@ -42,7 +42,7 @@
 #include "EntityItemPropertiesMacros.h"
 #include "EntityTypes.h"
 #include "EntityPropertyFlags.h"
-#include "EntityPsuedoPropertyFlags.h"
+#include "EntityPseudoPropertyFlags.h"
 #include "SimulationOwner.h"
 
 #include "TextEntityItem.h"
@@ -138,7 +138,7 @@ public:
     void setType(EntityTypes::EntityType type) { _type = type; }
 
     virtual ScriptValue copyToScriptValue(ScriptEngine* engine, bool skipDefaults, bool allowUnknownCreateTime = false,
-        bool strictSemantics = false, EntityPsuedoPropertyFlags psueudoPropertyFlags = EntityPsuedoPropertyFlags()) const;
+        bool strictSemantics = false, EntityPseudoPropertyFlags pseudoPropertyFlags = EntityPseudoPropertyFlags()) const;
     virtual void copyFromScriptValue(const ScriptValue& object, bool honorReadOnly);
     void copyFromJSONString(ScriptEngine& scriptEngine, const QString& jsonString);
 
