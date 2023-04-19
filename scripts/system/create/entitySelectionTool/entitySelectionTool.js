@@ -88,11 +88,9 @@ SelectionManager = (function() {
         if (channel !== 'entityToolUpdates') {
             return;
         }
-        print("handleEntitySelectionToolUpdates entityToolUpdates");
         if (sender !== MyAvatar.sessionUUID) {
             return;
         }
-        print("handleEntitySelectionToolUpdates MyAvatar.sessionUUID");
 
         var wantDebug = false;
         var messageParsed;
@@ -112,11 +110,11 @@ SelectionManager = (function() {
                 if (wantDebug) {
                     print("setting selection to " + messageParsed.entityID);
                 }
-                if (expectingRotateAsClickedSurface) {
+                if (that.createApp.expectingRotateAsClickedSurface) {
                     if (!SelectionManager.hasSelection() || !SelectionManager.hasUnlockedSelection()) {
                         audioFeedback.rejection();
                         Window.notifyEditError("You have nothing selected, or the selection is locked.");
-                        expectingRotateAsClickedSurface = false;
+                        that.createApp.expectingRotateAsClickedSurface = false;
                     } else {
                         //Rotate Selection according the Surface Normal
                         var normalRotation = Quat.lookAtSimple(Vec3.ZERO, Vec3.multiply(messageParsed.surfaceNormal, -1));
@@ -131,7 +129,7 @@ SelectionManager = (function() {
                         selectionDisplay.moveSelection(Vec3.sum(messageParsed.intersection, Vec3.multiplyQbyV( normalRotation, {"x": 0.0, "y":0.0, "z": distanceFromSurface})));
                         that._update(false, this);
                         that.createApp.pushCommandForSelections();
-                        expectingRotateAsClickedSurface = false;
+                        that.createApp.expectingRotateAsClickedSurface = false;
                         audioFeedback.action();
                     }
                 } else {
@@ -140,7 +138,7 @@ SelectionManager = (function() {
                     if (intersectObj.intersects) {
                         return;
                     }
-                    if (hmdMultiSelectMode) {
+                    if (that.createApp.hmdMultiSelectMode) {
                         that.addEntity(messageParsed.entityID, true, that);
                     } else {
                         that.setSelections([messageParsed.entityID], that);
@@ -152,7 +150,6 @@ SelectionManager = (function() {
                 that.clearSelections();
             }
         } else if (messageParsed.method === "pointingAt") {
-            print("handleEntitySelectionToolUpdates pointingAt");
             if (messageParsed.hand === Controller.Standard.RightHand) {
                 that.pointingAtDesktopWindowRight = messageParsed.desktopWindow;
                 that.pointingAtTabletRight = messageParsed.tablet;

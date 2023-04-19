@@ -370,7 +370,7 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
         } else if (data.type === 'unparent') {
             that.createApp.unparentSelectedEntities();
         } else if (data.type === 'hmdMultiSelectMode') {
-            hmdMultiSelectMode = data.value;
+            that.createApp.hmdMultiSelectMode = data.value;
         } else if (data.type === 'selectAllInBox') {
             that.createApp.selectAllEntitiesInCurrentSelectionBox(false);
         } else if (data.type === 'selectAllTouchingBox') {

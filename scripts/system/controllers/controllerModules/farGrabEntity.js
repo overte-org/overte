@@ -567,6 +567,8 @@ Script.include("/~/system/libraries/controllers.js");
             if (this.distanceHolding) {
                 var targetProps = Entities.getEntityProperties(this.targetObject.entityID,
                     ["position", "rotation", "registrationPoint", "dimensions"]);
+                if (controllerData.rayPicks[this.hand].intersection == null)
+                    return undefined;
                 return worldPositionToRegistrationFrameMatrix(targetProps, controllerData.rayPicks[this.hand].intersection);
             }
             return undefined;

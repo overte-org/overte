@@ -563,8 +563,8 @@ var distanceBetweenPointAndEntityBoundingBox = function(point, entityProps) {
     var localPoint = entityXform.inv().xformPoint(point);
     var minOffset = Vec3.multiplyVbyV(entityProps.registrationPoint, entityProps.dimensions);
     var maxOffset = Vec3.multiplyVbyV(Vec3.subtract(ONE_VEC, entityProps.registrationPoint), entityProps.dimensions);
-    var localMin = Vec3.subtract(entityXform.trans, minOffset);
-    var localMax = Vec3.sum(entityXform.trans, maxOffset);
+    var localMin = Vec3.subtract(entityXform.pos, minOffset);
+    var localMax = Vec3.sum(entityXform.pos, maxOffset);
 
     var v = {x: localPoint.x, y: localPoint.y, z: localPoint.z};
     v.x = Math.max(v.x, localMin.x);
@@ -589,7 +589,7 @@ var worldPositionToRegistrationFrameMatrix = function(wptrProps, pos) {
     // get world matrix for intersection point
     var intersectionMat = new Xform({ x: 0, y: 0, z:0, w: 1 }, pos);
 
-    // calculate world matrix for registrationPoint addjusted entity
+    // calculate world matrix for registrationPoint adjusted entity
     var DEFAULT_REGISTRATION_POINT = { x: 0.5, y: 0.5, z: 0.5 };
     var regRatio = Vec3.subtract(DEFAULT_REGISTRATION_POINT, wptrProps.registrationPoint);
     var regOffset = Vec3.multiplyVbyV(regRatio, wptrProps.dimensions);

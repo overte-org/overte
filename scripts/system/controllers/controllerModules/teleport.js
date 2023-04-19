@@ -216,15 +216,21 @@ Script.include("/~/system/libraries/controllers.js");
                 avatarSensorPosition.y = 0;
 
                 var targetRotation = Entities.getEntityProperties(_this.targetOverlayID, ["rotation"]).rotation;
-                var relativePlayAreaCenterOffset =
-                    Vec3.sum(_this.playAreaCenterOffset, { x: 0, y: -TARGET_MODEL_DIMENSIONS.y / 2, z: 0 });
-                var localPosition = Vec3.multiplyQbyV(Quat.inverse(targetRotation),
-                    Vec3.multiplyQbyV(sensorToWorldRotation,
-                        Vec3.multiply(avatarScale, Vec3.subtract(relativePlayAreaCenterOffset, avatarSensorPosition))));
-                localPosition.y = _this.teleportScaleFactor * localPosition.y;
+                if (targetRotation != null) {
+                    var relativePlayAreaCenterOffset =
+                        Vec3.sum(_this.playAreaCenterOffset, {x: 0, y: -TARGET_MODEL_DIMENSIONS.y / 2, z: 0});
+                    var localPosition = Vec3.multiplyQbyV(Quat.inverse(targetRotation),
+                        Vec3.multiplyQbyV(sensorToWorldRotation,
+                            Vec3.multiply(avatarScale, Vec3.subtract(relativePlayAreaCenterOffset, avatarSensorPosition))));
+                    localPosition.y = _this.teleportScaleFactor * localPosition.y;
+                } else {
+                    print("");
+                }
 
                 playAreaOverlayProperties.parentID = _this.targetOverlayID;
-                playAreaOverlayProperties.localPosition = localPosition;
+                if (targetRotation != null) {
+                    playAreaOverlayProperties.localPosition = localPosition;
+                }
             }
 
             Overlays.editOverlay(_this.playAreaOverlay, playAreaOverlayProperties);
