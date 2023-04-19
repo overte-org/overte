@@ -88,6 +88,7 @@
     var selectionDisplay = SelectionDisplay;
     selectionDisplay.createApp = createApp;
     var selectionManager = SelectionManager;
+    selectionManager.createApp = createApp;
 
     var PARTICLE_SYSTEM_URL = Script.resolvePath("assets/images/icon-particles.svg");
     var POINT_LIGHT_URL = Script.resolvePath("assets/images/icon-point-light.svg");
@@ -114,8 +115,8 @@
         }
     });
 
-    var hmdMultiSelectMode = false;
-    var expectingRotateAsClickedSurface = false;
+    createApp.hmdMultiSelectMode = false;
+    createApp.expectingRotateAsClickedSurface = false;
     var keepSelectedOnNextClick = false;
 
     var copiedPosition;
@@ -1236,11 +1237,11 @@
         }
 
         var result;
-        if (expectingRotateAsClickedSurface) {
+        if (createApp.expectingRotateAsClickedSurface) {
             if (!SelectionManager.hasSelection() || !SelectionManager.hasUnlockedSelection()) {
                 audioFeedback.rejection();
                 Window.notifyEditError("You have nothing selected, or the selection is locked.");
-                expectingRotateAsClickedSurface = false;
+                createApp.expectingRotateAsClickedSurface = false;
             } else {
                 //Rotate Selection according the Surface Normal
                 var normalRotation = Quat.lookAtSimple(Vec3.ZERO, Vec3.multiply(entityResult.surfaceNormal, -1));
@@ -1255,7 +1256,7 @@
                 selectionDisplay.moveSelection(Vec3.sum(entityResult.intersection, Vec3.multiplyQbyV( normalRotation, {"x": 0.0, "y":0.0, "z": distanceFromSurface})));
                 selectionManager._update(false, this);
                 createApp.pushCommandForSelections();
-                expectingRotateAsClickedSurface = false;
+                createApp.expectingRotateAsClickedSurface = false;
                 audioFeedback.action();
             }
             keepSelectedOnNextClick = true;
@@ -1299,7 +1300,7 @@
                 var entity = entityIconOverlayManager.findEntity(data.overlayID);
 
                 if (entity !== null) {
-                    if (hmdMultiSelectMode) {
+                    if (createApp.hmdMultiSelectMode) {
                         selectionManager.addEntity(entity, true, this);
                     } else {
                         selectionManager.setSelections([entity], this);
@@ -2510,7 +2511,7 @@
                 webView.setLandscape(true);
             } else {
                 if (!visible) {
-                    hmdMultiSelectMode = false;
+                    createApp.hmdMultiSelectMode = false;
                     webView.setLandscape(false);
                 }
             }
@@ -3278,9 +3279,9 @@
         if (!SelectionManager.hasSelection() || !SelectionManager.hasUnlockedSelection()) {
             audioFeedback.rejection();
             Window.notifyEditError("You have nothing selected, or the selection is locked.");
-            expectingRotateAsClickedSurface = false;
+            createApp.expectingRotateAsClickedSurface = false;
         } else {
-            expectingRotateAsClickedSurface = true;
+            createApp.expectingRotateAsClickedSurface = true;
         }
     }
 
