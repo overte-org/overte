@@ -1,12 +1,15 @@
 //
 //  FileLogger.cpp
-//  interface/src
+//  libraries/shared/src/shared
 //
 //  Created by Stojce Slavkovski on 12/22/13.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
 //
 
 #include "FileLogger.h"
@@ -46,11 +49,11 @@ static const QString SESSION_WILDCARD = "[0-9a-z]{8}(-[0-9a-z]{4}){3}-[0-9a-z]{1
 static QRegExp LOG_FILENAME_REGEX { "overte-log_" + DATETIME_WILDCARD + "(_" + SESSION_WILDCARD + ")?\\.txt" };
 static QUuid SESSION_ID;
 
-// Max log size is 512 KB. We send log files to our crash reporter, so we want to keep this relatively
-// small so it doesn't go over the 2MB zipped limit for all of the files we send.
-static const qint64 MAX_LOG_SIZE = 512 * 1024;
-// Max log files found in the log directory is 100.
-static const qint64 MAX_LOG_DIR_SIZE = 512 * 1024 * 100;
+// Max log size is 10 MiB. We send log files to our crash reporter, so we want to keep this relatively
+// small so it doesn't go over 10 MiB zipped for all of the files we send.
+static const qint64 MAX_LOG_SIZE = 10 * 1024 * 1024;
+// Max log files found in the log directory is 20.
+static const qint64 MAX_LOG_DIR_SIZE = 10 * 1024 * 1024 * 20;
 
 static FilePersistThread* _persistThreadInstance;
 
@@ -140,7 +143,7 @@ FileLogger::~FileLogger() {
 }
 
 void FileLogger::setSessionID(const QUuid& message) {
-    // This is for the output of log files. Once the application is first started, 
+    // This is for the output of log files. Once the application is first started,
     // this function runs and grabs the AccountManager Session ID and saves it here.
     SESSION_ID = message;
     }
