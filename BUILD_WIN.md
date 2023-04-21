@@ -95,13 +95,24 @@ To create this variable:
 
 ## Step 7. Running CMake to Generate Build Files
 
-Run Command Prompt from Start and run the following commands:
-`cd "%OVERTE_DIR%"`
-`mkdir build`
-`cd build`
+These instructions only apply to Visual Studio 2019.
 
-### Visual Studio 2019
-Run `cmake .. -G "Visual Studio 16 2019" -A x64`.
+### Automatic
+
+There is a batch file to automatically run the commands below for ease of use.
+
+`winprepareVS19.bat`
+
+### Manual
+
+Run The Command Prompt from Start and run the following commands:
+
+```Bash
+cd "%OVERTE_DIR%"
+mkdir build
+cd build
+cmake .. -G "Visual Studio 16 2019" -A x64
+```
 
 Where `%OVERTE_DIR%` is the directory for the Overte repository.
 
