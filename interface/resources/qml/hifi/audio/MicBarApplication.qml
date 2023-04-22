@@ -39,8 +39,9 @@ Rectangle {
     }
 
     Component.onCompleted: {
-        AudioScriptingInterface.noiseGateOpened.connect(function() { micBar.gated = false; });
-        AudioScriptingInterface.noiseGateClosed.connect(function() { micBar.gated = true; });
+        //TODO: this was causing type errors
+        //AudioScriptingInterface.noiseGateOpened.connect(function() { micBar.gated = false; });
+        //AudioScriptingInterface.noiseGateClosed.connect(function() { micBar.gated = true; });
         HMD.displayModeChanged.connect(function() {
             muted = AudioScriptingInterface.muted;
             pushToTalk = AudioScriptingInterface.pushToTalk;

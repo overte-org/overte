@@ -73,23 +73,24 @@ Script.include("/~/system/libraries/controllers.js");
         width: 0.025,
         drawInFront: true
     };
-    
+
+    //V8TODO: check render states
     var teleportEnd = {
-        type: "model",
+        type: "Model",
         url: TARGET_MODEL_URL,
         dimensions: TARGET_MODEL_DIMENSIONS,
         ignorePickIntersection: true
     };
     
     var seatEnd = {
-        type: "model",
+        type: "Model",
         url: SEAT_MODEL_URL,
         dimensions: TARGET_MODEL_DIMENSIONS,
         ignorePickIntersection: true
     };
     
     var collisionEnd = {
-        type: "shape",
+        type: "Shape",
         shape: "box",
         dimensions: { x: 1.0, y: 0.001, z: 1.0 },
         alpha: 0.0,
@@ -409,6 +410,7 @@ Script.include("/~/system/libraries/controllers.js");
             });
 
 
+            //V8TODO: this won't work anymore
             _this.playAreaOverlay = Overlays.addOverlay("model", {
                 url: _this.PLAY_AREA_OVERLAY_MODEL,
                 drawInFront: false,
@@ -434,6 +436,7 @@ Script.include("/~/system/libraries/controllers.js");
 
                 for (var i = 0; i < _this.playAreaSensorPositions.length; i++) {
                     if (i > _this.playAreaSensorPositionOverlays.length - 1) {
+                        //V8TODO: replace with local entity
                         var overlay = Overlays.addOverlay("model", {
                             url: _this.PLAY_AREA_SENSOR_OVERLAY_MODEL,
                             dimensions: _this.PLAY_AREA_SENSOR_OVERLAY_DIMENSIONS,
