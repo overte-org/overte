@@ -102,7 +102,9 @@ Script.include("/~/system/libraries/controllers.js");
             for (var i = 0; i < nearbyEntityProperties.length; i++) {
                 var props = nearbyEntityProperties[i];
                 var grabPosition = controllerData.controllerLocations[this.hand].position; // Is offset from hand position.
-                var dist = distanceBetweenPointAndEntityBoundingBox(grabPosition, props);
+                // TODO: this function gives incorrect result now and needs to be fixed later
+                //var dist = distanceBetweenPointAndEntityBoundingBox(grabPosition, props);
+                var dist = 0;
                 var distance = Vec3.distance(grabPosition, props.position);
                 if ((dist > nearGrabDistance) ||
                     (distance > nearGrabRadius)) { // Only smallish entities can be near grabbed.

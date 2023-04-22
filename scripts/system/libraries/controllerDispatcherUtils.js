@@ -565,6 +565,9 @@ var distanceBetweenPointAndEntityBoundingBox = function(point, entityProps) {
     var maxOffset = Vec3.multiplyVbyV(Vec3.subtract(ONE_VEC, entityProps.registrationPoint), entityProps.dimensions);
     var localMin = Vec3.subtract(entityXform.pos, minOffset);
     var localMax = Vec3.sum(entityXform.pos, maxOffset);
+    // TODO: was originally this, but this causes an error on V8 branch and probably never worked on QtScript either
+    //var localMin = Vec3.subtract(entityXform.trans, minOffset);
+    //var localMax = Vec3.sum(entityXform.trans, maxOffset);
 
     var v = {x: localPoint.x, y: localPoint.y, z: localPoint.z};
     v.x = Math.max(v.x, localMin.x);

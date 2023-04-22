@@ -101,7 +101,6 @@ SelectionManager = (function() {
             return;
         }
 
-        print("handleEntitySelectionToolUpdates JSON.parse(message): " + messageParsed.method);
         if (messageParsed.method === "selectEntity") {
             if (!that.editEnabled) {
                 return;
@@ -1302,7 +1301,7 @@ SelectionDisplay = (function() {
     
     var debugPickPlaneEnabled = false;
     var debugPickPlane = Entities.addEntity({
-        type: "shape",
+        type: "Shape",
         shape: "Quad",
         alpha: 0.25,
         color: COLOR_DEBUG_PICK_PLANE,
