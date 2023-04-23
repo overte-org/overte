@@ -12,42 +12,54 @@
 
 #include "ScriptManager.h"
 #include "ScriptManagerScriptingInterface.h"
+#include "ScriptEngine.h"
 #include <QMetaType>
 
 
 
  ScriptManagerScriptingInterface::ScriptManagerScriptingInterface(ScriptManager *parent): QObject(parent), _manager(parent) {
 
-        qRegisterMetaType<ScriptException>();
-        qRegisterMetaType<ScriptEngineException>();
-        qRegisterMetaType<ScriptRuntimeException>();
+    qRegisterMetaType<ScriptException>();
+    qRegisterMetaType<ScriptEngineException>();
+    qRegisterMetaType<ScriptRuntimeException>();
 
-        qRegisterMetaType<std::shared_ptr<ScriptException>>();
-        qRegisterMetaType<std::shared_ptr<ScriptEngineException>>();
-        qRegisterMetaType<std::shared_ptr<ScriptRuntimeException>>();
-
-
-        connect(_manager, &ScriptManager::scriptLoaded, this, &ScriptManagerScriptingInterface::scriptLoaded);
-        connect(_manager, &ScriptManager::errorLoadingScript, this, &ScriptManagerScriptingInterface::errorLoadingScript);
-        connect(_manager, &ScriptManager::update, this, &ScriptManagerScriptingInterface::update);
-        connect(_manager, &ScriptManager::scriptEnding, this, &ScriptManagerScriptingInterface::scriptEnding);
-        connect(_manager, &ScriptManager::finished, this, &ScriptManagerScriptingInterface::finished);
-        connect(_manager, &ScriptManager::printedMessage, this, &ScriptManagerScriptingInterface::printedMessage);
-        connect(_manager, &ScriptManager::errorMessage, this, &ScriptManagerScriptingInterface::errorMessage);
-        connect(_manager, &ScriptManager::warningMessage, this, &ScriptManagerScriptingInterface::warningMessage);
-        connect(_manager, &ScriptManager::infoMessage, this, &ScriptManagerScriptingInterface::infoMessage);
-        connect(_manager, &ScriptManager::runningStateChanged, this, &ScriptManagerScriptingInterface::runningStateChanged);
-        connect(_manager, &ScriptManager::clearDebugWindow, this, &ScriptManagerScriptingInterface::clearDebugWindow);
-        connect(_manager, &ScriptManager::loadScript, this, &ScriptManagerScriptingInterface::loadScript);
-        connect(_manager, &ScriptManager::doneRunning, this, &ScriptManagerScriptingInterface::doneRunning);
-        connect(_manager, &ScriptManager::entityScriptDetailsUpdated, this, &ScriptManagerScriptingInterface::entityScriptDetailsUpdated);
-        connect(_manager, &ScriptManager::entityScriptPreloadFinished, this, &ScriptManagerScriptingInterface::entityScriptPreloadFinished);
-        connect(_manager, &ScriptManager::unhandledException, this, &ScriptManagerScriptingInterface::scriptManagerException);
-    }
-
-    void ScriptManagerScriptingInterface::scriptManagerException(std::shared_ptr<ScriptException> exception) {
-        // V8TODO: What should we actually handle here?
+    qRegisterMetaType<std::shared_ptr<ScriptException>>();
+    qRegisterMetaType<std::shared_ptr<ScriptEngineException>>();
+    qRegisterMetaType<std::shared_ptr<ScriptRuntimeException>>();
 
 
-        // emit unhandledException(exception.thrownValue);
-    }
+    connect(_manager, &ScriptManager::scriptLoaded, this, &ScriptManagerScriptingInterface::scriptLoaded);
+    connect(_manager, &ScriptManager::errorLoadingScript, this, &ScriptManagerScriptingInterface::errorLoadingScript);
+    connect(_manager, &ScriptManager::update, this, &ScriptManagerScriptingInterface::update);
+    connect(_manager, &ScriptManager::scriptEnding, this, &ScriptManagerScriptingInterface::scriptEnding);
+    connect(_manager, &ScriptManager::finished, this, &ScriptManagerScriptingInterface::finished);
+    connect(_manager, &ScriptManager::printedMessage, this, &ScriptManagerScriptingInterface::printedMessage);
+    connect(_manager, &ScriptManager::errorMessage, this, &ScriptManagerScriptingInterface::errorMessage);
+    connect(_manager, &ScriptManager::warningMessage, this, &ScriptManagerScriptingInterface::warningMessage);
+    connect(_manager, &ScriptManager::infoMessage, this, &ScriptManagerScriptingInterface::infoMessage);
+    connect(_manager, &ScriptManager::runningStateChanged, this, &ScriptManagerScriptingInterface::runningStateChanged);
+    connect(_manager, &ScriptManager::clearDebugWindow, this, &ScriptManagerScriptingInterface::clearDebugWindow);
+    connect(_manager, &ScriptManager::loadScript, this, &ScriptManagerScriptingInterface::loadScript);
+    connect(_manager, &ScriptManager::doneRunning, this, &ScriptManagerScriptingInterface::doneRunning);
+    connect(_manager, &ScriptManager::entityScriptDetailsUpdated, this, &ScriptManagerScriptingInterface::entityScriptDetailsUpdated);
+    connect(_manager, &ScriptManager::entityScriptPreloadFinished, this, &ScriptManagerScriptingInterface::entityScriptPreloadFinished);
+    connect(_manager, &ScriptManager::unhandledException, this, &ScriptManagerScriptingInterface::scriptManagerException);
+}
+
+void ScriptManagerScriptingInterface::scriptManagerException(std::shared_ptr<ScriptException> exception) {
+    // V8TODO: What should we actually handle here?
+
+
+    // emit unhandledException(exception.thrownValue);
+}
+
+QVariantMap ScriptManagerScriptingInterface::getMemoryUsageStatistics() {
+    auto statistics = _manager->engine()->getMemoryUsageStatistics();
+    QVariantMap map;
+    map.insert("totalHeapSize", QVariant((qulonglong)(statistics.totalHeapSize)));
+    map.insert("usedHeapSize", QVariant((qulonglong)(statistics.usedHeapSize)));
+    map.insert("totalAvailableSize", QVariant((qulonglong)(statistics.totalAvailableSize)));
+    map.insert("totalGlobalHandlesSize", QVariant((qulonglong)(statistics.totalGlobalHandlesSize)));
+    map.insert("usedGlobalHandlesSize", QVariant((qulonglong)(statistics.usedGlobalHandlesSize)));
+    return map;
+}
