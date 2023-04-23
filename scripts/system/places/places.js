@@ -199,10 +199,6 @@
             }
         }
 
-        //################### TO REMOVED ONCE NO MORE USED #####################
-        getDeprecatedBeaconsData();
-        //################### END: TO REMOVED ONCE NO MORE USED #####################
-        
         addUtilityPortals();
         
         portalList.sort(sortOrder);
@@ -312,7 +308,7 @@
                     "pinned": true,
                     "order": "Z"
                 };
-                metaverseServers.push(metaverse);                
+                metaverseServers.push(metaverse);
             }
         }
 
@@ -402,65 +398,6 @@
         nbrPlaceProtocolKnown = nbrPlaceProtocolKnown + places.length;
     
     }
-
-    //################### CODE TO REMOVED ONCE NO MORE USED #####################
-    function getDeprecatedBeaconsData() {
-        var url = "https://metaverse.vircadia.com/interim/d-goto/app/goto.json";
-        httpRequest = new XMLHttpRequest();
-        httpRequest.open("GET", url, false); // false for synchronous request
-        httpRequest.send( null );
-        var extractedData = httpRequest.responseText;
-        
-        httpRequest = null;
-        
-        var places;
-        try {
-            places = JSON.parse(extractedData);
-        } catch(e) {
-            places = {};
-        }
-
-        for (var i = 0;i < places.length; i++) {
-
-            var category, accessStatus;
-            
-            var description = "...";
-            var thumbnail = "";
-            category = "U"; //uncertain
-
-            if (places[i].People > 0) {
-                accessStatus = "LIFE";
-            } else {
-                accessStatus = "NOBODY";
-            }                 
-            
-            var shortenName = places[i]["Domain Name"].substr(0, 24);
-            
-
-            var portal = {
-                "order": category + "_Z_" + getSeededRandomForString(places[i]["Domain Name"]),
-                "category": category,
-                "accessStatus": accessStatus,
-                "name": shortenName,
-                "description": description,
-                "thumbnail": thumbnail,
-                "maturity": "unrated",
-                "address": places[i].Visit,
-                "current_attendance": places[i].People,
-                "id": "BEACON" + i,
-                "visibility": "open",
-                "capacity": 0,
-                "tags": "",
-                "managers": places[i].Owner,
-                "domain": "UNKNOWN (Beacon)",
-                "domainOrder": "ZZZZZZZZZZZZZUA",
-                "metaverseServer": "",
-                "metaverseRegion": "external"                
-            };
-            portalList.push(portal);
-        }
-    }
-    //################### END::: CODE TO REMOVED ONCE NO MORE USED #####################
 
     function addUtilityPortals() {
         var localHostPortal = {

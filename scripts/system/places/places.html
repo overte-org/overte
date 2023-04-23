@@ -414,8 +414,6 @@
                                             moreStyle = " style='background-image: url(" + placeRecords[i].thumbnail + "); background-repeat: no-repeat; background-position: 50% 50%; background-size: cover;'";
                                         } else if (placeRecords[i].category === "Z") {
                                             moreStyle = " style='background-color: #364a6e;'";
-                                        } else if (placeRecords[i].category === "U") { //TO REMOVE ONCE BEACONS GET REMOVED
-                                            moreStyle = " style='background-color: #38130f;'";
                                         }
 
                                         var shortenedDescription = placeRecords[i].description.substr(0, 55);
@@ -424,9 +422,7 @@
                                         }
 
                                         var placeUrl = "hifi://" + placeRecords[i].name;
-                                        if (placeRecords[i].category === "U") {  //TO REMOVE ONCE BEACONS GET REMOVED
-                                            placeUrl = placeRecords[i].address;
-                                        } else if (placeRecords[i].metaverseRegion !== "local") {
+                                        if (placeRecords[i].metaverseRegion !== "local") {
                                             placeUrl = "hifi://" + placeRecords[i].address;
                                         }
 
@@ -730,9 +726,7 @@
                 document.getElementById("placeDetail-description").innerHTML = placeDetail.description;
 
                 var placeUrl = "hifi://" + placeDetail.name;
-                if (placeDetail.category === "U") {  //TO REMOVE ONCE BEACONS GET REMOVED
-                    placeUrl = placeDetail.address;
-                } else if (placeDetail.metaverseRegion !== "local") {
+                if (placeDetail.metaverseRegion !== "local") {
                     placeUrl = "hifi://" + placeDetail.address;
                 }                
                 document.getElementById("placeDetail-visitBtn-container").innerHTML = "<button id='placeDetail-visitBtn' onclick='teleport(" + '"' + placeDetail.id + '"' + ", " + '"' + placeUrl + '"' + "); return false;'>Visit</button>";
