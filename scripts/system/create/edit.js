@@ -185,6 +185,7 @@
     var SUBMENU_ENTITY_EDITOR_PREFERENCES = "Edit > Preferences";
     var MENU_AUTO_FOCUS_ON_SELECT = "Auto Focus on Select";
     var MENU_EASE_ON_FOCUS = "Ease Orientation on Focus";
+    createApp.MENU_EASE_ON_FOCUS = MENU_EASE_ON_FOCUS;
     var MENU_SHOW_ICONS_IN_CREATE_MODE = "Show Icons in Create Mode";
     var MENU_CREATE_ENTITIES_GRABBABLE = "Create Entities As Grabbable (except Zones, Particles, and Lights)";
     var MENU_ALLOW_SELECTION_LARGE = "Allow Selecting of Large Models";
@@ -539,7 +540,7 @@
 
         function createNewEntity(requestedProperties) {
             var dimensions = requestedProperties.dimensions ? requestedProperties.dimensions : DEFAULT_DIMENSIONS;
-            var position = getPositionToCreateEntity();
+            var position = createApp.getPositionToCreateEntity();
             var entityID = null;
 
             var properties = {};
@@ -1858,7 +1859,7 @@
             Window.notifyEditError("You have nothing selected or the selection has locked entities.");
         }
     }
-     createApp.parentSelectedEntities = function() {
+    createApp.parentSelectedEntities = function() {
         if (SelectionManager.hasSelection() && SelectionManager.hasUnlockedSelection()) {
             var selectedEntities = selectionManager.selections;
             if (selectedEntities.length <= 1) {
@@ -2044,7 +2045,7 @@
 
     var HALF_TREE_SCALE = 16384;
 
-    function getPositionToCreateEntity(extra) {
+    createApp.getPositionToCreateEntity = function(extra) {
         var CREATE_DISTANCE = 2;
         var position;
         var delta = extra !== undefined ? extra : 0;
@@ -2081,7 +2082,7 @@
             var isLargeImport = Clipboard.getClipboardContentsLargestDimension() >= VERY_LARGE;
             var position = Vec3.ZERO;
             if (!isLargeImport) {
-                position = getPositionToCreateEntity(Clipboard.getClipboardContentsLargestDimension() / 2);
+                position = createApp.getPositionToCreateEntity(Clipboard.getClipboardContentsLargestDimension() / 2);
             }
             if (position !== null && position !== undefined) {
                 var pastedEntityIDs = Clipboard.pasteEntities(position);
@@ -2104,7 +2105,7 @@
                         }
                         targetDirection = Vec3.multiplyQbyV(targetDirection, Vec3.UNIT_Z);
 
-                        var targetPosition = getPositionToCreateEntity();
+                        var targetPosition = createApp.getPositionToCreateEntity();
                         var deltaParallel = HALF_TREE_SCALE;  // Distance to move entities parallel to targetDirection.
                         var deltaPerpendicular = Vec3.ZERO;  // Distance to move entities perpendicular to targetDirection.
                         for (var i = 0, length = pastedEntityIDs.length; i < length; i++) {
@@ -3203,7 +3204,7 @@
     createApp.getParentState = function(id) {
         var state = "NONE";
         var properties = Entities.getEntityProperties(id, ["parentID"]);
-        var children = getDomainOnlyChildrenIDs(id);
+        var children = createApp.getDomainOnlyChildrenIDs(id);
         if (properties.parentID !== Uuid.NULL) {
             if (children.length > 0) {
                 state = "PARENT_CHILDREN";
@@ -3220,7 +3221,7 @@
 
     //print("Global object after getParentState" + JSON.stringify(globalThis));
 
-    function getDomainOnlyChildrenIDs(id) {
+    createApp.getDomainOnlyChildrenIDs = function(id) {
         var allChildren = Entities.getChildrenIDs(id);
         var realChildren = [];
         var properties;
@@ -3233,7 +3234,7 @@
         return realChildren;
     }
 
-     createApp.importEntitiesFromFile = function() {
+    createApp.importEntitiesFromFile = function() {
         Window.browseChanged.connect(onFileOpenChanged);
         Window.browseAsync("Select .json to Import", "", "*.json");
     }
