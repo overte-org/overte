@@ -46,6 +46,14 @@ inline ScriptValue scriptValueFromValue(ScriptEngine* engine, const T& t);
 template <typename T>
 inline T scriptvalue_cast(const ScriptValue& value);
 
+class ScriptEngineMemoryStatistics {
+public:
+    size_t totalHeapSize;
+    size_t usedHeapSize;
+    size_t totalAvailableSize;
+    size_t totalGlobalHandlesSize;
+    size_t usedGlobalHandlesSize;
+};
 
 /**
  * @brief Provides an engine-independent interface for a scripting engine
@@ -374,6 +382,16 @@ public:
      * @param title Informative title for the backtrace
      */
     virtual void logBacktrace(const QString &title) = 0;
+
+    /**
+     * @brief Return memory usage statistics data.
+     *
+     * Returns memory usage statistics data for debugging.
+     *
+     * @return ScriptEngineMemoryStatistics Object containing memory usage statistics data.
+     */
+    virtual ScriptEngineMemoryStatistics getMemoryUsageStatistics() = 0;
+
 public:
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
     bool IS_THREADSAFE_INVOCATION(const QString& method);
