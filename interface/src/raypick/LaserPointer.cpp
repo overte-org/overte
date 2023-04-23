@@ -175,6 +175,7 @@ void LaserPointer::RenderState::update(const glm::vec3& origin, const glm::vec3&
         points.append(glm::vec3(0.0f));
         points.append(end - origin);
         properties.setPosition(origin);
+        properties.setRotation(glm::quat(1.0f, 0.0f ,0.0f ,0.0f));
         properties.setLinePoints(points);
         properties.setVisible(true);
         properties.setIgnorePickIntersection(doesPathIgnorePicks());
