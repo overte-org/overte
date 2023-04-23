@@ -585,7 +585,7 @@ SelectionManager = (function() {
     that.pasteEntities = function() {
         var dimensions = entityClipboard.dimensions;
         var maxDimension = Math.max(dimensions.x, dimensions.y, dimensions.z);
-        var pastePosition = getPositionToCreateEntity(maxDimension);
+        var pastePosition = that.createApp.getPositionToCreateEntity(maxDimension);
         var deltaPosition = Vec3.subtract(pastePosition, entityClipboard.position);
 
         var copiedProperties = [];
@@ -783,12 +783,12 @@ SelectionManager = (function() {
     that.addChildrenToSelection = function() {
         if (that.hasSelection()) {
             for (var i = 0; i < that.selections.length; i++) {
-                var childrenIDs = getDomainOnlyChildrenIDs(that.selections[i]);
+                var childrenIDs = that.createApp.getDomainOnlyChildrenIDs(that.selections[i]);
                 var collectNewChildren;
                 var j;
                 var k = 0;
                 do {
-                    collectNewChildren = getDomainOnlyChildrenIDs(childrenIDs[k]);
+                    collectNewChildren = that.createApp.getDomainOnlyChildrenIDs(childrenIDs[k]);
                     if (collectNewChildren.length > 0) {
                         for (j = 0; j < collectNewChildren.length; j++) {
                             childrenIDs.push(collectNewChildren[j]);
