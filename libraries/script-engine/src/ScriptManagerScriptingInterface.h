@@ -479,6 +479,30 @@ public:
      */
     Q_INVOKABLE QString getExternalPath(ExternalResource::Bucket bucket, const QString& path) { return _manager->getExternalPath(bucket, path); }
 
+    /**jsdoc
+     * <p>Object containing memory usage statistics data.</p>
+     * <table>
+     *   <thead>
+     *     <tr><th>Name</th><th>Type</th><th>Description</th></tr>
+     *   </thead>
+     *   <tbody>
+     *     <tr><td><code>totalHeapSize</code></td><td>{number}</td><td>Total heap size allocated by scripting engine.</td></tr>
+     *     <tr><td><code>usedHeapSize</code></td><td>{number}</td><td></td>Amount of heap memory that is currently in use.</tr>
+     *     <tr><td><code>totalAvailableSize</code></td><td>{number}</td><td>Amount of remaining available heap memory</td></tr>
+     *     <tr><td><code>totalGlobalHandlesSize</code></td><td>{number}</td><td>V8-specific property</td></tr>
+     *     <tr><td><code>usedGlobalHandlesSize</code></td><td>{number}</td><td>V8-specific property</td></tr>
+     *   </tbody>
+     * </table>
+     * @typedef {object} Script.MemoryUsageData
+     */
+
+    /**jsdoc
+     * Returns memory usage statistics data.
+     * @function Script.getMemoryUsageStatistics
+     * @Returns {Script.MemoryUsageData} Object containing statistics about memory usage.
+     */
+    Q_INVOKABLE QVariantMap getMemoryUsageStatistics();
+
 signals:
 
     /**jsdoc
