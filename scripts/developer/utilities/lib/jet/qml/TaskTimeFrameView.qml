@@ -3,17 +3,19 @@
 //
 //  Created by Sam Gateau, 2018/06/15
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 import QtQuick 2.7
 import QtQuick.Controls 1.4 as Original
 import QtQuick.Controls.Styles 1.4
 
-import "qrc:///qml/styles-uit"
-import "qrc:///qml/controls-uit" as HifiControls
+import stylesUit 1.0
+import controlsUit 1.0 as HifiControls
 
 import "../jet.js" as Jet
 

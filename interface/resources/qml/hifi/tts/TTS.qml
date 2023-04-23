@@ -5,17 +5,19 @@
 //
 //  Created by Zach Fox on 2018-10-10
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 import Hifi 1.0 as Hifi
 import QtQuick 2.10
 import QtQuick.Controls 2.3
-import "qrc:////qml//styles-uit" as HifiStylesUit
-import "qrc:////qml//controls-uit" as HifiControlsUit
-import "qrc:////qml//controls" as HifiControls
+import stylesUit 1.0 as HifiStylesUit
+import controlsUit 1.0 as HifiControlsUit
+import controls 1.0 as HifiControls
 
 Rectangle {
     HifiStylesUit.HifiConstants { id: hifi; }

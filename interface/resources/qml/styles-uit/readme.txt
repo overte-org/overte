@@ -1,1 +1,0 @@
-this folder exists purely for compatibility reasons and might be deleted in future! please consider using 'import stylesUit 1.0' instead of including this folder
