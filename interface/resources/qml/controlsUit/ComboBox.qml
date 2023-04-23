@@ -50,8 +50,8 @@ FocusScope {
 
         function previousItem() { root.currentHighLightedIndex = (root.currentHighLightedIndex + comboBox.count - 1) % comboBox.count; }
         function nextItem() { root.currentHighLightedIndex = (root.currentHighLightedIndex + comboBox.count + 1) % comboBox.count; }
-        function selectCurrentItem() { root.currentIndex = root.currentHighLightedIndex; close(); /*hideList();*/ }
-        function selectSpecificItem(index) { root.currentIndex = index; close();/*hideList();*/ }
+        function selectCurrentItem() { root.currentIndex = root.currentHighLightedIndex; /*hideList();*/ }
+        function selectSpecificItem(index) { root.currentIndex = index; /*hideList();*/ }
 
         Keys.onUpPressed: previousItem();
         Keys.onDownPressed: nextItem();

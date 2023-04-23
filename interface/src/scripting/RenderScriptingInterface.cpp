@@ -8,6 +8,8 @@
 #include "RenderScriptingInterface.h"
 
 #include "LightingModel.h"
+#include <QScreen>
+#include "ScreenName.h"
 
 
 RenderScriptingInterface* RenderScriptingInterface::getInstance() {
@@ -23,6 +25,7 @@ RenderScriptingInterface::RenderScriptingInterface() {
     });
 }
 
+
 void RenderScriptingInterface::loadSettings() {
     _renderSettingLock.withReadLock([&] {
         _renderMethod = (_renderMethodSetting.get());
@@ -31,7 +34,17 @@ void RenderScriptingInterface::loadSettings() {
         //_antialiasingMode = (_antialiasingModeSetting.get());
         _antialiasingMode = static_cast<AntialiasingConfig::Mode>(_antialiasingModeSetting.get());
         _viewportResolutionScale = (_viewportResolutionScaleSetting.get());
+        _fullScreenScreen = (_fullScreenScreenSetting.get());
     });
+
+    // If full screen screen is not initialized, or set to an invalid value,
+    // set to the first screen.
+    auto screens = getScreens();
+    if (std::find(screens.begin(), screens.end(), _fullScreenScreen) == screens.end()) {
+        setFullScreenScreen(screens.first());
+    }
+
+
     forceRenderMethod((RenderMethod)_renderMethod);
     forceShadowsEnabled(_shadowsEnabled);
     forceAmbientOcclusionEnabled(_ambientOcclusionEnabled);
@@ -192,6 +205,41 @@ void RenderScriptingInterface::setViewportResolutionScale(float scale) {
         emit settingsChanged();
     }
 }
+
+QStringList RenderScriptingInterface::getScreens() const {
+    QStringList screens;
+
+    for(QScreen *screen : qApp->screens()) {
+        screens << ScreenName::getNameForScreen(screen);
+    }
+
+    return screens;
+}
+
+bool RenderScriptingInterface::setFullScreenScreen(QString name) {
+    auto screens = getScreens();
+
+    if (std::find(screens.begin(), screens.end(), name) == screens.end()) {
+        // Screens can come and go and don't have a stable opaque ID, so we
+        // go by model here. For multiple screens with the same model we get names
+        // that include a serial number, so it works.
+        return false;
+    }
+
+    _renderSettingLock.withWriteLock([&] {
+        _fullScreenScreen = name;
+        _fullScreenScreenSetting.set(name);
+    });
+
+    emit settingsChanged();
+
+    return true;
+}
+
+QString RenderScriptingInterface::getFullScreenScreen() const {
+    return _fullScreenScreen;
+}
+
 
 void RenderScriptingInterface::forceViewportResolutionScale(float scale) {
     // just not negative values or zero
