@@ -512,3 +512,6 @@ if (BUILD_INSTALLER)
   endif()
   generate_installers()
 endif()
+
+# QML import paths for Qt Creator and KDevelop code completion
+set(QML_IMPORT_PATH ${CMAKE_SOURCE_DIR}/interface/resources/qml;${CMAKE_SOURCE_DIR}/launchers/qt/resources/qml CACHE PATH "Extra QML import paths for KDevelop and Qt Creator")
