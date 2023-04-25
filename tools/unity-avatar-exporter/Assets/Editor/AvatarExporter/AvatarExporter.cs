@@ -63,7 +63,7 @@ class AvatarExporter : MonoBehaviour {
         "2017.4.15f1",
     };
 
-    static readonly Dictionary<string, string> HUMANOID_TO_OVERTE_JOINT_NAME = new Dictionary<string, string> {
+    static readonly Dictionary<string, string> HUMANOID_TO_VIRC_JOINT_NAME = new Dictionary<string, string> {
         {"Chest", "Spine1"},
         {"Head", "Head"},
         {"Hips", "Hips"},
@@ -464,7 +464,7 @@ class AvatarExporter : MonoBehaviour {
         }
 
         string documentsFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments);
-        string overteFolder = documentsFolder + "/Overte Projects";
+        string overteFolder = documentsFolder + "\\Overte Projects";
         if (updateExistingAvatar) { // Update Existing Avatar menu option
             // open update existing project popup window including project to update, scale, and warnings
             // default the initial file chooser location to Overte Projects folder in user documents folder
@@ -661,8 +661,8 @@ class AvatarExporter : MonoBehaviour {
         // write out joint mappings to fst file
         foreach (var userBoneInfo in userBoneInfos) {
             if (userBoneInfo.Value.HasHumanMapping()) {
-                string overteJointName = HUMANOID_TO_OVERTE_JOINT_NAME[userBoneInfo.Value.humanName];
-                File.AppendAllText(exportFstPath, "jointMap = " + overteJointName + " = " + removeTypeFromJointname(userBoneInfo.Key) + "\n");
+                string vircJointName = HUMANOID_TO_VIRC_JOINT_NAME[userBoneInfo.Value.humanName];
+                File.AppendAllText(exportFstPath, "jointMap = " + vircJointName + " = " + removeTypeFromJointname(userBoneInfo.Key) + "\n");
             }
         }
 
@@ -760,10 +760,10 @@ class AvatarExporter : MonoBehaviour {
         foreach (HumanBone bone in boneMap) {
             string humanName = bone.humanName;
             string userBoneName = bone.boneName;
-            string overteJointName;
+            string vircJointName;
             if (userBoneInfos.ContainsKey(userBoneName)) {
                 ++userBoneInfos[userBoneName].mappingCount;
-                if (HUMANOID_TO_OVERTE_JOINT_NAME.TryGetValue(humanName, out overteJointName)) {
+                if (HUMANOID_TO_VIRC_JOINT_NAME.TryGetValue(humanName, out vircJointName)) {
                     userBoneInfos[userBoneName].humanName = humanName;
                     humanoidToUserBoneMappings.Add(humanName, userBoneName);
                 }
