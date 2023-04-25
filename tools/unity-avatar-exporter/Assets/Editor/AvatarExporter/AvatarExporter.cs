@@ -63,7 +63,7 @@ class AvatarExporter : MonoBehaviour {
         "2017.4.15f1",
     };
 
-    static readonly Dictionary<string, string> HUMANOID_TO_VIRC_JOINT_NAME = new Dictionary<string, string> {
+    static readonly Dictionary<string, string> HUMANOID_TO_OVERTE_JOINT_NAME = new Dictionary<string, string> {
         {"Chest", "Spine1"},
         {"Head", "Head"},
         {"Hips", "Hips"},
@@ -661,7 +661,7 @@ class AvatarExporter : MonoBehaviour {
         // write out joint mappings to fst file
         foreach (var userBoneInfo in userBoneInfos) {
             if (userBoneInfo.Value.HasHumanMapping()) {
-                string vircJointName = HUMANOID_TO_VIRC_JOINT_NAME[userBoneInfo.Value.humanName];
+                string vircJointName = HUMANOID_TO_OVERTE_JOINT_NAME[userBoneInfo.Value.humanName];
                 File.AppendAllText(exportFstPath, "jointMap = " + vircJointName + " = " + removeTypeFromJointname(userBoneInfo.Key) + "\n");
             }
         }
@@ -763,7 +763,7 @@ class AvatarExporter : MonoBehaviour {
             string vircJointName;
             if (userBoneInfos.ContainsKey(userBoneName)) {
                 ++userBoneInfos[userBoneName].mappingCount;
-                if (HUMANOID_TO_VIRC_JOINT_NAME.TryGetValue(humanName, out vircJointName)) {
+                if (HUMANOID_TO_OVERTE_JOINT_NAME.TryGetValue(humanName, out vircJointName)) {
                     userBoneInfos[userBoneName].humanName = humanName;
                     humanoidToUserBoneMappings.Add(humanName, userBoneName);
                 }
