@@ -22,6 +22,7 @@
 #include <bitset>
 #include <array>
 #include <string>
+#include <cstdint>
 
 class CPUIdent
 {

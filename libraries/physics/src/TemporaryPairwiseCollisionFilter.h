@@ -14,7 +14,7 @@
 
 #include <unordered_map>
 #include <btBulletDynamicsCommon.h>
-
+#include <cstdint>
 class TemporaryPairwiseCollisionFilter {
 public:
     using LastContactMap = std::unordered_map<const btCollisionObject*, uint32_t>;
