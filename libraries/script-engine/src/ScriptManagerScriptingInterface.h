@@ -49,6 +49,13 @@
  * @property {Script.ResourceBuckets} ExternalPaths - External resource buckets.
  */
 
+// V8TODO: this should be moved to somewhere test-related
+class TestQObject : public QObject {
+    Q_OBJECT
+public:
+    Q_INVOKABLE virtual void testMethod() { qDebug() << "TestQObject::testMethod"; };
+};
+
 class ScriptManagerScriptingInterface : public QObject {
     Q_OBJECT
 public:
@@ -502,6 +509,13 @@ public:
      * @Returns {Script.MemoryUsageData} Object containing statistics about memory usage.
      */
     Q_INVOKABLE QVariantMap getMemoryUsageStatistics();
+
+    /**jsdoc
+     * Create test object for garbage collector debugging.
+     * @function Script.createGarbageCollectorDebuggingObject()
+     * @Returns Test object.
+     */
+     Q_INVOKABLE ScriptValue createGarbageCollectorDebuggingObject();
 
 signals:
 

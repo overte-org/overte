@@ -37,6 +37,8 @@ public: // construction
                            const v8::Local<v8::Context> context, ScriptContextPointer parent);
     ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::PropertyCallbackInfo<v8::Value> *propertyCallbackInfo,
                            const v8::Local<v8::Context> context, ScriptContextPointer parent);
+    virtual ~ScriptContextV8Wrapper() {_context.Reset();}
+
     static ScriptContextV8Wrapper* unwrap(ScriptContext* val);
 
 public: // ScriptContext implementation
@@ -68,6 +70,7 @@ class ScriptFunctionContextV8Wrapper final : public ScriptFunctionContext {
 public:  // construction
     //V8TODO
     ScriptFunctionContextV8Wrapper(ScriptEngineV8* engine, const v8::Local<v8::Context> context);
+    virtual ~ScriptFunctionContextV8Wrapper() {_context.Reset();};
 
 public:  // ScriptFunctionContext implementation
     virtual QString fileName() const override;

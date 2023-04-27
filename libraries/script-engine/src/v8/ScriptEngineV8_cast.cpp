@@ -750,6 +750,7 @@ V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
         case QMetaType::QObjectStar: {
             QObject* obj = val.value<QObject*>();
             if (obj == nullptr) return V8ScriptValue(this, v8::Null(_v8Isolate));
+            //V8TODO: what should be the ownership in this case?
             return ScriptObjectV8Proxy::newQObject(this, obj);
         }
         case QMetaType::QDateTime:
@@ -768,9 +769,10 @@ V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
             if (QMetaType::typeFlags(valTypeId) & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
                 QObject* obj = val.value<QObject*>();
                 if (obj == nullptr) return V8ScriptValue(this, v8::Null(_v8Isolate));
+                //V8TODO: what should be the ownership in this case?
                 return ScriptObjectV8Proxy::newQObject(this, obj);
             }
-            // have we set a prototype'd variant?
+            // have we set a prototyped variant?
             {
                 _customTypeProtect.lockForRead();
                 CustomPrototypeMap::const_iterator lookup = _customPrototypes.find(valTypeId);

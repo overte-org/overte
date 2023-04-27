@@ -41,6 +41,9 @@ var CONTOLLER_SCRIPTS = [
     "controllerModules/trackedHandTablet.js"
 ];
 
+Script.include("../../developer/debugging/scriptMemoryReport.js");
+//Script.include("developer/debugging/scriptMemoryReport.js");
+
 var DEBUG_MENU_ITEM = "Debug defaultScripts.js";
 
 function runDefaultsTogether() {
