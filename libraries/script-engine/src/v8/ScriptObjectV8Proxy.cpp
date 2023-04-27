@@ -146,7 +146,9 @@ V8ScriptValue ScriptObjectV8Proxy::newQObject(ScriptEngineV8* engine, QObject* o
             if (lookupV8 != enginePtr->_qobjectWrapperMapV8.end()) {
                 enginePtr->_qobjectWrapperMapV8.erase(lookupV8);
             }
+            qDebug() << "ScriptObjectV8Proxy::newQObject object deleted, object count: " << enginePtr->_qobjectWrapperMapV8.size();
         });
+        //qDebug() << "ScriptObjectV8Proxy::newQObject object count: " << engine->_qobjectWrapperMapV8.size();
     }
 
     return V8ScriptValue(engine, proxy.get()->toV8Value());
@@ -373,6 +375,10 @@ void ScriptObjectV8Proxy::investigate() {
     v8::Local<v8::Object> propertiesObject = v8::Object::New(_engine->getIsolate());
     v8Object->SetInternalField(2, propertiesObject);
     _v8Object.Reset(_engine->getIsolate(), v8Object);
+    if (_ownsObject) {
+        qDebug(scriptengine_v8) << "ScriptObjectV8Proxy::investigate SetWeak";
+        _v8Object.SetWeak(this, weakHandleCallback, v8::WeakCallbackType::kParameter);
+    }
 
     // Add all the methods objects as properties - this allows adding properties to a given method later. Is used by Script.request.
     // V8TODO: Should these be deleted when the script-owned object is destroyed? It needs checking if script-owned objects will be garbage-collected, or will self-referencing prevent it.
@@ -383,7 +389,13 @@ void ScriptObjectV8Proxy::investigate() {
             Q_ASSERT(false);
         }
     }
+}
 
+void ScriptObjectV8Proxy::weakHandleCallback(const v8::WeakCallbackInfo<ScriptObjectV8Proxy>& info) {
+    //V8TODO: does the object need to be moved to script engine thread?
+    //V8TODO: why does this never get called?
+    qDebug(scriptengine_v8) << "ScriptObjectV8Proxy::weakHandleCallback";
+    info.GetParameter()->_object->deleteLater();
 }
 
 QString ScriptObjectV8Proxy::name() const {
@@ -690,6 +702,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
                                                         //V8TODO ScriptEngine::ExcludeDeleteLater |
                                                         ScriptEngine::PreferExistingWrapperObject;
             // It's not necessarily new, newQObject looks for it first in object wrapper map
+            // V8TODO: won't ScriptEngine::ScriptOwnership cause trouble here?
             return ScriptObjectV8Proxy::newQObject(_engine, proxy, ScriptEngine::ScriptOwnership, options);
             //return _engine->newQObject(proxy, ScriptEngine::ScriptOwnership, options);
         }

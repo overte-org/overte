@@ -108,6 +108,8 @@ public:
     static void v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info);
     static void v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value_obj, const v8::PropertyCallbackInfo<v8::Value>& info);
     static void v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::Array>& info);
+    // This gets called when script-owned object is being garbage-collected
+    static void weakHandleCallback(const v8::WeakCallbackInfo<ScriptObjectV8Proxy> &info);
 
 private:  // implementation
     void investigate();
@@ -129,7 +131,7 @@ private:  // storage
     // V8TODO Maybe depending on object ownership it should be different type of handles? For example weak persistent would allow
     // script engine-owned objects to be garbage collected. This will also need adding a garbage collector callback from V8
     // to let proxy know that it is not valid anymore
-    v8::UniquePersistent<v8::Object> _v8Object;
+    v8::Persistent<v8::Object> _v8Object;
     int pointerCorruptionTest = 12345678;
 
     Q_DISABLE_COPY(ScriptObjectV8Proxy)

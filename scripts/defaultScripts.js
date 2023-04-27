@@ -40,7 +40,8 @@ var DEFAULT_SCRIPTS_COMBINED = [
     "system/onEscape.js",
     "system/onFirstRun.js",
     "system/appreciate/appreciate_app.js",
-    "system/places/places.js"
+    "system/places/places.js",
+    "developer/debugging/scriptMemoryReport.js"
 ];
 var DEFAULT_SCRIPTS_SEPARATE = [
     "system/controllers/controllerScripts.js",
