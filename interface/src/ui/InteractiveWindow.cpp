@@ -106,6 +106,7 @@ void registerInteractiveWindowMetaType(ScriptEngine* engine) {
 }
 
 ScriptValue interactiveWindowPointerToScriptValue(ScriptEngine* engine, const InteractiveWindowPointer& in) {
+    // V8TODO: is ScriptOwnership safe here?
     return engine->newQObject(in, ScriptEngine::ScriptOwnership);
 }
 

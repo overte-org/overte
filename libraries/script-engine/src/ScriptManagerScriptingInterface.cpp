@@ -63,3 +63,7 @@ QVariantMap ScriptManagerScriptingInterface::getMemoryUsageStatistics() {
     map.insert("usedGlobalHandlesSize", QVariant((qulonglong)(statistics.usedGlobalHandlesSize)));
     return map;
 }
+
+ScriptValue ScriptManagerScriptingInterface::createGarbageCollectorDebuggingObject() {
+    return _manager->engine()->newQObject(new TestQObject, ScriptEngine::ScriptOwnership);
+}
