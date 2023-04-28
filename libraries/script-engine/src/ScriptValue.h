@@ -179,7 +179,7 @@ public:
     virtual QObject* toQObject() const = 0;
 
 protected:
-    ~ScriptValueProxy() {}  // prevent explicit deletion of base class
+    virtual ~ScriptValueProxy() {}  // prevent explicit deletion of base class
 };
 
 // the second template parameter is used to defer evaluation of calls to the engine until ScriptEngine isn't forward-declared

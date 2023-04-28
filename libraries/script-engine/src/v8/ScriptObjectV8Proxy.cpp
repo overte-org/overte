@@ -376,7 +376,6 @@ void ScriptObjectV8Proxy::investigate() {
     v8Object->SetInternalField(2, propertiesObject);
     _v8Object.Reset(_engine->getIsolate(), v8Object);
     if (_ownsObject) {
-        qDebug(scriptengine_v8) << "ScriptObjectV8Proxy::investigate SetWeak";
         _v8Object.SetWeak(this, weakHandleCallback, v8::WeakCallbackType::kParameter);
     }
 
