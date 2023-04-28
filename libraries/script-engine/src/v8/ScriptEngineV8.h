@@ -205,6 +205,13 @@ public: // not for public use, but I don't like how Qt strings this along with p
     void popContext();
     // V8TODO: call this after initializing global object
     void storeGlobalObjectContents();
+#ifdef OVERTE_V8_HANDLE_COUNTERS
+    void incrementScriptValueCounter() { scriptValueCount++; };
+    void decrementScriptValueCounter() { scriptValueCount--; };
+    void incrementScriptValueProxyCounter() { scriptValueProxyCount++; };
+    void decrementScriptValueProxyCounter() { scriptValueProxyCount--; };
+    //V8TODO: do the same for other proxy objects
+#endif
 
 protected:
     // like `newFunction`, but allows mapping inline C++ lambdas with captures as callable V8ScriptValues
@@ -257,6 +264,10 @@ protected:
     //ArrayBufferClass* _arrayBufferClass;
     // Counts how many nested evaluate calls are there at a given point
     int _evaluatingCounter;
+#ifdef OVERTE_V8_HANDLE_COUNTERS
+    std::atomic<size_t> scriptValueCount{0};
+    std::atomic<size_t> scriptValueProxyCount{0};
+#endif
 };
 
 #include "V8Types.h"

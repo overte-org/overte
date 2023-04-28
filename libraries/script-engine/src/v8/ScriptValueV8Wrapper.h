@@ -29,14 +29,16 @@
 /// [V8] Implements ScriptValue for V8 and translates calls for V8ScriptValue
 class ScriptValueV8Wrapper final : public ScriptValueProxy {
 public: // construction
+    ScriptValueV8Wrapper() = delete;
+    //ScriptValueV8Wrapper(ScriptValueV8Wrapper &) = delete;
     inline ScriptValueV8Wrapper(ScriptEngineV8* engine, const V8ScriptValue& value) :
-        _engine(engine), _value(value) {}
+        _engine(engine), _value(value) { engine->incrementScriptValueProxyCounter(); }
     inline ScriptValueV8Wrapper(ScriptEngineV8* engine, V8ScriptValue&& value) :
-        _engine(engine), _value(std::move(value)) {}
+        _engine(engine), _value(std::move(value)) { engine->incrementScriptValueProxyCounter(); }
     static ScriptValueV8Wrapper* unwrap(const ScriptValue& val);
     inline const V8ScriptValue& toV8Value() const { return _value; }
     static V8ScriptValue fullUnwrap(ScriptEngineV8* engine, const ScriptValue& value);
-    ScriptEngineV8* getV8Engine() {return _engine;}
+    ScriptEngineV8* getV8Engine() {return _engine;};
 
 public:
     virtual void release() override;
@@ -91,12 +93,18 @@ public:  // ScriptValue implementation
     virtual QVariant toVariant() const override;
     virtual QObject* toQObject() const override;
 
+protected:
+    virtual ~ScriptValueV8Wrapper() { _engine->decrementScriptValueProxyCounter(); };
+
 private: // helper functions
     V8ScriptValue fullUnwrap(const ScriptValue& value) const;
 
 private: // storage
     ScriptEngineV8 *_engine;
+    //V8TODO: this needs a persistent handle instead, maybe with set weak?
     V8ScriptValue _value;
+
+    Q_DISABLE_COPY(ScriptValueV8Wrapper)
 };
 
 #endif  // hifi_ScriptValueV8Wrapper_h

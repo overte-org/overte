@@ -21,7 +21,7 @@
 
 void ScriptValueV8Wrapper::release() {
     // V8TODO: maybe add an assert to check if it happens on script engine thread?
-    // With v8::Locker in V8ScriptValue such requirement shouldn't be necessary but deleting on different threadwww can cause deadlocks sometimes
+    // With v8::Locker in V8ScriptValue such requirement shouldn't be necessary but deleting on different thread can cause deadlocks sometimes
     delete this;
 }
 
@@ -31,8 +31,8 @@ ScriptValueProxy* ScriptValueV8Wrapper::copy() const {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    // V8TODO: I'm not sure if this part is right:
     v8::Context::Scope contextScope(_engine->getContext());
+    // V8TODO: I'm not sure if this part is right:
     ScriptValueV8Wrapper *copiedWrapper = new ScriptValueV8Wrapper(_engine, _value);
     return copiedWrapper;
 }

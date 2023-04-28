@@ -47,6 +47,9 @@ public:
             return;
         }
         Q_ASSERT(false);*/
+#ifdef OVERTE_V8_HANDLE_COUNTERS
+        _engine->incrementScriptValueCounter();
+#endif
         _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), value));
     };
 
@@ -67,6 +70,9 @@ public:
         v8::HandleScope handleScope(_engine->getIsolate());
         v8::Context::Scope(_engine->getContext());
         //_value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), v8::Local<T>()));
+#ifdef OVERTE_V8_HANDLE_COUNTERS
+        _engine->incrementScriptValueCounter();
+#endif
         _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), v8::Local<T>()));
     };
 
@@ -76,6 +82,9 @@ public:
         v8::HandleScope handleScope(_engine->getIsolate());
         v8::Context::Scope(_engine->getContext());
         //_value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), copied.constGet()));
+#ifdef OVERTE_V8_HANDLE_COUNTERS
+        _engine->incrementScriptValueCounter();
+#endif
         _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), copied.constGet()));
     }
 
@@ -127,6 +136,9 @@ public:
         v8::Isolate::Scope isolateScope(_engine->getIsolate());
         v8::HandleScope handleScope(_engine->getIsolate());
         //v8::Context::Scope(_engine->getContext());
+#ifdef OVERTE_V8_HANDLE_COUNTERS
+        _engine->decrementScriptValueCounter();
+#endif
         _value->Reset();
     }
 

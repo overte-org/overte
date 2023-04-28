@@ -26,6 +26,9 @@
 #include "ScriptValue.h"
 #include "ScriptException.h"
 
+// These are used for debugging memory leaks caused by persistent handles
+#define OVERTE_V8_HANDLE_COUNTERS
+
 class QByteArray;
 class QLatin1String;
 class QString;
@@ -53,6 +56,10 @@ public:
     size_t totalAvailableSize;
     size_t totalGlobalHandlesSize;
     size_t usedGlobalHandlesSize;
+#ifdef OVERTE_V8_HANDLE_COUNTERS
+    size_t scriptValueCount;
+    size_t scriptValueProxyCount;
+#endif
 };
 
 /**
