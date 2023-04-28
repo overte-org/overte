@@ -1720,6 +1720,10 @@ ScriptEngineMemoryStatistics ScriptEngineV8::getMemoryUsageStatistics() {
     statistics.totalAvailableSize = heapStatistics.total_available_size();
     statistics.totalGlobalHandlesSize = heapStatistics.total_global_handles_size();
     statistics.usedGlobalHandlesSize = heapStatistics.used_global_handles_size();
+#ifdef OVERTE_V8_HANDLE_COUNTERS
+    statistics.scriptValueCount = scriptValueCount;
+    statistics.scriptValueProxyCount = scriptValueProxyCount;
+#endif
 
     return statistics;
 }

@@ -61,6 +61,10 @@ QVariantMap ScriptManagerScriptingInterface::getMemoryUsageStatistics() {
     map.insert("totalAvailableSize", QVariant((qulonglong)(statistics.totalAvailableSize)));
     map.insert("totalGlobalHandlesSize", QVariant((qulonglong)(statistics.totalGlobalHandlesSize)));
     map.insert("usedGlobalHandlesSize", QVariant((qulonglong)(statistics.usedGlobalHandlesSize)));
+#ifdef OVERTE_V8_HANDLE_COUNTERS
+    map.insert("scriptValueCount", QVariant((qulonglong)(statistics.scriptValueCount)));
+    map.insert("scriptValueProxyCount", QVariant((qulonglong)(statistics.scriptValueProxyCount)));
+#endif
     return map;
 }
 
