@@ -33,6 +33,11 @@
 class ScriptEngineV8;
 class ScriptSignalV8Proxy;
 
+// V8TODO: Current implementation relies on weak handle callbacks for destroying objects on C++ side
+// this is fine for avoiding memory leaks while script engine runs, but there's no guarantee that these will be called
+// when script engine shutd down, so memory leaks may happen
+// To avoid this handle visitor needs to be added (it's a feature of V8)
+
 /// [V8] (re-)implements the translation layer between ScriptValue and QObject.  This object
 /// will focus exclusively on property get/set until function calls appear to be a problem
 class ScriptObjectV8Proxy final {
@@ -108,11 +113,11 @@ public:
     static void v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info);
     static void v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value_obj, const v8::PropertyCallbackInfo<v8::Value>& info);
     static void v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::Array>& info);
-    // This gets called when script-owned object is being garbage-collected
-    static void weakHandleCallback(const v8::WeakCallbackInfo<ScriptObjectV8Proxy> &info);
 
 private:  // implementation
     void investigate();
+    // This gets called when script-owned object is being garbage-collected
+    static void weakHandleCallback(const v8::WeakCallbackInfo<ScriptObjectV8Proxy> &info);
 
 private:  // storage
     ScriptEngineV8* _engine;
@@ -150,6 +155,7 @@ private:  // storage
         new AnimationObject(), ScriptEngine::ScriptOwnership));
  *
  */
+ // V8TODO: there may be memory leaks in these
 class ScriptVariantV8Proxy final {
 public:  // construction
     ScriptVariantV8Proxy(ScriptEngineV8* engine, const QVariant& variant, V8ScriptValue scriptProto, ScriptObjectV8Proxy* proto);
@@ -204,7 +210,8 @@ private:
     Q_DISABLE_COPY(ScriptVariantV8Proxy)
 };
 
-class ScriptMethodV8Proxy final {
+class ScriptMethodV8Proxy final : public QObject {
+    Q_OBJECT
 public:  // construction
     ScriptMethodV8Proxy(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime,
                                const QList<QMetaMethod>& metas, int numMaxParams);
@@ -220,13 +227,15 @@ public:  // QScriptClass implementation
                                const QList<QMetaMethod>& metas, int numMaxParams);
 
 private:
+    static void weakHandleCallback(const v8::WeakCallbackInfo<ScriptMethodV8Proxy> &info);
     QString fullName() const;
 
 private:  // storage
     const int _numMaxParams;
     ScriptEngineV8* _engine;
     QPointer<QObject> _object;
-    V8ScriptValue _objectLifetime;
+    v8::Persistent<v8::Value> _objectLifetime;
+    //V8ScriptValue _objectLifetime;
     const QList<QMetaMethod> _metas;
 
     Q_DISABLE_COPY(ScriptMethodV8Proxy)
@@ -257,14 +266,7 @@ private:  // storage
     using ConnectionList = QList<Connection>;
 
 public:  // construction
-    inline ScriptSignalV8Proxy(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime, const QMetaMethod& meta) :
-        _engine(engine), _object(object), _objectLifetime(lifetime), _meta(meta), _metaCallId(discoverMetaCallIdx()) {
-        v8::Locker locker(_engine->getIsolate());
-        v8::Isolate::Scope isolateScope(_engine->getIsolate());
-        v8::HandleScope handleScope(_engine->getIsolate());
-        v8::Context::Scope contextScope(_engine->getContext());
-        _v8Context.Reset(_engine->getIsolate(), _engine->getContext());
-    }
+    inline ScriptSignalV8Proxy(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime, const QMetaMethod& meta);
 
     ~ScriptSignalV8Proxy();
 
@@ -273,6 +275,7 @@ private:  // implementation
     int discoverMetaCallIdx();
     ConnectionList::iterator findConnection(V8ScriptValue thisObject, V8ScriptValue callback);
     //QString fullName() const;
+    static void weakHandleCallback(const v8::WeakCallbackInfo<ScriptSignalV8Proxy> &info);
 
 public:  // API
     // arg1 was had Null default value, but that needs isolate pointer to create Null in V8
@@ -285,9 +288,11 @@ public:  // API
     //virtual void disconnect(V8ScriptValue arg0) override;
 
 private:  // storage
+
     ScriptEngineV8* _engine;
     QPointer<QObject> _object;
-    V8ScriptValue _objectLifetime;
+    v8::Persistent<v8::Value> _objectLifetime;
+
     const QMetaMethod _meta;
     const int _metaCallId;
     ConnectionList _connections;

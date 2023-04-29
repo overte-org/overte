@@ -146,7 +146,7 @@ V8ScriptValue ScriptObjectV8Proxy::newQObject(ScriptEngineV8* engine, QObject* o
             if (lookupV8 != enginePtr->_qobjectWrapperMapV8.end()) {
                 enginePtr->_qobjectWrapperMapV8.erase(lookupV8);
             }
-            qDebug() << "ScriptObjectV8Proxy::newQObject object deleted, object count: " << enginePtr->_qobjectWrapperMapV8.size();
+            //qDebug() << "ScriptObjectV8Proxy::newQObject object deleted, object count: " << enginePtr->_qobjectWrapperMapV8.size();
         });
         //qDebug() << "ScriptObjectV8Proxy::newQObject object count: " << engine->_qobjectWrapperMapV8.size();
     }
@@ -218,19 +218,26 @@ QObject* ScriptObjectV8Proxy::unwrap(const V8ScriptValue& val) {
 }
 
 ScriptObjectV8Proxy::~ScriptObjectV8Proxy() {
-    auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
-    v8::HandleScope handleScope(isolate);
-    if(_object) qCDebug(scriptengine_v8) << "Deleting object proxy: " << name();
-    // V8TODO: once WeakPersistent pointer is added we should check if it's valid before deleting
-    Q_ASSERT(!_v8Object.Get(isolate)->IsNullOrUndefined());
-    // This prevents unwrap function from unwrapping proxy that was deleted
-    _v8Object.Get(isolate)->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToDeletedQObjectProxy));
-    _v8Object.Reset();
     if (_ownsObject) {
+        auto isolate = _engine->getIsolate();
+        v8::Locker locker(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
+        v8::HandleScope handleScope(isolate);
+        _v8Object.Reset();
         QObject* qobject = _object;
         if(qobject) qobject->deleteLater();
+    } else {
+        auto isolate = _engine->getIsolate();
+        v8::Locker locker(isolate);
+        v8::Isolate::Scope isolateScope(isolate);
+        v8::HandleScope handleScope(isolate);
+        if (_object)
+            qCDebug(scriptengine_v8) << "Deleting object proxy: " << name();
+        // V8TODO: once WeakPersistent pointer is added we should check if it's valid before deleting
+        Q_ASSERT(!_v8Object.Get(isolate)->IsNullOrUndefined());
+        // This prevents unwrap function from unwrapping proxy that was deleted
+        _v8Object.Get(isolate)->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToDeletedQObjectProxy));
+        _v8Object.Reset();
     }
 }
 
@@ -382,6 +389,7 @@ void ScriptObjectV8Proxy::investigate() {
     // Add all the methods objects as properties - this allows adding properties to a given method later. Is used by Script.request.
     // V8TODO: Should these be deleted when the script-owned object is destroyed? It needs checking if script-owned objects will be garbage-collected, or will self-referencing prevent it.
     for (auto i = _methods.begin(); i != _methods.end(); i++) {
+        //V8TODO: lifetime may prevent garbage collection?
         V8ScriptValue method = ScriptMethodV8Proxy::newMethod(_engine, qobject, V8ScriptValue(_engine, v8Object),
                                                               i.value().methods, i.value().numMaxParms);
         if(!propertiesObject->Set(_engine->getContext(), i.value().name.constGet(), method.get()).FromMaybe(false)) {
@@ -393,7 +401,9 @@ void ScriptObjectV8Proxy::investigate() {
 void ScriptObjectV8Proxy::weakHandleCallback(const v8::WeakCallbackInfo<ScriptObjectV8Proxy>& info) {
     //V8TODO: does the object need to be moved to script engine thread?
     //V8TODO: why does this never get called?
-    qDebug(scriptengine_v8) << "ScriptObjectV8Proxy::weakHandleCallback";
+    //qDebug(scriptengine_v8) << "ScriptObjectV8Proxy::weakHandleCallback";
+    auto proxy = info.GetParameter();
+    proxy->_v8Object.Reset();
     info.GetParameter()->_object->deleteLater();
 }
 
@@ -775,6 +785,7 @@ ScriptVariantV8Proxy::~ScriptVariantV8Proxy() {
 }
 
 V8ScriptValue ScriptVariantV8Proxy::newVariant(ScriptEngineV8* engine, const QVariant& variant, V8ScriptValue proto) {
+    qDebug() << "ScriptVariantV8Proxy::newVariant";
     auto isolate = engine->getIsolate();
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
@@ -960,12 +971,30 @@ QVariant ScriptVariantV8Proxy::unwrap(const V8ScriptValue& val) {
 
 ScriptMethodV8Proxy::ScriptMethodV8Proxy(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime,
                                const QList<QMetaMethod>& metas, int numMaxParams) :
-    _numMaxParams(numMaxParams), _engine(engine), _object(object), _objectLifetime(lifetime), _metas(metas) {
+    _numMaxParams(numMaxParams), _engine(engine), _object(object), /*_objectLifetime(lifetime),*/ _metas(metas) {
+    auto isolate = engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(engine->getContext());
+    _objectLifetime.Reset(isolate, lifetime.get());
+    _objectLifetime.SetWeak(this, weakHandleCallback, v8::WeakCallbackType::kParameter);
 }
 
 ScriptMethodV8Proxy::~ScriptMethodV8Proxy() {
-    qCDebug(scriptengine_v8) << "ScriptMethodV8Proxy destroyed";
-    printf("ScriptMethodV8Proxy destroyed");
+    //qCDebug(scriptengine_v8) << "ScriptMethodV8Proxy destroyed";
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    _objectLifetime.Reset();
+}
+
+void ScriptMethodV8Proxy::weakHandleCallback(const v8::WeakCallbackInfo<ScriptMethodV8Proxy>& info) {
+    //qDebug(scriptengine_v8) << "ScriptMethodV8Proxy::weakHandleCallback";
+    auto proxy = info.GetParameter();
+    proxy->_objectLifetime.Reset();
+    info.GetParameter()->deleteLater();
 }
 
 V8ScriptValue ScriptMethodV8Proxy::newMethod(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime,
@@ -980,6 +1009,7 @@ V8ScriptValue ScriptMethodV8Proxy::newMethod(ScriptEngineV8* engine, QObject* ob
     auto methodData = methodDataTemplate->NewInstance(engine->getContext()).ToLocalChecked();
     methodData->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToMethodProxy));
     // V8TODO it needs to be deleted somehow on object destruction
+    // weak persistent callback would do this
     methodData->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(new ScriptMethodV8Proxy(engine, object, lifetime, metas, numMaxParams)));
     auto v8Function = v8::Function::New(engine->getContext(), callback, methodData, numMaxParams).ToLocalChecked();
     return V8ScriptValue(engine, v8Function);
@@ -1067,6 +1097,7 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
     bool isValidMetaSelected = false;
     int bestMeta = 0;
     int bestConversionPenaltyScore = 0;
+
 
     for (int i = 0; i < num_metas; i++) {
         const QMetaMethod& meta = _metas[i];
@@ -1162,14 +1193,25 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
             return;
         } else if (returnTypeId == scriptValueTypeId) {
             ScriptValue result;
-            bool success = meta.invoke(qobject, Qt::DirectConnection, Q_RETURN_ARG(ScriptValue, result), qGenArgs[0],
+            /*if (_metas.front().name() == "createGarbageCollectorDebuggingObject") {
+                //qDebug() << "createGarbageCollectorDebuggingObject";
+                return;
+            }*/
+            /*const char* typeName = meta.typeName();
+            QVariant qRetVal(returnTypeId, static_cast<void*>(NULL));
+            QGenericReturnArgument sRetVal(typeName, const_cast<void*>(qRetVal.constData()));
+            bool success = meta.invoke(qobject, Qt::DirectConnection, sRetVal, qGenArgs[0],
                                         qGenArgs[1], qGenArgs[2], qGenArgs[3], qGenArgs[4], qGenArgs[5], qGenArgs[6],
-                                        qGenArgs[7], qGenArgs[8], qGenArgs[9]);
+                                        qGenArgs[7], qGenArgs[8], qGenArgs[9]);*/
+            bool success = meta.invoke(qobject, Qt::DirectConnection, Q_RETURN_ARG(ScriptValue, result), qGenArgs[0],
+                                       qGenArgs[1], qGenArgs[2], qGenArgs[3], qGenArgs[4], qGenArgs[5], qGenArgs[6],
+                                       qGenArgs[7], qGenArgs[8], qGenArgs[9]);
             if (!success) {
                 isolate->ThrowError(v8::String::NewFromUtf8(isolate, QString("Unexpected: Native call of %1 failed").arg(fullName()).toStdString().c_str()).ToLocalChecked());
                 return;
             }
             V8ScriptValue v8Result = ScriptValueV8Wrapper::fullUnwrap(_engine, result);
+            //V8ScriptValue v8Result = _engine->castVariantToValue(qRetVal);
             arguments.GetReturnValue().Set(v8Result.get());
             return;
         } else {
@@ -1396,12 +1438,32 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
     return QVariant();
 }*/
 
+ScriptSignalV8Proxy::ScriptSignalV8Proxy(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime, const QMetaMethod& meta) :
+    _engine(engine), _object(object), _meta(meta), _metaCallId(discoverMetaCallIdx()) {
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
+    _objectLifetime.Reset(isolate, lifetime.get());
+    _objectLifetime.SetWeak(this, weakHandleCallback, v8::WeakCallbackType::kParameter);
+    _v8Context.Reset(isolate, _engine->getContext());
+}
+
 ScriptSignalV8Proxy::~ScriptSignalV8Proxy() {
     auto isolate = _engine->getIsolate();
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
+    _objectLifetime.Reset();
     _v8Context.Reset();
+}
+
+void ScriptSignalV8Proxy::weakHandleCallback(const v8::WeakCallbackInfo<ScriptSignalV8Proxy>& info) {
+    //qDebug(scriptengine_v8) << "ScriptSignalV8Proxy::weakHandleCallback";
+    auto proxy = info.GetParameter();
+    proxy->_objectLifetime.Reset();
+    proxy->deleteLater();
 }
 
 QString ScriptSignalV8Proxy::fullName() const {
