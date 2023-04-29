@@ -71,7 +71,7 @@ public:
 
     JobConcept(const std::string& name, QConfigPointer config) : _config(config), _name(name) { config->_jobConcept = this; }
     virtual ~JobConcept() = default;
-    
+
     const std::string& getName() const { return _name; }
 
     virtual const Varying getInput() const { return Varying(); }
@@ -165,7 +165,7 @@ public:
             // Capture this
             Concept::_config->_jobConcept = this;
         }
-        
+
         void applyConfiguration() override {
             TimeProfiler probe(("configure::" + JobConcept::getName()));
 
@@ -185,40 +185,40 @@ public:
     template <class T, class I, class O, class C = Config> using ModelIO = Model<T, C, I, O>;
 
     Job() {}
-    Job(const ConceptPointer& concept) : _concept(concept) {}
+    Job(const ConceptPointer& conceptPtr) : _conceptPtr(conceptPtr) {}
     virtual ~Job() = default;
 
-    const std::string& getName() const { return _concept->getName(); }
-    const Varying getInput() const { return _concept->getInput(); }
-    const Varying getOutput() const { return _concept->getOutput(); }
+    const std::string& getName() const { return _conceptPtr->getName(); }
+    const Varying getInput() const { return _conceptPtr->getInput(); }
+    const Varying getOutput() const { return _conceptPtr->getOutput(); }
 
-    QConfigPointer& getConfiguration() const { return _concept->getConfiguration(); }
-    void applyConfiguration() { return _concept->applyConfiguration(); }
+    QConfigPointer& getConfiguration() const { return _conceptPtr->getConfiguration(); }
+    void applyConfiguration() { return _conceptPtr->applyConfiguration(); }
 
-    template <class I> void feedInput(const I& in) { _concept->editInput().template edit<I>() = in; }
-    template <class I, class S> void feedInput(int index, const S& inS) { (_concept->editInput().template editN<I>(index)).template edit<S>() = inS; }
+    template <class I> void feedInput(const I& in) { _conceptPtr->editInput().template edit<I>() = in; }
+    template <class I, class S> void feedInput(int index, const S& inS) { (_conceptPtr->editInput().template editN<I>(index)).template edit<S>() = inS; }
 
     template <class T> T& edit() {
-        auto concept = std::static_pointer_cast<typename T::JobModel>(_concept);
-        assert(concept);
-        return concept->_data;
+        auto conceptPtr = std::static_pointer_cast<typename T::JobModel>(_conceptPtr);
+        assert(conceptPtr);
+        return conceptPtr->_data;
     }
 
     template <class T> const T& get() const {
-        auto concept = std::static_pointer_cast<typename T::JobModel>(_concept);
-        assert(concept);
-        return concept->_data;
+        auto conceptPtr = std::static_pointer_cast<typename T::JobModel>(_conceptPtr);
+        assert(conceptPtr);
+        return conceptPtr->_data;
     }
 
     virtual void run(const ContextPointer& jobContext) {
         TimeProfiler probe(getName());
         auto startTime = std::chrono::high_resolution_clock::now();
-        _concept->run(jobContext);
-        _concept->setCPURunTime((std::chrono::high_resolution_clock::now() - startTime));
+        _conceptPtr->run(jobContext);
+        _conceptPtr->setCPURunTime((std::chrono::high_resolution_clock::now() - startTime));
     }
 
 protected:
-    ConceptPointer _concept;
+    ConceptPointer _conceptPtr;
 };
 
 
@@ -242,7 +242,7 @@ public:
     using ConceptPointer = typename JobType::ConceptPointer;
     using Jobs = std::vector<JobType>;
 
-    Task(ConceptPointer concept) : JobType(concept) {}
+    Task(ConceptPointer conceptPtr) : JobType(conceptPtr) {}
 
     class TaskConcept : public Concept {
     public:
@@ -347,15 +347,15 @@ public:
 
     // Create a new job in the Task's queue; returns the job's output
     template <class T, class... A> const Varying addJob(std::string name, const Varying& input, A&&... args) {
-        return std::static_pointer_cast<TaskConcept>(JobType::_concept)->template addJob<T>(name, input, std::forward<A>(args)...);
+        return std::static_pointer_cast<TaskConcept>(JobType::_conceptPtr)->template addJob<T>(name, input, std::forward<A>(args)...);
     }
     template <class T, class... A> const Varying addJob(std::string name, A&&... args) {
         const auto input = Varying(typename T::JobModel::Input());
-        return std::static_pointer_cast<TaskConcept>(JobType::_concept)->template addJob<T>(name, input, std::forward<A>(args)...);
+        return std::static_pointer_cast<TaskConcept>(JobType::_conceptPtr)->template addJob<T>(name, input, std::forward<A>(args)...);
     }
 
     std::shared_ptr<Config> getConfiguration() {
-        return std::static_pointer_cast<Config>(JobType::_concept->getConfiguration());
+        return std::static_pointer_cast<Config>(JobType::_conceptPtr->getConfiguration());
     }
 };
 
@@ -380,7 +380,7 @@ public:
     using ConceptPointer = typename JobType::ConceptPointer;
     using Branches = std::unordered_map<uint8_t, JobType>;
 
-    Switch(ConceptPointer concept) : JobType(concept) {}
+    Switch(ConceptPointer conceptPtr) : JobType(conceptPtr) {}
 
     class SwitchConcept : public Concept {
     public:
@@ -485,15 +485,15 @@ public:
 
     // Create a new job in the Switches' branches; returns the job's output
     template <class T, class... A> const Varying addBranch(std::string name, uint8_t index, const Varying& input, A&&... args) {
-        return std::static_pointer_cast<SwitchConcept>(JobType::_concept)->template addBranch<T>(name, index, input, std::forward<A>(args)...);
+        return std::static_pointer_cast<SwitchConcept>(JobType::_conceptPtr)->template addBranch<T>(name, index, input, std::forward<A>(args)...);
     }
     template <class T, class... A> const Varying addBranch(std::string name, uint8_t index, A&&... args) {
         const auto input = Varying(typename T::JobModel::Input());
-        return std::static_pointer_cast<SwitchConcept>(JobType::_concept)->template addBranch<T>(name, index, input, std::forward<A>(args)...);
+        return std::static_pointer_cast<SwitchConcept>(JobType::_conceptPtr)->template addBranch<T>(name, index, input, std::forward<A>(args)...);
     }
 
     std::shared_ptr<Config> getConfiguration() {
-        return std::static_pointer_cast<Config>(JobType::_concept->getConfiguration());
+        return std::static_pointer_cast<Config>(JobType::_conceptPtr->getConfiguration());
     }
 };
 
@@ -507,7 +507,7 @@ public:
     using TaskType = Task<JC, TP>;
     using ConceptPointer = typename TaskType::ConceptPointer;
 
-    Engine(const ConceptPointer& concept, const ContextPointer& context) : TaskType(concept), _context(context) {}
+    Engine(const ConceptPointer& conceptPtr, const ContextPointer& context) : TaskType(conceptPtr), _context(context) {}
     ~Engine() = default;
 
     void reset(const ContextPointer& context) { _context = context; }
