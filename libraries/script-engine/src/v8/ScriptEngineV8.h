@@ -136,6 +136,8 @@ public:  // ScriptEngine implementation
     QString scriptValueDebugListMembersV8(const V8ScriptValue &v8Value);
     virtual void logBacktrace(const QString &title = QString("")) override;
     virtual ScriptEngineMemoryStatistics getMemoryUsageStatistics() override;
+    virtual void startCollectingObjectStatistics() override;
+    virtual void dumpHeapObjectStatistics() override;
 
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
     inline bool IS_THREADSAFE_INVOCATION(const QString& method) { return ScriptEngine::IS_THREADSAFE_INVOCATION(method); }
@@ -205,7 +207,7 @@ public: // not for public use, but I don't like how Qt strings this along with p
     void popContext();
     // V8TODO: call this after initializing global object
     void storeGlobalObjectContents();
-#ifdef OVERTE_V8_HANDLE_COUNTERS
+#ifdef OVERTE_V8_MEMORY_DEBUG
     void incrementScriptValueCounter() { scriptValueCount++; };
     void decrementScriptValueCounter() { scriptValueCount--; };
     void incrementScriptValueProxyCounter() { scriptValueProxyCount++; };
@@ -264,7 +266,7 @@ protected:
     //ArrayBufferClass* _arrayBufferClass;
     // Counts how many nested evaluate calls are there at a given point
     int _evaluatingCounter;
-#ifdef OVERTE_V8_HANDLE_COUNTERS
+#ifdef OVERTE_V8_MEMORY_DEBUG
     std::atomic<size_t> scriptValueCount{0};
     std::atomic<size_t> scriptValueProxyCount{0};
 #endif

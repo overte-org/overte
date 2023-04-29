@@ -42,6 +42,8 @@
 
 #include <Profile.h>
 
+#include <v8-profiler.h>
+
 #include "../ScriptEngineLogging.h"
 #include "../ScriptProgram.h"
 #include "../ScriptValue.h"
@@ -282,7 +284,11 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager *manager) : ScriptEngine(manager), 
         // --assert-types
 
         v8::V8::InitializeICU();
-        v8::V8::SetFlagsFromString("--stack-size=256 --verify-heap --assert-types");
+#ifdef OVERTE_V8_MEMORY_DEBUG
+        v8::V8::SetFlagsFromString("--stack-size=256 --track_gc_object_stats --assert-types");
+#else
+        v8::V8::SetFlagsFromString("--stack-size=256");
+#endif
         //v8::V8::SetFlagsFromString("--stack-size=256 --single-threaded");
         v8::Platform* platform = getV8Platform();
         v8::V8::InitializePlatform(platform);
@@ -1720,10 +1726,31 @@ ScriptEngineMemoryStatistics ScriptEngineV8::getMemoryUsageStatistics() {
     statistics.totalAvailableSize = heapStatistics.total_available_size();
     statistics.totalGlobalHandlesSize = heapStatistics.total_global_handles_size();
     statistics.usedGlobalHandlesSize = heapStatistics.used_global_handles_size();
-#ifdef OVERTE_V8_HANDLE_COUNTERS
+#ifdef OVERTE_V8_MEMORY_DEBUG
     statistics.scriptValueCount = scriptValueCount;
     statistics.scriptValueProxyCount = scriptValueProxyCount;
 #endif
-
     return statistics;
+}
+
+void ScriptEngineV8::startCollectingObjectStatistics() {
+    auto heapProfiler = _v8Isolate->GetHeapProfiler();
+    heapProfiler->StartTrackingHeapObjects();
+}
+
+void ScriptEngineV8::dumpHeapObjectStatistics() {
+    // V8TODO: this is not very elegant, but very convenient
+    QFile dumpFile("/tmp/heap_objectStatistics_dump.csv");
+    if (!dumpFile.open(QFile::WriteOnly | QFile::Truncate)) {
+        return;
+    }
+    QTextStream dump(&dumpFile);
+    size_t objectTypeCount = _v8Isolate->NumberOfTrackedHeapObjectTypes();
+    for (size_t i = 0; i < objectTypeCount; i++) {
+        v8::HeapObjectStatistics statistics;
+        if (_v8Isolate->GetHeapObjectStatisticsAtLastGC(&statistics, i)) {
+            dump << statistics.object_type() << " " << statistics.object_sub_type() << " " << statistics.object_count() << " "
+                 << statistics.object_size() << "\n";
+        }
+    }
 }
