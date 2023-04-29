@@ -53,7 +53,7 @@
 class TestQObject : public QObject {
     Q_OBJECT
 public:
-    Q_INVOKABLE virtual void testMethod() { qDebug() << "TestQObject::testMethod"; };
+    //Q_INVOKABLE virtual void testMethod() { qDebug() << "TestQObject::testMethod"; };
 };
 
 class ScriptManagerScriptingInterface : public QObject {
@@ -509,6 +509,18 @@ public:
      * @Returns {Script.MemoryUsageData} Object containing statistics about memory usage.
      */
     Q_INVOKABLE QVariantMap getMemoryUsageStatistics();
+
+    /**jsdoc
+     * Start collecting object statistics that can later be reported with Script.dumpHeapObjectStatistics().
+     * @function Script.dumpHeapObjectStatistics
+     */
+    Q_INVOKABLE void startCollectingObjectStatistics();
+
+    /**jsdoc
+     * Prints heap statistics to a file. Collecting needs to first be started with Script.dumpHeapObjectStatistics().
+     * @function Script.dumpHeapObjectStatistics
+     */
+    Q_INVOKABLE void dumpHeapObjectStatistics();
 
     /**jsdoc
      * Create test object for garbage collector debugging.

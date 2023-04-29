@@ -27,7 +27,8 @@
 #include "ScriptException.h"
 
 // These are used for debugging memory leaks caused by persistent handles
-#define OVERTE_V8_HANDLE_COUNTERS
+// V8TODO: Rename to something better, like for example OVERTE_V8_MEMORY_DEBUG
+#define OVERTE_V8_MEMORY_DEBUG
 
 class QByteArray;
 class QLatin1String;
@@ -56,7 +57,7 @@ public:
     size_t totalAvailableSize;
     size_t totalGlobalHandlesSize;
     size_t usedGlobalHandlesSize;
-#ifdef OVERTE_V8_HANDLE_COUNTERS
+#ifdef OVERTE_V8_MEMORY_DEBUG
     size_t scriptValueCount;
     size_t scriptValueProxyCount;
 #endif
@@ -398,6 +399,16 @@ public:
      * @return ScriptEngineMemoryStatistics Object containing memory usage statistics data.
      */
     virtual ScriptEngineMemoryStatistics getMemoryUsageStatistics() = 0;
+
+    /**
+     * @brief Start collecting object statistics that can later be reported with dumpHeapObjectStatistics().
+     */
+    virtual void startCollectingObjectStatistics() = 0;
+
+    /**
+     * @brief Prints heap statistics to a file. Collecting needs to first be started with dumpHeapObjectStatistics().
+     */
+    virtual void dumpHeapObjectStatistics() = 0;
 
 public:
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
