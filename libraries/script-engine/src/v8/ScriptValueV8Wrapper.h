@@ -38,7 +38,7 @@ public: // construction
     static ScriptValueV8Wrapper* unwrap(const ScriptValue& val);
     inline const V8ScriptValue& toV8Value() const { return _value; }
     static V8ScriptValue fullUnwrap(ScriptEngineV8* engine, const ScriptValue& value);
-    ScriptEngineV8* getV8Engine() {return _engine;};
+    ScriptEngineV8* getV8Engine() {return _engine;}
 
 public:
     virtual void release() override;
