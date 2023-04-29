@@ -69,5 +69,7 @@ QVariantMap ScriptManagerScriptingInterface::getMemoryUsageStatistics() {
 }
 
 ScriptValue ScriptManagerScriptingInterface::createGarbageCollectorDebuggingObject() {
+    //auto value = _manager->engine()->newQObject(new TestQObject, ScriptEngine::ScriptOwnership);
     return _manager->engine()->newQObject(new TestQObject, ScriptEngine::ScriptOwnership);
+    //return _manager->engine()->newValue(1);
 }
