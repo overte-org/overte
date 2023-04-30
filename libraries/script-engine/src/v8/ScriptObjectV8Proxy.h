@@ -44,23 +44,23 @@ class ScriptObjectV8Proxy final {
 private:  // implementation
     class PropertyDef {
     public:
-        PropertyDef(ScriptEngineV8 *engine, v8::Local<v8::String> string, uint id) : name(engine, string), _id(id) {};
-        V8ScriptString name;
+        PropertyDef(QString string, uint id) : name(string), _id(id) {};
+        QString name;
         ScriptValue::PropertyFlags flags;
         uint _id;
     };
     class MethodDef {
     public:
-        MethodDef(ScriptEngineV8 *engine, v8::Local<v8::String> string, uint id) : name(engine, string), _id(id) {};
-        V8ScriptString name;
-        int numMaxParms;
+        MethodDef(QString string, uint id) : name(string), _id(id) {};
+        QString name;
+        int numMaxParams;
         QList<QMetaMethod> methods;
         uint _id;
     };
     class SignalDef {
     public:
-        SignalDef(ScriptEngineV8 *engine, v8::Local<v8::String> string, uint id) : name(engine, string), _id(id) {};
-        V8ScriptString name;
+        SignalDef(QString string, uint id) : name(string), _id(id) {};
+        QString name;
         QMetaMethod signal;
         uint _id;
     };
@@ -68,9 +68,9 @@ private:  // implementation
     using MethodDefMap = QHash<uint, MethodDef>;
     using SignalDefMap = QHash<uint, SignalDef>;
     using InstanceMap = QHash<uint, QPointer<ScriptSignalV8Proxy> >;
-    using PropertyNameMap = QHash<V8ScriptString, PropertyDef*>;
-    using MethodNameMap = QHash<V8ScriptString, MethodDef*>;
-    using SignalNameMap = QHash<V8ScriptString, SignalDef*>;
+    using PropertyNameMap = QHash<QString, PropertyDef*>;
+    using MethodNameMap = QHash<QString, MethodDef*>;
+    using SignalNameMap = QHash<QString, SignalDef*>;
 
     static constexpr uint PROPERTY_TYPE = 0x1000;
     static constexpr uint METHOD_TYPE = 0x2000;

@@ -255,12 +255,12 @@ void ScriptObjectV8Proxy::investigate() {
     v8::HandleScope handleScope(_engine->getIsolate());
     v8::Context::Scope contextScope(_engine->getContext());
 
+    const QMetaObject* metaObject = qobject->metaObject();
+
     //auto objectTemplate = _v8ObjectTemplate.Get(_engine->getIsolate());
     auto objectTemplate = v8::ObjectTemplate::New(_engine->getIsolate());
     objectTemplate->SetInternalFieldCount(3);
     objectTemplate->SetHandler(v8::NamedPropertyHandlerConfiguration(v8Get, v8Set, nullptr, nullptr, v8GetPropertyNames));
-
-    const QMetaObject* metaObject = qobject->metaObject();
 
     //qCDebug(scriptengine_v8) << "Investigate: " << metaObject->className();
     if (QString("ConsoleScriptingInterface") == metaObject->className()) {
@@ -283,9 +283,9 @@ void ScriptObjectV8Proxy::investigate() {
             }
         }
 
-        auto v8Name = v8::String::NewFromUtf8(_engine->getIsolate(), prop.name()).ToLocalChecked();
-        PropertyDef& propDef = _props.insert(idx, PropertyDef(_engine, v8Name, idx)).value();
-        _propNameMap.insert(V8ScriptString(_engine, v8Name), &propDef);
+        //auto v8Name = v8::String::NewFromUtf8(_engine->getIsolate(), prop.name()).ToLocalChecked();
+        PropertyDef& propDef = _props.insert(idx, PropertyDef(prop.name(), idx)).value();
+        _propNameMap.insert(prop.name(), &propDef);
         propDef.flags = ScriptValue::Undeletable | ScriptValue::PropertyGetter | ScriptValue::PropertySetter |
                         ScriptValue::QObjectMember;
         if (prop.isConstant()) propDef.flags |= ScriptValue::ReadOnly;
@@ -294,7 +294,7 @@ void ScriptObjectV8Proxy::investigate() {
     // discover methods
     startIdx = (_wrapOptions & ScriptEngine::ExcludeSuperClassMethods) ? metaObject->methodOffset() : 0;
     num = metaObject->methodCount();
-    QHash<V8ScriptString, int> methodNames;
+    QHash<QString, int> methodNames;
     for (int idx = startIdx; idx < num; ++idx) {
         QMetaMethod method = metaObject->method(idx);
         //qCDebug(scriptengine_v8) << "Investigate: " << metaObject->className() << " Method: " << method.name();
@@ -325,17 +325,17 @@ void ScriptObjectV8Proxy::investigate() {
 
         auto nameString = v8::String::NewFromUtf8(_engine->getIsolate(), szName.data(), v8::NewStringType::kNormal, szName.length()).ToLocalChecked();
         V8ScriptString name(_engine, nameString);
-        auto nameLookup = methodNames.find(name);
+        auto nameLookup = methodNames.find(szName);
         if (isSignal) {
             if (nameLookup == methodNames.end()) {
-                SignalDef& signalDef = _signals.insert(idx, SignalDef(_engine, name.get(), idx)).value();
-                signalDef.name = name;
+                SignalDef& signalDef = _signals.insert(idx, SignalDef(szName, idx)).value();
+                signalDef.name = szName;
                 signalDef.signal = method;
-                _signalNameMap.insert(name, &signalDef);
+                _signalNameMap.insert(szName, &signalDef);
                 //qCDebug(scriptengine_v8) << "Utf8Value 1: " << QString(*v8::String::Utf8Value(const_cast<v8::Isolate*>(_engine->getIsolate()), nameString));
                 //qCDebug(scriptengine_v8) << "Utf8Value 2: " << QString(*v8::String::Utf8Value(const_cast<v8::Isolate*>(_engine->getIsolate()), name.constGet()));
                 //qCDebug(scriptengine_v8) << "toQString: " << name.toQString();
-                methodNames.insert(name, idx);
+                methodNames.insert(szName, idx);
             } else {
                 int originalMethodId = nameLookup.value();
                 SignalDefMap::iterator signalLookup = _signals.find(originalMethodId);
@@ -357,18 +357,18 @@ void ScriptObjectV8Proxy::investigate() {
                 }
             }
             if (nameLookup == methodNames.end()) {
-                MethodDef& methodDef = _methods.insert(idx, MethodDef(_engine, name.get(), idx)).value();
-                methodDef.name = name;
-                methodDef.numMaxParms = parameterCount;
+                MethodDef& methodDef = _methods.insert(idx, MethodDef(szName, idx)).value();
+                methodDef.name = szName;
+                methodDef.numMaxParams = parameterCount;
                 methodDef.methods.append(method);
-                _methodNameMap.insert(name, &methodDef);
-                methodNames.insert(name, idx);
+                _methodNameMap.insert(szName, &methodDef);
+                methodNames.insert(szName, idx);
             } else {
                 int originalMethodId = nameLookup.value();
                 MethodDefMap::iterator methodLookup = _methods.find(originalMethodId);
                 Q_ASSERT(methodLookup != _methods.end());
                 MethodDef& methodDef = methodLookup.value();
-                if(methodDef.numMaxParms < parameterCount) methodDef.numMaxParms = parameterCount;
+                if(methodDef.numMaxParams < parameterCount) methodDef.numMaxParams = parameterCount;
                 methodDef.methods.append(method);
             }
         }
@@ -386,13 +386,18 @@ void ScriptObjectV8Proxy::investigate() {
         _v8Object.SetWeak(this, weakHandleCallback, v8::WeakCallbackType::kParameter);
     }
 
+    /*if (QString(metaObject->className()) == QString("TestQObject")) {
+        //qDebug() << "TestQObject investigate: _methods.size: " << _methods.size();
+        return;
+    }*/
+
     // Add all the methods objects as properties - this allows adding properties to a given method later. Is used by Script.request.
     // V8TODO: Should these be deleted when the script-owned object is destroyed? It needs checking if script-owned objects will be garbage-collected, or will self-referencing prevent it.
     for (auto i = _methods.begin(); i != _methods.end(); i++) {
         //V8TODO: lifetime may prevent garbage collection?
         V8ScriptValue method = ScriptMethodV8Proxy::newMethod(_engine, qobject, V8ScriptValue(_engine, v8Object),
-                                                              i.value().methods, i.value().numMaxParms);
-        if(!propertiesObject->Set(_engine->getContext(), i.value().name.constGet(), method.get()).FromMaybe(false)) {
+                                                              i.value().methods, i.value().numMaxParams);
+        if(!propertiesObject->Set(_engine->getContext(), v8::String::NewFromUtf8(isolate, i.value().name.toStdString().c_str()).ToLocalChecked(), method.get()).FromMaybe(false)) {
             Q_ASSERT(false);
         }
     }
@@ -416,6 +421,7 @@ QString ScriptObjectV8Proxy::name() const {
     return _object->metaObject()->className();
 }
 
+// V8TODO: check if it would be more optimal to use V8ScriptString& name or QString name
 ScriptObjectV8Proxy::QueryFlags ScriptObjectV8Proxy::queryProperty(const V8ScriptValue& object, const V8ScriptString& name, QueryFlags flags, uint* id) {
     auto isolate = _engine->getIsolate();
     v8::Locker locker(isolate);
@@ -424,7 +430,7 @@ ScriptObjectV8Proxy::QueryFlags ScriptObjectV8Proxy::queryProperty(const V8Scrip
     // V8TODO: this might be inefficient when there's large number of properties
     v8::Local<v8::Context> context = _engine->getContext();
     v8::Context::Scope contextScope(context);
-    v8::String::Utf8Value nameStr(isolate, name.constGet());
+    QString nameStr(*v8::String::Utf8Value(isolate, name.constGet()));
 
     // check for methods
     /*for (MethodDefMap::const_iterator trans = _methods.cbegin(); trans != _methods.cend(); ++trans) {
@@ -434,7 +440,7 @@ ScriptObjectV8Proxy::QueryFlags ScriptObjectV8Proxy::queryProperty(const V8Scrip
         *id = trans.key() | METHOD_TYPE;
         return flags & (HandlesReadAccess | HandlesWriteAccess);
     }*/
-    MethodNameMap::const_iterator method = _methodNameMap.find(name);
+    MethodNameMap::const_iterator method = _methodNameMap.find(nameStr);
     if (method != _methodNameMap.cend()) {
         //v8::String::Utf8Value methodNameStr(isolate, trans.value().name.constGet());
         //qCDebug(scriptengine_v8) << "queryProperty : " << *nameStr << " method: " << *methodNameStr;
@@ -450,7 +456,7 @@ ScriptObjectV8Proxy::QueryFlags ScriptObjectV8Proxy::queryProperty(const V8Scrip
         *id = trans.key() | PROPERTY_TYPE;
         return flags & (HandlesReadAccess | HandlesWriteAccess);
     }*/
-    PropertyNameMap::const_iterator prop = _propNameMap.find(name);
+    PropertyNameMap::const_iterator prop = _propNameMap.find(nameStr);
     if (prop != _propNameMap.cend()) {
         const PropertyDef* propDef = prop.value();
         *id = propDef->_id | PROPERTY_TYPE;
@@ -458,8 +464,9 @@ ScriptObjectV8Proxy::QueryFlags ScriptObjectV8Proxy::queryProperty(const V8Scrip
     }
 
     // check for signals
+    // V8TODO: this should use _signalNameMap QHash for faster search
     for (SignalDefMap::const_iterator trans = _signals.cbegin(); trans != _signals.cend(); ++trans) {
-        if (!(trans.value().name == name)) continue;
+        if (!(trans.value().name == nameStr)) continue;
         *id = trans.key() | SIGNAL_TYPE;
         return flags & (HandlesReadAccess | HandlesWriteAccess);
     }
@@ -627,17 +634,20 @@ v8::Local<v8::Array> ScriptObjectV8Proxy::getPropertyNames() {
     v8::Local<v8::Array> properties = v8::Array::New(isolate, _props.size() + _methods.size() + _signals.size());
     uint32_t position = 0;
     for (PropertyDefMap::const_iterator i = _props.begin(); i != _props.end(); i++){
-        if(!properties->Set(context, position++, i.value().name.constGet()).FromMaybe(false)) {
+        v8::Local<v8::String> name = v8::String::NewFromUtf8(isolate, i.value().name.toStdString().c_str()).ToLocalChecked();
+        if(!properties->Set(context, position++, name).FromMaybe(false)) {
             qCDebug(scriptengine_v8) << "ScriptObjectV8Proxy::getPropertyNames: Cannot add property member name";
         }
     }
     for (MethodDefMap::const_iterator i = _methods.begin(); i != _methods.end(); i++){
-        if(!properties->Set(context, position++, i.value().name.constGet()).FromMaybe(false)) {
+        v8::Local<v8::String> name = v8::String::NewFromUtf8(isolate, i.value().name.toStdString().c_str()).ToLocalChecked();
+        if(!properties->Set(context, position++, name).FromMaybe(false)) {
             qCDebug(scriptengine_v8) << "ScriptObjectV8Proxy::getPropertyNames: Cannot add property member name";
         }
     }
     for (SignalDefMap::const_iterator i = _signals.begin(); i != _signals.end(); i++){
-        if(!properties->Set(context, position++, i.value().name.constGet()).FromMaybe(false)) {
+        v8::Local<v8::String> name = v8::String::NewFromUtf8(isolate, i.value().name.toStdString().c_str()).ToLocalChecked();
+        if(!properties->Set(context, position++, name).FromMaybe(false)) {
             qCDebug(scriptengine_v8) << "ScriptObjectV8Proxy::getPropertyNames: Cannot add property member name";
         }
     }
@@ -692,7 +702,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
             }
             Q_ASSERT(false);
             qCDebug(scriptengine_v8) << "(This should not happen) Creating new method object for " << metaObject->className() << " " << name.toQString();
-            return ScriptMethodV8Proxy::newMethod(_engine, qobject, object, methodDef.methods, methodDef.numMaxParms);
+            return ScriptMethodV8Proxy::newMethod(_engine, qobject, object, methodDef.methods, methodDef.numMaxParams);
         }
         case SIGNAL_TYPE: {
             int signalId = id & ~TYPE_MASK;
