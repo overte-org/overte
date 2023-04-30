@@ -203,6 +203,13 @@ public: // not for public use, but I don't like how Qt strings this along with p
     // V8TODO add a V8 callback that removes pointer from the map so that it gets deleted
     QMap<QObject*, QSharedPointer<ScriptObjectV8Proxy>> _qobjectWrapperMapV8;
 
+    // Used by ScriptObjectV8Proxy to create JS objects referencing C++ ones
+    v8::Local<v8::ObjectTemplate> getObjectProxyTemplate();
+    v8::Local<v8::ObjectTemplate> getMethodDataTemplate();
+    v8::Local<v8::ObjectTemplate> getFunctionDataTemplate();
+    v8::Local<v8::ObjectTemplate> getVariantDataTemplate();
+    v8::Local<v8::ObjectTemplate> getVariantProxyTemplate();
+
     ScriptContextV8Pointer pushContext(v8::Local<v8::Context> context);
     void popContext();
     // V8TODO: call this after initializing global object
@@ -259,8 +266,17 @@ protected:
     //mutable ScriptContextV8Pointer _currContext;
     // Current context stack. Main context is first on the list and current one is last.
     QList<ScriptContextV8Pointer> _contexts;
+    // V8TODO: release in destructor
     v8::Persistent<v8::Object> _globalObjectContents;
     bool areGlobalObjectContentsStored {false};
+
+    // Used by ScriptObjectV8Proxy to create JS objects referencing C++ ones
+    // V8TODO: release in destructor
+    v8::Persistent<v8::ObjectTemplate> _objectProxyTemplate;
+    v8::Persistent<v8::ObjectTemplate> _methodDataTemplate;
+    v8::Persistent<v8::ObjectTemplate> _functionDataTemplate;
+    v8::Persistent<v8::ObjectTemplate> _variantDataTemplate;
+    v8::Persistent<v8::ObjectTemplate> _variantProxyTemplate;
 
     //V8TODO
     //ArrayBufferClass* _arrayBufferClass;
