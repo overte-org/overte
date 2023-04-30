@@ -31,7 +31,7 @@
 #include <AvatarLogging.h>
 #include <LogHandler.h>
 #include <NodeList.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include <SharedUtil.h>
 #include <UUID.h>
 #include <TryLocker.h>

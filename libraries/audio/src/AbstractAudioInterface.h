@@ -15,7 +15,7 @@
 #include <QtCore/QObject>
 #include <QtMultimedia/qaudiooutput.h>
 
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 
 #include "AudioInjectorOptions.h"
 #include "AudioInjector.h"

@@ -16,7 +16,7 @@
 #include <PerfStat.h>
 
 #include <OctalCode.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include "OctreeLogging.h"
 
 const int OctreeEditPacketSender::DEFAULT_MAX_PENDING_MESSAGES = PacketSender::DEFAULT_PACKETS_PER_SECOND;

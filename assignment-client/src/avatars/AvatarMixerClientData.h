@@ -26,7 +26,7 @@
 #include <AssociatedTraitValues.h>
 #include <NodeData.h>
 #include <NumericalConstants.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include <PortableHighResolutionClock.h>
 #include <SimpleMovingAverage.h>
 #include <UUIDHasher.h>

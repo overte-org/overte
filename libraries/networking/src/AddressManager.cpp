@@ -30,7 +30,7 @@
 #include "NetworkLogging.h"
 #include "NetworkingConstants.h"
 #include "UserActivityLogger.h"
-#include "udt/PacketHeaders.h"
+#include "PacketHeaders.h"
 
 const QString REDIRECT_HIFI_ADDRESS = NetworkingConstants::REDIRECT_HIFI_ADDRESS;
 const QString ADDRESS_MANAGER_SETTINGS_GROUP = "AddressManager";

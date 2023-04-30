@@ -31,7 +31,7 @@
 #include <SharedUtil.h>
 #include <ShapeInfo.h>
 #include <NLPacket.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 
 #include "MaterialMappingMode.h"
 #include "BillboardMode.h"

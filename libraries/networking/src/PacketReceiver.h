@@ -27,7 +27,7 @@
 #include "NLPacket.h"
 #include "NLPacketList.h"
 #include "ReceivedMessage.h"
-#include "udt/PacketHeaders.h"
+#include "PacketHeaders.h"
 
 class EntityEditPacketSender;
 class Node;

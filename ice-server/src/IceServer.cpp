@@ -26,7 +26,7 @@
 #include <NetworkAccessManager.h>
 #include <NetworkingConstants.h>
 #include <MetaverseAPI.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include <SharedUtil.h>
 #include "WarningsSuppression.h"
 

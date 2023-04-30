@@ -150,7 +150,7 @@
 #include <ui/ToolbarScriptingInterface.h>
 #include <ui/types/ContextAwareProfile.h>
 #include <Tooltip.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include <UserActivityLogger.h>
 #include <UsersScriptingInterface.h>
 #include <recording/ClipCache.h>

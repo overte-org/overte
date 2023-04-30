@@ -17,7 +17,7 @@
 
 #include <LogHandler.h>
 #include <NumericalConstants.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 
 #include "OctreePacketData.h"
 #include "OctreeElement.h"

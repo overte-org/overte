@@ -42,7 +42,7 @@
 #include <GLMHelpers.h>
 #include <NodeList.h>
 #include <NetworkingConstants.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include <PathUtils.h>
 #include <PerfStat.h>
 #include <ScriptEngine.h>

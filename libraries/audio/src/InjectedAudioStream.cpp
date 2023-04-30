@@ -16,7 +16,7 @@
 #include <QtCore/QDataStream>
 #include <QtCore/qdebug.h>
 
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include <UUID.h>
 
 #include "AudioHelpers.h"

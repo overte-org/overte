@@ -17,7 +17,7 @@
 
 #include "../ExtendedIODevice.h"
 #include "Packet.h"
-#include "PacketHeaders.h"
+#include "../PacketHeaders.h"
 
 class LimitedNodeList;
 

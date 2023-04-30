@@ -14,7 +14,7 @@
 #include <limits>
 
 #include <NumericalConstants.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include <PerfStat.h>
 
 #include "OctreeServer.h"

@@ -12,7 +12,7 @@
 #include "AvatarMixerClientData.h"
 
 #include <algorithm>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 
 #include <DependencyManager.h>
 #include <NodeList.h>

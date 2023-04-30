@@ -33,7 +33,7 @@
 #include <MessagesClient.h>
 #include <NetworkAccessManager.h>
 #include <NodeList.h>
-#include <udt/PacketHeaders.h>
+#include <PacketHeaders.h>
 #include <ResourceCache.h>
 #include <ResourceScriptingInterface.h>
 #include <ScriptCache.h>
