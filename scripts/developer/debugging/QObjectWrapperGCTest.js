@@ -22,7 +22,8 @@ var memoryStatisticsIntervalHandle = Script.setInterval(function () {
             + " totalGlobalHandlesSize: " + statistics.totalGlobalHandlesSize
             + " usedGlobalHandlesSize: " + statistics.usedGlobalHandlesSize
             + " scriptValueCount: " + statistics.scriptValueCount
-            + " scriptValueProxyCount: " + statistics.scriptValueProxyCount);
+            + " scriptValueProxyCount: " + statistics.scriptValueProxyCount
+            + " qObjectCount: " + statistics.qObjectCount);
     } else {
         print("GC test script memory usage: Total heap size: " + statistics.totalHeapSize
             + " usedHeapSize: " + statistics.usedHeapSize

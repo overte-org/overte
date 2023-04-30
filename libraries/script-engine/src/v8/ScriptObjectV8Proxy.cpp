@@ -258,9 +258,10 @@ void ScriptObjectV8Proxy::investigate() {
     const QMetaObject* metaObject = qobject->metaObject();
 
     //auto objectTemplate = _v8ObjectTemplate.Get(_engine->getIsolate());
-    auto objectTemplate = v8::ObjectTemplate::New(_engine->getIsolate());
+    auto objectTemplate = _engine->getObjectProxyTemplate();
+    /*auto objectTemplate = v8::ObjectTemplate::New(_engine->getIsolate());
     objectTemplate->SetInternalFieldCount(3);
-    objectTemplate->SetHandler(v8::NamedPropertyHandlerConfiguration(v8Get, v8Set, nullptr, nullptr, v8GetPropertyNames));
+    objectTemplate->SetHandler(v8::NamedPropertyHandlerConfiguration(v8Get, v8Set, nullptr, nullptr, v8GetPropertyNames));*/
 
     //qCDebug(scriptengine_v8) << "Investigate: " << metaObject->className();
     if (QString("ConsoleScriptingInterface") == metaObject->className()) {
@@ -375,21 +376,22 @@ void ScriptObjectV8Proxy::investigate() {
     }
 
     v8::Local<v8::Object> v8Object = objectTemplate->NewInstance(_engine->getContext()).ToLocalChecked();
+    /*if (QString(metaObject->className()) == QString("TestQObject")) {
+        //qDebug() << "TestQObject investigate: _methods.size: " << _methods.size();
+        return;
+    }*/
 
     v8Object->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToQObjectProxy));
     v8Object->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(this));
-    // Properties added later will be stored in this object
-    v8::Local<v8::Object> propertiesObject = v8::Object::New(_engine->getIsolate());
-    v8Object->SetInternalField(2, propertiesObject);
+
     _v8Object.Reset(_engine->getIsolate(), v8Object);
     if (_ownsObject) {
         _v8Object.SetWeak(this, weakHandleCallback, v8::WeakCallbackType::kParameter);
     }
 
-    /*if (QString(metaObject->className()) == QString("TestQObject")) {
-        //qDebug() << "TestQObject investigate: _methods.size: " << _methods.size();
-        return;
-    }*/
+    // Properties added later will be stored in this object
+    v8::Local<v8::Object> propertiesObject = v8::Object::New(_engine->getIsolate());
+    v8Object->SetInternalField(2, propertiesObject);
 
     // Add all the methods objects as properties - this allows adding properties to a given method later. Is used by Script.request.
     // V8TODO: Should these be deleted when the script-owned object is destroyed? It needs checking if script-owned objects will be garbage-collected, or will self-referencing prevent it.
@@ -774,8 +776,9 @@ ScriptVariantV8Proxy::ScriptVariantV8Proxy(ScriptEngineV8* engine, const QVarian
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(engine->getContext());
-    auto variantDataTemplate = v8::ObjectTemplate::New(isolate);
-    variantDataTemplate->SetInternalFieldCount(2);
+    auto variantDataTemplate = _engine->getVariantDataTemplate();
+    //auto variantDataTemplate = v8::ObjectTemplate::New(isolate);
+    //variantDataTemplate->SetInternalFieldCount(2);
     auto variantData = variantDataTemplate->NewInstance(engine->getContext()).ToLocalChecked();
     variantData->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToQVariantInProxy));
     // Internal field doesn't point directly to QVariant, because then alignment would need to be guaranteed in all compilers
@@ -810,9 +813,10 @@ V8ScriptValue ScriptVariantV8Proxy::newVariant(ScriptEngineV8* engine, const QVa
     // V8TODO probably needs connection to be deleted
     auto proxy = new ScriptVariantV8Proxy(engine, variant, proto, protoProxy);
 
-    auto variantProxyTemplate = v8::ObjectTemplate::New(isolate);
-    variantProxyTemplate->SetInternalFieldCount(2);
-    variantProxyTemplate->SetHandler(v8::NamedPropertyHandlerConfiguration(v8Get, v8Set, nullptr, nullptr, v8GetPropertyNames));
+    auto variantProxyTemplate = engine->getVariantProxyTemplate();
+    //auto variantProxyTemplate = v8::ObjectTemplate::New(isolate);
+    //variantProxyTemplate->SetInternalFieldCount(2);
+    //variantProxyTemplate->SetHandler(v8::NamedPropertyHandlerConfiguration(v8Get, v8Set, nullptr, nullptr, v8GetPropertyNames));
     auto variantProxy = variantProxyTemplate->NewInstance(engine->getContext()).ToLocalChecked();
     variantProxy->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToQVariantProxy));
     variantProxy->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(proxy));
@@ -1014,8 +1018,9 @@ V8ScriptValue ScriptMethodV8Proxy::newMethod(ScriptEngineV8* engine, QObject* ob
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(engine->getContext());
-    auto methodDataTemplate = v8::ObjectTemplate::New(isolate);
-    methodDataTemplate->SetInternalFieldCount(2);
+    auto methodDataTemplate = engine->getMethodDataTemplate();
+    //auto methodDataTemplate = v8::ObjectTemplate::New(isolate);
+    //methodDataTemplate->SetInternalFieldCount(2);
     auto methodData = methodDataTemplate->NewInstance(engine->getContext()).ToLocalChecked();
     methodData->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToMethodProxy));
     // V8TODO it needs to be deleted somehow on object destruction

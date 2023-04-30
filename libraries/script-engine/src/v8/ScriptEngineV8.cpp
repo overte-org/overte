@@ -1090,6 +1090,64 @@ QString ScriptEngineV8::formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch) {
     return result;
 }
 
+v8::Local<v8::ObjectTemplate> ScriptEngineV8::getObjectProxyTemplate() {
+    v8::EscapableHandleScope handleScope(_v8Isolate);
+    if (_objectProxyTemplate.IsEmpty()) {
+        auto objectTemplate = v8::ObjectTemplate::New(_v8Isolate);
+        objectTemplate->SetInternalFieldCount(3);
+        objectTemplate->SetHandler(v8::NamedPropertyHandlerConfiguration(ScriptObjectV8Proxy::v8Get, ScriptObjectV8Proxy::v8Set, nullptr, nullptr, ScriptObjectV8Proxy::v8GetPropertyNames));
+        _objectProxyTemplate.Reset(_v8Isolate, objectTemplate);
+    }
+
+    return handleScope.Escape(_objectProxyTemplate.Get(_v8Isolate));
+}
+
+v8::Local<v8::ObjectTemplate> ScriptEngineV8::getMethodDataTemplate() {
+    v8::EscapableHandleScope handleScope(_v8Isolate);
+    if (_methodDataTemplate.IsEmpty()) {
+        auto methodDataTemplate = v8::ObjectTemplate::New(_v8Isolate);
+        methodDataTemplate->SetInternalFieldCount(2);
+        _methodDataTemplate.Reset(_v8Isolate, methodDataTemplate);
+    }
+
+    return handleScope.Escape(_methodDataTemplate.Get(_v8Isolate));
+}
+
+v8::Local<v8::ObjectTemplate> ScriptEngineV8::getFunctionDataTemplate() {
+    v8::EscapableHandleScope handleScope(_v8Isolate);
+    if (_functionDataTemplate.IsEmpty()) {
+        auto functionDataTemplate = v8::ObjectTemplate::New(_v8Isolate);
+        functionDataTemplate->SetInternalFieldCount(2);
+        _functionDataTemplate.Reset(_v8Isolate, functionDataTemplate);
+    }
+
+    return handleScope.Escape(_functionDataTemplate.Get(_v8Isolate));
+}
+
+v8::Local<v8::ObjectTemplate> ScriptEngineV8::getVariantDataTemplate() {
+    v8::EscapableHandleScope handleScope(_v8Isolate);
+    if (_variantDataTemplate.IsEmpty()) {
+        auto variantDataTemplate = v8::ObjectTemplate::New(_v8Isolate);
+        variantDataTemplate->SetInternalFieldCount(2);
+        _variantDataTemplate.Reset(_v8Isolate, variantDataTemplate);
+    }
+
+    return handleScope.Escape(_variantDataTemplate.Get(_v8Isolate));
+}
+
+v8::Local<v8::ObjectTemplate> ScriptEngineV8::getVariantProxyTemplate() {
+    v8::EscapableHandleScope handleScope(_v8Isolate);
+    if (_variantProxyTemplate.IsEmpty()) {
+        auto variantProxyTemplate = v8::ObjectTemplate::New(_v8Isolate);
+        variantProxyTemplate->SetInternalFieldCount(2);
+        variantProxyTemplate->SetHandler(v8::NamedPropertyHandlerConfiguration(ScriptVariantV8Proxy::v8Get, ScriptVariantV8Proxy::v8Set, nullptr, nullptr, ScriptVariantV8Proxy::v8GetPropertyNames));
+        _variantProxyTemplate.Reset(_v8Isolate, variantProxyTemplate);
+    }
+
+    return handleScope.Escape(_variantProxyTemplate.Get(_v8Isolate));
+}
+
+
 ScriptContextV8Pointer ScriptEngineV8::pushContext(v8::Local<v8::Context> context) {
     v8::HandleScope handleScope(_v8Isolate);
     Q_ASSERT(!_contexts.isEmpty());
@@ -1463,8 +1521,9 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
     //auto functionTemplate = v8::FunctionTemplate::New(_v8Isolate, v8FunctionCallback, v8::Local<v8::Value>(), v8::Local<v8::Signature>(), length);
     //auto functionData = v8::Object::New(_v8Isolate);
     //functionData->setIn
-    auto functionDataTemplate = v8::ObjectTemplate::New(_v8Isolate);
-    functionDataTemplate->SetInternalFieldCount(2);
+    auto functionDataTemplate = getFunctionDataTemplate();
+    //auto functionDataTemplate = v8::ObjectTemplate::New(_v8Isolate);
+    //functionDataTemplate->SetInternalFieldCount(2);
     auto functionData = functionDataTemplate->NewInstance(getContext()).ToLocalChecked();
     functionData->SetAlignedPointerInInternalField(0, reinterpret_cast<void*>(fun));
     functionData->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(this));
@@ -1729,6 +1788,7 @@ ScriptEngineMemoryStatistics ScriptEngineV8::getMemoryUsageStatistics() {
 #ifdef OVERTE_V8_MEMORY_DEBUG
     statistics.scriptValueCount = scriptValueCount;
     statistics.scriptValueProxyCount = scriptValueProxyCount;
+    statistics.qObjectCount = _qobjectWrapperMapV8.size();
 #endif
     return statistics;
 }
