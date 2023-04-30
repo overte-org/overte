@@ -49,7 +49,6 @@
 void ScriptManagerScriptingInterface::scriptManagerException(std::shared_ptr<ScriptException> exception) {
     // V8TODO: What should we actually handle here?
 
-
     // emit unhandledException(exception.thrownValue);
 }
 
@@ -64,6 +63,7 @@ QVariantMap ScriptManagerScriptingInterface::getMemoryUsageStatistics() {
 #ifdef OVERTE_V8_MEMORY_DEBUG
     map.insert("scriptValueCount", QVariant((qulonglong)(statistics.scriptValueCount)));
     map.insert("scriptValueProxyCount", QVariant((qulonglong)(statistics.scriptValueProxyCount)));
+    map.insert("qObjectCount", QVariant((qulonglong)(statistics.qObjectCount)));
 #endif
     return map;
 }

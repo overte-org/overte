@@ -60,6 +60,8 @@ public:
 #ifdef OVERTE_V8_MEMORY_DEBUG
     size_t scriptValueCount;
     size_t scriptValueProxyCount;
+    size_t qObjectCount;
+    //size_t qVariantProxyCount;
 #endif
 };
 
