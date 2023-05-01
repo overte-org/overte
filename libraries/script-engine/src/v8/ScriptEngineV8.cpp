@@ -52,7 +52,6 @@
 #include "ScriptObjectV8Proxy.h"
 #include "ScriptProgramV8Wrapper.h"
 #include "ScriptValueV8Wrapper.h"
-#include "V8Lambda.h"
 #include "ScriptEngineLoggingV8.h"
 
 static const int MAX_DEBUG_VALUE_LENGTH { 80 };
@@ -147,63 +146,6 @@ ScriptValue ScriptEngineV8::checkScriptSyntax(ScriptProgramPointer program) {
         return err;
     }
     return undefinedValue();
-}
-
-// Lambda
-/*ScriptValue ScriptEngineV8::newLambdaFunction(std::function<V8ScriptValue(V8ScriptContext*, ScriptEngineV8*)> operation,
-                                                 const V8ScriptValue& data,
-                                                 const ValueOwnership& ownership) {
-    v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(getContext());
-    auto lambda = new Lambda(this, operation, data);
-    auto object = newQObject(lambda, ownership);
-    //V8TODO - I'm not sure if this works
-    auto call = object.property("call");
-    call.setPrototype(object);  // context->callee().prototype() === Lambda QObject
-    call.setData(ScriptValue(new ScriptValueV8Wrapper(this, data)));         // context->callee().data() will === data param
-    return call;
-}*/
-QString Lambda::toString() const {
-    v8::Locker locker(_engine->getIsolate());
-    v8::Isolate::Scope isolateScope(_engine->getIsolate());
-    v8::HandleScope handleScope(_engine->getIsolate());
-    v8::Context::Scope contextScope(_engine->getContext());
-    v8::Local<v8::String> string;
-    QString qString("");
-    if (_data.constGet()->ToString(_engine->getContext()).ToLocal(&string)) {
-        v8::String::Utf8Value utf8Value(_engine->getIsolate(), string);
-        qString = QString(*utf8Value);
-    }
-    //V8TODO it was data.isValid() originally
-    //I have no idea what happens here
-    return QString("[Lambda%1]").arg((!_data.constGet()->IsNullOrUndefined()) ? " " + qString : qString);
-}
-
-Lambda::~Lambda() {
-#ifdef DEBUG_JS_LAMBDA_FUNCS
-    qCDebug(scriptengine_v8) << "~Lambda"
-             << "this" << this;
-#endif
-}
-
-Lambda::Lambda(ScriptEngineV8* engine,
-               std::function<V8ScriptValue(ScriptEngineV8*)> operation,
-               V8ScriptValue data) :
-    _engine(engine),
-    _operation(operation), _data(data) {
-#ifdef DEBUG_JS_LAMBDA_FUNCS
-    qCDebug(scriptengine_v8) << "Lambda" << data.toString();
-#endif
-}
-V8ScriptValue Lambda::call() {
-    if (!_engine->IS_THREADSAFE_INVOCATION(__FUNCTION__)) {
-        return V8ScriptValue(_engine, v8::Null(_engine->getIsolate()));
-    }
-    // V8TODO: it needs to be done in entirely different way for V8
-    Q_ASSERT(false);
-    //return _operation(_engine->getContext(), _engine);
-    //return V8ScriptValue(_engine->getIsolate(), v8::Null(_engine->getIsolate()));
-    //return operation(static_cast<QScriptEngine*>(engine)->currentContext(), engine);
 }
 
 #ifdef DEBUG_JS
