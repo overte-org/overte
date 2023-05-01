@@ -37,7 +37,7 @@ public: // construction
                            const v8::Local<v8::Context> context, ScriptContextPointer parent);
     ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8::PropertyCallbackInfo<v8::Value> *propertyCallbackInfo,
                            const v8::Local<v8::Context> context, ScriptContextPointer parent);
-    virtual ~ScriptContextV8Wrapper() {_context.Reset();}
+    virtual ~ScriptContextV8Wrapper();
 
     static ScriptContextV8Wrapper* unwrap(ScriptContext* val);
 
@@ -60,7 +60,6 @@ private: // storage
     const v8::FunctionCallbackInfo<v8::Value> *_functionCallbackInfo;
     const v8::PropertyCallbackInfo<v8::Value> *_propertyCallbackInfo;
     ScriptEngineV8* _engine;
-    // V8TODO: custom destructor is needed for v8::Persistent
     v8::Persistent<v8::Context> _context;
     ScriptContextPointer _parentContext;
     Q_DISABLE_COPY(ScriptContextV8Wrapper)
@@ -68,9 +67,8 @@ private: // storage
 
 class ScriptFunctionContextV8Wrapper final : public ScriptFunctionContext {
 public:  // construction
-    //V8TODO
     ScriptFunctionContextV8Wrapper(ScriptEngineV8* engine, const v8::Local<v8::Context> context);
-    virtual ~ScriptFunctionContextV8Wrapper() {_context.Reset();};
+    virtual ~ScriptFunctionContextV8Wrapper();
 
 public:  // ScriptFunctionContext implementation
     virtual QString fileName() const override;
@@ -80,9 +78,7 @@ public:  // ScriptFunctionContext implementation
 
 private: // storage
     ScriptEngineV8* _engine;
-    // V8TODO: custom destructor is needed for v8::Persistent (check is all other classes using different types of persistent handles have custom destructors too)
     v8::Persistent<v8::Context> _context;
-    //V8ScriptContextInfo _value;
     Q_DISABLE_COPY(ScriptFunctionContextV8Wrapper)
 };
 

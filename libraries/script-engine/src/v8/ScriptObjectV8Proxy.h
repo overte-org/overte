@@ -133,11 +133,7 @@ private:  // storage
     const bool _ownsObject;
     QPointer<QObject> _object;
     // Handle for its own object
-    // V8TODO Maybe depending on object ownership it should be different type of handles? For example weak persistent would allow
-    // script engine-owned objects to be garbage collected. This will also need adding a garbage collector callback from V8
-    // to let proxy know that it is not valid anymore
     v8::Persistent<v8::Object> _v8Object;
-    int pointerCorruptionTest = 12345678;
 
     Q_DISABLE_COPY(ScriptObjectV8Proxy)
 };
@@ -171,7 +167,6 @@ public:  // construction
     static QVariant* unwrapQVariantPointer(v8::Isolate* isolate, const v8::Local<v8::Value> &value);
     static QVariant unwrap(const V8ScriptValue& val);
     inline QVariant toQVariant() const { return _variant; }
-    //inline QVariant toV8Value() const { return _variant; }
     inline v8::Local<v8::Object> toV8Value() const {
         v8::EscapableHandleScope handleScope(_engine->getIsolate());
         return handleScope.Escape(_v8Object.Get(_engine->getIsolate()));
@@ -188,9 +183,6 @@ public:  // QScriptClass implementation
     virtual ScriptValue::PropertyFlags propertyFlags(const V8ScriptValue& object, const V8ScriptString& name, uint id) {
         return _proto->propertyFlags(object, name, id);
     }
-    /*virtual QueryFlags queryProperty(const V8ScriptValue& object, const V8ScriptString& name, QueryFlags flags, uint* id) {
-        return _proto->queryProperty(object, name, flags, id);
-    }*/
     virtual void setProperty(V8ScriptValue& object, const V8ScriptString& name, uint id, const V8ScriptValue& value) {
         return _proto->setProperty(object, name, id, value);
     }
@@ -204,7 +196,6 @@ private:
     V8ScriptValue _scriptProto;
     ScriptObjectV8Proxy* _proto;
     QString _name;
-    //v8::UniquePersistent<v8::ObjectTemplate> _v8ObjectTemplate;
     v8::UniquePersistent<v8::Object> _v8Object;
 
     Q_DISABLE_COPY(ScriptVariantV8Proxy)
@@ -219,10 +210,8 @@ public:  // construction
 
 public:  // QScriptClass implementation
     virtual QString name() const { return fullName(); }
-    //virtual bool supportsExtension(Extension extension) const;
     static void callback(const v8::FunctionCallbackInfo<v8::Value>& arguments);
     void call(const v8::FunctionCallbackInfo<v8::Value>& arguments);
-    //virtual QVariant extension(Extension extension, const QVariant& argument = QVariant());
     static V8ScriptValue newMethod(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime,
                                const QList<QMetaMethod>& metas, int numMaxParams);
 
@@ -250,8 +239,6 @@ public:  // API
     // arg1 was had Null default value, but that needs isolate pointer in V8
     Q_INVOKABLE virtual void connect(ScriptValue arg0, ScriptValue arg1 = ScriptValue()) = 0;
     Q_INVOKABLE virtual void disconnect(ScriptValue arg0, ScriptValue arg1 = ScriptValue()) = 0;
-    //Q_INVOKABLE virtual void connect(ScriptValue arg0) = 0;
-    //Q_INVOKABLE virtual void disconnect(ScriptValue arg0) = 0;
 };
 
 class ScriptSignalV8Proxy final : public ScriptSignalV8ProxyBase, public ReadWriteLockable {
@@ -283,9 +270,6 @@ public:  // API
     virtual void disconnect(ScriptValue arg0, ScriptValue arg1 = ScriptValue()) override;
     //Moved to public temporarily for debugging:
     QString fullName() const;
-
-    //virtual void connect(V8ScriptValue arg0) override;
-    //virtual void disconnect(V8ScriptValue arg0) override;
 
 private:  // storage
 

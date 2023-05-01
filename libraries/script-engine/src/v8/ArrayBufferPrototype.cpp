@@ -23,7 +23,7 @@
 static const int QCOMPRESS_HEADER_POSITION = 0;
 static const int QCOMPRESS_HEADER_SIZE = 4;
 
-// V8TODO
+// V8TODO Do not remove yet, this will be useful in later PRs
 /*Q_DECLARE_METATYPE(QByteArray*)
 
 ArrayBufferPrototype::ArrayBufferPrototype(QObject* parent) : QObject(parent) {

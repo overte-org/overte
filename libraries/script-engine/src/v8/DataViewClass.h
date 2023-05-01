@@ -17,7 +17,7 @@
 #ifndef hifi_DataViewClass_h
 #define hifi_DataViewClass_h
 
-// V8TODO
+// V8TODO Do not remove yet, this will be useful in later PRs
 /*
 #include "ArrayBufferViewClass.h"
 

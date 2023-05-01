@@ -21,7 +21,7 @@
 
 void ScriptValueV8Wrapper::release() {
     // V8TODO: maybe add an assert to check if it happens on script engine thread?
-    // With v8::Locker in V8ScriptValue such requirement shouldn't be necessary but deleting on different thread can cause deadlocks sometimes
+    // With v8::Locker in V8ScriptValue such requirement shouldn't be necessary but could deleting it on different thread cause deadlocks sometimes?
     delete this;
 }
 
@@ -45,7 +45,6 @@ V8ScriptValue ScriptValueV8Wrapper::fullUnwrap(const ScriptValue& value) const {
     ScriptValueV8Wrapper* unwrapped = unwrap(value);
     if (unwrapped) {
         if (unwrapped->engine().get() != _engine) {
-            //return _engine->toScriptValue(unwrapped->toVariant());
             return _engine->castVariantToValue(unwrapped->toVariant());
         } else {
             return unwrapped->toV8Value();
@@ -59,7 +58,6 @@ V8ScriptValue ScriptValueV8Wrapper::fullUnwrap(ScriptEngineV8* engine, const Scr
     ScriptValueV8Wrapper* unwrapped = unwrap(value);
     if (unwrapped) {
         if (unwrapped->engine().get() != engine) {
-            //return static_cast<QScriptEngine*>(engine)->toScriptValue(unwrapped->toVariant());
             return engine->castVariantToValue(unwrapped->toVariant());
         } else {
             return unwrapped->toV8Value();
@@ -78,9 +76,7 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     auto context = _engine->getContext();
     v8::Context::Scope contextScope(context);
     V8ScriptValue v8This = fullUnwrap(thisObject);
-    //V8ScriptValueList qArgs;
     Q_ASSERT(args.length() <= Q_METAMETHOD_INVOKE_MAX_ARGS);
-    //V8TODO I'm not sure how else to do this since v8::Local should probably be on stack, not heap
     v8::Local<v8::Value> v8Args[Q_METAMETHOD_INVOKE_MAX_ARGS];
     int argIndex = 0;
     for (ScriptValueList::const_iterator iter = args.begin(); iter != args.end(); ++iter) {
@@ -92,15 +88,10 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     v8::Local<v8::Value> recv;
     if (v8This.get()->IsObject()) {
         recv = v8This.get();
-        //qCDebug(scriptengine_v8) << "V8 This: " << _engine->scriptValueDebugDetailsV8(v8This);
     }else{
         recv = _engine->getContext()->Global();
-        //recv = v8::Null(isolate);
-        //qCDebug(scriptengine_v8) << "global";
     }
-    //qCDebug(scriptengine_v8) << "V8 Call: " << *v8::String::Utf8Value(isolate, v8This.get()->TypeOf(isolate));
     auto maybeResult = v8Function->Call(_engine->getContext(), recv, args.length(), v8Args);
-    // V8TODO: Exceptions don't seem to actually be caught here?
     if (tryCatch.HasCaught()) {
         qCDebug(scriptengine_v8) << "Function call failed: \"" << _engine->formatErrorMessageFromTryCatch(tryCatch);
     }
@@ -126,6 +117,7 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     // V8TODO should there be a v8 try-catch here?
     // IsFunction check should be here probably
     // V8TODO I'm not sure in what format arguments are yet, backtrace will show how it is used
+    // V8TODO: this seems to never be used?
     Q_ASSERT(false);
     return _engine->undefinedValue();
     /*v8::Local<v8::Function> v8Function = v8::Local<v8::Function>::Cast(_value.get());
@@ -148,7 +140,6 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     Q_ASSERT(args.length() <= Q_METAMETHOD_INVOKE_MAX_ARGS);
-    //V8TODO I'm not sure how else to do this since v8::Local should probably be on stack, not heap
     v8::Local<v8::Value> v8Args[Q_METAMETHOD_INVOKE_MAX_ARGS];
     int argIndex = 0;
     for (ScriptValueList::const_iterator iter = args.begin(); iter != args.end(); ++iter) {
@@ -174,6 +165,7 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
     }
 }
 
+// V8TODO: this seems to never be used?
 ScriptValue ScriptValueV8Wrapper::construct(const ScriptValue& arguments) {
     auto isolate = _engine->getIsolate();
     v8::Locker locker(isolate);
@@ -287,7 +279,6 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
         const v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(_value.constGet());
         //V8TODO: Which context?
         if (object->Get(_engine->getContext(), key).ToLocal(&resultLocal)) {
-        //if (object->Get(_value.constGetContext(), key).ToLocal(&resultLocal)) {
             V8ScriptValue result(_engine, resultLocal);
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
         } else {
@@ -302,15 +293,7 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
     if (name == QString("x")) {
         printf("x");
     }
-    //This displays too many messages during correct operation, but is useful for debugging
-    //qCDebug(scriptengine_v8) << "Failed to get property, parent of value: " << name << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
-    //qCDebug(scriptengine_v8) << "Backtrace: " << _engine->currentContext()->backtrace();
     return _engine->undefinedValue();
-    /*v8::Local<v8::Value> nullValue = v8::Null(_engine->getIsolate());
-    V8ScriptValue nullScriptValue(_engine->getIsolate(), std::move(nullValue));
-    return ScriptValue(new ScriptValueV8Wrapper(_engine, nullScriptValue));*/
-    //V8ScriptValue result = _value.property(name, (V8ScriptValue::ResolveFlags)(int)mode);
-    //return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
 }
 
 ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue::ResolveFlags& mode) const {
@@ -343,7 +326,6 @@ void ScriptValueV8Wrapper::setData(const ScriptValue& value) {
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     V8ScriptValue unwrapped = fullUnwrap(value);
-    // V8TODO Check if it uses same isolate. Would pointer check be enough?
     // Private properties are an experimental feature for now on V8, so we are using regular value for now
     if (_value.constGet()->IsNullOrUndefined()) {
         qCDebug(scriptengine_v8) << "ScriptValueV8Wrapper::setData() was called on a value that is null or undefined";
@@ -377,9 +359,6 @@ void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& v
         v8::Local<v8::String> key = v8::String::NewFromUtf8(isolate, name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
         Q_ASSERT(_value.get()->IsObject());
         auto object = v8::Local<v8::Object>::Cast(_value.get());
-        // V8TODO: What if value context and current context is different?
-        //v8::Maybe<bool> retVal = object->Set(_value.getContext(), key, unwrapped.constGet());
-        //v8::Maybe<bool> retVal = object->Set(_engine->getContext(), key, unwrapped.constGet());
         v8::Maybe<bool> retVal = object->Set(isolate->GetCurrentContext(), key, unwrapped.constGet());
         if (retVal.IsJust() ? !retVal.FromJust() : true){
             qCDebug(scriptengine_v8) << "Failed to set property";
@@ -413,7 +392,6 @@ void ScriptValueV8Wrapper::setProperty(quint32 arrayIndex, const ScriptValue& va
         auto object = v8::Local<v8::Object>::Cast(_value.get());
         //V8TODO: I don't know which context to use here
         v8::Maybe<bool> retVal(object->Set(_engine->getContext(), arrayIndex, unwrapped.constGet()));
-        //v8::Maybe<bool> retVal(object->Set(_value.getContext(), arrayIndex, unwrapped.constGet()));
         if (retVal.IsJust() ? !retVal.FromJust() : true){
             qCDebug(scriptengine_v8) << "Failed to set property";
         }
@@ -440,7 +418,6 @@ void ScriptValueV8Wrapper::setPrototype(const ScriptValue& prototype) {
             auto object = v8::Local<v8::Object>::Cast(_value.get());
             //V8TODO: I don't know which context to use here
             v8::Maybe<bool> retVal = object->SetPrototype(context, unwrappedPrototype->toV8Value().constGet());
-            //v8::Maybe<bool> retVal = object->SetPrototype(_value.getContext(), unwrappedPrototype->toV8Value().constGet());
             if (retVal.IsJust() ? !retVal.FromJust() : true){
                 qCDebug(scriptengine_v8) << "Failed to assign prototype";
             }
@@ -604,23 +581,15 @@ bool ScriptValueV8Wrapper::equals(const ScriptValue& other) const {
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     ScriptValueV8Wrapper* unwrappedOther = unwrap(other);
-    //V8TODO: is this used with different isolates?
-    // in such case conversion will probably be necessary
     Q_ASSERT(_engine->getIsolate() == unwrappedOther->_engine->getIsolate());
     if (!unwrappedOther) {
         return false;
     }else{
-        // V8TODO: which context needs to be used here?
         if (_value.constGet()->Equals(_engine->getContext(), unwrappedOther->toV8Value().constGet()).IsNothing()) {
             return false;
         } else {
             return _value.constGet()->Equals(_engine->getContext(), unwrappedOther->toV8Value().constGet()).FromJust();
         }
-        /*if (_value.constGet()->Equals(unwrappedOther->toV8Value().constGetContext(), unwrappedOther->toV8Value().constGet()).IsNothing()) {
-            return false;
-        } else {
-            return _value.constGet()->Equals(unwrappedOther->toV8Value().constGetContext(), unwrappedOther->toV8Value().constGet()).FromJust();
-        }*/
     }
 }
 
@@ -719,7 +688,7 @@ bool ScriptValueV8Wrapper::isValid() const {
 }
 
 bool ScriptValueV8Wrapper::isVariant() const {
-    //V8TODO
+    //V8TODO: check if it's variant proxy? I'm not sure though.
     auto isolate = _engine->getIsolate();
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);

@@ -17,7 +17,7 @@
 #ifndef hifi_TypedArrays_h
 #define hifi_TypedArrays_h
 
-// V8TODO
+// V8TODO Do not remove yet, this will be useful in later PRs
 /*#include "ArrayBufferViewClass.h"
 
 static const QString BYTES_PER_ELEMENT_PROPERTY_NAME = "BYTES_PER_ELEMENT";

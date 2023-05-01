@@ -23,7 +23,7 @@
 #include "ScriptEngineV8.h"
 #include "TypedArrayPrototype.h"
 
-// V8TODO
+// V8TODO Do not remove yet, this will be useful in later PRs
 /*Q_DECLARE_METATYPE(QByteArray*)
 
 TypedArray::TypedArray(ScriptEngineV8* scriptEngine, QString name) : ArrayBufferViewClass(scriptEngine) {

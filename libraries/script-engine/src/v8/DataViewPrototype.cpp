@@ -22,7 +22,7 @@
 
 #include "ArrayBufferViewClass.h"
 
-// V8TODO
+// V8TODO Do not remove yet, this will be useful in later PRs
 /*Q_DECLARE_METATYPE(QByteArray*)
 
 DataViewPrototype::DataViewPrototype(QObject* parent) : QObject(parent) {

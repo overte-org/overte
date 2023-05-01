@@ -20,7 +20,7 @@
 #include <QtCore/QObject>
 #include "V8Types.h"
 
-// V8TODO
+// V8TODO Do not remove yet, this will be useful in later PRs
 /*class ScriptEngineV8;
 
 static const QString BUFFER_PROPERTY_NAME = "buffer";

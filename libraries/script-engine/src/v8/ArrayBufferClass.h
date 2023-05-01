@@ -22,8 +22,8 @@
 #include "v8.h"
 #include <QtCore/QDateTime>
 
+// V8TODO Do not remove yet, this will be useful in later PRs
 //#include "V8Types.h"
-// V8TODO
 /*
 class ScriptEngineV8;
 
