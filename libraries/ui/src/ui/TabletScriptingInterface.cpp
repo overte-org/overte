@@ -37,6 +37,7 @@ STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
 
     scriptRegisterMetaType<TabletProxy*, wrapperToScriptValue<TabletProxy>, wrapperFromScriptValue<TabletProxy> >(scriptEngine);
     scriptRegisterMetaType<TabletButtonProxy*, wrapperToScriptValue<TabletButtonProxy>, wrapperFromScriptValue<TabletButtonProxy> >(scriptEngine);
+    scriptRegisterMetaType<TabletScriptingInterface::TabletAudioEvents, scriptValueFromEnumClass<TabletScriptingInterface::TabletAudioEvents>, scriptValueToEnumClass<TabletScriptingInterface::TabletAudioEvents>>(scriptEngine);
 }));
 
 // FIXME move to global app properties

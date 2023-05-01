@@ -549,4 +549,6 @@ private:
     QUrl _previousAPILookup;
 };
 
+Q_DECLARE_METATYPE(AddressManager::LookupTrigger)
+
 #endif  // hifi_AddressManager_h

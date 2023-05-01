@@ -215,7 +215,7 @@ public:
      * @function Audio.setReverbOptions
      * @param {AudioEffectOptions} options - The reverberation options.
      */
-    Q_INVOKABLE void setReverbOptions(const AudioEffectOptions* options);
+    Q_INVOKABLE void setReverbOptions(const AudioEffectOptions options);
 
     /*@jsdoc
      * Sets the gain (relative volume) that avatars' voices are played at. This gain is used at the server.

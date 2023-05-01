@@ -34,6 +34,7 @@
 #include "ScriptValueIterator.h"
 #include "ScriptEngineLogging.h"
 #include "v8/FastScriptValueUtils.h"
+#include "AddressManager.h"
 
 bool isListOfStrings(const ScriptValue& arg) {
     if (!arg.isArray()) {
@@ -98,6 +99,8 @@ void registerMetaTypes(ScriptEngine* engine) {
     scriptRegisterSequenceMetaType<QVector<glm::vec2>>(engine);
     scriptRegisterSequenceMetaType<QVector<glm::quat>>(engine);
     scriptRegisterSequenceMetaType<QVector<QString>>(engine);
+
+    scriptRegisterMetaType<AddressManager::LookupTrigger, scriptValueFromEnumClass<AddressManager::LookupTrigger>, scriptValueToEnumClass<AddressManager::LookupTrigger>>(engine, "LookupTrigger");
 }
 
 ScriptValue qVector2DToScriptValue(ScriptEngine* engine, const QVector2D& qVector2D) {

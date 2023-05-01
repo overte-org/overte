@@ -123,16 +123,8 @@ namespace controller {
         return userInputMapper->getPose(Input((uint32_t)source));
     }
 
-    QVector<Action> ScriptingInterface::getAllActions() {
-        return DependencyManager::get<UserInputMapper>()->getAllActions();
-    }
-
     QString ScriptingInterface::getDeviceName(unsigned int device) {
         return DependencyManager::get<UserInputMapper>()->getDeviceName((unsigned short)device);
-    }
-
-    QVector<Input::NamedPair> ScriptingInterface::getAvailableInputs(unsigned int device) {
-        return DependencyManager::get<UserInputMapper>()->getAvailableInputs((unsigned short)device);
     }
 
     int ScriptingInterface::findDevice(QString name) {
