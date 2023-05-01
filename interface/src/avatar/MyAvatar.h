@@ -2292,13 +2292,6 @@ public slots:
     void clearAvatarEntity(const QUuid& entityID, bool requiresRemovalFromTree = true) override;
 
     /*@jsdoc
-     * @function MyAvatar.sanitizeAvatarEntityProperties
-     * @param {EntityItemProperties} properties - Properties.
-     * @deprecated This function is deprecated and will be removed.
-     */
-    void sanitizeAvatarEntityProperties(EntityItemProperties& properties) const;
-
-    /*@jsdoc
      * Sets whether your avatar mesh is visible to you.
      * @function MyAvatar.setEnableMeshVisible
      * @param {boolean} enabled - <code>true</code> to show your avatar mesh, <code>false</code> to hide.
@@ -2689,6 +2682,7 @@ private:
     virtual int parseDataFromBuffer(const QByteArray& buffer) override;
     virtual glm::vec3 getSkeletonPosition() const override;
     int _skeletonModelChangeCount { 0 };
+    void sanitizeAvatarEntityProperties(EntityItemProperties& properties) const;
 
     void saveAvatarScale();
 
@@ -3118,6 +3112,8 @@ private:
 
     QTimer _addAvatarEntitiesToTreeTimer;
 };
+
+Q_DECLARE_METATYPE(MyAvatar::DriveKeys)
 
 ScriptValue audioListenModeToScriptValue(ScriptEngine* engine, const AudioListenerMode& audioListenerMode);
 bool audioListenModeFromScriptValue(const ScriptValue& object, AudioListenerMode& audioListenerMode);

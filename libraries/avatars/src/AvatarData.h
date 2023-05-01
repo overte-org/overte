@@ -778,16 +778,6 @@ public:
      */
     Q_INVOKABLE char getHandState() const { return _handState; }
 
-    const QVector<JointData>& getRawJointData() const { return _jointData; }
-
-    /*@jsdoc
-     * Sets joint translations and rotations from raw joint data.
-     * @function Avatar.setRawJointData
-     * @param {JointData[]} data - The raw joint data.
-     * @deprecated This function is deprecated and will be removed.
-     */
-    Q_INVOKABLE void setRawJointData(QVector<JointData> data);
-
     /*@jsdoc
      * Sets a specific joint's rotation and position relative to its parent, in model coordinates.
      * <p><strong>Warning:</strong> These coordinates are not necessarily in meters.</p>
@@ -1706,6 +1696,9 @@ protected:
     QByteArray packAvatarEntityTraitInstance(AvatarTraits::TraitInstanceID traitInstanceID);
     QByteArray packGrabTraitInstance(AvatarTraits::TraitInstanceID traitInstanceID);
 
+    const QVector<JointData>& getRawJointData() const { return _jointData; }
+    void setRawJointData(QVector<JointData> data);
+
     void unpackSkeletonModelURL(const QByteArray& data);
     void unpackSkeletonData(const QByteArray& data);
 
@@ -1894,6 +1887,9 @@ private:
     Q_DISABLE_COPY(AvatarData)
 
     friend void avatarStateFromFrame(const QByteArray& frameData, AvatarData* _avatar);
+    // Required for setRawJointData. Making setRawJointData public would expose it to scripting interface.
+    friend class SkeletonModel;
+    friend class MyAvatar;
     static QUrl _defaultFullAvatarModelUrl;
 };
 Q_DECLARE_METATYPE(AvatarData*)

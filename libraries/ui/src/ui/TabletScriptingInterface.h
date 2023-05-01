@@ -687,5 +687,6 @@ protected:
 };
 
 Q_DECLARE_METATYPE(TabletButtonProxy*);
+Q_DECLARE_METATYPE(TabletScriptingInterface::TabletAudioEvents)
 
 #endif // hifi_TabletScriptingInterface_h
