@@ -20,22 +20,6 @@
 #ifdef CONVERSIONS_OPTIMIZED_FOR_V8
 
 ScriptValue vec3ToScriptValue(ScriptEngine* engine, const glm::vec3& vec3) {
-    //auto prototype = engine->globalObject().property("__hifi_vec3__");
-    /*if (!prototype.hasProperty("defined") || !prototype.property("defined").toBool()) {
-        prototype = engine->evaluate(
-            "__hifi_vec3__ = Object.defineProperties({}, { "
-            "defined: { value: true },"
-            "0: { set: function(nv) { return this.x = nv; }, get: function() { return this.x; } },"
-            "1: { set: function(nv) { return this.y = nv; }, get: function() { return this.y; } },"
-            "2: { set: function(nv) { return this.z = nv; }, get: function() { return this.z; } },"
-            "r: { set: function(nv) { return this.x = nv; }, get: function() { return this.x; } },"
-            "g: { set: function(nv) { return this.y = nv; }, get: function() { return this.y; } },"
-            "b: { set: function(nv) { return this.z = nv; }, get: function() { return this.z; } },"
-            "red: { set: function(nv) { return this.x = nv; }, get: function() { return this.x; } },"
-            "green: { set: function(nv) { return this.y = nv; }, get: function() { return this.y; } },"
-            "blue: { set: function(nv) { return this.z = nv; }, get: function() { return this.z; } }"
-            "})");
-    }*/
     ScriptValue value = engine->newObject();
 
     ScriptValueV8Wrapper *proxy = ScriptValueV8Wrapper::unwrap(value);
@@ -106,11 +90,9 @@ ScriptValue vec3ToScriptValue(ScriptEngine* engine, const glm::vec3& vec3) {
         Q_ASSERT(false);
     }
 
-    //auto v8Prototype = ScriptValueV8Wrapper::fullUnwrap(engineV8, prototype);
     if (!v8Object->SetPrototype(context, prototype).FromMaybe(false)) {
         Q_ASSERT(false);
     }
-    //value.setPrototype(prototype);
     return value;
 }
 
@@ -143,7 +125,6 @@ bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3) {
         }
     } else if (v8Value->IsArray()) {
         auto array = v8::Local<v8::Array>::Cast(v8Value);
-        //QVariantList list = object.toVariant().toList();
         if (array->Length() == 3) {
             v8::Local<v8::Value> xValue,yValue,zValue;
             if (!array->Get(context, 0).ToLocal(&xValue)) {
@@ -218,11 +199,6 @@ bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3) {
                 Q_ASSERT(false);
             }
         }
-
-        //f (!x.isValid() || !y.isValid() || !z.isValid()) {
-            // V8TODO: This breaks the sit script for some reason
-            //return false;
-        //}
 
         vec3.x = xValue->NumberValue(context).FromMaybe(0.0);
         vec3.y = yValue->NumberValue(context).FromMaybe(0.0);

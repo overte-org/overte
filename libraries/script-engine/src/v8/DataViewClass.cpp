@@ -13,7 +13,7 @@
 
 #include "DataViewClass.h"
 
-// V8TODO
+// V8TODO Do not remove yet, this will be useful in later PRs
 /*#include "DataViewPrototype.h"
 
 Q_DECLARE_METATYPE(QByteArray*)

@@ -17,7 +17,7 @@
 #ifndef hifi_ArrayBufferPrototype_h
 #define hifi_ArrayBufferPrototype_h
 
-// V8TODO
+// V8TODO Do not remove yet, this will be useful in later PRs
 /*#include <QtCore/QObject>
 
 #include "../Scriptable.h"

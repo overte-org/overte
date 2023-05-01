@@ -53,15 +53,6 @@ void ScriptEngineV8::registerCustomType(int type,
 Q_DECLARE_METATYPE(ScriptValue);
 Q_DECLARE_METATYPE(QVariantMap);
 
-/*static V8ScriptValue ScriptValueToV8ScriptValue(ScriptEngineV8* engine, const ScriptValue& src) {
-    return ScriptValueV8Wrapper::fullUnwrap(static_cast<ScriptEngineV8*>(engine), src);
-}*/
-
-/*static void ScriptValueFromV8ScriptValue(ScriptEngineV8* engine, const V8ScriptValue& src, ScriptValue& dest) {
-    //ScriptEngineV8* engine = static_cast<ScriptEngineV8*>(src.engine());
-    dest = ScriptValue(new ScriptValueV8Wrapper(engine, src));
-}*/
-
 static ScriptValue StringListToScriptValue(ScriptEngine* engine, const QStringList& src) {
     int len = src.length();
     ScriptValue dest = engine->newArray(len);
@@ -189,9 +180,6 @@ static bool JsonArrayFromScriptValue(const ScriptValue& src, QJsonArray& dest) {
 // QMetaType::QJsonArray
 
 void ScriptEngineV8::registerSystemTypes() {
-    // V8TODO: why is this commented out?
-    //qScriptRegisterMetaType(this, ScriptValueToV8ScriptValue, ScriptValueFromV8ScriptValue);
-
     scriptRegisterMetaType<QStringList, StringListToScriptValue, StringListFromScriptValue>(static_cast<ScriptEngine*>(this));
     scriptRegisterMetaType<QVariantList, VariantListToScriptValue, VariantListFromScriptValue>(this);
     scriptRegisterMetaType<QVariantMap, VariantMapToScriptValue, VariantMapFromScriptValue>(this);
@@ -308,12 +296,6 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
     v8::Context::Scope contextScope(context);
     const v8::Local<v8::Value> val = v8Val.constGet();
 
-    // Conversion debugging:
-    /*if (destTypeId == QMetaType::QVariant && val->IsBoolean()) {
-        //It's for placing breakpoint here
-        qCDebug(scriptengine_v8) << "Conversion Debug: " << scriptValueDebugDetailsV8(v8Val);
-    }*/
-
     // if we're not particularly interested in a specific type, try to detect if we're dealing with a registered type
     if (destTypeId == QMetaType::UnknownType) {
         QObject* obj = ScriptObjectV8Proxy::unwrap(v8Val);
@@ -346,10 +328,8 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
         _customTypeProtect.unlock();
     }
     if (demarshalFunc) {
-        //dest = QVariant(destTypeId, static_cast<void*>(NULL));
         dest = QVariant();
         ScriptValue wrappedVal(new ScriptValueV8Wrapper(this, v8Val));
-        //Q_ASSERT(dest.constData() != nullptr);
         bool success = demarshalFunc(wrappedVal, dest);
         if(!success) dest = QVariant();
         return success;
@@ -374,7 +354,6 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                     v8::String::Utf8Value string(_v8Isolate, val);
                     Q_ASSERT(*string != nullptr);
                     dest = QVariant::fromValue(QString(*string));
-                    //dest = QVariant::fromValue(val->ToString(_v8Context.Get(_v8Isolate)).ToLocalChecked()->);
                     break;
                 }
                 if (val->IsNumber()) {
@@ -406,12 +385,12 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                         break;
                     }
                 }
-                // V8TODO
                 errorMessage = QString() + "Conversion failure: " + QString(*v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked()))
                                + "to variant. Destination type: " + QMetaType::typeName(destTypeId) +" details: "+ scriptValueDebugDetailsV8(v8Val);
                 qCDebug(scriptengine_v8) << errorMessage;
 
                 //Q_ASSERT(false);
+                // V8TODO
                 //dest = val->ToVariant();
                 break;
             case QMetaType::Bool:
@@ -489,16 +468,13 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                     return true;
                 }
                 if (val->IsBoolean()) {
-                    //V8TODO is it right isolate? What if value from different script engine is used here
                     dest = QVariant::fromValue(val->BooleanValue(_v8Isolate));
                     return true;
                 }
                 if (val->IsString()) {
-                    //V8TODO is it right context? What if value from different script engine is used here
                     v8::String::Utf8Value string(_v8Isolate, val);
                     Q_ASSERT(*string != nullptr);
                     dest = QVariant::fromValue(QString(*string));
-                    //dest = QVariant::fromValue(val->ToString(_v8Context.Get(_v8Isolate)).ToLocalChecked()->);
                     return true;
                 }
                 if (val->IsNumber()) {
@@ -529,7 +505,6 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                         return true;
                     }
                 }
-                //V8TODO is v8::Array to QVariant conversion used anywhere?
                 errorMessage = QString() + "Conversion to variant failed: " + QString(*v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked()))
                                        + " Destination type: " + QMetaType::typeName(destTypeId) + " Value details: " + scriptValueDebugDetailsV8(v8Val);
                 qCDebug(scriptengine_v8) << errorMessage;
@@ -640,14 +615,12 @@ bool ScriptEngineV8::convertJSObjectToVariant(v8::Local<v8::Object> object, QVar
 }
 
 QString ScriptEngineV8::valueType(const V8ScriptValue& v8Val) {
-    // V8TODO I'm not sure why is there a TODO here
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
     v8::Local<v8::Context> context = getContext();
     v8::Context::Scope contextScope(context);
 
-    //v8::HandleScope handleScope(const_cast<v8::Isolate*>(v8Val.constGetIsolate()));
     const v8::Local<v8::Value> val = v8Val.constGet();
 
     if (val->IsUndefined()) {
@@ -684,7 +657,6 @@ QString ScriptEngineV8::valueType(const V8ScriptValue& v8Val) {
         return dest.typeName();
     }
     qCDebug(scriptengine_v8) << "Cast to variant failed";
-    // V8TODO: what to return here?
     return "undefined";
 }
 
@@ -765,7 +737,7 @@ V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
             }
         default:
             // check to see if this is a pointer to a QObject-derived object
-            // V8TODO: WeakPointerToQObject and SharedPointerToQObject were causing trouble here because some values are handled by custom prototypes instead
+            // WeakPointerToQObject and SharedPointerToQObject were causing trouble here because some values are handled by custom prototypes instead
             if (QMetaType::typeFlags(valTypeId) & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
                 QObject* obj = val.value<QObject*>();
                 if (obj == nullptr) return V8ScriptValue(this, v8::Null(_v8Isolate));

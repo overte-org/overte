@@ -22,7 +22,7 @@
 #include "V8Types.h"
 #include "../Scriptable.h"
 
-// V8TODO
+// V8TODO Do not remove yet, this will be useful in later PRs
 /// [V8] The javascript functions associated with a <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a></code> instance prototype
 /*class TypedArrayPrototype : public QObject, public Scriptable {
     Q_OBJECT

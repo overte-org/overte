@@ -21,7 +21,7 @@
 #include "TypedArrays.h"
 
 
-// V8TODO
+// V8TODO Do not remove yet, this will be useful in later PRs
 /*static const QString CLASS_NAME = "ArrayBuffer";
 
 // FIXME: Q_DECLARE_METATYPE is global and really belongs in a shared header file, not per .cpp like this

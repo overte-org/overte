@@ -22,6 +22,7 @@
 
 // Lambda helps create callable V8ScriptValues out of std::functions:
 // (just meant for use from within the script engine itself)
+// V8TODO: this looks like it can be safely removed?
 class Lambda : public QObject {
     Q_OBJECT
 public:

@@ -78,14 +78,12 @@ public:  // ScriptEngine implementation
     virtual ScriptValue globalObject() override;
     virtual bool hasUncaughtException() const override;
     virtual bool isEvaluating() const override;
-    //virtual ScriptValue lintScript(const QString& sourceCode, const QString& fileName, const int lineNumber = 1) override;
     virtual ScriptValue checkScriptSyntax(ScriptProgramPointer program) override;
 
     virtual ScriptValue newArray(uint length = 0) override;
     virtual ScriptValue newArrayBuffer(const QByteArray& message) override;
     virtual ScriptValue newFunction(ScriptEngine::FunctionSignature fun, int length = 0) override;
     virtual ScriptValue newObject() override;
-    //virtual ScriptValue newObject( v8::Local<v8::ObjectTemplate> );
     virtual ScriptValue newMethod(QObject* object, V8ScriptValue lifetime,
                                const QList<QMetaMethod>& metas, int numMaxParams);
     virtual ScriptProgramPointer newProgram(const QString& sourceCode, const QString& fileName) override;
@@ -124,7 +122,6 @@ public:  // ScriptEngine implementation
     virtual void setProcessEventsInterval(int interval) override;
     virtual QThread* thread() const override;
     virtual void setThread(QThread* thread) override;
-    //Q_INVOKABLE virtual void enterIsolateOnThisThread() override;
     virtual ScriptValue undefinedValue() override;
     virtual std::shared_ptr<ScriptException> uncaughtException() const override;
     virtual void updateMemoryCost(const qint64& deltaSize) override;
@@ -153,18 +150,6 @@ protected: // brought over from BaseScriptEngine
     static bool IS_THREADSAFE_INVOCATION(const QThread* thread, const QString& method);
 
 public: // public non-interface methods for other QtScript-specific classes to use
-    /*typedef V8ScriptValue (*FunctionSignature)(v8::Local<v8::Context>, ScriptEngineV8 *);
-    typedef V8ScriptValue (*FunctionWithArgSignature)(v8::Local<v8::Context>, ScriptEngineV8 *, void *);
-    /// registers a global getter/setter
-    Q_INVOKABLE void registerGetterSetter(const QString& name, FunctionSignature getter,
-                                          FunctionSignature setter, const QString& parent = QString(""));
-
-    /// register a global function
-    Q_INVOKABLE void registerFunction(const QString& name, FunctionSignature fun, int numArguments = -1);
-
-    /// register a function as a method on a previously registered global object
-    Q_INVOKABLE void registerFunction(const QString& parent, const QString& name, FunctionSignature fun,
-                                      int numArguments = -1);*/
 
     /// registers a global object by name
     Q_INVOKABLE void registerValue(const QString& valueName, V8ScriptValue value);
@@ -193,15 +178,14 @@ public: // not for public use, but I don't like how Qt strings this along with p
     const v8::Local<v8::Context> getConstContext() const;
     QString formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch);
     // Useful for debugging
-    //QStringList getCurrentStackTrace();
     virtual QStringList getCurrentScriptURLs() const override;
 
     using ObjectWrapperMap = QMap<QObject*, QWeakPointer<ScriptObjectV8Proxy>>;
     mutable QMutex _qobjectWrapperMapProtect;
     ObjectWrapperMap _qobjectWrapperMap;
     // Second map, from which wrappers are removed by script engine upon deletion
-    // V8TODO add a V8 callback that removes pointer from the map so that it gets deleted
     QMap<QObject*, QSharedPointer<ScriptObjectV8Proxy>> _qobjectWrapperMapV8;
+    // V8TODO: maybe just a single map can be used instead to increase performance?
 
     // Used by ScriptObjectV8Proxy to create JS objects referencing C++ ones
     v8::Local<v8::ObjectTemplate> getObjectProxyTemplate();
@@ -219,17 +203,9 @@ public: // not for public use, but I don't like how Qt strings this along with p
     void decrementScriptValueCounter() { scriptValueCount--; };
     void incrementScriptValueProxyCounter() { scriptValueProxyCount++; };
     void decrementScriptValueProxyCounter() { scriptValueProxyCount--; };
-    //V8TODO: do the same for other proxy objects
 #endif
 
 protected:
-    // like `newFunction`, but allows mapping inline C++ lambdas with captures as callable V8ScriptValues
-    // even though the context/engine parameters are redundant in most cases, the function signature matches `newFunction`
-    // anyway so that newLambdaFunction can be used to rapidly prototype / test utility APIs and then if becoming
-    // permanent more easily promoted into regular static newFunction scenarios.
-    /*ScriptValue newLambdaFunction(std::function<V8ScriptValue(V8ScriptContext* context, ScriptEngineV8* engine)> operation,
-                                   const V8ScriptValue& data,
-                                   const ValueOwnership& ownership = AutoOwnership);*/
 
     void registerSystemTypes();
 
@@ -249,7 +225,6 @@ protected:
 
     // V8TODO: clean up isolate when script engine is destroyed?
     v8::Isolate* _v8Isolate;
-    //v8::UniquePersistent<v8::Context> _v8Context;
 
     struct CustomMarshal {
         ScriptEngine::MarshalFunction marshalFunc;
@@ -263,7 +238,6 @@ protected:
     CustomPrototypeMap _customPrototypes;
     ScriptValue _nullValue;
     ScriptValue _undefinedValue;
-    //mutable ScriptContextV8Pointer _currContext;
     // Current context stack. Main context is first on the list and current one is last.
     QList<ScriptContextV8Pointer> _contexts;
     // V8TODO: release in destructor

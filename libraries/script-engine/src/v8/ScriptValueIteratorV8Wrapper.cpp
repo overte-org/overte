@@ -20,7 +20,6 @@ V8ScriptValueIterator::V8ScriptValueIterator(ScriptEngineV8* engine, v8::Local<v
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    // V8TODO Is this necessary?
     _context.Reset(isolate, _engine->getContext());
     auto context = _context.Get(isolate);
     v8::Context::Scope contextScope(context);
@@ -83,7 +82,6 @@ V8ScriptValue V8ScriptValueIterator::value() {
     if (!_object.Get(isolate)->Get(context, propertyName->ToString(context).ToLocalChecked()).ToLocal(&v8Value)) {
         Q_ASSERT(false);
     }
-    //V8TODO: sometimes no value gets written to v8Value. This needs to be investigated and fixed.
     if (v8Value.IsEmpty()) {
         qDebug() << "V8ScriptValueIterator::value: value handle is empty for key: " << *v8::String::Utf8Value(isolate, propertyName->ToString(context).ToLocalChecked());
         v8Value = v8::Undefined(isolate);
@@ -93,7 +91,6 @@ V8ScriptValue V8ScriptValueIterator::value() {
 
 ScriptValue::PropertyFlags ScriptValueIteratorV8Wrapper::flags() const {
     //V8TODO
-    //return (ScriptValue::PropertyFlags)(int)_value.flags();
     return ScriptValue::PropertyFlags();
 }
 

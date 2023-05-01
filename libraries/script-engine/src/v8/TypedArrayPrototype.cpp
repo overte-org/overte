@@ -17,7 +17,7 @@
 
 #include "TypedArrays.h"
 
-// V8TODO
+// V8TODO Do not remove yet, this will be useful in later PRs
 /*Q_DECLARE_METATYPE(QByteArray*)
 
 TypedArrayPrototype::TypedArrayPrototype(QObject* parent) : QObject(parent) {

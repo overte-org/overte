@@ -16,7 +16,7 @@
 
 Q_DECLARE_METATYPE(QByteArray*)
 
-// V8TODO
+// V8TODO Do not remove yet, this will be useful in later PRs
 /*ArrayBufferViewClass::ArrayBufferViewClass(ScriptEngineV8* scriptEngine) :
     QObject(scriptEngine),
     QScriptClass(scriptEngine),
