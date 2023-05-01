@@ -31,6 +31,7 @@
 class QColor;
 class QUrl;
 
+Q_DECLARE_METATYPE(uint16_t)
 Q_DECLARE_METATYPE(glm::vec2)
 Q_DECLARE_METATYPE(glm::u8vec3)
 Q_DECLARE_METATYPE(glm::vec3)

@@ -27,6 +27,7 @@
 #include <QJsonDocument>
 
 int uint32MetaTypeId = qRegisterMetaType<glm::uint32>("uint32");
+int uint16MetaTypeId = qRegisterMetaType<uint16_t>();
 int glmUint32MetaTypeId = qRegisterMetaType<glm::uint32>("glm::uint32");
 int vec2MetaTypeId = qRegisterMetaType<glm::vec2>();
 int u8vec3MetaTypeId = qRegisterMetaType<u8vec3>();
