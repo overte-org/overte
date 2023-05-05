@@ -53,7 +53,6 @@ PickResultPointer LaserPointer::getPickResultCopy(const PickResultPointer& pickR
 }
 
 QVariantMap LaserPointer::toVariantMap() const {
-    //V8TODO: this cannot be done anymore without script engine
     QVariantMap qVariantMap = Parent::toVariantMap();
 
     QVariantMap qRenderStates;

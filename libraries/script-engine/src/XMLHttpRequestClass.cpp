@@ -221,6 +221,7 @@ void XMLHttpRequestClass::requestFinished() {
         _rawResponseData.append(_reply->readAll());
 
         if (_responseType == "json") {
+            // V8TODO: V8 JSON parser needs to be used instead
             _responseData = _engine->evaluate("(" + QString(_rawResponseData.data()) + ")");
             if (_responseData.isError()) {
                 _engine->clearExceptions();

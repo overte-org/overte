@@ -421,7 +421,6 @@ private:
     const glm::vec3& UP() { return Vectors::UP; }
     const glm::vec3& FRONT() { return Vectors::FRONT; }
 
-    //V8TODO delete after V8 works - used only for debugging
 public:
     virtual ~Vec3();
 };

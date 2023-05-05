@@ -282,7 +282,7 @@ bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3) {
         }
 
         if (!x.isValid() || !y.isValid() || !z.isValid()) {
-            // V8TODO: This breaks the sit script for some reason
+            // V8TODO: This breaks the sit script because in our API valid Vec3 can be created from just 2 values
             //return false;
         }
 

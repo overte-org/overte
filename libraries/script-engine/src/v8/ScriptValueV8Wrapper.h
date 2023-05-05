@@ -101,7 +101,6 @@ private: // helper functions
 
 private: // storage
     ScriptEngineV8 *_engine;
-    //V8TODO: this needs a persistent handle instead, maybe with set weak?
     V8ScriptValue _value;
 
     Q_DISABLE_COPY(ScriptValueV8Wrapper)

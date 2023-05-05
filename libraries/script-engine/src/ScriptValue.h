@@ -119,8 +119,6 @@ public:
     inline QObject* toQObject() const;
 
 protected:
-    //V8TODO
-    //Won't a regular pointer cause memory leak?
     ScriptValueProxy* _proxy;
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(ScriptValue::PropertyFlags);

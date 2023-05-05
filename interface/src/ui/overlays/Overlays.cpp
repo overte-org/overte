@@ -51,8 +51,7 @@ STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
                             RayToOverlayIntersectionResultFromScriptValue>(scriptEngine);
 }));
 
-// V8TODO: _scriptEngine can be safely removed as soon as 3D overlays are not used anymore by default scripts
-Overlays::Overlays() /*: _scriptEngine(newScriptEngine())*/ {
+Overlays::Overlays() {
     ADD_TYPE_MAP(Box, cube);
     ADD_TYPE_MAP(Sphere, sphere);
     _overlayToEntityTypes["rectangle3d"] = "Shape";
@@ -309,12 +308,6 @@ QString Overlays::entityToOverlayType(const QString& type) {
     }
 
 static QHash<QUuid, std::pair<glm::quat, bool>> savedRotations = QHash<QUuid, std::pair<glm::quat, bool>>();
-
-// V8TODO: This can be safely removed as soon as 3D overlays are not used anymore by default scripts
-/*EntityItemProperties Overlays::convertOverlayToEntityProperties(QVariantMap& overlayProps, const QString& type, bool add, const QUuid& id) {
-    std::pair<glm::quat, bool> rotation;
-    return convertOverlayToEntityProperties(overlayProps, rotation, type, add, id);
-}*/
 
 // V8TODO: This can be safely removed as soon as 3D overlays are not used anymore by default scripts
 /*EntityItemProperties Overlays::convertOverlayToEntityProperties(QVariantMap& overlayProps, std::pair<glm::quat, bool>& rotationToSave, const QString& type, bool add, const QUuid& id) {
@@ -815,22 +808,6 @@ QUuid Overlays::addOverlay(const QString& type, const QVariant& properties) {
     }
 
     return UNKNOWN_ENTITY_ID;
-    // V8TODO: This can be safely removed as soon as 3D overlays are not used anymore by default scripts
-    /*QString entityType = overlayToEntityType(type);
-    if (entityType == "Unknown") {
-        return UNKNOWN_ENTITY_ID;
-    }
-
-    QVariantMap propertyMap = properties.toMap();
-    if (type == "rectangle3d") {
-        propertyMap["shape"] = "Quad";
-    }
-    std::pair<glm::quat, bool> rotationToSave;
-    QUuid id = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(convertOverlayToEntityProperties(propertyMap, rotationToSave, entityType, true), entity::HostType::LOCAL);
-    if (entityType == "Text" || entityType == "Image" || entityType == "Grid" || entityType == "Web") {
-        savedRotations[id] = rotationToSave;
-    }
-    return id;*/
 }
 
 QUuid Overlays::add2DOverlay(const Overlay::Pointer& overlay) {
@@ -889,13 +866,6 @@ bool Overlays::editOverlay(const QUuid& id, const QVariant& properties) {
     }
 
     return false;
-
-    // V8TODO: This can be safely removed as soon as 3D overlays are not used anymore by default scripts
-    /*
-    auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
-    auto propertyMap = properties.toMap();
-    EntityItemProperties entityProperties = convertOverlayToEntityProperties(propertyMap, entityScriptingInterface->getEntityType(id), false, id);
-    return !entityScriptingInterface->editEntity(id, entityProperties).isNull();*/
 }
 
 bool Overlays::editOverlays(const QVariant& propertiesById) {
@@ -907,7 +877,6 @@ bool Overlays::editOverlays(const QVariant& propertiesById) {
 
     QVariantMap deferred;
     const QVariantMap map = propertiesById.toMap();
-    //auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
     for (const auto& key : map.keys()) {
         QUuid id = QUuid(key);
         const QVariant& properties = map[key];
@@ -921,9 +890,6 @@ bool Overlays::editOverlays(const QVariant& propertiesById) {
             overlay->setProperties(properties.toMap());
         } else {
             qDebug() << "Overlays::editOverlays doesn't support editing entities anymore";
-            // V8TODO: This can be safely removed as soon as 3D overlays are not used anymore by default scripts
-            /*auto propertyMap = properties.toMap();
-            entityScriptingInterface->editEntity(id, convertOverlayToEntityProperties(propertyMap, entityScriptingInterface->getEntityType(id), false, id));*/
         }
     }
 

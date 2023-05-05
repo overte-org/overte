@@ -213,7 +213,6 @@ ScriptObjectV8Proxy::~ScriptObjectV8Proxy() {
         v8::HandleScope handleScope(isolate);
         if (_object)
             qCDebug(scriptengine_v8) << "Deleting object proxy: " << name();
-        // V8TODO: once WeakPersistent pointer is added we should check if it's valid before deleting
         Q_ASSERT(!_v8Object.Get(isolate)->IsNullOrUndefined());
         // This prevents unwrap function from unwrapping proxy that was deleted
         _v8Object.Get(isolate)->SetAlignedPointerInInternalField(0, const_cast<void*>(internalPointsToDeletedQObjectProxy));
@@ -359,9 +358,7 @@ void ScriptObjectV8Proxy::investigate() {
     v8Object->SetInternalField(2, propertiesObject);
 
     // Add all the methods objects as properties - this allows adding properties to a given method later. Is used by Script.request.
-    // V8TODO: Should these be deleted when the script-owned object is destroyed? It needs checking if script-owned objects will be garbage-collected, or will self-referencing prevent it.
     for (auto i = _methods.begin(); i != _methods.end(); i++) {
-        //V8TODO: lifetime may prevent garbage collection?
         V8ScriptValue method = ScriptMethodV8Proxy::newMethod(_engine, qobject, V8ScriptValue(_engine, v8Object),
                                                               i.value().methods, i.value().numMaxParams);
         if(!propertiesObject->Set(_engine->getContext(), v8::String::NewFromUtf8(isolate, i.value().name.toStdString().c_str()).ToLocalChecked(), method.get()).FromMaybe(false)) {

@@ -966,7 +966,6 @@ ScriptValue ScriptEngineV8::newArrayBuffer(const QByteArray& message) {
     v8::Isolate::Scope isolateScope(_v8Isolate);
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(getContext());
-    //V8TODO: this will leak memory
     std::shared_ptr<v8::BackingStore> backingStore(v8::ArrayBuffer::NewBackingStore(_v8Isolate, message.size()));
     std::memcpy(backingStore.get()->Data(), message.constData(), message.size());
     auto arrayBuffer = v8::ArrayBuffer::New(_v8Isolate, backingStore);
