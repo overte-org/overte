@@ -69,7 +69,7 @@ public:  // ScriptValue implementation
                              const ScriptValue::PropertyFlags& flags = ScriptValue::KeepExistingFlags) override;
     virtual void setPrototype(const ScriptValue& prototype) override;
     virtual bool strictlyEquals(const ScriptValue& other) const override;
-    virtual QList<QString> getPropertyNames() const;
+    virtual QList<QString> getPropertyNames() const override;
 
     virtual bool equals(const ScriptValue& other) const override;
     virtual bool isArray() const override;
