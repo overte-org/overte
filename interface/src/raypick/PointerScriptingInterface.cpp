@@ -542,7 +542,7 @@ std::shared_ptr<Pointer> PointerScriptingInterface::buildParabolaPointer(const P
 }
 
 void PointerScriptingInterface::editRenderState(unsigned int uid, const QString& renderState, const QVariant& properties) const {
-    //V8TODO: this won't work for now
+    //V8TODO: this needs testing
     QVariantMap propMap = properties.toMap();
 
     QVariant startProps;

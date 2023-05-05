@@ -1680,6 +1680,7 @@ bool EntityScriptingInterface::getServerScriptStatus(const QUuid& entityID, Scri
         auto engine = callback.engine();
         // V8TODO: it seems to sometimes be called on a wrong thread, reading to script engine crashes. I added an assert for now.
         // V8TODO: somehow the asserts are not happening here, but destructor still runs on main thread sometimes and deadlocks.
+        // V8TODO: I think this was fixed? Should be tested
         Q_ASSERT(QThread::currentThread() == engine->thread());
         Q_ASSERT(QThread::currentThread() == engine->manager()->thread());
         QString statusString = EntityScriptStatus_::valueToKey(request->getStatus());
