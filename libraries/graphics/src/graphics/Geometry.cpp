@@ -160,7 +160,7 @@ graphics::MeshPointer Mesh::map(std::function<glm::vec3(glm::vec3)> vertexFunc,
     gpu::BufferView::Index numVertices = (gpu::BufferView::Index)getNumVertices();
 
     gpu::Resource::Size vertexSize = numVertices * sizeof(glm::vec3);
-    std::unique_ptr<unsigned char> resultVertexData{ new unsigned char[vertexSize] };
+    std::unique_ptr<unsigned char[]> resultVertexData{ new unsigned char[vertexSize] };
     unsigned char* vertexDataCursor = resultVertexData.get();
 
     for (gpu::BufferView::Index i = 0; i < numVertices; i++) {
