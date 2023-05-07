@@ -1,0 +1,62 @@
+#include <QtNetwork>
+#include <QUrlQuery>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <NetworkAccessManager.cpp>
+
+void sendWebhookMessage(const QString& webhookUrl, const QJsonObject& json) {
+    // Matrix.org webhook URL
+    QUrl url = QUrl::fromUserInput(webhookUrl);
+
+    // Convert the JSON object to a QByteArray
+    QJsonDocument json_doc(json);
+    QByteArray json_data = json_doc.toJson(QJsonDocument::Compact);
+
+    // Create a QNetworkRequest with the URL
+    QNetworkRequest request(url);
+
+    // Set the HTTP headers
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    QNetworkAccessManager& nam = NetworkAccessManager::getInstance();
+
+    // Send the HTTP request using the QNetworkAccessManager instance
+    QNetworkReply* reply = nam.post(request, json_data);
+
+    // Connect the finished() signal of the QNetworkReply to a lambda function
+    QObject::connect(reply, &QNetworkReply::finished, [=]() {
+        // Handle the HTTP response
+        if (reply->error() != QNetworkReply::NoError) {
+            qCritical() << "Error sending message to webhook:" << reply->errorString();
+        } else {
+            qDebug() << "Message sent successfully!";
+        }
+
+        // Delete the QNetworkReply object
+        reply->deleteLater();
+    });
+}
+
+void sendDiscordMessage(QString& webookUrl, QString& message) {
+    // Create a JSON object with the message content and other optional fields
+    QJsonObject json;
+    json.insert("content", message);
+
+    // Call the sendWebhookMessage function
+    sendWebhookMessage(webookUrl, json);
+}
+
+
+// TODO: Ask 74 to test this feature below.
+
+
+//void sendMatrixMessage(QString& webhookUrl, QString& message, QString& username) {
+//    // Create a JSON object with the message content and other optional fields
+//    QJsonObject json;
+//    json.insert("text", message);
+//    if (!username.isEmpty()) {
+//        json.insert("username", username);
+//    }
+//
+//    // Call the sendWebhookMessage function
+//    sendWebhookMessage(webhookUrl, json);
+//}
