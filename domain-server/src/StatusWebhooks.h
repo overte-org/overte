@@ -6,7 +6,7 @@
 
 void sendWebhookMessage(const QString& webhookUrl, const QJsonObject& json) {
     // Matrix.org webhook URL
-    QUrl url = QUrl::fromUserInput(webhookUrl);
+    QUrl url(webhookUrl);
 
     // Convert the JSON object to a QByteArray
     QJsonDocument json_doc(json);
@@ -45,18 +45,16 @@ void sendDiscordMessage(QString& webookUrl, QString& message) {
     sendWebhookMessage(webookUrl, json);
 }
 
+// TODO: This function needs to be check below.
 
-// TODO: Ask 74 to test this feature below.
+void sendMatrixMessage(QString& webhookUrl, QString& message, QString& username) {
+    // Create a JSON object with the message content and other optional fields
+    QJsonObject json;
+    json.insert("text", message);
+    if (!username.isEmpty()) {
+        json.insert("username", username);
+    }
 
-
-//void sendMatrixMessage(QString& webhookUrl, QString& message, QString& username) {
-//    // Create a JSON object with the message content and other optional fields
-//    QJsonObject json;
-//    json.insert("text", message);
-//    if (!username.isEmpty()) {
-//        json.insert("username", username);
-//    }
-//
-//    // Call the sendWebhookMessage function
-//    sendWebhookMessage(webhookUrl, json);
-//}
+    // Call the sendWebhookMessage function
+    sendWebhookMessage(webhookUrl, json);
+}
