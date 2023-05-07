@@ -153,7 +153,8 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
     }
 
     v8::Local<v8::Function> v8Function = v8::Local<v8::Function>::Cast(_value.get());
-    //V8TODO: I'm not sure if this is correct, maybe use CallAsContructor instead?
+    // V8TODO: I'm not sure if this is correct, maybe use CallAsConstructor instead?
+    // Maybe it's CallAsConstructor for function and NewInstance for class?
     auto maybeResult = v8Function->NewInstance(_engine->getContext(), args.length(), v8Args);
     v8::Local<v8::Object> result;
     if (maybeResult.ToLocal(&result)) {
@@ -317,6 +318,24 @@ ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue
     }
     qCDebug(scriptengine_v8) << "Failed to get property, parent of value: " << arrayIndex << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
     return _engine->undefinedValue();
+}
+
+ScriptValue ScriptValueV8Wrapper::prototype() const {
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
+
+    auto value = _value.constGet();
+    if (!value->IsObject()) {
+        return _engine->undefinedValue();
+    }
+    auto object = v8::Local<v8::Object>::Cast(value);
+    auto prototype = object->GetPrototype();
+
+    V8ScriptValue result(_engine, prototype);
+    return ScriptValue(new ScriptValueV8Wrapper(_engine, result));
 }
 
 void ScriptValueV8Wrapper::setData(const ScriptValue& value) {
@@ -612,13 +631,26 @@ bool ScriptValueV8Wrapper::isBool() const {
 }
 
 bool ScriptValueV8Wrapper::isError() const {
-    //auto isolate = _engine->getIsolate();
-    // Q_ASSERT(isolate->IsCurrent());
-    // v8::HandleScope handleScope(isolate);
-    // v8::Context::Scope contextScope(_engine->getContext());
-    //V8TODO
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(_engine->getContext());
+    v8::Local<v8::Value> error;
+    if (!context->Global()->Get(context, v8::String::NewFromUtf8(isolate, "Error").ToLocalChecked()).ToLocal(&error)) {
+        Q_ASSERT(false);
+    }
+    if (!error->IsObject()) {
+        Q_ASSERT(false);
+    }
+    auto errorObj = v8::Local<v8::Object>::Cast(error);
+    if (_value.constGet()->InstanceOf(context, errorObj).FromMaybe(false)) {
+        qDebug() << "ScriptValueV8Wrapper::isError : true";
+        return true;
+    }
+    qDebug() << "ScriptValueV8Wrapper::isError : false";
     return false;
-    //return _value.constGet()->IsError();
 }
 
 bool ScriptValueV8Wrapper::isFunction() const {

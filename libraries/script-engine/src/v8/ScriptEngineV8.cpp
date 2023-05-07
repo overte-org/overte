@@ -46,6 +46,7 @@
 
 #include "../ScriptEngineLogging.h"
 #include "../ScriptProgram.h"
+#include "../ScriptEngineCast.h"
 #include "../ScriptValue.h"
 
 #include "ScriptContextV8Wrapper.h"
@@ -53,6 +54,7 @@
 #include "ScriptProgramV8Wrapper.h"
 #include "ScriptValueV8Wrapper.h"
 #include "ScriptEngineLoggingV8.h"
+#include "ScriptValueIteratorV8Wrapper.h"
 
 static const int MAX_DEBUG_VALUE_LENGTH { 80 };
 
@@ -77,46 +79,40 @@ ScriptValue ScriptEngineV8::makeError(const ScriptValue& _other, const QString& 
     if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
         return nullValue();
     }
-    v8::Locker locker(_v8Isolate);
-    v8::Isolate::Scope isolateScope(_v8Isolate);
-    v8::HandleScope handleScope(_v8Isolate);
-    v8::Context::Scope contextScope(getContext());
     return nullValue();
-}
 
-    //V8TODO: do not remove until ScriptEngineV8::makeError is implemented
-    /*
     auto other = _other;
-    if (_other.constGet()->IsString()) {
-        other = QScriptEngine::newObject();
+    if (_other.isString()) {
+        other = newObject();
         other.setProperty("message", _other.toString());
     }
-    auto proto = QScriptEngine::globalObject().property(type);
+    auto proto = globalObject().property(type);
     if (!proto.isFunction()) {
-        proto = QScriptEngine::globalObject().property(other.prototype().property("constructor").property("name").toString());
+        proto = globalObject().property(other.prototype().property("constructor").property("name").toString());
     }
     if (!proto.isFunction()) {
 #ifdef DEBUG_JS_EXCEPTIONS
         qCDebug(shared) << "BaseScriptEngine::makeError -- couldn't find constructor for" << type << " -- using Error instead";
 #endif
-        proto = QScriptEngine::globalObject().property("Error");
+        proto = globalObject().property("Error");
     }
-    if (other.engine() != this) {
+    if (other.engine().get() != this) {
         // JS Objects are parented to a specific script engine instance
         // -- this effectively ~clones it locally by routing through a QVariant and back
-        other = QScriptEngine::toScriptValue(other.toVariant());
+        other = toScriptValue(other.toVariant());
     }
     // ~ var err = new Error(other.message)
-    auto err = proto.construct(V8ScriptValueList({ other.property("message") }));
+    auto err = proto.construct(ScriptValueList({ other.property("message") }));
 
     // transfer over any existing properties
-    V8ScriptValueIterator it(other);
-    while (it.hasNext()) {
-        it.next();
-        err.setProperty(it.name(), it.value());
+    auto it = other.newIterator();
+    while (it->hasNext()) {
+        it->next();
+        err.setProperty(it->name(), it->value());
     }
-    return err;*/
-//}
+    return err;
+}
+
 
 
 // check syntax and when there are issues returns an actual "SyntaxError" with the details

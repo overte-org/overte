@@ -90,6 +90,7 @@ public:
     inline ScriptValueIteratorPointer newIterator() const;
     inline ScriptValue property(const QString& name, const ResolveFlags& mode = ResolvePrototype) const;
     inline ScriptValue property(quint32 arrayIndex, const ResolveFlags& mode = ResolvePrototype) const;
+    inline ScriptValue prototype() const;
     inline void setData(const ScriptValue& val);
     inline bool hasProperty(const QString &name) const;
     inline void setProperty(const QString& name,
@@ -154,6 +155,7 @@ public:
                                  const ScriptValue::ResolveFlags& mode = ScriptValue::ResolvePrototype) const = 0;
     virtual ScriptValue property(quint32 arrayIndex,
                                  const ScriptValue::ResolveFlags& mode = ScriptValue::ResolvePrototype) const = 0;
+    virtual ScriptValue prototype() const = 0;
     virtual void setData(const ScriptValue& val) = 0;
     virtual bool hasProperty(const QString &name) const = 0;
     virtual void setProperty(const QString& name,
@@ -316,6 +318,11 @@ ScriptValue ScriptValue::property(const QString& name, const ResolveFlags& mode)
 ScriptValue ScriptValue::property(quint32 arrayIndex, const ResolveFlags& mode) const {
     Q_ASSERT(_proxy != nullptr);
     return _proxy->property(arrayIndex, mode);
+}
+
+ScriptValue ScriptValue::prototype() const {
+    Q_ASSERT(_proxy != nullptr);
+    return _proxy->prototype();
 }
 
 void ScriptValue::setData(const ScriptValue& val) {

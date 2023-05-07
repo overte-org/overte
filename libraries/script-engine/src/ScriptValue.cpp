@@ -45,6 +45,7 @@ public:
                                  const ScriptValue::ResolveFlags& mode = ScriptValue::ResolvePrototype) const override;
     virtual ScriptValue property(quint32 arrayIndex,
                                  const ScriptValue::ResolveFlags& mode = ScriptValue::ResolvePrototype) const override;
+    virtual ScriptValue prototype() const override;
     virtual void setData(const ScriptValue& val) override;
     virtual bool hasProperty(const QString &name) const override;
     virtual void setProperty(const QString& name,
@@ -55,7 +56,7 @@ public:
                              const ScriptValue::PropertyFlags& flags = ScriptValue::KeepExistingFlags) override;
     virtual void setPrototype(const ScriptValue& prototype) override;
     virtual bool strictlyEquals(const ScriptValue& other) const override;
-    virtual inline QList<QString> getPropertyNames() const override;
+    virtual QList<QString> getPropertyNames() const override;
 
     virtual bool toBool() const override;
     virtual qint32 toInt32() const override;
@@ -174,6 +175,10 @@ ScriptValue ScriptValueProxyNull::property(const QString& name, const ScriptValu
 }
 
 ScriptValue ScriptValueProxyNull::property(quint32 arrayIndex, const ScriptValue::ResolveFlags& mode) const {
+    return ScriptValue();
+}
+
+ScriptValue ScriptValueProxyNull::prototype() const {
     return ScriptValue();
 }
 
