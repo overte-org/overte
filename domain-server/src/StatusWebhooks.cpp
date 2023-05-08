@@ -1,6 +1,12 @@
 #include "StatusWebhooks.h"
 
 void sendWebhookMessage(const QString& webookURL, QJsonObject& json) {
+    QString enableWebook = Setting::Handle<QString>("connectivity/enable_webooks").get();
+
+    if(enableWebook == false) {
+        return;
+    }
+
     // prep the webook url
     QUrl url(webookURL);
 
