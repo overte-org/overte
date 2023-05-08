@@ -21,6 +21,10 @@ SettingsScriptingInterface* SettingsScriptingInterface::getInstance() {
 
 QVariant SettingsScriptingInterface::getValue(const QString& setting) {
     QVariant value = Setting::Handle<QVariant>(setting).get();
+    if(value.isValid() && setting.startsWith("secured/")) {
+        qWarning() << "Unable to access this data";
+        return "";
+    }
     if (!value.isValid()) {
         value = "";
     }
@@ -29,6 +33,10 @@ QVariant SettingsScriptingInterface::getValue(const QString& setting) {
 
 QVariant SettingsScriptingInterface::getValue(const QString& setting, const QVariant& defaultValue) {
     QVariant value = Setting::Handle<QVariant>(setting, defaultValue).get();
+    if(value.isValid() && setting.startsWith("secured/")) {
+        qWarning() << "Unable to access this data";
+        return "";
+    }
     if (!value.isValid()) {
         value = "";
     }
@@ -46,6 +54,10 @@ void SettingsScriptingInterface::setValue(const QString& setting, const QVariant
         } else {
             qInfo() << "SettingsScriptingInterface::setValue -- allowing restricted write: " << setting << value;
         }
+    }
+    if (setting.startsWith("secured/")) {
+        qWarning() << "Unable to access this data.";
+        return;
     }
     // Make a deep-copy of the string.
     // Dangling pointers can occur with QStrings that are implicitly shared from a QScriptEngine.
