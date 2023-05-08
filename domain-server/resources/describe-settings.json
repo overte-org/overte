@@ -152,6 +152,29 @@
       ]
     },
     {
+      "label": "Connectivity",
+      "name": "connectivity",
+      "restart": false,
+      "settings": [
+        {
+          "name": "enable_webook",
+          "label": "Enable's the webhook option",
+          "help": "Allows a user to connect to a webhook, Currently Support are Discord.",
+          "default": false,
+          "type": "checkbox",
+          "advanced": true
+        },
+         {
+          "name": "webook_url",
+          "label": "Webhook URL",
+          "help": "This is where you can put your webhook URLs",
+          "default": "",
+          "type": "string",
+          "advanced": true
+        }
+      ]
+    },
+    {
       "label": "Paths",
       "html_id": "paths",
       "restart": false,
