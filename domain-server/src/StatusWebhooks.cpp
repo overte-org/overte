@@ -1,8 +1,8 @@
-#include <StatusWebhooks.h>
+#include "StatusWebhooks.h"
 
-void sendWebhookMessage(const QString& webhookUrl, const QJsonObject& json) {
-    // Matrix.org webhook URL
-    QUrl url(webhookUrl);
+void sendWebhookMessage(const QString& webookURL, QJsonObject& json) {
+    // prep the webook url
+    QUrl url(webookURL);
 
     // Convert the JSON object to a QByteArray
     QJsonDocument json_doc(json);
@@ -32,18 +32,22 @@ void sendWebhookMessage(const QString& webhookUrl, const QJsonObject& json) {
     });
 }
 
-void sendDiscordMessage(QString& webookUrl, QString& message) {
+void sendDiscordMessage(QString& message) {
+    // get the webhook from the secured variable
+    QString hook = Setting::Handle<QString>("connectivity/discord_webhook").get();
     // Create a JSON object with the message content and other optional fields
     QJsonObject json;
     json.insert("content", message);
 
     // Call the sendWebhookMessage function
-    sendWebhookMessage(webookUrl, json);
+    sendWebhookMessage(hook, json);
 }
 
 // TODO: This function needs to be check below.
 
-void sendMatrixMessage(QString& webhookUrl, QString& message, QString& username) {
+void sendMatrixMessage(QString& message, QString& username) {
+    // get the webhook from the secured variable
+    QString hook = Setting::Handle<QString>("connectivity/discord_webhook").get();
     // Create a JSON object with the message content and other optional fields
     QJsonObject json;
     json.insert("text", message);
@@ -52,5 +56,5 @@ void sendMatrixMessage(QString& webhookUrl, QString& message, QString& username)
     }
 
     // Call the sendWebhookMessage function
-    sendWebhookMessage(webhookUrl, json);
+    sendWebhookMessage(hook, json);
 }

@@ -162,11 +162,19 @@
           "help": "Allows a user to connect to a webhook, Currently Support are Discord.",
           "default": false,
           "type": "checkbox",
-          "advanced": true
+          "advanced": false
         },
          {
-          "name": "webook_url",
-          "label": "Webhook URL",
+          "name": "discord_webhook",
+          "label": "Discord Webhook",
+          "help": "This is where you can put your webhook URLs",
+          "default": "",
+          "type": "string",
+          "advanced": true
+        },
+        {
+          "name": "matrix_webhook",
+          "label": "Matrix Webhook",
           "help": "This is where you can put your webhook URLs",
           "default": "",
           "type": "string",

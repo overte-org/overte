@@ -5,7 +5,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <NetworkAccessManager.h>
+#include <SettingHandle.h>
 
-void sendWebhookMessage(const QString& webhookUrl, const QJsonObject& json);
-void sendDiscordMessage(QString& webookUrl, QString& message);
-void sendMatrixMessage(QString& webhookUrl, QString& message, QString& username);
+void sendWebhookMessage(const QString& webookURL, QJsonObject& json);
+void sendDiscordMessage(QString& message);
+void sendMatrixMessage(QString& message, QString& username);
