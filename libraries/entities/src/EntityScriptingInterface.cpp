@@ -1574,7 +1574,8 @@ bool EntityPropertyMetadataRequest::script(EntityItemID entityID, const ScriptVa
     if (!request->isStarted()) {
         request->deleteLater();
         auto engine = handler.engine();
-        callScopedHandlerObject(handler, engine->makeError(engine->newValue("Entities Scripting Provider unavailable"), "InternalError"), ScriptValue());
+        // It was originally "InternalError", but there's no such error data type in V8
+        callScopedHandlerObject(handler, engine->makeError(engine->newValue("Entities Scripting Provider unavailable"), "Error"), ScriptValue());
         return false;
     }
     return true;

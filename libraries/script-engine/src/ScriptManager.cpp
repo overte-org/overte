@@ -2029,7 +2029,7 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
     }
 
     // SANITY/PERFORMANCE CHECK USING SANDBOX
-    // V8TODO: can be skipped for now but needs to be implemented before release
+    // V8TODO: can be skipped for now should we implement it before merging V8 branch?
 
     /*const int SANDBOX_TIMEOUT = 0.25 * MSECS_PER_SECOND;
     ScriptEnginePointer sandbox = newScriptEngine();

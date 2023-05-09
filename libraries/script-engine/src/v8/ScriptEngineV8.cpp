@@ -1212,40 +1212,42 @@ bool ScriptEngineV8::raiseException(const QString& error, const QString &reason)
 
 bool ScriptEngineV8::raiseException(const ScriptValue& exception, const QString &reason) {
     //V8TODO Im not sure how to finish these
-//    qCCritical(scriptengine_v8) << "Script exception occurred: " << exception.toString();
-//    ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(exception);
-//    V8ScriptValue qException = unwrapped ? unwrapped->toV8Value() : QScriptEngine::newVariant(exception.toVariant());
-
-  //  emit
-    //return raiseException(qException);
-
-//    qCCritical(scriptengine_v8) << "Raise exception for reason" << reason << "NOT IMPLEMENTED!";
-//    return false;
+    qCCritical(scriptengine_v8) << "Script exception occurred: " << exception.toString();
+    ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(exception);
+    ScriptValue qException = unwrapped ? exception : newVariant(exception.toVariant());
 
     return raiseException(ScriptValueV8Wrapper::fullUnwrap(this, exception));
 }
-
-
 
 bool ScriptEngineV8::raiseException(const V8ScriptValue& exception) {
     if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
         return false;
     }
 
+    v8::Locker locker(_v8Isolate);
+    v8::Isolate::Scope isolateScope(_v8Isolate);
+    v8::HandleScope handleScope(_v8Isolate);
+    v8::Context::Scope contextScope(getContext());
 
-    _v8Isolate->ThrowException(exception.constGet());
-
-    /*if (QScriptEngine::currentContext()) {
+    auto trace = v8::StackTrace::CurrentStackTrace(_v8Isolate, 2);
+    if (trace->GetFrameCount() > 0) {
         // we have an active context / JS stack frame so throw the exception per usual
-        QScriptEngine::currentContext()->throwValue(makeError(exception));
+        //currentContext()->throwValue(makeError(exception));
+        auto thrown = makeError(ScriptValue(new ScriptValueV8Wrapper(this, exception)));
+        auto thrownV8 = ScriptValueV8Wrapper::fullUnwrap(this, thrown);
+        _v8Isolate->ThrowException(thrownV8.get());
         return true;
-    } else if (_scriptManager) {
+    } else if (_manager) {
         // we are within a pure C++ stack frame (ie: being called directly by other C++ code)
         // in this case no context information is available so just emit the exception for reporting
-        V8ScriptValue thrown = makeError(exception);
-        emit _scriptManager->unhandledException(ScriptValue(new ScriptValueV8Wrapper(this, std::move(thrown))));
-    }*/
-    //emit _scriptManager->unhandledException(ScriptValue(new ScriptValueV8Wrapper(this, std::move(thrown))));
+        ScriptValue thrown = makeError(ScriptValue(new ScriptValueV8Wrapper(this, exception)));
+        auto scriptRuntimeException = std::make_shared<ScriptRuntimeException>();
+        ScriptValue message = thrown.property("stack"); //This contains more details along with the error message
+        scriptRuntimeException->errorMessage = message.toString();
+        scriptRuntimeException->thrownValue = thrown;
+        emit _manager->unhandledException(scriptRuntimeException);
+    }
+
     return false;
 }
 
