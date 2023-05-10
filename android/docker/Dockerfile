@@ -1,4 +1,4 @@
-FROM openjdk:16.0.2
+FROM openjdk:21-ea-20-slim-bullseye
 
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 
