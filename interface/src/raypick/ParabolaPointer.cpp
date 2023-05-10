@@ -230,6 +230,7 @@ void ParabolaPointer::RenderState::update(const glm::vec3& origin, const glm::ve
             item.updateBounds();
         });
         scene->enqueueTransaction(transaction);
+        qDebug() << "ParabolaPointer::RenderState::update";
     }
 }
 
@@ -249,7 +250,7 @@ std::shared_ptr<StartEndRenderState> ParabolaPointer::buildRenderState(const QVa
     bool isVisibleInSecondaryCamera = RenderState::ParabolaRenderItem::DEFAULT_PARABOLA_ISVISIBLEINSECONDARYCAMERA;
     bool drawInFront = RenderState::ParabolaRenderItem::DEFAULT_PARABOLA_DRAWINFRONT;
     bool enabled = false;
-    if (propMap["pathPropertyIndex"].isValid()) {
+    /*if (propMap["pathPropertyIndex"].isValid()) {
         int pathPropertyIndex = propMap["pathPropertyIndex"].toInt();
         if (pathPropertyIndex >= 0 && pathPropertyIndex < entityProperties.length()) {
             const EntityItemProperties &pathProperties(entityProperties[pathPropertyIndex]);
@@ -260,6 +261,30 @@ std::shared_ptr<StartEndRenderState> ParabolaPointer::buildRenderState(const QVa
             //width = pathProperties.getWidth;
             drawInFront = (pathProperties.getRenderLayer() == RenderLayer::FRONT);
         }
+    }*/
+    if (propMap["path"].isValid()) {
+        enabled = true;
+        QVariantMap pathMap = propMap["path"].toMap();
+        if (pathMap["color"].isValid()) {
+            color = toGlm(u8vec3FromVariant(pathMap["color"]));
+        }
+
+        if (pathMap["alpha"].isValid()) {
+            alpha = pathMap["alpha"].toFloat();
+        }
+
+        if (pathMap["width"].isValid()) {
+            width = pathMap["width"].toFloat();
+        }
+
+        if (pathMap["isVisibleInSecondaryCamera"].isValid()) {
+            isVisibleInSecondaryCamera = pathMap["isVisibleInSecondaryCamera"].toBool();
+        }
+
+        if (pathMap["drawInFront"].isValid()) {
+            drawInFront = pathMap["drawInFront"].toBool();
+        }
+        qDebug() << "ParabolaPointer::buildRenderState";
     }
 
     QUuid endID;
@@ -445,6 +470,7 @@ void ParabolaPointer::RenderState::ParabolaRenderItem::render(RenderArgs* args) 
 
     // We draw 2 * n + 2 vertices for a triangle strip
     batch.draw(gpu::TRIANGLE_STRIP, 2 * _parabolaData.numSections + 2, 0);
+    qDebug() << "ParabolaPointer::RenderState::ParabolaRenderItem::render";
 }
 
 namespace render {

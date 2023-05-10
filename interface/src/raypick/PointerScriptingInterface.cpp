@@ -677,7 +677,7 @@ bool stylusPointerPropertiesFromScriptValue(const ScriptValue& value, StylusPoin
             out.properties[*renderStatesName].setValue(renderStates);
         }
     }
-    qDebug() << "rayPointerPropertiesFromScriptValue" << out.properties;
+    qDebug() << "stylusPointerPropertiesFromScriptValue" << out.properties;
     return true;
 }
 
@@ -716,6 +716,7 @@ bool parabolaPointerPropertiesFromScriptValue(const ScriptValue& value, Parabola
                         pathProperties.copyFromScriptValue(path, false);
                         stateMap.insert("pathPropertyIndex", QVariant(out.entityProperties.length()));
                         out.entityProperties.append(pathProperties);
+                        qDebug() << "parabolaPointerPropertiesFromScriptValue : added path entity";
                     }
 
                     if (stateMap["end"].isValid()) {
@@ -724,6 +725,7 @@ bool parabolaPointerPropertiesFromScriptValue(const ScriptValue& value, Parabola
                         endProperties.copyFromScriptValue(end, false);
                         stateMap.insert("endPropertyIndex", QVariant(out.entityProperties.length()));
                         out.entityProperties.append(endProperties);
+                        qDebug() << "parabolaPointerPropertiesFromScriptValue : added end entity";
                     }
                     // V8TODO: Check if path is a polyline and if values are valid
                     renderStates[i].setValue(stateMap);
@@ -732,6 +734,6 @@ bool parabolaPointerPropertiesFromScriptValue(const ScriptValue& value, Parabola
             out.properties[*renderStatesName].setValue(renderStates);
         }
     }
-    qDebug() << "rayPointerPropertiesFromScriptValue" << out.properties;
+    qDebug() << "parabolaPointerPropertiesFromScriptValue" << out.properties;
     return true;
 }

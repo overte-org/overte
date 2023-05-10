@@ -646,10 +646,8 @@ bool ScriptValueV8Wrapper::isError() const {
     }
     auto errorObj = v8::Local<v8::Object>::Cast(error);
     if (_value.constGet()->InstanceOf(context, errorObj).FromMaybe(false)) {
-        qDebug() << "ScriptValueV8Wrapper::isError : true";
         return true;
     }
-    qDebug() << "ScriptValueV8Wrapper::isError : false";
     return false;
 }
 

@@ -1458,7 +1458,7 @@ void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
     // For debugging
     ScriptSignalV8Proxy* thisProxy = dynamic_cast<ScriptSignalV8Proxy*>(ScriptObjectV8Proxy::unwrapProxy(v8ThisObject)->toQObject());
     Q_ASSERT(thisProxy);
-    qCDebug(scriptengine_v8) << "ScriptSignalV8Proxy::disconnect: " << thisProxy->fullName() << " fullName: " << fullName();
+    //qCDebug(scriptengine_v8) << "ScriptSignalV8Proxy::disconnect: " << thisProxy->fullName() << " fullName: " << fullName();
     if (!destFunction->Get(destFunctionContext, destDataName).ToLocal(&destData)) {
         Q_ASSERT(false);
     }
@@ -1472,21 +1472,18 @@ void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
             v8::Local<v8::Value> entry = destArray->Get(destFunctionContext, idx).ToLocalChecked();
             // For debugging:
             {
-                _engine->logBacktrace("ScriptSignalV8Proxy::disconnect");
-                qCDebug(scriptengine_v8) << "ScriptSignalV8Proxy::disconnect: entry details: " << _engine->scriptValueDebugDetailsV8(V8ScriptValue(_engine, entry))
-                         << " Array: " << _engine->scriptValueDebugDetailsV8(V8ScriptValue(_engine, destArray));
+                //qCDebug(scriptengine_v8) << "ScriptSignalV8Proxy::disconnect: entry details: " << _engine->scriptValueDebugDetailsV8(V8ScriptValue(_engine, entry))
+                //         << " Array: " << _engine->scriptValueDebugDetailsV8(V8ScriptValue(_engine, destArray));
                 Q_ASSERT(entry->IsObject());
                 V8ScriptValue v8EntryObject(_engine, entry);
                 Q_ASSERT(ScriptObjectV8Proxy::unwrapProxy(v8EntryObject));
                 // For debugging
-                ScriptSignalV8Proxy* entryProxy = dynamic_cast<ScriptSignalV8Proxy*>(ScriptObjectV8Proxy::unwrapProxy(v8EntryObject)->toQObject());
+                //ScriptSignalV8Proxy* entryProxy = dynamic_cast<ScriptSignalV8Proxy*>(ScriptObjectV8Proxy::unwrapProxy(v8EntryObject)->toQObject());
                 Q_ASSERT(thisProxy);
-                qCDebug(scriptengine_v8) << "ScriptSignalV8Proxy::disconnect: entry proxy: " << entryProxy->fullName();
+                //qCDebug(scriptengine_v8) << "ScriptSignalV8Proxy::disconnect: entry proxy: " << entryProxy->fullName();
             }
             if (entry->StrictEquals(v8ThisObject.get())) {
-                //V8TODO: compare proxies instead?
                 foundIt = true;
-                qCDebug(scriptengine_v8) << "ScriptSignalV8Proxy::disconnect foundIt";
             } else {
                 if (!newArray->Set(destFunctionContext, newIndex, entry).FromMaybe(false)) {
                     Q_ASSERT(false);
