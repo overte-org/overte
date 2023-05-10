@@ -27,7 +27,7 @@
 #include "ScriptException.h"
 
 // These are used for debugging memory leaks caused by persistent handles
-#define OVERTE_V8_MEMORY_DEBUG
+//#define OVERTE_V8_MEMORY_DEBUG
 
 class QByteArray;
 class QLatin1String;

@@ -2638,7 +2638,12 @@ SelectionDisplay = (function() {
                     that.showDebugPickPlaneHit(newPick);
                 }
 
-                var vector = Vec3.subtract(newPick, initialPick);
+                var vector = null;
+                if (initialPick) {
+                    vector = Vec3.subtract(newPick, initialPick);
+                } else {
+                    vector = newPick;
+                }
 
                 // If the mouse is too close to the horizon of the pick plane, stop moving
                 var MIN_ELEVATION = 0.02; //  largest dimension of object divided by distance to it

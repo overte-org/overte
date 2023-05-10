@@ -521,17 +521,20 @@ Script.include("/~/system/libraries/controllers.js");
             } else {
                 // Set play area position and rotation in local coordinates with parenting.
                 var targetRotation = Entities.getEntityProperties(_this.targetOverlayID, ["rotation"]).rotation;
-                var sensorToTargetRotation = Quat.multiply(Quat.inverse(targetRotation), sensorToWorldRotation);
-                var relativePlayAreaCenterOffset =
-                    Vec3.sum(_this.playAreaCenterOffset, { x: 0, y: -TARGET_MODEL_DIMENSIONS.y / 2, z: 0 });
-                Overlays.editOverlay(_this.playAreaOverlay, {
-                    parentID: _this.targetOverlayID,
-                    localPosition: Vec3.multiplyQbyV(Quat.inverse(targetRotation),
-                        Vec3.multiplyQbyV(sensorToWorldRotation,
-                            Vec3.multiply(MyAvatar.sensorToWorldScale,
-                                Vec3.subtract(relativePlayAreaCenterOffset, avatarSensorPosition)))),
-                    localRotation: sensorToTargetRotation
-                });
+                // TODO: Why is targetRotation undefined sometimes?
+                if (targetRotation) {
+                    var sensorToTargetRotation = Quat.multiply(Quat.inverse(targetRotation), sensorToWorldRotation);
+                    var relativePlayAreaCenterOffset =
+                        Vec3.sum(_this.playAreaCenterOffset, {x: 0, y: -TARGET_MODEL_DIMENSIONS.y / 2, z: 0});
+                    Overlays.editOverlay(_this.playAreaOverlay, {
+                        parentID: _this.targetOverlayID,
+                        localPosition: Vec3.multiplyQbyV(Quat.inverse(targetRotation),
+                            Vec3.multiplyQbyV(sensorToWorldRotation,
+                                Vec3.multiply(MyAvatar.sensorToWorldScale,
+                                    Vec3.subtract(relativePlayAreaCenterOffset, avatarSensorPosition)))),
+                        localRotation: sensorToTargetRotation
+                    });
+                }
             }
         };
 

@@ -230,7 +230,6 @@ void ParabolaPointer::RenderState::update(const glm::vec3& origin, const glm::ve
             item.updateBounds();
         });
         scene->enqueueTransaction(transaction);
-        qDebug() << "ParabolaPointer::RenderState::update";
     }
 }
 
@@ -284,7 +283,6 @@ std::shared_ptr<StartEndRenderState> ParabolaPointer::buildRenderState(const QVa
         if (pathMap["drawInFront"].isValid()) {
             drawInFront = pathMap["drawInFront"].toBool();
         }
-        qDebug() << "ParabolaPointer::buildRenderState";
     }
 
     QUuid endID;
@@ -470,7 +468,6 @@ void ParabolaPointer::RenderState::ParabolaRenderItem::render(RenderArgs* args) 
 
     // We draw 2 * n + 2 vertices for a triangle strip
     batch.draw(gpu::TRIANGLE_STRIP, 2 * _parabolaData.numSections + 2, 0);
-    qDebug() << "ParabolaPointer::RenderState::ParabolaRenderItem::render";
 }
 
 namespace render {

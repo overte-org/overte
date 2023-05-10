@@ -32,9 +32,17 @@ public: // construction
     ScriptValueV8Wrapper() = delete;
     //ScriptValueV8Wrapper(ScriptValueV8Wrapper &) = delete;
     inline ScriptValueV8Wrapper(ScriptEngineV8* engine, const V8ScriptValue& value) :
-        _engine(engine), _value(value) { engine->incrementScriptValueProxyCounter(); }
+        _engine(engine), _value(value) {
+#ifdef OVERTE_V8_MEMORY_DEBUG
+        engine->incrementScriptValueProxyCounter();
+#endif
+    }
     inline ScriptValueV8Wrapper(ScriptEngineV8* engine, V8ScriptValue&& value) :
-        _engine(engine), _value(std::move(value)) { engine->incrementScriptValueProxyCounter(); }
+        _engine(engine), _value(std::move(value)) {
+#ifdef OVERTE_V8_MEMORY_DEBUG
+        engine->incrementScriptValueProxyCounter();
+#endif
+    }
     static ScriptValueV8Wrapper* unwrap(const ScriptValue& val);
     inline const V8ScriptValue& toV8Value() const { return _value; }
     static V8ScriptValue fullUnwrap(ScriptEngineV8* engine, const ScriptValue& value);
@@ -95,7 +103,11 @@ public:  // ScriptValue implementation
     virtual QObject* toQObject() const override;
 
 protected:
-    virtual ~ScriptValueV8Wrapper() { _engine->decrementScriptValueProxyCounter(); };
+    virtual ~ScriptValueV8Wrapper() {
+#ifdef OVERTE_V8_MEMORY_DEBUG
+        _engine->decrementScriptValueProxyCounter();
+#endif
+    };
 
 private: // helper functions
     V8ScriptValue fullUnwrap(const ScriptValue& value) const;
