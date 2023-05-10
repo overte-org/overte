@@ -1,4 +1,4 @@
-FROM openjdk:8
+FROM openjdk:16.0.2
 
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 
