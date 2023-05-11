@@ -7,7 +7,7 @@ FROM ubuntu:18.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
 
-# Don't use any frontend when installalling packages during the creation of this container
+# Don't use any frontend when installing packages during the creation of this container
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN echo UTC >/etc/timezone
