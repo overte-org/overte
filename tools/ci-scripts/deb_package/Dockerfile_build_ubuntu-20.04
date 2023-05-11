@@ -1,8 +1,8 @@
-# Copyright 2022 Overte e.V.
 # SPDX-License-Identifier: MIT
+# Copyright 2022-2023 Overte e.V.
 
 # Docker file for building Overte Server
-# Example build: docker build -t overte/overte-server-build:0.1.1-ubuntu-20.04 -f Dockerfile_build_ubuntu-20.04 .
+# Example build: docker build -t overte/overte-server-build:0.1.3-ubuntu-20.04 -f Dockerfile_build_ubuntu-20.04 .
 FROM ubuntu:20.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
@@ -15,7 +15,7 @@ RUN echo UTC >/etc/timezone
 RUN apt-get update && apt-get -y install tzdata
 
 # Install Overte domain-server and assignment-client build dependencies
-RUN apt-get -y install curl ninja-build git cmake g++ libssl-dev python3-distutils python3-distro mesa-common-dev libgl1-mesa-dev libharfbuzz-dev libdouble-conversion3 libxext-dev
+RUN apt-get -y install curl ninja-build git cmake g++ libssl-dev python3-distutils python3-distro mesa-common-dev libgl1-mesa-dev libharfbuzz-dev libdouble-conversion3 libxext-dev libsystemd-dev
 
 # Install tools for package creation
 RUN apt-get -y install sudo chrpath binutils dh-make
