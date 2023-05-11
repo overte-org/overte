@@ -155,6 +155,12 @@ jobs:
           echo "INSTALLER=Overte-Interface-$RELEASE_NUMBER-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
 
+    - name: Clear Working Directory
+      if: startsWith(matrix.os, 'windows') || contains(matrix.os, 'self-hosted')
+      shell: bash
+      working-directory: ${{runner.workspace}}
+      run: rm -rf ./*
+
     - uses: actions/checkout@v3
       with:
         submodules: false
