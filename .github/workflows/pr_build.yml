@@ -42,7 +42,7 @@ env:
 
 jobs:
   build_pr:
-    name: "${{matrix.os}}, ${{matrix.build_type}}"
+    name: "${{matrix.os}}, ${{matrix.arch}}"
     strategy:
         matrix:
           include:
