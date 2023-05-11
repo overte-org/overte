@@ -259,7 +259,7 @@ jobs:
         cmake --build . --config $BUILD_TYPE --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build Installer
-      if: matrix.build_type != 'android'
+      if: matrix.build_type != 'android' && matrix.arch != 'aarch64'
       working-directory: build
       shell: bash
       run: |
