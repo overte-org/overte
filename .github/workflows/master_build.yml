@@ -41,8 +41,8 @@ jobs:
         include:
           - os: windows-2019
             build_type: full
-          - os: macOS-10.15
-            build_type: full
+          #- os: macOS-10.15
+          #  build_type: full
           - os: ubuntu-20.04
             build_type: full
             apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion3 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-github python3-distro
