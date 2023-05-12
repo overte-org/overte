@@ -677,7 +677,8 @@
 
             function teleportUsingAddressBarValue(url) {
                 var finalizedUrl = url;
-                if (url.substr(0, 7).toLocaleLowerCase() !== "http://" && 
+                if (url.substr(0, 6).toLocaleLowerCase() !== "file:/" && 
+                    url.substr(0, 7).toLocaleLowerCase() !== "http://" && 
                     url.substr(0, 8).toLocaleLowerCase() !== "https://" && 
                     url.substr(0, 7).toLocaleLowerCase() !== "hifi://") {
                         finalizedUrl = "hifi://" + url;
