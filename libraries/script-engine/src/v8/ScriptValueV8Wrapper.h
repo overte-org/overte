@@ -26,6 +26,8 @@
 #include "ScriptEngineV8.h"
 #include "V8Types.h"
 
+//#define OVERTE_V8_SCRIPT_VALUE_WRAPPER_DELETE_GUARD
+
 /// [V8] Implements ScriptValue for V8 and translates calls for V8ScriptValue
 class ScriptValueV8Wrapper final : public ScriptValueProxy {
 public: // construction
@@ -102,10 +104,23 @@ public:  // ScriptValue implementation
     virtual QVariant toVariant() const override;
     virtual QObject* toQObject() const override;
 
+#ifdef OVERTE_V8_SCRIPT_VALUE_WRAPPER_DELETE_GUARD
+    // These can be used for debugging crashes caused access after delete
+    // If delete guard is enabled, deleting wrapper will cause a crash and thus trigger debugger and reveal location where object was deleted.
+    void enableDeleteGuard() { deleteGuard = true;}
+    void disableDeleteGuard() { deleteGuard = false;}
+#endif
+
 protected:
     virtual ~ScriptValueV8Wrapper() {
 #ifdef OVERTE_V8_MEMORY_DEBUG
         _engine->decrementScriptValueProxyCounter();
+#endif
+#ifdef OVERTE_V8_SCRIPT_VALUE_WRAPPER_DELETE_GUARD
+        if (deleteGuard) {
+            uint32_t* crashTrigger = nullptr;
+            *crashTrigger = 0x12345678;
+        }
 #endif
     };
 
@@ -115,6 +130,12 @@ private: // helper functions
 private: // storage
     ScriptEngineV8 *_engine;
     V8ScriptValue _value;
+
+#ifdef OVERTE_V8_SCRIPT_VALUE_WRAPPER_DELETE_GUARD
+    bool deleteGuard{false};
+#endif
+    // This is to prevent proxy being deleted when it is in use for example during callbacks from inside it
+    mutable QReadWriteLock lock;
 
     Q_DISABLE_COPY(ScriptValueV8Wrapper)
 };

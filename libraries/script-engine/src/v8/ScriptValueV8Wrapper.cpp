@@ -20,9 +20,15 @@
 #include "ScriptEngineLoggingV8.h"
 
 void ScriptValueV8Wrapper::release() {
-    // V8TODO: maybe add an assert to check if it happens on script engine thread?
-    // With v8::Locker in V8ScriptValue such requirement shouldn't be necessary but could deleting it on different thread cause deadlocks sometimes?
-    delete this;
+    // Check if ScriptValueV8Wrapper::release was called from inside ScriptValueV8Wrapper functions, and if so, delete it later
+    // This prevents access-after-delete crashes when ScriptValueV8Wrapper::release is called from inside JS executed in
+    // ScriptValueV8Wrapper::call, ScriptValueV8Wrapper::construct and others
+    if (lock.tryLockForWrite()) {
+        lock.unlock();
+        delete this;
+    } else {
+        _engine->scheduleValueWrapperForDeletion(this);
+    }
 }
 
 ScriptValueProxy* ScriptValueV8Wrapper::copy() const {
@@ -91,7 +97,10 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     }else{
         recv = _engine->getContext()->Global();
     }
+
+    lock.lockForRead();
     auto maybeResult = v8Function->Call(_engine->getContext(), recv, args.length(), v8Args);
+    lock.unlock();
     if (tryCatch.HasCaught()) {
         qCDebug(scriptengine_v8) << "Function call failed: \"" << _engine->formatErrorMessageFromTryCatch(tryCatch);
     }
@@ -155,7 +164,9 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
     v8::Local<v8::Function> v8Function = v8::Local<v8::Function>::Cast(_value.get());
     // V8TODO: I'm not sure if this is correct, maybe use CallAsConstructor instead?
     // Maybe it's CallAsConstructor for function and NewInstance for class?
+    lock.lockForRead();
     auto maybeResult = v8Function->NewInstance(_engine->getContext(), args.length(), v8Args);
+    lock.unlock();
     v8::Local<v8::Object> result;
     if (maybeResult.ToLocal(&result)) {
         return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
@@ -279,8 +290,10 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
         v8::Local<v8::String> key = v8::String::NewFromUtf8(_engine->getIsolate(), name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
         const v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(_value.constGet());
         //V8TODO: Which context?
+        lock.lockForRead();
         if (object->Get(_engine->getContext(), key).ToLocal(&resultLocal)) {
             V8ScriptValue result(_engine, resultLocal);
+            lock.unlock();
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
         } else {
             QString parentValueQString("");
@@ -311,10 +324,13 @@ ScriptValue ScriptValueV8Wrapper::property(quint32 arrayIndex, const ScriptValue
     //V8TODO: what about flags?
         v8::Local<v8::Value> resultLocal;
         const v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(_value.constGet());
+        lock.lockForRead();
         if (object->Get(_value.constGetContext(), arrayIndex).ToLocal(&resultLocal)) {
             V8ScriptValue result(_engine, resultLocal);
+            lock.unlock();
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
         }
+        lock.unlock();
     }
     qCDebug(scriptengine_v8) << "Failed to get property, parent of value: " << arrayIndex << " is not a V8 object, reported type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate)));
     return _engine->undefinedValue();
@@ -378,7 +394,9 @@ void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& v
         v8::Local<v8::String> key = v8::String::NewFromUtf8(isolate, name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
         Q_ASSERT(_value.get()->IsObject());
         auto object = v8::Local<v8::Object>::Cast(_value.get());
+        lock.lockForRead();
         v8::Maybe<bool> retVal = object->Set(isolate->GetCurrentContext(), key, unwrapped.constGet());
+        lock.unlock();
         if (retVal.IsJust() ? !retVal.FromJust() : true){
             qCDebug(scriptengine_v8) << "Failed to set property";
         }
@@ -410,7 +428,9 @@ void ScriptValueV8Wrapper::setProperty(quint32 arrayIndex, const ScriptValue& va
     if(_value.constGet()->IsObject()) {
         auto object = v8::Local<v8::Object>::Cast(_value.get());
         //V8TODO: I don't know which context to use here
+        lock.lockForRead();
         v8::Maybe<bool> retVal(object->Set(_engine->getContext(), arrayIndex, unwrapped.constGet()));
+        lock.unlock();
         if (retVal.IsJust() ? !retVal.FromJust() : true){
             qCDebug(scriptengine_v8) << "Failed to set property";
         }
@@ -436,7 +456,9 @@ void ScriptValueV8Wrapper::setPrototype(const ScriptValue& prototype) {
         if(unwrappedPrototype->toV8Value().constGet()->IsObject() && _value.constGet()->IsObject()) {
             auto object = v8::Local<v8::Object>::Cast(_value.get());
             //V8TODO: I don't know which context to use here
+            lock.lockForRead();
             v8::Maybe<bool> retVal = object->SetPrototype(context, unwrappedPrototype->toV8Value().constGet());
+            lock.unlock();
             if (retVal.IsJust() ? !retVal.FromJust() : true){
                 qCDebug(scriptengine_v8) << "Failed to assign prototype";
             }

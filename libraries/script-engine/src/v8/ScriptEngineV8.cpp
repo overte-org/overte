@@ -245,6 +245,21 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager *manager) : ScriptEngine(manager), 
     //}
 }
 
+ScriptEngineV8::~ScriptEngineV8() {
+    deleteUnusedValueWrappers();
+}
+
+void ScriptEngineV8::perManagerLoopIterationCleanup() {
+    deleteUnusedValueWrappers();
+}
+
+void ScriptEngineV8::deleteUnusedValueWrappers() {
+    while (!_scriptValueWrappersToDelete.empty()) {
+        auto wrapper = _scriptValueWrappersToDelete.dequeue();
+        wrapper->release();
+    }
+}
+
 void ScriptEngineV8::registerEnum(const QString& enumName, QMetaEnum newEnum) {
     if (!newEnum.isValid()) {
         qCCritical(scriptengine_v8) << "registerEnum called on invalid enum with name " << enumName;

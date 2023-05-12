@@ -45,6 +45,7 @@ class ScriptEngineV8;
 class ScriptManager;
 class ScriptObjectV8Proxy;
 class ScriptMethodV8Proxy;
+class ScriptValueV8Wrapper;
 
 template <typename T> class V8ScriptValueTemplate;
 typedef V8ScriptValueTemplate<v8::Value> V8ScriptValue;
@@ -63,6 +64,7 @@ class ScriptEngineV8 final : public ScriptEngine,
 
 public:  // construction
     ScriptEngineV8(ScriptManager *manager = nullptr);
+    virtual ~ScriptEngineV8();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // NOTE - these are NOT intended to be public interfaces available to scripts, the are only Q_INVOKABLE so we can
@@ -135,6 +137,9 @@ public:  // ScriptEngine implementation
     virtual ScriptEngineMemoryStatistics getMemoryUsageStatistics() override;
     virtual void startCollectingObjectStatistics() override;
     virtual void dumpHeapObjectStatistics() override;
+    void scheduleValueWrapperForDeletion(ScriptValueV8Wrapper* wrapper) {_scriptValueWrappersToDelete.enqueue(wrapper);}
+    void deleteUnusedValueWrappers();
+    virtual void perManagerLoopIterationCleanup() override;
 
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
     inline bool IS_THREADSAFE_INVOCATION(const QString& method) { return ScriptEngine::IS_THREADSAFE_INVOCATION(method); }
@@ -186,6 +191,10 @@ public: // not for public use, but I don't like how Qt strings this along with p
     // Second map, from which wrappers are removed by script engine upon deletion
     QMap<QObject*, QSharedPointer<ScriptObjectV8Proxy>> _qobjectWrapperMapV8;
     // V8TODO: maybe just a single map can be used instead to increase performance?
+
+    // Sometimes ScriptValueV8Wrapper::release() is called from inside ScriptValueV8Wrapper.
+    // Then wrapper needs to be deleted in the event loop
+    QQueue<ScriptValueV8Wrapper*> _scriptValueWrappersToDelete;
 
     // Used by ScriptObjectV8Proxy to create JS objects referencing C++ ones
     v8::Local<v8::ObjectTemplate> getObjectProxyTemplate();
@@ -252,6 +261,9 @@ protected:
     v8::Persistent<v8::ObjectTemplate> _variantDataTemplate;
     v8::Persistent<v8::ObjectTemplate> _variantProxyTemplate;
 
+public:
+    volatile int _memoryCorruptionIndicator = 12345678;
+private:
     //V8TODO
     //ArrayBufferClass* _arrayBufferClass;
     // Counts how many nested evaluate calls are there at a given point

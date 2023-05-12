@@ -234,8 +234,6 @@ void XMLHttpRequestClass::requestFinished() {
         }
     }
 
-    qDebug() << "XMLHttpRequestClass::requestFinished : ec: " << _errorCode << " rt: " << _responseType << " URL: " << _url
-             << " method: " << _method << "data" << QString(_rawResponseData.data());
     setReadyState(DONE);
     emit requestComplete();
 

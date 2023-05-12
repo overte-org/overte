@@ -433,7 +433,7 @@ public: // not for public use, but I don't like how Qt strings this along with p
     virtual QVariant convert(const ScriptValue& value, int type) = 0;
     virtual void registerCustomType(int type, MarshalFunction mf, DemarshalFunction df) = 0;
     virtual QStringList getCurrentScriptURLs() const = 0;
-
+    virtual void perManagerLoopIterationCleanup() = 0;
 
 signals:
     /**
@@ -444,7 +444,7 @@ signals:
     void exception(std::shared_ptr<ScriptException> exception);
 
 protected:
-    ~ScriptEngine() {}  // prevent explicit deletion of base class
+    virtual ~ScriptEngine() {}  // prevent explicit deletion of base class
 
     ScriptManager *_manager;
 };

@@ -980,6 +980,7 @@ void ScriptManager::run() {
                 QCoreApplication::processEvents();
             }
             processedEvents = true;
+            _engine->perManagerLoopIterationCleanup();
         }
 
         PROFILE_RANGE(script, "ScriptMainLoop");
