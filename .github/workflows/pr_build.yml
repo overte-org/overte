@@ -42,15 +42,19 @@ env:
 
 jobs:
   build_pr:
-    name: "${{matrix.os}}, ${{matrix.build_type}}"
+    name: "${{matrix.os}}, ${{matrix.arch}}"
     strategy:
         matrix:
           include:
-            - os: windows-2019
+            - os: Windows 2019
+              runner: windows-2019
+              arch: x86_64
               build_type: full
-            - os: macOS-10.15
-              build_type: full
-            - os: ubuntu-20.04
+            #- os: macOS-10.15
+            #  build_type: full
+            - os: Ubuntu 20.04
+              runner: ubuntu-20.04
+              arch: amd64
               build_type: full
               apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion3 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-distro
             # Android builds are currently failing
@@ -58,11 +62,14 @@ jobs:
             #  build_type: android
             #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
             # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
-            - os: self-hosted_debian-11_aarch64
+            - os: Ubuntu 22.04
+              runner: linux_aarch64
+              arch: aarch64
               build_type: full
-              apt-dependencies: qtbase5-dev qtbase5-private-dev qtwebengine5-dev qtwebengine5-dev-tools qtmultimedia5-dev libqt5opengl5-dev qtscript5-dev libqt5scripttools5 libqt5webchannel5-dev libqt5websockets5-dev qtxmlpatterns5-dev-tools qttools5-dev libqt5xmlpatterns5-dev libqt5svg5-dev qml-module-qtwebchannel build-essential cmake curl freeglut3-dev git libasound2 libasound2-dev libdouble-conversion-dev libdrm-dev libfontconfig1 libgl1-mesa-dev libglvnd-dev libharfbuzz-dev libjack-dev libjack0 libnspr4 libnss3 libpcre2-16-0 libpulse0 libsdl2-dev libssl-dev libudev-dev libxcb-xinerama0-dev libxcb-xinput0 libxcomposite1 libxcursor1 libxi-dev libxmu-dev libxrandr-dev libxslt1.1 libxtst6 make mesa-common-dev mesa-utils nodejs npm patchelf python2 python3 python3-distro xdg-user-dirs zlib1g-dev ninja-build zip python3-distro
+              image: docker.io/overte/overte-full-build:0.1.1-ubuntu-22.04-aarch64
         fail-fast: false
-    runs-on: ${{matrix.os}}
+    runs-on: ${{matrix.runner}}
+    container: ${{matrix.image}}
     steps:
     - name: Configure Build Environment 1
       shell: bash
@@ -75,19 +82,18 @@ jobs:
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
 
         # Linux build variables
-        if [[ "${{ matrix.os }}" = "ubuntu-"* || "${{ matrix.os }}" = *"debian"* ]]; then
+        if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=*" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
           # Don't optimize builds to save build time.
           echo "OVERTE_OPTIMIZE=false" >> $GITHUB_ENV
-          # Variables specific to our aarch64 runner
-          if [ "${{ matrix.os }}" = "self-hosted_debian-11_aarch64" ]; then
+          # Starting with Ubuntu 22.04 we can use system Qt
+          if [[ "${{ matrix.image }}" = *"ubuntu-22.04"* ]]; then
             echo "OVERTE_USE_SYSTEM_QT=true" >> $GITHUB_ENV
-            echo "CI_WORKSPACE=${{runner.workspace}}" >> $GITHUB_ENV
           fi
 
-          if [[ "${{ matrix.os }}" = *"aarch64" ]]; then
+          if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
             echo "VCPKG_FORCE_SYSTEM_BINARIES=true" >> $GITHUB_ENV
             if [ "${{ matrix.build_type }}" = "full" ]; then
               echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
@@ -97,7 +103,7 @@ jobs:
 
           fi
 
-          if [[ "${{ matrix.os }}" != *"aarch64" ]]; then
+          if [[ "${{ matrix.arch }}" = "amd64" ]]; then
             if [ "${{ matrix.build_type }}" = "full" ]; then
               echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
             else
@@ -118,7 +124,7 @@ jobs:
           echo "APP_TARGET_NAME=Overte" >> $GITHUB_ENV
         fi
         # Windows build variables
-        if [ "${{ matrix.os }}" = "windows-2019" ]; then
+        if [ "${{ matrix.os }}" = "Windows 2019" ]; then
           echo "PYTHON_EXEC=python" >> $GITHUB_ENV
           echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
@@ -149,22 +155,16 @@ jobs:
           echo "INSTALLER=Overte-Interface-$RELEASE_NUMBER-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
 
-    - name: Clear Working Directory
-      if: startsWith(matrix.os, 'windows') || contains(matrix.os, 'self-hosted')
-      shell: bash
-      working-directory: ${{runner.workspace}}
-      run: rm -rf ./*
-
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
       with:
         submodules: false
         fetch-depth: 1
 
     - name: Install dependencies
       shell: bash
-      if: startsWith(matrix.os, 'ubuntu') || contains(matrix.os, 'debian') || startsWith(matrix.os, 'macOS')
+      if: startsWith(matrix.os, 'Ubuntu') || contains(matrix.os, 'Debian') || startsWith(matrix.os, 'macOS')
       run: |
-        if [[ "${{ matrix.os }}" =~ "ubuntu" || "${{ matrix.os }}" =~ "debian" ]]; then
+        if [[ "${{ matrix.os }}" =~ "Ubuntu" || "${{ matrix.os }}" =~ "Debian" ]]; then
 
           echo "Updating apt repository index"
           sudo apt update || exit 1
@@ -187,7 +187,7 @@ jobs:
           sudo cp -rp MacOSX10.12.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/ || exit 0
           echo "  done"
         fi
-        if [[ "${{ matrix.os }}" =~ "debian-11" ]]; then
+        if [[ "${{ matrix.os }}" =~ "Debian 11" ]]; then
           echo "Installing CMake from Debian Backports"
           echo deb http://deb.debian.org/debian bullseye-backports main > /etc/apt/sources.list.d/bullseye-backports.list
           sudo apt update
@@ -197,20 +197,20 @@ jobs:
 
     - name: Override NSIS
       shell: pwsh
-      if: startsWith(matrix.os, 'windows')
+      if: startsWith(matrix.os, 'Windows')
       run: choco install nsis --version=3.06.1
 
     - name: Install Python modules
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
+      if: startsWith(matrix.os, 'Windows') || startsWith(matrix.os, 'macOS')
       shell: bash
       run: $PYTHON_EXEC -m pip install boto3 PyGithub
 
     - name: Create Build Environment
       shell: bash
-      run: cmake -E make_directory "${{runner.workspace}}/build"
+      run: cmake -E make_directory ./build
 
     - name: Configure CMake
-      working-directory: ${{runner.workspace}}/build
+      working-directory: build
       shell: bash
       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release $CMAKE_EXTRA
 
@@ -223,48 +223,44 @@ jobs:
         else
           TAR=tar
         fi
-
-        if [ ${{ env.CI_WORKSPACE }} ]; then
-          find "$CI_WORKSPACE/overte-files/vcpkg" -name '*log' -type f -print0 | $TAR --null --force-local -T - -c --xz -v -f "${{ runner.workspace }}/cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz"
-        else
-          find "$HOME/overte-files/vcpkg" -name '*log' -type f -print0 | $TAR --null --force-local -T - -c --xz -v -f "${{ runner.workspace }}/cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz"
-        fi
+          find "$HOME/overte-files/vcpkg" -name '*log' -type f -print0 | $TAR --null --force-local -T - -c --xz -v -f "./cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz"
 
     - name: Archive cmake logs
       if: always()
       uses: actions/upload-artifact@v3
       with:
         name: cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz
-        path: ${{ runner.workspace }}/cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz
+        path: ./cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz
         if-no-files-found: error
 
     - name: Build Application
       if: matrix.build_type == 'full' || matrix.build_type == 'client'
-      working-directory: ${{runner.workspace}}/build
+      working-directory: build
       shell: bash
       run: cmake --build . --config $BUILD_TYPE --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
 
     - name: Build Domain Server
       if: matrix.build_type == 'full'
-      working-directory: ${{runner.workspace}}/build
+      working-directory: build
       shell: bash
       run: cmake --build . --config $BUILD_TYPE --target domain-server $CMAKE_BUILD_EXTRA
 
     - name: Build Assignment Client
       if: matrix.build_type == 'full'
-      working-directory: ${{runner.workspace}}/build
+      working-directory: build
       shell: bash
       run: cmake --build . --config $BUILD_TYPE --target assignment-client $CMAKE_BUILD_EXTRA
 
     - name: Build Console
-      if: matrix.build_type == 'full' || startsWith(matrix.os, 'windows')
-      working-directory: ${{runner.workspace}}/build
+      if: matrix.build_type == 'full' && matrix.arch != 'aarch64' || startsWith(matrix.os, 'windows')
+      working-directory: build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target packaged-server-console $CMAKE_BUILD_EXTRA
+      run: |
+        cmake --build . --config $BUILD_TYPE --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build Installer
-      if: matrix.build_type != 'android'
-      working-directory: ${{runner.workspace}}/build
+      if: matrix.build_type != 'android' && matrix.arch != 'aarch64'
+      working-directory: build
       shell: bash
       run: |
         echo "Retry code from https://unix.stackexchange.com/a/137639"
@@ -315,22 +311,22 @@ jobs:
 
     - name: Output system stats
       if: ${{ always() }}
-      working-directory: ${{runner.workspace}}/build
+      working-directory: build
       shell: bash
       run: |
         echo "Disk usage:"
         df -h
 
     - name: Output Installer Logs
-      if: failure() && startsWith(matrix.os, 'windows')
+      if: failure() && startsWith(matrix.os, 'Windows')
       shell: bash
-      working-directory: ${{runner.workspace}}/build
+      working-directory: build
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
     - name: Upload Artifact
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
+      if: startsWith(matrix.os, 'Windows') || startsWith(matrix.os, 'macOS')
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.ARTIFACT_PATTERN }}
-        path: ${{ runner.workspace }}/build/${{ env.ARTIFACT_PATTERN }}
+        path: ./build/${{ env.ARTIFACT_PATTERN }}
         if-no-files-found: error

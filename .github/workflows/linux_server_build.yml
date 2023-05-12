@@ -29,57 +29,57 @@ jobs:
       matrix:
         include:
           - os: debian-11
-            image: docker.io/overte/overte-server-build:0.1.2-debian-11-amd64
+            image: docker.io/overte/overte-server-build:0.1.3-debian-11-amd64
             arch: amd64
             runner: ubuntu-latest
 
           - os: debian-11
-            image: docker.io/overte/overte-server-build:0.1.2-debian-11-aarch64
+            image: docker.io/overte/overte-server-build:0.1.3-debian-11-aarch64
             arch: aarch64
             runner: linux_aarch64
 
           - os: ubuntu-18.04
-            image: docker.io/overte/overte-server-build:0.1.1-ubuntu-18.04-amd64
+            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-18.04-amd64
             arch: amd64
             runner: ubuntu-latest
 
           - os: ubuntu-20.04
-            image: docker.io/overte/overte-server-build:0.1.1-ubuntu-20.04-amd64
+            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-20.04-amd64
             arch: amd64
             runner: ubuntu-latest
 
           - os: ubuntu-22.04
-            image: docker.io/overte/overte-server-build:0.1.1-ubuntu-22.04-amd64
+            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-22.04-amd64
             arch: amd64
             runner: ubuntu-latest
 
           - os: ubuntu-22.04
-            image: docker.io/overte/overte-server-build:0.1.1-ubuntu-22.04-aarch64
+            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-22.04-aarch64
             arch: aarch64
             runner: linux_aarch64
 
           - os: fedora-36
-            image: docker.io/overte/overte-server-build:0.1.2-fedora-36-amd64
+            image: docker.io/overte/overte-server-build:0.1.3-fedora-36-amd64
             arch: amd64
             runner: ubuntu-latest
 
           - os: fedora-36
-            image: docker.io/overte/overte-server-build:0.1.2-fedora-36-aarch64
+            image: docker.io/overte/overte-server-build:0.1.3-fedora-36-aarch64
             arch: aarch64
             runner: linux_aarch64
 
           - os: fedora-37
-            image: docker.io/overte/overte-server-build:0.1.2-fedora-37-amd64
+            image: docker.io/overte/overte-server-build:0.1.3-fedora-37-amd64
             arch: amd64
             runner: ubuntu-latest
 
           - os: fedora-37
-            image: docker.io/overte/overte-server-build:0.1.2-fedora-37-aarch64
+            image: docker.io/overte/overte-server-build:0.1.3-fedora-37-aarch64
             arch: aarch64
             runner: linux_aarch64
 
           - os: rockylinux-9
-            image: docker.io/overte/overte-server-build:0.1.2-rockylinux-9-amd64
+            image: docker.io/overte/overte-server-build:0.1.3-rockylinux-9-amd64
             arch: amd64
             runner: ubuntu-latest
 
