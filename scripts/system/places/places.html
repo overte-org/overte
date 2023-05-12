@@ -486,7 +486,7 @@
                     "channel": channel,
                     "action": "GO_HOME"
                     };
-                EventBridge.emitWebEvent(JSON.stringify(message));            
+                EventBridge.emitWebEvent(JSON.stringify(message));
             }
 
             function goBack() {
@@ -494,7 +494,7 @@
                     "channel": channel,
                     "action": "GO_BACK"
                     };
-                EventBridge.emitWebEvent(JSON.stringify(message));             
+                EventBridge.emitWebEvent(JSON.stringify(message));
             }
 
             function goForward() {
@@ -502,7 +502,7 @@
                     "channel": channel,
                     "action": "GO_FORWARD"
                     };
-                EventBridge.emitWebEvent(JSON.stringify(message));             
+                EventBridge.emitWebEvent(JSON.stringify(message));
             }
 
             function pinMetaverse(metaverseIndex, pinned) {
@@ -569,8 +569,8 @@
                     } else {
                         externalFilter = true;
                         document.getElementById("extPlacesFilter").className = "externalFilterOn";
-                    }                
-                }                
+                    }
+                }
 
                 loadRecordsUpTo = NUMBER_OF_RECORDS_PER_LOAD;
                 generateContent();
@@ -627,13 +627,13 @@
                     document.getElementById("maturityEveryone").className = "filterOff";
                 } else {
                     document.getElementById("maturityEveryone").className = "everyoneFilterOn";
-                }                
+                }
 
                 if (maturityFilter.indexOf("unrated") === -1) {
                     document.getElementById("maturityUnrated").className = "filterOff";
                 } else {
                     document.getElementById("maturityUnrated").className = "unratedFilterOn";
-                }                
+                }
             }
 
             function displaySearchFieldsFilter() {
@@ -668,6 +668,12 @@
                 loadRecordsUpTo = NUMBER_OF_RECORDS_PER_LOAD;
                 generateContent();
             }
+
+            document.addEventListener("keyup", function(event) {
+                if (event.keyCode === 13) {
+                    teleportUsingAddressBarValue(document.getElementById("search").value);
+                }
+            });
 
             function teleportUsingAddressBarValue(url) {
                 var finalizedUrl = url;
