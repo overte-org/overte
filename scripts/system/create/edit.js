@@ -2791,7 +2791,7 @@
                 } else if (data.action === "setRotationToZero") {
                     if (selectionManager.selections.length === 1 && SelectionManager.hasUnlockedSelection()) {
                         selectionManager.saveProperties();
-                        var parentState = getParentState(selectionManager.selections[0]);
+                        var parentState = createApp.getParentState(selectionManager.selections[0]);
                         if ((parentState === "PARENT_CHILDREN" || parentState === "CHILDREN") && selectionDisplay.getSpaceMode() === "local" ) {
                             Entities.editEntity(selectionManager.selections[0], {
                                 localRotation: Quat.IDENTITY
