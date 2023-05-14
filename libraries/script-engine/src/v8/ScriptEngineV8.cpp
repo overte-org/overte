@@ -48,6 +48,7 @@
 #include "../ScriptProgram.h"
 #include "../ScriptEngineCast.h"
 #include "../ScriptValue.h"
+#include "../ScriptManagerScriptingInterface.h"
 
 #include "ScriptContextV8Wrapper.h"
 #include "ScriptObjectV8Proxy.h"
@@ -335,7 +336,7 @@ void ScriptEngineV8::registerValue(const QString& valueName, V8ScriptValue value
     }
 }
 
-void ScriptEngineV8::registerGlobalObject(const QString& name, QObject* object) {
+void ScriptEngineV8::registerGlobalObject(const QString& name, QObject* object, ScriptEngine::ValueOwnership) {
     if (QThread::currentThread() != thread()) {
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerGlobalObject() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]  name:" << name;
@@ -627,6 +628,9 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
                     Q_ASSERT(false);
                 }
             }
+            // "Script" API is context-dependent, so it needs to be recreated for each new context
+            registerGlobalObject("Script", new ScriptManagerScriptingInterface(_manager), ScriptEngine::ScriptOwnership);
+
             auto maybeResult = program.constGet()->GetUnboundScript()->BindToCurrentContext()->Run(closureContext);
             v8::Local<v8::Value> v8Result;
             if (!maybeResult.ToLocal(&v8Result)) {
@@ -859,13 +863,13 @@ ScriptContextV8Pointer ScriptEngineV8::pushContext(v8::Local<v8::Context> contex
     v8::HandleScope handleScope(_v8Isolate);
     Q_ASSERT(!_contexts.isEmpty());
     ScriptContextPointer parent = _contexts.last();
-    _contexts.append(std::make_shared<ScriptContextV8Wrapper>(this, context, ScriptContextPointer()));
+    _contexts.append(std::make_shared<ScriptContextV8Wrapper>(this, context, parent));
     v8::Context::Scope contextScope(context);
-    static volatile int debug_context_id = 1;
+    /*static volatile int debug_context_id = 1;
     if (!context->Global()->Set(context, v8::String::NewFromUtf8(_v8Isolate, "debug_context_id").ToLocalChecked(), v8::Integer::New(_v8Isolate, debug_context_id)).FromMaybe(false)) {
         Q_ASSERT(false);
     }
-    debug_context_id++;
+    debug_context_id++;*/
     return _contexts.last();
 }
 

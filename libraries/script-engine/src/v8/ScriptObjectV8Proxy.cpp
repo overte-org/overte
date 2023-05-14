@@ -939,7 +939,17 @@ void ScriptMethodV8Proxy::callback(const v8::FunctionCallbackInfo<v8::Value>& ar
         return;
     }
     ScriptMethodV8Proxy *proxy = reinterpret_cast<ScriptMethodV8Proxy*>(data->GetAlignedPointerFromInternalField(1));
+
+    // V8TODO: all other V8 callbacks need this too
+    bool isContextChangeNeeded = (proxy->_engine->getContext() != arguments.GetIsolate()->GetCurrentContext());
+    if (isContextChangeNeeded) {
+        qDebug() << "ScriptMethodV8Proxy::callback : changing context";
+        proxy->_engine->pushContext(arguments.GetIsolate()->GetCurrentContext());
+    }
     proxy->call(arguments);
+    if (isContextChangeNeeded) {
+        proxy->_engine->popContext();
+    }
 }
 
 void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& arguments) {

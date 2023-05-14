@@ -350,7 +350,7 @@ public:
     virtual void registerFunction(const QString& name, FunctionSignature fun, int numArguments = -1) = 0;
     virtual void registerFunction(const QString& parent, const QString& name, FunctionSignature fun, int numArguments = -1) = 0;
     virtual void registerGetterSetter(const QString& name, FunctionSignature getter, FunctionSignature setter, const QString& parent = QString("")) = 0;
-    virtual void registerGlobalObject(const QString& name, QObject* object) = 0;
+    virtual void registerGlobalObject(const QString& name, QObject* object, ScriptEngine::ValueOwnership = ScriptEngine::QtOwnership) = 0;
     virtual void setDefaultPrototype(int metaTypeId, const ScriptValue& prototype) = 0;
     virtual void setObjectName(const QString& name) = 0;
     virtual bool setProperty(const char* name, const QVariant& value) = 0;

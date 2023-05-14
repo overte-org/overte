@@ -222,6 +222,11 @@ QString ScriptFunctionContextV8Wrapper::fileName() const {
     v8::Context::Scope contextScope(_context.Get(isolate));
     // V8TODO: does this work for context selected with contextScope?
     v8::Local<v8::String> name = v8::StackTrace::CurrentScriptNameOrSourceURL(_engine->getIsolate());
+    /*auto stackTrace = v8::StackTrace::CurrentStackTrace(isolate, 1);
+    if (stackTrace.IsEmpty() || stackTrace->GetFrameCount() == 0) {
+        return "";
+    }
+    auto name = stackTrace->GetFrame(isolate, 0)->GetScriptNameOrSourceURL();*/
     v8::String::Utf8Value nameUTF(_engine->getIsolate(), name);
     return QString(*nameUTF);
 }

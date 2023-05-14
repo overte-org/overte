@@ -117,7 +117,7 @@ public:  // ScriptEngine implementation
                                                   ScriptEngine::FunctionSignature getter,
                                                   ScriptEngine::FunctionSignature setter,
                                                   const QString& parent = QString("")) override;
-    Q_INVOKABLE virtual void registerGlobalObject(const QString& name, QObject* object) override;
+    Q_INVOKABLE virtual void registerGlobalObject(const QString& name, QObject* object, ScriptEngine::ValueOwnership = ScriptEngine::QtOwnership) override;
     virtual void setDefaultPrototype(int metaTypeId, const ScriptValue& prototype) override;
     virtual void setObjectName(const QString& name) override;
     virtual bool setProperty(const char* name, const QVariant& value) override;
