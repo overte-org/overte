@@ -249,18 +249,7 @@ std::shared_ptr<StartEndRenderState> ParabolaPointer::buildRenderState(const QVa
     bool isVisibleInSecondaryCamera = RenderState::ParabolaRenderItem::DEFAULT_PARABOLA_ISVISIBLEINSECONDARYCAMERA;
     bool drawInFront = RenderState::ParabolaRenderItem::DEFAULT_PARABOLA_DRAWINFRONT;
     bool enabled = false;
-    /*if (propMap["pathPropertyIndex"].isValid()) {
-        int pathPropertyIndex = propMap["pathPropertyIndex"].toInt();
-        if (pathPropertyIndex >= 0 && pathPropertyIndex < entityProperties.length()) {
-            const EntityItemProperties &pathProperties(entityProperties[pathPropertyIndex]);
-            enabled = true;
-            color = pathProperties.getColor();
-            alpha = pathProperties.getAlpha();
-            //V8TODO I'm not sure how to do this one
-            //width = pathProperties.getWidth;
-            drawInFront = (pathProperties.getRenderLayer() == RenderLayer::FRONT);
-        }
-    }*/
+
     if (propMap["path"].isValid()) {
         enabled = true;
         QVariantMap pathMap = propMap["path"].toMap();

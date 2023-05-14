@@ -2059,6 +2059,7 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
             exception = testConstructor;
         }
     } else {
+        // V8TODO: re-enable entity script whitelist
         // ENTITY SCRIPT WHITELIST STARTS HERE
         auto nodeList = DependencyManager::get<NodeList>();
         bool passList = false;  // assume unsafe

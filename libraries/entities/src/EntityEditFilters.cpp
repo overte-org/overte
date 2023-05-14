@@ -232,19 +232,8 @@ static bool hasCorrectSyntax(const ScriptProgramPointer& program) {
 }
 static bool hadUncaughtExceptions(ScriptEngine& engine, const QString& fileName) {
     if (engine.hasUncaughtException()) {
-        //const auto backtrace = engine.uncaughtException().backtrace;
-        //const auto exception = engine.uncaughtException().toString();
-        //const auto line = QString::number(engine.uncaughtExceptionLineNumber());
         qCritical() << engine.uncaughtException();
         engine.clearExceptions();
-
-        //static const QString SCRIPT_EXCEPTION_FORMAT = "[UncaughtException] %1 in %2:%3";
-        //auto message = QString(SCRIPT_EXCEPTION_FORMAT).arg(exception, fileName, line);
-        //if (!backtrace.empty()) {
-        //    static const auto lineSeparator = "\n    ";
-        //    message += QString("\n[Backtrace]%1%2").arg(lineSeparator, backtrace.join(lineSeparator));
-        //}
-        //qCritical() << qPrintable(message);
         return true;
     }
     return false;

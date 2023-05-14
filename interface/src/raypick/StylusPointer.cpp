@@ -85,13 +85,9 @@ QUuid StylusPointer::buildStylus(const QVariantMap& properties) {
     entityProperties.setType(EntityTypes::Model);
     entityProperties.setName("stylus");
     entityProperties.setModelURL(modelURL);
-    // V8TODO: I can't find equivalent for entities
-    //propertiesMap["loadPriority"] = 10.0f;
     entityProperties.setPrimitiveMode(PrimitiveMode::SOLID);
     entityProperties.setVisible(true);
     entityProperties.setIgnorePickIntersection(true);
-    // V8TODO: I can't find equivalent for entities but shouldn't be necessary
-    //propertiesMap["drawInFront"] = false;
     return DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(entityProperties, entity::HostType::LOCAL);
 }
 

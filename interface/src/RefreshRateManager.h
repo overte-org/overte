@@ -118,7 +118,7 @@ private:
     mutable int _activeRefreshRate { 20 };
     RefreshRateProfile _refreshRateProfile { RefreshRateProfile::INTERACTIVE};
     RefreshRateRegime _refreshRateRegime { RefreshRateRegime::STARTUP };
-    UXMode _uxMode { UXMode::UX_NUM };
+    UXMode _uxMode { UXMode::DESKTOP };
 
     mutable ReadWriteLockable _refreshRateProfileSettingLock;
     Setting::Handle<int> _refreshRateProfileSetting { "refreshRateProfile", RefreshRateProfile::INTERACTIVE };
