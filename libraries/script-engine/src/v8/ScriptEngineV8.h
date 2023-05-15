@@ -29,6 +29,7 @@
 #include <QtCore/QPointer>
 #include <QtCore/QSharedPointer>
 #include <QtCore/QString>
+#include <QQueue>
 
 #include "libplatform/libplatform.h"
 #include "v8.h"
