@@ -1,5 +1,5 @@
 # Copyright 2023 Overte e.V.
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
 
 set(NODE_VERSION 18.14.2)
 set(MASTER_COPY_SOURCE_PATH ${CURRENT_BUILDTREES_DIR}/src)
@@ -16,6 +16,7 @@ elseif (WIN32)
         FILENAME node-install-18.15.1-win-x64-release.tar.xz
     )
 elseif (APPLE)
+    # TODO
     vcpkg_download_distfile(
         NODE_SOURCE_ARCHIVE
         URLS "${EXTERNAL_BUILD_ASSETS}/dependencies/node/node-install-18.14.2-macOSXSDK10.14-macos-amd64-release.tar.xz"
@@ -24,12 +25,21 @@ elseif (APPLE)
     )
 else ()
     # else Linux desktop
-    vcpkg_download_distfile(
-        NODE_SOURCE_ARCHIVE
-        URLS "${EXTERNAL_BUILD_ASSETS}/dependencies/node/node-install-18.14.2-ubuntu-18.04-amd64-release.tar.xz"
-        SHA512 ff5ca5c27b811d20ac524346ee122bcd72e9e85c6de6f4799f620bb95dac959ce910cc5bb2162ed741a7f65043aa78173ecd2ce5b92f5a4d91ecb07ce71fa560
-        FILENAME node-install-18.14.2-ubuntu-18.04-amd64-release.tar.xz
-    )
+    if (VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")
+        vcpkg_download_distfile(
+            NODE_SOURCE_ARCHIVE
+            URLS "${EXTERNAL_BUILD_ASSETS}/dependencies/node/node-install-18.14.2-ubuntu-18.04-amd64-release.tar.xz"
+            SHA512 ff5ca5c27b811d20ac524346ee122bcd72e9e85c6de6f4799f620bb95dac959ce910cc5bb2162ed741a7f65043aa78173ecd2ce5b92f5a4d91ecb07ce71fa560
+            FILENAME node-install-18.14.2-ubuntu-18.04-amd64-release.tar.xz
+        )
+    elseif (VCPKG_TARGET_ARCHITECTURE STREQUAL "arm64")
+            vcpkg_download_distfile(
+            NODE_SOURCE_ARCHIVE
+            URLS "${EXTERNAL_BUILD_ASSETS}/dependencies/node/node-install-18.16.0-ubuntu-22.04-aarch64-release.tar.xz"
+            SHA512 2b1a1ba5be891cdd04a43ab2a0af3051bc7329b5fc8e5cf4f0a7d0cee8cea994404b006a89d66629d4e9876a17b5a4dd845131489bf483561c47fa6d1246746e
+            FILENAME node-install-18.16.0-ubuntu-22.04-aarch64-release.tar.xz
+        )
+    endif ()
 endif ()
 
 vcpkg_extract_source_archive(MASTER_COPY_SOURCE_PATH ARCHIVE ${NODE_SOURCE_ARCHIVE} NO_REMOVE_ONE_LEVEL)
