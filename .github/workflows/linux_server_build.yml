@@ -89,6 +89,11 @@ jobs:
     container: ${{matrix.image}}
 
     steps:
+    - name: Clear Working Directory
+      if: contains(matrix.runner, 'linux_aarch64')
+      shell: bash
+      run: rm -rf ./*
+
     - name: Configure Build Environment 1
       shell: bash
       run: |
@@ -267,3 +272,8 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.s3_access_key_id }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.s3_secret_access_key }}
       run: python3 $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
+
+    - name: Clear Working Directory
+      if: contains(matrix.runner, 'linux_aarch64')
+      shell: bash
+      run: rm -rf ./*

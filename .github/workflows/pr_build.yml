@@ -156,9 +156,8 @@ jobs:
         fi
 
     - name: Clear Working Directory
-      if: startsWith(matrix.os, 'windows') || contains(matrix.os, 'self-hosted')
+      if: contains(matrix.runner, 'linux_aarch64')
       shell: bash
-      working-directory: ${{runner.workspace}}
       run: rm -rf ./*
 
     - uses: actions/checkout@v3
@@ -336,3 +335,8 @@ jobs:
         name: ${{ env.ARTIFACT_PATTERN }}
         path: ./build/${{ env.ARTIFACT_PATTERN }}
         if-no-files-found: error
+
+    - name: Clear Working Directory
+      if: contains(matrix.runner, 'linux_aarch64')
+      shell: bash
+      run: rm -rf ./*
