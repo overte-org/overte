@@ -309,7 +309,7 @@ public slots:
      * });
      */
     QUuid getOverlayAtPoint(const glm::vec2& point);
-    
+
     /*@jsdoc
      * Finds the closest 3D overlay (or local entity) intersected by a {@link PickRay}.
      * @function Overlays.findRayIntersection

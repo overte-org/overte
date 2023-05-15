@@ -25,32 +25,16 @@
 #include "scripting/ControllerScriptingInterface.h"
 
 static const float SEARCH_SPHERE_SIZE = 0.0132f;
-/*static const QVariantMap SEARCH_SPHERE = {{"x", SEARCH_SPHERE_SIZE},
-                                            {"y", SEARCH_SPHERE_SIZE},
-                                            {"z", SEARCH_SPHERE_SIZE}};*/
 
 static const glm::vec3 SEARCH_SPHERE(SEARCH_SPHERE_SIZE, SEARCH_SPHERE_SIZE, SEARCH_SPHERE_SIZE);
 
 static const int DEFAULT_SEARCH_SPHERE_DISTANCE = 1000; // how far from camera to search intersection?
-
-/*static const QVariantMap COLORS_GRAB_SEARCHING_HALF_SQUEEZE = {{"red", 10},
-                                                                {"green", 10},
-                                                                {"blue", 255}};
-
-static const QVariantMap COLORS_GRAB_SEARCHING_FULL_SQUEEZE = {{"red", 250},
-                                                                {"green", 10},
-                                                                {"blue", 10}};
-
-static const QVariantMap COLORS_GRAB_DISTANCE_HOLD = {{"red", 238},
-                                                        {"green", 75},
-                                                        {"blue", 214}};*/
 
 static const glm::u8vec3 COLORS_GRAB_SEARCHING_HALF_SQUEEZE(10, 10, 255);
 
 static const glm::u8vec3 COLORS_GRAB_SEARCHING_FULL_SQUEEZE(250, 10, 10);
 
 static const glm::u8vec3 COLORS_GRAB_DISTANCE_HOLD(238, 75, 215);
-
 
 void LoginStateManager::tearDown() {
     auto pointers = DependencyManager::get<PointerManager>().data();

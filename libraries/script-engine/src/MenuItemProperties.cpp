@@ -78,6 +78,12 @@ ScriptValue menuItemPropertiesToScriptValue(ScriptEngine* engine, const MenuItem
  * @property {string} [grouping] - The name of grouping to add this menu item to.
  */
 bool menuItemPropertiesFromScriptValue(const ScriptValue& object, MenuItemProperties& properties) {
+    if (!object.hasProperty("menuName")) {
+        return false;
+    }
+    if (!object.hasProperty("menuItemName")) {
+        return false;
+    }
     properties.menuName = object.property("menuName").toVariant().toString();
     properties.menuItemName = object.property("menuItemName").toVariant().toString();
     properties.isCheckable = object.property("isCheckable").toVariant().toBool();

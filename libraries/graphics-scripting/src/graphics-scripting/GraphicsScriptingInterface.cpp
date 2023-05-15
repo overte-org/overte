@@ -338,20 +338,12 @@ namespace scriptable {
                 return engine->newQObject(object, ScriptEngine::QtOwnership, ScriptEngine::AutoCreateDynamicProperties);
             },
             [](const ScriptValue& value, QVariant &dest) -> bool {
-                //Q_ASSERT(p != NULL);
-                //QPointer<T>& out = *(reinterpret_cast<QPointer<T>* >(p));
                 auto obj = value.toQObject();
 #ifdef SCRIPTABLE_MESH_DEBUG
                 qCInfo(graphics_scripting) << "qpointer_qobject_cast" << obj << value.toString();
 #endif
                 if (auto tmp = qobject_cast<T*>(obj)) {
-                    //out = QPointer<T>(tmp);
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
                     dest.setValue(QPointer<T>(tmp));
-#else
-                    //V8TODO: works on Linux but not Windows?
-                    dest.template setValue(QPointer<T>(tmp));
-#endif
                     return true;
                 }
 #if 0
@@ -363,7 +355,6 @@ namespace scriptable {
                     return true;
                 }
 #endif
-                //out = nullptr;
                 return false;
             }
         );

@@ -104,10 +104,10 @@ bool blockingInvokeMethod(
 }
 
 // Inspecting of the qt event queue
-// requres access to private Qt datastructures
+// requires access to private Qt datastructures
 // Querying the event queue should be done with
 // care as it could lock the threadData->postEventList.mutex
-// The code uses a tryLock to avoid the possability of a
+// The code uses a tryLock to avoid the possibility of a
 // deadlock during a call to this code, although that is unlikely
 //
 #ifdef DEBUG_EVENT_QUEUE
