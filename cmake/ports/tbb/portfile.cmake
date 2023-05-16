@@ -4,7 +4,7 @@ vcpkg_from_github(
     REF 3df08fe234f23e732a122809b40eb129ae22733f
     SHA512 078b0aef93fb49a974adc365a4147cd2d12704e59d448fa2e510cd4ac8fa77cc4c83eebc5612684ed36a907449c876e5717eba581c195e1d9a7faf0ae832cb00
     HEAD_REF v2021.5.0
-        fix-static-build.patch
+    PATCHES
         add-find-dependency.patch
 )
 
