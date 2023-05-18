@@ -2059,7 +2059,6 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
             exception = testConstructor;
         }
     } else {
-        // V8TODO: re-enable entity script whitelist
         // ENTITY SCRIPT WHITELIST STARTS HERE
         auto nodeList = DependencyManager::get<NodeList>();
         bool passList = false;  // assume unsafe
@@ -2170,6 +2169,77 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
         emit unhandledException(err);
         return; // done processing script
     }*/
+
+    // ENTITY SCRIPT WHITELIST STARTS HERE
+    auto nodeList = DependencyManager::get<NodeList>();
+    bool passList = false;  // assume unsafe
+    QString whitelistPrefix = "[WHITELIST ENTITY SCRIPTS]";
+    QList<QString> safeURLPrefixes = { "file:///", "atp:", "cache:" };
+    safeURLPrefixes += qEnvironmentVariable("EXTRA_WHITELIST").trimmed().split(QRegExp("\\s*,\\s*"), Qt::SkipEmptyParts);
+
+    // Entity Script Whitelist toggle check.
+    Setting::Handle<bool> whitelistEnabled {"private/whitelistEnabled", false };
+
+    if (!whitelistEnabled.get()) {
+        passList = true;
+    }
+
+    // Pull SAFEURLS from the Interface.JSON settings.
+    QVariant raw = Setting::Handle<QVariant>("private/settingsSafeURLS").get();
+    QStringList settingsSafeURLS = raw.toString().trimmed().split(QRegExp("\\s*[,\r\n]+\\s*"), Qt::SkipEmptyParts);
+    safeURLPrefixes += settingsSafeURLS;
+    // END Pull SAFEURLS from the Interface.JSON settings.
+
+    // Get current domain whitelist bypass, in case an entire domain is whitelisted.
+    QString currentDomain = DependencyManager::get<AddressManager>()->getDomainURL().host();
+
+    QString domainSafeIP = nodeList->getDomainHandler().getHostname();
+    QString domainSafeURL = URL_SCHEME_OVERTE + "://" + currentDomain;
+    for (const auto& str : safeURLPrefixes) {
+        if (domainSafeURL.startsWith(str) || domainSafeIP.startsWith(str)) {
+            qCDebug(scriptengine) << whitelistPrefix << "Whitelist Bypassed, entire domain is whitelisted. Current Domain Host: "
+                                  << nodeList->getDomainHandler().getHostname()
+                                  << "Current Domain: " << currentDomain;
+            passList = true;
+        }
+    }
+    // END bypass whitelist based on current domain.
+
+    // Start processing scripts through the whitelist.
+    if (ScriptManager::getContext() == "entity_server") { // If running on the server, do not engage whitelist.
+        passList = true;
+    } else if (!passList) { // If waved through, do not engage whitelist.
+        for (const auto& str : safeURLPrefixes) {
+            qCDebug(scriptengine) << whitelistPrefix << "Script URL: " << scriptOrURL << "TESTING AGAINST" << str << "RESULTS IN"
+                                  << scriptOrURL.startsWith(str);
+            if (!str.isEmpty() && scriptOrURL.startsWith(str)) {
+                passList = true;
+                qCDebug(scriptengine) << whitelistPrefix << "Script approved.";
+                break; // Bail early since we found a match.
+            }
+        }
+    }
+    // END processing of scripts through the whitelist.
+
+    ScriptValue exception;
+    if (!passList) { // If the entity failed to pass for any reason, it's blocked and an error is thrown.
+        qCDebug(scriptengine) << whitelistPrefix << "(disabled entity script)" << entityID.toString() << scriptOrURL;
+        exception = _engine->makeError(_engine->newValue("UNSAFE_ENTITY_SCRIPTS == 0"));
+    }
+
+    if (exception.isError()) {
+        setError(formatException(exception, _enableExtendedJSExceptions.get()), EntityScriptStatus::ERROR_RUNNING_SCRIPT);
+        auto scriptRuntimeException = std::make_shared<ScriptRuntimeException>();
+        ScriptValue message = exception.property("stack"); //This contains more details along with the error message
+        scriptRuntimeException->errorMessage = message.toString();
+        scriptRuntimeException->thrownValue = exception;
+        emit unhandledException(scriptRuntimeException);
+        return;
+    }
+    // ENTITY SCRIPT WHITELIST ENDS HERE, uncomment below for original full disabling.
+
+    // qCDebug(scriptengine) << "(disabled entity script)" << entityID.toString() << scriptOrURL;
+    // exception = makeError("UNSAFE_ENTITY_SCRIPTS == 0");
 
     // (this feeds into refreshFileScript)
     int64_t lastModified = 0;

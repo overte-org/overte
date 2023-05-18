@@ -80,7 +80,6 @@ ScriptValue ScriptEngineV8::makeError(const ScriptValue& _other, const QString& 
     if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
         return nullValue();
     }
-    return nullValue();
 
     auto other = _other;
     if (_other.isString()) {
