@@ -17,12 +17,25 @@
 
 #if !defined(Q_MOC_RUN)
 // Work around https://bugreports.qt.io/browse/QTBUG-80990
+
+// This causes a compile error in profiling.h:
+// profiling.h:229:15: error: expected unqualified-id before ‘)’ token
+//   229 |     void emit() { }
+//
+// 'emit' is defined to nothing in qt and is just syntactic sugar, so get rid of it
+#undef emit
+
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_unordered_set.h>
 #include <tbb/concurrent_vector.h>
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range2d.h>
+
+
+// and re-add later.
+#define emit
+
 #endif
 
 #ifdef _WIN32
