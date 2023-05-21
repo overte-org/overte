@@ -270,6 +270,9 @@ void UserInputMapper::update(float deltaTime) {
         channel = Pose();
     }
 
+    // Remove callbacks to script engines that are being destroyed
+    runScriptEndpointCleanup();
+
     // Run the mappings code
     runMappings();
 
@@ -855,6 +858,12 @@ void UserInputMapper::unloadMapping(const QString& jsonFile) {
     }
 }
 
+void UserInputMapper::scheduleScriptEndpointCleanup(ScriptEngine* engine) {
+    _lock.lock();
+    scriptEnginesRequestingCleanup.enqueue(engine);
+    _lock.unlock();
+}
+
 static const QString JSON_NAME = QStringLiteral("name");
 static const QString JSON_CHANNELS = QStringLiteral("channels");
 static const QString JSON_CHANNEL_FROM = QStringLiteral("from");
@@ -1247,6 +1256,50 @@ void UserInputMapper::disableMapping(const Mapping::Pointer& mapping) {
     if (debuggableRoutes) {
         debuggableRoutes = hasDebuggableRoute(_deviceRoutes) || hasDebuggableRoute(_standardRoutes);
     }
+}
+
+void UserInputMapper::runScriptEndpointCleanup() {
+    _lock.lock();
+    QList<RoutePointer> routesToRemove;
+    while (!scriptEnginesRequestingCleanup.empty()){
+        auto engine = scriptEnginesRequestingCleanup.dequeue();
+        QList<RouteList*> routeLists = {&_deviceRoutes, &_standardRoutes};
+        auto iterator = _mappingsByName.begin();
+        while (iterator != _mappingsByName.end()) {
+            if (iterator->second) {
+                routeLists.append(&iterator->second->routes);
+            }
+            iterator++;
+        }
+        for (auto routeList: routeLists) {
+            for (auto route: *routeList) {
+                auto source = std::dynamic_pointer_cast<ScriptEndpoint>(route->source);
+                if (source && source->getEngine() == engine) {
+                    qDebug() << "UserInputMapper::runScriptEndpointCleanup source";
+                    routesToRemove.append(route);
+                }
+                auto destination = std::dynamic_pointer_cast<ScriptEndpoint>(route->destination);
+                if (destination && destination->getEngine() == engine) {
+                    qDebug() << "UserInputMapper::runScriptEndpointCleanup destination";
+                    routesToRemove.append(route);
+                }
+            }
+        }
+    }
+    while (!routesToRemove.empty()) {
+        qDebug() << "UserInputMapper::runScriptEndpointCleanup routesToRemove";
+        auto route = routesToRemove.first();
+        _deviceRoutes.remove(route);
+        _standardRoutes.remove(route);
+        auto iterator = _mappingsByName.begin();
+        while (iterator != _mappingsByName.end()) {
+            iterator->second->routes.remove(route);
+            iterator++;
+        }
+
+        routesToRemove.removeAll(route);
+    }
+    _lock.unlock();
 }
 
 void UserInputMapper::setActionState(Action action, float value, bool valid) {

@@ -33,6 +33,7 @@ public:
     virtual void apply(const Pose& newValue, const Pointer& source) override;
 
     virtual bool isPose() const override { return _returnPose; }
+    virtual const ScriptEngine* getEngine() const { return _callable.engine().get(); }
 
 protected:
     Q_INVOKABLE void updateValue();

@@ -26,7 +26,7 @@ using ScriptManagerPointer = std::shared_ptr<ScriptManager>;
 class AbstractScriptingServicesInterface {
 public:
     /// Registers application specific services with a script engine.
-    virtual void registerScriptEngineWithApplicationServices(const ScriptManagerPointer& scriptEngine) = 0;
+    virtual void registerScriptEngineWithApplicationServices(ScriptManagerPointer& scriptEngine) = 0;
 };
 
 

@@ -45,6 +45,9 @@ STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager) {
     auto scriptEngine = manager->engine().get();
 
     scriptRegisterMetaType<controller::InputController*, inputControllerToScriptValue, inputControllerFromScriptValue>(scriptEngine);
+    manager->connect(manager, &ScriptManager::scriptEnding, [manager]() {
+        ;
+    });
 }));
 
 static QRegularExpression SANITIZE_NAME_EXPRESSION{ "[\\(\\)\\.\\s]" };

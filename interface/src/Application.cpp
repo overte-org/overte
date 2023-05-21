@@ -7453,7 +7453,7 @@ void Application::addingEntityWithCertificate(const QString& certificateID, cons
     ledger->updateLocation(certificateID, placeName);
 }
 
-void Application::registerScriptEngineWithApplicationServices(const ScriptManagerPointer& scriptManager) {
+void Application::registerScriptEngineWithApplicationServices(ScriptManagerPointer& scriptManager) {
 
     auto scriptEngine = scriptManager->engine();
     scriptManager->setEmitScriptUpdatesFunction([this]() {
@@ -7587,6 +7587,12 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptManage
     }
     auto scriptingInterface = DependencyManager::get<controller::ScriptingInterface>();
     scriptEngine->registerGlobalObject("Controller", scriptingInterface.data());
+    scriptManager->connect(scriptManager.get(), &ScriptManager::scriptEnding, [scriptManager]() {
+        // Request removal of controller routes with callbacks to a given script engine
+        auto userInputMapper = DependencyManager::get<UserInputMapper>();
+        userInputMapper->scheduleScriptEndpointCleanup(scriptManager->engine().get());
+        // V8TODO: Maybe we should wait until removal is finished if there are still crashes
+    });
     UserInputMapper::registerControllerTypes(scriptEngine.get());
 
     auto recordingInterface = DependencyManager::get<RecordingScriptingInterface>();

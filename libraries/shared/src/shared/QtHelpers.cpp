@@ -83,6 +83,8 @@ bool blockingInvokeMethod(
     }
 
     PROFILE_RANGE(app, function);
+    // V8TODO: this causes a deadlock when main thread calls blocking invoke method on entity script thread,
+    // for example when clearing cache. Some sort of mutex is needed to prevent this.
     return QMetaObject::invokeMethod(obj, member,
             Qt::BlockingQueuedConnection, ret, val0, val1, val2, val3, val4, val5, val6, val7, val8, val9);
 }

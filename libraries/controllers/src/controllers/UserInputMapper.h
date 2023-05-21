@@ -19,6 +19,7 @@
 #include <memory>
 #include <mutex>
 
+#include <QQueue>
 #include <QtQml/QJSValue>
 
 #include <DependencyManager.h>
@@ -126,6 +127,17 @@ namespace controller {
         void unloadMappings(const QStringList& jsonFiles);
         void unloadMapping(const QString& jsonFile);
 
+        /**
+         * @brief Request cleaning up endpoints on script engine shutdown
+         *
+         * Script endpoints need to be removed before script engine they belong to gets deleted, because otherwise
+         * script callback will cause a crash. Script engine invokes this function during shutdown and then waits
+         * for confirmation before being shut down.
+         *
+         * @param engine Pointer to the script engine that will be shut down
+         */
+        void scheduleScriptEndpointCleanup(ScriptEngine* engine);
+
         AxisValue getValue(const Input& input) const;
         Pose getPose(const Input& input) const;
 
@@ -167,6 +179,16 @@ namespace controller {
         static bool applyRoute(const RoutePointer& route, bool force = false);
         void enableMapping(const MappingPointer& mapping);
         void disableMapping(const MappingPointer& mapping);
+
+        /**
+         * @brief Clean up endpoints on script engine shutdown
+         *
+         * Script endpoints need to be removed before script engine they belong to gets deleted, because otherwise
+         * script callback will cause a crash. This function is called from UserInputMapper::runMappings.
+         *
+         */
+        void runScriptEndpointCleanup();
+
         EndpointPointer endpointFor(const QJSValue& endpoint);
         EndpointPointer endpointFor(const ScriptValue& endpoint);
         EndpointPointer compositeEndpointFor(EndpointPointer first, EndpointPointer second);
@@ -199,6 +221,9 @@ namespace controller {
         QSet<QString> _loadedRouteJsonFiles;
 
         InputCalibrationData inputCalibrationData;
+
+        // Contains pointers to script engines that are requesting callback cleanup during their shutdown process
+        QQueue<ScriptEngine*> scriptEnginesRequestingCleanup;
 
         mutable std::recursive_mutex _lock;
     };
