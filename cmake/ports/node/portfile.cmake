@@ -35,8 +35,8 @@ else ()
     elseif (VCPKG_TARGET_ARCHITECTURE STREQUAL "arm64")
             vcpkg_download_distfile(
             NODE_SOURCE_ARCHIVE
-            URLS "${EXTERNAL_BUILD_ASSETS}/dependencies/node/node-install-18.16.0-ubuntu-22.04-aarch64-release.tar.xz"
-            SHA512 2b1a1ba5be891cdd04a43ab2a0af3051bc7329b5fc8e5cf4f0a7d0cee8cea994404b006a89d66629d4e9876a17b5a4dd845131489bf483561c47fa6d1246746e
+            URLS "${EXTERNAL_BUILD_ASSETS}/dependencies/node/node-install-18.16.0-ubuntu-20.04-aarch64-release.tar.xz"
+            SHA512 aa4814c4ab1a922ec5afd4d7ef08479a32bfd23cb9a745102891bed5a2be13cc912e57e9bf80d856a15a5a9439b67c9a83963c605fdce349236795513090a426
             FILENAME node-install-18.16.0-ubuntu-22.04-aarch64-release.tar.xz
         )
     endif ()
