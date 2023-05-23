@@ -51,9 +51,10 @@ Download and install the latest version of CMake 3.15.
 
 Download the file named win64-x64 Installer from the [CMake Website](https://cmake.org/download/). You can access the installer on this [3.15 Version page](https://cmake.org/files/v3.15/). During installation, make sure to check "Add CMake to system PATH for all users" when prompted.
 
-## Step 4. Node.JS and NPM
+## Step 4. (Optional) Node.JS and NPM
 
 Install version 10.15.0 LTS (or greater) of [Node.JS and NPM](<https://nodejs.org/en/download/>).
+This is required to build the server-console, hifi-screenshare, jsdoc, and for javascript console autocompletion.
 
 ## Step 5. (Optional) Install Qt
 
