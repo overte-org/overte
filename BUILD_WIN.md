@@ -51,9 +51,10 @@ Download and install the latest version of CMake 3.15.
 
 Download the file named win64-x64 Installer from the [CMake Website](https://cmake.org/download/). You can access the installer on this [3.15 Version page](https://cmake.org/files/v3.15/). During installation, make sure to check "Add CMake to system PATH for all users" when prompted.
 
-## Step 4. Node.JS and NPM
+## Step 4. (Optional) Node.JS and NPM
 
 Install version 10.15.0 LTS (or greater) of [Node.JS and NPM](<https://nodejs.org/en/download/>).
+This is required to build the server-console, hifi-screenshare, jsdoc, and for javascript console autocompletion.
 
 ## Step 5. (Optional) Install Qt
 
@@ -74,7 +75,7 @@ To create this variable:
 * Set "Variable name" to `QT_CMAKE_PREFIX_PATH`
 * Set "Variable value" to `%QT_INSTALL_DIR%\5.15.2\msvc2019_64\lib\cmake`, where `%QT_INSTALL_DIR%` is the directory you specified for Qt's installation. The default is `C:\Qt`.
 
-## Step 6. Create VCPKG environment variable
+## Step 6. (Optional) Create VCPKG environment variable
 In the next step, you will use CMake to build Overte. By default, the CMake process builds dependency files in Windows' `%TEMP%` directory, which is periodically cleared by the operating system. To prevent you from having to re-build the dependencies in the event that Windows clears that directory, we recommend that you create a `HIFI_VCPKG_BASE` environment variable linked to a directory somewhere on your machine. That directory will contain all dependency files until you manually remove them.
 
 To create this variable:
