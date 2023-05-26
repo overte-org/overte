@@ -4181,6 +4181,31 @@ static inline bool isKeyEvent(QEvent::Type type) {
     return type == QEvent::KeyPress || type == QEvent::KeyRelease;
 }
 
+bool Application::handleInputMethodEventForFocusedEntity(QEvent* event) {
+    if (_keyboardFocusedEntity.get() != UNKNOWN_ENTITY_ID) {
+        switch (event->type()) {
+            case QEvent::InputMethod:
+            case QEvent::InputMethodQuery:
+            {
+                auto eventHandler = getEntities()->getEventHandler(_keyboardFocusedEntity.get());
+                if (eventHandler) {
+                    event->setAccepted(false);
+                    QCoreApplication::sendEvent(eventHandler, event);
+                    if (event->isAccepted()) {
+                        _lastAcceptedKeyPress = usecTimestampNow();
+                        return true;
+                    }
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    return false;
+}
+
 bool Application::handleKeyEventForFocusedEntity(QEvent* event) {
     if (_keyboardFocusedEntity.get() != UNKNOWN_ENTITY_ID) {
         switch (event->type()) {
@@ -4239,6 +4264,10 @@ bool Application::event(QEvent* event) {
 
     if (!Menu::getInstance()) {
         return false;
+    }
+
+    if ((event->type() == QEvent::InputMethod || event->type() == QEvent::InputMethodQuery) && handleInputMethodEventForFocusedEntity(event)) {
+        return true;
     }
 
     // Allow focused Entities to handle keyboard input

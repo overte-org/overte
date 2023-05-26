@@ -1145,6 +1145,12 @@ bool OffscreenUi::eventFilter(QObject* originalDestination, QEvent* event) {
             }
             break;
         }
+        case QEvent::InputMethod:
+        case QEvent::InputMethodQuery:
+            if (QCoreApplication::sendEvent(getWindow(), event)) {
+                return result;
+            }
+            break;
         default:
             break;
     }

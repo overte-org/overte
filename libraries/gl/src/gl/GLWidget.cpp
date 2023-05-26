@@ -39,6 +39,7 @@ GLWidget::GLWidget() {
     setAttribute(Qt::WA_NativeWindow);
     setAttribute(Qt::WA_PaintOnScreen);
     setAttribute(Qt::WA_NoSystemBackground);
+    setAttribute(Qt::WA_InputMethodEnabled);
     setAutoFillBackground(false);
     grabGesture(Qt::PinchGesture);
     setAcceptDrops(true);
@@ -102,6 +103,16 @@ bool GLWidget::event(QEvent* event) {
         case QEvent::Wheel:
         case QEvent::DragEnter:
         case QEvent::Drop:
+            if (QCoreApplication::sendEvent(QCoreApplication::instance(), event)) {
+                return true;
+            }
+            break;
+        case QEvent::InputMethod:
+            if (QCoreApplication::sendEvent(QCoreApplication::instance(), event)) {
+                return true;
+            }
+            break;
+        case QEvent::InputMethodQuery:
             if (QCoreApplication::sendEvent(QCoreApplication::instance(), event)) {
                 return true;
             }

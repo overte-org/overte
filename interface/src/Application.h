@@ -565,6 +565,7 @@ private:
     bool initMenu();
     void pauseUntilLoginDetermined();
     void resumeAfterLoginDialogActionTaken();
+    bool handleInputMethodEventForFocusedEntity(QEvent* event);
     bool handleKeyEventForFocusedEntity(QEvent* event);
     bool handleFileOpenEvent(QFileOpenEvent* event);
     void cleanupBeforeQuit();
