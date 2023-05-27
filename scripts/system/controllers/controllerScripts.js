@@ -11,13 +11,15 @@
 
 /* global Script, Menu */
 
+Script.include("controllerDispatcher.js");
+
 var CONTOLLER_SCRIPTS = [
     "squeezeHands.js",
     "controllerDisplayManager.js",
     "grab.js",
     //"toggleAdvancedMovementForHandControllers.js",
     "handTouch.js",
-    "controllerDispatcher.js",
+    //"controllerDispatcher.js",
     "controllerModules/nearParentGrabOverlay.js",
     "controllerModules/stylusInput.js",
     "controllerModules/equipEntity.js",
@@ -39,11 +41,15 @@ var CONTOLLER_SCRIPTS = [
     "controllerModules/trackedHandTablet.js"
 ];
 
+Script.include("../../developer/debugging/scriptMemoryReport.js");
+//Script.include("developer/debugging/scriptMemoryReport.js");
+
 var DEBUG_MENU_ITEM = "Debug defaultScripts.js";
 
 function runDefaultsTogether() {
     for (var j in CONTOLLER_SCRIPTS) {
         if (CONTOLLER_SCRIPTS.hasOwnProperty(j)) {
+            print("including " + CONTOLLER_SCRIPTS[j]);
             Script.include(CONTOLLER_SCRIPTS[j]);
         }
     }
@@ -52,6 +58,7 @@ function runDefaultsTogether() {
 function runDefaultsSeparately() {
     for (var i in CONTOLLER_SCRIPTS) {
         if (CONTOLLER_SCRIPTS.hasOwnProperty(i)) {
+            print("loading " + CONTOLLER_SCRIPTS[j]);
             Script.load(CONTOLLER_SCRIPTS[i]);
         }
     }

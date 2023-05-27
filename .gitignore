@@ -11,13 +11,16 @@ CMakeCache.txt
 CMakeFiles/
 CMakeScripts/
 cmake_install.cmake
-build*/
+/build*/
+cmake-build-minsizerelease-visual-studio/
+cmake-build-release-visual-studio/
 cmake-build-relwithdebinfo-visual-studio/
-release*/
-debug*/
-gprof*/
-valgrind*/
-ext/
+cmake-build-debug-visual-studio/
+/release*/
+/debug*/
+/gprof*/
+/valgrind*/
+/ext/
 Makefile
 *.user
 
@@ -25,14 +28,14 @@ Makefile
 *.iml
 *.class
 local.properties
-android/gradle*
-android/.gradle
-android/**/src/main/jniLibs
-android/**/libs
-android/**/bin
-android/**/src/main/res/values/libs.xml
-android/**/src/main/assets
-android/**/gradle*
+/android/gradle*
+/android/.gradle
+/android/**/src/main/jniLibs
+/android/**/libs
+/android/**/bin
+/android/**/src/main/res/values/libs.xml
+/android/**/src/main/assets
+/android/**/gradle*
 *.class
 
 # Visual Studio
@@ -73,18 +76,15 @@ DerivedData
 *.hmap
 
 # ignore interface optional externals
-interface/external/*/*
+/interface/external/*/*
 !interface/external/*/readme.txt
 
 # Ignore interfaceCache for Linux users
-interface/interfaceCache/
+/interface/interfaceCache/
 
 # ignore audio-client externals
-libraries/audio-client/external/*/*
+/libraries/audio-client/external/*/*
 !libraries/audio-client/external/*/readme.txt
-
-gvr-interface/assets/oculussig*
-gvr-interface/libs/*
 
 # ignore files for various dev environments
 TAGS
@@ -108,21 +108,22 @@ interface/compiledResources
 *.rcc
 
 # GPUCache
-interface/resources/GPUCache/*
+/interface/resources/GPUCache/*
 
 # package lock file for JSDoc tool
-tools/jsdoc/package-lock.json
+/tools/jsdoc/package-lock.json
 
 # Python compile artifacts
 **/__pycache__
 
 # ignore local unity project files for avatar exporter
-tools/unity-avatar-exporter
+/tools/unity-avatar-exporter
 
-server-console/package-lock.json
-vcpkg/
+/server-console/package-lock.json
+/vcpkg/
 /tools/nitpick/compiledResources
-qt/
+/qt/
 
 # Act local GitHub Actions
 .secret
+

@@ -7,6 +7,7 @@
 //
 //  Created by Seth Alves 2016-9-29
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -50,14 +51,14 @@
         if (!UIWebTablet) {
             return false;
         }
-        if (Overlays.getProperty(HMD.tabletID, "type") !== "model") {
+        if (Entities.getEntityProperties(HMD.tabletID, ["type"]).type !== "Model") {
             if (debugTablet) {
-                print("TABLET is invalid due to frame: " + JSON.stringify(Overlays.getProperty(HMD.tabletID, "type")));
+                print("TABLET is invalid due to frame: " + JSON.stringify(Entities.getEntityProperties(HMD.tabletID, ["type"]).type));
             }
             return false;
         }
-        if (Overlays.getProperty(HMD.homeButtonID, "type") !== "circle3d" ||
-                Overlays.getProperty(HMD.tabletScreenID, "type") !== "web3d") {
+        if (Entities.getEntityProperties(HMD.homeButtonID, ["type"]).type !== "Gizmo" ||
+                Entities.getEntityProperties(HMD.tabletScreenID, ["type"]).type !== "Web") {
             if (debugTablet) {
                 print("TABLET is invalid due to other");
             }
@@ -138,10 +139,10 @@
             }
             tabletProperties.visible = true;
             tabletProperties.ignorePickIntersection = false;
-            Overlays.editOverlay(HMD.tabletID, tabletProperties);
-            Overlays.editOverlay(HMD.homeButtonID, { visible: true, ignorePickIntersection: false });
-            Overlays.editOverlay(HMD.homeButtonHighlightID, { visible: true, ignorePickIntersection: false });
-            Overlays.editOverlay(HMD.tabletScreenID, { visible: true, ignorePickIntersection: false, maxFPS: 90 });
+            Entities.editEntity(HMD.tabletID, tabletProperties);
+            Entities.editEntity(HMD.homeButtonID, { "visible": true, "ignorePickIntersection": false });
+            Entities.editEntity(HMD.homeButtonHighlightID, { "visible": true, "ignorePickIntersection": false });
+            Entities.editEntity(HMD.tabletScreenID, { "visible": true, "ignorePickIntersection": false, "maxFPS": 90 });
             updateTabletWidthFromSettings(true);
         }
         gTablet.tabletShown = true;
@@ -158,10 +159,10 @@
             print("TABLET hide");
         }
 
-        Overlays.editOverlay(HMD.tabletID, { visible: false, ignorePickIntersection: true });
-        Overlays.editOverlay(HMD.homeButtonID, { visible: false, ignorePickIntersection: true });
-        Overlays.editOverlay(HMD.homeButtonHighlightID, { visible: false, ignorePickIntersection: true });
-        Overlays.editOverlay(HMD.tabletScreenID, { visible: false, ignorePickIntersection: true, maxFPS: 1 });
+        Entities.editEntity(HMD.tabletID, { "visible": false, "ignorePickIntersection": true });
+        Entities.editEntity(HMD.homeButtonID, { "visible": false, "ignorePickIntersection": true });
+        Entities.editEntity(HMD.homeButtonHighlightID, { "visible": false, "ignorePickIntersection": true });
+        Entities.editEntity(HMD.tabletScreenID, { "visible": false, "ignorePickIntersection": true, "maxFPS": 1 });
     }
 
     function closeTabletUI() {
@@ -249,20 +250,20 @@
                     tabletShown = false;
 
                     // also cause the stylus model to be loaded
-                    var tmpStylusID = Overlays.addOverlay("model", {
-                                               name: "stylus",
-                                               url: Script.resourcesPath() + "meshes/tablet-stylus-fat.fbx",
-                                               loadPriority: 10.0,
-                                               position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, {x: 0, y: 0.1, z: -2})),
-                                               dimensions: { x: 0.01, y: 0.01, z: 0.2 },
-                                               solid: true,
-                                               visible: true,
-                                               ignoreRayIntersection: true,
-                                               drawInFront: false,
-                                               lifetime: 3
-                                       });
+                    var tmpStylusID = Entities.addEntity({
+                                               "type": "Model",
+                                               "name": "stylus",
+                                               "modelURL": Script.resourcesPath() + "meshes/tablet-stylus-fat.fbx",
+                                               "position": Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, {"x": 0, "y": 0.1, "z": -2})),
+                                               "dimensions": { "x": 0.01, "y": 0.01, "z": 0.2 },
+                                               "primitiveMode": "solid",
+                                               "visible": true,
+                                               "ignorePickIntersection": true,
+                                               "renderLayer": "world",
+                                               "lifetime": 3
+                                       }, "local");
                     Script.setTimeout(function() {
-                        Overlays.deleteOverlay(tmpStylusID);
+                        Entities.deleteEntity(tmpStylusID);
                     }, 300);
                 } else if (!tabletShown) {
                     hideTabletUI();
@@ -330,7 +331,6 @@
 
         var tabletID = HMD.tabletID;
         Entities.deleteEntity(tabletID);
-        Overlays.deleteOverlay(tabletID);
         HMD.tabletID = null;
         HMD.homeButtonID = null;
         HMD.homeButtonHighlightID = null;

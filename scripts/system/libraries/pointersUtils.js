@@ -2,8 +2,13 @@
 
 //  pointerUtils.js
 //
+//  Copyright 2017-2018 High Fidelity, Inc.
+//  Copyright 2022-2023 Overte e.V.
+//
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
 
 /* jslint bitwise: true */
 
@@ -14,62 +19,66 @@
 */
 
 Script.include("/~/system/libraries/controllerDispatcherUtils.js");
-Pointer = function(hudLayer, pickType, pointerData) {
+var Pointer = function(hudLayer, pickType, pointerData) {
     this.SEARCH_SPHERE_SIZE = 0.0132;
     this.dim = {x: this.SEARCH_SPHERE_SIZE, y: this.SEARCH_SPHERE_SIZE, z: this.SEARCH_SPHERE_SIZE};
     this.halfPath = {
-        type: "line3d",
+        type: "PolyLine",
         color: COLORS_GRAB_SEARCHING_HALF_SQUEEZE,
         visible: true,
         alpha: 1,
         solid: true,
-        glow: 1.0,
-        ignoreRayIntersection: true, // always ignore this
-        drawInFront: !hudLayer, // Even when burried inside of something, show it.
+        glow: true,
+        faceCamera: true,
+        ignorePickIntersection: true, // always ignore this
+        //V8TODO
+        drawInFront: !hudLayer, // Even when buried inside of something, show it.
         drawHUDLayer: hudLayer,
     };
     this.halfEnd = {
-        type: "sphere",
+        type: "Sphere",
         dimensions: this.dim,
         solid: true,
         color: COLORS_GRAB_SEARCHING_HALF_SQUEEZE,
         alpha: 0.9,
-        ignoreRayIntersection: true,
-        drawInFront: !hudLayer, // Even when burried inside of something, show it.
+        ignorePickIntersection: true,
+        drawInFront: !hudLayer, // Even when buried inside of something, show it.
         drawHUDLayer: hudLayer,
         visible: true
     };
     this.fullPath = {
-        type: "line3d",
+        type: "PolyLine",
         color: COLORS_GRAB_SEARCHING_FULL_SQUEEZE,
         visible: true,
         alpha: 1,
         solid: true,
-        glow: 1.0,
-        ignoreRayIntersection: true, // always ignore this
-        drawInFront: !hudLayer, // Even when burried inside of something, show it.
+        glow: true,
+        faceCamera: true,
+        ignorePickIntersection: true, // always ignore this
+        drawInFront: !hudLayer, // Even when buried inside of something, show it.
         drawHUDLayer: hudLayer,
     };
     this.fullEnd = {
-        type: "sphere",
+        type: "Sphere",
         dimensions: this.dim,
         solid: true,
         color: COLORS_GRAB_SEARCHING_FULL_SQUEEZE,
         alpha: 0.9,
-        ignoreRayIntersection: true,
-        drawInFront: !hudLayer, // Even when burried inside of something, show it.
+        ignorePickIntersection: true,
+        drawInFront: !hudLayer, // Even when buried inside of something, show it.
         drawHUDLayer: hudLayer,
         visible: true
     };
     this.holdPath = {
-        type: "line3d",
+        type: "PolyLine",
         color: COLORS_GRAB_DISTANCE_HOLD,
         visible: true,
         alpha: 1,
         solid: true,
-        glow: 1.0,
-        ignoreRayIntersection: true, // always ignore this
-        drawInFront: !hudLayer, // Even when burried inside of something, show it.
+        glow: true,
+        faceCamera: true,
+        ignorePickIntersection: true, // always ignore this
+        drawInFront: !hudLayer, // Even when buried inside of something, show it.
         drawHUDLayer: hudLayer,
     };
 
@@ -94,10 +103,15 @@ Pointer = function(hudLayer, pickType, pointerData) {
     delete pointerData.hand;
 
     function createPointer(pickType, pointerData) {
-        var pointerID = Pointers.createPointer(pickType, pointerData);
-        Pointers.setRenderState(pointerID, "");
-        Pointers.enablePointer(pointerID);
-        return pointerID;
+        //V8TODO
+        if (pickType == PickType.Ray) {
+            var pointerID = Pointers.createRayPointer(pointerData);
+            Pointers.setRenderState(pointerID, "");
+            Pointers.enablePointer(pointerID);
+            return pointerID;
+        } else {
+            print("pointerUtils.js createPointer: ray type not supported yet on V8 branch");
+        }
     }
 
     this.enable = function() {
@@ -158,7 +172,7 @@ Pointer = function(hudLayer, pickType, pointerData) {
 };
 
 
-PointerManager = function() {
+var PointerManager = function() {
     this.pointers = [];
 
     this.createPointer = function(hudLayer, pickType, pointerData) {

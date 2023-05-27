@@ -4,9 +4,11 @@
 //
 //  Created by Sam Gateau on 2019-05-29.
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #include "PerformanceManager.h"
 
@@ -19,7 +21,11 @@
 
 PerformanceManager::PerformanceManager()
 {
-    setPerformancePreset((PerformancePreset) _performancePresetSetting.get());
+    static std::once_flag registry_flag;
+    std::call_once(registry_flag, [] {
+        qRegisterMetaType<PerformanceManager::PerformancePreset>("PerformanceManager::PerformancePreset");
+    });
+    setPerformancePreset((PerformancePreset)_performancePresetSetting.get());
 }
 
 void PerformanceManager::setupPerformancePresetSettings(bool evaluatePlatformTier) {

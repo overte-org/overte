@@ -1,23 +1,25 @@
 //
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "ScriptableMesh.h"
-
-#include <QtScript/QScriptValue>
 
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/transform.hpp>
 
-#include <BaseScriptEngine.h>
 #include <graphics/BufferViewHelpers.h>
 #include <graphics/GpuHelpers.h>
 #include <graphics/Geometry.h>
 #include <RegisteredMetaTypes.h>
+#include <ScriptEngine.h>
+#include <ScriptEngineCast.h>
+#include <ScriptValue.h>
 
 #include "Forward.h"
 #include "ScriptableMeshPart.h"
@@ -27,7 +29,7 @@
 // #define SCRIPTABLE_MESH_DEBUG 1
 
 scriptable::ScriptableMesh::ScriptableMesh(const ScriptableMeshBase& other)
-    : ScriptableMeshBase(other), QScriptable() {
+    : ScriptableMeshBase(other), Scriptable() {
     auto mesh = getMeshPointer();
     QString name = mesh ? QString::fromStdString(mesh->modelName) : "";
     if (name.isEmpty()) {
@@ -264,7 +266,7 @@ bool scriptable::ScriptableMesh::setVertexProperty(glm::uint32 vertexIndex, cons
  * @param {number} index - The vertex index.
  * @param {object} properties - The properties of the mesh, per {@link GraphicsMesh}.
  */
-glm::uint32 scriptable::ScriptableMesh::forEachVertex(QScriptValue _callback) {
+glm::uint32 scriptable::ScriptableMesh::forEachVertex(const ScriptValue& _callback) {
     auto mesh = getMeshPointer();
     if (!mesh) {
         return 0;
@@ -278,12 +280,17 @@ glm::uint32 scriptable::ScriptableMesh::forEachVertex(QScriptValue _callback) {
     if (!js) {
         return 0;
     }
-    auto meshPart = js ? js->toScriptValue(getSelf()) : QScriptValue::NullValue;
+    auto meshPart = js ? js->toScriptValue(getSelf()) : js->nullValue();
     int numProcessed = 0;
     buffer_helpers::mesh::forEachVertex(mesh, [&](glm::uint32 index, const QVariantMap& values) {
-        auto result = callback.call(scope, { js->toScriptValue(values), index, meshPart });
+        auto result = callback.call(scope, { js->toScriptValue(values), js->newValue(index), meshPart });
         if (js->hasUncaughtException()) {
-            js->currentContext()->throwValue(js->uncaughtException());
+            // TODO: I think the idea here is that toScriptValue or toValue might throw an exception
+            // in the script engine, which we're then propagating to the running script. This got broken
+            // by the scripting engine changes, needs fixing.
+
+            qCCritical(graphics_scripting) << "Uncaught exception, handling broken, FIX ME: " << js->uncaughtException();
+            //js->currentContext()->throwValue(js->uncaughtException());
             return false;
         }
         numProcessed++;
@@ -293,16 +300,16 @@ glm::uint32 scriptable::ScriptableMesh::forEachVertex(QScriptValue _callback) {
 }
 
 /*@jsdoc
- * Called for each vertex when {@link GraphicsMesh.updateVertexAttributes} is called. The value returned by the script function 
+ * Called for each vertex when {@link GraphicsMesh.updateVertexAttributes} is called. The value returned by the script function
  * should be the modified attributes to update the vertex with, or <code>false</code> to not update the particular vertex.
  * @callback GraphicsMesh~updateVertexAttributesCallback
  * @param {Object<Graphics.BufferTypeName, Graphics.BufferType>} attributes - The attributes  of the vertex.
  * @param {number} index - The vertex index.
  * @param {object} properties - The properties of the mesh, per {@link GraphicsMesh}.
- * @returns {Object<Graphics.BufferTypeName, Graphics.BufferType>|boolean} The attribute values to update the vertex with, or 
+ * @returns {Object<Graphics.BufferTypeName, Graphics.BufferType>|boolean} The attribute values to update the vertex with, or
  *     <code>false</code> to not update the vertex.
  */
-glm::uint32 scriptable::ScriptableMesh::updateVertexAttributes(QScriptValue _callback) {
+glm::uint32 scriptable::ScriptableMesh::updateVertexAttributes(const ScriptValue& _callback) {
     auto mesh = getMeshPointer();
     if (!mesh) {
         return 0;
@@ -316,14 +323,15 @@ glm::uint32 scriptable::ScriptableMesh::updateVertexAttributes(QScriptValue _cal
     if (!js) {
         return 0;
     }
-    auto meshPart = js ? js->toScriptValue(getSelf()) : QScriptValue::NullValue;
+    auto meshPart = js ? js->toScriptValue(getSelf()) : js->nullValue();
     int numProcessed = 0;
     auto attributeViews = buffer_helpers::mesh::getAllBufferViews(mesh);
     buffer_helpers::mesh::forEachVertex(mesh, [&](glm::uint32 index, const QVariantMap& values) {
         auto obj = js->toScriptValue(values);
-        auto result = callback.call(scope, { obj, index, meshPart });
+        auto result = callback.call(scope, { obj, js->newValue(index), meshPart });
         if (js->hasUncaughtException()) {
-            js->currentContext()->throwValue(js->uncaughtException());
+            qCCritical(graphics_scripting) << "Uncaught exception, handling broken, FIX ME: " << js->uncaughtException();
+            //js->currentContext()->throwValue(js->uncaughtException());
             return false;
         }
         if (result.isBool() && !result.toBool()) {

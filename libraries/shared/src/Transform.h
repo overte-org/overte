@@ -4,10 +4,13 @@
 //
 //  Created by Sam Gateau on 11/4/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
+
 #ifndef hifi_gpu_Transform_h
 #define hifi_gpu_Transform_h
 
@@ -26,7 +29,11 @@ class QJsonValue;
 
 inline bool isValidScale(glm::vec3 scale) {
     bool result = scale.x != 0.0f && scale.y != 0.0f && scale.z != 0.0f;
-    assert(result);
+    if(!result){
+        qWarning() << "Scale is equal to 0";
+    }
+    // V8TODO: commented out for now
+    // assert(result);
     return result;
 }
 

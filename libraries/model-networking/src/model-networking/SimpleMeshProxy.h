@@ -4,17 +4,15 @@
 //
 //  Created by Seth Alves on 2017-1-27.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_SimpleMeshProxy_h
 #define hifi_SimpleMeshProxy_h
-
-#include <QScriptEngine>
-#include <QScriptValueIterator>
-#include <QtScript/QScriptValue>
 
 #include <RegisteredMetaTypes.h>
 

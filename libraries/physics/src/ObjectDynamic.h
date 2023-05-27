@@ -4,9 +4,11 @@
 //
 //  Created by Seth Alves 2015-6-2
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 //  http://bulletphysics.org/Bullet/BulletFull/classbtDynamicInterface.html
 
@@ -23,7 +25,7 @@
 
 #include "ObjectMotionState.h"
 #include "BulletUtil.h"
-#include "EntityDynamicInterface.h"
+#include <EntityDynamicInterface.h>
 
 
 class ObjectDynamic : public EntityDynamicInterface, public ReadWriteLockable {

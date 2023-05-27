@@ -1,3 +1,8 @@
+# Copyright 2013-2019 High Fidelity, Inc.
+# Copyright 2019-2021 Vircadia contributors
+# Copyright 2021-2023 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 if (APPLE)
   # Make the OSX DMG app be Overte.app.
   set(TARGET_NAME Overte)
@@ -21,7 +26,7 @@ set(CUSTOM_INTERFACE_QRC_PATHS "")
 
 find_package(
   Qt5 COMPONENTS
-  Gui Widgets Multimedia Network Qml Quick Script Svg WebEngineCore WebEngineWidgets
+  Gui Widgets Multimedia Network Qml Quick Svg WebEngineCore WebEngineWidgets
   ${PLATFORM_QT_COMPONENTS}
   WebChannel WebSockets
 )
@@ -217,7 +222,7 @@ link_hifi_libraries(
   shared workload task octree ktx gpu gl procedural graphics graphics-scripting render
   pointers recording hfm model-serializers networking material-networking
   model-networking model-baker entities avatars
-  audio audio-client animation script-engine physics
+  audio audio-client animation physics
   render-utils entities-renderer avatars-renderer ui qml auto-updater midi
   controllers plugins image platform
   ui-plugins display-plugins input-plugins
@@ -227,6 +232,7 @@ link_hifi_libraries(
   ${PLATFORM_PLUGIN_LIBRARIES}
   shaders
 )
+include_hifi_library_headers(script-engine)
 
 # include the binary directory of render-utils for shader includes
 target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_BINARY_DIR}/libraries/render-utils")
@@ -291,7 +297,7 @@ endif ()
 target_link_libraries(
   ${TARGET_NAME}
   Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::Widgets
-  Qt5::Qml Qt5::Quick Qt5::Script Qt5::Svg
+  Qt5::Qml Qt5::Quick Qt5::Svg
   Qt5::WebChannel Qt5::WebEngineCore Qt5::WebEngineWidgets
   ${PLATFORM_QT_LIBRARIES}
 )

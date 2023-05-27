@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gondelman 7/11/2017
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -32,6 +33,7 @@ PickQuery::PickType LaserPointer::getType() const {
 }
 
 void LaserPointer::editRenderStatePath(const std::string& state, const QVariant& pathProps) {
+    //V8TODO pathProps are not a thing anymore
     auto renderState = std::static_pointer_cast<RenderState>(_renderStates[state]);
     if (renderState) {
         updateRenderState(renderState->getPathID(), pathProps);
@@ -135,12 +137,12 @@ LaserPointer::RenderState::RenderState(const QUuid& startID, const QUuid& pathID
         {
             EntityPropertyFlags desiredProperties;
             desiredProperties += PROP_IGNORE_PICK_INTERSECTION;
-            _pathIgnorePicks = entityScriptingInterface->getEntityProperties(getPathID(), desiredProperties).getIgnorePickIntersection();
+            _pathIgnorePicks = entityScriptingInterface->getEntityPropertiesInternal(getPathID(), desiredProperties).getIgnorePickIntersection();
         }
         {
             EntityPropertyFlags desiredProperties;
             desiredProperties += PROP_STROKE_WIDTHS;
-            auto widths = entityScriptingInterface->getEntityProperties(getPathID(), desiredProperties).getStrokeWidths();
+            auto widths = entityScriptingInterface->getEntityPropertiesInternal(getPathID(), desiredProperties).getStrokeWidths();
             _lineWidth = widths.length() == 0 ? PolyLineEntityItem::DEFAULT_LINE_WIDTH : widths[0];
         }
     }
@@ -172,9 +174,14 @@ void LaserPointer::RenderState::update(const glm::vec3& origin, const glm::vec3&
         points.append(glm::vec3(0.0f));
         points.append(end - origin);
         properties.setPosition(origin);
+        properties.setRotation(glm::quat(1.0f, 0.0f ,0.0f ,0.0f));
         properties.setLinePoints(points);
         properties.setVisible(true);
         properties.setIgnorePickIntersection(doesPathIgnorePicks());
+        QVector<glm::vec3> normals;
+        normals.append(glm::vec3(0.0f, 0.0f, 1.0f));
+        normals.append(glm::vec3(0.0f, 0.0f, 1.0f));
+        properties.setNormals(normals);
         QVector<float> widths;
         float width = getLineWidth() * parentScale;
         widths.append(width);
@@ -184,33 +191,34 @@ void LaserPointer::RenderState::update(const glm::vec3& origin, const glm::vec3&
     }
 }
 
-std::shared_ptr<StartEndRenderState> LaserPointer::buildRenderState(const QVariantMap& propMap) {
+std::shared_ptr<StartEndRenderState> LaserPointer::buildRenderState(const QVariantMap& propMap, const QList<EntityItemProperties> &entityProperties) {
     // FIXME: we have to keep using the Overlays interface here, because existing scripts use overlay properties to define pointers
     QUuid startID;
-    if (propMap["start"].isValid()) {
-        QVariantMap startMap = propMap["start"].toMap();
-        if (startMap["type"].isValid()) {
-            startMap.remove("visible");
-            startID = qApp->getOverlays().addOverlay(startMap["type"].toString(), startMap);
+    if (propMap["startPropertyIndex"].isValid()) {
+        int startPropertyIndex = propMap["startPropertyIndex"].toInt();
+        if (startPropertyIndex >= 0 && startPropertyIndex < entityProperties.length()) {
+            //startMap.remove("visible");
+            startID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(entityProperties[startPropertyIndex], entity::HostType::LOCAL);
         }
     }
 
     QUuid pathID;
-    if (propMap["path"].isValid()) {
-        QVariantMap pathMap = propMap["path"].toMap();
-        // laser paths must be line3ds
-        if (pathMap["type"].isValid() && pathMap["type"].toString() == "line3d") {
-            pathMap.remove("visible");
-            pathID = qApp->getOverlays().addOverlay(pathMap["type"].toString(), pathMap);
+    if (propMap["pathPropertyIndex"].isValid()) {
+        // laser paths must be PolyLine
+        int pathPropertyIndex = propMap["pathPropertyIndex"].toInt();
+        if (pathPropertyIndex >= 0 && pathPropertyIndex < entityProperties.length()) {
+            //startMap.remove("visible");
+            //pathMap["type"].toString() == "PolyLine"
+            pathID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(entityProperties[pathPropertyIndex], entity::HostType::LOCAL);
         }
     }
 
     QUuid endID;
-    if (propMap["end"].isValid()) {
-        QVariantMap endMap = propMap["end"].toMap();
-        if (endMap["type"].isValid()) {
-            endMap.remove("visible");
-            endID = qApp->getOverlays().addOverlay(endMap["type"].toString(), endMap);
+    if (propMap["endPropertyIndex"].isValid()) {
+        int endPropertyIndex = propMap["endPropertyIndex"].toInt();
+        if (endPropertyIndex >= 0 && endPropertyIndex < entityProperties.length()) {
+            //startMap.remove("visible");
+            endID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(entityProperties[endPropertyIndex], entity::HostType::LOCAL);
         }
     }
 

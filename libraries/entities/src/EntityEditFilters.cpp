@@ -4,9 +4,11 @@
 //
 //  Created by David Kelly on 2/7/2017.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "EntityEditFilters.h"
@@ -15,6 +17,9 @@
 
 #include <ResourceManager.h>
 #include <shared/ScriptInitializerMixin.h>
+#include <ScriptEngine.h>
+#include <ScriptManager.h>
+#include <ScriptProgram.h>
 
 QList<EntityItemID> EntityEditFilters::getZonesByPosition(glm::vec3& position) {
     QList<EntityItemID> zones;
@@ -25,7 +30,7 @@ QList<EntityItemID> EntityEditFilters::getZonesByPosition(glm::vec3& position) {
     for (auto id : zoneIDs) {
         if (!id.isInvalidID()) {
             // for now, look it up in the tree (soon we need to cache or similar?)
-            EntityItemPointer itemPtr = _tree->findEntityByEntityItemID(id); 
+            EntityItemPointer itemPtr = _tree->findEntityByEntityItemID(id);
             auto zone = std::dynamic_pointer_cast<ZoneEntityItem>(itemPtr);
             if (!zone) {
                 // TODO: maybe remove later?
@@ -34,7 +39,7 @@ QList<EntityItemID> EntityEditFilters::getZonesByPosition(glm::vec3& position) {
                 zones.append(id);
             }
         } else {
-            // the null id is the global filter we put in the domain server's 
+            // the null id is the global filter we put in the domain server's
             // advanced entity server settings
             zones.append(id);
         }
@@ -44,7 +49,7 @@ QList<EntityItemID> EntityEditFilters::getZonesByPosition(glm::vec3& position) {
 
 bool EntityEditFilters::filter(glm::vec3& position, EntityItemProperties& propertiesIn, EntityItemProperties& propertiesOut,
         bool& wasChanged, EntityTree::FilterType filterType, EntityItemID& itemID, const EntityItemPointer& existingEntity) {
-    
+
     // get the ids of all the zones (plus the global entity edit filter) that the position
     // lies within
     auto zoneIDs = getZonesByPosition(position);
@@ -52,12 +57,12 @@ bool EntityEditFilters::filter(glm::vec3& position, EntityItemProperties& proper
         if (!itemID.isInvalidID() && id == itemID) {
             continue;
         }
-        
-        // get the filter pair, etc...  
+
+        // get the filter pair, etc...
         _lock.lockForRead();
         FilterData filterData = _filterDataMap.value(id);
         _lock.unlock();
-    
+
         if (filterData.valid()) {
             if (filterData.rejectAll) {
                 return false;
@@ -76,19 +81,19 @@ bool EntityEditFilters::filter(glm::vec3& position, EntityItemProperties& proper
             auto oldProperties = propertiesIn.getDesiredProperties();
             auto specifiedProperties = propertiesIn.getChangedProperties();
             propertiesIn.setDesiredProperties(specifiedProperties);
-            QScriptValue inputValues = propertiesIn.copyToScriptValue(filterData.engine, false, true, true);
+            ScriptValue inputValues = propertiesIn.copyToScriptValue(filterData.engine.get(), false, true, true);
             propertiesIn.setDesiredProperties(oldProperties);
 
             auto in = QJsonValue::fromVariant(inputValues.toVariant()); // grab json copy now, because the inputValues might be side effected by the filter.
 
-            QScriptValueList args;
+            ScriptValueList args;
             args << inputValues;
-            args << filterType;
+            args << filterData.engine->newValue(filterType);
 
             // get the current properties for then entity and include them for the filter call
             if (existingEntity && filterData.wantsOriginalProperties) {
                 auto currentProperties = existingEntity->getProperties(filterData.includedOriginalProperties);
-                QScriptValue currentValues = currentProperties.copyToScriptValue(filterData.engine, false, true, true);
+                ScriptValue currentValues = currentProperties.copyToScriptValue(filterData.engine.get(), false, true, true);
                 args << currentValues;
             }
 
@@ -98,17 +103,17 @@ bool EntityEditFilters::filter(glm::vec3& position, EntityItemProperties& proper
                 auto zoneEntity = _tree->findEntityByEntityItemID(id);
                 if (zoneEntity) {
                     auto zoneProperties = zoneEntity->getProperties(filterData.includedZoneProperties);
-                    QScriptValue zoneValues = zoneProperties.copyToScriptValue(filterData.engine, false, true, true);
+                    ScriptValue zoneValues = zoneProperties.copyToScriptValue(filterData.engine.get(), false, true, true);
 
                     if (filterData.wantsZoneBoundingBox) {
                         bool success = true;
                         AABox aaBox = zoneEntity->getAABox(success);
                         if (success) {
-                            QScriptValue boundingBox = filterData.engine->newObject();
-                            QScriptValue bottomRightNear = vec3ToScriptValue(filterData.engine, aaBox.getCorner());
-                            QScriptValue topFarLeft = vec3ToScriptValue(filterData.engine, aaBox.calcTopFarLeft());
-                            QScriptValue center = vec3ToScriptValue(filterData.engine, aaBox.calcCenter());
-                            QScriptValue boundingBoxDimensions = vec3ToScriptValue(filterData.engine, aaBox.getDimensions());
+                            ScriptValue boundingBox = filterData.engine->newObject();
+                            ScriptValue bottomRightNear = vec3ToScriptValue(filterData.engine.get(), aaBox.getCorner());
+                            ScriptValue topFarLeft = vec3ToScriptValue(filterData.engine.get(), aaBox.calcTopFarLeft());
+                            ScriptValue center = vec3ToScriptValue(filterData.engine.get(), aaBox.calcCenter());
+                            ScriptValue boundingBoxDimensions = vec3ToScriptValue(filterData.engine.get(), aaBox.getDimensions());
                             boundingBox.setProperty("brn", bottomRightNear);
                             boundingBox.setProperty("tfl", topFarLeft);
                             boundingBox.setProperty("center", center);
@@ -122,14 +127,14 @@ bool EntityEditFilters::filter(glm::vec3& position, EntityItemProperties& proper
                     // to be the fourth parameter, so we need to pad the args accordingly
                     int EXPECTED_ARGS = 3;
                     if (args.length() < EXPECTED_ARGS) {
-                        args << QScriptValue();
+                        args << ScriptValue();
                     }
                     assert(args.length() == EXPECTED_ARGS); // we MUST have 3 args by now!
                     args << zoneValues;
                 }
             }
 
-            QScriptValue result = filterData.filterFn.call(_nullObjectForFilter, args);
+            ScriptValue result = filterData.filterFn.call(_nullObjectForFilter, args);
 
             if (filterData.uncaughtExceptions()) {
                 return false;
@@ -154,45 +159,41 @@ bool EntityEditFilters::filter(glm::vec3& position, EntityItemProperties& proper
                 // otherwise, assume it wants to pass all properties
                 propertiesOut = propertiesIn;
                 wasChanged = false;
-                
+
             } else {
                 return false;
             }
         }
     }
-    // if we made it here, 
+    // if we made it here,
     return true;
 }
 
 void EntityEditFilters::removeFilter(EntityItemID entityID) {
     QWriteLocker writeLock(&_lock);
-    FilterData filterData = _filterDataMap.value(entityID);
-    if (filterData.valid()) {
-        delete filterData.engine;
-    }
     _filterDataMap.remove(entityID);
 }
 
 void EntityEditFilters::addFilter(EntityItemID entityID, QString filterURL) {
 
     QUrl scriptURL(filterURL);
-    
-    // setting it to an empty string is same as removing 
+
+    // setting it to an empty string is same as removing
     if (filterURL.size() == 0) {
         removeFilter(entityID);
         return;
     }
-   
+
     // The following should be abstracted out for use in Agent.cpp (and maybe later AvatarMixer.cpp)
     if (scriptURL.scheme().isEmpty() || (scriptURL.scheme() == HIFI_URL_SCHEME_FILE)) {
         qWarning() << "Cannot load script from local filesystem, because assignment may be on a different computer.";
         scriptRequestFinished(entityID);
         return;
     }
-   
+
     // first remove any existing info for this entity
     removeFilter(entityID);
-    
+
     // reject all edits until we load the script
     FilterData filterData;
     filterData.rejectAll = true;
@@ -200,7 +201,7 @@ void EntityEditFilters::addFilter(EntityItemID entityID, QString filterURL) {
     _lock.lockForWrite();
     _filterDataMap.insert(entityID, filterData);
     _lock.unlock();
-   
+
     auto scriptRequest = DependencyManager::get<ResourceManager>()->createResourceRequest(
         this, scriptURL, true, -1, "EntityEditFilters::addFilter");
     if (!scriptRequest) {
@@ -216,33 +217,23 @@ void EntityEditFilters::addFilter(EntityItemID entityID, QString filterURL) {
 }
 
 // Copied from ScriptEngine.cpp. We should make this a class method for reuse.
-// Note: I've deliberately stopped short of using ScriptEngine instead of QScriptEngine, as that is out of project scope at this point.
-static bool hasCorrectSyntax(const QScriptProgram& program) {
-    const auto syntaxCheck = QScriptEngine::checkSyntax(program.sourceCode());
-    if (syntaxCheck.state() != QScriptSyntaxCheckResult::Valid) {
-        const auto error = syntaxCheck.errorMessage();
-        const auto line = QString::number(syntaxCheck.errorLineNumber());
-        const auto column = QString::number(syntaxCheck.errorColumnNumber());
-        const auto message = QString("[SyntaxError] %1 in %2:%3(%4)").arg(error, program.fileName(), line, column);
+// Note: I've deliberately stopped short of using ScriptEngine instead of ScriptEngine, as that is out of project scope at this point.
+static bool hasCorrectSyntax(const ScriptProgramPointer& program) {
+    const auto syntaxCheck = program->checkSyntax();
+    if (syntaxCheck->state() != ScriptSyntaxCheckResult::Valid) {
+        const auto error = syntaxCheck->errorMessage();
+        const auto line = QString::number(syntaxCheck->errorLineNumber());
+        const auto column = QString::number(syntaxCheck->errorColumnNumber());
+        const auto message = QString("[SyntaxError] %1 in %2:%3(%4)").arg(error, program->fileName(), line, column);
         qCritical() << qPrintable(message);
         return false;
     }
     return true;
 }
-static bool hadUncaughtExceptions(QScriptEngine& engine, const QString& fileName) {
+static bool hadUncaughtExceptions(ScriptEngine& engine, const QString& fileName) {
     if (engine.hasUncaughtException()) {
-        const auto backtrace = engine.uncaughtExceptionBacktrace();
-        const auto exception = engine.uncaughtException().toString();
-        const auto line = QString::number(engine.uncaughtExceptionLineNumber());
+        qCritical() << engine.uncaughtException();
         engine.clearExceptions();
-
-        static const QString SCRIPT_EXCEPTION_FORMAT = "[UncaughtException] %1 in %2:%3";
-        auto message = QString(SCRIPT_EXCEPTION_FORMAT).arg(exception, fileName, line);
-        if (!backtrace.empty()) {
-            static const auto lineSeparator = "\n    ";
-            message += QString("\n[Backtrace]%1%2").arg(lineSeparator, backtrace.join(lineSeparator));
-        }
-        qCritical() << qPrintable(message);
         return true;
     }
     return false;
@@ -255,25 +246,26 @@ void EntityEditFilters::scriptRequestFinished(EntityItemID entityID) {
         const QString urlString = scriptRequest->getUrl().toString();
         auto scriptContents = scriptRequest->getData();
         qInfo() << "Downloaded script:" << scriptContents;
-        QScriptProgram program(scriptContents, urlString);
+        // create a ScriptEngine for this script
+        ScriptManagerPointer manager = newScriptManager(ScriptManager::ENTITY_SERVER_SCRIPT, "", urlString);
+        ScriptEnginePointer engine = manager->engine();
+        ScriptProgramPointer program = engine->newProgram(scriptContents, urlString);
         if (hasCorrectSyntax(program)) {
-            // create a QScriptEngine for this script
-            QScriptEngine* engine = new QScriptEngine();
             engine->setObjectName("filter:" + entityID.toString());
             engine->setProperty("type", "edit_filter");
             engine->setProperty("fileName", urlString);
             engine->setProperty("entityID", entityID);
-            engine->globalObject().setProperty("Script", engine->newQObject(engine));
-            DependencyManager::get<ScriptInitializers>()->runScriptInitializers(engine);
+            engine->globalObject().setProperty("Script", engine->newQObject(manager.get()));
+            DependencyManager::get<ScriptInitializers>()->runScriptInitializers(engine.get());
             engine->evaluate(scriptContents, urlString);
             if (!hadUncaughtExceptions(*engine, urlString)) {
                 // put the engine in the engine map (so we don't leak them, etc...)
                 FilterData filterData;
                 filterData.engine = engine;
                 filterData.rejectAll = false;
-                
+
                 // define the uncaughtException function
-                QScriptEngine& engineRef = *engine;
+                ScriptEngine& engineRef = *engine;
                 filterData.uncaughtExceptions = [&engineRef, urlString]() { return hadUncaughtExceptions(engineRef, urlString); };
 
                 // now get the filter function
@@ -287,28 +279,28 @@ void EntityEditFilters::scriptRequestFinished(EntityItemID entityID) {
                 filterData.filterFn = global.property("filter");
                 if (!filterData.filterFn.isFunction()) {
                     qDebug() << "Filter function specified but not found. Will reject all edits for those without lock rights.";
-                    delete engine;
+                    engine.reset();
                     filterData.rejectAll=true;
                 }
 
                 // if the wantsToFilterEdit is a boolean evaluate as a boolean, otherwise assume true
-                QScriptValue wantsToFilterAddValue = filterData.filterFn.property("wantsToFilterAdd");
+                ScriptValue wantsToFilterAddValue = filterData.filterFn.property("wantsToFilterAdd");
                 filterData.wantsToFilterAdd = wantsToFilterAddValue.isBool() ? wantsToFilterAddValue.toBool() : true;
 
                 // if the wantsToFilterEdit is a boolean evaluate as a boolean, otherwise assume true
-                QScriptValue wantsToFilterEditValue = filterData.filterFn.property("wantsToFilterEdit");
+                ScriptValue wantsToFilterEditValue = filterData.filterFn.property("wantsToFilterEdit");
                 filterData.wantsToFilterEdit = wantsToFilterEditValue.isBool() ? wantsToFilterEditValue.toBool() : true;
 
                 // if the wantsToFilterPhysics is a boolean evaluate as a boolean, otherwise assume true
-                QScriptValue wantsToFilterPhysicsValue = filterData.filterFn.property("wantsToFilterPhysics");
+                ScriptValue wantsToFilterPhysicsValue = filterData.filterFn.property("wantsToFilterPhysics");
                 filterData.wantsToFilterPhysics = wantsToFilterPhysicsValue.isBool() ? wantsToFilterPhysicsValue.toBool() : true;
 
                 // if the wantsToFilterDelete is a boolean evaluate as a boolean, otherwise assume false
-                QScriptValue wantsToFilterDeleteValue = filterData.filterFn.property("wantsToFilterDelete");
+                ScriptValue wantsToFilterDeleteValue = filterData.filterFn.property("wantsToFilterDelete");
                 filterData.wantsToFilterDelete = wantsToFilterDeleteValue.isBool() ? wantsToFilterDeleteValue.toBool() : false;
 
                 // check to see if the filterFn has properties asking for Original props
-                QScriptValue wantsOriginalPropertiesValue = filterData.filterFn.property("wantsOriginalProperties");
+                ScriptValue wantsOriginalPropertiesValue = filterData.filterFn.property("wantsOriginalProperties");
                 // if the wantsOriginalProperties is a boolean, or a string, or list of strings, then evaluate as follows:
                 //   - boolean - true  - include all original properties
                 //               false - no properties at all
@@ -329,7 +321,7 @@ void EntityEditFilters::scriptRequestFinished(EntityItemID entityID) {
                 }
 
                 // check to see if the filterFn has properties asking for Zone props
-                QScriptValue wantsZonePropertiesValue = filterData.filterFn.property("wantsZoneProperties");
+                ScriptValue wantsZonePropertiesValue = filterData.filterFn.property("wantsZoneProperties");
                 // if the wantsZoneProperties is a boolean, or a string, or list of strings, then evaluate as follows:
                 //   - boolean - true  - include all Zone properties
                 //               false - no properties at all
@@ -375,11 +367,11 @@ void EntityEditFilters::scriptRequestFinished(EntityItemID entityID) {
                 _lock.unlock();
 
                 qDebug() << "script request filter processed for entity id " << entityID;
-                
+
                 emit filterAdded(entityID, true);
                 return;
             }
-        } 
+        }
     } else if (scriptRequest) {
         const QString urlString = scriptRequest->getUrl().toString();
         qCritical() << "Failed to download script";

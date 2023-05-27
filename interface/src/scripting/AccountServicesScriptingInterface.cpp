@@ -4,17 +4,27 @@
 //
 //  Created by Thijs Wenker on 9/10/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "AccountServicesScriptingInterface.h"
+
+#include <ScriptEngineCast.h>
 
 #include "AccountManager.h"
 #include "Application.h"
 #include "DiscoverabilityManager.h"
 #include "ResourceCache.h"
+
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType<DownloadInfoResult, DownloadInfoResultToScriptValue, DownloadInfoResultFromScriptValue>(scriptEngine);
+}));
 
 AccountServicesScriptingInterface::AccountServicesScriptingInterface() {
     auto accountManager = DependencyManager::get<AccountManager>();
@@ -123,10 +133,10 @@ DownloadInfoResult::DownloadInfoResult() :
  * @property {number[]} downloading - The download percentage remaining of each asset currently downloading.
  * @property {number} pending - The number of assets pending download.
  */
-QScriptValue DownloadInfoResultToScriptValue(QScriptEngine* engine, const DownloadInfoResult& result) {
-    QScriptValue object = engine->newObject();
+ScriptValue DownloadInfoResultToScriptValue(ScriptEngine* engine, const DownloadInfoResult& result) {
+    ScriptValue object = engine->newObject();
 
-    QScriptValue array = engine->newArray(result.downloading.count());
+    ScriptValue array = engine->newArray(result.downloading.count());
     for (int i = 0; i < result.downloading.count(); i += 1) {
         array.setProperty(i, result.downloading[i]);
     }
@@ -136,7 +146,7 @@ QScriptValue DownloadInfoResultToScriptValue(QScriptEngine* engine, const Downlo
     return object;
 }
 
-void DownloadInfoResultFromScriptValue(const QScriptValue& object, DownloadInfoResult& result) {
+bool DownloadInfoResultFromScriptValue(const ScriptValue& object, DownloadInfoResult& result) {
     QList<QVariant> downloading = object.property("downloading").toVariant().toList();
     result.downloading.clear();
     for (int i = 0; i < downloading.count(); i += 1) {
@@ -144,6 +154,7 @@ void DownloadInfoResultFromScriptValue(const QScriptValue& object, DownloadInfoR
     }
 
     result.pending = object.property("pending").toVariant().toFloat();
+    return true;
 }
 
 DownloadInfoResult AccountServicesScriptingInterface::getDownloadInfo() {

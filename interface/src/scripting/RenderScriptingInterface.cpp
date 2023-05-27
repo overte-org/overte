@@ -1,16 +1,33 @@
 //
 //  Created by Sam Gondelman on 5/16/19
 //  Copyright 2013-2019 High Fidelity, Inc.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #include "RenderScriptingInterface.h"
+
+#include <ScriptEngineCast.h>
 
 #include "LightingModel.h"
 #include <QScreen>
 #include "ScreenName.h"
 
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType<RenderScriptingInterface::RenderMethod, scriptValueFromEnumClass<RenderScriptingInterface::RenderMethod>, scriptValueToEnumClass<RenderScriptingInterface::RenderMethod> >(scriptEngine, "RenderMethod");
+    scriptRegisterMetaType<AntialiasingConfig::Mode, scriptValueFromEnumClass<AntialiasingConfig::Mode>, scriptValueToEnumClass<AntialiasingConfig::Mode> >(scriptEngine, "Mode");
+}));
+
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptEngine->registerEnum("Render.RenderMethod",QMetaEnum::fromType<RenderScriptingInterface::RenderMethod>());
+    scriptEngine->registerEnum("AntialiasingMode",QMetaEnum::fromType<AntialiasingConfig::Mode>());
+});
 
 RenderScriptingInterface* RenderScriptingInterface::getInstance() {
     static RenderScriptingInterface sharedInstance;

@@ -1,6 +1,10 @@
+# Copyright 2013-2019 High Fidelity, Inc.
+# Copyright 2021-2022 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 set(TARGET_NAME assignment-client)
 
-setup_hifi_project(Core Gui Network Script Quick WebSockets)
+setup_hifi_project(Core Gui Network Quick WebSockets)
 
 # Fix up the rpath so macdeployqt works
 if (APPLE)

@@ -4,9 +4,11 @@
 //
 //  Created by Clément Brisset on 1/5/17.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "EntityScriptServer.h"
@@ -14,7 +16,9 @@
 #include <mutex>
 
 #include <AudioConstants.h>
+#include <AudioScriptingInterface.h>
 #include <AudioInjectorManager.h>
+#include <AvatarHashMap.h>
 #include <ClientServerUtils.h>
 #include <DebugDraw.h>
 #include <EntityNodeData.h>
@@ -130,7 +134,7 @@ void EntityScriptServer::handleEntityScriptGetStatusPacket(QSharedPointer<Receiv
         replyPacketList->writePrimitive(messageID);
 
         EntityScriptDetails details;
-        if (_entitiesScriptEngine->getEntityScriptDetails(entityID, details)) {
+        if (_entitiesScriptManager->getEntityScriptDetails(entityID, details)) {
             replyPacketList->writePrimitive(true);
             replyPacketList->writePrimitive(details.status);
             replyPacketList->writeString(details.errorInfo);
@@ -175,7 +179,7 @@ void EntityScriptServer::handleSettings() {
 }
 
 void EntityScriptServer::updateEntityPPS() {
-    int numRunningScripts = _entitiesScriptEngine->getNumRunningEntityScripts();
+    int numRunningScripts = _entitiesScriptManager->getNumRunningEntityScripts();
     int pps;
     if (std::numeric_limits<int>::max() / _entityPPSPerScript < numRunningScripts) {
         qWarning() << QString("Integer multiplication would overflow, clamping to maxint: %1 * %2").arg(numRunningScripts).arg(_entityPPSPerScript);
@@ -236,7 +240,7 @@ void EntityScriptServer::pushLogs() {
 
 void EntityScriptServer::handleEntityScriptCallMethodPacket(QSharedPointer<ReceivedMessage> receivedMessage, SharedNodePointer senderNode) {
 
-    if (_entitiesScriptEngine && _entityViewer.getTree() && !_shuttingDown) {
+    if (_entitiesScriptManager && _entityViewer.getTree() && !_shuttingDown) {
         auto entityID = QUuid::fromRfc4122(receivedMessage->read(NUM_BYTES_RFC4122_UUID));
 
         auto method = receivedMessage->readString();
@@ -250,13 +254,13 @@ void EntityScriptServer::handleEntityScriptCallMethodPacket(QSharedPointer<Recei
             params << paramString;
         }
 
-        _entitiesScriptEngine->callEntityScriptMethod(entityID, method, params, senderNode->getUUID());
+        _entitiesScriptManager->callEntityScriptMethod(entityID, method, params, senderNode->getUUID());
     }
 }
 
 
 void EntityScriptServer::run() {
-    DependencyManager::set<ScriptEngines>(ScriptEngine::ENTITY_SERVER_SCRIPT);
+    DependencyManager::set<ScriptEngines>(ScriptManager::ENTITY_SERVER_SCRIPT);
     DependencyManager::set<EntityScriptServerServices>();
     DependencyManager::set<AvatarHashMap>();
 
@@ -446,7 +450,8 @@ void EntityScriptServer::selectAudioFormat(const QString& selectedCodecName) {
 
 void EntityScriptServer::resetEntitiesScriptEngine() {
     auto engineName = QString("about:Entities %1").arg(++_entitiesScriptEngineCount);
-    auto newEngine = scriptEngineFactory(ScriptEngine::ENTITY_SERVER_SCRIPT, NO_SCRIPT, engineName);
+    auto newManager = scriptManagerFactory(ScriptManager::ENTITY_SERVER_SCRIPT, NO_SCRIPT, engineName);
+    auto newEngine = newManager->engine();
 
     auto webSocketServerConstructorValue = newEngine->newFunction(WebSocketServerClass::constructor);
     newEngine->globalObject().setProperty("WebSocketServer", webSocketServerConstructorValue);
@@ -456,42 +461,42 @@ void EntityScriptServer::resetEntitiesScriptEngine() {
 
     // connect this script engines printedMessage signal to the global ScriptEngines these various messages
     auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
-    connect(newEngine.data(), &ScriptEngine::printedMessage, scriptEngines, &ScriptEngines::onPrintedMessage);
-    connect(newEngine.data(), &ScriptEngine::errorMessage, scriptEngines, &ScriptEngines::onErrorMessage);
-    connect(newEngine.data(), &ScriptEngine::warningMessage, scriptEngines, &ScriptEngines::onWarningMessage);
-    connect(newEngine.data(), &ScriptEngine::infoMessage, scriptEngines, &ScriptEngines::onInfoMessage);
+    connect(newManager.get(), &ScriptManager::printedMessage, scriptEngines, &ScriptEngines::onPrintedMessage);
+    connect(newManager.get(), &ScriptManager::errorMessage, scriptEngines, &ScriptEngines::onErrorMessage);
+    connect(newManager.get(), &ScriptManager::warningMessage, scriptEngines, &ScriptEngines::onWarningMessage);
+    connect(newManager.get(), &ScriptManager::infoMessage, scriptEngines, &ScriptEngines::onInfoMessage);
 
-    connect(newEngine.data(), &ScriptEngine::update, this, [this] {
+    connect(newManager.get(), &ScriptManager::update, this, [this] {
         _entityViewer.queryOctree();
         _entityViewer.getTree()->preUpdate();
         _entityViewer.getTree()->update();
     });
 
-    scriptEngines->runScriptInitializers(newEngine);
-    newEngine->runInThread();
-    auto newEngineSP = qSharedPointerCast<EntitiesScriptEngineProvider>(newEngine);
+    scriptEngines->runScriptInitializers(newManager);
+    newManager->runInThread();
+    std::shared_ptr<EntitiesScriptEngineProvider> newEngineSP = newManager;
     // On the entity script server, these are the same
     DependencyManager::get<EntityScriptingInterface>()->setPersistentEntitiesScriptEngine(newEngineSP);
     DependencyManager::get<EntityScriptingInterface>()->setNonPersistentEntitiesScriptEngine(newEngineSP);
 
-    if (_entitiesScriptEngine) {
-        disconnect(_entitiesScriptEngine.data(), &ScriptEngine::entityScriptDetailsUpdated,
+    if (_entitiesScriptManager) {
+        disconnect(_entitiesScriptManager.get(), &ScriptManager::entityScriptDetailsUpdated,
                    this, &EntityScriptServer::updateEntityPPS);
     }
 
-    _entitiesScriptEngine.swap(newEngine);
-    connect(_entitiesScriptEngine.data(), &ScriptEngine::entityScriptDetailsUpdated,
+    _entitiesScriptManager.swap(newManager);
+    connect(_entitiesScriptManager.get(), &ScriptManager::entityScriptDetailsUpdated,
             this, &EntityScriptServer::updateEntityPPS);
 }
 
 
 void EntityScriptServer::clear() {
     // unload and stop the engine
-    if (_entitiesScriptEngine) {
+    if (_entitiesScriptManager) {
         // do this here (instead of in deleter) to avoid marshalling unload signals back to this thread
-        _entitiesScriptEngine->unloadAllEntityScripts();
-        _entitiesScriptEngine->stop();
-        _entitiesScriptEngine->waitTillDoneRunning();
+        _entitiesScriptManager->unloadAllEntityScripts();
+        _entitiesScriptManager->stop();
+        _entitiesScriptManager->waitTillDoneRunning();
     }
 
     _entityViewer.clear();
@@ -503,8 +508,8 @@ void EntityScriptServer::clear() {
 }
 
 void EntityScriptServer::shutdownScriptEngine() {
-    if (_entitiesScriptEngine) {
-        _entitiesScriptEngine->disconnectNonEssentialSignals(); // disconnect all slots/signals from the script engine, except essential
+    if (_entitiesScriptManager) {
+        _entitiesScriptManager->disconnectNonEssentialSignals(); // disconnect all slots/signals from the script engine, except essential
     }
     _shuttingDown = true;
 
@@ -513,7 +518,7 @@ void EntityScriptServer::shutdownScriptEngine() {
     auto scriptEngines = DependencyManager::get<ScriptEngines>();
     scriptEngines->shutdownScripting();
 
-    _entitiesScriptEngine.clear();
+    _entitiesScriptManager.reset();
 
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
     // our entity tree is going to go away so tell that to the EntityScriptingInterface
@@ -531,8 +536,8 @@ void EntityScriptServer::addingEntity(const EntityItemID& entityID) {
 }
 
 void EntityScriptServer::deletingEntity(const EntityItemID& entityID) {
-    if (_entityViewer.getTree() && !_shuttingDown && _entitiesScriptEngine) {
-        _entitiesScriptEngine->unloadEntityScript(entityID, true);
+    if (_entityViewer.getTree() && !_shuttingDown && _entitiesScriptManager) {
+        _entitiesScriptManager->unloadEntityScript(entityID, true);
     }
 }
 
@@ -543,20 +548,20 @@ void EntityScriptServer::entityServerScriptChanging(const EntityItemID& entityID
 }
 
 void EntityScriptServer::checkAndCallPreload(const EntityItemID& entityID, bool forceRedownload) {
-    if (_entityViewer.getTree() && !_shuttingDown && _entitiesScriptEngine) {
+    if (_entityViewer.getTree() && !_shuttingDown && _entitiesScriptManager) {
 
         EntityItemPointer entity = _entityViewer.getTree()->findEntityByEntityItemID(entityID);
         EntityScriptDetails details;
-        bool isRunning = _entitiesScriptEngine->getEntityScriptDetails(entityID, details);
+        bool isRunning = _entitiesScriptManager->getEntityScriptDetails(entityID, details);
         if (entity && (forceRedownload || !isRunning || details.scriptText != entity->getServerScripts())) {
             if (isRunning) {
-                _entitiesScriptEngine->unloadEntityScript(entityID, true);
+                _entitiesScriptManager->unloadEntityScript(entityID, true);
             }
 
             QString scriptUrl = entity->getServerScripts();
             if (!scriptUrl.isEmpty()) {
                 scriptUrl = DependencyManager::get<ResourceManager>()->normalizeURL(scriptUrl);
-                _entitiesScriptEngine->loadEntityScript(entityID, scriptUrl, forceRedownload);
+                _entitiesScriptManager->loadEntityScript(entityID, scriptUrl, forceRedownload);
             }
         }
     }
@@ -573,9 +578,9 @@ void EntityScriptServer::sendStatsPacket() {
 
     QJsonObject scriptEngineStats;
     int numberRunningScripts = 0;
-    const auto scriptEngine = _entitiesScriptEngine;
-    if (scriptEngine) {
-        numberRunningScripts = scriptEngine->getNumRunningEntityScripts();
+    const auto scriptManager = _entitiesScriptManager;
+    if (scriptManager) {
+        numberRunningScripts = scriptManager->getNumRunningEntityScripts();
     }
     scriptEngineStats["number_running_scripts"] = numberRunningScripts;
     statsObject["script_engine_stats"] = scriptEngineStats;

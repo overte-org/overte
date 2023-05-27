@@ -4,9 +4,11 @@
 //
 //  Created by Thijs Wenker on 2018-06-25
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #pragma once
@@ -16,12 +18,14 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QPointer>
-#include <QtScript/QScriptValue>
 #include <QQmlEngine>
 #include <ui/QmlWrapper.h>
 
 #include <glm/glm.hpp>
 #include <GLMHelpers.h>
+#include <ScriptValue.h>
+
+class ScriptEngine;
 
 class QmlWindowProxy : public QmlWrapper {
     Q_OBJECT
@@ -408,10 +412,10 @@ private:
 
 typedef InteractiveWindow* InteractiveWindowPointer;
 
-QScriptValue interactiveWindowPointerToScriptValue(QScriptEngine* engine, const InteractiveWindowPointer& in);
-void interactiveWindowPointerFromScriptValue(const QScriptValue& object, InteractiveWindowPointer& out);
+ScriptValue interactiveWindowPointerToScriptValue(ScriptEngine* engine, const InteractiveWindowPointer& in);
+bool interactiveWindowPointerFromScriptValue(const ScriptValue& object, InteractiveWindowPointer& out);
 
-void registerInteractiveWindowMetaType(QScriptEngine* engine);
+void registerInteractiveWindowMetaType(ScriptEngine* engine);
 
 Q_DECLARE_METATYPE(InteractiveWindowPointer)
 

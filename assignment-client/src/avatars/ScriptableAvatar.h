@@ -4,9 +4,11 @@
 //
 //  Created by Clement on 7/22/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_ScriptableAvatar_h
@@ -220,7 +222,7 @@ private:
     QHash<QString, int> _fstJointIndices; ///< 1-based, since zero is returned for missing keys
     QStringList _fstJointNames; ///< in order of depth-first traversal
     QUrl _skeletonFBXURL;
-    mutable QScriptEngine _scriptEngine;
+    mutable ScriptEnginePointer _scriptEngine;
     std::map<QUuid, EntityItemPointer> _entities;
 
     /// Loads the joint indices, names from the FST file (if any)

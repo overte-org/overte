@@ -1,9 +1,11 @@
 //
 //  Created by Sam Gondelman on 11/29/18
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_RenderableGridEntityItem_h
@@ -37,9 +39,9 @@ private:
     float _alpha { NAN };
     PulsePropertyGroup _pulseProperties;
 
-    bool _followCamera;
+    bool _followCamera { false };
     uint32_t _majorGridEvery;
-    float _minorGridEvery;
+    float _minorGridEvery { false };
 
     glm::vec3 _dimensions;
 

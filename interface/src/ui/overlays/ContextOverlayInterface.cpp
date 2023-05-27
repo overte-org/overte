@@ -141,7 +141,7 @@ bool ContextOverlayInterface::createOrDestroyContextOverlay(const EntityItemID& 
             qCDebug(context_overlay) << "Creating Context Overlay on top of entity with ID: " << entityItemID;
 
             // Add all necessary variables to the stack
-            EntityItemProperties entityProperties = _entityScriptingInterface->getEntityProperties(entityItemID, _entityPropertyFlags);
+            EntityItemProperties entityProperties = _entityScriptingInterface->getEntityPropertiesInternal(entityItemID, _entityPropertyFlags);
             glm::vec3 cameraPosition = qApp->getCamera().getPosition();
             glm::vec3 entityDimensions = entityProperties.getDimensions();
             glm::vec3 entityPosition = entityProperties.getPosition();
@@ -231,7 +231,7 @@ bool ContextOverlayInterface::createOrDestroyContextOverlay(const EntityItemID& 
 }
 
 bool ContextOverlayInterface::contextOverlayFilterPassed(const EntityItemID& entityItemID) {
-    EntityItemProperties entityProperties = _entityScriptingInterface->getEntityProperties(entityItemID, _entityPropertyFlags);
+    EntityItemProperties entityProperties = _entityScriptingInterface->getEntityPropertiesInternal(entityItemID, _entityPropertyFlags);
     return (entityProperties.getCertificateID().length() != 0);
 }
 
@@ -294,7 +294,7 @@ void ContextOverlayInterface::requestOwnershipVerification(const QUuid& entityID
 
     setLastInspectedEntity(entityID);
 
-    EntityItemProperties entityProperties = _entityScriptingInterface->getEntityProperties(entityID, _entityPropertyFlags);
+    EntityItemProperties entityProperties = _entityScriptingInterface->getEntityPropertiesInternal(entityID, _entityPropertyFlags);
 
     auto nodeList = DependencyManager::get<NodeList>();
 
@@ -399,7 +399,7 @@ void ContextOverlayInterface::deletingEntity(const EntityItemID& entityID) {
 
 void ContextOverlayInterface::startChallengeOwnershipTimer(const EntityItemID& entityItemID) {
     auto ledger = DependencyManager::get<Ledger>();
-    EntityItemProperties entityProperties = _entityScriptingInterface->getEntityProperties(entityItemID, _entityPropertyFlags);
+    EntityItemProperties entityProperties = _entityScriptingInterface->getEntityPropertiesInternal(entityItemID, _entityPropertyFlags);
 
     connect(&_challengeOwnershipTimeoutTimer, &QTimer::timeout, this, [=]() {
         qCDebug(entities) << "Ownership challenge timed out for" << entityItemID;

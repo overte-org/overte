@@ -1,9 +1,11 @@
 //
 //  Created by Bradley Austin Davis on 2015-12-15
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_ui_QmlWindowClass_h
@@ -11,13 +13,13 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QPointer>
-#include <QtScript/QScriptValue>
 #include <QtQuick/QQuickItem>
 
 #include <GLMHelpers.h>
+#include <ScriptValue.h>
 
-class QScriptEngine;
-class QScriptContext;
+class ScriptContext;
+class ScriptEngine;
 
 /*@jsdoc
  * A <code>OverlayWindow</code> displays a QML window inside Interface.
@@ -53,13 +55,13 @@ class QmlWindowClass : public QObject {
     Q_PROPERTY(bool visible READ isVisible WRITE setVisible NOTIFY visibleChanged)
 
 private:
-    static QScriptValue internal_constructor(QScriptContext* context, QScriptEngine* engine, bool restricted);
+    static ScriptValue internal_constructor(ScriptContext* context, ScriptEngine* engine, bool restricted);
 public:
-    static QScriptValue constructor(QScriptContext* context, QScriptEngine* engine) {
+    static ScriptValue constructor(ScriptContext* context, ScriptEngine* engine) {
         return internal_constructor(context, engine, false);
     }
 
-    static QScriptValue restricted_constructor(QScriptContext* context, QScriptEngine* engine ){
+    static ScriptValue restricted_constructor(ScriptContext* context, ScriptEngine* engine ){
         return internal_constructor(context, engine, true);
     }
 
@@ -345,8 +347,8 @@ protected slots:
     void qmlToScript(const QVariant& message);
 
 protected:
-    static QVariantMap parseArguments(QScriptContext* context);
-    static QScriptValue internalConstructor(QScriptContext* context, QScriptEngine* engine, 
+    static QVariantMap parseArguments(ScriptContext* context);
+    static ScriptValue internalConstructor(ScriptContext* context, ScriptEngine* engine, 
         std::function<QmlWindowClass*(QVariantMap)> function);
 
     virtual QString qmlSource() const { return "QmlWindow.qml"; }

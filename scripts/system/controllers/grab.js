@@ -5,6 +5,7 @@
 //
 //  Created by Eric Levin on May 1, 2015
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Grab's physically moveable entities with the mouse, by applying a spring force.
 //
@@ -12,6 +13,7 @@
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /* global MyAvatar, Entities, Script, HMD, Camera, Vec3, Reticle, Overlays, Messages, Quat, Controller,
@@ -146,7 +148,7 @@ Mouse.prototype.restoreRotateCursor = function() {
 var mouse = new Mouse();
 
 var beacon = {
-    type: "cube",
+    type: "Box",
     dimensions: {
         x: 0.01,
         y: 0,
@@ -158,8 +160,7 @@ var beacon = {
         blue: 200
     },
     alpha: 1,
-    solid: true,
-    ignoreRayIntersection: true,
+    ignorePickIntersection: true,
     visible: true
 };
 
@@ -211,7 +212,7 @@ function Grabber() {
         Picks.setIncludeItems(this.mouseRayOverlays, tabletItems);
     }
     var renderStates = [{name: "grabbed", end: beacon}];
-    this.mouseRayEntities = Pointers.createPointer(PickType.Ray, {
+    this.mouseRayEntities = Pointers.createRayPointer({
         joint: "Mouse",
         filter: Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
         faceAvatar: true,
@@ -344,7 +345,7 @@ Grabber.prototype.pressEvent = function(event) {
     this.computeNewGrabPlane();
     this.moveEvent(event);
 
-    var args = "mouse";
+    var args = ["mouse"];
     Entities.callEntityMethod(this.entityID, "startDistanceGrab", args);
 
     Messages.sendLocalMessage('Hifi-Object-Manipulation', JSON.stringify({
@@ -378,7 +379,7 @@ Grabber.prototype.releaseEvent = function(event) {
         Pointers.setRenderState(this.mouseRayEntities, "");
         Pointers.setLockEndUUID(this.mouseRayEntities, null, false);
 
-        var args = "mouse";
+        var args = ["mouse"];
         Entities.callEntityMethod(this.entityID, "releaseGrab", args);
 
         Messages.sendLocalMessage('Hifi-Object-Manipulation', JSON.stringify({

@@ -4,9 +4,11 @@
 //
 //  Created by Sam Gondelman 8/15/2017
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "RayPickScriptingInterface.h"
@@ -15,6 +17,7 @@
 #include "GLMHelpers.h"
 
 #include <PickManager.h>
+#include <ScriptValueUtils.h>
 
 unsigned int RayPickScriptingInterface::createRayPick(const QVariant& properties) {
     return DependencyManager::get<PickScriptingInterface>()->createPick(PickQuery::PickType::Ray, properties);
@@ -45,11 +48,11 @@ void RayPickScriptingInterface::setPrecisionPicking(unsigned int uid, bool preci
     DependencyManager::get<PickManager>()->setPrecisionPicking(uid, precisionPicking);
 }
 
-void RayPickScriptingInterface::setIgnoreItems(unsigned int uid, const QScriptValue& ignoreItems) {
+void RayPickScriptingInterface::setIgnoreItems(unsigned int uid, const ScriptValue& ignoreItems) {
     DependencyManager::get<PickManager>()->setIgnoreItems(uid, qVectorQUuidFromScriptValue(ignoreItems));
 }
 
-void RayPickScriptingInterface::setIncludeItems(unsigned int uid, const QScriptValue& includeItems) {
+void RayPickScriptingInterface::setIncludeItems(unsigned int uid, const ScriptValue& includeItems) {
     DependencyManager::get<PickManager>()->setIncludeItems(uid, qVectorQUuidFromScriptValue(includeItems));
 }
 

@@ -77,8 +77,8 @@ var HOME_BUTTON_TEXTURE = Script.getExternalPath(Script.ExternalPaths.HF_Content
 
         if (button) {
             button.clicked.disconnect(onClicked);
+            tablet.removeButton(button);
         }
-        tablet.removeButton(button);
         tablet.screenChanged.disconnect(onScreenChanged);
     });
 }());

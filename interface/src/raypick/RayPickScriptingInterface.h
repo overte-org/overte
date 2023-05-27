@@ -4,9 +4,11 @@
 //
 //  Created by Sam Gondelman 8/15/2017
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #ifndef hifi_RayPickScriptingInterface_h
 #define hifi_RayPickScriptingInterface_h
@@ -17,6 +19,8 @@
 #include <DependencyManager.h>
 
 #include "PickScriptingInterface.h"
+
+class ScriptValue;
 
 /*@jsdoc
  * The <code>RayPick</code> API is a subset of the {@link Picks} API, as used for ray picks.
@@ -47,20 +51,20 @@
  */
 class RayPickScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
-    Q_PROPERTY(unsigned int PICK_ENTITIES READ PICK_ENTITIES CONSTANT)
-    Q_PROPERTY(unsigned int PICK_OVERLAYS READ PICK_OVERLAYS CONSTANT)
-    Q_PROPERTY(unsigned int PICK_AVATARS READ PICK_AVATARS CONSTANT)
-    Q_PROPERTY(unsigned int PICK_HUD READ PICK_HUD CONSTANT)
-    Q_PROPERTY(unsigned int PICK_COARSE READ PICK_COARSE CONSTANT)
-    Q_PROPERTY(unsigned int PICK_INCLUDE_INVISIBLE READ PICK_INCLUDE_INVISIBLE CONSTANT)
-    Q_PROPERTY(unsigned int PICK_INCLUDE_NONCOLLIDABLE READ PICK_INCLUDE_NONCOLLIDABLE CONSTANT)
-    Q_PROPERTY(unsigned int PICK_ALL_INTERSECTIONS READ PICK_ALL_INTERSECTIONS CONSTANT)
-    Q_PROPERTY(unsigned int INTERSECTED_NONE READ INTERSECTED_NONE CONSTANT)
-    Q_PROPERTY(unsigned int INTERSECTED_ENTITY READ INTERSECTED_ENTITY CONSTANT)
-    Q_PROPERTY(unsigned int INTERSECTED_LOCAL_ENTITY READ INTERSECTED_LOCAL_ENTITY CONSTANT)
-    Q_PROPERTY(unsigned int INTERSECTED_OVERLAY READ INTERSECTED_OVERLAY CONSTANT)
-    Q_PROPERTY(unsigned int INTERSECTED_AVATAR READ INTERSECTED_AVATAR CONSTANT)
-    Q_PROPERTY(unsigned int INTERSECTED_HUD READ INTERSECTED_HUD CONSTANT)
+    Q_PROPERTY(unsigned int PICK_ENTITIES READ getPickEntities CONSTANT)
+    Q_PROPERTY(unsigned int PICK_OVERLAYS READ getPickOverlays CONSTANT)
+    Q_PROPERTY(unsigned int PICK_AVATARS READ getPickAvatars CONSTANT)
+    Q_PROPERTY(unsigned int PICK_HUD READ getPickHud CONSTANT)
+    Q_PROPERTY(unsigned int PICK_COARSE READ getPickCoarse CONSTANT)
+    Q_PROPERTY(unsigned int PICK_INCLUDE_INVISIBLE READ getPickIncludeInvisible CONSTANT)
+    Q_PROPERTY(unsigned int PICK_INCLUDE_NONCOLLIDABLE READ getPickIncludeNoncollidable CONSTANT)
+    Q_PROPERTY(unsigned int PICK_ALL_INTERSECTIONS READ getPickAllIntersections CONSTANT)
+    Q_PROPERTY(unsigned int INTERSECTED_NONE READ getIntersectedNone CONSTANT)
+    Q_PROPERTY(unsigned int INTERSECTED_ENTITY READ getIntersectedEntity CONSTANT)
+    Q_PROPERTY(unsigned int INTERSECTED_LOCAL_ENTITY READ getIntersectedLocalEntity CONSTANT)
+    Q_PROPERTY(unsigned int INTERSECTED_OVERLAY READ getIntersectedOverlay CONSTANT)
+    Q_PROPERTY(unsigned int INTERSECTED_AVATAR READ getIntersectedAvatar CONSTANT)
+    Q_PROPERTY(unsigned int INTERSECTED_HUD READ getIntersectedHud CONSTANT)
     SINGLETON_DEPENDENCY
 
 public:
@@ -121,7 +125,7 @@ public:
      * @param {number} id - The ID of the ray pick.
      * @param {Uuid[]} ignoreItems - The list of IDs to ignore.
      */
-    Q_INVOKABLE void setIgnoreItems(unsigned int uid, const QScriptValue& ignoreEntities);
+    Q_INVOKABLE void setIgnoreItems(unsigned int uid, const ScriptValue& ignoreEntities);
 
     /*@jsdoc
      * Sets a list of entity and avatar IDs that a ray pick should include during intersection, instead of intersecting with 
@@ -130,7 +134,7 @@ public:
      * @param {number} id - The ID of the ray pick.
      * @param {Uuid[]} includeItems - The list of IDs to include.
      */
-    Q_INVOKABLE void setIncludeItems(unsigned int uid, const QScriptValue& includeEntities);
+    Q_INVOKABLE void setIncludeItems(unsigned int uid, const ScriptValue& includeEntities);
 
 
     /*@jsdoc
@@ -169,35 +173,35 @@ public slots:
      * @deprecated This function is deprecated and will be removed. Use the <code>Raypick.PICK_ENTITIES</code> property instead.
      * @returns {number}
      */
-    static unsigned int PICK_ENTITIES() { return PickScriptingInterface::PICK_ENTITIES(); }
+    static unsigned int getPickEntities() { return PickScriptingInterface::getPickEntities(); }
 
     /*@jsdoc
      * @function RayPick.PICK_OVERLAYS
      * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.PICK_OVERLAYS</code> property instead.
      * @returns {number}
      */
-    static unsigned int PICK_OVERLAYS() { return PickScriptingInterface::PICK_OVERLAYS(); }
+    static unsigned int getPickOverlays() { return PickScriptingInterface::getPickOverlays(); }
 
     /*@jsdoc
      * @function RayPick.PICK_AVATARS
      * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.PICK_AVATARS</code> property instead.
      * @returns {number}
      */
-    static unsigned int PICK_AVATARS() { return PickScriptingInterface::PICK_AVATARS(); }
+    static unsigned int getPickAvatars() { return PickScriptingInterface::getPickAvatars(); }
 
     /*@jsdoc
      * @function RayPick.PICK_HUD
      * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.PICK_HUD</code> property instead.
      * @returns {number}
      */
-    static unsigned int PICK_HUD() { return PickScriptingInterface::PICK_HUD(); }
+    static unsigned int getPickHud() { return PickScriptingInterface::getPickHud(); }
 
     /*@jsdoc
      * @function RayPick.PICK_COARSE
      * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.PICK_COARSE</code> property instead.
      * @returns {number}
      */
-    static unsigned int PICK_COARSE() { return PickScriptingInterface::PICK_COARSE(); }
+    static unsigned int getPickCoarse() { return PickScriptingInterface::getPickCoarse(); }
 
     /*@jsdoc
      * @function RayPick.PICK_INCLUDE_INVISIBLE
@@ -205,7 +209,7 @@ public slots:
      *     property instead.
      * @returns {number}
      */
-    static unsigned int PICK_INCLUDE_INVISIBLE() { return PickScriptingInterface::PICK_INCLUDE_INVISIBLE(); }
+    static unsigned int getPickIncludeInvisible() { return PickScriptingInterface::getPickIncludeInvisible(); }
 
     /*@jsdoc
      * @function RayPick.PICK_INCLUDE_NONCOLLIDABLE
@@ -213,7 +217,7 @@ public slots:
      *     property instead.
      * @returns {number}
      */
-    static unsigned int PICK_INCLUDE_NONCOLLIDABLE() { return PickScriptingInterface::PICK_INCLUDE_NONCOLLIDABLE(); }
+    static unsigned int getPickIncludeNoncollidable() { return PickScriptingInterface::getPickIncludeNoncollidable(); }
 
     /*@jsdoc
      * @function RayPick.PICK_ALL_INTERSECTIONS
@@ -221,7 +225,7 @@ public slots:
      *     property instead.
      * @returns {number}
      */
-    static unsigned int PICK_ALL_INTERSECTIONS() { return PickScriptingInterface::PICK_ALL_INTERSECTIONS(); }
+    static unsigned int getPickAllIntersections() { return PickScriptingInterface::getPickAllIntersections(); }
 
     /*@jsdoc
      * @function RayPick.INTERSECTED_NONE
@@ -229,7 +233,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static unsigned int INTERSECTED_NONE() { return PickScriptingInterface::INTERSECTED_NONE(); }
+    static unsigned int getIntersectedNone() { return PickScriptingInterface::getIntersectedNone(); }
 
     /*@jsdoc
      * @function RayPick.INTERSECTED_ENTITY
@@ -237,7 +241,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static unsigned int INTERSECTED_ENTITY() { return PickScriptingInterface::INTERSECTED_ENTITY(); }
+    static unsigned int getIntersectedEntity() { return PickScriptingInterface::getIntersectedEntity(); }
 
     /*@jsdoc
      * @function RayPick.INTERSECTED_OVERLAY
@@ -245,7 +249,7 @@ public slots:
      *     property instead.
      * @returns {number}
      */
-    static unsigned int INTERSECTED_LOCAL_ENTITY() { return PickScriptingInterface::INTERSECTED_LOCAL_ENTITY(); }
+    static unsigned int getIntersectedLocalEntity() { return PickScriptingInterface::getIntersectedLocalEntity(); }
 
     /*@jsdoc
      * @function RayPick.INTERSECTED_OVERLAY
@@ -253,7 +257,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static unsigned int INTERSECTED_OVERLAY() { return PickScriptingInterface::INTERSECTED_LOCAL_ENTITY(); }
+    static unsigned int getIntersectedOverlay() { return PickScriptingInterface::getIntersectedOverlay(); }
 
     /*@jsdoc
      * @function RayPick.INTERSECTED_AVATAR
@@ -261,7 +265,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static unsigned int INTERSECTED_AVATAR() { return PickScriptingInterface::INTERSECTED_AVATAR(); }
+    static unsigned int getIntersectedAvatar() { return PickScriptingInterface::getIntersectedAvatar(); }
 
     /*@jsdoc
      * @function RayPick.INTERSECTED_HUD
@@ -269,7 +273,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static unsigned int INTERSECTED_HUD() { return PickScriptingInterface::INTERSECTED_HUD(); }
+    static unsigned int getIntersectedHud() { return PickScriptingInterface::getIntersectedHud(); }
 };
 
 #endif // hifi_RayPickScriptingInterface_h

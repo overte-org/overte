@@ -654,10 +654,10 @@ EditVoxels = function() {
     }
 
     function cleanup() {
-        Controller.mousePressEvent.disconnect(self.mousePressEvent);
-        Controller.mouseReleaseEvent.disconnect(self.mouseReleaseEvent);
-        Controller.keyPressEvent.disconnect(self.keyPressEvent);
-        Controller.keyReleaseEvent.disconnect(self.keyReleaseEvent);
+        Controller.mousePressEvent.disconnect(mousePressEvent);
+        Controller.mouseReleaseEvent.disconnect(mouseReleaseEvent);
+        Controller.keyPressEvent.disconnect(keyPressEvent);
+        Controller.keyReleaseEvent.disconnect(keyReleaseEvent);
     }
 
     Controller.mousePressEvent.connect(mousePressEvent);

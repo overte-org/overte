@@ -1,12 +1,15 @@
-"use strict";
+"no use strict";
 
 //  inVREditMode.js
 //
 //  Created by David Rowe on 16 Sep 2017.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
 
 /* global Script, HMD, Messages, MyAvatar, RIGHT_HAND, LEFT_HAND, enableDispatcherModule, disableDispatcherModule,
    makeDispatcherModuleParameters, makeRunningValues, getEnabledModuleByName, makeLaserParams

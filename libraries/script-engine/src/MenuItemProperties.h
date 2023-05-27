@@ -4,9 +4,11 @@
 //
 //  Created by Brad Hefta-Gaub on 1/28/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /// @addtogroup ScriptEngine
@@ -15,10 +17,11 @@
 #ifndef hifi_MenuItemProperties_h
 #define hifi_MenuItemProperties_h
 
-#include <QtScript/QScriptEngine>
-
 #include "KeyEvent.h"
 
+#include "ScriptValue.h"
+
+class ScriptEngine;
 
 /// Represents a menu item a script may declare and bind events to. Exposed as <code><a href="https://apidocs.overte.org/Menu.html#.MenuItemProperties">MenuItemProperties</a></code>
 class MenuItemProperties {
@@ -53,9 +56,8 @@ private:
     static const int UNSPECIFIED_POSITION = -1;
 };
 Q_DECLARE_METATYPE(MenuItemProperties)
-QScriptValue menuItemPropertiesToScriptValue(QScriptEngine* engine, const MenuItemProperties& props);
-void menuItemPropertiesFromScriptValue(const QScriptValue& object, MenuItemProperties& props);
-void registerMenuItemProperties(QScriptEngine* engine);
+ScriptValue menuItemPropertiesToScriptValue(ScriptEngine* engine, const MenuItemProperties& props);
+bool menuItemPropertiesFromScriptValue(const ScriptValue& object, MenuItemProperties& props);
 
 
 

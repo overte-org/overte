@@ -4,9 +4,11 @@
 //
 //  Created by Ryan Huffman on 2015/07/21
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "AssetClient.h"
@@ -16,7 +18,6 @@
 #include <QtCore/QBuffer>
 #include <QtCore/QStandardPaths>
 #include <QtCore/QThread>
-#include <QtScript/QScriptEngine>
 #include <QtNetwork/QNetworkDiskCache>
 
 #include <shared/GlobalAppProperties.h>
@@ -79,8 +80,10 @@ void AssetClient::initCaching() {
                  << "(size:" << MAXIMUM_CACHE_SIZE / BYTES_PER_GIGABYTES << "GB)";
     } else {
         auto cache = qobject_cast<QNetworkDiskCache*>(networkAccessManager.cache());
-        qInfo() << "ResourceManager disk cache already setup at" << cache->cacheDirectory()
-                << "(size:" << cache->maximumCacheSize() / BYTES_PER_GIGABYTES << "GB)";
+        if (cache) {
+            qInfo() << "ResourceManager disk cache already setup at" << cache->cacheDirectory()
+                    << "(size:" << cache->maximumCacheSize() / BYTES_PER_GIGABYTES << "GB)";
+        }
     }
 
 }
@@ -294,7 +297,6 @@ void AssetClient::cacheInfoRequest(QObject* reciever, QString slot) {
                                   Q_ARG(QObject*, reciever), Q_ARG(QString, slot));
         return;
     }
-
 
     if (auto* cache = qobject_cast<QNetworkDiskCache*>(NetworkAccessManager::getInstance().cache())) {
         QMetaObject::invokeMethod(reciever, slot.toStdString().data(), Qt::QueuedConnection,

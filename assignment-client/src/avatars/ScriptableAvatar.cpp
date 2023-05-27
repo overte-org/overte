@@ -4,9 +4,11 @@
 //
 //  Created by Clement on 7/22/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "ScriptableAvatar.h"
@@ -17,16 +19,18 @@
 
 #include <shared/QtHelpers.h>
 #include <AnimUtil.h>
+#include <AvatarHashMap.h>
 #include <ClientTraitsHandler.h>
 #include <GLMHelpers.h>
 #include <ResourceRequestObserver.h>
 #include <AvatarLogging.h>
 #include <EntityItem.h>
 #include <EntityItemProperties.h>
+#include <NetworkAccessManager.h>
 #include <NetworkingConstants.h>
 
 
-ScriptableAvatar::ScriptableAvatar() {
+ScriptableAvatar::ScriptableAvatar(): _scriptEngine(newScriptEngine()) {
     _clientTraitsHandler.reset(new ClientTraitsHandler(this));
 }
 
@@ -311,7 +315,7 @@ AvatarEntityMap ScriptableAvatar::getAvatarEntityDataInternal(bool allProperties
             EntityItemProperties properties = entity->getProperties(desiredProperties);
 
             QByteArray blob;
-            EntityItemProperties::propertiesToBlob(_scriptEngine, sessionID, properties, blob, allProperties);
+            EntityItemProperties::propertiesToBlob(*_scriptEngine, sessionID, properties, blob, allProperties);
             data[id] = blob;
         }
     });
@@ -335,7 +339,7 @@ void ScriptableAvatar::setAvatarEntityData(const AvatarEntityMap& avatarEntityDa
     while (dataItr != avatarEntityData.end()) {
         EntityItemProperties properties;
         const QByteArray& blob = dataItr.value();
-        if (!blob.isNull() && EntityItemProperties::blobToProperties(_scriptEngine, blob, properties)) {
+        if (!blob.isNull() && EntityItemProperties::blobToProperties(*_scriptEngine, blob, properties)) {
             newProperties[dataItr.key()] = properties;
         }
         ++dataItr;
@@ -415,7 +419,7 @@ void ScriptableAvatar::updateAvatarEntity(const QUuid& entityID, const QByteArra
 
     EntityItemPointer entity;
     EntityItemProperties properties;
-    if (!EntityItemProperties::blobToProperties(_scriptEngine, entityData, properties)) {
+    if (!EntityItemProperties::blobToProperties(*_scriptEngine, entityData, properties)) {
         // entityData is corrupt
         return;
     }

@@ -1,9 +1,11 @@
 //
 //  Created by Bradley Austin Davis 2015/10/23
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "ScriptEndpoint.h"
@@ -11,11 +13,13 @@
 
 #include <QtCore/QThread>
 
+#include <ScriptEngine.h>
+#include <ScriptValue.h>
 #include <StreamUtils.h>
 
 using namespace controller;
 
-QString formatException(const QScriptValue& exception) {
+QString formatException(const ScriptValue& exception) {
     QString note { "UncaughtException" };
     QString result;
 
@@ -45,7 +49,7 @@ void ScriptEndpoint::updateValue() {
         return;
     }
 
-    QScriptValue result = _callable.call();
+    ScriptValue result = _callable.call();
     if (result.isError()) {
         // print JavaScript exception
         qCDebug(controllers).noquote() << formatException(result);
@@ -73,8 +77,9 @@ void ScriptEndpoint::internalApply(float value, int sourceID) {
             Q_ARG(int, sourceID));
         return;
     }
-    QScriptValue result = _callable.call(QScriptValue(),
-        QScriptValueList({ QScriptValue(value), QScriptValue(sourceID) }));
+    ScriptEnginePointer engine = _callable.engine();
+    ScriptValue result = _callable.call(ScriptValue(),
+        ScriptValueList({ engine->newValue(value), engine->newValue(sourceID) }));
     if (result.isError()) {
         // print JavaScript exception
         qCDebug(controllers).noquote() << formatException(result);
@@ -91,7 +96,7 @@ void ScriptEndpoint::updatePose() {
         QMetaObject::invokeMethod(this, "updatePose", Qt::QueuedConnection);
         return;
     }
-    QScriptValue result = _callable.call();
+    ScriptValue result = _callable.call();
     if (result.isError()) {
         // print JavaScript exception
         qCDebug(controllers).noquote() << formatException(result);
@@ -114,8 +119,9 @@ void ScriptEndpoint::internalApply(const Pose& newPose, int sourceID) {
             Q_ARG(int, sourceID));
         return;
     }
-    QScriptValue result = _callable.call(QScriptValue(),
-        QScriptValueList({ Pose::toScriptValue(_callable.engine(), newPose), QScriptValue(sourceID) }));
+    ScriptEnginePointer engine = _callable.engine();
+    ScriptValue result = _callable.call(ScriptValue(),
+        ScriptValueList({ Pose::toScriptValue(engine.get(), newPose), engine->newValue(sourceID) }));
     if (result.isError()) {
         // print JavaScript exception
         qCDebug(controllers).noquote() << formatException(result);

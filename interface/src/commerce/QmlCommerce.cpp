@@ -4,9 +4,11 @@
 //
 //  Created by Howard Stearns on 8/4/17.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "QmlCommerce.h"
@@ -374,7 +376,7 @@ bool QmlCommerce::installApp(const QString& itemHref, const bool& alsoOpenImmedi
         // Don't try to re-load (install) a script if it's already running
         QStringList runningScripts = DependencyManager::get<ScriptEngines>()->getRunningScripts();
         if (!runningScripts.contains(scriptUrl)) {
-            if ((DependencyManager::get<ScriptEngines>()->loadScript(scriptUrl.trimmed())).isNull()) {
+            if (!(DependencyManager::get<ScriptEngines>()->loadScript(scriptUrl.trimmed()))) {
                 qCDebug(commerce) << "Couldn't load script.";
                 return false;
             }

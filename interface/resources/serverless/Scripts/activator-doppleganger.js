@@ -1,14 +1,15 @@
-'use strict';
+'no use strict';
 //
 //  activator-doppleganger.js
 //
 //  Created by Alezia Kurdis on February 20th, 2022.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
-//  This script is display a doppleganger of the user by entering an entity.
+//  This script displays a doppleganger of the user when entering an entity.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 (function() {
@@ -23,6 +24,8 @@
         autoUpdate: true
     });
 
+    // V8TODO: does this need to be fixed? Right now it refers to global object in non-strict mode,
+    // and in strict mode it's undefined
     this.preload = function(entityID) {
        thisEntityID = entityID;
     }

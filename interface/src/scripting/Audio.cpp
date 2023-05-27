@@ -508,9 +508,9 @@ void Audio::setReverb(bool enable) {
     });
 }
 
-void Audio::setReverbOptions(const AudioEffectOptions* options) {
+void Audio::setReverbOptions(const AudioEffectOptions options) {
     withWriteLock([&] {
-        DependencyManager::get<AudioClient>()->setReverbOptions(options);
+        DependencyManager::get<AudioClient>()->setReverbOptions(&options);
     });
 }
 

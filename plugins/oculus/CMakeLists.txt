@@ -1,9 +1,11 @@
 #
 #  Created by Bradley Austin Davis on 2015/10/25
 #  Copyright 2015 High Fidelity, Inc.
+#  Copyright 2023 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http:#www.apache.org/licenses/LICENSE-2.0.html
+#  SPDX-License-Identifier: Apache-2.0
 #
 
 if (WIN32 AND (NOT USE_GLES) AND (MSVC_VERSION LESS 1930) )
@@ -22,6 +24,7 @@ if (WIN32 AND (NOT USE_GLES) AND (MSVC_VERSION LESS 1930) )
     ${PLATFORM_GL_BACKEND}
   )
   include_hifi_library_headers(octree)
+  include_hifi_library_headers(script-engine)
 
   add_dependency_external_projects(LibOVR)
   find_package(LibOVR REQUIRED)

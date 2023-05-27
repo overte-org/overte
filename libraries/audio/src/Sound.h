@@ -4,9 +4,11 @@
 //
 //  Created by Stephen Birarda on 1/2/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_Sound_h
@@ -16,13 +18,15 @@
 #include <QtCore/QObject>
 #include <QtCore/QSharedPointer>
 #include <QtNetwork/QNetworkReply>
-#include <QtScript/qscriptengine.h>
+#include <QtCore/QSharedPointer>
 
 #include <ResourceCache.h>
+#include <ScriptValue.h>
 
 #include "AudioConstants.h"
 
 class AudioData;
+class ScriptEngine;
 using AudioDataPointer = std::shared_ptr<const AudioData>;
 
 Q_DECLARE_METATYPE(AudioDataPointer);
@@ -169,7 +173,7 @@ private:
 };
 
 Q_DECLARE_METATYPE(SharedSoundPointer)
-QScriptValue soundSharedPointerToScriptValue(QScriptEngine* engine, const SharedSoundPointer& in);
-void soundSharedPointerFromScriptValue(const QScriptValue& object, SharedSoundPointer& out);
+ScriptValue soundSharedPointerToScriptValue(ScriptEngine* engine, const SharedSoundPointer& in);
+bool soundSharedPointerFromScriptValue(const ScriptValue& object, SharedSoundPointer& out);
 
 #endif // hifi_Sound_h

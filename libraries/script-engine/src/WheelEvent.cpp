@@ -4,15 +4,17 @@
 //
 //  Created by Stephen Birarda on 2014-10-27.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "WheelEvent.h"
 
-#include <QScriptEngine>
-#include <QScriptValue>
+#include "ScriptEngine.h"
+#include "ScriptValue.h"
 
 WheelEvent::WheelEvent() :
     x(0.0f),
@@ -80,8 +82,8 @@ WheelEvent::WheelEvent(const QWheelEvent& event) {
  *     print(JSON.stringify(event));
  * });
  */
-QScriptValue WheelEvent::toScriptValue(QScriptEngine* engine, const WheelEvent& event) {
-    QScriptValue obj = engine->newObject();
+ScriptValue WheelEvent::toScriptValue(ScriptEngine* engine, const WheelEvent& event) {
+    ScriptValue obj = engine->newObject();
     obj.setProperty("x", event.x);
     obj.setProperty("y", event.y);
     obj.setProperty("delta", event.delta);
@@ -96,6 +98,7 @@ QScriptValue WheelEvent::toScriptValue(QScriptEngine* engine, const WheelEvent& 
     return obj;
 }
 
-void WheelEvent::fromScriptValue(const QScriptValue& object, WheelEvent& event) {
+bool WheelEvent::fromScriptValue(const ScriptValue& object, WheelEvent& event) {
     // nothing for now...
+    return false;
 }

@@ -2,8 +2,13 @@
 
 //  controllerDispatcherUtils.js
 //
+//  Copyright 2017-2020 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
 
 /* global module, HMD, MyAvatar, controllerDispatcherPlugins:true, Quat, Vec3, Overlays, Xform, Mat4,
    Selection, Uuid, Controller,
@@ -68,50 +73,50 @@
    handsAreTracked: true
 */
 
-MSECS_PER_SEC = 1000.0;
-INCHES_TO_METERS = 1.0 / 39.3701;
+var MSECS_PER_SEC = 1000.0;
+var INCHES_TO_METERS = 1.0 / 39.3701;
 
-HAPTIC_PULSE_STRENGTH = 1.0;
-HAPTIC_PULSE_DURATION = 13.0;
+var HAPTIC_PULSE_STRENGTH = 1.0;
+var HAPTIC_PULSE_DURATION = 13.0;
 
-ZERO_VEC = { x: 0, y: 0, z: 0 };
-ONE_VEC = { x: 1, y: 1, z: 1 };
+var ZERO_VEC = { x: 0, y: 0, z: 0 };
+var ONE_VEC = { x: 1, y: 1, z: 1 };
 
-LEFT_HAND = 0;
-RIGHT_HAND = 1;
+var LEFT_HAND = 0;
+var RIGHT_HAND = 1;
 
-FORBIDDEN_GRAB_TYPES = ["Unknown", "Light", "PolyLine", "Zone"];
+var FORBIDDEN_GRAB_TYPES = ["Unknown", "Light", "PolyLine", "Zone"];
 
-HAPTIC_PULSE_STRENGTH = 1.0;
-HAPTIC_PULSE_DURATION = 13.0;
+var HAPTIC_PULSE_STRENGTH = 1.0;
+var HAPTIC_PULSE_DURATION = 13.0;
 
-DEFAULT_REGISTRATION_POINT = { x: 0.5, y: 0.5, z: 0.5 };
+var DEFAULT_REGISTRATION_POINT = { x: 0.5, y: 0.5, z: 0.5 };
 
-TRIGGER_OFF_VALUE = 0.1;
-TRIGGER_ON_VALUE = TRIGGER_OFF_VALUE + 0.05; // Squeezed just enough to activate search or near grab
-BUMPER_ON_VALUE = 0.5;
+var TRIGGER_OFF_VALUE = 0.1;
+var TRIGGER_ON_VALUE = TRIGGER_OFF_VALUE + 0.05; // Squeezed just enough to activate search or near grab
+var BUMPER_ON_VALUE = 0.5;
 
-PICK_MAX_DISTANCE = 500; // max length of pick-ray
-DEFAULT_SEARCH_SPHERE_DISTANCE = 1000; // how far from camera to search intersection?
-NEAR_GRAB_PICK_RADIUS = 0.25; // radius used for search ray vs object for near grabbing.
+var PICK_MAX_DISTANCE = 500; // max length of pick-ray
+var DEFAULT_SEARCH_SPHERE_DISTANCE = 1000; // how far from camera to search intersection?
+var NEAR_GRAB_PICK_RADIUS = 0.25; // radius used for search ray vs object for near grabbing.
 
-COLORS_GRAB_SEARCHING_HALF_SQUEEZE = { red: 10, green: 10, blue: 255 };
-COLORS_GRAB_SEARCHING_FULL_SQUEEZE = { red: 250, green: 10, blue: 10 };
-COLORS_GRAB_DISTANCE_HOLD = { red: 238, green: 75, blue: 214 };
+var COLORS_GRAB_SEARCHING_HALF_SQUEEZE = { red: 10, green: 10, blue: 255 };
+var COLORS_GRAB_SEARCHING_FULL_SQUEEZE = { red: 250, green: 10, blue: 10 };
+var COLORS_GRAB_DISTANCE_HOLD = { red: 238, green: 75, blue: 214 };
 
-NEAR_GRAB_RADIUS = 1.0;
+var NEAR_GRAB_RADIUS = 1.0;
 
-TEAR_AWAY_DISTANCE = 0.15; // ungrab an entity if its bounding-box moves this far from the hand
-TEAR_AWAY_COUNT = 2; // multiply by TEAR_AWAY_CHECK_TIME to know how long the item must be away
-TEAR_AWAY_CHECK_TIME = 0.15; // seconds, duration between checks
+var TEAR_AWAY_DISTANCE = 0.15; // ungrab an entity if its bounding-box moves this far from the hand
+var TEAR_AWAY_COUNT = 2; // multiply by TEAR_AWAY_CHECK_TIME to know how long the item must be away
+var TEAR_AWAY_CHECK_TIME = 0.15; // seconds, duration between checks
 
-TELEPORT_DEADZONE = 0.15;
+var TELEPORT_DEADZONE = 0.15;
 
-NEAR_GRAB_DISTANCE = 0.14; // Grab an entity if its bounding box is within this distance.
+var NEAR_GRAB_DISTANCE = 0.14; // Grab an entity if its bounding box is within this distance.
 // Smaller than TEAR_AWAY_DISTANCE for hysteresis.
 
-DISPATCHER_HOVERING_LIST = "dispatcherHoveringList";
-DISPATCHER_HOVERING_STYLE = {
+var DISPATCHER_HOVERING_LIST = "dispatcherHoveringList";
+var DISPATCHER_HOVERING_STYLE = {
     isOutlineSmooth: true,
     outlineWidth: 0,
     outlineUnoccludedColor: {red: 255, green: 128, blue: 128},
@@ -124,7 +129,7 @@ DISPATCHER_HOVERING_STYLE = {
     fillOccludedAlpha: 0.0
 };
 
-DISPATCHER_PROPERTIES = [
+var DISPATCHER_PROPERTIES = [
     "position",
     "registrationPoint",
     "rotation",
@@ -169,7 +174,7 @@ DISPATCHER_PROPERTIES = [
 // activitySlots -- indicates which "slots" must not yet be in use for this module to start
 // requiredDataForReady -- which "situation" parts this module looks at to decide if it will start
 // sleepMSBetweenRuns -- how long to wait between calls to this module's "run" method
-makeDispatcherModuleParameters = function (priority, activitySlots, requiredDataForReady, sleepMSBetweenRuns, enableLaserForHand) {
+var makeDispatcherModuleParameters = function (priority, activitySlots, requiredDataForReady, sleepMSBetweenRuns, enableLaserForHand) {
     if (enableLaserForHand === undefined) {
         enableLaserForHand = -1;
     }
@@ -183,7 +188,7 @@ makeDispatcherModuleParameters = function (priority, activitySlots, requiredData
     };
 };
 
-makeLaserLockInfo = function(targetID, isOverlay, hand, offset) {
+var makeLaserLockInfo = function(targetID, isOverlay, hand, offset) {
     return {
         targetID: targetID,
         isOverlay: isOverlay,
@@ -192,7 +197,7 @@ makeLaserLockInfo = function(targetID, isOverlay, hand, offset) {
     };
 };
 
-makeLaserParams = function(hand, alwaysOn) {
+var makeLaserParams = function(hand, alwaysOn) {
     if (alwaysOn === undefined) {
         alwaysOn = false;
     }
@@ -203,7 +208,7 @@ makeLaserParams = function(hand, alwaysOn) {
     };
 };
 
-makeRunningValues = function (active, targets, requiredDataForRun, laserLockInfo) {
+var makeRunningValues = function (active, targets, requiredDataForRun, laserLockInfo) {
     return {
         active: active,
         targets: targets,
@@ -212,7 +217,7 @@ makeRunningValues = function (active, targets, requiredDataForRun, laserLockInfo
     };
 };
 
-enableDispatcherModule = function (moduleName, module, priority) {
+var enableDispatcherModule = function (moduleName, module, priority) {
     if (!controllerDispatcherPlugins) {
         controllerDispatcherPlugins = {};
     }
@@ -220,19 +225,19 @@ enableDispatcherModule = function (moduleName, module, priority) {
     controllerDispatcherPluginsNeedSort = true;
 };
 
-disableDispatcherModule = function (moduleName) {
+var disableDispatcherModule = function (moduleName) {
     delete controllerDispatcherPlugins[moduleName];
     controllerDispatcherPluginsNeedSort = true;
 };
 
-getEnabledModuleByName = function (moduleName) {
+var getEnabledModuleByName = function (moduleName) {
     if (controllerDispatcherPlugins.hasOwnProperty(moduleName)) {
         return controllerDispatcherPlugins[moduleName];
     }
     return null;
 };
 
-getGrabbableData = function (ggdProps) {
+var getGrabbableData = function (ggdProps) {
     // look in userData for a "grabbable" key, return the value or some defaults
     var grabbableData = {};
     var userDataParsed = null;
@@ -297,7 +302,7 @@ getGrabbableData = function (ggdProps) {
     return grabbableData;
 };
 
-isAnothersAvatarEntity = function (iaaeProps) {
+var isAnothersAvatarEntity = function (iaaeProps) {
     if (!iaaeProps.avatarEntity) {
         return false;
     }
@@ -310,7 +315,7 @@ isAnothersAvatarEntity = function (iaaeProps) {
     return true;
 };
 
-isAnothersChildEntity = function (iaceProps) {
+var isAnothersChildEntity = function (iaceProps) {
     while (iaceProps.parentID && iaceProps.parentID !== Uuid.NULL) {
         if (Entities.getNestableType(iaceProps.parentID) == "avatar") {
             if (iaceProps.parentID == MyAvatar.SELF_ID || iaceProps.parentID == MyAvatar.sessionUUID) {
@@ -330,7 +335,7 @@ isAnothersChildEntity = function (iaceProps) {
 };
 
 
-entityIsEquippable = function (eieProps) {
+var entityIsEquippable = function (eieProps) {
     var grabbable = getGrabbableData(eieProps).grabbable;
     if (!grabbable ||
         isAnothersAvatarEntity(eieProps) ||
@@ -341,7 +346,7 @@ entityIsEquippable = function (eieProps) {
     return true;
 };
 
-entityIsGrabbable = function (eigProps) {
+var entityIsGrabbable = function (eigProps) {
     var grabbable = getGrabbableData(eigProps).grabbable;
     if (!grabbable ||
         eigProps.locked ||
@@ -351,19 +356,19 @@ entityIsGrabbable = function (eigProps) {
     return true;
 };
 
-clearHighlightedEntities = function() {
+var clearHighlightedEntities = function() {
     Selection.clearSelectedItemsList(DISPATCHER_HOVERING_LIST);
 };
 
-highlightTargetEntity = function(entityID) {
+var highlightTargetEntity = function(entityID) {
     Selection.addToSelectedItemsList(DISPATCHER_HOVERING_LIST, "entity", entityID);
 };
 
-unhighlightTargetEntity = function(entityID) {
+var unhighlightTargetEntity = function(entityID) {
     Selection.removeFromSelectedItemsList(DISPATCHER_HOVERING_LIST, "entity", entityID);
 };
 
-entityIsDistanceGrabbable = function(eidgProps) {
+var entityIsDistanceGrabbable = function(eidgProps) {
     if (!entityIsGrabbable(eidgProps)) {
         return false;
     }
@@ -377,10 +382,10 @@ entityIsDistanceGrabbable = function(eidgProps) {
     return true;
 };
 
-getControllerJointIndexCacheTime = [0, 0];
-getControllerJointIndexCache = [-1, -1];
+var getControllerJointIndexCacheTime = [0, 0];
+var getControllerJointIndexCache = [-1, -1];
 
-getControllerJointIndex = function (hand) {
+var getControllerJointIndex = function (hand) {
     var GET_CONTROLLERJOINTINDEX_CACHE_REFRESH_TIME = 3000; // msecs
 
     var now = Date.now();
@@ -400,7 +405,7 @@ getControllerJointIndex = function (hand) {
     return -1;
 };
 
-propsArePhysical = function (papProps) {
+var propsArePhysical = function (papProps) {
     if (!papProps.dynamic) {
         return false;
     }
@@ -408,7 +413,7 @@ propsArePhysical = function (papProps) {
     return isPhysical;
 };
 
-projectOntoXYPlane = function (worldPos, position, rotation, dimensions, registrationPoint) {
+var projectOntoXYPlane = function (worldPos, position, rotation, dimensions, registrationPoint) {
     var invRot = Quat.inverse(rotation);
     var localPos = Vec3.multiplyQbyV(invRot, Vec3.subtract(worldPos, position));
     var invDimensions = {
@@ -424,25 +429,25 @@ projectOntoXYPlane = function (worldPos, position, rotation, dimensions, registr
     };
 };
 
-projectOntoEntityXYPlane = function (entityID, worldPos, popProps) {
+var projectOntoEntityXYPlane = function (entityID, worldPos, popProps) {
     return projectOntoXYPlane(worldPos, popProps.position, popProps.rotation,
                               popProps.dimensions, popProps.registrationPoint);
 };
 
-projectOntoOverlayXYPlane = function projectOntoOverlayXYPlane(overlayID, worldPos) {
-    var position = Overlays.getProperty(overlayID, "position");
-    var rotation = Overlays.getProperty(overlayID, "rotation");
-    var dimensions = Overlays.getProperty(overlayID, "dimensions");
+var projectOntoOverlayXYPlane = function projectOntoOverlayXYPlane(overlayID, worldPos) {
+    var position = Entities.getEntityProperties(overlayID, ["position"]).position;
+    var rotation = Entities.getEntityProperties(overlayID, ["rotation"]).rotation;
+    var dimensions = Entities.getEntityProperties(overlayID, ["dimensions"]).dimensions;
     dimensions.z = 0.01; // we are projecting onto the XY plane of the overlay, so ignore the z dimension
 
     return projectOntoXYPlane(worldPos, position, rotation, dimensions, DEFAULT_REGISTRATION_POINT);
 };
 
-entityHasActions = function (entityID) {
+var entityHasActions = function (entityID) {
     return Entities.getActionIDs(entityID).length > 0;
 };
 
-ensureDynamic = function (entityID) {
+var ensureDynamic = function (entityID) {
     // if we distance hold something and keep it very still before releasing it, it ends up
     // non-dynamic in bullet.  If it's too still, give it a little bounce so it will fall.
     var edProps = Entities.getEntityProperties(entityID, ["velocity", "dynamic", "parentID"]);
@@ -455,7 +460,7 @@ ensureDynamic = function (entityID) {
     }
 };
 
-findGrabbableGroupParent = function (controllerData, targetProps) {
+var findGrabbableGroupParent = function (controllerData, targetProps) {
     while (targetProps.grab.grabDelegateToParent &&
            targetProps.parentID &&
            targetProps.parentID !== Uuid.NULL &&
@@ -475,7 +480,7 @@ findGrabbableGroupParent = function (controllerData, targetProps) {
     return targetProps;
 };
 
-getEntityParents = function(targetProps) {
+var getEntityParents = function(targetProps) {
     var parentProperties = [];
     while (targetProps.parentID &&
            targetProps.parentID !== Uuid.NULL &&
@@ -493,7 +498,7 @@ getEntityParents = function(targetProps) {
 };
 
 
-findHandChildEntities = function(hand) {
+var findHandChildEntities = function(hand) {
     // find children of avatar's hand joint
     var handJointIndex = MyAvatar.getJointIndex(hand === RIGHT_HAND ? "RightHand" : "LeftHand");
     var children = Entities.getChildrenIDsOfJoint(MyAvatar.sessionUUID, handJointIndex);
@@ -517,7 +522,7 @@ findHandChildEntities = function(hand) {
     });
 };
 
-findFarGrabJointChildEntities = function(hand) {
+var findFarGrabJointChildEntities = function(hand) {
     // find children of avatar's far-grab joint
     var farGrabJointIndex = MyAvatar.getJointIndex(hand === RIGHT_HAND ? "_FARGRAB_RIGHTHAND" : "_FARGRAB_LEFTHAND");
     var children = Entities.getChildrenIDsOfJoint(MyAvatar.sessionUUID, farGrabJointIndex);
@@ -529,7 +534,7 @@ findFarGrabJointChildEntities = function(hand) {
     });
 };
 
-distanceBetweenEntityLocalPositionAndBoundingBox = function(entityProps, jointGrabOffset) {
+var distanceBetweenEntityLocalPositionAndBoundingBox = function(entityProps, jointGrabOffset) {
     var DEFAULT_REGISTRATION_POINT = { x: 0.5, y: 0.5, z: 0.5 };
     var rotInv = Quat.inverse(entityProps.localRotation);
     var localPosition = Vec3.sum(entityProps.localPosition, jointGrabOffset);
@@ -553,13 +558,16 @@ distanceBetweenEntityLocalPositionAndBoundingBox = function(entityProps, jointGr
     return Vec3.distance(v, localPoint);
 };
 
-distanceBetweenPointAndEntityBoundingBox = function(point, entityProps) {
+var distanceBetweenPointAndEntityBoundingBox = function(point, entityProps) {
     var entityXform = new Xform(entityProps.rotation, entityProps.position);
     var localPoint = entityXform.inv().xformPoint(point);
     var minOffset = Vec3.multiplyVbyV(entityProps.registrationPoint, entityProps.dimensions);
     var maxOffset = Vec3.multiplyVbyV(Vec3.subtract(ONE_VEC, entityProps.registrationPoint), entityProps.dimensions);
-    var localMin = Vec3.subtract(entityXform.trans, minOffset);
-    var localMax = Vec3.sum(entityXform.trans, maxOffset);
+    var localMin = Vec3.subtract(entityXform.pos, minOffset);
+    var localMax = Vec3.sum(entityXform.pos, maxOffset);
+    // TODO: was originally this, but this causes an error on V8 branch and probably never worked on QtScript either
+    //var localMin = Vec3.subtract(entityXform.trans, minOffset);
+    //var localMax = Vec3.sum(entityXform.trans, maxOffset);
 
     var v = {x: localPoint.x, y: localPoint.y, z: localPoint.z};
     v.x = Math.max(v.x, localMin.x);
@@ -572,7 +580,7 @@ distanceBetweenPointAndEntityBoundingBox = function(point, entityProps) {
     return Vec3.distance(v, localPoint);
 };
 
-entityIsEquipped = function(entityID) {
+var entityIsEquipped = function(entityID) {
     var rightEquipEntity = getEnabledModuleByName("RightEquipEntity");
     var leftEquipEntity = getEnabledModuleByName("LeftEquipEntity");
     var equippedInRightHand = rightEquipEntity ? rightEquipEntity.targetEntityID === entityID : false;
@@ -580,11 +588,11 @@ entityIsEquipped = function(entityID) {
     return equippedInRightHand || equippedInLeftHand;
 };
 
-worldPositionToRegistrationFrameMatrix = function(wptrProps, pos) {
+var worldPositionToRegistrationFrameMatrix = function(wptrProps, pos) {
     // get world matrix for intersection point
     var intersectionMat = new Xform({ x: 0, y: 0, z:0, w: 1 }, pos);
 
-    // calculate world matrix for registrationPoint addjusted entity
+    // calculate world matrix for registrationPoint adjusted entity
     var DEFAULT_REGISTRATION_POINT = { x: 0.5, y: 0.5, z: 0.5 };
     var regRatio = Vec3.subtract(DEFAULT_REGISTRATION_POINT, wptrProps.registrationPoint);
     var regOffset = Vec3.multiplyVbyV(regRatio, wptrProps.dimensions);
@@ -602,7 +610,7 @@ worldPositionToRegistrationFrameMatrix = function(wptrProps, pos) {
     return offsetMat;
 };
 
-handsAreTracked = function () {
+var handsAreTracked = function () {
     return Controller.getPoseValue(Controller.Standard.LeftHandIndex3).valid ||
         Controller.getPoseValue(Controller.Standard.RightHandIndex3).valid;
 };

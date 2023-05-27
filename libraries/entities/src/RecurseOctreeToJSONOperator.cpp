@@ -4,15 +4,18 @@
 //
 //  Created by Simon Walton on Oct 11, 2018.
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "RecurseOctreeToJSONOperator.h"
 #include "EntityItemProperties.h"
+#include <ScriptValue.h>
 
-RecurseOctreeToJSONOperator::RecurseOctreeToJSONOperator(const OctreeElementPointer&, QScriptEngine* engine,
+RecurseOctreeToJSONOperator::RecurseOctreeToJSONOperator(const OctreeElementPointer&, ScriptEngine* engine,
     QString jsonPrefix, bool skipDefaults, bool skipThoseWithBadParents):
     _engine(engine),
     _json(jsonPrefix),
@@ -34,7 +37,7 @@ void RecurseOctreeToJSONOperator::processEntity(const EntityItemPointer& entity)
         return;  // we weren't able to resolve a parent from _parentID, so don't save this entity.
     }
 
-    QScriptValue qScriptValues = _skipDefaults
+    ScriptValue qScriptValues = _skipDefaults
         ? EntityItemNonDefaultPropertiesToScriptValue(_engine, entity->getProperties())
         : EntityItemPropertiesToScriptValue(_engine, entity->getProperties());
 

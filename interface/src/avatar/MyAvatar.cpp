@@ -5,9 +5,11 @@
 //  Created by Mark Peng on 8/16/13.
 //  Copyright 2012 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "MyAvatar.h"
@@ -43,13 +45,16 @@
 #include <udt/PacketHeaders.h>
 #include <PathUtils.h>
 #include <PerfStat.h>
+#include <ScriptEngine.h>
+#include <ScriptEngineCast.h>
+#include <ScriptEngineLogging.h>
 #include <SharedUtil.h>
 #include <SoundCache.h>
 #include <ModelEntityItem.h>
 #include <TextRenderer3D.h>
 #include <UserActivityLogger.h>
 #include <recording/Recorder.h>
-#include <RecordingScriptingInterface.h>
+#include <recording/RecordingScriptingInterface.h>
 #include <RenderableModelEntityItem.h>
 #include <VariantMapToScriptValue.h>
 #include <NetworkingConstants.h>
@@ -109,6 +114,23 @@ const QString POINT_BLEND_DIRECTIONAL_ALPHA_NAME = "pointAroundAlpha";
 const QString POINT_BLEND_LINEAR_ALPHA_NAME = "pointBlendAlpha";
 const QString POINT_REF_JOINT_NAME = "RightShoulder";
 const float POINT_ALPHA_BLENDING = 1.0f;
+
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine();
+
+    MyAvatar::registerMetaTypes(scriptEngine);
+});
+
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine();
+
+    auto avatarManager = DependencyManager::get<AvatarManager>();
+    if (avatarManager) {
+        avatarManager->getMyAvatar()->registerProperties(scriptEngine);
+    } else {
+        qWarning(scriptengine) << "Cannot register MyAvatar with script engine, AvatarManager instance not available";
+    }
+});
 
 const std::array<QString, static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count)>
     MyAvatar::allowAvatarStandingPreferenceStrings = {
@@ -378,8 +400,6 @@ MyAvatar::MyAvatar(QThread* thread) :
 
 MyAvatar::~MyAvatar() {
     _lookAtTargetAvatar.reset();
-    delete _scriptEngine;
-    _scriptEngine = nullptr;
     if (_addAvatarEntitiesToTreeTimer.isActive()) {
         _addAvatarEntitiesToTreeTimer.stop();
     }
@@ -439,19 +459,23 @@ void MyAvatar::enableHandTouchForID(const QUuid& entityID) {
 }
 
 void MyAvatar::registerMetaTypes(ScriptEnginePointer engine) {
-    QScriptValue value = engine->newQObject(this, QScriptEngine::QtOwnership, QScriptEngine::ExcludeDeleteLater | QScriptEngine::ExcludeChildObjects);
+    scriptRegisterMetaType<AudioListenerMode, audioListenModeToScriptValue, audioListenModeFromScriptValue>(engine.get());
+    scriptRegisterMetaType<MyAvatar::DriveKeys, driveKeysToScriptValue, driveKeysFromScriptValue>(engine.get(), "DriveKeys");
+    qDebug() << "MyAvatar::registerMetaTypes";
+}
+
+void MyAvatar::registerProperties(ScriptEnginePointer engine) {
+    ScriptValue value = engine->newQObject(this, ScriptEngine::QtOwnership);
     engine->globalObject().setProperty("MyAvatar", value);
 
-    QScriptValue driveKeys = engine->newObject();
+    ScriptValue driveKeys = engine->newObject();
     auto metaEnum = QMetaEnum::fromType<DriveKeys>();
     for (int i = 0; i < MAX_DRIVE_KEYS; ++i) {
         driveKeys.setProperty(metaEnum.key(i), metaEnum.value(i));
     }
     engine->globalObject().setProperty("DriveKeys", driveKeys);
-
-    qScriptRegisterMetaType(engine.data(), audioListenModeToScriptValue, audioListenModeFromScriptValue);
-    qScriptRegisterMetaType(engine.data(), driveKeysToScriptValue, driveKeysFromScriptValue);
 }
+
 
 void MyAvatar::setOrientationVar(const QVariant& newOrientationVar) {
     Avatar::setWorldOrientation(quatFromVariant(newOrientationVar));
@@ -2065,7 +2089,7 @@ void MyAvatar::avatarEntityDataToJson(QJsonObject& root) const {
 
 void MyAvatar::loadData() {
     if (!_scriptEngine) {
-        _scriptEngine = new QScriptEngine();
+        _scriptEngine = newScriptEngine();
     }
     getHead()->setBasePitch(_headPitchSetting.get());
 
@@ -2673,8 +2697,7 @@ QVariantList MyAvatar::getAvatarEntitiesVariant() {
             EntityItemProperties entityProperties = entity->getProperties(desiredProperties);
             {
                 std::lock_guard<std::mutex> guard(_scriptEngineLock);
-                QScriptValue scriptProperties;
-                scriptProperties = EntityItemPropertiesToScriptValue(_scriptEngine, entityProperties);
+                ScriptValue scriptProperties = EntityItemPropertiesToScriptValue(_scriptEngine.get(), entityProperties);
                 avatarEntityData["properties"] = scriptProperties.toVariant();
             }
             avatarEntitiesData.append(QVariant(avatarEntityData));
@@ -5704,20 +5727,22 @@ void MyAvatar::setAudioListenerMode(AudioListenerMode audioListenerMode) {
     }
 }
 
-QScriptValue audioListenModeToScriptValue(QScriptEngine* engine, const AudioListenerMode& audioListenerMode) {
-    return audioListenerMode;
+ScriptValue audioListenModeToScriptValue(ScriptEngine* engine, const AudioListenerMode& audioListenerMode) {
+    return engine->newValue(audioListenerMode);
 }
 
-void audioListenModeFromScriptValue(const QScriptValue& object, AudioListenerMode& audioListenerMode) {
+bool audioListenModeFromScriptValue(const ScriptValue& object, AudioListenerMode& audioListenerMode) {
     audioListenerMode = static_cast<AudioListenerMode>(object.toUInt16());
+    return true;
 }
 
-QScriptValue driveKeysToScriptValue(QScriptEngine* engine, const MyAvatar::DriveKeys& driveKeys) {
-    return driveKeys;
+ScriptValue driveKeysToScriptValue(ScriptEngine* engine, const MyAvatar::DriveKeys& driveKeys) {
+    return engine->newValue(driveKeys);
 }
 
-void driveKeysFromScriptValue(const QScriptValue& object, MyAvatar::DriveKeys& driveKeys) {
+bool driveKeysFromScriptValue(const ScriptValue& object, MyAvatar::DriveKeys& driveKeys) {
     driveKeys = static_cast<MyAvatar::DriveKeys>(object.toUInt16());
+    return true;
 }
 
 

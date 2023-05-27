@@ -4,9 +4,11 @@
 //
 //  Created by Utkarsh Gautam on 9/18/17.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "JSBaker.h"
@@ -77,6 +79,7 @@ void JSBaker::loadScript() {
 
 void JSBaker::handleScriptNetworkReply() {
     auto requestReply = qobject_cast<QNetworkReply*>(sender());
+    Q_ASSERT(requestReply != nullptr);
 
     if (requestReply->error() == QNetworkReply::NoError) {
         qCDebug(js_baking) << "Downloaded script" << _jsURL;

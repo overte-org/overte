@@ -4,9 +4,11 @@
 //
 //  Created by Sam Gondelman on 8/7/2018
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "BloomPropertyGroup.h"
@@ -16,13 +18,13 @@
 #include "EntityItemProperties.h"
 #include "EntityItemPropertiesMacros.h"
 
-void BloomPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, QScriptValue& properties, QScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties) const {
+void BloomPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties) const {
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_BLOOM_INTENSITY, Bloom, bloom, BloomIntensity, bloomIntensity);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_BLOOM_THRESHOLD, Bloom, bloom, BloomThreshold, bloomThreshold);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_BLOOM_SIZE, Bloom, bloom, BloomSize, bloomSize);
 }
 
-void BloomPropertyGroup::copyFromScriptValue(const QScriptValue& object, bool& _defaultSettings) {
+void BloomPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(bloom, bloomIntensity, float, setBloomIntensity);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(bloom, bloomThreshold, float, setBloomThreshold);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(bloom, bloomSize, float, setBloomSize);

@@ -4,9 +4,11 @@
 //
 //  Created by Seth Alves on 2018-8-8.
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_GrabPropertyGroup_h
@@ -16,8 +18,6 @@
 
 #include <glm/glm.hpp>
 
-#include <QtScript/QScriptEngine>
-
 #include "PropertyGroup.h"
 #include "EntityItemPropertiesMacros.h"
 
@@ -25,6 +25,7 @@ class EntityItemProperties;
 class EncodeBitstreamParams;
 class OctreePacketData;
 class ReadBitstreamToTreeParams;
+class ScriptValue;
 
 static const bool INITIAL_GRABBABLE { true };
 static const bool INITIAL_KINEMATIC { true };
@@ -72,10 +73,10 @@ static const glm::vec3 INITIAL_EQUIPPABLE_INDICATOR_OFFSET { glm::vec3(0.0f) };
 class GrabPropertyGroup : public PropertyGroup {
 public:
     // EntityItemProperty related helpers
-    virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, QScriptValue& properties,
-                                   QScriptEngine* engine, bool skipDefaults,
+    virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
+                                   ScriptEngine* engine, bool skipDefaults,
                                    EntityItemProperties& defaultEntityProperties) const override;
-    virtual void copyFromScriptValue(const QScriptValue& object, bool& _defaultSettings) override;
+    virtual void copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) override;
 
     void merge(const GrabPropertyGroup& other);
 

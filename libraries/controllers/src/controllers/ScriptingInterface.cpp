@@ -1,9 +1,11 @@
 ﻿//
 //  Created by Bradley Austin Davis 2015/10/09
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #include "ScriptingInterface.h"
 
@@ -25,6 +27,28 @@
 #include "InputDevice.h"
 #include "InputRecorder.h"
 
+#include <ScriptEngine.h>
+#include <ScriptEngineCast.h>
+#include <ScriptManager.h>
+#include <ScriptValue.h>
+
+
+ScriptValue inputControllerToScriptValue(ScriptEngine* engine, controller::InputController* const& in) {
+    return engine->newQObject(in, ScriptEngine::QtOwnership);
+}
+
+bool inputControllerFromScriptValue(const ScriptValue& object, controller::InputController*& out) {
+    return (out = qobject_cast<controller::InputController*>(object.toQObject())) != nullptr;
+}
+
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager) {
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType<controller::InputController*, inputControllerToScriptValue, inputControllerFromScriptValue>(scriptEngine);
+    manager->connect(manager, &ScriptManager::scriptEnding, [manager]() {
+        ;
+    });
+}));
 
 static QRegularExpression SANITIZE_NAME_EXPRESSION{ "[\\(\\)\\.\\s]" };
 
@@ -101,17 +125,9 @@ namespace controller {
         auto userInputMapper = DependencyManager::get<UserInputMapper>();
         return userInputMapper->getPose(Input((uint32_t)source));
     }
-    
-    QVector<Action> ScriptingInterface::getAllActions() {
-        return DependencyManager::get<UserInputMapper>()->getAllActions();
-    }
 
     QString ScriptingInterface::getDeviceName(unsigned int device) {
         return DependencyManager::get<UserInputMapper>()->getDeviceName((unsigned short)device);
-    }
-
-    QVector<Input::NamedPair> ScriptingInterface::getAvailableInputs(unsigned int device) {
-        return DependencyManager::get<UserInputMapper>()->getAvailableInputs((unsigned short)device);
     }
 
     int ScriptingInterface::findDevice(QString name) {
@@ -167,7 +183,7 @@ namespace controller {
         InputRecorder* inputRecorder = InputRecorder::getInstance();
         inputRecorder->saveRecording();
     }
-    
+
     void ScriptingInterface::loadInputRecording(const QString& file) {
         InputRecorder* inputRecorder = InputRecorder::getInstance();
         inputRecorder->loadRecording(file);

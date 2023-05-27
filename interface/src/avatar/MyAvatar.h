@@ -5,16 +5,18 @@
 //  Created by Mark Peng on 8/16/13.
 //  Copyright 2012 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_MyAvatar_h
 #define hifi_MyAvatar_h
 
 #include <bitset>
+#include <memory>
 
 #include <glm/glm.hpp>
 
@@ -28,10 +30,10 @@
 #include <EntityItem.h>
 #include <ThreadSafeValueCache.h>
 #include <Rig.h>
-#include <ScriptEngine.h>
 #include <SettingHandle.h>
 #include <Sound.h>
 #include <shared/Camera.h>
+#include <ScriptValue.h>
 
 #include "AtRestDetector.h"
 #include "MyCharacterController.h"
@@ -41,6 +43,8 @@ class AvatarActionHold;
 class ModelItemID;
 class MyHead;
 class DetailedMotionState;
+class ScriptEngine;
+using ScriptEnginePointer = std::shared_ptr<ScriptEngine>;
 
 /*@jsdoc
  * <p>Locomotion control types.</p>
@@ -581,7 +585,8 @@ public:
     virtual ~MyAvatar();
 
     void instantiableAvatar() override {};
-    void registerMetaTypes(ScriptEnginePointer engine);
+    static void registerMetaTypes(ScriptEnginePointer engine);
+    void registerProperties(ScriptEnginePointer engine);
 
     virtual void simulateAttachments(float deltaTime) override;
 
@@ -870,7 +875,7 @@ public:
      *     MyAvatar.removeAnimationStateHandler(handler);
      * }, 100);
      */
-    Q_INVOKABLE QScriptValue addAnimationStateHandler(QScriptValue handler, QScriptValue propertiesList) { return _skeletonModel->getRig().addAnimationStateHandler(handler, propertiesList); }
+    Q_INVOKABLE ScriptValue addAnimationStateHandler(const ScriptValue& handler, const ScriptValue& propertiesList) { return _skeletonModel->getRig().addAnimationStateHandler(handler, propertiesList); }
 
     /*@jsdoc
      * Removes an animation state handler function.
@@ -878,7 +883,7 @@ public:
      * @param {number} handler - The ID of the animation state handler function to remove.
      */
     // Removes a handler previously added by addAnimationStateHandler.
-    Q_INVOKABLE void removeAnimationStateHandler(QScriptValue handler) { _skeletonModel->getRig().removeAnimationStateHandler(handler); }
+    Q_INVOKABLE void removeAnimationStateHandler(const ScriptValue& handler) { _skeletonModel->getRig().removeAnimationStateHandler(handler); }
 
 
     /*@jsdoc
@@ -1213,8 +1218,6 @@ public:
      * @function MyAvatar.getTargetAvatar
      * @returns {ScriptAvatar} Information on the avatar being looked at, <code>null</code> if no avatar is being looked at.
      */
-    // FIXME: The return type doesn't have a conversion to a script value so the function always returns undefined in
-    // JavaScript. Note: When fixed, JSDoc is needed for the return type.
     Q_INVOKABLE ScriptAvatarData* getTargetAvatar() const;
 
 
@@ -2289,13 +2292,6 @@ public slots:
     void clearAvatarEntity(const QUuid& entityID, bool requiresRemovalFromTree = true) override;
 
     /*@jsdoc
-     * @function MyAvatar.sanitizeAvatarEntityProperties
-     * @param {EntityItemProperties} properties - Properties.
-     * @deprecated This function is deprecated and will be removed.
-     */
-    void sanitizeAvatarEntityProperties(EntityItemProperties& properties) const;
-
-    /*@jsdoc
      * Sets whether your avatar mesh is visible to you.
      * @function MyAvatar.setEnableMeshVisible
      * @param {boolean} enabled - <code>true</code> to show your avatar mesh, <code>false</code> to hide.
@@ -2686,6 +2682,7 @@ private:
     virtual int parseDataFromBuffer(const QByteArray& buffer) override;
     virtual glm::vec3 getSkeletonPosition() const override;
     int _skeletonModelChangeCount { 0 };
+    void sanitizeAvatarEntityProperties(EntityItemProperties& properties) const;
 
     void saveAvatarScale();
 
@@ -3099,7 +3096,7 @@ private:
     //
     // keep a ScriptEngine around so we don't have to instantiate on the fly (these are very slow to create/delete)
     mutable std::mutex _scriptEngineLock;
-    QScriptEngine* _scriptEngine { nullptr };
+    ScriptEnginePointer _scriptEngine { nullptr };
     bool _needToSaveAvatarEntitySettings { false };
 
     bool _reactionTriggers[NUM_AVATAR_TRIGGER_REACTIONS] { false, false };
@@ -3116,11 +3113,13 @@ private:
     QTimer _addAvatarEntitiesToTreeTimer;
 };
 
-QScriptValue audioListenModeToScriptValue(QScriptEngine* engine, const AudioListenerMode& audioListenerMode);
-void audioListenModeFromScriptValue(const QScriptValue& object, AudioListenerMode& audioListenerMode);
+Q_DECLARE_METATYPE(MyAvatar::DriveKeys)
 
-QScriptValue driveKeysToScriptValue(QScriptEngine* engine, const MyAvatar::DriveKeys& driveKeys);
-void driveKeysFromScriptValue(const QScriptValue& object, MyAvatar::DriveKeys& driveKeys);
+ScriptValue audioListenModeToScriptValue(ScriptEngine* engine, const AudioListenerMode& audioListenerMode);
+bool audioListenModeFromScriptValue(const ScriptValue& object, AudioListenerMode& audioListenerMode);
+
+ScriptValue driveKeysToScriptValue(ScriptEngine* engine, const MyAvatar::DriveKeys& driveKeys);
+bool driveKeysFromScriptValue(const ScriptValue& object, MyAvatar::DriveKeys& driveKeys);
 
 bool isWearableEntity(const EntityItemPointer& entity);
 

@@ -4,11 +4,13 @@
 //
 //  Created by Andrew Meadows on 2014-04-07
 //  Copyright (c) 2014 High Fidelity, Inc. All rights reserved.
+//  Copyright 2023 Overte e.V.
 //
 //  Scriptable interface for a UUID helper class object. Used exclusively in the JavaScript API
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /// @addtogroup ScriptEngine
@@ -19,7 +21,8 @@
 
 #include <QUuid>
 #include <QObject>
-#include <QtScript/QScriptable>
+
+#include "Scriptable.h"
 
 /*@jsdoc
  * The <code>Uuid</code> API provides facilities for working with UUIDs.
@@ -36,7 +39,7 @@
  * @property {Uuid} NULL - The null UUID, <code>"{00000000-0000-0000-0000-000000000000}"</code>.
  */
 /// Provides the <code><a href="https://apidocs.overte.org/Uuid.html">Uuid</a></code> scripting interface
-class ScriptUUID : public QObject, protected QScriptable {
+class ScriptUUID : public QObject, protected Scriptable {
     Q_OBJECT
     Q_PROPERTY(QString NULL READ NULL_UUID CONSTANT) // String for use in scripts.
 

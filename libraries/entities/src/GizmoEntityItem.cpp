@@ -1,9 +1,11 @@
 //
 //  Created by Sam Gondelman on 1/22/19
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "GizmoEntityItem.h"
@@ -21,6 +23,7 @@ EntityItemPointer GizmoEntityItem::factory(const EntityItemID& entityID, const E
 // our non-pure virtual subclass for now...
 GizmoEntityItem::GizmoEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
     _type = EntityTypes::Gizmo;
+    _gizmoType = GizmoType::UNSET_GIZMO_TYPE;
 }
 
 void GizmoEntityItem::setUnscaledDimensions(const glm::vec3& value) {

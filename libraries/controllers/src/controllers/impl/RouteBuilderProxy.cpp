@@ -1,9 +1,11 @@
 //
 //  Created by Bradley Austin Davis 2015/10/09
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #include "RouteBuilderProxy.h"
 
@@ -17,6 +19,7 @@
 #include "MappingBuilderProxy.h"
 #include "../ScriptingInterface.h"
 #include "../Logging.h"
+#include <ScriptValue.h>
 
 #include "filters/ClampFilter.h"
 #include "filters/ConstrainToIntegerFilter.h"
@@ -43,7 +46,7 @@ void RouteBuilderProxy::toQml(const QJSValue& destination) {
     return to(destinationEndpoint);
 }
 
-void RouteBuilderProxy::to(const QScriptValue& destination) {
+void RouteBuilderProxy::to(const ScriptValue& destination) {
     qCDebug(controllers) << "Completing route " << destination.toString();
     auto destinationEndpoint = _parent.endpointFor(destination);
     return to(destinationEndpoint);
@@ -65,7 +68,7 @@ QObject* RouteBuilderProxy::peek(bool enable) {
     return this;
 }
 
-QObject* RouteBuilderProxy::when(const QScriptValue& expression) {
+QObject* RouteBuilderProxy::when(const ScriptValue& expression) {
     // FIXME: Support "!" conditional in simple expression and array expression.
     // Note that "!" is supported when parsing a JSON file, in UserInputMapper::parseConditional().
     auto newConditional = _parent.conditionalFor(expression);

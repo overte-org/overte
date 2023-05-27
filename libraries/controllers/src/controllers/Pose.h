@@ -2,17 +2,19 @@
 //  Created by Bradley Austin Davis on 2015/10/18
 //  (based on UserInputMapper inner class created by Sam Gateau on 4/27/15)
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #pragma once
 #ifndef hifi_controllers_Pose_h
 #define hifi_controllers_Pose_h
+#include <ScriptValue.h>
 
-class QScriptEngine;
-class QScriptValue;
+class ScriptEngine;
 
 #include <GLMHelpers.h>
 
@@ -44,8 +46,8 @@ namespace controller {
         Pose transform(const glm::mat4& mat) const;
         Pose postTransform(const glm::mat4& mat) const;
 
-        static QScriptValue toScriptValue(QScriptEngine* engine, const Pose& event);
-        static void fromScriptValue(const QScriptValue& object, Pose& event);
+        static ScriptValue toScriptValue(ScriptEngine* engine, const Pose& event);
+        static bool fromScriptValue(const ScriptValue& object, Pose& event);
     };
 }
 

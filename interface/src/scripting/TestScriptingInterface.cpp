@@ -1,9 +1,11 @@
 //
 //  Created by Bradley Austin Davis on 2016/12/12
 //  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #include "TestScriptingInterface.h"
 
@@ -16,6 +18,7 @@
 #include <DependencyManager.h>
 #include <MainWindow.h>
 #include <OffscreenUi.h>
+#include <ScriptValue.h>
 #include <StatTracker.h>
 #include <Trace.h>
 
@@ -153,7 +156,7 @@ void TestScriptingInterface::savePhysicsSimulationStats(QString originalPath) {
     qApp->saveNextPhysicsStats(path);
 }
 
-void TestScriptingInterface::profileRange(const QString& name, QScriptValue fn) {
+void TestScriptingInterface::profileRange(const QString& name, const ScriptValue& fn) {
     PROFILE_RANGE(script, name);
     fn.call();
 }

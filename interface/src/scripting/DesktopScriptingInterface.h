@@ -4,16 +4,17 @@
 //
 //  Created by David Rowe on 25 Aug 2015.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_DesktopScriptingInterface_h
 #define hifi_DesktopScriptingInterface_h
 
 #include <QObject>
-#include <QtScript/QScriptValue>
 
 #include <DependencyManager.h>
 
@@ -46,6 +47,7 @@
  *     {@link InteractiveWindow}: none, top left, top right, bottom right, or bottom left of the Interface window. 
  *     <em>Read-only.</em>
  */
+
 class DesktopScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
     Q_PROPERTY(int width READ getWidth)  // Physical width of screen(s) including task bars and system menus

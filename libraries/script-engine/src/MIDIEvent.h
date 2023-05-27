@@ -4,9 +4,11 @@
 //
 //  Created by Stephen Birarda on 2014-06-30.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /// @addtogroup ScriptEngine
@@ -15,7 +17,9 @@
 #ifndef hifi_MIDIEvent_h
 #define hifi_MIDIEvent_h
 
-#include <QtScript/QScriptEngine>
+#include "ScriptValue.h"
+
+class ScriptEngine;
 
 /// Represents a MIDI protocol event to the scripting engine.
 class MIDIEvent {
@@ -28,10 +32,10 @@ public:
 
 Q_DECLARE_METATYPE(MIDIEvent)
 
-void registerMIDIMetaTypes(QScriptEngine* engine);
+void registerMIDIMetaTypes(ScriptEngine* engine);
 
-QScriptValue midiEventToScriptValue(QScriptEngine* engine, const MIDIEvent& event);
-void midiEventFromScriptValue(const QScriptValue &object, MIDIEvent& event);
+ScriptValue midiEventToScriptValue(ScriptEngine* engine, const MIDIEvent& event);
+bool midiEventFromScriptValue(const ScriptValue &object, MIDIEvent& event);
 
 #endif // hifi_MIDIEvent_h
 

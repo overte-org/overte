@@ -5,10 +5,11 @@
 //  Created by Stephen Birarda on 4/9/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_AvatarData_h
@@ -33,8 +34,6 @@
 #include <QUuid>
 #include <QVariantMap>
 #include <QVector>
-#include <QtScript/QScriptable>
-#include <QtScript/QScriptValueIterator>
 #include <QReadWriteLock>
 
 #include <AvatarConstants.h>
@@ -51,11 +50,15 @@
 #include <ViewFrustum.h>
 #include <shared/RateCounter.h>
 #include <udt/SequenceNumber.h>
+#include <Scriptable.h>
+#include <ScriptValue.h>
 
 #include "AABox.h"
 #include "AvatarTraits.h"
 #include "HeadData.h"
 #include "PathUtils.h"
+
+class ScriptEngine;
 
 using AvatarSharedPointer = std::shared_ptr<AvatarData>;
 using AvatarWeakPointer = std::weak_ptr<AvatarData>;
@@ -774,16 +777,6 @@ public:
      * @returns {HandState} The pointing state of the hand.
      */
     Q_INVOKABLE char getHandState() const { return _handState; }
-
-    const QVector<JointData>& getRawJointData() const { return _jointData; }
-
-    /*@jsdoc
-     * Sets joint translations and rotations from raw joint data.
-     * @function Avatar.setRawJointData
-     * @param {JointData[]} data - The raw joint data.
-     * @deprecated This function is deprecated and will be removed.
-     */
-    Q_INVOKABLE void setRawJointData(QVector<JointData> data);
 
     /*@jsdoc
      * Sets a specific joint's rotation and position relative to its parent, in model coordinates.
@@ -1703,6 +1696,9 @@ protected:
     QByteArray packAvatarEntityTraitInstance(AvatarTraits::TraitInstanceID traitInstanceID);
     QByteArray packGrabTraitInstance(AvatarTraits::TraitInstanceID traitInstanceID);
 
+    const QVector<JointData>& getRawJointData() const { return _jointData; }
+    void setRawJointData(QVector<JointData> data);
+
     void unpackSkeletonModelURL(const QByteArray& data);
     void unpackSkeletonData(const QByteArray& data);
 
@@ -1891,6 +1887,9 @@ private:
     Q_DISABLE_COPY(AvatarData)
 
     friend void avatarStateFromFrame(const QByteArray& frameData, AvatarData* _avatar);
+    // Required for setRawJointData. Making setRawJointData public would expose it to scripting interface.
+    friend class SkeletonModel;
+    friend class MyAvatar;
     static QUrl _defaultFullAvatarModelUrl;
 };
 Q_DECLARE_METATYPE(AvatarData*)
@@ -1925,7 +1924,7 @@ Q_DECLARE_METATYPE(AttachmentData)
 Q_DECLARE_METATYPE(QVector<AttachmentData>)
 
 /// Scriptable wrapper for attachments.
-class AttachmentDataObject : public QObject, protected QScriptable {
+class AttachmentDataObject : public QObject, protected Scriptable {
     Q_OBJECT
     Q_PROPERTY(QString modelURL READ getModelURL WRITE setModelURL)
     Q_PROPERTY(QString jointName READ getJointName WRITE setJointName)
@@ -1955,22 +1954,23 @@ public:
     Q_INVOKABLE bool getIsSoft() const;
 };
 
-void registerAvatarTypes(QScriptEngine* engine);
+void registerAvatarTypes(ScriptEngine* engine);
+void registerAvatarPrototypes(ScriptEngine* engine);
 
 class RayToAvatarIntersectionResult {
 public:
     bool intersects { false };
     QUuid avatarID;
     float distance { FLT_MAX };
-    BoxFace face;
-    glm::vec3 intersection;
-    glm::vec3 surfaceNormal;
+    BoxFace face { UNKNOWN_FACE };
+    glm::vec3 intersection { glm::vec3(0.0f, 0.0f, 0.0f) };
+    glm::vec3 surfaceNormal { glm::vec3(0.0f, 1.0f, 0.0f) };
     int jointIndex { -1 };
     QVariantMap extraInfo;
 };
 Q_DECLARE_METATYPE(RayToAvatarIntersectionResult)
-QScriptValue RayToAvatarIntersectionResultToScriptValue(QScriptEngine* engine, const RayToAvatarIntersectionResult& results);
-void RayToAvatarIntersectionResultFromScriptValue(const QScriptValue& object, RayToAvatarIntersectionResult& results);
+ScriptValue RayToAvatarIntersectionResultToScriptValue(ScriptEngine* engine, const RayToAvatarIntersectionResult& results);
+bool RayToAvatarIntersectionResultFromScriptValue(const ScriptValue& object, RayToAvatarIntersectionResult& results);
 
 // No JSDoc because it's not provided as a type to the script engine.
 class ParabolaToAvatarIntersectionResult {
@@ -1987,8 +1987,8 @@ public:
 
 Q_DECLARE_METATYPE(AvatarEntityMap)
 
-QScriptValue AvatarEntityMapToScriptValue(QScriptEngine* engine, const AvatarEntityMap& value);
-void AvatarEntityMapFromScriptValue(const QScriptValue& object, AvatarEntityMap& value);
+ScriptValue AvatarEntityMapToScriptValue(ScriptEngine* engine, const AvatarEntityMap& value);
+bool AvatarEntityMapFromScriptValue(const ScriptValue& object, AvatarEntityMap& value);
 
 // faux joint indexes (-1 means invalid)
 const int NO_JOINT_INDEX = 65535; // -1

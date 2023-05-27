@@ -5,10 +5,11 @@
 //  Created by Andrzej Kapolka on 5/10/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 
@@ -130,15 +131,19 @@
 #include <plugins/SteamClientPlugin.h>
 #include <plugins/OculusPlatformPlugin.h>
 #include <plugins/InputConfiguration.h>
-#include <RecordingScriptingInterface.h>
+#include <Quat.h>
+#include <recording/RecordingScriptingInterface.h>
 #include <render/EngineStats.h>
 #include <SecondaryCamera.h>
 #include <ResourceCache.h>
 #include <ResourceRequest.h>
 #include <SandboxUtils.h>
 #include <SceneScriptingInterface.h>
-#include <ScriptEngines.h>
 #include <ScriptCache.h>
+#include <ScriptEngines.h>
+#include <ScriptEngineCast.h>
+#include <ScriptManager.h>
+#include <ScriptUUID.h>
 #include <ShapeEntityItem.h>
 #include <SoundCacheScriptingInterface.h>
 #include <ui/TabletScriptingInterface.h>
@@ -166,6 +171,7 @@
 #include <procedural/ProceduralMaterialCache.h>
 #include <procedural/ReferenceMaterial.h>
 #include "recording/ClipCache.h"
+#include <Vec3.h>
 
 #include "AudioClient.h"
 #include "audio/AudioScope.h"
@@ -236,7 +242,6 @@
 #include <PickManager.h>
 #include <PointerManager.h>
 #include <raypick/RayPickScriptingInterface.h>
-#include <raypick/LaserPointerScriptingInterface.h>
 #include <raypick/PickScriptingInterface.h>
 #include <raypick/PointerScriptingInterface.h>
 #include <raypick/RayPick.h>
@@ -443,38 +448,38 @@ public:
 
             if (elapsedMovingAverage > _maxElapsedAverage * 1.1f) {
 #if !defined(NDEBUG)
-                qCDebug(interfaceapp_deadlock) << "DEADLOCK WATCHDOG WARNING:"
+/*                qCDebug(interfaceapp_deadlock) << "DEADLOCK WATCHDOG WARNING:"
                     << "lastHeartbeatAge:" << lastHeartbeatAge
                     << "elapsedMovingAverage:" << elapsedMovingAverage
                     << "maxElapsed:" << _maxElapsed
                     << "PREVIOUS maxElapsedAverage:" << _maxElapsedAverage
                     << "NEW maxElapsedAverage:" << elapsedMovingAverage << "** NEW MAX ELAPSED AVERAGE **"
-                    << "samples:" << _movingAverage.getSamples();
+                    << "samples:" << _movingAverage.getSamples();*/
 #endif
                 _maxElapsedAverage = elapsedMovingAverage;
             }
             if (lastHeartbeatAge > _maxElapsed) {
 #if !defined(NDEBUG)
-                qCDebug(interfaceapp_deadlock) << "DEADLOCK WATCHDOG WARNING:"
+/*                qCDebug(interfaceapp_deadlock) << "DEADLOCK WATCHDOG WARNING:"
                     << "lastHeartbeatAge:" << lastHeartbeatAge
                     << "elapsedMovingAverage:" << elapsedMovingAverage
                     << "PREVIOUS maxElapsed:" << _maxElapsed
                     << "NEW maxElapsed:" << lastHeartbeatAge << "** NEW MAX ELAPSED **"
                     << "maxElapsedAverage:" << _maxElapsedAverage
-                    << "samples:" << _movingAverage.getSamples();
+                    << "samples:" << _movingAverage.getSamples();*/
 #endif
                 _maxElapsed = lastHeartbeatAge;
             }
 
 #if !defined(NDEBUG)
-            if (elapsedMovingAverage > WARNING_ELAPSED_HEARTBEAT) {
+/*            if (elapsedMovingAverage > WARNING_ELAPSED_HEARTBEAT) {
                 qCDebug(interfaceapp_deadlock) << "DEADLOCK WATCHDOG WARNING:"
                     << "lastHeartbeatAge:" << lastHeartbeatAge
                     << "elapsedMovingAverage:" << elapsedMovingAverage << "** OVER EXPECTED VALUE **"
                     << "maxElapsed:" << _maxElapsed
                     << "maxElapsedAverage:" << _maxElapsedAverage
                     << "samples:" << _movingAverage.getSamples();
-            }
+            }*/
 #endif
 
             if (lastHeartbeatAge > MAX_HEARTBEAT_AGE_USECS) {
@@ -800,7 +805,6 @@ bool setupEssentials(int& argc, char** argv, const QCommandLineParser& parser, b
     // Set dependencies
     DependencyManager::set<PickManager>();
     DependencyManager::set<PointerManager>();
-    DependencyManager::set<LaserPointerScriptingInterface>();
     DependencyManager::set<RayPickScriptingInterface>();
     DependencyManager::set<PointerScriptingInterface>();
     DependencyManager::set<PickScriptingInterface>();
@@ -814,7 +818,7 @@ bool setupEssentials(int& argc, char** argv, const QCommandLineParser& parser, b
 #endif
     DependencyManager::set<DomainAccountManager>();
     DependencyManager::set<StatTracker>();
-    DependencyManager::set<ScriptEngines>(ScriptEngine::CLIENT_SCRIPT, defaultScriptsOverrideOption);
+    DependencyManager::set<ScriptEngines>(ScriptManager::CLIENT_SCRIPT, defaultScriptsOverrideOption);
     DependencyManager::set<Preferences>();
     DependencyManager::set<recording::Deck>();
     DependencyManager::set<recording::Recorder>();
@@ -973,6 +977,12 @@ QSharedPointer<OffscreenUi> getOffscreenUI() {
 #endif
 }
 
+bool Application::initMenu() {
+    _isMenuInitialized = false;
+    qApp->getWindow()->menuBar();
+    return true;
+}
+
 Application::Application(
     int& argc, char** argv,
     const QCommandLineParser& parser,
@@ -981,6 +991,8 @@ Application::Application(
 ) :
     QApplication(argc, argv),
     _window(new MainWindow(desktop())),
+    // Menu needs to be initialized before other initializers. Otherwise deadlock happens on qApp->getWindow()->menuBar().
+    _isMenuInitialized(initMenu()),
     _sessionRunTimer(startupTimer),
 #ifndef Q_OS_ANDROID
     _logger(new FileLogger(this)),
@@ -1013,7 +1025,6 @@ Application::Application(
     _snapshotSound(nullptr),
     _sampleSound(nullptr)
 {
-
     auto steamClient = PluginManager::getInstance()->getSteamClientPlugin();
     setProperty(hifi::properties::STEAM, (steamClient && steamClient->isRunning()));
     setProperty(hifi::properties::CRASHED, _previousSessionCrashed);
@@ -1399,8 +1410,8 @@ Application::Application(
 
     {
         auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
-        scriptEngines->registerScriptInitializer([this](ScriptEnginePointer engine) {
-            registerScriptEngineWithApplicationServices(engine);
+        scriptEngines->registerScriptInitializer([this](ScriptManagerPointer manager) {
+            registerScriptEngineWithApplicationServices(manager);
         });
 
         connect(scriptEngines, &ScriptEngines::scriptCountChanged, this, [this] {
@@ -2403,7 +2414,7 @@ Application::Application(
 
     // Setup the mouse ray pick and related operators
     {
-        auto mouseRayPick = std::make_shared<RayPick>(Vectors::ZERO, Vectors::UP, PickFilter(PickScriptingInterface::PICK_ENTITIES() | PickScriptingInterface::PICK_LOCAL_ENTITIES()), 0.0f, true);
+        auto mouseRayPick = std::make_shared<RayPick>(Vectors::ZERO, Vectors::UP, PickFilter(PickScriptingInterface::getPickEntities() | PickScriptingInterface::getPickLocalEntities()), 0.0f, true);
         mouseRayPick->parentTransform = std::make_shared<MouseTransformNode>();
         mouseRayPick->setJointState(PickQuery::JOINT_STATE_MOUSE);
         auto mouseRayPickID = DependencyManager::get<PickManager>()->addPick(PickQuery::Ray, mouseRayPick);
@@ -4221,6 +4232,11 @@ bool Application::event(QEvent* event) {
         return false;
     }
 
+    // This helps avoid deadlock issue early during Application initialization
+    if (!_isMenuInitialized) {
+        return QApplication::event(event);
+    }
+
     if (!Menu::getInstance()) {
         return false;
     }
@@ -5835,7 +5851,7 @@ void Application::loadAvatarScripts(const QVector<QString>& urls) {
         if (index < 0) {
             auto scriptEnginePointer = scriptEngines->loadScript(url, false);
             if (scriptEnginePointer) {
-                scriptEnginePointer->setType(ScriptEngine::Type::AVATAR);
+                scriptEnginePointer->setType(ScriptManager::Type::AVATAR);
             }
         }
     }
@@ -5846,7 +5862,7 @@ void Application::unloadAvatarScripts() {
     auto urls = scriptEngines->getRunningScripts();
     for (auto url : urls) {
         auto scriptEngine = scriptEngines->getScriptEngine(url);
-        if (scriptEngine->getType() == ScriptEngine::Type::AVATAR) {
+        if (scriptEngine->getType() == ScriptManager::Type::AVATAR) {
             scriptEngines->stopScript(url, false);
         }
     }
@@ -6034,7 +6050,8 @@ void Application::reloadResourceCaches() {
     getEntities()->clear();
 
     DependencyManager::get<AssetClient>()->clearCache();
-    DependencyManager::get<ScriptCache>()->clearCache();
+    //It's already cleared in reloadAllScripts so I'm not sure this is necessary.
+    //DependencyManager::get<ScriptCache>()->clearCache();
 
     // Clear all the resource caches
     DependencyManager::get<ResourceCacheSharedItems>()->clear();
@@ -7436,9 +7453,10 @@ void Application::addingEntityWithCertificate(const QString& certificateID, cons
     ledger->updateLocation(certificateID, placeName);
 }
 
-void Application::registerScriptEngineWithApplicationServices(const ScriptEnginePointer& scriptEngine) {
+void Application::registerScriptEngineWithApplicationServices(ScriptManagerPointer& scriptManager) {
 
-    scriptEngine->setEmitScriptUpdatesFunction([this]() {
+    auto scriptEngine = scriptManager->engine();
+    scriptManager->setEmitScriptUpdatesFunction([this]() {
         SharedNodePointer entityServerNode = DependencyManager::get<NodeList>()->soloNodeOfType(NodeType::EntityServer);
         return !entityServerNode || isPhysicsEnabled();
     });
@@ -7456,9 +7474,6 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptEngine
     scriptEngine->registerGlobalObject("PlatformInfo", PlatformInfoScriptingInterface::getInstance());
     scriptEngine->registerGlobalObject("Rates", new RatesScriptingInterface(this));
 
-    // hook our avatar and avatar hash map object into this script engine
-    getMyAvatar()->registerMetaTypes(scriptEngine);
-
     scriptEngine->registerGlobalObject("AvatarList", DependencyManager::get<AvatarManager>().data());
 
     scriptEngine->registerGlobalObject("Camera", &_myCamera);
@@ -7470,13 +7485,11 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptEngine
 
     ClipboardScriptingInterface* clipboardScriptable = new ClipboardScriptingInterface();
     scriptEngine->registerGlobalObject("Clipboard", clipboardScriptable);
-    connect(scriptEngine.data(), &ScriptEngine::finished, clipboardScriptable, &ClipboardScriptingInterface::deleteLater);
+    connect(scriptManager.get(), &ScriptManager::finished, clipboardScriptable, &ClipboardScriptingInterface::deleteLater);
 
     scriptEngine->registerGlobalObject("Overlays", &_overlays);
-    qScriptRegisterMetaType(scriptEngine.data(), RayToOverlayIntersectionResultToScriptValue,
-                            RayToOverlayIntersectionResultFromScriptValue);
 
-    bool clientScript = scriptEngine->isClientScript();
+    bool clientScript = scriptManager->isClientScript();
 
 #if !defined(DISABLE_QML)
     scriptEngine->registerGlobalObject("OffscreenFlags", getOffscreenUI()->getFlags());
@@ -7491,14 +7504,8 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptEngine
     }
 #endif
 
-    qScriptRegisterMetaType(scriptEngine.data(), wrapperToScriptValue<ToolbarProxy>, wrapperFromScriptValue<ToolbarProxy>);
-    qScriptRegisterMetaType(scriptEngine.data(),
-                            wrapperToScriptValue<ToolbarButtonProxy>, wrapperFromScriptValue<ToolbarButtonProxy>);
     scriptEngine->registerGlobalObject("Toolbars", DependencyManager::get<ToolbarScriptingInterface>().data());
 
-    qScriptRegisterMetaType(scriptEngine.data(), wrapperToScriptValue<TabletProxy>, wrapperFromScriptValue<TabletProxy>);
-    qScriptRegisterMetaType(scriptEngine.data(),
-                            wrapperToScriptValue<TabletButtonProxy>, wrapperFromScriptValue<TabletButtonProxy>);
     scriptEngine->registerGlobalObject("Tablet", DependencyManager::get<TabletScriptingInterface>().data());
     // FIXME remove these deprecated names for the tablet scripting interface
     scriptEngine->registerGlobalObject("tabletInterface", DependencyManager::get<TabletScriptingInterface>().data());
@@ -7532,7 +7539,6 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptEngine
     scriptEngine->registerGlobalObject("LocationBookmarks", DependencyManager::get<LocationBookmarks>().data());
 
     scriptEngine->registerGlobalObject("RayPick", DependencyManager::get<RayPickScriptingInterface>().data());
-    scriptEngine->registerGlobalObject("LaserPointers", DependencyManager::get<LaserPointerScriptingInterface>().data());
     scriptEngine->registerGlobalObject("Picks", DependencyManager::get<PickScriptingInterface>().data());
     scriptEngine->registerGlobalObject("Pointers", DependencyManager::get<PointerScriptingInterface>().data());
 
@@ -7548,12 +7554,10 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptEngine
     scriptEngine->registerGlobalObject("Account", AccountServicesScriptingInterface::getInstance()); // DEPRECATED - TO BE REMOVED
     scriptEngine->registerGlobalObject("GlobalServices", AccountServicesScriptingInterface::getInstance()); // DEPRECATED - TO BE REMOVED
     scriptEngine->registerGlobalObject("AccountServices", AccountServicesScriptingInterface::getInstance());
-    qScriptRegisterMetaType(scriptEngine.data(), DownloadInfoResultToScriptValue, DownloadInfoResultFromScriptValue);
 
     scriptEngine->registerGlobalObject("AvatarManager", DependencyManager::get<AvatarManager>().data());
 
     scriptEngine->registerGlobalObject("LODManager", DependencyManager::get<LODManager>().data());
-    qScriptRegisterMetaType(scriptEngine.data(), worldDetailQualityToScriptValue, worldDetailQualityFromScriptValue);
 
     scriptEngine->registerGlobalObject("Keyboard", DependencyManager::get<KeyboardScriptingInterface>().data());
     scriptEngine->registerGlobalObject("Performance", new PerformanceScriptingInterface());
@@ -7568,7 +7572,6 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptEngine
     scriptEngine->registerGlobalObject("Render", RenderScriptingInterface::getInstance());
     scriptEngine->registerGlobalObject("Workload", _gameWorkload._engine->getConfiguration().get());
 
-    GraphicsScriptingInterface::registerMetaTypes(scriptEngine.data());
     scriptEngine->registerGlobalObject("Graphics", DependencyManager::get<GraphicsScriptingInterface>().data());
 
     scriptEngine->registerGlobalObject("ScriptDiscoveryService", DependencyManager::get<ScriptEngines>().data());
@@ -7577,14 +7580,20 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptEngine
     scriptEngine->registerGlobalObject("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
     scriptEngine->registerGlobalObject("Users", DependencyManager::get<UsersScriptingInterface>().data());
 
-    scriptEngine->registerGlobalObject("GooglePoly", DependencyManager::get<GooglePolyScriptingInterface>().data());
+    //scriptEngine->registerGlobalObject("GooglePoly", DependencyManager::get<GooglePolyScriptingInterface>().data());
 
     if (auto steamClient = PluginManager::getInstance()->getSteamClientPlugin()) {
-        scriptEngine->registerGlobalObject("Steam", new SteamScriptingInterface(scriptEngine.data(), steamClient.get()));
+        scriptEngine->registerGlobalObject("Steam", new SteamScriptingInterface(scriptManager.get(), steamClient.get()));
     }
     auto scriptingInterface = DependencyManager::get<controller::ScriptingInterface>();
     scriptEngine->registerGlobalObject("Controller", scriptingInterface.data());
-    UserInputMapper::registerControllerTypes(scriptEngine.data());
+    scriptManager->connect(scriptManager.get(), &ScriptManager::scriptEnding, [scriptManager]() {
+        // Request removal of controller routes with callbacks to a given script engine
+        auto userInputMapper = DependencyManager::get<UserInputMapper>();
+        userInputMapper->scheduleScriptEndpointCleanup(scriptManager->engine().get());
+        // V8TODO: Maybe we should wait until removal is finished if there are still crashes
+    });
+    UserInputMapper::registerControllerTypes(scriptEngine.get());
 
     auto recordingInterface = DependencyManager::get<RecordingScriptingInterface>();
     scriptEngine->registerGlobalObject("Recording", recordingInterface.data());
@@ -7600,18 +7609,13 @@ void Application::registerScriptEngineWithApplicationServices(const ScriptEngine
     scriptEngine->registerGlobalObject("HifiAbout", AboutUtil::getInstance());  // Deprecated.
     scriptEngine->registerGlobalObject("ResourceRequestObserver", DependencyManager::get<ResourceRequestObserver>().data());
 
-    registerInteractiveWindowMetaType(scriptEngine.data());
-
-    auto pickScriptingInterface = DependencyManager::get<PickScriptingInterface>();
-    pickScriptingInterface->registerMetaTypes(scriptEngine.data());
-
     // connect this script engines printedMessage signal to the global ScriptEngines these various messages
     auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
-    connect(scriptEngine.data(), &ScriptEngine::printedMessage, scriptEngines, &ScriptEngines::onPrintedMessage);
-    connect(scriptEngine.data(), &ScriptEngine::errorMessage, scriptEngines, &ScriptEngines::onErrorMessage);
-    connect(scriptEngine.data(), &ScriptEngine::warningMessage, scriptEngines, &ScriptEngines::onWarningMessage);
-    connect(scriptEngine.data(), &ScriptEngine::infoMessage, scriptEngines, &ScriptEngines::onInfoMessage);
-    connect(scriptEngine.data(), &ScriptEngine::clearDebugWindow, scriptEngines, &ScriptEngines::onClearDebugWindow);
+    connect(scriptManager.get(), &ScriptManager::printedMessage, scriptEngines, &ScriptEngines::onPrintedMessage);
+    connect(scriptManager.get(), &ScriptManager::errorMessage, scriptEngines, &ScriptEngines::onErrorMessage);
+    connect(scriptManager.get(), &ScriptManager::warningMessage, scriptEngines, &ScriptEngines::onWarningMessage);
+    connect(scriptManager.get(), &ScriptManager::infoMessage, scriptEngines, &ScriptEngines::onInfoMessage);
+    connect(scriptManager.get(), &ScriptManager::clearDebugWindow, scriptEngines, &ScriptEngines::onClearDebugWindow);
 
 }
 
@@ -7998,6 +8002,7 @@ void Application::addAssetToWorldFromURL(QString url) {
 
 void Application::addAssetToWorldFromURLRequestFinished() {
     auto request = qobject_cast<ResourceRequest*>(sender());
+    Q_ASSERT(request != nullptr);
     auto url = request->getUrl().toString();
     auto result = request->getResult();
 
@@ -8220,7 +8225,7 @@ void Application::addAssetToWorldCheckModelSize() {
         propertyFlags += PROP_NAME;
         propertyFlags += PROP_DIMENSIONS;
         auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
-        auto properties = entityScriptingInterface->getEntityProperties(entityID, propertyFlags);
+        auto properties = entityScriptingInterface->getEntityPropertiesInternal(entityID, propertyFlags);
         auto name = properties.getName();
         auto dimensions = properties.getDimensions();
 
@@ -9210,7 +9215,7 @@ void Application::updateLoginDialogPosition() {
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
     EntityPropertyFlags desiredProperties;
     desiredProperties += PROP_POSITION;
-    auto properties = entityScriptingInterface->getEntityProperties(_loginDialogID, desiredProperties);
+    auto properties = entityScriptingInterface->getEntityPropertiesInternal(_loginDialogID, desiredProperties);
     auto positionVec = properties.getPosition();
     auto cameraPositionVec = _myCamera.getPosition();
     auto cameraOrientation = cancelOutRollAndPitch(_myCamera.getOrientation());
@@ -9366,6 +9371,7 @@ void Application::setActiveDisplayPlugin(const QString& pluginName) {
 
 void Application::handleLocalServerConnection() const {
     auto server = qobject_cast<QLocalServer*>(sender());
+    Q_ASSERT(server != nullptr);
 
     qCDebug(interfaceapp) << "Got connection on local server from additional instance - waiting for parameters";
 
@@ -9379,6 +9385,7 @@ void Application::handleLocalServerConnection() const {
 
 void Application::readArgumentsFromLocalSocket() const {
     auto socket = qobject_cast<QLocalSocket*>(sender());
+    Q_ASSERT(socket != nullptr);
 
     auto message = socket->readAll();
     socket->deleteLater();

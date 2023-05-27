@@ -4,9 +4,11 @@
 //
 //  Created by Eric Levin on 8/3/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_PolyLineEntityItem_h
@@ -103,9 +105,9 @@ private:
     QVector<glm::vec3> _colors;
     QVector<float> _widths;
     QString _textures;
-    bool _isUVModeStretch;
-    bool _glow;
-    bool _faceCamera;
+    bool _isUVModeStretch { false };
+    bool _glow { false };
+    bool _faceCamera { false };
 
     bool _pointsChanged { false };
     bool _normalsChanged { false };

@@ -376,7 +376,7 @@ resizeTablet = function (width, newParentJointIndex, sensorToWorldScaleOverride)
     var sensorScaleFactor = sensorToWorldScaleOverride || MyAvatar.sensorToWorldScale;
     var sensorScaleOffsetOverride = 1;
     var SENSOR_TO_ROOM_MATRIX = 65534;
-    var parentJointIndex = newParentJointIndex || Overlays.getProperty(HMD.tabletID, "parentJointIndex");
+    var parentJointIndex = newParentJointIndex || Entities.getEntityProperties(HMD.tabletID, ["parentJointIndex"]).parentJointIndex;
     if (parentJointIndex === SENSOR_TO_ROOM_MATRIX) {
         sensorScaleOffsetOverride = 1 / sensorScaleFactor;
     }

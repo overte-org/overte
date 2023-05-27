@@ -4,11 +4,13 @@
 //
 //  Created by Brad Hefta-Gaub on 1/29/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Scriptable Vec3 class library.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /// @addtogroup ScriptEngine
@@ -20,9 +22,9 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QString>
-#include <QtScript/QScriptable>
 
 #include "GLMHelpers.h"
+#include "Scriptable.h"
 
 /*@jsdoc
  * The <code>Vec3</code> API provides facilities for generating and manipulating 3-dimensional vectors. Overte uses a 
@@ -75,7 +77,7 @@
  *     <code>UNIT_NEG_Z</code>. <em>Read-only.</em>
  */
 /// Provides the <code><a href="https://apidocs.overte.org/Vec3.html">Vec3</a></code> scripting interface
-class Vec3 : public QObject, protected QScriptable {
+class Vec3 : public QObject, protected Scriptable {
     Q_OBJECT
     Q_PROPERTY(glm::vec3 UNIT_X READ UNIT_X CONSTANT)
     Q_PROPERTY(glm::vec3 UNIT_Y READ UNIT_Y CONSTANT)
@@ -418,6 +420,9 @@ private:
     const glm::vec3& RIGHT() { return Vectors::RIGHT; }
     const glm::vec3& UP() { return Vectors::UP; }
     const glm::vec3& FRONT() { return Vectors::FRONT; }
+
+public:
+    virtual ~Vec3();
 };
 
 #endif // hifi_Vec3_h

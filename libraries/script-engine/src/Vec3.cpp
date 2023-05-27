@@ -4,9 +4,11 @@
 //
 //  Created by Brad Hefta-Gaub on 1/29/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "Vec3.h"
@@ -21,7 +23,12 @@
 #include "NumericalConstants.h"
 #include "ScriptEngine.h"
 #include "ScriptEngineLogging.h"
+#include "ScriptManager.h"
 
+Vec3::~Vec3() {
+    qCDebug(scriptengine) << "ScriptMethodV8Proxy destroyed";
+    printf("ScriptMethodV8Proxy destroyed");
+}
 
 float Vec3::orientedAngle(const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3) {
     float radians = glm::orientedAngle(glm::normalize(v1), glm::normalize(v2), glm::normalize(v3));
@@ -32,8 +39,9 @@ void Vec3::print(const QString& label, const glm::vec3& v) {
     QString message = QString("%1 %2").arg(qPrintable(label));
     message = message.arg(glm::to_string(glm::dvec3(v)).c_str());
     qCDebug(scriptengine) << message;
-    if (ScriptEngine* scriptEngine = qobject_cast<ScriptEngine*>(engine())) {
-        scriptEngine->print(message);
+    Q_ASSERT(engine);
+    if (ScriptManager* scriptManager = engine()->manager()) {
+        scriptManager->print(message);
     }
 }
 
@@ -47,14 +55,14 @@ glm::vec3 Vec3::toPolar(const glm::vec3& v) {
     if (glm::abs(radius) < EPSILON) {
         return glm::vec3(0.0f, 0.0f, 0.0f);
     }
-    
+
     glm::vec3 u = v / radius;
-    
+
     float elevation, azimuth;
-    
+
     elevation = glm::asin(-u.y);
     azimuth = atan2(v.x, v.z);
-    
+
     // Round off small decimal values
     if (glm::abs(elevation) < EPSILON) {
         elevation = 0.0f;

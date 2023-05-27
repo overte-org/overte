@@ -4,9 +4,11 @@
 //
 //  Modified by Zander Otavka on 7/15/15
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 //  Exposes methods to scripts for managing `Overlay`s and `OverlayPanel`s.
 //
@@ -20,15 +22,16 @@
 
 #include <QMouseEvent>
 #include <QReadWriteLock>
-#include <QScriptValue>
 
 #include <PointerEvent.h>
+#include <ScriptValue.h>
 
 #include "Overlay.h"
 
 #include <EntityScriptingInterface.h>
 
 class PickRay;
+class ScriptEngine;
 
 /*@jsdoc
  * The result of a {@link PickRay} search using {@link Overlays.findRayIntersection|findRayIntersection}.
@@ -52,8 +55,8 @@ public:
     QVariantMap extraInfo;
 };
 Q_DECLARE_METATYPE(RayToOverlayIntersectionResult);
-QScriptValue RayToOverlayIntersectionResultToScriptValue(QScriptEngine* engine, const RayToOverlayIntersectionResult& value);
-void RayToOverlayIntersectionResultFromScriptValue(const QScriptValue& object, RayToOverlayIntersectionResult& value);
+ScriptValue RayToOverlayIntersectionResultToScriptValue(ScriptEngine* engine, const RayToOverlayIntersectionResult& value);
+bool RayToOverlayIntersectionResultFromScriptValue(const ScriptValue& object, RayToOverlayIntersectionResult& value);
 
 class ParabolaToOverlayIntersectionResult {
 public:
@@ -73,8 +76,6 @@ public:
  *
  * <p><strong>Note:</strong> 3D overlays are local {@link Entities}, internally, so many of the methods also work with 
  * entities.</p>
- *
- * <p class="important">3D overlays are deprecated: Use local {@link Entities} for these instead.</p>
  *
  * @namespace Overlays
  *
@@ -119,8 +120,6 @@ public:
         bool visibleOnly = false, bool collidableOnly = false);
 
     void cleanupAllOverlays();
-
-    mutable QScriptEngine _scriptEngine;
 
 public slots:
     /*@jsdoc
@@ -312,74 +311,6 @@ public slots:
     QUuid getOverlayAtPoint(const glm::vec2& point);
 
     /*@jsdoc
-     * Gets a specified property value of a 3D overlay (or entity).
-     * <p><strong>Note:</strong> 2D overlays' property values cannot be retrieved.</p>
-     * @function Overlays.getProperty
-     * @param {Uuid} id - The ID of the 3D overlay (or entity).
-     * @param {string} property - The name of the property to get the value of.
-     * @returns {object} The value of the property if the 3D overlay and property can be found, otherwise
-     *     <code>undefined</code>.
-     * @example <caption>Create an overlay in front of your avatar then report its alpha property value.</caption>
-     * var overlay = Overlays.addOverlay("cube", {
-     *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: -3 })),
-     *     rotation: MyAvatar.orientation,
-     *     dimensions: { x: 0.3, y: 0.3, z: 0.3 },
-     *     solid: true
-     * });
-     * var alpha = Overlays.getProperty(overlay, "alpha");
-     * print("Overlay alpha: " + alpha);
-     */
-    QVariant getProperty(const QUuid& id, const QString& property);
-
-    /*@jsdoc
-     * Gets specified property values of a 3D overlay (or entity).
-     * <p><strong>Note:</strong> 2D overlays' property values cannot be retrieved.</p>
-     * @function Overlays.getProperties
-     * @param {Uuid} id - The ID of the overlay (or entity).
-     * @param {Array.<string>} properties - The names of the properties to get the values of.
-     * @returns {Overlays.OverlayProperties} The values of valid properties if the overlay can be found, otherwise an empty 
-     *     object.
-     * @example <caption>Create an overlay in front of your avatar then report some of its properties.</caption>
-     * var overlay = Overlays.addOverlay("cube", {
-     *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: -3 })),
-     *     rotation: MyAvatar.orientation,
-     *     dimensions: { x: 0.3, y: 0.3, z: 0.3 },
-     *     solid: true
-     * });
-     * var properties = Overlays.getProperties(overlay, ["color", "alpha", "grabbable"]);
-     * print("Overlay properties: " + JSON.stringify(properties));
-     */
-    QVariantMap getProperties(const QUuid& id, const QStringList& properties);
-
-    /*@jsdoc
-     * Gets the values of multiple overlays' (or entities') properties.
-     * @function Overlays.getOverlaysProperties
-     * @param propertiesById {object.<Uuid, Array.<string>>} - An object with overlay (or entity) IDs as keys and arrays of the 
-     *     names of properties to get for each as values.
-     * @returns {object.<Uuid, Overlays.OverlayProperties>} An object with overlay (or entity) IDs as keys and
-     *     {@link Overlays.OverlayProperties|OverlayProperties} as values.
-     * @example <caption>Create two cube overlays in front of your avatar then get some of their properties.</caption>
-     * var overlayA = Overlays.addOverlay("cube", {
-     *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: -0.3, y: 0, z: -3 })),
-     *     rotation: MyAvatar.orientation,
-     *     dimensions: { x: 0.3, y: 0.3, z: 0.3 },
-     *     solid: true
-     * });
-     * var overlayB = Overlays.addOverlay("cube", {
-     *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0.3, y: 0, z: -3 })),
-     *     rotation: MyAvatar.orientation,
-     *     dimensions: { x: 0.3, y: 0.3, z: 0.3 },
-     *     solid: true
-     * });
-     * var propertiesToGet = {};
-     * propertiesToGet[overlayA] = ["color", "alpha"];
-     * propertiesToGet[overlayB] = ["dimensions"];
-     * var properties = Overlays.getOverlaysProperties(propertiesToGet);
-     * print("Overlays properties: " + JSON.stringify(properties));
-     */
-    QVariantMap getOverlaysProperties(const QVariant& overlaysProperties);
-
-    /*@jsdoc
      * Finds the closest 3D overlay (or local entity) intersected by a {@link PickRay}.
      * @function Overlays.findRayIntersection
      * @param {PickRay} pickRay - The PickRay to use for finding overlays.
@@ -411,8 +342,8 @@ public slots:
      */
     RayToOverlayIntersectionResult findRayIntersection(const PickRay& ray,
                                                        bool precisionPicking = false,
-                                                       const QScriptValue& include = QScriptValue(),
-                                                       const QScriptValue& discard = QScriptValue(),
+                                                       const ScriptValue& include = ScriptValue(),
+                                                       const ScriptValue& discard = ScriptValue(),
                                                        bool visibleOnly = false,
                                                        bool collidableOnly = false);
 
@@ -759,13 +690,8 @@ private:
         QMouseEvent* event, PointerEvent::EventType eventType);
 
     static QString entityToOverlayType(const QString& type);
-    static QString overlayToEntityType(const QString& type);
     static std::unordered_map<QString, QString> _entityToOverlayTypes;
     static std::unordered_map<QString, QString> _overlayToEntityTypes;
-
-    QVariantMap convertEntityToOverlayProperties(const EntityItemProperties& entityProps);
-    EntityItemProperties convertOverlayToEntityProperties(QVariantMap& overlayProps, const QString& type, bool add, const QUuid& id);
-    EntityItemProperties convertOverlayToEntityProperties(QVariantMap& overlayProps, std::pair<glm::quat, bool>& rotationToSave, const QString& type, bool add, const QUuid& id = QUuid());
 
 private slots:
     void mousePressOnPointerEvent(const QUuid& id, const PointerEvent& event);

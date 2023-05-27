@@ -4,9 +4,11 @@
 //
 //  Created by Sam Gateau on 2/24/15.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /// @addtogroup ScriptEngine
@@ -15,7 +17,6 @@
 #ifndef hifi_SceneScriptingInterface_h
 #define hifi_SceneScriptingInterface_h
 
-#include <qscriptengine.h>
 #include <DependencyManager.h>
 
 /*@jsdoc

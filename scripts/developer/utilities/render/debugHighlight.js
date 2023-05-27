@@ -94,7 +94,8 @@
         color: COLOR2,
         ignorePickIntersection: true
     }
-    var laser = Pointers.createPointer(PickType.Ray, {
+    //V8TODO
+    var laser = Pointers.createRayPointer({
         joint: "Mouse",
         filter: Picks.PICK_ENTITIES | Picks.PICK_OVERLAYS | Picks.PICK_AVATARS,
         renderStates: [{name: "one", end: end1}],
@@ -124,7 +125,7 @@
     Pointers.disablePointer(laser)
      
     function fromQml(message) {
-        tokens = message.split(' ')
+        var tokens = message.split(' ')
         print("Received message from QML")
         if (tokens[0]=="highlight") {
             currentSelectionName = tokens[1];

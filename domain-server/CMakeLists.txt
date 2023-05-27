@@ -1,3 +1,7 @@
+# Copyright 2014-2018 High Fidelity, Inc.
+# Copyright 2021-2023 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 set(TARGET_NAME domain-server)
 
 if (UPPER_CMAKE_BUILD_TYPE MATCHES DEBUG AND NOT WIN32)
@@ -25,6 +29,7 @@ symlink_or_copy_directory_beside_target(${_SHOULD_SYMLINK_RESOURCES} "${CMAKE_CU
 # link the shared hifi libraries
 include_hifi_library_headers(gpu)
 include_hifi_library_headers(graphics)
+include_hifi_library_headers(script-engine)
 link_hifi_libraries(embedded-webserver networking shared avatars octree)
 
 target_zlib()

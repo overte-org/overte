@@ -4,9 +4,11 @@
 //
 //  Created by Ryan Huffman on 2016-03-09.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #pragma once
@@ -15,13 +17,11 @@
 #define hifi_AssetMappingsScriptingInterface_h
 
 #include <QtCore/QObject>
-#include <QtScript/QScriptValue>
 
 #include <AssetClient.h>
 #include <QSortFilterProxyModel>
 
 #include "DependencyManager.h"
-
 
 class AssetMappingModel : public QStandardItemModel {
     Q_OBJECT

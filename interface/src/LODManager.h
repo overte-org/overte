@@ -5,9 +5,11 @@
 //  Created by Clement on 1/16/15.
 //  Copyright 2015 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_LODManager_h
@@ -22,7 +24,9 @@
 #include <PIDController.h>
 #include <SimpleMovingAverage.h>
 #include <render/Args.h>
+#include <ScriptValue.h>
 
+class ScriptEngine;
 
 /*@jsdoc
  * <p>The world detail quality rendered.</p>
@@ -380,7 +384,7 @@ private:
     glm::vec4 _pidOutputs{ 0.0f };
 };
 
-QScriptValue worldDetailQualityToScriptValue(QScriptEngine* engine, const WorldDetailQuality& worldDetailQuality);
-void worldDetailQualityFromScriptValue(const QScriptValue& object, WorldDetailQuality& worldDetailQuality);
+ScriptValue worldDetailQualityToScriptValue(ScriptEngine* engine, const WorldDetailQuality& worldDetailQuality);
+bool worldDetailQualityFromScriptValue(const ScriptValue& object, WorldDetailQuality& worldDetailQuality);
 
 #endif // hifi_LODManager_h

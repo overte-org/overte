@@ -3,13 +3,15 @@
 //  libraries/networking/src
 //
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 // BaseAssetScriptingInterface contains the engine-agnostic support code that can be used from
-// both QML JS and QScriptEngine JS engine implementations
+// both QML JS and ScriptEngine JS engine implementations
 
 #ifndef hifi_BaseAssetScriptingInterface_h
 #define hifi_BaseAssetScriptingInterface_h

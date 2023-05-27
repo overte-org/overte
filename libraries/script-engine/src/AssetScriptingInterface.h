@@ -4,9 +4,11 @@
 //
 //  Created by Stephen Birarda on 2016-03-08.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /// @addtogroup ScriptEngine
@@ -19,13 +21,13 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QThread>
-#include <QtScript/QScriptValue>
-#include <QtScript/QScriptable>
 #include <AssetClient.h>
 #include <NetworkAccessManager.h>
 #include <BaseAssetScriptingInterface.h>
-#include <BaseScriptEngine.h>
 #include <QtNetwork/QNetworkDiskCache>
+
+#include "Scriptable.h"
+#include "ScriptValue.h"
 
 /*@jsdoc
  * The <code>Assets</code> API provides facilities for interacting with the domain's asset server and the client cache. 
@@ -44,12 +46,15 @@
  * @hifi-server-entity
  * @hifi-assignment-client
  */
+
+class ScriptManager;
+
 /// Provides the <code><a href="https://apidocs.overte.org/Assets.html">Assets</a></code> scripting API
-class AssetScriptingInterface : public BaseAssetScriptingInterface, QScriptable {
+class AssetScriptingInterface : public BaseAssetScriptingInterface, Scriptable {
     Q_OBJECT
 public:
     using Parent = BaseAssetScriptingInterface;
-    AssetScriptingInterface(QObject* parent = nullptr);
+    AssetScriptingInterface(ScriptManager* parent);
 
     /*@jsdoc
      * Called when an {@link Assets.uploadData} call is complete.
@@ -76,7 +81,7 @@ public:
      *     });
      * });
      */
-    Q_INVOKABLE void uploadData(QString data, QScriptValue callback);
+    Q_INVOKABLE void uploadData(QString data, const ScriptValue& callback);
 
     /*@jsdoc
      * Called when an {@link Assets.downloadData} call is complete.
@@ -112,7 +117,7 @@ public:
      *     });
      * }, 1000);
      */
-    Q_INVOKABLE void downloadData(QString url, QScriptValue callback);
+    Q_INVOKABLE void downloadData(QString url, const ScriptValue& callback);
 
     /*@jsdoc
      * Called when an {@link Assets.setMapping} call is complete.
@@ -126,7 +131,7 @@ public:
      * @param {string} hash - The hash in the asset server.
      * @param {Assets~setMappingCallback} callback - The function to call upon completion.
      */
-    Q_INVOKABLE void setMapping(QString path, QString hash, QScriptValue callback);
+    Q_INVOKABLE void setMapping(QString path, QString hash, const ScriptValue& callback);
 
     /*@jsdoc
      * Called when an {@link Assets.getMapping} call is complete.
@@ -150,7 +155,7 @@ public:
      *     });
      * }
      */
-    Q_INVOKABLE void getMapping(QString path, QScriptValue callback);
+    Q_INVOKABLE void getMapping(QString path, const ScriptValue& callback);
 
     /*@jsdoc
      * Called when an {@link Assets.setBakingEnabled} call is complete.
@@ -166,7 +171,7 @@ public:
      * @param {Assets~setBakingEnabledCallback} callback - The function to call upon completion.
      */
     // Note: Second callback parameter not documented because it's always {}.
-    Q_INVOKABLE void setBakingEnabled(QString path, bool enabled, QScriptValue callback);
+    Q_INVOKABLE void setBakingEnabled(QString path, bool enabled, const ScriptValue& callback);
 
 #if (PR_BUILD || DEV_BUILD)
     /**
@@ -222,7 +227,7 @@ public:
      *     }
      * );
      */
-    Q_INVOKABLE void getAsset(QScriptValue options, QScriptValue scope, QScriptValue callback = QScriptValue());
+    Q_INVOKABLE void getAsset(const ScriptValue& options, const ScriptValue& scope, const ScriptValue& callback = ScriptValue());
 
     /*@jsdoc
      * Called when an {@link Assets.putAsset} call is complete.
@@ -259,7 +264,7 @@ public:
      *     }
      * );
      */
-    Q_INVOKABLE void putAsset(QScriptValue options, QScriptValue scope, QScriptValue callback = QScriptValue());
+    Q_INVOKABLE void putAsset(const ScriptValue& options, const ScriptValue& scope, const ScriptValue& callback = ScriptValue());
 
     /*@jsdoc
      * Called when an {@link Assets.deleteAsset} call is complete.
@@ -276,7 +281,7 @@ public:
      * @param {object} scope - The scope that the <code>callback</code> function is defined in.
      * @param {Assets~deleteAssetCallback} callback - The function to call upon completion.
      */
-    Q_INVOKABLE void deleteAsset(QScriptValue options, QScriptValue scope, QScriptValue callback = QScriptValue());
+    Q_INVOKABLE void deleteAsset(const ScriptValue& options, const ScriptValue& scope, const ScriptValue& callback = ScriptValue());
 
     /*@jsdoc
      * Called when an {@link Assets.resolveAsset} call is complete.
@@ -310,7 +315,7 @@ public:
      *     }
      * );
      */
-    Q_INVOKABLE void resolveAsset(QScriptValue options, QScriptValue scope, QScriptValue callback = QScriptValue());
+    Q_INVOKABLE void resolveAsset(const ScriptValue& options, const ScriptValue& scope, const ScriptValue& callback = ScriptValue());
     
     /*@jsdoc
      * Called when an {@link Assets.decompressData} call is complete.
@@ -331,7 +336,7 @@ public:
      *     in a string. If the name of a function or a function identifier, it must be a member of the scope specified by
      *     <code>scopeOrCallback</code>.</p>
      */
-    Q_INVOKABLE void decompressData(QScriptValue options, QScriptValue scope, QScriptValue callback = QScriptValue());
+    Q_INVOKABLE void decompressData(const ScriptValue& options, const ScriptValue& scope, const ScriptValue& callback = ScriptValue());
     
     /*@jsdoc
      * Called when an {@link Assets.compressData} call is complete.
@@ -353,7 +358,7 @@ public:
      *     in a string. If the name of a function or a function identifier, it must be a member of the scope specified by
      *     <code>scopeOrCallback</code>.</p>
      */
-    Q_INVOKABLE void compressData(QScriptValue options, QScriptValue scope, QScriptValue callback = QScriptValue());
+    Q_INVOKABLE void compressData(const ScriptValue& options, const ScriptValue& scope, const ScriptValue& callback = ScriptValue());
     
     /*@jsdoc
      * Initializes the cache if it isn't already initialized.
@@ -398,7 +403,7 @@ public:
      *     print("- Status: " + JSON.stringify(status));
      * });
      */
-    Q_INVOKABLE void getCacheStatus(QScriptValue scope, QScriptValue callback = QScriptValue()) {
+    Q_INVOKABLE void getCacheStatus(const ScriptValue& scope, const ScriptValue& callback = ScriptValue()) {
         jsPromiseReady(Parent::getCacheStatus(), scope, callback);
     }
 
@@ -438,7 +443,7 @@ public:
      *     }
      * );
      */
-    Q_INVOKABLE void queryCacheMeta(QScriptValue options, QScriptValue scope, QScriptValue callback = QScriptValue());
+    Q_INVOKABLE void queryCacheMeta(const ScriptValue& options, const ScriptValue& scope, const ScriptValue& callback = ScriptValue());
     
     /*@jsdoc
      * Called when an {@link Assets.loadFromCache} call is complete.
@@ -478,7 +483,7 @@ public:
      *     }
      * );
      */
-    Q_INVOKABLE void loadFromCache(QScriptValue options, QScriptValue scope, QScriptValue callback = QScriptValue());
+    Q_INVOKABLE void loadFromCache(const ScriptValue& options, const ScriptValue& scope, const ScriptValue& callback = ScriptValue());
     
     /*@jsdoc
      * Called when an {@link Assets.saveToCache} call is complete.
@@ -517,7 +522,7 @@ public:
      *     }
      * );
      */
-    Q_INVOKABLE void saveToCache(QScriptValue options, QScriptValue scope, QScriptValue callback = QScriptValue());
+    Q_INVOKABLE void saveToCache(const ScriptValue& options, const ScriptValue& scope, const ScriptValue& callback = ScriptValue());
     
     /*@jsdoc
      * Saves asset data to the cache directly, without downloading it from a URL.
@@ -537,14 +542,15 @@ public:
      *     <code>scopeOrCallback</code>.</p>
      */
     Q_INVOKABLE void saveToCache(const QUrl& url, const QByteArray& data, const QVariantMap& metadata,
-                                 QScriptValue scope, QScriptValue callback = QScriptValue());
+                                 const ScriptValue& scope, const ScriptValue& callback = ScriptValue());
 protected:
-    QScriptValue jsBindCallback(QScriptValue scope, QScriptValue callback = QScriptValue());
-    Promise jsPromiseReady(Promise promise, QScriptValue scope, QScriptValue callback = QScriptValue());
+    ScriptValue jsBindCallback(const ScriptValue& scope, const ScriptValue& callback = ScriptValue());
+    Promise jsPromiseReady(Promise promise, const ScriptValue& scope, const ScriptValue& callback = ScriptValue());
 
-    void jsCallback(const QScriptValue& handler, const QScriptValue& error, const QVariantMap& result);
-    void jsCallback(const QScriptValue& handler, const QScriptValue& error, const QScriptValue& result);
+    void jsCallback(const ScriptValue& handler, const ScriptValue& error, const QVariantMap& result);
+    void jsCallback(const ScriptValue& handler, const ScriptValue& error, const ScriptValue& result);
     bool jsVerify(bool condition, const QString& error);
+    ScriptManager *_scriptManager;
 };
 
 #endif // hifi_AssetScriptingInterface_h

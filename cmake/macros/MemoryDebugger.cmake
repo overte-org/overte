@@ -2,9 +2,11 @@
 #  MemoryDebugger.cmake
 #
 #  Copyright 2015 High Fidelity, Inc.
+#  Copyright 2023 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+#  SPDX-License-Identifier: Apache-2.0
 #
 
 macro(SETUP_MEMORY_DEBUGGER)
@@ -16,7 +18,7 @@ if ("$ENV{OVERTE_MEMORY_DEBUGGING}")
   SET( OVERTE_MEMORY_DEBUGGING true )
 endif ()
 
-if (OVERTE_MEMORY_DEBUGGING)
+if ( OVERTE_MEMORY_DEBUGGING)
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address -fsanitize-recover=address")
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined -fsanitize=address -fsanitize-recover=address")

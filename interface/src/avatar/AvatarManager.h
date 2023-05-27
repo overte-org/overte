@@ -4,9 +4,11 @@
 //
 //  Created by Stephen Birarda on 1/23/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_AvatarManager_h
@@ -26,13 +28,14 @@
 #include <AudioInjectorManager.h>
 #include <workload/Space.h>
 #include <EntitySimulation.h> // for SetOfEntities
+#include <ScriptValue.h>
 
 #include "AvatarMotionState.h"
 #include "DetailedMotionState.h"
 #include "MyAvatar.h"
 #include "OtherAvatar.h"
 
-
+class ScriptEngine;
 using SortedAvatar = std::pair<float, std::shared_ptr<Avatar>>;
 
 /*@jsdoc 
@@ -94,7 +97,7 @@ public:
      */
 
     /// Registers the script types associated with the avatar manager.
-    static void registerMetaTypes(QScriptEngine* engine);
+    static void registerMetaTypes(ScriptEngine* engine);
 
     virtual ~AvatarManager();
 
@@ -185,8 +188,8 @@ public:
      * }
      */
     Q_INVOKABLE RayToAvatarIntersectionResult findRayIntersection(const PickRay& ray,
-                                                                  const QScriptValue& avatarIdsToInclude = QScriptValue(),
-                                                                  const QScriptValue& avatarIdsToDiscard = QScriptValue(),
+                                                                  const ScriptValue& avatarIdsToInclude = ScriptValue(),
+                                                                  const ScriptValue& avatarIdsToDiscard = ScriptValue(),
                                                                   bool pickAgainstMesh = true);
     /*@jsdoc
      * @function AvatarManager.findRayIntersectionVector
@@ -229,7 +232,7 @@ public:
      * @param {number} value - Value.
      * @deprecated This function is deprecated and will be removed.
      */
-    Q_INVOKABLE void setAvatarSortCoefficient(const QString& name, const QScriptValue& value);
+    Q_INVOKABLE void setAvatarSortCoefficient(const QString& name, const ScriptValue& value);
 
     /*@jsdoc
      * Gets PAL (People Access List) data for one or more avatars. Using this method is faster than iterating over each avatar 

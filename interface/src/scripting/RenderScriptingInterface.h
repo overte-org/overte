@@ -1,9 +1,11 @@
 //
 //  Created by Sam Gondelman on 5/16/19
 //  Copyright 2013-2019 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_RenderScriptingInterface_h
@@ -148,14 +150,14 @@ public slots:
     /*@jsdoc
      * Gets the active anti-aliasing mode.
      * @function Render.getAntialiasingMode
-     * @returns {integer} the active anti-aliasing mode.
+     * @returns {AntialiasingMode} The active anti-aliasing mode.
      */
     AntialiasingConfig::Mode getAntialiasingMode() const;
 
     /*@jsdoc
      * Sets the active anti-aliasing mode.
      * @function Render.setAntialiasingMode
-     * @param {integer} the active anti-aliasing mode.
+     * @param {AntialiasingMode} The active anti-aliasing mode.
      */
     void setAntialiasingMode(AntialiasingConfig::Mode mode);
 

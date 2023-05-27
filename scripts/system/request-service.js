@@ -1,20 +1,22 @@
 "use strict";
 //
-// request-service.js
+//  request-service.js
 //
-// Created by Howard Stearns on May 22, 2018
-// Copyright 2018 High Fidelity, Inc
+//  Created by Howard Stearns on May 22, 2018
+//  Copyright 2018 High Fidelity, Inc
+//  Copyright 2023 Overte e.V.
 //
-// Distributed under the Apache License, Version 2.0
-// See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  Distributed under the Apache License, Version 2.0
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 (function() { // BEGIN LOCAL_SCOPE
 
     // QML has its own XMLHttpRequest, but:
     // - npm request is easier to use.
-    // - It is not easy to hack QML's XMLHttpRequest to use our Directory Services, and to supply the user's auth when contacting it.
-    //   a. Our custom XMLHttpRequestClass object only works with QScriptEngine, not QML's javascript.
+    // - It is not easy to hack QML's XMLHttpRequest to use our MetaverseServer, and to supply the user's auth when contacting it.
+    //   a. Our custom XMLHttpRequestClass object only works with ScriptEngine, not QML's javascript.
     //   b. We have hacked profiles that intercept requests to our MetavserseServer (providing the correct auth), but those
     //      only work in QML WebEngineView. Setting up communication between ordinary QML and a hiddent WebEngineView is
     //      tantamount to the following anyway, and would still have to duplicate the code from request.js.

@@ -4,9 +4,11 @@
 //
 //  Created by Stephen Birarda on 7/1/13.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_Agent_h
@@ -15,12 +17,12 @@
 #include <memory>
 #include <vector>
 
-#include <QtScript/QScriptEngine>
 #include <QtCore/QObject>
 #include <QtCore/QSharedPointer>
 #include <QtCore/QUrl>
 #include <QtCore/QTimer>
 #include <QUuid>
+#include <QtCore/QSharedPointer>
 
 #include <EntityEditPacketSender.h>
 #include <EntityTree.h>
@@ -29,10 +31,16 @@
 
 #include <plugins/CodecPlugin.h>
 
+#include <Sound.h>
 #include "AudioGate.h"
 #include "MixedAudioStream.h"
 #include "entities/EntityTreeHeadlessViewer.h"
 #include "avatars/ScriptableAvatar.h"
+
+class ScriptEngine;
+class ScriptManager;
+using ScriptEnginePointer = std::shared_ptr<ScriptEngine>;
+using ScriptManagerPointer = std::shared_ptr<ScriptManager>;
 
 class Agent : public ThreadedAssignment {
     Q_OBJECT
@@ -90,7 +98,7 @@ private:
     void encodeFrameOfZeros(QByteArray& encodedZeros);
     void computeLoudness(const QByteArray* decodedBuffer, QSharedPointer<ScriptableAvatar>);
 
-    ScriptEnginePointer _scriptEngine;
+    ScriptManagerPointer _scriptManager;
     EntityEditPacketSender _entityEditSender;
     EntityTreeHeadlessViewer _entityViewer;
 

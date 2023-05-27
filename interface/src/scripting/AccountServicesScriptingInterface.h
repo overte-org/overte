@@ -4,23 +4,25 @@
 //
 //  Created by Thijs Wenker on 9/10/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_AccountServicesScriptingInterface_h
 #define hifi_AccountServicesScriptingInterface_h
 
 #include <QObject>
-#include <QScriptContext>
-#include <QScriptEngine>
-#include <QScriptValue>
 #include <QString>
 #include <QStringList>
 
 #include <AccountManager.h>
 #include <DiscoverabilityManager.h>
+#include <ScriptValue.h>
+
+class ScriptEngine;
 
 class DownloadInfoResult {
 public:
@@ -31,8 +33,8 @@ public:
 
 Q_DECLARE_METATYPE(DownloadInfoResult)
 
-QScriptValue DownloadInfoResultToScriptValue(QScriptEngine* engine, const DownloadInfoResult& result);
-void DownloadInfoResultFromScriptValue(const QScriptValue& object, DownloadInfoResult& result);
+ScriptValue DownloadInfoResultToScriptValue(ScriptEngine* engine, const DownloadInfoResult& result);
+bool DownloadInfoResultFromScriptValue(const ScriptValue& object, DownloadInfoResult& result);
 
 class AccountServicesScriptingInterface : public QObject {
     Q_OBJECT

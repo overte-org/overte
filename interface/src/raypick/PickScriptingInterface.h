@@ -1,9 +1,11 @@
 //
 //  Created by Sam Gondelman 10/20/2017
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #ifndef hifi_PickScriptingInterface_h
 #define hifi_PickScriptingInterface_h
@@ -14,6 +16,9 @@
 #include <PhysicsEngine.h>
 #include <Pick.h>
 #include <PickFilter.h>
+
+class ScriptEngine;
+class ScriptValue;
 
 /*@jsdoc
  * The <code>Picks</code> API lets you create and manage objects for repeatedly calculating intersections.
@@ -71,39 +76,40 @@
 
 class PickScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
-    Q_PROPERTY(unsigned int PICK_ENTITIES READ PICK_ENTITIES CONSTANT)
-    Q_PROPERTY(unsigned int PICK_OVERLAYS READ PICK_OVERLAYS CONSTANT)
+    Q_PROPERTY(unsigned int PICK_ENTITIES READ getPickEntities CONSTANT)
+    Q_PROPERTY(unsigned int PICK_OVERLAYS READ getPickOverlays CONSTANT)
 
-    Q_PROPERTY(unsigned int PICK_DOMAIN_ENTITIES READ PICK_DOMAIN_ENTITIES CONSTANT)
-    Q_PROPERTY(unsigned int PICK_AVATAR_ENTITIES READ PICK_AVATAR_ENTITIES CONSTANT)
-    Q_PROPERTY(unsigned int PICK_LOCAL_ENTITIES READ PICK_LOCAL_ENTITIES CONSTANT)
-    Q_PROPERTY(unsigned int PICK_AVATARS READ PICK_AVATARS CONSTANT)
-    Q_PROPERTY(unsigned int PICK_HUD READ PICK_HUD CONSTANT)
+    Q_PROPERTY(unsigned int PICK_DOMAIN_ENTITIES READ getPickDomainEntities CONSTANT)
+    Q_PROPERTY(unsigned int PICK_AVATAR_ENTITIES READ getPickAvatarEntities CONSTANT)
+    Q_PROPERTY(unsigned int PICK_LOCAL_ENTITIES READ getPickLocalEntities CONSTANT)
+    Q_PROPERTY(unsigned int PICK_AVATARS READ getPickAvatars CONSTANT)
+    Q_PROPERTY(unsigned int PICK_HUD READ getPickHud CONSTANT)
 
-    Q_PROPERTY(unsigned int PICK_INCLUDE_VISIBLE READ PICK_INCLUDE_VISIBLE CONSTANT)
-    Q_PROPERTY(unsigned int PICK_INCLUDE_INVISIBLE READ PICK_INCLUDE_INVISIBLE CONSTANT)
+    Q_PROPERTY(unsigned int PICK_INCLUDE_VISIBLE READ getPickIncludeVisible CONSTANT)
+    Q_PROPERTY(unsigned int PICK_INCLUDE_INVISIBLE READ getPickIncludeInvisible CONSTANT)
 
-    Q_PROPERTY(unsigned int PICK_INCLUDE_COLLIDABLE READ PICK_INCLUDE_COLLIDABLE CONSTANT)
-    Q_PROPERTY(unsigned int PICK_INCLUDE_NONCOLLIDABLE READ PICK_INCLUDE_NONCOLLIDABLE CONSTANT)
+    Q_PROPERTY(unsigned int PICK_INCLUDE_COLLIDABLE READ getPickIncludeCollidable CONSTANT)
+    Q_PROPERTY(unsigned int PICK_INCLUDE_NONCOLLIDABLE READ getPickIncludeNoncollidable CONSTANT)
 
-    Q_PROPERTY(unsigned int PICK_PRECISE READ PICK_PRECISE CONSTANT)
-    Q_PROPERTY(unsigned int PICK_COARSE READ PICK_COARSE CONSTANT)
+    Q_PROPERTY(unsigned int PICK_PRECISE READ getPickPrecise CONSTANT)
+    Q_PROPERTY(unsigned int PICK_COARSE READ getPickCoarse CONSTANT)
 
-    Q_PROPERTY(unsigned int PICK_ALL_INTERSECTIONS READ PICK_ALL_INTERSECTIONS CONSTANT)
+    Q_PROPERTY(unsigned int PICK_ALL_INTERSECTIONS READ getPickAllIntersections CONSTANT)
 
-    Q_PROPERTY(unsigned int PICK_BYPASS_IGNORE READ PICK_BYPASS_IGNORE CONSTANT)
+    Q_PROPERTY(unsigned int PICK_BYPASS_IGNORE READ getPickBypassIgnore CONSTANT)
 
-    Q_PROPERTY(unsigned int INTERSECTED_NONE READ INTERSECTED_NONE CONSTANT)
-    Q_PROPERTY(unsigned int INTERSECTED_ENTITY READ INTERSECTED_ENTITY CONSTANT)
-    Q_PROPERTY(unsigned int INTERSECTED_LOCAL_ENTITY READ INTERSECTED_LOCAL_ENTITY CONSTANT)
-    Q_PROPERTY(unsigned int INTERSECTED_OVERLAY READ INTERSECTED_OVERLAY CONSTANT)
-    Q_PROPERTY(unsigned int INTERSECTED_AVATAR READ INTERSECTED_AVATAR CONSTANT)
-    Q_PROPERTY(unsigned int INTERSECTED_HUD READ INTERSECTED_HUD CONSTANT)
+    Q_PROPERTY(unsigned int INTERSECTED_NONE READ getIntersectedNone CONSTANT)
+    Q_PROPERTY(unsigned int INTERSECTED_ENTITY READ getIntersectedEntity CONSTANT)
+    Q_PROPERTY(unsigned int INTERSECTED_LOCAL_ENTITY READ getIntersectedLocalEntity CONSTANT)
+    Q_PROPERTY(unsigned int INTERSECTED_OVERLAY READ getIntersectedOverlay CONSTANT)
+    Q_PROPERTY(unsigned int INTERSECTED_AVATAR READ getIntersectedAvatar CONSTANT)
+    Q_PROPERTY(unsigned int INTERSECTED_HUD READ getIntersectedHud CONSTANT)
     Q_PROPERTY(unsigned int perFrameTimeBudget READ getPerFrameTimeBudget WRITE setPerFrameTimeBudget)
     SINGLETON_DEPENDENCY
 
 public:
-    void registerMetaTypes(QScriptEngine* engine);
+    static void registerMetaTypes(ScriptEngine* engine);
+    void registerProperties(ScriptEngine* engine);
 
     /*@jsdoc
      * Creates a new pick. Different {@link PickType}s use different properties, and within one PickType the properties you 
@@ -245,7 +251,7 @@ public:
      * @param {number} id - The ID of the pick.
      * @param {Uuid[]} ignoreItems - The list of IDs to ignore.
      */
-    Q_INVOKABLE void setIgnoreItems(unsigned int uid, const QScriptValue& ignoreItems);
+    Q_INVOKABLE void setIgnoreItems(unsigned int uid, const ScriptValue& ignoreItems);
 
     /*@jsdoc
      * Sets a list of entity and avatar IDs that a pick should include during intersection, instead of intersecting with 
@@ -255,7 +261,7 @@ public:
      * @param {number} id - The ID of the pick.
      * @param {Uuid[]} includeItems - The list of IDs to include.
      */
-    Q_INVOKABLE void setIncludeItems(unsigned int uid, const QScriptValue& includeItems);
+    Q_INVOKABLE void setIncludeItems(unsigned int uid, const ScriptValue& includeItems);
 
     /*@jsdoc
      * Checks if a pick is associated with the left hand: a ray or parabola pick with <code>joint</code> property set to 
@@ -289,9 +295,9 @@ public:
     unsigned int getPerFrameTimeBudget() const;
     void setPerFrameTimeBudget(unsigned int numUsecs);
 
-    static constexpr unsigned int PICK_BYPASS_IGNORE() { return PickFilter::getBitMask(PickFilter::FlagBit::PICK_BYPASS_IGNORE); }
-
 public slots:
+
+    static constexpr unsigned int getPickBypassIgnore() { return PickFilter::getBitMask(PickFilter::FlagBit::PICK_BYPASS_IGNORE); }
 
     /*@jsdoc
      * @function Picks.PICK_ENTITIES
@@ -299,7 +305,7 @@ public slots:
      *     Picks.PICK_AVATAR_ENTITIES</code> properties expression instead.
      * @returns {number}
      */
-    static constexpr unsigned int PICK_ENTITIES() { return PickFilter::getBitMask(PickFilter::FlagBit::DOMAIN_ENTITIES) | PickFilter::getBitMask(PickFilter::FlagBit::AVATAR_ENTITIES); }
+    static constexpr unsigned int getPickEntities() { return PickFilter::getBitMask(PickFilter::FlagBit::DOMAIN_ENTITIES) | PickFilter::getBitMask(PickFilter::FlagBit::AVATAR_ENTITIES); }
 
     /*@jsdoc
      * @function Picks.PICK_OVERLAYS
@@ -307,7 +313,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static constexpr unsigned int PICK_OVERLAYS() { return PickFilter::getBitMask(PickFilter::FlagBit::LOCAL_ENTITIES); }
+    static constexpr unsigned int getPickOverlays() { return PickFilter::getBitMask(PickFilter::FlagBit::LOCAL_ENTITIES); }
 
 
     /*@jsdoc
@@ -316,7 +322,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static constexpr unsigned int PICK_DOMAIN_ENTITIES() { return PickFilter::getBitMask(PickFilter::FlagBit::DOMAIN_ENTITIES); }
+    static constexpr unsigned int getPickDomainEntities() { return PickFilter::getBitMask(PickFilter::FlagBit::DOMAIN_ENTITIES); }
 
     /*@jsdoc
      * @function Picks.PICK_AVATAR_ENTITIES
@@ -324,7 +330,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static constexpr unsigned int PICK_AVATAR_ENTITIES() { return PickFilter::getBitMask(PickFilter::FlagBit::AVATAR_ENTITIES); }
+    static constexpr unsigned int getPickAvatarEntities() { return PickFilter::getBitMask(PickFilter::FlagBit::AVATAR_ENTITIES); }
 
     /*@jsdoc
      * @function Picks.PICK_LOCAL_ENTITIES
@@ -332,7 +338,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static constexpr unsigned int PICK_LOCAL_ENTITIES() { return PickFilter::getBitMask(PickFilter::FlagBit::LOCAL_ENTITIES); }
+    static constexpr unsigned int getPickLocalEntities() { return PickFilter::getBitMask(PickFilter::FlagBit::LOCAL_ENTITIES); }
 
     /*@jsdoc
      * @function Picks.PICK_AVATARS
@@ -340,14 +346,14 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static constexpr unsigned int PICK_AVATARS() { return PickFilter::getBitMask(PickFilter::FlagBit::AVATARS); }
+    static constexpr unsigned int getPickAvatars() { return PickFilter::getBitMask(PickFilter::FlagBit::AVATARS); }
 
     /*@jsdoc
      * @function Picks.PICK_HUD
      * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_HUD</code> property instead.
      * @returns {number}
      */
-    static constexpr unsigned int PICK_HUD() { return PickFilter::getBitMask(PickFilter::FlagBit::HUD); }
+    static constexpr unsigned int getPickHud() { return PickFilter::getBitMask(PickFilter::FlagBit::HUD); }
 
 
     /*@jsdoc
@@ -356,7 +362,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static constexpr unsigned int PICK_INCLUDE_VISIBLE() { return PickFilter::getBitMask(PickFilter::FlagBit::VISIBLE); }
+    static constexpr unsigned int getPickIncludeVisible() { return PickFilter::getBitMask(PickFilter::FlagBit::VISIBLE); }
 
     /*@jsdoc
      * @function Picks.PICK_INCLUDE_INVISIBLE
@@ -364,7 +370,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static constexpr unsigned int PICK_INCLUDE_INVISIBLE() { return PickFilter::getBitMask(PickFilter::FlagBit::INVISIBLE); }
+    static constexpr unsigned int getPickIncludeInvisible() { return PickFilter::getBitMask(PickFilter::FlagBit::INVISIBLE); }
 
 
     /*@jsdoc
@@ -373,7 +379,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static constexpr unsigned int PICK_INCLUDE_COLLIDABLE() { return PickFilter::getBitMask(PickFilter::FlagBit::COLLIDABLE); }
+    static constexpr unsigned int getPickIncludeCollidable() { return PickFilter::getBitMask(PickFilter::FlagBit::COLLIDABLE); }
 
     /*@jsdoc
      * @function Picks.PICK_INCLUDE_NONCOLLIDABLE
@@ -381,7 +387,7 @@ public slots:
      *     property instead.
      * @returns {number}
      */
-    static constexpr unsigned int PICK_INCLUDE_NONCOLLIDABLE() { return PickFilter::getBitMask(PickFilter::FlagBit::NONCOLLIDABLE); }
+    static constexpr unsigned int getPickIncludeNoncollidable() { return PickFilter::getBitMask(PickFilter::FlagBit::NONCOLLIDABLE); }
 
 
     /*@jsdoc
@@ -389,14 +395,14 @@ public slots:
      * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_PRECISE</code> property instead.
      * @returns {number}
      */
-    static constexpr unsigned int PICK_PRECISE() { return PickFilter::getBitMask(PickFilter::FlagBit::PRECISE); }
+    static constexpr unsigned int getPickPrecise() { return PickFilter::getBitMask(PickFilter::FlagBit::PRECISE); }
 
     /*@jsdoc
      * @function Picks.PICK_COARSE
      * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_COARSE</code> property instead.
      * @returns {number}
      */
-    static constexpr unsigned int PICK_COARSE() { return PickFilter::getBitMask(PickFilter::FlagBit::COARSE); }
+    static constexpr unsigned int getPickCoarse() { return PickFilter::getBitMask(PickFilter::FlagBit::COARSE); }
 
 
     /*@jsdoc
@@ -405,7 +411,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static constexpr unsigned int PICK_ALL_INTERSECTIONS() { return PickFilter::getBitMask(PickFilter::FlagBit::PICK_ALL_INTERSECTIONS); }
+    static constexpr unsigned int getPickAllIntersections() { return PickFilter::getBitMask(PickFilter::FlagBit::PICK_ALL_INTERSECTIONS); }
 
     /*@jsdoc
      * @function Picks.INTERSECTED_NONE
@@ -413,7 +419,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static constexpr unsigned int INTERSECTED_NONE() { return IntersectionType::NONE; }
+    static constexpr unsigned int getIntersectedNone() { return IntersectionType::NONE; }
 
     /*@jsdoc
      * @function Picks.INTERSECTED_ENTITY
@@ -421,7 +427,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static constexpr unsigned int INTERSECTED_ENTITY() { return IntersectionType::ENTITY; }
+    static constexpr unsigned int getIntersectedEntity() { return IntersectionType::ENTITY; }
 
     /*@jsdoc
      * @function Picks.INTERSECTED_LOCAL_ENTITY
@@ -429,7 +435,7 @@ public slots:
      *     property instead.
      * @returns {number}
      */
-    static constexpr unsigned int INTERSECTED_LOCAL_ENTITY() { return IntersectionType::LOCAL_ENTITY; }
+    static constexpr unsigned int getIntersectedLocalEntity() { return IntersectionType::LOCAL_ENTITY; }
 
     /*@jsdoc
      * @function Picks.INTERSECTED_OVERLAY
@@ -437,7 +443,7 @@ public slots:
      *     property instead.
      * @returns {number}
      */
-    static constexpr unsigned int INTERSECTED_OVERLAY() { return INTERSECTED_LOCAL_ENTITY(); }
+    static constexpr unsigned int getIntersectedOverlay() { return getIntersectedLocalEntity(); }
 
     /*@jsdoc
      * @function Picks.INTERSECTED_AVATAR
@@ -445,7 +451,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static constexpr unsigned int INTERSECTED_AVATAR() { return IntersectionType::AVATAR; }
+    static constexpr unsigned int getIntersectedAvatar() { return IntersectionType::AVATAR; }
 
     /*@jsdoc
      * @function Picks.INTERSECTED_HUD
@@ -453,7 +459,7 @@ public slots:
      *     instead.
      * @returns {number}
      */
-    static constexpr unsigned int INTERSECTED_HUD() { return IntersectionType::HUD; }
+    static constexpr unsigned int getIntersectedHud() { return IntersectionType::HUD; }
 
 protected:
     static std::shared_ptr<PickQuery> buildRayPick(const QVariantMap& properties);

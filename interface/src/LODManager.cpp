@@ -5,9 +5,11 @@
 //  Created by Clement on 1/16/15.
 //  Copyright 2015 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "LODManager.h"
@@ -15,10 +17,17 @@
 #include <SettingHandle.h>
 #include <Util.h>
 #include <shared/GlobalAppProperties.h>
+#include <ScriptEngineCast.h>
 
 #include "Application.h"
 #include "ui/DialogsManager.h"
 #include "InterfaceLogging.h"
+
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType<WorldDetailQuality, worldDetailQualityToScriptValue, worldDetailQualityFromScriptValue>(scriptEngine);
+}));
 
 const QString LOD_SETTINGS_PREFIX { "lodManager/" };
 
@@ -426,13 +435,14 @@ WorldDetailQuality LODManager::getWorldDetailQuality() const {
     return qApp->isHMDMode() ? _hmdWorldDetailQuality : _desktopWorldDetailQuality;
 }
 
-QScriptValue worldDetailQualityToScriptValue(QScriptEngine* engine, const WorldDetailQuality& worldDetailQuality) {
-    return worldDetailQuality;
+ScriptValue worldDetailQualityToScriptValue(ScriptEngine* engine, const WorldDetailQuality& worldDetailQuality) {
+    return engine->newValue(worldDetailQuality);
 }
 
-void worldDetailQualityFromScriptValue(const QScriptValue& object, WorldDetailQuality& worldDetailQuality) {
+bool worldDetailQualityFromScriptValue(const ScriptValue& object, WorldDetailQuality& worldDetailQuality) {
     worldDetailQuality = 
         static_cast<WorldDetailQuality>(std::min(std::max(object.toInt32(), (int)WORLD_DETAIL_LOW), (int)WORLD_DETAIL_HIGH));
+    return true;
 }
 
 void LODManager::setLODQualityLevel(float quality) {

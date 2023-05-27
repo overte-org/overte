@@ -4,9 +4,11 @@
 //
 //  Created by Anthony Thibault on 3/7/16.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "Mat4.h"
@@ -20,6 +22,7 @@
 
 #include "ScriptEngineLogging.h"
 #include "ScriptEngine.h"
+#include "ScriptManager.h"
 
 glm::mat4 Mat4::multiply(const glm::mat4& m1, const glm::mat4& m2) const {
     return m1 * m2;
@@ -87,7 +90,8 @@ void Mat4::print(const QString& label, const glm::mat4& m, bool transpose) const
     QString message = QString("%1 %2").arg(qPrintable(label));
     message = message.arg(glm::to_string(out).c_str());
     qCDebug(scriptengine) << message;
-    if (ScriptEngine* scriptEngine = qobject_cast<ScriptEngine*>(engine())) {
-        scriptEngine->print(message);
+    Q_ASSERT(engine);
+    if (ScriptManager* scriptManager = engine()->manager()) {
+        scriptManager->print(message);
     }
 }

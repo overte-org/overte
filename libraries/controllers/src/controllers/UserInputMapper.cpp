@@ -1,9 +1,11 @@
 //
 //  Created by Sam Gateau on 4/27/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "UserInputMapper.h"
@@ -26,6 +28,10 @@
 #include "StateController.h"
 #include "InputRecorder.h"
 #include "Logging.h"
+#include "ScriptValueUtils.h"
+#include <ScriptEngine.h>
+#include <ScriptEngineCast.h>
+#include <ScriptValue.h>
 
 #include "impl/conditionals/AndConditional.h"
 #include "impl/conditionals/NotConditional.h"
@@ -264,6 +270,9 @@ void UserInputMapper::update(float deltaTime) {
         channel = Pose();
     }
 
+    // Remove callbacks to script engines that are being destroyed
+    runScriptEndpointCleanup();
+
     // Run the mappings code
     runMappings();
 
@@ -388,17 +397,17 @@ int inputPairMetaTypeId = qRegisterMetaType<Input::NamedPair>();
 int poseMetaTypeId = qRegisterMetaType<controller::Pose>("Pose");
 int handMetaTypeId = qRegisterMetaType<controller::Hand>();
 
-QScriptValue inputToScriptValue(QScriptEngine* engine, const Input& input);
-void inputFromScriptValue(const QScriptValue& object, Input& input);
-QScriptValue actionToScriptValue(QScriptEngine* engine, const Action& action);
-void actionFromScriptValue(const QScriptValue& object, Action& action);
-QScriptValue inputPairToScriptValue(QScriptEngine* engine, const Input::NamedPair& inputPair);
-void inputPairFromScriptValue(const QScriptValue& object, Input::NamedPair& inputPair);
-QScriptValue handToScriptValue(QScriptEngine* engine, const controller::Hand& hand);
-void handFromScriptValue(const QScriptValue& object, controller::Hand& hand);
+ScriptValue inputToScriptValue(ScriptEngine* engine, const Input& input);
+bool inputFromScriptValue(const ScriptValue& object, Input& input);
+ScriptValue actionToScriptValue(ScriptEngine* engine, const Action& action);
+bool actionFromScriptValue(const ScriptValue& object, Action& action);
+ScriptValue inputPairToScriptValue(ScriptEngine* engine, const Input::NamedPair& inputPair);
+bool inputPairFromScriptValue(const ScriptValue& object, Input::NamedPair& inputPair);
+ScriptValue handToScriptValue(ScriptEngine* engine, const controller::Hand& hand);
+bool handFromScriptValue(const ScriptValue& object, controller::Hand& hand);
 
-QScriptValue inputToScriptValue(QScriptEngine* engine, const Input& input) {
-    QScriptValue obj = engine->newObject();
+ScriptValue inputToScriptValue(ScriptEngine* engine, const Input& input) {
+    ScriptValue obj = engine->newObject();
     obj.setProperty("device", input.getDevice());
     obj.setProperty("channel", input.getChannel());
     obj.setProperty("type", (unsigned short)input.getType());
@@ -406,51 +415,55 @@ QScriptValue inputToScriptValue(QScriptEngine* engine, const Input& input) {
     return obj;
 }
 
-void inputFromScriptValue(const QScriptValue& object, Input& input) {
+bool inputFromScriptValue(const ScriptValue& object, Input& input) {
     input.id = object.property("id").toInt32();
+    return true;
 }
 
-QScriptValue actionToScriptValue(QScriptEngine* engine, const Action& action) {
-    QScriptValue obj = engine->newObject();
+ScriptValue actionToScriptValue(ScriptEngine* engine, const Action& action) {
+    ScriptValue obj = engine->newObject();
     auto userInputMapper = DependencyManager::get<UserInputMapper>();
     obj.setProperty("action", (int)action);
     obj.setProperty("actionName", userInputMapper->getActionName(action));
     return obj;
 }
 
-void actionFromScriptValue(const QScriptValue& object, Action& action) {
+bool actionFromScriptValue(const ScriptValue& object, Action& action) {
     action = Action(object.property("action").toVariant().toInt());
+    return true;
 }
 
-QScriptValue inputPairToScriptValue(QScriptEngine* engine, const Input::NamedPair& inputPair) {
-    QScriptValue obj = engine->newObject();
+ScriptValue inputPairToScriptValue(ScriptEngine* engine, const Input::NamedPair& inputPair) {
+    ScriptValue obj = engine->newObject();
     obj.setProperty("input", inputToScriptValue(engine, inputPair.first));
     obj.setProperty("inputName", inputPair.second);
     return obj;
 }
 
-void inputPairFromScriptValue(const QScriptValue& object, Input::NamedPair& inputPair) {
+bool inputPairFromScriptValue(const ScriptValue& object, Input::NamedPair& inputPair) {
     inputFromScriptValue(object.property("input"), inputPair.first);
     inputPair.second = QString(object.property("inputName").toVariant().toString());
+    return true;
 }
 
-QScriptValue handToScriptValue(QScriptEngine* engine, const controller::Hand& hand) {
-    return engine->newVariant((int)hand);
+ScriptValue handToScriptValue(ScriptEngine* engine, const controller::Hand& hand) {
+    return engine->newValue((int)hand);
 }
 
-void handFromScriptValue(const QScriptValue& object, controller::Hand& hand) {
+bool handFromScriptValue(const ScriptValue& object, controller::Hand& hand) {
     hand = Hand(object.toVariant().toInt());
+    return true;
 }
 
-void UserInputMapper::registerControllerTypes(QScriptEngine* engine) {
-    qScriptRegisterSequenceMetaType<QVector<Action> >(engine);
-    qScriptRegisterSequenceMetaType<Input::NamedVector>(engine);
-    qScriptRegisterMetaType(engine, actionToScriptValue, actionFromScriptValue);
-    qScriptRegisterMetaType(engine, inputToScriptValue, inputFromScriptValue);
-    qScriptRegisterMetaType(engine, inputPairToScriptValue, inputPairFromScriptValue);
-    qScriptRegisterMetaType(engine, handToScriptValue, handFromScriptValue);
+void UserInputMapper::registerControllerTypes(ScriptEngine* engine) {
+    scriptRegisterSequenceMetaType<QVector<Action> >(engine);
+    scriptRegisterSequenceMetaType<Input::NamedVector>(engine);
+    scriptRegisterMetaType<controller::Action, actionToScriptValue, actionFromScriptValue>(engine);
+    scriptRegisterMetaType<controller::Input, inputToScriptValue, inputFromScriptValue>(engine);
+    scriptRegisterMetaType<controller::Input::NamedPair, inputPairToScriptValue, inputPairFromScriptValue>(engine);
+    scriptRegisterMetaType<controller::Hand, handToScriptValue, handFromScriptValue>(engine);
 
-    qScriptRegisterMetaType(engine, Pose::toScriptValue, Pose::fromScriptValue);
+    scriptRegisterMetaType<Pose, Pose::toScriptValue, Pose::fromScriptValue>(engine);
 }
 
 Input UserInputMapper::makeStandardInput(controller::StandardButtonChannel button) {
@@ -658,7 +671,7 @@ Endpoint::Pointer UserInputMapper::endpointFor(const QJSValue& endpoint) {
     return Endpoint::Pointer();
 }
 
-Endpoint::Pointer UserInputMapper::endpointFor(const QScriptValue& endpoint) {
+Endpoint::Pointer UserInputMapper::endpointFor(const ScriptValue& endpoint) {
     if (endpoint.isNumber()) {
         return endpointFor(Input(endpoint.toInt32()));
     }
@@ -672,7 +685,7 @@ Endpoint::Pointer UserInputMapper::endpointFor(const QScriptValue& endpoint) {
         int length = endpoint.property("length").toInteger();
         Endpoint::List children;
         for (int i = 0; i < length; i++) {
-            QScriptValue arrayItem = endpoint.property(i);
+            ScriptValue arrayItem = endpoint.property(i);
             Endpoint::Pointer destination = endpointFor(arrayItem);
             if (!destination) {
                 return Endpoint::Pointer();
@@ -845,6 +858,12 @@ void UserInputMapper::unloadMapping(const QString& jsonFile) {
     }
 }
 
+void UserInputMapper::scheduleScriptEndpointCleanup(ScriptEngine* engine) {
+    _lock.lock();
+    scriptEnginesRequestingCleanup.enqueue(engine);
+    _lock.unlock();
+}
+
 static const QString JSON_NAME = QStringLiteral("name");
 static const QString JSON_CHANNELS = QStringLiteral("channels");
 static const QString JSON_CHANNEL_FROM = QStringLiteral("from");
@@ -883,7 +902,7 @@ Conditional::Pointer UserInputMapper::conditionalFor(const QJSValue& condition) 
     return Conditional::Pointer();
 }
 
-Conditional::Pointer UserInputMapper::conditionalFor(const QScriptValue& condition) {
+Conditional::Pointer UserInputMapper::conditionalFor(const ScriptValue& condition) {
     if (condition.isArray()) {
         int length = condition.property("length").toInteger();
         Conditional::List children;
@@ -1237,6 +1256,50 @@ void UserInputMapper::disableMapping(const Mapping::Pointer& mapping) {
     if (debuggableRoutes) {
         debuggableRoutes = hasDebuggableRoute(_deviceRoutes) || hasDebuggableRoute(_standardRoutes);
     }
+}
+
+void UserInputMapper::runScriptEndpointCleanup() {
+    _lock.lock();
+    QList<RoutePointer> routesToRemove;
+    while (!scriptEnginesRequestingCleanup.empty()){
+        auto engine = scriptEnginesRequestingCleanup.dequeue();
+        QList<RouteList*> routeLists = {&_deviceRoutes, &_standardRoutes};
+        auto iterator = _mappingsByName.begin();
+        while (iterator != _mappingsByName.end()) {
+            if (iterator->second) {
+                routeLists.append(&iterator->second->routes);
+            }
+            iterator++;
+        }
+        for (auto routeList: routeLists) {
+            for (auto route: *routeList) {
+                auto source = std::dynamic_pointer_cast<ScriptEndpoint>(route->source);
+                if (source && source->getEngine() == engine) {
+                    qDebug() << "UserInputMapper::runScriptEndpointCleanup source";
+                    routesToRemove.append(route);
+                }
+                auto destination = std::dynamic_pointer_cast<ScriptEndpoint>(route->destination);
+                if (destination && destination->getEngine() == engine) {
+                    qDebug() << "UserInputMapper::runScriptEndpointCleanup destination";
+                    routesToRemove.append(route);
+                }
+            }
+        }
+    }
+    while (!routesToRemove.empty()) {
+        qDebug() << "UserInputMapper::runScriptEndpointCleanup routesToRemove";
+        auto route = routesToRemove.first();
+        _deviceRoutes.remove(route);
+        _standardRoutes.remove(route);
+        auto iterator = _mappingsByName.begin();
+        while (iterator != _mappingsByName.end()) {
+            iterator->second->routes.remove(route);
+            iterator++;
+        }
+
+        routesToRemove.removeAll(route);
+    }
+    _lock.unlock();
 }
 
 void UserInputMapper::setActionState(Action action, float value, bool valid) {

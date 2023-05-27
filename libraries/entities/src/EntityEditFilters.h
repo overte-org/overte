@@ -4,30 +4,34 @@
 //
 //  Created by David Kelly on 2/7/2017.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #ifndef hifi_EntityEditFilters_h
 #define hifi_EntityEditFilters_h
 
 #include <QObject>
 #include <QMap>
-#include <QScriptValue>
-#include <QScriptEngine>
 #include <glm/glm.hpp>
 
 #include <functional>
+
+#include <ScriptValue.h>
 
 #include "EntityItemID.h"
 #include "EntityItemProperties.h"
 #include "EntityTree.h"
 
+class ScriptEngine;
+
 class EntityEditFilters : public QObject, public Dependency {
     Q_OBJECT
 public:
     struct FilterData {
-        QScriptValue filterFn;
+        ScriptValue filterFn;
         bool wantsOriginalProperties { false };
         bool wantsZoneProperties { false };
 
@@ -41,10 +45,10 @@ public:
         bool wantsZoneBoundingBox { false };
 
         std::function<bool()> uncaughtExceptions;
-        QScriptEngine* engine;
+        ScriptEnginePointer engine;
         bool rejectAll;
         
-        FilterData(): engine(nullptr), rejectAll(false) {};
+        FilterData(): rejectAll(false) {};
         bool valid() { return (rejectAll || (engine != nullptr && filterFn.isFunction() && uncaughtExceptions)); }
     };
 
@@ -68,7 +72,7 @@ private:
 
     EntityTreePointer _tree {};
     bool _rejectAll {false};
-    QScriptValue _nullObjectForFilter{};
+    ScriptValue _nullObjectForFilter{};
     
     QReadWriteLock _lock;
     QMap<EntityItemID, FilterData> _filterDataMap;

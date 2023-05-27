@@ -4,11 +4,13 @@
 //
 //  Created by Anthony Thibault on 3/7/16.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Scriptable 4x4 Matrix class library.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /// @addtogroup ScriptEngine
@@ -19,10 +21,10 @@
 
 #include <QObject>
 #include <QString>
-#include <QtScript/QScriptable>
 #include <QVector>
 #include <glm/glm.hpp>
 #include "RegisteredMetaTypes.h"
+#include "Scriptable.h"
 
 /*@jsdoc
  * The <code>Mat4</code> API provides facilities for generating and using 4 x 4 matrices. These matrices are typically used to 
@@ -39,7 +41,7 @@
  * @hifi-assignment-client
  */
 /// Provides the <code><a href="https://apidocs.overte.org/Mat4.html">Mat4</a></code> scripting interface
-class Mat4 : public QObject, protected QScriptable {
+class Mat4 : public QObject, protected Scriptable {
     Q_OBJECT
 
 public slots:

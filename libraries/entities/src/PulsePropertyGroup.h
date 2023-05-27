@@ -3,17 +3,17 @@
 //
 //  Created by Sam Gondelman on 1/15/19
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_PulsePropertyGroup_h
 #define hifi_PulsePropertyGroup_h
 
 #include <stdint.h>
-
-#include <QtScript/QScriptEngine>
 
 #include <PulseMode.h>
 
@@ -24,6 +24,8 @@ class EntityItemProperties;
 class EncodeBitstreamParams;
 class OctreePacketData;
 class ReadBitstreamToTreeParams;
+class ScriptEngine;
+class ScriptValue;
 
 /*@jsdoc
  * A color and alpha pulse that an entity may have.
@@ -40,10 +42,10 @@ class ReadBitstreamToTreeParams;
 class PulsePropertyGroup : public PropertyGroup {
 public:
     // EntityItemProperty related helpers
-    virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, QScriptValue& properties,
-                                   QScriptEngine* engine, bool skipDefaults,
+    virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
+                                   ScriptEngine* engine, bool skipDefaults,
                                    EntityItemProperties& defaultEntityProperties) const override;
-    virtual void copyFromScriptValue(const QScriptValue& object, bool& _defaultSettings) override;
+    virtual void copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) override;
 
     void merge(const PulsePropertyGroup& other);
 

@@ -1,13 +1,15 @@
-"use strict";
+"no use strict";
 
 //  createWindow.js
 //
 //  Created by Thijs Wenker on 6/1/18
 //
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 var getWindowRect = function(settingsKey, defaultRect) {
@@ -71,6 +73,7 @@ var CallableEvent = (function() {
 module.exports = (function() {
     function CreateWindow(qmlPath, title, settingsKey, defaultRect, createOnStartup) {
         this.qmlPath = qmlPath;
+        print("QML path: " + qmlPath);
         this.title = title;
         this.settingsKey = settingsKey;
         this.defaultRect = defaultRect;

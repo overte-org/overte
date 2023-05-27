@@ -1,9 +1,11 @@
 #
 #  Created by Bradley Austin Davis on 2015/11/18
 #  Copyright 2015 High Fidelity, Inc.
+#  Copyright 2023 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http:#www.apache.org/licenses/LICENSE-2.0.html
+#  SPDX-License-Identifier: Apache-2.0
 #
 
 if (NOT APPLE)
@@ -16,6 +18,7 @@ if (NOT APPLE)
         link_libraries("-Wl,--allow-multiple-definition")
     endif()
     setup_hifi_plugin(Qml)
-    link_hifi_libraries(shared controllers ui plugins input-plugins script-engine)
+    link_hifi_libraries(shared controllers ui plugins input-plugins)
+    include_hifi_library_headers(script-engine)
     target_sdl2()
 endif()

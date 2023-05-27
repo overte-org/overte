@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2019-2021 Vircadia contributors.
-# Copyright 2020-2022 Overte e.V.
+# Copyright 2020-2023 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 # If we're running under the gradle build, HIFI_ANDROID will be set here, but
@@ -12,6 +12,8 @@ else()
   cmake_minimum_required(VERSION 3.2)
 endif()
 
+# 3.14 is the minimum version that supports symlinks on Windows
+cmake_minimum_required(VERSION 3.14)
 
 # Passing of variables to vcpkg
 #
@@ -192,7 +194,7 @@ else()
       set(VCPKG_BUILD_TYPE_PARAM --vcpkg-build-type ${VCPKG_BUILD_TYPE})
     endif()
     execute_process(
-        COMMAND ${HIFI_PYTHON_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/prebuild.py --vcpkg-skip-clean --release-type ${RELEASE_TYPE} --build-root ${CMAKE_BINARY_DIR} ${VCPKG_BUILD_TYPE_PARAM}
+        COMMAND ${HIFI_PYTHON_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/prebuild.py --release-type ${RELEASE_TYPE} --build-root ${CMAKE_BINARY_DIR} ${VCPKG_BUILD_TYPE_PARAM}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} RESULTS_VARIABLE PREBUILD_RET
     )
     # squelch the Policy CMP0074 warning without requiring an update to cmake 3.12.

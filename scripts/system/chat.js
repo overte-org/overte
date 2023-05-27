@@ -1,7 +1,11 @@
 "use strict";
-
+//
 // Chat.js
-// By Don Hopkins (dhopkins@donhopkins.com)
+//
+// By Don Hopkins (dhopkins@donhopkins.com) on May 5th, 2017
+//  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
 //
 // Distributed under the Apache License, Version 2.0.
 // See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -45,16 +49,19 @@
     var speechBubbleLineHeight = 0.05; // The height of a line of text in the speech bubble.
     var SPEECH_BUBBLE_MAX_WIDTH = 1; // meters
 
-    var textSizeOverlay = Overlays.addOverlay("text3d", {
-        position: MyAvatar.position,
-        lineHeight: speechBubbleLineHeight,
-        leftMargin: 0,
-        topMargin: 0,
-        rightMargin: 0,
-        bottomMargin: 0,
-        ignoreRayIntersection: true,
-        visible: false
-    });
+    var textSizeOverlay = Entities.addEntity({
+        "type": "Text",
+        "position": MyAvatar.position,
+        "lineHeight": speechBubbleLineHeight,
+        "leftMargin": 0,
+        "topMargin": 0,
+        "rightMargin": 0,
+        "bottomMargin": 0,
+        "unlit": true,
+        "alignment": "center",
+        "ignorePickIntersection": true,
+        "visible": false
+    }, "local");
 
     // Load the persistent variables from the Settings, with defaults.
     function loadSettings() {
@@ -74,8 +81,8 @@
         speechBubbleOffset = Settings.getValue('Chat_speechBubbleOffset', {x: 0.0, y: 0.3, z:0.0});
         speechBubbleJointName = Settings.getValue('Chat_speechBubbleJointName', 'Head');
         speechBubbleLineHeight = Settings.getValue('Chat_speechBubbleLineHeight', 0.05);
-        Overlays.editOverlay(textSizeOverlay, {
-            lineHeight: speechBubbleLineHeight
+        Entities.editEntity(textSizeOverlay, {
+            "lineHeight": speechBubbleLineHeight
         });
 
         saveSettings();
@@ -290,20 +297,23 @@
         }
 
         var identifierParams = {
-            parentID: myAvatarID,
-            parentJointIndex: myJointIndex,
-            lifetime: identifyAvatarDuration,
-            start: myJointPosition,
-            endParentID: yourAvatarID,
-            endParentJointIndex: yourJointIndex,
-            end: yourJointPosition,
-            color: identifyAvatarLineColor,
-            alpha: 1
+            "type": "PolyLine",
+            "parentID": myAvatarID,
+            "parentJointIndex": myJointIndex,
+            "lifetime": identifyAvatarDuration,
+            "linePoints": [
+                myJointPosition,
+                yourJointPosition
+            ],
+            "strokeWidths": [ 0.02, 0.02],
+            //endParentID: yourAvatarID, //Currently doesn't work. Never implemented.
+            //endParentJointIndex: yourJointIndex, //Currently doesn't work. Never implemented.
+            "color": identifyAvatarLineColor
         };
 
         avatarIdentifiers[yourAvatarID] = identifierParams;
 
-        identifierParams.lineID = Overlays.addOverlay("line3d", identifierParams);
+        identifierParams.lineID = Entities.addEntity(identifierParams, "local");
 
         //print("ADDOVERLAY lineID", lineID, "myJointPosition", JSON.stringify(myJointPosition), "yourJointPosition", JSON.stringify(yourJointPosition), "lineData", JSON.stringify(lineData));
 
@@ -329,7 +339,7 @@
         }
 
         if (identifierParams.lineID) {
-            Overlays.deleteOverlay(identifierParams.lineID);
+            Entities.deleteEntity(identifierParams.lineID);
         }
 
         delete avatarIdentifiers[yourAvatarID];
@@ -623,37 +633,36 @@
 
         var jointIndex = MyAvatar.getJointIndex(speechBubbleJointName);
         var dimensions = {
-            x: 100.0,
-            y: 100.0,
-            z: 0.1
+            "x": 100.0,
+            "y": 100.0,
+            "z": 0.1
         };
 
         speechBubbleParams = {
-            type: "Text",
-            lifetime: speechBubbleDuration,
-            parentID: MyAvatar.sessionUUID,
-            jointIndex: jointIndex,
-            dimensions: dimensions,
-            lineHeight: speechBubbleLineHeight,
-            leftMargin: 0,
-            topMargin: 0,
-            rightMargin: 0,
-            bottomMargin: 0,
-            faceCamera: true,
-            drawInFront: true,
-            ignoreRayIntersection: true,
-            text: speechBubbleMessage,
-            textColor: speechBubbleTextColor,
-            color: speechBubbleTextColor,
-            backgroundColor: speechBubbleBackgroundColor
+            "type": "Text",
+            "lifetime": speechBubbleDuration,
+            "parentID": MyAvatar.sessionUUID,
+            "jointIndex": jointIndex,
+            "dimensions": dimensions,
+            "lineHeight": speechBubbleLineHeight,
+            "leftMargin": 0,
+            "topMargin": 0,
+            "rightMargin": 0,
+            "bottomMargin": 0,
+            "billboardMode": "full",
+            "renderLayer": "front",
+            "ignorePickIntersection": true,
+            "text": speechBubbleMessage,
+            "textColor": speechBubbleTextColor,
+            "backgroundColor": speechBubbleBackgroundColor
         };
 
         // Only overlay text3d has a way to measure the text, not entities.
         // So we make a temporary one just for measuring text, then delete it.
-        var speechBubbleTextOverlayID = Overlays.addOverlay("text3d", speechBubbleParams);
-        var textSize = Overlays.textSize(textSizeOverlay, speechBubbleMessage);
+        var speechBubbleTextOverlayID = Entities.addEntity(speechBubbleParams, "local");
+        var textSize = Entities.textSize(textSizeOverlay, speechBubbleMessage);
         try {
-            Overlays.deleteOverlay(speechBubbleTextOverlayID);
+            Entities.deleteEntity(speechBubbleTextOverlayID);
         } catch (e) {}
 
         //print("updateSpeechBubble:", "speechBubbleMessage", speechBubbleMessage, "textSize", textSize.width, textSize.height);
@@ -985,7 +994,7 @@
         unidentifyAvatars();
         disconnectWebHandler();
 
-        Overlays.deleteOverlay(textSizeOverlay);
+        Entities.deleteEntity(textSizeOverlay);
 
         if (onChatPage) {
             tablet.gotoHomeScreen();
