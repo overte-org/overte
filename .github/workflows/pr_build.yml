@@ -155,6 +155,11 @@ jobs:
           echo "INSTALLER=Overte-Interface-$RELEASE_NUMBER-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
 
+    - name: Clear Working Directory
+      if: contains(matrix.runner, 'linux_aarch64')
+      shell: bash
+      run: rm -rf ./*
+
     - uses: actions/checkout@v3
       with:
         submodules: false
@@ -330,3 +335,8 @@ jobs:
         name: ${{ env.ARTIFACT_PATTERN }}
         path: ./build/${{ env.ARTIFACT_PATTERN }}
         if-no-files-found: error
+
+    - name: Clear Working Directory
+      if: contains(matrix.runner, 'linux_aarch64')
+      shell: bash
+      run: rm -rf ./*
