@@ -85,6 +85,15 @@ void GLWidget::doneCurrent() {
     _context->doneCurrent();
 }
 
+QVariant GLWidget::inputMethodQuery(Qt::InputMethodQuery query) const {
+    if (query == Qt::ImCursorRectangle) {
+        int x = 50;
+        int y = 50;
+        return QRect(x, y, 10, 10);
+    }
+    return QWidget::inputMethodQuery(query);
+}
+
 bool GLWidget::event(QEvent* event) {
     switch (event->type()) {
         case QEvent::MouseMove:
