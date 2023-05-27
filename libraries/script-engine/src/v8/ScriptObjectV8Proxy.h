@@ -35,7 +35,7 @@ class ScriptSignalV8Proxy;
 
 // V8TODO: Current implementation relies on weak handle callbacks for destroying objects on C++ side
 // this is fine for avoiding memory leaks while script engine runs, but there's no guarantee that these will be called
-// when script engine shutd down, so memory leaks may happen
+// when script engine shuts down, so memory leaks may happen
 // To avoid this handle visitor needs to be added (it's a feature of V8)
 
 /// [V8] (re-)implements the translation layer between ScriptValue and QObject.  This object
@@ -106,7 +106,6 @@ public:
 
     virtual V8ScriptValue property(const V8ScriptValue& object, const V8ScriptString& name, uint id);
     virtual ScriptValue::PropertyFlags propertyFlags(const V8ScriptValue& object, const V8ScriptString& name, uint id);
-    //V8TODO
     virtual QueryFlags queryProperty(const V8ScriptValue& object, const V8ScriptString& name, QueryFlags flags, uint* id);
     virtual void setProperty(V8ScriptValue& object, const V8ScriptString& name, uint id, const V8ScriptValue& value);
     v8::Local<v8::Array> getPropertyNames();
@@ -151,7 +150,7 @@ private:  // storage
         new AnimationObject(), ScriptEngine::ScriptOwnership));
  *
  */
- // V8TODO: there may be memory leaks in these
+ // V8TODO: there may be memory leaks in these, it's worth checking if the proxy actually gets garbage-collected and destroyed
 class ScriptVariantV8Proxy final {
 public:  // construction
     ScriptVariantV8Proxy(ScriptEngineV8* engine, const QVariant& variant, V8ScriptValue scriptProto, ScriptObjectV8Proxy* proto);

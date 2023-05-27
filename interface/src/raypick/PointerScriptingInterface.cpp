@@ -630,7 +630,6 @@ ScriptValue stylusPointerPropertiesToScriptValue(ScriptEngine* engine, const Sty
     return engine->newVariant(QVariant(in.properties));
 }
 
-//V8TODO: adapt render states to what parabola expects
 bool stylusPointerPropertiesFromScriptValue(const ScriptValue& value, StylusPointerProperties& out) {
     // This copies properties from script value, but also converts entity properties of entities used in render states
     // from JS objects into EntityItemProperties
@@ -670,7 +669,6 @@ bool stylusPointerPropertiesFromScriptValue(const ScriptValue& value, StylusPoin
                         stateMap.insert("endPropertyIndex", QVariant(out.entityProperties.length()));
                         out.entityProperties.append(endProperties);
                     }
-                    // V8TODO: Check if path is a polyline and if values are valid
                     renderStates[i].setValue(stateMap);
                 }
             }
@@ -727,7 +725,6 @@ bool parabolaPointerPropertiesFromScriptValue(const ScriptValue& value, Parabola
                         out.entityProperties.append(endProperties);
                         qDebug() << "parabolaPointerPropertiesFromScriptValue : added end entity";
                     }
-                    // V8TODO: Check if path is a polyline and if values are valid
                     renderStates[i].setValue(stateMap);
                 }
             }

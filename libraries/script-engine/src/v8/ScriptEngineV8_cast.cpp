@@ -345,12 +345,10 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                     break;
                 }
                 if (val->IsBoolean()) {
-                    //V8TODO is it right isolate? What if value from different script engine is used here
                     dest = QVariant::fromValue(val->ToBoolean(_v8Isolate)->Value());
                     break;
                 }
                 if (val->IsString()) {
-                    //V8TODO is it right context? What if value from different script engine is used here
                     v8::String::Utf8Value string(_v8Isolate, val);
                     Q_ASSERT(*string != nullptr);
                     dest = QVariant::fromValue(QString(*string));
@@ -389,8 +387,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                                + "to variant. Destination type: " + QMetaType::typeName(destTypeId) +" details: "+ scriptValueDebugDetailsV8(v8Val);
                 qCDebug(scriptengine_v8) << errorMessage;
 
-                //Q_ASSERT(false);
-                // V8TODO
+                // V8TODO: this doesn't seem to be necessary anymore but I'm keeping it until all the API is tested
                 //dest = val->ToVariant();
                 break;
             case QMetaType::Bool:
@@ -402,7 +399,6 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                     double timeMs = v8::Date::Cast(*val)->NumberValue(context).ToChecked();
                     dest = QVariant::fromValue(QDateTime::fromMSecsSinceEpoch(timeMs));
                 } else if (val->IsNumber()) {
-                    //V8TODO should we automatically cast numbers to datetime?
                     dest = QVariant::fromValue(QDateTime::fromMSecsSinceEpoch(val->ToNumber(context).ToLocalChecked()->Value()));
                 } else {
                     return false;
@@ -448,7 +444,8 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                 break;
             case QMetaType::QObjectStar:
                 {
-                    // V8TODO: this is to diagnose a really weird segfault where it looks like only half of the QPointer is set to null upon object deletion
+                    // V8TODO: This is to diagnose a really weird segfault where it looks like only half of the QPointer is set
+                    // to null upon object deletion, it doesn't seem to happen anymore, but I'm keeping it for now
                     uint64_t ptrVal = (uint64_t)(ScriptObjectV8Proxy::unwrap(v8Val));
                     if ((uint32_t)(ptrVal) == 0 && ptrVal != 0) {
                         qCDebug(scriptengine_v8) << "ScriptEngineV8::castValueToVariant pointer bug happened";

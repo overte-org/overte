@@ -173,7 +173,6 @@ ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(v8::Isolate* isolate, v8::
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    //V8TODO: should there be context scope here?
 
     if (value->IsNullOrUndefined()) {
         return nullptr;

@@ -188,7 +188,7 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager *manager) : ScriptEngine(manager), 
         // Based on that, going with 256K for stacks for now. That seems like a reasonable value.
         // We'll probably need a more complex system on the longer term, with configurable limits.
         // Flags to try:
-        // V8TODO --single-threaded is to check if it fixes random crashes
+        // --single-threaded is to check if it fixes random crashes
         // --jitless - might improve debugging performance due to no JIT?
         // --assert-types
 

@@ -206,7 +206,6 @@ public: // not for public use, but I don't like how Qt strings this along with p
 
     ScriptContextV8Pointer pushContext(v8::Local<v8::Context> context);
     void popContext();
-    // V8TODO: call this after initializing global object
     void storeGlobalObjectContents();
 #ifdef OVERTE_V8_MEMORY_DEBUG
     void incrementScriptValueCounter() { scriptValueCount++; };

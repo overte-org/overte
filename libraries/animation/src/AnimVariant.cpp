@@ -124,7 +124,6 @@ void AnimVariantMap::animVariantMapFromScriptValue(const ScriptValue& source) {
                 }
             }
             qCWarning(animation) << "Ignoring unrecognized data " << value.toString() << " for animation property " << property->name();
-            // V8TODO this was spamming too much logs but needs to be fixed later
             //Q_ASSERT(false);
         }
     }

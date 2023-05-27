@@ -44,7 +44,6 @@ inline ScriptValue scriptValueFromValue<QVariant>(ScriptEngine* engine, const QV
     return engine->create(v.userType(), v.data());
 }
 
-// V8TODO: check if it's typesafe
 // V8TODO: run through debugger for AnimationPointer/AnimationObject
 template <typename T>
 inline T scriptvalue_cast(const ScriptValue& value) {
@@ -64,13 +63,10 @@ inline T scriptvalue_cast(const ScriptValue& value) {
     return T();
 }
 
-// V8TODO: check if it's typesafe
 template <>
 inline QVariant scriptvalue_cast<QVariant>(const ScriptValue& value) {
     return value.toVariant();
 }
-
-//#define MARSHAL_MACRO(FUNCTION, TYPE) +[FUNCTION](ScriptEngine* engine, const void* p) -> ScriptValue { FUNCTION(engine, *(static_cast<const TYPE*>(p)) ); }
 
 template <typename T, ScriptValue (*f)(ScriptEngine*, const T&)>
 ScriptValue toScriptValueWrapper(ScriptEngine* engine, const void *p) {

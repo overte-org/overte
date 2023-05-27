@@ -136,7 +136,6 @@ bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3) {
             if (!array->Get(context, 2).ToLocal(&zValue)) {
                 return false;
             }
-            //V8TODO:
             if (xValue->IsNullOrUndefined() || yValue->IsNullOrUndefined() || zValue->IsNullOrUndefined()) {
                 return false;
             }
