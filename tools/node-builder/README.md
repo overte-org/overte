@@ -1,5 +1,5 @@
 # Copyright 2023 Overte e.V.
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
 
 # General
 This document describes the process to build Node 18.14.2 for usage as scripting engine..
@@ -94,7 +94,7 @@ make -j4 install
 ```
 
 #### Uploading
-1.  Tar and xz qt5-install to create the package. Replace `ubuntu-18.04` with the relevant system and `amd64` with the relevant architecture.
+1.  Tar and xz node-install to create the package. Replace `ubuntu-18.04` with the relevant system and `amd64` with the relevant architecture.
 ```bash
 tar -Jcvf node-install-18.14.2-ubuntu-18.04-amd64-release.tar.xz node-install
 ```

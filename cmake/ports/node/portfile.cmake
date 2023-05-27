@@ -1,5 +1,5 @@
 # Copyright 2023 Overte e.V.
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
 
 set(NODE_VERSION 18.14.2)
 set(MASTER_COPY_SOURCE_PATH ${CURRENT_BUILDTREES_DIR}/src)
@@ -11,12 +11,12 @@ if (ANDROID)
 elseif (WIN32)
     vcpkg_download_distfile(
         NODE_SOURCE_ARCHIVE
-        #URLS "${EXTERNAL_BUILD_ASSETS}/dependencies/node/node-install-18.14.2-windows-amd64-release.tar.xz"
-        URLS "http://oaktown.pl/tmp/node-install-18.15.1-win-x64-release.tar.xz"
+        URLS "${EXTERNAL_BUILD_ASSETS}/dependencies/node/node-install-18.15.1-win-x64-release.tar.xz"
         SHA512 892608a43ae32b0a82a0e3c7994934d0ce85639ea372c8e7feb7de44220211fa91878bd0744e1488054777807dd5b0c0677b59b44ab5e9fd35ecf222b38d8046
         FILENAME node-install-18.15.1-win-x64-release.tar.xz
     )
 elseif (APPLE)
+    # TODO
     vcpkg_download_distfile(
         NODE_SOURCE_ARCHIVE
         URLS "${EXTERNAL_BUILD_ASSETS}/dependencies/node/node-install-18.14.2-macOSXSDK10.14-macos-amd64-release.tar.xz"
@@ -25,12 +25,21 @@ elseif (APPLE)
     )
 else ()
     # else Linux desktop
-    vcpkg_download_distfile(
-        NODE_SOURCE_ARCHIVE
-        URLS "${EXTERNAL_BUILD_ASSETS}/dependencies/node/node-install-18.14.2-ubuntu-18.04-amd64-release.tar.xz"
-        SHA512 ff5ca5c27b811d20ac524346ee122bcd72e9e85c6de6f4799f620bb95dac959ce910cc5bb2162ed741a7f65043aa78173ecd2ce5b92f5a4d91ecb07ce71fa560
-        FILENAME node-install-18.14.2-ubuntu-18.04-amd64-release.tar.xz
-    )
+    if (VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")
+        vcpkg_download_distfile(
+            NODE_SOURCE_ARCHIVE
+            URLS "${EXTERNAL_BUILD_ASSETS}/dependencies/node/node-install-18.14.2-ubuntu-18.04-amd64-release.tar.xz"
+            SHA512 ff5ca5c27b811d20ac524346ee122bcd72e9e85c6de6f4799f620bb95dac959ce910cc5bb2162ed741a7f65043aa78173ecd2ce5b92f5a4d91ecb07ce71fa560
+            FILENAME node-install-18.14.2-ubuntu-18.04-amd64-release.tar.xz
+        )
+    elseif (VCPKG_TARGET_ARCHITECTURE STREQUAL "arm64")
+            vcpkg_download_distfile(
+            NODE_SOURCE_ARCHIVE
+            URLS "${EXTERNAL_BUILD_ASSETS}/dependencies/node/node-install-18.16.0-ubuntu-20.04-aarch64-release.tar.xz"
+            SHA512 aa4814c4ab1a922ec5afd4d7ef08479a32bfd23cb9a745102891bed5a2be13cc912e57e9bf80d856a15a5a9439b67c9a83963c605fdce349236795513090a426
+            FILENAME node-install-18.16.0-ubuntu-22.04-aarch64-release.tar.xz
+        )
+    endif ()
 endif ()
 
 vcpkg_extract_source_archive(MASTER_COPY_SOURCE_PATH ARCHIVE ${NODE_SOURCE_ARCHIVE} NO_REMOVE_ONE_LEVEL)
