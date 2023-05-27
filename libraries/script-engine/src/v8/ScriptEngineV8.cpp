@@ -1164,6 +1164,7 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
             (object->GetAlignedPointerFromInternalField(0));
         ScriptEngineV8 *scriptEngine = reinterpret_cast<ScriptEngineV8*>
             (object->GetAlignedPointerFromInternalField(1));
+        ContextScopeV8 contextScopeV8(scriptEngine);
         ScriptContextV8Wrapper scriptContext(scriptEngine, &info, scriptEngine->getContext(), scriptEngine->currentContext()->parentContext());
         ScriptContextGuard scriptContextGuard(&scriptContext);
         ScriptValue result = function(&scriptContext, scriptEngine);
@@ -1431,5 +1432,20 @@ void ScriptEngineV8::dumpHeapObjectStatistics() {
             dump << statistics.object_type() << " " << statistics.object_sub_type() << " " << statistics.object_count() << " "
                  << statistics.object_size() << "\n";
         }
+    }
+}
+
+ContextScopeV8::ContextScopeV8(ScriptEngineV8 *engine) :
+    _engine(engine) {
+    Q_ASSERT(engine);
+    _isContextChangeNeeded = engine->getContext() != engine->getIsolate()->GetCurrentContext();
+    if (_isContextChangeNeeded) {
+        engine->pushContext(engine->getIsolate()->GetCurrentContext());
+    }
+}
+
+ContextScopeV8::~ContextScopeV8() {
+    if (_isContextChangeNeeded) {
+        _engine->popContext();
     }
 }

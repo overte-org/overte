@@ -462,6 +462,8 @@ void ScriptObjectV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCall
     }
     v8::Local<v8::String> v8NameString;
 
+    ContextScopeV8 contextScopeV8(proxy->_engine);
+
     if (name->IsString()) {
         V8ScriptString nameString(proxy->_engine, v8::Local<v8::String>::Cast(name));
         uint id;
@@ -496,6 +498,8 @@ void ScriptObjectV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> v
         qCDebug(scriptengine_v8) << notStringMessage;
         Q_ASSERT(false);
     }
+
+    ContextScopeV8 contextScopeV8(proxy->_engine);
 
     if (name->IsString()) {
         V8ScriptString nameString(proxy->_engine, v8::Local<v8::String>::Cast(name));
@@ -800,6 +804,8 @@ void ScriptVariantV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCal
     }
     V8ScriptValue object(proxy->_engine, proxy->_v8Object.Get(info.GetIsolate()));
 
+    ContextScopeV8 contextScopeV8(proxy->_engine);
+
     if (name->IsString()) {
         V8ScriptString nameString(proxy->_engine, v8::Local<v8::String>::Cast(name));
         uint id;
@@ -831,6 +837,7 @@ void ScriptVariantV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> 
         Q_ASSERT(false);
     }
 
+    ContextScopeV8 contextScopeV8(proxy->_engine);
     if (name->IsString()) {
         V8ScriptString nameString(proxy->_engine, v8::Local<v8::String>::Cast(name));
         uint id;
@@ -940,16 +947,8 @@ void ScriptMethodV8Proxy::callback(const v8::FunctionCallbackInfo<v8::Value>& ar
     }
     ScriptMethodV8Proxy *proxy = reinterpret_cast<ScriptMethodV8Proxy*>(data->GetAlignedPointerFromInternalField(1));
 
-    // V8TODO: all other V8 callbacks need this too
-    bool isContextChangeNeeded = (proxy->_engine->getContext() != arguments.GetIsolate()->GetCurrentContext());
-    if (isContextChangeNeeded) {
-        qDebug() << "ScriptMethodV8Proxy::callback : changing context";
-        proxy->_engine->pushContext(arguments.GetIsolate()->GetCurrentContext());
-    }
+    ContextScopeV8 contextScopeV8(proxy->_engine);
     proxy->call(arguments);
-    if (isContextChangeNeeded) {
-        proxy->_engine->popContext();
-    }
 }
 
 void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& arguments) {
@@ -958,6 +957,7 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
+    ContextScopeV8 contextScopeV8(_engine);
     v8::Context::Scope contextScope(_engine->getContext());
     QObject* qobject = _object;
     if (!qobject) {

@@ -274,6 +274,18 @@ private:
 #endif
 };
 
+// This class is used to automatically add context to script engine's context list that is used by C++ calls
+// An instance of it needs to be created in every V8 callback
+
+class ContextScopeV8 {
+public:
+    ContextScopeV8(ScriptEngineV8 *engine);
+    ~ContextScopeV8();
+private:
+    bool _isContextChangeNeeded;
+    ScriptEngineV8* _engine;
+};
+
 #include "V8Types.h"
 
 #endif  // hifi_ScriptEngineV8_h
