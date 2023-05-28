@@ -29,16 +29,37 @@ public:
     bool needsIdentityUpdate() const { return _needsIdentityUpdate; }
     void setNeedsIdentityUpdate(bool value = true) { _needsIdentityUpdate = value; }
 
-    bool isInScreenshareZone() const { return _inScreenshareZone; }
-    void setInScreenshareZone(bool value = true) { _inScreenshareZone = value; }
-    const QUuid& getScreenshareZone() const { return _screenshareZone; }
-    void setScreenshareZone(QUuid zone) { _screenshareZone = zone; }
+    void processCertifyEvents();
+    void processChallengeResponse(ReceivedMessage& response);
+
+    void stopChallengeTimer();
+
+    // Avatar certification/verification:
+    enum VerifyState {
+        nonCertified, requestingFST, receivedFST, staticValidation, requestingOwner, ownerResponse,
+        challengeClient, verified, verificationFailed, verificationSucceeded, error
+    };
+    Q_ENUM(VerifyState)
 
 private:
     bool _needsHeroCheck { false };
     bool _needsIdentityUpdate { false };
-    bool _inScreenshareZone { false };
-    QUuid _screenshareZone;
+
+    bool generateFSTHash();
+    bool validateFSTHash(const QString& publicKey) const;
+    QByteArray canonicalJson(const QString fstFile);
+    void requestCurrentOwnership();
+    void sendOwnerChallenge();
+
+    static const QString VERIFY_FAIL_MODEL;
+
+private slots:
+    void fstRequestComplete();
+    void ownerRequestComplete();
+    void challengeTimeout();
+
+ signals:
+    void startChallengeTimer();
 };
 
 using MixerAvatarSharedPointer = std::shared_ptr<MixerAvatar>;

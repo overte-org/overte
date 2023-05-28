@@ -133,7 +133,6 @@ macro(SET_PACKAGING_PARAMETERS)
 
     set(CONSOLE_INSTALL_DIR       ".")
     set(INTERFACE_INSTALL_DIR     ".")
-    set(SCREENSHARE_INSTALL_DIR   ".")
     set(NITPICK_INSTALL_DIR       ".")
 
     if (CLIENT_ONLY)
@@ -143,27 +142,20 @@ macro(SET_PACKAGING_PARAMETERS)
     endif()
     set(CONSOLE_INSTALL_APP_PATH "${CONSOLE_INSTALL_DIR}/${CONSOLE_EXEC_NAME}")
 
-    set(SCREENSHARE_EXEC_NAME "hifi-screenshare.app")
-    set(SCREENSHARE_INSTALL_APP_PATH "${SCREENSHARE_INSTALL_DIR}/${SCREENSHARE_EXEC_NAME}")
-
     set(CONSOLE_APP_CONTENTS "${CONSOLE_INSTALL_APP_PATH}/Contents")
     set(COMPONENT_APP_PATH "${CONSOLE_APP_CONTENTS}/MacOS/Components.app")
     set(COMPONENT_INSTALL_DIR "${COMPONENT_APP_PATH}/Contents/MacOS")
     set(CONSOLE_PLUGIN_INSTALL_DIR "${COMPONENT_APP_PATH}/Contents/PlugIns")
     
-    set(SCREENSHARE_APP_CONTENTS "${SCREENSHARE_INSTALL_APP_PATH}/Contents")
-
     set(INTERFACE_INSTALL_APP_PATH "${INTERFACE_INSTALL_DIR}/${INTERFACE_BUNDLE_NAME}.app")
     set(INTERFACE_ICON_FILENAME "${INTERFACE_ICON_PREFIX}.icns")
     set(NITPICK_ICON_FILENAME "${NITPICK_ICON_PREFIX}.icns")
   else ()
     if (WIN32)
       set(CONSOLE_INSTALL_DIR "server-console")
-      set(SCREENSHARE_INSTALL_DIR "hifi-screenshare")
       set(NITPICK_INSTALL_DIR "nitpick")
     else ()
       set(CONSOLE_INSTALL_DIR ".")
-      set(SCREENSHARE_INSTALL_DIR ".")
       set(NITPICK_INSTALL_DIR ".")
     endif ()
 
@@ -177,7 +169,6 @@ macro(SET_PACKAGING_PARAMETERS)
     set(NITPICK_ICON_FILENAME "${NITPICK_ICON_PREFIX}.ico")
 
     set(CONSOLE_EXEC_NAME "server-console.exe")
-    set(SCREENSHARE_EXEC_NAME "hifi-screenshare.exe")
 
     set(DS_EXEC_NAME "domain-server.exe")
     set(AC_EXEC_NAME "assignment-client.exe")
