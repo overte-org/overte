@@ -401,8 +401,7 @@
             },
             shapeType: "box",
             bloomMode: "inherit",
-            avatarPriority: "inherit",
-            screenshare: "inherit",
+            avatarPriority: "inherit"
         },
         Model: {
             collisionShape: "none",

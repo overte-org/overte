@@ -248,15 +248,6 @@ else()
   set(MOBILE 0)
 endif()
 
-set(SCREENSHARE 0)
-if (WIN32)
-  set(SCREENSHARE 1)
-endif()
-if (APPLE AND NOT CLIENT_ONLY)
-  # Don't include Screenshare in OSX client-only builds.
-  set(SCREENSHARE 1)
-endif()
-
 # Use default time server if none defined in environment
 set_from_env(TIMESERVER_URL TIMESERVER_URL "http://timestamp.comodoca.com?td=sha256")
 
@@ -456,10 +447,6 @@ if (BUILD_GPU_FRAME_PLAYER_ONLY)
     # This is for CI build testing
     add_subdirectory(tools/gpu-frame-player)
 else()
-
-if (SCREENSHARE)
-  add_subdirectory(screenshare)
-endif()
 
 # BUILD_TOOLS option will be handled inside the tools's CMakeLists.txt because 'scribe' tool is required for build anyway
 add_subdirectory(tools)

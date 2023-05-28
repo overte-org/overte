@@ -282,7 +282,6 @@ enum class EntityVersion : PacketVersion {
     ShadowBiasAndDistance,
     TextEntityFonts,
     ScriptServerKinematicMotion,
-    ScreenshareZone,
     ZoneOcclusion,
     ModelBlendshapes,
     TransparentWeb,
