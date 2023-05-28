@@ -86,6 +86,8 @@ void GLWidget::doneCurrent() {
 }
 
 QVariant GLWidget::inputMethodQuery(Qt::InputMethodQuery query) const {
+    // TODO: for now we just use top left corner for an IME popup location, but in the future its position could be calculated
+    // for a given entry field.
     if (query == Qt::ImCursorRectangle) {
         int x = 50;
         int y = 50;
