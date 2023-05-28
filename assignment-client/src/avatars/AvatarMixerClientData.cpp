@@ -97,10 +97,7 @@ using std::static_pointer_cast;
 struct FindContainingZone {
     glm::vec3 position;
     bool isInPriorityZone { false };
-    bool isInScreenshareZone { false };
     float priorityZoneVolume { std::numeric_limits<float>::max() };
-    float screenshareZoneVolume { priorityZoneVolume };
-    EntityItemID screenshareZoneid{};
 
     static bool operation(const OctreeElementPointer& element, void* extraData) {
         auto findContainingZone = static_cast<FindContainingZone*>(extraData);
@@ -110,18 +107,11 @@ struct FindContainingZone {
                 if (item->getType() == EntityTypes::Zone && item->contains(findContainingZone->position)) {
                     auto zoneItem = static_pointer_cast<ZoneEntityItem>(item);
                     auto avatarPriorityProperty = zoneItem->getAvatarPriority();
-                    auto screenshareProperty = zoneItem->getScreenshare();
                     float volume = zoneItem->getVolumeEstimate();
                     if (avatarPriorityProperty != COMPONENT_MODE_INHERIT
                         && volume < findContainingZone->priorityZoneVolume) {  // Smaller volume wins
                         findContainingZone->isInPriorityZone = avatarPriorityProperty == COMPONENT_MODE_ENABLED;
                         findContainingZone->priorityZoneVolume = volume;
-                    }
-                    if (screenshareProperty != COMPONENT_MODE_INHERIT
-                        && volume < findContainingZone->screenshareZoneVolume) {
-                            findContainingZone->isInScreenshareZone = screenshareProperty == COMPONENT_MODE_ENABLED;
-                            findContainingZone->screenshareZoneVolume = volume;
-                            findContainingZone->screenshareZoneid = zoneItem->getEntityItemID();
                     }
                 }
             });
@@ -163,18 +153,6 @@ int AvatarMixerClientData::parseData(ReceivedMessage& message, const SlaveShared
         bool currentlyHasPriority = findContainingZone.isInPriorityZone;
         if (currentlyHasPriority != _avatar->getHasPriority()) {
             _avatar->setHasPriority(currentlyHasPriority);
-        }
-        bool isInScreenshareZone = findContainingZone.isInScreenshareZone;
-        if (isInScreenshareZone != _avatar->isInScreenshareZone()
-            || findContainingZone.screenshareZoneid != _avatar->getScreenshareZone()) {
-            _avatar->setInScreenshareZone(isInScreenshareZone);
-            _avatar->setScreenshareZone(findContainingZone.screenshareZoneid);
-            const QUuid& zoneId = isInScreenshareZone ? findContainingZone.screenshareZoneid : QUuid();
-            auto nodeList = DependencyManager::get<NodeList>();
-            auto packet = NLPacket::create(PacketType::AvatarZonePresence, 2 * NUM_BYTES_RFC4122_UUID, true);
-            packet->write(_avatar->getSessionUUID().toRfc4122());
-            packet->write(zoneId.toRfc4122());
-            nodeList->sendPacket(std::move(packet), nodeList->getDomainSockAddr());
         }
         _avatar->setNeedsHeroCheck(false);
     }
