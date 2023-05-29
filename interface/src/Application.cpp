@@ -7376,6 +7376,7 @@ int Application::processOctreeStats(ReceivedMessage& message, SharedNodePointer 
     return statsMessageLength;
 }
 
+void Application::registerScriptEngineWithApplicationServices(ScriptManagerPointer& scriptManager) {
 
     auto scriptEngine = scriptManager->engine();
     scriptManager->setEmitScriptUpdatesFunction([this]() {
