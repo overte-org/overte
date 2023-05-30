@@ -109,11 +109,15 @@ jobs:
           echo "CLIENT_ONLY=TRUE" >> $GITHUB_ENV
           echo "INSTALLER=Overte-Interface-master$BUILD_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
-    - name: Clear working directory
-      if: startsWith(matrix.os, 'windows')
+
+    - name: Clear Working Directories
+      if: contains(matrix.runner, 'linux_aarch64')
       shell: bash
-      working-directory: ${{runner.workspace}}
-      run: rm -rf ./*
+      run: |
+        rm -rf ./*
+        rm -rf ~/overte-files
+        rm -rf ~/.cache
+
     - uses: actions/checkout@v1
       with:
         submodules: false
@@ -273,3 +277,11 @@ jobs:
     #  with:
     #    name: symbols
     #    path: ${{runner.workspace}}/${{ steps.buildenv1.outputs.symbols_archive }}
+
+    - name: Clear Working Directories
+      if: contains(matrix.runner, 'linux_aarch64')
+      shell: bash
+      run: |
+        rm -rf ./*
+        rm -rf ~/overte-files
+        rm -rf ~/.cache

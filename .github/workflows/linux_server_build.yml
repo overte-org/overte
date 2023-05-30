@@ -89,10 +89,13 @@ jobs:
     container: ${{matrix.image}}
 
     steps:
-    - name: Clear Working Directory
+    - name: Clear Working Directories
       if: contains(matrix.runner, 'linux_aarch64')
       shell: bash
-      run: rm -rf ./*
+      run: |
+        rm -rf ./*
+        rm -rf ~/overte-files
+        rm -rf ~/.cache
 
     - name: Configure Build Environment 1
       shell: bash
@@ -273,7 +276,10 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.s3_secret_access_key }}
       run: python3 $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
 
-    - name: Clear Working Directory
+    - name: Clear Working Directories
       if: contains(matrix.runner, 'linux_aarch64')
       shell: bash
-      run: rm -rf ./*
+      run: |
+        rm -rf ./*
+        rm -rf ~/overte-files
+        rm -rf ~/.cache
