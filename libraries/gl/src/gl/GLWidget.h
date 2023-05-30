@@ -35,7 +35,7 @@ public:
     void swapBuffers();
     gl::Context* context() { return _context; }
     QOpenGLContext* qglContext();
-
+    virtual QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
 
 protected:
     virtual bool nativeEvent(const QByteArray &eventType, void *message, long *result) override;

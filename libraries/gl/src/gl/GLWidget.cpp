@@ -39,6 +39,7 @@ GLWidget::GLWidget() {
     setAttribute(Qt::WA_NativeWindow);
     setAttribute(Qt::WA_PaintOnScreen);
     setAttribute(Qt::WA_NoSystemBackground);
+    setAttribute(Qt::WA_InputMethodEnabled);
     setAutoFillBackground(false);
     grabGesture(Qt::PinchGesture);
     setAcceptDrops(true);
@@ -84,6 +85,17 @@ void GLWidget::doneCurrent() {
     _context->doneCurrent();
 }
 
+QVariant GLWidget::inputMethodQuery(Qt::InputMethodQuery query) const {
+    // TODO: for now we just use top left corner for an IME popup location, but in the future its position could be calculated
+    // for a given entry field.
+    if (query == Qt::ImCursorRectangle) {
+        int x = 50;
+        int y = 50;
+        return QRect(x, y, 10, 10);
+    }
+    return QWidget::inputMethodQuery(query);
+}
+
 bool GLWidget::event(QEvent* event) {
     switch (event->type()) {
         case QEvent::MouseMove:
@@ -102,6 +114,16 @@ bool GLWidget::event(QEvent* event) {
         case QEvent::Wheel:
         case QEvent::DragEnter:
         case QEvent::Drop:
+            if (QCoreApplication::sendEvent(QCoreApplication::instance(), event)) {
+                return true;
+            }
+            break;
+        case QEvent::InputMethod:
+            if (QCoreApplication::sendEvent(QCoreApplication::instance(), event)) {
+                return true;
+            }
+            break;
+        case QEvent::InputMethodQuery:
             if (QCoreApplication::sendEvent(QCoreApplication::instance(), event)) {
                 return true;
             }
