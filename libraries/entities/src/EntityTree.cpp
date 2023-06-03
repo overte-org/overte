@@ -2708,6 +2708,7 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
     ScriptEnginePointer scriptEngine = newScriptEngine();
 
     if (entitiesQList.length() == 0) {
+        qCDebug(entities) << "EntityTree::readFromMap: entitiesQList.length() == 0, Empty map or invalidly formed file";
         // Empty map or invalidly formed file.
         return false;
     }

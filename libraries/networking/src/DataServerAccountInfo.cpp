@@ -148,15 +148,18 @@ QByteArray DataServerAccountInfo::signPlaintext(const QByteArray& plaintext) {
 }
 
 QDataStream& operator<<(QDataStream &out, const DataServerAccountInfo& info) {
+    // Placeholder QUuid can be removed during protocol change
     out << info._accessToken << info._username << info._xmppPassword << info._discourseApiKey
-        << info._privateKey << info._domainID
+        << QUuid() << info._privateKey << info._domainID
         << info._temporaryDomainID << info._temporaryDomainApiKey;
     return out;
 }
 
 QDataStream& operator>>(QDataStream &in, DataServerAccountInfo& info) {
+    // Placeholder QUuid can be removed during protocol change
+    QUuid placeholder;
     in >> info._accessToken >> info._username >> info._xmppPassword >> info._discourseApiKey
-        >> info._privateKey >> info._domainID
+        >> placeholder >> info._privateKey >> info._domainID
         >> info._temporaryDomainID >> info._temporaryDomainApiKey;
     return in;
 }
