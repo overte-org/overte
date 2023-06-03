@@ -19,7 +19,6 @@
 
 #include <OffscreenUi.h>
 #include "ModelSelector.h"
-#include <avatar/MarketplaceItemUploader.h>
 
 #include <mutex>
 #include "ui/TabletScriptingInterface.h"
@@ -31,7 +30,6 @@ AvatarPackager::AvatarPackager() {
         OVERTE_IGNORE_DEPRECATED_BEGIN
 
         qmlRegisterType<FST>();
-        qmlRegisterType<MarketplaceItemUploader>();
 
         OVERTE_IGNORE_DEPRECATED_END
 

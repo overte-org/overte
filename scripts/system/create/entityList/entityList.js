@@ -207,7 +207,7 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
             PROFILE("getMultipleProperties", function () {
                 var multipleProperties = Entities.getMultipleEntityProperties(ids, ['position', 'name', 'type', 'locked',
                     'visible', 'renderInfo', 'modelURL', 'materialURL', 'imageURL', 'script', 'serverScripts', 
-                    'certificateID', 'skybox.url', 'ambientLight.url', 'created', 'lastEdited']);
+                    'skybox.url', 'ambientLight.url', 'created', 'lastEdited']);
                 for (var i = 0; i < multipleProperties.length; i++) {
                     var properties = multipleProperties[i];
 
@@ -238,7 +238,6 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
                             url: url,
                             locked: properties.locked,
                             visible: properties.visible,
-                            certificateID: properties.certificateID,
                             verticesCount: (properties.renderInfo !== undefined ?
                                 valueIfDefined(properties.renderInfo.verticesCount) : ""),
                             texturesCount: (properties.renderInfo !== undefined ?

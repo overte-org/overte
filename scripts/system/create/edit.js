@@ -19,7 +19,6 @@
    progressDialog, tooltip, MyAvatar, Quat, Controller, Clipboard, HMD, UndoStack, OverlaySystemWindow */
 
 (function() { // BEGIN LOCAL_SCOPE
-    //var CreateApp = function() { // BEGIN LOCAL_SCOPE
     var createApp = {};
 
     var EDIT_TOGGLE_BUTTON = "com.highfidelity.interface.system.editButton";
@@ -246,40 +245,6 @@
         visible: false
     });
 
-    var MARKETPLACE_URL = Account.metaverseServerURL + "/marketplace";
-    var marketplaceWindow = new OverlayWebWindow({
-        title: 'Marketplace',
-        source: "about:blank",
-        width: 900,
-        height: 700,
-        visible: false
-    });
-
-    function showMarketplace(marketplaceID) {
-        var url = MARKETPLACE_URL;
-        if (marketplaceID) {
-            url = url + "/items/" + marketplaceID;
-        }
-        marketplaceWindow.setURL(url);
-        marketplaceWindow.setVisible(true);
-        marketplaceWindow.raise();
-
-        UserActivityLogger.logAction("opened_marketplace");
-    }
-
-    function hideMarketplace() {
-        marketplaceWindow.setVisible(false);
-        marketplaceWindow.setURL("about:blank");
-    }
-
-    // function toggleMarketplace() {
-    //     if (marketplaceWindow.visible) {
-    //         hideMarketplace();
-    //     } else {
-    //         showMarketplace();
-    //     }
-    // }
-
     function adjustPositionPerBoundingBox(position, direction, registration, dimensions, orientation) {
         // Adjust the position such that the bounding box (registration, dimensions and orientation) lies behind the original
         // position in the given direction.
@@ -313,7 +278,7 @@
             return;
         }
 
-        var hasRezPermissions = (Entities.canRez() || Entities.canRezTmp() || Entities.canRezCertified() || Entities.canRezTmpCertified());
+        var hasRezPermissions = (Entities.canRez() || Entities.canRezTmp());
         createButton.editProperties({
             icon: (hasRezPermissions ? CREATE_ENABLED_ICON : CREATE_DISABLED_ICON),
             captionColor: (hasRezPermissions ? "#ffffff" : "#888888"),
@@ -685,7 +650,7 @@
 
             } else {
                 Window.notifyEditError("Can't create " + properties.type + ": " +
-                                       properties.type + " would be out of bounds.");
+                                        properties.type + " would be out of bounds.");
             }
 
             selectionManager.clearSelections(this);
@@ -972,9 +937,7 @@
 
             Entities.canRezChanged.connect(checkEditPermissionsAndUpdate);
             Entities.canRezTmpChanged.connect(checkEditPermissionsAndUpdate);
-            Entities.canRezCertifiedChanged.connect(checkEditPermissionsAndUpdate);
-            Entities.canRezTmpCertifiedChanged.connect(checkEditPermissionsAndUpdate);
-            var hasRezPermissions = (Entities.canRez() || Entities.canRezTmp() || Entities.canRezCertified() || Entities.canRezTmpCertified());
+            var hasRezPermissions = (Entities.canRez() || Entities.canRezTmp());
 
             Entities.deletingEntity.connect(checkDeletedEntityAndUpdate);
 
@@ -999,7 +962,7 @@
             createToolsWindow.fromQml.addListener(fromQml);
 
             createButton.clicked.connect(function() {
-                if ( ! (Entities.canRez() || Entities.canRezTmp() || Entities.canRezCertified() || Entities.canRezTmpCertified()) ) {
+                if ( ! (Entities.canRez() || Entities.canRezTmp()) ) {
                     Window.notifyEditError(INSUFFICIENT_PERMISSIONS_ERROR_MSG);
                     return;
                 }
@@ -1116,7 +1079,6 @@
         };
 
         that.setActive = function (active) {
-            ContextOverlay.enabled = !active;
             Settings.setValue(EDIT_SETTING, active);
             if (active) {
                 Controller.captureEntityClickEvents();
@@ -1128,14 +1090,13 @@
             if (active === isActive) {
                 return;
             }
-            if (active && !Entities.canRez() && !Entities.canRezTmp() && !Entities.canRezCertified() && !Entities.canRezTmpCertified()) {
+            if (active && !Entities.canRez() && !Entities.canRezTmp()) {
                 Window.notifyEditError(INSUFFICIENT_PERMISSIONS_ERROR_MSG);
                 return;
             }
             Messages.sendLocalMessage("edit-events", JSON.stringify({
                 enabled: active
             }));
-            print("Setting isActive: " + active);
             isActive = active;
             activeButton.editProperties({isActive: isActive});
             createApp.undoHistory.setEnabled(isActive);
@@ -1401,7 +1362,6 @@
     }
 
     function mouseReleaseEvent(event) {
-        print("mouseReleaseEvent");
         mouseDown = false;
 
         if (lastMouseMoveEvent) {
@@ -1409,24 +1369,20 @@
             lastMouseMoveEvent = null;
         }
         if (propertyMenu.mouseReleaseEvent(event)) {
-            print("propertyMenu.mouseReleaseEvent(event)");
             return true;
         }
         if (isActive && selectionManager.hasSelection()) {
             tooltip.show(false);
         }
         if (mouseCapturedByTool) {
-            print("mouseCapturedByTool");
+
             return;
         }
 
         cameraManager.mouseReleaseEvent(event);
 
         if (!mouseHasMovedSincePress) {
-            print("!mouseHasMovedSincePress: " + JSON.stringify(event));
             mouseClickEvent(event);
-        } else {
-            print("mouseHasMovedSincePress");
         }
     }
 
@@ -1446,11 +1402,9 @@
     }
 
     function mouseClickEvent(event) {
-        print("mouseClickEvent isActive: " + isActive);
         var wantDebug = false;
         var result, properties, tabletClicked;
         if (isActive && event.isLeftButton) {
-            print("mouseClickEvent isActive && event.isLeftButton");
             result = findClickedEntity(event);
             var tabletOrEditHandleClicked = wasTabletOrEditHandleClicked(event);
             if (tabletOrEditHandleClicked) {
@@ -1496,10 +1450,10 @@
             var x = Vec3.dot(Vec3.subtract(P, A), B);
 
             var angularSize = 2 * Math.atan(halfDiagonal / Vec3.distance(Camera.getPosition(), properties.position)) *
-                              180 / Math.PI;
+                                180 / Math.PI;
 
             var sizeOK = (allowLargeModels || angularSize < MAX_ANGULAR_SIZE) &&
-                         (allowSmallModels || angularSize > MIN_ANGULAR_SIZE);
+                            (allowSmallModels || angularSize > MIN_ANGULAR_SIZE);
 
             if (0 < x && sizeOK && selectionManager.editEnabled) {
                 selectedEntityID = foundEntity;
@@ -1532,13 +1486,6 @@
                     return;
                 }
                 properties = Entities.getEntityProperties(result.entityID);
-                if (properties.marketplaceID) {
-                    propertyMenu.marketplaceID = properties.marketplaceID;
-                    propertyMenu.updateMenuItemText(showMenuItem, "Show in Marketplace");
-                } else {
-                    propertyMenu.marketplaceID = null;
-                    propertyMenu.updateMenuItemText(showMenuItem, "No marketplace info");
-                }
                 propertyMenu.setPosition(event.x, event.y);
                 propertyMenu.show();
             } else {
@@ -1722,11 +1669,11 @@
 
     function insideBox(center, dimensions, point) {
         return (Math.abs(point.x - center.x) <= (dimensions.x / 2.0)) &&
-               (Math.abs(point.y - center.y) <= (dimensions.y / 2.0)) &&
-               (Math.abs(point.z - center.z) <= (dimensions.z / 2.0));
+                (Math.abs(point.y - center.y) <= (dimensions.y / 2.0)) &&
+                (Math.abs(point.z - center.z) <= (dimensions.z / 2.0));
     }
 
-     createApp.selectAllEntitiesInCurrentSelectionBox = function(keepIfTouching) {
+        createApp.selectAllEntitiesInCurrentSelectionBox = function(keepIfTouching) {
         if (selectionManager.hasSelection()) {
             // Get all entities touching the bounding box of the current selection
             var boundingBoxCorner = Vec3.subtract(selectionManager.worldPosition,
@@ -1818,7 +1765,7 @@
         }
     }
 
-     createApp.unparentSelectedEntities = function() {
+    createApp.unparentSelectedEntities = function() {
         if (SelectionManager.hasSelection() && SelectionManager.hasUnlockedSelection()) {
             var selectedEntities = selectionManager.selections;
             var parentCheck = false;
@@ -1932,7 +1879,7 @@
         }
     }
 
-     createApp.toggleSelectedEntitiesLocked = function() {
+        createApp.toggleSelectedEntitiesLocked = function() {
         if (SelectionManager.hasSelection()) {
             var locked = !Entities.getEntityProperties(SelectionManager.selections[0], ["locked"]).locked;
             for (var i = 0; i < selectionManager.selections.length; i++) {
@@ -1946,7 +1893,7 @@
         }
     }
 
-     createApp.toggleSelectedEntitiesVisible = function() {
+        createApp.toggleSelectedEntitiesVisible = function() {
         if (SelectionManager.hasSelection()) {
             var visible = !Entities.getEntityProperties(SelectionManager.selections[0], ["visible"]).visible;
             for (var i = 0; i < selectionManager.selections.length; i++) {
@@ -1987,7 +1934,7 @@
             }
         }
         if (importURL) {
-            if (!isActive && (Entities.canRez() && Entities.canRezTmp() && Entities.canRezCertified() && Entities.canRezTmpCertified())) {
+            if (!isActive && (Entities.canRez() && Entities.canRezTmp())) {
                 toolBar.toggle();
             }
             importSVO(importURL);
@@ -1997,7 +1944,7 @@
     function onPromptTextChanged(prompt) {
         Window.promptTextChanged.disconnect(onPromptTextChanged);
         if (prompt !== "") {
-            if (!isActive && (Entities.canRez() && Entities.canRezTmp() && Entities.canRezCertified() && Entities.canRezTmpCertified())) {
+            if (!isActive && (Entities.canRez() && Entities.canRezTmp())) {
                 toolBar.toggle();
             }
             importSVO(prompt);
@@ -2062,8 +2009,7 @@
     }
 
     function importSVO(importURL) {
-        if (!Entities.canRez() && !Entities.canRezTmp() &&
-            !Entities.canRezCertified() && !Entities.canRezTmpCertified()) {
+        if (!Entities.canRez() && !Entities.canRezTmp()) {
             Window.notifyEditError(INSUFFICIENT_PERMISSIONS_IMPORT_ERROR_MSG);
             return;
         }
@@ -2219,7 +2165,7 @@
             createApp.alignGridToAvatar();
         }
     }
-     createApp.rotateAsNextClickedSurfaceKey = function(value) {
+    createApp.rotateAsNextClickedSurfaceKey = function(value) {
         if (value === 0) { // on release
             createApp.rotateAsNextClickedSurface();
         }
@@ -2652,8 +2598,6 @@
                 data.ids.forEach(function(entityID) {
                     Entities.editEntity(entityID, data.properties);
                 });
-            } else if (data.type === "showMarketplace") {
-                showMarketplace();
             } else if (data.type === "action") {
                 if (data.action === "moveSelectionToGrid") {
                     if (selectionManager.hasSelection()) {
@@ -3012,7 +2956,6 @@
         };
 
         function cleanup() {
-            ContextOverlay.enabled = true;
             for (var i = 0; i < overlays.length; i++) {
                 Overlays.deleteOverlay(overlays[i]);
             }
@@ -3022,8 +2965,6 @@
 
             Entities.canRezChanged.disconnect(checkEditPermissionsAndUpdate);
             Entities.canRezTmpChanged.disconnect(checkEditPermissionsAndUpdate);
-            Entities.canRezCertifiedChanged.disconnect(checkEditPermissionsAndUpdate);
-            Entities.canRezTmpCertifiedChanged.disconnect(checkEditPermissionsAndUpdate);
         }
 
         Controller.mousePressEvent.connect(self.mousePressEvent);
@@ -3139,8 +3080,8 @@
         } else if (keyUpEvent.controlKey && keyUpEvent.shiftKey && keyUpEvent.keyCodeString === "P") {
             createApp.unparentSelectedEntities();
         } else if (!isOnMacPlatform &&
-                  ((keyUpEvent.controlKey && keyUpEvent.shiftKey && keyUpEvent.keyCodeString === "Z") ||
-                   (keyUpEvent.controlKey && keyUpEvent.keyCodeString === "Y"))) {
+                    ((keyUpEvent.controlKey && keyUpEvent.shiftKey && keyUpEvent.keyCodeString === "Z") ||
+                    (keyUpEvent.controlKey && keyUpEvent.keyCodeString === "Y"))) {
             createApp.undoHistory.redo(); // redo is only handled via handleMenuItem on Mac
         } else if (WANT_DEBUG_MISSING_SHORTCUTS) {
             console.warn("unhandled key event: " + JSON.stringify(keyUpEvent))
@@ -3150,13 +3091,7 @@
     var propertyMenu = new PopupMenu();
 
     propertyMenu.onSelectMenuItem = function (name) {
-
-        if (propertyMenu.marketplaceID) {
-            showMarketplace(propertyMenu.marketplaceID);
-        }
     };
-
-    var showMenuItem = propertyMenu.addMenuItem("Show in Marketplace");
 
     var propertiesTool = new PropertiesTool();
 
@@ -3199,8 +3134,6 @@
         return 0;
     }
 
-    //print("getParentState added");
-    //function getParentState(id) {
     createApp.getParentState = function(id) {
         var state = "NONE";
         var properties = Entities.getEntityProperties(id, ["parentID"]);
@@ -3218,8 +3151,6 @@
         }
         return state;
     }
-
-    //print("Global object after getParentState" + JSON.stringify(globalThis));
 
     createApp.getDomainOnlyChildrenIDs = function(id) {
         var allChildren = Entities.getChildrenIDs(id);
@@ -3276,7 +3207,7 @@
         }
     }
 
-     createApp.rotateAsNextClickedSurface = function() {
+        createApp.rotateAsNextClickedSurface = function() {
         if (!SelectionManager.hasSelection() || !SelectionManager.hasUnlockedSelection()) {
             audioFeedback.rejection();
             Window.notifyEditError("You have nothing selected, or the selection is locked.");
@@ -3287,4 +3218,3 @@
     }
 
 }()); // END LOCAL_SCOPE
-//}(); // END LOCAL_SCOPE

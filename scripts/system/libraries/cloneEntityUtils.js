@@ -53,8 +53,7 @@ var propsAreCloneDynamic = function(props) {
 
 var cloneEntity = function(props) {
     var entityIDToClone = props.id;
-    if (entityIsCloneable(props) &&
-        (Uuid.isNull(props.certificateID) || props.certificateType.indexOf('domainUnlimited') >= 0)) {
+    if (entityIsCloneable(props)) {
         var cloneID = Entities.cloneEntity(entityIDToClone);
         return cloneID;
     }
