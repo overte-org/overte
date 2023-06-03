@@ -271,7 +271,7 @@ void ScriptObjectV8Proxy::investigate() {
         QMetaMethod method = metaObject->method(idx);
 
         // perhaps keep this comment?  Calls (like AudioScriptingInterface::playSound) seem to expect non-public methods to be script-accessible
-        /* if (method.access() != QMetaMethod::Public) continue;*/
+        if (method.access() == QMetaMethod::Private) continue;
 
         bool isSignal = false;
         QByteArray szName = method.name();
@@ -389,6 +389,7 @@ ScriptObjectV8Proxy::QueryFlags ScriptObjectV8Proxy::queryProperty(const V8Scrip
     v8::Local<v8::Context> context = _engine->getContext();
     v8::Context::Scope contextScope(context);
     QString nameStr(*v8::String::Utf8Value(isolate, name.constGet()));
+    // V8TODO: registering methods on V8 side would make API calls a lot faster
 
     // check for methods
     MethodNameMap::const_iterator method = _methodNameMap.find(nameStr);
