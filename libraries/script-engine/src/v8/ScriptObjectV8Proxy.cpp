@@ -280,6 +280,12 @@ void ScriptObjectV8Proxy::investigate() {
             case QMetaMethod::Constructor:
                 continue;
             case QMetaMethod::Signal:
+                if (szName == "destroyed") {
+                    continue;
+                }
+                if (szName == "objectNameChanged") {
+                    continue;
+                }
                 isSignal = true;
                 break;
             case QMetaMethod::Slot:
