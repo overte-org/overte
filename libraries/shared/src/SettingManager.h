@@ -76,6 +76,12 @@ namespace Setting {
         void removeKey(const QString key);
 
         /**
+         * @brief Remove all values from the configuration.
+         *
+         */
+        void clearAllSettings();
+
+        /**
          * @brief Force writing the config to disk
          *
          */
@@ -172,6 +178,13 @@ namespace Setting {
          */
         QVariant value(const QString &key, const QVariant &defaultValue = QVariant()) const;
 
+        /**
+         * @brief Clear all the settings
+         *
+         * Removes the entire configuration, resetting everything to "factory default"
+         *
+         */
+        void clearAllSettings();
     protected:
         /**
          * @brief How long to wait for writer thread termination
@@ -204,9 +217,39 @@ namespace Setting {
         void terminateThread();
 
     signals:
+        /**
+         * @brief The value of a setting was changed
+         *
+         * @param key Setting key
+         * @param value New value
+         */
         void valueChanged(const QString key, QVariant value);
+
+        /**
+         * @brief A setting was removed
+         *
+         * @param key Setting key
+         */
         void keyRemoved(const QString key);
+
+        /**
+         * @brief A request to synchronize the settings to permanent storage was made
+         *
+         */
         void syncRequested();
+
+        /**
+         * @brief A request to clear all the settings was made
+         *
+         */
+        void clearAllSettingsRequested();
+
+        /**
+         * @brief The termination of the settings system was requested
+         *
+         * This happens on shutdown. All pending changes should be serialized to disk.
+         *
+         */
         void terminationRequested();
 
     private:

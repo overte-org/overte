@@ -200,3 +200,7 @@ QString Settings::getPath(const QString &key) const {
     ret.append(key);
     return ret;
 }
+
+void Settings::clear() {
+    _manager->clearAllSettings();
+}

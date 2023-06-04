@@ -25,14 +25,16 @@
 #include "Application.h"
 #include "Menu.h"
 
+
 #include <RunningMarker.h>
 #include <SettingHandle.h>
 #include <SettingHelpers.h>
+#include <SettingManager.h>
+#include <DependencyManager.h>
 
 
 bool CrashRecoveryHandler::checkForResetSettings(bool wasLikelyCrash, bool suppressPrompt) {
-    QSettings::setDefaultFormat(JSON_FORMAT);
-    QSettings settings;
+    Settings settings;
     settings.beginGroup("Developer");
     QVariant displayCrashOptions = settings.value(MenuOption::DisplayCrashOptions);
     settings.endGroup();
@@ -111,7 +113,8 @@ void CrashRecoveryHandler::handleCrash(CrashRecoveryHandler::Action action) {
         return;
     }
 
-    QSettings settings;
+    Settings settings;
+
     const QString ADDRESS_MANAGER_GROUP = "AddressManager";
     const QString ADDRESS_KEY = "address";
     const QString AVATAR_GROUP = "Avatar";
@@ -145,11 +148,8 @@ void CrashRecoveryHandler::handleCrash(CrashRecoveryHandler::Action action) {
         tutorialComplete = settings.value(TUTORIAL_COMPLETE_FLAG_KEY).toBool();
     }
 
-    // Delete Interface.ini
-    QFile settingsFile(settings.fileName());
-    if (settingsFile.exists()) {
-        settingsFile.remove();
-    }
+    // Reset everything
+    settings.clear();
 
     if (action == CrashRecoveryHandler::RETAIN_IMPORTANT_INFO) {
         // Write avatar info

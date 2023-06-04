@@ -45,6 +45,12 @@ namespace Setting {
         _qSettings->remove(key);
     }
 
+    void WriteWorker::clearAllSettings() {
+        init();
+        _qSettings->clear();
+        sync();
+    }
+
     void WriteWorker::sync() {
         //qCDebug(settings_writer) << "Forcing settings sync";
         init();
@@ -81,6 +87,7 @@ namespace Setting {
         connect(this, &Manager::valueChanged, worker, &WriteWorker::setValue, Qt::QueuedConnection);
         connect(this, &Manager::keyRemoved, worker, &WriteWorker::removeKey, Qt::QueuedConnection);
         connect(this, &Manager::syncRequested, worker, &WriteWorker::sync, Qt::QueuedConnection);
+        connect(this, &Manager::clearAllSettingsRequested, worker, &WriteWorker::clearAllSettings, Qt::QueuedConnection);
 
         // This one is blocking because we want to wait until it's actually processed.
         connect(this, &Manager::terminationRequested, worker, &WriteWorker::terminate, Qt::BlockingQueuedConnection);
@@ -208,5 +215,13 @@ namespace Setting {
         return resultWithReadLock<QVariant>([&] {
             return _settings.value(key, defaultValue);
         });
+    }
+
+    void Manager::clearAllSettings() {
+        withWriteLock([&] {
+            _settings.clear();
+        });
+
+        emit clearAllSettingsRequested();
     }
 }
