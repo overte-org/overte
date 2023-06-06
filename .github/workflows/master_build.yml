@@ -24,6 +24,8 @@ env:
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
+  CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
+  CMAKE_BACKTRACE_TOKEN: master_${{ github.event.number }}_${{ github.sha }}
 
   # OSX-specific variables
   DEVELOPER_DIR: /Applications/Xcode_11.2.app/Contents/Developer

@@ -21,7 +21,7 @@ env:
   RELEASE_NUMBER: ${{ github.event.number }}
   VERSION_CODE: ${{ github.event.number }}
   # Sentry Crash Reporting
-  CMAKE_BACKTRACE_URL:
+  CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
   CMAKE_BACKTRACE_TOKEN: PR_${{ github.event.number }}_${{ github.sha }}
 
   UPLOAD_BUCKET: overte-public
