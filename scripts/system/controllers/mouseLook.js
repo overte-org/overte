@@ -7,8 +7,10 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 	var oldMode;
 
 	var mouseLookEnabled = false;
-
-	mouseLookOn();
+	
+	if (mouseLookEnabled) {
+		mouseLookOn();
+	}
 
 	Controller.keyPressEvent.connect(function(event) {
 		if (event.text === 'm') {
