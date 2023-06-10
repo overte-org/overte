@@ -21,9 +21,8 @@ env:
   RELEASE_NUMBER: ${{ github.event.number }}
   VERSION_CODE: ${{ github.event.number }}
   # Sentry Crash Reporting
-  # We use a variable rather than a secret here -- this makes the URL more exposed, so there's some risk of somebody
-  # using it for no good. But then the secret can also be extracted from a binary.
-  CMAKE_BACKTRACE_URL: ${{ vars.SENTRY_PR_MINIDUMP_ENDPOINT }}
+  # We can't use secrets or actions here, so the actual value has to be hardcoded.
+  CMAKE_BACKTRACE_URL: "https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
   CMAKE_BACKTRACE_TOKEN: PR_${{ github.event.number }}_${{ github.sha }}
 
   UPLOAD_BUCKET: overte-public

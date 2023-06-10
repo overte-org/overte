@@ -19,7 +19,7 @@ env:
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
-  CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT || vars.SENTRY_PR_MINIDUMP_ENDPOINT }}
+  CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
   CMAKE_BACKTRACE_TOKEN: server_${{ github.event.number }}_${{ github.sha }}
 
 jobs:
@@ -210,7 +210,14 @@ jobs:
     - name: Configure CMake
       working-directory: build
       shell: bash
-      run: cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release $CMAKE_EXTRA
+      run: |
+        if [ -z "$CMAKE_BACKTRACE_URL" ] ; then
+          # We're building a PR, default to the PR endpoint
+          export CMAKE_BACKTRACE_URL="https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
+          export CMAKE_BACKTRACE_TOKEN="server_pr_${{ github.event.number }}_${{ github.sha }}"
+        fi
+
+        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release $CMAKE_EXTRA
 
     - name: Compress cmake logs
       if: always()
