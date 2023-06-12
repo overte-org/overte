@@ -10,14 +10,12 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 
 	var mouseLookEnabled = false;
 
-	var oldMode;
-
 	var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
 	var tabletUp;
 
 	var tempOff = false;
-	
+
 	hmd = AvatarInputs.isHMD;
 
 	if (!hmd){
@@ -139,20 +137,11 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 	}
 
 	function mouseLookOn() {
-		oldMode = Camera.mode;
-		Camera.mode = "first person";
 		Camera.captureMouse = true;
 	}
 
 	function mouseLookOff() {
 		Camera.captureMouse = false;
-		Camera.mode = oldMode;
-	}
-
-	function onCameraModeUpdated(newMode) {
-		if (Camera.getCaptureMouse()){
-			Camera.captureMouse = false;
-		}
 	}
 
 	Camera.modeUpdated.connect(onCameraModeUpdated);
