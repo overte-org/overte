@@ -299,11 +299,15 @@ void setupPreferences() {
     }
 
     {
-        auto getter = []()->bool { return !Menu::getInstance()->isOptionChecked(MenuOption::DisableCrashLogger); };
-        auto setter = [](bool value) { Menu::getInstance()->setIsOptionChecked(MenuOption::DisableCrashLogger, !value); };
-        preferences->addPreference(new CheckPreference("Privacy", "Send crashes - Overte uses information provided by your "
+        auto getter = []()->bool { return Menu::getInstance()->isOptionChecked(MenuOption::GenerateAndSubmitCrashReports); };
+        auto setter = [](bool value) { Menu::getInstance()->setIsOptionChecked(MenuOption::GenerateAndSubmitCrashReports, !value); };
+        auto preference = new CheckPreference("Privacy", "Send crashes - Overte uses information provided by your "
                                 "client to improve the product through crash reports. By allowing Overte to collect "
-                                "this information you are helping to improve the product. ", getter, setter));
+                                "this information you are helping to improve the product. ", getter, setter);
+        if (!UserActivityLogger::getInstance().isCrashMonitorEnabled()) {
+            preference->setFunctionalityDisabledTooltip("Your version of the application was not built with support for crash reporting.");
+        }
+        preferences->addPreference(preference);
     }
 
     static const QString AVATAR_TUNING { "Avatar Tuning" };
