@@ -26,12 +26,6 @@ elseif (APPLE)
 else ()
     # else Linux desktop
     if (VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")
-        #vcpkg_download_distfile(
-        #    NODE_SOURCE_ARCHIVE
-        #    URLS "https://daleglass.eu-central-1.linodeobjects.com/node-install-18.14.2-ubuntu-18.04-amd64-patched.tar.xz"
-        #    SHA512 ecaf8139cd9e49528db349cf17b16b477b6153b8c8d9b08e7aea9cb378dd5126fa0a9a0f97bb6987da452c351047dec5abfede92404d7d940edeecb248b6b8b7
-        #    FILENAME node-install-18.14.2-ubuntu-18.04-amd64-release.tar.xz
-        #)
         vcpkg_from_github(
             OUT_SOURCE_PATH
             SOURCE_PATH
@@ -50,16 +44,40 @@ else ()
             WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/v18.16.0-e8bd828d3a.clean
             LOGNAME "configure-node"
         )
-        vcpkg_execute_build_process(
-                COMMAND make -j20
+        if(VCPKG_MAX_CONCURRENCY GREATER 0)
+            vcpkg_execute_build_process(
+                COMMAND make -j${VCPKG_MAX_CONCURRENCY}
                 WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/v18.16.0-e8bd828d3a.clean
                 LOGNAME "make-node"
-        )
-        vcpkg_execute_build_process(
-                COMMAND make -j20 install
+            )
+            vcpkg_execute_build_process(
+                    COMMAND make -j${VCPKG_MAX_CONCURRENCY} install
+                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/v18.16.0-e8bd828d3a.clean
+                    LOGNAME "install-node"
+            )
+        elseif (VCPKG_CONCURRENCY GREATER 0)
+            vcpkg_execute_build_process(
+                COMMAND make -j${VCPKG_CONCURRENCY}
                 WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/v18.16.0-e8bd828d3a.clean
-                LOGNAME "install-node"
-        )
+                LOGNAME "make-node"
+            )
+            vcpkg_execute_build_process(
+                    COMMAND make -j${VCPKG_CONCURRENCY} install
+                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/v18.16.0-e8bd828d3a.clean
+                    LOGNAME "install-node"
+            )
+        else ()
+            vcpkg_execute_build_process(
+                COMMAND make -j$(nproc)
+                WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/v18.16.0-e8bd828d3a.clean
+                LOGNAME "make-node"
+            )
+            vcpkg_execute_build_process(
+                    COMMAND make -j$(nproc) install
+                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/v18.16.0-e8bd828d3a.clean
+                    LOGNAME "install-node"
+            )
+        endif ()
         set(NODE_INSTALL_PATH ${CURRENT_BUILDTREES_DIR})
     elseif (VCPKG_TARGET_ARCHITECTURE STREQUAL "arm64")
             vcpkg_download_distfile(
