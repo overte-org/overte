@@ -89,7 +89,7 @@ else ()
     endif ()
 endif ()
 
-if (VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")
+if (NODE_INSTALL_PATH)
 
 else()
     vcpkg_extract_source_archive(SOURCE_PATH ARCHIVE ${NODE_SOURCE_ARCHIVE} NO_REMOVE_ONE_LEVEL)
