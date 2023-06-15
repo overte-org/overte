@@ -1,0 +1,63 @@
+# Copyright 2013-2019 High Fidelity, Inc.
+# Copyright 2020-2022 Vircadia contributors.
+# Copyright 2021-2023 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Linux AppImage build
+# Keep in mind that GitHub Actions does not allow reading secrets during PR builds.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches:
+      - master
+
+env:
+  BUILD_TYPE: Release
+
+  UPLOAD_BUCKET: overte-public
+  UPLOAD_REGION: fra1
+  UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
+
+jobs:
+  build:
+
+    name: "${{matrix.os}}, ${{matrix.arch}}"
+    strategy:
+      matrix:
+        include:
+          - os: Ubuntu 20.04
+            runner: AppImage
+            arch: amd64
+
+      fail-fast: true
+
+    runs-on: ${{matrix.runner}}
+
+    steps:
+    - name: Clear Working Directories
+      shell: bash
+      run: |
+        [ -d "overte-builder" ] && rm -rf "overte-builder"
+
+    - name: Download Overte Builder
+      shell: bash
+      run: |
+        git clone https://github.com/overte-org/overte-builder.git
+
+
+    # Configuration is broken into multiple steps because you can't set an env var and also reference it in the same step
+    - name: Build AppImage
+      shell: bash
+      run: |
+
+        cd overte-builder
+        ./overte-builder --auto --make-appimage
+
+    - name: Output system stats
+      if: ${{ always() }}
+      shell: bash
+      run: |
+        echo "Disk usage:"
+        df -h
