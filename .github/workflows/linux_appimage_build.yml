@@ -16,7 +16,6 @@ on:
 defaults:
   run:
     shell: bash
-    working-directory: appimage
 
 env:
   BUILD_TYPE: Release
@@ -44,12 +43,16 @@ jobs:
     - name: Clear Working Directories
       shell: bash
       run: |
+        mkdir -p appimage
+        cd appimage
+
         if [ -d "overte-builder" ] ; then
             rm -rf "overte-builder"
         fi
 
     - name: Download Overte Builder
       shell: bash
+      working-directory: appimage
       run: |
         git clone https://github.com/overte-org/overte-builder.git
 
@@ -57,6 +60,7 @@ jobs:
     # Configuration is broken into multiple steps because you can't set an env var and also reference it in the same step
     - name: Build AppImage
       shell: bash
+      working-directory: appimage
       run: |
 
         cd overte-builder
