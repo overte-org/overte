@@ -90,15 +90,23 @@ jobs:
     - name: Upload AppImage without debug info to GitHub
       uses: actions/upload-artifact@v3
       with:
+        name: Overte-nodebug-x86_64.AppImage
         path: appimage/Overte/Overte-*-nodebug-x86_64.AppImage
 
     - name: Upload AppImage with debug info to GitHub
       uses: actions/upload-artifact@v3
       with:
+        name: Overte-x86_64.AppImage
         path: |
             appimage/Overte/Overte-*-x86_64.AppImage
             !appimage/Overte/Overte-*-nodebug-x86_64.AppImage
 
+    - name: Cleanup
+      if: ${{ always() }}
+      shell: bash
+      working-directory: appimage
+      run: |
+        rm -rf Overte/*AppImage Overte/build
 
     - name: Output system stats
       if: ${{ always() }}
@@ -106,3 +114,5 @@ jobs:
       run: |
         echo "Disk usage:"
         df -h
+
+
