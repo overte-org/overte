@@ -13,6 +13,11 @@ on:
     branches:
       - master
 
+defaults:
+  run:
+    shell: bash
+    working-directory: appimage
+
 env:
   BUILD_TYPE: Release
 
@@ -39,7 +44,9 @@ jobs:
     - name: Clear Working Directories
       shell: bash
       run: |
-        [ -d "overte-builder" ] && rm -rf "overte-builder"
+        if [ -d "overte-builder" ] ; then
+            rm -rf "overte-builder"
+        fi
 
     - name: Download Overte Builder
       shell: bash
