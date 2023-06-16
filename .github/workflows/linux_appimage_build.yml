@@ -72,11 +72,26 @@ jobs:
         cd overte-builder
         ./overte-builder --auto --make-appimage --destdir="$overtedir"
 
+
+    # Warning: We generate an appimage/Overte/Overte.AppImage directory which is then
+    # used to generate the actual AppImage. We don't want to upload that as an artifact,
+    # as that's what's inside the AppImage files anyway.
+    #
+    # We tailor the path pattern to exclude it, but we'll also remove it for good measure.
+
+    - name: Remove unneeded AppImage directory
+      shell: bash
+      working-directory: appimage
+      run: |
+        if [ -d "Overte/Overte.AppImage" ] ; then
+          rm -rf "Overte/Overte.AppImage"
+        fi
+
     - name: Upload artifact to GitHub
       uses: actions/upload-artifact@v3
       with:
         name: AppImage
-        path: appimage/Overte/*AppImage
+        path: appimage/Overte/Overte-*AppImage
 
 
     - name: Output system stats
