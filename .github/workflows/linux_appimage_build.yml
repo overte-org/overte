@@ -56,15 +56,28 @@ jobs:
       run: |
         git clone https://github.com/overte-org/overte-builder.git
 
-
-    # Configuration is broken into multiple steps because you can't set an env var and also reference it in the same step
     - name: Build AppImage
       shell: bash
       working-directory: appimage
       run: |
+        basedir=`pwd`
+        overtedir="$basedir/Overte"
+
+        if [ -d "$overtedir" ] ; then
+            # Get rid of any existing AppImage
+            echo Cleaning up previous AppImages
+            rm -v $overtedir/*AppImage || true
+        fi
 
         cd overte-builder
-        ./overte-builder --auto --make-appimage
+        ./overte-builder --auto --make-appimage --destdir="$overtedir"
+
+    - name: Upload artifact to GitHub
+      uses: actions/upload-artifact@v3
+      with:
+        name: AppImage
+        path: appimage/Overte/*AppImage
+
 
     - name: Output system stats
       if: ${{ always() }}
