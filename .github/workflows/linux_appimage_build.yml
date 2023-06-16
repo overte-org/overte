@@ -87,11 +87,17 @@ jobs:
           rm -rf "Overte/Overte.AppImage"
         fi
 
-    - name: Upload artifact to GitHub
+    - name: Upload AppImage without debug info to GitHub
       uses: actions/upload-artifact@v3
       with:
-        name: AppImage
-        path: appimage/Overte/Overte-*AppImage
+        path: appimage/Overte/Overte-*-nodebug-x86_64.AppImage
+
+    - name: Upload AppImage with debug info to GitHub
+      uses: actions/upload-artifact@v3
+      with:
+        path: |
+            appimage/Overte/Overte-*-x86_64.AppImage
+            !appimage/Overte/Overte-*-nodebug-x86_64.AppImage
 
 
     - name: Output system stats
