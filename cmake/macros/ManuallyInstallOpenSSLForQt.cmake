@@ -20,13 +20,13 @@ macro(manually_install_openssl_for_qt)
     find_package(OpenSSL REQUIRED)
 
     install(
-      FILES "${VCPKG_INSTALL_ROOT}/bin/libcrypto-1_1-x64.dll"
+      FILES "${VCPKG_INSTALL_ROOT}/bin/libcrypto-3-x64.dll"
       DESTINATION ${TARGET_INSTALL_DIR}
       COMPONENT ${TARGET_INSTALL_COMPONENT}
     )
 
     install(
-      FILES "${VCPKG_INSTALL_ROOT}/bin/libssl-1_1-x64.dll"
+      FILES "${VCPKG_INSTALL_ROOT}/bin/libssl-3-x64.dll"
       DESTINATION ${TARGET_INSTALL_DIR}
       COMPONENT ${TARGET_INSTALL_COMPONENT}
     )
