@@ -27,17 +27,13 @@ else ()
     # else Linux desktop
     if (VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")
         vcpkg_from_github(
-            OUT_SOURCE_PATH
-            SOURCE_PATH
-            REPO
-            nodejs/node
-            REF
-            v18.16.0
-            SHA512
-            9b983b899acd02e7ed761bc3633fc56855e10335fcdb558a29d1cf068ce1125991c9a781616d82a9dc90be6e8ba1bf4a34a10a92c6b7db9cbe33ef7fa7dda67f
-            HEAD_REF
-            v18.16.0
+            OUT_SOURCE_PATH SOURCE_PATH
+            REPO nodejs/node
+            REF v18.16.0
+            SHA512 9b983b899acd02e7ed761bc3633fc56855e10335fcdb558a29d1cf068ce1125991c9a781616d82a9dc90be6e8ba1bf4a34a10a92c6b7db9cbe33ef7fa7dda67f
+            HEAD_REF v18.16.0
         )
+        # v18.16.0-e8bd828d3a.clean is getting added by VCPKG. It will need to be updated when we update libnode version.
         file(COPY ${SOURCE_PATH} DESTINATION "${CURRENT_BUILDTREES_DIR}")
         vcpkg_execute_build_process(
             COMMAND ./configure --gdb --shared --v8-enable-object-print --shared-openssl --prefix=${CURRENT_BUILDTREES_DIR}/node-install/
