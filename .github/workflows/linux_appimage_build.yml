@@ -98,8 +98,20 @@ jobs:
       with:
         name: Overte-x86_64.AppImage
         path: |
-            appimage/Overte/Overte-*-x86_64.AppImage
-            !appimage/Overte/Overte-*-nodebug-x86_64.AppImage
+            appimage/Overte/Overte-*-debug-x86_64.AppImage
+
+    - name: Upload AppImage without debugging to S3
+      shell: bash
+      working-directory: appimage
+      run: |
+        sudo -u uploader /usr/local/bin/upload_to_s3 --number ${{ github.event.number }} < Overte/Overte-*-nodebug-x86_64.AppImage
+
+    - name: Upload AppImage with debugging to S3
+      shell: bash
+      working-directory: appimage
+      run: |
+        sudo -u uploader /usr/local/bin/upload_to_s3 --number ${{ github.event.number }} < Overte/Overte-*-debug-x86_64.AppImage
+
 
     - name: Cleanup
       if: ${{ always() }}
