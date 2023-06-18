@@ -104,14 +104,19 @@ jobs:
       shell: bash
       working-directory: appimage
       run: |
-        sudo -u uploader /usr/local/bin/upload_to_s3 --number ${{ github.event.number }} < Overte/Overte-*-nodebug-x86_64.AppImage
+        filename=`find Overte -maxdepth 1 -name 'Overte-*-nodebug-x86_64.AppImage'`
+        base=`basename "$filename"`
+
+        sudo -u uploader /usr/local/bin/upload_to_s3 --number ${{ github.event.number }} --name "$base" < "$filename"
 
     - name: Upload AppImage with debugging to S3
       shell: bash
       working-directory: appimage
       run: |
-        sudo -u uploader /usr/local/bin/upload_to_s3 --number ${{ github.event.number }} < Overte/Overte-*-debug-x86_64.AppImage
+        filename=`find Overte -maxdepth 1 -name 'Overte-*-debug-x86_64.AppImage'`
+        base=`basename "$filename"`
 
+        sudo -u uploader /usr/local/bin/upload_to_s3 --number ${{ github.event.number }} --name "$base" < "$filename"
 
     - name: Cleanup
       if: ${{ always() }}
