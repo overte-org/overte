@@ -34,43 +34,44 @@ else ()
             HEAD_REF v18.16.0
         )
         # v18.16.0-e8bd828d3a.clean is getting added by VCPKG. It will need to be updated when we update libnode version.
+        set(NODE_SOURCE_DIRECTORY_NAME "v18.16.0-e8bd828d3a.clean")
         file(COPY ${SOURCE_PATH} DESTINATION "${CURRENT_BUILDTREES_DIR}")
         vcpkg_execute_build_process(
             COMMAND ./configure --gdb --shared --v8-enable-object-print --shared-openssl --prefix=${CURRENT_BUILDTREES_DIR}/node-install/
-            WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/v18.16.0-e8bd828d3a.clean
+            WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${NODE_SOURCE_DIRECTORY_NAME}
             LOGNAME "configure-node"
         )
         if(VCPKG_MAX_CONCURRENCY GREATER 0)
             vcpkg_execute_build_process(
                 COMMAND make -j${VCPKG_MAX_CONCURRENCY}
-                WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/v18.16.0-e8bd828d3a.clean
+                WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${NODE_SOURCE_DIRECTORY_NAME}
                 LOGNAME "make-node"
             )
             vcpkg_execute_build_process(
                     COMMAND make -j${VCPKG_MAX_CONCURRENCY} install
-                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/v18.16.0-e8bd828d3a.clean
+                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${NODE_SOURCE_DIRECTORY_NAME}
                     LOGNAME "install-node"
             )
         elseif (VCPKG_CONCURRENCY GREATER 0)
             vcpkg_execute_build_process(
                 COMMAND make -j${VCPKG_CONCURRENCY}
-                WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/v18.16.0-e8bd828d3a.clean
+                WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${NODE_SOURCE_DIRECTORY_NAME}
                 LOGNAME "make-node"
             )
             vcpkg_execute_build_process(
                     COMMAND make -j${VCPKG_CONCURRENCY} install
-                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/v18.16.0-e8bd828d3a.clean
+                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${NODE_SOURCE_DIRECTORY_NAME}
                     LOGNAME "install-node"
             )
         else ()
             vcpkg_execute_build_process(
                 COMMAND make -j$(nproc)
-                WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/v18.16.0-e8bd828d3a.clean
+                WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${NODE_SOURCE_DIRECTORY_NAME}
                 LOGNAME "make-node"
             )
             vcpkg_execute_build_process(
                     COMMAND make -j$(nproc) install
-                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/v18.16.0-e8bd828d3a.clean
+                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${NODE_SOURCE_DIRECTORY_NAME}
                     LOGNAME "install-node"
             )
         endif ()
