@@ -4,7 +4,7 @@
 //
 //  Created by Andrzej Kapolka on 9/18/13.
 //  Copyright 2013 High Fidelity, Inc.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -13,6 +13,7 @@
 #include "FBXSerializer.h"
 
 #include <QBuffer>
+#include <QRegularExpression>
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -22,7 +23,7 @@
 
 #include <hfm/ModelFormatLogging.h>
 
-// TOOL: Uncomment the following line to enable the filtering of all the unkwnon fields of a node so we can break point easily while loading a model with problems...
+// TOOL: Uncomment the following line to enable the filtering of all the unknown fields of a node so we can break point easily while loading a model with problems...
 //#define DEBUG_FBXSERIALIZER
 
 using namespace std;
@@ -454,6 +455,25 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
     unsigned int meshIndex = 0;
     haveReportedUnhandledRotationOrder = false;
     int fbxVersionNumber = -1;
+    bool isBlenderVersionLower280 = false;
+
+    foreach (const FBXNode& child, node.children) {
+        if (child.name == "Creator") {
+            // Match Blender version lower than 2.80
+            // Example version string from Blender 2.78: "Blender (stable FBX IO) - 2.78 (sub 0) - 3.7.7"
+            // Example version string from Blender 2.92: "Blender (stable FBX IO) - 2.92.0 - 4.22.0"
+            QRegularExpression blenderVersionRegex(".*Blender.*-\\s(\\d+)\\.(\\d+).*-.*");
+            QRegularExpressionMatch blenderVersionMatch = blenderVersionRegex.match(child.properties.at(0).toString());
+
+            if (blenderVersionMatch.hasMatch()) {
+                int major =  blenderVersionMatch.captured(1).toInt();
+                int minor =  blenderVersionMatch.captured(2).toInt();
+
+                isBlenderVersionLower280 = major < 2 || (major == 2 && minor < 80);
+            }
+        }
+    }
+
     foreach (const FBXNode& child, node.children) {
 
         if (child.name == "FBXHeaderExtension") {
@@ -932,8 +952,14 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
                                     } else if (property.properties.at(0) == OPACITY) {
                                         material.opacity = property.properties.at(index).value<double>();
                                     } else if (property.properties.at(0) == REFLECTION_FACTOR) {
-                                        material.isPBSMaterial = true;
-                                        material.metallic = property.properties.at(index).value<double>();
+                                        // Blender 2.79 and below set REFLECTION_FACTOR, but there is no way to actually change that value in their UI,
+                                        // so we are falling back to non-PBS material.
+                                        if (isBlenderVersionLower280 == true) {
+                                            material.isPBSMaterial = false;
+                                        } else {
+                                            material.isPBSMaterial = true;
+                                            material.metallic = property.properties.at(index).value<double>();
+                                        }
                                     }
 
                                     // Sting Ray Material Properties!!!!
@@ -1191,13 +1217,13 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
                 }
             }
         }
+
 #if defined(DEBUG_FBXSERIALIZER)
         else {
             QString objectname = child.name.data();
             if ( objectname == "Pose"
                 || objectname == "CreationTime"
                 || objectname == "FileId"
-                || objectname == "Creator"
                 || objectname == "Documents"
                 || objectname == "References"
                 || objectname == "Definitions"
