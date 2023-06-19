@@ -18,6 +18,7 @@
 #include <QLabel>
 #include <PathUtils.h>
 #include <QRadioButton>
+#include <QCheckBox>
 #include <QStandardPaths>
 #include <QVBoxLayout>
 #include <QtCore/QUrl>
@@ -31,6 +32,7 @@
 #include <SettingHelpers.h>
 #include <SettingManager.h>
 #include <DependencyManager.h>
+#include <UserActivityLogger.h>
 
 
 bool CrashRecoveryHandler::checkForResetSettings(bool wasLikelyCrash, bool suppressPrompt) {
@@ -79,10 +81,26 @@ CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool show
     QRadioButton* option1 = new QRadioButton("Reset all my settings");
     QRadioButton* option2 = new QRadioButton("Reset my settings but keep essential info");
     QRadioButton* option3 = new QRadioButton("Continue with my current settings");
+
+    QLabel* crashReportLabel = new QLabel("To help us with debugging, you can enable automatic crash reports.\n"
+                                          "They'll only be seen by members of the Overte e.V. organization and\n"
+                                          "trusted developers, and will only be used for improving the code.");
+
+    QCheckBox* crashReportCheckbox = new QCheckBox("Enable automatic crash reporting");
+
+    auto &ual = UserActivityLogger::getInstance();
+    crashReportCheckbox->setChecked(ual.isCrashMonitorEnabled());
+
+
+
     option3->setChecked(true);
     layout->addWidget(option1);
     layout->addWidget(option2);
     layout->addWidget(option3);
+    layout->addSpacing(12);
+
+    layout->addWidget(crashReportLabel);
+    layout->addWidget(crashReportCheckbox);
     layout->addSpacing(12);
     layout->addStretch();
 
@@ -102,6 +120,8 @@ CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool show
             return CrashRecoveryHandler::RETAIN_IMPORTANT_INFO;
         }
     }
+
+    ual.crashMonitorDisable(!crashReportCheckbox->isChecked());
 
     // Dialog cancelled or "do nothing" option chosen
     return CrashRecoveryHandler::DO_NOTHING;
