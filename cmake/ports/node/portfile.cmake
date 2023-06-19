@@ -26,12 +26,54 @@ elseif (APPLE)
 else ()
     # else Linux desktop
     if (VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")
-        vcpkg_download_distfile(
-            NODE_SOURCE_ARCHIVE
-            URLS "${EXTERNAL_BUILD_ASSETS}/dependencies/node/node-install-18.14.2-ubuntu-18.04-amd64-release.tar.xz"
-            SHA512 ff5ca5c27b811d20ac524346ee122bcd72e9e85c6de6f4799f620bb95dac959ce910cc5bb2162ed741a7f65043aa78173ecd2ce5b92f5a4d91ecb07ce71fa560
-            FILENAME node-install-18.14.2-ubuntu-18.04-amd64-release.tar.xz
+        vcpkg_from_github(
+            OUT_SOURCE_PATH SOURCE_PATH
+            REPO nodejs/node
+            REF v18.16.0
+            SHA512 9b983b899acd02e7ed761bc3633fc56855e10335fcdb558a29d1cf068ce1125991c9a781616d82a9dc90be6e8ba1bf4a34a10a92c6b7db9cbe33ef7fa7dda67f
+            HEAD_REF v18.16.0
         )
+        file(COPY ${SOURCE_PATH}/ DESTINATION "${CURRENT_BUILDTREES_DIR}")
+        vcpkg_execute_build_process(
+            COMMAND ./configure --gdb --shared --v8-enable-object-print --shared-openssl --prefix=${CURRENT_BUILDTREES_DIR}/node-install/
+            WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
+            LOGNAME "configure-node"
+        )
+        if(VCPKG_MAX_CONCURRENCY GREATER 0)
+            vcpkg_execute_build_process(
+                COMMAND make -j${VCPKG_MAX_CONCURRENCY}
+                WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
+                LOGNAME "make-node"
+            )
+            vcpkg_execute_build_process(
+                    COMMAND make -j${VCPKG_MAX_CONCURRENCY} install
+                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
+                    LOGNAME "install-node"
+            )
+        elseif (VCPKG_CONCURRENCY GREATER 0)
+            vcpkg_execute_build_process(
+                COMMAND make -j${VCPKG_CONCURRENCY}
+                WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
+                LOGNAME "make-node"
+            )
+            vcpkg_execute_build_process(
+                    COMMAND make -j${VCPKG_CONCURRENCY} install
+                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
+                    LOGNAME "install-node"
+            )
+        else ()
+            vcpkg_execute_build_process(
+                COMMAND make -j$(nproc)
+                WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
+                LOGNAME "make-node"
+            )
+            vcpkg_execute_build_process(
+                    COMMAND make -j$(nproc) install
+                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
+                    LOGNAME "install-node"
+            )
+        endif ()
+        set(NODE_INSTALL_PATH ${CURRENT_BUILDTREES_DIR})
     elseif (VCPKG_TARGET_ARCHITECTURE STREQUAL "arm64")
             vcpkg_download_distfile(
             NODE_SOURCE_ARCHIVE
@@ -42,18 +84,23 @@ else ()
     endif ()
 endif ()
 
-vcpkg_extract_source_archive(MASTER_COPY_SOURCE_PATH ARCHIVE ${NODE_SOURCE_ARCHIVE} NO_REMOVE_ONE_LEVEL)
+if (NODE_INSTALL_PATH)
+
+else()
+    vcpkg_extract_source_archive(MASTER_COPY_SOURCE_PATH ARCHIVE ${NODE_SOURCE_ARCHIVE} NO_REMOVE_ONE_LEVEL)
+    set(NODE_INSTALL_PATH ${MASTER_COPY_SOURCE_PATH})
+endif()
 
 # move WIN dll to /bin and WIN .lib to /lib
 
 if (WIN32)
-    file(COPY ${MASTER_COPY_SOURCE_PATH}/node-install/include DESTINATION ${CURRENT_PACKAGES_DIR})
-    file(COPY ${MASTER_COPY_SOURCE_PATH}/node-install/libnode.lib DESTINATION ${CURRENT_PACKAGES_DIR}/lib)
-    file(COPY ${MASTER_COPY_SOURCE_PATH}/node-install/v8_libplatform.lib DESTINATION ${CURRENT_PACKAGES_DIR}/lib)
-    file(COPY ${MASTER_COPY_SOURCE_PATH}/node-install/libnode.dll DESTINATION ${CURRENT_PACKAGES_DIR}/bin)
+    file(COPY ${NODE_INSTALL_PATH}/node-install/include DESTINATION ${CURRENT_PACKAGES_DIR})
+    file(COPY ${NODE_INSTALL_PATH}/node-install/libnode.lib DESTINATION ${CURRENT_PACKAGES_DIR}/lib)
+    file(COPY ${NODE_INSTALL_PATH}/node-install/v8_libplatform.lib DESTINATION ${CURRENT_PACKAGES_DIR}/lib)
+    file(COPY ${NODE_INSTALL_PATH}/node-install/libnode.dll DESTINATION ${CURRENT_PACKAGES_DIR}/bin)
 else ()
-    file(COPY ${MASTER_COPY_SOURCE_PATH}/node-install/include DESTINATION ${CURRENT_PACKAGES_DIR})
-    file(COPY ${MASTER_COPY_SOURCE_PATH}/node-install/lib DESTINATION ${CURRENT_PACKAGES_DIR})
-    file(COPY ${MASTER_COPY_SOURCE_PATH}/node-install/share DESTINATION ${CURRENT_PACKAGES_DIR})
-    file(COPY ${MASTER_COPY_SOURCE_PATH}/node-install/bin DESTINATION ${CURRENT_PACKAGES_DIR})
+    file(COPY ${NODE_INSTALL_PATH}/node-install/include DESTINATION ${CURRENT_PACKAGES_DIR})
+    file(COPY ${NODE_INSTALL_PATH}/node-install/lib DESTINATION ${CURRENT_PACKAGES_DIR})
+    file(COPY ${NODE_INSTALL_PATH}/node-install/share DESTINATION ${CURRENT_PACKAGES_DIR})
+    file(COPY ${NODE_INSTALL_PATH}/node-install/bin DESTINATION ${CURRENT_PACKAGES_DIR})
 endif ()
