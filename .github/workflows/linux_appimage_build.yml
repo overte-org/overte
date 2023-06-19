@@ -24,6 +24,9 @@ env:
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
 
+  # Sentry Crash Reporting
+  CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
+  CMAKE_BACKTRACE_TOKEN: AppImage_${{ github.event.number }}_${{ github.sha }}
 jobs:
   build:
 
@@ -69,6 +72,13 @@ jobs:
             rm -v $overtedir/*AppImage || true
         fi
 
+        if [ -z "$CMAKE_BACKTRACE_URL" ] ; then
+          # We're building a PR, default to the PR endpoint
+          echo "Setting up crash reporting for a PR"
+          export CMAKE_BACKTRACE_URL="https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
+          export CMAKE_BACKTRACE_TOKEN="AppImage_pr_${{ github.event.number }}_${{ github.sha }}"
+        fi
+
         cd overte-builder
         ./overte-builder --auto --make-appimage --destdir="$overtedir"
 
@@ -107,7 +117,7 @@ jobs:
         filename=`find Overte -maxdepth 1 -name 'Overte-*-nodebug-x86_64.AppImage'`
         base=`basename "$filename"`
 
-        sudo -u uploader /usr/local/bin/upload_to_s3 --number ${{ github.event.number }} --name "$base" < "$filename"
+        sudo -u uploader /usr/local/bin/upload_to_s3 --type "${{ github.event_name }}" --number ${{ github.event.number }} --name "$base" < "$filename"
 
     - name: Upload AppImage with debugging to S3
       shell: bash
@@ -116,7 +126,7 @@ jobs:
         filename=`find Overte -maxdepth 1 -name 'Overte-*-debug-x86_64.AppImage'`
         base=`basename "$filename"`
 
-        sudo -u uploader /usr/local/bin/upload_to_s3 --number ${{ github.event.number }} --name "$base" < "$filename"
+        sudo -u uploader /usr/local/bin/upload_to_s3 --type "${{ github.event_name }}" --number ${{ github.event.number }} --name "$base" < "$filename"
 
     - name: Cleanup
       if: ${{ always() }}
