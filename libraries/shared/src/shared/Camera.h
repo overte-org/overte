@@ -15,6 +15,7 @@
 #include "../GLMHelpers.h"
 #include "../RegisteredMetaTypes.h"
 #include "../ViewFrustum.h"
+#include "../SettingHandle.h"
 
 enum CameraMode
 {
@@ -131,6 +132,23 @@ public slots:
     void setCaptureMouse(bool captureMouse) { _captureMouse = captureMouse; emit captureMouseChanged(captureMouse); }
 
     /*@jsdoc
+     * Gets the current mouse look setting state.
+     * @function Camera.getMouseLook
+     * @returns {boolean} <code>true</code> if the mouse look setting is enabled (mouse look can be toggled with M key in this
+     * mode), <code>false</code> if the mouse look setting is disabled.
+     */
+    bool getMouseLook() const { return Setting::Handle<bool>{"MouseLookAllowed", false }.get(); }
+
+    /*@jsdoc
+     * Sets the mouse look setting state.  When <code>true</code>, the mouse look setting is enabled (mouse look can be toggled
+     * with M key in this mode).  When <code>false</code>, the mouse behaves normally.
+     * @function Camera.setMouseLook
+     * @param {boolean} mouseLook - <code>true</code> to enable mouse look setting, <code>false</code> to disable mouse look
+     * setting.
+     */
+    void setMouseLook(bool mouseLook);
+
+    /*@jsdoc
      * Gets the current camera sensitivity.
      * @function Camera.getSensitivity
      * @returns {number} The current camera sensitivity.  Must be positive.
@@ -228,6 +246,20 @@ signals:
      * Camera.captureMouseChanged.connect(onCaptureMouseChanged);
      */
     void captureMouseChanged(bool newCaptureMouse);
+
+    /*@jsdoc
+     * Triggered when mouse look setting changes.
+     * @function Camera.mouseLookChanged
+     * @param {boolean} mouseLookChanged - The new mouse look state.
+     * @returns {Signal}
+     * @example <caption>Report mouse look state changes.</caption>
+     * function onMouseLookChanged(newMouseLook) {
+     *     print("The mouse look has changed to " + newMouseLook);
+     * }
+     *
+     * Camera.mouseLookChanged.connect(onMouseLookChanged);
+     */
+    void mouseLookChanged(bool newMouseLook);
 
 private:
     void recompose();
