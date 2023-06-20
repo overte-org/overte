@@ -109,7 +109,7 @@ jobs:
             appimage/Overte/Overte-*-debug-x86_64.AppImage
 
     - name: Upload AppImage without debugging to S3
-      if: ! contains( github.event.pull_request.labels.*.name, 'upload_to_github')
+      if: contains( github.event.pull_request.labels.*.name, 'upload_to_github') == false
       shell: bash
       working-directory: appimage
       run: |
@@ -124,7 +124,7 @@ jobs:
         sudo -u uploader /usr/local/bin/upload_to_s3 --type "${{ github.event_name }}" --number ${{ github.event.number }} --name "$base" < "$filename"
 
     - name: Upload AppImage with debugging to S3
-      if: ! contains( github.event.pull_request.labels.*.name, 'upload_to_github')
+      if: contains( github.event.pull_request.labels.*.name, 'upload_to_github') == false
       shell: bash
       working-directory: appimage
       run: |
