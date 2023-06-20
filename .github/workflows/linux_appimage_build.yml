@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 name: Linux AppImage build
-# Keep in mind that GitHub Actions does not allow reading secrets during PR builds.
+# This was made for a particular self-hosted setup containing helper scripts.
 
 on:
   pull_request:
@@ -19,10 +19,6 @@ defaults:
 
 env:
   BUILD_TYPE: Release
-
-  UPLOAD_BUCKET: overte-public
-  UPLOAD_REGION: fra1
-  UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
 
   # Sentry Crash Reporting
   CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
@@ -98,12 +94,14 @@ jobs:
         fi
 
     - name: Upload AppImage without debug info to GitHub
+      if: contains( github.event.pull_request.labels.*.name, 'upload_to_github')
       uses: actions/upload-artifact@v3
       with:
         name: Overte-nodebug-x86_64.AppImage
         path: appimage/Overte/Overte-*-nodebug-x86_64.AppImage
 
     - name: Upload AppImage with debug info to GitHub
+      if: contains( github.event.pull_request.labels.*.name, 'upload_to_github')
       uses: actions/upload-artifact@v3
       with:
         name: Overte-x86_64.AppImage
@@ -111,18 +109,30 @@ jobs:
             appimage/Overte/Overte-*-debug-x86_64.AppImage
 
     - name: Upload AppImage without debugging to S3
+      if: ! contains( github.event.pull_request.labels.*.name, 'upload_to_github')
       shell: bash
       working-directory: appimage
       run: |
+        if [ ! -x "/usr/local/bin/upload_to_s3" ] ; then
+            echo "Couldn't find /usr/local/bin/upload_to_s3 upload script. Label this with upload_to_github to upload to GitHub instead."
+            exit 1
+        fi
+
         filename=`find Overte -maxdepth 1 -name 'Overte-*-nodebug-x86_64.AppImage'`
         base=`basename "$filename"`
 
         sudo -u uploader /usr/local/bin/upload_to_s3 --type "${{ github.event_name }}" --number ${{ github.event.number }} --name "$base" < "$filename"
 
     - name: Upload AppImage with debugging to S3
+      if: ! contains( github.event.pull_request.labels.*.name, 'upload_to_github')
       shell: bash
       working-directory: appimage
       run: |
+        if [ ! -x "/usr/local/bin/upload_to_s3" ] ; then
+          echo "Couldn't find /usr/local/bin/upload_to_s3 upload script. Label this with upload_to_github to upload to GitHub instead."
+          exit 1
+        fi
+
         filename=`find Overte -maxdepth 1 -name 'Overte-*-debug-x86_64.AppImage'`
         base=`basename "$filename"`
 
