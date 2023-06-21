@@ -8,7 +8,7 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 
 	var hmd;
 
-	var mouseLookEnabled = Camera.getMouseLook;
+	var mouseLookEnabled = Camera.getMouseLook();
 
 	var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
