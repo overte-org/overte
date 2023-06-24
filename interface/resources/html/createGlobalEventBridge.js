@@ -1,11 +1,9 @@
+//  Created by Anthony J. Thibault on 9/7/2016
+//  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
-// createGlobalEventBridge.js
-//
-// Created by Anthony J. Thibault on 9/7/2016
-// Copyright 2016 High Fidelity, Inc.
-//
-// Distributed under the Apache License, Version 2.0.
-// See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
 // Stick a EventBridge object in the global namespace.
