@@ -33,6 +33,30 @@ var EventBridge;
         var tempEventBridge = EventBridge;
         EventBridge = channel.objects.eventBridge;
 
+        // TODO: These event listeners cause issues. Most likely the function is not being exposed to this scope. This may be causing issues!
+        
+        // To be able to update the state of the output device selection for every element added to the DOM
+        // we need to listen to events that might precede the addition of this elements.
+        // A more robust hack will be to add a setInterval that look for DOM changes every 100-300 ms (low performance?)
+
+        // window.addEventListener("load",function(event) {
+        //     setTimeout(function() { 
+        //         EventBridge.forceHtmlAudioOutputDeviceUpdate();
+        //     }, 1200);
+        // }, false);
+
+        // document.addEventListener("click",function(){
+        //     setTimeout(function() { 
+        //         EventBridge.forceHtmlAudioOutputDeviceUpdate();
+        //     }, 1200);
+        // }, false);
+
+        // document.addEventListener("change",function(){
+        //     setTimeout(function() { 
+        //         EventBridge.forceHtmlAudioOutputDeviceUpdate();
+        //     }, 1200);
+        // }, false);
+
         tempEventBridge._callbacks.forEach(function (callback) {
             EventBridge.scriptEventReceived.connect(callback);
         });
