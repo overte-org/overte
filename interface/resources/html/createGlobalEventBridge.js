@@ -1,11 +1,11 @@
 //
-//  createGlobalEventBridge.js
+// createGlobalEventBridge.js
 //
-//  Created by Anthony J. Thibault on 9/7/2016
-//  Copyright 2016 High Fidelity, Inc.
+// Created by Anthony J. Thibault on 9/7/2016
+// Copyright 2016 High Fidelity, Inc.
 //
-//  Distributed under the Apache License, Version 2.0.
-//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+// Distributed under the Apache License, Version 2.0.
+// See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
 // Stick a EventBridge object in the global namespace.
@@ -25,37 +25,16 @@ var EventBridge;
         this.emitWebEvent = function (message) {
             self._messages.push(message);
         };
-    };
+    }
 
     EventBridge = new TempEventBridge();
 
-    var webChannel = new QWebChannel(qt.webChannelTransport, function (channel) {
+    var webChannel = new QWebChannel(qt.webChannelTransport, (channel) => {
+        //
         // replace the TempEventBridge with the real one.
         var tempEventBridge = EventBridge;
         EventBridge = channel.objects.eventBridge;
-        
-        // To be able to update the state of the output device selection for every element added to the DOM
-        // we need to listen to events that might precede the addition of this elements.
-        // A more robust hack will be to add a setInterval that look for DOM changes every 100-300 ms (low performance?)
-        
-        window.addEventListener("load",function(event) {
-            setTimeout(function() { 
-                // EventBridge.forceHtmlAudioOutputDeviceUpdate();
-            }, 1200);
-        }, false);
-        
-        document.addEventListener("click",function(){
-            setTimeout(function() { 
-                // EventBridge.forceHtmlAudioOutputDeviceUpdate();
-            }, 1200);
-        }, false);
-        
-        document.addEventListener("change",function(){
-            setTimeout(function() { 
-                // EventBridge.forceHtmlAudioOutputDeviceUpdate();
-            }, 1200);
-        }, false);
-        
+
         tempEventBridge._callbacks.forEach(function (callback) {
             EventBridge.scriptEventReceived.connect(callback);
         });
