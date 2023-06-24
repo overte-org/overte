@@ -40,19 +40,19 @@ var EventBridge;
         
         window.addEventListener("load",function(event) {
             setTimeout(function() { 
-                EventBridge.forceHtmlAudioOutputDeviceUpdate();
+                // EventBridge.forceHtmlAudioOutputDeviceUpdate();
             }, 1200);
         }, false);
         
         document.addEventListener("click",function(){
             setTimeout(function() { 
-                EventBridge.forceHtmlAudioOutputDeviceUpdate();
+                // EventBridge.forceHtmlAudioOutputDeviceUpdate();
             }, 1200);
         }, false);
         
         document.addEventListener("change",function(){
             setTimeout(function() { 
-                EventBridge.forceHtmlAudioOutputDeviceUpdate();
+                // EventBridge.forceHtmlAudioOutputDeviceUpdate();
             }, 1200);
         }, false);
         

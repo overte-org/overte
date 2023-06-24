@@ -50,6 +50,8 @@ local.properties
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+# Workspace
+*.code-workspace
 
 # Xcode
 *.xcodeproj
