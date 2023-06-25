@@ -421,12 +421,12 @@ bool startCrashHandler(std::string appPath) {
     }
 
     // Enable automated uploads.
-    QObject::connect(&UserActivityLogger::getInstance(), &UserActivityLogger::crashReportingEnabledChanged, []() {
-        auto &ual = UserActivityLogger::getInstance();
-        setCrashReportingEnabled(ual.isCrashReportingEnabled());
-    });
+  //  QObject::connect(&UserActivityLogger::getInstance(), &UserActivityLogger::crashReportingEnabledChanged, []() {
+  //      auto &ual = UserActivityLogger::getInstance();
+  //      setCrashReportingEnabled(ual.isCrashReportingEnabled());
+  //  });
 
-    crashpadDatabase->GetSettings()->SetUploadsEnabled(UserActivityLogger::getInstance().isCrashReportingEnabled());
+    crashpadDatabase->GetSettings()->SetUploadsEnabled(CrashHandler::getInstance().isEnabled());
 
 
     if (!client->StartHandler(handler, db, db, BACKTRACE_URL, annotations, arguments, true, true)) {

@@ -27,7 +27,7 @@
 
 #include "AddressManager.h"
 #include "Application.h"
-#include "CrashHandler.h"
+#include "crash-handler/CrashHandler.h"
 #include "InterfaceLogging.h"
 #include "UserActivityLogger.h"
 #include "MainWindow.h"
@@ -37,7 +37,7 @@
 #ifdef Q_OS_WIN
 #include <Windows.h>
 extern "C" {
-    typedef int(__stdcall * CHECKMINSPECPROC) ();
+typedef int(__stdcall* CHECKMINSPECPROC)();
 }
 #endif
 
@@ -51,7 +51,7 @@ int main(int argc, const char* argv[]) {
     // This appears to resolve the issues with corrupted fonts on OSX.  No
     // idea why.
     qputenv("QT_ENABLE_GLYPH_CACHE_WORKAROUND", "true");
-	// https://i.kym-cdn.com/entries/icons/original/000/008/342/ihave.jpg
+    // https://i.kym-cdn.com/entries/icons/original/000/008/342/ihave.jpg
     QSurfaceFormat::setDefaultFormat(format);
 #endif
 
@@ -73,179 +73,88 @@ int main(int argc, const char* argv[]) {
     QCommandLineOption helpOption = parser.addHelpOption();
     QCommandLineOption versionOption = parser.addVersionOption();
 
-    QCommandLineOption urlOption(
-        "url",
-        "Start at specified URL location.",
-        "string"
-    );
-    QCommandLineOption protocolVersionOption(
-        "protocolVersion",
-        "Writes the protocol version base64 signature to a file?",
-        "path"
-    );
-    QCommandLineOption noUpdaterOption(
-        "no-updater",
-        "Do not show auto-updater."
-    );
-    QCommandLineOption checkMinSpecOption(
-        "checkMinSpec",
-        "Check if machine meets minimum specifications. The program will run if check passes."
-    );
-    QCommandLineOption runServerOption(
-        "runServer",
-        "Run the server."
-    );
-    QCommandLineOption listenPortOption(
-        "listenPort",
-        "Port to listen on.",
-        "port_number"
-    );
-    QCommandLineOption serverContentPathOption(
-        "serverContentPath",
-        "Path to find server content.", // What content??
-        "path"
-    );
-    QCommandLineOption overrideAppLocalDataPathOption(
-        "cache",
-        "Set test cache.",
-        "dir"
-    );
-    QCommandLineOption scriptsOption(
-        "scripts",
-        "Set path for defaultScripts. These are probably scripts that run automatically. This parameter does not seem to work.",
-        "dir"
-    );
-    QCommandLineOption allowMultipleInstancesOption(
-        "allowMultipleInstances",
-        "Allow multiple instances to run."
-    );
-    QCommandLineOption displaysOption(
-        "display",
-        "Preferred display.",
-        "displays"
-    );
-    QCommandLineOption disableDisplaysOption(
-        "disable-displays",
-        "Displays to disable. Valid options include \"OpenVR (Vive)\" and \"Oculus Rift\"",
-        "string"
-    );
-    QCommandLineOption disableInputsOption(
-        "disable-inputs",
-        "Inputs to disable. Valid options include \"OpenVR (Vive)\" and \"Oculus Rift\"",
-        "string"
-    );
-    QCommandLineOption suppressSettingsResetOption(
-        "suppress-settings-reset",
-        "Suppress the prompt to reset interface settings."
-    );
-    QCommandLineOption oculusStoreOption(
-        "oculus-store",
-        "Let the Oculus plugin know if interface was run from the Oculus Store."
-    );
-    QCommandLineOption standaloneOption(
-        "standalone",
-        "Emulate a standalone device."
-    );
-    QCommandLineOption disableWatchdogOption(
-        "disableWatchdog",
-        "Disable the watchdog thread. The interface will crash on deadlocks."
-    );
-    QCommandLineOption systemCursorOption(
-        "system-cursor",
-        "Use the default system cursor."
-    );
-    QCommandLineOption concurrentDownloadsOption(
-        "concurrent-downloads",
-        "Maximum concurrent resource downloads. Default is 16, except for Android where it is 4.",
-        "integer"
-    );
-    QCommandLineOption avatarURLOption(
-        "avatarURL",
-        "Override the avatar U.R.L.",
-        "url"
-    );
-    QCommandLineOption replaceAvatarURLOption(
-        "replaceAvatarURL",
-        "Replaces the avatar U.R.L. When used with --avatarURL, this takes precedence.",
-        "url"
-    );
-    QCommandLineOption setBookmarkOption(
-        "setBookmark",
-        "Set bookmark as key=value pair. Including the '=' symbol in either string is unsupported.",
-        "string"
-    );
-    QCommandLineOption forceCrashReportingOption(
-        "forceCrashReporting",
-        "Force crash reporting to initialize."
-    );
+    QCommandLineOption urlOption("url", "Start at specified URL location.", "string");
+    QCommandLineOption protocolVersionOption("protocolVersion", "Writes the protocol version base64 signature to a file?",
+                                             "path");
+    QCommandLineOption noUpdaterOption("no-updater", "Do not show auto-updater.");
+    QCommandLineOption
+        checkMinSpecOption("checkMinSpec",
+                           "Check if machine meets minimum specifications. The program will run if check passes.");
+    QCommandLineOption runServerOption("runServer", "Run the server.");
+    QCommandLineOption listenPortOption("listenPort", "Port to listen on.", "port_number");
+    QCommandLineOption serverContentPathOption("serverContentPath",
+                                               "Path to find server content.",  // What content??
+                                               "path");
+    QCommandLineOption overrideAppLocalDataPathOption("cache", "Set test cache.", "dir");
+    QCommandLineOption scriptsOption("scripts",
+                                     "Set path for defaultScripts. These are probably scripts that run automatically. This "
+                                     "parameter does not seem to work.",
+                                     "dir");
+    QCommandLineOption allowMultipleInstancesOption("allowMultipleInstances", "Allow multiple instances to run.");
+    QCommandLineOption displaysOption("display", "Preferred display.", "displays");
+    QCommandLineOption disableDisplaysOption("disable-displays",
+                                             "Displays to disable. Valid options include \"OpenVR (Vive)\" and \"Oculus Rift\"",
+                                             "string");
+    QCommandLineOption disableInputsOption("disable-inputs",
+                                           "Inputs to disable. Valid options include \"OpenVR (Vive)\" and \"Oculus Rift\"",
+                                           "string");
+    QCommandLineOption suppressSettingsResetOption("suppress-settings-reset",
+                                                   "Suppress the prompt to reset interface settings.");
+    QCommandLineOption oculusStoreOption("oculus-store",
+                                         "Let the Oculus plugin know if interface was run from the Oculus Store.");
+    QCommandLineOption standaloneOption("standalone", "Emulate a standalone device.");
+    QCommandLineOption disableWatchdogOption("disableWatchdog",
+                                             "Disable the watchdog thread. The interface will crash on deadlocks.");
+    QCommandLineOption systemCursorOption("system-cursor", "Use the default system cursor.");
+    QCommandLineOption
+        concurrentDownloadsOption("concurrent-downloads",
+                                  "Maximum concurrent resource downloads. Default is 16, except for Android where it is 4.",
+                                  "integer");
+    QCommandLineOption avatarURLOption("avatarURL", "Override the avatar U.R.L.", "url");
+    QCommandLineOption replaceAvatarURLOption("replaceAvatarURL",
+                                              "Replaces the avatar U.R.L. When used with --avatarURL, this takes precedence.",
+                                              "url");
+    QCommandLineOption
+        setBookmarkOption("setBookmark",
+                          "Set bookmark as key=value pair. Including the '=' symbol in either string is unsupported.",
+                          "string");
+    QCommandLineOption forceCrashReportingOption("forceCrashReporting", "Force crash reporting to initialize.");
     // The documented "--disable-lod" does not seem to exist.
     // Below are undocumented.
-    QCommandLineOption noLauncherOption(
-       "no-launcher",
-       "Supposedly does something for the server, unrelated to the application launcher. The feature may never have been implemented."
-    );
-    QCommandLineOption overrideScriptsPathOption(
-       "overrideScriptsPath",
-       "Specifies path to default directory where the application will look for scripts to load.",
-       "string"
-    );
-    QCommandLineOption defaultScriptsOverrideOption(
-       "defaultScriptsOverride",
-       "Override default script to run automatically on start. Default is \"defaultsScripts.js\".",
-       "string"
-    );
-    QCommandLineOption responseTokensOption(
-       "tokens",
-       "Set response tokens <json>.",
-       "json"
-    );
-    QCommandLineOption displayNameOption(
-       "displayName",
-       "Set user display name <string>.",
-       "string"
-    );
-    QCommandLineOption noLoginOption(
-       "no-login-suggestion",
-       "Do not show log-in dialogue."
-    );
-    QCommandLineOption traceFileOption(
-       "traceFile",
-       "Writes a trace to a file in the documents folder. Only works if \"--traceDuration\" is specified.",
-       "path"
-    );
-    QCommandLineOption traceDurationOption(
-       "traceDuration",
-       "Automatically quit interface after duration. Only works if \"--traceFile\" is specified.",
-       "seconds"
-    );
-    QCommandLineOption clockSkewOption(
-       "clockSkew",
-       "Forces client instance's clock to skew for demonstration purposes.",
-       "integer"
-    ); // This should probably be removed.
-    QCommandLineOption testScriptOption(
-       "testScript",
-       "Undocumented. Accepts parameter as U.R.L.",
-       "string"
-    );
-    QCommandLineOption testResultsLocationOption(
-       "testResultsLocation",
-       "Undocumented",
-       "path"
-    );
+    QCommandLineOption noLauncherOption("no-launcher",
+                                        "Supposedly does something for the server, unrelated to the application launcher. The "
+                                        "feature may never have been implemented.");
+    QCommandLineOption
+        overrideScriptsPathOption("overrideScriptsPath",
+                                  "Specifies path to default directory where the application will look for scripts to load.",
+                                  "string");
+    QCommandLineOption defaultScriptsOverrideOption("defaultScriptsOverride",
+                                                    "Override default script to run automatically on start. Default is "
+                                                    "\"defaultsScripts.js\".",
+                                                    "string");
+    QCommandLineOption responseTokensOption("tokens", "Set response tokens <json>.", "json");
+    QCommandLineOption displayNameOption("displayName", "Set user display name <string>.", "string");
+    QCommandLineOption noLoginOption("no-login-suggestion", "Do not show log-in dialogue.");
+    QCommandLineOption
+        traceFileOption("traceFile",
+                        "Writes a trace to a file in the documents folder. Only works if \"--traceDuration\" is specified.",
+                        "path");
+    QCommandLineOption
+        traceDurationOption("traceDuration",
+                            "Automatically quit interface after duration. Only works if \"--traceFile\" is specified.",
+                            "seconds");
+    QCommandLineOption clockSkewOption("clockSkew", "Forces client instance's clock to skew for demonstration purposes.",
+                                       "integer");  // This should probably be removed.
+    QCommandLineOption testScriptOption("testScript", "Undocumented. Accepts parameter as U.R.L.", "string");
+    QCommandLineOption testResultsLocationOption("testResultsLocation", "Undocumented", "path");
     QCommandLineOption quitWhenFinishedOption(
-       "quitWhenFinished",
-       "Only works if \"--testScript\" is provided."
-    ); // Should probably also be made to work on testResultsLocationOption.
-    QCommandLineOption fastHeartbeatOption(
-       "fast-heartbeat",
-       "Change stats polling interval from 10000ms to 1000ms."
-    );
-    QCommandLineOption logOption(
-        "logOptions",
-        "Logging options, comma separated: color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald",
-        "options"
-    );
+        "quitWhenFinished",
+        "Only works if \"--testScript\" is provided.");  // Should probably also be made to work on testResultsLocationOption.
+    QCommandLineOption fastHeartbeatOption("fast-heartbeat", "Change stats polling interval from 10000ms to 1000ms.");
+    QCommandLineOption logOption("logOptions",
+                                 "Logging options, comma separated: "
+                                 "color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald",
+                                 "options");
     // "--qmljsdebugger", which appears in output from "--help-all".
     // Those below don't seem to be optional.
     //     --ignore-gpu-blacklist
@@ -296,7 +205,7 @@ int main(int argc, const char* argv[]) {
     {
         QCoreApplication tempApp(argc, const_cast<char**>(argv));
 
-        parser.process(QCoreApplication::arguments()); // Must be run after QCoreApplication is initalised.
+        parser.process(QCoreApplication::arguments());  // Must be run after QCoreApplication is initalised.
 
 #ifdef Q_OS_OSX
         if (QFileInfo::exists(QCoreApplication::applicationDirPath() + "/../../../config.json")) {
@@ -310,10 +219,10 @@ int main(int argc, const char* argv[]) {
     }
 
     // We want to configure the logging system as early as possible
-    auto &logHandler = LogHandler::getInstance();
+    auto& logHandler = LogHandler::getInstance();
     if (parser.isSet(logOption)) {
         if (!logHandler.parseOptions(parser.value(logOption).toUtf8(), logOption.names().first())) {
-            QCoreApplication mockApp(argc, const_cast<char**>(argv)); // required for call to showHelp()
+            QCoreApplication mockApp(argc, const_cast<char**>(argv));  // required for call to showHelp()
             parser.showHelp();
             Q_UNREACHABLE();
         }
@@ -325,7 +234,7 @@ int main(int argc, const char* argv[]) {
         Q_UNREACHABLE();
     }
     if (parser.isSet(helpOption)) {
-        QCoreApplication mockApp(argc, const_cast<char**>(argv)); // required for call to showHelp()
+        QCoreApplication mockApp(argc, const_cast<char**>(argv));  // required for call to showHelp()
         parser.showHelp();
         Q_UNREACHABLE();
     }
@@ -378,7 +287,7 @@ int main(int argc, const char* argv[]) {
 
     // Early check for --traceFile argument
     auto tracer = DependencyManager::set<tracing::Tracer>();
-    const char * traceFile = nullptr;
+    const char* traceFile = nullptr;
     float traceDuration = 0.0f;
     if (parser.isSet(traceFileOption)) {
         traceFile = parser.value(traceFileOption).toStdString().c_str();
@@ -412,6 +321,8 @@ int main(int argc, const char* argv[]) {
 
     // Instance UserActivityLogger now that the settings are loaded
     auto& ual = UserActivityLogger::getInstance();
+    auto& ch = CrashHandler::getInstance();
+
     // once the settings have been loaded, check if we need to flip the default for UserActivityLogger
     if (!ual.isDisabledSettingSet()) {
         // the user activity logger is opt-out for Interface
@@ -423,13 +334,12 @@ int main(int argc, const char* argv[]) {
 
     if (parser.isSet(forceCrashReportingOption)) {
         qInfo() << "Crash reporting enabled on the command-line";
-        ual.setCrashReportingEnabled(true);
+        ch.setEnabled(true);
     }
 
-    auto crashHandlerStarted = startCrashHandler(argv[0]);
+    auto crashHandlerStarted = ch.start(argv[0]);
     if (crashHandlerStarted) {
-        ual.setCrashMonitorStarted(true);
-        qDebug() << "Crash handler started:" << crashHandlerStarted;
+        qDebug() << "Crash handler started";
     } else {
         qWarning() << "Crash handler failed to start";
     }
@@ -472,9 +382,9 @@ int main(int argc, const char* argv[]) {
         if (socket.waitForConnected(LOCAL_SERVER_TIMEOUT_MS)) {
             if (parser.isSet(urlOption)) {
                 QUrl url = QUrl(parser.value(urlOption));
-                if (url.isValid() && (url.scheme() == URL_SCHEME_OVERTE || url.scheme() == URL_SCHEME_OVERTEAPP
-                        || url.scheme() == HIFI_URL_SCHEME_HTTP || url.scheme() == HIFI_URL_SCHEME_HTTPS
-                        || url.scheme() == HIFI_URL_SCHEME_FILE)) {
+                if (url.isValid() && (url.scheme() == URL_SCHEME_OVERTE || url.scheme() == URL_SCHEME_OVERTEAPP ||
+                                      url.scheme() == HIFI_URL_SCHEME_HTTP || url.scheme() == HIFI_URL_SCHEME_HTTPS ||
+                                      url.scheme() == HIFI_URL_SCHEME_FILE)) {
                     qDebug() << "Writing URL to local socket";
                     socket.write(url.toString().toUtf8());
                     if (!socket.waitForBytesWritten(5000)) {
@@ -494,7 +404,6 @@ int main(int argc, const char* argv[]) {
         return EXIT_SUCCESS;
 #endif
     }
-
 
     // FIXME this method of checking the OpenGL version screws up the `QOpenGLContext::globalShareContext()` value, which in turn
     // leads to crashes when creating the real OpenGL instance.  Disabling for now until we come up with a better way of checking
@@ -521,7 +430,6 @@ int main(int argc, const char* argv[]) {
         }
     }
 #endif
-
 
     // Debug option to demonstrate that the client's local time does not
     // need to be in sync with any other network node. This forces clock
@@ -590,7 +498,8 @@ int main(int argc, const char* argv[]) {
 #if defined(Q_OS_LINUX)
         app.setWindowIcon(QIcon(PathUtils::resourcesPath() + "images/brand-logo.svg"));
 #endif
-        startCrashHookMonitor(&app);
+        ch.startMonitor(&app);
+
 
         QTimer exitTimer;
         if (traceDuration > 0.0f) {
@@ -618,14 +527,14 @@ int main(int argc, const char* argv[]) {
 #endif
 
         // Setup local server
-        QLocalServer server { &app };
+        QLocalServer server{ &app };
 
         // We failed to connect to a local server, so we remove any existing servers.
         server.removeServer(applicationName);
         server.listen(applicationName);
 
-        QObject::connect(&server, &QLocalServer::newConnection,
-                         &app, &Application::handleLocalServerConnection, Qt::DirectConnection);
+        QObject::connect(&server, &QLocalServer::newConnection, &app, &Application::handleLocalServerConnection,
+                         Qt::DirectConnection);
 
         printSystemInformation();
 

@@ -12,8 +12,8 @@
 #include "Application.h"
 #include <shared/GlobalAppProperties.h>
 #include <shared/QtHelpers.h>
+#include <crash-handler/CrashHandler.h>
 
-#include "CrashHandler.h"
 
 RenderEventHandler::RenderEventHandler(CheckCall checkCall, RenderCall renderCall) :
     _checkCall(checkCall),
@@ -29,7 +29,7 @@ RenderEventHandler::RenderEventHandler(CheckCall checkCall, RenderCall renderCal
 void RenderEventHandler::initialize() {
     setObjectName("Render");
     PROFILE_SET_THREAD_NAME("Render");
-    setCrashAnnotation("render_thread_id", std::to_string((size_t)QThread::currentThreadId()));
+    CrashHandler::getInstance().setAnnotation("render_thread_id", std::to_string((size_t)QThread::currentThreadId()));
 }
 
 void RenderEventHandler::resumeThread() {

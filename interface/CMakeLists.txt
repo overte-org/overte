@@ -230,7 +230,7 @@ link_hifi_libraries(
   ${PLATFORM_GL_BACKEND}
   # Plaform specific input & display plugin libraries
   ${PLATFORM_PLUGIN_LIBRARIES}
-  shaders
+  shaders monitoring
 )
 include_hifi_library_headers(script-engine)
 

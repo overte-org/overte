@@ -57,6 +57,7 @@
 #include "LocationBookmarks.h"
 #include "DeferredLightingEffect.h"
 #include "PickManager.h"
+#include "crash-handler/CrashHandler.h"
 
 #include "scripting/SettingsScriptingInterface.h"
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
@@ -636,12 +637,13 @@ Menu::Menu() {
         true,
         &UserActivityLogger::getInstance(),
         SLOT(disable(bool)));
+
     addCheckableActionToQMenuAndActionHash(networkMenu,
         MenuOption::EnableCrashReporting,
         0,
-        UserActivityLogger::getInstance().isCrashReportingEnabled(),
-        &UserActivityLogger::getInstance(),
-        SLOT(setCrashReportingEnabled(bool)));
+        CrashHandler::getInstance().isEnabled(),
+        &CrashHandler::getInstance(),
+        SLOT(setEnabled(bool)));
 
     addActionToQMenuAndActionHash(networkMenu, MenuOption::ShowDSConnectTable, 0,
         qApp, SLOT(loadDomainConnectionDialog()));
