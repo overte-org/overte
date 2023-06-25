@@ -6,7 +6,7 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 
 	var away;
 
-	var hmd;
+	var hmd = HMD.active;
 
 	var mouseLookEnabled = Camera.getMouseLook();
 
@@ -15,8 +15,6 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 	var tabletUp;
 
 	var tempOff = false;
-
-	hmd = AvatarInputs.isHMD;
 
 	Camera.mouseLookChanged.connect(onMouseLookChanged);
 
@@ -112,11 +110,11 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 		}
 	}
 
-	AvatarInputs.isHMDChanged.connect(onIsHMDChanged);
+	HMD.displayModeChanged.connect(onDisplayModeChanged);
 
-	function onIsHMDChanged() {
+	function onDisplayModeChanged() {
 		if (mouseLookEnabled) {
-			if (AvatarInputs.isHMD) {
+			if (HMD.active) {
 				hmd = true;
 				mouseLookOff();
 			} else {
@@ -149,7 +147,7 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 		tablet.tabletShownChanged.disconnect(onTabletShownChanged);
 		MyAvatar.wentAway.disconnect(onWentAway);
 		MyAvatar.wentActive.disconnect(onWentActive);
-		AvatarInputs.isHMDChanged.disconnect(onIsHMDChanged);
+		HMD.displayModeChanged.disconnect(onDisplayModeChanged);
 		Camera.modeUpdated.disconnect(onCameraModeUpdated);
 		Script.scriptEnding.disconnect(onScriptEnding);
 	}
