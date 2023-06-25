@@ -955,7 +955,6 @@ function loaded() {
                         type: type,
                         url: filename,
                         fullUrl: filename,
-                        urlWithPath: entity.certificateID === "" ? entity.url : "<i>" + CERTIFIED_PLACEHOLDER + "</i>",
                         locked: entity.locked,
                         visible: entity.visible,
                         verticesCount: displayIfNonZero(entity.verticesCount),
