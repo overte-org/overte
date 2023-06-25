@@ -344,6 +344,8 @@ int main(int argc, const char* argv[]) {
         qWarning() << "Crash handler failed to start";
     }
 
+    ch.setAnnotation("program", "interface");
+
     const QString& applicationName = getInterfaceSharedMemoryName();
     bool instanceMightBeRunning = true;
 #ifdef Q_OS_WIN

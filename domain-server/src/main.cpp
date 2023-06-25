@@ -21,6 +21,8 @@
 #include <SharedUtil.h>
 
 #include "DomainServer.h"
+#include <crash-handler/CrashHandler.h>
+
 
 int main(int argc, char* argv[]) {
     setupHifiApplication(BuildInfo::DOMAIN_SERVER_NAME);
@@ -32,9 +34,21 @@ int main(int argc, char* argv[]) {
     int currentExitCode = 0;
 
     // use a do-while to handle domain-server restart
+    auto &ch = CrashHandler::getInstance();
+    ch.start(argv[0]);
+
+    if ( DomainServer::forceCrashReporting() ) {
+        ch.setEnabled(true);
+    }
+
+    ch.setAnnotation("program", "domain-server");
+
+
     do {
         crash::annotations::setShutdownState(false);
         DomainServer domainServer(argc, argv);
+        ch.startMonitor(&domainServer);
+
         currentExitCode = domainServer.exec();
     } while (currentExitCode == DomainServer::EXIT_CODE_REBOOT);
 

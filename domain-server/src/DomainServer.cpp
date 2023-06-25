@@ -85,6 +85,8 @@ QUuid DomainServer::_overridingDomainID;
 bool DomainServer::_getTempName { false };
 QString DomainServer::_userConfigFilename;
 int DomainServer::_parentPID { -1 };
+bool DomainServer::_forceCrashReporting{false};
+
 
 /// @brief The Domain server can proxy requests to the Directory Server, this function handles those forwarding requests.
 /// @param connection The HTTP connection object.
@@ -417,6 +419,8 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
     const QCommandLineOption logOption("logOptions", "Logging options, comma separated: color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald", "options");
     parser.addOption(logOption);
 
+    const QCommandLineOption forceCrashReportingOption("forceCrashReporting", "Force crash reporting to initialize.");
+    parser.addOption(forceCrashReportingOption);
 
     QStringList arguments;
     for (int i = 0; i < argc; ++i) {
@@ -487,6 +491,10 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
             _parentPID = parentPID;
             qDebug() << "Parent process PID is" << _parentPID;
         }
+    }
+
+    if (parser.isSet(forceCrashReportingOption)) {
+        _forceCrashReporting = true;
     }
 }
 
