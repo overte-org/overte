@@ -223,6 +223,13 @@ void RenderScriptingInterface::setViewportResolutionScale(float scale) {
     }
 }
 
+void RenderScriptingInterface::setVerticalFieldOfView(float fieldOfView) {
+    if (getViewportResolutionScale() != fieldOfView) {
+        qApp->setFieldOfView(fieldOfView);
+        emit settingsChanged();
+    }
+}
+
 QStringList RenderScriptingInterface::getScreens() const {
     QStringList screens;
 

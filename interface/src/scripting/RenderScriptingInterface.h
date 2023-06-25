@@ -41,6 +41,7 @@ class RenderScriptingInterface : public QObject {
     Q_PROPERTY(bool ambientOcclusionEnabled READ getAmbientOcclusionEnabled WRITE setAmbientOcclusionEnabled NOTIFY settingsChanged)
     Q_PROPERTY(AntialiasingConfig::Mode antialiasingMode READ getAntialiasingMode WRITE setAntialiasingMode NOTIFY settingsChanged)
     Q_PROPERTY(float viewportResolutionScale READ getViewportResolutionScale WRITE setViewportResolutionScale NOTIFY settingsChanged)
+    Q_PROPERTY(float verticalFieldOfView READ getVerticalFieldOfView WRITE setVerticalFieldOfView NOTIFY settingsChanged)
 
 public:
     RenderScriptingInterface();
@@ -178,26 +179,40 @@ public slots:
     /*@jsdoc
      * Returns the list of screens
      * @function Render.getScreens
-     * @returns {string[]} The names of the available screens
+     * @returns {string[]} The names of the available screens.
      */
     QStringList getScreens() const;
 
     /*@jsdoc
-     * Gets the screen used when switching to full screen mode
+     * Gets the screen used when switching to full screen mode.
      * @function Render.getFullScreenScreen
-     * @returns {string} The name of the screen used for full screen mode
+     * @returns {string} The name of the screen used for full screen mode.
      */
     QString getFullScreenScreen() const;
 
     /*@jsdoc
-     * Sets the screen used when switching to full screen mode
+     * Sets the screen used when switching to full screen mode.
      * This function will only succeed if the name passed is one of the entries from Render.getScreens.
      * Otherwise, it will return False and have no effect.
      *
      * @function Render.setFullScreenScreen
-     * @returns {bool} True if the setting was successful
+     * @returns {bool} True if the setting was successful.
      */
     bool setFullScreenScreen(QString name);
+
+    /*@jsdoc
+     * Gets the vertical field of view in degrees.
+     * @function Render.getVerticalFieldOfView
+     * @returns {number} The vertical field of view in degrees.
+     */
+    float getVerticalFieldOfView() { return qApp->getFieldOfView(); }
+
+    /*@jsdoc
+     * Sets the vertical field of view in degrees.
+     * @function Render.setVerticalFieldOfView
+     * @param {number} fieldOfView - The vertical field of view in degrees to set.
+     */
+    void setVerticalFieldOfView( float fieldOfView );
 
 signals:
 
