@@ -421,11 +421,17 @@ int main(int argc, const char* argv[]) {
     }
     qDebug() << "UserActivityLogger is enabled:" << ual.isEnabled();
 
-    bool isCrashHandlerEnabled = ual.isCrashMonitorEnabled() || parser.isSet(forceCrashReportingOption);
-    qDebug() << "Crash handler logger is enabled:" << isCrashHandlerEnabled;
-    if (isCrashHandlerEnabled) {
-        auto crashHandlerStarted = startCrashHandler(argv[0]);
+    if (parser.isSet(forceCrashReportingOption)) {
+        qInfo() << "Crash reporting enabled on the command-line";
+        ual.setCrashReportingEnabled(true);
+    }
+
+    auto crashHandlerStarted = startCrashHandler(argv[0]);
+    if (crashHandlerStarted) {
+        ual.setCrashMonitorStarted(true);
         qDebug() << "Crash handler started:" << crashHandlerStarted;
+    } else {
+        qWarning() << "Crash handler failed to start";
     }
 
     const QString& applicationName = getInterfaceSharedMemoryName();

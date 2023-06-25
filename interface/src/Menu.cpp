@@ -368,7 +368,7 @@ Menu::Menu() {
     // Developer > Scripting > Verbose Logging
     addCheckableActionToQMenuAndActionHash(scriptingOptionsMenu, MenuOption::VerboseLogging, 0, false,
                                            qApp, SLOT(updateVerboseLogging()));
-                                           
+
    // Developer > Scripting > Enable Cachebusting of Script.require
    addCheckableActionToQMenuAndActionHash(scriptingOptionsMenu, MenuOption::CachebustRequire, 0, false,
                                           qApp, SLOT(setCachebustRequire()));
@@ -637,11 +637,12 @@ Menu::Menu() {
         &UserActivityLogger::getInstance(),
         SLOT(disable(bool)));
     addCheckableActionToQMenuAndActionHash(networkMenu,
-        MenuOption::DisableCrashLogger,
+        MenuOption::EnableCrashReporting,
         0,
-        true,
+        UserActivityLogger::getInstance().isCrashReportingEnabled(),
         &UserActivityLogger::getInstance(),
-        SLOT(crashMonitorDisable(bool)));
+        SLOT(setCrashReportingEnabled(bool)));
+
     addActionToQMenuAndActionHash(networkMenu, MenuOption::ShowDSConnectTable, 0,
         qApp, SLOT(loadDomainConnectionDialog()));
 

@@ -34,10 +34,6 @@ void UserActivityLogger::disable(bool disable) {
     _disabled.set(disable);
 }
 
-void UserActivityLogger::crashMonitorDisable(bool disable) {
-    _crashMonitorDisabled.set(disable);
-}
-
 void UserActivityLogger::logAction(QString action, QJsonObject details, JSONCallbackParameters params) {
 //  qCDebug(networking).nospace() << ">>> UserActivityLogger::logAction(" << action << "," << QJsonDocument(details).toJson();
 // This logs what the UserActivityLogger would normally send to centralized servers.
@@ -85,6 +81,15 @@ void UserActivityLogger::logAction(QString action, QJsonObject details, JSONCall
 void UserActivityLogger::requestError(QNetworkReply* errorReply) {
     qCDebug(networking) << errorReply->error() << "-" << errorReply->errorString();
 }
+
+void UserActivityLogger::setCrashReportingEnabled(bool enabled) {
+    bool old = _crashReportingEnabled.get();
+    _crashReportingEnabled.set(enabled);
+
+    if (old != enabled) {
+        emit crashReportingEnabledChanged();
+    }
+ }
 
 void UserActivityLogger::launch(QString applicationVersion, bool previousSessionCrashed, int previousSessionRuntime) {
     const QString ACTION_NAME = "launch";
