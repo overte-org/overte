@@ -22,6 +22,7 @@ class InputConfiguration : public QObject, public Dependency {
 public:
     InputConfiguration();
 
+    // For OpenVR this returns headset name instead
     Q_INVOKABLE QStringList inputPlugins();
     Q_INVOKABLE QStringList activeInputPlugins();
     Q_INVOKABLE QString configurationLayout(QString pluginName);
