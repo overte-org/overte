@@ -89,7 +89,7 @@ bool CrashRecoveryHandler::checkForResetSettings(bool wasLikelyCrash, bool suppr
 bool CrashRecoveryHandler::suggestCrashReporting() {
     QDialog crashDialog;
 
-    crashDialog.setWindowTitle("You are running an experimental version of Overte");
+    crashDialog.setWindowTitle("Overte");
 
     QVBoxLayout* layout = new QVBoxLayout;
 
@@ -129,8 +129,8 @@ bool CrashRecoveryHandler::suggestCrashReporting() {
 
     QLabel* explainLabel = new QLabel(explainText);
 
-    QLabel* crashReportLabel = new QLabel("Reports can only be seen by members of the Overte e.V. organization and\n"
-                                          "trusted developers, and will only be used for improving the code.");
+    QLabel* crashReportLabel = new QLabel("Reports can only be seen by developers trusted by the Overte e.V.\n"
+                                          "organization, and will only be used for improving the code.");
 
     QCheckBox* crashReportCheckbox = new QCheckBox("Enable automatic crash reporting");
 
@@ -181,8 +181,8 @@ CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool show
 
     if (ual.isCrashMonitorStarted()) {
         crashReportLabel = new QLabel("To help us with debugging, you can enable automatic crash reports.\n"
-                                      "They'll only be seen by members of the Overte e.V. organization and\n"
-                                      "trusted developers, and will only be used for improving the code.");
+                                      "They'll only be seen by developers trusted by the Overte e.V. organization,\n"
+                                      "and will only be used for improving the code.");
     } else {
         crashReportLabel = new QLabel("Unfortunately, crash reporting isn't built into this release.");
     }
