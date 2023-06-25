@@ -81,6 +81,11 @@ void setCrashAnnotation(std::string name, std::string value) {
     flushAnnotations();
 }
 
+void setCrashReportingEnabled(bool value) {
+    qCritical() << "Can't set crash reporting status on Breakpad.";
+    qCritical() << "Breakpad is deprecated and needs replacing!";
+}
+
 void startCrashHookMonitor(QCoreApplication* app) {
 }
 

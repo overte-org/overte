@@ -238,9 +238,9 @@ void setupPreferences() {
         auto preference = new BrowsePreference(SNAPSHOTS, "Put my snapshots here", getter, setter);
         preferences->addPreference(preference);
     }
-    
+
     {
-        auto getter = []()->bool { 
+        auto getter = []()->bool {
             if (!DependencyManager::get<Snapshot>()->_snapshotNotifications.isSet()){
                 DependencyManager::get<Snapshot>()->_snapshotNotifications.set(true);
             }
@@ -278,7 +278,7 @@ void setupPreferences() {
         preference->setItems(items);
         preferences->addPreference(preference);
     }
-    
+
     {
         auto getter = []()->float { return SnapshotAnimated::snapshotAnimatedDuration.get(); };
         auto setter = [](float value) { SnapshotAnimated::snapshotAnimatedDuration.set(value); };
@@ -299,8 +299,8 @@ void setupPreferences() {
     }
 
     {
-        auto getter = []()->bool { return !Menu::getInstance()->isOptionChecked(MenuOption::DisableCrashLogger); };
-        auto setter = [](bool value) { Menu::getInstance()->setIsOptionChecked(MenuOption::DisableCrashLogger, !value); };
+        auto getter = []()->bool { return Menu::getInstance()->isOptionChecked(MenuOption::EnableCrashReporting); };
+        auto setter = [](bool value) { Menu::getInstance()->setIsOptionChecked(MenuOption::EnableCrashReporting, value); };
         preferences->addPreference(new CheckPreference("Privacy", "Send crashes - Overte uses information provided by your "
                                 "client to improve the product through crash reports. By allowing Overte to collect "
                                 "this information you are helping to improve the product. ", getter, setter));

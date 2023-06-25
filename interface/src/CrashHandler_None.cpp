@@ -31,4 +31,7 @@ void setCrashAnnotation(std::string name, std::string value) {
 void startCrashHookMonitor(QCoreApplication* app) {
 }
 
+void setCrashReportingEnabled(bool value) {
+
+}
 #endif

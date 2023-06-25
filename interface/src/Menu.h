@@ -90,7 +90,7 @@ namespace MenuOption {
     const QString DeleteAvatarEntitiesBookmark = "Delete Avatar Entities Bookmark";
     const QString DeleteBookmark = "Delete Bookmark...";
     const QString DisableActivityLogger = "Disable Activity Logger";
-    const QString DisableCrashLogger = "Disable Crash Reporter";
+    const QString EnableCrashReporting = "Enable Crash Reporting";
     const QString DisableEyelidAdjustment = "Disable Eyelid Adjustment";
     const QString DisableLightEntities = "Disable Light Entities";
     const QString DisplayCrashOptions = "Display Crash Options";
@@ -145,7 +145,7 @@ namespace MenuOption {
     const QString OctreeStats = "Entity Statistics";
     const QString OnePointCalibration = "1 Point Calibration";
     const QString OnlyDisplayTopTen = "Only Display Top Ten";
-    const QString OpenVrThreadedSubmit = "OpenVR Threaded Submit"; 
+    const QString OpenVrThreadedSubmit = "OpenVR Threaded Submit";
     const QString OutputMenu = "Display";
     const QString Overlays = "Show Overlays";
     const QString PackageModel = "Package Avatar as .fst...";

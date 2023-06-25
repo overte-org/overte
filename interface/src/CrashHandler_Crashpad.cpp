@@ -43,6 +43,8 @@ Q_LOGGING_CATEGORY(crash_handler, "overte.crash_handler")
 #include <BuildInfo.h>
 #include <FingerprintUtils.h>
 #include <UUID.h>
+#include <UserActivityLogger.h>
+
 
 static const std::string BACKTRACE_URL{ CMAKE_BACKTRACE_URL };
 static const std::string BACKTRACE_TOKEN{ CMAKE_BACKTRACE_TOKEN };
@@ -134,6 +136,9 @@ bool SpinLockLocker::relock(int msecs /* = -1 */ ) {
 // ------------------------------------------------------------------------------------------------
 
 crashpad::CrashpadClient* client{ nullptr };
+std::unique_ptr< crashpad::CrashReportDatabase > crashpadDatabase;
+
+
 SpinLock crashpadAnnotationsProtect;
 crashpad::SimpleStringDictionary* crashpadAnnotations{ nullptr };
 
@@ -409,14 +414,20 @@ bool startCrashHandler(std::string appPath) {
     base::FilePath handler(handlerPath);
 
     qCDebug(crash_handler) << "Opening crashpad database" << QString::fromStdString(crashpadDbPath);
-    auto database = crashpad::CrashReportDatabase::Initialize(db);
-    if (database == nullptr || database->GetSettings() == nullptr) {
+    crashpadDatabase = crashpad::CrashReportDatabase::Initialize(db);
+    if (crashpadDatabase == nullptr || crashpadDatabase->GetSettings() == nullptr) {
         qCCritical(crash_handler) << "Failed to open crashpad database" << QString::fromStdString(crashpadDbPath);
         return false;
     }
 
     // Enable automated uploads.
-    database->GetSettings()->SetUploadsEnabled(true);
+    QObject::connect(&UserActivityLogger::getInstance(), &UserActivityLogger::crashReportingEnabledChanged, []() {
+        auto &ual = UserActivityLogger::getInstance();
+        setCrashReportingEnabled(ual.isCrashReportingEnabled());
+    });
+
+    crashpadDatabase->GetSettings()->SetUploadsEnabled(UserActivityLogger::getInstance().isCrashReportingEnabled());
+
 
     if (!client->StartHandler(handler, db, db, BACKTRACE_URL, annotations, arguments, true, true)) {
         qCCritical(crash_handler) << "Failed to start crashpad handler";
@@ -430,6 +441,36 @@ bool startCrashHandler(std::string appPath) {
 
     qCInfo(crash_handler) << "Crashpad initialized";
     return true;
+}
+
+void setCrashReportingEnabled(bool enabled) {
+    auto settings = crashpadDatabase->GetSettings();
+    settings->SetUploadsEnabled(enabled);
+
+    if (enabled) {
+        // Enabled now, was disabled before
+        //
+        // Reports are generated while uploads are disabled, so if we didn't do this we could
+        // send something the user doesn't want sent. So if reporting was disabled then enabled,
+        // remove any pending reports.
+        qCDebug(crash_handler) << "Removing any pending crash reports";
+
+        std::vector<crashpad::CrashReportDatabase::Report> pendingReports;
+        crashpad::CrashReportDatabase::OperationStatus status;
+
+        status = crashpadDatabase->GetPendingReports(&pendingReports);
+
+        if (status != crashpad::CrashReportDatabase::kNoError) {
+            qCWarning(crash_handler) << "Failed to get pending reports";
+        } else {
+            for (const auto& report : pendingReports) {
+                qCDebug(crash_handler) << "Deleted crash report" << QString::fromStdString(report.uuid.ToString());
+                crashpadDatabase->DeleteReport(report.uuid);
+            }
+        }
+    }
+
+    qCInfo(crash_handler) << "Crashpad uploads " << (enabled ? QString("enabled") : QString("disabled"));
 }
 
 void setCrashAnnotation(std::string name, std::string value) {
