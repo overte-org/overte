@@ -36,9 +36,6 @@
 #include <UserActivityLogger.h>
 #include <BuildInfo.h>
 
- static const QString BACKTRACE_URL{ CMAKE_BACKTRACE_URL };
-
-
 bool CrashRecoveryHandler::checkForResetSettings(bool wasLikelyCrash, bool suppressPrompt) {
     Setting::Handle<bool> crashReportingAsked { "CrashReportingAsked", false };
 
