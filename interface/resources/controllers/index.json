@@ -12,7 +12,7 @@
 
         { "from": "Vive.LY", "filters": [ { "type": "deadZone", "min": 0.15 }, "invert" ], "to": "Standard.LY" },
         { "from": "Vive.LX", "when": ["Application.RightHandDominant"], "filters": { "type": "deadZone", "min": 0.15 }, "to": "Standard.LX" },
-        { "from": "Vive.LX", "when": ["Vive.LSX", "!Vive.LSY", "Application.LeftHandDominant"], "filters": { "type": "deadZone", "min": 0.15 }, "to": "Standard.LX" },
+        { "from": "Vive.LX", "when": ["!Vive.LSY", "Application.LeftHandDominant"], "filters": { "type": "deadZone", "min": 0.15 }, "to": "Standard.LX" },
         {
             "from": "Vive.LT", "to": "Standard.LT",
             "filters": [
@@ -31,7 +31,7 @@
 
         { "from": "Vive.RY", "filters": [ { "type": "deadZone", "min": 0.15 }, "invert" ], "to": "Standard.RY" },
         { "from": "Vive.RX", "when": ["Application.LeftHandDominant"], "filters": { "type": "deadZone", "min": 0.15 }, "to": "Standard.RX" },
-        { "from": "Vive.RX", "when": ["Vive.RSX", "!Vive.RSY", "Application.RightHandDominant"], "filters": { "type": "deadZone", "min": 0.15 }, "to": "Standard.RX" },
+        { "from": "Vive.RX", "when": ["!Vive.RSY", "Application.RightHandDominant"], "filters": { "type": "deadZone", "min": 0.15 }, "to": "Standard.RX" },
         {
             "from": "Vive.RT", "to": "Standard.RT",
             "filters": [
