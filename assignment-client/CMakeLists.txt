@@ -19,9 +19,12 @@ link_hifi_libraries(
   audio avatars octree gpu graphics shaders model-serializers hfm entities
   networking animation recording shared script-engine embedded-webserver
   controllers physics plugins midi image
-  material-networking model-networking ktx shaders
+  material-networking model-networking ktx shaders monitoring
 )
 include_hifi_library_headers(procedural)
+
+add_crashpad()
+target_breakpad()
 
 if (BUILD_TOOLS)
   add_dependencies(${TARGET_NAME} oven)

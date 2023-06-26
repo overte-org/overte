@@ -24,6 +24,8 @@
 #include <SharedUtil.h>
 #include <ShutdownEventListener.h>
 #include <shared/ScriptInitializerMixin.h>
+#include <crash-handler/CrashHandler.h>
+
 
 #include "Assignment.h"
 #include "AssignmentClient.h"
@@ -106,6 +108,9 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
     const QCommandLineOption logOption("logOptions", "Logging options, comma separated: color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald", "options");
     parser.addOption(logOption);
 
+    const QCommandLineOption forceCrashReportingOption("forceCrashReporting", "Force crash reporting to initialize.");
+    parser.addOption(forceCrashReportingOption);
+
     if (!parser.parse(QCoreApplication::arguments())) {
         std::cout << parser.errorText().toStdString() << std::endl; // Avoid Qt log spam
         parser.showHelp();
@@ -174,6 +179,7 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
         disableDomainPortAutoDiscovery = true;
     }
 
+
     Assignment::Type requestAssignmentType = Assignment::AllTypes;
     if (argumentVariantMap.contains(ASSIGNMENT_TYPE_OVERRIDE_OPTION)) {
         requestAssignmentType = (Assignment::Type) argumentVariantMap.value(ASSIGNMENT_TYPE_OVERRIDE_OPTION).toInt();
@@ -181,6 +187,9 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
     if (parser.isSet(clientTypeOption)) {
         requestAssignmentType = (Assignment::Type) parser.value(clientTypeOption).toInt();
     }
+
+    auto &ch = CrashHandler::getInstance();
+    ch.setAnnotation("type", QString::number(requestAssignmentType));
 
     QString assignmentPool;
     // check for an assignment pool passed on the command line or in the config
@@ -245,6 +254,11 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
             qDebug() << "Parent process PID is" << parentPID;
             watchParentProcess(parentPID);
         }
+    }
+
+    if (parser.isSet(forceCrashReportingOption)) {
+        auto &ch = CrashHandler::getInstance();
+        ch.setEnabled(true);
     }
 
     QThread::currentThread()->setObjectName("main thread");
