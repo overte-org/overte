@@ -74,6 +74,21 @@
       ]
     },
     {
+      "label": "Networking / Crash Reporting",
+      "name": "crash_reporting",
+      "restart": false,
+      "settings": [
+        {
+          "name": "enable_crash_reporter",
+          "label": "Enable Crash Reporter",
+          "help": "Enable the automatic submission of crash reports to Overte e.V. This will help us find bugs and improve the code. Crash data will only be shared with developers trusted by Overte e.V., and will only be used to aid in development.",
+          "default": false,
+          "type": "checkbox",
+          "advanced": true
+        }
+      ]
+    },
+    {
       "name": "webrtc",
       "label": "Networking / WebRTC",
       "settings": [

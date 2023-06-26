@@ -61,6 +61,8 @@
 
 #include <OctreeDataUtils.h>
 #include <ThreadHelpers.h>
+#include <crash-handler/CrashHandler.h>
+
 
 using namespace std::chrono;
 
@@ -199,6 +201,8 @@ DomainServer::DomainServer(int argc, char* argv[]) :
     _httpManager(QHostAddress::AnyIPv4, DOMAIN_SERVER_HTTP_PORT,
         QString("%1/resources/web/").arg(QCoreApplication::applicationDirPath()), this)
 {
+    static const QString CRASH_REPORTER = "crash_reporting.enable_crash_reporter";
+
     if (_parentPID != -1) {
         watchParentProcess(_parentPID);
     }
@@ -239,11 +243,15 @@ DomainServer::DomainServer(int argc, char* argv[]) :
     _settingsManager.setupConfigMap(userConfigFilename);
 
     // setup a shutdown event listener to handle SIGTERM or WM_CLOSE for us
+
 #ifdef _WIN32
     installNativeEventFilter(&ShutdownEventListener::getInstance());
 #else
     ShutdownEventListener::getInstance();
 #endif
+
+    auto &ch = CrashHandler::getInstance();
+    ch.setEnabled(_settingsManager.valueOrDefaultValueForKeyPath(CRASH_REPORTER).toBool());
 
     qRegisterMetaType<DomainServerWebSessionData>("DomainServerWebSessionData");
     qRegisterMetaTypeStreamOperators<DomainServerWebSessionData>("DomainServerWebSessionData");
