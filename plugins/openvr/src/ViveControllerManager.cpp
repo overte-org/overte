@@ -2070,7 +2070,7 @@ controller::Input::NamedVector ViveControllerManager::InputDevice::getAvailableI
 QString ViveControllerManager::InputDevice::getDefaultMappingConfig() const {
     QString name(getOpenVrDeviceName().c_str());
     QString MAPPING_JSON;
-    if (name.contains(QString("Vive")) || name.contains(QString("Vive"))) {
+    if (name.contains(QString("HTC")) || name.contains(QString("Vive"))) {
         MAPPING_JSON = PathUtils::resourcesPath() + "/controllers/vive.json";
     } else {
         MAPPING_JSON = PathUtils::resourcesPath() + "/controllers/index.json";
