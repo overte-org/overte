@@ -20,6 +20,10 @@
 
 Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 var Pointer = function(hudLayer, pickType, pointerData) {
+    this.renderLayer = "front";
+    if (hudLayer) {
+        this.renderLayer = "hud";
+    }
     this.SEARCH_SPHERE_SIZE = 0.0132;
     this.dim = {x: this.SEARCH_SPHERE_SIZE, y: this.SEARCH_SPHERE_SIZE, z: this.SEARCH_SPHERE_SIZE};
     this.halfPath = {
@@ -31,9 +35,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
         glow: true,
         faceCamera: true,
         ignorePickIntersection: true, // always ignore this
-        //V8TODO
-        drawInFront: !hudLayer, // Even when buried inside of something, show it.
-        drawHUDLayer: hudLayer,
+        renderLayer: this.renderLayer,
     };
     this.halfEnd = {
         type: "Sphere",
@@ -42,8 +44,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
         color: COLORS_GRAB_SEARCHING_HALF_SQUEEZE,
         alpha: 0.9,
         ignorePickIntersection: true,
-        drawInFront: !hudLayer, // Even when buried inside of something, show it.
-        drawHUDLayer: hudLayer,
+        renderLayer: this.renderLayer,
         visible: true
     };
     this.fullPath = {
@@ -55,8 +56,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
         glow: true,
         faceCamera: true,
         ignorePickIntersection: true, // always ignore this
-        drawInFront: !hudLayer, // Even when buried inside of something, show it.
-        drawHUDLayer: hudLayer,
+        renderLayer: this.renderLayer,
     };
     this.fullEnd = {
         type: "Sphere",
@@ -65,8 +65,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
         color: COLORS_GRAB_SEARCHING_FULL_SQUEEZE,
         alpha: 0.9,
         ignorePickIntersection: true,
-        drawInFront: !hudLayer, // Even when buried inside of something, show it.
-        drawHUDLayer: hudLayer,
+        renderLayer: this.renderLayer,
         visible: true
     };
     this.holdPath = {
@@ -78,8 +77,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
         glow: true,
         faceCamera: true,
         ignorePickIntersection: true, // always ignore this
-        drawInFront: !hudLayer, // Even when buried inside of something, show it.
-        drawHUDLayer: hudLayer,
+        renderLayer: this.renderLayer,
     };
 
     this.renderStates = [
