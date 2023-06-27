@@ -41,32 +41,6 @@ bool OverlayConductor::headNotCenteredInOverlay() const {
     return false;
 }
 
-bool OverlayConductor::updateAvatarIsAtRest() {
-    auto myAvatar = DependencyManager::get<AvatarManager>()->getMyAvatar();
-
-    const quint64 REST_ENABLE_TIME_USECS = 1000 * 1000;  // 1 s
-    const quint64 REST_DISABLE_TIME_USECS = 200 * 1000;  // 200 ms
-
-    const float AT_REST_THRESHOLD = 0.01f;
-    bool desiredAtRest = glm::length(myAvatar->getWorldVelocity()) < AT_REST_THRESHOLD;
-    if (desiredAtRest != _desiredAtRest) {
-        // start timer
-        _desiredAtRestTimer = usecTimestampNow() + (desiredAtRest ? REST_ENABLE_TIME_USECS : REST_DISABLE_TIME_USECS);
-    }
-
-    _desiredAtRest = desiredAtRest;
-
-    if (_desiredAtRestTimer != 0 && usecTimestampNow() > _desiredAtRestTimer) {
-        // timer expired
-        // change state!
-        _currentAtRest = _desiredAtRest;
-        // disable timer
-        _desiredAtRestTimer = 0;
-    }
-
-    return _currentAtRest;
-}
-
 void OverlayConductor::centerUI() {
     // place the overlay at the current hmd position in sensor space
     auto camMat = cancelOutRollAndPitch(qApp->getHMDSensorPose());
@@ -103,16 +77,12 @@ void OverlayConductor::update(float dt) {
     }
 
     bool shouldRecenter = false;
-    if (initiateRecenter || _suppressedByHead) {
-        _suppressedByHead = !updateAvatarIsAtRest();
-        shouldRecenter = !_suppressedByHead;
-    }
 
-    bool currentVisible = !desktop->property("pinned").toBool();
-    bool targetVisible = Menu::getInstance()->isOptionChecked(MenuOption::Overlays) && !_suppressedByHead;
-    if (targetVisible != currentVisible) {
-        offscreenUi->setPinned(!targetVisible);
+    bool hasDriveInput = myAvatar->hasDriveInput();
+    if (hasDriveInput && !_lastHasDriveInput && initiateRecenter) {
+        shouldRecenter = true;
     }
+    _lastHasDriveInput = hasDriveInput;
 
     if (shouldRecenter) {
         centerUI();
