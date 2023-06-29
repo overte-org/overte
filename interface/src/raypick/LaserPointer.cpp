@@ -197,8 +197,9 @@ std::shared_ptr<StartEndRenderState> LaserPointer::buildRenderState(const QVaria
     if (propMap["startPropertyIndex"].isValid()) {
         int startPropertyIndex = propMap["startPropertyIndex"].toInt();
         if (startPropertyIndex >= 0 && startPropertyIndex < entityProperties.length()) {
-            //startMap.remove("visible");
-            startID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(entityProperties[startPropertyIndex], entity::HostType::LOCAL);
+            EntityItemProperties startProperties(entityProperties[startPropertyIndex]);
+            startProperties.getGrab().setGrabbable(false);
+            startID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(startProperties, entity::HostType::LOCAL);
         }
     }
 
@@ -207,9 +208,10 @@ std::shared_ptr<StartEndRenderState> LaserPointer::buildRenderState(const QVaria
         // laser paths must be PolyLine
         int pathPropertyIndex = propMap["pathPropertyIndex"].toInt();
         if (pathPropertyIndex >= 0 && pathPropertyIndex < entityProperties.length()) {
-            //startMap.remove("visible");
             //pathMap["type"].toString() == "PolyLine"
-            pathID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(entityProperties[pathPropertyIndex], entity::HostType::LOCAL);
+            EntityItemProperties pathProperties(entityProperties[pathPropertyIndex]);
+            pathProperties.getGrab().setGrabbable(false);
+            pathID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(pathProperties, entity::HostType::LOCAL);
         }
     }
 
@@ -217,8 +219,9 @@ std::shared_ptr<StartEndRenderState> LaserPointer::buildRenderState(const QVaria
     if (propMap["endPropertyIndex"].isValid()) {
         int endPropertyIndex = propMap["endPropertyIndex"].toInt();
         if (endPropertyIndex >= 0 && endPropertyIndex < entityProperties.length()) {
-            //startMap.remove("visible");
-            endID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(entityProperties[endPropertyIndex], entity::HostType::LOCAL);
+            EntityItemProperties endProperties(entityProperties[endPropertyIndex]);
+            endProperties.getGrab().setGrabbable(false);
+            endID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(endProperties, entity::HostType::LOCAL);
         }
     }
 

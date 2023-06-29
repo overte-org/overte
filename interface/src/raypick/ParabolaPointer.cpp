@@ -238,8 +238,9 @@ std::shared_ptr<StartEndRenderState> ParabolaPointer::buildRenderState(const QVa
     if (propMap["startPropertyIndex"].isValid()) {
         int startPropertyIndex = propMap["startPropertyIndex"].toInt();
         if (startPropertyIndex >= 0 && startPropertyIndex < entityProperties.length()) {
-            //startMap.remove("visible");
-            startID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(entityProperties[startPropertyIndex], entity::HostType::LOCAL);
+            EntityItemProperties startProperties(entityProperties[startPropertyIndex]);
+            startProperties.getGrab().setGrabbable(false);
+            startID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(startProperties, entity::HostType::LOCAL);
         }
     }
 
@@ -278,8 +279,9 @@ std::shared_ptr<StartEndRenderState> ParabolaPointer::buildRenderState(const QVa
     if (propMap["endPropertyIndex"].isValid()) {
         int endPropertyIndex = propMap["endPropertyIndex"].toInt();
         if (endPropertyIndex >= 0 && endPropertyIndex < entityProperties.length()) {
-            //endMap.remove("visible");
-            endID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(entityProperties[endPropertyIndex], entity::HostType::LOCAL);
+            EntityItemProperties endProperties(entityProperties[endPropertyIndex]);
+            endProperties.getGrab().setGrabbable(false);
+            endID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(endProperties, entity::HostType::LOCAL);
         }
     }
 
