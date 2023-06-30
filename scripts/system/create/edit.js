@@ -156,7 +156,7 @@
 
     selectionManager.addEventListener(function () {
         selectionDisplay.updateHandles();
-        entityIconOverlayManager.updatePositions();
+        entityIconOverlayManager.updatePositions(selectionManager.selections);
         entityShapeVisualizer.setEntities(selectionManager.selections);
     });
 
