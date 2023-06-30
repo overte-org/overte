@@ -109,6 +109,10 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
             // ignore events that we emitted from the entity list itself
             return;
         }
+        // Otherwise this will emit tens of events every second when objects are moved.
+        if (!isSelectionUpdate) {
+            return;
+        }
         var selectedIDs = [];
 
         for (var i = 0; i < that.selectionManager.selections.length; i++) {
