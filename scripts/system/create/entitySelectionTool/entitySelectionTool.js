@@ -2539,7 +2539,6 @@ SelectionDisplay = (function() {
         var pickPlanePosition = null;
         var pickPlaneNormal = { x: 0, y: 1, z: 0 };
         var greatestDimension = 0.0;
-        var startingDistance = 0.0;
         var startingElevation = 0.0;
         addHandleTool(toolEntity, {
             mode: mode,
@@ -2581,11 +2580,9 @@ SelectionDisplay = (function() {
                 greatestDimension = Math.max(Math.max(SelectionManager.worldDimensions.x, 
                                                       SelectionManager.worldDimensions.y),
                                                       SelectionManager.worldDimensions.z);
-                startingDistance = Vec3.distance(pickRay.origin, SelectionManager.position);
                 startingElevation = this.elevation(pickRay.origin, pickPlanePosition);
                 if (wantDebug) {
                     print("    longest dimension: " + greatestDimension);
-                    print("    starting distance: " + startingDistance);
                     print("    starting elevation: " + startingElevation);
                 }
 
