@@ -437,6 +437,15 @@ int main(int argc, const char* argv[]) {
         ch.setEnabled(true);
     }
 
+    {
+        Settings crashSettings;
+        crashSettings.beginGroup("Crash");
+        if (crashSettings.value("ReportingEnabled").toBool()) {
+            ch.setEnabled(true);
+        }
+        crashSettings.endGroup();
+    }
+
     ch.setAnnotation("program", "interface");
 
     const QString& applicationName = getInterfaceSharedMemoryName();
