@@ -30,7 +30,7 @@ symlink_or_copy_directory_beside_target(${_SHOULD_SYMLINK_RESOURCES} "${CMAKE_CU
 include_hifi_library_headers(gpu)
 include_hifi_library_headers(graphics)
 include_hifi_library_headers(script-engine)
-link_hifi_libraries(embedded-webserver networking shared avatars octree monitoring)
+link_hifi_libraries(embedded-webserver networking shared avatars octree)
 
 target_zlib()
 target_quazip()

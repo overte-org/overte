@@ -19,7 +19,7 @@ link_hifi_libraries(
   audio avatars octree gpu graphics shaders model-serializers hfm entities
   networking animation recording shared script-engine embedded-webserver
   controllers physics plugins midi image
-  material-networking model-networking ktx shaders monitoring
+  material-networking model-networking ktx shaders
 )
 include_hifi_library_headers(procedural)
 

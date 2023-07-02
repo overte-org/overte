@@ -17,7 +17,7 @@
 #include <QtCore/QStandardPaths>
 #include <QtCore/QDir>
 #include <QJsonObject>
-#include <crash-handler/CrashHandler.h>
+#include "crash-handler/CrashHandler.h"
 
 
 #include "udt/PacketHeaders.h"

@@ -41,9 +41,10 @@ Q_LOGGING_CATEGORY(crash_handler, "overte.crash_handler")
 #endif
 
 #include <BuildInfo.h>
-#include <FingerprintUtils.h>
+#include "../FingerprintUtils.h"
+#include "../UserActivityLogger.h"
 #include <UUID.h>
-#include <UserActivityLogger.h>
+
 
 
 static const std::string BACKTRACE_URL{ CMAKE_BACKTRACE_URL };
