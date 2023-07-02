@@ -257,7 +257,6 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
     }
 
     if (parser.isSet(forceCrashReportingOption)) {
-        auto &ch = CrashHandler::getInstance();
         ch.setEnabled(true);
     }
 
