@@ -19,14 +19,14 @@ STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
     scriptRegisterMetaType<RenderScriptingInterface::RenderMethod, scriptValueFromEnumClass<RenderScriptingInterface::RenderMethod>, scriptValueToEnumClass<RenderScriptingInterface::RenderMethod> >(scriptEngine, "RenderMethod");
-    scriptRegisterMetaType<AntialiasingConfig::Mode, scriptValueFromEnumClass<AntialiasingConfig::Mode>, scriptValueToEnumClass<AntialiasingConfig::Mode> >(scriptEngine, "Mode");
+    scriptRegisterMetaType<AntialiasingSetupConfig::Mode, scriptValueFromEnumClass<AntialiasingSetupConfig::Mode>, scriptValueToEnumClass<AntialiasingSetupConfig::Mode> >(scriptEngine, "Mode");
 }));
 
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
     scriptEngine->registerEnum("Render.RenderMethod",QMetaEnum::fromType<RenderScriptingInterface::RenderMethod>());
-    scriptEngine->registerEnum("AntialiasingMode",QMetaEnum::fromType<AntialiasingConfig::Mode>());
+    scriptEngine->registerEnum("AntialiasingMode",QMetaEnum::fromType<AntialiasingSetupConfig::Mode>());
 });
 
 RenderScriptingInterface* RenderScriptingInterface::getInstance() {
@@ -49,7 +49,7 @@ void RenderScriptingInterface::loadSettings() {
         _shadowsEnabled = (_shadowsEnabledSetting.get());
         _ambientOcclusionEnabled = (_ambientOcclusionEnabledSetting.get());
         //_antialiasingMode = (_antialiasingModeSetting.get());
-        _antialiasingMode = static_cast<AntialiasingConfig::Mode>(_antialiasingModeSetting.get());
+        _antialiasingMode = static_cast<AntialiasingSetupConfig::Mode>(_antialiasingModeSetting.get());
         _viewportResolutionScale = (_viewportResolutionScaleSetting.get());
         _fullScreenScreen = (_fullScreenScreenSetting.get());
     });
@@ -162,57 +162,57 @@ void RenderScriptingInterface::forceAmbientOcclusionEnabled(bool enabled) {
     });
 }
 
-AntialiasingConfig::Mode RenderScriptingInterface::getAntialiasingMode() const {
+AntialiasingSetupConfig::Mode RenderScriptingInterface::getAntialiasingMode() const {
     return _antialiasingMode;
 }
 
-void RenderScriptingInterface::setAntialiasingMode(AntialiasingConfig::Mode mode) {
+void RenderScriptingInterface::setAntialiasingMode(AntialiasingSetupConfig::Mode mode) {
     if (_antialiasingMode != mode) {
         forceAntialiasingMode(mode);
         emit settingsChanged();
     }
 }
 
-void setAntialiasingModeForView(AntialiasingConfig::Mode mode, JitterSampleConfig *jitterCamConfig, AntialiasingConfig *antialiasingConfig) {
+void setAntialiasingModeForView(AntialiasingSetupConfig::Mode mode, AntialiasingSetupConfig *antialiasingSetupConfig, AntialiasingConfig *antialiasingConfig) {
     switch (mode) {
-        case AntialiasingConfig::Mode::NONE:
-            jitterCamConfig->none();
+        case AntialiasingSetupConfig::Mode::NONE:
+            antialiasingSetupConfig->none();
             antialiasingConfig->blend = 1;
             antialiasingConfig->setDebugFXAA(false);
             break;
-        case AntialiasingConfig::Mode::TAA:
-            jitterCamConfig->play();
+        case AntialiasingSetupConfig::Mode::TAA:
+            antialiasingSetupConfig->play();
             antialiasingConfig->blend = 0.25;
             antialiasingConfig->setDebugFXAA(false);
             break;
-        case AntialiasingConfig::Mode::FXAA:
-            jitterCamConfig->none();
+        case AntialiasingSetupConfig::Mode::FXAA:
+            antialiasingSetupConfig->none();
             antialiasingConfig->blend = 0.25;
             antialiasingConfig->setDebugFXAA(true);
             break;
         default:
-            jitterCamConfig->none();
+            antialiasingSetupConfig->none();
             antialiasingConfig->blend = 1;
             antialiasingConfig->setDebugFXAA(false);
             break;
     }
 }
 
-void RenderScriptingInterface::forceAntialiasingMode(AntialiasingConfig::Mode mode) {
+void RenderScriptingInterface::forceAntialiasingMode(AntialiasingSetupConfig::Mode mode) {
     _renderSettingLock.withWriteLock([&] {
         _antialiasingMode = mode;
 
         auto renderConfig = qApp->getRenderEngine()->getConfiguration();
         // TODO: this may be needed if there are problems with changing antialiasing settings
         //auto mainViewAntialiasingSetupConfig  = renderConfig->getConfig<AntialiasingSetup>("RenderMainView.AntialiasingSetup");
-        auto mainViewJitterCamConfig = renderConfig->getConfig<JitterSample>("RenderMainView.JitterCam");
+        auto mainViewJitterCamConfig = renderConfig->getConfig<AntialiasingSetup>("RenderMainView.JitterCam");
         auto mainViewAntialiasingConfig = renderConfig->getConfig<Antialiasing>("RenderMainView.Antialiasing");
-        auto secondViewJitterCamConfig = renderConfig->getConfig<JitterSample>("RenderSecondView.JitterCam");
+        auto secondViewJitterCamConfig = renderConfig->getConfig<AntialiasingSetup>("RenderSecondView.JitterCam");
         auto secondViewAntialiasingConfig = renderConfig->getConfig<Antialiasing>("RenderSecondView.Antialiasing");
-        if (mode != AntialiasingConfig::Mode::NONE
-                && mode != AntialiasingConfig::Mode::TAA
-                && mode != AntialiasingConfig::Mode::FXAA) {
-            _antialiasingMode = AntialiasingConfig::Mode::NONE;
+        if (mode != AntialiasingSetupConfig::Mode::NONE
+                && mode != AntialiasingSetupConfig::Mode::TAA
+                && mode != AntialiasingSetupConfig::Mode::FXAA) {
+            _antialiasingMode = AntialiasingSetupConfig::Mode::NONE;
         }
         if (mainViewJitterCamConfig && mainViewAntialiasingConfig) {
             setAntialiasingModeForView( mode, mainViewJitterCamConfig, mainViewAntialiasingConfig);

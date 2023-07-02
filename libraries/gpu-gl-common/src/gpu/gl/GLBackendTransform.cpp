@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 3/8/2015.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -31,7 +32,7 @@ void GLBackend::do_setViewTransform(const Batch& batch, size_t paramOffset) {
 }
 
 void GLBackend::do_setProjectionTransform(const Batch& batch, size_t paramOffset) {
-    memcpy(glm::value_ptr(_transform._projection), batch.readData(batch._params[paramOffset]._uint), sizeof(Mat4));
+    memcpy(glm::value_ptr(_transform._viewProjectionState._projection), batch.readData(batch._params[paramOffset]._uint), sizeof(Mat4));
     _transform._invalidProj = true;
     // The current view / proj doesn't correspond to a saved camera slot
     _transform._currentSavedTransformSlot = INVALID_SAVED_CAMERA_SLOT;

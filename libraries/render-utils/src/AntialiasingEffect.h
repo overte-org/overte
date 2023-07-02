@@ -28,12 +28,38 @@ class AntialiasingSetupConfig : public render::Job::Config {
     Q_PROPERTY(bool freeze MEMBER freeze NOTIFY dirty)
     Q_PROPERTY(bool stop MEMBER stop NOTIFY dirty)
     Q_PROPERTY(int index READ getIndex NOTIFY dirty)
+    Q_PROPERTY(int state READ getState WRITE setState NOTIFY dirty)
+    Q_PROPERTY(int mode READ getAAMode WRITE setAAMode NOTIFY dirty)
+
 public:
     AntialiasingSetupConfig() : render::Job::Config(true) {}
+
+    /*@jsdoc
+     *Antialiasing modes. <table>
+     *   <thead>
+     *     <tr><th>Value</th><th>Name</th><th>Description</th>
+     *   </thead>
+     *   <tbody>
+     *     <tr><td><code>0</code></td><td>NONE</td><td>Antialiasing is disabled.</td></tr>
+     *     <tr><td><code>1</code></td><td>TAA</td><td>Temporal Antialiasing.</td></tr>
+     *     <tr><td><code>2</code></td><td>FXAA</td><td>FXAA.</td></tr>
+     *     <tr><td><code>3</code></td><td>MODE_COUNT</td><td>Inducates number of antialiasing modes</td></tr>
+     *   </tbody>
+     * </table>
+     * @typedef {number} AntialiasingMode
+     */
+    enum Mode {
+        NONE = 0,
+        TAA,
+        FXAA,
+        MODE_COUNT
+    };
+    Q_ENUM(Mode) // Stored as signed int.
 
     float scale { 0.75f };
     bool stop { false };
     bool freeze { false };
+    int mode { TAA };
 
     void setIndex(int current);
     void setState(int state);
@@ -48,6 +74,10 @@ public slots:
 
     int getIndex() const { return _index; }
     int getState() const { return _state; }
+
+    void setAAMode(int mode);
+    int getAAMode() const { return mode; }
+
 signals:
     void dirty();
 
@@ -76,6 +106,7 @@ private:
     int _freezedSampleIndex { 0 };
     bool _isStopped { false };
     bool _isFrozen { false };
+    int _mode { AntialiasingSetupConfig::Mode::TAA };
 };
 
 
@@ -102,36 +133,8 @@ class AntialiasingConfig : public render::Job::Config {
 public:
     AntialiasingConfig() : render::Job::Config(true) {}
 
-    /*@jsdoc
-     *Antialiasing modes. <table>
-     *   <thead>
-     *     <tr><th>Value</th><th>Name</th><th>Description</th>
-     *   </thead>
-     *   <tbody>
-     *     <tr><td><code>0</code></td><td>NONE</td><td>Antialiasing is disabled.</td></tr>
-     *     <tr><td><code>1</code></td><td>TAA</td><td>Temporal Antialiasing.</td></tr>
-     *     <tr><td><code>2</code></td><td>FXAA</td><td>FXAA.</td></tr>
-     *     <tr><td><code>3</code></td><td>MODE_COUNT</td><td>Inducates number of antialiasing modes</td></tr>
-     *   </tbody>
-     * </table>
-     * @typedef {number} AntialiasingMode
-     */
-    enum Mode {
-        NONE = 0,
-        TAA,
-        FXAA,
-        MODE_COUNT
-    };
-    Q_ENUM(Mode) // Stored as signed int.
-
-    void setAAMode(int mode);
-    int getAAMode() const { return _mode; }
-
     void setDebugFXAA(bool debug) { debugFXAAX = (debug ? 0.0f : 1.0f); emit dirty();}
     bool debugFXAA() const { return (debugFXAAX == 0.0f ? true : false); }
-
-    // TODO: _mode appears in 2 different classes
-    int _mode{ TAA }; // '_' prefix but not private?
 
     float blend { 0.2f };
     float sharpen { 0.05f };

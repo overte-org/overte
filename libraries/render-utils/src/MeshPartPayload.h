@@ -5,6 +5,7 @@
 //  Created by Sam Gateau on 10/3/15.
 //  Copyright 2015 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -68,6 +69,9 @@ public:
 
     static bool enableMaterialProceduralShaders;
 
+protected: 
+    mutable Transform _previousRenderTransform;
+
 private:
     void initCache(const ModelPointer& model, int shapeID);
 
@@ -100,7 +104,6 @@ private:
     Transform _parentTransform;
     graphics::Box _localBound;
     graphics::Box _adjustedLocalBound;
-    //TODO: add     mutable Transform _previousModelTransform; ?
 };
 
 namespace render {

@@ -5,6 +5,7 @@
 //  Created by Sam Gateau on 10/3/15.
 //  Copyright 2015 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -193,9 +194,13 @@ void ModelMeshPartPayload::bindTransform(gpu::Batch& batch, const Transform& tra
     if (_clusterBuffer) {
         batch.setUniformBuffer(graphics::slot::buffer::Skinning, _clusterBuffer);
     }
-    batch.setModelTransform(transform, _previousModelTransform);
+    // TODO: I'm not sure of this
+    //batch.setModelTransform(transform, _previousModelTransform);
+    batch.setModelTransform(transform, _previousRenderTransform);
     if (renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
-        _prevRenderTransform = _drawTransform;
+        // TODO: I'm not sure of this
+        //_prevRenderTransform = _drawTransform;
+        _previousRenderTransform = transform;
     }
 }
 
