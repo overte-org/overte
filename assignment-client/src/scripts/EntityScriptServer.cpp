@@ -149,10 +149,13 @@ void EntityScriptServer::handleEntityScriptGetStatusPacket(QSharedPointer<Receiv
 
 void EntityScriptServer::handleSettings() {
 
+
     auto nodeList = DependencyManager::get<NodeList>();
 
     auto& domainHandler = nodeList->getDomainHandler();
     const QJsonObject& settingsObject = domainHandler.getSettingsObject();
+
+    commonParseSettingsObject(settingsObject);
 
     static const QString ENTITY_SCRIPT_SERVER_SETTINGS_KEY = "entity_script_server";
 
@@ -292,7 +295,7 @@ void EntityScriptServer::run() {
     entityScriptingInterface->init();
 
     _entityViewer.init();
-    
+
     // setup the JSON filter that asks for entities with a non-default serverScripts property
     QJsonObject queryJSONParameters;
     queryJSONParameters[EntityJSONQueryProperties::SERVER_SCRIPTS_PROPERTY] = EntityQueryFilterSymbol::NonDefault;
@@ -303,7 +306,7 @@ void EntityScriptServer::run() {
     queryFlags[EntityJSONQueryProperties::INCLUDE_DESCENDANTS_PROPERTY] = true;
 
     queryJSONParameters[EntityJSONQueryProperties::FLAGS_PROPERTY] = queryFlags;
-    
+
     // setup the JSON parameters so that OctreeQuery does not use a frustum and uses our JSON filter
     _entityViewer.getOctreeQuery().setJSONParameters(queryJSONParameters);
 
@@ -380,7 +383,7 @@ void EntityScriptServer::nodeKilled(SharedNodePointer killedNode) {
             if (!hasAnotherEntityServer) {
                 clear();
             }
-            
+
             break;
         }
         case NodeType::Agent: {
@@ -584,7 +587,7 @@ void EntityScriptServer::sendStatsPacket() {
     }
     scriptEngineStats["number_running_scripts"] = numberRunningScripts;
     statsObject["script_engine_stats"] = scriptEngineStats;
-    
+
 
     auto nodeList = DependencyManager::get<NodeList>();
     QJsonObject nodesObject;

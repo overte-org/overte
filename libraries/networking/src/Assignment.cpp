@@ -16,10 +16,16 @@
 #include <BuildInfo.h>
 #include <QtCore/QStandardPaths>
 #include <QtCore/QDir>
+#include <QJsonObject>
+#include <crash-handler/CrashHandler.h>
+
 
 #include "udt/PacketHeaders.h"
 #include "SharedUtil.h"
 #include "UUID.h"
+
+static const QString CRASH_REPORTING_GROUP_KEY = "crash_reporting";
+
 
 Assignment::Type Assignment::typeForNodeType(NodeType_t nodeType) {
     switch (nodeType) {
@@ -51,7 +57,7 @@ Assignment::Assignment() :
     _payload(),
     _isStatic(false)
 {
-    
+
 }
 
 Assignment::Assignment(Assignment::Command command, Assignment::Type type, const QString& pool, Assignment::Location location, QString dataDirectory) :
@@ -84,9 +90,9 @@ Assignment::Assignment(ReceivedMessage& message) :
     } else if (message.getType() == PacketType::CreateAssignment) {
         _command = Assignment::CreateCommand;
     }
-    
+
     QDataStream packetStream(message.getMessage());
-    
+
     packetStream >> *this;
 }
 
@@ -113,7 +119,7 @@ Assignment& Assignment::operator=(const Assignment& rhsAssignment) {
 
 void Assignment::swap(Assignment& otherAssignment) {
     using std::swap;
-    
+
     swap(_uuid, otherAssignment._uuid);
     swap(_command, otherAssignment._command);
     swap(_type, otherAssignment._type);
@@ -148,10 +154,36 @@ const char* Assignment::typeToString(Assignment::Type type) {
     }
 }
 
+
+void Assignment::commonParseSettingsObject(const QJsonObject &settingsObject) {
+
+    if (settingsObject.contains(CRASH_REPORTING_GROUP_KEY)) {
+
+        auto &ch = CrashHandler::getInstance();
+        QJsonObject crashGroupObject = settingsObject[CRASH_REPORTING_GROUP_KEY].toObject();
+
+        const QString CRASH_REPORTING_ENABLED = "enable_crash_reporter";
+        const QString CRASH_REPORTING_CUSTOM_URL = "custom_crash_url";
+        const QString CRASH_REPORTING_CUSTOM_TOKEN = "custom_crash_token";
+
+        bool enabled = crashGroupObject[CRASH_REPORTING_ENABLED].toBool();
+        QString url = crashGroupObject[CRASH_REPORTING_CUSTOM_URL].toString();
+        QString token = crashGroupObject[CRASH_REPORTING_CUSTOM_TOKEN].toString();
+
+        ch.setUrl(url);
+        ch.setToken(token);
+        ch.setEnabled(enabled);
+
+        ch.setAnnotation("program", "assignment-client");
+        ch.setAnnotation("assignment-client", "audio-mixer");
+    }
+
+}
+
 QDebug operator<<(QDebug debug, const Assignment &assignment) {
     debug.nospace() << "UUID: " << qPrintable(assignment.getUUID().toString()) <<
         ", Type: " << assignment.getTypeName() << " (" << assignment.getType() << ")";
-    
+
     if (!assignment.getPool().isEmpty()) {
         debug << ", Pool: " << assignment.getPool();
     }
@@ -161,11 +193,11 @@ QDebug operator<<(QDebug debug, const Assignment &assignment) {
 
 QDataStream& operator<<(QDataStream &out, const Assignment& assignment) {
     out << (quint8) assignment._type << assignment._uuid << assignment._pool << assignment._payload;
-    
+
     if (assignment._command == Assignment::RequestCommand) {
         out << assignment._nodeVersion;
     }
-    
+
     return out;
 }
 
@@ -173,11 +205,11 @@ QDataStream& operator>>(QDataStream &in, Assignment& assignment) {
     quint8 packedType;
     in >> packedType >> assignment._uuid >> assignment._pool >> assignment._payload;
     assignment._type = (Assignment::Type) packedType;
-    
+
     if (assignment._command == Assignment::RequestCommand) {
         in >> assignment._nodeVersion;
     }
-    
+
     return in;
 }
 
@@ -187,3 +219,4 @@ uint qHash(const Assignment::Type& key, uint seed) {
     // strongly typed enum for PacketType
     return qHash((uint8_t) key, seed);
 }
+

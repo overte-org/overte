@@ -50,12 +50,42 @@ enum SettingsType {
     ContentSettings
 };
 
+/**
+ * @brief Manages the domain-wide settings
+ *
+ * The domain server doesn't use the interface's QSettings based system, but this one.
+ * The domain holds all the settings and distributes it to the connected assignment clients.
+ *
+ * Assignment clients request their settings by making a DomainSettingsRequest. The request
+ * is specific to the client's type.
+ *
+ * The response is generated in settingsResponseObjectForType and filtered according to what
+ * the client is allowed to see.
+ *
+ * To add a new setting, add it in resources/describe-settings.json
+ *
+ * To make a setting be sent to assignment clients, set the assignment-types value to an array
+ * of the desired assignment clients. The type is defined numerically.
+ *
+ * The canonical list of assignment types is in the Assignment::Type enum.
+ *
+ *
+ *
+ */
 class DomainServerSettingsManager : public QObject {
     Q_OBJECT
 public:
     DomainServerSettingsManager();
     bool handleAuthenticatedHTTPRequest(HTTPConnection* connection, const QUrl& url);
 
+
+    /**
+     * @brief Loads the configuration from the specified file
+     *
+     * Performs version upgrades when we're loading an older version of the config.
+     *
+     * @param userConfigFilename
+     */
     void setupConfigMap(const QString& userConfigFilename);
 
     // each of the three methods in this group takes a read lock of _settingsLock
@@ -126,7 +156,21 @@ public:
     enum DefaultSettingsInclusion { NoDefaultSettings, IncludeDefaultSettings };
     enum SettingsBackupFlag { NotForBackup, ForBackup };
 
-    /// thread safe method to retrieve a JSON representation of settings
+    /**
+     * @brief Generates a JSON representation of settings
+     *
+     * This is what answers an assignment client's request for domain settings.
+     *
+     * @note thread safe
+     *
+     * @param typeValue Type of assignment client
+     * @param authentication
+     * @param domainSettingsInclusion
+     * @param contentSettingsInclusion
+     * @param defaultSettingsInclusion
+     * @param settingsBackupFlag
+     * @return QJsonObject
+     */
     QJsonObject settingsResponseObjectForType(const QString& typeValue,
                                               SettingsRequestAuthentication authentication = NotAuthenticated,
                                               DomainSettingsInclusion domainSettingsInclusion = IncludeDomainSettings,
@@ -211,7 +255,7 @@ private:
     // keep track of answers to api queries about which users are in which groups
     QHash<QString, QHash<QUuid, QUuid>> _groupMembership; // QHash<user-name, QHash<group-id, rank-id>>
 
-    /// guard read/write access from multiple threads to settings 
+    /// guard read/write access from multiple threads to settings
     QReadWriteLock _settingsLock { QReadWriteLock::Recursive };
 
     friend class DomainServer;

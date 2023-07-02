@@ -988,6 +988,8 @@ void AvatarMixer::handlePacketVersionMismatch(PacketType type, const SockAddr& s
 }
 
 void AvatarMixer::parseDomainServerSettings(const QJsonObject& domainSettings) {
+    commonParseSettingsObject(domainSettings);
+
     const QString AVATAR_MIXER_SETTINGS_KEY = "avatar_mixer";
     QJsonObject avatarMixerGroupObject = domainSettings[AVATAR_MIXER_SETTINGS_KEY].toObject();
 

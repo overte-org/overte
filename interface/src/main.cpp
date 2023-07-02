@@ -323,6 +323,13 @@ int main(int argc, const char* argv[]) {
     auto& ual = UserActivityLogger::getInstance();
     auto& ch = CrashHandler::getInstance();
 
+    QObject::connect(&ch, &CrashHandler::enabledChanged, [](bool enabled) {
+        Settings s;
+        s.beginGroup("Crash");
+        s.setValue("ReportingEnabled", enabled);
+        s.endGroup();
+    });
+
     // once the settings have been loaded, check if we need to flip the default for UserActivityLogger
     if (!ual.isDisabledSettingSet()) {
         // the user activity logger is opt-out for Interface
@@ -335,13 +342,6 @@ int main(int argc, const char* argv[]) {
     if (parser.isSet(forceCrashReportingOption)) {
         qInfo() << "Crash reporting enabled on the command-line";
         ch.setEnabled(true);
-    }
-
-    auto crashHandlerStarted = ch.start(argv[0]);
-    if (crashHandlerStarted) {
-        qDebug() << "Crash handler started";
-    } else {
-        qWarning() << "Crash handler failed to start";
     }
 
     ch.setAnnotation("program", "interface");

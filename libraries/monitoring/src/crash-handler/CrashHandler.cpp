@@ -11,6 +11,8 @@
 
 #include "CrashHandler.h"
 #include "CrashHandlerBackend.h"
+#include <QFileInfo>
+#include <QCoreApplication>
 
 
 CrashHandler& CrashHandler::getInstance() {
@@ -18,13 +20,32 @@ CrashHandler& CrashHandler::getInstance() {
     return sharedInstance;
 }
 
-bool CrashHandler::start(const QString &path) {
+CrashHandler::CrashHandler(QObject *parent) : QObject(parent) {
+
+}
+
+
+void CrashHandler::setPath(const QString &path) {
+    QFileInfo fi(path);
+
     if (isStarted()) {
-        qCWarning(crash_handler) << "Crash handler already started";
+        qCWarning(crash_handler) << "Crash handler already started, too late to set the path.";
+    }
+
+    if (fi.isFile()) {
+        _path = fi.absolutePath();
+    } else {
+        _path = path;
+    }
+}
+
+bool CrashHandler::start() {
+    if (isStarted()) {
+        //qCWarning(crash_handler) << "Crash handler already started";
         return false;
     }
 
-    auto started = startCrashHandler(path.toStdString());
+    auto started = startCrashHandler(_path.toStdString(), _crashUrl.toStdString(), _crashToken.toStdString());
     setStarted(started);
 
     if ( started ) {
@@ -41,21 +62,50 @@ void CrashHandler::startMonitor(QCoreApplication *app) {
 }
 
 void CrashHandler::setEnabled(bool enabled) {
-    if (enabled != _crashReportingEnabled.get()) {
-        _crashReportingEnabled.set(enabled);
+    start();
 
+    if (enabled != _crashReportingEnabled) {
+        _crashReportingEnabled = enabled;
         setCrashReportingEnabled(enabled);
+
+        emit enabledChanged(enabled);
+    }
+}
+
+void CrashHandler::setUrl(const QString &url) {
+    // This can be called both from the settings system in an assignment client
+    // and from the commandline parser. We only emit a warning if the commandline
+    // argument causes the domain setting to be ignored.
+
+    if (isStarted() && url != _crashUrl) {
+        qCWarning(crash_handler) << "Setting crash reporting URL to " << url << "after the crash handler is already running has no effect";
+    } else {
+        _crashUrl = url;
+    }
+}
+
+void CrashHandler::setToken(const QString &token) {
+    if (isStarted() && token != _crashToken) {
+        qCWarning(crash_handler) << "Setting crash reporting token to " << token << "after the crash handler is already running has no effect";
+    } else {
+        _crashToken = token;
     }
 }
 
 void CrashHandler::setAnnotation(const std::string &key, const char *value) {
+    setAnnotation(key, std::string(value));
     setCrashAnnotation(key, std::string(value));
 }
 
 void CrashHandler::setAnnotation(const std::string &key, const QString &value) {
-    setCrashAnnotation(key, value.toStdString());
+    setAnnotation(key, value.toStdString());
 }
 
 void CrashHandler::setAnnotation(const std::string &key, const std::string &value) {
+    if (!isStarted()) {
+        qCWarning(crash_handler) << "Can't set annotation" << QString::fromStdString(key) << "to" << QString::fromStdString(value) << "crash handler not yet started";
+        return;
+    }
+
     setCrashAnnotation(key, value);
 }

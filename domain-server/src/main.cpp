@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
 
     // use a do-while to handle domain-server restart
     auto &ch = CrashHandler::getInstance();
-    ch.start(argv[0]);
+    ch.setPath(argv[0]);
 
     if ( DomainServer::forceCrashReporting() ) {
         ch.setEnabled(true);

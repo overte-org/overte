@@ -371,6 +371,8 @@ void AssetServer::completeSetup() {
     auto& domainHandler = nodeList->getDomainHandler();
     const QJsonObject& settingsObject = domainHandler.getSettingsObject();
 
+    commonParseSettingsObject(settingsObject);
+
     static const QString ASSET_SERVER_SETTINGS_KEY = "asset_server";
 
     if (!settingsObject.contains(ASSET_SERVER_SETTINGS_KEY)) {

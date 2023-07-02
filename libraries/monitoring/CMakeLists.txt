@@ -1,6 +1,6 @@
 set(TARGET_NAME monitoring)
 setup_hifi_library()
-link_hifi_libraries(shared networking)
+link_hifi_libraries(shared)
 
 add_crashpad()
 target_breakpad()

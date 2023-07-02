@@ -19,13 +19,8 @@
 int main(int argc, char* argv[]) {
     setupHifiApplication(BuildInfo::ASSIGNMENT_CLIENT_NAME);
 
-    auto &ch = CrashHandler::getInstance();
-    ch.start(argv[0]);
-    ch.setAnnotation("program", "assignment-client");
-
-
-
     AssignmentClientApp app(argc, argv);
+    auto &ch = CrashHandler::getInstance();
     ch.startMonitor(&app);
 
 

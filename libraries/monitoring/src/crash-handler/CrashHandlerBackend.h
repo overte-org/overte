@@ -18,7 +18,7 @@
 
 Q_DECLARE_LOGGING_CATEGORY(crash_handler)
 
-bool startCrashHandler(std::string appPath);
+bool startCrashHandler(std::string appPath, std::string url="", std::string token="");
 void setCrashAnnotation(std::string name, std::string value);
 void startCrashHookMonitor(QCoreApplication* app);
 void setCrashReportingEnabled(bool value);
