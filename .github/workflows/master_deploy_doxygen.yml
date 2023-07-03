@@ -32,6 +32,7 @@ jobs:
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4
       with:
         server: www531.your-server.de
+        protocol: ftps
         username: ${{ secrets.GHA_HETZNER_DOXYGEN_FTP_USER }}
         password: ${{ secrets.GHA_HETZNER_DOXYGEN_FTP_PASS }}
         local-dir: ./build/docs/html/
