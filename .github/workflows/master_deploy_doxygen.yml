@@ -1,5 +1,5 @@
 # Copyright 2022-2023 Overte e.V.
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
 
 name: Master Doxygen CI Build and Deploy
 
@@ -29,13 +29,13 @@ jobs:
         doxygen Doxyfile
 
     - name: Deploy Doxygen
-      uses: SamKirkland/FTP-Deploy-Action@4.3.3
+      uses: SamKirkland/FTP-Deploy-Action@4.3.4
       with:
-        server: ftp.tuxfamily.org
-        username: ${{ secrets.GHA_JSDOC_FTP_USER }}
-        password: ${{ secrets.GHA_JSDOC_FTP_PASS }}
+        server: www531.your-server.de
+        username: ${{ secrets.GHA_HETZNER_DOXYGEN_FTP_USER }}
+        password: ${{ secrets.GHA_HETZNER_DOXYGEN_FTP_PASS }}
         local-dir: ./build/docs/html/
-        server-dir: overte/doxygen.overte.org-web/htdocs/
+        server-dir: /
         exclude: |
           **/staging/**
           .htaccess
