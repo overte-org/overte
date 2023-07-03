@@ -14,24 +14,64 @@
 #include <BuildInfo.h>
 #include <SettingInterface.h>
 #include <SharedUtil.h>
+#include <SettingManager.h>
+#include <DependencyManager.h>
+#include <crash-handler/CrashHandler.h>
+#include <iostream>
+
+
+// This needs to be run after a QApplication has been created
+void postAppInit(QCoreApplication *app, bool enableCrashHandler) {
+    Setting::init();
+
+    auto &ch = CrashHandler::getInstance();
+
+
+
+    QObject::connect(&ch, &CrashHandler::enabledChanged, [](bool enabled) {
+        Settings s;
+        s.beginGroup("Crash");
+        s.setValue("ReportingEnabled", enabled);
+        s.endGroup();
+    });
+
+
+    Settings crashSettings;
+    crashSettings.beginGroup("Crash");
+    ch.setEnabled(crashSettings.value("ReportingEnabled").toBool() || enableCrashHandler);
+    ch.startMonitor(app);
+}
+
 
 int main (int argc, char** argv) {
     setupHifiApplication("Oven");
 
+
+    DependencyManager::set<Setting::Manager>();
+
+    auto &ch = CrashHandler::getInstance();
+    ch.setPath(argv[0]);
+
+
+
     // figure out if we're launching our GUI application or just the simple command line interface
-    if (argc > 1) {
-        OvenCLIApplication::parseCommandLine(argc, argv);
+    bool enableCrashHandler = false;
+    OvenCLIApplication::parseResult res = OvenCLIApplication::parseCommandLine(argc, argv, &enableCrashHandler);
 
-        // init the settings interface so we can save and load settings
-        Setting::init();
-
-        OvenCLIApplication app { argc, argv };
-        return app.exec();
-    } else {
-        // init the settings interface so we can save and load settings
-        Setting::init();
-
-        OvenGUIApplication app { argc, argv };
-        return app.exec();
+    switch(res) {
+        case OvenCLIApplication::CLIMode:
+        {
+            OvenCLIApplication app { argc, argv };
+            postAppInit(&app, enableCrashHandler);
+            return app.exec();
+            break;
+        }
+        case OvenCLIApplication::GUIMode:
+        {
+            OvenGUIApplication app { argc, argv };
+            postAppInit(&app, enableCrashHandler);
+            return app.exec();
+            break;
+        }
     }
 }

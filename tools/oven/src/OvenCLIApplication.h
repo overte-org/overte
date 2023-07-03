@@ -21,7 +21,12 @@ class OvenCLIApplication : public QCoreApplication, public Oven {
 public:
     OvenCLIApplication(int argc, char* argv[]);
 
-    static void parseCommandLine(int argc, char* argv[]);
+    enum parseResult {
+        GUIMode,
+        CLIMode
+    };
+
+    static parseResult parseCommandLine(int argc, char* argv[], bool *enableCrashHandler);
 
     static OvenCLIApplication* instance() { return dynamic_cast<OvenCLIApplication*>(QCoreApplication::instance()); }
 
