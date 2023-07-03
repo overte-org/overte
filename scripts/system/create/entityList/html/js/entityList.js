@@ -955,6 +955,7 @@ function loaded() {
                         type: type,
                         url: filename,
                         fullUrl: filename,
+                        urlWithPath: entity.url,
                         locked: entity.locked,
                         visible: entity.visible,
                         verticesCount: displayIfNonZero(entity.verticesCount),
