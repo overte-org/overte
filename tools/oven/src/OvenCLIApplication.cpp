@@ -38,7 +38,7 @@ OvenCLIApplication::OvenCLIApplication(int argc, char* argv[]) :
                               Q_ARG(QString, _outputUrlParameter.toString()), Q_ARG(QString, _typeParameter));
 }
 
-OvenCLIApplication::parseResult OvenCLIApplication::parseCommandLine(int argc, char* argv[], bool *enableCrashHandler) {
+OvenCLIApplication::parseResult OvenCLIApplication::parseCommandLine(int argc, char* argv[], bool &enableCrashHandler) {
     // parse the command line parameters
     QCommandLineParser parser;
 
@@ -71,7 +71,7 @@ OvenCLIApplication::parseResult OvenCLIApplication::parseCommandLine(int argc, c
     }
 
     if (parser.isSet(forceCrashReportingOption)) {
-        *enableCrashHandler = true;
+        enableCrashHandler = true;
     }
 
     if (parser.isSet(versionOption)) {

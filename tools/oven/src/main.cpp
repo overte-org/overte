@@ -56,7 +56,7 @@ int main (int argc, char** argv) {
 
     // figure out if we're launching our GUI application or just the simple command line interface
     bool enableCrashHandler = false;
-    OvenCLIApplication::parseResult res = OvenCLIApplication::parseCommandLine(argc, argv, &enableCrashHandler);
+    OvenCLIApplication::parseResult res = OvenCLIApplication::parseCommandLine(argc, argv, enableCrashHandler);
 
     switch(res) {
         case OvenCLIApplication::CLIMode:
