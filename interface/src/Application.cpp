@@ -179,7 +179,7 @@
 #include "avatar/AvatarPackager.h"
 #include "avatar/MyCharacterController.h"
 #include "CrashRecoveryHandler.h"
-#include "CrashHandler.h"
+#include "crash-handler/CrashHandler.h"
 #include "DiscoverabilityManager.h"
 #include "GLCanvas.h"
 #include "InterfaceDynamicFactory.h"
@@ -407,8 +407,10 @@ public:
     }
 
     void deadlockDetectionCrash() {
-        setCrashAnnotation("_mod_faulting_tid", std::to_string((uint64_t)_mainThreadID));
-        setCrashAnnotation("deadlock", "1");
+        auto &ch = CrashHandler::getInstance();
+
+        ch.setAnnotation("_mod_faulting_tid", std::to_string((uint64_t)_mainThreadID));
+        ch.setAnnotation("deadlock", "1");
         uint32_t* crashTrigger = nullptr;
         *crashTrigger = 0xDEAD10CC;
     }
@@ -1054,9 +1056,11 @@ Application::Application(
     {
         // identify gpu as early as possible to help identify OpenGL initialization errors.
         auto gpuIdent = GPUIdent::getInstance();
-        setCrashAnnotation("sentry[contexts][gpu][name]", gpuIdent->getName().toStdString());
-        setCrashAnnotation("sentry[contexts][gpu][version]", gpuIdent->getDriver().toStdString());
-        setCrashAnnotation("gpu_memory", std::to_string(gpuIdent->getMemory()));
+        auto &ch = CrashHandler::getInstance();
+
+        ch.setAnnotation("sentry[contexts][gpu][name]", gpuIdent->getName().toStdString());
+        ch.setAnnotation("sentry[contexts][gpu][version]", gpuIdent->getDriver().toStdString());
+        ch.setAnnotation("gpu_memory", std::to_string(gpuIdent->getMemory()));
     }
 
     // make sure the debug draw singleton is initialized on the main thread.
@@ -1166,13 +1170,15 @@ Application::Application(
     _logger->setSessionID(accountManager->getSessionID());
 #endif
 
-    setCrashAnnotation("metaverse_session_id", accountManager->getSessionID().toString().toStdString());
-    setCrashAnnotation("main_thread_id", std::to_string((size_t)QThread::currentThreadId()));
+    auto &ch = CrashHandler::getInstance();
+
+    ch.setAnnotation("metaverse_session_id", accountManager->getSessionID().toString().toStdString());
+    ch.setAnnotation("main_thread_id", std::to_string((size_t)QThread::currentThreadId()));
 
     if (steamClient) {
         qCDebug(interfaceapp) << "[VERSION] SteamVR buildID:" << steamClient->getSteamVRBuildID();
     }
-    setCrashAnnotation("steam", property(hifi::properties::STEAM).toBool() ? "1" : "0");
+    ch.setAnnotation("steam", property(hifi::properties::STEAM).toBool() ? "1" : "0");
 
     qCDebug(interfaceapp) << "[VERSION] Build sequence:" << qPrintable(applicationVersion());
     qCDebug(interfaceapp) << "[VERSION] MODIFIED_ORGANIZATION:" << BuildInfo::MODIFIED_ORGANIZATION;
@@ -1236,7 +1242,8 @@ Application::Application(
     connect(&domainHandler, SIGNAL(domainURLChanged(QUrl)), SLOT(domainURLChanged(QUrl)));
     connect(&domainHandler, SIGNAL(redirectToErrorDomainURL(QUrl)), SLOT(goToErrorDomainURL(QUrl)));
     connect(&domainHandler, &DomainHandler::domainURLChanged, [](QUrl domainURL){
-        setCrashAnnotation("domain", domainURL.toString().toStdString());
+        auto &ch = CrashHandler::getInstance();
+        ch.setAnnotation("domain", domainURL.toString().toStdString());
     });
     connect(&domainHandler, SIGNAL(resetting()), SLOT(resettingDomain()));
     connect(&domainHandler, SIGNAL(connectedToDomain(QUrl)), SLOT(updateWindowTitle()));
@@ -1348,8 +1355,9 @@ Application::Application(
                 setPreferredCursor(Cursor::Manager::getIconName(Cursor::Icon::SYSTEM));
             }
 
-            setCrashAnnotation("display_plugin", displayPlugin->getName().toStdString());
-            setCrashAnnotation("hmd", displayPlugin->isHmd() ? "1" : "0");
+            auto &ch = CrashHandler::getInstance();
+            ch.setAnnotation("display_plugin", displayPlugin->getName().toStdString());
+            ch.setAnnotation("hmd", displayPlugin->isHmd() ? "1" : "0");
         });
     }
     connect(this, &Application::activeDisplayPluginChanged, this, &Application::updateSystemTabletMode);
@@ -1388,7 +1396,8 @@ Application::Application(
 
     connect(myAvatar.get(), &MyAvatar::skeletonModelURLChanged, [](){
         QUrl avatarURL = qApp->getMyAvatar()->getSkeletonModelURL();
-        setCrashAnnotation("avatar", avatarURL.toString().toStdString());
+        auto &ch = CrashHandler::getInstance();
+        ch.setAnnotation("avatar", avatarURL.toString().toStdString());
     });
 
     // Inititalize sample before registering
@@ -2698,7 +2707,8 @@ void Application::updateHeartbeat() const {
 }
 
 void Application::onAboutToQuit() {
-    setCrashAnnotation("shutdown", "1");
+    auto &ch = CrashHandler::getInstance();
+    ch.setAnnotation("shutdown", "1");
 
     // quickly save AvatarEntityData before the EntityTree is dismantled
     getMyAvatar()->saveAvatarEntityDataToSettings();
@@ -7147,7 +7157,8 @@ void Application::updateWindowTitle() const {
     QString metaverseUsername = accountManager->getAccountInfo().getUsername();
     QString domainUsername = domainAccountManager->getUsername();
 
-    setCrashAnnotation("sentry[user][username]", metaverseUsername.toStdString());
+    auto &ch = CrashHandler::getInstance();
+    ch.setAnnotation("sentry[user][username]", metaverseUsername.toStdString());
 
     QString currentPlaceName;
     if (isServerlessMode()) {

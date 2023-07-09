@@ -36,51 +36,6 @@ public slots:
     bool isDisabledSettingSet() const { return _disabled.isSet(); }
 
 
-    /**
-     * @brief Whether the crash monitor has been successfully started
-     *
-     * Reasons for it failing to start include:
-     *
-     *  * Not having a crash reporter for the platform
-     *  * Crash reporter not being configured with reporting URLs (CMAKE_BACKTRACE_TOKEN and CMAKE_BACKTRACE_URL)
-     *  * Crash reporter is present and configured, but failed to initialize for some reason
-     *
-     * @return true Crash reporter is present, configured and working.
-     * @return false Crash reporter has not been started for one of the above reasons.
-     */
-    bool isCrashMonitorStarted() const { return _crashMonitorStarted; }
-
-
-    /**
-     * @brief Whether the crash monitor will report crashes if they occur
-     *
-     * This setting is independent of isCrashMonitorStarted() -- crash reporting may be enabled but fail to work
-     * due to the crash reporting component being missing or failing to initialize.
-     *
-     * @return true Crashes will be reported to CMAKE_BACKTRACE_URL
-     * @return false Crashes will not be reported
-     */
-    bool isCrashReportingEnabled() { return _crashReportingEnabled.get(); }
-
-    /**
-     * @brief Marks the crash monitor as started
-     *
-     * @warning Only to be used as part of the startup process
-     *
-     * @param started
-     */
-    void setCrashMonitorStarted(bool started) { _crashMonitorStarted = started; }
-
-    /**
-     * @brief Set whether we want to submit crash reports to the report server
-     *
-     * The report server is configured with CMAKE_BACKTRACE_URL.
-     * Emits crashReportingEnabledChanged signal.
-     *
-     * @param enabled Whether it's enabled.
-     */
-    void setCrashReportingEnabled(bool enabled);
-
     void disable(bool disable);
     void logAction(QString action, QJsonObject details = QJsonObject(), JSONCallbackParameters params = JSONCallbackParameters());
 
@@ -111,9 +66,9 @@ private slots:
 private:
     UserActivityLogger();
     Setting::Handle<bool> _disabled { "UserActivityLoggerDisabled", true };
-    Setting::Handle<bool> _crashReportingEnabled { "CrashReportingEnabled", false };
 
-    bool _crashMonitorStarted {false};
+
+
     QElapsedTimer _timer;
 };
 

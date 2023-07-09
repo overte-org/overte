@@ -34,6 +34,7 @@
 #include <SettingManager.h>
 #include <DependencyManager.h>
 #include <UserActivityLogger.h>
+#include <crash-handler/CrashHandler.h>
 #include <BuildInfo.h>
 
 bool CrashRecoveryHandler::checkForResetSettings(bool wasLikelyCrash, bool suppressPrompt) {
@@ -91,7 +92,7 @@ bool CrashRecoveryHandler::suggestCrashReporting() {
     QVBoxLayout* layout = new QVBoxLayout;
 
     QString explainText;
-    auto &ual = UserActivityLogger::getInstance();
+    auto &ch = CrashHandler::getInstance();
 
 
 
@@ -119,7 +120,7 @@ bool CrashRecoveryHandler::suggestCrashReporting() {
             break;
     }
 
-    if (!ual.isCrashMonitorStarted()) {
+    if (!ch.isStarted()) {
         qWarning() << "Crash reporting not working, skipping suggestion to enable it.";
         return false;
     }
@@ -131,8 +132,8 @@ bool CrashRecoveryHandler::suggestCrashReporting() {
 
     QCheckBox* crashReportCheckbox = new QCheckBox("Enable automatic crash reporting");
 
-    crashReportCheckbox->setChecked(ual.isCrashReportingEnabled());
-    crashReportCheckbox->setEnabled(ual.isCrashMonitorStarted());
+    crashReportCheckbox->setChecked(ch.isEnabled());
+    crashReportCheckbox->setEnabled(ch.isStarted());
 
     layout->addWidget(explainLabel);
     layout->addSpacing(12);
@@ -149,7 +150,7 @@ bool CrashRecoveryHandler::suggestCrashReporting() {
 
     crashDialog.exec();
 
-    ual.setCrashReportingEnabled(crashReportCheckbox->isChecked());
+    ch.setEnabled(crashReportCheckbox->isChecked());
 
     return true;
 }
@@ -157,7 +158,7 @@ bool CrashRecoveryHandler::suggestCrashReporting() {
 CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool showCrashMessage) {
     QDialog crashDialog;
     QLabel* label;
-    auto &ual = UserActivityLogger::getInstance();
+    auto &ch = CrashHandler::getInstance();
 
     if (showCrashMessage) {
         crashDialog.setWindowTitle("Interface Crashed Last Run");
@@ -176,7 +177,7 @@ CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool show
     QRadioButton* option3 = new QRadioButton("Continue with my current settings");
     QLabel* crashReportLabel = nullptr;
 
-    if (ual.isCrashMonitorStarted()) {
+    if (ch.isStarted()) {
         crashReportLabel = new QLabel("To help us with debugging, you can enable automatic crash reports.\n"
                                       "They'll only be seen by developers trusted by the Overte e.V. organization,\n"
                                       "and will only be used for improving the code.");
@@ -187,8 +188,8 @@ CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool show
     QCheckBox* crashReportCheckbox = new QCheckBox("Enable automatic crash reporting");
 
 
-    crashReportCheckbox->setChecked(ual.isCrashReportingEnabled());
-    crashReportCheckbox->setEnabled(ual.isCrashMonitorStarted());
+    crashReportCheckbox->setChecked(ch.isEnabled());
+    crashReportCheckbox->setEnabled(ch.isStarted());
 
     option3->setChecked(true);
     layout->addWidget(option1);
@@ -218,7 +219,7 @@ CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool show
         }
     }
 
-    ual.setCrashReportingEnabled(crashReportCheckbox->isChecked());
+    ch.setEnabled(crashReportCheckbox->isChecked());
 
     // Dialog cancelled or "do nothing" option chosen
     return CrashRecoveryHandler::DO_NOTHING;

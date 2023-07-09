@@ -23,6 +23,9 @@ link_hifi_libraries(
 )
 include_hifi_library_headers(procedural)
 
+add_crashpad()
+target_breakpad()
+
 if (BUILD_TOOLS)
   add_dependencies(${TARGET_NAME} oven)
 

@@ -27,7 +27,7 @@
 
 #include "AddressManager.h"
 #include "Application.h"
-#include "CrashHandler.h"
+#include "crash-handler/CrashHandler.h"
 #include "InterfaceLogging.h"
 #include "UserActivityLogger.h"
 #include "MainWindow.h"
@@ -37,7 +37,7 @@
 #ifdef Q_OS_WIN
 #include <Windows.h>
 extern "C" {
-    typedef int(__stdcall * CHECKMINSPECPROC) ();
+    typedef int(__stdcall* CHECKMINSPECPROC)();
 }
 #endif
 
@@ -51,7 +51,7 @@ int main(int argc, const char* argv[]) {
     // This appears to resolve the issues with corrupted fonts on OSX.  No
     // idea why.
     qputenv("QT_ENABLE_GLYPH_CACHE_WORKAROUND", "true");
-	// https://i.kym-cdn.com/entries/icons/original/000/008/342/ihave.jpg
+    // https://i.kym-cdn.com/entries/icons/original/000/008/342/ihave.jpg
     QSurfaceFormat::setDefaultFormat(format);
 #endif
 
@@ -251,6 +251,7 @@ int main(int argc, const char* argv[]) {
     //     --ignore-gpu-blacklist
     //     --suppress-settings-reset
 
+
     parser.addOption(urlOption);
     parser.addOption(protocolVersionOption);
     parser.addOption(noUpdaterOption);
@@ -296,7 +297,7 @@ int main(int argc, const char* argv[]) {
     {
         QCoreApplication tempApp(argc, const_cast<char**>(argv));
 
-        parser.process(QCoreApplication::arguments()); // Must be run after QCoreApplication is initalised.
+        parser.process(QCoreApplication::arguments());  // Must be run after QCoreApplication is initalised.
 
 #ifdef Q_OS_OSX
         if (QFileInfo::exists(QCoreApplication::applicationDirPath() + "/../../../config.json")) {
@@ -310,10 +311,11 @@ int main(int argc, const char* argv[]) {
     }
 
     // We want to configure the logging system as early as possible
-    auto &logHandler = LogHandler::getInstance();
+    auto& logHandler = LogHandler::getInstance();
+
     if (parser.isSet(logOption)) {
         if (!logHandler.parseOptions(parser.value(logOption).toUtf8(), logOption.names().first())) {
-            QCoreApplication mockApp(argc, const_cast<char**>(argv)); // required for call to showHelp()
+            QCoreApplication mockApp(argc, const_cast<char**>(argv));  // required for call to showHelp()
             parser.showHelp();
             Q_UNREACHABLE();
         }
@@ -325,7 +327,7 @@ int main(int argc, const char* argv[]) {
         Q_UNREACHABLE();
     }
     if (parser.isSet(helpOption)) {
-        QCoreApplication mockApp(argc, const_cast<char**>(argv)); // required for call to showHelp()
+        QCoreApplication mockApp(argc, const_cast<char**>(argv));  // required for call to showHelp()
         parser.showHelp();
         Q_UNREACHABLE();
     }
@@ -378,7 +380,7 @@ int main(int argc, const char* argv[]) {
 
     // Early check for --traceFile argument
     auto tracer = DependencyManager::set<tracing::Tracer>();
-    const char * traceFile = nullptr;
+    const char* traceFile = nullptr;
     float traceDuration = 0.0f;
     if (parser.isSet(traceFileOption)) {
         traceFile = parser.value(traceFileOption).toStdString().c_str();
@@ -412,6 +414,15 @@ int main(int argc, const char* argv[]) {
 
     // Instance UserActivityLogger now that the settings are loaded
     auto& ual = UserActivityLogger::getInstance();
+    auto& ch = CrashHandler::getInstance();
+
+    QObject::connect(&ch, &CrashHandler::enabledChanged, [](bool enabled) {
+        Settings s;
+        s.beginGroup("Crash");
+        s.setValue("ReportingEnabled", enabled);
+        s.endGroup();
+    });
+
     // once the settings have been loaded, check if we need to flip the default for UserActivityLogger
     if (!ual.isDisabledSettingSet()) {
         // the user activity logger is opt-out for Interface
@@ -423,16 +434,19 @@ int main(int argc, const char* argv[]) {
 
     if (parser.isSet(forceCrashReportingOption)) {
         qInfo() << "Crash reporting enabled on the command-line";
-        ual.setCrashReportingEnabled(true);
+        ch.setEnabled(true);
     }
 
-    auto crashHandlerStarted = startCrashHandler(argv[0]);
-    if (crashHandlerStarted) {
-        ual.setCrashMonitorStarted(true);
-        qDebug() << "Crash handler started:" << crashHandlerStarted;
-    } else {
-        qWarning() << "Crash handler failed to start";
+    {
+        Settings crashSettings;
+        crashSettings.beginGroup("Crash");
+        if (crashSettings.value("ReportingEnabled").toBool()) {
+            ch.setEnabled(true);
+        }
+        crashSettings.endGroup();
     }
+
+    ch.setAnnotation("program", "interface");
 
     const QString& applicationName = getInterfaceSharedMemoryName();
     bool instanceMightBeRunning = true;
@@ -472,9 +486,9 @@ int main(int argc, const char* argv[]) {
         if (socket.waitForConnected(LOCAL_SERVER_TIMEOUT_MS)) {
             if (parser.isSet(urlOption)) {
                 QUrl url = QUrl(parser.value(urlOption));
-                if (url.isValid() && (url.scheme() == URL_SCHEME_OVERTE || url.scheme() == URL_SCHEME_OVERTEAPP
-                        || url.scheme() == HIFI_URL_SCHEME_HTTP || url.scheme() == HIFI_URL_SCHEME_HTTPS
-                        || url.scheme() == HIFI_URL_SCHEME_FILE)) {
+                if (url.isValid() && (url.scheme() == URL_SCHEME_OVERTE || url.scheme() == URL_SCHEME_OVERTEAPP ||
+                                      url.scheme() == HIFI_URL_SCHEME_HTTP || url.scheme() == HIFI_URL_SCHEME_HTTPS ||
+                                      url.scheme() == HIFI_URL_SCHEME_FILE)) {
                     qDebug() << "Writing URL to local socket";
                     socket.write(url.toString().toUtf8());
                     if (!socket.waitForBytesWritten(5000)) {
@@ -494,7 +508,6 @@ int main(int argc, const char* argv[]) {
         return EXIT_SUCCESS;
 #endif
     }
-
 
     // FIXME this method of checking the OpenGL version screws up the `QOpenGLContext::globalShareContext()` value, which in turn
     // leads to crashes when creating the real OpenGL instance.  Disabling for now until we come up with a better way of checking
@@ -521,7 +534,6 @@ int main(int argc, const char* argv[]) {
         }
     }
 #endif
-
 
     // Debug option to demonstrate that the client's local time does not
     // need to be in sync with any other network node. This forces clock
@@ -590,7 +602,8 @@ int main(int argc, const char* argv[]) {
 #if defined(Q_OS_LINUX)
         app.setWindowIcon(QIcon(PathUtils::resourcesPath() + "images/brand-logo.svg"));
 #endif
-        startCrashHookMonitor(&app);
+        ch.startMonitor(&app);
+
 
         QTimer exitTimer;
         if (traceDuration > 0.0f) {
@@ -618,7 +631,7 @@ int main(int argc, const char* argv[]) {
 #endif
 
         // Setup local server
-        QLocalServer server { &app };
+        QLocalServer server{ &app };
 
         // We failed to connect to a local server, so we remove any existing servers.
         server.removeServer(applicationName);

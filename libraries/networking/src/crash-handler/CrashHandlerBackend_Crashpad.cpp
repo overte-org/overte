@@ -41,13 +41,18 @@ Q_LOGGING_CATEGORY(crash_handler, "overte.crash_handler")
 #endif
 
 #include <BuildInfo.h>
-#include <FingerprintUtils.h>
+#include "../FingerprintUtils.h"
+#include "../UserActivityLogger.h"
 #include <UUID.h>
-#include <UserActivityLogger.h>
+
 
 
 static const std::string BACKTRACE_URL{ CMAKE_BACKTRACE_URL };
 static const std::string BACKTRACE_TOKEN{ CMAKE_BACKTRACE_TOKEN };
+
+std::string custom_backtrace_url;
+std::string custom_backtrace_token;
+
 
 // ------------------------------------------------------------------------------------------------
 // SpinLock - a lock that can timeout attempting to lock a block of code, and is in a busy-wait cycle while trying to acquire
@@ -351,8 +356,16 @@ static QString findBinaryDir() {
     return QString();
 }
 
-bool startCrashHandler(std::string appPath) {
-    if (BACKTRACE_URL.empty() || BACKTRACE_TOKEN.empty()) {
+bool startCrashHandler(std::string appPath, std::string crashURL, std::string crashToken) {
+    if (crashURL.empty()) {
+        crashURL = BACKTRACE_URL;
+    }
+
+    if (crashToken.empty()) {
+        crashToken = BACKTRACE_TOKEN;
+    }
+
+    if (crashURL.empty() || crashToken.empty()) {
         qCCritical(crash_handler) << "Backtrace URL or token not set, crash handler disabled.";
         return false;
     }
@@ -362,7 +375,7 @@ bool startCrashHandler(std::string appPath) {
     std::vector<std::string> arguments;
 
     std::map<std::string, std::string> annotations;
-    annotations["sentry[release]"] = BACKTRACE_TOKEN;
+    annotations["sentry[release]"] = crashToken;
     annotations["sentry[contexts][app][app_version]"] = BuildInfo::VERSION.toStdString();
     annotations["sentry[contexts][app][app_build]"] = BuildInfo::BUILD_NUMBER.toStdString();
     annotations["build_type"] = BuildInfo::BUILD_TYPE_STRING.toStdString();
@@ -389,10 +402,10 @@ bool startCrashHandler(std::string appPath) {
         qCDebug(crash_handler) << "Locating own directory by platform-specific method";
         interfaceDir.setPath(binaryDir);
     } else {
+        // Getting the base dir from argv[0] is already handled by CrashHandler, so we use
+        // the path as-is here.
         qCDebug(crash_handler) << "Locating own directory by argv[0]";
         interfaceDir.setPath(QString::fromStdString(appPath));
-        // argv[0] gets us the path including the binary file
-        interfaceDir.cdUp();
     }
 
     if (!interfaceDir.exists(CRASHPAD_HANDLER_NAME)) {
@@ -421,15 +434,15 @@ bool startCrashHandler(std::string appPath) {
     }
 
     // Enable automated uploads.
-    QObject::connect(&UserActivityLogger::getInstance(), &UserActivityLogger::crashReportingEnabledChanged, []() {
-        auto &ual = UserActivityLogger::getInstance();
-        setCrashReportingEnabled(ual.isCrashReportingEnabled());
-    });
+  //  QObject::connect(&UserActivityLogger::getInstance(), &UserActivityLogger::crashReportingEnabledChanged, []() {
+  //      auto &ual = UserActivityLogger::getInstance();
+  //      setCrashReportingEnabled(ual.isCrashReportingEnabled());
+  //  });
 
-    crashpadDatabase->GetSettings()->SetUploadsEnabled(UserActivityLogger::getInstance().isCrashReportingEnabled());
+    crashpadDatabase->GetSettings()->SetUploadsEnabled(CrashHandler::getInstance().isEnabled());
 
 
-    if (!client->StartHandler(handler, db, db, BACKTRACE_URL, annotations, arguments, true, true)) {
+    if (!client->StartHandler(handler, db, db, crashURL, annotations, arguments, true, true)) {
         qCCritical(crash_handler) << "Failed to start crashpad handler";
         return false;
     }

@@ -57,7 +57,7 @@ void flushAnnotations() {
     settings.sync();
 }
 
-bool startCrashHandler(std::string appPath) {
+bool startCrashHandler(std::string appPath, std::string crashURL, std::string crashToken) {
     annotations["version"] = BuildInfo::VERSION;
     annotations["build_number"] = BuildInfo::BUILD_NUMBER;
     annotations["build_type"] = BuildInfo::BUILD_TYPE_STRING;

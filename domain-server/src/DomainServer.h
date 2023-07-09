@@ -83,6 +83,8 @@ public:
 
     void screensharePresence(QString roomname, QUuid avatarID, int expiration_seconds = 0);
 
+    static bool forceCrashReporting() { return _forceCrashReporting; }
+
 public slots:
     /// Called by NodeList to inform us a node has been added
     void nodeAdded(SharedNodePointer node);
@@ -311,6 +313,8 @@ private:
     static bool _getTempName;
     static QString _userConfigFilename;
     static int _parentPID;
+    static bool _forceCrashReporting;
+
 
     bool _sendICEServerAddressToMetaverseAPIInProgress { false };
     bool _sendICEServerAddressToMetaverseAPIRedo { false };

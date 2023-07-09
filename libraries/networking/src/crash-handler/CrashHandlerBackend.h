@@ -9,8 +9,8 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#ifndef hifi_CrashHandler_h
-#define hifi_CrashHandler_h
+#ifndef hifi_CrashHandlerBackend_h
+#define hifi_CrashHandlerBackend_h
 
 #include <string>
 #include <QCoreApplication>
@@ -18,10 +18,10 @@
 
 Q_DECLARE_LOGGING_CATEGORY(crash_handler)
 
-bool startCrashHandler(std::string appPath);
+bool startCrashHandler(std::string appPath, std::string url="", std::string token="");
 void setCrashAnnotation(std::string name, std::string value);
 void startCrashHookMonitor(QCoreApplication* app);
 void setCrashReportingEnabled(bool value);
 
 
-#endif // hifi_CrashHandler_h
+#endif // hifi_CrashHandlerBackend_h

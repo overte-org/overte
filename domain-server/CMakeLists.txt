@@ -36,6 +36,9 @@ target_zlib()
 target_quazip()
 target_openssl()
 
+add_crashpad()
+target_breakpad()
+
 # libcrypto uses dlopen in libdl
 if (UNIX)
   target_link_libraries(${TARGET_NAME} ${CMAKE_DL_LIBS})
