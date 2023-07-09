@@ -2070,10 +2070,14 @@ controller::Input::NamedVector ViveControllerManager::InputDevice::getAvailableI
 QString ViveControllerManager::InputDevice::getDefaultMappingConfig() const {
     QString name(getOpenVrDeviceName().c_str());
     QString MAPPING_JSON;
-    if (name.contains(QString("HTC")) || name.contains(QString("Vive"))) {
+    // Workaround for having to press the thumbstick to be able to move.
+    // On HTC Vive wands we want to need to press the touchpad to move.
+    // On Valve Index controllers the thumbsticks don't need to be pressed, but the touchpad does. Valve seems to have already thought of this.
+    if (name.contains(QString("HTC")) || name.contains(QString("Vive")) || name.contains(QString("Valve"))) {
         MAPPING_JSON = PathUtils::resourcesPath() + "/controllers/vive.json";
+    // Other HMDs need a different mapping to not need the thumbstick to be pressed.
     } else {
-        MAPPING_JSON = PathUtils::resourcesPath() + "/controllers/index.json";
+        MAPPING_JSON = PathUtils::resourcesPath() + "/controllers/openvr_alternative.json";
     }
     return MAPPING_JSON;
 }
