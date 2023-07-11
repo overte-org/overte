@@ -3,6 +3,7 @@
 //
 //  Created by Vlad Stelmahovsky on 29 Mar 2017
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023, Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -19,7 +20,7 @@ Item {
                                             buttons: OriginalDialogs.StandardButton.Ok,
                                             defaultButton: OriginalDialogs.StandardButton.NoButton,
                                             title: "No Connection",
-                                            text: "Unable to connect to this domain. Click the 'EXPLORE' button on the toolbar to visit another domain."
+                                            text: "Unable to connect to this domain. Click the 'PLACES' button on the toolbar to visit another domain."
                                         });
         object.selected.connect(function(button) {
             if (button === OriginalDialogs.StandardButton.Ok) {
