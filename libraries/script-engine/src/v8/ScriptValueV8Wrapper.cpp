@@ -102,15 +102,24 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     auto maybeResult = v8Function->Call(_engine->getContext(), recv, args.length(), v8Args);
     lock.unlock();
     if (tryCatch.HasCaught()) {
-        qCDebug(scriptengine_v8) << "Function call failed: \"" << _engine->formatErrorMessageFromTryCatch(tryCatch);
+        QString errorMessage(QString("Function call failed: \"") + _engine->formatErrorMessageFromTryCatch(tryCatch));
+        if (_engine->_manager) {
+            _engine->_manager->scriptErrorMessage(errorMessage);
+        } else {
+            qDebug(scriptengine_v8) << errorMessage;
+        }
     }
     v8::Local<v8::Value> result;
     Q_ASSERT(_engine == _value.getEngine());
     if (maybeResult.ToLocal(&result)) {
         return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
     } else {
-        //V8TODO Add more details
-        qCWarning(scriptengine_v8) << "JS function call failed";
+        QString errorMessage("JS function call failed: " + _engine->currentContext()->backtrace().join("\n"));
+        if (_engine->_manager) {
+            _engine->_manager->scriptErrorMessage(errorMessage);
+        } else {
+            qDebug(scriptengine_v8) << errorMessage;
+        }
         return _engine->undefinedValue();
     }
 }
