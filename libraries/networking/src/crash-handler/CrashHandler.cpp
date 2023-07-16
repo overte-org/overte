@@ -50,6 +50,20 @@ bool CrashHandler::start() {
 
     if ( started ) {
         qCInfo(crash_handler) << "Crash handler started";
+        std::size_t countAdded = 0;
+
+        {
+            std::lock_guard<std::mutex> lock(_annotationsMutex);
+            for(const auto &item : _annotations) {
+                setCrashAnnotation(item.first, item.second);
+            }
+
+            countAdded = _annotations.size();
+            _annotations.clear();
+        }
+
+        qCDebug(crash_handler) << "Forwarded" << countAdded << "annotations";
+
     } else {
         qCWarning(crash_handler) << "Crash handler failed to start";
     }
@@ -94,7 +108,6 @@ void CrashHandler::setToken(const QString &token) {
 
 void CrashHandler::setAnnotation(const std::string &key, const char *value) {
     setAnnotation(key, std::string(value));
-    setCrashAnnotation(key, std::string(value));
 }
 
 void CrashHandler::setAnnotation(const std::string &key, const QString &value) {
@@ -103,7 +116,8 @@ void CrashHandler::setAnnotation(const std::string &key, const QString &value) {
 
 void CrashHandler::setAnnotation(const std::string &key, const std::string &value) {
     if (!isStarted()) {
-        qCWarning(crash_handler) << "Can't set annotation" << QString::fromStdString(key) << "to" << QString::fromStdString(value) << "crash handler not yet started";
+        std::lock_guard<std::mutex> lock(_annotationsMutex);
+        _annotations[key] = value;
         return;
     }
 

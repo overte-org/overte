@@ -14,6 +14,9 @@
 #include <QObject>
 #include <QCoreApplication>
 #include <SettingHandle.h>
+#include <atomic>
+#include <unordered_map>
+#include <mutex>
 
 
 
@@ -162,6 +165,9 @@ public slots:
      * Annotations add extra information, such as the application's version number,
      * the current user, or any other information of interest.
      *
+     * @note Annotations made before the crash handler are remembered, and sent to the
+     * crash handler as soon as it's initialized.
+     *
      * @param key Key
      * @param value Value
      */
@@ -173,6 +179,9 @@ public slots:
      * Annotations add extra information, such as the application's version number,
      * the current user, or any other information of interest.
      *
+     * @note Annotations made before the crash handler are remembered, and sent to the
+     * crash handler as soon as it's initialized.
+     *
      * @param key Key
      * @param value Value
      */
@@ -183,6 +192,10 @@ public slots:
      *
      * Annotations add extra information, such as the application's version number,
      * the current user, or any other information of interest.
+     *
+     * @note Annotations made before the crash handler are remembered, and sent to the
+     * crash handler as soon as it's initialized.
+     *
      *
      * @param key Key
      * @param value Value
@@ -214,8 +227,10 @@ private:
     void setStarted(bool started) { _crashMonitorStarted = started; }
 
 
-    bool _crashMonitorStarted {false};
-    bool _crashReportingEnabled {false};
+    std::atomic<bool> _crashMonitorStarted {false};
+    std::atomic<bool> _crashReportingEnabled {false};
+    std::unordered_map<std::string, std::string> _annotations{};
+    std::mutex _annotationsMutex{};
 
     QString _path;
     QString _crashUrl;
