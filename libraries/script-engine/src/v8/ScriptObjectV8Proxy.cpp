@@ -1255,9 +1255,14 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
                 v8::TryCatch tryCatch(isolate);
                 callback->Call(functionContext, v8This, numArgs, args);
                 if (tryCatch.HasCaught()) {
-                    qCDebug(scriptengine) << "Signal proxy " << fullName() << " connection call failed: \""
-                                          << _engine->formatErrorMessageFromTryCatch(tryCatch)
-                                          << "\nThis provided: " << conn.thisValue.get()->IsObject();
+                    QString errorMessage(QString("Signal proxy ") + fullName() + " connection call failed: \""
+                                          + _engine->formatErrorMessageFromTryCatch(tryCatch)
+                                          + "\nThis provided: " + QString::number(conn.thisValue.get()->IsObject()));
+                    if (_engine->_manager) {
+                        _engine->_manager->scriptErrorMessage(errorMessage);
+                    } else {
+                        qDebug(scriptengine_v8) << errorMessage;
+                    }
 
                     _engine->setUncaughtException(tryCatch, "Error in signal proxy");
                 }

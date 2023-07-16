@@ -69,7 +69,7 @@ bool ScriptProgramV8Wrapper::compile() {
             if (backtraceV8String->IsString()) {
                 if (v8::Local<v8::String>::Cast(backtraceV8String)->Length() > 0) {
                     v8::String::Utf8Value backtraceUtf8Value(isolate, backtraceV8String);
-                    errorBacktrace = *backtraceUtf8Value;
+                    errorBacktrace = QString(*backtraceUtf8Value).replace("\\n","\n");
                 }
             }
         }

@@ -272,6 +272,7 @@ private:
     std::atomic<size_t> scriptValueCount{0};
     std::atomic<size_t> scriptValueProxyCount{0};
 #endif
+    friend ScriptValueV8Wrapper;
 };
 
 // This class is used to automatically add context to script engine's context list that is used by C++ calls

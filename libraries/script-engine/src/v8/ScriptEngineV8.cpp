@@ -634,9 +634,13 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             v8::Local<v8::Value> v8Result;
             if (!maybeResult.ToLocal(&v8Result)) {
                 v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Exception());
-                QString errorMessage = QString(*utf8Value);
-                qCWarning(scriptengine_v8) << __FUNCTION__ << "---------- hasCaught:" << errorMessage;
-                qCWarning(scriptengine_v8) << __FUNCTION__ << "---------- tryCatch details:" << formatErrorMessageFromTryCatch(tryCatch);
+                QString errorMessage = QString(__FUNCTION__) + " hasCaught:" + QString(*utf8Value) + "\n"
+                    + "tryCatch details:" + formatErrorMessageFromTryCatch(tryCatch);
+                if (_manager) {
+                    _manager->scriptErrorMessage(errorMessage);
+                } else {
+                    qWarning(scriptengine_v8) << errorMessage;
+                }
             }
 
             if (hasUncaughtException()) {
@@ -685,6 +689,12 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
     {
         v8::TryCatch tryCatch(getIsolate());
         if (!v8::Script::Compile(getContext(), v8::String::NewFromUtf8(getIsolate(), sourceCode.toStdString().c_str()).ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
+            QString errorMessage(QString("Error while compiling script: \"") + fileName + QString("\" ") + formatErrorMessageFromTryCatch(tryCatch));
+            if (_manager) {
+                _manager->scriptErrorMessage(errorMessage);
+            } else {
+                qDebug(scriptengine_v8) << errorMessage;
+            }
             setUncaughtException(tryCatch, "Error while compiling script");
             _evaluatingCounter--;
             return nullValue();
@@ -697,7 +707,12 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
         Q_ASSERT(tryCatchRun.HasCaught());
         auto runError = tryCatchRun.Message();
         ScriptValue errorValue(new ScriptValueV8Wrapper(this, V8ScriptValue(this, runError->Get())));
-        qCDebug(scriptengine_v8) << "Running script: \"" << fileName << "\" " << formatErrorMessageFromTryCatch(tryCatchRun);
+        QString errorMessage(QString("Running script: \"") + fileName + QString("\" ") + formatErrorMessageFromTryCatch(tryCatchRun));
+        if (_manager) {
+            _manager->scriptErrorMessage(errorMessage);
+        } else {
+            qDebug(scriptengine_v8) << errorMessage;
+        }
         setUncaughtException(tryCatchRun, "script evaluation");
 
         _evaluatingCounter--;
@@ -749,7 +764,7 @@ void ScriptEngineV8::setUncaughtException(const v8::TryCatch &tryCatch, const QS
             if (backtraceV8String->IsString()) {
                 if (v8::Local<v8::String>::Cast(backtraceV8String)->Length() > 0) {
                     v8::String::Utf8Value backtraceUtf8Value(getIsolate(), backtraceV8String);
-                    QString errorBacktrace = *backtraceUtf8Value;
+                    QString errorBacktrace = QString(*backtraceUtf8Value).replace("\\n","\n");
                     ex->backtrace = errorBacktrace.split("\n");
 
                 }
@@ -790,14 +805,14 @@ QString ScriptEngineV8::formatErrorMessageFromTryCatch(v8::TryCatch &tryCatch) {
             if (backtraceV8String->IsString()) {
                 if (v8::Local<v8::String>::Cast(backtraceV8String)->Length() > 0) {
                     v8::String::Utf8Value backtraceUtf8Value(getIsolate(), backtraceV8String);
-                    errorBacktrace = *backtraceUtf8Value;
+                    errorBacktrace = QString(*backtraceUtf8Value).replace("\\n","\n");
                 }
             }
         }
         QTextStream resultStream(&result);
         resultStream << "failed on line " << errorLineNumber << " column " << errorColumnNumber << " with message: \"" << errorMessage <<"\" backtrace: " << errorBacktrace;
     }
-    return result;
+    return result.replace("\\n", "\n");
 }
 
 v8::Local<v8::ObjectTemplate> ScriptEngineV8::getObjectProxyTemplate() {
