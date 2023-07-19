@@ -7550,12 +7550,18 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     }
     auto scriptingInterface = DependencyManager::get<controller::ScriptingInterface>();
     scriptEngine->registerGlobalObject("Controller", scriptingInterface.data());
-    scriptManager->connect(scriptManager.get(), &ScriptManager::scriptEnding, [scriptManager]() {
-        // Request removal of controller routes with callbacks to a given script engine
-        auto userInputMapper = DependencyManager::get<UserInputMapper>();
-        userInputMapper->scheduleScriptEndpointCleanup(scriptManager->engine().get());
-        // V8TODO: Maybe we should wait until removal is finished if there are still crashes
-    });
+
+    {
+        auto connection = std::make_shared<QMetaObject::Connection>();
+        *connection = scriptManager->connect(scriptManager.get(), &ScriptManager::scriptEnding, [scriptManager, connection]() {
+            // Request removal of controller routes with callbacks to a given script engine
+            auto userInputMapper = DependencyManager::get<UserInputMapper>();
+            userInputMapper->scheduleScriptEndpointCleanup(scriptManager->engine().get());
+            QObject::disconnect(*connection);
+            // V8TODO: Maybe we should wait until removal is finished if there are still crashes
+        });
+    }
+
     UserInputMapper::registerControllerTypes(scriptEngine.get());
 
     auto recordingInterface = DependencyManager::get<RecordingScriptingInterface>();
