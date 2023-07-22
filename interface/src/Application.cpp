@@ -7557,8 +7557,8 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
             // Request removal of controller routes with callbacks to a given script engine
             auto userInputMapper = DependencyManager::get<UserInputMapper>();
             userInputMapper->scheduleScriptEndpointCleanup(scriptManager->engine().get());
+            // V8TODO: Maybe we should wait until endpoint cleanup is finished before deleting the script engine if there are still crashes
             QObject::disconnect(*connection);
-            // V8TODO: Maybe we should wait until removal is finished if there are still crashes
         });
     }
 
