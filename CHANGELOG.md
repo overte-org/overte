@@ -12,8 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-<!-- ## [Unreleased] 2023.07.09 -->
-<!-- ## [2023.07.1] 2023.07.09 -->
+<!-- ## [Unreleased] 2023.07.22 -->
+<!-- ## [2023.07.1] 2023.07.22 -->
 
 <!--
 ### Misc
@@ -35,6 +35,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Fixed angle text sometimes being occluded when using Create app (PR498)
 - Hugely improved Create app performance in Domains with many entities (PR498)
 - Fixed an issue that could cause laser pointers to rapidly flash (PR495)
+- Fixed the connection failure dialog mentioning "Explore" instead of "Places" (PR515)
 
 ### Changes
 - Replaced Vircadia Metaverse Server with a testing server as federation default (PR330)
@@ -42,13 +43,13 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Increased the maximum log file size from 512 kiB to 10 MiB (PR342,PR513)
 - Decreased the amount of retained log files from 100 to 20 (PR342)
 - Pressing the Return key with the the address/search bar in the Places App selected now navigates you to that address (PR403)
-- Replaced QT Script with V8 scripting engine (PR185,PR507)
+- Replaced QT Script with V8 scripting engine (PR185,PR507,PR519)
 	This is a huge change under the hood, which ended up fixing a lot of issues.
 	Since the new scripting engine does not behave exactly the same as the old one,
 	some scripts might need fixing. The new scripting engine is especially picky when it comes to undefined behaviour.
 	Most notably "use strict" is actually strict now and won't allow you to use variables without defining them first.
 - Silenced ForceHtmlAudioOutputDeviceUpdate log message (PR473)
-- Improved crash reporting functionality (PR480,PR484)
+- Improved crash reporting functionality (PR480,PR484,PR518)
 	Interface will ask if future crashes should be reported automatically when it detects that it crashed on last run.
 	It will also ask once in case of a non-stable build.
 - Changed the VR overlay to only recenter when moving (PR478)
