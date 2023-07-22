@@ -578,15 +578,6 @@ signals:
     void scriptEnding();
 
     /*@jsdoc
-     * @function Script.finished
-     * @param {string} filename - File name.
-     * @param {object} engine - Engine.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-    void finished(const QString& fileNameString, ScriptManagerPointer);
-
-    /*@jsdoc
      * Triggered when the script prints a message to the program log via {@link  print}, {@link Script.print},
      * {@link console.log}, {@link console.debug}, {@link console.group}, {@link console.groupEnd}, {@link console.time}, or
      * {@link console.timeEnd}.

@@ -32,7 +32,6 @@
     connect(_manager, &ScriptManager::errorLoadingScript, this, &ScriptManagerScriptingInterface::errorLoadingScript);
     connect(_manager, &ScriptManager::update, this, &ScriptManagerScriptingInterface::update);
     connect(_manager, &ScriptManager::scriptEnding, this, &ScriptManagerScriptingInterface::scriptEnding);
-    connect(_manager, &ScriptManager::finished, this, &ScriptManagerScriptingInterface::finished);
     connect(_manager, &ScriptManager::printedMessage, this, &ScriptManagerScriptingInterface::printedMessage);
     connect(_manager, &ScriptManager::errorMessage, this, &ScriptManagerScriptingInterface::errorMessage);
     connect(_manager, &ScriptManager::warningMessage, this, &ScriptManagerScriptingInterface::warningMessage);
