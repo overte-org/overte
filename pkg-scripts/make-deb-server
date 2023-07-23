@@ -1,15 +1,16 @@
 #!/bin/sh
 
 # Copyright 2020-2021 Vircadia contributors.
-# Copyright 2022 Overte e.V.
+# Copyright 2022-2023 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 if [ "$OVERTE" = "" ]; then
 	OVERTE=`realpath ..`
-	if [ ! "$OVERTE_USE_SYSTEM_QT" ]; then
-		QT5_LIBS=`realpath ~/overte-files/qt/qt5-install/lib`
-	fi
 fi
+if [ ! "$OVERTE_USE_SYSTEM_QT" ]; then
+	QT5_LIBS=`realpath ~/overte-files/qt/qt5-install/lib`
+fi
+VCPKG_INSTALL_ROOT=`grep VCPKG_INSTALL_ROOT $OVERTE/build/vcpkg.cmake | perl -ne 'm/set\(VCPKG_INSTALL_ROOT\s+\"(.*?)\"/; print $1'`
 
 sudo apt-get install chrpath binutils dh-make
 
@@ -31,12 +32,12 @@ if [ ! "$OVERTE_USE_SYSTEM_QT" ]; then
 	cp $QT5_LIBS/libQt5Core.so.*.*.* $DEB_BUILD_ROOT
 	cp $QT5_LIBS/libQt5Widgets.so.*.*.* $DEB_BUILD_ROOT
 	cp $QT5_LIBS/libQt5Gui.so.*.*.* $DEB_BUILD_ROOT
-	cp $QT5_LIBS/libQt5Script.so.*.*.* $DEB_BUILD_ROOT
 	cp $QT5_LIBS/libQt5WebSockets.so.*.*.* $DEB_BUILD_ROOT
 	cp $QT5_LIBS/libQt5Qml.so.*.*.* $DEB_BUILD_ROOT
-	cp $QT5_LIBS/libQt5ScriptTools.so.*.*.* $DEB_BUILD_ROOT
 	chmod +x $DEB_BUILD_ROOT/*.so.*.*.*
 fi
+cp $VCPKG_INSTALL_ROOT/lib/libnode.so* $DEB_BUILD_ROOT
+
 strip --strip-all $DEB_BUILD_ROOT/*
 cp $OVERTE/pkg-scripts/new-server $DEB_BUILD_ROOT
 cp -a $OVERTE/domain-server/resources $DEB_BUILD_ROOT
@@ -77,12 +78,7 @@ echo domain-server opt/overte >> debian/install
 echo oven opt/overte >> debian/install
 #echo ice-server opt/overte >> debian/install
 echo new-server opt/overte >> debian/install
-if [ ! "$OVERTE_USE_SYSTEM_QT" ]; then
-	for so in *.so.*.*.*; do
-		echo $so opt/overte/lib >> debian/install
-	done
-fi
-for so in *.so; do
+for so in *.so*; do
 	echo $so opt/overte/lib >> debian/install
 done
 #for service in *.service; do
