@@ -1,33 +1,36 @@
 #!/bin/sh
 
 # Copyright 2020-2021 Vircadia contributors.
-# Copyright 2022 Overte e.V.
+# Copyright 2022-2023 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 if [ "$OVERTE" = "" ]; then
-	        OVERTE=`realpath ..`
-	        QT5_LIBS=`realpath ~/overte-files/qt/qt5-install/lib`
+	OVERTE=`realpath ..`
 fi
+if [ "$OVERTE_USE_SYSTEM_QT" = "" ]; then
+	QT5_LIBS=`realpath ~/overte-files/qt/qt5-install/lib`
+fi
+VCPKG_INSTALL_ROOT=`grep VCPKG_INSTALL_ROOT $OVERTE/build/vcpkg.cmake | perl -ne 'm/set\(VCPKG_INSTALL_ROOT\s+\"(.*?)\"/; print $1'`
 
 VERSION=${RPMVERSION}
 
 if [ "$OVERTE_USE_SYSTEM_QT" = "" ]; then
 SOFILES=`ls \
 		$OVERTE/build/libraries/*/*.so \
+		$VCPKG_INSTALL_ROOT/lib/libnode.so* \
 		$OVERTE/qt5-install/lib/libQt5Network.so.*.*.* \
 		$OVERTE/qt5-install/lib/libQt5Core.so.*.*.* \
 		$OVERTE/qt5-install/lib/libQt5Widgets.so.*.*.* \
 		$OVERTE/qt5-install/lib/libQt5Gui.so.*.*.* \
-		$OVERTE/qt5-install/lib/libQt5Script.so.*.*.* \
 		$OVERTE/qt5-install/lib/libQt5WebSockets.so.*.*.* \
 		$OVERTE/qt5-install/lib/libQt5Qml.so.*.*.* \
 		$OVERTE/qt5-install/lib/libQt5Quick.so.*.*.* \
-		$OVERTE/qt5-install/lib/libQt5ScriptTools.so.*.*.* \
 	| sed 's/\./\\\./g' \
 	| paste -d'|' -s`
 else
 SOFILES=`ls \
 		$OVERTE/build/libraries/*/*.so \
+		$VCPKG_INSTALL_ROOT/lib/libnode.so* \
 	| sed 's/\./\\\./g' \
 	| paste -d'|' -s`
 fi
@@ -38,15 +41,14 @@ DEPENDS=mesa-libGL,`ls \
 		$OVERTE/build/domain-server/domain-server \
 		$OVERTE/build/tools/oven/oven \
 		$OVERTE/build/libraries/*/*.so \
+		$VCPKG_INSTALL_ROOT/lib/libnode.so* \
 		$QT5_LIBS/libQt5Network.so.*.*.* \
 		$QT5_LIBS/libQt5Core.so.*.*.* \
 		$QT5_LIBS/libQt5Widgets.so.*.*.* \
 		$QT5_LIBS/libQt5Gui.so.*.*.* \
-		$QT5_LIBS/libQt5Script.so.*.*.* \
 		$QT5_LIBS/libQt5WebSockets.so.*.*.* \
 		$QT5_LIBS/libQt5Qml.so.*.*.* \
 		$QT5_LIBS/libQt5Quick.so.*.*.* \
-		$QT5_LIBS/libQt5ScriptTools.so.*.*.* \
 		$OVERTE/build/assignment-client/plugins/*.so \
 		$OVERTE/build/assignment-client/plugins/*/*.so \
 	| xargs -I {} sh -c 'objdump -p {} | grep NEEDED' \
@@ -64,6 +66,7 @@ DEPENDS=mesa-libGL,`ls \
 		$OVERTE/build/domain-server/domain-server \
 		$OVERTE/build/tools/oven/oven \
 		$OVERTE/build/libraries/*/*.so \
+		$VCPKG_INSTALL_ROOT/lib/libnode.so* \
 		$OVERTE/build/assignment-client/plugins/*.so \
 		$OVERTE/build/assignment-client/plugins/*/*.so \
 	| xargs -I {} sh -c 'objdump -p {} | grep NEEDED' \
@@ -79,6 +82,6 @@ fi
 
 sudo yum install chrpath
 
-export VERSION DEPENDS OVERTE
+export VERSION DEPENDS OVERTE QT5_LIBS VCPKG_INSTALL_ROOT
 rpmbuild --target $(uname -m) -bb ./overte-server.spec
 mv ~/rpmbuild/RPMS/$(uname -m)/*.rpm .
