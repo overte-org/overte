@@ -197,10 +197,6 @@ else()
         COMMAND ${HIFI_PYTHON_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/prebuild.py --release-type ${RELEASE_TYPE} --build-root ${CMAKE_BINARY_DIR} ${VCPKG_BUILD_TYPE_PARAM}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} RESULTS_VARIABLE PREBUILD_RET
     )
-    # squelch the Policy CMP0074 warning without requiring an update to cmake 3.12.
-    if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
-        cmake_policy(SET CMP0074 NEW)
-    endif()
 endif()
 
 if (PREBUILD_RET GREATER 0)
