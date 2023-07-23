@@ -15,7 +15,7 @@ RUN echo UTC >/etc/timezone
 RUN apt-get update && apt-get -y install tzdata
 
 # Install Overte domain-server and assignment-client build dependencies
-RUN apt-get -y install curl ninja-build git cmake g++ libssl-dev libqt5websockets5-dev qtscript5-dev qtdeclarative5-dev qtmultimedia5-dev python3-distutils python3-distro mesa-common-dev libgl1-mesa-dev libsystemd-dev
+RUN apt-get -y install curl ninja-build git cmake g++ libssl-dev libqt5websockets5-dev qtdeclarative5-dev qtmultimedia5-dev python3-distutils python3-distro mesa-common-dev libgl1-mesa-dev libsystemd-dev
 # Install Overte tools build dependencies
 RUN apt-get -y install libqt5webchannel5-dev qtwebengine5-dev libqt5xmlpatterns5-dev
 
