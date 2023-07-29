@@ -10,6 +10,7 @@ fi
 if [ "$OVERTE_USE_SYSTEM_QT" = "" ]; then
 	QT5_LIBS=`realpath ~/overte-files/qt/qt5-install/lib`
 fi
+# The regex below extracts the path from the VCPKG_INSTALL_ROOT variable. Said variable gets populated during the CMake step.
 VCPKG_INSTALL_ROOT=`grep VCPKG_INSTALL_ROOT $OVERTE/build/vcpkg.cmake | perl -ne 'm/set\(VCPKG_INSTALL_ROOT\s+\"(.*?)\"/; print $1'`
 
 VERSION=${RPMVERSION}
