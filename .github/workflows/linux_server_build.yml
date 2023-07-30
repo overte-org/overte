@@ -101,6 +101,10 @@ jobs:
     container: ${{matrix.image}}
 
     steps:
+    - name: Check current space situation
+      shell: bash
+      run: df -h
+
     - name: Clear Working Directories
       if: contains(matrix.runner, 'linux_aarch64')
       shell: bash
@@ -278,6 +282,9 @@ jobs:
       run: |
         echo "Disk usage:"
         df -h
+        du -h -t 1G -d 1
+        du -h -t 1G
+
 
     - name: Upload artifact to GitHub
       if: github.event_name == 'pull_request'
