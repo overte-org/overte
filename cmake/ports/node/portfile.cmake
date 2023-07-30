@@ -25,63 +25,64 @@ elseif (APPLE)
     )
 else ()
     # else Linux desktop
-    if (VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")
-        vcpkg_from_github(
-            OUT_SOURCE_PATH SOURCE_PATH
-            REPO nodejs/node
-            REF v18.16.0
-            SHA512 9b983b899acd02e7ed761bc3633fc56855e10335fcdb558a29d1cf068ce1125991c9a781616d82a9dc90be6e8ba1bf4a34a10a92c6b7db9cbe33ef7fa7dda67f
-            HEAD_REF v18.16.0
+    vcpkg_from_github(
+        OUT_SOURCE_PATH SOURCE_PATH
+        REPO nodejs/node
+        REF v18.16.0
+        SHA512 9b983b899acd02e7ed761bc3633fc56855e10335fcdb558a29d1cf068ce1125991c9a781616d82a9dc90be6e8ba1bf4a34a10a92c6b7db9cbe33ef7fa7dda67f
+        HEAD_REF v18.16.0
+    )
+    # node cannot configure out of source, which VCPKG expects. So we copy the source to the configure directory.
+    file(COPY ${SOURCE_PATH}/ DESTINATION "${CURRENT_BUILDTREES_DIR}")
+    if (VCPKG_TARGET_ARCHITECTURE STREQUAL "arm64")
+        # --gdb fails on aarch64
+        vcpkg_execute_build_process(
+            COMMAND ./configure --shared --v8-enable-object-print --shared-openssl --prefix=${CURRENT_BUILDTREES_DIR}/node-install/
+            WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
+            LOGNAME "configure-node"
         )
-        file(COPY ${SOURCE_PATH}/ DESTINATION "${CURRENT_BUILDTREES_DIR}")
+    else () # amd64
         vcpkg_execute_build_process(
             COMMAND ./configure --gdb --shared --v8-enable-object-print --shared-openssl --prefix=${CURRENT_BUILDTREES_DIR}/node-install/
             WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
             LOGNAME "configure-node"
         )
-        if(VCPKG_MAX_CONCURRENCY GREATER 0)
-            vcpkg_execute_build_process(
-                COMMAND make -j${VCPKG_MAX_CONCURRENCY}
+    endif ()
+    if(VCPKG_MAX_CONCURRENCY GREATER 0)
+        vcpkg_execute_build_process(
+            COMMAND make -j${VCPKG_MAX_CONCURRENCY}
+            WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
+            LOGNAME "make-node"
+        )
+        vcpkg_execute_build_process(
+                COMMAND make -j${VCPKG_MAX_CONCURRENCY} install
                 WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
-                LOGNAME "make-node"
-            )
-            vcpkg_execute_build_process(
-                    COMMAND make -j${VCPKG_MAX_CONCURRENCY} install
-                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
-                    LOGNAME "install-node"
-            )
-        elseif (VCPKG_CONCURRENCY GREATER 0)
-            vcpkg_execute_build_process(
-                COMMAND make -j${VCPKG_CONCURRENCY}
+                LOGNAME "install-node"
+        )
+    elseif (VCPKG_CONCURRENCY GREATER 0)
+        vcpkg_execute_build_process(
+            COMMAND make -j${VCPKG_CONCURRENCY}
+            WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
+            LOGNAME "make-node"
+        )
+        vcpkg_execute_build_process(
+                COMMAND make -j${VCPKG_CONCURRENCY} install
                 WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
-                LOGNAME "make-node"
-            )
-            vcpkg_execute_build_process(
-                    COMMAND make -j${VCPKG_CONCURRENCY} install
-                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
-                    LOGNAME "install-node"
-            )
-        else ()
-            vcpkg_execute_build_process(
-                COMMAND make -j$(nproc)
+                LOGNAME "install-node"
+        )
+    else ()
+        vcpkg_execute_build_process(
+            COMMAND make -j$(nproc)
+            WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
+            LOGNAME "make-node"
+        )
+        vcpkg_execute_build_process(
+                COMMAND make -j$(nproc) install
                 WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
-                LOGNAME "make-node"
-            )
-            vcpkg_execute_build_process(
-                    COMMAND make -j$(nproc) install
-                    WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}
-                    LOGNAME "install-node"
-            )
-        endif ()
-        set(NODE_INSTALL_PATH ${CURRENT_BUILDTREES_DIR})
-    elseif (VCPKG_TARGET_ARCHITECTURE STREQUAL "arm64")
-            vcpkg_download_distfile(
-            NODE_SOURCE_ARCHIVE
-            URLS "${EXTERNAL_BUILD_ASSETS}/dependencies/node/node-install-18.16.0-ubuntu-20.04-aarch64-release.tar.xz"
-            SHA512 aa4814c4ab1a922ec5afd4d7ef08479a32bfd23cb9a745102891bed5a2be13cc912e57e9bf80d856a15a5a9439b67c9a83963c605fdce349236795513090a426
-            FILENAME node-install-18.16.0-ubuntu-22.04-aarch64-release.tar.xz
+                LOGNAME "install-node"
         )
     endif ()
+    set(NODE_INSTALL_PATH ${CURRENT_BUILDTREES_DIR})
 endif ()
 
 if (NODE_INSTALL_PATH)
