@@ -40,6 +40,16 @@ jobs:
             arch: aarch64
             runner: linux_aarch64
 
+          - os: debian-12
+            image: docker.io/overte/overte-server-build:0.1.3-debian-12-amd64
+            arch: amd64
+            runner: ubuntu-latest
+
+          - os: debian-12
+            image: docker.io/overte/overte-server-build:0.1.3-debian-12-aarch64
+            arch: aarch64
+            runner: linux_aarch64
+
           - os: ubuntu-18.04
             image: docker.io/overte/overte-server-build:0.1.3-ubuntu-18.04-amd64
             arch: amd64
@@ -60,16 +70,6 @@ jobs:
             arch: aarch64
             runner: linux_aarch64
 
-          - os: fedora-36
-            image: docker.io/overte/overte-server-build:0.1.3-fedora-36-amd64
-            arch: amd64
-            runner: ubuntu-latest
-
-          - os: fedora-36
-            image: docker.io/overte/overte-server-build:0.1.3-fedora-36-aarch64
-            arch: aarch64
-            runner: linux_aarch64
-
           - os: fedora-37
             image: docker.io/overte/overte-server-build:0.1.3-fedora-37-amd64
             arch: amd64
@@ -77,6 +77,16 @@ jobs:
 
           - os: fedora-37
             image: docker.io/overte/overte-server-build:0.1.3-fedora-37-aarch64
+            arch: aarch64
+            runner: linux_aarch64
+
+          - os: fedora-38
+            image: docker.io/overte/overte-server-build:0.1.3-fedora-38-amd64
+            arch: amd64
+            runner: ubuntu-latest
+
+          - os: fedora-38
+            image: docker.io/overte/overte-server-build:0.1.3-fedora-38-aarch64
             arch: aarch64
             runner: linux_aarch64
 
@@ -187,10 +197,10 @@ jobs:
         else  # RPM
           if [ "${{ matrix.os }}" == "rockylinux-9" ]; then
             echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.el9.$INSTALLER_EXT" >> $GITHUB_ENV
-          elif [ "${{ matrix.os }}" == "fedora-36" ]; then
-            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc36.$INSTALLER_EXT" >> $GITHUB_ENV
           elif [ "${{ matrix.os }}" == "fedora-37" ]; then
             echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc37.$INSTALLER_EXT" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "fedora-38" ]; then
+            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc38.$INSTALLER_EXT" >> $GITHUB_ENV
           else
             echo "Error! ARTIFACT_PATTERN not set!"
             exit 1  # Fail

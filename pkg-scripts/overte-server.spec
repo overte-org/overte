@@ -50,16 +50,15 @@ install -d $RPM_BUILD_ROOT/opt/overte/lib
 install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $OVERTE/build/libraries/*/*.so
 strip --strip-all $RPM_BUILD_ROOT/opt/overte/lib/*
 chrpath -d $RPM_BUILD_ROOT/opt/overte/lib/*
+install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $VCPKG_INSTALL_ROOT/lib/libnode.so*
 %if "$OVERTE_USE_SYSTEM_QT" == ""
 install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $QT5_LIBS/libQt5Network.so.*.*.*
 install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $QT5_LIBS/libQt5Core.so.*.*.*
 install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $QT5_LIBS/libQt5Widgets.so.*.*.*
 install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $QT5_LIBS/libQt5Gui.so.*.*.*
-install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $QT5_LIBS/libQt5Script.so.*.*.*
 install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $QT5_LIBS/libQt5WebSockets.so.*.*.*
 install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $QT5_LIBS/libQt5Qml.so.*.*.*
 install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $QT5_LIBS/libQt5Quick.so.*.*.*
-install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $QT5_LIBS/libQt5ScriptTools.so.*.*.*
 %endif
 install -d $RPM_BUILD_ROOT/usr/lib/systemd/system
 install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/overte-assignment-client.service
