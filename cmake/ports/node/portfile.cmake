@@ -28,9 +28,9 @@ else ()
     vcpkg_from_github(
         OUT_SOURCE_PATH SOURCE_PATH
         REPO nodejs/node
-        REF v18.16.0
-        SHA512 9b983b899acd02e7ed761bc3633fc56855e10335fcdb558a29d1cf068ce1125991c9a781616d82a9dc90be6e8ba1bf4a34a10a92c6b7db9cbe33ef7fa7dda67f
-        HEAD_REF v18.16.0
+        REF v18.16.1
+        SHA512 cd2d7871a1a2aca8d800e0a501bd2836cbce076de750dcfc0b2bbe602c8a23705154bfb12faa3ff78e25ec753f419220742228569c281fa458987fb24f6d4d09
+        HEAD_REF v18.16.1
     )
     # node cannot configure out of source, which VCPKG expects. So we copy the source to the configure directory.
     file(COPY ${SOURCE_PATH}/ DESTINATION "${CURRENT_BUILDTREES_DIR}")
