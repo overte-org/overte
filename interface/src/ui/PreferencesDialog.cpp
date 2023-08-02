@@ -401,6 +401,16 @@ void setupPreferences() {
         preferences->addPreference(preference);
     }
     {
+        auto getter = [myAvatar]()->float { return myAvatar->getHMDYawSpeed(); };
+        auto setter = [myAvatar](float value) { myAvatar->setHMDYawSpeed(value); };
+        auto preference = new SpinnerSliderPreference(VR_MOVEMENT, "HMD smooth turning sensitivity:", getter, setter);
+        preference->setMin(50.0f);
+        preference->setMax(400.0f);
+        preference->setStep(1);
+        preference->setDecimals(0);
+        preferences->addPreference(preference);
+    }
+    {
         auto getter = [myAvatar]()->float { return qApp->getCamera().getSensitivity(); };
         auto setter = [myAvatar](float value) { qApp->getCamera().setSensitivity(value); };
         auto preference = new SpinnerSliderPreference(VR_MOVEMENT, "Camera Sensitivity", getter, setter);
