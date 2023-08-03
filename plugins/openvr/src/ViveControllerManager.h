@@ -105,6 +105,9 @@ private:
     public:
         InputDevice(vr::IVRSystem*& system);
         bool isHeadControllerMounted() const { return _overrideHead; }
+        float getControllerStickHysteresisTime() { return _filteredLeftStick.getHysteresisPeriod(); };
+        // Sets hysteresis period for the filter. This is a workaround needed only for Vive wands which use value 0.2f.
+        void setControllerStickHysteresisTime(float value);
 
     private:
         // Device functions
@@ -156,10 +159,12 @@ private:
 
         class FilteredStick {
         public:
+            float getHysteresisPeriod() { return _hysteresis_period; };
+            // Sets hysteresis period for the filter. This is a workaround needed only for Vive wands which use value 0.2f.
+            void setHysteresisPeriod(float value) { _hysteresis_period = value; };
             glm::vec2 process(float deltaTime, const glm::vec2& stick) {
-                // Use a timer to prevent the stick going to back to zero.
-                // This to work around the noisy touch pad that will flash back to zero breifly
-                const float ZERO_HYSTERESIS_PERIOD = 0.2f;  // 200 ms
+                // Use a timer to prevent the stick going back to zero.
+                // This to work around the noisy touchpad that will flash back to zero briefly
                 if (glm::length(stick) == 0.0f) {
                     if (_timer <= 0.0f) {
                         return glm::vec2(0.0f, 0.0f);
@@ -168,12 +173,13 @@ private:
                         return _stick;
                     }
                 } else {
-                    _timer = ZERO_HYSTERESIS_PERIOD;
+                    _timer = _hysteresis_period;
                     _stick = stick;
                     return stick;
                 }
             }
         protected:
+            float _hysteresis_period{ 0.0f };
             float _timer { 0.0f };
             glm::vec2 _stick { 0.0f, 0.0f };
         };

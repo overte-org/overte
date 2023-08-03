@@ -404,6 +404,7 @@ class MyAvatar : public Avatar {
     Q_PROPERTY(bool showPlayArea READ getShowPlayArea WRITE setShowPlayArea)
 
     Q_PROPERTY(float yawSpeed MEMBER _yawSpeed)
+    Q_PROPERTY(float hmdYawSpeed MEMBER _hmdYawSpeed)
     Q_PROPERTY(float pitchSpeed MEMBER _pitchSpeed)
 
     Q_PROPERTY(bool hmdRollControlEnabled READ getHMDRollControlEnabled WRITE setHMDRollControlEnabled)
@@ -1415,6 +1416,9 @@ public:
 
     float getYawSpeed() const { return _yawSpeed; }
     void setYawSpeed(float speed) { _yawSpeed = speed; }
+
+    float getHMDYawSpeed() const { return _hmdYawSpeed; }
+    void setHMDYawSpeed(float speed) { _hmdYawSpeed = speed; }
 
     static const float ZOOM_MIN;
     static const float ZOOM_MAX;
@@ -2755,6 +2759,7 @@ private:
 
     float _boomLength { ZOOM_DEFAULT };
     float _yawSpeed; // degrees/sec
+    float _hmdYawSpeed; // degrees/sec
     float _pitchSpeed; // degrees/sec
     float _driveGear1 { DEFAULT_GEAR_1 };
     float _driveGear2 { DEFAULT_GEAR_2 };
@@ -3040,6 +3045,7 @@ private:
     Setting::Handle<float> _headPitchSetting;
     Setting::Handle<float> _scaleSetting;
     Setting::Handle<float> _yawSpeedSetting;
+    Setting::Handle<float> _hmdYawSpeedSetting;
     Setting::Handle<float> _pitchSpeedSetting;
     Setting::Handle<QUrl> _fullAvatarURLSetting;
     Setting::Handle<QUrl> _fullAvatarModelNameSetting;

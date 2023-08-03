@@ -9,6 +9,7 @@
 
 import QtQuick 2.5
 import QtGraphicalEffects 1.0
+import QtQuick.Controls 2.2
 
 import stylesUit 1.0
 import "../../controls"
@@ -25,6 +26,39 @@ Flickable {
     flickableDirection: Flickable.VerticalFlick
     property string pluginName: ""
     property var page: null;
+
+    ScrollBar.vertical: ScrollBar {
+        policy: ScrollBar.AlwaysOn
+        parent: flick.parent
+        anchors.top: flick.top
+        anchors.right: flick.right
+        anchors.bottom: flick.bottom
+        z: 100  // Display over top of separators.
+
+        background: Item {
+            implicitWidth: verticalScrollWidth
+            Rectangle {
+                color: hifi.colors.baseGrayShadow
+                radius: 4
+                anchors {
+                    fill: parent
+                    bottomMargin: 1
+                }
+            }
+        }
+        contentItem: Item {
+            implicitWidth: verticalScrollShaft
+            Rectangle {
+                radius: verticalScrollShaft/2
+                color: hifi.colors.white30
+                anchors {
+                    fill: parent
+                    topMargin: 1
+                    bottomMargin: 1
+                }
+            }
+        }
+    }
 
     onPluginNameChanged: {
         if (page !== null) {
@@ -932,6 +966,43 @@ Flickable {
                 }
             }
 
+            Row {
+                id: controllerStickHysteresisTimeRow
+                anchors.top: outOfRangeDataStrategyRow.bottom
+                anchors.topMargin: 20
+                anchors.left: parent.left
+                anchors.leftMargin: leftMargin
+                spacing: 15
+
+                HifiControls.SpinBox {
+                    id: controllerStickHysteresisTime
+                    width: 70
+
+                    minimumValue: 0
+                    maximumValue: 0.2
+                    realValue: 0
+                    realStepSize: 0.05
+                    colorScheme: hifi.colorSchemes.dark
+
+                    onRealValueChanged: {
+                        sendConfigurationSettings();
+                    }
+                }
+
+                RalewayBold {
+                    id: controllerStickHysteresisTimeInfo
+                    size: 12
+                    text: "Stick Hysteresis Time (set to 0.2 for Vive wands)"
+                    color: hifi.colors.white
+                }
+
+                RalewayRegular {
+                    size: 12
+                    text: "sec"
+                    color: hifi.colors.lightGray
+                }
+            }
+
             RalewayBold {
                 id: viveDesktopText
                 size: 12
@@ -1047,6 +1118,8 @@ Flickable {
 
                 armCircumference.realValue = settings["armCircumference"];
                 shoulderWidth.realValue = settings["shoulderWidth"];
+
+                controllerStickHysteresisTime.realValue = settings["controllerStickHysteresisTime"];
 
                 if (HmdHead) {
                     headBox.checked = true;
@@ -1236,7 +1309,8 @@ Flickable {
                     "desktopMode": viveInDesktop.checked,
                     "hmdDesktopTracking": hmdInDesktop.checked,
                     "eyeTrackingEnabled": eyeTracking.checked,
-                    "outOfRangeDataStrategy": outOfRangeDataStrategyComboBox.model[outOfRangeDataStrategyComboBox.currentIndex]
+                    "outOfRangeDataStrategy": outOfRangeDataStrategyComboBox.model[outOfRangeDataStrategyComboBox.currentIndex],
+                    "controllerStickHysteresisTime": controllerStickHysteresisTime.realValue
                 }
 
                 return settingsObject;
