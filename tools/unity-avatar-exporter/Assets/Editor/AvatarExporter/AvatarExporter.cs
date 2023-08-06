@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Globalization;
 
+
 class AvatarExporter : MonoBehaviour
 {
     // update version number for every PR that changes this file, also set updated version in README file
@@ -283,34 +284,35 @@ class AvatarExporter : MonoBehaviour
         public string getJSON()
         {
             string json = "{ \"materialVersion\": 1, \"materials\": { ";
-            json += "\"albedo\": [" + albedo.r + ", " + albedo.g + ", " + albedo.b + "], ";
+
+            //Albedo
+            json += $"\"albedo\": [{albedo.r.F()}, {albedo.g.F()}, {albedo.b.F()}], ";
             if (!string.IsNullOrEmpty(albedoMap))
-            {
-                json += "\"albedoMap\": \"" + albedoMap + "\", ";
-            }
-            json += "\"metallic\": " + metallic + ", ";
+                json += $"\"albedoMap\": \"{albedoMap}\", ";
+
+            //Metallic
+            json += $"\"metallic\": {metallic.F()}, ";
             if (!string.IsNullOrEmpty(metallicMap))
-            {
-                json += "\"metallicMap\": \"" + metallicMap + "\", ";
-            }
-            json += "\"roughness\": " + roughness + ", ";
+                json += $"\"metallicMap\": \"{metallicMap}\", ";
+
+            //Roughness
+            json += $"\"roughness\": {roughness.F()}, ";
             if (!string.IsNullOrEmpty(roughnessMap))
-            {
-                json += "\"roughnessMap\": \"" + roughnessMap + "\", ";
-            }
+                json += $"\"roughnessMap\": \"{roughnessMap}\", ";
+
+            //Normal
             if (!string.IsNullOrEmpty(normalMap))
-            {
-                json += "\"normalMap\": \"" + normalMap + "\", ";
-            }
+                json += $"\"normalMap\": \"{normalMap}\", ";
+
+            //Occlusion
             if (!string.IsNullOrEmpty(occlusionMap))
-            {
-                json += "\"occlusionMap\": \"" + occlusionMap + "\", ";
-            }
-            json += "\"emissive\": [" + emissive.r + ", " + emissive.g + ", " + emissive.b + "]";
+                json += $"\"occlusionMap\": \"{occlusionMap}\", ";
+
+            //Emissive
+            json += $"\"emissive\": [{emissive.r.F()}, {emissive.g.F()}, {emissive.b.F()}]";
             if (!string.IsNullOrEmpty(emissiveMap))
-            {
-                json += ", \"emissiveMap\": \"" + emissiveMap + "\"";
-            }
+                json += $", \"emissiveMap\": \"{emissiveMap}\"";
+
             json += " } }";
             return json;
         }
@@ -701,12 +703,13 @@ class AvatarExporter : MonoBehaviour
         try
         {
             File.WriteAllText(exportFstPath,
-            $"exporterVersion = {AVATAR_EXPORTER_VERSION}\n" +
-            $"name     = {projectName}\n" +
-             "type     = body+head\n" +
-            $"scale    = {scale.F()}\n" +
-            $"filename = {assetName}.fbx\n" +
-             "texdir   = textures\n");
+                $"exporterVersion = {AVATAR_EXPORTER_VERSION}\n" +
+                $"name     = {projectName}\n" +
+                "type     = body+head\n" +
+                $"scale    = {scale.F()}\n" +
+                $"filename = {assetName}.fbx\n" +
+                "texdir   = textures\n"
+            );
         }
         catch
         {
@@ -771,7 +774,7 @@ class AvatarExporter : MonoBehaviour
 
             // swap from left-handed (Unity) to right-handed (Overte) coordinates and write out joint rotation offset to fst
             jointOffset = new Quaternion(-jointOffset.x, jointOffset.y, jointOffset.z, -jointOffset.w);
-            File.AppendAllText(exportFstPath, 
+            File.AppendAllText(exportFstPath,
                 $"jointRotationOffset2 = {removeTypeFromJointname(userBoneName)} = ({jointOffset.x.F()}, {jointOffset.y.F()}, {jointOffset.z.F()}, {jointOffset.w.F()})\n"
             );
         }
@@ -779,26 +782,15 @@ class AvatarExporter : MonoBehaviour
         // if there is any material data to save then write out all materials in JSON material format to the materialMap field
         if (materialDatas.Count > 0)
         {
-            string materialJson = "{ ";
+            var matData = new List<string>();
             foreach (var materialData in materialDatas)
             {
                 // if this is the only material in the mapping and it is mapped to default material name No Name,
                 // then the avatar has no embedded materials and this material should be applied to all meshes
-                string materialName = materialData.Key;
-                if (materialMappings.Count == 1 && materialName == DEFAULT_MATERIAL_NAME)
-                {
-                    materialJson += "\"all\": ";
-                }
-                else
-                {
-                    materialJson += "\"mat::" + materialName + "\": ";
-                }
-                materialJson += materialData.Value.getJSON();
-                materialJson += ", ";
+                string matName = (materialMappings.Count == 1 && materialData.Key == DEFAULT_MATERIAL_NAME) ? "all" : $"mat::{materialData.Key}";
+                matData.Add($"\"{matName}\": {materialData.Value.getJSON()}");
             }
-            materialJson = materialJson.Substring(0, materialJson.LastIndexOf(", "));
-            materialJson += " }";
-            File.AppendAllText(exportFstPath, "materialMap = " + materialJson);
+            File.AppendAllText(exportFstPath, $"materialMap = {{{string.Join(",", matData)}}}");
         }
 
         /*if (SystemInfo.operatingSystemFamily == OperatingSystemFamily.Windows)
@@ -1925,7 +1917,9 @@ class AvatarUtilities
 
 public static class ConverterExtensions
 {
+    //Helper function to convert floats to string without commas
     public static string F(this float x) => x.ToString("G", CultureInfo.InvariantCulture);
+    public static string F(this double x) => x.ToString("G", CultureInfo.InvariantCulture);
 }
 
 #endif
