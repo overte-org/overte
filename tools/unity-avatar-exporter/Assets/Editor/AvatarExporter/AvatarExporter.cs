@@ -793,6 +793,8 @@ class AvatarExporter : MonoBehaviour
             File.AppendAllText(exportFstPath, $"materialMap = {{{string.Join(",", matData)}}}");
         }
 
+        EditorPrefs.SetString("OV_LAST_PROJECT_PATH", exportFstPath);
+
         /*if (SystemInfo.operatingSystemFamily == OperatingSystemFamily.Windows)
         {
             // open File Explorer to the project directory once finished
@@ -1603,7 +1605,7 @@ class ExportProjectWindow : EditorWindow
         avatarPreviewObject = avatarObject;
         titleContent.text = updateExistingAvatar ? "Update Existing Avatar" : "Export New Avatar";
         initialProjectLocation = initialPath;
-        projectLocation = updateExistingAvatar ? "" : initialProjectLocation;
+        projectLocation = updateExistingAvatar ? (EditorPrefs.HasKey("OV_LAST_PROJECT_PATH") ? EditorPrefs.GetString("OV_LAST_PROJECT_PATH") : "") : initialProjectLocation;
         warningText = warnings;
         onExportCallback = exportCallback;
         onCloseCallback = closeCallback;
