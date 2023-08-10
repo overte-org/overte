@@ -1,4 +1,4 @@
-﻿//  AvatarExporter.cs
+//  AvatarExporter.cs
 //
 //  Created by David Back on 28 Nov 2018
 //  Copyright 2018 High Fidelity, Inc.
@@ -6,21 +6,20 @@
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
-
+#if UNITY_EDITOR
 
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
+using System.Globalization;
 
 class AvatarExporter : MonoBehaviour
 {
     // update version number for every PR that changes this file, also set updated version in README file
-    static readonly string AVATAR_EXPORTER_VERSION = "0.5.0";
+    static readonly string AVATAR_EXPORTER_VERSION = "0.6.0";
 
     static readonly float HIPS_MIN_Y_PERCENT_OF_HEIGHT = 0.03f;
     static readonly float BELOW_GROUND_THRESHOLD_PERCENT_OF_HEIGHT = -0.15f;
@@ -35,33 +34,8 @@ class AvatarExporter : MonoBehaviour
 
     // TODO: use regex
     static readonly string[] RECOMMENDED_UNITY_VERSIONS = new string[] {
-        "2018.2.12f1",
-        "2018.2.11f1",
-        "2018.2.10f1",
-        "2018.2.9f1",
-        "2018.2.8f1",
-        "2018.2.7f1",
-        "2018.2.6f1",
-        "2018.2.5f1",
-        "2018.2.4f1",
-        "2018.2.3f1",
-        "2018.2.2f1",
-        "2018.2.1f1",
-        "2018.2.0f2",
-        "2018.1.9f2",
-        "2018.1.8f1",
-        "2018.1.7f1",
-        "2018.1.6f1",
-        "2018.1.5f1",
-        "2018.1.4f1",
-        "2018.1.3f1",
-        "2018.1.2f1",
-        "2018.1.1f1",
-        "2018.1.0f2",
-        "2017.4.18f1",
-        "2017.4.17f1",
-        "2017.4.16f1",
-        "2017.4.15f1",
+        "2019.4.31f1", //Version currently used by VRChat
+        "2021.3.23f1" //Version currently used by ChilloutVR
     };
 
     static readonly Dictionary<string, string> HUMANOID_TO_OVERTE_JOINT_NAME = new Dictionary<string, string> {
@@ -211,11 +185,9 @@ class AvatarExporter : MonoBehaviour
     };
 
     static readonly string STANDARD_SHADER = "Standard";
-    static readonly string STANDARD_ROUGHNESS_SHADER = "Standard (Roughness setup)";
     static readonly string STANDARD_SPECULAR_SHADER = "Standard (Specular setup)";
     static readonly string[] SUPPORTED_SHADERS = new string[] {
         STANDARD_SHADER,
-        STANDARD_ROUGHNESS_SHADER,
         STANDARD_SPECULAR_SHADER,
     };
 
@@ -728,9 +700,13 @@ class AvatarExporter : MonoBehaviour
         // write out core fields to top of fst file
         try
         {
-            File.WriteAllText(exportFstPath, "exporterVersion = " + AVATAR_EXPORTER_VERSION + "\nname = " + projectName +
-                                             "\ntype = body+head\nscale = " + scale + "\nfilename = " + assetName +
-                                             ".fbx\n" + "texdir = textures\n");
+            File.WriteAllText(exportFstPath,
+            $"exporterVersion = {AVATAR_EXPORTER_VERSION}\n" +
+            $"name     = {projectName}\n" +
+             "type     = body+head\n" +
+            $"scale    = {scale.F()}\n" +
+            $"filename = {assetName}.fbx\n" +
+             "texdir   = textures\n");
         }
         catch
         {
@@ -745,7 +721,7 @@ class AvatarExporter : MonoBehaviour
             if (userBoneInfo.Value.HasHumanMapping())
             {
                 string overteJointName = HUMANOID_TO_OVERTE_JOINT_NAME[userBoneInfo.Value.humanName];
-                File.AppendAllText(exportFstPath, "jointMap = " + overteJointName + " = " + removeTypeFromJointname(userBoneInfo.Key) + "\n");
+                File.AppendAllText(exportFstPath, $"jointMap = {overteJointName} = {removeTypeFromJointname(userBoneInfo.Key)}\n");
             }
         }
 
@@ -795,8 +771,9 @@ class AvatarExporter : MonoBehaviour
 
             // swap from left-handed (Unity) to right-handed (Overte) coordinates and write out joint rotation offset to fst
             jointOffset = new Quaternion(-jointOffset.x, jointOffset.y, jointOffset.z, -jointOffset.w);
-            File.AppendAllText(exportFstPath, "jointRotationOffset2 = " + removeTypeFromJointname(userBoneName) + " = (" + jointOffset.x + ", " +
-                                              jointOffset.y + ", " + jointOffset.z + ", " + jointOffset.w + ")\n");
+            File.AppendAllText(exportFstPath, 
+                $"jointRotationOffset2 = {removeTypeFromJointname(userBoneName)} = ({jointOffset.x.F()}, {jointOffset.y.F()}, {jointOffset.z.F()}, {jointOffset.w.F()})\n"
+            );
         }
 
         // if there is any material data to save then write out all materials in JSON material format to the materialMap field
@@ -824,11 +801,11 @@ class AvatarExporter : MonoBehaviour
             File.AppendAllText(exportFstPath, "materialMap = " + materialJson);
         }
 
-        if (SystemInfo.operatingSystemFamily == OperatingSystemFamily.Windows)
+        /*if (SystemInfo.operatingSystemFamily == OperatingSystemFamily.Windows)
         {
             // open File Explorer to the project directory once finished
             System.Diagnostics.Process.Start("explorer.exe", "/select," + exportFstPath);
-        }
+        }*/
 
         return true;
     }
@@ -1021,10 +998,7 @@ class AvatarExporter : MonoBehaviour
                 case AvatarRule.RecommendedUnityVersion:
                     if (Array.IndexOf(RECOMMENDED_UNITY_VERSIONS, Application.unityVersion) == -1)
                     {
-                        failedAvatarRules.Add(avatarRule, "The current version of Unity is not one of the recommended Unity " +
-                                                          "versions. If you are using a version of Unity later than 2018.2.12f1, " +
-                                                          "it is recommended to apply Enforce T-Pose under the Pose dropdown " +
-                                                          "in Humanoid configuration.");
+                        failedAvatarRules.Add(avatarRule, "The current version of Unity is not one of the recommended Unity versions.");
                     }
                     break;
                 case AvatarRule.SingleRoot:
@@ -1738,8 +1712,7 @@ class ExportProjectWindow : EditorWindow
         GUIStyle scaleInputStyle = new GUIStyle(textStyle);
         scaleInputStyle.fixedWidth = SCALE_TEXT_WIDTH;
         actualScale *= 100.0f; // convert to 100-based percentage for display purposes
-        string actualScaleStr = GUILayout.TextField(String.Format("{0:0.00}", actualScale), scaleInputStyle);
-        actualScaleStr = Regex.Replace(actualScaleStr, @"[^0-9.]", "");
+        string actualScaleStr = GUILayout.TextField($"{actualScale}", scaleInputStyle);
         actualScale = float.Parse(actualScaleStr);
         actualScale /= 100.0f; // convert back to 1.0-based percentage
         SetAvatarScale(actualScale);
@@ -1949,3 +1922,10 @@ class AvatarUtilities
         return avatarBounds.max.y - avatarBounds.min.y;
     }
 }
+
+public static class ConverterExtensions
+{
+    public static string F(this float x) => x.ToString("G", CultureInfo.InvariantCulture);
+}
+
+#endif
