@@ -529,6 +529,34 @@ public:
      */
      Q_INVOKABLE ScriptValue createGarbageCollectorDebuggingObject();
 
+     /*@jsdoc
+     * Starts collecting profiling data
+     * @function Script.startProfiling
+     */
+     Q_INVOKABLE void startProfiling();
+
+     /*@jsdoc
+     * Stops collecting profiling data and writes them to a timestamped CSV file in Logs directory.
+     * @function Script.stopProfilingAndSave
+     * @example <caption>Collect profiling data from a script.</caption>
+     * Script.startProfiling();
+     * workFunc1();
+     * Script.stopProfilingAndSave();
+     *
+     * function workFunc1() {
+     *     for (var i=0; i<100000; i++) {
+     *         var vec1 = {x: i, y: i+1, z: i+2};
+     *         var vec2 = {x: i+3, y: i+4, z: i+5};
+     *         workFunc2(vec1, vec2);
+     *     }
+     * };
+     * function workFunc2(vec1, vec2) {
+     *     var cross = Vec3.cross(vec1, vec2);
+     *     var dot = Vec3.dot(vec1, vec2);
+     * };
+     */
+     Q_INVOKABLE void stopProfilingAndSave();
+
 signals:
 
     /*@jsdoc
@@ -704,7 +732,6 @@ signals:
      * var properties = JSON.parse("{ x: 1"); // Invalid JSON string.
      */
     void unhandledException(const ScriptValue& exception);
-
 
 protected:
     /*@jsdoc

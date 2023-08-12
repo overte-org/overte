@@ -30,6 +30,7 @@
 #include <QtCore/QSharedPointer>
 #include <QtCore/QString>
 #include <QQueue>
+#include <v8-profiler.h>
 
 #include "libplatform/libplatform.h"
 #include "v8.h"
@@ -138,6 +139,8 @@ public:  // ScriptEngine implementation
     virtual ScriptEngineMemoryStatistics getMemoryUsageStatistics() override;
     virtual void startCollectingObjectStatistics() override;
     virtual void dumpHeapObjectStatistics() override;
+    virtual void startProfiling() override;
+    virtual void stopProfilingAndSave() override;
     void scheduleValueWrapperForDeletion(ScriptValueV8Wrapper* wrapper) {_scriptValueWrappersToDelete.enqueue(wrapper);}
     void deleteUnusedValueWrappers();
     virtual void perManagerLoopIterationCleanup() override;
@@ -272,6 +275,12 @@ private:
     std::atomic<size_t> scriptValueCount{0};
     std::atomic<size_t> scriptValueProxyCount{0};
 #endif
+
+    // Pointers to profiling classes. These are valid only when profiler is running, otherwise null
+    // Smart pointer cannot be used here since profiler has private destructor
+    v8::CpuProfiler *_profiler{nullptr};
+    v8::ProfilerId _profilerId{0};
+
     friend ScriptValueV8Wrapper;
 };
 
