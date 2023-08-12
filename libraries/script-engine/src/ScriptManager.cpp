@@ -992,11 +992,14 @@ void ScriptManager::run() {
             if (seconds > 0) { // avoid division by zero and time travel
                 uint64_t fps = thisFrame / seconds;
                 // Overreporting artificially reduces the reported rate
-                if (thisFrame % SCRIPT_FPS == 0) {
+                const int REPORT_BELOW_FPS = 30;
+                if (thisFrame % SCRIPT_FPS == 0 && fps < REPORT_BELOW_FPS) {
                     qCDebug(scriptengine) <<
+                        "Script:" << name <<
                         "Frame:" << thisFrame <<
                         "Slept (us):" << std::chrono::duration_cast<std::chrono::microseconds>(actuallySleptUntil - beforeSleep).count() <<
                         "Avg Updates (us):" << averageUpdate.count() <<
+                        "averageTimerPerFrame (us):" << averageTimerPerFrame.count() <<
                         "FPS:" << fps;
                 }
             }

@@ -80,3 +80,11 @@ ScriptValue ScriptManagerScriptingInterface::createGarbageCollectorDebuggingObje
     return _manager->engine()->newQObject(new TestQObject, ScriptEngine::ScriptOwnership);
     //return _manager->engine()->newValue(1);
 }
+
+void ScriptManagerScriptingInterface::startProfiling() {
+    _manager->engine()->startProfiling();
+}
+
+void ScriptManagerScriptingInterface::stopProfilingAndSave() {
+    _manager->engine()->stopProfilingAndSave();
+}

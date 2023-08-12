@@ -56,6 +56,7 @@
 #include "ScriptValueV8Wrapper.h"
 #include "ScriptEngineLoggingV8.h"
 #include "ScriptValueIteratorV8Wrapper.h"
+#include "shared/FileUtils.h"
 
 static const int MAX_DEBUG_VALUE_LENGTH { 80 };
 
@@ -1449,6 +1450,90 @@ void ScriptEngineV8::dumpHeapObjectStatistics() {
         }
     }
 }
+
+void ScriptEngineV8::startProfiling() {
+    if (_profiler) {
+        qWarning(scriptengine_v8) << "ScriptEngineV8::startProfiling: Profiler is already running";
+        return;
+    }
+    _profiler = v8::CpuProfiler::New(_v8Isolate);
+    v8::CpuProfilingResult result = _profiler->Start(v8::CpuProfilingOptions());
+    if (!result.id) {
+        qWarning(scriptengine_v8) << "ScriptEngineV8::startProfiling: Profiler failed to start";
+        _profiler->Dispose();
+        _profiler = nullptr;
+        return;
+    }
+    qDebug(scriptengine_v8) << "Script profiler started";
+    _profilerId = result.id;
+};
+
+// Helper function for ScriptEngineV8::stopProfilingAndSave
+
+int getTotalNodeHitCount(const v8::CpuProfileNode *node) {
+    int hitCount = node->GetHitCount();
+    for (int i = 0; i < node->GetChildrenCount(); i++) {
+        hitCount += getTotalNodeHitCount(node->GetChild(i));
+    }
+    return hitCount;
+}
+
+QString getLogFileName() {
+    static const QString FILENAME_FORMAT = "overte-profile_%1.txt";
+    static const QString DATETIME_FORMAT = "yyyy-MM-dd_hh.mm.ss";
+    static const QString LOGS_DIRECTORY = "Logs";
+
+    QString result = FileUtils::standardPath(LOGS_DIRECTORY);
+    QDateTime now = QDateTime::currentDateTime();
+
+    result.append(QString(FILENAME_FORMAT).arg(now.toString(DATETIME_FORMAT)));
+    return result;
+}
+
+void ScriptEngineV8::stopProfilingAndSave() {
+    // the following will produce 11/18 13:55:36
+    const QString DATE_STRING_FORMAT = "MM/dd hh:mm:ss";
+
+    if (!_profiler || !_profilerId) {
+        qWarning(scriptengine_v8) << "ScriptEngineV8::stopProfilingAndSave: Profiler is not running";
+        return;
+    }
+    v8::CpuProfile *profile = _profiler->Stop(_profilerId);
+    QString filename(getLogFileName());
+    QFile file(filename);
+    if (file.open(QIODevice::WriteOnly)) {
+        QStringList samples;
+        for (int i = 0; i < profile->GetSamplesCount(); i++) {
+            QString line;
+            QTextStream stream(&line);
+            const v8::CpuProfileNode *node = profile->GetSample(i);
+            stream << getTotalNodeHitCount(node) << ";"
+                   << node->GetHitCount() << ";"
+                   << node->GetFunctionNameStr() << ";"
+                   << node->GetScriptResourceNameStr() << ";"
+                   << node->GetLineNumber() << "\n";
+            samples.append(line);
+        }
+        samples.sort();
+        QStringList deduplicated;
+        deduplicated.append(samples[0]);
+        for (int i=1; i < samples.size(); i++) {
+            if (samples[i] != samples[i-1]) {
+                deduplicated.append(samples[i]);
+            }
+        }
+        QTextStream fileStream(&file);
+        for (QString line : deduplicated) {
+            fileStream << line;
+        }
+    } else {
+        qWarning(scriptengine_v8) << "ScriptEngineV8::stopProfilingAndSave: Cannot open output file";
+    }
+    profile->Delete();
+    _profiler->Dispose();
+    _profiler = nullptr;
+    qDebug(scriptengine_v8) << "Script profiler stopped, results written to: " << filename;
+};
 
 ContextScopeV8::ContextScopeV8(ScriptEngineV8 *engine) :
     _engine(engine) {
