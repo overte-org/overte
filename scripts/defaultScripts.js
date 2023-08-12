@@ -38,7 +38,6 @@ var DEFAULT_SCRIPTS_COMBINED = [
     "system/keyboardShortcuts/keyboardShortcuts.js",
     "system/onEscape.js",
     "system/onFirstRun.js",
-    "system/appreciate/appreciate_app.js",
     "system/places/places.js"
     //"developer/debugging/scriptMemoryReport.js"
 ];
