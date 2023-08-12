@@ -1479,7 +1479,7 @@ int getTotalNodeHitCount(const v8::CpuProfileNode *node) {
 }
 
 QString getLogFileName() {
-    static const QString FILENAME_FORMAT = "overte-profile_%1.txt";
+    static const QString FILENAME_FORMAT = "overte-profile_%1.csv";
     static const QString DATETIME_FORMAT = "yyyy-MM-dd_hh.mm.ss";
     static const QString LOGS_DIRECTORY = "Logs";
 
@@ -1491,9 +1491,6 @@ QString getLogFileName() {
 }
 
 void ScriptEngineV8::stopProfilingAndSave() {
-    // the following will produce 11/18 13:55:36
-    const QString DATE_STRING_FORMAT = "MM/dd hh:mm:ss";
-
     if (!_profiler || !_profilerId) {
         qWarning(scriptengine_v8) << "ScriptEngineV8::stopProfilingAndSave: Profiler is not running";
         return;
