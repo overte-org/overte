@@ -18,39 +18,6 @@ cmake_minimum_required(VERSION 3.14)
 # This should allow using long paths on Windows
 SET(CMAKE_NINJA_FORCE_RESPONSE_FILE 1 CACHE INTERNAL "")
 
-# Passing of variables to vcpkg
-#
-# vcpkg runs cmake scripts in an isolated environment, see this for details:
-# https://github.com/Microsoft/vcpkg/issues/3712
-#
-# Here's how this works and how we work around this issue:
-#
-# 1. This file (CMakeLists.txt) runs first and is authoritative. It is the one
-#    that reads the environment, sets variables and sets a default value.
-# 2. It writes the contents of the variables to
-#    $CMAKE_CURRENT_BINARY_DIR/_env/$VARNAME
-# 3. hifi_vcpkg.py takes the _env directory, and copies it to the vcpkg dir.
-#    This solves the issue of CMakeLists.txt not knowing where the vcpkg dir is.
-# 4. cmake/ports/*/portfile.cmake does know where the vcpkg dir is, and can
-#    read the _env that was copied there to obtain the variable's name.
-#
-# To ensure no old data could be accidentally read, the _env directories are
-# deleted on each execution and fully recreated.
-
-# Ensure nothing is kept from any previous run
-file(REMOVE_RECURSE "${CMAKE_CURRENT_BINARY_DIR}/_env")
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/_env")
-
-# Base URL for externally downloaded files
-set(EXTERNAL_BUILD_ASSETS "https://build-deps.overte.org")
-
-if( DEFINED ENV{EXTERNAL_BUILD_ASSETS} )
-    set(EXTERNAL_BUILD_ASSETS "$ENV{EXTERNAL_BUILD_ASSETS}")
-endif()
-
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/_env/EXTERNAL_BUILD_ASSETS.txt" "${EXTERNAL_BUILD_ASSETS}")
-MESSAGE(STATUS "EXTERNAL_BUILD_ASSETS: ${EXTERNAL_BUILD_ASSETS}")
-
 # read USE_GLES enviroment variable and sets it as GLES option
 # TODO still gets overwritten by "use GLES on linux aarch64"
 set(GLES_OPTION "$ENV{USE_GLES}")
@@ -58,18 +25,6 @@ set(GLES_OPTION "$ENV{USE_GLES}")
 # use GLES on linux aarch64
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
     set(GLES_OPTION ON)
-endif()
-
-# Will affect VCPKG dependencies
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/_env/USE_GLES.txt" "${GLES_OPTION}")
-MESSAGE(STATUS "GLES_OPTION: ${GLES_OPTION}")
-
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/macros/TargetPython.cmake")
-target_python()
-
-if (WIN32 AND NOT HIFI_ANDROID AND NOT (CMAKE_GENERATOR STREQUAL "Ninja"))
-    # Force x64 toolset
-    set(CMAKE_GENERATOR_TOOLSET "host=x64" CACHE STRING "64-bit toolset" FORCE)
 endif()
 
 # set our OS X deployment target
@@ -194,50 +149,9 @@ if(OVERTE_WARNINGS_AS_ERRORS)
 endif()
 
 
-if (HIFI_ANDROID)
-    execute_process(
-        COMMAND ${HIFI_PYTHON_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/prebuild.py --release-type ${RELEASE_TYPE} --android ${HIFI_ANDROID_APP} --build-root ${CMAKE_BINARY_DIR}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} RESULTS_VARIABLE PREBUILD_RET
-    )
-else()
-    set(VCPKG_BUILD_TYPE_PARAM "")
-    if (VCPKG_BUILD_TYPE)
-      set(VCPKG_BUILD_TYPE_PARAM --vcpkg-build-type ${VCPKG_BUILD_TYPE})
-    endif()
-    execute_process(
-        COMMAND ${HIFI_PYTHON_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/prebuild.py --release-type ${RELEASE_TYPE} --build-root ${CMAKE_BINARY_DIR} ${VCPKG_BUILD_TYPE_PARAM}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} RESULTS_VARIABLE PREBUILD_RET
-    )
-endif()
-
-if (PREBUILD_RET GREATER 0)
-  message(FATAL_ERROR "prebuild.py failed with error ${PREBUILD_RET}")
-endif()
-if(NOT EXISTS "${CMAKE_BINARY_DIR}/vcpkg.cmake")
-    message(FATAL_ERROR "vcpkg configuration missing.")
-endif()
-include("${CMAKE_BINARY_DIR}/vcpkg.cmake")
-
-if (HIFI_ANDROID)
-  set(QT_CMAKE_PREFIX_PATH "$ENV{HIFI_ANDROID_PRECOMPILED}/qt/lib/cmake")
-else()
-  if ("$ENV{OVERTE_USE_SYSTEM_QT}" STREQUAL "")
-     if(NOT EXISTS "${CMAKE_BINARY_DIR}/qt.cmake")
-        message(FATAL_ERROR "qt configuration missing.")
-    endif()
-    include("${CMAKE_BINARY_DIR}/qt.cmake")
-    message(STATUS "${CMAKE_BINARY_DIR}/qt.cmake included!")
-  else()
-    message(STATUS "System Qt in use, not including qt.cmake!")
-  endif()
-endif()
-
-option(VCPKG_APPLOCAL_DEPS OFF)
-
 project(overte)
 include("cmake/init.cmake")
 include("cmake/compiler.cmake")
-option(VCPKG_APPLOCAL_DEPS OFF)
 
 add_paths_to_fixup_libs(${VCPKG_INSTALL_ROOT}/bin)
 add_paths_to_fixup_libs(${VCPKG_INSTALL_ROOT}/debug/bin)
