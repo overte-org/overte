@@ -643,31 +643,39 @@ function setVisible(_visible) {
     visible = _visible;
 }
 
+var palDataStore = AvatarManager.getPalData().data;
+
 function avatarJoinsDomain(sessionID) {
     Script.setTimeout(function () {
-        var messageText = AvatarManager.getPalData([sessionID]).data[0].sessionDisplayName + " has joined."
+        palDataStore = AvatarManager.getPalData().data;
+        var DisplayName = AvatarManager.getPalData([sessionID]).data[0].sessionDisplayName;
+        var messageText = DisplayName + " has joined.";
         var messageColor = { red: 122, green: 122, blue: 122 };
-        
         addToLog(messageText, "Notice", messageColor, "Domain");
-        
+
         if (!mutedAudio["Domain"]) {
             playNotificationSound();
         }
-        
+
         if (!muted["Domain"]) {
             Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                 sender: "(D)",
-                text:  messageText,
+                text: messageText,
                 colour: { text: messageColor }
             }));
         }
-    }, 500); // Wait 500ms for the avatar to load to properly get info about them.
-}
 
+    }, 1500); // Wait 1500ms for the avatar to load to properly get info about them.
+}
 function avatarLeavesDomain(sessionID) {
-    var messageText = AvatarManager.getPalData([sessionID]).data[0].sessionDisplayName + " has left."
+    var displayName = "";
+    for (let i = 0; i < palDataStore.length; i++) {
+        if (palDataStore[i].sessionUUID == sessionID) {
+            displayName = palDataStore[i].sessionDisplayName;
+        }
+    }
+    var messageText = displayName + " has left.";
     var messageColor = { red: 122, green: 122, blue: 122 };
-    
     addToLog(messageText, "Notice", messageColor, "Domain");
     
     if (!mutedAudio["Domain"]) {
