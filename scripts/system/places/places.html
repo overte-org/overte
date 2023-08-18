@@ -425,6 +425,9 @@
                                         if (placeRecords[i].metaverseRegion !== "local") {
                                             placeUrl = "hifi://" + placeRecords[i].address;
                                         }
+                                        if (placeRecords[i].name === "tutorial") {
+                                            placeUrl = "file:///~/serverless/tutorial.json";
+                                        }
 
                                         //Add the place to the list
 

@@ -94,7 +94,7 @@
                 if (LocationBookmarks.getHomeLocationAddress()) {
                     location.handleLookupString(LocationBookmarks.getHomeLocationAddress());
                 } else {
-                    location.goToLocalSandbox();
+                    Window.location = "file:///~/serverless/tutorial.json";
                 }                
             } else if (messageObj.action === "GO_BACK" && (n - timestamp) > INTERCALL_DELAY) {
                 location.goBack();
@@ -442,7 +442,7 @@
             "domain": "",
             "domainOrder": "ZZZZZZZZZZZZZZZ",
             "metaverseServer": "",
-            "metaverseRegion": "local"            
+            "metaverseRegion": "local"
         };
         portalList.push(tutorialPortal);
         
