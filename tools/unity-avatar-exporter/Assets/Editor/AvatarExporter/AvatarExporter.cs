@@ -1,4 +1,4 @@
-//  AvatarExporter.cs
+﻿//  AvatarExporter.cs
 //
 //  Created by David Back on 28 Nov 2018
 //  Copyright 2018 High Fidelity, Inc.
@@ -15,12 +15,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Globalization;
-
+using Overte;
 
 class AvatarExporter : MonoBehaviour
 {
     // update version number for every PR that changes this file, also set updated version in README file
-    static readonly string AVATAR_EXPORTER_VERSION = "0.6.0";
+    public static readonly string AVATAR_EXPORTER_VERSION = "0.6.0";
 
     static readonly float HIPS_MIN_Y_PERCENT_OF_HEIGHT = 0.03f;
     static readonly float BELOW_GROUND_THRESHOLD_PERCENT_OF_HEIGHT = -0.15f;
@@ -223,105 +223,12 @@ class AvatarExporter : MonoBehaviour
         AvatarRule.HeadMapped,
     };
 
-    class UserBoneInformation
-    {
-        public string humanName; // bone name in Humanoid if it is mapped, otherwise ""
-        public string parentName; // parent user bone name
-        public BoneTreeNode boneTreeNode; // node within the user bone tree
-        public int mappingCount; // number of times this bone is mapped in Humanoid
-        public Vector3 position; // absolute position
-        public Quaternion rotation; // absolute rotation
-
-        public UserBoneInformation()
-        {
-            humanName = "";
-            parentName = "";
-            boneTreeNode = new BoneTreeNode();
-            mappingCount = 0;
-            position = new Vector3();
-            rotation = new Quaternion();
-        }
-        public UserBoneInformation(string parent, BoneTreeNode treeNode, Vector3 pos)
-        {
-            humanName = "";
-            parentName = parent;
-            boneTreeNode = treeNode;
-            mappingCount = 0;
-            position = pos;
-            rotation = new Quaternion();
-        }
-
-        public bool HasHumanMapping() { return !string.IsNullOrEmpty(humanName); }
-    }
-
-    class BoneTreeNode
-    {
-        public string boneName;
-        public string parentName;
-        public List<BoneTreeNode> children = new List<BoneTreeNode>();
-
-        public BoneTreeNode() { }
-        public BoneTreeNode(string name, string parent)
-        {
-            boneName = name;
-            parentName = parent;
-        }
-    }
-
-    class MaterialData
-    {
-        public Color albedo;
-        public string albedoMap;
-        public double metallic;
-        public string metallicMap;
-        public double roughness;
-        public string roughnessMap;
-        public string normalMap;
-        public string occlusionMap;
-        public Color emissive;
-        public string emissiveMap;
-
-        public string getJSON()
-        {
-            string json = "{ \"materialVersion\": 1, \"materials\": { ";
-
-            //Albedo
-            json += $"\"albedo\": [{albedo.r.F()}, {albedo.g.F()}, {albedo.b.F()}], ";
-            if (!string.IsNullOrEmpty(albedoMap))
-                json += $"\"albedoMap\": \"{albedoMap}\", ";
-
-            //Metallic
-            json += $"\"metallic\": {metallic.F()}, ";
-            if (!string.IsNullOrEmpty(metallicMap))
-                json += $"\"metallicMap\": \"{metallicMap}\", ";
-
-            //Roughness
-            json += $"\"roughness\": {roughness.F()}, ";
-            if (!string.IsNullOrEmpty(roughnessMap))
-                json += $"\"roughnessMap\": \"{roughnessMap}\", ";
-
-            //Normal
-            if (!string.IsNullOrEmpty(normalMap))
-                json += $"\"normalMap\": \"{normalMap}\", ";
-
-            //Occlusion
-            if (!string.IsNullOrEmpty(occlusionMap))
-                json += $"\"occlusionMap\": \"{occlusionMap}\", ";
-
-            //Emissive
-            json += $"\"emissive\": [{emissive.r.F()}, {emissive.g.F()}, {emissive.b.F()}]";
-            if (!string.IsNullOrEmpty(emissiveMap))
-                json += $", \"emissiveMap\": \"{emissiveMap}\"";
-
-            json += " } }";
-            return json;
-        }
-    }
-
     static string assetPath = "";
     static string assetName = "";
     static ModelImporter modelImporter;
     static HumanDescription humanDescription;
+
+    static FST currentFst;
 
     static Dictionary<string, UserBoneInformation> userBoneInfos = new Dictionary<string, UserBoneInformation>();
     static Dictionary<string, string> humanoidToUserBoneMappings = new Dictionary<string, string>();
@@ -361,6 +268,15 @@ class AvatarExporter : MonoBehaviour
     {
         EditorUtility.DisplayDialog("About", "Avatar Exporter\nVersion " + AVATAR_EXPORTER_VERSION + "\nCopyright 2022 to 2023 Overte e.V.\nCopyright 2018 High Fidelity, Inc.", "Ok");
     }
+
+    /*[MenuItem("Overte/Test")]
+    static void Test()
+    {
+        var f = new FST();
+        f.LoadFile(@"E:\TMP2\test\avatar.fst");
+        Debug.Log(f.remapBlendShapeList[1]);
+        f.ExportFile(@"E:\TMP2\test\avatar2.fst");
+    }*/
 
     static void ExportSelectedAvatar(bool updateExistingAvatar)
     {
@@ -613,21 +529,13 @@ class AvatarExporter : MonoBehaviour
             }
         }
 
-        // delete existing fst file since we will write a new file
-        // TODO: updating fst should only rewrite joint mappings and joint rotation offsets to existing file
-        try
-        {
-            File.Delete(exportFstPath);
-        }
-        catch
-        {
-            EditorUtility.DisplayDialog("Error", "Failed to overwrite existing file " + exportFstPath +
-                                        ". Please check the file and try again.", "Ok");
-            return;
-        }
+        currentFst = new FST();
+        // load the old file first
+        currentFst.LoadFile(exportFstPath);
+        currentFst.scale = scale;
 
         // write out a new fst file in place of the old file
-        if (!WriteFST(exportFstPath, projectName, scale))
+        if (!WriteFST(exportFstPath))
         {
             return;
         }
@@ -662,7 +570,14 @@ class AvatarExporter : MonoBehaviour
 
         // write out the avatar.fst file to the project directory
         string exportFstPath = projectDirectory + "avatar.fst";
-        if (!WriteFST(exportFstPath, projectName, scale))
+
+        currentFst = new FST
+        {
+            name = projectName,
+            scale = scale,
+            filename = $"{assetName}.fbx"
+        };
+        if (!WriteFST(exportFstPath))
         {
             return;
         }
@@ -697,34 +612,18 @@ class AvatarExporter : MonoBehaviour
         return jointName.Substring(jointName.IndexOf(':') + 1);
     }
 
-    static bool WriteFST(string exportFstPath, string projectName, float scale)
+    static bool WriteFST(string exportFstPath)
     {
-        // write out core fields to top of fst file
-        try
-        {
-            File.WriteAllText(exportFstPath,
-                $"exporterVersion = {AVATAR_EXPORTER_VERSION}\n" +
-                $"name     = {projectName}\n" +
-                "type     = body+head\n" +
-                $"scale    = {scale.F()}\n" +
-                $"filename = {assetName}.fbx\n" +
-                "texdir   = textures\n"
-            );
-        }
-        catch
-        {
-            EditorUtility.DisplayDialog("Error", "Failed to write file " + exportFstPath +
-                                        ". Please check the location and try again.", "Ok");
-            return false;
-        }
-
         // write out joint mappings to fst file
         foreach (var userBoneInfo in userBoneInfos)
         {
             if (userBoneInfo.Value.HasHumanMapping())
             {
-                string overteJointName = HUMANOID_TO_OVERTE_JOINT_NAME[userBoneInfo.Value.humanName];
-                File.AppendAllText(exportFstPath, $"jointMap = {overteJointName} = {removeTypeFromJointname(userBoneInfo.Key)}\n");
+                string jointName = HUMANOID_TO_OVERTE_JOINT_NAME[userBoneInfo.Value.humanName];
+                if (!currentFst.jointMapList.Exists(x => x.From == jointName))
+                    currentFst.jointMapList.Add(new JointMap(jointName, removeTypeFromJointname(userBoneInfo.Key)));
+                else
+                    currentFst.jointMapList.Find(x => x.From == jointName).To = removeTypeFromJointname(userBoneInfo.Key);
             }
         }
 
@@ -772,11 +671,15 @@ class AvatarExporter : MonoBehaviour
                 }
             }
 
-            // swap from left-handed (Unity) to right-handed (Overte) coordinates and write out joint rotation offset to fst
-            jointOffset = new Quaternion(-jointOffset.x, jointOffset.y, jointOffset.z, -jointOffset.w);
-            File.AppendAllText(exportFstPath,
-                $"jointRotationOffset2 = {removeTypeFromJointname(userBoneName)} = ({jointOffset.x.F()}, {jointOffset.y.F()}, {jointOffset.z.F()}, {jointOffset.w.F()})\n"
-            );
+            var norBName = removeTypeFromJointname(userBoneName);
+            if (!currentFst.jointRotationList.Exists(x => x.BoneName == norBName))
+                // swap from left-handed (Unity) to right-handed (Overte) coordinates and write out joint rotation offset to fst
+                currentFst.jointRotationList.Add(
+                    new JointRotationOffset(norBName, -jointOffset.x, jointOffset.y, jointOffset.z, -jointOffset.w)
+                );
+            else
+                currentFst.jointRotationList.Find(x => x.BoneName == norBName).offset =
+                    new Quaternion(-jointOffset.x, jointOffset.y, jointOffset.z, -jointOffset.w);
         }
 
         // if there is any material data to save then write out all materials in JSON material format to the materialMap field
@@ -788,10 +691,12 @@ class AvatarExporter : MonoBehaviour
                 // if this is the only material in the mapping and it is mapped to default material name No Name,
                 // then the avatar has no embedded materials and this material should be applied to all meshes
                 string matName = (materialMappings.Count == 1 && materialData.Key == DEFAULT_MATERIAL_NAME) ? "all" : $"mat::{materialData.Key}";
-                matData.Add($"\"{matName}\": {materialData.Value.getJSON()}");
+                matData.Add($"\"{matName}\": {materialData.Value}");
             }
-            File.AppendAllText(exportFstPath, $"materialMap = {{{string.Join(",", matData)}}}");
+            currentFst.materialMap = $"{{{string.Join(",", matData)}}}";
         }
+
+        var res = currentFst.ExportFile(exportFstPath);
 
         EditorPrefs.SetString("OV_LAST_PROJECT_PATH", exportFstPath);
 
@@ -801,7 +706,7 @@ class AvatarExporter : MonoBehaviour
             System.Diagnostics.Process.Start("explorer.exe", "/select," + exportFstPath);
         }*/
 
-        return true;
+        return res;
     }
 
     static void SetBoneAndMaterialInformation()
@@ -1917,11 +1822,6 @@ class AvatarUtilities
     }
 }
 
-public static class ConverterExtensions
-{
-    //Helper function to convert floats to string without commas
-    public static string F(this float x) => x.ToString("G", CultureInfo.InvariantCulture);
-    public static string F(this double x) => x.ToString("G", CultureInfo.InvariantCulture);
-}
+
 
 #endif
