@@ -132,11 +132,14 @@ if( NOT WIN32 )
         MESSAGE(STATUS "OVERTE_CPU_ARCHITECTURE: ${OVERTE_CPU_ARCHITECTURE}")
     endif()
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OVERTE_OPTIMIZE_FLAGS}")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OVERTE_OPTIMIZE_FLAGS}")
+    # Function alignment is necessary for V8.
+    # SetAlignedPointerInInternalField requires at least 2 byte alignment and -falign-functions will set alignment
+    # to machine specific value which should be greater than 2.
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OVERTE_OPTIMIZE_FLAGS} -falign-functions")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OVERTE_OPTIMIZE_FLAGS} -falign-functions")
 
-    set(ENV{CXXFLAGS} "$ENV{CXXFLAGS} ${OVERTE_OPTIMIZE_FLAGS}")
-    set(ENV{CFLAGS} "$ENV{CFLAGS} ${OVERTE_OPTIMIZE_FLAGS}")
+    set(ENV{CXXFLAGS} "$ENV{CXXFLAGS} ${OVERTE_OPTIMIZE_FLAGS} -falign-functions")
+    set(ENV{CFLAGS} "$ENV{CFLAGS} ${OVERTE_OPTIMIZE_FLAGS} -falign-functions")
     message($ENV{CXXFLAGS})
 endif()
 
