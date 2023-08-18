@@ -22,9 +22,9 @@ class ScriptEndpoint : public Endpoint {
     Q_OBJECT;
 public:
     using Endpoint::apply;
-    ScriptEndpoint(const ScriptValue& callable)
-        : Endpoint(Input::INVALID_INPUT), _callable(callable) {
-    }
+    static std::shared_ptr<Endpoint> newEndpoint(const ScriptValue& callable) {
+        return std::shared_ptr<Endpoint>(new ScriptEndpoint(callable));
+    };
 
     virtual AxisValue peek() const override;
     virtual void apply(AxisValue newValue, const Pointer& source) override;
@@ -42,6 +42,9 @@ protected:
     Q_INVOKABLE void updatePose();
     Q_INVOKABLE virtual void internalApply(const Pose& newValue, int sourceID);
 private:
+    ScriptEndpoint(const ScriptValue& callable)
+        : Endpoint(Input::INVALID_INPUT), _callable(callable) {
+    }
     ScriptValue _callable;
     float _lastValueRead { 0.0f };
     AxisValue _lastValueWritten { 0.0f, 0, false };

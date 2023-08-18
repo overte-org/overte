@@ -32,6 +32,7 @@
 #include <ScriptEngine.h>
 #include <ScriptEngineCast.h>
 #include <ScriptValue.h>
+#include <ScriptManager.h>
 
 #include "impl/conditionals/AndConditional.h"
 #include "impl/conditionals/NotConditional.h"
@@ -92,9 +93,9 @@ void UserInputMapper::registerDevice(InputDevice::Pointer device) {
             if (input.device == STANDARD_DEVICE) {
                 endpoint = std::make_shared<StandardEndpoint>(input);
             } else if (input.device == ACTIONS_DEVICE) {
-                endpoint = std::make_shared<ActionEndpoint>(input);
+                endpoint = ActionEndpoint::newEndpoint(input);
             } else {
-                endpoint = std::make_shared<InputEndpoint>(input);
+                endpoint = InputEndpoint::newEndpoint(input);
             }
         }
         _inputsByEndpoint[endpoint] = input;
@@ -663,7 +664,7 @@ Endpoint::Pointer UserInputMapper::endpointFor(const QJSValue& endpoint) {
     }
 
     if (endpoint.isCallable()) {
-        auto result = std::make_shared<JSEndpoint>(endpoint);
+        auto result = JSEndpoint::newEndpoint(endpoint);
         return result;
     }
 
@@ -677,7 +678,7 @@ Endpoint::Pointer UserInputMapper::endpointFor(const ScriptValue& endpoint) {
     }
 
     if (endpoint.isFunction()) {
-        auto result = std::make_shared<ScriptEndpoint>(endpoint);
+        auto result = ScriptEndpoint::newEndpoint(endpoint);
         return result;
     }
 
@@ -692,7 +693,7 @@ Endpoint::Pointer UserInputMapper::endpointFor(const ScriptValue& endpoint) {
             }
             children.push_back(destination);
         }
-        return std::make_shared<AnyEndpoint>(children);
+        return AnyEndpoint::newEndpoint(children);
     }
 
 
@@ -715,7 +716,7 @@ Endpoint::Pointer UserInputMapper::compositeEndpointFor(Endpoint::Pointer first,
     Endpoint::Pointer result;
     auto iterator = _compositeEndpoints.find(pair);
     if (_compositeEndpoints.end() == iterator) {
-        result = std::make_shared<CompositeEndpoint>(first, second);
+        result = CompositeEndpoint::newEndpoint(first, second);
         _compositeEndpoints[pair] = result;
     } else {
         result = iterator->second;
@@ -858,9 +859,9 @@ void UserInputMapper::unloadMapping(const QString& jsonFile) {
     }
 }
 
-void UserInputMapper::scheduleScriptEndpointCleanup(ScriptEngine* engine) {
+void UserInputMapper::scheduleScriptEndpointCleanup(std::shared_ptr<ScriptManager> manager) {
     _lock.lock();
-    scriptEnginesRequestingCleanup.enqueue(engine);
+    scriptManagersRequestingCleanup.enqueue(manager);
     _lock.unlock();
 }
 
@@ -1025,7 +1026,7 @@ Filter::List UserInputMapper::parseFilters(const QJsonValue& value) {
 
 Endpoint::Pointer UserInputMapper::parseDestination(const QJsonValue& value) {
     if (value.isArray()) {
-        ArrayEndpoint::Pointer result = std::make_shared<ArrayEndpoint>();
+        ArrayEndpoint::Pointer result = std::dynamic_pointer_cast<ArrayEndpoint>(ArrayEndpoint::newEndpoint());
         auto array = value.toArray();
         for (const auto& arrayItem : array) {
             Endpoint::Pointer destination = parseEndpoint(arrayItem);
@@ -1052,7 +1053,7 @@ Endpoint::Pointer UserInputMapper::parseAxis(const QJsonValue& value) {
                     Endpoint::Pointer first = parseEndpoint(axisArray.first());
                     Endpoint::Pointer second = parseEndpoint(axisArray.last());
                     if (first && second) {
-                        return std::make_shared<CompositeEndpoint>(first, second);
+                        return CompositeEndpoint::newEndpoint(first, second);
                     }
                 }
             }
@@ -1072,7 +1073,7 @@ Endpoint::Pointer UserInputMapper::parseAny(const QJsonValue& value) {
             }
             children.push_back(destination);
         }
-        return std::make_shared<AnyEndpoint>(children);
+        return AnyEndpoint::newEndpoint(children);
     }
     return Endpoint::Pointer();
 }
@@ -1261,8 +1262,8 @@ void UserInputMapper::disableMapping(const Mapping::Pointer& mapping) {
 void UserInputMapper::runScriptEndpointCleanup() {
     _lock.lock();
     QList<RoutePointer> routesToRemove;
-    while (!scriptEnginesRequestingCleanup.empty()){
-        auto engine = scriptEnginesRequestingCleanup.dequeue();
+    while (!scriptManagersRequestingCleanup.empty()){
+        auto manager = scriptManagersRequestingCleanup.dequeue();
         QList<RouteList*> routeLists = {&_deviceRoutes, &_standardRoutes};
         auto iterator = _mappingsByName.begin();
         while (iterator != _mappingsByName.end()) {
@@ -1274,12 +1275,12 @@ void UserInputMapper::runScriptEndpointCleanup() {
         for (auto routeList: routeLists) {
             for (auto route: *routeList) {
                 auto source = std::dynamic_pointer_cast<ScriptEndpoint>(route->source);
-                if (source && source->getEngine() == engine) {
+                if (source && source->getEngine() == manager->engine().get()) {
                     qDebug() << "UserInputMapper::runScriptEndpointCleanup source";
                     routesToRemove.append(route);
                 }
                 auto destination = std::dynamic_pointer_cast<ScriptEndpoint>(route->destination);
-                if (destination && destination->getEngine() == engine) {
+                if (destination && destination->getEngine() == manager->engine().get()) {
                     qDebug() << "UserInputMapper::runScriptEndpointCleanup destination";
                     routesToRemove.append(route);
                 }

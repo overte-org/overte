@@ -248,11 +248,26 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager *manager) : ScriptEngine(manager), 
 
 ScriptEngineV8::~ScriptEngineV8() {
     deleteUnusedValueWrappers();
+#ifdef OVERTE_SCRIPT_USE_AFTER_DELETE_GUARD
+    _wasDestroyed = true;
+#endif
+    qDebug() << "ScriptEngineV8::~ScriptEngineV8: script engine destroyed";
 }
 
 void ScriptEngineV8::perManagerLoopIterationCleanup() {
     deleteUnusedValueWrappers();
 }
+
+void ScriptEngineV8::disconnectSignalProxies() {
+    _signalProxySetLock.lockForRead();
+    while (!_signalProxySet.empty()) {
+        _signalProxySetLock.unlock();
+        delete *_signalProxySet.begin();
+        _signalProxySetLock.lockForRead();
+    }
+    _signalProxySetLock.unlock();
+}
+
 
 void ScriptEngineV8::deleteUnusedValueWrappers() {
     while (!_scriptValueWrappersToDelete.empty()) {
@@ -485,6 +500,9 @@ void ScriptEngineV8::registerGetterSetter(const QString& name, ScriptEngine::Fun
 }
 
 v8::Local<v8::Context> ScriptEngineV8::getContext() {
+#ifdef OVERTE_SCRIPT_USE_AFTER_DELETE_GUARD
+    Q_ASSERT(!_wasDestroyed);
+#endif
     v8::EscapableHandleScope handleScope(_v8Isolate);
     Q_ASSERT(!_contexts.isEmpty());
     return handleScope.Escape(_contexts.last().get()->toV8Value());

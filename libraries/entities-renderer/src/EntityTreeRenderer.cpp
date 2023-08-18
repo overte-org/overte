@@ -226,6 +226,10 @@ void EntityTreeRenderer::resetPersistentEntitiesScriptEngine() {
             manager->stop();
             manager->waitTillDoneRunning();
             manager->disconnectNonEssentialSignals();
+            // TODO: script manager pointer is still in use somewhere after the cleanup in lambda.
+            //  To prevent memory leaks on multiple reloads we would need to find all the usages and remove them.
+            //  Script engines are correctly deleted later during shutdown currently.
+            qDebug() << "_nonPersistentEntitiesScriptManager lambda finished, script manager pointer use count: " << manager.use_count();
         });
     }
     _persistentEntitiesScriptManager = scriptManagerFactory(ScriptManager::ENTITY_CLIENT_SCRIPT, NO_SCRIPT,
@@ -248,6 +252,10 @@ void EntityTreeRenderer::resetNonPersistentEntitiesScriptEngine() {
             manager->stop();
             manager->waitTillDoneRunning();
             manager->disconnectNonEssentialSignals();
+            // TODO: script manager pointer is still in use somewhere after the cleanup in lambda.
+            //  To prevent memory leaks on multiple reloads we would need to find all the usages and remove them.
+            //  Script engines are correctly deleted later during shutdown currently.
+            qDebug() << "_nonPersistentEntitiesScriptManager lambda finished, script manager pointer use count: " << manager.use_count();
         });
     }
     _nonPersistentEntitiesScriptManager = scriptManagerFactory(ScriptManager::ENTITY_CLIENT_SCRIPT, NO_SCRIPT,

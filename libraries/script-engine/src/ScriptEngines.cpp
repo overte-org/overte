@@ -21,6 +21,7 @@
 #include <UserActivityLogger.h>
 #include <PathUtils.h>
 #include <shared/FileUtils.h>
+#include <QtConcurrent/QtConcurrent>
 
 #include "ScriptCache.h"
 #include "ScriptEngine.h"
@@ -404,42 +405,49 @@ QStringList ScriptEngines::getRunningScripts() {
 }
 
 void ScriptEngines::stopAllScripts(bool restart) {
-    QReadLocker lock(&_scriptManagersHashLock);
+    QtConcurrent::run([this, restart] {
+        QHash<QUrl, ScriptManagerPointer> scriptManagersHashCopy;
 
-    if (_isReloading) {
-        return;
-    }
-
-    for (QHash<QUrl, ScriptManagerPointer>::const_iterator it = _scriptManagersHash.constBegin();
-        it != _scriptManagersHash.constEnd(); it++) {
-        ScriptManagerPointer scriptManager = it.value();
-        // skip already stopped scripts
-        if (scriptManager->isFinished() || scriptManager->isStopping()) {
-            continue;
+        {
+            QReadLocker lock(&_scriptManagersHashLock);
+            scriptManagersHashCopy = _scriptManagersHash;
         }
 
-        bool isOverrideScript = it.key().toString().compare(this->_defaultScriptsOverride.toString()) == 0;
-        // queue user scripts if restarting
-        if (restart && (scriptManager->isUserLoaded() || isOverrideScript)) {
-            _isReloading = true;
-            ScriptManager::Type type = scriptManager->getType();
-
-            connect(scriptManager.get(), &ScriptManager::finished, this, [this, type, isOverrideScript](QString scriptName) {
-                reloadScript(scriptName, !isOverrideScript)->setType(type);
-            });
+        if (_isReloading) {
+            return;
         }
 
-        // stop all scripts
-        scriptManager->stop();
-    }
+        for (QHash<QUrl, ScriptManagerPointer>::const_iterator it = scriptManagersHashCopy.constBegin();
+                it != scriptManagersHashCopy.constEnd(); it++) {
+            ScriptManagerPointer scriptManager = it.value();
+            // skip already stopped scripts
+            if (scriptManager->isFinished() || scriptManager->isStopping()) {
+                continue;
+            }
 
-    if (restart) {
-        qCDebug(scriptengine) << "stopAllScripts -- emitting scriptsReloading";
-        QTimer::singleShot(RELOAD_ALL_SCRIPTS_TIMEOUT, this, [&] {
-            _isReloading = false;
-        });
-        emit scriptsReloading();
-    }
+            bool isOverrideScript = it.key().toString().compare(this->_defaultScriptsOverride.toString()) == 0;
+            // queue user scripts if restarting
+            if (restart && (scriptManager->isUserLoaded() || isOverrideScript)) {
+                _isReloading = true;
+                ScriptManager::Type type = scriptManager->getType();
+
+                connect(scriptManager.get(), &ScriptManager::finished, this,
+                        [this, type, isOverrideScript](QString scriptName) {
+                            reloadScript(scriptName, !isOverrideScript)->setType(type);
+                        });
+            }
+
+            // stop all scripts
+            scriptManager->stop();
+            scriptManager->waitTillDoneRunning();
+        }
+
+        if (restart) {
+            qCDebug(scriptengine) << "stopAllScripts -- emitting scriptsReloading";
+            QTimer::singleShot(RELOAD_ALL_SCRIPTS_TIMEOUT, this, [&] { _isReloading = false; });
+            emit scriptsReloading();
+        }
+    });
 }
 
 bool ScriptEngines::stopScript(const QString& rawScriptURL, bool restart) {
@@ -612,6 +620,7 @@ void ScriptEngines::onScriptFinished(const QString& rawScriptURL, ScriptManagerP
         }
     }
 
+    // Could this cause deadlocks when script engine invokes a blocking method on main thread?
     manager->waitTillDoneRunning();
     removeScriptEngine(manager);
 

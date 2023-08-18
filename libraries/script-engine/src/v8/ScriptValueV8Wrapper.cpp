@@ -248,6 +248,9 @@ ScriptEnginePointer ScriptValueV8Wrapper::engine() const {
     if (!_engine) {
         return ScriptEnginePointer();
     }
+#ifdef OVERTE_SCRIPT_USE_AFTER_DELETE_GUARD
+    Q_ASSERT(!_engine->_wasDestroyed);
+#endif
     return _engine->shared_from_this();
 }
 

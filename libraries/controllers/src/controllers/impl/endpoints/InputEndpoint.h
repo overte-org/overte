@@ -16,9 +16,9 @@ namespace controller {
 
 class InputEndpoint : public Endpoint {
 public:
-    InputEndpoint(const Input& id = Input::INVALID_INPUT)
-        : Endpoint(id) {
-    }
+    static std::shared_ptr<Endpoint> newEndpoint(const Input& id = Input::INVALID_INPUT) {
+        return std::shared_ptr<Endpoint>(new InputEndpoint(id));
+    };
 
     virtual AxisValue peek() const override;
     virtual AxisValue value() override;
@@ -34,6 +34,10 @@ public:
     virtual void reset() override { _read = false; }
 
 private:
+    InputEndpoint(const Input& id = Input::INVALID_INPUT)
+        : Endpoint(id) {
+    }
+
     bool _read { false };
 };
 

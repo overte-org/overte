@@ -1197,6 +1197,14 @@ public:
      */
     void setAbortOnUncaughtException(bool value) { _abortOnUncaughtException = value; }
 
+    /**
+     * @brief Returns true after script finished running and doneRunning signal was called
+     *
+     * @return true If the script and doneRunning signal was called
+     * @return false If the script has not finished running yet
+     */
+    bool isDoneRunning() { return _isDoneRunning; };
+
 public slots:
 
     /**
@@ -1527,6 +1535,7 @@ protected:
     std::atomic<bool> _isFinished { false };
     std::atomic<bool> _isRunning { false };
     std::atomic<bool> _isStopping { false };
+    std::atomic<bool> _isDoneRunning { false };
     bool _areMetaTypesInitialized { false };
     bool _isInitialized { false };
     QHash<QTimer*, CallbackData> _timerFunctionMap;

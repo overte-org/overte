@@ -35,6 +35,7 @@
 #include "StateController.h"
 
 class ScriptEngine;
+class ScriptManager;
 class ScriptValue;
 
 namespace controller {
@@ -136,7 +137,7 @@ namespace controller {
          *
          * @param engine Pointer to the script engine that will be shut down
          */
-        void scheduleScriptEndpointCleanup(ScriptEngine* engine);
+        void scheduleScriptEndpointCleanup(std::shared_ptr<ScriptManager> manager);
 
         AxisValue getValue(const Input& input) const;
         Pose getPose(const Input& input) const;
@@ -223,7 +224,7 @@ namespace controller {
         InputCalibrationData inputCalibrationData;
 
         // Contains pointers to script engines that are requesting callback cleanup during their shutdown process
-        QQueue<ScriptEngine*> scriptEnginesRequestingCleanup;
+        QQueue<std::shared_ptr<ScriptManager>> scriptManagersRequestingCleanup;
 
         mutable std::recursive_mutex _lock;
     };
