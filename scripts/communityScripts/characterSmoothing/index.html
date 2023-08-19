@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<style>
+    body{
+        /* margin:0; */
+        display:flex;
+        flex-direction: column;
+    }
+    .container-1{
+        margin-bottom:1rem;
+    }
+</style>
+
+<body>
+    <div id="left-hand-cnt" data-name="left-hand" class="container-1">
+        <span>Left Hand</span>
+        <input data-name="value" type="number">
+        <input data-name="state" type="checkbox">
+        <button>Apply</button>
+    </div>
+    <div id="right-hand-cnt" data-name="right-hand" class="container-1">
+        <span>Right Hand</span>
+        <input data-name="value" type="number">
+        <input data-name="state" type="checkbox">
+        <button>Apply</button>
+    </div>
+    <div id="left-foot-cnt" data-name="left-foot" class="container-1">
+        <span>Left Foot</span>
+        <input data-name="value" type="number">
+        <input data-name="state" type="checkbox">
+        <button>Apply</button>
+    </div>
+</body>
+
+<script>
+    const qs = (target) => document.querySelector(target);
+    const qsa = (target) => document.querySelectorAll(target);
+
+    qsa('.container-1 button').forEach(item => item.addEventListener('click', (event) => {
+        let data_bundle = {
+            target: event.target.parentNode.dataset.name,
+            value: event.target.parentNode.querySelector(`[data-name='value']`).value,
+            state: event.target.parentNode.querySelector(`[data-name='state']`).checked
+        }
+        console.log(JSON.stringify(data_bundle))
+        
+        _sendMessage({name: `enable-filtering`, val: 'on'})
+        _sendMessage({name: `${data_bundle.target}-rotation`, val: data_bundle.value})
+        _sendMessage({name: `${data_bundle.target}-translation`, val: data_bundle.value})
+    }))
+
+    // Emit messages to the script backend
+    function _sendMessage(message) {
+        EventBridge.emitWebEvent(JSON.stringify(message));
+    }
+
+
+</script>
+</html>
