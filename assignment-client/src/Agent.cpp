@@ -337,6 +337,9 @@ void Agent::selectAudioFormat(const QString& selectedCodecName) {
             _codec = plugin;
             _receivedAudioStream.setupCodec(plugin, _selectedCodecName, AudioConstants::STEREO);
             _encoder = plugin->createEncoder(AudioConstants::SAMPLE_RATE, AudioConstants::MONO);
+
+            //TODO: _codecSettings is not being set by anything -- where do we receive the settings here?
+            _encoder->configure(_codecSettings);
             qDebug() << "Selected Codec Plugin:" << _codec.get();
             break;
         }
@@ -725,7 +728,7 @@ void Agent::processAgentAvatarAudio() {
             if (isPlayingRecording && !_shouldMuteRecordingAudio) {
                 _shouldMuteRecordingAudio = true;
             }
-            
+
             auto audioData = _avatarSound->getAudioData();
             nextSoundOutput = reinterpret_cast<const int16_t*>(audioData->rawData()
                     + _numAvatarSoundSentBytes);
@@ -886,7 +889,7 @@ void Agent::aboutToFinish() {
     {
         DependencyManager::get<ScriptEngines>()->shutdownScripting();
     }
-    
+
     DependencyManager::destroy<ScriptEngines>();
 
     DependencyManager::destroy<AssignmentDynamicFactory>();

@@ -177,6 +177,13 @@ void EntityScriptServer::handleSettings() {
     _maxEntityPPS = std::max(0, entityScriptServerSettings[MAX_ENTITY_PPS_OPTION].toInt());
     _entityPPSPerScript = std::max(0, entityScriptServerSettings[ENTITY_PPS_PER_SCRIPT].toInt());
 
+    static const QString AUDIO_ENV_GROUP_KEY = "audio_env";
+    if ( settingsObject.contains(AUDIO_ENV_GROUP_KEY)) {
+        _codecSettings = Encoder::parseSettings(settingsObject[AUDIO_ENV_GROUP_KEY].toObject());
+    } else {
+        qWarning() << "Failed to find" << AUDIO_ENV_GROUP_KEY << "key in settings. Dump: " << settingsObject;
+    }
+
     qDebug() << QString("Received entity script server settings, Max Entity PPS: %1, Entity PPS Per Entity Script: %2")
                 .arg(_maxEntityPPS).arg(_entityPPSPerScript);
 }
@@ -445,6 +452,7 @@ void EntityScriptServer::selectAudioFormat(const QString& selectedCodecName) {
         if (_selectedCodecName == plugin->getName()) {
             _codec = plugin;
             _encoder = plugin->createEncoder(AudioConstants::SAMPLE_RATE, AudioConstants::MONO);
+            _encoder->configure(_codecSettings);
             qCDebug(entity_script_server) << "Selected Codec Plugin:" << _codec.get();
             break;
         }
