@@ -736,6 +736,8 @@ void ScriptManager::init() {
         auto require = Script.property("require");
         auto resolve = Script.property("_requireResolve");
         require.setProperty("resolve", resolve, READONLY_PROP_FLAGS);
+
+        scriptEngine->globalObject().setProperty("require", require, READONLY_PROP_FLAGS);
         resetModuleCache();
     }
 
