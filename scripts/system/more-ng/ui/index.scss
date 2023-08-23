@@ -1,0 +1,236 @@
+body {
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    overflow-y: hidden;
+}
+
+.search-area {
+    display: grid;
+    grid-template-columns: auto 140px;
+    margin-bottom: 10px;
+    height: 45px;
+
+    .search {
+        width: 100%;
+        height: 100%;
+
+        input {
+            width: 100%;
+            height: 45px;
+            margin: 0;
+            box-sizing: border-box;
+            font-size: 20px;
+        }
+    }
+
+    .settings {
+        display: flex;
+        flex-direction: row;
+        button {
+            width: 70px;
+            height: 45px;
+            display: flex;
+            padding: 5px;
+
+            img {
+                filter: invert(100%);
+                height: 35px;
+                width: 35px;
+                margin: auto;
+            }
+        }
+    }
+}
+
+.filter {
+    margin-bottom: 10px;
+    .horizontal-button-container {
+        padding: 5px;
+        box-sizing: border-box;
+        button {
+            padding: 5px;
+            max-width: 50%;
+        }
+    }
+}
+
+.app-list {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+
+    .listing {
+        margin-bottom: 10px;
+        width: 100%;
+        // min-height: 20px;
+        padding: 10px;
+        box-sizing: border-box;
+        border-left: 4px solid #00000000;
+
+        .app-info {
+            display: flex;
+            flex-direction: row;
+            margin-bottom: 5px;
+            .icon {
+                height: 75px;
+                width: 75px;
+                padding: 10px;
+                box-sizing: border-box;
+                background-color: black;
+                border-radius: 5px;
+                border: 2px solid white;
+                margin-right: 10px;
+                user-select: none;
+
+                img {
+                    height: 100%;
+                    width: auto;
+                }
+            }
+
+            .body {
+                display: flex;
+                flex-direction: column;
+
+                .title {
+                    font-size: 20px;
+                    margin-bottom: 6px;
+                }
+                .description {
+                    color: #ccc;
+                    font-size: 14px;
+                }
+            }
+        }
+
+        .app-actions {
+            margin-left: auto;
+            width: fit-content;
+            button {
+                height: 40px;
+                padding: 0 5px;
+                width: 120px;
+            }
+        }
+    }
+
+    .listing.installed {
+        border-left: 4px solid #771d1d;
+        background-color: #191919;
+    }
+
+    .listing:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+
+    .header {
+        height: 45px;
+        width: 100%;
+        margin-bottom: 5px;
+        button {
+            width: 100%;
+            height: 45px;
+            display: flex;
+            padding: 5px;
+            span {
+                margin: auto;
+            }
+        }
+    }
+    .text-list {
+        width: 100%;
+        flex-grow: 1;
+        border-radius: 5px;
+        padding: 5px;
+        box-sizing: border-box;
+        overflow-y: auto;
+        margin-bottom: 5px;
+
+        div {
+            background-color: #111;
+            padding: 5px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: row;
+            max-height: 65px;
+            overflow-y: hidden;
+        }
+        div:nth-child(even) {
+            background-color: #252525;
+        }
+    }
+    .new-link {
+        width: 100%;
+        height: 55px;
+        display: flex;
+        flex-direction: row;
+
+        input {
+            width: 100%;
+        }
+        button {
+            padding: 0 20px;
+            font-size: 24px;
+        }
+    }
+
+    .app-about {
+        display: flex;
+        flex-direction: column;
+        padding: 10px 15px;
+        box-sizing: border-box;
+
+        .app-title {
+            display: flex;
+            flex-direction: row;
+            margin-bottom: 15px;
+
+            .icon {
+                height: 75px;
+                width: 75px;
+                background-color: black;
+                padding: 10px;
+                box-sizing: border-box;
+                border-radius: 5px;
+                border: 2px solid white;
+                margin-right: 10px;
+
+                img {
+                    width: 100%;
+                    height: 100%;
+                }
+            }
+
+            div {
+                font-size: 22px;
+            }
+        }
+        .url-link {
+            font-size: 10px;
+            margin-bottom: 10px;
+            padding: 5px;
+            box-sizing: border-box;
+            border-radius: 2px;
+            text-align: center;
+        }
+        .description {
+            font-size: 18px;
+            line-height: 20px;
+        }
+    }
+}
+
+button:focus {
+    outline: 0;
+}
+input:focus {
+    outline: 0;
+}
+.hidden {
+    display: none !important;
+}

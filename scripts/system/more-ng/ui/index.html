@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link type="text/css" rel="stylesheet" href="theme.css" />
+        <link type="text/css" rel="stylesheet" href="index.css" />
+    </head>
+    <body>
+        <div id="app-listing" class="page">
+            <div class="search-area container color-primary">
+                <div class="search">
+                    <input type="text" placeholder="Search..." />
+                </div>
+                <div class="settings">
+                    <button id="open-filters" class="">
+                        <img src="../img/filter.svg" />
+                    </button>
+                    <button id="open-settings" class="generic">
+                        <img src="../img/gear.svg" />
+                    </button>
+                </div>
+            </div>
+
+            <div id="app-filters" class="container color-primary filter hidden">
+                <div class="horizontal-button-container">
+                    <button class="generic">Only installed</button>
+                </div>
+            </div>
+
+            <div class="app-list">
+
+        <div class="listing color-secondary">
+            <div class="app-info">
+                <div class="icon">
+                    <img src=""  />
+                </div>
+                <div class="body">
+                    <div class="title"></div>
+                    <div class="description"></div>
+                </div>
+            </div>
+            <div class="app-actions horizontial-button-container">
+                <button data-intention="view">View</button>
+                <button data-intention="uninstall"class="bad">Uninstall</button>
+                <button data-intention="install" class="good">Install</button>
+            </div>
+        </div>
+        <div class="listing color-secondary">
+            <div class="app-info">
+                <div class="icon">
+                    <img src=""  />
+                </div>
+                <div class="body">
+                    <div class="title"></div>
+                    <div class="description"></div>
+                </div>
+            </div>
+            <div class="app-actions horizontial-button-container">
+                <button data-intention="view">View</button>
+                <button data-intention="uninstall"class="bad">Uninstall</button>
+                <button data-intention="install" class="good">Install</button>
+            </div>
+        </div>
+        <div class="listing color-secondary">
+            <div class="app-info">
+                <div class="icon">
+                    <img src=""  />
+                </div>
+                <div class="body">
+                    <div class="title"></div>
+                    <div class="description"></div>
+                </div>
+            </div>
+            <div class="app-actions horizontial-button-container">
+                <button data-intention="view">View</button>
+                <button data-intention="uninstall"class="bad">Uninstall</button>
+                <button data-intention="install" class="good">Install</button>
+            </div>
+        </div>
+        <div class="listing color-secondary">
+            <div class="app-info">
+                <div class="icon">
+                    <img src=""  />
+                </div>
+                <div class="body">
+                    <div class="title"></div>
+                    <div class="description"></div>
+                </div>
+            </div>
+            <div class="app-actions horizontial-button-container">
+                <button data-intention="view">View</button>
+                <button data-intention="uninstall"class="bad">Uninstall</button>
+                <button data-intention="install" class="good">Install</button>
+            </div>
+        </div>
+        <div class="listing color-secondary">
+            <div class="app-info">
+                <div class="icon">
+                    <img src=""  />
+                </div>
+                <div class="body">
+                    <div class="title"></div>
+                    <div class="description"></div>
+                </div>
+            </div>
+            <div class="app-actions horizontial-button-container">
+                <button data-intention="view">View</button>
+                <button data-intention="uninstall"class="bad">Uninstall</button>
+                <button data-intention="install" class="good">Install</button>
+            </div>
+        </div>
+            </div>
+        </div>
+
+        <div id="settings" class="page hidden">
+            <div class="header color-primary horizontial-button-container">
+                <button id="close-settings" class="generic">
+                    <span>Close</span>
+                </button>
+            </div>
+            <div class="text-list color-primary">
+                <div>
+                    <span>
+                        https://github.com/overte-org/community-apps/blob/master/applications/metadata.js
+                    </span>
+                    <button ">O</button>
+                    <button class="bad">X</button>
+                </div>
+            </div>
+            <div class="new-link">
+                <input type="text" placeholder="Repo metadata url" />
+                <button class="good">+</button>
+            </div>
+        </div>
+        <!-- TODO -->
+        <!-- <div class="page">
+            <div class="header color-primary horizontial-button-container">
+                <button class="generic"><span>Close</span></button>
+            </div>
+
+            <div class="container color-primary app-about">
+                <div class="app-title">
+                    <div class="icon">
+                        <img
+                            src="https://raw.githubusercontent.com/overte-org/community-apps/master/applications/inventory-app/dist/inventory-i.svg"
+                        />
+                    </div>
+                    <div>Inventory</div>
+                </div>
+                <div class="url-link color-secondary">
+                    https://github.com/overte-org/community-apps/blob/master/applications/metadata.js
+                </div>
+                <div class="description">
+                    The inventory app allows you to store, use, and share items
+                    in Overte. The inventory app allows you to store, use, and
+                    share items in Overte. The inventory app allows you to
+                    store, use, and share items in Overte. The inventory app
+                    allows you to store, use, and share items in Overte. The
+                    inventory app allows you to store, use, and share items in
+                    Overte. The inventory app allows you to store, use, and
+                    share items in Overte.
+                </div>
+            </div>
+        </div> -->
+    </body>
+
+    <!-- listing installed -->
+    <template id="app-listing-template">
+        <div class="listing color-secondary">
+            <div class="app-info">
+                <div class="icon">
+                    <img src=""  />
+                </div>
+                <div class="body">
+                    <div class="title"></div>
+                    <div class="description"></div>
+                </div>
+            </div>
+            <div class="app-actions horizontial-button-container">
+                <button data-intention="view">View</button>
+                <button data-intention="uninstall"class="bad">Uninstall</button>
+                <button data-intention="install" class="good">Install</button>
+            </div>
+        </div>
+    </template>
+
+    <script src="./index.js"></script>
+</html>

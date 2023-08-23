@@ -1,0 +1,220 @@
+body {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  overflow-y: hidden;
+}
+
+.search-area {
+  display: grid;
+  grid-template-columns: auto 140px;
+  margin-bottom: 10px;
+  height: 45px;
+}
+.search-area .search {
+  width: 100%;
+  height: 100%;
+}
+.search-area .search input {
+  width: 100%;
+  height: 45px;
+  margin: 0;
+  box-sizing: border-box;
+  font-size: 20px;
+}
+.search-area .settings {
+  display: flex;
+  flex-direction: row;
+}
+.search-area .settings button {
+  width: 70px;
+  height: 45px;
+  display: flex;
+  padding: 5px;
+}
+.search-area .settings button img {
+  filter: invert(100%);
+  height: 35px;
+  width: 35px;
+  margin: auto;
+}
+
+.filter {
+  margin-bottom: 10px;
+}
+.filter .horizontal-button-container {
+  padding: 5px;
+  box-sizing: border-box;
+}
+.filter .horizontal-button-container button {
+  padding: 5px;
+  max-width: 50%;
+}
+
+.app-list {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.app-list .listing {
+  margin-bottom: 10px;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  border-left: 4px solid rgba(0, 0, 0, 0);
+}
+.app-list .listing .app-info {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 5px;
+}
+.app-list .listing .app-info .icon {
+  height: 75px;
+  width: 75px;
+  padding: 10px;
+  box-sizing: border-box;
+  background-color: black;
+  border-radius: 5px;
+  border: 2px solid white;
+  margin-right: 10px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+.app-list .listing .app-info .icon img {
+  height: 100%;
+  width: auto;
+}
+.app-list .listing .app-info .body {
+  display: flex;
+  flex-direction: column;
+}
+.app-list .listing .app-info .body .title {
+  font-size: 20px;
+  margin-bottom: 6px;
+}
+.app-list .listing .app-info .body .description {
+  color: #ccc;
+  font-size: 14px;
+}
+.app-list .listing .app-actions {
+  margin-left: auto;
+  width: -moz-fit-content;
+  width: fit-content;
+}
+.app-list .listing .app-actions button {
+  height: 40px;
+  padding: 0 5px;
+  width: 120px;
+}
+.app-list .listing.installed {
+  border-left: 4px solid #771d1d;
+  background-color: #191919;
+}
+.app-list .listing:last-child {
+  margin-bottom: 0;
+}
+
+.page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.page .header {
+  height: 45px;
+  width: 100%;
+  margin-bottom: 5px;
+}
+.page .header button {
+  width: 100%;
+  height: 45px;
+  display: flex;
+  padding: 5px;
+}
+.page .header button span {
+  margin: auto;
+}
+.page .text-list {
+  width: 100%;
+  flex-grow: 1;
+  border-radius: 5px;
+  padding: 5px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  margin-bottom: 5px;
+}
+.page .text-list div {
+  background-color: #111;
+  padding: 5px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  max-height: 65px;
+  overflow-y: hidden;
+}
+.page .text-list div:nth-child(even) {
+  background-color: #252525;
+}
+.page .new-link {
+  width: 100%;
+  height: 55px;
+  display: flex;
+  flex-direction: row;
+}
+.page .new-link input {
+  width: 100%;
+}
+.page .new-link button {
+  padding: 0 20px;
+  font-size: 24px;
+}
+.page .app-about {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 15px;
+  box-sizing: border-box;
+}
+.page .app-about .app-title {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 15px;
+}
+.page .app-about .app-title .icon {
+  height: 75px;
+  width: 75px;
+  background-color: black;
+  padding: 10px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  border: 2px solid white;
+  margin-right: 10px;
+}
+.page .app-about .app-title .icon img {
+  width: 100%;
+  height: 100%;
+}
+.page .app-about .app-title div {
+  font-size: 22px;
+}
+.page .app-about .url-link {
+  font-size: 10px;
+  margin-bottom: 10px;
+  padding: 5px;
+  box-sizing: border-box;
+  border-radius: 2px;
+  text-align: center;
+}
+.page .app-about .description {
+  font-size: 18px;
+  line-height: 20px;
+}
+
+button:focus {
+  outline: 0;
+}
+
+input:focus {
+  outline: 0;
+}
+
+.hidden {
+  display: none !important;
+}
