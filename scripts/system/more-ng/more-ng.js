@@ -1,9 +1,11 @@
 //
 // Copyright 2023 Overte e.V.
+// "https://more.overte.org/applications/metadata.js",
 
 const html_url = Script.resolvePath("./ui/index.html");
 let tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 let shown = false;
+const logs = (info) => console.log("[NEW_MORE] " + JSON.stringify(info));
 
 tablet.screenChanged.connect(onScreenChanged);
 Script.scriptEnding.connect(shutdownTabletApp);
@@ -14,6 +16,13 @@ let tabletButton = tablet.addButton({
     activeIcon: Script.resolvePath("./img/icon-a.png"),
 });
 
+let repo_list = [
+    "https://raw.githubusercontent.com/Armored-Dragon/overte-app-examples/master/metadata.json",
+];
+let app_info = {
+    installed_apps: [],
+    thirdparty_apps: [],
+};
 // REVIEW: How can we optimize this further?
 tabletButton.clicked.connect(clicked);
 
@@ -57,16 +66,8 @@ function onWebEventReceived(message) {
     message = JSON.parse(message);
 
     if (message.action === "ready") {
-        // Get apps from repos
-        // Form custom Object and send to ui
-
-        // Get installed apps
-        const installed_apps = ScriptDiscoveryService.getRunning();
-        const repo_apps = _get("");
-
-        const app_list = _createAppList(installed_apps, repo_apps);
-
-        _sendMessage({ action: "app_list", data: app_list });
+        getInstalledApps();
+        findThirdParty();
     }
 
     if (message.action === "new_repo") {
@@ -79,49 +80,112 @@ function onWebEventReceived(message) {
     }
 
     if (message.action === "install_script") {
-        // On installed, create "setting" to save app metadata
+        logs(`Installing script ${message.data}`);
+        ScriptDiscoveryService.loadScript(message.data);
     }
 
     if (message.action === "uninstall_script") {
+        logs(`Uninstalling script ${message.data}`);
         ScriptDiscoveryService.stopScript(message.data);
-        // TODO: Reload application window
     }
 }
 
-function _get(url) {
-    // HTTPS Request here
-    return [];
-}
+function getInstalledApps() {
+    const running_apps = ScriptDiscoveryService.getRunning();
+    const installed_apps = Settings.getValue("more_installed_list", []);
 
-function _createAppList(installed_apps, repo_apps) {
     let return_array = [];
-
-    installed_apps.forEach((app) => {
+    running_apps.forEach((app) => {
         // REVIEW: Multiplatform support functional?
         if (app.url.includes("file://")) return;
+        let found = false;
 
-        return_array.push({
-            title: app.name,
-            url: app.url,
-            icon: app.icon || "",
-            installed: true,
-        });
-    });
+        logs(`Processing ${app.name || app.title}`);
+        logs(app.url);
 
-    // REVIEW: Is this legit?
-    repo_apps.forEach((app) => {
         for (let i = 0; installed_apps.length > i; i++) {
-            if (installed_apps[Object.keys(installed_apps)[i]].url === app.url)
-                return;
-        }
+            if (installed_apps[i].url === app.url) {
+                return_array.push(installed_apps[i]);
+                found = true;
+                break;
+            }
 
-        return_array.push({
-            title: app.name,
-            url: app.url,
-            icon: app.icon || "",
-            installed: false,
-        });
+            // Our installed app is not saved in settings, add it
+            if (installed_apps.length === i) {
+                logs("Not in settings");
+                let template = {
+                    title: app.name,
+                    url: app.url,
+                    icon: app.icon || "",
+                    description: app.description,
+                    directory: app.directory,
+                    installed: true,
+                };
+                return_array.push(template);
+                found = true;
+                return;
+            }
+        }
+        if (!found) {
+            logs("Settings was blank; just pushing it in.");
+            let template = {
+                title: app.name,
+                url: app.url,
+                icon: app.icon || "",
+                description: app.description,
+                directory: app.directory,
+                installed: true,
+            };
+            return_array.push(template);
+            return;
+        }
     });
 
-    return return_array;
+    Settings.setValue("more_installed_list", return_array);
+    _sendMessage({ action: "installed_apps", data: return_array });
 }
+
+function findThirdParty() {
+    repo_list.forEach((url) => {
+        var req = new XMLHttpRequest();
+
+        req.requestComplete.connect(() => {
+            if (req.status !== 200) {
+                _sendMessage({
+                    action: "repo_loaded",
+                    data: { error: true, status: req.status },
+                });
+            }
+
+            const response = JSON.parse(req.responseText);
+            let app_list_formatted = [];
+
+            response.forEach((app) => {
+                const app_dir =
+                    url.split("/metadata.json")[0] + "/" + app.directory + "/";
+
+                const icon_url = app_dir + app.icon;
+                const script_url = app_dir + app.script;
+
+                app_list_formatted.push({
+                    title: app.name,
+                    url: script_url,
+                    icon: icon_url,
+                    description: app.description,
+                    directory: app.directory,
+                    installed: false,
+                });
+            });
+
+            return _sendMessage({
+                action: "repo_loaded",
+                data: app_list_formatted,
+            });
+        });
+
+        req.open("GET", url);
+        req.send();
+    });
+}
+
+repo_list = Settings.getValue("more_repo_list", repo_list);

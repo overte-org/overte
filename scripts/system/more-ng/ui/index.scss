@@ -2,6 +2,9 @@ body {
     font-family: Verdana, Geneva, Tahoma, sans-serif;
     overflow-y: hidden;
 }
+.container {
+    min-height: inherit;
+}
 
 .search-area {
     display: grid;

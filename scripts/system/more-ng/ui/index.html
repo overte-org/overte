@@ -24,93 +24,17 @@
 
             <div id="app-filters" class="container color-primary filter hidden">
                 <div class="horizontal-button-container">
-                    <button class="generic">Only installed</button>
+                    <button
+                        data-filter_name="only_installed"
+                        class=""
+                        onclick="toggleFilter('only_installed')"
+                    >
+                        Only installed
+                    </button>
                 </div>
             </div>
 
-            <div class="app-list">
-
-        <div class="listing color-secondary">
-            <div class="app-info">
-                <div class="icon">
-                    <img src=""  />
-                </div>
-                <div class="body">
-                    <div class="title"></div>
-                    <div class="description"></div>
-                </div>
-            </div>
-            <div class="app-actions horizontial-button-container">
-                <button data-intention="view">View</button>
-                <button data-intention="uninstall"class="bad">Uninstall</button>
-                <button data-intention="install" class="good">Install</button>
-            </div>
-        </div>
-        <div class="listing color-secondary">
-            <div class="app-info">
-                <div class="icon">
-                    <img src=""  />
-                </div>
-                <div class="body">
-                    <div class="title"></div>
-                    <div class="description"></div>
-                </div>
-            </div>
-            <div class="app-actions horizontial-button-container">
-                <button data-intention="view">View</button>
-                <button data-intention="uninstall"class="bad">Uninstall</button>
-                <button data-intention="install" class="good">Install</button>
-            </div>
-        </div>
-        <div class="listing color-secondary">
-            <div class="app-info">
-                <div class="icon">
-                    <img src=""  />
-                </div>
-                <div class="body">
-                    <div class="title"></div>
-                    <div class="description"></div>
-                </div>
-            </div>
-            <div class="app-actions horizontial-button-container">
-                <button data-intention="view">View</button>
-                <button data-intention="uninstall"class="bad">Uninstall</button>
-                <button data-intention="install" class="good">Install</button>
-            </div>
-        </div>
-        <div class="listing color-secondary">
-            <div class="app-info">
-                <div class="icon">
-                    <img src=""  />
-                </div>
-                <div class="body">
-                    <div class="title"></div>
-                    <div class="description"></div>
-                </div>
-            </div>
-            <div class="app-actions horizontial-button-container">
-                <button data-intention="view">View</button>
-                <button data-intention="uninstall"class="bad">Uninstall</button>
-                <button data-intention="install" class="good">Install</button>
-            </div>
-        </div>
-        <div class="listing color-secondary">
-            <div class="app-info">
-                <div class="icon">
-                    <img src=""  />
-                </div>
-                <div class="body">
-                    <div class="title"></div>
-                    <div class="description"></div>
-                </div>
-            </div>
-            <div class="app-actions horizontial-button-container">
-                <button data-intention="view">View</button>
-                <button data-intention="uninstall"class="bad">Uninstall</button>
-                <button data-intention="install" class="good">Install</button>
-            </div>
-        </div>
-            </div>
+            <div class="app-list"></div>
         </div>
 
         <div id="settings" class="page hidden">
@@ -124,7 +48,7 @@
                     <span>
                         https://github.com/overte-org/community-apps/blob/master/applications/metadata.js
                     </span>
-                    <button ">O</button>
+                    <button>O</button>
                     <button class="bad">X</button>
                 </div>
             </div>
@@ -170,7 +94,7 @@
         <div class="listing color-secondary">
             <div class="app-info">
                 <div class="icon">
-                    <img src=""  />
+                    <img src="" />
                 </div>
                 <div class="body">
                     <div class="title"></div>
@@ -179,7 +103,9 @@
             </div>
             <div class="app-actions horizontial-button-container">
                 <button data-intention="view">View</button>
-                <button data-intention="uninstall"class="bad">Uninstall</button>
+                <button data-intention="uninstall" class="bad hidden">
+                    Uninstall
+                </button>
                 <button data-intention="install" class="good">Install</button>
             </div>
         </div>

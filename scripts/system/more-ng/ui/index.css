@@ -3,6 +3,10 @@ body {
   overflow-y: hidden;
 }
 
+.container {
+  min-height: inherit;
+}
+
 .search-area {
   display: grid;
   grid-template-columns: auto 140px;
