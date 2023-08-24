@@ -1,4 +1,4 @@
-﻿//  AvatarExporter.cs
+//  AvatarExporter.cs
 //
 //  Created by David Back on 28 Nov 2018
 //  Copyright 2018 High Fidelity, Inc.
@@ -418,33 +418,25 @@ class AvatarExporter : MonoBehaviour
     {
         bool copyModelToExport = false;
 
-        // lookup the project name field from the fst file to update
-        projectName = "";
         try
         {
-            string[] lines = File.ReadAllLines(exportFstPath);
-            foreach (string line in lines)
+            currentFst = new FST();
+            // load the old file first
+            if(!currentFst.LoadFile(exportFstPath))
             {
-                int separatorIndex = line.IndexOf("=");
-                if (separatorIndex >= 0)
-                {
-                    string key = line.Substring(0, separatorIndex).Trim();
-                    if (key == "name")
-                    {
-                        projectName = line.Substring(separatorIndex + 1).Trim();
-                        break;
-                    }
-                }
+                EditorUtility.DisplayDialog("Error",
+                    $"Failed to read from existing file {exportFstPath}. Please check the file and try again.", "Ok");
+                return;
             }
         }
         catch
         {
-            EditorUtility.DisplayDialog("Error", "Failed to read from existing file " + exportFstPath +
-                                        ". Please check the file and try again.", "Ok");
+            EditorUtility.DisplayDialog("Error",
+                $"Failed to read from existing file {exportFstPath}. Please check the file and try again.", "Ok");
             return;
         }
 
-        string exportModelPath = Path.GetDirectoryName(exportFstPath) + "/" + assetName + ".fbx";
+        string exportModelPath = $"{Path.GetDirectoryName(exportFstPath)}/{assetName}.fbx";
         if (File.Exists(exportModelPath))
         {
             // if the fbx in Unity Assets is newer than the fbx in the target export
@@ -529,9 +521,6 @@ class AvatarExporter : MonoBehaviour
             }
         }
 
-        currentFst = new FST();
-        // load the old file first
-        currentFst.LoadFile(exportFstPath);
         currentFst.scale = scale;
 
         // write out a new fst file in place of the old file
