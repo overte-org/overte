@@ -104,6 +104,15 @@ public:
     int getWidth();
     int getHeight();
 
+signals:
+
+    /*@jsdoc
+     * Triggered when keyboard focus changes to another overlay UI window.
+     * @param {boolean} isActive - <code>true</code> if the keyboard focus is on overlay UI window, <code>false</code> if not.
+     * @function Desktop.uiFocusChanged
+     * @returns {Signal}
+     */
+    void uiFocusChanged(bool isActive);
 
 private:
     static int flagAlwaysOnTop() { return AlwaysOnTop; }

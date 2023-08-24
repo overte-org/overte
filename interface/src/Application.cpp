@@ -868,6 +868,22 @@ bool setupEssentials(int& argc, char** argv, const QCommandLineParser& parser, b
     DependencyManager::set<SceneScriptingInterface>();
 #if !defined(DISABLE_QML)
     DependencyManager::set<OffscreenUi>();
+    {
+        auto window = DependencyManager::get<OffscreenUi>()->getWindow();
+        auto desktopScriptingInterface = DependencyManager::get<DesktopScriptingInterface>();
+        QObject::connect(window, &QQuickWindow::focusObjectChanged, [desktopScriptingInterface](QObject *object) {
+            if (object) {
+                if (object->objectName() == QString("desktop")) {
+                    emit desktopScriptingInterface->uiFocusChanged(false);
+                    return;
+                }
+                // Signal with empty object name happens in addition to regular named ones and is not necessary here
+                if (!object->objectName().isEmpty()) {
+                    emit desktopScriptingInterface->uiFocusChanged(true);
+                }
+            }
+        });
+    }
 #endif
     DependencyManager::set<Midi>();
     DependencyManager::set<PathUtils>();
