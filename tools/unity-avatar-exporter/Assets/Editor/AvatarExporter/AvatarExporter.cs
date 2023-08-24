@@ -608,11 +608,15 @@ class AvatarExporter : MonoBehaviour
         {
             if (userBoneInfo.Value.HasHumanMapping())
             {
-                string jointName = HUMANOID_TO_OVERTE_JOINT_NAME[userBoneInfo.Value.humanName];
+                var jointName = HUMANOID_TO_OVERTE_JOINT_NAME[userBoneInfo.Value.humanName];
+                var userJointName = removeTypeFromJointname(userBoneInfo.Key);
+                // Skip joints with the same name
+                if(jointName == userJointName)
+                    continue;
                 if (!currentFst.jointMapList.Exists(x => x.From == jointName))
-                    currentFst.jointMapList.Add(new JointMap(jointName, removeTypeFromJointname(userBoneInfo.Key)));
+                    currentFst.jointMapList.Add(new JointMap(jointName, userJointName));
                 else
-                    currentFst.jointMapList.Find(x => x.From == jointName).To = removeTypeFromJointname(userBoneInfo.Key);
+                    currentFst.jointMapList.Find(x => x.From == jointName).To = userJointName;
             }
         }
 
