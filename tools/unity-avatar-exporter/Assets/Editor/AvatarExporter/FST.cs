@@ -30,10 +30,29 @@ namespace Overte
             From = f; To = t;
         }
 
-        public override string ToString()
+        public override string ToString() => $"jointMap = {From} = {To}";
+    }
+    
+    class Joint
+    {
+        public string From;
+        public string To;
+
+        private Regex parseRx = new Regex(@"^(?<From>[\w]*)\s*=\s*(?<To>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        public Joint(string RawInput)
         {
-            return $"jointMap = {From} = {To}";
+            var parsed = parseRx.Matches(RawInput).First();
+            From = parsed.Groups["From"].Value.Trim();
+            To = parsed.Groups["To"].Value.Trim();
         }
+
+        public Joint(string f, string t)
+        {
+            From = f; To = t;
+        }
+
+        public override string ToString() => $"joint = {From} = {To}";
     }
 
     class JointRotationOffset
@@ -119,9 +138,11 @@ namespace Overte
 
         public List<RemapBlendShape> remapBlendShapeList = new List<RemapBlendShape>();
 
+        public List<Joint> jointList = new List<Joint>();
         public List<JointMap> jointMapList = new List<JointMap>();
         public List<JointRotationOffset> jointRotationList = new List<JointRotationOffset>();
         public List<JointIndex> jointIndexList = new List<JointIndex>();
+        public List<string> freeJointList = new List<string>();
 
         private Regex parseRx = new Regex(@"^(?<Key>[\w]*)\s*=\s*(?<Value>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -148,6 +169,7 @@ namespace Overte
             AddIfNotNull(jointMapList);
             AddIfNotNull(jointIndexList);
             AddIfNotNull(jointRotationList);
+            AddIfNotNull("freeJoint", freeJointList);
 
             AddIfNotNull(nameof(materialMap), materialMap);
             AddIfNotNull(nameof(flowPhysicsData), flowPhysicsData);
@@ -168,6 +190,12 @@ namespace Overte
                 Debug.LogException(e);
                 return false;
             }
+        }
+
+        private void AddIfNotNull<T>(string keyname, List<T> list)
+        {
+            if (list.Count != 0)
+                list.ForEach(x => fstContent.Add($"{keyname} = {x}"));
         }
 
         private void AddIfNotNull<T>(List<T> list)
@@ -233,6 +261,9 @@ namespace Overte
                     // TODO:Parse it when changed to importing instead of updating
                     break;
 
+                case "joint":
+                    jointList.Add(new Joint(value));
+                    break;
                 case "jointMap":
                     jointMapList.Add(new JointMap(value));
                     break;
@@ -241,6 +272,9 @@ namespace Overte
                     break;
                 case "jointIndex":
                     jointIndexList.Add(new JointIndex(value));
+                    break;
+                case "freeJoint":
+                    freeJointList.Add(value);
                     break;
 
                 case "bs":
