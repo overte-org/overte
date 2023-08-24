@@ -68,10 +68,10 @@ namespace Overte
             BoneName = parsed.Groups["BoneName"].Value.Trim();
             offset = new Quaternion
             {
-                x = float.Parse(parsed.Groups["X"].Value),
-                y = float.Parse(parsed.Groups["Y"].Value),
-                z = float.Parse(parsed.Groups["Z"].Value),
-                w = float.Parse(parsed.Groups["W"].Value)
+                x = float.Parse(parsed.Groups["X"].Value, CultureInfo.InvariantCulture),
+                y = float.Parse(parsed.Groups["Y"].Value, CultureInfo.InvariantCulture),
+                z = float.Parse(parsed.Groups["Z"].Value, CultureInfo.InvariantCulture),
+                w = float.Parse(parsed.Groups["W"].Value, CultureInfo.InvariantCulture)
             };
         }
 
@@ -81,11 +81,7 @@ namespace Overte
             offset = new Quaternion(x, y, z, w);
         }
 
-        public override string ToString()
-        {
-            return $"jointRotationOffset2 = {BoneName} = ({offset.x.F()}, {offset.y.F()}, {offset.z.F()}, {offset.w.F()})";
-        }
-
+        public override string ToString() => $"jointRotationOffset2 = {BoneName} = ({offset.x.F()}, {offset.y.F()}, {offset.z.F()}, {offset.w.F()})";
     }
 
     class RemapBlendShape
@@ -101,13 +97,10 @@ namespace Overte
             var parsed = parseRx.Matches(rawData).First();
             From = parsed.Groups["From"].Value.Trim();
             To = parsed.Groups["To"].Value.Trim();
-            Multiplier = float.Parse(parsed.Groups["Multiplier"].Value);
+            Multiplier = float.Parse(parsed.Groups["Multiplier"].Value, CultureInfo.InvariantCulture);
         }
 
-        public override string ToString()
-        {
-            return $"bs = {From} = {To} = {Multiplier}";
-        }
+        public override string ToString() => $"bs = {From} = {To} = {Multiplier.F()}";
     }
 
     class JointIndex
@@ -115,7 +108,7 @@ namespace Overte
         public string BoneName;
         public int Index;
 
-        private Regex parseRx = new Regex(@"^(?<BoneName>[\w]*)\s*=\s*(?<Index>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private Regex parseRx = new Regex(@"^(?<BoneName>.*)\s*=\s*(?<Index>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public JointIndex(string rawData)
         {
@@ -123,6 +116,8 @@ namespace Overte
             BoneName = parsed.Groups["BoneName"].Value.Trim();
             Index = int.Parse(parsed.Groups["Index"].Value);
         }
+        
+        public override string ToString() => $"jointIndex = {BoneName} = {Index}";
     }
 
     class FST
@@ -248,7 +243,7 @@ namespace Overte
                     type = value;
                     break;
                 case "scale":
-                    scale = float.Parse(value);
+                    scale = float.Parse(value, CultureInfo.InvariantCulture);
                     break;
                 case "filename":
                     filename = value;

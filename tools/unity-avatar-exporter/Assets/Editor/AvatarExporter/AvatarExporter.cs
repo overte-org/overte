@@ -596,10 +596,7 @@ class AvatarExporter : MonoBehaviour
     }
 
     // The Overte FBX Serializer omits the colon based prefixes. This will make the jointnames compatible.
-    static string removeTypeFromJointname(string jointName)
-    {
-        return jointName.Substring(jointName.IndexOf(':') + 1);
-    }
+    static string removeTypeFromJointname(string jointName) => jointName.Substring(jointName.IndexOf(':') + 1);
 
     static bool WriteFST(string exportFstPath)
     {
