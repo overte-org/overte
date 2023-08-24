@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Globalization;
+using System.Linq;
 using Overte;
 
 class AvatarExporter : MonoBehaviour
@@ -186,9 +187,11 @@ class AvatarExporter : MonoBehaviour
     };
 
     static readonly string STANDARD_SHADER = "Standard";
+    static readonly string STANDARD_ROUGHNESS_SHADER = "Autodesk Interactive"; // "Standard (Roughness setup)" Has been renamed in unity 2018.03
     static readonly string STANDARD_SPECULAR_SHADER = "Standard (Specular setup)";
     static readonly string[] SUPPORTED_SHADERS = new string[] {
         STANDARD_SHADER,
+        STANDARD_ROUGHNESS_SHADER,
         STANDARD_SPECULAR_SHADER,
     };
 
@@ -266,7 +269,8 @@ class AvatarExporter : MonoBehaviour
     [MenuItem("Overte/About")]
     static void About()
     {
-        EditorUtility.DisplayDialog("About", "Avatar Exporter\nVersion " + AVATAR_EXPORTER_VERSION + "\nCopyright 2022 to 2023 Overte e.V.\nCopyright 2018 High Fidelity, Inc.", "Ok");
+        EditorUtility.DisplayDialog("About",
+            $"Avatar Exporter\nVersion {AVATAR_EXPORTER_VERSION}\nCopyright 2022 to 2023 Overte e.V.\nCopyright 2018 High Fidelity, Inc.", "Ok");
     }
 
     /*[MenuItem("Overte/Test")]
@@ -343,14 +347,10 @@ class AvatarExporter : MonoBehaviour
         warnings = "";
         foreach (var failedAvatarRule in failedAvatarRules)
         {
-            if (Array.IndexOf(EXPORT_BLOCKING_AVATAR_RULES, failedAvatarRule.Key) >= 0)
-            {
+            if (EXPORT_BLOCKING_AVATAR_RULES.Contains(failedAvatarRule.Key))
                 boneErrors += failedAvatarRule.Value + "\n\n";
-            }
             else
-            {
                 warnings += failedAvatarRule.Value + "\n\n";
-            }
         }
 
         // add material and texture warnings after bone-related warnings
@@ -359,9 +359,7 @@ class AvatarExporter : MonoBehaviour
 
         // remove trailing newlines at the end of the warnings
         if (!string.IsNullOrEmpty(warnings))
-        {
-            warnings = warnings.Substring(0, warnings.LastIndexOf("\n\n"));
-        }
+            warnings = warnings.Trim();
 
         if (!string.IsNullOrEmpty(boneErrors))
         {
@@ -372,7 +370,7 @@ class AvatarExporter : MonoBehaviour
                 boneErrors += "Warnings:\n\n" + warnings;
             }
             // remove ending newlines from the last rule failure string that was added above
-            boneErrors = boneErrors.Substring(0, boneErrors.LastIndexOf("\n\n"));
+            boneErrors = boneErrors.Trim();
             EditorUtility.DisplayDialog("Error", boneErrors, "Ok");
             return;
         }
@@ -726,11 +724,10 @@ class AvatarExporter : MonoBehaviour
         {
             string humanName = bone.humanName;
             string userBoneName = bone.boneName;
-            string overteJointName;
             if (userBoneInfos.ContainsKey(userBoneName))
             {
                 ++userBoneInfos[userBoneName].mappingCount;
-                if (HUMANOID_TO_OVERTE_JOINT_NAME.TryGetValue(humanName, out overteJointName))
+                if (HUMANOID_TO_OVERTE_JOINT_NAME.ContainsKey(humanName))
                 {
                     userBoneInfos[userBoneName].humanName = humanName;
                     humanoidToUserBoneMappings.Add(humanName, userBoneName);
@@ -1245,8 +1242,9 @@ class AvatarExporter : MonoBehaviour
             }
 
             // don't store any material data for unsupported shader types
-            if (Array.IndexOf(SUPPORTED_SHADERS, shaderName) == -1)
+            if (!SUPPORTED_SHADERS.Contains(shaderName))
             {
+                Debug.LogWarning($"Unsuported shader {shaderName} in mat {materialName}");
                 if (!unsupportedShaderMaterials.Contains(materialName))
                 {
                     unsupportedShaderMaterials.Add(materialName);
@@ -1339,46 +1337,22 @@ class AvatarExporter : MonoBehaviour
 
     static void AddMaterialWarnings()
     {
-        string alternateStandardShaders = "";
-        string unsupportedShaders = "";
-        // combine all material names for each material warning into a comma-separated string
-        foreach (string materialName in alternateStandardShaderMaterials)
+        if (alternateStandardShaderMaterials.Count != 0)
         {
-            if (!string.IsNullOrEmpty(alternateStandardShaders))
-            {
-                alternateStandardShaders += ", ";
-            }
-            alternateStandardShaders += materialName;
+            string alternateStandardShaders = string.Join(", ", alternateStandardShaderMaterials);
+            warnings += alternateStandardShaderMaterials.Count == 1
+                ? $"The material {alternateStandardShaders} is not using the recommended variation of the Standard shader."
+                : $"The materials {alternateStandardShaders} are not using the recommended variation of the Standard shader."
+                  + " We recommend you change them to \"Autodesk Interactive\" shader for improved performance.\n\n";
         }
-        foreach (string materialName in unsupportedShaderMaterials)
+
+        if (unsupportedShaderMaterials.Count != 0)
         {
-            if (!string.IsNullOrEmpty(unsupportedShaders))
-            {
-                unsupportedShaders += ", ";
-            }
-            unsupportedShaders += materialName;
-        }
-        if (alternateStandardShaderMaterials.Count > 1)
-        {
-            warnings += "The materials " + alternateStandardShaders + " are not using the " +
-                        "recommended variation of the Standard shader. We recommend you change " +
-                        "them to Standard (Roughness setup) shader for improved performance.\n\n";
-        }
-        else if (alternateStandardShaderMaterials.Count == 1)
-        {
-            warnings += "The material " + alternateStandardShaders + " is not using the " +
-                        "recommended variation of the Standard shader. We recommend you change " +
-                        "it to Standard (Roughness setup) shader for improved performance.\n\n";
-        }
-        if (unsupportedShaderMaterials.Count > 1)
-        {
-            warnings += "The materials " + unsupportedShaders + " are using an unsupported shader. " +
-                        "We recommend you change them to a Standard shader type.\n\n";
-        }
-        else if (unsupportedShaderMaterials.Count == 1)
-        {
-            warnings += "The material " + unsupportedShaders + " is using an unsupported shader. " +
-                        "We recommend you change it to a Standard shader type.\n\n";
+            string unsupportedShaders = string.Join(", ", unsupportedShaderMaterials);
+            warnings += unsupportedShaderMaterials.Count == 1
+                ? $"The material {unsupportedShaders} is using an unsupported shader."
+                : $"The materials {unsupportedShaders} are using an unsupported shader."
+                  + " We recommend you change it to the \"Autodesk Interactive\" shader\n\n";
         }
     }
 
