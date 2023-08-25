@@ -1045,7 +1045,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     type: "Model",
  *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.75, z: -2 })),
  *     rotation: MyAvatar.orientation,
- *     modelURL: "https://apidocs.vircadia.dev/models/cowboy-hat.fbx",
+ *     modelURL: "https://apidocs.overte.org/examples/cowboy-hat.fbx",
  *     dimensions: { x: 0.8569, y: 0.3960, z: 1.0744 },
  *     lifetime: 300  // Delete after 5 minutes.
  * });
@@ -1160,7 +1160,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     speedSpread: 0.01,
  *     emitAcceleration: { x: 0, y: 0.02, z: 0 },
  *     polarFinish: Math.PI,
- *     textures: "https://content.vircadia.com/eu-c-1/vircadia-assets/interface/default/default_particle.png",
+ *     textures: "https://content.overte.org/Bazaar/Assets/Textures/Defaults/Interface/default_particle.png",
  *     particleRadius: 0.1,
  *     color: { red: 0, green: 255, blue: 0 },
  *     alphaFinish: 0,
