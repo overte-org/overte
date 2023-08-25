@@ -26,7 +26,7 @@
 
 class ScriptEngine;
 
-/// Represents a 2D or 3D pointer to the scripting engine. Exposed as <code><a href="https://apidocs.vircadia.dev/global.html#PointerEvent">PointerEvent</a></code>
+/// Represents a 2D or 3D pointer to the scripting engine. Exposed as <code><a href="https://apidocs.overte.org/global.html#PointerEvent">PointerEvent</a></code>
 class PointerEvent {
 public:
     enum Button {
