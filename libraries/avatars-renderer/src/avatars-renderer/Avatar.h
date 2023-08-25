@@ -358,7 +358,7 @@ public:
      * @param {Vec3} offset - The skeleton offset to set.
      * @example <caption>Raise your avatar off the ground a little.</caption>
      * // Raise your avatar off the ground a little.
-     * MyAvatar.setSkeletonOffset({ x: 0, y: 0.1: z: 0 });
+     * MyAvatar.setSkeletonOffset({ x: 0, y: 0.1, z: 0 });
      *
      * // Restore its offset after 5s.
      * Script.setTimeout(function () {
@@ -373,7 +373,7 @@ public:
      * @function MyAvatar.getSkeletonOffset
      * @returns {Vec3} The current skeleton offset.
      * @example <caption>Report your avatar's current skeleton offset.</caption>
-     * print(JSON.stringify(MyAvatar.getSkeletonOffset());
+     * print(JSON.stringify(MyAvatar.getSkeletonOffset()));
      */
     Q_INVOKABLE glm::vec3 getSkeletonOffset() { return _skeletonOffset; }
 
