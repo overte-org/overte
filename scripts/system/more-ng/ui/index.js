@@ -86,6 +86,8 @@ function buildAppList(app_list, clear) {
                     uninstallApp(app.url);
                 });
 
+            template.querySelector(".listing").classList.add("installed");
+
             app_info.installed_apps.push(app);
         }
         if (!app.installed) {

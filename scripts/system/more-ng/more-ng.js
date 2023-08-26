@@ -110,7 +110,7 @@ function installScript(url) {
     app_info.thirdparty_apps.forEach((app) => {
         if (app.url === url) {
             // Update installed list to include newly installed app
-            logs("Updating installed apps list");
+            app.installed = true;
             Settings.setValue("more_installed_list", [...installed_apps, app]);
         }
     });
@@ -122,8 +122,6 @@ function getInstalledApps() {
     let list = [];
 
     list = installed_apps;
-
-    // logs(list);
 
     running_apps.forEach((app) => {
         let data_exists = false; // Do we have a formatted object saved in our settings?
@@ -153,6 +151,7 @@ function getInstalledApps() {
 
     // Save our updated list
     Settings.setValue("more_installed_list", list);
+    app_info.installed_apps = list;
     _sendMessage({ action: "installed_apps", data: list });
 }
 
@@ -175,7 +174,6 @@ async function findThirdParty() {
             let found = false;
             let repo_valid_apps = [];
 
-            logs(app);
             const app_dir =
                 repo_data.repo.split("/metadata.json")[0] +
                 "/" +
@@ -201,15 +199,12 @@ async function findThirdParty() {
             };
 
             repo_valid_apps.push(app_form);
-            // app_info.thirdparty_apps.push(app_form);
+            app_info.thirdparty_apps.push(app_form);
 
             return _sendMessage({
                 action: "repo_loaded",
                 data: repo_valid_apps,
             });
-
-            logs(icon_url);
-            logs(script_url);
         });
     });
 }
@@ -227,6 +222,6 @@ async function _getRequest(url) {
         xhr.send();
     });
 }
-Settings.setValue("more_installed_list", []);
+// Settings.setValue("more_installed_list", []);
 
 repo_list = Settings.getValue("more_repo_list", repo_list);
