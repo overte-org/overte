@@ -104,6 +104,13 @@ public:
     int getWidth();
     int getHeight();
 
+    /*@jsdoc
+     * Checks whether the keyboard focus belongs to overlay UI window.
+     * @function Desktop.isOverlayWindowFocused
+     * @returns {boolean} <code>true</code> if the keyboard focus is on overlay UI window, <code>false</code> if not.
+     */
+    Q_INVOKABLE bool isOverlayWindowFocused() { return _isOverlayWindowFocused; };
+
 signals:
 
     /*@jsdoc
@@ -124,6 +131,7 @@ private:
     static QVariantMap getRelativePositionAnchor();
     Q_INVOKABLE static QVariantMap getPresentationMode();
     const bool _restricted;
+    std::atomic<bool> _isOverlayWindowFocused { false };
 };
 
 
