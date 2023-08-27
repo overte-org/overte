@@ -363,8 +363,8 @@ void FlowThread::computeRecovery() {
     int parentIndex = _joints[0];
     auto parentJoint = _jointsPointer->at(parentIndex);
     _jointsPointer->at(parentIndex)._recoveryPosition = parentJoint._recoveryPosition = parentJoint._currentPosition;
-    glm::quat parentRotation = parentJoint._parentWorldRotation * parentJoint._initialRotation;
     for (size_t i = 1; i < _joints.size(); i++) {
+        glm::quat parentRotation = parentJoint._parentWorldRotation * parentJoint._initialRotation;
         auto joint = _jointsPointer->at(_joints[i]);
         _jointsPointer->at(_joints[i])._recoveryPosition = joint._recoveryPosition = parentJoint._recoveryPosition + (parentRotation * (joint._initialTranslation * _rigScale));
         parentJoint = joint;
