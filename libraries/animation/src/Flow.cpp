@@ -320,7 +320,8 @@ void FlowJoint::toHelperJoint(const glm::vec3& initialPosition, float length) {
     _length = length;
 }
 
-FlowThread::FlowThread(int rootIndex, std::map<int, FlowJoint>* joints) {
+FlowThread::FlowThread(int rootIndex, std::map<int, FlowJoint>* joints, float rigScale) {
+    _rigScale = rigScale;
     _jointsPointer = joints;
     computeFlowThread(rootIndex);
 }
@@ -365,7 +366,7 @@ void FlowThread::computeRecovery() {
     glm::quat parentRotation = parentJoint._parentWorldRotation * parentJoint._initialRotation;
     for (size_t i = 1; i < _joints.size(); i++) {
         auto joint = _jointsPointer->at(_joints[i]);
-        _jointsPointer->at(_joints[i])._recoveryPosition = joint._recoveryPosition = parentJoint._recoveryPosition + (parentRotation * (joint._initialTranslation * 0.01f));
+        _jointsPointer->at(_joints[i])._recoveryPosition = joint._recoveryPosition = parentJoint._recoveryPosition + (parentRotation * (joint._initialTranslation * _rigScale));
         parentJoint = joint;
     }
 };
@@ -405,7 +406,7 @@ void FlowThread::computeJointRotations() {
     auto joint0 = _jointsPointer->at(_joints[0]);
     auto joint1 = _jointsPointer->at(_joints[1]);
 
-    auto initial_pos1 = pos0 + (joint0._initialRotation * (joint1._initialTranslation * 0.01f));
+    auto initial_pos1 = pos0 + (joint0._initialRotation * (joint1._initialTranslation * _rigScale));
 
     auto vec0 = initial_pos1 - pos0;
     auto vec1 = pos1 - pos0;
@@ -417,11 +418,11 @@ void FlowThread::computeJointRotations() {
     for (size_t i = 1; i < _joints.size() - 1; i++) {
         auto nextJoint = _jointsPointer->at(_joints[i + 1]);
         for (size_t j = i; j < _joints.size(); j++) {
-            _rootFramePositions[j] = glm::inverse(joint0._currentRotation) * _rootFramePositions[j] - (joint0._initialTranslation * 0.01f);
+            _rootFramePositions[j] = glm::inverse(joint0._currentRotation) * _rootFramePositions[j] - (joint0._initialTranslation * _rigScale);
         }
         pos0 = _rootFramePositions[i];
         pos1 = _rootFramePositions[i + 1];
-        initial_pos1 = pos0 + joint1._initialRotation * (nextJoint._initialTranslation * 0.01f);
+        initial_pos1 = pos0 + joint1._initialRotation * (nextJoint._initialTranslation * _rigScale);
 
         vec0 = initial_pos1 - pos0;
         vec1 = pos1 - pos0;
@@ -554,8 +555,9 @@ void Flow::calculateConstraints(const std::shared_ptr<AnimSkeleton>& skeleton,
         }
     }
     int extraIndex = -1;
+    qDebug() << "GetScaleFactorGeometryToUnscaledRig() " << _rig->GetScaleFactorGeometryToUnscaledRig();
     for (size_t i = 0; i < roots.size(); i++) {
-        FlowThread thread = FlowThread(roots[i], &_flowJointData);
+        FlowThread thread = FlowThread(roots[i], &_flowJointData, _rig->GetScaleFactorGeometryToUnscaledRig());
         // add threads with at least 2 joints
         if (thread._joints.size() > 0) {
             if (thread._joints.size() == 1) {
@@ -570,7 +572,7 @@ void Flow::calculateConstraints(const std::shared_ptr<AnimSkeleton>& skeleton,
                 glm::vec3 translation = glm::vec3(0.0f, HELPER_JOINT_LENGTH, 0.0f);
                 newJoint.setInitialData(jointPosition + translation, 100.0f * translation , Quaternions::IDENTITY, jointPosition);
                 _flowJointData.insert(std::pair<int, FlowJoint>(extraIndex, newJoint));
-                FlowThread newThread = FlowThread(jointIndex, &_flowJointData);
+                FlowThread newThread = FlowThread(jointIndex, &_flowJointData, _rig->GetScaleFactorGeometryToUnscaledRig());
                 if (newThread._joints.size() > 1) {
                     _jointThreads.push_back(newThread);
                 }
