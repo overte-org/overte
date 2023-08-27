@@ -445,6 +445,7 @@ void FlowThread::setScale(float scale, bool initScale) {
 }
 
 FlowThread& FlowThread::operator=(const FlowThread& otherFlowThread) {
+    _rigScale = otherFlowThread._rigScale;
     for (int jointIndex: otherFlowThread._joints) {
         auto& joint = otherFlowThread._jointsPointer->at(jointIndex);
         auto& myJoint = _jointsPointer->at(jointIndex);
@@ -798,6 +799,7 @@ Flow& Flow::operator=(const Flow& otherFlow) {
     _active = otherFlow.getActive();
     _scale = otherFlow.getScale();
     _isScaleSet = true;
+    _rig = otherFlow._rig;
     auto &threads = otherFlow.getThreads();
     if (threads.size() == _jointThreads.size()) {
         for (size_t i = 0; i < _jointThreads.size(); i++) {
