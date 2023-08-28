@@ -23,15 +23,12 @@ public:
      *     <tr><th>Value</th><th>Name</th><th>Description</th>
      *   </thead>
      *   <tbody>
-     *     <tr><td><code>0</code></td><td>RotationAndPosition</td><td>Attempt to reach the rotation and position end 
+     *     <tr><td><code>0</code></td><td>RotationAndPosition</td><td>Attempt to reach the rotation and position end
      *       effector.</td></tr>
      *     <tr><td><code>1</code></td><td>RotationOnly</td><td>Attempt to reach the end effector rotation only.</td></tr>
-     *     <tr><td><code>2</code></td><td>HmdHead</td><td>
-     *       <p>A special mode of IK that would attempt to prevent unnecessary bending of the spine.</p>
-     *       <p class="important">Deprecated: This target type is deprecated and will be removed.</p></td></tr>
-     *     <tr><td><code>3</code></td><td>HipsRelativeRotationAndPosition</td><td>Attempt to reach a rotation and position end 
+     *     <tr><td><code>3</code></td><td>HipsRelativeRotationAndPosition</td><td>Attempt to reach a rotation and position end
      *       effector that is not in absolute rig coordinates but is offset by the avatar hips translation.</td></tr>
-     *     <tr><td><code>4</code></td><td>Spline</td><td>Use a cubic Hermite spline to model the human spine. This prevents 
+     *     <tr><td><code>4</code></td><td>Spline</td><td>Use a cubic Hermite spline to model the human spine. This prevents
      *       kinks in the spine and allows for a small amount of stretch and squash.</td></tr>
      *     <tr><td><code>5</code></td><td>Unknown</td><td>IK is disabled.</td></tr>
      *   </tbody>

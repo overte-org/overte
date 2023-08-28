@@ -38,7 +38,7 @@ const quint64 MIN_TIME_BETWEEN_MY_AVATAR_DATA_SENDS = USECS_PER_SECOND / CLIENT_
 /*@jsdoc
  * The <code>AvatarList</code> API provides information about avatars within the current domain.
  *
- * <p><strong>Warning:</strong> An API named "<code>AvatarList</code>" is also provided for Interface, client entity, and avatar 
+ * <p><strong>Warning:</strong> An API named "<code>AvatarList</code>" is also provided for Interface, client entity, and avatar
  * scripts, however, it is a synonym for the {@link AvatarManager} API.</p>
  *
  * @namespace AvatarList
@@ -79,10 +79,10 @@ public:
     int size() { QReadLocker lock(&_hashLock); return _avatarHash.size(); }
 
     // Currently, your own avatar will be included as the null avatar id.
-    
+
     /*@jsdoc
      * Gets the IDs of all avatars in the domain.
-     * <p><strong>Warning:</strong> If the AC script is acting as an avatar (i.e., <code>Agent.isAvatar == true</code>) the 
+     * <p><strong>Warning:</strong> If the AC script is acting as an avatar (i.e., <code>Agent.isAvatar == true</code>) the
      * avatar's ID is NOT included in results.</p>
      * @function AvatarList.getAvatarIdentifiers
      * @returns {Uuid[]} The IDs of all avatars in the domain (excluding AC script's avatar).
@@ -176,51 +176,25 @@ public slots:
      * @function AvatarList.isAvatarInRange
      * @param {string} position - The test position.
      * @param {string} range - The test distance.
-     * @returns {boolean} <code>true</code> if there's an avatar within the specified distance of the point, <code>false</code> 
+     * @returns {boolean} <code>true</code> if there's an avatar within the specified distance of the point, <code>false</code>
      *     if not.
      */
     bool isAvatarInRange(const glm::vec3 & position, const float range);
 
 protected slots:
-
-    /*@jsdoc
-     * @function AvatarList.sessionUUIDChanged
-     * @param {Uuid} sessionUUID - New session ID.
-     * @param {Uuid} oldSessionUUID - Old session ID.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void sessionUUIDChanged(const QUuid& sessionUUID, const QUuid& oldUUID);
 
-    /*@jsdoc
-     * @function AvatarList.processAvatarDataPacket
-     * @param {object} message - Message.
-     * @param {object} sendingNode - Sending node.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void processAvatarDataPacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer sendingNode);
-   
-    /*@jsdoc
-     * @function AvatarList.processAvatarIdentityPacket
-     * @param {object} message - Message.
-     * @param {object} sendingNode - Sending node.
-     * @deprecated This function is deprecated and will be removed.
-     */
+
+    // TODO: Deprecated by documentation, please review for accuracy
     void processAvatarIdentityPacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer sendingNode);
-    
-    /*@jsdoc
-     * @function AvatarList.processBulkAvatarTraits
-     * @param {object} message - Message.
-     * @param {object} sendingNode - Sending node.
-     * @deprecated This function is deprecated and will be removed.
-     */
+
+    // TODO: Deprecated by documentation, please review for accuracy
     void processBulkAvatarTraits(QSharedPointer<ReceivedMessage> message, SharedNodePointer sendingNode);
-    
-    /*@jsdoc
-     * @function AvatarList.processKillAvatar
-     * @param {object} message - Message.
-     * @param {object} sendingNode - Sending node.
-     * @deprecated This function is deprecated and will be removed.
-     */
+
+    // TODO: Deprecated by documentation, please review for accuracy
     void processKillAvatar(QSharedPointer<ReceivedMessage> message, SharedNodePointer sendingNode);
 
 protected:
@@ -233,9 +207,9 @@ protected:
         bool& isNew);
     virtual AvatarSharedPointer findAvatar(const QUuid& sessionUUID) const; // uses a QReadLocker on the hashLock
     virtual void removeAvatar(const QUuid& sessionUUID, KillAvatarReason removalReason = KillAvatarReason::NoReason);
-    
+
     virtual void handleRemovedAvatar(const AvatarSharedPointer& removedAvatar, KillAvatarReason removalReason = KillAvatarReason::NoReason);
-    
+
     mutable QReadWriteLock _hashLock;
     AvatarHash _avatarHash;
 

@@ -59,30 +59,16 @@ public slots:
      */
     void setCenterRadius(float radius) { _hasViewFrustum = true; _viewFrustum.setCenterRadius(radius); }
 
-    /*@jsdoc
-     * Sets the radius of the center "keyhole" in the view frustum.
-     * @function EntityViewer.setKeyholeRadius
-     * @param {number} radius - The radius of the center "keyhole" in the view frustum.
-     * @deprecated This function is deprecated and will be removed. Use {@link EntityViewer.setCenterRadius|setCenterRadius} 
-     *     instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void setKeyholeRadius(float radius) { _hasViewFrustum = true; _viewFrustum.setCenterRadius(radius); } // TODO: remove this legacy support
 
 
     // setters for LOD and PPS
 
-    /*@jsdoc
-     * @function EntityViewer.setVoxelSizeScale
-     * @param {number} sizeScale - The voxel size scale.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void setVoxelSizeScale(float sizeScale) { _octreeQuery.setOctreeSizeScale(sizeScale) ; }
 
-    /*@jsdoc
-     * @function EntityViewer.setBoundaryLevelAdjust
-     * @param {number} boundaryLevelAdjust - The boundary level adjust factor.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void setBoundaryLevelAdjust(int boundaryLevelAdjust) { _octreeQuery.setBoundaryLevelAdjust(boundaryLevelAdjust); }
 
     /*@jsdoc
@@ -111,18 +97,10 @@ public slots:
 
     // getters for LOD and PPS
 
-    /*@jsdoc
-     * @function EntityViewer.getVoxelSizeScale
-     * @returns {number} The voxel size scale.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     float getVoxelSizeScale() const { return _octreeQuery.getOctreeSizeScale(); }
 
-    /*@jsdoc
-     * @function EntityViewer.getBoundaryLevelAdjust
-     * @returns {number} The boundary level adjust factor.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     int getBoundaryLevelAdjust() const { return _octreeQuery.getBoundaryLevelAdjust(); }
 
     /*@jsdoc

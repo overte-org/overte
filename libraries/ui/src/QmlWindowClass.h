@@ -24,8 +24,8 @@ class ScriptEngine;
 /*@jsdoc
  * A <code>OverlayWindow</code> displays a QML window inside Interface.
  *
- * <p>The QML can optionally include a <code>WebView</code> control that embeds an HTML-based windows. (The <code>WebView</code> 
- * control is defined by a "WebView.qml" file included in the Interface install.) Alternatively, an {@link OverlayWebWindow} 
+ * <p>The QML can optionally include a <code>WebView</code> control that embeds an HTML-based windows. (The <code>WebView</code>
+ * control is defined by a "WebView.qml" file included in the Interface install.) Alternatively, an {@link OverlayWebWindow}
  * can be used for HTML-based windows.</p>
  *
  * <p>Create using <code>new OverlayWindow(...)</code>.</p>
@@ -47,7 +47,7 @@ class ScriptEngine;
  * @property {boolean} visible - <code>true</code> if the window is visible, <code>false</code> if it isn't.
  */
 
-// FIXME refactor this class to be a QQuickItem derived type and eliminate the needless wrapping 
+// FIXME refactor this class to be a QQuickItem derived type and eliminate the needless wrapping
 class QmlWindowClass : public QObject {
     Q_OBJECT
     Q_PROPERTY(glm::vec2 position READ getPosition WRITE setPosition NOTIFY positionChanged)
@@ -68,11 +68,7 @@ public:
     QmlWindowClass(bool restricted);
     ~QmlWindowClass();
 
-    /*@jsdoc
-     * @function OverlayWindow.initQml
-     * @param {OverlayWindow.Properties} properties - Properties.
-     * @deprecated This method is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // FIXME: This shouldn't be in the API. It is an internal function used in object construction.
     Q_INVOKABLE virtual void initQml(QVariantMap properties);
 
@@ -162,11 +158,7 @@ public slots:
      */
     Q_INVOKABLE void close();
 
-    /*@jsdoc
-     * @function OverlayWindow.getEventBridge
-     * @returns {object} Object.
-     * @deprecated This method is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // Shouldn't be in the API: It returns the OverlayWindow object, not the even bridge.
     Q_INVOKABLE QObject* getEventBridge() { return this; };
 
@@ -180,37 +172,37 @@ public slots:
      * @param {string | object} message - The message to send to the QML.
      * @example <caption>Send and receive messages with a QML window.</caption>
      * // JavaScript file.
-     * 
+     *
      * var overlayWindow = new OverlayWindow({
      *     title: "Overlay Window",
      *     source: Script.resolvePath("OverlayWindow.qml"),
      *     width: 400,
      *     height: 300
      * });
-     * 
+     *
      * overlayWindow.fromQml.connect(function (message) {
      *     print("Message received: " + message);
      * });
-     * 
+     *
      * Script.setTimeout(function () {
      *     overlayWindow.sendToQml("Hello world!");
      * }, 2000);
-     * 
+     *
      * @example
      * // QML file, "OverlayWindow.qml".
      *
      * import QtQuick 2.5
      * import QtQuick.Controls 1.4
-     * 
+     *
      * Rectangle {
      *     width: parent.width
      *     height: parent.height
-     * 
+     *
      *     function fromScript(message) {
      *         text.text = message;
      *         sendToScript("Hello back!");
      *     }
-     * 
+     *
      *     Label{
      *         id: text
      *         anchors.centerIn : parent
@@ -221,10 +213,7 @@ public slots:
     // Scripts can use this to send a message to the QML object
     void sendToQml(const QVariant& message);
 
-    /*@jsdoc
-     * Calls a <code>clearWindow()</code> function if present in the QML.
-     * @function OverlayWindow.clearDebugWindow
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void clearDebugWindow();
 
     /*@jsdoc
@@ -239,11 +228,7 @@ public slots:
     // QmlWindow content may include WebView requiring EventBridge.
     void emitScriptEvent(const QVariant& scriptMessage);
 
-    /*@jsdoc
-     * @function OverlayWindow.emitWebEvent
-     * @param {object|string} message - The message.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void emitWebEvent(const QVariant& webMessage);
 
 signals:
@@ -302,13 +287,7 @@ signals:
     // Scripts can connect to this signal to receive messages from the QML object
     void fromQml(const QVariant& message);
 
-
-    /*@jsdoc
-     * @function OverlayWindow.scriptEventReceived
-     * @param {object} message - The message.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // QmlWindow content may include WebView requiring EventBridge.
     void scriptEventReceived(const QVariant& message);
 
@@ -323,32 +302,21 @@ signals:
 
 protected slots:
 
-    /*@jsdoc
-     * @function OverlayWindow.hasMoved
-     * @param {Vec2} position - Position.
-     * @deprecated This method is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // Shouldn't be in the API: it is just connected to in order to emit a signal.
     void hasMoved(QVector2D);
 
-    /*@jsdoc
-     * @function OverlayWindow.hasClosed
-     * @deprecated This method is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // Shouldn't be in the API: it is just connected to in order to emit a signal.
     void hasClosed();
 
-    /*@jsdoc
-     * @function OverlayWindow.qmlToScript
-     * @param {object} message - Message.
-     * @deprecated This method is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // Shouldn't be in the API: it is just connected to in order to emit a signal.
     void qmlToScript(const QVariant& message);
 
 protected:
     static QVariantMap parseArguments(ScriptContext* context);
-    static ScriptValue internalConstructor(ScriptContext* context, ScriptEngine* engine, 
+    static ScriptValue internalConstructor(ScriptContext* context, ScriptEngine* engine,
         std::function<QmlWindowClass*(QVariantMap)> function);
 
     virtual QString qmlSource() const { return "QmlWindow.qml"; }

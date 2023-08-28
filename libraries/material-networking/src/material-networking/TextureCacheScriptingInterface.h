@@ -43,7 +43,6 @@ class TextureCacheScriptingInterface : public ScriptableResourceCache, public De
      *     <em>Read-only.</em>
      *
      * @borrows ResourceCache.getResourceList as getResourceList
-     * @borrows ResourceCache.updateTotalSize as updateTotalSize
      * @borrows ResourceCache.prefetch as prefetch
      * @borrows ResourceCache.dirty as dirty
      */
@@ -57,18 +56,14 @@ public:
      * @variation 0
      * @param {string} url - The URL of the texture to prefetch.
      * @param {TextureCache.TextureType} type - The type of the texture.
-     * @param {number} [maxNumPixels=67108864] - The maximum number of pixels to use for the image. If the texture has more 
+     * @param {number} [maxNumPixels=67108864] - The maximum number of pixels to use for the image. If the texture has more
      *     than this number it is downscaled.
      * @returns {ResourceObject} A resource object.
      */
     Q_INVOKABLE ScriptableResource* prefetch(const QUrl& url, int type, int maxNumPixels = ABSOLUTE_MAX_TEXTURE_NUM_PIXELS);
 
 signals:
-    /*@jsdoc
-     * @function TextureCache.spectatorCameraFramebufferReset
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void spectatorCameraFramebufferReset();
 };
 

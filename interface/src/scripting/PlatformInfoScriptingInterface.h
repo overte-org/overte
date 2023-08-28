@@ -60,56 +60,19 @@ public:
     Q_ENUM(PlatformTier);
 
 public slots:
-    /*
-     * @function PlatformInfo.getInstance
-     * @deprecated This function is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Gets the operating system type.
-     * @function PlatformInfo.getOperatingSystemType
-     * @returns {string} The operating system type: <code>"WINDOWS"</code>, <code>"MACOS"</code>, or <code>"UNKNOWN"</code>.
-     * @deprecated This function is deprecated and will be removed.
-     *     Use <code>JSON.parse({@link PlatformInfo.getComputer|PlatformInfo.getComputer()}).OS</code> instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     QString getOperatingSystemType();
 
-    /*@jsdoc
-     * Gets information on the CPU model.
-     * @function PlatformInfo.getCPUBrand
-     * @returns {string} Information on the CPU.
-     * @deprecated This function is deprecated and will be removed.
-     *     Use <code>JSON.parse({@link PlatformInfo.getCPU|PlatformInfo.getCPU(0)}).model</code> instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     QString getCPUBrand();
 
-    /*@jsdoc
-     * Gets the number of logical CPU cores.
-     * @function PlatformInfo.getNumLogicalCores
-     * @returns {number} The number of logical CPU cores.
-     * @deprecated This function is deprecated and will be removed.
-     *     Use <code>JSON.parse({@link PlatformInfo.getCPU|PlatformInfo.getCPU(0)}).numCores</code> instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     unsigned int getNumLogicalCores();
 
-    /*@jsdoc
-     * Gets the total amount of usable physical memory, in MB.
-     * @function PlatformInfo.getTotalSystemMemoryMB
-     * @returns {number} The total system memory in megabytes.
-     * @deprecated This function is deprecated and will be removed.
-     *     Use <code>JSON.parse({@link PlatformInfo.getMemory|PlatformInfo.getMemory()}).memTotal</code> instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     int getTotalSystemMemoryMB();
 
-    /*@jsdoc
-     * Gets the model of the graphics card currently being used.
-     * @function PlatformInfo.getGraphicsCardType
-     * @returns {string} The model of the graphics card currently being used.
-     * @deprecated This function is deprecated and will be removed.
-     *     Use <code>JSON.parse({@link PlatformInfo.getGPU|PlatformInfo.getGPU(} 
-     *     {@link PlatformInfo.getMasterGPU|PlatformInfo.getMasterGPU() )}).model</code> 
-     *     instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     QString getGraphicsCardType();
 
     /*@jsdoc
@@ -129,7 +92,7 @@ public slots:
     /*@jsdoc
      * Checks whether HTML on 3D surfaces (e.g., Web entities) is supported.
      * @function PlatformInfo.has3DHTML
-     * @returns {boolean} <code>true</code> if the current display supports HTML on 3D surfaces, <code>false</code> if it 
+     * @returns {boolean} <code>true</code> if the current display supports HTML on 3D surfaces, <code>false</code> if it
      *     doesn't.
      */
     bool has3DHTML();
@@ -272,7 +235,7 @@ public slots:
     /*@jsdoc
      * Gets whether the current hardware can use deferred rendering.
      * @function PlatformInfo.isRenderMethodDeferredCapable
-     * @returns {boolean} <code>true</code> if the current hardware can use deferred rendering, <code>false</code> if it can't. 
+     * @returns {boolean} <code>true</code> if the current hardware can use deferred rendering, <code>false</code> if it can't.
      */
     bool isRenderMethodDeferredCapable();
 };

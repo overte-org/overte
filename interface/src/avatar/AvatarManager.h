@@ -38,11 +38,11 @@
 class ScriptEngine;
 using SortedAvatar = std::pair<float, std::shared_ptr<Avatar>>;
 
-/*@jsdoc 
- * The <code>AvatarManager</code> API provides information about avatars within the current domain. The avatars available are 
+/*@jsdoc
+ * The <code>AvatarManager</code> API provides information about avatars within the current domain. The avatars available are
  * those that Interface has displayed and therefore knows about.
  *
- * <p><strong>Warning:</strong> This API is also provided to Interface, client entity, and avatar scripts as the synonym, 
+ * <p><strong>Warning:</strong> This API is also provided to Interface, client entity, and avatar scripts as the synonym,
  * "<code>AvatarList</code>". For assignment client scripts, see the separate {@link AvatarList} API.</p>
  *
  * @namespace AvatarManager
@@ -107,7 +107,7 @@ public:
     std::shared_ptr<MyAvatar> getMyAvatar() { return _myAvatar; }
     glm::vec3 getMyAvatarPosition() const { return _myAvatar->getWorldPosition(); }
 
-    /*@jsdoc 
+    /*@jsdoc
      * @comment Uses the base class's JSDoc.
      */
     // Null/Default-constructed QUuids will return MyAvatar
@@ -171,7 +171,7 @@ public:
      * @param {PickRay} ray - The ray to use for finding avatars.
      * @param {Uuid[]} [avatarsToInclude=[]] - If not empty then search is restricted to these avatars.
      * @param {Uuid[]} [avatarsToDiscard=[]] - Avatars to ignore in the search.
-     * @param {boolean} [pickAgainstMesh=true] - If <code>true</code> then the exact intersection with the avatar mesh is 
+     * @param {boolean} [pickAgainstMesh=true] - If <code>true</code> then the exact intersection with the avatar mesh is
      *     calculated, if <code>false</code> then the intersection is approximate.
      * @returns {RayToAvatarIntersectionResult} The result of the search for the first intersected avatar.
      * @example <caption>Find the first avatar directly in front of you.</caption>
@@ -179,7 +179,7 @@ public:
      *     origin: MyAvatar.position,
      *     direction: Quat.getFront(MyAvatar.orientation)
      * };
-     * 
+     *
      * var intersection = AvatarManager.findRayIntersection(pickRay);
      * if (intersection.intersects) {
      *     print("Avatar found: " + JSON.stringify(intersection));
@@ -191,54 +191,30 @@ public:
                                                                   const ScriptValue& avatarIdsToInclude = ScriptValue(),
                                                                   const ScriptValue& avatarIdsToDiscard = ScriptValue(),
                                                                   bool pickAgainstMesh = true);
-    /*@jsdoc
-     * @function AvatarManager.findRayIntersectionVector
-     * @param {PickRay} ray - Ray.
-     * @param {Uuid[]} avatarsToInclude - Avatars to include.
-     * @param {Uuid[]} avatarsToDiscard - Avatars to discard.
-     * @param {boolean} pickAgainstMesh - Pick against mesh.
-     * @returns {RayToAvatarIntersectionResult} Intersection result.
-     * @deprecated This function is deprecated and will be removed.
-     */
+
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE RayToAvatarIntersectionResult findRayIntersectionVector(const PickRay& ray,
                                                                         const QVector<EntityItemID>& avatarsToInclude,
                                                                         const QVector<EntityItemID>& avatarsToDiscard,
                                                                         bool pickAgainstMesh);
 
-    /*@jsdoc
-     * @function AvatarManager.findParabolaIntersectionVector
-     * @param {PickParabola} pick - Pick.
-     * @param {Uuid[]} avatarsToInclude - Avatars to include.
-     * @param {Uuid[]} avatarsToDiscard - Avatars to discard.
-     * @returns {ParabolaToAvatarIntersectionResult} Intersection result.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE ParabolaToAvatarIntersectionResult findParabolaIntersectionVector(const PickParabola& pick,
                                                                                   const QVector<EntityItemID>& avatarsToInclude,
                                                                                   const QVector<EntityItemID>& avatarsToDiscard);
 
-    /*@jsdoc
-     * @function AvatarManager.getAvatarSortCoefficient
-     * @param {string} name - Name.
-     * @returns {number} Value.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // TODO: remove this HACK once we settle on optimal default sort coefficients
     Q_INVOKABLE float getAvatarSortCoefficient(const QString& name);
 
-    /*@jsdoc
-     * @function AvatarManager.setAvatarSortCoefficient
-     * @param {string} name - Name
-     * @param {number} value - Value.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE void setAvatarSortCoefficient(const QString& name, const ScriptValue& value);
 
     /*@jsdoc
-     * Gets PAL (People Access List) data for one or more avatars. Using this method is faster than iterating over each avatar 
+     * Gets PAL (People Access List) data for one or more avatars. Using this method is faster than iterating over each avatar
      * and obtaining data about each individually.
      * @function AvatarManager.getPalData
-     * @param {string[]} [avatarIDs=[]] - The IDs of the avatars to get the PAL data for. If empty, then PAL data is obtained 
+     * @param {string[]} [avatarIDs=[]] - The IDs of the avatars to get the PAL data for. If empty, then PAL data is obtained
      *     for all avatars.
      * @returns {Object<"data", AvatarManager.PalData[]>} An array of objects, each object being the PAL data for an avatar.
      * @example <caption>Report the PAL data for an avatar nearby.</caption>
@@ -257,11 +233,7 @@ public:
     void accumulateGrabPositions(std::map<QUuid, GrabLocationAccumulator>& grabAccumulators);
 
 public slots:
-    /*@jsdoc
-     * @function AvatarManager.updateAvatarRenderStatus
-     * @param {boolean} shouldRenderAvatars - Should render avatars.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void updateAvatarRenderStatus(bool shouldRenderAvatars);
 
     /*@jsdoc

@@ -498,12 +498,7 @@ public:
     void setTargetScale(float targetScale) override;
     float getTargetScale() const { return _targetScale; }
 
-    /*@jsdoc
-     * @function MyAvatar.getSimulationRate
-     * @param {AvatarSimulationRate} [rateName=""] - Rate name.
-     * @returns {number} Simulation rate in Hz.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE float getSimulationRate(const QString& rateName = QString("")) const;
 
     bool hasNewJointData() const { return _hasNewJointData; }
@@ -607,26 +602,14 @@ public slots:
      */
     glm::quat getRightPalmRotation() const;
 
-    /*@jsdoc
-     * @function MyAvatar.setModelURLFinished
-     * @param {boolean} success
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // hooked up to Model::setURLFinished signal
     void setModelURLFinished(bool success);
 
-    /*@jsdoc
-     * @function MyAvatar.rigReady
-     * @deprecated This function is deprecated and will be removed.
-     */
-    // Hooked up to Model::rigReady signal
+    // TODO: Deprecated by documentation, please review for accuracy
     void rigReady();
 
-    /*@jsdoc
-     * @function MyAvatar.rigReset
-     * @deprecated This function is deprecated and will be removed.
-     */
-    // Hooked up to Model::rigReset signal
+    // TODO: Deprecated by documentation, please review for accuracy
     void rigReset();
 
 protected:

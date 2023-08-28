@@ -71,66 +71,7 @@ const QString GET_PLACE = "/api/v1/places/%1";
  *     <em>Read-only.</em>
  */
 
-/*@jsdoc
- * The <code>AddressManager</code> API provides facilities related to your current location in the directory services.
- *
- * @namespace AddressManager
- *
- * @hifi-interface
- * @hifi-client-entity
- * @hifi-avatar
- *
- * @deprecated This API is deprecated and will be removed. Use the {@link location} or {@link Window|Window.location} APIs
- * instead.
- *
- * @property {Uuid} domainID - A UUID uniquely identifying the domain you're visiting. Is {@link Uuid(0)|Uuid.NULL} if you're not
- *     connected to the domain or are in a serverless domain.
- *     <em>Read-only.</em>
- * @property {string} hostname - The name of the domain for your current directory services address (e.g., <code>"DomainName"</code>,
- *     <code>localhost</code>, or an IP address). Is blank if you're in a serverless domain.
- *     <em>Read-only.</em>
- * @property {string} href - Your current directory services address (e.g., <code>"hifi://domainname/15,-10,26/0,0,0,1"</code>)
- *     regardless of whether or not you're connected to the domain. Starts with <code>"file:///"</code> if you're in a
- *     serverless domain.
- *     <em>Read-only.</em>
- * @property {boolean} isConnected - <code>true</code> if you're connected to the domain in your current <code>href</code>
- *     directory services address, otherwise <code>false</code>.
- * @property {string} pathname - The location and orientation in your current <code>href</code> directory services address
- *     (e.g., <code>"/15,-10,26/0,0,0,1"</code>).
- *     <em>Read-only.</em>
- * @property {string} placename - The place name in your current <code>href</code> directory services address
- *     (e.g., <code>"DomainName"</code>). Is blank if your <code>hostname</code> is an IP address.
- *     <em>Read-only.</em>
- * @property {string} protocol - The protocol of your current <code>href</code> directory services address (e.g., <code>"hifi"</code>).
- *     <em>Read-only.</em>
- *
- * @borrows location.handleLookupString as handleLookupString
- * @borrows location.goToViewpointForPath as goToViewpointForPath
- * @borrows location.goBack as goBack
- * @borrows location.goForward as goForward
- * @borrows location.goToLocalSandbox as goToLocalSandbox
- * @borrows location.goToEntry as goToEntry
- * @borrows location.goToUser as goToUser
- * @borrows location.goToLastAddress as goToLastAddress
- * @borrows location.canGoBack as canGoBack
- * @borrows location.refreshPreviousLookup as refreshPreviousLookup
- * @borrows location.storeCurrentAddress as storeCurrentAddress
- * @borrows location.copyAddress as copyAddress
- * @borrows location.copyPath as copyPath
- * @borrows location.lookupShareableNameForDomainID as lookupShareableNameForDomainID
- *
- * @borrows location.lookupResultsFinished as lookupResultsFinished
- * @borrows location.lookupResultIsOffline as lookupResultIsOffline
- * @borrows location.lookupResultIsNotFound as lookupResultIsNotFound
- * @borrows location.possibleDomainChangeRequired as possibleDomainChangeRequired
- * @borrows location.locationChangeRequired as locationChangeRequired
- * @borrows location.possibleDomainChangeRequiredViaICEForID as possibleDomainChangeRequiredViaICEForID
- * @borrows location.pathChangeRequired as pathChangeRequired
- * @borrows location.hostChanged as hostChanged
- * @borrows location.goBackPossible as goBackPossible
- * @borrows location.goForwardPossible as goForwardPossible
- */
-
+// TODO: Deprecated by documentation, please review for accuracy
 class AddressManager : public QObject, public Dependency {
     Q_OBJECT
     SINGLETON_DEPENDENCY
@@ -261,14 +202,7 @@ public slots:
      */
     void handleLookupString(const QString& lookupString, bool fromSuggestions = false);
 
-    /*@jsdoc
-     * Takes you to a position and orientation resulting from a lookup for a named path in the domain (set in the domain
-     * server's settings).
-     * @function location.goToViewpointForPath
-     * @param {string} path - The position and orientation corresponding to the named path.
-     * @param {string} namedPath - The named path that was looked up on the server.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // This function is marked as deprecated in anticipation that it will not be included in the JavaScript API if and when the
     // functions and signals that should be exposed are moved to a scripting interface class.
     //
@@ -329,11 +263,7 @@ public slots:
      */
     bool canGoBack() const;
 
-    /*@jsdoc
-     * Refreshes the current address, e.g., after connecting to a domain in order to position the user to the desired location.
-     * @function location.refreshPreviousLookup
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // This function is marked as deprecated in anticipation that it will not be included in the JavaScript API if and when the
     // functions and signals that should be exposed are moved to a scripting interface class.
     void refreshPreviousLookup();
@@ -358,12 +288,7 @@ public slots:
      */
     void copyPath();
 
-    /*@jsdoc
-     * Retrieves and remembers the place name for the given domain ID if the place name is not already known.
-     * @function location.lookupShareableNameForDomainID
-     * @param {Uuid} domainID - The UUID of the domain.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // This function is marked as deprecated in anticipation that it will not be included in the JavaScript API if and when the
     // functions and signals that should be exposed are moved to a scripting interface class.
     void lookupShareableNameForDomainID(const QUuid& domainID);

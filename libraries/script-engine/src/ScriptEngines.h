@@ -165,11 +165,7 @@ public:
      */
     Q_INVOKABLE QVariantList getPublic();
 
-    /*@jsdoc
-     * @function ScriptDiscoveryService.getLocal
-     * @returns {ScriptDiscoveryService.LocalScript[]} Local scripts.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // Deprecated because there is no longer a notion of a "local" scripts folder where you would put your personal scripts.
     Q_INVOKABLE QVariantList getLocal();
 
@@ -254,12 +250,7 @@ signals:
      */
     void infoMessage(const QString& message, const QString& engineName);
 
-    /*@jsdoc
-     * @function ScriptDiscoveryService.errorLoadingScript
-     * @param {string} url - URL.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // Deprecated because never emitted.
     void errorLoadingScript(const QString& url);
 
@@ -272,65 +263,33 @@ signals:
 
 public slots:
 
-    /*@jsdoc
-     * @function ScriptDiscoveryService.onPrintedMessage
-     * @param {string} message - Message.
-     * @param {string} scriptName - Script name.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // Deprecated because only use is to emit a signal.
     void onPrintedMessage(const QString& message, const QString& scriptName);
 
-    /*@jsdoc
-     * @function ScriptDiscoveryService.onErrorMessage
-     * @param {string} message - Message.
-     * @param {string} scriptName - Script name.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // Deprecated because only use is to emit a signal.
     void onErrorMessage(const QString& message, const QString& scriptName);
 
-    /*@jsdoc
-     * @function ScriptDiscoveryService.onWarningMessage
-     * @param {string} message - Message.
-     * @param {string} scriptName - Script name.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // Deprecated because only use is to emit a signal.
     void onWarningMessage(const QString& message, const QString& scriptName);
 
-    /*@jsdoc
-     * @function ScriptDiscoveryService.onInfoMessage
-     * @param {string} message - Message.
-     * @param {string} scriptName - Script name.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // Deprecated because only use is to emit a signal.
     void onInfoMessage(const QString& message, const QString& scriptName);
 
-    /*@jsdoc
-     * @function ScriptDiscoveryService.onErrorLoadingScript
-     * @param {string} url - URL.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // Deprecated because only use is to emit a signal. And it isn't used.
     void onErrorLoadingScript(const QString& url);
 
-    /*@jsdoc
-     * @function ScriptDiscoveryService.onClearDebugWindow
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // Deprecated because only use is to emit a signal.
     void onClearDebugWindow();
 
 protected slots:
 
-    /*@jsdoc
-     * @function ScriptDiscoveryService.onScriptFinished
-     * @param {string} scriptName - Script name.
-     * @param {object} manager - Script manager.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // Deprecated because it wasn't intended to be in the API.
     void onScriptFinished(const QString& fileNameString, ScriptManagerPointer manager);
 

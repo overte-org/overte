@@ -27,8 +27,8 @@
 
 
 /*@jsdoc
- * The <code>Window</code> API provides various facilities not covered elsewhere, including: window dimensions, window focus, 
- * camera view, announcements, user connections, common dialog boxes, snapshots, file import, domain navigation, domain changes, 
+ * The <code>Window</code> API provides various facilities not covered elsewhere, including: window dimensions, window focus,
+ * camera view, announcements, user connections, common dialog boxes, snapshots, file import, domain navigation, domain changes,
  * domain physics, OS clipboard, build number.
  *
  * @namespace Window
@@ -41,11 +41,11 @@
  *     chrome), in pixels. <em>Read-only.</em>
  * @property {number} innerHeight - The height of the drawable area of the Interface window (i.e., without borders or other
  *     chrome), in pixels. <em>Read-only.</em>
- * @property {number} x - The x display coordinate of the top left corner of the drawable area of the Interface window. 
+ * @property {number} x - The x display coordinate of the top left corner of the drawable area of the Interface window.
  *     <em>Read-only.</em>
- * @property {number} y - The y display coordinate of the top left corner of the drawable area of the Interface window. 
+ * @property {number} y - The y display coordinate of the top left corner of the drawable area of the Interface window.
  *     <em>Read-only.</em>
- * @property {boolean} interstitialModeEnabled=false - <code>true</code> if the interstitial graphics are displayed when a 
+ * @property {boolean} interstitialModeEnabled=false - <code>true</code> if the interstitial graphics are displayed when a
  *     domain is loading, otherwise <code>false</code>.
  * @property {location} location - Provides facilities for working with your current directory services location.
  */
@@ -76,7 +76,7 @@ public slots:
     ScriptValue hasFocus();
 
     /*@jsdoc
-     * Makes the Interface window have focus. On Windows, if Interface doesn't already have focus, the task bar icon flashes to 
+     * Makes the Interface window have focus. On Windows, if Interface doesn't already have focus, the task bar icon flashes to
      * indicate that Interface wants attention but focus isn't taken away from the application that the user is using.
      * @function Window.setFocus
      */
@@ -111,7 +111,7 @@ public slots:
     ScriptValue confirm(const QString& message = "");
 
     /*@jsdoc
-     * Prompts the user to enter some text. Displays a modal dialog with a message and a text box, plus "OK" and "Cancel" 
+     * Prompts the user to enter some text. Displays a modal dialog with a message and a text box, plus "OK" and "Cancel"
      * buttons.
      * @function Window.prompt
      * @param {string} message - The question to display.
@@ -128,8 +128,8 @@ public slots:
     ScriptValue prompt(const QString& message, const QString& defaultText);
 
     /*@jsdoc
-     * Prompts the user to enter some text. Displays a non-modal dialog with a message and a text box, plus "OK" and "Cancel" 
-     * buttons. A {@link Window.promptTextChanged|promptTextChanged} signal is emitted when the user OKs the dialog; no signal 
+     * Prompts the user to enter some text. Displays a non-modal dialog with a message and a text box, plus "OK" and "Cancel"
+     * buttons. A {@link Window.promptTextChanged|promptTextChanged} signal is emitted when the user OKs the dialog; no signal
      * is emitted if the user cancels the dialog.
      * @function Window.promptAsync
      * @param {string} [message=""] - The question to display.
@@ -156,7 +156,7 @@ public slots:
      * print("Directory: " + directory);
      */
     ScriptValue browseDir(const QString& title = "", const QString& directory = "");
-    
+
     /*@jsdoc
      * Prompts the user to choose a directory. Displays a non-modal dialog that navigates the directory tree. A
      * {@link Window.browseDirChanged|browseDirChanged} signal is emitted when a directory is chosen; no signal is emitted if
@@ -180,7 +180,7 @@ public slots:
      * @function Window.browse
      * @param {string} [title=""] - The title to display at the top of the dialog.
      * @param {string} [directory=""] - The initial directory to start browsing at.
-     * @param {string} [nameFilter=""] - The types of files to display. Examples: <code>"*.json"</code> and 
+     * @param {string} [nameFilter=""] - The types of files to display. Examples: <code>"*.json"</code> and
      *     <code>"Images (*.png *.jpg *.svg)"</code>. All files are displayed if a filter isn't specified.
      * @returns {string} The path and name of the file if one is chosen, otherwise <code>null</code>.
      * @example <caption>Ask the user to choose an image file.</caption>
@@ -251,7 +251,7 @@ public slots:
      * @function Window.browseAssets
      * @param {string} [title=""] - The title to display at the top of the dialog.
      * @param {string} [directory=""] - The initial directory to start browsing at.
-     * @param {string} [nameFilter=""] - The types of files to display. Examples: <code>"*.json"</code> and 
+     * @param {string} [nameFilter=""] - The types of files to display. Examples: <code>"*.json"</code> and
      *     <code>"Images (*.png *.jpg *.svg)"</code>. All files are displayed if a filter isn't specified.
      * @returns {string} The path and name of the asset if one is chosen, otherwise <code>null</code>.
      * @example <caption>Ask the user to select an FBX asset.</caption>
@@ -261,7 +261,7 @@ public slots:
     ScriptValue browseAssets(const QString& title = "", const QString& directory = "", const QString& nameFilter = "");
 
     /*@jsdoc
-     * Prompts the user to choose an Asset Server item. Displays a non-modal dialog that navigates the tree of assets on the 
+     * Prompts the user to choose an Asset Server item. Displays a non-modal dialog that navigates the tree of assets on the
      * Asset Server. An {@link Window.assetsDirChanged|assetsDirChanged} signal is emitted when an asset is chosen; no signal is
      * emitted if the user cancels the dialog.
      * @function Window.browseAssetsAsync
@@ -321,25 +321,25 @@ public slots:
     void copyToClipboard(const QString& text);
 
     /*@jsdoc
-     * Takes a snapshot of the current Interface view from the primary camera. When a still image only is captured, 
-     * {@link Window.stillSnapshotTaken|stillSnapshotTaken} is emitted; when a still image plus moving images are captured, 
+     * Takes a snapshot of the current Interface view from the primary camera. When a still image only is captured,
+     * {@link Window.stillSnapshotTaken|stillSnapshotTaken} is emitted; when a still image plus moving images are captured,
      * {@link Window.processingGifStarted|processingGifStarted} and {@link Window.processingGifCompleted|processingGifCompleted}
      * are emitted.
-     * <p>Snapshots are saved to the path specified in Settings &gt; General &gt; Snapshots, which can be accessed via the 
+     * <p>Snapshots are saved to the path specified in Settings &gt; General &gt; Snapshots, which can be accessed via the
      * {@link Snapshot} API.</p>
      *
      * @function Window.takeSnapshot
      * @param {boolean} [notify=true] - This value is passed on through the {@link Window.stillSnapshotTaken|stillSnapshotTaken}
      *     signal.
-     * @param {boolean} [includeAnimated=false] - If <code>true</code>, a moving image is captured as an animated GIF in addition 
+     * @param {boolean} [includeAnimated=false] - If <code>true</code>, a moving image is captured as an animated GIF in addition
      *     to a still image.
      * @param {number} [aspectRatio=0] - The width/height ratio of the snapshot required. If the value is <code>0</code>, the
      *     full resolution is used (window dimensions in desktop mode; HMD display dimensions in HMD mode), otherwise one of the
      *     dimensions is adjusted in order to match the aspect ratio.
-     * @param {string} [filename=""] - If a filename is not provided, the image is saved as "overte-snap-by-&lt;user 
+     * @param {string} [filename=""] - If a filename is not provided, the image is saved as "overte-snap-by-&lt;user
      *     name&gt;-on-YYYY-MM-DD_HH-MM-SS".
-     *     <p>Still images are saved in JPEG, PNG or WEBP format according to the extension provided &mdash; <code>".jpg"</code>, 
-     *     <code>".jpeg"</code>, <code>".png"</code>, or <code>".webp"</code> &mdash; or if not provided then in the format chosen in general settings, 
+     *     <p>Still images are saved in JPEG, PNG or WEBP format according to the extension provided &mdash; <code>".jpg"</code>,
+     *     <code>".jpeg"</code>, <code>".png"</code>, or <code>".webp"</code> &mdash; or if not provided then in the format chosen in general settings,
      *     Default is PNG. Animated images are saved in GIF format.</p>
      *
      * @example <caption>Using the snapshot function and signals.</caption>
@@ -375,29 +375,29 @@ public slots:
      * @function Window.takeSecondaryCameraSnapshot
      * @param {boolean} [notify=true] - This value is passed on through the {@link Window.stillSnapshotTaken|stillSnapshotTaken}
      *     signal.
-     * @param {string} [filename=""] - If a filename is not provided, the image is saved as "overte-snap-by-&lt;user 
+     * @param {string} [filename=""] - If a filename is not provided, the image is saved as "overte-snap-by-&lt;user
      *     name&gt;-on-YYYY-MM-DD_HH-MM-SS".
-     *     <p>Still images are saved in JPEG, PNG or WEBP format according to the extension provided &mdash; <code>".jpg"</code>, 
-     *     <code>".jpeg"</code>, <code>".png"</code>, or <code>".webp"</code> &mdash; or if not provided then in the format chosen in general settings, 
+     *     <p>Still images are saved in JPEG, PNG or WEBP format according to the extension provided &mdash; <code>".jpg"</code>,
+     *     <code>".jpeg"</code>, <code>".png"</code>, or <code>".webp"</code> &mdash; or if not provided then in the format chosen in general settings,
      *     Default is PNG. Animated images are saved in GIF format.</p>
      */
     void takeSecondaryCameraSnapshot(const bool& notify = true, const QString& filename = QString());
 
     /*@jsdoc
-     * Takes a 360&deg; snapshot at a given position for the secondary camera. The secondary camera does not need to have been 
+     * Takes a 360&deg; snapshot at a given position for the secondary camera. The secondary camera does not need to have been
      *     set up.
      * <p>Snapshots are saved to the path specified in Settings &gt; General &gt; Snapshots, which can be accessed via the
      * {@link Snapshot} API.</p>
      * @function Window.takeSecondaryCamera360Snapshot
      * @param {Vec3} cameraPosition - The position of the camera for the snapshot.
-     * @param {boolean} [cubemapOutputFormat=false] - If <code>true</code> then the snapshot is saved as a cube map image, 
+     * @param {boolean} [cubemapOutputFormat=false] - If <code>true</code> then the snapshot is saved as a cube map image,
      *     otherwise it is saved as an equirectangular image.
      * @param {boolean} [notify=true] - This value is passed on through the {@link Window.stillSnapshotTaken|stillSnapshotTaken}
      *     signal.
-     * @param {string} [filename=""] - If a filename is not provided, the image is saved as "overte-snap-by-&lt;user 
+     * @param {string} [filename=""] - If a filename is not provided, the image is saved as "overte-snap-by-&lt;user
      *     name&gt;-on-YYYY-MM-DD_HH-MM-SS".
-     *     <p>Still images are saved in JPEG, PNG or WEBP format according to the extension provided &mdash; <code>".jpg"</code>, 
-     *     <code>".jpeg"</code>, <code>".png"</code>, or <code>".webp"</code> &mdash; or if not provided then in the format chosen in general settings, 
+     *     <p>Still images are saved in JPEG, PNG or WEBP format according to the extension provided &mdash; <code>".jpg"</code>,
+     *     <code>".jpeg"</code>, <code>".png"</code>, or <code>".webp"</code> &mdash; or if not provided then in the format chosen in general settings,
      *     Default is PNG. Animated images are saved in GIF format.</p>
      */
     void takeSecondaryCamera360Snapshot(const glm::vec3& cameraPosition, const bool& cubemapOutputFormat = false, const bool& notify = true, const QString& filename = QString());
@@ -461,7 +461,7 @@ public slots:
     bool isPhysicsEnabled();
 
     /*@jsdoc
-     * Sets what to show on the PC display. For entity camera view, the entity camera is configured using 
+     * Sets what to show on the PC display. For entity camera view, the entity camera is configured using
      * {@link Camera.setCameraEntity} and {@link Camera|Camera.mode}.
      * @function Window.setDisplayTexture
      * @param {Window.DisplayTexture} texture - The view to display.
@@ -493,7 +493,7 @@ public slots:
     int getLastDomainConnectionError() const;
 
     /*@jsdoc
-     * Opens a non-modal message box that can have a variety of button combinations. See also, 
+     * Opens a non-modal message box that can have a variety of button combinations. See also,
      * {@link Window.updateMessageBox|updateMessageBox} and {@link Window.closeMessageBox|closeMessageBox}.
      * @function Window.openMessageBox
      * @param {string} title - The title to display for the message box.
@@ -518,20 +518,20 @@ public slots:
      * }
      * Window.messageBoxClosed.connect(onMessageBoxClosed);
      *
-     * messageBox = Window.openMessageBox("Reset Something", 
+     * messageBox = Window.openMessageBox("Reset Something",
      *     "Do you want to reset something?",
      *     resetButton + cancelButton, cancelButton);
      */
     int openMessageBox(QString title, QString text, int buttons, int defaultButton);
 
     /*@jsdoc
-     * Opens a URL in the Interface window or other application, depending on the URL's scheme. The following schemes are 
+     * Opens a URL in the Interface window or other application, depending on the URL's scheme. The following schemes are
      * supported:
      * <ul>
      *   <li><code>hifi</code>: Navigate to the URL in Interface.</li>
      *   <li><code>hifiapp</code>: Open a system app in Interface.</li>
      * </ul>
-     * <p>Other schemes will either be handled by the OS (e.g. <code>http</code>, <code>https</code>, or <code>mailto</code>) or 
+     * <p>Other schemes will either be handled by the OS (e.g. <code>http</code>, <code>https</code>, or <code>mailto</code>) or
      * will display a dialog asking the user to confirm that they want to try to open the URL.</p>
      * @function Window.openUrl
      * @param {string} url - The URL to open.
@@ -541,9 +541,9 @@ public slots:
     /*@jsdoc
      * Opens an Android activity and optionally return back to the scene when the activity is completed. <em>Android only.</em>
      * @function Window.openAndroidActivity
-     * @param {string} activityName - The name of the activity to open: one of <code>"Home"</code>, <code>"Login"</code>, or 
+     * @param {string} activityName - The name of the activity to open: one of <code>"Home"</code>, <code>"Login"</code>, or
      *     <code>"Privacy Policy"</code>.
-     * @param {boolean} backToScene - If <code>true</code>, the user is automatically returned back to the scene when the 
+     * @param {boolean} backToScene - If <code>true</code>, the user is automatically returned back to the scene when the
      *     activity is completed.
      */
     void openAndroidActivity(const QString& activityName, const bool backToScene);
@@ -567,11 +567,7 @@ public slots:
      */
     void closeMessageBox(int id);
 
-    /*@jsdoc
-     * @function Window.domainLoadingProgress
-     * @returns {number} Progress.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     float domainLoadingProgress();
 
     /*@jsdoc
@@ -584,7 +580,7 @@ public slots:
     /*@jsdoc
      * Gets the name of a display plugin.
      * @function Window.getDisplayPluginName
-     * @param {number} index - The index of the display plugin. Must be less than the value returned by 
+     * @param {number} index - The index of the display plugin. Must be less than the value returned by
      *     {@link Window.getDisplayPluginCount|getDisplayPluginCount}. The first display plugin has an index of <code>0</code>.
      * @returns {string} The name of the display plugin.
      * @example <caption>Print the names of all available display plugins.</caption>
@@ -597,7 +593,7 @@ public slots:
     /*@jsdoc
      * Checks whether a display plugin is an HMD.
      * @function Window.isDisplayPluginHmd
-     * @param {number} index - The index of the display plugin. Must be less than the value returned by 
+     * @param {number} index - The index of the display plugin. Must be less than the value returned by
      *     {@link Window.getDisplayPluginCount|getDisplayPluginCount}. The first display plugin has an index of <code>0</code>.
      * @returns {boolean} <code>true</code> if the display plugin is a HMD, <code>false</code> if it isn't.
      */
@@ -606,7 +602,7 @@ public slots:
     /*@jsdoc
      * Gets the index of the currently active display plugin.
      * @function Window.getActiveDisplayPlugin
-     * @returns {number} The index of the currently active display plugin. The first display plugin has an index of 
+     * @returns {number} The index of the currently active display plugin. The first display plugin has an index of
      *     <code>0</code>.
      */
     int getActiveDisplayPlugin();
@@ -614,7 +610,7 @@ public slots:
     /*@jsdoc
      * Sets the currently active display plugin.
      * @function Window.setActiveDisplayPlugin
-     * @param {number} index - The index of the display plugin. Must be less than the value returned by 
+     * @param {number} index - The index of the display plugin. Must be less than the value returned by
      *     {@link Window.getDisplayPluginCount|getDisplayPluginCount}. The first display plugin has an index of <code>0</code>.
      */
     void setActiveDisplayPlugin(int index);
@@ -670,7 +666,7 @@ signals:
     /*@jsdoc
      * Triggered when you try to visit a domain but are redirected into the error state.
      * @function Window.redirectErrorStateChanged
-     * @param {boolean} isInErrorState - <code>true</code> if the user has been redirected to the error URL, <code>false</code> 
+     * @param {boolean} isInErrorState - <code>true</code> if the user has been redirected to the error URL, <code>false</code>
      *     if they haven't.
      * @returns {Signal}
      */
@@ -679,14 +675,14 @@ signals:
     /*@jsdoc
      * Triggered when the interstitial mode changes.
      * @function Window.interstitialModeChanged
-     * @param {boolean} interstitialMode - <code>true</code> if the interstitial graphics are displayed when the domain is 
+     * @param {boolean} interstitialMode - <code>true</code> if the interstitial graphics are displayed when the domain is
      *     loading, <code>false</code> if they are not.
      * @returns {Signal}
      */
     void interstitialModeChanged(bool interstitialMode);
 
     /*@jsdoc
-     * Triggered when a still snapshot has been taken by calling {@link Window.takeSnapshot|takeSnapshot} with 
+     * Triggered when a still snapshot has been taken by calling {@link Window.takeSnapshot|takeSnapshot} with
      *     <code>includeAnimated = false</code> or {@link Window.takeSecondaryCameraSnapshot|takeSecondaryCameraSnapshot}.
      * @function Window.stillSnapshotTaken
      * @param {string} pathStillSnapshot - The path and name of the snapshot image file.
@@ -697,7 +693,7 @@ signals:
     void stillSnapshotTaken(const QString& pathStillSnapshot, bool notify);
 
     /*@jsdoc
-    * Triggered when a still 360&deg; snapshot has been taken by calling 
+    * Triggered when a still 360&deg; snapshot has been taken by calling
     *     {@link Window.takeSecondaryCamera360Snapshot|takeSecondaryCamera360Snapshot}.
     * @function Window.snapshot360Taken
     * @param {string} pathStillSnapshot - The path and name of the snapshot image file.

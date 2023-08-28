@@ -27,11 +27,11 @@ class ScriptEngine;
  *
  * @class OverlayWebWindow
  * @param {string|OverlayWindow.Properties} [titleOrProperties="WebWindow"] - The window's title or initial property values.
- * @param {string} [source="about:blank"] - The URL of the HTML to display. Not used unless the first parameter is the window 
+ * @param {string} [source="about:blank"] - The URL of the HTML to display. Not used unless the first parameter is the window
  *     title.
- * @param {number} [width=0] - The width of the window interior, in pixels. Not used unless the first parameter is the window 
+ * @param {number} [width=0] - The width of the window interior, in pixels. Not used unless the first parameter is the window
  *     title.
- * @param {number} [height=0] - The height of the window interior, in pixels. Not used unless the first parameter is the 
+ * @param {number} [height=0] - The height of the window interior, in pixels. Not used unless the first parameter is the
  *     window title.
  *
  * @hifi-interface
@@ -73,24 +73,6 @@ class ScriptEngine;
  */
 
 /*@jsdoc
- * @function OverlayWebWindow.clearDebugWindow
- * @deprecated This method is deprecated and will be removed.
- */
-
-/*@jsdoc
- * @function OverlayWebWindow.sendToQML
- * @param {string | object} message - Message.
- * @deprecated This method is deprecated and will be removed.
- */
-
-/*@jsdoc
- * @function OverlayWebWindow.fromQML
- * @param {object} message - Message.
- * @returns {Signal}
- * @deprecated This signal is deprecated and will be removed.
- */
-
-/*@jsdoc
  * Sends a message to the HTML page. To receive the message, the HTML page's script must connect to the <code>EventBridge</code>
  * that is automatically provided for the script:
  * <pre class="prettyprint"><code>EventBridge.scriptEventReceived.connect(function(message) {
@@ -107,11 +89,11 @@ class ScriptEngine;
  *     width: 400,
  *     height: 300
  * });
- * 
+ *
  * overlayWebWindow.webEventReceived.connect(function (message) {
  *     print("Message received: " + message);
  * });
- * 
+ *
  * Script.setTimeout(function () {
  *     overlayWebWindow.emitScriptEvent("Hello world!");
  * }, 2000);
@@ -145,7 +127,7 @@ class ScriptEngine;
  */
 
 
-// FIXME refactor this class to be a QQuickItem derived type and eliminate the needless wrapping 
+// FIXME refactor this class to be a QQuickItem derived type and eliminate the needless wrapping
 class QmlWebWindowClass : public QmlWindowClass {
     Q_OBJECT
     Q_PROPERTY(QString url READ getURL CONSTANT)

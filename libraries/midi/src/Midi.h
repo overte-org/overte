@@ -56,14 +56,7 @@ private:
     void MidiCleanup();
 
 signals:
-
-    /*@jsdoc
-     * Triggered when a connected device sends an output.
-     * @function Midi.midiNote
-     * @param {Midi.MidiMessage} message - The MIDI message.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed. Use {@link Midi.midiMessage|midiMessage} instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void midiNote(QVariantMap eventData);
 
     /*@jsdoc

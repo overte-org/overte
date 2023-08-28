@@ -60,7 +60,7 @@ namespace InteractiveWindowEnums {
     Q_NAMESPACE
 
     /*@jsdoc
-     * <p>A set of  flags controlling <code>InteractiveWindow</code> behavior. The value is constructed by using the 
+     * <p>A set of  flags controlling <code>InteractiveWindow</code> behavior. The value is constructed by using the
      * <code>|</code> (bitwise OR) operator on the individual flag values.</p>
      * <table>
      *   <thead>
@@ -68,7 +68,7 @@ namespace InteractiveWindowEnums {
      *   </thead>
      *   <tbody>
      *     <tr><td>ALWAYS_ON_TOP</td><td><code>1</code></td><td>The window always displays on top.</td></tr>
-     *     <tr><td>CLOSE_BUTTON_HIDES</td><td><code>2</code></td><td>The window hides instead of closing when the user clicks 
+     *     <tr><td>CLOSE_BUTTON_HIDES</td><td><code>2</code></td><td>The window hides instead of closing when the user clicks
      *       the "close" button.</td></tr>
      *   </tbody>
      * </table>
@@ -155,8 +155,8 @@ namespace InteractiveWindowEnums {
 using namespace InteractiveWindowEnums;
 
 /*@jsdoc
- * An <code>InteractiveWindow</code> can display either inside Interface or in its own window separate from the Interface 
- * window. The window content is defined by a QML file, which can optionally include a <code>WebView</code> control that embeds 
+ * An <code>InteractiveWindow</code> can display either inside Interface or in its own window separate from the Interface
+ * window. The window content is defined by a QML file, which can optionally include a <code>WebView</code> control that embeds
  * an HTML web page. (The <code>WebView</code> control is defined by a "WebView.qml" file included in the Interface install.)
  *
  * <p>Create using {@link Desktop.createWindow}.</p>
@@ -170,13 +170,13 @@ using namespace InteractiveWindowEnums;
  *
  * @property {string} title - The title of the window.
  * @property {Vec2} position - The absolute position of the window, in pixels.
- * @property {InteractiveWindow.RelativePositionAnchor} relativePositionAnchor -  The anchor for the 
+ * @property {InteractiveWindow.RelativePositionAnchor} relativePositionAnchor -  The anchor for the
  *     <code>relativePosition</code>, if used.
- * @property {Vec2} relativePosition - The position of the window, relative to the <code>relativePositionAnchor</code>, in 
+ * @property {Vec2} relativePosition - The position of the window, relative to the <code>relativePositionAnchor</code>, in
  *     pixels. Excludes the window frame.
  * @property {Vec2} size - The size of the window, in pixels.
  * @property {boolean} visible - <code>true</code> if the window is visible, <code>false</code> if it isn't.
- * @property {InteractiveWindow.PresentationMode} presentationMode - The presentation mode of the window: 
+ * @property {InteractiveWindow.PresentationMode} presentationMode - The presentation mode of the window:
  *     <code>Desktop.PresentationMode.VIRTUAL</code> to display the window inside Interface, <code>.NATIVE</code> to display it
  *     as its own separate window.
  */
@@ -204,7 +204,7 @@ private:
 
     Q_INVOKABLE glm::vec2 getPosition() const;
     Q_INVOKABLE void setPosition(const glm::vec2& position);
-    
+
     RelativePositionAnchor _relativePositionAnchor{ RelativePositionAnchor::NO_ANCHOR };
     Q_INVOKABLE RelativePositionAnchor getRelativePositionAnchor() const;
     Q_INVOKABLE void setRelativePositionAnchor(const RelativePositionAnchor& position);
@@ -242,36 +242,36 @@ public slots:
      * @param {string|object} message - The message to send to the QML page.
      * @example <caption>Send and receive messages with a QML window.</caption>
      * // JavaScript file.
-     * 
+     *
      * var interactiveWindow = Desktop.createWindow(Script.resolvePath("InteractiveWindow.qml"), {
      *     title: "Interactive Window",
      *     size: { x: 400, y: 300 }
      * });
-     * 
+     *
      * interactiveWindow.fromQml.connect(function (message) {
      *     print("Message received: " + message);
      * });
-     * 
+     *
      * Script.setTimeout(function () {
      *     interactiveWindow.sendToQml("Hello world!");
      * }, 2000);
-     * 
+     *
      * Script.scriptEnding.connect(function () {
      *     interactiveWindow.close();
      * });
      * @example
      * // QML file, "InteractiveWindow.qml".
-     * 
+     *
      * import QtQuick 2.5
      * import QtQuick.Controls 1.4
-     * 
+     *
      * Rectangle {
-     * 
+     *
      *     function fromScript(message) {
      *         text.text = message;
      *         sendToScript("Hello back!");
      *     }
-     * 
+     *
      *     Label {
      *         id: text
      *         anchors.centerIn: parent
@@ -283,7 +283,7 @@ public slots:
     void sendToQml(const QVariant& message);
 
     /*@jsdoc
-     * Sends a message to an embedded HTML web page. To receive the message, the HTML page's script must connect to the 
+     * Sends a message to an embedded HTML web page. To receive the message, the HTML page's script must connect to the
      * <code>EventBridge</code> that is automatically provided for the script:
      * <pre class="prettyprint"><code>EventBridge.scriptEventReceived.connect(function(message) {
      *     ...
@@ -294,11 +294,7 @@ public slots:
     // QmlWindow content may include WebView requiring EventBridge.
     void emitScriptEvent(const QVariant& scriptMessage);
 
-    /*@jsdoc
-     * @function InteractiveWindow.emitWebEvent
-     * @param {object|string} message - Message.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void emitWebEvent(const QVariant& webMessage);
 
     /*@jsdoc
@@ -373,12 +369,7 @@ signals:
     // Scripts can connect to this signal to receive messages from the QML object
     void fromQml(const QVariant& message);
 
-    /*@jsdoc
-     * @function InteractiveWindow.scriptEventReceived
-     * @param {object} message - Message.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // InteractiveWindow content may include WebView requiring EventBridge.
     void scriptEventReceived(const QVariant& message);
 
@@ -392,11 +383,7 @@ signals:
     void webEventReceived(const QVariant& message);
 
 protected slots:
-    /*@jsdoc
-     * @function InteractiveWindow.qmlToScript
-     * @param {object} message - Message.
-     * @deprecated This method is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void qmlToScript(const QVariant& message);
 
     void forwardKeyPressEvent(int key, int modifiers);

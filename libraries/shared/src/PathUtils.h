@@ -18,20 +18,7 @@
 
 #include "DependencyManager.h"
 
-/*@jsdoc
- * The <code>Paths</code> API provides absolute paths to the scripts and resources directories.
- *
- * @namespace Paths
- *
- * @hifi-interface
- * @hifi-client-entity
- * @hifi-avatar
- *
- * @deprecated The Paths API is deprecated. Use {@link Script.resolvePath} and {@link Script.resourcesPath} instead.
- * @readonly
- * @property {string} defaultScripts - The path to the scripts directory. <em>Read-only.</em>
- * @property {string} resources - The path to the resources directory. <em>Read-only.</em>
- */
+// TODO: Deprecated by documentation, please review for accuracy
 class PathUtils : public QObject, public Dependency {
     Q_OBJECT
     SINGLETON_DEPENDENCY
