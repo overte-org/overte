@@ -120,6 +120,14 @@ jobs:
         rm -rf ~/overte-files
         rm -rf ~/.cache
 
+
+    # For nodejs we need ~50GB of free disk space
+    - name: Free Disk Space (Ubuntu)
+      if: matrix.os == 'ubuntu-20.04'
+      uses: jlumbroso/free-disk-space@main
+      with:
+        tool-cache: true
+
     - uses: actions/checkout@v1
       with:
         submodules: false
