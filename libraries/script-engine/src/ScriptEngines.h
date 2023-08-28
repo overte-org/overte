@@ -184,6 +184,8 @@ public:
 
     void addScriptEngine(ScriptManagerPointer);
 
+    void removeScriptEngine(ScriptManagerPointer);
+
     ScriptGatekeeper scriptGatekeeper;
 
 signals:
@@ -336,7 +338,6 @@ protected slots:
 
 protected:
     ScriptManagerPointer reloadScript(const QString& scriptName, bool isUserLoaded = true) { return loadScript(scriptName, isUserLoaded, false, false, true); }
-    void removeScriptEngine(ScriptManagerPointer);
     void onScriptEngineLoaded(const QString& scriptFilename);
     void quitWhenFinished();
     void onScriptEngineError(const QString& scriptFilename);

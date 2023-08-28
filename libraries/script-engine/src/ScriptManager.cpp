@@ -519,6 +519,11 @@ void ScriptManager::waitTillDoneRunning(bool shutdown) {
     }
 }
 
+void ScriptManager::removeFromScriptEngines() {
+    Q_ASSERT(_scriptEngines);
+    _scriptEngines.toStrongRef()->removeScriptEngine(shared_from_this());
+}
+
 QString ScriptManager::getFilename() const {
     QStringList fileNameParts = _fileNameString.split("/");
     QString lastPart;
