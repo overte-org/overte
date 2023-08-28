@@ -13,6 +13,8 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 	var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
 	var tabletUp;
+    
+    var keysOnOverlay = Desktop.isOverlayWindowFocused();
 
 	var tempOff = false;
 
@@ -24,12 +26,14 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 
 	if (!hmd){
 		if (mouseLookEnabled) {
-			if (!tablet.tabletShown){
-				Window.displayAnnouncement("Mouse look: ON");
-				mouseLookOn();
-			} else {
-				Window.displayAnnouncement("Tablet is up – mouse look temporarily OFF.");
-			}
+            if (!keysOnOverlay) {
+                if (!tablet.tabletShown){
+                    Window.displayAnnouncement("Mouse look: ON");
+                    mouseLookOn();
+                } else {
+                    Window.displayAnnouncement("Tablet is up – mouse look temporarily OFF.");
+                }
+            }
 		}
 	}
 
@@ -38,17 +42,19 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 	function onKeyPressEvent(event) {
 		if (!hmd){
 			if (event.text === 'm') {
-				if (mouseLookEnabled) {
-					if (!Camera.getCaptureMouse()){
-						tempOff = false;
-						Window.displayAnnouncement("Mouse look: ON");
-						mouseLookOn();
-					} else {
-						tempOff = true;
-						Window.displayAnnouncement("Mouse look: Temporarily OFF");
-						mouseLookOff();
-					}
-				}
+                if (!keysOnOverlay) {
+                    if (mouseLookEnabled) {
+                        if (!Camera.getCaptureMouse()){
+                            tempOff = false;
+                            Window.displayAnnouncement("Mouse look: ON");
+                            mouseLookOn();
+                        } else {
+                            tempOff = true;
+                            Window.displayAnnouncement("Mouse look: Temporarily OFF");
+                            mouseLookOff();
+                        }
+                    }
+                }
 			}
 		}
 	}
@@ -59,23 +65,25 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 		if (!hmd) {
 			if (mouseLookEnabled) {
 				if (!tablet.toolbarMode) {
-					if (tablet.tabletShown) {
-						tabletUp = true;
-						if (!tempOff) {
-							if (!away) {
-								Window.displayAnnouncement("Tablet is up – mouse look temporarily OFF.");
-								mouseLookOff();
-							}
-						}
-					} else if (!tablet.tabletShown) {
-						tabletUp = false;
-						if (!tempOff) {
-							if (!away) {
-								Window.displayAnnouncement("Tablet hidden – mouse look ON.");
-								mouseLookOn();
-							}
-						}
-					}
+                    if (!keysOnOverlay) {
+                        if (tablet.tabletShown) {
+                            tabletUp = true;
+                            if (!tempOff) {
+                                if (!away) {
+                                    Window.displayAnnouncement("Tablet is up – mouse look temporarily OFF.");
+                                    mouseLookOff();
+                                }
+                            }
+                        } else if (!tablet.tabletShown) {
+                            tabletUp = false;
+                            if (!tempOff) {
+                                if (!away && !keysOnOverlay) {
+                                    Window.displayAnnouncement("Tablet hidden – mouse look ON.");
+                                    mouseLookOn();
+                                }
+                            }
+                        }
+                    }
 				}
 			}
 		}
@@ -87,11 +95,13 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 		if (!hmd) {
 			if (mouseLookEnabled) {
 				away = true;
-				if (!tabletUp){
-					Window.displayAnnouncement("Away state ON – mouse look temporarily OFF.")
-					tempOff = false;
-					mouseLookOff()
-				}
+                if (!keysOnOverlay) {
+                    if (!tabletUp){
+                        Window.displayAnnouncement("Away state ON – mouse look temporarily OFF.")
+                        tempOff = false;
+                        mouseLookOff()
+                    }
+                }
 			}
 		}
 	}
@@ -102,10 +112,12 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 		if (!hmd) {
 			if (mouseLookEnabled) {
 				away = false;
-				if (!tabletUp) {
-					Window.displayAnnouncement("Away state OFF – mouse look ON.");
-					mouseLookOn();
-				}
+                if (!keysOnOverlay) {
+                    if (!tabletUp) {
+                        Window.displayAnnouncement("Away state OFF – mouse look ON.");
+                        mouseLookOn();
+                    }
+                }
 			}
 		}
 	}
@@ -120,9 +132,11 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 			} else {
 				hmd = false;
 				if (!tempOff) {
-					if (!tabletUp) {
-						mouseLookOn();
-					}
+                    if (!keysOnOverlay) {
+                        if (!tabletUp) {
+                            mouseLookOn();
+                        }
+                    }
 				}
 			}
 		}
@@ -135,8 +149,28 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 	function mouseLookOff() {
 		Camera.captureMouse = false;
 	}
-
-	Camera.modeUpdated.connect(onCameraModeUpdated);
+    
+    Desktop.uiFocusChanged.connect(onUiFocusChanged);
+    
+    function onUiFocusChanged(keyFocus) {
+        if (!hmd) {
+            if (keyFocus) {
+                keysOnOverlay = true;
+                if (Camera.captureMouse) {
+                    Camera.captureMouse = false;
+                }
+            } else {
+                keysOnOverlay = false;
+                if (!tablet.tabletShown) {
+                    if (!tempOff) {
+                        if (!away) {
+                            mouseLookOn();
+                        }
+                    }
+                }
+            }
+        }
+    }
 
 	Script.scriptEnding.connect(onScriptEnding);
 
@@ -148,7 +182,7 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 		MyAvatar.wentAway.disconnect(onWentAway);
 		MyAvatar.wentActive.disconnect(onWentActive);
 		HMD.displayModeChanged.disconnect(onDisplayModeChanged);
-		Camera.modeUpdated.disconnect(onCameraModeUpdated);
+        Desktop.uiFocusChanged.disconnect(onUiFocusChanged);
 		Script.scriptEnding.disconnect(onScriptEnding);
 	}
 
