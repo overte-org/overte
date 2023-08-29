@@ -21,7 +21,7 @@ using Overte;
 class AvatarExporter : MonoBehaviour
 {
     // update version number for every PR that changes this file, also set updated version in README file
-    public static readonly string AVATAR_EXPORTER_VERSION = "0.6.0";
+    public static readonly string AVATAR_EXPORTER_VERSION = "2023.08";
 
     static readonly float HIPS_MIN_Y_PERCENT_OF_HEIGHT = 0.03f;
     static readonly float BELOW_GROUND_THRESHOLD_PERCENT_OF_HEIGHT = -0.15f;
