@@ -270,6 +270,9 @@ public:  // API
     //Moved to public temporarily for debugging:
     QString fullName() const;
 
+    // Disconnects all signals from the proxy
+    void disconnectAll() { QObject::disconnect(this, nullptr, nullptr, nullptr); };
+
 private:  // storage
 
     ScriptEngineV8* _engine;

@@ -30,7 +30,7 @@ namespace controller {
     }
 
     EndpointPointer ActionsDevice::createEndpoint(const Input& input) const {
-        return std::make_shared<ActionEndpoint>(input);
+        return ActionEndpoint::newEndpoint(input);
     }
 
     /*@jsdoc

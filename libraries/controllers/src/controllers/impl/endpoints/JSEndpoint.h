@@ -19,15 +19,19 @@ namespace controller {
 
 class JSEndpoint : public Endpoint {
 public:
-    using Endpoint::apply;
-    JSEndpoint(const QJSValue& callable)
-        : Endpoint(Input::INVALID_INPUT), _callable(callable) {
-    }
+    static std::shared_ptr<Endpoint> newEndpoint(const QJSValue& callable) {
+        return std::shared_ptr<Endpoint>(new JSEndpoint(callable));
+    };
 
+    using Endpoint::apply;
     virtual AxisValue peek() const override;
     virtual void apply(AxisValue newValue, const Pointer& source) override;
 
 private:
+    JSEndpoint(const QJSValue& callable)
+        : Endpoint(Input::INVALID_INPUT), _callable(callable) {
+    }
+
     mutable QJSValue _callable;
 };
 

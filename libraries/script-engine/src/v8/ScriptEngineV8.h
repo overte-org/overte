@@ -48,6 +48,7 @@ class ScriptManager;
 class ScriptObjectV8Proxy;
 class ScriptMethodV8Proxy;
 class ScriptValueV8Wrapper;
+class ScriptSignalV8Proxy;
 
 template <typename T> class V8ScriptValueTemplate;
 typedef V8ScriptValueTemplate<v8::Value> V8ScriptValue;
@@ -56,6 +57,8 @@ typedef V8ScriptValueTemplate<v8::Script> V8ScriptProgram;
 using ScriptContextV8Pointer = std::shared_ptr<ScriptContextV8Wrapper>;
 
 const double GARBAGE_COLLECTION_TIME_LIMIT_S = 1.0;
+
+#define OVERTE_SCRIPT_USE_AFTER_DELETE_GUARD
 
 Q_DECLARE_METATYPE(ScriptEngine::FunctionSignature)
 
@@ -144,6 +147,7 @@ public:  // ScriptEngine implementation
     void scheduleValueWrapperForDeletion(ScriptValueV8Wrapper* wrapper) {_scriptValueWrappersToDelete.enqueue(wrapper);}
     void deleteUnusedValueWrappers();
     virtual void perManagerLoopIterationCleanup() override;
+    virtual void disconnectSignalProxies() override;
 
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
     inline bool IS_THREADSAFE_INVOCATION(const QString& method) { return ScriptEngine::IS_THREADSAFE_INVOCATION(method); }
@@ -276,12 +280,21 @@ private:
     std::atomic<size_t> scriptValueProxyCount{0};
 #endif
 
+#ifdef OVERTE_SCRIPT_USE_AFTER_DELETE_GUARD
+    bool _wasDestroyed{false};
+#endif
     // Pointers to profiling classes. These are valid only when profiler is running, otherwise null
     // Smart pointer cannot be used here since profiler has private destructor
     v8::CpuProfiler *_profiler{nullptr};
     v8::ProfilerId _profilerId{0};
 
+    // Set of script signal proxy pointers. Used for disconnecting signals on cleanup.
+    // V8TODO: later it would be also worth to make sure that script proxies themselves get deleted together with script engine
+    QReadWriteLock _signalProxySetLock;
+    QSet<ScriptSignalV8Proxy*> _signalProxySet;
+
     friend ScriptValueV8Wrapper;
+    friend ScriptSignalV8Proxy;
 };
 
 // This class is used to automatically add context to script engine's context list that is used by C++ calls

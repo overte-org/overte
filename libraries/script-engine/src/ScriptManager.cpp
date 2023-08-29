@@ -67,6 +67,7 @@
 #include <AddressManager.h>
 #include <NetworkingConstants.h>
 #include <ThreadHelpers.h>
+#include <iostream>
 
 const QString ScriptManager::_SETTINGS_ENABLE_EXTENDED_EXCEPTIONS {
     "com.highfidelity.experimental.enableExtendedJSExceptions"
@@ -366,7 +367,12 @@ bool ScriptManager::isDebugMode() const {
 #endif
 }
 
-ScriptManager::~ScriptManager() {}
+ScriptManager::~ScriptManager() {
+    qDebug() << "ScriptManager::~ScriptManager() : Script manager deleted, type: " << _type << " name: " << _fileNameString;
+    if (_type == ScriptManager::Type::ENTITY_CLIENT) {
+        printf("ScriptManager::~ScriptManager");
+    }
+}
 
 void ScriptManager::disconnectNonEssentialSignals() {
     disconnect();
@@ -464,11 +470,14 @@ void ScriptManager::waitTillDoneRunning(bool shutdown) {
         }
 #else
         auto startedWaiting = usecTimestampNow();
-        while (workerThread->isRunning()) {
+        while (!_isDoneRunning) {
             // If the final evaluation takes too long, then tell the script engine to stop running
             auto elapsedUsecs = usecTimestampNow() - startedWaiting;
+            // TODO: This part was very unsafe and was causing crashes all the time.
+            //  I disabled it for now until we find a safer solution.
+            //  With it disabled now we get clean shutdowns and restarts.
             // V8TODO: temporarily increased script timeout. Maybe use different timeouts for release and unoptimized debug?
-            static const auto MAX_SCRIPT_EVALUATION_TIME = USECS_PER_SECOND;
+            /*static const auto MAX_SCRIPT_EVALUATION_TIME = 10 * USECS_PER_SECOND;
             if (elapsedUsecs > MAX_SCRIPT_EVALUATION_TIME) {
                 workerThread->quit();
 
@@ -485,12 +494,12 @@ void ScriptManager::waitTillDoneRunning(bool shutdown) {
 
                 // Wait for the scripting thread to stop running, as
                 // flooding it with aborts/exceptions will persist it longer
-                static const auto MAX_SCRIPT_QUITTING_TIME = 0.5 * MSECS_PER_SECOND;
+                static const auto MAX_SCRIPT_QUITTING_TIME = 50 * MSECS_PER_SECOND;
                 if (!workerThread->wait(MAX_SCRIPT_QUITTING_TIME)) {
                     Q_ASSERT(false);
                     workerThread->terminate();
                 }
-            }
+            }*/
 
             if (shutdown) {
                 // NOTE: This will be called on the main application thread (among other threads) from stopAllScripts.
@@ -502,12 +511,17 @@ void ScriptManager::waitTillDoneRunning(bool shutdown) {
             }
 
             // Avoid a pure busy wait
-            QThread::yieldCurrentThread();
+            QThread::msleep(1);
         }
 #endif
 
         scriptInfoMessage("Script Engine has stopped:" + getFilename());
     }
+}
+
+void ScriptManager::removeFromScriptEngines() {
+    Q_ASSERT(_scriptEngines);
+    _scriptEngines.toStrongRef()->removeScriptEngine(shared_from_this());
 }
 
 QString ScriptManager::getFilename() const {
@@ -987,6 +1001,7 @@ void ScriptManager::run() {
 
         PROFILE_RANGE(script, "ScriptMainLoop");
 
+//#define SCRIPT_DELAY_DEBUG
 #ifdef SCRIPT_DELAY_DEBUG
         {
             auto actuallySleptUntil = clock::now();
@@ -1066,6 +1081,13 @@ void ScriptManager::run() {
     _isRunning = false;
     emit runningStateChanged();
     emit doneRunning();
+    _engine->disconnectSignalProxies();
+    // Process all remaining events
+    {
+        QEventLoop loop;
+        loop.processEvents();
+    }
+    _isDoneRunning = true;
 }
 
 // NOTE: This is private because it must be called on the same thread that created the timers, which is why
@@ -1123,6 +1145,7 @@ void ScriptManager::timerFired() {
         return; // bail early
     }
 
+//#define SCRIPT_TIMER_PERFORMANCE_STATISTICS
 #ifdef SCRIPT_TIMER_PERFORMANCE_STATISTICS
     _timerCallCounter++;
     if (_timerCallCounter % 100 == 0) {

@@ -423,6 +423,11 @@ public:
      */
     virtual void stopProfilingAndSave() = 0;
 
+    /**
+     * @brief Cleanup function that disconnects signals connected to script proxies to avoid use-after-delete crash when shutting down script engine.
+     */
+    virtual void disconnectSignalProxies() = 0;
+
 public:
     // helper to detect and log warnings when other code invokes QScriptEngine/BaseScriptEngine in thread-unsafe ways
     bool IS_THREADSAFE_INVOCATION(const QString& method);

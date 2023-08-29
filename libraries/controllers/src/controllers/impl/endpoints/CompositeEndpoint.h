@@ -15,14 +15,19 @@
 namespace controller {
     class CompositeEndpoint : public Endpoint, Endpoint::Pair {
     public:
+        static std::shared_ptr<Endpoint> newEndpoint(Endpoint::Pointer first, Endpoint::Pointer second) {
+            return std::shared_ptr<Endpoint>(new CompositeEndpoint(first, second));
+        };
+
         using Endpoint::apply;
-        CompositeEndpoint(Endpoint::Pointer first, Endpoint::Pointer second);
 
         virtual AxisValue peek() const override;
         virtual AxisValue value() override;
         virtual void apply(AxisValue newValue, const Pointer& source) override;
         virtual bool readable() const override;
 
+    private:
+        CompositeEndpoint(Endpoint::Pointer first, Endpoint::Pointer second);
     };
 
 }

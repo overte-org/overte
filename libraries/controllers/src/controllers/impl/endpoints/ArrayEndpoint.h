@@ -17,9 +17,12 @@ namespace controller {
 class ArrayEndpoint : public Endpoint {
     friend class UserInputMapper;
 public:
+    static std::shared_ptr<Endpoint> newEndpoint() {
+        return std::shared_ptr<Endpoint>(new ArrayEndpoint());
+    };
+
     using Endpoint::apply;
     using Pointer = std::shared_ptr<ArrayEndpoint>;
-    ArrayEndpoint() : Endpoint(Input::INVALID_INPUT) { }
 
     virtual AxisValue peek() const override { return AxisValue(); }
 
@@ -34,6 +37,7 @@ public:
     virtual bool readable() const override { return false; }
 
 private:
+    ArrayEndpoint() : Endpoint(Input::INVALID_INPUT) { }
     Endpoint::List _children;
 };
 

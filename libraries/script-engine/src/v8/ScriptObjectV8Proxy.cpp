@@ -1157,6 +1157,9 @@ ScriptSignalV8Proxy::ScriptSignalV8Proxy(ScriptEngineV8* engine, QObject* object
     _objectLifetime.Reset(isolate, lifetime.get());
     _objectLifetime.SetWeak(this, weakHandleCallback, v8::WeakCallbackType::kParameter);
     _v8Context.Reset(isolate, _engine->getContext());
+    _engine->_signalProxySetLock.lockForWrite();
+    _engine->_signalProxySet.insert(this);
+    _engine->_signalProxySetLock.unlock();
 }
 
 ScriptSignalV8Proxy::~ScriptSignalV8Proxy() {
@@ -1166,6 +1169,12 @@ ScriptSignalV8Proxy::~ScriptSignalV8Proxy() {
     v8::HandleScope handleScope(isolate);
     _objectLifetime.Reset();
     _v8Context.Reset();
+#ifdef OVERTE_SCRIPT_USE_AFTER_DELETE_GUARD
+    Q_ASSERT(!_engine->_wasDestroyed);
+#endif
+    _engine->_signalProxySetLock.lockForWrite();
+    _engine->_signalProxySet.remove(this);
+    _engine->_signalProxySetLock.unlock();
 }
 
 void ScriptSignalV8Proxy::weakHandleCallback(const v8::WeakCallbackInfo<ScriptSignalV8Proxy>& info) {

@@ -472,6 +472,15 @@ public:
     void waitTillDoneRunning(bool shutdown = false);
 
     /**
+     * @brief Removes shared pointer to script engine from the list of all script engines.
+     *
+     * This allows deletion of the script engine once all shared pointer instances are gone.
+     * This function is called for entity script engines when they are  being destroyed.
+     *
+     */
+    void removeFromScriptEngines();
+
+    /**
      * @brief Load a script from a given URL
      *
      * If the script engine is not already running, this will download the URL and start the process of seting it up
@@ -1197,6 +1206,14 @@ public:
      */
     void setAbortOnUncaughtException(bool value) { _abortOnUncaughtException = value; }
 
+    /**
+     * @brief Returns true after script finished running and doneRunning signal was called
+     *
+     * @return true If the script and doneRunning signal was called
+     * @return false If the script has not finished running yet
+     */
+    bool isDoneRunning() { return _isDoneRunning; };
+
 public slots:
 
     /**
@@ -1527,6 +1544,7 @@ protected:
     std::atomic<bool> _isFinished { false };
     std::atomic<bool> _isRunning { false };
     std::atomic<bool> _isStopping { false };
+    std::atomic<bool> _isDoneRunning { false };
     bool _areMetaTypesInitialized { false };
     bool _isInitialized { false };
     QHash<QTimer*, CallbackData> _timerFunctionMap;
