@@ -25,7 +25,7 @@ namespace Overte
 
         public JointMap(string RawInput)
         {
-            var parsed = parseRx.Matches(RawInput).First();
+            var parsed = parseRx.Matches(RawInput)[0];
             From = parsed.Groups["From"].Value.Trim();
             To = parsed.Groups["To"].Value.Trim();
         }
@@ -47,7 +47,7 @@ namespace Overte
 
         public Joint(string RawInput)
         {
-            var parsed = parseRx.Matches(RawInput).First();
+            var parsed = parseRx.Matches(RawInput)[0];
             From = parsed.Groups["From"].Value.Trim();
             To = parsed.Groups["To"].Value.Trim();
         }
@@ -60,16 +60,16 @@ namespace Overte
         public override string ToString() => $"joint = {From} = {To}";
     }
 
-    class JointRotationOffset
+    class JointRotationOffset2
     {
         public string BoneName;
         public Quaternion offset;
 
         private Regex parseRx = new Regex(@"(?<BoneName>.*)\s*=\s*\(\s*(?<X>.*)\s*,\s*(?<Y>.*)\s*,\s*(?<Z>.*)\s*,\s*(?<W>.*)\s*\)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-        public JointRotationOffset(string value)
+        public JointRotationOffset2(string value)
         {
-            var parsed = parseRx.Matches(value).First();
+            var parsed = parseRx.Matches(value)[0];
             BoneName = parsed.Groups["BoneName"].Value.Trim();
             offset = new Quaternion
             {
@@ -80,7 +80,7 @@ namespace Overte
             };
         }
 
-        public JointRotationOffset(string boneName, float x, float y, float z, float w)
+        public JointRotationOffset2(string boneName, float x, float y, float z, float w)
         {
             BoneName = boneName;
             offset = new Quaternion(x, y, z, w);
@@ -99,7 +99,7 @@ namespace Overte
 
         public RemapBlendShape(string rawData)
         {
-            var parsed = parseRx.Matches(rawData).First();
+            var parsed = parseRx.Matches(rawData)[0];
             From = parsed.Groups["From"].Value.Trim();
             To = parsed.Groups["To"].Value.Trim();
             Multiplier = float.Parse(parsed.Groups["Multiplier"].Value, CultureInfo.InvariantCulture);
@@ -117,7 +117,7 @@ namespace Overte
 
         public JointIndex(string rawData)
         {
-            var parsed = parseRx.Matches(rawData).First();
+            var parsed = parseRx.Matches(rawData)[0];
             BoneName = parsed.Groups["BoneName"].Value.Trim();
             Index = int.Parse(parsed.Groups["Index"].Value);
         }
@@ -140,7 +140,7 @@ namespace Overte
 
         public List<Joint> jointList = new List<Joint>();
         public List<JointMap> jointMapList = new List<JointMap>();
-        public List<JointRotationOffset> jointRotationList = new List<JointRotationOffset>();
+        public List<JointRotationOffset2> jointRotationList = new List<JointRotationOffset2>();
         public List<JointIndex> jointIndexList = new List<JointIndex>();
         public List<string> freeJointList = new List<string>();
 
@@ -219,6 +219,7 @@ namespace Overte
 
                 foreach (var l in rawFst)
                 {
+                    if (!parseRx.IsMatch(l)) continue;
                     var match = parseRx.Matches(l)[0];
                     ParseLine(match.Groups["Key"].Value.Trim(), match.Groups["Value"].Value.Trim());
                 }
@@ -267,8 +268,11 @@ namespace Overte
                 case "jointMap":
                     jointMapList.Add(new JointMap(value));
                     break;
+                case "jointRotationOffset":
+                    // Old version, does not seem to be used
+                    break;
                 case "jointRotationOffset2":
-                    jointRotationList.Add(new JointRotationOffset(value));
+                    jointRotationList.Add(new JointRotationOffset2(value));
                     break;
                 case "jointIndex":
                     jointIndexList.Add(new JointIndex(value));
@@ -289,7 +293,7 @@ namespace Overte
 
         private KeyValuePair<string, string> ParseKVPair(Regex rx, string sinput)
         {
-            var match = rx.Matches(sinput).First();
+            var match = rx.Matches(sinput)[0];
             return new KeyValuePair<string, string>(match.Groups["Key"].Value.Trim(), match.Groups["Value"].Value.Trim());
         }
     }

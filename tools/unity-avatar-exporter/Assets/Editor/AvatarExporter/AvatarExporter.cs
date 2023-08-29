@@ -663,7 +663,7 @@ class AvatarExporter : MonoBehaviour
             if (!currentFst.jointRotationList.Exists(x => x.BoneName == norBName))
                 // swap from left-handed (Unity) to right-handed (Overte) coordinates and write out joint rotation offset to fst
                 currentFst.jointRotationList.Add(
-                    new JointRotationOffset(norBName, -jointOffset.x, jointOffset.y, jointOffset.z, -jointOffset.w)
+                    new JointRotationOffset2(norBName, -jointOffset.x, jointOffset.y, jointOffset.z, -jointOffset.w)
                 );
             else
                 currentFst.jointRotationList.Find(x => x.BoneName == norBName).offset =
