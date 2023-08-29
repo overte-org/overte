@@ -154,17 +154,19 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
     
     function onUiFocusChanged(keyFocus) {
         if (!hmd) {
-            if (keyFocus) {
-                keysOnOverlay = true;
-                if (Camera.captureMouse) {
-                    Camera.captureMouse = false;
-                }
-            } else {
-                keysOnOverlay = false;
-                if (!tablet.tabletShown) {
-                    if (!tempOff) {
-                        if (!away) {
-                            mouseLookOn();
+            if (mouseLookEnabled) {
+                if (keyFocus) {
+                    keysOnOverlay = true;
+                    if (Camera.captureMouse) {
+                        mouseLookOff();
+                    }
+                } else {
+                    keysOnOverlay = false;
+                    if (!tablet.tabletShown) {
+                        if (!tempOff) {
+                            if (!away) {
+                                mouseLookOn();
+                            }
                         }
                     }
                 }
