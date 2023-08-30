@@ -263,7 +263,7 @@ public:
     FlowThread() {};
     FlowThread& operator=(const FlowThread& otherFlowThread);
 
-    FlowThread(int rootIndex, std::map<int, FlowJoint>* joints);
+    FlowThread(int rootIndex, std::map<int, FlowJoint>* joints, float rigScale);
 
     void resetLength();
     void computeFlowThread(int rootIndex);
@@ -278,6 +278,8 @@ public:
     std::vector<glm::vec3> _positions;
     float _radius{ 0.0f };
     float _length{ 0.0f };
+    // 100.0f was default rig scale when it was hardcoded but it caused issues with most avatars
+    float _rigScale { 100.0f };
     std::map<int, FlowJoint>* _jointsPointer;
     std::vector<glm::vec3> _rootFramePositions;
 };
@@ -285,7 +287,7 @@ public:
 class Flow : public QObject{
     Q_OBJECT
 public:
-    Flow() { }
+    Flow(Rig *rig) : _rig (rig) {};
     Flow& operator=(const Flow& otherFlow);
     bool getActive() const { return _active; }
     void setActive(bool active) { _active = active; }
@@ -323,6 +325,8 @@ private:
     
     float _scale { 1.0f };
     float _lastScale{ 1.0f };
+    // Rig to which flow system belongs, it's used for getting rig scale
+    Rig *_rig { nullptr };
     glm::vec3 _entityPosition;
     glm::quat _entityRotation;
     std::map<int, FlowJoint> _flowJointData;
