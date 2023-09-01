@@ -6326,6 +6326,9 @@ void Application::update(float deltaTime) {
         if (QCursor::pos() != point) {
             _mouseCaptureTarget = point;
             _ignoreMouseMove = true;
+            if (_captureMouse) {
+                _keyboardMouseDevice->updateMousePositionForCapture(QCursor::pos(), _mouseCaptureTarget);
+            }
             QCursor::setPos(point);
         }
     }

@@ -93,6 +93,9 @@ public:
     void wheelEvent(QWheelEvent* event);
     bool isWheelByTouchPad(QWheelEvent* event);
 
+    // This gets called from Application::update just before resetting cursor position when mouse capture is enabled
+    void updateMousePositionForCapture(QPoint globalPos, QPointF captureTarget);
+
     static void enableTouch(bool enableTouch) { _enableTouch = enableTouch; }
 
     static const char* NAME;

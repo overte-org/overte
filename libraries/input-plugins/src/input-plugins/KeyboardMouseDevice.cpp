@@ -113,14 +113,18 @@ void KeyboardMouseDevice::eraseMouseClicked() {
     _inputDevice->_buttonPressedMap.erase(_inputDevice->makeInput(Qt::RightButton, true).getChannel());
 }
 
+void KeyboardMouseDevice::updateMousePositionForCapture(QPoint globalPos, QPointF captureTarget) {
+    if (!isNaN(captureTarget.x())) {
+        QPointF change = globalPos - captureTarget;
+        _accumulatedMove += QPoint(change.x(), change.y());
+    }
+}
+
 void KeyboardMouseDevice::mouseMoveEvent(QMouseEvent* event, bool capture, QPointF captureTarget) {
     QPoint currentPos = event->pos();
 
     if (!capture) {
         _accumulatedMove += currentPos - _lastCursor;
-    } else if (!isNaN(captureTarget.x())) {
-        QPointF change = event->globalPos() - captureTarget;
-        _accumulatedMove += QPoint(change.x(), change.y());
     }
 
     // FIXME - this has the characteristic that it will show large jumps when you move the cursor
