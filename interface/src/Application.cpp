@@ -1505,7 +1505,6 @@ Application::Application(
     qCDebug(interfaceapp, "Initialized Display");
 
     if (_displayPlugin && !_displayPlugin->isHmd()) {
-        _preferredCursor.set(Cursor::Manager::getIconName(Cursor::Icon::SYSTEM));
         showCursor(Cursor::Manager::lookupIcon(_preferredCursor.get()));
     }
     // An audio device changed signal received before the display plugins are set up will cause a crash,
