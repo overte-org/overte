@@ -156,7 +156,7 @@ gpu::TexturePointer TextureUsage::createEmissiveTextureFromImage(Image&& srcImag
 
 gpu::TexturePointer TextureUsage::createLightmapTextureFromImage(Image&& srcImage, const std::string& srcImageName,
                                                                  bool compress, BackendTarget target, const std::atomic<bool>& abortProcessing) {
-    return process2DTextureColorFromImage(std::move(srcImage), srcImageName, compress, target, false, abortProcessing);
+    return process2DHDRTextureColorFromImage(std::move(srcImage), srcImageName, compress, target, false, abortProcessing);
 }
 
 gpu::TexturePointer TextureUsage::createNormalTextureFromNormalImage(Image&& srcImage, const std::string& srcImageName,
@@ -926,10 +926,71 @@ gpu::TexturePointer TextureUsage::process2DTextureColorFromImage(Image&& srcImag
             }
         } else {
             if (target == BackendTarget::GLES32) {
+                //TODO: is this correct? It seems that no format is set for uncompressed texture on GLES
+                qDebug() << "TextureUsage::process2DTextureColorFromImage: no format is set for uncompressed texture on GLES";
             } else {
                 formatGPU = gpu::Element::COLOR_SRGBA_32;
                 formatMip = gpu::Element::COLOR_SBGRA_32;
             }
+        }
+
+        if (isStrict) {
+            theTexture = gpu::Texture::createStrict(formatGPU, image.getWidth(), image.getHeight(), gpu::Texture::MAX_NUM_MIPS, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR));
+        } else {
+            theTexture = gpu::Texture::create2D(formatGPU, image.getWidth(), image.getHeight(), gpu::Texture::MAX_NUM_MIPS, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR));
+        }
+        theTexture->setSource(srcImageName);
+        auto usage = gpu::Texture::Usage::Builder().withColor();
+        if (validAlpha) {
+            usage.withAlpha();
+            if (alphaAsMask) {
+                usage.withAlphaMask();
+            }
+        }
+        theTexture->setUsage(usage.build());
+        theTexture->setStoredMipFormat(formatMip);
+        theTexture->assignStoredMip(0, image.getByteCount(), image.getBits());
+        convertToTextureWithMips(theTexture.get(), std::move(image), target, abortProcessing);
+    }
+
+    return theTexture;
+}
+
+gpu::TexturePointer TextureUsage::process2DHDRTextureColorFromImage(Image&& srcImage, const std::string& srcImageName, bool compress,
+                                                                 BackendTarget target, bool isStrict, const std::atomic<bool>& abortProcessing) {
+    PROFILE_RANGE(resource_parse, "process2DHDRTextureColorFromImage");
+    Image image = processSourceImage(std::move(srcImage), false, target);
+
+    bool validAlpha = image.hasAlphaChannel();
+    bool alphaAsMask = false;
+
+    auto hasTargetHDRFormat = isHDRTextureFormatEnabledForTarget(target);
+    if (hasTargetHDRFormat && image.getFormat() != Image::Format_PACKED_FLOAT) {
+        // If the target format is HDR but the image isn't, we need to convert the
+        // image to HDR.
+        image = convertToHDRFormat(std::move(image), GPU_CUBEMAP_HDR_FORMAT);
+    } else if (!hasTargetHDRFormat && image.getFormat() == Image::Format_PACKED_FLOAT) {
+        // If the target format isn't HDR (such as on GLES) but the image is, we need to
+        // convert the image to LDR
+        image = convertToLDRFormat(std::move(image), Image::Format_ARGB32);
+    }
+
+    gpu::TexturePointer theTexture = nullptr;
+
+    if ((image.getWidth() > 0) && (image.getHeight() > 0)) {
+        gpu::Element formatMip;
+        gpu::Element formatGPU;
+        if (target == BackendTarget::GLES32) {
+            if (compress) {
+                // GLES does not support GL_BGRA
+                formatGPU = gpu::Element::COLOR_COMPRESSED_ETC2_SRGBA;
+                formatMip = formatGPU;
+            } else {
+                //TODO: is this correct? It seems that no format is set for uncompressed texture on GLES
+                qDebug() << "TextureUsage::process2DHDRTextureColorFromImage: no format is set for uncompressed texture on GLES";
+            }
+        } else {
+            formatMip = formatGPU = getHDRTextureFormatForTarget(target, compress);
         }
 
         if (isStrict) {

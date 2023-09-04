@@ -106,6 +106,8 @@ gpu::TexturePointer createLightmapTextureFromImage(Image&& image, const std::str
                                                    bool compress, gpu::BackendTarget target, const std::atomic<bool>& abortProcessing);
 gpu::TexturePointer process2DTextureColorFromImage(Image&& srcImage, const std::string& srcImageName, bool compress,
                                                    gpu::BackendTarget target, bool isStrict, const std::atomic<bool>& abortProcessing);
+gpu::TexturePointer process2DHDRTextureColorFromImage(Image&& srcImage, const std::string& srcImageName, bool compress,
+                                                   gpu::BackendTarget target, bool isStrict, const std::atomic<bool>& abortProcessing);
 gpu::TexturePointer process2DTextureNormalMapFromImage(Image&& srcImage, const std::string& srcImageName, bool compress,
                                                        gpu::BackendTarget target, bool isBumpMap, const std::atomic<bool>& abortProcessing);
 gpu::TexturePointer process2DTextureGrayscaleFromImage(Image&& srcImage, const std::string& srcImageName, bool compress,
@@ -128,7 +130,8 @@ std::pair<gpu::TexturePointer, glm::ivec2> processImage(std::shared_ptr<QIODevic
 
 void convertToTextureWithMips(gpu::Texture* texture, Image&& image, gpu::BackendTarget target, const std::atomic<bool>& abortProcessing = false, int face = -1);
 void convertToTexture(gpu::Texture* texture, Image&& image, gpu::BackendTarget target, const std::atomic<bool>& abortProcessing = false, int face = -1, int mipLevel = 0);
-
+Image convertToHDRFormat(Image&& srcImage, gpu::Element format);
+Image convertToLDRFormat(Image&& srcImage, Image::Format format);
 } // namespace image
 
 #endif // hifi_image_TextureProcessing_h
