@@ -927,6 +927,7 @@ gpu::TexturePointer TextureUsage::process2DTextureColorFromImage(Image&& srcImag
         } else {
             if (target == BackendTarget::GLES32) {
                 //TODO: is this correct? It seems that no format is set for uncompressed texture on GLES
+                qDebug() << "TextureUsage::process2DTextureColorFromImage: no format is set for uncompressed texture on GLES";
             } else {
                 formatGPU = gpu::Element::COLOR_SRGBA_32;
                 formatMip = gpu::Element::COLOR_SBGRA_32;
@@ -986,6 +987,7 @@ gpu::TexturePointer TextureUsage::process2DHDRTextureColorFromImage(Image&& srcI
                 formatMip = formatGPU;
             } else {
                 //TODO: is this correct? It seems that no format is set for uncompressed texture on GLES
+                qDebug() << "TextureUsage::process2DHDRTextureColorFromImage: no format is set for uncompressed texture on GLES";
             }
         } else {
             formatMip = formatGPU = getHDRTextureFormatForTarget(target, compress);
