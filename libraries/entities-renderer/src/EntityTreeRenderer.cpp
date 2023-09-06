@@ -226,6 +226,7 @@ void EntityTreeRenderer::resetPersistentEntitiesScriptEngine() {
             manager->stop();
             manager->waitTillDoneRunning();
             manager->disconnectNonEssentialSignals();
+            manager->removeFromScriptEngines();
         });
     }
     _persistentEntitiesScriptManager = scriptManagerFactory(ScriptManager::ENTITY_CLIENT_SCRIPT, NO_SCRIPT,
@@ -248,6 +249,7 @@ void EntityTreeRenderer::resetNonPersistentEntitiesScriptEngine() {
             manager->stop();
             manager->waitTillDoneRunning();
             manager->disconnectNonEssentialSignals();
+            manager->removeFromScriptEngines();
         });
     }
     _nonPersistentEntitiesScriptManager = scriptManagerFactory(ScriptManager::ENTITY_CLIENT_SCRIPT, NO_SCRIPT,

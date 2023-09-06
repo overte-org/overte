@@ -27,7 +27,9 @@ namespace controller {
     * Encapsulates a particular input / output,
     * i.e. Hydra.Button0, Standard.X, Action.Yaw
     */
-    class Endpoint : public QObject {
+
+// All the derived classes need to have private constructors
+class Endpoint : public QObject, public std::enable_shared_from_this<Endpoint> {
         Q_OBJECT;
     public:
         using Pointer = std::shared_ptr<Endpoint>;
@@ -36,7 +38,6 @@ namespace controller {
         using ReadLambda = std::function<float()>;
         using WriteLambda = std::function<void(float)>;
 
-        Endpoint(const Input& input) : _input(input) {}
         virtual AxisValue value() { return peek(); }
         virtual AxisValue peek() const = 0;
         virtual void apply(AxisValue value, const Pointer& source) = 0;
@@ -51,19 +52,21 @@ namespace controller {
         const Input& getInput() { return _input;  }
 
     protected:
+        Endpoint(const Input& input) : _input(input) {}
         Input _input;
     };
 
     class LambdaEndpoint : public Endpoint {
     public:
         using Endpoint::apply;
-        LambdaEndpoint(ReadLambda readLambda, WriteLambda writeLambda = [](float) {})
-            : Endpoint(Input::INVALID_INPUT), _readLambda(readLambda), _writeLambda(writeLambda) { }
 
         virtual AxisValue peek() const override { return AxisValue(_readLambda(), 0); }
         virtual void apply(AxisValue value, const Pointer& source) override { _writeLambda(value.value); }
 
     private:
+        LambdaEndpoint(ReadLambda readLambda, WriteLambda writeLambda = [](float) {})
+            : Endpoint(Input::INVALID_INPUT), _readLambda(readLambda), _writeLambda(writeLambda) { }
+
         ReadLambda _readLambda;
         WriteLambda _writeLambda;
     };
@@ -72,15 +75,20 @@ namespace controller {
 
     class LambdaRefEndpoint : public Endpoint {
     public:
+        static std::shared_ptr<Endpoint> newEndpoint(const ReadLambda& readLambda, const WriteLambda& writeLambda = DEFAULT_WRITE_LAMBDA) {
+            return std::shared_ptr<Endpoint>(new LambdaRefEndpoint(readLambda, writeLambda));
+        };
+
         using Endpoint::apply;
-        LambdaRefEndpoint(const ReadLambda& readLambda, const WriteLambda& writeLambda = DEFAULT_WRITE_LAMBDA)
-            : Endpoint(Input::INVALID_INPUT), _readLambda(readLambda), _writeLambda(writeLambda) {
-        }
 
         virtual AxisValue peek() const override { return AxisValue(_readLambda(), 0); }
         virtual void apply(AxisValue value, const Pointer& source) override { _writeLambda(value.value); }
 
     private:
+        LambdaRefEndpoint(const ReadLambda& readLambda, const WriteLambda& writeLambda = DEFAULT_WRITE_LAMBDA)
+            : Endpoint(Input::INVALID_INPUT), _readLambda(readLambda), _writeLambda(writeLambda) {
+        }
+
         const ReadLambda& _readLambda;
         const WriteLambda& _writeLambda;
     };
@@ -88,10 +96,6 @@ namespace controller {
 
     class VirtualEndpoint : public Endpoint {
     public:
-        VirtualEndpoint(const Input& id = Input::INVALID_INPUT)
-            : Endpoint(id) {
-        }
-
         virtual AxisValue peek() const override { return _currentValue; }
         virtual void apply(AxisValue value, const Pointer& source) override { _currentValue = value; }
 
@@ -100,6 +104,10 @@ namespace controller {
             _currentPose = value;
         }
     protected:
+        VirtualEndpoint(const Input& id = Input::INVALID_INPUT)
+            : Endpoint(id) {
+        }
+
         AxisValue _currentValue { 0.0f, 0, false };
         Pose _currentPose {};
     };

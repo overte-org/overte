@@ -261,6 +261,9 @@ public:
     bool getNetworkGraphActive() const;
     void setDirectionalBlending(const QString& targetName, const glm::vec3& blendingTarget, const QString& alphaName, float alpha);
 
+    // Get the scale factor to convert distances in the geometry frame into the unscaled rig frame.
+    float GetScaleFactorGeometryToUnscaledRig() const;
+
 signals:
     void onLoadComplete();
     void onLoadFailed();
@@ -289,9 +292,6 @@ protected:
     glm::vec3 calculateKneePoleVector(int footJointIndex, int kneeJoint, int upLegIndex, int hipsIndex, const AnimPose& targetFootPose) const;
     glm::vec3 deflectHandFromTorso(const glm::vec3& handPosition, const HFMJointShapeInfo& hipsShapeInfo, const HFMJointShapeInfo& spineShapeInfo,
                                    const HFMJointShapeInfo& spine1ShapeInfo, const HFMJointShapeInfo& spine2ShapeInfo) const;
-
-    // Get the scale factor to convert distances in the geometry frame into the unscaled rig frame.
-    float GetScaleFactorGeometryToUnscaledRig() const;
 
     // The ground plane Y position in geometry space.
     static constexpr float GEOMETRY_GROUND_Y = 0.0f;
