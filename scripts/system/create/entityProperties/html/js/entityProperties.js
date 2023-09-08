@@ -1586,14 +1586,20 @@ const GROUPS = [
             {
                 label: "Script",
                 type: "string",
-                buttons: [ { id: "reload", label: "F", className: "glyph", onClick: reloadScripts } ],
+                buttons: [
+                    { id: "editor", label: "s", className: "glyph", onClick: startClientEditor },
+                    { id: "reload", label: "F", className: "glyph", onClick: reloadScripts }
+                ],
                 propertyID: "script",
                 placeholder: "URL",
             },
             {
                 label: "Server Script",
                 type: "string",
-                buttons: [ { id: "reload", label: "F", className: "glyph", onClick: reloadServerScripts } ],
+                buttons: [
+                    { id: "editor", label: "s", className: "glyph", onClick: startServerEditor },
+                    { id: "reload", label: "F", className: "glyph", onClick: reloadServerScripts }
+                ],
                 propertyID: "serverScripts",
                 placeholder: "URL",
             },
@@ -3366,6 +3372,20 @@ function reloadServerScripts() {
     }));
 }
 
+function startClientEditor() {
+    EventBridge.emitWebEvent(JSON.stringify({
+        type: "action",
+        action: "startClientEditor"
+    }));
+}
+
+function startServerEditor() {
+    EventBridge.emitWebEvent(JSON.stringify({
+        type: "action",
+        action: "startServerEditor"
+    }));
+}
+
 function copySkyboxURLToAmbientURL() {
     let skyboxURL = getPropertyInputElement("skybox.url").value;
     getPropertyInputElement("ambientLight.ambientURL").value = skyboxURL;
@@ -4982,6 +5002,7 @@ function loaded() {
         showPage("base");
         resetProperties();
         disableProperties();
+        console.log(JSON.stringify(document.body.innerHTML));
 
     });
 
