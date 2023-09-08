@@ -273,15 +273,6 @@ class AvatarExporter : MonoBehaviour
             $"Avatar Exporter\nVersion {AVATAR_EXPORTER_VERSION}\nCopyright 2022 to 2023 Overte e.V.\nCopyright 2018 High Fidelity, Inc.", "Ok");
     }
 
-    /*[MenuItem("Overte/Test")]
-    static void Test()
-    {
-        var f = new FST();
-        f.LoadFile(@"E:\TMP2\test\avatar.fst");
-        Debug.Log(f.remapBlendShapeList[1]);
-        f.ExportFile(@"E:\TMP2\test\avatar2.fst");
-    }*/
-
     static void ExportSelectedAvatar(bool updateExistingAvatar)
     {
         // ensure everything is saved to file before doing anything
