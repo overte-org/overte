@@ -1,10 +1,10 @@
 "use strict";
 
-/* global Entities, Window, EditorWindow */
+/* global Entities, Window, EditorWindow, Script */
 
 (function (global) {
 
-  Script.include('./editorWindow.js');
+  var scriptEditorFactory = Script.require('./scriptEditor.js');
 
   function EditorSpawner() { }
 
@@ -26,8 +26,14 @@
     }
 
     var isClient = scriptType === 'client';
-    var editor = new EditorWindow(entityId, isClient);
-    editor.openEditor();
+    var entityScriptBody = '"use strict"; (' + String(scriptEditorFactory) + ');';
+
+    var editorWindow = scriptEditorFactory({
+      entityId: entityId,
+      isClient: isClient,
+      scriptBody: entityScriptBody
+    });
+    editorWindow.openEditor();
   };
 
   global.editorSpawner = new EditorSpawner();
