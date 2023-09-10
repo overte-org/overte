@@ -868,6 +868,22 @@ bool setupEssentials(int& argc, char** argv, const QCommandLineParser& parser, b
     DependencyManager::set<SceneScriptingInterface>();
 #if !defined(DISABLE_QML)
     DependencyManager::set<OffscreenUi>();
+    {
+        auto window = DependencyManager::get<OffscreenUi>()->getWindow();
+        auto desktopScriptingInterface = DependencyManager::get<DesktopScriptingInterface>();
+        QObject::connect(window, &QQuickWindow::focusObjectChanged, [desktopScriptingInterface](QObject *object) {
+            if (object) {
+                if (object->objectName() == QString("desktop")) {
+                    emit desktopScriptingInterface->uiFocusChanged(false);
+                    return;
+                }
+                // Signal with empty object name happens in addition to regular named ones and is not necessary here
+                if (!object->objectName().isEmpty()) {
+                    emit desktopScriptingInterface->uiFocusChanged(true);
+                }
+            }
+        });
+    }
 #endif
     DependencyManager::set<Midi>();
     DependencyManager::set<PathUtils>();
@@ -1489,7 +1505,6 @@ Application::Application(
     qCDebug(interfaceapp, "Initialized Display");
 
     if (_displayPlugin && !_displayPlugin->isHmd()) {
-        _preferredCursor.set(Cursor::Manager::getIconName(Cursor::Icon::SYSTEM));
         showCursor(Cursor::Manager::lookupIcon(_preferredCursor.get()));
     }
     // An audio device changed signal received before the display plugins are set up will cause a crash,
@@ -6311,6 +6326,9 @@ void Application::update(float deltaTime) {
         if (QCursor::pos() != point) {
             _mouseCaptureTarget = point;
             _ignoreMouseMove = true;
+            if (_captureMouse) {
+                _keyboardMouseDevice->updateMousePositionForCapture(QCursor::pos(), _mouseCaptureTarget);
+            }
             QCursor::setPos(point);
         }
     }

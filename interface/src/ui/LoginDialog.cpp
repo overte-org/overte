@@ -33,6 +33,7 @@
 #include "Application.h"
 #include "scripting/HMDScriptingInterface.h"
 #include "Constants.h"
+#include "scripting/DesktopScriptingInterface.h"
 
 HIFI_QML_DEF(LoginDialog)
 
@@ -67,6 +68,7 @@ void LoginDialog::showWithSelection() {
     auto hmd = DependencyManager::get<HMDScriptingInterface>();
 
     if (!qApp->isHMDMode()) {
+        emit DependencyManager::get<DesktopScriptingInterface>()->uiFocusChanged(true);
         if (qApp->getLoginDialogPoppedUp()) {
             LoginDialog::show();
             return;

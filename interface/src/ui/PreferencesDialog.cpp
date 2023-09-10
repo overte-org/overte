@@ -343,6 +343,13 @@ void setupPreferences() {
         preferences->addPreference(preference);
     }
 
+    static const QString DESKTOP_MOVEMENT{ "Desktop Movement" };
+    {
+        auto getter = []()->bool { return qApp->getCamera().getMouseLook(); };
+        auto setter = [](bool value) { qApp->getCamera().setMouseLook(value); };
+        auto preference = new CheckPreference(DESKTOP_MOVEMENT, "Mouse look (toggle with M key)", getter, setter);
+        preferences->addPreference(preference);
+    }
     static const QString VR_MOVEMENT{ "VR Movement" };
     {
         auto getter = [myAvatar]()->bool { return myAvatar->getAllowTeleporting(); };

@@ -60,7 +60,9 @@ static const QVariantMap RELATIVE_POSITION_ANCHOR {
 };
 
 DesktopScriptingInterface::DesktopScriptingInterface(QObject* parent, bool restricted) 
-    : QObject(parent), _restricted(restricted) { }
+    : QObject(parent), _restricted(restricted) {
+    connect(this, &DesktopScriptingInterface::uiFocusChanged, [this] (bool isActive) { _isOverlayWindowFocused = isActive; });
+}
 
 int DesktopScriptingInterface::getWidth() {
     QSize size = qApp->getWindow()->windowHandle()->screen()->virtualSize();
