@@ -4,28 +4,28 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 */
 (function() { // BEGIN LOCAL_SCOPE
 
-	var away;
+    var away;
 
-	var hmd = HMD.active;
+    var hmd = HMD.active;
 
-	var mouseLookEnabled = Camera.getMouseLook();
+    var mouseLookEnabled = Camera.getMouseLook();
 
-	var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
+    var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
-	var tabletUp;
+    var tabletUp;
     
     var keysOnOverlay = Desktop.isOverlayWindowFocused();
 
-	var tempOff = false;
+    var tempOff = false;
 
-	Camera.mouseLookChanged.connect(onMouseLookChanged);
+    Camera.mouseLookChanged.connect(onMouseLookChanged);
 
-	function onMouseLookChanged(newMouseLook) {
-		mouseLookEnabled = newMouseLook;
-	}
+    function onMouseLookChanged(newMouseLook) {
+        mouseLookEnabled = newMouseLook;
+    }
 
-	if (!hmd){
-		if (mouseLookEnabled) {
+    if (!hmd){
+        if (mouseLookEnabled) {
             if (!keysOnOverlay) {
                 if (!tablet.tabletShown){
                     Window.displayAnnouncement("Mouse look: ON");
@@ -34,14 +34,14 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
                     Window.displayAnnouncement("Tablet is up – mouse look temporarily OFF.");
                 }
             }
-		}
-	}
+        }
+    }
 
-	Controller.keyPressEvent.connect(onKeyPressEvent);
+    Controller.keyPressEvent.connect(onKeyPressEvent);
 
-	function onKeyPressEvent(event) {
-		if (!hmd){
-			if (event.text === 'm') {
+    function onKeyPressEvent(event) {
+        if (!hmd){
+            if (event.text === 'm') {
                 if (!keysOnOverlay) {
                     if (mouseLookEnabled) {
                         if (!Camera.getCaptureMouse()){
@@ -55,16 +55,16 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
                         }
                     }
                 }
-			}
-		}
-	}
+            }
+        }
+    }
 
-	tablet.tabletShownChanged.connect(onTabletShownChanged);
+    tablet.tabletShownChanged.connect(onTabletShownChanged);
 
-	function onTabletShownChanged() {
-		if (!hmd) {
-			if (mouseLookEnabled) {
-				if (!tablet.toolbarMode) {
+    function onTabletShownChanged() {
+        if (!hmd) {
+            if (mouseLookEnabled) {
+                if (!tablet.toolbarMode) {
                     if (!keysOnOverlay) {
                         if (tablet.tabletShown) {
                             tabletUp = true;
@@ -84,17 +84,17 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
                             }
                         }
                     }
-				}
-			}
-		}
-	}
+                }
+            }
+        }
+    }
 
-	MyAvatar.wentAway.connect(onWentAway);
+    MyAvatar.wentAway.connect(onWentAway);
 
-	function onWentAway() {
-		if (!hmd) {
-			if (mouseLookEnabled) {
-				away = true;
+    function onWentAway() {
+        if (!hmd) {
+            if (mouseLookEnabled) {
+                away = true;
                 if (!keysOnOverlay) {
                     if (!tabletUp){
                         Window.displayAnnouncement("Away state ON – mouse look temporarily OFF.")
@@ -102,53 +102,53 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
                         mouseLookOff()
                     }
                 }
-			}
-		}
-	}
+            }
+        }
+    }
 
-	MyAvatar.wentActive.connect(onWentActive);
+    MyAvatar.wentActive.connect(onWentActive);
 
-	function onWentActive() {
-		if (!hmd) {
-			if (mouseLookEnabled) {
-				away = false;
+    function onWentActive() {
+        if (!hmd) {
+            if (mouseLookEnabled) {
+                away = false;
                 if (!keysOnOverlay) {
                     if (!tabletUp) {
                         Window.displayAnnouncement("Away state OFF – mouse look ON.");
                         mouseLookOn();
                     }
                 }
-			}
-		}
-	}
+            }
+        }
+    }
 
-	HMD.displayModeChanged.connect(onDisplayModeChanged);
+    HMD.displayModeChanged.connect(onDisplayModeChanged);
 
-	function onDisplayModeChanged() {
-		if (mouseLookEnabled) {
-			if (HMD.active) {
-				hmd = true;
-				mouseLookOff();
-			} else {
-				hmd = false;
-				if (!tempOff) {
+    function onDisplayModeChanged() {
+        if (mouseLookEnabled) {
+            if (HMD.active) {
+                hmd = true;
+                mouseLookOff();
+            } else {
+                hmd = false;
+                if (!tempOff) {
                     if (!keysOnOverlay) {
                         if (!tabletUp) {
                             mouseLookOn();
                         }
                     }
-				}
-			}
-		}
-	}
+                }
+            }
+        }
+    }
 
-	function mouseLookOn() {
-		Camera.captureMouse = true;
-	}
+    function mouseLookOn() {
+        Camera.captureMouse = true;
+    }
 
-	function mouseLookOff() {
-		Camera.captureMouse = false;
-	}
+    function mouseLookOff() {
+        Camera.captureMouse = false;
+    }
     
     Desktop.uiFocusChanged.connect(onUiFocusChanged);
     
@@ -174,18 +174,18 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
         }
     }
 
-	Script.scriptEnding.connect(onScriptEnding);
+    Script.scriptEnding.connect(onScriptEnding);
 
-	function onScriptEnding() {
-		Camera.captureMouse = false;
-		Camera.mouseLookChanged.disconnect(onMouseLookChanged);
-		Controller.keyPressEvent.disconnect(onKeyPressEvent);
-		tablet.tabletShownChanged.disconnect(onTabletShownChanged);
-		MyAvatar.wentAway.disconnect(onWentAway);
-		MyAvatar.wentActive.disconnect(onWentActive);
-		HMD.displayModeChanged.disconnect(onDisplayModeChanged);
+    function onScriptEnding() {
+        Camera.captureMouse = false;
+        Camera.mouseLookChanged.disconnect(onMouseLookChanged);
+        Controller.keyPressEvent.disconnect(onKeyPressEvent);
+        tablet.tabletShownChanged.disconnect(onTabletShownChanged);
+        MyAvatar.wentAway.disconnect(onWentAway);
+        MyAvatar.wentActive.disconnect(onWentActive);
+        HMD.displayModeChanged.disconnect(onDisplayModeChanged);
         Desktop.uiFocusChanged.disconnect(onUiFocusChanged);
-		Script.scriptEnding.disconnect(onScriptEnding);
-	}
+        Script.scriptEnding.disconnect(onScriptEnding);
+    }
 
 }()); // END LOCAL_SCOPE
