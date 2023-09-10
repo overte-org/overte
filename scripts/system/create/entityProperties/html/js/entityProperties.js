@@ -5894,7 +5894,6 @@ function loaded() {
         showPage("base");
         resetProperties();
         disableProperties();
-        console.log(JSON.stringify(document.body.innerHTML));
 
     });
 
