@@ -18,6 +18,8 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 
     var tempOff = false;
 
+    var altMode = false;
+
     Camera.mouseLookChanged.connect(onMouseLookChanged);
 
     function onMouseLookChanged(newMouseLook) {
@@ -41,6 +43,21 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
 
     function onKeyPressEvent(event) {
         if (!hmd){
+            if(event.isAlt){
+                if (keysOnOverlay) return;
+                if (!mouseLookEnabled) return;
+                mouseLookOff();
+                Window.displayAnnouncement("Mouse look: Temporarily OFF");
+                tempOff = true;
+                altMode = true;
+            }
+            if (tempOff && altMode && ['left', 'right', 'up', 'down', 'esc', 'w', 'a', 's', 'd'].includes(event.text.toLowerCase())){
+                if (keysOnOverlay) return;
+                if (!mouseLookEnabled) return;
+                mouseLookOn();
+                tempOff = false;
+                altMode = false
+            }
             if (event.text === 'm') {
                 if (!keysOnOverlay) {
                     if (mouseLookEnabled) {
