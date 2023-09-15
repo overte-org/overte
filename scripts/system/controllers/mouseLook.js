@@ -191,6 +191,12 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
         }
     }
 
+    Messages.messageReceived.connect(onMessageReceived);
+    function onMessageReceived(channel, message, sender, localOnly) {
+        if (channel === "Hifi-Away-Enable")
+            if (message === 'enable') mouseLookOn();
+    }
+
     Script.scriptEnding.connect(onScriptEnding);
 
     function onScriptEnding() {
