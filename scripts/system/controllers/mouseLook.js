@@ -58,7 +58,7 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
                 tempOff = false;
                 altMode = false
             }
-            if (event.text === 'm') {
+            if (event.text.toLowerCase() === 'm') {
                 if (!keysOnOverlay) {
                     if (mouseLookEnabled) {
                         if (!Camera.getCaptureMouse()){
