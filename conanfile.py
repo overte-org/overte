@@ -6,6 +6,15 @@ class Overte(ConanFile):
     name = "Overte"
     settings = "os", "compiler", "build_type", "arch"
     generators = "CMakeToolchain", "CMakeDeps"
+    default_options = {
+        "qt*:shared": "True",
+        "qt*:gui": "True",
+        "qt*:qtdeclarative": "True",
+        "qt*:qtlocation": "True",
+        "qt*:qtquickcontrols2": "True",
+        "qt*:qtscxml": "True",
+        "qt*:qtwebchannel": "True",
+    }
 
     def requirements(self):
         self.requires("bullet3/3.25")
@@ -24,8 +33,9 @@ class Overte(ConanFile):
         #self.requires("openvr/1.16.8") # Broken
         self.requires("opus/1.3.1")
         self.requires("polyvox/2016.11@overte/stable")
-        #self.requires("quazip/1.4")
+        self.requires("quazip/1.4")
         self.requires("sdl/2.26.5")
+        self.requires("qt/5.15.10", force=True)
         self.requires("scribe/2019.02@overte/stable")
         #self.requires("shaderc/2021.1") # Broken
         self.requires("spirv-cross/cci.20211113")
