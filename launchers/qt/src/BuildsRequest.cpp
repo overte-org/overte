@@ -25,7 +25,7 @@ bool Builds::getBuild(QString tag, Build* outBuild) {
 }
 
 void BuildsRequest::send(QNetworkAccessManager& nam) {
-    QString latestBuildRequestUrl { "https://thunder.highfidelity.com/builds/api/tags/latest/?format=json" };
+    QString latestBuildRequestUrl { "https://cdn.anotherfoxguy.com/overte/HQLauncher.json" };
     QProcessEnvironment processEnvironment = QProcessEnvironment::systemEnvironment();
 
     if (processEnvironment.contains("HQ_LAUNCHER_BUILDS_URL")) {

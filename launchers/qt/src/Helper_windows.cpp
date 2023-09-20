@@ -30,6 +30,8 @@ void launchClient(const QString& clientPath, const QString& homePath, const QStr
         params += " --tokens \"" + loginResponseToken.replace("\"", "\\\"") + "\"";
     }
 
+    qDebug() << "parms: " << params;
+
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
 

@@ -11,6 +11,16 @@
 # This macro checks some Jenkins defined environment variables to determine the origin of this build
 # and decides how targets should be packaged.
 
+function(set_from_env _RESULT_NAME _ENV_VAR_NAME _DEFAULT_VALUE)
+  if (NOT DEFINED ${_RESULT_NAME})
+    if ("$ENV{${_ENV_VAR_NAME}}" STREQUAL "")
+      set (${_RESULT_NAME} ${_DEFAULT_VALUE} PARENT_SCOPE)
+    else()
+      set (${_RESULT_NAME} $ENV{${_ENV_VAR_NAME}} PARENT_SCOPE)
+    endif()
+  endif()
+endfunction()
+
 macro(SET_PACKAGING_PARAMETERS)
   set(PR_BUILD 0)
   set(PRODUCTION_BUILD 0)

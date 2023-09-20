@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.16)
 if (APPLE)
   set(ENV{MACOSX_DEPLOYMENT_TARGET} 10.10)
 endif()
@@ -24,114 +24,25 @@ if(MSVC)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 endif()
 
-
-function(set_from_env _RESULT_NAME _ENV_VAR_NAME _DEFAULT_VALUE)
-  if (NOT DEFINED ${_RESULT_NAME})
-    if ("$ENV{${_ENV_VAR_NAME}}" STREQUAL "")
-      set (${_RESULT_NAME} ${_DEFAULT_VALUE} PARENT_SCOPE)
-    else()
-      set (${_RESULT_NAME} $ENV{${_ENV_VAR_NAME}} PARENT_SCOPE)
-    endif()
-  endif()
-endfunction()
-
-include(ExternalProject)
-
-if (APPLE)
-  set(CMAKE_EXE_LINKER_FLAGS "-framework Cocoa -framework CoreServices -framework Carbon -framework IOKit -framework Security -framework SystemConfiguration")
-  add_compile_options(-W -Wall -Wextra -Wpedantic)
-endif()
-if (WIN32)
-
-    ExternalProject_Add(
-        qtlite
-        URL "${EXTERNAL_BUILD_ASSETS}/dependencies/qtlite/qt-lite-5.9.9-win-oct-15-2019.zip"
-        URL_HASH MD5=0176277bca37d219e83738caf3a698eb
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
-        LOG_DOWNLOAD 1
-    )
-
-
-  ExternalProject_Get_Property(qtlite SOURCE_DIR)
-  ExternalProject_Get_Property(qtlite STAMP_DIR)
-
-  include("${STAMP_DIR}/download-qtlite.cmake")
-  include("${STAMP_DIR}/extract-qtlite.cmake")
-  include("${STAMP_DIR}/verify-qtlite.cmake")
-
-  message("${SOURCE_DIR}/lib/cmake")
-
-  list(APPEND CMAKE_PREFIX_PATH ${SOURCE_DIR}/lib/cmake)
-
-  set(SSL_DIR ${SOURCE_DIR}/ssl)
-  set(OPENSSL_ROOT_DIR ${SSL_DIR})
-  message("SSL dir is ${SSL_DIR}")
-  set(OPENSSL_USE_STATIC_LIBS TRUE)
-  find_package(OpenSSL 1.1.0 REQUIRED)
-
-  message("-- Found OpenSSL Libs ${OPENSSL_LIBRARIES}")
-
-endif ()
-
-if (APPLE)
-  ExternalProject_Add(
-    qtlite
-    URL "${EXTERNAL_BUILD_ASSETS}/dependencies/qtlite/qt-lite-5.9.9-mac.zip"
-    URL_HASH MD5=0cd78d40e5f539a7e314cf99b6cae0d0
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-    LOG_DOWNLOAD 1
-    )
-
-
-  ExternalProject_Get_Property(qtlite SOURCE_DIR)
-  ExternalProject_Get_Property(qtlite STAMP_DIR)
-
-  include("${STAMP_DIR}/download-qtlite.cmake")
-  include("${STAMP_DIR}/extract-qtlite.cmake")
-  include("${STAMP_DIR}/verify-qtlite.cmake")
-
-  message("${SOURCE_DIR}/lib/cmake")
-
-  list(APPEND CMAKE_PREFIX_PATH ${SOURCE_DIR}/lib/cmake)
-
-  set(SSL_DIR ${SOURCE_DIR}/ssl)
-  set(OPENSSL_ROOT_DIR ${SSL_DIR})
-  message("SSL dir is ${SSL_DIR}")
-endif()
-
-if (APPLE)
-  set(OPENSSL_USE_STATIC_LIBS TRUE)
-  find_package(OpenSSL 1.1.0 REQUIRED)
-endif()
-
-find_package(Qt5 COMPONENTS Core Gui Qml Quick QuickControls2 Network REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Qml Quick QuickControls2 Network QmlImportScanner REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(QtStaticDeps REQUIRED)
 
+link_directories(${CMAKE_BINARY_DIR}/qtplugins)
 set(CUSTOM_LAUNCHER_QRC_PATHS "")
 set(RESOURCES_QRC ${CMAKE_CURRENT_BINARY_DIR}/resources.qrc)
 set(RESOURCES_RCC ${CMAKE_CURRENT_SOURCE_DIR}/resources.rcc)
 generate_qrc(OUTPUT ${RESOURCES_QRC} PATH ${CMAKE_CURRENT_SOURCE_DIR}/resources CUSTOM_PATHS ${CUSTOM_LAUNCHER_QRC_PATHS} GLOBS *)
 
-add_custom_command(
-  OUTPUT ${RESOURCES_RCC}
-  DEPENDS ${RESOURCES_QRC} ${GENERATE_QRC_DEPENDS}
-  COMMAND "${_qt5Core_install_prefix}/bin/rcc"
-  ARGS ${RESOURCES_QRC} -binary -o ${RESOURCES_RCC})
+# add_custom_command(
+#   OUTPUT ${RESOURCES_RCC}
+#   DEPENDS ${RESOURCES_QRC} ${GENERATE_QRC_DEPENDS}
+#   COMMAND "${_qt5Core_install_prefix}/bin/rcc"
+#   ARGS ${RESOURCES_QRC} -binary -o ${RESOURCES_RCC})
 
 QT5_ADD_RESOURCES(RES_SOURCES ${RESOURCES_QRC})
 
 list(APPEND GENERATE_QRC_DEPENDS ${RESOURCES_RCC})
 add_custom_target(resources ALL DEPENDS ${GENERATE_QRC_DEPENDS})
-
-foreach(plugin ${Qt5Gui_PLUGINS})
-  get_target_property(_loc ${plugin} LOCATION)
-  set(plugin_libs ${plugin_libs} ${_loc})
-endforeach()
 
 set(src_files
   src/main.cpp
@@ -208,62 +119,41 @@ elseif (APPLE)
     )
 endif()
 
-target_link_libraries(${PROJECT_NAME}
-  Qt5::Core
-  Qt5::Quick
-  Qt5::QuickControls2
-  Qt5::Qml
-  Qt5::Gui
-  Qt5::Network
-  ${Qt_LIBRARIES}
-  ${OPENGL_LIBRARIES}
-  ${plugin_libs}
-  ${QT_STATIC_LIBS}
-  )
+target_link_libraries(${PROJECT_NAME} PUBLIC
+  qt::qt
+  opengl::opengl
+)
+target_include_directories(${PROJECT_NAME} PUBLIC ${Qt5_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/deps/)
 
 if (WIN32)
-  target_link_libraries(${PROJECT_NAME}
-    wsock32 ws2_32 Winmm version imm32 dwmapi
-    Crypt32 Iphlpapi
-    #"${SSL_DIR}/lib/libeay32.lib"
-    #"${SSL_DIR}/lib/ssleay32.lib"
-    ${OPENSSL_LIBRARIES}
-    "${_qt5Core_install_prefix}/qml/QtQuick.2/qtquick2plugin.lib"
-    "${_qt5Core_install_prefix}/qml/QtQuick/Controls.2/qtquickcontrols2plugin.lib"
-    "${_qt5Core_install_prefix}/qml/QtQuick/Templates.2/qtquicktemplates2plugin.lib")
-elseif (APPLE)
-  target_link_libraries(${PROJECT_NAME}
-    ${OPENSSL_LIBRARIES}
-    "${_qt5Core_install_prefix}/qml/QtQuick.2/libqtquick2plugin.a"
-    "${_qt5Core_install_prefix}/qml/QtQuick/Controls.2/libqtquickcontrols2plugin.a"
-    "${_qt5Core_install_prefix}/qml/QtQuick/Templates.2/libqtquicktemplates2plugin.a"
-    "${_qt5Core_install_prefix}/plugins/platforms/libqcocoa.a")
+    target_link_libraries(${PROJECT_NAME} PUBLIC "d3d11" "DXGI" "dxguid" 
+        qtquick2plugin
+        qtquickcontrols2plugin
+        qtquicktemplates2plugin
+        Qt5::QWindowsIntegrationPlugin
+    )
 endif()
 
-target_include_directories(${PROJECT_NAME} PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/deps/
-  ${Qt5Core_INCLUDE_DIRS}
-  ${Qt5Quick_INCLUDE_DIRS}
-  ${Qt5Gui_INCLUDE_DIRS}
-  ${Qt5Qml_INCLUDE_DIRS})
+qt_import_plugins(${PROJECT_NAME} INCLUDE Qt5::QtQuick2Plugin Qt5::QtQuickControls2Plugin Qt5::QWindowsIntegrationPlugin)
+
+#qt5_import_qml_plugins(${PROJECT_NAME})
 
 add_dependencies(${PROJECT_NAME} resources)
 
 if (APPLE)
-  target_include_directories(${PROJECT_NAME} PUBLIC
-    ${OPENSSL_INCLUDE_DIR})
+  target_include_directories(${PROJECT_NAME} PUBLIC ${OPENSSL_INCLUDE_DIR})
 endif()
 
-  if (LAUNCHER_SOURCE_TREE_RESOURCES)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE RESOURCE_PREFIX_URL="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE HIFI_USE_LOCAL_FILE)
-    message("Use source tree resources path: file://${CMAKE_CURRENT_SOURCE_DIR}/resources/")
-  else()
-    target_compile_definitions(${PROJECT_NAME} PRIVATE RESOURCE_PREFIX_URL="qrc:/")
-    message("Use resource.rcc path: qrc:/")
-  endif()
+if (LAUNCHER_SOURCE_TREE_RESOURCES)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE RESOURCE_PREFIX_URL="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
+  target_compile_definitions(${PROJECT_NAME} PRIVATE HIFI_USE_LOCAL_FILE)
+  message("Use source tree resources path: file://${CMAKE_CURRENT_SOURCE_DIR}/resources/")
+else()
+  target_compile_definitions(${PROJECT_NAME} PRIVATE RESOURCE_PREFIX_URL="qrc:/")
+  message("Use resource.rcc path: qrc:/")
+endif()
 
-  target_compile_definitions(${PROJECT_NAME} PRIVATE LAUNCHER_BUILD_VERSION="${BUILD_VERSION}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE LAUNCHER_BUILD_VERSION="${BUILD_VERSION}")
 
 if (APPLE)
   install(
@@ -281,7 +171,7 @@ if (APPLE)
 
   set(CPACK_NSIS_DISPLAY_NAME ${_DISPLAY_NAME})
 
-  set(DMG_SUBFOLDER_NAME "Vircadia")
+  set(DMG_SUBFOLDER_NAME "Overte")
   set(ESCAPED_DMG_SUBFOLDER_NAME "")
   set(DMG_SUBFOLDER_ICON "${CMAKE_SOURCE_DIR}/cmake/installer/install-folder.rsrc")
 
