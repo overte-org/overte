@@ -139,7 +139,7 @@ endif()
             return
 
         if 'Windows' == system:
-            self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.10-qtwebengine-5.15.15-2023.06.17-kde1742cc4f85f1b57c5f8ef51d62ff0b958f38912de57a9094aa3a3e3bf35ae6cb-windows-x86_64.tar.xz'
+            self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.10-2023.09.17-windows-x86_64.tar.xz'
         elif 'Darwin' == system:
             self.qtUrl = self.assets_url + '/dependencies/vcpkg/qt5-install-5.15.2-macos.tar.gz'
         elif 'Linux' == system:
@@ -151,10 +151,8 @@ endif()
                 # The `or 0` conditional assignment prevents the int parsing error from hiding the useful Qt package error 
                 u_major = int( distro.major_version() or '0' )
                 if distro.id() == 'ubuntu' or distro.id() == 'linuxmint':
-                    if (distro.id() == 'ubuntu' and u_major == 18) or distro.id() == 'linuxmint' and u_major == 19:
-                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.5-2022.07.17-kde_ea4efc067b47c11b1aac61668afd8578a6834f5b-ubuntu-18.04-amd64.tar.xz'
-                    elif (distro.id() == 'ubuntu' and u_major == 20) or distro.id() == 'linuxmint' and u_major == 20:
-                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.5-2022.08.12-kde_0b4d44f2ff1103349bac22b9b207cfcc1f50a53a-ubuntu-20.04-amd64.tar.xz'
+                    if (distro.id() == 'ubuntu' and u_major == 20) or distro.id() == 'linuxmint' and u_major == 20:
+                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.10-2023.09.16-kde_15e6be42c230046646237698fa761b8fb3df71ee-ubuntu-20.04-amd64.tar.xz'
                     elif (distro.id() == 'ubuntu' and u_major > 20) or (distro.id() == 'linuxmint' and u_major > 20):
                         self.__no_qt_package_error()
                     else:
