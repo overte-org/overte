@@ -12,6 +12,10 @@ class OVLauncher(ConanFile):
         "qt*:qtquickcontrols": True,
         "qt*:qtquickcontrols2": True,
         "qt*:qtwebengine": False,
+        "qt*:with_mysql": False,
+        "qt*:with_odbc": False,
+        "qt*:with_pq": False,
+        "qt*:with_sqlite3": False,
     }
 
     def requirements(self):
