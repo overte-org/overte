@@ -33,3 +33,8 @@ class PolyvoxConan(ConanFile):
     def package(self):
         cmake = CMake(self)
         cmake.install()
+
+    def package_info(self):
+        self.cpp_info.includedirs = ['PolyVoxCore/include', 'PolyVoxUtil/include']
+        self.cpp_info.libdirs = ['PolyVoxCore/lib', 'PolyVoxUtil/lib']
+        self.cpp_info.libs = collect_libs(self)
