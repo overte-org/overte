@@ -7,5 +7,9 @@
 # 
 macro(TARGET_JSON)
 	# We use vcpkg for both json and glm, so we just re-use the target_glm macro here
-    target_glm()
+    # target_glm()
+
+
+    find_package(nlohmann_json REQUIRED)
+    target_link_libraries(${TARGET_NAME} nlohmann_json::nlohmann_json)
 endmacro()
