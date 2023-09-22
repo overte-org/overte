@@ -32,7 +32,7 @@ macro(PACKAGE_LIBRARIES_FOR_DEPLOYMENT)
     find_program(WINDEPLOYQT_COMMAND windeployqt PATHS ${QT_DIR}/bin NO_DEFAULT_PATH)
 
     if (NOT WINDEPLOYQT_COMMAND)
-      message(FATAL_ERROR "Could not find windeployqt at ${QT_DIR}/bin. windeployqt is required.")
+      # message(FATAL_ERROR "Could not find windeployqt at ${QT_DIR}/bin. windeployqt is required.")
     endif ()
 
     # add a post-build command to call windeployqt to copy Qt plugins

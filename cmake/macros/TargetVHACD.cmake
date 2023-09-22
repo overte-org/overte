@@ -1,6 +1,4 @@
 macro(TARGET_VHACD)
-    find_library(VHACD_LIBRARY_RELEASE VHACD PATHS ${VCPKG_INSTALL_ROOT}/lib NO_DEFAULT_PATH)
-    find_library(VHACD_LIBRARY_DEBUG VHACD PATHS ${VCPKG_INSTALL_ROOT}/debug/lib NO_DEFAULT_PATH)
-    select_library_configurations(VHACD)
-    target_link_libraries(${TARGET_NAME} ${VHACD_LIBRARIES})
+    find_package(v-hacd REQUIRED)
+    target_link_libraries(${TARGET_NAME} v-hacd::v-hacd)
 endmacro()
