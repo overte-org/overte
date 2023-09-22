@@ -217,7 +217,7 @@ def processCommand(line):
         executeSubprocess(scribeArgs)
 
         # Generate the un-optimized output
-        executeSubprocess([glslangExec, '-V110', '-o', upoptSpirvFile, unoptGlslFile])
+        executeSubprocess([glslangExec, '-V100', '-o', upoptSpirvFile, unoptGlslFile])
 
         # Optimize the SPIRV
         executeSubprocess([spirvOptExec, '-O', '-o', spirvFile, upoptSpirvFile])
