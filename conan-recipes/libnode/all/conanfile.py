@@ -1,9 +1,8 @@
 import os
 from conan import ConanFile
-from conan.tools.files import get, copy
+from conan.tools.files import get, copy, collect_libs
 from conan.tools.gnu import Autotools
 from conan.tools.env import Environment, VirtualBuildEnv
-from conan.tools.layout import basic_layout
 from conan.tools.microsoft import (
     VCVars,
     MSBuild,
@@ -36,9 +35,6 @@ class libnodeConan(ConanFile):
             f"--shared-{libname}-libpath={libpath}",
         ]
 
-    def layout(self):
-        basic_layout(self)
-
     def build_requirements(self):
         self.tool_requires("nasm/2.15.05")
 
@@ -67,7 +63,7 @@ class libnodeConan(ConanFile):
             vbe = VirtualBuildEnv(self)
             vbe.generate()
             tc = MSBuildToolchain(self)
-            tc.configuration = "%s" % self.settings.build_type
+            tc.configuration = str(self.settings.build_type)
             tc.generate()
             tc = VCVars(self)
             tc.generate()
@@ -115,20 +111,20 @@ class libnodeConan(ConanFile):
     def package(self):
         if self.settings.os == "Windows":
             self.run(
-                "set HEADERS_ONLY=1 && python ..\\tools\\install.py install %s include"
+                "set HEADERS_ONLY=1 && python ./tools/install.py install %s\\ \\"
                 % self.package_folder
             )
             copy(
                 self,
-                "libnode*.lib",
-                os.path.join(self.source_folder, "out"),
+                "libnode.lib",
+                os.path.join(self.source_folder, "out", str(self.settings.build_type)),
                 os.path.join(self.package_folder, "lib"),
                 keep_path=False
             )
             copy(
                 self,
-                "v8_libplatform*.lib",
-                os.path.join(self.source_folder, "out"),
+                "v8_libplatform.lib",
+                os.path.join(self.source_folder, "out", str(self.settings.build_type), "lib"),
                 os.path.join(self.package_folder, "lib"),
                 keep_path=False
             )
@@ -140,5 +136,31 @@ class libnodeConan(ConanFile):
                 keep_path=False
             )
         else:
-            autotools = Autotools(self)
-            autotools.install()
+            self.run(
+                "set HEADERS_ONLY=1 && python ./tools/install.py install %s\\ \\"
+                % self.package_folder
+            )
+            copy(
+                self,
+                "libnode.lib",
+                os.path.join(self.source_folder, "out", str(self.settings.build_type)),
+                os.path.join(self.package_folder, "lib"),
+                keep_path=False
+            )
+            copy(
+                self,
+                "v8_libplatform.lib",
+                os.path.join(self.source_folder, "out", str(self.settings.build_type), "lib"),
+                os.path.join(self.package_folder, "lib"),
+                keep_path=False
+            )
+            copy(
+                self,
+                "*.dll",
+                os.path.join(self.source_folder, "out"),
+                os.path.join(self.package_folder, "bin"),
+                keep_path=False
+            )
+
+    def package_info(self):
+        self.cpp_info.libs = collect_libs(self)
