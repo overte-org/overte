@@ -68,8 +68,8 @@ foreach(EXTERNAL ${OPTIONAL_EXTERNALS})
   endif ()
 endforeach()
 
-find_package(Qt5LinguistTools REQUIRED)
-find_package(Qt5LinguistToolsMacros)
+# find_package(Qt5LinguistTools REQUIRED)
+# find_package(Qt5LinguistToolsMacros)
 
 if (WIN32)
   set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -bigobj")
@@ -247,6 +247,7 @@ target_opengl()
 add_crashpad()
 target_breakpad()
 target_json()
+target_glm()
 target_discord_rpc()
 
 # perform standard include and linking for found externals
