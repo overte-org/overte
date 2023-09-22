@@ -17,13 +17,7 @@ macro(TARGET_WEBRTC)
         # WebRTC is basically impossible to build on aarch64 Linux.
         # I am looking at https://gitlab.freedesktop.org/pulseaudio/webrtc-audio-processing for an alternative.
     else()
-        set(WEBRTC_INCLUDE_DIRS "${VCPKG_INSTALL_ROOT}/include/webrtc")
-        target_include_directories(${TARGET_NAME} SYSTEM PUBLIC ${WEBRTC_INCLUDE_DIRS})
-        find_library(WEBRTC_LIBRARY_RELEASE webrtc PATHS ${VCPKG_INSTALL_ROOT}/lib NO_DEFAULT_PATH)
-        find_library(WEBRTC_LIBRARY_DEBUG webrtc PATHS ${VCPKG_INSTALL_ROOT}/debug/lib NO_DEFAULT_PATH)
-        select_library_configurations(WEBRTC)
-        target_link_libraries(${TARGET_NAME} ${WEBRTC_LIBRARIES})
+        #find_package(WebRTC REQUIRED)
+        #target_link_libraries(${TARGET_NAME} WebRTC::WebRTC)
     endif()
-
-
 endmacro()

@@ -6,8 +6,6 @@
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 # 
 macro(TARGET_QUAZIP)
-  find_library(QUAZIP_LIBRARY_RELEASE quazip5 PATHS ${VCPKG_INSTALL_ROOT}/lib NO_DEFAULT_PATH)
-  find_library(QUAZIP_LIBRARY_DEBUG quazip5 PATHS ${VCPKG_INSTALL_ROOT}/debug/lib NO_DEFAULT_PATH)
-  select_library_configurations(QUAZIP)
-  target_link_libraries(${TARGET_NAME} ${QUAZIP_LIBRARIES})
+  find_package(QuaZip-Qt5 REQUIRED)
+  target_link_libraries(${TARGET_NAME} QuaZip::QuaZip)
 endmacro()
