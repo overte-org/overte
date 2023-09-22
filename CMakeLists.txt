@@ -18,9 +18,17 @@ cmake_minimum_required(VERSION 3.14)
 # This should allow using long paths on Windows
 SET(CMAKE_NINJA_FORCE_RESPONSE_FILE 1 CACHE INTERNAL "")
 
+include(SelectLibraryConfigurations)
+
 # read USE_GLES enviroment variable and sets it as GLES option
 # TODO still gets overwritten by "use GLES on linux aarch64"
 set(GLES_OPTION "$ENV{USE_GLES}")
+
+# Instruct CMake to run moc automatically when needed.
+set(CMAKE_AUTOMOC ON)
+
+# Instruct CMake to run rcc automatically when needed
+set(CMAKE_AUTORCC ON)
 
 # use GLES on linux aarch64
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
@@ -33,6 +41,8 @@ endif()
 if (APPLE)
   set(ENV{MACOSX_DEPLOYMENT_TARGET} 10.11)
 endif()
+
+set(EXTERNAL_BUILD_ASSETS "https://build-deps.overte.org")
 
 set(RELEASE_TYPE "$ENV{RELEASE_TYPE}")
 if ((NOT "${RELEASE_TYPE}" STREQUAL "PRODUCTION") AND (NOT "${RELEASE_TYPE}" STREQUAL "PR"))
@@ -57,8 +67,6 @@ if( NOT WIN32 )
     set(OVERTE_OPTIMIZE_FLAGS "")
 
     if(OVERTE_OPTIMIZE)
-
-        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/_env/OVERTE_OPTIMIZE.txt" "${OVERTE_OPTIMIZE}")
         if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
             message("Clang compiler detected, adding -O3 -fPIC -g flags")
             set(OVERTE_OPTIMIZE_FLAGS "-O3 -fPIC -g")
@@ -84,7 +92,6 @@ if( NOT WIN32 )
     endif()
 
     if(DEFINED OVERTE_CPU_ARCHITECTURE)
-        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/_env/OVERTE_CPU_ARCHITECTURE.txt" "${OVERTE_CPU_ARCHITECTURE}")
         set(OVERTE_OPTIMIZE_FLAGS "${OVERTE_OPTIMIZE_FLAGS} ${OVERTE_CPU_ARCHITECTURE}")
         message("Adding CPU architecture flags: ${OVERTE_CPU_ARCHITECTURE}")
         MESSAGE(STATUS "OVERTE_CPU_ARCHITECTURE: ${OVERTE_CPU_ARCHITECTURE}")
@@ -329,12 +336,6 @@ endif()
 
 set_packaging_parameters()
 
-# Locate the required Qt build on the filesystem
-setup_qt()
-
-if ("$ENV{OVERTE_USE_SYSTEM_QT}" STREQUAL "")
-  list(APPEND CMAKE_PREFIX_PATH "${QT_CMAKE_PREFIX_PATH}")
-endif()
 
 find_package( Threads )
 

@@ -14,6 +14,7 @@
 #include <mutex>
 
 #if defined(Q_OS_WIN)
+#include <Windows.h>
 #elif defined(Q_OS_ANDROID)
 #elif defined(Q_OS_MAC)
 #include <OpenGL/OpenGL.h>
