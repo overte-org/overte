@@ -2,3 +2,6 @@ sources:
   "2016.11":
     url: "https://git.anotherfoxguy.com/AnotherFoxGuy/polyvox/archive/c986c9f0b1189737a182fbc8d4f4696436f972c1.tar.gz"
     sha256: "36878450cb36d2d14609027b0c8eb118f7e628cfa78152b86ae022031cc5b251"
+  "0.2.1":
+    url: "https://git.anotherfoxguy.com/AnotherFoxGuy/polyvox/archive/v0.2.1.tar.gz"
+    sha256: "299f4718c493ee44baaed11ab239ed501ff6622147e5eb0ce7c215538fa8264b"
