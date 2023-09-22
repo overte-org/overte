@@ -27,6 +27,8 @@
 #include "ThreadSafeDynamicsWorld.h"
 #include "PhysicsLogging.h"
 
+
+
 PhysicsEngine::PhysicsEngine(const glm::vec3& offset) :
         _originOffset(offset),
         _myAvatarController(nullptr) {
@@ -302,8 +304,10 @@ void PhysicsEngine::removeContacts(ObjectMotionState* motionState) {
 }
 
 void PhysicsEngine::stepSimulation() {
+    #ifndef BT_NO_PROFILE
     CProfileManager::Reset();
     BT_PROFILE("stepSimulation");
+    #endif
     // NOTE: the grand order of operations is:
     // (1) pull incoming changes
     // (2) step simulation
@@ -330,7 +334,7 @@ void PhysicsEngine::stepSimulation() {
         }
     }
 }
-
+#ifndef BT_NO_PROFILE
 class CProfileOperator {
 public:
     CProfileOperator() {}
@@ -373,6 +377,7 @@ public:
         };
 };
 
+
 class StatsWriter : public CProfileOperator {
 public:
     StatsWriter(QString filename) : _file(filename) {
@@ -395,8 +400,10 @@ public:
 protected:
     QFile _file;
 };
+#endif
 
 void PhysicsEngine::harvestPerformanceStats() {
+    #ifndef BT_NO_PROFILE
     // unfortunately the full context names get too long for our stats presentation format
     //QString contextName = PerformanceTimer::getContextName(); // TODO: how to show full context name?
     QString contextName("...");
@@ -415,9 +422,11 @@ void PhysicsEngine::harvestPerformanceStats() {
             itr->Next();
         }
     }
+    #endif
 }
 
 void PhysicsEngine::printPerformanceStatsToFile(const QString& filename) {
+    #ifndef BT_NO_PROFILE
     CProfileIterator* itr = CProfileManager::Get_Iterator();
     if (itr) {
         // hunt for stepSimulation context
@@ -432,6 +441,7 @@ void PhysicsEngine::printPerformanceStatsToFile(const QString& filename) {
             itr->Next();
         }
     }
+    #endif
 }
 
 void PhysicsEngine::doOwnershipInfection(const btCollisionObject* objectA, const btCollisionObject* objectB) {
@@ -627,6 +637,7 @@ const VectorOfMotionStates& PhysicsEngine::getChangedMotionStates() {
 }
 
 void PhysicsEngine::dumpStatsIfNecessary() {
+    #ifndef BT_NO_PROFILE
     if (_dumpNextStats) {
         _dumpNextStats = false;
         CProfileManager::Increment_Frame_Counter();
@@ -636,6 +647,7 @@ void PhysicsEngine::dumpStatsIfNecessary() {
         }
         CProfileManager::dumpAll();
     }
+    #endif
 }
 
 void PhysicsEngine::saveNextPhysicsStats(QString filename) {

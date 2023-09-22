@@ -26,8 +26,8 @@
 
 // FIXME quazip hasn't been built on the android toolchain
 #if !defined(Q_OS_ANDROID)
-#include <quazip5/quazip.h>
-#include <quazip5/JlCompress.h>
+#include <quazip/quazip.h>
+#include <quazip/JlCompress.h>
 #endif
 
 #include "ResourceManager.h"

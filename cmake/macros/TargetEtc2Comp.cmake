@@ -13,11 +13,9 @@ macro(TARGET_ETC2COMP)
         set(ETC2COMP_LIBRARY_RELEASE ${INSTALL_DIR}/lib/libEtcLib.a)
         target_include_directories(${TARGET_NAME} PRIVATE ${ETC2COMP_INCLUDE_DIRS})
     else()
-        find_library(ETC2COMP_LIBRARY_DEBUG EtcLib PATHS ${VCPKG_INSTALL_ROOT}/debug/lib/ NO_DEFAULT_PATH)
-        find_library(ETC2COMP_LIBRARY_RELEASE EtcLib PATHS ${VCPKG_INSTALL_ROOT}/lib/ NO_DEFAULT_PATH)
+        find_package(etc2comp REQUIRED)
     endif()
 
-    select_library_configurations(ETC2COMP)
-    target_link_libraries(${TARGET_NAME} ${ETC2COMP_LIBRARIES})
+    target_link_libraries(${TARGET_NAME} etc2comp::etc2comp)
 endmacro()
 

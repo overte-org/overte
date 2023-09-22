@@ -7,9 +7,6 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 macro(TARGET_V8)
-
-find_package(V8 REQUIRED)
-target_include_directories(${TARGET_NAME} PUBLIC ${V8_INCLUDE_DIRS})
-target_link_libraries(${TARGET_NAME} ${V8_LIBRARIES})
-
+    find_package(libnode REQUIRED)
+    target_link_libraries(${TARGET_NAME} libnode::libnode)
 endmacro()
