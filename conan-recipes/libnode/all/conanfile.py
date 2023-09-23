@@ -1,7 +1,7 @@
 import os
 from conan import ConanFile
-from conan.tools.files import get, copy, collect_libs
-from conan.tools.gnu import Autotools
+from conan.tools.files import get, copy, collect_libs, rename
+from conan.tools.gnu import Autotools, AutotoolsToolchain, PkgConfigDeps
 from conan.tools.env import Environment, VirtualBuildEnv
 from conan.tools.microsoft import (
     VCVars,
@@ -67,6 +67,16 @@ class libnodeConan(ConanFile):
             tc.generate()
             tc = VCVars(self)
             tc.generate()
+        else:
+            tc = AutotoolsToolchain(self)
+            tc.generate()
+            pc = PkgConfigDeps(self)
+            pc.generate()
+            node_build_env = Environment()
+            node_build_env.define("PKG_CONFIG_PATH", self.build_folder)
+            envvars = node_build_env.vars(self)
+            envvars.save_script("node_build_env")
+            rename(self, "libllhttp.pc", "http_parser.pc")
 
     def build(self):
         args = [
@@ -96,17 +106,16 @@ class libnodeConan(ConanFile):
         if self.settings.os == "Linux":
             args.append("--gdb")
 
+        self.run(
+            "python configure.py %s" % (" ".join(args)), env=["node_build_env"]
+        )
         if self.settings.os == "Windows":
-            self.run(
-                "python configure.py %s" % (" ".join(args)), env=["node_build_env"]
-            )
             # self.run("ninja libnode", env=["node_build_env"])
             msbuild = MSBuild(self)
             msbuild.build("node.sln", targets=["libnode"])
         else:
             autotools = Autotools(self)
-            autotools.configure(args=args)
-            autotools.make(target="libnode")
+            autotools.make(args=["-C out", "BUILDTYPE=%s" % self.settings.build_type], target="libnode")
 
     def package(self):
         if self.settings.os == "Windows":
@@ -116,51 +125,79 @@ class libnodeConan(ConanFile):
             )
             copy(
                 self,
+                "*.h",
+                os.path.join(
+                    self.source_folder, "deps", "v8", "include", "libplatform"
+                ),
+                os.path.join(self.package_folder, "include", "libplatform"),
+                keep_path=False,
+            )
+            copy(
+                self,
+                "*.h",
+                os.path.join(self.source_folder, "deps", "v8", "include", "cppgc"),
+                os.path.join(self.package_folder, "include", "cppgc"),
+                keep_path=False,
+            )
+            copy(
+                self,
                 "libnode.lib",
                 os.path.join(self.source_folder, "out", str(self.settings.build_type)),
                 os.path.join(self.package_folder, "lib"),
-                keep_path=False
+                keep_path=False,
             )
             copy(
                 self,
                 "v8_libplatform.lib",
-                os.path.join(self.source_folder, "out", str(self.settings.build_type), "lib"),
+                os.path.join(
+                    self.source_folder, "out", str(self.settings.build_type), "lib"
+                ),
                 os.path.join(self.package_folder, "lib"),
-                keep_path=False
+                keep_path=False,
             )
             copy(
                 self,
                 "*.dll",
                 os.path.join(self.source_folder, "out"),
                 os.path.join(self.package_folder, "bin"),
-                keep_path=False
+                keep_path=False,
             )
         else:
             self.run(
-                "set HEADERS_ONLY=1 && python ./tools/install.py install %s\\ \\"
+                "export HEADERS_ONLY=1 && python ./tools/install.py install %s/ /"
                 % self.package_folder
             )
             copy(
                 self,
-                "libnode.lib",
+                "*.h",
+                os.path.join(
+                    self.source_folder, "deps", "v8", "include", "libplatform"
+                ),
+                os.path.join(self.package_folder, "include", "libplatform"),
+                keep_path=False,
+            )
+            copy(
+                self,
+                "*.h",
+                os.path.join(self.source_folder, "deps", "v8", "include", "cppgc"),
+                os.path.join(self.package_folder, "include", "cppgc"),
+                keep_path=False,
+            )
+            copy(
+                self,
+                "libnode.so.*",
                 os.path.join(self.source_folder, "out", str(self.settings.build_type)),
                 os.path.join(self.package_folder, "lib"),
                 keep_path=False
             )
             copy(
                 self,
-                "v8_libplatform.lib",
-                os.path.join(self.source_folder, "out", str(self.settings.build_type), "lib"),
+                "*v8_libplatform.a",
+                os.path.join(self.source_folder, "out", str(self.settings.build_type), "obj.target", "tools", "v8_gypfiles"),
                 os.path.join(self.package_folder, "lib"),
-                keep_path=False
-            )
-            copy(
-                self,
-                "*.dll",
-                os.path.join(self.source_folder, "out"),
-                os.path.join(self.package_folder, "bin"),
                 keep_path=False
             )
 
     def package_info(self):
+        self.cpp_info.includedirs = ["include", "include/node"]
         self.cpp_info.libs = collect_libs(self)
