@@ -30,7 +30,7 @@ class Overte(ConanFile):
 
     def requirements(self):
         self.requires("bullet3/3.25")
-        self.requires("draco/1.5.6")
+        self.requires("draco/1.3.5")
         self.requires("etc2comp/cci.20170424")
         self.requires("glad/0.1.36")
         self.requires("gli/cci.20210515")
