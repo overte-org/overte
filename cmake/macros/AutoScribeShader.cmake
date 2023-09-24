@@ -380,6 +380,8 @@ macro(AUTOSCRIBE_SHADER_LIB)
 endmacro()
 
 macro(AUTOSCRIBE_SHADER_LIBS)
+    include(${CMAKE_BINARY_DIR}/cmake/ConanToolsDirs.cmake)
+
     message(STATUS "Shader processing start")
     set(AUTOSCRIBE_HEADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/headers)
     # Start the shader IDs
@@ -431,13 +433,17 @@ macro(AUTOSCRIBE_SHADER_LIBS)
         endif()
     endif()
 
+    
     # A custom python script which will generate all our shader artifacts
     add_custom_command(
         OUTPUT ${SCRIBED_SHADERS} ${SPIRV_SHADERS} ${REFLECTED_SHADERS}
         COMMENT "Generating/updating shaders"
         COMMAND python ${CMAKE_SOURCE_DIR}/tools/shadergen.py 
             --commands ${AUTOSCRIBE_SHADERGEN_COMMANDS_FILE} 
-            --tools-dir ${CMAKE_BINARY_DIR}/bin #${VCPKG_TOOLS_DIR}
+            --glslang "${GLSLANG_DIR}/glslangValidator"
+            --scribe "${SCRIBE_DIR}/scribe"
+            --spirv-cross "${SPIRV_CROSS_DIR}/spirv-cross"
+            --spirv-opt "${SPIRV_TOOLS_DIR}/spirv-opt"
             --build-dir ${CMAKE_CURRENT_BINARY_DIR}
             --source-dir ${CMAKE_SOURCE_DIR}
             ${EXTRA_SHADERGEN_ARGS}
