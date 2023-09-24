@@ -35,6 +35,10 @@
     connect(_manager, &ScriptManager::printedMessage, this, &ScriptManagerScriptingInterface::printedMessage);
     connect(_manager, &ScriptManager::errorMessage, this, &ScriptManagerScriptingInterface::errorMessage);
     connect(_manager, &ScriptManager::warningMessage, this, &ScriptManagerScriptingInterface::warningMessage);
+    connect(_manager, &ScriptManager::infoEntityMessage, this, &ScriptManagerScriptingInterface::infoEntityMessage);
+    connect(_manager, &ScriptManager::printedEntityMessage, this, &ScriptManagerScriptingInterface::printedEntityMessage);
+    connect(_manager, &ScriptManager::errorEntityMessage, this, &ScriptManagerScriptingInterface::errorEntityMessage);
+    connect(_manager, &ScriptManager::warningEntityMessage, this, &ScriptManagerScriptingInterface::warningEntityMessage);
     connect(_manager, &ScriptManager::infoMessage, this, &ScriptManagerScriptingInterface::infoMessage);
     connect(_manager, &ScriptManager::runningStateChanged, this, &ScriptManagerScriptingInterface::runningStateChanged);
     connect(_manager, &ScriptManager::clearDebugWindow, this, &ScriptManagerScriptingInterface::clearDebugWindow);

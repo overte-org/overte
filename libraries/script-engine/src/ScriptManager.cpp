@@ -573,21 +573,38 @@ void ScriptManager::loadURL(const QUrl& scriptURL, bool reload) {
 void ScriptManager::scriptErrorMessage(const QString& message) {
     qCCritical(scriptengine, "[%s] %s", qUtf8Printable(getFilename()), qUtf8Printable(message));
     emit errorMessage(message, getFilename());
+    if (!currentEntityIdentifier.isInvalidID()) {
+        // TODO: add line number and proper file name
+        //if (engine() && engine()->currentContext() && engine()->currentContext()->)
+        emit errorEntityMessage(message, getFilename(), currentEntityIdentifier);
+    }
 }
 
 void ScriptManager::scriptWarningMessage(const QString& message) {
     qCWarning(scriptengine, "[%s] %s", qUtf8Printable(getFilename()), qUtf8Printable(message));
     emit warningMessage(message, getFilename());
+    if (!currentEntityIdentifier.isInvalidID()) {
+        // TODO: add line number and proper file name
+        emit warningEntityMessage(message, getFilename(), currentEntityIdentifier);
+    }
 }
 
 void ScriptManager::scriptInfoMessage(const QString& message) {
     qCInfo(scriptengine, "[%s] %s", qUtf8Printable(getFilename()), qUtf8Printable(message));
     emit infoMessage(message, getFilename());
+    if (!currentEntityIdentifier.isInvalidID()) {
+        // TODO: add line number and proper file name
+        emit infoEntityMessage(message, getFilename(), currentEntityIdentifier);
+    }
 }
 
 void ScriptManager::scriptPrintedMessage(const QString& message) {
     qCDebug(scriptengine, "[%s] %s", qUtf8Printable(getFilename()), qUtf8Printable(message));
     emit printedMessage(message, getFilename());
+    if (!currentEntityIdentifier.isInvalidID()) {
+        // TODO: add line number and proper file name
+        emit printedEntityMessage(message, getFilename(), currentEntityIdentifier);
+    }
 }
 
 void ScriptManager::clearDebugLogWindow() {

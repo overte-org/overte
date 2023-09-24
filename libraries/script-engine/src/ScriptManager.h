@@ -1074,8 +1074,10 @@ public:
      * Emits errorMessage()
      *
      * @param message Message to send to the log
+     * @param fileName Name of the file in which message was generated. Empty string when no file name is available.
+     * @param lineNumber Number of the line on which message was generated. -1 if there line number is not available.
      */
-    void scriptErrorMessage(const QString& message);
+    void scriptErrorMessage(const QString& message, const QString& fileName, int lineNumber);
 
     /**
      * @brief Logs a script warning message and emits an warningMessage event
@@ -1083,8 +1085,10 @@ public:
      * Emits warningMessage()
      *
      * @param message Message to send to the log
+     * @param fileName Name of the file in which message was generated. Empty string when no file name is available.
+     * @param lineNumber Number of the line on which message was generated. -1 if there line number is not available.
      */
-    void scriptWarningMessage(const QString& message);
+    void scriptWarningMessage(const QString& message, const QString& fileName, int lineNumber);
 
     /**
      * @brief Logs a script info message and emits an infoMessage event
@@ -1092,8 +1096,10 @@ public:
      * Emits infoMessage()
      *
      * @param message Message to send to the log
+     * @param fileName Name of the file in which message was generated. Empty string when no file name is available.
+     * @param lineNumber Number of the line on which message was generated. -1 if there line number is not available.
      */
-    void scriptInfoMessage(const QString& message);
+    void scriptInfoMessage(const QString& message, const QString& fileName, int lineNumber);
 
     /**
      * @brief Logs a script printed message and emits an printedMessage event
@@ -1102,9 +1108,11 @@ public:
      * Emits printedMessage()
      *
      * @param message Message to send to the log
+     * @param fileName Name of the file in which message was generated. Empty string when no file name is available.
+     * @param lineNumber Number of the line on which message was generated. -1 if there line number is not available.
      */
 
-    void scriptPrintedMessage(const QString& message);
+    void scriptPrintedMessage(const QString& message, const QString& fileName, int lineNumber);
 
     /**
      * @brief Clears the debug log window
@@ -1320,6 +1328,50 @@ signals:
      * @param scriptName
      */
     void infoMessage(const QString& message, const QString& scriptName);
+
+    /**
+     * @brief Triggered when a client side entity script prints a message to the program log
+     *
+     * @param message
+     * @param fileName Name of the file in which message was generated.
+     * @param lineNumber Number of the line on which message was generated.
+     * @param entityID
+     */
+    void printedEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID);
+
+
+    /**
+     * @brief Triggered when a client side entity script generates an error
+     *
+     * @param message
+     * @param fileName Name of the file in which message was generated.
+     * @param lineNumber Number of the line on which message was generated.
+     * @param entityID
+     */
+    void errorEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID);
+
+
+
+    /**
+     * @brief  Triggered when a client side entity script generates a warning
+     *
+     * @param message
+     * @param fileName Name of the file in which message was generated.
+     * @param lineNumber Number of the line on which message was generated.
+     * @param entityID
+     */
+    void warningEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID);
+
+
+    /**
+     * @brief Triggered when a client side entity script generates an information message
+     *
+     * @param message
+     * @param fileName Name of the file in which message was generated.
+     * @param lineNumber Number of the line on which message was generated.
+     * @param entityID
+     */
+    void infoEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID);
 
 
     /**

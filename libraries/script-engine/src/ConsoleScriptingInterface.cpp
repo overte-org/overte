@@ -34,7 +34,7 @@ QList<QString> ConsoleScriptingInterface::_groupDetails = QList<QString>();
 
 ScriptValue ConsoleScriptingInterface::info(ScriptContext* context, ScriptEngine* engine) {
     if (ScriptManager* scriptManager = engine->manager()) {
-        scriptManager->scriptInfoMessage(appendArguments(context));
+        scriptManager->scriptInfoMessage(appendArguments(context), context->currentFileName(), context->currentLineNumber());
     }
     return engine->nullValue();
 }
@@ -43,7 +43,7 @@ ScriptValue ConsoleScriptingInterface::log(ScriptContext* context, ScriptEngine*
     QString message = appendArguments(context);
     if (_groupDetails.count() == 0) {
         if (ScriptManager* scriptManager = engine->manager()) {
-            scriptManager->scriptPrintedMessage(message);
+            scriptManager->scriptPrintedMessage(message, context->currentFileName(), context->currentLineNumber());
         }
     } else {
         logGroupMessage(message, engine);
@@ -53,28 +53,28 @@ ScriptValue ConsoleScriptingInterface::log(ScriptContext* context, ScriptEngine*
 
 ScriptValue ConsoleScriptingInterface::debug(ScriptContext* context, ScriptEngine* engine) {
     if (ScriptManager* scriptManager = engine->manager()) {
-        scriptManager->scriptPrintedMessage(appendArguments(context));
+        scriptManager->scriptPrintedMessage(appendArguments(context), context->currentFileName(), context->currentLineNumber());
     }
     return engine->nullValue();
 }
 
 ScriptValue ConsoleScriptingInterface::warn(ScriptContext* context, ScriptEngine* engine) {
     if (ScriptManager* scriptManager = engine->manager()) {
-        scriptManager->scriptWarningMessage(appendArguments(context));
+        scriptManager->scriptWarningMessage(appendArguments(context), context->currentFileName(), context->currentLineNumber());
     }
     return engine->nullValue();
 }
 
 ScriptValue ConsoleScriptingInterface::error(ScriptContext* context, ScriptEngine* engine) {
     if (ScriptManager* scriptManager = engine->manager()) {
-        scriptManager->scriptErrorMessage(appendArguments(context));
+        scriptManager->scriptErrorMessage(appendArguments(context), context->currentFileName(), context->currentLineNumber());
     }
     return engine->nullValue();
 }
 
 ScriptValue ConsoleScriptingInterface::exception(ScriptContext* context, ScriptEngine* engine) {
     if (ScriptManager* scriptManager = engine->manager()) {
-        scriptManager->scriptErrorMessage(appendArguments(context));
+        scriptManager->scriptErrorMessage(appendArguments(context), context->currentFileName(), context->currentLineNumber());
     }
     return engine->nullValue();
 }
