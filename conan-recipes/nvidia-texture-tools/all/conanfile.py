@@ -19,6 +19,10 @@ class NTTConan(ConanFile):
     def generate(self):
         tc = CMakeToolchain(self)
         tc.variables["BUILD_TESTS"] = "OFF"
+        tc.variables["BUILD_TOOLS"] = "OFF"
+        tc.variables["USE_CUDA"] = "OFF"
+        if self.settings.os == "Linux":
+            tc.variables["CMAKE_CXX_FLAGS"] = "-march=msse3 -fPIC"
         tc.generate()
 
     def build(self):
