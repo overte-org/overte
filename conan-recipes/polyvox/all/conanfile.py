@@ -35,6 +35,9 @@ class PolyvoxConan(ConanFile):
         cmake.install()
 
     def package_info(self):
-        self.cpp_info.includedirs = ['PolyVoxCore/include', 'PolyVoxUtil/include']
-        self.cpp_info.libdirs = ['PolyVoxCore/lib', 'PolyVoxUtil/lib']
+        if self.settings.os == "Windows":
+            self.cpp_info.includedirs = ['PolyVoxCore/include', 'PolyVoxUtil/include']
+            self.cpp_info.libdirs = ['PolyVoxCore/lib', 'PolyVoxUtil/lib']
+        else:
+            self.cpp_info.includedirs = ['include/PolyVoxCore', 'include/PolyVoxUtil']
         self.cpp_info.libs = collect_libs(self)
