@@ -1,6 +1,7 @@
 import os
 from conan import ConanFile
-from conan.tools.files import copy
+from conan.tools.files import copy, save
+
 
 class Overte(ConanFile):
     name = "Overte"
@@ -58,12 +59,29 @@ class Overte(ConanFile):
         # webrtc
         self.requires("zlib/1.2.13")
 
-    # def generate(self):
-    #     for dep in self.dependencies.values():
-    #         for f in dep.cpp_info.bindirs:
-    #             copy(self, "*.exe", f, os.path.join(self.build_folder, "bin"))
+    def generate(self):
+        bindirs = []
+        for dep in self.dependencies.values():
+            bindirs += dep.cpp_info.bindirs
+        save(
+            self,
+            os.path.join(self.build_folder, "cmake", "ConanBinDirs.cmake"),
+            'set(CONAN_BIN_DIRS "%s")' % ";".join(bindirs).replace('\\', '/'),
+        )
 
-    def cp_data(self, src):
-        bindir = os.path.join(self.build_folder, "bin")
-        copy(self, "*.exe", src, bindir)
-        # copy(self, "*.so*", src, bindir, False)
+        toolspath = """
+        set(GLSLANG_DIR "%s")
+        set(SCRIBE_DIR "%s/tools")
+        set(SPIRV_CROSS_DIR "%s")
+        set(SPIRV_TOOLS_DIR "%s")
+        """ % (
+            ";".join(self.dependencies["glslang"].cpp_info.bindirs).replace('\\', '/'),
+            self.dependencies["scribe"].package_folder.replace('\\', '/'),
+            ";".join(self.dependencies["spirv-cross"].cpp_info.bindirs).replace('\\', '/'),
+            ";".join(self.dependencies["spirv-tools"].cpp_info.bindirs).replace('\\', '/'),
+        )
+        save(
+            self,
+            os.path.join(self.build_folder, "cmake", "ConanToolsDirs.cmake"),
+            toolspath,
+        )
