@@ -39,7 +39,7 @@ def getTypeForScribeFile(scribefilename):
     return switcher.get(extension)
 
 def getCommonScribeArgs(scribefile, includeLibs):
-    scribeArgs = [os.path.join(args.tools_dir, 'scribe')]
+    scribeArgs = [args.scribe] # args.scribe is the executable 
     # FIXME use the sys.platform to set the correct value
     scribeArgs.extend(['-D', 'GLPROFILE', 'PC_GL'])
     scribeArgs.extend(['-T', getTypeForScribeFile(scribefile)])
@@ -166,9 +166,9 @@ folderMutex = Lock()
 def processCommand(line):
     global args
     global scribeDepCache
-    glslangExec = args.tools_dir + '/glslangValidator'
-    spirvCrossExec = args.tools_dir + '/spirv-cross'
-    spirvOptExec = args.tools_dir + '/spirv-opt'
+    glslangExec = args.glslang
+    spirvCrossExec = args.spirv_cross
+    spirvOptExec = args.spirv_opt
     params = line.split(';')
     dialect = params.pop(0)
     variant = params.pop(0)
@@ -261,7 +261,10 @@ def main():
 parser = ArgumentParser(description='Generate shader artifacts.')
 parser.add_argument('--extensions', type=str, nargs='*', help='Available extensions for the shaders')
 parser.add_argument('--commands', type=argparse.FileType('r'), help='list of commands to execute')
-parser.add_argument('--tools-dir', type=str, help='location of the host compatible binaries')
+parser.add_argument('--glslang', type=str, help='location of glslangValidator')
+parser.add_argument('--scribe', type=str, help='location of scribe')
+parser.add_argument('--spirv-cross', type=str, help='location of spirv-cross')
+parser.add_argument('--spirv-opt', type=str, help='location of spirv-opt')
 parser.add_argument('--build-dir', type=str, help='The build directory base path')
 parser.add_argument('--source-dir', type=str, help='The root directory of the git repository')
 parser.add_argument('--debug', action='store_true')
@@ -269,23 +272,7 @@ parser.add_argument('--force', action='store_true', help='Ignore timestamps and 
 parser.add_argument('--dry-run', action='store_true', help='Report the files that would be process, but do not output')
 
 args = None
-if len(sys.argv) == 1:
-    # for debugging
-    sourceDir = expanduser('~/git/hifi')
-    toolsDir = 'd:/hifi/vcpkg/android/fd82f0a8/installed/x64-windows/tools'
-    buildPath = sourceDir + '/build_android'
-    commandsPath = buildPath + '/libraries/shaders/shadergen.txt'
-    shaderDir = buildPath + '/libraries/shaders'
-    testArgs = '--commands {} --tools-dir {} --build-dir {} --source-dir {}'.format(
-        commandsPath, toolsDir, shaderDir, sourceDir
-    ).split()
-    testArgs.append('--debug')
-    testArgs.append('--force')
-    testArgs.extend('--extensions EXT_clip_cull_distance'.split())
-    #testArgs.append('--dry-run')
-    args = parser.parse_args(testArgs)
-else:
-    args = parser.parse_args()
+args = parser.parse_args()
 
 scribeDepCache = ScribeDependenciesCache(args.build_dir + '/shaderDeps.json')
 scribeDepCache.load()
