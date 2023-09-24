@@ -160,8 +160,9 @@ project(overte)
 include("cmake/init.cmake")
 include("cmake/compiler.cmake")
 
-add_paths_to_fixup_libs(${VCPKG_INSTALL_ROOT}/bin)
-add_paths_to_fixup_libs(${VCPKG_INSTALL_ROOT}/debug/bin)
+include(${CMAKE_BINARY_DIR}/cmake/ConanBinDirs.cmake)
+
+add_paths_to_fixup_libs(${CONAN_BIN_DIRS})
 
 if (NOT DEFINED CLIENT_ONLY)
   set(CLIENT_ONLY 0)
