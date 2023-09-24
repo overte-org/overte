@@ -8,7 +8,7 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-if (WIN32 AND (NOT USE_GLES) AND (MSVC_VERSION LESS 1930) )
+if (WIN32 AND (NOT USE_GLES) AND (MSVC_VERSION LESS 1930) AND (FALSE) )
 
   # if we were passed an Oculus App ID for entitlement checks, send that along
   if (DEFINED ENV{OCULUS_APP_ID})
