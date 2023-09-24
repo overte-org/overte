@@ -185,15 +185,8 @@ class libnodeConan(ConanFile):
             )
             copy(
                 self,
-                "libnode.so.*",
+                "libnode.so*",
                 os.path.join(self.source_folder, "out", str(self.settings.build_type)),
-                os.path.join(self.package_folder, "lib"),
-                keep_path=False
-            )
-            copy(
-                self,
-                "*v8_libplatform.a",
-                os.path.join(self.source_folder, "out", str(self.settings.build_type), "obj.target", "tools", "v8_gypfiles"),
                 os.path.join(self.package_folder, "lib"),
                 keep_path=False
             )
