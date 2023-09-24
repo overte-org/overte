@@ -29,10 +29,12 @@ macro(PACKAGE_LIBRARIES_FOR_DEPLOYMENT)
         -P "${CMAKE_CURRENT_BINARY_DIR}/FixupBundlePostBuild.cmake"
     )
 
-    find_program(WINDEPLOYQT_COMMAND windeployqt PATHS ${QT_DIR}/bin NO_DEFAULT_PATH)
+    get_target_property(Qt_Core_Location Qt5::Core LOCATION)
+    get_filename_component(QT_BIN_DIR ${Qt_Core_Location} DIRECTORY)
+    find_program(WINDEPLOYQT_COMMAND windeployqt PATHS QT_BIN_DIR)
 
     if (NOT WINDEPLOYQT_COMMAND)
-      # message(FATAL_ERROR "Could not find windeployqt at ${QT_DIR}/bin. windeployqt is required.")
+      message(FATAL_ERROR "Could not find windeployqt at ${QT_DIR}/bin. windeployqt is required.")
     endif ()
 
     # add a post-build command to call windeployqt to copy Qt plugins
