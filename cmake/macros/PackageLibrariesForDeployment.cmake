@@ -19,16 +19,6 @@ macro(PACKAGE_LIBRARIES_FOR_DEPLOYMENT)
 
     set(PLUGIN_PATH "plugins")
 
-    # add a post-build command to copy DLLs beside the executable
-    add_custom_command(
-      TARGET ${TARGET_NAME}
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND}
-        -DBUNDLE_EXECUTABLE="$<TARGET_FILE:${TARGET_NAME}>"
-        -DBUNDLE_PLUGIN_DIR="$<TARGET_FILE_DIR:${TARGET_NAME}>/${PLUGIN_PATH}"
-        -P "${CMAKE_CURRENT_BINARY_DIR}/FixupBundlePostBuild.cmake"
-    )
-
     get_target_property(Qt_Core_Location Qt5::Core LOCATION)
     get_filename_component(QT_BIN_DIR ${Qt_Core_Location} DIRECTORY)
     find_program(WINDEPLOYQT_COMMAND windeployqt PATHS QT_BIN_DIR)
@@ -44,6 +34,16 @@ macro(PACKAGE_LIBRARIES_FOR_DEPLOYMENT)
       COMMAND CMD /C "SET PATH=${QT_DIR}/bin;%PATH% && ${WINDEPLOYQT_COMMAND}\
        ${EXTRA_DEPLOY_OPTIONS} $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>,$<CONFIG:RelWithDebInfo>>:--release>\
        --no-compiler-runtime --no-opengl-sw --no-angle -no-system-d3d-compiler \"$<TARGET_FILE:${TARGET_NAME}>\""
+    )
+
+    # add a post-build command to copy DLLs beside the executable
+    add_custom_command(
+      TARGET ${TARGET_NAME}
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND}
+        -DBUNDLE_EXECUTABLE="$<TARGET_FILE:${TARGET_NAME}>"
+        -DBUNDLE_PLUGIN_DIR="$<TARGET_FILE_DIR:${TARGET_NAME}>/${PLUGIN_PATH}"
+        -P "${CMAKE_CURRENT_BINARY_DIR}/FixupBundlePostBuild.cmake"
     )
 
     set(QTAUDIO_PATH "$<TARGET_FILE_DIR:${TARGET_NAME}>/audio")
