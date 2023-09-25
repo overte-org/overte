@@ -1,4 +1,7 @@
 sources:
-  "0.30":
-    url: "https://github.com/radarsat1/liblo/releases/download/0.30/liblo-0.30.tar.gz"
-    sha256: "30a7c9de49a25ed7f2425a7a7415f5b14739def62431423d3419ea26fb978d1b"
+  '0.30':
+    sha256: 30a7c9de49a25ed7f2425a7a7415f5b14739def62431423d3419ea26fb978d1b
+    url: https://github.com/radarsat1/liblo/releases/download/0.30/liblo-0.30.tar.gz
+  '0.31':
+    sha256: 71d1819bcd18be66bd80c95a2d3159b9ca6f13746ddbaf1e489128f3bf46d231
+    url: https://github.com/radarsat1/liblo/archive/refs/tags/0.31.tar.gz
