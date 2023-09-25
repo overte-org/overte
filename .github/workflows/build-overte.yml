@@ -81,6 +81,12 @@ jobs:
         run: git clone https://git.anotherfoxguy.com/AnotherFoxGuy/build-tools.git %BUILD_TOOLS_PATH%
         shell: cmd
 
+      - name: Install Qt5
+        uses: jurplel/install-qt-action@v3.3.0
+        with:
+          cache: true
+          cache-key-prefix: windows-QtCache
+
       - name: Cache conan packages
         uses: actions/cache@v3
         with:
