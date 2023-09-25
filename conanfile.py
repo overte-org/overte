@@ -8,8 +8,6 @@ class Overte(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     generators = "CMakeToolchain", "CMakeDeps"
     default_options = {
-        "bullet3*:extras": "True",
-        "bullet3*:network_support": "True",
         "qt*:shared": "True",
         "qt*:gui": "True",
         "qt*:qtdeclarative": "True",
