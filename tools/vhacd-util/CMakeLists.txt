@@ -1,3 +1,5 @@
+
+return()
 set(TARGET_NAME vhacd-util)
 setup_hifi_project(Core)
 link_hifi_libraries(shared model-serializers hfm graphics gpu gl)

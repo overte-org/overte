@@ -1,4 +1,5 @@
 
+return()
 set(TARGET_NAME gpu-frame-player)
 
 setup_memory_debugger()
