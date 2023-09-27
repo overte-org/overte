@@ -14,9 +14,12 @@ jobs:
           fetch-depth: 1
 
       - name: Cache conan
+        id: cache-conan
         uses: actions/cache@v3
         with:
           key: conan-ubuntu-${{ hashFiles('conanfile.py') }}
+          restore-keys: |
+            conan-ubuntu-
           path: ~/.conan2/
 
       - name: Install dependencies
@@ -46,22 +49,36 @@ jobs:
                   qml-module-qt-labs-settings \
                   qml-module-qtquick-dialogs \
                   qml-module-qtwebengine
-
         shell: bash
 
-      - name: Configure
-        run: |
+      - name: Fix broken mpg123 lib
+        if: steps.cache-conan.outputs.cache-hit != 'true'
+        run: | 
           conan profile detect --force
           echo "tools.system.package_manager:mode = install" > ~/.conan2/global.conf
           echo "tools.system.package_manager:sudo = True" >> ~/.conan2/global.conf
           conan remote add overte https://git.anotherfoxguy.com/api/packages/overte/conan -f
-          conan install . -s build_type=Release -b missing -pr:b=default -c tools.cmake.cmaketoolchain:generator="Ninja"
+          conan install --requires mpg123/1.31.2 -b mpg123/1.31.2 -b missing
+
+      - name: Install conan pkgs
+        run: |
+          conan install . \
+            -s build_type=Release \
+            -b missing \
+            -pr:b=default \
+            -c tools.cmake.cmaketoolchain:generator="Ninja" \
+            -of build
           conan cache clean "*" -sbd
-          cmake --preset conan-release
+        shell: bash
+
+      - name: Configure
+        run: cmake --preset conan-release
         shell: bash
 
       - name: Build
-        run: ninja
+        run: |
+          cd build
+          ninja
         shell: bash
 
   build-msvc:
@@ -86,24 +103,32 @@ jobs:
         with:
           cache: true
           cache-key-prefix: windows-QtCache
+          modules: qtwebengine
 
       - name: Cache conan packages
         uses: actions/cache@v3
         with:
           key: conan-windows-${{ hashFiles('conanfile.py') }}
+          restore-keys: |
+            conan-windows-
           path: ~/.conan2
 
-      - name: Configure
+      - name: Install conan pkgs
         run: |
           conan remote add overte https://git.anotherfoxguy.com/api/packages/overte/conan -f
-          conan install . -b missing -pr:b=tools/conan-profiles/vs-19-release-ninja -pr=tools/conan-profiles/vs-19-release-ninja
+          conan install . -b missing -pr:b=tools/conan-profiles/vs-19-release-ninja -pr=tools/conan-profiles/vs-19-release-ninja -of build
           conan cache clean "*" -sbd
         shell: cmd
 
       - name: Enable Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1.12.1
+
+      - name: Configure
+        run: cmake --preset conan-release
+        shell: cmd
+
       - name: Build
         run: | 
-          cmake --preset conan-release
+          cd build
           ninja
         shell: cmd
