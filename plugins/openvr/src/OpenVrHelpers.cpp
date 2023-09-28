@@ -51,7 +51,7 @@ static const uint32_t RELEASE_OPENVR_HMD_DELAY_MS = 5000;
 bool isOculusPresent() {
     bool result = false;
 #ifdef Q_OS_WIN 
-    HANDLE oculusServiceEvent = ::OpenEventW(SYNCHRONIZE, FALSE, L"OculusHMDConnected");
+    /*HANDLE oculusServiceEvent = ::OpenEventW(SYNCHRONIZE, FALSE, L"OculusHMDConnected");
     // The existence of the service indicates a running Oculus runtime
     if (oculusServiceEvent) {
         // A signaled event indicates a connected HMD
@@ -59,7 +59,7 @@ bool isOculusPresent() {
             result = true;
         }
         ::CloseHandle(oculusServiceEvent);
-    }
+    }*/
 #endif
     return result;
 }
@@ -114,34 +114,34 @@ vr::IVRSystem* acquireOpenVrSystem() {
     if (hmdPresent && !isHMDInErrorState) {
         Lock lock(mutex);
         if (!activeHmd) {
-            #if DEV_BUILD
+            //#if DEV_BUILD
                 qCDebug(displayplugins) << "OpenVR: No vr::IVRSystem instance active, building";
-            #endif
+            //#endif
             vr::EVRInitError eError = vr::VRInitError_None;
             activeHmd = vr::VR_Init(&eError, vr::VRApplication_Scene);
 
-            #if DEV_BUILD
+            //#if DEV_BUILD
                 qCDebug(displayplugins) << "OpenVR display: HMD is " << activeHmd << " error is " << eError;
-            #endif
+            //#endif
 
             if (eError == vr::VRInitError_Init_HmdNotFound) {
                 isHMDInErrorState = true;
                 activeHmd = nullptr;
-                #if DEV_BUILD
+                //#if DEV_BUILD
                     qCDebug(displayplugins) << "OpenVR: No HMD connected, setting nullptr!";
-                #endif
+                //#endif
             }
         }
         if (activeHmd) {
-            #if DEV_BUILD
+            //#if DEV_BUILD
                 qCDebug(displayplugins) << "OpenVR: incrementing refcount";
-            #endif
+            //#endif
             ++refCount;
         }
     } else {
-        #if DEV_BUILD
+        //#if DEV_BUILD
             qCDebug(displayplugins) << "OpenVR: no hmd present";
-        #endif
+        //#endif
     }
     return activeHmd;
 }
@@ -149,14 +149,14 @@ vr::IVRSystem* acquireOpenVrSystem() {
 void releaseOpenVrSystem() {
     if (activeHmd) {
         Lock lock(mutex);
-        #if DEV_BUILD
+        //#if DEV_BUILD
             qCDebug(displayplugins) << "OpenVR: decrementing refcount";
-        #endif
+        //#endif
         --refCount;
         if (0 == refCount) {
-            #if DEV_BUILD
+            //#if DEV_BUILD
                 qCDebug(displayplugins) << "OpenVR: zero refcount, deallocate VR system";
-            #endif
+            //#endif
 
             // HACK: workaround openvr crash, call submit with an invalid texture, right before VR_Shutdown.
             const void* INVALID_GL_TEXTURE_HANDLE = (void*)(uintptr_t)-1;
