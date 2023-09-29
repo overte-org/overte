@@ -69,12 +69,12 @@ function touchEnd(event) {
         var propertiesToGet = {};
         propertiesToGet[overlayID] = ['url'];
         var properties = Overlays.getOverlaysProperties(propertiesToGet);
-        if (properties[overlayID].url) {
+        if (properties[overlayID].url && !properties[overlayID].url.match(/\.qml$/)) {
             Window.openUrl(properties[overlayID].url);
         }
     } else if (intersection && intersection.type == 'entity' && touchEntityID == intersection.obj.entityID) {
         var properties = Entities.getEntityProperties(touchEntityID, ["sourceUrl"]);
-        if (properties.sourceUrl) {
+        if (properties.sourceUrl && !properties.sourceUrl.match(/\.qml$/)) {
             Window.openUrl(properties.sourceUrl);
         }
     }

@@ -13,7 +13,7 @@
 //
 
 (function() {
-    var CONFIG_WIZARD_URL = "https://more.overte.org/tutorial/wizard.html?v=" + Math.floor(Math.random() * 65000);
+    var CONFIG_WIZARD_URL = "qrc:///serverless/Scripts/Wizard.qml";
 
     var loaderEntityID;
     var configWizardEntityID;

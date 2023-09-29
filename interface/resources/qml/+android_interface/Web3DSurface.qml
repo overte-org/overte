@@ -9,68 +9,94 @@
 //
 
 import QtQuick 2.5
-import QtGraphicalEffects 1.0
 
 Item {
+    id: root
+    anchors.fill: parent
+    property string url: ""
+    property string scriptUrl: null
+    property bool useBackground: true
+    property string userAgent: ""
 
-    property string url
-    RadialGradient {
+    onUrlChanged: {
+        load(root.url, root.scriptUrl, root.useBackground, root.userAgent);
+    }
+
+    onScriptUrlChanged: {
+        if (loader.item) {
+            if (root.webViewLoaded) {
+                loader.item.scriptUrl = root.scriptUrl;
+            }
+        } else {
+            load(root.url, root.scriptUrl, root.useBackground, root.userAgent);
+        }
+    }
+
+    onUseBackgroundChanged: {
+        if (loader.item) {
+            if (root.webViewLoaded) {
+                loader.item.useBackground = root.useBackground;
+            }
+        } else {
+            load(root.url, root.scriptUrl, root.useBackground, root.userAgent);
+        }
+    }
+
+    onUserAgentChanged: {
+        if (loader.item) {
+            if (root.webViewLoaded) {
+                loader.item.userAgent = root.userAgent;
+            }
+        } else {
+            load(root.url, root.scriptUrl, root.useBackground, root.userAgent);
+        }
+    }
+
+    // Handle message traffic from our loaded QML to the script that launched us
+    onItemChanged: {
+        if (loader.item && loader.item.sendToScript) {
+            loader.item.sendToScript.connect(sendToScript);
+        }
+    }
+
+    property var item: null
+    property bool webViewLoaded: false
+
+    // Handle message traffic from the script that launched us to the loaded QML
+    function fromScript(message) {
+        if (loader.item && loader.item.fromScript) {
+            loader.item.fromScript(message);
+        }
+    }
+
+    Loader {
+        id: loader
         anchors.fill: parent
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: "#262626" }
-            GradientStop { position: 1.0; color: "#000000" }
+    }
+
+    function load(url, scriptUrl, useBackground, userAgent) {
+        // Ensure we reset any existing item to "about:blank" to ensure web audio stops: DEV-2375
+        if (loader.item && root.webViewLoaded) {
+            loader.item.url = "about:blank"
+        }
+
+        if (url.match(/\.qml$/)) {
+            root.webViewLoaded = false;
+            loader.setSource(url);
+        } else {
+            root.webViewLoaded = true;
+            loader.setSource("./Web3DSurfaceAndroid.qml", {
+                url: url,
+                scriptUrl: scriptUrl,
+                useBackground: useBackground,
+                userAgent: userAgent
+            });
         }
     }
 
-    function shortUrl(url) {
-        var hostBegin = url.indexOf("://");
-        if (hostBegin > -1) {
-            url = url.substring(hostBegin + 3);
-        }
-
-        var portBegin = url.indexOf(":");
-        if (portBegin > -1) {
-            url = url.substring(0, portBegin);
-        }
-
-        var pathBegin = url.indexOf("/");
-        if (pathBegin > -1) {
-            url = url.substring(0, pathBegin);
-        }
-
-        if (url.length > 45) {
-            url = url.substring(0, 45);
-        }
-
-        return url;
+    Component.onCompleted: {
+        load(root.url, root.scriptUrl, root.useBackground, root.userAgent);
     }
 
-    Text { 
-        id: urlText
-        text: shortUrl(url)
-        verticalAlignment: Text.AlignVCenter
-        horizontalAlignment: Text.AlignHCenter
-        anchors.fill: parent
-        anchors.rightMargin: 10
-        anchors.leftMargin: 10
-        font.family: "Cairo"
-        font.weight: Font.DemiBold
-        font.pointSize: 48
-        fontSizeMode: Text.Fit
-        color: "#FFFFFF"
-        minimumPixelSize: 5
-    }
-
-    Image {
-        id: hand
-        source: "../../icons/hand.svg"
-        width: 300
-        height: 300
-        anchors.bottom: parent.bottom
-        anchors.right: parent.right
-        anchors.bottomMargin: 100
-        anchors.rightMargin: 100
-    }
-
-
+    signal sendToScript(var message);
 }

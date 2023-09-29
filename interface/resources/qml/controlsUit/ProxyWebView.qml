@@ -13,6 +13,8 @@ Rectangle {
     property string url: "";
     property bool canGoBack: false
     property bool canGoForward: false
+    property bool useBackground: false
+    property string userAgent: ""
     property string icon: ""
     property var profile: {}
 
