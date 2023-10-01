@@ -8,6 +8,15 @@ class Overte(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     generators = "CMakeToolchain", "CMakeDeps"
     default_options = {
+        "sdl*:alsa": "False",
+        "sdl*:pulse": "False",
+        "sdl*:wayland": "False",
+        "sdl*:xcursor": "False",
+        "sdl*:xinerama": "False",
+        "sdl*:xrandr": "False",
+        "sdl*:xscrnsaver": "False",
+        "sdl*:xshape": "False",
+        "sdl*:xvm": "False",
         "qt*:shared": "True",
         "qt*:gui": "True",
         "qt*:qtdeclarative": "True",
@@ -45,7 +54,7 @@ class Overte(ConanFile):
         self.requires("openexr/2.5.7")
         self.requires("openssl/1.1.1w")
         self.requires("openvr/1.26.7@overte/stable")
-        self.requires("opus/1.3.1")
+        self.requires("opus/1.4")
         self.requires("polyvox/0.2.1@overte/stable")
         self.requires("quazip/1.4@overte/stable")
         self.requires("sdl/2.26.5")
