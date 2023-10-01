@@ -438,7 +438,7 @@ macro(AUTOSCRIBE_SHADER_LIBS)
     add_custom_command(
         OUTPUT ${SCRIBED_SHADERS} ${SPIRV_SHADERS} ${REFLECTED_SHADERS}
         COMMENT "Generating/updating shaders"
-        COMMAND python ${CMAKE_SOURCE_DIR}/tools/shadergen.py 
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/shadergen.py 
             --commands ${AUTOSCRIBE_SHADERGEN_COMMANDS_FILE} 
             --glslang "${GLSLANG_DIR}/glslangValidator"
             --scribe "${SCRIBE_DIR}/scribe"
