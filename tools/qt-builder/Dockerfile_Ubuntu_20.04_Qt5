@@ -51,12 +51,8 @@ RUN ../qt5/configure -force-debug-info -release -opensource -confirm-license -pl
 
 RUN NINJAFLAGS='-j6' make -j6
 
-RUN make -j6 module-qtscript
-
 RUN make -j6 install
 
-WORKDIR ./qtscript
-RUN make -j6 install
 
 WORKDIR ../../qt5-install
 RUN find . -name \*.prl -exec sed -i -e '/^QMAKE_PRL_BUILD_DIR/d' {} \;
