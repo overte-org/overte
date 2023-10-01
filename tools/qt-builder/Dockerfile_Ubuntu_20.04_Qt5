@@ -4,11 +4,11 @@
 # - Check which commit you are building https://invent.kde.org/qt/qt/qt5/-/tree/kde/5.15
 # - Adjust this file to include the commit hash you are building, the date, the number of threads you want to use (-j10), the platform, and the Qt and QtWebEngine versions.
 #     Keep in mind that building Qt requires a lot of memory. You should have over 1.2GiB of system memory available per thread.
-# - Run the build process with something like `PROGRESS_NO_TRUNC=1 DOCKER_BUILDKIT=1 BUILDKIT_STEP_LOG_MAX_SIZE=-1 docker build --progress plain -t overte-qt5:5.15.10-2023.09.16-kde_15e6be42c230046646237698fa761b8fb3df71ee -f Dockerfile_Ubuntu_20.04_Qt5 .`
+# - Run the build process with something like `PROGRESS_NO_TRUNC=1 DOCKER_BUILDKIT=1 BUILDKIT_STEP_LOG_MAX_SIZE=-1 docker build --progress plain -t overte-qt5:5.15.10-2023.10.01-kde_d2122ee587cceb5b2f4130b7074f86db9aca570e -f Dockerfile_Ubuntu_20.04_Qt5 .`
 #     Buildkit is used to cache intermittent steps in case you need to modify something afterwards.
 # - Once the build has completed, create a container from the image and export the created Qt package.
-#     `docker create --name extract overte-qt5:5.15.10-2023.09.16-kde_15e6be42c230046646237698fa761b8fb3df71ee`
-#     `docker cp extract:qt5-install-5.15.10-2023.09.16-kde_15e6be42c230046646237698fa761b8fb3df71ee-ubuntu-20.04-amd64.tar.xz /path/on/host`
+#     `docker create --name extract overte-qt5:5.15.10-2023.10.01-kde_d2122ee587cceb5b2f4130b7074f86db9aca570e`
+#     `docker cp extract:qt5-install-5.15.10-2023.10.01-kde_d2122ee587cceb5b2f4130b7074f86db9aca570e-ubuntu-20.04-amd64.tar.xz /path/on/host`
 #     `docker rm extract`
 
 FROM ubuntu:20.04
@@ -42,7 +42,7 @@ RUN sed -i qt5/qtbase/mkspecs/linux-g++-64/qmake.conf -e 's/\/usr\/X11R6\/lib64/
 RUN apt-get -y build-dep qt5-default
 
 # Install build dependencies
-RUN apt-get -y install git python gperf flex bison pkg-config mesa-utils libgl1-mesa-dev make g++ libdbus-glib-1-dev libnss3-dev nodejs libxkbfile-dev libx11-dev libwebp-dev
+RUN apt-get -y install git python gperf flex bison pkg-config mesa-utils libgl1-mesa-dev make g++ libdbus-glib-1-dev libnss3-dev nodejs libxkbfile-dev libx11-dev libwebp-dev libvpx-dev
 
 
 RUN mkdir qt5-install && mkdir qt5-build
@@ -75,4 +75,4 @@ COPY ./qt.conf ./bin/
 RUN cp ../qt5-build/config.summary ./
 
 WORKDIR ..
-RUN XZ_OPT='-T0' tar -Jcvf qt5-install-5.15.10-2023.09.16-kde_15e6be42c230046646237698fa761b8fb3df71ee-ubuntu-20.04-amd64.tar.xz qt5-install
+RUN XZ_OPT='-T0' tar -Jcvf qt5-install-5.15.10-2023.10.01-kde_d2122ee587cceb5b2f4130b7074f86db9aca570e-ubuntu-20.04-amd64.tar.xz qt5-install

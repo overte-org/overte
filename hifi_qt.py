@@ -152,7 +152,7 @@ endif()
                 u_major = int( distro.major_version() or '0' )
                 if distro.id() == 'ubuntu' or distro.id() == 'linuxmint':
                     if (distro.id() == 'ubuntu' and u_major == 20) or distro.id() == 'linuxmint' and u_major == 20:
-                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.10-2023.09.16-kde_15e6be42c230046646237698fa761b8fb3df71ee-ubuntu-20.04-amd64.tar.xz'
+                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.10-2023.10.01-kde_d2122ee587cceb5b2f4130b7074f86db9aca570e-ubuntu-20.04-amd64.tar.xz'
                     elif (distro.id() == 'ubuntu' and u_major > 20) or (distro.id() == 'linuxmint' and u_major > 20):
                         self.__no_qt_package_error()
                     else:
