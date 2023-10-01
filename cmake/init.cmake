@@ -56,3 +56,5 @@ if (UNIX)
   # This will need to be looked at closely before Linux can have a static build.
   set(BUILD_SHARED_LIBS ON)
 endif ()
+
+find_package(Python3 REQUIRED)
