@@ -106,14 +106,17 @@ class libnodeConan(ConanFile):
         if self.settings.os == "Linux":
             args.append("--gdb")
 
-        self.run(
-            "python configure.py %s" % (" ".join(args)), env=["node_build_env"]
-        )
         if self.settings.os == "Windows":
+            self.run(
+                "python configure.py %s" % (" ".join(args)), env=["node_build_env"]
+            )
             # self.run("ninja libnode", env=["node_build_env"])
             msbuild = MSBuild(self)
             msbuild.build("node.sln", targets=["libnode"])
         else:
+            self.run(
+                "python3 configure.py %s" % (" ".join(args)), env=["node_build_env"]
+            )
             autotools = Autotools(self)
             autotools.make(args=["-C out", "BUILDTYPE=%s" % self.settings.build_type], target="libnode")
 
