@@ -51,7 +51,7 @@ class Overte(ConanFile):
         self.requires("libnode/18.17.1@overte/stable")
         self.requires("nlohmann_json/3.11.2")
         self.requires("nvidia-texture-tools/2023.01@overte/stable")
-        self.requires("openexr/2.5.7")
+        self.requires("openexr/3.1.9")
         self.requires("openssl/1.1.1w")
         self.requires("openvr/1.26.7@overte/stable")
         self.requires("opus/1.4")
