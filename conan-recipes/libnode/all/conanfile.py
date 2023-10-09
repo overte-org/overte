@@ -101,9 +101,13 @@ class libnodeConan(ConanFile):
         args += self.__add_shared("zlib", "zlib")
 
         args.append("" if self.settings.build_type == "Release" else "--debug")
-        args.append("--dest-cpu=%s" % self.settings.arch)
+        if self.settings.arch == "armv8":
+            args.append("--dest-cpu=arm64")
+        else:
+            args.append("--dest-cpu=%s" % self.settings.arch)
 
-        if self.settings.os == "Linux":
+        if self.settings.os == "Linux" and self.settings.arch != "armv8":
+            # node doesn't build with the gdb argument on aarch64
             args.append("--gdb")
 
         if self.settings.os == "Windows":
