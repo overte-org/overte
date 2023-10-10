@@ -160,7 +160,8 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
     }
 
     function mouseLookOn() {
-        Camera.captureMouse = true;
+        if (mouseLookEnabled)
+            Camera.captureMouse = true;
     }
 
     function mouseLookOff() {
