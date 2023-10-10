@@ -3222,7 +3222,7 @@ void Application::initializeUi() {
 
             // END PULL SAFEURLS FROM INTERFACE.JSON Settings
 
-            if (AUTHORIZED_EXTERNAL_QML_SOURCE.isParentOf(url) || url.scheme() == "file") {
+            if (AUTHORIZED_EXTERNAL_QML_SOURCE.isParentOf(url)) {
                 return true;
             } else {
                 for (const auto& str : safeURLS) {

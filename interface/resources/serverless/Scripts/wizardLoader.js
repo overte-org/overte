@@ -54,7 +54,7 @@
             "parentID": loaderEntityID,
             "sourceUrl": CONFIG_WIZARD_URL,
             "maxFPS": 60,
-            "dpi": 19,
+            "dpi": 15,
             "useBackground": true,
             "grab": {
                 "grabbable": false
