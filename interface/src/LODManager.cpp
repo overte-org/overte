@@ -316,7 +316,7 @@ bool LODManager::shouldRender(const RenderArgs* args, const AABox& bounds) {
     // we are comparing the square of the half tangent apparent angle for the bound against the LODAngle Half tangent square
     // if smaller, the bound is too small and we should NOT render it, return true otherwise.
 
-    // TODO: maybe include avatar size in calculating near and far distance?
+    // TODO: maybe include own avatar size in calculating near and far distance?
 
     // Tangent Adjacent side is eye to bound center vector length
     auto pos = args->getViewFrustum().getPosition() - bounds.calcCenter();
