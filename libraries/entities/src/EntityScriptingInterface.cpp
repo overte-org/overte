@@ -2525,6 +2525,10 @@ const EntityPropertyInfo EntityScriptingInterface::getPropertyInfo(const QString
     return propertyInfo;
 }
 
+int EntityScriptingInterface::removeOrphanedEntities() {
+    return _entityTree->removeOrphanedEntities();
+};
+
 glm::vec3 EntityScriptingInterface::worldToLocalPosition(glm::vec3 worldPosition, const QUuid& parentID,
                                                          int parentJointIndex, bool scalesWithParent) {
     bool success;

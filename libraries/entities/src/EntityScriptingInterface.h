@@ -2129,6 +2129,15 @@ public slots:
      */
     Q_INVOKABLE const EntityPropertyInfo getPropertyInfo(const QString& propertyName) const;
 
+    /*@jsdoc
+     * Removes entities with parent UUID of an entity that doesn't exits.
+     * Entities are sometimes orphaned when entity server crashes during entity deletion.
+     * This function should be run server-side.
+     * @function Entities.removeOrphanedEntities
+     * @returns {number} Number of entities that were removed.
+     */
+    Q_INVOKABLE const int removeOrphanedEntities() const;
+
 signals:
     /*@jsdoc
      * Triggered on the client that is the physics simulation owner during the collision of two entities. Note: Isn't triggered

@@ -2251,6 +2251,47 @@ void EntityTree::pruneTree() {
     recurseTreeWithOperator(&theOperator);
 }
 
+class RemoveOrphanedOperator : public RecurseOctreeOperator {
+public:
+    RemoveOrphanedOperator(EntityTreePointer entityTree) : _entityTree(entityTree) {}
+    virtual bool preRecursion(const OctreeElementPointer& element) override { return true; }
+    virtual bool postRecursion(const OctreeElementPointer& element) override {
+        EntityTreeElementPointer entityTreeElement = std::static_pointer_cast<EntityTreeElement>(element);
+
+        entityTreeElement->forEachEntity([&](const EntityItemPointer& entity) {
+            bool queryAACubeSuccess { false };
+            bool maxAACubeSuccess { false };
+            AACube newCube = entity->getQueryAACube(queryAACubeSuccess);
+            if (queryAACubeSuccess) {
+                // make sure queryAACube encompasses maxAACube
+                AACube maxAACube = entity->getMaximumAACube(maxAACubeSuccess);
+                if (maxAACubeSuccess && !newCube.contains(maxAACube)) {
+                    newCube = maxAACube;
+                }
+            }
+            if (!maxAACubeSuccess){
+                qDebug() << "RemoveOrphanedOperator: Deleting orphaned entity " << entity->getID();
+                std::vector<EntityItemPointer> entitiesToDeleteImmediately;
+                entitiesToDeleteImmediately.push_back(entity);
+                const auto sessionID = DependencyManager::get<NodeList>()->getSessionUUID();
+                Q_ASSERT(sessionID.isNull());
+                entity->collectChildrenForDelete(entitiesToDeleteImmediately, sessionID);
+                _deletedEntityCounter += entitiesToDeleteImmediately.size();
+                _entityTree->deleteEntitiesByPointer(entitiesToDeleteImmediately);
+            }
+        } );
+        return true;
+    }
+    int getDeletedEntityCounter() { return _deletedEntityCounter; };
+private:
+    int _deletedEntityCounter {0};
+    EntityTreePointer _entityTree;
+};
+
+int EntityTree::removeOrphanedEntities() {
+    RemoveOrphanedOperator theOperator(getThisPointer());
+    recurseTreeWithOperator(&theOperator);
+}
 
 QByteArray EntityTree::remapActionDataIDs(QByteArray actionData, QHash<EntityItemID, EntityItemID>& map) {
     if (actionData.isEmpty()) {
