@@ -29,15 +29,15 @@
 class ScriptEngine;
 
 /*@jsdoc
- * <p>The world detail quality rendered.</p>
+ * <p>The balance between target framerate and world detail quality rendered.</p>
  * <table>
  *   <thead>
  *     <tr><th>Value</th><th>Description</th></tr>
  *   </thead>
  *   <tbody>
- *     <tr><td><code>0</code></td><td>Low world detail quality.</td></tr>
- *     <tr><td><code>1</code></td><td>Medium world detail quality.</td></tr>
- *     <tr><td><code>2</code></td><td>High world detail quality.</td></tr>
+ *     <tr><td><code>0</code></td><td>High frame rate / Low detail quality.</td></tr>
+ *     <tr><td><code>1</code></td><td>Medium frame rate / Medium detail quality.</td></tr>
+ *     <tr><td><code>2</code></td><td>Low frame rate / High detail quality.</td></tr>
  *   </tbody>
  * </table>
  * @typedef {number} LODManager.WorldDetailQuality
@@ -121,11 +121,11 @@ class AABox;
  *     it to be rendered, in degrees. The angular dimension is calculated as a sphere of radius half the diagonal of the 
  *     entity's AA box.
 
- * @property {number} lodFarMaxAngleDeg - The upper limit of how big the minimum angular dimension (relative to the camera position)
- *     of an entity in order for it to be rendered, in degrees at distance specified by lodFarDistance. The angular dimension is
+ * @property {number} lodFarMaxAngleDeg - The maximum angular size (relative to the camera position)
+ *     of an entity that is allowed to be culled by LOD Manager, in degrees at distance specified by lodFarDistance. The angular dimension is
  *     calculated as a sphere of radius half the diagonal of the entity's AA box.
- * @property {number} lodNearMaxAngleDeg - The upper limit of how big the minimum angular dimension (relative to the camera position)
- *     of an entity in order for it to be rendered, in degrees at distance specified by lodFarDistance. The angular dimension is
+ * @property {number} lodNearMaxAngleDeg - The maximum angular size (relative to the camera position)
+*     of an entity that is allowed to be culled by LOD Manager, in degrees at distance specified by lodNearDistance. The angular dimension is
  *     calculated as a sphere of radius half the diagonal of the entity's AA box.
 
  * @property {number} lodFarDistance - Distance for which lodFarMaxAngleDeg limit is applied
