@@ -127,9 +127,9 @@ void FetchSpatialTree::run(const RenderContextPointer& renderContext, const Inpu
         // Octree selection!
         float threshold = 0.0f;
         if (queryFrustum.isPerspective()) {
-            //TODO: It was:
-            // threshold = args->_lodFarAngleHalfTan;
-            // But now should be dependent on distance
+            // TODO: Before our LOD took distance into account it used:
+            // threshold = args->_lodAngleHalfTan;
+            // We should make it dependent on distance in the future.
             threshold = args->_lodFarAngleHalfTan;
             if (frustumResolution.y > 0) {
                 threshold = glm::max(queryFrustum.getFieldOfView() / frustumResolution.y, threshold);
