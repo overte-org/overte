@@ -125,7 +125,7 @@ class AABox;
  *     of an entity that is allowed to be culled by LOD Manager, in degrees at distance specified by lodFarDistance. The angular dimension is
  *     calculated as a sphere of radius half the diagonal of the entity's AA box.
  * @property {number} lodNearMaxAngleDeg - The maximum angular size (relative to the camera position)
-*     of an entity that is allowed to be culled by LOD Manager, in degrees at distance specified by lodNearDistance. The angular dimension is
+ *     of an entity that is allowed to be culled by LOD Manager, in degrees at distance specified by lodNearDistance. The angular dimension is
  *     calculated as a sphere of radius half the diagonal of the entity's AA box.
 
  * @property {number} lodFarDistance - Distance for which lodFarMaxAngleDeg limit is applied
