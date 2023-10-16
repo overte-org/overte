@@ -172,7 +172,8 @@ void LODManager::autoAdjustLOD(float realTimeDelta) {
     _pidOutputs.w = output;
 
     // And now add the output of the controller to the LODAngle where we will guarantee it is in the proper range
-    setLODAngleDeg(oldLODAngle + output);
+    float newLODAngle = std::min(oldLODAngle + output, glm::degrees(_farMaxAngle));
+    setLODAngleDeg(newLODAngle);
 
     if (oldLODAngle != getLODAngleDeg()) {
         auto lodToolsDialog = DependencyManager::get<DialogsManager>()->getLodToolsDialog();
@@ -185,12 +186,53 @@ void LODManager::autoAdjustLOD(float realTimeDelta) {
 float LODManager::getLODHalfAngleTan() const {
     return tan(_lodHalfAngle);
 }
+float LODManager::getLODFarHalfAngleTan() const {
+    return tan(std::min(_lodHalfAngle, _farMaxAngle / 2.0f));
+}
+float LODManager::getLODNearHalfAngleTan() const {
+    if (_farMaxAngle > 0) {
+        return tan(std::min(_lodHalfAngle / (_farMaxAngle / 2.0f) * (_nearMaxAngle / 2.0f), _nearMaxAngle / 2.0f));
+    } else {
+        return 0.0f;
+    }
+}
 float LODManager::getLODAngle() const {
     return 2.0f * _lodHalfAngle;
 }
 float LODManager::getLODAngleDeg() const {
     return glm::degrees(getLODAngle());
 }
+
+void LODManager::setLODFarDistance(float value) {
+    _farDistance = value;
+    updateLODAfterSettingsChange();
+}
+
+void LODManager::setLODNearDistance(float value) {
+    _nearDistance = value;
+    updateLODAfterSettingsChange();
+}
+
+void LODManager::setLODFarMaxAngleDeg(float value) {
+    _farMaxAngle = glm::radians(value);
+    updateLODAfterSettingsChange();
+}
+
+float LODManager::getLODFarMaxAngleDeg() const {
+    return glm::degrees(_farMaxAngle);
+}
+
+void LODManager::setLODNearMaxAngle(float value) {
+    _nearMaxAngle = glm::radians(value);
+    updateLODAfterSettingsChange();
+}
+
+void LODManager::updateLODAfterSettingsChange() {}
+
+float LODManager::getLODNearMaxAngle() const {
+    return glm::degrees(_nearMaxAngle);
+}
+
 
 float LODManager::getVisibilityDistance() const {
     float systemDistance = getVisibilityDistanceFromHalfAngle(_lodHalfAngle);
@@ -274,9 +316,19 @@ bool LODManager::shouldRender(const RenderArgs* args, const AABox& bounds) {
     // we are comparing the square of the half tangent apparent angle for the bound against the LODAngle Half tangent square
     // if smaller, the bound is too small and we should NOT render it, return true otherwise.
 
+    // TODO: maybe include own avatar size in calculating near and far distance?
+
     // Tangent Adjacent side is eye to bound center vector length
     auto pos = args->getViewFrustum().getPosition() - bounds.calcCenter();
     auto halfTanAdjacentSq = glm::dot(pos, pos);
+    auto distSq = halfTanAdjacentSq;
+
+    if (distSq <= args->_lodNearDistSq) {
+        return true;
+    }
+
+    float farNearRatio = (distSq > args->_lodFarDistSq) ? 1.0f : (distSq - args->_lodNearDistSq)/(args->_lodFarDistSq - args->_lodNearDistSq);
+    float lodAngleHalfTanSq = (farNearRatio * (args->_lodFarAngleHalfTanSq - args->_lodNearAngleHalfTanSq)) + args->_lodNearAngleHalfTanSq;
 
     // Tangent Opposite side is the half length of the dimensions vector of the bound
     auto dim = bounds.getDimensions();
@@ -286,7 +338,7 @@ bool LODManager::shouldRender(const RenderArgs* args, const AABox& bounds) {
     // isVisible = halfTanSq >= lodHalfTanSq = (halfTanOppositeSq / halfTanAdjacentSq) >= lodHalfTanSq
     // which we express as below to avoid division
     // (halfTanOppositeSq) >= lodHalfTanSq * halfTanAdjacentSq
-    return (halfTanOppositeSq >= args->_lodAngleHalfTanSq * halfTanAdjacentSq);
+    return (halfTanOppositeSq >= lodAngleHalfTanSq * halfTanAdjacentSq);
 };
 
 void LODManager::setOctreeSizeScale(float sizeScale) {

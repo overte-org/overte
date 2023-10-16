@@ -144,7 +144,7 @@ Flickable {
 
                     HifiStylesUit.RalewayRegular {
                         id: worldDetailHeader
-                        text: "World Detail"
+                        text: "Target frame rate"
                         anchors.left: parent.left
                         anchors.top: parent.top
                         width: 130
@@ -157,13 +157,13 @@ Flickable {
                         id: worldDetailModel
 
                         ListElement {
-                            text: "Low World Detail"
+                            text: "High Frame Rate/Low Detail"
                         }
                         ListElement {
-                            text: "Medium World Detail"
+                            text: "Medium Frame Rate/Medium Detail"
                         }
                         ListElement {
-                            text: "Full World Detail"
+                            text: "Low Frame Rate/High Detail"
                         }
                     }
 

@@ -29,15 +29,15 @@
 class ScriptEngine;
 
 /*@jsdoc
- * <p>The world detail quality rendered.</p>
+ * <p>The balance between target framerate and world detail quality rendered.</p>
  * <table>
  *   <thead>
  *     <tr><th>Value</th><th>Description</th></tr>
  *   </thead>
  *   <tbody>
- *     <tr><td><code>0</code></td><td>Low world detail quality.</td></tr>
- *     <tr><td><code>1</code></td><td>Medium world detail quality.</td></tr>
- *     <tr><td><code>2</code></td><td>High world detail quality.</td></tr>
+ *     <tr><td><code>0</code></td><td>High frame rate / Low detail quality.</td></tr>
+ *     <tr><td><code>1</code></td><td>Medium frame rate / Medium detail quality.</td></tr>
+ *     <tr><td><code>2</code></td><td>Low frame rate / High detail quality.</td></tr>
  *   </tbody>
  * </table>
  * @typedef {number} LODManager.WorldDetailQuality
@@ -49,7 +49,7 @@ enum WorldDetailQuality {
 };
 Q_DECLARE_METATYPE(WorldDetailQuality);
 
-const bool DEFAULT_LOD_AUTO_ADJUST = false; // true for auto, false for manual.
+const bool DEFAULT_LOD_AUTO_ADJUST = true; // true for auto, false for manual.
 
 #ifdef Q_OS_ANDROID
 const float DEFAULT_LOD_QUALITY_LEVEL = 0.2f; // default quality level setting is High (lower framerate)
@@ -120,6 +120,17 @@ class AABox;
  * @property {number} lodAngleDeg - The minimum angular dimension (relative to the camera position) of an entity in order for 
  *     it to be rendered, in degrees. The angular dimension is calculated as a sphere of radius half the diagonal of the 
  *     entity's AA box.
+
+ * @property {number} lodFarMaxAngleDeg - The maximum angular size (relative to the camera position)
+ *     of an entity that is allowed to be culled by LOD Manager, in degrees at distance specified by lodFarDistance. The angular dimension is
+ *     calculated as a sphere of radius half the diagonal of the entity's AA box.
+ * @property {number} lodNearMaxAngleDeg - The maximum angular size (relative to the camera position)
+ *     of an entity that is allowed to be culled by LOD Manager, in degrees at distance specified by lodNearDistance. The angular dimension is
+ *     calculated as a sphere of radius half the diagonal of the entity's AA box.
+
+ * @property {number} lodFarDistance - Distance for which lodFarMaxAngleDeg limit is applied
+ * @property {number} lodNearDistance - Distance for which lodNearMaxAngleDeg limit is applied
+
  *
  * @property {number} pidKp - <em>Not used.</em>
  * @property {number} pidKi - <em>Not used.</em>
@@ -156,6 +167,11 @@ class LODManager : public QObject, public Dependency {
         Q_PROPERTY(float lodTargetFPS READ getLODTargetFPS)
 
         Q_PROPERTY(float lodAngleDeg READ getLODAngleDeg WRITE setLODAngleDeg)
+
+        Q_PROPERTY(float lodFarMaxAngleDeg READ getLODFarMaxAngleDeg WRITE setLODFarMaxAngleDeg)
+        Q_PROPERTY(float lodNearMaxAngleDeg READ getLODNearMaxAngle WRITE setLODNearMaxAngle)
+        Q_PROPERTY(float lodFarDistance READ getLODFarDistance WRITE setLODFarDistance)
+        Q_PROPERTY(float lodNearDistance READ getLODNearDistance WRITE setLODNearDistance)
 
         Q_PROPERTY(float pidKp READ getPidKp WRITE setPidKp)
         Q_PROPERTY(float pidKi READ getPidKi WRITE setPidKi)
@@ -292,7 +308,8 @@ public:
 
     float getLODAngleDeg() const;
     void setLODAngleDeg(float lodAngle);
-    float getLODHalfAngleTan() const;
+    float getLODFarHalfAngleTan() const;
+    float getLODNearHalfAngleTan() const;
     float getLODAngle() const;
     float getVisibilityDistance() const;
     void setVisibilityDistance(float distance);
@@ -310,6 +327,15 @@ public:
     float getPidOi() const;
     float getPidOd() const;
     float getPidO() const;
+
+    void setLODFarDistance(float value);
+    float getLODFarDistance() const { return _farDistance; }
+    void setLODNearDistance(float value);
+    float getLODNearDistance() const { return _nearDistance; }
+    void setLODFarMaxAngleDeg(float value);
+    float getLODFarMaxAngleDeg() const;
+    void setLODNearMaxAngle(float value);
+    float getLODNearMaxAngle() const;
 
 signals:
 
@@ -354,7 +380,9 @@ signals:
 private:
     LODManager();
 
+    float getLODHalfAngleTan() const;
     void setWorldDetailQuality(WorldDetailQuality quality, bool isHMDMode);
+    void updateLODAfterSettingsChange();
 
     std::mutex _automaticLODLock;
     bool _automaticLODAdjust = DEFAULT_LOD_AUTO_ADJUST;
@@ -363,6 +391,11 @@ private:
     float _engineRunTime{ 0.0f }; // msec
     float _batchTime{ 0.0f }; // msec
     float _gpuTime{ 0.0f }; // msec
+
+    float _farDistance{ 200.0f };
+    float _nearDistance{ 4.0f };
+    float _farMaxAngle{ 15.0f / 180.f * (float)M_PI };
+    float _nearMaxAngle{ 1.0f / 180.f * (float)M_PI };
 
     float _nowRenderTime{ 0.0f }; // msec
     float _smoothScale{ 10.0f }; // smooth is evaluated over 10 times longer than now

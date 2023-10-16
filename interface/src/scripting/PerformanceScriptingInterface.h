@@ -99,7 +99,7 @@ public slots:
     /*@jsdoc
      * Sets graphics performance to a preset.
      * @function Performance.setPerformancePreset
-     * @param {Performance.PerformancePreset} performancePreset - The graphics performance preset to to use.
+     * @param {Performance.PerformancePreset} performancePreset - The graphics performance preset to use.
      */
     void setPerformancePreset(PerformancePreset performancePreset);
 
