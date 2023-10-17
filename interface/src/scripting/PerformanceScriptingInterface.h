@@ -1,9 +1,11 @@
 //
 //  Created by Bradley Austin Davis on 2019/05/14
 //  Copyright 2013-2019 High Fidelity, Inc.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #pragma once
@@ -55,7 +57,7 @@ public:
      * @typedef {number} Performance.PerformancePreset
      */
     // PerformanceManager PerformancePreset tri state level enums
-    enum PerformancePreset {
+    enum class PerformancePreset {
         UNKNOWN = PerformanceManager::PerformancePreset::UNKNOWN,
         LOW_POWER = PerformanceManager::PerformancePreset::LOW_POWER,
         LOW = PerformanceManager::PerformancePreset::LOW,
@@ -82,7 +84,7 @@ public:
      * @typedef {number} Performance.RefreshRateProfile
      */
     // Must match RefreshRateManager enums
-    enum RefreshRateProfile {
+    enum class RefreshRateProfile {
         ECO = RefreshRateManager::RefreshRateProfile::ECO,
         INTERACTIVE = RefreshRateManager::RefreshRateProfile::INTERACTIVE,
         REALTIME = RefreshRateManager::RefreshRateProfile::REALTIME,
@@ -97,7 +99,7 @@ public slots:
     /*@jsdoc
      * Sets graphics performance to a preset.
      * @function Performance.setPerformancePreset
-     * @param {Performance.PerformancePreset} performancePreset - The graphics performance preset to to use.
+     * @param {Performance.PerformancePreset} performancePreset - The graphics performance preset to use.
      */
     void setPerformancePreset(PerformancePreset performancePreset);
 

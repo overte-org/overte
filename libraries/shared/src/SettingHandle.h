@@ -110,6 +110,8 @@ public:
     void setQuatValue(const QString& name, const glm::quat& quatValue);
     void getQuatValueIfValid(const QString& name, glm::quat& quatValue);
 
+    void clear();
+
 private:
     QString getGroupPrefix() const;
     QString getPath(const QString &value) const;

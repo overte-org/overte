@@ -5,9 +5,11 @@
 //  Created by Stephen Birarda on 8/12/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 //  For happ(ier) development of QML, use these two things:
 //  This forces QML files to be pulled from the source as you edit it: set environment variable HIFI_USE_SOURCE_TREE_RESOURCES=1
@@ -22,6 +24,7 @@
 #include <thread>
 
 #include <AddressManager.h>
+#include <AssetClient.h>
 #include <AudioClient.h>
 #include <CrashHelpers.h>
 #include <DependencyManager.h>
@@ -54,6 +57,7 @@
 #include "LocationBookmarks.h"
 #include "DeferredLightingEffect.h"
 #include "PickManager.h"
+#include "crash-handler/CrashHandler.h"
 
 #include "scripting/SettingsScriptingInterface.h"
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
@@ -365,7 +369,7 @@ Menu::Menu() {
     // Developer > Scripting > Verbose Logging
     addCheckableActionToQMenuAndActionHash(scriptingOptionsMenu, MenuOption::VerboseLogging, 0, false,
                                            qApp, SLOT(updateVerboseLogging()));
-                                           
+
    // Developer > Scripting > Enable Cachebusting of Script.require
    addCheckableActionToQMenuAndActionHash(scriptingOptionsMenu, MenuOption::CachebustRequire, 0, false,
                                           qApp, SLOT(setCachebustRequire()));
@@ -633,12 +637,14 @@ Menu::Menu() {
         true,
         &UserActivityLogger::getInstance(),
         SLOT(disable(bool)));
+
     addCheckableActionToQMenuAndActionHash(networkMenu,
-        MenuOption::DisableCrashLogger,
+        MenuOption::EnableCrashReporting,
         0,
-        true,
-        &UserActivityLogger::getInstance(),
-        SLOT(crashMonitorDisable(bool)));
+        CrashHandler::getInstance().isEnabled(),
+        &CrashHandler::getInstance(),
+        SLOT(setEnabled(bool)));
+
     addActionToQMenuAndActionHash(networkMenu, MenuOption::ShowDSConnectTable, 0,
         qApp, SLOT(loadDomainConnectionDialog()));
 

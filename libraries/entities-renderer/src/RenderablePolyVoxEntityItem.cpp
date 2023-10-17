@@ -4,10 +4,11 @@
 //
 //  Created by Seth Alves on 5/19/15.
 //  Copyright 2015 High Fidelity, Inc.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 
@@ -22,7 +23,7 @@
 #include <QtConcurrent/QtConcurrentRun>
 
 #include <model-networking/SimpleMeshProxy.h>
-#include <ModelScriptingInterface.h>
+#include "ModelScriptingInterface.h"
 #include <EntityEditPacketSender.h>
 #include <PhysicalEntitySimulation.h>
 #include <StencilMaskPass.h>

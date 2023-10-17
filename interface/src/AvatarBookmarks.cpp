@@ -5,9 +5,11 @@
 //  Created by Triplelexx on 23/03/17.
 //  Copyright 2017 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "AvatarBookmarks.h"
@@ -50,12 +52,13 @@ void addAvatarEntities(const QVariantList& avatarEntities) {
     EntitySimulationPointer entitySimulation = entityTree->getSimulation();
     PhysicalEntitySimulationPointer physicalEntitySimulation = std::static_pointer_cast<PhysicalEntitySimulation>(entitySimulation);
     EntityEditPacketSender* entityPacketSender = physicalEntitySimulation->getPacketSender();
-    QScriptEngine scriptEngine;
+    // V8TODO: Creating new script engine each time is very inefficient
+    ScriptEnginePointer scriptEngine = newScriptEngine();
     for (int index = 0; index < avatarEntities.count(); index++) {
         const QVariantMap& avatarEntityProperties = avatarEntities.at(index).toMap();
         QVariant variantProperties = avatarEntityProperties["properties"];
         QVariantMap asMap = variantProperties.toMap();
-        QScriptValue scriptProperties = variantMapToScriptValue(asMap, scriptEngine);
+        ScriptValue scriptProperties = variantMapToScriptValue(asMap, *scriptEngine);
         EntityItemProperties entityProperties;
         EntityItemPropertiesFromScriptValueIgnoreReadOnly(scriptProperties, entityProperties);
 
@@ -302,7 +305,8 @@ QVariantMap AvatarBookmarks::getAvatarDataToBookmark() {
     EntityTreePointer entityTree = treeRenderer ? treeRenderer->getTree() : nullptr;
 
     if (entityTree) {
-        QScriptEngine scriptEngine;
+        // V8TODO: Creating new script engine each time is very inefficient
+        ScriptEnginePointer scriptEngine = newScriptEngine();
         auto avatarEntities = myAvatar->getAvatarEntityDataNonDefault();
         for (auto entityID : avatarEntities.keys()) {
             auto entity = entityTree->findEntityByID(entityID);
@@ -322,7 +326,7 @@ QVariantMap AvatarBookmarks::getAvatarDataToBookmark() {
             desiredProperties -= PROP_JOINT_TRANSLATIONS;
 
             EntityItemProperties entityProperties = entity->getProperties(desiredProperties);
-            QScriptValue scriptProperties = EntityItemPropertiesToScriptValue(&scriptEngine, entityProperties);
+            ScriptValue scriptProperties = EntityItemPropertiesToScriptValue(scriptEngine.get(), entityProperties);
             avatarEntityData["properties"] = scriptProperties.toVariant();
             wearableEntities.append(QVariant(avatarEntityData));
         }

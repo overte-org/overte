@@ -1,17 +1,17 @@
 //
 //  Created by Sam Gondelman on 1/22/19
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_RingGizmoPropertyGroup_h
 #define hifi_RingGizmoPropertyGroup_h
 
 #include <stdint.h>
-
-#include <QtScript/QScriptEngine>
 
 #include "PropertyGroup.h"
 #include "EntityItemPropertiesMacros.h"
@@ -21,6 +21,8 @@ class EntityItemProperties;
 class EncodeBitstreamParams;
 class OctreePacketData;
 class ReadBitstreamToTreeParams;
+class ScriptEngine;
+class ScriptValue;
 
 using u8vec3Color = glm::u8vec3;
 
@@ -56,10 +58,10 @@ using u8vec3Color = glm::u8vec3;
 class RingGizmoPropertyGroup : public PropertyGroup {
 public:
     // EntityItemProperty related helpers
-    virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, QScriptValue& properties,
-                                   QScriptEngine* engine, bool skipDefaults,
+    virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
+                                   ScriptEngine* engine, bool skipDefaults,
                                    EntityItemProperties& defaultEntityProperties) const override;
-    virtual void copyFromScriptValue(const QScriptValue& object, bool& _defaultSettings) override;
+    virtual void copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) override;
 
     void merge(const RingGizmoPropertyGroup& other);
 

@@ -94,8 +94,6 @@ AvatarMixer::AvatarMixer(ReceivedMessage& message) :
         PacketReceiver::makeSourcedListenerReference<AvatarMixer>(this, &AvatarMixer::queueIncomingPacket));
     packetReceiver.registerListenerForTypes({ PacketType::OctreeStats, PacketType::EntityData, PacketType::EntityErase },
         PacketReceiver::makeSourcedListenerReference<AvatarMixer>(this, &AvatarMixer::handleOctreePacket));
-    packetReceiver.registerListener(PacketType::ChallengeOwnership,
-        PacketReceiver::makeSourcedListenerReference<AvatarMixer>(this, &AvatarMixer::queueIncomingPacket));
 
     packetReceiver.registerListenerForTypes({
         PacketType::ReplicatedAvatarIdentity,
@@ -512,8 +510,6 @@ void AvatarMixer::handleAvatarKilled(SharedNodePointer avatarNode) {
            } else {
                _sessionDisplayNames.erase(displayNameIter);
            }
-
-            nodeData->getAvatar().stopChallengeTimer();
         }
 
         std::unique_ptr<NLPacket> killPacket;
@@ -992,6 +988,8 @@ void AvatarMixer::handlePacketVersionMismatch(PacketType type, const SockAddr& s
 }
 
 void AvatarMixer::parseDomainServerSettings(const QJsonObject& domainSettings) {
+    commonParseSettingsObject(domainSettings);
+
     const QString AVATAR_MIXER_SETTINGS_KEY = "avatar_mixer";
     QJsonObject avatarMixerGroupObject = domainSettings[AVATAR_MIXER_SETTINGS_KEY].toObject();
 

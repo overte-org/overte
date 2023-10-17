@@ -24,6 +24,8 @@
 #include <SharedUtil.h>
 #include <ShutdownEventListener.h>
 #include <shared/ScriptInitializerMixin.h>
+#include <crash-handler/CrashHandler.h>
+
 
 #include "Assignment.h"
 #include "AssignmentClient.h"
@@ -70,10 +72,6 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
                                                 "Minimum UDP listen port", "port");
     parser.addOption(minChildListenPort);
 
-    const QCommandLineOption walletDestinationOption(ASSIGNMENT_WALLET_DESTINATION_ID_OPTION,
-                                                     "set wallet destination", "wallet-uuid");
-    parser.addOption(walletDestinationOption);
-
     const QCommandLineOption assignmentServerHostnameOption(CUSTOM_ASSIGNMENT_SERVER_HOSTNAME_OPTION,
                                                             "set assignment-server hostname", "hostname");
     parser.addOption(assignmentServerHostnameOption);
@@ -109,6 +107,9 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
 
     const QCommandLineOption logOption("logOptions", "Logging options, comma separated: color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald", "options");
     parser.addOption(logOption);
+
+    const QCommandLineOption forceCrashReportingOption("forceCrashReporting", "Force crash reporting to initialize.");
+    parser.addOption(forceCrashReportingOption);
 
     if (!parser.parse(QCoreApplication::arguments())) {
         std::cout << parser.errorText().toStdString() << std::endl; // Avoid Qt log spam
@@ -178,6 +179,7 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
         disableDomainPortAutoDiscovery = true;
     }
 
+
     Assignment::Type requestAssignmentType = Assignment::AllTypes;
     if (argumentVariantMap.contains(ASSIGNMENT_TYPE_OVERRIDE_OPTION)) {
         requestAssignmentType = (Assignment::Type) argumentVariantMap.value(ASSIGNMENT_TYPE_OVERRIDE_OPTION).toInt();
@@ -186,6 +188,9 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
         requestAssignmentType = (Assignment::Type) parser.value(clientTypeOption).toInt();
     }
 
+    auto &ch = CrashHandler::getInstance();
+    ch.setAnnotation("type", QString::number(requestAssignmentType));
+
     QString assignmentPool;
     // check for an assignment pool passed on the command line or in the config
     if (argumentVariantMap.contains(ASSIGNMENT_POOL_OPTION)) {
@@ -193,14 +198,6 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
     }
     if (parser.isSet(poolOption)) {
         assignmentPool = parser.value(poolOption);
-    }
-
-    QUuid walletUUID;
-    if (argumentVariantMap.contains(ASSIGNMENT_WALLET_DESTINATION_ID_OPTION)) {
-        walletUUID = argumentVariantMap.value(ASSIGNMENT_WALLET_DESTINATION_ID_OPTION).toString();
-    }
-    if (parser.isSet(walletDestinationOption)) {
-        walletUUID = parser.value(walletDestinationOption);
     }
 
     QString assignmentServerHostname;
@@ -259,6 +256,10 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
         }
     }
 
+    if (parser.isSet(forceCrashReportingOption)) {
+        ch.setEnabled(true);
+    }
+
     QThread::currentThread()->setObjectName("main thread");
 
     LogHandler::getInstance().moveToThread(thread());
@@ -270,14 +271,14 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
     if (numForks || minForks || maxForks) {
         AssignmentClientMonitor* monitor =  new AssignmentClientMonitor(numForks, minForks, maxForks,
                                                                         requestAssignmentType, assignmentPool, listenPort,
-                                                                        childMinListenPort, walletUUID, assignmentServerHostname,
+                                                                        childMinListenPort, assignmentServerHostname,
                                                                         assignmentServerPort, httpStatusPort, logDirectory,
                                                                         disableDomainPortAutoDiscovery);
         monitor->setParent(this);
         connect(this, &QCoreApplication::aboutToQuit, monitor, &AssignmentClientMonitor::aboutToQuit);
     } else {
         AssignmentClient* client = new AssignmentClient(requestAssignmentType, assignmentPool, listenPort,
-                                                        walletUUID, assignmentServerHostname,
+                                                        assignmentServerHostname,
                                                         assignmentServerPort, monitorPort,
                                                         disableDomainPortAutoDiscovery);
         client->setParent(this);

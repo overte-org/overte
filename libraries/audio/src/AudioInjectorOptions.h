@@ -4,18 +4,21 @@
 //
 //  Created by Stephen Birarda on 1/2/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_AudioInjectorOptions_h
 #define hifi_AudioInjectorOptions_h
 
-#include <QtScript/qscriptengine.h>
-
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <ScriptValue.h>
+
+class ScriptEngine;
 
 class AudioInjectorOptions {
 public:
@@ -35,7 +38,7 @@ public:
 
 Q_DECLARE_METATYPE(AudioInjectorOptions);
 
-QScriptValue injectorOptionsToScriptValue(QScriptEngine* engine, const AudioInjectorOptions& injectorOptions);
-void injectorOptionsFromScriptValue(const QScriptValue& object, AudioInjectorOptions& injectorOptions);
+ScriptValue injectorOptionsToScriptValue(ScriptEngine* engine, const AudioInjectorOptions& injectorOptions);
+bool injectorOptionsFromScriptValue(const ScriptValue& object, AudioInjectorOptions& injectorOptions);
 
 #endif // hifi_AudioInjectorOptions_h

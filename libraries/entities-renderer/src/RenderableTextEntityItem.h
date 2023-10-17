@@ -4,9 +4,11 @@
 //
 //  Created by Brad Hefta-Gaub on 8/6/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_RenderableTextEntityItem_h
@@ -57,7 +59,7 @@ private:
     float _lineHeight;
     glm::vec3 _textColor;
     float _textAlpha;
-    bool _unlit;
+    bool _unlit { false };
 
     std::shared_ptr<graphics::ProceduralMaterial> _material { std::make_shared<graphics::ProceduralMaterial>() };
     glm::vec3 _backgroundColor { NAN };

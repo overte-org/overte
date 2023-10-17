@@ -63,7 +63,9 @@ const QString SETTINGS_VIEWPOINT_KEY = "viewpoint";
 
 DomainServerSettingsManager::DomainServerSettingsManager() {
     // load the description object from the settings description
-    QFile descriptionFile(QCoreApplication::applicationDirPath() + SETTINGS_DESCRIPTION_RELATIVE_PATH);
+    qDebug() << "Application dir: " << QCoreApplication::applicationDirPath();
+    QString descriptionFilePath = QCoreApplication::applicationDirPath() + SETTINGS_DESCRIPTION_RELATIVE_PATH;
+    QFile descriptionFile(descriptionFilePath);
     descriptionFile.open(QIODevice::ReadOnly);
 
     QJsonParseError parseError;
@@ -89,7 +91,7 @@ DomainServerSettingsManager::DomainServerSettingsManager() {
 
     static const QString MISSING_SETTINGS_DESC_MSG =
         QString("Did not find settings description in JSON at %1 - Unable to continue. domain-server will quit.\n%2 at %3")
-        .arg(SETTINGS_DESCRIPTION_RELATIVE_PATH).arg(parseError.errorString()).arg(parseError.offset);
+        .arg(descriptionFilePath).arg(parseError.errorString()).arg(parseError.offset);
     static const int MISSING_SETTINGS_DESC_ERROR_CODE = 6;
 
     QMetaObject::invokeMethod(QCoreApplication::instance(), "queuedQuit", Qt::QueuedConnection,
@@ -397,14 +399,6 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
             unpackPermissions();
             // This was prior to addition of domain content replacement, add that to localhost permissions by default
             _standardAgentPermissions[NodePermissions::standardNameLocalhost]->set(NodePermissions::Permission::canReplaceDomainContent);
-            packPermissions();
-        }
-
-        if (oldVersion < 1.9) {
-            unpackPermissions();
-            // This was prior to addition of canRez(Tmp)Certified; add those to localhost permissions by default
-            _standardAgentPermissions[NodePermissions::standardNameLocalhost]->set(NodePermissions::Permission::canRezPermanentCertifiedEntities);
-            _standardAgentPermissions[NodePermissions::standardNameLocalhost]->set(NodePermissions::Permission::canRezTemporaryCertifiedEntities);
             packPermissions();
         }
 

@@ -1,9 +1,11 @@
 //
 //  Created by Sam Gondelman 7/17/2018
 //  Copyright 2018 High Fidelity, Inc.
+//  copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #include "PathPointer.h"
 
@@ -12,6 +14,7 @@
 
 #include <DependencyManager.h>
 #include <PickManager.h>
+#include <Quat.h>
 #include "PickScriptingInterface.h"
 #include "RayPick.h"
 
@@ -141,11 +144,13 @@ void PathPointer::updateVisuals(const PickResultPointer& pickResult) {
     auto renderState = _renderStates.find(_currentRenderState);
     auto defaultRenderState = _defaultRenderStates.find(_currentRenderState);
     float parentScale = 1.0f;
+    //if (_scaleWithParent) {
     if (_enabled && _scaleWithParent) {
         glm::vec3 dimensions = DependencyManager::get<PickManager>()->getParentTransform(_pickUID).getScale();
         parentScale = glm::max(glm::max(dimensions.x, dimensions.y), dimensions.z);
     }
 
+    //if (!_currentRenderState.empty() && renderState != _renderStates.end() &&
     if (_enabled && !_currentRenderState.empty() && renderState != _renderStates.end() &&
         (type != IntersectionType::NONE || _pathLength > 0.0f)) {
         glm::vec3 origin = getPickOrigin(pickResult);
@@ -157,6 +162,7 @@ void PathPointer::updateVisuals(const PickResultPointer& pickResult) {
             defaultRenderState->second.second->disable();
         }
     } else if (_enabled && !_currentRenderState.empty() && defaultRenderState != _defaultRenderStates.end()) {
+    //} else if (!_currentRenderState.empty() && defaultRenderState != _defaultRenderStates.end()) {
         if (renderState != _renderStates.end() && renderState->second->isEnabled()) {
             renderState->second->disable();
         }
@@ -251,7 +257,7 @@ StartEndRenderState::StartEndRenderState(const QUuid& startID, const QUuid& endI
         EntityPropertyFlags desiredProperties;
         desiredProperties += PROP_DIMENSIONS;
         desiredProperties += PROP_IGNORE_PICK_INTERSECTION;
-        auto properties = entityScriptingInterface->getEntityProperties(_startID, desiredProperties);
+        auto properties = entityScriptingInterface->getEntityPropertiesInternal(_startID, desiredProperties);
         _startDim = properties.getDimensions();
         _startIgnorePicks = properties.getIgnorePickIntersection();
     }
@@ -260,7 +266,7 @@ StartEndRenderState::StartEndRenderState(const QUuid& startID, const QUuid& endI
         desiredProperties += PROP_DIMENSIONS;
         desiredProperties += PROP_ROTATION;
         desiredProperties += PROP_IGNORE_PICK_INTERSECTION;
-        auto properties = entityScriptingInterface->getEntityProperties(_endID, desiredProperties);
+        auto properties = entityScriptingInterface->getEntityPropertiesInternal(_endID, desiredProperties);
         _endDim = properties.getDimensions();
         _endRot = properties.getRotation();
         _endIgnorePicks = properties.getIgnorePickIntersection();

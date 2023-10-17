@@ -118,7 +118,7 @@ std::pair<glm::vec3, glm::quat> calculateKeyboardPositionAndOrientation() {
         EntityPropertyFlags desiredProperties;
         desiredProperties += PROP_POSITION;
         desiredProperties += PROP_ROTATION;
-        auto properties = DependencyManager::get<EntityScriptingInterface>()->getEntityProperties(tabletID, desiredProperties);
+        auto properties = DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(tabletID, desiredProperties);
 
         auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
         bool landscapeMode = tablet->getLandscape();
@@ -146,7 +146,7 @@ void Key::saveDimensionsAndLocalPosition() {
     EntityPropertyFlags desiredProperties;
     desiredProperties += PROP_LOCAL_POSITION;
     desiredProperties += PROP_DIMENSIONS;
-    auto properties = DependencyManager::get<EntityScriptingInterface>()->getEntityProperties(_keyID, desiredProperties);
+    auto properties = DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(_keyID, desiredProperties);
 
     _originalLocalPosition = properties.getLocalPosition();
     _originalDimensions = properties.getDimensions();
@@ -271,14 +271,14 @@ void Keyboard::createKeyboard() {
 
     QVariantMap leftStylusProperties {
         { "hand", LEFT_HAND_CONTROLLER_INDEX },
-        { "filter", PickScriptingInterface::PICK_LOCAL_ENTITIES() },
+        { "filter", PickScriptingInterface::getPickLocalEntities() },
         { "model", modelProperties },
         { "tipOffset", vec3toVariant(MALLET_TIP_OFFSET) }
     };
 
     QVariantMap rightStylusProperties {
         { "hand", RIGHT_HAND_CONTROLLER_INDEX },
-        { "filter", PickScriptingInterface::PICK_LOCAL_ENTITIES() },
+        { "filter", PickScriptingInterface::getPickLocalEntities() },
         { "model", modelProperties },
         { "tipOffset", vec3toVariant(MALLET_TIP_OFFSET) }
     };
@@ -469,7 +469,7 @@ void Keyboard::switchToLayer(int layerIndex) {
         EntityPropertyFlags desiredProperties;
         desiredProperties += PROP_POSITION;
         desiredProperties += PROP_ROTATION;
-        auto oldProperties = entityScriptingInterface->getEntityProperties(_anchor.entityID, desiredProperties);
+        auto oldProperties = entityScriptingInterface->getEntityPropertiesInternal(_anchor.entityID, desiredProperties);
 
         glm::vec3 currentPosition = oldProperties.getPosition();
         glm::quat currentOrientation = oldProperties.getRotation();
@@ -530,7 +530,7 @@ void Keyboard::handleTriggerBegin(const QUuid& id, const PointerEvent& event) {
 
         EntityPropertyFlags desiredProperties;
         desiredProperties += PROP_POSITION;
-        glm::vec3 keyWorldPosition = DependencyManager::get<EntityScriptingInterface>()->getEntityProperties(id, desiredProperties).getPosition();
+        glm::vec3 keyWorldPosition = DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(id, desiredProperties).getPosition();
 
         AudioInjectorOptions audioOptions;
         audioOptions.localOnly = true;
@@ -662,7 +662,7 @@ void Keyboard::handleTriggerContinue(const QUuid& id, const PointerEvent& event)
             auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
             EntityPropertyFlags desiredProperties;
             desiredProperties += PROP_ROTATION;
-            glm::quat orientation = entityScriptingInterface->getEntityProperties(id, desiredProperties).getRotation();
+            glm::quat orientation = entityScriptingInterface->getEntityPropertiesInternal(id, desiredProperties).getRotation();
             glm::vec3 yAxis = orientation * Z_AXIS;
             glm::vec3 yOffset = yAxis * Z_OFFSET;
             glm::vec3 localPosition = key.getCurrentLocalPosition() - yOffset;

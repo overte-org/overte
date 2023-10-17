@@ -73,23 +73,24 @@ Script.include("/~/system/libraries/controllers.js");
         width: 0.025,
         drawInFront: true
     };
-    
+
+    //V8TODO: check render states
     var teleportEnd = {
-        type: "model",
+        type: "Model",
         url: TARGET_MODEL_URL,
         dimensions: TARGET_MODEL_DIMENSIONS,
         ignorePickIntersection: true
     };
     
     var seatEnd = {
-        type: "model",
+        type: "Model",
         url: SEAT_MODEL_URL,
         dimensions: TARGET_MODEL_DIMENSIONS,
         ignorePickIntersection: true
     };
     
     var collisionEnd = {
-        type: "shape",
+        type: "Shape",
         shape: "box",
         dimensions: { x: 1.0, y: 0.001, z: 1.0 },
         alpha: 0.0,
@@ -215,16 +216,22 @@ Script.include("/~/system/libraries/controllers.js");
                 var avatarSensorPosition = Mat4.transformPoint(worldToSensorMatrix, MyAvatar.position);
                 avatarSensorPosition.y = 0;
 
-                var targetRotation = Overlays.getProperty(_this.targetOverlayID, "rotation");
-                var relativePlayAreaCenterOffset =
-                    Vec3.sum(_this.playAreaCenterOffset, { x: 0, y: -TARGET_MODEL_DIMENSIONS.y / 2, z: 0 });
-                var localPosition = Vec3.multiplyQbyV(Quat.inverse(targetRotation),
-                    Vec3.multiplyQbyV(sensorToWorldRotation,
-                        Vec3.multiply(avatarScale, Vec3.subtract(relativePlayAreaCenterOffset, avatarSensorPosition))));
-                localPosition.y = _this.teleportScaleFactor * localPosition.y;
+                var targetRotation = Entities.getEntityProperties(_this.targetOverlayID, ["rotation"]).rotation;
+                if (targetRotation != null) {
+                    var relativePlayAreaCenterOffset =
+                        Vec3.sum(_this.playAreaCenterOffset, {x: 0, y: -TARGET_MODEL_DIMENSIONS.y / 2, z: 0});
+                    var localPosition = Vec3.multiplyQbyV(Quat.inverse(targetRotation),
+                        Vec3.multiplyQbyV(sensorToWorldRotation,
+                            Vec3.multiply(avatarScale, Vec3.subtract(relativePlayAreaCenterOffset, avatarSensorPosition))));
+                    localPosition.y = _this.teleportScaleFactor * localPosition.y;
+                } else {
+                    print("");
+                }
 
                 playAreaOverlayProperties.parentID = _this.targetOverlayID;
-                playAreaOverlayProperties.localPosition = localPosition;
+                if (targetRotation != null) {
+                    playAreaOverlayProperties.localPosition = localPosition;
+                }
             }
 
             Overlays.editOverlay(_this.playAreaOverlay, playAreaOverlayProperties);
@@ -295,7 +302,8 @@ Script.include("/~/system/libraries/controllers.js");
                 _this.cleanup();
             }
 
-            _this.teleportParabolaHandVisuals = Pointers.createPointer(PickType.Parabola, {
+            //V8TODO
+            _this.teleportParabolaHandVisuals = Pointers.createParabolaPointer({
                 joint: (_this.hand === RIGHT_HAND) ? "_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND" : "_CAMERA_RELATIVE_CONTROLLER_LEFTHAND",
                 dirOffset: { x: 0, y: 1, z: 0.1 },
                 posOffset: { x: (_this.hand === RIGHT_HAND) ? 0.03 : -0.03, y: 0.2, z: 0.02 },
@@ -311,7 +319,8 @@ Script.include("/~/system/libraries/controllers.js");
                 maxDistance: 8.0
             });
 
-            _this.teleportParabolaHandCollisions = Pointers.createPointer(PickType.Parabola, {
+            //V8TODO
+            _this.teleportParabolaHandCollisions = Pointers.createParabolaPointer({
                 joint: (_this.hand === RIGHT_HAND) ? "_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND" : "_CAMERA_RELATIVE_CONTROLLER_LEFTHAND",
                 dirOffset: { x: 0, y: 1, z: 0.1 },
                 posOffset: { x: (_this.hand === RIGHT_HAND) ? 0.03 : -0.03, y: 0.2, z: 0.02 },
@@ -326,7 +335,8 @@ Script.include("/~/system/libraries/controllers.js");
                 maxDistance: 8.0
             });
 
-            _this.teleportParabolaHeadVisuals = Pointers.createPointer(PickType.Parabola, {
+            //V8TODO
+            _this.teleportParabolaHeadVisuals = Pointers.createParabolaPointer({
                 joint: "Avatar",
                 filter: Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_INVISIBLE,
                 faceAvatar: true,
@@ -340,7 +350,8 @@ Script.include("/~/system/libraries/controllers.js");
                 maxDistance: 8.0
             });
 
-            _this.teleportParabolaHeadCollisions = Pointers.createPointer(PickType.Parabola, {
+            //V8TODO
+            _this.teleportParabolaHeadCollisions = Pointers.createParabolaPointer({
                 joint: "Avatar",
                 filter: Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_INVISIBLE,
                 faceAvatar: true,
@@ -399,6 +410,7 @@ Script.include("/~/system/libraries/controllers.js");
             });
 
 
+            //V8TODO: this won't work anymore
             _this.playAreaOverlay = Overlays.addOverlay("model", {
                 url: _this.PLAY_AREA_OVERLAY_MODEL,
                 drawInFront: false,
@@ -424,6 +436,7 @@ Script.include("/~/system/libraries/controllers.js");
 
                 for (var i = 0; i < _this.playAreaSensorPositions.length; i++) {
                     if (i > _this.playAreaSensorPositionOverlays.length - 1) {
+                        //V8TODO: replace with local entity
                         var overlay = Overlays.addOverlay("model", {
                             url: _this.PLAY_AREA_SENSOR_OVERLAY_MODEL,
                             dimensions: _this.PLAY_AREA_SENSOR_OVERLAY_DIMENSIONS,
@@ -507,18 +520,21 @@ Script.include("/~/system/libraries/controllers.js");
                 });
             } else {
                 // Set play area position and rotation in local coordinates with parenting.
-                var targetRotation = Overlays.getProperty(_this.targetOverlayID, "rotation");
-                var sensorToTargetRotation = Quat.multiply(Quat.inverse(targetRotation), sensorToWorldRotation);
-                var relativePlayAreaCenterOffset =
-                    Vec3.sum(_this.playAreaCenterOffset, { x: 0, y: -TARGET_MODEL_DIMENSIONS.y / 2, z: 0 });
-                Overlays.editOverlay(_this.playAreaOverlay, {
-                    parentID: _this.targetOverlayID,
-                    localPosition: Vec3.multiplyQbyV(Quat.inverse(targetRotation),
-                        Vec3.multiplyQbyV(sensorToWorldRotation,
-                            Vec3.multiply(MyAvatar.sensorToWorldScale,
-                                Vec3.subtract(relativePlayAreaCenterOffset, avatarSensorPosition)))),
-                    localRotation: sensorToTargetRotation
-                });
+                var targetRotation = Entities.getEntityProperties(_this.targetOverlayID, ["rotation"]).rotation;
+                // TODO: Why is targetRotation undefined sometimes?
+                if (targetRotation) {
+                    var sensorToTargetRotation = Quat.multiply(Quat.inverse(targetRotation), sensorToWorldRotation);
+                    var relativePlayAreaCenterOffset =
+                        Vec3.sum(_this.playAreaCenterOffset, {x: 0, y: -TARGET_MODEL_DIMENSIONS.y / 2, z: 0});
+                    Overlays.editOverlay(_this.playAreaOverlay, {
+                        parentID: _this.targetOverlayID,
+                        localPosition: Vec3.multiplyQbyV(Quat.inverse(targetRotation),
+                            Vec3.multiplyQbyV(sensorToWorldRotation,
+                                Vec3.multiply(MyAvatar.sensorToWorldScale,
+                                    Vec3.subtract(relativePlayAreaCenterOffset, avatarSensorPosition)))),
+                        localRotation: sensorToTargetRotation
+                    });
+                }
             }
         };
 

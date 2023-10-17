@@ -4,9 +4,11 @@
 //
 //  Created by Brad Hefta-Gaub on 1/29/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "Quat.h"
@@ -18,6 +20,7 @@
 
 #include "ScriptEngineLogging.h"
 #include "ScriptEngine.h"
+#include "ScriptManager.h"
 
 quat Quat::normalize(const glm::quat& q) {
     return glm::normalize(q);
@@ -123,8 +126,9 @@ void Quat::print(const QString& label, const glm::quat& q, bool asDegrees) {
         message = message.arg(glm::to_string(glm::dquat(q)).c_str());
     }
     qCDebug(scriptengine) << message;
-    if (ScriptEngine* scriptEngine = qobject_cast<ScriptEngine*>(engine())) {
-        scriptEngine->print(message);
+    Q_ASSERT(engine);
+    if (ScriptManager* scriptManager = engine()->manager()) {
+        scriptManager->print(message);
     }
 }
 

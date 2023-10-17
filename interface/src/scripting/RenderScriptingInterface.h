@@ -1,9 +1,11 @@
 //
 //  Created by Sam Gondelman on 5/16/19
 //  Copyright 2013-2019 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_RenderScriptingInterface_h
@@ -39,6 +41,7 @@ class RenderScriptingInterface : public QObject {
     Q_PROPERTY(bool ambientOcclusionEnabled READ getAmbientOcclusionEnabled WRITE setAmbientOcclusionEnabled NOTIFY settingsChanged)
     Q_PROPERTY(AntialiasingConfig::Mode antialiasingMode READ getAntialiasingMode WRITE setAntialiasingMode NOTIFY settingsChanged)
     Q_PROPERTY(float viewportResolutionScale READ getViewportResolutionScale WRITE setViewportResolutionScale NOTIFY settingsChanged)
+    Q_PROPERTY(float verticalFieldOfView READ getVerticalFieldOfView WRITE setVerticalFieldOfView NOTIFY settingsChanged)
 
 public:
     RenderScriptingInterface();
@@ -148,14 +151,14 @@ public slots:
     /*@jsdoc
      * Gets the active anti-aliasing mode.
      * @function Render.getAntialiasingMode
-     * @returns {integer} the active anti-aliasing mode.
+     * @returns {AntialiasingMode} The active anti-aliasing mode.
      */
     AntialiasingConfig::Mode getAntialiasingMode() const;
 
     /*@jsdoc
      * Sets the active anti-aliasing mode.
      * @function Render.setAntialiasingMode
-     * @param {integer} the active anti-aliasing mode.
+     * @param {AntialiasingMode} The active anti-aliasing mode.
      */
     void setAntialiasingMode(AntialiasingConfig::Mode mode);
 
@@ -176,26 +179,40 @@ public slots:
     /*@jsdoc
      * Returns the list of screens
      * @function Render.getScreens
-     * @returns {string[]} The names of the available screens
+     * @returns {string[]} The names of the available screens.
      */
     QStringList getScreens() const;
 
     /*@jsdoc
-     * Gets the screen used when switching to full screen mode
+     * Gets the screen used when switching to full screen mode.
      * @function Render.getFullScreenScreen
-     * @returns {string} The name of the screen used for full screen mode
+     * @returns {string} The name of the screen used for full screen mode.
      */
     QString getFullScreenScreen() const;
 
     /*@jsdoc
-     * Sets the screen used when switching to full screen mode
+     * Sets the screen used when switching to full screen mode.
      * This function will only succeed if the name passed is one of the entries from Render.getScreens.
      * Otherwise, it will return False and have no effect.
      *
      * @function Render.setFullScreenScreen
-     * @returns {bool} True if the setting was successful
+     * @returns {bool} True if the setting was successful.
      */
     bool setFullScreenScreen(QString name);
+
+    /*@jsdoc
+     * Gets the vertical field of view in degrees.
+     * @function Render.getVerticalFieldOfView
+     * @returns {number} The vertical field of view in degrees.
+     */
+    float getVerticalFieldOfView() { return qApp->getFieldOfView(); }
+
+    /*@jsdoc
+     * Sets the vertical field of view in degrees.
+     * @function Render.setVerticalFieldOfView
+     * @param {number} fieldOfView - The vertical field of view in degrees to set.
+     */
+    void setVerticalFieldOfView( float fieldOfView );
 
 signals:
 

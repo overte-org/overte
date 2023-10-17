@@ -1,6 +1,10 @@
+# Copyright 2015-2018, High Fidelity, Inc.
+# Copyright 2021-2023 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 set(TARGET_NAME gpu-textures-tests)
 # This is not a testcase -- just set it up as a regular hifi project
-setup_hifi_project(Quick Gui Script)
+setup_hifi_project(Quick Gui)
 setup_memory_debugger()
 setup_thread_debugger()
 set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "Tests/manual-tests/")

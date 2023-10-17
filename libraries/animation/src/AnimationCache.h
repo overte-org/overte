@@ -4,9 +4,11 @@
 //
 //  Created by Andrzej Kapolka on 4/14/14.
 //  Copyright (c) 2014 High Fidelity, Inc. All rights reserved.
+//  Copyright Overte e.V. 2023
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_AnimationCache_h
@@ -14,8 +16,6 @@
 
 #include <QtCore/QRunnable>
 #include <QtCore/QSharedPointer>
-#include <QtScript/QScriptEngine>
-#include <QtScript/QScriptValue>
 
 #include <DependencyManager.h>
 #include <hfm/HFM.h>

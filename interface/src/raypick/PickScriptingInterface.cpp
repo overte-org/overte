@@ -1,9 +1,11 @@
 //
 //  Created by Sam Gondelman 10/20/2017
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "PickScriptingInterface.h"
@@ -29,6 +31,26 @@
 #include "EntityTransformNode.h"
 
 #include <ScriptEngine.h>
+#include <ScriptEngineCast.h>
+#include <ScriptEngineLogging.h>
+#include <ScriptValueUtils.h>
+
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    PickScriptingInterface::registerMetaTypes(scriptEngine);
+});
+
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    auto pickScriptingInterface = DependencyManager::get<PickScriptingInterface>();
+    if (pickScriptingInterface) {
+        pickScriptingInterface->registerProperties(scriptEngine);
+    } else {
+        qWarning(scriptengine) << "Cannot register PickScriptingInterface properties with script engine, PickScriptingInterface instance not available";
+    }
+});
 
 static const float WEB_TOUCH_Y_OFFSET = 0.105f;  // how far forward (or back with a negative number) to slide stylus in hand
 static const glm::vec3 TIP_OFFSET = glm::vec3(0.0f, StylusPick::WEB_STYLUS_LENGTH - WEB_TOUCH_Y_OFFSET, 0.0f);
@@ -67,7 +89,7 @@ unsigned int PickScriptingInterface::createPick(const PickQuery::PickType type, 
 
 PickFilter getPickFilter(unsigned int filter) {
     // FIXME: Picks always intersect visible and collidable things right now
-    filter = filter | (PickScriptingInterface::PICK_INCLUDE_VISIBLE() | PickScriptingInterface::PICK_INCLUDE_COLLIDABLE());
+    filter = filter | (PickScriptingInterface::getPickIncludeVisible() | PickScriptingInterface::getPickIncludeCollidable());
     return PickFilter(filter);
 }
 
@@ -425,11 +447,11 @@ void PickScriptingInterface::setPrecisionPicking(unsigned int uid, bool precisio
     DependencyManager::get<PickManager>()->setPrecisionPicking(uid, precisionPicking);
 }
 
-void PickScriptingInterface::setIgnoreItems(unsigned int uid, const QScriptValue& ignoreItems) {
+void PickScriptingInterface::setIgnoreItems(unsigned int uid, const ScriptValue& ignoreItems) {
     DependencyManager::get<PickManager>()->setIgnoreItems(uid, qVectorQUuidFromScriptValue(ignoreItems));
 }
 
-void PickScriptingInterface::setIncludeItems(unsigned int uid, const QScriptValue& includeItems) {
+void PickScriptingInterface::setIncludeItems(unsigned int uid, const ScriptValue& includeItems) {
     DependencyManager::get<PickManager>()->setIncludeItems(uid, qVectorQUuidFromScriptValue(includeItems));
 }
 
@@ -445,23 +467,26 @@ bool PickScriptingInterface::isMouse(unsigned int uid) {
     return DependencyManager::get<PickManager>()->isMouse(uid);
 }
 
-QScriptValue pickTypesToScriptValue(QScriptEngine* engine, const PickQuery::PickType& pickType) {
-    return pickType;
+ScriptValue pickTypesToScriptValue(ScriptEngine* engine, const PickQuery::PickType& pickType) {
+    return engine->newValue(pickType);
 }
 
-void pickTypesFromScriptValue(const QScriptValue& object, PickQuery::PickType& pickType) {
+bool pickTypesFromScriptValue(const ScriptValue& object, PickQuery::PickType& pickType) {
     pickType = static_cast<PickQuery::PickType>(object.toUInt16());
+    return true;
 }
 
-void PickScriptingInterface::registerMetaTypes(QScriptEngine* engine) {
-    QScriptValue pickTypes = engine->newObject();
+void PickScriptingInterface::registerMetaTypes(ScriptEngine* engine) {
+    scriptRegisterMetaType<PickQuery::PickType, pickTypesToScriptValue, pickTypesFromScriptValue>(engine);
+}
+
+void PickScriptingInterface::registerProperties(ScriptEngine* engine) {
+    ScriptValue pickTypes = engine->newObject();
     auto metaEnum = QMetaEnum::fromType<PickQuery::PickType>();
     for (int i = 0; i < PickQuery::PickType::NUM_PICK_TYPES; ++i) {
         pickTypes.setProperty(metaEnum.key(i), metaEnum.value(i));
     }
     engine->globalObject().setProperty("PickType", pickTypes);
-
-    qScriptRegisterMetaType(engine, pickTypesToScriptValue, pickTypesFromScriptValue);
 }
 
 unsigned int PickScriptingInterface::getPerFrameTimeBudget() const {

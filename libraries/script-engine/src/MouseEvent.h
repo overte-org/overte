@@ -4,9 +4,11 @@
 //
 //  Created by Stephen Birarda on 2014-10-27.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /// @addtogroup ScriptEngine
@@ -16,9 +18,10 @@
 #define hifi_MouseEvent_h
 
 #include <QMouseEvent>
-#include <QScriptValue>
 
-class QScriptEngine;
+#include "ScriptValue.h"
+
+class ScriptEngine;
 
 /// Represents a mouse event to the scripting engine. Exposed as <code><a href="https://apidocs.overte.org/global.html#MouseEvent">MouseEvent</a></code>
 class MouseEvent {
@@ -26,10 +29,10 @@ public:
     MouseEvent();
     MouseEvent(const QMouseEvent& event);
     
-    static QScriptValue toScriptValue(QScriptEngine* engine, const MouseEvent& event);
-    static void fromScriptValue(const QScriptValue& object, MouseEvent& event);
+    static ScriptValue toScriptValue(ScriptEngine* engine, const MouseEvent& event);
+    static bool fromScriptValue(const ScriptValue& object, MouseEvent& event);
 
-    QScriptValue toScriptValue(QScriptEngine* engine) const { return MouseEvent::toScriptValue(engine, *this); }
+    ScriptValue toScriptValue(ScriptEngine* engine) const { return MouseEvent::toScriptValue(engine, *this); }
     
     int x;
     int y;

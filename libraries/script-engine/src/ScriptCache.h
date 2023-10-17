@@ -4,9 +4,11 @@
 //
 //  Created by Brad Hefta-Gaub on 2015-03-30
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /// @addtogroup ScriptEngine
@@ -16,7 +18,7 @@
 #define hifi_ScriptCache_h
 
 #include <mutex>
-#include <ResourceCache.h>
+#include <DependencyManager.h>
 
 using contentAvailableCallback = std::function<void(const QString& scriptOrURL, const QString& contents, bool isURL, bool contentAvailable, const QString& status)>;
 

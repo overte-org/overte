@@ -7,6 +7,7 @@
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "DesktopScriptingInterface.h"
@@ -59,7 +60,9 @@ static const QVariantMap RELATIVE_POSITION_ANCHOR {
 };
 
 DesktopScriptingInterface::DesktopScriptingInterface(QObject* parent, bool restricted) 
-    : QObject(parent), _restricted(restricted) { }
+    : QObject(parent), _restricted(restricted) {
+    connect(this, &DesktopScriptingInterface::uiFocusChanged, [this] (bool isActive) { _isOverlayWindowFocused = isActive; });
+}
 
 int DesktopScriptingInterface::getWidth() {
     QSize size = qApp->getWindow()->windowHandle()->screen()->virtualSize();

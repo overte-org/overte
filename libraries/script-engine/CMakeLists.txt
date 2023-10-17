@@ -1,18 +1,17 @@
+# Copyright 2013-2019, High Fidelity, Inc.
+# Copyright 2021-2023 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 set(TARGET_NAME script-engine)
 # FIXME Move undo scripting interface to application and remove Widgets
-setup_hifi_library(Gui Network Script ScriptTools WebSockets Widgets)
+setup_hifi_library(Network WebSockets)
 
 target_zlib()
+target_v8()
 if (NOT ANDROID)
   target_quazip()
 endif ()
 
-link_hifi_libraries(shared networking shaders material-networking model-networking recording avatars model-serializers entities controllers animation audio midi)
-include_hifi_library_headers(gl)
-include_hifi_library_headers(hfm)
-include_hifi_library_headers(gpu)
-include_hifi_library_headers(ktx)
-include_hifi_library_headers(image)
-include_hifi_library_headers(graphics)
+link_hifi_libraries(networking)
 include_hifi_library_headers(octree)
-include_hifi_library_headers(procedural)
+include_hifi_library_headers(shared)

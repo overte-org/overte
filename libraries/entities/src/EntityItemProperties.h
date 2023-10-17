@@ -5,9 +5,11 @@
 //  Created by Brad Hefta-Gaub on 12/4/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_EntityItemProperties_h
@@ -21,7 +23,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
 
-#include <QtScript/QScriptEngine>
 #include <QtCore/QObject>
 #include <QVector>
 #include <QString>
@@ -34,13 +35,14 @@
 #include <ShapeInfo.h>
 #include <ColorUtils.h>
 #include "FontFamilies.h"
+#include <ScriptValue.h>
 
-#include "EntityItemID.h"
+#include <EntityItemID.h>
 #include "EntityItemPropertiesDefaults.h"
 #include "EntityItemPropertiesMacros.h"
 #include "EntityTypes.h"
 #include "EntityPropertyFlags.h"
-#include "EntityPsuedoPropertyFlags.h"
+#include "EntityPseudoPropertyFlags.h"
 #include "SimulationOwner.h"
 
 #include "TextEntityItem.h"
@@ -69,6 +71,8 @@
 #include "TextEffect.h"
 #include "TextAlignment.h"
 
+class ScriptEngine;
+
 const quint64 UNKNOWN_CREATED_TIME = 0;
 
 using vec3Color = glm::vec3;
@@ -96,7 +100,7 @@ EntityPropertyInfo makePropertyInfo(EntityPropertyList p, typename std::enable_i
 }
 
 /// A collection of properties of an entity item used in the scripting API. Translates between the actual properties of an
-/// entity and a JavaScript style hash/QScriptValue storing a set of properties. Used in scripting to set/get the complete
+/// entity and a JavaScript style hash/ScriptValue storing a set of properties. Used in scripting to set/get the complete
 /// set of entity item properties via JavaScript hashes/QScriptValues
 /// all units for SI units (meter, second, radian, etc) 
 class EntityItemProperties {
@@ -119,8 +123,8 @@ class EntityItemProperties {
     friend class ZoneEntityItem;
     friend class MaterialEntityItem;
 public:
-    static bool blobToProperties(QScriptEngine& scriptEngine, const QByteArray& blob, EntityItemProperties& properties);
-    static void propertiesToBlob(QScriptEngine& scriptEngine, const QUuid& myAvatarID, const EntityItemProperties& properties, 
+    static bool blobToProperties(ScriptEngine& scriptEngine, const QByteArray& blob, EntityItemProperties& properties);
+    static void propertiesToBlob(ScriptEngine& scriptEngine, const QUuid& myAvatarID, const EntityItemProperties& properties, 
         QByteArray& blob, bool allProperties = false);
 
     EntityItemProperties(EntityPropertyFlags desiredProperties = EntityPropertyFlags());
@@ -133,13 +137,13 @@ public:
     EntityTypes::EntityType getType() const { return _type; }
     void setType(EntityTypes::EntityType type) { _type = type; }
 
-    virtual QScriptValue copyToScriptValue(QScriptEngine* engine, bool skipDefaults, bool allowUnknownCreateTime = false,
-        bool strictSemantics = false, EntityPsuedoPropertyFlags psueudoPropertyFlags = EntityPsuedoPropertyFlags()) const;
-    virtual void copyFromScriptValue(const QScriptValue& object, bool honorReadOnly);
-    void copyFromJSONString(QScriptEngine& scriptEngine, const QString& jsonString);
+    virtual ScriptValue copyToScriptValue(ScriptEngine* engine, bool skipDefaults, bool allowUnknownCreateTime = false,
+        bool strictSemantics = false, EntityPseudoPropertyFlags pseudoPropertyFlags = EntityPseudoPropertyFlags()) const;
+    virtual void copyFromScriptValue(const ScriptValue& object, bool honorReadOnly);
+    void copyFromJSONString(ScriptEngine& scriptEngine, const QString& jsonString);
 
-    static QScriptValue entityPropertyFlagsToScriptValue(QScriptEngine* engine, const EntityPropertyFlags& flags);
-    static void entityPropertyFlagsFromScriptValue(const QScriptValue& object, EntityPropertyFlags& flags);
+    static ScriptValue entityPropertyFlagsToScriptValue(ScriptEngine* engine, const EntityPropertyFlags& flags);
+    static bool entityPropertyFlagsFromScriptValue(const ScriptValue& object, EntityPropertyFlags& flags);
 
     static bool getPropertyInfo(const QString& propertyName, EntityPropertyInfo& propertyInfo);
 
@@ -230,20 +234,6 @@ public:
     DEFINE_PROPERTY_REF(PROP_SCRIPT, Script, script, QString, ENTITY_ITEM_DEFAULT_SCRIPT);
     DEFINE_PROPERTY(PROP_SCRIPT_TIMESTAMP, ScriptTimestamp, scriptTimestamp, quint64, ENTITY_ITEM_DEFAULT_SCRIPT_TIMESTAMP);
     DEFINE_PROPERTY_REF(PROP_SERVER_SCRIPTS, ServerScripts, serverScripts, QString, ENTITY_ITEM_DEFAULT_SERVER_SCRIPTS);
-
-    // Certifiable Properties - related to Proof of Purchase certificates
-    DEFINE_PROPERTY_REF(PROP_ITEM_NAME, ItemName, itemName, QString, ENTITY_ITEM_DEFAULT_ITEM_NAME);
-    DEFINE_PROPERTY_REF(PROP_ITEM_DESCRIPTION, ItemDescription, itemDescription, QString, ENTITY_ITEM_DEFAULT_ITEM_DESCRIPTION);
-    DEFINE_PROPERTY_REF(PROP_ITEM_CATEGORIES, ItemCategories, itemCategories, QString, ENTITY_ITEM_DEFAULT_ITEM_CATEGORIES);
-    DEFINE_PROPERTY_REF(PROP_ITEM_ARTIST, ItemArtist, itemArtist, QString, ENTITY_ITEM_DEFAULT_ITEM_ARTIST);
-    DEFINE_PROPERTY_REF(PROP_ITEM_LICENSE, ItemLicense, itemLicense, QString, ENTITY_ITEM_DEFAULT_ITEM_LICENSE);
-    DEFINE_PROPERTY_REF(PROP_LIMITED_RUN, LimitedRun, limitedRun, quint32, ENTITY_ITEM_DEFAULT_LIMITED_RUN);
-    DEFINE_PROPERTY_REF(PROP_MARKETPLACE_ID, MarketplaceID, marketplaceID, QString, ENTITY_ITEM_DEFAULT_MARKETPLACE_ID);
-    DEFINE_PROPERTY_REF(PROP_EDITION_NUMBER, EditionNumber, editionNumber, quint32, ENTITY_ITEM_DEFAULT_EDITION_NUMBER);
-    DEFINE_PROPERTY_REF(PROP_ENTITY_INSTANCE_NUMBER, EntityInstanceNumber, entityInstanceNumber, quint32, ENTITY_ITEM_DEFAULT_ENTITY_INSTANCE_NUMBER);
-    DEFINE_PROPERTY_REF(PROP_CERTIFICATE_ID, CertificateID, certificateID, QString, ENTITY_ITEM_DEFAULT_CERTIFICATE_ID);
-    DEFINE_PROPERTY_REF(PROP_CERTIFICATE_TYPE, CertificateType, certificateType, QString, ENTITY_ITEM_DEFAULT_CERTIFICATE_TYPE);
-    DEFINE_PROPERTY_REF(PROP_STATIC_CERTIFICATE_VERSION, StaticCertificateVersion, staticCertificateVersion, quint32, ENTITY_ITEM_DEFAULT_STATIC_CERTIFICATE_VERSION);
 
     // these are used when bouncing location data into and out of scripts
     DEFINE_PROPERTY_REF(PROP_LOCAL_POSITION, LocalPosition, localPosition, glm::vec3, ENTITY_ITEM_ZERO_VEC3);
@@ -502,11 +492,6 @@ public:
     QByteArray getPackedStrokeColors() const;
     QByteArray packStrokeColors(const QVector<glm::vec3>& strokeColors) const;
 
-    QByteArray getStaticCertificateJSON() const;
-    QByteArray getStaticCertificateHash() const;
-    bool verifyStaticCertificateProperties();
-    static bool verifySignature(const QString& key, const QByteArray& text, const QByteArray& signature);
-
     void convertToCloneProperties(const EntityItemID& entityIDToClone);
 
 protected:
@@ -539,18 +524,18 @@ private:
 };
 
 Q_DECLARE_METATYPE(EntityItemProperties);
-QScriptValue EntityItemPropertiesToScriptValue(QScriptEngine* engine, const EntityItemProperties& properties);
-QScriptValue EntityItemNonDefaultPropertiesToScriptValue(QScriptEngine* engine, const EntityItemProperties& properties);
-void EntityItemPropertiesFromScriptValueIgnoreReadOnly(const QScriptValue& object, EntityItemProperties& properties);
-void EntityItemPropertiesFromScriptValueHonorReadOnly(const QScriptValue& object, EntityItemProperties& properties);
+ScriptValue EntityItemPropertiesToScriptValue(ScriptEngine* engine, const EntityItemProperties& properties);
+ScriptValue EntityItemNonDefaultPropertiesToScriptValue(ScriptEngine* engine, const EntityItemProperties& properties);
+bool EntityItemPropertiesFromScriptValueIgnoreReadOnly(const ScriptValue& object, EntityItemProperties& properties);
+bool EntityItemPropertiesFromScriptValueHonorReadOnly(const ScriptValue& object, EntityItemProperties& properties);
 
 Q_DECLARE_METATYPE(EntityPropertyFlags);
-QScriptValue EntityPropertyFlagsToScriptValue(QScriptEngine* engine, const EntityPropertyFlags& flags);
-void EntityPropertyFlagsFromScriptValue(const QScriptValue& object, EntityPropertyFlags& flags);
+ScriptValue EntityPropertyFlagsToScriptValue(ScriptEngine* engine, const EntityPropertyFlags& flags);
+bool EntityPropertyFlagsFromScriptValue(const ScriptValue& object, EntityPropertyFlags& flags);
 
 Q_DECLARE_METATYPE(EntityPropertyInfo);
-QScriptValue EntityPropertyInfoToScriptValue(QScriptEngine* engine, const EntityPropertyInfo& propertyInfo);
-void EntityPropertyInfoFromScriptValue(const QScriptValue& object, EntityPropertyInfo& propertyInfo);
+ScriptValue EntityPropertyInfoToScriptValue(ScriptEngine* engine, const EntityPropertyInfo& propertyInfo);
+bool EntityPropertyInfoFromScriptValue(const ScriptValue& object, EntityPropertyInfo& propertyInfo);
 
 // define these inline here so the macros work
 inline void EntityItemProperties::setPosition(const glm::vec3& value)
@@ -644,20 +629,6 @@ inline QDebug operator<<(QDebug debug, const EntityItemProperties& properties) {
     DEBUG_PROPERTY_IF_CHANGED(debug, properties, RadiusSpread, radiusSpread, "");
     DEBUG_PROPERTY_IF_CHANGED(debug, properties, RadiusStart, radiusStart, "");
     DEBUG_PROPERTY_IF_CHANGED(debug, properties, RadiusFinish, radiusFinish, "");
-
-    // Certifiable Properties
-    DEBUG_PROPERTY_IF_CHANGED(debug, properties, ItemName, itemName, "");
-    DEBUG_PROPERTY_IF_CHANGED(debug, properties, ItemDescription, itemDescription, "");
-    DEBUG_PROPERTY_IF_CHANGED(debug, properties, ItemCategories, itemCategories, "");
-    DEBUG_PROPERTY_IF_CHANGED(debug, properties, ItemArtist, itemArtist, "");
-    DEBUG_PROPERTY_IF_CHANGED(debug, properties, ItemLicense, itemLicense, "");
-    DEBUG_PROPERTY_IF_CHANGED(debug, properties, LimitedRun, limitedRun, "");
-    DEBUG_PROPERTY_IF_CHANGED(debug, properties, MarketplaceID, marketplaceID, "");
-    DEBUG_PROPERTY_IF_CHANGED(debug, properties, EditionNumber, editionNumber, "");
-    DEBUG_PROPERTY_IF_CHANGED(debug, properties, EntityInstanceNumber, entityInstanceNumber, "");
-    DEBUG_PROPERTY_IF_CHANGED(debug, properties, CertificateID, certificateID, "");
-    DEBUG_PROPERTY_IF_CHANGED(debug, properties, CertificateType, certificateType, "");
-    DEBUG_PROPERTY_IF_CHANGED(debug, properties, StaticCertificateVersion, staticCertificateVersion, "");
 
     DEBUG_PROPERTY_IF_CHANGED(debug, properties, LocalPosition, localPosition, "");
     DEBUG_PROPERTY_IF_CHANGED(debug, properties, LocalRotation, localRotation, "");

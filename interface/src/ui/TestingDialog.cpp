@@ -4,15 +4,18 @@
 //
 //  Created by Ryan Jones on 12/3/2016.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "TestingDialog.h"
 
 #include "Application.h"
 #include "ScriptEngines.h"
+#include <ScriptManager.h>
 
 TestingDialog::TestingDialog(QWidget* parent) :
     QDialog(parent, Qt::Window | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint),
@@ -23,12 +26,12 @@ TestingDialog::TestingDialog(QWidget* parent) :
 
     _console->setFixedHeight(TESTING_CONSOLE_HEIGHT);
 
-    _engine = DependencyManager::get<ScriptEngines>()->loadScript(qApp->applicationDirPath() + testRunnerRelativePath);
-    _console->setScriptEngine(_engine);
-    connect(_engine.data(), &ScriptEngine::finished, this, &TestingDialog::onTestingFinished);
+    _scriptManager = DependencyManager::get<ScriptEngines>()->loadScript(qApp->applicationDirPath() + testRunnerRelativePath);
+    _console->setScriptManager(_scriptManager);
+    connect(_scriptManager.get(), &ScriptManager::finished, this, &TestingDialog::onTestingFinished);
 }
 
 void TestingDialog::onTestingFinished(const QString& scriptPath) {
-    _engine.reset();
-    _console->setScriptEngine();
+    _scriptManager.reset();
+    _console->setScriptManager();
 }

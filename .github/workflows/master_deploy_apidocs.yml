@@ -1,5 +1,5 @@
-# Copyright 2022 Overte e.V.
-# SPDX-License-Identifier: MIT
+# Copyright 2022-2023 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
 
 name: Master API-docs CI Build and Deploy
 
@@ -10,11 +10,11 @@ on:
 
 jobs:
   build_site:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     name: Build and deploy API-docs
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Install dependencies
       working-directory: tools/jsdoc
@@ -31,13 +31,14 @@ jobs:
         jsdoc root.js -r api-mainpage.md -c config.json -d output
 
     - name: Deploy API-docs
-      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
       with:
-        server: ftp.tuxfamily.org
-        username: ${{ secrets.GHA_JSDOC_FTP_USER }}
-        password: ${{ secrets.GHA_JSDOC_FTP_PASS }}
+        server: www531.your-server.de
+        protocol: ftps
+        username: ${{ secrets.GHA_HETZNER_APIDOCS_FTP_USER }}
+        password: ${{ secrets.GHA_HETZNER_APIDOCS_FTP_PASS }}
         local-dir: ./tools/jsdoc/output/
-        server-dir: overte/apidocs.overte.org-web/htdocs/
+        server-dir: /
         exclude: |
           **/staging/**
           .htaccess

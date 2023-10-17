@@ -1,9 +1,11 @@
 //
 //  Created by Anthony J. Thibault on 2016-12-12
 //  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "TabletScriptingInterface.h"
@@ -17,6 +19,8 @@
 #include <DependencyManager.h>
 #include <AccountManager.h>
 #include <RegisteredMetaTypes.h>
+#include <ScriptManager.h>
+#include <ScriptEngineCast.h>
 
 #include "../QmlWindowClass.h"
 #include "../OffscreenUi.h"
@@ -27,6 +31,14 @@
 #include <AudioInjectorManager.h>
 
 #include "SettingHandle.h"
+
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType<TabletProxy*, wrapperToScriptValue<TabletProxy>, wrapperFromScriptValue<TabletProxy> >(scriptEngine);
+    scriptRegisterMetaType<TabletButtonProxy*, wrapperToScriptValue<TabletButtonProxy>, wrapperFromScriptValue<TabletButtonProxy> >(scriptEngine);
+    scriptRegisterMetaType<TabletScriptingInterface::TabletAudioEvents, scriptValueFromEnumClass<TabletScriptingInterface::TabletAudioEvents>, scriptValueToEnumClass<TabletScriptingInterface::TabletAudioEvents>>(scriptEngine);
+}));
 
 // FIXME move to global app properties
 const QString SYSTEM_TOOLBAR = "com.highfidelity.interface.toolbar.system";
@@ -159,6 +171,8 @@ bool TabletButtonsProxyModel::filterAcceptsRow(int sourceRow,
 
 TabletScriptingInterface::TabletScriptingInterface() {
     qmlRegisterType<TabletScriptingInterface>("TabletScriptingInterface", 1, 0, "TabletEnums");
+    qRegisterMetaType<TabletScriptingInterface::TabletAudioEvents>("TabletScriptingInterface::TabletAudioEvents");
+    qRegisterMetaType<TabletScriptingInterface::TabletConstants>("TabletScriptingInterface::TabletConstants");
     qmlRegisterType<TabletButtonsProxyModel>("TabletScriptingInterface", 1, 0, "TabletButtonsProxyModel");
 }
 
@@ -309,6 +323,7 @@ void TabletScriptingInterface::processTabletEvents(QObject* object, const QKeyEv
 void TabletScriptingInterface::processEvent(const QKeyEvent* event) {
     Q_ASSERT(QThread::currentThread() == qApp->thread());
     TabletProxy* tablet = qobject_cast<TabletProxy*>(getTablet(SYSTEM_TABLET));
+    Q_ASSERT(tablet != nullptr);
     QObject* qmlTablet = tablet->getQmlTablet();
     QObject* qmlMenu = tablet->getQmlMenu();
 

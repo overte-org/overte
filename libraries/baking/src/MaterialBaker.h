@@ -4,9 +4,11 @@
 //
 //  Created by Sam Gondelman on 2/26/2019
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_MaterialBaker_h
@@ -20,6 +22,7 @@
 #include "baking/TextureFileNamer.h"
 
 #include <procedural/ProceduralMaterialCache.h>
+#include <ScriptEngine.h>
 
 static const QString BAKED_MATERIAL_EXTENSION = ".baked.json";
 
@@ -69,7 +72,7 @@ private:
     QString _textureOutputDir;
     QString _bakedMaterialData;
 
-    QScriptEngine _scriptEngine;
+    ScriptEnginePointer _scriptEngine;
     static std::function<QThread*()> _getNextOvenWorkerThreadOperator;
     TextureFileNamer _textureFileNamer;
 

@@ -1,9 +1,11 @@
 //
 //  Created by Bradley Austin Davis 2015/10/09
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #pragma once
 #ifndef hifi_Controllers_Impl_MappingBuilderProxy_h
@@ -16,8 +18,8 @@
 #include "Endpoint.h"
 
 class QJSValue;
-class QScriptValue;
 class QJsonValue;
+class ScriptValue;
 
 namespace controller {
 
@@ -165,7 +167,7 @@ public:
      *     of the route data. If a function, it must return a number or a {@link Pose} value as the route data.
      * @returns {RouteObject} A route ready for mapping to an action or function using {@link RouteObject} methods.
      */
-    Q_INVOKABLE QObject* from(const QScriptValue& source);
+    Q_INVOKABLE QObject* from(const ScriptValue& source);
 
     /*@jsdoc
      * Creates a new {@link RouteObject} from two numeric {@link Controller.Hardware} outputs, one applied in the negative 
@@ -187,7 +189,7 @@ public:
      *     Controller.disableMapping(MAPPING_NAME);
      * });
      */
-    Q_INVOKABLE QObject* makeAxis(const QScriptValue& source1, const QScriptValue& source2);
+    Q_INVOKABLE QObject* makeAxis(const ScriptValue& source1, const ScriptValue& source2);
 
     /*@jsdoc
      * Enables or disables the mapping. When enabled, the routes in the mapping take effect.

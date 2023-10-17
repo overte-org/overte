@@ -1,6 +1,6 @@
 <!--
-Copyright 2022 Overte e.V.
-SPDX-License-Identifier: MIT
+Copyright 2022-2023 Overte e.V.
+SPDX-License-Identifier: Apache-2.0
 -->
 
 # Changelog
@@ -12,7 +12,79 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-<!-- ## [Unreleased] 2022.12.24 -->
+<!-- ## [Unreleased] 2023.07.22 -->
+<!-- ## [2023.07.1] 2023.07.22 -->
+
+<!--
+### Misc
+- Updated the Unity Avatar Exporter and added Linux support
+- Added Linux support to the Unity Avatar Exporter
+-->
+
+### Fixes
+- Fixed color conversion for glTF material colors (PR307)
+- Fixed a possible crash in Mesh::map (PR392)
+- Fixed multiple memory corruption issues that were causing frequent crashes (PR185)
+	Most notably this gets rid of a frequent Create App related crash.
+- Hide private methods and QObject signals from script engine (PR444)
+- Fixed a regression that broke resetting the settings (PR445)
+- Fixed deadlock on start on Debian Testing (PR185)
+- Fixed Windows 11 showing up as Windows 10 in logs (PR448)
+- Fixed Metallic values on FBX models created by Blender 2.79 or earlier (PR463)
+- Fixed laser pointers being rendered below overlays (PR490)
+- Fixed angle text sometimes being occluded when using Create app (PR498)
+- Hugely improved Create app performance in Domains with many entities (PR498)
+- Fixed an issue that could cause laser pointers to rapidly flash (PR495)
+- Fixed the connection failure dialog mentioning "Explore" instead of "Places" (PR515)
+
+### Changes
+- Replaced Vircadia Metaverse Server with a testing server as federation default (PR330)
+- An empty audio device list now throws a warning instead of just a debug message (PR347)
+- Increased the maximum log file size from 512 kiB to 10 MiB (PR342,PR513)
+- Decreased the amount of retained log files from 100 to 20 (PR342)
+- Pressing the Return key with the the address/search bar in the Places App selected now navigates you to that address (PR403)
+- Replaced QT Script with V8 scripting engine (PR185,PR507,PR519)
+	This is a huge change under the hood, which ended up fixing a lot of issues.
+	Since the new scripting engine does not behave exactly the same as the old one,
+	some scripts might need fixing. The new scripting engine is especially picky when it comes to undefined behaviour.
+	Most notably "use strict" is actually strict now and won't allow you to use variables without defining them first.
+- Silenced ForceHtmlAudioOutputDeviceUpdate log message (PR473)
+- Improved crash reporting functionality (PR480,PR484,PR518)
+	Interface will ask if future crashes should be reported automatically when it detects that it crashed on last run.
+	It will also ask once in case of a non-stable build.
+- Changed the VR overlay to only recenter when moving (PR478)
+- Added a workaround that prevents most users from needing to press down on the thumbstick to move (PR481,PR512)
+
+### Additions
+- Added option to graphics menu for choosing which screen to use for full screen mode (PR302)
+- file URLs can now be navigated to using the Places App (PR397)
+- Added IME support in Desktop mode (PR431)
+	This allows typing in languages like Japanese or Chinese that make use of an IME.
+- Added vertical Field Of View setting to graphics menu (PR465)
+- Added crash reporting to the Domain server, Assignment client, and Oven (PR482)
+
+### Removals
+- Removed outdated Inventory and Marketplace options from Wearables UI (PR303)
+- Removed outdated Beacon system (PR327)
+- Removed long deprecated styles-uit and controls-uit QML modules (PR380)
+- Removed outdated Marketplace and Wallet code (PR381,PR477,PR487)
+
+### Build system
+- Fixed error in configuration step on some rolling release Linux distributions (PR301)
+- Removed executable permissions from files that shouldn't have them (PR349)
+- Added QML import path (PR379)
+- Fixed building on GCC 13 (PR385)
+- Fixed a bunch of warnings on C++20 (PR385)
+- Updated TBB dependency from version 2019_U8-1 to 2021.5.0 (PR412)
+- Fixed NVTT compilation on Visual Studio 2022 (PR374)
+- Disabled libOVR on MSVC 2022 (PR430)
+- Added Qt 5.15.9 package for aarch64 Ubuntu 20.04 (PR409)
+- Fixed build error on aarch64 (PR409)
+- Replaced QT Script with V8/libnode (PR185,PR409,PR443)
+- Updated Qt on Windows to 5.15.10 with KDE patches (PR448)
+- Updated included OpenSSL to 3.0.5 (PR448)
+
+
 
 ## [2022.12.1] 2022.12.24
 ### Fixes
@@ -29,14 +101,13 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 ### Changes
 - Disable anti-aliasing by default (PR294)
 - Made the deadlock watchdog less spammy (PR288)
-- Domain Server Metadata exporter by default is now disabled by default (PR247)
+- Domain Server Metadata exporter is now disabled by default (PR247)
 	This avoids port conflicts when running multiple Domain Servers on one machine.
 - Improved the notification system (PR190,PR189)
 	Notifications can be closed by just clicking them now.
 	Snapshot notifications can now be turned off.
 	VR notifications are now unlit and have been slightly moved.
 	The notification system is generally more stable.
-
 
 ### Additions
 - Added partial Blender FBX metallic support (PR221)

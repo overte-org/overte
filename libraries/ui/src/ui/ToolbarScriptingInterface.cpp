@@ -1,41 +1,54 @@
 //
 //  Created by Bradley Austin Davis on 2016-06-16
 //  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "ToolbarScriptingInterface.h"
 
 #include <QtCore/QThread>
 #include <QtQuick/QQuickItem>
-#include <QtScript/QScriptValue>
-#include <QtScript/QScriptEngine>
+#include <ScriptValue.h>
+#include <ScriptEngine.h>
+#include <ScriptEngineCast.h>
+#include <ScriptManager.h>
 
 #include <shared/QtHelpers.h>
 #include "../OffscreenUi.h"
 
-QScriptValue toolbarToScriptValue(QScriptEngine* engine, ToolbarProxy* const &in) {
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType<ToolbarProxy*, wrapperToScriptValue<ToolbarProxy>, wrapperFromScriptValue<ToolbarProxy> >(scriptEngine);
+    scriptRegisterMetaType<ToolbarButtonProxy*, wrapperToScriptValue<ToolbarButtonProxy>, wrapperFromScriptValue<ToolbarButtonProxy> >(scriptEngine);
+}));
+
+ScriptValue toolbarToScriptValue(ScriptEngine* engine, ToolbarProxy* const &in) {
     if (!in) {
         return engine->undefinedValue();
     }
-    return engine->newQObject(in, QScriptEngine::QtOwnership, QScriptEngine::ExcludeDeleteLater | QScriptEngine::ExcludeChildObjects);
+    return engine->newQObject(in, ScriptEngine::QtOwnership);
 }
 
-void toolbarFromScriptValue(const QScriptValue& value, ToolbarProxy* &out) {
+void toolbarFromScriptValue(const ScriptValue& value, ToolbarProxy* &out) {
     out = qobject_cast<ToolbarProxy*>(value.toQObject());
+    Q_ASSERT(out != nullptr);
 }
 
-QScriptValue toolbarButtonToScriptValue(QScriptEngine* engine, ToolbarButtonProxy* const &in) {
+ScriptValue toolbarButtonToScriptValue(ScriptEngine* engine, ToolbarButtonProxy* const &in) {
     if (!in) {
         return engine->undefinedValue();
     }
-    return engine->newQObject(in, QScriptEngine::QtOwnership, QScriptEngine::ExcludeDeleteLater | QScriptEngine::ExcludeChildObjects);
+    return engine->newQObject(in, ScriptEngine::QtOwnership);
 }
 
-void toolbarButtonFromScriptValue(const QScriptValue& value, ToolbarButtonProxy* &out) {
+void toolbarButtonFromScriptValue(const ScriptValue& value, ToolbarButtonProxy* &out) {
     out = qobject_cast<ToolbarButtonProxy*>(value.toQObject());
+    Q_ASSERT(out != nullptr);
 }
 
 

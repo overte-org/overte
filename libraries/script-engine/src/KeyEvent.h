@@ -4,9 +4,11 @@
 //
 //  Created by Stephen Birarda on 2014-10-27.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /// @addtogroup ScriptEngine
@@ -16,7 +18,10 @@
 #define hifi_KeyEvent_h
 
 #include <QKeyEvent>
-#include <QScriptValue>
+
+#include "ScriptValue.h"
+
+class ScriptEngine;
 
 /// Represents a keyboard event to the scripting engine. Exposed as <code><a href="https://apidocs.overte.org/global.html#KeyEvent">KeyEvent</a></code>
 class KeyEvent {
@@ -26,8 +31,8 @@ public:
     bool operator==(const KeyEvent& other) const;
     operator QKeySequence() const;
     
-    static QScriptValue toScriptValue(QScriptEngine* engine, const KeyEvent& event);
-    static void fromScriptValue(const QScriptValue& object, KeyEvent& event);
+    static ScriptValue toScriptValue(ScriptEngine* engine, const KeyEvent& event);
+    static bool fromScriptValue(const ScriptValue& object, KeyEvent& event);
     
     int key;
     QString text;

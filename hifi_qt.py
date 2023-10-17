@@ -139,7 +139,7 @@ endif()
             return
 
         if 'Windows' == system:
-            self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.5-qtwebengine-5.15.11-2022.08.01-kde_9480de754ec97f4b63c2b5176672903f80e3f22ff59d3acf0ddd8c68f58c1ed8-windows-x86_64.tar.xz'
+            self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.10-2023.10.02-windows-x86_64.tar.xz'
         elif 'Darwin' == system:
             self.qtUrl = self.assets_url + '/dependencies/vcpkg/qt5-install-5.15.2-macos.tar.gz'
         elif 'Linux' == system:
@@ -151,10 +151,8 @@ endif()
                 # The `or 0` conditional assignment prevents the int parsing error from hiding the useful Qt package error 
                 u_major = int( distro.major_version() or '0' )
                 if distro.id() == 'ubuntu' or distro.id() == 'linuxmint':
-                    if (distro.id() == 'ubuntu' and u_major == 18) or distro.id() == 'linuxmint' and u_major == 19:
-                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.5-2022.07.17-kde_ea4efc067b47c11b1aac61668afd8578a6834f5b-ubuntu-18.04-amd64.tar.xz'
-                    elif (distro.id() == 'ubuntu' and u_major == 20) or distro.id() == 'linuxmint' and u_major == 20:
-                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.5-2022.08.12-kde_0b4d44f2ff1103349bac22b9b207cfcc1f50a53a-ubuntu-20.04-amd64.tar.xz'
+                    if (distro.id() == 'ubuntu' and u_major == 20) or distro.id() == 'linuxmint' and u_major == 20:
+                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.10-2023.10.01-kde_d2122ee587cceb5b2f4130b7074f86db9aca570e-ubuntu-20.04-amd64.tar.xz'
                     elif (distro.id() == 'ubuntu' and u_major > 20) or (distro.id() == 'linuxmint' and u_major > 20):
                         self.__no_qt_package_error()
                     else:
@@ -169,7 +167,9 @@ endif()
 
                     if u_major == 18:
                         self.qtUrl = 'http://motofckr9k.ddns.net/vircadia_packages/qt5-install-5.15.2-ubuntu-18.04-aarch64_test.tar.xz'
-                    elif u_major > 19:
+                    elif u_major == 20:
+                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.9-2023.05.21-kde_fb3ec282151b1ee281a24f0545a40ac6438537c2-ubuntu-20.04-aarch64.tar.xz'
+                    elif u_major > 20:
                         self.__no_qt_package_error()
                     else:
                         self.__unsupported_error()

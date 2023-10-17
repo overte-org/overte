@@ -1,9 +1,11 @@
 //
 //  Created by Bradley Austin Davis on 2016/12/12
 //  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #pragma once
@@ -12,8 +14,7 @@
 
 #include <functional>
 #include <QtCore/QObject>
-
-class QScriptValue;
+#include <ScriptValue.h>
 
 class TestScriptingInterface : public QObject {
     Q_OBJECT
@@ -127,7 +128,7 @@ public slots:
     * @param {string} name - Name used to reference the function
     * @param {function} function - Function to profile
     */
-    Q_INVOKABLE void profileRange(const QString& name, QScriptValue function);
+    Q_INVOKABLE void profileRange(const QString& name, const ScriptValue& function);
 
     /*@jsdoc
     * Clear all caches (menu command Reload Content)

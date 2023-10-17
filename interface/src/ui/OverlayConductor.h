@@ -23,17 +23,13 @@ public:
 
 private:
     bool headNotCenteredInOverlay() const;
-    bool updateAvatarIsAtRest();
 
 #if !defined(DISABLE_QML)
-    bool _suppressedByHead { false };
     bool _hmdMode { false };
 #endif
 
-    // used by updateAvatarIsAtRest
-    uint64_t _desiredAtRestTimer { 0 };
-    bool _desiredAtRest { true };
-    bool _currentAtRest { true };
+    // This stores value of myAvatar->hasDriveInput() from previous update, so that recentering can be triggered by a rising edge of that function's output
+    bool _lastHasDriveInput { false };
 };
 
 #endif

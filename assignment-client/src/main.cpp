@@ -13,12 +13,17 @@
 #include <SharedUtil.h>
 
 #include "AssignmentClientApp.h"
+#include <crash-handler/CrashHandler.h>
+
 
 int main(int argc, char* argv[]) {
     setupHifiApplication(BuildInfo::ASSIGNMENT_CLIENT_NAME);
 
     AssignmentClientApp app(argc, argv);
-    
+    auto &ch = CrashHandler::getInstance();
+    ch.startMonitor(&app);
+
+
     int acReturn = app.exec();
     qDebug() << "assignment-client process" <<  app.applicationPid() << "exiting with status code" << acReturn;
 

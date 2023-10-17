@@ -5,9 +5,11 @@
 //  Created by Mark Peng on 8/16/13.
 //  Copyright 2012 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "MyAvatar.h"
@@ -43,13 +45,16 @@
 #include <udt/PacketHeaders.h>
 #include <PathUtils.h>
 #include <PerfStat.h>
+#include <ScriptEngine.h>
+#include <ScriptEngineCast.h>
+#include <ScriptEngineLogging.h>
 #include <SharedUtil.h>
 #include <SoundCache.h>
 #include <ModelEntityItem.h>
 #include <TextRenderer3D.h>
 #include <UserActivityLogger.h>
 #include <recording/Recorder.h>
-#include <RecordingScriptingInterface.h>
+#include <recording/RecordingScriptingInterface.h>
 #include <RenderableModelEntityItem.h>
 #include <VariantMapToScriptValue.h>
 #include <NetworkingConstants.h>
@@ -74,6 +79,7 @@ using namespace std;
 const float DEFAULT_REAL_WORLD_FIELD_OF_VIEW_DEGREES = 30.0f;
 
 const float YAW_SPEED_DEFAULT = 100.0f;   // degrees/sec
+const float HMD_YAW_SPEED_DEFAULT = 300.0f;   // degrees/sec
 const float PITCH_SPEED_DEFAULT = 75.0f; // degrees/sec
 
 const float MAX_BOOST_SPEED = 0.5f * DEFAULT_AVATAR_MAX_WALKING_SPEED; // action motor gets additive boost below this speed
@@ -109,6 +115,23 @@ const QString POINT_BLEND_DIRECTIONAL_ALPHA_NAME = "pointAroundAlpha";
 const QString POINT_BLEND_LINEAR_ALPHA_NAME = "pointBlendAlpha";
 const QString POINT_REF_JOINT_NAME = "RightShoulder";
 const float POINT_ALPHA_BLENDING = 1.0f;
+
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine();
+
+    MyAvatar::registerMetaTypes(scriptEngine);
+});
+
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine();
+
+    auto avatarManager = DependencyManager::get<AvatarManager>();
+    if (avatarManager) {
+        avatarManager->getMyAvatar()->registerProperties(scriptEngine);
+    } else {
+        qWarning(scriptengine) << "Cannot register MyAvatar with script engine, AvatarManager instance not available";
+    }
+});
 
 const std::array<QString, static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count)>
     MyAvatar::allowAvatarStandingPreferenceStrings = {
@@ -168,6 +191,7 @@ static int beginEndReactionNameToIndex(const QString& reactionName) {
 MyAvatar::MyAvatar(QThread* thread) :
     Avatar(thread),
     _yawSpeed(YAW_SPEED_DEFAULT),
+    _hmdYawSpeed(HMD_YAW_SPEED_DEFAULT),
     _pitchSpeed(PITCH_SPEED_DEFAULT),
     _scriptedMotorTimescale(DEFAULT_SCRIPTED_MOTOR_TIMESCALE),
     _scriptedMotorFrame(SCRIPTED_MOTOR_CAMERA_FRAME),
@@ -200,6 +224,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     _headPitchSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "", 0.0f),
     _scaleSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "scale", _targetScale),
     _yawSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "yawSpeed", _yawSpeed),
+    _hmdYawSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "hmdYawSpeed", _hmdYawSpeed),
     _pitchSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "pitchSpeed", _pitchSpeed),
     _fullAvatarURLSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "fullAvatarURL",
                           AvatarData::defaultFullAvatarModelUrl()),
@@ -378,8 +403,6 @@ MyAvatar::MyAvatar(QThread* thread) :
 
 MyAvatar::~MyAvatar() {
     _lookAtTargetAvatar.reset();
-    delete _scriptEngine;
-    _scriptEngine = nullptr;
     if (_addAvatarEntitiesToTreeTimer.isActive()) {
         _addAvatarEntitiesToTreeTimer.stop();
     }
@@ -439,19 +462,23 @@ void MyAvatar::enableHandTouchForID(const QUuid& entityID) {
 }
 
 void MyAvatar::registerMetaTypes(ScriptEnginePointer engine) {
-    QScriptValue value = engine->newQObject(this, QScriptEngine::QtOwnership, QScriptEngine::ExcludeDeleteLater | QScriptEngine::ExcludeChildObjects);
+    scriptRegisterMetaType<AudioListenerMode, audioListenModeToScriptValue, audioListenModeFromScriptValue>(engine.get());
+    scriptRegisterMetaType<MyAvatar::DriveKeys, driveKeysToScriptValue, driveKeysFromScriptValue>(engine.get(), "DriveKeys");
+    qDebug() << "MyAvatar::registerMetaTypes";
+}
+
+void MyAvatar::registerProperties(ScriptEnginePointer engine) {
+    ScriptValue value = engine->newQObject(this, ScriptEngine::QtOwnership);
     engine->globalObject().setProperty("MyAvatar", value);
 
-    QScriptValue driveKeys = engine->newObject();
+    ScriptValue driveKeys = engine->newObject();
     auto metaEnum = QMetaEnum::fromType<DriveKeys>();
     for (int i = 0; i < MAX_DRIVE_KEYS; ++i) {
         driveKeys.setProperty(metaEnum.key(i), metaEnum.value(i));
     }
     engine->globalObject().setProperty("DriveKeys", driveKeys);
-
-    qScriptRegisterMetaType(engine.data(), audioListenModeToScriptValue, audioListenModeFromScriptValue);
-    qScriptRegisterMetaType(engine.data(), driveKeysToScriptValue, driveKeysFromScriptValue);
 }
+
 
 void MyAvatar::setOrientationVar(const QVariant& newOrientationVar) {
     Avatar::setWorldOrientation(quatFromVariant(newOrientationVar));
@@ -1311,6 +1338,7 @@ void MyAvatar::saveData() {
     _headPitchSetting.set(getHead()->getBasePitch());
     _scaleSetting.set(_targetScale);
     _yawSpeedSetting.set(_yawSpeed);
+    _hmdYawSpeedSetting.set(_hmdYawSpeed);
     _pitchSpeedSetting.set(_pitchSpeed);
 
     // only save the fullAvatarURL if it has not been overwritten on command line
@@ -2065,11 +2093,12 @@ void MyAvatar::avatarEntityDataToJson(QJsonObject& root) const {
 
 void MyAvatar::loadData() {
     if (!_scriptEngine) {
-        _scriptEngine = new QScriptEngine();
+        _scriptEngine = newScriptEngine();
     }
     getHead()->setBasePitch(_headPitchSetting.get());
 
     _yawSpeed = _yawSpeedSetting.get(_yawSpeed);
+    _hmdYawSpeed = _hmdYawSpeedSetting.get(_hmdYawSpeed);
     _pitchSpeed = _pitchSpeedSetting.get(_pitchSpeed);
 
     _prefOverrideAnimGraphUrl.set(_animGraphURLSetting.get().toString());
@@ -2673,8 +2702,7 @@ QVariantList MyAvatar::getAvatarEntitiesVariant() {
             EntityItemProperties entityProperties = entity->getProperties(desiredProperties);
             {
                 std::lock_guard<std::mutex> guard(_scriptEngineLock);
-                QScriptValue scriptProperties;
-                scriptProperties = EntityItemPropertiesToScriptValue(_scriptEngine, entityProperties);
+                ScriptValue scriptProperties = EntityItemPropertiesToScriptValue(_scriptEngine.get(), entityProperties);
                 avatarEntityData["properties"] = scriptProperties.toVariant();
             }
             avatarEntitiesData.append(QVariant(avatarEntityData));
@@ -2778,8 +2806,8 @@ controller::Pose MyAvatar::getControllerPoseInAvatarFrame(controller::Action act
 void MyAvatar::updateMotors() {
     _characterController.clearMotors();
 
-    const float FLYING_MOTOR_TIMESCALE = 0.05f;
-    const float WALKING_MOTOR_TIMESCALE = 0.2f;
+    const float FLYING_MOTOR_TIMESCALE = 0.0002f; // Originally 0.05f;
+    const float WALKING_MOTOR_TIMESCALE = 0.0002f; // Originally 0.2f;
     const float INVALID_MOTOR_TIMESCALE = 1.0e6f;
 
     float horizontalMotorTimescale;
@@ -3517,7 +3545,7 @@ void MyAvatar::setRotationThreshold(float angleRadians) {
 
 void MyAvatar::updateOrientation(float deltaTime) {
     //  Smoothly rotate body with arrow keys
-    float targetSpeed = getDriveKey(YAW) * _yawSpeed;
+    float targetSpeed = getDriveKey(YAW) * (qApp->isHMDMode() ? _hmdYawSpeed : _yawSpeed);
     CameraMode mode = qApp->getCamera().getMode();
     bool computeLookAt = isReadyForPhysics() && !qApp->isHMDMode() &&
                         (mode == CAMERA_MODE_FIRST_PERSON_LOOK_AT || mode == CAMERA_MODE_LOOK_AT || mode == CAMERA_MODE_SELFIE);
@@ -3530,7 +3558,7 @@ void MyAvatar::updateOrientation(float deltaTime) {
     }
 
     if (targetSpeed != 0.0f) {
-        const float ROTATION_RAMP_TIMESCALE = 0.5f;
+        const float ROTATION_RAMP_TIMESCALE = (qApp->isHMDMode() ? 0.02f : 0.5f);
         float blend = deltaTime / ROTATION_RAMP_TIMESCALE;
         if (blend > 1.0f) {
             blend = 1.0f;
@@ -3538,7 +3566,7 @@ void MyAvatar::updateOrientation(float deltaTime) {
         _bodyYawDelta = (1.0f - blend) * _bodyYawDelta + blend * targetSpeed;
     } else if (_bodyYawDelta != 0.0f) {
         // attenuate body rotation speed
-        const float ROTATION_DECAY_TIMESCALE = 0.05f;
+        const float ROTATION_DECAY_TIMESCALE = (qApp->isHMDMode() ? 0.001f : 0.05f);
         float attenuation = 1.0f - deltaTime / ROTATION_DECAY_TIMESCALE;
         if (attenuation < 0.0f) {
             attenuation = 0.0f;
@@ -3571,7 +3599,7 @@ void MyAvatar::updateOrientation(float deltaTime) {
         const glm::vec3 characterForward = getWorldOrientation() * Vectors::UNIT_NEG_Z;
         float forwardSpeed = glm::dot(characterForward, getWorldVelocity());
 
-        // only enable roll-turns if we are moving forward or backward at greater then MIN_CONTROL_SPEED
+        // only enable roll-turns if we are moving forward or backward at greater than MIN_CONTROL_SPEED
         if (fabsf(forwardSpeed) >= MIN_CONTROL_SPEED) {
 
             float direction = forwardSpeed > 0.0f ? 1.0f : -1.0f;
@@ -4063,7 +4091,7 @@ void MyAvatar::updateActionMotor(float deltaTime) {
         float finalMaxMotorSpeed = sensorToWorldScale * DEFAULT_AVATAR_MAX_FLYING_SPEED * _walkSpeedScalar;
         float speedGrowthTimescale  = 2.0f;
         float speedIncreaseFactor = 1.8f * _walkSpeedScalar;
-        motorSpeed *= 1.0f + glm::clamp(deltaTime / speedGrowthTimescale, 0.0f, 1.0f) * speedIncreaseFactor;
+        motorSpeed *= 1.0f + glm::pow(glm::clamp(deltaTime / speedGrowthTimescale, 0.0f, 1.0f), 0.7f) * speedIncreaseFactor;
         // use feedback from CharacterController to prevent tunneling under high motorspeed
         motorSpeed *= _characterController.getCollisionBrakeAttenuationFactor();
         const float maxBoostSpeed = sensorToWorldScale * MAX_BOOST_SPEED;
@@ -5704,20 +5732,22 @@ void MyAvatar::setAudioListenerMode(AudioListenerMode audioListenerMode) {
     }
 }
 
-QScriptValue audioListenModeToScriptValue(QScriptEngine* engine, const AudioListenerMode& audioListenerMode) {
-    return audioListenerMode;
+ScriptValue audioListenModeToScriptValue(ScriptEngine* engine, const AudioListenerMode& audioListenerMode) {
+    return engine->newValue(audioListenerMode);
 }
 
-void audioListenModeFromScriptValue(const QScriptValue& object, AudioListenerMode& audioListenerMode) {
+bool audioListenModeFromScriptValue(const ScriptValue& object, AudioListenerMode& audioListenerMode) {
     audioListenerMode = static_cast<AudioListenerMode>(object.toUInt16());
+    return true;
 }
 
-QScriptValue driveKeysToScriptValue(QScriptEngine* engine, const MyAvatar::DriveKeys& driveKeys) {
-    return driveKeys;
+ScriptValue driveKeysToScriptValue(ScriptEngine* engine, const MyAvatar::DriveKeys& driveKeys) {
+    return engine->newValue(driveKeys);
 }
 
-void driveKeysFromScriptValue(const QScriptValue& object, MyAvatar::DriveKeys& driveKeys) {
+bool driveKeysFromScriptValue(const ScriptValue& object, MyAvatar::DriveKeys& driveKeys) {
     driveKeys = static_cast<MyAvatar::DriveKeys>(object.toUInt16());
+    return true;
 }
 
 

@@ -1,25 +1,26 @@
-﻿//  AvatarExporter.cs
+//  AvatarExporter.cs
 //
 //  Created by David Back on 28 Nov 2018
 //  Copyright 2018 High Fidelity, Inc.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022 to 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
-
+#if UNITY_EDITOR
 
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
+using System.Globalization;
 
-class AvatarExporter : MonoBehaviour {
+
+class AvatarExporter : MonoBehaviour
+{
     // update version number for every PR that changes this file, also set updated version in README file
-    static readonly string AVATAR_EXPORTER_VERSION = "0.5.0";
+    static readonly string AVATAR_EXPORTER_VERSION = "0.6.0";
 
     static readonly float HIPS_MIN_Y_PERCENT_OF_HEIGHT = 0.03f;
     static readonly float BELOW_GROUND_THRESHOLD_PERCENT_OF_HEIGHT = -0.15f;
@@ -34,33 +35,8 @@ class AvatarExporter : MonoBehaviour {
 
     // TODO: use regex
     static readonly string[] RECOMMENDED_UNITY_VERSIONS = new string[] {
-        "2018.2.12f1",
-        "2018.2.11f1",
-        "2018.2.10f1",
-        "2018.2.9f1",
-        "2018.2.8f1",
-        "2018.2.7f1",
-        "2018.2.6f1",
-        "2018.2.5f1",
-        "2018.2.4f1",
-        "2018.2.3f1",
-        "2018.2.2f1",
-        "2018.2.1f1",
-        "2018.2.0f2",
-        "2018.1.9f2",
-        "2018.1.8f1",
-        "2018.1.7f1",
-        "2018.1.6f1",
-        "2018.1.5f1",
-        "2018.1.4f1",
-        "2018.1.3f1",
-        "2018.1.2f1",
-        "2018.1.1f1",
-        "2018.1.0f2",
-        "2017.4.18f1",
-        "2017.4.17f1",
-        "2017.4.16f1",
-        "2017.4.15f1",
+        "2019.4.31f1", //Version currently used by VRChat
+        "2021.3.23f1" //Version currently used by ChilloutVR
     };
 
     static readonly Dictionary<string, string> HUMANOID_TO_OVERTE_JOINT_NAME = new Dictionary<string, string> {
@@ -210,15 +186,14 @@ class AvatarExporter : MonoBehaviour {
     };
 
     static readonly string STANDARD_SHADER = "Standard";
-    static readonly string STANDARD_ROUGHNESS_SHADER = "Standard (Roughness setup)";
     static readonly string STANDARD_SPECULAR_SHADER = "Standard (Specular setup)";
     static readonly string[] SUPPORTED_SHADERS = new string[] {
         STANDARD_SHADER,
-        STANDARD_ROUGHNESS_SHADER,
         STANDARD_SPECULAR_SHADER,
     };
 
-    enum AvatarRule {
+    enum AvatarRule
+    {
         RecommendedUnityVersion,
         SingleRoot,
         NoDuplicateMapping,
@@ -248,7 +223,8 @@ class AvatarExporter : MonoBehaviour {
         AvatarRule.HeadMapped,
     };
 
-    class UserBoneInformation {
+    class UserBoneInformation
+    {
         public string humanName; // bone name in Humanoid if it is mapped, otherwise ""
         public string parentName; // parent user bone name
         public BoneTreeNode boneTreeNode; // node within the user bone tree
@@ -256,7 +232,8 @@ class AvatarExporter : MonoBehaviour {
         public Vector3 position; // absolute position
         public Quaternion rotation; // absolute rotation
 
-        public UserBoneInformation() {
+        public UserBoneInformation()
+        {
             humanName = "";
             parentName = "";
             boneTreeNode = new BoneTreeNode();
@@ -264,7 +241,8 @@ class AvatarExporter : MonoBehaviour {
             position = new Vector3();
             rotation = new Quaternion();
         }
-        public UserBoneInformation(string parent, BoneTreeNode treeNode, Vector3 pos) {
+        public UserBoneInformation(string parent, BoneTreeNode treeNode, Vector3 pos)
+        {
             humanName = "";
             parentName = parent;
             boneTreeNode = treeNode;
@@ -276,19 +254,22 @@ class AvatarExporter : MonoBehaviour {
         public bool HasHumanMapping() { return !string.IsNullOrEmpty(humanName); }
     }
 
-    class BoneTreeNode {
+    class BoneTreeNode
+    {
         public string boneName;
         public string parentName;
         public List<BoneTreeNode> children = new List<BoneTreeNode>();
 
-        public BoneTreeNode() {}
-        public BoneTreeNode(string name, string parent) {
+        public BoneTreeNode() { }
+        public BoneTreeNode(string name, string parent)
+        {
             boneName = name;
             parentName = parent;
         }
     }
 
-    class MaterialData {
+    class MaterialData
+    {
         public Color albedo;
         public string albedoMap;
         public double metallic;
@@ -300,30 +281,38 @@ class AvatarExporter : MonoBehaviour {
         public Color emissive;
         public string emissiveMap;
 
-        public string getJSON() {
+        public string getJSON()
+        {
             string json = "{ \"materialVersion\": 1, \"materials\": { ";
-            json += "\"albedo\": [" + albedo.r + ", " + albedo.g + ", " + albedo.b + "], ";
-            if (!string.IsNullOrEmpty(albedoMap)) {
-                json += "\"albedoMap\": \"" + albedoMap + "\", ";
-            }
-            json += "\"metallic\": " + metallic + ", ";
-            if (!string.IsNullOrEmpty(metallicMap)) {
-                json += "\"metallicMap\": \"" + metallicMap + "\", ";
-            }
-            json += "\"roughness\": " + roughness + ", ";
-            if (!string.IsNullOrEmpty(roughnessMap)) {
-                json += "\"roughnessMap\": \"" + roughnessMap + "\", ";
-            }
-            if (!string.IsNullOrEmpty(normalMap)) {
-                json += "\"normalMap\": \"" + normalMap + "\", ";
-            }
-            if (!string.IsNullOrEmpty(occlusionMap)) {
-                json += "\"occlusionMap\": \"" + occlusionMap + "\", ";
-            }
-            json += "\"emissive\": [" + emissive.r + ", " + emissive.g + ", " + emissive.b + "]";
-            if (!string.IsNullOrEmpty(emissiveMap)) {
-                json += ", \"emissiveMap\": \"" + emissiveMap + "\"";
-            }
+
+            //Albedo
+            json += $"\"albedo\": [{albedo.r.F()}, {albedo.g.F()}, {albedo.b.F()}], ";
+            if (!string.IsNullOrEmpty(albedoMap))
+                json += $"\"albedoMap\": \"{albedoMap}\", ";
+
+            //Metallic
+            json += $"\"metallic\": {metallic.F()}, ";
+            if (!string.IsNullOrEmpty(metallicMap))
+                json += $"\"metallicMap\": \"{metallicMap}\", ";
+
+            //Roughness
+            json += $"\"roughness\": {roughness.F()}, ";
+            if (!string.IsNullOrEmpty(roughnessMap))
+                json += $"\"roughnessMap\": \"{roughnessMap}\", ";
+
+            //Normal
+            if (!string.IsNullOrEmpty(normalMap))
+                json += $"\"normalMap\": \"{normalMap}\", ";
+
+            //Occlusion
+            if (!string.IsNullOrEmpty(occlusionMap))
+                json += $"\"occlusionMap\": \"{occlusionMap}\", ";
+
+            //Emissive
+            json += $"\"emissive\": [{emissive.r.F()}, {emissive.g.F()}, {emissive.b.F()}]";
+            if (!string.IsNullOrEmpty(emissiveMap))
+                json += $", \"emissiveMap\": \"{emissiveMap}\"";
+
             json += " } }";
             return json;
         }
@@ -356,29 +345,37 @@ class AvatarExporter : MonoBehaviour {
     static GameObject heightReferenceObject;
 
     [MenuItem("Overte/Export New Avatar")]
-    static void ExportNewAvatar() {
+    static void ExportNewAvatar()
+    {
         ExportSelectedAvatar(false);
     }
 
     [MenuItem("Overte/Update Existing Avatar")]
-    static void UpdateAvatar() {
+    static void UpdateAvatar()
+    {
         ExportSelectedAvatar(true);
     }
 
     [MenuItem("Overte/About")]
-    static void About() {
-        EditorUtility.DisplayDialog("About", "Avatar Exporter\nVersion " + AVATAR_EXPORTER_VERSION + "\nCopyright 2022 Overte e.V.\nCopyright 2018 High Fidelity, Inc.", "Ok");
+    static void About()
+    {
+        EditorUtility.DisplayDialog("About", "Avatar Exporter\nVersion " + AVATAR_EXPORTER_VERSION + "\nCopyright 2022 to 2023 Overte e.V.\nCopyright 2018 High Fidelity, Inc.", "Ok");
     }
 
-    static void ExportSelectedAvatar(bool updateExistingAvatar) {
+    static void ExportSelectedAvatar(bool updateExistingAvatar)
+    {
         // ensure everything is saved to file before doing anything
         AssetDatabase.SaveAssets();
 
         string[] guids = Selection.assetGUIDs;
-        if (guids.Length != 1) {
-            if (guids.Length == 0) {
+        if (guids.Length != 1)
+        {
+            if (guids.Length == 0)
+            {
                 EditorUtility.DisplayDialog("Error", "Please select an asset to export.", "Ok");
-            } else {
+            }
+            else
+            {
                 EditorUtility.DisplayDialog("Error", "Please select a single asset to export.", "Ok");
             }
             return;
@@ -386,11 +383,13 @@ class AvatarExporter : MonoBehaviour {
         assetPath = AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]);
         assetName = Path.GetFileNameWithoutExtension(assetPath);
         modelImporter = ModelImporter.GetAtPath(assetPath) as ModelImporter;
-        if (Path.GetExtension(assetPath).ToLower() != ".fbx" || modelImporter == null) {
+        if (Path.GetExtension(assetPath).ToLower() != ".fbx" || modelImporter == null)
+        {
             EditorUtility.DisplayDialog("Error", "Please select an .fbx model asset to export.", "Ok");
             return;
         }
-        if (modelImporter.animationType != ModelImporterAnimationType.Human) {
+        if (modelImporter.animationType != ModelImporterAnimationType.Human)
+        {
             EditorUtility.DisplayDialog("Error", "Please set model's Animation Type to Humanoid in " +
                                                  " the Rig section of it's Inspector window.", "Ok");
             return;
@@ -403,14 +402,16 @@ class AvatarExporter : MonoBehaviour {
 
         // if the rig is optimized we should de-optimize it during the export process
         bool shouldDeoptimizeGameObjects = modelImporter.optimizeGameObjects;
-        if (shouldDeoptimizeGameObjects) {
+        if (shouldDeoptimizeGameObjects)
+        {
             modelImporter.optimizeGameObjects = false;
             modelImporter.SaveAndReimport();
         }
 
         SetBoneAndMaterialInformation();
 
-        if (shouldDeoptimizeGameObjects) {
+        if (shouldDeoptimizeGameObjects)
+        {
             // switch back to optimized game object in case it was originally optimized
             modelImporter.optimizeGameObjects = true;
             modelImporter.SaveAndReimport();
@@ -424,10 +425,14 @@ class AvatarExporter : MonoBehaviour {
         // and also include any other avatar rule failures plus texture warnings as warnings in the dialog
         string boneErrors = "";
         warnings = "";
-        foreach (var failedAvatarRule in failedAvatarRules) {
-            if (Array.IndexOf(EXPORT_BLOCKING_AVATAR_RULES, failedAvatarRule.Key) >= 0) {
+        foreach (var failedAvatarRule in failedAvatarRules)
+        {
+            if (Array.IndexOf(EXPORT_BLOCKING_AVATAR_RULES, failedAvatarRule.Key) >= 0)
+            {
                 boneErrors += failedAvatarRule.Value + "\n\n";
-            } else {
+            }
+            else
+            {
                 warnings += failedAvatarRule.Value + "\n\n";
             }
         }
@@ -437,13 +442,16 @@ class AvatarExporter : MonoBehaviour {
         warnings += textureWarnings;
 
         // remove trailing newlines at the end of the warnings
-        if (!string.IsNullOrEmpty(warnings)) {
+        if (!string.IsNullOrEmpty(warnings))
+        {
             warnings = warnings.Substring(0, warnings.LastIndexOf("\n\n"));
         }
 
-        if (!string.IsNullOrEmpty(boneErrors)) {
+        if (!string.IsNullOrEmpty(boneErrors))
+        {
             // if there are both errors and warnings then warnings will be displayed with errors in the error dialog
-            if (!string.IsNullOrEmpty(warnings)) {
+            if (!string.IsNullOrEmpty(warnings))
+            {
                 boneErrors = "Errors:\n\n" + boneErrors;
                 boneErrors += "Warnings:\n\n" + warnings;
             }
@@ -454,26 +462,32 @@ class AvatarExporter : MonoBehaviour {
         }
 
         // since there are no errors we can now open the preview scene in place of the user's scene
-        if (!OpenPreviewScene()) {
+        if (!OpenPreviewScene())
+        {
             return;
         }
 
         // show None instead of blank warnings if there are no warnings in the export windows
-        if (string.IsNullOrEmpty(warnings)) {
+        if (string.IsNullOrEmpty(warnings))
+        {
             warnings = EMPTY_WARNING_TEXT;
         }
 
         string documentsFolder = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments);
         string overteFolder = documentsFolder + "/Overte Projects";
-        if (updateExistingAvatar) { // Update Existing Avatar menu option
+        if (updateExistingAvatar)
+        { // Update Existing Avatar menu option
             // open update existing project popup window including project to update, scale, and warnings
             // default the initial file chooser location to Overte Projects folder in user documents folder
             ExportProjectWindow window = ScriptableObject.CreateInstance<ExportProjectWindow>();
             string initialPath = Directory.Exists(overteFolder) ? overteFolder : documentsFolder;
             window.Init(initialPath, warnings, updateExistingAvatar, avatarPreviewObject, OnUpdateExistingProject, OnExportWindowClose);
-        } else { // Export New Avatar menu option
+        }
+        else
+        { // Export New Avatar menu option
             // create Overte Projects folder in user documents folder if it doesn't exist
-            if (!Directory.Exists(overteFolder)) {
+            if (!Directory.Exists(overteFolder))
+            {
                 Directory.CreateDirectory(overteFolder);
             }
 
@@ -484,56 +498,74 @@ class AvatarExporter : MonoBehaviour {
         }
     }
 
-    static void OnUpdateExistingProject(string exportFstPath, string projectName, float scale) {
+    static void OnUpdateExistingProject(string exportFstPath, string projectName, float scale)
+    {
         bool copyModelToExport = false;
 
         // lookup the project name field from the fst file to update
         projectName = "";
-        try {
+        try
+        {
             string[] lines = File.ReadAllLines(exportFstPath);
-            foreach (string line in lines) {
+            foreach (string line in lines)
+            {
                 int separatorIndex = line.IndexOf("=");
-                if (separatorIndex >= 0) {
+                if (separatorIndex >= 0)
+                {
                     string key = line.Substring(0, separatorIndex).Trim();
-                    if (key == "name") {
+                    if (key == "name")
+                    {
                         projectName = line.Substring(separatorIndex + 1).Trim();
                         break;
                     }
                 }
             }
-        } catch {
+        }
+        catch
+        {
             EditorUtility.DisplayDialog("Error", "Failed to read from existing file " + exportFstPath +
                                         ". Please check the file and try again.", "Ok");
             return;
         }
 
         string exportModelPath = Path.GetDirectoryName(exportFstPath) + "/" + assetName + ".fbx";
-        if (File.Exists(exportModelPath)) {
+        if (File.Exists(exportModelPath))
+        {
             // if the fbx in Unity Assets is newer than the fbx in the target export
             // folder or vice-versa then ask to replace the older fbx with the newer fbx
             DateTime assetModelWriteTime = File.GetLastWriteTime(assetPath);
             DateTime targetModelWriteTime = File.GetLastWriteTime(exportModelPath);
-            if (assetModelWriteTime > targetModelWriteTime) {
+            if (assetModelWriteTime > targetModelWriteTime)
+            {
                 int option = EditorUtility.DisplayDialogComplex("Error", "The " + assetName +
                              ".fbx model in the Unity Assets folder is newer than the " + exportModelPath +
                              " model.\n\nDo you want to replace the older .fbx with the newer .fbx?",
                              "Yes", "No", "Cancel");
-                if (option == 2) { // Cancel
+                if (option == 2)
+                { // Cancel
                     return;
                 }
                 copyModelToExport = option == 0; // Yes
-            } else if (assetModelWriteTime < targetModelWriteTime) {
+            }
+            else if (assetModelWriteTime < targetModelWriteTime)
+            {
                 int option = EditorUtility.DisplayDialogComplex("Error", "The " + exportModelPath +
                              " model is newer than the " + assetName + ".fbx model in the Unity Assets folder." +
                              "\n\nDo you want to replace the older .fbx with the newer .fbx and re-import it?",
-                             "Yes", "No" , "Cancel");
-                if (option == 2) { // Cancel
+                             "Yes", "No", "Cancel");
+                if (option == 2)
+                { // Cancel
                     return;
-                } else if (option == 0) { // Yes - copy model to Unity project
+                }
+                else if (option == 0)
+                { // Yes - copy model to Unity project
                     // copy the fbx from the project folder to Unity Assets, overwriting the existing fbx, and re-import it
-                    try {
+                    try
+                    {
                         File.Copy(exportModelPath, assetPath, true);
-                    } catch {
+                    }
+                    catch
+                    {
                         EditorUtility.DisplayDialog("Error", "Failed to copy existing file " + exportModelPath + " to " + assetPath +
                                                     ". Please check the location and try again.", "Ok");
                         return;
@@ -552,22 +584,29 @@ class AvatarExporter : MonoBehaviour {
                     SetBoneAndMaterialInformation();
                 }
             }
-        } else {
+        }
+        else
+        {
             // if no matching fbx exists in the target export folder then ask to copy fbx over
             int option = EditorUtility.DisplayDialogComplex("Error", "There is no existing " + exportModelPath +
                          " model.\n\nDo you want to copy over the " + assetName +
                          ".fbx model from the Unity Assets folder?", "Yes", "No", "Cancel");
-            if (option == 2) { // Cancel
+            if (option == 2)
+            { // Cancel
                 return;
             }
             copyModelToExport = option == 0; // Yes
         }
 
         // copy asset fbx over deleting any existing fbx if we agreed to overwrite it
-        if (copyModelToExport) {
-            try {
+        if (copyModelToExport)
+        {
+            try
+            {
                 File.Copy(assetPath, exportModelPath, true);
-            } catch {
+            }
+            catch
+            {
                 EditorUtility.DisplayDialog("Error", "Failed to copy existing file " + assetPath + " to " + exportModelPath +
                                             ". Please check the location and try again.", "Ok");
                 return;
@@ -576,34 +615,41 @@ class AvatarExporter : MonoBehaviour {
 
         // delete existing fst file since we will write a new file
         // TODO: updating fst should only rewrite joint mappings and joint rotation offsets to existing file
-        try {
+        try
+        {
             File.Delete(exportFstPath);
-        } catch {
+        }
+        catch
+        {
             EditorUtility.DisplayDialog("Error", "Failed to overwrite existing file " + exportFstPath +
                                         ". Please check the file and try again.", "Ok");
             return;
         }
 
         // write out a new fst file in place of the old file
-        if (!WriteFST(exportFstPath, projectName, scale)) {
+        if (!WriteFST(exportFstPath, projectName, scale))
+        {
             return;
         }
 
         // copy any external texture files to the project's texture directory that are considered dependencies of the model
         string texturesDirectory = GetTextureDirectory(exportFstPath);
-        if (!CopyExternalTextures(texturesDirectory)) {
+        if (!CopyExternalTextures(texturesDirectory))
+        {
             return;
         }
 
         // display success dialog with any avatar rule warnings
         string successDialog = "Avatar successfully updated!";
-        if (!string.IsNullOrEmpty(warnings)) {
+        if (!string.IsNullOrEmpty(warnings))
+        {
             successDialog += "\n\nWarnings:\n" + warnings;
         }
         EditorUtility.DisplayDialog("Success!", successDialog, "Ok");
     }
 
-    static void OnExportNewProject(string projectDirectory, string projectName, float scale) {
+    static void OnExportNewProject(string projectDirectory, string projectName, float scale)
+    {
         // copy the fbx from the Unity Assets folder to the project directory
         string exportModelPath = projectDirectory + assetName + ".fbx";
         File.Copy(assetPath, exportModelPath);
@@ -616,19 +662,22 @@ class AvatarExporter : MonoBehaviour {
 
         // write out the avatar.fst file to the project directory
         string exportFstPath = projectDirectory + "avatar.fst";
-        if (!WriteFST(exportFstPath, projectName, scale)) {
+        if (!WriteFST(exportFstPath, projectName, scale))
+        {
             return;
         }
 
         // copy any external texture files to the project's texture directory that are considered dependencies of the model
-        if (!CopyExternalTextures(texturesDirectory)) {
+        if (!CopyExternalTextures(texturesDirectory))
+        {
             return;
         }
 
         // remove any double slashes in texture directory path, display success dialog with any
         // bone warnings previously mentioned, and suggest user to copy external textures over
         string successDialog = "Avatar successfully exported!\n\n";
-        if (warnings != EMPTY_WARNING_TEXT) {
+        if (warnings != EMPTY_WARNING_TEXT)
+        {
             successDialog += "Warnings:\n" + warnings;
         }
         successDialog += "\n\nNote: If you are using any external textures with your model, " +
@@ -636,64 +685,86 @@ class AvatarExporter : MonoBehaviour {
         EditorUtility.DisplayDialog("Success!", successDialog, "Ok");
     }
 
-    static void OnExportWindowClose() {
+    static void OnExportWindowClose()
+    {
         // close the preview avatar scene and go back to user's previous scene when export project windows close
         ClosePreviewScene();
     }
 
     // The Overte FBX Serializer omits the colon based prefixes. This will make the jointnames compatible.
-    static string removeTypeFromJointname(string jointName) {
+    static string removeTypeFromJointname(string jointName)
+    {
         return jointName.Substring(jointName.IndexOf(':') + 1);
     }
 
-    static bool WriteFST(string exportFstPath, string projectName, float scale) {
+    static bool WriteFST(string exportFstPath, string projectName, float scale)
+    {
         // write out core fields to top of fst file
-        try {
-            File.WriteAllText(exportFstPath, "exporterVersion = " + AVATAR_EXPORTER_VERSION + "\nname = " + projectName +
-                                             "\ntype = body+head\nscale = " + scale + "\nfilename = " + assetName +
-                                             ".fbx\n" + "texdir = textures\n");
-        } catch {
+        try
+        {
+            File.WriteAllText(exportFstPath,
+                $"exporterVersion = {AVATAR_EXPORTER_VERSION}\n" +
+                $"name     = {projectName}\n" +
+                "type     = body+head\n" +
+                $"scale    = {scale.F()}\n" +
+                $"filename = {assetName}.fbx\n" +
+                "texdir   = textures\n"
+            );
+        }
+        catch
+        {
             EditorUtility.DisplayDialog("Error", "Failed to write file " + exportFstPath +
                                         ". Please check the location and try again.", "Ok");
             return false;
         }
 
         // write out joint mappings to fst file
-        foreach (var userBoneInfo in userBoneInfos) {
-            if (userBoneInfo.Value.HasHumanMapping()) {
+        foreach (var userBoneInfo in userBoneInfos)
+        {
+            if (userBoneInfo.Value.HasHumanMapping())
+            {
                 string overteJointName = HUMANOID_TO_OVERTE_JOINT_NAME[userBoneInfo.Value.humanName];
-                File.AppendAllText(exportFstPath, "jointMap = " + overteJointName + " = " + removeTypeFromJointname(userBoneInfo.Key) + "\n");
+                File.AppendAllText(exportFstPath, $"jointMap = {overteJointName} = {removeTypeFromJointname(userBoneInfo.Key)}\n");
             }
         }
 
         // calculate and write out joint rotation offsets to fst file
         SkeletonBone[] skeletonMap = humanDescription.skeleton;
-        foreach (SkeletonBone userBone in skeletonMap) {
+        foreach (SkeletonBone userBone in skeletonMap)
+        {
             string userBoneName = userBone.name;
             UserBoneInformation userBoneInfo;
-            if (!userBoneInfos.TryGetValue(userBoneName, out userBoneInfo)) {
+            if (!userBoneInfos.TryGetValue(userBoneName, out userBoneInfo))
+            {
                 continue;
             }
 
             Quaternion userBoneRotation = userBone.rotation;
             string parentName = userBoneInfo.parentName;
-            if (parentName == "root") {
+            if (parentName == "root")
+            {
                 // if the parent is root then use bone's rotation
                 userBoneInfo.rotation = userBoneRotation;
-            } else {
+            }
+            else
+            {
                 // otherwise multiply bone's rotation by parent bone's absolute rotation
                 userBoneInfo.rotation = userBoneInfos[parentName].rotation * userBoneRotation;
             }
 
             // generate joint rotation offsets for both humanoid-mapped bones as well as extra unmapped bones
             Quaternion jointOffset = new Quaternion();
-            if (userBoneInfo.HasHumanMapping()) {
+            if (userBoneInfo.HasHumanMapping())
+            {
                 Quaternion rotation = REFERENCE_ROTATIONS[userBoneInfo.humanName];
                 jointOffset = Quaternion.Inverse(userBoneInfo.rotation) * rotation;
-            } else {
+            }
+            else
+            {
                 jointOffset = Quaternion.Inverse(userBoneInfo.rotation);
                 string lastRequiredParent = FindLastRequiredAncestorBone(userBoneName);
-                if (lastRequiredParent != "root") {
+                if (lastRequiredParent != "root")
+                {
                     // take the previous offset and multiply it by the current local when we have an extra joint
                     string lastRequiredParentHumanName = userBoneInfos[lastRequiredParent].humanName;
                     Quaternion lastRequiredParentRotation = REFERENCE_ROTATIONS[lastRequiredParentHumanName];
@@ -703,39 +774,38 @@ class AvatarExporter : MonoBehaviour {
 
             // swap from left-handed (Unity) to right-handed (Overte) coordinates and write out joint rotation offset to fst
             jointOffset = new Quaternion(-jointOffset.x, jointOffset.y, jointOffset.z, -jointOffset.w);
-            File.AppendAllText(exportFstPath, "jointRotationOffset2 = " + removeTypeFromJointname(userBoneName) + " = (" + jointOffset.x + ", " +
-                                              jointOffset.y + ", " + jointOffset.z + ", " + jointOffset.w + ")\n");
+            File.AppendAllText(exportFstPath,
+                $"jointRotationOffset2 = {removeTypeFromJointname(userBoneName)} = ({jointOffset.x.F()}, {jointOffset.y.F()}, {jointOffset.z.F()}, {jointOffset.w.F()})\n"
+            );
         }
 
         // if there is any material data to save then write out all materials in JSON material format to the materialMap field
-        if (materialDatas.Count > 0) {
-            string materialJson = "{ ";
-            foreach (var materialData in materialDatas) {
+        if (materialDatas.Count > 0)
+        {
+            var matData = new List<string>();
+            foreach (var materialData in materialDatas)
+            {
                 // if this is the only material in the mapping and it is mapped to default material name No Name,
                 // then the avatar has no embedded materials and this material should be applied to all meshes
-                string materialName = materialData.Key;
-                if (materialMappings.Count == 1 && materialName == DEFAULT_MATERIAL_NAME) {
-                    materialJson += "\"all\": ";
-                } else {
-                    materialJson += "\"mat::" + materialName + "\": ";
-                }
-                materialJson += materialData.Value.getJSON();
-                materialJson += ", ";
+                string matName = (materialMappings.Count == 1 && materialData.Key == DEFAULT_MATERIAL_NAME) ? "all" : $"mat::{materialData.Key}";
+                matData.Add($"\"{matName}\": {materialData.Value.getJSON()}");
             }
-            materialJson = materialJson.Substring(0, materialJson.LastIndexOf(", "));
-            materialJson += " }";
-            File.AppendAllText(exportFstPath, "materialMap = " + materialJson);
+            File.AppendAllText(exportFstPath, $"materialMap = {{{string.Join(",", matData)}}}");
         }
 
-        if(SystemInfo.operatingSystemFamily == OperatingSystemFamily.Windows) {
+        EditorPrefs.SetString("OV_LAST_PROJECT_PATH", exportFstPath);
+
+        /*if (SystemInfo.operatingSystemFamily == OperatingSystemFamily.Windows)
+        {
             // open File Explorer to the project directory once finished
             System.Diagnostics.Process.Start("explorer.exe", "/select," + exportFstPath);
-        }
+        }*/
 
         return true;
     }
 
-    static void SetBoneAndMaterialInformation() {
+    static void SetBoneAndMaterialInformation()
+    {
         userBoneInfos.Clear();
         humanoidToUserBoneMappings.Clear();
         userBoneTree = new BoneTreeNode();
@@ -757,13 +827,16 @@ class AvatarExporter : MonoBehaviour {
         // iterate over Humanoid bones and update user bone info to increase human mapping counts for each bone
         // as well as set their Humanoid name and build a Humanoid to user bone mapping
         HumanBone[] boneMap = humanDescription.human;
-        foreach (HumanBone bone in boneMap) {
+        foreach (HumanBone bone in boneMap)
+        {
             string humanName = bone.humanName;
             string userBoneName = bone.boneName;
             string overteJointName;
-            if (userBoneInfos.ContainsKey(userBoneName)) {
+            if (userBoneInfos.ContainsKey(userBoneName))
+            {
                 ++userBoneInfos[userBoneName].mappingCount;
-                if (HUMANOID_TO_OVERTE_JOINT_NAME.TryGetValue(humanName, out overteJointName)) {
+                if (HUMANOID_TO_OVERTE_JOINT_NAME.TryGetValue(humanName, out overteJointName))
+                {
                     userBoneInfos[userBoneName].humanName = humanName;
                     humanoidToUserBoneMappings.Add(humanName, userBoneName);
                 }
@@ -774,7 +847,8 @@ class AvatarExporter : MonoBehaviour {
         SetFailedAvatarRules(bounds, height);
     }
 
-    static void TraverseUserBoneTree(Transform modelBone, BoneTreeNode boneTreeNode) {
+    static void TraverseUserBoneTree(Transform modelBone, BoneTreeNode boneTreeNode)
+    {
         GameObject gameObject = modelBone.gameObject;
 
         // check if this transform is a node containing mesh, light, or camera instead of a bone
@@ -785,7 +859,8 @@ class AvatarExporter : MonoBehaviour {
         bool camera = gameObject.GetComponent<Camera>() != null;
 
         // if this is a mesh then store its material data to be exported if the material is mapped to an fbx material name
-        if (mesh) {
+        if (mesh)
+        {
             Material[] materials = skinnedMeshRenderer != null ? skinnedMeshRenderer.sharedMaterials : meshRenderer.sharedMaterials;
             StoreMaterialData(materials);
 
@@ -793,31 +868,41 @@ class AvatarExporter : MonoBehaviour {
             Transform ancestorBone = modelBone;
             string previousBoneName = "";
             // find the name of the root child bone that this mesh is underneath
-            while (ancestorBone != null) {
-                if (ancestorBone.parent == null) {
+            while (ancestorBone != null)
+            {
+                if (ancestorBone.parent == null)
+                {
                     break;
                 }
                 previousBoneName = ancestorBone.name;
                 ancestorBone = ancestorBone.parent;
             }
             // remove the bone tree node from root's children for the root child bone that has mesh children
-            if (!string.IsNullOrEmpty(previousBoneName)) {
-                foreach (BoneTreeNode rootChild in userBoneTree.children) {
-                    if (rootChild.boneName == previousBoneName) {
+            if (!string.IsNullOrEmpty(previousBoneName))
+            {
+                foreach (BoneTreeNode rootChild in userBoneTree.children)
+                {
+                    if (rootChild.boneName == previousBoneName)
+                    {
                         userBoneTree.children.Remove(rootChild);
                         break;
                     }
                 }
             }
-        } else if (!light && !camera) {
+        }
+        else if (!light && !camera)
+        {
             // if it is in fact a bone, add it to the bone tree as well as user bone infos list with position and parent name
             string boneName = modelBone.name;
-            if (modelBone.parent == null) {
+            if (modelBone.parent == null)
+            {
                 // if no parent then this is actual root bone node of the user avatar, so consider it's parent as "root"
                 boneName = GetRootBoneName(); // ensure we use the root bone name from the skeleton list for consistency
                 boneTreeNode.boneName = boneName;
                 boneTreeNode.parentName = "root";
-            } else {
+            }
+            else
+            {
                 // otherwise add this bone node as a child to it's parent's children list
                 // if its a child of the root bone, use the root bone name from the skeleton list as the parent for consistency
                 string parentName = modelBone.parent.parent == null ? GetRootBoneName() : modelBone.parent.name;
@@ -832,28 +917,35 @@ class AvatarExporter : MonoBehaviour {
         }
 
         // recurse over transform node's children
-        for (int i = 0; i < modelBone.childCount; ++i) {
+        for (int i = 0; i < modelBone.childCount; ++i)
+        {
             TraverseUserBoneTree(modelBone.GetChild(i), boneTreeNode);
         }
     }
 
-    static string FindLastRequiredAncestorBone(string currentBone) {
+    static string FindLastRequiredAncestorBone(string currentBone)
+    {
         string result = currentBone;
         // iterating upward through user bone info parent names, find the first ancestor bone that is mapped in Humanoid
-        while (result != "root" && userBoneInfos.ContainsKey(result) && !userBoneInfos[result].HasHumanMapping()) {
+        while (result != "root" && userBoneInfos.ContainsKey(result) && !userBoneInfos[result].HasHumanMapping())
+        {
             result = userBoneInfos[result].parentName;
         }
         return result;
     }
 
-    static void AdjustUpperChestMapping() {
-        if (!humanoidToUserBoneMappings.ContainsKey("UpperChest")) {
+    static void AdjustUpperChestMapping()
+    {
+        if (!humanoidToUserBoneMappings.ContainsKey("UpperChest"))
+        {
             // if parent of Neck is not Chest then map the parent to UpperChest
             string neckUserBone;
-            if (humanoidToUserBoneMappings.TryGetValue("Neck", out neckUserBone)) {
+            if (humanoidToUserBoneMappings.TryGetValue("Neck", out neckUserBone))
+            {
                 UserBoneInformation neckParentBoneInfo;
                 string neckParentUserBone = userBoneInfos[neckUserBone].parentName;
-                if (userBoneInfos.TryGetValue(neckParentUserBone, out neckParentBoneInfo) && !neckParentBoneInfo.HasHumanMapping()) {
+                if (userBoneInfos.TryGetValue(neckParentUserBone, out neckParentBoneInfo) && !neckParentBoneInfo.HasHumanMapping())
+                {
                     neckParentBoneInfo.humanName = "UpperChest";
                     humanoidToUserBoneMappings.Add("UpperChest", neckParentUserBone);
                 }
@@ -861,7 +953,8 @@ class AvatarExporter : MonoBehaviour {
             // if there is still no UpperChest bone but there is a Chest bone then we remap Chest to UpperChest
             string chestUserBone;
             if (!humanoidToUserBoneMappings.ContainsKey("UpperChest") &&
-                humanoidToUserBoneMappings.TryGetValue("Chest", out chestUserBone)) {
+                humanoidToUserBoneMappings.TryGetValue("Chest", out chestUserBone))
+            {
                 userBoneInfos[chestUserBone].humanName = "UpperChest";
                 humanoidToUserBoneMappings.Remove("Chest");
                 humanoidToUserBoneMappings.Add("UpperChest", chestUserBone);
@@ -869,15 +962,18 @@ class AvatarExporter : MonoBehaviour {
         }
     }
 
-    static string GetRootBoneName() {
+    static string GetRootBoneName()
+    {
         // the "root" bone is the first element in the human skeleton bone list
-        if (humanDescription.skeleton.Length > 0) {
+        if (humanDescription.skeleton.Length > 0)
+        {
             return humanDescription.skeleton[0].name;
         }
         return "";
     }
 
-    static void SetFailedAvatarRules(Bounds avatarBounds, float avatarHeight) {
+    static void SetFailedAvatarRules(Bounds avatarBounds, float avatarHeight)
+    {
         failedAvatarRules.Clear();
 
         string hipsUserBone = "";
@@ -889,19 +985,20 @@ class AvatarExporter : MonoBehaviour {
 
         // iterate over all avatar rules in order and add any rules that fail
         // to the failed avatar rules map with appropriate error or warning text
-        for (AvatarRule avatarRule = 0; avatarRule < AvatarRule.AvatarRuleEnd; ++avatarRule) {
-            switch (avatarRule) {
+        for (AvatarRule avatarRule = 0; avatarRule < AvatarRule.AvatarRuleEnd; ++avatarRule)
+        {
+            switch (avatarRule)
+            {
                 case AvatarRule.RecommendedUnityVersion:
-                    if (Array.IndexOf(RECOMMENDED_UNITY_VERSIONS, Application.unityVersion) == -1) {
-                        failedAvatarRules.Add(avatarRule, "The current version of Unity is not one of the recommended Unity " +
-                                                          "versions. If you are using a version of Unity later than 2018.2.12f1, " +
-                                                          "it is recommended to apply Enforce T-Pose under the Pose dropdown " +
-                                                          "in Humanoid configuration.");
+                    if (Array.IndexOf(RECOMMENDED_UNITY_VERSIONS, Application.unityVersion) == -1)
+                    {
+                        failedAvatarRules.Add(avatarRule, "The current version of Unity is not one of the recommended Unity versions.");
                     }
                     break;
                 case AvatarRule.SingleRoot:
                     // avatar rule fails if the root bone node has more than one child bone
-                    if (userBoneTree.children.Count > 1) {
+                    if (userBoneTree.children.Count > 1)
+                    {
                         failedAvatarRules.Add(avatarRule, "There is more than one bone at the top level of the selected avatar's " +
                                                           "bone hierarchy. Please ensure all bones for Humanoid mappings are " +
                                                           "under the same bone hierarchy.");
@@ -909,14 +1006,19 @@ class AvatarExporter : MonoBehaviour {
                     break;
                 case AvatarRule.NoDuplicateMapping:
                     // avatar rule fails if any user bone is mapped to more than one Humanoid bone
-                    foreach (var userBoneInfo in userBoneInfos) {
+                    foreach (var userBoneInfo in userBoneInfos)
+                    {
                         string boneName = userBoneInfo.Key;
                         int mappingCount = userBoneInfo.Value.mappingCount;
-                        if (mappingCount > 1) {
+                        if (mappingCount > 1)
+                        {
                             string text = "The " + boneName + " bone is mapped to more than one bone in Humanoid.";
-                            if (failedAvatarRules.ContainsKey(avatarRule)) {
+                            if (failedAvatarRules.ContainsKey(avatarRule))
+                            {
                                 failedAvatarRules[avatarRule] += "\n" + text;
-                            } else {
+                            }
+                            else
+                            {
                                 failedAvatarRules.Add(avatarRule, text);
                             }
                         }
@@ -941,21 +1043,26 @@ class AvatarExporter : MonoBehaviour {
                     CheckUserBoneDescendantOfHumanRule(avatarRule, spineUserBone, "Hips");
                     break;
                 case AvatarRule.ChestMapped:
-                    if (!humanoidToUserBoneMappings.TryGetValue("Chest", out chestUserBone)) {
+                    if (!humanoidToUserBoneMappings.TryGetValue("Chest", out chestUserBone))
+                    {
                         // check to see if there is an unmapped child of Spine that we can suggest to be mapped to Chest
                         string chestMappingCandidate = "";
-                        if (!string.IsNullOrEmpty(spineUserBone)) {
+                        if (!string.IsNullOrEmpty(spineUserBone))
+                        {
                             BoneTreeNode spineTreeNode = userBoneInfos[spineUserBone].boneTreeNode;
-                            foreach (BoneTreeNode spineChildTreeNode in spineTreeNode.children) {
+                            foreach (BoneTreeNode spineChildTreeNode in spineTreeNode.children)
+                            {
                                 string spineChildBone = spineChildTreeNode.boneName;
-                                if (userBoneInfos[spineChildBone].HasHumanMapping()) {
+                                if (userBoneInfos[spineChildBone].HasHumanMapping())
+                                {
                                     continue;
                                 }
                                 // a suitable candidate for Chest should have Neck/Head or Shoulder mappings in its descendants
                                 if (IsHumanBoneInHierarchy(spineChildTreeNode, "Neck") ||
                                     IsHumanBoneInHierarchy(spineChildTreeNode, "Head") ||
                                     IsHumanBoneInHierarchy(spineChildTreeNode, "LeftShoulder") ||
-                                    IsHumanBoneInHierarchy(spineChildTreeNode, "RightShoulder")) {
+                                    IsHumanBoneInHierarchy(spineChildTreeNode, "RightShoulder"))
+                                {
                                     chestMappingCandidate = spineChildBone;
                                     break;
                                 }
@@ -963,7 +1070,8 @@ class AvatarExporter : MonoBehaviour {
                         }
                         failedAvatarRules.Add(avatarRule, "There is no Chest bone mapped in Humanoid for the selected avatar.");
                         // if the only found child of Spine is not yet mapped then add it as a suggestion for Chest mapping
-                        if (!string.IsNullOrEmpty(chestMappingCandidate)) {
+                        if (!string.IsNullOrEmpty(chestMappingCandidate))
+                        {
                             failedAvatarRules[avatarRule] += " It is suggested that you map bone " + chestMappingCandidate +
                                                              " to Chest in Humanoid.";
                         }
@@ -984,14 +1092,20 @@ class AvatarExporter : MonoBehaviour {
                 case AvatarRule.EyesMapped:
                     bool leftEyeMapped = humanoidToUserBoneMappings.ContainsKey("LeftEye");
                     bool rightEyeMapped = humanoidToUserBoneMappings.ContainsKey("RightEye");
-                    if (!leftEyeMapped || !rightEyeMapped) {
-                        if (leftEyeMapped && !rightEyeMapped) {
+                    if (!leftEyeMapped || !rightEyeMapped)
+                    {
+                        if (leftEyeMapped && !rightEyeMapped)
+                        {
                             failedAvatarRules.Add(avatarRule, "There is no RightEye bone mapped in Humanoid " +
                                                               "for the selected avatar.");
-                        } else if (!leftEyeMapped && rightEyeMapped) {
+                        }
+                        else if (!leftEyeMapped && rightEyeMapped)
+                        {
                             failedAvatarRules.Add(avatarRule, "There is no LeftEye bone mapped in Humanoid " +
                                                               "for the selected avatar.");
-                        } else {
+                        }
+                        else
+                        {
                             failedAvatarRules.Add(avatarRule, "There is no LeftEye or RightEye bone mapped in Humanoid " +
                                                               "for the selected avatar.");
                         }
@@ -999,22 +1113,26 @@ class AvatarExporter : MonoBehaviour {
                     break;
                 case AvatarRule.HipsNotAtBottom:
                     // ensure that Hips is not below a proportional percentage of the avatar's height in avatar space
-                    if (!string.IsNullOrEmpty(hipsUserBone)) {
+                    if (!string.IsNullOrEmpty(hipsUserBone))
+                    {
                         UserBoneInformation hipsBoneInfo = userBoneInfos[hipsUserBone];
                         hipsPosition = hipsBoneInfo.position;
 
                         // find the lowest y position of the bones
                         float minBoneYPosition = float.MaxValue;
-                        foreach (var userBoneInfo in userBoneInfos) {
+                        foreach (var userBoneInfo in userBoneInfos)
+                        {
                             Vector3 position = userBoneInfo.Value.position;
-                            if (position.y < minBoneYPosition) {
+                            if (position.y < minBoneYPosition)
+                            {
                                 minBoneYPosition = position.y;
                             }
                         }
 
                         // check that Hips is within a percentage of avatar's height from the lowest Y point of the avatar
                         float bottomYRange = HIPS_MIN_Y_PERCENT_OF_HEIGHT * avatarHeight;
-                        if (Mathf.Abs(hipsPosition.y - minBoneYPosition) < bottomYRange) {
+                        if (Mathf.Abs(hipsPosition.y - minBoneYPosition) < bottomYRange)
+                        {
                             failedAvatarRules.Add(avatarRule, "The bone mapped to Hips in Humanoid (" + hipsUserBone +
                                                               ") should not be at the bottom of the selected avatar.");
                         }
@@ -1023,7 +1141,8 @@ class AvatarExporter : MonoBehaviour {
                 case AvatarRule.ExtentsNotBelowGround:
                     // ensure the minimum Y extent of the model's bounds is not below a proportional threshold of avatar's height
                     float belowGroundThreshold = BELOW_GROUND_THRESHOLD_PERCENT_OF_HEIGHT * avatarHeight;
-                    if (avatarBounds.min.y < belowGroundThreshold) {
+                    if (avatarBounds.min.y < belowGroundThreshold)
+                    {
                         failedAvatarRules.Add(avatarRule, "The bottom extents of the selected avatar go below ground level.");
                     }
                     break;
@@ -1031,13 +1150,15 @@ class AvatarExporter : MonoBehaviour {
                     // ensure the bones mapped to Hips, Spine, and Chest are all not in the same position,
                     // check Hips to Spine and Spine to Chest lengths are within HIPS_SPINE_CHEST_MIN_SEPARATION
                     if (!string.IsNullOrEmpty(spineUserBone) && !string.IsNullOrEmpty(chestUserBone) &&
-                        !string.IsNullOrEmpty(hipsUserBone)) {
+                        !string.IsNullOrEmpty(hipsUserBone))
+                    {
                         UserBoneInformation spineBoneInfo = userBoneInfos[spineUserBone];
                         UserBoneInformation chestBoneInfo = userBoneInfos[chestUserBone];
                         Vector3 hipsToSpine = hipsPosition - spineBoneInfo.position;
                         Vector3 spineToChest = spineBoneInfo.position - chestBoneInfo.position;
                         if (hipsToSpine.magnitude < HIPS_SPINE_CHEST_MIN_SEPARATION &&
-                            spineToChest.magnitude < HIPS_SPINE_CHEST_MIN_SEPARATION) {
+                            spineToChest.magnitude < HIPS_SPINE_CHEST_MIN_SEPARATION)
+                        {
                             failedAvatarRules.Add(avatarRule, "The bone mapped to Hips in Humanoid (" + hipsUserBone +
                                                               "), the bone mapped to Spine in Humanoid (" + spineUserBone +
                                                               "), and the bone mapped to Chest in Humanoid (" + chestUserBone +
@@ -1047,7 +1168,8 @@ class AvatarExporter : MonoBehaviour {
                     break;
                 case AvatarRule.TotalBoneCountUnderLimit:
                     int userBoneCount = userBoneInfos.Count;
-                    if (userBoneCount > MAXIMUM_USER_BONE_COUNT) {
+                    if (userBoneCount > MAXIMUM_USER_BONE_COUNT)
+                    {
                         failedAvatarRules.Add(avatarRule, "The total number of bones in the avatar (" + userBoneCount +
                                                           ") exceeds the maximum bone limit (" + MAXIMUM_USER_BONE_COUNT + ").");
                     }
@@ -1056,16 +1178,20 @@ class AvatarExporter : MonoBehaviour {
         }
     }
 
-    static bool IsHumanBoneInHierarchy(BoneTreeNode boneTreeNode, string humanBoneName) {
+    static bool IsHumanBoneInHierarchy(BoneTreeNode boneTreeNode, string humanBoneName)
+    {
         UserBoneInformation userBoneInfo;
-        if (userBoneInfos.TryGetValue(boneTreeNode.boneName, out userBoneInfo) && userBoneInfo.humanName == humanBoneName) {
+        if (userBoneInfos.TryGetValue(boneTreeNode.boneName, out userBoneInfo) && userBoneInfo.humanName == humanBoneName)
+        {
             // this bone matches the human bone name being searched for
             return true;
         }
 
         // recursively check downward through children bones for target human bone
-        foreach (BoneTreeNode childNode in boneTreeNode.children) {
-            if (IsHumanBoneInHierarchy(childNode, humanBoneName)) {
+        foreach (BoneTreeNode childNode in boneTreeNode.children)
+        {
+            if (IsHumanBoneInHierarchy(childNode, humanBoneName))
+            {
                 return true;
             }
         }
@@ -1073,23 +1199,28 @@ class AvatarExporter : MonoBehaviour {
         return false;
     }
 
-    static string CheckHumanBoneMappingRule(AvatarRule avatarRule, string humanBoneName) {
+    static string CheckHumanBoneMappingRule(AvatarRule avatarRule, string humanBoneName)
+    {
         string userBoneName = "";
         // avatar rule fails if bone is not mapped in Humanoid
-        if (!humanoidToUserBoneMappings.TryGetValue(humanBoneName, out userBoneName)) {
+        if (!humanoidToUserBoneMappings.TryGetValue(humanBoneName, out userBoneName))
+        {
             failedAvatarRules.Add(avatarRule, "There is no " + humanBoneName +
                                               " bone mapped in Humanoid for the selected avatar.");
         }
         return userBoneName;
     }
 
-    static void CheckUserBoneDescendantOfHumanRule(AvatarRule avatarRule, string descendantUserBoneName, string descendantOfHumanName) {
-        if (string.IsNullOrEmpty(descendantUserBoneName)) {
+    static void CheckUserBoneDescendantOfHumanRule(AvatarRule avatarRule, string descendantUserBoneName, string descendantOfHumanName)
+    {
+        if (string.IsNullOrEmpty(descendantUserBoneName))
+        {
             return;
         }
 
         string descendantOfUserBoneName = "";
-        if (!humanoidToUserBoneMappings.TryGetValue(descendantOfHumanName, out descendantOfUserBoneName)) {
+        if (!humanoidToUserBoneMappings.TryGetValue(descendantOfHumanName, out descendantOfUserBoneName))
+        {
             return;
         }
 
@@ -1098,13 +1229,18 @@ class AvatarExporter : MonoBehaviour {
         string descendantHumanName = userBoneInfo.humanName;
         // iterate upward from user bone through user bone info parent names until root
         // is reached or the ancestor bone name matches the target descendant of name
-        while (userBoneName != "root") {
-            if (userBoneName == descendantOfUserBoneName) {
+        while (userBoneName != "root")
+        {
+            if (userBoneName == descendantOfUserBoneName)
+            {
                 return;
             }
-            if (userBoneInfos.TryGetValue(userBoneName, out userBoneInfo)) {
+            if (userBoneInfos.TryGetValue(userBoneName, out userBoneInfo))
+            {
                 userBoneName = userBoneInfo.parentName;
-            } else {
+            }
+            else
+            {
                 break;
             }
         }
@@ -1115,50 +1251,62 @@ class AvatarExporter : MonoBehaviour {
                                           descendantOfHumanName + " in Humanoid (" + descendantOfUserBoneName + ").");
     }
 
-    static void CheckAsymmetricalMappingRule(AvatarRule avatarRule, string[] mappingSuffixes, string appendage) {
+    static void CheckAsymmetricalMappingRule(AvatarRule avatarRule, string[] mappingSuffixes, string appendage)
+    {
         int leftCount = 0;
         int rightCount = 0;
         // add Left/Right to each mapping suffix to make Humanoid mapping names,
         // and count the number of bones mapped in Humanoid on each side
-        foreach (string mappingSuffix in mappingSuffixes) {
+        foreach (string mappingSuffix in mappingSuffixes)
+        {
             string leftMapping = "Left" + mappingSuffix;
             string rightMapping = "Right" + mappingSuffix;
-            if (humanoidToUserBoneMappings.ContainsKey(leftMapping)) {
+            if (humanoidToUserBoneMappings.ContainsKey(leftMapping))
+            {
                 ++leftCount;
             }
-            if (humanoidToUserBoneMappings.ContainsKey(rightMapping)) {
+            if (humanoidToUserBoneMappings.ContainsKey(rightMapping))
+            {
                 ++rightCount;
             }
         }
         // avatar rule fails if number of left appendage mappings doesn't match number of right appendage mappings
-        if (leftCount != rightCount) {
+        if (leftCount != rightCount)
+        {
             failedAvatarRules.Add(avatarRule, "The number of bones mapped in Humanoid for the left " + appendage + " (" +
                                               leftCount + ") does not match the number of bones mapped in Humanoid for the right " +
                                               appendage + " (" + rightCount + ").");
         }
     }
 
-    static string GetTextureDirectory(string basePath) {
+    static string GetTextureDirectory(string basePath)
+    {
         string textureDirectory = Path.GetDirectoryName(basePath) + "/" + TEXTURES_DIRECTORY;
         textureDirectory = textureDirectory.Replace("//", "/");
         return textureDirectory;
     }
 
-    static string SetTextureDependencies() {
+    static string SetTextureDependencies()
+    {
         string textureWarnings = "";
         textureDependencies.Clear();
 
         // build the list of all local asset paths for textures that Unity considers dependencies of the model
         // for any textures that have duplicate names, return a string of duplicate name warnings
         string[] dependencies = AssetDatabase.GetDependencies(assetPath);
-        foreach (string dependencyPath in dependencies) {
+        foreach (string dependencyPath in dependencies)
+        {
             UnityEngine.Object textureObject = AssetDatabase.LoadAssetAtPath(dependencyPath, typeof(Texture2D));
-            if (textureObject != null) {
+            if (textureObject != null)
+            {
                 string textureName = Path.GetFileName(dependencyPath);
-                if (textureDependencies.ContainsKey(textureName)) {
+                if (textureDependencies.ContainsKey(textureName))
+                {
                     textureWarnings += "There is more than one texture with the name " + textureName +
                                        " referenced in the selected avatar.\n\n";
-                } else {
+                }
+                else
+                {
                     textureDependencies.Add(textureName, dependencyPath);
                 }
             }
@@ -1167,13 +1315,18 @@ class AvatarExporter : MonoBehaviour {
         return textureWarnings;
     }
 
-    static bool CopyExternalTextures(string texturesDirectory) {
+    static bool CopyExternalTextures(string texturesDirectory)
+    {
         // copy the found dependency textures from the local asset folder to the textures folder in the target export project
-        foreach (var texture in textureDependencies) {
+        foreach (var texture in textureDependencies)
+        {
             string targetPath = texturesDirectory + "/" + texture.Key;
-            try {
+            try
+            {
                 File.Copy(texture.Value, targetPath, true);
-            } catch {
+            }
+            catch
+            {
                 EditorUtility.DisplayDialog("Error", "Failed to copy texture file " + texture.Value + " to " + targetPath +
                                             ". Please check the location and try again.", "Ok");
                 return false;
@@ -1182,20 +1335,25 @@ class AvatarExporter : MonoBehaviour {
         return true;
     }
 
-    static void StoreMaterialData(Material[] materials) {
+    static void StoreMaterialData(Material[] materials)
+    {
         // store each material's info in the materialDatas list to be written out later to the FST if it is a supported shader
-        foreach (Material material in materials) {
+        foreach (Material material in materials)
+        {
             string materialName = material.name;
             string shaderName = material.shader.name;
 
             // if this material isn't mapped externally then ignore it
-            if (!materialMappings.ContainsValue(materialName)) {
+            if (!materialMappings.ContainsValue(materialName))
+            {
                 continue;
             }
 
             // don't store any material data for unsupported shader types
-            if (Array.IndexOf(SUPPORTED_SHADERS, shaderName) == -1) {
-                if (!unsupportedShaderMaterials.Contains(materialName)) {
+            if (Array.IndexOf(SUPPORTED_SHADERS, shaderName) == -1)
+            {
+                if (!unsupportedShaderMaterials.Contains(materialName))
+                {
                     unsupportedShaderMaterials.Add(materialName);
                 }
                 continue;
@@ -1212,42 +1370,54 @@ class AvatarExporter : MonoBehaviour {
             materialData.emissiveMap = GetMaterialTexture(material, "_EmissionMap");
 
             // for specular setups we will treat the metallic value as the average of the specular RGB intensities
-            if (shaderName == STANDARD_SPECULAR_SHADER) {
+            if (shaderName == STANDARD_SPECULAR_SHADER)
+            {
                 Color specular = material.GetColor("_SpecColor");
                 materialData.metallic = (specular.r + specular.g + specular.b) / 3.0f;
-            } else {
+            }
+            else
+            {
                 materialData.metallic = material.GetFloat("_Metallic");
                 materialData.metallicMap = GetMaterialTexture(material, "_MetallicGlossMap");
             }
 
             // for non-roughness Standard shaders give a warning that is not the recommended Standard shader,
             // and invert smoothness for roughness
-            if (shaderName == STANDARD_SHADER || shaderName == STANDARD_SPECULAR_SHADER) {
-                if (!alternateStandardShaderMaterials.Contains(materialName)) {
+            if (shaderName == STANDARD_SHADER || shaderName == STANDARD_SPECULAR_SHADER)
+            {
+                if (!alternateStandardShaderMaterials.Contains(materialName))
+                {
                     alternateStandardShaderMaterials.Add(materialName);
                 }
                 materialData.roughness = 1.0f - materialData.roughness;
             }
 
             // store the material data under each fbx material name that it overrides from the material mapping
-            foreach (var materialMapping in materialMappings) {
+            foreach (var materialMapping in materialMappings)
+            {
                 string fbxMaterialName = materialMapping.Key;
                 string unityMaterialName = materialMapping.Value;
-                if (unityMaterialName == materialName && !materialDatas.ContainsKey(fbxMaterialName)) {
+                if (unityMaterialName == materialName && !materialDatas.ContainsKey(fbxMaterialName))
+                {
                     materialDatas.Add(fbxMaterialName, materialData);
                 }
             }
         }
     }
 
-    static string GetMaterialTexture(Material material, string textureProperty) {
+    static string GetMaterialTexture(Material material, string textureProperty)
+    {
         // ensure the texture property name exists in this material and return its texture directory path if so
-        if (material.HasProperty(textureProperty)) {
+        if (material.HasProperty(textureProperty))
+        {
             Texture texture = material.GetTexture(textureProperty);
-            if (texture) {
-                foreach (var textureDependency in textureDependencies) {
+            if (texture)
+            {
+                foreach (var textureDependency in textureDependencies)
+                {
                     string textureFile = textureDependency.Key;
-                    if (Path.GetFileNameWithoutExtension(textureFile) == texture.name) {
+                    if (Path.GetFileNameWithoutExtension(textureFile) == texture.name)
+                    {
                         return TEXTURES_DIRECTORY + "/" + textureFile;
                     }
                 }
@@ -1256,65 +1426,82 @@ class AvatarExporter : MonoBehaviour {
         return "";
     }
 
-    static void SetMaterialMappings() {
+    static void SetMaterialMappings()
+    {
         materialMappings.Clear();
 
         // store the mappings from fbx material name to the Unity Material name that overrides it using external fbx mapping
         var objectMap = modelImporter.GetExternalObjectMap();
-        foreach (var mapping in objectMap) {
+        foreach (var mapping in objectMap)
+        {
             var material = mapping.Value as UnityEngine.Material;
-            if (material != null) {
+            if (material != null)
+            {
                 materialMappings.Add(mapping.Key.name, material.name);
             }
         }
     }
 
-    static void AddMaterialWarnings() {
+    static void AddMaterialWarnings()
+    {
         string alternateStandardShaders = "";
         string unsupportedShaders = "";
         // combine all material names for each material warning into a comma-separated string
-        foreach (string materialName in alternateStandardShaderMaterials) {
-            if (!string.IsNullOrEmpty(alternateStandardShaders)) {
+        foreach (string materialName in alternateStandardShaderMaterials)
+        {
+            if (!string.IsNullOrEmpty(alternateStandardShaders))
+            {
                 alternateStandardShaders += ", ";
             }
             alternateStandardShaders += materialName;
         }
-        foreach (string materialName in unsupportedShaderMaterials) {
-            if (!string.IsNullOrEmpty(unsupportedShaders)) {
+        foreach (string materialName in unsupportedShaderMaterials)
+        {
+            if (!string.IsNullOrEmpty(unsupportedShaders))
+            {
                 unsupportedShaders += ", ";
             }
             unsupportedShaders += materialName;
         }
-        if (alternateStandardShaderMaterials.Count > 1) {
+        if (alternateStandardShaderMaterials.Count > 1)
+        {
             warnings += "The materials " + alternateStandardShaders + " are not using the " +
                         "recommended variation of the Standard shader. We recommend you change " +
                         "them to Standard (Roughness setup) shader for improved performance.\n\n";
-        } else if (alternateStandardShaderMaterials.Count == 1) {
+        }
+        else if (alternateStandardShaderMaterials.Count == 1)
+        {
             warnings += "The material " + alternateStandardShaders + " is not using the " +
                         "recommended variation of the Standard shader. We recommend you change " +
                         "it to Standard (Roughness setup) shader for improved performance.\n\n";
         }
-        if (unsupportedShaderMaterials.Count > 1) {
+        if (unsupportedShaderMaterials.Count > 1)
+        {
             warnings += "The materials " + unsupportedShaders + " are using an unsupported shader. " +
                         "We recommend you change them to a Standard shader type.\n\n";
-        } else if (unsupportedShaderMaterials.Count == 1) {
+        }
+        else if (unsupportedShaderMaterials.Count == 1)
+        {
             warnings += "The material " + unsupportedShaders + " is using an unsupported shader. " +
                         "We recommend you change it to a Standard shader type.\n\n";
         }
     }
 
-    static bool OpenPreviewScene() {
+    static bool OpenPreviewScene()
+    {
         // store the current scene setup to restore when closing the preview scene
         previousSceneSetup = EditorSceneManager.GetSceneManagerSetup();
 
         // if the user is currently in the Humanoid Avatar Configuration then inform them to close it first
-        if (EditorSceneManager.GetActiveScene().name == "Avatar Configuration" && previousSceneSetup.Length == 0) {
+        if (EditorSceneManager.GetActiveScene().name == "Avatar Configuration" && previousSceneSetup.Length == 0)
+        {
             EditorUtility.DisplayDialog("Error", "Please exit the Avatar Configuration before exporting.", "Ok");
             return false;
         }
 
         // see if the user wants to save their current scene before opening preview avatar scene in place of user's scene
-        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) {
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+        {
             return false;
         }
 
@@ -1329,7 +1516,8 @@ class AvatarExporter : MonoBehaviour {
         // store the camera pivot and rotation from the user's last scene to be restored later
         // replace the camera pivot and rotation to point at the preview avatar object in the -Z direction (facing front of it)
         var sceneView = SceneView.lastActiveSceneView;
-        if (sceneView != null) {
+        if (sceneView != null)
+        {
             previousScenePivot = sceneView.pivot;
             previousSceneRotation = sceneView.rotation;
             previousSceneSize = sceneView.size;
@@ -1343,7 +1531,8 @@ class AvatarExporter : MonoBehaviour {
         return true;
     }
 
-    static void ClosePreviewScene() {
+    static void ClosePreviewScene()
+    {
         // destroy the avatar and height reference game objects closing the scene
         DestroyImmediate(avatarPreviewObject);
         DestroyImmediate(heightReferenceObject);
@@ -1353,7 +1542,8 @@ class AvatarExporter : MonoBehaviour {
 
         // restore the camera pivot and rotation to the user's previous scene settings
         var sceneView = SceneView.lastActiveSceneView;
-        if (sceneView != null) {
+        if (sceneView != null)
+        {
             sceneView.pivot = previousScenePivot;
             sceneView.rotation = previousSceneRotation;
             sceneView.size = previousSceneSize;
@@ -1362,7 +1552,8 @@ class AvatarExporter : MonoBehaviour {
     }
 }
 
-class ExportProjectWindow : EditorWindow {
+class ExportProjectWindow : EditorWindow
+{
     const int WINDOW_WIDTH = 500;
     const int EXPORT_NEW_WINDOW_HEIGHT = 520;
     const int UPDATE_EXISTING_WINDOW_HEIGHT = 465;
@@ -1405,7 +1596,8 @@ class ExportProjectWindow : EditorWindow {
     OnCloseDelegate onCloseCallback;
 
     public void Init(string initialPath, string warnings, bool updateExisting, GameObject avatarObject,
-                     OnExportDelegate exportCallback, OnCloseDelegate closeCallback) {
+                     OnExportDelegate exportCallback, OnCloseDelegate closeCallback)
+    {
         updateExistingAvatar = updateExisting;
         float windowHeight = updateExistingAvatar ? UPDATE_EXISTING_WINDOW_HEIGHT : EXPORT_NEW_WINDOW_HEIGHT;
         minSize = new Vector2(WINDOW_WIDTH, windowHeight);
@@ -1413,7 +1605,7 @@ class ExportProjectWindow : EditorWindow {
         avatarPreviewObject = avatarObject;
         titleContent.text = updateExistingAvatar ? "Update Existing Avatar" : "Export New Avatar";
         initialProjectLocation = initialPath;
-        projectLocation = updateExistingAvatar ? "" : initialProjectLocation;
+        projectLocation = updateExistingAvatar ? (EditorPrefs.HasKey("OV_LAST_PROJECT_PATH") ? EditorPrefs.GetString("OV_LAST_PROJECT_PATH") : "") : initialProjectLocation;
         warningText = warnings;
         onExportCallback = exportCallback;
         onCloseCallback = closeCallback;
@@ -1422,7 +1614,8 @@ class ExportProjectWindow : EditorWindow {
 
         // if the avatar's starting height is outside of the recommended ranges, auto-adjust the scale to default height
         float height = AvatarUtilities.GetAvatarHeight(avatarPreviewObject);
-        if (height < MINIMUM_RECOMMENDED_HEIGHT || height > MAXIMUM_RECOMMENDED_HEIGHT) {
+        if (height < MINIMUM_RECOMMENDED_HEIGHT || height > MAXIMUM_RECOMMENDED_HEIGHT)
+        {
             float newScale = AvatarUtilities.DEFAULT_AVATAR_HEIGHT / height;
             SetAvatarScale(newScale);
             scaleWarningText = "Avatar's scale automatically adjusted to be within the recommended range.";
@@ -1431,7 +1624,8 @@ class ExportProjectWindow : EditorWindow {
         originalSliderScale = sliderScale;
     }
 
-    void OnGUI() {
+    void OnGUI()
+    {
         // define UI styles for all GUI elements to be created
         GUIStyle buttonStyle = new GUIStyle(GUI.skin.button);
         buttonStyle.fontSize = BUTTON_FONT_SIZE;
@@ -1458,11 +1652,14 @@ class ExportProjectWindow : EditorWindow {
 
         GUILayout.Space(10);
 
-        if (updateExistingAvatar) {
+        if (updateExistingAvatar)
+        {
             // Project file to update label and input text field
             GUILayout.Label("Project file to update:", labelStyle);
             projectLocation = GUILayout.TextField(projectLocation, textStyle);
-        } else {
+        }
+        else
+        {
             // Project name label and input text field
             GUILayout.Label("Export project name:", labelStyle);
             projectName = GUILayout.TextField(projectName, textStyle);
@@ -1475,17 +1672,22 @@ class ExportProjectWindow : EditorWindow {
         }
 
         // Browse button to open file/folder explorer and set project location
-        if (GUILayout.Button("Browse", buttonStyle)) {
+        if (GUILayout.Button("Browse", buttonStyle))
+        {
             string result = "";
-            if (updateExistingAvatar) {
+            if (updateExistingAvatar)
+            {
                 // open file explorer starting at overte projects folder in user documents and select target fst to update
                 string initialPath = string.IsNullOrEmpty(projectLocation) ? initialProjectLocation : projectLocation;
                 result = EditorUtility.OpenFilePanel("Select .fst to update", initialPath, "fst");
-            } else {
+            }
+            else
+            {
                 // open folder explorer starting at project location path and select folder to create project folder in
                 result = EditorUtility.OpenFolderPanel("Select export location", projectLocation, "");
             }
-            if (!string.IsNullOrEmpty(result)) { // file/folder selection not cancelled
+            if (!string.IsNullOrEmpty(result))
+            { // file/folder selection not cancelled
                 projectLocation = result.Replace('\\', '/');
             }
         }
@@ -1504,8 +1706,7 @@ class ExportProjectWindow : EditorWindow {
         GUIStyle scaleInputStyle = new GUIStyle(textStyle);
         scaleInputStyle.fixedWidth = SCALE_TEXT_WIDTH;
         actualScale *= 100.0f; // convert to 100-based percentage for display purposes
-        string actualScaleStr = GUILayout.TextField(String.Format("{0:0.00}", actualScale), scaleInputStyle);
-        actualScaleStr = Regex.Replace(actualScaleStr, @"[^0-9.]", "");
+        string actualScaleStr = GUILayout.TextField($"{actualScale}", scaleInputStyle);
         actualScale = float.Parse(actualScaleStr);
         actualScale /= 100.0f; // convert back to 1.0-based percentage
         SetAvatarScale(actualScale);
@@ -1515,7 +1716,8 @@ class ExportProjectWindow : EditorWindow {
         GUILayout.Space(15);
 
         // red error label text to display any file-related errors
-        if(errorText != EMPTY_ERROR_TEXT) {
+        if (errorText != EMPTY_ERROR_TEXT)
+        {
             GUILayout.Label("Error:", errorStyle);
             GUILayout.Label(errorText, errorStyle);
         }
@@ -1534,76 +1736,104 @@ class ExportProjectWindow : EditorWindow {
         // export button will verify target project folder can actually be created (or target fst file is valid)
         // before closing popup window and calling back to initiate the export
         bool export = false;
-        if (GUILayout.Button("Export", buttonStyle)) {
+        if (GUILayout.Button("Export", buttonStyle))
+        {
             export = true;
-            if (!CheckForErrors(true)) {
+            if (!CheckForErrors(true))
+            {
                 Close();
                 onExportCallback(updateExistingAvatar ? projectLocation : projectDirectory, projectName, actualScale);
             }
         }
 
         // cancel button closes the popup window triggering the close callback to close the preview scene
-        if (GUILayout.Button("Cancel", buttonStyle)) {
+        if (GUILayout.Button("Cancel", buttonStyle))
+        {
             Close();
         }
 
         // When a text field changes check for any errors if we didn't just check errors from clicking Export above
-        if (GUI.changed && !export) {
+        if (GUI.changed && !export)
+        {
             CheckForErrors(false);
         }
     }
 
-    bool CheckForErrors(bool exporting) {
+    bool CheckForErrors(bool exporting)
+    {
         errorText = EMPTY_ERROR_TEXT; // default to None if no errors found
-        if (updateExistingAvatar) {
+        if (updateExistingAvatar)
+        {
             // if any text is set in the project file to update field verify that the file actually exists
-            if (projectLocation.Length > 0) {
-                if (!File.Exists(projectLocation)) {
+            if (projectLocation.Length > 0)
+            {
+                if (!File.Exists(projectLocation))
+                {
                     errorText = "Please select a valid project file to update.\n";
                     return true;
                 }
-            } else if (exporting) {
+            }
+            else if (exporting)
+            {
                 errorText = "Please select a project file to update.\n";
                 return true;
             }
-        } else {
+        }
+        else
+        {
             projectDirectory = projectLocation + "/" + projectName + "/";
-            if (projectName.Length > 0) {
+            if (projectName.Length > 0)
+            {
                 // new project must have a unique folder name since the folder will be created for it
-                if (Directory.Exists(projectDirectory)) {
+                if (Directory.Exists(projectDirectory))
+                {
                     errorText = "A folder with the name " + projectName +
                                  " already exists at that location.\nPlease choose a different project name or location.";
                     return true;
                 }
             }
-            if (projectLocation.Length > 0) {
+            if (projectLocation.Length > 0)
+            {
                 // Check to ensure provided path is absolute, not relative.
-                if(SystemInfo.operatingSystemFamily == OperatingSystemFamily.Windows) {
-                    if (!Char.IsLetter(projectLocation[0]) || projectLocation.Length == 1 || projectLocation[1] != ':') {
+                if (SystemInfo.operatingSystemFamily == OperatingSystemFamily.Windows)
+                {
+                    if (!Char.IsLetter(projectLocation[0]) || projectLocation.Length == 1 || projectLocation[1] != ':')
+                    {
                         errorText = "Project location is invalid. Please choose a different project location.\n";
                         return true;
                     }
                 }
-                else {
-                    if (projectLocation[0] != '/') {
+                else
+                {
+                    if (projectLocation[0] != '/')
+                    {
                         errorText = "Project location is invalid. Please choose a different project location.\n";
                         return true;
                     }
                 }
             }
-            if (exporting) {
+            if (exporting)
+            {
                 // when exporting, project name and location must both be defined, and project location must
                 // be valid and accessible (we attempt to create the project folder at this time to verify this)
-                if (projectName.Length == 0) {
+                if (projectName.Length == 0)
+                {
                     errorText = "Please define a project name.\n";
                     return true;
-                } else if (projectLocation.Length == 0) {
+                }
+                else if (projectLocation.Length == 0)
+                {
                     errorText = "Please define a project location.\n";
                     return true;
-                } else {
-                    try {
+                }
+                else
+                {
+                    try
+                    {
                         Directory.CreateDirectory(projectDirectory);
-                    } catch {
+                    }
+                    catch
+                    {
                         errorText = "Project location is invalid. Please choose a different project location.\n";
                         return true;
                     }
@@ -1614,20 +1844,27 @@ class ExportProjectWindow : EditorWindow {
         return false;
     }
 
-    void UpdateScaleWarning() {
+    void UpdateScaleWarning()
+    {
         // called on any scale changes
         float height = AvatarUtilities.GetAvatarHeight(avatarPreviewObject);
-        if (height < MINIMUM_RECOMMENDED_HEIGHT) {
+        if (height < MINIMUM_RECOMMENDED_HEIGHT)
+        {
             scaleWarningText = "The height of the avatar is below the recommended minimum.";
-        } else if (height > MAXIMUM_RECOMMENDED_HEIGHT) {
+        }
+        else if (height > MAXIMUM_RECOMMENDED_HEIGHT)
+        {
             scaleWarningText = "The height of the avatar is above the recommended maximum.";
-        } else if (Mathf.Abs(originalSliderScale - sliderScale) > SLIDER_DIFFERENCE_REMOVE_TEXT) {
+        }
+        else if (Mathf.Abs(originalSliderScale - sliderScale) > SLIDER_DIFFERENCE_REMOVE_TEXT)
+        {
             // once moving slider beyond a small threshold, remove the automatically scaled text
             scaleWarningText = "";
         }
     }
 
-    void SetAvatarScale(float actualScale) {
+    void SetAvatarScale(float actualScale)
+    {
         // set the new scale uniformly on the preview avatar's transform to show the resulting avatar size
         avatarPreviewObject.transform.localScale = new Vector3(actualScale, actualScale, actualScale);
 
@@ -1637,37 +1874,54 @@ class ExportProjectWindow : EditorWindow {
         UpdateScaleWarning();
     }
 
-    float GetSliderScaleFromActualScale(float actualScale) {
+    float GetSliderScaleFromActualScale(float actualScale)
+    {
         // since actual scale is an exponent of slider scale with an offset, do the logarithm operation to convert it back
         return Mathf.Log(actualScale + ACTUAL_SCALE_OFFSET, SLIDER_SCALE_EXPONENT);
     }
 
-    void OnDestroy() {
+    void OnDestroy()
+    {
         onCloseCallback();
     }
 }
 
-class AvatarUtilities {
+class AvatarUtilities
+{
     public const float DEFAULT_AVATAR_HEIGHT = 1.755f;
 
-    public static Bounds GetAvatarBounds(GameObject avatarObject) {
+    public static Bounds GetAvatarBounds(GameObject avatarObject)
+    {
         Bounds bounds = new Bounds();
-        if (avatarObject != null) {
+        if (avatarObject != null)
+        {
             var meshRenderers = avatarObject.GetComponentsInChildren<MeshRenderer>();
             var skinnedMeshRenderers = avatarObject.GetComponentsInChildren<SkinnedMeshRenderer>();
-            foreach (var renderer in meshRenderers) {
+            foreach (var renderer in meshRenderers)
+            {
                 bounds.Encapsulate(renderer.bounds);
             }
-            foreach (var renderer in skinnedMeshRenderers) {
+            foreach (var renderer in skinnedMeshRenderers)
+            {
                 bounds.Encapsulate(renderer.bounds);
             }
         }
         return bounds;
     }
 
-    public static float GetAvatarHeight(GameObject avatarObject) {
+    public static float GetAvatarHeight(GameObject avatarObject)
+    {
         // height of an avatar model can be determined to be the max Y extents of the combined bounds for all its mesh renderers
         Bounds avatarBounds = GetAvatarBounds(avatarObject);
         return avatarBounds.max.y - avatarBounds.min.y;
     }
 }
+
+public static class ConverterExtensions
+{
+    //Helper function to convert floats to string without commas
+    public static string F(this float x) => x.ToString("G", CultureInfo.InvariantCulture);
+    public static string F(this double x) => x.ToString("G", CultureInfo.InvariantCulture);
+}
+
+#endif

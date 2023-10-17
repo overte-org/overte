@@ -4,9 +4,11 @@
 //
 //  Created by Ryan Huffman on 4/29/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_WindowScriptingInterface_h
@@ -17,10 +19,12 @@
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtQuick/QQuickItem>
-#include <QtScript/QScriptValue>
 #include <QtWidgets/QMessageBox>
 
 #include <DependencyManager.h>
+#include <Scriptable.h>
+#include <ScriptValue.h>
+
 
 /*@jsdoc
  * The <code>Window</code> API provides various facilities not covered elsewhere, including: window dimensions, window focus, 
@@ -46,7 +50,7 @@
  * @property {location} location - Provides facilities for working with your current directory services location.
  */
 
-class WindowScriptingInterface : public QObject, public Dependency {
+class WindowScriptingInterface : public QObject, protected Scriptable, public Dependency {
     Q_OBJECT
     Q_PROPERTY(int innerWidth READ getInnerWidth)
     Q_PROPERTY(int innerHeight READ getInnerHeight)
@@ -69,7 +73,7 @@ public slots:
      * @function Window.hasFocus
      * @returns {boolean} <code>true</code> if the Interface window has focus, <code>false</code> if it doesn't.
      */
-    QScriptValue hasFocus();
+    ScriptValue hasFocus();
 
     /*@jsdoc
      * Makes the Interface window have focus. On Windows, if Interface doesn't already have focus, the task bar icon flashes to 
@@ -104,7 +108,7 @@ public slots:
      * var answer = Window.confirm("Are you sure?");
      * print(answer);  // true or false
      */
-    QScriptValue confirm(const QString& message = "");
+    ScriptValue confirm(const QString& message = "");
 
     /*@jsdoc
      * Prompts the user to enter some text. Displays a modal dialog with a message and a text box, plus "OK" and "Cancel" 
@@ -121,7 +125,7 @@ public slots:
      *     print("User answer: " + answer);
      * }
      */
-    QScriptValue prompt(const QString& message, const QString& defaultText);
+    ScriptValue prompt(const QString& message, const QString& defaultText);
 
     /*@jsdoc
      * Prompts the user to enter some text. Displays a non-modal dialog with a message and a text box, plus "OK" and "Cancel" 
@@ -151,7 +155,7 @@ public slots:
      * var directory = Window.browseDir("Select Directory", Paths.resources);
      * print("Directory: " + directory);
      */
-    QScriptValue browseDir(const QString& title = "", const QString& directory = "");
+    ScriptValue browseDir(const QString& title = "", const QString& directory = "");
     
     /*@jsdoc
      * Prompts the user to choose a directory. Displays a non-modal dialog that navigates the directory tree. A
@@ -183,7 +187,7 @@ public slots:
      * var filename = Window.browse("Select Image File", Paths.resources, "Images (*.png *.jpg *.svg)");
      * print("File: " + filename);
      */
-    QScriptValue browse(const QString& title = "", const QString& directory = "",  const QString& nameFilter = "");
+    ScriptValue browse(const QString& title = "", const QString& directory = "",  const QString& nameFilter = "");
 
     /*@jsdoc
      * Prompts the user to choose a file. Displays a non-modal dialog that navigates the directory tree. A
@@ -219,7 +223,7 @@ public slots:
      * var filename = Window.save("Save to JSON file", Paths.resources, "*.json");
      * print("File: " + filename);
      */
-    QScriptValue save(const QString& title = "", const QString& directory = "",  const QString& nameFilter = "");
+    ScriptValue save(const QString& title = "", const QString& directory = "",  const QString& nameFilter = "");
 
     /*@jsdoc
      * Prompts the user to specify the path and name of a file to save to. Displays a non-modal dialog that navigates the
@@ -254,7 +258,7 @@ public slots:
      * var asset = Window.browseAssets("Select FBX File", "/", "*.fbx");
      * print("FBX file: " + asset);
      */
-    QScriptValue browseAssets(const QString& title = "", const QString& directory = "", const QString& nameFilter = "");
+    ScriptValue browseAssets(const QString& title = "", const QString& directory = "", const QString& nameFilter = "");
 
     /*@jsdoc
      * Prompts the user to choose an Asset Server item. Displays a non-modal dialog that navigates the tree of assets on the 

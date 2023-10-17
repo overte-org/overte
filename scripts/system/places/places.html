@@ -425,6 +425,9 @@
                                         if (placeRecords[i].metaverseRegion !== "local") {
                                             placeUrl = "hifi://" + placeRecords[i].address;
                                         }
+                                        if (placeRecords[i].name === "tutorial") {
+                                            placeUrl = "file:///~/serverless/tutorial.json";
+                                        }
 
                                         //Add the place to the list
 
@@ -432,7 +435,7 @@
                                         formatedList = formatedList + "<table class='placeTable'>";
                                         formatedList = formatedList + "    <tr valign = 'top'>";
                                         formatedList = formatedList + "        <td width='2%'></td>";                                
-                                        formatedList = formatedList + "        <td align='left' width='75%' onclick='teleport(" + '"' + placeRecords[i].id + '"' + ", " + '"' + placeUrl + '"' + "); return false;'><a class= 'placeTitle' href='javascript:void(0)' onclick='teleport(" + '"' + placeRecords[i].id + '"' + ", " + '"' + placeRecords[i].address + '"' + "); return false;'>" + placeRecords[i].name + "</a></td>";
+                                        formatedList = formatedList + "        <td align='left' width='75%' onclick='teleport(" + '"' + placeRecords[i].id + '"' + ", " + '"' + placeUrl + '"' + "); return false;'><a class= 'placeTitle' href='javascript:void(0)' onclick='teleport(" + '"' + placeRecords[i].id + '"' + ", " + '"' + placeUrl + '"' + "); return false;'>" + placeRecords[i].name + "</a></td>";
                                         if (placeRecords[i].category !== "Z") {
                                             formatedList = formatedList + "        <td align='right' ><span style='padding: 0%; cursor: pointer;' onclick='openDetail(" + '"' + placeRecords[i].id + '"' + ")'><img src='icons/info.png' width='26' height='26' draggable='false'></span></td>";
                                         }
@@ -486,7 +489,7 @@
                     "channel": channel,
                     "action": "GO_HOME"
                     };
-                EventBridge.emitWebEvent(JSON.stringify(message));            
+                EventBridge.emitWebEvent(JSON.stringify(message));
             }
 
             function goBack() {
@@ -494,7 +497,7 @@
                     "channel": channel,
                     "action": "GO_BACK"
                     };
-                EventBridge.emitWebEvent(JSON.stringify(message));             
+                EventBridge.emitWebEvent(JSON.stringify(message));
             }
 
             function goForward() {
@@ -502,7 +505,7 @@
                     "channel": channel,
                     "action": "GO_FORWARD"
                     };
-                EventBridge.emitWebEvent(JSON.stringify(message));             
+                EventBridge.emitWebEvent(JSON.stringify(message));
             }
 
             function pinMetaverse(metaverseIndex, pinned) {
@@ -569,8 +572,8 @@
                     } else {
                         externalFilter = true;
                         document.getElementById("extPlacesFilter").className = "externalFilterOn";
-                    }                
-                }                
+                    }
+                }
 
                 loadRecordsUpTo = NUMBER_OF_RECORDS_PER_LOAD;
                 generateContent();
@@ -627,13 +630,13 @@
                     document.getElementById("maturityEveryone").className = "filterOff";
                 } else {
                     document.getElementById("maturityEveryone").className = "everyoneFilterOn";
-                }                
+                }
 
                 if (maturityFilter.indexOf("unrated") === -1) {
                     document.getElementById("maturityUnrated").className = "filterOff";
                 } else {
                     document.getElementById("maturityUnrated").className = "unratedFilterOn";
-                }                
+                }
             }
 
             function displaySearchFieldsFilter() {
@@ -669,9 +672,16 @@
                 generateContent();
             }
 
+            document.addEventListener("keyup", function(event) {
+                if (event.keyCode === 13) {
+                    teleportUsingAddressBarValue(document.getElementById("search").value);
+                }
+            });
+
             function teleportUsingAddressBarValue(url) {
                 var finalizedUrl = url;
-                if (url.substr(0, 7).toLocaleLowerCase() !== "http://" && 
+                if (url.substr(0, 6).toLocaleLowerCase() !== "file:/" && 
+                    url.substr(0, 7).toLocaleLowerCase() !== "http://" && 
                     url.substr(0, 8).toLocaleLowerCase() !== "https://" && 
                     url.substr(0, 7).toLocaleLowerCase() !== "hifi://") {
                         finalizedUrl = "hifi://" + url;

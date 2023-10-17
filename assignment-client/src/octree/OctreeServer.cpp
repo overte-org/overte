@@ -1023,6 +1023,8 @@ void OctreeServer::readConfiguration() {
 
     const QJsonObject& settingsObject = DependencyManager::get<NodeList>()->getDomainHandler().getSettingsObject();
 
+    commonParseSettingsObject(settingsObject);
+
     QString settingsKey = getMyDomainSettingsKey();
     QJsonObject settingsSectionObject = settingsObject[settingsKey].toObject();
     _settings = settingsSectionObject; // keep this for later

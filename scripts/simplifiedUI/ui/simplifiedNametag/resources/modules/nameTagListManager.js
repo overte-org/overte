@@ -3,9 +3,11 @@
 //  nameTagListManager.js
 //  Created by Milad Nazeri on 2019-03-09
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 //  Helps manage the list of avatars added to the nametag list
 //
@@ -148,8 +150,9 @@ function getAvatarData(uuid) {
     var avatarInfo = avatar.avatarInfo;
 
     var newAvatarInfo = AvatarManager.getAvatar(uuid);
+
     // Save the username so it doesn't get overwritten when grabbing new avatarData
-    var combinedAvatarInfo = Object.assign({}, newAvatarInfo, {
+    var combinedAvatarInfo = Object.assign({}, {avatarData: newAvatarInfo}, {
         username: avatarInfo === null ? null : avatarInfo.username
     });
 
@@ -168,7 +171,7 @@ function getDistance(uuid, checkAvatar, shouldSave) {
     var avatar = _this.avatars[uuid];
     var avatarInfo = avatar.avatarInfo;
 
-    var target = avatarInfo.position;
+    var target = avatarInfo.avatarData.position;
 
     var currentDistance = Vec3.distance(target, eye);
 
@@ -304,7 +307,7 @@ function getCorrectName(uuid) {
     var avatar = _this.avatars[uuid];
     var avatarInfo = avatar.avatarInfo;
 
-    var displayNameToUse = avatarInfo.displayName.trim();
+    var displayNameToUse = avatarInfo.avatarData.displayName.trim();
 
     if (displayNameToUse === "") {
         displayNameToUse = "anonymous";

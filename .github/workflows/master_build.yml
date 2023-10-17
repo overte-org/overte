@@ -24,6 +24,8 @@ env:
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
+  CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
+  CMAKE_BACKTRACE_TOKEN: master_${{ github.event.number }}_${{ github.sha }}
 
   # OSX-specific variables
   DEVELOPER_DIR: /Applications/Xcode_11.2.app/Contents/Developer
@@ -41,8 +43,8 @@ jobs:
         include:
           - os: windows-2019
             build_type: full
-          - os: macOS-10.15
-            build_type: full
+          #- os: macOS-10.15
+          #  build_type: full
           - os: ubuntu-20.04
             build_type: full
             apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion3 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-github python3-distro
@@ -109,11 +111,15 @@ jobs:
           echo "CLIENT_ONLY=TRUE" >> $GITHUB_ENV
           echo "INSTALLER=Overte-Interface-master$BUILD_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
-    - name: Clear working directory
-      if: startsWith(matrix.os, 'windows')
+
+    - name: Clear Working Directories
+      if: contains(matrix.runner, 'linux_aarch64')
       shell: bash
-      working-directory: ${{runner.workspace}}
-      run: rm -rf ./*
+      run: |
+        rm -rf ./*
+        rm -rf ~/overte-files
+        rm -rf ~/.cache
+
     - uses: actions/checkout@v1
       with:
         submodules: false
@@ -273,3 +279,11 @@ jobs:
     #  with:
     #    name: symbols
     #    path: ${{runner.workspace}}/${{ steps.buildenv1.outputs.symbols_archive }}
+
+    - name: Clear Working Directories
+      if: contains(matrix.runner, 'linux_aarch64')
+      shell: bash
+      run: |
+        rm -rf ./*
+        rm -rf ~/overte-files
+        rm -rf ~/.cache

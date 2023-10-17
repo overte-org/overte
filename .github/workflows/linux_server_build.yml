@@ -19,6 +19,8 @@ env:
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
+  CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
+  CMAKE_BACKTRACE_TOKEN: server_${{ github.event.number }}_${{ github.sha }}
 
 jobs:
   build:
@@ -29,57 +31,67 @@ jobs:
       matrix:
         include:
           - os: debian-11
-            image: docker.io/overte/overte-server-build:0.1.2-debian-11-amd64
+            image: docker.io/overte/overte-server-build:0.1.3-debian-11-amd64
             arch: amd64
             runner: ubuntu-latest
 
           - os: debian-11
-            image: docker.io/overte/overte-server-build:0.1.2-debian-11-aarch64
+            image: docker.io/overte/overte-server-build:0.1.3-debian-11-aarch64
+            arch: aarch64
+            runner: linux_aarch64
+
+          - os: debian-12
+            image: docker.io/overte/overte-server-build:0.1.3-debian-12-amd64
+            arch: amd64
+            runner: ubuntu-latest
+
+          - os: debian-12
+            image: docker.io/overte/overte-server-build:0.1.3-debian-12-aarch64
             arch: aarch64
             runner: linux_aarch64
 
           - os: ubuntu-18.04
-            image: docker.io/overte/overte-server-build:0.1.1-ubuntu-18.04-amd64
+            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-18.04-amd64
             arch: amd64
             runner: ubuntu-latest
 
           - os: ubuntu-20.04
-            image: docker.io/overte/overte-server-build:0.1.1-ubuntu-20.04-amd64
+            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-20.04-amd64
             arch: amd64
             runner: ubuntu-latest
 
           - os: ubuntu-22.04
-            image: docker.io/overte/overte-server-build:0.1.1-ubuntu-22.04-amd64
+            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-22.04-amd64
             arch: amd64
             runner: ubuntu-latest
 
           - os: ubuntu-22.04
-            image: docker.io/overte/overte-server-build:0.1.1-ubuntu-22.04-aarch64
-            arch: aarch64
-            runner: linux_aarch64
-
-          - os: fedora-36
-            image: docker.io/overte/overte-server-build:0.1.2-fedora-36-amd64
-            arch: amd64
-            runner: ubuntu-latest
-
-          - os: fedora-36
-            image: docker.io/overte/overte-server-build:0.1.2-fedora-36-aarch64
+            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-22.04-aarch64
             arch: aarch64
             runner: linux_aarch64
 
           - os: fedora-37
-            image: docker.io/overte/overte-server-build:0.1.2-fedora-37-amd64
+            image: docker.io/overte/overte-server-build:0.1.3-fedora-37-amd64
             arch: amd64
             runner: ubuntu-latest
 
           - os: fedora-37
-            image: docker.io/overte/overte-server-build:0.1.2-fedora-37-aarch64
+            image: docker.io/overte/overte-server-build:0.1.3-fedora-37-aarch64
+            arch: aarch64
+            runner: linux_aarch64
+
+          - os: fedora-38
+            image: docker.io/overte/overte-server-build:0.1.3-fedora-38-amd64
+            arch: amd64
+            runner: ubuntu-latest
+
+          - os: fedora-38
+            image: docker.io/overte/overte-server-build:0.1.3-fedora-38-aarch64
             arch: aarch64
             runner: linux_aarch64
 
           - os: rockylinux-9
-            image: docker.io/overte/overte-server-build:0.1.2-rockylinux-9-amd64
+            image: docker.io/overte/overte-server-build:0.1.3-rockylinux-9-amd64
             arch: amd64
             runner: ubuntu-latest
 
@@ -89,6 +101,14 @@ jobs:
     container: ${{matrix.image}}
 
     steps:
+    - name: Clear Working Directories
+      if: contains(matrix.runner, 'linux_aarch64')
+      shell: bash
+      run: |
+        rm -rf ./*
+        rm -rf ~/overte-files
+        rm -rf ~/.cache
+
     - name: Configure Build Environment 1
       shell: bash
       run: |
@@ -177,10 +197,10 @@ jobs:
         else  # RPM
           if [ "${{ matrix.os }}" == "rockylinux-9" ]; then
             echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.el9.$INSTALLER_EXT" >> $GITHUB_ENV
-          elif [ "${{ matrix.os }}" == "fedora-36" ]; then
-            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc36.$INSTALLER_EXT" >> $GITHUB_ENV
           elif [ "${{ matrix.os }}" == "fedora-37" ]; then
             echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc37.$INSTALLER_EXT" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "fedora-38" ]; then
+            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc38.$INSTALLER_EXT" >> $GITHUB_ENV
           else
             echo "Error! ARTIFACT_PATTERN not set!"
             exit 1  # Fail
@@ -200,7 +220,14 @@ jobs:
     - name: Configure CMake
       working-directory: build
       shell: bash
-      run: cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release $CMAKE_EXTRA
+      run: |
+        if [ -z "$CMAKE_BACKTRACE_URL" ] ; then
+          # We're building a PR, default to the PR endpoint
+          export CMAKE_BACKTRACE_URL="https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
+          export CMAKE_BACKTRACE_TOKEN="server_pr_${{ github.event.number }}_${{ github.sha }}"
+        fi
+
+        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release $CMAKE_EXTRA
 
     - name: Compress cmake logs
       if: always()
@@ -267,3 +294,11 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.s3_access_key_id }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.s3_secret_access_key }}
       run: python3 $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
+
+    - name: Clear Working Directories
+      if: contains(matrix.runner, 'linux_aarch64')
+      shell: bash
+      run: |
+        rm -rf ./*
+        rm -rf ~/overte-files
+        rm -rf ~/.cache

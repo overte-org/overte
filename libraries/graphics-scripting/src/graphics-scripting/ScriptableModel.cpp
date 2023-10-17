@@ -3,14 +3,16 @@
 //  libraries/graphics-scripting
 //
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "ScriptableModel.h"
 
-#include <QtScript/QScriptEngine>
+#include <ScriptValue.h>
 
 #include "GraphicsScriptingUtil.h"
 #include "ScriptableMesh.h"
@@ -262,7 +264,7 @@ scriptable::ScriptableMeshes scriptable::ScriptableModel::getMeshes() {
 }
 
 #if 0
-glm::uint32 scriptable::ScriptableModel::forEachVertexAttribute(QScriptValue callback) {
+glm::uint32 scriptable::ScriptableModel::forEachVertexAttribute(const ScriptValue& callback) {
     glm::uint32 result = 0;
     scriptable::ScriptableMeshes in = getMeshes();
     if (in.size()) {

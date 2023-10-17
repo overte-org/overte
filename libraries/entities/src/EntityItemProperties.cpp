@@ -5,10 +5,11 @@
 //  Created by Brad Hefta-Gaub on 12/4/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "EntityItemProperties.h"
@@ -31,6 +32,7 @@
 #include <RegisteredMetaTypes.h>
 #include <Extents.h>
 #include <VariantMapToScriptValue.h>
+#include <ScriptValue.h>
 
 #include "EntitiesLogging.h"
 #include "EntityItem.h"
@@ -484,20 +486,6 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_SCRIPT_TIMESTAMP, scriptTimestamp);
     CHECK_PROPERTY_CHANGE(PROP_SERVER_SCRIPTS, serverScripts);
 
-    // Certifiable Properties
-    CHECK_PROPERTY_CHANGE(PROP_ITEM_NAME, itemName);
-    CHECK_PROPERTY_CHANGE(PROP_ITEM_DESCRIPTION, itemDescription);
-    CHECK_PROPERTY_CHANGE(PROP_ITEM_CATEGORIES, itemCategories);
-    CHECK_PROPERTY_CHANGE(PROP_ITEM_ARTIST, itemArtist);
-    CHECK_PROPERTY_CHANGE(PROP_ITEM_LICENSE, itemLicense);
-    CHECK_PROPERTY_CHANGE(PROP_LIMITED_RUN, limitedRun);
-    CHECK_PROPERTY_CHANGE(PROP_MARKETPLACE_ID, marketplaceID);
-    CHECK_PROPERTY_CHANGE(PROP_EDITION_NUMBER, editionNumber);
-    CHECK_PROPERTY_CHANGE(PROP_ENTITY_INSTANCE_NUMBER, entityInstanceNumber);
-    CHECK_PROPERTY_CHANGE(PROP_CERTIFICATE_ID, certificateID);
-    CHECK_PROPERTY_CHANGE(PROP_CERTIFICATE_TYPE, certificateType);
-    CHECK_PROPERTY_CHANGE(PROP_STATIC_CERTIFICATE_VERSION, staticCertificateVersion);
-
     // Location data for scripts
     CHECK_PROPERTY_CHANGE(PROP_LOCAL_POSITION, localPosition);
     CHECK_PROPERTY_CHANGE(PROP_LOCAL_ROTATION, localRotation);
@@ -837,23 +825,6 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *
  * @property {Entities.Grab} grab - The entity's grab-related properties.
  *
- * @property {string} itemName="" - Certifiable name of the Marketplace item.
- * @property {string} itemDescription="" - Certifiable description of the Marketplace item.
- * @property {string} itemCategories="" - Certifiable category of the Marketplace item.
- * @property {string} itemArtist="" - Certifiable artist that created the Marketplace item.
- * @property {string} itemLicense="" - Certifiable license URL for the Marketplace item.
- * @property {number} limitedRun=4294967295 - Certifiable maximum integer number of editions (copies) of the Marketplace item
- *     allowed to be sold.
- * @property {number} editionNumber=0 - Certifiable integer edition (copy) number or the Marketplace item. Each copy sold in
- *     the Marketplace is numbered sequentially, starting at 1.
- * @property {number} entityInstanceNumber=0 - Certifiable integer instance number for identical entities in a Marketplace
- *     item. A Marketplace item may have multiple, identical parts. If so, then each is numbered sequentially with an instance
- *     number.
- * @property {string} marketplaceID="" - Certifiable UUID for the Marketplace item, as used in the URL of the item's download
- *     and its Marketplace Web page.
- * @property {string} certificateID="" - Hash of the entity's static certificate JSON, signed by the artist's private key.
- * @property {number} staticCertificateVersion=0 - The version of the method used to generate the <code>certificateID</code>.
- *
  * @comment The different entity types have additional properties as follows:
  * @see {@link Entities.EntityProperties-Box|EntityProperties-Box}
  * @see {@link Entities.EntityProperties-Gizmo|EntityProperties-Gizmo}
@@ -1074,7 +1045,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     type: "Model",
  *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.75, z: -2 })),
  *     rotation: MyAvatar.orientation,
- *     modelURL: "https://apidocs.vircadia.dev/models/cowboy-hat.fbx",
+ *     modelURL: "https://apidocs.overte.org/examples/cowboy-hat.fbx",
  *     dimensions: { x: 0.8569, y: 0.3960, z: 1.0744 },
  *     lifetime: 300  // Delete after 5 minutes.
  * });
@@ -1189,7 +1160,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     speedSpread: 0.01,
  *     emitAcceleration: { x: 0, y: 0.02, z: 0 },
  *     polarFinish: Math.PI,
- *     textures: "https://content.vircadia.com/eu-c-1/vircadia-assets/interface/default/default_particle.png",
+ *     textures: "https://content.overte.org/Bazaar/Assets/Textures/Defaults/Interface/default_particle.png",
  *     particleRadius: 0.1,
  *     color: { red: 0, green: 255, blue: 0 },
  *     alphaFinish: 0,
@@ -1575,40 +1546,41 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @property {Entities.RingGizmo} ring - The ring gizmo properties.
  */
 
-QScriptValue EntityItemProperties::copyToScriptValue(QScriptEngine* engine, bool skipDefaults, bool allowUnknownCreateTime,
-    bool strictSemantics, EntityPsuedoPropertyFlags psueudoPropertyFlags) const {
+ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool skipDefaults, bool allowUnknownCreateTime,
+    bool strictSemantics,
+                                                    EntityPseudoPropertyFlags pseudoPropertyFlags) const {
 
     // If strictSemantics is true and skipDefaults is false, then all and only those properties are copied for which the property flag
     // is included in _desiredProperties, or is one of the specially enumerated ALWAYS properties below.
     // (There may be exceptions, but if so, they are bugs.)
     // In all other cases, you are welcome to inspect the code and try to figure out what was intended. I wish you luck. -HRS 1/18/17
-    QScriptValue properties = engine->newObject();
+    ScriptValue properties = engine->newObject();
     EntityItemProperties defaultEntityProperties;
 
-    const bool psuedoPropertyFlagsActive = psueudoPropertyFlags.test(EntityPsuedoPropertyFlag::FlagsActive);
-    // Fix to skip the default return all mechanism, when psuedoPropertyFlagsActive
-    const bool psuedoPropertyFlagsButDesiredEmpty = psuedoPropertyFlagsActive && _desiredProperties.isEmpty();
+    const bool pseudoPropertyFlagsActive = pseudoPropertyFlags.test(EntityPseudoPropertyFlag::FlagsActive);
+    // Fix to skip the default return all mechanism, when pseudoPropertyFlagsActive
+    const bool pseudoPropertyFlagsButDesiredEmpty = pseudoPropertyFlagsActive && _desiredProperties.isEmpty();
 
     if (_created == UNKNOWN_CREATED_TIME && !allowUnknownCreateTime) {
         // No entity properties can have been set so return without setting any default, zero property values.
         return properties;
     }
 
-    if (_idSet && (!psuedoPropertyFlagsActive || psueudoPropertyFlags.test(EntityPsuedoPropertyFlag::ID))) {
+    if (_idSet && (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::ID))) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_ALWAYS(id, _id.toString());
     }
-    if (!psuedoPropertyFlagsActive || psueudoPropertyFlags.test(EntityPsuedoPropertyFlag::Type)) {
+    if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::Type)) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_ALWAYS(type, EntityTypes::getEntityTypeName(_type));
     }
     if ((!skipDefaults || _lifetime != defaultEntityProperties._lifetime) && !strictSemantics) {
-        if (!psuedoPropertyFlagsActive || psueudoPropertyFlags.test(EntityPsuedoPropertyFlag::Age)) {
+        if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::Age)) {
             COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_NO_SKIP(age, getAge()); // gettable, but not settable
         }
-        if (!psuedoPropertyFlagsActive || psueudoPropertyFlags.test(EntityPsuedoPropertyFlag::AgeAsText)) {
+        if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::AgeAsText)) {
             COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_NO_SKIP(ageAsText, formatSecondsElapsed(getAge())); // gettable, but not settable
         }
     }
-    if (!psuedoPropertyFlagsActive || psueudoPropertyFlags.test(EntityPsuedoPropertyFlag::LastEdited)) {
+    if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::LastEdited)) {
         properties.setProperty("lastEdited", convertScriptValue(engine, _lastEdited));
     }
     if (!skipDefaults) {
@@ -1677,20 +1649,6 @@ QScriptValue EntityItemProperties::copyToScriptValue(QScriptEngine* engine, bool
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SCRIPT, script);
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SCRIPT_TIMESTAMP, scriptTimestamp);
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SERVER_SCRIPTS, serverScripts);
-
-    // Certifiable Properties
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ITEM_NAME, itemName);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ITEM_DESCRIPTION, itemDescription);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ITEM_CATEGORIES, itemCategories);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ITEM_ARTIST, itemArtist);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ITEM_LICENSE, itemLicense);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_LIMITED_RUN, limitedRun);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MARKETPLACE_ID, marketplaceID);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_EDITION_NUMBER, editionNumber);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ENTITY_INSTANCE_NUMBER, entityInstanceNumber);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_CERTIFICATE_ID, certificateID);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_CERTIFICATE_TYPE, certificateType);
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_STATIC_CERTIFICATE_VERSION, staticCertificateVersion);
 
     // Local props for scripts
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_LOCAL_POSITION, localPosition);
@@ -1766,7 +1724,7 @@ QScriptValue EntityItemProperties::copyToScriptValue(QScriptEngine* engine, bool
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_GROUP_CULLED, groupCulled);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_BLENDSHAPE_COEFFICIENTS, blendshapeCoefficients);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_USE_ORIGINAL_PIVOT, useOriginalPivot);
-        if (!psuedoPropertyFlagsButDesiredEmpty) {
+        if (!pseudoPropertyFlagsButDesiredEmpty) {
             _animation.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
         }
     }
@@ -1823,7 +1781,7 @@ QScriptValue EntityItemProperties::copyToScriptValue(QScriptEngine* engine, bool
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_SHAPE_TYPE, shapeType, getShapeTypeAsString());
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
 
-        if (!psuedoPropertyFlagsButDesiredEmpty) {
+        if (!pseudoPropertyFlagsButDesiredEmpty) {
             _keyLight.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
             _ambientLight.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
             _skybox.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
@@ -1924,9 +1882,9 @@ QScriptValue EntityItemProperties::copyToScriptValue(QScriptEngine* engine, bool
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SUB_IMAGE, subImage);
 
         // Handle conversions to old 'textures' property from "imageURL"
-        if (((!psuedoPropertyFlagsButDesiredEmpty && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(PROP_IMAGE_URL)) &&
+        if (((!pseudoPropertyFlagsButDesiredEmpty && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(PROP_IMAGE_URL)) &&
                 (!skipDefaults || defaultEntityProperties._imageURL != _imageURL)) {
-            QScriptValue textures = engine->newObject();
+            ScriptValue textures = engine->newObject();
             textures.setProperty("tex.picture", _imageURL);
             properties.setProperty("textures", textures);
         }
@@ -1958,14 +1916,14 @@ QScriptValue EntityItemProperties::copyToScriptValue(QScriptEngine* engine, bool
      * @property {Vec3} dimensions - The dimensions of the AA box.
      */
     if (!skipDefaults && !strictSemantics &&
-        (!psuedoPropertyFlagsActive || psueudoPropertyFlags.test(EntityPsuedoPropertyFlag::BoundingBox))) {
+        (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::BoundingBox))) {
 
         AABox aaBox = getAABox();
-        QScriptValue boundingBox = engine->newObject();
-        QScriptValue bottomRightNear = vec3ToScriptValue(engine, aaBox.getCorner());
-        QScriptValue topFarLeft = vec3ToScriptValue(engine, aaBox.calcTopFarLeft());
-        QScriptValue center = vec3ToScriptValue(engine, aaBox.calcCenter());
-        QScriptValue boundingBoxDimensions = vec3ToScriptValue(engine, aaBox.getDimensions());
+        ScriptValue boundingBox = engine->newObject();
+        ScriptValue bottomRightNear = vec3ToScriptValue(engine, aaBox.getCorner());
+        ScriptValue topFarLeft = vec3ToScriptValue(engine, aaBox.calcTopFarLeft());
+        ScriptValue center = vec3ToScriptValue(engine, aaBox.calcCenter());
+        ScriptValue boundingBoxDimensions = vec3ToScriptValue(engine, aaBox.getDimensions());
         boundingBox.setProperty("brn", bottomRightNear);
         boundingBox.setProperty("tfl", topFarLeft);
         boundingBox.setProperty("center", center);
@@ -1974,15 +1932,15 @@ QScriptValue EntityItemProperties::copyToScriptValue(QScriptEngine* engine, bool
     }
 
     QString textureNamesStr = QJsonDocument::fromVariant(_textureNames).toJson();
-    if (!skipDefaults && !strictSemantics && (!psuedoPropertyFlagsActive || psueudoPropertyFlags.test(EntityPsuedoPropertyFlag::OriginalTextures))) {
+    if (!skipDefaults && !strictSemantics && (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::OriginalTextures))) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_NO_SKIP(originalTextures, textureNamesStr); // gettable, but not settable
     }
 
     // Rendering info
     if (!skipDefaults && !strictSemantics &&
-        (!psuedoPropertyFlagsActive || psueudoPropertyFlags.test(EntityPsuedoPropertyFlag::RenderInfo))) {
+        (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::RenderInfo))) {
 
-        QScriptValue renderInfo = engine->newObject();
+        ScriptValue renderInfo = engine->newObject();
 
         /*@jsdoc
          * Information on how an entity is rendered. Properties are only filled in for <code>Model</code> entities; other
@@ -2007,28 +1965,36 @@ QScriptValue EntityItemProperties::copyToScriptValue(QScriptEngine* engine, bool
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_NO_SKIP(renderInfo, renderInfo);  // Gettable but not settable
     }
 
-    if (!psuedoPropertyFlagsActive || psueudoPropertyFlags.test(EntityPsuedoPropertyFlag::ClientOnly)) {
+    if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::ClientOnly)) {
         properties.setProperty("clientOnly", convertScriptValue(engine, getEntityHostType() == entity::HostType::AVATAR));
     }
-    if (!psuedoPropertyFlagsActive || psueudoPropertyFlags.test(EntityPsuedoPropertyFlag::AvatarEntity)) {
+    if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::AvatarEntity)) {
         properties.setProperty("avatarEntity", convertScriptValue(engine, getEntityHostType() == entity::HostType::AVATAR));
     }
-    if (!psuedoPropertyFlagsActive || psueudoPropertyFlags.test(EntityPsuedoPropertyFlag::LocalEntity)) {
+    if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::LocalEntity)) {
         properties.setProperty("localEntity", convertScriptValue(engine, getEntityHostType() == entity::HostType::LOCAL));
     }
 
-    if (_type != EntityTypes::PolyLine && (!psuedoPropertyFlagsActive || psueudoPropertyFlags.test(EntityPsuedoPropertyFlag::FaceCamera))) {
+    if (_type != EntityTypes::PolyLine && (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::FaceCamera))) {
         properties.setProperty("faceCamera", convertScriptValue(engine, getBillboardMode() == BillboardMode::YAW));
     }
-    if (!psuedoPropertyFlagsActive || psueudoPropertyFlags.test(EntityPsuedoPropertyFlag::IsFacingAvatar)) {
+    if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::IsFacingAvatar)) {
         properties.setProperty("isFacingAvatar", convertScriptValue(engine, getBillboardMode() == BillboardMode::FULL));
     }
 
     return properties;
 }
 
-void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool honorReadOnly) {
-    QScriptValue typeScriptValue = object.property("type");
+void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool honorReadOnly) {
+    //qDebug() << "EntityItemProperties::copyFromScriptValue: properties: " << object.getPropertyNames();
+    QList<QString> namesList = object.getPropertyNames();
+
+    QSet<QString> namesSet;
+    for (auto name = namesList.cbegin(); name != namesList.cend(); name++) {
+        namesSet.insert(*name);
+    }
+
+    ScriptValue typeScriptValue = object.property("type");
     if (typeScriptValue.isValid()) {
         setType(typeScriptValue.toVariant().toString());
     }
@@ -2065,7 +2031,7 @@ void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool 
     COPY_PROPERTY_FROM_QSCRIPTVALUE(ignorePickIntersection, bool, setIgnorePickIntersection);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(renderWithZones, qVectorQUuid, setRenderWithZones);
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(billboardMode, BillboardMode);
-    _grab.copyFromScriptValue(object, _defaultSettings);
+    _grab.copyFromScriptValue(object, namesSet, _defaultSettings);
 
     // Physics
     COPY_PROPERTY_FROM_QSCRIPTVALUE(density, float, setDensity);
@@ -2102,20 +2068,6 @@ void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool 
     COPY_PROPERTY_FROM_QSCRIPTVALUE(scriptTimestamp, quint64, setScriptTimestamp);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(serverScripts, QString, setServerScripts);
 
-    // Certifiable Properties
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(itemName, QString, setItemName);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(itemDescription, QString, setItemDescription);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(itemCategories, QString, setItemCategories);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(itemArtist, QString, setItemArtist);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(itemLicense, QString, setItemLicense);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(limitedRun, quint32, setLimitedRun);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(marketplaceID, QString, setMarketplaceID);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(editionNumber, quint32, setEditionNumber);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(entityInstanceNumber, quint32, setEntityInstanceNumber);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(certificateID, QString, setCertificateID);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(certificateType, QString, setCertificateType);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(staticCertificateVersion, quint32, setStaticCertificateVersion);
-
     // Script location data
     COPY_PROPERTY_FROM_QSCRIPTVALUE(localPosition, vec3, setLocalPosition);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(localRotation, quat, setLocalRotation);
@@ -2128,7 +2080,7 @@ void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool 
     COPY_PROPERTY_FROM_QSCRIPTVALUE(compoundShapeURL, QString, setCompoundShapeURL);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(color, u8vec3Color, setColor);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(alpha, float, setAlpha);
-    _pulse.copyFromScriptValue(object, _defaultSettings);
+    _pulse.copyFromScriptValue(object, namesSet, _defaultSettings);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(textures, QString, setTextures);
 
     // Particles
@@ -2175,7 +2127,7 @@ void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool 
     COPY_PROPERTY_FROM_QSCRIPTVALUE(groupCulled, bool, setGroupCulled);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(blendshapeCoefficients, QString, setBlendshapeCoefficients);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(useOriginalPivot, bool, setUseOriginalPivot);
-    _animation.copyFromScriptValue(object, _defaultSettings);
+    _animation.copyFromScriptValue(object, namesSet, _defaultSettings);
 
     // Light
     COPY_PROPERTY_FROM_QSCRIPTVALUE(isSpotlight, bool, setIsSpotlight);
@@ -2203,11 +2155,11 @@ void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool 
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(alignment, Alignment);
 
     // Zone
-    _keyLight.copyFromScriptValue(object, _defaultSettings);
-    _ambientLight.copyFromScriptValue(object, _defaultSettings);
-    _skybox.copyFromScriptValue(object, _defaultSettings);
-    _haze.copyFromScriptValue(object, _defaultSettings);
-    _bloom.copyFromScriptValue(object, _defaultSettings);
+    _keyLight.copyFromScriptValue(object, namesSet, _defaultSettings);
+    _ambientLight.copyFromScriptValue(object, namesSet, _defaultSettings);
+    _skybox.copyFromScriptValue(object, namesSet, _defaultSettings);
+    _haze.copyFromScriptValue(object, namesSet, _defaultSettings);
+    _bloom.copyFromScriptValue(object, namesSet, _defaultSettings);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(flyingAllowed, bool, setFlyingAllowed);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(ghostingAllowed, bool, setGhostingAllowed);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(filterURL, QString, setFilterURL);
@@ -2279,11 +2231,11 @@ void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool 
 
     // Gizmo
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(gizmoType, GizmoType);
-    _ring.copyFromScriptValue(object, _defaultSettings);
+    _ring.copyFromScriptValue(object, namesSet, _defaultSettings);
 
     // Handle conversions from old 'textures' property to "imageURL"
-    {
-        QScriptValue V = object.property("textures");
+    if (namesSet.contains("textures")) {
+        ScriptValue V = object.property("textures");
         if (_type == EntityTypes::Image && V.isValid() && !object.property("imageURL").isValid()) {
             bool isValid = false;
             QString textures = QString_convertFromScriptValue(V, isValid);
@@ -2301,8 +2253,8 @@ void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool 
     }
 
     // Handle old "faceCamera" and "isFacingAvatar" props
-    if (_type != EntityTypes::PolyLine) {
-        QScriptValue P = object.property("faceCamera");
+    if (_type != EntityTypes::PolyLine && namesSet.contains("textures")) {
+        ScriptValue P = object.property("faceCamera");
         if (P.isValid() && !object.property("billboardMode").isValid()) {
             bool newValue = P.toVariant().toBool();
             bool oldValue = getBillboardMode() == BillboardMode::YAW;
@@ -2311,8 +2263,8 @@ void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool 
             }
         }
     }
-    {
-        QScriptValue P = object.property("isFacingAvatar");
+    if (namesSet.contains("isFacingAvatar")) {
+        ScriptValue P = object.property("isFacingAvatar");
         if (P.isValid() && !object.property("billboardMode").isValid() && !object.property("faceCamera").isValid()) {
             bool newValue = P.toVariant().toBool();
             bool oldValue = getBillboardMode() == BillboardMode::FULL;
@@ -2325,13 +2277,13 @@ void EntityItemProperties::copyFromScriptValue(const QScriptValue& object, bool 
     _lastEdited = usecTimestampNow();
 }
 
-void EntityItemProperties::copyFromJSONString(QScriptEngine& scriptEngine, const QString& jsonString) {
+void EntityItemProperties::copyFromJSONString(ScriptEngine& scriptEngine, const QString& jsonString) {
     // DANGER: this method is expensive
     QJsonDocument propertiesDoc = QJsonDocument::fromJson(jsonString.toUtf8());
     QJsonObject propertiesObj = propertiesDoc.object();
     QVariant propertiesVariant(propertiesObj);
     QVariantMap propertiesMap = propertiesVariant.toMap();
-    QScriptValue propertiesScriptValue = variantMapToScriptValue(propertiesMap, scriptEngine);
+    ScriptValue propertiesScriptValue = variantMapToScriptValue(propertiesMap, scriptEngine);
     bool honorReadOnly = true;
     copyFromScriptValue(propertiesScriptValue, honorReadOnly);
 }
@@ -2396,20 +2348,6 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(script);
     COPY_PROPERTY_IF_CHANGED(scriptTimestamp);
     COPY_PROPERTY_IF_CHANGED(serverScripts);
-
-    // Certifiable Properties
-    COPY_PROPERTY_IF_CHANGED(itemName);
-    COPY_PROPERTY_IF_CHANGED(itemDescription);
-    COPY_PROPERTY_IF_CHANGED(itemCategories);
-    COPY_PROPERTY_IF_CHANGED(itemArtist);
-    COPY_PROPERTY_IF_CHANGED(itemLicense);
-    COPY_PROPERTY_IF_CHANGED(limitedRun);
-    COPY_PROPERTY_IF_CHANGED(marketplaceID);
-    COPY_PROPERTY_IF_CHANGED(editionNumber);
-    COPY_PROPERTY_IF_CHANGED(entityInstanceNumber);
-    COPY_PROPERTY_IF_CHANGED(certificateID);
-    COPY_PROPERTY_IF_CHANGED(certificateType);
-    COPY_PROPERTY_IF_CHANGED(staticCertificateVersion);
 
     // Local props for scripts
     COPY_PROPERTY_IF_CHANGED(localPosition);
@@ -2579,37 +2517,39 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     _lastEdited = usecTimestampNow();
 }
 
-QScriptValue EntityItemPropertiesToScriptValue(QScriptEngine* engine, const EntityItemProperties& properties) {
+ScriptValue EntityItemPropertiesToScriptValue(ScriptEngine* engine, const EntityItemProperties& properties) {
     return properties.copyToScriptValue(engine, false);
 }
 
-QScriptValue EntityItemNonDefaultPropertiesToScriptValue(QScriptEngine* engine, const EntityItemProperties& properties) {
+ScriptValue EntityItemNonDefaultPropertiesToScriptValue(ScriptEngine* engine, const EntityItemProperties& properties) {
     return properties.copyToScriptValue(engine, true);
 }
 
-void EntityItemPropertiesFromScriptValueIgnoreReadOnly(const QScriptValue &object, EntityItemProperties& properties) {
+bool EntityItemPropertiesFromScriptValueIgnoreReadOnly(const ScriptValue &object, EntityItemProperties& properties) {
     properties.copyFromScriptValue(object, false);
+    return true;
 }
 
-void EntityItemPropertiesFromScriptValueHonorReadOnly(const QScriptValue &object, EntityItemProperties& properties) {
+bool EntityItemPropertiesFromScriptValueHonorReadOnly(const ScriptValue &object, EntityItemProperties& properties) {
     properties.copyFromScriptValue(object, true);
+    return true;
 }
 
-QScriptValue EntityPropertyFlagsToScriptValue(QScriptEngine* engine, const EntityPropertyFlags& flags) {
+ScriptValue EntityPropertyFlagsToScriptValue(ScriptEngine* engine, const EntityPropertyFlags& flags) {
     return EntityItemProperties::entityPropertyFlagsToScriptValue(engine, flags);
 }
 
-void EntityPropertyFlagsFromScriptValue(const QScriptValue& object, EntityPropertyFlags& flags) {
-    EntityItemProperties::entityPropertyFlagsFromScriptValue(object, flags);
+bool EntityPropertyFlagsFromScriptValue(const ScriptValue& object, EntityPropertyFlags& flags) {
+    return EntityItemProperties::entityPropertyFlagsFromScriptValue(object, flags);
 }
 
 
-QScriptValue EntityItemProperties::entityPropertyFlagsToScriptValue(QScriptEngine* engine, const EntityPropertyFlags& flags) {
-    QScriptValue result = engine->newObject();
+ScriptValue EntityItemProperties::entityPropertyFlagsToScriptValue(ScriptEngine* engine, const EntityPropertyFlags& flags) {
+    ScriptValue result = engine->newObject();
     return result;
 }
 
-void EntityItemProperties::entityPropertyFlagsFromScriptValue(const QScriptValue& object, EntityPropertyFlags& flags) {
+bool EntityItemProperties::entityPropertyFlagsFromScriptValue(const ScriptValue& object, EntityPropertyFlags& flags) {
     if (object.isString()) {
         EntityPropertyInfo propertyInfo;
         if (getPropertyInfo(object.toString(), propertyInfo)) {
@@ -2626,6 +2566,7 @@ void EntityItemProperties::entityPropertyFlagsFromScriptValue(const QScriptValue
             }
         }
     }
+    return true;
 }
 
 static QHash<QString, EntityPropertyInfo> _propertyInfos;
@@ -2634,7 +2575,7 @@ static QHash<EntityPropertyList, QString> _enumsToPropertyStrings;
 bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPropertyInfo& propertyInfo) {
 
     static std::once_flag initMap;
-
+    // V8TODO: Probably needs mutex before call_once
     std::call_once(initMap, []() {
         // Core
         ADD_PROPERTY_TO_MAP(PROP_SIMULATION_OWNER, SimulationOwner, simulationOwner, SimulationOwner);
@@ -2724,20 +2665,6 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
         ADD_PROPERTY_TO_MAP(PROP_SCRIPT, Script, script, QString);
         ADD_PROPERTY_TO_MAP(PROP_SCRIPT_TIMESTAMP, ScriptTimestamp, scriptTimestamp, quint64);
         ADD_PROPERTY_TO_MAP(PROP_SERVER_SCRIPTS, ServerScripts, serverScripts, QString);
-
-        // Certifiable Properties
-        ADD_PROPERTY_TO_MAP(PROP_ITEM_NAME, ItemName, itemName, QString);
-        ADD_PROPERTY_TO_MAP(PROP_ITEM_DESCRIPTION, ItemDescription, itemDescription, QString);
-        ADD_PROPERTY_TO_MAP(PROP_ITEM_CATEGORIES, ItemCategories, itemCategories, QString);
-        ADD_PROPERTY_TO_MAP(PROP_ITEM_ARTIST, ItemArtist, itemArtist, QString);
-        ADD_PROPERTY_TO_MAP(PROP_ITEM_LICENSE, ItemLicense, itemLicense, QString);
-        ADD_PROPERTY_TO_MAP(PROP_LIMITED_RUN, LimitedRun, limitedRun, quint32);
-        ADD_PROPERTY_TO_MAP(PROP_MARKETPLACE_ID, MarketplaceID, marketplaceID, QString);
-        ADD_PROPERTY_TO_MAP(PROP_EDITION_NUMBER, EditionNumber, editionNumber, quint32);
-        ADD_PROPERTY_TO_MAP(PROP_ENTITY_INSTANCE_NUMBER, EntityInstanceNumber, entityInstanceNumber, quint32);
-        ADD_PROPERTY_TO_MAP(PROP_CERTIFICATE_ID, CertificateID, certificateID, QString);
-        ADD_PROPERTY_TO_MAP(PROP_CERTIFICATE_TYPE, CertificateType, certificateType, QString);
-        ADD_PROPERTY_TO_MAP(PROP_STATIC_CERTIFICATE_VERSION, StaticCertificateVersion, staticCertificateVersion, quint32);
 
         // Local script props
         ADD_PROPERTY_TO_MAP(PROP_LOCAL_POSITION, LocalPosition, localPosition, vec3);
@@ -3018,18 +2945,19 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
  * @property {string} minimum - The minimum numerical value the property may have, if available, otherwise <code>""</code>.
  * @property {string} maximum - The maximum numerical value the property may have, if available, otherwise <code>""</code>.
  */
-QScriptValue EntityPropertyInfoToScriptValue(QScriptEngine* engine, const EntityPropertyInfo& propertyInfo) {
-    QScriptValue obj = engine->newObject();
+ScriptValue EntityPropertyInfoToScriptValue(ScriptEngine* engine, const EntityPropertyInfo& propertyInfo) {
+    ScriptValue obj = engine->newObject();
     obj.setProperty("propertyEnum", propertyInfo.propertyEnum);
     obj.setProperty("minimum", propertyInfo.minimum.toString());
     obj.setProperty("maximum", propertyInfo.maximum.toString());
     return obj;
 }
 
-void EntityPropertyInfoFromScriptValue(const QScriptValue& object, EntityPropertyInfo& propertyInfo) {
+bool EntityPropertyInfoFromScriptValue(const ScriptValue& object, EntityPropertyInfo& propertyInfo) {
     propertyInfo.propertyEnum = (EntityPropertyList)object.property("propertyEnum").toVariant().toUInt();
     propertyInfo.minimum = object.property("minimum").toVariant();
     propertyInfo.maximum = object.property("maximum").toVariant();
+    return true;
 }
 
 // TODO: Implement support for edit packets that can span an MTU sized buffer. We need to implement a mechanism for the
@@ -3192,20 +3120,6 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
             APPEND_ENTITY_PROPERTY(PROP_SCRIPT, properties.getScript());
             APPEND_ENTITY_PROPERTY(PROP_SCRIPT_TIMESTAMP, properties.getScriptTimestamp());
             APPEND_ENTITY_PROPERTY(PROP_SERVER_SCRIPTS, properties.getServerScripts());
-
-            // Certifiable Properties
-            APPEND_ENTITY_PROPERTY(PROP_ITEM_NAME, properties.getItemName());
-            APPEND_ENTITY_PROPERTY(PROP_ITEM_DESCRIPTION, properties.getItemDescription());
-            APPEND_ENTITY_PROPERTY(PROP_ITEM_CATEGORIES, properties.getItemCategories());
-            APPEND_ENTITY_PROPERTY(PROP_ITEM_ARTIST, properties.getItemArtist());
-            APPEND_ENTITY_PROPERTY(PROP_ITEM_LICENSE, properties.getItemLicense());
-            APPEND_ENTITY_PROPERTY(PROP_LIMITED_RUN, properties.getLimitedRun());
-            APPEND_ENTITY_PROPERTY(PROP_MARKETPLACE_ID, properties.getMarketplaceID());
-            APPEND_ENTITY_PROPERTY(PROP_EDITION_NUMBER, properties.getEditionNumber());
-            APPEND_ENTITY_PROPERTY(PROP_ENTITY_INSTANCE_NUMBER, properties.getEntityInstanceNumber());
-            APPEND_ENTITY_PROPERTY(PROP_CERTIFICATE_ID, properties.getCertificateID());
-            APPEND_ENTITY_PROPERTY(PROP_CERTIFICATE_TYPE, properties.getCertificateType());
-            APPEND_ENTITY_PROPERTY(PROP_STATIC_CERTIFICATE_VERSION, properties.getStaticCertificateVersion());
 
             if (properties.getType() == EntityTypes::ParticleEffect) {
                 APPEND_ENTITY_PROPERTY(PROP_SHAPE_TYPE, (uint32_t)(properties.getShapeType()));
@@ -3685,20 +3599,6 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
     READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SCRIPT_TIMESTAMP, quint64, setScriptTimestamp);
     READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SERVER_SCRIPTS, QString, setServerScripts);
 
-    // Certifiable Properties
-    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_ITEM_NAME, QString, setItemName);
-    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_ITEM_DESCRIPTION, QString, setItemDescription);
-    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_ITEM_CATEGORIES, QString, setItemCategories);
-    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_ITEM_ARTIST, QString, setItemArtist);
-    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_ITEM_LICENSE, QString, setItemLicense);
-    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_LIMITED_RUN, quint32, setLimitedRun);
-    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_MARKETPLACE_ID, QString, setMarketplaceID);
-    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_EDITION_NUMBER, quint32, setEditionNumber);
-    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_ENTITY_INSTANCE_NUMBER, quint32, setEntityInstanceNumber);
-    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_CERTIFICATE_ID, QString, setCertificateID);
-    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_CERTIFICATE_TYPE, QString, setCertificateType);
-    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_STATIC_CERTIFICATE_VERSION, quint32, setStaticCertificateVersion);
-
     if (properties.getType() == EntityTypes::ParticleEffect) {
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SHAPE_TYPE, ShapeType, setShapeType);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_COMPOUND_SHAPE_URL, QString, setCompoundShapeURL);
@@ -4090,20 +3990,6 @@ void EntityItemProperties::markAllChanged() {
     _scriptChanged = true;
     _scriptTimestampChanged = true;
     _serverScriptsChanged = true;
-
-    // Certifiable Properties
-    _itemNameChanged = true;
-    _itemDescriptionChanged = true;
-    _itemCategoriesChanged = true;
-    _itemArtistChanged = true;
-    _itemLicenseChanged = true;
-    _limitedRunChanged = true;
-    _marketplaceIDChanged = true;
-    _editionNumberChanged = true;
-    _entityInstanceNumberChanged = true;
-    _certificateIDChanged = true;
-    _certificateTypeChanged = true;
-    _staticCertificateVersionChanged = true;
 
     // Common
     _shapeTypeChanged = true;
@@ -4552,44 +4438,6 @@ QList<QString> EntityItemProperties::listChangedProperties() {
         out += "serverScripts";
     }
 
-    // Certifiable Properties
-    if (itemNameChanged()) {
-        out += "itemName";
-    }
-    if (itemDescriptionChanged()) {
-        out += "itemDescription";
-    }
-    if (itemCategoriesChanged()) {
-        out += "itemCategories";
-    }
-    if (itemArtistChanged()) {
-        out += "itemArtist";
-    }
-    if (itemLicenseChanged()) {
-        out += "itemLicense";
-    }
-    if (limitedRunChanged()) {
-        out += "limitedRun";
-    }
-    if (marketplaceIDChanged()) {
-        out += "marketplaceID";
-    }
-    if (editionNumberChanged()) {
-        out += "editionNumber";
-    }
-    if (entityInstanceNumberChanged()) {
-        out += "entityInstanceNumber";
-    }
-    if (certificateIDChanged()) {
-        out += "certificateID";
-    }
-    if (certificateTypeChanged()) {
-        out += "certificateType";
-    }
-    if (staticCertificateVersionChanged()) {
-        out += "staticCertificateVersion";
-    }
-
     // Common
     if (shapeTypeChanged()) {
         out += "shapeType";
@@ -5036,138 +4884,6 @@ bool EntityItemProperties::grabbingRelatedPropertyChanged() const {
         grabProperties.equippableIndicatorScaleChanged() || grabProperties.equippableIndicatorOffsetChanged();
 }
 
-// Checking Certifiable Properties
-#define ADD_STRING_PROPERTY(n, N) if (!get##N().isEmpty()) json[#n] = get##N()
-#define ADD_ENUM_PROPERTY(n, N) json[#n] = get##N##AsString()
-#define ADD_INT_PROPERTY(n, N) if (get##N() != 0) json[#n] = (get##N() == (quint32) -1) ? -1.0 : ((double) get##N())
-QByteArray EntityItemProperties::getStaticCertificateJSON() const {
-    // Produce a compact json of every non-default static certificate property, with the property names in alphabetical order.
-    // The static certificate properties include all an only those properties that cannot be changed without altering the identity
-    // of the entity as reviewed during the certification submission.
-
-    QJsonObject json;
-
-    quint32 staticCertificateVersion = getStaticCertificateVersion();
-
-    if (!getAnimation().getURL().isEmpty()) {
-        json["animationURL"] = getAnimation().getURL();
-    }
-    if (staticCertificateVersion >= 3) {
-        ADD_STRING_PROPERTY(certificateType, CertificateType);
-    }
-    ADD_STRING_PROPERTY(collisionSoundURL, CollisionSoundURL);
-    ADD_STRING_PROPERTY(compoundShapeURL, CompoundShapeURL);
-    ADD_INT_PROPERTY(editionNumber, EditionNumber);
-    ADD_INT_PROPERTY(entityInstanceNumber, EntityInstanceNumber);
-    ADD_STRING_PROPERTY(itemArtist, ItemArtist);
-    ADD_STRING_PROPERTY(itemCategories, ItemCategories);
-    ADD_STRING_PROPERTY(itemDescription, ItemDescription);
-    ADD_STRING_PROPERTY(itemLicenseUrl, ItemLicense);
-    ADD_STRING_PROPERTY(itemName, ItemName);
-    ADD_INT_PROPERTY(limitedRun, LimitedRun);
-    ADD_STRING_PROPERTY(marketplaceID, MarketplaceID);
-    ADD_STRING_PROPERTY(modelURL, ModelURL);
-    ADD_STRING_PROPERTY(script, Script);
-    if (staticCertificateVersion >= 1) {
-        ADD_STRING_PROPERTY(serverScripts, ServerScripts);
-    }
-    ADD_ENUM_PROPERTY(shapeType, ShapeType);
-    ADD_INT_PROPERTY(staticCertificateVersion, StaticCertificateVersion);
-    json["type"] = EntityTypes::getEntityTypeName(getType());
-
-    return QJsonDocument(json).toJson(QJsonDocument::Compact);
-}
-QByteArray EntityItemProperties::getStaticCertificateHash() const {
-    return QCryptographicHash::hash(getStaticCertificateJSON(), QCryptographicHash::Sha256);
-}
-
-// FIXME: This is largely copied from EntityItemProperties::verifyStaticCertificateProperties, which should be refactored to use this.
-// I also don't like the nested-if style, but for this step I'm deliberately preserving the similarity.
-bool EntityItemProperties::verifySignature(const QString& publicKey, const QByteArray& digestByteArray, const QByteArray& signatureByteArray) {
-
-    OVERTE_IGNORE_DEPRECATED_BEGIN
-    // We're not really verifying these anymore
-
-    if (digestByteArray.isEmpty()) {
-        return false;
-    }
-
-    auto keyByteArray = publicKey.toUtf8();
-    auto key = keyByteArray.constData();
-    int keyLength = publicKey.length();
-
-    BIO *bio = BIO_new_mem_buf((void*)key, keyLength);
-    EVP_PKEY* evp_key = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL);
-    if (evp_key) {
-        EC_KEY* ec = EVP_PKEY_get1_EC_KEY(evp_key);
-        if (ec) {
-            const unsigned char* digest = reinterpret_cast<const unsigned char*>(digestByteArray.constData());
-            int digestLength = digestByteArray.length();
-
-            const unsigned char* signature = reinterpret_cast<const unsigned char*>(signatureByteArray.constData());
-            int signatureLength = signatureByteArray.length();
-
-            ERR_clear_error();
-            // ECSDA verification prototype: note that type is currently ignored
-            // int ECDSA_verify(int type, const unsigned char *dgst, int dgstlen,
-            // const unsigned char *sig, int siglen, EC_KEY *eckey);
-            int answer = ECDSA_verify(0,
-                digest,
-                digestLength,
-                signature,
-                signatureLength,
-                ec);
-            long error = ERR_get_error();
-            if (error != 0 || answer == -1) {
-                qCWarning(entities) << "ERROR while verifying signature!"
-                    << "\nKey:" << publicKey << "\nutf8 Key Length:" << keyLength
-                    << "\nDigest:" << digest << "\nDigest Length:" << digestLength
-                    << "\nSignature:" << signature << "\nSignature Length:" << signatureLength;
-                while (error != 0) {
-                    const char* error_str = ERR_error_string(error, NULL);
-                    qCWarning(entities) << "EC error:" << error_str;
-                    error = ERR_get_error();
-                }
-            }
-            EC_KEY_free(ec);
-            if (bio) {
-                BIO_free(bio);
-            }
-            if (evp_key) {
-                EVP_PKEY_free(evp_key);
-            }
-            return (answer == 1);
-        } else {
-            if (bio) {
-                BIO_free(bio);
-            }
-            if (evp_key) {
-                EVP_PKEY_free(evp_key);
-            }
-            long error = ERR_get_error();
-            const char* error_str = ERR_error_string(error, NULL);
-            qCWarning(entities) << "Failed to verify signature! key" << publicKey << " EC key error:" << error_str;
-            return false;
-        }
-    } else {
-        if (bio) {
-            BIO_free(bio);
-        }
-        long error = ERR_get_error();
-        const char* error_str = ERR_error_string(error, NULL);
-        qCWarning(entities) << "Failed to verify signature! key" << publicKey << " EC PEM error:" << error_str;
-        return false;
-    }
-
-    OVERTE_IGNORE_DEPRECATED_END
-}
-
-bool EntityItemProperties::verifyStaticCertificateProperties() {
-    // True IFF a non-empty certificateID matches the static certificate json.
-    // I.e., if we can verify that the certificateID was produced by Overte signing the static certificate hash.
-    return verifySignature(EntityItem::_marketplacePublicKey, getStaticCertificateHash(), QByteArray::fromBase64(getCertificateID().toUtf8()));
-}
-
 void EntityItemProperties::convertToCloneProperties(const EntityItemID& entityIDToClone) {
     setName(getName() + "-clone-" + entityIDToClone.toString());
     setLocked(false);
@@ -5192,7 +4908,7 @@ void EntityItemProperties::convertToCloneProperties(const EntityItemID& entityID
     setCloneAvatarEntity(ENTITY_ITEM_DEFAULT_CLONE_AVATAR_ENTITY);
 }
 
-bool EntityItemProperties::blobToProperties(QScriptEngine& scriptEngine, const QByteArray& blob, EntityItemProperties& properties) {
+bool EntityItemProperties::blobToProperties(ScriptEngine& scriptEngine, const QByteArray& blob, EntityItemProperties& properties) {
     // DANGER: this method is NOT efficient.
     // begin recipe for converting unfortunately-formatted-binary-blob to EntityItemProperties
     OVERTE_IGNORE_DEPRECATED_BEGIN
@@ -5204,17 +4920,17 @@ bool EntityItemProperties::blobToProperties(QScriptEngine& scriptEngine, const Q
     }
     QVariant variant = jsonProperties.toVariant();
     QVariantMap variantMap = variant.toMap();
-    QScriptValue scriptValue = variantMapToScriptValue(variantMap, scriptEngine);
+    ScriptValue scriptValue = variantMapToScriptValue(variantMap, scriptEngine);
     EntityItemPropertiesFromScriptValueIgnoreReadOnly(scriptValue, properties);
     // end recipe
     return true;
 }
 
-void EntityItemProperties::propertiesToBlob(QScriptEngine& scriptEngine, const QUuid& myAvatarID,
+void EntityItemProperties::propertiesToBlob(ScriptEngine& scriptEngine, const QUuid& myAvatarID,
             const EntityItemProperties& properties, QByteArray& blob, bool allProperties) {
     // DANGER: this method is NOT efficient.
     // begin recipe for extracting unfortunately-formatted-binary-blob from EntityItem
-    QScriptValue scriptValue = allProperties
+    ScriptValue scriptValue = allProperties
         ? EntityItemPropertiesToScriptValue(&scriptEngine, properties)
         : EntityItemNonDefaultPropertiesToScriptValue(&scriptEngine, properties);
     QVariant variantProperties = scriptValue.toVariant();

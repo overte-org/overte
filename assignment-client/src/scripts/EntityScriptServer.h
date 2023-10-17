@@ -4,9 +4,11 @@
 //
 //  Created by Clément Brisset on 1/5/17.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_EntityScriptServer_h
@@ -18,12 +20,14 @@
 #include <QtCore/QObject>
 #include <QtCore/QSharedPointer>
 #include <QtCore/QUuid>
+#include <QtCore/QSharedPointer>
 
 #include <EntityEditPacketSender.h>
 #include <plugins/CodecPlugin.h>
-#include <ScriptEngine.h>
 #include <SimpleEntitySimulation.h>
 #include <ThreadedAssignment.h>
+#include <ScriptManager.h>
+
 #include "../entities/EntityTreeHeadlessViewer.h"
 
 class EntityScriptServer : public ThreadedAssignment {
@@ -76,7 +80,7 @@ private:
     bool _shuttingDown { false };
 
     static int _entitiesScriptEngineCount;
-    ScriptEnginePointer _entitiesScriptEngine;
+    ScriptManagerPointer _entitiesScriptManager;
     SimpleEntitySimulationPointer _entitySimulation;
     EntityEditPacketSender _entityEditSender;
     EntityTreeHeadlessViewer _entityViewer;

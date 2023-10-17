@@ -4,9 +4,11 @@
 //
 //  Created by Ryan Huffman on 05/12/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /// @addtogroup ScriptEngine
@@ -144,10 +146,10 @@ public:
     // No JSDoc because the particulars of the parent class is provided in the @class description.
     int columnCount(const QModelIndex& parent = QModelIndex()) const override;
 
-    // Not exposed in the API because no conversion between TreeNodeBase and QScriptValue is provided.
+    // Not exposed in the API because no conversion between TreeNodeBase and ScriptValue is provided.
     TreeNodeBase* getTreeNodeFromIndex(const QModelIndex& index) const;
 
-    // Not exposed in the API because no conversion between TreeNodeBase and QScriptValue is provided.
+    // Not exposed in the API because no conversion between TreeNodeBase and ScriptValue is provided.
     QList<TreeNodeBase*> getFolderNodes(TreeNodeFolder* parent) const;
 
     enum Role {

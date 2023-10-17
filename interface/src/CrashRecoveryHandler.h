@@ -14,6 +14,11 @@
 
 #include <QString>
 
+
+
+
+
+
 class CrashRecoveryHandler {
 
 public:
@@ -26,8 +31,10 @@ private:
         DO_NOTHING
     };
 
+    static bool suggestCrashReporting();
     static Action promptUserForAction(bool showCrashMessage);
     static void handleCrash(Action action);
+
 };
 
 #endif // hifi_CrashRecoveryHandler_h

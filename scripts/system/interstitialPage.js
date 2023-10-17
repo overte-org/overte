@@ -54,7 +54,6 @@
         "Tip: Take and share your snapshots with everyone using the Snap app.",
         "Tip: Did you know you can show websites in-world by creating a web entity?",
         "Tip: Find out more information about domains by visiting our website!",
-        "Tip: Did you know you can get cool new apps from the Marketplace?",
         "Tip: Print your snapshots from the Snap app to share with others!",
         "Tip: Log in to make friends, visit new domains, and save avatars!"
     ];
@@ -237,8 +236,8 @@
     var connectionToDomainFailed = false;
 
     function getAnchorLocalYOffset() {
-        var loadingSpherePosition = Overlays.getProperty(loadingSphereID, "position");
-        var loadingSphereOrientation = Overlays.getProperty(loadingSphereID, "rotation");
+        var loadingSpherePosition = Entities.getEntityProperties(loadingSphereID, ["position"]).position;
+        var loadingSphereOrientation = Entities.getEntityProperties(loadingSphereID, ["rotation"]).rotation;
         var overlayXform = new Xform(loadingSphereOrientation, loadingSpherePosition);
         var worldToOverlayXform = overlayXform.inv();
         var headPosition = MyAvatar.getHeadPosition();

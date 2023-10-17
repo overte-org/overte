@@ -4,9 +4,11 @@
 //
 //  Created by Utkarsh Gautam on 9/29/17.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "ModelBaker.h"
@@ -177,6 +179,7 @@ void ModelBaker::saveSourceModel() {
 
 void ModelBaker::handleModelNetworkReply() {
     auto requestReply = qobject_cast<QNetworkReply*>(sender());
+    Q_ASSERT(requestReply != nullptr);
 
     if (requestReply->error() == QNetworkReply::NoError) {
         qCDebug(model_baking) << "Downloaded" << _modelURL;

@@ -3,35 +3,37 @@
 //  places.js
 //
 //  Created by Alezia Kurdis, January 1st, 2022.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Generate an explore app based on the differents source of placename data.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
+
 (function() {
     var jsMainFileName = "places.js";
     var ROOT = Script.resolvePath('').split(jsMainFileName)[0];
-       
+
     var metaverseServers = [];
     var SETTING_METAVERSE_TO_FETCH = "placesAppMetaverseToFetch";
     var SETTING_PINNED_METAVERSE = "placesAppPinnedMetaverse";
     var REQUEST_TIMEOUT = 10000; //10 seconds
-         
+
     var httpRequest = null;
     var placesData;
     var portalList = [];
 
     var nbrPlacesNoProtocolMatch = 0;
     var nbrPlaceProtocolKnown = 0;
-    
+
     var APP_NAME = "PLACES";
     var APP_URL = ROOT + "places.html";
     var APP_ICON_INACTIVE = ROOT + "icons/appicon_i.png";
     var APP_ICON_ACTIVE = ROOT + "icons/appicon_a.png";
     var appStatus = false;
-    var channel = "com.overte.places";    
+    var channel = "com.overte.places";
 
     var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
@@ -79,7 +81,7 @@
                 transmitPortalList();
 
                 sendCurrentLocationToUI();
-                
+
             } else if (messageObj.action === "TELEPORT" && (n - timestamp) > INTERCALL_DELAY) {
                 d = new Date();
                 timestamp = d.getTime();
@@ -92,7 +94,7 @@
                 if (LocationBookmarks.getHomeLocationAddress()) {
                     location.handleLookupString(LocationBookmarks.getHomeLocationAddress());
                 } else {
-                    location.goToLocalSandbox();
+                    Window.location = "file:///~/serverless/tutorial.json";
                 }                
             } else if (messageObj.action === "GO_BACK" && (n - timestamp) > INTERCALL_DELAY) {
                 location.goBack();
@@ -440,7 +442,7 @@
             "domain": "",
             "domainOrder": "ZZZZZZZZZZZZZZZ",
             "metaverseServer": "",
-            "metaverseRegion": "local"            
+            "metaverseRegion": "local"
         };
         portalList.push(tutorialPortal);
         
@@ -504,13 +506,13 @@
     }
 
     //####### seed random library ################
-    Math.seed = 75;
+    var seed = 75;
 
-    Math.seededRandom = function(max, min) {
+    var seededRandom = function(max, min) {
         max = max || 1;
         min = min || 0;
-        Math.seed = (Math.seed * 9301 + 49297) % 233280;
-        var rnd = Math.seed / 233280;
+        seed = (seed * 9301 + 49297) % 233280;
+        var rnd = seed / 233280;
         return min + rnd * (max - min);
     }
 
@@ -527,8 +529,8 @@
         var d = new Date();
         var n = d.getTime();
         var currentSeed = Math.floor(n / PERSISTENCE_ORDERING_CYCLE);
-        Math.seed = score * currentSeed;
-        return zeroPad(Math.floor(Math.seededRandom() * 100000),5);
+        seed = score * currentSeed;
+        return zeroPad(Math.floor(seededRandom() * 100000),5);
     }
     //####### END of seed random library ################
 

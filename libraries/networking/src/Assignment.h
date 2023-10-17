@@ -14,9 +14,11 @@
 
 #include <QtCore/QUuid>
 
+
 #include "ReceivedMessage.h"
 
 #include "NodeList.h"
+
 
 const int MAX_PAYLOAD_BYTES = 1024;
 
@@ -80,15 +82,12 @@ public:
 
     void setPool(const QString& pool) { _pool = pool; };
     const QString& getPool() const { return _pool; }
-    
+
     void setIsStatic(bool isStatic) { _isStatic = isStatic; }
     bool isStatic() const  { return _isStatic; }
-    
-    void setWalletUUID(const QUuid& walletUUID) { _walletUUID = walletUUID; }
-    const QUuid& getWalletUUID() const { return _walletUUID; }
-    
+
     const QString& getNodeVersion() const { return _nodeVersion; }
-    
+
     const char* getTypeName() const;
     static const char* typeToString(Assignment::Type type);
 
@@ -97,6 +96,16 @@ public:
     friend QDataStream& operator>>(QDataStream &in, Assignment& assignment);
 
 protected:
+    /**
+     * @brief Parse the part of the settings object common to all assignment clients
+     *
+     * Currently this is the crash reporting settings.
+     *
+     * @param settingsObject
+     */
+    void commonParseSettingsObject(const QJsonObject &settingsObject);
+
+
     QUuid _uuid; /// the 16 byte UUID for this assignment
     Assignment::Command _command; /// the command for this assignment (Create, Deploy, Request)
     Assignment::Type _type; /// the type of the assignment, defines what the assignee will do
@@ -104,7 +113,6 @@ protected:
     Assignment::Location _location; /// the location of the assignment, allows a domain to preferentially use local ACs
     QByteArray _payload; /// an optional payload attached to this assignment, a maximum for 1024 bytes will be packed
     bool _isStatic; /// defines if this assignment needs to be re-queued in the domain-server if it stops being fulfilled
-    QUuid _walletUUID; /// the UUID for the wallet that should be paid for this assignment
     QString _nodeVersion;
     QString _dataDirectory;
 };

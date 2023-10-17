@@ -157,11 +157,22 @@ void FileLogger::locateLog() {
     FileUtils::locateFile(_fileName);
 }
 
-QString FileLogger::getLogData() {
+QString FileLogger::getLogData(const qint64 maxSize) {
     QString result;
     QFile f(_fileName);
     if (f.open(QFile::ReadOnly | QFile::Text)) {
-        result = QTextStream(&f).readAll();
+        if (maxSize != 0) {
+            f.seek(f.size() - maxSize);
+        }
+        QTextStream stream(&f);
+        if (maxSize != 0) {
+            // Continue one line, in case we are in the middle of a line.
+            stream.readLine();
+            result = "Log has been truncated to " + QString::number(maxSize) + " bytes.\n" + stream.readAll();
+        }
+        else {
+            result = stream.readAll();
+        }
     }
     return result;
 }

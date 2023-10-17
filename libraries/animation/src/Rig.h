@@ -6,9 +6,11 @@
 //
 //  Created by Howard Stearns, Seth Alves, Anthony Thibault, Andrew Meadows on 7/15/15.
 //  Copyright (c) 2015 High Fidelity, Inc. All rights reserved.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef __hifi__Rig__
@@ -16,10 +18,10 @@
 
 #include <QObject>
 #include <QMutex>
-#include <QScriptValue>
 #include <vector>
 #include <JointData.h>
 #include <QReadWriteLock>
+#include <ScriptValue.h>
 
 #include "AnimNode.h"
 #include "AnimNodeLoader.h"
@@ -40,7 +42,7 @@ public:
     struct StateHandler {
         AnimVariantMap results;
         QStringList propertyNames;
-        QScriptValue function;
+        std::shared_ptr<ScriptValue> function;
         bool useNames;
     };
 
@@ -205,9 +207,9 @@ public:
     AnimNode::ConstPointer getAnimNode() const { return _animNode; }
     AnimNode::ConstPointer findAnimNodeByName(const QString& name) const;
     AnimSkeleton::ConstPointer getAnimSkeleton() const { return _animSkeleton; }
-    QScriptValue addAnimationStateHandler(QScriptValue handler, QScriptValue propertiesList);
-    void removeAnimationStateHandler(QScriptValue handler);
-    void animationStateHandlerResult(int identifier, QScriptValue result);
+    ScriptValue addAnimationStateHandler(const ScriptValue& handler, const ScriptValue& propertiesList);
+    void removeAnimationStateHandler(const ScriptValue& handler);
+    void animationStateHandlerResult(int identifier, const ScriptValue& result);
 
     // rig space
     bool getModelRegistrationPoint(glm::vec3& modelRegistrationPointOut) const;
@@ -259,6 +261,9 @@ public:
     bool getNetworkGraphActive() const;
     void setDirectionalBlending(const QString& targetName, const glm::vec3& blendingTarget, const QString& alphaName, float alpha);
 
+    // Get the scale factor to convert distances in the geometry frame into the unscaled rig frame.
+    float GetScaleFactorGeometryToUnscaledRig() const;
+
 signals:
     void onLoadComplete();
     void onLoadFailed();
@@ -287,9 +292,6 @@ protected:
     glm::vec3 calculateKneePoleVector(int footJointIndex, int kneeJoint, int upLegIndex, int hipsIndex, const AnimPose& targetFootPose) const;
     glm::vec3 deflectHandFromTorso(const glm::vec3& handPosition, const HFMJointShapeInfo& hipsShapeInfo, const HFMJointShapeInfo& spineShapeInfo,
                                    const HFMJointShapeInfo& spine1ShapeInfo, const HFMJointShapeInfo& spine2ShapeInfo) const;
-
-    // Get the scale factor to convert distances in the geometry frame into the unscaled rig frame.
-    float GetScaleFactorGeometryToUnscaledRig() const;
 
     // The ground plane Y position in geometry space.
     static constexpr float GEOMETRY_GROUND_Y = 0.0f;

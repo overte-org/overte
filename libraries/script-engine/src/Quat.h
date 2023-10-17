@@ -4,11 +4,13 @@
 //
 //  Created by Brad Hefta-Gaub on 1/29/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Scriptable Quaternion class library.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /// @addtogroup ScriptEngine
@@ -21,9 +23,10 @@
 
 #include <QObject>
 #include <QString>
-#include <QtScript/QScriptable>
 
 #include <GLMHelpers.h>
+
+#include "Scriptable.h"
 
 /*@jsdoc
  * A quaternion value. See also the {@link Quat(0)|Quat} API.
@@ -55,7 +58,7 @@
  * print(JSON.stringify(Quat.safeEulerAngles(Quat.IDENTITY))); // { x: 0, y: 0, z: 0 }
  */
 /// Provides the <code><a href="https://apidocs.overte.org/Quat.html">Quat</a></code> scripting interface
-class Quat : public QObject, protected QScriptable {
+class Quat : public QObject, protected Scriptable {
     Q_OBJECT
     Q_PROPERTY(glm::quat IDENTITY READ IDENTITY CONSTANT)
 

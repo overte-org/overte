@@ -4,9 +4,11 @@
 //
 //  Created by Clément Brisset on 5/30/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 
@@ -90,6 +92,7 @@
         
         var keys = Object.keys(object);
         for (var i = 0; i < keys.length; ++i) {
+            print("key: " + keys[i]);
             if (string === "") {
                 listKeys(keys[i], object[keys[i]]);
             } else if (keys[i] !== "parent") {

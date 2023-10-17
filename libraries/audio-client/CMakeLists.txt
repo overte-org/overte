@@ -1,3 +1,7 @@
+# Copyright 2013-2019, High Fidelity, Inc.
+# Copyright 2022-2023 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
 set(TARGET_NAME audio-client)
 if (ANDROID)
   set(PLATFORM_QT_COMPONENTS AndroidExtras)
@@ -6,6 +10,7 @@ setup_hifi_library(Network Multimedia ${PLATFORM_QT_COMPONENTS})
 link_hifi_libraries(audio plugins)
 include_hifi_library_headers(shared)
 include_hifi_library_headers(networking)
+include_hifi_library_headers(script-engine)
 
 if (ANDROID)
 else ()

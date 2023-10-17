@@ -126,7 +126,6 @@ LogDialog::LogDialog(QWidget* parent, AbstractLoggerInterface* logger) : BaseLog
     _filterDropdown->addItem("hifi.audioclient");
     _filterDropdown->addItem("hifi.animation");
     _filterDropdown->addItem("hifi.avatars");
-    _filterDropdown->addItem("hifi.commerce");
     _filterDropdown->addItem("hifi.controllers");
     _filterDropdown->addItem("hifi.entities");
     _filterDropdown->addItem("hifi.gl");
@@ -322,7 +321,8 @@ void LogDialog::handleFilterDropdownChanged(int selection) {
 }
 
 QString LogDialog::getCurrentLog() {
-    return _logger->getLogData();
+    // We start 512 KiB from the end of the file.
+    return _logger->getLogData(524288);
 }
 
 void LogDialog::appendLogLine(QString logLine) {

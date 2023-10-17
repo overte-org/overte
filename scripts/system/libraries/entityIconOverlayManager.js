@@ -16,20 +16,33 @@ EntityIconOverlayManager = function(entityTypes, getOverlayPropertiesFunc) {
     // Map from EntityItemID to EntityItemID object
     var entityIDs = {};
 
+    function updateEntity(entityID) {
+        var properties = Entities.getEntityProperties(entityID);
+        var overlayProperties = {
+            position: properties.position
+        };
+        if (getOverlayPropertiesFunc) {
+            var customProperties = getOverlayPropertiesFunc(entityID, properties);
+            for (var key in customProperties) {
+                overlayProperties[key] = customProperties[key];
+            }
+        }
+        Entities.editEntity(entityOverlays[entityID], overlayProperties);
+    }
+
     this.updatePositions = function(ids) {
-        for (var id in entityIDs) {
-            var entityID = entityIDs[id];
-            var properties = Entities.getEntityProperties(entityID);
-            var overlayProperties = {
-                position: properties.position
-            };
-            if (getOverlayPropertiesFunc) {
-                var customProperties = getOverlayPropertiesFunc(entityID, properties);
-                for (var key in customProperties) {
-                    overlayProperties[key] = customProperties[key];
+        if (ids) {
+            for (var index in ids) {
+                var id = ids[index];
+                if (entityIDs[id]) {
+                    updateEntity(entityIDs[id]);
                 }
             }
-            Entities.editEntity(entityOverlays[entityID], overlayProperties);
+        } else {
+            for (var id in entityIDs) {
+                var entityID = entityIDs[id];
+                updateEntity(entityID);
+            }
         }
     };
 

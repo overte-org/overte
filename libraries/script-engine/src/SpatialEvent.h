@@ -4,9 +4,11 @@
 //
 //  Created by Stephen Birarda on 2014-10-27.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 /// @addtogroup ScriptEngine
@@ -18,7 +20,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include <qscriptengine.h>
+#include "ScriptValue.h"
+
+class ScriptEngine;
 
 /// [unused] Represents a spatial event to the scripting engine
 class SpatialEvent {
@@ -26,8 +30,8 @@ public:
     SpatialEvent();
     SpatialEvent(const SpatialEvent& other);
     
-    static QScriptValue toScriptValue(QScriptEngine* engine, const SpatialEvent& event);
-    static void fromScriptValue(const QScriptValue& object, SpatialEvent& event);
+    static ScriptValue toScriptValue(ScriptEngine* engine, const SpatialEvent& event);
+    static bool fromScriptValue(const ScriptValue& object, SpatialEvent& event);
     
     glm::vec3 locTranslation;
     glm::quat locRotation;

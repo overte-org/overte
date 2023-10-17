@@ -4,23 +4,27 @@
 //
 //  Created by Seth Alves on 3/16/15.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "EntityTree.h"
 
+class ScriptEngine;
+
 class RecurseOctreeToMapOperator : public RecurseOctreeOperator {
 public:
-    RecurseOctreeToMapOperator(QVariantMap& map, const OctreeElementPointer& top, QScriptEngine* engine, bool skipDefaultValues,
+    RecurseOctreeToMapOperator(QVariantMap& map, const OctreeElementPointer& top, ScriptEngine* engine, bool skipDefaultValues,
                                bool skipThoseWithBadParents, std::shared_ptr<AvatarData> myAvatar);
     bool preRecursion(const OctreeElementPointer& element) override;
     bool postRecursion(const OctreeElementPointer& element) override;
  private:
     QVariantMap& _map;
     OctreeElementPointer _top;
-    QScriptEngine* _engine;
+    ScriptEngine* _engine;
     bool _withinTop;
     bool _skipDefaultValues;
     bool _skipThoseWithBadParents;

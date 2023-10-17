@@ -2,8 +2,13 @@
 
 //  cloneEntity.js
 //
+//  Copyright 2017-2019 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
 
 /* global entityIsCloneable:true, cloneEntity:true, propsAreCloneDynamic:true, Script,
    propsAreCloneDynamic:true, Entities, Uuid */
@@ -31,14 +36,14 @@ if (typeof Object.assign !== 'function') {
     };
 }
 
-entityIsCloneable = function(props) {
+var entityIsCloneable = function(props) {
     if (props) {
         return props.cloneable;
     }
     return false;
 };
 
-propsAreCloneDynamic = function(props) {
+var propsAreCloneDynamic = function(props) {
     var cloneable = entityIsCloneable(props);
     if (cloneable) {
         return props.cloneDynamic;
@@ -46,10 +51,9 @@ propsAreCloneDynamic = function(props) {
     return false;
 };
 
-cloneEntity = function(props) {
+var cloneEntity = function(props) {
     var entityIDToClone = props.id;
-    if (entityIsCloneable(props) &&
-        (Uuid.isNull(props.certificateID) || props.certificateType.indexOf('domainUnlimited') >= 0)) {
+    if (entityIsCloneable(props)) {
         var cloneID = Entities.cloneEntity(entityIDToClone);
         return cloneID;
     }

@@ -4,9 +4,11 @@
 //
 //  Created by Stephen Birarda on 4/7/17.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "ModesWidget.h"
@@ -49,6 +51,7 @@ void ModesWidget::setupUI() {
 
 void ModesWidget::showModelBakingWidget() {
     auto stackedWidget = qobject_cast<QStackedWidget*>(parentWidget());
+    Q_ASSERT(stackedWidget != nullptr);
 
     // add a new widget for model baking to the stack, and switch to it
     stackedWidget->setCurrentIndex(stackedWidget->addWidget(new ModelBakeWidget));
@@ -56,6 +59,7 @@ void ModesWidget::showModelBakingWidget() {
 
 void ModesWidget::showDomainBakingWidget() {
     auto stackedWidget = qobject_cast<QStackedWidget*>(parentWidget());
+    Q_ASSERT(stackedWidget != nullptr);
 
     // add a new widget for domain baking to the stack, and switch to it
     stackedWidget->setCurrentIndex(stackedWidget->addWidget(new DomainBakeWidget));
@@ -63,6 +67,7 @@ void ModesWidget::showDomainBakingWidget() {
 
 void ModesWidget::showSkyboxBakingWidget() {
     auto stackedWidget = qobject_cast<QStackedWidget*>(parentWidget());
+    Q_ASSERT(stackedWidget != nullptr);
 
     // add a new widget for skybox baking to the stack, and switch to it
     stackedWidget->setCurrentIndex(stackedWidget->addWidget(new SkyboxBakeWidget));

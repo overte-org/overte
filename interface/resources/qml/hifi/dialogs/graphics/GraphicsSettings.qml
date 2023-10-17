@@ -18,8 +18,19 @@ import controlsUit 1.0 as HifiControlsUit
 import "qrc:////qml//controls" as HifiControls
 import PerformanceEnums 1.0
 
-Item {
+Flickable {
     HifiStylesUit.HifiConstants { id: hifi; }
+
+    contentHeight: graphicsSettingsColumnLayout.height;
+
+    ScrollBar.vertical : ScrollBar {
+        policy: ScrollBar.AlwaysOn
+        visible: true
+        width: 20
+        background: Rectangle {
+            color: hifi.colors.tableScrollBackgroundDark
+        }
+    }
 
     id: root;
     anchors.fill: parent
@@ -133,7 +144,7 @@ Item {
 
                     HifiStylesUit.RalewayRegular {
                         id: worldDetailHeader
-                        text: "World Detail"
+                        text: "Target frame rate"
                         anchors.left: parent.left
                         anchors.top: parent.top
                         width: 130
@@ -146,13 +157,13 @@ Item {
                         id: worldDetailModel
 
                         ListElement {
-                            text: "Low World Detail"
+                            text: "High Frame Rate/Low Detail"
                         }
                         ListElement {
-                            text: "Medium World Detail"
+                            text: "Medium Frame Rate/Medium Detail"
                         }
                         ListElement {
-                            text: "Full World Detail"
+                            text: "Low Frame Rate/High Detail"
                         }
                     }
 
@@ -414,6 +425,53 @@ Item {
                         onPressedChanged: {
                             if (!pressed) {
                                 updateResolutionScale(value);
+                            }
+                        }
+                    }
+                }
+                Item {
+                    Layout.preferredWidth: parent.width
+                    Layout.preferredHeight: 35
+                    Layout.topMargin: 16
+
+                    HifiStylesUit.RalewayRegular {
+                        id: fieldOfViewHeader
+                        text: "Vertical FOV (" + Number(Math.round(Render.verticalFieldOfView)) + ")"
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        width: 130
+                        height: parent.height
+                        size: 16
+                        color: "#FFFFFF"
+                    }
+
+                    HifiControlsUit.Slider {
+                        id: fieldOfViewSlider
+                        enabled: true
+                        anchors.left: fieldOfViewHeader.right
+                        anchors.leftMargin: 57
+                        anchors.top: parent.top
+                        width: 150
+                        height: parent.height
+                        colorScheme: hifi.colorSchemes.dark
+                        minimumValue: 20
+                        maximumValue: 130
+                        stepSize: 0.05
+                        value: Render.verticalFieldOfView
+                        live: true
+
+                        function updateFieldOfView(sliderValue) {
+                            if (Render.verticalFieldOfView !== sliderValue) {
+                                Render.verticalFieldOfView = sliderValue;
+                            }
+                        }
+
+                        onValueChanged: {
+                            updateFieldOfView(value);
+                        }
+                        onPressedChanged: {
+                            if (!pressed) {
+                                updateFieldOfView(value);
                             }
                         }
                     }

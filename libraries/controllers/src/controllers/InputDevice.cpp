@@ -91,7 +91,7 @@ namespace controller {
     }
 
     EndpointPointer InputDevice::createEndpoint(const Input& input) const {
-        return std::make_shared<InputEndpoint>(input);
+        return InputEndpoint::newEndpoint(input);
     }
 
 }

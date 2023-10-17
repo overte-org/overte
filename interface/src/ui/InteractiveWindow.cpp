@@ -4,9 +4,11 @@
 //
 //  Created by Thijs Wenker on 2018-06-25
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "InteractiveWindow.h"
@@ -24,6 +26,8 @@
 #include <DependencyManager.h>
 #include <DockWidget.h>
 #include <RegisteredMetaTypes.h>
+#include <ScriptEngine.h>
+#include <ScriptEngineCast.h>
 
 #include "OffscreenUi.h"
 #include "shared/QtHelpers.h"
@@ -32,6 +36,12 @@
 #ifdef Q_OS_WIN
 #include <WinUser.h>
 #endif
+
+STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    registerInteractiveWindowMetaType(scriptEngine);
+});
 
 static auto CONTENT_WINDOW_QML = QUrl("InteractiveWindow.qml");
 
@@ -91,18 +101,20 @@ static void dockWidgetDeleter(DockWidget* dockWidget) {
     dockWidget->deleteLater();
 }
 
-void registerInteractiveWindowMetaType(QScriptEngine* engine) {
-    qScriptRegisterMetaType(engine, interactiveWindowPointerToScriptValue, interactiveWindowPointerFromScriptValue);
+void registerInteractiveWindowMetaType(ScriptEngine* engine) {
+    scriptRegisterMetaType<InteractiveWindowPointer, interactiveWindowPointerToScriptValue, interactiveWindowPointerFromScriptValue>(engine);
 }
 
-QScriptValue interactiveWindowPointerToScriptValue(QScriptEngine* engine, const InteractiveWindowPointer& in) {
-    return engine->newQObject(in, QScriptEngine::ScriptOwnership);
+ScriptValue interactiveWindowPointerToScriptValue(ScriptEngine* engine, const InteractiveWindowPointer& in) {
+    // V8TODO: is ScriptOwnership safe here?
+    return engine->newQObject(in, ScriptEngine::ScriptOwnership);
 }
 
-void interactiveWindowPointerFromScriptValue(const QScriptValue& object, InteractiveWindowPointer& out) {
+bool interactiveWindowPointerFromScriptValue(const ScriptValue& object, InteractiveWindowPointer& out) {
     if (const auto interactiveWindow = qobject_cast<InteractiveWindowPointer>(object.toQObject())) {
         out = interactiveWindow;
     }
+    return true;
 }
 
 void InteractiveWindow::forwardKeyPressEvent(int key, int modifiers) {

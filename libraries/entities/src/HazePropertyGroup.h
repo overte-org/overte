@@ -4,9 +4,11 @@
 //
 //  Created by Nissim hadar on 9/21/17.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_HazePropertyGroup_h
@@ -16,8 +18,6 @@
 
 #include <glm/glm.hpp>
 
-#include <QtScript/QScriptEngine>
-
 #include "PropertyGroup.h"
 #include "EntityItemPropertiesMacros.h"
 
@@ -26,6 +26,8 @@ class EncodeBitstreamParams;
 class OctreePacketData;
 class EntityTreeElementExtraEncodeData;
 class ReadBitstreamToTreeParams;
+class ScriptEngine;
+class ScriptValue;
 
 static const float INITIAL_HAZE_RANGE{ 1000.0f };
 static const glm::u8vec3 initialHazeGlareColor { 255, 229, 179 };
@@ -76,10 +78,10 @@ static const float INITIAL_KEY_LIGHT_ALTITUDE{ 200.0f };
 class HazePropertyGroup : public PropertyGroup {
 public:
     // EntityItemProperty related helpers
-    virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, QScriptValue& properties,
-                                   QScriptEngine* engine, bool skipDefaults,
+    virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
+                                   ScriptEngine* engine, bool skipDefaults,
                                    EntityItemProperties& defaultEntityProperties) const override;
-    virtual void copyFromScriptValue(const QScriptValue& object, bool& _defaultSettings) override;
+    virtual void copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) override;
 
     void merge(const HazePropertyGroup& other);
 

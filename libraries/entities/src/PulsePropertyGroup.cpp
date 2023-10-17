@@ -3,9 +3,11 @@
 //
 //  Created by Sam Gondelman on 1/15/19
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "PulsePropertyGroup.h"
@@ -57,8 +59,8 @@ void PulsePropertyGroup::setAlphaModeFromString(const QString& pulseMode) {
     }
 }
 
-void PulsePropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, QScriptValue& properties,
-                                          QScriptEngine* engine, bool skipDefaults,
+void PulsePropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
+                                          ScriptEngine* engine, bool skipDefaults,
                                           EntityItemProperties& defaultEntityProperties) const {
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_PULSE_MIN, Pulse, pulse, Min, min);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_PULSE_MAX, Pulse, pulse, Max, max);
@@ -67,7 +69,7 @@ void PulsePropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredPro
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_PULSE_ALPHA_MODE, Pulse, pulse, AlphaMode, alphaMode, getAlphaModeAsString);
 }
 
-void PulsePropertyGroup::copyFromScriptValue(const QScriptValue& object, bool& _defaultSettings) {
+void PulsePropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(pulse, min, float, setMin);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(pulse, max, float, setMax);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(pulse, period, float, setPeriod);

@@ -27,39 +27,47 @@ const QString USER_ACTIVITY_URL = "/api/v1/user_activities";
 
 class UserActivityLogger : public QObject {
     Q_OBJECT
-    
+
 public:
     static UserActivityLogger& getInstance();
-    
+
 public slots:
     bool isEnabled() { return !_disabled.get(); }
     bool isDisabledSettingSet() const { return _disabled.isSet(); }
 
-    bool isCrashMonitorEnabled() { return !_crashMonitorDisabled.get(); }
-    bool isCrashMonitorDisabledSettingSet() const { return _crashMonitorDisabled.isSet(); }
 
     void disable(bool disable);
-    void crashMonitorDisable(bool disable);
     void logAction(QString action, QJsonObject details = QJsonObject(), JSONCallbackParameters params = JSONCallbackParameters());
-    
+
     void launch(QString applicationVersion, bool previousSessionCrashed, int previousSessionRuntime);
 
     void insufficientGLVersion(const QJsonObject& glData);
-    
+
     void changedDisplayName(QString displayName);
     void changedModel(QString typeOfModel, QString modelURL);
     void changedDomain(QString domainURL);
     void connectedDevice(QString typeOfDevice, QString deviceName);
     void loadedScript(QString scriptName);
     void wentTo(AddressManager::LookupTrigger trigger, QString destinationType, QString destinationName);
-    
+
+signals:
+
+    /**
+     * @brief The crash reporting setting has been changed.
+     *
+     * This signal is used by the crash reporter to enable/disable itself.
+     *
+     */
+    void crashReportingEnabledChanged();
+
 private slots:
     void requestError(QNetworkReply* errorReply);
-    
+
 private:
     UserActivityLogger();
     Setting::Handle<bool> _disabled { "UserActivityLoggerDisabled", true };
-    Setting::Handle<bool> _crashMonitorDisabled { "CrashMonitorDisabled2", true };
+
+
 
     QElapsedTimer _timer;
 };

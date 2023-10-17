@@ -4,9 +4,11 @@
 //
 //  Created by Stephen Birarda on 1/2/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "Sound.h"
@@ -26,6 +28,8 @@
 #include <LimitedNodeList.h>
 #include <NetworkAccessManager.h>
 #include <SharedUtil.h>
+#include <ScriptEngine.h>
+#include <ScriptValue.h>
 
 #include "AudioRingBuffer.h"
 #include "AudioLogging.h"
@@ -422,14 +426,15 @@ SoundProcessor::AudioProperties SoundProcessor::interpretAsMP3(const QByteArray&
 }
 
 
-QScriptValue soundSharedPointerToScriptValue(QScriptEngine* engine, const SharedSoundPointer& in) {
-    return engine->newQObject(new SoundScriptingInterface(in), QScriptEngine::ScriptOwnership);
+ScriptValue soundSharedPointerToScriptValue(ScriptEngine* engine, const SharedSoundPointer& in) {
+    return engine->newQObject(new SoundScriptingInterface(in), ScriptEngine::ScriptOwnership);
 }
 
-void soundSharedPointerFromScriptValue(const QScriptValue& object, SharedSoundPointer& out) {
+bool soundSharedPointerFromScriptValue(const ScriptValue& object, SharedSoundPointer& out) {
     if (auto soundInterface = qobject_cast<SoundScriptingInterface*>(object.toQObject())) {
         out = soundInterface->getSound();
     }
+    return true;
 }
 
 SoundScriptingInterface::SoundScriptingInterface(const SharedSoundPointer& sound) : _sound(sound) {

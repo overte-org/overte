@@ -1,9 +1,11 @@
 //
 //  Created by Bradley Austin Davis on 2015-04-04
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #pragma once
 #ifndef hifi_OffscreenQmlSurface_h
@@ -13,7 +15,9 @@
 #include <QtGui/qevent.h>
 
 #include <QTouchEvent>
-#include "PointerEvent.h"
+
+#include <ScriptEngine.h>
+#include <PointerEvent.h>
 
 using QmlContextCallback = std::function<void(QQmlContext*)>;
 

@@ -1,15 +1,33 @@
 //
 //  Created by Bradley Austin Davis on 2019/05/14
 //  Copyright 2013-2019 High Fidelity, Inc.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 
 #include "PerformanceScriptingInterface.h"
 
+#include <ScriptEngineCast.h>
+
 #include "../Application.h"
+
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType<PerformanceScriptingInterface::PerformancePreset, scriptValueFromEnumClass<PerformanceScriptingInterface::PerformancePreset>, scriptValueToEnumClass<PerformanceScriptingInterface::PerformancePreset> >(scriptEngine, "PerformancePreset");
+    scriptRegisterMetaType<PerformanceScriptingInterface::RefreshRateProfile, scriptValueFromEnumClass<PerformanceScriptingInterface::RefreshRateProfile>, scriptValueToEnumClass<PerformanceScriptingInterface::RefreshRateProfile> >(scriptEngine, "RefreshRateProfile");
+}));
+
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptEngine->registerEnum("Performance.PerformancePreset",QMetaEnum::fromType<PerformanceScriptingInterface::PerformancePreset>());
+    scriptEngine->registerEnum("Performance.RefreshRateProfile",QMetaEnum::fromType<PerformanceScriptingInterface::RefreshRateProfile>());
+});
 
 std::once_flag PerformanceScriptingInterface::registry_flag;
 

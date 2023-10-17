@@ -1,7 +1,8 @@
 //  avatarFinderBeacon.js
 //
-//  Created by Thijs Wenker on 12/7/16
+//  Created by Thijs Wenker on December 7th, 2016
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Shows 2km long red beams for each avatar outside of the 20 meter radius of your avatar, tries to ignore AC Agents.
 //
@@ -9,7 +10,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
 var MIN_DISPLAY_DISTANCE = 20.0; // meters
-var BEAM_COLOR = {red: 255, green: 0, blue: 0};
+var BEAM_COLOR = {"red": 255, "green": 0, "blue": 0};
 var SHOW_THROUGH_WALLS = false;
 var BEACON_LENGTH = 2000.0; // meters
 var TRY_TO_IGNORE_AC_AGENTS = true;
@@ -27,28 +28,38 @@ var POSSIBLE_AC_AVATARS = [
 AvatarFinderBeacon = function(avatar) {
     var visible = false;
     var avatarSessionUUID = avatar.sessionUUID;
-    this.overlay = Overlays.addOverlay('line3d', {
-        color: BEAM_COLOR,
-        dashed: false,
-        start: Vec3.sum(avatar.position, {x: 0, y: -HALF_BEACON_LENGTH, z: 0}),
-        end: Vec3.sum(avatar.position, {x: 0, y: HALF_BEACON_LENGTH, z: 0}),
-        rotation: {x: 0, y: 0, z: 0, w: 1},
-        visible: visible,
-        drawInFront: SHOW_THROUGH_WALLS,
-        ignoreRayIntersection: true,
-        parentID: avatarSessionUUID,
-        parentJointIndex: -2
-    });
+    var renderLayer = "world";
+    if (SHOW_THROUGH_WALLS) { 
+        renderLayer = "front"; 
+    }
+    this.overlay = Entities.addEntity({
+        "type": "PolyLine",
+        "color": BEAM_COLOR,
+        "linePoints": [
+            Vec3.sum(avatar.position, {"x": 0, "y": -HALF_BEACON_LENGTH, "z": 0}),
+            Vec3.sum(avatar.position, {"x": 0, "y": HALF_BEACON_LENGTH, "z": 0})
+        ],
+        "strokeWidths": [
+            0.02,
+            0.02
+        ],
+        "rotation": {"x": 0, "y": 0, "z": 0, "w": 1},
+        "visible": visible,
+        "renderLayer": renderLayer,
+        "ignorePickIntersection": true,
+        "parentID": avatarSessionUUID,
+        "parentJointIndex": -2
+    }, "local");
     this.cleanup = function() {
-        Overlays.deleteOverlay(this.overlay);
+        Entities.deleteEntity(this.overlay);
     };
     this.shouldShow = function() {
         return Vec3.distance(MyAvatar.position, avatar.position) >= MIN_DISPLAY_DISTANCE;
     };
     this.update = function() {
         avatar = AvatarList.getAvatar(avatarSessionUUID);
-        Overlays.editOverlay(this.overlay, {
-            visible: this.shouldShow()
+        Entities.editEntity(this.overlay, {
+            "visible": this.shouldShow()
         });
     };
 };

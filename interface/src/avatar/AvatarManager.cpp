@@ -4,16 +4,19 @@
 //
 //  Created by Stephen Birarda on 1/23/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "AvatarManager.h"
 
 #include <string>
 
-#include <QScriptEngine>
+#include <ScriptEngine.h>
+#include <ScriptValue.h>
 
 #include "AvatarLogging.h"
 
@@ -735,8 +738,8 @@ AvatarSharedPointer AvatarManager::getAvatarBySessionID(const QUuid& sessionID) 
 }
 
 RayToAvatarIntersectionResult AvatarManager::findRayIntersection(const PickRay& ray,
-                                                                 const QScriptValue& avatarIdsToInclude,
-                                                                 const QScriptValue& avatarIdsToDiscard,
+                                                                 const ScriptValue& avatarIdsToInclude,
+                                                                 const ScriptValue& avatarIdsToDiscard,
                                                                  bool pickAgainstMesh) {
     QVector<EntityItemID> avatarsToInclude = qVectorEntityItemIDFromScriptValue(avatarIdsToInclude);
     QVector<EntityItemID> avatarsToDiscard = qVectorEntityItemIDFromScriptValue(avatarIdsToDiscard);
@@ -860,6 +863,7 @@ RayToAvatarIntersectionResult AvatarManager::findRayIntersectionVector(const Pic
                 result.avatarID = rayAvatarResult._intersectWithAvatar;
                 result.distance = rayAvatarResult._distance;
                 result.face = face;
+                Q_ASSERT(face < 7);
                 result.intersection = ray.origin + rayAvatarResult._distance * rayDirection;
                 result.surfaceNormal = rayAvatarResult._intersectionNormal;
                 result.jointIndex = rayAvatarResult._intersectWithJoint;
@@ -953,6 +957,7 @@ ParabolaToAvatarIntersectionResult AvatarManager::findParabolaIntersectionVector
                 result.avatarID = sortedAvatar.second->getID();
                 result.parabolicDistance = parabolicDistance;
                 result.face = face;
+                Q_ASSERT(face < 7);
                 result.surfaceNormal = surfaceNormal;
                 result.extraInfo = extraInfo;
             }
@@ -980,7 +985,7 @@ float AvatarManager::getAvatarSortCoefficient(const QString& name) {
 }
 
 // HACK
-void AvatarManager::setAvatarSortCoefficient(const QString& name, const QScriptValue& value) {
+void AvatarManager::setAvatarSortCoefficient(const QString& name, const ScriptValue& value) {
     bool somethingChanged = false;
     if (value.isNumber()) {
         float numericalValue = (float)value.toNumber();

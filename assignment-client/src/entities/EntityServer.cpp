@@ -15,7 +15,6 @@
 #include <QTimer>
 #include <QJsonArray>
 #include <QJsonDocument>
-#include <QRandomGenerator>
 
 #include <EntityTree.h>
 #include <ResourceCache.h>
@@ -38,8 +37,7 @@ const char* LOCAL_MODELS_PERSIST_FILE = "resources/models.svo";
 
 EntityServer::EntityServer(ReceivedMessage& message) :
     OctreeServer(message),
-    _entitySimulation(nullptr),
-    _dynamicDomainVerificationTimer(this)
+    _entitySimulation(nullptr)
 {
     DependencyManager::set<ResourceManager>();
     DependencyManager::set<ResourceCacheSharedItems>();
@@ -56,14 +54,8 @@ EntityServer::EntityServer(ReceivedMessage& message) :
         PacketType::EntityClone,
         PacketType::EntityEdit,
         PacketType::EntityErase,
-        PacketType::EntityPhysics,
-        PacketType::ChallengeOwnership,
-        PacketType::ChallengeOwnershipRequest,
-        PacketType::ChallengeOwnershipReply },
+        PacketType::EntityPhysics },
         PacketReceiver::makeSourcedListenerReference<EntityServer>(this, &EntityServer::handleEntityPacket));
-
-    connect(&_dynamicDomainVerificationTimer, &QTimer::timeout, this, &EntityServer::startDynamicDomainVerification);
-    _dynamicDomainVerificationTimer.setSingleShot(true);
 }
 
 EntityServer::~EntityServer() {
@@ -280,7 +272,7 @@ int EntityServer::sendSpecialPackets(const SharedNodePointer& node, OctreeQueryN
 
     #ifdef EXTRA_ERASE_DEBUGGING
         if (packetsSent > 0) {
-            qDebug() << "EntityServer::sendSpecialPackets() sent " << packetsSent << "special packets of " 
+            qDebug() << "EntityServer::sendSpecialPackets() sent " << packetsSent << "special packets of "
                         << totalBytes << " total bytes to node:" << node->getUUID();
         }
     #endif
@@ -325,18 +317,6 @@ void EntityServer::readAdditionalConfiguration(const QJsonObject& settingsSectio
         tree->setEntityMaxTmpLifetime(EntityTree::DEFAULT_MAX_TMP_ENTITY_LIFETIME);
     }
 
-    int minTime;
-    if (readOptionInt("dynamicDomainVerificationTimeMin", settingsSectionObject, minTime)) {
-        _MINIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS = minTime * 1000;
-    }
-
-    int maxTime;
-    if (readOptionInt("dynamicDomainVerificationTimeMax", settingsSectionObject, maxTime)) {
-        _MAXIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS = maxTime * 1000;
-    }
-
-    startDynamicDomainVerification();
-
     tree->setWantEditLogging(wantEditLogging);
     tree->setWantTerseEditLogging(wantTerseEditLogging);
 
@@ -346,14 +326,14 @@ void EntityServer::readAdditionalConfiguration(const QJsonObject& settingsSectio
     } else {
         tree->setEntityScriptSourceWhitelist("");
     }
-    
+
     auto entityEditFilters = DependencyManager::get<EntityEditFilters>();
-    
+
     QString filterURL;
     if (readOptionString("entityEditFilter", settingsSectionObject, filterURL) && !filterURL.isEmpty()) {
         // connect the filterAdded signal, and block edits until you hear back
         connect(entityEditFilters.data(), &EntityEditFilters::filterAdded, this, &EntityServer::entityFilterAdded);
-        
+
         entityEditFilters->addFilter(EntityItemID(), filterURL);
     }
 }
@@ -387,7 +367,7 @@ void EntityServer::nodeKilled(SharedNodePointer node) {
 
 // FIXME - this stats tracking is somewhat temporary to debug the Whiteboard issues. It's not a bad
 // set of stats to have, but we'd probably want a different data structure if we keep it very long.
-// Since this version uses a single shared QMap for all senders, there could be some lock contention 
+// Since this version uses a single shared QMap for all senders, there could be some lock contention
 // on this QWriteLocker
 void EntityServer::trackSend(const QUuid& dataID, quint64 dataLastEdited, const QUuid& sessionID) {
     QWriteLocker locker(&_viewerSendingStatsLock);
@@ -463,20 +443,5 @@ QString EntityServer::serverSubclassStats() {
 
 void EntityServer::domainSettingsRequestFailed() {
     auto nodeList = DependencyManager::get<NodeList>();
-    qCDebug(entities) << "The EntityServer couldn't get the Domain Settings. Starting dynamic domain verification with default values...";
-
-    _MINIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS = DEFAULT_MINIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS;
-    _MAXIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS = DEFAULT_MAXIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS;
-    startDynamicDomainVerification();
-}
-
-void EntityServer::startDynamicDomainVerification() {
-    qCDebug(entities) << "Starting Dynamic Domain Verification...";
-
-    EntityTreePointer tree = std::static_pointer_cast<EntityTree>(_tree);
-    tree->startDynamicDomainVerificationOnServer((float) _MAXIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS / MSECS_PER_SECOND);
-
-    int nextInterval = QRandomGenerator::global()->bounded(((_MAXIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS + 1) - _MINIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS) + _MINIMUM_DYNAMIC_DOMAIN_VERIFICATION_TIMER_MS);
-    qCDebug(entities) << "Restarting Dynamic Domain Verification timer for" << nextInterval / 1000 << "seconds";
-    _dynamicDomainVerificationTimer.start(nextInterval);
+    qCDebug(entities) << "The EntityServer couldn't get the Domain Settings.";
 }

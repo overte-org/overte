@@ -4,17 +4,23 @@
 //
 //  Created by Ryan Jones on 12/3/2016.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_TestingDialog_h
 #define hifi_TestingDialog_h
 
+#include <memory>
+
 #include <QDialog>
-#include "ScriptEngine.h"
 #include "JSConsole.h"
+
+class ScriptManager;
+using ScriptManagerPointer = std::shared_ptr<ScriptManager>;
 
 const QString windowLabel = "Client Script Tests";
 const QString testRunnerRelativePath = "/scripts/developer/tests/unit_tests/testRunner.js";
@@ -29,7 +35,7 @@ public:
 
 private:
     std::unique_ptr<JSConsole> _console;
-    ScriptEnginePointer _engine;
+    ScriptManagerPointer _scriptManager;
 };
 
 #endif

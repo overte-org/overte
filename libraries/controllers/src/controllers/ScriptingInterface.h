@@ -4,9 +4,11 @@
 //
 //  Created by Brad Hefta-Gaub on 12/17/13.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #pragma once
@@ -29,7 +31,6 @@
 #include <QMutex>
 
 #include <QtQml/QJSValue>
-#include <QtScript/QScriptValue>
 
 #include <DependencyManager.h>
 #include <StreamUtils.h>
@@ -72,25 +73,6 @@ namespace controller {
         ScriptingInterface();
         virtual ~ScriptingInterface() {};
 
-        /*@jsdoc
-         * Gets a list of all available actions.
-         * @function Controller.getAllActions
-         * @returns {Action[]} All available actions.
-         * @deprecated This function is deprecated and will be removed. It no longer works.
-         */
-        // FIXME: This function causes a JavaScript crash: https://highfidelity.manuscript.com/f/cases/edit/13921
-        Q_INVOKABLE QVector<Action> getAllActions();
-        
-        /*@jsdoc
-         * Gets a list of all available inputs for a hardware device.
-         * @function Controller.getAvailableInputs
-         * @param {number} deviceID - Integer ID of the hardware device.
-         * @returns {NamedPair[]} All available inputs for the device.
-         * @deprecated This function is deprecated and will be removed. It no longer works.
-         */
-        // FIXME: This function causes a JavaScript crash: https://highfidelity.manuscript.com/f/cases/edit/13922
-        Q_INVOKABLE QVector<Input::NamedPair> getAvailableInputs(unsigned int device);
-        
         /*@jsdoc
          * Finds the name of a particular controller from its device ID.
          * @function Controller.getDeviceName

@@ -1,9 +1,11 @@
 //
 //  Created by Anthony J. Thibault on 2016-12-12
 //  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_TabletScriptingInterface_h
@@ -18,10 +20,6 @@
 #include <QtCore/QVariant>
 #include <QtCore/QAbstractListModel>
 #include <QSortFilterProxyModel>
-
-#include <QtScript/QScriptValue>
-#include <QtScript/QScriptEngine>
-#include <QtScript/QScriptValueIterator>
 
 #include <QtQuick/QQuickItem>
 
@@ -689,5 +687,6 @@ protected:
 };
 
 Q_DECLARE_METATYPE(TabletButtonProxy*);
+Q_DECLARE_METATYPE(TabletScriptingInterface::TabletAudioEvents)
 
 #endif // hifi_TabletScriptingInterface_h

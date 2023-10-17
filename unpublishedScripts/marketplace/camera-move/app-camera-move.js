@@ -354,7 +354,7 @@ function main() {
     settingsApp.isActiveChanged.connect(function(isActive) {
         updateButtonText();
         if (Overlays.getOverlayType(HMD.tabletScreenID)) {
-            var fromMode = Overlays.getProperty(HMD.tabletScreenID, 'inputMode'),
+            var fromMode = Entities.getEntityProperties(HMD.tabletScreenID, ['inputMode']).inputMode,
                 inputMode = isActive ? "Mouse" : "Touch";
             log('switching HMD.tabletScreenID from inputMode', fromMode, 'to', inputMode);
             Overlays.editOverlay(HMD.tabletScreenID, { inputMode: inputMode });

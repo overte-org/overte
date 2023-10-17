@@ -4,10 +4,11 @@
 //
 //  Created by Clement on 9/13/16.
 //  Copyright 2016 High Fidelity, Inc.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "SettingHelpers.h"
@@ -133,6 +134,7 @@ QJsonDocument variantMapToJsonDocument(const QSettings::SettingsMap& map) {
         }
 
         switch (variantType) {
+            // QML has problems with QVariant::Hash
             case QVariant::Hash: {
                 qCritical() << "Unsupported variant type" << variant.typeName() << ";" << key << variant;
                 Q_ASSERT(false);

@@ -1,9 +1,11 @@
 //
 //  Created by Sam Gondelman on 11/29/18
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_RenderableImageEntityItem_h
@@ -42,8 +44,8 @@ private:
     NetworkTexturePointer _texture;
     bool _textureIsLoaded { false };
 
-    bool _emissive;
-    bool _keepAspectRatio;
+    bool _emissive { false };
+    bool _keepAspectRatio { false };
     QRect _subImage;
 
     std::shared_ptr<graphics::ProceduralMaterial> _material { std::make_shared<graphics::ProceduralMaterial>() };

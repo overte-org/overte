@@ -33,7 +33,7 @@ Overte is a free and open source 3D social virtual worlds software.
 * Full-body avatars
 * FBX, glTF, and OBJ support
 * JavaScript scripting engine
-* 16km³ world space in a server
+* 256km²/4096km³ world space in a server
 * Fully self-hosted
 * Apache 2.0
 

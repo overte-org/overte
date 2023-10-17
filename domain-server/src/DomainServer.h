@@ -35,7 +35,6 @@
 #include "DomainMetadata.h"
 #include "DomainServerSettingsManager.h"
 #include "DomainServerWebSessionData.h"
-#include "WalletTransaction.h"
 #include "DomainContentBackupManager.h"
 
 #include "PendingAssignedNodeData.h"
@@ -48,7 +47,6 @@ Q_DECLARE_LOGGING_CATEGORY(domain_server_ice)
 Q_DECLARE_LOGGING_CATEGORY(domain_server_auth)
 
 typedef QSharedPointer<Assignment> SharedAssignmentPointer;
-typedef QMultiHash<QUuid, WalletTransaction*> TransactionHash;
 
 using Subnet = QPair<QHostAddress, int>;
 using SubnetList = std::vector<Subnet>;
@@ -85,13 +83,13 @@ public:
 
     void screensharePresence(QString roomname, QUuid avatarID, int expiration_seconds = 0);
 
+    static bool forceCrashReporting() { return _forceCrashReporting; }
+
 public slots:
     /// Called by NodeList to inform us a node has been added
     void nodeAdded(SharedNodePointer node);
     /// Called by NodeList to inform us a node has been killed
     void nodeKilled(SharedNodePointer node);
-
-    void transactionJSONCallback(const QJsonObject& data);
 
     void restart();
 
@@ -111,9 +109,6 @@ private slots:
 
     void processOctreeDataRequestMessage(QSharedPointer<ReceivedMessage> message);
     void processOctreeDataPersistMessage(QSharedPointer<ReceivedMessage> message);
-
-    void setupPendingAssignmentCredits();
-    void sendPendingTransactionsToServer();
 
     void performIPAddressPortUpdate(const SockAddr& newPublicSockAddr);
     void sendHeartbeatToMetaverse() { sendHeartbeatToMetaverse(QString(), int()); }
@@ -271,7 +266,6 @@ private:
 
     QHash<QUuid, SharedAssignmentPointer> _allAssignments;
     QQueue<SharedAssignmentPointer> _unfulfilledAssignments;
-    TransactionHash _pendingAssignmentCredits;
 
     bool _isUsingDTLS { false };
 
@@ -319,6 +313,8 @@ private:
     static bool _getTempName;
     static QString _userConfigFilename;
     static int _parentPID;
+    static bool _forceCrashReporting;
+
 
     bool _sendICEServerAddressToMetaverseAPIInProgress { false };
     bool _sendICEServerAddressToMetaverseAPIRedo { false };

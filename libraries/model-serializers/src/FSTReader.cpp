@@ -20,6 +20,9 @@
 #include <NetworkingConstants.h>
 #include <SharedUtil.h>
 
+
+const QStringList SINGLE_VALUE_PROPERTIES{"name", "filename", "texdir", "script", "comment"};
+
 hifi::VariantMultiHash FSTReader::parseMapping(QIODevice* device) {
     hifi::VariantMultiHash properties;
 
@@ -32,9 +35,25 @@ hifi::VariantMultiHash FSTReader::parseMapping(QIODevice* device) {
         if (sections.size() < 2) {
             continue;
         }
+
+        // We can have URLs like:
+        // filename = https://www.dropbox.com/scl/fi/xxx/avatar.fbx?rlkey=xxx&dl=1\n
+        // These confuse the parser due to the presence of = in the URL.
+        //
+        // SINGLE_VALUE_PROPERTIES contains a list of things that may be URLs or contain an =
+        // for some other reason, and that we know for sure contain only a single value after
+        // the first =.
+        //
+        // Really though, we should just use JSON instead.
         QByteArray name = sections.at(0).trimmed();
-        if (sections.size() == 2) {
-            properties.insert(name, sections.at(1).trimmed());
+        bool isSingleValue = SINGLE_VALUE_PROPERTIES.contains(name);
+
+        if (sections.size() == 2 || isSingleValue) {
+            // As per the above, we can have '=' signs inside of URLs, so instead of
+            // using the split string, just use everything after the first '='.
+
+            QString value = line.mid(line.indexOf("=")+1).trimmed();
+            properties.insert(name, value);
         } else if (sections.size() == 3) {
             QVariantHash heading = properties.value(name).toHash();
             heading.insert(sections.at(1).trimmed(), sections.at(2).trimmed());
@@ -127,7 +146,7 @@ void FSTReader::writeVariant(QBuffer& buffer, QVariantHash::const_iterator& it) 
 
 QByteArray FSTReader::writeMapping(const hifi::VariantMultiHash& mapping) {
     static const QStringList PREFERED_ORDER = QStringList() << NAME_FIELD << TYPE_FIELD << SCALE_FIELD << FILENAME_FIELD
-    << MARKETPLACE_ID_FIELD << TEXDIR_FIELD << SCRIPT_FIELD << JOINT_FIELD
+    << TEXDIR_FIELD << SCRIPT_FIELD << JOINT_FIELD
     << BLENDSHAPE_FIELD << JOINT_INDEX_FIELD;
     QBuffer buffer;
     buffer.open(QIODevice::WriteOnly);

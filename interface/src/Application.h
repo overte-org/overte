@@ -5,16 +5,18 @@
 //  Created by Andrzej Kapolka on 5/10/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_Application_h
 #define hifi_Application_h
 
 #include <functional>
+#include <memory>
 
 #include <QtCore/QCommandLineParser>
 #include <QtCore/QHash>
@@ -23,11 +25,13 @@
 #include <QtCore/QSharedPointer>
 #include <QtCore/QStringList>
 #include <QtQuick/QQuickItem>
+#include <QtCore/QSharedPointer>
 
 #include <QtGui/QImage>
 
 #include <QtWidgets/QApplication>
 
+#include <AvatarHashMap.h>
 #include <ThreadHelpers.h>
 #include <AbstractScriptingServicesInterface.h>
 #include <AbstractViewStateInterface.h>
@@ -42,7 +46,6 @@
 #include <PhysicsEngine.h>
 #include <plugins/Forward.h>
 #include <ui-plugins/PluginContainer.h>
-#include <ScriptEngine.h>
 #include <ShapeManager.h>
 #include <SimpleMovingAverage.h>
 #include <StDev.h>
@@ -91,6 +94,8 @@ class MainWindow;
 class AssetUpload;
 class CompositorHelper;
 class AudioInjector;
+class ScriptEngine;
+using ScriptEnginePointer = std::shared_ptr<ScriptEngine>;
 
 namespace controller {
     class StateController;
@@ -249,7 +254,7 @@ public:
     NodeToOctreeSceneStats* getOcteeSceneStats() { return &_octreeServerSceneStats; }
 
     virtual controller::ScriptingInterface* getControllerScriptingInterface() { return _controllerScriptingInterface; }
-    virtual void registerScriptEngineWithApplicationServices(const ScriptEnginePointer& scriptEngine) override;
+    virtual void registerScriptEngineWithApplicationServices(ScriptManagerPointer& scriptManager) override;
 
     virtual void copyCurrentViewFrustum(ViewFrustum& viewOut) const override { copyDisplayViewFrustum(viewOut); }
     virtual QThread* getMainThread() override { return thread(); }
@@ -530,8 +535,6 @@ private slots:
     void nodeAdded(SharedNodePointer node);
     void nodeActivated(SharedNodePointer node);
     void nodeKilled(SharedNodePointer node);
-    static void packetSent(quint64 length);
-    static void addingEntityWithCertificate(const QString& certificateID, const QString& placeName);
     void updateDisplayMode();
     void setDisplayPlugin(DisplayPluginPointer newPlugin);
     void domainConnectionRefused(const QString& reasonMessage, int reason, const QString& extraInfo);
@@ -557,8 +560,10 @@ private slots:
 
 private:
     void init();
+    bool initMenu();
     void pauseUntilLoginDetermined();
     void resumeAfterLoginDialogActionTaken();
+    bool handleInputMethodEventForFocusedEntity(QEvent* event);
     bool handleKeyEventForFocusedEntity(QEvent* event);
     bool handleFileOpenEvent(QFileOpenEvent* event);
     void cleanupBeforeQuit();
@@ -621,6 +626,10 @@ private:
     void userKickConfirmation(const QUuid& nodeID, unsigned int banFlags = ModerationFlags::getDefaultBanFlags());
 
     MainWindow* _window;
+
+    // _isMenuInitialized: used to initialize menu early enough before it's needed by other
+    // initializers. Fixes a deadlock issue with recent Qt versions.
+    bool _isMenuInitialized;
     QElapsedTimer& _sessionRunTimer;
 
     bool _aboutToQuit { false };

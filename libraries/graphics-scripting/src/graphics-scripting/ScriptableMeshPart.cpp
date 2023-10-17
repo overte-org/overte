@@ -1,8 +1,10 @@
 //
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "ScriptableMeshPart.h"
@@ -11,8 +13,7 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/transform.hpp>
 
-#include <BaseScriptEngine.h>
-#include <QtScript/QScriptValue>
+#include <ScriptValue.h>
 #include <RegisteredMetaTypes.h>
 #include <graphics/BufferViewHelpers.h>
 #include <graphics/GpuHelpers.h>
@@ -78,12 +79,12 @@ QVariantList scriptable::ScriptableMeshPart::queryVertexAttributes(QVariant sele
     return parentMesh->queryVertexAttributes(selector);
 }
 
-glm::uint32 scriptable::ScriptableMeshPart::forEachVertex(QScriptValue _callback) {
+glm::uint32 scriptable::ScriptableMeshPart::forEachVertex(const ScriptValue& _callback) {
     // TODO: limit to vertices within the part's indexed range?
     return isValid() ? parentMesh->forEachVertex(_callback) : 0;
 }
 
-glm::uint32 scriptable::ScriptableMeshPart::updateVertexAttributes(QScriptValue _callback) {
+glm::uint32 scriptable::ScriptableMeshPart::updateVertexAttributes(const ScriptValue& _callback) {
     // TODO: limit to vertices within the part's indexed range?
     return isValid() ? parentMesh->updateVertexAttributes(_callback) : 0;
 }

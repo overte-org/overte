@@ -27,6 +27,11 @@ macro(add_crashpad)
     set(CMAKE_BACKTRACE_TOKEN $ENV{CMAKE_BACKTRACE_TOKEN})
   endif()
 
+  if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+    message(STATUS "Checking crashpad config - Linux aarch64 is not supported by crashpad, disabled.")
+    set(USE_CRASHPAD FALSE)
+  endif()
+
   if (USE_CRASHPAD)
     message(STATUS "Checking crashpad config - enabled.")
     get_property(CRASHPAD_CHECKED GLOBAL PROPERTY CHECKED_FOR_CRASHPAD_ONCE)

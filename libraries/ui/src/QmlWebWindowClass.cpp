@@ -1,17 +1,20 @@
 //
 //  Created by Bradley Austin Davis on 2015-12-15
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "QmlWebWindowClass.h"
 
 #include <QtCore/QThread>
 
-#include <QtScript/QScriptContext>
-#include <QtScript/QScriptEngine>
+#include <ScriptContext.h>
+#include <ScriptEngine.h>
+#include <ScriptManager.h>
 
 #include <shared/QtHelpers.h>
 
@@ -19,7 +22,7 @@ static const char* const URL_PROPERTY = "source";
 static const char* const SCRIPT_PROPERTY = "scriptUrl";
 
 // Method called by Qt scripts to create a new web window in the overlay
-QScriptValue QmlWebWindowClass::internal_constructor(QScriptContext* context, QScriptEngine* engine, bool restricted) {
+ScriptValue QmlWebWindowClass::internal_constructor(ScriptContext* context, ScriptEngine* engine, bool restricted) {
     auto properties = parseArguments(context);
     QmlWebWindowClass* retVal = new QmlWebWindowClass(restricted);
     Q_ASSERT(retVal);
@@ -29,7 +32,8 @@ QScriptValue QmlWebWindowClass::internal_constructor(QScriptContext* context, QS
     } else {
         retVal->initQml(properties);
     }
-    connect(engine, &QScriptEngine::destroyed, retVal, &QmlWindowClass::deleteLater);
+    auto manager = engine->manager();
+    connect(manager, &ScriptManager::destroyed, retVal, &QmlWindowClass::deleteLater);
     return engine->newQObject(retVal);
 }
 

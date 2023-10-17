@@ -1,4 +1,4 @@
-"use strict";
+"no use strict";
 
 //  inEditMode.js
 //
@@ -72,14 +72,17 @@ Script.include("/~/system/libraries/utils.js");
             if (controllerData.triggerClicks[this.hand]) {
                 var hand = this.hand === RIGHT_HAND ? Controller.Standard.RightHand : Controller.Standard.LeftHand;
                 if (!this.triggerClicked) {
+                    print("inEditMode click");
                     this.selectedTarget = controllerData.rayPicks[this.hand];
                     if (!this.selectedTarget.intersects) {
+                        print("inEditMode no intersect");
                         Messages.sendLocalMessage(this.ENTITY_TOOL_UPDATES_CHANNEL, JSON.stringify({
                             method: "clearSelection",
                             hand: hand
                         }));
                     } else {
                         if (this.selectedTarget.type === Picks.INTERSECTED_ENTITY) {
+                            print("inEditMode select entity");
                             Messages.sendLocalMessage(this.ENTITY_TOOL_UPDATES_CHANNEL, JSON.stringify({
                                 method: "selectEntity",
                                 entityID: this.selectedTarget.objectID,
@@ -88,6 +91,7 @@ Script.include("/~/system/libraries/utils.js");
                                 intersection: this.selectedTarget.intersection
                             }));
                         } else if (this.selectedTarget.type === Picks.INTERSECTED_OVERLAY) {
+                            print("inEditMode select overlay");
                             Messages.sendLocalMessage(this.ENTITY_TOOL_UPDATES_CHANNEL, JSON.stringify({
                                 method: "selectOverlay",
                                 overlayID: this.selectedTarget.objectID,
@@ -106,6 +110,10 @@ Script.include("/~/system/libraries/utils.js");
         this.sendPointingAtData = function(controllerData) {
             var rayPick = controllerData.rayPicks[this.hand];
             var hudRayPick = controllerData.hudRayPicks[this.hand];
+            // V8TODO: this needs to be checked if it works correctly
+            if (!hudRayPick.intersects) {
+                return;
+            }
             var point2d = this.calculateNewReticlePosition(hudRayPick.intersection);
             var desktopWindow = Window.isPointOnDesktopWindow(point2d);
             var tablet = this.pointingAtTablet(rayPick.objectID);
@@ -195,12 +203,13 @@ Script.include("/~/system/libraries/utils.js");
 
             if ((controllerData.triggerClicks[this.hand] === 0 && controllerData.secondaryValues[this.hand] === 0)) {
                 var stopRunning = false;
-                controllerData.nearbyOverlayIDs[this.hand].forEach(function(overlayID) {
+                // V8TODO: check if this doesn't break anything
+                /*controllerData.nearbyOverlayIDs[this.hand].forEach(function(overlayID) {
                     var overlayName = Overlays.getProperty(overlayID, "name");
                     if (overlayName === "KeyboardAnchor") {
                         stopRunning = true;
                     }
-                });
+                });*/
 
                 if (stopRunning) {
                     return this.exitModule();

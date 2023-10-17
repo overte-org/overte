@@ -18,6 +18,7 @@
 #include <QLabel>
 #include <PathUtils.h>
 #include <QRadioButton>
+#include <QCheckBox>
 #include <QStandardPaths>
 #include <QVBoxLayout>
 #include <QtCore/QUrl>
@@ -25,14 +26,22 @@
 #include "Application.h"
 #include "Menu.h"
 
+
+
 #include <RunningMarker.h>
 #include <SettingHandle.h>
 #include <SettingHelpers.h>
-
+#include <SettingManager.h>
+#include <DependencyManager.h>
+#include <UserActivityLogger.h>
+#include <crash-handler/CrashHandler.h>
+#include <BuildInfo.h>
 
 bool CrashRecoveryHandler::checkForResetSettings(bool wasLikelyCrash, bool suppressPrompt) {
-    QSettings::setDefaultFormat(JSON_FORMAT);
-    QSettings settings;
+    Setting::Handle<bool> crashReportingAsked { "CrashReportingAsked", false };
+
+
+    Settings settings;
     settings.beginGroup("Developer");
     QVariant displayCrashOptions = settings.value(MenuOption::DisplayCrashOptions);
     settings.endGroup();
@@ -43,6 +52,7 @@ bool CrashRecoveryHandler::checkForResetSettings(bool wasLikelyCrash, bool suppr
 
     // If option does not exist in Interface.ini so assume default behavior.
     bool displaySettingsResetOnCrash = !displayCrashOptions.isValid() || displayCrashOptions.toBool();
+    bool userPrompted = false;
 
     if (suppressPrompt) {
         return wasLikelyCrash;
@@ -50,18 +60,106 @@ bool CrashRecoveryHandler::checkForResetSettings(bool wasLikelyCrash, bool suppr
 
     if (wasLikelyCrash || askToResetSettings) {
         if (displaySettingsResetOnCrash || askToResetSettings) {
+            userPrompted = true;
             Action action = promptUserForAction(wasLikelyCrash);
             if (action != DO_NOTHING) {
                 handleCrash(action);
             }
         }
     }
+
+    if (!userPrompted) {
+        // Both dialogs share a purpose -- if we already showed the full dialog, no need to show this one.
+        if (BuildInfo::BUILD_TYPE != BuildInfo::BuildType::Stable) {
+            // We didn't crash but are running a development build -- we'd like reports if possible.
+            if (suggestCrashReporting()) {
+                // If suggestCrashReporting returns false, we didn't ask the user.
+                crashReportingAsked.set(true);
+            }
+        }
+
+    }
+
     return wasLikelyCrash;
+}
+
+
+bool CrashRecoveryHandler::suggestCrashReporting() {
+    QDialog crashDialog;
+
+    crashDialog.setWindowTitle("Overte");
+
+    QVBoxLayout* layout = new QVBoxLayout;
+
+    QString explainText;
+    auto &ch = CrashHandler::getInstance();
+
+
+
+    switch(BuildInfo::BUILD_TYPE) {
+        case BuildInfo::BuildType::Dev:
+            explainText = "You're running a pre-release version. This is an official release, but the code\n"
+                        "is not yet considered to be fully stable. We'd highly appreciate it if you enabled\n"
+                        "crash reporting to help us test the upcoming release.";
+            break;
+        case BuildInfo::BuildType::PR:
+            // TODO: It would be nice to have here the PR number, and who submitted it. This would require GHA support.
+            explainText = "You're running a PR version. This is experimental code contributed by a third party\n"
+                        "and not yet part of the official code. We'd highly appreciate it if you enabled\n"
+                        "crash reporting to help us test this potential addition.";
+            break;
+        case BuildInfo::BuildType::Master:
+            explainText = "You're running a pre-release version. This is an official release, but the code\n"
+                        "is not yet considered to be fully stable. We'd highly appreciate it if you enabled\n"
+                        "crash reporting to help us test the upcoming release.";
+            break;
+        case BuildInfo::BuildType::Stable:
+            explainText = "You're running a stable version. This is an official release, and should perform\n"
+                          "correctly. Nevertheless, we'd highly appreciate it if you enabled crash reporting\n"
+                          "to help us catch any remaining problems.";
+            break;
+    }
+
+    if (!ch.isStarted()) {
+        qWarning() << "Crash reporting not working, skipping suggestion to enable it.";
+        return false;
+    }
+
+    QLabel* explainLabel = new QLabel(explainText);
+
+    QLabel* crashReportLabel = new QLabel("Reports can only be seen by developers trusted by the Overte e.V.\n"
+                                          "organization, and will only be used for improving the code.");
+
+    QCheckBox* crashReportCheckbox = new QCheckBox("Enable automatic crash reporting");
+
+    crashReportCheckbox->setChecked(ch.isEnabled());
+    crashReportCheckbox->setEnabled(ch.isStarted());
+
+    layout->addWidget(explainLabel);
+    layout->addSpacing(12);
+    layout->addWidget(crashReportLabel);
+    layout->addWidget(crashReportCheckbox);
+    layout->addSpacing(12);
+    layout->addStretch();
+
+    QDialogButtonBox* buttons = new QDialogButtonBox(QDialogButtonBox::Ok);
+    layout->addWidget(buttons);
+    crashDialog.connect(buttons, SIGNAL(accepted()), SLOT(accept()));
+
+    crashDialog.setLayout(layout);
+
+    crashDialog.exec();
+
+    ch.setEnabled(crashReportCheckbox->isChecked());
+
+    return true;
 }
 
 CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool showCrashMessage) {
     QDialog crashDialog;
     QLabel* label;
+    auto &ch = CrashHandler::getInstance();
+
     if (showCrashMessage) {
         crashDialog.setWindowTitle("Interface Crashed Last Run");
         label = new QLabel("If you are having trouble starting would you like to reset your settings?");
@@ -77,10 +175,30 @@ CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool show
     QRadioButton* option1 = new QRadioButton("Reset all my settings");
     QRadioButton* option2 = new QRadioButton("Reset my settings but keep essential info");
     QRadioButton* option3 = new QRadioButton("Continue with my current settings");
+    QLabel* crashReportLabel = nullptr;
+
+    if (ch.isStarted()) {
+        crashReportLabel = new QLabel("To help us with debugging, you can enable automatic crash reports.\n"
+                                      "They'll only be seen by developers trusted by the Overte e.V. organization,\n"
+                                      "and will only be used for improving the code.");
+    } else {
+        crashReportLabel = new QLabel("Unfortunately, crash reporting isn't built into this release.");
+    }
+
+    QCheckBox* crashReportCheckbox = new QCheckBox("Enable automatic crash reporting");
+
+
+    crashReportCheckbox->setChecked(ch.isEnabled());
+    crashReportCheckbox->setEnabled(ch.isStarted());
+
     option3->setChecked(true);
     layout->addWidget(option1);
     layout->addWidget(option2);
     layout->addWidget(option3);
+    layout->addSpacing(12);
+
+    layout->addWidget(crashReportLabel);
+    layout->addWidget(crashReportCheckbox);
     layout->addSpacing(12);
     layout->addStretch();
 
@@ -101,6 +219,8 @@ CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool show
         }
     }
 
+    ch.setEnabled(crashReportCheckbox->isChecked());
+
     // Dialog cancelled or "do nothing" option chosen
     return CrashRecoveryHandler::DO_NOTHING;
 }
@@ -111,7 +231,8 @@ void CrashRecoveryHandler::handleCrash(CrashRecoveryHandler::Action action) {
         return;
     }
 
-    QSettings settings;
+    Settings settings;
+
     const QString ADDRESS_MANAGER_GROUP = "AddressManager";
     const QString ADDRESS_KEY = "address";
     const QString AVATAR_GROUP = "Avatar";
@@ -145,11 +266,8 @@ void CrashRecoveryHandler::handleCrash(CrashRecoveryHandler::Action action) {
         tutorialComplete = settings.value(TUTORIAL_COMPLETE_FLAG_KEY).toBool();
     }
 
-    // Delete Interface.ini
-    QFile settingsFile(settings.fileName());
-    if (settingsFile.exists()) {
-        settingsFile.remove();
-    }
+    // Reset everything
+    settings.clear();
 
     if (action == CrashRecoveryHandler::RETAIN_IMPORTANT_INFO) {
         // Write avatar info

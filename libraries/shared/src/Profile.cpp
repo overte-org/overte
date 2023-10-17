@@ -1,9 +1,11 @@
 //
 //  Created by Ryan Huffman on 2016-12-14
 //  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "Profile.h"
@@ -48,15 +50,15 @@ static bool tracingEnabled() {
     return (tracer && tracer->isEnabled());
 }
 
-DurationBase::DurationBase(const QLoggingCategory& category, const QString& name) : _name(name), _category(category) {
+ProfileDurationBase::ProfileDurationBase(const QLoggingCategory& category, const QString& name) : _name(name), _category(category) {
 }
 
-Duration::Duration(const QLoggingCategory& category,
+ProfileDuration::ProfileDuration(const QLoggingCategory& category,
                    const QString& name,
                    uint32_t argbColor,
                    uint64_t payload,
                    const QVariantMap& baseArgs) :
-    DurationBase(category, name) {
+    ProfileDurationBase(category, name) {
     if (tracingEnabled() && category.isDebugEnabled()) {
         QVariantMap args = baseArgs;
         args["nv_payload"] = QVariant::fromValue(payload);
@@ -78,7 +80,7 @@ Duration::Duration(const QLoggingCategory& category,
     }
 }
 
-Duration::~Duration() {
+ProfileDuration::~ProfileDuration() {
     if (tracingEnabled() && _category.isDebugEnabled()) {
         tracing::traceEvent(_category, _name, tracing::DurationEnd);
 #ifdef NSIGHT_TRACING
@@ -88,7 +90,7 @@ Duration::~Duration() {
 }
 
 // FIXME
-uint64_t Duration::beginRange(const QLoggingCategory& category, const char* name, uint32_t argbColor) {
+uint64_t ProfileDuration::beginRange(const QLoggingCategory& category, const char* name, uint32_t argbColor) {
 #ifdef NSIGHT_TRACING
     if (tracingEnabled() && category.isDebugEnabled()) {
         nvtxEventAttributes_t eventAttrib = { 0 };
@@ -105,7 +107,7 @@ uint64_t Duration::beginRange(const QLoggingCategory& category, const char* name
 }
 
 // FIXME
-void Duration::endRange(const QLoggingCategory& category, uint64_t rangeId) {
+void ProfileDuration::endRange(const QLoggingCategory& category, uint64_t rangeId) {
 #ifdef NSIGHT_TRACING
     if (tracingEnabled() && category.isDebugEnabled()) {
         nvtxRangeEnd(rangeId);
@@ -113,11 +115,11 @@ void Duration::endRange(const QLoggingCategory& category, uint64_t rangeId) {
 #endif
 }
 
-ConditionalDuration::ConditionalDuration(const QLoggingCategory& category, const QString& name, uint32_t minTime) :
-    DurationBase(category, name), _startTime(tracing::Tracer::now()), _minTime(minTime * USECS_PER_MSEC) {
+ConditionalProfileDuration::ConditionalProfileDuration(const QLoggingCategory& category, const QString& name, uint32_t minTime) :
+    ProfileDurationBase(category, name), _startTime(tracing::Tracer::now()), _minTime(minTime * USECS_PER_MSEC) {
 }
 
-ConditionalDuration::~ConditionalDuration() {
+ConditionalProfileDuration::~ConditionalProfileDuration() {
     if (tracingEnabled() && _category.isDebugEnabled()) {
         auto endTime = tracing::Tracer::now();
         auto duration = endTime - _startTime;

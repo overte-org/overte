@@ -38,6 +38,7 @@
 #include "AudioMixerClientData.h"
 #include "AvatarAudioStream.h"
 #include "InjectedAudioStream.h"
+#include "crash-handler/CrashHandler.h"
 
 using namespace std;
 
@@ -48,6 +49,7 @@ static const QString AUDIO_MIXER_LOGGING_TARGET_NAME = "audio-mixer";
 static const QString AUDIO_ENV_GROUP_KEY = "audio_env";
 static const QString AUDIO_BUFFER_GROUP_KEY = "audio_buffer";
 static const QString AUDIO_THREADING_GROUP_KEY = "audio_threading";
+
 
 int AudioMixer::_numStaticJitterFrames{ DISABLE_STATIC_JITTER_FRAMES };
 float AudioMixer::_noiseMutingThreshold{ DEFAULT_NOISE_MUTING_THRESHOLD };
@@ -559,6 +561,8 @@ void AudioMixer::clearDomainSettings() {
 
 void AudioMixer::parseSettingsObject(const QJsonObject& settingsObject) {
     qCDebug(audio) << "AVX2 Support:" << (cpuSupportsAVX2() ? "enabled" : "disabled");
+
+    commonParseSettingsObject(settingsObject);
 
     if (settingsObject.contains(AUDIO_THREADING_GROUP_KEY)) {
         QJsonObject audioThreadingGroupObject = settingsObject[AUDIO_THREADING_GROUP_KEY].toObject();

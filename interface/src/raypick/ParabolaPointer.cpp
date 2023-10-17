@@ -1,6 +1,7 @@
 //
 //  Created by Sam Gondelman 7/17/2018
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -232,14 +233,14 @@ void ParabolaPointer::RenderState::update(const glm::vec3& origin, const glm::ve
     }
 }
 
-std::shared_ptr<StartEndRenderState> ParabolaPointer::buildRenderState(const QVariantMap& propMap) {
-    // FIXME: we have to keep using the Overlays interface here, because existing scripts use overlay properties to define pointers
+std::shared_ptr<StartEndRenderState> ParabolaPointer::buildRenderState(const QVariantMap& propMap, const QList<EntityItemProperties> &entityProperties) {
     QUuid startID;
-    if (propMap["start"].isValid()) {
-        QVariantMap startMap = propMap["start"].toMap();
-        if (startMap["type"].isValid()) {
-            startMap.remove("visible");
-            startID = qApp->getOverlays().addOverlay(startMap["type"].toString(), startMap);
+    if (propMap["startPropertyIndex"].isValid()) {
+        int startPropertyIndex = propMap["startPropertyIndex"].toInt();
+        if (startPropertyIndex >= 0 && startPropertyIndex < entityProperties.length()) {
+            EntityItemProperties startProperties(entityProperties[startPropertyIndex]);
+            startProperties.getGrab().setGrabbable(false);
+            startID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(startProperties, entity::HostType::LOCAL);
         }
     }
 
@@ -249,6 +250,7 @@ std::shared_ptr<StartEndRenderState> ParabolaPointer::buildRenderState(const QVa
     bool isVisibleInSecondaryCamera = RenderState::ParabolaRenderItem::DEFAULT_PARABOLA_ISVISIBLEINSECONDARYCAMERA;
     bool drawInFront = RenderState::ParabolaRenderItem::DEFAULT_PARABOLA_DRAWINFRONT;
     bool enabled = false;
+
     if (propMap["path"].isValid()) {
         enabled = true;
         QVariantMap pathMap = propMap["path"].toMap();
@@ -274,11 +276,12 @@ std::shared_ptr<StartEndRenderState> ParabolaPointer::buildRenderState(const QVa
     }
 
     QUuid endID;
-    if (propMap["end"].isValid()) {
-        QVariantMap endMap = propMap["end"].toMap();
-        if (endMap["type"].isValid()) {
-            endMap.remove("visible");
-            endID = qApp->getOverlays().addOverlay(endMap["type"].toString(), endMap);
+    if (propMap["endPropertyIndex"].isValid()) {
+        int endPropertyIndex = propMap["endPropertyIndex"].toInt();
+        if (endPropertyIndex >= 0 && endPropertyIndex < entityProperties.length()) {
+            EntityItemProperties endProperties(entityProperties[endPropertyIndex]);
+            endProperties.getGrab().setGrabbable(false);
+            endID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(endProperties, entity::HostType::LOCAL);
         }
     }
 

@@ -1,9 +1,11 @@
 //
 //  Created by Sam Gateau on 4/27/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #pragma once
@@ -17,8 +19,8 @@
 #include <memory>
 #include <mutex>
 
+#include <QQueue>
 #include <QtQml/QJSValue>
-#include <QtScript/QScriptValue>
 
 #include <DependencyManager.h>
 #include <RegisteredMetaTypes.h>
@@ -31,6 +33,10 @@
 #include "StandardControls.h"
 #include "Actions.h"
 #include "StateController.h"
+
+class ScriptEngine;
+class ScriptManager;
+class ScriptValue;
 
 namespace controller {
 
@@ -64,7 +70,7 @@ namespace controller {
         virtual ~UserInputMapper();
 
 
-        static void registerControllerTypes(QScriptEngine* engine);
+        static void registerControllerTypes(ScriptEngine* engine);
 
         void registerDevice(InputDevice::Pointer device);
         InputDevice::Pointer getDevice(const Input& input);
@@ -122,6 +128,17 @@ namespace controller {
         void unloadMappings(const QStringList& jsonFiles);
         void unloadMapping(const QString& jsonFile);
 
+        /**
+         * @brief Request cleaning up endpoints on script engine shutdown
+         *
+         * Script endpoints need to be removed before script engine they belong to gets deleted, because otherwise
+         * script callback will cause a crash. Script engine invokes this function during shutdown and then waits
+         * for confirmation before being shut down.
+         *
+         * @param engine Pointer to the script engine that will be shut down
+         */
+        void scheduleScriptEndpointCleanup(std::shared_ptr<ScriptManager> manager);
+
         AxisValue getValue(const Input& input) const;
         Pose getPose(const Input& input) const;
 
@@ -163,11 +180,21 @@ namespace controller {
         static bool applyRoute(const RoutePointer& route, bool force = false);
         void enableMapping(const MappingPointer& mapping);
         void disableMapping(const MappingPointer& mapping);
+
+        /**
+         * @brief Clean up endpoints on script engine shutdown
+         *
+         * Script endpoints need to be removed before script engine they belong to gets deleted, because otherwise
+         * script callback will cause a crash. This function is called from UserInputMapper::runMappings.
+         *
+         */
+        void runScriptEndpointCleanup();
+
         EndpointPointer endpointFor(const QJSValue& endpoint);
-        EndpointPointer endpointFor(const QScriptValue& endpoint);
+        EndpointPointer endpointFor(const ScriptValue& endpoint);
         EndpointPointer compositeEndpointFor(EndpointPointer first, EndpointPointer second);
         ConditionalPointer conditionalFor(const QJSValue& endpoint);
-        ConditionalPointer conditionalFor(const QScriptValue& endpoint);
+        ConditionalPointer conditionalFor(const ScriptValue& endpoint);
         ConditionalPointer conditionalFor(const Input& endpoint) const;
 
         MappingPointer parseMapping(const QJsonValue& json);
@@ -195,6 +222,9 @@ namespace controller {
         QSet<QString> _loadedRouteJsonFiles;
 
         InputCalibrationData inputCalibrationData;
+
+        // Contains pointers to script engines that are requesting callback cleanup during their shutdown process
+        QQueue<std::shared_ptr<ScriptManager>> scriptManagersRequestingCleanup;
 
         mutable std::recursive_mutex _lock;
     };

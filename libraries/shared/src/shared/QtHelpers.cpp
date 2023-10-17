@@ -1,9 +1,11 @@
 //
 //  Created by Bradley Austin Davis on 2015/11/09
 //  Copyright 2013-2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "QtHelpers.h"
@@ -40,6 +42,16 @@ void addBlockingForbiddenThread(const QString& name, QThread* thread) {
     threadHash[thread] = name;
 }
 
+QString isBlockingForbiddenThread(QThread* currentThread) {
+    QReadLocker locker(&threadHashLock);
+    for (const auto& thread : threadHash.keys()) {
+        if (currentThread == thread) {
+            return threadHash[thread];
+        }
+    }
+    return QString();
+}
+
 bool blockingInvokeMethod(
     const char* function,
     QObject *obj, const char *member,
@@ -71,6 +83,8 @@ bool blockingInvokeMethod(
     }
 
     PROFILE_RANGE(app, function);
+    // V8TODO: this causes a deadlock when main thread calls blocking invoke method on entity script thread,
+    // for example when clearing cache. Some sort of mutex is needed to prevent this.
     return QMetaObject::invokeMethod(obj, member,
             Qt::BlockingQueuedConnection, ret, val0, val1, val2, val3, val4, val5, val6, val7, val8, val9);
 }
@@ -92,10 +106,10 @@ bool blockingInvokeMethod(
 }
 
 // Inspecting of the qt event queue
-// requres access to private Qt datastructures
+// requires access to private Qt datastructures
 // Querying the event queue should be done with
 // care as it could lock the threadData->postEventList.mutex
-// The code uses a tryLock to avoid the possability of a
+// The code uses a tryLock to avoid the possibility of a
 // deadlock during a call to this code, although that is unlikely
 //
 #ifdef DEBUG_EVENT_QUEUE

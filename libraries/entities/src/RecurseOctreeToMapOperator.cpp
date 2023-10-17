@@ -4,18 +4,21 @@
 //
 //  Created by Seth Alves on 3/16/15.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "RecurseOctreeToMapOperator.h"
 
 #include "EntityItemProperties.h"
+#include <ScriptValue.h>
 
 RecurseOctreeToMapOperator::RecurseOctreeToMapOperator(QVariantMap& map,
                                                        const OctreeElementPointer& top,
-                                                       QScriptEngine* engine,
+                                                       ScriptEngine* engine,
                                                        bool skipDefaultValues,
                                                        bool skipThoseWithBadParents,
                                                        std::shared_ptr<AvatarData> myAvatar) :
@@ -56,7 +59,7 @@ bool RecurseOctreeToMapOperator::postRecursion(const OctreeElementPointer& eleme
         }
 
         EntityItemProperties properties = entityItem->getProperties();
-        QScriptValue qScriptValues;
+        ScriptValue qScriptValues;
         if (_skipDefaultValues) {
             qScriptValues = EntityItemNonDefaultPropertiesToScriptValue(_engine, properties);
         } else {

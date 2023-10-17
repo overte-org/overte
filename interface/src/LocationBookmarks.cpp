@@ -4,9 +4,11 @@
 //
 //  Created by Triplelexx on 23/03/17.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "LocationBookmarks.h"
@@ -73,6 +75,7 @@ QString LocationBookmarks::getAddress(const QString& bookmarkName) {
 
 void LocationBookmarks::teleportToBookmark() {
     QAction* action = qobject_cast<QAction*>(sender());
+    Q_ASSERT(action != nullptr);
     QString address = action->data().toString();
     DependencyManager::get<AddressManager>()->handleLookupString(address);
 }

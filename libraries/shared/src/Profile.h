@@ -1,9 +1,11 @@
 //
 //  Created by Ryan Huffman on 2016-12-14
 //  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #pragma once
 
@@ -37,27 +39,27 @@ Q_DECLARE_LOGGING_CATEGORY(trace_startup)
 Q_DECLARE_LOGGING_CATEGORY(trace_workload)
 Q_DECLARE_LOGGING_CATEGORY(trace_baker)
 
-class DurationBase {
+class ProfileDurationBase {
 
 protected:
-    DurationBase(const QLoggingCategory& category, const QString& name);
+    ProfileDurationBase(const QLoggingCategory& category, const QString& name);
     const QString _name;
     const QLoggingCategory& _category;
 };
 
-class Duration : public DurationBase {
+class ProfileDuration : public ProfileDurationBase {
 public:
-    Duration(const QLoggingCategory& category, const QString& name, uint32_t argbColor = 0xff0000ff, uint64_t payload = 0, const QVariantMap& args = QVariantMap());
-    ~Duration();
+    ProfileDuration(const QLoggingCategory& category, const QString& name, uint32_t argbColor = 0xff0000ff, uint64_t payload = 0, const QVariantMap& args = QVariantMap());
+    ~ProfileDuration();
 
     static uint64_t beginRange(const QLoggingCategory& category, const char* name, uint32_t argbColor);
     static void endRange(const QLoggingCategory& category, uint64_t rangeId);
 };
 
-class ConditionalDuration : public DurationBase {
+class ConditionalProfileDuration : public ProfileDurationBase {
 public:
-    ConditionalDuration(const QLoggingCategory& category, const QString& name, uint32_t minTime);
-    ~ConditionalDuration();
+    ConditionalProfileDuration(const QLoggingCategory& category, const QString& name, uint32_t minTime);
+    ~ConditionalProfileDuration();
 
 private:
     const int64_t _startTime;
@@ -108,11 +110,11 @@ inline void metadata(const QString& metadataType, const QVariantMap& args) {
     tracing::traceEvent(trace_metadata(), metadataType, tracing::Metadata, "", args);
 }
 
-#define PROFILE_RANGE(category, name) Duration profileRangeThis(trace_##category(), name);
-#define PROFILE_RANGE_IF_LONGER(category, name, ms) ConditionalDuration profileRangeThis(trace_##category(), name, ms);
-#define PROFILE_RANGE_EX(category, name, argbColor, payload, ...) Duration profileRangeThis(trace_##category(), name, argbColor, (uint64_t)payload, ##__VA_ARGS__);
-#define PROFILE_RANGE_BEGIN(category, rangeId, name, argbColor) rangeId = Duration::beginRange(trace_##category(), name, argbColor)
-#define PROFILE_RANGE_END(category, rangeId) Duration::endRange(trace_##category(), rangeId)
+#define PROFILE_RANGE(category, name) ProfileDuration profileRangeThis(trace_##category(), name);
+#define PROFILE_RANGE_IF_LONGER(category, name, ms) ConditionalProfileDuration profileRangeThis(trace_##category(), name, ms);
+#define PROFILE_RANGE_EX(category, name, argbColor, payload, ...) ProfileDuration profileRangeThis(trace_##category(), name, argbColor, (uint64_t)payload, ##__VA_ARGS__);
+#define PROFILE_RANGE_BEGIN(category, rangeId, name, argbColor) rangeId = ProfileDuration::beginRange(trace_##category(), name, argbColor)
+#define PROFILE_RANGE_END(category, rangeId) ProfileDuration::endRange(trace_##category(), rangeId)
 #define PROFILE_SYNC_BEGIN(category, name, id, ...) syncBegin(trace_##category(), name, id, ##__VA_ARGS__);
 #define PROFILE_SYNC_END(category, name, id, ...) syncEnd(trace_##category(), name, id, ##__VA_ARGS__);
 #define PROFILE_ASYNC_BEGIN(category, name, id, ...) asyncBegin(trace_##category(), name, id, ##__VA_ARGS__);
@@ -130,8 +132,8 @@ inline void metadata(const QString& metadataType, const QVariantMap& args) {
 // uncomment WANT_DETAILED_PROFILING definition to enable profiling in high-frequency contexts
 //#define WANT_DETAILED_PROFILING
 #ifdef WANT_DETAILED_PROFILING
-#define DETAILED_PROFILE_RANGE(category, name) Duration profileRangeThis(trace_##category(), name);
-#define DETAILED_PROFILE_RANGE_EX(category, name, argbColor, payload, ...) Duration profileRangeThis(trace_##category(), name, argbColor, (uint64_t)payload, ##__VA_ARGS__);
+#define DETAILED_PROFILE_RANGE(category, name) ProfileDuration profileRangeThis(trace_##category(), name);
+#define DETAILED_PROFILE_RANGE_EX(category, name, argbColor, payload, ...) ProfileDuration profileRangeThis(trace_##category(), name, argbColor, (uint64_t)payload, ##__VA_ARGS__);
 #else // WANT_DETAILED_PROFILING
 #define DETAILED_PROFILE_RANGE(category, name) ; // no-op
 #define DETAILED_PROFILE_RANGE_EX(category, name, argbColor, payload, ...) ; // no-op

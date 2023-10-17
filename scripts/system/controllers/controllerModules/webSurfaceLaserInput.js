@@ -7,7 +7,7 @@
 
 /* global Script, Entities, enableDispatcherModule, disableDispatcherModule, makeRunningValues,
    makeDispatcherModuleParameters, Overlays, HMD, TRIGGER_ON_VALUE, TRIGGER_OFF_VALUE, getEnabledModuleByName,
-   ContextOverlay, Picks, makeLaserParams, Settings, MyAvatar, RIGHT_HAND, LEFT_HAND, DISPATCHER_PROPERTIES
+   Picks, makeLaserParams, Settings, MyAvatar, RIGHT_HAND, LEFT_HAND, DISPATCHER_PROPERTIES
 */
 
 Script.include("/~/system/libraries/controllerDispatcherUtils.js");
@@ -58,7 +58,8 @@ Script.include("/~/system/libraries/controllers.js");
                 if (nearGrabModule) {
                     var candidateOverlays = controllerData.nearbyOverlayIDs[this.hand];
                     var grabbableOverlays = candidateOverlays.filter(function(overlayID) {
-                        return Overlays.getProperty(overlayID, "grabbable");
+                        //V8TODO: this needs to be checked if it works
+                        return Entities.getEntityProperties(overlayID, ["grab"]).grab.grabbable;
                     });
                     var target = nearGrabModule.getTargetID(grabbableOverlays, controllerData);
                     if (target) {
@@ -105,7 +106,7 @@ Script.include("/~/system/libraries/controllers.js");
                 if (intersection.type === Picks.INTERSECTED_OVERLAY) {
                     var overlayIndex = this.ignoredObjects.indexOf(objectID);
 
-                    var overlayName = Overlays.getProperty(objectID, "name");
+                    var overlayName = Entities.getEntityProperties(objectID, ["name"]).name;
                     if (overlayName !== "Loading-Destination-Card-Text" && overlayName !== "Loading-Destination-Card-GoTo-Image" &&
                         overlayName !== "Loading-Destination-Card-GoTo-Image-Hover") {
                         var data = {
@@ -171,20 +172,6 @@ Script.include("/~/system/libraries/controllers.js");
                 }
             }
             return intersectionType["None"];
-        };
-
-        this.deleteContextOverlay = function() {
-            var farGrabModule = getEnabledModuleByName(this.hand === RIGHT_HAND ?
-                                                       "RightFarActionGrabEntity" :
-                                                       "LeftFarActionGrabEntity");
-            if (farGrabModule) {
-                var entityWithContextOverlay = farGrabModule.entityWithContextOverlay;
-
-                if (entityWithContextOverlay) {
-                    ContextOverlay.destroyContextOverlay(entityWithContextOverlay);
-                    farGrabModule.entityWithContextOverlay = false;
-                }
-            }
         };
 
         this.updateAlwaysOn = function(type) {
@@ -267,7 +254,6 @@ Script.include("/~/system/libraries/controllers.js");
                 return makeRunningValues(true, [], []);
             }
 
-            this.deleteContextOverlay();
             this.running = false;
             this.dominantHandOverride = false;
             return makeRunningValues(false, [], []);

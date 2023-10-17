@@ -4,9 +4,11 @@
 //
 //  Created by Raffi Bedikian on 8/30/15
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_AntialiasingEffect_h
@@ -109,6 +111,20 @@ class AntialiasingConfig : public render::Job::Config {
 public:
     AntialiasingConfig() : render::Job::Config(true) {}
 
+    /*@jsdoc
+     *Antialiasing modes. <table>
+     *   <thead>
+     *     <tr><th>Value</th><th>Name</th><th>Description</th>
+     *   </thead>
+     *   <tbody>
+     *     <tr><td><code>0</code></td><td>NONE</td><td>Antialiasing is disabled.</td></tr>
+     *     <tr><td><code>1</code></td><td>TAA</td><td>Temporal Antialiasing.</td></tr>
+     *     <tr><td><code>2</code></td><td>FXAA</td><td>FXAA.</td></tr>
+     *     <tr><td><code>3</code></td><td>MODE_COUNT</td><td>Inducates number of antialiasing modes</td></tr>
+     *   </tbody>
+     * </table>
+     * @typedef {number} AntialiasingMode
+     */
     enum Mode {
         NONE = 0,
         TAA,

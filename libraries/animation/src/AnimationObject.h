@@ -4,20 +4,22 @@
 //
 //  Created by Andrzej Kapolka on 4/17/14.
 //  Copyright (c) 2014 High Fidelity, Inc. All rights reserved.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_AnimationObject_h
 #define hifi_AnimationObject_h
 
 #include <QObject>
-#include <QScriptable>
 
 #include <FBXSerializer.h>
+#include "Scriptable.h"
 
-class QScriptEngine;
+class ScriptEngine;
 
 /*@jsdoc
  * Information about an animation resource, created by {@link AnimationCache.getAnimation}.
@@ -35,7 +37,7 @@ class QScriptEngine;
  * @property {AnimationFrameObject[]} frames - The frames in the animation. <em>Read-only.</em>
  */
 /// Scriptable wrapper for animation pointers.
-class AnimationObject : public QObject, protected QScriptable {
+class AnimationObject : public QObject, protected Scriptable {
     Q_OBJECT
     Q_PROPERTY(QStringList jointNames READ getJointNames)
     Q_PROPERTY(QVector<HFMAnimationFrame> frames READ getFrames)
@@ -72,7 +74,7 @@ public:
  * @property {Quat[]} rotations - Joint rotations. <em>Read-only.</em>
  */
 /// Scriptable wrapper for animation frames.
-class AnimationFrameObject : public QObject, protected QScriptable {
+class AnimationFrameObject : public QObject, protected Scriptable {
     Q_OBJECT
     Q_PROPERTY(QVector<glm::quat> rotations READ getRotations)
 
@@ -86,6 +88,7 @@ public:
     Q_INVOKABLE QVector<glm::quat> getRotations() const;
 };
 
-void registerAnimationTypes(QScriptEngine* engine);
+void registerAnimationTypes(ScriptEngine* engine);
+void registerAnimationPrototypes(ScriptEngine* engine);
 
 #endif // hifi_AnimationObject_h

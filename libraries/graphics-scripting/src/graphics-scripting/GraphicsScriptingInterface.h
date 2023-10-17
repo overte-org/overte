@@ -3,9 +3,11 @@
 //  libraries/graphics-scripting/src
 //
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef hifi_GraphicsScriptingInterface_h
@@ -14,17 +16,17 @@
 #include <QtCore/QObject>
 #include <QUrl>
 
-#include <QtScript/QScriptEngine>
-#include <QtScript/QScriptable>
-
 #include "ScriptableMesh.h"
 #include <DependencyManager.h>
 #include "RegisteredMetaTypes.h"
+#include <Scriptable.h>
+#include <ScriptValue.h>
 
+class ScriptEngine;
 
 /*@jsdoc
- * The <code>Graphics</code> API enables you to access and manipulate avatar, entity, and overlay models in the rendered scene. 
- * This includes getting mesh and material information for applying {@link Entities.EntityProperties-Material|Material} 
+ * The <code>Graphics</code> API enables you to access and manipulate avatar, entity, and overlay models in the rendered scene.
+ * This includes getting mesh and material information for applying {@link Entities.EntityProperties-Material|Material}
  * entities.
  *
  * @namespace Graphics
@@ -34,11 +36,11 @@
  * @hifi-avatar
  */
 
-class GraphicsScriptingInterface : public QObject, public QScriptable, public Dependency {
+class GraphicsScriptingInterface : public QObject, public Scriptable, public Dependency {
     Q_OBJECT
 
 public:
-    static void registerMetaTypes(QScriptEngine* engine);
+    static void registerMetaTypes(ScriptEngine* engine);
     GraphicsScriptingInterface(QObject* parent = nullptr);
 
 public slots:
@@ -47,7 +49,7 @@ public slots:
      * <p>Note: The model data may be used for more than one instance of the item displayed in the scene.</p>
      * @function Graphics.getModel
      * @param {UUID} id - The ID of the avatar, 3D entity, or 3D overlay.
-     * @returns {GraphicsModel} The model data for the avatar, entity, or overlay, as displayed. This includes the results of 
+     * @returns {GraphicsModel} The model data for the avatar, entity, or overlay, as displayed. This includes the results of
      *     applying any {@link Entities.EntityProperties-Material|Material} entities to the item.
      * @example <caption>Report some details of your avatar's model.</caption>
      * var model = Graphics.getModel(MyAvatar.sessionUUID);
@@ -56,7 +58,7 @@ public slots:
      * for (var i = 0; i < meshes.length; i++) {
      *     numMeshparts += meshes[i].numParts;
      * }
-     * 
+     *
      * print("Avatar:", MyAvatar.skeletonModelURL);
      * print("Number of meshes:", model.numMeshes);
      * print("Number of mesh parts:", numMeshparts);
@@ -75,7 +77,7 @@ public slots:
     bool updateModel(const QUuid& uuid, const scriptable::ScriptableModelPointer& model);
 
     /*@jsdoc
-     * Checks whether the model for an avatar, entity, or overlay can be updated in the rendered scene. Only avatars, 
+     * Checks whether the model for an avatar, entity, or overlay can be updated in the rendered scene. Only avatars,
      * <code>"Model"</code> entities and <code>"model"</code> overlays can have their meshes updated.
      * @function Graphics.canUpdateModel
      * @param {Uuid} id - The ID of the avatar, entity, or overlay.
@@ -87,7 +89,7 @@ public slots:
      *     type: "Model",
      *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(Camera.orientation, { x: -0.5, y: 0, z: -3 })),
      *     rotation: MyAvatar.orientation,
-     *     modelURL: "https://apidocs.vircadia.dev/models/cowboy-hat.fbx",
+     *     modelURL: "https://apidocs.overte.org/examples/cowboy-hat.fbx",
      *     dimensions: { x: 0.8569, y: 0.3960, z: 1.0744 },
      *     lifetime: 300  // Delete after 5 minutes.
      * });
@@ -98,7 +100,7 @@ public slots:
      *     dimensions: { x: 0.4, y: 0.6, z: 0.4 },
      *     lifetime: 300  // Delete after 5 minutes.
      * });
-     * 
+     *
      * Script.setTimeout(function () {
      *     print("Can update avatar:", Graphics.canUpdateModel(MyAvatar.sessionUUID));  // true
      *     print("Can update model entity:", Graphics.canUpdateModel(modelEntityID));  // true
@@ -149,7 +151,7 @@ private:
 };
 
 namespace scriptable {
-    QScriptValue scriptableMaterialToScriptValue(QScriptEngine* engine, const scriptable::ScriptableMaterial &material);
+    ScriptValue scriptableMaterialToScriptValue(ScriptEngine* engine, const scriptable::ScriptableMaterial &material);
 };
 
 Q_DECLARE_METATYPE(NestableType)

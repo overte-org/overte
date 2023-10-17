@@ -1,9 +1,11 @@
 //
 //  Created by Nissim Hadar on 2018/12/28
 //  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #include "PlatformInfoScriptingInterface.h"
 #include "Application.h"
@@ -12,12 +14,25 @@
 
 #include <platform/Platform.h>
 #include <platform/Profiler.h>
+#include <ScriptEngineCast.h>
 
 #ifdef Q_OS_WIN
 #include <Windows.h>
 #elif defined Q_OS_MAC
 #include <sstream>
 #endif
+
+STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptRegisterMetaType<PlatformInfoScriptingInterface::PlatformTier, scriptValueFromEnumClass<PlatformInfoScriptingInterface::PlatformTier>, scriptValueToEnumClass<PlatformInfoScriptingInterface::PlatformTier> >(scriptEngine, "PlatformTier");
+}));
+
+STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
+    auto scriptEngine = manager->engine().get();
+
+    scriptEngine->registerEnum("PlatformInfo.PlatformTier",QMetaEnum::fromType<PlatformInfoScriptingInterface::PlatformTier>());
+});
 
 PlatformInfoScriptingInterface* PlatformInfoScriptingInterface::getInstance() {
     static PlatformInfoScriptingInterface sharedInstance;
