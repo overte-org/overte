@@ -84,7 +84,7 @@ void ConsoleScriptingInterface::time(QString labelName) {
     QString message = QString("%1: Timer started").arg(labelName);
     Q_ASSERT(engine);
     if (ScriptManager* scriptManager = engine()->manager()) {
-        scriptManager->scriptPrintedMessage(message);
+        scriptManager->scriptPrintedMessage(message, context()->currentFileName(), context()->currentLineNumber());
     }
 }
 
@@ -92,13 +92,13 @@ void ConsoleScriptingInterface::timeEnd(QString labelName) {
     Q_ASSERT(engine);
     if (ScriptManager* scriptManager = engine()->manager()) {
         if (!_timerDetails.contains(labelName)) {
-            scriptManager->scriptErrorMessage("No such label found " + labelName);
+            scriptManager->scriptErrorMessage("No such label found " + labelName, context()->currentFileName(), context()->currentLineNumber());
             return;
         }
 
         if (_timerDetails.value(labelName).isNull()) {
             _timerDetails.remove(labelName);
-            scriptManager->scriptErrorMessage("Invalid start time for " + labelName);
+            scriptManager->scriptErrorMessage("Invalid start time for " + labelName, context()->currentFileName(), context()->currentLineNumber());
             return;
         }
         QDateTime _startTime = _timerDetails.value(labelName);
@@ -108,7 +108,7 @@ void ConsoleScriptingInterface::timeEnd(QString labelName) {
         QString message = QString("%1: %2ms").arg(labelName).arg(QString::number(diffInMS));
         _timerDetails.remove(labelName);
 
-        scriptManager->scriptPrintedMessage(message);
+        scriptManager->scriptPrintedMessage(message, context()->currentFileName(), context()->currentLineNumber());
     }
 }
 
@@ -131,7 +131,7 @@ ScriptValue ConsoleScriptingInterface::assertion(ScriptContext* context, ScriptE
             assertionResult = QString("Assertion failed : %1").arg(message);
         }
         if (ScriptManager* scriptManager = engine->manager()) {
-            scriptManager->scriptErrorMessage(assertionResult);
+            scriptManager->scriptErrorMessage(assertionResult, context->currentFileName(), context->currentLineNumber());
         }
     }
     return engine->nullValue();
@@ -143,7 +143,7 @@ void ConsoleScriptingInterface::trace() {
     if (ScriptManager* scriptManager = scriptEngine->manager()) {
         scriptManager->scriptPrintedMessage
             (QString(STACK_TRACE_FORMAT).arg(LINE_SEPARATOR,
-            scriptEngine->currentContext()->backtrace().join(LINE_SEPARATOR)));
+            scriptEngine->currentContext()->backtrace().join(LINE_SEPARATOR)), context()->currentFileName(), context()->currentLineNumber());
     }
 }
 
@@ -190,6 +190,6 @@ void ConsoleScriptingInterface::logGroupMessage(QString message, ScriptEngine* e
     }
     logMessage.append(message);
     if (ScriptManager* scriptManager = engine->manager()) {
-        scriptManager->scriptPrintedMessage(logMessage);
+        scriptManager->scriptPrintedMessage(logMessage, context()->currentFileName(), context()->currentLineNumber());
     }
 }

@@ -225,7 +225,12 @@ QString encodeEntityIdIntoEntityUrl(const QString& url, const QString& entityID)
 
 QString ScriptManager::logException(const ScriptValue& exception) {
     auto message = formatException(exception, _enableExtendedJSExceptions.get());
-    scriptErrorMessage(message);
+    auto context = _engine->currentContext();
+    if (context) {
+        scriptErrorMessage(message, context->currentFileName(), context->currentLineNumber());
+    } else {
+        scriptErrorMessage(message, "", -1);
+    }
     return message;
 }
 
@@ -328,6 +333,11 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
                 }
             }
         });
+    }
+
+    //Gather entity script messages for transmission when running server side.
+    if (_type == Type::ENTITY_SERVER) {
+        ;
     }
 
     if (!_areMetaTypesInitialized) {
@@ -514,7 +524,7 @@ void ScriptManager::waitTillDoneRunning(bool shutdown) {
         }
 #endif
 
-        scriptInfoMessage("Script Engine has stopped:" + getFilename());
+        scriptInfoMessage("Script Engine has stopped:" + getFilename(), "", -1);
     }
 }
 
@@ -549,7 +559,7 @@ void ScriptManager::loadURL(const QUrl& scriptURL, bool reload) {
 
     // Check that script has a supported file extension
     if (!hasValidScriptSuffix(_fileNameString)) {
-        scriptErrorMessage("File extension of file: " + _fileNameString + " is not a currently supported script type");
+        scriptErrorMessage("File extension of file: " + _fileNameString + " is not a currently supported script type", _fileNameString, -1);
         emit errorLoadingScript(_fileNameString);
         return;
     }
@@ -559,7 +569,7 @@ void ScriptManager::loadURL(const QUrl& scriptURL, bool reload) {
     scriptCache->getScriptContents(url.toString(), [this](const QString& url, const QString& scriptContents, bool isURL, bool success, const QString&status) {
         qCDebug(scriptengine) << "loadURL" << url << status << QThread::currentThread();
         if (!success) {
-            scriptErrorMessage("ERROR Loading file (" + status + "):" + url);
+            scriptErrorMessage("ERROR Loading file (" + status + "):" + url, url, -1);
             emit errorLoadingScript(_fileNameString);
             return;
         }
@@ -570,40 +580,35 @@ void ScriptManager::loadURL(const QUrl& scriptURL, bool reload) {
     }, reload, maxRetries);
 }
 
-void ScriptManager::scriptErrorMessage(const QString& message) {
+void ScriptManager::scriptErrorMessage(const QString& message, const QString& fileName, int lineNumber) {
     qCCritical(scriptengine, "[%s] %s", qUtf8Printable(getFilename()), qUtf8Printable(message));
     emit errorMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
-        // TODO: add line number and proper file name
-        //if (engine() && engine()->currentContext() && engine()->currentContext()->)
-        emit errorEntityMessage(message, getFilename(), currentEntityIdentifier);
+        emit errorEntityMessage(message, fileName, lineNumber, currentEntityIdentifier);
     }
 }
 
-void ScriptManager::scriptWarningMessage(const QString& message) {
+void ScriptManager::scriptWarningMessage(const QString& message, const QString& fileName, int lineNumber) {
     qCWarning(scriptengine, "[%s] %s", qUtf8Printable(getFilename()), qUtf8Printable(message));
     emit warningMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
-        // TODO: add line number and proper file name
-        emit warningEntityMessage(message, getFilename(), currentEntityIdentifier);
+        emit warningEntityMessage(message, fileName, lineNumber, currentEntityIdentifier);
     }
 }
 
-void ScriptManager::scriptInfoMessage(const QString& message) {
+void ScriptManager::scriptInfoMessage(const QString& message, const QString& fileName, int lineNumber) {
     qCInfo(scriptengine, "[%s] %s", qUtf8Printable(getFilename()), qUtf8Printable(message));
     emit infoMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
-        // TODO: add line number and proper file name
-        emit infoEntityMessage(message, getFilename(), currentEntityIdentifier);
+        emit infoEntityMessage(message, fileName, lineNumber, currentEntityIdentifier);
     }
 }
 
-void ScriptManager::scriptPrintedMessage(const QString& message) {
+void ScriptManager::scriptPrintedMessage(const QString& message, const QString& fileName, int lineNumber) {
     qCDebug(scriptengine, "[%s] %s", qUtf8Printable(getFilename()), qUtf8Printable(message));
     emit printedMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
-        // TODO: add line number and proper file name
-        emit printedEntityMessage(message, getFilename(), currentEntityIdentifier);
+        emit printedEntityMessage(message, fileName, lineNumber, currentEntityIdentifier);
     }
 }
 
@@ -929,7 +934,7 @@ void ScriptManager::run() {
         return; // bail early - avoid setting state in init(), as evaluate() will bail too
     }
 
-    scriptInfoMessage("Script Engine starting:" + getFilename());
+    scriptInfoMessage("Script Engine starting:" + getFilename(), getFilename(), -1);
 
     if (!_isInitialized) {
         init();
@@ -1081,7 +1086,7 @@ void ScriptManager::run() {
             _engine->clearExceptions();
         }
     }
-    scriptInfoMessage("Script Engine stopping:" + getFilename());
+    scriptInfoMessage("Script Engine stopping:" + getFilename(), getFilename(), -1);
 
     stopAllTimers(); // make sure all our timers are stopped if the script is ending
     emit scriptEnding();
@@ -1156,7 +1161,7 @@ void ScriptManager::updateMemoryCost(const qint64& deltaSize) {
 
 void ScriptManager::timerFired() {
     if (isStopped()) {
-        scriptWarningMessage("Script.timerFired() while shutting down is ignored... parent script:" + getFilename());
+        scriptWarningMessage("Script.timerFired() while shutting down is ignored... parent script:" + getFilename(), getFilename(), -1);
         return; // bail early
     }
 
@@ -1223,7 +1228,14 @@ QTimer* ScriptManager::setupTimerWithInterval(const ScriptValue& function, int i
 
 QTimer* ScriptManager::setInterval(const ScriptValue& function, int intervalMS) {
     if (isStopped()) {
-        scriptWarningMessage("Script.setInterval() while shutting down is ignored... parent script:" + getFilename());
+        int lineNumber = -1;
+        QString fileName = getFilename();
+        auto context = _engine->currentContext();
+        if (context) {
+            lineNumber = context->currentLineNumber();
+            fileName = context->currentFileName();
+        }
+        scriptWarningMessage("Script.setInterval() while shutting down is ignored... parent script:" + getFilename(), fileName, lineNumber);
         return NULL; // bail early
     }
 
@@ -1232,7 +1244,14 @@ QTimer* ScriptManager::setInterval(const ScriptValue& function, int intervalMS) 
 
 QTimer* ScriptManager::setTimeout(const ScriptValue& function, int timeoutMS) {
     if (isStopped()) {
-        scriptWarningMessage("Script.setTimeout() while shutting down is ignored... parent script:" + getFilename());
+        int lineNumber = -1;
+        QString fileName = getFilename();
+        auto context = _engine->currentContext();
+        if (context) {
+            lineNumber = context->currentLineNumber();
+            fileName = context->currentFileName();
+        }
+        scriptWarningMessage("Script.setTimeout() while shutting down is ignored... parent script:" + getFilename(), fileName, lineNumber);
         return NULL; // bail early
     }
 
@@ -1668,8 +1687,15 @@ void ScriptManager::include(const QStringList& includeFiles, const ScriptValue& 
         return;
     }
     if (isStopped()) {
+        int lineNumber = -1;
+        QString fileName = getFilename();
+        auto context = _engine->currentContext();
+        if (context) {
+            lineNumber = context->currentLineNumber();
+            fileName = context->currentFileName();
+        }
         scriptWarningMessage("Script.include() while shutting down is ignored... includeFiles:"
-                + includeFiles.join(",") + "parent script:" + getFilename());
+                + includeFiles.join(",") + "parent script:" + getFilename(), fileName, lineNumber);
         return; // bail early
     }
     QList<QUrl> urls;
@@ -1682,8 +1708,15 @@ void ScriptManager::include(const QStringList& includeFiles, const ScriptValue& 
             thisURL = expandScriptUrl(QUrl::fromLocalFile(expandScriptPath(file)));
             QUrl defaultScriptsLoc = PathUtils::defaultScriptsLocation();
             if (!defaultScriptsLoc.isParentOf(thisURL)) {
+                int lineNumber = -1;
+                QString fileName = getFilename();
+                auto context = _engine->currentContext();
+                if (context) {
+                    lineNumber = context->currentLineNumber();
+                    fileName = context->currentFileName();
+                }
                 //V8TODO this probably needs to be done per context, otherwise file cannot be included again in a module
-                scriptWarningMessage("Script.include() -- skipping" + file + "-- outside of standard libraries");
+                scriptWarningMessage("Script.include() -- skipping" + file + "-- outside of standard libraries", fileName, lineNumber);
                 continue;
             }
             isStandardLibrary = true;
@@ -1693,8 +1726,15 @@ void ScriptManager::include(const QStringList& includeFiles, const ScriptValue& 
 
         bool disallowOutsideFiles = thisURL.isLocalFile() && !isStandardLibrary && !currentSandboxURL.isLocalFile();
         if (disallowOutsideFiles && !PathUtils::isDescendantOf(thisURL, currentSandboxURL)) {
+            int lineNumber = -1;
+            QString fileName = currentSandboxURL.toString();
+            auto context = _engine->currentContext();
+            if (context) {
+                lineNumber = context->currentLineNumber();
+                fileName = context->currentFileName();
+            }
             scriptWarningMessage("Script.include() ignoring file path" + thisURL.toString()
-                                + "outside of original entity script" + currentSandboxURL.toString());
+                                + "outside of original entity script" + currentSandboxURL.toString(), fileName, lineNumber);
         } else {
             // We could also check here for CORS, but we don't yet.
             // It turns out that QUrl.resolve will not change hosts and copy authority, so we don't need to check that here.
@@ -1716,7 +1756,14 @@ void ScriptManager::include(const QStringList& includeFiles, const ScriptValue& 
         for (QUrl url : urls) {
             QString contents = data[url];
             if (contents.isNull()) {
-                scriptErrorMessage("Error loading file (" + status[url] +"): " + url.toString());
+                int lineNumber = -1;
+                QString fileName = url.toString();
+                auto context = _engine->currentContext();
+                if (context) {
+                    lineNumber = context->currentLineNumber();
+                    fileName = context->currentFileName();
+                }
+                scriptErrorMessage("Error loading file (" + status[url] +"): " + url.toString(), fileName, lineNumber);
             } else {
                 std::lock_guard<std::recursive_mutex> lock(_lock);
                 if (!_includedURLs.contains(url)) {
@@ -1736,7 +1783,14 @@ void ScriptManager::include(const QStringList& includeFiles, const ScriptValue& 
                         _engine->clearExceptions();
                     }
                 } else {
-                    scriptPrintedMessage("Script.include() skipping evaluation of previously included url:" + url.toString());
+                    int lineNumber = -1;
+                    QString fileName = url.toString();
+                    auto context = _engine->currentContext();
+                    if (context) {
+                        lineNumber = context->currentLineNumber();
+                        fileName = context->currentFileName();
+                    }
+                    scriptPrintedMessage("Script.include() skipping evaluation of previously included url:" + url.toString(), fileName, lineNumber);
                 }
             }
         }
@@ -1765,8 +1819,15 @@ void ScriptManager::include(const QStringList& includeFiles, const ScriptValue& 
 
 void ScriptManager::include(const QString& includeFile, const ScriptValue& callback) {
     if (isStopped()) {
+        int lineNumber = -1;
+        QString fileName = currentSandboxURL.toString();
+        auto context = _engine->currentContext();
+        if (context) {
+            lineNumber = context->currentLineNumber();
+            fileName = context->currentFileName();
+        }
         scriptWarningMessage("Script.include() while shutting down is ignored...  includeFile:"
-                    + includeFile + "parent script:" + getFilename());
+                    + includeFile + "parent script:" + getFilename(), fileName, lineNumber);
         return; // bail early
     }
 
@@ -1782,14 +1843,21 @@ void ScriptManager::load(const QString& loadFile) {
     if (!_engine->IS_THREADSAFE_INVOCATION(__FUNCTION__)) {
         return;
     }
+    int lineNumber = -1;
+    QString fileName = getFilename();
+    auto context = _engine->currentContext();
+    if (context) {
+        lineNumber = context->currentLineNumber();
+        fileName = context->currentFileName();
+    }
     if (isStopped()) {
         scriptWarningMessage("Script.load() while shutting down is ignored... loadFile:"
-                + loadFile + "parent script:" + getFilename());
+                + loadFile + "parent script:" + getFilename(), fileName, lineNumber);
         return; // bail early
     }
     if (!currentEntityIdentifier.isInvalidID()) {
         scriptWarningMessage("Script.load() from entity script is ignored...  loadFile:"
-                + loadFile + "parent script:" + getFilename() + "entity: " + currentEntityIdentifier.toString());
+                + loadFile + "parent script:" + getFilename() + "entity: " + currentEntityIdentifier.toString(), fileName, lineNumber);
         return; // bail early
     }
 
@@ -2457,7 +2525,7 @@ void ScriptManager::refreshFileScript(const EntityItemID& entityID) {
         QString filePath = QUrl(details.scriptText).toLocalFile();
         auto lastModified = QFileInfo(filePath).lastModified().toMSecsSinceEpoch();
         if (lastModified > details.lastModified) {
-            scriptInfoMessage("Reloading modified script " + details.scriptText);
+            scriptInfoMessage("Reloading modified script " + details.scriptText, filePath, -1);
             loadEntityScript(entityID, details.scriptText, true);
         }
     }

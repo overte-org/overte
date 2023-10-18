@@ -34,17 +34,12 @@ public:
         SEVERITY_ERROR
     };
 
-    static QString scriptTypeToString(ScriptType scriptType);
-    static QString severityToString(Severity severity);
-
-    static ScriptType scriptTypeFromString(ScriptType scriptType);
-    static Severity severityFromString(Severity severity);
-
     ScriptMessage() {};
     ScriptMessage(QString messageContent, QString fileName, int lineNumber, ScriptType scriptType, Severity severity)
         : _messageContent(messageContent), _fileName(fileName), _lineNumber(lineNumber), _scriptType(scriptType) {}
 
     QJsonObject toJson();
+    bool fromJson(const QJsonObject &object);
 
 private:
     QString _messageContent;

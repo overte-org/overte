@@ -1281,8 +1281,14 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
                     QString errorMessage(QString("Signal proxy ") + fullName() + " connection call failed: \""
                                           + _engine->formatErrorMessageFromTryCatch(tryCatch)
                                           + "\nThis provided: " + QString::number(conn.thisValue.get()->IsObject()));
+                    v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
+                    int errorLineNumber = -1;
+                    if (!exceptionMessage.IsEmpty()) {
+                        errorLineNumber = exceptionMessage->GetLineNumber(context).FromJust();
+                    }
                     if (_engine->_manager) {
-                        _engine->_manager->scriptErrorMessage(errorMessage);
+                        _engine->_manager->scriptErrorMessage(errorMessage, getFileNameFromTryCatch(tryCatch, isolate, context),
+                                                              errorLineNumber);
                     } else {
                         qDebug(scriptengine_v8) << errorMessage;
                     }
