@@ -3226,7 +3226,7 @@ void Application::initializeUi() {
                 return true;
             } else {
                 for (const auto& str : safeURLS) {
-                    if (!str.isEmpty() && str.endsWith(".qml") && url.toString().endsWith(".qml") &&
+                    if (!str.isEmpty() && url.toString().endsWith(".qml") &&
                         url.toString().startsWith(str)) {
                         qCDebug(interfaceapp) << "Found matching url!" << url.host();
                         return true;

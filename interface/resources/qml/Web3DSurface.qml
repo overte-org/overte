@@ -10,8 +10,8 @@
 //
 
 import QtQuick 2.5
-
-import "controls" as Controls
+import controlsUit 1.0 as Controls
+import "controls"
 
 Item {
     id: root
@@ -26,45 +26,78 @@ Item {
     }
 
     onScriptUrlChanged: {
-        if (root.item) {
-            root.item.scriptUrl = root.scriptUrl;
+        if (loader.item) {
+            if (root.webViewLoaded) {
+                loader.item.scriptUrl = root.scriptUrl;
+            }
         } else {
             load(root.url, root.scriptUrl, root.useBackground, root.userAgent);
         }
     }
 
     onUseBackgroundChanged: {
-        if (root.item) {
-            root.item.useBackground = root.useBackground;
+        if (loader.item) {
+            if (root.webViewLoaded) {
+                loader.item.useBackground = root.useBackground;
+            }
         } else {
             load(root.url, root.scriptUrl, root.useBackground, root.userAgent);
         }
     }
-    
+
     onUserAgentChanged: {
-        if (root.item) {
-            root.item.userAgent = root.userAgent;
+        if (loader.item) {
+            if (root.webViewLoaded) {
+                loader.item.userAgent = root.userAgent;
+            }
         } else {
             load(root.url, root.scriptUrl, root.useBackground, root.userAgent);
+        }
+    }
+
+    // Handle message traffic from our loaded QML to the script that launched us
+    onItemChanged: {
+        if (loader.item && loader.item.sendToScript) {
+            loader.item.sendToScript.connect(sendToScript);
         }
     }
 
     property var item: null
+    property bool webViewLoaded: false
+
+    // Handle message traffic from the script that launched us to the loaded QML
+    function fromScript(message) {
+        if (loader.item && loader.item.fromScript) {
+            loader.item.fromScript(message);
+        }
+    }
+
+    Loader {
+        id: loader
+        anchors.fill: parent
+    }
 
     function load(url, scriptUrl, useBackground, userAgent) {
         // Ensure we reset any existing item to "about:blank" to ensure web audio stops: DEV-2375
-        if (root.item != null) {
-            root.item.url = "about:blank"
-            root.item.destroy()
-            root.item = null
+        if (loader.item && root.webViewLoaded) {
+            if (root.webViewLoaded) {
+                loader.item.url = "about:blank"
+            }
+            loader.setSource(undefined);
         }
-        QmlSurface.load("./controls/WebView.qml", root, function(newItem) {
-            root.item = newItem
-            root.item.url = url
-            root.item.scriptUrl = scriptUrl
-            root.item.useBackground = useBackground
-            root.item.userAgent = userAgent
-        })
+
+        if (url.match(/\.qml$/)) {
+            root.webViewLoaded = false;
+            loader.setSource(url);
+        } else {
+            root.webViewLoaded = true;
+            loader.setSource("./controls/WebView.qml", {
+                url: url,
+                scriptUrl: scriptUrl,
+                useBackground: useBackground,
+                userAgent: userAgent
+            });
+        }
     }
 
     Component.onCompleted: {
