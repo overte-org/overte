@@ -144,7 +144,7 @@ Note: You can also run Interface by launching it from command line or File Explo
 For any problems after Step #7, first try this:
 * Delete your locally cloned copy of the Overte repository
 * Restart your computer
-* Redownload the [repository](https://github.com/overte.org/overte)
+* Redownload the [repository](https://github.com/overte-org/overte)
 * Restart directions from Step #7
 
 ## CMake gives you the same error message repeatedly after the build fails
