@@ -1,4 +1,3 @@
 [
-    {"node": "https://mv.overte.org/server"},
-    {"node": "https://api.mv.metax.zone"}
+    {"node": "https://mv.overte.org/server"}
 ]
