@@ -2553,11 +2553,13 @@ bool EntityTree::writeToMap(QVariantMap& entityDescription, OctreeElementPointer
     }
     entityDescription["DataVersion"] = _persistDataVersion;
     entityDescription["Id"] = _persistID;
+    scriptEngineMutex.lock();
     RecurseOctreeToMapOperator theOperator(entityDescription, element, scriptEngine.get(), skipDefaultValues,
                                             skipThoseWithBadParents, _myAvatar);
     withReadLock([&] {
         recurseTreeWithOperator(&theOperator);
     });
+    scriptEngineMutex.unlock();
     return true;
 }
 
@@ -2726,9 +2728,11 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
                 " mapped it to parentJointIndex " << entityMap["parentJointIndex"].toInt();
         }
 
+        scriptEngineMutex.lock();
         ScriptValue entityScriptValue = variantMapToScriptValue(entityMap, *scriptEngine);
         EntityItemProperties properties;
         EntityItemPropertiesFromScriptValueIgnoreReadOnly(entityScriptValue, properties);
+        scriptEngineMutex.unlock();
 
         EntityItemID entityItemID;
         if (entityMap.contains("id")) {
@@ -2877,10 +2881,12 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
 }
 
 bool EntityTree::writeToJSON(QString& jsonString, const OctreeElementPointer& element) {
+    scriptEngineMutex.lock();
     RecurseOctreeToJSONOperator theOperator(element, scriptEngine.get(), jsonString);
     withReadLock([&] {
         recurseTreeWithOperator(&theOperator);
     });
+    scriptEngineMutex.unlock();
 
     jsonString = theOperator.getJson();
     return true;

@@ -387,6 +387,7 @@ private:
                                          MovingEntitiesOperator& moveOperator, bool force, bool tellServer);
 
     // Script engine for writing entity tree data to and from JSON
+    std::mutex scriptEngineMutex;
     ScriptEnginePointer scriptEngine{ newScriptEngine() };
 };
 
