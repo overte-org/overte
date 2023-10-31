@@ -37,7 +37,7 @@
 #include <AbstractViewStateInterface.h>
 #include <EntityEditPacketSender.h>
 #include <EntityTreeRenderer.h>
-#include <FileScriptingInterface.h>
+#include "ArchiveDownloadInterface.h"
 #include <input-plugins/KeyboardMouseDevice.h>
 #include <input-plugins/TouchscreenDevice.h>
 #include <input-plugins/TouchscreenVirtualPadDevice.h>
@@ -425,7 +425,7 @@ public slots:
 
     void handleUnzip(QString sourceFile, QStringList destinationFile, bool autoAdd, bool isZip, bool isBlocks);
 
-    FileScriptingInterface* getFileDownloadInterface() { return _fileDownload; }
+    ArchiveDownloadInterface* getFileDownloadInterface() { return _fileDownload; }
 
     void handleLocalServerConnection() const;
     void readArgumentsFromLocalSocket() const;
@@ -820,7 +820,7 @@ private:
     QTimer _addAssetToWorldErrorTimer;
     mutable QTimer _entityServerConnectionTimer;
 
-    FileScriptingInterface* _fileDownload;
+    ArchiveDownloadInterface* _fileDownload;
     AudioInjectorPointer _snapshotSoundInjector;
     SharedSoundPointer _snapshotSound;
     SharedSoundPointer _sampleSound;

@@ -87,7 +87,6 @@
 #include <EntityScriptServerLogClient.h>
 #include <EntityScriptingInterface.h>
 #include <ErrorDialog.h>
-#include <FileScriptingInterface.h>
 #include <Finally.h>
 #include <FingerprintUtils.h>
 #include <FramebufferCache.h>
@@ -3414,9 +3413,9 @@ void Application::onDesktopRootContextCreated(QQmlContext* surfaceContext) {
     surfaceContext->setContextProperty("Controller", DependencyManager::get<controller::ScriptingInterface>().data());
     surfaceContext->setContextProperty("Entities", DependencyManager::get<EntityScriptingInterface>().data());
     surfaceContext->setContextProperty("Performance", new PerformanceScriptingInterface());
-    _fileDownload = new FileScriptingInterface(engine);
+    _fileDownload = new ArchiveDownloadInterface(engine);
     surfaceContext->setContextProperty("File", _fileDownload);
-    connect(_fileDownload, &FileScriptingInterface::unzipResult, this, &Application::handleUnzip);
+    connect(_fileDownload, &ArchiveDownloadInterface::unzipResult, this, &Application::handleUnzip);
     surfaceContext->setContextProperty("MyAvatar", getMyAvatar().get());
     surfaceContext->setContextProperty("Messages", DependencyManager::get<MessagesClient>().data());
     surfaceContext->setContextProperty("Recording", DependencyManager::get<RecordingScriptingInterface>().data());

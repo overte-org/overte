@@ -1,9 +1,10 @@
 //
-//  FileScriptingInterface.h
+//  ArchiveDownloadInterface.h
 //  libraries/script-engine/src
 //
 //  Created by Elisa Lupin-Jimenez on 6/28/16.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -12,10 +13,11 @@
 /// @addtogroup ScriptEngine
 /// @{
 
-#ifndef hifi_FileScriptingInterface_h
-#define hifi_FileScriptingInterface_h
+#ifndef hifi_ArchiveDownloadInterface_h
+#define hifi_ArchiveDownloadInterface_h
 
 #include <QtCore/QObject>
+#include <QtCore/QUrl>
 #include <QFileInfo>
 #include <QString>
 
@@ -30,12 +32,11 @@
  * @hifi-server-entity
  * @hifi-assignment-client
  */
-/// Provides the <code><a href="https://apidocs.overte.org/File.html">File</a></code> scripting API
-class FileScriptingInterface : public QObject {
+class ArchiveDownloadInterface : public QObject {
     Q_OBJECT
 
 public:
-    FileScriptingInterface(QObject* parent);
+    ArchiveDownloadInterface(QObject* parent);
 
 public slots:
 
@@ -116,6 +117,6 @@ private:
 
 };
 
-#endif // hifi_FileScriptingInterface_h
+#endif // hifi_ArchiveDownloadInterface_h
 
 /// @}

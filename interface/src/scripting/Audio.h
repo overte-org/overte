@@ -301,18 +301,17 @@ public:
      * @returns {boolean} <code>true</code> if the specified file could be opened and audio recording has started, otherwise
      *     <code>false</code>.
      * @example <caption>Make a 10 second audio recording.</caption>
-     * var filename = File.getTempDir() + "/audio.wav";
-     * if (Audio.startRecording(filename)) {
+     * if (Audio.startRecording()) {
      *     Script.setTimeout(function () {
      *         Audio.stopRecording();
-     *         print("Audio recording made in: " + filename);
+     *         print("Audio recording finished.");
      *     }, 10000);
      *
      * } else {
-     *     print("Could not make an audio recording in: " + filename);
+     *     print("Could not make an audio recording file.");
      * }
      */
-    Q_INVOKABLE bool startRecording(const QString& filename);
+    Q_INVOKABLE bool startRecording();
 
     /*@jsdoc
      * Finishes making an audio recording started with {@link Audio.startRecording|startRecording}.

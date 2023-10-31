@@ -17,6 +17,8 @@
 #include "AudioClient.h"
 #include "AudioHelpers.h"
 #include "ui/AvatarInputs.h"
+#include "ui/Snapshot.h"
+#include "AccountManager.h"
 
 using namespace scripting;
 
@@ -58,9 +60,17 @@ Audio::Audio() : _devices(_contextIsHMD) {
     onContextChanged();
 }
 
-bool Audio::startRecording(const QString& filepath) {
+bool Audio::startRecording() {
     return resultWithWriteLock<bool>([&] {
-        return DependencyManager::get<AudioClient>()->startRecording(filepath);
+        const QString FILENAME_PATH_FORMAT = "overte-snap-by-%1-on-%2";
+        const QString DEFAULT_FORMAT = "wav";
+        const QString DATETIME_FORMAT = "yyyy-MM-dd_hh-mm-ss";
+
+        QString username = DependencyManager::get<AccountManager>()->getAccountInfo().getUsername();
+        QString filepath = DependencyManager::get<Snapshot>()->_snapshotsLocation.get();
+        QDateTime now = QDateTime::currentDateTime();
+        QString filename = FILENAME_PATH_FORMAT.arg(username, now.toString(DATETIME_FORMAT)) + "." + DEFAULT_FORMAT;
+        return DependencyManager::get<AudioClient>()->startRecording(filepath + "/" + filename);
     });
 }
 
