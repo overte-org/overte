@@ -17,6 +17,8 @@
 #include "AudioClient.h"
 #include "AudioHelpers.h"
 #include "ui/AvatarInputs.h"
+#include "ui/Snapshot.h"
+#include "AccountManager.h"
 
 using namespace scripting;
 
@@ -58,9 +60,19 @@ Audio::Audio() : _devices(_contextIsHMD) {
     onContextChanged();
 }
 
-bool Audio::startRecording(const QString& filepath) {
-    return resultWithWriteLock<bool>([&] {
-        return DependencyManager::get<AudioClient>()->startRecording(filepath);
+QUuid Audio::startRecording() {
+    return resultWithWriteLock<QUuid>([&] {
+        const QString FILENAME_PREFIX = "overte-audio-";
+        const QString AUDIO_FORMAT = "wav";
+        QUuid id = QUuid::createUuid();
+
+        QString filepath = DependencyManager::get<Snapshot>()->_snapshotsLocation.get();
+        QString filename = FILENAME_PREFIX + id.toString() + "." + AUDIO_FORMAT;
+        if (DependencyManager::get<AudioClient>()->startRecording(filepath + "/" + filename)) {
+            return id;
+        } else {
+            return QUuid();
+        }
     });
 }
 

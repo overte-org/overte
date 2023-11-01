@@ -42,7 +42,6 @@
 #include "AssetScriptingInterface.h"
 #include "BatchLoader.h"
 #include "EventTypes.h"
-#include "FileScriptingInterface.h" // unzip project
 #include "MenuItemProperties.h"
 #include "ScriptCache.h"
 #include "ScriptContext.h"
@@ -767,7 +766,6 @@ void ScriptManager::init() {
         scriptEngine->registerGlobalObject("Messages", DependencyManager::get<MessagesClient>().data());
     }
 
-    scriptEngine->registerGlobalObject("File", new FileScriptingInterface(this));
     scriptEngine->registerGlobalObject("console", &_consoleScriptingInterface);
     scriptEngine->registerFunction("console", "info", ConsoleScriptingInterface::info, scriptEngine->currentContext()->argumentCount());
     scriptEngine->registerFunction("console", "log", ConsoleScriptingInterface::log, scriptEngine->currentContext()->argumentCount());
