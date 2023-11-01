@@ -295,13 +295,12 @@ public:
 
     /*@jsdoc
      * Starts making an audio recording of the audio being played in-world (i.e., not local-only audio) to a file in WAV format.
+     * Audio is recorded to snapshots directory specified in settings.
      * @function Audio.startRecording
-     * @param {string} filename - The path and name of the file to make the recording in. Should have a <code>.wav</code>
-     *     extension. The file is overwritten if it already exists.
-     * @returns {boolean} <code>true</code> if the specified file could be opened and audio recording has started, otherwise
-     *     <code>false</code>.
+     * @returns {Uuid} A valid <code>Uuid</code> if the specified file could be opened and audio recording has started, otherwise
+     *     <code>Uuid.NULL</code>.
      * @example <caption>Make a 10 second audio recording.</caption>
-     * if (Audio.startRecording()) {
+     * if (Audio.startRecording() !== Uuid.NULL) {
      *     Script.setTimeout(function () {
      *         Audio.stopRecording();
      *         print("Audio recording finished.");
@@ -311,7 +310,7 @@ public:
      *     print("Could not make an audio recording file.");
      * }
      */
-    Q_INVOKABLE bool startRecording();
+    Q_INVOKABLE QUuid startRecording();
 
     /*@jsdoc
      * Finishes making an audio recording started with {@link Audio.startRecording|startRecording}.
