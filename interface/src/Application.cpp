@@ -2560,6 +2560,9 @@ Application::Application(
     DependencyManager::get<TabletScriptingInterface>()->preloadSounds();
     DependencyManager::get<Keyboard>()->createKeyboard();
 
+    // Initialize Discord rich presence
+    _discordPresence = new DiscordPresence();
+
     FileDialogHelper::setOpenDirectoryOperator([this](const QString& path) { openDirectory(path); });
     QDesktopServices::setUrlHandler("file", this, "showUrlHandler");
     QDesktopServices::setUrlHandler("", this, "showUrlHandler");
