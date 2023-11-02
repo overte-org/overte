@@ -21,7 +21,8 @@ static bool enableDebugHmd = QProcessEnvironment::systemEnvironment().contains(D
 
 
 bool DebugHmdDisplayPlugin::isSupported() const {
-    return enableDebugHmd;
+    return false;
+    //return enableDebugHmd;
 }
 
 void DebugHmdDisplayPlugin::resetSensors() {
