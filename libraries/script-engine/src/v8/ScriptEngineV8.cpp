@@ -625,6 +625,9 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
         qCDebug(shared) << QString("[%1] evaluateInClosure %2").arg(isEvaluating()).arg(shortName);
 #endif
         {
+            ScriptContextV8Wrapper scriptContext(this, getContext(), currentContext()->parentContext());
+            ScriptContextGuard scriptContextGuard(&scriptContext);
+
             v8::TryCatch tryCatch(getIsolate());
             // Since V8 cannot use arbitrary object as global object, objects from main global need to be copied to closure's global object
             auto globalObjectContents = _globalObjectContents.Get(_v8Isolate);
@@ -649,12 +652,77 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             // "Script" API is context-dependent, so it needs to be recreated for each new context
             registerGlobalObject("Script", new ScriptManagerScriptingInterface(_manager), ScriptEngine::ScriptOwnership);
 
+            // Script.require properties need to be copied, since that's where the Script.require cache is
+            // Get source and destination Script.require objects
+            try {
+                v8::Local<v8::Value> oldScriptObjectValue;
+                if (!globalObjectContents
+                         ->Get(closureContext, v8::String::NewFromUtf8(_v8Isolate, "Script").ToLocalChecked())
+                         .ToLocal(&oldScriptObjectValue)) {
+                    throw(QString("evaluateInClosure: Script API object does not exist in calling script"));
+                }
+                if (!oldScriptObjectValue->IsObject()) {
+                    throw(QString("evaluateInClosure: Script API object invalid in calling script"));
+                }
+                v8::Local<v8::Object> oldScriptObject = v8::Local<v8::Object>::Cast(oldScriptObjectValue);
+
+                v8::Local<v8::Value> oldRequireObjectValue;
+                if (!oldScriptObject->Get(closureContext, v8::String::NewFromUtf8(_v8Isolate, "require").ToLocalChecked())
+                         .ToLocal(&oldRequireObjectValue)) {
+                    throw(QString("evaluateInClosure: Script.require API object does not exist in calling script"));
+                }
+                if (!oldRequireObjectValue->IsObject()) {
+                    throw(QString("evaluateInClosure: Script.require API object invalid in calling script"));
+                }
+                v8::Local<v8::Object> oldRequireObject = v8::Local<v8::Object>::Cast(oldRequireObjectValue);
+
+                v8::Local<v8::Value> newScriptObjectValue;
+                if (!closureContext->Global()
+                         ->Get(closureContext, v8::String::NewFromUtf8(_v8Isolate, "Script").ToLocalChecked())
+                         .ToLocal(&newScriptObjectValue)) {
+                    Q_ASSERT(false);  // This should never happen
+                }
+                if (!newScriptObjectValue->IsObject()) {
+                    Q_ASSERT(false);  // This should never happen
+                }
+                v8::Local<v8::Object> newScriptObject = v8::Local<v8::Object>::Cast(newScriptObjectValue);
+
+                v8::Local<v8::Value> newRequireObjectValue;
+                if (!newScriptObject->Get(closureContext, v8::String::NewFromUtf8(_v8Isolate, "require").ToLocalChecked())
+                         .ToLocal(&newRequireObjectValue)) {
+                    Q_ASSERT(false);  // This should never happen
+                }
+                if (!newRequireObjectValue->IsObject()) {
+                    Q_ASSERT(false);  // This should never happen
+                }
+                v8::Local<v8::Object> newRequireObject = v8::Local<v8::Object>::Cast(newRequireObjectValue);
+
+                auto requireMemberNames =
+                    oldRequireObject->GetPropertyNames(oldRequireObject->CreationContext()).ToLocalChecked();
+                for (size_t i = 0; i < requireMemberNames->Length(); i++) {
+                    auto name = requireMemberNames->Get(closureContext, i).ToLocalChecked();
+                    v8::Local<v8::Value> oldObject;
+                    if (!oldRequireObject->Get(oldRequireObject->CreationContext(), name).ToLocal(&oldObject)) {
+                        Q_ASSERT(false);  // This should never happen, the property has been reported as existing
+                    }
+                    if (!newRequireObject->Set(closureContext, name,oldObject).FromMaybe(false)) {
+                        Q_ASSERT(false);
+                    }
+                }
+            } catch (QString exception) {
+                raiseException(exception);
+                popContext();
+                _evaluatingCounter--;
+                return nullValue();
+            }
+
             auto maybeResult = program.constGet()->GetUnboundScript()->BindToCurrentContext()->Run(closureContext);
             v8::Local<v8::Value> v8Result;
             if (!maybeResult.ToLocal(&v8Result)) {
                 v8::String::Utf8Value utf8Value(getIsolate(), tryCatch.Exception());
                 QString errorMessage = QString(__FUNCTION__) + " hasCaught:" + QString(*utf8Value) + "\n"
                     + "tryCatch details:" + formatErrorMessageFromTryCatch(tryCatch);
+                v8Result = v8::Null(_v8Isolate);
                 if (_manager) {
                     _manager->scriptErrorMessage(errorMessage);
                 } else {
