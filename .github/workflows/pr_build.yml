@@ -207,7 +207,7 @@ jobs:
     - name: Override NSIS
       shell: pwsh
       if: startsWith(matrix.os, 'Windows')
-      run: choco install nsis --version=3.06.1
+      run: choco install nsis --allow-downgrade --version=3.06.1
 
     - name: Install Python modules
       if: startsWith(matrix.os, 'Windows') || startsWith(matrix.os, 'macOS')
