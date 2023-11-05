@@ -23,6 +23,7 @@ public:
         LOW,
         MID,
         HIGH,
+        CUSTOM, // Never used, added for consistency with performance presets
 
         NumTiers, // not a valid Tier
     };
