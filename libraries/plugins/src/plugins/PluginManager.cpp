@@ -213,6 +213,7 @@ const OculusPlatformPluginPointer PluginManager::getOculusPlatformPlugin() {
     std::call_once(once, [&] {
         // Now grab the dynamic plugins if the setting allows it
         if (_enableOculusPluginSetting.get()) {
+            qCDebug(plugins) << "PluginManager::getOculusPlatformPlugin: Oculus plugin enabled by a setting";
             for (auto loader : getLoadedPlugins()) {
                 OculusPlatformProvider* oculusPlatformProvider = qobject_cast<OculusPlatformProvider*>(loader->instance());
                 if (oculusPlatformProvider) {
@@ -220,6 +221,8 @@ const OculusPlatformPluginPointer PluginManager::getOculusPlatformPlugin() {
                     break;
                 }
             }
+        } else {
+            qCDebug(plugins) << "PluginManager::getOculusPlatformPlugin: Oculus plugin disabled by a setting";
         }
     });
     return oculusPlatformPlugin;
