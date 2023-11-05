@@ -695,7 +695,7 @@ function keyPressEvent(event) {
     if (event.key === H_KEY && !event.isAutoRepeat && event.isControl) {
         toggleMainChatWindow()
     }
-    if (event.key === ENTER_KEY && !event.isAutoRepeat && !visible) {
+    if (event.key === ENTER_KEY && !event.isAutoRepeat && !visible && !HMD.active) {
         setVisible(true);
     }
     if (event.key === ESC_KEY && !event.isAutoRepeat && visible) {
