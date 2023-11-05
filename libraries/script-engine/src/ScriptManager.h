@@ -439,6 +439,16 @@ public:
 
     QList<EntityItemID> getListOfEntityScriptIDs();
 
+    /**
+     * @brief Whether the ScriptManager is stopped and unable to run scripts
+     *
+     * This is always false for NETWORKLESS_TEST_SCRIPT scripts.
+     *
+     * Otherwise, it checks whether scriptEngines is set and is not stopped.
+     *
+     * @return true
+     * @return false
+     */
     bool isStopped() const;
 
 
