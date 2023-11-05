@@ -77,7 +77,7 @@ public:
         int _arraySize{-1};
     };
 
-    static const QString firstRun;
+    static const QString firstRun {"firstRun"};
     Settings();
 
     QString fileName() const;
