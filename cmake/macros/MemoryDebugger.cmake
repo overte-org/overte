@@ -15,10 +15,25 @@ if ("$ENV{OVERTE_MEMORY_DEBUGGING}")
     message(FATAL_ERROR "Thread debugging and memory debugging can't be enabled at the same time." )
   endif()
 
+  if (OVERTE_OPTIMIZE)
+    message(WARNING "You should consider building without optimization by passing -DOVERTE_OPTIMIZE=false to CMake")
+  endif()
+  if (NOT CMAKE_BUILD_TYPE MATCHES "Debug")
+    message(WARNING "You should consider building with debugging enabled by passing -DCMAKE_BUILD_TYPE=Debug to CMake. Current type is ${CMAKE_BUILD_TYPE}")
+  endif()
+
+
   SET( OVERTE_MEMORY_DEBUGGING true )
+  SET ( DISABLE_WEBRTC true )
 endif ()
 
 if ( OVERTE_MEMORY_DEBUGGING)
+  # WebRTC doesn't work with memory debugging enabled, it fails to link:
+  # /usr/bin/ld: ../../libraries/networking/libnetworking.so: undefined reference to `typeinfo for rtc::Thread'
+  # /usr/bin/ld: ../../libraries/networking/libnetworking.so: undefined reference to `typeinfo for webrtc::SessionDescriptionInterface'
+  # /usr/bin/ld: ../../libraries/networking/libnetworking.so: undefined reference to `typeinfo for webrtc::IceCandidateInterface'
+  add_compile_definitions(DISABLE_WEBRTC)
+
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address -fsanitize-recover=address")
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined -fsanitize=address -fsanitize-recover=address")
