@@ -63,6 +63,7 @@ public:
         LOW = PerformanceManager::PerformancePreset::LOW,
         MID = PerformanceManager::PerformancePreset::MID,
         HIGH = PerformanceManager::PerformancePreset::HIGH,
+        CUSTOM = PerformanceManager::PerformancePreset::CUSTOM
     };
     Q_ENUM(PerformancePreset)
 

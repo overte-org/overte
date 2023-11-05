@@ -30,7 +30,7 @@ PerformanceManager::PerformanceManager()
 
 void PerformanceManager::setupPerformancePresetSettings(bool evaluatePlatformTier) {
     if (evaluatePlatformTier || (getPerformancePreset() == UNKNOWN)) {
-        // If evaluatePlatformTier, evalute the Platform Tier and assign the matching Performance profile by default.
+        // If evaluatePlatformTier, evaluate the Platform Tier and assign the matching Performance profile by default.
         // A bunch of Performance, Simulation and Render settings will be set to a matching default value from this
 
         // Here is the mapping between platformTier and performance profile
@@ -39,7 +39,8 @@ void PerformanceManager::setupPerformancePresetSettings(bool evaluatePlatformTie
             PerformanceManager::PerformancePreset::LOW_POWER,  // platform::Profiler::LOW_POWER
             PerformanceManager::PerformancePreset::LOW,        // platform::Profiler::LOW
             PerformanceManager::PerformancePreset::MID,        // platform::Profiler::MID
-            PerformanceManager::PerformancePreset::HIGH        // platform::Profiler::HIGH
+            PerformanceManager::PerformancePreset::HIGH,       // platform::Profiler::HIGH
+            PerformanceManager::PerformancePreset::CUSTOM      // platform::Profiler::CUSTOM
         } };
 
         // What is our profile?
@@ -134,6 +135,8 @@ void PerformanceManager::applyPerformancePreset(PerformanceManager::PerformanceP
             DependencyManager::get<LODManager>()->setWorldDetailQuality(WORLD_DETAIL_LOW);
 
             break;
+        case PerformancePreset::CUSTOM:
+            // Intentionally unbroken.
         case PerformancePreset::UNKNOWN:
 	    // Intentionally unbroken.
         default:
