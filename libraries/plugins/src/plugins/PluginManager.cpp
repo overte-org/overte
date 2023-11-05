@@ -211,16 +211,22 @@ const OculusPlatformPluginPointer PluginManager::getOculusPlatformPlugin() {
     static OculusPlatformPluginPointer oculusPlatformPlugin;
     static std::once_flag once;
     std::call_once(once, [&] {
-        // Now grab the dynamic plugins
-        for (auto loader : getLoadedPlugins()) {
-            OculusPlatformProvider* oculusPlatformProvider = qobject_cast<OculusPlatformProvider*>(loader->instance());
-            if (oculusPlatformProvider) {
-                oculusPlatformPlugin = oculusPlatformProvider->getOculusPlatformPlugin();
-                break;
+        // Now grab the dynamic plugins if the setting allows it
+        if (_enableOculusPluginSetting.get()) {
+            for (auto loader : getLoadedPlugins()) {
+                OculusPlatformProvider* oculusPlatformProvider = qobject_cast<OculusPlatformProvider*>(loader->instance());
+                if (oculusPlatformProvider) {
+                    oculusPlatformPlugin = oculusPlatformProvider->getOculusPlatformPlugin();
+                    break;
+                }
             }
         }
     });
     return oculusPlatformPlugin;
+}
+
+void PluginManager::setEnableOculusPluginSetting(bool value) {
+    _enableOculusPluginSetting.set(value);
 }
 
 DisplayPluginList PluginManager::getAllDisplayPlugins() {
