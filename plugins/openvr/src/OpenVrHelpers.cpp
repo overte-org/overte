@@ -23,6 +23,8 @@
 #include <controllers/Pose.h>
 #include <NumericalConstants.h>
 #include <ui-plugins/PluginContainer.h>
+#include <plugins/PluginManager.h>
+
 #include <ui/Menu.h>
 #include "../../interface/src/Menu.h"
 
