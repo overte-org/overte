@@ -763,19 +763,7 @@ bool setupEssentials(int& argc, char** argv, const QCommandLineParser& parser, b
         }
     }
 
-    // Tell the plugin manager about our statically linked plugins
-    DependencyManager::set<ScriptInitializers>();
-    DependencyManager::set<PluginManager>();
-    auto pluginManager = PluginManager::getInstance();
-    pluginManager->setInputPluginProvider([] { return getInputPlugins(); });
-    pluginManager->setDisplayPluginProvider([] { return getDisplayPlugins(); });
-    pluginManager->setInputPluginSettingsPersister([](const InputPluginList& plugins) { saveInputPluginSettings(plugins); });
-    if (auto steamClient = pluginManager->getSteamClientPlugin()) {
-        steamClient->init();
-    }
-    if (auto oculusPlatform = pluginManager->getOculusPlatformPlugin()) {
-        oculusPlatform->init();
-    }
+
 
     PROFILE_SET_THREAD_NAME("Main Thread");
 
@@ -8763,6 +8751,21 @@ void Application::sendLambdaEvent(const std::function<void()>& f) {
 }
 
 void Application::initPlugins(const QCommandLineParser& parser) {
+    // Tell the plugin manager about our statically linked plugins
+    DependencyManager::set<ScriptInitializers>();
+    DependencyManager::set<PluginManager>();
+    auto pluginManager = PluginManager::getInstance();
+    pluginManager->setInputPluginProvider([] { return getInputPlugins(); });
+    pluginManager->setDisplayPluginProvider([] { return getDisplayPlugins(); });
+    pluginManager->setInputPluginSettingsPersister([](const InputPluginList& plugins) { saveInputPluginSettings(plugins); });
+    if (auto steamClient = pluginManager->getSteamClientPlugin()) {
+        steamClient->init();
+    }
+    if (auto oculusPlatform = pluginManager->getOculusPlatformPlugin()) {
+        oculusPlatform->init();
+    }
+
+
     if (parser.isSet("display")) {
         auto preferredDisplays = parser.value("display").split(',', Qt::SkipEmptyParts);
         qInfo() << "Setting prefered display plugins:" << preferredDisplays;
