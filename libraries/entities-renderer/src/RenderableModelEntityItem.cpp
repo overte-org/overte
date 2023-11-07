@@ -903,6 +903,7 @@ bool RenderableModelEntityItem::setLocalJointRotation(int index, const glm::quat
                 jointData.rotationDirty = true;
                 result = true;
                 _needsJointSimulation = true;
+                somethingChangedNotification();
             }
         }
     });
@@ -922,6 +923,7 @@ bool RenderableModelEntityItem::setLocalJointTranslation(int index, const glm::v
                 jointData.translationDirty = true;
                 result = true;
                 _needsJointSimulation = true;
+                somethingChangedNotification();
             }
         }
     });
