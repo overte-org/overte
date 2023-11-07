@@ -155,3 +155,31 @@ void ScriptEngineNetworkedTests::testRequire() {
 
 
 
+void ScriptEngineNetworkedTests::testRequireInfinite() {
+    auto sm = makeManager(
+        "print(\"Starting\");"
+        "Script.require('./tests/require_inf_a.js');"
+        "print(\"Done\");"
+        "Script.stop(true);", "testRequireInf.js");
+    QString errors;
+
+
+
+    QVERIFY(!sm->isRunning());
+    QVERIFY(!sm->isStopped());
+    QVERIFY(!sm->isFinished());
+
+    connect(sm.get(), &ScriptManager::errorMessage, [&errors](const QString& message, const QString& engineName){
+        errors.append(message);
+    });
+
+
+    qInfo() << "About to run script";
+    sm->run();
+
+    QVERIFY(!sm->isRunning());
+    QVERIFY(!sm->isStopped());
+    QVERIFY(sm->isFinished());
+
+    QVERIFY(errors.contains("Maximum call stack size exceeded"));
+}
