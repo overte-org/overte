@@ -4,6 +4,7 @@
 //
 //  Created by Ryan Huffman on 2015/07/23
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -162,7 +163,7 @@ bool ResourceManager::resourceExists(const QUrl& url) {
         auto& networkAccessManager = NetworkAccessManager::getInstance();
         QNetworkRequest request{ url };
 
-        request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+        request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
         request.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
 
         auto reply = networkAccessManager.head(request);

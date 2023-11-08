@@ -4,6 +4,7 @@
 //
 //  Created by Clement on 3/26/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -272,7 +273,7 @@ QVector<QString> FSTReader::getScripts(const QUrl& url, const hifi::VariantMulti
 hifi::VariantMultiHash FSTReader::downloadMapping(const QString& url) {
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
     QNetworkRequest networkRequest = QNetworkRequest(url);
-    networkRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    networkRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
     QNetworkReply* reply = networkAccessManager.get(networkRequest);
     QEventLoop loop;

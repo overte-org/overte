@@ -4,6 +4,7 @@
 //
 //  Created by David Rowe on 23 Jul 2020.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -96,7 +97,7 @@ void DomainAccountManager::requestAccessToken(const QString& username, const QSt
 
     request.setUrl(_currentAuth.authURL);
 
-    request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
 
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
     QNetworkReply* requestReply = networkAccessManager.post(request, formData);

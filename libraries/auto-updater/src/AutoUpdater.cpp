@@ -52,7 +52,7 @@ void AutoUpdater::getLatestVersionData() {
     
     QNetworkRequest latestVersionRequest(buildsURL);
 
-    latestVersionRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    latestVersionRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     latestVersionRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
     QNetworkReply* reply = networkAccessManager.get(latestVersionRequest);
     connect(reply, &QNetworkReply::finished, this, &AutoUpdater::parseLatestVersionData);

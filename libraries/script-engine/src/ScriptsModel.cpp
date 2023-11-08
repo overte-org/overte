@@ -1,6 +1,7 @@
 //
 //  Created by Ryan Huffman on 05/12/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  S3 request code written with ModelBrowser as a reference.
 //
@@ -191,7 +192,7 @@ void ScriptsModel::requestDefaultFiles(QString marker) {
 
             QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
             QNetworkRequest request(url);
-            request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+            request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
             request.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
             QNetworkReply* reply = networkAccessManager.get(request);
             connect(reply, SIGNAL(finished()), SLOT(downloadFinished()));
