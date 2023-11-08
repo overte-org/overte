@@ -180,6 +180,9 @@ endif()
 
 set(SCREENSHARE 0)
 
+set(DISABLE_WEBRTC true) # TODO: remove
+add_compile_definitions(DISABLE_WEBRTC)
+
 # Use default time server if none defined in environment
 set_from_env(TIMESERVER_URL TIMESERVER_URL "http://timestamp.comodoca.com?td=sha256")
 
