@@ -57,7 +57,7 @@ jobs:
               runner: linux_amd64
               arch: amd64
               build_type: full
-              apt-dependencies: pkg-config libxext-dev libdouble-conversion-dev # add missing dependencies to docker image when convenient
+              apt-dependencies: pkg-config libxext-dev libdouble-conversion-dev libpcre2-16-0 # add missing dependencies to docker image when convenient
               image: docker.io/overte/overte-full-build:0.1.1-ubuntu-20.04-amd64
             # Android builds are currently failing
             #- os: ubuntu-18.04
