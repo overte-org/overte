@@ -32,7 +32,9 @@ QHostAddress getGuessedLocalAddress() {
             foreach(const QNetworkAddressEntry &entry, networkInterface.addressEntries()) {
                 const auto& addressCandidate = entry.ip();
                 // make sure it's an IPv4 address that isn't the loopback
-                if (addressCandidate.protocol() == QAbstractSocket::IPv4Protocol && !addressCandidate.isLoopback()) {
+                // TODO(IPv6): does it matter if it's IPv4?
+                //if (addressCandidate.protocol() == QAbstractSocket::IPv4Protocol && !addressCandidate.isLoopback()) {
+                if (addressCandidate.protocol() == QAbstractSocket::AnyIPProtocol && !addressCandidate.isLoopback()) {
                     if (isLinkLocalAddress(addressCandidate)) {
                         linkLocalAddress = addressCandidate;  // Last resort
                     } else {

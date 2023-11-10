@@ -148,7 +148,7 @@ void ICEClientApp::openSocket() {
 
     _socket = new udt::Socket();
     unsigned int localPort = 0;
-    _socket->bind(SocketType::UDP, QHostAddress::AnyIPv4, localPort);
+    _socket->bind(SocketType::UDP, QHostAddress::Any, localPort);
     _socket->setPacketHandler([this](std::unique_ptr<udt::Packet> packet) { processPacket(std::move(packet)); });
     _socket->addUnfilteredHandler(_stunSockAddr,
                                   [this](std::unique_ptr<udt::BasePacket> packet) {

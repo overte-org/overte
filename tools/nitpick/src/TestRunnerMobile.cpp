@@ -301,7 +301,9 @@ QString TestRunnerMobile::getServerIP() {
     for (int i = 0; i < interfaces.count(); i++) {
         QList<QNetworkAddressEntry> entries = interfaces.at(i).addressEntries();
         for (int j = 0; j < entries.count(); j++) {
-            if (entries.at(j).ip().protocol() == QAbstractSocket::IPv4Protocol) {
+            // TODO(IPv6): does IPv6 need to be handled differently
+            //if (entries.at(j).ip().protocol() == QAbstractSocket::IPv4Protocol) {
+            if (entries.at(j).ip().protocol() == QAbstractSocket::AnyIPProtocol) {
                 qint64 hostIP = convertToBinary(entries.at(j).ip().toString());
                 qint64 hostMask = convertToBinary(entries.at(j).netmask().toString());
                 qint64 hostSubnet = hostMask & hostIP;

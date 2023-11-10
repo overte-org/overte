@@ -199,7 +199,7 @@ bool DomainServer::forwardMetaverseAPIRequest(HTTPConnection* connection,
 DomainServer::DomainServer(int argc, char* argv[]) :
     QCoreApplication(argc, argv),
     _gatekeeper(this),
-    _httpManager(QHostAddress::AnyIPv4, DOMAIN_SERVER_HTTP_PORT,
+    _httpManager(QHostAddress::Any, DOMAIN_SERVER_HTTP_PORT,
         QString("%1/resources/web/").arg(QCoreApplication::applicationDirPath()), this)
 {
     static const QString CRASH_REPORTER = "crash_reporting.enable_crash_reporter";
@@ -595,7 +595,7 @@ bool DomainServer::optionallyReadX509KeyAndCertificate() {
             qCritical() << "SSL Private Key Not Loading.  Bad password or key format?";
         }
 
-        _httpsManager.reset(new HTTPSManager(QHostAddress::AnyIPv4, DOMAIN_SERVER_HTTPS_PORT, sslCertificate, privateKey, QString(), this));
+        _httpsManager.reset(new HTTPSManager(QHostAddress::Any, DOMAIN_SERVER_HTTPS_PORT, sslCertificate, privateKey, QString(), this));
 
         qDebug() << "TCP server listening for HTTPS connections on" << DOMAIN_SERVER_HTTPS_PORT;
 
@@ -931,7 +931,7 @@ void DomainServer::setupNodeListAndAssignments() {
 // Sets up the WebRTC signaling server that's hosted by the domain server.
 void DomainServer::setUpWebRTCSignalingServer() {
     // Bind the WebRTC signaling server's WebSocket to its port.
-    bool isBound = _webrtcSignalingServer->bind(QHostAddress::AnyIPv4, DEFAULT_DOMAIN_SERVER_WS_PORT);
+    bool isBound = _webrtcSignalingServer->bind(QHostAddress::Any, DEFAULT_DOMAIN_SERVER_WS_PORT);
     if (!isBound) {
         qWarning() << "WebRTC signaling server not bound to port. WebRTC connections are not supported.";
         return;
@@ -3582,10 +3582,12 @@ void DomainServer::handleICEHostInfo(const QHostInfo& hostInfo) {
     _iceAddressLookupID = INVALID_ICE_LOOKUP_ID;
 
     // enumerate the returned addresses and collect only valid IPv4 addresses
+    // TODO(IPv6): Does it need to be IPv4 and if so why?
     QList<QHostAddress> sanitizedAddresses = hostInfo.addresses();
     auto it = sanitizedAddresses.begin();
     while (it != sanitizedAddresses.end()) {
-        if (!it->isNull() && it->protocol() == QAbstractSocket::IPv4Protocol) {
+        //if (!it->isNull() && it->protocol() == QAbstractSocket::IPv4Protocol) {
+        if (!it->isNull() && it->protocol() == QAbstractSocket::AnyIPProtocol) {
             ++it;
         } else {
             it = sanitizedAddresses.erase(it);

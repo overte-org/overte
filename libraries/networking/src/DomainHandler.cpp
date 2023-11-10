@@ -331,7 +331,8 @@ QString DomainHandler::getViewPointFromNamedPath(QString namedPath) {
 
 void DomainHandler::completedHostnameLookup(const QHostInfo& hostInfo) {
     for (int i = 0; i < hostInfo.addresses().size(); i++) {
-        if (hostInfo.addresses()[i].protocol() == QAbstractSocket::IPv4Protocol) {
+        // TODO(IPv6): do IPv4 and v6 need to be treated separately?
+        if (hostInfo.addresses()[i].protocol() == QAbstractSocket::AnyIPProtocol) {
             _sockAddr.setAddress(hostInfo.addresses()[i]);
 
             DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetDomainSocket);

@@ -64,7 +64,9 @@ SockAddr::SockAddr(SocketType socketType, const QString& hostname, quint16 hostO
     _port(hostOrderPort)
 {
     // if we parsed an IPv4 address out of the hostname, don't look it up
-    if (_address.protocol() != QAbstractSocket::IPv4Protocol) {
+    // TODO(IPv6): is IPv4 needed here?
+    //if (_address.protocol() != QAbstractSocket::IPv4Protocol) {
+    if (_address.protocol() != QAbstractSocket::AnyIPProtocol) {
         // lookup the IP by the hostname
         if (shouldBlockForLookup) {
             qCDebug(networking) << "Synchronously looking up IP address for hostname" << hostname << "for" << socketType << "socket on port" << hostOrderPort;
@@ -104,7 +106,8 @@ void SockAddr::handleLookupResult(const QHostInfo& hostInfo) {
     } else {
         foreach(const QHostAddress& address, hostInfo.addresses()) {
             // just take the first IPv4 address
-            if (address.protocol() == QAbstractSocket::IPv4Protocol) {
+            // TODO(IPv6): what to do about IPv4 and IPv6?
+            if (address.protocol() == QAbstractSocket::AnyIPProtocol) {
                 _address = address;
                 qCDebug(networking) << "QHostInfo lookup result for"
                     << hostInfo.hostName() << "with lookup ID" << hostInfo.lookupId() << "is" << address.toString();

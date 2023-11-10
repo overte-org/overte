@@ -56,7 +56,7 @@ LimitedNodeList::LimitedNodeList(int socketListenPort, int dtlsListenPort) :
 {
     qRegisterMetaType<ConnectionStep>("ConnectionStep");
     auto port = (socketListenPort != INVALID_PORT) ? socketListenPort : LIMITED_NODELIST_LOCAL_PORT.get();
-    _nodeSocket.bind(SocketType::UDP, QHostAddress::AnyIPv4, port);
+    _nodeSocket.bind(SocketType::UDP, QHostAddress::Any, port);
     quint16 assignedPort = _nodeSocket.localPort(SocketType::UDP);
     if (socketListenPort != INVALID_PORT && socketListenPort != 0 && socketListenPort != assignedPort) {
         qCCritical(networking) << "PAGE: NodeList is unable to assign requested UDP port of" << socketListenPort;
@@ -67,14 +67,14 @@ LimitedNodeList::LimitedNodeList(int socketListenPort, int dtlsListenPort) :
         // only create the DTLS socket during constructor if a custom port is passed
         _dtlsSocket = new QUdpSocket(this);
 
-        _dtlsSocket->bind(QHostAddress::AnyIPv4, dtlsListenPort);
+        _dtlsSocket->bind(QHostAddress::Any, dtlsListenPort);
         if (dtlsListenPort != 0 && _dtlsSocket->localPort() != dtlsListenPort) {
             qCDebug(networking) << "NodeList is unable to assign requested DTLS port of" << dtlsListenPort;
         }
         qCDebug(networking) << "NodeList DTLS socket is listening on" << _dtlsSocket->localPort();
     }
 
-    _nodeSocket.bind(SocketType::WebRTC, QHostAddress::AnyIPv4);
+    _nodeSocket.bind(SocketType::WebRTC, QHostAddress::Any);
 
     // check for local socket updates every so often
     const int LOCAL_SOCKET_UPDATE_INTERVAL_MSECS = 5 * 1000;
@@ -225,7 +225,7 @@ QUdpSocket& LimitedNodeList::getDTLSSocket() {
         // DTLS socket getter called but no DTLS socket exists, create it now
         _dtlsSocket = new QUdpSocket(this);
 
-        _dtlsSocket->bind(QHostAddress::AnyIPv4, 0, QAbstractSocket::DontShareAddress);
+        _dtlsSocket->bind(QHostAddress::Any, 0, QAbstractSocket::DontShareAddress);
 
         // we're using DTLS and our socket is good to go, so make the required DTLS changes
         // DTLS requires that IP_DONTFRAG be set
@@ -1059,6 +1059,7 @@ bool LimitedNodeList::parseSTUNResponse(udt::BasePacket* packet,
         if (memcmp(packet->getData() + attributeStartIndex, &XOR_MAPPED_ADDRESS_TYPE, sizeof(XOR_MAPPED_ADDRESS_TYPE)) == 0) {
             const int NUM_BYTES_STUN_ATTR_TYPE_AND_LENGTH = 4;
             const int NUM_BYTES_FAMILY_ALIGN = 1;
+            // TODO(IPv6): this probably needs work
             const uint8_t IPV4_FAMILY_NETWORK_ORDER = htons(0x01) >> 8;
 
             int byteIndex = attributeStartIndex + NUM_BYTES_STUN_ATTR_TYPE_AND_LENGTH + NUM_BYTES_FAMILY_ALIGN;
@@ -1068,6 +1069,7 @@ bool LimitedNodeList::parseSTUNResponse(udt::BasePacket* packet,
 
             byteIndex += sizeof(addressFamily);
 
+            // TODO(IPv6): this probably needs work
             if (addressFamily == IPV4_FAMILY_NETWORK_ORDER) {
                 // grab the X-Port
                 uint16_t xorMappedPort = 0;
@@ -1253,7 +1255,9 @@ void LimitedNodeList::connectedForLocalSocketTest() {
     if (localIPTestSocket) {
         auto localHostAddress = localIPTestSocket->localAddress();
 
-        if (localHostAddress.protocol() == QAbstractSocket::IPv4Protocol) {
+        // TODO(IPv6):
+        //if (localHostAddress.protocol() == QAbstractSocket::IPv4Protocol) {
+        if (localHostAddress.protocol() == QAbstractSocket::AnyIPProtocol) {
             setLocalSocket(SockAddr { SocketType::UDP, localHostAddress, _nodeSocket.localPort(SocketType::UDP) });
             _hasTCPCheckedLocalSocket = true;
         }

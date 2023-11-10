@@ -85,7 +85,8 @@ namespace std {
         size_t operator()(const SockAddr& sockAddr) const {
             // use XOR of implemented std::hash templates for new hash
             // depending on the type of address we're looking at
-            
+
+            // TODO(IPv6): does this need to be modified or is it fine?
             if (sockAddr.getAddress().protocol() == QAbstractSocket::IPv4Protocol) {
                 return hash<uint32_t>()((uint32_t) sockAddr.getAddress().toIPv4Address())
                     ^ hash<uint16_t>()((uint16_t) sockAddr.getPort());

@@ -284,7 +284,7 @@ void OctreeServer::initHTTPManager(int port) {
     QString documentRoot = QString("%1/web").arg(PathUtils::getAppDataPath());
 
     // setup an httpManager with us as the request handler and the parent
-    _httpManager.reset(new HTTPManager(QHostAddress::AnyIPv4, port, documentRoot, this));
+    _httpManager.reset(new HTTPManager(QHostAddress::Any, port, documentRoot, this));
 }
 
 bool OctreeServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url, bool skipSubHandler) {
