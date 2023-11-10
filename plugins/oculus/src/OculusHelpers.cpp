@@ -7,6 +7,7 @@
 //
 
 #include "OculusHelpers.h"
+#include "plugins/PluginManager.h"
 
 #include <atomic>
 
@@ -38,6 +39,10 @@ bool ovr::available() {
         static const QString DEBUG_FLAG("HIFI_DEBUG_OPENVR");
         static bool enableDebugOpenVR = QProcessEnvironment::systemEnvironment().contains(DEBUG_FLAG);
         if (enableDebugOpenVR) {
+            return;
+        }
+
+        if (!PluginManager::getInstance()->getEnableOculusPluginSetting()) {
             return;
         }
 
