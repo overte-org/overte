@@ -114,7 +114,8 @@ qint64 WebRTCSocket::readDatagram(char* data, qint64 maxSize, QHostAddress* addr
         }
 
         if (address) {
-            *address = datagram.first.getAddress();
+            // TODO(IPv6):
+            *address = datagram.first.getAddressIPv4();
         }
 
         if (port) {

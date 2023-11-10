@@ -13,12 +13,13 @@ namespace {
     const QString LINK_LOCAL_SUBNET {"169.254."};
 
     // Is address local-subnet valid only (rfc 3927):
+    // TODO(IPv6): This needs to be updated for IPv6 too
     bool isLinkLocalAddress(const QHostAddress& ip4Addr) {
         return ip4Addr.toString().startsWith(LINK_LOCAL_SUBNET);
     }
 }
 
-QHostAddress getGuessedLocalAddress() {
+QHostAddress getGuessedLocalAddress(QAbstractSocket::NetworkLayerProtocol protocol) {
 
     QHostAddress localAddress;
     QHostAddress linkLocalAddress;
@@ -32,9 +33,8 @@ QHostAddress getGuessedLocalAddress() {
             foreach(const QNetworkAddressEntry &entry, networkInterface.addressEntries()) {
                 const auto& addressCandidate = entry.ip();
                 // make sure it's an IPv4 address that isn't the loopback
-                // TODO(IPv6): does it matter if it's IPv4?
-                //if (addressCandidate.protocol() == QAbstractSocket::IPv4Protocol && !addressCandidate.isLoopback()) {
-                if (addressCandidate.protocol() == QAbstractSocket::AnyIPProtocol && !addressCandidate.isLoopback()) {
+                // TODO(IPv6): how to do the checks for IPv6?
+                if (addressCandidate.protocol() == protocol && !addressCandidate.isLoopback()) {
                     if (isLinkLocalAddress(addressCandidate)) {
                         linkLocalAddress = addressCandidate;  // Last resort
                     } else {

@@ -130,7 +130,8 @@ qint64 NetworkSocket::writeDatagram(const QByteArray& datagram, const SockAddr& 
     case SocketType::UDP:
         // WEBRTC TODO: The Qt documentation says that the following call shouldn't be used if the UDP socket is connected!!!
         // https://doc.qt.io/qt-5/qudpsocket.html#writeDatagram
-        return _udpSocket.writeDatagram(datagram, sockAddr.getAddress(), sockAddr.getPort());
+        // TODO(IPv6):
+        return _udpSocket.writeDatagram(datagram, sockAddr.getAddressIPv4(), sockAddr.getPort());
 #if defined(WEBRTC_DATA_CHANNELS)
     case SocketType::WebRTC:
         return _webrtcSocket.writeDatagram(datagram, sockAddr);
@@ -198,7 +199,8 @@ qint64 NetworkSocket::readDatagram(char* data, qint64 maxSize, SockAddr* sockAdd
         _pendingDatagramSizeSocketType = SocketType::Unknown;
         if (sockAddr) {
             sockAddr->setType(SocketType::UDP);
-            return _udpSocket.readDatagram(data, maxSize, sockAddr->getAddressPointer(), sockAddr->getPortPointer());
+            // TODO(IPv6):
+            return _udpSocket.readDatagram(data, maxSize, sockAddr->getAddressPointerIPv4(), sockAddr->getPortPointer());
         } else {
             return _udpSocket.readDatagram(data, maxSize);
         }
@@ -207,7 +209,8 @@ qint64 NetworkSocket::readDatagram(char* data, qint64 maxSize, SockAddr* sockAdd
         _pendingDatagramSizeSocketType = SocketType::Unknown;
         if (sockAddr) {
             sockAddr->setType(SocketType::WebRTC);
-            return _webrtcSocket.readDatagram(data, maxSize, sockAddr->getAddressPointer(), sockAddr->getPortPointer());
+            // TODO(IPv6):
+            return _webrtcSocket.readDatagram(data, maxSize, sockAddr->getAddressPointerIPv4(), sockAddr->getPortPointer());
         } else {
             return _webrtcSocket.readDatagram(data, maxSize);
         }

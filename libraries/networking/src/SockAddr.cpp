@@ -28,23 +28,23 @@
 int sockAddrMetaTypeId = qRegisterMetaType<SockAddr>();
 
 SockAddr::SockAddr() :
-    _socketType(SocketType::Unknown),
-    _address(),
+    _socketType(SocketType::Unknown), _addressIPv4(), _addressIPv6(),
     _port(0)
 {
 }
 
-SockAddr::SockAddr(SocketType socketType, const QHostAddress& address, quint16 port) :
-    _socketType(socketType),
-    _address(address),
+SockAddr::SockAddr(SocketType socketType, const QHostAddress& addressV4, const QHostAddress& addressV6, quint16 port) :
+    _socketType(socketType), _addressIPv4(addressV4), _addressIPv6(addressV6),
     _port(port)
 {
+    Q_ASSERT(_addressIPv4.protocol() == QAbstractSocket::IPv4Protocol || _addressIPv4.isNull());
+    Q_ASSERT(_addressIPv6.protocol() == QAbstractSocket::IPv6Protocol || _addressIPv6.isNull());
 }
 
 SockAddr::SockAddr(const SockAddr& otherSockAddr) :
     QObject(),
-    _socketType(otherSockAddr._socketType),
-    _address(otherSockAddr._address),
+    _socketType(otherSockAddr._socketType), _addressIPv4(otherSockAddr._addressIPv4),
+    _addressIPv6(otherSockAddr._addressIPv6),
     _port(otherSockAddr._port)
 {
     setObjectName(otherSockAddr.objectName());
@@ -53,20 +53,19 @@ SockAddr::SockAddr(const SockAddr& otherSockAddr) :
 SockAddr& SockAddr::operator=(const SockAddr& rhsSockAddr) {
     setObjectName(rhsSockAddr.objectName());
     _socketType = rhsSockAddr._socketType;
-    _address = rhsSockAddr._address;
+    _addressIPv4 = rhsSockAddr._addressIPv4;
+    _addressIPv6 = rhsSockAddr._addressIPv6;
     _port = rhsSockAddr._port;
     return *this;
 }
 
 SockAddr::SockAddr(SocketType socketType, const QString& hostname, quint16 hostOrderPort, bool shouldBlockForLookup) :
-    _socketType(socketType),
-    _address(hostname),
+    _socketType(socketType), _addressIPv4(), _addressIPv6(),
     _port(hostOrderPort)
 {
     // if we parsed an IPv4 address out of the hostname, don't look it up
-    // TODO(IPv6): is IPv4 needed here?
-    //if (_address.protocol() != QAbstractSocket::IPv4Protocol) {
-    if (_address.protocol() != QAbstractSocket::AnyIPProtocol) {
+    QHostAddress address(hostname);
+    if (address.protocol() != QAbstractSocket::IPv4Protocol && address.protocol() != QAbstractSocket::IPv6Protocol) {
         // lookup the IP by the hostname
         if (shouldBlockForLookup) {
             qCDebug(networking) << "Synchronously looking up IP address for hostname" << hostname << "for" << socketType << "socket on port" << hostOrderPort;
@@ -78,13 +77,20 @@ SockAddr::SockAddr(SocketType socketType, const QString& hostname, quint16 hostO
             qCDebug(networking) << "Lookup ID for " << hostname << "is" << lookupID;
         }
     }
+    if (address.protocol() == QAbstractSocket::IPv4Protocol) {
+        _addressIPv4 = address;
+    }
+    if (address.protocol() == QAbstractSocket::IPv6Protocol) {
+        _addressIPv6 = address;
+    }
 }
 
 void SockAddr::swap(SockAddr& otherSockAddr) {
     using std::swap;
 
     swap(_socketType, otherSockAddr._socketType);
-    swap(_address, otherSockAddr._address);
+    swap(_addressIPv4, otherSockAddr._addressIPv4);
+    swap(_addressIPv6, otherSockAddr._addressIPv6);
     swap(_port, otherSockAddr._port);
 
     // Swap objects name
@@ -94,7 +100,18 @@ void SockAddr::swap(SockAddr& otherSockAddr) {
 }
 
 bool SockAddr::operator==(const SockAddr& rhsSockAddr) const {
-    return _socketType == rhsSockAddr._socketType && _address == rhsSockAddr._address && _port == rhsSockAddr._port;
+    return _socketType == rhsSockAddr._socketType && _addressIPv4 == rhsSockAddr._addressIPv4 &&
+           _addressIPv6 == rhsSockAddr._addressIPv6 && _port == rhsSockAddr._port;
+}
+
+void SockAddr::setAddress(const QHostAddress& address) {
+    if (address.protocol() == QAbstractSocket::IPv4Protocol) {
+        _addressIPv4 = address;
+    } else if (address.protocol() == QAbstractSocket::IPv6Protocol) {
+        _addressIPv6 = address;
+    } else {
+        Q_ASSERT(false);
+    }
 }
 
 void SockAddr::handleLookupResult(const QHostInfo& hostInfo) {
@@ -104,26 +121,64 @@ void SockAddr::handleLookupResult(const QHostInfo& hostInfo) {
         qCDebug(networking) << "Lookup failed for" << hostInfo.lookupId() << ":" << hostInfo.errorString();
         emit lookupFailed();
     } else {
+        bool addressFound = false;
         foreach(const QHostAddress& address, hostInfo.addresses()) {
             // just take the first IPv4 address
             // TODO(IPv6): what to do about IPv4 and IPv6?
-            if (address.protocol() == QAbstractSocket::AnyIPProtocol) {
-                _address = address;
+            qDebug() << "SockAddr::handleLookupResult hostInfo: " << hostInfo.addresses();
+            if (address.protocol() == QAbstractSocket::IPv4Protocol) {
+                _addressIPv4 = address;
                 qCDebug(networking) << "QHostInfo lookup result for"
                     << hostInfo.hostName() << "with lookup ID" << hostInfo.lookupId() << "is" << address.toString();
-                emit lookupCompleted();
-                break;
+                addressFound = true;
             }
+            if (address.protocol() == QAbstractSocket::IPv6Protocol) {
+                _addressIPv6 = address;
+                qCDebug(networking) << "QHostInfo lookup result for"
+                                    << hostInfo.hostName() << "with lookup ID" << hostInfo.lookupId() << "is" << address.toString();
+                addressFound = true;
+            }
+        }
+        if (addressFound) {
+            emit lookupCompleted();
+        } else {
+            emit lookupFailed();
         }
     }
 }
 
 QString SockAddr::toString() const {
-    return SocketTypeToString::socketTypeToString(_socketType) + " " + _address.toString() + ":" + QString::number(_port);
+    if (!_addressIPv4.isNull() && _addressIPv6.isNull()) {
+        return SocketTypeToString::socketTypeToString(_socketType) + " " + _addressIPv4.toString() + ":" + QString::number(_port);
+    } else if (!_addressIPv4.isNull() && _addressIPv6.isNull()) {
+        // TODO(IPv6): How to format IPv6?
+        Q_ASSERT(false);
+    } else if (!_addressIPv4.isNull() && !_addressIPv6.isNull()) {
+        // TODO(IPv6): What to do if both are valid?
+        Q_ASSERT(false);
+        return SocketTypeToString::socketTypeToString(_socketType) + " " + _addressIPv4.toString() + ":" + QString::number(_port);
+    } else {
+        // TODO(IPv6): What to do if none are valid?
+        Q_ASSERT(false);
+        return "";
+    }
 }
 
 QString SockAddr::toShortString() const {
-    return _address.toString() + ":" + QString::number(_port);
+    if (!_addressIPv4.isNull() && _addressIPv6.isNull()) {
+        return _addressIPv4.toString() + ":" + QString::number(_port);
+    } else if (!_addressIPv4.isNull() && _addressIPv6.isNull()) {
+        // TODO(IPv6): How to format IPv6?
+        Q_ASSERT(false);
+    } else if (!_addressIPv4.isNull() && !_addressIPv6.isNull()) {
+        // TODO(IPv6): What to do if both are valid?
+        Q_ASSERT(false);
+        return _addressIPv4.toString() + ":" + QString::number(_port);
+    } else {
+        // TODO(IPv6): What to do if none are valid?
+        Q_ASSERT(false);
+        return "";
+    }
 }
 
 bool SockAddr::hasPrivateAddress() const {
@@ -132,33 +187,38 @@ bool SockAddr::hasPrivateAddress() const {
     const QPair<QHostAddress, int> TWENTY_BIT_BLOCK = { QHostAddress("172.16.0.0") , 12 };
     const QPair<QHostAddress, int> SIXTEEN_BIT_BLOCK = { QHostAddress("192.168.0.0"), 16 };
 
-    return _address.isLoopback()
-        || _address.isInSubnet(TWENTY_FOUR_BIT_BLOCK)
-        || _address.isInSubnet(TWENTY_BIT_BLOCK)
-        || _address.isInSubnet(SIXTEEN_BIT_BLOCK);
+    // TODO(IPv6): How to do this for IPv6?
+    return _addressIPv4.isLoopback()
+        || _addressIPv4.isInSubnet(TWENTY_FOUR_BIT_BLOCK)
+        ||
+           _addressIPv4.isInSubnet(TWENTY_BIT_BLOCK)
+        || _addressIPv4.isInSubnet(SIXTEEN_BIT_BLOCK);
 }
 
 QDebug operator<<(QDebug debug, const SockAddr& sockAddr) {
     debug.nospace()
         << (sockAddr._socketType != SocketType::Unknown
             ? (SocketTypeToString::socketTypeToString(sockAddr._socketType) + " ") : QString(""))
-        << sockAddr._address.toString() << ":" << sockAddr._port;
+        << sockAddr._addressIPv4.toString() << ":" << sockAddr._port << " "
+        << sockAddr._addressIPv6.toString() << ":" << sockAddr._port;
     return debug.space();
 }
 
 QDataStream& operator<<(QDataStream& dataStream, const SockAddr& sockAddr) {
     // Don't include socket type because ICE packets must not have it.
-    dataStream << sockAddr._address << sockAddr._port;
+    // TODO(IPv6): How to add IPv6 here without braking the protocol
+    dataStream << sockAddr._addressIPv4 << sockAddr._port;
     return dataStream;
 }
 
 QDataStream& operator>>(QDataStream& dataStream, SockAddr& sockAddr) {
     // Don't include socket type because ICE packets must not have it.
-    dataStream >> sockAddr._address >> sockAddr._port;
+    // TODO(IPv6): How to add IPv6 here without braking the protocol
+    dataStream >> sockAddr._addressIPv4 >> sockAddr._port;
     return dataStream;
 }
 
 uint qHash(const SockAddr& key, uint seed) {
     // use the existing QHostAddress and quint16 hash functions to get our hash
-    return qHash(key.getAddress(), seed) ^ qHash(key.getPort(), seed);
+    return qHash(key.getAddressIPv4(), seed) ^ qHash(key.getAddressIPv6(), seed) ^ qHash(key.getPort(), seed);
 }

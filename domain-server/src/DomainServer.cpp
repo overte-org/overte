@@ -76,6 +76,7 @@ const QString DomainServer::REPLACEMENT_FILE_EXTENSION = ".replace";
 const QString& DOMAIN_SERVER_SETTINGS_KEY = "domain_server";
 const QString PUBLIC_SOCKET_ADDRESS_KEY = "network_address";
 const QString PUBLIC_SOCKET_PORT_KEY = "network_port";
+const QString DOMAIN_UPDATE_AUTOMATIC_NETWORKING_KEY = "automatic_networking";
 const int MIN_PORT = 1;
 const int MAX_PORT = 65535;
 
@@ -1496,7 +1497,8 @@ void DomainServer::processRequestAssignmentPacket(QSharedPointer<ReceivedMessage
     // construct the requested assignment from the packet data
     Assignment requestAssignment(*message);
 
-    auto senderAddr = message->getSenderSockAddr().getAddress();
+    // TODO(IPv6):
+    auto senderAddr = message->getSenderSockAddr().getAddressIPv4();
 
     auto isHostAddressInSubnet = [&senderAddr](const Subnet& mask) -> bool {
         return senderAddr.isInSubnet(mask);
@@ -1560,14 +1562,17 @@ QJsonObject jsonForDomainSocketUpdate(const SockAddr& socket) {
     const QString SOCKET_PORT_KEY = "port";
 
     QJsonObject socketObject;
-    socketObject[SOCKET_NETWORK_ADDRESS_KEY] = socket.getAddress().toString();
+    // TODO(IPv6):
+    socketObject[SOCKET_NETWORK_ADDRESS_KEY] = socket.getAddressIPv4().toString();
     socketObject[SOCKET_PORT_KEY] = socket.getPort();
 
     return socketObject;
 }
 
 void DomainServer::performIPAddressPortUpdate(const SockAddr& newPublicSockAddr) {
-    const QString& publicSocketAddress = newPublicSockAddr.getAddress().toString();
+    const QString& DOMAIN_SERVER_SETTINGS_KEY = "domain_server";
+    // TODO(IPv6):
+    const QString& publicSocketAddress = newPublicSockAddr.getAddressIPv4().toString();
     const int publicSocketPort = newPublicSockAddr.getPort();
 
     if (_automaticNetworkingSetting == IP_ONLY_AUTOMATIC_NETWORKING_VALUE) {
@@ -1711,7 +1716,8 @@ void DomainServer::sendICEServerAddressToMetaverseAPI() {
         domainObject[ICE_SERVER_ADDRESS] = "0.0.0.0";
     } else {
         // we're using full automatic networking and we have a current ice-server socket, use that now
-        domainObject[ICE_SERVER_ADDRESS] = _iceServerSocket.getAddress().toString();
+        // TODO(IPv6):
+        domainObject[ICE_SERVER_ADDRESS] = _iceServerSocket.getAddressIPv4().toString();
     }
 
     const auto& temporaryDomainKey = DependencyManager::get<AccountManager>()->getTemporaryDomainKey(getID());
@@ -1730,7 +1736,8 @@ void DomainServer::sendICEServerAddressToMetaverseAPI() {
     callbackParameters.jsonCallbackMethod = "handleSuccessfulICEServerAddressUpdate";
 
     qCDebug(domain_server_ice) << "Updating ice-server address in Directory Services API to"
-        << (_iceServerSocket.isNull() ? "" : _iceServerSocket.getAddress().toString());
+        << (_iceServerSocket.isNull() ? "" : _iceServerSocket.getAddressIPv4().toString()) << " "
+        << (_iceServerSocket.isNull() ? "" : _iceServerSocket.getAddressIPv6().toString());
 
     static const QString DOMAIN_ICE_ADDRESS_UPDATE = "/api/v1/domains/%1/ice_server_address";
 
@@ -1771,7 +1778,8 @@ void DomainServer::handleFailedICEServerAddressUpdate(QNetworkReply* requestRepl
 }
 
 void DomainServer::sendHeartbeatToIceServer() {
-    if (!_iceServerSocket.getAddress().isNull()) {
+    // TODO(IPv6):
+    if (!_iceServerSocket.getAddressIPv4().isNull()) {
 
         auto accountManager = DependencyManager::get<AccountManager>();
         auto limitedNodeList = DependencyManager::get<LimitedNodeList>();
@@ -1799,7 +1807,8 @@ void DomainServer::sendHeartbeatToIceServer() {
             qCWarning(domain_server_ice) << "Clearing the current ice-server socket and selecting a new candidate ice-server";
 
             // add the current address to our list of failed addresses
-            _failedIceServerAddresses << _iceServerSocket.getAddress();
+            // TODO(IPv6):
+            _failedIceServerAddresses << _iceServerSocket.getAddressIPv4();
 
             // if we've failed to hear back for three heartbeats, we clear the current ice-server socket and attempt
             // to randomize a new one
@@ -1992,7 +2001,8 @@ void DomainServer::processNodeJSONStatsPacket(QSharedPointer<ReceivedMessage> pa
 QJsonObject DomainServer::jsonForSocket(const SockAddr& socket) {
     QJsonObject socketJSON;
 
-    socketJSON["ip"] = socket.getAddress().toString();
+    // TODO(IPv6): IPv6 needs to be added here too
+    socketJSON["ip"] = socket.getAddressIPv4().toString();
     socketJSON["port"] = socket.getPort();
 
     return socketJSON;
@@ -3586,8 +3596,8 @@ void DomainServer::handleICEHostInfo(const QHostInfo& hostInfo) {
     QList<QHostAddress> sanitizedAddresses = hostInfo.addresses();
     auto it = sanitizedAddresses.begin();
     while (it != sanitizedAddresses.end()) {
-        //if (!it->isNull() && it->protocol() == QAbstractSocket::IPv4Protocol) {
-        if (!it->isNull() && it->protocol() == QAbstractSocket::AnyIPProtocol) {
+        // TODO(IPv6):
+        if (!it->isNull() && it->protocol() == QAbstractSocket::IPv4Protocol) {
             ++it;
         } else {
             it = sanitizedAddresses.erase(it);
@@ -3664,7 +3674,8 @@ void DomainServer::randomizeICEServerAddress(bool shouldTriggerHostLookup) {
         indexToTry = distribution(generator);
     }
 
-    _iceServerSocket = SockAddr { SocketType::UDP, candidateICEAddresses[indexToTry], ICE_SERVER_DEFAULT_PORT };
+    // TODO(IPv6):
+    _iceServerSocket = SockAddr { SocketType::UDP, candidateICEAddresses[indexToTry], QHostAddress(), ICE_SERVER_DEFAULT_PORT };
     qCInfo(domain_server_ice) << "Set candidate ice-server socket to" << _iceServerSocket;
 
     // clear our number of hearbeat denials, this should be re-set on ice-server change
