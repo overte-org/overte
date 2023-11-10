@@ -338,8 +338,8 @@ void AssignmentClientMonitor::handleChildStatusPacket(QSharedPointer<ReceivedMes
 
     if (!matchingNode) {
         // The parent only expects to be talking with programs running on this same machine.
-        if (senderSockAddr.getAddress() == QHostAddress::LocalHost ||
-                senderSockAddr.getAddress() == QHostAddress::LocalHostIPv6) {
+        if (senderSockAddr.getAddressIPv4() == QHostAddress::LocalHost ||
+            senderSockAddr.getAddressIPv6() == QHostAddress::LocalHostIPv6) {
 
             if (!senderID.isNull()) {
                 // We don't have this node yet - we should add it

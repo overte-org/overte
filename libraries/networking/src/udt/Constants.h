@@ -18,8 +18,10 @@
 
 namespace udt {
 
+    // TODO(IPv6): Is UDP header size different for IPv6?
     static const int UDP_IPV4_HEADER_SIZE = 28;
     static const int MAX_PACKET_SIZE_WITH_UDP_HEADER = 1492;
+    // TODO(IPv6): Is UDP header size different for IPv6?
     static const int MAX_PACKET_SIZE = MAX_PACKET_SIZE_WITH_UDP_HEADER - UDP_IPV4_HEADER_SIZE;
     static const int MAX_PACKETS_IN_FLIGHT = 25600;
     static const int CONNECTION_RECEIVE_BUFFER_SIZE_PACKETS = 8192;
