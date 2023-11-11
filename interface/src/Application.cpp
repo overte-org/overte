@@ -1049,6 +1049,7 @@ void Application::initialize(const QCommandLineParser &parser) {
     _octreeProcessor = std::make_shared<OctreePacketProcessor>();
     _entityEditSender = std::make_shared<EntityEditPacketSender>();
     _graphicsEngine = std::make_shared<GraphicsEngine>();
+    _applicationOverlay = std::make_shared<ApplicationOverlay>();
 
 
 

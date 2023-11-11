@@ -217,8 +217,8 @@ public:
 
     ivec2 getMouse() const;
 
-    ApplicationOverlay& getApplicationOverlay() { return _applicationOverlay; }
-    const ApplicationOverlay& getApplicationOverlay() const { return _applicationOverlay; }
+    ApplicationOverlay& getApplicationOverlay() { return *_applicationOverlay; }
+    const ApplicationOverlay& getApplicationOverlay() const { return *_applicationOverlay; }
     CompositorHelper& getApplicationCompositor() const;
 
     Overlays& getOverlays() { return _overlays; }
@@ -775,7 +775,7 @@ private:
     bool _disableLoginScreen { true };
 
     Overlays _overlays;
-    ApplicationOverlay _applicationOverlay;
+    std::shared_ptr<ApplicationOverlay> _applicationOverlay;
     OverlayConductor _overlayConductor;
 
     DialogsManagerScriptingInterface* _dialogsManagerScriptingInterface = new DialogsManagerScriptingInterface();
