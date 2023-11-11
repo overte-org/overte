@@ -1007,9 +1007,6 @@ Application::Application(
     _logger(new FileLogger(this)),
 #endif
     _previousSessionCrashed(setupEssentials(parser, false)),
-    _entitySimulation(std::make_shared<PhysicalEntitySimulation>()),
-    _physicsEngine(std::make_shared<PhysicsEngine>(Vectors::ZERO)),
-    _entityClipboard(std::make_shared<EntityTree>()),
     _previousScriptLocation("LastScriptLocation", DESKTOP_LOCATION),
     _fieldOfView("fieldOfView", DEFAULT_FIELD_OF_VIEW_DEGREES),
     _hmdTabletScale("hmdTabletScale", DEFAULT_HMD_TABLET_SCALE_PERCENT),
@@ -1045,6 +1042,13 @@ void Application::initialize(const QCommandLineParser &parser) {
     //qCDebug(interfaceapp) << "Setting up essentials";
     //setupEssentials(parser, _previousSessionCrashed);
     qCDebug(interfaceapp) << "Initializing application";
+
+    _entitySimulation = std::make_shared<PhysicalEntitySimulation>();
+    _physicsEngine = std::make_shared<PhysicsEngine>(Vectors::ZERO);
+    _entityClipboard = std::make_shared<EntityTree>();
+
+
+
 
 
     auto steamClient = PluginManager::getInstance()->getSteamClientPlugin();
