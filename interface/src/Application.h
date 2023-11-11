@@ -123,6 +123,19 @@ class Application : public QApplication,
     friend class OctreePacketProcessor;
 
 public:
+    /**
+     * @brief Initialize everything
+     *
+     * This is a QApplication, and for Qt reasons it's desirable to create this object
+     * as early as possible. Without that some Qt functions don't work, like QCoreApplication::applicationDirPath()
+     *
+     * So we keep the constructor as minimal as possible, and do the rest of the work in
+     * this function.
+     */
+    void initialize(const QCommandLineParser &parser);
+
+    void setPreviousSessionCrashed(bool value) { _previousSessionCrashed = value; }
+
     // virtual functions required for PluginContainer
     virtual ui::Menu* getPrimaryMenu() override;
     virtual void requestReset() override { resetSensors(false); }
@@ -136,14 +149,13 @@ public:
     virtual DisplayPluginPointer getActiveDisplayPlugin() const override;
 
     // FIXME? Empty methods, do we still need them?
-    static void initPlugins(const QCommandLineParser& parser);
+    void configurePlugins(const QCommandLineParser& parser);
     static void shutdownPlugins();
 
     Application(
         int& argc, char** argv,
         const QCommandLineParser& parser,
-        QElapsedTimer& startup_time,
-        bool runningMarkerExisted
+        QElapsedTimer& startup_time
     );
     ~Application();
 
@@ -860,5 +872,7 @@ private:
     bool _crashOnShutdown { false };
 
     DiscordPresence* _discordPresence{ nullptr };
+
+    bool _profilingInitialized { false };
 };
 #endif // hifi_Application_h

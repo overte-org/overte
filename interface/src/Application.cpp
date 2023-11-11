@@ -724,7 +724,7 @@ extern DisplayPluginList getDisplayPlugins();
 extern InputPluginList getInputPlugins();
 extern void saveInputPluginSettings(const InputPluginList& plugins);
 
-bool setupEssentials(int& argc, char** argv, const QCommandLineParser& parser, bool runningMarkerExisted) {
+bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted) {
     qInstallMessageHandler(messageHandler);
 
 
@@ -743,6 +743,7 @@ bool setupEssentials(int& argc, char** argv, const QCommandLineParser& parser, b
 
     bool previousSessionCrashed { false };
     if (!inTestMode) {
+        // TODO: FIX
         previousSessionCrashed = CrashRecoveryHandler::checkForResetSettings(runningMarkerExisted, suppressPrompt);
     }
 
@@ -764,6 +765,7 @@ bool setupEssentials(int& argc, char** argv, const QCommandLineParser& parser, b
     }
 
     // Tell the plugin manager about our statically linked plugins
+    DependencyManager::set<PathUtils>();
     DependencyManager::set<ScriptInitializers>();
     DependencyManager::set<PluginManager>();
     auto pluginManager = PluginManager::getInstance();
@@ -776,6 +778,7 @@ bool setupEssentials(int& argc, char** argv, const QCommandLineParser& parser, b
     if (auto oculusPlatform = pluginManager->getOculusPlatformPlugin()) {
         oculusPlatform->init();
     }
+
 
     PROFILE_SET_THREAD_NAME("Main Thread");
 
@@ -993,8 +996,7 @@ bool Application::initMenu() {
 Application::Application(
     int& argc, char** argv,
     const QCommandLineParser& parser,
-    QElapsedTimer& startupTimer,
-    bool runningMarkerExisted
+    QElapsedTimer& startupTimer
 ) :
     QApplication(argc, argv),
     _window(new MainWindow(desktop())),
@@ -1004,7 +1006,7 @@ Application::Application(
 #ifndef Q_OS_ANDROID
     _logger(new FileLogger(this)),
 #endif
-    _previousSessionCrashed(setupEssentials(argc, argv, parser, runningMarkerExisted)),
+    _previousSessionCrashed(setupEssentials(parser, false)),
     _entitySimulation(std::make_shared<PhysicalEntitySimulation>()),
     _physicsEngine(std::make_shared<PhysicsEngine>(Vectors::ZERO)),
     _entityClipboard(std::make_shared<EntityTree>()),
@@ -1032,12 +1034,22 @@ Application::Application(
     _snapshotSound(nullptr),
     _sampleSound(nullptr)
 {
-    auto steamClient = PluginManager::getInstance()->getSteamClientPlugin();
-    setProperty(hifi::properties::STEAM, (steamClient && steamClient->isRunning()));
     setProperty(hifi::properties::CRASHED, _previousSessionCrashed);
 
     LogHandler::getInstance().moveToThread(thread());
     LogHandler::getInstance().setupRepeatedMessageFlusher();
+}
+
+void Application::initialize(const QCommandLineParser &parser) {
+
+    //qCDebug(interfaceapp) << "Setting up essentials";
+    //setupEssentials(parser, _previousSessionCrashed);
+    qCDebug(interfaceapp) << "Initializing application";
+
+
+    auto steamClient = PluginManager::getInstance()->getSteamClientPlugin();
+    setProperty(hifi::properties::STEAM, (steamClient && steamClient->isRunning()));
+
 
     {
         if (parser.isSet("testScript")) {
@@ -2375,7 +2387,7 @@ Application::Application(
 
     connect(this, &Application::applicationStateChanged, this, &Application::activeChanged);
     connect(_window, SIGNAL(windowMinimizedChanged(bool)), this, SLOT(windowMinimizedChanged(bool)));
-    qCDebug(interfaceapp, "Startup time: %4.2f seconds.", (double)startupTimer.elapsed() / 1000.0);
+    qCDebug(interfaceapp, "Startup time: %4.2f seconds.", (double)_sessionRunTimer.elapsed() / 1000.0);
 
     EntityTreeRenderer::setEntitiesShouldFadeFunction([this]() {
         SharedNodePointer entityServerNode = DependencyManager::get<NodeList>()->soloNodeOfType(NodeType::EntityServer);
@@ -4201,7 +4213,9 @@ bool Application::handleFileOpenEvent(QFileOpenEvent* fileEvent) {
 }
 
 bool Application::notify(QObject * object, QEvent * event) {
-    if (thread() == QThread::currentThread()) {
+    if (thread() == QThread::currentThread() && _profilingInitialized ) {
+        // _profilingInitialized gets set once we're reading for profiling.
+        // this prevents a deadlock due to profiling not working yet
         PROFILE_RANGE_IF_LONGER(app, "notify", 2)
         return QApplication::notify(object, event);
     }
@@ -8762,7 +8776,11 @@ void Application::sendLambdaEvent(const std::function<void()>& f) {
     }
 }
 
-void Application::initPlugins(const QCommandLineParser& parser) {
+void Application::configurePlugins(const QCommandLineParser& parser) {
+    // This must be a member function -- PluginManager must exist, and for that
+    // QApplication must exist, or it can't find the plugin path, as QCoreApplication:applicationDirPath
+    // won't work yet.
+
     if (parser.isSet("display")) {
         auto preferredDisplays = parser.value("display").split(',', Qt::SkipEmptyParts);
         qInfo() << "Setting prefered display plugins:" << preferredDisplays;
@@ -8780,6 +8798,7 @@ void Application::initPlugins(const QCommandLineParser& parser) {
         qInfo() << "Disabling following input plugins:" << disabledInputs;
         PluginManager::getInstance()->disableInputs(disabledInputs);
     }
+
 }
 
 void Application::shutdownPlugins() {

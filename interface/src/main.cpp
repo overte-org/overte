@@ -68,6 +68,18 @@ int main(int argc, const char* argv[]) {
     // Journald by default in user applications is probably a bit too modern still.
     LogHandler::getInstance().setShouldUseJournald(false);
 
+
+    // Extend argv to enable WebGL rendering
+    std::vector<const char*> argvExtended(&argv[0], &argv[argc]);
+    argvExtended.push_back("--ignore-gpu-blocklist");
+#ifdef Q_OS_ANDROID
+    argvExtended.push_back("--suppress-settings-reset");
+#endif
+    int argcExtended = (int)argvExtended.size();
+
+    QElapsedTimer startupTime;
+    startupTime.start();
+
     QCommandLineParser parser;
     parser.setApplicationDescription("Overte -- A free/libre and open-source virtual worlds client");
     QCommandLineOption helpOption = parser.addHelpOption();
@@ -246,6 +258,15 @@ int main(int argc, const char* argv[]) {
         "Logging options, comma separated: color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald",
         "options"
     );
+    QCommandLineOption abortAfterStartupOption(
+        "abortAfterStartup",
+        "Debug option. Aborts right after startup."
+    );
+    QCommandLineOption abortAfterInitOption(
+        "abortAfterInit",
+        "Debug option. Aborts after initialization, right before the program starts running the event loop."
+    );
+
     // "--qmljsdebugger", which appears in output from "--help-all".
     // Those below don't seem to be optional.
     //     --ignore-gpu-blacklist
@@ -288,6 +309,9 @@ int main(int argc, const char* argv[]) {
     parser.addOption(quitWhenFinishedOption);
     parser.addOption(fastHeartbeatOption);
     parser.addOption(logOption);
+    parser.addOption(abortAfterStartupOption);
+    parser.addOption(abortAfterInitOption);
+
 
     QString applicationPath;
     // A temporary application instance is needed to get the location of the running executable
@@ -308,6 +332,16 @@ int main(int argc, const char* argv[]) {
 #else
         applicationPath = QCoreApplication::applicationDirPath();
 #endif
+    }
+
+    // TODO: We need settings for Application, but Settings needs an Application
+    // to handle events. Needs splitting into two parts: enough initialization
+    // for Application to work, and then thread start afterwards.
+    Setting::init();
+    Application app(argcExtended, const_cast<char**>(argvExtended.data()), parser, startupTime);
+
+    if (parser.isSet("abortAfterStartup")) {
+        return 99;
     }
 
     // We want to configure the logging system as early as possible
@@ -407,10 +441,9 @@ int main(int argc, const char* argv[]) {
     QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
 #endif
 
-    QElapsedTimer startupTime;
-    startupTime.start();
 
-    Setting::init();
+
+
 
     // Instance UserActivityLogger now that the settings are loaded
     auto& ual = UserActivityLogger::getInstance();
@@ -548,7 +581,7 @@ int main(int argc, const char* argv[]) {
     // Oculus initialization MUST PRECEDE OpenGL context creation.
     // The nature of the Application constructor means this has to be either here,
     // or in the main window ctor, before GL startup.
-    Application::initPlugins(parser);
+    app.configurePlugins(parser);
 
 #ifdef Q_OS_WIN
     // If we're running in steam mode, we need to do an explicit check to ensure we're up to the required min spec
@@ -586,17 +619,10 @@ int main(int argc, const char* argv[]) {
             SandboxUtils::runLocalSandbox(serverContentPath, true, noUpdater);
         }
 
-        // Extend argv to enable WebGL rendering
-        std::vector<const char*> argvExtended(&argv[0], &argv[argc]);
-        argvExtended.push_back("--ignore-gpu-blocklist");
-#ifdef Q_OS_ANDROID
-        argvExtended.push_back("--suppress-settings-reset");
-#endif
-        int argcExtended = (int)argvExtended.size();
-
         PROFILE_SYNC_END(startup, "main startup", "");
         PROFILE_SYNC_BEGIN(startup, "app full ctor", "");
-        Application app(argcExtended, const_cast<char**>(argvExtended.data()), parser, startupTime, runningMarkerExisted);
+        app.setPreviousSessionCrashed(runningMarkerExisted);
+        app.initialize(parser);
         PROFILE_SYNC_END(startup, "app full ctor", "");
 
 #if defined(Q_OS_LINUX)
@@ -664,6 +690,9 @@ int main(int argc, const char* argv[]) {
         translator.load("i18n/interface_en");
         app.installTranslator(&translator);
         qCDebug(interfaceapp, "Created QT Application.");
+        if (parser.isSet("abortAfterInit")) {
+            return 99;
+        }
         exitCode = app.exec();
         server.close();
 
