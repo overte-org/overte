@@ -209,11 +209,11 @@ public:
 
     const ConicalViewFrustums& getConicalViews() const override { return _conicalViews; }
 
-    const OctreePacketProcessor& getOctreePacketProcessor() const { return _octreeProcessor; }
+    const OctreePacketProcessor& getOctreePacketProcessor() const { return *_octreeProcessor; }
     QSharedPointer<EntityTreeRenderer> getEntities() const { return DependencyManager::get<EntityTreeRenderer>(); }
     MainWindow* getWindow() const { return _window; }
     EntityTreePointer getEntityClipboard() const { return _entityClipboard; }
-    EntityEditPacketSender* getEntityEditPacketSender() { return &_entityEditSender; }
+    std::shared_ptr<EntityEditPacketSender> getEntityEditPacketSender() { return _entityEditSender; }
 
     ivec2 getMouse() const;
 
@@ -721,8 +721,8 @@ private:
     bool _enableProcessOctreeThread;
     bool _interstitialMode { false };
 
-    OctreePacketProcessor _octreeProcessor;
-    EntityEditPacketSender _entityEditSender;
+    std::shared_ptr<OctreePacketProcessor> _octreeProcessor;
+    std::shared_ptr<EntityEditPacketSender> _entityEditSender;
 
     StDev _idleLoopStdev;
     float _idleLoopMeasuredJitter;

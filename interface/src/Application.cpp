@@ -1006,7 +1006,7 @@ Application::Application(
 #ifndef Q_OS_ANDROID
     _logger(new FileLogger(this)),
 #endif
-    _previousSessionCrashed(setupEssentials(parser, false)),
+    _previousSessionCrashed(false), //setupEssentials(parser, false)),
     _previousScriptLocation("LastScriptLocation", DESKTOP_LOCATION),
     _fieldOfView("fieldOfView", DEFAULT_FIELD_OF_VIEW_DEGREES),
     _hmdTabletScale("hmdTabletScale", DEFAULT_HMD_TABLET_SCALE_PERCENT),
@@ -1046,7 +1046,8 @@ void Application::initialize(const QCommandLineParser &parser) {
     _entitySimulation = std::make_shared<PhysicalEntitySimulation>();
     _physicsEngine = std::make_shared<PhysicsEngine>(Vectors::ZERO);
     _entityClipboard = std::make_shared<EntityTree>();
-
+    _octreeProcessor = std::make_shared<OctreePacketProcessor>();
+    _entityEditSender = std::make_shared<EntityEditPacketSender>();
 
 
 
@@ -1421,7 +1422,7 @@ void Application::initialize(const QCommandLineParser &parser) {
     connect(myAvatar.get(), &MyAvatar::positionGoneTo, this, [this] {
         if (!_physicsEnabled) {
             // when we arrive somewhere without physics enabled --> startSafeLanding
-            _octreeProcessor.startSafeLanding();
+            _octreeProcessor->startSafeLanding();
         }
     }, Qt::QueuedConnection);
 
@@ -1594,9 +1595,9 @@ void Application::initialize(const QCommandLineParser &parser) {
     qCDebug(interfaceapp, "init() complete.");
 
     // create thread for parsing of octree data independent of the main network and rendering threads
-    _octreeProcessor.initialize(_enableProcessOctreeThread);
-    connect(&_octreeProcessor, &OctreePacketProcessor::packetVersionMismatch, this, &Application::notifyPacketVersionMismatch);
-    _entityEditSender.initialize(_enableProcessOctreeThread);
+    _octreeProcessor->initialize(_enableProcessOctreeThread);
+    connect(_octreeProcessor.get(), &OctreePacketProcessor::packetVersionMismatch, this, &Application::notifyPacketVersionMismatch);
+    _entityEditSender->initialize(_enableProcessOctreeThread);
 
     _idleLoopStdev.reset();
 
@@ -1714,7 +1715,7 @@ void Application::initialize(const QCommandLineParser &parser) {
         userActivityLogger.logAction("launch", properties);
     }
 
-    _entityEditSender.setMyAvatar(myAvatar.get());
+    _entityEditSender->setMyAvatar(myAvatar.get());
 
     // The entity octree will have to know about MyAvatar for the parentJointName import
     getEntities()->getTree()->setMyAvatar(myAvatar);
@@ -1723,7 +1724,7 @@ void Application::initialize(const QCommandLineParser &parser) {
     // For now we're going to set the PPS for outbound packets to be super high, this is
     // probably not the right long term solution. But for now, we're going to do this to
     // allow you to move an entity around in your hand
-    _entityEditSender.setPacketsPerSecond(3000); // super high!!
+    _entityEditSender->setPacketsPerSecond(3000); // super high!!
 
     // Make sure we don't time out during slow operations at startup
     updateHeartbeat();
@@ -2923,8 +2924,8 @@ Application::~Application() {
     _entityClipboard->eraseAllOctreeElements();
     _entityClipboard.reset();
 
-    _octreeProcessor.terminate();
-    _entityEditSender.terminate();
+    _octreeProcessor->terminate();
+    _entityEditSender->terminate();
 
     if (auto steamClient = PluginManager::getInstance()->getSteamClientPlugin()) {
         steamClient->shutdown();
@@ -4076,7 +4077,7 @@ std::map<QString, QString> Application::prepareServerlessDomainContents(QUrl dom
     bool success = tmpTree->readFromByteArray(domainURL.toString(), data);
     if (success) {
         tmpTree->reaverageOctreeElements();
-        tmpTree->sendEntities(&_entityEditSender, getEntities()->getTree(), "domain", 0, 0, 0);
+        tmpTree->sendEntities(_entityEditSender.get(), getEntities()->getTree(), "domain", 0, 0, 0);
     }
     std::map<QString, QString> namedPaths = tmpTree->getNamedPaths();
 
@@ -5632,7 +5633,7 @@ bool Application::importEntities(const QString& urlOrFilename, const bool isObse
 }
 
 QVector<EntityItemID> Application::pasteEntities(const QString& entityHostType, float x, float y, float z) {
-    return _entityClipboard->sendEntities(&_entityEditSender, getEntities()->getTree(), entityHostType, x, y, z);
+    return _entityClipboard->sendEntities(_entityEditSender.get(), getEntities()->getTree(), entityHostType, x, y, z);
 }
 
 void Application::init() {
@@ -5682,7 +5683,7 @@ void Application::init() {
     _physicsEngine->init();
 
     EntityTreePointer tree = getEntities()->getTree();
-    _entitySimulation->init(tree, _physicsEngine, &_entityEditSender);
+    _entitySimulation->init(tree, _physicsEngine, _entityEditSender.get());
     tree->setSimulation(_entitySimulation);
 
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
@@ -5914,8 +5915,8 @@ void Application::updateThreads(float deltaTime) {
 
     // parse voxel packets
     if (!_enableProcessOctreeThread) {
-        _octreeProcessor.threadRoutine();
-        _entityEditSender.threadRoutine();
+        _octreeProcessor->threadRoutine();
+        _entityEditSender->threadRoutine();
     }
 }
 
@@ -6038,7 +6039,7 @@ void Application::resetPhysicsReadyInformation() {
     _gpuTextureMemSizeStabilityCount = 0;
     _gpuTextureMemSizeAtLastCheck = 0;
     _physicsEnabled = false;
-    _octreeProcessor.stopSafeLanding();
+    _octreeProcessor->stopSafeLanding();
 }
 
 void Application::reloadResourceCaches() {
@@ -6301,7 +6302,7 @@ void Application::tryToEnablePhysics() {
         auto myAvatar = getMyAvatar();
         if (myAvatar->isReadyForPhysics()) {
             myAvatar->getCharacterController()->setPhysicsEngine(_physicsEngine);
-            _octreeProcessor.resetSafeLanding();
+            _octreeProcessor->resetSafeLanding();
             _physicsEnabled = true;
             setIsInterstitialMode(false);
             myAvatar->updateMotionBehaviorFromMenu();
@@ -6327,12 +6328,12 @@ void Application::update(float deltaTime) {
         if (isServerlessMode()) {
             tryToEnablePhysics();
         } else if (_failedToConnectToEntityServer) {
-            if (_octreeProcessor.safeLandingIsActive()) {
-                _octreeProcessor.stopSafeLanding();
+            if (_octreeProcessor->safeLandingIsActive()) {
+                _octreeProcessor->stopSafeLanding();
             }
         } else {
-            _octreeProcessor.updateSafeLanding();
-            if (_octreeProcessor.safeLandingIsComplete()) {
+            _octreeProcessor->updateSafeLanding();
+            if (_octreeProcessor->safeLandingIsComplete()) {
                 tryToEnablePhysics();
             }
         }
@@ -6987,7 +6988,7 @@ int Application::sendNackPackets() {
 
             // if there are octree packets from this node that are waiting to be processed,
             // don't send a NACK since the missing packets may be among those waiting packets.
-            if (_octreeProcessor.hasPacketsToProcessFrom(nodeUUID)) {
+            if (_octreeProcessor->hasPacketsToProcessFrom(nodeUUID)) {
                 return;
             }
 
@@ -7029,7 +7030,7 @@ void Application::queryOctree(NodeType_t serverType, PacketType packetType) {
 
     const bool isModifiedQuery = !_physicsEnabled;
     if (isModifiedQuery) {
-        if (!_octreeProcessor.safeLandingIsActive()) {
+        if (!_octreeProcessor->safeLandingIsActive()) {
             // don't send the octreeQuery until SafeLanding knows it has started
             return;
         }
@@ -7298,12 +7299,12 @@ void Application::resettingDomain() {
 void Application::nodeAdded(SharedNodePointer node) {
     if (node->getType() == NodeType::EntityServer) {
         if (_failedToConnectToEntityServer && !_entityServerConnectionTimer.isActive()) {
-            _octreeProcessor.stopSafeLanding();
+            _octreeProcessor->stopSafeLanding();
             _failedToConnectToEntityServer = false;
         } else if (_entityServerConnectionTimer.isActive()) {
             _entityServerConnectionTimer.stop();
         }
-        _octreeProcessor.startSafeLanding();
+        _octreeProcessor->startSafeLanding();
         _entityServerConnectionTimer.setInterval(ENTITY_SERVER_CONNECTION_TIMEOUT);
         _entityServerConnectionTimer.start();
     }
@@ -7375,9 +7376,9 @@ void Application::nodeKilled(SharedNodePointer node) {
     // OctreePacketProcessor::nodeKilled is not being called when NodeList::nodeKilled is emitted.
     // This may have to do with GenericThread::threadRoutine() blocking the QThread event loop
 
-    _octreeProcessor.nodeKilled(node);
+    _octreeProcessor->nodeKilled(node);
 
-    _entityEditSender.nodeKilled(node);
+    _entityEditSender->nodeKilled(node);
 
     if (node->getType() == NodeType::AudioMixer) {
         QMetaObject::invokeMethod(DependencyManager::get<AudioClient>().data(), "audioMixerKilled");
@@ -7466,7 +7467,7 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     // setup the packet sender of the script engine's scripting interfaces so
     // we can use the same ones from the application.
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
-    entityScriptingInterface->setPacketSender(&_entityEditSender);
+    entityScriptingInterface->setPacketSender(_entityEditSender.get());
     entityScriptingInterface->setEntityTree(getEntities()->getTree());
 
     if (property(hifi::properties::TEST).isValid()) {
