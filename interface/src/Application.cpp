@@ -1040,7 +1040,7 @@ Application::Application(
 void Application::initialize(const QCommandLineParser &parser) {
 
     //qCDebug(interfaceapp) << "Setting up essentials";
-    //setupEssentials(parser, _previousSessionCrashed);
+    setupEssentials(parser, _previousSessionCrashed);
     qCDebug(interfaceapp) << "Initializing application";
 
     _entitySimulation = std::make_shared<PhysicalEntitySimulation>();
