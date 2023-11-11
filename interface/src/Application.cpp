@@ -764,14 +764,12 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
         }
     }
 
-    // Tell the plugin manager about our statically linked plugins
+
 
     DependencyManager::set<ScriptInitializers>();
-    DependencyManager::set<PluginManager>();
+
+    // Tell the plugin manager about our statically linked plugins
     auto pluginManager = PluginManager::getInstance();
-    pluginManager->setInputPluginProvider([] { return getInputPlugins(); });
-    pluginManager->setDisplayPluginProvider([] { return getDisplayPlugins(); });
-    pluginManager->setInputPluginSettingsPersister([](const InputPluginList& plugins) { saveInputPluginSettings(plugins); });
     if (auto steamClient = pluginManager->getSteamClientPlugin()) {
         steamClient->init();
     }
@@ -1040,8 +1038,12 @@ Application::Application(
     DependencyManager::set<PathUtils>();
 }
 
-void Application::initializePlugins() {
-
+void Application::initializePluginManager() {
+    DependencyManager::set<PluginManager>();
+    auto pluginManager = PluginManager::getInstance();
+    pluginManager->setInputPluginProvider([] { return getInputPlugins(); });
+    pluginManager->setDisplayPluginProvider([] { return getDisplayPlugins(); });
+    pluginManager->setInputPluginSettingsPersister([](const InputPluginList& plugins) { saveInputPluginSettings(plugins); });
 }
 
 void Application::initialize(const QCommandLineParser &parser) {

@@ -24,6 +24,7 @@
 #include <SharedUtil.h>
 #include <NetworkAccessManager.h>
 #include <gl/GLHelpers.h>
+#include <iostream>
 
 #include "AddressManager.h"
 #include "Application.h"
@@ -33,6 +34,9 @@
 #include "MainWindow.h"
 #include "Profile.h"
 #include "LogHandler.h"
+#include <plugins/PluginManager.h>
+#include <plugins/DisplayPlugin.h>
+#include <plugins/CodecPlugin.h>
 
 #ifdef Q_OS_WIN
 #include <Windows.h>
@@ -63,6 +67,7 @@ int main(int argc, const char* argv[]) {
     }
 #endif
 
+    // Setup QCoreApplication settings, install log message handler
     setupHifiApplication(BuildInfo::INTERFACE_NAME);
 
     // Journald by default in user applications is probably a bit too modern still.
@@ -258,6 +263,10 @@ int main(int argc, const char* argv[]) {
         "Logging options, comma separated: color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald",
         "options"
     );
+    QCommandLineOption getPluginsOption(
+        "getPlugins",
+        "Print out a list of plugins in JSON"
+    );
     QCommandLineOption abortAfterStartupOption(
         "abortAfterStartup",
         "Debug option. Aborts right after startup."
@@ -311,6 +320,7 @@ int main(int argc, const char* argv[]) {
     parser.addOption(logOption);
     parser.addOption(abortAfterStartupOption);
     parser.addOption(abortAfterInitOption);
+    parser.addOption(getPluginsOption);
 
 
     QString applicationPath;
@@ -354,6 +364,55 @@ int main(int argc, const char* argv[]) {
             Q_UNREACHABLE();
         }
     }
+
+    app.initializePluginManager();
+
+    if (parser.isSet(getPluginsOption)) {
+        auto pluginManager = PluginManager::getInstance();
+
+        QJsonObject inputJson;
+        for (const auto &plugin : pluginManager->getInputPlugins()) {
+            QJsonObject data;
+            data["subdeviceNames"] = QJsonArray::fromStringList(plugin->getSubdeviceNames());
+            data["deviceName"] = plugin->getDeviceName();
+            data["configurable"] = plugin->configurable();
+            data["isHandController"] = plugin->isHandController();
+            data["isHeadController"] = plugin->isHeadController();
+
+            inputJson[plugin->getName()] = data;
+        }
+
+        QJsonObject displayJson;
+        for (const auto &plugin : pluginManager->getDisplayPlugins()) {
+            QJsonObject data;
+            data["isHmd"] = plugin->isHmd();
+            data["isStereo"] = plugin->isStereo();
+            data["targetFramerate"] = plugin->getTargetFrameRate();
+            data["hasAsyncReprojection"] = plugin->hasAsyncReprojection();
+
+            displayJson[plugin->getName()] = data;
+        }
+
+        QJsonArray codecsArray;
+        for (const auto &plugin : pluginManager->getCodecPlugins()) {
+            codecsArray.append(plugin->getName());
+        }
+
+        QJsonObject staticJson;
+        staticJson["steamAvailable"] = (pluginManager->getSteamClientPlugin() == nullptr);
+        staticJson["oculusAvailable"] = (pluginManager->getOculusPlatformPlugin() == nullptr);
+
+        QJsonObject root;
+        root["input"] = inputJson;
+        root["display"] = displayJson;
+        root["codec"] = codecsArray;
+        root["staticPlugins"] = staticJson;
+
+        std::cout << QJsonDocument(root).toJson().toStdString() << "\n";
+
+        return 0;
+    }
+
 
     // Act on arguments for early termination.
     if (parser.isSet(versionOption)) {

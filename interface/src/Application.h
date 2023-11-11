@@ -124,7 +124,7 @@ class Application : public QApplication,
 
 public:
 
-    void initializePlugins();
+    void initializePluginManager();
 
     /**
      * @brief Initialize everything
