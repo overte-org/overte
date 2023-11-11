@@ -2897,43 +2897,59 @@ void Application::cleanupBeforeQuit() {
 
 Application::~Application() {
     // remove avatars from physics engine
-    auto avatarManager = DependencyManager::get<AvatarManager>();
-    avatarManager->clearOtherAvatars();
-    auto myCharacterController = getMyAvatar()->getCharacterController();
-    myCharacterController->clearDetailedMotionStates();
+    if (auto avatarManager = DependencyManager::get<AvatarManager>()) {
+        // AvatarManager may not yet exist in case of an early exit
 
-    PhysicsEngine::Transaction transaction;
-    avatarManager->buildPhysicsTransaction(transaction);
-    _physicsEngine->processTransaction(transaction);
-    avatarManager->handleProcessedPhysicsTransaction(transaction);
-    avatarManager->deleteAllAvatars();
+        avatarManager->clearOtherAvatars();
+        auto myCharacterController = getMyAvatar()->getCharacterController();
+        myCharacterController->clearDetailedMotionStates();
 
-    _physicsEngine->setCharacterController(nullptr);
+        PhysicsEngine::Transaction transaction;
+        avatarManager->buildPhysicsTransaction(transaction);
+        _physicsEngine->processTransaction(transaction);
+        avatarManager->handleProcessedPhysicsTransaction(transaction);
+        avatarManager->deleteAllAvatars();
+    }
+
+    if (_physicsEngine) {
+        _physicsEngine->setCharacterController(nullptr);
+    }
 
     // the _shapeManager should have zero references
     _shapeManager.collectGarbage();
     assert(_shapeManager.getNumShapes() == 0);
 
-    // shutdown graphics engine
-    _graphicsEngine->shutdown();
+    if (_graphicsEngine) {
+        // shutdown graphics engine
+        _graphicsEngine->shutdown();
+    }
 
     _gameWorkload.shutdown();
 
     DependencyManager::destroy<Preferences>();
     PlatformHelper::shutdown();
 
-    _entityClipboard->eraseAllOctreeElements();
-    _entityClipboard.reset();
-
-    _octreeProcessor->terminate();
-    _entityEditSender->terminate();
-
-    if (auto steamClient = PluginManager::getInstance()->getSteamClientPlugin()) {
-        steamClient->shutdown();
+    if (_entityClipboard) {
+        _entityClipboard->eraseAllOctreeElements();
+        _entityClipboard.reset();
     }
 
-    if (auto oculusPlatform = PluginManager::getInstance()->getOculusPlatformPlugin()) {
-        oculusPlatform->shutdown();
+    if (_octreeProcessor) {
+        _octreeProcessor->terminate();
+    }
+
+    if (_entityEditSender) {
+        _entityEditSender->terminate();
+    }
+
+    if (auto pluginManager = PluginManager::getInstance()) {
+        if (auto steamClient = pluginManager->getSteamClientPlugin()) {
+            steamClient->shutdown();
+        }
+
+        if (auto oculusPlatform = pluginManager->getOculusPlatformPlugin()) {
+            oculusPlatform->shutdown();
+        }
     }
 
     DependencyManager::destroy<PluginManager>();
@@ -2961,7 +2977,9 @@ Application::~Application() {
     DependencyManager::destroy<GeometryCache>();
     DependencyManager::destroy<ScreenshareScriptingInterface>();
 
-    DependencyManager::get<ResourceManager>()->cleanup();
+    if (auto resourceManager = DependencyManager::get<ResourceManager>()) {
+        resourceManager->cleanup();
+    }
 
     // remove the NodeList from the DependencyManager
     DependencyManager::destroy<NodeList>();
@@ -2975,13 +2993,14 @@ Application::~Application() {
     _window->deleteLater();
 
     // make sure that the quit event has finished sending before we take the application down
-    auto closeEventSender = DependencyManager::get<CloseEventSender>();
-    while (!closeEventSender->hasFinishedQuitEvent() && !closeEventSender->hasTimedOutQuitEvent()) {
-        // sleep a little so we're not spinning at 100%
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    if (auto closeEventSender = DependencyManager::get<CloseEventSender>()) {
+        while (!closeEventSender->hasFinishedQuitEvent() && !closeEventSender->hasTimedOutQuitEvent()) {
+            // sleep a little so we're not spinning at 100%
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        // quit the thread used by the closure event sender
+        closeEventSender->thread()->quit();
     }
-    // quit the thread used by the closure event sender
-    closeEventSender->thread()->quit();
 
     // Can't log to file past this point, FileLogger about to be deleted
     qInstallMessageHandler(LogHandler::verboseMessageHandler);
