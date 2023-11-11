@@ -123,6 +123,9 @@ class Application : public QApplication,
     friend class OctreePacketProcessor;
 
 public:
+
+    void initializePlugins();
+
     /**
      * @brief Initialize everything
      *

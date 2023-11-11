@@ -725,7 +725,7 @@ extern InputPluginList getInputPlugins();
 extern void saveInputPluginSettings(const InputPluginList& plugins);
 
 bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted) {
-    qInstallMessageHandler(messageHandler);
+
 
 
     const int listenPort = parser.isSet("listenPort") ? parser.value("listenPort").toInt() : INVALID_PORT;
@@ -765,7 +765,7 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
     }
 
     // Tell the plugin manager about our statically linked plugins
-    DependencyManager::set<PathUtils>();
+
     DependencyManager::set<ScriptInitializers>();
     DependencyManager::set<PluginManager>();
     auto pluginManager = PluginManager::getInstance();
@@ -1035,6 +1035,13 @@ Application::Application(
 
     LogHandler::getInstance().moveToThread(thread());
     LogHandler::getInstance().setupRepeatedMessageFlusher();
+    qInstallMessageHandler(messageHandler);
+
+    DependencyManager::set<PathUtils>();
+}
+
+void Application::initializePlugins() {
+
 }
 
 void Application::initialize(const QCommandLineParser &parser) {
