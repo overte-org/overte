@@ -1048,7 +1048,7 @@ void Application::initialize(const QCommandLineParser &parser) {
     _entityClipboard = std::make_shared<EntityTree>();
     _octreeProcessor = std::make_shared<OctreePacketProcessor>();
     _entityEditSender = std::make_shared<EntityEditPacketSender>();
-
+    _graphicsEngine = std::make_shared<GraphicsEngine>();
 
 
 
@@ -2589,7 +2589,7 @@ void Application::initialize(const QCommandLineParser &parser) {
     }
 
     _pendingIdleEvent = false;
-    _graphicsEngine.startup();
+    _graphicsEngine->startup();
 
     qCDebug(interfaceapp) << "Directory Service session ID is" << uuidStringWithoutCurlyBraces(accountManager->getSessionID());
 
@@ -2914,7 +2914,7 @@ Application::~Application() {
     assert(_shapeManager.getNumShapes() == 0);
 
     // shutdown graphics engine
-    _graphicsEngine.shutdown();
+    _graphicsEngine->shutdown();
 
     _gameWorkload.shutdown();
 
@@ -3120,7 +3120,7 @@ void Application::initializeGL() {
     glClear(GL_COLOR_BUFFER_BIT);
     _glWidget->swapBuffers();
 
-    _graphicsEngine.initializeGPU(_glWidget);
+    _graphicsEngine->initializeGPU(_glWidget);
 }
 
 void Application::initializeDisplayPlugins() {
@@ -3132,7 +3132,7 @@ void Application::initializeDisplayPlugins() {
     // Once time initialization code
     DisplayPluginPointer targetDisplayPlugin;
     for(const auto& displayPlugin : displayPlugins) {
-        displayPlugin->setContext(_graphicsEngine.getGPUContext());
+        displayPlugin->setContext(_graphicsEngine->getGPUContext());
         if (displayPlugin->getName() == lastActiveDisplayPluginName) {
             targetDisplayPlugin = displayPlugin;
         }
@@ -3184,7 +3184,7 @@ void Application::initializeDisplayPlugins() {
 void Application::initializeRenderEngine() {
     // FIXME: on low end systems os the shaders take up to 1 minute to compile, so we pause the deadlock watchdog thread.
     DeadlockWatchdogThread::withPause([&] {
-        _graphicsEngine.initializeRender();
+        _graphicsEngine->initializeRender();
         DependencyManager::get<Keyboard>()->registerKeyboardHighlighting();
     });
 }
@@ -3441,7 +3441,7 @@ void Application::onDesktopRootContextCreated(QQmlContext* surfaceContext) {
     surfaceContext->setContextProperty("Recording", DependencyManager::get<RecordingScriptingInterface>().data());
     surfaceContext->setContextProperty("Preferences", DependencyManager::get<Preferences>().data());
     surfaceContext->setContextProperty("AddressManager", DependencyManager::get<AddressManager>().data());
-    surfaceContext->setContextProperty("FrameTimings", &_graphicsEngine._frameTimingsScriptingInterface);
+    surfaceContext->setContextProperty("FrameTimings", &_graphicsEngine->_frameTimingsScriptingInterface);
     surfaceContext->setContextProperty("Rates", new RatesScriptingInterface(this));
 
     surfaceContext->setContextProperty("TREE_SCALE", TREE_SCALE);
@@ -4147,8 +4147,8 @@ void Application::onPresent(quint32 frameCount) {
         postEvent(this, new QEvent((QEvent::Type)ApplicationEvent::Idle), Qt::HighEventPriority);
     }
     expected = false;
-    if (_graphicsEngine.checkPendingRenderEvent() && !isAboutToQuit()) {
-        postEvent(_graphicsEngine._renderEventHandler, new QEvent((QEvent::Type)ApplicationEvent::Render));
+    if (_graphicsEngine->checkPendingRenderEvent() && !isAboutToQuit()) {
+        postEvent(_graphicsEngine->_renderEventHandler, new QEvent((QEvent::Type)ApplicationEvent::Render));
     }
 }
 
@@ -5265,8 +5265,8 @@ void Application::idle() {
     PROFILE_COUNTER_IF_CHANGED(app, "pendingDownloads", uint32_t, ResourceCache::getPendingRequestCount());
     PROFILE_COUNTER_IF_CHANGED(app, "currentProcessing", int, DependencyManager::get<StatTracker>()->getStat("Processing").toInt());
     PROFILE_COUNTER_IF_CHANGED(app, "pendingProcessing", int, DependencyManager::get<StatTracker>()->getStat("PendingProcessing").toInt());
-    auto renderConfig = _graphicsEngine.getRenderEngine()->getConfiguration();
-    PROFILE_COUNTER_IF_CHANGED(render, "gpuTime", float, (float)_graphicsEngine.getGPUContext()->getFrameTimerGPUAverage());
+    auto renderConfig = _graphicsEngine->getRenderEngine()->getConfiguration();
+    PROFILE_COUNTER_IF_CHANGED(render, "gpuTime", float, (float)_graphicsEngine->getGPUContext()->getFrameTimerGPUAverage());
 
     PROFILE_RANGE(app, __FUNCTION__);
 
@@ -5707,7 +5707,7 @@ void Application::init() {
         }
     }, Qt::QueuedConnection);
 
-    _gameWorkload.startup(getEntities()->getWorkloadSpace(), _graphicsEngine.getRenderScene(), _entitySimulation);
+    _gameWorkload.startup(getEntities()->getWorkloadSpace(), _graphicsEngine->getRenderScene(), _entitySimulation);
     _entitySimulation->setWorkloadSpace(getEntities()->getWorkloadSpace());
 }
 
@@ -5879,7 +5879,7 @@ void Application::updateLOD(float deltaTime) const {
     // adjust it unless we were asked to disable this feature, or if we're currently in throttleRendering mode
     if (!isThrottleRendering()) {
         float presentTime = getActiveDisplayPlugin()->getAveragePresentTime();
-        float engineRunTime = (float)(_graphicsEngine.getRenderEngine()->getConfiguration().get()->getCPURunTime());
+        float engineRunTime = (float)(_graphicsEngine->getRenderEngine()->getConfiguration().get()->getCPURunTime());
         float gpuTime = getGPUContext()->getFrameTimerGPUAverage();
         float batchTime = getGPUContext()->getFrameTimerBatchAverage();
         auto lodManager = DependencyManager::get<LODManager>();
@@ -6184,7 +6184,7 @@ void Application::updateSecondaryCameraViewFrustum() {
     // camera should be.
 
     // Code based on SecondaryCameraJob
-    auto renderConfig = _graphicsEngine.getRenderEngine()->getConfiguration();
+    auto renderConfig = _graphicsEngine->getRenderEngine()->getConfiguration();
     assert(renderConfig);
     auto camera = dynamic_cast<SecondaryCameraJobConfig*>(renderConfig->getConfig("SecondaryCamera"));
 
@@ -6311,7 +6311,7 @@ void Application::tryToEnablePhysics() {
 }
 
 void Application::update(float deltaTime) {
-    PROFILE_RANGE_EX(app, __FUNCTION__, 0xffff0000, (uint64_t)_graphicsEngine._renderFrameCount + 1);
+    PROFILE_RANGE_EX(app, __FUNCTION__, 0xffff0000, (uint64_t)_graphicsEngine->_renderFrameCount + 1);
 
     if (_aboutToQuit) {
         return;
@@ -6820,7 +6820,7 @@ void Application::update(float deltaTime) {
 }
 
 void Application::updateRenderArgs(float deltaTime) {
-    _graphicsEngine.editRenderArgs([this, deltaTime](AppRenderArgs& appRenderArgs) {
+    _graphicsEngine->editRenderArgs([this, deltaTime](AppRenderArgs& appRenderArgs) {
         PerformanceTimer perfTimer("editRenderArgs");
         appRenderArgs._headPose = getHMDSensorPose();
 
@@ -6849,7 +6849,7 @@ void Application::updateRenderArgs(float deltaTime) {
                 _viewFrustum.setProjection(adjustedProjection);
                 _viewFrustum.calculate();
             }
-            appRenderArgs._renderArgs = RenderArgs(_graphicsEngine.getGPUContext(), lodManager->getVisibilityDistance(),
+            appRenderArgs._renderArgs = RenderArgs(_graphicsEngine->getGPUContext(), lodManager->getVisibilityDistance(),
                 lodManager->getBoundaryLevelAdjust(), lodManager->getLODFarHalfAngleTan(), lodManager->getLODNearHalfAngleTan(),
                 lodManager->getLODFarDistance(), lodManager->getLODNearDistance(), RenderArgs::DEFAULT_RENDER_MODE,
                 RenderArgs::MONO, RenderArgs::DEFERRED, RenderArgs::RENDER_DEBUG_NONE);

@@ -226,8 +226,8 @@ public:
     PerformanceManager& getPerformanceManager() { return _performanceManager; }
     RefreshRateManager& getRefreshRateManager() { return _refreshRateManager; }
 
-    size_t getRenderFrameCount() const { return _graphicsEngine.getRenderFrameCount(); }
-    float getRenderLoopRate() const { return _graphicsEngine.getRenderLoopRate(); }
+    size_t getRenderFrameCount() const { return _graphicsEngine->getRenderFrameCount(); }
+    float getRenderLoopRate() const { return _graphicsEngine->getRenderLoopRate(); }
     float getNumCollisionObjects() const;
     float getTargetRenderFrameRate() const; // frames/second
 
@@ -305,9 +305,9 @@ public:
     void setMaxOctreePacketsPerSecond(int maxOctreePPS);
     int getMaxOctreePacketsPerSecond() const;
 
-    render::ScenePointer getMain3DScene() override { return _graphicsEngine.getRenderScene(); }
-    render::EnginePointer getRenderEngine() override { return  _graphicsEngine.getRenderEngine(); }
-    gpu::ContextPointer getGPUContext() const { return _graphicsEngine.getGPUContext(); }
+    render::ScenePointer getMain3DScene() override { return _graphicsEngine->getRenderScene(); }
+    render::EnginePointer getRenderEngine() override { return  _graphicsEngine->getRenderEngine(); }
+    gpu::ContextPointer getGPUContext() const { return _graphicsEngine->getGPUContext(); }
 
     const GameWorkload& getGameWorkload() const { return _gameWorkload; }
 
@@ -769,7 +769,7 @@ private:
 
     GameWorkload _gameWorkload;
 
-    GraphicsEngine _graphicsEngine;
+    std::shared_ptr<GraphicsEngine> _graphicsEngine;
     void updateRenderArgs(float deltaTime);
 
     bool _disableLoginScreen { true };
