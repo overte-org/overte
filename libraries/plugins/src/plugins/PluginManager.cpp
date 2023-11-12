@@ -77,7 +77,8 @@ bool isDisabled(QJsonObject metaData) {
     auto name = getPluginNameFromMetaData(metaData);
     auto iid = getPluginIIDFromMetaData(metaData);
 
-    if (iid == DisplayProvider_iid) {
+    qDebug() << "Name = " << name << "; iid =" << iid;
+    if (iid == DisplayProvider_iid || iid == SteamClientProvider_iid || iid == OculusPlatformProvider_iid) {
         return disabledDisplays.contains(name);
     } else if (iid == InputProvider_iid) {
         return disabledInputs.contains(name);
