@@ -1041,6 +1041,14 @@ Application::Application(
 void Application::initializePluginManager() {
     DependencyManager::set<PluginManager>();
     auto pluginManager = PluginManager::getInstance();
+
+    qWarning() << "Input plugins: " << getInputPlugins().size();
+
+    // To avoid any confusion: the getInputPlugins and getDisplayPlugins are not the ones
+    // from PluginManager, but functions exported by input-plugins/InputPlugin.cpp and
+    // display-plugins/DisplayPlugin.cpp.
+    //
+    // These functions provide the plugin manager with static default plugins.
     pluginManager->setInputPluginProvider([] { return getInputPlugins(); });
     pluginManager->setDisplayPluginProvider([] { return getDisplayPlugins(); });
     pluginManager->setInputPluginSettingsPersister([](const InputPluginList& plugins) { saveInputPluginSettings(plugins); });
