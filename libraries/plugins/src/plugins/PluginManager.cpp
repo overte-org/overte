@@ -272,14 +272,6 @@ DisplayPluginList PluginManager::getAllDisplayPlugins() {
     return _displayPlugins;
 }
 
-void PluginManager::disableDisplayPlugin(const QString& name) {
-    auto it = std::remove_if(_displayPlugins.begin(), _displayPlugins.end(), [&](const DisplayPluginPointer& plugin){
-        return plugin->getName() == name;
-    });
-    _displayPlugins.erase(it, _displayPlugins.end());
-}
-
-
 const InputPluginList& PluginManager::getInputPlugins() {
     static std::once_flag once;
     static auto deviceAddedCallback = [&](QString deviceName) {

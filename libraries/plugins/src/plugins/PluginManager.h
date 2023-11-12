@@ -108,15 +108,6 @@ public:
     void setPreferredDisplayPlugins(const QStringList& displays);
 
     /**
-     * @brief Disable a display plugin.
-     *
-     * This removes the plugin from the plugins list.
-     * The plugin is not deinitialized, and events are not disconnected.
-     * @param name
-     */
-    void disableDisplayPlugin(const QString& name);
-
-    /**
      * @brief Disable a list of displays
      *
      * This adds the display to a list of displays not to be used.
