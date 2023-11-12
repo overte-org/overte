@@ -12,6 +12,8 @@
 
 #include <DependencyManager.h>
 #include <SettingHandle.h>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 #include "Forward.h"
 
@@ -39,6 +41,49 @@ class PluginManager : public QObject, public Dependency {
     Q_OBJECT
 
 public:
+
+    /**
+     * @brief Information about known plugins
+     *
+     */
+    struct PluginInfo {
+        /**
+         * @brief Plugin metadata
+        */
+        QJsonObject metaData;
+
+        /**
+         * @brief Filename
+         *
+         */
+        QString name;
+
+        /**
+         * @brief Whether the plugin has been disabled
+         *
+         */
+        bool disabled = false;
+
+        /**
+         * @brief Whether the plugin has been filtered out by a filter
+         *
+         */
+        bool filteredOut = false;
+
+        /**
+         * @brief Whether the plugin has been not loaded because it's the wrong version
+         *
+         */
+        bool wrongVersion = false;
+
+        /**
+         * @brief Whether the plugin has been loaded successfully
+         *
+         */
+        bool loaded = false;
+    };
+
+
     static PluginManagerPointer getInstance();
 
     /**
@@ -216,6 +261,15 @@ public:
 
     bool getEnableOculusPluginSetting() { return _enableOculusPluginSetting.get(); }
     void setEnableOculusPluginSetting(bool value);
+
+    /**
+     * @brief Returns information about known plugins
+     *
+     * This is a function for informative/debugging purposes.
+     *
+     * @return std::vector<PluginInfo>
+     */
+    std::vector<PluginInfo> getPluginInfo() const;
 
 signals:
     void inputDeviceRunningChanged(const QString& pluginName, bool isRunning, const QStringList& runningDevices);

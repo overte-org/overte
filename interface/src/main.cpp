@@ -370,6 +370,17 @@ int main(int argc, const char* argv[]) {
     if (parser.isSet(getPluginsOption)) {
         auto pluginManager = PluginManager::getInstance();
 
+        QJsonObject pluginsJson;
+        for (const auto &plugin : pluginManager->getPluginInfo()) {
+            QJsonObject data;
+            data["data"] = plugin.metaData;
+            data["loaded"] = plugin.loaded;
+            data["disabled"] = plugin.disabled;
+            data["filteredOut"] = plugin.filteredOut;
+            data["wrongVersion"] = plugin.wrongVersion;
+            pluginsJson[plugin.name] = data;
+        }
+
         QJsonObject inputJson;
         for (const auto &plugin : pluginManager->getInputPlugins()) {
             QJsonObject data;
@@ -406,15 +417,16 @@ int main(int argc, const char* argv[]) {
             codecsJson[plugin->getName()] = data;
         }
 
-        QJsonObject staticJson;
-        staticJson["steamAvailable"] = (pluginManager->getSteamClientPlugin() != nullptr);
-        staticJson["oculusAvailable"] = (pluginManager->getOculusPlatformPlugin() != nullptr);
+        QJsonObject platformsJson;
+        platformsJson["steamAvailable"] = (pluginManager->getSteamClientPlugin() != nullptr);
+        platformsJson["oculusAvailable"] = (pluginManager->getOculusPlatformPlugin() != nullptr);
 
         QJsonObject root;
-        root["input"] = inputJson;
-        root["display"] = displayJson;
-        root["codec"] = codecsJson;
-        root["staticPlugins"] = staticJson;
+        root["plugins"] = pluginsJson;
+        root["inputs"] = inputJson;
+        root["displays"] = displayJson;
+        root["codecs"] = codecsJson;
+        root["platforms"] = platformsJson;
 
         std::cout << QJsonDocument(root).toJson().toStdString() << "\n";
 
