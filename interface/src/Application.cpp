@@ -1062,14 +1062,14 @@ void Application::initializePluginManager(const QCommandLineParser& parser) {
         PluginManager::getInstance()->setPreferredDisplayPlugins(preferredDisplays);
     }
 
-    if (parser.isSet("disableDisplays")) {
-        auto disabledDisplays = parser.value("disableDisplays").split(',', Qt::SkipEmptyParts);
+    if (parser.isSet("disableDisplayPlugins")) {
+        auto disabledDisplays = parser.value("disableDisplayPlugins").split(',', Qt::SkipEmptyParts);
         qInfo() << "Disabling following display plugins:"  << disabledDisplays;
         PluginManager::getInstance()->disableDisplays(disabledDisplays);
     }
 
-    if (parser.isSet("disableInputs")) {
-        auto disabledInputs = parser.value("disableInputs").split(',', Qt::SkipEmptyParts);
+    if (parser.isSet("disableInputPlugins")) {
+        auto disabledInputs = parser.value("disableInputPlugins").split(',', Qt::SkipEmptyParts);
         qInfo() << "Disabling following input plugins:" << disabledInputs;
         PluginManager::getInstance()->disableInputs(disabledInputs);
     }

@@ -142,12 +142,12 @@ int main(int argc, const char* argv[]) {
         "displays"
     );
     QCommandLineOption disableDisplaysOption(
-        "disableDisplays",
+        "disableDisplayPlugins",
         "Displays to disable. Valid options include \"OpenVR (Vive)\" and \"Oculus Rift\"",
         "string"
     );
     QCommandLineOption disableInputsOption(
-        "disableInputs",
+        "disableInputPlugins",
         "Inputs to disable. Valid options include \"OpenVR (Vive)\" and \"Oculus Rift\"",
         "string"
     );
