@@ -378,6 +378,8 @@ int main(int argc, const char* argv[]) {
             data["configurable"] = plugin->configurable();
             data["isHandController"] = plugin->isHandController();
             data["isHeadController"] = plugin->isHeadController();
+            data["isActive"] = plugin->isActive();
+            data["isSupported"] = plugin->isSupported();
 
             inputJson[plugin->getName()] = data;
         }
@@ -389,13 +391,19 @@ int main(int argc, const char* argv[]) {
             data["isStereo"] = plugin->isStereo();
             data["targetFramerate"] = plugin->getTargetFrameRate();
             data["hasAsyncReprojection"] = plugin->hasAsyncReprojection();
+            data["isActive"] = plugin->isActive();
+            data["isSupported"] = plugin->isSupported();
 
             displayJson[plugin->getName()] = data;
         }
 
-        QJsonArray codecsArray;
+        QJsonObject codecsJson;
         for (const auto &plugin : pluginManager->getCodecPlugins()) {
-            codecsArray.append(plugin->getName());
+            QJsonObject data;
+            data["isActive"] = plugin->isActive();
+            data["isSupported"] = plugin->isSupported();
+
+            codecsJson[plugin->getName()] = data;
         }
 
         QJsonObject staticJson;
@@ -405,7 +413,7 @@ int main(int argc, const char* argv[]) {
         QJsonObject root;
         root["input"] = inputJson;
         root["display"] = displayJson;
-        root["codec"] = codecsArray;
+        root["codec"] = codecsJson;
         root["staticPlugins"] = staticJson;
 
         std::cout << QJsonDocument(root).toJson().toStdString() << "\n";
