@@ -407,8 +407,8 @@ int main(int argc, const char* argv[]) {
         }
 
         QJsonObject staticJson;
-        staticJson["steamAvailable"] = (pluginManager->getSteamClientPlugin() == nullptr);
-        staticJson["oculusAvailable"] = (pluginManager->getOculusPlatformPlugin() == nullptr);
+        staticJson["steamAvailable"] = (pluginManager->getSteamClientPlugin() != nullptr);
+        staticJson["oculusAvailable"] = (pluginManager->getOculusPlatformPlugin() != nullptr);
 
         QJsonObject root;
         root["input"] = inputJson;
