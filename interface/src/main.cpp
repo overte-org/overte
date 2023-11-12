@@ -142,12 +142,12 @@ int main(int argc, const char* argv[]) {
         "displays"
     );
     QCommandLineOption disableDisplaysOption(
-        "disable-displays",
+        "disableDisplays",
         "Displays to disable. Valid options include \"OpenVR (Vive)\" and \"Oculus Rift\"",
         "string"
     );
     QCommandLineOption disableInputsOption(
-        "disable-inputs",
+        "disableInputs",
         "Inputs to disable. Valid options include \"OpenVR (Vive)\" and \"Oculus Rift\"",
         "string"
     );
@@ -365,7 +365,7 @@ int main(int argc, const char* argv[]) {
         }
     }
 
-    app.initializePluginManager();
+    app.initializePluginManager(parser);
 
     if (parser.isSet(getPluginsOption)) {
         auto pluginManager = PluginManager::getInstance();
@@ -648,7 +648,7 @@ int main(int argc, const char* argv[]) {
     // Oculus initialization MUST PRECEDE OpenGL context creation.
     // The nature of the Application constructor means this has to be either here,
     // or in the main window ctor, before GL startup.
-    app.configurePlugins(parser);
+    //app.configurePlugins(parser);
 
 #ifdef Q_OS_WIN
     // If we're running in steam mode, we need to do an explicit check to ensure we're up to the required min spec

@@ -124,7 +124,16 @@ class Application : public QApplication,
 
 public:
 
-    void initializePluginManager();
+    /**
+     * @brief Initialize the plugin manager
+     *
+     * This both does the initial startup and parses arguments. This
+     * is necessary because the plugin manager's options must be set
+     * before any usage of it is made, or they won't apply.
+     *
+     * @param parser
+     */
+    void initializePluginManager(const QCommandLineParser& parser);
 
     /**
      * @brief Initialize everything
@@ -151,8 +160,6 @@ public:
 
     virtual DisplayPluginPointer getActiveDisplayPlugin() const override;
 
-    // FIXME? Empty methods, do we still need them?
-    void configurePlugins(const QCommandLineParser& parser);
     static void shutdownPlugins();
 
     Application(

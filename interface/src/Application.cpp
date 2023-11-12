@@ -1038,11 +1038,9 @@ Application::Application(
     DependencyManager::set<PathUtils>();
 }
 
-void Application::initializePluginManager() {
+void Application::initializePluginManager(const QCommandLineParser& parser) {
     DependencyManager::set<PluginManager>();
     auto pluginManager = PluginManager::getInstance();
-
-    qWarning() << "Input plugins: " << getInputPlugins().size();
 
     // To avoid any confusion: the getInputPlugins and getDisplayPlugins are not the ones
     // from PluginManager, but functions exported by input-plugins/InputPlugin.cpp and
@@ -1052,6 +1050,30 @@ void Application::initializePluginManager() {
     pluginManager->setInputPluginProvider([] { return getInputPlugins(); });
     pluginManager->setDisplayPluginProvider([] { return getDisplayPlugins(); });
     pluginManager->setInputPluginSettingsPersister([](const InputPluginList& plugins) { saveInputPluginSettings(plugins); });
+
+
+    // This must be a member function -- PluginManager must exist, and for that
+    // QApplication must exist, or it can't find the plugin path, as QCoreApplication:applicationDirPath
+    // won't work yet.
+
+    if (parser.isSet("display")) {
+        auto preferredDisplays = parser.value("display").split(',', Qt::SkipEmptyParts);
+        qInfo() << "Setting prefered display plugins:" << preferredDisplays;
+        PluginManager::getInstance()->setPreferredDisplayPlugins(preferredDisplays);
+    }
+
+    if (parser.isSet("disableDisplays")) {
+        auto disabledDisplays = parser.value("disableDisplays").split(',', Qt::SkipEmptyParts);
+        qInfo() << "Disabling following display plugins:"  << disabledDisplays;
+        PluginManager::getInstance()->disableDisplays(disabledDisplays);
+    }
+
+    if (parser.isSet("disableInputs")) {
+        auto disabledInputs = parser.value("disableInputs").split(',', Qt::SkipEmptyParts);
+        qInfo() << "Disabling following input plugins:" << disabledInputs;
+        PluginManager::getInstance()->disableInputs(disabledInputs);
+    }
+
 }
 
 void Application::initialize(const QCommandLineParser &parser) {
@@ -8816,31 +8838,6 @@ void Application::sendLambdaEvent(const std::function<void()>& f) {
         LambdaEvent event(f);
         QCoreApplication::sendEvent(this, &event);
     }
-}
-
-void Application::configurePlugins(const QCommandLineParser& parser) {
-    // This must be a member function -- PluginManager must exist, and for that
-    // QApplication must exist, or it can't find the plugin path, as QCoreApplication:applicationDirPath
-    // won't work yet.
-
-    if (parser.isSet("display")) {
-        auto preferredDisplays = parser.value("display").split(',', Qt::SkipEmptyParts);
-        qInfo() << "Setting prefered display plugins:" << preferredDisplays;
-        PluginManager::getInstance()->setPreferredDisplayPlugins(preferredDisplays);
-    }
-
-    if (parser.isSet("disable-displays")) {
-        auto disabledDisplays = parser.value("disable-displays").split(',', Qt::SkipEmptyParts);
-        qInfo() << "Disabling following display plugins:"  << disabledDisplays;
-        PluginManager::getInstance()->disableDisplays(disabledDisplays);
-    }
-
-    if (parser.isSet("disable-inputs")) {
-        auto disabledInputs = parser.value("disable-inputs").split(',', Qt::SkipEmptyParts);
-        qInfo() << "Disabling following input plugins:" << disabledInputs;
-        PluginManager::getInstance()->disableInputs(disabledInputs);
-    }
-
 }
 
 void Application::shutdownPlugins() {
