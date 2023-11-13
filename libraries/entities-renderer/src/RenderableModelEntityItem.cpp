@@ -1085,7 +1085,7 @@ void ModelEntityRenderer::setKey(bool didVisualGeometryRequestSucceed, const Mod
         builder.withSubMetaCulled();
     }
 
-    if (_mirrorMode != MirrorMode::NONE) {
+    if (_mirrorMode == MirrorMode::MIRROR || (_mirrorMode == MirrorMode::PORTAL && !_portalExitID.isNull())) {
         builder.withMirror();
     }
 
