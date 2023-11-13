@@ -24,7 +24,9 @@
 #include "UUID.h"
 
 const QString ICE_SERVER_HOSTNAME = "localhost";
-const quint16 ICE_SERVER_DEFAULT_PORT = 7337;
+// set env for ICE server port
+const char* port_str = std::getenv("OVERTE_ICE_SERVER_DEFAULT_PORT");
+const quint16 ICE_SERVER_DEFAULT_PORT = port_str ? std::stoi(port_str) : 7337;
 const int ICE_HEARBEAT_INTERVAL_MSECS = 1 * 1000;
 const int MAX_ICE_CONNECTION_ATTEMPTS = 5;
 
