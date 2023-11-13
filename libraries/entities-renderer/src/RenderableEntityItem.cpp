@@ -227,38 +227,12 @@ bool EntityRenderer::passesZoneOcclusionTest(const std::unordered_set<QUuid>& co
 }
 
 void EntityRenderer::computeMirrorView(ViewFrustum& viewFrustum) const {
-    //glm::vec3 mirrorPosition;
-    //glm::quat mirrorRotation;
-    //withReadLock([&]{
-    //    mirrorPosition = _entity->getWorldPosition();
-    //    mirrorRotation = _entity->getWorldOrientation();
-    //});
-
-    //glm::mat4 mirrorToWorld = glm::translate(mirrorPosition) * glm::mat4_cast(mirrorRotation);
-    //glm::mat4 worldToMirror = glm::inverse(mirrorToWorld);
-
-    //// get mirror camera position by reflecting main camera position's z coordinate in mirror space
-    //glm::vec3 cameraPosition = viewFrustum.getPosition();
-    //glm::quat cameraRotation = viewFrustum.getOrientation();
-    //glm::vec3 localCameraPosition = glm::vec3(worldToMirror * glm::vec4(cameraPosition, 1.0f));
-    //localCameraPosition.z *= -1.0f;
-    //glm::quat localCameraRotation = worldToMirror * glm::mat4_cast(cameraRotation);
-    //glm::vec3 localCameraRotationAngles = glm::eulerAngles(localCameraRotation);
-    //localCameraRotationAngles.y = M_PI - localCameraRotationAngles.y;
-
-    //viewFrustum.setPosition(mirrorToWorld * glm::vec4(localCameraPosition, 1.0f));
-    //viewFrustum.setOrientation(mirrorToWorld * glm::mat4_cast(glm::quat(localCameraRotationAngles)));
-
     glm::vec3 mirrorPropertiesPosition;
     glm::quat mirrorPropertiesRotation;
-    glm::vec3 mirrorPropertiesDimensions;
     withReadLock([&]{
         mirrorPropertiesPosition = _entity->getWorldPosition();
         mirrorPropertiesRotation = _entity->getWorldOrientation();
-        mirrorPropertiesDimensions = _entity->getScaledDimensions();
     });
-
-    glm::vec3 halfMirrorPropertiesDimensions = 0.5f * mirrorPropertiesDimensions;
 
     glm::mat4 worldFromMirrorRotation = glm::mat4_cast(mirrorPropertiesRotation);
     glm::mat4 worldFromMirrorTranslation = glm::translate(mirrorPropertiesPosition);
@@ -275,19 +249,47 @@ void EntityRenderer::computeMirrorView(ViewFrustum& viewFrustum) const {
     // get mirror camera rotation by reflecting main camera rotation in mirror space
     // TODO: we are assuming here that UP is world y-axis
     glm::quat mainCameraRotationWorld = viewFrustum.getOrientation();
-    glm::mat4 mainCameraRotationMirror = mirrorFromWorld * glm::mat4_cast(mainCameraRotationWorld);
-    glm::mat4 mirrorCameraRotationMirror = mainCameraRotationMirror;// * glm::scale(vec3(-1.0f, 1.0f, -1.0f));
-    glm::quat mirrorCameraRotationWorld = worldFromMirror * mirrorCameraRotationMirror;
+    glm::quat mainCameraRotationMirror = mirrorFromWorld * glm::mat4_cast(mainCameraRotationWorld);
+    glm::quat mirrorCameraRotationMirror = glm::quat(mainCameraRotationMirror.w, -mainCameraRotationMirror.x, -mainCameraRotationMirror.y, mainCameraRotationMirror.z) *
+        glm::angleAxis((float)M_PI, glm::vec3(0, 1, 0));
+    glm::quat mirrorCameraRotationWorld = worldFromMirror * glm::mat4_cast(mirrorCameraRotationMirror);
 
     viewFrustum.setPosition(mirrorCameraPositionWorld);
     viewFrustum.setOrientation(mirrorCameraRotationWorld);
 
-    // build frustum using mirror space translation of mirrored camera
-    //float nearClip = mirrorCameraPositionMirror.z + mirrorPropertiesDimensions.z * 2.0f;
-    //glm::vec3 upperRight = halfMirrorPropertiesDimensions - mirrorCameraPositionMirror;
-    //glm::vec3 bottomLeft = -halfMirrorPropertiesDimensions - mirrorCameraPositionMirror;
-    //glm::mat4 frustum = glm::frustum(bottomLeft.x, upperRight.x, bottomLeft.y, upperRight.y, nearClip, viewFrustum.getFarClip());
-    //viewFrustum.setProjection(frustum);
+    // modify the near clip plane to be the XY plane of the mirror
+    // from: https://terathon.com/lengyel/Lengyel-Oblique.pdf
+    glm::mat4 view = viewFrustum.getView();
+    glm::mat4 projection = viewFrustum.getProjection();
+
+    //Find the camera-space 4D reflection plane vector
+    glm::vec3 cameraSpacePosition = glm::inverse(view) * glm::vec4(mirrorPropertiesPosition, 1.0f);
+    glm::vec3 cameraSpaceNormal = glm::transpose(view) * (worldFromMirrorRotation * glm::vec4(0, 0, -1, 0));
+    glm::vec4 clipPlane = glm::vec4(cameraSpaceNormal, -glm::dot(cameraSpaceNormal, cameraSpacePosition));
+    if (clipPlane.w > 0.0f) {
+        clipPlane *= -1.0f;
+    }
+
+    // Calculate the clip-space corner point opposite the clipping plane
+    // as (sign(clipPlane.x), sign(clipPlane.y), 1, 1) and
+    // transform it into camera space by multiplying it
+    // by the inverse of the projection matrix
+    glm::vec4 q;
+    q.x = (glm::sign(clipPlane.x) + projection[0][2]) / projection[0][0];
+    q.y = (glm::sign(clipPlane.y) + projection[1][2]) / projection[1][1];
+    q.z = -1.0f;
+    q.w = (1.0f + projection[2][2]) / projection[2][3];
+
+    // Calculate the scaled plane vector
+    glm::vec4 c = (2.0f / glm::dot(clipPlane, q)) * clipPlane;
+
+    // Replace the third row of the projection matrix
+    projection[0][2] = c.x;
+    projection[1][2] = c.y;
+    projection[2][2] = c.z + 1.0f;
+    projection[3][2] = c.w;
+
+    viewFrustum.setProjection(projection);
 }
 
 void EntityRenderer::render(RenderArgs* args) {
@@ -295,7 +297,7 @@ void EntityRenderer::render(RenderArgs* args) {
         return;
     }
 
-    if (_visible && (args->_renderMode != RenderArgs::RenderMode::DEFAULT_RENDER_MODE || !_cauterized)) {
+    if (_visible && (!_cauterized || args->_renderMode != RenderArgs::RenderMode::DEFAULT_RENDER_MODE || args->_mirrorDepth > 0)) {
         doRender(args);
     }
 }

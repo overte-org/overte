@@ -189,7 +189,7 @@ void ModelMeshPartPayload::bindMesh(gpu::Batch& batch) {
     batch.setInputStream(0, _drawMesh->getVertexStream());
 }
 
-void ModelMeshPartPayload::bindTransform(gpu::Batch& batch, const Transform& transform, RenderArgs::RenderMode renderMode) const {
+void ModelMeshPartPayload::bindTransform(gpu::Batch& batch, const Transform& transform, RenderArgs::RenderMode renderMode, size_t mirrorDepth) const {
     if (_clusterBuffer) {
         batch.setUniformBuffer(graphics::slot::buffer::Skinning, _clusterBuffer);
     }
@@ -300,8 +300,9 @@ Item::Bound ModelMeshPartPayload::getBound(RenderArgs* args) const {
     auto worldBound = _adjustedLocalBound;
     auto parentTransform = _parentTransform;
     if (args) {
+        bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
         parentTransform.setRotation(BillboardModeHelpers::getBillboardRotation(parentTransform.getTranslation(), parentTransform.getRotation(), _billboardMode,
-            args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
+            usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
     }
     worldBound.transform(parentTransform);
     return worldBound;
@@ -314,18 +315,19 @@ ShapeKey ModelMeshPartPayload::getShapeKey() const {
 void ModelMeshPartPayload::render(RenderArgs* args) {
     PerformanceTimer perfTimer("ModelMeshPartPayload::render");
 
-    if (!args || (args->_renderMode == RenderArgs::RenderMode::DEFAULT_RENDER_MODE && _cauterized)) {
+    if (!args || (_cauterized && args->_renderMode == RenderArgs::RenderMode::DEFAULT_RENDER_MODE && args->_mirrorDepth == 0)) {
         return;
     }
 
     gpu::Batch& batch = *(args->_batch);
 
     Transform transform = _parentTransform;
+    bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), _billboardMode,
-        args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
+        usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
 
     Transform modelTransform = transform.worldTransform(_localTransform);
-    bindTransform(batch, modelTransform, args->_renderMode);
+    bindTransform(batch, modelTransform, args->_renderMode, args->_mirrorDepth);
 
     //Bind the index buffer and vertex buffer and Blend shapes if needed
     bindMesh(batch);

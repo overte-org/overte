@@ -37,7 +37,7 @@ public:
 
     // ModelMeshPartPayload functions to perform render
     void bindMesh(gpu::Batch& batch);
-    virtual void bindTransform(gpu::Batch& batch, const Transform& transform, RenderArgs::RenderMode renderMode) const;
+    virtual void bindTransform(gpu::Batch& batch, const Transform& transform, RenderArgs::RenderMode renderMode, size_t mirrorDepth) const;
     void drawCall(gpu::Batch& batch) const;
 
     void updateKey(const render::ItemKey& key);

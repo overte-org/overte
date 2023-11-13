@@ -277,7 +277,7 @@ public:
     using Outputs = render::VaryingSet4<render::ItemBound, gpu::FramebufferPointer, RenderArgsPointer, glm::vec2>;
     using JobModel = render::Job::ModelIO<SetupMirrorTask, Input, Outputs>;
 
-    SetupMirrorTask(size_t mirrorIndex) : _mirrorIndex(mirrorIndex) {}
+    SetupMirrorTask(size_t mirrorIndex, size_t depth) : _mirrorIndex(mirrorIndex), _depth(depth) {}
 
     void run(const render::RenderContextPointer& renderContext, const Input& inputs, Outputs& outputs) {
         auto args = renderContext->args;
@@ -293,12 +293,17 @@ public:
             _mirrorFramebuffer.reset(gpu::Framebuffer::create("mirror" + _mirrorIndex, gpu::Element::COLOR_SRGBA_32, inputFramebuffer->getWidth(), inputFramebuffer->getHeight()));
         }
 
+        render::ItemBound mirror = items[_mirrorIndex];
+
         _cachedArgsPointer->_renderMode = args->_renderMode;
         _cachedArgsPointer->_blitFramebuffer = args->_blitFramebuffer;
-        args->_renderMode = RenderArgs::RenderMode::SECONDARY_CAMERA_RENDER_MODE;
-        args->_blitFramebuffer = _mirrorFramebuffer;
+        _cachedArgsPointer->_ignoreItem = args->_ignoreItem;
+        _cachedArgsPointer->_mirrorDepth = args->_mirrorDepth;
 
-        render::ItemBound mirror = items[_mirrorIndex];
+        args->_blitFramebuffer = _mirrorFramebuffer;
+        args->_ignoreItem = mirror.id;
+        args->_mirrorDepth = _depth;
+
         ViewFrustum srcViewFrustum = args->getViewFrustum();
         args->_scene->getItem(mirror.id).computeMirrorView(srcViewFrustum);
 
@@ -317,6 +322,7 @@ protected:
     gpu::FramebufferPointer _mirrorFramebuffer { nullptr };
     RenderArgsPointer _cachedArgsPointer { std::make_shared<RenderArgs>() };
     size_t _mirrorIndex;
+    size_t _depth;
 
 };
 
@@ -377,6 +383,8 @@ public:
         // Restore the blit framebuffer after we've sampled from it
         if (cachedArgs) {
             args->_blitFramebuffer = cachedArgs->_blitFramebuffer;
+            args->_ignoreItem = cachedArgs->_ignoreItem;
+            args->_mirrorDepth = cachedArgs->_mirrorDepth;
         }
     }
 
@@ -389,9 +397,10 @@ ShapePlumberPointer DrawMirrorTask::_forwardPipelines = std::make_shared<ShapePl
 ShapePlumberPointer DrawMirrorTask::_deferredPipelines = std::make_shared<ShapePlumber>();
 
  void RenderMirrorTask::build(JobModel& task, const render::Varying& inputs, render::Varying& output, size_t mirrorIndex, render::CullFunctor cullFunctor, size_t depth) {
-    const auto setupOutput = task.addJob<SetupMirrorTask>("SetupMirror" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), inputs, mirrorIndex);
+    size_t nextDepth = depth + 1;
+    const auto setupOutput = task.addJob<SetupMirrorTask>("SetupMirror" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), inputs, mirrorIndex, nextDepth);
 
-    task.addJob<RenderViewTask>("RenderMirrorView" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), cullFunctor, render::ItemKey::TAG_BITS_1, render::ItemKey::TAG_BITS_1, depth + 1);
+    task.addJob<RenderViewTask>("RenderMirrorView" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), cullFunctor, render::ItemKey::TAG_BITS_1, render::ItemKey::TAG_BITS_1, nextDepth);
 
     task.addJob<DrawMirrorTask>("DrawMirrorTask" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), setupOutput);
  }
