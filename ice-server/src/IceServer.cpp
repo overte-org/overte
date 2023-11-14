@@ -21,6 +21,7 @@
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QNetworkRequest>
 #include <QtCore/QSharedPointer>
+#include <QCommandLineParser>
 
 #include <LimitedNodeList.h>
 #include <NetworkAccessManager.h>
@@ -39,9 +40,45 @@ IceServer::IceServer(int argc, char* argv[]) :
     _serverSocket(0, false),
     _activePeers()
 {
-    // start the ice-server socket
-    qDebug() << "ice-server socket is listening on" << ICE_SERVER_DEFAULT_PORT;
-    _serverSocket.bind(SocketType::UDP, QHostAddress::AnyIPv4, ICE_SERVER_DEFAULT_PORT);
+    // parse command-line
+    QCommandLineParser parser;
+
+    const QCommandLineOption helpOption = parser.addHelpOption();
+
+    const QCommandLineOption addressOption("address", "Ice listen address.", "address");
+    parser.addOption(addressOption);
+
+    const QCommandLineOption portOption("port", "Port for the ICE server to listen on", "port");
+    parser.addOption(portOption);
+
+    if (!parser.parse(QCoreApplication::arguments())) {
+        qCritical() << parser.errorText() << Qt::endl;
+        parser.showHelp();
+        Q_UNREACHABLE();
+    }
+
+    if (parser.isSet(helpOption)) {
+        parser.showHelp();
+        Q_UNREACHABLE();
+    }
+
+    QHostAddress address = QHostAddress::AnyIPv4;
+    if (parser.isSet(addressOption)) {
+        if (parser.value(addressOption) == "0.0.0.0") {
+            QHostAddress address = QHostAddress::AnyIPv4;
+        } else {
+            address.setAddress(parser.value(addressOption));
+        }
+    }
+
+    // set the port
+    quint16 port = ICE_SERVER_DEFAULT_PORT;
+    if (parser.isSet(portOption)) {
+        port = parser.value(portOption).toInt();
+    }
+
+    _serverSocket.bind(SocketType::UDP, address, port);
+    qDebug() << "ice-server socket is listening on address: " << address.toString() << ":" << port;
 
     // set processPacket as the verified packet callback for the udt::Socket
     _serverSocket.setPacketHandler([this](std::unique_ptr<udt::Packet> packet) { processPacket(std::move(packet));  });
