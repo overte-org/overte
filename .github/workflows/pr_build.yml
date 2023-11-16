@@ -90,6 +90,8 @@ jobs:
           echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
           # Don't optimize builds to save build time.
           echo "OVERTE_OPTIMIZE=false" >> $GITHUB_ENV
+          # Transparently enable ccache
+          echo "PATH=/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH" >> $GITHUB_ENV
           # Starting with Ubuntu 22.04 we can use system Qt
           if [[ "${{ matrix.image }}" = *"ubuntu-22.04"* ]]; then
             echo "OVERTE_USE_SYSTEM_QT=true" >> $GITHUB_ENV
@@ -169,6 +171,11 @@ jobs:
       with:
         submodules: false
         fetch-depth: 1
+
+    - name: Enable ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{matrix.os}}-${{matrix.arch}}
 
     - name: Install dependencies
       shell: bash

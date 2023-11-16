@@ -71,6 +71,8 @@ jobs:
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=tgz" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
+          # Transparently enable ccache
+          echo "PATH=/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
         fi
         # Mac build variables
@@ -124,6 +126,11 @@ jobs:
       with:
         submodules: false
         fetch-depth: 1
+
+    - name: Enable ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{matrix.os}}-${{matrix.arch}}
 
     - name: Install dependencies
       shell: bash

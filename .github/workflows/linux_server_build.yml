@@ -118,6 +118,8 @@ jobs:
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.arch}}" >> $GITHUB_ENV
 
         echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
+        # Transparently enable ccache
+        echo "PATH=/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH" >> $GITHUB_ENV
 
         if [[ "${{ matrix.os }}" =~ "ubuntu" || "${{ matrix.os }}" =~ "debian" ]]; then
           echo "INSTALLER_EXT=deb" >> $GITHUB_ENV
@@ -207,6 +209,11 @@ jobs:
       with:
         submodules: false
         fetch-depth: 1
+
+    - name: Enable ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{matrix.os}}-${{matrix.arch}}
 
     - name: Create Build Environment
       shell: bash
