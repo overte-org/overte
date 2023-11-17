@@ -181,6 +181,7 @@ jobs:
       shell: bash
       if: startsWith(matrix.os, 'Ubuntu') || contains(matrix.os, 'Debian') || startsWith(matrix.os, 'macOS')
       run: |
+        ccache -s
         if [[ "${{ matrix.os }}" =~ "Ubuntu" || "${{ matrix.os }}" =~ "Debian" ]]; then
 
           echo "Updating apt repository index"
@@ -235,6 +236,7 @@ jobs:
       if: always()
       shell: bash
       run: |
+        ccache -s
         if [ "${{ matrix.os }}" == "macOS-10.15" ]; then
           TAR=gtar
         else
@@ -254,7 +256,10 @@ jobs:
       if: matrix.build_type == 'full' || matrix.build_type == 'client'
       working-directory: build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
+      run: |
+        ccache -s
+        cmake --build . --config $BUILD_TYPE --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
+        ccache -s
 
     - name: Build Domain Server
       if: matrix.build_type == 'full'
