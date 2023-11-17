@@ -147,7 +147,7 @@ void DrawHighlightMask::run(const render::RenderContextPointer& renderContext, c
     }
 
     if (!_boundsBuffer) {
-        _boundsBuffer = std::make_shared<gpu::Buffer>(sizeof(render::ItemBound));
+        _boundsBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::ResourceBuffer, sizeof(render::ItemBound));
     }
 
     auto highlightStage = renderContext->_scene->getStage<render::HighlightStage>(render::HighlightStage::getName());

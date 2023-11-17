@@ -10,12 +10,12 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-LAYOUT(binding=0) uniform sampler2D colorMap;
+TEXTURE(0, sampler2D, colorMap);
 
-layout(location=0) in vec4 varColor;
-layout(location=1) in vec2 varTexcoord;
+INPUT(0, vec4, varColor);
+INPUT(1, vec2, varTexcoord);
 
-layout(location=0) out vec4 outFragColor;
+OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
     outFragColor = texture(colorMap, varTexcoord.xy) * varColor;

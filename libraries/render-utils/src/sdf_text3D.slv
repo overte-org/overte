@@ -10,8 +10,13 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-<@include gpu/Inputs.slh@>
+<@include gpu/ShaderConstants.h@>
 <@include gpu/Color.slh@>
+INPUT(GPU_ATTR_POSITION, vec4, inPosition);
+INPUT(GPU_ATTR_TEXCOORD0, vec4, inTexCoord0);
+INPUT(GPU_ATTR_TEXCOORD1, vec4, inTexCoord1);
+
+<@include gpu/Transform.slh@>
 <@include render-utils/ShaderConstants.h@>
 
 <@include gpu/Transform.slh@>
@@ -20,11 +25,13 @@
 <@include sdf_text3D.slh@>
 
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_ES) out vec4 _positionES;
+    OUTPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
 <@endif@>
-layout(location=RENDER_UTILS_ATTR_NORMAL_WS) out vec3 _normalWS;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
-layout(location=RENDER_UTILS_ATTR_FADE1) flat out vec4 _glyphBounds; // we're reusing the fade texcoord locations here
+OUTPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
+OUTPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
+//TODO: what does flat mean?
+//layout(location=RENDER_UTILS_ATTR_FADE1) flat out vec4 _glyphBounds; // we're reusing the fade texcoord locations here
+OUTPUT(RENDER_UTILS_ATTR_FADE1, vec4, _glyphBounds); // we're reusing the fade texcoord locations here
 
 void main() {
     _texCoord01 = vec4(inTexCoord0.st, 0.0, 0.0);

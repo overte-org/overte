@@ -8,6 +8,7 @@
 
 #include "PlayerWindow.h"
 
+#include <QtCore/QTimer>
 #include <QtCore/QByteArray>
 #include <QtCore/QBuffer>
 #include <QtGui/QResizeEvent>
@@ -20,6 +21,7 @@
 PlayerWindow::PlayerWindow() {
     installEventFilter(this);
     setFlags(Qt::MSWindowsOwnDC | Qt::Window | Qt::Dialog | Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint);
+    //setFlags(Qt::Window);
 
 #ifdef USE_GL
     setSurfaceType(QSurface::OpenGLSurface);
@@ -73,6 +75,14 @@ void PlayerWindow::keyPressEvent(QKeyEvent* event) {
             loadFrame();
             return;
 
+        case Qt::Key_F3:
+            _renderThread.testGlTransfer();
+            return;
+
+        case Qt::Key_F4:
+            _renderThread.testVkTransfer();
+            return;
+
         case Qt::Key_W:
             _renderThread.move(vec3{ 0, 0, -0.1f } * moveScale);
             return;
@@ -106,7 +116,18 @@ void PlayerWindow::resizeEvent(QResizeEvent* ev) {
     _renderThread.resize(ev->size());
 }
 
+static const QString DEFAULT_TRACING_RULES =
+    "trace.*=true\n" \
+    "*.detail=false\n";
+
 void PlayerWindow::loadFrame(const QString& path) {
+    DependencyManager::get<tracing::Tracer>()->startTracing();
+    QLoggingCategory::setFilterRules(DEFAULT_TRACING_RULES);
+    QTimer::singleShot(10 * 1000, [] {
+        DependencyManager::get<tracing::Tracer>()->stopTracing();
+        DependencyManager::get<tracing::Tracer>()->serialize("D:/frames/trace-{DATE}_{TIME}.json.gz");
+    });
+
     auto frame = gpu::readFrame(path.toStdString(), _renderThread._externalTexture);
     if (frame) {
         _renderThread.submitFrame(frame);

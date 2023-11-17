@@ -370,7 +370,7 @@ SurfaceGeometryPass::SurfaceGeometryPass() :
     _diffusePass(false)
 {
     Parameters parameters;
-    _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Parameters), (const gpu::Byte*) &parameters));
+    _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Parameters), (const gpu::Byte*) &parameters));
 }
 
 void SurfaceGeometryPass::configure(const Config& config) {

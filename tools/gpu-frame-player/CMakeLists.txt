@@ -9,23 +9,24 @@ if (APPLE)
 endif()
 
 setup_hifi_project(Gui Widgets)
+# link in the shared libraries
+link_hifi_libraries(shared ktx shaders gpu)
 
 if (APPLE)
     unset(CMAKE_MACOSX_BUNDLE)
 endif()
 
-# link in the shared libraries
-link_hifi_libraries(
-    shared ktx shaders gpu
-#    vk gpu-vk 
-    gl ${PLATFORM_GL_BACKEND}
-)
+option(BUILD_FRAME_PLAYER_GL "Use OpenGL backend for frame player" ON)
 
-target_compile_definitions(${TARGET_NAME} PRIVATE USE_GL)
-
-set(OpenGL_GL_PREFERENCE "GLVND")
-target_opengl()
-#target_vulkan()
+if (BUILD_FRAME_PLAYER_GL)
+    target_compile_definitions(${TARGET_NAME} PRIVATE USE_GL)
+    set(OpenGL_GL_PREFERENCE "GLVND")
+    link_hifi_libraries(gl ${PLATFORM_GL_BACKEND})
+    target_opengl()
+else()
+    link_hifi_libraries(vk gpu-vk)
+    target_vulkan()
+endif()
 
 package_libraries_for_deployment()
 

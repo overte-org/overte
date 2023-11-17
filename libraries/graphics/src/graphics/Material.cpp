@@ -66,6 +66,9 @@ Material::Material() {
     for (int i = 0; i < NUM_TOTAL_FLAGS; i++) {
         _propertyFallthroughs[i] = false;
     }
+    // created from nothing: create the Buffer to store the properties
+    //Schema schema;
+    //_schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
 }
 
 Material::Material(const Material& material) :
@@ -87,6 +90,10 @@ Material::Material(const Material& material) :
     _defaultFallthrough(material._defaultFallthrough),
     _propertyFallthroughs(material._propertyFallthroughs)
 {
+    // copied: create the Buffer to store the properties, avoid holding a ref to the old Buffer
+    //Schema schema;
+    //_schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
+    //_schemaBuffer.edit<Schema>() = material._schemaBuffer.get<Schema>();
 }
 
 Material& Material::operator=(const Material& material) {
@@ -110,6 +117,11 @@ Material& Material::operator=(const Material& material) {
 
     _defaultFallthrough = material._defaultFallthrough;
     _propertyFallthroughs = material._propertyFallthroughs;
+
+    // copied: create the Buffer to store the properties, avoid holding a ref to the old Buffer
+    //Schema schema;
+    //_schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
+    //_schemaBuffer.edit<Schema>() = material._schemaBuffer.get<Schema>();
 
     return (*this);
 }
@@ -260,7 +272,7 @@ void Material::setTextureTransforms(const Transform& transform, MaterialMappingM
 
 MultiMaterial::MultiMaterial() {
     Schema schema;
-    _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
+    _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
 }
 
 void MultiMaterial::calculateMaterialInfo() const {

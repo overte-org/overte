@@ -28,7 +28,7 @@ void CauterizedMeshPartPayload::updateClusterBuffer(const std::vector<glm::mat4>
 
     if (cauterizedClusterMatrices.size() > 1) {
         if (!_cauterizedClusterBuffer) {
-            _cauterizedClusterBuffer = std::make_shared<gpu::Buffer>(cauterizedClusterMatrices.size() * sizeof(glm::mat4),
+            _cauterizedClusterBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, cauterizedClusterMatrices.size() * sizeof(glm::mat4),
                 (const gpu::Byte*) cauterizedClusterMatrices.data());
         } else {
             _cauterizedClusterBuffer->setSubData(0, cauterizedClusterMatrices.size() * sizeof(glm::mat4),
@@ -43,7 +43,7 @@ void CauterizedMeshPartPayload::updateClusterBuffer(const std::vector<Model::Tra
 
     if (cauterizedClusterDualQuaternions.size() > 1) {
         if (!_cauterizedClusterBuffer) {
-            _cauterizedClusterBuffer = std::make_shared<gpu::Buffer>(cauterizedClusterDualQuaternions.size() * sizeof(Model::TransformDualQuaternion),
+            _cauterizedClusterBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, cauterizedClusterDualQuaternions.size() * sizeof(Model::TransformDualQuaternion),
                 (const gpu::Byte*) cauterizedClusterDualQuaternions.data());
         } else {
             _cauterizedClusterBuffer->setSubData(0, cauterizedClusterDualQuaternions.size() * sizeof(Model::TransformDualQuaternion),

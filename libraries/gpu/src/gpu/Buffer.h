@@ -27,8 +27,25 @@ namespace gpu {
 class Buffer : public Resource {
     static ContextMetricCount _bufferCPUCount;
     static ContextMetricSize _bufferCPUMemSize;
+
 public:
     using Flag = PageManager::Flag;
+
+    // Flags match VkBufferUsageFlagBits for convenience... do not modify
+    enum Usage
+    {
+        // These values are unused in our API
+        //TransferSrc = 0x0001,
+        //TransferDst = 0x0002,
+        //UniformTexelBuffer = 0x0004,
+        //StorageTexelBuffer = 0x0008,
+        UniformBuffer = 0x0010,
+        ResourceBuffer = 0x0020,
+        IndexBuffer = 0x0040,
+        VertexBuffer = 0x0080,
+        IndirectBuffer = 0x0100,
+        AllFlags = 0x01F3
+    };
 
     class Update {
     public:
@@ -48,19 +65,29 @@ public:
     static uint32_t getBufferCPUCount();
     static Size getBufferCPUMemSize();
 
-    Buffer(Size pageSize = PageManager::DEFAULT_PAGE_SIZE);
-    Buffer(Size size, const Byte* bytes, Size pageSize = PageManager::DEFAULT_PAGE_SIZE);
-    Buffer(const Buffer& buf); // deep copy of the sysmem buffer
-    Buffer& operator=(const Buffer& buf); // deep copy of the sysmem buffer
+    Buffer(uint32_t usage, Size pageSize = PageManager::DEFAULT_PAGE_SIZE);
+
+    template <typename T>
+    static Buffer* createBuffer(uint32_t usage, const std::vector<T>& v) {
+        return new Buffer(usage, sizeof(T) * v.size(), (const gpu::Byte*)v.data());
+    }
+
+    Buffer(uint32_t usage, Size size, const Byte* bytes, Size pageSize = PageManager::DEFAULT_PAGE_SIZE);
+    Buffer(const Buffer& buf);             // deep copy of the sysmem buffer
+    Buffer& operator=(const Buffer& buf);  // deep copy of the sysmem buffer
     ~Buffer();
 
     // The size in bytes of data stored in the buffer
     Size getSize() const override;
     template <typename T>
-    Size getNumTypedElements() const { return getSize() / sizeof(T); };
+    Size getNumTypedElements() const {
+        return getSize() / sizeof(T);
+    };
 
     const Byte* getData() const { return getSysmem().readData(); }
-    
+
+    uint32_t getUsage() const { return _usage; }
+
     // Resize the buffer
     // Keep previous data [0 to min(pSize, mSize)]
     Size resize(Size pSize);
@@ -95,7 +122,7 @@ public:
     // \return the number of bytes copied
     Size append(Size size, const Byte* data);
 
-    template <typename T> 
+    template <typename T>
     Size append(const T& t) {
         return append(sizeof(t), reinterpret_cast<const Byte*>(&t));
     }
@@ -108,15 +135,12 @@ public:
         return append(sizeof(T) * t.size(), reinterpret_cast<const Byte*>(&t[0]));
     }
 
+    const GPUObjectPointer gpuObject{};
 
-    const GPUObjectPointer gpuObject {};
-    
     // Access the sysmem object, limited to ourselves and GPUObject derived classes
     const Sysmem& getSysmem() const { return _sysmem; }
-    
-    bool isDirty() const {
-        return _pages(PageManager::DIRTY);
-    }
+
+    bool isDirty() const { return _pages(PageManager::DIRTY); }
 
     void applyUpdate(const Update& update);
 
@@ -127,13 +151,13 @@ protected:
     // For use by the render thread to avoid the intermediate step of getUpdate/applyUpdate
     void flush() const;
 
-    // FIXME don't maintain a second buffer continuously.  We should be able to apply updates 
+    // FIXME don't maintain a second buffer continuously.  We should be able to apply updates
     // directly to the GL object and discard _renderSysmem and _renderPages
     mutable PageManager _renderPages;
     mutable Sysmem _renderSysmem;
 
-    mutable std::atomic<size_t> _getUpdateCount { 0 };
-    mutable std::atomic<size_t> _applyUpdateCount { 0 };
+    mutable std::atomic<size_t> _getUpdateCount{ 0 };
+    mutable std::atomic<size_t> _applyUpdateCount{ 0 };
 
     void markDirty(Size offset, Size bytes);
 
@@ -148,6 +172,7 @@ protected:
     mutable PageManager _pages;
     Size _end{ 0 };
     Sysmem _sysmem;
+    const uint32_t _usage{ 0 };
 
     friend class Serializer;
     friend class Deserializer;
@@ -156,18 +181,19 @@ protected:
     friend class Batch;
 
     // FIXME find a more generic way to do this.
+    friend class ::gpu::vulkan::VKBuffer;
     friend class gl::GLBackend;
     friend class gl::GLBuffer;
     friend class gl41::GL41Buffer;
     friend class gl45::GL45Buffer;
     friend class gles::GLESBuffer;
+    friend class vulkan::VKBuffer;
 };
 
 using BufferUpdates = std::vector<Buffer::Update>;
 
 typedef std::shared_ptr<Buffer> BufferPointer;
-typedef std::vector< BufferPointer > Buffers;
-
+typedef std::vector<BufferPointer> Buffers;
 
 class BufferView {
 protected:
@@ -179,10 +205,10 @@ public:
     using Index = int32_t;
 
     BufferPointer _buffer;
-    Size _offset { 0 };
-    Size _size { 0 };
-    Element _element { DEFAULT_ELEMENT };
-    uint16 _stride { 0 };
+    Size _offset{ 0 };
+    Size _size{ 0 };
+    Element _element{ DEFAULT_ELEMENT };
+    uint16 _stride{ 0 };
 
     BufferView(const BufferView& view) = default;
     BufferView& operator=(const BufferView& view) = default;
@@ -197,12 +223,10 @@ public:
     Size getNumElements() const { return _size / _stride; }
 
     //Template iterator with random access on the buffer sysmem
-    template<typename T>
-    class Iterator : public std::iterator<std::random_access_iterator_tag, T, Index, T*, T&>
-    {
+    template <typename T>
+    class Iterator : public std::iterator<std::random_access_iterator_tag, T, Index, T*, T&> {
     public:
-
-        Iterator(T* ptr = NULL, int stride = sizeof(T)): _ptr(ptr), _stride(stride) { }
+        Iterator(T* ptr = NULL, int stride = sizeof(T)) : _ptr(ptr), _stride(stride) {}
         Iterator(const Iterator<T>& iterator) = default;
         ~Iterator() {}
 
@@ -213,9 +237,8 @@ public:
             return (*this);
         }
 
-        operator bool() const
-        {
-            if(_ptr)
+        operator bool() const {
+            if (_ptr)
                 return true;
             else
                 return false;
@@ -273,17 +296,16 @@ public:
             return temp;
         }
 
-        Index operator-(const Iterator<T>& iterator) { return (iterator.getPtr() - this->getPtr())/sizeof(T); }
+        Index operator-(const Iterator<T>& iterator) { return (iterator.getPtr() - this->getPtr()) / sizeof(T); }
 
-        T& operator*(){return *_ptr;}
-        const T& operator*()const{return *_ptr;}
-        T* operator->(){return _ptr;}
+        T& operator*() { return *_ptr; }
+        const T& operator*() const { return *_ptr; }
+        T* operator->() { return _ptr; }
 
-        T* getPtr()const{return _ptr;}
-        const T* getConstPtr()const{return _ptr;}
+        T* getPtr() const { return _ptr; }
+        const T* getConstPtr() const { return _ptr; }
 
     protected:
-
         T* _ptr;
         int _stride;
     };
@@ -292,113 +314,131 @@ public:
     // Direct memory access to the buffer contents is incompatible with the paging memory scheme
     template <typename T> Iterator<T> begin() { return Iterator<T>(&edit<T>(0), _stride); }
     template <typename T> Iterator<T> end() { return Iterator<T>(&edit<T>(getNum<T>()), _stride); }
-#else 
-    template <typename T> Iterator<const T> begin() const { return Iterator<const T>(&get<T>(), _stride); }
-    template <typename T> Iterator<const T> end() const {
+#else
+    template <typename T>
+    Iterator<const T> begin() const {
+        return Iterator<const T>(&get<T>(), _stride);
+    }
+    template <typename T>
+    Iterator<const T> end() const {
         // reimplement get<T> without bounds checking
         Resource::Size elementOffset = getNum<T>() * _stride + _offset;
-        return Iterator<const T>((reinterpret_cast<const T*> (_buffer->getData() + elementOffset)), _stride);
+        return Iterator<const T>((reinterpret_cast<const T*>(_buffer->getData() + elementOffset)), _stride);
     }
 #endif
-    template <typename T> Iterator<const T> cbegin() const { return Iterator<const T>(&get<T>(), _stride); }
-    template <typename T> Iterator<const T> cend() const {
+    template <typename T>
+    Iterator<const T> cbegin() const {
+        return Iterator<const T>(&get<T>(), _stride);
+    }
+    template <typename T>
+    Iterator<const T> cend() const {
         // reimplement get<T> without bounds checking
         Resource::Size elementOffset = getNum<T>() * _stride + _offset;
-        return Iterator<const T>((reinterpret_cast<const T*> (_buffer->getData() + elementOffset)), _stride);
+        return Iterator<const T>((reinterpret_cast<const T*>(_buffer->getData() + elementOffset)), _stride);
     }
 
     // the number of elements of the specified type fitting in the view size
-    template <typename T> Index getNum() const {
+    template <typename T>
+    Index getNum() const {
         return Index(_size / _stride);
     }
 
-    template <typename T> const T& get() const {
- #if _DEBUG
+    template <typename T>
+    const T& get() const {
+#if _DEBUG
         if (!_buffer) {
             qCDebug(gpulogging) << "Accessing null gpu::buffer!";
         }
         if (sizeof(T) > (_buffer->getSize() - _offset)) {
-            qCDebug(gpulogging) << "Accessing buffer in non allocated memory, element size = " << sizeof(T) << " available space in buffer at offset is = " << (_buffer->getSize() - _offset);
+            qCDebug(gpulogging) << "Accessing buffer in non allocated memory, element size = " << sizeof(T)
+                                << " available space in buffer at offset is = " << (_buffer->getSize() - _offset);
         }
         if (sizeof(T) > _size) {
-            qCDebug(gpulogging) << "Accessing buffer outside the BufferView range, element size = " << sizeof(T) << " when bufferView size = " << _size;
+            qCDebug(gpulogging) << "Accessing buffer outside the BufferView range, element size = " << sizeof(T)
+                                << " when bufferView size = " << _size;
         }
- #endif
-        const T* t = (reinterpret_cast<const T*> (_buffer->getData() + _offset));
+#endif
+        const T* t = (reinterpret_cast<const T*>(_buffer->getData() + _offset));
         return *(t);
     }
 
-    template <typename T> T& edit() {
- #if _DEBUG
+    template <typename T>
+    T& edit() {
+#if _DEBUG
         if (!_buffer) {
             qCDebug(gpulogging) << "Accessing null gpu::buffer!";
         }
         if (sizeof(T) > (_buffer->getSize() - _offset)) {
-            qCDebug(gpulogging) << "Accessing buffer in non allocated memory, element size = " << sizeof(T) << " available space in buffer at offset is = " << (_buffer->getSize() - _offset);
+            qCDebug(gpulogging) << "Accessing buffer in non allocated memory, element size = " << sizeof(T)
+                                << " available space in buffer at offset is = " << (_buffer->getSize() - _offset);
         }
         if (sizeof(T) > _size) {
-            qCDebug(gpulogging) << "Accessing buffer outside the BufferView range, element size = " << sizeof(T) << " when bufferView size = " << _size;
+            qCDebug(gpulogging) << "Accessing buffer outside the BufferView range, element size = " << sizeof(T)
+                                << " when bufferView size = " << _size;
         }
- #endif
+#endif
         _buffer->markDirty(_offset, sizeof(T));
-        T* t = (reinterpret_cast<T*> (_buffer->editData() + _offset));
+        T* t = (reinterpret_cast<T*>(_buffer->editData() + _offset));
         return *(t);
     }
 
-    template <typename T> const T& get(const Index index) const {
+    template <typename T>
+    const T& get(const Index index) const {
         Resource::Size elementOffset = index * _stride + _offset;
- #if _DEBUG
+#if _DEBUG
         if (!_buffer) {
             qCDebug(gpulogging) << "Accessing null gpu::buffer!";
         }
         if (sizeof(T) > (_buffer->getSize() - elementOffset)) {
-            qCDebug(gpulogging) << "Accessing buffer in non allocated memory, index = " << index << ", element size = " << sizeof(T) << " available space in buffer at offset is = " << (_buffer->getSize() - elementOffset);
+            qCDebug(gpulogging) << "Accessing buffer in non allocated memory, index = " << index
+                                << ", element size = " << sizeof(T)
+                                << " available space in buffer at offset is = " << (_buffer->getSize() - elementOffset);
         }
         if (index > getNum<T>()) {
-            qCDebug(gpulogging) << "Accessing buffer outside the BufferView range, index = " << index << " number elements = " << getNum<T>();
+            qCDebug(gpulogging) << "Accessing buffer outside the BufferView range, index = " << index
+                                << " number elements = " << getNum<T>();
         }
- #endif
-        return *(reinterpret_cast<const T*> (_buffer->getData() + elementOffset));
+#endif
+        return *(reinterpret_cast<const T*>(_buffer->getData() + elementOffset));
     }
 
-    template <typename T> T& edit(const Index index) const {
+    template <typename T>
+    T& edit(const Index index) const {
         Resource::Size elementOffset = index * _stride + _offset;
- #if _DEBUG
+#if _DEBUG
         if (!_buffer) {
             qCDebug(gpulogging) << "Accessing null gpu::buffer!";
         }
         if (sizeof(T) > (_buffer->getSize() - elementOffset)) {
-            qCDebug(gpulogging) << "Accessing buffer in non allocated memory, index = " << index << ", element size = " << sizeof(T) << " available space in buffer at offset is = " << (_buffer->getSize() - elementOffset);
+            qCDebug(gpulogging) << "Accessing buffer in non allocated memory, index = " << index
+                                << ", element size = " << sizeof(T)
+                                << " available space in buffer at offset is = " << (_buffer->getSize() - elementOffset);
         }
         if (index > getNum<T>()) {
-            qCDebug(gpulogging) << "Accessing buffer outside the BufferView range, index = " << index << " number elements = " << getNum<T>();
+            qCDebug(gpulogging) << "Accessing buffer outside the BufferView range, index = " << index
+                                << " number elements = " << getNum<T>();
         }
- #endif
+#endif
         _buffer->markDirty(elementOffset, sizeof(T));
-        return *(reinterpret_cast<T*> (_buffer->editData() + elementOffset));
+        return *(reinterpret_cast<T*>(_buffer->editData() + elementOffset));
     }
 };
- 
 
-    template <class T> class StructBuffer : public gpu::BufferView {
-    public:
+template <class T>
+class StructBuffer : public gpu::BufferView {
+public:
+    template <class U>
+    static BufferPointer makeBuffer(uint32_t usage = gpu::Buffer::UniformBuffer) {
+        U t;
+        return std::make_shared<gpu::Buffer>(usage, sizeof(U), (const gpu::Byte*)&t, sizeof(U));
+    }
+    ~StructBuffer<T>(){};
+    StructBuffer<T>() : gpu::BufferView(makeBuffer<T>()) {}
 
-        template <class U> static BufferPointer makeBuffer() {
-            U t;
-            return std::make_shared<gpu::Buffer>(sizeof(U), (const gpu::Byte*) &t, sizeof(U));
-        }
-        ~StructBuffer<T>() {};
-        StructBuffer<T>() : gpu::BufferView(makeBuffer<T>()) {}
-
-
-        T& edit() {
-            return BufferView::edit<T>(0);
-        }
-        const T& get() const {
-            return BufferView::get<T>(0);
-        }
-        const T* operator ->() const { return &get(); }
-    };
+    T& edit() { return BufferView::edit<T>(0); }
+    const T& get() const { return BufferView::get<T>(0); }
+    const T* operator->() const { return &get(); }
 };
+};  // namespace gpu
 
 #endif

@@ -254,19 +254,19 @@ scriptable::ScriptableMeshPointer GraphicsScriptingInterface::newMesh(const QVar
 
     // TODO: newFromVector does inbound type conversion, but not compression or packing
     //  (later we should autodetect if fitting into gpu::INDEX_UINT16 and reduce / pack normals etc.)
-    mesh->setIndexBuffer(buffer_helpers::newFromVector(indices, gpu::Format::INDEX_INT32));
-    mesh->setVertexBuffer(buffer_helpers::newFromVector(vertices, gpu::Format::VEC3F_XYZ));
+    mesh->setIndexBuffer(buffer_helpers::newFromVector(gpu::Buffer::IndexBuffer, indices, gpu::Format::INDEX_INT32));
+    mesh->setVertexBuffer(buffer_helpers::newFromVector(gpu::Buffer::VertexBuffer, vertices, gpu::Format::VEC3F_XYZ));
     if (normals.size()) {
-        mesh->addAttribute(gpu::Stream::NORMAL, buffer_helpers::newFromVector(normals, gpu::Format::VEC3F_XYZ));
+        mesh->addAttribute(gpu::Stream::NORMAL, buffer_helpers::newFromVector(gpu::Buffer::VertexBuffer, normals, gpu::Format::VEC3F_XYZ));
     }
     if (colors.size()) {
-        mesh->addAttribute(gpu::Stream::COLOR, buffer_helpers::newFromVector(colors, gpu::Format::VEC3F_XYZ));
+        mesh->addAttribute(gpu::Stream::COLOR, buffer_helpers::newFromVector(gpu::Buffer::VertexBuffer, colors, gpu::Format::VEC3F_XYZ));
     }
     if (texCoords0.size()) {
-        mesh->addAttribute(gpu::Stream::TEXCOORD0, buffer_helpers::newFromVector(texCoords0, gpu::Format::VEC2F_UV));
+        mesh->addAttribute(gpu::Stream::TEXCOORD0, buffer_helpers::newFromVector(gpu::Buffer::VertexBuffer, texCoords0, gpu::Format::VEC2F_UV));
     }
     QVector<graphics::Mesh::Part> parts = {{ 0, indices.size(), 0, topology }};
-    mesh->setPartBuffer(buffer_helpers::newFromVector(parts, gpu::Element::PART_DRAWCALL));
+    mesh->setPartBuffer(buffer_helpers::newFromVector(gpu::Buffer::IndirectBuffer, parts, gpu::Element::PART_DRAWCALL));
     return scriptable::make_scriptowned<scriptable::ScriptableMesh>(mesh, nullptr);
 }
 

@@ -36,7 +36,7 @@ const float Haze::LOG_P_05{ logf(0.5f) };
 
 Haze::Haze() {
     Parameters parameters;
-    _hazeParametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Parameters), (const gpu::Byte*) &parameters));
+    _hazeParametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Parameters), (const gpu::Byte*) &parameters));
 }
 
 enum HazeModes {
