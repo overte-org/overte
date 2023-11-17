@@ -51,6 +51,7 @@ public:
     void setProjection(float cameraFov, float cameraAspectRatio, float cameraNearClip, float cameraFarClip);
     void setFocalLength(float focalLength) { _focalLength = focalLength; }
     bool isPerspective() const;
+    void setIsOblique(bool isOblique) { _isOblique = isOblique; }
 
     // getters for lens attributes
     const glm::mat4& getProjection() const { return _projection; }
@@ -103,7 +104,6 @@ public:
 
     bool pointIntersectsFrustum(const glm::vec3& point) const;
     bool sphereIntersectsFrustum(const glm::vec3& center, float radius) const;
-    bool cubeIntersectsFrustum(const AACube& box) const;
     bool boxIntersectsFrustum(const AABox& box) const;
     bool boxInsideFrustum(const AABox& box) const;
 
@@ -174,6 +174,8 @@ private:
 
     float _nearClip { DEFAULT_NEAR_CLIP };
     float _farClip { DEFAULT_FAR_CLIP };
+
+    bool _isOblique { false };
 
     const char* debugPlaneName (int plane) const;
 

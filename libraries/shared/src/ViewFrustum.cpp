@@ -208,6 +208,11 @@ bool ViewFrustum::sphereIntersectsFrustum(const glm::vec3& center, float radius)
 }
 
 bool ViewFrustum::boxIntersectsFrustum(const AABox& box) const {
+    // FIXME: remove once we fix culling
+    if (_isOblique) {
+        return true;
+    }
+
     // only check against frustum
     for(int i = 0; i < NUM_FRUSTUM_PLANES; i++) {
         const glm::vec3& normal = _planes[i].getNormal();

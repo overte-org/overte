@@ -308,6 +308,7 @@ void EntityRenderer::computeMirrorView(ViewFrustum& viewFrustum) const {
     projection[3][2] = c.w;
 
     viewFrustum.setProjection(projection);
+    viewFrustum.setIsOblique(true);
 }
 
 void EntityRenderer::render(RenderArgs* args) {
@@ -596,7 +597,7 @@ graphics::MaterialPointer EntityRenderer::getTopMaterial() {
 }
 
 EntityRenderer::Pipeline EntityRenderer::getPipelineType(const graphics::MultiMaterial& materials) {
-    if (_mirrorMode != MirrorMode::NONE) {
+    if (_mirrorMode == MirrorMode::MIRROR || (_mirrorMode == MirrorMode::PORTAL && !_portalExitID.isNull())) {
         return Pipeline::MIRROR;
     }
 
