@@ -23,10 +23,11 @@ class DiscordPresence : public QObject {
     Q_OBJECT
 public:
     DiscordPresence();
-    void shutdown();
+    static void shutdown();
 
 public slots:
     void domainChanged();
+    void vrChanged(bool isHMDMode);
 
 private:
     QString currentDomainID;

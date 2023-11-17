@@ -21,6 +21,7 @@
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QNetworkRequest>
 #include <QtCore/QSharedPointer>
+#include <QCommandLineParser>
 
 #include <LimitedNodeList.h>
 #include <NetworkAccessManager.h>
@@ -29,6 +30,7 @@
 #include <udt/PacketHeaders.h>
 #include <SharedUtil.h>
 #include "WarningsSuppression.h"
+#include <LogHandler.h>
 
 const int CLEAR_INACTIVE_PEERS_INTERVAL_MSECS = 1 * 1000;
 const int PEER_SILENCE_THRESHOLD_MSECS = 5 * 1000;
@@ -39,9 +41,59 @@ IceServer::IceServer(int argc, char* argv[]) :
     _serverSocket(0, false),
     _activePeers()
 {
-    // start the ice-server socket
-    qDebug() << "ice-server socket is listening on" << ICE_SERVER_DEFAULT_PORT;
-    _serverSocket.bind(SocketType::UDP, QHostAddress::AnyIPv4, ICE_SERVER_DEFAULT_PORT);
+    // parse command-line
+    QCommandLineParser parser;
+
+    const QCommandLineOption helpOption = parser.addHelpOption();
+
+    const QCommandLineOption addressOption("address", "Ice listen address.", "address");
+    parser.addOption(addressOption);
+
+    const QCommandLineOption portOption("port", "Port for the ICE server to listen on", "port");
+    parser.addOption(portOption);
+
+    const QCommandLineOption logOption("logOptions",  "Logging options, comma separated: ", "color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald", "options");
+    parser.addOption(logOption);
+
+    if (!parser.parse(QCoreApplication::arguments())) {
+        qCritical() << parser.errorText() << Qt::endl;
+        parser.showHelp();
+        Q_UNREACHABLE();
+    }
+
+    if (parser.isSet(helpOption)) {
+        parser.showHelp();
+        Q_UNREACHABLE();
+    }
+
+    QHostAddress address = QHostAddress::AnyIPv4;
+    if (parser.isSet(addressOption)) {
+        if (parser.value(addressOption) == "0.0.0.0") {
+            QHostAddress address = QHostAddress::AnyIPv4;
+        } else {
+            address.setAddress(parser.value(addressOption));
+        }
+    }
+
+    // set the port
+    quint16 port = ICE_SERVER_DEFAULT_PORT;
+    if (parser.isSet(portOption)) {
+        port = parser.value(portOption).toInt();
+    }
+
+    // We want to configure the logging system as early as possible
+    auto& logHandler = LogHandler::getInstance();
+    if (parser.isSet(logOption)) {
+        if (!logHandler.parseOptions(parser.value(logOption).toUtf8(), logOption.names().first())) {
+            QCoreApplication mockApp(argc, const_cast<char**>(argv));  // required for call to showHelp()
+            parser.showHelp();
+            Q_UNREACHABLE();
+        }
+    }
+
+
+    _serverSocket.bind(SocketType::UDP, address, port);
+    qDebug() << "ice-server socket is listening on address: " << address.toString() << ":" << port;
 
     // set processPacket as the verified packet callback for the udt::Socket
     _serverSocket.setPacketHandler([this](std::unique_ptr<udt::Packet> packet) { processPacket(std::move(packet));  });

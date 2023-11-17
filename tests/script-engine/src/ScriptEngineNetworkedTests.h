@@ -27,6 +27,7 @@ class ScriptEngineNetworkedTests : public QObject {
 private slots:
     void initTestCase();
     void testRequire();
+    void testRequireInfinite();
 
 
 private:
