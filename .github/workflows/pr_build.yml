@@ -88,8 +88,6 @@ jobs:
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=*" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
-          # Don't optimize builds to save build time.
-          echo "OVERTE_OPTIMIZE=false" >> $GITHUB_ENV
           # Transparently enable ccache
           echo "PATH=/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH" >> $GITHUB_ENV
           # Starting with Ubuntu 22.04 we can use system Qt
@@ -100,18 +98,18 @@ jobs:
           if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
             echo "VCPKG_FORCE_SYSTEM_BINARIES=true" >> $GITHUB_ENV
             if [ "${{ matrix.build_type }}" = "full" ]; then
-              echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+              echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DOVERTE_OPTIMIZE=false -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
             else
-              echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DCLIENT_ONLY=1 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+              echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DOVERTE_OPTIMIZE=false -DCLIENT_ONLY=1 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
             fi
 
           fi
 
           if [[ "${{ matrix.arch }}" = "amd64" ]]; then
             if [ "${{ matrix.build_type }}" = "full" ]; then
-              echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+              echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DOVERTE_OPTIMIZE=false -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
             else
-              echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DCLIENT_ONLY=1 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+              echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DOVERTE_OPTIMIZE=false -DCLIENT_ONLY=1 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
             fi
           fi
         fi

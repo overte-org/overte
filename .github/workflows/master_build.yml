@@ -73,7 +73,7 @@ jobs:
           echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
           # Transparently enable ccache
           echo "PATH=/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH" >> $GITHUB_ENV
-          echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+          echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DOVERTE_OPTIMIZE=false -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
         fi
         # Mac build variables
         if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
