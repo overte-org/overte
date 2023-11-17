@@ -356,7 +356,7 @@
         },
         {
           "name": "api_token",
-          "label": "API token for server management over HTTP",
+          "label": "API token for server management over HTTP (Minimum length is 64 characters)",
           "type": "string",
           "help": "This will let you place API calls programmatically."
         },
