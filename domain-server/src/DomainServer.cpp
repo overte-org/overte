@@ -430,6 +430,9 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
 
     const QCommandLineOption forceCrashReportingOption("forceCrashReporting", "Force crash reporting to initialize.");
     parser.addOption(forceCrashReportingOption);
+    
+    const QCommandLineOption apiTokenOption("api-token", "Set API token minimal is 64 characters long", "api-token");
+    parser.addOption(apiTokenOption);
 
     QStringList arguments;
     for (int i = 0; i < argc; ++i) {
@@ -504,6 +507,22 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
 
     if (parser.isSet(forceCrashReportingOption)) {
         _forceCrashReporting = true;
+    }
+
+    if (parser.isSet(apiTokenOption) && parser.value(apiTokenOption).length() >= MIN_API_TOKEN_LENGTH) {
+        //TODO: Set API token.
+    } else {
+        QUuid str1 = QUuid::createUuid();
+        QUuid str2 = QUuid::createUuid();
+        QString stringPart1 = str1.toString();
+        QString stringPart2 = str2.toString();
+        stringPart1.remove(QChar('{')).remove(QChar('}')).remove(QChar('-'));
+        stringPart2.remove(QChar('{')).remove(QChar('}')).remove(QChar('-'));
+
+        QString finalApiToken = stringPart1 + stringPart2;
+
+        //TODO: Set API token if its not more than or equal to MIN_API_TOKEN_LENGTH
+        
     }
 }
 
