@@ -348,6 +348,19 @@
           "value-hidden": true
         },
         {
+          "name": "api_token_enable",
+          "label": "Enable API token authentication for server management over HTTP",
+          "type": "checkbox",
+          "help": "This lets you enable/disable the use of API token.",
+          "default": false
+        },
+        {
+          "name": "api_token",
+          "label": "API token for server management over HTTP",
+          "type": "string",
+          "help": "This will let you place API calls programmatically."
+        },
+        {
           "name": "approved_safe_urls",
           "label": "Approved Script and QML URLs (Not Enabled)",
           "help": "These URLs will be sent to the Interface as safe URLs to allow through the whitelist if the Interface has this security option enabled.",
