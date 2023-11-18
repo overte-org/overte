@@ -47,11 +47,10 @@ public:
     const glm::vec3& getRight() const { return _right; }
 
     // setters for lens attributes
-    void setProjection(const glm::mat4 & projection);
+    void setProjection(const glm::mat4& projection, bool isOblique = false);
     void setProjection(float cameraFov, float cameraAspectRatio, float cameraNearClip, float cameraFarClip);
     void setFocalLength(float focalLength) { _focalLength = focalLength; }
     bool isPerspective() const;
-    void setIsOblique(bool isOblique) { _isOblique = isOblique; }
 
     // getters for lens attributes
     const glm::mat4& getProjection() const { return _projection; }

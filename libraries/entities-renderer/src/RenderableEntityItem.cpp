@@ -307,8 +307,7 @@ void EntityRenderer::computeMirrorView(ViewFrustum& viewFrustum) const {
     projection[2][2] = c.z + 1.0f;
     projection[3][2] = c.w;
 
-    viewFrustum.setProjection(projection);
-    viewFrustum.setIsOblique(true);
+    viewFrustum.setProjection(projection, true);
 }
 
 void EntityRenderer::render(RenderArgs* args) {

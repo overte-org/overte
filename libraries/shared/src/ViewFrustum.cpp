@@ -53,7 +53,7 @@ static const glm::vec4 NDC_VALUES[NUM_FRUSTUM_CORNERS] = {
     glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f),
 };
 
-void ViewFrustum::setProjection(const glm::mat4& projection) {
+void ViewFrustum::setProjection(const glm::mat4& projection, bool isOblique) {
     _projection = projection;
     glm::mat4 inverseProjection = glm::inverse(projection);
 
@@ -63,16 +63,21 @@ void ViewFrustum::setProjection(const glm::mat4& projection) {
         _corners[i] /= _corners[i].w;
     }
 
-    // compute frustum properties
-    _nearClip = -_corners[BOTTOM_LEFT_NEAR].z;
-    _farClip = -_corners[BOTTOM_LEFT_FAR].z;
-    _aspectRatio = (_corners[TOP_RIGHT_NEAR].x - _corners[BOTTOM_LEFT_NEAR].x) /
-        (_corners[TOP_RIGHT_NEAR].y - _corners[BOTTOM_LEFT_NEAR].y);
-    glm::vec4 top = inverseProjection * vec4(0.0f, 1.0f, -1.0f, 1.0f);
-    top /= top.w;
-    _fieldOfView = abs(glm::degrees(2.0f * abs(glm::angle(vec3(0.0f, 0.0f, -1.0f), glm::normalize(vec3(top))))));
-    _height = _corners[TOP_RIGHT_NEAR].y - _corners[BOTTOM_RIGHT_NEAR].y;
-    _width = _corners[TOP_RIGHT_NEAR].x - _corners[TOP_LEFT_NEAR].x;
+    // HACK: these calculations aren't correct for our oblique mirror frustums, but we can just reuse the values from the original
+    // frustum since these values are only used on the CPU.
+    if (!isOblique) {
+        // compute frustum properties
+        _nearClip = -_corners[BOTTOM_LEFT_NEAR].z;
+        _farClip = -_corners[BOTTOM_LEFT_FAR].z;
+        _aspectRatio = (_corners[TOP_RIGHT_NEAR].x - _corners[BOTTOM_LEFT_NEAR].x) /
+            (_corners[TOP_RIGHT_NEAR].y - _corners[BOTTOM_LEFT_NEAR].y);
+        glm::vec4 top = inverseProjection * vec4(0.0f, 1.0f, -1.0f, 1.0f);
+        top /= top.w;
+        _fieldOfView = abs(glm::degrees(2.0f * abs(glm::angle(vec3(0.0f, 0.0f, -1.0f), glm::normalize(vec3(top))))));
+        _height = _corners[TOP_RIGHT_NEAR].y - _corners[BOTTOM_RIGHT_NEAR].y;
+        _width = _corners[TOP_RIGHT_NEAR].x - _corners[TOP_LEFT_NEAR].x;
+    }
+    _isOblique = isOblique;
 }
 
 void ViewFrustum::setProjection(float cameraFov, float cameraAspectRatio, float cameraNearClip, float cameraFarClip) {
@@ -109,12 +114,24 @@ void ViewFrustum::calculate() {
     // the function set3Points assumes that the points are given in counter clockwise order, assume you
     // are inside the frustum, facing the plane. Start with any point, and go counter clockwise for
     // three consecutive points
-    _planes[TOP_PLANE].set3Points(_cornersWorld[TOP_RIGHT_NEAR], _cornersWorld[TOP_LEFT_NEAR], _cornersWorld[TOP_LEFT_FAR]);
-    _planes[BOTTOM_PLANE].set3Points(_cornersWorld[BOTTOM_LEFT_NEAR], _cornersWorld[BOTTOM_RIGHT_NEAR], _cornersWorld[BOTTOM_RIGHT_FAR]);
-    _planes[LEFT_PLANE].set3Points(_cornersWorld[BOTTOM_LEFT_NEAR], _cornersWorld[BOTTOM_LEFT_FAR], _cornersWorld[TOP_LEFT_FAR]);
-    _planes[RIGHT_PLANE].set3Points(_cornersWorld[BOTTOM_RIGHT_FAR], _cornersWorld[BOTTOM_RIGHT_NEAR], _cornersWorld[TOP_RIGHT_FAR]);
-    _planes[NEAR_PLANE].set3Points(_cornersWorld[BOTTOM_RIGHT_NEAR], _cornersWorld[BOTTOM_LEFT_NEAR], _cornersWorld[TOP_LEFT_NEAR]);
-    _planes[FAR_PLANE].set3Points(_cornersWorld[BOTTOM_LEFT_FAR], _cornersWorld[BOTTOM_RIGHT_FAR], _cornersWorld[TOP_RIGHT_FAR]);
+    if (!_isOblique) {
+        _planes[TOP_PLANE].set3Points(_cornersWorld[TOP_RIGHT_NEAR], _cornersWorld[TOP_LEFT_NEAR], _cornersWorld[TOP_LEFT_FAR]);
+        _planes[BOTTOM_PLANE].set3Points(_cornersWorld[BOTTOM_LEFT_NEAR], _cornersWorld[BOTTOM_RIGHT_NEAR], _cornersWorld[BOTTOM_RIGHT_FAR]);
+        _planes[LEFT_PLANE].set3Points(_cornersWorld[BOTTOM_LEFT_NEAR], _cornersWorld[BOTTOM_LEFT_FAR], _cornersWorld[TOP_LEFT_FAR]);
+        _planes[RIGHT_PLANE].set3Points(_cornersWorld[BOTTOM_RIGHT_FAR], _cornersWorld[BOTTOM_RIGHT_NEAR], _cornersWorld[TOP_RIGHT_FAR]);
+        _planes[NEAR_PLANE].set3Points(_cornersWorld[BOTTOM_RIGHT_NEAR], _cornersWorld[BOTTOM_LEFT_NEAR], _cornersWorld[TOP_LEFT_NEAR]);
+        _planes[FAR_PLANE].set3Points(_cornersWorld[BOTTOM_LEFT_FAR], _cornersWorld[BOTTOM_RIGHT_FAR], _cornersWorld[TOP_RIGHT_FAR]);
+    } else {
+        Corners near = getCorners(_nearClip);
+        Corners far = getCorners(_farClip);
+
+        _planes[TOP_PLANE].set3Points(near.topRight, near.topLeft, far.topLeft);
+        _planes[BOTTOM_PLANE].set3Points(near.bottomLeft, near.bottomRight, far.bottomRight);
+        _planes[LEFT_PLANE].set3Points(near.bottomLeft, far.bottomLeft, far.topLeft);
+        _planes[RIGHT_PLANE].set3Points(far.bottomRight, near.bottomRight, far.topRight);
+        _planes[NEAR_PLANE].set3Points(near.bottomRight, near.bottomLeft, near.topLeft);
+        _planes[FAR_PLANE].set3Points(far.bottomLeft, far.bottomRight, far.topRight);
+    }
 
     // Also calculate our projection matrix in case people want to project points...
     // Projection matrix : Field of View, ratio, display range : near to far
@@ -208,11 +225,6 @@ bool ViewFrustum::sphereIntersectsFrustum(const glm::vec3& center, float radius)
 }
 
 bool ViewFrustum::boxIntersectsFrustum(const AABox& box) const {
-    // FIXME: remove once we fix culling
-    if (_isOblique) {
-        return true;
-    }
-
     // only check against frustum
     for(int i = 0; i < NUM_FRUSTUM_PLANES; i++) {
         const glm::vec3& normal = _planes[i].getNormal();
