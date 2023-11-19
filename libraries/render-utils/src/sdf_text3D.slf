@@ -59,15 +59,16 @@ void main() {
 
 <@if HIFI_USE_MIRROR@>
     color.rgb = texelFetch(mirrorMap, ivec2(gl_FragCoord.xy), 0).rgb;
+    color.a = 1.0;
 <@endif@>
 
 <@if HIFI_USE_UNLIT@>
     <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
-        _fragColor0 = vec4(color.rgb * isUnlitEnabled(), 1.0);
+        _fragColor0 = vec4(color.rgb * isUnlitEnabled(), color.a);
     <@else@>
         packDeferredFragmentUnlit(
             normalize(_normalWS),
-            1.0,
+            color.a,
             color.rgb);
     <@endif@>
 <@else@>

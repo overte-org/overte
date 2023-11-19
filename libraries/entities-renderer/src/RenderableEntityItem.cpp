@@ -248,6 +248,7 @@ ItemID EntityRenderer::computeMirrorViewOperator(ViewFrustum& viewFrustum, const
     glm::vec3 outPropertiesPosition = inPropertiesPosition;
     glm::quat outPropertiesRotation = inPropertiesRotation;
     glm::mat4 outToWorld = inToWorld;
+    bool foundPortalExit = false;
     if (mirrorMode == MirrorMode::PORTAL && !portalExitID.isNull()) {
         auto renderer = DependencyManager::get<EntityTreeRenderer>();
         if (renderer) {
@@ -258,6 +259,7 @@ ItemID EntityRenderer::computeMirrorViewOperator(ViewFrustum& viewFrustum, const
                 });
 
                 outToWorld = glm::translate(outPropertiesPosition) * glm::mat4_cast(outPropertiesRotation);
+                foundPortalExit = true;
             }
         }
     }
@@ -314,7 +316,7 @@ ItemID EntityRenderer::computeMirrorViewOperator(ViewFrustum& viewFrustum, const
 
     viewFrustum.setProjection(projection, true);
 
-    return (mirrorMode == MirrorMode::PORTAL && !portalExitID.isNull()) ? DependencyManager::get<EntityTreeRenderer>()->renderableIdForEntityId(portalExitID) : Item::INVALID_ITEM_ID;
+    return foundPortalExit ? DependencyManager::get<EntityTreeRenderer>()->renderableIdForEntityId(portalExitID) : Item::INVALID_ITEM_ID;
 }
 
 void EntityRenderer::render(RenderArgs* args) {
