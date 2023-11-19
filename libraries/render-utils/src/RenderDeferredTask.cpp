@@ -157,6 +157,7 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
     const auto prepareDeferredOutputs = task.addJob<PrepareDeferred>("PrepareDeferred", prepareDeferredInputs);
     const auto deferredFramebuffer = prepareDeferredOutputs.getN<PrepareDeferred::Outputs>(0);
     const auto lightingFramebuffer = prepareDeferredOutputs.getN<PrepareDeferred::Outputs>(1);
+    const auto mirrorTargetFramebuffer = prepareDeferredOutputs.getN<PrepareDeferred::Outputs>(2);
 
     // draw a stencil mask in hidden regions of the framebuffer.
     task.addJob<PrepareStencil>("PrepareStencil", scaledPrimaryFramebuffer);
@@ -166,7 +167,7 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
     task.addJob<DrawStateSortDeferred>("DrawOpaqueDeferred", opaqueInputs, shapePlumber);
 
     if (depth < RenderMirrorTask::MAX_MIRROR_DEPTH) {
-        const auto mirrorInputs = RenderMirrorTask::Inputs(mirrors, scaledPrimaryFramebuffer, jitter).asVarying();
+        const auto mirrorInputs = RenderMirrorTask::Inputs(mirrors, mirrorTargetFramebuffer, jitter).asVarying();
         for (size_t i = 0; i < RenderMirrorTask::MAX_MIRRORS_PER_LEVEL; i++) {
             task.addJob<RenderMirrorTask>("RenderMirrorTask" + std::to_string(i) + "Depth" + std::to_string(depth), mirrorInputs, i, cullFunctor, depth);
         }
