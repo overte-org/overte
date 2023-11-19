@@ -161,10 +161,10 @@ namespace render {
         return payload->passesZoneOcclusionTest(containingZones);
     }
 
-    template <> void payloadComputeMirrorView(const PayloadProxyInterface::Pointer& payload, ViewFrustum& viewFrustum) {
+    template <> ItemID payloadComputeMirrorView(const PayloadProxyInterface::Pointer& payload, ViewFrustum& viewFrustum) {
         if (!payload) {
-            return;
+            return Item::INVALID_ITEM_ID;
         }
-        payload->computeMirrorView(viewFrustum);
+        return payload->computeMirrorView(viewFrustum);
     }
 }

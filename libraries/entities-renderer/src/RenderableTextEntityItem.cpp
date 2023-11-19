@@ -316,7 +316,7 @@ bool entities::TextPayload::passesZoneOcclusionTest(const std::unordered_set<QUu
     return false;
 }
 
-void entities::TextPayload::computeMirrorView(ViewFrustum& viewFrustum) const {
+ItemID entities::TextPayload::computeMirrorView(ViewFrustum& viewFrustum) const {
     auto entityTreeRenderer = DependencyManager::get<EntityTreeRenderer>();
     if (entityTreeRenderer) {
         auto renderable = entityTreeRenderer->renderableForEntityId(_entityID);
@@ -324,6 +324,7 @@ void entities::TextPayload::computeMirrorView(ViewFrustum& viewFrustum) const {
             return renderable->computeMirrorView(viewFrustum);
         }
     }
+    return Item::INVALID_ITEM_ID;
 }
 
 void entities::TextPayload::render(RenderArgs* args) {
@@ -417,10 +418,11 @@ template <> bool payloadPassesZoneOcclusionTest(const entities::TextPayload::Poi
     return false;
 }
 
-template <> void payloadComputeMirrorView(const entities::TextPayload::Pointer& payload, ViewFrustum& viewFrustum) {
+template <> ItemID payloadComputeMirrorView(const entities::TextPayload::Pointer& payload, ViewFrustum& viewFrustum) {
     if (payload) {
-        payload->computeMirrorView(viewFrustum);
+        return payload->computeMirrorView(viewFrustum);
     }
+    return Item::INVALID_ITEM_ID;
 }
 
 }

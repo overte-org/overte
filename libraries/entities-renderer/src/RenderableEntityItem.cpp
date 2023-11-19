@@ -226,7 +226,7 @@ bool EntityRenderer::passesZoneOcclusionTest(const std::unordered_set<QUuid>& co
     return true;
 }
 
-void EntityRenderer::computeMirrorView(ViewFrustum& viewFrustum) const {
+ItemID EntityRenderer::computeMirrorView(ViewFrustum& viewFrustum) const {
     glm::vec3 inPropertiesPosition;
     glm::quat inPropertiesRotation;
     MirrorMode mirrorMode;
@@ -237,11 +237,11 @@ void EntityRenderer::computeMirrorView(ViewFrustum& viewFrustum) const {
         mirrorMode = _mirrorMode;
         portalExitID = _portalExitID;
     });
-    computeMirrorViewOperator(viewFrustum, inPropertiesPosition, inPropertiesRotation, mirrorMode, portalExitID);
+    return computeMirrorViewOperator(viewFrustum, inPropertiesPosition, inPropertiesRotation, mirrorMode, portalExitID);
 }
 
-void EntityRenderer::computeMirrorViewOperator(ViewFrustum& viewFrustum, const glm::vec3& inPropertiesPosition, const glm::quat& inPropertiesRotation,
-                                               MirrorMode mirrorMode, const QUuid& portalExitID) {
+ItemID EntityRenderer::computeMirrorViewOperator(ViewFrustum& viewFrustum, const glm::vec3& inPropertiesPosition, const glm::quat& inPropertiesRotation,
+                                                 MirrorMode mirrorMode, const QUuid& portalExitID) {
     glm::mat4 inToWorld = glm::translate(inPropertiesPosition) * glm::mat4_cast(inPropertiesRotation);
     glm::mat4 worldToIn = glm::inverse(inToWorld);
 
@@ -313,6 +313,8 @@ void EntityRenderer::computeMirrorViewOperator(ViewFrustum& viewFrustum, const g
     projection[3][2] = c.w;
 
     viewFrustum.setProjection(projection, true);
+
+    return (mirrorMode == MirrorMode::PORTAL && !portalExitID.isNull()) ? DependencyManager::get<EntityTreeRenderer>()->renderableIdForEntityId(portalExitID) : Item::INVALID_ITEM_ID;
 }
 
 void EntityRenderer::render(RenderArgs* args) {

@@ -75,9 +75,9 @@ public:
     virtual uint32_t metaFetchMetaSubItems(ItemIDs& subItems) const override;
     virtual Item::Bound getBound(RenderArgs* args) override;
     bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const override;
-    void computeMirrorView(ViewFrustum& viewFrustum) const override;
-    static void computeMirrorViewOperator(ViewFrustum& viewFrustum, const glm::vec3& inPropertiesPosition, const glm::quat& inPropertiesRotation,
-                                          MirrorMode mirrorMode, const QUuid& portalExitID);
+    ItemID computeMirrorView(ViewFrustum& viewFrustum) const override;
+    static ItemID computeMirrorViewOperator(ViewFrustum& viewFrustum, const glm::vec3& inPropertiesPosition, const glm::quat& inPropertiesRotation,
+                                            MirrorMode mirrorMode, const QUuid& portalExitID);
 
 protected:
     virtual bool needsRenderUpdateFromEntity() const final { return needsRenderUpdateFromEntity(_entity); }

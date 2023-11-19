@@ -40,12 +40,12 @@ class MirrorModeHelpers {
 public:
     static QString getNameForMirrorMode(MirrorMode mode);
 
-    static void setComputeMirrorViewOperator(std::function<void(ViewFrustum&, const glm::vec3&, const glm::quat&, MirrorMode, const QUuid&)> computeMirrorViewOperator);
-    static void computeMirrorView(ViewFrustum& viewFrustum, const glm::vec3& inPropertiesPosition, const glm::quat& inPropertiesRotation,
-                                  MirrorMode mirrorMode, const QUuid& portalExitID);
+    static void setComputeMirrorViewOperator(std::function<uint32_t(ViewFrustum&, const glm::vec3&, const glm::quat&, MirrorMode, const QUuid&)> computeMirrorViewOperator);
+    static uint32_t computeMirrorView(ViewFrustum& viewFrustum, const glm::vec3& inPropertiesPosition, const glm::quat& inPropertiesRotation,
+                                      MirrorMode mirrorMode, const QUuid& portalExitID);
 
 private:
-    static std::function<void(ViewFrustum&, const glm::vec3&, const glm::quat&, MirrorMode, const QUuid&)> _computeMirrorViewOperator;
+    static std::function<uint32_t(ViewFrustum&, const glm::vec3&, const glm::quat&, MirrorMode, const QUuid&)> _computeMirrorViewOperator;
 };
 
 #endif // hifi_MirrorMode_h

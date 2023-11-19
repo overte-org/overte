@@ -300,12 +300,12 @@ public:
         _cachedArgsPointer->_ignoreItem = args->_ignoreItem;
         _cachedArgsPointer->_mirrorDepth = args->_mirrorDepth;
 
-        args->_blitFramebuffer = _mirrorFramebuffer;
-        args->_ignoreItem = mirror.id;
-        args->_mirrorDepth = _depth;
-
         ViewFrustum srcViewFrustum = args->getViewFrustum();
-        args->_scene->getItem(mirror.id).computeMirrorView(srcViewFrustum);
+        ItemID portalExitID = args->_scene->getItem(mirror.id).computeMirrorView(srcViewFrustum);
+
+        args->_blitFramebuffer = _mirrorFramebuffer;
+        args->_ignoreItem = portalExitID != Item::INVALID_ITEM_ID ? portalExitID : mirror.id;
+        args->_mirrorDepth = _depth;
 
         // Without calculating the bound planes, the mirror will use the same culling frustum as the main camera,
         // which is not what we want here.

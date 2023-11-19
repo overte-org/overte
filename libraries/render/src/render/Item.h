@@ -450,7 +450,7 @@ public:
 
         virtual bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const = 0;
 
-        virtual void computeMirrorView(ViewFrustum& viewFrustum) const = 0;
+        virtual ItemID computeMirrorView(ViewFrustum& viewFrustum) const = 0;
 
         ~PayloadInterface() {}
 
@@ -505,7 +505,7 @@ public:
 
     bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const { return _payload->passesZoneOcclusionTest(containingZones); }
 
-    void computeMirrorView(ViewFrustum& viewFrustum) const { _payload->computeMirrorView(viewFrustum); }
+    ItemID computeMirrorView(ViewFrustum& viewFrustum) const { return _payload->computeMirrorView(viewFrustum); }
 
     // Access the status
     const StatusPointer& getStatus() const { return _payload->getStatus(); }
@@ -562,7 +562,7 @@ template <class T> uint32_t metaFetchMetaSubItems(const std::shared_ptr<T>& payl
 template <class T> bool payloadPassesZoneOcclusionTest(const std::shared_ptr<T>& payloadData, const std::unordered_set<QUuid>& containingZones) { return true; }
 
 // Mirror Interface
-template <class T> void payloadComputeMirrorView(const std::shared_ptr<T>& payloadData, ViewFrustum& viewFrustum) { return; }
+template <class T> ItemID payloadComputeMirrorView(const std::shared_ptr<T>& payloadData, ViewFrustum& viewFrustum) { return Item::INVALID_ITEM_ID; }
 
 // THe Payload class is the real Payload to be used
 // THis allow anything to be turned into a Payload as long as the required interface functions are available
@@ -590,7 +590,7 @@ public:
 
     virtual bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const override { return payloadPassesZoneOcclusionTest<T>(_data, containingZones); }
 
-    virtual void computeMirrorView(ViewFrustum& viewFrustum) const override { return payloadComputeMirrorView<T>(_data, viewFrustum); }
+    virtual ItemID computeMirrorView(ViewFrustum& viewFrustum) const override { return payloadComputeMirrorView<T>(_data, viewFrustum); }
 
 protected:
     DataPointer _data;
@@ -647,7 +647,7 @@ public:
     virtual void render(RenderArgs* args) = 0;
     virtual uint32_t metaFetchMetaSubItems(ItemIDs& subItems) const = 0;
     virtual bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const = 0;
-    virtual void computeMirrorView(ViewFrustum& viewFrustum) const = 0;
+    virtual ItemID computeMirrorView(ViewFrustum& viewFrustum) const = 0;
 
     // FIXME: this isn't the best place for this since it's only used for ModelEntities, but currently all Entities use PayloadProxyInterface
     virtual void handleBlendedVertices(int blendshapeNumber, const QVector<BlendshapeOffset>& blendshapeOffsets,
@@ -660,7 +660,7 @@ template <> void payloadRender(const PayloadProxyInterface::Pointer& payload, Re
 template <> uint32_t metaFetchMetaSubItems(const PayloadProxyInterface::Pointer& payload, ItemIDs& subItems);
 template <> const ShapeKey shapeGetShapeKey(const PayloadProxyInterface::Pointer& payload);
 template <> bool payloadPassesZoneOcclusionTest(const PayloadProxyInterface::Pointer& payload, const std::unordered_set<QUuid>& containingZones);
-template <> void payloadComputeMirrorView(const PayloadProxyInterface::Pointer& payload, ViewFrustum& viewFrustum);
+template <> ItemID payloadComputeMirrorView(const PayloadProxyInterface::Pointer& payload, ViewFrustum& viewFrustum);
 
 typedef Item::PayloadPointer PayloadPointer;
 typedef std::vector<PayloadPointer> Payloads;
