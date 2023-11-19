@@ -31,6 +31,7 @@ if (BUILD_TOOLS)
         ac-client
         skeleton-dump
         atp-client
+        api-tool
     )
 
     # Don't include oven or vhacd-til in OSX client-only DMGs.
