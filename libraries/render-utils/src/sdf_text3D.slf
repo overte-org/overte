@@ -41,6 +41,12 @@ layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4 _texCoord01;
 #define _texCoord1 _texCoord01.zw
 layout(location=RENDER_UTILS_ATTR_FADE1) flat in vec4 _glyphBounds; // we're reusing the fade texcoord locations here
 
+<@if HIFI_USE_MIRROR@>
+    <@include graphics/ShaderConstants.h@>
+
+    LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MIRROR) uniform sampler2D mirrorMap;
+<@endif@>
+
 void main() {
     vec4 color = evalSDFSuperSampled(_texCoord0, _glyphBounds);
 
@@ -51,13 +57,17 @@ void main() {
     }
 <@endif@>
 
+<@if HIFI_USE_MIRROR@>
+    color.rgb = texelFetch(mirrorMap, ivec2(gl_FragCoord.xy), 0).rgb;
+<@endif@>
+
 <@if HIFI_USE_UNLIT@>
     <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
-        _fragColor0 = vec4(color.rgb * isUnlitEnabled(), color.a);
+        _fragColor0 = vec4(color.rgb * isUnlitEnabled(), 1.0);
     <@else@>
         packDeferredFragmentUnlit(
             normalize(_normalWS),
-            color.a,
+            1.0,
             color.rgb);
     <@endif@>
 <@else@>

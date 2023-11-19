@@ -15,6 +15,8 @@ const char* MirrorModeNames[] = {
 };
 
 static const size_t MIRROR_MODE_NAMES = (sizeof(MirrorModeNames) / sizeof(MirrorModeNames[0]));
+std::function<void(ViewFrustum&, const glm::vec3&, const glm::quat&, MirrorMode, const QUuid&)> MirrorModeHelpers::_computeMirrorViewOperator =
+    [](ViewFrustum&, const glm::vec3&, const glm::quat&, MirrorMode, const QUuid&) { return; };
 
 QString MirrorModeHelpers::getNameForMirrorMode(MirrorMode mode) {
     if (((int)mode <= 0) || ((int)mode >= (int)MIRROR_MODE_NAMES)) {
@@ -22,4 +24,13 @@ QString MirrorModeHelpers::getNameForMirrorMode(MirrorMode mode) {
     }
 
     return MirrorModeNames[(int)mode];
+}
+
+void MirrorModeHelpers::setComputeMirrorViewOperator(std::function<void(ViewFrustum&, const glm::vec3&, const glm::quat&, MirrorMode, const QUuid&)> computeMirrorViewOperator) {
+    _computeMirrorViewOperator = computeMirrorViewOperator;
+}
+
+void MirrorModeHelpers::computeMirrorView(ViewFrustum& viewFrustum, const glm::vec3& inPropertiesPosition, const glm::quat& inPropertiesRotation,
+                                          MirrorMode mirrorMode, const QUuid& portalExitID) {
+    _computeMirrorViewOperator(viewFrustum, inPropertiesPosition, inPropertiesRotation, mirrorMode, portalExitID);
 }

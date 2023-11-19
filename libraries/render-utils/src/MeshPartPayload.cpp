@@ -221,6 +221,10 @@ void ModelMeshPartPayload::updateKey(const render::ItemKey& key) {
         builder.withSubMetaCulled();
     }
 
+    if (_mirrorMode == MirrorMode::MIRROR || (_mirrorMode == MirrorMode::PORTAL && !_portalExitID.isNull())) {
+        builder.withMirror();
+    }
+
     _itemKey = builder.build();
 }
 
@@ -349,7 +353,7 @@ void ModelMeshPartPayload::render(RenderArgs* args) {
         procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created,
                             ProceduralProgramKey(outColor.a < 1.0f, _shapeKey.isDeformed(), _shapeKey.isDualQuatSkinned()));
         batch._glColor4f(outColor.r, outColor.g, outColor.b, outColor.a);
-    } else {
+    } else if (!_itemKey.isMirror()) {
         // apply material properties
         if (RenderPipelines::bindMaterials(_drawMaterials, batch, args->_renderMode, args->_enableTexturing)) {
             args->_details._materialSwitches++;
@@ -381,7 +385,9 @@ bool ModelMeshPartPayload::passesZoneOcclusionTest(const std::unordered_set<QUui
 }
 
 void ModelMeshPartPayload::computeMirrorView(ViewFrustum& viewFrustum) const {
-    return;
+    Transform transform = _parentTransform;
+    transform = transform.worldTransform(_localTransform);
+    MirrorModeHelpers::computeMirrorView(viewFrustum, transform.getTranslation(), transform.getRotation(), _mirrorMode, _portalExitID);
 }
 
 void ModelMeshPartPayload::setBlendshapeBuffer(const std::unordered_map<int, gpu::BufferPointer>& blendshapeBuffers, const QVector<int>& blendedMeshSizes) {

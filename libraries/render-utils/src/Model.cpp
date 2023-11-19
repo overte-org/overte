@@ -1078,9 +1078,11 @@ void Model::setMirrorMode(MirrorMode mirrorMode, const render::ScenePointer& sce
         }
 
         render::Transaction transaction;
+        auto renderItemsKey = _renderItemKeyGlobalFlags;
         for (auto item : _modelMeshRenderItemIDs) {
-            transaction.updateItem<ModelMeshPartPayload>(item, [mirrorMode](ModelMeshPartPayload& data) {
+            transaction.updateItem<ModelMeshPartPayload>(item, [mirrorMode, renderItemsKey](ModelMeshPartPayload& data) {
                 data.setMirrorMode(mirrorMode);
+                data.updateKey(renderItemsKey);
             });
         }
         scene->enqueueTransaction(transaction);
@@ -1096,9 +1098,11 @@ void Model::setPortalExitID(const QUuid& portalExitID, const render::ScenePointe
         }
 
         render::Transaction transaction;
+        auto renderItemsKey = _renderItemKeyGlobalFlags;
         for (auto item : _modelMeshRenderItemIDs) {
-            transaction.updateItem<ModelMeshPartPayload>(item, [portalExitID](ModelMeshPartPayload& data) {
+            transaction.updateItem<ModelMeshPartPayload>(item, [portalExitID, renderItemsKey](ModelMeshPartPayload& data) {
                 data.setPortalExitID(portalExitID);
+                data.updateKey(renderItemsKey);
             });
         }
         scene->enqueueTransaction(transaction);

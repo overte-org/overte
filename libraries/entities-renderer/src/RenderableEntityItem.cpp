@@ -237,7 +237,11 @@ void EntityRenderer::computeMirrorView(ViewFrustum& viewFrustum) const {
         mirrorMode = _mirrorMode;
         portalExitID = _portalExitID;
     });
+    computeMirrorViewOperator(viewFrustum, inPropertiesPosition, inPropertiesRotation, mirrorMode, portalExitID);
+}
 
+void EntityRenderer::computeMirrorViewOperator(ViewFrustum& viewFrustum, const glm::vec3& inPropertiesPosition, const glm::quat& inPropertiesRotation,
+                                               MirrorMode mirrorMode, const QUuid& portalExitID) {
     glm::mat4 inToWorld = glm::translate(inPropertiesPosition) * glm::mat4_cast(inPropertiesRotation);
     glm::mat4 worldToIn = glm::inverse(inToWorld);
 
@@ -284,6 +288,7 @@ void EntityRenderer::computeMirrorView(ViewFrustum& viewFrustum) const {
     glm::vec3 cameraSpacePosition = glm::inverse(view) * glm::vec4(outPropertiesPosition, 1.0f);
     glm::vec3 cameraSpaceNormal = glm::transpose(view) * (outPropertiesRotation * glm::vec4(0, 0, -1, 0));
     glm::vec4 clipPlane = glm::vec4(cameraSpaceNormal, -glm::dot(cameraSpaceNormal, cameraSpacePosition));
+    // Make sure we pick the direction facing away from us
     if (clipPlane.w > 0.0f) {
         clipPlane *= -1.0f;
     }

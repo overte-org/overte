@@ -9,7 +9,11 @@
 #ifndef hifi_MirrorMode_h
 #define hifi_MirrorMode_h
 
+#include <functional>
+
 #include "QString"
+
+#include "ViewFrustum.h"
 
 /*@jsdoc
  * <p>If an entity is rendered as a mirror, a portal, or normally.</p>
@@ -35,6 +39,13 @@ enum class MirrorMode {
 class MirrorModeHelpers {
 public:
     static QString getNameForMirrorMode(MirrorMode mode);
+
+    static void setComputeMirrorViewOperator(std::function<void(ViewFrustum&, const glm::vec3&, const glm::quat&, MirrorMode, const QUuid&)> computeMirrorViewOperator);
+    static void computeMirrorView(ViewFrustum& viewFrustum, const glm::vec3& inPropertiesPosition, const glm::quat& inPropertiesRotation,
+                                  MirrorMode mirrorMode, const QUuid& portalExitID);
+
+private:
+    static std::function<void(ViewFrustum&, const glm::vec3&, const glm::quat&, MirrorMode, const QUuid&)> _computeMirrorViewOperator;
 };
 
 #endif // hifi_MirrorMode_h
