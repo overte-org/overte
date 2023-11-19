@@ -27,7 +27,8 @@
 int main(int argc, char* argv[]) {
     setupHifiApplication(BuildInfo::DOMAIN_SERVER_NAME);
 
-    DomainServer::parseCommandLine(argc, argv);
+    QJsonObject domainSettingsToSet;
+    DomainServer::parseCommandLine(argc, argv, domainSettingsToSet);
 
     Setting::init();
 
@@ -46,7 +47,8 @@ int main(int argc, char* argv[]) {
 
     do {
         crash::annotations::setShutdownState(false);
-        DomainServer domainServer(argc, argv);
+        DomainServer domainServer(argc, argv, domainSettingsToSet);
+        domainSettingsToSet = QJsonObject();
         ch.startMonitor(&domainServer);
 
         currentExitCode = domainServer.exec();

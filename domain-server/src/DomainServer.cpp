@@ -71,6 +71,10 @@ Q_LOGGING_CATEGORY(domain_server_ice, "hifi.domain_server.ice")
 Q_LOGGING_CATEGORY(domain_server_auth, "overte.domain_server.auth")
 
 const QString ACCESS_TOKEN_KEY_PATH = "metaverse.access_token";
+const QString HTTP_API_TOKEN_PREFIX = "security";
+const QString HTTP_API_TOKEN_KEY = "api_token";
+const QString HTTP_API_TOKEN_ENABLE_KEY = "api_token_enable";
+
 const QString DomainServer::REPLACEMENT_FILE_EXTENSION = ".replace";
 const QString PUBLIC_SOCKET_ADDRESS_KEY = "network_address";
 const QString PUBLIC_SOCKET_PORT_KEY = "network_port";
@@ -196,7 +200,7 @@ bool DomainServer::forwardMetaverseAPIRequest(HTTPConnection* connection,
     return true;
 }
 
-DomainServer::DomainServer(int argc, char* argv[]) :
+DomainServer::DomainServer(int argc, char* argv[], QJsonObject &domainSettingsToSet) :
     QCoreApplication(argc, argv),
     _gatekeeper(this),
     _httpManager(QHostAddress::AnyIPv4, DOMAIN_SERVER_HTTP_PORT,
@@ -242,6 +246,10 @@ DomainServer::DomainServer(int argc, char* argv[]) :
         userConfigFilename = PathUtils::getAppDataFilePath(USER_CONFIG_FILE_NAME);
     }
     _settingsManager.setupConfigMap(userConfigFilename);
+    if (!domainSettingsToSet.isEmpty()) {
+        //TODO: put a breakpoint there to test
+        _settingsManager.recurseJSONObjectAndOverwriteSettings(domainSettingsToSet, DomainSettings);
+    }
 
     // setup a shutdown event listener to handle SIGTERM or WM_CLOSE for us
 
@@ -404,7 +412,7 @@ DomainServer::DomainServer(int argc, char* argv[]) :
     initializeMetadataExporter();
 }
 
-void DomainServer::parseCommandLine(int argc, char* argv[]) {
+void DomainServer::parseCommandLine(int argc, char* argv[], QJsonObject &domainSettingsToSet) {
     QCommandLineParser parser;
     parser.setApplicationDescription("Overte Domain Server");
     const QCommandLineOption versionOption = parser.addVersionOption();
@@ -431,7 +439,7 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
     const QCommandLineOption forceCrashReportingOption("forceCrashReporting", "Force crash reporting to initialize.");
     parser.addOption(forceCrashReportingOption);
     
-    const QCommandLineOption apiTokenOption("api-token", "Set API token minimal is 64 characters long", "api-token");
+    const QCommandLineOption apiTokenOption("api-token", "Set API token. Minimum length is 64 characters long, otherwise random token will be generated", "api-token");
     parser.addOption(apiTokenOption);
 
     QStringList arguments;
@@ -509,20 +517,29 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
         _forceCrashReporting = true;
     }
 
-    if (parser.isSet(apiTokenOption) && parser.value(apiTokenOption).length() >= MIN_API_TOKEN_LENGTH) {
-        //TODO: Set API token.
-    } else {
-        QUuid str1 = QUuid::createUuid();
-        QUuid str2 = QUuid::createUuid();
-        QString stringPart1 = str1.toString();
-        QString stringPart2 = str2.toString();
-        stringPart1.remove(QChar('{')).remove(QChar('}')).remove(QChar('-'));
-        stringPart2.remove(QChar('{')).remove(QChar('}')).remove(QChar('-'));
+    if (parser.isSet(apiTokenOption)) {
+        if (parser.value(apiTokenOption).length() >= MIN_API_TOKEN_LENGTH) {
+            qInfo() << "Setting the HTTP API token and enabling HTTP API";
+            QJsonObject domainServerObject;
+            domainServerObject.insert(HTTP_API_TOKEN_KEY, parser.value(apiTokenOption));
+            domainServerObject.insert(HTTP_API_TOKEN_ENABLE_KEY, true);
+            domainSettingsToSet.insert(HTTP_API_TOKEN_PREFIX, domainServerObject);
+        } else {
+            qInfo() << "Generating the HTTP API token and enabling HTTP API";
+            QUuid str1 = QUuid::createUuid();
+            QUuid str2 = QUuid::createUuid();
+            QString stringPart1 = str1.toString();
+            QString stringPart2 = str2.toString();
+            stringPart1.remove(QChar('{')).remove(QChar('}')).remove(QChar('-'));
+            stringPart2.remove(QChar('{')).remove(QChar('}')).remove(QChar('-'));
 
-        QString finalApiToken = stringPart1 + stringPart2;
+            QString finalApiToken = stringPart1 + stringPart2;
 
-        //TODO: Set API token if its not more than or equal to MIN_API_TOKEN_LENGTH
-        
+            QJsonObject domainServerObject;
+            domainServerObject.insert(HTTP_API_TOKEN_KEY, finalApiToken);
+            domainServerObject.insert(HTTP_API_TOKEN_ENABLE_KEY, true);
+            domainSettingsToSet.insert(HTTP_API_TOKEN_PREFIX, domainServerObject);
+        }
     }
 }
 
@@ -2839,8 +2856,6 @@ std::pair<bool, QString>  DomainServer::isAuthenticatedRequest(HTTPConnection* c
     static const QString ADMIN_ROLES_CONFIG_KEY = "oauth.admin-roles";
     static const QString BASIC_AUTH_USERNAME_KEY_PATH = "security.http_username";
     static const QString BASIC_AUTH_PASSWORD_KEY_PATH = "security.http_password";
-    static const QString HTTP_API_TOKEN = "security.api_token";
-    static const QString HTTP_API_TOKEN_ENABLE = "security.api_token_enable";
     const QString COOKIE_UUID_REGEX_STRING = HIFI_SESSION_COOKIE_KEY + "=([\\d\\w-]+)($|;)";
 
     const QByteArray UNAUTHENTICATED_BODY = "You do not have permission to access this domain-server.";
@@ -2851,12 +2866,12 @@ std::pair<bool, QString>  DomainServer::isAuthenticatedRequest(HTTPConnection* c
     QString httpPeerAddress = connection->peerAddress().toString();
     QString httpOperation = operationToString(connection->requestOperation());
 
-    if (_settingsManager.valueForKeyPath(HTTP_API_TOKEN_ENABLE).toBool()) {
-        QString httpApiHeader = connection->requestHeader(HTTP_API_TOKEN);
+    if (_settingsManager.valueForKeyPath(HTTP_API_TOKEN_PREFIX + "." + HTTP_API_TOKEN_ENABLE_KEY).toBool()) {
+        QString httpApiHeader = connection->requestHeader(HTTP_API_TOKEN_PREFIX + "." + HTTP_API_TOKEN_KEY);
 
         if (!httpApiHeader.isEmpty()) {
             if (httpApiHeader.length() >= MIN_API_TOKEN_LENGTH &&
-                httpApiHeader == _settingsManager.valueForKeyPath(HTTP_API_TOKEN)) {
+                httpApiHeader == _settingsManager.valueForKeyPath(HTTP_API_TOKEN_PREFIX + "." + HTTP_API_TOKEN_KEY)) {
                 qDebug(domain_server_auth) << "[API ACCESS] "
                                            << "ok";
                 return { true, "API_TOKEN" };
