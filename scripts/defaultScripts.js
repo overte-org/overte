@@ -43,6 +43,7 @@ var DEFAULT_SCRIPTS_COMBINED = [
 ];
 var DEFAULT_SCRIPTS_SEPARATE = [
     "system/controllers/controllerScripts.js",
+    "system/controllers/squeezeHands.js",
     "communityScripts/notificationCore/notificationCore.js",
     "simplifiedUI/ui/simplifiedNametag/simplifiedNametag.js",
     {"stable": "system/more/app-more.js", "beta": "https://more.overte.org/more/app-more.js"},

@@ -439,8 +439,10 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
                 }
             }
 
+
+            // TODO: These are not used currently, but have severe impact on performace. They can be re-enabled when we have OpenXR support
             // check for hand-tracking "click"
-            _this.checkForHandTrackingClick();
+            //_this.checkForHandTrackingClick();
 
             // bundle up all the data about the current situation
             var controllerData = {
