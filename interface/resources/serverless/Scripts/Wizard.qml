@@ -318,22 +318,22 @@ Rectangle {
             text:
               "<font size=\"4\" color=\"#ff9900\"><b>Not Smooth (20 Hz)</b></font>\n" +
               "<font color=\"white\">Conserve Power</font>"
-            onClicked: wizard.refreshRateProfile = 1
-            checked: wizard.refreshRateProfile === 1
+            onClicked: wizard.refreshRateProfile = 0
+            checked: wizard.refreshRateProfile === 0
         }
         RadioButton {
             text:
               "<font size=\"4\" color=\"#ffff00\"><b>Smooth (30 Hz)</b></font>\n" +
               "<font color=\"white\">Use Average Resources</font>"
-            onClicked: wizard.refreshRateProfile = 2
-            checked: wizard.refreshRateProfile === 2
+            onClicked: wizard.refreshRateProfile = 1
+            checked: wizard.refreshRateProfile === 1
         }
         RadioButton {
             text:
               "<font size=\"4\" color=\"#00ba1c\"><b>Very Smooth (60 Hz)</b></font>\n" +
               "<font color=\"white\">Use Maximum Resources - </font><font color=\"#00ba1c\"><i>Recommended</i></font>"
-            onClicked: wizard.refreshRateProfile = 3
-            checked: wizard.refreshRateProfile === 3
+            onClicked: wizard.refreshRateProfile = 2
+            checked: wizard.refreshRateProfile === 2
         }
       }
     }
