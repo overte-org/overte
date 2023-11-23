@@ -927,9 +927,10 @@ void CharacterController::updateState() {
 
     const btScalar FLY_TO_GROUND_THRESHOLD = 0.1f * _radius;
     const btScalar GROUND_TO_FLY_THRESHOLD = 0.8f * _radius + _halfHeight;
+    // TODO: This could be a setting. With 5 ms jumping feels very responsive, but with 250 ms animation looks nicer
     const quint64 TAKE_OFF_TO_IN_AIR_PERIOD = 5 * MSECS_PER_SECOND; // Originally 250 ms
     const btScalar MIN_HOVER_HEIGHT = _scaleFactor * DEFAULT_AVATAR_MIN_HOVER_HEIGHT;
-    const quint64 JUMP_TO_HOVER_PERIOD = _scaleFactor < 1.0f ? _scaleFactor * 350 * MSECS_PER_SECOND : 350 * MSECS_PER_SECOND; // Originally 1100 ms
+    const quint64 JUMP_TO_HOVER_PERIOD = _scaleFactor < 1.0f ? _scaleFactor * 500 * MSECS_PER_SECOND : 500 * MSECS_PER_SECOND; // Originally 1100 ms
 
     // scan for distant floor
     // rayStart is at center of bottom sphere
