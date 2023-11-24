@@ -25,9 +25,10 @@ public:
         LOW,
         MID,
         HIGH,
+        CUSTOM,
         PROFILE_COUNT
     };
-    static bool isValidPerformancePreset(int value) { return (value >= PerformancePreset::UNKNOWN && value <= PerformancePreset::HIGH); }
+    static bool isValidPerformancePreset(int value) { return (value >= PerformancePreset::UNKNOWN && value <= PerformancePreset::CUSTOM); }
 
     PerformanceManager();
     ~PerformanceManager() = default;

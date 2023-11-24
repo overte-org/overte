@@ -14,7 +14,11 @@ include_hifi_library_headers(script-engine)
 
 if (ANDROID)
 else ()
-  target_webrtc()
+  if (NOT DISABLE_WEBRTC )
+    target_webrtc()
+  else()
+    message(WARNING "WebRTC is supported on this platform but has been disabled for this build (likely memory debugging)")
+  endif()
 endif ()
 
 # append audio includes to our list of includes to bubble

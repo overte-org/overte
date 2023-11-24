@@ -106,7 +106,7 @@ Font::Pointer Font::load(const QString& family) {
             auto& networkAccessManager = NetworkAccessManager::getInstance();
 
             QNetworkRequest networkRequest;
-            networkRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+            networkRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
             networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
             networkRequest.setUrl(family);
 

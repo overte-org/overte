@@ -87,7 +87,6 @@
 #include <EntityScriptServerLogClient.h>
 #include <EntityScriptingInterface.h>
 #include <ErrorDialog.h>
-#include <FileScriptingInterface.h>
 #include <Finally.h>
 #include <FingerprintUtils.h>
 #include <FramebufferCache.h>
@@ -2561,6 +2560,9 @@ Application::Application(
     DependencyManager::get<TabletScriptingInterface>()->preloadSounds();
     DependencyManager::get<Keyboard>()->createKeyboard();
 
+    // Initialize Discord rich presence
+    _discordPresence = new DiscordPresence();
+
     FileDialogHelper::setOpenDirectoryOperator([this](const QString& path) { openDirectory(path); });
     QDesktopServices::setUrlHandler("file", this, "showUrlHandler");
     QDesktopServices::setUrlHandler("", this, "showUrlHandler");
@@ -3226,7 +3228,7 @@ void Application::initializeUi() {
                 return true;
             } else {
                 for (const auto& str : safeURLS) {
-                    if (!str.isEmpty() && str.endsWith(".qml") && url.toString().endsWith(".qml") &&
+                    if (!str.isEmpty() && url.toString().endsWith(".qml") &&
                         url.toString().startsWith(str)) {
                         qCDebug(interfaceapp) << "Found matching url!" << url.host();
                         return true;
@@ -3414,9 +3416,9 @@ void Application::onDesktopRootContextCreated(QQmlContext* surfaceContext) {
     surfaceContext->setContextProperty("Controller", DependencyManager::get<controller::ScriptingInterface>().data());
     surfaceContext->setContextProperty("Entities", DependencyManager::get<EntityScriptingInterface>().data());
     surfaceContext->setContextProperty("Performance", new PerformanceScriptingInterface());
-    _fileDownload = new FileScriptingInterface(engine);
+    _fileDownload = new ArchiveDownloadInterface(engine);
     surfaceContext->setContextProperty("File", _fileDownload);
-    connect(_fileDownload, &FileScriptingInterface::unzipResult, this, &Application::handleUnzip);
+    connect(_fileDownload, &ArchiveDownloadInterface::unzipResult, this, &Application::handleUnzip);
     surfaceContext->setContextProperty("MyAvatar", getMyAvatar().get());
     surfaceContext->setContextProperty("Messages", DependencyManager::get<MessagesClient>().data());
     surfaceContext->setContextProperty("Recording", DependencyManager::get<RecordingScriptingInterface>().data());
@@ -7755,7 +7757,7 @@ bool Application::askToLoadScript(const QString& scriptFilenameOrURL) {
 bool Application::askToWearAvatarAttachmentUrl(const QString& url) {
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
     QNetworkRequest networkRequest = QNetworkRequest(url);
-    networkRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    networkRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
     QNetworkReply* reply = networkAccessManager.get(networkRequest);
     int requestNumber = ++_avatarAttachmentRequest;

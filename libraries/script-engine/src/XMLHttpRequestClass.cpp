@@ -38,7 +38,7 @@ XMLHttpRequestClass::XMLHttpRequestClass(ScriptEngine* engine) :
     _onReadyStateChange(engine->nullValue()),
     _timer(this) {
 
-    _request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    _request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     _timer.setSingleShot(true);
 }
 

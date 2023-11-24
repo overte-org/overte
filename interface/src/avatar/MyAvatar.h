@@ -2849,7 +2849,7 @@ private:
     ThreadSafeValueCache<QUrl> _prefOverrideAnimGraphUrl;
     QUrl _fstAnimGraphOverrideUrl;
     bool _useSnapTurn { true };
-    bool _hoverWhenUnsupported{ true };
+    bool _hoverWhenUnsupported{ false };
     ThreadSafeValueCache<QString> _dominantHand { DOMINANT_RIGHT_HAND };
     ThreadSafeValueCache<QString> _hmdAvatarAlignmentType { DEFAULT_HMD_AVATAR_ALIGNMENT_TYPE };
     ThreadSafeValueCache<bool> _strafeEnabled{ DEFAULT_STRAFE_ENABLED };

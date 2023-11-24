@@ -2806,8 +2806,8 @@ controller::Pose MyAvatar::getControllerPoseInAvatarFrame(controller::Action act
 void MyAvatar::updateMotors() {
     _characterController.clearMotors();
 
-    const float FLYING_MOTOR_TIMESCALE = 0.0002f; // Originally 0.05f;
-    const float WALKING_MOTOR_TIMESCALE = 0.0002f; // Originally 0.2f;
+    const float FLYING_MOTOR_TIMESCALE = 0.002f; // Originally 0.05f;
+    const float WALKING_MOTOR_TIMESCALE = 0.1f; // Originally 0.2f;
     const float INVALID_MOTOR_TIMESCALE = 1.0e6f;
 
     float horizontalMotorTimescale;
@@ -4091,7 +4091,7 @@ void MyAvatar::updateActionMotor(float deltaTime) {
         float finalMaxMotorSpeed = sensorToWorldScale * DEFAULT_AVATAR_MAX_FLYING_SPEED * _walkSpeedScalar;
         float speedGrowthTimescale  = 2.0f;
         float speedIncreaseFactor = 1.8f * _walkSpeedScalar;
-        motorSpeed *= 1.0f + glm::pow(glm::clamp(deltaTime / speedGrowthTimescale, 0.0f, 1.0f), 0.7f) * speedIncreaseFactor;
+        motorSpeed *= 1.0f + glm::pow(glm::clamp(deltaTime / speedGrowthTimescale, 0.0f, 1.0f), 0.85f) * speedIncreaseFactor;
         // use feedback from CharacterController to prevent tunneling under high motorspeed
         motorSpeed *= _characterController.getCollisionBrakeAttenuationFactor();
         const float maxBoostSpeed = sensorToWorldScale * MAX_BOOST_SPEED;

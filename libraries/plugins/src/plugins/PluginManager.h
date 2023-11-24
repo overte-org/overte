@@ -54,6 +54,9 @@ public:
     void setPluginFilter(PluginFilter pluginFilter) { _pluginFilter = pluginFilter; }
     Q_INVOKABLE DisplayPluginList getAllDisplayPlugins();
 
+    bool getEnableOculusPluginSetting() { return _enableOculusPluginSetting.get(); }
+    void setEnableOculusPluginSetting(bool value);
+
 signals:
     void inputDeviceRunningChanged(const QString& pluginName, bool isRunning, const QStringList& runningDevices);
     
@@ -76,6 +79,8 @@ private:
     Setting::Handle<bool> _enableScriptingPlugins {
         "private/enableScriptingPlugins", (bool)qgetenv("enableScriptingPlugins").toInt()
     };
+
+    Setting::Handle<bool> _enableOculusPluginSetting { "enableOculusPluginSetting", false };
 };
 
 // TODO: we should define this value in CMake, and then use CMake

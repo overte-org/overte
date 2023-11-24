@@ -18,27 +18,5 @@ Item {
 
 
     function initWebviewProfileHandlers(profile) {
-        downloadUrl = currentUrl;
-        if (webViewProfileSetup) return;
-        webViewProfileSetup = true;
-
-        profile.downloadRequested.connect(function(download){
-            adaptedPath = File.convertUrlToPath(downloadUrl);
-            tempDir = File.getTempDir();
-            download.path = tempDir + "/" + adaptedPath;
-            download.accept();
-            if (download.state === WebEngineDownloadItem.DownloadInterrupted) {
-                console.log("download failed to complete");
-            }
-        })
-
-        profile.downloadFinished.connect(function(download){
-            if (download.state === WebEngineDownloadItem.DownloadCompleted) {
-                File.runUnzip(download.path, downloadUrl, autoAdd);
-            } else {
-                console.log("The download was corrupted, state: " + download.state);
-            }
-            autoAdd = false;
-        })
     }
 }

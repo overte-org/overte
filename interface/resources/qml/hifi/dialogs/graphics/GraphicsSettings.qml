@@ -126,9 +126,9 @@ Flickable {
                     fontSize: 16
                     leftPadding: 0
                     text: "Custom"
-                    checked: Performance.getPerformancePreset() === PerformanceEnums.UNKNOWN
+                    checked: Performance.getPerformancePreset() === PerformanceEnums.CUSTOM
                     onClicked: {
-                        Performance.setPerformancePreset(PerformanceEnums.UNKNOWN);
+                        Performance.setPerformancePreset(PerformanceEnums.CUSTOM);
                     }
                 }
             }
