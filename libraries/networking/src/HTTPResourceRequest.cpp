@@ -4,6 +4,7 @@
 //
 //  Created by Ryan Huffman on 2015/07/23
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -54,7 +55,7 @@ void HTTPResourceRequest::doSend() {
     DependencyManager::get<StatTracker>()->incrementStat(STAT_HTTP_REQUEST_STARTED);
 
     QNetworkRequest networkRequest(_url);
-    networkRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    networkRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
 
     if (_cacheEnabled) {

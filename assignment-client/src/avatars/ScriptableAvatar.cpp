@@ -225,7 +225,7 @@ void ScriptableAvatar::updateJointMappings() {
         // connects.
         QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
         QNetworkRequest networkRequest = QNetworkRequest(_skeletonModelURL);
-        networkRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+        networkRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
         networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
         DependencyManager::get<ResourceRequestObserver>()->update(
             _skeletonModelURL, -1, "AvatarData::updateJointMappings");

@@ -5,6 +5,7 @@
 //  Created by Stephen Birarda on 2014-10-01.
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -281,7 +282,7 @@ void IceServer::requestDomainPublicKey(const QUuid& domainID) {
     // qDebug() << "publicKeyURL.errorString()" << publicKeyURL.errorString();
 
     QNetworkRequest publicKeyRequest { publicKeyURL };
-    publicKeyRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    publicKeyRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     publicKeyRequest.setAttribute(QNetworkRequest::User, domainID);
 
     qDebug() << "Requesting public key for domain with ID" << domainID;

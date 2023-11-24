@@ -5,6 +5,7 @@
 //  Created by Stephen Birarda on 9/26/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -2641,7 +2642,7 @@ bool DomainServer::handleHTTPSRequest(HTTPSConnection* connection, const QUrl &u
                 .arg(authorizationCode, oauthRedirectURL().toString(), _oauthClientID, _oauthClientSecret);
 
             QNetworkRequest tokenRequest(tokenRequestUrl);
-            tokenRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+            tokenRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
             tokenRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
             tokenRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
 
@@ -2986,7 +2987,7 @@ QNetworkReply* DomainServer::profileRequestGivenTokenReply(QNetworkReply* tokenR
     qDebug() << "Sending profile request to: " << profileURL;
 
     QNetworkRequest profileRequest(profileURL);
-    profileRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    profileRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     profileRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
     return NetworkAccessManager::getInstance().get(profileRequest);
 }

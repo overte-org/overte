@@ -4,6 +4,7 @@
 //
 //  Created by Stephen Birarda on 2014-09-18.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -38,7 +39,7 @@ QNetworkReply* OAuthNetworkAccessManager::createRequest(QNetworkAccessManager::O
     if (accountManager->hasValidAccessToken()
         && req.url().host() == MetaverseAPI::getCurrentMetaverseServerURL().host()) {
         QNetworkRequest authenticatedRequest(req);
-        authenticatedRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+        authenticatedRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
         authenticatedRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
         authenticatedRequest.setRawHeader(ACCESS_TOKEN_AUTHORIZATION_HEADER,
                                           accountManager->getAccountInfo().getAccessToken().authorizationHeaderValue());
