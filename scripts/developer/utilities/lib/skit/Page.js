@@ -60,7 +60,7 @@ Page.prototype.createView = function () {
 };
 
 
-Pages = function (relativePath) {
+function Pages(relativePath) {
     print(relativePath)
     this._relativePath = relativePath
     this._pages = {};
@@ -103,5 +103,11 @@ Pages.prototype.sendTo = function (command, message) {
     }
     this._pages[command].window.sendToQml(message);
 };
+
+
+module.exports = {
+    Page: Page,
+    Pages: Pages
+}
 
 }()); 
