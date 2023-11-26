@@ -26,6 +26,16 @@
 #include <QtCore/QVariant>
 #include <QtCore/QDebug>
 
+#define SCRIPT_VALUE_MAIN_THREAD_DEBUG
+
+#ifdef SCRIPT_VALUE_MAIN_THREAD_DEBUG
+#include <QThread>
+#include <QCoreApplication>
+#define SCRIPT_VALUE_MAIN_THREAD_CHECK() scriptValueOnMainThreadCheck()
+#else
+#define SCRIPT_VALUE_MAIN_THREAD_CHECK()
+#endif
+
 #include "ScriptEngineLogging.h"
 
 class ScriptEngine;
@@ -121,6 +131,8 @@ public:
 
 protected:
     ScriptValueProxy* _proxy;
+private:
+    void scriptValueOnMainThreadCheck() const;
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(ScriptValue::PropertyFlags);
 
@@ -185,25 +197,30 @@ protected:
 // the second template parameter is used to defer evaluation of calls to the engine until ScriptEngine isn't forward-declared
 template <typename TYP, class ScriptEnginePointer>
 void ScriptValue::setProperty(const QString& name, const TYP& value, const PropertyFlags& flags) {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     setProperty(name, static_cast<const ScriptEnginePointer&>(engine())->newValue(value), flags);
 }
 
 // the second template parameter is used to defer evaluation of calls to the engine until ScriptEngine isn't forward-declared
 template <typename TYP, class ScriptEnginePointer>
 void ScriptValue::setProperty(quint32 arrayIndex, const TYP& value, const PropertyFlags& flags) {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     setProperty(arrayIndex, static_cast<const ScriptEnginePointer&>(engine())->newValue(value), flags);
 }
 
 ScriptValue::ScriptValue(const ScriptValue& src) : _proxy(src.ptr()->copy()) {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
 }
 
 ScriptValue::~ScriptValue() {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     _proxy->release();
 }
 
 ScriptValue& ScriptValue::operator=(const ScriptValue& other) {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     _proxy->release();
     _proxy = other.ptr()->copy();
@@ -211,6 +228,7 @@ ScriptValue& ScriptValue::operator=(const ScriptValue& other) {
 }
 
 ScriptValue ScriptValue::call(const ScriptValue& thisObject, const ScriptValueList& args) const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     ScriptEnginePointer scriptEngine = _proxy->engine();
     if (scriptEngine == nullptr) {
@@ -221,21 +239,25 @@ ScriptValue ScriptValue::call(const ScriptValue& thisObject, const ScriptValueLi
 }
 
 ScriptValue ScriptValue::call(const ScriptValue& thisObject, const ScriptValue& arguments) const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->call(thisObject, arguments);
 }
 
 ScriptValue ScriptValue::construct(const ScriptValueList& args) const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->construct(args);
 }
 
 ScriptValue ScriptValue::construct(const ScriptValue& arguments) const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->construct(arguments);
 }
 
 ScriptValue ScriptValue::data() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->data();
 }
@@ -246,162 +268,194 @@ ScriptEnginePointer ScriptValue::engine() const {
 }
 
 bool ScriptValue::equals(const ScriptValue& other) const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->equals(other);
 }
 
 bool ScriptValue::isArray() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->isArray();
 }
 
 bool ScriptValue::isBool() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->isBool();
 }
 
 bool ScriptValue::isError() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->isError();
 }
 
 bool ScriptValue::isFunction() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->isFunction();
 }
 
 bool ScriptValue::isNumber() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->isNumber();
 }
 
 bool ScriptValue::isNull() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->isNull();
 }
 
 bool ScriptValue::isObject() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->isObject();
 }
 
 bool ScriptValue::isString() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->isString();
 }
 
 bool ScriptValue::isUndefined() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->isUndefined();
 }
 
 bool ScriptValue::isValid() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->isValid();
 }
 
 bool ScriptValue::isVariant() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->isVariant();
 }
 
 ScriptValueIteratorPointer ScriptValue::newIterator() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->newIterator();
 }
 
 ScriptValue ScriptValue::property(const QString& name, const ResolveFlags& mode) const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->property(name, mode);
 }
 
 ScriptValue ScriptValue::property(quint32 arrayIndex, const ResolveFlags& mode) const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->property(arrayIndex, mode);
 }
 
 ScriptValue ScriptValue::prototype() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->prototype();
 }
 
 void ScriptValue::setData(const ScriptValue& val) {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->setData(val);
 }
 
 
 bool ScriptValue::hasProperty(const QString& name) const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->hasProperty(name);
 }
 
 void ScriptValue::setProperty(const QString& name, const ScriptValue& value, const PropertyFlags& flags) {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->setProperty(name, value, flags);
 }
 
 void ScriptValue::setProperty(quint32 arrayIndex, const ScriptValue& value, const PropertyFlags& flags) {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->setProperty(arrayIndex, value, flags);
 }
 
 void ScriptValue::setPrototype(const ScriptValue& prototype) {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->setPrototype(prototype);
 }
 
 bool ScriptValue::strictlyEquals(const ScriptValue& other) const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->strictlyEquals(other);
 }
 
 inline QList<QString> ScriptValue::getPropertyNames() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->getPropertyNames();
 };
 
 bool ScriptValue::toBool() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->toBool();
 }
 
 qint32 ScriptValue::toInt32() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->toInt32();
 }
 
 double ScriptValue::toInteger() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->toInteger();
 }
 
 double ScriptValue::toNumber() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->toNumber();
 }
 
 QString ScriptValue::toString() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->toString();
 }
 
 quint16 ScriptValue::toUInt16() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->toUInt16();
 }
 
 quint32 ScriptValue::toUInt32() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->toUInt32();
 }
 
 QVariant ScriptValue::toVariant() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->toVariant();
 }
 
 QObject* ScriptValue::toQObject() const {
+    SCRIPT_VALUE_MAIN_THREAD_CHECK();
     Q_ASSERT(_proxy != nullptr);
     return _proxy->toQObject();
 }

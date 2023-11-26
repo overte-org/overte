@@ -13,6 +13,7 @@
 
 #include "ScriptValue.h"
 
+#include "ScriptEngine.h"
 #include "ScriptEngineLogging.h"
 
 //V8TODO name is misleading, it's actually undefined
@@ -254,3 +255,13 @@ QVariant ScriptValueProxyNull::toVariant() const {
 QObject* ScriptValueProxyNull::toQObject() const {
     return nullptr;
 }
+
+
+void ScriptValue::scriptValueOnMainThreadCheck() const {
+    if (QThread::currentThread() == QCoreApplication::instance()->thread()) {
+        if (!dynamic_cast<ScriptValueProxyNull*>(_proxy) && engine() && QThread::currentThread() != engine()->thread()) {
+            qDebug(scriptengine_script) << "Script value usage on main thread";
+        }
+    }
+}
+
