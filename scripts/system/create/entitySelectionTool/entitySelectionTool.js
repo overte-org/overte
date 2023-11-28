@@ -2241,7 +2241,7 @@ SelectionDisplay = (function() {
             Entities.editEntity(selectionBox, selectionBoxGeometry);
 
             // UPDATE ICON TRANSLATE HANDLE
-            if (SelectionManager.entityType === "ParticleEffect" || SelectionManager.entityType === "Light") {
+            if (SelectionManager.entityType === "ParticleEffect" || SelectionManager.entityType === "ProceduralParticleEffect" || SelectionManager.entityType === "Light") {
                 var iconSelectionBoxGeometry = {
                     position: position,
                     rotation: rotation

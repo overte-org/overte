@@ -1,0 +1,107 @@
+<@include gpu/Config.slh@>
+<$VERSION_HEADER$>
+//  <$_SCRIBE_FILENAME$>
+//  Generated on <$_SCRIBE_DATE$>
+//
+//  Created by HifiExperiements on 11/21/23
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+<@include procedural/ProceduralCommon.slh@>
+<@include procedural/ProceduralParticleCommon.slh@>
+
+layout(location=0) in vec2 varTexCoord0;
+
+#if NUM_UPDATE_PROPS > 0
+layout(location=0) out vec4 _prop0;
+#endif
+#if NUM_UPDATE_PROPS > 1
+layout(location=1) out vec4 _prop1;
+#endif
+#if NUM_UPDATE_PROPS > 2
+layout(location=2) out vec4 _prop2;
+#endif
+#if NUM_UPDATE_PROPS > 3
+layout(location=3) out vec4 _prop3;
+#endif
+#if NUM_UPDATE_PROPS > 4
+layout(location=4) out vec4 _prop4;
+#endif
+
+#if NUM_UPDATE_PROPS > 0
+struct ParticleUpdateProps {
+    vec4 prop0;
+#if NUM_UPDATE_PROPS > 1
+    vec4 prop1;
+#endif
+#if NUM_UPDATE_PROPS > 2
+    vec4 prop2;
+#endif
+#if NUM_UPDATE_PROPS > 3
+    vec4 prop3;
+#endif
+#if NUM_UPDATE_PROPS > 4
+    vec4 prop4;
+#endif
+};
+
+ParticleUpdateProps getParticleProps() {
+    ParticleUpdateProps particleProps;
+    particleProps.prop0 = texture(_prop0Texture, varTexCoord0);
+#if NUM_UPDATE_PROPS > 1
+    particleProps.prop1 = texture(_prop1Texture, varTexCoord0);
+#endif
+#if NUM_UPDATE_PROPS > 2
+    particleProps.prop2 = texture(_prop2Texture, varTexCoord0);
+#endif
+#if NUM_UPDATE_PROPS > 3
+    particleProps.prop3 = texture(_prop3Texture, varTexCoord0);
+#endif
+#if NUM_UPDATE_PROPS > 4
+    particleProps.prop4 = texture(_prop4Texture, varTexCoord0);
+#endif
+    return particleProps;
+}
+#endif
+
+#line 1001
+#if NUM_UPDATE_PROPS > 0
+//PROCEDURAL_BLOCK_BEGIN
+
+void updateParticleProps(const int particleID, inout ParticleUpdateProps particleProps) {}
+
+//PROCEDURAL_BLOCK_END
+#endif
+
+#line 2030
+void main(void) {
+#if NUM_UPDATE_PROPS > 0
+    const ivec2 textureDims = textureSize(_prop0Texture, 0);
+    const ivec2 indexXY = ivec2(gl_FragCoord.xy);
+    const int particleID = indexXY.x + textureDims.x * indexXY.y;
+
+    if (particleID >= NUM_PARTICLES) {
+        return;
+    }
+
+    ParticleUpdateProps particleProps = getParticleProps();
+    updateParticleProps(particleID, particleProps);
+
+    _prop0 = particleProps.prop0;
+#endif
+#if NUM_UPDATE_PROPS > 1
+    _prop1 = particleProps.prop1;
+#endif
+#if NUM_UPDATE_PROPS > 2
+    _prop2 = particleProps.prop2;
+#endif
+#if NUM_UPDATE_PROPS > 3
+    _prop3 = particleProps.prop3;
+#endif
+#if NUM_UPDATE_PROPS > 4
+    _prop4 = particleProps.prop4;
+#endif
+}

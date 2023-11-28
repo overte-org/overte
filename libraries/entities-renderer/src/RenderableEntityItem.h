@@ -78,6 +78,7 @@ public:
     ItemID computeMirrorView(ViewFrustum& viewFrustum) const override;
     static ItemID computeMirrorViewOperator(ViewFrustum& viewFrustum, const glm::vec3& inPropertiesPosition, const glm::quat& inPropertiesRotation,
                                             MirrorMode mirrorMode, const QUuid& portalExitID);
+    virtual void renderSimulate(RenderArgs* args) override {}
 
 protected:
     virtual bool needsRenderUpdateFromEntity() const final { return needsRenderUpdateFromEntity(_entity); }
