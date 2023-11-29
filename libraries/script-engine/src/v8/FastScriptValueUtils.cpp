@@ -31,7 +31,7 @@ ScriptValue vec3ToScriptValue(ScriptEngine* engine, const glm::vec3& vec3) {
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     auto context = engineV8->getContext();
-    v8::Context::Scope contextScope(engineV8->getContext());
+    v8::Context::Scope contextScope(context);
     V8ScriptValue v8ScriptValue = proxy->toV8Value();
     v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(v8ScriptValue.get());
 
@@ -106,7 +106,7 @@ bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3) {
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     auto context = engineV8->getContext();
-    v8::Context::Scope contextScope(engineV8->getContext());
+    v8::Context::Scope contextScope(context);
     V8ScriptValue v8ScriptValue = proxy->toV8Value();
 
     v8::Local<v8::Value> v8Value = v8ScriptValue.get();
