@@ -19,6 +19,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 Script.include("/~/system/libraries/controllers.js");
 
 (function () {
+    var controllerStandard = Controller.Standard;
+
     var MARGIN = 25;
 
     function TargetObject(entityID, entityProps) {
@@ -120,7 +122,7 @@ Script.include("/~/system/libraries/controllers.js");
         };
 
         this.handToController = function () {
-            return (this.hand === RIGHT_HAND) ? Controller.Standard.RightHand : Controller.Standard.LeftHand;
+            return (this.hand === RIGHT_HAND) ? controllerStandard.RightHand : controllerStandard.LeftHand;
         };
 
         this.distanceGrabTimescale = function (mass, distance) {
@@ -276,7 +278,7 @@ Script.include("/~/system/libraries/controllers.js");
             // This block handles the user's ability to rotate the object they're FarGrabbing
             if (this.shouldManipulateTarget(controllerData)) {
                 // Get the pose of the controller that is not grabbing.
-                var pose = Controller.getPoseValue((this.getOffhand() ? Controller.Standard.RightHand : Controller.Standard.LeftHand));
+                var pose = Controller.getPoseValue((this.getOffhand() ? controllerStandard.RightHand : controllerStandard.LeftHand));
                 if (pose.valid) {
                     // If we weren't manipulating the object yet, initialize the entity's original position.
                     if (!this.manipulating) {
