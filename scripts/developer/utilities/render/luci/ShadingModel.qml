@@ -79,7 +79,7 @@ Column {
                         "Point:LightingModel:enablePointLight",
                         "Spot:LightingModel:enableSpotLight",
                         "Light Contour:LightingModel:showLightContour",
-                        "Zone Stack:DrawZoneStack:enabled",
+                        "Zone Stack:DebugRenderDeferredTask.DrawZoneStack:enabled",
                         "Shadow:LightingModel:enableShadow"
                 ]
                 Prop.PropCheckBox {

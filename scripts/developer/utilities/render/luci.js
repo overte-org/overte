@@ -6,7 +6,7 @@ var Page = Script.require('../lib/skit/Page.js');
 
 
 function openView() {
-    var pages = new Pages(Script.resolvePath("."));
+    var pages = new Page.Pages(Script.resolvePath("."));
 
     function fromQml(message) {
         if (pages.open(message.method)) {

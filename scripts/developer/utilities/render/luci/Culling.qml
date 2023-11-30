@@ -19,8 +19,8 @@ Column {
     anchors.left: parent.left;
     anchors.right: parent.right;
 
-    property var sceneOctree: Render.getConfig("RenderMainView.DrawSceneOctree");
-    property var itemSelection: Render.getConfig("RenderMainView.DrawItemSelection");
+    property var sceneOctree: Render.getConfig("RenderMainView.DebugRenderDeferredTask.DrawSceneOctree");
+    property var itemSelection: Render.getConfig("RenderMainView.DebugRenderDeferredTask.DrawItemSelection");
 
      Component.onCompleted: {
         sceneOctree.enabled = true;
@@ -35,8 +35,8 @@ Column {
     Component.onDestruction: {
         sceneOctree.enabled = false;
         itemSelection.enabled = false;
-        Render.getConfig("RenderMainView.FetchSceneSelection").freezeFrustum = false;
-        Render.getConfig("RenderMainView.CullSceneSelection").freezeFrustum = false;
+        Render.getConfig("RenderMainView.DebugRenderDeferredTask.FetchSceneSelection").freezeFrustum = false;
+        Render.getConfig("RenderMainView.DebugRenderDeferredTask.CullSceneSelection").freezeFrustum = false;
     }
 
     GroupBox {
@@ -54,8 +54,8 @@ Column {
                     text: "Freeze Culling Frustum"
                     checked: false
                     onCheckedChanged: {
-                        Render.getConfig("RenderMainView.FetchSceneSelection").freezeFrustum = checked;
-                        Render.getConfig("RenderMainView.CullSceneSelection").freezeFrustum = checked;
+                        Render.getConfig("RenderMainView.DebugRenderDeferredTask.FetchSceneSelection").freezeFrustum = checked;
+                        Render.getConfig("RenderMainView.DebugRenderDeferredTask.CullSceneSelection").freezeFrustum = checked;
                     }
                 }
                 Label {
@@ -112,9 +112,9 @@ Column {
             anchors.left: parent.left;
             anchors.right: parent.right;
             Repeater {
-                model: [ "Opaque:RenderMainView.DrawOpaqueDeferred", "Transparent:RenderMainView.DrawTransparentDeferred", "Light:RenderMainView.DrawLight",
-                        "Opaque InFront:RenderMainView.DrawInFrontOpaque", "Transparent InFront:RenderMainView.DrawInFrontTransparent",
-                        "Opaque HUD:RenderMainView.DrawHUDOpaque", "Transparent HUD:RenderMainView.DrawHUDTransparent" ]
+                model: [ "Opaque:RenderMainView.DebugRenderDeferredTask.DrawOpaqueDeferred", "Transparent:RenderMainView.DebugRenderDeferredTask.DrawTransparentDeferred", "Light:RenderMainView.DebugRenderDeferredTask.DrawLight",
+                        "Opaque InFront:RenderMainView.DebugRenderDeferredTask.DrawInFrontOpaque", "Transparent InFront:RenderMainView.DebugRenderDeferredTask.DrawInFrontTransparent",
+                        "Opaque HUD:RenderMainView.DebugRenderDeferredTask.DrawHUDOpaque", "Transparent HUD:RenderMainView.DebugRenderDeferredTask.DrawHUDTransparent" ]
                 Prop.PropScalar {
                     label: qsTr(modelData.split(":")[0])
                     integral: true

@@ -16,7 +16,7 @@ Column {
 
     id: bloom
 
-    property var config: Render.getConfig("RenderMainView.DebugBloom")
+    property var config: Render.getConfig("RenderMainView.Bloom.DebugBloom")
 
     Prop.PropBool {
         label: "Apply Bloom"
