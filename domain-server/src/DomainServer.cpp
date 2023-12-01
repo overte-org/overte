@@ -1570,12 +1570,19 @@ void DomainServer::performIPAddressPortUpdate(const SockAddr& newPublicSockAddr)
     const QString& publicSocketAddress = newPublicSockAddr.getAddress().toString();
     const int publicSocketPort = newPublicSockAddr.getPort();
 
-    sendHeartbeatToMetaverse(publicSocketAddress, publicSocketPort);
+    if (_automaticNetworkingSetting == IP_ONLY_AUTOMATIC_NETWORKING_VALUE) {
+        sendHeartbeatToMetaverse(publicSocketAddress, 0);
+    } else {
+        // Full automatic networking, update both port and IP address
+        sendHeartbeatToMetaverse(publicSocketAddress, publicSocketPort);
+    }
 
     QJsonObject rootObject;
     QJsonObject domainServerObject;
     domainServerObject.insert(PUBLIC_SOCKET_ADDRESS_KEY, publicSocketAddress);
-    domainServerObject.insert(PUBLIC_SOCKET_PORT_KEY, publicSocketPort);
+    if (_automaticNetworkingSetting == FULL_AUTOMATIC_NETWORKING_VALUE) {
+        domainServerObject.insert(PUBLIC_SOCKET_PORT_KEY, publicSocketPort);
+    }
     rootObject.insert(DOMAIN_SERVER_SETTINGS_KEY, domainServerObject);
     QJsonDocument doc(rootObject);
     qDebug() << "DomainServer::performIPAddressPortUpdate: " << doc;
