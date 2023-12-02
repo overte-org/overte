@@ -1457,6 +1457,17 @@ QVector<QUuid> EntityScriptingInterface::findEntitiesByName(const QString entity
     return result;
 }
 
+QVector<QUuid> EntityScriptingInterface::findEntitiesByTags(const QVector<QString> entityTags, const glm::vec3& center, float radius, bool caseSensitiveSearch) const {
+    QVector<QUuid> result;
+    if (_entityTree) {
+        _entityTree->withReadLock([&] {
+            unsigned int searchFilter = PickFilter::getBitMask(PickFilter::FlagBit::DOMAIN_ENTITIES) | PickFilter::getBitMask(PickFilter::FlagBit::AVATAR_ENTITIES);
+            _entityTree->evalEntitiesInSphereWithTags(center, radius, entityTags, caseSensitiveSearch, PickFilter(searchFilter), result);
+        });
+    }
+    return result;
+}
+
 RayToEntityIntersectionResult EntityScriptingInterface::findRayIntersection(const PickRay& ray, bool precisionPicking,
         const ScriptValue& entityIdsToInclude, const ScriptValue& entityIdsToDiscard, bool visibleOnly, bool collidableOnly) const {
     PROFILE_RANGE(script_entities, __FUNCTION__);

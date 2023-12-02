@@ -559,6 +559,9 @@ public:
     BillboardMode getBillboardMode() const;
     virtual bool getRotateForPicking() const { return false; }
 
+    void setTags(const QSet<QString>& tags);
+    QSet<QString> getTags() const;
+
 signals:
     void spaceUpdate(std::pair<int32_t, glm::vec4> data);
 
@@ -739,6 +742,8 @@ protected:
     BillboardMode _billboardMode { BillboardMode::NONE };
 
     bool _cullWithParent { false };
+
+    QSet<QString> _tags;
 
     mutable bool _needsRenderUpdate { false };
 };

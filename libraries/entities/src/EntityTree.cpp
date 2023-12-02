@@ -1110,6 +1110,42 @@ void EntityTree::evalEntitiesInSphereWithName(const glm::vec3& center, float rad
     foundEntities.swap(args.entities);
 }
 
+class FindEntitiesInSphereWithTagsArgs {
+public:
+    // Inputs
+    glm::vec3 position;
+    float targetRadius;
+    QVector<QString> tags;
+    bool caseSensitive;
+    PickFilter searchFilter;
+
+    // Outputs
+    QVector<QUuid> entities;
+};
+
+bool evalInSphereWithTagsOperation(const OctreeElementPointer& element, void* extraData) {
+    FindEntitiesInSphereWithTagsArgs* args = static_cast<FindEntitiesInSphereWithTagsArgs*>(extraData);
+    glm::vec3 penetration;
+    bool sphereIntersection = element->getAACube().findSpherePenetration(args->position, args->targetRadius, penetration);
+
+    // If this element contains the point, then search it...
+    if (sphereIntersection) {
+        EntityTreeElementPointer entityTreeElement = std::static_pointer_cast<EntityTreeElement>(element);
+        entityTreeElement->evalEntitiesInSphereWithTags(args->position, args->targetRadius, args->tags, args->caseSensitive, args->searchFilter, args->entities);
+        return true; // keep searching in case children have closer entities
+    }
+
+    // if this element doesn't contain the point, then none of it's children can contain the point, so stop searching
+    return false;
+}
+
+// NOTE: assumes caller has handled locking
+void EntityTree::evalEntitiesInSphereWithTags(const glm::vec3& center, float radius, const QVector<QString>& tags, bool caseSensitive, PickFilter searchFilter, QVector<QUuid>& foundEntities) {
+    FindEntitiesInSphereWithTagsArgs args = { center, radius, tags, caseSensitive, searchFilter, QVector<QUuid>() };
+    recurseTreeWithOperation(evalInSphereWithTagsOperation, &args);
+    foundEntities.swap(args.entities);
+}
+
 class FindEntitiesInCubeArgs {
 public:
     // Inputs

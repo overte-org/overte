@@ -424,6 +424,21 @@ void EntityItemProperties::setEntityHostTypeFromString(const QString& entityHost
     }
 }
 
+QVector<QString> EntityItemProperties::getTagsAsVector() const {
+    QVector<QString> tags;
+    for (const QString& tag : _tags) {
+        tags.push_back(tag);
+    }
+    return tags;
+}
+
+void EntityItemProperties::setTagsFromVector(const QVector<QString>& tags) {
+    _tags.clear();
+    for (const QString& tag : tags) {
+        _tags.insert(tag);
+    }
+}
+
 EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     EntityPropertyFlags changedProperties;
 
@@ -454,6 +469,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_IGNORE_PICK_INTERSECTION, ignorePickIntersection);
     CHECK_PROPERTY_CHANGE(PROP_RENDER_WITH_ZONES, renderWithZones);
     CHECK_PROPERTY_CHANGE(PROP_BILLBOARD_MODE, billboardMode);
+    CHECK_PROPERTY_CHANGE(PROP_TAGS, tags);
     changedProperties += _grab.getChangedProperties();
 
     // Physics
@@ -822,6 +838,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     one of the zones in this list.
  * @property {BillboardMode} billboardMode="none" - Whether the entity is billboarded to face the camera.  Use the rotation
  *     property to control which axis is facing you.
+ * @property {string[]} tags=[] - A set of tags describing this entity.
  *
  * @property {Entities.Grab} grab - The entity's grab-related properties.
  *
@@ -1615,6 +1632,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_IGNORE_PICK_INTERSECTION, ignorePickIntersection);
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_RENDER_WITH_ZONES, renderWithZones);
     COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_BILLBOARD_MODE, billboardMode, getBillboardModeAsString());
+    COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_TAGS, tags, getTagsAsVector());
     _grab.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
 
     // Physics
@@ -2031,6 +2049,7 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE(ignorePickIntersection, bool, setIgnorePickIntersection);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(renderWithZones, qVectorQUuid, setRenderWithZones);
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(billboardMode, BillboardMode);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(tags, qVectorQString, setTagsFromVector, getTagsAsVector);
     _grab.copyFromScriptValue(object, namesSet, _defaultSettings);
 
     // Physics
@@ -2317,6 +2336,7 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(ignorePickIntersection);
     COPY_PROPERTY_IF_CHANGED(renderWithZones);
     COPY_PROPERTY_IF_CHANGED(billboardMode);
+    COPY_PROPERTY_IF_CHANGED(tags);
     _grab.merge(other._grab);
 
     // Physics
@@ -2605,6 +2625,7 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
         ADD_PROPERTY_TO_MAP(PROP_IGNORE_PICK_INTERSECTION, IgnorePickIntersection, ignorePickIntersection, bool);
         ADD_PROPERTY_TO_MAP(PROP_RENDER_WITH_ZONES, RenderWithZones, renderWithZones, QVector<QUuid>);
         ADD_PROPERTY_TO_MAP(PROP_BILLBOARD_MODE, BillboardMode, billboardMode, BillboardMode);
+        ADD_PROPERTY_TO_MAP(PROP_TAGS, Tags, tags, QSet<QString>);
         { // Grab
             ADD_GROUP_PROPERTY_TO_MAP(PROP_GRAB_GRABBABLE, Grab, grab, Grabbable, grabbable);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_GRAB_KINEMATIC, Grab, grab, GrabKinematic, grabKinematic);
@@ -3087,6 +3108,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
             APPEND_ENTITY_PROPERTY(PROP_IGNORE_PICK_INTERSECTION, properties.getIgnorePickIntersection());
             APPEND_ENTITY_PROPERTY(PROP_RENDER_WITH_ZONES, properties.getRenderWithZones());
             APPEND_ENTITY_PROPERTY(PROP_BILLBOARD_MODE, (uint32_t)properties.getBillboardMode());
+            APPEND_ENTITY_PROPERTY(PROP_TAGS, properties.getTags());
             _staticGrab.setProperties(properties);
             _staticGrab.appendToEditPacket(packetData, requestedProperties, propertyFlags,
                                            propertiesDidntFit, propertyCount, appendState);
@@ -3567,6 +3589,7 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
     READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_IGNORE_PICK_INTERSECTION, bool, setIgnorePickIntersection);
     READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_RENDER_WITH_ZONES, QVector<QUuid>, setRenderWithZones);
     READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_BILLBOARD_MODE, BillboardMode, setBillboardMode);
+    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_TAGS, QSet<QString>, setTags);
     properties.getGrab().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
 
     // Physics
@@ -3959,6 +3982,7 @@ void EntityItemProperties::markAllChanged() {
     _ignorePickIntersectionChanged = true;
     _renderWithZonesChanged = true;
     _billboardModeChanged = true;
+    _tagsChanged = true;
     _grab.markAllChanged();
 
     // Physics
@@ -4357,6 +4381,9 @@ QList<QString> EntityItemProperties::listChangedProperties() {
     }
     if (billboardModeChanged()) {
         out += "billboardMode";
+    }
+    if (tagsChanged()) {
+        out += "tags";
     }
     getGrab().listChangedProperties(out);
 
