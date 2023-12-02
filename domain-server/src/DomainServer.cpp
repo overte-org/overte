@@ -73,9 +73,9 @@ Q_LOGGING_CATEGORY(domain_server_auth, "overte.domain_server.auth")
 
 const QString ACCESS_TOKEN_KEY_PATH = "metaverse.access_token";
 const QString DomainServer::REPLACEMENT_FILE_EXTENSION = ".replace";
+const QString& DOMAIN_SERVER_SETTINGS_KEY = "domain_server";
 const QString PUBLIC_SOCKET_ADDRESS_KEY = "network_address";
 const QString PUBLIC_SOCKET_PORT_KEY = "network_port";
-const QString DOMAIN_UPDATE_AUTOMATIC_NETWORKING_KEY = "automatic_networking";
 const int MIN_PORT = 1;
 const int MAX_PORT = 65535;
 
@@ -1567,18 +1567,25 @@ QJsonObject jsonForDomainSocketUpdate(const SockAddr& socket) {
 }
 
 void DomainServer::performIPAddressPortUpdate(const SockAddr& newPublicSockAddr) {
-    const QString& DOMAIN_SERVER_SETTINGS_KEY = "domain_server";
     const QString& publicSocketAddress = newPublicSockAddr.getAddress().toString();
     const int publicSocketPort = newPublicSockAddr.getPort();
 
-    sendHeartbeatToMetaverse(publicSocketAddress, publicSocketPort);
+    if (_automaticNetworkingSetting == IP_ONLY_AUTOMATIC_NETWORKING_VALUE) {
+        sendHeartbeatToMetaverse(publicSocketAddress, 0);
+    } else {
+        // Full automatic networking, update both port and IP address
+        sendHeartbeatToMetaverse(publicSocketAddress, publicSocketPort);
+    }
 
     QJsonObject rootObject;
     QJsonObject domainServerObject;
     domainServerObject.insert(PUBLIC_SOCKET_ADDRESS_KEY, publicSocketAddress);
-    domainServerObject.insert(PUBLIC_SOCKET_PORT_KEY, publicSocketPort);
+    if (_automaticNetworkingSetting == FULL_AUTOMATIC_NETWORKING_VALUE) {
+        domainServerObject.insert(PUBLIC_SOCKET_PORT_KEY, publicSocketPort);
+    }
     rootObject.insert(DOMAIN_SERVER_SETTINGS_KEY, domainServerObject);
     QJsonDocument doc(rootObject);
+    qDebug() << "DomainServer::performIPAddressPortUpdate: " << doc;
     _settingsManager.recurseJSONObjectAndOverwriteSettings(rootObject, DomainSettings);
 }
 
@@ -2487,6 +2494,16 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
                 return true;
             }
             auto domainID = domainSetting.toString();
+            qDebug() << connection->parseUrlEncodedForm();
+            auto parsed = connection->parseUrlEncodedForm();
+            if (parsed.contains(PUBLIC_SOCKET_PORT_KEY) || parsed.contains(PUBLIC_SOCKET_ADDRESS_KEY)) {
+                QJsonObject domainServerObject;
+                domainServerObject.insert(PUBLIC_SOCKET_PORT_KEY, parsed[PUBLIC_SOCKET_PORT_KEY]);
+                domainServerObject.insert(PUBLIC_SOCKET_ADDRESS_KEY, parsed[PUBLIC_SOCKET_ADDRESS_KEY]);
+                QJsonObject rootObject;
+                rootObject.insert(DOMAIN_SERVER_SETTINGS_KEY, domainServerObject);
+                _settingsManager.recurseJSONObjectAndOverwriteSettings(rootObject, DomainSettings);
+            }
             return forwardMetaverseAPIRequest(connection, url, "/api/v1/domains/" + domainID, "domain",
                                               { }, { "network_address", "network_port", "label" });
         }  else if (url.path() == URI_API_PLACES) {
