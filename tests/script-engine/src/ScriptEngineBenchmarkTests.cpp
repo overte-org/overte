@@ -29,7 +29,6 @@
 
 #include "NodeList.h"
 #include "../../../libraries/entities/src/EntityScriptingInterface.h"
-//#include "../../../libraries/entities/src/EntityScriptingInterface.h"
 
 QTEST_MAIN(ScriptEngineBenchmarkTests)
 
