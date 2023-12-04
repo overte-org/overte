@@ -81,6 +81,7 @@ GLBackend::CommandCall GLBackend::_commandCalls[Batch::NUM_COMMANDS] =
 
     (&::gpu::gl::GLBackend::do_disableContextViewCorrection),
     (&::gpu::gl::GLBackend::do_restoreContextViewCorrection),
+    (&::gpu::gl::GLBackend::do_setContextMirrorViewCorrection),
     (&::gpu::gl::GLBackend::do_disableContextStereo),
     (&::gpu::gl::GLBackend::do_restoreContextStereo),
 
@@ -617,6 +618,10 @@ void GLBackend::do_disableContextViewCorrection(const Batch& batch, size_t param
 
 void GLBackend::do_restoreContextViewCorrection(const Batch& batch, size_t paramOffset) {
     _transform._viewCorrectionEnabled = true;
+}
+
+void GLBackend::do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) {
+    _transform._mirrorViewCorrection = batch._params[paramOffset + 1]._uint != 0;
 }
 
 void GLBackend::do_disableContextStereo(const Batch& batch, size_t paramOffset) {

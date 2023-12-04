@@ -146,6 +146,7 @@ const GROUPS = [
                 label: "Portal Exit",
                 type: "string",
                 propertyID: "portalExitID",
+                showPropertyRule: { "mirrorMode": "portal" },
             }
         ]
     },

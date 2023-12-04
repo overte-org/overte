@@ -211,6 +211,7 @@ public:
 
     virtual void do_disableContextViewCorrection(const Batch& batch, size_t paramOffset) final;
     virtual void do_restoreContextViewCorrection(const Batch& batch, size_t paramOffset) final;
+    virtual void do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) final;
 
     virtual void do_disableContextStereo(const Batch& batch, size_t paramOffset) final;
     virtual void do_restoreContextStereo(const Batch& batch, size_t paramOffset) final;
@@ -433,6 +434,7 @@ protected:
         Transform _view;
         CameraCorrection _correction;
         bool _viewCorrectionEnabled{ true };
+        bool _mirrorViewCorrection{ false };
 
         Mat4 _projection;
         Vec4i _viewport{ 0, 0, 1, 1 };

@@ -307,6 +307,11 @@ public:
         args->_ignoreItem = portalExitID != Item::INVALID_ITEM_ID ? portalExitID : mirror.id;
         args->_mirrorDepth = _depth;
 
+        gpu::doInBatch("SetupMirrorTask::run", args->_context, [&](gpu::Batch& batch) {
+            bool shouldMirror = _depth % 2 == (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE);
+            batch.setContextMirrorViewCorrection(shouldMirror);
+        });
+
         // Without calculating the bound planes, the mirror will use the same culling frustum as the main camera,
         // which is not what we want here.
         srcViewFrustum.calculate();
@@ -359,6 +364,11 @@ public:
 
         gpu::doInBatch("DrawMirrorTask::run", args->_context, [&](gpu::Batch& batch) {
             args->_batch = &batch;
+
+            if (cachedArgs) {
+                bool shouldMirror = cachedArgs->_mirrorDepth % 2 == (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE);
+                batch.setContextMirrorViewCorrection(shouldMirror);
+            }
 
             batch.setFramebuffer(framebuffer);
             batch.setViewportTransform(args->_viewport);
