@@ -115,7 +115,7 @@ endif()
             self.exe = os.path.join(self.path, 'vcpkg')
             self.bootstrapCmds = [ os.path.join(self.path, 'bootstrap-vcpkg.sh'), '-disableMetrics' ]
             self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/vcpkg-linux_amd64_2023.10.19.tar.xz'
-            self.vcpkgHash = '67e1ae7e00a7e5812790619cccfbd85982094f4b54170c9c39b4546bb3ab34860e7f67c9065ccecd650f3036c3ceeb675753902f3114f6f27d2ee78736574240'
+            self.vcpkgHash = '6c26ff73d6348e121cca47e90d5358587bf83ba22852acb195b76fbf0473070b24512c8fdd3216d26f03515a79c085f239272ef87c7020cc578cc79abbbd338d'
             self.hostTriplet = 'x64-linux'
 
         if self.args.android:
