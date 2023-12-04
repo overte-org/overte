@@ -483,6 +483,7 @@ if (BUILD_CLIENT)
   endif()
 
   option(USE_SIXENSE "Build Interface with sixense library/plugin" OFF)
+  option(USE_NEURON "Build Interface with Neuron library/plugin" OFF)
 endif()
 
 if (BUILD_CLIENT OR BUILD_SERVER)

@@ -31,8 +31,12 @@ if (NOT SERVER_ONLY AND NOT ANDROID)
 
   set(DIR "hifiSpacemouse")
   add_subdirectory(${DIR})
-  set(DIR "hifiNeuron")
-  add_subdirectory(${DIR})
+
+  if (USE_NEURON)
+    set(DIR "hifiNeuron")
+    add_subdirectory(${DIR})
+  endif()
+
   set(DIR "hifiKinect")
   add_subdirectory(${DIR})
 
