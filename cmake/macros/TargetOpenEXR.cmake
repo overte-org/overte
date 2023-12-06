@@ -79,5 +79,11 @@ macro(TARGET_OPENEXR)
         select_library_configurations(OPENEXR)
         target_link_libraries(${TARGET_NAME} ${OPENEXR_LIBRARY})
         target_include_directories(${TARGET_NAME} PUBLIC "${VCPKG_INSTALL_ROOT}/include/Imath")
+
+        # This prevents:
+        # LNK2001	unresolved external symbol imath_half_to_float_table
+        #
+        # Apparently something changed in newer versions.
+        target_compile_definitions(${TARGET_NAME} PUBLIC IMATH_HALF_NO_LOOKUP_TABLE)
     endif()
 endmacro()
