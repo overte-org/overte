@@ -107,7 +107,7 @@ bool ZoneEntityItem::setSubClassProperties(const EntityItemProperties& propertie
     return somethingChanged;
 }
 
-int ZoneEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead, 
+int ZoneEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
                                                 ReadBitstreamToTreeParams& args,
                                                 EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
                                                 bool& somethingChanged) {
@@ -176,6 +176,8 @@ int ZoneEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, 
     READ_ENTITY_PROPERTY(PROP_HAZE_MODE, uint32_t, setHazeMode);
     READ_ENTITY_PROPERTY(PROP_BLOOM_MODE, uint32_t, setBloomMode);
     READ_ENTITY_PROPERTY(PROP_AVATAR_PRIORITY, uint32_t, setAvatarPriority);
+    READ_ENTITY_PROPERTY(PROP_SCREENSHARE, uint32_t, ignoreUint32);
+
 
     return bytesRead;
 }
@@ -206,13 +208,13 @@ EntityPropertyFlags ZoneEntityItem::getEntityProperties(EncodeBitstreamParams& p
     return requestedProperties;
 }
 
-void ZoneEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params, 
+void ZoneEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
                                     EntityTreeElementExtraEncodeDataPointer modelTreeElementExtraEncodeData,
                                     EntityPropertyFlags& requestedProperties,
                                     EntityPropertyFlags& propertyFlags,
                                     EntityPropertyFlags& propertiesDidntFit,
-                                    int& propertyCount, 
-                                    OctreeElement::AppendState& appendState) const { 
+                                    int& propertyCount,
+                                    OctreeElement::AppendState& appendState) const {
 
     bool successPropertyFits = true;
 
@@ -367,7 +369,7 @@ void ZoneEntityItem::setFilterURL(QString url) {
     }
 }
 
-QString ZoneEntityItem::getFilterURL() const { 
+QString ZoneEntityItem::getFilterURL() const {
     QString result;
     withReadLock([&] {
         result = _filterURL;
@@ -375,7 +377,7 @@ QString ZoneEntityItem::getFilterURL() const {
     return result;
 }
 
-QString ZoneEntityItem::getCompoundShapeURL() const { 
+QString ZoneEntityItem::getCompoundShapeURL() const {
     QString result;
     withReadLock([&] {
         result = _compoundShapeURL;
