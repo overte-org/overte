@@ -341,8 +341,8 @@ enum class EntityVersion : PacketVersion {
     ShadowBiasAndDistance,
     TextEntityFonts,
     ScriptServerKinematicMotion,
-    // TODO: This was "ScreenshareZone". Drop it on the next protocol change.
-    DropOnProtocolChange,
+    // This was ScreenshareZone, property was dropped.
+    ScreenshareZoneUnused,
     ZoneOcclusion,
     ModelBlendshapes,
     TransparentWeb,

@@ -57,6 +57,14 @@ public:
     const TonemappingPropertyGroup& getTonemappingProperties() const { return _tonemappingProperties; }
     const AmbientOcclusionPropertyGroup& getAmbientOcclusionProperties() const { return _ambientOcclusionProperties; }
 
+    /**
+     * @brief Backwards compatibility for screenshare and the like
+     * Doesn't do anything.
+     * @param value
+     */
+    void ignoreUint32(uint32_t value) { /* nothing */ };
+
+
     void setUserData(const QString& value) override;
 
     bool keyLightPropertiesChanged() const { return _keyLightPropertiesChanged; }
