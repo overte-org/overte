@@ -128,11 +128,6 @@ const GROUPS = [
                 propertyID: "billboardMode",
             },
             {
-                label: "Render With Zones",
-                type: "multipleZonesSelection",
-                propertyID: "renderWithZones",
-            },
-            {
                 label: "Mirror Mode",
                 type: "dropdown",
                 options: {
@@ -147,6 +142,11 @@ const GROUPS = [
                 type: "string",
                 propertyID: "portalExitID",
                 showPropertyRule: { "mirrorMode": "portal" },
+            },
+            {
+                label: "Render With Zones",
+                type: "multipleZonesSelection",
+                propertyID: "renderWithZones",
             }
         ]
     },

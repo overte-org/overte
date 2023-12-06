@@ -113,7 +113,7 @@ void GLBackend::TransformStageState::preUpdate(size_t commandIndex, const Stereo
             Transform result;
             glm::mat4 correction = _correction.correctionInverse;
             if (_mirrorViewCorrection) {
-                correction = glm::scale(glm::mat4(), glm::vec3(-1.0f, 1.0f, 1.0f)) * correction;
+                correction = correction * glm::scale(glm::mat4(), glm::vec3(-1.0f, 1.0f, 1.0f));
             }
             _view.mult(result, _view, correction);
             if (_skybox) {
