@@ -45,21 +45,6 @@ private:
     bool _needsHeroCheck { false };
     bool _needsIdentityUpdate { false };
 
-    bool generateFSTHash();
-    bool validateFSTHash(const QString& publicKey) const;
-    QByteArray canonicalJson(const QString fstFile);
-    void requestCurrentOwnership();
-    void sendOwnerChallenge();
-
-    static const QString VERIFY_FAIL_MODEL;
-
-private slots:
-    void fstRequestComplete();
-    void ownerRequestComplete();
-    void challengeTimeout();
-
- signals:
-    void startChallengeTimer();
 };
 
 using MixerAvatarSharedPointer = std::shared_ptr<MixerAvatar>;
