@@ -29,18 +29,6 @@ public:
     bool needsIdentityUpdate() const { return _needsIdentityUpdate; }
     void setNeedsIdentityUpdate(bool value = true) { _needsIdentityUpdate = value; }
 
-    void processCertifyEvents();
-    void processChallengeResponse(ReceivedMessage& response);
-
-    void stopChallengeTimer();
-
-    // Avatar certification/verification:
-    enum VerifyState {
-        nonCertified, requestingFST, receivedFST, staticValidation, requestingOwner, ownerResponse,
-        challengeClient, verified, verificationFailed, verificationSucceeded, error
-    };
-    Q_ENUM(VerifyState)
-
 private:
     bool _needsHeroCheck { false };
     bool _needsIdentityUpdate { false };
