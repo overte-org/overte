@@ -296,7 +296,10 @@ enum EntityPropertyList {
     PROP_BLOOM_MODE = PROP_DERIVED_32,
     // Avatar priority
     PROP_AVATAR_PRIORITY = PROP_DERIVED_33,
-    
+
+    // Screen-sharing, obsolete.
+    PROP_SCREENSHARE = PROP_DERIVED_34,
+
     // Polyvox
     PROP_VOXEL_VOLUME_SIZE = PROP_DERIVED_0,
     PROP_VOXEL_DATA = PROP_DERIVED_1,

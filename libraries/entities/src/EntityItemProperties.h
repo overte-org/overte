@@ -102,7 +102,7 @@ EntityPropertyInfo makePropertyInfo(EntityPropertyList p, typename std::enable_i
 /// A collection of properties of an entity item used in the scripting API. Translates between the actual properties of an
 /// entity and a JavaScript style hash/ScriptValue storing a set of properties. Used in scripting to set/get the complete
 /// set of entity item properties via JavaScript hashes/QScriptValues
-/// all units for SI units (meter, second, radian, etc) 
+/// all units for SI units (meter, second, radian, etc)
 class EntityItemProperties {
     // TODO: consider removing these friend relationship and use public methods
     friend class EntityItem;
@@ -124,7 +124,7 @@ class EntityItemProperties {
     friend class MaterialEntityItem;
 public:
     static bool blobToProperties(ScriptEngine& scriptEngine, const QByteArray& blob, EntityItemProperties& properties);
-    static void propertiesToBlob(ScriptEngine& scriptEngine, const QUuid& myAvatarID, const EntityItemProperties& properties, 
+    static void propertiesToBlob(ScriptEngine& scriptEngine, const QUuid& myAvatarID, const EntityItemProperties& properties,
         QByteArray& blob, bool allProperties = false);
 
     EntityItemProperties(EntityPropertyFlags desiredProperties = EntityPropertyFlags());
@@ -426,10 +426,10 @@ public:
 
     const glm::vec3& getNaturalDimensions() const { return _naturalDimensions; }
     void setNaturalDimensions(const glm::vec3& value) { _naturalDimensions = value; }
-    
+
     const glm::vec3& getNaturalPosition() const { return _naturalPosition; }
     void calculateNaturalPosition(const glm::vec3& min, const glm::vec3& max);
-    
+
     const QVariantMap& getTextureNames() const { return _textureNames; }
     void setTextureNames(const QVariantMap& value) { _textureNames = value; }
 
