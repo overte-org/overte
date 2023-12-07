@@ -23,6 +23,8 @@ if (WIN32)
     PATCH_COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/LibOVRCMakeLists.txt" <SOURCE_DIR>/CMakeLists.txt
     LOG_DOWNLOAD 1
     DOWNLOAD_EXTRACT_TIMESTAMP 1
+    BUILD_BYPRODUCTS
+      "project/Lib/LibOVR.lib"
   )
 
   ExternalProject_Get_Property(${EXTERNAL_NAME} SOURCE_DIR)
