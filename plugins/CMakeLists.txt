@@ -22,7 +22,8 @@ if (NOT SERVER_ONLY AND NOT ANDROID)
       set(DIR "oculusLegacy")
       add_subdirectory(${DIR})
     endif()
-    
+
+    # Note: OpenVR is a Steam thing, which is different from OVR, which is an Oculus SDK component.
     set(DIR "openvr")
     add_subdirectory(${DIR})    
   endif()
