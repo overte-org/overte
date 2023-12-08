@@ -469,7 +469,7 @@ Menu::Menu() {
             newMaxTextureMemory = MB_TO_BYTES(4096);
         } else if (MenuOption::RenderMaxTexture6144MB == text) {
             newMaxTextureMemory = MB_TO_BYTES(6144);
-        } else if (MenuOption::RenderMaxTexture8192MB == text) {
+        } else if (MenuOption::RenderMaxTexture1024MB == text) {
             newMaxTextureMemory = MB_TO_BYTES(8192);
         } else if (MenuOption::RenderMaxTexture10240MB == text) {
             newMaxTextureMemory = MB_TO_BYTES(10240);
