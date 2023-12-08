@@ -351,7 +351,7 @@ add_definitions(-DGLM_FORCE_CTOR_INIT)
 
 if (WIN32)
     # Deal with fakakta Visual Studo 2017 bug
-    add_definitions(-DQT_NO_FLOAT16_OPERATORS)
+    add_definitions(-DQT_NO_FLOAT16_OPERATORS -DWIN32)
 endif()
 
 if (HIFI_USE_OPTIMIZED_IK)
