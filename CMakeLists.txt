@@ -15,6 +15,9 @@ endif()
 # 3.14 is the minimum version that supports symlinks on Windows
 cmake_minimum_required(VERSION 3.14)
 
+# This should allow using long paths on Windows
+SET(CMAKE_NINJA_FORCE_RESPONSE_FILE 1 CACHE INTERNAL "")
+
 # Passing of variables to vcpkg
 #
 # vcpkg runs cmake scripts in an isolated environment, see this for details:
