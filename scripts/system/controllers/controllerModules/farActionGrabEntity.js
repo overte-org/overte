@@ -22,6 +22,8 @@ Script.include("/~/system/libraries/controllers.js");
 
 (function() {
 
+    var controllerStandard = Controller.Standard;
+
     var MARGIN = 25;
 
     function TargetObject(entityID, entityProps) {
@@ -104,7 +106,7 @@ Script.include("/~/system/libraries/controllers.js");
 
 
         this.handToController = function() {
-            return (this.hand === RIGHT_HAND) ? Controller.Standard.RightHand : Controller.Standard.LeftHand;
+            return (this.hand === RIGHT_HAND) ? controllerStandard.RightHand : controllerStandard.LeftHand;
         };
 
         this.distanceGrabTimescale = function(mass, distance) {

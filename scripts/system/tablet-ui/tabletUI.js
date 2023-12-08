@@ -17,6 +17,8 @@
    MyAvatar, Menu, AvatarInputs, Vec3, cleanUpOldMaterialEntities */
 
 (function() { // BEGIN LOCAL_SCOPE
+    var controllerStandard = Controller.Standard;
+
     var tabletRezzed = false;
     var activeHand = null;
     var DEFAULT_WIDTH = 0.4375;
@@ -292,27 +294,27 @@
     var clickMapping = Controller.newMapping('tabletToggle-click');
     var wantsMenu = 0;
     clickMapping.from(function () { return wantsMenu; }).to(Controller.Actions.ContextMenu);
-    clickMapping.from(Controller.Standard.RightSecondaryThumb).peek().when(Controller.Hardware.Application.LeftHandDominant).to(function (clicked) {
+    clickMapping.from(controllerStandard.RightSecondaryThumb).peek().when(Controller.Hardware.Application.LeftHandDominant).to(function (clicked) {
     if (clicked) {
-        //activeHudPoint2d(Controller.Standard.RightHand);
-        Messages.sendLocalMessage("toggleHand", Controller.Standard.RightHand);
+        //activeHudPoint2d(controllerStandard.RightHand);
+        Messages.sendLocalMessage("toggleHand", controllerStandard.RightHand);
     }
         wantsMenu = clicked;
     });
     
-    clickMapping.from(Controller.Standard.LeftSecondaryThumb).peek().when(Controller.Hardware.Application.RightHandDominant).to(function (clicked) {
+    clickMapping.from(controllerStandard.LeftSecondaryThumb).peek().when(Controller.Hardware.Application.RightHandDominant).to(function (clicked) {
         if (clicked) {
-            //activeHudPoint2d(Controller.Standard.LeftHand);
-            Messages.sendLocalMessage("toggleHand", Controller.Standard.LeftHand);
+            //activeHudPoint2d(controllerStandard.LeftHand);
+            Messages.sendLocalMessage("toggleHand", controllerStandard.LeftHand);
         }
         wantsMenu = clicked;
     });
 
-    clickMapping.from(Controller.Standard.Start).peek().to(function (clicked) {
+    clickMapping.from(controllerStandard.Start).peek().to(function (clicked) {
     if (clicked) {
         //activeHudPoint2dGamePad();
         var noHands = -1;
-        Messages.sendLocalMessage("toggleHand", Controller.Standard.LeftHand);
+        Messages.sendLocalMessage("toggleHand", controllerStandard.LeftHand);
     }
 
         wantsMenu = clicked;
