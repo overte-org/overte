@@ -190,7 +190,7 @@ Script.include("/~/system/libraries/controllers.js");
             var worldToSensorMat = Mat4.inverse(MyAvatar.getSensorToWorldMatrix());
             var roomControllerPosition = Mat4.transformPoint(worldToSensorMat, worldControllerPosition);
 
-            var grabbedProperties = Entities.getEntityProperties(this.grabbedThingID, DISPATCHER_PROPERTIES);
+            var grabbedProperties = Entities.getEntityProperties(this.grabbedThingID, "position");
             var now = Date.now();
             var deltaObjectTime = (now - this.currentObjectTime) / MSECS_PER_SEC; // convert to seconds
             this.currentObjectTime = now;
@@ -306,7 +306,7 @@ Script.include("/~/system/libraries/controllers.js");
 
         this.notPointingAtEntity = function(controllerData) {
             var intersection = controllerData.rayPicks[this.hand];
-            var entityProperty = Entities.getEntityProperties(intersection.objectID, DISPATCHER_PROPERTIES);
+            var entityProperty = Entities.getEntityProperties(intersection.objectID, "type");
             var entityType = entityProperty.type;
             var hudRayPick = controllerData.hudRayPicks[this.hand];
             var point2d = this.calculateNewReticlePosition(hudRayPick.intersection);
@@ -341,7 +341,7 @@ Script.include("/~/system/libraries/controllers.js");
             var worldControllerPosition = controllerLocation.position;
             var worldControllerRotation = controllerLocation.orientation;
 
-            var grabbedProperties = Entities.getEntityProperties(intersection.objectID, DISPATCHER_PROPERTIES);
+            var grabbedProperties = Entities.getEntityProperties(intersection.objectID, "position");
             this.currentObjectPosition = grabbedProperties.position;
             this.grabRadius = intersection.distance;
 
@@ -355,7 +355,7 @@ Script.include("/~/system/libraries/controllers.js");
         };
 
         this.targetIsNull = function() {
-            var properties = Entities.getEntityProperties(this.grabbedThingID, DISPATCHER_PROPERTIES);
+            var properties = Entities.getEntityProperties(this.grabbedThingID, "type");
             if (Object.keys(properties).length === 0 && this.distanceHolding) {
                 return true;
             }
