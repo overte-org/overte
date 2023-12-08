@@ -25,6 +25,7 @@ if (WIN32)
     DOWNLOAD_EXTRACT_TIMESTAMP 1
     BUILD_BYPRODUCTS
       "project/Lib/LibOVR.lib"
+      "project/Lib/LibOVRd.lib"
   )
 
   ExternalProject_Get_Property(${EXTERNAL_NAME} SOURCE_DIR)
