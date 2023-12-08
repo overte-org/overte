@@ -68,15 +68,13 @@ public:
      * Stops and unloads the current script.
      * <p><strong>Warning:</strong> If an assignment client script, the script gets restarted after stopping.</p>
      * @function Script.stop
-     * @param {boolean} [marshal=false] - Marshal.
-     *     <p class="important">Deprecated: This parameter is deprecated and will be removed.</p>
      * @example <caption>Stop a script after 5s.</caption>
      * Script.setInterval(function () {
      *     print("Hello");
      * }, 1000);
      *
      * Script.setTimeout(function () {
-     *     Script.stop(true);
+     *     Script.stop();
      * }, 5000);
      */
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -147,13 +145,7 @@ public:
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // NOTE - these are intended to be public interfaces available to scripts
 
-    /*@jsdoc
-     * @function Script.formatExecption
-     * @param {object} exception - Exception.
-     * @param {boolean} inludeExtendeDetails - Include extended details.
-     * @returns {string} String.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE QString formatException(const ScriptValue& exception, bool includeExtendedDetails) { return _manager->formatException(exception, includeExtendedDetails); }
 
     /*@jsdoc
@@ -263,11 +255,7 @@ public:
      */
     Q_INVOKABLE ScriptValue require(const QString& moduleId) { return _manager->require(moduleId); }
 
-    /*@jsdoc
-     * @function Script.resetModuleCache
-     * @param {boolean} [deleteScriptCache=false] - Delete script cache.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE void resetModuleCache(bool deleteScriptCache = false) { _manager->resetModuleCache(deleteScriptCache);}
 
     /*@jsdoc
@@ -405,28 +393,13 @@ public:
      */
     Q_INVOKABLE void logBacktrace(const QString &title) { _manager->logBacktrace(title); }
 
-    /*@jsdoc
-     * @function Script.loadEntityScript
-     * @param {Uuid} entityID - Entity ID.
-     * @param {string} script - Script.
-     * @param {boolean} forceRedownload - Force re-download.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE void loadEntityScript(const EntityItemID& entityID, const QString& entityScript, bool forceRedownload) { _manager->loadEntityScript(entityID, entityScript, forceRedownload); }
 
-    /*@jsdoc
-     * @function Script.unloadEntityScript
-     * @param {Uuid} entityID - Entity ID.
-     * @param {boolean} [shouldRemoveFromMap=false] - Should remove from map.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE void unloadEntityScript(const EntityItemID& entityID, bool shouldRemoveFromMap = false) { _manager->unloadEntityScript(entityID, shouldRemoveFromMap); }
 
-    /*@jsdoc
-     * @function Script.unloadAllEntityScripts
-     * @param {boolean} [blockingCall=false] - Wait for completion if call moved to another thread.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE void unloadAllEntityScripts(bool blockingCall = false) { _manager->unloadAllEntityScripts(blockingCall); }
 
     /*@jsdoc
@@ -441,32 +414,13 @@ public:
                                             const QStringList& params = QStringList(),
                                             const QUuid& remoteCallerID = QUuid()) { _manager->callEntityScriptMethod(entityID, methodName, params, remoteCallerID); }
 
-    /*@jsdoc
-     * Calls a method in an entity script.
-     * @function Script.callEntityScriptMethod
-     * @param {Uuid} entityID - Entity ID.
-     * @param {string} methodName - Method name.
-     * @param {PointerEvent} event - Pointer event.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE void callEntityScriptMethod(const EntityItemID& entityID, const QString& methodName, const PointerEvent& event) { _manager->callEntityScriptMethod(entityID, methodName, event); }
 
-    /*@jsdoc
-     * Calls a method in an entity script.
-     * @function Script.callEntityScriptMethod
-     * @param {Uuid} entityID - Entity ID.
-     * @param {string} methodName - Method name.
-     * @param {Uuid} otherID - Other entity ID.
-     * @param {Collision} collision - Collision.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE void callEntityScriptMethod(const EntityItemID& entityID, const QString& methodName, const EntityItemID& otherID, const Collision& collision) { _manager->callEntityScriptMethod(entityID, methodName, otherID, collision);}
 
-    /*@jsdoc
-     * @function Script.generateUUID
-     * @returns {Uuid} A new UUID.
-     * @deprecated This function is deprecated and will be removed. Use {@link Uuid(0).generate|Uuid.generate} instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE QUuid generateUUID() { return QUuid::createUuid(); }
 
     /*@jsdoc
@@ -559,20 +513,10 @@ public:
 
 signals:
 
-    /*@jsdoc
-     * @function Script.scriptLoaded
-     * @param {string} filename - File name.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void scriptLoaded(const QString& scriptFilename);
 
-    /*@jsdoc
-     * @function Script.errorLoadingScript
-     * @param {string} filename - File name.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void errorLoadingScript(const QString& scriptFilename);
 
     /*@jsdoc
@@ -651,29 +595,12 @@ signals:
      */
     void runningStateChanged();
 
-    /*@jsdoc
-     * @function Script.clearDebugWindow
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void clearDebugWindow();
 
-    /*@jsdoc
-     * @function Script.loadScript
-     * @param {string} scriptName - Script name.
-     * @param {boolean} isUserLoaded - Is user loaded.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void loadScript(const QString& scriptName, bool isUserLoaded);
 
-    /*@jsdoc
-     * @function Script.reloadScript
-     * @param {string} scriptName - Script name.
-     * @param {boolean} isUserLoaded - Is user loaded.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
     void reloadScript(const QString& scriptName, bool isUserLoaded);
 
     /*@jsdoc
@@ -683,13 +610,7 @@ signals:
      */
     void doneRunning();
 
-    /*@jsdoc
-     * @function Script.entityScriptDetailsUpdated
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-    // Emitted when an entity script is added or removed, or when the status of an entity
-    // script is updated (goes from RUNNING to ERROR_RUNNING_SCRIPT, for example)
+    // TODO: Deprecated by documentation, please review for accuracy
     void entityScriptDetailsUpdated();
 
     /*@jsdoc
@@ -734,39 +655,10 @@ signals:
     void unhandledException(const ScriptValue& exception);
 
 protected:
-    /*@jsdoc
-     * @function Script.executeOnScriptThread
-     * @param {function} function - Function.
-     * @param {ConnectionType} [type=2] - Connection type.
-     * @deprecated This function is deprecated and will be removed.
-     */
-    // V8TODO: Nothing seems to be using this, and it generates:
-    // hifi.scriptengine: Parameter  1 in method  ScriptManagerScriptingInterface :: "executeOnScriptThread"  is of type QMetaType::UnknownType
-    // so removing for now.
-    //
-    // Q_INVOKABLE void executeOnScriptThread(std::function<void()> function, const Qt::ConnectionType& type = Qt::QueuedConnection ) { _manager->executeOnScriptThread(function, type);}
-
-    /*@jsdoc
-     * @function Script._requireResolve
-     * @param {string} module - Module.
-     * @param {string} [relativeTo=""] - Relative to.
-     * @returns {string} Result.
-     * @deprecated This function is deprecated and will be removed.
-     */
-    // note: this is not meant to be called directly, but just to have QMetaObject take care of wiring it up in general;
-    //   then inside of init() we just have to do "Script.require.resolve = Script._requireResolve;"
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE QString _requireResolve(const QString& moduleId, const QString& relativeTo = QString()) { return _manager->_requireResolve(moduleId, relativeTo); }
 
-    /*@jsdoc
-     * @function Script.entityScriptContentAvailable
-     * @param {Uuid} entityID - Entity ID.
-     * @param {string} scriptOrURL - Path.
-     * @param {string} contents - Contents.
-     * @param {boolean} isURL - Is a URL.
-     * @param {boolean} success - Success.
-     * @param {string} status - Status.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE void entityScriptContentAvailable(const EntityItemID& entityID, const QString& scriptOrURL, const QString& contents, bool isURL, bool success, const QString& status)
         { _manager->entityScriptContentAvailable(entityID, scriptOrURL, contents, isURL, success, status); }
 

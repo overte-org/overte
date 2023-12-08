@@ -204,13 +204,7 @@ public:
      */
     Q_INVOKABLE QStringList getJointNames() const;
 
-    /*@jsdoc
-     * Gets information about the models currently attached to the avatar.
-     * @function ScriptAvatar.getAttachmentData
-     * @returns {AttachmentData[]} Information about all models attached to the avatar, or <code>[]</code> if the avatar data
-     *     aren't available.
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE QVector<AttachmentData> getAttachmentData() const;
 
 #if DEV_BUILD || PR_BUILD

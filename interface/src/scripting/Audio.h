@@ -41,7 +41,7 @@ class Audio : public AudioScriptingInterface, protected ReadWriteLockable {
      * @hifi-server-entity
      * @hifi-assignment-client
      *
-     * @property {boolean} muted - <code>true</code> if the audio input is muted for the current user context (desktop or HMD), 
+     * @property {boolean} muted - <code>true</code> if the audio input is muted for the current user context (desktop or HMD),
      *     otherwise <code>false</code>.
      * @property {boolean} mutedDesktop - <code>true</code> if desktop audio input is muted, otherwise <code>false</code>.
      * @property {boolean} mutedHMD - <code>true</code> if the HMD input is muted, otherwise <code>false</code>.
@@ -50,48 +50,46 @@ class Audio : public AudioScriptingInterface, protected ReadWriteLockable {
      * @property {boolean} noiseReduction - <code>true</code> if noise reduction is enabled, otherwise <code>false</code>. When
      *     enabled, the input audio signal is blocked (fully attenuated) when it falls below an adaptive threshold set just
      *     above the noise floor.
-     * @property {boolean} noiseReductionAutomatic - <code>true</code> if audio input noise reduction automatic mode is enabled, 
+     * @property {boolean} noiseReductionAutomatic - <code>true</code> if audio input noise reduction automatic mode is enabled,
      *     <code>false</code> if in manual mode. Manual mode allows you to use <code>Audio.noiseReductionThreshold</code>
      *     to set a manual sensitivity for the noise gate.
-     * @property {number} noiseReductionThreshold - Sets the noise gate threshold before your mic audio is transmitted. 
+     * @property {number} noiseReductionThreshold - Sets the noise gate threshold before your mic audio is transmitted.
      *     (Applies only if <code>Audio.noiseReductionAutomatic</code> is <code>false</code>.)
-     * @property {number} inputVolume - Adjusts the volume of the input audio, range <code>0.0</code> &ndash; <code>1.0</code>. 
-     *     If set to a value, the resulting value depends on the input device: for example, the volume can't be changed on some 
+     * @property {number} inputVolume - Adjusts the volume of the input audio, range <code>0.0</code> &ndash; <code>1.0</code>.
+     *     If set to a value, the resulting value depends on the input device: for example, the volume can't be changed on some
      *     devices, and others might only support values of <code>0.0</code> and <code>1.0</code>.
      * @property {number} inputLevel - The loudness of the audio input, range <code>0.0</code> (no sound) &ndash;
      *     <code>1.0</code> (the onset of clipping). <em>Read-only.</em>
      * @property {boolean} clipping - <code>true</code> if the audio input is clipping, otherwise <code>false</code>.
      * @property {string} context - The current context of the audio: either <code>"Desktop"</code> or <code>"HMD"</code>.
      *     <em>Read-only.</em>
-     * @property {object} devices - <em>Read-only.</em>
-     *     <p class="important">Deprecated: This property is deprecated and will be removed.
-     * @property {boolean} pushToTalk - <code>true</code> if push-to-talk is enabled for the current user context (desktop or 
+     * @property {boolean} pushToTalk - <code>true</code> if push-to-talk is enabled for the current user context (desktop or
      *     HMD), otherwise <code>false</code>.
-     * @property {boolean} pushToTalkDesktop - <code>true</code> if desktop push-to-talk is enabled, otherwise 
+     * @property {boolean} pushToTalkDesktop - <code>true</code> if desktop push-to-talk is enabled, otherwise
      *     <code>false</code>.
      * @property {boolean} pushToTalkHMD - <code>true</code> if HMD push-to-talk is enabled, otherwise <code>false</code>.
-     * @property {boolean} pushingToTalk - <code>true</code> if the user is currently pushing-to-talk, otherwise 
+     * @property {boolean} pushingToTalk - <code>true</code> if the user is currently pushing-to-talk, otherwise
      *     <code>false</code>.
-     
-     * @property {number} avatarGain - The gain (relative volume in dB) that avatars' voices are played at. This gain is used 
+
+     * @property {number} avatarGain - The gain (relative volume in dB) that avatars' voices are played at. This gain is used
      *     at the server.
-     * @property {number} localInjectorGain - The gain (relative volume in dB) that local injectors (local environment sounds) 
+     * @property {number} localInjectorGain - The gain (relative volume in dB) that local injectors (local environment sounds)
      *    are played at.
-     * @property {number} serverInjectorGain - The gain (relative volume in dB) that server injectors (server environment 
+     * @property {number} serverInjectorGain - The gain (relative volume in dB) that server injectors (server environment
      *     sounds) are played at. This gain is used at the server.
      * @property {number} systemInjectorGain - The gain (relative volume in dB) that system sounds are played at.
-     * @property {number} pushingToTalkOutputGainDesktop - The gain (relative volume in dB) that all sounds are played at when 
+     * @property {number} pushingToTalkOutputGainDesktop - The gain (relative volume in dB) that all sounds are played at when
      *     the user is holding the push-to-talk key in desktop mode.
      * @property {boolean} acousticEchoCancellation - <code>true</code> if acoustic echo cancellation is enabled, otherwise
-     *     <code>false</code>. When enabled, sound from the audio output is suppressed when it echos back to the input audio 
+     *     <code>false</code>. When enabled, sound from the audio output is suppressed when it echos back to the input audio
      *     signal.
      *
      * @comment The following properties are from AudioScriptingInterface.h.
      * @property {boolean} isStereoInput - <code>true</code> if the input audio is being used in stereo, otherwise
      *     <code>false</code>. Some devices do not support stereo, in which case the value is always <code>false</code>.
-     * @property {boolean} isSoloing - <code>true</code> if currently audio soloing, i.e., playing audio from only specific 
+     * @property {boolean} isSoloing - <code>true</code> if currently audio soloing, i.e., playing audio from only specific
      *     avatars. <em>Read-only.</em>
-     * @property {Uuid[]} soloList - The list of currently soloed avatar IDs. Empty list if not currently audio soloing. 
+     * @property {Uuid[]} soloList - The list of currently soloed avatar IDs. Empty list if not currently audio soloing.
      *     <em>Read-only.</em>
      */
 
@@ -161,20 +159,10 @@ public:
     void saveData();
     void loadData();
 
-    /*@jsdoc
-     * @function Audio.setInputDevice
-     * @param {object} device - Device.
-     * @param {boolean} isHMD - Is HMD.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE void setInputDevice(const HifiAudioDeviceInfo& device, bool isHMD);
 
-    /*@jsdoc
-     * @function Audio.setOutputDevice
-     * @param {object} device - Device.
-     * @param {boolean} isHMD - Is HMD.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE void setOutputDevice(const HifiAudioDeviceInfo& device, bool isHMD);
 
     /*@jsdoc
@@ -278,7 +266,7 @@ public:
      * @returns {number} The injector gain (dB) in the client.
     */
     Q_INVOKABLE float getSystemInjectorGain();
-    
+
     /*@jsdoc
      * Sets the noise gate threshold before your mic audio is transmitted. (Applies only if <code>Audio.noiseReductionAutomatic</code> is <code>false</code>.)
      * @function Audio.setNoiseReductionThreshold
@@ -342,18 +330,13 @@ public:
     Q_INVOKABLE float getPushingToTalkOutputGainDesktop();
 
 signals:
-
-    /*@jsdoc
-     * @function Audio.nop
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void nop();
 
     /*@jsdoc
      * Triggered when the audio input is muted or unmuted for the current context (desktop or HMD).
      * @function Audio.mutedChanged
-     * @param {boolean} isMuted - <code>true</code> if the audio input is muted for the current context (desktop or HMD), 
+     * @param {boolean} isMuted - <code>true</code> if the audio input is muted for the current context (desktop or HMD),
      *     otherwise <code>false</code>.
      * @returns {Signal}
      * @example <caption>Report when audio input is muted or unmuted</caption>
@@ -418,7 +401,7 @@ signals:
      * @returns {Signal}
      */
     void noiseReductionChanged(bool isEnabled);
-    
+
     /*@jsdoc
      * Triggered when the audio input noise reduction mode is changed.
      * @function Audio.noiseReductionAutomaticChanged
@@ -426,7 +409,7 @@ signals:
      * @returns {Signal}
      */
     void noiseReductionAutomaticChanged(bool isEnabled);
-    
+
     /*@jsdoc
      * Triggered when the audio input noise reduction threshold is changed.
      * @function Audio.noiseReductionThresholdChanged
@@ -537,11 +520,7 @@ signals:
     void pushingToTalkOutputGainDesktopChanged(float gain);
 
 public slots:
-
-    /*@jsdoc
-     * @function Audio.onContextChanged
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void onContextChanged();
 
     void handlePushedToTalk(bool enabled);

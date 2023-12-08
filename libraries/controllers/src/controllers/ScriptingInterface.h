@@ -123,12 +123,12 @@ namespace controller {
          * // ["Standard","Keyboard","LeapMotion","OculusTouch","Application","Actions"] or similar.
          */
         Q_INVOKABLE QVector<QString> getDeviceNames();
-        
+
         /*@jsdoc
          * Finds the ID of an action from its name.
          * @function Controller.findAction
          * @param {string} actionName - The name of the action: one of the {@link Controller.Actions} property names.
-         * @returns {number} The integer ID of the action if found, otherwise <code>4095</code>. Note that this value is not 
+         * @returns {number} The integer ID of the action if found, otherwise <code>4095</code>. Note that this value is not
          * the same as the value of the relevant {@link Controller.Actions} property.
          * @example <caption>Get the ID of the "TranslateY" action. Compare with the property value.</caption>
          * var actionID = Controller.findAction("TranslateY");
@@ -149,10 +149,10 @@ namespace controller {
         Q_INVOKABLE QVector<QString> getActionNames() const;
 
         /*@jsdoc
-         * Gets the value of a controller button or axis output. Note: Also gets the value of a controller axis output. 
+         * Gets the value of a controller button or axis output. Note: Also gets the value of a controller axis output.
          * @function Controller.getValue
          * @param {number} source - The {@link Controller.Standard} or {@link Controller.Hardware} item.
-         * @returns {number} The current value of the controller item output if <code>source</code> is valid, otherwise 
+         * @returns {number} The current value of the controller item output if <code>source</code> is valid, otherwise
          *     <code>0</code>.
          * @example <caption>Report the Standard and Vive right trigger values.</caption>
          * var triggerValue = Controller.getValue(Controller.Standard.RT);
@@ -171,7 +171,7 @@ namespace controller {
          * Gets the value of a controller axis output. Note: Also gets the value of a controller button output.
          * @function Controller.getAxisValue
          * @param {number} source - The {@link Controller.Standard} or {@link Controller.Hardware} item.
-         * @returns {number} The current value of the controller item output if <code>source</code> is valid, otherwise 
+         * @returns {number} The current value of the controller item output if <code>source</code> is valid, otherwise
          *     <code>0</code>.
          */
         // TODO: getAxisValue() should use const int& parameter? Or others shouldn't?
@@ -181,7 +181,7 @@ namespace controller {
          * Gets the value of a controller pose output.
          * @function Controller.getPoseValue
          * @param {number} source - The {@link Controller.Standard} or {@link Controller.Hardware} pose output.
-         * @returns {Pose} The current value of the controller pose output if <code>source</code> is a pose output, otherwise 
+         * @returns {Pose} The current value of the controller pose output if <code>source</code> is a pose output, otherwise
          *     an invalid pose with <code>Pose.valid == false</code>.
          * @exammple <caption>Report the right hand's pose.</caption>
          * var pose = Controller.getPoseValue(Controller.Standard.RightHand);
@@ -250,11 +250,11 @@ namespace controller {
         Q_INVOKABLE bool triggerShortHapticPulseOnDevice(unsigned int device, float strength, uint16_t index = 2) const;
 
         /*@jsdoc
-         * Creates a new controller mapping. Routes can then be added to the mapping using {@link MappingObject} methods and 
-         * routed to <code>Standard</code> controls, <code>Actions</code>, or script functions using {@link RouteObject} 
+         * Creates a new controller mapping. Routes can then be added to the mapping using {@link MappingObject} methods and
+         * routed to <code>Standard</code> controls, <code>Actions</code>, or script functions using {@link RouteObject}
          * methods. The mapping can then be enabled using {@link Controller.enableMapping|enableMapping} for it to take effect.
          * @function Controller.newMapping
-         * @param {string} [mappingName=Uuid.generate()] - A unique name for the mapping. If not specified a new UUID generated 
+         * @param {string} [mappingName=Uuid.generate()] - A unique name for the mapping. If not specified a new UUID generated
          *     by {@link Uuid(0).generate|Uuid.generate} is used.
          * @returns {MappingObject} A controller mapping object.
          * @example <caption>Create a simple mapping that makes the right trigger move your avatar up.</caption>
@@ -286,7 +286,7 @@ namespace controller {
         Q_INVOKABLE void disableMapping(const QString& mappingName) { enableMapping(mappingName, false); }
 
         /*@jsdoc
-         * Creates a new controller mapping from a {@link Controller.MappingJSON|MappingJSON} string. Use 
+         * Creates a new controller mapping from a {@link Controller.MappingJSON|MappingJSON} string. Use
          * {@link Controller.enableMapping|enableMapping} to enable the mapping for it to take effect.
          * @function Controller.parseMapping
          * @param {string} jsonString - A JSON string of the {@link Controller.MappingJSON|MappingJSON}.
@@ -309,9 +309,9 @@ namespace controller {
         Q_INVOKABLE QObject* parseMapping(const QString& json);
 
         /*@jsdoc
-         * Creates a new controller mapping from a {@link Controller.MappingJSON|MappingJSON} JSON file at a URL. Use 
+         * Creates a new controller mapping from a {@link Controller.MappingJSON|MappingJSON} JSON file at a URL. Use
          * {@link Controller.enableMapping|enableMapping} to enable the mapping for it to take effect.
-         * <p><strong>Warning:</strong> This function is not yet implemented; it doesn't load a mapping and just returns 
+         * <p><strong>Warning:</strong> This function is not yet implemented; it doesn't load a mapping and just returns
          * <code>null</code>.
          * @function Controller.loadMapping
          * @param {string} jsonURL - The URL the {@link Controller.MappingJSON|MappingJSON} JSON file.
@@ -321,7 +321,7 @@ namespace controller {
 
 
         /*@jsdoc
-         * Gets the {@link Controller.Hardware} property tree. Calling this function is the same as using the {@link Controller} 
+         * Gets the {@link Controller.Hardware} property tree. Calling this function is the same as using the {@link Controller}
          * property, <code>Controller.Hardware</code>.
          * @function Controller.getHardware
          * @returns {Controller.Hardware} The {@link Controller.Hardware} property tree.
@@ -329,7 +329,7 @@ namespace controller {
         Q_INVOKABLE const QVariantMap getHardware() { return _hardware; }
 
         /*@jsdoc
-         * Gets the {@link Controller.Actions} property tree. Calling this function is the same as using the {@link Controller} 
+         * Gets the {@link Controller.Actions} property tree. Calling this function is the same as using the {@link Controller}
          * property, <code>Controller.Actions</code>.
          * @function Controller.getActions
          * @returns {Controller.Actions} The {@link Controller.Actions} property tree.
@@ -337,7 +337,7 @@ namespace controller {
         Q_INVOKABLE const QVariantMap getActions() { return _actions; }  //undefined
 
         /*@jsdoc
-         * Gets the {@link Controller.Standard} property tree. Calling this function is the same as using the {@link Controller} 
+         * Gets the {@link Controller.Standard} property tree. Calling this function is the same as using the {@link Controller}
          * property, <code>Controller.Standard</code>.
          * @function Controller.getStandard
          * @returns {Controller.Standard} The {@link Controller.Standard} property tree.
@@ -372,10 +372,10 @@ namespace controller {
         Q_INVOKABLE void stopInputRecording();
 
         /*@jsdoc
-         * Plays back the current recording from the beginning. The current recording may have been recorded by 
-         * {@link Controller.startInputRecording|startInputRecording} and 
-         * {@link Controller.stopInputRecording|stopInputRecording}, or loaded by 
-         * {@link Controller.loadInputRecording|loadInputRecording}. Playback repeats in a loop until 
+         * Plays back the current recording from the beginning. The current recording may have been recorded by
+         * {@link Controller.startInputRecording|startInputRecording} and
+         * {@link Controller.stopInputRecording|stopInputRecording}, or loaded by
+         * {@link Controller.loadInputRecording|loadInputRecording}. Playback repeats in a loop until
          * {@link Controller.stopInputPlayback|stopInputPlayback} is called.
          * @function Controller.startInputPlayback
          * @example <caption>Play back a controller recording.</caption>
@@ -404,7 +404,7 @@ namespace controller {
          * Saves the current recording to a file. The current recording may have been recorded by
          * {@link Controller.startInputRecording|startInputRecording} and
          * {@link Controller.stopInputRecording|stopInputRecording}, or loaded by
-         * {@link Controller.loadInputRecording|loadInputRecording}. It is saved in the directory returned by 
+         * {@link Controller.loadInputRecording|loadInputRecording}. It is saved in the directory returned by
          * {@link Controller.getInputRecorderSaveDirectory|getInputRecorderSaveDirectory}.
          * @function Controller.saveInputRecording
          */
@@ -441,7 +441,7 @@ namespace controller {
     public slots:
 
         /*@jsdoc
-         * Disables processing of mouse "move", "press", "double-press", and "release" events into 
+         * Disables processing of mouse "move", "press", "double-press", and "release" events into
          * {@link Controller.Hardware|Controller.Hardware.Keyboard} outputs.
          * @function Controller.captureMouseEvents
          * @example <caption>Disable Controller.Hardware.Keyboard mouse events for a short period.</caption>
@@ -469,8 +469,8 @@ namespace controller {
         virtual void captureMouseEvents() { _mouseCaptured = true; }
 
         /*@jsdoc
-         * Enables processing of mouse "move", "press", "double-press", and "release" events into 
-         * {@link Controller.Hardware-Keyboard|Controller.Hardware.Keyboard} outputs that were disabled using 
+         * Enables processing of mouse "move", "press", "double-press", and "release" events into
+         * {@link Controller.Hardware-Keyboard|Controller.Hardware.Keyboard} outputs that were disabled using
          * {@link Controller.captureMouseEvents|captureMouseEvents}.
          * @function Controller.releaseMouseEvents
          */
@@ -478,19 +478,19 @@ namespace controller {
 
 
         /*@jsdoc
-         * Disables processing of touch "begin", "update", and "end" events into 
-         * {@link Controller.Hardware|Controller.Hardware.Keyboard}, 
-         * {@link Controller.Hardware|Controller.Hardware.Touchscreen}, and 
+         * Disables processing of touch "begin", "update", and "end" events into
+         * {@link Controller.Hardware|Controller.Hardware.Keyboard},
+         * {@link Controller.Hardware|Controller.Hardware.Touchscreen}, and
          * {@link Controller.Hardware|Controller.Hardware.TouchscreenVirtualPad} outputs.
          * @function Controller.captureTouchEvents
          */
         virtual void captureTouchEvents() { _touchCaptured = true; }
 
         /*@jsdoc
-         * Enables processing of touch "begin", "update", and "end" events into 
-         * {@link Controller.Hardware|Controller.Hardware.Keyboard}, 
-         * {@link Controller.Hardware|Controller.Hardware.Touchscreen}, and 
-         * {@link Controller.Hardware|Controller.Hardware.TouchscreenVirtualPad} outputs that were disabled using 
+         * Enables processing of touch "begin", "update", and "end" events into
+         * {@link Controller.Hardware|Controller.Hardware.Keyboard},
+         * {@link Controller.Hardware|Controller.Hardware.Touchscreen}, and
+         * {@link Controller.Hardware|Controller.Hardware.TouchscreenVirtualPad} outputs that were disabled using
          * {@link Controller.captureTouchEvents|captureTouchEvents}.
          * @function Controller.releaseTouchEvents
          */
@@ -498,14 +498,14 @@ namespace controller {
 
 
         /*@jsdoc
-         * Disables processing of mouse wheel rotation events into {@link Controller.Hardware|Controller.Hardware.Keyboard} 
+         * Disables processing of mouse wheel rotation events into {@link Controller.Hardware|Controller.Hardware.Keyboard}
          * outputs.
          * @function Controller.captureWheelEvents
          */
         virtual void captureWheelEvents() { _wheelCaptured = true; }
 
         /*@jsdoc
-         * Enables processing of mouse wheel rotation events into {@link Controller.Hardware|Controller.Hardware.Keyboard} 
+         * Enables processing of mouse wheel rotation events into {@link Controller.Hardware|Controller.Hardware.Keyboard}
          * outputs that wer disabled using {@link Controller.captureWheelEvents|captureWheelEvents}.
          * @function Controller.releaseWheelEvents
          */
@@ -527,19 +527,13 @@ namespace controller {
         virtual void captureActionEvents() { _actionsCaptured = true; }
 
         /*@jsdoc
-         * Enables translating and rotating the user's avatar in response to keyboard and controller controls that were disabled 
+         * Enables translating and rotating the user's avatar in response to keyboard and controller controls that were disabled
          * using {@link Controller.captureActionEvents|captureActionEvents}.
          * @function Controller.releaseActionEvents
          */
         virtual void releaseActionEvents() { _actionsCaptured = false; }
 
-        /*@jsdoc
-         * @function Controller.updateRunningInputDevices
-         * @param {string} deviceName - Device name.
-         * @param {boolean} isRunning - Is running.
-         * @param {string[]} runningDevices - Running devices.
-         * @deprecated This function is deprecated and will be removed.
-         */
+        // TODO: Deprecated by documentation, please review for accuracy
         void updateRunningInputDevices(const QString& deviceName, bool isRunning, const QStringList& runningDevices);
 
     signals:
@@ -593,8 +587,8 @@ namespace controller {
         void inputEvent(int action, float state);
 
         /*@jsdoc
-         * Triggered when a device is registered or unregistered by a plugin. Not all plugins generate 
-         * <code>hardwareChanged</code> events: for example, connecting or disconnecting a mouse will not generate an event but 
+         * Triggered when a device is registered or unregistered by a plugin. Not all plugins generate
+         * <code>hardwareChanged</code> events: for example, connecting or disconnecting a mouse will not generate an event but
          * connecting or disconnecting an Xbox controller will.
          * @function Controller.hardwareChanged
          * @returns {Signal}
@@ -602,7 +596,7 @@ namespace controller {
         void hardwareChanged();
 
         /*@jsdoc
-         * Triggered when an input device starts or stops being active and running (enabled). For example, enabling or 
+         * Triggered when an input device starts or stops being active and running (enabled). For example, enabling or
          * disabling the LeapMotion in Settings &gt; Controls &gt; Calibration will trigger this signal.
          * @function Controller.inputDeviceRunningChanged
          * @param {string} deviceName - The name of the device.

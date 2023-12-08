@@ -177,7 +177,7 @@ void AvatarManager::updateMyAvatar(float deltaTime) {
 
     if (dt > MIN_TIME_BETWEEN_MY_AVATAR_DATA_SENDS && !_myAvatarDataPacketsPaused) {
         // send head/hand data to the avatar mixer and voxel server
-        PerformanceTimer perfTimer("send"); 
+        PerformanceTimer perfTimer("send");
         _myAvatar->sendAvatarDataPacket();
         _lastSendAvatarDataTime = now;
         _myAvatarSendRate.increment();
@@ -763,7 +763,7 @@ RayToAvatarIntersectionResult AvatarManager::findRayIntersectionVector(const Pic
 
     PROFILE_RANGE(simulation_physics, __FUNCTION__);
 
-    float bulletDistance = (float)INT_MAX;  // with FLT_MAX bullet rayTest does not return results 
+    float bulletDistance = (float)INT_MAX;  // with FLT_MAX bullet rayTest does not return results
     glm::vec3 rayDirection = glm::normalize(ray.direction);
     std::vector<MyCharacterController::RayAvatarResult> physicsResults = _myAvatar->getCharacterController()->rayTest(glmToBullet(ray.origin), glmToBullet(rayDirection), bulletDistance, QVector<uint>());
     if (physicsResults.size() > 0) {
@@ -1001,7 +1001,7 @@ void AvatarManager::setAvatarSortCoefficient(const QString& name, const ScriptVa
         }
     }
     if (somethingChanged) {
-        size_t packetSize = sizeof(AvatarData::_avatarSortCoefficientSize) + 
+        size_t packetSize = sizeof(AvatarData::_avatarSortCoefficientSize) +
                             sizeof(AvatarData::_avatarSortCoefficientCenter) +
                             sizeof(AvatarData::_avatarSortCoefficientAge);
 
@@ -1017,12 +1017,10 @@ void AvatarManager::setAvatarSortCoefficient(const QString& name, const ScriptVa
  * PAL (People Access List) data for an avatar.
  * @typedef {object} AvatarManager.PalData
  * @property {Uuid} sessionUUID - The avatar's session ID. <code>""</code> if the avatar is your own.
- * @property {string} sessionDisplayName - The avatar's display name, sanitized and versioned, as defined by the avatar mixer. 
+ * @property {string} sessionDisplayName - The avatar's display name, sanitized and versioned, as defined by the avatar mixer.
  *     It is unique among all avatars present in the domain at the time.
- * @property {number} audioLoudness - The instantaneous loudness of the audio input that the avatar is injecting into the 
+ * @property {number} audioLoudness - The instantaneous loudness of the audio input that the avatar is injecting into the
  *     domain.
- * @property {boolean} isReplicated - <span class="important">Deprecated: This property is deprecated and will be 
- *     removed.</span>
  * @property {Vec3} position - The position of the avatar.
  * @property {number} palOrbOffset - The vertical offset from the avatar's position that an overlay orb should be displayed at.
  */

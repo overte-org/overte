@@ -1143,43 +1143,20 @@ public:
      */
     Q_INVOKABLE void setBlendshape(QString name, float val) { _headData->setBlendshape(name, val); }
 
-
-    /*@jsdoc
-     * Gets information about the models currently attached to your avatar.
-     * @function Avatar.getAttachmentsVariant
-     * @returns {AttachmentData[]} Information about all models attached to your avatar.
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // FIXME: Can this name be improved? Can it be deprecated?
     Q_INVOKABLE virtual QVariantList getAttachmentsVariant() const;
 
-    /*@jsdoc
-     * Sets all models currently attached to your avatar. For example, if you retrieve attachment data using
-     * {@link MyAvatar.getAttachmentsVariant} or {@link Avatar.getAttachmentsVariant}, make changes to it, and then want to
-     * update your avatar's attachments per the changed data.
-     * @function Avatar.setAttachmentsVariant
-     * @param {AttachmentData[]} variant - The attachment data defining the models to have attached to your avatar.
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     // FIXME: Can this name be improved? Can it be deprecated?
     Q_INVOKABLE virtual void setAttachmentsVariant(const QVariantList& variant);
 
     virtual void storeAvatarEntityDataPayload(const QUuid& entityID, const QByteArray& payload);
 
-    /*@jsdoc
-     * @function Avatar.updateAvatarEntity
-     * @param {Uuid} entityID - The entity ID.
-     * @param {ArrayBuffer} entityData - Entity data.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE virtual void updateAvatarEntity(const QUuid& entityID, const QByteArray& entityData);
 
-    /*@jsdoc
-     * @function Avatar.clearAvatarEntity
-     * @param {Uuid} entityID - The entity ID.
-     * @param {boolean} [requiresRemovalFromTree=true] - unused
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE virtual void clearAvatarEntity(const QUuid& entityID, bool requiresRemovalFromTree = true);
 
     // FIXME: Rename to clearAvatarEntity() once the API call is removed.
@@ -1189,15 +1166,7 @@ public:
 
     QList<QUuid> getAvatarEntityIDs() const;
 
-    /*@jsdoc
-     * Enables blend shapes set using {@link Avatar.setBlendshape} or {@link MyAvatar.setBlendshape} to be transmitted to other
-     * users so that they can see the animation of your avatar's face.
-     * <p class="important">Deprecated: This method is deprecated and will be removed. Use the
-     * <code>Avatar.hasScriptedBlendshapes</code> or <code>MyAvatar.hasScriptedBlendshapes</code>  property instead.</p>
-     * @function Avatar.setForceFaceTrackerConnected
-     * @param {boolean} connected - <code>true</code> to enable blend shape changes to be transmitted to other users,
-     *     <code>false</code> to disable.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE void setForceFaceTrackerConnected(bool connected) { setHasScriptedBlendshapes(connected); }
 
     // key state
@@ -1252,107 +1221,23 @@ public:
     }
     virtual bool isCertifyFailed() const { return _verificationFailed; }
 
-    /*@jsdoc
-     * Gets information about the models currently attached to your avatar.
-     * @function Avatar.getAttachmentData
-     * @returns {AttachmentData[]} Information about all models attached to your avatar.
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     * @example <caption>Report the URLs of all current attachments.</caption>
-     * var attachments = MyAvatar.getaAttachmentData();
-     * for (var i = 0; i < attachments.length; i++) {
-     *     print(attachments[i].modelURL);
-     * }
-     *
-     * // Note: If using from the Avatar API, replace "MyAvatar" with "Avatar".
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
+    // Note: If using from the Avatar API, replace "MyAvatar" with "Avatar".
     Q_INVOKABLE virtual QVector<AttachmentData> getAttachmentData() const;
 
-    /*@jsdoc
-     * Sets all models currently attached to your avatar. For example, if you retrieve attachment data using
-     * {@link MyAvatar.getAttachmentData} or {@link Avatar.getAttachmentData}, make changes to it, and then want to update your avatar's attachments per the
-     * changed data. You can also remove all attachments by using setting <code>attachmentData</code> to <code>null</code>.
-     * @function Avatar.setAttachmentData
-     * @param {AttachmentData[]} attachmentData - The attachment data defining the models to have attached to your avatar. Use
-     *     <code>null</code> to remove all attachments.
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     * @example <caption>Remove a hat attachment if your avatar is wearing it.</caption>
-     * var hatURL = "https://apidocs.overte.org/examples/cowboy-hat.fbx";
-     * var attachments = MyAvatar.getAttachmentData();
-     *
-     * for (var i = 0; i < attachments.length; i++) {
-     *     if (attachments[i].modelURL === hatURL) {
-     *         attachments.splice(i, 1);
-     *         MyAvatar.setAttachmentData(attachments);
-     *         break;
-     *     }
-     *  }
-     *
-     * // Note: If using from the Avatar API, replace all occurrences of "MyAvatar" with "Avatar".
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE virtual void setAttachmentData(const QVector<AttachmentData>& attachmentData);
 
-    /*@jsdoc
-     * Attaches a model to your avatar. For example, you can give your avatar a hat to wear, a guitar to hold, or a surfboard to
-     * stand on.
-     * @function Avatar.attach
-     * @param {string} modelURL - The URL of the glTF, FBX, or OBJ model to attach. glTF models may be in JSON or binary format
-     *     (".gltf" or ".glb" URLs respectively).
-     * @param {string} [jointName=""] - The name of the avatar joint (see {@link MyAvatar.getJointNames} or
-     *     {@link Avatar.getJointNames}) to attach the model to.
-     * @param {Vec3} [translation=Vec3.ZERO] - The offset to apply to the model relative to the joint position.
-     * @param {Quat} [rotation=Quat.IDENTITY] - The rotation to apply to the model relative to the joint orientation.
-     * @param {number} [scale=1.0] - The scale to apply to the model.
-     * @param {boolean} [isSoft=false] -  If the model has a skeleton, set this to <code>true</code> so that the bones of the
-     *     attached model's skeleton are rotated to fit the avatar's current pose. <code>isSoft</code> is used, for example,
-     *     to have clothing that moves with the avatar.
-     *     <p>If <code>true</code>, the <code>translation</code>, <code>rotation</code>, and <code>scale</code> parameters are
-     *     ignored.</p>
-     * @param {boolean} [allowDuplicates=false] - If <code>true</code> then more than one copy of any particular model may be
-     *     attached to the same joint; if <code>false</code> then the same model cannot be attached to the same joint.
-     * @param {boolean} [useSaved=true] - <em>Not used.</em>
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     * @example <caption>Attach a cowboy hat to your avatar's head.</caption>
-     * var attachment = {
-     *     modelURL: "https://apidocs.overte.org/examples/cowboy-hat.fbx",
-     *     jointName: "Head",
-     *     translation: {"x": 0, "y": 0.25, "z": 0},
-     *     rotation: {"x": 0, "y": 0, "z": 0, "w": 1},
-     *     scale: 0.01,
-     *     isSoft: false
-     * };
-     *
-     *  MyAvatar.attach(attachment.modelURL,
-     *                  attachment.jointName,
-     *                  attachment.translation,
-     *                  attachment.rotation,
-     *                  attachment.scale,
-     *                  attachment.isSoft);
-     *
-     * // Note: If using from the Avatar API, replace "MyAvatar" with "Avatar".
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE virtual void attach(const QString& modelURL, const QString& jointName = QString(),
                                     const glm::vec3& translation = glm::vec3(), const glm::quat& rotation = glm::quat(),
                                     float scale = 1.0f, bool isSoft = false,
                                     bool allowDuplicates = false, bool useSaved = true);
 
-    /*@jsdoc
-     * Detaches the most recently attached instance of a particular model from either a specific joint or any joint.
-     * @function Avatar.detachOne
-     * @param {string} modelURL - The URL of the model to detach.
-     * @param {string} [jointName=""] - The name of the joint to detach the model from. If <code>""</code>, then the most
-     *     recently attached model is removed from which ever joint it was attached to.
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE virtual void detachOne(const QString& modelURL, const QString& jointName = QString());
 
-    /*@jsdoc
-     * Detaches all instances of a particular model from either a specific joint or all joints.
-     * @function Avatar.detachAll
-     * @param {string} modelURL - The URL of the model to detach.
-     * @param {string} [jointName=""] - The name of the joint to detach the model from. If <code>""</code>, then the model is
-     *     detached from all joints.
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE virtual void detachAll(const QString& modelURL, const QString& jointName = QString());
 
     QString getSkeletonModelURLFromScript() const { return _skeletonModelURL.toString(); }
@@ -1584,27 +1469,13 @@ signals:
     void sessionUUIDChanged();
 
 public slots:
-
-/*@jsdoc
-     * @function Avatar.sendAvatarDataPacket
-     * @param {boolean} [sendAll=false] - Send all.
-     * @returns {number}
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     virtual int sendAvatarDataPacket(bool sendAll = false);
 
-    /*@jsdoc
-     * @function Avatar.sendIdentityPacket
-     * @returns {number}
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     int sendIdentityPacket();
 
-    /*@jsdoc
-     * @function Avatar.setSessionUUID
-     * @param {Uuid} sessionUUID - Session UUID.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     virtual void setSessionUUID(const QUuid& sessionUUID) {
         if (sessionUUID != getID()) {
             if (sessionUUID == QUuid()) {
@@ -1668,10 +1539,7 @@ public slots:
      */
     float getTargetScale() const { return _targetScale; } // why is this a slot?
 
-    /*@jsdoc
-     * @function Avatar.resetLastSent
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void resetLastSent() { _lastToByteArray = 0; }
 
 protected:

@@ -44,7 +44,6 @@ class AnimationCacheScriptingInterface : public ScriptableResourceCache, public 
      *     <em>Read-only.</em>
      *
      * @borrows ResourceCache.getResourceList as getResourceList
-     * @borrows ResourceCache.updateTotalSize as updateTotalSize
      * @borrows ResourceCache.prefetch as prefetch
      * @borrows ResourceCache.dirty as dirty
      */

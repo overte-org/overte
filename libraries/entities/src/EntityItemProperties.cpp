@@ -733,8 +733,6 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     to an entity's motion only if its <code>dynamic</code> property is <code>true</code>.
  *     <p>If changing an entity's <code>gravity</code> from {@link Vec3(0)|Vec3.ZERO}, you need to give it a small
  *     <code>velocity</code> in order to kick off physics simulation.</p>
- * @property {Vec3} acceleration - The current, measured acceleration of the entity, in m/s<sup>2</sup>.
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  * @property {number} restitution=0.5 - The "bounciness" of an entity when it collides, range <code>0.0</code> &ndash;
  *     <code>0.99</code>. The higher the value, the more bouncy.
  * @property {number} friction=0.5 - How much an entity slows down when it's moving against another, range <code>0.0</code>
@@ -885,34 +883,6 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  */
 
 /*@jsdoc
- * The <code>"Line"</code> {@link Entities.EntityType|EntityType} draws thin, straight lines between a sequence of two or more
- * points. It has properties in addition to the common {@link Entities.EntityProperties|EntityProperties}.
- * <p class=important>Deprecated: Use {@link Entities.EntityProperties-PolyLine|PolyLine} entities instead.</p>
- *
- * @typedef {object} Entities.EntityProperties-Line
- * @property {Vec3} dimensions=0.1,0.1,0.1 - The dimensions of the entity. Must be sufficient to contain all the
- *     <code>linePoints</code>.
- * @property {Vec3[]} linePoints=[]] - The sequence of points to draw lines between. The values are relative to the entity's
- *     position. A maximum of 70 points can be specified. The property's value is set only if all the <code>linePoints</code>
- *     lie within the entity's <code>dimensions</code>.
- * @property {Color} color=255,255,255 - The color of the line.
- * @example <caption>Draw lines in a "V".</caption>
- * var entity = Entities.addEntity({
- *     type: "Line",
- *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.75, z: -5 })),
- *     rotation: MyAvatar.orientation,
- *     dimensions: { x: 2, y: 2, z: 1 },
- *     linePoints: [
- *         { x: -1, y: 1, z: 0 },
- *         { x: 0, y: -1, z: 0 },
- *         { x: 1, y: 1, z: 0 },
- *     ],
- *     color: { red: 255, green: 0, blue: 0 },
- *     lifetime: 300  // Delete after 5 minutes.
- * });
- */
-
-/*@jsdoc
  * The <code>"Material"</code> {@link Entities.EntityType|EntityType} modifies existing materials on entities and avatars. It
  * has properties in addition to the common {@link Entities.EntityProperties|EntityProperties}.
  * <p>To apply a material to an entity, set the material entity's <code>parentID</code> property to the entity ID.
@@ -992,8 +962,6 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @property {string} modelURL="" - The URL of the glTF, FBX, or OBJ model. glTF models may be in JSON or binary format
  *     (".gltf" or ".glb" URLs respectively). Baked models' URLs have ".baked" before the file type. Model files may also be
  *     compressed in GZ format, in which case the URL ends in ".gz".
- * @property {Vec3} modelScale - The scale factor applied to the model's dimensions.
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  * @property {string} blendshapeCoefficients - A JSON string of a map of blendshape names to values.  Only stores set values.
  *     When editing this property, only coefficients that you are editing will change; it will not explicitly reset other
  *     coefficients.
@@ -1134,8 +1102,6 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @property {number} alphaSpread=0 - The spread in alpha that each particle is given. For example, if
  *     <code>alpha == 0.5</code> and <code>alphaSpread == 0.25</code>, each particle will have an alpha in the range
  *     <code>0.25</code> &ndash; <code>0.75</code>.
- * @property {Entities.Pulse} pulse - Color and alpha pulse.
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  * @property {number} particleSpin=0 - The rotation of each particle at the middle of its life, range <code>-2 * Math.PI</code>
  *     &ndash; <code>2 * Math.PI</code> radians.
  * @property {number} spinStart=null - The rotation of each particle at the start of its life, range <code>-2 * Math.PI</code>
@@ -1283,8 +1249,6 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @property {Vec3} dimensions=0.1,0.1,0.1 - The dimensions of the entity.
  * @property {Color} color=255,255,255 - The color of the entity.
  * @property {number} alpha=1 - The opacity of the entity, range <code>0.0</code> &ndash; <code>1.0</code>.
- * @property {Entities.Pulse} pulse - Color and alpha pulse.
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  * @example <caption>Create a cylinder.</caption>
  * var shape = Entities.addEntity({
  *     type: "Shape",
@@ -1319,8 +1283,6 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @property {number} textAlpha=1.0 - The opacity of the text.
  * @property {Color} backgroundColor=0,0,0 - The color of the background rectangle.
  * @property {number} backgroundAlpha=1.0 - The opacity of the background.
- * @property {Entities.Pulse} pulse - Color and alpha pulse.
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  * @property {number} leftMargin=0.0 - The left margin, in meters.
  * @property {number} rightMargin=0.0 - The right margin, in meters.
  * @property {number} topMargin=0.0 - The top margin, in meters.
@@ -1333,13 +1295,6 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @property {Color} textEffectColor=255,255,255 - The color of the effect.
  * @property {number} textEffectThickness=0.2 - The magnitude of the text effect, range <code>0.0</code> &ndash; <code>0.5</code>.
  * @property {Entities.TextAlignment} alignment="left" - How the text is aligned against its background.
- * @property {boolean} faceCamera - <code>true</code> if <code>billboardMode</code> is <code>"yaw"</code>, <code>false</code>
- *     if it isn't. Setting this property to <code>false</code> sets the <code>billboardMode</code> to <code>"none"</code>.
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {boolean} isFacingAvatar - <code>true</code> if <code>billboardMode</code> is <code>"full"</code>,
- *     <code>false</code> if it isn't. Setting this property to <code>false</code> sets the <code>billboardMode</code> to
- *     <code>"none"</code>.
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  * @example <caption>Create a text entity.</caption>
  * var text = Entities.addEntity({
  *     type: "Text",
@@ -1367,15 +1322,6 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     colors on the web page are multiplied by the property color. For example, a value of
  *     <code>{ red: 255, green: 0, blue: 0 }</code> lets only the red channel of pixels' colors through.
  * @property {number} alpha=1 - The opacity of the web surface.
- * @property {Entities.Pulse} pulse - Color and alpha pulse.
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {boolean} faceCamera - <code>true</code> if <code>billboardMode</code> is <code>"yaw"</code>, <code>false</code>
- *     if it isn't. Setting this property to <code>false</code> sets the <code>billboardMode</code> to <code>"none"</code>.
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {boolean} isFacingAvatar - <code>true</code> if <code>billboardMode</code> is <code>"full"</code>,
- *     <code>false</code> if it isn't. Setting this property to <code>false</code> sets the <code>billboardMode</code> to
- *     <code>"none"</code>.
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  * @property {number} dpi=30 - The resolution to display the page at, in dots per inch. If you convert this to dots per meter
  *     (multiply by 1 / 0.0254 = 39.3701) then multiply <code>dimensions.x</code> and <code>dimensions.y</code> by that value
  *     you get the resolution in pixels.
@@ -1487,16 +1433,6 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @property {Rect} subImage=0,0,0,0 - The portion of the image to display. If width or height are <code>0</code>, it defaults
  *     to the full image in that dimension.
  * @property {Color} color=255,255,255 - The color of the image.
- * @property {number} alpha=1 - The opacity of the image.
- * @property {Entities.Pulse} pulse - Color and alpha pulse.
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {boolean} faceCamera - <code>true</code> if <code>billboardMode</code> is <code>"yaw"</code>, <code>false</code>
- *     if it isn't. Setting this property to <code>false</code> sets the <code>billboardMode</code> to <code>"none"</code>.
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {boolean} isFacingAvatar - <code>true</code> if <code>billboardMode</code> is <code>"full"</code>,
- *     <code>false</code> if it isn't. Setting this property to <code>false</code> sets the <code>billboardMode</code> to
- *     <code>"none"</code>.
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  * @example <caption>Create an image entity.</caption>
  * var image = Entities.addEntity({
  *     type: "Image",
@@ -1515,9 +1451,6 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @typedef {object} Entities.EntityProperties-Grid
  * @property {Vec3} dimensions - 0.1,0.1,0.01 - The dimensions of the entity.
  * @property {Color} color=255,255,255 - The color of the grid.
- * @property {number} alpha=1 - The opacity of the grid.
- * @property {Entities.Pulse} pulse - Color and alpha pulse.
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  * @property {boolean} followCamera=true - <code>true</code> if the grid is always visible even as the camera moves to another
  *     position, <code>false</code> if it doesn't follow the camrmea.
  * @property {number} majorGridEvery=5 - Integer number of <code>minorGridEvery</code> intervals at which to draw a thick grid

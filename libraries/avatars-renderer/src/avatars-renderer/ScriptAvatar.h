@@ -52,14 +52,10 @@
  * @property {string} displayName - The avatar's display name.
  * @property {string} sessionDisplayName - The avatar's display name, sanitized and versioned, as defined by the avatar mixer.
  *     It is unique among all avatars present in the domain at the time.
- * @property {boolean} isReplicated - <span class="important">Deprecated: This property is deprecated and will be
- *     removed.</span>
  * @property {boolean} lookAtSnappingEnabled - <code>true</code> if the avatar's eyes snap to look at another avatar's eyes
  *     when the other avatar is in the line of sight and also has <code>lookAtSnappingEnabled == true</code>.
  *
  * @property {string} skeletonModelURL - The avatar's FST file.
- * @property {AttachmentData[]} attachmentData - Information on the avatar's attachments.
- *     <p class="important">Deprecated: This property is deprecated and will be removed. Use avatar entities instead.</p>
  * @property {string[]} jointNames - The list of joints in the avatar model.
  *
  * @property {number} audioLoudness - The instantaneous loudness of the audio input that the avatar is injecting into the
@@ -178,12 +174,7 @@ public slots:
     QVariantList getSkeleton() const;
 
 
-    /*@jsdoc
-     * @function ScriptAvatar.getSimulationRate
-     * @param {AvatarSimulationRate} [rateName=""] - Rate name.
-     * @returns {number} Simulation rate in Hz, or <code>0.0</code> if avatar data aren't available.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     float getSimulationRate(const QString& rateName = QString("")) const;
 
 

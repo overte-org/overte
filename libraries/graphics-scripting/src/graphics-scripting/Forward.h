@@ -89,7 +89,7 @@ namespace scriptable {
      * A material layer.
      * @typedef {object} Graphics.MaterialLayer
      * @property {Graphics.Material} material - The layer's material.
-     * @property {number} priority - The priority of the layer. If multiple materials are applied to a mesh part, only the 
+     * @property {number} priority - The priority of the layer. If multiple materials are applied to a mesh part, only the
      *     layer with the highest priority is applied, with materials of the same priority randomly assigned.
      */
     class ScriptableMaterialLayer {
@@ -117,31 +117,19 @@ namespace scriptable {
         ScriptableMeshBase& operator=(const ScriptableMeshBase& view);
         virtual ~ScriptableMeshBase();
 
-        /*@jsdoc
-         * @function GraphicsMesh.getMeshPointer
-         * @deprecated This method is deprecated and will be removed.
-         * @returns {undefined}
-         */
+        // TODO: Deprecated by documentation, please review for accuracy
         // scriptable::MeshPointer is not registered as a JavaScript type.
         Q_INVOKABLE const scriptable::MeshPointer getMeshPointer() const { return weakMesh.lock(); }
 
-        /*@jsdoc
-         * @function GraphicsMesh.getModelProviderPointer
-         * @deprecated This method is deprecated and will be removed.
-         * @returns {undefined}
-         */
+        // TODO: Deprecated by documentation, please review for accuracy
         // scriptable::ModelProviderPointer is not registered as a JavaScript type.
         Q_INVOKABLE const scriptable::ModelProviderPointer getModelProviderPointer() const { return provider.lock(); }
 
-        /*@jsdoc
-         * @function GraphicsMesh.getModelBasePointer
-         * @deprecated This method is deprecated and will be removed.
-         * @returns {undefined}
-         */
+        // TODO: Deprecated by documentation, please review for accuracy
         // scriptable::ScriptableModelBasePointer is not registered as a JavaScript type.
         Q_INVOKABLE const scriptable::ScriptableModelBasePointer getModelBasePointer() const { return model; }
     };
-    
+
     // abstract container for holding one or more references to mesh pointers
     class ScriptableModelBase : public QObject {
         Q_OBJECT

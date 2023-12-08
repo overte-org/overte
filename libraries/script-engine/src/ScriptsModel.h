@@ -70,10 +70,10 @@ public:
 };
 
 /*@jsdoc
- * Information on the scripts that are in the default scripts directory of the Interface installation. This is provided as a 
+ * Information on the scripts that are in the default scripts directory of the Interface installation. This is provided as a
  * property of {@link ScriptDiscoveryService}.
  *
- * <p>The information provided reflects the subdirectory structure. Methods and signals are per QT's 
+ * <p>The information provided reflects the subdirectory structure. Methods and signals are per QT's
  * <a href="http://doc.qt.io/qt-5/qabstractitemmodel.html">QAbstractItemModel</a> class, with the following details:</p>
  * <ul>
  *   <li>A single column of data: <code>columnCount(index)</code> returns <code>1</code>. </li>
@@ -84,7 +84,7 @@ public:
  *       </thead>
  *       <tbody>
  *         <tr><td>Display</td><td><code>0</code></td><td>The directory or script file name.</td></tr>
- *         <tr><td>Path</td><td><code>256</code></td><td>The path and filename of the data item if it is a script, 
+ *         <tr><td>Path</td><td><code>256</code></td><td>The path and filename of the data item if it is a script,
  *         <code>undefined</code> if it is a directory.</td></tr>
  *       </tbody>
  *     </table>
@@ -103,24 +103,24 @@ public:
  * var MAX_DIRECTORY_LEVEL = 1;
  * var DISPLAY_ROLE = 0;
  * var PATH_ROLE = 256;
- * 
+ *
  * function printDirectory(parentIndex, directoryLevel, indent) {
  *     var numRows = ScriptDiscoveryService.scriptsModel.rowCount(parentIndex);
  *     for (var i = 0; i < numRows; i++) {
  *         var rowIndex = ScriptDiscoveryService.scriptsModel.index(i, 0, parentIndex);
- * 
+ *
  *         var name = ScriptDiscoveryService.scriptsModel.data(rowIndex, DISPLAY_ROLE);
  *         var hasChildren = ScriptDiscoveryService.scriptsModel.hasChildren(rowIndex);
  *         var path = hasChildren ? "" : ScriptDiscoveryService.scriptsModel.data(rowIndex, PATH_ROLE);
- * 
+ *
  *         print(indent + "- " + name + (hasChildren ? "" : " - " + path));
- * 
+ *
  *         if (hasChildren && directoryLevel < MAX_DIRECTORY_LEVEL) {
  *             printDirectory(rowIndex, directoryLevel + 1, indent + "    ");
  *         }
  *     }
  * }
- * 
+ *
  * print("Scripts:");
  * printDirectory(null, 0, "");  // null index for the root directory.
  */
@@ -158,29 +158,16 @@ public:
 
 protected slots:
 
-    /*@jsdoc
-     * @function ScriptsModel.updateScriptsLocation
-     * @param {string} newPath - New path.
-     * @deprecated This method is deprecated and will be removed from the API.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void updateScriptsLocation(const QString& newPath);
 
-    /*@jsdoc
-     * @function ScriptsModel.downloadFinished
-     * @deprecated This method is deprecated and will be removed from the API.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void downloadFinished();
 
-    /*@jsdoc
-     * @function ScriptsModel.reloadLocalFiles
-     * @deprecated This method is deprecated and will be removed from the API.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void reloadLocalFiles();
 
-    /*@jsdoc
-     * @function ScriptsModel.reloadDefaultFiles
-     * @deprecated This method is deprecated and will be removed from the API.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void reloadDefaultFiles();
 
 protected:

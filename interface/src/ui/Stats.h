@@ -36,11 +36,11 @@ private: \
  * @hifi-server-entity
  * @hifi-assignment-client
  *
- * @property {boolean} expanded - <code>true</code> if the statistics overlay should be in expanded form when the overlay is 
+ * @property {boolean} expanded - <code>true</code> if the statistics overlay should be in expanded form when the overlay is
  *     displayed, <code>false</code> if it shouldn't be expanded.
- * @property {boolean} timingExpanded - <code>true</code> if timing details should be displayed when the statistics overlay is 
- *     displayed in expanded form, <code>false</code> if timing details should not be displayed. Set by the menu item, 
- *     Developer &gt; Timing &gt; Performance Timer &gt; Display Timing Details. 
+ * @property {boolean} timingExpanded - <code>true</code> if timing details should be displayed when the statistics overlay is
+ *     displayed in expanded form, <code>false</code> if timing details should not be displayed. Set by the menu item,
+ *     Developer &gt; Timing &gt; Performance Timer &gt; Display Timing Details.
  *     <em>Read-only.</em>
  * @property {string} monospaceFont - The name of the monospace font used in the statistics overlay.
  *     <em>Read-only.</em>
@@ -56,10 +56,10 @@ private: \
  *
  * @property {number} appdropped - The number of times a frame has not been provided to the display device in time.
  *     <em>Read-only.</em>
- * @property {number} longsubmits - The number of times the display device has taken longer than 11ms to return after being 
+ * @property {number} longsubmits - The number of times the display device has taken longer than 11ms to return after being
  *     given a frame.
  *     <em>Read-only.</em>
- * @property {number} longrenders - The number of times it has taken longer than 11ms to submit a new frame to the display 
+ * @property {number} longrenders - The number of times it has taken longer than 11ms to submit a new frame to the display
  *     device.
  *     <em>Read-only.</em>
  * @property {number} longframes - The number of times <code>longsubmits + longrenders</code> has taken longer than 15ms.
@@ -72,8 +72,8 @@ private: \
 
  * @property {number} gameLoopRate - The rate at which the game loop is running, in Hz.
  *     <em>Read-only.</em>
- * @property {number} refreshRateTarget - The current target refresh rate, in Hz, per the current <code>refreshRateMode</code> 
- *     and <code>refreshRateRegime</code> if in desktop mode; a higher rate if in VR mode. 
+ * @property {number} refreshRateTarget - The current target refresh rate, in Hz, per the current <code>refreshRateMode</code>
+ *     and <code>refreshRateRegime</code> if in desktop mode; a higher rate if in VR mode.
  *     <em>Read-only.</em>
  * @property {RefreshRateProfileName} refreshRateMode - The current refresh rate profile.
  *     <em>Read-only.</em>
@@ -87,13 +87,13 @@ private: \
  *     <em>Read-only.</em>
  * @property {number} physicsObjectCount - The number of objects that have collisions enabled.
  *     <em>Read-only.</em>
- * @property {number} updatedAvatarCount - The number of avatars in the domain, other than the client's, that were updated in 
+ * @property {number} updatedAvatarCount - The number of avatars in the domain, other than the client's, that were updated in
  *     the most recent game loop.
  *     <em>Read-only.</em>
- * @property {number} updatedHeroAvatarCount - The number of avatars in a "hero" zone in the domain, other than the client's, 
+ * @property {number} updatedHeroAvatarCount - The number of avatars in a "hero" zone in the domain, other than the client's,
  *     that were updated in the most recent game loop.
  *     <em>Read-only.</em>
- * @property {number} notUpdatedAvatarCount - The number of avatars in the domain, other than the client's, that weren't able 
+ * @property {number} notUpdatedAvatarCount - The number of avatars in the domain, other than the client's, that weren't able
  *     to be updated in the most recent game loop because there wasn't enough time to.
  *     <em>Read-only.</em>
  * @property {number} packetInCount - The number of packets being received from the domain server, in packets per second.
@@ -159,18 +159,18 @@ private: \
  * @property {number} audioMixerOutPps - The number of packets being sent to the audio mixer, in packets per second.
  *     <code>-1</code> if not connected to an audio mixer.
  *     <em>Read-only.</em>
- * @property {number} audioMixerKbps - The total amount of data being sent to and received from the audio mixer, in kilobits 
+ * @property {number} audioMixerKbps - The total amount of data being sent to and received from the audio mixer, in kilobits
  *     per second.
  *     <code>-1</code> if not connected to an audio mixer.
  *     <em>Read-only.</em>
- * @property {number} audioMixerPps - The total number of packets being sent to and received from the audio mixer, in packets 
+ * @property {number} audioMixerPps - The total number of packets being sent to and received from the audio mixer, in packets
  *     per second.
  *     <code>-1</code> if not connected to an audio mixer.
  *     <em>Read-only.</em>
  * @property {number} audioOutboundPPS - The number of non-silent audio packets being sent by the user, in packets per second.
  *     <code>-1</code> if not connected to an audio mixer.
  *     <em>Read-only.</em>
- * @property {number} audioSilentOutboundPPS -  The number of silent audio packets being sent by the user, in packets per 
+ * @property {number} audioSilentOutboundPPS -  The number of silent audio packets being sent by the user, in packets per
  *     second.
  *     <code>-1</code> if not connected to an audio mixer.
  *     <em>Read-only.</em>
@@ -178,13 +178,7 @@ private: \
  *     second.
  *     <code>-1</code> if not connected to an audio mixer.
  *     <em>Read-only.</em>
- * @property {number} audioAudioInboundPPS -  The number of non-silent audio packets being received by the user, in packets per
- *     second.
- *     <code>-1</code> if not connected to an audio mixer.
- *     <em>Read-only.</em>
- *     <p class="important">Deprecated: This property is deprecated and will be removed. Use <code>audioInboundPPS</code> 
- *     instead.</p>
- * @property {number} audioSilentInboundPPS -  The number of silent audio packets being received by the user, in packets per 
+ * @property {number} audioSilentInboundPPS -  The number of silent audio packets being received by the user, in packets per
  *     second.
  *     <code>-1</code> if not connected to an audio mixer.
  *     <em>Read-only.</em>
@@ -198,7 +192,7 @@ private: \
  * @property {Vec2} audioInjectors - The number of audio injectors, local and non-local.
  *     <em>Read-only.</em>
  *     <p><strong>Note:</strong> Property not available in the API.</p>
- * @property {number} entityPacketsInKbps - The average amount of data being received from entity servers, in kilobits per 
+ * @property {number} entityPacketsInKbps - The average amount of data being received from entity servers, in kilobits per
  *     second. (Multiply by the number of entity servers to get the total amount of data being received.)
  *     <code>-1</code> if not connected to an entity server.
  *     <em>Read-only.</em>
@@ -252,8 +246,8 @@ private: \
  *     <em>Read-only.</em>
  * @property {number} numNeededEntityUpdates - The total number of entity updates scheduled for last frame.
  *     <em>Read-only.</em>
- * @property {string} timingStats - Details of the average time (ms) spent in and number of calls made to different parts of 
- *     the code. Provided only if <code>timingExpanded</code> is <code>true</code>. Only the top 10 items are provided if 
+ * @property {string} timingStats - Details of the average time (ms) spent in and number of calls made to different parts of
+ *     the code. Provided only if <code>timingExpanded</code> is <code>true</code>. Only the top 10 items are provided if
  *     Developer &gt; Timing &gt; Performance Timer &gt; Only Display Top 10 is enabled.
  *     <em>Read-only.</em>
  * @property {string} gameUpdateStats - Details of the average time (ms) spent in different parts of the game loop.
@@ -270,22 +264,22 @@ private: \
  *     <em>Read-only.</em>
  * @property {number} localLeaves - The number of leaf elements in the client octree.
  *     <em>Read-only.</em>
- * @property {number} rectifiedTextureCount - The number of textures that have been resized so that their dimensions is a power 
+ * @property {number} rectifiedTextureCount - The number of textures that have been resized so that their dimensions is a power
  *     of 2 if smaller than 128 pixels, or a multiple of 128 if greater than 128 pixels.
  *     <em>Read-only.</em>
- * @property {number} decimatedTextureCount - The number of textures that have been reduced in size because they were over the 
+ * @property {number} decimatedTextureCount - The number of textures that have been reduced in size because they were over the
  *     maximum allowed dimensions of 8192 pixels on desktop or 2048 pixels on mobile.
  *     <em>Read-only.</em>
  * @property {number} gpuBuffers - The number of OpenGL buffer objects managed by the GPU back-end.
  *     <em>Read-only.</em>
- * @property {number} gpuBufferMemory - The total memory size of the <code>gpuBuffers</code>, in MB. 
+ * @property {number} gpuBufferMemory - The total memory size of the <code>gpuBuffers</code>, in MB.
  *     <em>Read-only.</em>
- * @property {number} gpuTextures - The number of OpenGL textures managed by the GPU back-end. This is the sum of the number of 
+ * @property {number} gpuTextures - The number of OpenGL textures managed by the GPU back-end. This is the sum of the number of
  *     textures managed for <code>gpuTextureResidentMemory</code>,  <code>gpuTextureResourceMemory</code>, and
  *     <code>gpuTextureFramebufferMemory</code>.
  *     <em>Read-only.</em>
- * @property {number} gpuTextureMemory - The total memory size of the <code>gpuTextures</code>, in MB. This is the sum of 
- *     <code>gpuTextureResidentMemory</code>,  <code>gpuTextureResourceMemory</code>, and 
+ * @property {number} gpuTextureMemory - The total memory size of the <code>gpuTextures</code>, in MB. This is the sum of
+ *     <code>gpuTextureResidentMemory</code>,  <code>gpuTextureResourceMemory</code>, and
  *     <code>gpuTextureFramebufferMemory</code>.
  *     <em>Read-only.</em>
  * @property {number} glContextSwapchainMemory -  The estimated memory used by the default OpenGL frame buffer, in MB.
@@ -294,32 +288,32 @@ private: \
  *     <em>Read-only.</em>
  * @property {number} texturePendingTransfers - The memory size of textures pending transfer to the GPU, in MB.
  *     <em>Read-only.</em>
- * @property {number} gpuTextureResidentMemory - The memory size of the "strict" textures that always have their full 
+ * @property {number} gpuTextureResidentMemory - The memory size of the "strict" textures that always have their full
  *     resolution in GPU memory, in MB.
  *     <em>Read-only.</em>
  * @property {number} gpuTextureFramebufferMemory - The memory size of the frame buffer on the GPU, in MB.
  *     <em>Read-only.</em>
- * @property {number} gpuTextureResourceMemory - The amount of GPU memory that has been allocated for "variable" textures that 
+ * @property {number} gpuTextureResourceMemory - The amount of GPU memory that has been allocated for "variable" textures that
  *     don't necessarily always have their full resolution in GPU memory, in MB.
  *     <em>Read-only.</em>
- * @property {number} gpuTextureResourceIdealMemory - The amount of memory that "variable" textures would take up if they were 
+ * @property {number} gpuTextureResourceIdealMemory - The amount of memory that "variable" textures would take up if they were
  *     all completely loaded, in MB.
  *     <em>Read-only.</em>
- * @property {number} gpuTextureResourcePopulatedMemory - How much of the GPU memory allocated has actually been populated, in 
+ * @property {number} gpuTextureResourcePopulatedMemory - How much of the GPU memory allocated has actually been populated, in
 *      MB.
  *     <em>Read-only.</em>
  * @property {string} gpuTextureMemoryPressureState - The stats of the texture transfer engine.
  *     <ul>
- *         <li><code>"Undersubscribed"</code>: There is texture data that can fit in memory but that isn't on the GPU, so more 
+ *         <li><code>"Undersubscribed"</code>: There is texture data that can fit in memory but that isn't on the GPU, so more
  *         GPU texture memory should be allocated if possible.</li>
  *         <li><code>"Transfer"</code>: More GPU texture memory has been allocated and texture data is being transferred.</li>
- *         <li><code>"Idle"</code>: Either all texture data has been transferred to the GPU or there is nor more space 
+ *         <li><code>"Idle"</code>: Either all texture data has been transferred to the GPU or there is nor more space
  *         available.</li>
  *     </ul>
  *     <em>Read-only.</em>
- * @property {number} gpuFreeMemory - The amount of GPU memory available after all allocations, in MB. 
+ * @property {number} gpuFreeMemory - The amount of GPU memory available after all allocations, in MB.
  *     <em>Read-only.</em>
- *     <p><strong>Note:</strong> This is not a reliable number because OpenGL doesn't have an official method of getting this 
+ *     <p><strong>Note:</strong> This is not a reliable number because OpenGL doesn't have an official method of getting this
  *     information.</p>
  * @property {number} gpuTextureExternalMemory - The estimated amount of memory consumed by textures being used but that are
  *     not managed by the GPU library, in MB.
@@ -346,7 +340,7 @@ private: \
  *     <em>Read-only.</em>
  * @property {number} collisionPicksCount - The number of collision picks currently in effect.
  *     <em>Read-only.</em>
- * @property {Vec3} stylusPicksUpdated - The number of stylus pick intersection that were found in the most recent game loop: 
+ * @property {Vec3} stylusPicksUpdated - The number of stylus pick intersection that were found in the most recent game loop:
  *     <ul>
  *         <li><code>x</code> = entity intersections.</li>
  *         <li><code>y</code> = avatar intersections.</li>
@@ -390,68 +384,6 @@ private: \
  * @property {number} nodeListThreadQueueDepth - The number of events in the node list thread's event queue.
  *     Only provided if <code>eventQueueDebuggingOn</code> is <code>true</code>.
  *     <em>Read-only.</em>
- *
- * @comment The following property is from Stats.qml. It shouldn't be in the API.
- * @property {string} bgColor
- *     <em>Read-only.</em>
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- *
- * @comment The following properties are from QQuickItem. They shouldn't be in the API.
- * @property {boolean} activeFocus
- *     <em>Read-only.</em>
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {boolean} activeFocusOnTab
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {object} anchors
- *     <em>Read-only.</em>
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {boolean} antialiasing
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {number} baselineOffset
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {object[]} children
- *     <em>Read-only.</em>
- *     <p><strong>Note:</strong> Property not available in the API.</p>
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {boolean} clip
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {object} containmentMask
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {boolean} enabled
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {boolean} focus
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {number} height
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {number} implicitHeight
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {number} implicitWidth 
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {object} layer
- *     <em>Read-only.</em>
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {number} opacity
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {number} rotation
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {number} scale
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {boolean} smooth
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {string} state
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {number} transformOrigin
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {boolean} visible
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {number} width
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {number} x
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {number} y
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
- * @property {number} z
- *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  */
 // Properties from x onwards are QQuickItem properties.
 
@@ -629,7 +561,7 @@ public slots:
     /*@jsdoc
      * Updates statistics to make current values available to scripts even though the statistics overlay may not be displayed.
      * (Many statistics values are normally updated only if the statistics overlay is displayed.)
-     * <p><strong>Note:</strong> Not all statistics values are updated when the statistics overlay isn't displayed or 
+     * <p><strong>Note:</strong> Not all statistics values are updated when the statistics overlay isn't displayed or
      * expanded.</p>
      * @function Stats.forceUpdateStats
      * @example <caption>Report avatar mixer data and packet rates.</caption>
@@ -640,10 +572,10 @@ public slots:
      *     "avatarMixerOutKbps",
      *     "avatarMixerOutPps"
      * ];
-     * 
+     *
      * // Update the statistics for the script.
      * Stats.forceUpdateStats();
-     * 
+     *
      * // Report the statistics.
      * for (var i = 0; i < stats.length; i++) {
      *     print(stats[i], "=", Stats[stats[i]]);
@@ -1012,13 +944,7 @@ signals:
      */
     void audioInboundPPSChanged();
 
-    /*@jsdoc
-     * Triggered when the value of the <code>audioAudioInboundPPS</code> property changes.
-     * @function Stats.audioAudioInboundPPSChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed. Use 
-     *     {@link Stats.audioInboundPPSChanged|audioInboundPPSChanged} instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void audioAudioInboundPPSChanged();
 
     /*@jsdoc
@@ -1524,289 +1450,6 @@ signals:
      * @returns {Signal}
      */
     void eventQueueDebuggingOnChanged();
-
-
-    // Stats.qml signals: shouldn't be in the API.
-
-    /*@jsdoc
-     * Triggered when the value of the <code>bgColor</code> property changes.
-     * @function Stats.bgColorChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-
-    // QQuickItem signals: shouldn't be in the API.
-
-    /*@jsdoc
-     * Triggered when the value of the <code>activeFocus</code> property changes.
-     * @function Stats.activeFocusChanged
-     * @param {boolean} activeFocus - Active focus.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>activeFocusOnTab</code> property changes.
-     * @function Stats.activeFocusOnTabChanged
-     * @param {boolean} activeFocusOnTab - Active focus on tab.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>antialiasing</code> property changes.
-     * @function Stats.antialiasingChanged
-     * @param {boolean} antialiasing - Antialiasing.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>baselineOffset</code> property changes.
-     * @function Stats.baselineOffsetChanged
-     * @param {number} baselineOffset - Baseline offset.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>children</code> property changes.
-     * @function Stats.childrenChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the position and size of the rectangle containing the children changes.
-     * @function Stats.childrenRectChanged
-     * @param {Rect} childrenRect - Children rect.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-
-    /*@jsdoc
-     * Triggered when the value of the <code>clip</code> property changes.
-     * @function Stats.clipChanged
-     * @param {boolean} clip - Clip.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>containmentMask</code> property changes.
-     * @function Stats.containmentMaskChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>enabled</code> property changes.
-     * @function Stats.enabledChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>focus</code> property changes.
-     * @function Stats.focusChanged
-     * @param {boolean} focus - Focus.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>height</code> property changes.
-     * @function Stats.heightChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>implicitHeight</code> property changes.
-     * @function Stats.implicitHeightChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>implicitWidth</code> property changes.
-     * @function Stats.implicitWidthChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>opacity</code> property changes.
-     * @function Stats.opacityChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the parent item changes.
-     * @function Stats.parentChanged
-     * @param {object} parent - Parent.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>rotation</code> property changes.
-     * @function Stats.rotationChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>scale</code> property changes.
-     * @function Stats.scaleChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>smooth</code> property changes.
-     * @function Stats.smoothChanged
-     * @param {boolean} smooth - Smooth.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>state</code> property changes.
-     * @function Stats.stateChanged
-     * @paramm {string} state - State.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>transformOrigin</code> property changes.
-     * @function Stats.transformOriginChanged
-     * @param {number} transformOrigin - Transformm origin.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>visibleChanged</code> property changes.
-     * @function Stats.visibleChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the list of visible children changes.
-     * @function Stats.visibleChildrenChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>width</code> property changes.
-     * @function Stats.widthChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the stats window changes.
-     * @function Stats.windowChanged
-     * @param {object} window - Window.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>x</code> property changes.
-     * @function Stats.xChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>y</code> property changes.
-     * @function Stats.yChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * Triggered when the value of the <code>z</code> property changes.
-     * @function Stats.zChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-
-
-    // QQuickItem methods: shouldn't be in the API.
-
-    /*@jsdoc
-     * @function Stats.childAt
-     * @param {number} x - X.
-     * @param {number} y - Y.
-     * @returns {object}
-     * @deprecated This method is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * @function Stats.contains
-     * @param {Vec2} point - Point
-     * @returns {boolean}
-     * @deprecated This method is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * @function Stats.forceActiveFocus
-     * @param {number} [reason=7] - Reason
-     * @deprecated This method is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * @function Stats.grabToImage
-     * @param {object} callback - Callback.
-     * @param {Size} [targetSize=0,0] - Target size.
-     * @returns {boolean}
-     * @deprecated This method is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * @function Stats.mapFromGlobal
-     * @param {object} global - Global.
-     * @deprecated This method is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * @function Stats.mapFromItem
-     * @param {object} item - Item.
-     * @deprecated This method is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * @function Stats.mapToGlobal
-     * @param {object} global - Global.
-     * @deprecated This method is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * @function Stats.mapToItem
-     * @param {object} item - Item
-     * @deprecated This method is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * @function Stats.nextItemInFocusChain
-     * @param {boolean} [forward=true] - Forward.
-     * @returns {object}
-     * @deprecated This method is deprecated and will be removed.
-     */
-
-    /*@jsdoc
-     * @function Stats.update
-     * @deprecated This method is deprecated and will be removed.
-     */
 
 private:
     int _recentMaxPackets{ 0 } ; // recent max incoming voxel packets to process

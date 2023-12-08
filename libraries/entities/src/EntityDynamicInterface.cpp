@@ -101,11 +101,11 @@ variables.  These argument variables are used by the code which is run when bull
  *   </thead>
  *   <tbody>
  *     <tr><td><code>"far-grab"</code></td><td>Avatar action</td>
- *       <td>Moves and rotates an entity to a target position and orientation, optionally relative to another entity. Collisions 
+ *       <td>Moves and rotates an entity to a target position and orientation, optionally relative to another entity. Collisions
  *       between the entity and the user's avatar are disabled during the far-grab.</td>
  *       <td>{@link Entities.ActionArguments-FarGrab}</td></tr>
  *     <tr><td><code>"hold"</code></td><td>Avatar action</td>
- *       <td>Positions and rotates an entity relative to an avatar's hand. Collisions between the entity and the user's avatar 
+ *       <td>Positions and rotates an entity relative to an avatar's hand. Collisions between the entity and the user's avatar
  *       are disabled during the hold.</td>
  *       <td>{@link Entities.ActionArguments-Hold}</td></tr>
  *     <tr><td><code>"offset"</code></td><td>Object action</td>
@@ -121,7 +121,7 @@ variables.  These argument variables are used by the code which is run when bull
  *       <td>Lets an entity pivot about an axis or connects two entities with a hinge joint.</td>
  *       <td>{@link Entities.ActionArguments-Hinge}</td></tr>
  *     <tr><td><code>"slider"</code></td><td>Object constraint</td>
- *       <td>Lets an entity slide and rotate along an axis, or connects two entities that slide and rotate along a shared 
+ *       <td>Lets an entity slide and rotate along an axis, or connects two entities that slide and rotate along a shared
  *       axis.</td>
  *       <td>{@link Entities.ActionArguments-Slider|ActionArguments-Slider}</td></tr>
  *     <tr><td><code>"cone-twist"</code></td><td>Object constraint</td>
@@ -130,8 +130,6 @@ variables.  These argument variables are used by the code which is run when bull
  *     <tr><td><code>"ball-socket"</code></td><td>Object constraint</td>
  *       <td>Connects two entities with a ball and socket joint.</td>
  *       <td>{@link Entities.ActionArguments-BallSocket}</td></tr>
- *     <tr><td><code>"spring"</code></td><td>&nbsp;</td><td>Synonym for <code>"tractor"</code>. 
- *       <p class="important">Deprecated.</p></td><td>&nbsp;</td></tr>
  *   </tbody>
  * </table>
  * @typedef {string} Entities.ActionType

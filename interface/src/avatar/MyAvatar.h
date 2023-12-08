@@ -140,8 +140,6 @@ class MyAvatar : public Avatar {
      * @property {boolean} lookAtSnappingEnabled=true - <code>true</code> if the avatar's eyes snap to look at another avatar's
      *     eyes when the other avatar is in the line of sight and also has <code>lookAtSnappingEnabled == true</code>.
      * @property {string} skeletonModelURL - The avatar's FST file.
-     * @property {AttachmentData[]} attachmentData - Information on the avatar's attachments.
-     *     <p class="important">Deprecated: This property is deprecated and will be removed. Use avatar entities instead.</p>
      * @property {string[]} jointNames - The list of joints in the current avatar model. <em>Read-only.</em>
      * @property {Uuid} sessionUUID - Unique ID of the avatar in the domain. <em>Read-only.</em>
      * @property {Mat4} sensorToWorldMatrix - The scale, rotation, and translation transform from the user's real world to the
@@ -174,9 +172,6 @@ class MyAvatar : public Avatar {
      * @comment IMPORTANT: This group of properties is copied from Avatar.h; they should NOT be edited here.
      * @property {Vec3} skeletonOffset - Can be used to apply a translation offset between the avatar's position and the
      *     registration point of the 3D model.
-     *
-     * @property {Vec3} qmlPosition - A synonym for <code>position</code> for use by QML.
-     *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
      *
      * @property {Vec3} feetPosition - The position of the avatar's feet.
      * @property {boolean} shouldRenderLocally=true - If <code>true</code> then your avatar is rendered for you in Interface,
@@ -238,7 +233,6 @@ class MyAvatar : public Avatar {
      * @property {Pose} rightHandTipPose - The right hand's pose as determined by the hand controllers, relative to the avatar,
      *     with the position adjusted by 0.3m along the direction of the palm. <em>Read-only.</em>
      *
-     * @property {number} energy - <span class="important">Deprecated: This property will be removed.</span>
      * @property {boolean} isAway - <code>true</code> if your avatar is away (i.e., inactive), <code>false</code> if it is
      *     active.
      *
@@ -253,9 +247,6 @@ class MyAvatar : public Avatar {
      *     was set <code>false</code> because the zone may disallow collisionless avatars.
      * @property {boolean} otherAvatarsCollisionsEnabled - Set to <code>true</code> to enable the avatar to collide with other
      *     avatars, <code>false</code> to disable collisions with other avatars.
-     * @property {boolean} characterControllerEnabled - Synonym of <code>collisionsEnabled</code>.
-     *     <p class="important">Deprecated: This property is deprecated and will be removed. Use <code>collisionsEnabled</code>
-     *     instead.</p>
      * @property {boolean} useAdvancedMovementControls - Returns and sets the value of the Interface setting, Settings >
      *     Controls > Walking. Note: Setting the value has no effect unless Interface is restarted.
      * @property {boolean} showPlayArea - Returns and sets the value of the Interface setting, Settings > Controls > Show room
@@ -288,18 +279,11 @@ class MyAvatar : public Avatar {
      * @property {number} analogPlusWalkSpeed - The walk speed of your avatar for the "AnalogPlus" control scheme.
      *     <p><strong>Warning:</strong> Setting this value also sets the value of <code>analogPlusSprintSpeed</code> to twice
      *     the value.</p>
-     * @property {number} analogPlusSprintSpeed - The sprint (run) speed of your avatar for the "AnalogPlus" control scheme.
-     * @property {MyAvatar.SitStandModelType} userRecenterModel - Controls avatar leaning and recentering behavior.
-     *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
      * @property {boolean} isInSittingState - <code>true</code> if the user wearing the HMD is determined to be sitting;
      *     <code>false</code> if the user wearing the HMD is determined to be standing.  This can affect whether the avatar
      *     is allowed to stand, lean or recenter its footing, depending on user preferences.
      *     The property value automatically updates as the user sits or stands. Setting the property value overrides the current
      *     sitting / standing state, which is updated when the user next sits or stands.
-     * @property {boolean} isSitStandStateLocked - <code>true</code> to lock the avatar sitting/standing state, i.e., use this
-     *     to disable automatically changing state.
-     *     <p class="important">Deprecated: This property is deprecated and will be removed.
-     *     See also: <code>getUserRecenterModel</code> and <code>setUserRecenterModel</code>.</p>
      * @property {boolean} allowTeleporting - <code>true</code> if teleporting is enabled in the Interface settings,
      *     <code>false</code> if it isn't. <em>Read-only.</em>
      *
@@ -526,30 +510,7 @@ public:
     };
     Q_ENUM(DriveKeys)
 
-    /*@jsdoc
-     * <p>Specifies different avatar leaning and recentering behaviors.</p>
-     * <p class="important">Deprecated: This type is deprecated and will be removed.</p>
-     * <table>
-     *   <thead>
-     *     <tr><th>Value</th><th>Name</th><th>Description</th></tr>
-     *   </thead>
-     *   <tbody>
-     *     <tr><td><code>0</code></td><td>ForceSit</td><td>Assumes the user is seated in the real world. Disables avatar
-     *       leaning regardless of what the avatar is doing in the virtual world (i.e., avatar always recenters).</td></tr>
-     *     <tr><td><code>1</code></td><td>ForceStand</td><td>Assumes the user is standing in the real world. Enables avatar
-     *       leaning regardless of what the avatar is doing in the virtual world (i.e., avatar leans, then if leans too far it
-     *       recenters).</td></tr>
-     *     <tr><td><code>2</code></td><td>Auto</td><td>Interface detects when the user is standing or seated in the real world.
-     *       Avatar leaning is disabled when the user is sitting (i.e., avatar always recenters), and avatar leaning is enabled
-     *       when the user is standing (i.e., avatar leans, then if leans too far it recenters).</td></tr>
-     *     <tr><td><code>3</code></td><td>DisableHMDLean</td><td><p>Both avatar leaning and recentering are disabled regardless of
-     *       what the user is doing in the real world and no matter what their avatar is doing in the virtual world. Enables
-     *       the avatar to sit on the floor when the user sits on the floor.</p>
-     *       <p><strong>Note:</strong> Experimental.</p></td></tr>
-     *   </tbody>
-     * </table>
-     * @typedef {number} MyAvatar.SitStandModelType
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     enum SitStandModelType {
         ForceSit = 0,
         ForceStand,
@@ -1684,19 +1645,10 @@ public:
      */
     Q_INVOKABLE QVariantMap getCollisionCapsule() const;
 
-    /*@jsdoc
-     * @function MyAvatar.setCharacterControllerEnabled
-     * @param {boolean} enabled - <code>true</code> to enable the avatar to collide with entities, <code>false</code> to
-     *     disable.
-     * @deprecated This function is deprecated and will be removed. Use {@link MyAvatar.setCollisionsEnabled} instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE void setCharacterControllerEnabled(bool enabled); // deprecated
 
-    /*@jsdoc
-     * @function MyAvatar.getCharacterControllerEnabled
-     * @returns {boolean} <code>true</code> if the avatar will currently collide with entities, <code>false</code> if it won't.
-     * @deprecated This function is deprecated and will be removed. Use {@link MyAvatar.getCollisionsEnabled} instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     Q_INVOKABLE bool getCharacterControllerEnabled(); // deprecated
 
     /*@jsdoc
@@ -2074,10 +2026,7 @@ public slots:
      */
     void resetSize();
 
-    /*@jsdoc
-     * @function MyAvatar.animGraphLoaded
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void animGraphLoaded();
 
     /*@jsdoc
@@ -2135,55 +2084,19 @@ public slots:
      */
     void goToLocationAndEnableCollisions(const glm::vec3& newPosition);
 
-    /*@jsdoc
-     * @function MyAvatar.safeLanding
-     * @param {Vec3} position -The new position for the avatar, in world coordinates.
-     * @returns {boolean} <code>true</code> if the avatar was moved, <code>false</code> if it wasn't.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     bool safeLanding(const glm::vec3& position);
 
 
-    /*@jsdoc
-     * @function MyAvatar.restrictScaleFromDomainSettings
-     * @param {object} domainSettings - Domain settings.
-     * @deprecated This function is deprecated and will be removed.
-     */
     void restrictScaleFromDomainSettings(const QJsonObject& domainSettingsObject);
 
-    /*@jsdoc
-     * @function MyAvatar.clearScaleRestriction
-     * @deprecated This function is deprecated and will be removed.
-     */
     void clearScaleRestriction();
 
-
-    /*@jsdoc
-     * Adds a thrust to your avatar's current thrust to be applied for a short while.
-     * @function MyAvatar.addThrust
-     * @param {Vec3} thrust - The thrust direction and magnitude.
-     * @deprecated This function is deprecated and will be removed. Use {@link MyAvatar|MyAvatar.motorVelocity} and related
-     *     properties instead.
-     */
     //  Set/Get update the thrust that will move the avatar around
     void addThrust(glm::vec3 newThrust) { _thrust += newThrust; };
 
-    /*@jsdoc
-     * Gets the thrust currently being applied to your avatar.
-     * @function MyAvatar.getThrust
-     * @returns {Vec3} The thrust currently being applied to your avatar.
-     * @deprecated This function is deprecated and will be removed. Use {@link MyAvatar|MyAvatar.motorVelocity} and related
-     *     properties instead.
-     */
     glm::vec3 getThrust() { return _thrust; };
 
-    /*@jsdoc
-     * Sets the thrust to be applied to your avatar for a short while.
-     * @function MyAvatar.setThrust
-     * @param {Vec3} thrust - The thrust direction and magnitude.
-     * @deprecated This function is deprecated and will be removed. Use {@link MyAvatar|MyAvatar.motorVelocity} and related
-     *     properties instead.
-     */
     void setThrust(glm::vec3 newThrust) { _thrust = newThrust; }
 
 
@@ -2194,11 +2107,6 @@ public slots:
      */
     Q_INVOKABLE void updateMotionBehaviorFromMenu();
 
-    /*@jsdoc
-     * @function MyAvatar.setToggleHips
-     * @param {boolean} enabled - Enabled.
-     * @deprecated This function is deprecated and will be removed.
-     */
     void setToggleHips(bool followHead);
 
     /*@jsdoc
@@ -2370,11 +2278,7 @@ public slots:
      */
     glm::quat getOrientationForAudio();
 
-    /*@jsdoc
-     * @function MyAvatar.setModelScale
-     * @param {number} scale - The scale.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     virtual void setModelScale(float scale) override;
 
     /*@jsdoc
@@ -2470,11 +2374,7 @@ signals:
      */
     void walkBackwardSpeedChanged(float value);
 
-    /*@jsdoc
-     * @function MyAvatar.transformChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void transformChanged();
 
     /*@jsdoc
@@ -2526,12 +2426,7 @@ signals:
      * });     */
     void animGraphUrlChanged(const QUrl& url);
 
-    /*@jsdoc
-     * @function MyAvatar.energyChanged
-     * @param {number} energy - Avatar energy.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void energyChanged(float newEnergy);
 
     /*@jsdoc
@@ -2609,14 +2504,7 @@ signals:
      */
     void sensorToWorldScaleChanged(float sensorToWorldScale);
 
-    /*@jsdoc
-     * Triggered when the a model is attached to or detached from one of the avatar's joints using one of
-     * {@link MyAvatar.attach|attach}, {@link MyAvatar.detachOne|detachOne}, {@link MyAvatar.detachAll|detachAll}, or
-     * {@link MyAvatar.setAttachmentData|setAttachmentData}.
-     * @function MyAvatar.attachmentsChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed. Use avatar entities instead.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void attachmentsChanged();
 
     /*@jsdoc

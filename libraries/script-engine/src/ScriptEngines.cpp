@@ -202,11 +202,6 @@ void ScriptEngines::shutdownScripting() {
  * Information on a public script, i.e., a script that's included in the Interface installation.
  * @typedef {object} ScriptDiscoveryService.PublicScript
  * @property {string} name - The script's file name.
- * @property {string} type - <code>"script"</code> or <code>"folder"</code>.
- *     <p class="important">Deprecated: This property is deprecated and will be removed. It currently always has the value,
- *     <code>"script"</code>.</p>
- * @property {ScriptDiscoveryService.PublicScript[]} [children] - Only present if <code>type == "folder"</code>.
- *     <p class="important">Deprecated: This property is deprecated and will be removed. It currently is never present.
  * @property {string} [url] - The full URL of the script &mdash; including the <code>"file:///"</code> scheme at the start.
  *     <p>Only present if <code>type == "script"</code>.</p>
  */
@@ -241,13 +236,7 @@ QVariantList ScriptEngines::getPublic() {
     return getPublicChildNodes(NULL);
 }
 
-/*@jsdoc
- * Information on a local script.
- * @typedef {object} ScriptDiscoveryService.LocalScript
- * @property {string} name - The script's file name.
- * @property {string} path - The script's path.
- * @deprecated This type is deprecated and will be removed.
- */
+// TODO: Deprecated by documentation, please review for accuracy
 QVariantList ScriptEngines::getLocal() {
     QVariantList result;
     QList<TreeNodeBase*> treeNodes = getScriptsModel().getFolderNodes(NULL);

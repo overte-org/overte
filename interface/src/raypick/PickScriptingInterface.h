@@ -35,13 +35,6 @@ class ScriptValue;
  * @property {FilterFlags} PICK_AVATARS - Include avatars when intersecting. <em>Read-only.</em>
  * @property {FilterFlags} PICK_HUD - Include the HUD surface when intersecting in HMD mode. <em>Read-only.</em>
  *
- * @property {FilterFlags} PICK_ENTITIES - Include domain and avatar entities when intersecting. <em>Read-only.</em>
- *     <p class="important">Deprecated: This property is deprecated and will be removed. Use <code>PICK_DOMAIN_ENTITIES | 
- *     PICK_AVATAR_ENTITIES</code> instead.</p>
- * @property {FilterFlags} PICK_OVERLAYS - Include local entities when intersecting. <em>Read-only.</em>
- *     <p class="important">Deprecated: This property is deprecated and will be removed. Use <code>PICK_LOCAL_ENTITIES</code> 
- *     instead.</p>
- *
  * @property {FilterFlags} PICK_INCLUDE_VISIBLE - Include visible objects when intersecting. <em>Read-only.</em>
  *     <p><strong>Warning:</strong> Is currently always enabled by default but may not be in the future.</p>
  * @property {FilterFlags} PICK_INCLUDE_INVISIBLE - Include invisible objects when intersecting. <em>Read-only.</em>
@@ -53,21 +46,17 @@ class ScriptValue;
  * @property {FilterFlags} PICK_PRECISE - Pick against exact meshes. <em>Read-only.</em>
  * @property {FilterFlags} PICK_COARSE - Pick against coarse meshes. <em>Read-only.</em>
  *
- * @property {FilterFlags} PICK_ALL_INTERSECTIONS - If set, returns all intersections instead of just the closest. 
+ * @property {FilterFlags} PICK_ALL_INTERSECTIONS - If set, returns all intersections instead of just the closest.
  *     <em>Read-only.</em>
  *     <p><strong>Warning:</strong> Not yet implemented.</p>
  *
- * @property {FilterFlags} PICK_BYPASS_IGNORE - Allows pick to intersect entities even when their 
+ * @property {FilterFlags} PICK_BYPASS_IGNORE - Allows pick to intersect entities even when their
  *     <code>ignorePickIntersection</code> property value is <code>true</code>. For debug purposes.
  *     <em>Read-only.</em>
  *
  * @property {IntersectionType} INTERSECTED_NONE - Intersected nothing. <em>Read-only.</em>
  * @property {IntersectionType} INTERSECTED_ENTITY - Intersected an entity. <em>Read-only.</em>
  * @property {IntersectionType} INTERSECTED_LOCAL_ENTITY - Intersected a local entity. <em>Read-only.</em>
- * @property {IntersectionType} INTERSECTED_OVERLAY - Intersected a local entity. (3D overlays no longer exist.) 
- *     <em>Read-only.</em>
- *     <p class="important">Deprecated: This property is deprecated and will be removed. Use 
- *     <code>INTERSECTED_LOCAL_ENTITY</code> instead.</p>
  * @property {IntersectionType} INTERSECTED_AVATAR - Intersected an avatar. <em>Read-only.</em>
  * @property {IntersectionType} INTERSECTED_HUD - Intersected the HUD surface. <em>Read-only.</em>
  *
@@ -112,14 +101,14 @@ public:
     void registerProperties(ScriptEngine* engine);
 
     /*@jsdoc
-     * Creates a new pick. Different {@link PickType}s use different properties, and within one PickType the properties you 
-     * choose can lead to a wide range of behaviors. For example, with <code>PickType.Ray</code>, the properties could 
+     * Creates a new pick. Different {@link PickType}s use different properties, and within one PickType the properties you
+     * choose can lead to a wide range of behaviors. For example, with <code>PickType.Ray</code>, the properties could
      * configure a mouse ray pick, an avatar head ray pick, or a joint ray pick.
-     * <p><strong>Warning:</strong> Picks created using this method currently always intersect at least visible and collidable 
+     * <p><strong>Warning:</strong> Picks created using this method currently always intersect at least visible and collidable
      * things but this may not always be the case.</p>
      * @function Picks.createPick
      * @param {PickType} type - The type of picking to use.
-     * @param {Picks.RayPickProperties|Picks.ParabolaPickProperties|Picks.StylusPickProperties|Picks.CollisionPickProperties} 
+     * @param {Picks.RayPickProperties|Picks.ParabolaPickProperties|Picks.StylusPickProperties|Picks.CollisionPickProperties}
      *     properties - Properties of the pick, per the pick <code>type</code>.
      * @returns {number} The ID of the pick created. <code>0</code> if invalid.
      */
@@ -165,12 +154,12 @@ public:
     Q_INVOKABLE QVariantMap getPickProperties(unsigned int uid) const;
 
     /*@jsdoc
-     * Gets the parameters that were passed in to {@link Picks.createPick} to create the pick, if the pick was created through 
+     * Gets the parameters that were passed in to {@link Picks.createPick} to create the pick, if the pick was created through
      * a script. Note that these properties do not reflect the current state of the pick.
      * See {@link Picks.getPickProperties}.
      * @function Picks.getPickScriptParameters
      * @param {number} id - The ID of the pick.
-     * @returns {Picks.RayPickProperties|Picks.ParabolaPickProperties|Picks.StylusPickProperties|Picks.CollisionPickProperties} 
+     * @returns {Picks.RayPickProperties|Picks.ParabolaPickProperties|Picks.StylusPickProperties|Picks.CollisionPickProperties}
      *     Script-provided properties, per the pick <code>type</code>.
      */
     Q_INVOKABLE QVariantMap getPickScriptParameters(unsigned int uid) const;
@@ -183,9 +172,9 @@ public:
     Q_INVOKABLE QVector<unsigned int> getPicks() const;
 
     /*@jsdoc
-     * Gets the most recent result from a pick. A pick continues to be updated ready to return a result, as long as it is 
+     * Gets the most recent result from a pick. A pick continues to be updated ready to return a result, as long as it is
      * enabled.
-     * <p><strong>Note:</strong> Stylus picks only intersect with objects in their include list, set using 
+     * <p><strong>Note:</strong> Stylus picks only intersect with objects in their include list, set using
      * {@link Picks.setIncludeItems|setIncludeItems}.</p>
      * @function Picks.getPrevPickResult
      * @param {number} id - The ID of the pick.
@@ -195,7 +184,7 @@ public:
      * var HIGHLIGHT_LIST_NAME = "highlightEntitiesExampleList";
      * var HIGHLIGHT_LIST_TYPE = "entity";
      * Selection.enableListHighlight(HIGHLIGHT_LIST_NAME, {});
-     * 
+     *
      * // Ray pick.
      * var PICK_FILTER = Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES
      *         | Picks.PICK_INCLUDE_COLLIDABLE | Picks.PICK_INCLUDE_NONCOLLIDABLE;
@@ -204,7 +193,7 @@ public:
      *     filter: PICK_FILTER,
      *     joint: HMD.active ? "Avatar" : "Mouse"
      * });
-     * 
+     *
      * // Highlight intersected entity.
      * var highlightedEntityID = null;
      * Script.update.connect(function () {
@@ -224,7 +213,7 @@ public:
      *         }
      *     }
      * });
-     * 
+     *
      * // Clean up.
      * Script.scriptEnding.connect(function () {
      *     if (highlightedEntityID) {
@@ -235,7 +224,7 @@ public:
     Q_INVOKABLE QVariantMap getPrevPickResult(unsigned int uid);
 
     /*@jsdoc
-     * Sets whether or not a pick should use precision picking, i.e., whether it should pick against precise meshes or coarse 
+     * Sets whether or not a pick should use precision picking, i.e., whether it should pick against precise meshes or coarse
      * meshes.
      * This has the same effect as using the <code>PICK_PRECISE</code> or <code>PICK_COARSE</code> filter flags.
      * @function Picks.setPrecisionPicking
@@ -254,7 +243,7 @@ public:
     Q_INVOKABLE void setIgnoreItems(unsigned int uid, const ScriptValue& ignoreItems);
 
     /*@jsdoc
-     * Sets a list of entity and avatar IDs that a pick should include during intersection, instead of intersecting with 
+     * Sets a list of entity and avatar IDs that a pick should include during intersection, instead of intersecting with
      * everything.
      * <p><strong>Note:</strong> Stylus picks only intersect with items in their include list.</p>
      * @function Picks.setIncludeItems
@@ -264,8 +253,8 @@ public:
     Q_INVOKABLE void setIncludeItems(unsigned int uid, const ScriptValue& includeItems);
 
     /*@jsdoc
-     * Checks if a pick is associated with the left hand: a ray or parabola pick with <code>joint</code> property set to 
-     * <code>"_CONTROLLER_LEFTHAND"</code> or <code>"_CAMERA_RELATIVE_CONTROLLER_LEFTHAND"</code>, or a stylus pick with 
+     * Checks if a pick is associated with the left hand: a ray or parabola pick with <code>joint</code> property set to
+     * <code>"_CONTROLLER_LEFTHAND"</code> or <code>"_CAMERA_RELATIVE_CONTROLLER_LEFTHAND"</code>, or a stylus pick with
      * <code>hand</code> property set to <code>0</code>.
      * @function Picks.isLeftHand
      * @param {number} id - The ID of the pick.
@@ -275,7 +264,7 @@ public:
 
     /*@jsdoc
      * Checks if a pick is associated with the right hand: a ray or parabola pick with <code>joint</code> property set to
-     * <code>"_CONTROLLER_RIGHTHAND"</code> or <code>"_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND"</code>, or a stylus pick with 
+     * <code>"_CONTROLLER_RIGHTHAND"</code> or <code>"_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND"</code>, or a stylus pick with
      * <code>hand</code> property set to <code>1</code>.
      * @function Picks.isRightHand
      * @param {number} id - The ID of the pick.
@@ -284,7 +273,7 @@ public:
     Q_INVOKABLE bool isRightHand(unsigned int uid);
 
     /*@jsdoc
-     * Checks if a pick is associated with the system mouse: a ray or parabola pick with <code>joint</code> property set to 
+     * Checks if a pick is associated with the system mouse: a ray or parabola pick with <code>joint</code> property set to
      * <code>"Mouse"</code>.
      * @function Picks.isMouse
      * @param {number} id - The ID of the pick.
@@ -299,166 +288,64 @@ public slots:
 
     static constexpr unsigned int getPickBypassIgnore() { return PickFilter::getBitMask(PickFilter::FlagBit::PICK_BYPASS_IGNORE); }
 
-    /*@jsdoc
-     * @function Picks.PICK_ENTITIES
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_DOMAIN_ENTITIES | 
-     *     Picks.PICK_AVATAR_ENTITIES</code> properties expression instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getPickEntities() { return PickFilter::getBitMask(PickFilter::FlagBit::DOMAIN_ENTITIES) | PickFilter::getBitMask(PickFilter::FlagBit::AVATAR_ENTITIES); }
 
-    /*@jsdoc
-     * @function Picks.PICK_OVERLAYS
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_LOCAL_ENTITIES</code> property 
-     *     instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getPickOverlays() { return PickFilter::getBitMask(PickFilter::FlagBit::LOCAL_ENTITIES); }
 
-
-    /*@jsdoc
-     * @function Picks.PICK_DOMAIN_ENTITIES
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_DOMAIN_ENTITIES</code> property 
-     *     instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getPickDomainEntities() { return PickFilter::getBitMask(PickFilter::FlagBit::DOMAIN_ENTITIES); }
 
-    /*@jsdoc
-     * @function Picks.PICK_AVATAR_ENTITIES
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_AVATAR_ENTITIES</code> property 
-     *     instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getPickAvatarEntities() { return PickFilter::getBitMask(PickFilter::FlagBit::AVATAR_ENTITIES); }
 
-    /*@jsdoc
-     * @function Picks.PICK_LOCAL_ENTITIES
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_LOCAL_ENTITIES</code> property 
-     *     instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getPickLocalEntities() { return PickFilter::getBitMask(PickFilter::FlagBit::LOCAL_ENTITIES); }
 
-    /*@jsdoc
-     * @function Picks.PICK_AVATARS
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_AVATARS</code> property 
-     *     instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getPickAvatars() { return PickFilter::getBitMask(PickFilter::FlagBit::AVATARS); }
 
-    /*@jsdoc
-     * @function Picks.PICK_HUD
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_HUD</code> property instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getPickHud() { return PickFilter::getBitMask(PickFilter::FlagBit::HUD); }
 
-
-    /*@jsdoc
-     * @function Picks.PICK_INCLUDE_VISIBLE
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_INCLUDE_VISIBLE</code> property 
-     *     instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getPickIncludeVisible() { return PickFilter::getBitMask(PickFilter::FlagBit::VISIBLE); }
 
-    /*@jsdoc
-     * @function Picks.PICK_INCLUDE_INVISIBLE
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_INCLUDE_INVISIBLE</code> property 
-     *     instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getPickIncludeInvisible() { return PickFilter::getBitMask(PickFilter::FlagBit::INVISIBLE); }
 
-
-    /*@jsdoc
-     * @function Picks.PICK_INCLUDE_COLLIDABLE
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_INCLUDE_COLLIDABLE</code> property 
-     *     instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getPickIncludeCollidable() { return PickFilter::getBitMask(PickFilter::FlagBit::COLLIDABLE); }
 
-    /*@jsdoc
-     * @function Picks.PICK_INCLUDE_NONCOLLIDABLE
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_INCLUDE_NONCOLLIDABLE</code> 
-     *     property instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getPickIncludeNoncollidable() { return PickFilter::getBitMask(PickFilter::FlagBit::NONCOLLIDABLE); }
 
-
-    /*@jsdoc
-     * @function Picks.PICK_PRECISE
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_PRECISE</code> property instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getPickPrecise() { return PickFilter::getBitMask(PickFilter::FlagBit::PRECISE); }
 
-    /*@jsdoc
-     * @function Picks.PICK_COARSE
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_COARSE</code> property instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getPickCoarse() { return PickFilter::getBitMask(PickFilter::FlagBit::COARSE); }
 
-
-    /*@jsdoc
-     * @function Picks.PICK_ALL_INTERSECTIONS
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.PICK_ALL_INTERSECTIONS</code> property 
-     *     instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getPickAllIntersections() { return PickFilter::getBitMask(PickFilter::FlagBit::PICK_ALL_INTERSECTIONS); }
 
-    /*@jsdoc
-     * @function Picks.INTERSECTED_NONE
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.INTERSECTED_NONE</code> property 
-     *     instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getIntersectedNone() { return IntersectionType::NONE; }
 
-    /*@jsdoc
-     * @function Picks.INTERSECTED_ENTITY
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.INTERSECTED_ENTITY</code> property 
-     *     instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getIntersectedEntity() { return IntersectionType::ENTITY; }
 
-    /*@jsdoc
-     * @function Picks.INTERSECTED_LOCAL_ENTITY
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.INTERSECTED_LOCAL_ENTITY</code> 
-     *     property instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getIntersectedLocalEntity() { return IntersectionType::LOCAL_ENTITY; }
 
-    /*@jsdoc
-     * @function Picks.INTERSECTED_OVERLAY
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.INTERSECTED_LOCAL_ENTITY</code> 
-     *     property instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getIntersectedOverlay() { return getIntersectedLocalEntity(); }
 
-    /*@jsdoc
-     * @function Picks.INTERSECTED_AVATAR
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.INTERSECTED_AVATAR</code> property 
-     *     instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getIntersectedAvatar() { return IntersectionType::AVATAR; }
 
-    /*@jsdoc
-     * @function Picks.INTERSECTED_HUD
-     * @deprecated This function is deprecated and will be removed. Use the <code>Picks.INTERSECTED_HUD</code> property 
-     *     instead.
-     * @returns {number}
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     static constexpr unsigned int getIntersectedHud() { return IntersectionType::HUD; }
 
 protected:

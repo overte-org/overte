@@ -22,33 +22,7 @@
 
 class ScriptValue;
 
-/*@jsdoc
- * The <code>RayPick</code> API is a subset of the {@link Picks} API, as used for ray picks.
- *
- * @namespace RayPick
- *
- * @deprecated This API is deprecated and will be removed. Use the {@link Picks} API instead.
- *
- * @hifi-interface
- * @hifi-client-entity
- * @hifi-avatar
- *
- * @property {FilterFlags} PICK_ENTITIES - Include domain and avatar entities when intersecting. 
- *     <em>Read-only.</em>
- * @property {FilterFlags} PICK_OVERLAYS - Include local entities when intersecting. <em>Read-only.</em>
- * @property {FilterFlags} PICK_AVATARS - Include avatars when intersecting. <em>Read-only.</em>
- * @property {FilterFlags} PICK_HUD - Include the HUD surface when intersecting in HMD mode. <em>Read-only.</em>
- * @property {FilterFlags} PICK_PRECISE - Pick against exact meshes. <em>Read-only.</em>
- * @property {FilterFlags} PICK_INCLUDE_INVISIBLE - Include invisible objects when intersecting. <em>Read-only.</em>
- * @property {FilterFlags} PICK_INCLUDE_NONCOLLIDABLE - Include non-collidable objects when intersecting. <em>Read-only.</em>
- * @property {FilterFlags} PICK_ALL_INTERSECTIONS - Return all intersections instead of just the closest. <em>Read-only.</em>
- * @property {IntersectionType} INTERSECTED_NONE - Intersected nothing with the given filter flags. <em>Read-only.</em>
- * @property {IntersectionType} INTERSECTED_ENTITY - Intersected an entity. <em>Read-only.</em>
- * @property {IntersectionType} INTERSECTED_LOCAL_ENTITY - Intersected a local entity. <em>Read-only.</em>
- * @property {IntersectionType} INTERSECTED_OVERLAY - Intersected an entity (3D Overlays no longer exist). <em>Read-only.</em>
- * @property {IntersectionType} INTERSECTED_AVATAR - Intersected an avatar. <em>Read-only.</em>
- * @property {IntersectionType} INTERSECTED_HUD - Intersected the HUD surface. <em>Read-only.</em>
- */
+// TODO: Deprecated by documentation, please review for accuracy
 class RayPickScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
     Q_PROPERTY(unsigned int PICK_ENTITIES READ getPickEntities CONSTANT)
@@ -101,7 +75,7 @@ public:
     Q_INVOKABLE void removeRayPick(unsigned int uid);
 
     /*@jsdoc
-     * Gets the most recent pick result from a ray pick. A ray pick continues to be updated ready to return a result, as long 
+     * Gets the most recent pick result from a ray pick. A ray pick continues to be updated ready to return a result, as long
      * as it is enabled.
      * @function RayPick.getPrevRayPickResult
      * @param {number} id - The ID of the ray pick.
@@ -111,7 +85,7 @@ public:
 
 
     /*@jsdoc
-     * Sets whether or not a ray pick should use precision picking, i.e., whether it should pick against precise meshes or 
+     * Sets whether or not a ray pick should use precision picking, i.e., whether it should pick against precise meshes or
      * coarse meshes.
      * @function RayPick.setPrecisionPicking
      * @param {number} id - The ID of the ray pick.
@@ -128,7 +102,7 @@ public:
     Q_INVOKABLE void setIgnoreItems(unsigned int uid, const ScriptValue& ignoreEntities);
 
     /*@jsdoc
-     * Sets a list of entity and avatar IDs that a ray pick should include during intersection, instead of intersecting with 
+     * Sets a list of entity and avatar IDs that a ray pick should include during intersection, instead of intersecting with
      * everything.
      * @function RayPick.setIncludeItems
      * @param {number} id - The ID of the ray pick.
@@ -139,7 +113,7 @@ public:
 
     /*@jsdoc
      * Checks if a pick is associated with the left hand: a ray or parabola pick with <code>joint</code> property set to
-     * <code>"_CONTROLLER_LEFTHAND"</code> or <code>"_CAMERA_RELATIVE_CONTROLLER_LEFTHAND"</code>, or a stylus pick with 
+     * <code>"_CONTROLLER_LEFTHAND"</code> or <code>"_CAMERA_RELATIVE_CONTROLLER_LEFTHAND"</code>, or a stylus pick with
      * <code>hand</code> property set to <code>0</code>.
      * @function RayPick.isLeftHand
      * @param {number} id - The ID of the ray pick.
@@ -149,7 +123,7 @@ public:
 
     /*@jsdoc
      * Checks if a pick is associated with the right hand: a ray or parabola pick with <code>joint</code> property set to
-     * <code>"_CONTROLLER_RIGHTHAND"</code> or <code>"_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND"</code>, or a stylus pick with 
+     * <code>"_CONTROLLER_RIGHTHAND"</code> or <code>"_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND"</code>, or a stylus pick with
      * <code>hand</code> property set to <code>1</code>.
      * @function RayPick.isRightHand
      * @param {number} id - The ID of the ray pick.
@@ -158,7 +132,7 @@ public:
     Q_INVOKABLE bool isRightHand(unsigned int uid);
 
     /*@jsdoc
-     * Checks if a pick is associated with the system mouse: a ray or parabola pick with <code>joint</code> property set to 
+     * Checks if a pick is associated with the system mouse: a ray or parabola pick with <code>joint</code> property set to
      * <code>"Mouse"</code>.
      * @function RayPick.isMouse
      * @param {number} id - The ID of the ray pick.
@@ -205,7 +179,7 @@ public slots:
 
     /*@jsdoc
      * @function RayPick.PICK_INCLUDE_INVISIBLE
-     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.PICK_INCLUDE_INVISIBLE</code> 
+     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.PICK_INCLUDE_INVISIBLE</code>
      *     property instead.
      * @returns {number}
      */
@@ -213,7 +187,7 @@ public slots:
 
     /*@jsdoc
      * @function RayPick.PICK_INCLUDE_NONCOLLIDABLE
-     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.PICK_INCLUDE_NONCOLLIDABLE</code> 
+     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.PICK_INCLUDE_NONCOLLIDABLE</code>
      *     property instead.
      * @returns {number}
      */
@@ -221,7 +195,7 @@ public slots:
 
     /*@jsdoc
      * @function RayPick.PICK_ALL_INTERSECTIONS
-     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.PICK_ALL_INTERSECTIONS</code> 
+     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.PICK_ALL_INTERSECTIONS</code>
      *     property instead.
      * @returns {number}
      */
@@ -229,7 +203,7 @@ public slots:
 
     /*@jsdoc
      * @function RayPick.INTERSECTED_NONE
-     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.INTERSECTED_NONE</code> property 
+     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.INTERSECTED_NONE</code> property
      *     instead.
      * @returns {number}
      */
@@ -237,7 +211,7 @@ public slots:
 
     /*@jsdoc
      * @function RayPick.INTERSECTED_ENTITY
-     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.INTERSECTED_ENTITY</code> property 
+     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.INTERSECTED_ENTITY</code> property
      *     instead.
      * @returns {number}
      */
@@ -245,7 +219,7 @@ public slots:
 
     /*@jsdoc
      * @function RayPick.INTERSECTED_OVERLAY
-     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.INTERSECTED_LOCAL_ENTITY</code> 
+     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.INTERSECTED_LOCAL_ENTITY</code>
      *     property instead.
      * @returns {number}
      */
@@ -253,7 +227,7 @@ public slots:
 
     /*@jsdoc
      * @function RayPick.INTERSECTED_OVERLAY
-     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.INTERSECTED_OVERLAY</code> property 
+     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.INTERSECTED_OVERLAY</code> property
      *     instead.
      * @returns {number}
      */
@@ -261,7 +235,7 @@ public slots:
 
     /*@jsdoc
      * @function RayPick.INTERSECTED_AVATAR
-     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.INTERSECTED_AVATAR</code> property 
+     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.INTERSECTED_AVATAR</code> property
      *     instead.
      * @returns {number}
      */
@@ -269,7 +243,7 @@ public slots:
 
     /*@jsdoc
      * @function RayPick.INTERSECTED_HUD
-     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.INTERSECTED_HUD</code> property 
+     * @deprecated This function is deprecated and will be removed. Use the <code>RayPick.INTERSECTED_HUD</code> property
      *     instead.
      * @returns {number}
      */

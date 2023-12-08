@@ -44,27 +44,6 @@
  * print("Qt version: " + About.qtVersion);
  */
 
- /*@jsdoc
- * The <code>HifiAbout</code> API provides information about the version of Interface that is currently running. It also
- * has the functionality to open a web page in an Interface browser window.
- *
- * @namespace HifiAbout
- *
- * @hifi-interface
- * @hifi-client-entity
- * @hifi-avatar
- *
- * @deprecated This API is deprecated and will be removed. Use the {@link About} API instead.
- *
- * @property {string} platform - The name of the Interface platform running, e,g., <code>"Overte"</code> for the Overte.
- *     <em>Read-only.</em>
- * @property {string} buildDate - The build date of Interface that is currently running. <em>Read-only.</em>
- * @property {string} buildVersion - The build version of Interface that is currently running. <em>Read-only.</em>
- * @property {string} qtVersion - The Qt version used in Interface that is currently running. <em>Read-only.</em>
- *
- * @borrows About.openUrl as openUrl
- */
-
 class AboutUtil : public QObject {
     Q_OBJECT
 

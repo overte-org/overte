@@ -21,7 +21,7 @@
 #include <EntityItem.h>
 
 /*@jsdoc
- * The <code>Avatar</code> API is used to manipulate scriptable avatars on the domain. This API is a subset of the 
+ * The <code>Avatar</code> API is used to manipulate scriptable avatars on the domain. This API is a subset of the
  * {@link MyAvatar} API. To enable this API, set {@link Agent|Agent.isAvatar} to <code>true</code>.
  *
  * <p>For Interface, client entity, and avatar scripts, see {@link MyAvatar}.</p>
@@ -32,7 +32,7 @@
  *
  * @comment IMPORTANT: This group of properties is copied from AvatarData.h; they should NOT be edited here.
  * @property {Vec3} position - The position of the avatar.
- * @property {number} scale=1.0 - The scale of the avatar. The value can be set to anything between <code>0.005</code> and 
+ * @property {number} scale=1.0 - The scale of the avatar. The value can be set to anything between <code>0.005</code> and
  *     <code>1000.0</code>. When the scale value is fetched, it may temporarily be further limited by the domain's settings.
  * @property {number} density - The density of the avatar in kg/m<sup>3</sup>. The density is used to work out its mass in
  *     the application of physics. <em>Read-only.</em>
@@ -59,13 +59,11 @@
  * @property {number} audioAverageLoudness - The rolling average loudness of the audio input that the avatar is injecting
  *     into the domain.
  * @property {string} displayName - The avatar's display name.
- * @property {string} sessionDisplayName - <code>displayName's</code> sanitized and default version defined by the avatar mixer 
+ * @property {string} sessionDisplayName - <code>displayName's</code> sanitized and default version defined by the avatar mixer
  *     rather than Interface clients. The result is unique among all avatars present in the domain at the time.
  * @property {boolean} lookAtSnappingEnabled=true - <code>true</code> if the avatar's eyes snap to look at another avatar's
  *     eyes when the other avatar is in the line of sight and also has <code>lookAtSnappingEnabled == true</code>.
  * @property {string} skeletonModelURL - The avatar's FST file.
- * @property {AttachmentData[]} attachmentData - Information on the avatar's attachments. 
- *     <p class="important">Deprecated: This property is deprecated and will be removed. Use avatar entities instead.</p>
  * @property {string[]} jointNames - The list of joints in the current avatar model. <em>Read-only.</em>
  * @property {Uuid} sessionUUID - Unique ID of the avatar in the domain. <em>Read-only.</em>
  * @property {Mat4} sensorToWorldMatrix - The scale, rotation, and translation transform from the user's real world to the
@@ -78,21 +76,21 @@
  *     size in the virtual world. <em>Read-only.</em>
  * @property {boolean} hasPriority - <code>true</code> if the avatar is in a "hero" zone, <code>false</code> if it isn't.
  *     <em>Read-only.</em>
- * @property {boolean} hasScriptedBlendshapes=false - <code>true</code> if blend shapes are controlled by scripted actions, 
- *     otherwise <code>false</code>. Set this to <code>true</code> before using the {@link MyAvatar.setBlendshape} method, 
+ * @property {boolean} hasScriptedBlendshapes=false - <code>true</code> if blend shapes are controlled by scripted actions,
+ *     otherwise <code>false</code>. Set this to <code>true</code> before using the {@link MyAvatar.setBlendshape} method,
  *     and set back to <code>false</code> after you no longer want scripted control over the blend shapes.
- *     <p><strong>Note:</strong> This property will automatically be set to true if the Controller system has valid facial 
+ *     <p><strong>Note:</strong> This property will automatically be set to true if the Controller system has valid facial
  *     blend shape actions.</p>
- * @property {boolean} hasProceduralBlinkFaceMovement=true - <code>true</code> if avatars blink automatically by animating 
- *     facial blend shapes, <code>false</code> if automatic blinking is disabled. Set to <code>false</code> to fully control 
+ * @property {boolean} hasProceduralBlinkFaceMovement=true - <code>true</code> if avatars blink automatically by animating
+ *     facial blend shapes, <code>false</code> if automatic blinking is disabled. Set to <code>false</code> to fully control
  *     the blink facial blend shapes via the {@link MyAvatar.setBlendshape} method.
- * @property {boolean} hasProceduralEyeFaceMovement=true - <code>true</code> if the facial blend shapes for an avatar's eyes 
- *     adjust automatically as the eyes move, <code>false</code> if this automatic movement is disabled. Set this property 
- *     to <code>true</code> to prevent the iris from being obscured by the upper or lower lids. Set to <code>false</code> to 
+ * @property {boolean} hasProceduralEyeFaceMovement=true - <code>true</code> if the facial blend shapes for an avatar's eyes
+ *     adjust automatically as the eyes move, <code>false</code> if this automatic movement is disabled. Set this property
+ *     to <code>true</code> to prevent the iris from being obscured by the upper or lower lids. Set to <code>false</code> to
  *     fully control the eye blend shapes via the {@link MyAvatar.setBlendshape} method.
- * @property {boolean} hasAudioEnabledFaceMovement=true - <code>true</code> if the avatar's mouth blend shapes animate 
- *     automatically based on detected microphone input, <code>false</code> if this automatic movement is disabled. Set 
- *     this property to <code>false</code> to fully control the mouth facial blend shapes via the 
+ * @property {boolean} hasAudioEnabledFaceMovement=true - <code>true</code> if the avatar's mouth blend shapes animate
+ *     automatically based on detected microphone input, <code>false</code> if this automatic movement is disabled. Set
+ *     this property to <code>false</code> to fully control the mouth facial blend shapes via the
  *     {@link MyAvatar.setBlendshape} method.
  *
  * @example <caption>Create a scriptable avatar.</caption>
@@ -115,8 +113,8 @@ public:
     /*@jsdoc
      * Starts playing an animation on the avatar.
      * @function Avatar.startAnimation
-     * @param {string} url - The animation file's URL. Animation files need to be in glTF or FBX format but only need to 
-     *     contain the avatar skeleton and animation data. glTF models may be in JSON or binary format (".gltf" or ".glb" URLs 
+     * @param {string} url - The animation file's URL. Animation files need to be in glTF or FBX format but only need to
+     *     contain the avatar skeleton and animation data. glTF models may be in JSON or binary format (".gltf" or ".glb" URLs
      *     respectively).
      *     <p><strong>Warning:</strong> glTF animations currently do not always animate correctly.</p>
      * @param {number} [fps=30] - The frames per second (FPS) rate for the animation playback. 30 FPS is normal speed.
@@ -129,7 +127,7 @@ public:
      */
     /// Allows scripts to run animations.
     Q_INVOKABLE void startAnimation(const QString& url, float fps = 30.0f, float priority = 1.0f, bool loop = false,
-                                    bool hold = false, float firstFrame = 0.0f, float lastFrame = FLT_MAX, 
+                                    bool hold = false, float firstFrame = 0.0f, float lastFrame = FLT_MAX,
                                     const QStringList& maskedJoints = QStringList());
 
     /*@jsdoc
@@ -200,17 +198,10 @@ public:
     Q_INVOKABLE void updateAvatarEntity(const QUuid& entityID, const QByteArray& entityData) override;
 
 public slots:
-    /*@jsdoc
-     * @function Avatar.update
-     * @param {number} deltaTime - Delta time.
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void update(float deltatime);
 
-    /*@jsdoc
-     * @function Avatar.setJointMappingsFromNetworkReply
-     * @deprecated This function is deprecated and will be removed.
-     */
+    // TODO: Deprecated by documentation, please review for accuracy
     void setJointMappingsFromNetworkReply();
 
 private:
