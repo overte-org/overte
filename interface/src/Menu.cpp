@@ -465,8 +465,16 @@ Menu::Menu() {
             newMaxTextureMemory = MB_TO_BYTES(4096);
         } else if (MenuOption::RenderMaxTexture6144MB == text) {
             newMaxTextureMemory = MB_TO_BYTES(6144);
-        } else if (MenuOption::RenderMaxTexture8192MB == text) {
+        } else if (MenuOption::RenderMaxTexture1024MB == text) {
             newMaxTextureMemory = MB_TO_BYTES(8192);
+        } else if (MenuOption::RenderMaxTexture10240MB == text) {
+            newMaxTextureMemory = MB_TO_BYTES(10240);
+        } else if (MenuOption::RenderMaxTexture12288MB == text) {
+            newMaxTextureMemory = MB_TO_BYTES(12288);
+        } else if (MenuOption::RenderMaxTexture16384MB == text) {
+            newMaxTextureMemory = MB_TO_BYTES(16384);
+        } else if (MenuOption::RenderMaxTexture20480MB == text) {
+            newMaxTextureMemory = MB_TO_BYTES(20480);
         }
         gpu::Texture::setAllowedGPUMemoryUsage(newMaxTextureMemory);
     });
@@ -774,7 +782,6 @@ Menu::Menu() {
 
         addActionToQMenuAndActionHash(crashMenu, MenuOption::CrashOnShutdown, 0, qApp, SLOT(crashOnShutdown()));
     }
-
 
     // Developer > Show Statistics
     addCheckableActionToQMenuAndActionHash(developerMenu, MenuOption::Stats, 0, true);
