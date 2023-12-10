@@ -138,7 +138,7 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const EntityItemID& v) { 
 inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return aaCubeToScriptValue(e, v); }
 
 #define COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(X,G,g,P,p) \
-    if ((desiredProperties.isEmpty() || desiredProperties.getHasProperty(X)) && \
+    if (((!pseudoPropertyFlagsButDesiredEmpty && desiredProperties.isEmpty()) || desiredProperties.getHasProperty(X)) && \
         (!skipDefaults || defaultEntityProperties.get##G().get##P() != get##P())) { \
         ScriptValue groupProperties = properties.property(#g); \
         if (!groupProperties.isValid()) { \
@@ -150,7 +150,7 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return
     }
 
 #define COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_TYPED(X,G,g,P,p,T) \
-    if ((desiredProperties.isEmpty() || desiredProperties.getHasProperty(X)) && \
+    if (((!pseudoPropertyFlagsButDesiredEmpty && desiredProperties.isEmpty()) || desiredProperties.getHasProperty(X)) && \
         (!skipDefaults || defaultEntityProperties.get##G().get##P() != get##P())) { \
         ScriptValue groupProperties = properties.property(#g); \
         if (!groupProperties.isValid()) { \
@@ -162,7 +162,7 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return
     }
 
 #define COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_GETTER(X,G,g,P,p,M)                       \
-    if ((desiredProperties.isEmpty() || desiredProperties.getHasProperty(X)) &&       \
+    if (((!pseudoPropertyFlagsButDesiredEmpty && desiredProperties.isEmpty()) || desiredProperties.getHasProperty(X)) &&       \
         (!skipDefaults || defaultEntityProperties.get##G().get##P() != get##P())) {   \
         ScriptValue groupProperties = properties.property(#g);                        \
         if (!groupProperties.isValid()) {                                             \
@@ -181,7 +181,7 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return
     }
 
 #define COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(p,P,T) \
-    if ((_desiredProperties.isEmpty() || _desiredProperties.getHasProperty(p)) && \
+    if (((!pseudoPropertyFlagsButDesiredEmpty && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
         (!skipDefaults || defaultEntityProperties._##P != _##P)) { \
         ScriptValue V = T##_convertScriptValue(engine, _##P); \
         properties.setProperty(#P, V); \

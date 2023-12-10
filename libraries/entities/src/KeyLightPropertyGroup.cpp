@@ -28,7 +28,7 @@ const float KeyLightPropertyGroup::DEFAULT_KEYLIGHT_SHADOW_BIAS { 0.5f };
 const float KeyLightPropertyGroup::DEFAULT_KEYLIGHT_SHADOW_MAX_DISTANCE { 40.0f };
 
 void KeyLightPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, 
-    ScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties) const {
+    ScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool pseudoPropertyFlagsButDesiredEmpty) const {
         
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_KEYLIGHT_COLOR, KeyLight, keyLight, Color, color, u8vec3Color);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_KEYLIGHT_INTENSITY, KeyLight, keyLight, Intensity, intensity);

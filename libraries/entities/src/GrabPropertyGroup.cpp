@@ -20,7 +20,7 @@
 
 void GrabPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
                                           ScriptEngine* engine, bool skipDefaults,
-                                          EntityItemProperties& defaultEntityProperties) const {
+                                          EntityItemProperties& defaultEntityProperties, bool pseudoPropertyFlagsButDesiredEmpty) const {
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_GRAB_GRABBABLE, Grab, grab, Grabbable, grabbable);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_GRAB_KINEMATIC, Grab, grab, GrabKinematic, grabKinematic);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_GRAB_FOLLOWS_CONTROLLER, Grab, grab, GrabFollowsController, grabFollowsController);

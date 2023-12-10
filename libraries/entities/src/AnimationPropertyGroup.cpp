@@ -67,7 +67,8 @@ bool operator!=(const AnimationPropertyGroup& a, const AnimationPropertyGroup& b
  * @property {boolean} hold=false - <code>true</code> if the rotations and translations of the last frame played are 
  *     maintained when the animation stops playing, <code>false</code> if they aren't.
  */
-void AnimationPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties) const {
+void AnimationPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+                                               bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool pseudoPropertyFlagsButDesiredEmpty) const {
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_URL, Animation, animation, URL, url);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_ALLOW_TRANSLATION, Animation, animation, AllowTranslation, allowTranslation);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_FPS, Animation, animation, FPS, fps);

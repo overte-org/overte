@@ -24,7 +24,7 @@ const float RingGizmoPropertyGroup::MAX_RADIUS = 0.5f;
 
 void RingGizmoPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
                                           ScriptEngine* engine, bool skipDefaults,
-                                          EntityItemProperties& defaultEntityProperties) const {
+                                          EntityItemProperties& defaultEntityProperties, bool pseudoPropertyFlagsButDesiredEmpty) const {
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_START_ANGLE, Ring, ring, StartAngle, startAngle);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_END_ANGLE, Ring, ring, EndAngle, endAngle);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_INNER_RADIUS, Ring, ring, InnerRadius, innerRadius);

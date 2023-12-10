@@ -137,12 +137,12 @@ LaserPointer::RenderState::RenderState(const QUuid& startID, const QUuid& pathID
         {
             EntityPropertyFlags desiredProperties;
             desiredProperties += PROP_IGNORE_PICK_INTERSECTION;
-            _pathIgnorePicks = entityScriptingInterface->getEntityPropertiesInternal(getPathID(), desiredProperties).getIgnorePickIntersection();
+            _pathIgnorePicks = entityScriptingInterface->getEntityPropertiesInternal(getPathID(), desiredProperties, false).getIgnorePickIntersection();
         }
         {
             EntityPropertyFlags desiredProperties;
             desiredProperties += PROP_STROKE_WIDTHS;
-            auto widths = entityScriptingInterface->getEntityPropertiesInternal(getPathID(), desiredProperties).getStrokeWidths();
+            auto widths = entityScriptingInterface->getEntityPropertiesInternal(getPathID(), desiredProperties, false).getStrokeWidths();
             _lineWidth = widths.length() == 0 ? PolyLineEntityItem::DEFAULT_LINE_WIDTH : widths[0];
         }
     }

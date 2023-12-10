@@ -206,7 +206,8 @@ public:
      * @param {Uuid[]} entityIDs - The IDs of the entities to get the properties of.
      * @param {string[]|string} [desiredProperties=[]] - The name or names of the properties to get. For properties that are 
      *     objects (e.g., the <code>"keyLight"</code> property), use the property and subproperty names in dot notation (e.g., 
-     *     <code>"keyLight.color"</code>).
+     *     <code>"keyLight.color"</code>). Getting all subproperties with the name of an object is currently not supported (e.g.,
+     *     passing the <code>"keyLight"</code> property only).
      * @returns {Entities.EntityProperties[]} The specified properties of each entity for each entity that can be found. If 
      *     none of the entities can be found, then an empty array is returned. If no properties are specified, then all 
      *     properties are returned.
@@ -395,7 +396,8 @@ public slots:
      */
     Q_INVOKABLE EntityItemProperties getEntityProperties(const QUuid& entityID);
     Q_INVOKABLE ScriptValue getEntityProperties(const QUuid& entityID, const ScriptValue &desiredProperties);
-    Q_INVOKABLE EntityItemProperties getEntityPropertiesInternal(const QUuid& entityID, EntityPropertyFlags desiwredProperties);
+    Q_INVOKABLE EntityItemProperties getEntityPropertiesInternal(const QUuid& entityID, EntityPropertyFlags desiredProperties,
+                                                                 bool hasExtendedDesiredProperties);
     //Q_INVOKABLE EntityItemProperties getEntityProperties(const QUuid& entityID, EntityPropertyFlags desiredProperties);
 
     /*@jsdoc
