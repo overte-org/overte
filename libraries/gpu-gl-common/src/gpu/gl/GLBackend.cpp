@@ -621,7 +621,12 @@ void GLBackend::do_restoreContextViewCorrection(const Batch& batch, size_t param
 }
 
 void GLBackend::do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) {
+    bool prevMirrorViewCorrection = _transform._mirrorViewCorrection;
     _transform._mirrorViewCorrection = batch._params[paramOffset + 1]._uint != 0;
+    if (prevMirrorViewCorrection != _transform._mirrorViewCorrection) {
+        static const mat4 flipXScale = glm::scale(glm::mat4(), glm::vec3(-1.0f, 1.0f, 1.0f));
+        setCameraCorrection(_transform._correction.correction * flipXScale, _transform._correction.prevView);
+    }
 }
 
 void GLBackend::do_disableContextStereo(const Batch& batch, size_t paramOffset) {
