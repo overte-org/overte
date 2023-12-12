@@ -61,7 +61,7 @@ void PulsePropertyGroup::setAlphaModeFromString(const QString& pulseMode) {
 
 void PulsePropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
                                           ScriptEngine* engine, bool skipDefaults,
-                                          EntityItemProperties& defaultEntityProperties, bool pseudoPropertyFlagsButDesiredEmpty) const {
+                                          EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags) const {
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_PULSE_MIN, Pulse, pulse, Min, min);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_PULSE_MAX, Pulse, pulse, Max, max);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_PULSE_PERIOD, Pulse, pulse, Period, period);

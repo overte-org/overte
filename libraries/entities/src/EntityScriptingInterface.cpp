@@ -817,7 +817,7 @@ ScriptValue EntityScriptingInterface::getEntityProperties(const QUuid& entityID,
 
 EntityItemProperties EntityScriptingInterface::getEntityPropertiesInternal(const QUuid& entityID,
                                                                            EntityPropertyFlags desiredProperties,
-                                                                           bool hasExtendedDesiredProperties) {
+                                                                           bool returnNothingOnEmptyPropertyFlags) {
 
     PROFILE_RANGE(script_entities, __FUNCTION__);
 
@@ -840,7 +840,7 @@ EntityItemProperties EntityScriptingInterface::getEntityPropertiesInternal(const
                     desiredProperties.setHasProperty(PROP_PARENT_JOINT_INDEX);
                 }
 
-                if (desiredProperties.isEmpty() && !hasExtendedDesiredProperties) {
+                if (desiredProperties.isEmpty() && !returnNothingOnEmptyPropertyFlags) {
                     // these are left out of EntityItem::getEntityProperties so that localPosition and localRotation
                     // don't end up in json saves, etc.  We still want them here, though.
                     EncodeBitstreamParams params; // unknown

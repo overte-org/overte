@@ -396,8 +396,24 @@ public slots:
      */
     Q_INVOKABLE EntityItemProperties getEntityProperties(const QUuid& entityID);
     Q_INVOKABLE ScriptValue getEntityProperties(const QUuid& entityID, const ScriptValue &desiredProperties);
+    /**
+     * @brief Internal function to get entity properties.
+     *
+     * It's being called by EntityScriptingInterface::getEntityProperties
+     * and also from C++ side in several places in the source code.
+     *
+     * @param entityID The ID of the entity to get the properties of.
+     * @param desiredProperties Flags representing requested entity properties
+     * @param returnNothingOnEmptyPropertyFlags If this parameter is false and property flags are empty, then all possible
+     * properties will get returned. This is needed because we divide properties requested through getEntityProperties into
+     * real properties and pseudo properties. Only real properties are passed here as desiredProperties, so if user requests
+     * only pseudo properties, then desiredProperties will be empty. In such case we need to pass true
+     * as returnNothingOnEmptyPropertyFlags to avoid mistakenly returning all the properties.
+     * @return EntityItemProperties Requested properties of the entity if it can be found.
+     */
+
     Q_INVOKABLE EntityItemProperties getEntityPropertiesInternal(const QUuid& entityID, EntityPropertyFlags desiredProperties,
-                                                                 bool hasExtendedDesiredProperties);
+                                                                 bool returnNothingOnEmptyPropertyFlags);
     //Q_INVOKABLE EntityItemProperties getEntityProperties(const QUuid& entityID, EntityPropertyFlags desiredProperties);
 
     /*@jsdoc
