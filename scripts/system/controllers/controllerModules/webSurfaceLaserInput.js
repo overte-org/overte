@@ -59,7 +59,7 @@ Script.include("/~/system/libraries/controllers.js");
                     var candidateOverlays = controllerData.nearbyOverlayIDs[this.hand];
                     var grabbableOverlays = candidateOverlays.filter(function(overlayID) {
                         //V8TODO: this needs to be checked if it works
-                        return Entities.getEntityProperties(overlayID, ["grab"]).grab.grabbable;
+                        return Entities.getEntityProperties(overlayID, ["grab.grabbable"]).grab.grabbable;
                     });
                     var target = nearGrabModule.getTargetID(grabbableOverlays, controllerData);
                     if (target) {

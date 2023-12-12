@@ -8292,7 +8292,7 @@ void Application::addAssetToWorldCheckModelSize() {
         propertyFlags += PROP_NAME;
         propertyFlags += PROP_DIMENSIONS;
         auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
-        auto properties = entityScriptingInterface->getEntityPropertiesInternal(entityID, propertyFlags);
+        auto properties = entityScriptingInterface->getEntityPropertiesInternal(entityID, propertyFlags, false);
         auto name = properties.getName();
         auto dimensions = properties.getDimensions();
 
@@ -9262,7 +9262,7 @@ void Application::updateLoginDialogPosition() {
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
     EntityPropertyFlags desiredProperties;
     desiredProperties += PROP_POSITION;
-    auto properties = entityScriptingInterface->getEntityPropertiesInternal(_loginDialogID, desiredProperties);
+    auto properties = entityScriptingInterface->getEntityPropertiesInternal(_loginDialogID, desiredProperties, false);
     auto positionVec = properties.getPosition();
     auto cameraPositionVec = _myCamera.getPosition();
     auto cameraOrientation = cancelOutRollAndPitch(_myCamera.getOrientation());
