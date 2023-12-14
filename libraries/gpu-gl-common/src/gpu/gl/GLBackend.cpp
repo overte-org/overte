@@ -349,6 +349,7 @@ void GLBackend::renderPassTransfer(const Batch& batch) {
                 case Batch::COMMAND_setViewTransform:
                 case Batch::COMMAND_setProjectionTransform:
                 case Batch::COMMAND_setProjectionJitter:
+                case Batch::COMMAND_setContextMirrorViewCorrection:
                 {
                     CommandCall call = _commandCalls[(*command)];
                     (this->*(call))(batch, *offset);
@@ -386,6 +387,7 @@ void GLBackend::renderPassDraw(const Batch& batch) {
             case Batch::COMMAND_setModelTransform:
             case Batch::COMMAND_setViewTransform:
             case Batch::COMMAND_setProjectionTransform:
+            case Batch::COMMAND_setContextMirrorViewCorrection:
                 break;
 
             case Batch::COMMAND_draw:
@@ -411,6 +413,7 @@ void GLBackend::renderPassDraw(const Batch& batch) {
             //case Batch::COMMAND_setModelTransform:
             //case Batch::COMMAND_setViewTransform:
             //case Batch::COMMAND_setProjectionTransform:
+            //case Batch::COMMAND_setContextMirrorViewCorrection:
             case Batch::COMMAND_setProjectionJitter:
             case Batch::COMMAND_setViewportTransform:
             case Batch::COMMAND_setDepthRangeTransform:
@@ -623,9 +626,23 @@ void GLBackend::do_restoreContextViewCorrection(const Batch& batch, size_t param
 void GLBackend::do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) {
     bool prevMirrorViewCorrection = _transform._mirrorViewCorrection;
     _transform._mirrorViewCorrection = batch._params[paramOffset + 1]._uint != 0;
-    if (prevMirrorViewCorrection != _transform._mirrorViewCorrection) {
-        static const mat4 flipXScale = glm::scale(glm::mat4(), glm::vec3(-1.0f, 1.0f, 1.0f));
-        setCameraCorrection(_transform._correction.correction * flipXScale, _transform._correction.prevView);
+
+    if (_transform._correction.correction != glm::mat4()) {
+        // If we were previously not flipped, take this opportunity to save our flipped and unflipped matrices.
+        if (!prevMirrorViewCorrection) {
+            _transform._unflippedCorrection = _transform._correction.correction;
+            quat flippedRotation = glm::quat_cast(_transform._unflippedCorrection);
+            flippedRotation.y *= -1.0f;
+            flippedRotation.z *= -1.0f;
+            vec3 flippedTranslation = _transform._unflippedCorrection[3];
+            flippedTranslation.x *= -1.0f;
+            _transform._flippedCorrection = glm::translate(glm::mat4_cast(flippedRotation), flippedTranslation);
+        }
+
+        if (prevMirrorViewCorrection != _transform._mirrorViewCorrection) {
+            setCameraCorrection(_transform._mirrorViewCorrection ? _transform._flippedCorrection : _transform._unflippedCorrection, _transform._correction.prevView);
+            _transform._invalidView = true;
+        }
     }
 }
 

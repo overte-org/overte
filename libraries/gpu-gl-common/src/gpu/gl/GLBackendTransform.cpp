@@ -108,8 +108,7 @@ void GLBackend::TransformStageState::preUpdate(size_t commandIndex, const Stereo
 
     if (_invalidView) {
         // Apply the correction
-        static const mat4 flipXScale = glm::scale(glm::mat4(), glm::vec3(-1.0f, 1.0f, 1.0f));
-        if (_viewIsCamera && (_viewCorrectionEnabled && _correction.correction != (_mirrorViewCorrection ? flipXScale : glm::mat4()))) {
+        if (_viewIsCamera && (_viewCorrectionEnabled && _correction.correction != glm::mat4())) {
             // FIXME should I switch to using the camera correction buffer in Transform.slf and leave this out?
             Transform result;
             _view.mult(result, _view, _correction.correctionInverse);

@@ -434,6 +434,8 @@ protected:
         Transform _view;
         CameraCorrection _correction;
         bool _viewCorrectionEnabled{ true };
+        mat4 _unflippedCorrection;
+        mat4 _flippedCorrection;
         bool _mirrorViewCorrection{ false };
 
         Mat4 _projection;
