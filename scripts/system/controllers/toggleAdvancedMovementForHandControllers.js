@@ -17,6 +17,8 @@
 
 (function() { // BEGIN LOCAL_SCOPE
 
+    var controllerStandard = Controller.Standard;
+
     var TWO_SECONDS_INTERVAL = 2000;
     var FLYING_MAPPING_NAME = 'Hifi-Flying-Dev-' + Math.random();
     var DRIVING_MAPPING_NAME = 'Hifi-Driving-Dev-' + Math.random();
@@ -44,7 +46,7 @@
     function registerBasicMapping() {
 
         drivingMapping = Controller.newMapping(DRIVING_MAPPING_NAME);
-        drivingMapping.from(Controller.Standard.LY).to(function(value) {
+        drivingMapping.from(controllerStandard.LY).to(function(value) {
             if (isDisabled) {
                 return;
             }
@@ -64,7 +66,7 @@
         });
 
         flyingMapping = Controller.newMapping(FLYING_MAPPING_NAME);
-        flyingMapping.from(Controller.Standard.RY).to(function(value) {
+        flyingMapping.from(controllerStandard.RY).to(function(value) {
             if (isDisabled) {
                 return;
             }

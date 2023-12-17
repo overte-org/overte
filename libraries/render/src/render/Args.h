@@ -76,7 +76,11 @@ namespace render {
         Args(const gpu::ContextPointer& context,
             float sizeScale = 1.0f,
             int boundaryLevelAdjust = 0,
-            float lodAngleHalfTan = 0.1f,
+            float lodFarAngleHalfTan = 0.1f,
+            float lodNearAngleHalfTan = 0.01f,
+            //float lodAngleHalfTan = 0.1f,
+            float lodFarDist = 200.0f,
+            float lodNearDist = 4.0f,
             RenderMode renderMode = DEFAULT_RENDER_MODE,
             DisplayMode displayMode = MONO,
             RenderMethod renderMethod = DEFERRED,
@@ -85,8 +89,14 @@ namespace render {
             _context(context),
             _sizeScale(sizeScale),
             _boundaryLevelAdjust(boundaryLevelAdjust),
-            _lodAngleHalfTan(lodAngleHalfTan),
-            _lodAngleHalfTanSq(lodAngleHalfTan * lodAngleHalfTan),
+            _lodFarAngleHalfTan(lodFarAngleHalfTan),
+            _lodFarAngleHalfTanSq(lodFarAngleHalfTan * lodFarAngleHalfTan),
+            _lodNearAngleHalfTan(lodNearAngleHalfTan),
+            _lodNearAngleHalfTanSq(lodNearAngleHalfTan * lodNearAngleHalfTan),
+            _lodFarDist(lodFarDist),
+            _lodNearDist(lodNearDist),
+            _lodFarDistSq(lodFarDist * lodFarDist),
+            _lodNearDistSq(lodNearDist * lodNearDist),
             _renderMode(renderMode),
             _displayMode(displayMode),
             _renderMethod(renderMethod),
@@ -116,8 +126,14 @@ namespace render {
 
         float _sizeScale { 1.0f };
         int _boundaryLevelAdjust { 0 };
-        float _lodAngleHalfTan{ 0.1f };
-        float _lodAngleHalfTanSq{ _lodAngleHalfTan  * _lodAngleHalfTan };
+        float _lodFarAngleHalfTan{ 0.1f };
+        float _lodFarAngleHalfTanSq{ _lodFarAngleHalfTan  * _lodFarAngleHalfTan };
+        float _lodNearAngleHalfTan{ 0.01f };
+        float _lodNearAngleHalfTanSq{ _lodNearAngleHalfTan  * _lodNearAngleHalfTan };
+        float _lodFarDist { 200.0f };
+        float _lodNearDist { 4.0f };
+        float _lodFarDistSq { _lodFarDist * _lodFarDist };
+        float _lodNearDistSq { _lodNearDist * _lodNearDist };
 
         RenderMode _renderMode { DEFAULT_RENDER_MODE };
         DisplayMode _displayMode { MONO };

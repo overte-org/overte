@@ -237,4 +237,3 @@ Script.scriptEnding.connect(function() {
     }
     tablet.removeButton(tabletButton);
 });
-

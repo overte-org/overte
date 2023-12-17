@@ -385,6 +385,10 @@ private:
     // Return an AACube containing object and all its entity descendants
     AACube updateEntityQueryAACubeWorker(SpatiallyNestablePointer object, EntityEditPacketSender* packetSender,
                                          MovingEntitiesOperator& moveOperator, bool force, bool tellServer);
+
+    // Script engine for writing entity tree data to and from JSON
+    std::mutex scriptEngineMutex;
+    ScriptEnginePointer scriptEngine{ newScriptEngine() };
 };
 
 void convertGrabUserDataToProperties(EntityItemProperties& properties);

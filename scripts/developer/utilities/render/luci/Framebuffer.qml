@@ -18,7 +18,7 @@ Column {
 
     id: framebuffer
 
-    property var config: Render.getConfig("RenderMainView.DebugDeferredBuffer")
+    property var config: Render.getConfig("RenderMainView.DebugRenderDeferredTask.DebugDeferredBuffer")
 
     function setDebugMode(mode) {
         framebuffer.config.enabled = (mode != 0);

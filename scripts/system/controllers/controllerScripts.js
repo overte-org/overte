@@ -14,11 +14,11 @@
 Script.include("controllerDispatcher.js");
 
 var CONTOLLER_SCRIPTS = [
-    "squeezeHands.js",
     "controllerDisplayManager.js",
     "grab.js",
     "toggleAdvancedMovementForHandControllers.js",
-    "handTouch.js",
+    // TODO: These are not used currently. It can be reworked re-enabled when we have OpenXR support
+    //"handTouch.js",
     "mouseLook.js",
     "controllerModules/nearParentGrabOverlay.js",
     "controllerModules/stylusInput.js",
@@ -37,8 +37,9 @@ var CONTOLLER_SCRIPTS = [
     "controllerModules/nearGrabEntity.js",
     "controllerModules/farGrabEntity.js",
     "controllerModules/pushToTalk.js",
-    "controllerModules/trackedHandWalk.js",
-    "controllerModules/trackedHandTablet.js"
+    // TODO: These are not used currently, but have severe impact on performace. They can be re-enabled when we have OpenXR support
+    //"controllerModules/trackedHandWalk.js",
+    //"controllerModules/trackedHandTablet.js"
 ];
 
 //Script.include("../../developer/debugging/scriptMemoryReport.js");

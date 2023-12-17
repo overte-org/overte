@@ -63,6 +63,7 @@ public:
         LOW = PerformanceManager::PerformancePreset::LOW,
         MID = PerformanceManager::PerformancePreset::MID,
         HIGH = PerformanceManager::PerformancePreset::HIGH,
+        CUSTOM = PerformanceManager::PerformancePreset::CUSTOM
     };
     Q_ENUM(PerformancePreset)
 
@@ -99,7 +100,7 @@ public slots:
     /*@jsdoc
      * Sets graphics performance to a preset.
      * @function Performance.setPerformancePreset
-     * @param {Performance.PerformancePreset} performancePreset - The graphics performance preset to to use.
+     * @param {Performance.PerformancePreset} performancePreset - The graphics performance preset to use.
      */
     void setPerformancePreset(PerformancePreset performancePreset);
 

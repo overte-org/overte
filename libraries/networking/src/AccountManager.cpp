@@ -4,6 +4,7 @@
 //
 //  Created by Stephen Birarda on 2/18/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -218,7 +219,7 @@ void AccountManager::setSessionID(const QUuid& sessionID) {
 
 QNetworkRequest AccountManager::createRequest(QString path, AccountManagerAuth::Type authType) {
     QNetworkRequest networkRequest;
-    networkRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    networkRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     networkRequest.setHeader(QNetworkRequest::UserAgentHeader, _userAgentGetter());
 
     networkRequest.setRawHeader(METAVERSE_SESSION_ID_HEADER,
@@ -563,7 +564,7 @@ void AccountManager::requestAccessToken(const QString& login, const QString& pas
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
 
     QNetworkRequest request;
-    request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     request.setHeader(QNetworkRequest::UserAgentHeader, _userAgentGetter());
 
     QUrl grantURL = _authURL;
@@ -586,7 +587,7 @@ void AccountManager::requestAccessTokenWithAuthCode(const QString& authCode, con
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
 
     QNetworkRequest request;
-    request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     request.setHeader(QNetworkRequest::UserAgentHeader, _userAgentGetter());
 
     QUrl grantURL = _authURL;
@@ -662,7 +663,7 @@ void AccountManager::refreshAccessToken() {
         QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
 
         QNetworkRequest request;
-        request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+        request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
         request.setHeader(QNetworkRequest::UserAgentHeader, _userAgentGetter());
 
         QUrl grantURL = _authURL;
@@ -798,7 +799,7 @@ void AccountManager::requestProfile() {
     profileURL.setPath(getMetaverseServerURLPath() + "/api/v1/user/profile");
 
     QNetworkRequest profileRequest(profileURL);
-    profileRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    profileRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     profileRequest.setHeader(QNetworkRequest::UserAgentHeader, _userAgentGetter());
     profileRequest.setRawHeader(ACCESS_TOKEN_AUTHORIZATION_HEADER, _accountInfo.getAccessToken().authorizationHeaderValue());
 
@@ -848,7 +849,7 @@ void AccountManager::requestAccountSettings() {
     lockerURL.setPath(getMetaverseServerURLPath() + "/api/v1/user/locker");
 
     QNetworkRequest lockerRequest(lockerURL);
-    lockerRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    lockerRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     lockerRequest.setHeader(QNetworkRequest::UserAgentHeader, _userAgentGetter());
     lockerRequest.setRawHeader(ACCESS_TOKEN_AUTHORIZATION_HEADER, _accountInfo.getAccessToken().authorizationHeaderValue());
 
@@ -919,7 +920,7 @@ void AccountManager::postAccountSettings() {
     lockerURL.setPath(getMetaverseServerURLPath() + "/api/v1/user/locker");
 
     QNetworkRequest lockerRequest(lockerURL);
-    lockerRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    lockerRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     lockerRequest.setHeader(QNetworkRequest::UserAgentHeader, _userAgentGetter());
     lockerRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     lockerRequest.setRawHeader(ACCESS_TOKEN_AUTHORIZATION_HEADER, _accountInfo.getAccessToken().authorizationHeaderValue());

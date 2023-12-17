@@ -139,7 +139,7 @@ endif()
             return
 
         if 'Windows' == system:
-            self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.10-qtwebengine-5.15.15-2023.06.17-kde1742cc4f85f1b57c5f8ef51d62ff0b958f38912de57a9094aa3a3e3bf35ae6cb-windows-x86_64.tar.xz'
+            self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.10-2023.10.02-windows-x86_64.tar.xz'
         elif 'Darwin' == system:
             self.qtUrl = self.assets_url + '/dependencies/vcpkg/qt5-install-5.15.2-macos.tar.gz'
         elif 'Linux' == system:
@@ -152,7 +152,7 @@ endif()
                 u_major = int( distro.major_version() or '0' )
                 if distro.id() == 'ubuntu' or distro.id() == 'linuxmint':
                     if (distro.id() == 'ubuntu' and u_major == 20) or distro.id() == 'linuxmint' and u_major == 20:
-                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.10-2023.09.16-kde_15e6be42c230046646237698fa761b8fb3df71ee-ubuntu-20.04-amd64.tar.xz'
+                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.10-2023.10.01-kde_d2122ee587cceb5b2f4130b7074f86db9aca570e-ubuntu-20.04-amd64.tar.xz'
                     elif (distro.id() == 'ubuntu' and u_major > 20) or (distro.id() == 'linuxmint' and u_major > 20):
                         self.__no_qt_package_error()
                     else:

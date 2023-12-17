@@ -45,9 +45,9 @@ jobs:
             build_type: full
           #- os: macOS-10.15
           #  build_type: full
-          - os: ubuntu-20.04
-            build_type: full
-            apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion3 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-github python3-distro
+          #- os: ubuntu-20.04
+          #  build_type: full
+          #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion3 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-github python3-distro
       fail-fast: false
     runs-on: ${{matrix.os}}
     steps:
@@ -159,7 +159,7 @@ jobs:
     - name: Override NSIS
       shell: pwsh
       if: startsWith(matrix.os, 'windows')
-      run: choco install nsis --version=3.06.1
+      run: choco install nsis --allow-downgrade --version=3.06.1
 
     - name: Install Python modules
       if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')

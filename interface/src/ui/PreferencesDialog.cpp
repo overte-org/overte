@@ -15,6 +15,7 @@
 #include <OffscreenUi.h>
 #include <Preferences.h>
 #include <plugins/PluginUtils.h>
+#include <plugins/PluginManager.h>
 #include <display-plugins/CompositorHelper.h>
 #include <display-plugins/hmd/HmdDisplayPlugin.h>
 #include "scripting/RenderScriptingInterface.h"
@@ -636,5 +637,13 @@ void setupPreferences() {
             preference->setStep(10);
             preferences->addPreference(preference);
         }
+    }
+
+    static const QString PLUGIN_CATEGORY{ "Plugins" };
+    auto pluginManager = PluginManager::getInstance();
+    {
+        auto getter = [pluginManager]()->bool { return pluginManager->getEnableOculusPluginSetting(); };
+        auto setter = [pluginManager](bool value) { pluginManager->setEnableOculusPluginSetting(value); };
+        preferences->addPreference(new CheckPreference(PLUGIN_CATEGORY, "Enable Oculus Platform Plugin", getter, setter));
     }
 }

@@ -1,15 +1,16 @@
 //
-//  FileScriptingInterface.cpp
+//  ArchiveDownloadInterface.cpp
 //  libraries/script-engine/src
 //
 //  Created by Elisa Lupin-Jimenez on 6/28/16.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#include "FileScriptingInterface.h"
+#include "ArchiveDownloadInterface.h"
 
 #include <QtCore/QTemporaryDir>
 #include <QtCore/QDir>
@@ -33,11 +34,11 @@
 #include "ScriptEngineLogging.h"
 
 
-FileScriptingInterface::FileScriptingInterface(QObject* parent) : QObject(parent) {
+ArchiveDownloadInterface::ArchiveDownloadInterface(QObject* parent) : QObject(parent) {
     // nothing for now
 }
 
-void FileScriptingInterface::runUnzip(QString path, QUrl url, bool autoAdd, bool isZip, bool isBlocks) {
+void ArchiveDownloadInterface::runUnzip(QString path, QUrl url, bool autoAdd, bool isZip, bool isBlocks) {
     QString fileName = "/" + path.section("/", -1);
     QString tempDir = path;
     if (!isZip) {
@@ -71,7 +72,7 @@ void FileScriptingInterface::runUnzip(QString path, QUrl url, bool autoAdd, bool
 
 }
 
-QStringList FileScriptingInterface::unzipFile(QString path, QString tempDir) {
+QStringList ArchiveDownloadInterface::unzipFile(QString path, QString tempDir) {
 #if defined(Q_OS_ANDROID)
     // FIXME quazip hasn't been built on the android toolchain
     return QStringList();
@@ -94,7 +95,7 @@ QStringList FileScriptingInterface::unzipFile(QString path, QString tempDir) {
 }
 
 // fix to check that we are only referring to a temporary directory
-bool FileScriptingInterface::isTempDir(QString tempDir) {
+bool ArchiveDownloadInterface::isTempDir(QString tempDir) {
     QString folderName = "/" + tempDir.section("/", -1);
     QString tempContainer = tempDir;
     tempContainer.remove(folderName);
@@ -106,7 +107,7 @@ bool FileScriptingInterface::isTempDir(QString tempDir) {
     return (testContainer == tempContainer);
 }
 
-bool FileScriptingInterface::hasModel(QStringList fileList) {
+bool ArchiveDownloadInterface::hasModel(QStringList fileList) {
     for (int i = 0; i < fileList.size(); i++) {
         if (fileList.at(i).toLower().contains(".fbx") || fileList.at(i).toLower().contains(".obj")) {
             return true;
@@ -115,14 +116,14 @@ bool FileScriptingInterface::hasModel(QStringList fileList) {
     return false;
 }
 
-QString FileScriptingInterface::getTempDir() {
+QString ArchiveDownloadInterface::getTempDir() {
     QTemporaryDir dir;
     dir.setAutoRemove(false);
     return dir.path();
     // do something to delete this temp dir later
 }
 
-QString FileScriptingInterface::convertUrlToPath(QUrl url) {
+QString ArchiveDownloadInterface::convertUrlToPath(QUrl url) {
     QString newUrl;
     QString oldUrl = url.toString();
     newUrl = oldUrl.section("filename=", 1, 1);
@@ -130,10 +131,10 @@ QString FileScriptingInterface::convertUrlToPath(QUrl url) {
 }
 
 // this function is not in use
-void FileScriptingInterface::downloadZip(QString path, const QString link) {
+void ArchiveDownloadInterface::downloadZip(QString path, const QString link) {
     QUrl url = QUrl(link);
     auto request = DependencyManager::get<ResourceManager>()->createResourceRequest(
-        nullptr, url, true, -1, "FileScriptingInterface::downloadZip");
+        nullptr, url, true, -1, "ArchiveDownloadInterface::downloadZip");
     connect(request, &ResourceRequest::finished, this, [this, path]{
         unzipFile(path, ""); // so intellisense isn't mad
     });
@@ -141,7 +142,7 @@ void FileScriptingInterface::downloadZip(QString path, const QString link) {
 }
 
 // this function is not in use
-void FileScriptingInterface::recursiveFileScan(QFileInfo file, QString* dirName) {
+void ArchiveDownloadInterface::recursiveFileScan(QFileInfo file, QString* dirName) {
     /*if (!file.isDir()) {
         return;
     }*/

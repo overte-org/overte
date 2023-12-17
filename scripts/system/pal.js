@@ -18,6 +18,7 @@
 //
 
 (function () { // BEGIN LOCAL_SCOPE
+var controllerStandard = Controller.Standard;
 
 var request = Script.require('request').request;
 var AppUi = Script.require('appUi');
@@ -715,10 +716,10 @@ function makePressHandler(hand) {
         handleTriggerPressed(hand, value);
     };
 }
-triggerMapping.from(Controller.Standard.RTClick).peek().to(makeClickHandler(Controller.Standard.RightHand));
-triggerMapping.from(Controller.Standard.LTClick).peek().to(makeClickHandler(Controller.Standard.LeftHand));
-triggerPressMapping.from(Controller.Standard.RT).peek().to(makePressHandler(Controller.Standard.RightHand));
-triggerPressMapping.from(Controller.Standard.LT).peek().to(makePressHandler(Controller.Standard.LeftHand));
+triggerMapping.from(controllerStandard.RTClick).peek().to(makeClickHandler(controllerStandard.RightHand));
+triggerMapping.from(controllerStandard.LTClick).peek().to(makeClickHandler(controllerStandard.LeftHand));
+triggerPressMapping.from(controllerStandard.RT).peek().to(makePressHandler(controllerStandard.RightHand));
+triggerPressMapping.from(controllerStandard.LT).peek().to(makePressHandler(controllerStandard.LeftHand));
 
 var ui;
 // Most apps can have people toggle the tablet closed and open again, and the app should remain "open" even while

@@ -2553,9 +2553,8 @@ bool EntityTree::writeToMap(QVariantMap& entityDescription, OctreeElementPointer
     }
     entityDescription["DataVersion"] = _persistDataVersion;
     entityDescription["Id"] = _persistID;
-    // V8TODO: Creating new script engine each time is very inefficient
-    ScriptEnginePointer engine = newScriptEngine();
-    RecurseOctreeToMapOperator theOperator(entityDescription, element, engine.get(), skipDefaultValues,
+    const std::lock_guard<std::mutex> scriptLock(scriptEngineMutex);
+    RecurseOctreeToMapOperator theOperator(entityDescription, element, scriptEngine.get(), skipDefaultValues,
                                             skipThoseWithBadParents, _myAvatar);
     withReadLock([&] {
         recurseTreeWithOperator(&theOperator);
@@ -2704,8 +2703,6 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
     // to a ScriptValue, and then to EntityItemProperties.  These properties are used
     // to add the new entity to the EntityTree.
     QVariantList entitiesQList = map["Entities"].toList();
-    // V8TODO: Creating new script engine each time is very inefficient
-    ScriptEnginePointer scriptEngine = newScriptEngine();
 
     if (entitiesQList.length() == 0) {
         qCDebug(entities) << "EntityTree::readFromMap: entitiesQList.length() == 0, Empty map or invalidly formed file";
@@ -2730,9 +2727,12 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
                 " mapped it to parentJointIndex " << entityMap["parentJointIndex"].toInt();
         }
 
-        ScriptValue entityScriptValue = variantMapToScriptValue(entityMap, *scriptEngine);
         EntityItemProperties properties;
-        EntityItemPropertiesFromScriptValueIgnoreReadOnly(entityScriptValue, properties);
+        {
+            const std::lock_guard<std::mutex> scriptLock(scriptEngineMutex);
+            ScriptValue entityScriptValue = variantMapToScriptValue(entityMap, *scriptEngine);
+            EntityItemPropertiesFromScriptValueIgnoreReadOnly(entityScriptValue, properties);
+        }
 
         EntityItemID entityItemID;
         if (entityMap.contains("id")) {
@@ -2881,9 +2881,8 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
 }
 
 bool EntityTree::writeToJSON(QString& jsonString, const OctreeElementPointer& element) {
-    // V8TODO: Creating new script engine each time is very inefficient
-    ScriptEnginePointer engine = newScriptEngine();
-    RecurseOctreeToJSONOperator theOperator(element, engine.get(), jsonString);
+    const std::lock_guard<std::mutex> scriptLock(scriptEngineMutex);
+    RecurseOctreeToJSONOperator theOperator(element, scriptEngine.get(), jsonString);
     withReadLock([&] {
         recurseTreeWithOperator(&theOperator);
     });

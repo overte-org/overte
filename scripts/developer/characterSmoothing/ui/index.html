@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link type="text/css" rel="stylesheet" href="theme.css" />
+        <link type="text/css" rel="stylesheet" href="index.css" />
+    </head>
+    <body>
+        <div id="target-list"></div>
+
+        <div class="horizontal-button-container">
+            <button class="generic" onclick="applySettings()">Apply</button>
+            <button id="toggle-button" class="bad" onclick="toggleSmoothing()">
+                Disable
+            </button>
+        </div>
+    </body>
+
+    <template id="target-template">
+        <div data-name="[BONE/TARGET NAME]" class="container color-primary">
+            <div class="container-header color-secondary">
+                [BONE/TARGET NAME PRETTY]
+            </div>
+            <div class="content">
+                <div class="type" data-value="rotation">
+                    <span class="header">Rotation</span>
+
+                    <input type="range" min="1" max="100" value="100" />
+                    <span class="type-value">[VALUE % PRETTY]</span>
+                </div>
+
+                <div class="type" data-value="transform">
+                    <span class="header">Transform</span>
+                    <input type="range" min="1" max="100" value="100" />
+                    <span class="type-value">[VALUE % PRETTY]</span>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="./index.js"></script>
+</html>
