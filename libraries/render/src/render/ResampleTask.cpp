@@ -167,7 +167,7 @@ void UpsampleToBlitFramebuffer::run(const RenderContextPointer& renderContext, c
             batch.setViewportTransform(viewport);
             batch.setProjectionTransform(glm::mat4());
             batch.resetViewTransform();
-            bool shouldMirror = _depth % 2 == (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE);
+            bool shouldMirror = _depth >= (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE);
             batch.setPipeline(shouldMirror ? _mirrorPipeline : _pipeline);
 
             batch.setModelTransform(gpu::Framebuffer::evalSubregionTexcoordTransform(bufferSize, viewport));

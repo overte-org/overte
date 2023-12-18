@@ -121,7 +121,7 @@ public:
     // Shutdown rendering and persist any required resources
     void shutdown() override;
 
-    void setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool reset = false) override;
+    void setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool primary, bool reset = false) override;
     void render(const Batch& batch) final override;
 
     // This call synchronize the Full Backend cache with the current GLState
