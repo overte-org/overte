@@ -96,7 +96,7 @@ void ToneMapAndResample::run(const RenderContextPointer& renderContext, const In
         batch.setViewportTransform(destViewport);
         batch.setProjectionTransform(glm::mat4());
         batch.resetViewTransform();
-        bool shouldMirror = _depth >= (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE);
+        bool shouldMirror = args->_numMirrorFlips >= (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE);
         batch.setPipeline(shouldMirror ? _mirrorPipeline : _pipeline);
 
         batch.setModelTransform(gpu::Framebuffer::evalSubregionTexcoordTransform(srcBufferSize, args->_viewport));

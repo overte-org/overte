@@ -162,6 +162,7 @@ namespace render {
 
         ItemID _ignoreItem { 0 };
         size_t _mirrorDepth { 0 };
+        size_t _numMirrorFlips { 0 };
     };
 
 }

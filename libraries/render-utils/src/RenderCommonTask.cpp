@@ -299,6 +299,7 @@ public:
         _cachedArgsPointer->_blitFramebuffer = args->_blitFramebuffer;
         _cachedArgsPointer->_ignoreItem = args->_ignoreItem;
         _cachedArgsPointer->_mirrorDepth = args->_mirrorDepth;
+        _cachedArgsPointer->_numMirrorFlips = args->_numMirrorFlips;
 
         ViewFrustum srcViewFrustum = args->getViewFrustum();
         ItemID portalExitID = args->_scene->getItem(mirror.id).computeMirrorView(srcViewFrustum);
@@ -306,9 +307,10 @@ public:
         args->_blitFramebuffer = _mirrorFramebuffer;
         args->_ignoreItem = portalExitID != Item::INVALID_ITEM_ID ? portalExitID : mirror.id;
         args->_mirrorDepth = _depth;
+        args->_numMirrorFlips += portalExitID != Item::INVALID_ITEM_ID ? 0 : 1;
 
         gpu::doInBatch("SetupMirrorTask::run", args->_context, [&](gpu::Batch& batch) {
-            bool shouldMirror = _depth % 2 == (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE);
+            bool shouldMirror = args->_numMirrorFlips % 2 == (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE);
             batch.setContextMirrorViewCorrection(shouldMirror);
         });
 
@@ -366,7 +368,7 @@ public:
             args->_batch = &batch;
 
             if (cachedArgs) {
-                bool shouldMirror = cachedArgs->_mirrorDepth % 2 == (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE);
+                bool shouldMirror = cachedArgs->_numMirrorFlips % 2 == (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE);
                 batch.setContextMirrorViewCorrection(shouldMirror);
             }
 
@@ -390,11 +392,12 @@ public:
             args->_batch = nullptr;
         });
 
-        // Restore the blit framebuffer after we've sampled from it
         if (cachedArgs) {
+            // Restore the blit framebuffer after we've sampled from it
             args->_blitFramebuffer = cachedArgs->_blitFramebuffer;
             args->_ignoreItem = cachedArgs->_ignoreItem;
             args->_mirrorDepth = cachedArgs->_mirrorDepth;
+            args->_numMirrorFlips = cachedArgs->_numMirrorFlips;
         }
     }
 
