@@ -373,7 +373,13 @@ function playNotificationSound() {
 
 function replaceFormatting(text) {
     var found = false;
-    if (text.indexOf("**") !== -1) {
+    console.log("Formatting: '" + text + "'");
+
+    if (text.startsWith("    ")) {
+        console.log("Typewriter");
+        found = true;
+        text = "<code>" + text + "</code>";
+    } else if (text.indexOf("**") !== -1) {
         var firstMatch = text.indexOf("**") + 2;
         var secondMatch = text.indexOf("**", firstMatch);
         if (firstMatch !== -1 && secondMatch !== -1) {

@@ -257,7 +257,10 @@
 
     function replaceFormatting(text) {
         var found = false;
-        if (text.indexOf("**") !== -1) {
+        if (text.startsWith("    ")) {
+            text = "<code>" + text + "</code>";
+            found = true;
+        } else if (text.indexOf("**") !== -1) {
             var firstMatch = text.indexOf("**") + 2;
             var secondMatch = text.indexOf("**", firstMatch);
             if (firstMatch !== -1 && secondMatch !== -1) {
