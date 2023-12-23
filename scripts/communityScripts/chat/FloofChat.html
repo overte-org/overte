@@ -35,7 +35,7 @@
                 <span class="lever waves-light"></span>
             </label>
         </div>
-        
+
         <div class="switch muteSwitch col s2">
             <label>
                 <span id="muteAudioText">Mute Sound</span>
@@ -43,7 +43,13 @@
                 <span class="lever waves-light"></span>
             </label>
         </div>
-
+        <div class="switch muteSwitch col s2">
+            <label>
+                <span id="autoFormattingText">Autoformat</span>
+                <input type="checkbox" id="autoFormattingInput" onclick="autoFormattingToggle()">
+                <span class="lever waves-light"></span>
+            </label>
+        </div>
         <span class="col s1">
         </span>
         <a class="waves-effect waves-light btn col s2" onclick="redock()">Redock</a>
@@ -57,6 +63,8 @@
 <script>
     var muted = {"Local": false, "Domain": false, "Grid": false};
     var mutedAudio = {"Local": false, "Domain": false, "Grid": false};
+    var autoFormatting = {"Local" : true, "Domain": true, "Grid": true};
+
     var instance;
     var appUUID;
     var messageData = {}; // The data that is sent along with the message.
@@ -161,7 +169,7 @@
 
             return elContent;
         }
-        
+
         // For any URLs present, unless they are already identified within
         // an `a` element, linkify them.
         function _linkifyUrls(matches, $el) {
@@ -230,7 +238,7 @@
 
                         elContent = elContent.replace(this, replaceWith);
                         break;
-                        
+
                 }
 
             });
@@ -325,7 +333,7 @@
     function gotoURL(url) {
         emitWebEvent({type: "CMD", cmd: "URL", url: url});
     }
-    
+
     function gotoExternalURL(url) {
         emitWebEvent({ type: "CMD", cmd: "EXTERNALURL", url: url });
     }
@@ -367,7 +375,9 @@
         location.reload();
     }
 
-    function logMessage(timestamp, userName, message, logScreen, colour) {
+    function logMessage(timestamp, userName, message, logScreen, colour, formatted) {
+        console.log("LogMessage: " + JSON.stringify({ts: timestamp, user: userName, msg: message, logS: logScreen, color: colour, formatted: formatted}));
+
         var LogScreen = $("#" + logScreen);
         var $logLine =
             $('<div/>')
@@ -386,10 +396,17 @@
             .addClass('LogLogLineMessage')
             .text(userName + ": ").css("color", rgbToHex(colour))
             .appendTo($logLine);
-        $('<span/>')
-            .addClass('LogLogLineMessage')
-            .text(message).css("color", rgbToHex(colour)).linky()
-            .appendTo($logLine);
+        if (formatted) {
+            $('<span/>')
+                .addClass('LogLogLineMessage')
+                .text(message).css("color", rgbToHex(colour)).linky()
+                .appendTo($logLine);
+        } else {
+            $('<span/>')
+                .addClass('LogLogLineMessage')
+                .text(message).css("color", rgbToHex(colour))
+                .appendTo($logLine);
+        }
     }
 
     function scrollChatLog(chatID) {
@@ -400,7 +417,7 @@
     function time() {
         var d = new Date();
         // Months are returned in range 0-11 instead of 1-12, so we have to add 1.
-        var month = (d.getMonth() + 1).toString(); 
+        var month = (d.getMonth() + 1).toString();
         var day = (d.getDate()).toString();
         var h = (d.getHours()).toString();
         var m = (d.getMinutes()).toString();
@@ -414,9 +431,12 @@
 
     var muteInput;
     var muteText;
-    
+
     var muteAudioInput;
     var muteAudioText;
+
+    var autoFormattingInput;
+    var autoFormattingText;
 
     function muteSwitchToggle() {
         muted[getCurrTab()] = muteInput.checked;
@@ -424,7 +444,7 @@
         muteText.classList.remove(!muteInput.checked ? "red-text" : "white-text");
         emitWebEvent({type: "CMD", cmd: "MUTED", muted: muted});
     }
-    
+
     function muteAudioSwitchToggle() {
         mutedAudio[getCurrTab()] = muteAudioInput.checked;
         muteAudioText.classList.add(muteAudioInput.checked ? "red-text" : "white-text");
@@ -432,25 +452,39 @@
         emitWebEvent({ type: "CMD", cmd: "MUTEDAUDIO", muted: mutedAudio });
     }
 
+    function autoFormattingToggle() {
+        autoFormatting[getCurrTab()] = autoFormattingInput.checked;
+        autoFormattingText.classList.add(autoFormattingInput.checked ? "red-text" : "white-text");
+        autoFormattingText.classList.remove(!autoFormattingInput.checked ? "red-text" : "white-text");
+        emitWebEvent({ type: "CMD", cmd: "FORMATTING", enabled: autoFormatting });
+    }
+
     function main() {
 
         muteInput = document.getElementById("muteInput");
         muteText = document.getElementById("muteText");
-        
+
         muteAudioInput = document.getElementById("muteAudioInput");
         muteAudioText = document.getElementById("muteAudioText");
+
+        autoFormattingText = document.getElementById("autoFormattingText");
+        autoFormattingInput = document.getElementById("autoFormattingInput");
 
         instance = M.Tabs.init(document.getElementById("tabs"), {
             "onShow": function (e) {
                 scrollChatLog(getCurrTab());
-                
+
                 muteInput.checked = muted[getCurrTab()];
                 muteText.classList.add(muteInput.checked ? "red-text" : "white-text");
                 muteText.classList.remove(!muteInput.checked ? "red-text" : "white-text");
-                
+
                 muteAudioInput.checked = mutedAudio[getCurrTab()];
                 muteAudioText.classList.add(muteAudioInput.checked ? "red-text" : "white-text");
                 muteAudioText.classList.remove(!muteAudioInput.checked ? "red-text" : "white-text");
+
+                autoFormattingInput.checked = autoFormatting[getCurrTab()];
+                autoFormattingText.classList.add(autoFormattingInput.checked ? "red-text" : "white-text");
+                autoFormattingText.classList.remove(!autoFormattingInput.checked ? "red-text" : "white-text");
             }
         });
         instance.select("Local");
@@ -492,22 +526,17 @@
                 EventBridge.scriptEventReceived.connect(function (message) {
                     var cmd = [];
                     try {
+                        console.log("CHAT MSG: " + message);
                         cmd = JSON.parse(message);
                     } catch (e) {
                         //
                     }
                     if (cmd.type === "MSG") {
                         var temp = cmd.data;
-                        if (temp.length === 1) {
-                            var temp2 = temp[0];
-                            logMessage("[" + temp2[0] + "] ", temp2[2], temp2[1], temp2[4], temp2[3]);
-                            scrollChatLog(temp2[4]);
-                        } else if (temp.length > 1) {
-                            temp.forEach(function (msg) {
-                                logMessage("[" + msg[0] + "] ", msg[2], msg[1], msg[4], msg[3]);
-                                scrollChatLog(msg[4]);
-                            });
-                        }
+                        temp.forEach(function (msg) {
+                            logMessage("[" + msg.timestamp + "] ", msg.avatarName, msg.message, msg.tab, msg.colour, msg.autoFormat);
+                            scrollChatLog(msg.tab);
+                        });
                     } else if (cmd.type === "CMD") {
                         if (cmd.cmd === "MUTED") {
                             muted = cmd.muted;
@@ -520,6 +549,12 @@
                             muteAudioInput.checked = mutedAudio[getCurrTab()];
                             muteAudioText.classList.add(muteAudioInput.checked ? "red-text" : "white-text");
                             muteAudioText.classList.remove(!muteAudioInput.checked ? "red-text" : "white-text");
+                        }
+                        if (cmd.cmd === "FORMATTING") {
+                            autoFormatting = cmd.enabled;
+                            autoFormattingInput.checked = mutedAudio[getCurrTab()];
+                            autoFormattingText.classList.add(autoFormattingInput.checked ? "red-text" : "white-text");
+                            autoFormattingText.classList.remove(!autoFormattingInput.checked ? "red-text" : "white-text");
                         }
                     }
                 });

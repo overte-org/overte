@@ -63,6 +63,7 @@ var gotoJSONUrl = Settings.getValue(settingsRoot + "/gotoJSONUrl", vircadiaGotoU
 
 var muted = Settings.getValue(settingsRoot + "/muted", {"Local": false, "Domain": true, "Grid": true});
 var mutedAudio = Settings.getValue(settingsRoot + "/mutedAudio", {"Local": false, "Domain": true, "Grid": true});
+var autoFormatting = Settings.getValue(settingsRoot + "/autoFormatting", {"Local": true, "Domain": true, "Grid": true});
 var notificationSound = SoundCache.getSound(Script.resolvePath("resources/bubblepop.wav"));
 
 var ws;
@@ -119,11 +120,11 @@ function connectWebSocket(timeout) {
         }
         if (!cmd.FAILED) {
             addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel);
-            
+
             if (!mutedAudio["Grid"] && MyAvatar.sessionDisplayName !== cmd.displayName) {
                 playNotificationSound();
             }
-            
+
             if (!muted["Grid"]) {
                 Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                     sender: "(G) " + cmd.displayName,
@@ -301,6 +302,7 @@ function onWebEventReceived(event) {
         chatHistory.emitScriptEvent(JSON.stringify({type: "MSG", data: historyLog}));
         chatHistory.emitScriptEvent(JSON.stringify({type: "CMD", cmd: "MUTED", muted: muted}));
         chatHistory.emitScriptEvent(JSON.stringify({type: "CMD", cmd: "MUTEDAUDIO", muted: mutedAudio}));
+        chatHistory.emitScriptEvent(JSON.stringify({type: "CMD", cmd: "FORMATTING", enabled: autoFormatting}));
     }
     if (event.type === "CMD") {
         if (event.cmd === "MUTED") {
@@ -310,6 +312,10 @@ function onWebEventReceived(event) {
         if (event.cmd === "MUTEDAUDIO") {
             mutedAudio = event.muted;
             Settings.setValue(settingsRoot + "/mutedAudio", mutedAudio);
+        }
+        if (event.cmd === "FORMATTING") {
+            autoFormatting = event.enabled;
+            Settings.setValue(settingsRoot + "/autoFormatting", autoFormatting);
         }
         if (event.cmd === "COLOUR") {
             Settings.setValue(settingsRoot + "/" + event.colourType + "Colour", event.colour);
@@ -346,6 +352,9 @@ function onWebEventReceived(event) {
     }
     if (event.type === "MSG") {
         event.avatarName = MyAvatar.sessionDisplayName;
+        if (!event.AvatarName) {
+            event.avatarName = MyAvatar.displayName;
+        }
         event = processChat(event);
         if (event.message === "") return;
         Messages.sendMessage("Chat", JSON.stringify({
@@ -459,14 +468,18 @@ function messageReceived(channel, message, sender) {
                 }
                 if (cmd.channel === "Local") {
                     if (Vec3.withinEpsilon(MyAvatar.position, cmd.position, 20)) {
-                        addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel);
-                        
+                        addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel, autoFormatting["Local"]);
+
                         if (!mutedAudio["Local"] && MyAvatar.sessionDisplayName !== cmd.displayName) {
                             playNotificationSound();
                         }
-                        
+
                         if (!muted["Local"]) {
+                            console.log("Autoformatting: " + JSON.stringify(autoFormatting));
+                            console.log("Autoformatting local: " +  autoFormatting["Local"]);
+
                             Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
+                                autoFormatting: autoFormatting["Local"],
                                 sender: "(L) " + cmd.displayName,
                                 text: cmd.message,
                                 colour: {text: cmd.colour}
@@ -474,28 +487,30 @@ function messageReceived(channel, message, sender) {
                         }
                     }
                 } else if (cmd.channel === "Domain") {
-                    addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel);
-                    
+                    addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel, autoFormatting["Domain"]);
+
                     if (!mutedAudio["Domain"] && MyAvatar.sessionDisplayName !== cmd.displayName) {
                         playNotificationSound();
                     }
-                    
+
                     if (!muted["Domain"]) {
                         Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
+                            autoFormatting: autoFormatting["Domain"],
                             sender: "(D) " + cmd.displayName,
                             text: cmd.message,
                             colour: {text: cmd.colour}
                         }));
                     }
                 } else if (cmd.channel === "Grid") {
-                    addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel);
-                    
+                    addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel, autoFormatting["Grid"]);
+
                     if (!mutedAudio["Grid"] && MyAvatar.sessionDisplayName !== cmd.displayName) {
                         playNotificationSound();
                     }
-                    
+
                     if (!muted["Grid"]) {
                         Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
+                            autoFormatting: autoFormatting["Grid"],
                             sender: "(G) " + cmd.displayName,
                             text: cmd.message,
                             colour: {text: cmd.colour}
@@ -503,11 +518,11 @@ function messageReceived(channel, message, sender) {
                     }
                 } else {
                     addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel);
-                    
+
                     if (MyAvatar.sessionDisplayName !== cmd.displayName) {
                         playNotificationSound();
                     }
-                    
+
                     Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                         sender: cmd.displayName,
                         text: cmd.message,
@@ -520,7 +535,7 @@ function messageReceived(channel, message, sender) {
             }
         }
     }
-    
+
     if (channel === SYSTEM_NOTIFICATION_CHANNEL && sender == MyAvatar.sessionUUID) {
         var cmd = {FAILED: true};
         try {
@@ -531,7 +546,7 @@ function messageReceived(channel, message, sender) {
         if (!cmd.FAILED) {
             if (cmd.type === "Update-Notification") {
                 addToLog(cmd.message, cmd.category, cmd.colour, cmd.channel);
-                
+
                 Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                     sender: "(" + cmd.category + ")",
                     text: cmd.message,
@@ -545,7 +560,7 @@ function messageReceived(channel, message, sender) {
 function time() {
     var d = new Date();
     // Months are returned in range 0-11 instead of 1-12, so we have to add 1.
-    var month = (d.getMonth() + 1).toString(); 
+    var month = (d.getMonth() + 1).toString();
     var day = (d.getDate()).toString();
     var h = (d.getHours()).toString();
     var m = (d.getMinutes()).toString();
@@ -557,10 +572,26 @@ function time() {
     return month + "/" + day + " - " + h2 + ":" + m2 + ":" + s2;
 }
 
-function addToLog(msg, dp, colour, tab) {
+function addToLog(msg, avatarName, colour, tab, autoFormat) {
     var currentTimestamp = time();
-    historyLog.push([currentTimestamp, msg, dp, colour, tab]);
-    chatHistory.emitScriptEvent(JSON.stringify({ type: "MSG", data: [[currentTimestamp, msg, dp, colour, tab]]}));
+    historyLog.push([currentTimestamp, msg, avatarName, colour, tab, autoFormat]);
+    //chatHistory.emitScriptEvent(JSON.stringify({ type: "MSG", data: [[currentTimestamp, msg, dp, colour, tab, autoFormat]]}));
+
+
+    // Send this over to the HTML part
+    chatHistory.emitScriptEvent(JSON.stringify({ type: "MSG", data:
+        [ // Array because we can send multiple messages at once elsewhere
+            {
+                timestamp: currentTimestamp,
+                message: msg,
+                avatarName: avatarName,
+                colour: colour,
+                tab: tab,
+                autoFormat: autoFormat
+            }
+        ]
+    }));
+
     while (historyLog.length > chatHistoryLimit) {
         historyLog.shift();
     }
@@ -588,17 +619,24 @@ function fromQml(message) {
                 addToChatBarHistory(cmd.message);
                 if (cmd.event.modifiers === CONTROL_KEY) {
                     cmd.avatarName = MyAvatar.sessionDisplayName;
+                    if (!cmd.AvatarName) {
+                        cmd.AvatarName = MyAvatar.displayName;
+                    }
                     cmd = processChat(cmd);
                     if (cmd.message === "") return;
                     Messages.sendMessage(FLOOF_CHAT_CHANNEL, JSON.stringify({
-                        type: "TransmitChatMessage", 
-                        channel: "Domain", 
+                        type: "TransmitChatMessage",
+                        channel: "Domain",
                         colour: chatColour("Domain"),
                         message: cmd.message,
                         displayName: cmd.avatarName
                     }));
                 } else if (cmd.event.modifiers === CONTROL_KEY + SHIFT_KEY) {
                     cmd.avatarName = MyAvatar.sessionDisplayName;
+                    if (!cmd.AvatarName) {
+                        cmd.AvatarName = MyAvatar.displayName;
+                    }
+
                     cmd = processChat(cmd);
                     if (cmd.message === "") return;
                     sendWS({
@@ -611,6 +649,10 @@ function fromQml(message) {
                     });
                 } else {
                     cmd.avatarName = MyAvatar.sessionDisplayName;
+                    if (!cmd.AvatarName) {
+                        cmd.AvatarName = MyAvatar.displayName;
+                    }
+
                     cmd = processChat(cmd);
                     if (cmd.message === "") return;
                     Messages.sendMessage(FLOOF_CHAT_CHANNEL, JSON.stringify({
@@ -683,11 +725,11 @@ function avatarLeavesDomain(sessionID) {
     var messageText = displayName + " has left.";
     var messageColor = { red: 122, green: 122, blue: 122 };
     addToLog(messageText, "Notice", messageColor, "Domain");
-    
+
     if (!mutedAudio["Domain"]) {
         playNotificationSound();
     }
-    
+
     if (!muted["Domain"]) {
         Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
             sender: "(D)",
@@ -715,25 +757,25 @@ function shutdown() {
     } catch (e) {
         // empty
     }
-    
+
     try {
         AvatarManager.avatarAddedEvent.disconnect(avatarJoinsDomain);
     } catch (e) {
         // empty
     }
-    
+
     try {
         AvatarManager.avatarRemovedEvent.disconnect(avatarLeavesDomain);
     } catch (e) {
         // empty
     }
-    
+
     try {
         Controller.keyPressEvent.disconnect(keyPressEvent);
     } catch (e) {
         // empty
     }
-    
+
     chatBar.close();
     chatHistory.close();
 }
