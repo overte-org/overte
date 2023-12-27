@@ -21,6 +21,8 @@ Script.include("/~/system/libraries/controllers.js");
 
 (function() { // BEGIN LOCAL_SCOPE
 
+    var controllerStandard = Controller.Standard;
+
     var TARGET_MODEL_URL = Script.resolvePath("../../assets/models/teleportationSpotBasev8.fbx");
     var SEAT_MODEL_URL = Script.resolvePath("../../assets/models/teleport-seat.fbx");
 
@@ -46,10 +48,10 @@ Script.include("/~/system/libraries/controllers.js");
 
     var handInfo = {
         right: {
-            controllerInput: Controller.Standard.RightHand
+            controllerInput: controllerStandard.RightHand
         },
         left: {
-            controllerInput: Controller.Standard.LeftHand
+            controllerInput: controllerStandard.LeftHand
         }
     };
 
@@ -1065,10 +1067,10 @@ Script.include("/~/system/libraries/controllers.js");
         registerGamePadMapping();
 
         // Teleport actions.
-        teleportMapping.from(Controller.Standard.LY).peek().to(leftTeleporter.getStandardLY);
-        teleportMapping.from(Controller.Standard.RY).peek().to(leftTeleporter.getStandardRY);
-        teleportMapping.from(Controller.Standard.LY).peek().to(rightTeleporter.getStandardLY);
-        teleportMapping.from(Controller.Standard.RY).peek().to(rightTeleporter.getStandardRY);
+        teleportMapping.from(controllerStandard.LY).peek().to(leftTeleporter.getStandardLY);
+        teleportMapping.from(controllerStandard.RY).peek().to(leftTeleporter.getStandardRY);
+        teleportMapping.from(controllerStandard.LY).peek().to(rightTeleporter.getStandardLY);
+        teleportMapping.from(controllerStandard.RY).peek().to(rightTeleporter.getStandardRY);
     }
 
     var leftTeleporter = new Teleporter(LEFT_HAND);

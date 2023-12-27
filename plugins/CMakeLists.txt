@@ -12,14 +12,16 @@ list(REMOVE_ITEM PLUGIN_SUBDIRS "CMakeFiles")
 
 # client-side plugins
 if (NOT SERVER_ONLY AND NOT ANDROID)
-  if (NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-    set(DIR "oculus")
-    add_subdirectory(${DIR})
-    set(DIR "openvr")
-    add_subdirectory(${DIR})
-    set(DIR "oculusLegacy")
-    add_subdirectory(${DIR})
+  if (WIN32 AND (NOT USE_GLES))
+      set(DIR "oculus")
+      add_subdirectory(${DIR})
+      set(DIR "oculusLegacy")
+      add_subdirectory(${DIR})
   endif()
+
+  # Note: OpenVR is a Steam thing, which is different from OVR, which is an Oculus SDK component.
+  set(DIR "openvr")
+  add_subdirectory(${DIR})
 
   set(DIR "hifiSdl2")
   add_subdirectory(${DIR})
@@ -31,8 +33,12 @@ if (NOT SERVER_ONLY AND NOT ANDROID)
 
   set(DIR "hifiSpacemouse")
   add_subdirectory(${DIR})
-  set(DIR "hifiNeuron")
-  add_subdirectory(${DIR})
+
+  if (USE_NEURON)
+    set(DIR "hifiNeuron")
+    add_subdirectory(${DIR})
+  endif()
+
   set(DIR "hifiKinect")
   add_subdirectory(${DIR})
 

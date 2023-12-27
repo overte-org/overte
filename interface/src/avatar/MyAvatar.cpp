@@ -1035,8 +1035,8 @@ void MyAvatar::simulate(float deltaTime, bool inView) {
         std::pair<bool, bool> zoneInteractionProperties;
         entityTree->withWriteLock([&] {
             zoneInteractionProperties = entityTreeRenderer->getZoneInteractionProperties();
-            EntityEditPacketSender* packetSender = qApp->getEntityEditPacketSender();
-            entityTree->updateEntityQueryAACube(shared_from_this(), packetSender, false, true);
+            std::shared_ptr<EntityEditPacketSender> packetSender = qApp->getEntityEditPacketSender();
+            entityTree->updateEntityQueryAACube(shared_from_this(), packetSender.get(), false, true);
         });
         bool isPhysicsEnabled = qApp->isPhysicsEnabled();
         bool zoneAllowsFlying = zoneInteractionProperties.first;
@@ -1729,7 +1729,7 @@ void MyAvatar::handleChangedAvatarEntityData() {
     entityTree->deleteEntitiesByID(entitiesToDelete);
 
     // ADD real entities
-    EntityEditPacketSender* packetSender = qApp->getEntityEditPacketSender();
+    auto packetSender = qApp->getEntityEditPacketSender();
     for (const auto& id : entitiesToAdd) {
         bool blobFailed = false;
         EntityItemProperties properties;
@@ -4231,7 +4231,7 @@ void MyAvatar::setSessionUUID(const QUuid& sessionUUID) {
             _avatarEntitiesLock.withReadLock([&] {
                 avatarEntityIDs = _packedAvatarEntityData.keys();
             });
-            EntityEditPacketSender* packetSender = qApp->getEntityEditPacketSender();
+            auto packetSender = qApp->getEntityEditPacketSender();
             entityTree->withWriteLock([&] {
                 for (const auto& entityID : avatarEntityIDs) {
                     auto entity = entityTree->findEntityByID(entityID);
@@ -6888,7 +6888,7 @@ void MyAvatar::sendPacket(const QUuid& entityID) const {
     if (entityTree) {
         entityTree->withWriteLock([&] {
             // force an update packet
-            EntityEditPacketSender* packetSender = qApp->getEntityEditPacketSender();
+            auto packetSender = qApp->getEntityEditPacketSender();
             packetSender->queueEditAvatarEntityMessage(entityTree, entityID);
         });
     }

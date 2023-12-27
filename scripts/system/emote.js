@@ -15,6 +15,7 @@
 
 (function() { // BEGIN LOCAL_SCOPE
 
+var controllerStandard = Controller.Standard;
 
 var EMOTE_ANIMATIONS = 
     ['Crying', 'Surprised', 'Dancing', 'Cheering', 'Waving', 'Fall', 'Pointing', 'Clapping', 'Sit1', 'Sit2', 'Sit3', 'Love'];
@@ -138,22 +139,22 @@ function restoreAnimation() {
 }
                     
 // Note peek() so as to not interfere with other mappings.
-eventMapping.from(Controller.Standard.LeftPrimaryThumb).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.RightPrimaryThumb).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.LeftSecondaryThumb).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.RightSecondaryThumb).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.LB).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.LS).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.RY).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.RX).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.LY).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.LX).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.LeftGrip).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.RB).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.RS).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.RightGrip).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.Back).peek().to(restoreAnimation);
-eventMapping.from(Controller.Standard.Start).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.LeftPrimaryThumb).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.RightPrimaryThumb).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.LeftSecondaryThumb).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.RightSecondaryThumb).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.LB).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.LS).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.RY).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.RX).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.LY).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.LX).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.LeftGrip).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.RB).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.RS).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.RightGrip).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.Back).peek().to(restoreAnimation);
+eventMapping.from(controllerStandard.Start).peek().to(restoreAnimation);
 
 
 button.clicked.connect(onClicked);

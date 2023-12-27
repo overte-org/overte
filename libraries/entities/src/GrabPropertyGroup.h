@@ -75,7 +75,7 @@ public:
     // EntityItemProperty related helpers
     virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
                                    ScriptEngine* engine, bool skipDefaults,
-                                   EntityItemProperties& defaultEntityProperties) const override;
+                                   EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags) const override;
     virtual void copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) override;
 
     void merge(const GrabPropertyGroup& other);

@@ -17,6 +17,8 @@
 
 (function() { // BEGIN LOCAL_SCOPE
 
+var controllerStandard = Controller.Standard;
+
 var BASIC_TIMER_INTERVAL = 50; // 50ms = 20hz
 var OVERLAY_WIDTH = 1920;
 var OVERLAY_HEIGHT = 1080;
@@ -344,20 +346,20 @@ var maybeIntervalTimer = Script.setInterval(function() {
 
 Controller.mousePressEvent.connect(goActive);
 // Note peek() so as to not interfere with other mappings.
-eventMapping.from(Controller.Standard.LeftPrimaryThumb).peek().to(goActive);
-eventMapping.from(Controller.Standard.RightPrimaryThumb).peek().to(goActive);
-eventMapping.from(Controller.Standard.LeftSecondaryThumb).peek().to(goActive);
-eventMapping.from(Controller.Standard.RightSecondaryThumb).peek().to(goActive);
-eventMapping.from(Controller.Standard.LT).peek().to(goActive);
-eventMapping.from(Controller.Standard.LB).peek().to(goActive);
-eventMapping.from(Controller.Standard.LS).peek().to(goActive);
-eventMapping.from(Controller.Standard.LeftGrip).peek().to(goActive);
-eventMapping.from(Controller.Standard.RT).peek().to(goActive);
-eventMapping.from(Controller.Standard.RB).peek().to(goActive);
-eventMapping.from(Controller.Standard.RS).peek().to(goActive);
-eventMapping.from(Controller.Standard.RightGrip).peek().to(goActive);
-eventMapping.from(Controller.Standard.Back).peek().to(goActive);
-eventMapping.from(Controller.Standard.Start).peek().to(goActive);
+eventMapping.from(controllerStandard.LeftPrimaryThumb).peek().to(goActive);
+eventMapping.from(controllerStandard.RightPrimaryThumb).peek().to(goActive);
+eventMapping.from(controllerStandard.LeftSecondaryThumb).peek().to(goActive);
+eventMapping.from(controllerStandard.RightSecondaryThumb).peek().to(goActive);
+eventMapping.from(controllerStandard.LT).peek().to(goActive);
+eventMapping.from(controllerStandard.LB).peek().to(goActive);
+eventMapping.from(controllerStandard.LS).peek().to(goActive);
+eventMapping.from(controllerStandard.LeftGrip).peek().to(goActive);
+eventMapping.from(controllerStandard.RT).peek().to(goActive);
+eventMapping.from(controllerStandard.RB).peek().to(goActive);
+eventMapping.from(controllerStandard.RS).peek().to(goActive);
+eventMapping.from(controllerStandard.RightGrip).peek().to(goActive);
+eventMapping.from(controllerStandard.Back).peek().to(goActive);
+eventMapping.from(controllerStandard.Start).peek().to(goActive);
 Controller.enableMapping(eventMappingName);
 
 function awayStateWhenFocusLostInVRChanged(enabled) {

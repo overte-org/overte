@@ -724,8 +724,8 @@ extern DisplayPluginList getDisplayPlugins();
 extern InputPluginList getInputPlugins();
 extern void saveInputPluginSettings(const InputPluginList& plugins);
 
-bool setupEssentials(int& argc, char** argv, const QCommandLineParser& parser, bool runningMarkerExisted) {
-    qInstallMessageHandler(messageHandler);
+bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted) {
+
 
 
     const int listenPort = parser.isSet("listenPort") ? parser.value("listenPort").toInt() : INVALID_PORT;
@@ -743,6 +743,7 @@ bool setupEssentials(int& argc, char** argv, const QCommandLineParser& parser, b
 
     bool previousSessionCrashed { false };
     if (!inTestMode) {
+        // TODO: FIX
         previousSessionCrashed = CrashRecoveryHandler::checkForResetSettings(runningMarkerExisted, suppressPrompt);
     }
 
@@ -763,19 +764,19 @@ bool setupEssentials(int& argc, char** argv, const QCommandLineParser& parser, b
         }
     }
 
-    // Tell the plugin manager about our statically linked plugins
+
+
     DependencyManager::set<ScriptInitializers>();
-    DependencyManager::set<PluginManager>();
+
+    // Tell the plugin manager about our statically linked plugins
     auto pluginManager = PluginManager::getInstance();
-    pluginManager->setInputPluginProvider([] { return getInputPlugins(); });
-    pluginManager->setDisplayPluginProvider([] { return getDisplayPlugins(); });
-    pluginManager->setInputPluginSettingsPersister([](const InputPluginList& plugins) { saveInputPluginSettings(plugins); });
     if (auto steamClient = pluginManager->getSteamClientPlugin()) {
         steamClient->init();
     }
     if (auto oculusPlatform = pluginManager->getOculusPlatformPlugin()) {
         oculusPlatform->init();
     }
+
 
     PROFILE_SET_THREAD_NAME("Main Thread");
 
@@ -993,8 +994,7 @@ bool Application::initMenu() {
 Application::Application(
     int& argc, char** argv,
     const QCommandLineParser& parser,
-    QElapsedTimer& startupTimer,
-    bool runningMarkerExisted
+    QElapsedTimer& startupTimer
 ) :
     QApplication(argc, argv),
     _window(new MainWindow(desktop())),
@@ -1004,10 +1004,7 @@ Application::Application(
 #ifndef Q_OS_ANDROID
     _logger(new FileLogger(this)),
 #endif
-    _previousSessionCrashed(setupEssentials(argc, argv, parser, runningMarkerExisted)),
-    _entitySimulation(std::make_shared<PhysicalEntitySimulation>()),
-    _physicsEngine(std::make_shared<PhysicsEngine>(Vectors::ZERO)),
-    _entityClipboard(std::make_shared<EntityTree>()),
+    _previousSessionCrashed(false), //setupEssentials(parser, false)),
     _previousScriptLocation("LastScriptLocation", DESKTOP_LOCATION),
     _fieldOfView("fieldOfView", DEFAULT_FIELD_OF_VIEW_DEGREES),
     _hmdTabletScale("hmdTabletScale", DEFAULT_HMD_TABLET_SCALE_PERCENT),
@@ -1032,12 +1029,72 @@ Application::Application(
     _snapshotSound(nullptr),
     _sampleSound(nullptr)
 {
-    auto steamClient = PluginManager::getInstance()->getSteamClientPlugin();
-    setProperty(hifi::properties::STEAM, (steamClient && steamClient->isRunning()));
     setProperty(hifi::properties::CRASHED, _previousSessionCrashed);
 
     LogHandler::getInstance().moveToThread(thread());
     LogHandler::getInstance().setupRepeatedMessageFlusher();
+    qInstallMessageHandler(messageHandler);
+
+    DependencyManager::set<PathUtils>();
+}
+
+void Application::initializePluginManager(const QCommandLineParser& parser) {
+    DependencyManager::set<PluginManager>();
+    auto pluginManager = PluginManager::getInstance();
+
+    // To avoid any confusion: the getInputPlugins and getDisplayPlugins are not the ones
+    // from PluginManager, but functions exported by input-plugins/InputPlugin.cpp and
+    // display-plugins/DisplayPlugin.cpp.
+    //
+    // These functions provide the plugin manager with static default plugins.
+    pluginManager->setInputPluginProvider([] { return getInputPlugins(); });
+    pluginManager->setDisplayPluginProvider([] { return getDisplayPlugins(); });
+    pluginManager->setInputPluginSettingsPersister([](const InputPluginList& plugins) { saveInputPluginSettings(plugins); });
+
+
+    // This must be a member function -- PluginManager must exist, and for that
+    // QApplication must exist, or it can't find the plugin path, as QCoreApplication:applicationDirPath
+    // won't work yet.
+
+    if (parser.isSet("display")) {
+        auto preferredDisplays = parser.value("display").split(',', Qt::SkipEmptyParts);
+        qInfo() << "Setting prefered display plugins:" << preferredDisplays;
+        PluginManager::getInstance()->setPreferredDisplayPlugins(preferredDisplays);
+    }
+
+    if (parser.isSet("disableDisplayPlugins")) {
+        auto disabledDisplays = parser.value("disableDisplayPlugins").split(',', Qt::SkipEmptyParts);
+        qInfo() << "Disabling following display plugins:"  << disabledDisplays;
+        PluginManager::getInstance()->disableDisplays(disabledDisplays);
+    }
+
+    if (parser.isSet("disableInputPlugins")) {
+        auto disabledInputs = parser.value("disableInputPlugins").split(',', Qt::SkipEmptyParts);
+        qInfo() << "Disabling following input plugins:" << disabledInputs;
+        PluginManager::getInstance()->disableInputs(disabledInputs);
+    }
+
+}
+
+void Application::initialize(const QCommandLineParser &parser) {
+
+    //qCDebug(interfaceapp) << "Setting up essentials";
+    setupEssentials(parser, _previousSessionCrashed);
+    qCDebug(interfaceapp) << "Initializing application";
+
+    _entitySimulation = std::make_shared<PhysicalEntitySimulation>();
+    _physicsEngine = std::make_shared<PhysicsEngine>(Vectors::ZERO);
+    _entityClipboard = std::make_shared<EntityTree>();
+    _octreeProcessor = std::make_shared<OctreePacketProcessor>();
+    _entityEditSender = std::make_shared<EntityEditPacketSender>();
+    _graphicsEngine = std::make_shared<GraphicsEngine>();
+    _applicationOverlay = std::make_shared<ApplicationOverlay>();
+
+
+
+    auto steamClient = PluginManager::getInstance()->getSteamClientPlugin();
+    setProperty(hifi::properties::STEAM, (steamClient && steamClient->isRunning()));
+
 
     {
         if (parser.isSet("testScript")) {
@@ -1405,7 +1462,7 @@ Application::Application(
     connect(myAvatar.get(), &MyAvatar::positionGoneTo, this, [this] {
         if (!_physicsEnabled) {
             // when we arrive somewhere without physics enabled --> startSafeLanding
-            _octreeProcessor.startSafeLanding();
+            _octreeProcessor->startSafeLanding();
         }
     }, Qt::QueuedConnection);
 
@@ -1578,9 +1635,9 @@ Application::Application(
     qCDebug(interfaceapp, "init() complete.");
 
     // create thread for parsing of octree data independent of the main network and rendering threads
-    _octreeProcessor.initialize(_enableProcessOctreeThread);
-    connect(&_octreeProcessor, &OctreePacketProcessor::packetVersionMismatch, this, &Application::notifyPacketVersionMismatch);
-    _entityEditSender.initialize(_enableProcessOctreeThread);
+    _octreeProcessor->initialize(_enableProcessOctreeThread);
+    connect(_octreeProcessor.get(), &OctreePacketProcessor::packetVersionMismatch, this, &Application::notifyPacketVersionMismatch);
+    _entityEditSender->initialize(_enableProcessOctreeThread);
 
     _idleLoopStdev.reset();
 
@@ -1698,7 +1755,7 @@ Application::Application(
         userActivityLogger.logAction("launch", properties);
     }
 
-    _entityEditSender.setMyAvatar(myAvatar.get());
+    _entityEditSender->setMyAvatar(myAvatar.get());
 
     // The entity octree will have to know about MyAvatar for the parentJointName import
     getEntities()->getTree()->setMyAvatar(myAvatar);
@@ -1707,7 +1764,7 @@ Application::Application(
     // For now we're going to set the PPS for outbound packets to be super high, this is
     // probably not the right long term solution. But for now, we're going to do this to
     // allow you to move an entity around in your hand
-    _entityEditSender.setPacketsPerSecond(3000); // super high!!
+    _entityEditSender->setPacketsPerSecond(3000); // super high!!
 
     // Make sure we don't time out during slow operations at startup
     updateHeartbeat();
@@ -2375,7 +2432,7 @@ Application::Application(
 
     connect(this, &Application::applicationStateChanged, this, &Application::activeChanged);
     connect(_window, SIGNAL(windowMinimizedChanged(bool)), this, SLOT(windowMinimizedChanged(bool)));
-    qCDebug(interfaceapp, "Startup time: %4.2f seconds.", (double)startupTimer.elapsed() / 1000.0);
+    qCDebug(interfaceapp, "Startup time: %4.2f seconds.", (double)_sessionRunTimer.elapsed() / 1000.0);
 
     EntityTreeRenderer::setEntitiesShouldFadeFunction([this]() {
         SharedNodePointer entityServerNode = DependencyManager::get<NodeList>()->soloNodeOfType(NodeType::EntityServer);
@@ -2572,7 +2629,7 @@ Application::Application(
     }
 
     _pendingIdleEvent = false;
-    _graphicsEngine.startup();
+    _graphicsEngine->startup();
 
     qCDebug(interfaceapp) << "Directory Service session ID is" << uuidStringWithoutCurlyBraces(accountManager->getSessionID());
 
@@ -2879,43 +2936,59 @@ void Application::cleanupBeforeQuit() {
 
 Application::~Application() {
     // remove avatars from physics engine
-    auto avatarManager = DependencyManager::get<AvatarManager>();
-    avatarManager->clearOtherAvatars();
-    auto myCharacterController = getMyAvatar()->getCharacterController();
-    myCharacterController->clearDetailedMotionStates();
+    if (auto avatarManager = DependencyManager::get<AvatarManager>()) {
+        // AvatarManager may not yet exist in case of an early exit
 
-    PhysicsEngine::Transaction transaction;
-    avatarManager->buildPhysicsTransaction(transaction);
-    _physicsEngine->processTransaction(transaction);
-    avatarManager->handleProcessedPhysicsTransaction(transaction);
-    avatarManager->deleteAllAvatars();
+        avatarManager->clearOtherAvatars();
+        auto myCharacterController = getMyAvatar()->getCharacterController();
+        myCharacterController->clearDetailedMotionStates();
 
-    _physicsEngine->setCharacterController(nullptr);
+        PhysicsEngine::Transaction transaction;
+        avatarManager->buildPhysicsTransaction(transaction);
+        _physicsEngine->processTransaction(transaction);
+        avatarManager->handleProcessedPhysicsTransaction(transaction);
+        avatarManager->deleteAllAvatars();
+    }
+
+    if (_physicsEngine) {
+        _physicsEngine->setCharacterController(nullptr);
+    }
 
     // the _shapeManager should have zero references
     _shapeManager.collectGarbage();
     assert(_shapeManager.getNumShapes() == 0);
 
-    // shutdown graphics engine
-    _graphicsEngine.shutdown();
+    if (_graphicsEngine) {
+        // shutdown graphics engine
+        _graphicsEngine->shutdown();
+    }
 
     _gameWorkload.shutdown();
 
     DependencyManager::destroy<Preferences>();
     PlatformHelper::shutdown();
 
-    _entityClipboard->eraseAllOctreeElements();
-    _entityClipboard.reset();
-
-    _octreeProcessor.terminate();
-    _entityEditSender.terminate();
-
-    if (auto steamClient = PluginManager::getInstance()->getSteamClientPlugin()) {
-        steamClient->shutdown();
+    if (_entityClipboard) {
+        _entityClipboard->eraseAllOctreeElements();
+        _entityClipboard.reset();
     }
 
-    if (auto oculusPlatform = PluginManager::getInstance()->getOculusPlatformPlugin()) {
-        oculusPlatform->shutdown();
+    if (_octreeProcessor) {
+        _octreeProcessor->terminate();
+    }
+
+    if (_entityEditSender) {
+        _entityEditSender->terminate();
+    }
+
+    if (auto pluginManager = PluginManager::getInstance()) {
+        if (auto steamClient = pluginManager->getSteamClientPlugin()) {
+            steamClient->shutdown();
+        }
+
+        if (auto oculusPlatform = pluginManager->getOculusPlatformPlugin()) {
+            oculusPlatform->shutdown();
+        }
     }
 
     DependencyManager::destroy<PluginManager>();
@@ -2943,7 +3016,9 @@ Application::~Application() {
     DependencyManager::destroy<GeometryCache>();
     DependencyManager::destroy<ScreenshareScriptingInterface>();
 
-    DependencyManager::get<ResourceManager>()->cleanup();
+    if (auto resourceManager = DependencyManager::get<ResourceManager>()) {
+        resourceManager->cleanup();
+    }
 
     // remove the NodeList from the DependencyManager
     DependencyManager::destroy<NodeList>();
@@ -2957,13 +3032,14 @@ Application::~Application() {
     _window->deleteLater();
 
     // make sure that the quit event has finished sending before we take the application down
-    auto closeEventSender = DependencyManager::get<CloseEventSender>();
-    while (!closeEventSender->hasFinishedQuitEvent() && !closeEventSender->hasTimedOutQuitEvent()) {
-        // sleep a little so we're not spinning at 100%
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    if (auto closeEventSender = DependencyManager::get<CloseEventSender>()) {
+        while (!closeEventSender->hasFinishedQuitEvent() && !closeEventSender->hasTimedOutQuitEvent()) {
+            // sleep a little so we're not spinning at 100%
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        // quit the thread used by the closure event sender
+        closeEventSender->thread()->quit();
     }
-    // quit the thread used by the closure event sender
-    closeEventSender->thread()->quit();
 
     // Can't log to file past this point, FileLogger about to be deleted
     qInstallMessageHandler(LogHandler::verboseMessageHandler);
@@ -3103,7 +3179,7 @@ void Application::initializeGL() {
     glClear(GL_COLOR_BUFFER_BIT);
     _glWidget->swapBuffers();
 
-    _graphicsEngine.initializeGPU(_glWidget);
+    _graphicsEngine->initializeGPU(_glWidget);
 }
 
 void Application::initializeDisplayPlugins() {
@@ -3115,7 +3191,7 @@ void Application::initializeDisplayPlugins() {
     // Once time initialization code
     DisplayPluginPointer targetDisplayPlugin;
     for(const auto& displayPlugin : displayPlugins) {
-        displayPlugin->setContext(_graphicsEngine.getGPUContext());
+        displayPlugin->setContext(_graphicsEngine->getGPUContext());
         if (displayPlugin->getName() == lastActiveDisplayPluginName) {
             targetDisplayPlugin = displayPlugin;
         }
@@ -3167,7 +3243,7 @@ void Application::initializeDisplayPlugins() {
 void Application::initializeRenderEngine() {
     // FIXME: on low end systems os the shaders take up to 1 minute to compile, so we pause the deadlock watchdog thread.
     DeadlockWatchdogThread::withPause([&] {
-        _graphicsEngine.initializeRender();
+        _graphicsEngine->initializeRender();
         DependencyManager::get<Keyboard>()->registerKeyboardHighlighting();
     });
 }
@@ -3424,7 +3500,7 @@ void Application::onDesktopRootContextCreated(QQmlContext* surfaceContext) {
     surfaceContext->setContextProperty("Recording", DependencyManager::get<RecordingScriptingInterface>().data());
     surfaceContext->setContextProperty("Preferences", DependencyManager::get<Preferences>().data());
     surfaceContext->setContextProperty("AddressManager", DependencyManager::get<AddressManager>().data());
-    surfaceContext->setContextProperty("FrameTimings", &_graphicsEngine._frameTimingsScriptingInterface);
+    surfaceContext->setContextProperty("FrameTimings", &_graphicsEngine->_frameTimingsScriptingInterface);
     surfaceContext->setContextProperty("Rates", new RatesScriptingInterface(this));
 
     surfaceContext->setContextProperty("TREE_SCALE", TREE_SCALE);
@@ -4060,7 +4136,7 @@ std::map<QString, QString> Application::prepareServerlessDomainContents(QUrl dom
     bool success = tmpTree->readFromByteArray(domainURL.toString(), data);
     if (success) {
         tmpTree->reaverageOctreeElements();
-        tmpTree->sendEntities(&_entityEditSender, getEntities()->getTree(), "domain", 0, 0, 0);
+        tmpTree->sendEntities(_entityEditSender.get(), getEntities()->getTree(), "domain", 0, 0, 0);
     }
     std::map<QString, QString> namedPaths = tmpTree->getNamedPaths();
 
@@ -4130,8 +4206,8 @@ void Application::onPresent(quint32 frameCount) {
         postEvent(this, new QEvent((QEvent::Type)ApplicationEvent::Idle), Qt::HighEventPriority);
     }
     expected = false;
-    if (_graphicsEngine.checkPendingRenderEvent() && !isAboutToQuit()) {
-        postEvent(_graphicsEngine._renderEventHandler, new QEvent((QEvent::Type)ApplicationEvent::Render));
+    if (_graphicsEngine->checkPendingRenderEvent() && !isAboutToQuit()) {
+        postEvent(_graphicsEngine->_renderEventHandler, new QEvent((QEvent::Type)ApplicationEvent::Render));
     }
 }
 
@@ -4201,7 +4277,9 @@ bool Application::handleFileOpenEvent(QFileOpenEvent* fileEvent) {
 }
 
 bool Application::notify(QObject * object, QEvent * event) {
-    if (thread() == QThread::currentThread()) {
+    if (thread() == QThread::currentThread() && _profilingInitialized ) {
+        // _profilingInitialized gets set once we're reading for profiling.
+        // this prevents a deadlock due to profiling not working yet
         PROFILE_RANGE_IF_LONGER(app, "notify", 2)
         return QApplication::notify(object, event);
     }
@@ -5246,8 +5324,8 @@ void Application::idle() {
     PROFILE_COUNTER_IF_CHANGED(app, "pendingDownloads", uint32_t, ResourceCache::getPendingRequestCount());
     PROFILE_COUNTER_IF_CHANGED(app, "currentProcessing", int, DependencyManager::get<StatTracker>()->getStat("Processing").toInt());
     PROFILE_COUNTER_IF_CHANGED(app, "pendingProcessing", int, DependencyManager::get<StatTracker>()->getStat("PendingProcessing").toInt());
-    auto renderConfig = _graphicsEngine.getRenderEngine()->getConfiguration();
-    PROFILE_COUNTER_IF_CHANGED(render, "gpuTime", float, (float)_graphicsEngine.getGPUContext()->getFrameTimerGPUAverage());
+    auto renderConfig = _graphicsEngine->getRenderEngine()->getConfiguration();
+    PROFILE_COUNTER_IF_CHANGED(render, "gpuTime", float, (float)_graphicsEngine->getGPUContext()->getFrameTimerGPUAverage());
 
     PROFILE_RANGE(app, __FUNCTION__);
 
@@ -5614,7 +5692,7 @@ bool Application::importEntities(const QString& urlOrFilename, const bool isObse
 }
 
 QVector<EntityItemID> Application::pasteEntities(const QString& entityHostType, float x, float y, float z) {
-    return _entityClipboard->sendEntities(&_entityEditSender, getEntities()->getTree(), entityHostType, x, y, z);
+    return _entityClipboard->sendEntities(_entityEditSender.get(), getEntities()->getTree(), entityHostType, x, y, z);
 }
 
 void Application::init() {
@@ -5664,7 +5742,7 @@ void Application::init() {
     _physicsEngine->init();
 
     EntityTreePointer tree = getEntities()->getTree();
-    _entitySimulation->init(tree, _physicsEngine, &_entityEditSender);
+    _entitySimulation->init(tree, _physicsEngine, _entityEditSender.get());
     tree->setSimulation(_entitySimulation);
 
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
@@ -5688,7 +5766,7 @@ void Application::init() {
         }
     }, Qt::QueuedConnection);
 
-    _gameWorkload.startup(getEntities()->getWorkloadSpace(), _graphicsEngine.getRenderScene(), _entitySimulation);
+    _gameWorkload.startup(getEntities()->getWorkloadSpace(), _graphicsEngine->getRenderScene(), _entitySimulation);
     _entitySimulation->setWorkloadSpace(getEntities()->getWorkloadSpace());
 }
 
@@ -5860,7 +5938,7 @@ void Application::updateLOD(float deltaTime) const {
     // adjust it unless we were asked to disable this feature, or if we're currently in throttleRendering mode
     if (!isThrottleRendering()) {
         float presentTime = getActiveDisplayPlugin()->getAveragePresentTime();
-        float engineRunTime = (float)(_graphicsEngine.getRenderEngine()->getConfiguration().get()->getCPURunTime());
+        float engineRunTime = (float)(_graphicsEngine->getRenderEngine()->getConfiguration().get()->getCPURunTime());
         float gpuTime = getGPUContext()->getFrameTimerGPUAverage();
         float batchTime = getGPUContext()->getFrameTimerBatchAverage();
         auto lodManager = DependencyManager::get<LODManager>();
@@ -5896,8 +5974,8 @@ void Application::updateThreads(float deltaTime) {
 
     // parse voxel packets
     if (!_enableProcessOctreeThread) {
-        _octreeProcessor.threadRoutine();
-        _entityEditSender.threadRoutine();
+        _octreeProcessor->threadRoutine();
+        _entityEditSender->threadRoutine();
     }
 }
 
@@ -6020,7 +6098,7 @@ void Application::resetPhysicsReadyInformation() {
     _gpuTextureMemSizeStabilityCount = 0;
     _gpuTextureMemSizeAtLastCheck = 0;
     _physicsEnabled = false;
-    _octreeProcessor.stopSafeLanding();
+    _octreeProcessor->stopSafeLanding();
 }
 
 void Application::reloadResourceCaches() {
@@ -6165,7 +6243,7 @@ void Application::updateSecondaryCameraViewFrustum() {
     // camera should be.
 
     // Code based on SecondaryCameraJob
-    auto renderConfig = _graphicsEngine.getRenderEngine()->getConfiguration();
+    auto renderConfig = _graphicsEngine->getRenderEngine()->getConfiguration();
     assert(renderConfig);
     auto camera = dynamic_cast<SecondaryCameraJobConfig*>(renderConfig->getConfig("SecondaryCamera"));
 
@@ -6283,7 +6361,7 @@ void Application::tryToEnablePhysics() {
         auto myAvatar = getMyAvatar();
         if (myAvatar->isReadyForPhysics()) {
             myAvatar->getCharacterController()->setPhysicsEngine(_physicsEngine);
-            _octreeProcessor.resetSafeLanding();
+            _octreeProcessor->resetSafeLanding();
             _physicsEnabled = true;
             setIsInterstitialMode(false);
             myAvatar->updateMotionBehaviorFromMenu();
@@ -6292,7 +6370,7 @@ void Application::tryToEnablePhysics() {
 }
 
 void Application::update(float deltaTime) {
-    PROFILE_RANGE_EX(app, __FUNCTION__, 0xffff0000, (uint64_t)_graphicsEngine._renderFrameCount + 1);
+    PROFILE_RANGE_EX(app, __FUNCTION__, 0xffff0000, (uint64_t)_graphicsEngine->_renderFrameCount + 1);
 
     if (_aboutToQuit) {
         return;
@@ -6309,12 +6387,12 @@ void Application::update(float deltaTime) {
         if (isServerlessMode()) {
             tryToEnablePhysics();
         } else if (_failedToConnectToEntityServer) {
-            if (_octreeProcessor.safeLandingIsActive()) {
-                _octreeProcessor.stopSafeLanding();
+            if (_octreeProcessor->safeLandingIsActive()) {
+                _octreeProcessor->stopSafeLanding();
             }
         } else {
-            _octreeProcessor.updateSafeLanding();
-            if (_octreeProcessor.safeLandingIsComplete()) {
+            _octreeProcessor->updateSafeLanding();
+            if (_octreeProcessor->safeLandingIsComplete()) {
                 tryToEnablePhysics();
             }
         }
@@ -6801,7 +6879,7 @@ void Application::update(float deltaTime) {
 }
 
 void Application::updateRenderArgs(float deltaTime) {
-    _graphicsEngine.editRenderArgs([this, deltaTime](AppRenderArgs& appRenderArgs) {
+    _graphicsEngine->editRenderArgs([this, deltaTime](AppRenderArgs& appRenderArgs) {
         PerformanceTimer perfTimer("editRenderArgs");
         appRenderArgs._headPose = getHMDSensorPose();
 
@@ -6830,7 +6908,7 @@ void Application::updateRenderArgs(float deltaTime) {
                 _viewFrustum.setProjection(adjustedProjection);
                 _viewFrustum.calculate();
             }
-            appRenderArgs._renderArgs = RenderArgs(_graphicsEngine.getGPUContext(), lodManager->getVisibilityDistance(),
+            appRenderArgs._renderArgs = RenderArgs(_graphicsEngine->getGPUContext(), lodManager->getVisibilityDistance(),
                 lodManager->getBoundaryLevelAdjust(), lodManager->getLODFarHalfAngleTan(), lodManager->getLODNearHalfAngleTan(),
                 lodManager->getLODFarDistance(), lodManager->getLODNearDistance(), RenderArgs::DEFAULT_RENDER_MODE,
                 RenderArgs::MONO, RenderArgs::DEFERRED, RenderArgs::RENDER_DEBUG_NONE);
@@ -6969,7 +7047,7 @@ int Application::sendNackPackets() {
 
             // if there are octree packets from this node that are waiting to be processed,
             // don't send a NACK since the missing packets may be among those waiting packets.
-            if (_octreeProcessor.hasPacketsToProcessFrom(nodeUUID)) {
+            if (_octreeProcessor->hasPacketsToProcessFrom(nodeUUID)) {
                 return;
             }
 
@@ -7011,7 +7089,7 @@ void Application::queryOctree(NodeType_t serverType, PacketType packetType) {
 
     const bool isModifiedQuery = !_physicsEnabled;
     if (isModifiedQuery) {
-        if (!_octreeProcessor.safeLandingIsActive()) {
+        if (!_octreeProcessor->safeLandingIsActive()) {
             // don't send the octreeQuery until SafeLanding knows it has started
             return;
         }
@@ -7280,12 +7358,12 @@ void Application::resettingDomain() {
 void Application::nodeAdded(SharedNodePointer node) {
     if (node->getType() == NodeType::EntityServer) {
         if (_failedToConnectToEntityServer && !_entityServerConnectionTimer.isActive()) {
-            _octreeProcessor.stopSafeLanding();
+            _octreeProcessor->stopSafeLanding();
             _failedToConnectToEntityServer = false;
         } else if (_entityServerConnectionTimer.isActive()) {
             _entityServerConnectionTimer.stop();
         }
-        _octreeProcessor.startSafeLanding();
+        _octreeProcessor->startSafeLanding();
         _entityServerConnectionTimer.setInterval(ENTITY_SERVER_CONNECTION_TIMEOUT);
         _entityServerConnectionTimer.start();
     }
@@ -7357,9 +7435,9 @@ void Application::nodeKilled(SharedNodePointer node) {
     // OctreePacketProcessor::nodeKilled is not being called when NodeList::nodeKilled is emitted.
     // This may have to do with GenericThread::threadRoutine() blocking the QThread event loop
 
-    _octreeProcessor.nodeKilled(node);
+    _octreeProcessor->nodeKilled(node);
 
-    _entityEditSender.nodeKilled(node);
+    _entityEditSender->nodeKilled(node);
 
     if (node->getType() == NodeType::AudioMixer) {
         QMetaObject::invokeMethod(DependencyManager::get<AudioClient>().data(), "audioMixerKilled");
@@ -7448,7 +7526,7 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     // setup the packet sender of the script engine's scripting interfaces so
     // we can use the same ones from the application.
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
-    entityScriptingInterface->setPacketSender(&_entityEditSender);
+    entityScriptingInterface->setPacketSender(_entityEditSender.get());
     entityScriptingInterface->setEntityTree(getEntities()->getTree());
 
     if (property(hifi::properties::TEST).isValid()) {
@@ -8214,7 +8292,7 @@ void Application::addAssetToWorldCheckModelSize() {
         propertyFlags += PROP_NAME;
         propertyFlags += PROP_DIMENSIONS;
         auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
-        auto properties = entityScriptingInterface->getEntityPropertiesInternal(entityID, propertyFlags);
+        auto properties = entityScriptingInterface->getEntityPropertiesInternal(entityID, propertyFlags, false);
         auto name = properties.getName();
         auto dimensions = properties.getDimensions();
 
@@ -8762,26 +8840,6 @@ void Application::sendLambdaEvent(const std::function<void()>& f) {
     }
 }
 
-void Application::initPlugins(const QCommandLineParser& parser) {
-    if (parser.isSet("display")) {
-        auto preferredDisplays = parser.value("display").split(',', Qt::SkipEmptyParts);
-        qInfo() << "Setting prefered display plugins:" << preferredDisplays;
-        PluginManager::getInstance()->setPreferredDisplayPlugins(preferredDisplays);
-    }
-
-    if (parser.isSet("disable-displays")) {
-        auto disabledDisplays = parser.value("disable-displays").split(',', Qt::SkipEmptyParts);
-        qInfo() << "Disabling following display plugins:"  << disabledDisplays;
-        PluginManager::getInstance()->disableDisplays(disabledDisplays);
-    }
-
-    if (parser.isSet("disable-inputs")) {
-        auto disabledInputs = parser.value("disable-inputs").split(',', Qt::SkipEmptyParts);
-        qInfo() << "Disabling following input plugins:" << disabledInputs;
-        PluginManager::getInstance()->disableInputs(disabledInputs);
-    }
-}
-
 void Application::shutdownPlugins() {
 }
 
@@ -9204,7 +9262,7 @@ void Application::updateLoginDialogPosition() {
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
     EntityPropertyFlags desiredProperties;
     desiredProperties += PROP_POSITION;
-    auto properties = entityScriptingInterface->getEntityPropertiesInternal(_loginDialogID, desiredProperties);
+    auto properties = entityScriptingInterface->getEntityPropertiesInternal(_loginDialogID, desiredProperties, false);
     auto positionVec = properties.getPosition();
     auto cameraPositionVec = _myCamera.getPosition();
     auto cameraOrientation = cancelOutRollAndPitch(_myCamera.getOrientation());

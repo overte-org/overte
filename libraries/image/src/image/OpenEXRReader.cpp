@@ -23,6 +23,7 @@
 #include <OpenEXR/ImfRgbaFile.h>
 #include <OpenEXR/ImfArray.h>
 #include <OpenEXR/ImfTestFile.h>
+#include <OpenEXR/ImfInt64.h>
 
 class QIODeviceImfStream : public Imf::IStream {
 public:
@@ -39,11 +40,11 @@ public:
         return true;
     }
 
-    Imf::Int64 tellg() override {
+    uint64_t tellg() override {
         return _device.pos();
     }
 
-    void seekg(Imf::Int64 pos) override {
+    void seekg(uint64_t pos) override {
         _device.seek(pos);
     }
 
@@ -76,7 +77,7 @@ image::Image image::readOpenEXR(QIODevice& content, const std::string& filename)
 
         Image image{ width, height, Image::Format_PACKED_FLOAT };
         auto packHDRPixel = getHDRPackingFunction();
-        
+
         for (int y = 0; y < height; y++) {
             const auto srcScanline = pixels[y];
             gpu::uint32* dstScanline = (gpu::uint32*) image.editScanLine(y);
