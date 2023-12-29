@@ -18,6 +18,7 @@ QJsonObject ScriptMessage::toJson() {
     object["message"] = _messageContent;
     object["lineNumber"] = _lineNumber;
     object["fileName"] = _fileName;
+    object["entityID"] = _entityID.toString();
     object["type"] = static_cast<int>(_scriptType);
     object["severity"] = static_cast<int>(_severity);
     return object;
@@ -27,6 +28,7 @@ bool ScriptMessage::fromJson(const QJsonObject &object) {
     if (!object["message"].isString()
         || !object["lineNumber"].isDouble()
         || !object["fileName"].isString()
+        || !object["entityID"].isString()
         || !object["type"].isDouble()
         || !object["severity"].isDouble()) {
         qDebug() << "ScriptMessage::fromJson failed to find required fields in JSON file";
@@ -35,6 +37,7 @@ bool ScriptMessage::fromJson(const QJsonObject &object) {
     _messageContent = object["message"].toString();
     _lineNumber = object["lineNumber"].toInt();
     _fileName = object["fileName"].toInt();
+    _entityID = QUuid::fromString(object["entityID"].toString());
     _scriptType = static_cast<ScriptMessage::ScriptType>(object["type"].toInt());
     _severity = static_cast<ScriptMessage::Severity>(object["severity"].toInt());
 }

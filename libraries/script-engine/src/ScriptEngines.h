@@ -257,6 +257,57 @@ signals:
     void infoMessage(const QString& message, const QString& engineName);
 
     /*@jsdoc
+     * Triggered when a client side entity script prints a message to the program log via {@link  print}, {@link Script.print},
+     * {@link console.log}, {@link console.debug}, {@link console.group}, {@link console.groupEnd}, {@link console.time}, or
+     * {@link console.timeEnd}.
+     * @function Script.printedMessage
+     * @param {string} message - The message.
+     * @param {string} fileName - Name of the file in which message was generated. Empty string when no file name is available.
+     * @param {number} lineNumber - Number of the line on which message was generated. -1 if there line number is not available.
+     * @param {Uuid} entityID - Entity ID.
+     * @param {boolean} isServerScript - true if entity script is server-side, false if it is client-side.
+     * @returns {Signal}
+     */
+    void printedEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID, bool isServerScript);
+
+    /*@jsdoc
+     * Triggered when a client side entity script generates an error, {@link console.error} or {@link console.exception} is called, or
+     * {@link console.assert} is called and fails.
+     * @function Script.errorMessage
+     * @param {string} message - The error message.
+     * @param {string} fileName - Name of the file in which message was generated. Empty string when no file name is available.
+     * @param {number} lineNumber - Number of the line on which message was generated. -1 if there line number is not available.
+     * @param {Uuid} entityID - Entity ID.
+     * @param {boolean} isServerScript - true if entity script is server-side, false if it is client-side.
+     * @returns {Signal}
+     */
+    void errorEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID, bool isServerScript);
+
+    /*@jsdoc
+     * Triggered when a client side entity script generates a warning or {@link console.warn} is called.
+     * @function Script.warningMessage
+     * @param {string} message - The warning message.
+     * @param {string} fileName - Name of the file in which message was generated. Empty string when no file name is available.
+     * @param {number} lineNumber - Number of the line on which message was generated. -1 if there line number is not available.
+     * @param {Uuid} entityID - Entity ID.
+     * @param {boolean} isServerScript - true if entity script is server-side, false if it is client-side.
+     * @returns {Signal}
+     */
+    void warningEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID, bool isServerScript);
+
+    /*@jsdoc
+     * Triggered when a client side entity script generates an information message or {@link console.info} is called.
+     * @function Script.infoMessage
+     * @param {string} message - The information message.
+     * @param {string} fileName - Name of the file in which message was generated. Empty string when no file name is available.
+     * @param {number} lineNumber - Number of the line on which message was generated. -1 if there line number is not available.
+     * @param {Uuid} entityID - Entity ID.
+     * @param {boolean} isServerScript - true if entity script is server-side, false if it is client-side.
+     * @returns {Signal}
+     */
+    void infoEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID, bool isServerScript);
+
+    /*@jsdoc
      * @function ScriptDiscoveryService.errorLoadingScript
      * @param {string} url - URL.
      * @returns {Signal}
@@ -354,6 +405,10 @@ protected:
     std::atomic<bool> _isReloading { false };
     bool _defaultScriptsLocationOverridden { false };
     QString _debugScriptUrl;
+
+    // TODO: remove script managers when shutting them down
+    QSet<ScriptManagerPointer> _scriptManagersThatRequestedServerEntityMessages;
+    QMutex _serverEntityMessagesMutex;
 
     // If this is set, defaultScripts.js will not be run if it is in the settings,
     // and this will be run instead. This script will not be persisted to settings.

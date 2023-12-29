@@ -584,7 +584,7 @@ void ScriptManager::scriptErrorMessage(const QString& message, const QString& fi
     qCCritical(scriptengine, "[%s] %s", qUtf8Printable(getFilename()), qUtf8Printable(message));
     emit errorMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
-        emit errorEntityMessage(message, fileName, lineNumber, currentEntityIdentifier);
+        emit errorEntityMessage(message, fileName, lineNumber, currentEntityIdentifier, isEntityServerScript());
     }
 }
 
@@ -592,7 +592,7 @@ void ScriptManager::scriptWarningMessage(const QString& message, const QString& 
     qCWarning(scriptengine, "[%s] %s", qUtf8Printable(getFilename()), qUtf8Printable(message));
     emit warningMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
-        emit warningEntityMessage(message, fileName, lineNumber, currentEntityIdentifier);
+        emit warningEntityMessage(message, fileName, lineNumber, currentEntityIdentifier, isEntityServerScript());
     }
 }
 
@@ -600,7 +600,7 @@ void ScriptManager::scriptInfoMessage(const QString& message, const QString& fil
     qCInfo(scriptengine, "[%s] %s", qUtf8Printable(getFilename()), qUtf8Printable(message));
     emit infoMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
-        emit infoEntityMessage(message, fileName, lineNumber, currentEntityIdentifier);
+        emit infoEntityMessage(message, fileName, lineNumber, currentEntityIdentifier, isEntityServerScript());
     }
 }
 
@@ -608,7 +608,7 @@ void ScriptManager::scriptPrintedMessage(const QString& message, const QString& 
     qCDebug(scriptengine, "[%s] %s", qUtf8Printable(getFilename()), qUtf8Printable(message));
     emit printedMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
-        emit printedEntityMessage(message, fileName, lineNumber, currentEntityIdentifier);
+        emit printedEntityMessage(message, fileName, lineNumber, currentEntityIdentifier, isEntityServerScript());
     }
 }
 

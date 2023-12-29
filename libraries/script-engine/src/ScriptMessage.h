@@ -18,6 +18,7 @@
 
 #include <QString>
 #include <QJsonObject>
+#include "EntityItemID.h"
 
 class ScriptMessage {
 public:
@@ -35,16 +36,24 @@ public:
     };
 
     ScriptMessage() {};
-    ScriptMessage(QString messageContent, QString fileName, int lineNumber, ScriptType scriptType, Severity severity)
-        : _messageContent(messageContent), _fileName(fileName), _lineNumber(lineNumber), _scriptType(scriptType) {}
+    ScriptMessage(const QString &messageContent, const QString &fileName, int lineNumber, const EntityItemID& entityID, ScriptType scriptType, Severity severity)
+        : _messageContent(messageContent), _fileName(fileName), _lineNumber(lineNumber), _entityID(entityID), _scriptType(scriptType), _severity(severity) {}
 
     QJsonObject toJson();
     bool fromJson(const QJsonObject &object);
+
+    QString getMessage() { return _messageContent; }
+    QString getFileName() { return _fileName; }
+    int getLineNumber() { return _lineNumber; }
+    ScriptType getScriptType() { return _scriptType; }
+    Severity getSeverity() { return _severity; }
+    EntityItemID getEntityID() { return _entityID; }
 
 private:
     QString _messageContent;
     QString _fileName;
     int _lineNumber {-1};
+    EntityItemID _entityID;
     ScriptType _scriptType {ScriptType::TYPE_NONE};
     Severity _severity {Severity::SEVERITY_NONE};
 };

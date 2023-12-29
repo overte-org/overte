@@ -12,6 +12,7 @@
 
 #include "ScriptManager.h"
 #include "ScriptManagerScriptingInterface.h"
+#include "ScriptEngines.h"
 #include "ScriptEngine.h"
 #include <QMetaType>
 
@@ -35,10 +36,6 @@
     connect(_manager, &ScriptManager::printedMessage, this, &ScriptManagerScriptingInterface::printedMessage);
     connect(_manager, &ScriptManager::errorMessage, this, &ScriptManagerScriptingInterface::errorMessage);
     connect(_manager, &ScriptManager::warningMessage, this, &ScriptManagerScriptingInterface::warningMessage);
-    connect(_manager, &ScriptManager::infoEntityMessage, this, &ScriptManagerScriptingInterface::infoEntityMessage);
-    connect(_manager, &ScriptManager::printedEntityMessage, this, &ScriptManagerScriptingInterface::printedEntityMessage);
-    connect(_manager, &ScriptManager::errorEntityMessage, this, &ScriptManagerScriptingInterface::errorEntityMessage);
-    connect(_manager, &ScriptManager::warningEntityMessage, this, &ScriptManagerScriptingInterface::warningEntityMessage);
     connect(_manager, &ScriptManager::infoMessage, this, &ScriptManagerScriptingInterface::infoMessage);
     connect(_manager, &ScriptManager::runningStateChanged, this, &ScriptManagerScriptingInterface::runningStateChanged);
     connect(_manager, &ScriptManager::clearDebugWindow, this, &ScriptManagerScriptingInterface::clearDebugWindow);
@@ -92,3 +89,18 @@ void ScriptManagerScriptingInterface::startProfiling() {
 void ScriptManagerScriptingInterface::stopProfilingAndSave() {
     _manager->engine()->stopProfilingAndSave();
 }
+
+void ScriptManagerScriptingInterface::requestServerEntityScriptMessages() {
+    if (_manager->isEntityServerScript() || _manager->isEntityServerScript() || _manager->isClientScript()) {
+        auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+        //TODO;
+    }
+}
+
+void ScriptManagerScriptingInterface::removeServerEntityScriptMessagesRequest() {
+    if (_manager->isEntityServerScript() || _manager->isEntityServerScript() || _manager->isClientScript()) {
+        auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+        //TODO;
+    }
+}
+

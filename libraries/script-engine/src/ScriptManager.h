@@ -1336,8 +1336,9 @@ signals:
      * @param fileName Name of the file in which message was generated.
      * @param lineNumber Number of the line on which message was generated.
      * @param entityID
+     * @param isServerScript true if entity script is server-side, false if it is client-side.
      */
-    void printedEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID);
+    void printedEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID, bool isServerScript);
 
 
     /**
@@ -1347,8 +1348,9 @@ signals:
      * @param fileName Name of the file in which message was generated.
      * @param lineNumber Number of the line on which message was generated.
      * @param entityID
+     * @param isServerScript true if entity script is server-side, false if it is client-side.
      */
-    void errorEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID);
+    void errorEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID, bool isServerScript);
 
 
 
@@ -1359,8 +1361,9 @@ signals:
      * @param fileName Name of the file in which message was generated.
      * @param lineNumber Number of the line on which message was generated.
      * @param entityID
+     * @param isServerScript true if entity script is server-side, false if it is client-side.
      */
-    void warningEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID);
+    void warningEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID, bool isServerScript);
 
 
     /**
@@ -1370,8 +1373,9 @@ signals:
      * @param fileName Name of the file in which message was generated.
      * @param lineNumber Number of the line on which message was generated.
      * @param entityID
+     * @param isServerScript true if entity script is server-side, false if it is client-side.
      */
-    void infoEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID);
+    void infoEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID, bool isServerScript);
 
 
     /**

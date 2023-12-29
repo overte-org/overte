@@ -9,7 +9,11 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
+#include <QJsonDocument>
+#include <QJsonArray>
 #include "EntityScriptServerLogClient.h"
+#include "ScriptMessage.h"
+#include "ScriptEngines.h"
 
 EntityScriptServerLogClient::EntityScriptServerLogClient() {
     auto nodeList = DependencyManager::get<NodeList>();
@@ -62,7 +66,59 @@ void EntityScriptServerLogClient::enableToEntityServerScriptLog(bool enable) {
 }
 
 void EntityScriptServerLogClient::handleEntityServerScriptLogPacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer senderNode) {
-    emit receivedNewLogLines(QString::fromUtf8(message->readAll()));
+    QString messageText = QString::fromUtf8(message->readAll());
+    QJsonParseError error;
+    QJsonDocument document = QJsonDocument::fromJson(messageText.toUtf8(), &error);
+    emit receivedNewLogLines(messageText);
+    if(document.isNull()) {
+        qWarning() << "EntityScriptServerLogClient::handleEntityServerScriptLogPacket: Cannot parse JSON: " << error.errorString()
+            << " Contents: " << messageText;
+        return;
+    }
+    // Iterate through contents and emit messages
+    if(!document.isArray()) {
+        qWarning() << "EntityScriptServerLogClient::handleEntityServerScriptLogPacket: JSON is not an array: " << messageText;
+        return;
+    }
+
+    auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+
+    auto array = document.array();
+    for (int n = 0; n < array.size(); n++) {
+        if (!array[n].isObject()) {
+            qWarning() << "EntityScriptServerLogClient::handleEntityServerScriptLogPacket: message is not an object: " << messageText;
+            continue;
+        }
+        ScriptMessage scriptMessage;
+        if (!scriptMessage.fromJson(array[n].toObject())) {
+            qWarning() << "EntityScriptServerLogClient::handleEntityServerScriptLogPacket: message parsing failed: " << messageText;
+            continue;
+        }
+        switch (scriptMessage.getSeverity()) {
+            case ScriptMessage::Severity::SEVERITY_INFO:
+                emit scriptEngines->infoEntityMessage(scriptMessage.getMessage(), scriptMessage.getFileName(),
+                                                      scriptMessage.getLineNumber(), scriptMessage.getEntityID(), true);
+            break;
+
+            case ScriptMessage::Severity::SEVERITY_PRINT:
+                emit scriptEngines->printedEntityMessage(scriptMessage.getMessage(), scriptMessage.getFileName(),
+                                                  scriptMessage.getLineNumber(), scriptMessage.getEntityID(), true);
+            break;
+
+            case ScriptMessage::Severity::SEVERITY_WARNING:
+                emit scriptEngines->warningEntityMessage(scriptMessage.getMessage(), scriptMessage.getFileName(),
+                                                  scriptMessage.getLineNumber(), scriptMessage.getEntityID(), true);
+            break;
+
+            case ScriptMessage::Severity::SEVERITY_ERROR:
+                emit scriptEngines->errorEntityMessage(scriptMessage.getMessage(), scriptMessage.getFileName(),
+                                                  scriptMessage.getLineNumber(), scriptMessage.getEntityID(), true);
+            break;
+
+            default:
+            break;
+        }
+    }
 }
 
 void EntityScriptServerLogClient::nodeActivated(SharedNodePointer activatedNode) {
