@@ -618,6 +618,7 @@ void EntityTreeElement::evalEntitiesInSphereWithTags(const glm::vec3& position, 
                 for (const QString& entityTag : entityTags) {
                     if (lowerTag == entityTag.toLower()) {
                         found = true;
+                        break;
                     }
                 }
                 if (!found) {
