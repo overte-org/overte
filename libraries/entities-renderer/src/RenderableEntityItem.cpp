@@ -268,6 +268,10 @@ ItemID EntityRenderer::computeMirrorViewOperator(ViewFrustum& viewFrustum, const
     glm::vec3 cameraPositionWorld = viewFrustum.getPosition();
     glm::vec3 cameraPositionIn = vec3(worldToIn * vec4(cameraPositionWorld, 1.0f));
     glm::vec3 mirrorCameraPositionIn = vec3(cameraPositionIn.x, cameraPositionIn.y, -cameraPositionIn.z);
+    if (foundPortalExit) {
+        // portals also flip over x
+        mirrorCameraPositionIn.x *= -1.0f;
+    }
     glm::vec3 mirrorCameraPositionWorld = vec3(outToWorld * vec4(mirrorCameraPositionIn, 1.0f));
 
     // get mirror camera rotation by reflecting main camera rotation in mirror space
@@ -276,6 +280,10 @@ ItemID EntityRenderer::computeMirrorViewOperator(ViewFrustum& viewFrustum, const
     glm::quat mainCameraRotationMirror = worldToIn * glm::mat4_cast(mainCameraRotationWorld);
     glm::quat mirrorCameraRotationMirror = glm::quat(mainCameraRotationMirror.w, -mainCameraRotationMirror.x, -mainCameraRotationMirror.y, mainCameraRotationMirror.z) *
         glm::angleAxis((float)M_PI, glm::vec3(0, 1, 0));
+    if (foundPortalExit) {
+        // portals also flip over x
+        mirrorCameraRotationMirror = glm::quat(mirrorCameraRotationMirror.w, mirrorCameraRotationMirror.x, -mirrorCameraRotationMirror.y, -mirrorCameraRotationMirror.z);
+    }
     glm::quat mirrorCameraRotationWorld = outToWorld * glm::mat4_cast(mirrorCameraRotationMirror);
 
     viewFrustum.setPosition(mirrorCameraPositionWorld);
