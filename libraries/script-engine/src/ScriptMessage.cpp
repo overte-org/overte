@@ -25,6 +25,10 @@ QJsonObject ScriptMessage::toJson() {
 }
 
 bool ScriptMessage::fromJson(const QJsonObject &object) {
+    if (object.isEmpty()) {
+        qDebug() << "ScriptMessage::fromJson object is empty";
+        return false;
+    }
     if (!object["message"].isString()
         || !object["lineNumber"].isDouble()
         || !object["fileName"].isString()
@@ -40,4 +44,5 @@ bool ScriptMessage::fromJson(const QJsonObject &object) {
     _entityID = QUuid::fromString(object["entityID"].toString());
     _scriptType = static_cast<ScriptMessage::ScriptType>(object["type"].toInt());
     _severity = static_cast<ScriptMessage::Severity>(object["severity"].toInt());
+    return true;
 }

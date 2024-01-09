@@ -1317,7 +1317,7 @@ QUrl ScriptManager::resourcesPath() const {
 }
 
 void ScriptManager::print(const QString& message) {
-    emit printedMessage(message, getFilename());
+    emit scriptPrintedMessage(message, getFilename(), engine()->currentContext()->currentLineNumber());
 }
 
 

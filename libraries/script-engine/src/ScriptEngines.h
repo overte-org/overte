@@ -251,7 +251,7 @@ signals:
      * Triggered when any script generates an information message or {@link console.info} is called.
      * @function ScriptDiscoveryService.infoMessage
      * @param {string} message - The information message.
-     * @param {string} scriptName - The name of the script that generated the informaton message.
+     * @param {string} scriptName - The name of the script that generated the information message.
      * @returns {Signal}
      */
     void infoMessage(const QString& message, const QString& engineName);
