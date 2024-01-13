@@ -121,7 +121,7 @@ public:
     // Shutdown rendering and persist any required resources
     void shutdown() override;
 
-    void setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool reset = false) override;
+    void setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool primary, bool reset = false) override;
     void render(const Batch& batch) final override;
 
     // This call synchronize the Full Backend cache with the current GLState
@@ -211,6 +211,7 @@ public:
 
     virtual void do_disableContextViewCorrection(const Batch& batch, size_t paramOffset) final;
     virtual void do_restoreContextViewCorrection(const Batch& batch, size_t paramOffset) final;
+    virtual void do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) final;
 
     virtual void do_disableContextStereo(const Batch& batch, size_t paramOffset) final;
     virtual void do_restoreContextStereo(const Batch& batch, size_t paramOffset) final;
@@ -433,6 +434,9 @@ protected:
         Transform _view;
         CameraCorrection _correction;
         bool _viewCorrectionEnabled{ true };
+        mat4 _unflippedCorrection;
+        mat4 _flippedCorrection;
+        bool _mirrorViewCorrection{ false };
 
         Mat4 _projection;
         Vec4i _viewport{ 0, 0, 1, 1 };

@@ -559,6 +559,12 @@ public:
     BillboardMode getBillboardMode() const;
     virtual bool getRotateForPicking() const { return false; }
 
+    MirrorMode getMirrorMode() const;
+    void setMirrorMode(MirrorMode value);
+
+    QUuid getPortalExitID() const;
+    void setPortalExitID(const QUuid& value);
+
     void setTags(const QSet<QString>& tags);
     QSet<QString> getTags() const;
 
@@ -742,6 +748,9 @@ protected:
     BillboardMode _billboardMode { BillboardMode::NONE };
 
     bool _cullWithParent { false };
+
+    MirrorMode _mirrorMode { MirrorMode::NONE };
+    QUuid _portalExitID;
 
     QSet<QString> _tags;
 

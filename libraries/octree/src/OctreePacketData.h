@@ -42,6 +42,7 @@
 #include "GizmoType.h"
 #include "TextEffect.h"
 #include "TextAlignment.h"
+#include "MirrorMode.h"
 
 #include "OctreeConstants.h"
 #include "OctreeElement.h"
@@ -283,6 +284,7 @@ public:
     static int unpackDataFromBytes(const unsigned char* dataBytes, GizmoType& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, TextEffect& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, TextAlignment& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
+    static int unpackDataFromBytes(const unsigned char* dataBytes, MirrorMode& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, glm::vec2& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, glm::vec3& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, glm::u8vec3& result);

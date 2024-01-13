@@ -290,6 +290,7 @@ enum class EntityVersion : PacketVersion {
     UserAgent,
     AllBillboardMode,
     TextAlignment,
+    Mirror,
     EntityTags,
 
     // Add new versions above here

@@ -1274,6 +1274,8 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
                     _model->setBillboardMode(_billboardMode, scene);
                     _model->setCullWithParent(_cullWithParent, scene);
                     _model->setRenderWithZones(_renderWithZones, scene);
+                    _model->setMirrorMode(_mirrorMode, scene);
+                    _model->setPortalExitID(_portalExitID, scene);
                 });
                 if (didVisualGeometryRequestSucceed) {
                     emit DependencyManager::get<scriptable::ModelProviderFactory>()->
@@ -1353,6 +1355,8 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
         model->setBillboardMode(_billboardMode, scene);
         model->setCullWithParent(_cullWithParent, scene);
         model->setRenderWithZones(_renderWithZones, scene);
+        model->setMirrorMode(_mirrorMode, scene);
+        model->setPortalExitID(_portalExitID, scene);
     });
 
     if (entity->blendshapesChanged()) {
@@ -1462,6 +1466,18 @@ void ModelEntityRenderer::setRenderLayer(RenderLayer value) {
 
 void ModelEntityRenderer::setCullWithParent(bool value) {
     Parent::setCullWithParent(value);
+    // called within a lock so no need to lock for _model
+    setKey(_didLastVisualGeometryRequestSucceed, _model);
+}
+
+void ModelEntityRenderer::setMirrorMode(MirrorMode value) {
+    Parent::setMirrorMode(value);
+    // called within a lock so no need to lock for _model
+    setKey(_didLastVisualGeometryRequestSucceed, _model);
+}
+
+void ModelEntityRenderer::setPortalExitID(const QUuid& value) {
+    Parent::setPortalExitID(value);
     // called within a lock so no need to lock for _model
     setKey(_didLastVisualGeometryRequestSucceed, _model);
 }
