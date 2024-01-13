@@ -121,6 +121,29 @@ namespace render {
         void run(const RenderContextPointer& renderContext, const Inputs& inputs, ItemBounds& outItems);
     };
 
+    class CullShapeBounds {
+    public:
+        using Inputs = render::VaryingSet4<ShapeBounds, ItemFilter, ItemFilter, ViewFrustumPointer>;
+        using Outputs = render::VaryingSet2<ShapeBounds, AABox>;
+        using JobModel = Job::ModelIO<CullShapeBounds, Inputs, Outputs>;
+
+        CullShapeBounds(CullFunctor cullFunctor, RenderDetails::Type type) :
+            _cullFunctor{ cullFunctor },
+            _detailType(type) {}
+
+        CullShapeBounds(CullFunctor cullFunctor) :
+            _cullFunctor{ cullFunctor } {
+        }
+
+        void run(const RenderContextPointer& renderContext, const Inputs& inputs, Outputs& outputs);
+
+    private:
+
+        CullFunctor _cullFunctor;
+        RenderDetails::Type _detailType{ RenderDetails::OTHER };
+
+    };
+
     class ApplyCullFunctorOnItemBounds {
     public:
         using Inputs = render::VaryingSet2<ItemBounds, ViewFrustumPointer>;

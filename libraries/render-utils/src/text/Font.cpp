@@ -29,7 +29,7 @@
 
 static std::mutex fontMutex;
 
-std::map<std::tuple<bool, bool, bool, bool>, gpu::PipelinePointer> Font::_pipelines;
+std::map<std::tuple<bool, bool, bool>, gpu::PipelinePointer> Font::_pipelines;
 gpu::Stream::FormatPointer Font::_format;
 
 struct TextureVertex {
@@ -277,7 +277,6 @@ void Font::setupGPU() {
     if (_pipelines.empty()) {
         using namespace shader::render_utils::program;
 
-        // transparent, unlit, forward
         static const std::vector<std::tuple<bool, bool, bool, uint32_t>> keys = {
             std::make_tuple(false, false, false, sdf_text3D), std::make_tuple(true, false, false, sdf_text3D_translucent),
             std::make_tuple(false, true, false, sdf_text3D_unlit), std::make_tuple(true, true, false, sdf_text3D_translucent_unlit),
@@ -285,23 +284,18 @@ void Font::setupGPU() {
             std::make_tuple(false, true, true, sdf_text3D_translucent_unlit/*sdf_text3D_unlit_forward*/), std::make_tuple(true, true, true, sdf_text3D_translucent_unlit/*sdf_text3D_translucent_unlit_forward*/)
         };
         for (auto& key : keys) {
-            bool transparent = std::get<0>(key);
-            bool unlit = std::get<1>(key);
-            bool forward = std::get<2>(key);
-
             auto state = std::make_shared<gpu::State>();
             state->setCullMode(gpu::State::CULL_BACK);
-            state->setDepthTest(true, !transparent, gpu::LESS_EQUAL);
-            state->setBlendFunction(transparent,
+            state->setDepthTest(true, !std::get<0>(key), gpu::LESS_EQUAL);
+            state->setBlendFunction(std::get<0>(key),
                 gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
                 gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
-            if (transparent) {
+            if (std::get<0>(key)) {
                 PrepareStencil::testMask(*state);
             } else {
                 PrepareStencil::testMaskDrawShape(*state);
             }
-            _pipelines[std::make_tuple(transparent, unlit, forward, false)] = gpu::Pipeline::create(gpu::Shader::createProgram(std::get<3>(key)), state);
-            _pipelines[std::make_tuple(transparent, unlit, forward, true)] = gpu::Pipeline::create(gpu::Shader::createProgram(forward ? sdf_text3D_forward_mirror : sdf_text3D_mirror), state);
+            _pipelines[std::make_tuple(std::get<0>(key), std::get<1>(key), std::get<2>(key))] = gpu::Pipeline::create(gpu::Shader::createProgram(std::get<3>(key)), state);
         }
 
         // Sanity checks
@@ -450,30 +444,32 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     }
 }
 
-void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const DrawProps& props) {
-    if (!_loaded || props.str == "") {
+void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const QString& str, const glm::vec4& color,
+                      const glm::vec3& effectColor, float effectThickness, TextEffect effect, TextAlignment alignment,
+                      const glm::vec2& origin, const glm::vec2& bounds, float scale, bool unlit, bool forward) {
+    if (!_loaded || str == "") {
         return;
     }
 
-    int textEffect = (int)props.effect;
+    int textEffect = (int)effect;
     const int SHADOW_EFFECT = (int)TextEffect::SHADOW_EFFECT;
 
     // If we're switching to or from shadow effect mode, we need to rebuild the vertices
-    if (props.str != drawInfo.string || props.bounds != drawInfo.bounds || props.origin != drawInfo.origin || props.alignment != _alignment ||
+    if (str != drawInfo.string || bounds != drawInfo.bounds || origin != drawInfo.origin || alignment != _alignment ||
             (drawInfo.params.effect != textEffect && (textEffect == SHADOW_EFFECT || drawInfo.params.effect == SHADOW_EFFECT)) ||
-            (textEffect == SHADOW_EFFECT && props.scale != _scale)) {
-        _scale = props.scale;
-        _alignment = props.alignment;
-        buildVertices(drawInfo, props.str, props.origin, props.bounds, props.scale, textEffect == SHADOW_EFFECT, props.alignment);
+            (textEffect == SHADOW_EFFECT && scale != _scale)) {
+        _scale = scale;
+        _alignment = alignment;
+        buildVertices(drawInfo, str, origin, bounds, scale, textEffect == SHADOW_EFFECT, alignment);
     }
 
     setupGPU();
 
-    if (!drawInfo.paramsBuffer || drawInfo.params.color != props.color || drawInfo.params.effectColor != props.effectColor ||
-        drawInfo.params.effectThickness != props.effectThickness || drawInfo.params.effect != textEffect) {
-        drawInfo.params.color = props.color;
-        drawInfo.params.effectColor = props.effectColor;
-        drawInfo.params.effectThickness = props.effectThickness;
+    if (!drawInfo.paramsBuffer || drawInfo.params.color != color || drawInfo.params.effectColor != effectColor ||
+            drawInfo.params.effectThickness != effectThickness || drawInfo.params.effect != textEffect) {
+        drawInfo.params.color = color;
+        drawInfo.params.effectColor = effectColor;
+        drawInfo.params.effectThickness = effectThickness;
         drawInfo.params.effect = textEffect;
 
         // need the gamma corrected color here
@@ -488,7 +484,7 @@ void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const DrawPro
         drawInfo.paramsBuffer->setSubData(0, sizeof(DrawParams), (const gpu::Byte*)&gpuDrawParams);
     }
 
-    batch.setPipeline(_pipelines[std::make_tuple(props.color.a < 1.0f, props.unlit, props.forward, props.mirror)]);
+    batch.setPipeline(_pipelines[std::make_tuple(color.a < 1.0f, unlit, forward)]);
     batch.setInputFormat(_format);
     batch.setInputBuffer(0, drawInfo.verticesBuffer, 0, _format->getChannels().at(0)._stride);
     batch.setResourceTexture(render_utils::slot::texture::TextFont, _texture);

@@ -105,8 +105,6 @@ EntityPropertyFlags EntityItem::getEntityProperties(EncodeBitstreamParams& param
     requestedProperties += PROP_RENDER_WITH_ZONES;
     requestedProperties += PROP_BILLBOARD_MODE;
     requestedProperties += _grabProperties.getEntityProperties(params);
-    requestedProperties += PROP_MIRROR_MODE;
-    requestedProperties += PROP_PORTAL_EXIT_ID;
 
     // Physics
     requestedProperties += PROP_DENSITY;
@@ -307,8 +305,6 @@ OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packet
             _grabProperties.appendSubclassData(packetData, params, entityTreeElementExtraEncodeData, requestedProperties,
                 propertyFlags, propertiesDidntFit, propertyCount, appendState);
         });
-        APPEND_ENTITY_PROPERTY(PROP_MIRROR_MODE, (uint32_t)getMirrorMode());
-        APPEND_ENTITY_PROPERTY(PROP_PORTAL_EXIT_ID, getPortalExitID());
 
         // Physics
         APPEND_ENTITY_PROPERTY(PROP_DENSITY, getDensity());
@@ -885,8 +881,6 @@ int EntityItem::readEntityDataFromBuffer(const unsigned char* data, int bytesLef
         bytesRead += bytesFromGrab;
         dataAt += bytesFromGrab;
     });
-    READ_ENTITY_PROPERTY(PROP_MIRROR_MODE, MirrorMode, setMirrorMode);
-    READ_ENTITY_PROPERTY(PROP_PORTAL_EXIT_ID, QUuid, setPortalExitID);
 
     READ_ENTITY_PROPERTY(PROP_DENSITY, float, setDensity);
     {
@@ -1367,8 +1361,6 @@ EntityItemProperties EntityItem::getProperties(const EntityPropertyFlags& desire
     withReadLock([&] {
         _grabProperties.getProperties(properties);
     });
-    COPY_ENTITY_PROPERTY_TO_PROPERTIES(mirrorMode, getMirrorMode);
-    COPY_ENTITY_PROPERTY_TO_PROPERTIES(portalExitID, getPortalExitID);
 
     // Physics
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(density, getDensity);
@@ -1507,8 +1499,6 @@ bool EntityItem::setProperties(const EntityItemProperties& properties) {
         bool grabPropertiesChanged = _grabProperties.setProperties(properties);
         somethingChanged |= grabPropertiesChanged;
     });
-    SET_ENTITY_PROPERTY_FROM_PROPERTIES(mirrorMode, setMirrorMode);
-    SET_ENTITY_PROPERTY_FROM_PROPERTIES(portalExitID, setPortalExitID);
 
     // Physics
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(density, setDensity);
@@ -3561,31 +3551,5 @@ void EntityItem::setBillboardMode(BillboardMode value) {
     withWriteLock([&] {
         _needsRenderUpdate |= _billboardMode != value;
         _billboardMode = value;
-    });
-}
-
-MirrorMode EntityItem::getMirrorMode() const {
-    return resultWithReadLock<MirrorMode>([&] {
-        return _mirrorMode;
-    });
-}
-
-void EntityItem::setMirrorMode(MirrorMode value) {
-    withWriteLock([&] {
-        _needsRenderUpdate |= _mirrorMode != value;
-        _mirrorMode = value;
-    });
-}
-
-QUuid EntityItem::getPortalExitID() const {
-    return resultWithReadLock<QUuid>([&] {
-        return _portalExitID;
-    });
-}
-
-void EntityItem::setPortalExitID(const QUuid& value) {
-    withWriteLock([&] {
-        _needsRenderUpdate |= _portalExitID != value;
-        _portalExitID = value;
     });
 }

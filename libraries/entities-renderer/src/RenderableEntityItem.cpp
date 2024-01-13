@@ -12,7 +12,6 @@
 
 #include "RenderableEntityItem.h"
 
-#include <glm/gtx/transform.hpp>
 #include <ObjectMotionState.h>
 
 #include "RenderableShapeEntityItem.h"
@@ -193,10 +192,6 @@ ItemKey EntityRenderer::getKey() {
         builder.withSubMetaCulled();
     }
 
-    if (_mirrorMode == MirrorMode::MIRROR || (_mirrorMode == MirrorMode::PORTAL && !_portalExitID.isNull())) {
-        builder.withMirror();
-    }
-
     if (!_visible) {
         builder.withInvisible();
     }
@@ -226,113 +221,12 @@ bool EntityRenderer::passesZoneOcclusionTest(const std::unordered_set<QUuid>& co
     return true;
 }
 
-ItemID EntityRenderer::computeMirrorView(ViewFrustum& viewFrustum) const {
-    glm::vec3 inPropertiesPosition;
-    glm::quat inPropertiesRotation;
-    MirrorMode mirrorMode;
-    QUuid portalExitID;
-    withReadLock([&]{
-        inPropertiesPosition = _entity->getWorldPosition();
-        inPropertiesRotation = _entity->getWorldOrientation();
-        mirrorMode = _mirrorMode;
-        portalExitID = _portalExitID;
-    });
-    return computeMirrorViewOperator(viewFrustum, inPropertiesPosition, inPropertiesRotation, mirrorMode, portalExitID);
-}
-
-ItemID EntityRenderer::computeMirrorViewOperator(ViewFrustum& viewFrustum, const glm::vec3& inPropertiesPosition, const glm::quat& inPropertiesRotation,
-                                                 MirrorMode mirrorMode, const QUuid& portalExitID) {
-    glm::mat4 inToWorld = glm::translate(inPropertiesPosition) * glm::mat4_cast(inPropertiesRotation);
-    glm::mat4 worldToIn = glm::inverse(inToWorld);
-
-    glm::vec3 outPropertiesPosition = inPropertiesPosition;
-    glm::quat outPropertiesRotation = inPropertiesRotation;
-    glm::mat4 outToWorld = inToWorld;
-    bool foundPortalExit = false;
-    if (mirrorMode == MirrorMode::PORTAL && !portalExitID.isNull()) {
-        auto renderer = DependencyManager::get<EntityTreeRenderer>();
-        if (renderer) {
-            if (auto renderable = renderer->renderableForEntityId(portalExitID)) {
-                renderable->withReadLock([&] {
-                    outPropertiesPosition = renderable->_entity->getWorldPosition();
-                    outPropertiesRotation = renderable->_entity->getWorldOrientation();
-                });
-
-                outToWorld = glm::translate(outPropertiesPosition) * glm::mat4_cast(outPropertiesRotation);
-                foundPortalExit = true;
-            }
-        }
-    }
-
-    // get mirror camera position by reflecting main camera position's z coordinate in mirror space
-    glm::vec3 cameraPositionWorld = viewFrustum.getPosition();
-    glm::vec3 cameraPositionIn = vec3(worldToIn * vec4(cameraPositionWorld, 1.0f));
-    glm::vec3 mirrorCameraPositionIn = vec3(cameraPositionIn.x, cameraPositionIn.y, -cameraPositionIn.z);
-    if (foundPortalExit) {
-        // portals also flip over x
-        mirrorCameraPositionIn.x *= -1.0f;
-    }
-    glm::vec3 mirrorCameraPositionWorld = vec3(outToWorld * vec4(mirrorCameraPositionIn, 1.0f));
-
-    // get mirror camera rotation by reflecting main camera rotation in mirror space
-    // TODO: we are assuming here that UP is world y-axis
-    glm::quat mainCameraRotationWorld = viewFrustum.getOrientation();
-    glm::quat mainCameraRotationMirror = worldToIn * glm::mat4_cast(mainCameraRotationWorld);
-    glm::quat mirrorCameraRotationMirror = glm::quat(mainCameraRotationMirror.w, -mainCameraRotationMirror.x, -mainCameraRotationMirror.y, mainCameraRotationMirror.z) *
-        glm::angleAxis((float)M_PI, glm::vec3(0, 1, 0));
-    if (foundPortalExit) {
-        // portals also flip over x
-        mirrorCameraRotationMirror = glm::quat(mirrorCameraRotationMirror.w, mirrorCameraRotationMirror.x, -mirrorCameraRotationMirror.y, -mirrorCameraRotationMirror.z);
-    }
-    glm::quat mirrorCameraRotationWorld = outToWorld * glm::mat4_cast(mirrorCameraRotationMirror);
-
-    viewFrustum.setPosition(mirrorCameraPositionWorld);
-    viewFrustum.setOrientation(mirrorCameraRotationWorld);
-
-    // modify the near clip plane to be the XY plane of the mirror
-    // from: https://terathon.com/lengyel/Lengyel-Oblique.pdf
-    glm::mat4 view = viewFrustum.getView();
-    glm::mat4 projection = viewFrustum.getProjection();
-
-    //Find the camera-space 4D reflection plane vector
-    glm::vec3 cameraSpacePosition = glm::inverse(view) * glm::vec4(outPropertiesPosition, 1.0f);
-    glm::vec3 cameraSpaceNormal = glm::transpose(view) * (outPropertiesRotation * glm::vec4(0, 0, -1, 0));
-    glm::vec4 clipPlane = glm::vec4(cameraSpaceNormal, -glm::dot(cameraSpaceNormal, cameraSpacePosition));
-    // Make sure we pick the direction facing away from us
-    if (clipPlane.w > 0.0f) {
-        clipPlane *= -1.0f;
-    }
-
-    // Calculate the clip-space corner point opposite the clipping plane
-    // as (sign(clipPlane.x), sign(clipPlane.y), 1, 1) and
-    // transform it into camera space by multiplying it
-    // by the inverse of the projection matrix
-    glm::vec4 q;
-    q.x = (glm::sign(clipPlane.x) + projection[0][2]) / projection[0][0];
-    q.y = (glm::sign(clipPlane.y) + projection[1][2]) / projection[1][1];
-    q.z = -1.0f;
-    q.w = (1.0f + projection[2][2]) / projection[2][3];
-
-    // Calculate the scaled plane vector
-    glm::vec4 c = (2.0f / glm::dot(clipPlane, q)) * clipPlane;
-
-    // Replace the third row of the projection matrix
-    projection[0][2] = c.x;
-    projection[1][2] = c.y;
-    projection[2][2] = c.z + 1.0f;
-    projection[3][2] = c.w;
-
-    viewFrustum.setProjection(projection, true);
-
-    return foundPortalExit ? DependencyManager::get<EntityTreeRenderer>()->renderableIdForEntityId(portalExitID) : Item::INVALID_ITEM_ID;
-}
-
 void EntityRenderer::render(RenderArgs* args) {
     if (!isValidRenderItem()) {
         return;
     }
 
-    if (_visible && (!_cauterized || args->_renderMode != RenderArgs::RenderMode::DEFAULT_RENDER_MODE || args->_mirrorDepth > 0)) {
+    if (_visible && (args->_renderMode != RenderArgs::RenderMode::DEFAULT_RENDER_MODE || !_cauterized)) {
         doRender(args);
     }
 }
@@ -560,8 +454,6 @@ void EntityRenderer::doRenderUpdateAsynchronous(const EntityItemPointer& entity)
     _canCastShadow = entity->getCanCastShadow();
     setCullWithParent(entity->getCullWithParent());
     _cauterized = entity->getCauterized();
-    setMirrorMode(entity->getMirrorMode());
-    setPortalExitID(entity->getPortalExitID());
     if (entity->needsZoneOcclusionUpdate()) {
         entity->resetNeedsZoneOcclusionUpdate();
         _renderWithZones = entity->getRenderWithZones();
@@ -613,10 +505,6 @@ graphics::MaterialPointer EntityRenderer::getTopMaterial() {
 }
 
 EntityRenderer::Pipeline EntityRenderer::getPipelineType(const graphics::MultiMaterial& materials) {
-    if (_mirrorMode == MirrorMode::MIRROR || (_mirrorMode == MirrorMode::PORTAL && !_portalExitID.isNull())) {
-        return Pipeline::MIRROR;
-    }
-
     if (materials.top().material && materials.top().material->isProcedural() && materials.top().material->isReady()) {
         return Pipeline::PROCEDURAL;
     }

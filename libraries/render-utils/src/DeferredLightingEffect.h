@@ -78,8 +78,8 @@ class PrepareDeferred {
 public:
     // Inputs: primaryFramebuffer and lightingModel
     using Inputs = render::VaryingSet2 <gpu::FramebufferPointer, LightingModelPointer>;
-    // Output: DeferredFramebuffer, LightingFramebuffer, the framebuffer to be used for mirrors (same as DeferredFramebuffer)
-    using Outputs = render::VaryingSet3<DeferredFramebufferPointer, gpu::FramebufferPointer, gpu::FramebufferPointer>;
+    // Output: DeferredFramebuffer, LightingFramebuffer
+    using Outputs = render::VaryingSet2<DeferredFramebufferPointer, gpu::FramebufferPointer>;
 
     using JobModel = render::Job::ModelIO<PrepareDeferred, Inputs, Outputs>;
 

@@ -9,7 +9,6 @@
 //
 #include "RenderScriptingInterface.h"
 
-#include <RenderCommonTask.h>
 #include <ScriptEngineCast.h>
 
 #include "LightingModel.h"
@@ -80,35 +79,14 @@ void RenderScriptingInterface::setRenderMethod(RenderMethod renderMethod) {
         emit settingsChanged();
     }
 }
-
-void recursivelyUpdateMirrorRenderMethods(const QString& parentTaskName, int renderMethod, int depth) {
-    if (depth == RenderMirrorTask::MAX_MIRROR_DEPTH) {
-        return;
-    }
-
-    for (size_t mirrorIndex = 0; mirrorIndex < RenderMirrorTask::MAX_MIRRORS_PER_LEVEL; mirrorIndex++) {
-        std::string mirrorTaskString = parentTaskName.toStdString() + ".RenderMirrorView" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth) + ".DeferredForwardSwitch";
-        auto mirrorConfig = dynamic_cast<render::SwitchConfig*>(qApp->getRenderEngine()->getConfiguration()->getConfig(QString::fromStdString(mirrorTaskString)));
-        if (mirrorConfig) {
-            mirrorConfig->setBranch((int)renderMethod);
-            recursivelyUpdateMirrorRenderMethods(QString::fromStdString(mirrorTaskString) + (renderMethod == 1 ? ".RenderForwardTask" : ".RenderShadowsAndDeferredTask.RenderDeferredTask"),
-                renderMethod, depth + 1);
-        }
-    }
-}
-
 void RenderScriptingInterface::forceRenderMethod(RenderMethod renderMethod) {
     _renderSettingLock.withWriteLock([&] {
         _renderMethod = (int)renderMethod;
         _renderMethodSetting.set((int)renderMethod);
 
-        QString configName = "RenderMainView.DeferredForwardSwitch";
-        auto config = dynamic_cast<render::SwitchConfig*>(qApp->getRenderEngine()->getConfiguration()->getConfig(configName));
+        auto config = dynamic_cast<render::SwitchConfig*>(qApp->getRenderEngine()->getConfiguration()->getConfig("RenderMainView.DeferredForwardSwitch"));
         if (config) {
             config->setBranch((int)renderMethod);
-
-            recursivelyUpdateMirrorRenderMethods(configName + (renderMethod == RenderMethod::FORWARD ? ".RenderForwardTask" : ".RenderShadowsAndDeferredTask.RenderDeferredTask"),
-                (int)renderMethod, 0);
         }
     });
 }

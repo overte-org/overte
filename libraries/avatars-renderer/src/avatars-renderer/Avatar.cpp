@@ -1120,7 +1120,7 @@ void Avatar::renderDisplayName(gpu::Batch& batch, const ViewFrustum& view, const
         batch.setModelTransform(textTransform);
         {
             PROFILE_RANGE_BATCH(batch, __FUNCTION__":renderText");
-            displayNameRenderer->draw(batch, { nameUTF8.data(), textColor, { text_x, -text_y }, glm::vec2(-1.0f), forward });
+            displayNameRenderer->draw(batch, text_x, -text_y, glm::vec2(-1.0f), nameUTF8.data(), textColor, true, forward);
         }
     }
 }

@@ -506,9 +506,8 @@ void DrawHighlightTask::build(JobModel& task, const render::Varying& inputs, ren
     const auto jitter = inputs.getN<Inputs>(4);
 
     // Prepare the ShapePipeline
-    static ShapePlumberPointer shapePlumber = std::make_shared<ShapePlumber>();
-    static std::once_flag once;
-    std::call_once(once, [] {
+    auto shapePlumber = std::make_shared<ShapePlumber>();
+    {
         auto state = std::make_shared<gpu::State>();
         state->setDepthTest(true, true, gpu::LESS_EQUAL);
         state->setColorWriteMask(false, false, false, false);
@@ -516,7 +515,7 @@ void DrawHighlightTask::build(JobModel& task, const render::Varying& inputs, ren
 
         auto fadeEffect = DependencyManager::get<FadeEffect>();
         initZPassPipelines(*shapePlumber, state, fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter());
-    });
+    }
     auto sharedParameters = std::make_shared<HighlightSharedParameters>();
 
     const auto highlightSelectionNames = task.addJob<SelectionToHighlight>("SelectionToHighlight", sharedParameters);

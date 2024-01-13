@@ -144,7 +144,7 @@ public:
     RenderDeferredTask();
 
     void configure(const Config& config);
-    void build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, size_t depth);
+    void build(JobModel& task, const render::Varying& input, render::Varying& output);
 
 private:
 };
