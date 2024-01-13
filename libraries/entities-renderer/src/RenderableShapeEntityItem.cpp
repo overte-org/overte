@@ -118,9 +118,8 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
 
     bool wireframe = render::ShapeKey(args->_globalShapeKey).isWireframe() || _primitiveMode == PrimitiveMode::LINES;
 
-    bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), _billboardMode,
-        usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition(),
+        args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition(),
         _shape < entity::Shape::Cube || _shape > entity::Shape::Icosahedron));
     batch.setModelTransform(transform);
 
@@ -158,7 +157,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
             }
         }
     } else {
-        if (pipelineType == Pipeline::MATERIAL && RenderPipelines::bindMaterials(materials, batch, args->_renderMode, args->_enableTexturing)) {
+        if (RenderPipelines::bindMaterials(materials, batch, args->_renderMode, args->_enableTexturing)) {
             args->_details._materialSwitches++;
         }
 

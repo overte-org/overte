@@ -58,13 +58,12 @@ public:
     enum class Pipeline {
         SIMPLE,
         MATERIAL,
-        PROCEDURAL,
-        MIRROR
+        PROCEDURAL
     };
     virtual void addMaterial(graphics::MaterialLayer material, const std::string& parentMaterialName);
     virtual void removeMaterial(graphics::MaterialPointer material, const std::string& parentMaterialName);
     virtual graphics::MaterialPointer getTopMaterial();
-    Pipeline getPipelineType(const graphics::MultiMaterial& materials);
+    static Pipeline getPipelineType(const graphics::MultiMaterial& materials);
     virtual gpu::TexturePointer getTexture() { return nullptr; }
 
     virtual scriptable::ScriptableModelBase getScriptableModel() override { return scriptable::ScriptableModelBase(); }
@@ -75,9 +74,6 @@ public:
     virtual uint32_t metaFetchMetaSubItems(ItemIDs& subItems) const override;
     virtual Item::Bound getBound(RenderArgs* args) override;
     bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const override;
-    ItemID computeMirrorView(ViewFrustum& viewFrustum) const override;
-    static ItemID computeMirrorViewOperator(ViewFrustum& viewFrustum, const glm::vec3& inPropertiesPosition, const glm::quat& inPropertiesRotation,
-                                            MirrorMode mirrorMode, const QUuid& portalExitID);
 
 protected:
     virtual bool needsRenderUpdateFromEntity() const final { return needsRenderUpdateFromEntity(_entity); }
@@ -120,8 +116,6 @@ protected:
     virtual void setIsVisibleInSecondaryCamera(bool value) { _isVisibleInSecondaryCamera = value; }
     virtual void setRenderLayer(RenderLayer value) { _renderLayer = value; }
     virtual void setCullWithParent(bool value) { _cullWithParent = value; }
-    virtual void setMirrorMode(MirrorMode value) { _mirrorMode = value; }
-    virtual void setPortalExitID(const QUuid& value) { _portalExitID = value; }
 
     template<typename T>
     std::shared_ptr<T> asTypedEntity() { return std::static_pointer_cast<T>(_entity); }
@@ -157,8 +151,6 @@ protected:
     BillboardMode _billboardMode { BillboardMode::NONE };
     bool _cauterized { false };
     bool _moving { false };
-    MirrorMode _mirrorMode { MirrorMode::NONE };
-    QUuid _portalExitID;
     Transform _renderTransform;
 
     MaterialMap _materials;

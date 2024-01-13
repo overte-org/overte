@@ -464,12 +464,6 @@ void Batch::restoreContextViewCorrection() {
     ADD_COMMAND(restoreContextViewCorrection);
 }
 
-void Batch::setContextMirrorViewCorrection(bool shouldMirror) {
-    ADD_COMMAND(setContextMirrorViewCorrection);
-    uint mirrorFlag = shouldMirror ? 1 : 0;
-    _params.emplace_back(mirrorFlag);
-}
-
 void Batch::disableContextStereo() {
     ADD_COMMAND(disableContextStereo);
 }

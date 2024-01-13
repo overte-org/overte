@@ -181,7 +181,6 @@ constexpr const char*  COMMAND_NAMES[] = {
 
     "disableContextViewCorrection",
     "restoreContextViewCorrection",
-    "setContextMirrorViewCorrection",
 
     "disableContextStereo",
     "restoreContextStereo",

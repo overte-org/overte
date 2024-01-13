@@ -3530,9 +3530,8 @@ bool MyAvatar::shouldRenderHead(const RenderArgs* renderArgs) const {
     bool firstPerson = qApp->getCamera().getMode() == CAMERA_MODE_FIRST_PERSON_LOOK_AT ||
                        qApp->getCamera().getMode() == CAMERA_MODE_FIRST_PERSON;
     bool overrideAnim = _skeletonModel ? _skeletonModel->getRig().isPlayingOverrideAnimation() : false;
-    bool isInMirror = renderArgs->_mirrorDepth > 0;
     bool insideHead = cameraInsideHead(renderArgs->getViewFrustum().getPosition());
-    return !defaultMode || isInMirror || (!firstPerson && !insideHead) || (overrideAnim && !insideHead);
+    return !defaultMode || (!firstPerson && !insideHead) || (overrideAnim && !insideHead);
 }
 
 void MyAvatar::setRotationRecenterFilterLength(float length) {

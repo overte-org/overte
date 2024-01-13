@@ -101,7 +101,6 @@ public:
     ShapeKey getShapeKey() const;
     void render(RenderArgs* args);
     bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const;
-    ItemID computeMirrorView(ViewFrustum& viewFrustum) const;
 
 protected:
     QUuid _entityID;
@@ -118,7 +117,6 @@ namespace render {
     template <> const ShapeKey shapeGetShapeKey(const entities::TextPayload::Pointer& payload);
     template <> void payloadRender(const entities::TextPayload::Pointer& payload, RenderArgs* args);
     template <> bool payloadPassesZoneOcclusionTest(const entities::TextPayload::Pointer& payload, const std::unordered_set<QUuid>& containingZones);
-    template <> ItemID payloadComputeMirrorView(const entities::TextPayload::Pointer& payload, ViewFrustum& viewFrustum);
 }
 
 #endif // hifi_RenderableTextEntityItem_h

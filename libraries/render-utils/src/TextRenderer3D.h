@@ -26,9 +26,12 @@ public:
 
     glm::vec2 computeExtent(const QString& str) const;
     float getFontSize() const; // Pixel size
-
-    void draw(gpu::Batch& batch, const Font::DrawProps& props);
-    void draw(gpu::Batch& batch, const QString& font, const Font::DrawProps& props);
+    
+    void draw(gpu::Batch& batch, float x, float y, const glm::vec2& bounds,
+              const QString& str, const glm::vec4& color, bool unlit, bool forward);
+    void draw(gpu::Batch& batch, float x, float y, const glm::vec2& bounds, float scale,
+              const QString& str, const QString& font, const glm::vec4& color, const glm::vec3& effectColor,
+              float effectThickness, TextEffect effect, TextAlignment alignment, bool unlit, bool forward);
 
 private:
     TextRenderer3D(const char* family);
