@@ -57,10 +57,30 @@ public:
     glm::vec2 computeExtent(const QString& str) const;
     float getFontSize() const { return _fontSize; }
 
+    struct DrawProps {
+        DrawProps(const QString& str, const glm::vec4& color, const glm::vec3& effectColor, const glm::vec2& origin, const glm::vec2& bounds,
+                  float scale, float effectThickness, TextEffect effect, TextAlignment alignment, bool unlit, bool forward, bool mirror) :
+            str(str), color(color), effectColor(effectColor), origin(origin), bounds(bounds), scale(scale), effectThickness(effectThickness),
+            effect(effect), alignment(alignment), unlit(unlit), forward(forward), mirror(mirror) {}
+        DrawProps(const QString& str, const glm::vec4& color, const glm::vec2& origin, const glm::vec2& bounds, bool forward) :
+            str(str), color(color), origin(origin), bounds(bounds), forward(forward) {}
+
+        const QString& str;
+        const glm::vec4& color;
+        const glm::vec3& effectColor { glm::vec3(0.0f) };
+        const glm::vec2& origin;
+        const glm::vec2& bounds;
+        float scale { 1.0f };
+        float effectThickness { 0.0f };
+        TextEffect effect { TextEffect::NO_EFFECT };
+        TextAlignment alignment { TextAlignment::LEFT };
+        bool unlit = true;
+        bool forward;
+        bool mirror = false;
+    };
+
     // Render string to batch
-    void drawString(gpu::Batch& batch, DrawInfo& drawInfo, const QString& str, const glm::vec4& color,
-                    const glm::vec3& effectColor, float effectThickness, TextEffect effect, TextAlignment alignment,
-                    const glm::vec2& origin, const glm::vec2& bound, float scale, bool unlit, bool forward);
+    void drawString(gpu::Batch& batch, DrawInfo& drawInfo, const DrawProps& props);
 
     static Pointer load(const QString& family);
 
@@ -105,7 +125,7 @@ private:
     gpu::TexturePointer _texture;
     gpu::BufferStreamPointer _stream;
 
-    static std::map<std::tuple<bool, bool, bool>, gpu::PipelinePointer> _pipelines;
+    static std::map<std::tuple<bool, bool, bool, bool>, gpu::PipelinePointer> _pipelines;
     static gpu::Stream::FormatPointer _format;
 };
 

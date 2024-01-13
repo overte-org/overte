@@ -128,6 +128,22 @@ const GROUPS = [
                 propertyID: "billboardMode",
             },
             {
+                label: "Mirror Mode",
+                type: "dropdown",
+                options: {
+                    none: "None",
+                    mirror: "Mirror",
+                    portal: "Portal"
+                },
+                propertyID: "mirrorMode",
+            },
+            {
+                label: "Portal Exit",
+                type: "string",
+                propertyID: "portalExitID",
+                showPropertyRule: { "mirrorMode": "portal" },
+            },
+            {
                 label: "Render With Zones",
                 type: "multipleZonesSelection",
                 propertyID: "renderWithZones",
