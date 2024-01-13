@@ -25,9 +25,10 @@ using namespace shader::render_utils::program;
 gpu::PipelinePointer ToneMapAndResample::_pipeline;
 gpu::PipelinePointer ToneMapAndResample::_mirrorPipeline;
 
-ToneMapAndResample::ToneMapAndResample() {
+ToneMapAndResample::ToneMapAndResample(size_t depth) {
     Parameters parameters;
     _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Parameters), (const gpu::Byte*) &parameters));
+    _depth = depth;
 }
 
 void ToneMapAndResample::init() {
@@ -95,7 +96,8 @@ void ToneMapAndResample::run(const RenderContextPointer& renderContext, const In
         batch.setViewportTransform(destViewport);
         batch.setProjectionTransform(glm::mat4());
         batch.resetViewTransform();
-        batch.setPipeline(args->_renderMode == RenderArgs::MIRROR_RENDER_MODE ? _mirrorPipeline : _pipeline);
+        bool shouldMirror = args->_numMirrorFlips >= (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE);
+        batch.setPipeline(shouldMirror ? _mirrorPipeline : _pipeline);
 
         batch.setModelTransform(gpu::Framebuffer::evalSubregionTexcoordTransform(srcBufferSize, args->_viewport));
         batch.setUniformBuffer(render_utils::slot::buffer::ToneMappingParams, _parametersBuffer);

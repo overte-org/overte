@@ -49,10 +49,8 @@ signals:
 
 class ToneMapAndResample {
 public:
-    ToneMapAndResample();
+    ToneMapAndResample(size_t depth);
     virtual ~ToneMapAndResample() {}
-
-    void render(RenderArgs* args, const gpu::TexturePointer& lightingBuffer, gpu::FramebufferPointer& destinationBuffer);
 
     void setExposure(float exposure);
     float getExposure() const { return _parametersBuffer.get<Parameters>()._exposure; }
@@ -75,7 +73,8 @@ protected:
 
     gpu::FramebufferPointer _destinationFrameBuffer;
 
-    float _factor{ 2.0f };
+    float _factor { 2.0f };
+    size_t _depth { 0 };
 
     gpu::FramebufferPointer getResampledFrameBuffer(const gpu::FramebufferPointer& sourceFramebuffer);
 
