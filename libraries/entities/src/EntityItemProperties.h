@@ -204,6 +204,7 @@ public:
     DEFINE_PROPERTY(PROP_IGNORE_PICK_INTERSECTION, IgnorePickIntersection, ignorePickIntersection, bool, false);
     DEFINE_PROPERTY_REF(PROP_RENDER_WITH_ZONES, RenderWithZones, renderWithZones, QVector<QUuid>, QVector<QUuid>());
     DEFINE_PROPERTY_REF_ENUM(PROP_BILLBOARD_MODE, BillboardMode, billboardMode, BillboardMode, BillboardMode::NONE);
+    DEFINE_PROPERTY_REF(PROP_TAGS, Tags, tags, QSet<QString>, QSet<QString>());
     DEFINE_PROPERTY_GROUP(Grab, grab, GrabPropertyGroup);
     DEFINE_PROPERTY_REF_ENUM(PROP_MIRROR_MODE, MirrorMode, mirrorMode, MirrorMode, MirrorMode::NONE);
     DEFINE_PROPERTY_REF(PROP_PORTAL_EXIT_ID, PortalExitID, portalExitID, QUuid, UNKNOWN_ENTITY_ID);
@@ -500,6 +501,9 @@ public:
 protected:
     QString getCollisionMaskAsString() const;
     void setCollisionMaskFromString(const QString& maskString);
+
+    QVector<QString> getTagsAsVector() const;
+    void setTagsFromVector(const QVector<QString>& tags);
 
 private:
     QUuid _id;

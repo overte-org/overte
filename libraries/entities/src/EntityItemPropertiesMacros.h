@@ -125,6 +125,7 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const QVector<glm::quat>&
 inline ScriptValue convertScriptValue(ScriptEngine* e, const QVector<bool>& v) {return qVectorBoolToScriptValue(e, v); }
 inline ScriptValue convertScriptValue(ScriptEngine* e, const QVector<float>& v) { return qVectorFloatToScriptValue(e, v); }
 inline ScriptValue convertScriptValue(ScriptEngine* e, const QVector<QUuid>& v) { return qVectorQUuidToScriptValue(e, v); }
+inline ScriptValue convertScriptValue(ScriptEngine* e, const QVector<QString>& v) { return qVectorQStringToScriptValue(e, v); }
 
 inline ScriptValue convertScriptValue(ScriptEngine* e, const QRect& v) { return qRectToScriptValue(e, v); }
 
@@ -223,6 +224,7 @@ typedef QVector<glm::quat> qVectorQuat;
 typedef QVector<bool> qVectorBool;
 typedef QVector<float> qVectorFloat;
 typedef QVector<QUuid> qVectorQUuid;
+typedef QVector<QString> qVectorQString;
 inline float float_convertFromScriptValue(const ScriptValue& v, bool& isValid) { return v.toVariant().toFloat(&isValid); }
 inline quint64 quint64_convertFromScriptValue(const ScriptValue& v, bool& isValid) { return v.toVariant().toULongLong(&isValid); }
 inline quint32 quint32_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
@@ -303,6 +305,11 @@ inline qVectorBool qVectorBool_convertFromScriptValue(const ScriptValue& v, bool
 inline qVectorQUuid qVectorQUuid_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
     isValid = true;
     return qVectorQUuidFromScriptValue(v);
+}
+
+inline qVectorQString qVectorQString_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
+    isValid = true;
+    return qVectorQStringFromScriptValue(v);
 }
 
 inline glm::quat quat_convertFromScriptValue(const ScriptValue& v, bool& isValid) {

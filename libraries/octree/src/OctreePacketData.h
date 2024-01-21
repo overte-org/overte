@@ -191,6 +191,9 @@ public:
     /// appends a QVector of QUuids to the end of the stream, may fail if new data stream is too long to fit in packet
     bool appendValue(const QVector<QUuid>& value);
 
+    /// appends a QSet of QStrings to the end of the stream, may fail if new data stream is too long to fit in packet
+    bool appendValue(const QSet<QString>& value);
+
     /// appends a packed quat to the end of the stream, may fail if new data stream is too long to fit in packet
     bool appendValue(const glm::quat& value);
 
@@ -292,6 +295,7 @@ public:
     static int unpackDataFromBytes(const unsigned char* dataBytes, QVector<float>& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, QVector<bool>& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, QVector<QUuid>& result);
+    static int unpackDataFromBytes(const unsigned char* dataBytes, QSet<QString>& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, QByteArray& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, AACube& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, QRect& result);

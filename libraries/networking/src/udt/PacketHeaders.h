@@ -291,6 +291,7 @@ enum class EntityVersion : PacketVersion {
     AllBillboardMode,
     TextAlignment,
     Mirror,
+    EntityTags,
 
     // Add new versions above here
     NUM_PACKET_TYPE,

@@ -565,6 +565,9 @@ public:
     QUuid getPortalExitID() const;
     void setPortalExitID(const QUuid& value);
 
+    void setTags(const QSet<QString>& tags);
+    QSet<QString> getTags() const;
+
 signals:
     void spaceUpdate(std::pair<int32_t, glm::vec4> data);
 
@@ -748,6 +751,8 @@ protected:
 
     MirrorMode _mirrorMode { MirrorMode::NONE };
     QUuid _portalExitID;
+
+    QSet<QString> _tags;
 
     mutable bool _needsRenderUpdate { false };
 };
