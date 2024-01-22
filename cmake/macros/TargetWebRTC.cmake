@@ -17,7 +17,7 @@ macro(TARGET_WEBRTC)
         # WebRTC is basically impossible to build on aarch64 Linux.
         # I am looking at https://gitlab.freedesktop.org/pulseaudio/webrtc-audio-processing for an alternative.
     else()
-        #find_package(WebRTC REQUIRED)
-        #target_link_libraries(${TARGET_NAME} WebRTC::WebRTC)
+        find_package(WebRTC REQUIRED)
+        target_link_libraries(${TARGET_NAME} WebRTC::WebRTC)
     endif()
 endmacro()
