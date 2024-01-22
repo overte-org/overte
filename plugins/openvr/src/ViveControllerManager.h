@@ -26,7 +26,7 @@
 #include "OpenVrHelpers.h"
 
 #ifdef Q_OS_WIN
-#define VIVE_PRO_EYE
+// #define VIVE_PRO_EYE
 #endif
 
 using PuckPosePair = std::pair<uint32_t, controller::Pose>;
