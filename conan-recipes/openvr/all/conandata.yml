@@ -1,4 +1,10 @@
 sources:
-  "1.26.7":
-    url: https://github.com/ValveSoftware/openvr/archive/refs/tags/v1.26.7.tar.gz
+  1.26.7:
     sha256: e7391f1129db777b2754f5b017cfa356d7811a7bcaf57f09805b47c2e630a725
+    url: https://github.com/ValveSoftware/openvr/archive/refs/tags/v1.26.7.tar.gz
+  2.0.10:
+    sha256: 22c9a3c5c2ed9ebf0423ab329ecc3b870b0c980abdfbaaa204e5b59313d8c7e3
+    url: https://github.com/ValveSoftware/openvr/archive/refs/tags/v2.0.10.tar.gz
+  2.2.3:
+    sha256: 4da20c2c33e7488703802eafd7f2e6c92dd0f324e887711e1e11e9b9d3dd3daa
+    url: https://github.com/ValveSoftware/openvr/archive/refs/tags/v2.2.3.tar.gz
