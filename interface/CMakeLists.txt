@@ -195,16 +195,15 @@ endif()
 
 
 if (WIN32)
-  # These are external plugins, but we need to do the 'add dependency' here so that their
-  # binary directories get added to the fixup path
 
   if (USE_SIXENSE)
-    add_dependency_external_projects(sixense)
+    find_package(sixense REQUIRED)
+    target_link_libraries(${TARGET_NAME} Sixense::Sixense)
   endif ()
 
-  add_dependency_external_projects(neuron)
-  add_dependency_external_projects(wasapi)
-  add_dependency_external_projects(steamworks)
+  find_package(neuron REQUIRED)
+  find_package(steamworks REQUIRED)
+  target_link_libraries(${TARGET_NAME} Neuron::Datareader Steam::Works)
 endif()
 
 # disable /OPT:REF and /OPT:ICF for the Debug builds
@@ -474,9 +473,8 @@ if (WIN32)
     package_libraries_for_deployment()
 endif()
 
-add_dependency_external_projects(GifCreator)
 find_package(GifCreator REQUIRED)
-target_include_directories(${TARGET_NAME} PUBLIC ${GIFCREATOR_INCLUDE_DIRS})
+target_link_libraries(${TARGET_NAME} GifCreator::GifCreator)
 
 # tell CMake to exclude ui_console.h for policy CMP0071
 set_property(SOURCE ui_console.h PROPERTY SKIP_AUTOMOC ON)
