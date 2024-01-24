@@ -7,7 +7,9 @@ class Overte(ConanFile):
     name = "Overte"
     settings = "os", "compiler", "build_type", "arch"
     generators = "CMakeToolchain", "CMakeDeps"
+    options = {"with_qt": [True, False]}
     default_options = {
+        "with_qt": False,
         "sdl*:alsa": "False",
         "sdl*:pulse": "False",
         "sdl*:wayland": "False",
@@ -40,10 +42,13 @@ class Overte(ConanFile):
         self.folders.generators = os.path.join(self.folders.build, "generators")
 
     def requirements(self):
+        # self.requires("shaderc/2021.1") # Broken
+        # self.requires("crashpad/cci.20220219") # Broken
         self.requires("bullet3/3.25")
-        self.requires("draco/1.3.5")
         self.requires("discord-rpc/3.4.0@anotherfoxguy/stable")
+        self.requires("draco/1.3.5")
         self.requires("etc2comp/cci.20170424")
+        self.requires("gifcreator/2016.11@overte/stable")
         self.requires("glad/0.1.36")
         self.requires("gli/cci.20210515")
         self.requires("glm/cci.20230113")
@@ -52,23 +57,30 @@ class Overte(ConanFile):
         self.requires("libnode/18.17.1@overte/stable")
         self.requires("nlohmann_json/3.11.2")
         self.requires("nvidia-texture-tools/2023.01@overte/stable")
+        self.requires("onetbb/2021.10.0")
         self.requires("openexr/3.1.9")
         self.requires("openssl/1.1.1w")
         self.requires("openvr/2.2.3@overte/stable")
         self.requires("opus/1.4")
         self.requires("polyvox/0.2.1@overte/stable")
         self.requires("quazip/1.4@overte/stable")
-        self.requires("sdl/2.26.5")
-        #self.requires("qt/5.15.10", force=True)
         self.requires("scribe/2019.02@overte/stable")
-        #self.requires("shaderc/2021.1") # Broken
+        self.requires("sdl/2.26.5")
         self.requires("spirv-cross/cci.20211113")
         self.requires("spirv-tools/2021.4")
-        self.requires("onetbb/2021.10.0")
+        self.requires("steamworks/158a@overte/prebuild")
         self.requires("v-hacd/4.1.0")
         self.requires("vulkan-memory-allocator/3.0.1")
         self.requires("webrtc/2021.01.05@overte/prebuild")
         self.requires("zlib/1.2.13")
+
+        if self.settings.os == "Windows":
+            self.requires("neuron/12.2@overte/prebuild")
+            self.requires("ovr-skd/1.35.0@overte/prebuild")
+            self.requires("ovr-platform-skd/1.10.0@overte/prebuild")
+
+        if self.options.with_qt:
+            self.requires("qt/5.15.10", force=True)
 
     def generate(self):
         bindirs = []
@@ -77,7 +89,7 @@ class Overte(ConanFile):
         save(
             self,
             os.path.join(self.build_folder, "cmake", "ConanBinDirs.cmake"),
-            'set(CONAN_BIN_DIRS "%s")' % ";".join(bindirs).replace('\\', '/'),
+            'set(CONAN_BIN_DIRS "%s")' % ";".join(bindirs).replace("\\", "/"),
         )
 
         toolspath = """
@@ -86,10 +98,14 @@ class Overte(ConanFile):
         set(SPIRV_CROSS_DIR "%s")
         set(SPIRV_TOOLS_DIR "%s")
         """ % (
-            ";".join(self.dependencies["glslang"].cpp_info.bindirs).replace('\\', '/'),
-            self.dependencies["scribe"].package_folder.replace('\\', '/'),
-            ";".join(self.dependencies["spirv-cross"].cpp_info.bindirs).replace('\\', '/'),
-            ";".join(self.dependencies["spirv-tools"].cpp_info.bindirs).replace('\\', '/'),
+            ";".join(self.dependencies["glslang"].cpp_info.bindirs).replace("\\", "/"),
+            self.dependencies["scribe"].package_folder.replace("\\", "/"),
+            ";".join(self.dependencies["spirv-cross"].cpp_info.bindirs).replace(
+                "\\", "/"
+            ),
+            ";".join(self.dependencies["spirv-tools"].cpp_info.bindirs).replace(
+                "\\", "/"
+            ),
         )
         save(
             self,
