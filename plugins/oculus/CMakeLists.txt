@@ -26,14 +26,10 @@ if (WIN32 AND (NOT USE_GLES))
   include_hifi_library_headers(octree)
   include_hifi_library_headers(script-engine)
 
-  add_dependency_external_projects(LibOVR)
-  find_package(LibOVR REQUIRED)
-  target_include_directories(${TARGET_NAME} PRIVATE ${LIBOVR_INCLUDE_DIRS})
-  target_link_libraries(${TARGET_NAME} ${LIBOVR_LIBRARIES})
+  find_package(OVR REQUIRED)
+  find_package(OVRPlatform REQUIRED)
+
+  target_link_libraries(${TARGET_NAME} OVR::SDK OVR::Platform)
   target_link_libraries(${TARGET_NAME} Winmm.lib)
 
-  add_dependency_external_projects(LibOVRPlatform)
-  find_package(LibOVRPlatform REQUIRED)
-  target_include_directories(${TARGET_NAME} PRIVATE ${LIBOVRPLATFORM_INCLUDE_DIRS})
-  target_link_libraries(${TARGET_NAME} ${LIBOVRPLATFORM_LIBRARIES})
 endif()
