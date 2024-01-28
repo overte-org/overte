@@ -4,7 +4,7 @@
 //  Persist toolbar by HRS 6/11/15.
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2023 Overte e.V.
+//  Copyright 2022-2024 Overte e.V.
 //
 //  This script allows you to edit entities with a new UI/UX for mouse and trackpad based editing
 //
@@ -38,6 +38,7 @@
         "entitySelectionTool/entitySelectionTool.js",
         "audioFeedback/audioFeedback.js",
         "modules/brokenURLReport.js",
+        "modules/renderWithZonesManager.js",
         "editModes/editModes.js",
         "editModes/editVoxels.js"
     ]);
