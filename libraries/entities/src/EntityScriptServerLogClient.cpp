@@ -39,9 +39,9 @@ void EntityScriptServerLogClient::disconnectNotify(const QMetaMethod& signal) {
 
 void EntityScriptServerLogClient::connectionsChanged() {
     auto numReceivers = receivers(SIGNAL(receivedNewLogLines(QString)));
-    if (!_subscribed && numReceivers > 0) {
+    if (!_subscribed && (numReceivers > 0 || _areMessagesRequestedByScripts)) {
         enableToEntityServerScriptLog(DependencyManager::get<NodeList>()->getThisNodeCanRez());
-    } else if (_subscribed && numReceivers == 0) {
+    } else if (_subscribed && (numReceivers == 0 && !_areMessagesRequestedByScripts)) {
         enableToEntityServerScriptLog(false);
     }
 }
@@ -139,4 +139,9 @@ void EntityScriptServerLogClient::canRezChanged(bool canRez) {
     if (numReceivers > 0) {
         enableToEntityServerScriptLog(canRez);
     }
+}
+
+void EntityScriptServerLogClient::requestMessagesForScriptEngines(bool areMessagesRequested) {
+    _areMessagesRequestedByScripts = areMessagesRequested;
+    connectionsChanged();
 }

@@ -186,6 +186,13 @@ public:
 
     void removeScriptEngine(ScriptManagerPointer);
 
+    // Called by ScriptManagerScriptingInterface
+    void requestServerEntityScriptMessages(ScriptManager *manager);
+    void requestServerEntityScriptMessages(ScriptManager *manager, const QUuid& entityID);
+
+    void removeServerEntityScriptMessagesRequest(ScriptManager *manager);
+    void removeServerEntityScriptMessagesRequest(ScriptManager *manager, const QUuid& entityID);
+
     ScriptGatekeeper scriptGatekeeper;
 
 signals:
@@ -323,6 +330,12 @@ signals:
      */
     void clearDebugWindow();
 
+    /**
+     * @brief Fires when script engines need entity server script messages (areMessagesRequested == true)
+     * and when messages are not needed anymore (areMessagesRequested == false).
+     */
+    void requestingEntityScriptServerLog(bool areMessagesRequested);
+
 public slots:
 
     /*@jsdoc
@@ -406,9 +419,11 @@ protected:
     bool _defaultScriptsLocationOverridden { false };
     QString _debugScriptUrl;
 
-    // TODO: remove script managers when shutting them down
-    QSet<ScriptManagerPointer> _scriptManagersThatRequestedServerEntityMessages;
-    QMutex _serverEntityMessagesMutex;
+    // For subscriptions to server entity script messages
+    std::mutex _subscriptionsToEntityScriptMessagesMutex;
+    QSet<ScriptManager*> _managersSubscribedToEntityScriptMessages;
+    // Since multiple entity scripts run in the same script engine, there's a need to track subscriptions per entity
+    QHash<ScriptManager*, QSet<QUuid>> _entitiesSubscribedToEntityScriptMessages;
 
     // If this is set, defaultScripts.js will not be run if it is in the settings,
     // and this will be run instead. This script will not be persisted to settings.

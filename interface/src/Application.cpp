@@ -902,7 +902,12 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
     DependencyManager::set<CompositorHelper>();
     DependencyManager::set<OffscreenQmlSurfaceCache>();
     DependencyManager::set<EntityScriptClient>();
+
     DependencyManager::set<EntityScriptServerLogClient>();
+    auto scriptEngines = DependencyManager::get<ScriptEngines>();
+    auto entityScriptServerLog = DependencyManager::get<EntityScriptServerLogClient>();
+    QObject::connect(scriptEngines.data(), &ScriptEngines::requestingEntityScriptServerLog, entityScriptServerLog.data(), &EntityScriptServerLogClient::requestMessagesForScriptEngines);
+
     DependencyManager::set<GooglePolyScriptingInterface>();
     DependencyManager::set<OctreeStatsProvider>(nullptr, qApp->getOcteeSceneStats());
     DependencyManager::set<AvatarBookmarks>();
