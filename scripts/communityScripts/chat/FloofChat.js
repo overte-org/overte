@@ -15,6 +15,42 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
+// TODO:
+// Remove the following from the chat messages, because they're untrustworthy:
+// * Position
+// * Color (should be a local decision)
+// *
+
+//
+// There's 3 parts to this
+// * FloofChat.js is the main script
+// * FloofChat.html provides the history window
+// * notificationCore.js (in the parent directory of this script) handles showing notifications at the bottom of the screen
+//
+// Flow for a message sent from the chat bar at the bottom:
+// 1. FloofChat.qml      : Message entered in QML
+// 2. FloofChat.qml      : sendToScript(message)
+// 3. FloofChat.js       : fromQML(message)
+
+
+// Flow for a message sent from the chat window:
+// 1. FloofChat.html     : $ChatInputText.on('keydown', ...)
+// 2. FloofChat.html     : emitWebEvent
+// 3. FloofChat.js       : onWebEventReceived
+
+// Flow for a message received from another user:
+//
+
+// 4. FloofChat.js       : processChatMessage (handle /commands)
+// 5. FloofChat.js       : (send on FLOOF_CHAT_CHANNEL)
+
+
+// 6. FloofChat.js       : messageReceived
+// 7. FloofChat.js       : addToLog (uses emitScriptEvent to send to FloofChat.html to add to chat window)
+// 8. FloofChat.js       : (send on FLOOF_NOTIFICATION_CHANNEL to notificationCore.js)
+// 9. notificationCore.js: Displays notification on the bottom of the screen
+
+//
 var ROOT = Script.resolvePath('').split("FloofChat.js")[0];
 var H_KEY = 72;
 var ENTER_KEY = 16777220;
@@ -22,7 +58,10 @@ var ESC_KEY = 16777216;
 var CONTROL_KEY = 67108864;
 var SHIFT_KEY = 33554432;
 var FLOOF_CHAT_CHANNEL = "Chat";
+
+// This talks to notificationCore.js
 var FLOOF_NOTIFICATION_CHANNEL = "Floof-Notif";
+
 var SYSTEM_NOTIFICATION_CHANNEL = "System-Notifications";
 
 var MAIN_CHAT_WINDOW_HEIGHT = 450;
@@ -247,11 +286,11 @@ function gotoConfirm(url, name, confirm) {
     }
 }
 
-function processChat(cmd) {
+function processChatCommands(cmd) {
 
     function commandResult() {
         msg = "";
-        setVisible(false);
+        setChatBarVisible(false);
     }
 
     var msg = cmd.message;
@@ -296,8 +335,17 @@ function processChat(cmd) {
     return cmd;
 }
 
-function onWebEventReceived(event) {
-    event = JSON.parse(event);
+// Event received from FloofChat.html -- the chat window
+function onWebEventReceived(eventdata) {
+    var event = JSON.parse(eventdata);
+
+    // Fill in additional data
+    event.time = Date.now();
+    event.formatted = autoFormatting;
+
+
+    console.log("Web Event: " + eventdata);
+
     if (event.type === "ready") {
         chatHistory.emitScriptEvent(JSON.stringify({type: "MSG", data: historyLog}));
         chatHistory.emitScriptEvent(JSON.stringify({type: "CMD", cmd: "MUTED", muted: muted}));
@@ -351,11 +399,17 @@ function onWebEventReceived(event) {
         });
     }
     if (event.type === "MSG") {
+        // Chat message typed into the chat window
+        // {"type":"MSG","message":"test","tab":"Local","time":"1/6 - 18:18:58","appUUID":"{cd0f1cb9-b95e-4007-9b3c-a93ba3850cbc}"}
+
+        handleUserMessage(event);
+
+        /*
         event.avatarName = MyAvatar.sessionDisplayName;
         if (!event.AvatarName) {
             event.avatarName = MyAvatar.displayName;
         }
-        event = processChat(event);
+        event = processChatCommands(event);
         if (event.message === "") return;
         Messages.sendMessage("Chat", JSON.stringify({
             type: "TransmitChatMessage",
@@ -365,9 +419,113 @@ function onWebEventReceived(event) {
             message: event.message,
             displayName: event.avatarName
         }));
-        setVisible(false);
+        */
+        setChatBarVisible(false);
     }
 }
+
+// This is a message sent by our user. It was typed locally, and it may contain commands
+// we want to interpret. This comes either from the chat window or the bottom chat bar.
+function handleUserMessage(userMsg) {
+
+    // Process any user commands like /me
+    userMsg = processChatCommands(userMsg);
+
+    if (userMsg.message === "") return;
+
+    if ( userMsg.formatted ) {
+        userMsg.formattedMessage = replaceFormatting(userMsg.message);
+    } else {
+        userMsg.formattedMessage = userMsg.message;
+    }
+
+
+    sendChatMessage(userMsg);
+}
+
+// Take an user message, and produce a message that we send through the message mixer.
+// Handles both local and grid chat.
+function sendChatMessage(userMsg) {
+    var avName = MyAvatar.sessionDisplayName;
+
+    if (!avName) {
+        avName = MyAvatar.displayName;
+    }
+
+    // TODO: Improve timestamp formatting
+    var dt = new Date(userMsg.time);
+    var textTime = dt.toLocaleString();
+
+    var msg = {
+        uuid             : "", // what is this for?
+        position         : MyAvatar.position, // remove later, insecure
+        channel          : userMsg.tab,
+        colour           : chatColour("Grid"),
+        message          : userMsg.message,
+        formattedMessage : userMsg.formattedMessage,
+        isFormatted      : userMsg.formatted,
+        displayName      : avName,
+        time             : textTime
+    };
+
+    if ( userMsg.tab == "Grid" ) {
+        msg.type = "WebChat";
+    } else {
+        msg.type = "TransmitChatMessage";
+    }
+
+    console.log("Sending message: " + JSON.stringify(msg));
+
+    if ( userMsg.tab == "Grid" ) {
+        sendWS(msg);
+    } else {
+        Messages.sendMessage("Chat", JSON.stringify(msg));
+    }
+}
+
+
+// Take a message we received from the mixer/grid and add it to any UI elements.
+// * Handles formatting.
+// * Sends the message to any relevant UI elements, currently the chat window and bottom chat display.
+// * Adds the message to the chat history, for recall after a restart.
+function addReceivedMessageToUI(sender, receivedMsg) {
+
+    // We don't want to blindly copy external input, so we build our messages from scratch,
+    // making sure external entities don't get to add anything extra.
+
+    var msg = {
+        channel    : receivedMsg.channel,
+        colour     : receivedMsg.colour,
+        message    : receivedMsg.message,
+        formatted  : receivedMsg.formatted,
+        displayName: receivedMsg.displayName,
+        position   : receivedMsg.position,
+        uuid       : sender
+    };
+
+    if (receivedMsg.formatted) {
+        // We do all formatting after receiving, so that we can incorporate any
+        // user preferences in the formatting. Also, we preserve the original
+        // message, so that it's possible to display the unformatted version if
+        // needed.
+        msg.formattedMessage = replaceFormatting(receivedMsg.message);
+    } else {
+        msg.formattedMessage = receivedMsg.message;
+    }
+
+    if ( msg.channel != "Grid" && msg.channel != "Local" && msg.channel != "Domain" ) {
+        msg.channel = "Local";
+    }
+
+
+    addReceivedMessageToLog(msg);
+    addReceivedMessageToChatWindow(msg);
+
+    if (!mutedAudio["Grid"] && MyAvatar.sessionDisplayName !== cmd.displayName) {
+        playNotificationSound();
+    }
+}
+
 
 function playNotificationSound() {
     if (notificationSound.downloaded) {
@@ -379,6 +537,7 @@ function playNotificationSound() {
         Audio.playSound(notificationSound, injectorOptions);
     }
 }
+
 
 function replaceFormatting(text) {
     var found = false;
@@ -446,15 +605,19 @@ function replaceFormatting(text) {
     }
 }
 
+
 function messageReceived(channel, message, sender) {
     if (channel === FLOOF_CHAT_CHANNEL) {
         var cmd = {FAILED: true};
         try {
             cmd = JSON.parse(message);
         } catch (e) {
-            //
+            console.log("Failed to decode message: " + message + " from " + sender);
         }
+
         if (!cmd.FAILED) {
+
+
             if (cmd.type === "TransmitChatMessage") {
                 if (!cmd.hasOwnProperty("channel")) {
                     cmd.channel = "Domain";
@@ -462,6 +625,7 @@ function messageReceived(channel, message, sender) {
                 if (!cmd.hasOwnProperty("colour")) {
                     cmd.colour = {red: 222, green: 222, blue: 222};
                 }
+
                 if (cmd.message.indexOf("/me") === 0) {
                     cmd.message = cmd.message.replace("/me", cmd.displayName);
                     cmd.displayName = "";
@@ -578,7 +742,7 @@ function addToLog(msg, avatarName, colour, tab, autoFormat) {
     //chatHistory.emitScriptEvent(JSON.stringify({ type: "MSG", data: [[currentTimestamp, msg, dp, colour, tab, autoFormat]]}));
 
 
-    // Send this over to the HTML part
+    // Send this over to the HTML part. This goes to the chat window
     chatHistory.emitScriptEvent(JSON.stringify({ type: "MSG", data:
         [ // Array because we can send multiple messages at once elsewhere
             {
@@ -608,6 +772,12 @@ function addToChatBarHistory(msg) {
 
 function fromQml(message) {
     var cmd = {FAILED: true};
+
+    // Chat message received from the chat bar
+    // {"type":"MSG","message":"test","event":{"objectName":"","key":16777220,"text":"\r","modifiers":0,"isAutoRepeat":false,"count":1,"nativeScanCode":36,"accepted":true}}
+
+    console.log("Message from QML: " + message);
+
     try {
         cmd = JSON.parse(message);
     } catch (e) {
@@ -615,6 +785,9 @@ function fromQml(message) {
     }
     if (!cmd.FAILED) {
         if (cmd.type === "MSG") {
+            handleUserMessage(cmd);
+
+            /*
             if (cmd.message !== "") {
                 addToChatBarHistory(cmd.message);
                 if (cmd.event.modifiers === CONTROL_KEY) {
@@ -622,7 +795,7 @@ function fromQml(message) {
                     if (!cmd.AvatarName) {
                         cmd.AvatarName = MyAvatar.displayName;
                     }
-                    cmd = processChat(cmd);
+                    cmd = processChatCommands(cmd);
                     if (cmd.message === "") return;
                     Messages.sendMessage(FLOOF_CHAT_CHANNEL, JSON.stringify({
                         type: "TransmitChatMessage",
@@ -637,7 +810,7 @@ function fromQml(message) {
                         cmd.AvatarName = MyAvatar.displayName;
                     }
 
-                    cmd = processChat(cmd);
+                    cmd = processChatCommands(cmd);
                     if (cmd.message === "") return;
                     sendWS({
                         uuid: "",
@@ -653,7 +826,7 @@ function fromQml(message) {
                         cmd.AvatarName = MyAvatar.displayName;
                     }
 
-                    cmd = processChat(cmd);
+                    cmd = processChatCommands(cmd);
                     if (cmd.message === "") return;
                     Messages.sendMessage(FLOOF_CHAT_CHANNEL, JSON.stringify({
                         type: "TransmitChatMessage",
@@ -665,7 +838,8 @@ function fromQml(message) {
                     }));
                 }
             }
-            setVisible(false);
+            */
+            setChatBarVisible(false);
         } else if (cmd.type === "CMD") {
             if (cmd.cmd === "Clicked") {
                 toggleMainChatWindow()
@@ -674,7 +848,7 @@ function fromQml(message) {
     }
 }
 
-function setVisible(_visible) {
+function setChatBarVisible(_visible) {
     if (_visible) {
         Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
             type: "options",
@@ -744,10 +918,10 @@ function keyPressEvent(event) {
         toggleMainChatWindow()
     }
     if (event.key === ENTER_KEY && !event.isAutoRepeat && !visible && !HMD.active) {
-        setVisible(true);
+        setChatBarVisible(true);
     }
     if (event.key === ESC_KEY && !event.isAutoRepeat && visible) {
-        setVisible(false);
+        setChatBarVisible(false);
     }
 }
 

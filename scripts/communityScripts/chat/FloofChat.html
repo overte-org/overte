@@ -119,7 +119,8 @@
                     completeMessage.push(messageFormatted[i], urlLinkified[i]);
                 }
 
-                $el.html(completeMessage.join(""));
+                // Do markdown after link handling, so that we don't break URLs
+                $el.html(replaceFormatting(completeMessage.join("")));
             });
         };
 
@@ -414,6 +415,7 @@
         $chatID.scrollTop($chatID.scrollTop() + 100000);
     }
 
+    /*
     function time() {
         var d = new Date();
         // Months are returned in range 0-11 instead of 1-12, so we have to add 1.
@@ -428,6 +430,7 @@
         // s2 += (d.getMilliseconds() / 1000).toFixed(2).slice(1);
         return month + "/" + day + " - " + h2 + ":" + m2 + ":" + s2;
     }
+    */
 
     var muteInput;
     var muteText;
@@ -503,8 +506,13 @@
 
         $ChatInputText.on('keydown', function (event) {
             if (event.keyCode === 13) {
-                var message = $ChatInputText.val().substr(0, 256);
+                var message = $ChatInputText.val();
                 $ChatInputText.val('');
+                var curTab = getCurrTab();
+                emitWebEvent({type: "MSG", message: message, tab: curTab});
+
+                // Simplify: always same message for all messages
+/*
                 if (message !== '') {
                     var tab = getCurrTab();
                     if (tab === "Grid") {
@@ -515,6 +523,7 @@
 
                     console.log("getCurrTab: ", getCurrTab());
                 }
+                */
             }
         });
 
@@ -529,10 +538,11 @@
                         console.log("CHAT MSG: " + message);
                         cmd = JSON.parse(message);
                     } catch (e) {
-                        //
+                        console.log("Failed to parse message: " + message);
                     }
                     if (cmd.type === "MSG") {
                         var temp = cmd.data;
+                        console.log("DATA: " + JSON.stringify(temp));
                         temp.forEach(function (msg) {
                             logMessage("[" + msg.timestamp + "] ", msg.avatarName, msg.message, msg.tab, msg.colour, msg.autoFormat);
                             scrollChatLog(msg.tab);
