@@ -24,6 +24,9 @@ const RWZ_ZONE_SCAN_RADIUS = 27713; //maximal radius to cover the entire domain.
 let rwzmOverlayWebWindow = null;
 
 function renderWithZonesManager(entityIDs, highlightedID = "") {
+    if (rwzmGetCheckSum(entityIDs) !== rwzmGetCheckSum(rwzmSelectedId)) {
+        rwzmUndo = [];
+    }
     rwzmSelectedId = entityIDs;
     if (entityIDs.length === 0) {
         audioFeedback.rejection();
@@ -75,6 +78,16 @@ function renderWithZonesManager(entityIDs, highlightedID = "") {
     
     rwzmGenerateUI(highlightedID);
 }
+
+function rwzmGetCheckSum(array) {
+    let i = 0;
+    let sum = 0;
+    let strForm = JSON.stringify(array);
+    for (i = 0; i < strForm.length; i++) {
+        sum = sum + strForm.charCodeAt(i);
+    }
+    return sum;
+}
 function uiHasClosed() {
     rwzmOverlayWebWindow.closed.disconnect(uiHasClosed);
     rwzmOverlayWebWindow.webEventReceived.disconnect(webEventReceiver);
@@ -96,6 +109,7 @@ function rwzmGenerateUI(highlightedID) {
     let addAction = "";
     let toHighlight = "";
     let viewBtnCaption = "";
+    let warning = false;
     uiContent = uiContent + '    <h1>RenderWithZones Manager</h1><hr>\n';
     if (canUnlock) {
         if (enforceLocked) {
@@ -123,6 +137,7 @@ function rwzmGenerateUI(highlightedID) {
         if (name === "") {
             name = rwzmGenerateUnidentifiedZoneName(rwzmUsedZonesList[i]);
             elementClass = "errorline";
+            warning = true;
         }
         toHighlight = rwzmUsedZonesList[i];
         viewBtnCaption = "View";
@@ -201,6 +216,9 @@ function rwzmGenerateUI(highlightedID) {
     uiContent = uiContent + '        </tr>\n';
     uiContent = uiContent + '    </table></div>\n';
     uiContent = uiContent + '    <input type = "hidden" id = "highlightedID" value = "' + highlightedID + '">\n';
+    if (warning) {
+        uiContent = uiContent + '    <div class="warning"><b>WARNING</b>: The "<b>ZONE NOT FOUND</b>" visibility zones might simply not be loaded if too far and small. Please, verify before.</div>\n';
+    }
     //Zone selector Add
     uiContent = uiContent + '    <div id="rwzmAddZoneSelector">\n';
     uiContent = uiContent + '    <h2>Select the zone to add:</h2><div class="zoneSelectorContainer">\n';
