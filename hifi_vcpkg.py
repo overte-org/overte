@@ -108,8 +108,8 @@ endif()
         elif 'Linux' == system and 'aarch64' == machine:
             self.exe = os.path.join(self.path, 'vcpkg')
             self.bootstrapCmds = [ os.path.join(self.path, 'bootstrap-vcpkg.sh'), '-disableMetrics' ]
-            self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/vcpkg-linux_aarch64_2022.07.25.tar.xz'
-            self.vcpkgHash = '7abb7aa96200e3cb5a6d0ec1c6ee63aa7886df2d1fecf8f9ee41ebe4d2cea0d4143274222c4941cb7aca61e4048229fdfe9eb2cd36dd559dd26db871a3b3ed61'
+            self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/vcpkg-linux_aarch64_2024.01.12.tar.xz'
+            self.vcpkgHash = '222d82079f0e087b9978f4446dd2b11e19db3bbbaa3aac0de4710732d64f1d55fb506fc5b8979a61ab13834028e2141aa49a79ed83c0fb03b87944c707d2f2d3'
             self.hostTriplet = 'arm64-linux'
         else:
             self.exe = os.path.join(self.path, 'vcpkg')
