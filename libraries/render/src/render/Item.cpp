@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 1/26/16.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -159,5 +160,12 @@ namespace render {
             return false;
         }
         return payload->passesZoneOcclusionTest(containingZones);
+    }
+
+    template <> HighlightStyle payloadGetOutlineStyle(const PayloadProxyInterface::Pointer& payload, const ViewFrustum& viewFrustum, const size_t height) {
+        if (!payload) {
+            return HighlightStyle();
+        }
+        return payload->getOutlineStyle(viewFrustum, height);
     }
 }

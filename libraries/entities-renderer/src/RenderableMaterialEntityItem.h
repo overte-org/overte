@@ -1,6 +1,7 @@
 //
 //  Created by Sam Gondelman on 1/18/2018
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -32,6 +33,7 @@ private:
     virtual void doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) override;
     virtual void doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) override;
     virtual void doRender(RenderArgs* args) override;
+    virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const override;
 
     ItemKey getKey() override;
     ShapeKey getShapeKey() override;

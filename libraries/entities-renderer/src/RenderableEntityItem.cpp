@@ -4,6 +4,7 @@
 //
 //  Created by Brad Hefta-Gaub on 12/6/13.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -196,6 +197,8 @@ ItemKey EntityRenderer::getKey() {
         builder.withInvisible();
     }
 
+    updateItemKeyBuilderFromMaterials(builder);
+
     return builder;
 }
 
@@ -219,6 +222,20 @@ bool EntityRenderer::passesZoneOcclusionTest(const std::unordered_set<QUuid>& co
         return false;
     }
     return true;
+}
+
+HighlightStyle EntityRenderer::getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const {
+    std::lock_guard<std::mutex> lock(_materialsLock);
+    auto materials = _materials.find("0");
+    if (materials != _materials.end()) {
+        glm::vec3 position;
+        withReadLock([&] {
+            position = _renderTransform.getTranslation();
+        });
+        return HighlightStyle::calculateOutlineStyle(materials->second.getOutlineWidthMode(), materials->second.getOutlineWidth(),
+                                                     materials->second.getOutline(), position, viewFrustum, height);
+    }
+    return HighlightStyle();
 }
 
 void EntityRenderer::render(RenderArgs* args) {
@@ -510,7 +527,7 @@ EntityRenderer::Pipeline EntityRenderer::getPipelineType(const graphics::MultiMa
     }
 
     graphics::MaterialKey drawMaterialKey = materials.getMaterialKey();
-    if (drawMaterialKey.isEmissive() || drawMaterialKey.isMetallic() || drawMaterialKey.isScattering()) {
+    if (materials.isMToon() || drawMaterialKey.isEmissive() || drawMaterialKey.isMetallic() || drawMaterialKey.isScattering()) {
         return Pipeline::MATERIAL;
     }
 
@@ -630,6 +647,26 @@ Item::Bound EntityRenderer::getMaterialBound(RenderArgs* args) {
     return EntityRenderer::getBound(args);
 }
 
+void EntityRenderer::updateItemKeyBuilderFromMaterials(ItemKey::Builder& builder) {
+    MaterialMap::iterator materials;
+    {
+        std::lock_guard<std::mutex> lock(_materialsLock);
+        materials = _materials.find("0");
+
+        if (materials != _materials.end()) {
+            if (materials->second.shouldUpdate()) {
+                RenderPipelines::updateMultiMaterial(materials->second);
+            }
+        } else {
+            return;
+        }
+    }
+
+    if (materials->second.hasOutline()) {
+        builder.withOutline();
+    }
+}
+
 void EntityRenderer::updateShapeKeyBuilderFromMaterials(ShapeKey::Builder& builder) {
     MaterialMap::iterator materials;
     {
@@ -656,7 +693,7 @@ void EntityRenderer::updateShapeKeyBuilderFromMaterials(ShapeKey::Builder& build
     builder.withCullFaceMode(materials->second.getCullFaceMode());
 
     graphics::MaterialKey drawMaterialKey = materials->second.getMaterialKey();
-    if (drawMaterialKey.isUnlit()) {
+    if (!materials->second.isMToon() && drawMaterialKey.isUnlit()) {
         builder.withUnlit();
     }
 
@@ -666,8 +703,12 @@ void EntityRenderer::updateShapeKeyBuilderFromMaterials(ShapeKey::Builder& build
         if (drawMaterialKey.isNormalMap()) {
             builder.withTangents();
         }
-        if (drawMaterialKey.isLightMap()) {
-            builder.withLightMap();
+        if (!materials->second.isMToon()) {
+            if (drawMaterialKey.isLightMap()) {
+                builder.withLightMap();
+            }
+        } else {
+            builder.withMToon();
         }
     } else if (pipelineType == Pipeline::PROCEDURAL) {
         builder.withOwnPipeline();

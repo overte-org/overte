@@ -82,13 +82,33 @@ namespace scriptable {
 
         QString procedural;
 
+        glm::vec3 shade;
+        QString shadeMap;
+        float shadingShift;
+        QString shadingShiftMap;
+        float shadingToony;
+        glm::vec3 matcap;
+        QString matcapMap;
+        glm::vec3 parametricRim;
+        float parametricRimFresnelPower;
+        float parametricRimLift;
+        QString rimMap;
+        float rimLightingMix;
+        QString outlineWidthMode;
+        float outlineWidth;
+        glm::vec3 outline;
+        QString uvAnimationMaskMap;
+        float uvAnimationScrollXSpeed;
+        float uvAnimationScrollYSpeed;
+        float uvAnimationRotationSpeed;
+
         graphics::MaterialKey key { 0 };
     };
 
     /*@jsdoc
      * A material layer.
      * @typedef {object} Graphics.MaterialLayer
-     * @property {Graphics.Material} material - The layer's material.
+     * @property {Entities.Material} material - The layer's material.
      * @property {number} priority - The priority of the layer. If multiple materials are applied to a mesh part, only the 
      *     layer with the highest priority is applied, with materials of the same priority randomly assigned.
      */
