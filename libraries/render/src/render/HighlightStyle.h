@@ -69,9 +69,9 @@ namespace render {
                 glm::vec4 p2 = projection * (viewPos - glm::vec4(0.0f, 0.5f * outlineWidth, 0.0f, 0.0f));
                 p2 /= p2.w;
 
-                style._outlineWidth = 0.5 * screenHeight * fabs(p1.y - p2.y);
+                style._outlineWidth = floor(0.5f * (float)screenHeight * fabs(p1.y - p2.y));
             } else { // OUTLINE_SCREEN
-                style._outlineWidth = outlineWidth * screenHeight;
+                style._outlineWidth = floor(outlineWidth * (float)screenHeight);
             }
 
             return style;

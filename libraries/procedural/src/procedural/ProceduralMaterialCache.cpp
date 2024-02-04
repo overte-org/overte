@@ -725,7 +725,8 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
                         } else {
                             NetworkMToonMaterial::OutlineWidthMode mode;
                             if (NetworkMToonMaterial::getOutlineWidthModeFromName(valueString.toStdString(), mode)) {
-                                toonMaterial->setOutlineWidthMode(mode);
+                                // FIXME: Outlines are currently disabled because they're buggy
+                                //toonMaterial->setOutlineWidthMode(mode);
                             }
                         }
                     }

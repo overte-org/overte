@@ -72,8 +72,8 @@ Material::Material() {
 
 Material::Material(const Material& material) :
     _name(material._name),
-    _model(material._model),
     _key(material._key),
+    _model(material._model),
     _emissive(material._emissive),
     _opacity(material._opacity),
     _albedo(material._albedo),
