@@ -222,7 +222,8 @@ void GeometryResource::downloadFinished(const QByteArray& data) {
         PROFILE_ASYNC_BEGIN(resource_parse_geometry, "GeometryResource::downloadFinished", _url.toString(), { { "url", _url.toString() } });
 
         // store parsed contents of FST file
-        _mapping = FSTReader::readMapping(data);
+        auto reader = FSTReader::getReader(data);
+        _mapping = reader->readMapping(data);
 
         QString filename = _mapping.value("filename").toString();
 

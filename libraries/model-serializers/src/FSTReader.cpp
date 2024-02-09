@@ -1,208 +1,68 @@
-//
-//  FSTReader.cpp
-//
-//
-//  Created by Clement on 3/26/15.
-//  Copyright 2015 High Fidelity, Inc.
-//  Copyright 2023 Overte e.V.
-//
-//  Distributed under the Apache License, Version 2.0.
-//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
-//
+#include <cctype>
+#include <memory>
 
+
+#include "FSTJsonReader.h"
+#include "FSTOldReader.h"
 #include "FSTReader.h"
+#include "NetworkAccessManager.h"
+#include "NetworkingConstants.h"
 
-#include <QBuffer>
+#include <QNetworkAccessManager>
 #include <QEventLoop>
 #include <QNetworkReply>
-#include <QNetworkRequest>
-
-#include <NetworkAccessManager.h>
-#include <NetworkingConstants.h>
-#include <SharedUtil.h>
 
 
-const QStringList SINGLE_VALUE_PROPERTIES{"name", "filename", "texdir", "script", "comment"};
+Q_LOGGING_CATEGORY(fst_reader_logging, "overte.model-serializers.fst")
 
-hifi::VariantMultiHash FSTReader::parseMapping(QIODevice* device) {
-    hifi::VariantMultiHash properties;
 
-    QByteArray line;
-    while (!(line = device->readLine()).isEmpty()) {
-        if ((line = line.trimmed()).startsWith('#')) {
-            continue; // comment
-        }
-        QList<QByteArray> sections = line.split('=');
-        if (sections.size() < 2) {
-            continue;
-        }
+const QHash<FSTReader::ModelType, QString> FSTReader::_typesToNames = 
+{
+    {ModelType::ENTITY_MODEL, "entity"},
+    {ModelType::HEAD_MODEL, "head"},
+    {ModelType::BODY_ONLY_MODEL, "body"},
+    {ModelType::HEAD_AND_BODY_MODEL, "body+head"},
+    {ModelType::ATTACHMENT_MODEL, "attachment"}
+};
 
-        // We can have URLs like:
-        // filename = https://www.dropbox.com/scl/fi/xxx/avatar.fbx?rlkey=xxx&dl=1\n
-        // These confuse the parser due to the presence of = in the URL.
-        //
-        // SINGLE_VALUE_PROPERTIES contains a list of things that may be URLs or contain an =
-        // for some other reason, and that we know for sure contain only a single value after
-        // the first =.
-        //
-        // Really though, we should just use JSON instead.
-        QByteArray name = sections.at(0).trimmed();
-        bool isSingleValue = SINGLE_VALUE_PROPERTIES.contains(name);
+const QHash<QString, FSTReader::ModelType> FSTReader::_namesToTypes =
+{
+    {"entity", ModelType::ENTITY_MODEL},
+    {"head", ModelType::HEAD_MODEL},
+    {"body", ModelType::BODY_ONLY_MODEL},
+    {"body+head",  ModelType::HEAD_AND_BODY_MODEL},
+    // NOTE: this is not yet implemented, but will be used to allow you to attach fully independent models to your avatar
+    {"attachment", ModelType::ATTACHMENT_MODEL}
+};
 
-        if (sections.size() == 2 || isSingleValue) {
-            // As per the above, we can have '=' signs inside of URLs, so instead of
-            // using the split string, just use everything after the first '='.
-
-            QString value = line.mid(line.indexOf("=")+1).trimmed();
-            properties.insert(name, value);
-        } else if (sections.size() == 3) {
-            QVariantHash heading = properties.value(name).toHash();
-            heading.insert(sections.at(1).trimmed(), sections.at(2).trimmed());
-            properties.insert(name, heading);
-        } else if (sections.size() >= 4) {
-            QVariantHash heading = properties.value(name).toHash();
-            QVariantList contents;
-            for (int i = 2; i < sections.size(); i++) {
-                contents.append(sections.at(i).trimmed());
-            }
-            heading.insert(sections.at(1).trimmed(), contents);
-            properties.insert(name, heading);
+std::shared_ptr<FSTReader> FSTReader::getReader(const QByteArray &data) {
+    if (data.length() >= 3) {
+        if (data[0] == 0xd9 && data[1] == 0xd9 && data[2] == 0xf7) {
+            // Looks like CBOR (Binary) JSON
+            // https://en.wikipedia.org/wiki/CBOR
+            return std::make_shared<FSTJsonReader>();
         }
     }
 
-    return properties;
-}
+    for(int i=0;i<data.length();i++) {
+        char c = data[i];
 
-static void removeBlendshape(QVariantHash& bs, const QString& key) {
-    if (bs.contains(key)) {
-        bs.remove(key);
-    }
-}
-
-static void splitBlendshapes(hifi::VariantMultiHash& bs, const QString& key, const QString& leftKey, const QString& rightKey) {
-    if (bs.contains(key) && !(bs.contains(leftKey) || bs.contains(rightKey))) {
-        // key has been split into leftKey and rightKey blendshapes
-        QVariantList origShapes = bs.values(key);
-        QVariantList halfShapes;
-        for (int i = 0; i < origShapes.size(); i++) {
-            QVariantList origShape = origShapes[i].toList();
-            QVariantList halfShape;
-            halfShape.append(origShape[0]);
-            halfShape.append(QVariant(0.5f * origShape[1].toFloat()));
-            bs.insert(leftKey, halfShape);
-            bs.insert(rightKey, halfShape);
-        }
-    }
-}
-
-// convert legacy blendshapes to arkit blendshapes
-static void fixUpLegacyBlendshapes(hifi::VariantMultiHash & properties) {
-    hifi::VariantMultiHash bs = properties.value("bs").toHash();
-
-    // These blendshapes have no ARKit equivalent, so we remove them.
-    removeBlendshape(bs, "JawChew");
-    removeBlendshape(bs, "ChinLowerRaise");
-    removeBlendshape(bs, "ChinUpperRaise");
-    removeBlendshape(bs, "LipsUpperOpen");
-    removeBlendshape(bs, "LipsLowerOpen");
-
-    // These blendshapes are split in ARKit, we replace them with their left and right sides with a weight of 1/2.
-    splitBlendshapes(bs, "LipsUpperUp", "MouthUpperUp_L", "MouthUpperUp_R");
-    splitBlendshapes(bs, "LipsLowerDown", "MouthLowerDown_L", "MouthLowerDown_R");
-    splitBlendshapes(bs, "Sneer", "NoseSneer_L", "NoseSneer_R");
-
-    // re-insert new mutated bs hash into mapping properties.
-    properties.insert("bs", bs);
-}
-
-hifi::VariantMultiHash FSTReader::readMapping(const QByteArray& data) {
-    QBuffer buffer(const_cast<QByteArray*>(&data));
-    buffer.open(QIODevice::ReadOnly);
-    hifi::VariantMultiHash mapping = FSTReader::parseMapping(&buffer);
-    fixUpLegacyBlendshapes(mapping);
-    return mapping;
-}
-
-void FSTReader::writeVariant(QBuffer& buffer, QVariantHash::const_iterator& it) {
-    QByteArray key = it.key().toUtf8() + " = ";
-    QVariantHash hashValue = it.value().toHash();
-    if (hashValue.isEmpty()) {
-        buffer.write(key + it.value().toByteArray() + "\n");
-        return;
-    }
-    for (QVariantHash::const_iterator second = hashValue.constBegin(); second != hashValue.constEnd(); second++) {
-        QByteArray extendedKey = key + second.key().toUtf8();
-        QVariantList listValue = second.value().toList();
-        if (listValue.isEmpty()) {
-            buffer.write(extendedKey + " = " + second.value().toByteArray() + "\n");
-            continue;
-        }
-        buffer.write(extendedKey);
-        for (QVariantList::const_iterator third = listValue.constBegin(); third != listValue.constEnd(); third++) {
-            buffer.write(" = " + third->toByteArray());
-        }
-        buffer.write("\n");
-    }
-}
-
-QByteArray FSTReader::writeMapping(const hifi::VariantMultiHash& mapping) {
-    static const QStringList PREFERED_ORDER = QStringList() << NAME_FIELD << TYPE_FIELD << SCALE_FIELD << FILENAME_FIELD
-    << TEXDIR_FIELD << SCRIPT_FIELD << JOINT_FIELD
-    << BLENDSHAPE_FIELD << JOINT_INDEX_FIELD;
-    QBuffer buffer;
-    buffer.open(QIODevice::WriteOnly);
-
-    for (auto key : PREFERED_ORDER) {
-        auto it = mapping.find(key);
-        if (it != mapping.constEnd()) {
-            if (key == SCRIPT_FIELD) { // writeVariant does not handle strings added using insertMulti.
-                for (auto multi : mapping.values(key)) {
-                    buffer.write(key.toUtf8());
-                    buffer.write(" = ");
-                    buffer.write(multi.toByteArray());
-                    buffer.write("\n");
-                }
-            } else {
-                writeVariant(buffer, it);
-            }
+        if ( !std::isspace(c) && (c == '{' || c == '[') ) {
+            // Looks like JSON.
+            //
+            // The old format is a 'key = value' type format, so there's no way
+            // a valid file will ever begin with a [ or a {.
+            return std::make_shared<FSTJsonReader>();
+        } else {
+            return std::make_shared<FSTOldReader>();
         }
     }
 
-    for (auto it = mapping.constBegin(); it != mapping.constEnd(); it++) {
-        if (!PREFERED_ORDER.contains(it.key())) {
-            writeVariant(buffer, it);
-        }
-    }
-    return buffer.data();
+    qCWarning(fst_reader_logging) << "Failed to detect type of FST. Data:" << data.left(100);
+    return nullptr;
 }
 
-QHash<FSTReader::ModelType, QString> FSTReader::_typesToNames;
-QString FSTReader::getNameFromType(ModelType modelType) {
-    if (_typesToNames.size() == 0) {
-        _typesToNames[ENTITY_MODEL] = "entity";
-        _typesToNames[HEAD_MODEL] = "head";
-        _typesToNames[BODY_ONLY_MODEL] = "body";
-        _typesToNames[HEAD_AND_BODY_MODEL] = "body+head";
-        _typesToNames[ATTACHMENT_MODEL] = "attachment";
-    }
-    return _typesToNames[modelType];
-}
-
-QHash<QString, FSTReader::ModelType> FSTReader::_namesToTypes;
-FSTReader::ModelType FSTReader::getTypeFromName(const QString& name) {
-    if (_namesToTypes.size() == 0) {
-        _namesToTypes["entity"] = ENTITY_MODEL;
-        _namesToTypes["head"] = HEAD_MODEL ;
-        _namesToTypes["body"] = BODY_ONLY_MODEL;
-        _namesToTypes["body+head"] = HEAD_AND_BODY_MODEL;
-
-        // NOTE: this is not yet implemented, but will be used to allow you to attach fully independent models to your avatar
-        _namesToTypes["attachment"] = ATTACHMENT_MODEL;
-    }
-    return _namesToTypes[name];
-}
-
-FSTReader::ModelType FSTReader::predictModelType(const hifi::VariantMultiHash& mapping) {
+FSTReader::ModelType FSTReader::predictModelType(const Mapping& mapping) {
 
     QVariantHash joints;
 
@@ -236,21 +96,22 @@ FSTReader::ModelType FSTReader::predictModelType(const hifi::VariantMultiHash& m
     bool isLikelyHead = hasBlendshapes || hasHeadMinimum;
 
     if (isLikelyHead && hasBodyMinimumJoints) {
-        return HEAD_AND_BODY_MODEL;
+        return ModelType::HEAD_AND_BODY_MODEL;
     }
 
     if (isLikelyHead) {
-        return HEAD_MODEL;
+        return ModelType::HEAD_MODEL;
     }
 
     if (hasBodyMinimumJoints) {
-        return BODY_ONLY_MODEL;
+        return ModelType::BODY_ONLY_MODEL;
     }
 
-    return ENTITY_MODEL;
+    return ModelType::ENTITY_MODEL;
 }
 
-QVector<QString> FSTReader::getScripts(const QUrl& url, const hifi::VariantMultiHash& mapping) {
+
+QVector<QString> FSTReader::getScripts(const QUrl& url, const Mapping& mapping) {
 
     auto fstMapping = mapping.isEmpty() ? downloadMapping(url.toString()) : mapping;
     QVector<QString> scriptPaths;
@@ -270,7 +131,8 @@ QVector<QString> FSTReader::getScripts(const QUrl& url, const hifi::VariantMulti
     return scriptPaths;
 }
 
-hifi::VariantMultiHash FSTReader::downloadMapping(const QString& url) {
+
+FSTReader::Mapping FSTReader::downloadMapping(const QString& url) {
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
     QNetworkRequest networkRequest = QNetworkRequest(url);
     networkRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
@@ -281,5 +143,54 @@ hifi::VariantMultiHash FSTReader::downloadMapping(const QString& url) {
     loop.exec();
     QByteArray fstContents = reply->readAll();
     delete reply;
-    return FSTReader::readMapping(fstContents);
+
+    auto reader = getReader(fstContents);
+    if (reader) {
+        return reader->readMapping(fstContents);
+    } else {
+        qWarning(fst_reader_logging) << "Failed to identify FST format for" << url;
+        return FSTReader::Mapping();
+    }
+}
+
+
+static void removeBlendshape(QVariantHash& bs, const QString& key) {
+    if (bs.contains(key)) {
+        bs.remove(key);
+    }
+}
+
+static void splitBlendshapes(hifi::VariantMultiHash& bs, const QString& key, const QString& leftKey, const QString& rightKey) {
+    if (bs.contains(key) && !(bs.contains(leftKey) || bs.contains(rightKey))) {
+        // key has been split into leftKey and rightKey blendshapes
+        QVariantList origShapes = bs.values(key);
+        QVariantList halfShapes;
+        for (int i = 0; i < origShapes.size(); i++) {
+            QVariantList origShape = origShapes[i].toList();
+            QVariantList halfShape;
+            halfShape.append(origShape[0]);
+            halfShape.append(QVariant(0.5f * origShape[1].toFloat()));
+            bs.insert(leftKey, halfShape);
+            bs.insert(rightKey, halfShape);
+        }
+    }
+}
+
+void FSTReader::fixUpLegacyBlendshapes(Mapping &properties) {
+    hifi::VariantMultiHash bs = properties.value("bs").toHash();
+
+    // These blendshapes have no ARKit equivalent, so we remove them.
+    removeBlendshape(bs, "JawChew");
+    removeBlendshape(bs, "ChinLowerRaise");
+    removeBlendshape(bs, "ChinUpperRaise");
+    removeBlendshape(bs, "LipsUpperOpen");
+    removeBlendshape(bs, "LipsLowerOpen");
+
+    // These blendshapes are split in ARKit, we replace them with their left and right sides with a weight of 1/2.
+    splitBlendshapes(bs, "LipsUpperUp", "MouthUpperUp_L", "MouthUpperUp_R");
+    splitBlendshapes(bs, "LipsLowerDown", "MouthLowerDown_L", "MouthLowerDown_R");
+    splitBlendshapes(bs, "Sneer", "NoseSneer_L", "NoseSneer_R");
+
+    // re-insert new mutated bs hash into mapping properties.
+    properties.insert("bs", bs);
 }

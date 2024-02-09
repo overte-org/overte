@@ -72,7 +72,7 @@ _hfmModel(hfmModel)
 
 QVariantHash ModelPropertiesDialog::getMapping() const {
     QVariantHash mapping = _originalMapping;
-    mapping.insert(TYPE_FIELD, FSTReader::getNameFromType(FSTReader::HEAD_AND_BODY_MODEL));
+    mapping.insert(TYPE_FIELD, FSTReader::getNameFromType(FSTReader::ModelType::HEAD_AND_BODY_MODEL));
     mapping.insert(NAME_FIELD, _name->text());
     mapping.insert(TEXDIR_FIELD, _textureDirectory->text());
     mapping.insert(SCRIPT_FIELD, _scriptDirectory->text());

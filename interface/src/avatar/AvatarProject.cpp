@@ -186,10 +186,16 @@ bool AvatarProject::isValidNewProjectName(const QString& projectPath, const QStr
     return !dir.exists();
 }
 
-AvatarProject::AvatarProject(const QString& fstPath, const QByteArray& data) :
-    AvatarProject::AvatarProject(new FST(fstPath, FSTReader::readMapping(data))) {
+AvatarProject::AvatarProject(const QString& fstPath, const QByteArray& data) {
+    auto reader = FSTReader::getReader(data);
+    setFST(new FST(fstPath, reader->readMapping(data)));
 }
+
 AvatarProject::AvatarProject(FST* fst) {
+    setFST(fst);
+}
+
+void AvatarProject::setFST(FST *fst) {
     _fst = fst;
     auto fileInfo = QFileInfo(getFSTPath());
     _directory = fileInfo.absoluteDir();
