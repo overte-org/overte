@@ -75,6 +75,16 @@ jobs:
             arch: aarch64
             runner: linux_aarch64
 
+          - os: fedora-39
+            image: docker.io/overte/overte-server-build:0.1.4-fedora-39-amd64
+            arch: amd64
+            runner: linux_amd64
+
+          - os: fedora-39
+            image: docker.io/overte/overte-server-build:0.1.4-fedora-39-aarch64
+            arch: aarch64
+            runner: linux_aarch64
+
           - os: rockylinux-9
             image: docker.io/overte/overte-server-build:0.1.3-rockylinux-9-amd64
             arch: amd64
@@ -184,6 +194,8 @@ jobs:
             echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.el9.$INSTALLER_EXT" >> $GITHUB_ENV
           elif [ "${{ matrix.os }}" == "fedora-38" ]; then
             echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc38.$INSTALLER_EXT" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "fedora-39" ]; then
+            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc39.$INSTALLER_EXT" >> $GITHUB_ENV
           else
             echo "Error! ARTIFACT_PATTERN not set!"
             exit 1  # Fail
