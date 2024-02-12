@@ -520,84 +520,98 @@ namespace scriptable {
                 }
             } else {
                 // See the mappings in ProceduralMatericalCache.h
+                // SHADE_VAL_BIT = graphics::MaterialKey::FlagBit::UNLIT_VAL_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::UNLIT_VAL_BIT)) {
                     obj.setProperty("shade", FALLTHROUGH);
                 } else if (material.key._flags[graphics::MaterialKey::UNLIT_VAL_BIT]) {
                     obj.setProperty("shade", vec3ColorToScriptValue(engine, material.shade));
                 }
 
+                // SHADE_MAP_BIT = graphics::MaterialKey::FlagBit::ROUGHNESS_MAP_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::ROUGHNESS_MAP_BIT)) {
                     obj.setProperty("shadeMap", FALLTHROUGH);
                 } else if (!material.shadeMap.isEmpty()) {
                     obj.setProperty("shadeMap", material.shadeMap);
                 }
 
+                // SHADING_SHIFT_VAL_BIT = graphics::MaterialKey::FlagBit::METALLIC_VAL_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::METALLIC_VAL_BIT)) {
                     obj.setProperty("shadingShift", FALLTHROUGH);
                 } else if (material.key._flags[graphics::MaterialKey::METALLIC_VAL_BIT]) {
                     obj.setProperty("shadingShift", material.shadingShift);
                 }
 
+                // SHADING_SHIFT_MAP_BIT = graphics::MaterialKey::FlagBit::METALLIC_MAP_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::METALLIC_MAP_BIT)) {
                     obj.setProperty("shadingShiftMap", FALLTHROUGH);
                 } else if (!material.shadingShiftMap.isEmpty()) {
                     obj.setProperty("shadingShiftMap", material.shadingShiftMap);
                 }
 
+                // SHADING_TOONY_VAL_BIT = graphics::MaterialKey::FlagBit::GLOSSY_VAL_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::GLOSSY_VAL_BIT)) {
                     obj.setProperty("shadingToony", FALLTHROUGH);
                 } else if (material.key._flags[graphics::MaterialKey::GLOSSY_VAL_BIT]) {
                     obj.setProperty("shadingToony", material.shadingToony);
                 }
 
+                // MATCAP_VAL_BIT = graphics::MaterialKey::FlagBit::EXTRA_1_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::EXTRA_1_BIT)) {
                     obj.setProperty("matcap", FALLTHROUGH);
                 } else if (material.key._flags[graphics::MaterialKey::EXTRA_1_BIT]) {
                     obj.setProperty("matcap", vec3ColorToScriptValue(engine, material.matcap));
                 }
 
+                // MATCAP_MAP_BIT = graphics::MaterialKey::FlagBit::OCCLUSION_MAP_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::OCCLUSION_MAP_BIT)) {
                     obj.setProperty("matcapMap", FALLTHROUGH);
                 } else if (!material.matcapMap.isEmpty()) {
                     obj.setProperty("matcapMap", material.matcapMap);
                 }
 
+                // PARAMETRIC_RIM_VAL_BIT = graphics::MaterialKey::FlagBit::EXTRA_2_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::EXTRA_2_BIT)) {
                     obj.setProperty("parametricRim", FALLTHROUGH);
                 } else if (material.key._flags[graphics::MaterialKey::EXTRA_2_BIT]) {
                     obj.setProperty("parametricRim", vec3ColorToScriptValue(engine, material.parametricRim));
                 }
 
+                // PARAMETRIC_RIM_POWER_VAL_BIT = graphics::MaterialKey::FlagBit::EXTRA_3_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::EXTRA_3_BIT)) {
                     obj.setProperty("parametricRimFresnelPower", FALLTHROUGH);
                 } else if (material.key._flags[graphics::MaterialKey::EXTRA_3_BIT]) {
                     obj.setProperty("parametricRimFresnelPower", material.parametricRimFresnelPower);
                 }
 
+                // PARAMETRIC_RIM_LIFT_VAL_BIT = graphics::MaterialKey::FlagBit::EXTRA_4_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::EXTRA_4_BIT)) {
                     obj.setProperty("parametricRimLift", FALLTHROUGH);
                 } else if (material.key._flags[graphics::MaterialKey::EXTRA_4_BIT]) {
                     obj.setProperty("parametricRimLift", material.parametricRimLift);
                 }
 
+                // RIM_MAP_BIT = graphics::MaterialKey::FlagBit::SCATTERING_MAP_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::SCATTERING_MAP_BIT)) {
                     obj.setProperty("rimMap", FALLTHROUGH);
                 } else if (!material.rimMap.isEmpty()) {
                     obj.setProperty("rimMap", material.rimMap);
                 }
 
+                // RIM_LIGHTING_MIX_VAL_BIT = graphics::MaterialKey::FlagBit::EXTRA_5_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::EXTRA_5_BIT)) {
                     obj.setProperty("rimLightingMix", FALLTHROUGH);
                 } else if (material.key._flags[graphics::MaterialKey::EXTRA_5_BIT]) {
                     obj.setProperty("rimLightingMix", material.rimLightingMix);
                 }
 
+                // UV_ANIMATION_MASK_MAP_BIT = graphics::MaterialKey::FlagBit::LIGHT_MAP_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::LIGHT_MAP_BIT)) {
                     obj.setProperty("uvAnimationMaskMap", FALLTHROUGH);
                 } else if (!material.uvAnimationMaskMap.isEmpty()) {
                     obj.setProperty("uvAnimationMaskMap", material.uvAnimationMaskMap);
                 }
 
+                // UV_ANIMATION_SCROLL_VAL_BIT = graphics::MaterialKey::FlagBit::SCATTERING_VAL_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::SCATTERING_VAL_BIT)) {
                     obj.setProperty("uvAnimationScrollXSpeed", FALLTHROUGH);
                     obj.setProperty("uvAnimationScrollYSpeed", FALLTHROUGH);
@@ -608,18 +622,21 @@ namespace scriptable {
                     obj.setProperty("uvAnimationRotationSpeed", material.uvAnimationRotationSpeed);
                 }
 
+                // OUTLINE_WIDTH_MODE_VAL_BIT = graphics::Material::ExtraFlagBit::EXTRA_1_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::Material::EXTRA_1_BIT)) {
                     obj.setProperty("outlineWidthMode", FALLTHROUGH);
                 } else {
                     obj.setProperty("outlineWidthMode", material.outlineWidthMode);
                 }
 
+                // OUTLINE_WIDTH_VAL_BIT = graphics::Material::ExtraFlagBit::EXTRA_2_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::Material::EXTRA_2_BIT)) {
                     obj.setProperty("outlineWidth", FALLTHROUGH);
                 } else {
                     obj.setProperty("outlineWidth", material.outlineWidth);
                 }
 
+                // OUTLINE_VAL_BIT = graphics::Material::ExtraFlagBit::EXTRA_3_BIT
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::Material::EXTRA_3_BIT)) {
                     obj.setProperty("outline", FALLTHROUGH);
                 } else {

@@ -94,6 +94,7 @@ public:
     };
 
     enum MToonFlagBit {
+        // Must match mappings in GraphicsScriptingInterface.cpp
         SHADE_MAP_BIT = graphics::MaterialKey::FlagBit::ROUGHNESS_MAP_BIT,
         SHADING_SHIFT_MAP_BIT = graphics::MaterialKey::FlagBit::METALLIC_MAP_BIT,
         MATCAP_MAP_BIT = graphics::MaterialKey::FlagBit::OCCLUSION_MAP_BIT,
