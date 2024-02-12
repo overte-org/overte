@@ -26,6 +26,9 @@ if (NOT SERVER_ONLY AND NOT ANDROID)
     add_subdirectory(${DIR})
   endif()
 
+  set(DIR "openxr")
+  add_subdirectory(${DIR})
+
   set(DIR "hifiSdl2")
   add_subdirectory(${DIR})
 
