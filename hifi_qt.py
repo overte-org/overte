@@ -81,7 +81,7 @@ endif()
 
             qt_found = True
             system_qt = True
-            print("Using system Qt")
+            #print("Using system Qt")
 
         elif os.getenv('OVERTE_QT_PATH', "") != "":
             # 2. Using an user-provided directory.
@@ -92,7 +92,7 @@ endif()
             self.cmakePath = os.path.join(self.fullPath, 'lib', 'cmake')
 
             qt_found = True
-            print("Using Qt from " + self.fullPath)
+            #print("Using Qt from " + self.fullPath)
 
         else:
             # 3. Using a pre-built Qt.
@@ -135,7 +135,7 @@ endif()
             self.lockFile = os.path.join(lockDir, lockName)
 
         if qt_found:
-            print("Found pre-built Qt5")
+            #print("Found pre-built Qt5")
             return
 
         if 'Windows' == system:
@@ -147,8 +147,8 @@ endif()
             cpu_architecture = platform.machine()
 
             if 'x86_64' == cpu_architecture:
-                # `major_version()` can return blank string on rolling release distros like arch 
-                # The `or 0` conditional assignment prevents the int parsing error from hiding the useful Qt package error 
+                # `major_version()` can return blank string on rolling release distros like arch
+                # The `or 0` conditional assignment prevents the int parsing error from hiding the useful Qt package error
                 u_major = int( distro.major_version() or '0' )
                 if distro.id() == 'ubuntu' or distro.id() == 'linuxmint':
                     if (distro.id() == 'ubuntu' and u_major == 20) or distro.id() == 'linuxmint' and u_major == 20:

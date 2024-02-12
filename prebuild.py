@@ -1,19 +1,19 @@
 #!python
 
-# The prebuild script is intended to simplify life for developers and dev-ops.  It's repsonsible for acquiring 
-# tools required by the build as well as dependencies on which we rely.  
-# 
+# The prebuild script is intended to simplify life for developers and dev-ops.  It's repsonsible for acquiring
+# tools required by the build as well as dependencies on which we rely.
+#
 # By using this script, we can reduce the requirements for a developer getting started to:
 #
 # * A working C++ dev environment like visual studio, xcode, gcc, or clang
-# * Qt 
+# * Qt
 # * CMake
 # * Python 3.x
 #
 # The function of the build script is to acquire, if not already present, all the other build requirements
-# The build script should be idempotent.  If you run it with the same arguments multiple times, that should 
-# have no negative impact on the subsequent build times (i.e. re-running the prebuild script should not 
-# trigger a header change that causes files to be rebuilt).  Subsequent runs after the first run should 
+# The build script should be idempotent.  If you run it with the same arguments multiple times, that should
+# have no negative impact on the subsequent build times (i.e. re-running the prebuild script should not
+# trigger a header change that causes files to be rebuilt).  Subsequent runs after the first run should
 # execute quickly, determining that no work is to be done
 
 import hifi_singleton
@@ -83,6 +83,9 @@ def parse_args():
     parser.add_argument('--build-root', required=True, type=str, help='The location of the cmake build')
     parser.add_argument('--ports-path', type=str, default=defaultPortsPath)
     parser.add_argument('--ci-build', action='store_true', default=os.getenv('CI_BUILD') is not None)
+    parser.add_argument('--get-vcpkg-id', action='store_true', help='Get the VCPKG ID, the hash path of the full VCPKG path')
+    parser.add_argument('--get-vcpkg-path', action='store_true', help='Get the full VCPKG path, ID included.')
+
     if True:
         args = parser.parse_args()
     else:
@@ -91,7 +94,7 @@ def parse_args():
 
 def main():
     # Fixup env variables.  Leaving `USE_CCACHE` on will cause scribe to fail to build
-    # VCPKG_ROOT seems to cause confusion on Windows systems that previously used it for 
+    # VCPKG_ROOT seems to cause confusion on Windows systems that previously used it for
     # building OpenSSL
     removeEnvVars = ['VCPKG_ROOT', 'USE_CCACHE']
     for var in removeEnvVars:
@@ -129,11 +132,21 @@ def main():
                     qt.writeConfig()
         else:
             if (os.environ["OVERTE_USE_SYSTEM_QT"]):
-                print("System Qt selected")
+                #print("System Qt selected")
+                None
             else:
                 raise Exception("Internal error: System Qt not selected, but hifi_qt.py failed to return a cmake path")
 
     pm = hifi_vcpkg.VcpkgRepo(args)
+
+    if args.get_vcpkg_id:
+        print(pm.id)
+        exit(0)
+
+    if args.get_vcpkg_path:
+        print(pm.path)
+        exit(0)
+
     if qtInstallPath is not None:
         pm.writeVar('QT_CMAKE_PREFIX_PATH', qtInstallPath)
 
@@ -149,7 +162,7 @@ def main():
             if not pm.upToDate():
                 pm.bootstrap()
 
-        # Always write the tag, even if we changed nothing.  This 
+        # Always write the tag, even if we changed nothing.  This
         # allows vcpkg to reclaim disk space by identifying directories with
         # tags that haven't been touched in a long time
         pm.writeTag()
@@ -190,7 +203,7 @@ def main():
 
     logger.info('end')
 
-print(sys.argv)
+#print(sys.argv)
 try:
     main()
 except hifi_utils.SilentFatalError as fatal_ex:
