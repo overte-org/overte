@@ -1,0 +1,45 @@
+{
+    "name": "OpenXR Index to Standard",
+    "channels": [
+      { "from": "Index.LeftHand", "to": "Standard.LeftHand" },
+      { "from": "Index.RightHand", "to": "Standard.RightHand" },
+      { "from": "Index.Head", "to" : "Standard.Head", "when" : [ "Application.InHMD"] },
+
+      { "from": "Index.A", "to": "Standard.RightPrimaryThumb", "peek": true },
+      { "from": "Index.B", "to": "Standard.RightSecondaryThumb", "peek": true },
+      { "from": "Index.X", "to": "Standard.LeftPrimaryThumb", "peek": true },
+      { "from": "Index.Y", "to": "Standard.LeftSecondaryThumb", "peek": true},
+
+      { "from": "Index.A", "to": "Standard.A" },
+      { "from": "Index.B", "to": "Standard.B" },
+      { "from": "Index.X", "to": "Standard.X" },
+      { "from": "Index.Y", "to": "Standard.Y" },
+
+      { "from": "Index.LeftPrimaryThumbTouch", "to": "Standard.LeftPrimaryThumbTouch" },
+      { "from": "Index.LeftSecondaryThumbTouch", "to": "Standard.LeftSecondaryThumbTouch" },
+      { "from": "Index.LeftThumbUp", "to": "Standard.LeftThumbUp" },
+
+      { "from": "Index.RightPrimaryThumbTouch", "to": "Standard.RightPrimaryThumbTouch" },
+      { "from": "Index.RightSecondaryThumbTouch", "to": "Standard.RightSecondaryThumbTouch" },
+      { "from": "Index.RightThumbUp", "to": "Standard.RightThumbUp" },
+
+      { "from": "Index.LY", "to": "Standard.LY" },
+      { "from": "Index.LX", "to": "Standard.LX" },
+      { "from": "Index.RY", "to": "Standard.RY" },
+      { "from": "Index.RX", "to": "Standard.RX" },
+      { "from": "Index.LSTouch", "to": "Standard.LSTouch" },
+      { "from": "Index.RSTouch", "to": "Standard.RSTouch" },
+
+      { "from": "Index.RT", "to": "Standard.RT" },
+      { "from": "Index.LT", "to": "Standard.LT" },
+      { "from": "Index.RTClick", "to": "Standard.RTClick" },
+      { "from": "Index.LTClick", "to": "Standard.LTClick" },
+      { "from": "Index.LeftPrimaryIndexTouch", "to": "Standard.LeftPrimaryIndexTouch" },
+      { "from": "Index.RightPrimaryIndexTouch", "to": "Standard.RightPrimaryIndexTouch" },
+      { "from": "Index.LeftIndexPoint", "to": "Standard.LeftIndexPoint" },
+      { "from": "Index.RightIndexPoint", "to": "Standard.RightIndexPoint" },
+
+      { "from": "Index.LeftApplicationMenu", "to": "Standard.Back" },
+      { "from": "Index.RightApplicationMenu", "to": "Standard.Start" }
+    ]
+}
