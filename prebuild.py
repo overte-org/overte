@@ -85,6 +85,7 @@ def parse_args():
     parser.add_argument('--ci-build', action='store_true', default=os.getenv('CI_BUILD') is not None)
     parser.add_argument('--get-vcpkg-id', action='store_true', help='Get the VCPKG ID, the hash path of the full VCPKG path')
     parser.add_argument('--get-vcpkg-path', action='store_true', help='Get the full VCPKG path, ID included.')
+    parser.add_argument('--quiet', action='store_true', default=False, help='Quiet mode with less output')
 
     if True:
         args = parser.parse_args()
@@ -132,8 +133,9 @@ def main():
                     qt.writeConfig()
         else:
             if (os.environ["OVERTE_USE_SYSTEM_QT"]):
-                #print("System Qt selected")
-                None
+                if not args.quiet:
+                    print("System Qt selected")
+
             else:
                 raise Exception("Internal error: System Qt not selected, but hifi_qt.py failed to return a cmake path")
 

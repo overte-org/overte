@@ -71,7 +71,8 @@ endif()
                 os.makedirs(self.basePath)
             self.path = os.path.join(self.basePath, self.id)
 
-        #print("Using vcpkg path {}".format(self.path))
+        if not self.args.quiet:
+            print("Using vcpkg path {}".format(self.path))
         lockDir, lockName = os.path.split(self.path)
         lockName += '.lock'
         if not os.path.isdir(lockDir):

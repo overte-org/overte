@@ -81,7 +81,9 @@ endif()
 
             qt_found = True
             system_qt = True
-            #print("Using system Qt")
+
+            if not self.args.quiet:
+                print("Using system Qt")
 
         elif os.getenv('OVERTE_QT_PATH', "") != "":
             # 2. Using an user-provided directory.
@@ -92,7 +94,9 @@ endif()
             self.cmakePath = os.path.join(self.fullPath, 'lib', 'cmake')
 
             qt_found = True
-            #print("Using Qt from " + self.fullPath)
+
+            if not self.args.quiet:
+                print("Using Qt from " + self.fullPath)
 
         else:
             # 3. Using a pre-built Qt.
@@ -135,7 +139,8 @@ endif()
             self.lockFile = os.path.join(lockDir, lockName)
 
         if qt_found:
-            #print("Found pre-built Qt5")
+            if not self.args.quiet:
+                print("Found pre-built Qt5")
             return
 
         if 'Windows' == system:
