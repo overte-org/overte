@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 1/11/15.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -166,6 +167,14 @@ public:
     // Thread safe
     bool isSelectionEmpty(const Selection::Name& name) const;
 
+    // Add a single item to a selection by name
+    // Thread safe
+    void addItemToSelection(const std::string& selectionName, ItemID itemID);
+
+    // Remove a selection by name
+    // Thread safe
+    void removeSelection(const std::string& selectionName);
+
     // This next call are  NOT threadsafe, you have to call them from the correct thread to avoid any potential issues
 
     // Access a particular item from its ID
@@ -193,6 +202,8 @@ public:
 
     void setItemTransition(ItemID id, Index transitionId);
     void removeItemTransition(ItemID id);
+
+    HighlightStyle getOutlineStyle(ItemID id, const ViewFrustum& viewFrustum, uint16_t height) { return _items[id].getOutlineStyle(viewFrustum, height); }
 
 protected:
 

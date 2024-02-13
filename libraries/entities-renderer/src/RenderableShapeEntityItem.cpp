@@ -99,8 +99,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
         materials = _materials["0"];
     }
 
-    auto& schema = materials.getSchemaBuffer().get<graphics::MultiMaterial::Schema>();
-    glm::vec4 outColor = glm::vec4(ColorUtils::tosRGBVec3(schema._albedo), schema._opacity);
+    glm::vec4 outColor = materials.getColor();
     outColor = EntityRenderer::calculatePulseColor(outColor, _pulseProperties, _created);
 
     if (outColor.a == 0.0f) {
@@ -178,7 +177,7 @@ scriptable::ScriptableModelBase ShapeEntityRenderer::getScriptableModel()  {
         result.appendMaterials(_materials);
         auto materials = _materials.find("0");
         if (materials != _materials.end()) {
-            vertexColor = ColorUtils::tosRGBVec3(materials->second.getSchemaBuffer().get<graphics::MultiMaterial::Schema>()._albedo);
+            vertexColor = materials->second.getColor();
         }
     }
     if (auto mesh = geometryCache->meshFromShape(geometryShape, vertexColor)) {
