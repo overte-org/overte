@@ -59,7 +59,6 @@ class Overte(ConanFile):
         self.requires("nvidia-texture-tools/2023.01@overte/stable")
         self.requires("onetbb/2021.10.0")
         self.requires("openexr/3.1.9")
-        self.requires("openssl/1.1.1w")
         self.requires("openvr/2.2.3@overte/stable")
         self.requires("opus/1.4")
         self.requires("polyvox/0.2.1@overte/stable")
@@ -74,13 +73,15 @@ class Overte(ConanFile):
         self.requires("webrtc/2021.01.05@overte/prebuild")
         self.requires("zlib/1.2.13")
 
+        self.requires("openssl/3.2.1", force=True)
+
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")
             self.requires("ovr-skd/1.35.0@overte/prebuild")
             self.requires("ovr-platform-skd/1.10.0@overte/prebuild")
 
         if self.options.with_qt:
-            self.requires("qt/5.15.10", force=True)
+            self.requires("qt/5.15.12", force=True)
 
     def generate(self):
         bindirs = []
