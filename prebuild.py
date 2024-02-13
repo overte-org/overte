@@ -103,6 +103,10 @@ def main():
             del os.environ[var]
 
     args = parse_args()
+
+    if not args.quiet:
+        print(sys.argv)
+
     assets_url = hifi_utils.readEnviromentVariableFromFile(args.build_root, 'EXTERNAL_BUILD_ASSETS')
 
     if args.ci_build:
@@ -205,7 +209,7 @@ def main():
 
     logger.info('end')
 
-#print(sys.argv)
+
 try:
     main()
 except hifi_utils.SilentFatalError as fatal_ex:
