@@ -237,6 +237,9 @@
     "showKeyboardFocusHighlight": {
         "tooltip": "If enabled, highlights when it has keyboard focus."
     },
+    "wantsKeyboardFocus": {
+        "tooltip": "If enabled, this web entity will capture keyboard focus once clicked."
+    },
     "isEmitting": {
         "tooltip": "If enabled, then particles are emitted."
     },
