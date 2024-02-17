@@ -226,11 +226,13 @@ void EntityScriptServer::pushLogs() {
     QJsonDocument document;
     document.setArray(buffer);
     QString data(document.toJson());
+    std::string string = data.toStdString();
+    auto cstring = string.c_str();
     for (auto uuid : _logListeners) {
         auto node = nodeList->nodeWithUUID(uuid);
         if (node && node->getActiveSocket()) {
             auto packet = NLPacketList::create(PacketType::EntityServerScriptLog, QByteArray(), true, true);
-            packet->write(data.toStdString().c_str(), data.size());
+            packet->write(cstring, strlen(cstring));
             nodeList->sendPacketList(std::move(packet), *node);
         }
     }
