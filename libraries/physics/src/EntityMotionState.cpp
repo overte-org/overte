@@ -57,10 +57,10 @@ EntityMotionState::EntityMotionState(btCollisionShape* shape, EntityItemPointer 
 
     _type = MOTIONSTATE_TYPE_ENTITY;
     assert(_entity);
-    setMass(_entity->computeMass());
     // we need the side-effects of EntityMotionState::setShape() so we call it explicitly here
     // rather than pass the legit shape pointer to the ObjectMotionState ctor above.
     setShape(shape);
+    setMass(_entity->computeMass());
 
     if (_entity->isAvatarEntity() && !_entity->isMyAvatarEntity()) {
         // avatar entities are always thus, so we cache this fact in _ownershipState
@@ -177,6 +177,11 @@ void EntityMotionState::handleEasyChanges(uint32_t& flags) {
         } else {
             _body->activate();
         }
+    }
+
+    if (flags & Simulation::DIRTY_MASS) {
+        setMass(_entity->computeMass());
+        updateBodyMassProperties();
     }
 }
 
