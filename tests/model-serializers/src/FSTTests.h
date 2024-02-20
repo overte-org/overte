@@ -27,6 +27,9 @@ private slots:
     void parseFSTOld_data();
     void parseFSTOld();
 
+    void convertToJson_data();
+    void convertToJson();
+
 };
 
 Q_DECLARE_METATYPE(FSTTests::FileType)

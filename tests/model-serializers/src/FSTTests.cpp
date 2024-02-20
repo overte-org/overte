@@ -71,7 +71,7 @@ void FSTTests::parseFSTOld_data() {
     QTest::addColumn<QString>("filename");
     QTest::addColumn<FileType>("fileType");
     QTest::addColumn<bool>("expectParseFail");
- 
+
     QTest::newRow("avatar1")   << "fst/avatarStand.fst"                         << FileType::Old << false;
     QTest::newRow("object1")   << "fst/dome.fst"                                << FileType::Old << false;
     QTest::newRow("object2")   << "fst/logo_overte_white-color-emissive.fst"    << FileType::Old << false;
@@ -83,6 +83,8 @@ void FSTTests::parseFSTOld_data() {
     QTest::newRow("object8")   << "fst/standAngle_TabletAndToolbar.fst"         << FileType::Old << false;
     QTest::newRow("object9")   << "fst/teleporter.fst"                          << FileType::Old << false;
     QTest::newRow("object10")  << "fst/test_area.fst"                           << FileType::Old << false;
+    QTest::newRow("object11")  << "fst/avatar.fst"                              << FileType::Old << false;
+    QTest::newRow("object12")  << "fst/FenFen.fst"                              << FileType::Old << false;
 }
 
 void FSTTests::parseFSTOld() {
@@ -95,7 +97,7 @@ void FSTTests::parseFSTOld() {
     QVERIFY(gltf_file.open(QIODevice::ReadOnly));
     QByteArray data = gltf_file.readAll();
     QVERIFY(data.length() > 0);
-    
+
 
     auto reader = FSTReader::getReader(data);
     QVERIFY(reader);
@@ -125,4 +127,75 @@ void FSTTests::parseFSTOld() {
 
 
     qInfo() << "Model:" << mapping;
+}
+
+void FSTTests::convertToJson_data() {
+    // We feed a large amount of files into the test. Some we expect to fail, some we expect to load with issues. The
+    // added columns below indicate our expectations for each file.
+
+    QTest::addColumn<QString>("filename");
+
+    QTest::newRow("avatarStand.fst")                        << "fst/avatarStand.fst";
+    QTest::newRow("dome.fst")                               << "fst/dome.fst";
+    QTest::newRow("logo_overte_white-color-emissive.fst")   << "fst/logo_overte_white-color-emissive.fst";
+    QTest::newRow("objecengery-bowl.fstt3")                 << "fst/engery-bowl.fst";
+    QTest::newRow("standAngle_Applications")                << "fst/standAngle_Applications.fst";
+    QTest::newRow("standAngle_Avatar")                      << "fst/standAngle_Avatar.fst";
+    QTest::newRow("standAngle_ConfigWizard")                << "fst/standAngle_ConfigWizard.fst";
+    QTest::newRow("standAngle_Controls")                    << "fst/standAngle_Controls.fst";
+    QTest::newRow("standAngle_TabletAndToolbar")            << "fst/standAngle_TabletAndToolbar.fst";
+    QTest::newRow("teleporter.fst")                         << "fst/teleporter.fst";
+    QTest::newRow("test_area.fst")                          << "fst/test_area.fst";
+    QTest::newRow("avatar.fst")                             << "fst/avatar.fst";
+    QTest::newRow("FenFen.fst")                             << "fst/FenFen.fst";
+    QTest::newRow("test.fst")                               << "fst/test.fst";
+}
+
+
+void FSTTests::convertToJson() {
+    QFETCH(QString, filename);
+
+    QFile gltf_file(filename);
+    QVERIFY(gltf_file.open(QIODevice::ReadOnly));
+    QByteArray data = gltf_file.readAll();
+    QVERIFY(data.length() > 0);
+
+
+    auto reader = FSTReader::getReader(data);
+    QVERIFY(reader);
+
+
+    FSTReader::Mapping mapping = reader->readMapping(data);
+    QVERIFY(mapping.count() > 0);
+
+
+    QDir app_dir(QCoreApplication::applicationDirPath());
+    QFileInfo fi(filename);
+
+    app_dir.mkdir("out");
+
+
+    FSTOldReader oldReader;
+    QByteArray oldResult = oldReader.writeMapping(mapping);
+
+    QFile oldout_file(QCoreApplication::applicationDirPath() + "/out/" + fi.baseName() + ".fst");
+    oldout_file.open(QIODevice::WriteOnly);
+    oldout_file.write(oldResult);
+    oldout_file.close();
+
+
+
+    FSTJsonReader jsonReader;
+    QByteArray jsonResult = jsonReader.writeMapping(mapping);
+
+
+
+
+    QFile out_file(QCoreApplication::applicationDirPath() + "/out/" + fi.baseName() + ".json");
+    out_file.open(QIODevice::WriteOnly);
+    out_file.write(jsonResult);
+    out_file.close();
+
+    qInfo() << "JSON version: " << jsonResult;
+
 }

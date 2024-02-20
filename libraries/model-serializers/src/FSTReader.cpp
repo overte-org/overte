@@ -16,7 +16,7 @@
 Q_LOGGING_CATEGORY(fst_reader_logging, "overte.model-serializers.fst")
 
 
-const QHash<FSTReader::ModelType, QString> FSTReader::_typesToNames = 
+const QHash<FSTReader::ModelType, QString> FSTReader::_typesToNames =
 {
     {ModelType::ENTITY_MODEL, "entity"},
     {ModelType::HEAD_MODEL, "head"},
@@ -34,6 +34,9 @@ const QHash<QString, FSTReader::ModelType> FSTReader::_namesToTypes =
     // NOTE: this is not yet implemented, but will be used to allow you to attach fully independent models to your avatar
     {"attachment", ModelType::ATTACHMENT_MODEL}
 };
+
+
+const QStringList FSTReader::_preferredFieldOrder{NAME_FIELD, TYPE_FIELD, SCALE_FIELD, FILENAME_FIELD, TEXDIR_FIELD, SCRIPT_FIELD, JOINT_FIELD, BLENDSHAPE_FIELD, JOINT_INDEX_FIELD};
 
 std::shared_ptr<FSTReader> FSTReader::getReader(const QByteArray &data) {
     if (data.length() >= 3) {
