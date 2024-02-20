@@ -34,12 +34,10 @@ EntityItemPointer ModelEntityItem::factory(const EntityItemID& entityID, const E
 }
 
 ModelEntityItem::ModelEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID),
-    _blendshapeCoefficientsVector((int)Blendshapes::BlendshapeCount, 0.0f)
+    _blendshapeCoefficientsVector((int)Blendshapes::BlendshapeCount, 0.0f),
+    _lastAnimated(usecTimestampNow())
 {
-    _lastAnimated = usecTimestampNow();
-    // set the last animated when interface (re)starts
     _type = EntityTypes::Model;
-    _lastKnownCurrentFrame = -1;
     _visuallyReady = false;
 }
 
@@ -640,6 +638,22 @@ float ModelEntityItem::getAnimationCurrentFrame() const {
 bool ModelEntityItem::isAnimatingSomething() const {
     return resultWithReadLock<bool>([&] {
         return _animationProperties.isValidAndRunning();
+    });
+}
+
+bool ModelEntityItem::getAnimationSmoothFrames() const {
+    return resultWithReadLock<bool>([&] {
+        return _animationProperties.getSmoothFrames();
+    });
+}
+
+int ModelEntityItem::getAnimationNextFrame(int currentFrame, int frameCount) const {
+    return resultWithReadLock<int>([&] {
+        int result = currentFrame + 1;
+        if (result > _animationProperties.getLastFrame() || result > (frameCount - 1)) {
+            result = _animationProperties.getFirstFrame();
+        }
+        return std::max(result, 0);
     });
 }
 
