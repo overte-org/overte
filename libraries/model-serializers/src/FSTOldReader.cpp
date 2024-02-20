@@ -84,6 +84,10 @@ hifi::VariantMultiHash FSTOldReader::parseMapping(QIODevice* device) {
         }
     }
 
+    if (!properties.contains("version")) {
+        properties.insert("version", 0);
+    }
+
     return properties;
 }
 
