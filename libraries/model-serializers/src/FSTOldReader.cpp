@@ -55,23 +55,32 @@ hifi::VariantMultiHash FSTOldReader::parseMapping(QIODevice* device) {
         bool isSingleValue = SINGLE_VALUE_PROPERTIES.contains(name);
 
         if (sections.size() == 2 || isSingleValue) {
+            // This is a simple key = value
+
             // As per the above, we can have '=' signs inside of URLs, so instead of
             // using the split string, just use everything after the first '='.
 
             QString value = line.mid(line.indexOf("=")+1).trimmed();
             properties.insert(name, value);
         } else if (sections.size() == 3) {
+            // This is a name = key = value
+            // Or more normally, a dictionary called 'name', mapping 'key' to 'value'
+
             QVariantHash heading = properties.value(name).toHash();
             heading.insert(sections.at(1).trimmed(), sections.at(2).trimmed());
-            properties.insert(name, heading);
+            properties.replace(name, heading);
         } else if (sections.size() >= 4) {
+            // This is a name = key = newkey = value
+            // For example:
+            // bs = JawOpen = JawOpen = 0.5
+
             QVariantHash heading = properties.value(name).toHash();
             QVariantList contents;
             for (int i = 2; i < sections.size(); i++) {
                 contents.append(sections.at(i).trimmed());
             }
             heading.insert(sections.at(1).trimmed(), contents);
-            properties.insert(name, heading);
+            properties.replace(name, heading);
         }
     }
 
