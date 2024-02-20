@@ -198,4 +198,12 @@ void FSTTests::convertToJson() {
 
     qInfo() << "JSON version: " << jsonResult;
 
+
+    auto mapping2 = jsonReader.readMapping(jsonResult);
+    auto jsonResult2 = jsonReader.writeMapping(mapping2);
+
+    QFile out_file2(QCoreApplication::applicationDirPath() + "/out/" + fi.baseName() + ".json2");
+    out_file2.open(QIODevice::WriteOnly);
+    out_file2.write(jsonResult2);
+    out_file2.close();
 }

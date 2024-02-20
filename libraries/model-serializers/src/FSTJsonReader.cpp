@@ -11,7 +11,31 @@ Q_LOGGING_CATEGORY(fst_reader_json_logging, "overte.model-serializers.fst.json")
 QSet<QString> FSTJsonReader::_jsonFields{"materialMap", "flowPhysicsData", "flowCollisionsData"};
 
 FSTReader::Mapping FSTJsonReader::readMapping(const QByteArray& data) {
-    return Mapping();
+    FSTReader::Mapping mapping;
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+
+    if ( parseError.error != QJsonParseError::NoError ) {
+        qWarning() << "Failed to parse JSON:" << parseError.errorString();
+        return Mapping();
+    } else {
+        qInfo() << "Parse ok, result:" << doc;
+    }
+
+
+    if (!doc.isObject()) {
+        qWarning() << "FST JSON must contain a hash at top level";
+        return Mapping();
+    }
+
+    QJsonObject obj = doc.object();
+
+    for (auto key : obj.keys() ) {
+        qInfo() << "KEY: " << key;
+        mapping.insert(key, obj[key].toVariant());
+    }
+
+    return mapping;
 };
 
 
