@@ -60,7 +60,11 @@ EntityPropertyInfo makePropertyInfo(EntityPropertyList p, typename std::enable_i
             } else {                                                \
                 packetData->discardLevel(propertyLevel);            \
                 appendState = OctreeElement::PARTIAL;               \
+                if (firstProperty) {                                \
+                    firstDidntFitProperty = P;                      \
+                }                                                   \
             }                                                       \
+            firstProperty = false;                                  \
         } else {                                                    \
             propertiesDidntFit -= P;                                \
         }

@@ -87,6 +87,7 @@ EntityPropertyFlags EntityItem::getEntityProperties(EncodeBitstreamParams& param
 
 OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packetData, EncodeBitstreamParams& params,
                                             EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                            EntityPropertyList& firstDidntFitProperty,
                                             const bool destinationNodeCanGetAndSetPrivateUserData) const {
 
     // ALL this fits...
@@ -98,6 +99,7 @@ OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packet
     // ~27-35 bytes...
 
     OctreeElement::AppendState appendState = OctreeElement::COMPLETED; // assume the best
+    bool firstProperty = true;
 
     // encode our ID as a byte count coded byte stream
     QByteArray encodedID = getID().toRfc4122();
@@ -198,7 +200,6 @@ OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packet
         // NOTE: When we enable partial packing of entity properties, we'll want to pack simulationOwner, transform, and velocity properties near each other
         // since they will commonly be transmitted together.  simulationOwner must always go first, to avoid race conditions of simulation ownership bids
         // These items would go here once supported....
-        //      PROP_PAGED_PROPERTY,
         //      PROP_CUSTOM_PROPERTIES_INCLUDED,
 
         // convert AVATAR_SELF_ID to actual sessionUUID.
@@ -207,6 +208,38 @@ OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packet
         if (actualParentID == AVATAR_SELF_ID) {
             actualParentID = nodeList->getSessionUUID();
         }
+<<<<<<< HEAD:libraries/entities/src/EntityItem.cpp.in
+=======
+        APPEND_ENTITY_PROPERTY(PROP_PARENT_ID, actualParentID);
+        APPEND_ENTITY_PROPERTY(PROP_PARENT_JOINT_INDEX, getParentJointIndex());
+        APPEND_ENTITY_PROPERTY(PROP_VISIBLE, getVisible());
+        APPEND_ENTITY_PROPERTY(PROP_NAME, getName());
+        APPEND_ENTITY_PROPERTY(PROP_LOCKED, getLocked());
+        APPEND_ENTITY_PROPERTY(PROP_USER_DATA, getUserData());
+        APPEND_ENTITY_PROPERTY(PROP_PRIVATE_USER_DATA, privateUserData);
+        APPEND_ENTITY_PROPERTY(PROP_HREF, getHref());
+        APPEND_ENTITY_PROPERTY(PROP_DESCRIPTION, getDescription());
+        APPEND_ENTITY_PROPERTY(PROP_POSITION, getLocalPosition());
+        APPEND_ENTITY_PROPERTY(PROP_DIMENSIONS, getScaledDimensions());
+        APPEND_ENTITY_PROPERTY(PROP_ROTATION, getLocalOrientation());
+        APPEND_ENTITY_PROPERTY(PROP_REGISTRATION_POINT, getRegistrationPoint());
+        APPEND_ENTITY_PROPERTY(PROP_CREATED, getCreated());
+        APPEND_ENTITY_PROPERTY(PROP_LAST_EDITED_BY, getLastEditedBy());
+        // APPEND_ENTITY_PROPERTY(PROP_ENTITY_HOST_TYPE, (uint32_t)getEntityHostType());  // not sent over the wire
+        // APPEND_ENTITY_PROPERTY(PROP_OWNING_AVATAR_ID, getOwningAvatarID());            // not sent over the wire
+        APPEND_ENTITY_PROPERTY(PROP_QUERY_AA_CUBE, getQueryAACube());
+        APPEND_ENTITY_PROPERTY(PROP_CAN_CAST_SHADOW, getCanCastShadow());
+        // APPEND_ENTITY_PROPERTY(PROP_VISIBLE_IN_SECONDARY_CAMERA, getIsVisibleInSecondaryCamera()); // not sent over the wire
+        APPEND_ENTITY_PROPERTY(PROP_RENDER_LAYER, (uint32_t)getRenderLayer());
+        APPEND_ENTITY_PROPERTY(PROP_PRIMITIVE_MODE, (uint32_t)getPrimitiveMode());
+        APPEND_ENTITY_PROPERTY(PROP_IGNORE_PICK_INTERSECTION, getIgnorePickIntersection());
+        APPEND_ENTITY_PROPERTY(PROP_RENDER_WITH_ZONES, getRenderWithZones());
+        APPEND_ENTITY_PROPERTY(PROP_BILLBOARD_MODE, (uint32_t)getBillboardMode());
+        withReadLock([&] {
+            _grabProperties.appendSubclassData(packetData, params, entityTreeElementExtraEncodeData, requestedProperties,
+                propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
+        });
+>>>>>>> 2b55dbf4c8 (support larger entity edit/data packets via packet lists):libraries/entities/src/EntityItem.cpp
 
 @Base_ENTITY_APPEND@
 
@@ -214,6 +247,7 @@ OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packet
                                 requestedProperties,
                                 propertyFlags,
                                 propertiesDidntFit,
+                                firstProperty, firstDidntFitProperty,
                                 propertyCount,
                                 appendState);
     }
@@ -245,11 +279,8 @@ OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packet
         appendState = OctreeElement::NONE; // if we got here, then we didn't include the item
     }
 
-    // If any part of the model items didn't fit, then the element is considered partial
-    if (appendState != OctreeElement::COMPLETED) {
-        // add this item into our list for the next appendElementData() pass
-        entityTreeElementExtraEncodeData->entities.insert(getEntityItemID(), propertiesDidntFit);
-    }
+    // add this item into our list for the next appendElementData() pass
+    entityTreeElementExtraEncodeData->entities.insert(getEntityItemID(), propertiesDidntFit);
 
     // if any part of our entity was sent, call trackSend
     if (appendState != OctreeElement::NONE) {

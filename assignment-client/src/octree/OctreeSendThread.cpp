@@ -149,7 +149,7 @@ int OctreeSendThread::handlePacketSend(SharedNodePointer node, OctreeQueryNode* 
     // obscure the packet and not send it. This allows the callers and upper level logic to not need to know about
     // this rate control savings.
     if (!dontSuppressDuplicate && nodeData->shouldSuppressDuplicatePacket()) {
-        nodeData->resetOctreePacket(); // we still need to reset it though!
+        nodeData->resetOctreePacket(false);  // we still need to reset it though!
         return numPackets; // without sending...
     }
 
@@ -295,7 +295,137 @@ int OctreeSendThread::handlePacketSend(SharedNodePointer node, OctreeQueryNode* 
     if (numPackets > 0) {
         nodeData->stats.packetSent(nodeData->getPacket().getPayloadSize());
         nodeData->octreePacketSent();
-        nodeData->resetOctreePacket();
+        nodeData->resetOctreePacket(false);
+    }
+
+    _truePacketsSent += numPackets;
+    return numPackets;
+}
+
+int OctreeSendThread::handlePacketListSend(SharedNodePointer node, OctreeQueryNode* nodeData, bool dontSuppressDuplicate) {
+    OctreeServer::didHandlePacketSend(this);
+
+    // if we're shutting down, then exit early
+    if (nodeData->isShuttingDown()) {
+        return 0;
+    }
+
+    bool debug = _myServer->wantsDebugSending();
+    quint64 now = usecTimestampNow();
+
+    int numPackets = 0;
+
+    // Here's where we check to see if this packet is a duplicate of the last packet. If it is, we will silently
+    // obscure the packet and not send it. This allows the callers and upper level logic to not need to know about
+    // this rate control savings.
+    if (!dontSuppressDuplicate && nodeData->shouldSuppressDuplicatePacket()) {
+        return numPackets; // without sending...
+    }
+
+    // If we've got a stats message ready to send, send both
+    if (nodeData->stats.isReadyToSend() && !nodeData->isShuttingDown()) {
+        // Send the stats message to the client
+        NLPacket& statsPacket = nodeData->stats.getStatsMessage();
+
+        // packet lists never have enough room to piggyback the stats, so send two packets
+
+        // first packet
+        OctreeServer::didCallWriteDatagram(this);
+        DependencyManager::get<NodeList>()->sendPacket(NLPacket::createCopy(statsPacket), *node);
+
+        int numBytes = statsPacket.getDataSize();
+        _totalBytes += numBytes;
+        _totalPackets++;
+        // since a stats message is only included on end of scene, don't consider any of these bytes "wasted"
+        // there was nothing else to send.
+        int thisWastedBytes = 0;
+        //_totalWastedBytes += 0;
+        _trueBytesSent += numBytes;
+        numPackets++;
+        NLPacketList& sentPacketList = nodeData->getPacketList();
+
+        if (debug) {
+            sentPacketList.seek(sizeof(OCTREE_PACKET_FLAGS));
+
+            OCTREE_PACKET_SEQUENCE sequence;
+            sentPacketList.readPrimitive(&sequence);
+
+            OCTREE_PACKET_SENT_TIME timestamp;
+            sentPacketList.readPrimitive(&timestamp);
+
+            qDebug() << "Sending separate stats packet at " << now << " [" << _totalPackets <<"]: sequence: " << sequence <<
+                    " timestamp: " << timestamp <<
+                    " size: " << statsPacket.getDataSize() << " [" << _totalBytes <<
+                    "] wasted bytes:" << thisWastedBytes << " [" << _totalWastedBytes << "]";
+        }
+
+        // second packet
+        OctreeServer::didCallWriteDatagram(this);
+        DependencyManager::get<NodeList>()->sendPacketList(NLPacketList::createCopy(sentPacketList), *node);
+
+        numBytes = (int)sentPacketList.getDataSize();
+        _totalBytes += numBytes;
+        _totalPackets += (int)sentPacketList.getNumPackets();
+        // we count wasted bytes here because we were unable to fit the stats packet
+        thisWastedBytes = udt::MAX_PACKET_SIZE - (numBytes % udt::MAX_PACKET_SIZE);
+        _totalWastedBytes += thisWastedBytes;
+        _trueBytesSent += numBytes;
+        numPackets += (int)sentPacketList.getNumPackets();
+
+        if (debug) {
+            sentPacketList.seek(sizeof(OCTREE_PACKET_FLAGS));
+
+            OCTREE_PACKET_SEQUENCE sequence;
+            sentPacketList.readPrimitive(&sequence);
+
+            OCTREE_PACKET_SENT_TIME timestamp;
+            sentPacketList.readPrimitive(&timestamp);
+
+            qDebug() << "Sending packet at " << now << " [" << _totalPackets <<"]: sequence: " << sequence <<
+                    " timestamp: " << timestamp <<
+                    " size: " << nodeData->getPacketList().getDataSize() << " [" << _totalBytes <<
+                    "] wasted bytes:" << thisWastedBytes << " [" << _totalWastedBytes << "]";
+        }
+
+        nodeData->stats.markAsSent();
+    } else {
+        // In this case, we always have a packet list waiting, so just send it
+        if (!nodeData->isShuttingDown()) {
+            // just send the octree packet
+            OctreeServer::didCallWriteDatagram(this);
+            NLPacketList& sentPacketList = nodeData->getPacketList();
+
+            DependencyManager::get<NodeList>()->sendPacketList(NLPacketList::createCopy(sentPacketList), *node);
+
+            int numBytes = (int)sentPacketList.getDataSize();
+            _totalBytes += numBytes;
+            _totalPackets += (int)sentPacketList.getNumPackets();
+            int thisWastedBytes = udt::MAX_PACKET_SIZE - (numBytes % udt::MAX_PACKET_SIZE);
+            _totalWastedBytes += thisWastedBytes;
+            numPackets += (int)sentPacketList.getNumPackets();
+            _trueBytesSent += numBytes;
+
+            if (debug) {
+                sentPacketList.seek(sizeof(OCTREE_PACKET_FLAGS));
+
+                OCTREE_PACKET_SEQUENCE sequence;
+                sentPacketList.readPrimitive(&sequence);
+
+                OCTREE_PACKET_SENT_TIME timestamp;
+                sentPacketList.readPrimitive(&timestamp);
+
+                qDebug() << "Sending packet at " << now << " [" << _totalPackets <<"]: sequence: " << sequence <<
+                        " timestamp: " << timestamp <<
+                        " size: " << numBytes << " [" << _totalBytes <<
+                        "] wasted bytes:" << thisWastedBytes << " [" << _totalWastedBytes << "]";
+            }
+        }
+    }
+
+    // remember to track our stats
+    if (numPackets > 0) {
+        nodeData->stats.packetSent((int)nodeData->getPacketList().getMessageSize());
+        nodeData->octreePacketListSent();
     }
 
     _truePacketsSent += numPackets;
@@ -331,7 +461,7 @@ int OctreeSendThread::packetDistributor(SharedNodePointer node, OctreeQueryNode*
         // send the waiting packet
         _packetsSentThisInterval += handlePacketSend(node, nodeData);
     } else {
-        nodeData->resetOctreePacket();
+        nodeData->resetOctreePacket(false);
     }
     int targetSize = MAX_OCTREE_PACKET_DATA_SIZE;
     targetSize = nodeData->getAvailable() - sizeof(OCTREE_PACKET_INTERNAL_SECTION_SIZE);
@@ -373,7 +503,7 @@ int OctreeSendThread::packetDistributor(SharedNodePointer node, OctreeQueryNode*
     if (_myServer->hasSpecialPacketsToSend(node) && !nodeData->isShuttingDown()) {
         int specialPacketsSent = 0;
         int specialBytesSent = _myServer->sendSpecialPackets(node, nodeData, specialPacketsSent);
-        nodeData->resetOctreePacket();   // because nodeData's _sequenceNumber has changed
+        nodeData->resetOctreePacket(false);   // because nodeData's _sequenceNumber has changed
         _truePacketsSent += specialPacketsSent;
         _trueBytesSent += specialBytesSent;
         _packetsSentThisInterval += specialPacketsSent;
@@ -452,51 +582,71 @@ bool OctreeSendThread::traverseTreeAndSendContents(SharedNodePointer node, Octre
 
         somethingToSend = traverseTreeAndBuildNextPacketPayload(params, nodeData->getJSONParameters());
 
-        if (params.stopReason == EncodeBitstreamParams::DIDNT_FIT) {
+        if (params.stopReason == EncodeBitstreamParams::DIDNT_FIT || params.stopReason == EncodeBitstreamParams::SENT_LARGE) {
             lastNodeDidntFit = true;
-            extraPackingAttempts++;
+            if (params.stopReason == EncodeBitstreamParams::DIDNT_FIT) {
+                extraPackingAttempts++;
+            }
         }
 
         // If we had something to send, but now we don't, then we know we've sent the entire scene.
         bool completedScene = hadSomething;
         if (completedScene || lastNodeDidntFit) {
-            // we probably want to flush what has accumulated in nodeData but:
-            // do we have more data to send? and is there room?
-            if (_packetData.hasContent()) {
-                // yes, more data to send
+            if (params.stopReason == EncodeBitstreamParams::SENT_LARGE) {
+                // We always start with a fresh PacketList
+                nodeData->resetOctreePacket(true);
+
+                // we have a large packet, send it immediately
                 quint64 compressAndWriteStart = usecTimestampNow();
-                unsigned int additionalSize = _packetData.getFinalizedSize() + sizeof(OCTREE_PACKET_INTERNAL_SECTION_SIZE);
-                if (additionalSize > nodeData->getAvailable()) {
-                    // no room --> flush what we've got
-                    _packetsSentThisInterval += handlePacketSend(node, nodeData);
-                }
+                // transfer whatever is in _packetDataLarge to nodeData
+                nodeData->writeToPacket(_packetDataLarge.getFinalizedData(), _packetDataLarge.getFinalizedSize(), true);
+                compressAndWriteElapsedUsec = (float)(usecTimestampNow() - compressAndWriteStart);
 
-                // either there is room, or we've flushed and reset nodeData's data buffer
-                // so we can transfer whatever is in _packetData to nodeData
-                nodeData->writeToPacket(_packetData.getFinalizedData(), _packetData.getFinalizedSize());
-                compressAndWriteElapsedUsec = (float)(usecTimestampNow()- compressAndWriteStart);
-            }
-
-            bool sendNow = completedScene ||
-                nodeData->getAvailable() < MINIMUM_ATTEMPT_MORE_PACKING ||
-                extraPackingAttempts > REASONABLE_NUMBER_OF_PACKING_ATTEMPTS;
-
-            int targetSize = MAX_OCTREE_PACKET_DATA_SIZE;
-            if (sendNow) {
                 quint64 packetSendingStart = usecTimestampNow();
-                _packetsSentThisInterval += handlePacketSend(node, nodeData);
+                _packetsSentThisInterval += handlePacketListSend(node, nodeData);
                 packetSendingElapsedUsec = (float)(usecTimestampNow() - packetSendingStart);
 
-                targetSize = nodeData->getAvailable() - sizeof(OCTREE_PACKET_INTERNAL_SECTION_SIZE);
-                extraPackingAttempts = 0;
+                // _sequenceNumber has changed, so update the normal packet
+                nodeData->updatePacketSequenceNumber();
             } else {
-                // We want to see if we have room for more in this wire packet but we've copied the _packetData,
-                // so we want to start a new section. We will do that by resetting the packet settings with the max
-                // size of our current available space in the wire packet plus room for our section header and a
-                // little bit of padding.
-                targetSize = nodeData->getAvailable() - sizeof(OCTREE_PACKET_INTERNAL_SECTION_SIZE) - COMPRESS_PADDING;
+                // we probably want to flush what has accumulated in nodeData but:
+                // do we have more data to send? and is there room?
+                if (_packetData.hasContent()) {
+                    // yes, more data to send
+                    quint64 compressAndWriteStart = usecTimestampNow();
+                    unsigned int additionalSize = _packetData.getFinalizedSize() + sizeof(OCTREE_PACKET_INTERNAL_SECTION_SIZE);
+                    if (additionalSize > nodeData->getAvailable()) {
+                        // no room --> flush what we've got
+                        _packetsSentThisInterval += handlePacketSend(node, nodeData);
+                    }
+
+                    // either there is room, or we've flushed and reset nodeData's data buffer
+                    // so we can transfer whatever is in _packetData to nodeData
+                    nodeData->writeToPacket(_packetData.getFinalizedData(), _packetData.getFinalizedSize(), false);
+                    compressAndWriteElapsedUsec = (float)(usecTimestampNow()- compressAndWriteStart);
+                }
+
+                bool sendNow = completedScene ||
+                    nodeData->getAvailable() < MINIMUM_ATTEMPT_MORE_PACKING ||
+                    extraPackingAttempts > REASONABLE_NUMBER_OF_PACKING_ATTEMPTS;
+
+                int targetSize = MAX_OCTREE_PACKET_DATA_SIZE;
+                if (sendNow) {
+                    quint64 packetSendingStart = usecTimestampNow();
+                    _packetsSentThisInterval += handlePacketSend(node, nodeData);
+                    packetSendingElapsedUsec = (float)(usecTimestampNow() - packetSendingStart);
+
+                    targetSize = nodeData->getAvailable() - sizeof(OCTREE_PACKET_INTERNAL_SECTION_SIZE);
+                    extraPackingAttempts = 0;
+                } else {
+                    // We want to see if we have room for more in this wire packet but we've copied the _packetData,
+                    // so we want to start a new section. We will do that by resetting the packet settings with the max
+                    // size of our current available space in the wire packet plus room for our section header and a
+                    // little bit of padding.
+                    targetSize = nodeData->getAvailable() - sizeof(OCTREE_PACKET_INTERNAL_SECTION_SIZE) - COMPRESS_PADDING;
+                }
+                _packetData.changeSettings(true, targetSize); // will do reset - NOTE: Always compressed
             }
-            _packetData.changeSettings(true, targetSize); // will do reset - NOTE: Always compressed
         }
         OctreeServer::trackCompressAndWriteTime(compressAndWriteElapsedUsec);
         OctreeServer::trackPacketSendingTime(packetSendingElapsedUsec);

@@ -107,6 +107,8 @@ protected:
     Packet& operator=(Packet&& other);
 
 private:
+    friend class PacketList;
+
     void copyMembers(const Packet& other);
 
     // Header readers - these read data to member variables after pulling packet off wire

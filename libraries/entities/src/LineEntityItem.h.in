@@ -23,6 +23,33 @@ class LineEntityItem : public EntityItem {
     ALLOW_INSTANTIATION // This class can be instantiated
     ENTITY_PROPERTY_SUBCLASS_METHODS
 
+<<<<<<< HEAD:libraries/entities/src/LineEntityItem.h.in
+=======
+    // methods for getting/setting all properties of an entity
+    virtual EntityItemProperties getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const override;
+    virtual bool setSubClassProperties(const EntityItemProperties& properties) override;
+
+    virtual EntityPropertyFlags getEntityProperties(EncodeBitstreamParams& params) const override;
+
+    virtual void appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
+                                    EntityTreeElementExtraEncodeDataPointer modelTreeElementExtraEncodeData,
+                                    EntityPropertyFlags& requestedProperties,
+                                    EntityPropertyFlags& propertyFlags,
+                                    EntityPropertyFlags& propertiesDidntFit,
+                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
+                                    int& propertyCount,
+                                    OctreeElement::AppendState& appendState) const override;
+
+    virtual int readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                 ReadBitstreamToTreeParams& args,
+                                                 EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                 bool& somethingChanged) override;
+
+    glm::u8vec3 getColor() const;
+    void setColor(const glm::u8vec3& value);
+
+    bool setLinePoints(const QVector<glm::vec3>& points);
+>>>>>>> 2b55dbf4c8 (support larger entity edit/data packets via packet lists):libraries/entities/src/LineEntityItem.h
     bool appendPoint(const glm::vec3& point);
 
     // never have a ray intersection pick a LineEntityItem.

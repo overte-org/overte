@@ -168,6 +168,7 @@ int LightEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data,
     return bytesRead;
 }
 
+<<<<<<< HEAD:libraries/entities/src/LightEntityItem.cpp.in
 void LightEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
                                          EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
                                          EntityPropertyFlags& requestedProperties,
@@ -175,6 +176,28 @@ void LightEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBit
                                          EntityPropertyFlags& propertiesDidntFit,
                                          int& propertyCount,
                                          OctreeElement::AppendState& appendState) const {
+=======
+
+EntityPropertyFlags LightEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
+    requestedProperties += PROP_COLOR;
+    requestedProperties += PROP_IS_SPOTLIGHT;
+    requestedProperties += PROP_INTENSITY;
+    requestedProperties += PROP_EXPONENT;
+    requestedProperties += PROP_CUTOFF;
+    requestedProperties += PROP_FALLOFF_RADIUS;
+    return requestedProperties;
+}
+
+void LightEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params, 
+                                    EntityTreeElementExtraEncodeDataPointer modelTreeElementExtraEncodeData,
+                                    EntityPropertyFlags& requestedProperties,
+                                    EntityPropertyFlags& propertyFlags,
+                                    EntityPropertyFlags& propertiesDidntFit,
+                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
+                                    int& propertyCount, 
+                                    OctreeElement::AppendState& appendState) const { 
+>>>>>>> 2b55dbf4c8 (support larger entity edit/data packets via packet lists):libraries/entities/src/LightEntityItem.cpp
 
     bool successPropertyFits = true;
 
