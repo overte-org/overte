@@ -436,22 +436,6 @@ else()
   endif()
 endif()
 
-if ("$ENV{OVERTE_USE_SYSTEM_QT}" STREQUAL "")
-  if (DEV_BUILD AND (APPLE OR UNIX))
-    # create a qt.conf file to override hard-coded search paths in Qt libs
-    set(QT_LIB_PATH "${QT_CMAKE_PREFIX_PATH}/../..")
-    if (APPLE)
-      set(QT_CONF_FILE "${RESOURCES_DEV_DIR}/../Resources/qt.conf")
-    else ()
-      set(QT_CONF_FILE "${INTERFACE_EXEC_DIR}/qt.conf")
-    endif ()
-    file(GENERATE
-      OUTPUT "${QT_CONF_FILE}"
-      CONTENT "[Paths]\nPrefix=${QT_LIB_PATH}\n"
-    )
-  endif()
-endif()
-
 if (SCRIPTS_INSTALL_DIR)
   # setup install of scripts beside interface executable
   install(
