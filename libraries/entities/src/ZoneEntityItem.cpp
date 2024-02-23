@@ -215,6 +215,7 @@ void ZoneEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBits
                                     EntityPropertyFlags& requestedProperties,
                                     EntityPropertyFlags& propertyFlags,
                                     EntityPropertyFlags& propertiesDidntFit,
+                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                     int& propertyCount, 
                                     OctreeElement::AppendState& appendState) const { 
 
@@ -225,16 +226,16 @@ void ZoneEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBits
 
     withReadLock([&] {
         _keyLightProperties.appendSubclassData(packetData, params, modelTreeElementExtraEncodeData, requestedProperties,
-            propertyFlags, propertiesDidntFit, propertyCount, appendState);
+            propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
         _ambientLightProperties.appendSubclassData(packetData, params, modelTreeElementExtraEncodeData, requestedProperties,
-            propertyFlags, propertiesDidntFit, propertyCount, appendState);
+            propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
         _skyboxProperties.appendSubclassData(packetData, params, modelTreeElementExtraEncodeData, requestedProperties,
-            propertyFlags, propertiesDidntFit, propertyCount, appendState);
+            propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
     });
     _hazeProperties.appendSubclassData(packetData, params, modelTreeElementExtraEncodeData, requestedProperties,
-        propertyFlags, propertiesDidntFit, propertyCount, appendState);
+        propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
     _bloomProperties.appendSubclassData(packetData, params, modelTreeElementExtraEncodeData, requestedProperties,
-        propertyFlags, propertiesDidntFit, propertyCount, appendState);
+        propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
 
     APPEND_ENTITY_PROPERTY(PROP_FLYING_ALLOWED, getFlyingAllowed());
     APPEND_ENTITY_PROPERTY(PROP_GHOSTING_ALLOWED, getGhostingAllowed());

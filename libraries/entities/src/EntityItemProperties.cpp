@@ -2956,10 +2956,6 @@ bool EntityPropertyInfoFromScriptValue(const ScriptValue& object, EntityProperty
     return true;
 }
 
-// TODO: Implement support for edit packets that can span an MTU sized buffer. We need to implement a mechanism for the
-//       encodeEntityEditPacket() method to communicate the the caller which properties couldn't fit in the buffer. Similar
-//       to how we handle this in the Octree streaming case.
-//
 // TODO: Right now, all possible properties for all subclasses are handled here. Ideally we'd prefer
 //       to handle this in a more generic way. Allowing subclasses of EntityItem to register their properties
 //
@@ -2967,18 +2963,19 @@ bool EntityPropertyInfoFromScriptValue(const ScriptValue& object, EntityProperty
 //       registration mechanism allowed us to collapse these repeated sections of code into a single implementation that
 //       utilized the registration table to shorten up and simplify this code.
 //
-// TODO: Implement support for paged properties, spanning MTU, and custom properties
+// TODO: Implement support for custom properties
 //
 // TODO: Implement support for script and visible properties.
 //
 OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketType command, EntityItemID id, const EntityItemProperties& properties,
-                QByteArray& buffer, EntityPropertyFlags requestedProperties, EntityPropertyFlags& didntFitProperties) {
+                QByteArray& buffer, EntityPropertyFlags requestedProperties, EntityPropertyFlags& didntFitProperties, EntityPropertyList& firstDidntFitProperty) {
 
     OctreePacketData ourDataPacket(false, buffer.size()); // create a packetData object to add out packet details too.
     OctreePacketData* packetData = &ourDataPacket; // we want a pointer to this so we can use our APPEND_ENTITY_PROPERTY macro
 
     bool success = true; // assume the best
     OctreeElement::AppendState appendState = OctreeElement::COMPLETED; // assume the best
+    bool firstProperty = true;
 
     // TODO: We need to review how jurisdictions should be handled for entities. (The old Models and Particles code
     // didn't do anything special for jurisdictions, so we're keeping that same behavior here.)
@@ -3053,7 +3050,6 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
             propertyFlags -= PROP_LAST_ITEM; // clear the last item for now, we may or may not set it as the actual item
 
             // These items would go here once supported....
-            //      PROP_PAGED_PROPERTY,
             //      PROP_CUSTOM_PROPERTIES_INCLUDED,
 
 
@@ -3085,7 +3081,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
             APPEND_ENTITY_PROPERTY(PROP_BILLBOARD_MODE, (uint32_t)properties.getBillboardMode());
             _staticGrab.setProperties(properties);
             _staticGrab.appendToEditPacket(packetData, requestedProperties, propertyFlags,
-                                           propertiesDidntFit, propertyCount, appendState);
+                                           propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
 
             // Physics
             APPEND_ENTITY_PROPERTY(PROP_DENSITY, properties.getDensity());
@@ -3124,7 +3120,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_ALPHA, properties.getAlpha());
                 _staticPulse.setProperties(properties);
                 _staticPulse.appendToEditPacket(packetData, requestedProperties, propertyFlags,
-                    propertiesDidntFit, propertyCount, appendState);
+                    propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
                 APPEND_ENTITY_PROPERTY(PROP_TEXTURES, properties.getTextures());
 
                 APPEND_ENTITY_PROPERTY(PROP_MAX_PARTICLES, properties.getMaxParticles());
@@ -3186,7 +3182,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_USE_ORIGINAL_PIVOT, properties.getUseOriginalPivot());
 
                 _staticAnimation.setProperties(properties);
-                _staticAnimation.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
+                _staticAnimation.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
             }
 
             if (properties.getType() == EntityTypes::Light) {
@@ -3201,7 +3197,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
             if (properties.getType() == EntityTypes::Text) {
                 _staticPulse.setProperties(properties);
                 _staticPulse.appendToEditPacket(packetData, requestedProperties, propertyFlags,
-                    propertiesDidntFit, propertyCount, appendState);
+                    propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
 
                 APPEND_ENTITY_PROPERTY(PROP_TEXT, properties.getText());
                 APPEND_ENTITY_PROPERTY(PROP_LINE_HEIGHT, properties.getLineHeight());
@@ -3226,19 +3222,19 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_COMPOUND_SHAPE_URL, properties.getCompoundShapeURL());
 
                 _staticKeyLight.setProperties(properties);
-                _staticKeyLight.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
+                _staticKeyLight.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
 
                 _staticAmbientLight.setProperties(properties);
-                _staticAmbientLight.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
+                _staticAmbientLight.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
 
                 _staticSkybox.setProperties(properties);
-                _staticSkybox.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
+                _staticSkybox.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
 
                 _staticHaze.setProperties(properties);
-                _staticHaze.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
+                _staticHaze.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
 
                 _staticBloom.setProperties(properties);
-                _staticBloom.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
+                _staticBloom.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
 
                 APPEND_ENTITY_PROPERTY(PROP_FLYING_ALLOWED, properties.getFlyingAllowed());
                 APPEND_ENTITY_PROPERTY(PROP_GHOSTING_ALLOWED, properties.getGhostingAllowed());
@@ -3273,7 +3269,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_ALPHA, properties.getAlpha());
                 _staticPulse.setProperties(properties);
                 _staticPulse.appendToEditPacket(packetData, requestedProperties, propertyFlags,
-                    propertiesDidntFit, propertyCount, appendState);
+                    propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
 
                 APPEND_ENTITY_PROPERTY(PROP_SOURCE_URL, properties.getSourceUrl());
                 APPEND_ENTITY_PROPERTY(PROP_DPI, properties.getDPI());
@@ -3313,7 +3309,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_ALPHA, properties.getAlpha());
                 _staticPulse.setProperties(properties);
                 _staticPulse.appendToEditPacket(packetData, requestedProperties, propertyFlags,
-                    propertiesDidntFit, propertyCount, appendState);
+                    propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
                 APPEND_ENTITY_PROPERTY(PROP_SHAPE, properties.getShape());
             }
 
@@ -3336,7 +3332,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_ALPHA, properties.getAlpha());
                 _staticPulse.setProperties(properties);
                 _staticPulse.appendToEditPacket(packetData, requestedProperties, propertyFlags,
-                    propertiesDidntFit, propertyCount, appendState);
+                    propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
 
                 APPEND_ENTITY_PROPERTY(PROP_IMAGE_URL, properties.getImageURL());
                 APPEND_ENTITY_PROPERTY(PROP_EMISSIVE, properties.getEmissive());
@@ -3350,7 +3346,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_ALPHA, properties.getAlpha());
                 _staticPulse.setProperties(properties);
                 _staticPulse.appendToEditPacket(packetData, requestedProperties, propertyFlags,
-                    propertiesDidntFit, propertyCount, appendState);
+                    propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
 
                 APPEND_ENTITY_PROPERTY(PROP_GRID_FOLLOW_CAMERA, properties.getFollowCamera());
                 APPEND_ENTITY_PROPERTY(PROP_MAJOR_GRID_EVERY, properties.getMajorGridEvery());
@@ -3361,7 +3357,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_GIZMO_TYPE, (uint32_t)properties.getGizmoType());
                 _staticRing.setProperties(properties);
                 _staticRing.appendToEditPacket(packetData, requestedProperties, propertyFlags,
-                    propertiesDidntFit, propertyCount, appendState);
+                    propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
             }
         }
 
@@ -3409,9 +3405,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
             buffer.replace(0, finalizedSize, finalizedData, finalizedSize);
             buffer.resize(finalizedSize);
         } else {
-            qCDebug(entities) << "ERROR - encoded edit message doesn't fit in output buffer.";
             appendState = OctreeElement::NONE; // if we got here, then we didn't include the item
-            // maybe we should assert!!!
         }
     } else {
         packetData->discardSubTree();
@@ -3470,7 +3464,7 @@ QByteArray EntityItemProperties::packStrokeColors(const QVector<vec3>& strokeCol
 //       registration mechanism allowed us to collapse these repeated sections of code into a single implementation that
 //       utilized the registration table to shorten up and simplify this code.
 //
-// TODO: Implement support for paged properties, spanning MTU, and custom properties
+// TODO: Implement support for custom properties
 //
 // TODO: Implement support for script and visible properties.
 //

@@ -42,6 +42,16 @@ void SentPacketHistory::packetSent(uint16_t sequenceNumber, const NLPacket& pack
     _sentPackets.insert(NLPacket::createCopy(packet));
 }
 
+void SentPacketHistory::packetListSent(uint16_t sequenceNumber, const NLPacketList& packetList) {
+    untrackedPacketSent(sequenceNumber);
+
+    QWriteLocker locker(&_packetsLock);
+    for (const auto& packet : packetList.getPackets()) {
+        auto nlPacket = static_cast<NLPacket*>(packet.get());
+        _sentPackets.insert(NLPacket::createCopy(*nlPacket));
+    }
+}
+
 const NLPacket* SentPacketHistory::getPacket(uint16_t sequenceNumber) const {
 
     const int UINT16_RANGE = std::numeric_limits<uint16_t>::max() + 1;

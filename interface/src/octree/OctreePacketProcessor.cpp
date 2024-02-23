@@ -24,7 +24,7 @@ OctreePacketProcessor::OctreePacketProcessor():
 
     auto& packetReceiver = DependencyManager::get<NodeList>()->getPacketReceiver();
     const PacketReceiver::PacketTypeList octreePackets =
-        { PacketType::OctreeStats, PacketType::EntityData, PacketType::EntityErase, PacketType::EntityQueryInitialResultsComplete };
+        { PacketType::OctreeStats, PacketType::EntityData, PacketType::EntityDataLarge, PacketType::EntityErase, PacketType::EntityQueryInitialResultsComplete };
     packetReceiver.registerDirectListenerForTypes(octreePackets,
         PacketReceiver::makeSourcedListenerReference<OctreePacketProcessor>(this, &OctreePacketProcessor::handleOctreePacket));
 }
@@ -109,7 +109,8 @@ void OctreePacketProcessor::processPacket(QSharedPointer<ReceivedMessage> messag
             }
         } break;
 
-        case PacketType::EntityData: {
+        case PacketType::EntityData:
+        case PacketType::EntityDataLarge: {
             if (DependencyManager::get<SceneScriptingInterface>()->shouldRenderEntities()) {
                 auto renderer = qApp->getEntities();
                 if (renderer) {
