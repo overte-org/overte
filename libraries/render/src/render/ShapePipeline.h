@@ -4,6 +4,7 @@
 //
 //  Created by Zach Pomerantz on 12/31/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -38,6 +39,7 @@ public:
         FADE,
         CULL_FACE_NONE, // if neither of these are set, we're CULL_FACE_BACK
         CULL_FACE_FRONT,
+        MTOON,
 
         OWN_PIPELINE,
         INVALID,
@@ -84,6 +86,7 @@ public:
         Builder& withDepthBias() { _flags.set(DEPTH_BIAS); return (*this); }
         Builder& withWireframe() { _flags.set(WIREFRAME); return (*this); }
         Builder& withFade() { _flags.set(FADE); return (*this); }
+        Builder& withMToon() { _flags.set(MTOON); return (*this); }
 
         Builder& withoutCullFace() { return withCullFaceMode(graphics::MaterialKey::CullFaceMode::CULL_NONE); }
         Builder& withCullFaceMode(graphics::MaterialKey::CullFaceMode cullFaceMode) {
@@ -184,6 +187,9 @@ public:
             Builder& withFade() { _flags.set(FADE); _mask.set(FADE); return (*this); }
             Builder& withoutFade() { _flags.reset(FADE); _mask.set(FADE); return (*this); }
 
+            Builder& withMToon() { _flags.set(MTOON); _mask.set(MTOON); return (*this); }
+            Builder& withoutMToon() { _flags.reset(MTOON); _mask.set(MTOON); return (*this); }
+
             Builder& withCustom(uint8_t custom) { _flags &= (~CUSTOM_MASK); _flags |= (custom << CUSTOM_0); _mask |= (CUSTOM_MASK); return (*this); }
             Builder& withoutCustom() { _flags &= (~CUSTOM_MASK);  _mask |= (CUSTOM_MASK); return (*this); }
 
@@ -211,6 +217,7 @@ public:
     bool isWireframe() const { return _flags[WIREFRAME]; }
     bool isCullFace() const { return !_flags[CULL_FACE_NONE] && !_flags[CULL_FACE_FRONT]; }
     bool isFaded() const { return _flags[FADE]; }
+    bool isMToon() const { return _flags[MTOON]; }
 
     bool hasOwnPipeline() const { return _flags[OWN_PIPELINE]; }
     bool isValid() const { return !_flags[INVALID]; }
@@ -250,6 +257,7 @@ inline QDebug operator<<(QDebug debug, const ShapeKey& key) {
                 << "isWireframe:" << key.isWireframe()
                 << "isCullFace:" << key.isCullFace()
                 << "isFaded:" << key.isFaded()
+                << "isMToon:" << key.isMToon()
                 << "]";
         }
     } else {

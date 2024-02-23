@@ -56,6 +56,13 @@ public:  // ScriptContext implementation
     virtual int argumentCount() const override { return _parent->argumentCount(); }
     virtual ScriptValue argument(int index) const override { return _parent->argument(index); }
     virtual QStringList backtrace() const override { return _parent->backtrace(); }
+
+    // Name of the file in which message was generated. Empty string when no file name is available.
+    virtual int currentLineNumber() const override { return _parent->currentLineNumber(); }
+
+    // Number of the line on which message was generated. -1 if there line number is not available.
+    virtual QString currentFileName() const override { return _parent->currentFileName(); }
+
     virtual ScriptValue callee() const override { return _parent->callee(); }
     virtual ScriptEnginePointer engine() const override { return _parent->engine(); }
     virtual ScriptFunctionContextPointer functionContext() const override { return _parent->functionContext(); }
@@ -1274,8 +1281,14 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
                     QString errorMessage(QString("Signal proxy ") + fullName() + " connection call failed: \""
                                           + _engine->formatErrorMessageFromTryCatch(tryCatch)
                                           + "\nThis provided: " + QString::number(conn.thisValue.get()->IsObject()));
+                    v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
+                    int errorLineNumber = -1;
+                    if (!exceptionMessage.IsEmpty()) {
+                        errorLineNumber = exceptionMessage->GetLineNumber(context).FromJust();
+                    }
                     if (_engine->_manager) {
-                        _engine->_manager->scriptErrorMessage(errorMessage);
+                        _engine->_manager->scriptErrorMessage(errorMessage, getFileNameFromTryCatch(tryCatch, isolate, context),
+                                                              errorLineNumber);
                     } else {
                         qDebug(scriptengine_v8) << errorMessage;
                     }

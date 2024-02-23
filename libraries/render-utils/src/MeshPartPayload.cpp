@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 10/3/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -220,6 +221,10 @@ void ModelMeshPartPayload::updateKey(const render::ItemKey& key) {
         builder.withSubMetaCulled();
     }
 
+    if (_drawMaterials.hasOutline()) {
+        builder.withOutline();
+    }
+
     _itemKey = builder.build();
 }
 
@@ -268,11 +273,15 @@ void ModelMeshPartPayload::setShapeKey(bool invalidateShapeKey, PrimitiveMode pr
         if (hasTangents) {
             builder.withTangents();
         }
-        if (hasLightmap) {
-            builder.withLightMap();
-        }
-        if (isUnlit) {
-            builder.withUnlit();
+        if (!_drawMaterials.isMToon()) {
+            if (hasLightmap) {
+                builder.withLightMap();
+            }
+            if (isUnlit) {
+                builder.withUnlit();
+            }
+        } else {
+            builder.withMToon();
         }
         if (material) {
             builder.withCullFaceMode(material->getCullFaceMode());
@@ -377,6 +386,11 @@ bool ModelMeshPartPayload::passesZoneOcclusionTest(const std::unordered_set<QUui
     return true;
 }
 
+render::HighlightStyle ModelMeshPartPayload::getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const {
+    return render::HighlightStyle::calculateOutlineStyle(_drawMaterials.getOutlineWidthMode(), _drawMaterials.getOutlineWidth(), _drawMaterials.getOutline(),
+                                                         _parentTransform.getTranslation(), viewFrustum, height);
+}
+
 void ModelMeshPartPayload::setBlendshapeBuffer(const std::unordered_map<int, gpu::BufferPointer>& blendshapeBuffers, const QVector<int>& blendedMeshSizes) {
     if (_meshIndex < blendedMeshSizes.length() && blendedMeshSizes.at(_meshIndex) == _meshNumVertices) {
         auto blendshapeBuffer = blendshapeBuffers.find(_meshIndex);
@@ -425,5 +439,12 @@ template <> bool payloadPassesZoneOcclusionTest(const ModelMeshPartPayload::Poin
         return payload->passesZoneOcclusionTest(containingZones);
     }
     return false;
+}
+
+template <> HighlightStyle payloadGetOutlineStyle(const ModelMeshPartPayload::Pointer& payload, const ViewFrustum& viewFrustum, const size_t height) {
+    if (payload) {
+        return payload->getOutlineStyle(viewFrustum, height);
+    }
+    return HighlightStyle();
 }
 }

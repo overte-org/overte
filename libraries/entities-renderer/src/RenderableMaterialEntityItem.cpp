@@ -1,6 +1,7 @@
 //
 //  Created by Sam Gondelman on 1/18/2018
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -219,7 +220,7 @@ void MaterialEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPo
 ItemKey MaterialEntityRenderer::getKey() {
     auto builder = ItemKey::Builder().withTypeShape().withTagBits(getTagMask()).withLayer(getHifiRenderLayer());
 
-    if (!_visible) {
+    if (!_visible || !_parentID.isNull()) {
         builder.withInvisible();
     }
 
@@ -228,6 +229,10 @@ ItemKey MaterialEntityRenderer::getKey() {
         auto matKey = drawMaterial->getKey();
         if (matKey.isTranslucent()) {
             builder.withTransparent();
+        }
+
+        if (drawMaterial->getOutlineWidthMode() != NetworkMToonMaterial::OutlineWidthMode::OUTLINE_NONE && drawMaterial->getOutlineWidth() > 0.0f) {
+            builder.withOutline();
         }
     }
 
@@ -258,11 +263,16 @@ ShapeKey MaterialEntityRenderer::getShapeKey() {
         if (drawMaterialKey.isNormalMap()) {
             builder.withTangents();
         }
-        if (drawMaterialKey.isLightMap()) {
-            builder.withLightMap();
-        }
-        if (drawMaterialKey.isUnlit()) {
-            builder.withUnlit();
+
+        if (drawMaterial && drawMaterial->isMToon()) {
+            builder.withMToon();
+        } else {
+            if (drawMaterialKey.isLightMap()) {
+                builder.withLightMap();
+            }
+            if (drawMaterialKey.isUnlit()) {
+                builder.withUnlit();
+            }
         }
     }
 
@@ -271,6 +281,18 @@ ShapeKey MaterialEntityRenderer::getShapeKey() {
     }
 
     return builder.build();
+}
+
+HighlightStyle MaterialEntityRenderer::getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const {
+    if (const auto drawMaterial = getMaterial()) {
+        glm::vec3 position;
+        withReadLock([&] {
+            position = _renderTransform.getTranslation();
+        });
+        return HighlightStyle::calculateOutlineStyle(drawMaterial->getOutlineWidthMode(), drawMaterial->getOutlineWidth(),
+                                                     drawMaterial->getOutline(), position, viewFrustum, height);
+    }
+    return HighlightStyle();
 }
 
 void MaterialEntityRenderer::doRender(RenderArgs* args) {

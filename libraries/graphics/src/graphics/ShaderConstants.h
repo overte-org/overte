@@ -1,6 +1,7 @@
 // <!
 //  Created by Bradley Austin Davis on 2018/05/25
 //  Copyright 2013-2018 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -27,6 +28,13 @@
 #define GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS 4
 #define GRAPHICS_TEXTURE_MATERIAL_OCCLUSION 5
 #define GRAPHICS_TEXTURE_MATERIAL_SCATTERING 6
+
+// Keep aligned with procedural/ProceduralMaterialCache.h
+#define GRAPHICS_TEXTURE_MATERIAL_SHADE GRAPHICS_TEXTURE_MATERIAL_METALLIC
+#define GRAPHICS_TEXTURE_MATERIAL_SHADING_SHIFT GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS
+#define GRAPHICS_TEXTURE_MATERIAL_MATCAP GRAPHICS_TEXTURE_MATERIAL_OCCLUSION
+#define GRAPHICS_TEXTURE_MATERIAL_RIM GRAPHICS_TEXTURE_MATERIAL_SCATTERING
+#define GRAPHICS_TEXTURE_MATERIAL_UV_ANIMATION_MASK 7
 
 // Make sure these match the ones in render-utils/ShaderConstants.h
 #define GRAPHICS_TEXTURE_SKYBOX 11
@@ -59,7 +67,13 @@ enum Texture {
     MaterialRoughness = GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS,
     MaterialOcclusion = GRAPHICS_TEXTURE_MATERIAL_OCCLUSION,
     MaterialScattering = GRAPHICS_TEXTURE_MATERIAL_SCATTERING,
-    Skybox = GRAPHICS_TEXTURE_SKYBOX
+    Skybox = GRAPHICS_TEXTURE_SKYBOX,
+
+    MaterialShade = GRAPHICS_TEXTURE_MATERIAL_SHADE,
+    MaterialShadingShift = GRAPHICS_TEXTURE_MATERIAL_SHADING_SHIFT,
+    MaterialMatcap = GRAPHICS_TEXTURE_MATERIAL_MATCAP,
+    MaterialRim = GRAPHICS_TEXTURE_MATERIAL_RIM,
+    MaterialUVAnimationMask = GRAPHICS_TEXTURE_MATERIAL_UV_ANIMATION_MASK,
 };
 } // namespace texture
 

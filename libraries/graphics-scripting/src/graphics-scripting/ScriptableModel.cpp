@@ -27,27 +27,50 @@ scriptable::ScriptableMaterial& scriptable::ScriptableMaterial::operator=(const 
     opacity = material.opacity;
     albedo = material.albedo;
 
-    if (model.toStdString() == graphics::Material::HIFI_PBR) {
+    if (model.toStdString() == graphics::Material::HIFI_PBR || model.toStdString() == graphics::Material::VRM_MTOON) {
         opacityCutoff = material.opacityCutoff;
         opacityMapMode = material.opacityMapMode;
-        roughness = material.roughness;
-        metallic = material.metallic;
-        scattering = material.scattering;
-        unlit = material.unlit;
         emissive = material.emissive;
         emissiveMap = material.emissiveMap;
         albedoMap = material.albedoMap;
         opacityMap = material.opacityMap;
-        metallicMap = material.metallicMap;
-        specularMap = material.specularMap;
-        roughnessMap = material.roughnessMap;
-        glossMap = material.glossMap;
         normalMap = material.normalMap;
         bumpMap = material.bumpMap;
-        occlusionMap = material.occlusionMap;
-        lightMap = material.lightMap;
-        scatteringMap = material.scatteringMap;
         cullFaceMode = material.cullFaceMode;
+
+        if (model.toStdString() == graphics::Material::HIFI_PBR) {
+            roughness = material.roughness;
+            metallic = material.metallic;
+            scattering = material.scattering;
+            unlit = material.unlit;
+            metallicMap = material.metallicMap;
+            specularMap = material.specularMap;
+            roughnessMap = material.roughnessMap;
+            glossMap = material.glossMap;
+            occlusionMap = material.occlusionMap;
+            lightMap = material.lightMap;
+            scatteringMap = material.scatteringMap;
+        } else {
+            shade = material.shade;
+            shadeMap = material.shadeMap;
+            shadingShift = material.shadingShift;
+            shadingShiftMap = material.shadingShiftMap;
+            shadingToony = material.shadingToony;
+            matcap = material.matcap;
+            matcapMap = material.matcapMap;
+            parametricRim = material.parametricRim;
+            parametricRimFresnelPower = material.parametricRimFresnelPower;
+            parametricRimLift = material.parametricRimLift;
+            rimMap = material.rimMap;
+            rimLightingMix = material.rimLightingMix;
+            outlineWidthMode = material.outlineWidthMode;
+            outlineWidth = material.outlineWidth;
+            outline = material.outline;
+            uvAnimationMaskMap = material.uvAnimationMaskMap;
+            uvAnimationScrollXSpeed = material.uvAnimationScrollXSpeed;
+            uvAnimationScrollYSpeed = material.uvAnimationScrollYSpeed;
+            uvAnimationRotationSpeed = material.uvAnimationRotationSpeed;
+        }
     } else if (model.toStdString() == graphics::Material::HIFI_SHADER_SIMPLE) {
         procedural = material.procedural;
     }
@@ -67,13 +90,9 @@ scriptable::ScriptableMaterial::ScriptableMaterial(const graphics::MaterialPoint
         opacity = material->getOpacity();
         albedo = material->getAlbedo();
 
-        if (model.toStdString() == graphics::Material::HIFI_PBR) {
+        if (model.toStdString() == graphics::Material::HIFI_PBR || model.toStdString() == graphics::Material::VRM_MTOON) {
             opacityCutoff = material->getOpacityCutoff();
             opacityMapMode = QString(graphics::MaterialKey::getOpacityMapModeName(material->getOpacityMapMode()).c_str());
-            roughness = material->getRoughness();
-            metallic = material->getMetallic();
-            scattering = material->getScattering();
-            unlit = material->isUnlit();
             emissive = material->getEmissive();
 
             auto map = material->getTextureMap(graphics::Material::MapChannel::EMISSIVE_MAP);
@@ -89,24 +108,6 @@ scriptable::ScriptableMaterial::ScriptableMaterial(const graphics::MaterialPoint
                 }
             }
 
-            map = material->getTextureMap(graphics::Material::MapChannel::METALLIC_MAP);
-            if (map && map->getTextureSource()) {
-                if (map->getTextureSource()->getType() == image::TextureUsage::Type::METALLIC_TEXTURE) {
-                    metallicMap = map->getTextureSource()->getUrl().toString();
-                } else if (map->getTextureSource()->getType() == image::TextureUsage::Type::SPECULAR_TEXTURE) {
-                    specularMap = map->getTextureSource()->getUrl().toString();
-                }
-            }
-
-            map = material->getTextureMap(graphics::Material::MapChannel::ROUGHNESS_MAP);
-            if (map && map->getTextureSource()) {
-                if (map->getTextureSource()->getType() == image::TextureUsage::Type::ROUGHNESS_TEXTURE) {
-                    roughnessMap = map->getTextureSource()->getUrl().toString();
-                } else if (map->getTextureSource()->getType() == image::TextureUsage::Type::GLOSS_TEXTURE) {
-                    glossMap = map->getTextureSource()->getUrl().toString();
-                }
-            }
-
             map = material->getTextureMap(graphics::Material::MapChannel::NORMAL_MAP);
             if (map && map->getTextureSource()) {
                 if (map->getTextureSource()->getType() == image::TextureUsage::Type::NORMAL_TEXTURE) {
@@ -116,26 +117,92 @@ scriptable::ScriptableMaterial::ScriptableMaterial(const graphics::MaterialPoint
                 }
             }
 
-            map = material->getTextureMap(graphics::Material::MapChannel::OCCLUSION_MAP);
-            if (map && map->getTextureSource()) {
-                occlusionMap = map->getTextureSource()->getUrl().toString();
-            }
-
-            map = material->getTextureMap(graphics::Material::MapChannel::LIGHT_MAP);
-            if (map && map->getTextureSource()) {
-                lightMap = map->getTextureSource()->getUrl().toString();
-            }
-
-            map = material->getTextureMap(graphics::Material::MapChannel::SCATTERING_MAP);
-            if (map && map->getTextureSource()) {
-                scatteringMap = map->getTextureSource()->getUrl().toString();
-            }
-
             for (int i = 0; i < graphics::Material::NUM_TEXCOORD_TRANSFORMS; i++) {
                 texCoordTransforms[i] = material->getTexCoordTransform(i);
             }
 
             cullFaceMode = QString(graphics::MaterialKey::getCullFaceModeName(material->getCullFaceMode()).c_str());
+
+            if (model.toStdString() == graphics::Material::HIFI_PBR) {
+                roughness = material->getRoughness();
+                metallic = material->getMetallic();
+                scattering = material->getScattering();
+                unlit = material->isUnlit();
+
+                map = material->getTextureMap(graphics::Material::MapChannel::METALLIC_MAP);
+                if (map && map->getTextureSource()) {
+                    if (map->getTextureSource()->getType() == image::TextureUsage::Type::METALLIC_TEXTURE) {
+                        metallicMap = map->getTextureSource()->getUrl().toString();
+                    } else if (map->getTextureSource()->getType() == image::TextureUsage::Type::SPECULAR_TEXTURE) {
+                        specularMap = map->getTextureSource()->getUrl().toString();
+                    }
+                }
+
+                map = material->getTextureMap(graphics::Material::MapChannel::ROUGHNESS_MAP);
+                if (map && map->getTextureSource()) {
+                    if (map->getTextureSource()->getType() == image::TextureUsage::Type::ROUGHNESS_TEXTURE) {
+                        roughnessMap = map->getTextureSource()->getUrl().toString();
+                    } else if (map->getTextureSource()->getType() == image::TextureUsage::Type::GLOSS_TEXTURE) {
+                        glossMap = map->getTextureSource()->getUrl().toString();
+                    }
+                }
+
+                map = material->getTextureMap(graphics::Material::MapChannel::OCCLUSION_MAP);
+                if (map && map->getTextureSource()) {
+                    occlusionMap = map->getTextureSource()->getUrl().toString();
+                }
+
+                map = material->getTextureMap(graphics::Material::MapChannel::LIGHT_MAP);
+                if (map && map->getTextureSource()) {
+                    lightMap = map->getTextureSource()->getUrl().toString();
+                }
+
+                map = material->getTextureMap(graphics::Material::MapChannel::SCATTERING_MAP);
+                if (map && map->getTextureSource()) {
+                    scatteringMap = map->getTextureSource()->getUrl().toString();
+                }
+            } else {
+                shade = material->getShade();
+                shadingShift = material->getShadingShift();
+                shadingToony = material->getShadingToony();
+                matcap = material->getMatcap();
+                parametricRim = material->getParametricRim();
+                parametricRimFresnelPower = material->getParametricRimFresnelPower();
+                parametricRimLift = material->getParametricRimLift();
+                rimLightingMix = material->getRimLightingMix();
+                outlineWidthMode = material->getOutlineWidthMode();
+                outlineWidth = material->getOutlineWidth();
+                outline = material->getOutline();
+                uvAnimationScrollXSpeed = material->getUVAnimationScrollXSpeed();
+                uvAnimationScrollYSpeed = material->getUVAnimationScrollYSpeed();
+                uvAnimationRotationSpeed = material->getUVAnimationRotationSpeed();
+
+                // See the mappings in ProceduralMatericalCache.h
+                map = material->getTextureMap(graphics::Material::MapChannel::ROUGHNESS_MAP);
+                if (map && map->getTextureSource()) {
+                    shadeMap = map->getTextureSource()->getUrl().toString();
+                }
+
+                map = material->getTextureMap(graphics::Material::MapChannel::METALLIC_MAP);
+                if (map && map->getTextureSource()) {
+                    shadingShiftMap = map->getTextureSource()->getUrl().toString();
+                }
+
+                map = material->getTextureMap(graphics::Material::MapChannel::OCCLUSION_MAP);
+                if (map && map->getTextureSource()) {
+                    matcapMap = map->getTextureSource()->getUrl().toString();
+                }
+
+                map = material->getTextureMap(graphics::Material::MapChannel::SCATTERING_MAP);
+                if (map && map->getTextureSource()) {
+                    rimMap = map->getTextureSource()->getUrl().toString();
+                }
+
+                map = material->getTextureMap(graphics::Material::MapChannel::LIGHT_MAP);
+                if (map && map->getTextureSource()) {
+                    uvAnimationMaskMap = map->getTextureSource()->getUrl().toString();
+                }
+            }
         } else if (model.toStdString() == graphics::Material::HIFI_SHADER_SIMPLE) {
             procedural = material->getProceduralString();
         }

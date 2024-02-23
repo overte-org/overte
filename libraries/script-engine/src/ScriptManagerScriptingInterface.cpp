@@ -12,6 +12,7 @@
 
 #include "ScriptManager.h"
 #include "ScriptManagerScriptingInterface.h"
+#include "ScriptEngines.h"
 #include "ScriptEngine.h"
 #include <QMetaType>
 
@@ -87,4 +88,40 @@ void ScriptManagerScriptingInterface::startProfiling() {
 
 void ScriptManagerScriptingInterface::stopProfilingAndSave() {
     _manager->engine()->stopProfilingAndSave();
+}
+
+void ScriptManagerScriptingInterface::requestServerEntityScriptMessages() {
+    if (_manager->isEntityServerScript() || _manager->isEntityServerScript()) {
+        _manager->engine()->raiseException("Uuid needs to be specified when requestServerEntityScriptMessages is invoked from entity script");
+    } else {
+        auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+        scriptEngines->requestServerEntityScriptMessages(_manager);
+    }
+}
+
+void ScriptManagerScriptingInterface::requestServerEntityScriptMessages(const QUuid& entityID) {
+    if (_manager->isEntityServerScript() || _manager->isEntityServerScript()) {
+        auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+        scriptEngines->requestServerEntityScriptMessages(_manager, entityID);
+    } else {
+        _manager->engine()->raiseException("Uuid must not be specified when requestServerEntityScriptMessages is invoked from entity script");
+    }
+}
+
+void ScriptManagerScriptingInterface::removeServerEntityScriptMessagesRequest() {
+    if (_manager->isEntityServerScript() || _manager->isEntityServerScript()) {
+        _manager->engine()->raiseException("Uuid needs to be specified when removeServerEntityScriptMessagesRequest is invoked from entity script");
+    } else {
+        auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+        scriptEngines->removeServerEntityScriptMessagesRequest(_manager);
+    }
+}
+
+void ScriptManagerScriptingInterface::removeServerEntityScriptMessagesRequest(const QUuid& entityID) {
+    if (_manager->isEntityServerScript() || _manager->isEntityServerScript()) {
+        auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+        scriptEngines->removeServerEntityScriptMessagesRequest(_manager, entityID);
+    } else {
+        _manager->engine()->raiseException("Uuid must not be specified when removeServerEntityScriptMessagesRequest is invoked from entity script");
+    }
 }

@@ -232,6 +232,14 @@ void EntityTreeRenderer::resetPersistentEntitiesScriptEngine() {
     _persistentEntitiesScriptManager = scriptManagerFactory(ScriptManager::ENTITY_CLIENT_SCRIPT, NO_SCRIPT,
                                                 QString("about:Entities %1").arg(++_entitiesScriptEngineCount));
     DependencyManager::get<ScriptEngines>()->runScriptInitializers(_persistentEntitiesScriptManager);
+
+    // Make script engine messages available through ScriptDiscoveryService
+    auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+    connect(_persistentEntitiesScriptManager.get(), &ScriptManager::infoEntityMessage, scriptEngines, &ScriptEngines::infoEntityMessage);
+    connect(_persistentEntitiesScriptManager.get(), &ScriptManager::printedEntityMessage, scriptEngines, &ScriptEngines::printedEntityMessage);
+    connect(_persistentEntitiesScriptManager.get(), &ScriptManager::errorEntityMessage, scriptEngines, &ScriptEngines::errorEntityMessage);
+    connect(_persistentEntitiesScriptManager.get(), &ScriptManager::warningEntityMessage, scriptEngines, &ScriptEngines::warningEntityMessage);
+
     _persistentEntitiesScriptManager->runInThread();
     std::shared_ptr<EntitiesScriptEngineProvider> entitiesScriptEngineProvider = _persistentEntitiesScriptManager;
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
@@ -255,6 +263,14 @@ void EntityTreeRenderer::resetNonPersistentEntitiesScriptEngine() {
     _nonPersistentEntitiesScriptManager = scriptManagerFactory(ScriptManager::ENTITY_CLIENT_SCRIPT, NO_SCRIPT,
                                                 QString("about:Entities %1").arg(++_entitiesScriptEngineCount));
     DependencyManager::get<ScriptEngines>()->runScriptInitializers(_nonPersistentEntitiesScriptManager);
+
+    // Make script engine messages available through ScriptDiscoveryService
+    auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+    connect(_nonPersistentEntitiesScriptManager.get(), &ScriptManager::infoEntityMessage, scriptEngines, &ScriptEngines::infoEntityMessage);
+    connect(_nonPersistentEntitiesScriptManager.get(), &ScriptManager::printedEntityMessage, scriptEngines, &ScriptEngines::printedEntityMessage);
+    connect(_nonPersistentEntitiesScriptManager.get(), &ScriptManager::errorEntityMessage, scriptEngines, &ScriptEngines::errorEntityMessage);
+    connect(_nonPersistentEntitiesScriptManager.get(), &ScriptManager::warningEntityMessage, scriptEngines, &ScriptEngines::warningEntityMessage);
+
     _nonPersistentEntitiesScriptManager->runInThread();
     std::shared_ptr<EntitiesScriptEngineProvider> entitiesScriptEngineProvider = _nonPersistentEntitiesScriptManager;
     DependencyManager::get<EntityScriptingInterface>()->setNonPersistentEntitiesScriptEngine(entitiesScriptEngineProvider);
