@@ -56,16 +56,16 @@ QRect HmdDisplayPlugin::getRecommendedHUDRect() const {
     return CompositorHelper::VIRTUAL_SCREEN_RECOMMENDED_OVERLAY_RECT;
 }
 
-glm::mat4 HmdDisplayPlugin::getEyeToHeadTransform(Eye eye) const { 
-    return _eyeOffsets[eye]; 
+glm::mat4 HmdDisplayPlugin::getEyeToHeadTransform(Eye eye) const {
+    return _eyeOffsets[eye];
 }
 
-glm::mat4 HmdDisplayPlugin::getEyeProjection(Eye eye, const glm::mat4& baseProjection) const { 
-    return _eyeProjections[eye]; 
+glm::mat4 HmdDisplayPlugin::getEyeProjection(Eye eye, const glm::mat4& baseProjection) const {
+    return _eyeProjections[eye];
 }
 
-glm::mat4 HmdDisplayPlugin::getCullingProjection(const glm::mat4& baseProjection) const { 
-    return _cullingProjection; 
+glm::mat4 HmdDisplayPlugin::getCullingProjection(const glm::mat4& baseProjection) const {
+    return _cullingProjection;
 }
 
 glm::ivec4 HmdDisplayPlugin::eyeViewport(Eye eye) const {
