@@ -4,6 +4,7 @@
 //
 //  Created by Olivier Prat on 08/08/17.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -40,6 +41,7 @@ namespace gr {
 #define OUTLINE_STENCIL_MASK    1
 
 extern void initZPassPipelines(ShapePlumber& plumber, gpu::StatePointer state, const render::ShapePipeline::BatchSetter& batchSetter, const render::ShapePipeline::ItemSetter& itemSetter);
+extern void sortAndRenderZPassShapes(const ShapePlumberPointer& shapePlumber, const render::RenderContextPointer& renderContext, const render::ShapeBounds& inShapes, render::ItemBounds &itemBounds);
 
 HighlightResources::HighlightResources() {
 }
@@ -108,10 +110,14 @@ PrepareDrawHighlight::PrepareDrawHighlight() {
 }
 
 void PrepareDrawHighlight::run(const render::RenderContextPointer& renderContext, const Inputs& inputs, Outputs& outputs) {
-    auto destinationFrameBuffer = inputs;
+    RenderArgs* args = renderContext->args;
 
+    auto destinationFrameBuffer = inputs;
     _resources->update(destinationFrameBuffer);
-    outputs = _resources;
+    outputs.edit0() = _resources;
+
+    outputs.edit1() = args->_renderMode;
+    args->_renderMode = RenderArgs::SHADOW_RENDER_MODE;
 }
 
 gpu::PipelinePointer DrawHighlightMask::_stencilMaskPipeline;
@@ -186,61 +192,7 @@ void DrawHighlightMask::run(const render::RenderContextPointer& renderContext, c
             batch.setProjectionJitterEnabled(true);
             batch.setSavedViewProjectionTransform(_transformSlot);
 
-            const std::vector<ShapeKey::Builder> keys = {
-                ShapeKey::Builder(), ShapeKey::Builder().withFade(),
-                ShapeKey::Builder().withDeformed(), ShapeKey::Builder().withDeformed().withFade(),
-                ShapeKey::Builder().withDeformed().withDualQuatSkinned(), ShapeKey::Builder().withDeformed().withDualQuatSkinned().withFade(),
-                ShapeKey::Builder().withOwnPipeline(), ShapeKey::Builder().withOwnPipeline().withFade(),
-                ShapeKey::Builder().withDeformed().withOwnPipeline(), ShapeKey::Builder().withDeformed().withOwnPipeline().withFade(),
-                ShapeKey::Builder().withDeformed().withDualQuatSkinned().withOwnPipeline(), ShapeKey::Builder().withDeformed().withDualQuatSkinned().withOwnPipeline().withFade(),
-            };
-            std::vector<std::vector<ShapeKey>> sortedShapeKeys(keys.size());
-
-            const int OWN_PIPELINE_INDEX = 6;
-            for (const auto& items : inShapes) {
-                itemBounds.insert(itemBounds.end(), items.second.begin(), items.second.end());
-
-                int index = items.first.hasOwnPipeline() ? OWN_PIPELINE_INDEX : 0;
-                if (items.first.isDeformed()) {
-                    index += 2;
-                    if (items.first.isDualQuatSkinned()) {
-                        index += 2;
-                    }
-                }
-
-                if (items.first.isFaded()) {
-                    index += 1;
-                }
-
-                sortedShapeKeys[index].push_back(items.first);
-            }
-
-            // Render non-withOwnPipeline things
-            for (size_t i = 0; i < OWN_PIPELINE_INDEX; i++) {
-                auto& shapeKeys = sortedShapeKeys[i];
-                if (shapeKeys.size() > 0) {
-                    const auto& shapePipeline = _shapePlumber->pickPipeline(args, keys[i]);
-                    args->_shapePipeline = shapePipeline;
-                    for (const auto& key : shapeKeys) {
-                        renderShapes(renderContext, _shapePlumber, inShapes.at(key));
-                    }
-                }
-            }
-
-            // Render withOwnPipeline things
-            for (size_t i = OWN_PIPELINE_INDEX; i < keys.size(); i++) {
-                auto& shapeKeys = sortedShapeKeys[i];
-                if (shapeKeys.size() > 0) {
-                    args->_shapePipeline = nullptr;
-                    for (const auto& key : shapeKeys) {
-                        args->_itemShapeKey = key._flags.to_ulong();
-                        renderShapes(renderContext, _shapePlumber, inShapes.at(key));
-                    }
-                }
-            }
-
-            args->_shapePipeline = nullptr;
-            args->_batch = nullptr;
+            sortAndRenderZPassShapes(_shapePlumber, renderContext, inShapes, itemBounds);
         });
 
         _boundsBuffer->setData(itemBounds.size() * sizeof(render::ItemBound), (const gpu::Byte*) itemBounds.data());
@@ -441,12 +393,27 @@ const gpu::PipelinePointer& DebugHighlight::getDepthPipeline() {
     return _depthPipeline;
 }
 
-void SelectionToHighlight::run(const render::RenderContextPointer& renderContext, Outputs& outputs) {
+void SelectionToHighlight::run(const render::RenderContextPointer& renderContext, const Inputs& inputs, Outputs& outputs) {
     auto scene = renderContext->_scene;
     auto highlightStage = scene->getStage<render::HighlightStage>(render::HighlightStage::getName());
 
-    outputs.clear();
+    auto outlines = inputs.get0();
+    auto framebuffer = inputs.get1();
+
+    outputs.edit0().clear();
+    outputs.edit1().clear();
     _sharedParameters->_highlightIds.fill(render::HighlightStage::INVALID_INDEX);
+
+    outputs.edit1().reserve(outlines.size());
+    for (auto item : outlines) {
+        render::HighlightStyle style = scene->getOutlineStyle(item.id, renderContext->args->getViewFrustum() , framebuffer->getHeight());
+        auto selectionName = "__OUTLINE_MATERIAL" + style.toString();
+        if (highlightStage->getHighlightIdBySelection(selectionName) == HighlightStage::INVALID_INDEX) {
+            HighlightStage::Index newIndex = highlightStage->addHighlight(selectionName, style);
+            outputs.edit1().push_back(newIndex);
+        }
+        scene->addItemToSelection(selectionName, item.id);
+    }
 
     int numLayers = 0;
     auto highlightList = highlightStage->getActiveHighlightIds();
@@ -456,8 +423,8 @@ void SelectionToHighlight::run(const render::RenderContextPointer& renderContext
 
         if (!scene->isSelectionEmpty(highlight._selectionName)) {
             auto highlightId = highlightStage->getHighlightIdBySelection(highlight._selectionName);
-            _sharedParameters->_highlightIds[outputs.size()] = highlightId;
-            outputs.emplace_back(highlight._selectionName);
+            _sharedParameters->_highlightIds[outputs.edit0().size()] = highlightId;
+            outputs.edit0().emplace_back(highlight._selectionName);
             numLayers++;
 
             if (numLayers == HighlightSharedParameters::MAX_PASS_COUNT) {
@@ -489,6 +456,7 @@ void DrawHighlightTask::configure(const Config& config) {
 
 void DrawHighlightTask::build(JobModel& task, const render::Varying& inputs, render::Varying& outputs, uint transformSlot) {
     const auto items = inputs.getN<Inputs>(0).get<RenderFetchCullSortTask::BucketList>();
+        const auto& outlines = items[RenderFetchCullSortTask::OUTLINE];
     const auto sceneFrameBuffer = inputs.getN<Inputs>(1);
     const auto primaryFramebuffer = inputs.getN<Inputs>(2);
     const auto deferredFrameTransform = inputs.getN<Inputs>(3);
@@ -506,16 +474,21 @@ void DrawHighlightTask::build(JobModel& task, const render::Varying& inputs, ren
     }
     auto sharedParameters = std::make_shared<HighlightSharedParameters>();
 
-    const auto highlightSelectionNames = task.addJob<SelectionToHighlight>("SelectionToHighlight", sharedParameters);
+    const auto selectionToHighlightInputs = SelectionToHighlight::Inputs(outlines, primaryFramebuffer).asVarying();
+    const auto highlightSelectionOutputs = task.addJob<SelectionToHighlight>("SelectionToHighlight", selectionToHighlightInputs, sharedParameters);
 
     // Prepare for highlight group rendering.
-    const auto highlightResources = task.addJob<PrepareDrawHighlight>("PrepareHighlight", primaryFramebuffer);
+    const auto prepareOutputs = task.addJob<PrepareDrawHighlight>("PrepareHighlight", primaryFramebuffer);
+    const auto highlightResources = prepareOutputs.getN<PrepareDrawHighlight::Outputs>(0);
     render::Varying highlight0Rect;
 
+    const auto extractSelectionNameInput = Varying(highlightSelectionOutputs.getN<SelectionToHighlight::Outputs>(0));
     for (auto i = 0; i < HighlightSharedParameters::MAX_PASS_COUNT; i++) {
-        const auto selectionName = task.addJob<ExtractSelectionName>("ExtractSelectionName", highlightSelectionNames, i);
+        const auto selectionName = task.addJob<ExtractSelectionName>("ExtractSelectionName", extractSelectionNameInput, i);
         const auto groupItems = addSelectItemJobs(task, selectionName, items);
-        const auto highlightedItemIDs = task.addJob<render::MetaToSubItems>("HighlightMetaToSubItemIDs", groupItems);
+        const auto highlightedSubItemIDs = task.addJob<render::MetaToSubItems>("HighlightMetaToSubItemIDs", groupItems);
+        const auto appendNonMetaOutlinesInput = AppendNonMetaOutlines::Inputs(highlightedSubItemIDs, groupItems).asVarying();
+        const auto highlightedItemIDs = task.addJob<AppendNonMetaOutlines>("AppendNonMetaOutlines", appendNonMetaOutlinesInput);
         const auto highlightedItems = task.addJob<render::IDsToBounds>("HighlightMetaToSubItems", highlightedItemIDs);
 
         // Sort
@@ -545,6 +518,10 @@ void DrawHighlightTask::build(JobModel& task, const render::Varying& inputs, ren
         task.addJob<DrawHighlight>(name, drawHighlightInputs, i, sharedParameters);
     }
 
+    // Cleanup
+    const auto cleanupInput = HighlightCleanup::Inputs(highlightSelectionOutputs.getN<SelectionToHighlight::Outputs>(1), prepareOutputs.getN<PrepareDrawHighlight::Outputs>(1)).asVarying();
+    task.addJob<HighlightCleanup>("HighlightCleanup", cleanupInput);
+
     // Debug highlight
     const auto debugInputs = DebugHighlight::Inputs(highlightResources, const_cast<const render::Varying&>(highlight0Rect)).asVarying();
     task.addJob<DebugHighlight>("HighlightDebug", debugInputs, transformSlot);
@@ -564,3 +541,31 @@ const render::Varying DrawHighlightTask::addSelectItemJobs(JobModel& task, const
     return task.addJob<SelectItems>("TransparentSelection", selectItemInput);
 }
 
+void AppendNonMetaOutlines::run(const render::RenderContextPointer& renderContext, const Inputs& inputs, Outputs& outputs) {
+    auto& scene = renderContext->_scene;
+
+    outputs = inputs.get0();
+
+    const auto& groupItems = inputs.get1();
+    for (auto idBound : groupItems) {
+        auto& item = scene->getItem(idBound.id);
+        if (item.exist() && !item.getKey().isMeta()) {
+            outputs.push_back(idBound.id);
+        }
+    }
+}
+
+
+void HighlightCleanup::run(const render::RenderContextPointer& renderContext, const Inputs& inputs) {
+    auto scene = renderContext->_scene;
+    auto highlightStage = scene->getStage<render::HighlightStage>(render::HighlightStage::getName());
+
+    for (auto index : inputs.get0()) {
+        std::string selectionName = highlightStage->getHighlight(index)._selectionName;
+        highlightStage->removeHighlight(index);
+        scene->removeSelection(selectionName);
+    }
+
+    // Reset the render mode
+    renderContext->args->_renderMode = inputs.get1();
+}

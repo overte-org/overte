@@ -16,7 +16,7 @@ Column {
 
     id: root;   
     
-    property var mainViewTask: Render.getConfig("RenderMainView")
+    property var mainViewTask: Render.getConfig("RenderMainView.DebugRenderDeferredTask")
     
     spacing: 5
     anchors.left: parent.left

@@ -38,12 +38,12 @@ var DEFAULT_SCRIPTS_COMBINED = [
     "system/keyboardShortcuts/keyboardShortcuts.js",
     "system/onEscape.js",
     "system/onFirstRun.js",
-    "system/appreciate/appreciate_app.js",
     "system/places/places.js"
     //"developer/debugging/scriptMemoryReport.js"
 ];
 var DEFAULT_SCRIPTS_SEPARATE = [
     "system/controllers/controllerScripts.js",
+    "system/controllers/squeezeHands.js",
     "communityScripts/notificationCore/notificationCore.js",
     "simplifiedUI/ui/simplifiedNametag/simplifiedNametag.js",
     {"stable": "system/more/app-more.js", "beta": "https://more.overte.org/more/app-more.js"},

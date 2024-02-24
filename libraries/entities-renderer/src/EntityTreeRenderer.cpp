@@ -42,6 +42,7 @@
 #include "RenderableWebEntityItem.h"
 
 #include <PointerManager.h>
+#include <QtConcurrent/QtConcurrentRun>
 
 std::function<bool()> EntityTreeRenderer::_entitiesShouldFadeFunction = []() { return true; };
 
@@ -217,15 +218,28 @@ void EntityTreeRenderer::setupEntityScriptEngineSignals(const ScriptManagerPoint
 }
 
 void EntityTreeRenderer::resetPersistentEntitiesScriptEngine() {
+    // This runs script engine shutdown procedure in a separate thread, avoiding a deadlock when script engine is doing
+    // a blocking call to main thread
     if (_persistentEntitiesScriptManager) {
-        _persistentEntitiesScriptManager->unloadAllEntityScripts(true);
-        _persistentEntitiesScriptManager->stop();
-        _persistentEntitiesScriptManager->waitTillDoneRunning();
-        _persistentEntitiesScriptManager->disconnectNonEssentialSignals();
+        QtConcurrent::run([manager = _persistentEntitiesScriptManager] {
+            manager->unloadAllEntityScripts(true);
+            manager->stop();
+            manager->waitTillDoneRunning();
+            manager->disconnectNonEssentialSignals();
+            manager->removeFromScriptEngines();
+        });
     }
     _persistentEntitiesScriptManager = scriptManagerFactory(ScriptManager::ENTITY_CLIENT_SCRIPT, NO_SCRIPT,
                                                 QString("about:Entities %1").arg(++_entitiesScriptEngineCount));
     DependencyManager::get<ScriptEngines>()->runScriptInitializers(_persistentEntitiesScriptManager);
+
+    // Make script engine messages available through ScriptDiscoveryService
+    auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+    connect(_persistentEntitiesScriptManager.get(), &ScriptManager::infoEntityMessage, scriptEngines, &ScriptEngines::infoEntityMessage);
+    connect(_persistentEntitiesScriptManager.get(), &ScriptManager::printedEntityMessage, scriptEngines, &ScriptEngines::printedEntityMessage);
+    connect(_persistentEntitiesScriptManager.get(), &ScriptManager::errorEntityMessage, scriptEngines, &ScriptEngines::errorEntityMessage);
+    connect(_persistentEntitiesScriptManager.get(), &ScriptManager::warningEntityMessage, scriptEngines, &ScriptEngines::warningEntityMessage);
+
     _persistentEntitiesScriptManager->runInThread();
     std::shared_ptr<EntitiesScriptEngineProvider> entitiesScriptEngineProvider = _persistentEntitiesScriptManager;
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
@@ -235,15 +249,28 @@ void EntityTreeRenderer::resetPersistentEntitiesScriptEngine() {
 }
 
 void EntityTreeRenderer::resetNonPersistentEntitiesScriptEngine() {
+    // This runs script engine shutdown procedure in a separate thread, avoiding a deadlock when script engine is doing
+    // a blocking call to main thread
     if (_nonPersistentEntitiesScriptManager) {
-        _nonPersistentEntitiesScriptManager->unloadAllEntityScripts(true);
-        _nonPersistentEntitiesScriptManager->stop();
-        _nonPersistentEntitiesScriptManager->waitTillDoneRunning();
-        _nonPersistentEntitiesScriptManager->disconnectNonEssentialSignals();
+        QtConcurrent::run([manager = _nonPersistentEntitiesScriptManager] {
+            manager->unloadAllEntityScripts(true);
+            manager->stop();
+            manager->waitTillDoneRunning();
+            manager->disconnectNonEssentialSignals();
+            manager->removeFromScriptEngines();
+        });
     }
     _nonPersistentEntitiesScriptManager = scriptManagerFactory(ScriptManager::ENTITY_CLIENT_SCRIPT, NO_SCRIPT,
                                                 QString("about:Entities %1").arg(++_entitiesScriptEngineCount));
     DependencyManager::get<ScriptEngines>()->runScriptInitializers(_nonPersistentEntitiesScriptManager);
+
+    // Make script engine messages available through ScriptDiscoveryService
+    auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+    connect(_nonPersistentEntitiesScriptManager.get(), &ScriptManager::infoEntityMessage, scriptEngines, &ScriptEngines::infoEntityMessage);
+    connect(_nonPersistentEntitiesScriptManager.get(), &ScriptManager::printedEntityMessage, scriptEngines, &ScriptEngines::printedEntityMessage);
+    connect(_nonPersistentEntitiesScriptManager.get(), &ScriptManager::errorEntityMessage, scriptEngines, &ScriptEngines::errorEntityMessage);
+    connect(_nonPersistentEntitiesScriptManager.get(), &ScriptManager::warningEntityMessage, scriptEngines, &ScriptEngines::warningEntityMessage);
+
     _nonPersistentEntitiesScriptManager->runInThread();
     std::shared_ptr<EntitiesScriptEngineProvider> entitiesScriptEngineProvider = _nonPersistentEntitiesScriptManager;
     DependencyManager::get<EntityScriptingInterface>()->setNonPersistentEntitiesScriptEngine(entitiesScriptEngineProvider);
@@ -311,11 +338,23 @@ void EntityTreeRenderer::clear() {
         // unload and stop the engines
         if (_nonPersistentEntitiesScriptManager) {
             // do this here (instead of in deleter) to avoid marshalling unload signals back to this thread
+
+            // TODO: blocking call will cause deadlocks if the script engine is doing blocking call to main thread,
+            //  for example to access resource cache.
+            //  Since there's no event loop running at this time anymore, I have no easy workaround for this.
+            //  This could be solved by replacing all calls to quit() with calls to a new function that will do
+            //  a cleanup first while event loop is still running
             _nonPersistentEntitiesScriptManager->unloadAllEntityScripts(true);
             _nonPersistentEntitiesScriptManager->stop();
         }
         if (_persistentEntitiesScriptManager) {
             // do this here (instead of in deleter) to avoid marshalling unload signals back to this thread
+
+            // TODO: blocking call will cause deadlocks if the script engine is doing blocking call to main thread,
+            //  for example to access resource cache.
+            //  Since there's no event loop running at this time anymore, I have no easy workaround for this.
+            //  This could be solved by replacing all calls to quit() with calls to a new function that will do
+            //  a cleanup first while event loop is still running
             _persistentEntitiesScriptManager->unloadAllEntityScripts(true);
             _persistentEntitiesScriptManager->stop();
         }

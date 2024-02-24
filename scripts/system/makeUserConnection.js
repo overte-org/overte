@@ -16,6 +16,8 @@
 
     var request = Script.require('request').request;
 
+    var controllerStandard = Controller.Standard;
+
     var WANT_DEBUG = Settings.getValue('MAKE_USER_CONNECTION_DEBUG', false);
     var LABEL = "makeUserConnection";
     var MAX_AVATAR_DISTANCE = 0.2; // m
@@ -35,8 +37,9 @@
     var CONNECTING_TIME = 100; // ms One interval.
     var PARTICLE_RADIUS = 0.15; // m
     var PARTICLE_ANGLE_INCREMENT = 360 / 45; // 1hz
-    var HANDSHAKE_SOUND_URL = Script.getExternalPath(Script.ExternalPaths.HF_Content, "/davidkelly/production/audio/4beat_sweep.wav");
-    var SUCCESSFUL_HANDSHAKE_SOUND_URL = Script.getExternalPath(Script.ExternalPaths.HF_Content, "/davidkelly/production/audio/3rdbeat_success_bell.wav");
+    var HANDSHAKE_SOUND_URL = Script.resolvePath("assets/sounds/4beat_sweep.wav");
+    var SUCCESSFUL_HANDSHAKE_SOUND_URL = Script.resolvePath("assets/sounds/3rdbeat_success_bell.wav");
+    var PARTICLE_TEXTURE = Script.resolvePath("assets/images/Bokeh-Particle.png");
     var PREFERRER_HAND_JOINT_POSTFIX_ORDER = ['Middle1', 'Index1', ''];
     var HAPTIC_DATA = {
         initial: { duration: 20, strength: 0.6 }, // duration is in ms
@@ -60,7 +63,7 @@
         "radiusStart": 0.0025,
         "emitSpeed": 0.02,
         "speedSpread": 0.015,
-        "textures": Script.getExternalPath(Script.ExternalPaths.HF_Content, "/alan/dev/Particles/Bokeh-Particle.png"),
+        "textures": PARTICLE_TEXTURE,
         "color": {"red": 255, "green": 255, "blue": 255},
         "colorFinish": {"red": 0, "green": 164, "blue": 255},
         "colorStart": {"red": 255, "green": 255, "blue": 255},
@@ -92,7 +95,7 @@
         "radiusStart": 0.04,
         "speedSpread": 0.00,
         "radiusSpread": 0.0,
-        "textures": Script.getExternalPath(Script.ExternalPaths.HF_Content, "/alan/dev/Particles/Bokeh-Particle.png"),
+        "textures": PARTICLE_TEXTURE,
         "color": {"red": 200, "green": 170, "blue": 255},
         "colorFinish": {"red": 0, "green": 134, "blue": 255},
         "colorStart": {"red": 185, "green": 222, "blue": 255},
@@ -149,10 +152,10 @@
     }
 
     function handToString(hand) {
-        if (hand === Controller.Standard.RightHand) {
+        if (hand === controllerStandard.RightHand) {
             return "RightHand";
         }
-        if (hand === Controller.Standard.LeftHand) {
+        if (hand === controllerStandard.LeftHand) {
             return "LeftHand";
         }
         debug("handToString called without valid hand! value: ", hand);
@@ -160,10 +163,10 @@
     }
 
     function handToHaptic(hand) {
-        if (hand === Controller.Standard.RightHand) {
+        if (hand === controllerStandard.RightHand) {
             return 1;
         }
-        if (hand === Controller.Standard.LeftHand) {
+        if (hand === controllerStandard.LeftHand) {
             return 0;
         }
         debug("handToHaptic called without a valid hand!");
@@ -916,25 +919,25 @@
     function keyPressEvent(event) {
         if ((event.text.toUpperCase() === "X") && !event.isAutoRepeat && !event.isShifted && !event.isMeta && !event.isControl
                 && !event.isAlt) {
-            updateTriggers(1.0, true, Controller.Standard.RightHand);
+            updateTriggers(1.0, true, controllerStandard.RightHand);
         }
     }
     function keyReleaseEvent(event) {
         if (event.text.toUpperCase() === "X" && !event.isAutoRepeat) {
-            updateTriggers(0.0, true, Controller.Standard.RightHand);
+            updateTriggers(0.0, true, controllerStandard.RightHand);
         }
     }
     // map controller actions
     var connectionMapping = Controller.newMapping(Script.resolvePath('') + '-grip');
-    connectionMapping.from(Controller.Standard.LeftGrip).peek().to(makeGripHandler(Controller.Standard.LeftHand));
-    connectionMapping.from(Controller.Standard.RightGrip).peek().to(makeGripHandler(Controller.Standard.RightHand));
+    connectionMapping.from(controllerStandard.LeftGrip).peek().to(makeGripHandler(controllerStandard.LeftHand));
+    connectionMapping.from(controllerStandard.RightGrip).peek().to(makeGripHandler(controllerStandard.RightHand));
 
     // setup keyboard initiation
     Controller.keyPressEvent.connect(keyPressEvent);
     Controller.keyReleaseEvent.connect(keyReleaseEvent);
 
     // Xbox controller because that is important
-    connectionMapping.from(Controller.Standard.RB).peek().to(makeGripHandler(Controller.Standard.RightHand, true));
+    connectionMapping.from(controllerStandard.RB).peek().to(makeGripHandler(controllerStandard.RightHand, true));
 
     // it is easy to forget this and waste a lot of time for nothing
     connectionMapping.enable();

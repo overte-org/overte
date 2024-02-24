@@ -33,7 +33,7 @@ Overte is a free and open source 3D social virtual worlds software.
 * Full-body avatars
 * FBX, glTF, and OBJ support
 * JavaScript scripting engine
-* 16km³ world space in a server
+* 256km²/4096km³ world space in a server
 * Fully self-hosted
 * Apache 2.0
 
@@ -78,9 +78,9 @@ Overte consists of many projects and codebases with its unifying structure's goa
 
 - The Interface - You are here!
 - The Server - You are also here!
-- [The Directory Server (Codename Iamus)](https://github.com/overte/Iamus/)
-- [The Directory Server Dashboard (Codename Iamus)](https://github.com/overte/project-iamus-dashboard/)
-- [The Launcher (Codename Pantheon)](https://github.com/overte/pantheon-launcher/) - Currently Windows only.
+- [The Directory Server (Codename Iamus)](https://github.com/overte-org/overte-metaverse/)
+- [The Directory Server Dashboard (Codename Iamus)](https://github.com/overte-org/metaverse-dashboard/)
+- [The Launcher (Codename Pantheon)](https://github.com/overte-org/pantheon-launcher/) - Currently Windows only.
 
 #### Tools
 - [Overte Builder for Linux](https://github.com/overte-org/overte-builder/)

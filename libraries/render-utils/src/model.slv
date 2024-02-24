@@ -5,7 +5,7 @@
 //
 //  Created by Hifi Engine Team
 //  Copyright 2019 High Fidelity, Inc.
-//  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -48,7 +48,9 @@ layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
 <@if not HIFI_USE_SHADOW@>
     layout(location=RENDER_UTILS_ATTR_POSITION_ES) out vec4 _positionES;
     layout(location=RENDER_UTILS_ATTR_NORMAL_WS) out vec3 _normalWS;
-    layout(location=RENDER_UTILS_ATTR_COLOR) out vec4 _color;
+    <@if not HIFI_USE_MTOON@>
+        layout(location=RENDER_UTILS_ATTR_COLOR) out vec4 _color;
+    <@endif@>
     layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) out vec4 _prevPositionCS;
     <@if HIFI_USE_NORMALMAP@>
         layout(location=RENDER_UTILS_ATTR_TANGENT_WS) out vec3 _tangentWS;
@@ -98,7 +100,9 @@ void main(void) {
             _texCoord01 = vec4(0.0);
         }
 <@else@>
+<@if not HIFI_USE_MTOON@>
         _color = color_sRGBAToLinear(inColor);
+<@endif@>
 
         TexMapArray texMapArray = getTexMapArray();
         <$evalTexMapArrayTexcoord0(texMapArray, inTexCoord0, _positionWS, _texCoord01.xy)$>

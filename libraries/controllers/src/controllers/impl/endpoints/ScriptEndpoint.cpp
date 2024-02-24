@@ -45,7 +45,10 @@ AxisValue ScriptEndpoint::peek() const {
 
 void ScriptEndpoint::updateValue() {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "updateValue", Qt::QueuedConnection);
+        auto pointer = shared_from_this();
+        QMetaObject::invokeMethod(this, [pointer]{
+            std::dynamic_pointer_cast<ScriptEndpoint>(pointer)->updateValue();
+        });
         return;
     }
 

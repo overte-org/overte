@@ -22,8 +22,8 @@
 #include <plugins/SteamClientPlugin.h>
 #include <UserActivityLogger.h>
 #include <UUID.h>
+#include <crash-handler/CrashHandler.h>
 
-#include "CrashHandler.h"
 #include "Menu.h"
 
 const Discoverability::Mode DEFAULT_DISCOVERABILITY_MODE = Discoverability::Connections;
@@ -133,7 +133,8 @@ void DiscoverabilityManager::updateLocation() {
     if (auto steamClient = PluginManager::getInstance()->getSteamClientPlugin()) {
         steamClient->updateLocation(domainHandler.getHostname(), currentAddress);
     }
-    setCrashAnnotation("address", currentAddress.toString().toStdString());
+
+    CrashHandler::getInstance().setAnnotation("address", currentAddress.toString().toStdString());
 }
 
 void DiscoverabilityManager::handleHeartbeatResponse(QNetworkReply* requestReply) {

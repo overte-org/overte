@@ -39,8 +39,16 @@ Rectangle {
     }
 
     Component.onCompleted: {
-        AudioScriptingInterface.noiseGateOpened.connect(function() { micBar.gated = false; });
-        AudioScriptingInterface.noiseGateClosed.connect(function() { micBar.gated = true; });
+        AudioScriptingInterface.noiseGateOpened.connect(function() {
+            if (micBar) {
+                micBar.gated = false;
+            }
+        });
+        AudioScriptingInterface.noiseGateClosed.connect(function() {
+            if (micBar) {
+                micBar.gated = true;
+            }
+        });
         HMD.displayModeChanged.connect(function() {
             muted = AudioScriptingInterface.muted;
             pushToTalk = AudioScriptingInterface.pushToTalk;

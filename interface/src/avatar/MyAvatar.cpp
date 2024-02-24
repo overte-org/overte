@@ -79,6 +79,7 @@ using namespace std;
 const float DEFAULT_REAL_WORLD_FIELD_OF_VIEW_DEGREES = 30.0f;
 
 const float YAW_SPEED_DEFAULT = 100.0f;   // degrees/sec
+const float HMD_YAW_SPEED_DEFAULT = 300.0f;   // degrees/sec
 const float PITCH_SPEED_DEFAULT = 75.0f; // degrees/sec
 
 const float MAX_BOOST_SPEED = 0.5f * DEFAULT_AVATAR_MAX_WALKING_SPEED; // action motor gets additive boost below this speed
@@ -190,6 +191,7 @@ static int beginEndReactionNameToIndex(const QString& reactionName) {
 MyAvatar::MyAvatar(QThread* thread) :
     Avatar(thread),
     _yawSpeed(YAW_SPEED_DEFAULT),
+    _hmdYawSpeed(HMD_YAW_SPEED_DEFAULT),
     _pitchSpeed(PITCH_SPEED_DEFAULT),
     _scriptedMotorTimescale(DEFAULT_SCRIPTED_MOTOR_TIMESCALE),
     _scriptedMotorFrame(SCRIPTED_MOTOR_CAMERA_FRAME),
@@ -222,6 +224,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     _headPitchSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "", 0.0f),
     _scaleSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "scale", _targetScale),
     _yawSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "yawSpeed", _yawSpeed),
+    _hmdYawSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "hmdYawSpeed", _hmdYawSpeed),
     _pitchSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "pitchSpeed", _pitchSpeed),
     _fullAvatarURLSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "fullAvatarURL",
                           AvatarData::defaultFullAvatarModelUrl()),
@@ -1032,8 +1035,8 @@ void MyAvatar::simulate(float deltaTime, bool inView) {
         std::pair<bool, bool> zoneInteractionProperties;
         entityTree->withWriteLock([&] {
             zoneInteractionProperties = entityTreeRenderer->getZoneInteractionProperties();
-            EntityEditPacketSender* packetSender = qApp->getEntityEditPacketSender();
-            entityTree->updateEntityQueryAACube(shared_from_this(), packetSender, false, true);
+            std::shared_ptr<EntityEditPacketSender> packetSender = qApp->getEntityEditPacketSender();
+            entityTree->updateEntityQueryAACube(shared_from_this(), packetSender.get(), false, true);
         });
         bool isPhysicsEnabled = qApp->isPhysicsEnabled();
         bool zoneAllowsFlying = zoneInteractionProperties.first;
@@ -1335,6 +1338,7 @@ void MyAvatar::saveData() {
     _headPitchSetting.set(getHead()->getBasePitch());
     _scaleSetting.set(_targetScale);
     _yawSpeedSetting.set(_yawSpeed);
+    _hmdYawSpeedSetting.set(_hmdYawSpeed);
     _pitchSpeedSetting.set(_pitchSpeed);
 
     // only save the fullAvatarURL if it has not been overwritten on command line
@@ -1725,7 +1729,7 @@ void MyAvatar::handleChangedAvatarEntityData() {
     entityTree->deleteEntitiesByID(entitiesToDelete);
 
     // ADD real entities
-    EntityEditPacketSender* packetSender = qApp->getEntityEditPacketSender();
+    auto packetSender = qApp->getEntityEditPacketSender();
     for (const auto& id : entitiesToAdd) {
         bool blobFailed = false;
         EntityItemProperties properties;
@@ -2094,6 +2098,7 @@ void MyAvatar::loadData() {
     getHead()->setBasePitch(_headPitchSetting.get());
 
     _yawSpeed = _yawSpeedSetting.get(_yawSpeed);
+    _hmdYawSpeed = _hmdYawSpeedSetting.get(_hmdYawSpeed);
     _pitchSpeed = _pitchSpeedSetting.get(_pitchSpeed);
 
     _prefOverrideAnimGraphUrl.set(_animGraphURLSetting.get().toString());
@@ -2801,8 +2806,8 @@ controller::Pose MyAvatar::getControllerPoseInAvatarFrame(controller::Action act
 void MyAvatar::updateMotors() {
     _characterController.clearMotors();
 
-    const float FLYING_MOTOR_TIMESCALE = 0.05f;
-    const float WALKING_MOTOR_TIMESCALE = 0.2f;
+    const float FLYING_MOTOR_TIMESCALE = 0.002f; // Originally 0.05f;
+    const float WALKING_MOTOR_TIMESCALE = 0.1f; // Originally 0.2f;
     const float INVALID_MOTOR_TIMESCALE = 1.0e6f;
 
     float horizontalMotorTimescale;
@@ -3540,7 +3545,7 @@ void MyAvatar::setRotationThreshold(float angleRadians) {
 
 void MyAvatar::updateOrientation(float deltaTime) {
     //  Smoothly rotate body with arrow keys
-    float targetSpeed = getDriveKey(YAW) * _yawSpeed;
+    float targetSpeed = getDriveKey(YAW) * (qApp->isHMDMode() ? _hmdYawSpeed : _yawSpeed);
     CameraMode mode = qApp->getCamera().getMode();
     bool computeLookAt = isReadyForPhysics() && !qApp->isHMDMode() &&
                         (mode == CAMERA_MODE_FIRST_PERSON_LOOK_AT || mode == CAMERA_MODE_LOOK_AT || mode == CAMERA_MODE_SELFIE);
@@ -3553,7 +3558,7 @@ void MyAvatar::updateOrientation(float deltaTime) {
     }
 
     if (targetSpeed != 0.0f) {
-        const float ROTATION_RAMP_TIMESCALE = 0.5f;
+        const float ROTATION_RAMP_TIMESCALE = (qApp->isHMDMode() ? 0.02f : 0.5f);
         float blend = deltaTime / ROTATION_RAMP_TIMESCALE;
         if (blend > 1.0f) {
             blend = 1.0f;
@@ -3561,7 +3566,7 @@ void MyAvatar::updateOrientation(float deltaTime) {
         _bodyYawDelta = (1.0f - blend) * _bodyYawDelta + blend * targetSpeed;
     } else if (_bodyYawDelta != 0.0f) {
         // attenuate body rotation speed
-        const float ROTATION_DECAY_TIMESCALE = 0.05f;
+        const float ROTATION_DECAY_TIMESCALE = (qApp->isHMDMode() ? 0.001f : 0.05f);
         float attenuation = 1.0f - deltaTime / ROTATION_DECAY_TIMESCALE;
         if (attenuation < 0.0f) {
             attenuation = 0.0f;
@@ -3594,7 +3599,7 @@ void MyAvatar::updateOrientation(float deltaTime) {
         const glm::vec3 characterForward = getWorldOrientation() * Vectors::UNIT_NEG_Z;
         float forwardSpeed = glm::dot(characterForward, getWorldVelocity());
 
-        // only enable roll-turns if we are moving forward or backward at greater then MIN_CONTROL_SPEED
+        // only enable roll-turns if we are moving forward or backward at greater than MIN_CONTROL_SPEED
         if (fabsf(forwardSpeed) >= MIN_CONTROL_SPEED) {
 
             float direction = forwardSpeed > 0.0f ? 1.0f : -1.0f;
@@ -4086,7 +4091,7 @@ void MyAvatar::updateActionMotor(float deltaTime) {
         float finalMaxMotorSpeed = sensorToWorldScale * DEFAULT_AVATAR_MAX_FLYING_SPEED * _walkSpeedScalar;
         float speedGrowthTimescale  = 2.0f;
         float speedIncreaseFactor = 1.8f * _walkSpeedScalar;
-        motorSpeed *= 1.0f + glm::clamp(deltaTime / speedGrowthTimescale, 0.0f, 1.0f) * speedIncreaseFactor;
+        motorSpeed *= 1.0f + glm::pow(glm::clamp(deltaTime / speedGrowthTimescale, 0.0f, 1.0f), 0.85f) * speedIncreaseFactor;
         // use feedback from CharacterController to prevent tunneling under high motorspeed
         motorSpeed *= _characterController.getCollisionBrakeAttenuationFactor();
         const float maxBoostSpeed = sensorToWorldScale * MAX_BOOST_SPEED;
@@ -4226,7 +4231,7 @@ void MyAvatar::setSessionUUID(const QUuid& sessionUUID) {
             _avatarEntitiesLock.withReadLock([&] {
                 avatarEntityIDs = _packedAvatarEntityData.keys();
             });
-            EntityEditPacketSender* packetSender = qApp->getEntityEditPacketSender();
+            auto packetSender = qApp->getEntityEditPacketSender();
             entityTree->withWriteLock([&] {
                 for (const auto& entityID : avatarEntityIDs) {
                     auto entity = entityTree->findEntityByID(entityID);
@@ -6883,7 +6888,7 @@ void MyAvatar::sendPacket(const QUuid& entityID) const {
     if (entityTree) {
         entityTree->withWriteLock([&] {
             // force an update packet
-            EntityEditPacketSender* packetSender = qApp->getEntityEditPacketSender();
+            auto packetSender = qApp->getEntityEditPacketSender();
             packetSender->queueEditAvatarEntityMessage(entityTree, entityID);
         });
     }

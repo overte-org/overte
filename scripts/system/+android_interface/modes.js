@@ -30,6 +30,7 @@ var radar = Script.require('./radar.js');
 var uniqueColor = Script.require('./uniqueColor.js');
 var displayNames = Script.require('./displayNames.js');
 var clickWeb = Script.require('./clickWeb.js');
+var androidControls = Script.require('./androidControls.js');
 
 function printd(str) {
     if (logEnabled) {       
@@ -99,10 +100,12 @@ function switchToMode(newMode) {
         radar.startRadarMode();
         displayNames.ending();
         clickWeb.ending();
+        androidControls.ending();
     } else  if (currentMode == MODE_MY_VIEW) {
         // nothing to do yet
         displayNames.init();
         clickWeb.init();
+        androidControls.init();
     } else {
         printd("Unknown view mode " + currentMode);
     }

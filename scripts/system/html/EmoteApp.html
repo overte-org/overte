@@ -1,4 +1,4 @@
-﻿<!--
+<!--
 //  EmoteApp.html
 //
 //  Created by Brad Hefta-Gaub on 7 Jan 2018
@@ -110,7 +110,6 @@
                <input type="button" class="emote-button white" value="Love"></p>
         </div>
 
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
         <script>
             function main() {
                 // Send an event to emote.js when the page loads and is ready to get things rolling
@@ -122,17 +121,19 @@
                 EventBridge.emitWebEvent(JSON.stringify(readyEvent));
 
                 // Send an event when user click on each of the emote buttons
-                $(".emote-button").click(function(){
-                    console.log(this.value + " button click");
-                    var clickEvent = {
-                        "type": "click",
-                        "data": this.value
-                    };
-                    EventBridge.emitWebEvent(JSON.stringify(clickEvent));
+                document.querySelectorAll(".emote-button").forEach((btn)=>{
+                    btn.addEventListener("click", (e)=>{
+                        console.log(e.target.value + " button click");
+                        var clickEvent = {
+                            "type": "click",
+                            "data": e.target.value
+                        };
+                        EventBridge.emitWebEvent(JSON.stringify(clickEvent));
+                    });
                 });
             }
 
-            $(document).ready(main);
+            document.addEventListener("DOMContentLoaded", main);
         </script>
     </body>
 </html>

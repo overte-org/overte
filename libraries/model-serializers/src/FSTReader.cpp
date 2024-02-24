@@ -4,6 +4,7 @@
 //
 //  Created by Clement on 3/26/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -20,6 +21,9 @@
 #include <NetworkingConstants.h>
 #include <SharedUtil.h>
 
+
+const QStringList SINGLE_VALUE_PROPERTIES{"name", "filename", "texdir", "script", "comment"};
+
 hifi::VariantMultiHash FSTReader::parseMapping(QIODevice* device) {
     hifi::VariantMultiHash properties;
 
@@ -32,9 +36,25 @@ hifi::VariantMultiHash FSTReader::parseMapping(QIODevice* device) {
         if (sections.size() < 2) {
             continue;
         }
+
+        // We can have URLs like:
+        // filename = https://www.dropbox.com/scl/fi/xxx/avatar.fbx?rlkey=xxx&dl=1\n
+        // These confuse the parser due to the presence of = in the URL.
+        //
+        // SINGLE_VALUE_PROPERTIES contains a list of things that may be URLs or contain an =
+        // for some other reason, and that we know for sure contain only a single value after
+        // the first =.
+        //
+        // Really though, we should just use JSON instead.
         QByteArray name = sections.at(0).trimmed();
-        if (sections.size() == 2) {
-            properties.insert(name, sections.at(1).trimmed());
+        bool isSingleValue = SINGLE_VALUE_PROPERTIES.contains(name);
+
+        if (sections.size() == 2 || isSingleValue) {
+            // As per the above, we can have '=' signs inside of URLs, so instead of
+            // using the split string, just use everything after the first '='.
+
+            QString value = line.mid(line.indexOf("=")+1).trimmed();
+            properties.insert(name, value);
         } else if (sections.size() == 3) {
             QVariantHash heading = properties.value(name).toHash();
             heading.insert(sections.at(1).trimmed(), sections.at(2).trimmed());
@@ -253,7 +273,7 @@ QVector<QString> FSTReader::getScripts(const QUrl& url, const hifi::VariantMulti
 hifi::VariantMultiHash FSTReader::downloadMapping(const QString& url) {
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
     QNetworkRequest networkRequest = QNetworkRequest(url);
-    networkRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    networkRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
     QNetworkReply* reply = networkAccessManager.get(networkRequest);
     QEventLoop loop;

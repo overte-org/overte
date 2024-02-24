@@ -44,16 +44,8 @@
 using Mutex = std::mutex;
 using Lock = std::lock_guard<Mutex>;
 
-static std::mutex logBufferMutex;
-static std::string logBuffer;
-
 void messageHandler(QtMsgType type, const QMessageLogContext& context, const QString& message) {
     auto logMessage = LogHandler::getInstance().printMessage((LogMsgType) type, context, message);
-
-    if (!logMessage.isEmpty()) {
-        Lock lock(logBufferMutex);
-        logBuffer.append(logMessage.toStdString() + '\n');
-    }
 }
 
 int EntityScriptServer::_entitiesScriptEngineCount = 0;
@@ -149,10 +141,13 @@ void EntityScriptServer::handleEntityScriptGetStatusPacket(QSharedPointer<Receiv
 
 void EntityScriptServer::handleSettings() {
 
+
     auto nodeList = DependencyManager::get<NodeList>();
 
     auto& domainHandler = nodeList->getDomainHandler();
     const QJsonObject& settingsObject = domainHandler.getSettingsObject();
+
+    commonParseSettingsObject(settingsObject);
 
     static const QString ENTITY_SCRIPT_SERVER_SETTINGS_KEY = "entity_script_server";
 
@@ -214,10 +209,10 @@ void EntityScriptServer::handleEntityServerScriptLogPacket(QSharedPointer<Receiv
 }
 
 void EntityScriptServer::pushLogs() {
-    std::string buffer;
+    QJsonArray buffer;
     {
-        Lock lock(logBufferMutex);
-        std::swap(logBuffer, buffer);
+        Lock lock(_logBufferMutex);
+        std::swap(_logBuffer, buffer);
     }
 
     if (buffer.empty()) {
@@ -228,14 +223,25 @@ void EntityScriptServer::pushLogs() {
     }
 
     auto nodeList = DependencyManager::get<NodeList>();
+    QJsonDocument document;
+    document.setArray(buffer);
+    QString data(document.toJson());
+    std::string string = data.toStdString();
+    auto cstring = string.c_str();
     for (auto uuid : _logListeners) {
         auto node = nodeList->nodeWithUUID(uuid);
         if (node && node->getActiveSocket()) {
             auto packet = NLPacketList::create(PacketType::EntityServerScriptLog, QByteArray(), true, true);
-            packet->write(buffer.data(), buffer.size());
+            packet->write(cstring, strlen(cstring));
             nodeList->sendPacketList(std::move(packet), *node);
         }
     }
+}
+
+void EntityScriptServer::addLogEntry(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID, ScriptMessage::Severity severity) {
+    ScriptMessage entry(message, fileName, lineNumber, entityID, ScriptMessage::ScriptType::TYPE_ENTITY_SCRIPT, severity);
+    Lock lock(_logBufferMutex);
+    _logBuffer.append(entry.toJson());
 }
 
 void EntityScriptServer::handleEntityScriptCallMethodPacket(QSharedPointer<ReceivedMessage> receivedMessage, SharedNodePointer senderNode) {
@@ -292,7 +298,7 @@ void EntityScriptServer::run() {
     entityScriptingInterface->init();
 
     _entityViewer.init();
-    
+
     // setup the JSON filter that asks for entities with a non-default serverScripts property
     QJsonObject queryJSONParameters;
     queryJSONParameters[EntityJSONQueryProperties::SERVER_SCRIPTS_PROPERTY] = EntityQueryFilterSymbol::NonDefault;
@@ -303,7 +309,7 @@ void EntityScriptServer::run() {
     queryFlags[EntityJSONQueryProperties::INCLUDE_DESCENDANTS_PROPERTY] = true;
 
     queryJSONParameters[EntityJSONQueryProperties::FLAGS_PROPERTY] = queryFlags;
-    
+
     // setup the JSON parameters so that OctreeQuery does not use a frustum and uses our JSON filter
     _entityViewer.getOctreeQuery().setJSONParameters(queryJSONParameters);
 
@@ -380,7 +386,7 @@ void EntityScriptServer::nodeKilled(SharedNodePointer killedNode) {
             if (!hasAnotherEntityServer) {
                 clear();
             }
-            
+
             break;
         }
         case NodeType::Agent: {
@@ -465,6 +471,29 @@ void EntityScriptServer::resetEntitiesScriptEngine() {
     connect(newManager.get(), &ScriptManager::errorMessage, scriptEngines, &ScriptEngines::onErrorMessage);
     connect(newManager.get(), &ScriptManager::warningMessage, scriptEngines, &ScriptEngines::onWarningMessage);
     connect(newManager.get(), &ScriptManager::infoMessage, scriptEngines, &ScriptEngines::onInfoMessage);
+
+    // Make script engine messages available through ScriptDiscoveryService
+    connect(newManager.get(), &ScriptManager::infoEntityMessage, scriptEngines, &ScriptEngines::infoEntityMessage);
+    connect(newManager.get(), &ScriptManager::printedEntityMessage, scriptEngines, &ScriptEngines::printedEntityMessage);
+    connect(newManager.get(), &ScriptManager::errorEntityMessage, scriptEngines, &ScriptEngines::errorEntityMessage);
+    connect(newManager.get(), &ScriptManager::warningEntityMessage, scriptEngines, &ScriptEngines::warningEntityMessage);
+
+    connect(newManager.get(), &ScriptManager::infoEntityMessage,
+            [this](const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID) {
+                addLogEntry(message, fileName, lineNumber, entityID, ScriptMessage::Severity::SEVERITY_INFO);
+            });
+    connect(newManager.get(), &ScriptManager::printedEntityMessage,
+            [this](const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID) {
+                addLogEntry(message, fileName, lineNumber, entityID, ScriptMessage::Severity::SEVERITY_PRINT);
+            });
+    connect(newManager.get(), &ScriptManager::errorEntityMessage,
+            [this](const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID) {
+                addLogEntry(message, fileName, lineNumber, entityID, ScriptMessage::Severity::SEVERITY_ERROR);
+            });
+    connect(newManager.get(), &ScriptManager::warningEntityMessage,
+            [this](const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID) {
+                addLogEntry(message, fileName, lineNumber, entityID, ScriptMessage::Severity::SEVERITY_WARNING);
+            });
 
     connect(newManager.get(), &ScriptManager::update, this, [this] {
         _entityViewer.queryOctree();
@@ -584,7 +613,7 @@ void EntityScriptServer::sendStatsPacket() {
     }
     scriptEngineStats["number_running_scripts"] = numberRunningScripts;
     statsObject["script_engine_stats"] = scriptEngineStats;
-    
+
 
     auto nodeList = DependencyManager::get<NodeList>();
     QJsonObject nodesObject;

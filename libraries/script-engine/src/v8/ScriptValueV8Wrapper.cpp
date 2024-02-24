@@ -95,22 +95,38 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     if (v8This.get()->IsObject()) {
         recv = v8This.get();
     }else{
-        recv = _engine->getContext()->Global();
+        recv = context->Global();
     }
 
     lock.lockForRead();
-    auto maybeResult = v8Function->Call(_engine->getContext(), recv, args.length(), v8Args);
+    auto maybeResult = v8Function->Call(context, recv, args.length(), v8Args);
     lock.unlock();
     if (tryCatch.HasCaught()) {
-        qCDebug(scriptengine_v8) << "Function call failed: \"" << _engine->formatErrorMessageFromTryCatch(tryCatch);
+        QString errorMessage(QString("Function call failed: \"") + _engine->formatErrorMessageFromTryCatch(tryCatch));
+        if (_engine->_manager) {
+            v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
+            int errorLineNumber = -1;
+            if (!exceptionMessage.IsEmpty()) {
+                errorLineNumber = exceptionMessage->GetLineNumber(context).FromJust();
+            }
+            _engine->_manager->scriptErrorMessage(errorMessage, getFileNameFromTryCatch(tryCatch, isolate, context),
+                                                  errorLineNumber);
+        } else {
+            qDebug(scriptengine_v8) << errorMessage;
+        }
     }
     v8::Local<v8::Value> result;
     Q_ASSERT(_engine == _value.getEngine());
     if (maybeResult.ToLocal(&result)) {
         return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
     } else {
-        //V8TODO Add more details
-        qCWarning(scriptengine_v8) << "JS function call failed";
+        auto currentContext = _engine->currentContext();
+        QString errorMessage("JS function call failed: " + currentContext->backtrace().join("\n"));
+        if (_engine->_manager) {
+            _engine->_manager->scriptErrorMessage(errorMessage, currentContext->currentFileName(), currentContext->currentLineNumber());
+        } else {
+            qDebug(scriptengine_v8) << errorMessage;
+        }
         return _engine->undefinedValue();
     }
 }
@@ -147,7 +163,8 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     Q_ASSERT(args.length() <= Q_METAMETHOD_INVOKE_MAX_ARGS);
     v8::Local<v8::Value> v8Args[Q_METAMETHOD_INVOKE_MAX_ARGS];
     int argIndex = 0;
@@ -165,7 +182,7 @@ ScriptValue ScriptValueV8Wrapper::construct(const ScriptValueList& args) {
     // V8TODO: I'm not sure if this is correct, maybe use CallAsConstructor instead?
     // Maybe it's CallAsConstructor for function and NewInstance for class?
     lock.lockForRead();
-    auto maybeResult = v8Function->NewInstance(_engine->getContext(), args.length(), v8Args);
+    auto maybeResult = v8Function->NewInstance(context, args.length(), v8Args);
     lock.unlock();
     v8::Local<v8::Object> result;
     if (maybeResult.ToLocal(&result)) {
@@ -198,13 +215,14 @@ ScriptValue ScriptValueV8Wrapper::data() const {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     // Private properties are an experimental feature for now on V8, so we are using regular value for now
     if (_value.constGet()->IsObject()) {
         auto v8Object = v8::Local<v8::Object>::Cast(_value.constGet());
          v8::Local<v8::Value> data;
          //bool createData = false;
-         if (!v8Object->Get(_engine->getContext(), v8::String::NewFromUtf8(isolate, "__data").ToLocalChecked()).ToLocal(&data)) {
+         if (!v8Object->Get(context, v8::String::NewFromUtf8(isolate, "__data").ToLocalChecked()).ToLocal(&data)) {
              data = v8::Undefined(isolate);
              Q_ASSERT(false);
              //createData = true;
@@ -239,6 +257,9 @@ ScriptEnginePointer ScriptValueV8Wrapper::engine() const {
     if (!_engine) {
         return ScriptEnginePointer();
     }
+#ifdef OVERTE_SCRIPT_USE_AFTER_DELETE_GUARD
+    Q_ASSERT(!_engine->_wasDestroyed);
+#endif
     return _engine->shared_from_this();
 }
 
@@ -256,7 +277,8 @@ bool ScriptValueV8Wrapper::hasProperty(const QString& name) const {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     //V8TODO: does function return true on IsObject too?
     if (_value.constGet()->IsObject()) {
     //V8TODO: what about flags?
@@ -264,7 +286,7 @@ bool ScriptValueV8Wrapper::hasProperty(const QString& name) const {
         v8::Local<v8::String> key = v8::String::NewFromUtf8(isolate, name.toStdString().c_str(),v8::NewStringType::kNormal).ToLocalChecked();
         const v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(_value.constGet());
         //V8TODO: Which context?
-        if (object->Get(_engine->getContext(), key).ToLocal(&resultLocal)) {
+        if (object->Get(context, key).ToLocal(&resultLocal)) {
             return true;
         } else {
             return false;
@@ -280,7 +302,8 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
     v8::Locker locker(_engine->getIsolate());
     v8::Isolate::Scope isolateScope(_engine->getIsolate());
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     if (_value.constGet()->IsNullOrUndefined()) {
         return _engine->undefinedValue();
     }
@@ -291,14 +314,14 @@ ScriptValue ScriptValueV8Wrapper::property(const QString& name, const ScriptValu
         const v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(_value.constGet());
         //V8TODO: Which context?
         lock.lockForRead();
-        if (object->Get(_engine->getContext(), key).ToLocal(&resultLocal)) {
+        if (object->Get(context, key).ToLocal(&resultLocal)) {
             V8ScriptValue result(_engine, resultLocal);
             lock.unlock();
             return ScriptValue(new ScriptValueV8Wrapper(_engine, std::move(result)));
         } else {
             QString parentValueQString("");
             v8::Local<v8::String> parentValueString;
-            if (_value.constGet()->ToDetailString(_engine->getContext()).ToLocal(&parentValueString)) {
+            if (_value.constGet()->ToDetailString(context).ToLocal(&parentValueString)) {
                 QString(*v8::String::Utf8Value(isolate, parentValueString));
             }
             qCDebug(scriptengine_v8) << "Failed to get property, parent of value: " << name << ", parent type: " << QString(*v8::String::Utf8Value(isolate, _value.constGet()->TypeOf(isolate))) << " parent value: " << parentValueQString;
@@ -359,7 +382,8 @@ void ScriptValueV8Wrapper::setData(const ScriptValue& value) {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     V8ScriptValue unwrapped = fullUnwrap(value);
     // Private properties are an experimental feature for now on V8, so we are using regular value for now
     if (_value.constGet()->IsNullOrUndefined()) {
@@ -368,7 +392,7 @@ void ScriptValueV8Wrapper::setData(const ScriptValue& value) {
     }
     if (_value.constGet()->IsObject()) {
         auto v8Object = v8::Local<v8::Object>::Cast(_value.constGet());
-        if( !v8Object->Set(_engine->getContext(), v8::String::NewFromUtf8(isolate, "__data").ToLocalChecked(), unwrapped.constGet()).FromMaybe(false)) {
+        if( !v8Object->Set(context, v8::String::NewFromUtf8(isolate, "__data").ToLocalChecked(), unwrapped.constGet()).FromMaybe(false)) {
             qCDebug(scriptengine_v8) << "ScriptValueV8Wrapper::data(): Data object couldn't be created";
             Q_ASSERT(false);
         }
@@ -384,7 +408,8 @@ void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& v
     v8::Locker locker(_engine->getIsolate());
     v8::Isolate::Scope isolateScope(_engine->getIsolate());
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     V8ScriptValue unwrapped = fullUnwrap(value);
     if (_value.constGet()->IsNullOrUndefined()) {
         qCDebug(scriptengine_v8) << "ScriptValueV8Wrapper::setProperty() was called on a value that is null or undefined";
@@ -403,7 +428,7 @@ void ScriptValueV8Wrapper::setProperty(const QString& name, const ScriptValue& v
     } else {
         v8::Local<v8::String> details;
         QString detailsString("");
-        if(_value.get()->ToDetailString(_engine->getContext()).ToLocal(&details)) {
+        if(_value.get()->ToDetailString(context).ToLocal(&details)) {
             v8::String::Utf8Value utf8Value(isolate,details);
             detailsString = *utf8Value;
         }
@@ -419,7 +444,8 @@ void ScriptValueV8Wrapper::setProperty(quint32 arrayIndex, const ScriptValue& va
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     V8ScriptValue unwrapped = fullUnwrap(value);
     if (_value.constGet()->IsNullOrUndefined()) {
         qCDebug(scriptengine_v8) << "ScriptValueV8Wrapper::setProperty() was called on a value that is null or undefined";
@@ -429,7 +455,7 @@ void ScriptValueV8Wrapper::setProperty(quint32 arrayIndex, const ScriptValue& va
         auto object = v8::Local<v8::Object>::Cast(_value.get());
         //V8TODO: I don't know which context to use here
         lock.lockForRead();
-        v8::Maybe<bool> retVal(object->Set(_engine->getContext(), arrayIndex, unwrapped.constGet()));
+        v8::Maybe<bool> retVal(object->Set(context, arrayIndex, unwrapped.constGet()));
         lock.unlock();
         if (retVal.IsJust() ? !retVal.FromJust() : true){
             qCDebug(scriptengine_v8) << "Failed to set property";
@@ -519,9 +545,10 @@ qint32 ScriptValueV8Wrapper::toInt32() const {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     v8::Local<v8::Integer> integer;
-    if (!_value.constGet()->ToInteger(_engine->getContext()).ToLocal(&integer)) {
+    if (!_value.constGet()->ToInteger(context).ToLocal(&integer)) {
         Q_ASSERT(false);
     }
     return static_cast<int32_t>((integer)->Value());
@@ -532,9 +559,10 @@ double ScriptValueV8Wrapper::toInteger() const {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     v8::Local<v8::Integer> integer;
-    if (!_value.constGet()->ToInteger(_engine->getContext()).ToLocal(&integer)) {
+    if (!_value.constGet()->ToInteger(context).ToLocal(&integer)) {
         Q_ASSERT(false);
     }
     return (integer)->Value();
@@ -545,9 +573,10 @@ double ScriptValueV8Wrapper::toNumber() const {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     v8::Local<v8::Number> number;
-    if (!_value.constGet()->ToNumber(_engine->getContext()).ToLocal(&number)) {
+    if (!_value.constGet()->ToNumber(context).ToLocal(&number)) {
         Q_ASSERT(false);
     }
     return number->Value();
@@ -569,9 +598,10 @@ quint16 ScriptValueV8Wrapper::toUInt16() const {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     v8::Local<v8::Uint32> integer;
-    if (!_value.constGet()->ToUint32(_engine->getContext()).ToLocal(&integer)) {
+    if (!_value.constGet()->ToUint32(context).ToLocal(&integer)) {
         Q_ASSERT(false);
     }
     return static_cast<uint16_t>(integer->Value());
@@ -582,9 +612,10 @@ quint32 ScriptValueV8Wrapper::toUInt32() const {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     v8::Local<v8::Uint32> integer;
-    if (!_value.constGet()->ToUint32(_engine->getContext()).ToLocal(&integer)) {
+    if (!_value.constGet()->ToUint32(context).ToLocal(&integer)) {
         Q_ASSERT(false);
     }
     return integer->Value();
@@ -620,16 +651,17 @@ bool ScriptValueV8Wrapper::equals(const ScriptValue& other) const {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(_engine->getContext());
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
     ScriptValueV8Wrapper* unwrappedOther = unwrap(other);
     Q_ASSERT(_engine->getIsolate() == unwrappedOther->_engine->getIsolate());
     if (!unwrappedOther) {
         return false;
     }else{
-        if (_value.constGet()->Equals(_engine->getContext(), unwrappedOther->toV8Value().constGet()).IsNothing()) {
+        if (_value.constGet()->Equals(context, unwrappedOther->toV8Value().constGet()).IsNothing()) {
             return false;
         } else {
-            return _value.constGet()->Equals(_engine->getContext(), unwrappedOther->toV8Value().constGet()).FromJust();
+            return _value.constGet()->Equals(context, unwrappedOther->toV8Value().constGet()).FromJust();
         }
     }
 }
@@ -658,7 +690,7 @@ bool ScriptValueV8Wrapper::isError() const {
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     auto context = _engine->getContext();
-    v8::Context::Scope contextScope(_engine->getContext());
+    v8::Context::Scope contextScope(context);
     v8::Local<v8::Value> error;
     if (!context->Global()->Get(context, v8::String::NewFromUtf8(isolate, "Error").ToLocalChecked()).ToLocal(&error)) {
         Q_ASSERT(false);

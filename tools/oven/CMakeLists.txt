@@ -11,6 +11,9 @@ include_hifi_library_headers(script-engine)
 
 setup_memory_debugger()
 setup_thread_debugger()
+add_crashpad()
+target_breakpad()
+
 
 if (WIN32)
   package_libraries_for_deployment()

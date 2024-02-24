@@ -51,7 +51,7 @@ Input::NamedVector StateController::getAvailableInputs() const {
 EndpointPointer StateController::createEndpoint(const Input& input) const {
     auto name = stateVariables[input.getChannel()];
     ReadLambda& readLambda = const_cast<QHash<QString, ReadLambda>&>(_namedReadLambdas)[name];
-    return std::make_shared<LambdaRefEndpoint>(readLambda);
+    return LambdaRefEndpoint::newEndpoint(readLambda);
 }
 
 }

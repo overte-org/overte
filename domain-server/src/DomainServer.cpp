@@ -5,6 +5,7 @@
 //  Created by Stephen Birarda on 9/26/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -61,6 +62,8 @@
 
 #include <OctreeDataUtils.h>
 #include <ThreadHelpers.h>
+#include <crash-handler/CrashHandler.h>
+
 
 using namespace std::chrono;
 
@@ -70,9 +73,9 @@ Q_LOGGING_CATEGORY(domain_server_auth, "overte.domain_server.auth")
 
 const QString ACCESS_TOKEN_KEY_PATH = "metaverse.access_token";
 const QString DomainServer::REPLACEMENT_FILE_EXTENSION = ".replace";
+const QString& DOMAIN_SERVER_SETTINGS_KEY = "domain_server";
 const QString PUBLIC_SOCKET_ADDRESS_KEY = "network_address";
 const QString PUBLIC_SOCKET_PORT_KEY = "network_port";
-const QString DOMAIN_UPDATE_AUTOMATIC_NETWORKING_KEY = "automatic_networking";
 const int MIN_PORT = 1;
 const int MAX_PORT = 65535;
 
@@ -85,6 +88,8 @@ QUuid DomainServer::_overridingDomainID;
 bool DomainServer::_getTempName { false };
 QString DomainServer::_userConfigFilename;
 int DomainServer::_parentPID { -1 };
+bool DomainServer::_forceCrashReporting{false};
+
 
 /// @brief The Domain server can proxy requests to the Directory Server, this function handles those forwarding requests.
 /// @param connection The HTTP connection object.
@@ -197,6 +202,8 @@ DomainServer::DomainServer(int argc, char* argv[]) :
     _httpManager(QHostAddress::AnyIPv4, DOMAIN_SERVER_HTTP_PORT,
         QString("%1/resources/web/").arg(QCoreApplication::applicationDirPath()), this)
 {
+    static const QString CRASH_REPORTER = "crash_reporting.enable_crash_reporter";
+
     if (_parentPID != -1) {
         watchParentProcess(_parentPID);
     }
@@ -237,11 +244,15 @@ DomainServer::DomainServer(int argc, char* argv[]) :
     _settingsManager.setupConfigMap(userConfigFilename);
 
     // setup a shutdown event listener to handle SIGTERM or WM_CLOSE for us
+
 #ifdef _WIN32
     installNativeEventFilter(&ShutdownEventListener::getInstance());
 #else
     ShutdownEventListener::getInstance();
 #endif
+
+    auto &ch = CrashHandler::getInstance();
+    ch.setEnabled(_settingsManager.valueOrDefaultValueForKeyPath(CRASH_REPORTER).toBool());
 
     qRegisterMetaType<DomainServerWebSessionData>("DomainServerWebSessionData");
     qRegisterMetaTypeStreamOperators<DomainServerWebSessionData>("DomainServerWebSessionData");
@@ -417,6 +428,8 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
     const QCommandLineOption logOption("logOptions", "Logging options, comma separated: color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald", "options");
     parser.addOption(logOption);
 
+    const QCommandLineOption forceCrashReportingOption("forceCrashReporting", "Force crash reporting to initialize.");
+    parser.addOption(forceCrashReportingOption);
 
     QStringList arguments;
     for (int i = 0; i < argc; ++i) {
@@ -487,6 +500,10 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
             _parentPID = parentPID;
             qDebug() << "Parent process PID is" << _parentPID;
         }
+    }
+
+    if (parser.isSet(forceCrashReportingOption)) {
+        _forceCrashReporting = true;
     }
 }
 
@@ -1550,18 +1567,25 @@ QJsonObject jsonForDomainSocketUpdate(const SockAddr& socket) {
 }
 
 void DomainServer::performIPAddressPortUpdate(const SockAddr& newPublicSockAddr) {
-    const QString& DOMAIN_SERVER_SETTINGS_KEY = "domain_server";
     const QString& publicSocketAddress = newPublicSockAddr.getAddress().toString();
     const int publicSocketPort = newPublicSockAddr.getPort();
 
-    sendHeartbeatToMetaverse(publicSocketAddress, publicSocketPort);
+    if (_automaticNetworkingSetting == IP_ONLY_AUTOMATIC_NETWORKING_VALUE) {
+        sendHeartbeatToMetaverse(publicSocketAddress, 0);
+    } else {
+        // Full automatic networking, update both port and IP address
+        sendHeartbeatToMetaverse(publicSocketAddress, publicSocketPort);
+    }
 
     QJsonObject rootObject;
     QJsonObject domainServerObject;
     domainServerObject.insert(PUBLIC_SOCKET_ADDRESS_KEY, publicSocketAddress);
-    domainServerObject.insert(PUBLIC_SOCKET_PORT_KEY, publicSocketPort);
+    if (_automaticNetworkingSetting == FULL_AUTOMATIC_NETWORKING_VALUE) {
+        domainServerObject.insert(PUBLIC_SOCKET_PORT_KEY, publicSocketPort);
+    }
     rootObject.insert(DOMAIN_SERVER_SETTINGS_KEY, domainServerObject);
     QJsonDocument doc(rootObject);
+    qDebug() << "DomainServer::performIPAddressPortUpdate: " << doc;
     _settingsManager.recurseJSONObjectAndOverwriteSettings(rootObject, DomainSettings);
 }
 
@@ -2470,6 +2494,16 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
                 return true;
             }
             auto domainID = domainSetting.toString();
+            qDebug() << connection->parseUrlEncodedForm();
+            auto parsed = connection->parseUrlEncodedForm();
+            if (parsed.contains(PUBLIC_SOCKET_PORT_KEY) || parsed.contains(PUBLIC_SOCKET_ADDRESS_KEY)) {
+                QJsonObject domainServerObject;
+                domainServerObject.insert(PUBLIC_SOCKET_PORT_KEY, parsed[PUBLIC_SOCKET_PORT_KEY]);
+                domainServerObject.insert(PUBLIC_SOCKET_ADDRESS_KEY, parsed[PUBLIC_SOCKET_ADDRESS_KEY]);
+                QJsonObject rootObject;
+                rootObject.insert(DOMAIN_SERVER_SETTINGS_KEY, domainServerObject);
+                _settingsManager.recurseJSONObjectAndOverwriteSettings(rootObject, DomainSettings);
+            }
             return forwardMetaverseAPIRequest(connection, url, "/api/v1/domains/" + domainID, "domain",
                                               { }, { "network_address", "network_port", "label" });
         }  else if (url.path() == URI_API_PLACES) {
@@ -2625,7 +2659,7 @@ bool DomainServer::handleHTTPSRequest(HTTPSConnection* connection, const QUrl &u
                 .arg(authorizationCode, oauthRedirectURL().toString(), _oauthClientID, _oauthClientSecret);
 
             QNetworkRequest tokenRequest(tokenRequestUrl);
-            tokenRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+            tokenRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
             tokenRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
             tokenRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
 
@@ -2970,7 +3004,7 @@ QNetworkReply* DomainServer::profileRequestGivenTokenReply(QNetworkReply* tokenR
     qDebug() << "Sending profile request to: " << profileURL;
 
     QNetworkRequest profileRequest(profileURL);
-    profileRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    profileRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     profileRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
     return NetworkAccessManager::getInstance().get(profileRequest);
 }

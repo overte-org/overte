@@ -439,6 +439,16 @@ public:
 
     QList<EntityItemID> getListOfEntityScriptIDs();
 
+    /**
+     * @brief Whether the ScriptManager is stopped and unable to run scripts
+     *
+     * This is always false for NETWORKLESS_TEST_SCRIPT scripts.
+     *
+     * Otherwise, it checks whether scriptEngines is set and is not stopped.
+     *
+     * @return true
+     * @return false
+     */
     bool isStopped() const;
 
 
@@ -470,6 +480,15 @@ public:
      * takes too long.
      */
     void waitTillDoneRunning(bool shutdown = false);
+
+    /**
+     * @brief Removes shared pointer to script engine from the list of all script engines.
+     *
+     * This allows deletion of the script engine once all shared pointer instances are gone.
+     * This function is called for entity script engines when they are  being destroyed.
+     *
+     */
+    void removeFromScriptEngines();
 
     /**
      * @brief Load a script from a given URL
@@ -1055,8 +1074,10 @@ public:
      * Emits errorMessage()
      *
      * @param message Message to send to the log
+     * @param fileName Name of the file in which message was generated. Empty string when no file name is available.
+     * @param lineNumber Number of the line on which message was generated. -1 if there line number is not available.
      */
-    void scriptErrorMessage(const QString& message);
+    void scriptErrorMessage(const QString& message, const QString& fileName, int lineNumber);
 
     /**
      * @brief Logs a script warning message and emits an warningMessage event
@@ -1064,8 +1085,10 @@ public:
      * Emits warningMessage()
      *
      * @param message Message to send to the log
+     * @param fileName Name of the file in which message was generated. Empty string when no file name is available.
+     * @param lineNumber Number of the line on which message was generated. -1 if there line number is not available.
      */
-    void scriptWarningMessage(const QString& message);
+    void scriptWarningMessage(const QString& message, const QString& fileName, int lineNumber);
 
     /**
      * @brief Logs a script info message and emits an infoMessage event
@@ -1073,8 +1096,10 @@ public:
      * Emits infoMessage()
      *
      * @param message Message to send to the log
+     * @param fileName Name of the file in which message was generated. Empty string when no file name is available.
+     * @param lineNumber Number of the line on which message was generated. -1 if there line number is not available.
      */
-    void scriptInfoMessage(const QString& message);
+    void scriptInfoMessage(const QString& message, const QString& fileName, int lineNumber);
 
     /**
      * @brief Logs a script printed message and emits an printedMessage event
@@ -1083,9 +1108,11 @@ public:
      * Emits printedMessage()
      *
      * @param message Message to send to the log
+     * @param fileName Name of the file in which message was generated. Empty string when no file name is available.
+     * @param lineNumber Number of the line on which message was generated. -1 if there line number is not available.
      */
 
-    void scriptPrintedMessage(const QString& message);
+    void scriptPrintedMessage(const QString& message, const QString& fileName, int lineNumber);
 
     /**
      * @brief Clears the debug log window
@@ -1197,6 +1224,14 @@ public:
      */
     void setAbortOnUncaughtException(bool value) { _abortOnUncaughtException = value; }
 
+    /**
+     * @brief Returns true after script finished running and doneRunning signal was called
+     *
+     * @return true If the script and doneRunning signal was called
+     * @return false If the script has not finished running yet
+     */
+    bool isDoneRunning() { return _isDoneRunning; };
+
 public slots:
 
     /**
@@ -1293,6 +1328,54 @@ signals:
      * @param scriptName
      */
     void infoMessage(const QString& message, const QString& scriptName);
+
+    /**
+     * @brief Triggered when a client side entity script prints a message to the program log
+     *
+     * @param message
+     * @param fileName Name of the file in which message was generated.
+     * @param lineNumber Number of the line on which message was generated.
+     * @param entityID
+     * @param isServerScript true if entity script is server-side, false if it is client-side.
+     */
+    void printedEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID, bool isServerScript);
+
+
+    /**
+     * @brief Triggered when a client side entity script generates an error
+     *
+     * @param message
+     * @param fileName Name of the file in which message was generated.
+     * @param lineNumber Number of the line on which message was generated.
+     * @param entityID
+     * @param isServerScript true if entity script is server-side, false if it is client-side.
+     */
+    void errorEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID, bool isServerScript);
+
+
+
+    /**
+     * @brief  Triggered when a client side entity script generates a warning
+     *
+     * @param message
+     * @param fileName Name of the file in which message was generated.
+     * @param lineNumber Number of the line on which message was generated.
+     * @param entityID
+     * @param isServerScript true if entity script is server-side, false if it is client-side.
+     */
+    void warningEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID, bool isServerScript);
+
+
+    /**
+     * @brief Triggered when a client side entity script generates an information message
+     *
+     * @param message
+     * @param fileName Name of the file in which message was generated.
+     * @param lineNumber Number of the line on which message was generated.
+     * @param entityID
+     * @param isServerScript true if entity script is server-side, false if it is client-side.
+     */
+    void infoEntityMessage(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID, bool isServerScript);
 
 
     /**
@@ -1527,6 +1610,7 @@ protected:
     std::atomic<bool> _isFinished { false };
     std::atomic<bool> _isRunning { false };
     std::atomic<bool> _isStopping { false };
+    std::atomic<bool> _isDoneRunning { false };
     bool _areMetaTypesInitialized { false };
     bool _isInitialized { false };
     QHash<QTimer*, CallbackData> _timerFunctionMap;

@@ -321,7 +321,8 @@ void LogDialog::handleFilterDropdownChanged(int selection) {
 }
 
 QString LogDialog::getCurrentLog() {
-    return _logger->getLogData();
+    // We start 512 KiB from the end of the file.
+    return _logger->getLogData(524288);
 }
 
 void LogDialog::appendLogLine(QString logLine) {

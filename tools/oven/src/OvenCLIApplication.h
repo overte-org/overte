@@ -21,7 +21,25 @@ class OvenCLIApplication : public QCoreApplication, public Oven {
 public:
     OvenCLIApplication(int argc, char* argv[]);
 
-    static void parseCommandLine(int argc, char* argv[]);
+    enum parseResult {
+        GUIMode,
+        CLIMode
+    };
+
+    /**
+     * @brief Parses the command line arguments
+     *
+     * Oven can operate both in GUI and CLI mode. Depending on which arguments are passed,
+     * we pick the mode to use, and this function returns it.
+     *
+     * Both modes can have the crash handler enabled.
+     *
+     * @param argc argc
+     * @param argv argv
+     * @param enableCrashHandler Output parameter -- whether the crash handler should be enabled.
+     * @return parseResult Which application we should run
+     */
+    static parseResult parseCommandLine(int argc, char* argv[], bool &enableCrashHandler);
 
     static OvenCLIApplication* instance() { return dynamic_cast<OvenCLIApplication*>(QCoreApplication::instance()); }
 

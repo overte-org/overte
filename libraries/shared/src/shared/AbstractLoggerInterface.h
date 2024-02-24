@@ -43,7 +43,7 @@ public:
     inline void setUnknownPrint(bool unknownPrint) { _unknownPrint = unknownPrint; }
 
     virtual void addMessage(const QString&) = 0;
-    virtual QString getLogData() = 0;
+    virtual QString getLogData(const qint64 maxSize = 0) = 0;
     virtual void locateLog() = 0;
     virtual void sync() {}
 

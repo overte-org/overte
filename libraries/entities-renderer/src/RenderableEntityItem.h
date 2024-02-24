@@ -4,7 +4,7 @@
 //
 //  Created by Brad Hefta-Gaub on 12/6/13.
 //  Copyright 2013 High Fidelity, Inc.
-//  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -14,6 +14,8 @@
 #define hifi_RenderableEntityItem_h
 
 #include <render/Scene.h>
+#include <render/HighlightStyle.h>
+
 #include <EntityItem.h>
 #include <Sound.h>
 #include "AbstractViewStateInterface.h"
@@ -75,6 +77,7 @@ public:
     virtual uint32_t metaFetchMetaSubItems(ItemIDs& subItems) const override;
     virtual Item::Bound getBound(RenderArgs* args) override;
     bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const override;
+    virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const override;
 
 protected:
     virtual bool needsRenderUpdateFromEntity() const final { return needsRenderUpdateFromEntity(_entity); }
@@ -132,6 +135,7 @@ protected:
     void updateMaterials(bool baseMaterialChanged = false);
     bool materialsTransparent() const;
     Item::Bound getMaterialBound(RenderArgs* args);
+    void updateItemKeyBuilderFromMaterials(ItemKey::Builder& builder);
     void updateShapeKeyBuilderFromMaterials(ShapeKey::Builder& builder);
 
     Item::Bound _bound;

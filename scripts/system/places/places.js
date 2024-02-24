@@ -74,7 +74,6 @@
         var n = d.getTime();
         
         var messageObj = JSON.parse(message);
-        print(message);
         if (messageObj.channel === channel) {
             if (messageObj.action === "READY_FOR_CONTENT" && (n - timestamp) > INTERCALL_DELAY) {
                 d = new Date();
@@ -95,7 +94,7 @@
                 if (LocationBookmarks.getHomeLocationAddress()) {
                     location.handleLookupString(LocationBookmarks.getHomeLocationAddress());
                 } else {
-                    location.goToLocalSandbox();
+                    Window.location = "file:///~/serverless/tutorial.json";
                 }                
             } else if (messageObj.action === "GO_BACK" && (n - timestamp) > INTERCALL_DELAY) {
                 location.goBack();
@@ -213,7 +212,6 @@
             warning = "WARNING: " + percentProtocolRejected + "% of the places are not listed because they are running under a different protocol. Maybe consider to upgrade.";
         }
 
-        print(JSON.stringify(portalList));
         var message = {
             "channel": channel,
             "action": "PLACE_DATA",
@@ -444,7 +442,7 @@
             "domain": "",
             "domainOrder": "ZZZZZZZZZZZZZZZ",
             "metaverseServer": "",
-            "metaverseRegion": "local"            
+            "metaverseRegion": "local"
         };
         portalList.push(tutorialPortal);
         

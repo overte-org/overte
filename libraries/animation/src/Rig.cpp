@@ -305,7 +305,7 @@ static const QString MAIN_STATE_MACHINE_RIGHT_HAND_POSITION("mainStateMachineRig
 // - isLeftThumbRaise
 // - isLeftIndexPointAndThumbRaise
 // - isLeftHandGrasp
-Rig::Rig() {
+Rig::Rig() : _internalFlow(this), _networkFlow(this) {
     // Ensure thread-safe access to the rigRegistry.
     std::lock_guard<std::mutex> guard(rigRegistryMutex);
 

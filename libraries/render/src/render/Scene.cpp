@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 1/11/15.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -606,6 +607,22 @@ void Scene::resetSelections(const Transaction::SelectionResets& transactions) {
             found->second = selection;
         }
     }
+}
+
+void Scene::addItemToSelection(const std::string& selectionName, ItemID itemID) {
+    std::unique_lock<std::mutex> lock(_selectionsMutex);
+    auto found = _selections.find(selectionName);
+    if (found == _selections.end()) {
+        Selection selection = Selection(selectionName, { itemID });
+        _selections[selectionName] = selection;
+    } else {
+        _selections[selectionName].add(itemID);
+    }
+}
+
+void Scene::removeSelection(const std::string& selectionName) {
+    std::unique_lock<std::mutex> lock(_selectionsMutex);
+    _selections.erase(selectionName);
 }
 
 // Access a particular Stage (empty if doesn't exist)

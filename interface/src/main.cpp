@@ -24,20 +24,24 @@
 #include <SharedUtil.h>
 #include <NetworkAccessManager.h>
 #include <gl/GLHelpers.h>
+#include <iostream>
 
 #include "AddressManager.h"
 #include "Application.h"
-#include "CrashHandler.h"
+#include "crash-handler/CrashHandler.h"
 #include "InterfaceLogging.h"
 #include "UserActivityLogger.h"
 #include "MainWindow.h"
 #include "Profile.h"
 #include "LogHandler.h"
+#include <plugins/PluginManager.h>
+#include <plugins/DisplayPlugin.h>
+#include <plugins/CodecPlugin.h>
 
 #ifdef Q_OS_WIN
 #include <Windows.h>
 extern "C" {
-    typedef int(__stdcall * CHECKMINSPECPROC) ();
+    typedef int(__stdcall* CHECKMINSPECPROC)();
 }
 #endif
 
@@ -51,7 +55,7 @@ int main(int argc, const char* argv[]) {
     // This appears to resolve the issues with corrupted fonts on OSX.  No
     // idea why.
     qputenv("QT_ENABLE_GLYPH_CACHE_WORKAROUND", "true");
-	// https://i.kym-cdn.com/entries/icons/original/000/008/342/ihave.jpg
+    // https://i.kym-cdn.com/entries/icons/original/000/008/342/ihave.jpg
     QSurfaceFormat::setDefaultFormat(format);
 #endif
 
@@ -63,10 +67,23 @@ int main(int argc, const char* argv[]) {
     }
 #endif
 
+    // Setup QCoreApplication settings, install log message handler
     setupHifiApplication(BuildInfo::INTERFACE_NAME);
 
     // Journald by default in user applications is probably a bit too modern still.
     LogHandler::getInstance().setShouldUseJournald(false);
+
+
+    // Extend argv to enable WebGL rendering
+    std::vector<const char*> argvExtended(&argv[0], &argv[argc]);
+    argvExtended.push_back("--ignore-gpu-blocklist");
+#ifdef Q_OS_ANDROID
+    argvExtended.push_back("--suppress-settings-reset");
+#endif
+    int argcExtended = (int)argvExtended.size();
+
+    QElapsedTimer startupTime;
+    startupTime.start();
 
     QCommandLineParser parser;
     parser.setApplicationDescription("Overte -- A free/libre and open-source virtual worlds client");
@@ -125,12 +142,12 @@ int main(int argc, const char* argv[]) {
         "displays"
     );
     QCommandLineOption disableDisplaysOption(
-        "disable-displays",
+        "disableDisplayPlugins",
         "Displays to disable. Valid options include \"OpenVR (Vive)\" and \"Oculus Rift\"",
         "string"
     );
     QCommandLineOption disableInputsOption(
-        "disable-inputs",
+        "disableInputPlugins",
         "Inputs to disable. Valid options include \"OpenVR (Vive)\" and \"Oculus Rift\"",
         "string"
     );
@@ -246,10 +263,24 @@ int main(int argc, const char* argv[]) {
         "Logging options, comma separated: color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald",
         "options"
     );
+    QCommandLineOption getPluginsOption(
+        "getPlugins",
+        "Print out a list of plugins in JSON"
+    );
+    QCommandLineOption abortAfterStartupOption(
+        "abortAfterStartup",
+        "Debug option. Aborts right after startup."
+    );
+    QCommandLineOption abortAfterInitOption(
+        "abortAfterInit",
+        "Debug option. Aborts after initialization, right before the program starts running the event loop."
+    );
+
     // "--qmljsdebugger", which appears in output from "--help-all".
     // Those below don't seem to be optional.
     //     --ignore-gpu-blacklist
     //     --suppress-settings-reset
+
 
     parser.addOption(urlOption);
     parser.addOption(protocolVersionOption);
@@ -287,6 +318,10 @@ int main(int argc, const char* argv[]) {
     parser.addOption(quitWhenFinishedOption);
     parser.addOption(fastHeartbeatOption);
     parser.addOption(logOption);
+    parser.addOption(abortAfterStartupOption);
+    parser.addOption(abortAfterInitOption);
+    parser.addOption(getPluginsOption);
+
 
     QString applicationPath;
     // A temporary application instance is needed to get the location of the running executable
@@ -296,7 +331,7 @@ int main(int argc, const char* argv[]) {
     {
         QCoreApplication tempApp(argc, const_cast<char**>(argv));
 
-        parser.process(QCoreApplication::arguments()); // Must be run after QCoreApplication is initalised.
+        parser.process(QCoreApplication::arguments());  // Must be run after QCoreApplication is initalised.
 
 #ifdef Q_OS_OSX
         if (QFileInfo::exists(QCoreApplication::applicationDirPath() + "/../../../config.json")) {
@@ -309,15 +344,95 @@ int main(int argc, const char* argv[]) {
 #endif
     }
 
+    // TODO: We need settings for Application, but Settings needs an Application
+    // to handle events. Needs splitting into two parts: enough initialization
+    // for Application to work, and then thread start afterwards.
+    Setting::init();
+    Application app(argcExtended, const_cast<char**>(argvExtended.data()), parser, startupTime);
+
+    if (parser.isSet("abortAfterStartup")) {
+        return 99;
+    }
+
     // We want to configure the logging system as early as possible
-    auto &logHandler = LogHandler::getInstance();
+    auto& logHandler = LogHandler::getInstance();
+
     if (parser.isSet(logOption)) {
         if (!logHandler.parseOptions(parser.value(logOption).toUtf8(), logOption.names().first())) {
-            QCoreApplication mockApp(argc, const_cast<char**>(argv)); // required for call to showHelp()
+            QCoreApplication mockApp(argc, const_cast<char**>(argv));  // required for call to showHelp()
             parser.showHelp();
             Q_UNREACHABLE();
         }
     }
+
+    app.initializePluginManager(parser);
+
+    if (parser.isSet(getPluginsOption)) {
+        auto pluginManager = PluginManager::getInstance();
+
+        QJsonObject pluginsJson;
+        for (const auto &plugin : pluginManager->getPluginInfo()) {
+            QJsonObject data;
+            data["data"] = plugin.metaData;
+            data["loaded"] = plugin.loaded;
+            data["disabled"] = plugin.disabled;
+            data["filteredOut"] = plugin.filteredOut;
+            data["wrongVersion"] = plugin.wrongVersion;
+            pluginsJson[plugin.name] = data;
+        }
+
+        QJsonObject inputJson;
+        for (const auto &plugin : pluginManager->getInputPlugins()) {
+            QJsonObject data;
+            data["subdeviceNames"] = QJsonArray::fromStringList(plugin->getSubdeviceNames());
+            data["deviceName"] = plugin->getDeviceName();
+            data["configurable"] = plugin->configurable();
+            data["isHandController"] = plugin->isHandController();
+            data["isHeadController"] = plugin->isHeadController();
+            data["isActive"] = plugin->isActive();
+            data["isSupported"] = plugin->isSupported();
+
+            inputJson[plugin->getName()] = data;
+        }
+
+        QJsonObject displayJson;
+        for (const auto &plugin : pluginManager->getDisplayPlugins()) {
+            QJsonObject data;
+            data["isHmd"] = plugin->isHmd();
+            data["isStereo"] = plugin->isStereo();
+            data["targetFramerate"] = plugin->getTargetFrameRate();
+            data["hasAsyncReprojection"] = plugin->hasAsyncReprojection();
+            data["isActive"] = plugin->isActive();
+            data["isSupported"] = plugin->isSupported();
+
+            displayJson[plugin->getName()] = data;
+        }
+
+        QJsonObject codecsJson;
+        for (const auto &plugin : pluginManager->getCodecPlugins()) {
+            QJsonObject data;
+            data["isActive"] = plugin->isActive();
+            data["isSupported"] = plugin->isSupported();
+
+            codecsJson[plugin->getName()] = data;
+        }
+
+        QJsonObject platformsJson;
+        platformsJson["steamAvailable"] = (pluginManager->getSteamClientPlugin() != nullptr);
+        platformsJson["oculusAvailable"] = (pluginManager->getOculusPlatformPlugin() != nullptr);
+
+        QJsonObject root;
+        root["plugins"] = pluginsJson;
+        root["inputs"] = inputJson;
+        root["displays"] = displayJson;
+        root["codecs"] = codecsJson;
+        root["platforms"] = platformsJson;
+
+        std::cout << QJsonDocument(root).toJson().toStdString() << "\n";
+
+        return 0;
+    }
+
 
     // Act on arguments for early termination.
     if (parser.isSet(versionOption)) {
@@ -325,7 +440,7 @@ int main(int argc, const char* argv[]) {
         Q_UNREACHABLE();
     }
     if (parser.isSet(helpOption)) {
-        QCoreApplication mockApp(argc, const_cast<char**>(argv)); // required for call to showHelp()
+        QCoreApplication mockApp(argc, const_cast<char**>(argv));  // required for call to showHelp()
         parser.showHelp();
         Q_UNREACHABLE();
     }
@@ -378,7 +493,7 @@ int main(int argc, const char* argv[]) {
 
     // Early check for --traceFile argument
     auto tracer = DependencyManager::set<tracing::Tracer>();
-    const char * traceFile = nullptr;
+    const char* traceFile = nullptr;
     float traceDuration = 0.0f;
     if (parser.isSet(traceFileOption)) {
         traceFile = parser.value(traceFileOption).toStdString().c_str();
@@ -405,13 +520,21 @@ int main(int argc, const char* argv[]) {
     QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
 #endif
 
-    QElapsedTimer startupTime;
-    startupTime.start();
 
-    Setting::init();
+
+
 
     // Instance UserActivityLogger now that the settings are loaded
     auto& ual = UserActivityLogger::getInstance();
+    auto& ch = CrashHandler::getInstance();
+
+    QObject::connect(&ch, &CrashHandler::enabledChanged, [](bool enabled) {
+        Settings s;
+        s.beginGroup("Crash");
+        s.setValue("ReportingEnabled", enabled);
+        s.endGroup();
+    });
+
     // once the settings have been loaded, check if we need to flip the default for UserActivityLogger
     if (!ual.isDisabledSettingSet()) {
         // the user activity logger is opt-out for Interface
@@ -423,16 +546,19 @@ int main(int argc, const char* argv[]) {
 
     if (parser.isSet(forceCrashReportingOption)) {
         qInfo() << "Crash reporting enabled on the command-line";
-        ual.setCrashReportingEnabled(true);
+        ch.setEnabled(true);
     }
 
-    auto crashHandlerStarted = startCrashHandler(argv[0]);
-    if (crashHandlerStarted) {
-        ual.setCrashMonitorStarted(true);
-        qDebug() << "Crash handler started:" << crashHandlerStarted;
-    } else {
-        qWarning() << "Crash handler failed to start";
+    {
+        Settings crashSettings;
+        crashSettings.beginGroup("Crash");
+        if (crashSettings.value("ReportingEnabled").toBool()) {
+            ch.setEnabled(true);
+        }
+        crashSettings.endGroup();
     }
+
+    ch.setAnnotation("program", "interface");
 
     const QString& applicationName = getInterfaceSharedMemoryName();
     bool instanceMightBeRunning = true;
@@ -472,9 +598,9 @@ int main(int argc, const char* argv[]) {
         if (socket.waitForConnected(LOCAL_SERVER_TIMEOUT_MS)) {
             if (parser.isSet(urlOption)) {
                 QUrl url = QUrl(parser.value(urlOption));
-                if (url.isValid() && (url.scheme() == URL_SCHEME_OVERTE || url.scheme() == URL_SCHEME_OVERTEAPP
-                        || url.scheme() == HIFI_URL_SCHEME_HTTP || url.scheme() == HIFI_URL_SCHEME_HTTPS
-                        || url.scheme() == HIFI_URL_SCHEME_FILE)) {
+                if (url.isValid() && (url.scheme() == URL_SCHEME_OVERTE || url.scheme() == URL_SCHEME_OVERTEAPP ||
+                                      url.scheme() == HIFI_URL_SCHEME_HTTP || url.scheme() == HIFI_URL_SCHEME_HTTPS ||
+                                      url.scheme() == HIFI_URL_SCHEME_FILE)) {
                     qDebug() << "Writing URL to local socket";
                     socket.write(url.toString().toUtf8());
                     if (!socket.waitForBytesWritten(5000)) {
@@ -486,6 +612,7 @@ int main(int argc, const char* argv[]) {
             socket.close();
 
             qDebug() << "Interface instance appears to be running, exiting";
+            qDebug() << "Start with --allowMultipleInstances to allow running multiple instances at once.";
 
             return EXIT_SUCCESS;
         }
@@ -494,7 +621,6 @@ int main(int argc, const char* argv[]) {
         return EXIT_SUCCESS;
 #endif
     }
-
 
     // FIXME this method of checking the OpenGL version screws up the `QOpenGLContext::globalShareContext()` value, which in turn
     // leads to crashes when creating the real OpenGL instance.  Disabling for now until we come up with a better way of checking
@@ -522,7 +648,6 @@ int main(int argc, const char* argv[]) {
     }
 #endif
 
-
     // Debug option to demonstrate that the client's local time does not
     // need to be in sync with any other network node. This forces clock
     // skew for the individual client
@@ -536,7 +661,7 @@ int main(int argc, const char* argv[]) {
     // Oculus initialization MUST PRECEDE OpenGL context creation.
     // The nature of the Application constructor means this has to be either here,
     // or in the main window ctor, before GL startup.
-    Application::initPlugins(parser);
+    //app.configurePlugins(parser);
 
 #ifdef Q_OS_WIN
     // If we're running in steam mode, we need to do an explicit check to ensure we're up to the required min spec
@@ -574,23 +699,17 @@ int main(int argc, const char* argv[]) {
             SandboxUtils::runLocalSandbox(serverContentPath, true, noUpdater);
         }
 
-        // Extend argv to enable WebGL rendering
-        std::vector<const char*> argvExtended(&argv[0], &argv[argc]);
-        argvExtended.push_back("--ignore-gpu-blocklist");
-#ifdef Q_OS_ANDROID
-        argvExtended.push_back("--suppress-settings-reset");
-#endif
-        int argcExtended = (int)argvExtended.size();
-
         PROFILE_SYNC_END(startup, "main startup", "");
         PROFILE_SYNC_BEGIN(startup, "app full ctor", "");
-        Application app(argcExtended, const_cast<char**>(argvExtended.data()), parser, startupTime, runningMarkerExisted);
+        app.setPreviousSessionCrashed(runningMarkerExisted);
+        app.initialize(parser);
         PROFILE_SYNC_END(startup, "app full ctor", "");
 
 #if defined(Q_OS_LINUX)
         app.setWindowIcon(QIcon(PathUtils::resourcesPath() + "images/brand-logo.svg"));
 #endif
-        startCrashHookMonitor(&app);
+        ch.startMonitor(&app);
+
 
         QTimer exitTimer;
         if (traceDuration > 0.0f) {
@@ -618,7 +737,7 @@ int main(int argc, const char* argv[]) {
 #endif
 
         // Setup local server
-        QLocalServer server { &app };
+        QLocalServer server{ &app };
 
         // We failed to connect to a local server, so we remove any existing servers.
         server.removeServer(applicationName);
@@ -651,6 +770,9 @@ int main(int argc, const char* argv[]) {
         translator.load("i18n/interface_en");
         app.installTranslator(&translator);
         qCDebug(interfaceapp, "Created QT Application.");
+        if (parser.isSet("abortAfterInit")) {
+            return 99;
+        }
         exitCode = app.exec();
         server.close();
 

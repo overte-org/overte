@@ -20,6 +20,7 @@
 #include <PathUtils.h>
 #include <LimitedNodeList.h>
 #include <NetworkLogging.h>
+#include <LogHandler.h>
 
 ICEClientApp::ICEClientApp(int argc, char* argv[]) :
     QCoreApplication(argc, argv)
@@ -45,6 +46,9 @@ ICEClientApp::ICEClientApp(int argc, char* argv[]) :
 
     const QCommandLineOption cacheSTUNOption("s", "cache stun-server response");
     parser.addOption(cacheSTUNOption);
+
+    const QCommandLineOption logOption("logOptions", "Logging options, comma separated: ", "color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald", "options");
+    parser.addOption(logOption);
 
     if (!parser.parse(QCoreApplication::arguments())) {
         qCritical() << parser.errorText() << Qt::endl;
@@ -78,6 +82,16 @@ ICEClientApp::ICEClientApp(int argc, char* argv[]) :
         _domainID = QUuid(parser.value(domainIDOption));
         if (_verbose) {
             qDebug() << "domain-server ID is" << _domainID;
+        }
+    }
+
+    // We want to configure the logging system as early as possible
+    auto& logHandler = LogHandler::getInstance();
+    if (parser.isSet(logOption)) {
+        if (!logHandler.parseOptions(parser.value(logOption).toUtf8(), logOption.names().first())) {
+            QCoreApplication mockApp(argc, const_cast<char**>(argv));  // required for call to showHelp()
+            parser.showHelp();
+            Q_UNREACHABLE();
         }
     }
 

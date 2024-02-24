@@ -81,7 +81,9 @@ endif()
 
             qt_found = True
             system_qt = True
-            print("Using system Qt")
+
+            if not self.args.quiet:
+                print("Using system Qt")
 
         elif os.getenv('OVERTE_QT_PATH', "") != "":
             # 2. Using an user-provided directory.
@@ -92,7 +94,9 @@ endif()
             self.cmakePath = os.path.join(self.fullPath, 'lib', 'cmake')
 
             qt_found = True
-            print("Using Qt from " + self.fullPath)
+
+            if not self.args.quiet:
+                print("Using Qt from " + self.fullPath)
 
         else:
             # 3. Using a pre-built Qt.
@@ -135,11 +139,12 @@ endif()
             self.lockFile = os.path.join(lockDir, lockName)
 
         if qt_found:
-            print("Found pre-built Qt5")
+            if not self.args.quiet:
+                print("Found pre-built Qt5")
             return
 
         if 'Windows' == system:
-            self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.10-qtwebengine-5.15.15-2023.06.17-kde1742cc4f85f1b57c5f8ef51d62ff0b958f38912de57a9094aa3a3e3bf35ae6cb-windows-x86_64.tar.xz'
+            self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.10-2023.10.02-windows-x86_64.tar.xz'
         elif 'Darwin' == system:
             self.qtUrl = self.assets_url + '/dependencies/vcpkg/qt5-install-5.15.2-macos.tar.gz'
         elif 'Linux' == system:
@@ -147,14 +152,12 @@ endif()
             cpu_architecture = platform.machine()
 
             if 'x86_64' == cpu_architecture:
-                # `major_version()` can return blank string on rolling release distros like arch 
-                # The `or 0` conditional assignment prevents the int parsing error from hiding the useful Qt package error 
+                # `major_version()` can return blank string on rolling release distros like arch
+                # The `or 0` conditional assignment prevents the int parsing error from hiding the useful Qt package error
                 u_major = int( distro.major_version() or '0' )
                 if distro.id() == 'ubuntu' or distro.id() == 'linuxmint':
-                    if (distro.id() == 'ubuntu' and u_major == 18) or distro.id() == 'linuxmint' and u_major == 19:
-                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.5-2022.07.17-kde_ea4efc067b47c11b1aac61668afd8578a6834f5b-ubuntu-18.04-amd64.tar.xz'
-                    elif (distro.id() == 'ubuntu' and u_major == 20) or distro.id() == 'linuxmint' and u_major == 20:
-                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.5-2022.08.12-kde_0b4d44f2ff1103349bac22b9b207cfcc1f50a53a-ubuntu-20.04-amd64.tar.xz'
+                    if (distro.id() == 'ubuntu' and u_major == 20) or distro.id() == 'linuxmint' and u_major == 20:
+                        self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.10-2023.10.01-kde_d2122ee587cceb5b2f4130b7074f86db9aca570e-ubuntu-20.04-amd64.tar.xz'
                     elif (distro.id() == 'ubuntu' and u_major > 20) or (distro.id() == 'linuxmint' and u_major > 20):
                         self.__no_qt_package_error()
                     else:

@@ -27,7 +27,7 @@ public:
     QString getFilename() const { return _fileName; }
     virtual void addMessage(const QString&) override;
     virtual void setSessionID(const QUuid&);
-    virtual QString getLogData() override;
+    virtual QString getLogData(const qint64 maxSize = 0) override;
     virtual void locateLog() override;
     virtual void sync() override;
 

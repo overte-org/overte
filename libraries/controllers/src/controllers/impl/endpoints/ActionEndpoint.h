@@ -21,7 +21,9 @@ namespace controller {
 
 class ActionEndpoint : public Endpoint {
 public:
-    ActionEndpoint(const Input& id = Input::INVALID_INPUT) : Endpoint(id) { }
+    static std::shared_ptr<Endpoint> newEndpoint(const Input& id = Input::INVALID_INPUT) {
+        return std::shared_ptr<Endpoint>(new ActionEndpoint(id));
+    };
 
     virtual AxisValue peek() const override { return _currentValue; }
     virtual void apply(AxisValue newValue, const Pointer& source) override;
@@ -32,6 +34,8 @@ public:
     virtual void reset() override;
 
 private:
+    ActionEndpoint(const Input& id = Input::INVALID_INPUT) : Endpoint(id) { }
+
     AxisValue _currentValue { 0.0f, 0, false };
     Pose _currentPose{};
 };

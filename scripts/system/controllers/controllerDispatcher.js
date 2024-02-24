@@ -31,6 +31,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 (function() {
     Script.include("/~/system/libraries/pointersUtils.js");
 
+    var controllerStandard = Controller.Standard;
+
     var NEAR_MAX_RADIUS = 0.1;
     var NEAR_TABLET_MAX_RADIUS = 0.05;
 
@@ -136,10 +138,10 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 
         this.dataGatherers = {};
         this.dataGatherers.leftControllerLocation = function () {
-            return getControllerWorldLocation(Controller.Standard.LeftHand, true);
+            return getControllerWorldLocation(controllerStandard.LeftHand, true);
         };
         this.dataGatherers.rightControllerLocation = function () {
-            return getControllerWorldLocation(Controller.Standard.RightHand, true);
+            return getControllerWorldLocation(controllerStandard.RightHand, true);
         };
 
         this.updateTimings = function () {
@@ -178,8 +180,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             var pinchOnBelowDistance = 0.016;
             var pinchOffAboveDistance = 0.035;
 
-            var leftIndexPose = Controller.getPoseValue(Controller.Standard.LeftHandIndex4);
-            var leftThumbPose = Controller.getPoseValue(Controller.Standard.LeftHandThumb4);
+            var leftIndexPose = Controller.getPoseValue(controllerStandard.LeftHandIndex4);
+            var leftThumbPose = Controller.getPoseValue(controllerStandard.LeftHandThumb4);
             var leftThumbToIndexDistance = Vec3.distance(leftIndexPose.translation, leftThumbPose.translation);
             if (leftIndexPose.valid && leftThumbPose.valid && leftThumbToIndexDistance < pinchOnBelowDistance) {
                 _this.leftTriggerClicked = 1;
@@ -191,8 +193,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
                 _this.leftTrackerClicked = false;
             }
 
-            var rightIndexPose = Controller.getPoseValue(Controller.Standard.RightHandIndex4);
-            var rightThumbPose = Controller.getPoseValue(Controller.Standard.RightHandThumb4);
+            var rightIndexPose = Controller.getPoseValue(controllerStandard.RightHandIndex4);
+            var rightThumbPose = Controller.getPoseValue(controllerStandard.RightHandThumb4);
             var rightThumbToIndexDistance = Vec3.distance(rightIndexPose.translation, rightThumbPose.translation);
             if (rightIndexPose.valid && rightThumbPose.valid && rightThumbToIndexDistance < pinchOnBelowDistance) {
                 _this.rightTriggerClicked = 1;
@@ -439,8 +441,10 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
                 }
             }
 
+
+            // TODO: These are not used currently, but have severe impact on performace. They can be re-enabled when we have OpenXR support
             // check for hand-tracking "click"
-            _this.checkForHandTrackingClick();
+            //_this.checkForHandTrackingClick();
 
             // bundle up all the data about the current situation
             var controllerData = {
@@ -561,23 +565,23 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 
         var MAPPING_NAME = "com.highfidelity.controllerDispatcher";
         var mapping = Controller.newMapping(MAPPING_NAME);
-        mapping.from([Controller.Standard.RT]).peek().to(_this.rightTriggerPress);
-        mapping.from([Controller.Standard.RTClick]).peek().to(_this.rightTriggerClick);
-        mapping.from([Controller.Standard.LT]).peek().to(_this.leftTriggerPress);
-        mapping.from([Controller.Standard.LTClick]).peek().to(_this.leftTriggerClick);
+        mapping.from([controllerStandard.RT]).peek().to(_this.rightTriggerPress);
+        mapping.from([controllerStandard.RTClick]).peek().to(_this.rightTriggerClick);
+        mapping.from([controllerStandard.LT]).peek().to(_this.leftTriggerPress);
+        mapping.from([controllerStandard.LTClick]).peek().to(_this.leftTriggerClick);
 
-        mapping.from([Controller.Standard.RB]).peek().to(_this.rightSecondaryPress);
-        mapping.from([Controller.Standard.LB]).peek().to(_this.leftSecondaryPress);
-        mapping.from([Controller.Standard.LeftGrip]).peek().to(_this.leftSecondaryPress);
-        mapping.from([Controller.Standard.RightGrip]).peek().to(_this.rightSecondaryPress);
+        mapping.from([controllerStandard.RB]).peek().to(_this.rightSecondaryPress);
+        mapping.from([controllerStandard.LB]).peek().to(_this.leftSecondaryPress);
+        mapping.from([controllerStandard.LeftGrip]).peek().to(_this.leftSecondaryPress);
+        mapping.from([controllerStandard.RightGrip]).peek().to(_this.rightSecondaryPress);
 
         Controller.enableMapping(MAPPING_NAME);
 
         this.leftPointer = this.pointerManager.createPointer(false, PickType.Ray, {
             joint: "_CAMERA_RELATIVE_CONTROLLER_LEFTHAND",
             filter: Picks.PICK_OVERLAYS | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
-            triggers: [{action: Controller.Standard.LTClick, button: "Focus"}, {action: Controller.Standard.LTClick, button: "Primary"}],
-            posOffset: getGrabPointSphereOffset(Controller.Standard.LeftHand, true),
+            triggers: [{action: controllerStandard.LTClick, button: "Focus"}, {action: controllerStandard.LTClick, button: "Primary"}],
+            posOffset: getGrabPointSphereOffset(controllerStandard.LeftHand, true),
             hover: true,
             scaleWithParent: true,
             distanceScaleEnd: true,
@@ -587,8 +591,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
         this.rightPointer = this.pointerManager.createPointer(false, PickType.Ray, {
             joint: "_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND",
             filter: Picks.PICK_OVERLAYS | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
-            triggers: [{action: Controller.Standard.RTClick, button: "Focus"}, {action: Controller.Standard.RTClick, button: "Primary"}],
-            posOffset: getGrabPointSphereOffset(Controller.Standard.RightHand, true),
+            triggers: [{action: controllerStandard.RTClick, button: "Focus"}, {action: controllerStandard.RTClick, button: "Primary"}],
+            posOffset: getGrabPointSphereOffset(controllerStandard.RightHand, true),
             hover: true,
             scaleWithParent: true,
             distanceScaleEnd: true,
@@ -599,8 +603,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             joint: "_CAMERA_RELATIVE_CONTROLLER_LEFTHAND",
             filter: Picks.PICK_HUD,
             maxDistance: DEFAULT_SEARCH_SPHERE_DISTANCE,
-            posOffset: getGrabPointSphereOffset(Controller.Standard.LeftHand, true),
-            triggers: [{action: Controller.Standard.LTClick, button: "Focus"}, {action: Controller.Standard.LTClick, button: "Primary"}],
+            posOffset: getGrabPointSphereOffset(controllerStandard.LeftHand, true),
+            triggers: [{action: controllerStandard.LTClick, button: "Focus"}, {action: controllerStandard.LTClick, button: "Primary"}],
             hover: true,
             scaleWithParent: true,
             distanceScaleEnd: true,
@@ -610,8 +614,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             joint: "_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND",
             filter: Picks.PICK_HUD,
             maxDistance: DEFAULT_SEARCH_SPHERE_DISTANCE,
-            posOffset: getGrabPointSphereOffset(Controller.Standard.RightHand, true),
-            triggers: [{action: Controller.Standard.RTClick, button: "Focus"}, {action: Controller.Standard.RTClick, button: "Primary"}],
+            posOffset: getGrabPointSphereOffset(controllerStandard.RightHand, true),
+            triggers: [{action: controllerStandard.RTClick, button: "Focus"}, {action: controllerStandard.RTClick, button: "Primary"}],
             hover: true,
             scaleWithParent: true,
             distanceScaleEnd: true,

@@ -127,7 +127,7 @@ function connectWebSocket(timeout) {
             if (!muted["Grid"]) {
                 Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                     sender: "(G) " + cmd.displayName,
-                    text: replaceFormatting(cmd.message),
+                    text: cmd.message,
                     colour: {text: cmd.colour}
                 }));
             }
@@ -462,7 +462,7 @@ function messageReceived(channel, message, sender) {
                         if (!muted["Local"]) {
                             Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                                 sender: "(L) " + cmd.displayName,
-                                text: replaceFormatting(cmd.message),
+                                text: cmd.message,
                                 colour: {text: cmd.colour}
                             }));
                         }
@@ -477,7 +477,7 @@ function messageReceived(channel, message, sender) {
                     if (!muted["Domain"]) {
                         Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                             sender: "(D) " + cmd.displayName,
-                            text: replaceFormatting(cmd.message),
+                            text: cmd.message,
                             colour: {text: cmd.colour}
                         }));
                     }
@@ -491,7 +491,7 @@ function messageReceived(channel, message, sender) {
                     if (!muted["Grid"]) {
                         Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                             sender: "(G) " + cmd.displayName,
-                            text: replaceFormatting(cmd.message),
+                            text: cmd.message,
                             colour: {text: cmd.colour}
                         }));
                     }
@@ -504,7 +504,7 @@ function messageReceived(channel, message, sender) {
                     
                     Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                         sender: cmd.displayName,
-                        text: replaceFormatting(cmd.message),
+                        text: cmd.message,
                         colour: {text: cmd.colour}
                     }));
                 }
@@ -528,7 +528,7 @@ function messageReceived(channel, message, sender) {
                 
                 Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                     sender: "(" + cmd.category + ")",
-                    text: replaceFormatting(cmd.message),
+                    text: cmd.message,
                     colour: {text: cmd.colour}
                 }));
             }
@@ -643,31 +643,39 @@ function setVisible(_visible) {
     visible = _visible;
 }
 
+var palDataStore = AvatarManager.getPalData().data;
+
 function avatarJoinsDomain(sessionID) {
     Script.setTimeout(function () {
-        var messageText = AvatarManager.getPalData([sessionID]).data[0].sessionDisplayName + " has joined."
+        palDataStore = AvatarManager.getPalData().data;
+        var DisplayName = AvatarManager.getPalData([sessionID]).data[0].sessionDisplayName;
+        var messageText = DisplayName + " has joined.";
         var messageColor = { red: 122, green: 122, blue: 122 };
-        
         addToLog(messageText, "Notice", messageColor, "Domain");
-        
+
         if (!mutedAudio["Domain"]) {
             playNotificationSound();
         }
-        
+
         if (!muted["Domain"]) {
             Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                 sender: "(D)",
-                text:  messageText,
+                text: messageText,
                 colour: { text: messageColor }
             }));
         }
-    }, 500); // Wait 500ms for the avatar to load to properly get info about them.
-}
 
+    }, 1500); // Wait 1500ms for the avatar to load to properly get info about them.
+}
 function avatarLeavesDomain(sessionID) {
-    var messageText = AvatarManager.getPalData([sessionID]).data[0].sessionDisplayName + " has left."
+    var displayName = "";
+    for (let i = 0; i < palDataStore.length; i++) {
+        if (palDataStore[i].sessionUUID == sessionID) {
+            displayName = palDataStore[i].sessionDisplayName;
+        }
+    }
+    var messageText = displayName + " has left.";
     var messageColor = { red: 122, green: 122, blue: 122 };
-    
     addToLog(messageText, "Notice", messageColor, "Domain");
     
     if (!mutedAudio["Domain"]) {
@@ -687,7 +695,7 @@ function keyPressEvent(event) {
     if (event.key === H_KEY && !event.isAutoRepeat && event.isControl) {
         toggleMainChatWindow()
     }
-    if (event.key === ENTER_KEY && !event.isAutoRepeat && !visible) {
+    if (event.key === ENTER_KEY && !event.isAutoRepeat && !visible && !HMD.active) {
         setVisible(true);
     }
     if (event.key === ESC_KEY && !event.isAutoRepeat && visible) {

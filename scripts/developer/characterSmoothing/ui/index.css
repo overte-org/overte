@@ -1,0 +1,39 @@
+body {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.container {
+  margin-bottom: 10px;
+}
+.container .content .type {
+  display: grid;
+  grid-template-columns: 1fr 3fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  width: 100%;
+}
+.container .content .type span {
+  margin: 0 10px;
+}
+.container .content .type .header {
+  grid-column-start: 1;
+  grid-column-end: 3;
+}
+.container .content .type .type-value {
+  text-align: center;
+}
+.container .content .type input {
+  width: 100%;
+  grid-column-start: 1;
+  grid-column-end: 3;
+}
+
+.container:last-child {
+  margin-bottom: 0;
+}
+
+.horizontal-button-container {
+  margin-top: 10px;
+}
+.horizontal-button-container button:focus {
+  outline: 0;
+}

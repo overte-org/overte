@@ -24,6 +24,7 @@
 #include <shared/QtHelpers.h>
 #include <Trace.h>
 #include <Profile.h>
+#include <QUrlQuery>
 
 #include "NetworkAccessManager.h"
 #include "NetworkLogging.h"
@@ -700,6 +701,29 @@ void Resource::init(bool resetLoaded) {
     } else if (!(_url.isValid())) {
         _startedLoading = _failedToLoad = true;
     }
+
+
+    // Dropbox by default creates URLs like:
+    // https://www.dropbox.com/scl/fi/xxx/avatar.fbx?rlkey=xxx&dl=0
+    //
+    // Which go to an HTTP page that allows previewing and downloading the file. To actually download,
+    // a link with dl=1 at the end is needed instead. Users may often use the HTTP page by mistake, but
+    // we can't do anything useful with it.
+    //
+    // So we just catch and forcefully rewrite it here.
+    if (_activeUrl.host() == "www.dropbox.com" ) {
+        if ( _activeUrl.hasQuery() ) {
+            QUrlQuery query(_activeUrl);
+            if (query.queryItemValue("dl") == "0") {
+                query.removeQueryItem("dl");
+                query.addQueryItem("dl", "1");
+
+                _activeUrl.setQuery(query);
+                qCDebug(networking) << "Rewrote Dropbox URL to force download";
+            }
+        }
+    }
+
 }
 
 void Resource::attemptRequest() {

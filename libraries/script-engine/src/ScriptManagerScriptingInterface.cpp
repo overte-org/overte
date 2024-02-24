@@ -12,6 +12,7 @@
 
 #include "ScriptManager.h"
 #include "ScriptManagerScriptingInterface.h"
+#include "ScriptEngines.h"
 #include "ScriptEngine.h"
 #include <QMetaType>
 
@@ -32,7 +33,6 @@
     connect(_manager, &ScriptManager::errorLoadingScript, this, &ScriptManagerScriptingInterface::errorLoadingScript);
     connect(_manager, &ScriptManager::update, this, &ScriptManagerScriptingInterface::update);
     connect(_manager, &ScriptManager::scriptEnding, this, &ScriptManagerScriptingInterface::scriptEnding);
-    connect(_manager, &ScriptManager::finished, this, &ScriptManagerScriptingInterface::finished);
     connect(_manager, &ScriptManager::printedMessage, this, &ScriptManagerScriptingInterface::printedMessage);
     connect(_manager, &ScriptManager::errorMessage, this, &ScriptManagerScriptingInterface::errorMessage);
     connect(_manager, &ScriptManager::warningMessage, this, &ScriptManagerScriptingInterface::warningMessage);
@@ -80,4 +80,48 @@ ScriptValue ScriptManagerScriptingInterface::createGarbageCollectorDebuggingObje
     //auto value = _manager->engine()->newQObject(new TestQObject, ScriptEngine::ScriptOwnership);
     return _manager->engine()->newQObject(new TestQObject, ScriptEngine::ScriptOwnership);
     //return _manager->engine()->newValue(1);
+}
+
+void ScriptManagerScriptingInterface::startProfiling() {
+    _manager->engine()->startProfiling();
+}
+
+void ScriptManagerScriptingInterface::stopProfilingAndSave() {
+    _manager->engine()->stopProfilingAndSave();
+}
+
+void ScriptManagerScriptingInterface::requestServerEntityScriptMessages() {
+    if (_manager->isEntityServerScript() || _manager->isEntityServerScript()) {
+        _manager->engine()->raiseException("Uuid needs to be specified when requestServerEntityScriptMessages is invoked from entity script");
+    } else {
+        auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+        scriptEngines->requestServerEntityScriptMessages(_manager);
+    }
+}
+
+void ScriptManagerScriptingInterface::requestServerEntityScriptMessages(const QUuid& entityID) {
+    if (_manager->isEntityServerScript() || _manager->isEntityServerScript()) {
+        auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+        scriptEngines->requestServerEntityScriptMessages(_manager, entityID);
+    } else {
+        _manager->engine()->raiseException("Uuid must not be specified when requestServerEntityScriptMessages is invoked from entity script");
+    }
+}
+
+void ScriptManagerScriptingInterface::removeServerEntityScriptMessagesRequest() {
+    if (_manager->isEntityServerScript() || _manager->isEntityServerScript()) {
+        _manager->engine()->raiseException("Uuid needs to be specified when removeServerEntityScriptMessagesRequest is invoked from entity script");
+    } else {
+        auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+        scriptEngines->removeServerEntityScriptMessagesRequest(_manager);
+    }
+}
+
+void ScriptManagerScriptingInterface::removeServerEntityScriptMessagesRequest(const QUuid& entityID) {
+    if (_manager->isEntityServerScript() || _manager->isEntityServerScript()) {
+        auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+        scriptEngines->removeServerEntityScriptMessagesRequest(_manager, entityID);
+    } else {
+        _manager->engine()->raiseException("Uuid must not be specified when removeServerEntityScriptMessagesRequest is invoked from entity script");
+    }
 }

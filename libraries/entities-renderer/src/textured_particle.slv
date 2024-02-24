@@ -153,9 +153,9 @@ void main(void) {
     <$transformModelToWorldDir(cam, obj, UP, modelUpWorld)$>
     vec3 upWorld = mix(UP, normalize(modelUpWorld), float(particle.rotateWithEntity));
     vec3 upEye = normalize(view3 * upWorld);
-    vec3 FORWARD = vec3(0, 0, -1);
-    vec3 particleRight = normalize(cross(FORWARD, upEye));
-    vec3 particleUp = cross(particleRight, FORWARD);     // don't need to normalize
+    vec3 eyeToParticle = normalize(anchorPoint.xyz - vec3(0.0));
+    vec3 particleRight = cross(eyeToParticle, upEye);
+    vec3 particleUp = cross(particleRight, eyeToParticle);     // don't need to normalize
     // This ordering ensures that un-rotated particles render upright in the viewer.
     vec3 UNIT_QUAD[NUM_VERTICES_PER_PARTICLE] = vec3[NUM_VERTICES_PER_PARTICLE](
         normalize(-particleRight + particleUp),

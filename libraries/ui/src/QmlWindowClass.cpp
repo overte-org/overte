@@ -167,11 +167,21 @@ void QmlWindowClass::qmlToScript(const QVariant& message) {
 
 void QmlWindowClass::sendToQml(const QVariant& message) {
     // Forward messages received from the script on to QML
-    QMetaObject::invokeMethod(asQuickItem(), "fromScript", Qt::QueuedConnection, Q_ARG(QVariant, message));
+    QQuickItem *quickItem = asQuickItem();
+    if (quickItem) {
+        QMetaObject::invokeMethod(quickItem, "fromScript", Qt::QueuedConnection, Q_ARG(QVariant, message));
+    } else {
+        qDebug() << "QmlWindowClass::sendToQml: asQuickItem() returned NULL";
+    }
 }
 
 void QmlWindowClass::clearDebugWindow() {
-    QMetaObject::invokeMethod(asQuickItem(), "clearDebugWindow", Qt::QueuedConnection);
+    QQuickItem *quickItem = asQuickItem();
+    if (quickItem) {
+        QMetaObject::invokeMethod(quickItem, "clearDebugWindow", Qt::QueuedConnection);
+    } else {
+        qDebug() << "QmlWindowClass::clearDebugWindow: asQuickItem() returned NULL";
+    }
 }
 
 void QmlWindowClass::emitScriptEvent(const QVariant& scriptMessage) {
@@ -192,9 +202,19 @@ void QmlWindowClass::emitWebEvent(const QVariant& webMessage) {
         const QString LOWER_KEYBOARD = "_LOWER_KEYBOARD";
         QString messageString = webMessage.type() == QVariant::String ? webMessage.toString() : "";
         if (messageString.left(RAISE_KEYBOARD.length()) == RAISE_KEYBOARD) {
-            setKeyboardRaised(asQuickItem(), true, messageString == RAISE_KEYBOARD_NUMERIC);
+            QQuickItem *quickItem = asQuickItem();
+            if (quickItem) {
+                setKeyboardRaised(quickItem, true, messageString == RAISE_KEYBOARD_NUMERIC);
+            } else {
+                qDebug() << "QmlWindowClass::emitWebEvent: asQuickItem() returned NULL";
+            }
         } else if (messageString == LOWER_KEYBOARD) {
-            setKeyboardRaised(asQuickItem(), false);
+            QQuickItem *quickItem = asQuickItem();
+            if (quickItem) {
+                setKeyboardRaised(quickItem, false);
+            } else {
+                qDebug() << "QmlWindowClass::emitWebEvent: asQuickItem() returned NULL";
+            }
         } else {
             emit webEventReceived(webMessage);
         }
@@ -234,7 +254,12 @@ void QmlWindowClass::setVisible(bool visible) {
     }
 
     QQuickItem* targetWindow = asQuickItem();
-    targetWindow->setProperty(OFFSCREEN_VISIBILITY_PROPERTY, visible);
+    //TODO: all asQuickItem() need to be guarded like this
+    if (targetWindow) {
+        targetWindow->setProperty(OFFSCREEN_VISIBILITY_PROPERTY, visible);
+    } else {
+        qDebug() << "QmlWindowClass::setVisible: asQuickItem() returned NULL";
+    }
 }
 
 bool QmlWindowClass::isVisible() {
@@ -249,7 +274,12 @@ bool QmlWindowClass::isVisible() {
         return false;
     }
 
-    return asQuickItem()->isVisible();
+    QQuickItem *quickItem = asQuickItem();
+    if (quickItem) {
+        return quickItem->isVisible();
+    } else {
+        qDebug() << "QmlWindowClass::isVisible: asQuickItem() returned NULL";
+    }
 }
 
 glm::vec2 QmlWindowClass::getPosition() {
@@ -263,9 +293,14 @@ glm::vec2 QmlWindowClass::getPosition() {
         return {};
     }
 
-    return toGlm(asQuickItem()->position());
+    QQuickItem *quickItem = asQuickItem();
+    if (quickItem) {
+        return toGlm(quickItem->position());
+    } else {
+        qDebug() << "QmlWindowClass::getPosition: asQuickItem() returned NULL";
+        return glm::vec2(0.0f, 0.0f);
+    }
 }
-
 
 void QmlWindowClass::setPosition(const glm::vec2& position) {
     if (QThread::currentThread() != thread()) {
@@ -273,8 +308,9 @@ void QmlWindowClass::setPosition(const glm::vec2& position) {
         return;
     }
 
-    if (!_qmlWindow.isNull()) {
-        asQuickItem()->setPosition(QPointF(position.x, position.y));
+    QQuickItem *quickItem = asQuickItem();
+    if (quickItem) {
+        quickItem->setPosition(QPointF(position.x, position.y));
     }
 }
 
@@ -298,7 +334,12 @@ glm::vec2 QmlWindowClass::getSize() {
         return {};
     }
     QQuickItem* targetWindow = asQuickItem();
-    return vec2(targetWindow->width(), targetWindow->height());
+    if (targetWindow) {
+        return vec2(targetWindow->width(), targetWindow->height());
+    } else {
+        qDebug() << "QmlWindowClass::getSize: asQuickItem() returned NULL";
+        return vec2(0.0f, 0.0f);
+    }
 }
 
 void QmlWindowClass::setSize(const glm::vec2& size) {
@@ -307,8 +348,9 @@ void QmlWindowClass::setSize(const glm::vec2& size) {
         return;
     }
 
-    if (!_qmlWindow.isNull()) {
-        asQuickItem()->setSize(QSizeF(size.x, size.y));
+    QQuickItem *quickItem = asQuickItem();
+    if (quickItem) {
+        quickItem->setSize(QSizeF(size.x, size.y));
     }
 }
 
@@ -322,8 +364,9 @@ void QmlWindowClass::setTitle(const QString& title) {
         return;
     }
 
-    if (!_qmlWindow.isNull()) {
-        asQuickItem()->setProperty(TITLE_PROPERTY, title);
+    QQuickItem *quickItem = asQuickItem();
+    if (quickItem) {
+        quickItem->setProperty(TITLE_PROPERTY, title);
     }
 }
 
@@ -353,7 +396,8 @@ void QmlWindowClass::raise() {
         return;
     }
 
-    if (_qmlWindow) {
-        QMetaObject::invokeMethod(asQuickItem(), "raise", Qt::DirectConnection);
+    QQuickItem *quickItem = asQuickItem();
+    if (quickItem) {
+        QMetaObject::invokeMethod(quickItem, "raise", Qt::DirectConnection);
     }
 }

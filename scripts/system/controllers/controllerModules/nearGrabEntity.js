@@ -161,7 +161,7 @@ Script.include("/~/system/libraries/controllers.js");
 
                 var props = controllerData.nearbyEntityPropertiesByID[this.targetEntityID];
                 if (!props) {
-                    props = Entities.getEntityProperties(this.targetEntityID, DISPATCHER_PROPERTIES);
+                    props = Entities.getEntityProperties(this.targetEntityID, "type");
                     if (!props) {
                         // entity was deleted
                         this.grabbing = false;

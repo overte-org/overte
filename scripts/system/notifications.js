@@ -18,6 +18,8 @@
         "create/audioFeedback/audioFeedback.js"
     ]);
 
+    var controllerStandard = Controller.Standard;
+
     var NOTIFICATIONS_MESSAGE_CHANNEL = "Hifi-Notifications";
     var SETTING_ACTIVATION_SNAPSHOT_NOTIFICATIONS = "snapshotNotifications";
     var NOTIFICATION_LIFE_DURATION = 10000; //10 seconds (in millisecond) before expiration.
@@ -71,8 +73,8 @@
     }
 
     function checkHands() {
-        var myLeftHand = Controller.getPoseValue(Controller.Standard.LeftHand);
-        var myRightHand = Controller.getPoseValue(Controller.Standard.RightHand);
+        var myLeftHand = Controller.getPoseValue(controllerStandard.LeftHand);
+        var myRightHand = Controller.getPoseValue(controllerStandard.RightHand);
         var eyesPosition = MyAvatar.getEyePosition();
         var hipsPosition = MyAvatar.getJointPosition("Hips");
         var eyesRelativeHeight = eyesPosition.y - hipsPosition.y;

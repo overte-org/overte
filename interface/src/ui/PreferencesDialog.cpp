@@ -15,6 +15,7 @@
 #include <OffscreenUi.h>
 #include <Preferences.h>
 #include <plugins/PluginUtils.h>
+#include <plugins/PluginManager.h>
 #include <display-plugins/CompositorHelper.h>
 #include <display-plugins/hmd/HmdDisplayPlugin.h>
 #include "scripting/RenderScriptingInterface.h"
@@ -343,6 +344,13 @@ void setupPreferences() {
         preferences->addPreference(preference);
     }
 
+    static const QString DESKTOP_MOVEMENT{ "Desktop Movement" };
+    {
+        auto getter = []()->bool { return qApp->getCamera().getMouseLook(); };
+        auto setter = [](bool value) { qApp->getCamera().setMouseLook(value); };
+        auto preference = new CheckPreference(DESKTOP_MOVEMENT, "Mouse look (toggle with M key)", getter, setter);
+        preferences->addPreference(preference);
+    }
     static const QString VR_MOVEMENT{ "VR Movement" };
     {
         auto getter = [myAvatar]()->bool { return myAvatar->getAllowTeleporting(); };
@@ -398,6 +406,16 @@ void setupPreferences() {
         items << "Snap turn" << "Smooth turn";
         preference->setHeading("Rotation mode");
         preference->setItems(items);
+        preferences->addPreference(preference);
+    }
+    {
+        auto getter = [myAvatar]()->float { return myAvatar->getHMDYawSpeed(); };
+        auto setter = [myAvatar](float value) { myAvatar->setHMDYawSpeed(value); };
+        auto preference = new SpinnerSliderPreference(VR_MOVEMENT, "HMD smooth turning sensitivity:", getter, setter);
+        preference->setMin(50.0f);
+        preference->setMax(400.0f);
+        preference->setStep(1);
+        preference->setDecimals(0);
         preferences->addPreference(preference);
     }
     {
@@ -619,5 +637,13 @@ void setupPreferences() {
             preference->setStep(10);
             preferences->addPreference(preference);
         }
+    }
+
+    static const QString PLUGIN_CATEGORY{ "Plugins" };
+    auto pluginManager = PluginManager::getInstance();
+    {
+        auto getter = [pluginManager]()->bool { return pluginManager->getEnableOculusPluginSetting(); };
+        auto setter = [pluginManager](bool value) { pluginManager->setEnableOculusPluginSetting(value); };
+        preferences->addPreference(new CheckPreference(PLUGIN_CATEGORY, "Enable Oculus Platform Plugin", getter, setter));
     }
 }

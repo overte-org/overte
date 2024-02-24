@@ -7,7 +7,7 @@
 
 /* global Script, Entities, enableDispatcherModule, disableDispatcherModule, makeRunningValues,
    makeDispatcherModuleParameters, Overlays, HMD, TRIGGER_ON_VALUE, TRIGGER_OFF_VALUE, getEnabledModuleByName,
-   Picks, makeLaserParams, Settings, MyAvatar, RIGHT_HAND, LEFT_HAND, DISPATCHER_PROPERTIES
+   Picks, makeLaserParams, Settings, MyAvatar, RIGHT_HAND, LEFT_HAND
 */
 
 Script.include("/~/system/libraries/controllerDispatcherUtils.js");
@@ -59,7 +59,7 @@ Script.include("/~/system/libraries/controllers.js");
                     var candidateOverlays = controllerData.nearbyOverlayIDs[this.hand];
                     var grabbableOverlays = candidateOverlays.filter(function(overlayID) {
                         //V8TODO: this needs to be checked if it works
-                        return Entities.getEntityProperties(overlayID, ["grab"]).grab.grabbable;
+                        return Entities.getEntityProperties(overlayID, ["grab.grabbable"]).grab.grabbable;
                     });
                     var target = nearGrabModule.getTargetID(grabbableOverlays, controllerData);
                     if (target) {
@@ -164,7 +164,7 @@ Script.include("/~/system/libraries/controllers.js");
                     return type;
                 }
             } else if (intersection.type === Picks.INTERSECTED_ENTITY) {
-                var entityProperties = Entities.getEntityProperties(objectID, DISPATCHER_PROPERTIES);
+                var entityProperties = Entities.getEntityProperties(objectID, ["type","locked"]);
                 var entityType = entityProperties.type;
                 var isLocked = entityProperties.locked;
                 if (entityType === "Web" && (!isLocked || triggerPressed)) {

@@ -189,6 +189,13 @@ QString Camera::getModeString() const {
     return modeToString(_mode);
 }
 
+void Camera::setMouseLook(bool mouseLook) { Setting::Handle<bool>{"MouseLookAllowed", false }.set(mouseLook);
+    if (!mouseLook) {
+        setCaptureMouse(false);
+    }
+    emit mouseLookChanged(mouseLook);
+}
+
 void Camera::lookAt(const glm::vec3& lookAt) {
     glm::vec3 up = IDENTITY_UP;
     glm::mat4 lookAtMatrix = glm::lookAt(_position, lookAt, up);

@@ -817,10 +817,12 @@ void ViveControllerManager::loadSettings() {
         if (_inputDevice) {
             const double DEFAULT_ARM_CIRCUMFERENCE = 0.33;
             const double DEFAULT_SHOULDER_WIDTH = 0.48;
+            const float DEFAULT_ZERO_HYSTERESIS_PERIOD = 0.0f;  // in seconds, 0.0f for most controllers and 0.2f for Vive wands
             const QString DEFAULT_OUT_OF_RANGE_STRATEGY = "DropAfterDelay";
             _inputDevice->_armCircumference = settings.value("armCircumference", QVariant(DEFAULT_ARM_CIRCUMFERENCE)).toDouble();
             _inputDevice->_shoulderWidth = settings.value("shoulderWidth", QVariant(DEFAULT_SHOULDER_WIDTH)).toDouble();
             _inputDevice->_outOfRangeDataStrategy = stringToOutOfRangeDataStrategy(settings.value("outOfRangeDataStrategy", QVariant(DEFAULT_OUT_OF_RANGE_STRATEGY)).toString());
+            _inputDevice->setControllerStickHysteresisTime(settings.value("controllerStickHysteresisTime", QVariant(DEFAULT_ZERO_HYSTERESIS_PERIOD)).toFloat());
         }
 
         const bool DEFAULT_EYE_TRACKING_ENABLED = false;
@@ -838,6 +840,7 @@ void ViveControllerManager::saveSettings() const {
             settings.setValue(QString("armCircumference"), _inputDevice->_armCircumference);
             settings.setValue(QString("shoulderWidth"), _inputDevice->_shoulderWidth);
             settings.setValue(QString("outOfRangeDataStrategy"), outOfRangeDataStrategyToString(_inputDevice->_outOfRangeDataStrategy));
+            settings.setValue(QString("controllerStickHysteresisTime"), _inputDevice->getControllerStickHysteresisTime());
         }
 
         settings.setValue(QString("eyeTrackingEnabled"), _eyeTrackingEnabled);
@@ -857,6 +860,13 @@ ViveControllerManager::InputDevice::InputDevice(vr::IVRSystem*& system) :
     _configStringMap[Config::FeetHipsAndShoulders] = QString("FeetHipsAndShoulders");
     _configStringMap[Config::FeetHipsChestAndShoulders] = QString("FeetHipsChestAndShoulders");
 }
+
+void ViveControllerManager::InputDevice::setControllerStickHysteresisTime(float value) {
+    qDebug() << "ViveControllerManager::InputDevice::setControllerStickHysteresisTime: " << value;
+    _filteredLeftStick.setHysteresisPeriod(value);
+    _filteredRightStick.setHysteresisPeriod(value);
+}
+
 
 void ViveControllerManager::InputDevice::update(float deltaTime, const controller::InputCalibrationData& inputCalibrationData) {
     _poseStateMap.clear();
@@ -988,6 +998,9 @@ void ViveControllerManager::InputDevice::configureCalibrationSettings(const QJso
                 hmdDesktopMode = iter.value().toBool();
             } else if (iter.key() == "outOfRangeDataStrategy") {
                 _outOfRangeDataStrategy = stringToOutOfRangeDataStrategy(iter.value().toString());
+            } else if (iter.key() == "controllerStickHysteresisTime") {
+                qDebug() << "controllerStickHysteresisTime: " << iter.value().toDouble();
+                setControllerStickHysteresisTime(iter.value().toDouble());
             }
             iter++;
         }
@@ -1011,6 +1024,7 @@ QJsonObject ViveControllerManager::InputDevice::configurationSettings() {
     configurationSettings["armCircumference"] = (double)(_armCircumference * M_TO_CM);
     configurationSettings["shoulderWidth"] = (double)(_shoulderWidth * M_TO_CM);
     configurationSettings["outOfRangeDataStrategy"] = outOfRangeDataStrategyToString(_outOfRangeDataStrategy);
+    configurationSettings["controllerStickHysteresisTime"] = getControllerStickHysteresisTime();
     return configurationSettings;
 }
 
@@ -2070,10 +2084,14 @@ controller::Input::NamedVector ViveControllerManager::InputDevice::getAvailableI
 QString ViveControllerManager::InputDevice::getDefaultMappingConfig() const {
     QString name(getOpenVrDeviceName().c_str());
     QString MAPPING_JSON;
-    if (name.contains(QString("HTC")) || name.contains(QString("Vive"))) {
+    // Workaround for having to press the thumbstick to be able to move.
+    // On HTC Vive wands we want to need to press the touchpad to move.
+    // On Valve Index controllers the thumbsticks don't need to be pressed, but the touchpad does. Valve seems to have already thought of this.
+    if (name.contains(QString("HTC")) || name.contains(QString("Vive")) || name.contains(QString("Valve"))) {
         MAPPING_JSON = PathUtils::resourcesPath() + "/controllers/vive.json";
+    // Other HMDs need a different mapping to not need the thumbstick to be pressed.
     } else {
-        MAPPING_JSON = PathUtils::resourcesPath() + "/controllers/index.json";
+        MAPPING_JSON = PathUtils::resourcesPath() + "/controllers/openvr_alternative.json";
     }
     return MAPPING_JSON;
 }

@@ -89,13 +89,14 @@ const float ANALOG_PLUS_AVATAR_MAX_WALKING_BACKWARD_SPEED = 2.42f; // meters / s
 const float ANALOG_PLUS_AVATAR_MAX_FLYING_SPEED = 30.0f; // meters / second
 const float ANALOG_PLUS_AVATAR_MAX_SPRINT_SPEED = 20.0f; // meters / second
 
-const float DEFAULT_AVATAR_GRAVITY = -5.0f; // meters / second^2 (world)
-const float DEFAULT_AVATAR_JUMP_SPEED = 3.5f; // meters / second (sensor)
+const float DEFAULT_AVATAR_GRAVITY = -9.8f; // meters / second^2 (world) (originally -5.0f)
+const float DEFAULT_AVATAR_JUMP_SPEED = 5.0f; // meters / second (sensor) (originally 3.5f)
 const float DEFAULT_AVATAR_JUMP_HEIGHT = (DEFAULT_AVATAR_JUMP_SPEED * DEFAULT_AVATAR_JUMP_SPEED) / (2.0f * -DEFAULT_AVATAR_GRAVITY); // meters (sensor)
 const float DEFAULT_AVATAR_MIN_JUMP_HEIGHT = 0.25f; // meters (world)  // hack
 
 const float DEFAULT_AVATAR_FALL_HEIGHT = 20.0f; // meters
-const float DEFAULT_AVATAR_MIN_HOVER_HEIGHT = 2.5f; // meters
+const float DEFAULT_AVATAR_MIN_HOVER_HEIGHT = 0.35f; // meters, normally it was 2.5f
+//const float DEFAULT_AVATAR_MIN_HOVER_HEIGHT = 2.5f; // meters, normally it was 2.5f
 
 static const float MAX_AVATAR_SCALE = 1000.0f;
 static const float MIN_AVATAR_SCALE = 0.005f;

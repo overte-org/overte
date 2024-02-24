@@ -24,7 +24,8 @@ Script.include("/~/system/libraries/cloneEntityUtils.js");
 Script.include("/~/system/libraries/utils.js");
 
 
-var DEFAULT_SPHERE_MODEL_URL = Script.getExternalPath(Script.ExternalPaths.HF_Content, "/alan/dev/equip-Fresnel-3.fbx");
+var controllerStandard = Controller.Standard;
+var DEFAULT_SPHERE_MODEL_URL = Script.resolvePath("../../assets/models/equip-Fresnel-3.fbx");
 var EQUIP_SPHERE_SCALE_FACTOR = 0.65;
 
 
@@ -351,7 +352,7 @@ EquipHotspotBuddy.prototype.update = function(deltaTime, timestamp, controllerDa
         };
 
         this.handToController = function() {
-            return (this.hand === RIGHT_HAND) ? Controller.Standard.RightHand : Controller.Standard.LeftHand;
+            return (this.hand === RIGHT_HAND) ? controllerStandard.RightHand : controllerStandard.LeftHand;
         };
 
         this.updateSmoothedTrigger = function(controllerData) {

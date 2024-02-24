@@ -82,15 +82,6 @@ void UserActivityLogger::requestError(QNetworkReply* errorReply) {
     qCDebug(networking) << errorReply->error() << "-" << errorReply->errorString();
 }
 
-void UserActivityLogger::setCrashReportingEnabled(bool enabled) {
-    bool old = _crashReportingEnabled.get();
-    _crashReportingEnabled.set(enabled);
-
-    if (old != enabled) {
-        emit crashReportingEnabledChanged();
-    }
- }
-
 void UserActivityLogger::launch(QString applicationVersion, bool previousSessionCrashed, int previousSessionRuntime) {
     const QString ACTION_NAME = "launch";
     QJsonObject actionDetails;

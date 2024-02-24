@@ -149,8 +149,7 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
         materials = _materials["0"];
     }
 
-    auto& schema = materials.getSchemaBuffer().get<graphics::MultiMaterial::Schema>();
-    glm::vec4 backgroundColor = glm::vec4(ColorUtils::tosRGBVec3(schema._albedo), schema._opacity);
+    glm::vec4 backgroundColor = materials.getColor();
     backgroundColor = EntityRenderer::calculatePulseColor(backgroundColor, _pulseProperties, _created);
 
     if (backgroundColor.a <= 0.0f) {

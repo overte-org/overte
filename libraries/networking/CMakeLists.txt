@@ -4,9 +4,15 @@ link_hifi_libraries(shared platform)
 
 target_openssl()
 target_tbb()
+add_crashpad()
+target_breakpad()
 
 if (WIN32 OR (UNIX AND NOT APPLE))
-    target_webrtc()
+    if (NOT DISABLE_WEBRTC )
+        target_webrtc()
+    else()
+        message(WARNING "WebRTC is supported on this platform but has been disabled for this build (likely memory debugging)")
+    endif()
 endif ()
 
 if (WIN32)

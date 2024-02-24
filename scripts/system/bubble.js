@@ -25,9 +25,9 @@
         "type": "Model",
         "modelURL": Script.resolvePath("assets/models/Bubble-v14.fbx"), // If you'd like to change the model, modify this line (and the dimensions below)
         "dimensions": { 
-            "x": MyAvatar.sensorToWorldScale * 2,
-            "y": (0.75 * MyAvatar.sensorToWorldScale) * ((MyAvatar.scale * 0.5) + 0.5),
-            "z": MyAvatar.sensorToWorldScale * 2
+            "x": MyAvatar.sensorToWorldScale,
+            "y": (0.75 * MyAvatar.sensorToWorldScale),
+            "z": MyAvatar.sensorToWorldScale
         },
         "position": { "x": MyAvatar.position.x, "y": -MyAvatar.scale * 2 + MyAvatar.position.y + MyAvatar.scale * BUBBLE_HEIGHT_SCALE, "z": MyAvatar.position.z },
         "rotation": Quat.multiply(MyAvatar.orientation, Quat.fromVec3Degrees({"x": 0.0, "y": 180.0, "z": 0.0})),
@@ -90,9 +90,9 @@
 
         Entities.editEntity(bubbleOverlay, {
             "dimensions": { 
-                "x": MyAvatar.sensorToWorldScale * 2, 
-                "y": (0.75 * MyAvatar.sensorToWorldScale) * ((MyAvatar.scale * 0.5)  + 0.5), 
-                "z": MyAvatar.sensorToWorldScale * 2 
+                "x": MyAvatar.sensorToWorldScale,
+                "y": 0.75 * MyAvatar.sensorToWorldScale,
+                "z": MyAvatar.sensorToWorldScale
             },
             "position": { 
                 "x": MyAvatar.position.x, 
@@ -127,9 +127,9 @@
             if (delay < BUBBLE_RAISE_ANIMATION_DURATION_MS) {
                 Entities.editEntity(bubbleOverlay, {
                     "dimensions": { 
-                        "x": MyAvatar.sensorToWorldScale * 2,
-                        "y": (0.75 * MyAvatar.sensorToWorldScale) * ((1 - ((BUBBLE_RAISE_ANIMATION_DURATION_MS - delay) / BUBBLE_RAISE_ANIMATION_DURATION_MS)) * MyAvatar.scale * 0.5 + 0.5),
-                        "z": MyAvatar.sensorToWorldScale * 2
+                        "x": MyAvatar.sensorToWorldScale,
+                        "y": (0.75 * MyAvatar.sensorToWorldScale) * (1 - ((BUBBLE_RAISE_ANIMATION_DURATION_MS - delay) / BUBBLE_RAISE_ANIMATION_DURATION_MS)),
+                        "z": MyAvatar.sensorToWorldScale
                     },
                     // Quickly raise the bubble from the ground up
                     "position": {
@@ -143,9 +143,9 @@
                 // Keep the bubble in place for a couple seconds
                 Entities.editEntity(bubbleOverlay, {
                     "dimensions": { 
-                        "x": MyAvatar.sensorToWorldScale * 2,
-                        "y": (0.75 * MyAvatar.sensorToWorldScale) * ((MyAvatar.scale * 0.5) + 0.5),
-                        "z": MyAvatar.sensorToWorldScale * 2
+                        "x": MyAvatar.sensorToWorldScale,
+                        "y": 0.75 * MyAvatar.sensorToWorldScale,
+                        "z": MyAvatar.sensorToWorldScale
                     },            
                     "position": {
                         "x": MyAvatar.position.x,

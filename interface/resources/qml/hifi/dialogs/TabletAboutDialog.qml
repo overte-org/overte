@@ -172,7 +172,7 @@ Rectangle {
         Item { height: 20; width: 1 }
         RalewayRegular {
             color: "white"
-            text: "© 2022 Overte e.V."
+            text: "© 2022 - 2023 Overte e.V."
             size: 14
         }
         RalewayRegular {

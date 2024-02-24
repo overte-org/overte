@@ -365,7 +365,7 @@ public:
     Q_INVOKABLE QUrl resourcesPath() const { return _manager->resourcesPath(); }
 
     /*@jsdoc
-     * Starts timing a section of code in order to send usage data about it to Vircadia. Shouldn't be used outside of the
+     * Starts timing a section of code in order to send usage data about it to Overte. Shouldn't be used outside of the
      * standard scripts.
      * @function Script.beginProfileRange
      * @param {string} label - A name that identifies the section of code.
@@ -373,7 +373,7 @@ public:
     Q_INVOKABLE void beginProfileRange(const QString& label) const { _manager->beginProfileRange(label); }
 
     /*@jsdoc
-     * Finishes timing a section of code in order to send usage data about it to Vircadia. Shouldn't be used outside of
+     * Finishes timing a section of code in order to send usage data about it to Overte. Shouldn't be used outside of
      * the standard scripts.
      * @function Script.endProfileRange
      * @param {string} label - A name that identifies the section of code.
@@ -481,7 +481,7 @@ public:
      * @Returns {string} The URL of an external asset.
      * @example <caption>Report the URL of a default particle.</caption>
      * print(Script.getExternalPath(Script.ExternalPaths.Assets, "Bazaar/Assets/Textures/Defaults/Interface/default_particle.png"));
-     * @example <caption>Report the root directory where the Vircadia assets are located.</caption>
+     * @example <caption>Report the root directory where the Overte assets are located.</caption>
      * print(Script.getExternalPath(Script.ExternalPaths.Assets, "."));
      */
     Q_INVOKABLE QString getExternalPath(ExternalResource::Bucket bucket, const QString& path) { return _manager->getExternalPath(bucket, path); }
@@ -512,7 +512,7 @@ public:
 
     /*@jsdoc
      * Start collecting object statistics that can later be reported with Script.dumpHeapObjectStatistics().
-     * @function Script.dumpHeapObjectStatistics
+     * @function Script.startCollectingObjectStatistics
      */
     Q_INVOKABLE void startCollectingObjectStatistics();
 
@@ -529,7 +529,59 @@ public:
      */
      Q_INVOKABLE ScriptValue createGarbageCollectorDebuggingObject();
 
-signals:
+     /*@jsdoc
+     * Starts collecting profiling data
+     * @function Script.startProfiling
+     */
+     Q_INVOKABLE void startProfiling();
+
+     /*@jsdoc
+     * Stops collecting profiling data and writes them to a timestamped CSV file in Logs directory.
+     * @function Script.stopProfilingAndSave
+     * @example <caption>Collect profiling data from a script.</caption>
+     * Script.startProfiling();
+     * workFunc1();
+     * Script.stopProfilingAndSave();
+     *
+     * function workFunc1() {
+     *     for (var i=0; i<100000; i++) {
+     *         var vec1 = {x: i, y: i+1, z: i+2};
+     *         var vec2 = {x: i+3, y: i+4, z: i+5};
+     *         workFunc2(vec1, vec2);
+     *     }
+     * };
+     * function workFunc2(vec1, vec2) {
+     *     var cross = Vec3.cross(vec1, vec2);
+     *     var dot = Vec3.dot(vec1, vec2);
+     * };
+     */
+     Q_INVOKABLE void stopProfilingAndSave();
+
+     /*@jsdoc
+     * After calling this function current script engine will start receiving server-side entity script messages
+     * through signals such as errorEntityMessage. This function can be invoked both from client-side entity scripts
+     * and from interface scripts.
+     * @function Script.subscribeToServerEntityScriptMessages
+     * @param {Uuid=} entityID - The ID of the entity that requests entity server script messages. Only needs to be specified
+     * for entity scripts, and must not be specified for other types of scripts.
+     */
+
+     Q_INVOKABLE void requestServerEntityScriptMessages();
+     Q_INVOKABLE void requestServerEntityScriptMessages(const QUuid& entityID);
+
+     /*@jsdoc
+     * Calling this function signalizes that current script doesn't require stop receiving server-side entity script messages
+     * through signals such as errorEntityMessage. This function can be invoked both from client-side entity scripts
+     * and from interface scripts.
+     * @function Script.unsubscribeFromServerEntityScriptMessages
+     * @param {Uuid=} entityID - The ID of the entity that requests entity server script messages. Only needs to be specified
+     * for entity scripts, and must not be specified for other types of scripts.
+     */
+
+     Q_INVOKABLE void removeServerEntityScriptMessagesRequest();
+     Q_INVOKABLE void removeServerEntityScriptMessagesRequest(const QUuid& entityID);
+
+ signals:
 
     /*@jsdoc
      * @function Script.scriptLoaded
@@ -576,15 +628,6 @@ signals:
      * }, 1000);
      */
     void scriptEnding();
-
-    /*@jsdoc
-     * @function Script.finished
-     * @param {string} filename - File name.
-     * @param {object} engine - Engine.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-    void finished(const QString& fileNameString, ScriptManagerPointer);
 
     /*@jsdoc
      * Triggered when the script prints a message to the program log via {@link  print}, {@link Script.print},
@@ -713,7 +756,6 @@ signals:
      * var properties = JSON.parse("{ x: 1"); // Invalid JSON string.
      */
     void unhandledException(const ScriptValue& exception);
-
 
 protected:
     /*@jsdoc

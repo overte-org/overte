@@ -57,6 +57,7 @@
 #include "LocationBookmarks.h"
 #include "DeferredLightingEffect.h"
 #include "PickManager.h"
+#include "crash-handler/CrashHandler.h"
 
 #include "scripting/SettingsScriptingInterface.h"
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
@@ -444,6 +445,10 @@ Menu::Menu() {
     textureGroup->addAction(addCheckableActionToQMenuAndActionHash(textureMenu, MenuOption::RenderMaxTexture4096MB, 0, false));
     textureGroup->addAction(addCheckableActionToQMenuAndActionHash(textureMenu, MenuOption::RenderMaxTexture6144MB, 0, false));
     textureGroup->addAction(addCheckableActionToQMenuAndActionHash(textureMenu, MenuOption::RenderMaxTexture8192MB, 0, false));
+    textureGroup->addAction(addCheckableActionToQMenuAndActionHash(textureMenu, MenuOption::RenderMaxTexture10240MB, 0, false));
+    textureGroup->addAction(addCheckableActionToQMenuAndActionHash(textureMenu, MenuOption::RenderMaxTexture12288MB, 0, false));
+    textureGroup->addAction(addCheckableActionToQMenuAndActionHash(textureMenu, MenuOption::RenderMaxTexture16384MB, 0, false));
+    textureGroup->addAction(addCheckableActionToQMenuAndActionHash(textureMenu, MenuOption::RenderMaxTexture20480MB, 0, false));
     connect(textureGroup, &QActionGroup::triggered, [textureGroup] {
         auto checked = textureGroup->checkedAction();
         auto text = checked->text();
@@ -464,8 +469,16 @@ Menu::Menu() {
             newMaxTextureMemory = MB_TO_BYTES(4096);
         } else if (MenuOption::RenderMaxTexture6144MB == text) {
             newMaxTextureMemory = MB_TO_BYTES(6144);
-        } else if (MenuOption::RenderMaxTexture8192MB == text) {
+        } else if (MenuOption::RenderMaxTexture1024MB == text) {
             newMaxTextureMemory = MB_TO_BYTES(8192);
+        } else if (MenuOption::RenderMaxTexture10240MB == text) {
+            newMaxTextureMemory = MB_TO_BYTES(10240);
+        } else if (MenuOption::RenderMaxTexture12288MB == text) {
+            newMaxTextureMemory = MB_TO_BYTES(12288);
+        } else if (MenuOption::RenderMaxTexture16384MB == text) {
+            newMaxTextureMemory = MB_TO_BYTES(16384);
+        } else if (MenuOption::RenderMaxTexture20480MB == text) {
+            newMaxTextureMemory = MB_TO_BYTES(20480);
         }
         gpu::Texture::setAllowedGPUMemoryUsage(newMaxTextureMemory);
     });
@@ -636,12 +649,13 @@ Menu::Menu() {
         true,
         &UserActivityLogger::getInstance(),
         SLOT(disable(bool)));
+
     addCheckableActionToQMenuAndActionHash(networkMenu,
         MenuOption::EnableCrashReporting,
         0,
-        UserActivityLogger::getInstance().isCrashReportingEnabled(),
-        &UserActivityLogger::getInstance(),
-        SLOT(setCrashReportingEnabled(bool)));
+        CrashHandler::getInstance().isEnabled(),
+        &CrashHandler::getInstance(),
+        SLOT(setEnabled(bool)));
 
     addActionToQMenuAndActionHash(networkMenu, MenuOption::ShowDSConnectTable, 0,
         qApp, SLOT(loadDomainConnectionDialog()));
@@ -772,7 +786,6 @@ Menu::Menu() {
 
         addActionToQMenuAndActionHash(crashMenu, MenuOption::CrashOnShutdown, 0, qApp, SLOT(crashOnShutdown()));
     }
-
 
     // Developer > Show Statistics
     addCheckableActionToQMenuAndActionHash(developerMenu, MenuOption::Stats, 0, true);
