@@ -20,6 +20,9 @@
 #include <QJsonObject>
 #include "EntityItemID.h"
 
+// SEVERITY_ERROR is defined as a macro in winerror.h
+#undef SEVERITY_ERROR
+
 class ScriptMessage {
 public:
     enum class ScriptType {
