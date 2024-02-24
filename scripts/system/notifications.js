@@ -45,8 +45,8 @@
     
     //HMD NOTIFICATION PANEL PROPERTIES
     var HMD_UI_SCALE_FACTOR = 1.0; //This define the size of all the notification system in HMD.
-    var hmdPanelLocalPosition = {"x": 0.4, "y": 0.25, "z": -1.5};
-    var hmdPanelLocalRotation = Quat.fromVec3Degrees({"x": 0, "y": -5, "z": 0});
+    var hmdPanelLocalPosition = {"x": 0.3, "y": 0.25, "z": -1.5};
+    var hmdPanelLocalRotation = Quat.fromVec3Degrees({"x": 0, "y": -3, "z": 0});
     var mainHMDnotificationContainerID = Uuid.NULL;
     var CAMERA_MATRIX_INDEX = -7;
     
