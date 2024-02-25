@@ -39,7 +39,7 @@ class RenderScriptingInterface : public QObject {
     Q_PROPERTY(RenderMethod renderMethod READ getRenderMethod WRITE setRenderMethod NOTIFY settingsChanged)
     Q_PROPERTY(bool shadowsEnabled READ getShadowsEnabled WRITE setShadowsEnabled NOTIFY settingsChanged)
     Q_PROPERTY(bool ambientOcclusionEnabled READ getAmbientOcclusionEnabled WRITE setAmbientOcclusionEnabled NOTIFY settingsChanged)
-    Q_PROPERTY(AntialiasingConfig::Mode antialiasingMode READ getAntialiasingMode WRITE setAntialiasingMode NOTIFY settingsChanged)
+    Q_PROPERTY(AntialiasingSetupConfig::Mode antialiasingMode READ getAntialiasingMode WRITE setAntialiasingMode NOTIFY settingsChanged)
     Q_PROPERTY(float viewportResolutionScale READ getViewportResolutionScale WRITE setViewportResolutionScale NOTIFY settingsChanged)
     Q_PROPERTY(float verticalFieldOfView READ getVerticalFieldOfView WRITE setVerticalFieldOfView NOTIFY settingsChanged)
 
@@ -153,14 +153,14 @@ public slots:
      * @function Render.getAntialiasingMode
      * @returns {AntialiasingMode} The active anti-aliasing mode.
      */
-    AntialiasingConfig::Mode getAntialiasingMode() const;
+    AntialiasingSetupConfig::Mode getAntialiasingMode() const;
 
     /*@jsdoc
      * Sets the active anti-aliasing mode.
      * @function Render.setAntialiasingMode
      * @param {AntialiasingMode} The active anti-aliasing mode.
      */
-    void setAntialiasingMode(AntialiasingConfig::Mode mode);
+    void setAntialiasingMode(AntialiasingSetupConfig::Mode mode);
 
     /*@jsdoc
      * Gets the view port resolution scale.
@@ -236,7 +236,7 @@ private:
     int  _renderMethod{ RENDER_FORWARD ? render::Args::RenderMethod::FORWARD : render::Args::RenderMethod::DEFERRED };
     bool _shadowsEnabled{ true };
     bool _ambientOcclusionEnabled{ false };
-    AntialiasingConfig::Mode _antialiasingMode{ AntialiasingConfig::Mode::NONE };
+    AntialiasingSetupConfig::Mode _antialiasingMode{ AntialiasingSetupConfig::Mode::NONE };
     float _viewportResolutionScale{ 1.0f };
     QString _fullScreenScreen;
 
@@ -246,7 +246,7 @@ private:
     Setting::Handle<bool> _shadowsEnabledSetting { "shadowsEnabled", true };
     Setting::Handle<bool> _ambientOcclusionEnabledSetting { "ambientOcclusionEnabled", false };
     //Setting::Handle<AntialiasingConfig::Mode> _antialiasingModeSetting { "antialiasingMode", AntialiasingConfig::Mode::TAA };
-    Setting::Handle<int> _antialiasingModeSetting { "antialiasingMode", AntialiasingConfig::Mode::NONE };
+    Setting::Handle<int> _antialiasingModeSetting { "antialiasingMode", AntialiasingSetupConfig::Mode::NONE };
     Setting::Handle<float> _viewportResolutionScaleSetting { "viewportResolutionScale", 1.0f };
     Setting::Handle<QString> _fullScreenScreenSetting { "fullScreenScreen", "" };
 
@@ -254,7 +254,7 @@ private:
     void forceRenderMethod(RenderMethod renderMethod);
     void forceShadowsEnabled(bool enabled);
     void forceAmbientOcclusionEnabled(bool enabled);
-    void forceAntialiasingMode(AntialiasingConfig::Mode mode);
+    void forceAntialiasingMode(AntialiasingSetupConfig::Mode mode);
     void forceViewportResolutionScale(float scale);
 
     static std::once_flag registry_flag;

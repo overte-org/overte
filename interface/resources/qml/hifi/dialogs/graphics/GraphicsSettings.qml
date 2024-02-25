@@ -4,6 +4,7 @@
 //
 //  Created by Zach Fox on 2019-07-10
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -501,7 +502,7 @@ Flickable {
                     ListModel {
                         id: antialiasingModel
 
-                        // Maintain same order as "AntialiasingConfig::Mode".
+                        // Maintain same order as "AntialiasingSetupConfig::Mode".
                         ListElement {
                             text: "None"
                         }
