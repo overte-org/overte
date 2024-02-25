@@ -64,6 +64,7 @@
 #include <TextureCache.h>
 #include <FramebufferCache.h>
 #include <model-networking/ModelCache.h>
+#include <material-networking/TextureCache.h>
 #include <GeometryCache.h>
 #include <DeferredLightingEffect.h>
 #include <render/RenderFetchCullSortTask.h>
@@ -246,7 +247,7 @@ public:
         _context.makeCurrent();
         _frameTimes.resize(FRAME_TIME_BUFFER_SIZE, 0);
         {
-            gpu::ShaderPointer program = gpu::Shader::createProgram(shader::display_plugins::program::SrgbToLinear);
+            gpu::ShaderPointer program = gpu::Shader::createProgram(shader::display_plugins::program::InterleavedSrgbToLinear);
             gpu::StatePointer state = gpu::StatePointer(new gpu::State());
             _presentPipeline = gpu::Pipeline::create(program, state);
         }

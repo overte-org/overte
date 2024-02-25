@@ -11,10 +11,15 @@ setup_thread_debugger()
 set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "Tests/manual-tests/")
 
 # link in the shared libraries
-link_hifi_libraries(entities avatars shared octree gpu graphics fbx networking animation audio gl)
+link_hifi_libraries(
+        entities hfm avatars script-engine image
+        procedural material-networking ktx shaders
+        model-networking shared octree gpu graphics
+        model-serializers networking animation audio gl
+)
 
 if (WIN32)
-  add_dependency_external_projects(wasapi)
+    add_dependency_external_projects(wasapi)
 endif ()
 
 package_libraries_for_deployment()

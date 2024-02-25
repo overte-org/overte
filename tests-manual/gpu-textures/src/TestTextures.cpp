@@ -142,9 +142,9 @@ void TexturesTest::onChangeTextures() {
         const auto& textureFile = ALL_TEXTURE_FILES[i];
         auto texture = gpu::Texture::unserialize(textureFile);
         qDebug() << textureFile.c_str();
-        qDebug() << texture->getTexelFormat().getSemantic();
-        qDebug() << texture->getTexelFormat().getScalarCount();
-        textures.push_back(texture);
+        qDebug() << texture.first->getTexelFormat().getSemantic();
+        qDebug() << texture.first->getTexelFormat().getScalarCount();
+        textures.push_back(texture.first);
     }
 #endif
     index = 0;
