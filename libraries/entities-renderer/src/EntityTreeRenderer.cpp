@@ -928,7 +928,7 @@ QUuid EntityTreeRenderer::mousePressEvent(QMouseEvent* event) {
                                   pos2D, rayPickResult.intersection,
                                   rayPickResult.surfaceNormal, ray.direction,
                                   toPointerButton(*event), toPointerButtons(*event),
-                                  Qt::NoModifier); // TODO -- check for modifier keys?
+                                  event->modifiers());
 
         emit entityScriptingInterface->mousePressOnEntity(rayPickResult.entityID, pointerEvent);
 
@@ -959,9 +959,10 @@ void EntityTreeRenderer::mouseDoublePressEvent(QMouseEvent* event) {
     if (rayPickResult.intersects && (entity = getTree()->findEntityByID(rayPickResult.entityID))) {
         glm::vec2 pos2D = projectOntoEntityXYPlane(entity, ray, rayPickResult);
         PointerEvent pointerEvent(PointerEvent::Press, PointerManager::MOUSE_POINTER_ID,
-            pos2D, rayPickResult.intersection,
-            rayPickResult.surfaceNormal, ray.direction,
-            toPointerButton(*event), toPointerButtons(*event), Qt::NoModifier);
+                                  pos2D, rayPickResult.intersection,
+                                  rayPickResult.surfaceNormal, ray.direction,
+                                  toPointerButton(*event), toPointerButtons(*event),
+                                  event->modifiers());
 
         emit entityScriptingInterface->mouseDoublePressOnEntity(rayPickResult.entityID, pointerEvent);
 
@@ -995,7 +996,7 @@ void EntityTreeRenderer::mouseReleaseEvent(QMouseEvent* event) {
                                   pos2D, rayPickResult.intersection,
                                   rayPickResult.surfaceNormal, ray.direction,
                                   toPointerButton(*event), toPointerButtons(*event),
-                                  Qt::NoModifier); // TODO -- check for modifier keys?
+                                  event->modifiers());
 
         emit entityScriptingInterface->mouseReleaseOnEntity(rayPickResult.entityID, pointerEvent);
 
@@ -1011,7 +1012,7 @@ void EntityTreeRenderer::mouseReleaseEvent(QMouseEvent* event) {
                                   pos2D, rayPickResult.intersection,
                                   rayPickResult.surfaceNormal, ray.direction,
                                   toPointerButton(*event), toPointerButtons(*event),
-                                  Qt::NoModifier); // TODO -- check for modifier keys?
+                                  event->modifiers());
 
         emit entityScriptingInterface->clickReleaseOnEntity(_currentClickingOnEntityID, pointerEvent);
     }
@@ -1038,7 +1039,7 @@ void EntityTreeRenderer::mouseMoveEvent(QMouseEvent* event) {
                                   pos2D, rayPickResult.intersection,
                                   rayPickResult.surfaceNormal, ray.direction,
                                   toPointerButton(*event), toPointerButtons(*event),
-                                  Qt::NoModifier); // TODO -- check for modifier keys?
+                                  event->modifiers());
 
         emit entityScriptingInterface->mouseMoveOnEntity(rayPickResult.entityID, pointerEvent);
 
@@ -1052,7 +1053,7 @@ void EntityTreeRenderer::mouseMoveEvent(QMouseEvent* event) {
                                       pos2D, rayPickResult.intersection,
                                       rayPickResult.surfaceNormal, ray.direction,
                                       toPointerButton(*event), toPointerButtons(*event),
-                                      Qt::NoModifier); // TODO -- check for modifier keys?
+                                      event->modifiers());
 
             emit entityScriptingInterface->hoverLeaveEntity(_currentHoverOverEntityID, pointerEvent);
         }
@@ -1080,10 +1081,10 @@ void EntityTreeRenderer::mouseMoveEvent(QMouseEvent* event) {
         if (!_currentHoverOverEntityID.isInvalidID()) {
             glm::vec2 pos2D = projectOntoEntityXYPlane(entity, ray, rayPickResult);
             PointerEvent pointerEvent(PointerEvent::Move, PointerManager::MOUSE_POINTER_ID,
-                                  pos2D, rayPickResult.intersection,
-                                  rayPickResult.surfaceNormal, ray.direction,
+                                      pos2D, rayPickResult.intersection,
+                                      rayPickResult.surfaceNormal, ray.direction,
                                       toPointerButton(*event), toPointerButtons(*event),
-                                      Qt::NoModifier); // TODO -- check for modifier keys?
+                                      event->modifiers());
 
             emit entityScriptingInterface->hoverLeaveEntity(_currentHoverOverEntityID, pointerEvent);
             _currentHoverOverEntityID = UNKNOWN_ENTITY_ID; // makes it the unknown ID
