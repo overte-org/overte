@@ -162,7 +162,28 @@ class MyTestWindow : public TestWindow {
         }
 };
 
-extern uvec2 rectifySize(const uvec2& size);
+static const glm::uvec2 SPARSE_PAGE_SIZE(128);
+
+uint rectifyDimension(const uint& dimension) {
+    if (dimension == 0) {
+        return 0;
+    }
+    if (dimension < SPARSE_PAGE_SIZE.x) {
+        uint newSize = SPARSE_PAGE_SIZE.x;
+        while (dimension <= newSize / 2) {
+            newSize /= 2;
+        }
+        return newSize;
+    } else {
+        uint pages = (dimension / SPARSE_PAGE_SIZE.x) + (dimension % SPARSE_PAGE_SIZE.x == 0 ? 0 : 1);
+        return pages * SPARSE_PAGE_SIZE.x;
+    }
+}
+
+
+glm::uvec2 rectifySize(const glm::uvec2& size) {
+    return { rectifyDimension(size.x), rectifyDimension(size.y) };
+}
 
 void testSparseRectify() {
     std::vector<std::pair<uvec2, uvec2>> SPARSE_SIZE_TESTS {
