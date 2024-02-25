@@ -20,5 +20,6 @@ hfm::Model::Pointer ModelLoader::load(const hifi::ByteArray& data, const hifi::V
     if (!serializer) {
         return hfm::Model::Pointer();
     }
+    qDebug() << "ModelLoader::load: " << url;
     return serializer->read(data, mapping, url);
 }
