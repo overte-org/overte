@@ -4,7 +4,7 @@
 //
 //  Created by Adrian McCarlie on October 8th, 2014
 //  Copyright 2014 High Fidelity, Inc.
-//  Copyright 2022-2023 Overte e.V.
+//  Copyright 2022-2024 Overte e.V.
 //
 //  Display notifications to the user for some specific events.
 //
@@ -35,8 +35,7 @@
 
     //DESKTOP OVERLAY PROPERTIES
     var overlayWidth = 340.0; //width in pixel of notification overlay in desktop
-    var windowDimensions = Controller.getViewportDimensions(); // get the size of the interface window
-    var overlayLocationX = (windowDimensions.x - (overlayWidth + 20.0)); // positions window 20px from the right of the interface window
+    var overlayLocationX = (Window.innerWidth - (overlayWidth + 20.0)); // positions window 20px from the right of the interface window
     var overlayLocationY = 20.0; // position down from top of interface window
     var overlayTopMargin = 13.0;
     var overlayLeftMargin = 10.0;
@@ -46,9 +45,10 @@
     
     //HMD NOTIFICATION PANEL PROPERTIES
     var HMD_UI_SCALE_FACTOR = 1.0; //This define the size of all the notification system in HMD.
-    var hmdPanelLocalPosition = {"x": 1.2, "y": 2, "z": -1.0};
-    var hmdPanelLocalRotation = Quat.fromVec3Degrees({"x": 0, "y": -15, "z": 0});
+    var hmdPanelLocalPosition = {"x": 0.3, "y": 0.25, "z": -1.5};
+    var hmdPanelLocalRotation = Quat.fromVec3Degrees({"x": 0, "y": -3, "z": 0});
     var mainHMDnotificationContainerID = Uuid.NULL;
+    var CAMERA_MATRIX_INDEX = -7;
     
     //HMD LOCAL ENTITY PROPERTIES
     var entityWidth = 0.8; //in meter
@@ -87,6 +87,7 @@
 
     //DISPLAY
     function renderNotifications(remainingTime) {
+        overlayLocationX = (Window.innerWidth - (overlayWidth + 20.0)); 
         var alpha = NOTIFICATION_ALPHA;
         if (remainingTime < FADE_OUT_DURATION) {
             alpha = NOTIFICATION_ALPHA * (remainingTime/FADE_OUT_DURATION);
@@ -190,7 +191,7 @@
                             "subImage": { "x": 0, "y": 0 },
                             "visible": true,
                             "alpha": alpha
-                        };                        
+                        };
                         if (notifications[i].imageOverlayID === Uuid.NULL){
                             properties.imageURL = notifications[i].dataImage.path;
                             notifications[i].imageOverlayID = Overlays.addOverlay("image", properties);
@@ -239,7 +240,7 @@
                 "visible": false,
                 "dimensions": {"x": 0.1, "y": 0.1, "z":0.1},
                 "parentID": MyAvatar.sessionUUID,
-                "parentJointIndex": -2,
+                "parentJointIndex": CAMERA_MATRIX_INDEX,
                 "localPosition": hmdPanelLocalPosition,
                 "localRotation": hmdPanelLocalRotation
             };
