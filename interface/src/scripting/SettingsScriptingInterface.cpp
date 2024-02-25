@@ -20,8 +20,14 @@ SettingsScriptingInterface* SettingsScriptingInterface::getInstance() {
     return &sharedInstance;
 }
 
+const QSet<QString> securedVariables{"connectivity/webhook_url"};
+
 QVariant SettingsScriptingInterface::getValue(const QString& setting) {
     QVariant value = Setting::Handle<QVariant>(setting).get();
+    if(securedVariables.contains(setting)){
+        qWarning() << "SettingsScriptingInterface::getValue -- restricted read: " << setting;
+        return "";
+    }
     if (!value.isValid()) {
         value = "";
     }
@@ -30,6 +36,10 @@ QVariant SettingsScriptingInterface::getValue(const QString& setting) {
 
 QVariant SettingsScriptingInterface::getValue(const QString& setting, const QVariant& defaultValue) {
     QVariant value = Setting::Handle<QVariant>(setting, defaultValue).get();
+   if(securedVariables.contains(setting)){
+        qWarning() << "SettingsScriptingInterface::getValue -- restricted read: " << setting;
+        return "";
+    }
     if (!value.isValid()) {
         value = "";
     }
@@ -47,6 +57,10 @@ void SettingsScriptingInterface::setValue(const QString& setting, const QVariant
         } else {
             qInfo() << "SettingsScriptingInterface::setValue -- allowing restricted write: " << setting << value;
         }
+    }
+    if(securedVariables.contains(setting)){
+        qWarning() << "SettingsScriptingInterface::setValue -- restricted write: " << setting;
+        return;
     }
     // Make a deep-copy of the string.
     // Dangling pointers can occur with QStrings that are implicitly shared from a ScriptEngine.
