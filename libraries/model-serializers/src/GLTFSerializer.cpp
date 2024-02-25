@@ -317,6 +317,11 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                     size_t matrixIndex = jointNodeIndex;
                     std::vector<float>& value = inverseBindValues[s];
                     size_t matrixCount = 16 * matrixIndex;
+                    if (matrixCount + 15 >= value.size()) {
+                        qDebug(modelformat) << "GLTFSerializer::buildGeometry: not enough entries in jointInverseBindTransforms: " << _url;
+                        hfmModel.loadErrorCount++;
+                        return false;
+                    }
                     jointInverseBindTransforms[jointIndex] =
                         glm::mat4(value[matrixCount], value[matrixCount + 1], value[matrixCount + 2], value[matrixCount + 3],
                             value[matrixCount + 4], value[matrixCount + 5], value[matrixCount + 6], value[matrixCount + 7],
