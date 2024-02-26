@@ -4,6 +4,7 @@
 //
 //  Created by Andrzej Kapolka on 6/21/13.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html

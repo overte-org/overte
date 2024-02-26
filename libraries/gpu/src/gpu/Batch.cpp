@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 10/14/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -104,7 +105,7 @@ void Batch::clear() {
     _drawcallUniformReset = 0;
     _enableStereo = true;
     _enableSkybox = false;
-    _mustUpdatePreviousModels = true; 
+    _mustUpdatePreviousModels = true;
 }
 
 size_t Batch::cacheData(size_t size, const void* data) {
@@ -273,7 +274,7 @@ void Batch::pushProjectionJitterEnabled(bool isProjectionEnabled) {
     _params.emplace_back(isProjectionEnabled & 1);
 }
 
-void Batch::popProjectionJitterEnabled() { 
+void Batch::popProjectionJitterEnabled() {
     pushProjectionJitterEnabled(_isJitterOnProjectionEnabled);
 }
 

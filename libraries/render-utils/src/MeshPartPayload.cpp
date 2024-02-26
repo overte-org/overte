@@ -193,12 +193,9 @@ void ModelMeshPartPayload::bindTransform(gpu::Batch& batch, const Transform& tra
     if (_clusterBuffer) {
         batch.setUniformBuffer(graphics::slot::buffer::Skinning, _clusterBuffer);
     }
-    // TODO: I'm not sure of this
-    //batch.setModelTransform(transform, _previousModelTransform);
+
     batch.setModelTransform(transform, _previousRenderTransform);
     if (renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
-        // TODO: I'm not sure of this
-        //_prevRenderTransform = _drawTransform;
         _previousRenderTransform = transform;
     }
 }

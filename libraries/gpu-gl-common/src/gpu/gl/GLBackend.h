@@ -4,7 +4,7 @@
 //
 //  Created by Sam Gateau on 10/27/2014.
 //  Copyright 2014 High Fidelity, Inc.
-//  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -308,7 +308,7 @@ protected:
     virtual bool supportsBindless() const { return false; }
 
     static const size_t INVALID_OFFSET = (size_t)-1;
-    static const uint INVALID_SAVED_CAMERA_SLOT = (uint)-1; 
+    static const uint INVALID_SAVED_CAMERA_SLOT = (uint)-1;
     bool _inRenderTransferPass { false };
     int _currentDraw { -1 };
     
@@ -424,7 +424,7 @@ protected:
         using CameraBufferElement = TransformCamera;
 #endif
         using TransformCameras = std::vector<CameraBufferElement>;
-        
+
         struct ViewProjectionState {
             Transform _view;
             Transform _correctedView;
@@ -448,7 +448,7 @@ protected:
 
         TransformCamera _camera;
         TransformCameras _cameras;
-        std::array<SaveTransform, gpu::Batch::MAX_TRANSFORM_SAVE_SLOT_COUNT> _savedTransforms; 
+        std::array<SaveTransform, gpu::Batch::MAX_TRANSFORM_SAVE_SLOT_COUNT> _savedTransforms;
 
         mutable std::map<std::string, GLvoid*> _drawCallInfoOffsets;
 

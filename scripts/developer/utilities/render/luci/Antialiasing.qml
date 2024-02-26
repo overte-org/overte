@@ -3,7 +3,7 @@
 //
 //  Created by Sam Gateau on 8/14/2017
 //  Copyright 2016 High Fidelity, Inc.
-//  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or https://www.apache.org/licenses/LICENSE-2.0.html

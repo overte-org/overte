@@ -4,7 +4,7 @@
 //
 //  Created by Sam Gateau on 1/12/15.
 //  Copyright 2013 High Fidelity, Inc.
-//  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -16,11 +16,11 @@
 <@include DeferredBufferWrite_shared.slh@>
 
 // Must match layout in skybox.slh
-layout(location = DEFERRED_COLOR_SLOT) out vec4 _albedoMetallic;    // albedo / metallic
-layout(location = DEFERRED_NORMAL_SLOT) out vec4 _normalRoughness;   // normal / roughness
+layout(location = DEFERRED_COLOR_SLOT) out vec4 _albedoMetallic;                 // albedo / metallic
+layout(location = DEFERRED_NORMAL_SLOT) out vec4 _normalRoughness;               // normal / roughness
 layout(location = DEFERRED_SPECULAR_SLOT) out vec4 _scatteringEmissiveOcclusion; // scattering / emissive / occlusion
-layout(location = DEFERRED_VELOCITY_SLOT) out vec4 _velocity;   // velocity
-layout(location = DEFERRED_LIGHTING_SLOT) out vec4 _lighting;   // emissive
+layout(location = DEFERRED_VELOCITY_SLOT) out vec4 _velocity;                    // velocity
+layout(location = DEFERRED_LIGHTING_SLOT) out vec4 _lighting;                    // emissive
 
 // the alpha threshold
 const float alphaThreshold = 0.5;

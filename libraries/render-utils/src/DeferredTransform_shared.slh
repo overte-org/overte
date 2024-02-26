@@ -28,6 +28,6 @@ struct _DeferredFrameTransform {
 };
 
     // <@if 1@>
-    // Trigger Scribe include 
-    // <@endif@> <!def that !> 
+    // Trigger Scribe include
+    // <@endif@> <!def that !>
 //

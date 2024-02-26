@@ -7,6 +7,6 @@
 #define DEFERRED_LIGHTING_SLOT  4
 
     // <@if 1@>
-    // Trigger Scribe include 
-    // <@endif@> <!def that !> 
+    // Trigger Scribe include
+    // <@endif@> <!def that !>
 //

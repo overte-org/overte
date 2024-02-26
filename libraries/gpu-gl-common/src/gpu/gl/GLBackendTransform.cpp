@@ -4,7 +4,7 @@
 //
 //  Created by Sam Gateau on 3/8/2015.
 //  Copyright 2014 High Fidelity, Inc.
-//  Copyright 2023 Overte e.V.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -19,7 +19,7 @@ void GLBackend::do_setModelTransform(const Batch& batch, size_t paramOffset) {
 }
 
 void GLBackend::do_setViewTransform(const Batch& batch, size_t paramOffset) {
-    _transform._viewProjectionState._view = batch._transforms.get(batch._params[paramOffset]._uint); 
+    _transform._viewProjectionState._view = batch._transforms.get(batch._params[paramOffset]._uint);
     // View history is only supported with saved transforms and if setViewTransform is called (and not setSavedViewProjectionTransform)
     // then, in consequence, the view will NOT be corrected in the present thread. In which case
     // the previousCorrectedView should be the same as the view.
@@ -119,7 +119,7 @@ void GLBackend::syncTransformStateCache() {
 
     Mat4 modelView;
     auto modelViewInv = glm::inverse(modelView);
-    _transform._viewProjectionState._view.evalFromRawMatrix(modelViewInv); 
+    _transform._viewProjectionState._view.evalFromRawMatrix(modelViewInv);
 
     glDisableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO);
     _transform._enabledDrawcallInfoBuffer = false;

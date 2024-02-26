@@ -4,7 +4,7 @@
 //  Generated on <$_SCRIBE_DATE$>
 //
 //  Created by HifiExperiments on 7/24/2020
-//  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -26,7 +26,7 @@ layout(location=GPU_ATTR_COLOR) out vec4 varColor;
 void main(void) {
     varTexCoord0 = inTexCoord0.st;
     varColor = color_sRGBAToLinear(inColor);
-    
+
     // standard transform
     TransformCamera cam = getTransformCamera();
     TransformObject obj = getTransformObject();

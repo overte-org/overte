@@ -4,6 +4,9 @@
 //  Generated on <$_SCRIBE_DATE$>
 //
 //  Created by Bradley Austin Davis on 2015-02-04
+//  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
+//
 //  Based on fragment shader code from 
 //  https://github.com/paulhoux/Cinder-Samples/blob/master/TextRendering/include/text/Text.cpp 
 //  Distributed under the Apache License, Version 2.0.

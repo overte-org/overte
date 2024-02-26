@@ -5,7 +5,7 @@
 //
 //  Created by Sam Gateau on 5/5/2015.
 //  Copyright 2015 High Fidelity, Inc.
-//  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -36,9 +36,10 @@ void main(void) {
     <$transformEyeToWorldDir(cam, eyeDir, _normal)$>
 
 <@if not HIFI_USE_FORWARD@>
+    // FIXME: this is probably wrong
     _prevPositionCS = cam._previousProjectionViewUntranslated * (cam._viewInverse * (cam._projectionInverse * vec4(clipDir, 1.0)));
 <@endif@>
-    
+
     // Position is supposed to come in clip space
     gl_Position = vec4(clipDir, 1.0);
 

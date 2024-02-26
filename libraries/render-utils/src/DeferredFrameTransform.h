@@ -4,7 +4,7 @@
 //
 //  Created by Sam Gateau 6/3/2016.
 //  Copyright 2016 High Fidelity, Inc.
-//  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -33,10 +33,10 @@ public:
 
 protected:
 
-
     // Class describing the uniform buffer with the transform info common to the AO shaders
     // It s changing every frame
-#include "DeferredTransform_shared.slh" 
+#include "DeferredTransform_shared.slh"
+
     class FrameTransform : public _DeferredFrameTransform {
     public:
         FrameTransform() { infos.stereoInfo = glm::vec4(0.0f); }

@@ -6,7 +6,7 @@
 #else
 #   define TC_MAT4 mat4
 #   define TC_VEC4 vec4
-#   define TC_MUTABLE 
+#   define TC_MUTABLE
 #endif
 
 struct _TransformCamera {

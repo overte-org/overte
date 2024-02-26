@@ -4,7 +4,7 @@
 //
 //  Created by Olivier Prat on 05/25/2018.
 //  Copyright 2018 High Fidelity, Inc.
-//  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -119,6 +119,8 @@ const Backend::TransformCamera& Backend::TransformCamera::recomputeDerived(const
     viewUntranslated = _previousView;
     viewUntranslated[3] = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
     _previousProjectionViewUntranslated = previousProjection * viewUntranslated;
+
+    //_previousProjectionViewUntranslated = _projection * viewUntranslated;
 
     _stereoInfo = Vec4(0.0f);
 

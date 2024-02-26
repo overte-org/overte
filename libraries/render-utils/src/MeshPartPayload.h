@@ -70,7 +70,7 @@ public:
 
     static bool enableMaterialProceduralShaders;
 
-protected: 
+protected:
     mutable Transform _previousRenderTransform;
 
 private:

@@ -219,7 +219,7 @@ void RenderScriptingInterface::forceAntialiasingMode(AntialiasingSetupConfig::Mo
             setAntialiasingModeForView( mode, secondViewJitterCamConfig, secondViewAntialiasingConfig);
         }
 
-        _antialiasingModeSetting.set(_antialiasingMode);
+        _antialiasingModeSetting.set((int)_antialiasingMode);
     });
 }
 

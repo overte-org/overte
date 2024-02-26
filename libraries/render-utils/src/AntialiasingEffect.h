@@ -4,7 +4,6 @@
 //
 //  Created by Raffi Bedikian on 8/30/15
 //  Copyright 2015 High Fidelity, Inc.
-//  Copyright 2020 Vircadia contributors.
 //  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
@@ -28,8 +27,8 @@ class AntialiasingSetupConfig : public render::Job::Config {
     Q_PROPERTY(bool freeze MEMBER freeze NOTIFY dirty)
     Q_PROPERTY(bool stop MEMBER stop NOTIFY dirty)
     Q_PROPERTY(int index READ getIndex NOTIFY dirty)
-    Q_PROPERTY(int state READ getState WRITE setState NOTIFY dirty)
-    Q_PROPERTY(int mode READ getAAMode WRITE setAAMode NOTIFY dirty)
+    Q_PROPERTY(State state READ getState WRITE setState NOTIFY dirty)
+    Q_PROPERTY(Mode mode READ getAAMode WRITE setAAMode NOTIFY dirty)
 
 public:
     AntialiasingSetupConfig() : render::Job::Config(true) {}
@@ -43,12 +42,12 @@ public:
      *     <tr><td><code>0</code></td><td>NONE</td><td>Antialiasing is disabled.</td></tr>
      *     <tr><td><code>1</code></td><td>TAA</td><td>Temporal Antialiasing.</td></tr>
      *     <tr><td><code>2</code></td><td>FXAA</td><td>FXAA.</td></tr>
-     *     <tr><td><code>3</code></td><td>MODE_COUNT</td><td>Inducates number of antialiasing modes</td></tr>
+     *     <tr><td><code>3</code></td><td>MODE_COUNT</td><td>Indicates number of antialiasing modes</td></tr>
      *   </tbody>
      * </table>
      * @typedef {number} AntialiasingMode
      */
-    enum Mode {
+    enum class Mode {
         NONE = 0,
         TAA,
         FXAA,
@@ -56,33 +55,55 @@ public:
     };
     Q_ENUM(Mode) // Stored as signed int.
 
+    /*@jsdoc
+     *TAA Antialiasing state. <table>
+     *   <thead>
+     *     <tr><th>Value</th><th>Name</th><th>Description</th>
+     *   </thead>
+     *   <tbody>
+     *     <tr><td><code>0</code></td><td>NONE</td><td>TAA is disabled.</td></tr>
+     *     <tr><td><code>1</code></td><td>PAUSE</td><td>TAA jitter is paused.</td></tr>
+     *     <tr><td><code>2</code></td><td>PLAY</td><td>TAA jitter is playing.</td></tr>
+     *     <tr><td><code>3</code></td><td>STATE_COUNT</td><td>Indicates number of antialiasing states</td></tr>
+     *   </tbody>
+     * </table>
+     * @typedef {number} AntialiasingState
+     */
+    enum class State
+    {
+        NONE = 0,
+        PAUSE,
+        PLAY,
+        STATE_COUNT
+    };
+    Q_ENUM(State)
+
     float scale { 0.75f };
     bool stop { false };
     bool freeze { false };
-    int mode { TAA };
-
-    void setIndex(int current);
-    void setState(int state);
+    Mode mode { Mode::TAA };
 
 public slots:
-    int cycleStopPauseRun();
     int prev();
     int next();
-    int none();
-    int pause();
-    int play();
+    State none();
+    State pause();
+    State play();
 
     int getIndex() const { return _index; }
-    int getState() const { return _state; }
+    void setIndex(int current);
 
-    void setAAMode(int mode);
-    int getAAMode() const { return mode; }
+    State getState() const { return _state; }
+    void setState(State state);
+
+    Mode getAAMode() const { return mode; }
+    void setAAMode(Mode mode);
 
 signals:
     void dirty();
 
 private:
-    int _state { 0 };
+    State _state { State::PLAY };
     int _index { 0 };
 
 };
@@ -91,7 +112,7 @@ class AntialiasingSetup {
 public:
 
     using Config = AntialiasingSetupConfig;
-    using Output = int;
+    using Output = AntialiasingSetupConfig::Mode;
     using JobModel = render::Job::ModelO<AntialiasingSetup, Output, Config>;
 
     AntialiasingSetup();
@@ -106,7 +127,7 @@ private:
     int _freezedSampleIndex { 0 };
     bool _isStopped { false };
     bool _isFrozen { false };
-    int _mode { AntialiasingSetupConfig::Mode::TAA };
+    AntialiasingSetupConfig::Mode _mode{ AntialiasingSetupConfig::Mode::TAA };
 };
 
 
@@ -203,7 +224,7 @@ using TAAParamsBuffer = gpu::StructBuffer<TAAParams>;
 
 class Antialiasing {
 public:
-    using Inputs = render::VaryingSet4<DeferredFrameTransformPointer, DeferredFramebufferPointer, LinearDepthFramebufferPointer, int>;
+    using Inputs = render::VaryingSet4<DeferredFrameTransformPointer, DeferredFramebufferPointer, LinearDepthFramebufferPointer, AntialiasingSetupConfig::Mode>;
     using Outputs = gpu::TexturePointer;
     using Config = AntialiasingConfig;
     using JobModel = render::Job::ModelIO<Antialiasing, Inputs, Outputs, Config>;

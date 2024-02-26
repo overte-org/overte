@@ -5,7 +5,7 @@
 //
 //  Created by Sam Gateau on 8/17/2017
 //  Copyright 2017 High Fidelity, Inc.
-//  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -301,7 +301,7 @@ vec2 taa_computePrevFragAndEyeUV(vec2 fragUV, vec2 fragVelocity, out vec2 prevEy
 
 bool taa_fetchSourceAndHistory(vec2 fragUV, vec2 fragVelocity, out vec4 sourceColor, out vec4 historyColor) {
     sourceColor.rgb = texture(sourceMap, fragUV).rgb;
-    // Store AA intensity in alpha  
+    // Store AA intensity in alpha
     sourceColor.a = texture(intensityMap, fragUV).r;
 
     // If velocity is 0 then don't fetch history, just return the source. This means there is no jitter on this pixel

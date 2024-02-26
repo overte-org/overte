@@ -4,7 +4,7 @@
 //
 //  Created by Sam Gateau on 10/27/2014.
 //  Copyright 2014 High Fidelity, Inc.
-//  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -325,6 +325,7 @@ void GLBackend::renderPassTransfer(const Batch& batch) {
                 case Batch::COMMAND_drawIndexedInstanced:
                 case Batch::COMMAND_multiDrawIndirect:
                 case Batch::COMMAND_multiDrawIndexedIndirect:
+                case Batch::COMMAND_copySavedViewProjectionTransformToBuffer: // We need to store this transform state in the transform buffer
                     preUpdateTransform();
                     break;
 
@@ -334,11 +335,6 @@ void GLBackend::renderPassTransfer(const Batch& batch) {
 
                 case Batch::COMMAND_restoreContextStereo:
                     _stereo._contextDisable = false;
-                    break;
-
-                case Batch::COMMAND_copySavedViewProjectionTransformToBuffer:
-                    // We need to store this transform state in the transform buffer
-                    preUpdateTransform();
                     break;
 
                 case Batch::COMMAND_setFramebuffer:

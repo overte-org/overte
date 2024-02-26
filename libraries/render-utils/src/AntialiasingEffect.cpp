@@ -4,7 +4,7 @@
 //
 //  Created by Raffi Bedikian on 8/30/15
 //  Copyright 2015 High Fidelity, Inc.
-//  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -45,44 +45,24 @@ void AntialiasingSetupConfig::setIndex(int current) {
     emit dirty();
 }
 
-void AntialiasingSetupConfig::setState(int state) {
-    _state = (state) % 3;
+void AntialiasingSetupConfig::setState(State state) {
+    _state = (State)((int)state % (int)State::STATE_COUNT);
     switch (_state) {
-        case 0: {
+        case State::NONE: {
             none();
             break;
         }
-        case 1: {
+        case State::PAUSE: {
             pause();
             break;
         }
-        case 2:
+        case State::PLAY:
         default: {
             play();
             break;
         }
     }
     emit dirty();
-}
-
-int AntialiasingSetupConfig::cycleStopPauseRun() {
-    _state = (_state + 1) % 3;
-    switch (_state) {
-        case 0: {
-            return none();
-            break;
-        }
-        case 1: {
-            return pause();
-            break;
-        }
-        case 2:
-        default: {
-            return play();
-            break;
-        }
-    }
-    return _state;
 }
 
 int AntialiasingSetupConfig::prev() {
@@ -95,32 +75,32 @@ int AntialiasingSetupConfig::next() {
     return _index;
 }
 
-int AntialiasingSetupConfig::none() {
-    _state = 0;
+AntialiasingSetupConfig::State AntialiasingSetupConfig::none() {
+    _state = State::NONE;
     stop = true;
     freeze = false;
     setIndex(-1);
     return _state;
 }
 
-int AntialiasingSetupConfig::pause() {
-    _state = 1;
+AntialiasingSetupConfig::State AntialiasingSetupConfig::pause() {
+    _state = State::PAUSE;
     stop = false;
     freeze = true;
     setIndex(0);
     return _state;
 }
 
-int AntialiasingSetupConfig::play() {
-    _state = 2;
+AntialiasingSetupConfig::State AntialiasingSetupConfig::play() {
+    _state = State::PLAY;
     stop = false;
     freeze = false;
     setIndex(0);
     return _state;
 }
 
-void AntialiasingSetupConfig::setAAMode(int mode) {
-    this->mode = glm::clamp(mode, 0, (int)AntialiasingSetupConfig::MODE_COUNT);
+void AntialiasingSetupConfig::setAAMode(Mode mode) {
+    this->mode = (Mode)glm::clamp((int)mode, 0, (int)AntialiasingSetupConfig::Mode::MODE_COUNT);
     emit dirty();
 }
 
@@ -172,7 +152,7 @@ Antialiasing::~Antialiasing() {
     _antialiasingBuffers.clear();
 }
 
-const gpu::PipelinePointer& Antialiasing::getAntialiasingPipeline() {   
+const gpu::PipelinePointer& Antialiasing::getAntialiasingPipeline() {
     if (!_antialiasingPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::taa);
         gpu::StatePointer state = std::make_shared<gpu::State>();

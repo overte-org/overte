@@ -114,7 +114,8 @@ private:
 
 class DrawHighlightMask {
 public:
-    using Inputs = render::VaryingSet2<render::ShapeBounds, HighlightResourcesPointer>;    using Outputs = glm::ivec4;
+    using Inputs = render::VaryingSet2<render::ShapeBounds, HighlightResourcesPointer>;
+    using Outputs = glm::ivec4;
     using JobModel = render::Job::ModelIO<DrawHighlightMask, Inputs, Outputs>;
 
     DrawHighlightMask(unsigned int highlightIndex, render::ShapePlumberPointer shapePlumber, HighlightSharedParametersPointer parameters, uint transformSlot);
@@ -174,7 +175,8 @@ signals:
 
 class DebugHighlight {
 public:
-    using Inputs = render::VaryingSet2<HighlightResourcesPointer, glm::ivec4>;    using Config = DebugHighlightConfig;
+    using Inputs = render::VaryingSet2<HighlightResourcesPointer, glm::ivec4>;
+    using Config = DebugHighlightConfig;
     using JobModel = render::Job::ModelI<DebugHighlight, Inputs, Config>;
 
     DebugHighlight(uint transformSlot);

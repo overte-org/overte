@@ -246,7 +246,7 @@ private:
     Setting::Handle<bool> _shadowsEnabledSetting { "shadowsEnabled", true };
     Setting::Handle<bool> _ambientOcclusionEnabledSetting { "ambientOcclusionEnabled", false };
     //Setting::Handle<AntialiasingConfig::Mode> _antialiasingModeSetting { "antialiasingMode", AntialiasingConfig::Mode::TAA };
-    Setting::Handle<int> _antialiasingModeSetting { "antialiasingMode", AntialiasingSetupConfig::Mode::NONE };
+    Setting::Handle<int> _antialiasingModeSetting { "antialiasingMode", (int)AntialiasingSetupConfig::Mode::NONE };
     Setting::Handle<float> _viewportResolutionScaleSetting { "viewportResolutionScale", 1.0f };
     Setting::Handle<QString> _fullScreenScreenSetting { "fullScreenScreen", "" };
 
