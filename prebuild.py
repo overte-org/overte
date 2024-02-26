@@ -104,15 +104,29 @@ def main():
 
     args = parse_args()
 
+    if args.get_vcpkg_id or args.get_vcpkg_path:
+        # These arguments need quiet mode to avoid confusing scripts that use them.
+        args.quiet = True
+
     if not args.quiet:
         print(sys.argv)
-
-    assets_url = hifi_utils.readEnviromentVariableFromFile(args.build_root, 'EXTERNAL_BUILD_ASSETS')
 
     if args.ci_build:
         logging.basicConfig(datefmt='%H:%M:%S', format='%(asctime)s %(guid)s %(message)s', level=logging.INFO)
 
     logger.info('start')
+
+    pm = hifi_vcpkg.VcpkgRepo(args)
+
+    if args.get_vcpkg_id:
+        print(pm.id)
+        exit(0)
+
+    if args.get_vcpkg_path:
+        print(pm.path)
+        exit(0)
+
+    assets_url = hifi_utils.readEnviromentVariableFromFile(args.build_root, 'EXTERNAL_BUILD_ASSETS')
 
     # OS dependent information
     system = platform.system()
@@ -142,16 +156,6 @@ def main():
 
             else:
                 raise Exception("Internal error: System Qt not selected, but hifi_qt.py failed to return a cmake path")
-
-    pm = hifi_vcpkg.VcpkgRepo(args)
-
-    if args.get_vcpkg_id:
-        print(pm.id)
-        exit(0)
-
-    if args.get_vcpkg_path:
-        print(pm.path)
-        exit(0)
 
     if qtInstallPath is not None:
         pm.writeVar('QT_CMAKE_PREFIX_PATH', qtInstallPath)
