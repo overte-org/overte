@@ -1,6 +1,6 @@
 #
-#  FixupBundlePostBuild.cmake.in
-#  cmake/templates
+#  FixupBundlePostBuild.cmake
+#  cmake
 #
 #  Copyright 2015 High Fidelity, Inc.
 #  Created by Stephen Birarda on February 13, 2014
@@ -20,4 +20,4 @@ else()
 endif()
 
 file(GLOB EXTRA_PLUGINS "${BUNDLE_PLUGIN_DIR}/*.${PLUGIN_EXTENSION}")
-fixup_bundle("${BUNDLE_EXECUTABLE}" "${EXTRA_PLUGINS}" "@FIXUP_LIBS@" IGNORE_ITEM "vcredist_x86.exe;vcredist_x64.exe")
+fixup_bundle("${BUNDLE_EXECUTABLE}" "${EXTRA_PLUGINS}" "${LIB_PATHS}" IGNORE_ITEM "vcredist_x86.exe;vcredist_x64.exe")
