@@ -447,15 +447,12 @@ if (DOWNLOAD_SERVERLESS_CONTENT)
   )
 endif ()
 
-if (WIN32)
-    set(EXTRA_DEPLOY_OPTIONS "--qmldir  \"${PROJECT_SOURCE_DIR}/resources/qml\"")
+set(EXTRA_DEPLOY_OPTIONS "--qmldir  \"${PROJECT_SOURCE_DIR}/resources/qml\"")
 
-    set(TARGET_INSTALL_DIR ${INTERFACE_INSTALL_DIR})
-    set(TARGET_INSTALL_COMPONENT ${CLIENT_COMPONENT})
-    # manually_install_openssl_for_qt()
-
-    package_libraries_for_deployment()
-endif()
+set(TARGET_INSTALL_DIR ${INTERFACE_INSTALL_DIR})
+set(TARGET_INSTALL_COMPONENT ${CLIENT_COMPONENT})
+manually_install_openssl_for_qt()
+package_libraries_for_deployment()
 
 find_package(GifCreator REQUIRED)
 target_link_libraries(${TARGET_NAME} GifCreator::GifCreator)

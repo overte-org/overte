@@ -1,12 +1,12 @@
 import os
 from conan import ConanFile
+from conan.tools.cmake import CMakeToolchain, CMakeDeps
 from conan.tools.files import copy, save
 
 
 class Overte(ConanFile):
     name = "Overte"
     settings = "os", "compiler", "build_type", "arch"
-    generators = "CMakeToolchain", "CMakeDeps"
     options = {"with_qt": [True, False]}
     default_options = {
         "with_qt": False,
@@ -85,13 +85,35 @@ class Overte(ConanFile):
             self.requires("qt/5.15.12", force=True)
 
     def generate(self):
+        tc = CMakeToolchain(self)
+        tc.generate()
+        deps = CMakeDeps(self)
+        deps.generate()
+        if self.settings.os == "Windows" and self.settings.build_type == "Release":
+            deps.configuration = "RelWithDebInfo"
+            deps.generate()
+
         bindirs = []
         for dep in self.dependencies.values():
             bindirs += dep.cpp_info.bindirs
+
+        if self.settings.os == "Linux":
+            for dep in self.dependencies.values():
+                bindirs += dep.cpp_info.libdirs
+
+        bindirs_win = []
+        for dir in bindirs:
+            bindirs_win.append(os.path.join(dir, f"{self.settings.build_type}"))
+
+        conan_data = 'set(CONAN_BIN_DIRS "%s;%s")\n' % (
+            ";".join(bindirs).replace("\\", "/"),
+            ";".join(bindirs_win).replace("\\", "/"),
+        )
+
         save(
             self,
             os.path.join(self.build_folder, "cmake", "ConanBinDirs.cmake"),
-            'set(CONAN_BIN_DIRS "%s")' % ";".join(bindirs).replace("\\", "/"),
+            conan_data,
         )
 
         toolspath = """
