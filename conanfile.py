@@ -93,28 +93,11 @@ class Overte(ConanFile):
             deps.configuration = "RelWithDebInfo"
             deps.generate()
 
-        bindirs = []
         for dep in self.dependencies.values():
-            bindirs += dep.cpp_info.bindirs
-
-        if self.settings.os == "Linux":
-            for dep in self.dependencies.values():
-                bindirs += dep.cpp_info.libdirs
-
-        bindirs_win = []
-        for dir in bindirs:
-            bindirs_win.append(os.path.join(dir, f"{self.settings.build_type}"))
-
-        conan_data = 'set(CONAN_BIN_DIRS "%s;%s")\n' % (
-            ";".join(bindirs).replace("\\", "/"),
-            ";".join(bindirs_win).replace("\\", "/"),
-        )
-
-        save(
-            self,
-            os.path.join(self.build_folder, "cmake", "ConanBinDirs.cmake"),
-            conan_data,
-        )
+            for f in dep.cpp_info.bindirs:
+                self.cp_libs(f)
+            for f in dep.cpp_info.libdirs:
+                self.cp_libs(f)
 
         toolspath = """
         set(GLSLANG_DIR "%s")
@@ -136,3 +119,8 @@ class Overte(ConanFile):
             os.path.join(self.build_folder, "cmake", "ConanToolsDirs.cmake"),
             toolspath,
         )
+
+    def cp_libs(self, src):
+        bindir = os.path.join(self.build_folder, "conanlibs", f"{self.settings.build_type}")
+        copy(self, "*.dll", src, bindir, False)
+        copy(self, "*.so*", src, bindir, False)
