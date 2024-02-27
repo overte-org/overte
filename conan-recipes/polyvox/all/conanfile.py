@@ -20,7 +20,7 @@ class PolyvoxConan(ConanFile):
         tc = CMakeToolchain(self)
         tc.variables["ENABLE_EXAMPLES"] = "OFF"
         tc.variables["ENABLE_TESTS"] = "OFF"
-        tc.variables["BUILD_BINDINGS"] = "OFF"
+        tc.variables["ENABLE_BINDINGS"] = "OFF"
         tc.variables["BUILD_DOCS"] = "OFF"
         tc.variables["BUILD_MANUAL"] = "OFF"
         tc.generate()
