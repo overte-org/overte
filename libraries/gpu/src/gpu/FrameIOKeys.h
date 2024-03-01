@@ -201,8 +201,6 @@ constexpr const char*  COMMAND_NAMES[] = {
     "glUniformMatrix3fv",
     "glUniformMatrix4fv",
 
-    "glColor4f",
-
     "pushProfileRange",
     "popProfileRange",
 };

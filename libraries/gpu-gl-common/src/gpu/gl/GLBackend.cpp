@@ -100,8 +100,6 @@ GLBackend::CommandCall GLBackend::_commandCalls[Batch::NUM_COMMANDS] =
     (&::gpu::gl::GLBackend::do_glUniformMatrix3fv),
     (&::gpu::gl::GLBackend::do_glUniformMatrix4fv),
 
-    (&::gpu::gl::GLBackend::do_glColor4f),
-
     (&::gpu::gl::GLBackend::do_pushProfileRange),
     (&::gpu::gl::GLBackend::do_popProfileRange),
 };
@@ -835,22 +833,6 @@ void GLBackend::do_glUniformMatrix4fv(const Batch& batch, size_t paramOffset) {
         batch._params[paramOffset + 2]._uint,
         batch._params[paramOffset + 1]._uint,
         (const GLfloat*)batch.readData(batch._params[paramOffset + 0]._uint));
-    (void)CHECK_GL_ERROR();
-}
-
-void GLBackend::do_glColor4f(const Batch& batch, size_t paramOffset) {
-
-    glm::vec4 newColor(
-        batch._params[paramOffset + 3]._float,
-        batch._params[paramOffset + 2]._float,
-        batch._params[paramOffset + 1]._float,
-        batch._params[paramOffset + 0]._float);
-
-    if (_input._colorAttribute != newColor) {
-        _input._colorAttribute = newColor;
-        glVertexAttrib4fv(gpu::Stream::COLOR, &_input._colorAttribute.r);
-        _input._hasColorAttribute = true;
-    }
     (void)CHECK_GL_ERROR();
 }
 

@@ -131,10 +131,12 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
             procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created, ProceduralProgramKey(outColor.a < 1.0f));
         });
 
+        auto compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
         if (wireframe) {
-            geometryCache->renderWireShape(batch, geometryShape, outColor);
+            geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
         } else {
-            geometryCache->renderShape(batch, geometryShape, outColor);
+            geometryCache->renderShape(batch, geometryShape, _colorBuffer);
         }
     } else if (pipelineType == Pipeline::SIMPLE) {
         // FIXME, support instanced multi-shape rendering using multidraw indirect
@@ -149,10 +151,12 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
                 geometryCache->renderSolidShapeInstance(args, batch, geometryShape, outColor, pipeline);
             }
         } else {
+            auto compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+            _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
             if (wireframe) {
-                geometryCache->renderWireShape(batch, geometryShape, outColor);
+                geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
             } else {
-                geometryCache->renderShape(batch, geometryShape, outColor);
+                geometryCache->renderShape(batch, geometryShape, _colorBuffer);
             }
         }
     } else {
@@ -160,7 +164,9 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
             args->_details._materialSwitches++;
         }
 
-        geometryCache->renderShape(batch, geometryShape);
+        auto compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+        geometryCache->renderShape(batch, geometryShape, _colorBuffer);
     }
 
     const auto triCount = geometryCache->getShapeTriangleCount(geometryShape);

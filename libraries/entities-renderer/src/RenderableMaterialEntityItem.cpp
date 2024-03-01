@@ -337,21 +337,26 @@ void MaterialEntityRenderer::doRender(RenderArgs* args) {
         }
 
         // Draw!
-        DependencyManager::get<GeometryCache>()->renderSphere(batch);
+        auto compactColor = 0xFFFFFFFF;
+        _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+        DependencyManager::get<GeometryCache>()->renderShape(batch, GeometryCache::Shape::Sphere, _colorBuffer);
     } else {
         auto proceduralDrawMaterial = std::static_pointer_cast<graphics::ProceduralMaterial>(drawMaterial);
         glm::vec4 outColor = glm::vec4(drawMaterial->getAlbedo(), drawMaterial->getOpacity());
         outColor = proceduralDrawMaterial->getColor(outColor);
         proceduralDrawMaterial->prepare(batch, transform.getTranslation(), transform.getScale(),
                                         transform.getRotation(), _created, ProceduralProgramKey(outColor.a < 1.0f));
+
+        auto compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
         if (render::ShapeKey(args->_globalShapeKey).isWireframe() || _primitiveMode == PrimitiveMode::LINES) {
-            DependencyManager::get<GeometryCache>()->renderWireSphere(batch, outColor);
+            DependencyManager::get<GeometryCache>()->renderWireShape(batch, GeometryCache::Shape::Sphere, _colorBuffer);
         } else {
-            DependencyManager::get<GeometryCache>()->renderSphere(batch, outColor);
+            DependencyManager::get<GeometryCache>()->renderShape(batch, GeometryCache::Shape::Sphere, _colorBuffer);
         }
     }
 
-    args->_details._trianglesRendered += (int)DependencyManager::get<GeometryCache>()->getSphereTriangleCount();
+    args->_details._trianglesRendered += (int)DependencyManager::get<GeometryCache>()->getShapeTriangleCount(GeometryCache::Shape::Sphere);
 }
 
 void MaterialEntityRenderer::setCurrentMaterialName(const std::string& currentMaterialName) {
