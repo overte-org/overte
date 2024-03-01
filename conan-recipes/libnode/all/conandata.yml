@@ -1,4 +1,7 @@
 sources:
-  "18.17.1":
-    url: "https://cdn.anotherfoxguy.com/node-v18.17.1.tar.gz"
-    sha256: "1157525a819c395020795ff8c49eee7472b8666cc256b45558b9cbe2e0864c35"
+  18.17.1:
+    sha256: 1157525a819c395020795ff8c49eee7472b8666cc256b45558b9cbe2e0864c35
+    url: https://github.com/nodejs/node/archive/refs/tags/v18.17.1.tar.gz
+  21.6.2:
+    sha256: 24a2de72478e1aa60bc830092e8f331f86aedd41e7e3f98fcb66bf5f02bdb578
+    url: https://github.com/nodejs/node/archive/refs/tags/v21.6.2.tar.gz
