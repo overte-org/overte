@@ -3347,7 +3347,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_SCRIPT_URL, properties.getScriptURL());
                 APPEND_ENTITY_PROPERTY(PROP_MAX_FPS, properties.getMaxFPS());
                 APPEND_ENTITY_PROPERTY(PROP_INPUT_MODE, (uint32_t)properties.getInputMode());
-                APPEND_ENTITY_PROPERTY(PROP_SHOW_KEYBOARD_FOCUS_HIGHLIGHT, properties.getWantsKeyboardFocus());
+                APPEND_ENTITY_PROPERTY(PROP_WANTS_KEYBOARD_FOCUS, properties.getWantsKeyboardFocus());
                 APPEND_ENTITY_PROPERTY(PROP_SHOW_KEYBOARD_FOCUS_HIGHLIGHT, properties.getShowKeyboardFocusHighlight());
                 APPEND_ENTITY_PROPERTY(PROP_WEB_USE_BACKGROUND, properties.getUseBackground());
                 APPEND_ENTITY_PROPERTY(PROP_USER_AGENT, properties.getUserAgent());
