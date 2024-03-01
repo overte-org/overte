@@ -216,6 +216,8 @@ public:
     bool isDepthBiased() const { return _flags[DEPTH_BIAS]; }
     bool isWireframe() const { return _flags[WIREFRAME]; }
     bool isCullFace() const { return !_flags[CULL_FACE_NONE] && !_flags[CULL_FACE_FRONT]; }
+    bool isCullFaceNone() const { return _flags[CULL_FACE_NONE] && !_flags[CULL_FACE_FRONT]; }
+    bool isCullFaceFront() const { return !_flags[CULL_FACE_NONE] && _flags[CULL_FACE_FRONT]; }
     bool isFaded() const { return _flags[FADE]; }
     bool isMToon() const { return _flags[MTOON]; }
 

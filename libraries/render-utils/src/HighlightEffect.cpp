@@ -477,10 +477,7 @@ void DrawHighlightTask::build(JobModel& task, const render::Varying& inputs, ren
     auto shapePlumber = std::make_shared<ShapePlumber>();
     {
         auto state = std::make_shared<gpu::State>();
-        state->setDepthTest(true, true, gpu::LESS_EQUAL);
         state->setColorWriteMask(false, false, false, false);
-
-
         auto fadeEffect = DependencyManager::get<FadeEffect>();
         initZPassPipelines(*shapePlumber, state, fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter());
     }
