@@ -18,5 +18,14 @@ layout(location=1) in vec2 varTexcoord;
 layout(location=0) out vec4 outFragColor;
 
 void main(void) {
-    outFragColor = texture(colorMap, varTexcoord.xy) * varColor;
+    vec4 albedo = texture(colorMap, varTexcoord.xy) * varColor;
+
+    <@if not HIFI_USE_TRANSLUCENT@>
+        // to reduce texel flickering for floating point error we discard when alpha is "almost one"
+        if (albedo.a < 0.999999) {
+            discard;
+        }
+    <@endif@>
+
+    outFragColor = albedo;
 }
