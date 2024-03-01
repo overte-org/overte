@@ -16,6 +16,8 @@
 #include <string.h>
 #include <algorithm>
 
+#include <qdebug.h>
+
 #include "AudioHelpers.h"
 
 static const int HRTF_AZIMUTHS = 72;    // 360 / 5-degree steps
@@ -80,7 +82,10 @@ public:
     //
     // HRTF local gain adjustment in amplitude (1.0 == unity)
     //
-    void setGainAdjustment(float gain) { _gainAdjust = HRTF_GAIN * gain; };
+    void setGainAdjustment(float gain) {
+        _gainAdjust = HRTF_GAIN * gain;
+        qDebug() << "AudioHRTF::setGainAdjustment: " << _gainAdjust;
+    };
     float getGainAdjustment() { return _gainAdjust; }
 
     // clear internal state, but retain settings

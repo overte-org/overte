@@ -223,12 +223,24 @@ void AudioMixerClientData::parseInjectorGainSet(ReceivedMessage& message, const 
 }
 
 void AudioMixerClientData::setGainForAvatar(QUuid nodeID, float gain) {
-    auto it = std::find_if(_streams.active.cbegin(), _streams.active.cend(), [nodeID](const MixableStream& mixableStream){
+    auto itActive = std::find_if(_streams.active.cbegin(), _streams.active.cend(), [nodeID](const MixableStream& mixableStream){
         return mixableStream.nodeStreamID.nodeID == nodeID && mixableStream.nodeStreamID.streamID.isNull();
     });
 
-    if (it != _streams.active.cend()) {
-        it->hrtf->setGainAdjustment(gain);
+    if (itActive != _streams.active.cend()) {
+        itActive->hrtf->setGainAdjustment(gain);
+        return;
+    }
+
+    // If someone is not speaking at the moment, then stream is not in active streams, and volume adjustment will fail,
+    // so we need to search in inactive streams too
+    auto itInactive = std::find_if(_streams.inactive.cbegin(), _streams.inactive.cend(), [nodeID](const MixableStream& mixableStream){
+        return mixableStream.nodeStreamID.nodeID == nodeID && mixableStream.nodeStreamID.streamID.isNull();
+    });
+
+    if (itInactive != _streams.active.cend()) {
+        itInactive->hrtf->setGainAdjustment(gain);
+        return;
     }
 }
 
