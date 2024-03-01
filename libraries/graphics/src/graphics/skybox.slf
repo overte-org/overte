@@ -10,8 +10,6 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
-<@include graphics/ShaderConstants.h@>
-
 <@include skybox.slh@>
 
 <@if HIFI_USE_FORWARD@>
@@ -63,7 +61,7 @@ void main(void) {
         _fragColor.rgb = mix(_fragColor.rgb, hazeColor.rgb, hazeColor.a);
     }
 <@else@>
-    packDeferredFragmentSky(_prevPositionCS, color, normal);
+    packDeferredFragmentSky(_prevPositionCS, color);
 <@endif@>
 
 }

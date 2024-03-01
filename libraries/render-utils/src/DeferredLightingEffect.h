@@ -78,7 +78,7 @@ class PrepareDeferred {
 public:
     // Inputs: primaryFramebuffer and lightingModel
     using Inputs = render::VaryingSet2 <gpu::FramebufferPointer, LightingModelPointer>;
-    using Outputs = render::VaryingSet3<DeferredFramebufferPointer, gpu::FramebufferPointer, gpu::FramebufferPointer>;
+    using Outputs = render::VaryingSet2<DeferredFramebufferPointer, gpu::FramebufferPointer>;
 
     using JobModel = render::Job::ModelIO<PrepareDeferred, Inputs, Outputs>;
 
@@ -122,8 +122,8 @@ public:
 class RenderDeferredCleanup {
 public:
     using JobModel = render::Job::Model<RenderDeferredCleanup>;
-    
-    void run(const render::RenderContextPointer& renderContext);
+
+    void run(const render::RenderContextPointer& renderContext, const DeferredFramebufferPointer& deferredFramebuffer);
 };
 
 using RenderDeferredConfig = render::GPUJobConfig;

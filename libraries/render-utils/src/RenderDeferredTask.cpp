@@ -153,7 +153,6 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
     const auto prepareDeferredOutputs = task.addJob<PrepareDeferred>("PrepareDeferred", prepareDeferredInputs);
     const auto deferredFramebuffer = prepareDeferredOutputs.getN<PrepareDeferred::Outputs>(0);
     const auto lightingFramebuffer = prepareDeferredOutputs.getN<PrepareDeferred::Outputs>(1);
-    const auto lightingWithVelocityFramebuffer = prepareDeferredOutputs.getN<PrepareDeferred::Outputs>(2);
 
     // draw a stencil mask in hidden regions of the framebuffer.
     task.addJob<PrepareStencil>("PrepareStencil", scaledPrimaryFramebuffer);

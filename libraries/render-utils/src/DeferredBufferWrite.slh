@@ -15,7 +15,6 @@
 <@include DeferredBuffer.slh@>
 <@include DeferredBufferWrite_shared.slh@>
 
-// Must match layout in skybox.slh
 layout(location = DEFERRED_COLOR_SLOT) out vec4 _albedoMetallic;                 // albedo / metallic
 layout(location = DEFERRED_NORMAL_SLOT) out vec4 _normalRoughness;               // normal / roughness
 layout(location = DEFERRED_SPECULAR_SLOT) out vec4 _scatteringEmissiveOcclusion; // scattering / emissive / occlusion

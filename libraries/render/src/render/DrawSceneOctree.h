@@ -23,6 +23,7 @@ namespace render {
         Q_OBJECT
         Q_PROPERTY(bool showVisibleCells READ getShowVisibleCells WRITE setShowVisibleCells NOTIFY dirty())
         Q_PROPERTY(bool showEmptyCells READ getShowEmptyCells WRITE setShowEmptyCells NOTIFY dirty())
+        Q_PROPERTY(bool showLODReticle READ getShowLODReticle WRITE setShowLODReticle NOTIFY dirty())
         Q_PROPERTY(int numAllocatedCells READ getNumAllocatedCells)
         Q_PROPERTY(int numFreeCells READ getNumFreeCells)
 
@@ -36,15 +37,18 @@ namespace render {
         int getNumAllocatedCells() const { return numAllocatedCells; }
         int getNumFreeCells() const { return numFreeCells; }
 
-        bool showVisibleCells{ true };
-        bool showEmptyCells{ false };
+        bool showVisibleCells { false };
+        bool showEmptyCells { false };
+        bool showLODReticle { false };
 
         bool getShowVisibleCells() { return showVisibleCells; }
         bool getShowEmptyCells() { return showEmptyCells; }
+        bool getShowLODReticle() { return showLODReticle; }
 
     public slots:
         void setShowVisibleCells(bool show) { showVisibleCells = show; emit dirty(); }
         void setShowEmptyCells(bool show) { showEmptyCells = show; emit dirty(); }
+        void setShowLODReticle(bool show) { showLODReticle = show; emit dirty(); }
 
     signals:
         void dirty();
@@ -57,8 +61,10 @@ namespace render {
         gpu::BufferPointer _cellBoundsBuffer;
         gpu::Stream::FormatPointer _cellBoundsFormat;
 
-        bool _showVisibleCells; // initialized by Config
-        bool _showEmptyCells; // initialized by Config
+        // initialized by Config
+        bool _showVisibleCells;
+        bool _showEmptyCells;
+        bool _showLODReticle;
 
     public:
         using Config = DrawSceneOctreeConfig;

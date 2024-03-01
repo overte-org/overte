@@ -120,8 +120,6 @@ const Backend::TransformCamera& Backend::TransformCamera::recomputeDerived(const
     viewUntranslated[3] = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
     _previousProjectionViewUntranslated = previousProjection * viewUntranslated;
 
-    //_previousProjectionViewUntranslated = _projection * viewUntranslated;
-
     _stereoInfo = Vec4(0.0f);
 
     return *this;

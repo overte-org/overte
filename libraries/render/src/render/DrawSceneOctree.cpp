@@ -61,6 +61,7 @@ const gpu::PipelinePointer DrawSceneOctree::getDrawLODReticlePipeline() {
 void DrawSceneOctree::configure(const Config& config) {
     _showVisibleCells = config.showVisibleCells;
     _showEmptyCells = config.showEmptyCells;
+    _showLODReticle = config.showLODReticle;
 }
 
 
@@ -76,45 +77,48 @@ void DrawSceneOctree::run(const RenderContextPointer& renderContext, const ItemS
     gpu::doInBatch("DrawSceneOctree::run", args->_context, [&](gpu::Batch& batch) {
         batch.setViewportTransform(args->_viewport);
         batch.setSavedViewProjectionTransform(_transformSlot);
-        batch.setModelTransform(Transform());
 
-        // bind the one gpu::Pipeline we need
-        batch.setPipeline(getDrawCellBoundsPipeline());
-        batch.setInputFormat(_cellBoundsFormat);
+        if (_showEmptyCells || _showVisibleCells) {
+            batch.setModelTransform(Transform());
 
-        std::vector<ivec4> cellBounds;
-        auto drawCellBounds = [this, &cellBounds, &scene](const std::vector<gpu::Stamp>& cells) {
-            cellBounds.reserve(cellBounds.size() + cells.size());
-            for (const auto& cellID : cells) {
-                auto cell = scene->getSpatialTree().getConcreteCell(cellID);
-                auto cellLoc = cell.getlocation();
-                glm::ivec4 cellLocation(cellLoc.pos.x, cellLoc.pos.y, cellLoc.pos.z, cellLoc.depth);
+            // bind the one gpu::Pipeline we need
+            batch.setPipeline(getDrawCellBoundsPipeline());
+            batch.setInputFormat(_cellBoundsFormat);
 
-                bool empty = cell.isBrickEmpty() || !cell.hasBrick();
-                if (empty) {
-                    if (!_showEmptyCells) {
+            std::vector<ivec4> cellBounds;
+            auto drawCellBounds = [this, &cellBounds, &scene](const std::vector<gpu::Stamp>& cells) {
+                cellBounds.reserve(cellBounds.size() + cells.size());
+                for (const auto& cellID : cells) {
+                    auto cell = scene->getSpatialTree().getConcreteCell(cellID);
+                    auto cellLoc = cell.getlocation();
+                    glm::ivec4 cellLocation(cellLoc.pos.x, cellLoc.pos.y, cellLoc.pos.z, cellLoc.depth);
+
+                    bool empty = cell.isBrickEmpty() || !cell.hasBrick();
+                    if (empty) {
+                        if (!_showEmptyCells) {
+                            continue;
+                        }
+                        cellLocation.w *= -1.0;
+                    } else if (!_showVisibleCells) {
                         continue;
                     }
-                    cellLocation.w *= -1.0;
-                } else if (!empty && !_showVisibleCells) {
-                    continue;
+                    cellBounds.push_back(cellLocation);
                 }
-                cellBounds.push_back(cellLocation);
-            }
-        };
+            };
 
-        drawCellBounds(inSelection.cellSelection.insideCells);
-        drawCellBounds(inSelection.cellSelection.partialCells);
-        auto size = cellBounds.size() * sizeof(ivec4);
-        if (size > _cellBoundsBuffer->getSize()) {
-            _cellBoundsBuffer->resize(size);
+            drawCellBounds(inSelection.cellSelection.insideCells);
+            drawCellBounds(inSelection.cellSelection.partialCells);
+            auto size = cellBounds.size() * sizeof(ivec4);
+            if (size > _cellBoundsBuffer->getSize()) {
+                _cellBoundsBuffer->resize(size);
+            }
+            _cellBoundsBuffer->setSubData(0, cellBounds);
+            batch.setInputBuffer(0, _cellBoundsBuffer, 0, sizeof(ivec4));
+            batch.drawInstanced((uint32_t)cellBounds.size(), gpu::LINES, 24);
         }
-        _cellBoundsBuffer->setSubData(0, cellBounds);
-        batch.setInputBuffer(0, _cellBoundsBuffer, 0, sizeof(ivec4));
-        batch.drawInstanced((uint32_t)cellBounds.size(), gpu::LINES, 24);
 
         // Draw the LOD Reticle
-        {
+        if (_showLODReticle) {
             float angle = glm::degrees(getPerspectiveAccuracyHalfAngle(args->_sizeScale, args->_boundaryLevelAdjust));
             Transform crosshairModel;
             crosshairModel.setTranslation(glm::vec3(0.0, 0.0, -1000.0));

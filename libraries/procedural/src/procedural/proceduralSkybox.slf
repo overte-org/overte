@@ -11,8 +11,6 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
-<@include graphics/ShaderConstants.h@>
-
 <@include graphics/skybox.slh@>
 <$declarePackDeferredFragmentSky()$>
 
@@ -37,5 +35,5 @@ void main(void) {
     // Procedural Shaders are expected to be Gamma corrected so let's bring back the RGB in linear space for the rest of the pipeline
     color = pow(color, vec3(2.2));
 
-    packDeferredFragmentSky(_prevPositionCS, color, _normal);
+    packDeferredFragmentSky(_prevPositionCS, color);
 }
