@@ -222,25 +222,23 @@ void AudioMixerClientData::parseInjectorGainSet(ReceivedMessage& message, const 
     qCDebug(audio) << "Setting MASTER injector gain for" << uuid << "to" << gain;
 }
 
-void AudioMixerClientData::setGainForAvatar(QUuid nodeID, float gain) {
-    auto itActive = std::find_if(_streams.active.cbegin(), _streams.active.cend(), [nodeID](const MixableStream& mixableStream){
+bool setGainInStreams(const QUuid &nodeID, float gain, std::vector<AudioMixerClientData::MixableStream> &streamVector) {
+    auto itActive = std::find_if(streamVector.cbegin(), streamVector.cend(),
+                                 [nodeID](const AudioMixerClientData::MixableStream& mixableStream){
         return mixableStream.nodeStreamID.nodeID == nodeID && mixableStream.nodeStreamID.streamID.isNull();
     });
 
-    if (itActive != _streams.active.cend()) {
+    if (itActive != streamVector.cend()) {
         itActive->hrtf->setGainAdjustment(gain);
-        return;
+        return true;
+    } else {
+        return false;
     }
+}
 
-    // If someone is not speaking at the moment, then stream is not in active streams, and volume adjustment will fail,
-    // so we need to search in inactive streams too
-    auto itInactive = std::find_if(_streams.inactive.cbegin(), _streams.inactive.cend(), [nodeID](const MixableStream& mixableStream){
-        return mixableStream.nodeStreamID.nodeID == nodeID && mixableStream.nodeStreamID.streamID.isNull();
-    });
-
-    if (itInactive != _streams.active.cend()) {
-        itInactive->hrtf->setGainAdjustment(gain);
-        return;
+void AudioMixerClientData::setGainForAvatar(QUuid nodeID, float gain) {
+    if (!setGainInStreams(nodeID, gain, _streams.active)) {
+        setGainInStreams(nodeID, gain, _streams.inactive);
     }
 }
 
