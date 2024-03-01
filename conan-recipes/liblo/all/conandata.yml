@@ -5,3 +5,6 @@ sources:
   '0.31':
     sha256: 71d1819bcd18be66bd80c95a2d3159b9ca6f13746ddbaf1e489128f3bf46d231
     url: https://github.com/radarsat1/liblo/archive/refs/tags/0.31.tar.gz
+  '0.32':
+    sha256: e67c0716de55239de922c3d6d1b6f72fa8ee169dc35e0037e998fb56e4626f9b
+    url: https://github.com/radarsat1/liblo/archive/refs/tags/0.32.tar.gz
