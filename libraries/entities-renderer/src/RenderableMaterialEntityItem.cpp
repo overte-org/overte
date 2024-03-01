@@ -327,7 +327,10 @@ void MaterialEntityRenderer::doRender(RenderArgs* args) {
 
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), _billboardMode,
         args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
-    batch.setModelTransform(transform);
+    batch.setModelTransform(transform, _prevRenderTransform);
+    if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
+        _prevRenderTransform = transform;
+    }
 
     if (!proceduralRender) {
         drawMaterial->setTextureTransforms(textureTransform, MaterialMappingMode::UV, true);

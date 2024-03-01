@@ -4,6 +4,7 @@
 //
 //  Created by Seth Alves on 5/19/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2020 Vircadia contributors.
 //  Copyright 2022-2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
@@ -1863,7 +1864,10 @@ void PolyVoxEntityRenderer::doRender(RenderArgs* args) {
     glm::mat4 rotation = glm::mat4_cast(BillboardModeHelpers::getBillboardRotation(_position, _orientation, _billboardMode,
         args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
     Transform transform(glm::translate(_position) * rotation * _lastVoxelToLocalMatrix);
-    batch.setModelTransform(transform);
+    batch.setModelTransform(transform, _prevRenderTransform);
+    if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
+        _prevRenderTransform = transform;
+    }
 
     batch.setInputFormat(_vertexFormat);
     batch.setInputBuffer(gpu::Stream::POSITION, _mesh->getVertexBuffer()._buffer, 0,

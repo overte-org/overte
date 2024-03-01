@@ -70,6 +70,9 @@ public:
 
     static bool enableMaterialProceduralShaders;
 
+protected: 
+    mutable Transform _previousRenderTransform;
+
 private:
     void initCache(const ModelPointer& model, int shapeID);
 
