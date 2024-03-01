@@ -280,7 +280,9 @@ OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packet
     }
 
     // add this item into our list for the next appendElementData() pass
-    entityTreeElementExtraEncodeData->entities.insert(getEntityItemID(), propertiesDidntFit);
+    if (entityTreeElementExtraEncodeData) {
+        entityTreeElementExtraEncodeData->entities.insert(getEntityItemID(), propertiesDidntFit);
+    }
 
     // if any part of our entity was sent, call trackSend
     if (appendState != OctreeElement::NONE) {
