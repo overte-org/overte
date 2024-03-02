@@ -158,9 +158,13 @@ template<typename T> bool findPointerInArray(const T *pointer, const T *array, s
 bool findAttribute(const QString &name, const cgltf_attribute *attributes, size_t numAttributes, size_t &index) {
     std::string nameString = name.toStdString();
     for (size_t i = 0; i < numAttributes; i++) {
-        if (strcmp(nameString.c_str(), attributes->name) == 0) {
-            index = i;
-            return true;
+        if (attributes->name == nullptr) {
+            qDebug(modelformat) << "GLTFSerializer: attribute with a null pointer name string";
+        } else {
+            if (strcmp(nameString.c_str(), attributes->name) == 0) {
+                index = i;
+                return true;
+            }
         }
     }
     return false;
@@ -1072,7 +1076,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                         size_t normalAttributeIndex = 0;
                         if (findAttribute("NORMAL", target.attributes, target.attributes_count, normalAttributeIndex)) {
                             if (!generateTargetData(target.attributes[normalAttributeIndex].data, weight, normals)) {
-                                qWarning(modelformat) << "Invalid accessor type on generateTargetData vertices for model " << _url;
+                                qWarning(modelformat) << "Invalid NORMAL accessor on generateTargetData vertices for model " << _url;
                                 hfmModel.loadErrorCount++;
                                 return false;
                             }
@@ -1080,7 +1084,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                         size_t positionAttributeIndex = 0;
                         if (findAttribute("POSITION", target.attributes, target.attributes_count, positionAttributeIndex)) {
                             if (!generateTargetData(target.attributes[positionAttributeIndex].data, weight, vertices)) {
-                                qWarning(modelformat) << "Invalid accessor type on generateTargetData vertices for model " << _url;
+                                qWarning(modelformat) << "Invalid POSITION accessor on generateTargetData vertices for model " << _url;
                                 hfmModel.loadErrorCount++;
                                 return false;
                             }
