@@ -621,6 +621,42 @@ const GROUPS = [
         ]
     },
     {
+        id: "zone_audio",
+        label: "ZONE AUDIO",
+        properties: [
+            {
+                label: "Enable Reverb",
+                type: "bool",
+                propertyID: "audio.enableReverb"
+            },
+            {
+                label: "Reverb Time",
+                type: "number-draggable",
+                min: 0,
+                max: 10,
+                step: 0.1,
+                decimals: 2,
+                propertyID: "audio.reverbTime",
+                showPropertyRule: { "audio.enableReverb": "true" },
+            },
+            {
+                label: "Reverb Wet Level",
+                type: "number-draggable",
+                min: 0,
+                max: 100,
+                step: 1,
+                decimals: 1,
+                propertyID: "audio.reverbWetLevel",
+                showPropertyRule: { "audio.enableReverb": "true" },
+            },
+            {
+                label: "Listener Zones",
+                type: "multipleZonesSelection",
+                propertyID: "audio.listenerZones",
+            }
+        ]
+    },
+    {
         id: "model",
         label: "MODEL",
         properties: [
@@ -1764,7 +1800,7 @@ const GROUPS_PER_TYPE = {
   Shape: [ 'base', 'shape', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Text: [ 'base', 'text', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Zone: [ 'base', 'zone', 'zone_key_light', 'zone_skybox', 'zone_ambient_light', 'zone_haze', 
-            'zone_bloom', 'zone_avatar_priority', 'spatial', 'behavior', 'scripts', 'physics' ],
+            'zone_bloom', 'zone_avatar_priority', 'zone_audio', 'spatial', 'behavior', 'scripts', 'physics' ],
   Model: [ 'base', 'model', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Image: [ 'base', 'image', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Web: [ 'base', 'web', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],

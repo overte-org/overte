@@ -158,6 +158,21 @@
     "bloom.bloomSize": {
         "tooltip": "The radius of bloom. The higher the value, the larger the bloom."
     },
+    "audio.reverbEnabled": {
+        "tooltip": "If reverb should be enabled for listeners in this zone."
+    },
+    "audio.reverbTime": {
+        "tooltip": "The time (seconds) for the reverb tail to decay by 60dB."
+    },
+    "audio.reverbWetLevel": {
+        "tooltip": "Adjusts the wet/dry percentage, from completely dry (0%) to completely wet (100%)."
+    },
+    "audio.listenerZones": {
+        "tooltip": "A list of entity IDs representing listener zones with this zone as a source."
+    },
+    "audio.listenerAttenuationCoefficients": {
+        "tooltip": "A list of attenuation coefficients."
+    },
     "avatarPriority": {
         "tooltip": "Alter Avatars' update priorities."
     },

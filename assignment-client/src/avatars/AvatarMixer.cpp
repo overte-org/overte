@@ -1085,7 +1085,7 @@ void AvatarMixer::setupEntityQuery() {
     DependencyManager::set<AssignmentParentFinder>(entityTree);
 
     connect(entityTree.get(), &EntityTree::addingEntityPointer, this, &AvatarMixer::entityAdded);
-    connect(entityTree.get(), &EntityTree::deletingEntityPointer, this, &AvatarMixer::entityChange);
+    connect(entityTree.get(), &EntityTree::deletingEntityPointer, this, &AvatarMixer::entityRemoved);
 
     // ES query: {"avatarPriority": true, "type": "Zone"}
     QJsonObject priorityZoneQuery;
@@ -1140,7 +1140,7 @@ void AvatarMixer::entityAdded(EntityItem* entity) {
     if (entity->getType() == EntityTypes::Zone) {
         _dirtyHeroStatus = true;
         entity->registerChangeHandler([this](const EntityItemID& entityItemID) {
-            entityChange();
+            _dirtyHeroStatus = true;
         });
     }
 }
@@ -1149,10 +1149,6 @@ void AvatarMixer::entityRemoved(EntityItem * entity) {
     if (entity->getType() == EntityTypes::Zone) {
         _dirtyHeroStatus = true;
     }
-}
-
-void AvatarMixer::entityChange() {
-    _dirtyHeroStatus = true;
 }
 
 void AvatarMixer::aboutToFinish() {

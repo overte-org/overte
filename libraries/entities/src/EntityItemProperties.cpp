@@ -44,6 +44,7 @@ AnimationPropertyGroup EntityItemProperties::_staticAnimation;
 SkyboxPropertyGroup EntityItemProperties::_staticSkybox;
 HazePropertyGroup EntityItemProperties::_staticHaze;
 BloomPropertyGroup EntityItemProperties::_staticBloom;
+ZoneAudioPropertyGroup EntityItemProperties::_staticAudio;
 KeyLightPropertyGroup EntityItemProperties::_staticKeyLight;
 AmbientLightPropertyGroup EntityItemProperties::_staticAmbientLight;
 GrabPropertyGroup EntityItemProperties::_staticGrab;
@@ -87,6 +88,7 @@ void EntityItemProperties::debugDump() const {
     getKeyLight().debugDump();
     getAmbientLight().debugDump();
     getBloom().debugDump();
+    getAudio().debugDump();
     getGrab().debugDump();
 
     qCDebug(entities) << "   changed properties...";
@@ -613,6 +615,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     changedProperties += _skybox.getChangedProperties();
     changedProperties += _haze.getChangedProperties();
     changedProperties += _bloom.getChangedProperties();
+    changedProperties += _audio.getChangedProperties();
     CHECK_PROPERTY_CHANGE(PROP_FLYING_ALLOWED, flyingAllowed);
     CHECK_PROPERTY_CHANGE(PROP_GHOSTING_ALLOWED, ghostingAllowed);
     CHECK_PROPERTY_CHANGE(PROP_FILTER_URL, filterURL);
@@ -853,7 +856,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     avatar entities, <code>false</code> if they won't be.
  * @property {Uuid} cloneOriginID - The ID of the entity that this entity was cloned from.
  *
- * @property {Uuid[]} renderWithZones=[]] - A list of entity IDs representing with which zones this entity should render.
+ * @property {Uuid[]} renderWithZones=[] - A list of entity IDs representing with which zones this entity should render.
  *     If it is empty, this entity will render normally.  Otherwise, this entity will only render if your avatar is within
  *     one of the zones in this list.
  * @property {BillboardMode} billboardMode="none" - Whether the entity is billboarded to face the camera.  Use the rotation
@@ -1481,6 +1484,8 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @property {Entities.ComponentMode} bloomMode="inherit" - Configures the bloom in the zone.
  * @property {Entities.Bloom} bloom - The bloom properties of the zone.
  *
+ * @property {Entities.ZoneAudio} audio - The audio properties of the zone.
+ *
  * @property {boolean} flyingAllowed=true - <code>true</code> if visitors can fly in the zone; <code>false</code> if they
  *     cannot. Only works for domain entities.
  * @property {boolean} ghostingAllowed=true - <code>true</code> if visitors with avatar collisions turned off will not
@@ -1834,6 +1839,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
             _skybox.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
             _haze.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
             _bloom.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
+            _audio.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
         }
 
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_FLYING_ALLOWED, flyingAllowed);
@@ -2211,6 +2217,7 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     _skybox.copyFromScriptValue(object, namesSet, _defaultSettings);
     _haze.copyFromScriptValue(object, namesSet, _defaultSettings);
     _bloom.copyFromScriptValue(object, namesSet, _defaultSettings);
+    _audio.copyFromScriptValue(object, namesSet, _defaultSettings);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(flyingAllowed, bool, setFlyingAllowed);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(ghostingAllowed, bool, setGhostingAllowed);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(filterURL, QString, setFilterURL);
@@ -2496,6 +2503,7 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     _skybox.merge(other._skybox);
     _haze.merge(other._haze);
     _bloom.merge(other._bloom);
+    _audio.merge(other._audio);
     COPY_PROPERTY_IF_CHANGED(flyingAllowed);
     COPY_PROPERTY_IF_CHANGED(ghostingAllowed);
     COPY_PROPERTY_IF_CHANGED(filterURL);
@@ -2891,6 +2899,13 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
             ADD_GROUP_PROPERTY_TO_MAP(PROP_BLOOM_INTENSITY, Bloom, bloom, BloomIntensity, bloomIntensity);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_BLOOM_THRESHOLD, Bloom, bloom, BloomThreshold, bloomThreshold);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_BLOOM_SIZE, Bloom, bloom, BloomSize, bloomSize);
+        }
+        {  // Audio
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_REVERB_ENABLED, Audio, audio, ReverbEnabled, reverbEnabled);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_REVERB_TIME, Audio, audio, ReverbTime, reverbTime);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_REVERB_WET_LEVEL, Audio, audio, ReverbWetLevel, reverbWetLevel);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_LISTENER_ZONES, Audio, audio, ListenerZones, listenerZones);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_LISTENER_ATTENUATION_COEFFICIENTS, Audio, audio, ListenerAttenuationCoefficients, listenerAttenuationCoefficients);
         }
         ADD_PROPERTY_TO_MAP(PROP_FLYING_ALLOWED, FlyingAllowed, flyingAllowed, bool);
         ADD_PROPERTY_TO_MAP(PROP_GHOSTING_ALLOWED, GhostingAllowed, ghostingAllowed, bool);
@@ -3306,6 +3321,9 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
 
                 _staticBloom.setProperties(properties);
                 _staticBloom.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
+
+                _staticAudio.setProperties(properties);
+                _staticAudio.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
 
                 APPEND_ENTITY_PROPERTY(PROP_FLYING_ALLOWED, properties.getFlyingAllowed());
                 APPEND_ENTITY_PROPERTY(PROP_GHOSTING_ALLOWED, properties.getGhostingAllowed());
@@ -3775,6 +3793,7 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
         properties.getSkybox().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
         properties.getHaze().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
         properties.getBloom().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
+        properties.getAudio().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
 
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_FLYING_ALLOWED, bool, setFlyingAllowed);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_GHOSTING_ALLOWED, bool, setGhostingAllowed);
@@ -4147,6 +4166,7 @@ void EntityItemProperties::markAllChanged() {
     _skybox.markAllChanged();
     _haze.markAllChanged();
     _bloom.markAllChanged();
+    _audio.markAllChanged();
     _flyingAllowedChanged = true;
     _ghostingAllowedChanged = true;
     _filterURLChanged = true;
@@ -4738,6 +4758,7 @@ QList<QString> EntityItemProperties::listChangedProperties() {
     getSkybox().listChangedProperties(out);
     getHaze().listChangedProperties(out);
     getBloom().listChangedProperties(out);
+    getAudio().listChangedProperties(out);
     if (flyingAllowedChanged()) {
         out += "flyingAllowed";
     }

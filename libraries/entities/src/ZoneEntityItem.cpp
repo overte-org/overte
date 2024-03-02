@@ -60,6 +60,7 @@ EntityItemProperties ZoneEntityItem::getProperties(const EntityPropertyFlags& de
     });
     _hazeProperties.getProperties(properties);
     _bloomProperties.getProperties(properties);
+    _audioProperties.getProperties(properties);
 
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(flyingAllowed, getFlyingAllowed);
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(ghostingAllowed, getGhostingAllowed);
@@ -90,6 +91,7 @@ bool ZoneEntityItem::setSubClassProperties(const EntityItemProperties& propertie
     });
     _hazePropertiesChanged |= _hazeProperties.setProperties(properties);
     _bloomPropertiesChanged |= _bloomProperties.setProperties(properties);
+    bool audioPropertiesChanged = _audioProperties.setProperties(properties);
 
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(flyingAllowed, setFlyingAllowed);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(ghostingAllowed, setGhostingAllowed);
@@ -103,8 +105,8 @@ bool ZoneEntityItem::setSubClassProperties(const EntityItemProperties& propertie
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(avatarPriority, setAvatarPriority);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(screenshare, setScreenshare);
 
-    somethingChanged |= _keyLightPropertiesChanged || _ambientLightPropertiesChanged ||
-        _skyboxPropertiesChanged || _hazePropertiesChanged || _bloomPropertiesChanged;
+    somethingChanged |= _keyLightPropertiesChanged || _ambientLightPropertiesChanged || _skyboxPropertiesChanged ||
+                        _hazePropertiesChanged || _bloomPropertiesChanged || audioPropertiesChanged;
 
     return somethingChanged;
 }
@@ -168,6 +170,13 @@ int ZoneEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, 
         dataAt += bytesFromBloom;
     }
 
+    {
+        int bytesFromAudio = _audioProperties.readEntitySubclassDataFromBuffer(dataAt, (bytesLeftToRead - bytesRead), args,
+            propertyFlags, overwriteLocalData, somethingChanged);
+        bytesRead += bytesFromAudio;
+        dataAt += bytesFromAudio;
+    }
+
     READ_ENTITY_PROPERTY(PROP_FLYING_ALLOWED, bool, setFlyingAllowed);
     READ_ENTITY_PROPERTY(PROP_GHOSTING_ALLOWED, bool, setGhostingAllowed);
     READ_ENTITY_PROPERTY(PROP_FILTER_URL, QString, setFilterURL);
@@ -194,6 +203,7 @@ EntityPropertyFlags ZoneEntityItem::getEntityProperties(EncodeBitstreamParams& p
     requestedProperties += _skyboxProperties.getEntityProperties(params);
     requestedProperties += _hazeProperties.getEntityProperties(params);
     requestedProperties += _bloomProperties.getEntityProperties(params);
+    requestedProperties += _audioProperties.getEntityProperties(params);
 
     requestedProperties += PROP_FLYING_ALLOWED;
     requestedProperties += PROP_GHOSTING_ALLOWED;
@@ -235,6 +245,8 @@ void ZoneEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBits
         propertyFlags, propertiesDidntFit, propertyCount, appendState);
     _bloomProperties.appendSubclassData(packetData, params, modelTreeElementExtraEncodeData, requestedProperties,
         propertyFlags, propertiesDidntFit, propertyCount, appendState);
+    _audioProperties.appendSubclassData(packetData, params, modelTreeElementExtraEncodeData, requestedProperties,
+        propertyFlags, propertiesDidntFit, propertyCount, appendState);
 
     APPEND_ENTITY_PROPERTY(PROP_FLYING_ALLOWED, getFlyingAllowed());
     APPEND_ENTITY_PROPERTY(PROP_GHOSTING_ALLOWED, getGhostingAllowed());
@@ -267,6 +279,7 @@ void ZoneEntityItem::debugDump() const {
     _skyboxProperties.debugDump();
     _hazeProperties.debugDump();
     _bloomProperties.debugDump();
+    _audioProperties.debugDump();
 }
 
 void ZoneEntityItem::setShapeType(ShapeType type) {
