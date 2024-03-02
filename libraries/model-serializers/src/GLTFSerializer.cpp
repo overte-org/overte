@@ -125,7 +125,7 @@ bool GLTFSerializer::generateTargetData(cgltf_accessor *accessor, float weight, 
     }
     storedValues.resize(accessor->count * 3);
     size_t numFloats = cgltf_accessor_unpack_floats(accessor, storedValues.data(), accessor->count * 3);
-    if (numFloats == accessor->count * 3) {
+    if (numFloats != accessor->count * 3) {
         return false;
     }
 
@@ -158,9 +158,13 @@ template<typename T> bool findPointerInArray(const T *pointer, const T *array, s
 bool findAttribute(const QString &name, const cgltf_attribute *attributes, size_t numAttributes, size_t &index) {
     std::string nameString = name.toStdString();
     for (size_t i = 0; i < numAttributes; i++) {
-        if (strcmp(nameString.c_str(), attributes->name) != 0) {
-            index = i;
-            return true;
+        if (attributes->name == nullptr) {
+            qDebug(modelformat) << "GLTFSerializer: attribute with a null pointer name string";
+        } else {
+            if (strcmp(nameString.c_str(), attributes->name) == 0) {
+                index = i;
+                return true;
+            }
         }
     }
     return false;
@@ -212,27 +216,29 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
     // therefore we need to re-initialize the order in which nodes will be parsed
     QVector<bool> hasBeenSorted;
     hasBeenSorted.fill(false, numNodes);
-    size_t i = 0;  // initial index
-    while (i < numNodes) {
-        int currentNode = sortedNodes[i];
-        int parentIndex = parents[currentNode];
-        if (parentIndex == -1 || hasBeenSorted[parentIndex]) {
-            hasBeenSorted[currentNode] = true;
-            ++i;
-        } else {
-            size_t j = i + 1; // index of node to be sorted
-            while (j < numNodes) {
-                int nextNode = sortedNodes[j];
-                parentIndex = parents[nextNode];
-                if (parentIndex == -1 || hasBeenSorted[parentIndex]) {
-                    // swap with currentNode
-                    hasBeenSorted[nextNode] = true;
-                    sortedNodes[i] = nextNode;
-                    sortedNodes[j] = currentNode;
-                    ++i;
-                    currentNode = sortedNodes[i];
+    {
+        size_t i = 0;  // initial index
+        while (i < numNodes) {
+            int currentNode = sortedNodes[i];
+            int parentIndex = parents[currentNode];
+            if (parentIndex == -1 || hasBeenSorted[parentIndex]) {
+                hasBeenSorted[currentNode] = true;
+                ++i;
+            } else {
+                size_t j = i + 1;  // index of node to be sorted
+                while (j < numNodes) {
+                    int nextNode = sortedNodes[j];
+                    parentIndex = parents[nextNode];
+                    if (parentIndex == -1 || hasBeenSorted[parentIndex]) {
+                        // swap with currentNode
+                        hasBeenSorted[nextNode] = true;
+                        sortedNodes[i] = nextNode;
+                        sortedNodes[j] = currentNode;
+                        ++i;
+                        currentNode = sortedNodes[i];
+                    }
+                    ++j;
                 }
-                ++j;
             }
         }
     }
@@ -971,7 +977,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                 }
 
                 // Build morph targets (blend shapes)
-                if (!primitive.targets_count) {
+                if (primitive.targets_count) {
 
                     // Build list of blendshapes from FST and model.
                     typedef QPair<int, float> WeightedIndex;
@@ -993,8 +999,8 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                         } else {
                             // Use blendshape from model.
                             std::string blendshapeNameString = blendshapeName.toStdString();
-                            for (size_t i = 0; i < node.mesh->target_names_count; i++) {
-                                if (strcmp(node.mesh->target_names[i], blendshapeNameString.c_str()) == 0) {
+                            for (size_t j = 0; j < node.mesh->target_names_count; j++) {
+                                if (strcmp(node.mesh->target_names[j], blendshapeNameString.c_str()) == 0) {
                                     blendshapeIndices.insert(blendshapeName, WeightedIndex(i, 1.0f));
                                     break;
                                 }
@@ -1070,7 +1076,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                         size_t normalAttributeIndex = 0;
                         if (findAttribute("NORMAL", target.attributes, target.attributes_count, normalAttributeIndex)) {
                             if (!generateTargetData(target.attributes[normalAttributeIndex].data, weight, normals)) {
-                                qWarning(modelformat) << "Invalid accessor type on generateTargetData vertices for model " << _url;
+                                qWarning(modelformat) << "Invalid NORMAL accessor on generateTargetData vertices for model " << _url;
                                 hfmModel.loadErrorCount++;
                                 return false;
                             }
@@ -1078,7 +1084,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                         size_t positionAttributeIndex = 0;
                         if (findAttribute("POSITION", target.attributes, target.attributes_count, positionAttributeIndex)) {
                             if (!generateTargetData(target.attributes[positionAttributeIndex].data, weight, vertices)) {
-                                qWarning(modelformat) << "Invalid accessor type on generateTargetData vertices for model " << _url;
+                                qWarning(modelformat) << "Invalid POSITION accessor on generateTargetData vertices for model " << _url;
                                 hfmModel.loadErrorCount++;
                                 return false;
                             }
@@ -1089,12 +1095,23 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             blendshape.vertices.resize(prevMeshVerticesCount + vertices.size());
                             blendshape.normals.resize(prevMeshVerticesCount + vertices.size());
                         }
+                        //TODO: it looks like this can support sparse encoding, since there are indices?
                         for (int i = 0; i < vertices.size(); i++) {
                             blendshape.indices[prevMeshVerticesCount + i] = prevMeshVerticesCount + i;
                             blendshape.vertices[prevMeshVerticesCount + i] += vertices.value(i);
-                            blendshape.normals[prevMeshVerticesCount + i] += normals.value(i);
+                            // Prevent out-of-bounds access if blendshape normals are not available
+                            if (i < normals.size()) {
+                                blendshape.normals[prevMeshVerticesCount + i] += normals.value(i);
+                            } else {
+                                if (prevMeshVerticesCount + i < mesh.normals.size()) {
+                                    blendshape.normals[prevMeshVerticesCount + i] = mesh.normals[prevMeshVerticesCount + i];
+                                } else {
+                                    qWarning(modelformat) << "Blendshape has more vertices than original mesh " << _url;
+                                    hfmModel.loadErrorCount++;
+                                    return false;
+                                }
+                            }
                         }
-
                     }
                 }
 
