@@ -61,6 +61,7 @@ EntityItemProperties WebEntityItem::getProperties(const EntityPropertyFlags& des
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(scriptURL, getScriptURL);
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(maxFPS, getMaxFPS);
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(inputMode, getInputMode);
+    COPY_ENTITY_PROPERTY_TO_PROPERTIES(wantsKeyboardFocus, wantsKeyboardFocus);
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(showKeyboardFocusHighlight, getShowKeyboardFocusHighlight);
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(useBackground, getUseBackground);
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(userAgent, getUserAgent);
@@ -83,6 +84,7 @@ bool WebEntityItem::setSubClassProperties(const EntityItemProperties& properties
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(scriptURL, setScriptURL);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(maxFPS, setMaxFPS);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(inputMode, setInputMode);
+    SET_ENTITY_PROPERTY_FROM_PROPERTIES(wantsKeyboardFocus, setWantsKeyboardFocus);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(showKeyboardFocusHighlight, setShowKeyboardFocusHighlight);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(useBackground, setUseBackground);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(userAgent, setUserAgent);
@@ -113,6 +115,7 @@ int WebEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, i
     READ_ENTITY_PROPERTY(PROP_SCRIPT_URL, QString, setScriptURL);
     READ_ENTITY_PROPERTY(PROP_MAX_FPS, uint8_t, setMaxFPS);
     READ_ENTITY_PROPERTY(PROP_INPUT_MODE, WebInputMode, setInputMode);
+    READ_ENTITY_PROPERTY(PROP_WANTS_KEYBOARD_FOCUS, bool, setWantsKeyboardFocus);
     READ_ENTITY_PROPERTY(PROP_SHOW_KEYBOARD_FOCUS_HIGHLIGHT, bool, setShowKeyboardFocusHighlight);
     READ_ENTITY_PROPERTY(PROP_WEB_USE_BACKGROUND, bool, setUseBackground);
     READ_ENTITY_PROPERTY(PROP_USER_AGENT, QString, setUserAgent);
@@ -131,6 +134,7 @@ EntityPropertyFlags WebEntityItem::getEntityProperties(EncodeBitstreamParams& pa
     requestedProperties += PROP_SCRIPT_URL;
     requestedProperties += PROP_MAX_FPS;
     requestedProperties += PROP_INPUT_MODE;
+    requestedProperties += PROP_WANTS_KEYBOARD_FOCUS;
     requestedProperties += PROP_SHOW_KEYBOARD_FOCUS_HIGHLIGHT;
     requestedProperties += PROP_WEB_USE_BACKGROUND;
     requestedProperties += PROP_USER_AGENT;
@@ -158,6 +162,7 @@ void WebEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitst
     APPEND_ENTITY_PROPERTY(PROP_SCRIPT_URL, getScriptURL());
     APPEND_ENTITY_PROPERTY(PROP_MAX_FPS, getMaxFPS());
     APPEND_ENTITY_PROPERTY(PROP_INPUT_MODE, (uint32_t)getInputMode());
+    APPEND_ENTITY_PROPERTY(PROP_WANTS_KEYBOARD_FOCUS, wantsKeyboardFocus());
     APPEND_ENTITY_PROPERTY(PROP_SHOW_KEYBOARD_FOCUS_HIGHLIGHT, getShowKeyboardFocusHighlight());
     APPEND_ENTITY_PROPERTY(PROP_WEB_USE_BACKGROUND, getUseBackground());
     APPEND_ENTITY_PROPERTY(PROP_USER_AGENT, getUserAgent());
@@ -267,6 +272,17 @@ WebInputMode WebEntityItem::getInputMode() const {
     return resultWithReadLock<WebInputMode>([&] {
         return _inputMode;
     });
+}
+
+void WebEntityItem::setWantsKeyboardFocus(bool value) {
+    withWriteLock([&] {
+        _needsRenderUpdate |= _wantsKeyboardFocus != value;
+        _wantsKeyboardFocus = value;
+    });
+}
+
+bool WebEntityItem::wantsKeyboardFocus() const {
+    return _wantsKeyboardFocus;
 }
 
 void WebEntityItem::setShowKeyboardFocusHighlight(bool value) {

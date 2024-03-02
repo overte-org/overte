@@ -72,6 +72,9 @@ public:
     void setInputMode(const WebInputMode& value);
     WebInputMode getInputMode() const;
 
+    bool wantsKeyboardFocus() const;
+    void setWantsKeyboardFocus(bool value);
+
     bool getShowKeyboardFocusHighlight() const;
     void setShowKeyboardFocusHighlight(bool value);
     
@@ -94,6 +97,7 @@ protected:
     QString _scriptURL;
     uint8_t _maxFPS;
     WebInputMode _inputMode;
+    bool _wantsKeyboardFocus { false };
     bool _showKeyboardFocusHighlight { false };
     bool _useBackground { false };
     QString _userAgent;

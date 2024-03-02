@@ -809,6 +809,11 @@ const GROUPS = [
                 propertyID: "inputMode",
             },
             {
+                label: "Wants Keyboard Focus",
+                type: "bool",
+                propertyID: "wantsKeyboardFocus",
+            },
+            {
                 label: "Focus Highlight",
                 type: "bool",
                 propertyID: "showKeyboardFocusHighlight",

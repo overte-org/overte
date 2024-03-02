@@ -362,6 +362,7 @@ public:
     DEFINE_PROPERTY_REF(PROP_SCRIPT_URL, ScriptURL, scriptURL, QString, "");
     DEFINE_PROPERTY_REF(PROP_MAX_FPS, MaxFPS, maxFPS, uint8_t, WebEntityItem::DEFAULT_MAX_FPS);
     DEFINE_PROPERTY_REF_ENUM(PROP_INPUT_MODE, InputMode, inputMode, WebInputMode, WebInputMode::TOUCH);
+    DEFINE_PROPERTY_REF(PROP_WANTS_KEYBOARD_FOCUS, WantsKeyboardFocus, wantsKeyboardFocus, bool, true);
     DEFINE_PROPERTY_REF(PROP_SHOW_KEYBOARD_FOCUS_HIGHLIGHT, ShowKeyboardFocusHighlight, showKeyboardFocusHighlight, bool, true);
     DEFINE_PROPERTY_REF(PROP_WEB_USE_BACKGROUND, UseBackground, useBackground, bool, true);
     DEFINE_PROPERTY_REF(PROP_USER_AGENT, UserAgent, userAgent, QString, WebEntityItem::DEFAULT_USER_AGENT);

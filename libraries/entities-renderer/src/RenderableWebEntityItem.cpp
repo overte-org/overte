@@ -171,6 +171,7 @@ void WebEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene
         _dpi = entity->getDPI();
         _color = entity->getColor();
         _alpha = entity->getAlpha();
+        _wantsKeyboardFocus = entity->wantsKeyboardFocus();
         _pulseProperties = entity->getPulseProperties();
 
         if (_contentType == ContentType::NoContent) {
