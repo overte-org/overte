@@ -21,35 +21,46 @@ using namespace render::entities;
 
 static uint8_t CUSTOM_PIPELINE_NUMBER = 0;
 static gpu::Stream::FormatPointer _vertexFormat;
-static std::map<std::tuple<bool, bool>, gpu::PipelinePointer> _pipelines;
+static std::map<std::tuple<bool, bool, bool>, gpu::PipelinePointer> _pipelines;
 
 static ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, const ShapeKey& key, RenderArgs* args) {
     // FIXME: custom pipelines like this don't handle shadows or renderLayers correctly
 
     if (_pipelines.empty()) {
-        for (size_t i = 0; i < 4; i++) {
-            bool transparent = (i % 2 == 0);
-            bool wireframe = (i / 2) == 0;
+        using namespace shader::entities_renderer::program;
 
-            auto state = std::make_shared<gpu::State>();
-            state->setCullMode(gpu::State::CULL_BACK);
+        // forward, translucent
+        static const std::vector<std::tuple<bool, bool, uint32_t>> keys = {
+            std::make_tuple(false, false, textured_particle),
+            std::make_tuple(true, false, textured_particle_forward),
+            std::make_tuple(false, true, textured_particle_translucent),
+            std::make_tuple(true, true, textured_particle_forward)
+        };
 
-            if (wireframe) {
-                state->setFillMode(gpu::State::FILL_LINE);
+        for (auto& key : keys) {
+            for (int i = 0; i < 2; ++i) {
+                bool transparent = std::get<1>(key);
+                bool wireframe = i == 0;
+
+                auto state = std::make_shared<gpu::State>();
+                state->setCullMode(gpu::State::CULL_BACK);
+
+                if (wireframe) {
+                    state->setFillMode(gpu::State::FILL_LINE);
+                }
+
+                state->setDepthTest(true, !transparent, gpu::LESS_EQUAL);
+                state->setBlendFunction(transparent, gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE,
+                    gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
+                transparent ? PrepareStencil::testMask(*state) : PrepareStencil::testMaskDrawShape(*state);
+
+                auto program = gpu::Shader::createProgram(std::get<2>(key));
+                _pipelines[std::make_tuple(std::get<0>(key), transparent, wireframe)] = gpu::Pipeline::create(program, state);
             }
-
-            state->setDepthTest(true, !transparent, gpu::LESS_EQUAL);
-            state->setBlendFunction(transparent, gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE,
-                gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
-            transparent ? PrepareStencil::testMask(*state) : PrepareStencil::testMaskDrawShape(*state);
-
-            auto program = gpu::Shader::createProgram(transparent ? shader::entities_renderer::program::textured_particle_translucent :
-                shader::entities_renderer::program::textured_particle);
-            _pipelines[std::make_tuple(transparent, wireframe)] = gpu::Pipeline::create(program, state);
         }
     }
 
-    return std::make_shared<render::ShapePipeline>(_pipelines[std::make_tuple(key.isTranslucent(), key.isWireframe())], nullptr, nullptr, nullptr);
+    return std::make_shared<render::ShapePipeline>(_pipelines[std::make_tuple(args->_renderMethod == Args::RenderMethod::FORWARD, key.isTranslucent(), key.isWireframe())], nullptr, nullptr, nullptr);
 }
 
 struct GpuParticle {

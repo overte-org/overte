@@ -15,17 +15,23 @@ LAYOUT(binding=0) uniform sampler2D colorMap;
 layout(location=0) in vec4 varColor;
 layout(location=1) in vec2 varTexcoord;
 
-layout(location=0) out vec4 outFragColor;
+<@if not HIFI_USE_FORWARD@>
+    <@include DeferredBufferWrite.slh@>
+<@else@>
+    layout(location=0) out vec4 _fragColor0;
+<@endif@>
 
 void main(void) {
     vec4 albedo = texture(colorMap, varTexcoord.xy) * varColor;
 
+<@if not HIFI_USE_FORWARD@>
+    vec3 NORMAL = vec3(1.0, 0.0, 0.0);
     <@if not HIFI_USE_TRANSLUCENT@>
-        // to reduce texel flickering for floating point error we discard when alpha is "almost one"
-        if (albedo.a < 0.999999) {
-            discard;
-        }
+        packDeferredFragmentUnlit(NORMAL, albedo.a, albedo.rgb);
+    <@else@>
+        packDeferredFragmentTranslucent(NORMAL, albedo.a, albedo.rgb, DEFAULT_ROUGHNESS);
     <@endif@>
-
-    outFragColor = albedo;
+<@else@>
+    _fragColor0 = albedo;
+<@endif@>
 }
