@@ -1173,7 +1173,7 @@ void OctreeServer::domainSettingsRequestComplete() {
         }
 
         if (!QFile::exists(_persistAbsoluteFilePath)) {
-            qDebug() << "Persist file does not exist, checking for existence of persist file next to application";
+            qWarning() << "Persist file does not exist, checking for existence of persist file next to application";
 
             static const QString OLD_DEFAULT_PERSIST_FILENAME = "resources/models.json.gz";
             QString oldResourcesDirectory = QCoreApplication::applicationDirPath();
@@ -1185,7 +1185,7 @@ void OctreeServer::domainSettingsRequestComplete() {
             // This is the old default persist path.
             auto oldDefaultPersistPath = QDir(oldResourcesDirectory).absoluteFilePath(OLD_DEFAULT_PERSIST_FILENAME);
 
-            qDebug() << "Checking for existing persist file at " << oldPersistPath << " and " << oldDefaultPersistPath;
+            qWarning() << "Checking for existing persist file at " << oldPersistPath << " and " << oldDefaultPersistPath;
 
             QString pathToCopyFrom;
             bool shouldCopy = false;
@@ -1201,16 +1201,16 @@ void OctreeServer::domainSettingsRequestComplete() {
             QDir persistFileDirectory { QDir::cleanPath(_persistAbsoluteFilePath + "/..") };
 
             if (!persistFileDirectory.exists()) {
-                qDebug() << "Creating data directory " << persistFileDirectory.absolutePath();
+                qWarning() << "Creating data directory " << persistFileDirectory.absolutePath();
                 persistFileDirectory.mkpath(".");
             }
 
             if (shouldCopy) {
-                qDebug() << "Old persist file found, copying from " << pathToCopyFrom << " to " << _persistAbsoluteFilePath;
+                qWarning() << "Old persist file found, copying from " << pathToCopyFrom << " to " << _persistAbsoluteFilePath;
 
                 QFile::copy(pathToCopyFrom, _persistAbsoluteFilePath);
             } else {
-                qDebug() << "No existing persist file found";
+                qWarning() << "No existing persist file found";
             }
         }
 
