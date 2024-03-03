@@ -1070,8 +1070,10 @@ void OctreeServer::readConfiguration() {
             // if the domain settings passed us a relative path, make an absolute path that is relative to the
             // default data directory
             _persistAbsoluteFilePath = QDir(PathUtils::getAppDataFilePath("entities/")).absoluteFilePath(_persistFilePath);
+            qWarning() << "persistPath is relative=" << _persistFilePath;
         } else {
             _persistAbsoluteFilePath = persistPath.absolutePath();
+            qWarning() << "persistPath is absolute" << _persistFilePath;
         }
 
         qDebug() << "persistFilePath=" << _persistFilePath;
