@@ -50,6 +50,12 @@ static const QString DOMAIN_UNLIMITED = "domainUnlimited";
 EntityTree::EntityTree(bool shouldReaverage) :
     Octree(shouldReaverage)
 {
+    std::lock_guard<std::mutex> lock(_scriptEngineLock);
+    _scriptEngine = newScriptEngine();
+    _scriptEngineThread.reset(new QThread());
+    _scriptEngine->setThread(_scriptEngineThread.get());
+    _scriptEngineThread->start();
+
     resetClientEditStats();
 }
 
@@ -63,6 +69,14 @@ EntityTree::~EntityTree() {
     // TODO: EntityTreeElement::_tree should be raw back pointer.
     // AND: EntityItem::_element should be a raw back pointer.
     //eraseAllOctreeElements(false); // KEEP THIS
+    std::lock_guard<std::mutex> lock(_scriptEngineLock);
+    if (_scriptEngine) {
+        if (_scriptEngineThread) {
+            _scriptEngineThread->quit();
+            _scriptEngineThread->wait();
+        }
+        _scriptEngine.reset();
+    }
 }
 
 void EntityTree::setEntityScriptSourceWhitelist(const QString& entityScriptSourceWhitelist) { 
@@ -2553,8 +2567,8 @@ bool EntityTree::writeToMap(QVariantMap& entityDescription, OctreeElementPointer
     }
     entityDescription["DataVersion"] = _persistDataVersion;
     entityDescription["Id"] = _persistID;
-    const std::lock_guard<std::mutex> scriptLock(scriptEngineMutex);
-    RecurseOctreeToMapOperator theOperator(entityDescription, element, scriptEngine.get(), skipDefaultValues,
+    const std::lock_guard<std::mutex> scriptLock(_scriptEngineLock);
+    RecurseOctreeToMapOperator theOperator(entityDescription, element, _scriptEngine.get(), skipDefaultValues,
                                             skipThoseWithBadParents, _myAvatar);
     withReadLock([&] {
         recurseTreeWithOperator(&theOperator);
@@ -2729,8 +2743,8 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
 
         EntityItemProperties properties;
         {
-            const std::lock_guard<std::mutex> scriptLock(scriptEngineMutex);
-            ScriptValue entityScriptValue = variantMapToScriptValue(entityMap, *scriptEngine);
+            const std::lock_guard<std::mutex> scriptLock(_scriptEngineLock);
+            ScriptValue entityScriptValue = variantMapToScriptValue(entityMap, *_scriptEngine);
             EntityItemPropertiesFromScriptValueIgnoreReadOnly(entityScriptValue, properties);
         }
 
@@ -2881,8 +2895,8 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
 }
 
 bool EntityTree::writeToJSON(QString& jsonString, const OctreeElementPointer& element) {
-    const std::lock_guard<std::mutex> scriptLock(scriptEngineMutex);
-    RecurseOctreeToJSONOperator theOperator(element, scriptEngine.get(), jsonString);
+    const std::lock_guard<std::mutex> scriptLock(_scriptEngineLock);
+    RecurseOctreeToJSONOperator theOperator(element, _scriptEngine.get(), jsonString);
     withReadLock([&] {
         recurseTreeWithOperator(&theOperator);
     });

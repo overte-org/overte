@@ -36,9 +36,24 @@ MaterialBaker::MaterialBaker(const QString& materialData, bool isURL, const QStr
     _isURL(isURL),
     _destinationPath(destinationPath),
     _bakedOutputDir(bakedOutputDir),
-    _textureOutputDir(bakedOutputDir + "/materialTextures/" + QString::number(materialNum++)),
-    _scriptEngine(newScriptEngine())
+    _textureOutputDir(bakedOutputDir + "/materialTextures/" + QString::number(materialNum++))
 {
+    std::lock_guard<std::mutex> lock(_scriptEngineLock);
+    _scriptEngine = newScriptEngine();
+    _scriptEngineThread.reset(new QThread());
+    _scriptEngine->setThread(_scriptEngineThread.get());
+    _scriptEngineThread->start();
+}
+
+MaterialBaker::~MaterialBaker() {
+    std::lock_guard<std::mutex> lock(_scriptEngineLock);
+    if (_scriptEngine) {
+        if (_scriptEngineThread) {
+            _scriptEngineThread->quit();
+            _scriptEngineThread->wait();
+        }
+        _scriptEngine.reset();
+    }
 }
 
 void MaterialBaker::bake() {
@@ -214,6 +229,7 @@ void MaterialBaker::outputMaterial() {
         if (_materialResource->parsedMaterials.networkMaterials.size() == 1) {
             auto networkMaterial = _materialResource->parsedMaterials.networkMaterials.begin();
             auto scriptableMaterial = scriptable::ScriptableMaterial(networkMaterial->second);
+            std::lock_guard<std::mutex> lock(_scriptEngineLock);
             QVariant materialVariant =
                 scriptable::scriptableMaterialToScriptValue(_scriptEngine.get(), scriptableMaterial).toVariant();
             json.insert("materials", QJsonDocument::fromVariant(materialVariant).object());
@@ -221,6 +237,7 @@ void MaterialBaker::outputMaterial() {
             QJsonArray materialArray;
             for (auto networkMaterial : _materialResource->parsedMaterials.networkMaterials) {
                 auto scriptableMaterial = scriptable::ScriptableMaterial(networkMaterial.second);
+                std::lock_guard<std::mutex> lock(_scriptEngineLock);
                 QVariant materialVariant =
                     scriptable::scriptableMaterialToScriptValue(_scriptEngine.get(), scriptableMaterial).toVariant();
                 materialArray.append(QJsonDocument::fromVariant(materialVariant).object());

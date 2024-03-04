@@ -111,6 +111,7 @@ class ScriptableAvatar : public AvatarData, public Dependency {
 public:
 
     ScriptableAvatar();
+    ~ScriptableAvatar();
 
     /*@jsdoc
      * Starts playing an animation on the avatar.
@@ -222,7 +223,11 @@ private:
     QHash<QString, int> _fstJointIndices; ///< 1-based, since zero is returned for missing keys
     QStringList _fstJointNames; ///< in order of depth-first traversal
     QUrl _skeletonFBXURL;
-    mutable ScriptEnginePointer _scriptEngine;
+
+    mutable std::mutex _scriptEngineLock;
+    mutable ScriptEnginePointer _scriptEngine { nullptr };
+    std::shared_ptr<QThread> _scriptEngineThread { nullptr };
+
     std::map<QUuid, EntityItemPointer> _entities;
 
     /// Loads the joint indices, names from the FST file (if any)

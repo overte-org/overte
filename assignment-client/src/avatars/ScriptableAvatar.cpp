@@ -30,8 +30,26 @@
 #include <NetworkingConstants.h>
 
 
-ScriptableAvatar::ScriptableAvatar(): _scriptEngine(newScriptEngine()) {
+ScriptableAvatar::ScriptableAvatar() {
     _clientTraitsHandler.reset(new ClientTraitsHandler(this));
+    std::lock_guard<std::mutex> lock(_scriptEngineLock);
+    _scriptEngine = newScriptEngine();
+    if (!_scriptEngineThread) {
+        _scriptEngineThread.reset(new QThread());
+        _scriptEngine->setThread(_scriptEngineThread.get());
+        _scriptEngineThread->start();
+    }
+}
+
+ScriptableAvatar::~ScriptableAvatar() {
+    std::lock_guard<std::mutex> lock(_scriptEngineLock);
+    if (_scriptEngine) {
+        if (_scriptEngineThread) {
+            _scriptEngineThread->quit();
+            _scriptEngineThread->wait();
+        }
+        _scriptEngine.reset();
+    }
 }
 
 QByteArray ScriptableAvatar::toByteArrayStateful(AvatarDataDetail dataDetail, bool dropFaceTracking) {
@@ -315,7 +333,10 @@ AvatarEntityMap ScriptableAvatar::getAvatarEntityDataInternal(bool allProperties
             EntityItemProperties properties = entity->getProperties(desiredProperties);
 
             QByteArray blob;
-            EntityItemProperties::propertiesToBlob(*_scriptEngine, sessionID, properties, blob, allProperties);
+            {
+                std::lock_guard<std::mutex> lock(_scriptEngineLock);
+                EntityItemProperties::propertiesToBlob(*_scriptEngine, sessionID, properties, blob, allProperties);
+            }
             data[id] = blob;
         }
     });
@@ -339,8 +360,11 @@ void ScriptableAvatar::setAvatarEntityData(const AvatarEntityMap& avatarEntityDa
     while (dataItr != avatarEntityData.end()) {
         EntityItemProperties properties;
         const QByteArray& blob = dataItr.value();
-        if (!blob.isNull() && EntityItemProperties::blobToProperties(*_scriptEngine, blob, properties)) {
-            newProperties[dataItr.key()] = properties;
+        {
+            std::lock_guard<std::mutex> lock(_scriptEngineLock);
+            if (!blob.isNull() && EntityItemProperties::blobToProperties(*_scriptEngine, blob, properties)) {
+                newProperties[dataItr.key()] = properties;
+            }
         }
         ++dataItr;
     }
@@ -419,9 +443,12 @@ void ScriptableAvatar::updateAvatarEntity(const QUuid& entityID, const QByteArra
 
     EntityItemPointer entity;
     EntityItemProperties properties;
-    if (!EntityItemProperties::blobToProperties(*_scriptEngine, entityData, properties)) {
-        // entityData is corrupt
-        return;
+    {
+        std::lock_guard<std::mutex> lock(_scriptEngineLock);
+        if (!EntityItemProperties::blobToProperties(*_scriptEngine, entityData, properties)) {
+            // entityData is corrupt
+            return;
+        }
     }
 
     std::map<QUuid, EntityItemPointer>::iterator itr = _entities.find(entityID);
