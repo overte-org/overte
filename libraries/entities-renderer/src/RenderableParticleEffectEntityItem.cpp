@@ -21,20 +21,21 @@ using namespace render::entities;
 
 static uint8_t CUSTOM_PIPELINE_NUMBER = 0;
 static gpu::Stream::FormatPointer _vertexFormat;
-static std::map<std::tuple<bool, bool, bool>, gpu::PipelinePointer> _pipelines;
+// forward, transparent, shadow, wireframe
+static std::map<std::tuple<bool, bool, bool, bool>, gpu::PipelinePointer> _pipelines;
 
 static ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, const ShapeKey& key, RenderArgs* args) {
-    // FIXME: custom pipelines like this don't handle shadows or renderLayers correctly
-
     if (_pipelines.empty()) {
         using namespace shader::entities_renderer::program;
 
-        // forward, translucent
-        static const std::vector<std::tuple<bool, bool, uint32_t>> keys = {
-            std::make_tuple(false, false, textured_particle),
-            std::make_tuple(true, false, textured_particle_forward),
-            std::make_tuple(false, true, textured_particle_translucent),
-            std::make_tuple(true, true, textured_particle_forward)
+        // forward, translucent, shadow
+        static const std::vector<std::tuple<bool, bool, bool, uint32_t>> keys = {
+            std::make_tuple(false, false, false, textured_particle),
+            std::make_tuple(true, false, false, textured_particle_forward),
+            std::make_tuple(false, true, false, textured_particle_translucent),
+            std::make_tuple(true, true, false, textured_particle_translucent_forward),
+            std::make_tuple(false, false, true, textured_particle_shadow),
+            // no such thing as shadow and forward/translucent
         };
 
         for (auto& key : keys) {
@@ -54,13 +55,14 @@ static ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, co
                     gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
                 transparent ? PrepareStencil::testMask(*state) : PrepareStencil::testMaskDrawShape(*state);
 
-                auto program = gpu::Shader::createProgram(std::get<2>(key));
-                _pipelines[std::make_tuple(std::get<0>(key), transparent, wireframe)] = gpu::Pipeline::create(program, state);
+                auto program = gpu::Shader::createProgram(std::get<3>(key));
+                _pipelines[std::make_tuple(std::get<0>(key), transparent, std::get<2>(key), wireframe)] = gpu::Pipeline::create(program, state);
             }
         }
     }
 
-    return std::make_shared<render::ShapePipeline>(_pipelines[std::make_tuple(args->_renderMethod == Args::RenderMethod::FORWARD, key.isTranslucent(), key.isWireframe())], nullptr, nullptr, nullptr);
+    return std::make_shared<render::ShapePipeline>(_pipelines[std::make_tuple(args->_renderMethod == Args::RenderMethod::FORWARD, key.isTranslucent(),
+        args->_renderMode == Args::RenderMode::SHADOW_RENDER_MODE, key.isWireframe())], nullptr, nullptr, nullptr);
 }
 
 struct GpuParticle {
