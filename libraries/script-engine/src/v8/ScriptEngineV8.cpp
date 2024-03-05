@@ -664,6 +664,11 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             }
             // "Script" API is context-dependent, so it needs to be recreated for each new context
             registerGlobalObject("Script", new ScriptManagerScriptingInterface(_manager), ScriptEngine::ScriptOwnership);
+            auto Script = globalObject().property("Script");
+            auto require = Script.property("require");
+            auto resolve = Script.property("_requireResolve");
+            require.setProperty("resolve", resolve, ScriptValue::ReadOnly | ScriptValue::Undeletable);
+            globalObject().setProperty("require", require, ScriptValue::ReadOnly | ScriptValue::Undeletable);
 
             // Script.require properties need to be copied, since that's where the Script.require cache is
             // Get source and destination Script.require objects
