@@ -138,7 +138,9 @@ static AnimPose composeAnimPose(const HFMJoint& joint, const glm::quat rotation,
 
 void ScriptableAvatar::update(float deltatime) {
     // Run animation
-    auto frames = _animation->getFrames();
+    Q_ASSERT(QThread::currentThread() == thread());
+    Q_ASSERT(thread() == _animation->thread());
+    auto frames = _animation->getFramesReference();
     if (_animation && _animation->isLoaded() && frames.size() > 0 && !_bind.isNull() && _bind->isLoaded()) {
         if (!_animSkeleton) {
             _animSkeleton = std::make_shared<AnimSkeleton>(_bind->getHFMModel());
