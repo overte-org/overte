@@ -138,7 +138,8 @@ static AnimPose composeAnimPose(const HFMJoint& joint, const glm::quat rotation,
 
 void ScriptableAvatar::update(float deltatime) {
     // Run animation
-    if (_animation && _animation->isLoaded() && _animation->getFrames().size() > 0 && !_bind.isNull() && _bind->isLoaded()) {
+    auto frames = _animation->getFrames();
+    if (_animation && _animation->isLoaded() && frames.size() > 0 && !_bind.isNull() && _bind->isLoaded()) {
         if (!_animSkeleton) {
             _animSkeleton = std::make_shared<AnimSkeleton>(_bind->getHFMModel());
         }
@@ -157,9 +158,9 @@ void ScriptableAvatar::update(float deltatime) {
                 _jointData.resize(nJoints);
             }
 
-            const int frameCount = _animation->getFrames().size();
-            const HFMAnimationFrame& floorFrame = _animation->getFrames().at((int)glm::floor(currentFrame) % frameCount);
-            const HFMAnimationFrame& ceilFrame = _animation->getFrames().at((int)glm::ceil(currentFrame) % frameCount);
+            const int frameCount = frames.size();
+            const HFMAnimationFrame& floorFrame = frames.at((int)glm::floor(currentFrame) % frameCount);
+            const HFMAnimationFrame& ceilFrame = frames.at((int)glm::ceil(currentFrame) % frameCount);
             const float frameFraction = glm::fract(currentFrame);
             std::vector<AnimPose> poses = _animSkeleton->getRelativeDefaultPoses();
 
