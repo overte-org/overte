@@ -32,6 +32,10 @@
 
 ScriptableAvatar::ScriptableAvatar(): _scriptEngine(newScriptEngine()) {
     _clientTraitsHandler.reset(new ClientTraitsHandler(this));
+    static std::once_flag once;
+    std::call_once(once, [] {
+        qRegisterMetaType<HFMModel::Pointer>("HFMModel::Pointer");
+    });
 }
 
 QByteArray ScriptableAvatar::toByteArrayStateful(AvatarDataDetail dataDetail, bool dropFaceTracking) {
@@ -52,6 +56,7 @@ void ScriptableAvatar::startAnimation(const QString& url, float fps, float prior
     _animation = DependencyManager::get<AnimationCache>()->getAnimation(url);
     _animationDetails = AnimationDetails("", QUrl(url), fps, 0, loop, hold, false, firstFrame, lastFrame, true, firstFrame, false);
     _maskedJoints = maskedJoints;
+    _isAnimationRigValid = false;
 }
 
 void ScriptableAvatar::stopAnimation() {
@@ -89,11 +94,12 @@ QStringList ScriptableAvatar::getJointNames() const {
 }
 
 void ScriptableAvatar::setSkeletonModelURL(const QUrl& skeletonModelURL) {
-    _bind.reset();
-    _animSkeleton.reset();
+    _avatarAnimSkeleton.reset();
+    _geometryResource.reset();
 
     AvatarData::setSkeletonModelURL(skeletonModelURL);
     updateJointMappings();
+    _isRigValid = false;
 }
 
 int ScriptableAvatar::sendAvatarDataPacket(bool sendAll) {
@@ -137,68 +143,90 @@ static AnimPose composeAnimPose(const HFMJoint& joint, const glm::quat rotation,
 }
 
 void ScriptableAvatar::update(float deltatime) {
+    // TODO: the current decision to use geometry resource results in loading textures, but it works way better
+    // than previous choice of loading avatar as animation, which was missing data such as joint names hash,
+    // and also didn't support glTF models. Optimizing this will be left fot future PR.
+    if (!_geometryResource && !_skeletonModelFilenameURL.isEmpty()) { // AvatarData will parse the .fst, but not get the .fbx skeleton.
+        _geometryResource = DependencyManager::get<ModelCache>()->getGeometryResource(_skeletonModelFilenameURL);
+    }
+
     // Run animation
     Q_ASSERT(QThread::currentThread() == thread());
-    Q_ASSERT(thread() == _animation->thread());
-    auto frames = _animation->getFramesReference();
-    if (_animation && _animation->isLoaded() && frames.size() > 0 && !_bind.isNull() && _bind->isLoaded()) {
-        if (!_animSkeleton) {
-            _animSkeleton = std::make_shared<AnimSkeleton>(_bind->getHFMModel());
-        }
-        float currentFrame = _animationDetails.currentFrame + deltatime * _animationDetails.fps;
-        if (_animationDetails.loop || currentFrame < _animationDetails.lastFrame) {
-            while (currentFrame >= _animationDetails.lastFrame) {
-                currentFrame -= (_animationDetails.lastFrame - _animationDetails.firstFrame);
+    if (_animation && _animation->isLoaded()) {
+        Q_ASSERT(thread() == _animation->thread());
+        auto frames = _animation->getFramesReference();
+        if (frames.size() > 0 && _geometryResource && _geometryResource->isHFMModelLoaded()) {
+            if (!_isRigValid) {
+                _rig.reset(_geometryResource->getHFMModel());
+                _isRigValid = true;
             }
-            _animationDetails.currentFrame = currentFrame;
-
-            const QVector<HFMJoint>& modelJoints = _bind->getHFMModel().joints;
-            QStringList animationJointNames = _animation->getJointNames();
-
-            const int nJoints = modelJoints.size();
-            if (_jointData.size() != nJoints) {
-                _jointData.resize(nJoints);
+            if (!_isAnimationRigValid) {
+                _animationRig.reset(_animation->getHFMModel());
+                _isAnimationRigValid = true;
             }
-
-            const int frameCount = frames.size();
-            const HFMAnimationFrame& floorFrame = frames.at((int)glm::floor(currentFrame) % frameCount);
-            const HFMAnimationFrame& ceilFrame = frames.at((int)glm::ceil(currentFrame) % frameCount);
-            const float frameFraction = glm::fract(currentFrame);
-            std::vector<AnimPose> poses = _animSkeleton->getRelativeDefaultPoses();
-
-            const float UNIT_SCALE = 0.01f;
-
-            for (int i = 0; i < animationJointNames.size(); i++) {
-                const QString& name = animationJointNames[i];
-                // As long as we need the model preRotations anyway, let's get the jointIndex from the bind skeleton rather than
-                // trusting the .fst (which is sometimes not updated to match changes to .fbx).
-                int mapping = _bind->getHFMModel().getJointIndex(name);
-                if (mapping != -1 && !_maskedJoints.contains(name)) {
-
-                    AnimPose floorPose = composeAnimPose(modelJoints[mapping], floorFrame.rotations[i], floorFrame.translations[i] * UNIT_SCALE);
-                    AnimPose ceilPose = composeAnimPose(modelJoints[mapping], ceilFrame.rotations[i], floorFrame.translations[i] * UNIT_SCALE);
-                    blend(1, &floorPose, &ceilPose, frameFraction, &poses[mapping]);
-                 }
+            if (!_avatarAnimSkeleton) {
+                _avatarAnimSkeleton = std::make_shared<AnimSkeleton>(_geometryResource->getHFMModel());
             }
-
-            std::vector<AnimPose> absPoses = poses;
-            _animSkeleton->convertRelativePosesToAbsolute(absPoses);
-            for (int i = 0; i < nJoints; i++) {
-                JointData& data = _jointData[i];
-                AnimPose& absPose = absPoses[i];
-                if (data.rotation != absPose.rot()) {
-                    data.rotation = absPose.rot();
-                    data.rotationIsDefaultPose = false;
+            float currentFrame = _animationDetails.currentFrame + deltatime * _animationDetails.fps;
+            if (_animationDetails.loop || currentFrame < _animationDetails.lastFrame) {
+                while (currentFrame >= _animationDetails.lastFrame) {
+                    currentFrame -= (_animationDetails.lastFrame - _animationDetails.firstFrame);
                 }
-                AnimPose& relPose = poses[i];
-                if (data.translation != relPose.trans()) {
-                    data.translation = relPose.trans();
-                    data.translationIsDefaultPose = false;
-                }
-            }
+                _animationDetails.currentFrame = currentFrame;
 
-        } else {
-            _animation.clear();
+                const QVector<HFMJoint>& modelJoints = _geometryResource->getHFMModel().joints;
+                QStringList animationJointNames = _animation->getJointNames();
+
+                const int nJoints = modelJoints.size();
+                if (_jointData.size() != nJoints) {
+                    _jointData.resize(nJoints);
+                }
+
+                const int frameCount = frames.size();
+                const HFMAnimationFrame& floorFrame = frames.at((int)glm::floor(currentFrame) % frameCount);
+                const HFMAnimationFrame& ceilFrame = frames.at((int)glm::ceil(currentFrame) % frameCount);
+                const float frameFraction = glm::fract(currentFrame);
+                std::vector<AnimPose> poses = _avatarAnimSkeleton->getRelativeDefaultPoses();
+
+                // TODO: this needs more testing, it's possible that we need not only scale but also rotation and translation
+                // According to tests with unmatching avatar and animation armatures, sometimes bones are not rotated correctly.
+                // Matching armatures already work very well now.
+                const float UNIT_SCALE = _animationRig.GetScaleFactorGeometryToUnscaledRig() / _rig.GetScaleFactorGeometryToUnscaledRig();
+
+                for (int i = 0; i < animationJointNames.size(); i++) {
+                    const QString& name = animationJointNames[i];
+                    // As long as we need the model preRotations anyway, let's get the jointIndex from the bind skeleton rather than
+                    // trusting the .fst (which is sometimes not updated to match changes to .fbx).
+                    int mapping = _geometryResource->getHFMModel().getJointIndex(name);
+                    if (mapping != -1 && !_maskedJoints.contains(name)) {
+                        AnimPose floorPose = composeAnimPose(modelJoints[mapping], floorFrame.rotations[i],
+                                                             floorFrame.translations[i] * UNIT_SCALE);
+                        AnimPose ceilPose = composeAnimPose(modelJoints[mapping], ceilFrame.rotations[i],
+                                                            ceilFrame.translations[i] * UNIT_SCALE);
+                        blend(1, &floorPose, &ceilPose, frameFraction, &poses[mapping]);
+                    }
+                }
+
+                std::vector<AnimPose> absPoses = poses;
+                Q_ASSERT(_avatarAnimSkeleton != nullptr);
+                _avatarAnimSkeleton->convertRelativePosesToAbsolute(absPoses);
+                for (int i = 0; i < nJoints; i++) {
+                    JointData& data = _jointData[i];
+                    AnimPose& absPose = absPoses[i];
+                    if (data.rotation != absPose.rot()) {
+                        data.rotation = absPose.rot();
+                        data.rotationIsDefaultPose = false;
+                    }
+                    AnimPose& relPose = poses[i];
+                    if (data.translation != relPose.trans()) {
+                        data.translation = relPose.trans();
+                        data.translationIsDefaultPose = false;
+                    }
+                }
+
+            } else {
+                _animation.clear();
+            }
         }
     }
 
@@ -248,6 +276,7 @@ void ScriptableAvatar::setJointMappingsFromNetworkReply() {
         networkReply->deleteLater();
         return;
     }
+    // TODO: this works only with .fst files currently, not directly with FBX and GLB models
     {
         QWriteLocker writeLock(&_jointDataLock);
         QByteArray line;
@@ -256,7 +285,7 @@ void ScriptableAvatar::setJointMappingsFromNetworkReply() {
             if (line.startsWith("filename")) {
                 int filenameIndex = line.indexOf('=') + 1;
                 if (filenameIndex > 0) {
-                    _skeletonFBXURL = _skeletonModelURL.resolved(QString(line.mid(filenameIndex).trimmed()));
+                    _skeletonModelFilenameURL = _skeletonModelURL.resolved(QString(line.mid(filenameIndex).trimmed()));
                 }
             }
             if (!line.startsWith("jointIndex")) {

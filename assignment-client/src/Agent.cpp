@@ -108,6 +108,7 @@ Agent::Agent(ReceivedMessage& message) :
 
     DependencyManager::set<ModelFormatRegistry>();
     DependencyManager::set<ModelCache>();
+    DependencyManager::set<TextureCache>();
 
     // Needed to ensure the creation of the DebugDraw instance on the main thread
     DebugDraw::getInstance();
@@ -848,6 +849,7 @@ void Agent::aboutToFinish() {
 
     DependencyManager::destroy<ModelFormatRegistry>();
     DependencyManager::destroy<ModelCache>();
+    DependencyManager::destroy<TextureCache>();
 
     DependencyManager::destroy<PluginManager>();
 
