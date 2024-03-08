@@ -1270,8 +1270,27 @@ HFMTexture GLTFSerializer::getHFMTexture(const cgltf_texture *texture) {
     HFMTexture hfmTex = HFMTexture();
     hfmTex.texcoordSet = 0;
 
-    if (texture->image) {
-        QString url = texture->image->uri;
+    auto image = texture->image;
+
+    // Check for WebP extension
+    for (size_t i = 0; i < texture->extensions_count; i++) {
+        auto &extension = texture->extensions[i];
+        if (extension.name != nullptr
+            && strcmp(extension.name, "EXT_texture_webp") == 0
+            && extension.data != nullptr) {
+            QJsonDocument webPExtension = QJsonDocument::fromJson(extension.data);
+            if (!webPExtension.isNull() && webPExtension["source"].isDouble()) {
+                int imageIndex = webPExtension["source"].isDouble();
+                if (imageIndex > 0 && (size_t)imageIndex < _data->images_count) {
+                    image = &_data->images[(int)(webPExtension["source"].toDouble())];
+                    break;
+                }
+            }
+        }
+    }
+
+    if (image) {
+        QString url = image->uri;
 
         QString fileName = hifi::URL(url).fileName();
         hifi::URL textureUrl = _url.resolved(url);
@@ -1279,13 +1298,13 @@ HFMTexture GLTFSerializer::getHFMTexture(const cgltf_texture *texture) {
         hfmTex.filename = textureUrl.toEncoded();
 
         if (_url.path().endsWith("glb")) {
-            cgltf_buffer_view *bufferView = texture->image->buffer_view;
+            cgltf_buffer_view *bufferView = image->buffer_view;
 
             size_t offset = bufferView->offset;
             size_t length = bufferView->size;
 
             size_t imageIndex = 0;
-            if (!findPointerInArray(texture->image, _data->images, _data->images_count, imageIndex)) {
+            if (!findPointerInArray(image, _data->images, _data->images_count, imageIndex)) {
                 // This should never happen. It would mean a bug in cgltf library.
                 qDebug(modelformat) << "GLTFSerializer::getHFMTexture: can't find texture in the array";
                 return hfmTex;
@@ -1296,7 +1315,7 @@ HFMTexture GLTFSerializer::getHFMTexture(const cgltf_texture *texture) {
                 return hfmTex;
             }
             hfmTex.content = QByteArray(static_cast<const char *>(bufferView->buffer->data) + offset, length);
-            hfmTex.filename = textureUrl.toEncoded().append(imageIndex);
+            hfmTex.filename = textureUrl.toEncoded().append(QString::number(imageIndex).toUtf8());
         }
 
         if (url.contains("data:image/jpeg;base64,") || url.contains("data:image/png;base64,") || url.contains("data:image/webp;base64,")) {
