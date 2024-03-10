@@ -2746,27 +2746,37 @@ void Rig::computeAvatarBoundingCapsule(
     // even if they do not have legs (default robot)
     totalExtents.addPoint(glm::vec3(0.0f, GEOMETRY_GROUND_Y, 0.0f));
 
-    // To reduce the radius of the bounding capsule to be tight with the torso, we only consider joints
-    // from the head to the hips when computing the rest of the bounding capsule.
-    int index = indexOfJoint("Head");
-    while (index != -1) {
-        const HFMJointShapeInfo& shapeInfo = hfmModel.joints.at(index).shapeInfo;
-        AnimPose pose = _animSkeleton->getAbsoluteDefaultPose(index);
-        if (shapeInfo.points.size() > 0) {
-            for (auto& point : shapeInfo.points) {
-                totalExtents.addPoint((pose * point));
-            }
-        }
-        index = _animSkeleton->getParentIndex(index);
+    // We only have to sample the position of these bones to get a decent bounding box
+    const QStringList _bonenames = {
+        "LeftEye",
+        "RightEye",
+        "HeadTop_End",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "LeftToeBase",
+        "RightToeBase"
+    };
+
+    for (const auto &_bonename : _bonenames) {
+        int i = indexOfJoint(_bonename);
+        if (i != -1)
+            totalExtents.addPoint(_animSkeleton->getAbsoluteDefaultPose(i).trans());
     }
 
     // compute bounding shape parameters
     // NOTE: we assume that the longest side of totalExtents is the yAxis...
     glm::vec3 diagonal = (transformPoint(_geometryToRigTransform, totalExtents.maximum) -
                           transformPoint(_geometryToRigTransform, totalExtents.minimum));
-    // ... and assume the radiusOut is half the RMS of the X and Z sides:
-    radiusOut = 0.5f * sqrtf(0.5f * (diagonal.x * diagonal.x + diagonal.z * diagonal.z));
+    // ... and assume the radiusOut is the RMS of the X and Z sides:
+    radiusOut = sqrtf(0.5f * (diagonal.x * diagonal.x + diagonal.z * diagonal.z));
     heightOut = diagonal.y - 2.0f * radiusOut;
+
+    // This is kind of a hack to get the collision capsule of avatars that are wider than high to work
+    if(heightOut < 0) {
+        radiusOut /= 2.0f;
+        heightOut = diagonal.y - 2.0f * radiusOut;
+    }
 
     glm::vec3 capsuleCenter = transformPoint(_geometryToRigTransform, (0.5f * (totalExtents.maximum + totalExtents.minimum)));
     localOffsetOut = capsuleCenter - hipsPosition;
