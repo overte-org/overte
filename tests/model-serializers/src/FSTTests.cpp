@@ -46,6 +46,24 @@
 
 QTEST_MAIN(FSTTests)
 
+void FSTTests::writeFile(const QString &filename, const QByteArray &data) {
+    QDir app_dir(QCoreApplication::applicationDirPath());
+    QDir out_dir(app_dir.filePath("out"));
+    QString file_path = out_dir.filePath(filename);
+
+    qDebug() << "Writing to" << file_path;
+
+    app_dir.mkdir("out");
+
+    QFile out_file(file_path);
+    if (out_file.open(QIODevice::WriteOnly)) {
+        out_file.write(data);
+        out_file.close();
+    } else {
+        qWarning() << "Failed to open file" << file_path << "for writing";
+    }
+}
+
 void FSTTests::initTestCase() {
     qRegisterMetaType<QNetworkReply*>("QNetworkReply*");
 
@@ -172,16 +190,14 @@ void FSTTests::convertToJson() {
     QDir app_dir(QCoreApplication::applicationDirPath());
     QFileInfo fi(filename);
 
-    app_dir.mkdir("out");
+
 
 
     FSTOldReader oldReader;
     QByteArray oldResult = oldReader.writeMapping(mapping);
 
-    QFile oldout_file(QCoreApplication::applicationDirPath() + "/out/" + fi.baseName() + ".fst");
-    oldout_file.open(QIODevice::WriteOnly);
-    oldout_file.write(oldResult);
-    oldout_file.close();
+
+    writeFile(fi.baseName() + ".fst", oldResult);
 
 
 
@@ -189,21 +205,14 @@ void FSTTests::convertToJson() {
     QByteArray jsonResult = jsonReader.writeMapping(mapping);
 
 
+    writeFile(fi.baseName() + ".json", jsonResult);
 
-
-    QFile out_file(QCoreApplication::applicationDirPath() + "/out/" + fi.baseName() + ".json");
-    out_file.open(QIODevice::WriteOnly);
-    out_file.write(jsonResult);
-    out_file.close();
-
-    qInfo() << "JSON version: " << jsonResult;
+    //qInfo() << "JSON version: " << jsonResult;
 
 
     auto mapping2 = jsonReader.readMapping(jsonResult);
     auto jsonResult2 = jsonReader.writeMapping(mapping2);
 
-    QFile out_file2(QCoreApplication::applicationDirPath() + "/out/" + fi.baseName() + ".json2");
-    out_file2.open(QIODevice::WriteOnly);
-    out_file2.write(jsonResult2);
-    out_file2.close();
+    writeFile(fi.baseName() + ".json2", jsonResult2);
+
 }

@@ -22,6 +22,8 @@ public:
         JSON
     };
 
+    void writeFile(const QString &filename, const QByteArray &data);
+
 private slots:
     void initTestCase();
     void parseFSTOld_data();
