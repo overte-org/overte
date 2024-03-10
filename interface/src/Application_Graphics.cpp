@@ -522,45 +522,41 @@ void Application::updateRenderArgs(float deltaTime) {
         appRenderArgs._eyeToWorld = _myCamera.getTransform();
         appRenderArgs._isStereo = false;
 
-        {
+        if (getActiveDisplayPlugin()->isStereo()) {
             auto hmdInterface = DependencyManager::get<HMDScriptingInterface>();
-            float ipdScale = hmdInterface->getIPDScale();
-
             // scale IPD by sensorToWorldScale, to make the world seem larger or smaller accordingly.
-            ipdScale *= sensorToWorldScale;
+            float ipdScale = hmdInterface->getIPDScale() * sensorToWorldScale;
 
             auto baseProjection = appRenderArgs._renderArgs.getViewFrustum().getProjection();
 
-            if (getActiveDisplayPlugin()->isStereo()) {
-                // Stereo modes will typically have a larger projection matrix overall,
-                // so we ask for the 'mono' projection matrix, which for stereo and HMD
-                // plugins will imply the combined projection for both eyes.
-                //
-                // This is properly implemented for the Oculus plugins, but for OpenVR
-                // and Stereo displays I'm not sure how to get / calculate it, so we're
-                // just relying on the left FOV in each case and hoping that the
-                // overall culling margin of error doesn't cause popping in the
-                // right eye.  There are FIXMEs in the relevant plugins
-                _myCamera.setProjection(getActiveDisplayPlugin()->getCullingProjection(baseProjection));
-                appRenderArgs._isStereo = true;
+            // Stereo modes will typically have a larger projection matrix overall,
+            // so we ask for the 'mono' projection matrix, which for stereo and HMD
+            // plugins will imply the combined projection for both eyes.
+            //
+            // This is properly implemented for the Oculus plugins, but for OpenVR
+            // and Stereo displays I'm not sure how to get / calculate it, so we're
+            // just relying on the left FOV in each case and hoping that the
+            // overall culling margin of error doesn't cause popping in the
+            // right eye.  There are FIXMEs in the relevant plugins
+            _myCamera.setProjection(getActiveDisplayPlugin()->getCullingProjection(baseProjection));
+            appRenderArgs._isStereo = true;
 
-                auto& eyeOffsets = appRenderArgs._eyeOffsets;
-                auto& eyeProjections = appRenderArgs._eyeProjections;
+            auto& eyeOffsets = appRenderArgs._eyeOffsets;
+            auto& eyeProjections = appRenderArgs._eyeProjections;
 
-                // FIXME we probably don't need to set the projection matrix every frame,
-                // only when the display plugin changes (or in non-HMD modes when the user
-                // changes the FOV manually, which right now I don't think they can.
-                for_each_eye([&](Eye eye) {
-                    // Grab the translation
-                    eyeOffsets[eye] = getActiveDisplayPlugin()->getEyeToHeadTransform(eye);
-                    // Apply IPD scaling
-                    eyeOffsets[eye][3][0] *= ipdScale;
-                    eyeProjections[eye] = getActiveDisplayPlugin()->getEyeProjection(eye, baseProjection);
-                });
+            // FIXME we probably don't need to set the projection matrix every frame,
+            // only when the display plugin changes (or in non-HMD modes when the user
+            // changes the FOV manually, which right now I don't think they can.
+            for_each_eye([&](Eye eye) {
+                // Grab the translation
+                eyeOffsets[eye] = getActiveDisplayPlugin()->getEyeToHeadTransform(eye);
+                // Apply IPD scaling
+                eyeOffsets[eye][3][0] *= ipdScale;
+                eyeProjections[eye] = getActiveDisplayPlugin()->getEyeProjection(eye, baseProjection);
+            });
 
-                // Configure the type of display / stereo
-                appRenderArgs._renderArgs._displayMode = (isHMDMode() ? RenderArgs::STEREO_HMD : RenderArgs::STEREO_MONITOR);
-            }
+            // Configure the type of display / stereo
+            appRenderArgs._renderArgs._displayMode = (isHMDMode() ? RenderArgs::STEREO_HMD : RenderArgs::STEREO_MONITOR);
         }
 
         appRenderArgs._renderArgs._stencilMaskMode = getActiveDisplayPlugin()->getStencilMaskMode();
