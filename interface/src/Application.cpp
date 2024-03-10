@@ -6971,16 +6971,9 @@ void Application::updateRenderArgs(float deltaTime) {
                 // only when the display plugin changes (or in non-HMD modes when the user
                 // changes the FOV manually, which right now I don't think they can.
                 for_each_eye([&](Eye eye) {
-                    // For providing the stereo eye views, the HMD head pose has already been
-                    // applied to the avatar, so we need to get the difference between the head
-                    // pose applied to the avatar and the per eye pose, and use THAT as
-                    // the per-eye stereo matrix adjustment.
-                    mat4 eyeToHead = getActiveDisplayPlugin()->getEyeToHeadTransform(eye);
-                    // Grab the translation
-                    vec3 eyeOffset = glm::vec3(eyeToHead[3]);
+                    eyeOffsets[eye] = getActiveDisplayPlugin()->getEyeToHeadTransform(eye);
                     // Apply IPD scaling
-                    mat4 eyeOffsetTransform = glm::translate(mat4(), eyeOffset * -1.0f * ipdScale);
-                    eyeOffsets[eye] = eyeOffsetTransform;
+                    eyeOffsets[eye][3][0] *= ipdScale;
                     eyeProjections[eye] = getActiveDisplayPlugin()->getEyeProjection(eye, baseProjection);
                 });
 
