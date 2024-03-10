@@ -16,22 +16,21 @@ FSTReader::Mapping FSTJsonReader::readMapping(const QByteArray& data) {
     QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
 
     if ( parseError.error != QJsonParseError::NoError ) {
-        qWarning() << "Failed to parse JSON:" << parseError.errorString();
+        qCWarning(fst_reader_json_logging) << "Failed to parse JSON:" << parseError.errorString();
         return Mapping();
     } else {
-        qInfo() << "Parse ok, result:" << doc;
+        //qCDebug(fst_reader_json_logging) << "Parse ok, result:" << doc;
     }
 
 
     if (!doc.isObject()) {
-        qWarning() << "FST JSON must contain a hash at top level";
+        qCWarning(fst_reader_json_logging) << "FST JSON must contain a hash at top level";
         return Mapping();
     }
 
     QJsonObject obj = doc.object();
 
     for (auto key : obj.keys() ) {
-        qInfo() << "KEY: " << key;
         mapping.insert(key, obj[key].toVariant());
     }
 
@@ -46,7 +45,7 @@ QByteArray FSTJsonReader::writeMapping(const FSTReader::Mapping& mapping) {
     for (auto key : mapping.uniqueKeys()) {
 
         auto values = mapping.values(key);
-        qInfo() << "Converting " << key << "with" << values.size() << "values: " << values;
+        //qCDebug(fst_reader_json_logging) << "Converting " << key << "with" << values.size() << "values: " << values;
 
         if ( values.count() == 0 ) {
             continue;
@@ -57,13 +56,13 @@ QByteArray FSTJsonReader::writeMapping(const FSTReader::Mapping& mapping) {
 
         for(auto value : values) {
             if ( _jsonFields.contains(key) ) {
-                qInfo() << "Parsing JSON key: " << key << ":" << values.at(0);
+                qCDebug(fst_reader_json_logging) << "Parsing JSON key: " << key << ":" << values.at(0);
                 QJsonParseError parseError;
                 QJsonDocument tempDoc = QJsonDocument::fromJson(values.at(0).toByteArray(), &parseError);
                 if ( parseError.error != QJsonParseError::NoError ) {
-                    qWarning() << "Failed to parse JSON:" << parseError.errorString();
+                    qCWarning(fst_reader_json_logging)<< "Failed to parse JSON:" << parseError.errorString();
                 } else {
-                    qInfo() << "Parse ok, result:" << tempDoc;
+                    //qCDebug(fst_reader_json_logging) << "Parse ok, result:" << tempDoc;
                 }
 
                 if ( tempDoc.isObject() && !tempDoc.isEmpty() ) {
