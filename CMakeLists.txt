@@ -252,9 +252,6 @@ else()
 endif()
 
 set(SCREENSHARE 0)
-if (WIN32)
-  set(SCREENSHARE 1)
-endif()
 if (APPLE AND NOT CLIENT_ONLY)
   # Don't include Screenshare in OSX client-only builds.
   set(SCREENSHARE 1)
