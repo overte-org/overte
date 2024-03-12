@@ -1,10 +1,10 @@
 /*
 //  edit-style.css
 //
-//  Created by Ryan Huffman on 13 Nov 2014
+//  Created by Ryan Huffman on November 13th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -1739,6 +1739,7 @@ input#property-scale-button-reset {
     display: none;
     position: fixed;
     color: #000000;
+    font-family: FiraSans-SemiBold;
     background-color: #afafaf;
     padding: 5px 0 5px 0;
     cursor: default;
@@ -1758,7 +1759,7 @@ input#property-scale-button-reset {
     padding: 0 0;
 }
 .context-menu li.disabled {
-    color: #333333;
+    color: #777777;
 }
 .context-menu li.separator:hover, .context-menu li.disabled:hover {
     background-color: #afafaf;
