@@ -627,7 +627,7 @@ const GROUPS = [
             {
                 label: "Enable Reverb",
                 type: "bool",
-                propertyID: "audio.enableReverb"
+                propertyID: "audio.reverbEnabled"
             },
             {
                 label: "Reverb Time",
@@ -637,7 +637,7 @@ const GROUPS = [
                 step: 0.1,
                 decimals: 2,
                 propertyID: "audio.reverbTime",
-                showPropertyRule: { "audio.enableReverb": "true" },
+                showPropertyRule: { "audio.reverbEnabled": "true" },
             },
             {
                 label: "Reverb Wet Level",
@@ -647,7 +647,7 @@ const GROUPS = [
                 step: 1,
                 decimals: 1,
                 propertyID: "audio.reverbWetLevel",
-                showPropertyRule: { "audio.enableReverb": "true" },
+                showPropertyRule: { "audio.reverbEnabled": "true" },
             },
             {
                 label: "Listener Zones",
@@ -2883,10 +2883,18 @@ function createVec2Property(property, elProperty) {
 function updateVectorMinMax(property) {
     let min = property.data.min;
     let max = property.data.max;
-    property.elNumberX.updateMinMax(min, max);
-    property.elNumberY.updateMinMax(min, max);
-    if (property.elNumberZ) {
-        property.elNumberZ.updateMinMax(min, max);
+    if (property.elNumberX) {
+        property.elNumberX.updateMinMax(min, max);
+        property.elNumberY.updateMinMax(min, max);
+        if (property.elNumberZ) {
+            property.elNumberZ.updateMinMax(min, max);
+        }
+    } else if (property.elNumberR) {
+        property.elNumberR.updateMinMax(min, max);
+        property.elNumberG.updateMinMax(min, max);
+        if (property.elNumberB) {
+            property.elNumberB.updateMinMax(min, max);
+        }
     }
 }
 
@@ -3904,6 +3912,7 @@ function addZoneToZonesSelection(propertyId, id) {
     hiddenField.value = JSON.stringify(selectedZones);
     displaySelectedZones(propertyId, true);
     let propertyName = propertyId.replace("property-", "");
+    propertyName = propertyName.replace("-", ".");
     updateProperty(propertyName, selectedZones, false);
     document.getElementById("zones-select-selector-list-panel-" + propertyId).style.display = "none";
 }
@@ -3921,6 +3930,7 @@ function removeZoneFromZonesSelection(propertyId, zoneId) {
     hiddenField.value = JSON.stringify(selectedZones);
     displaySelectedZones(propertyId, true);
     let propertyName = propertyId.replace("property-", "");
+    propertyName = propertyName.replace("-", ".");
     updateProperty(propertyName, selectedZones, false);
 }
 
