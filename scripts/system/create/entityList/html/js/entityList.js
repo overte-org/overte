@@ -1,6 +1,6 @@
 //  entityList.js
 //
-//  Created by Ryan Huffman on 19 Nov 2014
+//  Created by Ryan Huffman on November 19th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
 //  Copyright 2024 Overte e.V.
@@ -328,6 +328,7 @@ function loaded() {
         elToolsMenu = document.getElementById("tools");
         elMenuBackgroundOverlay = document.getElementById("menuBackgroundOverlay");
         elHmdCopy = document.getElementById("hmdcopy");
+        elHmdCopyID = document.getElementById("hmdcopyid");
         elHmdCut = document.getElementById("hmdcut");
         elHmdPaste = document.getElementById("hmdpaste");
         elHmdDuplicate = document.getElementById("hmdduplicate");        
@@ -422,6 +423,10 @@ function loaded() {
         };
         elHmdCopy.onclick = function() {
             EventBridge.emitWebEvent(JSON.stringify({ type: "copy" }));
+            closeAllEntityListMenu();
+        };
+        elHmdCopyID.onclick = function() {
+            EventBridge.emitWebEvent(JSON.stringify({ type: "copyID" }));
             closeAllEntityListMenu();
         };
         elHmdCut.onclick = function() {
@@ -822,6 +827,9 @@ function loaded() {
                 case "Copy":
                     EventBridge.emitWebEvent(JSON.stringify({ type: "copy" }));
                     break;
+                case "Copy ID":
+                    EventBridge.emitWebEvent(JSON.stringify({ type: "copyID" }));
+                    break;
                 case "Paste":
                     EventBridge.emitWebEvent(JSON.stringify({ type: "paste" }));
                     break;
@@ -861,6 +869,10 @@ function loaded() {
                 enabledContextMenuItems.push("Cut");
                 enabledContextMenuItems.push("Rename");
                 enabledContextMenuItems.push("Delete");
+            }
+            
+            if (selectedEntities.length === 1) {
+                enabledContextMenuItems.push("Copy ID");
             }
 
             entityListContextMenu.open(clickEvent, entityID, enabledContextMenuItems);

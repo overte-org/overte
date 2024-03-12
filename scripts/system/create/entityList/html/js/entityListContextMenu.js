@@ -1,9 +1,10 @@
 //
 //  entityListContextMenu.js
 //
-//  exampleContextMenus.js was originally created by David Rowe on 22 Aug 2018.
-//  Modified to entityListContextMenu.js by Thijs Wenker on 10 Oct 2018
+//  exampleContextMenus.js was originally created by David Rowe on August 22nd, 2018.
+//  Modified to entityListContextMenu.js by Thijs Wenker on October 10th, 2018
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -137,6 +138,7 @@ EntityListContextMenu.prototype = {
 
         this._addListItem("Cut");
         this._addListItem("Copy");
+        this._addListItem("Copy ID");
         this._addListItem("Paste");
         this._addListSeparator();
         this._addListItem("Rename");
