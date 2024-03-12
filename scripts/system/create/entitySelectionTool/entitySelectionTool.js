@@ -1,12 +1,12 @@
 //
 //  entitySelectionTool.js
 //
-//  Created by Brad hefta-Gaub on 10/1/14.
-//    Modified by Daniela Fontes * @DanielaFifo and Tiago Andrade @TagoWill on 4/7/2017
-//    Modified by David Back on 1/9/2018
+//  Created by Brad hefta-Gaub on October 1st, 2014.
+//    Modified by Daniela Fontes * @DanielaFifo and Tiago Andrade @TagoWill on April 7th, 2017
+//    Modified by David Back on January 9th, 2018
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors
-//  Copyright 2022-2023 Overte e.V.
+//  Copyright 2022-2024 Overte e.V.
 //
 //  This script implements a class useful for building tools for editing entities.
 //
@@ -494,6 +494,15 @@ SelectionManager = (function() {
     that.cutSelectedEntities = function() {
         that.copySelectedEntities();
         that.createApp.deleteSelectedEntities();
+    };
+
+    that.copyIdFromSelectedEntity = function() {
+        if (that.selections.length !== 1) {
+            audioFeedback.rejection();
+        } else {
+            Window.copyToClipboard(that.selections[0]);
+            audioFeedback.confirmation();
+        }
     };
 
     that.copySelectedEntities = function() {
