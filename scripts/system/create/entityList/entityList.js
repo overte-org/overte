@@ -351,6 +351,8 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
             that.selectionManager.cutSelectedEntities();
         } else if (data.type === "copy") {
             that.selectionManager.copySelectedEntities();
+        } else if (data.type === "copyID") {
+            that.selectionManager.copyIdFromSelectedEntity();
         } else if (data.type === "paste") {
             that.selectionManager.pasteEntities();
         } else if (data.type === "duplicate") {
