@@ -29,16 +29,10 @@ public:
     bool needsIdentityUpdate() const { return _needsIdentityUpdate; }
     void setNeedsIdentityUpdate(bool value = true) { _needsIdentityUpdate = value; }
 
-    bool isInScreenshareZone() const { return _inScreenshareZone; }
-    void setInScreenshareZone(bool value = true) { _inScreenshareZone = value; }
-    const QUuid& getScreenshareZone() const { return _screenshareZone; }
-    void setScreenshareZone(QUuid zone) { _screenshareZone = zone; }
-
 private:
     bool _needsHeroCheck { false };
     bool _needsIdentityUpdate { false };
-    bool _inScreenshareZone { false };
-    QUuid _screenshareZone;
+
 };
 
 using MixerAvatarSharedPointer = std::shared_ptr<MixerAvatar>;

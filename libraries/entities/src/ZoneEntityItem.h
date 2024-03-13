@@ -87,7 +87,7 @@ public:
     uint32_t getBloomMode() const;
 
     SkyboxPropertyGroup getSkyboxProperties() const { return resultWithReadLock<SkyboxPropertyGroup>([&] { return _skyboxProperties; }); }
-    
+
     const HazePropertyGroup& getHazeProperties() const { return _hazeProperties; }
     const BloomPropertyGroup& getBloomProperties() const { return _bloomProperties; }
 
@@ -96,13 +96,18 @@ public:
     bool getGhostingAllowed() const { return _ghostingAllowed; }
     void setGhostingAllowed(bool value) { _ghostingAllowed = value; }
     QString getFilterURL() const;
-    void setFilterURL(const QString url); 
+    void setFilterURL(const QString url);
 
     uint32_t getAvatarPriority() const { return _avatarPriority; }
     void setAvatarPriority(uint32_t value) { _avatarPriority = value; }
 
-    uint32_t getScreenshare() const { return _screenshare; }
-    void setScreenshare(uint32_t value) { _screenshare = value; }
+    /**
+     * @brief Backwards compatibility for screenshare and the like
+     * Doesn't do anything.
+     * @param value
+     */
+    void ignoreUint32(uint32_t value) { /* nothing */ };
+
 
     void setUserData(const QString& value) override;
 
@@ -159,9 +164,6 @@ protected:
 
     // Avatar-updates priority
     uint32_t _avatarPriority { COMPONENT_MODE_INHERIT };
-
-    // Screen-sharing zone
-    uint32_t _screenshare { COMPONENT_MODE_INHERIT };
 
     // Dirty flags turn true when either keylight properties is changing values.
     bool _keyLightPropertiesChanged { false };
