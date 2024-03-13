@@ -30,6 +30,8 @@
 #include <qfile.h>
 #include <qfileinfo.h>
 
+#include <glm/gtx/transform.hpp>
+
 #include <shared/NsightHelpers.h>
 #include <NetworkAccessManager.h>
 #include <ResourceManager.h>
@@ -460,6 +462,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                 // Increment the triangle indices by the current mesh vertex count so each mesh part can all reference the same buffers within the mesh
                 int prevMeshVerticesCount = mesh.vertices.count();
 
+                // For each vertex (stride is WEIGHTS_PER_VERTEX), it contains index of the cluster that given weight belongs to.
                 QVector<uint16_t> clusterJoints;
                 QVector<float> clusterWeights;
 
@@ -940,18 +943,17 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                         } else {
                             mesh.clusterWeights[prevMeshClusterWeightCount + j] = (uint16_t)((float)(UINT16_MAX) + ALMOST_HALF);
                         }
-                        for (int clusterIndex = 0; clusterIndex < mesh.clusters.size() - 1; ++clusterIndex) {
+                        for (int k = j; k < j + WEIGHTS_PER_VERTEX; ++k) {
+                            int clusterIndex = mesh.clusterIndices[prevMeshClusterIndexCount + k];
                             ShapeVertices& points = hfmModel.shapeVertices.at(clusterIndex);
                             glm::vec3 globalMeshScale = extractScale(globalTransforms[nodeIndex]);
                             const glm::mat4 meshToJoint = glm::scale(glm::mat4(), globalMeshScale) * jointInverseBindTransforms[clusterIndex];
 
-                            // TODO: The entire clustering is probably broken and detailed collision shapes fail to generate due to it.
                             const uint16_t EXPANSION_WEIGHT_THRESHOLD = UINT16_MAX/4; // Equivalent of 0.25f?
-                            if (mesh.clusterWeights[j] >= EXPANSION_WEIGHT_THRESHOLD) {
-                                // TODO: fix transformed vertices being pushed back
-                                auto& vertex = mesh.vertices[i];
-                                const glm::mat4 vertexTransform = meshToJoint * (glm::translate(glm::mat4(), vertex));
-                                glm::vec3 transformedVertex = hfmModel.joints[clusterIndex].translation * (extractTranslation(vertexTransform));
+                            if (mesh.clusterWeights[prevMeshClusterWeightCount + k] >= EXPANSION_WEIGHT_THRESHOLD) {
+                                auto& vertex = mesh.vertices[prevMeshVerticesCount + i];
+                                const glm::mat4 vertexTransform = meshToJoint * glm::translate(vertex);
+                                glm::vec3 transformedVertex = extractTranslation(vertexTransform);
                                 points.push_back(transformedVertex);
                             }
                         }
