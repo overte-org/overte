@@ -138,7 +138,7 @@ EntityListContextMenu.prototype = {
 
         this._addListItem("Cut");
         this._addListItem("Copy");
-        this._addListItem("Copy ID");
+        this._addListItem("Copy ID(s)");
         this._addListItem("Paste");
         this._addListSeparator();
         this._addListItem("Rename");

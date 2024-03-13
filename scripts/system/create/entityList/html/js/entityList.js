@@ -827,7 +827,7 @@ function loaded() {
                 case "Copy":
                     EventBridge.emitWebEvent(JSON.stringify({ type: "copy" }));
                     break;
-                case "Copy ID":
+                case "Copy ID(s)":
                     EventBridge.emitWebEvent(JSON.stringify({ type: "copyID" }));
                     break;
                 case "Paste":
@@ -871,8 +871,8 @@ function loaded() {
                 enabledContextMenuItems.push("Delete");
             }
             
-            if (selectedEntities.length === 1) {
-                enabledContextMenuItems.push("Copy ID");
+            if (selectedEntities.length !== 0) {
+                enabledContextMenuItems.push("Copy ID(s)");
             }
 
             entityListContextMenu.open(clickEvent, entityID, enabledContextMenuItems);
