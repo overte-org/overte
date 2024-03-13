@@ -5,15 +5,10 @@
       { "from": "Index.RightHand", "to": "Standard.RightHand" },
       { "from": "Index.Head", "to" : "Standard.Head", "when" : [ "Application.InHMD"] },
 
-      { "from": "Index.A", "to": "Standard.RightPrimaryThumb", "peek": true },
-      { "from": "Index.B", "to": "Standard.RightSecondaryThumb", "peek": true },
-      { "from": "Index.X", "to": "Standard.LeftPrimaryThumb", "peek": true },
-      { "from": "Index.Y", "to": "Standard.LeftSecondaryThumb", "peek": true},
-
-      { "from": "Index.A", "to": "Standard.A" },
-      { "from": "Index.B", "to": "Standard.B" },
-      { "from": "Index.X", "to": "Standard.X" },
-      { "from": "Index.Y", "to": "Standard.Y" },
+      { "from": "Index.RightPrimaryThumb", "to": "Standard.RightPrimaryThumb" },
+      { "from": "Index.RightSecondaryThumb", "to": "Standard.RightSecondaryThumb" },
+      { "from": "Index.LeftPrimaryThumb", "to": "Standard.LeftPrimaryThumb" },
+      { "from": "Index.LeftSecondaryThumb", "to": "Standard.LeftSecondaryThumb" },
 
       { "from": "Index.LeftPrimaryThumbTouch", "to": "Standard.LeftPrimaryThumbTouch" },
       { "from": "Index.LeftSecondaryThumbTouch", "to": "Standard.LeftSecondaryThumbTouch" },
@@ -27,6 +22,8 @@
       { "from": "Index.LX", "to": "Standard.LX" },
       { "from": "Index.RY", "to": "Standard.RY" },
       { "from": "Index.RX", "to": "Standard.RX" },
+      { "from": "Index.LS", "to": "Standard.LS" },
+      { "from": "Index.RS", "to": "Standard.RS" },
       { "from": "Index.LSTouch", "to": "Standard.LSTouch" },
       { "from": "Index.RSTouch", "to": "Standard.RSTouch" },
 
