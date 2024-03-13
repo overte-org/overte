@@ -355,7 +355,7 @@ void ModelMeshPartPayload::render(RenderArgs* args) {
         procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created,
                             ProceduralProgramKey(outColor.a < 1.0f, _shapeKey.isDeformed(), _shapeKey.isDualQuatSkinned()));
 
-        auto compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
         _drawMesh->getColorBuffer()->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
     } else {
         // apply material properties
@@ -363,7 +363,7 @@ void ModelMeshPartPayload::render(RenderArgs* args) {
             args->_details._materialSwitches++;
         }
 
-        auto compactColor = 0xFFFFFFFF;
+        const uint32_t compactColor = 0xFFFFFFFF;
         _drawMesh->getColorBuffer()->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
     }
 

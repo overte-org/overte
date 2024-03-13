@@ -1927,7 +1927,7 @@ void renderInstances(RenderArgs* args, gpu::Batch& batch, const glm::vec4& color
     // Add color to named buffer
     {
         gpu::BufferPointer instanceColorBuffer = batch.getNamedBuffer(instanceName, INSTANCE_COLOR_BUFFER);
-        auto compactColor = GeometryCache::toCompactColor(color);
+        const uint32_t compactColor = GeometryCache::toCompactColor(color);
         instanceColorBuffer->append(compactColor);
     }
 

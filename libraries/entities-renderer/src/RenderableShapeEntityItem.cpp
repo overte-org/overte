@@ -131,7 +131,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
             procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created, ProceduralProgramKey(outColor.a < 1.0f));
         });
 
-        auto compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
         _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
         if (wireframe) {
             geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
@@ -151,7 +151,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
                 geometryCache->renderSolidShapeInstance(args, batch, geometryShape, outColor, pipeline);
             }
         } else {
-            auto compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+            const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
             _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
             if (wireframe) {
                 geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
@@ -164,7 +164,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
             args->_details._materialSwitches++;
         }
 
-        auto compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
         _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
         geometryCache->renderShape(batch, geometryShape, _colorBuffer);
     }

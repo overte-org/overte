@@ -337,7 +337,7 @@ void MaterialEntityRenderer::doRender(RenderArgs* args) {
         }
 
         // Draw!
-        auto compactColor = 0xFFFFFFFF;
+        const uint32_t compactColor = 0xFFFFFFFF;
         _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
         DependencyManager::get<GeometryCache>()->renderShape(batch, GeometryCache::Shape::Sphere, _colorBuffer);
     } else {
@@ -347,7 +347,7 @@ void MaterialEntityRenderer::doRender(RenderArgs* args) {
         proceduralDrawMaterial->prepare(batch, transform.getTranslation(), transform.getScale(),
                                         transform.getRotation(), _created, ProceduralProgramKey(outColor.a < 1.0f));
 
-        auto compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
         _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
         if (render::ShapeKey(args->_globalShapeKey).isWireframe() || _primitiveMode == PrimitiveMode::LINES) {
             DependencyManager::get<GeometryCache>()->renderWireShape(batch, GeometryCache::Shape::Sphere, _colorBuffer);

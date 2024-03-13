@@ -19,7 +19,7 @@ Mesh::Mesh() :
     _vertexBuffer(gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ)),
     _indexBuffer(gpu::Element(gpu::SCALAR, gpu::UINT32, gpu::INDEX)),
     _partBuffer(gpu::Element(gpu::VEC4, gpu::UINT32, gpu::PART)) {
-    auto compactColor = 0xFFFFFFFF;
+    const uint32_t compactColor = 0xFFFFFFFF;
     _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
 }
 
@@ -47,7 +47,7 @@ void Mesh::setVertexFormatAndStream(const gpu::Stream::FormatPointer& vf, const 
     if (!_vertexFormat->hasAttribute(gpu::Stream::COLOR)) {
         int channelNum = _vertexStream.getNumBuffers();
         _vertexFormat->setAttribute(gpu::Stream::COLOR, channelNum, gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA), 0, gpu::Stream::PER_INSTANCE);
-        _vertexStream.addBuffer(_colorBuffer, channelNum, _vertexFormat->getChannels().at(channelNum)._stride);
+        _vertexStream.addBuffer(_colorBuffer, 0, _vertexFormat->getChannels().at(channelNum)._stride);
     }
 }
 
@@ -112,7 +112,7 @@ void Mesh::evalVertexStream() {
     // We require meshes to have a color attribute.  If they don't, we default to white.
     if (!_vertexFormat->hasAttribute(gpu::Stream::COLOR)) {
         _vertexFormat->setAttribute(gpu::Stream::COLOR, channelNum, gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA), 0, gpu::Stream::PER_INSTANCE);
-        _vertexStream.addBuffer(_colorBuffer, channelNum, _vertexFormat->getChannels().at(channelNum)._stride);
+        _vertexStream.addBuffer(_colorBuffer, 0, _vertexFormat->getChannels().at(channelNum)._stride);
     }
 }
 
