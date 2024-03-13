@@ -496,11 +496,14 @@ SelectionManager = (function() {
         that.createApp.deleteSelectedEntities();
     };
 
-    that.copyIdFromSelectedEntity = function() {
-        if (that.selections.length !== 1) {
+    that.copyIdsFromSelectedEntities = function() {
+        if (that.selections.length === 0) {
             audioFeedback.rejection();
-        } else {
+        } else if (that.selections.length === 1) {
             Window.copyToClipboard(that.selections[0]);
+            audioFeedback.confirmation();
+        } else {
+            Window.copyToClipboard(JSON.stringify(that.selections));
             audioFeedback.confirmation();
         }
     };
