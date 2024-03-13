@@ -587,7 +587,7 @@ void CharacterController::setLocalBoundingBox(const glm::vec3& minCorner, const 
     }
 
     // it's ok to change offset immediately -- there are no thread safety issues here
-    _shapeLocalOffset = minCorner + 0.5f * scale;
+    _shapeLocalOffset = glm::vec3((minCorner + 0.5f * scale).x, (minCorner + 0.5f * scale).y, -(minCorner + 0.5f * scale).z);
 
     if (_rigidBody) {
         // update CCD with new _radius
