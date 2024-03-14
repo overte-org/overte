@@ -42,7 +42,7 @@ static const int HASH_ITERATIONS = 65535;
 
 // Salt string for the hardware ID, makes our IDs unique to our project.
 // Changing this results in different hardware IDs being computed.
-static const QByteArray HASH_SALT{"Vircadia"};
+static const QByteArray HASH_SALT{"Overte"};
 
 static const QString FALLBACK_FINGERPRINT_KEY = "fallbackFingerprint";
 
