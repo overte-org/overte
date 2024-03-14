@@ -40,7 +40,7 @@ const QStringList FSTReader::_preferredFieldOrder{NAME_FIELD, TYPE_FIELD, SCALE_
 
 std::shared_ptr<FSTReader> FSTReader::getReader(const QByteArray &data) {
     if (data.length() >= 3) {
-        if (data[0] == 0xd9 && data[1] == 0xd9 && data[2] == 0xf7) {
+        if (data.at(0) == (char)0xd9 && data.at(1) == (char)0xd9 && data.at(2) == (char)0xf7) {
             // Looks like CBOR (Binary) JSON
             // https://en.wikipedia.org/wiki/CBOR
             return std::make_shared<FSTJsonReader>();
