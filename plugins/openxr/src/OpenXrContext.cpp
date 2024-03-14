@@ -49,11 +49,14 @@ static bool initFunctionPointers(XrInstance instance) {
 OpenXrContext::OpenXrContext() {
     _isSupported = initPreGraphics();
     if (!_isSupported) {
-        qCCritical(xr_context_cat, "Pre graphics init failed.");
+        qCWarning(xr_context_cat, "OpenXR is not supported.");
     }
 }
 
 OpenXrContext::~OpenXrContext() {
+    if (_instance == XR_NULL_HANDLE) {
+        return;
+    }
     XrResult res = xrDestroyInstance(_instance);
     if (res != XR_SUCCESS) {
         qCCritical(xr_context_cat, "Failed to destroy OpenXR instance");
@@ -65,7 +68,13 @@ bool OpenXrContext::initInstance() {
     uint32_t count = 0;
     XrResult result = xrEnumerateInstanceExtensionProperties(nullptr, 0, &count, nullptr);
 
-    if (!xrCheck(XR_NULL_HANDLE, result, "Failed to enumerate number of extension properties"))
+    // Since this is the first OpenXR call we do, check here if RUNTIME_UNAVAILABLE is returned.
+    if (result == XR_ERROR_RUNTIME_UNAVAILABLE) {
+        qCCritical(xr_context_cat, "XR_ERROR_RUNTIME_UNAVAILABLE: Is XR_RUNTIME_JSON set correctly?");
+        return false;
+    }
+
+    if (!xrCheck(XR_NULL_HANDLE, result, "Failed to enumerate number of extensions."))
         return false;
 
     std::vector<XrExtensionProperties> properties;
@@ -75,7 +84,7 @@ bool OpenXrContext::initInstance() {
     }
 
     result = xrEnumerateInstanceExtensionProperties(nullptr, count, &count, properties.data());
-    if (!xrCheck(XR_NULL_HANDLE, result, "Failed to enumerate extension properties"))
+    if (!xrCheck(XR_NULL_HANDLE, result, "Failed to enumerate extensions."))
         return false;
 
     bool openglSupported = false;
@@ -109,7 +118,13 @@ bool OpenXrContext::initInstance() {
   };
 
     result = xrCreateInstance(&info, &_instance);
-    if (!xrCheck(XR_NULL_HANDLE, result, "Failed to create XR instance."))
+
+    if (result == XR_ERROR_RUNTIME_FAILURE) {
+        qCCritical(xr_context_cat, "XR_ERROR_RUNTIME_FAILURE: Is the OpenXR runtime up and running?");
+        return false;
+    }
+
+    if (!xrCheck(XR_NULL_HANDLE, result, "Failed to create OpenXR instance."))
         return false;
 
     if (!initFunctionPointers(_instance))
