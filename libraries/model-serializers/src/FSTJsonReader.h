@@ -1,5 +1,7 @@
 #include "FSTReader.h"
 #include <QSet>
+#include <QJsonParseError>
+
 
 Q_DECLARE_LOGGING_CATEGORY(fst_reader_json_logging)
 
@@ -17,6 +19,9 @@ public:
     virtual QByteArray writeMapping(const Mapping& mapping) override;
 
 private:
+    const int ERROR_CONTEXT_CHARACTERS = 80;
+
     static QSet<QString> _jsonFields;
     void variantToJSon(const QVariant &variant, QJsonObject &);
+    void logError(const QByteArray &data, const QJsonParseError &error, const QString &field = QString());
 };
