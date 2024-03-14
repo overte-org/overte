@@ -40,6 +40,7 @@
 #include "AvatarAudioStream.h"
 #include "InjectedAudioStream.h"
 #include "crash-handler/CrashHandler.h"
+#include "../AssignmentDynamicFactory.h"
 #include "../entities/AssignmentParentFinder.h"
 
 using namespace std;
@@ -63,6 +64,9 @@ unordered_map<QString, AudioMixer::ZoneSettings> AudioMixer::_audioZones;
 AudioMixer::AudioMixer(ReceivedMessage& message) :
     ThreadedAssignment(message)
 {
+
+    DependencyManager::registerInheritance<EntityDynamicFactoryInterface, AssignmentDynamicFactory>();
+    DependencyManager::set<AssignmentDynamicFactory>();
 
     // Always clear settings first
     // This prevents previous assignment settings from sticking around
