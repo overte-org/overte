@@ -287,8 +287,6 @@ public:
         _glUniformMatrix3fv(location, 1, false, glm::value_ptr(v));
     }
 
-    void _glColor4f(float red, float green, float blue, float alpha);
-
     // Maybe useful but shoudln't be public. Please convince me otherwise
     // Well porting to gles i need it...
     void runLambda(std::function<void()> f);
@@ -362,8 +360,6 @@ public:
         COMMAND_glUniform4iv,
         COMMAND_glUniformMatrix3fv,
         COMMAND_glUniformMatrix4fv,
-
-        COMMAND_glColor4f,
 
         COMMAND_pushProfileRange,
         COMMAND_popProfileRange,
