@@ -271,14 +271,14 @@ void Keyboard::createKeyboard() {
 
     QVariantMap leftStylusProperties {
         { "hand", LEFT_HAND_CONTROLLER_INDEX },
-        { "filter", PickScriptingInterface::getPickLocalEntities() },
+        { "filter", PickFilter::getBitMask(PickFilter::FlagBit::LOCAL_ENTITIES) },
         { "model", modelProperties },
         { "tipOffset", vec3toVariant(MALLET_TIP_OFFSET) }
     };
 
     QVariantMap rightStylusProperties {
         { "hand", RIGHT_HAND_CONTROLLER_INDEX },
-        { "filter", PickScriptingInterface::getPickLocalEntities() },
+        { "filter", PickFilter::getBitMask(PickFilter::FlagBit::LOCAL_ENTITIES) },
         { "model", modelProperties },
         { "tipOffset", vec3toVariant(MALLET_TIP_OFFSET) }
     };
