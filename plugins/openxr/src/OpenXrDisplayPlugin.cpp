@@ -23,6 +23,7 @@ constexpr GLint XR_PREFERRED_COLOR_FORMAT = GL_SRGB8_ALPHA8;
 
 OpenXrDisplayPlugin::OpenXrDisplayPlugin(std::shared_ptr<OpenXrContext> c) {
     _context = c;
+    _presentOnlyOnce = true;
 }
 
 bool OpenXrDisplayPlugin::isSupported() const {
