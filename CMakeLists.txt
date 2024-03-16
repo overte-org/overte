@@ -184,8 +184,13 @@ if(OVERTE_WARNINGS_WHITELIST)
 endif()
 
 if(OVERTE_WARNINGS_AS_ERRORS)
-    set(ENV{CXXFLAGS} "$ENV{CXXFLAGS} -Werror")
-    set(ENV{CFLAGS} "$ENV{CXXFLAGS} -Werror")
+    if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "" AND WIN32))
+      set(ENV{CXXFLAGS} "$ENV{CXXFLAGS} /WX")
+      set(ENV{CFLAGS} "$ENV{CXXFLAGS} /WX")
+    else()
+      set(ENV{CXXFLAGS} "$ENV{CXXFLAGS} -Werror")
+      set(ENV{CFLAGS} "$ENV{CXXFLAGS} -Werror")
+    endif()
 endif()
 
 
