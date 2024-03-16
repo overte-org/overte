@@ -279,6 +279,7 @@ bool QmlWindowClass::isVisible() {
         return quickItem->isVisible();
     } else {
         qDebug() << "QmlWindowClass::isVisible: asQuickItem() returned NULL";
+        return false;
     }
 }
 

@@ -25,7 +25,9 @@
 
 #if defined(_MSC_VER) && _MSC_VER < 1900
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 
 // The following struct is not compliant with the HF coding standard, but uses underscores to match the classes

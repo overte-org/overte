@@ -165,7 +165,7 @@ namespace REPLACE_ME_WITH_UNIQUE_NAME {
           * settings = null; // optional best pratice; allows the object to be reclaimed ASAP by the JS garbage collector
           */
         ScriptValue getScopedSettings(const QString& scope) {
-            Q_ASSERT(engine);
+            Q_ASSERT(engine());
             auto engine = Scriptable::engine();
             if (!engine) {
                 return ScriptValue();
