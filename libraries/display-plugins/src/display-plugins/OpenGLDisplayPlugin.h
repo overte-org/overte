@@ -205,6 +205,8 @@ protected:
     QImage getScreenshot(float aspectRatio);
     QImage getSecondaryCameraScreenshot();
 
+    bool _presentOnlyOnce = false;
+
 private:
     static Setting::Handle<bool> _extraLinearToSRGBConversionSetting;
 };
