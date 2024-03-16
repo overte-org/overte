@@ -5,6 +5,7 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
+
 #include "OffscreenQmlSurface.h"
 
 #include <unordered_set>
@@ -41,6 +42,7 @@
 #include <AbstractUriHandler.h>
 #include <AccountManager.h>
 #include <NetworkAccessManager.h>
+
 #include <GLMHelpers.h>
 #include <AudioClient.h>
 #include <shared/LocalFileAccessGate.h>
