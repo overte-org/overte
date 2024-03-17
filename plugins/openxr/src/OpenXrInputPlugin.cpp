@@ -115,8 +115,15 @@ bool OpenXrInputPlugin::InputDevice::triggerHapticPulse(float strength, float du
 
     std::unique_lock<std::recursive_mutex> locker(_lock);
 
-    // TODO: convert duration and strength to openxr values.
-    if (!_actions.at("/output/haptic")->applyHaptic(0, XR_MIN_HAPTIC_DURATION, XR_FREQUENCY_UNSPECIFIED, 0.5f)) {
+    // TODO: Haptic values in overte are always strengh 1.0 and duration only 13.0 or 16.0. So it's not really used.
+    // The duration does not seem to map to a time unit. 16ms seems quite short for a haptic vibration.
+    // Let's assume the duration is in 10 milliseconds.
+    // Let's also assume strength 1.0 is the middle value, which is 0.5 in OpenXR.
+    using namespace std::chrono;
+    nanoseconds durationNs = duration_cast<nanoseconds>(milliseconds(static_cast<int>(duration * 10.0f)));
+    XrDuration xrDuration = durationNs.count();
+
+    if (!_actions.at("/output/haptic")->applyHaptic(index, xrDuration, XR_FREQUENCY_UNSPECIFIED, 0.5f * strength)) {
         qCCritical(xr_input_cat, "Failed to apply haptic feedback!");
     }
 
