@@ -11,9 +11,15 @@
 
 #include <sstream>
 
-#include <GL/glx.h>
+#if defined(Q_OS_LINUX)
+  #include <GL/glx.h>
+  #define XR_USE_PLATFORM_XLIB
+#elif defined(Q_OS_WIN)
+  #define XR_USE_PLATFORM_WIN32
+#else
+  #error "Unsupported platform"
+#endif
 
-#define XR_USE_PLATFORM_XLIB
 #define XR_USE_GRAPHICS_API_OPENGL
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
@@ -178,14 +184,22 @@ bool OpenXrContext::requestExitSession() {
 }
 
 bool OpenXrContext::initSession() {
-    // TODO: Make cross platform
+#if defined(Q_OS_LINUX)
     XrGraphicsBindingOpenGLXlibKHR binding = {
         .type = XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR,
         .xDisplay = XOpenDisplay(nullptr),
         .glxDrawable = glXGetCurrentDrawable(),
         .glxContext = glXGetCurrentContext(),
     };
-
+#elif defined(Q_OS_WIN)
+    XrGraphicsBindingOpenGLWin32KHR binding = {
+        .type = XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR,
+        .hDC = wglGetCurrentDC(),
+        .hGLRC = wglGetCurrentContext(),
+    };
+#else
+  #error "Unsupported platform"
+#endif
     XrSessionCreateInfo info = {
         .type = XR_TYPE_SESSION_CREATE_INFO,
         .next = &binding,
