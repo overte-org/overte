@@ -18,8 +18,8 @@
       { "from": "Index.RightSecondaryThumbTouch", "to": "Standard.RightSecondaryThumbTouch" },
       { "from": "Index.RightThumbUp", "to": "Standard.RightThumbUp" },
 
-      { "from": "Index.LY", "to": "Standard.LY" },
-      { "from": "Index.LX", "to": "Standard.LX" },
+      { "from": "Index.LY", "to": "Actions.TranslateZ", "filters": ["invert"] },
+      { "from": "Index.LX", "to": "Actions.TranslateX" },
       { "from": "Index.RY", "to": "Standard.RY" },
       { "from": "Index.RX", "to": "Standard.RX" },
       { "from": "Index.LS", "to": "Standard.LS" },
