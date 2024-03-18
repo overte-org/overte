@@ -1,7 +1,7 @@
 //  edit.js
 //
-//  Created by Brad Hefta-Gaub on 10/2/14.
-//  Persist toolbar by HRS 6/11/15.
+//  Created by Brad Hefta-Gaub on October 2nd, 2014.
+//  Persist toolbar by HRS on June 2nd, 2015.
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
 //  Copyright 2022-2024 Overte e.V.
@@ -121,6 +121,7 @@
 
     var copiedPosition;
     var copiedRotation;
+    var copiedDimensions;
 
     var cameraManager = new CameraManager();
 
@@ -2707,12 +2708,32 @@
                         copiedRotation = properties.rotation;
                         Window.copyToClipboard(JSON.stringify(copiedRotation));
                     }
+                } else if (data.action === "copyDimensions") {
+                    if (selectionManager.selections.length === 1) {
+                        selectionManager.saveProperties();
+                        properties = selectionManager.savedProperties[selectionManager.selections[0]];
+                        copiedDimensions = properties.dimensions;
+                        Window.copyToClipboard(JSON.stringify(copiedDimensions));
+                    }
                 } else if (data.action === "pastePosition") {
                     if (copiedPosition !== undefined && selectionManager.selections.length > 0 && SelectionManager.hasUnlockedSelection()) {
                         selectionManager.saveProperties();
                         for (i = 0; i < selectionManager.selections.length; i++) {
                             Entities.editEntity(selectionManager.selections[i], {
                                 position: copiedPosition
+                            });
+                        }
+                        createApp.pushCommandForSelections();
+                        selectionManager._update(false, this);
+                    } else {
+                        audioFeedback.rejection();
+                    }
+                } else if (data.action === "pasteDimensions") {
+                    if (copiedDimensions !== undefined && selectionManager.selections.length > 0 && SelectionManager.hasUnlockedSelection()) {
+                        selectionManager.saveProperties();
+                        for (i = 0; i < selectionManager.selections.length; i++) {
+                            Entities.editEntity(selectionManager.selections[i], {
+                                dimensions: copiedDimensions
                             });
                         }
                         createApp.pushCommandForSelections();

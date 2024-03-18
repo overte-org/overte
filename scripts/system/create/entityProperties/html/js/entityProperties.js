@@ -1,9 +1,9 @@
 //  entityProperties.js
 //
-//  Created by Ryan Huffman on 13 Nov 2014
+//  Created by Ryan Huffman on November 13th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -136,7 +136,7 @@ const GROUPS = [
     },
     {
         id: "shape",
-        label: "SHAPE",        
+        label: "SHAPE",
         properties: [
             {
                 label: "Shape",
@@ -161,7 +161,7 @@ const GROUPS = [
                 decimals: 2,
                 propertyID: "shapeAlpha",
                 propertyName: "alpha",
-            },            
+            },
         ]
     },
     {
@@ -393,7 +393,7 @@ const GROUPS = [
                 decimals: 2,
                 propertyID: "keyLight.shadowMaxDistance",
                 showPropertyRule: { "keyLightMode": "enabled" },
-            }    
+            }
         ]
     },    
     {
@@ -1459,6 +1459,12 @@ const GROUPS = [
                 spaceMode: PROPERTY_SPACE_MODE.LOCAL,
             },
             {
+                type: "buttons",
+                buttons: [  { id: "copyDimensions", label: "Copy Dimensions", className: "secondary", onClick: copyDimensionsProperty },
+                            { id: "pasteDimensions", label: "Paste Dimensions", className: "secondary", onClick: pasteDimensionsProperty } ],
+                propertyID: "copyPasteDimensions"
+            },
+            {
                 label: "Scale",
                 type: "number-draggable",
                 defaultValue: 100,
@@ -1915,14 +1921,17 @@ function setCopyPastePositionAndRotationAvailability (selectionLength, islocked)
     if (selectionLength === 1) {
         $('#property-copyPastePosition-button-copyPosition').attr('disabled', false);
         $('#property-copyPasteRotation-button-copyRotation').attr('disabled', false);
+        $('#property-copyPasteDimensions-button-copyDimensions').attr('disabled', false);
     } else {
         $('#property-copyPastePosition-button-copyPosition').attr('disabled', true);
-        $('#property-copyPasteRotation-button-copyRotation').attr('disabled', true);        
+        $('#property-copyPasteRotation-button-copyRotation').attr('disabled', true);
+        $('#property-copyPasteDimensions-button-copyDimensions').attr('disabled', true);
     }
     
     if (selectionLength > 0 && !islocked) {
         $('#property-copyPastePosition-button-pastePosition').attr('disabled', false);
         $('#property-copyPasteRotation-button-pasteRotation').attr('disabled', false);
+        $('#property-copyPasteDimensions-button-pasteDimensions').attr('disabled', false);
         if (selectionLength === 1) {
             $('#property-copyPasteRotation-button-setRotationToZero').attr('disabled', false);
         } else {
@@ -1932,6 +1941,7 @@ function setCopyPastePositionAndRotationAvailability (selectionLength, islocked)
         $('#property-copyPastePosition-button-pastePosition').attr('disabled', true);
         $('#property-copyPasteRotation-button-pasteRotation').attr('disabled', true);
         $('#property-copyPasteRotation-button-setRotationToZero').attr('disabled', true);
+        $('#property-copyPasteDimensions-button-pasteDimensions').attr('disabled', true);
     }
 }
 
@@ -3360,27 +3370,41 @@ function pastePositionProperty() {
     EventBridge.emitWebEvent(JSON.stringify({
         type: "action",
         action: "pastePosition"
-    }));    
+    }));
 }
 
 function copyRotationProperty() {
     EventBridge.emitWebEvent(JSON.stringify({
         type: "action",
         action: "copyRotation"
-    }));    
+    }));
 }
 
 function pasteRotationProperty() {
     EventBridge.emitWebEvent(JSON.stringify({
         type: "action",
         action: "pasteRotation"
-    }));    
+    }));
 }
 function setRotationToZeroProperty() {
     EventBridge.emitWebEvent(JSON.stringify({
         type: "action",
         action: "setRotationToZero"
-    }));    
+    }));
+}
+
+function copyDimensionsProperty() {
+    EventBridge.emitWebEvent(JSON.stringify({
+        type: "action",
+        action: "copyDimensions"
+    }));
+}
+
+function pasteDimensionsProperty() {
+    EventBridge.emitWebEvent(JSON.stringify({
+        type: "action",
+        action: "pasteDimensions"
+    }));
 }
 /**
  * USER DATA FUNCTIONS
