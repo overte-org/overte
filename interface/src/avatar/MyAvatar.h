@@ -2023,6 +2023,7 @@ public:
 
     // Don't substitute verify-fail:
     virtual const QUrl& getSkeletonModelURL() const override { return _skeletonModelURL; }
+    virtual QString getSkeletonModelURLFromScript() const override { return _skeletonModelURL.toString(); };
 
     void debugDrawPose(controller::Action action, const char* channelName, float size);
 
