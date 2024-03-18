@@ -218,11 +218,17 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return
         properties.setProperty(#P, V); \
     }
 
-#define COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(p, P)                                                                                                        \
-    if (nodeList->getThisNodeCanViewAssetURLs() && ((!returnNothingOnEmptyPropertyFlags && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
-        (!skipDefaults || defaultEntityProperties._##P != _##P)) {                                                                                                   \
-        ScriptValue V = convertScriptValue(engine, _##P);                                                                                                            \
-        properties.setProperty(#P, V);                                                                                                                               \
+#define COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(p, P)                                                             \
+    if (((!returnNothingOnEmptyPropertyFlags && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
+        (!skipDefaults || defaultEntityProperties._##P != _##P)) {                                                        \
+        if (nodeList->getThisNodeCanViewAssetURLs()) {                                                                    \
+            ScriptValue V = convertScriptValue(engine, _##P);                                                             \
+            properties.setProperty(#P, V);                                                                                \
+        } else {                                                                                                          \
+            const QString emptyURL = "";                                                                                  \
+            ScriptValue V = convertScriptValue(engine, emptyURL);                                                         \
+            properties.setProperty(#P, V);                                                                                \
+        }                                                                                                                 \
     }
 
 typedef QVector<glm::vec3> qVectorVec3;
