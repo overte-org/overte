@@ -1,9 +1,9 @@
 <!--
 //  gridControls.html
 //
-//  Created by Ryan Huffman on 6 Nov 2014
+//  Created by Ryan Huffman on November 6th, 2014
 //  Copyright 2014 High Fidelity, Inc.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -23,26 +23,28 @@
     <body onload='loaded();'>
         <div id="mode-section" class="section">
             <div class="property container">
-                <label for="create-app-mode">Create app mode </label>
+                <div id="creationModeLabel">
+                CREATION MODE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                </div>
                 <div class="property container">
                     <input name="create-app-mode" type="button" class="entity-list-menutitle" id="create-app-mode" value="Create app mode&#9662;" />
                 </div>
             </div>
-        <div class="tools-select-menu" id="edit-mode-menu" >
-            <button class="menu-button" id="edit-mode-object" >
-                <div class = "menu-item">
-                    <div class = "menu-item-caption">Object mode</div>
-                    <div class = "menu-item-shortcut"></div>
-                </div>
-            </button>
-            <button class="menu-button" id="edit-mode-voxel" >
-                <div class = "menu-item">
-                    <div class = "menu-item-caption">Voxel edit mode</div>
-                    <div class = "menu-item-shortcut"></div>
-                </div>
-            </button>
-        </div>        
-    </div>
+            <div class="tools-select-menu" id="edit-mode-menu" >
+                <button class="menu-button" id="edit-mode-object" >
+                    <div class = "menu-item">
+                        <div class = "menu-item-caption">Object mode</div>
+                        <div class = "menu-item-shortcut"></div>
+                    </div>
+                </button>
+                <button class="menu-button" id="edit-mode-voxel" >
+                    <div class = "menu-item">
+                        <div class = "menu-item-caption">Voxel edit mode</div>
+                        <div class = "menu-item-shortcut"></div>
+                    </div>
+                </button>
+            </div>        
+        </div>
         <div id="voxels-section" class="section">
             <h2>Voxel edit settings</h2>
             <div class="property container">
@@ -76,9 +78,9 @@
                 </button>
             </div>
             <div class="property container">
-                <label for="voxel-remove">&nbsp;&nbsp;Remove voxels</label>
-                <div style="width: 100%">
-                    <input type='checkbox' id="voxel-remove" style="width: 100%">
+                <label for="voxel-remove">Remove voxels</label>
+                <div style="width: 100%;">
+                    <input type='checkbox' id="voxel-remove" style="width: 100%;">
                     <label for="voxel-remove">&nbsp;</label>
                 </div>
                 <div class="property container">
@@ -86,13 +88,14 @@
                 </div>
             </div>
             <div class="tools-help-popup" id="voxel-help-popup" >
-                <p>To edit voxels, Voxel Edit Mode needs to be selected.</p>
-                <p>Desktop mode:</p>
-                <p>Click the left mouse button to add a voxel. Click the middle mouse button to remove a voxel. Hold the mouse button and move the mouse to add or remove voxels in a single plane. The plane is determined by the direction in which you are looking when first voxel is added or removed (for example, look downwards to draw in horizontal plane).</p>
-                <p>VR mode:</p>
-                <p>Press the trigger to add a voxel. Press the trigger while holding the grip to remove a voxel. Hold the trigger and move the controller to add or remove voxels in a single plane. The plane is determined by the direction in which the controller's ray points when the first voxel is added or removed (for example point downwards to draw in the horizontal plane). Hold both grips and move your hands together or apart to change the size of the edit sphere.</p>
+                To edit voxels, "<b>Voxel Edit Mode</b>" needs to be selected.<br><br>
+                <b>Desktop:</b><br>
+                Click the left mouse button to add a voxel. Click the middle mouse button to remove a voxel. Hold the mouse button and move the mouse to add or remove voxels in a single plane. The plane is determined by the direction in which you are looking when first voxel is added or removed (for example, look downwards to draw in horizontal plane).<br><br>
+                <b>VR:</b><br>
+                Press the trigger to add a voxel. Press the trigger while holding the grip to remove a voxel. Hold the trigger and move the controller to add or remove voxels in a single plane. The plane is determined by the direction in which the controller's ray points when the first voxel is added or removed (for example point downwards to draw in the horizontal plane). Hold both grips and move your hands together or apart to change the size of the edit sphere.
             </div>
         </div>
+        <div class="simpleSeparator"></div>
         <div id="grid-section" class="section">
             <h2>Grid settings</h2>
             <div class="property container">
