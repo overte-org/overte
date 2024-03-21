@@ -96,6 +96,7 @@ macro (setup_testcase_dependencies)
     add_custom_command(TARGET ${TARGET_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/fst )
     add_custom_command(TARGET ${TARGET_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/interface/resources/meshes/*.fst ${CMAKE_CURRENT_BINARY_DIR}/fst )
     add_custom_command(TARGET ${TARGET_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/interface/resources/serverless/Models/*.fst ${CMAKE_CURRENT_BINARY_DIR}/fst )
+    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/tests/model-serializers/data/*.fst ${CMAKE_CURRENT_BINARY_DIR}/fst )
   endif()
 
   package_libraries_for_deployment()
