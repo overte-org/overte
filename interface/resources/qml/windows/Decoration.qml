@@ -59,11 +59,6 @@ Rectangle {
     color: Qt.rgba(0,0,0,0.8)
     radius: 0 // hifi.dimensions.borderRadius
 
-    Text {
-
-    }
-
-
     // Enable dragging of the window,
     // detect mouseover of the window (including decoration)
     MouseArea {
