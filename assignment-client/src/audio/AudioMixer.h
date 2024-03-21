@@ -14,7 +14,7 @@
 
 #include <QtCore/QSharedPointer>
 
-#include <AABox.h>
+#include <Transform.h>
 #include <AudioHRTF.h>
 #include <AudioRingBuffer.h>
 #include <ThreadedAssignment.h>
@@ -24,6 +24,8 @@
 
 #include "AudioMixerStats.h"
 #include "AudioMixerSlavePool.h"
+
+#include "../entities/EntityTreeHeadlessViewer.h"
 
 class PositionalAudioStream;
 class AvatarAudioStream;
@@ -36,28 +38,22 @@ class AudioMixer : public ThreadedAssignment {
 public:
     AudioMixer(ReceivedMessage& message);
 
-
-    struct ZoneDescription {
-        QString name;
-        AABox area;
-    };
     struct ZoneSettings {
-        int source;
-        int listener;
-        float coefficient;
-    };
-    struct ReverbSettings {
-        int zone;
-        float reverbTime;
-        float wetLevel;
+        glm::mat4 inverseTransform;
+        float volume { FLT_MAX };
+
+        bool reverbEnabled { false };
+        float reverbTime { 0.0f };
+        float wetLevel { 0.0f };
+
+        std::vector<QString> listeners;
+        std::vector<float> coefficients;
     };
 
     static int getStaticJitterFrames() { return _numStaticJitterFrames; }
     static bool shouldMute(float quietestFrame) { return quietestFrame > _noiseMutingThreshold; }
     static float getAttenuationPerDoublingInDistance() { return _attenuationPerDoublingInDistance; }
-    static const std::vector<ZoneDescription>& getAudioZones() { return _audioZones; }
-    static const std::vector<ZoneSettings>& getZoneSettings() { return _zoneSettings; }
-    static const std::vector<ReverbSettings>& getReverbSettings() { return _zoneReverbSettings; }
+    static const std::unordered_map<QString, ZoneSettings>& getAudioZones() { return _audioZones; }
     static const std::pair<QString, CodecPluginPointer> negotiateCodec(std::vector<QString> codecs);
 
     static bool shouldReplicateTo(const Node& from, const Node& to) {
@@ -72,12 +68,17 @@ public slots:
     void run() override;
     void sendStatsPacket() override;
 
+    // Audio zone possibly changed
+    void entityAdded(EntityItem* entity);
+    void entityRemoved(EntityItem* entity);
+
 private slots:
     // packet handlers
     void handleMuteEnvironmentPacket(QSharedPointer<ReceivedMessage> packet, SharedNodePointer sendingNode);
     void handleNodeMuteRequestPacket(QSharedPointer<ReceivedMessage> packet, SharedNodePointer sendingNode);
     void handleNodeKilled(SharedNodePointer killedNode);
     void handleKillAvatarPacket(QSharedPointer<ReceivedMessage> packet, SharedNodePointer sendingNode);
+    void handleOctreePacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer senderNode);
 
     void queueAudioPacket(QSharedPointer<ReceivedMessage> packet, SharedNodePointer sendingNode);
     void queueReplicatedAudioPacket(QSharedPointer<ReceivedMessage> packet);
@@ -146,14 +147,17 @@ private:
     static std::map<QString, CodecPluginPointer> _availableCodecs;
     static QStringList _codecPreferenceOrder;
 
-    static std::vector<ZoneDescription> _audioZones;
-    static std::vector<ZoneSettings> _zoneSettings;
-    static std::vector<ReverbSettings> _zoneReverbSettings;
+    static std::unordered_map<QString, ZoneSettings> _audioZones;
 
     float _throttleStartTarget = 0.9f;
     float _throttleBackoffTarget = 0.44f;
 
     AudioMixerSlave::SharedData _workerSharedData;
+
+    void setupEntityQuery();
+
+    // Attach to entity tree for audio zone info.
+    EntityTreeHeadlessViewer _entityViewer;
 };
 
 #endif // hifi_AudioMixer_h

@@ -621,6 +621,42 @@ const GROUPS = [
         ]
     },
     {
+        id: "zone_audio",
+        label: "ZONE AUDIO",
+        properties: [
+            {
+                label: "Enable Reverb",
+                type: "bool",
+                propertyID: "audio.reverbEnabled"
+            },
+            {
+                label: "Reverb Time",
+                type: "number-draggable",
+                min: 0,
+                max: 10,
+                step: 0.1,
+                decimals: 2,
+                propertyID: "audio.reverbTime",
+                showPropertyRule: { "audio.reverbEnabled": "true" },
+            },
+            {
+                label: "Reverb Wet Level",
+                type: "number-draggable",
+                min: 0,
+                max: 100,
+                step: 1,
+                decimals: 1,
+                propertyID: "audio.reverbWetLevel",
+                showPropertyRule: { "audio.reverbEnabled": "true" },
+            },
+            {
+                label: "Listener Zones",
+                type: "multipleZonesSelection",
+                propertyID: "audio.listenerZones",
+            }
+        ]
+    },
+    {
         id: "model",
         label: "MODEL",
         properties: [
@@ -1764,7 +1800,7 @@ const GROUPS_PER_TYPE = {
   Shape: [ 'base', 'shape', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Text: [ 'base', 'text', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Zone: [ 'base', 'zone', 'zone_key_light', 'zone_skybox', 'zone_ambient_light', 'zone_haze', 
-            'zone_bloom', 'zone_avatar_priority', 'spatial', 'behavior', 'scripts', 'physics' ],
+            'zone_bloom', 'zone_avatar_priority', 'zone_audio', 'spatial', 'behavior', 'scripts', 'physics' ],
   Model: [ 'base', 'model', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Image: [ 'base', 'image', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Web: [ 'base', 'web', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
@@ -2847,10 +2883,18 @@ function createVec2Property(property, elProperty) {
 function updateVectorMinMax(property) {
     let min = property.data.min;
     let max = property.data.max;
-    property.elNumberX.updateMinMax(min, max);
-    property.elNumberY.updateMinMax(min, max);
-    if (property.elNumberZ) {
-        property.elNumberZ.updateMinMax(min, max);
+    if (property.elNumberX) {
+        property.elNumberX.updateMinMax(min, max);
+        property.elNumberY.updateMinMax(min, max);
+        if (property.elNumberZ) {
+            property.elNumberZ.updateMinMax(min, max);
+        }
+    } else if (property.elNumberR) {
+        property.elNumberR.updateMinMax(min, max);
+        property.elNumberG.updateMinMax(min, max);
+        if (property.elNumberB) {
+            property.elNumberB.updateMinMax(min, max);
+        }
     }
 }
 
@@ -3868,6 +3912,7 @@ function addZoneToZonesSelection(propertyId, id) {
     hiddenField.value = JSON.stringify(selectedZones);
     displaySelectedZones(propertyId, true);
     let propertyName = propertyId.replace("property-", "");
+    propertyName = propertyName.replace("-", ".");
     updateProperty(propertyName, selectedZones, false);
     document.getElementById("zones-select-selector-list-panel-" + propertyId).style.display = "none";
 }
@@ -3885,6 +3930,7 @@ function removeZoneFromZonesSelection(propertyId, zoneId) {
     hiddenField.value = JSON.stringify(selectedZones);
     displaySelectedZones(propertyId, true);
     let propertyName = propertyId.replace("property-", "");
+    propertyName = propertyName.replace("-", ".");
     updateProperty(propertyName, selectedZones, false);
 }
 

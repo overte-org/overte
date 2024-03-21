@@ -22,6 +22,7 @@
 #include "SkyboxPropertyGroup.h"
 #include "HazePropertyGroup.h"
 #include "BloomPropertyGroup.h"
+#include "ZoneAudioPropertyGroup.h"
 
 class ZoneEntityItem : public EntityItem {
 public:
@@ -46,10 +47,9 @@ public:
                                     OctreeElement::AppendState& appendState) const override;
 
     virtual int readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
-                                                ReadBitstreamToTreeParams& args,
-                                                EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
-                                                bool& somethingChanged) override;
-
+                                                 ReadBitstreamToTreeParams& args,
+                                                 EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                 bool& somethingChanged) override;
 
 
     static bool getZonesArePickable() { return _zonesArePickable; }
@@ -90,6 +90,7 @@ public:
     
     const HazePropertyGroup& getHazeProperties() const { return _hazeProperties; }
     const BloomPropertyGroup& getBloomProperties() const { return _bloomProperties; }
+    const ZoneAudioPropertyGroup& getAudioProperties() const { return _audioProperties; }
 
     bool getFlyingAllowed() const { return _flyingAllowed; }
     void setFlyingAllowed(bool value) { _flyingAllowed = value; }
@@ -152,6 +153,7 @@ protected:
     SkyboxPropertyGroup _skyboxProperties;
     HazePropertyGroup _hazeProperties;
     BloomPropertyGroup _bloomProperties;
+    ZoneAudioPropertyGroup _audioProperties;
 
     bool _flyingAllowed { DEFAULT_FLYING_ALLOWED };
     bool _ghostingAllowed { DEFAULT_GHOSTING_ALLOWED };
@@ -167,7 +169,7 @@ protected:
     bool _keyLightPropertiesChanged { false };
     bool _ambientLightPropertiesChanged { false };
     bool _skyboxPropertiesChanged { false };
-    bool _hazePropertiesChanged{ false };
+    bool _hazePropertiesChanged { false };
     bool _bloomPropertiesChanged { false };
 
     static bool _drawZoneBoundaries;

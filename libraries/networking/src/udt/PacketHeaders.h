@@ -293,6 +293,7 @@ enum class EntityVersion : PacketVersion {
     Mirror,
     EntityTags,
     WantsKeyboardFocus,
+    AudioZones,
 
     // Add new versions above here
     NUM_PACKET_TYPE,
