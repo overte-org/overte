@@ -65,7 +65,8 @@ const QString SETTINGS_VIEWPOINT_KEY = "viewpoint";
 DomainServerSettingsManager::DomainServerSettingsManager() {
     // load the description object from the settings description
 
-    QFile descriptionFile(PathUtils::getSettingsDescriptionPath());
+    QString descriptionFilePath = PathUtils::getSettingsDescriptionPath();
+    QFile descriptionFile(descriptionFilePath);
     if (!descriptionFile.open(QIODevice::ReadOnly)) {
         qCritical() << "Failed to read settings description file" << descriptionFile;
         // Domain server will abort after failing on the attempt to parse the config below
