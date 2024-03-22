@@ -406,6 +406,14 @@ MyAvatar::~MyAvatar() {
     if (_addAvatarEntitiesToTreeTimer.isActive()) {
         _addAvatarEntitiesToTreeTimer.stop();
     }
+    std::lock_guard<std::mutex> lock(_scriptEngineLock);
+    if (_scriptEngine) {
+        if (_scriptEngineThread) {
+            _scriptEngineThread->quit();
+            _scriptEngineThread->wait();
+        }
+        _scriptEngine.reset();
+    }
 }
 
 QString MyAvatar::getDominantHand() const {
@@ -2092,8 +2100,16 @@ void MyAvatar::avatarEntityDataToJson(QJsonObject& root) const {
 }
 
 void MyAvatar::loadData() {
-    if (!_scriptEngine) {
-        _scriptEngine = newScriptEngine();
+    {
+        std::lock_guard<std::mutex> lock(_scriptEngineLock);
+        if (!_scriptEngine) {
+            _scriptEngine = newScriptEngine();
+            if (!_scriptEngineThread) {
+                _scriptEngineThread.reset(new QThread());
+                _scriptEngine->setThread(_scriptEngineThread.get());
+                _scriptEngineThread->start();
+            }
+        }
     }
     getHead()->setBasePitch(_headPitchSetting.get());
 

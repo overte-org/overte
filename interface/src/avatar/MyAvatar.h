@@ -3101,8 +3101,12 @@ private:
     mutable std::set<EntityItemID> _staleCachedAvatarEntityBlobs;
     //
     // keep a ScriptEngine around so we don't have to instantiate on the fly (these are very slow to create/delete)
+    // TODO: profile if it performs better when script engine is on avatar thread or on its own thread
+    // Own thread is safer from deadlocks
     mutable std::mutex _scriptEngineLock;
     ScriptEnginePointer _scriptEngine { nullptr };
+    std::shared_ptr<QThread> _scriptEngineThread { nullptr };
+
     bool _needToSaveAvatarEntitySettings { false };
 
     bool _reactionTriggers[NUM_AVATAR_TRIGGER_REACTIONS] { false, false };
