@@ -542,6 +542,10 @@ QString ScriptManager::getFilename() const {
     return lastPart;
 }
 
+QString ScriptManager::getAbsoluteFilename() const {
+    return _fileNameString;
+}
+
 bool ScriptManager::hasValidScriptSuffix(const QString& scriptFileName) {
     QFileInfo fileInfo(scriptFileName);
     QString scriptSuffixToLower = fileInfo.completeSuffix().toLower();

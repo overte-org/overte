@@ -73,6 +73,7 @@
 #include "MovingEntitiesOperator.h"
 #include "SceneScriptingInterface.h"
 #include "WarningsSuppression.h"
+#include "ScriptPermissions.h"
 
 using namespace std;
 
@@ -2236,6 +2237,9 @@ AttachmentData MyAvatar::loadAttachmentData(const QUrl& modelURL, const QString&
     return attachment;
 }
 
+bool MyAvatar::isMyAvatarURLProtected() const {
+    return !ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL);
+}
 
 int MyAvatar::parseDataFromBuffer(const QByteArray& buffer) {
     qCDebug(interfaceapp) << "Error: ignoring update packet for MyAvatar"
