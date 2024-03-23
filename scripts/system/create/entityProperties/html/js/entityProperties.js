@@ -1386,21 +1386,21 @@ const GROUPS = [
         label: "PROCEDURAL PARTICLES",
         properties: [
             {
-                label: "Num Particles",
+                label: "Particles",
                 type: "number-draggable",
                 propertyID: "numParticles",
                 min: 1,
                 max: 1000000
             },
             {
-                label: "Num Triangles Per Particle",
+                label: "Triangles Per Particle",
                 type: "number-draggable",
                 propertyID: "numTrianglesPerParticle",
                 min: 1,
                 max: 15
             },
             {
-                label: "Num Particle Update Props",
+                label: "Update Props",
                 type: "number-draggable",
                 propertyID: "numUpdateProps",
                 min: 1,
