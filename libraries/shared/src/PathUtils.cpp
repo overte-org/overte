@@ -42,20 +42,20 @@
 // The default values are only defined on Linux. On Windows and OSX the correct
 // procedure is to calculate the paths relative to where the binary is located.
 #ifdef Q_OS_LINUX
-#  ifndef VIRCADIA_DEFAULT_RESOURCES_PATH
-#    define VIRCADIA_DEFAULT_RESOURCES_PATH "/usr/share/vircadia/resources"
+#  ifndef OVERTE_DEFAULT_RESOURCES_PATH
+#    define OVERTE_DEFAULT_RESOURCES_PATH "/usr/share/overte/resources"
 #  endif
-#  ifndef VIRCADIA_DEFAULT_CONFIG_PATH
-#    define VIRCADIA_DEFAULT_CONFIG_PATH "/etc/vircadia"
+#  ifndef OVERTE_DEFAULT_CONFIG_PATH
+#    define OVERTE_DEFAULT_CONFIG_PATH "/etc/overte"
 #  endif
-#  ifndef VIRCADIA_DEFAULT_APPDATA_PATH
-#    define VIRCADIA_DEFAULT_APPDATA_PATH "/var/lib/vircadia"
+#  ifndef OVERTE_DEFAULT_APPDATA_PATH
+#    define OVERTE_DEFAULT_APPDATA_PATH "/var/lib/overte"
 #  endif
-#  ifndef VIRCADIA_DEFAULT_LOCAL_APPDATA_PATH
-#    define VIRCADIA_DEFAULT_LOCAL_APPDATA_PATH "/var/lib/vircadia"
+#  ifndef OVERTE_DEFAULT_LOCAL_APPDATA_PATH
+#    define OVERTE_DEFAULT_LOCAL_APPDATA_PATH "/var/lib/overte"
 #  endif
-#  ifndef VIRCADIA_DEFAULT_PLUGINS_PATH
-#    define VIRCADIA_DEFAULT_PLUGINS_PATH "/usr/lib/vircadia/plugins"
+#  ifndef OVERTE_DEFAULT_PLUGINS_PATH
+#    define OVERTE_DEFAULT_PLUGINS_PATH "/usr/lib/overte/plugins"
 #  endif
 #endif
 
@@ -92,7 +92,7 @@ static bool USE_SOURCE_TREE_RESOURCES() {
  *
  * This only applies on Linux systems. When running under a system account (uid < 1000),
  * we're assuming the server is installed server-wide as a package. In that case we'll be
- * looking for files in system paths like /usr/share/vircadia.
+ * looking for files in system paths like /usr/share/overte.
  *
  * When running as a normal user account we look for data relative to the binary's location,
  * and storing data in user-local directories like ~/.local/share.
@@ -101,9 +101,9 @@ static bool USE_SOURCE_TREE_RESOURCES() {
  * @return false Non-system user on Linux, or not a Linux system.
  */
 static bool isSystemUser() {
-    if ( qgetenv("VIRCADIA_FORCE_SYSTEM_PATHS").length() > 0 ) {
+    if ( qgetenv("OVERTE_FORCE_SYSTEM_PATHS").length() > 0 ) {
         // This is here to make debugging easier -- not intended as an useful setting for end-users.
-        qWarning() << "Forced usage of system paths through VIRCADIA_FORCE_SYSTEM_PATHS";
+        qWarning() << "Forced usage of system paths through OVERTE_FORCE_SYSTEM_PATHS";
         return true;
     }
 
@@ -126,15 +126,15 @@ static bool isSystemUser() {
  *
  * This only applies on Linux system. When running from a system location (/usr/bin or /usr/sbin),
  * we're assuming the program is installing system-wide as a package. We'll be looking for static files
- * in system paths like /usr/share/vircadia.
+ * in system paths like /usr/share/overte.
  *
  * @return true If system install
  * @return false Non-system install on Linux, or not Linux
  */
 static bool isSystemInstall() {
-    if ( qgetenv("VIRCADIA_FORCE_SYSTEM_INSTALL").length() > 0 ) {
+    if ( qgetenv("OVERTE_FORCE_SYSTEM_INSTALL").length() > 0 ) {
         // This is here to make debugging easier -- not intended as an useful setting for end-users.
-        qWarning() << "Forced usage of system install mode through VIRCADIA_FORCE_SYSTEM_INSTALL";
+        qWarning() << "Forced usage of system install mode through OVERTE_FORCE_SYSTEM_INSTALL";
         return true;
     }
 #ifdef Q_OS_LINUX
@@ -497,46 +497,46 @@ void PathUtils::initialize() {
         return;
     }
 
-    _server_resources_path = qgetenv("VIRCADIA_RESOURCES_PATH");
+    _server_resources_path = qgetenv("OVERTE_RESOURCES_PATH");
     if ( _server_resources_path.isEmpty() ) {
         if (isSystemInstall() || isSystemUser()) {
-            _server_resources_path = VIRCADIA_DEFAULT_RESOURCES_PATH;
+            _server_resources_path = OVERTE_DEFAULT_RESOURCES_PATH;
         } else {
             _server_resources_path = QCoreApplication::applicationDirPath() + "/resources";
         }
     }
 
-    _config_path = qgetenv("VIRCADIA_CONFIG_PATH");
+    _config_path = qgetenv("OVERTE_CONFIG_PATH");
     if ( _config_path.isEmpty() ) {
         if (isSystemUser()) {
-            _config_path = VIRCADIA_DEFAULT_CONFIG_PATH;
+            _config_path = OVERTE_DEFAULT_CONFIG_PATH;
         } else {
             _config_path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
         }
     }
 
-    _appdata_path = qgetenv("VIRCADIA_APPDATA_PATH");
+    _appdata_path = qgetenv("OVERTE_APPDATA_PATH");
     if ( _appdata_path.isEmpty()) {
         if (isSystemUser()) {
-            _appdata_path = VIRCADIA_DEFAULT_APPDATA_PATH;
+            _appdata_path = OVERTE_DEFAULT_APPDATA_PATH;
         } else {
             _appdata_path =  QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
         }
     }
 
-    _local_appdata_path = qgetenv("VIRCADIA_LOCAL_APPDATA_PATH");
+    _local_appdata_path = qgetenv("OVERTE_LOCAL_APPDATA_PATH");
     if ( _local_appdata_path.isEmpty()) {
         if (isSystemUser()) {
-            _local_appdata_path = VIRCADIA_DEFAULT_APPDATA_PATH;
+            _local_appdata_path = OVERTE_DEFAULT_APPDATA_PATH;
         } else {
             _local_appdata_path =  QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
         }
     }
 
-    _plugins_path = qgetenv("VIRCADIA_PLUGINS_PATH");
+    _plugins_path = qgetenv("OVERTE_PLUGINS_PATH");
     if ( _plugins_path.isEmpty()) {
         if (isSystemInstall()) {
-            _plugins_path = VIRCADIA_DEFAULT_PLUGINS_PATH;
+            _plugins_path = OVERTE_DEFAULT_PLUGINS_PATH;
         } else {
 #if defined(Q_OS_ANDROID)
             _plugins_path = QCoreApplication::applicationDirPath() + "/";
