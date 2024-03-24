@@ -313,6 +313,7 @@ void EntityScriptServer::run() {
     entityScriptingInterface->setEntityTree(_entityViewer.getTree());
 
     auto treePtr = _entityViewer.getTree();
+    treePtr->setIsServer(true);
     DependencyManager::set<AssignmentParentFinder>(treePtr);
 
     if (!_entitySimulation) {

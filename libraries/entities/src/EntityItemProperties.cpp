@@ -690,6 +690,16 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_GIZMO_TYPE, gizmoType);
     changedProperties += _ring.getChangedProperties();
 
+    // Sound
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_URL, soundURL);
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_VOLUME, volume);
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_TIME_OFFSET, timeOffset);
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_PITCH, pitch);
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_PLAYING, playing);
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_LOOP, loop);
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_POSITIONAL, positional);
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_LOCAL_ONLY, localOnly);
+
     return changedProperties;
 }
 
@@ -883,6 +893,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @see {@link Entities.EntityProperties-PolyLine|EntityProperties-PolyLine}
  * @see {@link Entities.EntityProperties-PolyVox|EntityProperties-PolyVox}
  * @see {@link Entities.EntityProperties-Shape|EntityProperties-Shape}
+ * @see {@link Entities.EntityProperties-Sound|EntityProperties-Sound}
  * @see {@link Entities.EntityProperties-Sphere|EntityProperties-Sphere}
  * @see {@link Entities.EntityProperties-Text|EntityProperties-Text}
  * @see {@link Entities.EntityProperties-Web|EntityProperties-Web}
@@ -1336,6 +1347,34 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     shape: "Cylinder",
  *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: -5 })),
  *     dimensions: { x: 0.4, y: 0.6, z: 0.4 },
+ *     lifetime: 300  // Delete after 5 minutes.
+ * });
+ */
+
+/*@jsdoc
+ * The <code>"Sound"</code> {@link Entities.EntityType|EntityType} plays a sound from a URL. It has properties in addition to
+ * the common {@link Entities.EntityProperties|EntityProperties}.
+ *
+ * @typedef {object} Entities.EntityProperties-Sound
+ * @property {string} soundURL="" - The URL of the sound to play, as a wav, mp3, or raw file.  Supports stereo and ambisonic.
+ * @property {boolean} playing=true - Whether or not the sound should play.
+ * @property {number} volume=1.0 - The volume of the sound, from <code>0</code> to <code>1</code>.
+ * @property {number} pitch=1.0 - The relative sample rate at which to resample the sound, within +/- 2 octaves.
+ * @property {number} timeOffset=0.0 - The time (in seconds) at which to start playback within the sound file.  If looping,
+ *     this only affects the first loop.
+ * @property {boolean} loop=true - Whether or not to loop the sound.
+ * @property {boolean} positional=true - Whether or not the volume of the sound should decay with distance.
+ * @property {boolean} localOnly=false - Whether or not the sound should play locally for everyone (unsynced), or synchronously
+ *     for everyone via the Entity Mixer.
+ * @example <caption>Create a Sound entity.</caption>
+ * var entity = Entities.addEntity({
+ *     type: "Sound",
+ *     soundURL: "https://themushroomkingdom.net/sounds/wav/lm/lm_gold_mouse.wav",
+ *     positional: true,
+ *     volume: 0.75,
+ *     localOnly: true,
+ *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.75, z: -4 })),
+ *     rotation: MyAvatar.orientation,
  *     lifetime: 300  // Delete after 5 minutes.
  * });
  */
@@ -1961,6 +2000,18 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         _ring.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
     }
 
+    // Sound only
+    if (_type == EntityTypes::Sound) {
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_URL, soundURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_VOLUME, volume);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_TIME_OFFSET, timeOffset);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_PITCH, pitch);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_PLAYING, playing);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_LOOP, loop);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_POSITIONAL, positional);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_LOCAL_ONLY, localOnly);
+    }
+
     /*@jsdoc
      * The axis-aligned bounding box of an entity.
      * @typedef {object} Entities.BoundingBox
@@ -2292,6 +2343,16 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(gizmoType, GizmoType);
     _ring.copyFromScriptValue(object, namesSet, _defaultSettings);
 
+    // Sound
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(soundURL, QString, setSoundURL);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(volume, float, setVolume);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(timeOffset, float, setTimeOffset);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(pitch, float, setPitch);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(playing, bool, setPlaying);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(loop, bool, setLoop);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(positional, bool, setPositional);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(localOnly, bool, setLocalOnly);
+
     // Handle conversions from old 'textures' property to "imageURL"
     if (namesSet.contains("textures")) {
         ScriptValue V = object.property("textures");
@@ -2577,6 +2638,16 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     // Gizmo
     COPY_PROPERTY_IF_CHANGED(gizmoType);
     _ring.merge(other._ring);
+
+    // Sound
+    COPY_PROPERTY_IF_CHANGED(soundURL);
+    COPY_PROPERTY_IF_CHANGED(volume);
+    COPY_PROPERTY_IF_CHANGED(timeOffset);
+    COPY_PROPERTY_IF_CHANGED(pitch);
+    COPY_PROPERTY_IF_CHANGED(playing);
+    COPY_PROPERTY_IF_CHANGED(loop);
+    COPY_PROPERTY_IF_CHANGED(positional);
+    COPY_PROPERTY_IF_CHANGED(localOnly);
 
     _lastEdited = usecTimestampNow();
 }
@@ -3002,6 +3073,16 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
             ADD_GROUP_PROPERTY_TO_MAP(PROP_MAJOR_TICK_MARKS_COLOR, Ring, ring, MajorTickMarksColor, majorTickMarksColor);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_MINOR_TICK_MARKS_COLOR, Ring, ring, MinorTickMarksColor, minorTickMarksColor);
         }
+
+        // Sound
+        ADD_PROPERTY_TO_MAP(PROP_SOUND_URL, SoundURL, soundURL, QString);
+        ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_SOUND_VOLUME, Volume, volume, float, 0.0f, 1.0f);
+        ADD_PROPERTY_TO_MAP(PROP_SOUND_TIME_OFFSET, TimeOffset, timeOffset, float);
+        ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_SOUND_PITCH, Pitch, pitch, float, 1.0f / 16.0f, 16.0f);
+        ADD_PROPERTY_TO_MAP(PROP_SOUND_PLAYING, Playing, playing, bool);
+        ADD_PROPERTY_TO_MAP(PROP_SOUND_LOOP, Loop, loop, bool);
+        ADD_PROPERTY_TO_MAP(PROP_SOUND_POSITIONAL, Positional, positional, bool);
+        ADD_PROPERTY_TO_MAP(PROP_SOUND_LOCAL_ONLY, LocalOnly, localOnly, bool);
     });
 
     auto iter = _propertyInfos.find(propertyName);
@@ -3448,6 +3529,17 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 _staticRing.setProperties(properties);
                 _staticRing.appendToEditPacket(packetData, requestedProperties, propertyFlags,
                     propertiesDidntFit, propertyCount, appendState);
+            }
+
+            if (properties.getType() == EntityTypes::Sound) {
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_URL, properties.getSoundURL());
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_VOLUME, properties.getVolume());
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_TIME_OFFSET, properties.getTimeOffset());
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_PITCH, properties.getPitch());
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_PLAYING, properties.getPlaying());
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_LOOP, properties.getLoop());
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_POSITIONAL, properties.getPositional());
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_LOCAL_ONLY, properties.getLocalOnly());
             }
         }
 
@@ -3911,6 +4003,17 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
         properties.getRing().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
     }
 
+    if (properties.getType() == EntityTypes::Sound) {
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_URL, QString, setSoundURL);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_VOLUME, float, setVolume);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_TIME_OFFSET, float, setTimeOffset);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_PITCH, float, setPitch);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_PLAYING, bool, setPlaying);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_LOOP, bool, setLoop);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_POSITIONAL, bool, setPositional);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_LOCAL_ONLY, bool, setLocalOnly);
+    }
+
     return valid;
 }
 
@@ -4240,6 +4343,16 @@ void EntityItemProperties::markAllChanged() {
     // Gizmo
     _gizmoTypeChanged = true;
     _ring.markAllChanged();
+
+    // Sound
+    _soundURLChanged = true;
+    _volumeChanged = true;
+    _timeOffsetChanged = true;
+    _pitchChanged = true;
+    _playingChanged = true;
+    _loopChanged = true;
+    _positionalChanged = true;
+    _localOnlyChanged = true;
 }
 
 // The minimum bounding box for the entity.
@@ -4944,6 +5057,32 @@ QList<QString> EntityItemProperties::listChangedProperties() {
         out += "gizmoType";
     }
     getRing().listChangedProperties(out);
+
+    // Sound
+    if (soundURLChanged()) {
+        out += "soundURL";
+    }
+    if (volumeChanged()) {
+        out += "volume";
+    }
+    if (timeOffsetChanged()) {
+        out += "timeOffset";
+    }
+    if (pitchChanged()) {
+        out += "pitch";
+    }
+    if (playingChanged()) {
+        out += "playing";
+    }
+    if (loopChanged()) {
+        out += "loop";
+    }
+    if (positionalChanged()) {
+        out += "positional";
+    }
+    if (localOnlyChanged()) {
+        out += "localOnly";
+    }
 
     return out;
 }

@@ -1081,6 +1081,7 @@ void AvatarMixer::parseDomainServerSettings(const QJsonObject& domainSettings) {
 void AvatarMixer::setupEntityQuery() {
     _entityViewer.init();
     EntityTreePointer entityTree = _entityViewer.getTree();
+    entityTree->setIsServer(true);
     DependencyManager::registerInheritance<SpatialParentFinder, AssignmentParentFinder>();
     DependencyManager::set<AssignmentParentFinder>(entityTree);
 

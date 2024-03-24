@@ -1871,6 +1871,7 @@ bool EntityScriptingInterface::setAllPoints(const QUuid& entityID, const QVector
     EntityItemPointer entity = static_cast<EntityItemPointer>(_entityTree->findEntityByEntityItemID(entityID));
     if (!entity) {
         qCDebug(entities) << "EntityScriptingInterface::setPoints no entity with ID" << entityID;
+        return false;
     }
 
     EntityTypes::EntityType entityType = entity->getType();
@@ -1907,6 +1908,31 @@ bool EntityScriptingInterface::appendPoint(const QUuid& entityID, const glm::vec
     return false;
 }
 
+bool EntityScriptingInterface::restartSound(const QUuid& entityID) {
+    PROFILE_RANGE(script_entities, __FUNCTION__);
+
+    EntityItemPointer entity = static_cast<EntityItemPointer>(_entityTree->findEntityByEntityItemID(entityID));
+    if (!entity) {
+        qCDebug(entities) << "EntityScriptingInterface::restartSound no entity with ID" << entityID;
+        // There is no entity
+        return false;
+    }
+
+    EntityTypes::EntityType entityType = entity->getType();
+
+    if (entityType == EntityTypes::Sound) {
+        auto soundEntity = std::dynamic_pointer_cast<SoundEntityItem>(entity);
+        bool isPlaying = soundEntity->getPlaying();
+        if (isPlaying) {
+            soundEntity->withWriteLock([&] {
+                soundEntity->restartSound();
+            });
+        }
+        return isPlaying;
+    }
+
+    return false;
+}
 
 bool EntityScriptingInterface::actionWorker(const QUuid& entityID,
                                             std::function<bool(EntitySimulationPointer, EntityItemPointer)> actor) {
