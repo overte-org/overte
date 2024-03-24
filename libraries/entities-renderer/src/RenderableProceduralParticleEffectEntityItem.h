@@ -55,7 +55,7 @@ private:
     bool _transparent { false };
 
     std::array<FramebufferPointer, 2> _particleBuffers;
-    bool _evenPass{ true };
+    bool _evenPass { true };
 };
 
 } } // namespace

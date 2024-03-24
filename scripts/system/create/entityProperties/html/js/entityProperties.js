@@ -1403,7 +1403,7 @@ const GROUPS = [
                 label: "Update Props",
                 type: "number-draggable",
                 propertyID: "numUpdateProps",
-                min: 1,
+                min: 0,
                 max: 5
             },
             {

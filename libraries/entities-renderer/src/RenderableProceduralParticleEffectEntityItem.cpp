@@ -200,7 +200,7 @@ void ProceduralParticleEffectEntityRenderer::doRender(RenderArgs* args) {
     Q_ASSERT(args->_batch);
     gpu::Batch& batch = *args->_batch;
 
-    if (!_visible || (_numUpdateProps > 0 && !_updateProcedural.isReady()) || !_renderProcedural.isReady()) {
+    if (!_visible || _numParticles == 0 || (_numUpdateProps > 0 && !_updateProcedural.isReady()) || !_renderProcedural.isReady()) {
         return;
     }
 

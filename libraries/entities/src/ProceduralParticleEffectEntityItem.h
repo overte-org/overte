@@ -20,8 +20,8 @@ namespace particle {
     static const uint8_t DEFAULT_NUM_TRIS_PER = 1;
     static const uint8_t MINIMUM_TRIS_PER = 1;
     static const uint8_t MAXIMUM_TRIS_PER = 15;
-    static const uint8_t DEFAULT_NUM_UPDATE_PROPS = 1;
-    static const uint8_t MINIMUM_NUM_UPDATE_PROPS = 1;
+    static const uint8_t DEFAULT_NUM_UPDATE_PROPS = 0;
+    static const uint8_t MINIMUM_NUM_UPDATE_PROPS = 0;
     static const uint8_t MAXIMUM_NUM_UPDATE_PROPS = 5;
 }
 
