@@ -46,8 +46,12 @@ bool ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission per
     // Get the script manager:
     auto engine = Scriptable::engine();
     if (!engine) {
-        qDebug() << "ScriptPermissions::isCurrentScriptAllowed called outside script engine for permission: " << scriptPermissionNames[permissionIndex];
-        return false;
+        // When this happens it means that function was called from QML or C++ and should always be allowed
+        if (PERMISSIONS_DEBUG_ENABLED) {
+            qDebug() << "ScriptPermissions::isCurrentScriptAllowed called outside script engine for permission: "
+                     << scriptPermissionNames[permissionIndex];
+        }
+        return true;
     }
     auto manager = engine->manager();
     if (!manager) {
@@ -76,7 +80,7 @@ bool ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission per
     }
     // Check if the script is allowed:
     QList<QString> safeURLPrefixes = { "file:///", "qrc:/", NetworkingConstants::OVERTE_COMMUNITY_APPLICATIONS,
-                                       NetworkingConstants::OVERTE_TUTORIAL_SCRIPTS/*, "about:console"*/};
+                                       NetworkingConstants::OVERTE_TUTORIAL_SCRIPTS, "about:console"};
     Setting::Handle<QString> allowedURLsSetting(scriptPermissionSettingKeyNames[permissionIndex]);
     QList<QString> allowedURLs = allowedURLsSetting.get().split("\n");
 
