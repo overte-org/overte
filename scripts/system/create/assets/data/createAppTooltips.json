@@ -215,6 +215,9 @@
     "animation.fps": {
         "tooltip": "The speed of the animation."
     },
+    "animation.smoothFrames": {
+        "tooltip": "If enabled, the frames of the animation will be linearly interpolated to create smoother movement."
+    },
     "textures": {
         "tooltip": "A JSON string containing a texture. Use a name from the Original Texture property to override it."
     },

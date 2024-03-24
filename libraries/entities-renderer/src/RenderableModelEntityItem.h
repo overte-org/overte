@@ -175,6 +175,7 @@ protected:
 
 private:
     void animate(const TypedEntityPointer& entity, const ModelPointer& model);
+    void updateJointData(const QVector<glm::vec3>& translations, const QVector<glm::quat>& rotations, const TypedEntityPointer& entity, const ModelPointer& model);
     void mapJoints(const TypedEntityPointer& entity, const ModelPointer& model);
 
     // Transparency is handled in ModelMeshPartPayload
@@ -184,7 +185,7 @@ private:
     ModelPointer _model;
     QString _textures;
     bool _texturesLoaded { false };
-    int _lastKnownCurrentFrame { -1 };
+    int _lastKnownCurrentIntegerFrame { -1 };
 #ifdef MODEL_ENTITY_USE_FADE_EFFECT
     bool _hasTransitioned{ false };
 #endif

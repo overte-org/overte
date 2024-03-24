@@ -1123,37 +1123,7 @@ void ModelEntityRenderer::onRemoveFromSceneTyped(const TypedEntityPointer& entit
     entity->setModel({});
 }
 
-void ModelEntityRenderer::animate(const TypedEntityPointer& entity, const ModelPointer& model) {
-    if (!_animation || !_animation->isLoaded()) {
-        return;
-    }
-
-    QVector<EntityJointData> jointsData;
-
-    const QVector<HFMAnimationFrame>& frames = _animation->getFramesReference(); // NOTE: getFrames() is too heavy
-    int frameCount = frames.size();
-    if (frameCount <= 0) {
-        return;
-    }
-
-    {
-        float currentFrame = fmod(entity->getAnimationCurrentFrame(), (float)(frameCount));
-        if (currentFrame < 0.0f) {
-            currentFrame += (float)frameCount;
-        }
-        int currentIntegerFrame = (int)(glm::floor(currentFrame));
-        if (currentIntegerFrame == _lastKnownCurrentFrame) {
-            return;
-        }
-        _lastKnownCurrentFrame = currentIntegerFrame;
-    }
-
-    if (_jointMapping.size() != model->getJointStateCount()) {
-        qCWarning(entitiesrenderer) << "RenderableModelEntityItem::getAnimationFrame -- joint count mismatch"
-                    << _jointMapping.size() << model->getJointStateCount();
-        return;
-    }
-
+void ModelEntityRenderer::updateJointData(const QVector<glm::vec3>& translations, const QVector<glm::quat>& rotations, const TypedEntityPointer& entity, const ModelPointer& model) {
     QStringList animationJointNames = _animation->getHFMModel().getJointNames();
     auto& hfmJoints = _animation->getHFMModel().joints;
 
@@ -1162,10 +1132,7 @@ void ModelEntityRenderer::animate(const TypedEntityPointer& entity, const ModelP
 
     bool allowTranslation = entity->getAnimationAllowTranslation();
 
-    const QVector<glm::quat>& rotations = frames[_lastKnownCurrentFrame].rotations;
-    const QVector<glm::vec3>& translations = frames[_lastKnownCurrentFrame].translations;
-
-    jointsData.resize(_jointMapping.size());
+    QVector<EntityJointData> jointsData(_jointMapping.size());
     for (int j = 0; j < _jointMapping.size(); j++) {
         int index = _jointMapping[j];
 
@@ -1204,6 +1171,58 @@ void ModelEntityRenderer::animate(const TypedEntityPointer& entity, const ModelP
     entity->setAnimationJointsData(jointsData);
 
     entity->copyAnimationJointDataToModel();
+}
+
+void ModelEntityRenderer::animate(const TypedEntityPointer& entity, const ModelPointer& model) {
+    if (!_animation || !_animation->isLoaded()) {
+        return;
+    }
+
+    const QVector<HFMAnimationFrame>& frames = _animation->getFramesReference(); // NOTE: getFrames() is too heavy
+    int frameCount = frames.size();
+    if (frameCount <= 0) {
+        return;
+    }
+
+    float currentFrame = fmod(entity->getAnimationCurrentFrame(), (float)(frameCount));
+    if (currentFrame < 0.0f) {
+        currentFrame += (float)frameCount;
+    }
+
+    const bool smoothFrames = entity->getAnimationSmoothFrames();
+    const int currentIntegerFrame = (int)(glm::floor(currentFrame));
+    if (!smoothFrames && currentIntegerFrame == _lastKnownCurrentIntegerFrame) {
+        return;
+    }
+    _lastKnownCurrentIntegerFrame = currentIntegerFrame;
+
+    if (_jointMapping.size() != model->getJointStateCount()) {
+        qCWarning(entitiesrenderer) << "RenderableModelEntityItem::getAnimationFrame -- joint count mismatch"
+                    << _jointMapping.size() << model->getJointStateCount();
+        return;
+    }
+
+    if (smoothFrames) {
+        QVector<glm::quat> rotations = frames[_lastKnownCurrentIntegerFrame].rotations;
+        QVector<glm::vec3> translations = frames[_lastKnownCurrentIntegerFrame].translations;
+
+        const int nextIntegerFrame = entity->getAnimationNextFrame(_lastKnownCurrentIntegerFrame, frameCount);
+
+        const QVector<glm::quat>& nextRotations = frames[nextIntegerFrame].rotations;
+        const QVector<glm::vec3>& nextTranslations = frames[nextIntegerFrame].translations;
+
+        const float frac = glm::fract(currentFrame);
+        for (int i = 0; i < translations.size(); i++) {
+            translations[i] = glm::mix(translations[i], nextTranslations[i], frac);
+        }
+        for (int i = 0; i < rotations.size(); i++) {
+            rotations[i] = glm::slerp(rotations[i], nextRotations[i], frac);
+        }
+
+        updateJointData(translations, rotations, entity, model);
+    } else {
+        updateJointData(frames[_lastKnownCurrentIntegerFrame].translations, frames[_lastKnownCurrentIntegerFrame].rotations, entity, model);
+    }
 }
 
 bool ModelEntityRenderer::needsRenderUpdateFromTypedEntity(const TypedEntityPointer& entity) const {

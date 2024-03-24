@@ -2833,6 +2833,7 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
             ADD_GROUP_PROPERTY_TO_MAP(PROP_ANIMATION_FIRST_FRAME, Animation, animation, FirstFrame, firstFrame);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_ANIMATION_LAST_FRAME, Animation, animation, LastFrame, lastFrame);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_ANIMATION_HOLD, Animation, animation, Hold, hold);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_ANIMATION_SMOOTH_FRAMES, Animation, animation, SmoothFrames, smoothFrames);
         }
 
         // Light
