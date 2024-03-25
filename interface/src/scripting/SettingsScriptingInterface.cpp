@@ -25,7 +25,7 @@ QVariant SettingsScriptingInterface::getValue(const QString& setting) {
     if (!value.isValid()) {
         value = "";
     }
-    if (_restrictPrivateValues || setting.startsWith(SETTINGS_FULL_PRIVATE_GROUP_NAME + "/")) {
+    if (_restrictPrivateValues && setting.startsWith(SETTINGS_FULL_PRIVATE_GROUP_NAME + "/")) {
         value = "";
     }
     return value;
@@ -36,7 +36,7 @@ QVariant SettingsScriptingInterface::getValue(const QString& setting, const QVar
     if (!value.isValid()) {
         value = "";
     }
-    if (_restrictPrivateValues || setting.startsWith(SETTINGS_FULL_PRIVATE_GROUP_NAME + "/")) {
+    if (_restrictPrivateValues && setting.startsWith(SETTINGS_FULL_PRIVATE_GROUP_NAME + "/")) {
         value = "";
     }
     return value;
