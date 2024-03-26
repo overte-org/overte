@@ -143,9 +143,6 @@ static AnimPose composeAnimPose(const HFMJoint& joint, const glm::quat rotation,
 }
 
 void ScriptableAvatar::update(float deltatime) {
-    // TODO: the current decision to use geometry resource results in loading textures, but it works way better
-    // than previous choice of loading avatar as animation, which was missing data such as joint names hash,
-    // and also didn't support glTF models. Optimizing this will be left fot future PR.
     if (!_geometryResource && !_skeletonModelFilenameURL.isEmpty()) { // AvatarData will parse the .fst, but not get the .fbx skeleton.
         _geometryResource = DependencyManager::get<ModelCache>()->getGeometryResource(_skeletonModelFilenameURL);
     }
