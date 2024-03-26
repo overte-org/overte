@@ -868,7 +868,7 @@ graphics::TextureMapPointer NetworkMaterial::fetchTextureMap(const QUrl& baseUrl
     auto textureCache = DependencyManager::get<TextureCache>();
     NetworkTexturePointer texture;
     if (textureCache) {
-        textureCache->getTexture(url, type, hfmTexture.content, hfmTexture.maxNumPixels, hfmTexture.sourceChannel);
+        texture = textureCache->getTexture(url, type, hfmTexture.content, hfmTexture.maxNumPixels, hfmTexture.sourceChannel);
     } else {
         qDebug() << "GeometryResource::setTextures: TextureCache dependency not available, skipping textures";
     }
