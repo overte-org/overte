@@ -43,7 +43,7 @@
     "Avatar/dominantHand": "right",
     "Avatar/flyingHMD": false,
     "Avatar/fullAvatarModelName": "Default",
-    "Avatar/fullAvatarURL": "",
+    "fullPrivate/Avatar/fullAvatarURL": "",
     "Avatar/headPitch": 0,
     "Avatar/pitchSpeed": 75,
     "Avatar/scale": 1,

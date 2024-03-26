@@ -431,6 +431,13 @@ public:
     QString getFilename() const;
 
     /**
+     * @brief Get the filename of the running script, with absolute path.
+     *
+     * @return QString Filename
+     */
+    QString getAbsoluteFilename() const;
+
+    /**
      * @brief Underlying scripting engine
      *
      * @return ScriptEnginePointer Scripting engine

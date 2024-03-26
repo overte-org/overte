@@ -323,6 +323,19 @@ Menu::Menu() {
         }
     });
 
+    // Settings > Script Security
+    action = addActionToQMenuAndActionHash(settingsMenu, MenuOption::ScriptSecurity);
+    connect(action, &QAction::triggered, [] {
+        auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
+        auto hmd = DependencyManager::get<HMDScriptingInterface>();
+
+        tablet->pushOntoStack("hifi/dialogs/security/ScriptSecurity.qml");
+
+        if (!hmd->getShouldShowTablet()) {
+            hmd->toggleShouldShowTablet();
+        }
+    });
+
     // Settings > Developer Menu
     addCheckableActionToQMenuAndActionHash(settingsMenu, "Developer Menu", 0, false, this, SLOT(toggleDeveloperMenus()));
 
