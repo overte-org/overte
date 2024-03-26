@@ -257,6 +257,9 @@ public:
     void setIsServerlessMode(bool value) { _serverlessDomain = value; }
     bool isServerlessMode() const { return _serverlessDomain; }
 
+    void setIsEntityServer(bool value) { _entityServer = value; }
+    bool isEntityServer() const { return _entityServer; }
+
     static void setGetEntityObjectOperator(std::function<QObject*(const QUuid&)> getEntityObjectOperator) { _getEntityObjectOperator = getEntityObjectOperator; }
     static QObject* getEntityObject(const QUuid& id);
 
@@ -380,6 +383,7 @@ private:
     std::vector<int32_t> _staleProxies;
 
     bool _serverlessDomain { false };
+    bool _entityServer { false };
 
     std::map<QString, QString> _namedPaths;
 

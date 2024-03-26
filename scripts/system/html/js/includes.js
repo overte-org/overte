@@ -20,6 +20,7 @@ const ENTITY_TYPE_ICON = {
     PolyLine: "&#xe01b;",
     Shape: "n",
     Sphere: "n",
+    Sound: "G",
     Text: "l",
     Web: "q",
     Zone: "o",

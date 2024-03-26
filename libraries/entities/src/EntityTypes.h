@@ -86,6 +86,8 @@ public:
      *       <td>{@link Entities.EntityProperties-Zone|EntityProperties-Zone}</td></tr>
      *     <tr><td><code>"Material"</code></td><td>Modifies the existing materials on entities and avatars.</td>
      *       <td>{@link Entities.EntityProperties-Material|EntityProperties-Material}</td></tr>
+     *     <tr><td><code>"Sound"</code></td><td>Plays a sound.</td>
+     *       <td>{@link Entities.EntityProperties-Material|EntityProperties-Sound}</td></tr>
      *   </tbody>
      * </table>
      * @typedef {string} Entities.EntityType
@@ -108,6 +110,7 @@ public:
         Light,
         Zone,
         Material,
+        Sound,
         NUM_TYPES
     } EntityType;
 
