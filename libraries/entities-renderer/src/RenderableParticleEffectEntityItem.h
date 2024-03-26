@@ -24,6 +24,8 @@ class ParticleEffectEntityRenderer : public TypedEntityRenderer<ParticleEffectEn
 public:
     ParticleEffectEntityRenderer(const EntityItemPointer& entity);
 
+    virtual void renderSimulate(RenderArgs* args) override;
+
 protected:
     virtual void doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) override;
     virtual void doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) override;

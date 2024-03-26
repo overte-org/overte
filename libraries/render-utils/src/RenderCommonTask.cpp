@@ -417,3 +417,24 @@ ShapePlumberPointer DrawMirrorTask::_deferredPipelines = std::make_shared<ShapeP
 
     task.addJob<DrawMirrorTask>("DrawMirrorTask" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), setupOutput);
  }
+
+void RenderSimulateTask::run(const render::RenderContextPointer& renderContext, const Inputs& inputs) {
+    auto args = renderContext->args;
+    auto items = inputs.get0();
+    auto framebuffer = inputs.get1();
+
+    gpu::doInBatch("RenderSimulateTask::run", args->_context, [&](gpu::Batch& batch) {
+        args->_batch = &batch;
+
+        for (ItemBound& item : items) {
+            args->_scene->simulate(item.id, args);
+        }
+
+        // Reset render state after each simulate
+        batch.setFramebuffer(framebuffer);
+        batch.setViewportTransform(args->_viewport);
+        batch.setStateScissorRect(args->_viewport);
+
+        args->_batch = nullptr;
+    });
+}

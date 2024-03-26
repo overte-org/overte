@@ -95,7 +95,7 @@
     var ZONE_URL = Script.resolvePath("assets/images/icon-zone.svg");
     var MATERIAL_URL = Script.resolvePath("assets/images/icon-material.svg");
 
-    var entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "Zone", "Material"], function(entityID) {
+    var entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "ProceduralParticleEffect", "Zone", "Material"], function(entityID) {
         var properties = Entities.getEntityProperties(entityID, ["type", "isSpotlight", "parentID", "name"]);
         if (properties.type === "Light") {
             return {
@@ -483,6 +483,9 @@
             azimuthStart: -Math.PI,
             azimuthFinish: Math.PI
         },
+        ProceduralParticleEffect: {
+            // TODO: what should the default procedural particle be?
+        },
         Light: {
             color: { red: 255, green: 255, blue: 255 },
             intensity: 5.0,
@@ -571,7 +574,8 @@
                     properties.grab = {};
                     if (Menu.isOptionChecked(MENU_CREATE_ENTITIES_GRABBABLE) &&
                         !(properties.type === "Zone" || properties.type === "Light"
-                        || properties.type === "ParticleEffect" || properties.type === "Web")) {
+                            || properties.type === "ParticleEffect" || properties.type == "ProceduralParticleEffect"
+                            || properties.type === "Web")) {
                         properties.grab.grabbable = true;
                     } else {
                         properties.grab.grabbable = false;
@@ -859,6 +863,14 @@
             }
         }
 
+        function handleNewParticleDialogResult(result) {
+            if (result) {
+                createNewEntity({
+                    type: result.procedural ? "ProceduralParticleEffect" : "ParticleEffect"
+                });
+            }
+        }
+
         function fromQml(message) { // messages are {method, params}, like json-rpc. See also sendToQml.
             var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
             tablet.popFromStack();
@@ -878,6 +890,13 @@
                     closeExistingDialogWindow();
                     break;
                 case "newMaterialDialogCancel":
+                    closeExistingDialogWindow();
+                    break;
+                case "newParticleDialogAdd":
+                    handleNewParticleDialogResult(message.params);
+                    closeExistingDialogWindow();
+                    break;
+                case "newParticleDialogCancel":
                     closeExistingDialogWindow();
                     break;
                 case "newPolyVoxDialogAdd":
@@ -1046,11 +1065,7 @@
                 });
             });
 
-            addButton("newParticleButton", function () {
-                createNewEntity({
-                    type: "ParticleEffect",
-                });
-            });
+            addButton("newParticleButton", createNewEntityDialogButtonCallback("Particle"));
 
             addButton("newMaterialButton", createNewEntityDialogButtonCallback("Material"));
 
@@ -2041,7 +2056,7 @@
                     var entityParentIDs = [];
 
                     var propType = Entities.getEntityProperties(pastedEntityIDs[0], ["type"]).type;
-                    var NO_ADJUST_ENTITY_TYPES = ["Zone", "Light", "ParticleEffect"];
+                    var NO_ADJUST_ENTITY_TYPES = ["Zone", "Light", "ParticleEffect", "ProceduralParticleEffect"];
                     if (NO_ADJUST_ENTITY_TYPES.indexOf(propType) === -1) {
                         var targetDirection;
                         if (Camera.mode === "entity" || Camera.mode === "independent") {
@@ -2594,7 +2609,7 @@
                 if (data.snapToGrid !== undefined) {
                     entityListTool.setListMenuSnapToGrid(data.snapToGrid);
                 }
-            } else if (data.type === 'saveUserData' || data.type === 'saveMaterialData') {
+            } else if (data.type === 'saveUserData' || data.type === 'saveMaterialData' || data.type === 'saveParticleUpdateData' || data.type === 'saveParticleRenderData') {
                 data.ids.forEach(function(entityID) {
                     Entities.editEntity(entityID, data.properties);
                 });

@@ -111,6 +111,7 @@ public:
         LAST_LAYER_BIT = FIRST_LAYER_BIT + NUM_LAYER_BITS,
 
         MIRROR,
+        SIMULATE,
 
         __SMALLER,        // Reserved bit for spatialized item to indicate that it is smaller than expected in the cell in which it belongs (probably because it overlaps over several smaller cells)
 
@@ -165,6 +166,7 @@ public:
         Builder& withSubMetaCulled() { _flags.set(SUB_META_CULLED); return (*this); }
         Builder& withoutSubMetaCulled() { _flags.reset(SUB_META_CULLED); return (*this); }
         Builder& withMirror() { _flags.set(MIRROR); return (*this); }
+        Builder& withSimulate() { _flags.set(SIMULATE); return (*this); }
 
         Builder& withTag(Tag tag) { _flags.set(FIRST_TAG_BIT + tag); return (*this); }
         // Set ALL the tags in one call using the Tag bits
@@ -210,6 +212,9 @@ public:
 
     bool isNotMirror() const { return !_flags[MIRROR]; }
     bool isMirror() const { return _flags[MIRROR]; }
+
+    bool isNotSimulate() const { return !_flags[SIMULATE]; }
+    bool isSimulate() const { return _flags[SIMULATE]; }
 
     bool isTag(Tag tag) const { return _flags[FIRST_TAG_BIT + tag]; }
     uint8_t getTagBits() const { return ((_flags.to_ulong() & KEY_TAG_BITS_MASK) >> FIRST_TAG_BIT); }
@@ -284,6 +289,9 @@ public:
 
         Builder& withoutMirror()        { _value.reset(ItemKey::MIRROR); _mask.set(ItemKey::MIRROR); return (*this); }
         Builder& withMirror()           { _value.set(ItemKey::MIRROR); _mask.set(ItemKey::MIRROR); return (*this); }
+
+        Builder& withoutSimulate()      { _value.reset(ItemKey::SIMULATE); _mask.set(ItemKey::SIMULATE); return (*this); }
+        Builder& withSimulate()         { _value.set(ItemKey::SIMULATE); _mask.set(ItemKey::SIMULATE); return (*this); }
 
         Builder& withoutTag(ItemKey::Tag tagIndex)    { _value.reset(ItemKey::FIRST_TAG_BIT + tagIndex);  _mask.set(ItemKey::FIRST_TAG_BIT + tagIndex); return (*this); }
         Builder& withTag(ItemKey::Tag tagIndex)       { _value.set(ItemKey::FIRST_TAG_BIT + tagIndex);  _mask.set(ItemKey::FIRST_TAG_BIT + tagIndex); return (*this); }
@@ -443,6 +451,7 @@ public:
         virtual const ItemKey getKey() const = 0;
         virtual const Bound getBound(RenderArgs* args) const = 0;
         virtual void render(RenderArgs* args) = 0;
+        virtual void renderSimulate(RenderArgs* args) = 0;
 
         virtual const ShapeKey getShapeKey() const = 0;
 
@@ -496,6 +505,9 @@ public:
     // Render call for the item
     void render(RenderArgs* args) const { _payload->render(args); }
 
+    // Render-side simulate call for the item
+    void renderSimulate(RenderArgs* args) { _payload->renderSimulate(args); }
+
     // Shape Type Interface
     const ShapeKey getShapeKey() const;
 
@@ -546,6 +558,7 @@ inline QDebug operator<<(QDebug debug, const Item& item) {
 template <class T> const ItemKey payloadGetKey(const std::shared_ptr<T>& payloadData) { return ItemKey(); }
 template <class T> const Item::Bound payloadGetBound(const std::shared_ptr<T>& payloadData, RenderArgs* args) { return Item::Bound(); }
 template <class T> void payloadRender(const std::shared_ptr<T>& payloadData, RenderArgs* args) { }
+template <class T> void payloadRenderSimulate(const std::shared_ptr<T>& payloadData, RenderArgs* args) { }
 
 // Shape type interface
 // This allows shapes to characterize their pipeline via a ShapeKey, to be picked with a subclass of Shape.
@@ -581,6 +594,7 @@ public:
     virtual const Item::Bound getBound(RenderArgs* args) const override { return payloadGetBound<T>(_data, args); }
 
     virtual void render(RenderArgs* args) override { payloadRender<T>(_data, args); }
+    virtual void renderSimulate(RenderArgs* args) override { payloadRenderSimulate<T>(_data, args); }
 
     // Shape Type interface
     virtual const ShapeKey getShapeKey() const override { return shapeGetShapeKey<T>(_data); }
@@ -645,6 +659,7 @@ public:
     virtual ShapeKey getShapeKey() = 0;
     virtual Item::Bound getBound(RenderArgs* args) = 0;
     virtual void render(RenderArgs* args) = 0;
+    virtual void renderSimulate(RenderArgs* args) = 0;
     virtual uint32_t metaFetchMetaSubItems(ItemIDs& subItems) const = 0;
     virtual bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const = 0;
     virtual ItemID computeMirrorView(ViewFrustum& viewFrustum) const = 0;
@@ -657,6 +672,7 @@ public:
 template <> const ItemKey payloadGetKey(const PayloadProxyInterface::Pointer& payload);
 template <> const Item::Bound payloadGetBound(const PayloadProxyInterface::Pointer& payload, RenderArgs* args);
 template <> void payloadRender(const PayloadProxyInterface::Pointer& payload, RenderArgs* args);
+template <> void payloadRenderSimulate(const PayloadProxyInterface::Pointer& payload, RenderArgs* args);
 template <> uint32_t metaFetchMetaSubItems(const PayloadProxyInterface::Pointer& payload, ItemIDs& subItems);
 template <> const ShapeKey shapeGetShapeKey(const PayloadProxyInterface::Pointer& payload);
 template <> bool payloadPassesZoneOcclusionTest(const PayloadProxyInterface::Pointer& payload, const std::unordered_set<QUuid>& containingZones);

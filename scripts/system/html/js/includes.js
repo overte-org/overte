@@ -16,6 +16,7 @@ const ENTITY_TYPE_ICON = {
     Material: "&#xe00b;",
     Model: "&#xe008;",
     ParticleEffect: "&#xe004;",
+    ProceduralParticleEffect: "&#xe004;",
     PolyVox: "&#xe005;",
     PolyLine: "&#xe01b;",
     Shape: "n",

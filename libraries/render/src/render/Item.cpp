@@ -147,6 +147,13 @@ namespace render {
         payload->render(args);
     }
 
+    template <> void payloadRenderSimulate(const PayloadProxyInterface::Pointer& payload, RenderArgs* args) {
+        if (!args || !payload) {
+            return;
+        }
+        payload->renderSimulate(args);
+    }
+
     template <> uint32_t metaFetchMetaSubItems(const PayloadProxyInterface::Pointer& payload, ItemIDs& subItems) {
         if (!payload) {
             return 0;

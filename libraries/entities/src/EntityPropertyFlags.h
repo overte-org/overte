@@ -5,6 +5,7 @@
 //  Created by Brad Hefta-Gaub on 12/4/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -215,6 +216,14 @@ enum EntityPropertyList {
     PROP_SPIN_FINISH = PROP_DERIVED_28,
     PROP_SPIN_SPREAD = PROP_DERIVED_29,
     PROP_PARTICLE_ROTATE_WITH_ENTITY = PROP_DERIVED_30,
+
+    // Procedural Particles
+    PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES = PROP_DERIVED_0,
+    PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER = PROP_DERIVED_1,
+    PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS = PROP_DERIVED_2,
+    PROP_PROCEDURAL_PARTICLE_TRANSPARENT = PROP_DERIVED_3,
+    PROP_PROCEDURAL_PARTCILE_UPDATE_DATA = PROP_DERIVED_4,
+    PROP_PROCEDURAL_PARTCILE_RENDER_DATA = PROP_DERIVED_5,
 
     // Model
     PROP_MODEL_URL = PROP_DERIVED_0,

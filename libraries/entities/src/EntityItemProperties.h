@@ -48,6 +48,7 @@
 #include "TextEntityItem.h"
 #include "WebEntityItem.h"
 #include "ParticleEffectEntityItem.h"
+#include "ProceduralParticleEffectEntityItem.h"
 #include "LineEntityItem.h"
 #include "PolyVoxEntityItem.h"
 #include "GridEntityItem.h"
@@ -116,6 +117,7 @@ class EntityItemProperties {
     friend class ImageEntityItem;
     friend class WebEntityItem;
     friend class ParticleEffectEntityItem;
+    friend class ProceduralParticleEffectEntityItem;
     friend class LineEntityItem;
     friend class PolyLineEntityItem;
     friend class PolyVoxEntityItem;
@@ -287,6 +289,14 @@ public:
     DEFINE_PROPERTY(PROP_SPIN_START, SpinStart, spinStart, float, particle::DEFAULT_SPIN_START);
     DEFINE_PROPERTY(PROP_SPIN_FINISH, SpinFinish, spinFinish, float, particle::DEFAULT_SPIN_FINISH);
     DEFINE_PROPERTY(PROP_PARTICLE_ROTATE_WITH_ENTITY, RotateWithEntity, rotateWithEntity, bool, particle::DEFAULT_ROTATE_WITH_ENTITY);
+
+    // Procedural Particles
+    DEFINE_PROPERTY_REF(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, NumParticles, numParticles, uint32_t, particle::DEFAULT_NUM_PROCEDURAL_PARTICLES);
+    DEFINE_PROPERTY_REF(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, NumTrianglesPerParticle, numTrianglesPerParticle, uint8_t, particle::DEFAULT_NUM_TRIS_PER);
+    DEFINE_PROPERTY_REF(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, NumUpdateProps, numUpdateProps, uint8_t, particle::DEFAULT_NUM_UPDATE_PROPS);
+    DEFINE_PROPERTY_REF(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, ParticleTransparent, particleTransparent, bool, false);
+    DEFINE_PROPERTY_REF(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, ParticleUpdateData, particleUpdateData, QString, "");
+    DEFINE_PROPERTY_REF(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, ParticleRenderData, particleRenderData, QString, "");
 
     // Model
     DEFINE_PROPERTY_REF(PROP_MODEL_URL, ModelURL, modelURL, QString, "");

@@ -1712,7 +1712,9 @@ input#property-scale-button-reset {
 }
 
 #property-userData-static,
-#property-materialData-static {
+#property-materialData-static,
+#property-particleUpdateData-static,
+#property-particleRenderData-static {
     display: none;
     z-index: 99;
     position: absolute;
@@ -1724,7 +1726,9 @@ input#property-scale-button-reset {
 }
 
 #property-userData-saved,
-#property-materialData-saved {
+#property-materialData-saved,
+#property-particleUpdateData-saved
+#property-particleRenderData-saved {
     margin-top: 5px;
     font-size: 16px;
     display: none;
@@ -1930,23 +1934,17 @@ input.number-slider {
     cursor: pointer;
 }
 
-#property-userData-editor.error {
+#property-userData-editor.error,
+#property-materialData-editor.error,
+#property-particleUpdateData-editor.error,
+#property-particleRenderData-editor.error {
     border: 2px solid red;
 }
 
-#property-userData-editorStatus {
-    color: white;
-    background-color: red;
-    padding: 5px;
-    display: none;
-    cursor: pointer;
-}
-
-#property-materialData-editor.error {
-    border: 2px solid red;
-}
-
-#property-materialData-editorStatus {
+#property-userData-editorStatus,
+#property-materialData-editorStatus,
+#property-particleUpdateData-editorStatus,
+#property-particleRenderData-editorStatus {
     color: white;
     background-color: red;
     padding: 5px;
