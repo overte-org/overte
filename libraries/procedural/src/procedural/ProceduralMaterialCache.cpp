@@ -865,13 +865,7 @@ graphics::TextureMapPointer NetworkMaterial::fetchTextureMap(const QUrl& baseUrl
     }
 
     const auto url = getTextureUrl(baseUrl, hfmTexture);
-    auto textureCache = DependencyManager::get<TextureCache>();
-    NetworkTexturePointer texture;
-    if (textureCache) {
-        textureCache->getTexture(url, type, hfmTexture.content, hfmTexture.maxNumPixels, hfmTexture.sourceChannel);
-    } else {
-        qDebug() << "GeometryResource::setTextures: TextureCache dependency not available, skipping textures";
-    }
+    const auto texture = DependencyManager::get<TextureCache>()->getTexture(url, type, hfmTexture.content, hfmTexture.maxNumPixels, hfmTexture.sourceChannel);
     _textures[channel] = Texture { hfmTexture.name, texture };
 
     auto map = std::make_shared<graphics::TextureMap>();

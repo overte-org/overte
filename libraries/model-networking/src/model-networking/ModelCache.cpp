@@ -355,12 +355,8 @@ void GeometryResource::deleter() {
 
 void GeometryResource::setTextures() {
     if (_hfmModel) {
-        if (DependencyManager::get<TextureCache>()) {
-            for (const HFMMaterial& material : _hfmModel->materials) {
-                _materials.push_back(std::make_shared<NetworkMaterial>(material, _textureBaseURL));
-            }
-        } else {
-            qDebug() << "GeometryResource::setTextures: TextureCache dependency not available, skipping textures";
+        for (const HFMMaterial& material : _hfmModel->materials) {
+            _materials.push_back(std::make_shared<NetworkMaterial>(material, _textureBaseURL));
         }
     }
 }
