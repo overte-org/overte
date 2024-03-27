@@ -18,7 +18,7 @@ if (ANDROID)
 else()
    	# using VCPKG for TBB
     find_package(TBB CONFIG REQUIRED)
-    target_link_libraries(${TARGET_NAME} TBB::tbb)
+    target_link_libraries(${TARGET_NAME} onetbb::onetbb)
 endif()
 
 endmacro()

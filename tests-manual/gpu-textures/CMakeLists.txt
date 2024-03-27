@@ -10,7 +10,7 @@ setup_thread_debugger()
 set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "Tests/manual-tests/")
 link_hifi_libraries(
     shared shaders task networking gl 
-    ktx gpu octree  
+    ktx gpu octree
     ${PLATFORM_GL_BACKEND}
 )
 

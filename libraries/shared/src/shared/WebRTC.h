@@ -11,6 +11,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
+#if 0
+
 #ifndef hifi_WebRTC_h
 #define hifi_WebRTC_h
 
@@ -26,9 +28,9 @@
 #  define WEBRTC_POSIX 1
 #  define WEBRTC_LEGACY 1
 #elif defined(Q_OS_WIN)
-#  define WEBRTC_AUDIO 1
-#  define WEBRTC_DATA_CHANNELS 1
-#  define WEBRTC_WIN 1
+// #  define WEBRTC_AUDIO 1
+// #  define WEBRTC_DATA_CHANNELS 1
+// #  define WEBRTC_WIN 1
 #  define NOMINMAX 1
 #  define WIN32_LEAN_AND_MEAN 1
 #elif defined(Q_OS_ANDROID)
@@ -51,3 +53,5 @@
 #endif
 
 #endif // hifi_WebRTC_h
+
+#endif
