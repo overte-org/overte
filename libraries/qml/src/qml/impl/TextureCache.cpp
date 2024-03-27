@@ -8,6 +8,7 @@
 #include <QtCore/QCoreApplication>
 
 #include "Profiling.h"
+#include "PathUtils.h"
 
 using namespace hifi::qml::impl;
 

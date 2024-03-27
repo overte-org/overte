@@ -15,7 +15,7 @@
 #include <QtCore/QObject>
 #include <QtCore/QUrl>
 #include <QtCore/QDir>
-
+#include <mutex>
 #include "DependencyManager.h"
 
 /*@jsdoc
@@ -65,6 +65,134 @@ public:
     // note: this is FS-case-sensitive version of parentURL.isParentOf(childURL)
     static bool isDescendantOf(const QUrl& childURL, const QUrl& parentURL);
     static QUrl defaultScriptsLocation(const QString& newDefault = "");
+
+
+    /**
+     * @brief Set the Server Name
+     *
+     * The server name is used as a component of paths to allow for multiple instances to run on the same machine.
+     * The default name is "main".
+     *
+     * For instance, by default the server-wide config files will be in "/etc/vircadia/main".
+     * Starting a second instance with a server name of "Bob" will result in a domain that loads the config from "/etc/vircadia/bob"
+     *
+     * @param server_name
+     */
+    static void setInstanceName(const QString& server_name);
+
+    /**
+     * @brief Get the instance name
+     *
+     * This allows running multiple clients or servers concurrently, by giving each instance a name.
+     * The name is purely descriptive and carries no meaning.
+     *
+     * The default instance name is 'main'.
+     *
+     * @return QString Current instance name
+     */
+    static QString getInstanceName();
+
+
+    static QString getDataPath();
+
+    static QString getServerDataPath();
+    static QString getServerDataFilePath(const QString& filename);
+
+
+    static void setResourcesPath(const QString &resource_dir);
+
+    /**
+     * @brief Return the path to the config file
+     *
+     * On Linux this will return a path within /etc in system mode.
+     *
+     * @param filename Configuration filename
+     * @return QString
+     */
+    static QString getConfigFilePath(const QString &filename);
+
+    /**
+     * @brief Get the location of the describe-settings.json
+     * The server name doesn't affect this function, this data is static and shared between instances.
+     *
+     * @return QString Location of describe-settings.json
+     */
+    static QString getSettingsDescriptionPath();
+
+    static QString getAccountFileDirPath();
+
+    /**
+     * @brief Get the location of a server content directory
+     *
+     * This finds resource directories like 'web' or 'prometheus_exporter'.
+     * The server name doesn't affect this function, this data is static and shared between instances.
+     *
+     * @param dir_name Directory being sought
+     * @return QString  Location of the directory
+     */
+    static QString getServerContentPath(const QString &dir_name);
+
+
+    /**
+     * @brief Get the path of the plugins
+     *
+     * @return QString Path to the plugins directory
+     */
+    static QString getPluginsPath();
+
+private:
+    /**
+     * @brief Initializes the default values
+     *
+     * Sets the paths to the default ones detected for the system. This may be overriden later from code.
+     * Only runs once.
+     *
+     * The priority order is:
+     * 1. Command-like argument (not handled in this function)
+     * 2. Environment variable
+     * 3. System-wide path (eg, /usr/share/vircadia). Linux only.
+     * 4. Path relative to the executable's location
+     *
+     * We can operate in one of 3 modes:
+     * 1. Everything is relative to the binary's position. This is used for running out of the source
+     *    tree and on Windows and MacOS.
+     * 2. Using Linux system paths for everything. Binary is in /usr/bin, data is in /var/lib/vircadia,
+     *    configuration is in /etc/vircadia. This is enabled when isSystemUser() is true.
+     * 3. Using Linux system paths for static data, home directory for user/dynamic data. This is used
+     *    for the interface. This is enabled when isSystemInstall() is true.
+     */
+    static void initialize();
+
+    /**
+     * @brief Given a list of paths, find the first one that exists
+     *
+     * @param paths Paths to check
+     * @param description Description of the kind of path being sought, for error messages
+     * @return QString Found path or empty string
+     */
+    static QString findFirstDir(const QStringList &paths, const QString &description);
+
+    // Name for our server instance. This allows us to run multiple instances on the same machine.
+    static QString _instance_name;
+
+    // Location of the static server resources directory. This is where the 'web' content is found.
+    static QString _server_resources_path;
+
+    // Location of the configuration. This may be written by the code
+    static QString _config_path;
+
+    // Location of the writable data files
+    static QString _appdata_path;
+
+    // Location of the local writable data files
+    static QString _local_appdata_path;
+
+    // Location of assignment client plugins
+    static QString _plugins_path;
+
+    static bool _initialized;
+    static std::mutex _lock;
+
 };
 
 QString fileNameWithoutExtension(const QString& fileName, const QVector<QString> possibleExtensions);
