@@ -9,6 +9,12 @@
 
 html {
     height: 100%;
+
+}
+
+code {
+    font-family: 'Fira Mono', 'Inconsolata', 'DejaVu Sans Mono', 'Courier New', Courier, monospace;
+    color: red;
 }
 
 div.dockButton {
