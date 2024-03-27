@@ -2764,6 +2764,10 @@
                     }
                 }
             } else if (data.type === "propertiesPageReady") {
+                emitScriptEvent({
+                    type: 'urlPermissionChanged',
+                    canViewAssetURLs: Entities.canViewAssetURLs(),
+                });
                 updateSelections(true);
             } else if (data.type === "tooltipsRequest") {
                 emitScriptEvent({
@@ -2876,6 +2880,13 @@
             emitScriptEvent({
                 type: 'hmdActiveChanged',
                 hmdActive: HMD.active,
+            });
+        });
+
+        Entities.canViewAssetURLsChanged.connect((value) => {
+            emitScriptEvent({
+                type: 'urlPermissionChanged',
+                canViewAssetURLs: value,
             });
         });
 
