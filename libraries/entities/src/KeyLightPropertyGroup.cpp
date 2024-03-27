@@ -97,6 +97,7 @@ bool KeyLightPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
     EntityPropertyFlags& requestedProperties,
     EntityPropertyFlags& propertyFlags,
     EntityPropertyFlags& propertiesDidntFit,
+    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
     int& propertyCount, 
     OctreeElement::AppendState& appendState) const {
 
@@ -202,6 +203,7 @@ void KeyLightPropertyGroup::appendSubclassData(OctreePacketData* packetData, Enc
                                 EntityPropertyFlags& requestedProperties,
                                 EntityPropertyFlags& propertyFlags,
                                 EntityPropertyFlags& propertiesDidntFit,
+                                bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                 int& propertyCount, 
                                 OctreeElement::AppendState& appendState) const {
 

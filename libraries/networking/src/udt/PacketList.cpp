@@ -54,6 +54,23 @@ PacketList::PacketList(PacketList&& other) :
 {
 }
 
+PacketList::PacketList(const PacketList& other) :
+    _packetType(other._packetType),
+    _isOrdered(other._isOrdered),
+    _messageNumber(other._messageNumber),
+    _isReliable(other._isReliable),
+    _segmentStartIndex(other._segmentStartIndex),
+    _extendedHeader(other._extendedHeader)
+{
+    for (const auto& packet : other._packets) {
+        _packets.push_back(PacketPointer(new Packet(*packet)));
+    }
+
+    if (other._currentPacket) {
+        _currentPacket = PacketPointer(new Packet(*other._currentPacket));
+    }
+}
+
 SockAddr PacketList::getSenderSockAddr() const {
     return _packets.size() > 0 ? _packets.front()->getSenderSockAddr() : SockAddr();
 }
