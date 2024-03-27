@@ -14,7 +14,13 @@
 
 #include <QBuffer>
 #include <QVariantHash>
+#include <memory>
+#include <QDebug>
+#include <QLoggingCategory>
+
 #include "shared/HifiTypes.h"
+
+Q_DECLARE_LOGGING_CATEGORY(fst_reader_logging)
 
 static const unsigned int FST_VERSION = 1;
 static const QString FST_VERSION_FIELD = "version";
@@ -35,38 +41,146 @@ static const QString JOINT_NAME_MAPPING_FIELD = "jointMap";
 static const QString MATERIAL_MAPPING_FIELD = "materialMap";
 static const QString COMMENT_FIELD = "comment";
 
+
+/**
+ * @brief Reads and writes avatar metadata files
+ *
+ * There are two formats: The old .fst key/value pair (sort of) format, and
+ * the new, JSON based format.
+ *
+ * The old one is a non-standard format with parsing problems and should be
+ * avoided for future usage.
+ *
+ * The mapping is stored in a variant multi-hash, and the same structure for
+ * every type. The methods for dealing with it are all in this class.
+ *
+ * The derived classes only deal with file format specifics.
+*/
 class FSTReader {
 public:
 
-    enum ModelType {
-        ENTITY_MODEL,
+    FSTReader() {};
+
+    virtual ~FSTReader() {};
+
+    enum class ModelType {
+        ENTITY_MODEL = 0,
         HEAD_MODEL,
         BODY_ONLY_MODEL,
         HEAD_AND_BODY_MODEL,
         ATTACHMENT_MODEL
     };
 
-    /// Reads an FST mapping from the supplied data.
-    static hifi::VariantMultiHash readMapping(const QByteArray& data);
 
-    /// Writes an FST mapping to a byte array.
-    static QByteArray writeMapping(const hifi::VariantMultiHash& mapping);
 
-    /// Predicts the type of model by examining the mapping
-    static ModelType predictModelType(const hifi::VariantMultiHash& mapping);
+    // TODO: Probably move this to FST.h
+    using Mapping = hifi::VariantMultiHash;
 
-    static QVector<QString> getScripts(const QUrl& fstUrl, const hifi::VariantMultiHash& mapping = QVariantHash());
 
-    static QString getNameFromType(ModelType modelType);
-    static FSTReader::ModelType getTypeFromName(const QString& name);
-    static hifi::VariantMultiHash downloadMapping(const QString& url);
+
+    /**
+     * @brief Constructs a reader for the detected format in the byte array.
+     *
+     * The detection is based on checking whether the contents look like
+     * JSON (the first non-whitepace character is a { or a [)
+     *
+     * CBOR is supported by recognizing the magic d9d9f7 sequence:
+     * https://en.wikipedia.org/wiki/CBOR#Semantic_tag_(type_6)
+     *
+     * Valid CBOR may not be recognized because the presence of this tag
+     * is optional.
+     *
+     * @param data
+     * @return std::shared_ptr<FSTReader>
+     */
+    static std::shared_ptr<FSTReader> getReader(const QByteArray &data);
+
+
+
+    /**
+     * @brief  Reads an FST mapping from the supplied data.
+     *
+     * @param data
+     * @return Mapping
+     */
+    virtual Mapping readMapping(const QByteArray& data) { return Mapping(); };
+
+
+    /**
+     * @brief Writes an FST mapping to a byte array.
+     *
+     * @param mapping
+     * @return QByteArray
+     */
+    virtual QByteArray writeMapping(const Mapping& mapping) { return QByteArray(); };
+
+    /**
+     * @brief Predicts the type of model by examining the mapping
+     *
+     * @param mapping Mapping to examine
+     * @return ModelType Likely model type. Defaults to ModelType::ENTITY_MODEL if nothing fits.
+     */
+    static ModelType predictModelType(const Mapping& mapping);
+
+    // TODO: Why not a QStringList?
+
+    /**
+     * @brief Get a list of script paths based on a base URL and a mapping
+     *
+     * @param fstUrl Mapping's URL
+     * @param mapping Mapping. If not specified, the URL will be downloaded and parsed.
+     * @return QVector<QString> List of URLs
+     */
+    static QVector<QString> getScripts(const QUrl& fstUrl, const Mapping& mapping = QVariantHash());
+
+
+    /**
+     * @brief Get a human-readable name for a model type
+     *
+     * @param modelType
+     * @return QString
+     */
+    static QString getNameFromType(ModelType modelType) { return _typesToNames.value(modelType, QString()); };
+
+    /**
+     * @brief Get the model type from a human readable name
+     *
+     * @param name
+     * @return FSTReader::ModelType
+     */
+    static FSTReader::ModelType getTypeFromName(const QString& name) { return _namesToTypes.value(name); }
+
+    /**
+     * @brief Downloads a mapping from the specified URL
+     *
+     * Automatically parses the result with either parser.
+     *
+     * @param url URL to download
+     * @return Mapping Resulting mapping, or an empty one on error.
+     */
+    static Mapping downloadMapping(const QString& url);
+
+protected:
+    /**
+     * @brief Convert legacy blendshapes to ARKit blendshapes
+     *
+     * See https://arkit-face-blendshapes.com/
+     * @param properties
+     */
+    void fixUpLegacyBlendshapes(Mapping &properties);
 
 private:
-    static void writeVariant(QBuffer& buffer, QVariantHash::const_iterator& it);
-    static hifi::VariantMultiHash parseMapping(QIODevice* device);
+    static const QHash<FSTReader::ModelType, QString> _typesToNames;
+    static const QHash<QString, FSTReader::ModelType> _namesToTypes;
 
-    static QHash<FSTReader::ModelType, QString> _typesToNames;
-    static QHash<QString, FSTReader::ModelType> _namesToTypes;
+    // Used for encoding files to write stuff in an user friendly order
+    static const QStringList _preferredFieldOrder;
 };
+
+
+    inline uint qHash(FSTReader::ModelType key, uint seed) {
+        return ::qHash(static_cast<uint>(key), seed);
+    }
+
 
 #endif // hifi_FSTReader_h
