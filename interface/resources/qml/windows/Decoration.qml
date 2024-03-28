@@ -35,6 +35,7 @@ Rectangle {
     property int frameMarginRight: frameMargin
     property int frameMarginTop: 10 + iconSize
     property int frameMarginBottom: frameMargin
+    property bool is_window: true // Controls whether or not the border should include the top bar
 
     Behavior on frameMargin {
         NumberAnimation {
@@ -116,11 +117,13 @@ Rectangle {
     }
 
     Rectangle{
+        visible: is_window
         height: frameMarginTop
         width: parent.width
         color: "black"
     }
     Row {
+        visible: is_window
         id: controlsRow
         width: parent.width
         height: frameMarginTop
@@ -134,6 +137,8 @@ Rectangle {
                 left: parent.left
                 leftMargin: titleMargin
             }
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
             font.family: "Raleway"
             font.pixelSize: 20 // Set font size
             color: hifi.colors.white
@@ -147,15 +152,45 @@ Rectangle {
                 top: parent.top
             }
             // Close
-            Button {
-                text: "X"
+            Rectangle {
                 visible: window ? window.closable : false
                 height: frameMarginTop
                 width: 100
-                onClicked: {
+                color: Qt.rgba(0.1,0.1,0.1,1)
+
+                Behavior on color {
+                    ColorAnimation{
+                        duration: 100
+                        easing.type: Easing.InOutQuad
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: containsMouse ? Qt.OpenHandCursor : Qt.ArrowCursor
+                    onEntered: {
+                        cursorShape: Qt.PointingHandCursor
+                        parent.color = Qt.rgba(1,0,0,1)
+                    }
+                    onExited: {
+                        cursorShape: Qt.ArrowCursor
+                        parent.color = Qt.rgba(0.1,0.1,0.1,1)
+                    }
+                    onClicked: {
                         window.shown = false;
                         window.windowClosed();
                     }
+                }
+
+                Text {
+                    text: "X"
+                    color: Qt.rgba(1,1,1,1)
+                    font.pointSize: 14
+                    anchors.fill: parent
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
             }
         }
 
