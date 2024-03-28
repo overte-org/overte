@@ -36,9 +36,16 @@ Rectangle {
     property int frameMarginTop: 10 + iconSize
     property int frameMarginBottom: frameMargin
     property bool is_window: true // Controls whether or not the border should include the top bar
+    property color bg_color: Qt.rgba(0.2,0.2,0.2,0.8)
 
     Behavior on frameMargin {
         NumberAnimation {
+            duration: 100
+            easing.type: Easing.InOutQuad
+        }
+    }
+    Behavior on bg_color {
+        ColorAnimation {
             duration: 100
             easing.type: Easing.InOutQuad
         }
@@ -57,7 +64,7 @@ Rectangle {
         bottomMargin: -frameMarginBottom
     }
     anchors.fill: parent
-    color: Qt.rgba(0,0,0,0.8)
+    color: bg_color
     radius: 0 // hifi.dimensions.borderRadius
 
     // Enable dragging of the window,
@@ -71,12 +78,14 @@ Rectangle {
             window.mouseEntered();
             frameMargin = 15;
             titleMargin = 18;
+            bg_color = Qt.rgba(0.113, 0.122, 0.149, 1)
         }
         onExited: {
             if (!containsMouseGlobal()) {
                 window.mouseExited();
                 frameMargin = 2;
                 titleMargin = 5;
+                bg_color = Qt.rgba(0,0,0,0.8)
             }
         }
 
@@ -132,7 +141,7 @@ Rectangle {
         Text {
             id: titleText
             anchors {
-                top: parent.top + frameMargin
+                top: parent.top + frameMargin // FIXME: Error somewhere here
                 bottom: parent.bottom
                 left: parent.left
                 leftMargin: titleMargin
@@ -152,30 +161,22 @@ Rectangle {
                 top: parent.top
             }
             // Close
-            Rectangle {
+            Item {
                 visible: window ? window.closable : false
                 height: frameMarginTop
-                width: 100
-                color: Qt.rgba(0.1,0.1,0.1,1)
-
-                Behavior on color {
-                    ColorAnimation{
-                        duration: 100
-                        easing.type: Easing.InOutQuad
-                    }
-                }
+                width: 50
 
                 MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
-                    cursorShape: containsMouse ? Qt.OpenHandCursor : Qt.ArrowCursor
+                    cursorShape: containsMouse ? Qt.PointingHandCursor : Qt.ArrowCursor
                     onEntered: {
                         cursorShape: Qt.PointingHandCursor
-                        parent.color = Qt.rgba(1,0,0,1)
+                        closeButton.color = Qt.rgba(1,0,0,1)
                     }
                     onExited: {
                         cursorShape: Qt.ArrowCursor
-                        parent.color = Qt.rgba(0.1,0.1,0.1,1)
+                        closeButton.color = Qt.rgba(1,1,1,1)
                     }
                     onClicked: {
                         window.shown = false;
@@ -184,12 +185,21 @@ Rectangle {
                 }
 
                 Text {
-                    text: "X"
+                    id: closeButton
+                    text: hifi.glyphs.close
+                    font.family: "hifi-glyphs"
                     color: Qt.rgba(1,1,1,1)
-                    font.pointSize: 14
+                    font.pointSize: 18
                     anchors.fill: parent
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
+
+                    Behavior on color {
+                        ColorAnimation{
+                            duration: 100
+                            easing.type: Easing.InOutQuad
+                        }
+                    }
                 }
             }
         }
