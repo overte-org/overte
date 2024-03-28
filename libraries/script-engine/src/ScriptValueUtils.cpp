@@ -79,6 +79,7 @@ void registerMetaTypes(ScriptEngine* engine) {
     scriptRegisterMetaType<QUrl, qURLToScriptValue, qURLFromScriptValue>(engine);
     scriptRegisterMetaType<QColor, qColorToScriptValue, qColorFromScriptValue>(engine);
     scriptRegisterMetaType<QTimer*, qTimerToScriptValue, qTimerFromScriptValue>(engine, "QTimer*");
+    scriptRegisterMetaType<QByteArray, qBytearrayToScriptValue, qBytearrayFromScriptValue>(engine, "QByteArray");
 
     scriptRegisterMetaType<PickRay, pickRayToScriptValue, pickRayFromScriptValue>(engine);
     scriptRegisterMetaType<Collision, collisionToScriptValue, collisionFromScriptValue>(engine);
