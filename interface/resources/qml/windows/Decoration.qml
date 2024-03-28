@@ -36,7 +36,7 @@ Rectangle {
     property int frameMarginTop: 10 + iconSize
     property int frameMarginBottom: frameMargin
     property bool is_window: true // Controls whether or not the border should include the top bar
-    property color bg_color: Qt.rgba(0.2,0.2,0.2,0.8)
+    property color bg_color: Qt.rgba(0,0,0,0.8)
 
     Behavior on frameMargin {
         NumberAnimation {
@@ -78,7 +78,7 @@ Rectangle {
             window.mouseEntered();
             frameMargin = 15;
             titleMargin = 18;
-            bg_color = Qt.rgba(0.113, 0.122, 0.149, 1)
+            bg_color = Qt.rgba(0.122, 0.122, 0.122, 1)
         }
         onExited: {
             if (!containsMouseGlobal()) {
