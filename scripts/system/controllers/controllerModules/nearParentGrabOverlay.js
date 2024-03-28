@@ -77,11 +77,12 @@ Script.include("/~/system/libraries/utils.js");
         };
 
         this.getGrabbedProperties = function() {
+            let properties = Entities.getEntityProperties(this.grabbedThingID, ["position", "rotation", "parentID", "parentJointIndex"]);
             return {
-                position: Entities.getEntityProperties(this.grabbedThingID, ["position"]).position,
-                rotation: Entities.getEntityProperties(this.grabbedThingID, ["rotation"]).rotation,
-                parentID: Entities.getEntityProperties(this.grabbedThingID, ["parentID"]).parentID,
-                parentJointIndex: Entities.getEntityProperties(this.grabbedThingID, ["parentJointIndex"]).parentJointIndex,
+                position: properties.position,
+                rotation: properties.rotation,
+                parentID: properties.parentID,
+                parentJointIndex: properties.parentJointIndex,
                 dynamic: false,
                 shapeType: "none"
             };
@@ -202,7 +203,6 @@ Script.include("/~/system/libraries/utils.js");
 
             var candidateOverlays = controllerData.nearbyOverlayIDs[this.hand];
             var grabbableOverlays = candidateOverlays.filter(function(overlayID) {
-                // V8TODO: check if this works
                 return Entities.getEntityProperties(overlayID, ["grab.grabbable"]).grab.grabbable;
             });
 

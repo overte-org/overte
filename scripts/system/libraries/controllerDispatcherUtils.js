@@ -436,9 +436,10 @@ var projectOntoEntityXYPlane = function (entityID, worldPos, popProps) {
 };
 
 var projectOntoOverlayXYPlane = function projectOntoOverlayXYPlane(overlayID, worldPos) {
-    var position = Entities.getEntityProperties(overlayID, ["position"]).position;
-    var rotation = Entities.getEntityProperties(overlayID, ["rotation"]).rotation;
-    var dimensions = Entities.getEntityProperties(overlayID, ["dimensions"]).dimensions;
+    var properties = Entities.getEntityProperties(overlayID, ["position", "rotation", "dimensions"]);
+    var position = properties.position;
+    var rotation = properties.rotation;
+    var dimensions = properties.dimensions;
     dimensions.z = 0.01; // we are projecting onto the XY plane of the overlay, so ignore the z dimension
 
     return projectOntoXYPlane(worldPos, position, rotation, dimensions, DEFAULT_REGISTRATION_POINT);
