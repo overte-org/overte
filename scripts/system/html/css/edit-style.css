@@ -1776,6 +1776,7 @@ input#property-scale-button-reset {
     display: none;
     position: fixed;
     color: #000000;
+    font-family: FiraSans-SemiBold;
     background-color: #afafaf;
     padding: 5px 0 5px 0;
     cursor: default;
@@ -1795,7 +1796,7 @@ input#property-scale-button-reset {
     padding: 0 0;
 }
 .context-menu li.disabled {
-    color: #333333;
+    color: #777777;
 }
 .context-menu li.separator:hover, .context-menu li.disabled:hover {
     background-color: #afafaf;
