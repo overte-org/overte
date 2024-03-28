@@ -94,7 +94,8 @@ static const std::array<std::string, RefreshRateManager::UXMode::UX_NUM> UX_MODE
 static const std::map<std::string, RefreshRateManager::RefreshRateProfile> REFRESH_RATE_PROFILE_FROM_STRING =
     { { "Eco", RefreshRateManager::RefreshRateProfile::ECO },
       { "Interactive", RefreshRateManager::RefreshRateProfile::INTERACTIVE },
-      { "Realtime", RefreshRateManager::RefreshRateProfile::REALTIME } };
+      { "Realtime", RefreshRateManager::RefreshRateProfile::REALTIME },
+      { "Custom", RefreshRateManager::RefreshRateProfile::CUSTOM } };
 
 
 // Porfile regimes are:
@@ -166,6 +167,25 @@ void RefreshRateManager::setRefreshRateProfile(RefreshRateManager::RefreshRatePr
         });
         updateRefreshRateController();
     }
+}
+
+int RefreshRateManager::getCustomRefreshRate(RefreshRateRegime regime)
+{
+    Q_ASSERT(regime >= 0 && regime < RefreshRateRegime::REGIME_NUM);
+    if (regime < 0 && regime >= RefreshRateRegime::REGIME_NUM)
+        return -1;
+
+    return _customProfile[regime];
+}
+
+int RefreshRateManager::setCustomRefreshRate(RefreshRateRegime regime, int value)
+{
+    Q_ASSERT(regime >= 0 && regime < RefreshRateRegime::REGIME_NUM);
+    if (regime < 0 && regime >= RefreshRateRegime::REGIME_NUM)
+        return -1;
+
+    _customProfile[regime] = value;
+    return 0;
 }
 
 RefreshRateManager::RefreshRateProfile RefreshRateManager::getRefreshRateProfile() const {

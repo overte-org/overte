@@ -32,6 +32,7 @@ public:
         ECO = 0,
         INTERACTIVE,
         REALTIME,
+        CUSTOM,
         PROFILE_NUM
     };
     Q_ENUM(RefreshRateProfile)
@@ -106,6 +107,9 @@ public:
     // query the refresh rate target at the specified combination
     int queryRefreshRateTarget(RefreshRateProfile profile, RefreshRateRegime regime, UXMode uxMode) const;
 
+    int getCustomRefreshRate(RefreshRateRegime regime);
+    int setCustomRefreshRate(RefreshRateRegime regime, int value);
+
     void resetInactiveTimer();
     void toggleInactive();
 
@@ -115,6 +119,9 @@ public:
     static std::string refreshRateRegimeToString(RefreshRateRegime refreshRateRegime);
 
 private:
+    std::array<int, RefreshRateRegime::REGIME_NUM> _customProfile =
+        { { 0, 0, 0, 0, 0, 0 } };
+
     mutable int _activeRefreshRate { 20 };
     RefreshRateProfile _refreshRateProfile { RefreshRateProfile::INTERACTIVE};
     RefreshRateRegime _refreshRateRegime { RefreshRateRegime::STARTUP };

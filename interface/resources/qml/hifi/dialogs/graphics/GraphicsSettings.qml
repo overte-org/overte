@@ -347,6 +347,10 @@ Flickable {
                             text: "Real-Time"
                             refreshRatePreset: 2 // RefreshRateProfile::REALTIME
                         }
+                        ListElement {
+                            text: "Custom"
+                            refreshRatePreset: 3 // RefreshRateProfile::CUSTOM
+                        }
                     }
 
                     HifiControlsUit.ComboBox {
@@ -366,8 +370,10 @@ Flickable {
                                 refreshRateDropdown.currentIndex = 0;
                             } else if (Performance.getRefreshRateProfile() === 1) {
                                 refreshRateDropdown.currentIndex = 1;
-                            } else {
+                            } else if (Performance.getRefreshRateProfile() === 2) {
                                 refreshRateDropdown.currentIndex = 2;
+                            } else {
+                                refreshRateDropdown.currentIndex = 3;
                             }
                         }
 
@@ -378,6 +384,132 @@ Flickable {
                         onCurrentIndexChanged: {
                             Performance.setRefreshRateProfile(model.get(currentIndex).refreshRatePreset);
                             refreshRateDropdown.displayText = model.get(currentIndex).text;
+                        }
+                    }
+
+                    HifiControlsUit.SpinBox {
+                        id: refreshRateCustomFocusActive
+                        decimals: 0
+                        width: 160
+                        height: parent.height
+                        suffix: " FPS"
+                        label: "Focus Active"
+                        minimumValue: 1.0
+                        realStepSize: 1.0
+                        realValue: 60.0
+                        colorScheme: hifi.colorSchemes.dark
+
+                        Component.onCompleted: {
+                            realValue = Performance.getCustomRefreshRate(0)
+                        }
+
+                        onRealValueChanged: {
+                            Performance.setCustomRefreshRate(0, realValue);
+                        }
+                    }
+
+                    HifiControlsUit.SpinBox {
+                        id: refreshRateCustomFocusInactive
+                        decimals: 0
+                        width: 160
+                        height: parent.height
+                        suffix: " FPS"
+                        label: "Focus Inactive"
+                        minimumValue: 1.0
+                        realStepSize: 1.0
+                        realValue: 60.0
+                        colorScheme: hifi.colorSchemes.dark
+
+                        Component.onCompleted: {
+                            realValue = Performance.getCustomRefreshRate(1)
+                        }
+
+                        onRealValueChanged: {
+                            Performance.setCustomRefreshRate(1, realValue);
+                        }
+                    }
+
+                    HifiControlsUit.SpinBox {
+                        id: refreshRateCustomUnfocus
+                        decimals: 0
+                        width: 160
+                        height: parent.height
+                        suffix: " FPS"
+                        label: "Unfocus"
+                        minimumValue: 1.0
+                        realStepSize: 1.0
+                        realValue: 60.0
+                        colorScheme: hifi.colorSchemes.dark
+
+                        Component.onCompleted: {
+                            realValue = Performance.getCustomRefreshRate(2)
+                        }
+
+                        onRealValueChanged: {
+                            Performance.setCustomRefreshRate(2, realValue);
+                        }
+                    }
+
+                    HifiControlsUit.SpinBox {
+                        id: refreshRateCustomMinimized
+                        decimals: 0
+                        width: 160
+                        height: parent.height
+                        suffix: " FPS"
+                        label: "Minimized"
+                        minimumValue: 1.0
+                        realStepSize: 1.0
+                        realValue: 60.0
+                        colorScheme: hifi.colorSchemes.dark
+
+                        Component.onCompleted: {
+                            realValue = Performance.getCustomRefreshRate(3)
+                        }
+
+                        onRealValueChanged: {
+                            Performance.setCustomRefreshRate(3, realValue);
+                        }
+                    }
+
+                    HifiControlsUit.SpinBox {
+                        id: refreshRateCustomStartup
+                        decimals: 0
+                        width: 160
+                        height: parent.height
+                        suffix: " FPS"
+                        label: "Startup"
+                        minimumValue: 1.0
+                        realStepSize: 1.0
+                        realValue: 60.0
+                        colorScheme: hifi.colorSchemes.dark
+
+                        Component.onCompleted: {
+                            realValue = Performance.getCustomRefreshRate(4)
+                        }
+
+                        onRealValueChanged: {
+                            Performance.setCustomRefreshRate(4, realValue);
+                        }
+                    }
+
+                    HifiControlsUit.SpinBox {
+                        id: refreshRateCustomShutdown
+                        decimals: 0
+                        width: 160
+                        height: parent.height
+                        suffix: " FPS"
+                        label: "Shutdown"
+                        minimumValue: 1.0
+                        realStepSize: 1.0
+                        realValue: 60.0
+                        colorScheme: hifi.colorSchemes.dark
+
+                        Component.onCompleted: {
+                            realValue = Performance.getCustomRefreshRate(5)
+                        }
+
+                        onRealValueChanged: {
+                            Performance.setCustomRefreshRate(5, realValue);
                         }
                     }
                 }
