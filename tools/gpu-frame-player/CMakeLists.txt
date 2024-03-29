@@ -24,9 +24,9 @@ if (BUILD_FRAME_PLAYER_GL)
     link_hifi_libraries(gl ${PLATFORM_GL_BACKEND})
     target_opengl()
 else()
-    link_hifi_libraries(vk gpu-vk)
     target_vulkan()
 endif()
+link_hifi_libraries(vk gpu-vk)
 
 package_libraries_for_deployment()
 
