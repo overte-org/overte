@@ -154,7 +154,8 @@ namespace vks {
 
             vk::Pipeline create(const vk::PipelineCache& cache) {
                 update();
-                return device.createGraphicsPipeline(cache, pipelineCreateInfo);
+                vk::ResultValue<vk::Pipeline> res = device.createGraphicsPipeline(cache, pipelineCreateInfo);
+                return res.value;
             }
 
             vk::Pipeline create() {
