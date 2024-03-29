@@ -31,11 +31,11 @@ static void initShadersResources() {
 namespace shader {
 
 #if defined(USE_GLES)
-static const Dialect DEFAULT_DIALECT = Dialect::glsl320es;
+const Dialect DEFAULT_DIALECT = Dialect::glsl320es;
 #elif defined(Q_OS_MAC)
-static const Dialect DEFAULT_DIALECT = Dialect::glsl410;
+const Dialect DEFAULT_DIALECT = Dialect::glsl410;
 #else
-static const Dialect DEFAULT_DIALECT = Dialect::glsl450;
+const Dialect DEFAULT_DIALECT = Dialect::glsl450;
 #endif
 
 const std::vector<Dialect>& allDialects() {
