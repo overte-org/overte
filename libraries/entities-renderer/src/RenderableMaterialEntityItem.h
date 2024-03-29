@@ -67,6 +67,7 @@ private:
     std::shared_ptr<NetworkMaterial> _appliedMaterial;
     std::string _currentMaterialName;
 
+    gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>() };
 };
 
 } } 
