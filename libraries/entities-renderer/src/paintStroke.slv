@@ -24,9 +24,7 @@ INPUT(GPU_ATTR_TEXCOORD0, vec4, inTexCoord0);
 <@include paintStroke.slh@>
 <$declarePolyLineBuffers()$>
 
-<@if not HIFI_USE_FORWARD@>
-    OUTPUT(0, vec3, _normalWS);
-<@endif@>
+OUTPUT(0, vec3, _normalWS);
 OUTPUT(1, vec2, _texCoord);
 OUTPUT(2, vec4, _color);
 OUTPUT(3, float, _distanceFromCenter);
