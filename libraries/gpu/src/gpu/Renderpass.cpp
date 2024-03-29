@@ -8,6 +8,8 @@
 
 #include "Renderpass.h"
 
+#include <stdexcept>
+
 using namespace gpu;
 
 Attachment::Attachment() {
