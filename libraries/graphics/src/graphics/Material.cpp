@@ -341,10 +341,10 @@ void MultiMaterial::setisMToon(bool isMToon) {
     if (isMToon != _isMToon) {
         if (isMToon) {
             MToonSchema toonSchema;
-            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(MToonSchema), (const gpu::Byte*) &toonSchema, sizeof(MToonSchema)));
+            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(MToonSchema), (const gpu::Byte*) &toonSchema, sizeof(MToonSchema)));
         } else {
             Schema schema;
-            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
+            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
         }
     }
     _isMToon = isMToon;

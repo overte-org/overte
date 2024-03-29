@@ -1471,9 +1471,9 @@ void GeometryCache::renderLine(gpu::Batch& batch, const glm::vec3& p1, const glm
         details.vertices = vertices;
         details.vertexSize = FLOATS_PER_VERTEX;
 
-        auto verticesBuffer = std::make_shared<gpu::Buffer>();
-        auto normalBuffer = std::make_shared<gpu::Buffer>();
-        auto colorBuffer = std::make_shared<gpu::Buffer>();
+        auto verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto normalBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto colorBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
         auto streamFormat = std::make_shared<gpu::Stream::Format>();
         auto stream = std::make_shared<gpu::BufferStream>();
 

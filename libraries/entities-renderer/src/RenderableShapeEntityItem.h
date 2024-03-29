@@ -43,7 +43,7 @@ private:
     glm::vec3 _color { NAN };
     float _alpha { NAN };
 
-    gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>() };
+    gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
 };
 
 } } 
