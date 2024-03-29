@@ -638,7 +638,6 @@ void VKBackend::executeFrame(const FramePointer& frame) {
 
                     case Batch::COMMAND_startNamedCall:
                     case Batch::COMMAND_stopNamedCall:
-                    case Batch::COMMAND_glColor4f:
 
                     case Batch::COMMAND_pushProfileRange:
                     case Batch::COMMAND_popProfileRange:
