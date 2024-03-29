@@ -156,7 +156,7 @@ protected:
 
     BufferView _partBuffer;
 
-    gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>() };
+    gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
 
     void evalVertexFormat();
     void evalVertexStream();

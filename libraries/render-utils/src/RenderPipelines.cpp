@@ -923,7 +923,7 @@ bool RenderPipelines::bindMaterials(graphics::MultiMaterial& multiMaterial, Batc
         // MaterialEmissiveLightmap has to be set later
 
         graphics::MultiMaterial::MToonSchema toonSchema;
-        defaultMToonMaterialSchema = BufferView(std::make_shared<Buffer>(sizeof(toonSchema), (const Byte*) &toonSchema, sizeof(toonSchema)));
+        defaultMToonMaterialSchema = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(toonSchema), (const gpu::Byte*) &toonSchema, sizeof(toonSchema)));
 
         defaultMToonMaterialTextures->setTexture(gr::Texture::MaterialAlbedo, textureCache->getWhiteTexture());
         defaultMToonMaterialTextures->setTexture(gr::Texture::MaterialNormal, textureCache->getBlueTexture());

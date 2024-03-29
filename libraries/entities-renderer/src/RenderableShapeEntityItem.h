@@ -47,7 +47,7 @@ private:
     float _alpha { NAN };
     bool _unlit { false };
 
-    gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>() };
+    gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
     int _torusID { GeometryCache::UNKNOWN_ID };
 
     FadeBuffers _fadeBuffers;
