@@ -366,15 +366,7 @@ Flickable {
                         currentIndex: -1
 
                         function refreshRefreshRateDropdownDisplay() {
-                            if (Performance.getRefreshRateProfile() === 0) {
-                                refreshRateDropdown.currentIndex = 0;
-                            } else if (Performance.getRefreshRateProfile() === 1) {
-                                refreshRateDropdown.currentIndex = 1;
-                            } else if (Performance.getRefreshRateProfile() === 2) {
-                                refreshRateDropdown.currentIndex = 2;
-                            } else {
-                                refreshRateDropdown.currentIndex = 3;
-                            }
+                            refreshRateDropdown.currentIndex = Performance.getRefreshRateProfile();
                         }
 
                         Component.onCompleted: {
@@ -386,130 +378,178 @@ Flickable {
                             refreshRateDropdown.displayText = model.get(currentIndex).text;
                         }
                     }
+                }
 
-                    HifiControlsUit.SpinBox {
-                        id: refreshRateCustomFocusActive
-                        decimals: 0
-                        width: 160
-                        height: parent.height
-                        suffix: " FPS"
-                        label: "Focus Active"
-                        minimumValue: 1.0
-                        realStepSize: 1.0
-                        realValue: 60.0
-                        colorScheme: hifi.colorSchemes.dark
+                ColumnLayout {
+                    width: parent.width
+                    Layout.topMargin: 32
+                    visible: refreshRateDropdown.currentIndex == 3
 
-                        Component.onCompleted: {
-                            realValue = Performance.getCustomRefreshRate(0)
+                    RowLayout {
+                        Layout.margins: 8
+
+                        HifiControlsUit.SpinBox {
+                            id: refreshRateCustomFocusActive
+                            decimals: 0
+                            width: 160
+                            height: 32
+                            suffix: " FPS"
+                            label: "Focus Active"
+                            realFrom: 1
+                            realTo: 1000
+                            realStepSize: 15
+                            realValue: 60
+                            colorScheme: hifi.colorSchemes.dark
+                            property var loaded: false
+
+                            Component.onCompleted: {
+                                realValue = Performance.getCustomRefreshRate(0)
+                                loaded = true
+                            }
+
+                            onRealValueChanged: {
+                                if (loaded) {
+                                    Performance.setCustomRefreshRate(0, realValue)
+                                }
+                            }
                         }
 
-                        onRealValueChanged: {
-                            Performance.setCustomRefreshRate(0, realValue);
-                        }
-                    }
+                        HifiControlsUit.SpinBox {
+                            id: refreshRateCustomFocusInactive
+                            decimals: 0
+                            width: 160
+                            height: 32
+                            suffix: " FPS"
+                            label: "Focus Inactive"
+                            realFrom: 1
+                            realTo: 1000
+                            realStepSize: 15
+                            realValue: 60
+                            colorScheme: hifi.colorSchemes.dark
+                            property var loaded: false
 
-                    HifiControlsUit.SpinBox {
-                        id: refreshRateCustomFocusInactive
-                        decimals: 0
-                        width: 160
-                        height: parent.height
-                        suffix: " FPS"
-                        label: "Focus Inactive"
-                        minimumValue: 1.0
-                        realStepSize: 1.0
-                        realValue: 60.0
-                        colorScheme: hifi.colorSchemes.dark
+                            Component.onCompleted: {
+                                realValue = Performance.getCustomRefreshRate(1)
+                                loaded = true
+                            }
 
-                        Component.onCompleted: {
-                            realValue = Performance.getCustomRefreshRate(1)
-                        }
-
-                        onRealValueChanged: {
-                            Performance.setCustomRefreshRate(1, realValue);
-                        }
-                    }
-
-                    HifiControlsUit.SpinBox {
-                        id: refreshRateCustomUnfocus
-                        decimals: 0
-                        width: 160
-                        height: parent.height
-                        suffix: " FPS"
-                        label: "Unfocus"
-                        minimumValue: 1.0
-                        realStepSize: 1.0
-                        realValue: 60.0
-                        colorScheme: hifi.colorSchemes.dark
-
-                        Component.onCompleted: {
-                            realValue = Performance.getCustomRefreshRate(2)
-                        }
-
-                        onRealValueChanged: {
-                            Performance.setCustomRefreshRate(2, realValue);
-                        }
-                    }
-
-                    HifiControlsUit.SpinBox {
-                        id: refreshRateCustomMinimized
-                        decimals: 0
-                        width: 160
-                        height: parent.height
-                        suffix: " FPS"
-                        label: "Minimized"
-                        minimumValue: 1.0
-                        realStepSize: 1.0
-                        realValue: 60.0
-                        colorScheme: hifi.colorSchemes.dark
-
-                        Component.onCompleted: {
-                            realValue = Performance.getCustomRefreshRate(3)
-                        }
-
-                        onRealValueChanged: {
-                            Performance.setCustomRefreshRate(3, realValue);
+                            onRealValueChanged: {
+                                if (loaded) {
+                                    Performance.setCustomRefreshRate(1, realValue)
+                                }
+                            }
                         }
                     }
 
-                    HifiControlsUit.SpinBox {
-                        id: refreshRateCustomStartup
-                        decimals: 0
-                        width: 160
-                        height: parent.height
-                        suffix: " FPS"
-                        label: "Startup"
-                        minimumValue: 1.0
-                        realStepSize: 1.0
-                        realValue: 60.0
-                        colorScheme: hifi.colorSchemes.dark
+                    RowLayout {
+                        Layout.margins: 8
 
-                        Component.onCompleted: {
-                            realValue = Performance.getCustomRefreshRate(4)
+                        HifiControlsUit.SpinBox {
+                            id: refreshRateCustomUnfocus
+                            decimals: 0
+                            width: 160
+                            height: 32
+                            suffix: " FPS"
+                            label: "Unfocus"
+                            realFrom: 1
+                            realTo: 1000
+                            realStepSize: 15
+                            realValue: 60
+                            colorScheme: hifi.colorSchemes.dark
+                            property var loaded: false
+
+                            Component.onCompleted: {
+                                realValue = Performance.getCustomRefreshRate(2)
+                                loaded = true
+                            }
+
+                            onRealValueChanged: {
+                                if (loaded) {
+                                    Performance.setCustomRefreshRate(2, realValue);
+                                }
+                            }
                         }
 
-                        onRealValueChanged: {
-                            Performance.setCustomRefreshRate(4, realValue);
+                        HifiControlsUit.SpinBox {
+                            id: refreshRateCustomMinimized
+                            decimals: 0
+                            width: 160
+                            height: 32
+                            suffix: " FPS"
+                            label: "Minimized"
+                            realFrom: 1
+                            realTo: 1000
+                            realStepSize: 1
+                            realValue: 60
+                            colorScheme: hifi.colorSchemes.dark
+                            property var loaded: false
+
+                            Component.onCompleted: {
+                                realValue = Performance.getCustomRefreshRate(3)
+                                loaded = true
+                            }
+
+                            onRealValueChanged: {
+                                if (loaded) {
+                                    Performance.setCustomRefreshRate(3, realValue)
+                                }
+                            }
                         }
                     }
 
-                    HifiControlsUit.SpinBox {
-                        id: refreshRateCustomShutdown
-                        decimals: 0
-                        width: 160
-                        height: parent.height
-                        suffix: " FPS"
-                        label: "Shutdown"
-                        minimumValue: 1.0
-                        realStepSize: 1.0
-                        realValue: 60.0
-                        colorScheme: hifi.colorSchemes.dark
+                    RowLayout {
+                        Layout.margins: 8
 
-                        Component.onCompleted: {
-                            realValue = Performance.getCustomRefreshRate(5)
+                        HifiControlsUit.SpinBox {
+                            id: refreshRateCustomStartup
+                            decimals: 0
+                            width: 160
+                            height: 32
+                            suffix: " FPS"
+                            label: "Startup"
+                            realFrom: 1
+                            realTo: 1000
+                            realStepSize: 15
+                            realValue: 60
+                            colorScheme: hifi.colorSchemes.dark
+                            property var loaded: false
+
+                            Component.onCompleted: {
+                                realValue = Performance.getCustomRefreshRate(4)
+                                loaded = true
+                            }
+
+                            onRealValueChanged: {
+                                if (loaded) {
+                                    Performance.setCustomRefreshRate(4, realValue)
+                                }
+                            }
                         }
 
-                        onRealValueChanged: {
-                            Performance.setCustomRefreshRate(5, realValue);
+                        HifiControlsUit.SpinBox {
+                            id: refreshRateCustomShutdown
+                            decimals: 0
+                            width: 160
+                            height: 32
+                            suffix: " FPS"
+                            label: "Shutdown"
+                            realFrom: 1
+                            realTo: 1000
+                            realStepSize: 15
+                            realValue: 60
+                            colorScheme: hifi.colorSchemes.dark
+                            property var loaded: false
+
+                            Component.onCompleted: {
+                                realValue = Performance.getCustomRefreshRate(5)
+                                loaded = true
+                            }
+
+                            onRealValueChanged: {
+                                if (loaded) {
+                                    Performance.setCustomRefreshRate(5, realValue)
+                                }
+                            }
                         }
                     }
                 }

@@ -48,12 +48,13 @@ static const int VR_TARGET_RATE = 90;
  *     <tr><td><code>"Interactive"</code></td><td>Medium refresh rate, which is reduced when Interface doesn't have focus or is 
  *         minimized.</td></tr>
  *     <tr><td><code>"Realtime"</code></td><td>High refresh rate, even when Interface doesn't have focus or is minimized.
+ *     <tr><td><code>"Custom"</code></td><td>Custom refresh rate for full control over the refresh rate in all states.
  *   </tbody>
  * </table>
  * @typedef {string} RefreshRateProfileName
  */
 static const std::array<std::string, RefreshRateManager::RefreshRateProfile::PROFILE_NUM> REFRESH_RATE_PROFILE_TO_STRING =
-    { { "Eco", "Interactive", "Realtime" } };
+    { { "Eco", "Interactive", "Realtime", "Custom" } };
 
 /*@jsdoc
  * <p>Interface states that affect the refresh rate.</p>
@@ -108,10 +109,12 @@ static const std::array<int, RefreshRateManager::RefreshRateRegime::REGIME_NUM> 
     { { 30, 20, 10, 2, 30, 30 } };
 
 static const std::array<int, RefreshRateManager::RefreshRateRegime::REGIME_NUM> REALTIME_PROFILE =
-    { { 60, 60, 60, 2, 30, 30} };
+    { { 60, 60, 60, 2, 30, 30 } };
 
-static const std::array<std::array<int, RefreshRateManager::RefreshRateRegime::REGIME_NUM>, RefreshRateManager::RefreshRateProfile::PROFILE_NUM> REFRESH_RATE_PROFILES =
-    { { ECO_PROFILE, INTERACTIVE_PROFILE, REALTIME_PROFILE } };
+static const std::array<int, RefreshRateManager::RefreshRateRegime::REGIME_NUM> CUSTOM_PROFILE = REALTIME_PROFILE; // derived from settings and modified by scripts below
+
+static std::array<std::array<int, RefreshRateManager::RefreshRateRegime::REGIME_NUM>, RefreshRateManager::RefreshRateProfile::PROFILE_NUM> REFRESH_RATE_PROFILES =
+    { { ECO_PROFILE, INTERACTIVE_PROFILE, REALTIME_PROFILE, CUSTOM_PROFILE } };
 
 
 static const int INACTIVE_TIMER_LIMIT = 3000;
@@ -135,6 +138,10 @@ std::string RefreshRateManager::uxModeToString(RefreshRateManager::RefreshRateMa
 
 RefreshRateManager::RefreshRateManager() {
     _refreshRateProfile = (RefreshRateManager::RefreshRateProfile) _refreshRateProfileSetting.get();
+    for (size_t i = 0; i < _customRefreshRateSettings.size(); i++) {
+        REFRESH_RATE_PROFILES[CUSTOM][i] = _customRefreshRateSettings[i].get();
+    }
+
     _inactiveTimer->setInterval(INACTIVE_TIMER_LIMIT);
     _inactiveTimer->setSingleShot(true);
     QObject::connect(_inactiveTimer.get(), &QTimer::timeout, [&] {
@@ -169,23 +176,23 @@ void RefreshRateManager::setRefreshRateProfile(RefreshRateManager::RefreshRatePr
     }
 }
 
-int RefreshRateManager::getCustomRefreshRate(RefreshRateRegime regime)
-{
-    Q_ASSERT(regime >= 0 && regime < RefreshRateRegime::REGIME_NUM);
-    if (regime < 0 && regime >= RefreshRateRegime::REGIME_NUM)
-        return -1;
+int RefreshRateManager::getCustomRefreshRate(RefreshRateRegime regime) {
+    if (isValidRefreshRateRegime(regime)) {
+        return REFRESH_RATE_PROFILES[RefreshRateProfile::CUSTOM][regime];
+    }
 
-    return _customProfile[regime];
+    return 0;
 }
 
-int RefreshRateManager::setCustomRefreshRate(RefreshRateRegime regime, int value)
-{
-    Q_ASSERT(regime >= 0 && regime < RefreshRateRegime::REGIME_NUM);
-    if (regime < 0 && regime >= RefreshRateRegime::REGIME_NUM)
-        return -1;
-
-    _customProfile[regime] = value;
-    return 0;
+void RefreshRateManager::setCustomRefreshRate(RefreshRateRegime regime, int value) {
+    value = std::max(value, 1);
+    if (isValidRefreshRateRegime(regime)) {
+        _refreshRateProfileSettingLock.withWriteLock([&] {
+            REFRESH_RATE_PROFILES[RefreshRateProfile::CUSTOM][regime] = value;
+            _customRefreshRateSettings[regime].set(value);
+        });
+        updateRefreshRateController();
+    }
 }
 
 RefreshRateManager::RefreshRateProfile RefreshRateManager::getRefreshRateProfile() const {
@@ -211,7 +218,6 @@ void RefreshRateManager::setRefreshRateRegime(RefreshRateManager::RefreshRateReg
         _refreshRateRegime = refreshRateRegime;
         updateRefreshRateController();
     }
-
 }
 
 void RefreshRateManager::setUXMode(RefreshRateManager::UXMode uxMode) {

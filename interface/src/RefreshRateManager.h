@@ -36,7 +36,7 @@ public:
         PROFILE_NUM
     };
     Q_ENUM(RefreshRateProfile)
-    static bool isValidRefreshRateProfile(RefreshRateProfile value) { return (value >= RefreshRateProfile::ECO && value <= RefreshRateProfile::REALTIME); }
+    static bool isValidRefreshRateProfile(RefreshRateProfile value) { return (value >= 0 && value < RefreshRateProfile::PROFILE_NUM); }
 
     /*@jsdoc
      * <p>Interface states that affect the refresh rate.</p>
@@ -108,7 +108,7 @@ public:
     int queryRefreshRateTarget(RefreshRateProfile profile, RefreshRateRegime regime, UXMode uxMode) const;
 
     int getCustomRefreshRate(RefreshRateRegime regime);
-    int setCustomRefreshRate(RefreshRateRegime regime, int value);
+    void setCustomRefreshRate(RefreshRateRegime regime, int value);
 
     void resetInactiveTimer();
     void toggleInactive();
@@ -119,16 +119,21 @@ public:
     static std::string refreshRateRegimeToString(RefreshRateRegime refreshRateRegime);
 
 private:
-    std::array<int, RefreshRateRegime::REGIME_NUM> _customProfile =
-        { { 0, 0, 0, 0, 0, 0 } };
-
     mutable int _activeRefreshRate { 20 };
     RefreshRateProfile _refreshRateProfile { RefreshRateProfile::INTERACTIVE};
     RefreshRateRegime _refreshRateRegime { RefreshRateRegime::STARTUP };
     UXMode _uxMode { UXMode::DESKTOP };
 
     mutable ReadWriteLockable _refreshRateProfileSettingLock;
-    Setting::Handle<int> _refreshRateProfileSetting { "refreshRateProfile", RefreshRateProfile::INTERACTIVE };
+    Setting::Handle<int> _refreshRateProfileSetting{ "refreshRateProfile", RefreshRateProfile::INTERACTIVE };
+    std::array<Setting::Handle<int>, REGIME_NUM> _customRefreshRateSettings { {
+        { "customRefreshRateFocusActive", 60 },
+        { "customRefreshRateFocusInactive", 60 },
+        { "customRefreshRateUnfocus", 60 },
+        { "customRefreshRateMinimized", 2 },
+        { "customRefreshRateStartup", 30 },
+        { "customRefreshRateShutdown", 30 }
+    } };
 
     std::function<void(int)> _refreshRateOperator { nullptr };
 
