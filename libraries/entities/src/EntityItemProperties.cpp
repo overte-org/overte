@@ -1357,6 +1357,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *
  * @typedef {object} Entities.EntityProperties-Sound
  * @property {string} soundURL="" - The URL of the sound to play, as a wav, mp3, or raw file.  Supports stereo and ambisonic.
+ *     Note: ambisonic sounds can only play as <code>localOnly</code>.
  * @property {boolean} playing=true - Whether or not the sound should play.
  * @property {number} volume=1.0 - The volume of the sound, from <code>0</code> to <code>1</code>.
  * @property {number} pitch=1.0 - The relative sample rate at which to resample the sound, within +/- 2 octaves.

@@ -336,9 +336,13 @@ bool SoundEntityItem::restartSound() {
     options.volume = _volume;
     options.loop = _loop;
     options.orientation = getWorldOrientation();
-    options.localOnly = _localOnly;
+    options.localOnly = _localOnly || _sound->isAmbisonic(); // force localOnly when ambisonic
     options.secondOffset = _timeOffset;
     options.pitch = _pitch;
+
+    // stereo option isn't set from script, this comes from sound metadata or filename
+    options.stereo = _sound->isStereo();
+    options.ambisonic = _sound->isAmbisonic();
 
     if (_injector) {
         DependencyManager::get<AudioInjectorManager>()->setOptionsAndRestart(_injector, options);
