@@ -338,9 +338,18 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     float rightEdge = origin.x + enlargedBoundsX;
 
     // Top left of text
+    bool firstTokenOfLine = true;
     glm::vec2 advance = origin;
     std::vector<std::pair<Glyph, vec2>> glyphsAndCorners;
-    foreach(const QString& token, tokenizeForWrapping(str)) {
+    const QStringList tokens = tokenizeForWrapping(str);
+    for (size_t i = 0; i < tokens.length(); i++) {
+        const QString& token = tokens[i];
+
+        if ((bounds.y != -1) && (advance.y < origin.y - bounds.y)) {
+            // We are out of the y bound, stop drawing
+            break;
+        }
+
         bool isNewLine = (token == QString('\n'));
         bool forceNewLine = false;
 
@@ -349,36 +358,43 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
             // We are out of the x bound, force new line
             forceNewLine = true;
         }
-        if (isNewLine || forceNewLine) {
+
+        if (isNewLine || (forceNewLine && !firstTokenOfLine)) {
+            if (forceNewLine && !firstTokenOfLine) {
+                // We want to try this token again on the new line
+                i--;
+            }
+
             // Character return, move the advance to a new line
             advance = glm::vec2(origin.x, advance.y - _leading);
-
-            if (isNewLine) {
-                // No need to draw anything, go directly to next token
-                continue;
-            } else if (computeExtent(token).x > enlargedBoundsX) {
-                // token will never fit, stop drawing
-                break;
-            }
-        }
-        if ((bounds.y != -1) && (advance.y - _fontSize < origin.y - bounds.y)) {
-            // We are out of the y bound, stop drawing
-            break;
+            firstTokenOfLine = true;
+            // No need to draw anything, go directly to next token
+            continue;
         }
 
         // Draw the token
-        if (!isNewLine) {
-            for (auto c : token) {
-                auto glyph = _glyphs[c];
-
-                glyphsAndCorners.emplace_back(glyph, advance - glm::vec2(0.0f, _ascent));
-
-                // Advance by glyph size
-                advance.x += glyph.d;
+        for (const QChar& c : token) {
+            if (advance.x > rightEdge) {
+                break;
             }
+            const Glyph& glyph = _glyphs[c];
 
+            glyphsAndCorners.emplace_back(glyph, advance - glm::vec2(0.0f, _ascent));
+
+            // Advance by glyph size
+            advance.x += glyph.d;
+        }
+
+        if (forceNewLine && firstTokenOfLine) {
+            // If the first word of a line didn't fit, we draw as many characters as we could, now go to the next line
+            // Character return, move the advance to a new line
+            advance = glm::vec2(origin.x, advance.y - _leading);
+            firstTokenOfLine = true;
+        } else {
             // Add space after all non return tokens
             advance.x += _spaceWidth;
+            // Our token fits in the x direction!  Any subsequent tokens won't be the first for this line.
+            firstTokenOfLine = false;
         }
     }
 
@@ -393,7 +409,7 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
                                                                        alignment, rightSpacing));
             i--;
             while (i >= 0) {
-                auto prevGlyphAndCorner = glyphsAndCorners[i];
+                const auto& prevGlyphAndCorner = glyphsAndCorners[i];
                 // We're to the right of the last character we checked, which means we're on a previous line, so we need to
                 // recalculate the spacing, so we exit this loop
                 if (prevGlyphAndCorner.second.x >= nextGlyphAndCorner.second.x) {

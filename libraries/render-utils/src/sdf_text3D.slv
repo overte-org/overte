@@ -19,6 +19,7 @@
 
 <@include sdf_text3D.slh@>
 
+layout(location=RENDER_UTILS_ATTR_POSITION_MS) out vec2 _positionMS;
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
     layout(location=RENDER_UTILS_ATTR_POSITION_ES) out vec4 _positionES;
 <@endif@>
@@ -46,6 +47,9 @@ void main() {
 <@else@>
     <$transformModelToClipPos(cam, obj, position, gl_Position)$>
 <@endif@>
+
+    // Our position has scale baked in, but we need the normalized values in the fragment shader
+    _positionMS = inPosition.xy * vec2(length(obj._model[0]), length(obj._model[1]));
 
     const vec3 normal = vec3(0, 0, 1);
     <$transformModelToWorldDir(cam, obj, normal, _normalWS)$>
