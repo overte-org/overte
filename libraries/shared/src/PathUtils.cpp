@@ -37,6 +37,8 @@
 #include "shared/GlobalAppProperties.h"
 #include "SharedUtil.h"
 
+Q_LOGGING_CATEGORY(pathutils_log, "pathutils")
+
 // These are the default, system paths.
 //
 // The default values are only defined on Linux. On Windows and OSX the correct
@@ -492,10 +494,121 @@ QString PathUtils::getPluginsPath() {
     return _plugins_path + "/";
 }
 
-void PathUtils::initialize() {
+
+void PathUtils::uninitialize() {
+    _initialized = false;
+}
+
+bool PathUtils::initialize(FilesystemLayout type, DataStorage ds) {
     if (_initialized) {
-        return;
+        return true;
     }
+
+    /*********************************************************************
+     * Checks
+     *********************************************************************/
+    if (QCoreApplication::applicationName().isEmpty()) {
+        qCCritical(pathutils_log) << "QCoreApplication not initialized yet!";
+        return false;
+    }
+
+
+    /*********************************************************************
+     * Auto-detection
+     *********************************************************************/
+
+    qCDebug(pathutils_log) << "Initializing, type" << type << "; storage" << ds;
+
+    QDir build_base_dir;
+    QDir fhs_base_dir;
+
+
+    if (type == FilesystemLayout::Auto) {
+        qCInfo(pathutils_log) << "Detecting filesystem layout";
+
+        QDir appdir(QCoreApplication::applicationDirPath());
+        QString lastDirName = appdir.dirName();
+
+        qCDebug(pathutils_log) << "Application binary directory: " << appdir << "; dirname" << appdir.dirName();
+
+        if (lastDirName == "bin") {
+            // In FHS, the bin directory is always 'bin', and there aren't any in the build tree
+            fhs_base_dir = appdir;
+            fhs_base_dir.cdUp();
+            qCDebug(pathutils_log) << "Detected FHS layout, we're in a 'bin' directory. Root at" << fhs_base_dir;
+
+            type = FilesystemLayout::FHS;
+        } else {
+            // In the build tree, things may or not be present depending on what got built, but the
+            // 'libraries' directory should always be there.
+            qCDebug(pathutils_log) << "We should be in a build directory, trying to locate the root. Descending, looking for 'libraries' directory.";
+
+            QDir build_base_dir = appdir;
+            while(!build_base_dir.isRoot()) {
+                QFileInfo libraries_info(build_base_dir, "libraries");
+                if (libraries_info.exists() && libraries_info.isDir()) {
+                    qCDebug(pathutils_log) << "Found base build directory:" << build_base_dir;
+                    break;
+                }
+
+                build_base_dir.cdUp();
+            }
+
+            if (build_base_dir.isRoot()) {
+                qCCritical(pathutils_log) << "Descended down to root, but still failed to find base build directory";
+                return false;
+            }
+
+            type = FilesystemLayout::BuildDir;
+        }
+    }
+
+    if (ds == DataStorage::Auto) {
+        if ( type == FilesystemLayout::FHS && isSystemUser() ) {
+            ds = DataStorage::System;
+        } else {
+            ds = DataStorage::Home;
+        }
+    }
+
+
+    /*********************************************************************
+     * Path setting
+     *********************************************************************/
+
+
+    QDir resources_dir = fhs_base_dir;
+
+    switch(type) {
+        case FilesystemLayout::Auto:
+            qCCritical(pathutils_log) << "Failed to detect filesystem layout";
+            return false;
+        case FilesystemLayout::FHS:
+
+            resources_dir.cd("var");
+            resources_dir.cd("lib");
+            resources_dir.cd("overte");
+
+            _server_resources_path = resources_dir.canonicalPath();
+            qCDebug(pathutils_log) << "Resources: " << _server_resources_path;
+            break;
+        case FilesystemLayout::BuildDir:
+
+            /* fall-through */
+        case FilesystemLayout::BuildDirSourceResources:
+            break;
+    }
+
+    switch (ds) {
+        case DataStorage::Auto:
+            break;
+        case DataStorage::System:
+            break;
+        case DataStorage::Home:
+            break;
+    }
+
+
 
     _server_resources_path = qgetenv("OVERTE_RESOURCES_PATH");
     if ( _server_resources_path.isEmpty() ) {
@@ -557,6 +670,8 @@ void PathUtils::initialize() {
     qInfo() << "Local data base path:" << _local_appdata_path;
     qInfo() << "Plugins path:" << _plugins_path;
     _initialized = true;
+
+    return true;
 }
 
 QString PathUtils::findFirstDir(const QStringList &paths, const QString &description) {
