@@ -15,6 +15,10 @@
 
 QTEST_MAIN(PathUtilsTests)
 
+void PathUtilsTests::initTestCase() {
+    PathUtils::initialize();
+}
+
 void PathUtilsTests::testPathUtils() {
     QString result = PathUtils::qmlBaseUrl();
     QVERIFY(result.startsWith("qrc:///"));
