@@ -11,9 +11,11 @@
 
 #include <QtCore/QObject>
 
+
 class PathUtilsTests : public QObject {
     Q_OBJECT
 private slots:
+    void initTestCase();
     void testPathUtils();
 };
 
