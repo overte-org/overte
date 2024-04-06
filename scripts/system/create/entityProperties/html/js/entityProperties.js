@@ -730,6 +730,11 @@ const GROUPS = [
                 propertyID: "animation.fps",
             },
             {
+                label: "Smooth Animation",
+                type: "bool",
+                propertyID: "animation.smoothFrames",
+            },
+            {
                 label: "Texture",
                 type: "textarea",
                 propertyID: "textures",
