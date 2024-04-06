@@ -2892,6 +2892,11 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
             }
         }
 
+        // Before, animations weren't smoothed
+        if (contentVersion < (int)EntityVersion::AnimationSmoothFrames && properties.getType() == EntityTypes::EntityType::Model) {
+            properties.getAnimation().setSmoothFrames(false);
+        }
+
         EntityItemPointer entity = addEntity(entityItemID, properties, isImport);
         if (!entity) {
             qCDebug(entities) << "adding Entity failed:" << entityItemID << properties.getType();
