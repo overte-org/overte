@@ -129,13 +129,19 @@ void SoundEntityItem::debugDump() const {
     qCDebug(entities) << "SOUND EntityItem Ptr:" << this;
 }
 
+bool SoundEntityItem::shouldCreateSound(const EntityTreePointer& tree) const {
+    bool clientShouldMakeSound = _localOnly || isMyAvatarEntity() || tree->isServerlessMode();
+    bool serverShouldMakeSound = !_localOnly;
+    return (clientShouldMakeSound && tree->getIsClient()) || (serverShouldMakeSound && tree->isEntityServer());
+}
+
 void SoundEntityItem::update(const quint64& now) {
     withWriteLock([&] {
         const auto tree = getTree();
         if (tree) {
             _updateNeeded = false;
 
-            if ((_localOnly && tree->getIsClient()) || (!_localOnly && (tree->isEntityServer() || tree->isServerlessMode()))) {
+            if (shouldCreateSound(tree)) {
                 _sound = DependencyManager::get<SoundCache>()->getSound(_url);
             }
 
@@ -175,7 +181,7 @@ void SoundEntityItem::setURL(const QString& value) {
                 return;
             }
 
-            if ((_localOnly && tree->getIsClient()) || (!_localOnly && (tree->isEntityServer() || tree->isServerlessMode()))) {
+            if (shouldCreateSound(tree)) {
                 _sound = DependencyManager::get<SoundCache>()->getSound(_url);
             }
 
@@ -297,7 +303,7 @@ void SoundEntityItem::setLocalOnly(bool value) {
                 return;
             }
 
-            if ((_localOnly && tree->getIsClient()) || (!_localOnly && (tree->isEntityServer() || tree->isServerlessMode()))) {
+            if (shouldCreateSound(tree)) {
                 _sound = DependencyManager::get<SoundCache>()->getSound(_url);
             } else {
                 _sound = nullptr;

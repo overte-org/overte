@@ -81,6 +81,7 @@ public:
     bool restartSound();
 
 protected:
+    bool shouldCreateSound(const EntityTreePointer& tree) const;
     void updateSound(bool restart = false);
 
     QString _url { "" };
