@@ -23,7 +23,8 @@ struct TextParams {
     float effectThickness;
 
     int effect;
-    vec3 spare;
+    vec2 unitRange;
+    float spare;
 };
 
 LAYOUT(binding=0) uniform textParamsBuffer {
@@ -37,9 +38,27 @@ LAYOUT(binding=0) uniform textParamsBuffer {
 const float interiorCutoff = 0.5;
 const float taaBias = pow(2.0, TAA_TEXTURE_LOD_BIAS);
 
-vec4 evalSDF(vec2 texCoord, vec4 glyphBounds) {
+// MSDF logic from: https://github.com/Chlumsky/msdfgen?tab=readme-ov-file#using-a-multi-channel-distance-field
+float median(float r, float g, float b) {
+    return max(min(r, g), min(max(r, g), b));
+}
+
+float screenPxRange(vec2 texCoord) {
+    vec2 screenTexSize = vec2(1.0) / fwidth(texCoord);
+    return max(0.5 * dot(params.unitRange, screenTexSize), 1.0);
+}
+
+float evalSDF(vec2 texCoord) {
+    vec3 msdf = textureLod(fontTexture, texCoord, TAA_TEXTURE_LOD_BIAS).rgb;
+    float sdf = median(msdf.r, msdf.g, msdf.b);
+    float screenPxDistance = screenPxRange(texCoord) * (sdf - 0.5);
+    float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
+    return opacity;
+}
+
+vec4 evalSDFColor(vec2 texCoord, vec4 glyphBounds) {
     vec3 color = params.color.rgb;
-    float sdf = textureLod(fontTexture, texCoord, TAA_TEXTURE_LOD_BIAS).g;
+    float sdf = evalSDF(texCoord);
 
     // Outline
     if (params.effect == 1 || params.effect == 2) {
@@ -62,7 +81,7 @@ vec4 evalSDF(vec2 texCoord, vec4 glyphBounds) {
             // really match the LOD that we use in the textureLod call below
             vec2 textureOffset = vec2(params.effectThickness * DOUBLE_MAX_OFFSET_PIXELS) / vec2(textureSize(fontTexture, 0/*int(TAA_TEXTURE_LOD_BIAS)*/));
             vec2 shadowTexCoords = texCoord - textureOffset;
-            sdf = textureLod(fontTexture, shadowTexCoords, TAA_TEXTURE_LOD_BIAS).g;
+            sdf = evalSDF(shadowTexCoords);
 
             // don't sample from outside of our glyph bounds
             sdf *= mix(1.0, 0.0, float(clamp(shadowTexCoords, glyphBounds.xy, glyphBounds.xy + glyphBounds.zw) != shadowTexCoords));
@@ -78,10 +97,10 @@ vec4 evalSDFSuperSampled(vec2 texCoord, vec4 glyphBounds) {
 
     // Perform 4x supersampling for anisotropic filtering
     vec4 color;
-    color = evalSDF(texCoord, glyphBounds);
-    color += evalSDF(texCoord + dxTexCoord, glyphBounds);
-    color += evalSDF(texCoord + dyTexCoord, glyphBounds);
-    color += evalSDF(texCoord + dxTexCoord + dyTexCoord, glyphBounds);
+    color = evalSDFColor(texCoord, glyphBounds);
+    color += evalSDFColor(texCoord + dxTexCoord, glyphBounds);
+    color += evalSDFColor(texCoord + dyTexCoord, glyphBounds);
+    color += evalSDFColor(texCoord + dxTexCoord + dyTexCoord, glyphBounds);
     color *= 0.25;
 
     return vec4(color.rgb, step(interiorCutoff, color.a));

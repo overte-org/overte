@@ -27,7 +27,7 @@
         "tooltip": "The height of each line of text. This determines the size of the text."
     },
     "font": {
-        "tooltip": "The font to render the text. Supported values: \"Courier\", \"Inconsolata\", \"Roboto\", \"Timeless\", or a URL to a .sdff file."
+        "tooltip": "The font to render the text. Supported values: \"Courier\", \"Inconsolata\", \"Roboto\", \"Timeless\", or a URL to a MTSDF .arfont file."
     },
     "textEffect": {
         "tooltip": "The effect that is applied to the text."

@@ -45,6 +45,7 @@ layout(location=RENDER_UTILS_ATTR_FADE1) flat in vec4 _glyphBounds; // we're reu
 void main() {
     vec4 color = evalSDFSuperSampled(_texCoord0, _glyphBounds);
 
+    // Clip to edges
     vec2 absPos = abs(_positionMS);
     if (max(absPos.x, absPos.y) >= 1.0 || _positionMS.x <= 0.0) {
         color.a = 0.0;

@@ -14,6 +14,9 @@
 #include <QImage>
 #include <QNetworkReply>
 
+#include "artery-font/artery-font.h"
+#include "artery-font/std-artery-font.h"
+
 #include <ColorUtils.h>
 
 #include <StreamHelpers.h>
@@ -77,10 +80,152 @@ struct QuadBuilder {
     }
 };
 
-Font::Pointer Font::load(QIODevice& fontFile) {
-    Pointer font = std::make_shared<Font>();
+Font::Pointer Font::load(const QString& family, QIODevice& fontFile) {
+    Pointer font = std::make_shared<Font>(family);
     font->read(fontFile);
     return font;
+}
+
+void Font::handleFontNetworkReply() {
+    auto requestReply = qobject_cast<QNetworkReply*>(sender());
+    Q_ASSERT(requestReply != nullptr);
+
+    if (requestReply->error() == QNetworkReply::NoError) {
+        read(*requestReply);
+    } else {
+        qDebug() << "Error downloading " << requestReply->url() << " - " << requestReply->errorString();
+    }
+}
+
+size_t _readOffset = 0;
+int readHelper(void* dst, int length, void* data) {
+    memcpy(dst, (char *)data + _readOffset, length);
+    _readOffset += length;
+    return length;
+};
+
+void Font::read(QIODevice& in) {
+    _readOffset = 0;
+    _loaded = false;
+
+    void* data = (void *)in.readAll().data();
+    artery_font::StdArteryFont<float> arteryFont;
+    bool success = artery_font::decode<&readHelper, float, artery_font::StdList, artery_font::StdByteArray, artery_font::StdString>(arteryFont, data);
+
+    if (!success) {
+        qDebug() << "Font" << _family << "failed to decode.";
+        return;
+    }
+
+    if (arteryFont.variants.length() == 0) {
+        qDebug() << "Font" << _family << "has 0 variants.";
+        return;
+    }
+
+    _distanceRange = glm::vec2(arteryFont.variants[0].metrics.distanceRange);
+    _fontSize = arteryFont.variants[0].metrics.ascender + fabs(arteryFont.variants[0].metrics.descender);
+    _leading = arteryFont.variants[0].metrics.lineHeight;
+    _spaceWidth = 0.5f * arteryFont.variants[0].metrics.emSize;
+
+    if (arteryFont.variants[0].glyphs.length() == 0) {
+        qDebug() << "Font" << _family << "has 0 glyphs.";
+        return;
+    }
+
+    QVector<Glyph> glyphs;
+    glyphs.reserve(arteryFont.variants[0].glyphs.length());
+    for (int i = 0; i < arteryFont.variants[0].glyphs.length(); i++) {
+        auto& g = arteryFont.variants[0].glyphs[i];
+
+        Glyph glyph;
+        glyph.c = g.codepoint;
+        glyph.texOffset = glm::vec2(g.imageBounds.l, g.imageBounds.b);
+        glyph.texSize = glm::vec2(g.imageBounds.r, g.imageBounds.t) - glyph.texOffset;
+        glyph.offset = glm::vec2(g.planeBounds.l, g.planeBounds.b);
+        glyph.size = glm::vec2(g.planeBounds.r, g.planeBounds.t) - glyph.offset;
+        glyph.d = g.advance.h;
+        glyphs.push_back(glyph);
+    }
+
+    if (arteryFont.images.length() == 0) {
+        qDebug() << "Font" << _family << "has 0 images.";
+        return;
+    }
+
+    // TODO: change back to MTSDF
+    if (arteryFont.images[0].imageType != artery_font::ImageType::IMAGE_MSDF) {
+        qDebug() << "Font" << _family << "has the wrong image type.  Expected MTSDF (7), got" << arteryFont.images[0].imageType;
+        return;
+    }
+
+    if (arteryFont.images[0].encoding != artery_font::ImageEncoding::IMAGE_PNG && arteryFont.images[0].encoding != artery_font::ImageEncoding::IMAGE_BMP) {
+        qDebug() << "Font" << _family << "has the wrong encoding.  Expected BMP (4) or PNG (8), got" << arteryFont.images[0].encoding;
+        return;
+    }
+
+    if (arteryFont.images[0].pixelFormat != artery_font::PixelFormat::PIXEL_UNSIGNED8) {
+        qDebug() << "Font" << _family << "has the wrong pixel format.  Expected unsigned char (8), got" << arteryFont.images[0].pixelFormat;
+        return;
+    }
+
+    if (arteryFont.images[0].width == 0 || arteryFont.images[0].height == 0) {
+        qDebug() << "Font" << _family << "has image with width or height of 0.  Width:" << arteryFont.images[0].width << ", height:"<< arteryFont.images[0].height;
+        return;
+    }
+
+    // read image data
+    QImage image;
+    QString format;
+    switch (arteryFont.images[0].encoding) {
+        case artery_font::ImageEncoding::IMAGE_PNG:
+            format = "PNG";
+            break;
+        case artery_font::ImageEncoding::IMAGE_BMP:
+            format = "BMP";
+            break;
+        default:
+            format = "PNG";
+            break;
+    }
+    if (!image.loadFromData((const unsigned char*)arteryFont.images[0].data, arteryFont.images[0].data.length(), format.toStdString().c_str())) {
+        qDebug() << "Failed to read" << format << "image for font" << _family;
+        return;
+    }
+
+    _glyphs.clear();
+    glm::vec2 imageSize = toGlm(image.size());
+    _distanceRange /= imageSize;
+    foreach(Glyph g, glyphs) {
+        // Adjust the pixel texture coordinates into UV coordinates,
+        g.texSize /= imageSize;
+        g.texOffset /= imageSize;
+        // Y flip
+        g.texOffset.y = 1.0f - (g.texOffset.y + g.texSize.y);
+        if (g.offset.y > 0.0f) {
+            g.offset.y = -g.offset.y;
+        }
+        // store in the character to glyph hash
+        _glyphs[g.c] = g;
+    };
+
+    image = image.convertToFormat(QImage::Format_RGBA8888);
+
+    gpu::Element formatGPU = gpu::Element(gpu::VEC3, gpu::NUINT8, gpu::RGB);
+    gpu::Element formatMip = gpu::Element(gpu::VEC3, gpu::NUINT8, gpu::RGB);
+    if (image.hasAlphaChannel()) {
+        formatGPU = gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA);
+        formatMip = gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::BGRA);
+    }
+    // FIXME: We're forcing this to use only one mip, and then manually doing anisotropic filtering in the shader,
+    // and also calling textureLod.  Shouldn't this just use anisotropic filtering and auto-generate mips?
+    // We should also use smoothstep for anti-aliasing, as explained here: https://github.com/libgdx/libgdx/wiki/Distance-field-fonts
+    _texture = gpu::Texture::create2D(formatGPU, image.width(), image.height(), gpu::Texture::SINGLE_MIP,
+                                      gpu::Sampler(gpu::Sampler::FILTER_MIN_POINT_MAG_LINEAR));
+    _texture->setStoredMipFormat(formatMip);
+    _texture->assignStoredMip(0, image.sizeInBytes(), image.constBits());
+    _texture->setImportant(true);
+
+    _loaded = true;
 }
 
 static QHash<QString, Font::Pointer> LOADED_FONTS;
@@ -91,16 +236,15 @@ Font::Pointer Font::load(const QString& family) {
         QString loadFilename;
 
         if (family == ROBOTO_FONT_FAMILY) {
-            loadFilename = ":/Roboto.sdff";
+            loadFilename = ":/Roboto.arfont";
         } else if (family == INCONSOLATA_FONT_FAMILY) {
-            loadFilename = ":/InconsolataMedium.sdff";
+            loadFilename = ":/InconsolataMedium.arfont";
         } else if (family == COURIER_FONT_FAMILY) {
-            loadFilename = ":/CourierPrime.sdff";
+            loadFilename = ":/CourierPrime.arfont";
         } else if (family == TIMELESS_FONT_FAMILY) {
-            loadFilename = ":/Timeless.sdff";
+            loadFilename = ":/Timeless.arfont";
         } else if (family.startsWith("http")) {
-            auto loadingFont = std::make_shared<Font>();
-            loadingFont->setLoaded(false);
+            auto loadingFont = std::make_shared<Font>(family);
             LOADED_FONTS[family] = loadingFont;
 
             auto& networkAccessManager = NetworkAccessManager::getInstance();
@@ -114,7 +258,7 @@ Font::Pointer Font::load(const QString& family) {
             connect(networkReply, &QNetworkReply::finished, loadingFont.get(), &Font::handleFontNetworkReply);
         } else if (!LOADED_FONTS.contains(ROBOTO_FONT_FAMILY)) {
             // Unrecognized font and we haven't loaded Roboto yet
-            loadFilename = ":/Roboto.sdff";
+            loadFilename = ":/Roboto.arfont";
         } else {
             // Unrecognized font but we've already loaded Roboto
             LOADED_FONTS[family] = LOADED_FONTS[ROBOTO_FONT_FAMILY];
@@ -126,25 +270,13 @@ Font::Pointer Font::load(const QString& family) {
 
             qCDebug(renderutils) << "Loaded font" << loadFilename << "from Qt Resource System.";
 
-            LOADED_FONTS[family] = load(fontFile);
+            LOADED_FONTS[family] = load(family, fontFile);
         }
     }
     return LOADED_FONTS[family];
 }
 
-void Font::handleFontNetworkReply() {
-    auto requestReply = qobject_cast<QNetworkReply*>(sender());
-    Q_ASSERT(requestReply != nullptr);
-
-    if (requestReply->error() == QNetworkReply::NoError) {
-        setLoaded(true);
-        read(*requestReply);
-    } else {
-        qDebug() << "Error downloading " << requestReply->url() << " - " << requestReply->errorString();
-    }
-}
-
-Font::Font() {
+Font::Font(const QString& family) : _family(family) {
     static std::once_flag once;
     std::call_once(once, []{
         Q_INIT_RESOURCE(fonts);
@@ -195,82 +327,6 @@ glm::vec2 Font::computeExtent(const QString& str) const {
         extent.y = lines.count() * _fontSize;
     }
     return extent;
-}
-
-void Font::read(QIODevice& in) {
-    uint8_t header[4];
-    readStream(in, header);
-    if (memcmp(header, "SDFF", 4)) {
-        qDebug() << "Bad SDFF file";
-        _loaded = false;
-        return;
-    }
-
-    uint16_t version;
-    readStream(in, version);
-
-    // read font name
-    _family = "";
-    if (version > 0x0001) {
-        char c;
-        readStream(in, c);
-        while (c) {
-            _family += c;
-            readStream(in, c);
-        }
-    }
-
-    // read font data
-    readStream(in, _leading);
-    readStream(in, _ascent);
-    readStream(in, _descent);
-    readStream(in, _spaceWidth);
-    _fontSize = _ascent + _descent;
-
-    // Read character count
-    uint16_t count;
-    readStream(in, count);
-    // read metrics data for each character
-    QVector<Glyph> glyphs(count);
-    // std::for_each instead of Qt foreach because we need non-const references
-    std::for_each(glyphs.begin(), glyphs.end(), [&](Glyph& g) {
-        g.read(in);
-    });
-
-    // read image data
-    QImage image;
-    if (!image.loadFromData(in.readAll(), "PNG")) {
-        qDebug() << "Failed to read SDFF image";
-        _loaded = false;
-        return;
-    }
-
-    _glyphs.clear();
-    glm::vec2 imageSize = toGlm(image.size());
-    foreach(Glyph g, glyphs) {
-        // Adjust the pixel texture coordinates into UV coordinates,
-        g.texSize /= imageSize;
-        g.texOffset /= imageSize;
-        // store in the character to glyph hash
-        _glyphs[g.c] = g;
-    };
-
-    image = image.convertToFormat(QImage::Format_RGBA8888);
-
-    gpu::Element formatGPU = gpu::Element(gpu::VEC3, gpu::NUINT8, gpu::RGB);
-    gpu::Element formatMip = gpu::Element(gpu::VEC3, gpu::NUINT8, gpu::RGB);
-    if (image.hasAlphaChannel()) {
-        formatGPU = gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA);
-        formatMip = gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::BGRA);
-    }
-    // FIXME: We're forcing this to use only one mip, and then manually doing anisotropic filtering in the shader,
-    // and also calling textureLod.  Shouldn't this just use anisotropic filtering and auto-generate mips?
-    // We should also use smoothstep for anti-aliasing, as explained here: https://github.com/libgdx/libgdx/wiki/Distance-field-fonts
-    _texture = gpu::Texture::create2D(formatGPU, image.width(), image.height(), gpu::Texture::SINGLE_MIP,
-                                      gpu::Sampler(gpu::Sampler::FILTER_MIN_POINT_MAG_LINEAR));
-    _texture->setStoredMipFormat(formatMip);
-    _texture->assignStoredMip(0, image.sizeInBytes(), image.constBits());
-    _texture->setImportant(true);
 }
 
 void Font::setupGPU() {
@@ -342,7 +398,7 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     glm::vec2 advance = origin;
     std::vector<std::pair<Glyph, vec2>> glyphsAndCorners;
     const QStringList tokens = tokenizeForWrapping(str);
-    for (size_t i = 0; i < tokens.length(); i++) {
+    for (int i = 0; i < tokens.length(); i++) {
         const QString& token = tokens[i];
 
         if ((bounds.y != -1) && (advance.y < origin.y - bounds.y)) {
@@ -379,7 +435,7 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
             }
             const Glyph& glyph = _glyphs[c];
 
-            glyphsAndCorners.emplace_back(glyph, advance - glm::vec2(0.0f, _ascent));
+            glyphsAndCorners.emplace_back(glyph, advance);
 
             // Advance by glyph size
             advance.x += glyph.d;
@@ -401,7 +457,7 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     std::vector<QuadBuilder> quadBuilders;
     quadBuilders.reserve(glyphsAndCorners.size());
     {
-        int i = glyphsAndCorners.size() - 1;
+        int i = (int)glyphsAndCorners.size() - 1;
         while (i >= 0) {
             auto nextGlyphAndCorner = glyphsAndCorners[i];
             float rightSpacing = rightEdge - (nextGlyphAndCorner.second.x + nextGlyphAndCorner.first.d);
@@ -426,7 +482,7 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     }
 
     // The quadBuilders is backwards now because we looped over the glyphs backwards to adjust their alignment
-    for (int i = quadBuilders.size() - 1; i >= 0; i--) {
+    for (int i = (int)quadBuilders.size() - 1; i >= 0; i--) {
         quint16 verticesOffset = numVertices;
         drawInfo.verticesBuffer->append(quadBuilders[i]);
         numVertices += VERTICES_PER_QUAD;
@@ -494,6 +550,7 @@ void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const QString
         gpuDrawParams.effectColor = ColorUtils::sRGBToLinearVec3(drawInfo.params.effectColor);
         gpuDrawParams.effectThickness = drawInfo.params.effectThickness;
         gpuDrawParams.effect = drawInfo.params.effect;
+        gpuDrawParams.unitRange = _distanceRange;
         if (!drawInfo.paramsBuffer) {
             drawInfo.paramsBuffer = std::make_shared<gpu::Buffer>(sizeof(DrawParams), nullptr);
         }
