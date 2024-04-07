@@ -51,7 +51,6 @@
 
     var DEFAULT_IMAGE = Script.getExternalPath(Script.ExternalPaths.Assets, "Bazaar/Assets/Textures/Defaults/Interface/default_image.jpg");
     var DEFAULT_PARTICLE = Script.getExternalPath(Script.ExternalPaths.Assets, "Bazaar/Assets/Textures/Defaults/Interface/default_particle.png");
-    var DEFAULT_SOUND = "TODO";
 
     var createToolsWindow = new CreateWindow(
         Script.resolvePath("qml/EditTools.qml"),
@@ -497,7 +496,11 @@
             cutoff: 75.0,
         },
         Sound: {
-            soundURL: DEFAULT_SOUND
+            volume: 1.0,
+            playing: true,
+            loop: true,
+            positional: true,
+            localOnly: false
         },
     };
 
@@ -866,6 +869,18 @@
             }
         }
 
+        function handleNewSoundDialogResult(result) {
+            if (result) {
+                var soundURL = result.textInput;
+                if (soundURL) {
+                    createNewEntity({
+                        type: "Sound",
+                        soundURL: soundURL
+                    });
+                }
+            }
+        }
+
         function fromQml(message) { // messages are {method, params}, like json-rpc. See also sendToQml.
             var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
             tablet.popFromStack();
@@ -892,6 +907,13 @@
                     closeExistingDialogWindow();
                     break;
                 case "newPolyVoxDialogCancel":
+                    closeExistingDialogWindow();
+                    break;
+                case "newSoundDialogAdd":
+                    handleNewSoundDialogResult(message.params);
+                    closeExistingDialogWindow();
+                    break;
+                case "newSoundDialogCancel":
                     closeExistingDialogWindow();
                     break;
             }
@@ -1063,11 +1085,7 @@
 
             addButton("newPolyVoxButton", createNewEntityDialogButtonCallback("PolyVox"));
 
-            addButton("newSoundButton", function () {
-                createNewEntity({
-                    type: "Sound",
-                });
-            });
+            addButton("newSoundButton", createNewEntityDialogButtonCallback("Sound"));
 
             var deactivateCreateIfDesktopWindowsHidden = function() {
                 if (!shouldUseEditTabletApp() && !entityListTool.isVisible() && !createToolsWindow.isVisible()) {
