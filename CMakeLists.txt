@@ -512,3 +512,15 @@ endif()
 
 # QML import paths for Qt Creator and KDevelop code completion
 set(QML_IMPORT_PATH ${CMAKE_SOURCE_DIR}/interface/resources/qml;${CMAKE_SOURCE_DIR}/launchers/qt/resources/qml CACHE PATH "Extra QML import paths for KDevelop and Qt Creator")
+
+
+
+# For running with in-tree resources, we need to find the source directory. CMake allows locating it anywhere.
+# Windows should support this fine. If there's some issue with this we could easily support a text file with
+# a path in it instead.
+
+add_custom_target(source_symlink)
+add_custom_command(TARGET source_symlink PRE_BUILD COMMAND cmake -E create_symlink ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}/source)
+
+# Making shared depend on this should ensure it's always built
+add_dependencies(shared source_symlink)
