@@ -28,6 +28,7 @@ layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
 layout(location=RENDER_UTILS_ATTR_FADE1) flat out vec4 _glyphBounds; // we're reusing the fade texcoord locations here
 
 void main() {
+    _positionMS = inPosition.xy;
     _texCoord01 = vec4(inTexCoord0.st, 0.0, 0.0);
     _glyphBounds = inTexCoord1;
 
@@ -47,9 +48,6 @@ void main() {
 <@else@>
     <$transformModelToClipPos(cam, obj, position, gl_Position)$>
 <@endif@>
-
-    // Our position has scale baked in, but we need the normalized values in the fragment shader
-    _positionMS = inPosition.xy * vec2(length(obj._model[0]), length(obj._model[1]));
 
     const vec3 normal = vec3(0, 0, 1);
     <$transformModelToWorldDir(cam, obj, normal, _normalWS)$>

@@ -13,6 +13,7 @@
 #include <QFile>
 #include <QImage>
 #include <QNetworkReply>
+#include <QThreadStorage>
 
 #include "artery-font/artery-font.h"
 #include "artery-font/std-artery-font.h"
@@ -97,20 +98,25 @@ void Font::handleFontNetworkReply() {
     }
 }
 
-size_t _readOffset = 0;
+QThreadStorage<size_t> _readOffset;
+QThreadStorage<size_t> _readMax;
 int readHelper(void* dst, int length, void* data) {
-    memcpy(dst, (char *)data + _readOffset, length);
-    _readOffset += length;
+    if (_readOffset.localData() + length > _readMax.localData()) {
+        return -1;
+    }
+    memcpy(dst, (char *)data + _readOffset.localData(), length);
+    _readOffset.setLocalData(_readOffset.localData() + length);
     return length;
 };
 
 void Font::read(QIODevice& in) {
-    _readOffset = 0;
     _loaded = false;
 
-    void* data = (void *)in.readAll().data();
+    QByteArray data = in.readAll();
+    _readOffset.setLocalData(0);
+    _readMax.setLocalData(data.length());
     artery_font::StdArteryFont<float> arteryFont;
-    bool success = artery_font::decode<&readHelper, float, artery_font::StdList, artery_font::StdByteArray, artery_font::StdString>(arteryFont, data);
+    bool success = artery_font::decode<&readHelper, float, artery_font::StdList, artery_font::StdByteArray, artery_font::StdString>(arteryFont, (void *)data.data());
 
     if (!success) {
         qDebug() << "Font" << _family << "failed to decode.";
@@ -152,8 +158,7 @@ void Font::read(QIODevice& in) {
         return;
     }
 
-    // TODO: change back to MTSDF
-    if (arteryFont.images[0].imageType != artery_font::ImageType::IMAGE_MSDF) {
+    if (arteryFont.images[0].imageType != artery_font::ImageType::IMAGE_MTSDF) {
         qDebug() << "Font" << _family << "has the wrong image type.  Expected MTSDF (7), got" << arteryFont.images[0].imageType;
         return;
     }
@@ -201,9 +206,7 @@ void Font::read(QIODevice& in) {
         g.texOffset /= imageSize;
         // Y flip
         g.texOffset.y = 1.0f - (g.texOffset.y + g.texSize.y);
-        if (g.offset.y > 0.0f) {
-            g.offset.y = -g.offset.y;
-        }
+        g.offset.y = -(1.0f - (g.offset.y + g.size.y));
         // store in the character to glyph hash
         _glyphs[g.c] = g;
     };
@@ -390,8 +393,7 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     drawInfo.bounds = bounds;
     drawInfo.origin = origin;
 
-    float enlargedBoundsX = bounds.x - 0.5f * DOUBLE_MAX_OFFSET_PIXELS * float(enlargeForShadows);
-    float rightEdge = origin.x + enlargedBoundsX;
+    float rightEdge = origin.x + bounds.x;
 
     // Top left of text
     bool firstTokenOfLine = true;
@@ -526,8 +528,10 @@ void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const QString
     int textEffect = (int)effect;
     const int SHADOW_EFFECT = (int)TextEffect::SHADOW_EFFECT;
 
+    const bool boundsChanged = bounds != drawInfo.bounds || origin != drawInfo.origin;
+
     // If we're switching to or from shadow effect mode, we need to rebuild the vertices
-    if (str != drawInfo.string || bounds != drawInfo.bounds || origin != drawInfo.origin || alignment != _alignment ||
+    if (str != drawInfo.string || boundsChanged || alignment != _alignment ||
             (drawInfo.params.effect != textEffect && (textEffect == SHADOW_EFFECT || drawInfo.params.effect == SHADOW_EFFECT)) ||
             (textEffect == SHADOW_EFFECT && scale != _scale)) {
         _scale = scale;
@@ -537,7 +541,7 @@ void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const QString
 
     setupGPU();
 
-    if (!drawInfo.paramsBuffer || drawInfo.params.color != color || drawInfo.params.effectColor != effectColor ||
+    if (!drawInfo.paramsBuffer || boundsChanged || drawInfo.params.color != color || drawInfo.params.effectColor != effectColor ||
             drawInfo.params.effectThickness != effectThickness || drawInfo.params.effect != textEffect) {
         drawInfo.params.color = color;
         drawInfo.params.effectColor = effectColor;
@@ -546,11 +550,12 @@ void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const QString
 
         // need the gamma corrected color here
         DrawParams gpuDrawParams;
+        gpuDrawParams.bounds = glm::vec4(origin, bounds);
         gpuDrawParams.color = ColorUtils::sRGBToLinearVec4(drawInfo.params.color);
-        gpuDrawParams.effectColor = ColorUtils::sRGBToLinearVec3(drawInfo.params.effectColor);
-        gpuDrawParams.effectThickness = drawInfo.params.effectThickness;
-        gpuDrawParams.effect = drawInfo.params.effect;
         gpuDrawParams.unitRange = _distanceRange;
+        gpuDrawParams.effect = drawInfo.params.effect;
+        gpuDrawParams.effectThickness = drawInfo.params.effectThickness;
+        gpuDrawParams.effectColor = ColorUtils::sRGBToLinearVec3(drawInfo.params.effectColor);
         if (!drawInfo.paramsBuffer) {
             drawInfo.paramsBuffer = std::make_shared<gpu::Buffer>(sizeof(DrawParams), nullptr);
         }

@@ -29,14 +29,15 @@ public:
     void read(QIODevice& path);
 
     struct DrawParams {
-        vec4 color { 0 };
-
-        vec3 effectColor { 0 };
-        float effectThickness { 0 };
-
-        int effect { 0 };
+        vec4 bounds { 0.0f };
+        vec4 color { 0.0f };
 
         vec2 unitRange { 1.0f };
+
+        int effect { 0 };
+        float effectThickness { 0.0f };
+
+        vec3 effectColor { 0.0f };
 
 #if defined(__clang__)
         __attribute__((unused))

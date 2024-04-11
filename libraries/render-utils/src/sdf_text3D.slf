@@ -43,13 +43,7 @@ layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4 _texCoord01;
 layout(location=RENDER_UTILS_ATTR_FADE1) flat in vec4 _glyphBounds; // we're reusing the fade texcoord locations here
 
 void main() {
-    vec4 color = evalSDFSuperSampled(_texCoord0, _glyphBounds);
-
-    // Clip to edges
-    vec2 absPos = abs(_positionMS);
-    if (max(absPos.x, absPos.y) >= 1.0 || _positionMS.x <= 0.0) {
-        color.a = 0.0;
-    }
+    vec4 color = evalSDFSuperSampled(_texCoord0, _positionMS, _glyphBounds);
 
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
     color.a *= params.color.a;
