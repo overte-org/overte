@@ -136,36 +136,42 @@ bool SoundEntityItem::shouldCreateSound(const EntityTreePointer& tree) const {
 }
 
 void SoundEntityItem::update(const quint64& now) {
-    withWriteLock([&] {
-        const auto tree = getTree();
-        if (tree) {
-            _updateNeeded = false;
+    const auto tree = getTree();
+    if (tree) {
+        _updateNeeded = false;
 
+        withWriteLock([&] {
             if (shouldCreateSound(tree)) {
                 _sound = DependencyManager::get<SoundCache>()->getSound(_url);
             }
+        });
 
+        withReadLock([&] {
             if (_sound) {
                 if (_sound->isLoaded()) {
                     updateSound(true);
                 } else {
-                    connect(_sound.data(), &Resource::finished, this, [&] { updateSound(true); });
+                    connect(_sound.data(), &Resource::finished, this, [&] {
+                        withReadLock([&] {
+                            updateSound(true);
+                        });
+                    });
                 }
             }
-        }
-    });
+        });
+    }
 }
 
-void SoundEntityItem::setLocalPosition(const glm::vec3& value, bool tellPhysics) {
-    EntityItem::setLocalPosition(value, tellPhysics);
-    withWriteLock([&] {
+void SoundEntityItem::locationChanged(bool tellPhysics, bool tellChildren) {
+    EntityItem::locationChanged(tellPhysics, tellChildren);
+    withReadLock([&] {
         updateSound();
     });
 }
 
-void SoundEntityItem::setLocalOrientation(const glm::quat& value) {
-    EntityItem::setLocalOrientation(value);
-    withWriteLock([&] {
+void SoundEntityItem::dimensionsChanged() {
+    EntityItem::dimensionsChanged();
+    withReadLock([&] {
         updateSound();
     });
 }
@@ -337,11 +343,12 @@ bool SoundEntityItem::restartSound() {
     }
 
     AudioInjectorOptions options;
-    options.position = getWorldPosition();
+    const glm::quat orientation = getWorldOrientation();
+    options.position = getWorldPosition() + orientation * (getScaledDimensions() * (ENTITY_ITEM_DEFAULT_REGISTRATION_POINT - getRegistrationPoint()));
     options.positionSet = _positional;
     options.volume = _volume;
     options.loop = _loop;
-    options.orientation = getWorldOrientation();
+    options.orientation = orientation;
     options.localOnly = _localOnly || _sound->isAmbisonic(); // force localOnly when ambisonic
     options.secondOffset = _timeOffset;
     options.pitch = _pitch;

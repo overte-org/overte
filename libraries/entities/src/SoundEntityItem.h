@@ -51,8 +51,8 @@ public:
     virtual void update(const quint64& now) override;
     bool needsToCallUpdate() const override { return _updateNeeded; }
 
-    void setLocalPosition(const glm::vec3& value, bool tellPhysics = true) override;
-    void setLocalOrientation(const glm::quat& value) override;
+    void locationChanged(bool tellPhysics = true, bool tellChildren = true) override;
+    void dimensionsChanged() override;
 
     void setURL(const QString& value);
     QString getURL() const;
