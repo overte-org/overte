@@ -662,13 +662,16 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds) {
     }
 
     qInfo() << "Initialized default paths:";
-    qInfo() << "Running as system user:" << isSystemUser();
-    qInfo() << "Running from system location: " << isSystemInstall();
-    qInfo() << "Resource base path:" << _server_resources_path;
-    qInfo() << "Config base path:" << _config_path;
-    qInfo() << "Data base path:" << _appdata_path;
-    qInfo() << "Local data base path:" << _local_appdata_path;
-    qInfo() << "Plugins path:" << _plugins_path;
+    qInfo() << "Running as system user      :" << isSystemUser();
+    qInfo() << "Running from system location:" << isSystemInstall();
+    qInfo() << "Organization name           :" << QCoreApplication::organizationName();
+    qInfo() << "Organization domain         :" << QCoreApplication::organizationDomain();
+    qInfo() << "Application name            :" << QCoreApplication::applicationName();
+    qInfo() << "Resource base path          :" << _server_resources_path;
+    qInfo() << "Config base path            :" << _config_path;
+    qInfo() << "Data base path              :" << _appdata_path;
+    qInfo() << "Local data base path        :" << _local_appdata_path;
+    qInfo() << "Plugins path                :" << _plugins_path;
     _initialized = true;
 
     return true;
