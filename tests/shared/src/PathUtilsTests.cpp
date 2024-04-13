@@ -10,12 +10,17 @@
 #include "PathUtilsTests.h"
 
 #include <QtTest/QtTest>
-
 #include <PathUtils.h>
+#include <QCoreApplication>
 
 QTEST_MAIN(PathUtilsTests)
 
 void PathUtilsTests::initTestCase() {
+    QCoreApplication::setApplicationName("PathUtilsTests");
+    QCoreApplication::setOrganizationName("Overte");
+    QCoreApplication::setOrganizationDomain("overte.org");
+
+
     PathUtils::initialize();
 }
 
