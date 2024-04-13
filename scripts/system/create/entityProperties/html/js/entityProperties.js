@@ -177,7 +177,12 @@ const GROUPS = [
                 decimals: 2,
                 propertyID: "shapeAlpha",
                 propertyName: "alpha",
-            },            
+            },
+            {
+                label: "Unlit",
+                type: "bool",
+                propertyID: "unlit",
+            }
         ]
     },
     {

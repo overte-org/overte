@@ -65,6 +65,13 @@ void ShapeEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
         materialChanged = true;
     }
 
+    bool unlit = entity->getUnlit();
+    if (_unlit != unlit) {
+        _unlit = unlit;
+        _material->setUnlit(unlit);
+        materialChanged = true;
+    }
+
     auto userData = entity->getUserData();
     if (_proceduralData != userData) {
         _proceduralData = userData;
