@@ -1027,7 +1027,7 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
                 } else {
                     qVarArgLists[i].append(varArgVal);
                     const QVariant& converted = qVarArgLists[i].back();
-                    conversionPenaltyScore = _engine->computeCastPenalty(V8ScriptValue(_engine, argVal), methodArgTypeId);
+                    conversionPenaltyScore += _engine->computeCastPenalty(V8ScriptValue(_engine, argVal), methodArgTypeId);
 
                     // a lot of type conversion assistance thanks to https://stackoverflow.com/questions/28457819/qt-invoke-method-with-qvariant
                     // A const_cast is needed because calling data() would detach the QVariant.
