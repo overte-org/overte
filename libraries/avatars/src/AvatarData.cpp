@@ -2107,15 +2107,11 @@ const QUrl& AvatarData::getSkeletonModelURL() const {
 }
 
 QString AvatarData::getSkeletonModelURLFromScript() const {
-    if (isMyAvatar()) {
-        if (!isMyAvatarURLProtected()) {
-            return _skeletonModelURL.toString();
-        } else {
-            return QString();
-        }
-    } else {
-        return QString();
+    if (isMyAvatar() && !isMyAvatarURLProtected()) {
+        return _skeletonModelURL.toString();
     }
+
+    return QString();
 };
 
 QByteArray AvatarData::packSkeletonData() const {
