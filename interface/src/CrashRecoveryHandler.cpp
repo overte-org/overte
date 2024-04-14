@@ -281,7 +281,6 @@ void CrashRecoveryHandler::handleCrash(CrashRecoveryHandler::Action action) {
         // Display name and avatar
         settings.beginGroup(AVATAR_GROUP);
         settings.setValue(DISPLAY_NAME_KEY, displayName);
-        settings.setValue(FULL_AVATAR_URL_KEY, fullAvatarURL);
         settings.setValue(FULL_AVATAR_MODEL_NAME_KEY, fullAvatarModelName);
         settings.endGroup();
 
@@ -291,4 +290,3 @@ void CrashRecoveryHandler::handleCrash(CrashRecoveryHandler::Action action) {
         settings.setValue(TUTORIAL_COMPLETE_FLAG_KEY, tutorialComplete);
     }
 }
-

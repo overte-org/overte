@@ -60,24 +60,32 @@ bool ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission per
     }
     std::vector<QString> urlsToCheck;
     QString scriptURL = manager->getAbsoluteFilename();
-    if (scriptURL.startsWith("about:Entities")) {
-        // This is entity script manager, we need to find the file name of the current script instead
-        scriptURL = Scriptable::context()->currentFileName();
+
+    // If this is an entity script manager, we need to find the file name of the current script instead
+    if (!scriptURL.startsWith("about:Entities")) {
         urlsToCheck.push_back(scriptURL);
-        if (PERMISSIONS_DEBUG_ENABLED) {
-            qDebug() << "ScriptPermissions::isCurrentScriptAllowed: filename: " << scriptURL;
-        }
-        auto parentContext = Scriptable::context()->parentContext();
-        while (parentContext) {
+    }
+
+    auto currentURL = Scriptable::context()->currentFileName();
+    if (!currentURL.isEmpty() && currentURL != scriptURL) {
+        urlsToCheck.push_back(currentURL);
+    }
+
+    if (PERMISSIONS_DEBUG_ENABLED) {
+        qDebug() << "ScriptPermissions::isCurrentScriptAllowed: filename: " << scriptURL;
+    }
+    auto parentContext = Scriptable::context()->parentContext();
+    while (parentContext) {
+        QString parentFilename = parentContext->currentFileName();
+        if (!parentFilename.isEmpty()) {
             urlsToCheck.push_back(parentContext->currentFileName());
             if (PERMISSIONS_DEBUG_ENABLED) {
                 qDebug() << "ScriptPermissions::isCurrentScriptAllowed: parent filename: " << parentContext->currentFileName();
             }
-            parentContext = parentContext->parentContext();
         }
-    } else {
-        urlsToCheck.push_back(scriptURL);
+        parentContext = parentContext->parentContext();
     }
+
     // Check if the script is allowed:
     QList<QString> safeURLPrefixes = { "file:///", "qrc:/", NetworkingConstants::OVERTE_COMMUNITY_APPLICATIONS,
                                        NetworkingConstants::OVERTE_TUTORIAL_SCRIPTS, "about:console"};
@@ -88,19 +96,26 @@ bool ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission per
         safeURLPrefixes.push_back(entry);
     }
 
-    for (const auto& str : safeURLPrefixes) {
-        if (!str.isEmpty() && scriptURL.startsWith(str)) {
+    for (auto urlToCheck : urlsToCheck) {
+        bool urlIsAllowed = false;
+        for (const auto& str : safeURLPrefixes) {
+            if (!str.isEmpty() && urlToCheck.startsWith(str)) {
+                urlIsAllowed = true;
+                if (PERMISSIONS_DEBUG_ENABLED) {
+                    qDebug() << "ScriptPermissions::isCurrentScriptAllowed: " << scriptPermissionNames[permissionIndex]
+                             << " for script " << urlToCheck << " accepted with rule: " << str;
+                }
+            }
+        }
+
+        if (!urlIsAllowed) {
             if (PERMISSIONS_DEBUG_ENABLED) {
                 qDebug() << "ScriptPermissions::isCurrentScriptAllowed: " << scriptPermissionNames[permissionIndex]
-                         << " for script " << scriptURL << " accepted with rule: " << str;
+                         << " for script " << urlToCheck << " rejected.";
             }
-            return true;
+            return false;
         }
     }
 
-    if (PERMISSIONS_DEBUG_ENABLED) {
-        qDebug() << "ScriptPermissions::isCurrentScriptAllowed: " << scriptPermissionNames[permissionIndex] << " for script "
-                 << scriptURL << " rejected.";
-    }
-    return false;
+    return true;
 }

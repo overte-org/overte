@@ -47,7 +47,6 @@ public:
     virtual void setParentID(const QUuid& parentID);
 
     virtual bool isMyAvatar() const { return false; }
-    virtual bool isMyAvatarURLProtected() const { return false; } // This needs to be here because both MyAvatar and AvatarData inherit from MyAvatar
 
     virtual quint16 getParentJointIndex() const { return _parentJointIndex; }
     virtual void setParentJointIndex(quint16 parentJointIndex);

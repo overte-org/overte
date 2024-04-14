@@ -29,43 +29,23 @@ Rectangle {
 
     function getWhitelistAsText() {
         var whitelist = Settings.getValue("private/scriptPermissionGetAvatarURLSafeURLs");
-        var arrayWhitelist = whitelist.split(",").join("\n");
+        var arrayWhitelist = whitelist.replace(",", "\n");
         return arrayWhitelist;
     }
 
     function setWhitelistAsText(whitelistText) {
         Settings.setValue("private/scriptPermissionGetAvatarURLSafeURLs", whitelistText.text);
-
-        var originalSetString = whitelistText.text;
-        var originalSet = originalSetString.split(' ').join('');
-
-        var check = Settings.getValue("private/scriptPermissionGetAvatarURLSafeURLs");
-        var arrayCheck = check.split(",").join("\n");
-
-        setWhitelistSuccess(arrayCheck === originalSet);
+        notificationText.text = "Whitelist saved.";
     }
 
-    function setWhitelistSuccess(success) {
-        if (success) {
-            notificationText.text = "Successfully saved settings.";
-        } else {
-            notificationText.text = "Error! Settings not saved.";
-        }
-    }
-
-    function toggleWhitelist(enabled) {
+    function setAvatarProtection(enabled) {
         Settings.setValue("private/scriptPermissionGetAvatarURLEnable", enabled);
-        console.info("Toggling Protect Avatar URLs to:", enabled);
+        console.info("Setting Protect Avatar URLs to:", enabled);
     }
 
     function initCheckbox() {
-        var check = Settings.getValue("private/scriptPermissionGetAvatarURLEnable", true);
-
-        if (check) {
-            whitelistEnabled.toggle();
-        }
+        whitelistEnabled.checked = Settings.getValue("private/scriptPermissionGetAvatarURLEnable", true);
     }
-  
   
     anchors.fill: parent
     width: parent.width;
@@ -99,7 +79,7 @@ Rectangle {
             anchors.top: parent.top;
             anchors.topMargin: 10;
             onToggled: {
-                toggleWhitelist(whitelistEnabled.checked)
+                setAvatarProtection(whitelistEnabled.checked)
             }
 
             Label {

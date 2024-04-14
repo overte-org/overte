@@ -610,6 +610,8 @@ public:
     AvatarData();
     virtual ~AvatarData();
 
+    virtual bool isMyAvatarURLProtected() const { return false; } // This needs to be here because both MyAvatar and AvatarData inherit from MyAvatar
+
     static const QUrl& defaultFullAvatarModelUrl();
 
     const QUuid getSessionUUID() const { return getID(); }
