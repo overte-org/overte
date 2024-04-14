@@ -26,6 +26,7 @@ public:
     NetworkMaterial() : _textures(MapChannel::NUM_MAP_CHANNELS) {}
     NetworkMaterial(const HFMMaterial& material, const QUrl& textureBaseUrl);
     NetworkMaterial(const NetworkMaterial& material);
+    NetworkMaterial(const graphics::Material material) : graphics::Material(material) {}
 
     void setAlbedoMap(const QUrl& url, bool useAlphaChannel);
     void setNormalMap(const QUrl& url, bool isBumpmap);
@@ -60,7 +61,7 @@ protected:
     static const QString NO_TEXTURE;
     const QString& getTextureName(MapChannel channel);
 
-    void setTextures(const QVariantMap& textureMap);
+    virtual void setTextures(const QVariantMap& textureMap);
 
     const bool& isOriginal() const { return _isOriginal; }
 
@@ -68,21 +69,25 @@ protected:
                                                 image::TextureUsage::Type type, MapChannel channel);
     graphics::TextureMapPointer fetchTextureMap(const QUrl& url, image::TextureUsage::Type type, MapChannel channel);
 
+    Transform _albedoTransform;
+
+    bool _isOriginal{ true };
+
 private:
     // Helpers for the ctors
     QUrl getTextureUrl(const QUrl& baseUrl, const HFMTexture& hfmTexture);
 
-    Transform _albedoTransform;
     Transform _lightmapTransform;
     vec2 _lightmapParams;
-
-    bool _isOriginal { true };
 };
 
 class NetworkMToonMaterial : public NetworkMaterial {
 public:
-    NetworkMToonMaterial() : NetworkMaterial() {}
+    NetworkMToonMaterial() : NetworkMaterial() { _model = VRM_MTOON; }
+    NetworkMToonMaterial(const HFMMaterial& material, const QUrl& textureBaseUrl);
     NetworkMToonMaterial(const NetworkMToonMaterial& material);
+
+    void setTextures(const QVariantMap& textureMap) override;
 
     enum MToonMapChannel {
         // Keep aligned with graphics/ShaderConstants.h and graphics-scripting/ScriptableModel.cpp

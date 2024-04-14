@@ -1134,6 +1134,65 @@ bool NetworkMaterial::checkResetOpacityMap() {
     return false;
 }
 
+NetworkMToonMaterial::NetworkMToonMaterial(const HFMMaterial& material, const QUrl& textureBaseUrl) :
+    NetworkMaterial(*material._material)
+{
+    _name = material.name.toStdString();
+    if (!material.albedoTexture.filename.isEmpty()) {
+        auto map = fetchTextureMap(textureBaseUrl, material.albedoTexture, image::TextureUsage::ALBEDO_TEXTURE, MapChannel::ALBEDO_MAP);
+        if (map) {
+            _albedoTransform = material.albedoTexture.transform;
+            map->setTextureTransform(_albedoTransform);
+
+            if (!material.opacityTexture.filename.isEmpty()) {
+                if (material.albedoTexture.filename == material.opacityTexture.filename) {
+                    // Best case scenario, just indicating that the albedo map contains transparency
+                    // TODO: Different albedo/opacity maps are not currently supported
+                    map->setUseAlphaChannel(true);
+                }
+            }
+        }
+
+        setTextureMap(MapChannel::ALBEDO_MAP, map);
+    }
+
+    if (!material.normalTexture.filename.isEmpty()) {
+        auto type = (material.normalTexture.isBumpmap ? image::TextureUsage::BUMP_TEXTURE : image::TextureUsage::NORMAL_TEXTURE);
+        auto map = fetchTextureMap(textureBaseUrl, material.normalTexture, type, MapChannel::NORMAL_MAP);
+        setTextureMap(MapChannel::NORMAL_MAP, map);
+    }
+
+    if (!material.emissiveTexture.filename.isEmpty()) {
+        auto map = fetchTextureMap(textureBaseUrl, material.emissiveTexture, image::TextureUsage::EMISSIVE_TEXTURE, MapChannel::EMISSIVE_MAP);
+        setTextureMap(MapChannel::EMISSIVE_MAP, map);
+    }
+
+    if (!material.shadeTexture.filename.isEmpty()) {
+        auto map = fetchTextureMap(textureBaseUrl, material.shadeTexture, image::TextureUsage::ALBEDO_TEXTURE, (MapChannel)MToonMapChannel::SHADE_MAP);
+        setTextureMap((MapChannel)MToonMapChannel::SHADE_MAP, map);
+    }
+
+    if (!material.shadingShiftTexture.filename.isEmpty()) {
+        auto map = fetchTextureMap(textureBaseUrl, material.shadingShiftTexture, image::TextureUsage::ROUGHNESS_TEXTURE, (MapChannel)MToonMapChannel::SHADING_SHIFT_MAP);
+        setTextureMap((MapChannel)MToonMapChannel::SHADING_SHIFT_MAP, map);
+    }
+
+    if (!material.matcapTexture.filename.isEmpty()) {
+        auto map = fetchTextureMap(textureBaseUrl, material.matcapTexture, image::TextureUsage::EMISSIVE_TEXTURE, (MapChannel)MToonMapChannel::MATCAP_MAP);
+        setTextureMap((MapChannel)MToonMapChannel::MATCAP_MAP, map);
+    }
+
+    if (!material.rimTexture.filename.isEmpty()) {
+        auto map = fetchTextureMap(textureBaseUrl, material.rimTexture, image::TextureUsage::ALBEDO_TEXTURE, (MapChannel)MToonMapChannel::RIM_MAP);
+        setTextureMap((MapChannel)MToonMapChannel::RIM_MAP, map);
+    }
+
+    if (!material.uvAnimationTexture.filename.isEmpty()) {
+        auto map = fetchTextureMap(textureBaseUrl, material.uvAnimationTexture, image::TextureUsage::ROUGHNESS_TEXTURE, (MapChannel)MToonMapChannel::UV_ANIMATION_MASK_MAP);
+        setTextureMap((MapChannel)MToonMapChannel::UV_ANIMATION_MASK_MAP, map);
+    }
+}
+
 NetworkMToonMaterial::NetworkMToonMaterial(const NetworkMToonMaterial& material) :
     NetworkMaterial(material),
     _shade(material._shade),
@@ -1151,6 +1210,72 @@ NetworkMToonMaterial::NetworkMToonMaterial(const NetworkMToonMaterial& material)
     _outlineWidth(material._outlineWidth),
     _outline(material._outline)
 {}
+
+void NetworkMToonMaterial::setTextures(const QVariantMap& textureMap) {
+    _isOriginal = false;
+
+    const auto& albedoName = getTextureName(MapChannel::ALBEDO_MAP);
+    const auto& normalName = getTextureName(MapChannel::NORMAL_MAP);
+    const auto& emissiveName = getTextureName(MapChannel::EMISSIVE_MAP);
+    const auto& shadeName = getTextureName((MapChannel)MToonMapChannel::SHADE_MAP);
+    const auto& shadingShiftName = getTextureName((MapChannel)MToonMapChannel::SHADING_SHIFT_MAP);
+    const auto& matcapName = getTextureName((MapChannel)MToonMapChannel::MATCAP_MAP);
+    const auto& rimName = getTextureName((MapChannel)MToonMapChannel::RIM_MAP);
+    const auto& uvAnimationMaskName = getTextureName((MapChannel)MToonMapChannel::UV_ANIMATION_MASK_MAP);
+
+    if (!albedoName.isEmpty()) {
+        auto url = textureMap.contains(albedoName) ? textureMap[albedoName].toUrl() : QUrl();
+        auto map = fetchTextureMap(url, image::TextureUsage::ALBEDO_TEXTURE, MapChannel::ALBEDO_MAP);
+        if (map) {
+            map->setTextureTransform(_albedoTransform);
+            // when reassigning the albedo texture we also check for the alpha channel used as opacity
+            map->setUseAlphaChannel(true);
+        }
+        setTextureMap(MapChannel::ALBEDO_MAP, map);
+    }
+
+    if (!normalName.isEmpty()) {
+        auto url = textureMap.contains(normalName) ? textureMap[normalName].toUrl() : QUrl();
+        auto map = fetchTextureMap(url, image::TextureUsage::NORMAL_TEXTURE, MapChannel::NORMAL_MAP);
+        setTextureMap(MapChannel::NORMAL_MAP, map);
+    }
+
+    if (!emissiveName.isEmpty()) {
+        auto url = textureMap.contains(emissiveName) ? textureMap[emissiveName].toUrl() : QUrl();
+        auto map = fetchTextureMap(url, image::TextureUsage::EMISSIVE_TEXTURE, MapChannel::EMISSIVE_MAP);
+        setTextureMap(MapChannel::EMISSIVE_MAP, map);
+    }
+
+    if (!shadeName.isEmpty()) {
+        auto url = textureMap.contains(shadeName) ? textureMap[shadeName].toUrl() : QUrl();
+        auto map = fetchTextureMap(url, image::TextureUsage::ALBEDO_TEXTURE, (MapChannel)MToonMapChannel::SHADE_MAP);
+        setTextureMap((MapChannel)MToonMapChannel::SHADE_MAP, map);
+    }
+
+    if (!shadingShiftName.isEmpty()) {
+        auto url = textureMap.contains(shadingShiftName) ? textureMap[shadingShiftName].toUrl() : QUrl();
+        auto map = fetchTextureMap(url, image::TextureUsage::ROUGHNESS_TEXTURE, (MapChannel)MToonMapChannel::SHADING_SHIFT_MAP);
+        setTextureMap((MapChannel)MToonMapChannel::SHADING_SHIFT_MAP, map);
+    }
+
+    if (!matcapName.isEmpty()) {
+        auto url = textureMap.contains(matcapName) ? textureMap[matcapName].toUrl() : QUrl();
+        auto map = fetchTextureMap(url, image::TextureUsage::EMISSIVE_TEXTURE, (MapChannel)MToonMapChannel::MATCAP_MAP);
+        setTextureMap((MapChannel)MToonMapChannel::MATCAP_MAP, map);
+    }
+
+    if (!rimName.isEmpty()) {
+        auto url = textureMap.contains(rimName) ? textureMap[rimName].toUrl() : QUrl();
+        auto map = fetchTextureMap(url, image::TextureUsage::ALBEDO_TEXTURE, (MapChannel)MToonMapChannel::RIM_MAP);
+        setTextureMap((MapChannel)MToonMapChannel::RIM_MAP, map);
+    }
+
+    if (!uvAnimationMaskName.isEmpty()) {
+        auto url = textureMap.contains(uvAnimationMaskName) ? textureMap[uvAnimationMaskName].toUrl() : QUrl();
+        auto map = fetchTextureMap(url, image::TextureUsage::ROUGHNESS_TEXTURE, (MapChannel)MToonMapChannel::UV_ANIMATION_MASK_MAP);
+        setTextureMap((MapChannel)MToonMapChannel::UV_ANIMATION_MASK_MAP, map);
+    }
+}
 
 std::string NetworkMToonMaterial::getOutlineWidthModeName(OutlineWidthMode mode) {
     const std::string names[3] = { "none", "worldCoordinates", "screenCoordinates" };
