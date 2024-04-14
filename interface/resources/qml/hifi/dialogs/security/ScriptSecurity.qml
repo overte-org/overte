@@ -43,10 +43,6 @@ Rectangle {
         console.info("Setting Protect Avatar URLs to:", enabled);
     }
 
-    function initCheckbox() {
-        whitelistEnabled.checked = Settings.getValue("private/scriptPermissionGetAvatarURLEnable", true);
-    }
-  
     anchors.fill: parent
     width: parent.width;
     height: 120;
@@ -69,11 +65,9 @@ Rectangle {
         height: 60;
 
         CheckBox {
-            Component.onCompleted: {
-                initCheckbox();
-            }
-
             id: whitelistEnabled;
+
+            checked: Settings.getValue("private/scriptPermissionGetAvatarURLEnable", true);
 
             anchors.right: parent.right;
             anchors.top: parent.top;
