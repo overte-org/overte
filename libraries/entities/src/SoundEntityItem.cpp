@@ -138,68 +138,68 @@ bool SoundEntityItem::shouldCreateSound(const EntityTreePointer& tree) const {
 void SoundEntityItem::update(const quint64& now) {
     const auto tree = getTree();
     if (tree) {
+        std::lock_guard<std::recursive_mutex> lock(_soundLock);
+
         _updateNeeded = false;
 
-        withWriteLock([&] {
+        withReadLock([&] {
             if (shouldCreateSound(tree)) {
                 _sound = DependencyManager::get<SoundCache>()->getSound(_url);
             }
         });
 
-        withReadLock([&] {
-            if (_sound) {
-                if (_sound->isLoaded()) {
-                    updateSound(true);
-                } else {
-                    connect(_sound.data(), &Resource::finished, this, [&] {
-                        withReadLock([&] {
-                            updateSound(true);
-                        });
-                    });
-                }
+        if (_sound) {
+            if (_sound->isLoaded()) {
+                updateSound(true);
+            } else {
+                connect(_sound.data(), &Resource::finished, this, [&] { updateSound(true); });
             }
-        });
+        }
     }
 }
 
 void SoundEntityItem::locationChanged(bool tellPhysics, bool tellChildren) {
     EntityItem::locationChanged(tellPhysics, tellChildren);
-    withReadLock([&] {
-        updateSound();
-    });
+    updateSound();
 }
 
 void SoundEntityItem::dimensionsChanged() {
     EntityItem::dimensionsChanged();
-    withReadLock([&] {
-        updateSound();
-    });
+    updateSound();
 }
 
 void SoundEntityItem::setURL(const QString& value) {
+    bool changed = false;
     withWriteLock([&] {
         if (value != _url) {
             _url = value;
+            changed = true;
+        }
+    });
 
-            const auto tree = getTree();
-            if (!tree) {
-                _updateNeeded = true;
-                return;
-            }
+    if (changed) {
+        const auto tree = getTree();
+        if (!tree) {
+            _updateNeeded = true;
+            return;
+        }
 
+        std::lock_guard<std::recursive_mutex> lock(_soundLock);
+
+        withReadLock([&] {
             if (shouldCreateSound(tree)) {
                 _sound = DependencyManager::get<SoundCache>()->getSound(_url);
             }
+        });
 
-            if (_sound) {
-                if (_sound->isLoaded()) {
-                    updateSound(true);
-                } else {
-                    connect(_sound.data(), &Resource::finished, this, [&] { updateSound(true); });
-                }
+        if (_sound) {
+            if (_sound->isLoaded()) {
+                updateSound(true);
+            } else {
+                connect(_sound.data(), &Resource::finished, this, [&] { updateSound(true); });
             }
         }
-    });
+    }
 }
 
 QString SoundEntityItem::getURL() const {
@@ -209,12 +209,17 @@ QString SoundEntityItem::getURL() const {
 }
 
 void SoundEntityItem::setVolume(float value) {
+    bool changed = false;
     withWriteLock([&] {
         if (value != _volume) {
             _volume = value;
-            updateSound();
+            changed = true;
         }
     });
+
+    if (changed) {
+        updateSound();
+    }
 }
 
 float SoundEntityItem::getVolume() const {
@@ -224,12 +229,17 @@ float SoundEntityItem::getVolume() const {
 }
 
 void SoundEntityItem::setTimeOffset(float value) {
+    bool changed = false;
     withWriteLock([&] {
         if (value != _timeOffset) {
             _timeOffset = value;
-            updateSound(true);
+            changed = true;
         }
     });
+
+    if (changed) {
+        updateSound(true);
+    }
 }
 
 float SoundEntityItem::getTimeOffset() const {
@@ -239,12 +249,17 @@ float SoundEntityItem::getTimeOffset() const {
 }
 
 void SoundEntityItem::setPitch(float value) {
+    bool changed = false;
     withWriteLock([&] {
         if (value != _pitch) {
             _pitch = value;
-            updateSound(true);
+            changed = true;
         }
     });
+
+    if (changed) {
+        updateSound(true);
+    }
 }
 
 float SoundEntityItem::getPitch() const {
@@ -254,12 +269,17 @@ float SoundEntityItem::getPitch() const {
 }
 
 void SoundEntityItem::setPlaying(bool value) {
+    bool changed = false;
     withWriteLock([&] {
         if (value != _playing) {
             _playing = value;
-            updateSound();
+            changed = true;
         }
     });
+
+    if (changed) {
+        updateSound();
+    }
 }
 
 bool SoundEntityItem::getPlaying() const {
@@ -269,12 +289,17 @@ bool SoundEntityItem::getPlaying() const {
 }
 
 void SoundEntityItem::setLoop(bool value) {
+    bool changed = false;
     withWriteLock([&] {
         if (value != _loop) {
             _loop = value;
-            updateSound(true);
+            changed = true;
         }
     });
+
+    if (changed) {
+        updateSound(true);
+    }
 }
 
 bool SoundEntityItem::getLoop() const {
@@ -284,12 +309,17 @@ bool SoundEntityItem::getLoop() const {
 }
 
 void SoundEntityItem::setPositional(bool value) {
+    bool changed = false;
     withWriteLock([&] {
         if (value != _positional) {
             _positional = value;
-            updateSound();
+            changed = true;
         }
     });
+
+    if (changed) {
+        updateSound();
+    }
 }
 
 bool SoundEntityItem::getPositional() const {
@@ -299,36 +329,48 @@ bool SoundEntityItem::getPositional() const {
 }
 
 void SoundEntityItem::setLocalOnly(bool value) {
+    bool changed = false;
     withWriteLock([&] {
         if (value != _localOnly) {
             _localOnly = value;
-
-            const auto tree = getTree();
-            if (!tree) {
-                _updateNeeded = true;
-                return;
-            }
-
-            if (shouldCreateSound(tree)) {
-                _sound = DependencyManager::get<SoundCache>()->getSound(_url);
-            } else {
-                _sound = nullptr;
-
-                if (_injector) {
-                    DependencyManager::get<AudioInjectorManager>()->stop(_injector);
-                }
-                _injector = nullptr;
-            }
-
-            if (_sound) {
-                if (_sound->isLoaded()) {
-                    updateSound(true);
-                } else {
-                    connect(_sound.data(), &Resource::finished, this, [&] { updateSound(true); });
-                }
-            }
+            changed = true;
         }
     });
+
+    if (changed) {
+        const auto tree = getTree();
+        if (!tree) {
+            _updateNeeded = true;
+            return;
+        }
+
+        std::lock_guard<std::recursive_mutex> lock(_soundLock);
+
+        bool createdSound = false;
+        withReadLock([&] {
+            if (shouldCreateSound(tree)) {
+                _sound = DependencyManager::get<SoundCache>()->getSound(_url);
+                createdSound = true;
+            }
+        });
+
+        if (!createdSound) {
+            _sound = nullptr;
+
+            if (_injector) {
+                DependencyManager::get<AudioInjectorManager>()->stop(_injector);
+            }
+            _injector = nullptr;
+        }
+
+        if (_sound) {
+            if (_sound->isLoaded()) {
+                updateSound(true);
+            } else {
+                connect(_sound.data(), &Resource::finished, this, [&] { updateSound(true); });
+            }
+        }
+    }
 }
 
 bool SoundEntityItem::getLocalOnly() const {
@@ -337,21 +379,30 @@ bool SoundEntityItem::getLocalOnly() const {
     });
 }
 
-bool SoundEntityItem::restartSound() {
+bool SoundEntityItem::restartSound(bool lock) {
+    if (lock) {
+        _soundLock.lock();
+    }
+
     if (!_sound) {
+        if (lock) {
+            _soundLock.unlock();
+        }
         return false;
     }
 
     AudioInjectorOptions options;
-    const glm::quat orientation = getWorldOrientation();
-    options.position = getWorldPosition() + orientation * (getScaledDimensions() * (ENTITY_ITEM_DEFAULT_REGISTRATION_POINT - getRegistrationPoint()));
-    options.positionSet = _positional;
-    options.volume = _volume;
-    options.loop = _loop;
-    options.orientation = orientation;
-    options.localOnly = _localOnly || _sound->isAmbisonic(); // force localOnly when ambisonic
-    options.secondOffset = _timeOffset;
-    options.pitch = _pitch;
+    withReadLock([&] {
+        const glm::quat orientation = getWorldOrientation();
+        options.position = getWorldPosition() + orientation * (getScaledDimensions() * (ENTITY_ITEM_DEFAULT_REGISTRATION_POINT - getRegistrationPoint()));
+        options.positionSet = _positional;
+        options.volume = _volume;
+        options.loop = _loop;
+        options.orientation = orientation;
+        options.localOnly = _localOnly || _sound->isAmbisonic(); // force localOnly when ambisonic
+        options.secondOffset = _timeOffset;
+        options.pitch = _pitch;
+    });
 
     // stereo option isn't set from script, this comes from sound metadata or filename
     options.stereo = _sound->isStereo();
@@ -363,10 +414,16 @@ bool SoundEntityItem::restartSound() {
         _injector = DependencyManager::get<AudioInjectorManager>()->playSound(_sound, options);
     }
 
+    if (lock) {
+        _soundLock.unlock();
+    }
+
     return true;
 }
 
 void SoundEntityItem::updateSound(bool restart) {
+    std::lock_guard<std::recursive_mutex> lock(_soundLock);
+
     if (!_sound) {
         return;
     }

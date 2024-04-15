@@ -78,7 +78,7 @@ public:
     void setLocalOnly(bool value);
     bool getLocalOnly() const;
 
-    bool restartSound();
+    bool restartSound(bool lock = false);
 
 protected:
     bool shouldCreateSound(const EntityTreePointer& tree) const;
@@ -93,6 +93,7 @@ protected:
     bool _positional { true };
     bool _localOnly { false };
 
+    std::recursive_mutex _soundLock;
     SharedSoundPointer _sound;
     AudioInjectorPointer _injector;
     bool _updateNeeded { false };

@@ -1924,9 +1924,7 @@ bool EntityScriptingInterface::restartSound(const QUuid& entityID) {
         auto soundEntity = std::dynamic_pointer_cast<SoundEntityItem>(entity);
         bool isPlaying = soundEntity->getPlaying();
         if (isPlaying) {
-            soundEntity->withWriteLock([&] {
-                soundEntity->restartSound();
-            });
+            soundEntity->restartSound(true);
         }
         return isPlaying;
     }
