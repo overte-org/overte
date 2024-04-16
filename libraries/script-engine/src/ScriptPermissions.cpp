@@ -43,6 +43,9 @@ bool ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission per
     int permissionIndex = static_cast<int>(permission);
     // Check if the permission checking is active
     Setting::Handle<bool> isCheckingEnabled(scriptPermissionSettingEnableKeyNames[permissionIndex], scriptPermissionSettingEnableDefaultValues[permissionIndex]);
+    if (!isCheckingEnabled.get()) {
+        return true;
+    }
     // Get the script manager:
     auto engine = Scriptable::engine();
     if (!engine) {
