@@ -24,6 +24,10 @@
 #define CONVERSIONS_OPTIMIZED_FOR_V8
 
 #ifdef CONVERSIONS_OPTIMIZED_FOR_V8
+ScriptValue qBytearrayToScriptValue(ScriptEngine* engine, const QByteArray &qByteArray);
+
+bool qBytearrayFromScriptValue(const ScriptValue& object, QByteArray &qByteArray);
+
 ScriptValue vec3ToScriptValue(ScriptEngine* engine, const glm::vec3& vec3);
 
 bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3);
