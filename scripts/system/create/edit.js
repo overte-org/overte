@@ -484,7 +484,29 @@
             azimuthFinish: Math.PI
         },
         ProceduralParticleEffect: {
-            // TODO: what should the default procedural particle be?
+            dimensions: 3,
+            numParticles: 10000,
+            numTrianglesPerParticle: 6,
+            numUpdateProps: 3,
+            particleUpdateData: JSON.stringify({
+                version: 1.0,
+                fragmentShaderURL: "qrc:///shaders/proceduralParticleSwarmUpdate.frag",
+                uniforms: {
+                    lifespan: 3.0,
+                    speed: 2.0,
+                    speedSpread: 0.25,
+                    mass: 50000000000
+                }
+            }),
+            particleRenderData: JSON.stringify({
+                version: 3.0,
+                vertexShaderURL: "qrc:///shaders/proceduralParticleSwarmRender.vert",
+                fragmentShaderURL: "qrc:///shaders/proceduralParticleSwarmRender.frag",
+                uniforms: {
+                    radius: 0.03,
+                    lifespan: 3.0
+                }
+            })
         },
         Light: {
             color: { red: 255, green: 255, blue: 255 },

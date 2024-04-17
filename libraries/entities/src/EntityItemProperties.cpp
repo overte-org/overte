@@ -1352,10 +1352,26 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     can manipulate the properties of, and use <code>JSON.stringify()</code> to convert the object into a string to put in
  *     the property.
  *
- * @example <caption>TODO</caption>
+ * @example <caption>A cube of oscillating, unlit, billboarded triangles, with the oscillation in the update (computed once per particle instead of once per vertex).</caption>
  * particles = Entities.addEntity({
  *     type: "ProceduralParticleEffect",
  *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.5, z: -4 })),
+ *     dimensions: 3,
+ *     numParticles: 10000,
+ *     numTrianglesPerParticle: 1,
+ *     numUpdateProps: 1,
+ *     particleUpdateData: JSON.stringify({
+ *         version: 1.0,
+ *         fragmentShaderURL: "https://gist.githubusercontent.com/HifiExperiments/9049fb4a8dcd2c1401ff4321103dce16/raw/4f9474ed82c66c1f94c1055d2724af808cd7aace/proceduralParticleUpdate.fs",
+ *     }),
+ *     particleRenderData: JSON.stringify({
+ *         version: 1.0,
+ *         vertexShaderURL: "https://gist.github.com/HifiExperiments/5dda24e28e7de1719e3a594d81306343/raw/92e0c5b82a9fa87685064cdbab92ed0c16f49f94/proceduralParticle2.vs",
+ *         fragmentShaderURL: "https://gist.github.com/HifiExperiments/7def54504362c7bc79b5c85cd515b98b/raw/93b3828c2ec66b12b789a625dd141f533c595ede/proceduralParticle.fs",
+ *         uniforms: {
+ *             radius: 0.03
+ *         }
+ *     }),
  *     lifetime: 300  // Delete after 5 minutes.
  * });
  */
