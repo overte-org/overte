@@ -3305,7 +3305,7 @@ void Application::initializeUi() {
 
             // END PULL SAFEURLS FROM INTERFACE.JSON Settings
 
-            if (AUTHORIZED_EXTERNAL_QML_SOURCE.isParentOf(url)) {
+            if (QUrl(NetworkingConstants::OVERTE_COMMUNITY_APPLICATIONS).isParentOf(url)) {
                 return true;
             } else {
                 for (const auto& str : safeURLS) {

@@ -73,6 +73,7 @@
 #include "MovingEntitiesOperator.h"
 #include "SceneScriptingInterface.h"
 #include "WarningsSuppression.h"
+#include "ScriptPermissions.h"
 
 using namespace std;
 
@@ -226,7 +227,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     _yawSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "yawSpeed", _yawSpeed),
     _hmdYawSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "hmdYawSpeed", _hmdYawSpeed),
     _pitchSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "pitchSpeed", _pitchSpeed),
-    _fullAvatarURLSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "fullAvatarURL",
+    _fullAvatarURLSetting(QStringList() << SETTINGS_FULL_PRIVATE_GROUP_NAME << AVATAR_SETTINGS_GROUP_NAME << "fullAvatarURL",
                           AvatarData::defaultFullAvatarModelUrl()),
     _fullAvatarModelNameSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "fullAvatarModelName", _fullAvatarModelName),
     _animGraphURLSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "animGraphURL", QUrl("")),
@@ -2236,6 +2237,9 @@ AttachmentData MyAvatar::loadAttachmentData(const QUrl& modelURL, const QString&
     return attachment;
 }
 
+bool MyAvatar::isMyAvatarURLProtected() const {
+    return !ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL);
+}
 
 int MyAvatar::parseDataFromBuffer(const QByteArray& buffer) {
     qCDebug(interfaceapp) << "Error: ignoring update packet for MyAvatar"

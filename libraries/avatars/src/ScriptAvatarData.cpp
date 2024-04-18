@@ -204,7 +204,11 @@ bool ScriptAvatarData::getLookAtSnappingEnabled() const {
 //
 QString ScriptAvatarData::getSkeletonModelURLFromScript() const {
     if (AvatarSharedPointer sharedAvatarData = _avatarData.lock()) {
-        return sharedAvatarData->getSkeletonModelURLFromScript();
+        if (sharedAvatarData->isMyAvatar() && !sharedAvatarData->isMyAvatarURLProtected()) {
+            return sharedAvatarData->getSkeletonModelURLFromScript();
+        }
+
+        return QString();
     } else {
         return QString();
     }
