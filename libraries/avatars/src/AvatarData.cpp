@@ -1681,14 +1681,6 @@ float AvatarData::getUpdateRate(const QString& rateName) const {
     return 0.0f;
 }
 
-QString AvatarData::getSkeletonModelURLFromScript() const {
-    if (DependencyManager::get<NodeList>()->getThisNodeCanViewAssetURLs()) {
-        return _skeletonModelURL.toString();
-    } else {
-        return QString();
-    }
-}
-
 int AvatarData::getAverageBytesReceivedPerSecond() const {
     return lrint(_averageBytesReceived.getAverageSampleValuePerSecond());
 }
@@ -2115,7 +2107,7 @@ const QUrl& AvatarData::getSkeletonModelURL() const {
 }
 
 QString AvatarData::getSkeletonModelURLFromScript() const {
-    if (isMyAvatar() && !isMyAvatarURLProtected()) {
+    if (isMyAvatar() && !isMyAvatarURLProtected() && DependencyManager::get<NodeList>()->getThisNodeCanViewAssetURLs()) {
         return _skeletonModelURL.toString();
     }
 
