@@ -499,14 +499,15 @@ void PathUtils::uninitialize() {
     _initialized = false;
 }
 
-bool PathUtils::initialize(FilesystemLayout type, DataStorage ds) {
+bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString &instance) {
+    /*********************************************************************
+     * Checks
+     *********************************************************************/
+
     if (_initialized) {
         return true;
     }
 
-    /*********************************************************************
-     * Checks
-     *********************************************************************/
     if (QCoreApplication::applicationName().isEmpty()) {
         qCCritical(pathutils_log) << "QCoreApplication not initialized yet!";
         return false;
