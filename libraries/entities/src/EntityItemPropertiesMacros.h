@@ -459,14 +459,16 @@ inline QRect QRect_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
     { \
         EntityPropertyInfo propertyInfo = EntityPropertyInfo(P); \
         _propertyInfos[#g "." #n] = propertyInfo; \
-		_enumsToPropertyStrings[P] = #g "." #n; \
+        _propertyInfos[#g].propertyEnums << P; \
+        _enumsToPropertyStrings[P] = #g "." #n; \
     }
 
 #define ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(P, G, g, N, n, M, X) \
     { \
         EntityPropertyInfo propertyInfo = EntityPropertyInfo(P, M, X); \
         _propertyInfos[#g "." #n] = propertyInfo; \
-		_enumsToPropertyStrings[P] = #g "." #n; \
+        _propertyInfos[#g].propertyEnums << P; \
+        _enumsToPropertyStrings[P] = #g "." #n; \
     }
 
 #define DEFINE_CORE(N, n, T, V) \
