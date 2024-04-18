@@ -51,9 +51,9 @@ Q_DECLARE_LOGGING_CATEGORY(pathutils_log)
  * 1. We're running from the build tree.
  * 2. We're running from a Linux FHS layout (/usr/bin, /var, etc)
  *
- * In both cases we locate everything relative to our current position. Paths are not hardcoded to eg, /var, but to
- * $BINARY_DIR/../var. This means things work correcly in /usr/local as well, and in untarred builds. This also
- * works to make testing this code easier, since it doesn't need to be in the system root.
+ * In both cases we locate everything relative to our current position. Paths are not hardcoded to eg, /var, but
+ * resolved to $BINARY_DIR/../var. This means things work correcly in /usr/local as well, and in untarred builds.
+ * This also works to make testing this code easier, since it doesn't need to be in the system root.
  *
  *
  * For dynamic data there's also two possibilities:
@@ -161,12 +161,14 @@ public:
      * This will be automatically called internally with the Auto type. Call it manually
      * to specify another one.
      *
-     * @param type Type to initialize as
-     * @param force Force initialization even if already initialized. Should only be used for testing.
+     * @param type Type of filesystem layout
+     * @param ds  Type of data storage
+     * @param instance Instance name
+     *
      * @return true Self-check passed, all paths look good.
      * @return false Something isn't being found, program should abort.
      */
-    static bool initialize(FilesystemLayout type = FilesystemLayout::Auto, DataStorage ds = DataStorage::Auto);
+    static bool initialize(FilesystemLayout type = FilesystemLayout::Auto, DataStorage ds = DataStorage::Auto, const QString &instance = "main");
 
 
 
