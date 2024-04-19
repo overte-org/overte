@@ -826,9 +826,9 @@ NetworkMaterial::NetworkMaterial(const NetworkMaterial& m) :
     Material(m),
     _textures(m._textures),
     _albedoTransform(m._albedoTransform),
+    _isOriginal(m._isOriginal),
     _lightmapTransform(m._lightmapTransform),
-    _lightmapParams(m._lightmapParams),
-    _isOriginal(m._isOriginal)
+    _lightmapParams(m._lightmapParams)
 {}
 
 const QString NetworkMaterial::NO_TEXTURE = QString();
@@ -1135,37 +1135,9 @@ bool NetworkMaterial::checkResetOpacityMap() {
 }
 
 NetworkMToonMaterial::NetworkMToonMaterial(const HFMMaterial& material, const QUrl& textureBaseUrl) :
-    NetworkMaterial(*material._material)
+    NetworkMaterial(material, textureBaseUrl) // handles _name, albedoMap, normalMap, and emissiveMap
 {
-    _name = material.name.toStdString();
-    if (!material.albedoTexture.filename.isEmpty()) {
-        auto map = fetchTextureMap(textureBaseUrl, material.albedoTexture, image::TextureUsage::ALBEDO_TEXTURE, MapChannel::ALBEDO_MAP);
-        if (map) {
-            _albedoTransform = material.albedoTexture.transform;
-            map->setTextureTransform(_albedoTransform);
-
-            if (!material.opacityTexture.filename.isEmpty()) {
-                if (material.albedoTexture.filename == material.opacityTexture.filename) {
-                    // Best case scenario, just indicating that the albedo map contains transparency
-                    // TODO: Different albedo/opacity maps are not currently supported
-                    map->setUseAlphaChannel(true);
-                }
-            }
-        }
-
-        setTextureMap(MapChannel::ALBEDO_MAP, map);
-    }
-
-    if (!material.normalTexture.filename.isEmpty()) {
-        auto type = (material.normalTexture.isBumpmap ? image::TextureUsage::BUMP_TEXTURE : image::TextureUsage::NORMAL_TEXTURE);
-        auto map = fetchTextureMap(textureBaseUrl, material.normalTexture, type, MapChannel::NORMAL_MAP);
-        setTextureMap(MapChannel::NORMAL_MAP, map);
-    }
-
-    if (!material.emissiveTexture.filename.isEmpty()) {
-        auto map = fetchTextureMap(textureBaseUrl, material.emissiveTexture, image::TextureUsage::EMISSIVE_TEXTURE, MapChannel::EMISSIVE_MAP);
-        setTextureMap(MapChannel::EMISSIVE_MAP, map);
-    }
+    _model = VRM_MTOON;
 
     if (!material.shadeTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.shadeTexture, image::TextureUsage::ALBEDO_TEXTURE, (MapChannel)MToonMapChannel::SHADE_MAP);

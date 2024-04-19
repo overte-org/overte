@@ -26,7 +26,6 @@ public:
     NetworkMaterial() : _textures(MapChannel::NUM_MAP_CHANNELS) {}
     NetworkMaterial(const HFMMaterial& material, const QUrl& textureBaseUrl);
     NetworkMaterial(const NetworkMaterial& material);
-    NetworkMaterial(const graphics::Material material) : graphics::Material(material) {}
 
     void setAlbedoMap(const QUrl& url, bool useAlphaChannel);
     void setNormalMap(const QUrl& url, bool isBumpmap);
@@ -71,7 +70,7 @@ protected:
 
     Transform _albedoTransform;
 
-    bool _isOriginal{ true };
+    bool _isOriginal { true };
 
 private:
     // Helpers for the ctors
