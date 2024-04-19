@@ -44,7 +44,8 @@ public:
     // EntityItemProperty related helpers
     virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
                                    ScriptEngine* engine, bool skipDefaults,
-                                   EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags) const override;
+                                   EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags,
+                                   bool isMyOwnAvatarEntity) const override;
     virtual void copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) override;
 
     void merge(const BloomPropertyGroup& other);

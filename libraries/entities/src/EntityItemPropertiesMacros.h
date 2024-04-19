@@ -221,7 +221,7 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return
 #define COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(p, P)                                                             \
     if (((!returnNothingOnEmptyPropertyFlags && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
         (!skipDefaults || defaultEntityProperties._##P != _##P)) {                                                        \
-        if (nodeList->getThisNodeCanViewAssetURLs()) {                                                                    \
+        if (isMyOwnAvatarEntity || nodeList->getThisNodeCanViewAssetURLs()) {                                             \
             ScriptValue V = convertScriptValue(engine, _##P);                                                             \
             properties.setProperty(#P, V);                                                                                \
         } else {                                                                                                          \
@@ -229,6 +229,24 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return
             ScriptValue V = convertScriptValue(engine, emptyURL);                                                         \
             properties.setProperty(#P, V);                                                                                \
         }                                                                                                                 \
+    }
+
+#define COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(X, G, g, P, p)                                            \
+    if (((!returnNothingOnEmptyPropertyFlags && desiredProperties.isEmpty()) || desiredProperties.getHasProperty(X)) && \
+        (!skipDefaults || defaultEntityProperties.get##G().get##P() != get##P())) {                                     \
+        if (isMyOwnAvatarEntity || nodeList->getThisNodeCanViewAssetURLs()) {                                           \
+            ScriptValue groupProperties = properties.property(#g);                                                      \
+            if (!groupProperties.isValid()) {                                                                           \
+                groupProperties = engine->newObject();                                                                  \
+            }                                                                                                           \
+            ScriptValue V = convertScriptValue(engine, get##P());                                                       \
+            groupProperties.setProperty(#p, V);                                                                         \
+            properties.setProperty(#g, groupProperties);                                                                \
+        } else {                                                                                                        \
+            const QString emptyURL = "";                                                                                \
+            ScriptValue V = convertScriptValue(engine, emptyURL);                                                       \
+            properties.setProperty(#P, V);                                                                              \
+        }                                                                                                               \
     }
 
 typedef QVector<glm::vec3> qVectorVec3;
