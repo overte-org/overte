@@ -21,6 +21,7 @@
 #include "RenderableImageEntityItem.h"
 #include "RenderableWebEntityItem.h"
 #include "RenderableParticleEffectEntityItem.h"
+#include "RenderableProceduralParticleEffectEntityItem.h"
 #include "RenderableLineEntityItem.h"
 #include "RenderablePolyLineEntityItem.h"
 #include "RenderablePolyVoxEntityItem.h"
@@ -377,6 +378,10 @@ EntityRenderer::Pointer EntityRenderer::addToScene(EntityTreeRenderer& renderer,
 
         case Type::ParticleEffect:
             result = make_renderer<ParticleEffectEntityRenderer>(entity);
+            break;
+
+        case Type::ProceduralParticleEffect:
+            result = make_renderer<ProceduralParticleEffectEntityRenderer>(entity);
             break;
 
         case Type::Line:

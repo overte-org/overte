@@ -709,5 +709,23 @@
     },
     "zTextureURL": {
         "tooltip": "The URL of the texture to map to surfaces perpendicular to the entity's local z-axis. JPG or PNG format."
+    },
+    "numParticles": {
+        "tooltip": "The maximum number of particles to render at one time."
+    },
+    "numTrianglesPerParticle": {
+        "tooltip": "The number of triangles to render per particle."
+    },
+    "numUpdateProps": {
+        "tooltip": "The number of persistent Vec4 per-particle properties to use during simulation and rendering."
+    },
+    "particleTransparent": {
+        "tooltip": "If the particles should render as transparent (with additive blending) or as opaque."
+    },
+    "particleUpdateData": {
+        "tooltip": "A JSON description of the shaders, textures, and uniforms to use during particle updating."
+    },
+    "particleRenderData": {
+        "tooltip": "A JSON description of the shaders, textures, and uniforms to use during particle rendering."
     }
 }

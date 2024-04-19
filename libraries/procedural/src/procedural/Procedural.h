@@ -118,6 +118,9 @@ public:
     bool hasBoundOperator() const { return (bool)_boundOperator; }
     AABox getBound(RenderArgs* args) { return _boundOperator(args); }
 
+    void setVertexReplacements(const std::unordered_map<std::string, std::string>& replacements);
+    void setFragmentReplacements(const std::unordered_map<std::string, std::string>& replacements);
+
     gpu::Shader::Source _vertexSource;
     gpu::Shader::Source _vertexSourceSkinned;
     gpu::Shader::Source _vertexSourceSkinnedDQ;
@@ -179,6 +182,8 @@ protected:
     // Rendering objects
     UniformLambdas _uniforms;
     NetworkTexturePointer _channels[MAX_PROCEDURAL_TEXTURE_CHANNELS];
+    std::unordered_map<std::string, std::string> _vertexReplacements;
+    std::unordered_map<std::string, std::string> _fragmentReplacements;
 
     std::unordered_map<ProceduralProgramKey, gpu::PipelinePointer> _proceduralPipelines;
 

@@ -194,6 +194,8 @@ public:
     void setItemTransition(ItemID id, Index transitionId);
     void removeItemTransition(ItemID id);
 
+    void simulate(ItemID id, RenderArgs* args) { _items[id].renderSimulate(args); }
+
 protected:
 
     // Thread safe elements that can be accessed from anywhere

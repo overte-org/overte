@@ -167,4 +167,14 @@ public:
     static const size_t MAX_MIRRORS_PER_LEVEL { 3 };
 };
 
+class RenderSimulateTask {
+public:
+    using Inputs = render::VaryingSet2<render::ItemBounds, gpu::FramebufferPointer>;
+    using JobModel = render::Job::ModelI<RenderSimulateTask, Inputs>;
+
+    RenderSimulateTask() {}
+
+    void run(const render::RenderContextPointer& renderContext, const Inputs& inputs);
+};
+
 #endif // hifi_RenderDeferredTask_h

@@ -92,6 +92,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
             const auto& transparents = items[RenderFetchCullSortTask::TRANSPARENT_SHAPE];
             const auto& metas = items[RenderFetchCullSortTask::META];
             const auto& mirrors = items[RenderFetchCullSortTask::MIRROR];
+            const auto& simulateItems = items[RenderFetchCullSortTask::SIMULATE];
             const auto& inFrontOpaque = items[RenderFetchCullSortTask::LAYER_FRONT_OPAQUE_SHAPE];
             const auto& inFrontTransparent = items[RenderFetchCullSortTask::LAYER_FRONT_TRANSPARENT_SHAPE];
             const auto& hudOpaque = items[RenderFetchCullSortTask::LAYER_HUD_OPAQUE_SHAPE];
@@ -122,6 +123,11 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     // Prepare Forward Framebuffer pass 
     const auto prepareForwardInputs = PrepareForward::Inputs(scaledPrimaryFramebuffer, lightFrame).asVarying();
     task.addJob<PrepareForward>("PrepareForward", prepareForwardInputs);
+
+    if (depth == 0) {
+        const auto simulateInputs = RenderSimulateTask::Inputs(simulateItems, scaledPrimaryFramebuffer).asVarying();
+        task.addJob<RenderSimulateTask>("RenderSimulation", simulateInputs);
+    }
 
     // draw a stencil mask in hidden regions of the framebuffer.
     task.addJob<PrepareStencil>("PrepareStencil", scaledPrimaryFramebuffer);

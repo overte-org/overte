@@ -327,12 +327,12 @@ void Procedural::prepare(gpu::Batch& batch,
 
         // Build the fragment and vertex shaders
         auto versionDefine = "#define PROCEDURAL_V" + std::to_string(_data.version);
-        fragmentSource.replacements.clear();
+        fragmentSource.replacements = _fragmentReplacements;
         fragmentSource.replacements[PROCEDURAL_VERSION] = versionDefine;
         if (!_fragmentShaderSource.isEmpty()) {
             fragmentSource.replacements[PROCEDURAL_BLOCK] = _fragmentShaderSource.toStdString();
         }
-        vertexSource.replacements.clear();
+        vertexSource.replacements = _vertexReplacements;
         vertexSource.replacements[PROCEDURAL_VERSION] = versionDefine;
         if (!_vertexShaderSource.isEmpty()) {
             vertexSource.replacements[PROCEDURAL_BLOCK] = _vertexShaderSource.toStdString();
@@ -523,6 +523,19 @@ glm::vec4 Procedural::getColor(const glm::vec4& entityColor) const {
 bool Procedural::hasVertexShader() const {
     std::lock_guard<std::mutex> lock(_mutex);
     return !_data.vertexShaderUrl.isEmpty();
+}
+
+
+void Procedural::setVertexReplacements(const std::unordered_map<std::string, std::string>& replacements) {
+    std::lock_guard<std::mutex> lock(_mutex);
+    _vertexReplacements = replacements;
+    _shaderDirty = true;
+}
+
+void Procedural::setFragmentReplacements(const std::unordered_map<std::string, std::string>& replacements) {
+    std::lock_guard<std::mutex> lock(_mutex);
+    _fragmentReplacements = replacements;
+    _shaderDirty = true;
 }
 
 void graphics::ProceduralMaterial::initializeProcedural() {

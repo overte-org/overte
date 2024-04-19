@@ -571,6 +571,14 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_SPIN_FINISH, spinFinish);
     CHECK_PROPERTY_CHANGE(PROP_PARTICLE_ROTATE_WITH_ENTITY, rotateWithEntity);
 
+    // Procedural Particles
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, numParticles);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, numTrianglesPerParticle);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, numUpdateProps);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, particleTransparent);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, particleUpdateData);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, particleRenderData);
+
     // Model
     CHECK_PROPERTY_CHANGE(PROP_MODEL_URL, modelURL);
     CHECK_PROPERTY_CHANGE(PROP_MODEL_SCALE, modelScale);
@@ -882,6 +890,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @see {@link Entities.EntityProperties-ParticleEffect|EntityProperties-ParticleEffect}
  * @see {@link Entities.EntityProperties-PolyLine|EntityProperties-PolyLine}
  * @see {@link Entities.EntityProperties-PolyVox|EntityProperties-PolyVox}
+ * @see {@link Entities.EntityProperties-ProceduralParticleEffect|EntityProperties-ProceduralParticleEffect}
  * @see {@link Entities.EntityProperties-Shape|EntityProperties-Shape}
  * @see {@link Entities.EntityProperties-Sphere|EntityProperties-Sphere}
  * @see {@link Entities.EntityProperties-Text|EntityProperties-Text}
@@ -1317,6 +1326,54 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     lifetime: 300  // Delete after 5 minutes.
  * });
  * Entities.setVoxelSphere(polyVox, position, 0.8, 255);
+ */
+
+/*@jsdoc
+ * The <code>"ProceduralParticleEffect"</code> {@link Entities.EntityType|EntityType} displays a particle system that can be
+ * used to simulate things such as fire, smoke, snow, magic spells, etc. The particles are fully controlled by the provided
+ * update and rendering shaders on the GPU.
+ * It has properties in addition to the common {@link Entities.EntityProperties|EntityProperties}.
+ *
+ * @typedef {object} Entities.EntityProperties-ProceduralParticleEffect
+ * @property {number} numParticles=10000 - The number of particles to render.
+ * @property {number} numTrianglesPerParticle=1 - The number of triangles to render per particle.  By default, these triangles
+ *     still need to be positioned in the <code>particleRenderData</code> vertex shader.
+ * @property {number} numUpdateProps=0 - The number of persistent Vec4 values stored per particle and updated once per frame.
+ *     These can be modified in the <code>particleUpdateData</code> fragment shader and read in the
+ *     <code>particleRenderData</code> vertex/fragment shaders.
+ * @property {boolean} particleTransparent=false - Whether the particles should render as transparent (with additive blending)
+ *     or opaque.
+ * @property {ProceduralData} particleUpdateData="" - Used to store {@link ProceduralData} data as a JSON string to control
+ *     per-particle updates if <code>numUpdateProps > 0</code>.  You can use <code>JSON.parse()</code> to parse the string
+ *     into a JavaScript object which you can manipulate the properties of, and use <code>JSON.stringify()</code> to convert
+ *     the object into a string to put in the property.
+ * @property {ProceduralData} particleRenderData="" - Used to store {@link ProceduralData} data as a JSON string to control
+ *     per-particle rendering.  You can use <code>JSON.parse()</code> to parse the string into a JavaScript object which you
+ *     can manipulate the properties of, and use <code>JSON.stringify()</code> to convert the object into a string to put in
+ *     the property.
+ *
+ * @example <caption>A cube of oscillating, unlit, billboarded triangles, with the oscillation in the update (computed once per particle instead of once per vertex).</caption>
+ * particles = Entities.addEntity({
+ *     type: "ProceduralParticleEffect",
+ *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.5, z: -4 })),
+ *     dimensions: 3,
+ *     numParticles: 10000,
+ *     numTrianglesPerParticle: 1,
+ *     numUpdateProps: 1,
+ *     particleUpdateData: JSON.stringify({
+ *         version: 1.0,
+ *         fragmentShaderURL: "https://gist.githubusercontent.com/HifiExperiments/9049fb4a8dcd2c1401ff4321103dce16/raw/4f9474ed82c66c1f94c1055d2724af808cd7aace/proceduralParticleUpdate.fs",
+ *     }),
+ *     particleRenderData: JSON.stringify({
+ *         version: 1.0,
+ *         vertexShaderURL: "https://gist.github.com/HifiExperiments/5dda24e28e7de1719e3a594d81306343/raw/92e0c5b82a9fa87685064cdbab92ed0c16f49f94/proceduralParticle2.vs",
+ *         fragmentShaderURL: "https://gist.github.com/HifiExperiments/7def54504362c7bc79b5c85cd515b98b/raw/93b3828c2ec66b12b789a625dd141f533c595ede/proceduralParticle.fs",
+ *         uniforms: {
+ *             radius: 0.03
+ *         }
+ *     }),
+ *     lifetime: 300  // Delete after 5 minutes.
+ * });
  */
 
 /*@jsdoc
@@ -1759,6 +1816,16 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PARTICLE_ROTATE_WITH_ENTITY, rotateWithEntity);
     }
 
+    // Procedural Particles
+    if (_type == EntityTypes::ProceduralParticleEffect) {
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, numParticles);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, numTrianglesPerParticle);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, numUpdateProps);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, particleTransparent);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, particleUpdateData);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, particleRenderData);
+    }
+
     // Models only
     if (_type == EntityTypes::Model) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_SHAPE_TYPE, shapeType, getShapeTypeAsString());
@@ -2173,6 +2240,14 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE(spinFinish, float, setSpinFinish);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(rotateWithEntity, bool, setRotateWithEntity);
 
+    // Procedural Particles
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(numParticles, uint32_t, setNumParticles);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(numTrianglesPerParticle, uint8_t, setNumTrianglesPerParticle);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(numUpdateProps, uint8_t, setNumUpdateProps);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(particleTransparent, bool, setParticleTransparent);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(particleUpdateData, QString, setParticleUpdateData);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(particleRenderData, QString, setParticleRenderData);
+
     // Model
     COPY_PROPERTY_FROM_QSCRIPTVALUE(modelURL, QString, setModelURL);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(modelScale, vec3, setModelScale);
@@ -2458,6 +2533,14 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(spinStart);
     COPY_PROPERTY_IF_CHANGED(spinFinish);
     COPY_PROPERTY_IF_CHANGED(rotateWithEntity);
+
+    // Procedural Particles
+    COPY_PROPERTY_IF_CHANGED(numParticles);
+    COPY_PROPERTY_IF_CHANGED(numTrianglesPerParticle);
+    COPY_PROPERTY_IF_CHANGED(numUpdateProps);
+    COPY_PROPERTY_IF_CHANGED(particleTransparent);
+    COPY_PROPERTY_IF_CHANGED(particleUpdateData);
+    COPY_PROPERTY_IF_CHANGED(particleRenderData);
 
     // Model
     COPY_PROPERTY_IF_CHANGED(modelURL);
@@ -2811,6 +2894,17 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
         ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_SPIN_FINISH, SpinFinish, spinFinish, float,
                                        particle::MINIMUM_PARTICLE_SPIN, particle::MAXIMUM_PARTICLE_SPIN);
         ADD_PROPERTY_TO_MAP(PROP_PARTICLE_ROTATE_WITH_ENTITY, RotateWithEntity, rotateWithEntity, float);
+
+        // Procedural Particles
+        ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, NumParticles, numParticles, uint32_t,
+                                       particle::MINIMUM_MAX_PARTICLES, particle::MAXIMUM_NUM_PROCEDURAL_PARTICLES);
+        ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, NumTrianglesPerParticle, numTrianglesPerParticle, uint8_t,
+                                       particle::MINIMUM_TRIS_PER, particle::MAXIMUM_TRIS_PER);
+        ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, NumUpdateProps, numUpdateProps, uint8_t,
+                                       particle::MINIMUM_NUM_UPDATE_PROPS, particle::MAXIMUM_NUM_UPDATE_PROPS);
+        ADD_PROPERTY_TO_MAP(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, ParticleTransparent, particleTransparent, bool);
+        ADD_PROPERTY_TO_MAP(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, ParticleUpdateData, particleUpdateData, QString);
+        ADD_PROPERTY_TO_MAP(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, ParticleRenderData, particleRenderData, QString);
 
         // Model
         ADD_PROPERTY_TO_MAP(PROP_MODEL_URL, ModelURL, modelURL, QString);
@@ -3249,6 +3343,15 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_SPIN_START, properties.getSpinStart());
                 APPEND_ENTITY_PROPERTY(PROP_SPIN_FINISH, properties.getSpinFinish());
                 APPEND_ENTITY_PROPERTY(PROP_PARTICLE_ROTATE_WITH_ENTITY, properties.getRotateWithEntity())
+            }
+
+            if (properties.getType() == EntityTypes::ProceduralParticleEffect) {
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, properties.getNumParticles());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, properties.getNumTrianglesPerParticle());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, properties.getNumUpdateProps());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, properties.getParticleTransparent());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, properties.getParticleUpdateData());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, properties.getParticleRenderData());
             }
 
             if (properties.getType() == EntityTypes::Model) {
@@ -3734,6 +3837,15 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PARTICLE_ROTATE_WITH_ENTITY, bool, setRotateWithEntity);
     }
 
+    if (properties.getType() == EntityTypes::ProceduralParticleEffect) {
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, uint32_t, setNumParticles);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, uint8_t, setNumTrianglesPerParticle);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, uint8_t, setNumUpdateProps);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, bool, setParticleTransparent);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, QString, setParticleUpdateData);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, QString, setParticleRenderData);
+    }
+
     if (properties.getType() == EntityTypes::Model) {
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SHAPE_TYPE, ShapeType, setShapeType);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_COMPOUND_SHAPE_URL, QString, setCompoundShapeURL);
@@ -4122,6 +4234,14 @@ void EntityItemProperties::markAllChanged() {
     _spinFinishChanged = true;
     _spinSpreadChanged = true;
     _rotateWithEntityChanged = true;
+
+    // Procedural Particles
+    _numParticlesChanged = true;
+    _numTrianglesPerParticleChanged = true;
+    _numUpdatePropsChanged = true;
+    _particleTransparentChanged = true;
+    _particleUpdateDataChanged = true;
+    _particleRenderDataChanged = true;
 
     // Model
     _modelURLChanged = true;
@@ -4651,6 +4771,26 @@ QList<QString> EntityItemProperties::listChangedProperties() {
     }
     if (rotateWithEntityChanged()) {
         out += "rotateWithEntity";
+    }
+
+    // Procedural Particles
+    if (numParticlesChanged()) {
+        out += "numParticles";
+    }
+    if (numTrianglesPerParticleChanged()) {
+        out += "numTrianglesPerParticle";
+    }
+    if (numUpdatePropsChanged()) {
+        out += "numUpdateProps";
+    }
+    if (particleTransparentChanged()) {
+        out += "particleTransparent";
+    }
+    if (particleUpdateDataChanged()) {
+        out += "particleUpdateData";
+    }
+    if (particleRenderDataChanged()) {
+        out += "particleRenderData";
     }
 
     // Model
