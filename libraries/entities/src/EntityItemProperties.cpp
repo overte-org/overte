@@ -33,6 +33,7 @@
 #include <Extents.h>
 #include <VariantMapToScriptValue.h>
 #include <ScriptValue.h>
+#include <PhysicsHelpers.h>
 
 #include "EntitiesLogging.h"
 #include "EntityItem.h"
@@ -1567,7 +1568,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     }
 
     auto nodeList = DependencyManager::get<NodeList>();
-    bool isMyOwnAvatarEntity = _entityHostType == entity::HostType::AVATAR && _owningAvatarID == AVATAR_SELF_ID;
+    bool isMyOwnAvatarEntity = _entityHostType == entity::HostType::AVATAR && (_owningAvatarID == AVATAR_SELF_ID || _owningAvatarID == Physics::getSessionUUID());
     if (_idSet && (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::ID))) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_ALWAYS(id, _id.toString());
     }
