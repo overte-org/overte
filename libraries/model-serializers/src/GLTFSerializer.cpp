@@ -38,6 +38,7 @@
 #include <PathUtils.h>
 #include <image/ColorChannel.h>
 #include <BlendshapeConstants.h>
+#include <procedural/ProceduralMaterialCache.h>
 
 #include "FBXSerializer.h"
 
@@ -109,7 +110,7 @@ bool GLTFSerializer::getSkinInverseBindMatrices(std::vector<std::vector<float>>&
         if (matricesAccessor.type != cgltf_type_mat4) {
             return false;
         }
-        matrices.resize(matricesAccessor.count * 16);
+        matrices.resize((int)matricesAccessor.count * 16);
         size_t numFloats = cgltf_accessor_unpack_floats(&matricesAccessor, matrices.data(), matricesAccessor.count * 16);
         Q_ASSERT(numFloats == matricesAccessor.count * 16);
         inverseBindMatrixValues.push_back(std::vector<float>(matrices.begin(), matrices.end()));
@@ -125,7 +126,7 @@ bool GLTFSerializer::generateTargetData(cgltf_accessor *accessor, float weight, 
     if (accessor->type != cgltf_type_vec3) {
         return false;
     }
-    storedValues.resize(accessor->count * 3);
+    storedValues.resize((int)accessor->count * 3);
     size_t numFloats = cgltf_accessor_unpack_floats(accessor, storedValues.data(), accessor->count * 3);
     if (numFloats != accessor->count * 3) {
         return false;
@@ -147,8 +148,8 @@ bool findNodeInPointerArray(const cgltf_node *nodePointer, cgltf_node **nodes, s
     return false;
 }
 
-template<typename T> bool findPointerInArray(const T *pointer, const T *array, size_t arraySize, size_t &index) {
-    for (size_t i = 0; i < arraySize; i++) {
+template<typename T> bool findPointerInArray(const T *pointer, const T *array, size_t arraySize, int &index) {
+    for (int i = 0; i < arraySize; i++) {
         if (&array[i] == pointer) {
             index = i;
             return true;
@@ -175,18 +176,18 @@ bool findAttribute(const QString &name, const cgltf_attribute *attributes, size_
 bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& mapping, const hifi::URL& url) {
     hfmModel.originalURL = url.toString();
 
-    size_t numNodes = _data->nodes_count;
+    int numNodes = (int)_data->nodes_count;
 
     //Build dependencies
     QVector<int> parents;
     QVector<int> sortedNodes;
     parents.fill(-1, numNodes);
     sortedNodes.reserve(numNodes);
-    for(size_t index = 0; index < numNodes; index++) {
+    for(int index = 0; index < numNodes; index++) {
         auto &node = _data->nodes[index];
         for(size_t childIndexInParent = 0; childIndexInParent < node.children_count; childIndexInParent++) {
             cgltf_node *child = node.children[childIndexInParent];
-            size_t childIndex = 0;
+            int childIndex = 0;
             if (!findPointerInArray(child, _data->nodes, _data->nodes_count, childIndex)) {
                 qDebug(modelformat) << "findPointerInArray failed for model: " << _url;
                 hfmModel.loadErrorCount++;
@@ -201,7 +202,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
     typedef QVector<glm::mat4> NodeTransforms;
     QVector<NodeTransforms> transforms;
     transforms.resize(numNodes);
-    for (size_t index = 0; index < numNodes; index++) {
+    for (int index = 0; index < numNodes; index++) {
         // collect node transform
         auto &node = _data->nodes[index];
         transforms[index].push_back(getModelTransform(node));
@@ -219,7 +220,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
     QVector<bool> hasBeenSorted;
     hasBeenSorted.fill(false, numNodes);
     {
-        size_t i = 0;  // initial index
+        int i = 0;  // initial index
         while (i < numNodes) {
             int currentNode = sortedNodes[i];
             int parentIndex = parents[currentNode];
@@ -227,7 +228,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                 hasBeenSorted[currentNode] = true;
                 ++i;
             } else {
-                size_t j = i + 1;  // index of node to be sorted
+                int j = i + 1;  // index of node to be sorted
                 while (j < numNodes) {
                     int nextNode = sortedNodes[j];
                     parentIndex = parents[nextNode];
@@ -249,7 +250,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
      // Build map from original to new indices
     QVector<int> originalToNewNodeIndexMap;
     originalToNewNodeIndexMap.fill(-1, numNodes);
-    for (size_t i = 0; i < numNodes; ++i) {
+    for (int i = 0; i < numNodes; ++i) {
         originalToNewNodeIndexMap[sortedNodes[i]] = i;
     }
 
@@ -311,7 +312,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
             return false;
         }
 
-        for (size_t jointIndex = 0; jointIndex < numNodes; ++jointIndex) {
+        for (int jointIndex = 0; jointIndex < numNodes; ++jointIndex) {
             int nodeIndex = sortedNodes[jointIndex];
             auto joint = hfmModel.joints[jointIndex];
 
@@ -365,18 +366,17 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
         materialIDs.push_back(mid);
     }
 
-    for (size_t i = 0; i < (size_t)materialIDs.size(); ++i) {
+    for (int i = 0; i < materialIDs.size(); ++i) {
         QString& matid = materialIDs[i];
         hfmModel.materials[matid] = HFMMaterial();
         HFMMaterial& hfmMaterial = hfmModel.materials[matid];
-        hfmMaterial._material = std::make_shared<graphics::Material>();
         hfmMaterial.name = hfmMaterial.materialID = matid;
         setHFMMaterial(hfmMaterial, _data->materials[i]);
     }
 
 
     // Build meshes
-    size_t nodeCount = 0;
+    int nodeCount = 0;
     hfmModel.meshExtents.reset();
     for (int nodeIndex : sortedNodes) {
         auto& node = _data->nodes[nodeIndex];
@@ -394,7 +394,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                 cluster.inverseBindTransform = Transform(cluster.inverseBindMatrix);
                 mesh.clusters.append(cluster);
             } else { // skinned model
-                for (size_t j = 0; j < numNodes; ++j) {
+                for (int j = 0; j < numNodes; ++j) {
                     HFMCluster cluster;
                     cluster.jointIndex = j;
                     cluster.inverseBindMatrix = jointInverseBindTransforms[j];
@@ -450,7 +450,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                 QVector<float> weights;
                 int weightStride = 4;
 
-                indices.resize(indicesAccessor->count);
+                indices.resize((int)indicesAccessor->count);
                 size_t readIndicesCount = cgltf_accessor_unpack_indices(indicesAccessor, indices.data(), sizeof(unsigned int), indicesAccessor->count);
 
                 if (readIndicesCount != indicesAccessor->count) {
@@ -480,6 +480,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                         return false;
                     }
                     auto accessor = primitive.attributes[attributeIndex].data;
+                    int accessorCount = (int)accessor->count;
 
                     if (key == "POSITION") {
                         if (accessor->type != cgltf_type_vec3) {
@@ -488,7 +489,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        vertices.resize(accessor->count * 3);
+                        vertices.resize(accessorCount * 3);
                         size_t floatCount = cgltf_accessor_unpack_floats(accessor, vertices.data(), accessor->count * 3);
                         if (floatCount != accessor->count * 3) {
                             qWarning(modelformat) << "There was a problem reading glTF POSITION data for model " << _url;
@@ -502,7 +503,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        normals.resize(accessor->count * 3);
+                        normals.resize(accessorCount * 3);
                         size_t floatCount = cgltf_accessor_unpack_floats(accessor, normals.data(), accessor->count * 3);
                         if (floatCount != accessor->count * 3) {
                             qWarning(modelformat) << "There was a problem reading glTF NORMAL data for model " << _url;
@@ -520,7 +521,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        tangents.resize(accessor->count * tangentStride);
+                        tangents.resize(accessorCount * tangentStride);
                         size_t floatCount = cgltf_accessor_unpack_floats(accessor, tangents.data(), accessor->count * tangentStride);
                         if (floatCount != accessor->count * tangentStride) {
                             qWarning(modelformat) << "There was a problem reading glTF TANGENT data for model " << _url;
@@ -535,7 +536,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        texcoords.resize(accessor->count * 2);
+                        texcoords.resize(accessorCount * 2);
                         size_t floatCount = cgltf_accessor_unpack_floats(accessor, texcoords.data(), accessor->count * 2);
                         if (floatCount != accessor->count * 2) {
                             qWarning(modelformat) << "There was a problem reading glTF TEXCOORD_0 data for model " << _url;
@@ -549,7 +550,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        texcoords2.resize(accessor->count * 2);
+                        texcoords2.resize(accessorCount * 2);
                         size_t floatCount = cgltf_accessor_unpack_floats(accessor, texcoords2.data(), accessor->count * 2);
                         if (floatCount != accessor->count * 2) {
                             qWarning(modelformat) << "There was a problem reading glTF TEXCOORD_1 data for model " << _url;
@@ -567,7 +568,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        colors.resize(accessor->count * colorStride);
+                        colors.resize(accessorCount * colorStride);
                         size_t floatCount = cgltf_accessor_unpack_floats(accessor, colors.data(), accessor->count * colorStride);
                         if (floatCount != accessor->count * colorStride) {
                             qWarning(modelformat) << "There was a problem reading glTF COLOR_0 data for model " << _url;
@@ -589,12 +590,12 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        joints.resize(accessor->count * jointStride);
+                        joints.resize(accessorCount * jointStride);
                         cgltf_uint jointIndices[4];
                         for (size_t i = 0; i < accessor->count; i++) {
                             cgltf_accessor_read_uint(accessor, i, jointIndices, jointStride);
                             for (int component = 0; component < jointStride; component++) {
-                                joints[i * jointStride + component] = (uint16_t)jointIndices[component];
+                                joints[(int)i * jointStride + component] = (uint16_t)jointIndices[component];
                             }
                         }
 
@@ -613,7 +614,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        weights.resize(accessor->count * weightStride);
+                        weights.resize(accessorCount * weightStride);
                         size_t floatCount = cgltf_accessor_unpack_floats(accessor, weights.data(), accessor->count * weightStride);
                         if (floatCount != accessor->count * weightStride) {
                             qWarning(modelformat) << "There was a problem reading glTF WEIGHTS_0 data for model " << _url;
@@ -917,7 +918,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        size_t jointIndex = 0;
+                        int jointIndex = 0;
                         if (!findPointerInArray(node.skin->joints[clusterJoints[c]], _data->nodes, _data->nodes_count, jointIndex)) {
                             qCWarning(modelformat) << "Cannot find the joint " << node.skin->joints[clusterJoints[c]]->name <<" in joint array";
                             hfmModel.loadErrorCount++;
@@ -960,7 +961,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                     }
                 }
 
-                size_t materialIndex = 0;
+                int materialIndex = 0;
                 if (primitive.material != nullptr && !findPointerInArray(primitive.material, _data->materials, _data->materials_count, materialIndex)) {
                     qCWarning(modelformat) << "GLTFSerializer::buildGeometry: Invalid material pointer";
                     hfmModel.loadErrorCount++;
@@ -1012,7 +1013,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
 
                     // If an FST isn't being used and the model is likely from ReadyPlayerMe, add blendshape synonyms.
                     QVector<QString> fileTargetNames;
-                    fileTargetNames.reserve(node.mesh->target_names_count);
+                    fileTargetNames.reserve((int)node.mesh->target_names_count);
                     for (size_t i = 0; i < node.mesh->target_names_count; i++) {
                         fileTargetNames.push_back(QString(node.mesh->target_names[i]));
                     }
@@ -1048,7 +1049,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                     auto keys = blendshapeIndices.keys();
                     auto values = blendshapeIndices.values();
                     QVector<QString> names;
-                    names.reserve(node.mesh->target_names_count);
+                    names.reserve((int)node.mesh->target_names_count);
                     for (size_t i = 0; i < node.mesh->target_names_count; i++) {
                         names.push_back(QString(node.mesh->target_names[i]));
                     }
@@ -1303,9 +1304,9 @@ HFMTexture GLTFSerializer::getHFMTexture(const cgltf_texture *texture) {
             cgltf_buffer_view *bufferView = image->buffer_view;
 
             size_t offset = bufferView->offset;
-            size_t length = bufferView->size;
+            int length = (int)bufferView->size;
 
-            size_t imageIndex = 0;
+            int imageIndex = 0;
             if (!findPointerInArray(image, _data->images, _data->images_count, imageIndex)) {
                 // This should never happen. It would mean a bug in cgltf library.
                 qDebug(modelformat) << "GLTFSerializer::getHFMTexture: can't find texture in the array";
@@ -1328,6 +1329,113 @@ HFMTexture GLTFSerializer::getHFMTexture(const cgltf_texture *texture) {
 }
 
 void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& material) {
+    hfmMat._material = std::make_shared<graphics::Material>();
+    for (size_t i = 0; i < material.extensions_count; i++) {
+        auto& extension = material.extensions[i];
+        if (extension.name != nullptr) {
+            if (strcmp(extension.name, "VRMC_materials_mtoon") == 0 && extension.data != nullptr) {
+                hfmMat.isMToonMaterial = true;
+                auto mToonMaterial = std::make_shared<NetworkMToonMaterial>();
+                QJsonDocument mToonExtension = QJsonDocument::fromJson(extension.data);
+                if (!mToonExtension.isNull()) {
+                    if (mToonExtension["shadeColorFactor"].isArray()) {
+                        auto array = mToonExtension["shadeColorFactor"].toArray();
+                        glm::vec3 shadeLinear = glm::vec3(array[0].toDouble(), array[1].toDouble(), array[2].toDouble());
+                        glm::vec3 shade = ColorUtils::tosRGBVec3(shadeLinear);
+                        mToonMaterial->setShade(shade);
+                    }
+                    if (mToonExtension["shadeMultiplyTexture"].isObject()) {
+                        QJsonObject object = mToonExtension["shadeMultiplyTexture"].toObject();
+                        if (object["index"].isDouble() && object["index"].toInt() < _data->textures_count) {
+                            hfmMat.shadeTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                        }
+                    }
+                    if (mToonExtension["shadingShiftFactor"].isDouble()) {
+                        mToonMaterial->setShadingShift(mToonExtension["shadingShiftFactor"].toDouble());
+                    }
+                    if (mToonExtension["shadingShiftTexture"].isObject()) {
+                        QJsonObject object = mToonExtension["shadingShiftTexture"].toObject();
+                        if (object["index"].isDouble() && object["index"].toInt() < _data->textures_count) {
+                            hfmMat.shadingShiftTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                        }
+                    }
+                    if (mToonExtension["shadingToonyFactor"].isDouble()) {
+                        mToonMaterial->setShadingToony(mToonExtension["shadingToonyFactor"].toDouble());
+                    }
+                    if (mToonExtension["matcapFactor"].isArray()) {
+                        auto array = mToonExtension["matcapFactor"].toArray();
+                        glm::vec3 matcapLinear = glm::vec3(array[0].toDouble(), array[1].toDouble(), array[2].toDouble());
+                        glm::vec3 matcap = ColorUtils::tosRGBVec3(matcapLinear);
+                        mToonMaterial->setMatcap(matcap);
+                    }
+                    if (mToonExtension["matcapTexture"].isObject()) {
+                        QJsonObject object = mToonExtension["matcapTexture"].toObject();
+                        if (object["index"].isDouble() && object["index"].toInt() < _data->textures_count) {
+                            hfmMat.matcapTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                        }
+                    }
+                    if (mToonExtension["parametricRimColorFactor"].isArray()) {
+                        auto array = mToonExtension["parametricRimColorFactor"].toArray();
+                        glm::vec3 parametricRimLinear = glm::vec3(array[0].toDouble(), array[1].toDouble(), array[2].toDouble());
+                        glm::vec3 parametricRim = ColorUtils::tosRGBVec3(parametricRimLinear);
+                        mToonMaterial->setParametricRim(parametricRim);
+                    }
+                    if (mToonExtension["parametricRimFresnelPowerFactor"].isDouble()) {
+                        mToonMaterial->setParametricRimFresnelPower(mToonExtension["parametricRimFresnelPowerFactor"].toDouble());
+                    }
+                    if (mToonExtension["parametricRimLiftFactor"].isDouble()) {
+                        mToonMaterial->setParametricRimLift(mToonExtension["parametricRimLiftFactor"].toDouble());
+                    }
+                    if (mToonExtension["rimMultiplyTexture"].isObject()) {
+                        QJsonObject object = mToonExtension["rimMultiplyTexture"].toObject();
+                        if (object["index"].isDouble() && object["index"].toInt() < _data->textures_count) {
+                            hfmMat.rimTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                        }
+                    }
+                    if (mToonExtension["rimLightingMixFactor"].isDouble()) {
+                        mToonMaterial->setRimLightingMix(mToonExtension["rimLightingMixFactor"].toDouble());
+                    }
+                    // FIXME: Outlines are currently disabled because they're buggy
+                    //if (mToonExtension["outlineWidthMode"].isString()) {
+                    //    QString outlineWidthMode = mToonExtension["outlineWidthMode"].toString();
+                    //    if (outlineWidthMode == "none") {
+                    //        mToonMaterial->setOutlineWidthMode(NetworkMToonMaterial::OutlineWidthMode::OUTLINE_NONE);
+                    //    } else if (outlineWidthMode == "worldCoordinates") {
+                    //        mToonMaterial->setOutlineWidthMode(NetworkMToonMaterial::OutlineWidthMode::OUTLINE_WORLD);
+                    //    } else if (outlineWidthMode == "screenCoordinates") {
+                    //        mToonMaterial->setOutlineWidthMode(NetworkMToonMaterial::OutlineWidthMode::OUTLINE_SCREEN);
+                    //    }
+                    //}
+                    if (mToonExtension["outlineWidthFactor"].isDouble()) {
+                        mToonMaterial->setOutlineWidth(mToonExtension["outlineWidthFactor"].toDouble());
+                    }
+                    if (mToonExtension["outlineColorFactor"].isArray()) {
+                        auto array = mToonExtension["outlineColorFactor"].toArray();
+                        glm::vec3 outlineLinear = glm::vec3(array[0].toDouble(), array[1].toDouble(), array[2].toDouble());
+                        glm::vec3 outline = ColorUtils::tosRGBVec3(outlineLinear);
+                        mToonMaterial->setOutline(outline);
+                    }
+                    if (mToonExtension["uvAnimationMaskTexture"].isObject()) {
+                        QJsonObject object = mToonExtension["uvAnimationMaskTexture"].toObject();
+                        if (object["index"].isDouble() && object["index"].toInt() < _data->textures_count) {
+                            hfmMat.uvAnimationTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                        }
+                    }
+                    if (mToonExtension["uvAnimationScrollXSpeedFactor"].isDouble()) {
+                        mToonMaterial->setUVAnimationScrollXSpeed(mToonExtension["uvAnimationScrollXSpeedFactor"].toDouble());
+                    }
+                    if (mToonExtension["uvAnimationScrollYSpeedFactor"].isDouble()) {
+                        mToonMaterial->setUVAnimationScrollYSpeed(mToonExtension["uvAnimationScrollYSpeedFactor"].toDouble());
+                    }
+                    if (mToonExtension["uvAnimationRotationSpeedFactor"].isDouble()) {
+                        mToonMaterial->setUVAnimationRotationSpeed(mToonExtension["uvAnimationRotationSpeedFactor"].toDouble());
+                    }
+                }
+                hfmMat._material = mToonMaterial;
+            }
+        }
+    }
+
     if (material.alpha_mode == cgltf_alpha_mode_opaque) {
         hfmMat._material->setOpacityMapMode(graphics::MaterialKey::OPACITY_MAP_OPAQUE);
     } else if (material.alpha_mode == cgltf_alpha_mode_mask) {
@@ -1339,6 +1447,11 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& m
     }
 
     hfmMat._material->setOpacityCutoff(material.alpha_cutoff);
+
+    // VRMC_materials_mtoon takes precedence over KHR_materials_unlit
+    if (!hfmMat.isMToonMaterial) {
+        hfmMat._material->setUnlit(material.unlit);
+    }
 
     if (material.double_sided) {
         hfmMat._material->setCullFaceMode(graphics::MaterialKey::CullFaceMode::CULL_NONE);
