@@ -50,12 +50,6 @@ static const QString DOMAIN_UNLIMITED = "domainUnlimited";
 EntityTree::EntityTree(bool shouldReaverage) :
     Octree(shouldReaverage)
 {
-    std::lock_guard<std::mutex> lock(_scriptEngineLock);
-    _scriptEngine = newScriptEngine();
-    _scriptEngineThread.reset(new QThread());
-    _scriptEngine->setThread(_scriptEngineThread.get());
-    _scriptEngineThread->start();
-
     resetClientEditStats();
 }
 
@@ -69,14 +63,6 @@ EntityTree::~EntityTree() {
     // TODO: EntityTreeElement::_tree should be raw back pointer.
     // AND: EntityItem::_element should be a raw back pointer.
     //eraseAllOctreeElements(false); // KEEP THIS
-    std::lock_guard<std::mutex> lock(_scriptEngineLock);
-    if (_scriptEngine) {
-        if (_scriptEngineThread) {
-            _scriptEngineThread->quit();
-            _scriptEngineThread->wait();
-        }
-        _scriptEngine.reset();
-    }
 }
 
 void EntityTree::setEntityScriptSourceWhitelist(const QString& entityScriptSourceWhitelist) { 
@@ -2567,11 +2553,10 @@ bool EntityTree::writeToMap(QVariantMap& entityDescription, OctreeElementPointer
     }
     entityDescription["DataVersion"] = _persistDataVersion;
     entityDescription["Id"] = _persistID;
-    const std::lock_guard<std::mutex> scriptLock(_scriptEngineLock);
-    RecurseOctreeToMapOperator theOperator(entityDescription, element, _scriptEngine.get(), skipDefaultValues,
-                                            skipThoseWithBadParents, _myAvatar);
-    withReadLock([&] {
-        recurseTreeWithOperator(&theOperator);
+    _helperScriptEngine.run( [&] {
+        RecurseOctreeToMapOperator theOperator(entityDescription, element, _helperScriptEngine.get(), skipDefaultValues,
+                                               skipThoseWithBadParents, _myAvatar);
+        withReadLock([&] { recurseTreeWithOperator(&theOperator); });
     });
     return true;
 }
@@ -2742,11 +2727,10 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
         }
 
         EntityItemProperties properties;
-        {
-            const std::lock_guard<std::mutex> scriptLock(_scriptEngineLock);
-            ScriptValue entityScriptValue = variantMapToScriptValue(entityMap, *_scriptEngine);
+        _helperScriptEngine.run( [&] {
+            ScriptValue entityScriptValue = variantMapToScriptValue(entityMap, *_helperScriptEngine.get());
             EntityItemPropertiesFromScriptValueIgnoreReadOnly(entityScriptValue, properties);
-        }
+        });
 
         EntityItemID entityItemID;
         if (entityMap.contains("id")) {
@@ -2895,13 +2879,12 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
 }
 
 bool EntityTree::writeToJSON(QString& jsonString, const OctreeElementPointer& element) {
-    const std::lock_guard<std::mutex> scriptLock(_scriptEngineLock);
-    RecurseOctreeToJSONOperator theOperator(element, _scriptEngine.get(), jsonString);
-    withReadLock([&] {
-        recurseTreeWithOperator(&theOperator);
-    });
+    _helperScriptEngine.run( [&] {
+        RecurseOctreeToJSONOperator theOperator(element, _helperScriptEngine.get(), jsonString);
+        withReadLock([&] { recurseTreeWithOperator(&theOperator); });
 
-    jsonString = theOperator.getJson();
+        jsonString = theOperator.getJson();
+    });
     return true;
 }
 

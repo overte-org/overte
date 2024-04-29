@@ -32,24 +32,6 @@
 
 ScriptableAvatar::ScriptableAvatar() {
     _clientTraitsHandler.reset(new ClientTraitsHandler(this));
-    std::lock_guard<std::mutex> lock(_scriptEngineLock);
-    _scriptEngine = newScriptEngine();
-    if (!_scriptEngineThread) {
-        _scriptEngineThread.reset(new QThread());
-        _scriptEngine->setThread(_scriptEngineThread.get());
-        _scriptEngineThread->start();
-    }
-}
-
-ScriptableAvatar::~ScriptableAvatar() {
-    std::lock_guard<std::mutex> lock(_scriptEngineLock);
-    if (_scriptEngine) {
-        if (_scriptEngineThread) {
-            _scriptEngineThread->quit();
-            _scriptEngineThread->wait();
-        }
-        _scriptEngine.reset();
-    }
 }
 
 QByteArray ScriptableAvatar::toByteArrayStateful(AvatarDataDetail dataDetail, bool dropFaceTracking) {
@@ -333,10 +315,9 @@ AvatarEntityMap ScriptableAvatar::getAvatarEntityDataInternal(bool allProperties
             EntityItemProperties properties = entity->getProperties(desiredProperties);
 
             QByteArray blob;
-            {
-                std::lock_guard<std::mutex> lock(_scriptEngineLock);
-                EntityItemProperties::propertiesToBlob(*_scriptEngine, sessionID, properties, blob, allProperties);
-            }
+            _helperScriptEngine.run( [&] {
+                EntityItemProperties::propertiesToBlob(*_helperScriptEngine.get(), sessionID, properties, blob, allProperties);
+            });
             data[id] = blob;
         }
     });
@@ -361,10 +342,11 @@ void ScriptableAvatar::setAvatarEntityData(const AvatarEntityMap& avatarEntityDa
         EntityItemProperties properties;
         const QByteArray& blob = dataItr.value();
         {
-            std::lock_guard<std::mutex> lock(_scriptEngineLock);
-            if (!blob.isNull() && EntityItemProperties::blobToProperties(*_scriptEngine, blob, properties)) {
-                newProperties[dataItr.key()] = properties;
-            }
+            _helperScriptEngine.run( [&] {
+                if (!blob.isNull() && EntityItemProperties::blobToProperties(*_helperScriptEngine.get(), blob, properties)) {
+                    newProperties[dataItr.key()] = properties;
+                }
+            });
         }
         ++dataItr;
     }
@@ -444,8 +426,12 @@ void ScriptableAvatar::updateAvatarEntity(const QUuid& entityID, const QByteArra
     EntityItemPointer entity;
     EntityItemProperties properties;
     {
-        std::lock_guard<std::mutex> lock(_scriptEngineLock);
-        if (!EntityItemProperties::blobToProperties(*_scriptEngine, entityData, properties)) {
+        // TODO: checking how often this happens and what is the performance impact of having the script engine on separate thread
+        // If it's happening often, a method to move HelperScriptEngine into the current thread would be a good idea
+        bool result = _helperScriptEngine.runWithResult<bool> ( [&]() {
+            return EntityItemProperties::blobToProperties(*_helperScriptEngine.get(), entityData, properties);
+        });
+        if (!result) {
             // entityData is corrupt
             return;
         }

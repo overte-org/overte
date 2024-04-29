@@ -28,6 +28,7 @@
 #include <controllers/Pose.h>
 #include <controllers/Actions.h>
 #include <EntityItem.h>
+#include <HelperScriptEngine.h>
 #include <ThreadSafeValueCache.h>
 #include <Rig.h>
 #include <SettingHandle.h>
@@ -3103,9 +3104,7 @@ private:
     // keep a ScriptEngine around so we don't have to instantiate on the fly (these are very slow to create/delete)
     // TODO: profile if it performs better when script engine is on avatar thread or on its own thread
     // Own thread is safer from deadlocks
-    mutable std::mutex _scriptEngineLock;
-    ScriptEnginePointer _scriptEngine { nullptr };
-    std::shared_ptr<QThread> _scriptEngineThread { nullptr };
+    mutable HelperScriptEngine _helperScriptEngine;
 
     bool _needToSaveAvatarEntitySettings { false };
 

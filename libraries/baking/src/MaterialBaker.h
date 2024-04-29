@@ -21,6 +21,7 @@
 #include "TextureBaker.h"
 #include "baking/TextureFileNamer.h"
 
+#include <HelperScriptEngine.h>
 #include <procedural/ProceduralMaterialCache.h>
 #include <ScriptEngine.h>
 
@@ -32,7 +33,6 @@ class MaterialBaker : public Baker {
     Q_OBJECT
 public:
     MaterialBaker(const QString& materialData, bool isURL, const QString& bakedOutputDir, QUrl destinationPath = QUrl());
-    virtual ~MaterialBaker();
 
     QString getMaterialData() const { return _materialData; }
     bool isURL() const { return _isURL; }
@@ -73,9 +73,7 @@ private:
     QString _textureOutputDir;
     QString _bakedMaterialData;
 
-    mutable std::mutex _scriptEngineLock;
-    ScriptEnginePointer _scriptEngine { nullptr };
-    std::shared_ptr<QThread> _scriptEngineThread { nullptr };
+    HelperScriptEngine _helperScriptEngine;
     static std::function<QThread*()> _getNextOvenWorkerThreadOperator;
     TextureFileNamer _textureFileNamer;
 

@@ -19,6 +19,7 @@
 #include <AvatarData.h>
 #include <ScriptEngine.h>
 #include <EntityItem.h>
+#include <HelperScriptEngine.h>
 
 /*@jsdoc
  * The <code>Avatar</code> API is used to manipulate scriptable avatars on the domain. This API is a subset of the 
@@ -111,7 +112,6 @@ class ScriptableAvatar : public AvatarData, public Dependency {
 public:
 
     ScriptableAvatar();
-    ~ScriptableAvatar();
 
     /*@jsdoc
      * Starts playing an animation on the avatar.
@@ -224,9 +224,7 @@ private:
     QStringList _fstJointNames; ///< in order of depth-first traversal
     QUrl _skeletonFBXURL;
 
-    mutable std::mutex _scriptEngineLock;
-    mutable ScriptEnginePointer _scriptEngine { nullptr };
-    std::shared_ptr<QThread> _scriptEngineThread { nullptr };
+    mutable HelperScriptEngine _helperScriptEngine;
 
     std::map<QUuid, EntityItemPointer> _entities;
 
