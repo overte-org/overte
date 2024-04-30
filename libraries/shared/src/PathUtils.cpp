@@ -494,6 +494,22 @@ QString PathUtils::getPluginsPath() {
     return _plugins_path + "/";
 }
 
+QString PathUtils::makePath(const QStringList &paths, bool create) {
+    QString concatenated;
+
+    for(const QString &path : paths) {
+        if (!path.isEmpty()) {
+            concatenated.append(QDir::separator());
+        }
+
+        concatenated.append(path);
+    }
+
+    concatenated = QDir::cleanPath(concatenated);
+
+    return concatenated;
+}
+
 
 void PathUtils::uninitialize() {
     _initialized = false;
@@ -625,7 +641,7 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
         if (isSystemUser()) {
             _config_path = OVERTE_DEFAULT_CONFIG_PATH;
         } else {
-            _config_path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
+            _config_path = QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + QDir::separator() + QCoreApplication::organizationName() + QDir::separator() + _instance_name);
         }
     }
 
@@ -662,17 +678,20 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
         }
     }
 
-    qInfo() << "Initialized default paths:";
-    qInfo() << "Running as system user      :" << isSystemUser();
-    qInfo() << "Running from system location:" << isSystemInstall();
-    qInfo() << "Organization name           :" << QCoreApplication::organizationName();
-    qInfo() << "Organization domain         :" << QCoreApplication::organizationDomain();
-    qInfo() << "Application name            :" << QCoreApplication::applicationName();
-    qInfo() << "Resource base path          :" << _server_resources_path;
-    qInfo() << "Config base path            :" << _config_path;
-    qInfo() << "Data base path              :" << _appdata_path;
-    qInfo() << "Local data base path        :" << _local_appdata_path;
-    qInfo() << "Plugins path                :" << _plugins_path;
+
+    qInfo() << "Path system initialized:";
+    qInfo() << "\tRunning as system user      :" << isSystemUser();
+    qInfo() << "\tRunning from system location:" << isSystemInstall();
+    qInfo() << "\tOrganization name           :" << QCoreApplication::organizationName();
+    qInfo() << "\tOrganization domain         :" << QCoreApplication::organizationDomain();
+    qInfo() << "\tApplication name            :" << QCoreApplication::applicationName();
+
+    qInfo() << "Initialized paths:";
+    qInfo() << "\tResource base path          :" << _server_resources_path;
+    qInfo() << "\tConfig base path            :" << _config_path;
+    qInfo() << "\tData base path              :" << _appdata_path;
+    qInfo() << "\tLocal data base path        :" << _local_appdata_path;
+    qInfo() << "\tPlugins path                :" << _plugins_path;
     _initialized = true;
 
     return true;
