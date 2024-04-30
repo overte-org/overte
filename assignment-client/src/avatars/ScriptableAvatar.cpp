@@ -341,9 +341,9 @@ void ScriptableAvatar::setAvatarEntityData(const AvatarEntityMap& avatarEntityDa
     while (dataItr != avatarEntityData.end()) {
         EntityItemProperties properties;
         const QByteArray& blob = dataItr.value();
-        {
-            _helperScriptEngine.run( [&] {
-                if (!blob.isNull() && EntityItemProperties::blobToProperties(*_helperScriptEngine.get(), blob, properties)) {
+        if (!blob.isNull()) {
+            _helperScriptEngine.run([&] {
+                if (EntityItemProperties::blobToProperties(*_helperScriptEngine.get(), blob, properties)) {
                     newProperties[dataItr.key()] = properties;
                 }
             });
