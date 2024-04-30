@@ -319,14 +319,14 @@ if (OVERTE_BUILD_TESTS)
   endif()
 endif()
 
-if (OVERTE_BUILD_INSTALLER)
-  if (UNIX)
-    install(
-        DIRECTORY "${CMAKE_SOURCE_DIR}/scripts"
-        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/interface
-        COMPONENT ${CLIENT_COMPONENT}
-    )
-  endif()
+if (BUILD_INSTALLER)
+#  if (UNIX)
+#    install(
+#        DIRECTORY "${CMAKE_SOURCE_DIR}/scripts"
+#        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/interface
+#        COMPONENT ${CLIENT_COMPONENT}
+#    )
+#  endif()
   generate_installers()
 endif()
 
