@@ -54,6 +54,7 @@ public:
         CUSTOM_7,
 
         NUM_FLAGS, // Not a valid flag
+        NUM_NON_CUSTOM = INVALID,
 
         CUSTOM_MASK = (0xFF << CUSTOM_0),
 
@@ -112,7 +113,7 @@ public:
         Builder& withOwnPipeline() { _flags.set(OWN_PIPELINE); return (*this); }
         Builder& invalidate() { _flags.set(INVALID); return (*this); }
 
-        Builder& withCustom(uint8_t custom) {  _flags &= (~CUSTOM_MASK); _flags |= (custom << CUSTOM_0); return (*this); }
+        Builder& withCustom(uint8_t custom) { _flags &= (~CUSTOM_MASK); _flags |= (custom << CUSTOM_0); return (*this); }
         
         static const ShapeKey ownPipeline() { return Builder().withOwnPipeline(); }
         static const ShapeKey invalid() { return Builder().invalidate(); }

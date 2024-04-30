@@ -403,6 +403,7 @@ void initZPassPipelines(ShapePlumber& plumber, gpu::StatePointer state, const re
 
 void sortAndRenderZPassShapes(const ShapePlumberPointer& shapePlumber, const render::RenderContextPointer& renderContext, const render::ShapeBounds& inShapes, render::ItemBounds &itemBounds) {
     std::unordered_map<ShapeKey, std::vector<ShapeKey>, ShapeKey::Hash, ShapeKey::KeyEqual> sortedShapeKeys;
+    std::unordered_map<uint8_t, std::unordered_map<ShapeKey, std::vector<ShapeKey>, ShapeKey::Hash, ShapeKey::KeyEqual>> sortedCustomShapeKeys;
     std::unordered_map<ShapeKey, std::vector<ShapeKey>, ShapeKey::Hash, ShapeKey::KeyEqual> sortedOwnPipelineShapeKeys;
 
     for (const auto& items : inShapes) {
@@ -444,14 +445,25 @@ void sortAndRenderZPassShapes(const ShapePlumberPointer& shapePlumber, const ren
 
         if (items.first.hasOwnPipeline()) {
             sortedOwnPipelineShapeKeys[variantKey.build()].push_back(items.first);
+        } else if (items.first.isCustom()) {
+            const uint8_t custom = items.first.getCustom();
+            variantKey.withCustom(custom);
+            sortedCustomShapeKeys[custom][variantKey.build()].push_back(items.first);
         } else {
             sortedShapeKeys[variantKey.build()].push_back(items.first);
         }
     }
 
-    // Render non-withOwnPipeline things
-    for (auto& variantAndKeys : sortedShapeKeys) {
-        if (variantAndKeys.second.size() > 0) {
+    // Render non-withCustom, non-withOwnPipeline things
+    for (const auto& variantAndKeys : sortedShapeKeys) {
+        for (const auto& key : variantAndKeys.second) {
+            renderShapes(renderContext, shapePlumber, inShapes.at(key));
+        }
+    }
+
+    // Render withCustom things
+    for (const auto& customAndSortedCustomKeys : sortedCustomShapeKeys) {
+        for (const auto& variantAndKeys : customAndSortedCustomKeys.second) {
             for (const auto& key : variantAndKeys.second) {
                 renderShapes(renderContext, shapePlumber, inShapes.at(key));
             }
@@ -459,11 +471,9 @@ void sortAndRenderZPassShapes(const ShapePlumberPointer& shapePlumber, const ren
     }
 
     // Render withOwnPipeline things
-    for (auto& variantAndKeys : sortedOwnPipelineShapeKeys) {
-        if (variantAndKeys.second.size() > 0) {
-            for (const auto& key : variantAndKeys.second) {
-                renderShapes(renderContext, shapePlumber, inShapes.at(key));
-            }
+    for (const auto& variantAndKeys : sortedOwnPipelineShapeKeys) {
+        for (const auto& key : variantAndKeys.second) {
+            renderShapes(renderContext, shapePlumber, inShapes.at(key));
         }
     }
 

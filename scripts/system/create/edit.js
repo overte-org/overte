@@ -1,7 +1,7 @@
 //  edit.js
 //
-//  Created by Brad Hefta-Gaub on 10/2/14.
-//  Persist toolbar by HRS 6/11/15.
+//  Created by Brad Hefta-Gaub on October 2nd, 2014.
+//  Persist toolbar by HRS on June 2nd, 2015.
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
 //  Copyright 2022-2024 Overte e.V.
@@ -121,6 +121,18 @@
 
     var copiedPosition;
     var copiedRotation;
+    var copiedDimensions;
+
+    var importUiPersistedData = {
+        "elJsonUrl": "",
+        "elImportAtAvatar": true,
+        "elImportAtSpecificPosition": false,
+        "elPositionX": 0,
+        "elPositionY": 0,
+        "elPositionZ": 0,
+        "elEntityHostTypeDomain": true,
+        "elEntityHostTypeAvatar": false
+    };
 
     var cameraManager = new CameraManager();
 
@@ -2009,7 +2021,8 @@
         return position;
     }
 
-    function importSVO(importURL) {
+    function importSVO(importURL, importEntityHostType) {
+        importEntityHostType = importEntityHostType || "domain";
         if (!Entities.canRez() && !Entities.canRezTmp()) {
             Window.notifyEditError(INSUFFICIENT_PERMISSIONS_IMPORT_ERROR_MSG);
             return;
@@ -2032,7 +2045,7 @@
                 position = createApp.getPositionToCreateEntity(Clipboard.getClipboardContentsLargestDimension() / 2);
             }
             if (position !== null && position !== undefined) {
-                var pastedEntityIDs = Clipboard.pasteEntities(position);
+                var pastedEntityIDs = Clipboard.pasteEntities(position, importEntityHostType);
                 if (!isLargeImport) {
                     // The first entity in Clipboard gets the specified position with the rest being relative to it. Therefore, move
                     // entities after they're imported so that they're all the correct distance in front of and with geometric mean
@@ -2707,12 +2720,32 @@
                         copiedRotation = properties.rotation;
                         Window.copyToClipboard(JSON.stringify(copiedRotation));
                     }
+                } else if (data.action === "copyDimensions") {
+                    if (selectionManager.selections.length === 1) {
+                        selectionManager.saveProperties();
+                        properties = selectionManager.savedProperties[selectionManager.selections[0]];
+                        copiedDimensions = properties.dimensions;
+                        Window.copyToClipboard(JSON.stringify(copiedDimensions));
+                    }
                 } else if (data.action === "pastePosition") {
                     if (copiedPosition !== undefined && selectionManager.selections.length > 0 && SelectionManager.hasUnlockedSelection()) {
                         selectionManager.saveProperties();
                         for (i = 0; i < selectionManager.selections.length; i++) {
                             Entities.editEntity(selectionManager.selections[i], {
                                 position: copiedPosition
+                            });
+                        }
+                        createApp.pushCommandForSelections();
+                        selectionManager._update(false, this);
+                    } else {
+                        audioFeedback.rejection();
+                    }
+                } else if (data.action === "pasteDimensions") {
+                    if (copiedDimensions !== undefined && selectionManager.selections.length > 0 && SelectionManager.hasUnlockedSelection()) {
+                        selectionManager.saveProperties();
+                        for (i = 0; i < selectionManager.selections.length; i++) {
+                            Entities.editEntity(selectionManager.selections[i], {
+                                dimensions: copiedDimensions
                             });
                         }
                         createApp.pushCommandForSelections();
@@ -2791,6 +2824,72 @@
                 emitScriptEvent({
                     type: 'zoneListRequest',
                     zones: getExistingZoneList()
+                });
+            } else if (data.type === "importUiBrowse") {
+                let fileToImport = Window.browse("Select .json to Import", "", "*.json");
+                if (fileToImport !== null) {
+                     emitScriptEvent({
+                        type: 'importUi_SELECTED_FILE',
+                        file: fileToImport
+                    });
+                } else {
+                    audioFeedback.rejection();
+                }
+            } else if (data.type === "importUiImport") {
+                if ((data.entityHostType === "domain" && Entities.canAdjustLocks() && Entities.canRez()) || 
+                    (data.entityHostType === "avatar" && Entities.canRezAvatarEntities())) {
+                    if (data.positioningMode === "avatar") {
+                        importSVO(data.jsonURL, data.entityHostType);
+                    } else {
+                        if (Clipboard.importEntities(data.jsonURL)) {
+                            let importedPastedEntities = Clipboard.pasteEntities(data.position, data.entityHostType);
+                            if (importedPastedEntities.length === 0) {
+                                emitScriptEvent({
+                                    type: 'importUi_IMPORT_ERROR',
+                                    reason: "No Entity has been imported."
+                                });
+                            } else {
+                                if (isActive) {
+                                    selectionManager.setSelections(importedPastedEntities, this);
+                                }
+                                emitScriptEvent({type: 'importUi_IMPORT_CONFIRMATION'});
+                            }
+                        } else {
+                            emitScriptEvent({
+                                type: 'importUi_IMPORT_ERROR',
+                                reason: "Import Entities has failed."
+                            });
+                        }
+                    }
+                } else {
+                    emitScriptEvent({
+                        type: 'importUi_IMPORT_ERROR',
+                        reason: "You don't have permission to create in this domain."
+                    });
+                }
+            } else if (data.type === "importUiGoBack") {
+                if (location.canGoBack()) {
+                    location.goBack();
+                } else {
+                    audioFeedback.rejection();
+                }
+            } else if (data.type === "importUiGoTutorial") {
+                Window.location = "file:///~/serverless/tutorial.json";
+            } else if (data.type === "importUiGetCopiedPosition") {
+                if (copiedPosition !== undefined) {
+                    emitScriptEvent({
+                        type: 'importUi_POSITION_TO_PASTE',
+                        position: copiedPosition
+                    });
+                } else {
+                    audioFeedback.rejection();
+                }
+            } else if (data.type === "importUiPersistData") {
+                importUiPersistedData = data.importUiPersistedData;
+            } else if (data.type === "importUiGetPersistData") {
+                emitScriptEvent({
+                    type: 'importUi_LOAD_DATA',
+                    importUiPersistedData: importUiPersistedData
                 });
             }
         };

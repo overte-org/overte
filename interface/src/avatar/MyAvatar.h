@@ -2684,6 +2684,7 @@ private:
     void setEnableDrawAverageFacing(bool drawAverage) { _drawAverageFacingEnabled = drawAverage; }
     bool getEnableDrawAverageFacing() const { return _drawAverageFacingEnabled; }
     virtual bool isMyAvatar() const override { return true; }
+    virtual bool isMyAvatarURLProtected() const override;
     virtual int parseDataFromBuffer(const QByteArray& buffer) override;
     virtual glm::vec3 getSkeletonPosition() const override;
     int _skeletonModelChangeCount { 0 };

@@ -100,7 +100,7 @@ public slots:
      *     print("- " + key + " " + bookmarks[key].avatarUrl);
      * };
      */
-    QVariantMap getBookmarks() { return _bookmarks; }
+    QVariantMap getBookmarks();
 
 signals:
     /*@jsdoc
@@ -147,6 +147,11 @@ protected slots:
     void deleteBookmark() override;
 
 private:
+    QVariantMap getBookmarkInternal(const QString &bookmarkName);
+    void addBookmarkInternal(const QString& bookmarkName);
+    void saveBookmarkInternal(const QString& bookmarkName);
+    void loadBookmarkInternal(const QString& bookmarkName);
+    void removeBookmarkInternal(const QString& bookmarkName);
     const QString AVATARBOOKMARKS_FILENAME = "avatarbookmarks.json";
     const QString ENTRY_AVATAR_URL = "avatarUrl";
     const QString ENTRY_AVATAR_ICON = "avatarIcon";

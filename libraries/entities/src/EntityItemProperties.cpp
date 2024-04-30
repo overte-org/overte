@@ -2549,7 +2549,7 @@ bool EntityItemProperties::entityPropertyFlagsFromScriptValue(const ScriptValue&
     if (object.isString()) {
         EntityPropertyInfo propertyInfo;
         if (getPropertyInfo(object.toString(), propertyInfo)) {
-            flags << propertyInfo.propertyEnum;
+            flags << propertyInfo.propertyEnums;
         }
     }
     else if (object.isArray()) {
@@ -2558,7 +2558,7 @@ bool EntityItemProperties::entityPropertyFlagsFromScriptValue(const ScriptValue&
             QString propertyName = object.property(i).toString();
             EntityPropertyInfo propertyInfo;
             if (getPropertyInfo(propertyName, propertyInfo)) {
-                flags << propertyInfo.propertyEnum;
+                flags << propertyInfo.propertyEnums;
             }
         }
     }
@@ -2794,7 +2794,7 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
         { // Keylight
             ADD_GROUP_PROPERTY_TO_MAP(PROP_KEYLIGHT_COLOR, KeyLight, keyLight, Color, color);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_KEYLIGHT_INTENSITY, KeyLight, keyLight, Intensity, intensity);
-            ADD_GROUP_PROPERTY_TO_MAP(PROP_KEYLIGHT_DIRECTION, KeyLight, keylight, Direction, direction);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_KEYLIGHT_DIRECTION, KeyLight, keyLight, Direction, direction);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_KEYLIGHT_CAST_SHADOW, KeyLight, keyLight, CastShadows, castShadows);
             ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_KEYLIGHT_SHADOW_BIAS, KeyLight, keyLight, ShadowBias, shadowBias, 0.0f, 1.0f);
             ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_KEYLIGHT_SHADOW_MAX_DISTANCE, KeyLight, keyLight, ShadowMaxDistance, shadowMaxDistance, 1.0f, 250.0f);
@@ -2943,14 +2943,14 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
  */
 ScriptValue EntityPropertyInfoToScriptValue(ScriptEngine* engine, const EntityPropertyInfo& propertyInfo) {
     ScriptValue obj = engine->newObject();
-    obj.setProperty("propertyEnum", propertyInfo.propertyEnum);
+    obj.setProperty("propertyEnum", propertyInfo.propertyEnums.firstFlag());
     obj.setProperty("minimum", propertyInfo.minimum.toString());
     obj.setProperty("maximum", propertyInfo.maximum.toString());
     return obj;
 }
 
 bool EntityPropertyInfoFromScriptValue(const ScriptValue& object, EntityPropertyInfo& propertyInfo) {
-    propertyInfo.propertyEnum = (EntityPropertyList)object.property("propertyEnum").toVariant().toUInt();
+    propertyInfo.propertyEnums = (EntityPropertyList)object.property("propertyEnum").toVariant().toUInt();
     propertyInfo.minimum = object.property("minimum").toVariant();
     propertyInfo.maximum = object.property("maximum").toVariant();
     return true;
