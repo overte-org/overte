@@ -384,6 +384,8 @@ else()
     COMMAND "${CMAKE_COMMAND}" -E copy_directory
       "${CMAKE_SOURCE_DIR}/scripts"
       "${INTERFACE_EXEC_DIR}/scripts"
+
+    # Actual tutorial resources like textures are packaged inside the QRC
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different
       "${PROJECT_SOURCE_DIR}/resources/serverless/tutorial.json"
       "${RESOURCES_DEV_DIR}/serverless/tutorial.json"
@@ -422,6 +424,35 @@ else()
     set(EXECUTABLE_COMPONENT ${CLIENT_COMPONENT})
 
     optional_win_executable_signing()
+  else()
+    # Not Apple and not Win32, so Linux
+
+    # Using PROGRAMS instead of TARGETS so that RENAME works.
+    # We're renaming interface to overte for Linux
+
+    install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/interface"
+            RENAME "overte"
+            DESTINATION ${CMAKE_INSTALL_BINDIR}
+            COMPONENT ${CLIENT_COMPONENT}
+    )
+
+    install(FILES ${RESOURCES_RCC}
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/overte/interface"
+            COMPONENT ${CLIENT_COMPONENT}
+            )
+
+    install(DIRECTORY "${RESOURCES_DEV_DIR}/fonts"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/overte/interface"
+            COMPONENT ${CLIENT_COMPONENT}
+    )
+
+    install(DIRECTORY "${RESOURCES_DEV_DIR}/serverless"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/overte/interface"
+            COMPONENT ${CLIENT_COMPONENT}
+    )
+
+
+    set(SCRIPTS_INSTALL_DIR "${CMAKE_INSTALL_DATADIR}/overte/interface")
   endif()
 endif()
 
@@ -443,11 +474,14 @@ endif()
 
 if (SCRIPTS_INSTALL_DIR)
   # setup install of scripts beside interface executable
+  message(STATUS "Installing scripts into ${SCRIPTS_INSTALL_DIR}")
   install(
     DIRECTORY "${CMAKE_SOURCE_DIR}/scripts/"
     DESTINATION ${SCRIPTS_INSTALL_DIR}/scripts
     COMPONENT ${CLIENT_COMPONENT}
   )
+else()
+  message(FATAL_ERROR "Not installing! ${CMAKE_INSTALL_DATA}")
 endif()
 
 if (DOWNLOAD_SERVERLESS_CONTENT)
