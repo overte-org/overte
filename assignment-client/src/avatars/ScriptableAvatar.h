@@ -21,6 +21,7 @@
 #include <EntityItem.h>
 #include "model-networking/ModelCache.h"
 #include "Rig.h"
+#include <HelperScriptEngine.h>
 
 /*@jsdoc
  * The <code>Avatar</code> API is used to manipulate scriptable avatars on the domain. This API is a subset of the 
@@ -228,7 +229,7 @@ private:
     QHash<QString, int> _fstJointIndices; ///< 1-based, since zero is returned for missing keys
     QStringList _fstJointNames; ///< in order of depth-first traversal
     QUrl _skeletonModelFilenameURL; // This contains URL from filename field in fst file
-    mutable ScriptEnginePointer _scriptEngine;
+    mutable HelperScriptEngine _helperScriptEngine;
     std::map<QUuid, EntityItemPointer> _entities;
 
     /// Loads the joint indices, names from the FST file (if any)
