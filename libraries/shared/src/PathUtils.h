@@ -306,6 +306,8 @@ private:
      */
     static QString findFirstDir(const QStringList &paths, const QString &description);
 
+    static QString makePath(const QStringList &paths, bool create=false);
+
     // Name for our server instance. This allows us to run multiple instances on the same machine.
     static QString _instance_name;
 
