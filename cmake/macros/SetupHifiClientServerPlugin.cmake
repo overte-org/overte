@@ -11,11 +11,7 @@ macro(SETUP_HIFI_CLIENT_SERVER_PLUGIN)
   setup_hifi_library()
 
   if (BUILD_CLIENT)
-    if (APPLE)
-      add_dependencies(Overte ${TARGET_NAME})
-    else()
-      add_dependencies(interface ${TARGET_NAME})
-    endif()
+    add_dependencies(${INTERFACE_TARGET_NAME} ${TARGET_NAME})
   endif()
 
   if (BUILD_SERVER)
