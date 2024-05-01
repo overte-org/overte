@@ -21,6 +21,23 @@ if (UNIX AND NOT APPLE)
 endif()
 
 
+
+# A bit annoying, but it seems we can't have INSTALL_RPATH and rename on install at the same time, as
+# install's RENAME doesn't seem to work on TARGET, and INSTALL_RPATH only works on TARGET. So the solution
+# seems to be to rename the target itself.
+#
+# At any rate, "interface" isn't a great binary name, might as well call it "overte"
+
+if (APPLE)
+  set(INTERFACE_TARGET_NAME "Overte")
+else()
+  set(INTERFACE_TARGET_NAME "overte")
+endif()
+
+
+
+
+
 # This should allow using long paths on Windows
 SET(CMAKE_NINJA_FORCE_RESPONSE_FILE 1 CACHE INTERNAL "")
 
@@ -480,7 +497,7 @@ if (BUILD_CLIENT)
   if (APPLE)
     set_target_properties(Overte PROPERTIES FOLDER "Apps")
   else()
-    set_target_properties(interface PROPERTIES FOLDER "Apps")
+    set_target_properties(${INTERFACE_TARGET_NAME} PROPERTIES FOLDER "Apps")
   endif()
 
   option(USE_SIXENSE "Build Interface with sixense library/plugin" OFF)

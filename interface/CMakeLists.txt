@@ -3,12 +3,7 @@
 # Copyright 2021-2023 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
-if (APPLE)
-  # Make the OSX DMG app be Overte.app.
-  set(TARGET_NAME Overte)
-else()
-  set(TARGET_NAME interface)
-endif()
+set(TARGET_NAME ${INTERFACE_TARGET_NAME})
 
 project(${TARGET_NAME})
 
@@ -170,6 +165,7 @@ elseif (WIN32)
 
   # add an executable that also has the icon itself and the configured rc file as resources
   add_executable(${TARGET_NAME} WIN32 ${INTERFACE_SRCS} ${QM} ${CONFIGURE_ICON_RC_OUTPUT} ${CONFIGURE_VERSION_INFO_RC_OUTPUT})
+
   ##^^^^^ creates native Win32 app w/o cmd console vvvvvv forces cmd console for logging
   # add_executable(${TARGET_NAME} ${INTERFACE_SRCS} ${QM} ${CONFIGURE_ICON_RC_OUTPUT} ${CONFIGURE_VERSION_INFO_RC_OUTPUT})
 
@@ -186,7 +182,10 @@ elseif (ANDROID)
   # on android the Interface target is a library that gets linked/used by the APK shell that qtcreateapk produces
   add_library(${TARGET_NAME} ${INTERFACE_SRCS} ${QM})
 else ()
+  # Linux
   add_executable(${TARGET_NAME} ${INTERFACE_SRCS} ${QM})
+
+  set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib/overte")
 endif ()
 
 if (NOT ANDROID)
@@ -430,8 +429,7 @@ else()
     # Using PROGRAMS instead of TARGETS so that RENAME works.
     # We're renaming interface to overte for Linux
 
-    install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/interface"
-            RENAME "overte"
+    install(TARGETS ${TARGET_NAME}
             DESTINATION ${CMAKE_INSTALL_BINDIR}
             COMPONENT ${CLIENT_COMPONENT}
     )
