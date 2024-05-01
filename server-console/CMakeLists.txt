@@ -32,7 +32,7 @@ if (OVERTE_BUILD_CLIENT)
   if (APPLE)
     add_dependencies(${TARGET_NAME} Overte)
   else()
-    add_dependencies(${TARGET_NAME} interface)
+    add_dependencies(${TARGET_NAME} ${INTERFACE_TARGET_NAME})
   endif()
 endif()
 
