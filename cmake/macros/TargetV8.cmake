@@ -17,4 +17,6 @@ macro(TARGET_V8)
         find_package(libnode QUIET REQUIRED)
         target_link_libraries(${TARGET_NAME} libnode::libnode)
     endif()
+
+    install_external_library("${V8_LIBRARIES}")
 endmacro()
