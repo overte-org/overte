@@ -2107,7 +2107,7 @@ const QUrl& AvatarData::getSkeletonModelURL() const {
 }
 
 QString AvatarData::getSkeletonModelURLFromScript() const {
-    if (isMyAvatar() && !isMyAvatarURLProtected()) {
+    if (isMyAvatar() && !isMyAvatarURLProtected() && DependencyManager::get<NodeList>()->getThisNodeCanViewAssetURLs()) {
         return _skeletonModelURL.toString();
     }
 

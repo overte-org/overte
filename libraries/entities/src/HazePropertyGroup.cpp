@@ -19,7 +19,8 @@
 #include "EntityItemPropertiesMacros.h"
 
 void HazePropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
-                                          bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags) const {
+                                          bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags,
+                                          bool isMyOwnAvatarEntity) const {
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_HAZE_RANGE, Haze, haze, HazeRange, hazeRange);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_HAZE_COLOR, Haze, haze, HazeColor, hazeColor, u8vec3Color);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_HAZE_GLARE_COLOR, Haze, haze, HazeGlareColor, hazeGlareColor, u8vec3Color);

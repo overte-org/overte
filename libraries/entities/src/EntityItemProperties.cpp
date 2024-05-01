@@ -33,6 +33,7 @@
 #include <Extents.h>
 #include <VariantMapToScriptValue.h>
 #include <ScriptValue.h>
+#include <PhysicsHelpers.h>
 
 #include "EntitiesLogging.h"
 #include "EntityItem.h"
@@ -1566,6 +1567,8 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         return properties;
     }
 
+    auto nodeList = DependencyManager::get<NodeList>();
+    bool isMyOwnAvatarEntity = _entityHostType == entity::HostType::AVATAR && (_owningAvatarID == AVATAR_SELF_ID || _owningAvatarID == Physics::getSessionUUID());
     if (_idSet && (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::ID))) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_ALWAYS(id, _id.toString());
     }
@@ -1615,7 +1618,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_IGNORE_PICK_INTERSECTION, ignorePickIntersection);
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_RENDER_WITH_ZONES, renderWithZones);
     COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_BILLBOARD_MODE, billboardMode, getBillboardModeAsString());
-    _grab.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags);
+    _grab.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
 
     // Physics
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_DENSITY, density);
@@ -1634,7 +1637,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     COPY_PROXY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_COLLISION_MASK, collisionMask, collidesWith, getCollisionMaskAsString());
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_DYNAMIC, dynamic);
     COPY_PROXY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_DYNAMIC, dynamic, collisionsWillMove, getDynamic()); // legacy support
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COLLISION_SOUND_URL, collisionSoundURL);
+    COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_COLLISION_SOUND_URL, collisionSoundURL);
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ACTION_DATA, actionData);
 
     // Cloning
@@ -1660,10 +1663,10 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     // Particles only
     if (_type == EntityTypes::ParticleEffect) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_SHAPE_TYPE, shapeType, getShapeTypeAsString());
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
         COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_COLOR, color, u8vec3Color);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA, alpha);
-        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags);
+        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_TEXTURES, textures);
 
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MAX_PARTICLES, maxParticles);
@@ -1710,11 +1713,11 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     // Models only
     if (_type == EntityTypes::Model) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_SHAPE_TYPE, shapeType, getShapeTypeAsString());
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
         COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_COLOR, color, u8vec3Color);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_TEXTURES, textures);
 
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MODEL_URL, modelURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_MODEL_URL, modelURL);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MODEL_SCALE, modelScale);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_JOINT_ROTATIONS_SET, jointRotationsSet);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_JOINT_ROTATIONS, jointRotations);
@@ -1724,7 +1727,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_GROUP_CULLED, groupCulled);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_BLENDSHAPE_COEFFICIENTS, blendshapeCoefficients);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_USE_ORIGINAL_PIVOT, useOriginalPivot);
-        _animation.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags);
+        _animation.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
     }
 
     // FIXME: Shouldn't provide a shapeType property for Box and Sphere entities.
@@ -1738,7 +1741,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     if (_type == EntityTypes::Box || _type == EntityTypes::Sphere || _type == EntityTypes::Shape) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_COLOR, color, u8vec3Color);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA, alpha);
-        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags);
+        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SHAPE, shape);
     }
 
@@ -1754,7 +1757,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
 
     // Text only
     if (_type == EntityTypes::Text) {
-        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags);
+        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
 
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_TEXT, text);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_LINE_HEIGHT, lineHeight);
@@ -1777,17 +1780,17 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     // Zones only
     if (_type == EntityTypes::Zone) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_SHAPE_TYPE, shapeType, getShapeTypeAsString());
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
 
-        _keyLight.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags);
-        _ambientLight.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags);
-        _skybox.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags);
-        _haze.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags);
-        _bloom.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags);
+        _keyLight.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+        _ambientLight.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+        _skybox.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+        _haze.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+        _bloom.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
 
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_FLYING_ALLOWED, flyingAllowed);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_GHOSTING_ALLOWED, ghostingAllowed);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_FILTER_URL, filterURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_FILTER_URL, filterURL);
 
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_KEY_LIGHT_MODE, keyLightMode, getKeyLightModeAsString());
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_AMBIENT_LIGHT_MODE, ambientLightMode, getAmbientLightModeAsString());
@@ -1802,11 +1805,11 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     if (_type == EntityTypes::Web) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_COLOR, color, u8vec3Color);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA, alpha);
-        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags);
+        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
 
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOURCE_URL, sourceUrl);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_SOURCE_URL, sourceUrl);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_DPI, dpi);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SCRIPT_URL, scriptURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_SCRIPT_URL, scriptURL);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MAX_FPS, maxFPS);
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_INPUT_MODE, inputMode, getInputModeAsString());
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SHOW_KEYBOARD_FOCUS_HIGHLIGHT, showKeyboardFocusHighlight);
@@ -1819,9 +1822,9 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_VOXEL_VOLUME_SIZE, voxelVolumeSize);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_VOXEL_DATA, voxelData);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_VOXEL_SURFACE_STYLE, voxelSurfaceStyle);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_X_TEXTURE_URL, xTextureURL);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_Y_TEXTURE_URL, yTextureURL);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_Z_TEXTURE_URL, zTextureURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_X_TEXTURE_URL, xTextureURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_Y_TEXTURE_URL, yTextureURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_Z_TEXTURE_URL, zTextureURL);
 
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_X_N_NEIGHBOR_ID, xNNeighborID);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_Y_N_NEIGHBOR_ID, yNNeighborID);
@@ -1855,14 +1858,14 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
 
     // Materials
     if (_type == EntityTypes::Material) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MATERIAL_URL, materialURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_MATERIAL_URL, materialURL);
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_MATERIAL_MAPPING_MODE, materialMappingMode, getMaterialMappingModeAsString());
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MATERIAL_PRIORITY, priority);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PARENT_MATERIAL_NAME, parentMaterialName);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MATERIAL_MAPPING_POS, materialMappingPos);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MATERIAL_MAPPING_SCALE, materialMappingScale);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MATERIAL_MAPPING_ROT, materialMappingRot);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MATERIAL_DATA, materialData);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_MATERIAL_DATA, materialData);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MATERIAL_REPEAT, materialRepeat);
     }
 
@@ -1870,15 +1873,16 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     if (_type == EntityTypes::Image) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_COLOR, color, u8vec3Color);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA, alpha);
-        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags);
+        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
 
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_IMAGE_URL, imageURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_IMAGE_URL, imageURL);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_EMISSIVE, emissive);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_KEEP_ASPECT_RATIO, keepAspectRatio);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SUB_IMAGE, subImage);
 
         // Handle conversions to old 'textures' property from "imageURL"
-        if (((!returnNothingOnEmptyPropertyFlags && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(PROP_IMAGE_URL)) &&
+        if ((isMyOwnAvatarEntity || nodeList->getThisNodeCanViewAssetURLs()) &&
+                ((!returnNothingOnEmptyPropertyFlags && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(PROP_IMAGE_URL)) &&
                 (!skipDefaults || defaultEntityProperties._imageURL != _imageURL)) {
             ScriptValue textures = engine->newObject();
             textures.setProperty("tex.picture", _imageURL);
@@ -1890,7 +1894,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     if (_type == EntityTypes::Grid) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_COLOR, color, u8vec3Color);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA, alpha);
-        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags);
+        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
 
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_GRID_FOLLOW_CAMERA, followCamera);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MAJOR_GRID_EVERY, majorGridEvery);
@@ -1900,7 +1904,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     // Gizmo only
     if (_type == EntityTypes::Gizmo) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_GIZMO_TYPE, gizmoType, getGizmoTypeAsString());
-        _ring.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags);
+        _ring.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
     }
 
     /*@jsdoc
