@@ -27,3 +27,5 @@ elseif (APPLE)
 endif()
 
 install_beside_console()
+install_beside_client()
+

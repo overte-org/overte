@@ -15,3 +15,7 @@ target_opus()
 if (OVERTE_BUILD_SERVER)
     install_beside_console()
 endif ()
+
+if (BUILD_CLIENT)
+  install_beside_client()
+endif ()
