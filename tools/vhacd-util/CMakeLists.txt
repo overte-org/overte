@@ -21,3 +21,7 @@ elseif (UNIX AND NOT APPLE)
 endif ()
 
 install_beside_console()
+
+if (BUILD_CLIENT)
+  install_beside_client()
+endif ()

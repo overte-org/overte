@@ -381,6 +381,9 @@ foreach(PLATFORM_QT_COMPONENT ${PLATFORM_QT_COMPONENTS})
   list(APPEND PLATFORM_QT_LIBRARIES "Qt5::${PLATFORM_QT_COMPONENT}")
 endforeach()
 
+MESSAGE(STATUS "Install prefix:        " ${CMAKE_INSTALL_PREFIX})
+#variable_watch(CMAKE_INSTALL_PREFIX)
+
 MESSAGE(STATUS "Use optimized IK:      " ${HIFI_USE_OPTIMIZED_IK})
 MESSAGE(STATUS "Build server:          " ${BUILD_SERVER})
 MESSAGE(STATUS "Build client:          " ${BUILD_CLIENT})
