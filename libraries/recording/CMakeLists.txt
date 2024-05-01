@@ -11,3 +11,5 @@ setup_hifi_library()
 link_hifi_libraries(shared networking script-engine)
 
 GroupSources("src/recording")
+
+install_overte_library()

@@ -11,5 +11,7 @@ macro(TARGET_V8)
 find_package(V8 REQUIRED)
 target_include_directories(${TARGET_NAME} PUBLIC ${V8_INCLUDE_DIRS})
 target_link_libraries(${TARGET_NAME} ${V8_LIBRARIES})
+install_external_library("${V8_LIBRARIES}")
+
 
 endmacro()
