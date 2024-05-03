@@ -511,3 +511,42 @@ target_include_directories(${TARGET_NAME} PUBLIC ${GIFCREATOR_INCLUDE_DIRS})
 
 # tell CMake to exclude ui_console.h for policy CMP0071
 set_property(SOURCE ui_console.h PROPERTY SKIP_AUTOMOC ON)
+
+
+
+##########################################################################
+# Installation
+##########################################################################
+
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Overte client")
+set(CPACK_PACKAGE_VENDOR "Overte e.V.")
+#set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../README.md")
+set(CPACK_PACKAGE_DESCRIPTION
+"Overte is a free and open source 3D social virtual worlds software.\
+\
+* Desktop and VR use\
+* Hundreds of users simultaneously\
+* Collaborative in-world creation\
+* Full-body avatars\
+* FBX, glTF, and OBJ support\
+* JavaScript scripting engine\
+* 256km²/4096km³ world space in a server\
+* Fully self-hosted\
+* Apache 2.0\
+")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Virtual worlds and social VR/desktp client")
+
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE")
+set(CPACK_PACKAGE_VERSION_MAJOR "${OVERTE_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${OVERTE_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${OVERTE_VERSION_REVISION}")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "Overte")
+set(CPACK_PACKAGE_EXECUTABLES "overte" "overte")
+set(CPACK_THREADS 0)
+set(CPACK_BUNDLE_NAME "Overte")
+
+set(CPACK_RPM_DEBUGINFO_PACKAGE "ON")
+set(CPACK_RPM_PACKAGE_GROUP "Applications/Multimedia")  # Obsolete on Fedora >=25
+
+include(CPack)
+include(InstallRequiredSystemLibraries)
