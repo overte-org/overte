@@ -311,6 +311,9 @@ private:
     // Name for our server instance. This allows us to run multiple instances on the same machine.
     static QString _instance_name;
 
+    // Location of static resources, /usr/share in Linux
+    static QString _static_resources_path;
+
     // Location of the static server resources directory. This is where the 'web' content is found.
     static QString _server_resources_path;
 
