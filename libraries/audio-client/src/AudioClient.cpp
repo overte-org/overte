@@ -448,6 +448,34 @@ void AudioClient::setAudioPaused(bool pause) {
     }
 }
 
+QUuid AudioClient::registerScriptListener() {
+    std::lock_guard<std::mutex> lock(_scriptListenersMutex);
+    QUuid listenerID = QUuid::createUuid();
+    while (_scriptListeners.contains(listenerID)) {
+        listenerID = QUuid::createUuid();
+    }
+    _scriptListeners.insert(listenerID, std::make_shared<ScriptAudioListener>());
+    return listenerID;
+}
+
+void AudioClient::unregisterScriptListener(const QUuid& listener) {
+    std::lock_guard<std::mutex> lock(_scriptListenersMutex);
+}
+
+QByteArray AudioClient::getPCMData(const QUuid& listenerID) {
+    std::shared_ptr<ScriptAudioListener> listener;
+    {
+        std::lock_guard<std::mutex> lock(_scriptListenersMutex);
+        if (_scriptListeners.contains(listenerID)) {
+            listener = _scriptListeners[listenerID];
+        } else {
+            qDebug() << "AudioClient::getPCMData: Script listener doesn't exist: " << listenerID;
+            return QByteArray();
+        }
+    }
+    return listener->getData();
+}
+
 HifiAudioDeviceInfo getNamedAudioDeviceForMode(QAudio::Mode mode, const QString& deviceName, const QString& hmdName, bool isHmd=false) {
     HifiAudioDeviceInfo result;
     foreach (HifiAudioDeviceInfo audioDevice, getAvailableDevices(mode,hmdName)) {
@@ -2448,6 +2476,18 @@ qint64 AudioClient::AudioOutputIODevice::readData(char * data, qint64 maxSize) {
     if (_audio->_isRecording) {
         Lock lock(_recordMutex);
         _audio->_audioFileWav.addRawAudioChunk(data, bytesWritten);
+    }
+
+    // Send audio data to script engines.
+    // Hash table needs to be copied to avoid deadlocks and improve performance
+    QHash<QUuid, std::shared_ptr<ScriptAudioListener>> scriptListeners;
+    {
+        std::lock_guard<std::mutex> lock(_audio->_scriptListenersMutex);
+        scriptListeners = _audio->_scriptListeners;
+    }
+    QByteArray dataArray(data, bytesWritten);
+    for (auto listener : _audio->_scriptListeners) {
+        listener->putData(dataArray);
     }
 
     int bytesAudioOutputUnplayed = _audio->_audioOutput->bufferSize() - _audio->_audioOutput->bytesFree();

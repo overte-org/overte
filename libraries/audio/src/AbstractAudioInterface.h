@@ -41,6 +41,10 @@ public:
 
     virtual AudioSolo& getAudioSolo() = 0;
 
+    virtual QUuid registerScriptListener() = 0;
+    virtual void unregisterScriptListener(const QUuid& listener) = 0;
+    virtual QByteArray getPCMData(const QUuid& listener) = 0;
+
 public slots:
     virtual bool shouldLoopbackInjectors() { return false; }
 

@@ -40,6 +40,22 @@ void registerAudioMetaTypes(ScriptEngine* engine) {
     scriptRegisterMetaType<SharedSoundPointer, soundSharedPointerToScriptValue, soundSharedPointerFromScriptValue>(engine);
 }
 
+QByteArray ScriptAudioListener::getData() {
+    QByteArray result;
+    {
+        std::lock_guard<std::mutex> lock(_dataMutex);
+        while (!_data.empty()) {
+            result.append(_data.front());
+            _data.pop();
+        }
+    }
+    return result;
+}
+
+void ScriptAudioListener::putData(const QByteArray &data) {
+    std::lock_guard<std::mutex> lock(_dataMutex);
+    _data.push(data);
+}
 
 void AudioScriptingInterface::setLocalAudioInterface(AbstractAudioInterface* audioInterface) {
     if (_localAudioInterface) {
@@ -94,6 +110,28 @@ bool AudioScriptingInterface::isStereoInput() {
         stereoEnabled = _localAudioInterface->isStereoInput();
     }
     return stereoEnabled;
+}
+
+QUuid AudioScriptingInterface::registerScriptListener() {
+    if (_localAudioInterface) {
+        return _localAudioInterface->registerScriptListener();
+    } else {
+        return QUuid();
+    }
+}
+
+void AudioScriptingInterface::unregisterScriptListener(const QUuid& listener) {
+    if (_localAudioInterface) {
+        _localAudioInterface->unregisterScriptListener(listener);
+    }
+}
+
+QByteArray AudioScriptingInterface::getPCMData(const QUuid& listener) {
+    if (_localAudioInterface) {
+        return _localAudioInterface->getPCMData(listener);
+    } else {
+        return QByteArray();
+    }
 }
 
 bool AudioScriptingInterface::getServerEcho() {
