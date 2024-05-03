@@ -63,6 +63,7 @@ Q_LOGGING_CATEGORY(pathutils_log, "pathutils")
 
 
 QString PathUtils::_server_resources_path{""};
+QString PathUtils::_static_resources_path{""};
 QString PathUtils::_config_path{""};
 QString PathUtils::_appdata_path{""};
 QString PathUtils::_local_appdata_path{""};
@@ -151,17 +152,7 @@ const QString& PathUtils::getRccPath() {
     static QString rccLocation;
     static std::once_flag once;
     std::call_once(once, [&] {
-        static const QString rccName{ "/resources.rcc" };
-#if defined(Q_OS_OSX)
-        char buffer[8192];
-        uint32_t bufferSize = sizeof(buffer);
-        _NSGetExecutablePath(buffer, &bufferSize);
-        rccLocation = QDir::cleanPath(QFileInfo(buffer).dir().absoluteFilePath("../Resources")) + rccName;
-#elif defined(Q_OS_ANDROID)
-        rccLocation = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + rccName;
-#else
-        rccLocation = QCoreApplication::applicationDirPath() + rccName;
-#endif
+        rccLocation = PathUtils::makePath(QStringList{_static_resources_path, "resources.rcc"}, false);
     });
     return rccLocation;
 }
@@ -245,7 +236,6 @@ QUrl PathUtils::qmlUrl(const QString& relativeUrl) {
 
 QString PathUtils::getAppDataPath() {
     std::lock_guard<std::mutex> guard(_lock);
-    initialize();
     return _appdata_path + "/" + _instance_name + "/";
     //return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/";
 }
@@ -422,7 +412,6 @@ bool PathUtils::isDescendantOf(const QUrl& childURL, const QUrl& parentURL) {
 
 QString PathUtils::getInstanceName() {
     std::lock_guard<std::mutex> guard(_lock);
-    initialize();
     return _instance_name;
 }
 
@@ -434,13 +423,11 @@ void PathUtils::setInstanceName(const QString &name) {
 
 void PathUtils::setResourcesPath(const QString &dir) {
     std::lock_guard<std::mutex> guard(_lock);
-    initialize();
     _server_resources_path = dir;
 }
 
 QString PathUtils::getDataPath() {
     std::lock_guard<std::mutex> guard(_lock);
-    initialize();
     QDir data_dir(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
     data_dir.mkdir(_instance_name);
     qInfo() << "Returning: " << data_dir.absoluteFilePath(_instance_name) + "/";
@@ -449,19 +436,16 @@ QString PathUtils::getDataPath() {
 
 QString PathUtils::getServerDataPath() {
     std::lock_guard<std::mutex> guard(_lock);
-    initialize();
     return _appdata_path + "/" + _instance_name;
 }
 
 QString PathUtils::getServerDataFilePath(const QString& filename) {
     std::lock_guard<std::mutex> guard(_lock);
-    initialize();
     return QDir(_appdata_path + "/" + _instance_name).absoluteFilePath(filename);
 }
 
 QString PathUtils::getSettingsDescriptionPath() {
     std::lock_guard<std::mutex> guard(_lock);
-    initialize();
     return _server_resources_path + "/describe-settings.json";
 }
 
@@ -470,27 +454,22 @@ QString PathUtils::getAccountFileDirPath() {
     return QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/../files";
 #else
     std::lock_guard<std::mutex> guard(_lock);
-    initialize();
-
     return _appdata_path + "/" + _instance_name;
 #endif
 }
 
 QString PathUtils::getConfigFilePath(const QString &filename) {
     std::lock_guard<std::mutex> guard(_lock);
-    initialize();
     return QDir(_config_path + "/" + _instance_name).absoluteFilePath(filename);
 }
 
 QString PathUtils::getServerContentPath(const QString &dir_name) {
     std::lock_guard<std::mutex> guard(_lock);
-    initialize();
     return _server_resources_path + "/" + dir_name + "/";
 }
 
 QString PathUtils::getPluginsPath() {
     std::lock_guard<std::mutex> guard(_lock);
-    initialize();
     return _plugins_path + "/";
 }
 
@@ -506,6 +485,12 @@ QString PathUtils::makePath(const QStringList &paths, bool create) {
     }
 
     concatenated = QDir::cleanPath(concatenated);
+
+    if (create) {
+        if (!QDir(concatenated).exists()) {
+            QDir(concatenated).mkpath(".");
+        }
+    }
 
     return concatenated;
 }
@@ -582,8 +567,10 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
 
     if (ds == DataStorage::Auto) {
         if ( type == FilesystemLayout::FHS && isSystemUser() ) {
+            qCDebug(pathutils_log) << "We're in a FHS layout, running as a system user. Using system settings paths";
             ds = DataStorage::System;
         } else {
+            qCDebug(pathutils_log) << "Using home paths for settings storage";
             ds = DataStorage::Home;
         }
     }
@@ -601,13 +588,13 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
             qCCritical(pathutils_log) << "Failed to detect filesystem layout";
             return false;
         case FilesystemLayout::FHS:
-
-            resources_dir.cd("var");
-            resources_dir.cd("lib");
+            resources_dir.cd("usr");
+            resources_dir.cd("share");
             resources_dir.cd("overte");
+            resources_dir.cd(QCoreApplication::applicationName().toLower());
 
-            _server_resources_path = resources_dir.canonicalPath();
-            qCDebug(pathutils_log) << "Resources: " << _server_resources_path;
+            _static_resources_path = resources_dir.canonicalPath();
+            qCDebug(pathutils_log) << "Resources: " << _static_resources_path;
             break;
         case FilesystemLayout::BuildDir:
 
@@ -618,10 +605,13 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
 
     switch (ds) {
         case DataStorage::Auto:
+            qCCritical(pathutils_log) << "Failed to detect data storage layout";
+            return false;
             break;
         case DataStorage::System:
             break;
         case DataStorage::Home:
+            _config_path = QDir::cleanPath(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + QDir::separator() + QCoreApplication::organizationName() + QDir::separator() + _instance_name);
             break;
     }
 
@@ -687,11 +677,19 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
     qInfo() << "\tApplication name            :" << QCoreApplication::applicationName();
 
     qInfo() << "Initialized paths:";
-    qInfo() << "\tResource base path          :" << _server_resources_path;
+    qInfo() << "\tResource base path          :" << _static_resources_path;
+    qInfo() << "\tRCC path                    :" << getRccPath();
+    qInfo() << "\tResources path              :" << resourcesPath();
+    qInfo() << "\tResources URL               :" << resourcesUrl();
     qInfo() << "\tConfig base path            :" << _config_path;
+    qInfo() << "\tQML base URL                :" << qmlBaseUrl();
+    qInfo() << "\tApp data path               :" << getAppDataPath();
+    qInfo() << "\tApp local data path         :" << getAppLocalDataPath();
+    qInfo() << "\tDefault scripts path        :" << defaultScriptsLocation();
+
     qInfo() << "\tData base path              :" << _appdata_path;
     qInfo() << "\tLocal data base path        :" << _local_appdata_path;
-    qInfo() << "\tPlugins path                :" << _plugins_path;
+    qInfo() << "\tPlugins path                :" << getPluginsPath();
     _initialized = true;
 
     return true;

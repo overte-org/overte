@@ -11,12 +11,13 @@
 # 3.20 is required for some improvements to CPack and installation
 cmake_minimum_required(VERSION 3.20)
 
+project(overte LANGUAGES CXX)
 
 if (UNIX AND NOT APPLE)
   # A bit of convenience for later
   set(LINUX TRUE)
 
-  # GNU paths for Linux installs
+  # GNU paths for Linux installs. Must come after project
   include(GNUInstallDirs)
 endif()
 
@@ -257,7 +258,7 @@ endif()
 
 option(VCPKG_APPLOCAL_DEPS OFF)
 
-project(overte)
+
 include("cmake/init.cmake")
 include("cmake/compiler.cmake")
 option(VCPKG_APPLOCAL_DEPS OFF)
