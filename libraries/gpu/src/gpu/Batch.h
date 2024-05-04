@@ -402,7 +402,7 @@ public:
     public:
         typedef T Data;
         Data _data;
-        Cache<T>(const Data& data) : _data(data) {}
+        Cache(const Data& data) : _data(data) {}
         static size_t _max;
 
         class Vector {
