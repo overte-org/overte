@@ -22,10 +22,12 @@
 const float AmbientLightPropertyGroup::DEFAULT_AMBIENT_LIGHT_INTENSITY = 0.5f;
 
 void AmbientLightPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
-    ScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags) const {
-    
+    ScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags,
+    bool isMyOwnAvatarEntity) const {
+
+    auto nodeList = DependencyManager::get<NodeList>();
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_AMBIENT_LIGHT_INTENSITY, AmbientLight, ambientLight, AmbientIntensity, ambientIntensity);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_AMBIENT_LIGHT_URL, AmbientLight, ambientLight, AmbientURL, ambientURL);
+    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_AMBIENT_LIGHT_URL, AmbientLight, ambientLight, AmbientURL, ambientURL);
 }
 
 void AmbientLightPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {

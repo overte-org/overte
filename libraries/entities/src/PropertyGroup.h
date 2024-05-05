@@ -34,7 +34,8 @@ public:
     virtual ~PropertyGroup() = default;
 
     // EntityItemProperty related helpers
-    virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags) const = 0;
+    virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine, bool skipDefaults,
+        EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const = 0;
     virtual void copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) = 0;
     virtual void debugDump() const { }
     virtual void listChangedProperties(QList<QString>& out) { }

@@ -581,6 +581,22 @@ public:
      Q_INVOKABLE void removeServerEntityScriptMessagesRequest();
      Q_INVOKABLE void removeServerEntityScriptMessagesRequest(const QUuid& entityID);
 
+     /*@jsdoc
+     * This decodes Base64 string and returns contents as ArrayBuffer.
+     * @function Script.atob
+     * @param {String} base64 - String with Base64-encoded binary data.
+     * @returns {ArrayBuffer} Decoded binary data.
+     */
+     Q_INVOKABLE QByteArray atob(const QString &base64);
+
+     /*@jsdoc
+     * This encodes ArrayBuffer and returns Base64-encoded string.
+     * @function Script.btoa
+     * @param {ArrayBuffer} binary - Data to be encoded.
+     * @returns {String} String with Base64-encoded binary data.
+     */
+     Q_INVOKABLE QString btoa(const QByteArray &binary);
+
  signals:
 
     /*@jsdoc
