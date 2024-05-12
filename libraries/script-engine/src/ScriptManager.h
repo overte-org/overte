@@ -41,6 +41,7 @@
 
 #include "AssetScriptingInterface.h"
 #include "ConsoleScriptingInterface.h"
+#include "CryptographyScriptingInterface.h"
 #include "Mat4.h"
 #include "PointerEvent.h"
 #include "Quat.h"
@@ -1662,6 +1663,7 @@ protected:
     double _totalTimeInTimerEvents_s{ 0.0 };
 
     ScriptManagerScriptingInterfacePointer _scriptingInterface;
+    std::shared_ptr<CryptographyScriptingInterface> _cryptographyInterface;
 
     bool _abortOnUncaughtException{ false };
 

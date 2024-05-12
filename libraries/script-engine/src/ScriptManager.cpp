@@ -290,6 +290,7 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
     qRegisterMetaType<std::function<void()>>();
 
     _scriptingInterface = std::make_shared<ScriptManagerScriptingInterface>(this);
+    _cryptographyInterface = std::make_shared<CryptographyScriptingInterface>();
 
     if (isEntityServerScript()) {
         qCDebug(scriptengine) << "isEntityServerScript() -- limiting maxRetries to 1";
@@ -803,6 +804,8 @@ void ScriptManager::init() {
     scriptEngine->registerFunction("console", "group", ConsoleScriptingInterface::group, 1);
     scriptEngine->registerFunction("console", "groupCollapsed", ConsoleScriptingInterface::groupCollapsed, 1);
     scriptEngine->registerFunction("console", "groupEnd", ConsoleScriptingInterface::groupEnd, 0);
+
+    scriptEngine->registerGlobalObject("crypto", _cryptographyInterface.get());
 
     // constants
     scriptEngine->globalObject().setProperty("TREE_SCALE", scriptEngine->newValue(TREE_SCALE));
