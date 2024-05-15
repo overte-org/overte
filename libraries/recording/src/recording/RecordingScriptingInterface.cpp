@@ -38,27 +38,33 @@ using namespace recording;
 static const QString HFR_EXTENSION = "hfr";
 
 RecordingScriptingInterface::RecordingScriptingInterface() {
+    Locker(_mutex);
     _player = DependencyManager::get<Deck>();
     _recorder = DependencyManager::get<Recorder>();
 }
 
 bool RecordingScriptingInterface::isPlaying() const {
+    Locker(_mutex);
     return _player->isPlaying();
 }
 
 bool RecordingScriptingInterface::isPaused() const {
+    Locker(_mutex);
     return _player->isPaused();
 }
 
 float RecordingScriptingInterface::playerElapsed() const {
+    Locker(_mutex);
     return _player->position();
 }
 
 float RecordingScriptingInterface::playerLength() const {
+    Locker(_mutex);
     return _player->length();
 }
 
 void RecordingScriptingInterface::playClip(NetworkClipLoaderPointer clipLoader, const QString& url, const ScriptValue& callback) {
+    Locker(_mutex);
     _player->queueClip(clipLoader->getClip());
 
     if (callback.isFunction()) {
@@ -69,10 +75,7 @@ void RecordingScriptingInterface::playClip(NetworkClipLoaderPointer clipLoader, 
 }
 
 void RecordingScriptingInterface::loadRecording(const QString& url, const ScriptValue& callback) {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "loadRecording", Q_ARG(const QString&, url), Q_ARG(const ScriptValue&, callback));
-        return;
-    }
+    Locker(_mutex);
 
     auto clipLoader = DependencyManager::get<recording::ClipCache>()->getClipLoader(url);
 
@@ -131,6 +134,7 @@ void RecordingScriptingInterface::startPlaying() {
         return;
     }
 
+    Locker(_mutex);
     _player->play();
 }
 
@@ -140,6 +144,7 @@ void RecordingScriptingInterface::setPlayerVolume(float volume) {
         return;
     }
 
+    Locker(_mutex);
     _player->setVolume(std::min(std::max(volume, 0.0f), 1.0f));
 }
 
@@ -152,6 +157,7 @@ void RecordingScriptingInterface::setPlayerTime(float time) {
         BLOCKING_INVOKE_METHOD(this, "setPlayerTime", Q_ARG(float, time));
         return;
     }
+    Locker(_mutex);
     _player->seek(time);
 }
 
@@ -165,6 +171,7 @@ void RecordingScriptingInterface::setPlayerLoop(bool loop) {
         return;
     }
 
+    Locker(_mutex);
     _player->loop(loop);
 }
 
@@ -189,6 +196,7 @@ void RecordingScriptingInterface::pausePlayer() {
         BLOCKING_INVOKE_METHOD(this, "pausePlayer");
         return;
     }
+    Locker(_mutex);
     _player->pause();
 }
 
@@ -197,6 +205,7 @@ void RecordingScriptingInterface::stopPlaying() {
         BLOCKING_INVOKE_METHOD(this, "stopPlaying");
         return;
     }
+    Locker(_mutex);
     _player->stop();
 }
 
@@ -219,6 +228,7 @@ void RecordingScriptingInterface::startRecording() {
         return;
     }
 
+    Locker(_mutex);
     _recorder->start();
 }
 
@@ -233,6 +243,7 @@ void RecordingScriptingInterface::stopRecording() {
         return;
     }
 
+    Locker(_mutex);
     _recorder->stop();
     _lastClip = _recorder->getClip();
     _lastClip->seek(0);
@@ -253,6 +264,7 @@ void RecordingScriptingInterface::saveRecording(const QString& filename) {
         return;
     }
 
+    Locker(_mutex);
     if (!_lastClip) {
         qWarning() << "There is no recording to save";
         return;
@@ -267,14 +279,7 @@ bool RecordingScriptingInterface::saveRecordingToAsset(const ScriptValue& getCli
         return false;
     }
 
-    if (QThread::currentThread() != thread()) {
-        bool result;
-        BLOCKING_INVOKE_METHOD(this, "saveRecordingToAsset",
-            Q_RETURN_ARG(bool, result),
-            Q_ARG(const ScriptValue&, getClipAtpUrl));
-        return result;
-    }
-
+    Locker(_mutex);
     if (!_lastClip) {
         qWarning() << "There is no recording to save";
         return false;
@@ -315,6 +320,8 @@ void RecordingScriptingInterface::loadLastRecording() {
         BLOCKING_INVOKE_METHOD(this, "loadLastRecording");
         return;
     }
+
+    Locker(_mutex);
 
     if (!_lastClip) {
         qCDebug(scriptengine) << "There is no recording to load";
