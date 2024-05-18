@@ -26,9 +26,8 @@ Rectangle {
     //     toScript({type: "initialized"})
     // }
 
-    Column {
+    Item {
         anchors.fill: parent
-        spacing: 0
 
         // Navigation Bar
         Rectangle {
@@ -135,6 +134,7 @@ Rectangle {
             width: parent.width
             height: parent.height - 40
             anchors.top: navigation_bar.bottom
+            visible: ["local", "domain"].includes(pageVal) ? true : false
 
 
             // Chat Message History
@@ -180,7 +180,6 @@ Rectangle {
                 height: 40
                 color: Qt.rgba(0.9,0.9,0.9,1)
                 anchors.bottom: parent.bottom
-                visible: ["local", "domain"].includes(pageVal) ? true : false
 
                 Row {
                     width: parent.width
@@ -218,6 +217,66 @@ Rectangle {
                                 toScript({type: "send_message", message: parent.children[0].text, channel: pageVal});
                                 parent.children[0].text = ""
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        Item {
+            width: parent.width
+            height: parent.height - 40
+            anchors.top: navigation_bar.bottom
+            visible: ["local", "domain"].includes(pageVal) ? false : true
+
+            Column {
+                width: parent.width - 10
+                height: parent.height - 10
+                anchors.centerIn: parent
+                spacing: 0
+
+                Rectangle {
+                    width: parent.width
+                    height: 40
+                    color: "transparent"
+
+                    Text{
+                        text: "External window"
+                        color: "white"
+                        font.pointSize: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    CheckBox{
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        onCheckedChanged: {
+                            toScript({type: 'setting_change', setting: 'external_window', value: checked})
+                        }
+                    }
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: 40
+                    color: Qt.rgba(0.15,0.15,0.15,1);
+
+                    Text{
+                        text: "Erase chat history"
+                        color: "white"
+                        font.pointSize: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Button {
+                        anchors.right: parent.right
+                        text: "Erase"
+                        height: parent.height
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        onClicked: {
+                            toScript({type: "action", action: "erase_history"})
                         }
                     }
                 }

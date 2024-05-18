@@ -129,12 +129,33 @@
     }
 
     function fromQML(event) {
-        console.log(`New web event:\n${JSON.stringify(event)}`);
+        console.log(`New QML event:\n${JSON.stringify(event)}`);
 
         switch (event.type) {
             case "send_message":
                 _sendMessage(event.message, event.channel);
                 break;
+            case "setting_change":
+                settings[event.setting] = event.value; // Update local settings
+                _saveSettings(); // Save local settings
+
+                switch (event.setting) {
+                    case "external_window":
+                        chat_overlay_window.presentationMode = event.value
+                            ? Desktop.PresentationMode.NATIVE
+                            : Desktop.PresentationMode.VIRTUAL;
+                        break;
+                }
+
+                break;
+            case "action":
+                switch (event.action) {
+                    case "erase_history":
+                        Settings.setValue("ArmoredChat-Messages", []);
+                        break;
+                }
+                break;
+
             case "initialized":
                 // https://github.com/overte-org/overte/issues/824
                 chat_overlay_window.visible = app_is_visible; // The "visible" field in the Desktop.createWindow does not seem to work. Force set it to the initial state (false)
