@@ -133,6 +133,7 @@ private:  // storage
     QPointer<QObject> _object;
     // Handle for its own object
     v8::Persistent<v8::Object> _v8Object;
+    bool _wasDestroyed{false};
 
     Q_DISABLE_COPY(ScriptObjectV8Proxy)
 };
@@ -271,7 +272,10 @@ public:  // API
     QString fullName() const;
 
     // Disconnects all signals from the proxy
-    void disconnectAll() { QObject::disconnect(this, nullptr, nullptr, nullptr); };
+    void disconnectAll();
+
+    // This should be called only just before destruction of ScriptSignalV8Proxy
+    void disconnectAllScriptSignalProxies();
 
 private:  // storage
 
@@ -283,6 +287,9 @@ private:  // storage
     const int _metaCallId;
     ConnectionList _connections;
     bool _isConnected{ false };
+
+    // This allows skipping qobject check during disconnect, which is needed during cleanup because qobject is already deleted
+    bool _cleanup{ false };
     // Context in which it was created
     v8::UniquePersistent<v8::Context> _v8Context;
     // Call counter for debugging purposes. It can be used to determine which signals are overwhelming script engine.
