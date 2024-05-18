@@ -152,10 +152,12 @@
                 switch (event.action) {
                     case "erase_history":
                         Settings.setValue("ArmoredChat-Messages", []);
+                        _emitEvent({
+                            type: "clear_messages",
+                        });
                         break;
                 }
                 break;
-
             case "initialized":
                 // https://github.com/overte-org/overte/issues/824
                 chat_overlay_window.visible = app_is_visible; // The "visible" field in the Desktop.createWindow does not seem to work. Force set it to the initial state (false)
@@ -201,7 +203,6 @@
             _emitEvent({ type: "avatar_connected", ...message });
         }, 1500);
     }
-
     function _loadSettings() {
         message_history.forEach((message) => {
             delete message.action;

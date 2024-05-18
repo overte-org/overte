@@ -452,6 +452,9 @@ Rectangle {
             case "avatar_connected":
                 addMessage("SYSTEM", message.message, `[ ${time} - ${date} ]`, "domain", "notification");
                 break;
+            case "clear_messages":
+                local.clear()
+                domain.clear()
         }
     }
 
