@@ -129,21 +129,11 @@ void RecordingScriptingInterface::loadRecording(const QString& url, const Script
 }
 
 void RecordingScriptingInterface::startPlaying() {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "startPlaying");
-        return;
-    }
-
     Locker(_mutex);
     _player->play();
 }
 
 void RecordingScriptingInterface::setPlayerVolume(float volume) {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "setPlayerVolume", Q_ARG(float, volume));
-        return;
-    }
-
     Locker(_mutex);
     _player->setVolume(std::min(std::max(volume, 0.0f), 1.0f));
 }
@@ -153,10 +143,6 @@ void RecordingScriptingInterface::setPlayerAudioOffset(float audioOffset) {
 }
 
 void RecordingScriptingInterface::setPlayerTime(float time) {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "setPlayerTime", Q_ARG(float, time));
-        return;
-    }
     Locker(_mutex);
     _player->seek(time);
 }
@@ -166,11 +152,6 @@ void RecordingScriptingInterface::setPlayFromCurrentLocation(bool playFromCurren
 }
 
 void RecordingScriptingInterface::setPlayerLoop(bool loop) {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "setPlayerLoop", Q_ARG(bool, loop));
-        return;
-    }
-
     Locker(_mutex);
     _player->loop(loop);
 }
@@ -192,19 +173,11 @@ void RecordingScriptingInterface::setPlayerUseSkeletonModel(bool useSkeletonMode
 }
 
 void RecordingScriptingInterface::pausePlayer() {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "pausePlayer");
-        return;
-    }
     Locker(_mutex);
     _player->pause();
 }
 
 void RecordingScriptingInterface::stopPlaying() {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "stopPlaying");
-        return;
-    }
     Locker(_mutex);
     _player->stop();
 }
@@ -223,11 +196,6 @@ void RecordingScriptingInterface::startRecording() {
         return;
     }
 
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "startRecording");
-        return;
-    }
-
     Locker(_mutex);
     _recorder->start();
 }
@@ -235,11 +203,6 @@ void RecordingScriptingInterface::startRecording() {
 void RecordingScriptingInterface::stopRecording() {
     if (!_recorder->isRecording()) {
         qCWarning(scriptengine) << "Recorder is not running";
-        return;
-    }
-
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "stopRecording");
         return;
     }
 
@@ -258,12 +221,6 @@ QString RecordingScriptingInterface::getDefaultRecordingSaveDirectory() {
 }
 
 void RecordingScriptingInterface::saveRecording(const QString& filename) {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "saveRecording",
-            Q_ARG(QString, filename));
-        return;
-    }
-
     Locker(_mutex);
     if (!_lastClip) {
         qWarning() << "There is no recording to save";
@@ -316,11 +273,6 @@ bool RecordingScriptingInterface::saveRecordingToAsset(const ScriptValue& getCli
 }
 
 void RecordingScriptingInterface::loadLastRecording() {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "loadLastRecording");
-        return;
-    }
-
     Locker(_mutex);
 
     if (!_lastClip) {
