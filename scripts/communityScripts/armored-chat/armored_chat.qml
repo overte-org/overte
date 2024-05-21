@@ -1,6 +1,7 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.0
 import QtQuick.Layouts 1.3
+import controlsUit 1.0 as HifiControlsUit
 
 Rectangle {
     color: Qt.rgba(0.1,0.1,0.1,1)
@@ -18,6 +19,7 @@ Rectangle {
     Timer {
         interval: 100
         running: true
+        repeat: false
         onTriggered: {
            toScript({type: "initialized"})
         }
@@ -26,6 +28,7 @@ Rectangle {
     //     toScript({type: "initialized"})
     // }
 
+    // User view
     Item {
         anchors.fill: parent
 
@@ -233,8 +236,9 @@ Rectangle {
                 width: parent.width - 10
                 height: parent.height - 10
                 anchors.centerIn: parent
-                spacing: 0
+                spacing: 10
 
+                // External Window
                 Rectangle {
                     width: parent.width
                     height: 40
@@ -248,6 +252,7 @@ Rectangle {
                     }
 
                     CheckBox{
+                        id: s_external_window
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
 
@@ -257,6 +262,38 @@ Rectangle {
                     }
                 }
 
+                // Maximum saved messages
+                Rectangle {
+                    width: parent.width
+                    height: 40
+                    color: "transparent"
+
+                    Text{
+                        text: "Maximum saved messages"
+                        color: "white"
+                        font.pointSize: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    
+                    HifiControlsUit.SpinBox {
+                        id: s_maximum_messages
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        decimals: 0
+                        width: 100
+                        height: parent.height
+                        realFrom: 1
+                        realTo: 1000
+                        backgroundColor: "#cccccc"
+
+                        onValueChanged: {
+                            toScript({type: 'setting_change', setting: 'maximum_messages', value: value})
+                        }
+                    }
+                }
+
+                // Erase History
                 Rectangle {
                     width: parent.width
                     height: 40
@@ -285,6 +322,7 @@ Rectangle {
 
     }
 
+    // Templates
     Component {
         id: template_chat_message
 
@@ -455,6 +493,9 @@ Rectangle {
             case "clear_messages":
                 local.clear()
                 domain.clear()
+            case "initial_settings":
+                if (message.settings.external_window) s_external_window.checked = true
+                if (message.settings.maximum_messages) s_maximum_messages.value = message.settings.maximum_messages
         }
     }
 

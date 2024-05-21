@@ -12,8 +12,8 @@
 
     var app_is_visible = false;
     var settings = {
-        compact_chat: false,
         external_window: false,
+        maximum_messages: 200,
     };
 
     // Global vars
@@ -123,8 +123,9 @@
             day: "numeric",
         });
         message_history.push(saved_message);
-        if (message_history.length > settings.max_history)
+        while (message_history.length > settings.maximum_messages) {
             message_history.shift();
+        }
         Settings.setValue("ArmoredChat-Messages", message_history);
     }
 
@@ -144,6 +145,9 @@
                         chat_overlay_window.presentationMode = event.value
                             ? Desktop.PresentationMode.NATIVE
                             : Desktop.PresentationMode.VIRTUAL;
+                        break;
+                    case "maximum_messages":
+                        // Do nothing
                         break;
                 }
 
@@ -204,12 +208,23 @@
         }, 1500);
     }
     function _loadSettings() {
+        settings = Settings.getValue("ArmoredChat-Config", settings);
+
+        // Load message history
         message_history.forEach((message) => {
             delete message.action;
             _emitEvent({ type: "show_message", ...message });
         });
+
+        // Send current settings to the app
+        _emitEvent({ type: "initial_settings", settings: settings });
+
+        console.log(`\n\n\n` + JSON.stringify(settings));
     }
-    function _saveSettings() {}
+    function _saveSettings() {
+        console.log("Saving config");
+        Settings.setValue("ArmoredChat-Config", settings);
+    }
 
     /**
      * Emit a packet to the HTML front end. Easy communication!
