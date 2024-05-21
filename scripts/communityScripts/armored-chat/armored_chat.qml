@@ -150,11 +150,11 @@ Rectangle {
                 id: listview
 
                 delegate: Loader {
-                    width: parent.width
                     property int delegateIndex: index
                     property string delegateText: model.text
                     property string delegateUsername: model.username
                     property string delegateDate: model.date
+                    width: parent.width // FIXME: Causes warning, but required for style?
 
                     sourceComponent: {
                         if (model.type === "chat") {
@@ -163,6 +163,12 @@ Rectangle {
                             return template_notification;
                         }
                     }
+                }
+
+                ScrollBar.vertical: ScrollBar {
+                    id: chat_scrollbar
+                    height: 100
+                    size: 0.05
                 }
 
                 model: getChannel(pageVal)
@@ -437,9 +443,12 @@ Rectangle {
     }
 
     function scrollToBottom() {
+        if (listview.count == 0) return;
+        // if (chat_scrollbar.visualPosition > 0.85) {
         listview.positionViewAtIndex(listview.count - 1, ListView.End);
         listview.positionViewAtEnd();
         listview.contentY = listview.contentY + 50;
+        // }
     }
 
 
@@ -485,7 +494,7 @@ Rectangle {
 
         switch (message.type){
             case "show_message":
-                addMessage(message.displayName, message.message, `[ ${time} - ${date} ]`, message.channel, "chat");
+                addMessage(message.displayName, message.message, `[ ${message.timeString || time} - ${message.dateString || date} ]`, message.channel, "chat");
                 break;
             case "avatar_connected":
                 addMessage("SYSTEM", message.message, `[ ${time} - ${date} ]`, "domain", "notification");

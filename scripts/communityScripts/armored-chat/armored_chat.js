@@ -21,7 +21,7 @@
     var chat_overlay_window;
     var app_button;
     const channels = ["domain", "local"];
-    var message_history = Settings.getValue("ArmoredChat-Messages", []);
+    var message_history = Settings.getValue("ArmoredChat-Messages", []) || [];
     var max_local_distance = 20; // Maximum range for the local chat
     var pal_data = AvatarManager.getPalData().data;
 
@@ -119,6 +119,7 @@
             hour12: false,
         });
         saved_message.dateString = new Date().toLocaleDateString(undefined, {
+            year: "numeric",
             month: "long",
             day: "numeric",
         });
@@ -210,11 +211,13 @@
     function _loadSettings() {
         settings = Settings.getValue("ArmoredChat-Config", settings);
 
-        // Load message history
-        message_history.forEach((message) => {
-            delete message.action;
-            _emitEvent({ type: "show_message", ...message });
-        });
+        if (message_history) {
+            // Load message history
+            message_history.forEach((message) => {
+                delete message.action;
+                _emitEvent({ type: "show_message", ...message });
+            });
+        }
 
         // Send current settings to the app
         _emitEvent({ type: "initial_settings", settings: settings });
