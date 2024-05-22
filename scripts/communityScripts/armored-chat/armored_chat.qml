@@ -369,6 +369,11 @@ Rectangle {
                 width: parent.width * 0.8
                 height: contentHeight // Adjust height to fit content
                 wrapMode: Text.Wrap
+                textFormat: TextEdit.RichText
+
+                onLinkActivated: {
+                    Window.openWebBrowser(link)
+                }
             }
         }
     }
@@ -455,6 +460,14 @@ Rectangle {
     function addMessage(username, message, date, channel, type){
         channel = getChannel(channel)
 
+        // Linkify
+        var regex = /(https?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)?(?=\s|$)/g;
+        message = message.replace(regex, (match) => {
+            return "<a onclick='Window.openUrl("+match+")' href='" + match + "'>" + match + "</a>";
+        });
+
+        message = sanatizeContent(message); // Make sure we don't have any nasties
+
         if (type === "notification"){
             channel.append({ text: message, date: date, type: "notification" });
             last_message_user = "";
@@ -471,6 +484,7 @@ Rectangle {
         var last_item = channel.get(last_item_index);
 
         if (last_message_user === username && elapsed_minutes < 1 && last_item){
+            message = "<br>" + message 
             last_item.text = last_item.text += "\n" + message;
             scrollToBottom()
             last_message_time = new Date();
@@ -487,10 +501,15 @@ Rectangle {
         return channels[id];
     }
 
+    function sanatizeContent(mess) {
+        var script_tag = /<script\b[^>]*>/gi;
+        return mess.replace(script_tag, "script");
+    }
+
     // Messages from script
     function fromScript(message) {
         let time = new Date().toLocaleTimeString(undefined, { hour12: false });
-        let date = new Date().toLocaleDateString(undefined, {  month: "long", day: "numeric", });
+        let date = new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric", });
 
         switch (message.type){
             case "show_message":
@@ -502,6 +521,7 @@ Rectangle {
             case "clear_messages":
                 local.clear()
                 domain.clear()
+                break;
             case "initial_settings":
                 if (message.settings.external_window) s_external_window.checked = true
                 if (message.settings.maximum_messages) s_maximum_messages.value = message.settings.maximum_messages
