@@ -16,23 +16,26 @@
 
 #include <sstream>
 
-inline float atof_locale_independent(char *str) {
+#include <memory.h>
+#include <QtNetwork/QNetworkReply>
+#include <hfm/ModelFormatLogging.h>
+#include <hfm/HFMSerializer.h>
+
+static float atof_locale_independent(char *str) {
     //TODO: Once we have C++17 we can use std::from_chars
     std::istringstream streamToParse(str);
     streamToParse.imbue(std::locale("C"));
-    float value = 0.0f;
-    streamToParse >> value;
+    float value;
+    if(!(streamToParse >> value)) {
+        qDebug(modelformat) << "cgltf: Cannot parse float from string: " << str;
+        return 0.0f;
+    }
     return value;
 }
 
 #define CGLTF_ATOF(str) atof_locale_independent(str)
 
 #include "cgltf.h"
-
-#include <memory.h>
-#include <QtNetwork/QNetworkReply>
-#include <hfm/ModelFormatLogging.h>
-#include <hfm/HFMSerializer.h>
 
 
 class GLTFSerializer : public QObject, public HFMSerializer {
