@@ -14,6 +14,19 @@
 #ifndef hifi_GLTFSerializer_h
 #define hifi_GLTFSerializer_h
 
+#include <sstream>
+
+inline float atof_locale_independent(char *str) {
+    //TODO: Once we have C++17 we can use std::from_chars
+    std::istringstream streamToParse(str);
+    streamToParse.imbue(std::locale("C"));
+    float value = 0.0f;
+    streamToParse >> value;
+    return value;
+}
+
+#define CGLTF_ATOF(str) atof_locale_independent(str)
+
 #include "cgltf.h"
 
 #include <memory.h>
