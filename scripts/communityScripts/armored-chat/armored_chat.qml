@@ -460,13 +460,8 @@ Rectangle {
     function addMessage(username, message, date, channel, type){
         channel = getChannel(channel)
 
-        // Linkify
-        var regex = /(https?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)?(?=\s|$)/g;
-        message = message.replace(regex, (match) => {
-            return "<a onclick='Window.openUrl("+match+")' href='" + match + "'>" + match + "</a>";
-        });
-
-        message = sanatizeContent(message); // Make sure we don't have any nasties
+        // Format content
+        message = formatContent(message);
 
         if (type === "notification"){
             channel.append({ text: message, date: date, type: "notification" });
@@ -501,9 +496,16 @@ Rectangle {
         return channels[id];
     }
 
-    function sanatizeContent(mess) {
+    function formatContent(mess) {
+        var link = /(https?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)?(?=\s|$)/g;
+        mess = mess.replace(link, () => {return "<a onclick='Window.openUrl("+match+")' href='" + match + "'>" + match + "</a>"});
+
         var script_tag = /<script\b[^>]*>/gi;
-        return mess.replace(script_tag, "script");
+        mess = mess.replace(script_tag, "script");
+
+        var newline = /\n/gi;
+        mess = mess.replace(newline, "<br>");
+        return mess
     }
 
     // Messages from script
@@ -519,12 +521,13 @@ Rectangle {
                 addMessage("SYSTEM", message.message, `[ ${time} - ${date} ]`, "domain", "notification");
                 break;
             case "clear_messages":
-                local.clear()
-                domain.clear()
+                local.clear();
+                domain.clear();
                 break;
             case "initial_settings":
-                if (message.settings.external_window) s_external_window.checked = true
-                if (message.settings.maximum_messages) s_maximum_messages.value = message.settings.maximum_messages
+                if (message.settings.external_window) s_external_window.checked = true;
+                if (message.settings.maximum_messages) s_maximum_messages.value = message.settings.maximum_messages;
+                break;
         }
     }
 
