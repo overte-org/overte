@@ -414,7 +414,7 @@ Rectangle {
                     color:"white"
                     font.pointSize: 12
                     readOnly: true
-                    width: parent.width
+                    width: parent.width * 0.8
                     selectByMouse: true
                     selectByKeyboard: true
                     height: parent.height
@@ -427,7 +427,7 @@ Rectangle {
                     text: date
                     color:"white"
                     font.pointSize: 12
-                    anchors.right: parent.children[0].right
+                    anchors.right: parent.right
                     height: parent.height
                     wrapMode: Text.Wrap
                     horizontalAlignment: Text.AlignRight
