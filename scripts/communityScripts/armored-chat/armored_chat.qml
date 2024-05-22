@@ -194,18 +194,18 @@ Rectangle {
                     width: parent.width
                     height: parent.height
 
-
                     TextField {
                         width: parent.width - 60
                         height: parent.height
                         placeholderText: pageVal.charAt(0).toUpperCase() + pageVal.slice(1) + " chat message..."
-
-                        onAccepted: {
-                            toScript({type: "send_message", message: text, channel: pageVal});
-                            text = ""
+                        Keys.onPressed: {
+                            if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && !(event.modifiers & Qt.ShiftModifier)) {
+                                event.accepted = true;
+                                toScript({type: "send_message", message: text, channel: pageVal});
+                                text = ""
+                            }
                         }
                     }
-
                     Button {
                         width: 60
                         height:parent.height
@@ -498,7 +498,7 @@ Rectangle {
 
     function formatContent(mess) {
         var link = /(https?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)?(?=\s|$)/g;
-        mess = mess.replace(link, () => {return "<a onclick='Window.openUrl("+match+")' href='" + match + "'>" + match + "</a>"});
+        mess = mess.replace(link, (match) => {return "<a onclick='Window.openUrl("+match+")' href='" + match + "'>" + match + "</a> <a onclick='Window.openUrl("+match+")'>⮺</a>"});
 
         var script_tag = /<script\b[^>]*>/gi;
         mess = mess.replace(script_tag, "script");
