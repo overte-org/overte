@@ -1,6 +1,6 @@
 # Armored Chat
 
-1. What is Armored Chat (AC) and what AC is not
+1. What is Armored Chat
 2. User manual
     - Installation
     - Settings
@@ -9,7 +9,12 @@
 ## What is Armored Chat
 
 Armored Chat is a chat application strictly made to communicate between players in the same domain. It is made using QML and to be as light weight as reasonably possible.
+
+### Dependencies
+
 AC uses the Overte [Messages](https://apidocs.overte.org/Messages.html) API to communicate.
+
+For notifications, AC uses [notificationCore.js](https://github.com/overte-org/overte/blob/bb8bac43eadd3b20956a2ff7b0b21c28844b0f77/scripts/communityScripts/notificationCore/notificationCore.js).
 
 ## User manual
 
@@ -51,7 +56,28 @@ This action immediately clears the AC history and the session. Functionally this
 
 ### Usability tips
 
+#### Navigation
+
 You can scroll quickly using kinetic scrolling! Try "grabbing" the right side of messages, where the timestamp is, and flinging yourself in a direction.
+
+#### Formatting
 
 You can format messages using basic HTML elements. Try `<div style="color: red"> Red text! </div>` to color your text red.
 Find the full list of Qt rich text tags [here](https://doc.qt.io/qt-6/richtext-html-subset.html). Please note that some of these tags may be intentionally restricted.
+
+#### Media embedding
+
+Images can be embedded when linked directly.
+
+Try it out by linking to the Overte logo! `https://github.com/overte-org/overte/raw/master/interface/resources/images/brand-banner.svg`
+
+In order for images to be embedded, URLs must end in a image filetype.
+Supported filetypes are:
+
+-   `.png`
+-   `.jpg`
+-   `.jpeg`
+-   `.gif`
+-   `.bmp`
+-   `.svg`
+-   `.webp`
