@@ -186,6 +186,8 @@
         }
     }
     function _sendMessage(message, channel) {
+        if (message.length == 0) return;
+
         Messages.sendMessage(
             "chat",
             JSON.stringify({

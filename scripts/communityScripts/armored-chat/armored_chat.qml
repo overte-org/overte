@@ -11,7 +11,6 @@ Rectangle {
     property string last_message_user: ""
     property date last_message_time: new Date()
 
-    // TODO: Find a better way to do this
     // When the window is created on the script side, the window starts open.
     // Once the QML window is created wait, then send the initialized signal.
     // This signal is mostly used to close the "Desktop overlay window" script side
@@ -154,7 +153,7 @@ Rectangle {
                     property string delegateText: model.text
                     property string delegateUsername: model.username
                     property string delegateDate: model.date
-                    width: parent.width // FIXME: Causes warning, but required for style?
+                    width: listview.width
 
                     sourceComponent: {
                         if (model.type === "chat") {
@@ -339,12 +338,12 @@ Rectangle {
             property string username: delegateUsername
             property string date: delegateDate
 
-            width: parent.width
             height: Math.max(65, children[1].height + 30)
             color: index % 2 === 0 ? "transparent" : Qt.rgba(0.15,0.15,0.15,1)
 
             Item {
-                width: parent.width
+                width: parent.width - 10
+                anchors.horizontalCenter: parent.horizontalCenter
                 height: 22
 
                 Text{
@@ -361,6 +360,7 @@ Rectangle {
 
             TextEdit{
                 anchors.top: parent.children[0].bottom
+                x: 5
                 text: texttest
                 color:"white"
                 font.pointSize: 12
@@ -368,7 +368,7 @@ Rectangle {
                 selectByMouse: true
                 selectByKeyboard: true
                 width: parent.width * 0.8
-                height: contentHeight // Adjust height to fit content
+                height: contentHeight
                 wrapMode: Text.Wrap
                 textFormat: TextEdit.RichText
 
@@ -381,8 +381,6 @@ Rectangle {
 
     Component {
         id: template_notification
-
-        // width: (Math.min(parent.width * 0.8, Math.max(contentWidth, parent.width))) - parent.children[0].width
 
         Rectangle{
             property int index: delegateIndex
