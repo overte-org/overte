@@ -462,6 +462,8 @@ Rectangle {
         // Format content
         message = formatContent(message);
 
+        message = embedImages(message);
+
         if (type === "notification"){
             channel.append({ text: message, date: date, type: "notification" });
             last_message_user = "";
@@ -505,6 +507,25 @@ Rectangle {
         var newline = /\n/gi;
         mess = mess.replace(newline, "<br>");
         return mess
+    }
+
+    function embedImages(mess){
+        var image_link = /(https?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)(?:png|jpe?g|gif|bmp|svg|webp)/g;
+        var matches = mess.match(image_link);
+        var new_message = ""
+        var listed = []
+        var total_emeds = 0
+
+        new_message += mess
+
+        for (var i = 0; matches && matches.length > i && total_emeds < 3; i++){
+            if (!listed.includes(matches[i])) {
+                new_message += "<br><img src="+ matches[i] +" width='250' >"
+                listed.push(matches[i]);
+                total_emeds++
+            } 
+        }
+        return new_message;
     }
 
     // Messages from script
