@@ -129,6 +129,11 @@ void RecordingScriptingInterface::loadRecording(const QString& url, const Script
 }
 
 void RecordingScriptingInterface::startPlaying() {
+    if (QThread::currentThread() != thread()) {
+        BLOCKING_INVOKE_METHOD(this, "startPlaying");
+        return;
+    }
+
     Locker(_mutex);
     _player->play();
 }
@@ -143,6 +148,11 @@ void RecordingScriptingInterface::setPlayerAudioOffset(float audioOffset) {
 }
 
 void RecordingScriptingInterface::setPlayerTime(float time) {
+    if (QThread::currentThread() != thread()) {
+        BLOCKING_INVOKE_METHOD(this, "setPlayerTime", Q_ARG(float, time));
+        return;
+    }
+
     Locker(_mutex);
     _player->seek(time);
 }
@@ -178,6 +188,11 @@ void RecordingScriptingInterface::pausePlayer() {
 }
 
 void RecordingScriptingInterface::stopPlaying() {
+    if (QThread::currentThread() != thread()) {
+        BLOCKING_INVOKE_METHOD(this, "stopPlaying");
+        return;
+    }
+
     Locker(_mutex);
     _player->stop();
 }
@@ -273,6 +288,11 @@ bool RecordingScriptingInterface::saveRecordingToAsset(const ScriptValue& getCli
 }
 
 void RecordingScriptingInterface::loadLastRecording() {
+    if (QThread::currentThread() != thread()) {
+        BLOCKING_INVOKE_METHOD(this, "loadLastRecording");
+        return;
+    }
+
     Locker(_mutex);
 
     if (!_lastClip) {
