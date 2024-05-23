@@ -33,6 +33,19 @@ Rectangle {
 
             Keys.onReturnPressed: { _onEnterPressed(); }
             Keys.onEnterPressed: { _onEnterPressed(); }
+            Keys.onLeftPressed: { moveLeft(); }
+            Keys.onRightPressed: { moveRight(); }
+
+            function moveLeft(){
+                if (cursorPosition > 0){
+                    cursorPosition--
+                }
+            }
+            function moveRight(){
+                if (cursorPosition < text.length){
+                    cursorPosition++
+                }
+            }
         }
 
         Text {
