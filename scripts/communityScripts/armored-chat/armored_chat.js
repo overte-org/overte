@@ -20,11 +20,13 @@
     var tablet;
     var chat_overlay_window;
     var app_button;
+    var quick_message;
     const channels = ["domain", "local"];
     var message_history = Settings.getValue("ArmoredChat-Messages", []) || [];
     var max_local_distance = 20; // Maximum range for the local chat
     var pal_data = AvatarManager.getPalData().data;
 
+    Controller.keyPressEvent.connect(keyPressEvent);
     Messages.subscribe("chat");
     Messages.messageReceived.connect(receivedMessage);
     AvatarManager.avatarAddedEvent.connect((session_id) => {
@@ -56,6 +58,10 @@
         // Overlay button toggle
         app_button.clicked.connect(toggleMainChatWindow);
 
+        quick_message = new OverlayWindow({
+            source: Script.resolvePath("./armored_chat_quick_message.qml"),
+        });
+
         _openWindow();
     }
     function toggleMainChatWindow() {
@@ -83,6 +89,7 @@
 
         chat_overlay_window.closed.connect(toggleMainChatWindow);
         chat_overlay_window.fromQml.connect(fromQML);
+        quick_message.fromQml.connect(fromQML);
     }
     function receivedMessage(channel, message) {
         // Is the message a chat message?
@@ -129,7 +136,6 @@
         }
         Settings.setValue("ArmoredChat-Messages", message_history);
     }
-
     function fromQML(event) {
         console.log(`New QML event:\n${JSON.stringify(event)}`);
 
@@ -168,6 +174,15 @@
                 chat_overlay_window.visible = app_is_visible; // The "visible" field in the Desktop.createWindow does not seem to work. Force set it to the initial state (false)
                 _loadSettings();
                 break;
+        }
+    }
+    function keyPressEvent(event) {
+        switch (JSON.stringify(event.key)) {
+            case "16777220": // Enter key
+                quick_message.sendToQml({
+                    type: "change_visibility",
+                    value: true,
+                });
         }
     }
     function _sendMessage(message, channel) {
