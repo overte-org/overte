@@ -134,6 +134,23 @@ V8ScriptValue ScriptObjectV8Proxy::newQObject(ScriptEngineV8* engine, QObject* o
         QPointer<ScriptEngineV8> enginePtr = engine;
         object->connect(object, &QObject::destroyed, engine, [enginePtr, object]() {
             if (!enginePtr) return;
+            // Lookup needs to be done twice, because _qobjectWrapperMapProtect must not be locked when disconnecting signals
+            QSharedPointer<ScriptObjectV8Proxy> proxy;
+            {
+                QMutexLocker guard(&enginePtr->_qobjectWrapperMapProtect);
+                auto lookupV8 = enginePtr->_qobjectWrapperMapV8.find(object);
+                if (lookupV8 != enginePtr->_qobjectWrapperMapV8.end()) {
+                    proxy = lookupV8.value();
+                }
+            }
+            if (proxy) {
+                for (auto signal : proxy->_signalInstances) {
+                    if (signal) {
+                        signal->disconnectAllScriptSignalProxies();
+                    }
+                }
+            }
+
             QMutexLocker guard(&enginePtr->_qobjectWrapperMapProtect);
             ScriptEngineV8::ObjectWrapperMap::iterator lookup = enginePtr->_qobjectWrapperMap.find(object);
             if (lookup != enginePtr->_qobjectWrapperMap.end()) {
@@ -195,7 +212,13 @@ ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(v8::Isolate* isolate, v8::
         qCDebug(scriptengine_v8) << "Cannot unwrap proxy - internal fields don't point to object proxy";
         return nullptr;
     }
-    return reinterpret_cast<ScriptObjectV8Proxy*>(v8Object->GetAlignedPointerFromInternalField(1));
+
+    ScriptObjectV8Proxy* proxy = reinterpret_cast<ScriptObjectV8Proxy*>(v8Object->GetAlignedPointerFromInternalField(1));
+    if (proxy) {
+        Q_ASSERT(!proxy->_wasDestroyed);
+    }
+
+    return proxy;
 }
 
 QObject* ScriptObjectV8Proxy::unwrap(const V8ScriptValue& val) {
@@ -204,6 +227,12 @@ QObject* ScriptObjectV8Proxy::unwrap(const V8ScriptValue& val) {
 }
 
 ScriptObjectV8Proxy::~ScriptObjectV8Proxy() {
+    for (auto signal : _signalInstances) {
+        if (signal) {
+            signal->disconnectAllScriptSignalProxies();
+        }
+    }
+    _wasDestroyed = true;
     if (_ownsObject) {
         auto isolate = _engine->getIsolate();
         v8::Locker locker(isolate);
@@ -1177,6 +1206,10 @@ ScriptSignalV8Proxy::ScriptSignalV8Proxy(ScriptEngineV8* engine, QObject* object
 }
 
 ScriptSignalV8Proxy::~ScriptSignalV8Proxy() {
+    if (!_cleanup) {
+        disconnectAllScriptSignalProxies();
+    }
+
     auto isolate = _engine->getIsolate();
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
@@ -1408,18 +1441,23 @@ void ScriptSignalV8Proxy::connect(ScriptValue arg0, ScriptValue arg1) {
                 Q_ASSERT(ScriptObjectV8Proxy::unwrapProxy(v8EntryObject));
                 // For debugging
                 ScriptSignalV8Proxy* entryProxy = dynamic_cast<ScriptSignalV8Proxy*>(ScriptObjectV8Proxy::unwrapProxy(v8EntryObject)->toQObject());
-                Q_ASSERT(thisProxy);
+                Q_ASSERT(entryProxy);
                 qCDebug(scriptengine_v8) << "ScriptSignalV8Proxy::connect: entry proxy: " << entryProxy->fullName();
             }
             if (!newArray->Set(destFunctionContext, idx, entry).FromMaybe(false)) {
                 Q_ASSERT(false);
             }
+            if (entry->StrictEquals(v8ThisObject.get())) {
+                foundIt = true;
+            }
         }
-        if (!newArray->Set(destFunctionContext, length, v8ThisObject.get()).FromMaybe(false)) {
-            Q_ASSERT(false);
-        }
-        if (!destFunction->Set(destFunctionContext, destDataName, newArray).FromMaybe(false)) {
-            Q_ASSERT(false);
+        if (!foundIt) {
+            if (!newArray->Set(destFunctionContext, length, v8ThisObject.get()).FromMaybe(false)) {
+                Q_ASSERT(false);
+            }
+            if (!destFunction->Set(destFunctionContext, destDataName, newArray).FromMaybe(false)) {
+                Q_ASSERT(false);
+            }
         }
     } else {
         v8::Local<v8::Array> newArray = v8::Array::New(isolate, 1);
@@ -1449,9 +1487,11 @@ void ScriptSignalV8Proxy::connect(ScriptValue arg0, ScriptValue arg1) {
 void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
     QObject* qobject = _object;
     v8::Isolate *isolate = _engine->getIsolate();
-    if (!qobject) {
-        isolate->ThrowError("Referencing deleted native object");
-        return;
+    if (!_cleanup) {
+        if (!qobject) {
+            isolate->ThrowError("Referencing deleted native object");
+            return;
+        }
     }
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolateScope(isolate);
@@ -1502,15 +1542,11 @@ void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
     v8::Local<v8::String> destDataName = v8::String::NewFromUtf8(isolate, "__data__").ToLocalChecked();
     v8::Local<v8::Value> destData;
 
-    //auto destFunctionContext = destFunction->CreationContext();
     auto destFunctionContext = context;
-    Q_ASSERT(thisObject().isObject());
-    V8ScriptValue v8ThisObject = ScriptValueV8Wrapper::fullUnwrap(_engine, thisObject());
-    Q_ASSERT(ScriptObjectV8Proxy::unwrapProxy(v8ThisObject));
-    // For debugging
-    ScriptSignalV8Proxy* thisProxy = dynamic_cast<ScriptSignalV8Proxy*>(ScriptObjectV8Proxy::unwrapProxy(v8ThisObject)->toQObject());
-    Q_ASSERT(thisProxy);
-    //qCDebug(scriptengine_v8) << "ScriptSignalV8Proxy::disconnect: " << thisProxy->fullName() << " fullName: " << fullName();
+    ScriptEngine::QObjectWrapOptions options = ScriptEngine::ExcludeSuperClassContents |
+                                               ScriptEngine::PreferExistingWrapperObject;
+    // It's not necessarily new, newQObject looks for it first in object wrapper map, and for already existing signal it should be found there
+    V8ScriptValue v8ThisObject = ScriptObjectV8Proxy::newQObject(_engine, this, ScriptEngine::ScriptOwnership, options);
     if (!destFunction->Get(destFunctionContext, destDataName).ToLocal(&destData)) {
         Q_ASSERT(false);
     }
@@ -1518,24 +1554,18 @@ void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
         v8::Local<v8::Array> destArray = v8::Local<v8::Array>::Cast(destData);
         int length = destArray->Length();
         v8::Local<v8::Array> newArray = v8::Array::New(isolate, length - 1);
-        bool foundIt = false;
+        int findCounter = 0;
         int newIndex = 0;
         for (int idx = 0; idx < length; ++idx) {
             v8::Local<v8::Value> entry = destArray->Get(destFunctionContext, idx).ToLocalChecked();
             // For debugging:
             {
-                //qCDebug(scriptengine_v8) << "ScriptSignalV8Proxy::disconnect: entry details: " << _engine->scriptValueDebugDetailsV8(V8ScriptValue(_engine, entry))
-                //         << " Array: " << _engine->scriptValueDebugDetailsV8(V8ScriptValue(_engine, destArray));
                 Q_ASSERT(entry->IsObject());
                 V8ScriptValue v8EntryObject(_engine, entry);
                 Q_ASSERT(ScriptObjectV8Proxy::unwrapProxy(v8EntryObject));
-                // For debugging
-                //ScriptSignalV8Proxy* entryProxy = dynamic_cast<ScriptSignalV8Proxy*>(ScriptObjectV8Proxy::unwrapProxy(v8EntryObject)->toQObject());
-                Q_ASSERT(thisProxy);
-                //qCDebug(scriptengine_v8) << "ScriptSignalV8Proxy::disconnect: entry proxy: " << entryProxy->fullName();
             }
             if (entry->StrictEquals(v8ThisObject.get())) {
-                foundIt = true;
+                findCounter++;
             } else {
                 if (!newArray->Set(destFunctionContext, newIndex, entry).FromMaybe(false)) {
                     Q_ASSERT(false);
@@ -1543,7 +1573,7 @@ void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
                 newIndex++;
             }
         }
-        Q_ASSERT(foundIt);
+        Q_ASSERT(findCounter == 1);
         if (!destFunction->Set(destFunctionContext, destDataName, newArray).FromMaybe(false)) {
             Q_ASSERT(false);
         }
@@ -1554,8 +1584,30 @@ void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
     // inform Qt that we're no longer connected to this signal
     if (_connections.empty()) {
         Q_ASSERT(_isConnected);
-        bool result = QMetaObject::disconnect(qobject, _meta.methodIndex(), this, _metaCallId);
-        Q_ASSERT(result);
+        // During cleanup qobject might be null since it might have been already deleted
+        if (!_cleanup || (_cleanup && qobject)) {
+            Q_ASSERT(qobject);
+            bool result = QMetaObject::disconnect(qobject, _meta.methodIndex(), this, _metaCallId);
+            Q_ASSERT(result);
+        }
         _isConnected = false;
     }
+}
+
+void ScriptSignalV8Proxy::disconnectAllScriptSignalProxies() {
+    _cleanup = true;
+    QList<Connection> connections;
+    withReadLock([&]{
+        connections = _connections;
+    });
+
+    for (auto &connection : connections) {
+        ScriptValue thisValue(new ScriptValueV8Wrapper(_engine, connection.thisValue));
+        ScriptValue callback(new ScriptValueV8Wrapper(_engine, connection.callback));
+        disconnect(thisValue, callback);
+    }
+}
+
+void ScriptSignalV8Proxy::disconnectAll() {
+    QObject::disconnect(this, nullptr, nullptr, nullptr);
 }
