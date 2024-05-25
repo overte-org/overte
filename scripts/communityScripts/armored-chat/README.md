@@ -54,6 +54,14 @@ This action immediately clears the AC history and the session. Functionally this
 
 ---
 
+### Usage
+
+AC has two chat modes: Local, and Domain. Local chat displays all other local chat messages that are within 20 units of you. Domain chat will display all other Domain messages sent though that channel regardless of distance.
+
+AC also handles link embedding. When you send an HTTP(S) link, it will automatically parse it using Qt RichText and allow everyone to click on the message. Next to the link you will also see a "⮺" symbol. Clicking on this symbol will open the link in an external window.
+
+---
+
 ### Usability tips
 
 #### Navigation
