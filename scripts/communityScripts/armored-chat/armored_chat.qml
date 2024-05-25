@@ -498,7 +498,7 @@ Rectangle {
     }
 
     function formatContent(mess) {
-        var link = /(https?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)?(?=\s|$)/g;
+        var link = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
         mess = mess.replace(link, (match) => {return "<a onclick='Window.openUrl("+match+")' href='" + match + "'>" + match + "</a> <a onclick='Window.openUrl("+match+")'>⮺</a>"});
 
         var script_tag = /<script\b[^>]*>/gi;
@@ -510,7 +510,7 @@ Rectangle {
     }
 
     function embedImages(mess){
-        var image_link = /(https?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)(?:png|jpe?g|gif|bmp|svg|webp)/g;
+        var image_link = /(https?:(\/){2})[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)(?:png|jpe?g|gif|bmp|svg|webp)/g;
         var matches = mess.match(image_link);
         var new_message = ""
         var listed = []
