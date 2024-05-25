@@ -7,9 +7,10 @@ from conan.tools.files import copy, save
 class Overte(ConanFile):
     name = "Overte"
     settings = "os", "compiler", "build_type", "arch"
-    options = {"with_qt": [True, False]}
+    options = {"with_qt": [True, False], "with_webrtc": [True, False]}
     default_options = {
         "with_qt": False,
+        "with_webrtc": False,
         "sdl*:alsa": "False",
         "sdl*:pulse": "False",
         "sdl*:wayland": "False",
@@ -52,7 +53,6 @@ class Overte(ConanFile):
         self.requires("gifcreator/2016.11@overte/stable")
         self.requires("glad/0.1.36")
         self.requires("gli/cci.20210515")
-        self.requires("glm/0.9.9.5", force=True)
         self.requires("glslang/11.7.0")
         self.requires("liblo/0.30@overte/stable")
         self.requires("libnode/18.17.1@overte/stable")
@@ -71,9 +71,9 @@ class Overte(ConanFile):
         self.requires("steamworks/158a@overte/prebuild")
         self.requires("v-hacd/4.1.0")
         self.requires("vulkan-memory-allocator/3.0.1")
-        self.requires("webrtc/2021.01.05@overte/prebuild")
         self.requires("zlib/1.2.13")
 
+        self.requires("glm/0.9.9.5", force=True)
         self.requires("openssl/3.2.1", force=True)
 
         if self.settings.os == "Windows":
@@ -82,10 +82,15 @@ class Overte(ConanFile):
             self.requires("ovr-platform-skd/1.10.0@overte/prebuild")
 
         if self.options.with_qt:
-            self.requires("qt/5.15.12", force=True)
+            self.requires("qt/5.15.13", force=True)
+
+        if self.options.with_webrtc:
+            self.requires("google-webrtc/94@overte/stable", force=True)
 
     def generate(self):
         tc = CMakeToolchain(self)
+        if not self.options.with_webrtc:
+            tc.variables["DISABLE_WEBRTC"] = "ON"
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()
@@ -121,6 +126,8 @@ class Overte(ConanFile):
         )
 
     def cp_libs(self, src):
-        bindir = os.path.join(self.build_folder, "conanlibs", f"{self.settings.build_type}")
+        bindir = os.path.join(
+            self.build_folder, "conanlibs", f"{self.settings.build_type}"
+        )
         copy(self, "*.dll", src, bindir, False)
         copy(self, "*.so*", src, bindir, False)
