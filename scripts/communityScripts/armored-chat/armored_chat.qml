@@ -59,7 +59,6 @@ Rectangle {
                     Behavior on width {
                         NumberAnimation {
                             duration: 50
-                            // easing.type: Easeing.InOutQuad
                         }
                     }
 
@@ -94,7 +93,6 @@ Rectangle {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            // addMessage("usertest", "Clicked", "Now", "domain", "notification");
                             pageVal = "domain"
                         }
                     }
@@ -537,7 +535,7 @@ Rectangle {
             case "show_message":
                 addMessage(message.displayName, message.message, `[ ${message.timeString || time} - ${message.dateString || date} ]`, message.channel, "chat");
                 break;
-            case "avatar_connected":
+            case "notification":
                 addMessage("SYSTEM", message.message, `[ ${time} - ${date} ]`, "domain", "notification");
                 break;
             case "clear_messages":

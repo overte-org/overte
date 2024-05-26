@@ -224,7 +224,7 @@
             let message = {};
             message.message = `${display_name} ${type}`;
 
-            _emitEvent({ type: "avatar_connected", ...message });
+            _emitEvent({ type: "notification", ...message });
         }, 1500);
     }
     function _loadSettings() {
@@ -251,7 +251,7 @@
     /**
      * Emit a packet to the HTML front end. Easy communication!
      * @param {Object} packet - The Object packet to emit to the HTML
-     * @param {("setting_update"|"show_message")} packet.type - The type of packet it is
+     * @param {("show_message"|"clear_messages"|"notification"|"initial_settings")} packet.type - The type of packet it is
      */
     function _emitEvent(packet = { type: "" }) {
         chat_overlay_window.sendToQml(packet);
