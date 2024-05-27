@@ -20,11 +20,20 @@ Rectangle {
         running: true
         repeat: false
         onTriggered: {
-           toScript({type: "initialized"})
+            toScript({type: "initialized"});
+        }
+    }
+    Timer {
+        id: load_scroll_timer
+        interval: 1000
+        running: true
+        repeat: false
+        onTriggered: {
+           scrollToBottom();
         }
     }
     // Component.onCompleted: {
-    //     toScript({type: "initialized"})
+    //     toScript({type: "initialized"});
     // }
 
     // User view
