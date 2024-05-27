@@ -16,17 +16,18 @@ Rectangle {
     // This signal is mostly used to close the "Desktop overlay window" script side
     // https://github.com/overte-org/overte/issues/824
     Timer {
-        interval: 100
+        interval: 10
         running: true
         repeat: false
         onTriggered: {
             toScript({type: "initialized"});
+            load_scroll_timer.running = true
         }
     }
     Timer {
         id: load_scroll_timer
-        interval: 1000
-        running: true
+        interval: 100
+        running: false
         repeat: false
         onTriggered: {
            scrollToBottom();
@@ -75,6 +76,7 @@ Rectangle {
                         anchors.fill: parent
                         onClicked: {
                             pageVal = "local";
+                            load_scroll_timer.running = true;
                         }
                     }
                 }
@@ -103,6 +105,7 @@ Rectangle {
                         anchors.fill: parent
                         onClicked: {
                             pageVal = "domain"
+                            load_scroll_timer.running = true;
                         }
                     }
                 }
