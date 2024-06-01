@@ -34,7 +34,7 @@ static void readWriteHelper(const std::vector<bool>& src) {
     int numBits = (int)src.size();
     int numBytes = calcBitVectorSize(numBits);
     uint8_t* bytes = new uint8_t[numBytes];
-    memset(bytes, sizeof(uint8_t), numBytes);
+    memset(bytes, 0, numBytes);
     int numBytesWritten = writeBitVector(bytes, numBits, [&](int i) {
         return src[i];
     });
