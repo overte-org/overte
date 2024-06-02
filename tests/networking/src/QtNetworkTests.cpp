@@ -44,7 +44,7 @@ void QtNetworkTests::httpRequest() {
 }
 
 void QtNetworkTests::httpsRequest() {
-auto manager = new QNetworkAccessManager();
+    auto manager = new QNetworkAccessManager();
 
     QSignalSpy spy(manager, &QNetworkAccessManager::finished);
     QNetworkRequest req(QUrl("https://google.com"));
