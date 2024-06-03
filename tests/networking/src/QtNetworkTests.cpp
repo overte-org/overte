@@ -30,6 +30,13 @@
  * Normally there's no reason why this should go wrong, so it's mostly
  * a test of that Qt is deployed and working properly.
  *
+ * Turns out it's some sort of initialization issue. It can be reproduced by calling the test as:
+ *    ./networking-QtNetworkTests httpsRequestNoSSLVersion
+ *
+ * This test may get stuck on some systems. Running the full suite, or:
+ *    ./networking-QtNetworkTests httpsRequestNoSSLVersion
+ *
+ * will work correctly because  QSslSocket::sslLibraryVersionString() initializes something.
  */
 const QUrl HTTP_URL("http://ping.archlinux.org/");
 const QUrl HTTPS_URL("https://ping.archlinux.org/");
@@ -103,6 +110,10 @@ void QtNetworkTests::httpRequest() {
     qDebug() << "DATA: " << data;
 }
 
+
+// Unlike the test below this works, because the sslLibraryVersionString call pokes something
+// in the Qt guts to make things initialize properly.
+
 void QtNetworkTests::httpsRequest() {
     auto manager = new QNetworkAccessManager();
 
@@ -130,6 +141,8 @@ void QtNetworkTests::httpsRequest() {
 
 }
 
+
+// On some systems, this hangs forever. Something in the Qt guts fails to initialize.
 
 void QtNetworkTests::httpsRequestNoSSLVersion() {
     auto manager = new QNetworkAccessManager();
