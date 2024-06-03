@@ -106,6 +106,11 @@ void QtNetworkTests::httpRequest() {
 void QtNetworkTests::httpsRequest() {
     auto manager = new QNetworkAccessManager();
 
+    qDebug() << "SSL library version      : " << QSslSocket::sslLibraryVersionString();
+    qDebug() << "SSL library version      : " << QSslSocket::sslLibraryVersionString();
+    qDebug() << "SSL library build version: " << QSslSocket::sslLibraryBuildVersionString();
+
+
     qDebug() << "Making request to" << HTTPS_URL;
     QSignalSpy spy(manager, &QNetworkAccessManager::finished);
     QNetworkRequest req(HTTPS_URL);
@@ -118,7 +123,32 @@ void QtNetworkTests::httpsRequest() {
     QNetworkReply *reply = arguments.at(0).value<QNetworkReply*>();
     QVERIFY(!reply->error());
     QVERIFY(!reply->sslConfiguration().isNull());
-
+    qDebug() << "Peer cert:" << reply->sslConfiguration().peerCertificate();
     QString data = reply->readAll();
     qDebug() << "DATA: " << data;
+    qDebug() << "SSL library version: " << QSslSocket::sslLibraryVersionString();
+
+}
+
+
+void QtNetworkTests::httpsRequestNoSSLVersion() {
+    auto manager = new QNetworkAccessManager();
+
+    qDebug() << "Making request to" << HTTPS_URL;
+    QSignalSpy spy(manager, &QNetworkAccessManager::finished);
+    QNetworkRequest req(HTTPS_URL);
+    manager->get(req);
+
+    spy.wait();
+
+    QCOMPARE(spy.count(), 1);
+    QList<QVariant> arguments = spy.takeFirst();
+    QNetworkReply *reply = arguments.at(0).value<QNetworkReply*>();
+    QVERIFY(!reply->error());
+    QVERIFY(!reply->sslConfiguration().isNull());
+    qDebug() << "Peer cert:" << reply->sslConfiguration().peerCertificate();
+    QString data = reply->readAll();
+    qDebug() << "DATA: " << data;
+    qDebug() << "SSL library version: " << QSslSocket::sslLibraryVersionString();
+
 }

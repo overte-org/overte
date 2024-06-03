@@ -24,6 +24,7 @@ private slots:
     void tcpSocket();
     void sslSocket();
     void httpRequest();
+    void httpsRequestNoSSLVersion();
     void httpsRequest();
 };
 
