@@ -483,7 +483,8 @@ protected:
 
 private slots:
     void flagTimeForConnectionStep(ConnectionStep connectionStep, quint64 timestamp);
-    void possiblyTimeoutSTUNAddressLookup();
+    void STUNAddressLookupTimeout();
+    void STUNAddressLookupFailed();
     void addSTUNHandlerToUnfiltered(); // called once STUN socket known
 
 private:
