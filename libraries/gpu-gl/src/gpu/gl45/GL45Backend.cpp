@@ -23,7 +23,7 @@ using namespace gpu::gl45;
 GLint GL45Backend::MAX_COMBINED_SHADER_STORAGE_BLOCKS{ 0 };
 GLint GL45Backend::MAX_UNIFORM_LOCATIONS{ 0 };
 
-#ifndef QT_NO_DEBUG
+#ifdef GLAD_DEBUG
 static void post_call_callback_gl(const char *name, void *funcptr, int len_args, ...) {
     (void)funcptr;
     (void)len_args;
@@ -39,7 +39,7 @@ static void post_call_callback_gl(const char *name, void *funcptr, int len_args,
 static void staticInit() {
     static std::once_flag once;
     std::call_once(once, [&] {
-#ifndef QT_NO_DEBUG
+#ifdef GLAD_DEBUG
         // This sets the post call callback to a logging function. By default it prints on
         // stderr and skips our log. It only exists in debug builds.
         glad_set_post_callback(&post_call_callback_gl);
