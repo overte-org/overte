@@ -12,7 +12,9 @@
 #include <list>
 #include <functional>
 #include <glm/gtc/type_ptr.hpp>
+#include <QLoggingCategory>
 
+#include "glad/glad.h"
 Q_LOGGING_CATEGORY(gpugl45logging, "hifi.gpu.gl45")
 
 using namespace gpu;
@@ -21,9 +23,27 @@ using namespace gpu::gl45;
 GLint GL45Backend::MAX_COMBINED_SHADER_STORAGE_BLOCKS{ 0 };
 GLint GL45Backend::MAX_UNIFORM_LOCATIONS{ 0 };
 
+#ifndef QT_NO_DEBUG
+static void post_call_callback_gl(const char *name, void *funcptr, int len_args, ...) {
+    (void)funcptr;
+    (void)len_args;
+
+    GLenum error_code = glad_glGetError();
+    if (error_code != GL_NO_ERROR) {
+        qCWarning(gpugl45logging) << "OpenGL error" << error_code << "in" << name;
+    }
+}
+#endif
+
+
 static void staticInit() {
     static std::once_flag once;
     std::call_once(once, [&] {
+#ifndef QT_NO_DEBUG
+        // This sets the post call callback to a logging function. By default it prints on
+        // stderr and skips our log. It only exists in debug builds.
+        glad_set_post_callback(&post_call_callback_gl);
+#endif
         glGetIntegerv(GL_MAX_COMBINED_SHADER_STORAGE_BLOCKS, &GL45Backend::MAX_COMBINED_SHADER_STORAGE_BLOCKS);
         glGetIntegerv(GL_MAX_UNIFORM_LOCATIONS, &GL45Backend::MAX_UNIFORM_LOCATIONS);
     });
@@ -82,7 +102,7 @@ void GL45Backend::do_drawIndexed(const Batch& batch, size_t paramOffset) {
     uint32 startIndex = batch._params[paramOffset + 0]._uint;
 
     GLenum glType = gl::ELEMENT_TYPE_TO_GL[_input._indexBufferType];
-    
+
     auto typeByteSize = TYPE_SIZE[_input._indexBufferType];
     GLvoid* indexBufferByteOffset = reinterpret_cast<GLvoid*>(startIndex * typeByteSize + _input._indexBufferOffset);
 
@@ -148,7 +168,7 @@ void GL45Backend::do_drawIndexedInstanced(const Batch& batch, size_t paramOffset
     GLenum glType = gl::ELEMENT_TYPE_TO_GL[_input._indexBufferType];
     auto typeByteSize = TYPE_SIZE[_input._indexBufferType];
     GLvoid* indexBufferByteOffset = reinterpret_cast<GLvoid*>(startIndex * typeByteSize + _input._indexBufferOffset);
- 
+
     if (isStereo()) {
         GLint trueNumInstances = 2 * numInstances;
 
