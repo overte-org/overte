@@ -102,6 +102,7 @@ private:
     TextAlignment _alignment { TextAlignment::LEFT };
 
     bool _loaded { false };
+    bool _needsParamsUpdate { false };
 
     gpu::TexturePointer _texture;
     gpu::BufferStreamPointer _stream;

@@ -131,7 +131,7 @@ void Font::read(QIODevice& in) {
     _distanceRange = glm::vec2(arteryFont.variants[0].metrics.distanceRange);
     _fontSize = arteryFont.variants[0].metrics.ascender + fabs(arteryFont.variants[0].metrics.descender);
     _leading = arteryFont.variants[0].metrics.lineHeight;
-    _spaceWidth = 0.5f * arteryFont.variants[0].metrics.emSize;
+    _spaceWidth = 0.5f * arteryFont.variants[0].metrics.emSize; // We use half the emSize as a first guess for _spaceWidth
 
     if (arteryFont.variants[0].glyphs.length() == 0) {
         qDebug() << "Font" << _family << "has 0 glyphs.";
@@ -151,6 +151,11 @@ void Font::read(QIODevice& in) {
         glyph.size = glm::vec2(g.planeBounds.r, g.planeBounds.t) - glyph.offset;
         glyph.d = g.advance.h;
         glyphs.push_back(glyph);
+
+        // If we find the space character, we save its size in _spaceWidth for later
+        if (glyph.c == ' ') {
+            _spaceWidth = glyph.d;
+        }
     }
 
     if (arteryFont.images.length() == 0) {
@@ -163,8 +168,8 @@ void Font::read(QIODevice& in) {
         return;
     }
 
-    if (arteryFont.images[0].encoding != artery_font::ImageEncoding::IMAGE_PNG && arteryFont.images[0].encoding != artery_font::ImageEncoding::IMAGE_BMP) {
-        qDebug() << "Font" << _family << "has the wrong encoding.  Expected BMP (4) or PNG (8), got" << arteryFont.images[0].encoding;
+    if (arteryFont.images[0].encoding != artery_font::ImageEncoding::IMAGE_PNG) {
+        qDebug() << "Font" << _family << "has the wrong encoding.  Expected PNG (8), got" << arteryFont.images[0].encoding;
         return;
     }
 
@@ -180,20 +185,8 @@ void Font::read(QIODevice& in) {
 
     // read image data
     QImage image;
-    QString format;
-    switch (arteryFont.images[0].encoding) {
-        case artery_font::ImageEncoding::IMAGE_PNG:
-            format = "PNG";
-            break;
-        case artery_font::ImageEncoding::IMAGE_BMP:
-            format = "BMP";
-            break;
-        default:
-            format = "PNG";
-            break;
-    }
-    if (!image.loadFromData((const unsigned char*)arteryFont.images[0].data, arteryFont.images[0].data.length(), format.toStdString().c_str())) {
-        qDebug() << "Failed to read" << format << "image for font" << _family;
+    if (!image.loadFromData((const unsigned char*)arteryFont.images[0].data, arteryFont.images[0].data.length(), "PNG")) {
+        qDebug() << "Failed to read image for font" << _family;
         return;
     }
 
@@ -229,6 +222,7 @@ void Font::read(QIODevice& in) {
     _texture->setImportant(true);
 
     _loaded = true;
+    _needsParamsUpdate = true;
 }
 
 static QHash<QString, Font::Pointer> LOADED_FONTS;
@@ -541,8 +535,9 @@ void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const QString
 
     setupGPU();
 
-    if (!drawInfo.paramsBuffer || boundsChanged || drawInfo.params.color != color || drawInfo.params.effectColor != effectColor ||
-            drawInfo.params.effectThickness != effectThickness || drawInfo.params.effect != textEffect) {
+    if (!drawInfo.paramsBuffer || boundsChanged || _needsParamsUpdate || drawInfo.params.color != color ||
+            drawInfo.params.effectColor != effectColor || drawInfo.params.effectThickness != effectThickness ||
+            drawInfo.params.effect != textEffect) {
         drawInfo.params.color = color;
         drawInfo.params.effectColor = effectColor;
         drawInfo.params.effectThickness = effectThickness;
@@ -560,6 +555,8 @@ void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const QString
             drawInfo.paramsBuffer = std::make_shared<gpu::Buffer>(sizeof(DrawParams), nullptr);
         }
         drawInfo.paramsBuffer->setSubData(0, sizeof(DrawParams), (const gpu::Byte*)&gpuDrawParams);
+
+        _needsParamsUpdate = false;
     }
 
     batch.setPipeline(_pipelines[std::make_tuple(color.a < 1.0f, unlit, forward)]);
