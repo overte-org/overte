@@ -478,10 +478,10 @@ void ScriptManager::waitTillDoneRunning(bool shutdown) {
             }
         }
 #else
-        auto startedWaiting = usecTimestampNow();
+        //auto startedWaiting = usecTimestampNow();
         while (!_isDoneRunning) {
             // If the final evaluation takes too long, then tell the script engine to stop running
-            auto elapsedUsecs = usecTimestampNow() - startedWaiting;
+            //auto elapsedUsecs = usecTimestampNow() - startedWaiting;
             // TODO: This part was very unsafe and was causing crashes all the time.
             //  I disabled it for now until we find a safer solution.
             //  With it disabled now we get clean shutdowns and restarts.
