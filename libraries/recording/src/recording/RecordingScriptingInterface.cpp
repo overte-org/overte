@@ -64,8 +64,10 @@ float RecordingScriptingInterface::playerLength() const {
 }
 
 void RecordingScriptingInterface::playClip(NetworkClipLoaderPointer clipLoader, const QString& url, const ScriptValue& callback) {
-    Locker lock(_mutex);
-    _player->queueClip(clipLoader->getClip());
+    {
+        Locker lock(_mutex);
+        _player->queueClip(clipLoader->getClip());
+    }
 
     if (callback.isFunction()) {
         auto engine = callback.engine();
@@ -75,8 +77,6 @@ void RecordingScriptingInterface::playClip(NetworkClipLoaderPointer clipLoader, 
 }
 
 void RecordingScriptingInterface::loadRecording(const QString& url, const ScriptValue& callback) {
-    Locker lock(_mutex);
-
     auto clipLoader = DependencyManager::get<recording::ClipCache>()->getClipLoader(url);
 
     if (clipLoader->isLoaded()) {
@@ -84,6 +84,8 @@ void RecordingScriptingInterface::loadRecording(const QString& url, const Script
         playClip(clipLoader, url, callback);
         return;
     }
+
+    Locker lock(_mutex);
 
     // hold a strong pointer to the loading clip so that it has a chance to load
     _clipLoaders.insert(clipLoader);
