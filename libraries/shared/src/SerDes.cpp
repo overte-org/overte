@@ -17,7 +17,7 @@ const char DataSerializer::PADDING_CHAR;
 
 
 static void dumpHex(QDebug &debug, const char*buf, size_t len) {
-  QString literal;
+    QString literal;
     QString hex;
 
     for(size_t i=0;i<len;i++) {
