@@ -7657,7 +7657,7 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
 
     {
         auto connection = std::make_shared<QMetaObject::Connection>();
-        *connection = scriptManager->connect(scriptManager.get(), &ScriptManager::scriptEnding, [scriptManager, connection]() {
+        *connection = scriptManager->connect(scriptManager.get(), &ScriptManager::scriptEnding, [this, scriptManager, connection]() {
             // Request removal of controller routes with callbacks to a given script engine
             auto userInputMapper = DependencyManager::get<UserInputMapper>();
             // scheduleScriptEndpointCleanup will have the last instance of shared pointer to script manager

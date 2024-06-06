@@ -82,14 +82,14 @@ ScriptValue ConsoleScriptingInterface::exception(ScriptContext* context, ScriptE
 void ConsoleScriptingInterface::time(QString labelName) {
     _timerDetails.insert(labelName, QDateTime::currentDateTime().toUTC());
     QString message = QString("%1: Timer started").arg(labelName);
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     if (ScriptManager* scriptManager = engine()->manager()) {
         scriptManager->scriptPrintedMessage(message, context()->currentFileName(), context()->currentLineNumber());
     }
 }
 
 void ConsoleScriptingInterface::timeEnd(QString labelName) {
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     if (ScriptManager* scriptManager = engine()->manager()) {
         if (!_timerDetails.contains(labelName)) {
             scriptManager->scriptErrorMessage("No such label found " + labelName, context()->currentFileName(), context()->currentLineNumber());
@@ -138,7 +138,7 @@ ScriptValue ConsoleScriptingInterface::assertion(ScriptContext* context, ScriptE
 }
 
 void ConsoleScriptingInterface::trace() {
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     ScriptEnginePointer scriptEngine = engine();
     if (ScriptManager* scriptManager = scriptEngine->manager()) {
         scriptManager->scriptPrintedMessage
@@ -148,7 +148,7 @@ void ConsoleScriptingInterface::trace() {
 }
 
 void ConsoleScriptingInterface::clear() {
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     if (ScriptManager* scriptManager = engine()->manager()) {
         scriptManager->clearDebugLogWindow();
     }
