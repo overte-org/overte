@@ -53,6 +53,14 @@ struct GPUKTXPayload {
     TextureUsageType _usageType;
     glm::ivec2 _originalSize { 0, 0 };
 
+    /**
+     * @brief Serialize the KTX payload
+     *
+     * @warning Be careful modifying this code, as it influences baked assets.
+     * Backwards compatibility must be maintained.
+     *
+     * @param ser Destination serializer
+     */
     void serialize(DataSerializer &ser) {
 
         ser << CURRENT_VERSION;
@@ -72,6 +80,16 @@ struct GPUKTXPayload {
         assert(ser.length() == GPUKTXPayload::SIZE);
     }
 
+    /**
+     * @brief Deserialize the KTX payload
+     *
+     * @warning Be careful modifying this code, as it influences baked assets.
+     * Backwards compatibility must be maintained.
+     *
+     * @param dsr Deserializer object
+     * @return true Successful
+     * @return false Version check failed
+     */
     bool unserialize(DataDeserializer &dsr) {
         Version version = 0;
         uint32_t usageData = 0;
