@@ -38,34 +38,36 @@ using namespace recording;
 static const QString HFR_EXTENSION = "hfr";
 
 RecordingScriptingInterface::RecordingScriptingInterface() {
-    Locker(_mutex);
+    Locker lock(_mutex);
     _player = DependencyManager::get<Deck>();
     _recorder = DependencyManager::get<Recorder>();
 }
 
 bool RecordingScriptingInterface::isPlaying() const {
-    Locker(_mutex);
+    Locker lock(_mutex);
     return _player->isPlaying();
 }
 
 bool RecordingScriptingInterface::isPaused() const {
-    Locker(_mutex);
+    Locker lock(_mutex);
     return _player->isPaused();
 }
 
 float RecordingScriptingInterface::playerElapsed() const {
-    Locker(_mutex);
+    Locker lock(_mutex);
     return _player->position();
 }
 
 float RecordingScriptingInterface::playerLength() const {
-    Locker(_mutex);
+    Locker lock(_mutex);
     return _player->length();
 }
 
 void RecordingScriptingInterface::playClip(NetworkClipLoaderPointer clipLoader, const QString& url, const ScriptValue& callback) {
-    Locker(_mutex);
-    _player->queueClip(clipLoader->getClip());
+    {
+        Locker lock(_mutex);
+        _player->queueClip(clipLoader->getClip());
+    }
 
     if (callback.isFunction()) {
         auto engine = callback.engine();
@@ -75,8 +77,6 @@ void RecordingScriptingInterface::playClip(NetworkClipLoaderPointer clipLoader, 
 }
 
 void RecordingScriptingInterface::loadRecording(const QString& url, const ScriptValue& callback) {
-    Locker(_mutex);
-
     auto clipLoader = DependencyManager::get<recording::ClipCache>()->getClipLoader(url);
 
     if (clipLoader->isLoaded()) {
@@ -84,6 +84,8 @@ void RecordingScriptingInterface::loadRecording(const QString& url, const Script
         playClip(clipLoader, url, callback);
         return;
     }
+
+    Locker lock(_mutex);
 
     // hold a strong pointer to the loading clip so that it has a chance to load
     _clipLoaders.insert(clipLoader);
@@ -134,12 +136,12 @@ void RecordingScriptingInterface::startPlaying() {
         return;
     }
 
-    Locker(_mutex);
+    Locker lock(_mutex);
     _player->play();
 }
 
 void RecordingScriptingInterface::setPlayerVolume(float volume) {
-    Locker(_mutex);
+    Locker lock(_mutex);
     _player->setVolume(std::min(std::max(volume, 0.0f), 1.0f));
 }
 
@@ -153,7 +155,7 @@ void RecordingScriptingInterface::setPlayerTime(float time) {
         return;
     }
 
-    Locker(_mutex);
+    Locker lock(_mutex);
     _player->seek(time);
 }
 
@@ -162,7 +164,7 @@ void RecordingScriptingInterface::setPlayFromCurrentLocation(bool playFromCurren
 }
 
 void RecordingScriptingInterface::setPlayerLoop(bool loop) {
-    Locker(_mutex);
+    Locker lock(_mutex);
     _player->loop(loop);
 }
 
@@ -183,7 +185,7 @@ void RecordingScriptingInterface::setPlayerUseSkeletonModel(bool useSkeletonMode
 }
 
 void RecordingScriptingInterface::pausePlayer() {
-    Locker(_mutex);
+    Locker lock(_mutex);
     _player->pause();
 }
 
@@ -193,7 +195,7 @@ void RecordingScriptingInterface::stopPlaying() {
         return;
     }
 
-    Locker(_mutex);
+    Locker lock(_mutex);
     _player->stop();
 }
 
@@ -211,7 +213,7 @@ void RecordingScriptingInterface::startRecording() {
         return;
     }
 
-    Locker(_mutex);
+    Locker lock(_mutex);
     _recorder->start();
 }
 
@@ -221,7 +223,7 @@ void RecordingScriptingInterface::stopRecording() {
         return;
     }
 
-    Locker(_mutex);
+    Locker lock(_mutex);
     _recorder->stop();
     _lastClip = _recorder->getClip();
     _lastClip->seek(0);
@@ -236,7 +238,7 @@ QString RecordingScriptingInterface::getDefaultRecordingSaveDirectory() {
 }
 
 void RecordingScriptingInterface::saveRecording(const QString& filename) {
-    Locker(_mutex);
+    Locker lock(_mutex);
     if (!_lastClip) {
         qWarning() << "There is no recording to save";
         return;
@@ -251,7 +253,7 @@ bool RecordingScriptingInterface::saveRecordingToAsset(const ScriptValue& getCli
         return false;
     }
 
-    Locker(_mutex);
+    Locker lock(_mutex);
     if (!_lastClip) {
         qWarning() << "There is no recording to save";
         return false;
@@ -293,7 +295,7 @@ void RecordingScriptingInterface::loadLastRecording() {
         return;
     }
 
-    Locker(_mutex);
+    Locker lock(_mutex);
 
     if (!_lastClip) {
         qCDebug(scriptengine) << "There is no recording to load";

@@ -244,7 +244,6 @@ Promise AssetScriptingInterface::jsPromiseReady(Promise promise, const ScriptVal
 void AssetScriptingInterface::jsCallback(const ScriptValue& handler,
                                          const ScriptValue& error, const ScriptValue& result) {
     Q_ASSERT(thread() == QThread::currentThread());
-    Q_ASSERT(engine());
     //V8TODO: which kind of script context guard needs to be used here?
     ScriptContextGuard scriptContextGuard(_scriptManager->engine()->currentContext());
     auto errorValue = !error.toBool() ? engine()->nullValue() : error;
