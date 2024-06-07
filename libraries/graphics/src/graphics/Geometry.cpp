@@ -45,7 +45,7 @@ void Mesh::setVertexFormatAndStream(const gpu::Stream::FormatPointer& vf, const 
 
     // We require meshes to have a color attribute.  If they don't, we default to white.
     if (!_vertexFormat->hasAttribute(gpu::Stream::COLOR)) {
-        int channelNum = _vertexStream.getNumBuffers();
+        gpu::Stream::Slot channelNum = (gpu::Stream::Slot)_vertexStream.getNumBuffers();
         _vertexFormat->setAttribute(gpu::Stream::COLOR, channelNum, gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA), 0, gpu::Stream::PER_INSTANCE);
         _vertexStream.addBuffer(_colorBuffer, 0, _vertexFormat->getChannels().at(channelNum)._stride);
     }
