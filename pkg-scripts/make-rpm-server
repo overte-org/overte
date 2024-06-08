@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Copyright 2020-2021 Vircadia contributors.
-# Copyright 2022-2023 Overte e.V.
+# Copyright 2022-2024 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 if [ "$OVERTE" = "" ]; then
@@ -55,7 +55,7 @@ DEPENDS=mesa-libGL,`ls \
 	| xargs -I {} sh -c 'objdump -p {} | grep NEEDED' \
 	| awk '{print $2}' \
 	| sort | uniq \
-	| egrep -v "^($SOFILES)$" \
+	| grep -E -v "^($SOFILES)$" \
 	| grep -v ^libGL \
 	| xargs -I {} sh -c "ldconfig -p | grep {} | tr ' ' '\n' | grep /" \
 	| xargs rpm -qf --queryformat "%{NAME}\n" \
@@ -73,7 +73,7 @@ DEPENDS=mesa-libGL,`ls \
 	| xargs -I {} sh -c 'objdump -p {} | grep NEEDED' \
 	| awk '{print $2}' \
 	| sort | uniq \
-	| egrep -v "^($SOFILES)$" \
+	| grep -E -v "^($SOFILES)$" \
 	| grep -v ^libGL \
 	| xargs -I {} sh -c "ldconfig -p | grep {} | tr ' ' '\n' | grep /" \
 	| xargs rpm -qf --queryformat "%{NAME}\n" \
