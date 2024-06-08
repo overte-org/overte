@@ -11,10 +11,10 @@
 
 (() => {
     // States ----
-    let mouse_look_active = Settings.getValue("mouselook-active", false);
-    let mouse_look_enabled = Camera.getMouseLook();
-    let hmd_active = HMD.active;
-    let overlay_active = Desktop.isOverlayWindowFocused();
+    let mouseLookActive = Settings.getValue("mouselook-active", false);
+    let mouseLookEnabled = Camera.getMouseLook();
+    let hmdActive = HMD.active;
+    let overlayActive = Desktop.isOverlayWindowFocused();
 
     // Resources ----
     let tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
@@ -31,18 +31,18 @@
 
     // Program ----
     function onMouseLookChanged(newMouseLook) {
-        mouse_look_enabled = newMouseLook;
+        mouseLookEnabled = newMouseLook;
     }
 
     function onKeyPressEvent(event) {
         // Toggle using the m key
         if (event.text.toLowerCase() === "m") {
             if (Camera.captureMouse) {
-                mouse_look_active = false;
+                mouseLookActive = false;
                 Settings.setValue("mouselook-active", false);
                 disableMouseLook();
             } else {
-                mouse_look_active = true;
+                mouseLookActive = true;
                 Settings.setValue("mouselook-active", true);
                 enableMouseLook();
             }
@@ -63,26 +63,26 @@
     }
 
     function onDisplayModeChanged() {
-        hmd_active = HMD.active;
-        if (hmd_active) disableMouseLook();
+        hmdActive = HMD.active;
+        if (hmdActive) disableMouseLook();
         else enableMouseLook();
     }
 
     function onUiFocusChanged(keyFocus) {
         if (keyFocus) {
-            overlay_active = true;
+            overlayActive = true;
             disableMouseLook();
         } else {
-            overlay_active = false;
+            overlayActive = false;
             enableMouseLook();
         }
     }
 
     function enableMouseLook() {
-        if (hmd_active) return;
+        if (hmdActive) return;
         if (tablet.tabletShown) return;
-        if (overlay_active) return;
-        if (!mouse_look_active) return; // Mouse look disabled via the hotkey
+        if (overlayActive) return;
+        if (!mouseLookActive) return; // Mouse look disabled via the hotkey
 
         Camera.captureMouse = true;
     }
