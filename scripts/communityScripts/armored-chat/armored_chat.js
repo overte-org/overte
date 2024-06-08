@@ -66,7 +66,6 @@
     }
     function toggleMainChatWindow() {
         appIsVisible = !appIsVisible;
-        console.log(`App is now ${appIsVisible ? "visible" : "hidden"}`);
         appButton.editProperties({ isActive: appIsVisible });
         chatOverlayWindow.visible = appIsVisible;
 
@@ -96,6 +95,9 @@
         channel = channel.toLowerCase();
         if (channel !== "chat") return;
         message = JSON.parse(message);
+
+        // Floofchat compatibility hook
+        message = floofChatCompatibilityConversion(message);
 
         message.channel = message.channel.toLowerCase(); // Make sure the "local", "domain", etc. is formatted consistently
 
@@ -197,6 +199,8 @@
                 action: "send_chat_message",
             })
         );
+
+        floofChatCompatibilitySendMessage(message, channel);
     }
     function _avatarAction(type, sessionId) {
         Script.setTimeout(() => {
@@ -250,5 +254,35 @@
      */
     function _emitEvent(packet = { type: "" }) {
         chatOverlayWindow.sendToQml(packet);
+    }
+
+    //
+    // Floofchat compatibility functions
+    // Added to ease the transition between Floofchat to ArmoredChat
+    // These functions can be safely removed at a much later date.
+    function floofChatCompatibilityConversion(message) {
+        if (message.type === "TransmitChatMessage" && !message.forApp) {
+            return {
+                position: message.position,
+                message: message.message,
+                displayName: message.displayName,
+                channel: message.channel.toLowerCase(),
+            };
+        }
+        return message;
+    }
+
+    function floofChatCompatibilitySendMessage(message, channel) {
+        Messages.sendMessage(
+            "Chat",
+            JSON.stringify({
+                position: MyAvatar.position,
+                message: message,
+                displayName: MyAvatar.sessionDisplayName,
+                channel: channel.charAt(0).toUpperCase() + channel.slice(1),
+                type: "TransmitChatMessage",
+                forApp: "Floof",
+            })
+        );
     }
 })();
