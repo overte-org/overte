@@ -458,11 +458,7 @@ Rectangle {
 
     function scrollToBottom() {
         if (listview.count == 0) return;
-        // if (chat_scrollbar.visualPosition > 0.85) {
-        listview.positionViewAtIndex(listview.count - 1, ListView.End);
         listview.positionViewAtEnd();
-        listview.contentY = listview.contentY + 50;
-        // }
     }
 
 
