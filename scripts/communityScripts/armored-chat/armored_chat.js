@@ -10,7 +10,7 @@
 (() => {
     "use strict";
 
-    var app_is_visible = false;
+    var appIsVisible = false;
     var settings = {
         external_window: false,
         maximum_messages: 200,
@@ -18,22 +18,22 @@
 
     // Global vars
     var tablet;
-    var chat_overlay_window;
-    var app_button;
-    var quick_message;
+    var chatOverlayWindow;
+    var appButton;
+    var quickMessage;
     const channels = ["domain", "local"];
-    var message_history = Settings.getValue("ArmoredChat-Messages", []) || [];
-    var max_local_distance = 20; // Maximum range for the local chat
-    var pal_data = AvatarManager.getPalData().data;
+    var messageHistory = Settings.getValue("ArmoredChat-Messages", []) || [];
+    var maxLocalDistance = 20; // Maximum range for the local chat
+    var palData = AvatarManager.getPalData().data;
 
     Controller.keyPressEvent.connect(keyPressEvent);
     Messages.subscribe("chat");
     Messages.messageReceived.connect(receivedMessage);
-    AvatarManager.avatarAddedEvent.connect((session_id) => {
-        _avatarAction("connected", session_id);
+    AvatarManager.avatarAddedEvent.connect((sessionId) => {
+        _avatarAction("connected", sessionId);
     });
-    AvatarManager.avatarRemovedEvent.connect((session_id) => {
-        _avatarAction("left", session_id);
+    AvatarManager.avatarRemovedEvent.connect((sessionId) => {
+        _avatarAction("left", sessionId);
     });
 
     startup();
@@ -41,62 +41,61 @@
     function startup() {
         tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
-        app_button = tablet.addButton({
+        appButton = tablet.addButton({
             icon: Script.resolvePath("./img/icon_white.png"),
             activeIcon: Script.resolvePath("./img/icon_black.png"),
             text: "CHAT",
-            isActive: app_is_visible,
+            isActive: appIsVisible,
         });
 
         // When script ends, remove itself from tablet
         Script.scriptEnding.connect(function () {
             console.log("Shutting Down");
-            tablet.removeButton(app_button);
-            chat_overlay_window.close();
+            tablet.removeButton(appButton);
+            chatOverlayWindow.close();
         });
 
         // Overlay button toggle
-        app_button.clicked.connect(toggleMainChatWindow);
+        appButton.clicked.connect(toggleMainChatWindow);
 
-        quick_message = new OverlayWindow({
+        quickMessage = new OverlayWindow({
             source: Script.resolvePath("./armored_chat_quick_message.qml"),
         });
 
         _openWindow();
     }
     function toggleMainChatWindow() {
-        app_is_visible = !app_is_visible;
-        console.log(`App is now ${app_is_visible ? "visible" : "hidden"}`);
-        app_button.editProperties({ isActive: app_is_visible });
-        chat_overlay_window.visible = app_is_visible;
+        appIsVisible = !appIsVisible;
+        console.log(`App is now ${appIsVisible ? "visible" : "hidden"}`);
+        appButton.editProperties({ isActive: appIsVisible });
+        chatOverlayWindow.visible = appIsVisible;
 
         // External window was closed; the window does not exist anymore
-        if (chat_overlay_window.title == "" && app_is_visible) {
+        if (chatOverlayWindow.title == "" && appIsVisible) {
             _openWindow();
         }
     }
     function _openWindow() {
-        chat_overlay_window = new Desktop.createWindow(
+        chatOverlayWindow = new Desktop.createWindow(
             Script.resolvePath("./armored_chat.qml"),
             {
                 title: "Chat",
                 size: { x: 550, y: 400 },
                 additionalFlags: Desktop.ALWAYS_ON_TOP,
-                visible: app_is_visible,
+                visible: appIsVisible,
                 presentationMode: Desktop.PresentationMode.VIRTUAL,
             }
         );
 
-        chat_overlay_window.closed.connect(toggleMainChatWindow);
-        chat_overlay_window.fromQml.connect(fromQML);
-        quick_message.fromQml.connect(fromQML);
+        chatOverlayWindow.closed.connect(toggleMainChatWindow);
+        chatOverlayWindow.fromQml.connect(fromQML);
+        quickMessage.fromQml.connect(fromQML);
     }
     function receivedMessage(channel, message) {
         // Is the message a chat message?
         channel = channel.toLowerCase();
         if (channel !== "chat") return;
-        console.log(`Received message:\n${message}`);
-        var message = JSON.parse(message);
+        message = JSON.parse(message);
 
         message.channel = message.channel.toLowerCase(); // Make sure the "local", "domain", etc. is formatted consistently
 
@@ -104,7 +103,7 @@
         if (
             message.channel == "local" &&
             Vec3.distance(MyAvatar.position, message.position) >
-                max_local_distance
+                maxLocalDistance
         )
             return; // If message is local, and if player is too far away from location, don't do anything
 
@@ -120,25 +119,23 @@
         );
 
         // Save message to history
-        let saved_message = message;
-        delete saved_message.position;
-        saved_message.timeString = new Date().toLocaleTimeString(undefined, {
+        let savedMessage = message;
+        delete savedMessage.position;
+        savedMessage.timeString = new Date().toLocaleTimeString(undefined, {
             hour12: false,
         });
-        saved_message.dateString = new Date().toLocaleDateString(undefined, {
+        savedMessage.dateString = new Date().toLocaleDateString(undefined, {
             year: "numeric",
             month: "long",
             day: "numeric",
         });
-        message_history.push(saved_message);
-        while (message_history.length > settings.maximum_messages) {
-            message_history.shift();
+        messageHistory.push(savedMessage);
+        while (messageHistory.length > settings.maximum_messages) {
+            messageHistory.shift();
         }
-        Settings.setValue("ArmoredChat-Messages", message_history);
+        Settings.setValue("ArmoredChat-Messages", messageHistory);
     }
     function fromQML(event) {
-        console.log(`New QML event:\n${JSON.stringify(event)}`);
-
         switch (event.type) {
             case "send_message":
                 _sendMessage(event.message, event.channel);
@@ -149,7 +146,7 @@
 
                 switch (event.setting) {
                     case "external_window":
-                        chat_overlay_window.presentationMode = event.value
+                        chatOverlayWindow.presentationMode = event.value
                             ? Desktop.PresentationMode.NATIVE
                             : Desktop.PresentationMode.VIRTUAL;
                         break;
@@ -171,7 +168,7 @@
                 break;
             case "initialized":
                 // https://github.com/overte-org/overte/issues/824
-                chat_overlay_window.visible = app_is_visible; // The "visible" field in the Desktop.createWindow does not seem to work. Force set it to the initial state (false)
+                chatOverlayWindow.visible = appIsVisible; // The "visible" field in the Desktop.createWindow does not seem to work. Force set it to the initial state (false)
                 _loadSettings();
                 break;
         }
@@ -181,7 +178,7 @@
             case "16777220": // Enter key
                 if (HMD.active) return; // Don't allow in VR
 
-                quick_message.sendToQml({
+                quickMessage.sendToQml({
                     type: "change_visibility",
                     value: true,
                 });
@@ -201,28 +198,28 @@
             })
         );
     }
-    function _avatarAction(type, session_id) {
+    function _avatarAction(type, sessionId) {
         Script.setTimeout(() => {
             if (type == "connected") {
-                pal_data = AvatarManager.getPalData().data;
+                palData = AvatarManager.getPalData().data;
             }
 
             // Get the display name of the user
-            let display_name = "";
-            display_name =
-                AvatarManager.getPalData([session_id])?.data[0]
+            let displayName = "";
+            displayName =
+                AvatarManager.getPalData([sessionId])?.data[0]
                     ?.sessionDisplayName || null;
-            if (display_name == null) {
-                for (let i = 0; i < pal_data.length; i++) {
-                    if (pal_data[i].sessionUUID == session_id) {
-                        display_name = pal_data[i].sessionDisplayName;
+            if (displayName == null) {
+                for (let i = 0; i < palData.length; i++) {
+                    if (palData[i].sessionUUID == sessionId) {
+                        displayName = palData[i].sessionDisplayName;
                     }
                 }
             }
 
             // Format the packet
             let message = {};
-            message.message = `${display_name} ${type}`;
+            message.message = `${displayName} ${type}`;
 
             _emitEvent({ type: "notification", ...message });
         }, 1500);
@@ -230,9 +227,9 @@
     function _loadSettings() {
         settings = Settings.getValue("ArmoredChat-Config", settings);
 
-        if (message_history) {
+        if (messageHistory) {
             // Load message history
-            message_history.forEach((message) => {
+            messageHistory.forEach((message) => {
                 delete message.action;
                 _emitEvent({ type: "show_message", ...message });
             });
@@ -240,8 +237,6 @@
 
         // Send current settings to the app
         _emitEvent({ type: "initial_settings", settings: settings });
-
-        console.log(`\n\n\n` + JSON.stringify(settings));
     }
     function _saveSettings() {
         console.log("Saving config");
@@ -254,6 +249,6 @@
      * @param {("show_message"|"clear_messages"|"notification"|"initial_settings")} packet.type - The type of packet it is
      */
     function _emitEvent(packet = { type: "" }) {
-        chat_overlay_window.sendToQml(packet);
+        chatOverlayWindow.sendToQml(packet);
     }
 })();
