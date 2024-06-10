@@ -34,6 +34,8 @@ static const QString JS_EXTENSION = ".js";
 static const QString FST_EXTENSION = ".fst";
 static const QString FBX_EXTENSION = ".fbx";
 static const QString OBJ_EXTENSION = ".obj";
+static const QString GLTF_EXTENSION = ".gltf";
+static const QString GLB_EXTENSION = ".glb";
 static const QString JSON_GZ_EXTENSION = ".json.gz";
 static const QString CONTENT_ZIP_EXTENSION = ".content.zip";
 static const QString ZIP_EXTENSION = ".zip";
@@ -281,7 +283,8 @@ void Application::addAssetToWorldSetMapping(QString filePath, QString mapping, Q
             addAssetToWorldError(filenameFromPath(filePath), errorInfo);
         } else {
             // to prevent files that aren't models or texture files from being loaded into world automatically
-            if ((filePath.toLower().endsWith(OBJ_EXTENSION) || filePath.toLower().endsWith(FBX_EXTENSION)) ||
+            if ((filePath.toLower().endsWith(OBJ_EXTENSION) || filePath.toLower().endsWith(FBX_EXTENSION) ||
+                 filePath.toLower().endsWith(GLTF_EXTENSION) || filePath.toLower().endsWith(GLB_EXTENSION)) ||
                 ((filePath.toLower().endsWith(JPG_EXTENSION) || filePath.toLower().endsWith(PNG_EXTENSION)) &&
                 ((!isBlocks) && (!isZip)))) {
                 addAssetToWorldAddEntity(filePath, mapping);

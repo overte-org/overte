@@ -1159,9 +1159,6 @@ void Application::loadSettings(const QCommandLineParser& parser) {
     DependencyManager::get<AudioClient>()->loadSettings();
     DependencyManager::get<LODManager>()->loadSettings();
 
-    // DONT CHECK IN
-    //DependencyManager::get<LODManager>()->setAutomaticLODAdjust(false);
-
     auto menu = Menu::getInstance();
     menu->loadSettings();
 
