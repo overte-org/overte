@@ -11,7 +11,7 @@
 
 #include "PerformanceScriptingInterface.h"
 
-#include <QtQML>
+#include <QtQml>
 
 #include <ScriptEngineCast.h>
 
