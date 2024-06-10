@@ -10,7 +10,7 @@
 #include "RenderScriptingInterface.h"
 
 #include <QScreen>
-#include <QtQML>
+#include <QtQml>
 
 #include <RenderCommonTask.h>
 #include <ScriptEngineCast.h>
