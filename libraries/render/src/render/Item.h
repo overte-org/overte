@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 1/26/16.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -29,6 +30,7 @@
 #include "ShapePipeline.h"
 
 #include "BlendshapeConstants.h"
+#include "HighlightStyle.h"
 
 namespace render {
 
@@ -104,15 +106,17 @@ public:
         META_CULL_GROUP,  // As a meta item, the culling of my sub items is based solely on my bounding box and my visibility in the view
         SUB_META_CULLED,  // As a sub item of a meta render item set as cull group, need to be set to my culling to the meta render it
 
-        FIRST_TAG_BIT, // 8 Tags available to organize the items and filter them against
+        FIRST_TAG_BIT,    // 8 Tags available to organize the items and filter them against
         LAST_TAG_BIT = FIRST_TAG_BIT + NUM_TAGS,
 
-        FIRST_LAYER_BIT, // 8 Exclusive Layers (encoded in 3 bits) available to organize the items in layers, an item can only belong to ONE layer
+        FIRST_LAYER_BIT,  // 8 Exclusive Layers (encoded in 3 bits) available to organize the items in layers, an item can only belong to ONE layer
         LAST_LAYER_BIT = FIRST_LAYER_BIT + NUM_LAYER_BITS,
+
+        OUTLINE,          // Item has an outline
 
         __SMALLER,        // Reserved bit for spatialized item to indicate that it is smaller than expected in the cell in which it belongs (probably because it overlaps over several smaller cells)
 
-        NUM_FLAGS,      // Not a valid flag
+        NUM_FLAGS,        // Not a valid flag
     };
     typedef std::bitset<NUM_FLAGS> Flags;
 
@@ -170,6 +174,9 @@ public:
         Builder& withLayer(uint8_t layer) { _flags = evalLayerBitsWithKeyBits(layer, _flags.to_ulong()); return (*this); }
         Builder& withoutLayer() { return withLayer(LAYER_DEFAULT); }
 
+        Builder& withOutline() { _flags.set(OUTLINE); return (*this); }
+        Builder& withoutOutline() { _flags.reset(OUTLINE); return (*this); }
+
         // Convenient standard keys that we will keep on using all over the place
         static Builder opaqueShape() { return Builder().withTypeShape(); }
         static Builder transparentShape() { return Builder().withTypeShape().withTransparent(); }
@@ -212,6 +219,8 @@ public:
     bool isLayer(uint8_t layer) const { return getLayer() == layer; }
     bool isLayered() const { return getLayer() != LAYER_DEFAULT; }
     bool isSpatial() const { return !isLayered(); }
+
+    bool isOutline() const { return _flags[OUTLINE]; }
 
     // Probably not public, flags used by the scene
     bool isSmall() const { return _flags[__SMALLER]; }
@@ -284,6 +293,9 @@ public:
         Builder& withoutLayered() { _value = ItemKey::evalLayerBitsWithKeyBits(ItemKey::LAYER_DEFAULT, _value.to_ulong()); _mask |= ItemKey::KEY_LAYER_BITS_MASK; return (*this); }
         Builder& withLayer(uint8_t layer) { _value = ItemKey::evalLayerBitsWithKeyBits(layer, _value.to_ulong()); _mask |= ItemKey::KEY_LAYER_BITS_MASK; return (*this); }
 
+        Builder& withoutOutline() { _value.reset(ItemKey::OUTLINE); _mask.set(ItemKey::OUTLINE); return (*this); }
+        Builder& withOutline() { _value.set(ItemKey::OUTLINE);  _mask.set(ItemKey::OUTLINE); return (*this); }
+
         Builder& withNothing()          { _value.reset(); _mask.reset(); return (*this); }
 
         // Convenient standard keys that we will keep on using all over the place
@@ -327,9 +339,9 @@ class ItemBound {
         ItemBound(ItemID id) : id(id) { }
         ItemBound(ItemID id, const AABox& bound) : id(id), bound(bound) { }
 
-        ItemID id;
+        ItemID id { 0 };
         AABox bound;
-        uint32_t padding;
+        uint32_t padding { 0 };
 };
 
 // many Item Bounds in a vector
@@ -440,6 +452,8 @@ public:
 
         virtual bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const = 0;
 
+        virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const = 0;
+
         ~PayloadInterface() {}
 
         // Status interface is local to the base class
@@ -492,6 +506,8 @@ public:
     uint32_t fetchMetaSubItemBounds(ItemBounds& subItemBounds, Scene& scene, RenderArgs* args) const;
 
     bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const { return _payload->passesZoneOcclusionTest(containingZones); }
+
+    HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const { return _payload->getOutlineStyle(viewFrustum, height); }
 
     // Access the status
     const StatusPointer& getStatus() const { return _payload->getStatus(); }
@@ -547,6 +563,12 @@ template <class T> uint32_t metaFetchMetaSubItems(const std::shared_ptr<T>& payl
 // Allows payloads to determine if they should render or not, based on the zones that contain the current camera
 template <class T> bool payloadPassesZoneOcclusionTest(const std::shared_ptr<T>& payloadData, const std::unordered_set<QUuid>& containingZones) { return true; }
 
+// Outline Interface
+// Allows payloads to specify an outline style
+template <class T> HighlightStyle payloadGetOutlineStyle(const std::shared_ptr<T>& payloadData, const ViewFrustum& viewFrustum, const size_t height) {
+    return HighlightStyle();
+}
+
 // THe Payload class is the real Payload to be used
 // THis allow anything to be turned into a Payload as long as the required interface functions are available
 // When creating a new kind of payload from a new "stuff" class then you need to create specialized version for "stuff"
@@ -572,6 +594,8 @@ public:
     virtual uint32_t fetchMetaSubItems(ItemIDs& subItems) const override { return metaFetchMetaSubItems<T>(_data, subItems); }
 
     virtual bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const override { return payloadPassesZoneOcclusionTest<T>(_data, containingZones); }
+
+    virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const override { return payloadGetOutlineStyle<T>(_data, viewFrustum, height); }
 
 protected:
     DataPointer _data;
@@ -628,6 +652,7 @@ public:
     virtual void render(RenderArgs* args) = 0;
     virtual uint32_t metaFetchMetaSubItems(ItemIDs& subItems) const = 0;
     virtual bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const = 0;
+    virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const = 0;
 
     // FIXME: this isn't the best place for this since it's only used for ModelEntities, but currently all Entities use PayloadProxyInterface
     virtual void handleBlendedVertices(int blendshapeNumber, const QVector<BlendshapeOffset>& blendshapeOffsets,
@@ -640,6 +665,7 @@ template <> void payloadRender(const PayloadProxyInterface::Pointer& payload, Re
 template <> uint32_t metaFetchMetaSubItems(const PayloadProxyInterface::Pointer& payload, ItemIDs& subItems);
 template <> const ShapeKey shapeGetShapeKey(const PayloadProxyInterface::Pointer& payload);
 template <> bool payloadPassesZoneOcclusionTest(const PayloadProxyInterface::Pointer& payload, const std::unordered_set<QUuid>& containingZones);
+template <> HighlightStyle payloadGetOutlineStyle(const PayloadProxyInterface::Pointer& payload, const ViewFrustum& viewFrustum, const size_t height);
 
 typedef Item::PayloadPointer PayloadPointer;
 typedef std::vector<PayloadPointer> Payloads;

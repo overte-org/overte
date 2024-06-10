@@ -1,6 +1,7 @@
 //
 //  Created by Sam Gondelman on 1/18/2018
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -219,7 +220,7 @@ void MaterialEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPo
 ItemKey MaterialEntityRenderer::getKey() {
     auto builder = ItemKey::Builder().withTypeShape().withTagBits(getTagMask()).withLayer(getHifiRenderLayer());
 
-    if (!_visible) {
+    if (!_visible || !_parentID.isNull()) {
         builder.withInvisible();
     }
 
@@ -228,6 +229,10 @@ ItemKey MaterialEntityRenderer::getKey() {
         auto matKey = drawMaterial->getKey();
         if (matKey.isTranslucent()) {
             builder.withTransparent();
+        }
+
+        if (drawMaterial->getOutlineWidthMode() != NetworkMToonMaterial::OutlineWidthMode::OUTLINE_NONE && drawMaterial->getOutlineWidth() > 0.0f) {
+            builder.withOutline();
         }
     }
 
@@ -258,11 +263,16 @@ ShapeKey MaterialEntityRenderer::getShapeKey() {
         if (drawMaterialKey.isNormalMap()) {
             builder.withTangents();
         }
-        if (drawMaterialKey.isLightMap()) {
-            builder.withLightMap();
-        }
-        if (drawMaterialKey.isUnlit()) {
-            builder.withUnlit();
+
+        if (drawMaterial && drawMaterial->isMToon()) {
+            builder.withMToon();
+        } else {
+            if (drawMaterialKey.isLightMap()) {
+                builder.withLightMap();
+            }
+            if (drawMaterialKey.isUnlit()) {
+                builder.withUnlit();
+            }
         }
     }
 
@@ -271,6 +281,18 @@ ShapeKey MaterialEntityRenderer::getShapeKey() {
     }
 
     return builder.build();
+}
+
+HighlightStyle MaterialEntityRenderer::getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const {
+    if (const auto drawMaterial = getMaterial()) {
+        glm::vec3 position;
+        withReadLock([&] {
+            position = _renderTransform.getTranslation();
+        });
+        return HighlightStyle::calculateOutlineStyle(drawMaterial->getOutlineWidthMode(), drawMaterial->getOutlineWidth(),
+                                                     drawMaterial->getOutline(), position, viewFrustum, height);
+    }
+    return HighlightStyle();
 }
 
 void MaterialEntityRenderer::doRender(RenderArgs* args) {
@@ -315,21 +337,26 @@ void MaterialEntityRenderer::doRender(RenderArgs* args) {
         }
 
         // Draw!
-        DependencyManager::get<GeometryCache>()->renderSphere(batch);
+        const uint32_t compactColor = 0xFFFFFFFF;
+        _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+        DependencyManager::get<GeometryCache>()->renderShape(batch, GeometryCache::Shape::Sphere, _colorBuffer);
     } else {
         auto proceduralDrawMaterial = std::static_pointer_cast<graphics::ProceduralMaterial>(drawMaterial);
         glm::vec4 outColor = glm::vec4(drawMaterial->getAlbedo(), drawMaterial->getOpacity());
         outColor = proceduralDrawMaterial->getColor(outColor);
         proceduralDrawMaterial->prepare(batch, transform.getTranslation(), transform.getScale(),
                                         transform.getRotation(), _created, ProceduralProgramKey(outColor.a < 1.0f));
+
+        const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
         if (render::ShapeKey(args->_globalShapeKey).isWireframe() || _primitiveMode == PrimitiveMode::LINES) {
-            DependencyManager::get<GeometryCache>()->renderWireSphere(batch, outColor);
+            DependencyManager::get<GeometryCache>()->renderWireShape(batch, GeometryCache::Shape::Sphere, _colorBuffer);
         } else {
-            DependencyManager::get<GeometryCache>()->renderSphere(batch, outColor);
+            DependencyManager::get<GeometryCache>()->renderShape(batch, GeometryCache::Shape::Sphere, _colorBuffer);
         }
     }
 
-    args->_details._trianglesRendered += (int)DependencyManager::get<GeometryCache>()->getSphereTriangleCount();
+    args->_details._trianglesRendered += (int)DependencyManager::get<GeometryCache>()->getShapeTriangleCount(GeometryCache::Shape::Sphere);
 }
 
 void MaterialEntityRenderer::setCurrentMaterialName(const std::string& currentMaterialName) {

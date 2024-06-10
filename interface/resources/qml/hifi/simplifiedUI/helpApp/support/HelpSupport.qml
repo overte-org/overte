@@ -3,6 +3,7 @@
 //
 //  Created by Zach Fox on 2019-08-20
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -76,7 +77,7 @@ Item {
             temporaryText: "Opening browser..."
 
             onClicked: {
-                Qt.openUrlExternally("https://www.highfidelity.com/knowledge/kb-tickets/new");
+                Qt.openUrlExternally("https://overte.org/contact.html");
             }
         }
     }

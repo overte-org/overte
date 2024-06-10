@@ -385,7 +385,7 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     std::vector<QuadBuilder> quadBuilders;
     quadBuilders.reserve(glyphsAndCorners.size());
     {
-        int i = glyphsAndCorners.size() - 1;
+        int i = (int)glyphsAndCorners.size() - 1;
         while (i >= 0) {
             auto nextGlyphAndCorner = glyphsAndCorners[i];
             float rightSpacing = rightEdge - (nextGlyphAndCorner.second.x + nextGlyphAndCorner.first.d);
@@ -410,7 +410,7 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     }
 
     // The quadBuilders is backwards now because we looped over the glyphs backwards to adjust their alignment
-    for (int i = quadBuilders.size() - 1; i >= 0; i--) {
+    for (int i = (int)quadBuilders.size() - 1; i >= 0; i--) {
         quint16 verticesOffset = numVertices;
         drawInfo.verticesBuffer->append(quadBuilders[i]);
         numVertices += VERTICES_PER_QUAD;

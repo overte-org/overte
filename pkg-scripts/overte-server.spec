@@ -1,5 +1,5 @@
 # Copyright 2020-2021 Vircadia contributors.
-# Copyright 2022 Overte e.V.
+# Copyright 2022-2024 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 #OVERTE=~/Overte rpmbuild --target x86_64 -bb overte-server.spec
@@ -75,11 +75,12 @@ chrpath -d $RPM_BUILD_ROOT/opt/overte/plugins/*.so
 chrpath -d $RPM_BUILD_ROOT/opt/overte/plugins/*/*.so
 strip --strip-all $RPM_BUILD_ROOT/opt/overte/plugins/*.so
 strip --strip-all $RPM_BUILD_ROOT/opt/overte/plugins/*/*.so
+cp $OVERTE/LICENSE $RPM_BUILD_ROOT/usr/share/licenses/overte-server/LICENSE
 find $RPM_BUILD_ROOT/opt/overte/resources -name ".gitignore" -delete
 
 
 %files
-%license $OVERTE/LICENSE
+%license /usr/share/licenses/overte-server/LICENSE
 /opt/overte
 /usr/lib/systemd/system
 

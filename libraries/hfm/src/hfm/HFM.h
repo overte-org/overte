@@ -224,6 +224,14 @@ public:
     bool useEmissiveMap { false };
     bool useOcclusionMap { false };
 
+
+    bool isMToonMaterial { false };
+    Texture shadeTexture;
+    Texture shadingShiftTexture;
+    Texture matcapTexture;
+    Texture rimTexture;
+    Texture uvAnimationTexture;
+
     bool needTangentSpace() const;
 };
 

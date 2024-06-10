@@ -1,6 +1,7 @@
 //
 //  Created by HifiExperiments on 3/14/2021
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -52,6 +53,23 @@ public:
                  const uint64_t& created, const ProceduralProgramKey key = ProceduralProgramKey()) override;
     void initializeProcedural() override;
 
+    // MToonMaterial
+    bool isMToon() const override;
+    glm::vec3 getShade(bool SRGB = true) const override;
+    float getShadingShift() const override;
+    float getShadingToony() const override;
+    glm::vec3 getMatcap(bool SRGB = true) const override;
+    glm::vec3 getParametricRim(bool SRGB = true) const override;
+    float getParametricRimFresnelPower() const override;
+    float getParametricRimLift() const override;
+    float getRimLightingMix() const override;
+    float getUVAnimationScrollXSpeed() const override;
+    float getUVAnimationScrollYSpeed() const override;
+    float getUVAnimationRotationSpeed() const override;
+    uint8_t getOutlineWidthMode() override;
+    float getOutlineWidth() override;
+    glm::vec3 getOutline(bool SRGB = true) const override;
+
     bool isReference() const override { return true; }
     std::function<graphics::MaterialPointer()> getReferenceOperator() const { return _materialForUUIDOperator; }
 
@@ -65,6 +83,7 @@ private:
     graphics::MaterialPointer getMaterial() const;
     std::shared_ptr<NetworkMaterial> getNetworkMaterial() const;
     graphics::ProceduralMaterialPointer getProceduralMaterial() const;
+    std::shared_ptr<NetworkMToonMaterial> getMToonMaterial() const;
 
     template <typename T, typename F>
     T resultWithLock(F&& f) const;

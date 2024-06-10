@@ -323,6 +323,19 @@ Menu::Menu() {
         }
     });
 
+    // Settings > Script Security
+    action = addActionToQMenuAndActionHash(settingsMenu, MenuOption::ScriptSecurity);
+    connect(action, &QAction::triggered, [] {
+        auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
+        auto hmd = DependencyManager::get<HMDScriptingInterface>();
+
+        tablet->pushOntoStack("hifi/dialogs/security/ScriptSecurity.qml");
+
+        if (!hmd->getShouldShowTablet()) {
+            hmd->toggleShouldShowTablet();
+        }
+    });
+
     // Settings > Developer Menu
     addCheckableActionToQMenuAndActionHash(settingsMenu, "Developer Menu", 0, false, this, SLOT(toggleDeveloperMenus()));
 
@@ -388,13 +401,18 @@ Menu::Menu() {
 
     // Developer > UI >>>
     MenuWrapper* uiOptionsMenu = developerMenu->addMenu("UI");
+
+    // Developer > UI > Show Overlays
+    action = addCheckableActionToQMenuAndActionHash(uiOptionsMenu, MenuOption::Overlays, 0, true);
+
+    connect(action, &QAction::triggered, [action] {
+        qApp->getApplicationOverlay().setEnabled(action->isChecked());
+    });
+
+    // Developer > UI > Desktop Tablet Becomes Toolbar
     action = addCheckableActionToQMenuAndActionHash(uiOptionsMenu, MenuOption::DesktopTabletToToolbar, 0,
                                                     qApp->getDesktopTabletBecomesToolbarSetting());
 
-    // Developer > UI > Show Overlays
-    addCheckableActionToQMenuAndActionHash(uiOptionsMenu, MenuOption::Overlays, 0, true);
-
-    // Developer > UI > Desktop Tablet Becomes Toolbar
     connect(action, &QAction::triggered, [action] {
         qApp->setDesktopTabletBecomesToolbarSetting(action->isChecked());
     });

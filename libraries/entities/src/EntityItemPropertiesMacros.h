@@ -218,6 +218,37 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return
         properties.setProperty(#P, V); \
     }
 
+#define COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(p, P)                                                             \
+    if (((!returnNothingOnEmptyPropertyFlags && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
+        (!skipDefaults || defaultEntityProperties._##P != _##P)) {                                                        \
+        if (isMyOwnAvatarEntity || nodeList->getThisNodeCanViewAssetURLs()) {                                             \
+            ScriptValue V = convertScriptValue(engine, _##P);                                                             \
+            properties.setProperty(#P, V);                                                                                \
+        } else {                                                                                                          \
+            const QString emptyURL = "";                                                                                  \
+            ScriptValue V = convertScriptValue(engine, emptyURL);                                                         \
+            properties.setProperty(#P, V);                                                                                \
+        }                                                                                                                 \
+    }
+
+#define COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(X, G, g, P, p)                                            \
+    if (((!returnNothingOnEmptyPropertyFlags && desiredProperties.isEmpty()) || desiredProperties.getHasProperty(X)) && \
+        (!skipDefaults || defaultEntityProperties.get##G().get##P() != get##P())) {                                     \
+        if (isMyOwnAvatarEntity || nodeList->getThisNodeCanViewAssetURLs()) {                                           \
+            ScriptValue groupProperties = properties.property(#g);                                                      \
+            if (!groupProperties.isValid()) {                                                                           \
+                groupProperties = engine->newObject();                                                                  \
+            }                                                                                                           \
+            ScriptValue V = convertScriptValue(engine, get##P());                                                       \
+            groupProperties.setProperty(#p, V);                                                                         \
+            properties.setProperty(#g, groupProperties);                                                                \
+        } else {                                                                                                        \
+            const QString emptyURL = "";                                                                                \
+            ScriptValue V = convertScriptValue(engine, emptyURL);                                                       \
+            properties.setProperty(#P, V);                                                                              \
+        }                                                                                                               \
+    }
+
 typedef QVector<glm::vec3> qVectorVec3;
 typedef QVector<glm::quat> qVectorQuat;
 typedef QVector<bool> qVectorBool;
@@ -459,14 +490,16 @@ inline QRect QRect_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
     { \
         EntityPropertyInfo propertyInfo = EntityPropertyInfo(P); \
         _propertyInfos[#g "." #n] = propertyInfo; \
-		_enumsToPropertyStrings[P] = #g "." #n; \
+        _propertyInfos[#g].propertyEnums << P; \
+        _enumsToPropertyStrings[P] = #g "." #n; \
     }
 
 #define ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(P, G, g, N, n, M, X) \
     { \
         EntityPropertyInfo propertyInfo = EntityPropertyInfo(P, M, X); \
         _propertyInfos[#g "." #n] = propertyInfo; \
-		_enumsToPropertyStrings[P] = #g "." #n; \
+        _propertyInfos[#g].propertyEnums << P; \
+        _enumsToPropertyStrings[P] = #g "." #n; \
     }
 
 #define DEFINE_CORE(N, n, T, V) \

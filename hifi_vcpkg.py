@@ -41,7 +41,13 @@ endif()
         else:
             self.id = hifi_utils.hashFolder(self.sourcePortsPath)[:8]
         self.configFilePath = os.path.join(args.build_root, 'vcpkg.cmake')
-        self.assets_url = self.readVar('EXTERNAL_BUILD_ASSETS')
+
+        if args.get_vcpkg_id or args.get_vcpkg_path:
+            # With these arguments no assets will be downloaded, and they may be used in conditions
+            # where the _env hack doesn't work.
+            self.assets_url = "http://no_assets.invalid"
+        else:
+            self.assets_url = self.readVar('EXTERNAL_BUILD_ASSETS')
 
         # The noClean flag indicates we're doing weird dependency maintenance stuff
         # i.e. we've got an explicit checkout of vcpkg and we don't want the script to
@@ -71,7 +77,8 @@ endif()
                 os.makedirs(self.basePath)
             self.path = os.path.join(self.basePath, self.id)
 
-        print("Using vcpkg path {}".format(self.path))
+        if not self.args.quiet:
+            print("Using vcpkg path {}".format(self.path))
         lockDir, lockName = os.path.split(self.path)
         lockName += '.lock'
         if not os.path.isdir(lockDir):
@@ -108,8 +115,8 @@ endif()
         elif 'Linux' == system and 'aarch64' == machine:
             self.exe = os.path.join(self.path, 'vcpkg')
             self.bootstrapCmds = [ os.path.join(self.path, 'bootstrap-vcpkg.sh'), '-disableMetrics' ]
-            self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/vcpkg-linux_aarch64_2022.07.25.tar.xz'
-            self.vcpkgHash = '7abb7aa96200e3cb5a6d0ec1c6ee63aa7886df2d1fecf8f9ee41ebe4d2cea0d4143274222c4941cb7aca61e4048229fdfe9eb2cd36dd559dd26db871a3b3ed61'
+            self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/vcpkg-linux_aarch64_2023.11.20.tar.xz'
+            self.vcpkgHash = 'f38efba40bd4b0b6df47986e373d5535d3e787e257cf19d66ee8ee00e670a6fb95b3e824020024f3edbdcf86a0548e5bbddcc0ac7bd2ff6352a245efac8402fe'
             self.hostTriplet = 'arm64-linux'
         else:
             self.exe = os.path.join(self.path, 'vcpkg')

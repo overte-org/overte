@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<!--//
+//  renderWithZonesManager.html
+//
+//  Created by Alezia Kurdis on January 28th, 2024.
+//  Copyright 2024 Overte e.V.
+//
+//  Web Ui for renderWithZonesManager.js module.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//-->
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>RenderWithZones Manager</title>
+        <style>
+            @font-face {
+                font-family: Raleway-Regular;
+                src: url(../../../../resources/fonts/Raleway-Regular.ttf),  /* Windows production */
+                     url(../../../../fonts/Raleway-Regular.ttf),  /* OSX production */
+                     url(../../../../interface/resources/fonts/Raleway-Regular.ttf),  /* Development, running script in /HiFi/examples */
+                     url(../fonts/Raleway-Regular.ttf);  /* Marketplace script */
+            }
+
+            @font-face {
+                font-family: Raleway-Bold;
+                src: url(../../../../resources/fonts/Raleway-Bold.ttf),
+                     url(../../../../fonts/Raleway-Bold.ttf),
+                     url(../../../../interface/resources/fonts/Raleway-Bold.ttf),
+                     url(../fonts/Raleway-Bold.ttf);
+            }
+            
+            @font-face {
+                font-family: HiFi-Glyphs;
+                src: url(../../../../resources/fonts/hifi-glyphs.ttf),
+                     url(../../../../fonts/hifi-glyphs.ttf),
+                     url(../../../../interface/resources/fonts/hifi-glyphs.ttf),
+                     url(../fonts/hifi-glyphs.ttf);
+            }
+            
+            body {
+                background-color:#000000;
+                color:#ffffff;
+                font-family: Raleway-Bold;
+                font-size: 11px;
+                width: 96%;
+                padding: 0;
+                margin: 0;
+            }
+            #rwzmUI {
+                width: 100%;
+                padding: 6px;
+            }
+            h1 {
+                font-family: Raleway-Bold;
+                font-size: 22px;
+            }
+            h2 {
+                font-family: Raleway-Bold;
+                font-size: 16px;
+            }            
+            table {
+                width: 98%;
+                border-collapse: collapse;
+            }
+            
+            td.cells {
+                background-color: #222222;
+                border: 1px solid #FFFFFF;
+                vertical-align: top;
+                height: 23px;
+            }
+            td.highlightedCells {
+                background-color: #3bc7ff;
+                border: 1px solid #FFFFFF;
+                vertical-align: top;
+                height: 23px;
+            }
+            td.header {
+                background-color: #444444;
+                color: #DDDDDD;
+            }
+            
+            td.line {
+                color: #FFFFFF;
+            }
+            td.errorline {
+                color: #ff5900;
+            }
+            td.lineInverted {
+                color: #000000;
+            }
+            div.warning {
+                color: #ff5900;
+                padding: 2px;
+                margin: 3px;
+                font-family: Raleway-Regular;
+                font-size: 12px;
+            }
+            a {
+                font-size: 22px;
+                font-weight: 500;
+            }
+            a:link {
+                color: #00b3ff;
+                background-color: transparent;
+                text-decoration: none;
+            }
+
+            a:visited {
+                color: #00b3ff;
+                background-color: transparent;
+                text-decoration: none;
+            }
+
+            a:hover {
+                color: #99e1ff;
+                background-color: transparent;
+                text-decoration: none;
+            }
+
+            a:active {
+                color: #99e1ff;
+                background-color: transparent;
+                text-decoration: none;
+            }
+            font.hifiGlyphs {
+                font-family: HiFi-Glyphs;
+                font-size: 12px;
+            }
+            span.delBtn {
+                color: #ad7171; font-size: 16px;
+            }
+            span.delBtn:hover {
+                color: #d65151;
+            }
+            button.addbtn {
+                margin: 2px;
+                border-radius: 4px;
+                border: 0px;
+                color: #ffffff;
+                font-family: Raleway-Bold;
+                font-size: 10px;
+                background-color: #57ad4f;
+                padding: 2px 6px 2px 6px;
+                text-decoration: none;
+            }
+            button.addbtn:hover {
+                background-color: #4fe63e;
+                text-decoration: none;
+            }
+            button:focus {
+                outline: none;
+            }
+            #rwzmAddZoneSelector, #rwzmReplaceZoneSelector {
+                position: absolute;
+                display: none;
+                width: 96%;
+                height: 100%;
+                top: 0px;
+                left: 0px;
+                right: 0px;
+                bottom: 0px;
+                border-width: 0px;
+                background-color: #666666;
+                color: #ffffff;
+                padding: 0% 2% 0% 2%;
+                z-index: 2;
+                cursor: pointer;
+            }
+            div.zoneSelectorContainer {
+                marging: 3%;
+                width: 100%;
+                height: 500px;
+                background-color: #c0c0c0;
+                overflow-y: auto;
+                padding: 0px;
+            }
+            button.greyBtn {
+                margin: 4px;
+                border-radius: 4px;
+                border: 0px;
+                color: #dddddd;
+                font-family: Raleway-Bold;
+                font-size: 14px;
+                background-color: #404040;
+                padding: 4px 8px 4px 8px;
+                text-decoration: none;
+            }
+            button.greyBtn:hover {
+                background-color: #828282;
+                color: #ffffff;
+                text-decoration: none;
+            }
+            button.small {
+                margin: 2px;
+                font-size: 10px;
+                padding: 2px 6px 2px 6px;
+            }
+            button.redBtn {
+                margin: 2px;
+                border-radius: 4px;
+                border: 0px;
+                color: #dddddd;
+                font-family: Raleway-Bold;
+                font-size: 10px;
+                background-color: #ba3d3d;
+                padding: 2px 6px 2px 6px;
+                text-decoration: none;
+            }
+            button.redBtn:hover {
+                background-color: #d60202;
+                color: #ffffff;
+                text-decoration: none;
+            }
+            button.blueBtn {
+                margin: 2px;
+                border-radius: 4px;
+                border: 0px;
+                color: #dddddd;
+                font-family: Raleway-Bold;
+                font-size: 10px;
+                background-color: #426aad;
+                padding: 2px 6px 2px 6px;
+                text-decoration: none;
+            }
+            button.blueBtn:hover {
+                background-color: #1e5dc9;
+                color: #ffffff;
+                text-decoration: none;
+            }            
+            button.zoneSelectorButton {
+                margin: 0px;
+                width: 100%;
+                border: 0px;
+                color: #000000;
+                font-family: Raleway-Bold;
+                font-size: 12px;
+                background-color: #c0c0c0;
+                padding: 4px;
+                text-align: left;
+            }
+            button.zoneSelectorButton:hover {
+                background-color: #999999;
+            }
+            div.listContainer {
+                overflow-x: hidden;
+                overflow-y: auto;
+                width: 100%;
+                height: 450px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="rwzmUI">
+            <div style='text-align: center; width: 100%;'>
+                <h1>
+                    <br>
+                    <br>
+                    Analysis in progress...
+                </h1>
+                <br>
+                <img src='../assets/images/processing.gif'>
+            </div>
+        </div>
+    </body>
+    <script>
+        var enforceLocked = false;
+        var highlightedID = "";
+        var entitiesToAddTo = [];
+        var targetZoneID = "";
+    
+        EventBridge.scriptEventReceived.connect(function (message) {
+            document.getElementById("rwzmUI").innerHTML = message;
+        });
+        
+        function highlight(id) {
+            EventBridge.emitWebEvent(JSON.stringify({
+                "action": "highlight",
+                "id": id,
+                "enforceLocked": document.getElementById("enforceLocked").checked
+            }));
+        }
+        
+        function getIdsFromScope() {
+            var ids = [];
+            var i = 0;
+            var checkboxes = document.getElementsByName("entitiesScope");
+            for(i = 0; i < checkboxes.length; i++) {  
+                if(checkboxes[i].checked) {
+                    ids.push(checkboxes[i].value);  
+                }
+            }
+            return ids;
+        }
+        
+        function selectAllOrNone() {
+            var setTo = false;
+            if (document.getElementById("fullScope").checked) {
+                setTo = true;
+            }
+            var checkboxes = document.getElementsByName("entitiesScope");
+            for(i = 0; i < checkboxes.length; i++) {  
+                checkboxes[i].checked = setTo;
+            }
+        }
+        
+        function addZoneToEntity(ids){
+            if (ids.length === 0) {
+                return;
+            } else {
+                enforceLocked = document.getElementById("enforceLocked").checked;
+                highlightedID = document.getElementById("highlightedID").value;
+                entitiesToAddTo = ids;
+                document.body.style.overflow = "hidden";
+                document.getElementById("rwzmAddZoneSelector").style.display = "block";
+            }
+        }
+        
+        function cancelZoneSelector() {
+            document.getElementById("rwzmAddZoneSelector").style.display = "none";
+            document.getElementById("rwzmReplaceZoneSelector").style.display = "none";
+            document.body.style.overflow = "auto";
+        }
+        
+        function addThisZone(id) {
+            document.getElementById("rwzmAddZoneSelector").style.display = "none";
+            document.body.style.overflow = "auto";
+            EventBridge.emitWebEvent(JSON.stringify({
+                "action": "addZoneToEntities",
+                "ids": entitiesToAddTo,
+                "zoneID": id,
+                "enforceLocked": enforceLocked,
+                "highlightedID": highlightedID
+            }));
+        }
+        
+        function removeZoneFromRWZ(id, rwzId) {
+            EventBridge.emitWebEvent(JSON.stringify({
+                "action": "removeZoneFromEntity",
+                "id": id,
+                "zoneID": rwzId,
+                "enforceLocked": document.getElementById("enforceLocked").checked,
+                "highlightedID": document.getElementById("highlightedID").value
+            }));
+        }
+
+        function replaceZoneOnAllEntities(id) {
+            var goProceed = false;
+            if (!document.getElementById("enforceLocked").checked) {
+                goProceed = confirm("Locked entities won't be modified unless you check the option 'Modify locked entities for me'\nAre you sure you want to do this?");
+            } else {
+                goProceed = true;
+            }
+            if (goProceed) {
+                enforceLocked = document.getElementById("enforceLocked").checked;
+                highlightedID = document.getElementById("highlightedID").value;
+                targetZoneID = id;
+                document.body.style.overflow = "hidden";
+                document.getElementById("rwzmReplaceZoneSelector").style.display = "block";
+            }
+        }
+        
+        function replaceByThisZone(replacementZoneID){
+            document.getElementById("rwzmReplaceZoneSelector").style.display = "none";
+            document.body.style.overflow = "auto";
+            EventBridge.emitWebEvent(JSON.stringify({
+                "action": "replaceZoneOnAllEntities",
+                "targetZoneID": targetZoneID,
+                "replacementZoneID": replacementZoneID,
+                "enforceLocked": enforceLocked,
+                "highlightedID": highlightedID
+            }));
+        }
+        
+        function removeZoneOnAllEntities(id) {
+            var goProceed = false;
+            if (!document.getElementById("enforceLocked").checked) {
+                goProceed = confirm("Locked entities won't be modified unless you check the option 'Modify locked entities for me'\nAre you sure you want to do this?");
+            } else {
+                goProceed = true;
+            }
+            if (goProceed) {
+                EventBridge.emitWebEvent(JSON.stringify({
+                    "action": "removeZoneOnAllEntities",
+                    "zoneID": id,
+                    "enforceLocked": document.getElementById("enforceLocked").checked,
+                    "highlightedID": document.getElementById("highlightedID").value
+                }));
+            }
+        }
+        
+        function undo() {
+            EventBridge.emitWebEvent(JSON.stringify({
+                "action": "undo",
+                "enforceLocked": document.getElementById("enforceLocked").checked,
+                "highlightedID": document.getElementById("highlightedID").value
+            }));
+        }
+        
+        function refresh() {
+            EventBridge.emitWebEvent(JSON.stringify({
+                "action": "refresh",
+                "enforceLocked": document.getElementById("enforceLocked").checked,
+                "highlightedID": document.getElementById("highlightedID").value
+            }));
+        }
+    </script>
+</html>

@@ -77,6 +77,17 @@ bool ScriptEngineV8::IS_THREADSAFE_INVOCATION(const QThread* thread, const QStri
     return false;
 }
 
+QString getFileNameFromTryCatch(v8::TryCatch &tryCatch, v8::Isolate *isolate, v8::Local<v8::Context> &context ) {
+    v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
+    QString errorFileName;
+    auto resource = exceptionMessage->GetScriptResourceName();
+    v8::Local<v8::String> v8resourceString;
+    if (resource->ToString(context).ToLocal(&v8resourceString)) {
+        errorFileName = QString(*v8::String::Utf8Value(isolate, v8resourceString));
+    }
+    return errorFileName;
+}
+
 ScriptValue ScriptEngineV8::makeError(const ScriptValue& _other, const QString& type) {
     if (!IS_THREADSAFE_INVOCATION(thread(), __FUNCTION__)) {
         return nullValue();
@@ -528,7 +539,7 @@ void ScriptEngineV8::storeGlobalObjectContents() {
     v8::Local<v8::Object> globalMemberObjects = v8::Object::New(_v8Isolate);
 
     auto globalMemberNames = context->Global()->GetPropertyNames(context).ToLocalChecked();
-    for (size_t i = 0; i < globalMemberNames->Length(); i++) {
+    for (uint32_t i = 0; i < globalMemberNames->Length(); i++) {
         auto name = globalMemberNames->Get(context, i).ToLocalChecked();
         if(!globalMemberObjects->Set(context, name, context->Global()->Get(context, name).ToLocalChecked()).FromMaybe(false)) {
             Q_ASSERT(false);
@@ -634,7 +645,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             // Since V8 cannot use arbitrary object as global object, objects from main global need to be copied to closure's global object
             auto globalObjectContents = _globalObjectContents.Get(_v8Isolate);
             auto globalMemberNames = globalObjectContents->GetPropertyNames(globalObjectContents->CreationContext()).ToLocalChecked();
-            for (size_t i = 0; i < globalMemberNames->Length(); i++) {
+            for (uint32_t i = 0; i < globalMemberNames->Length(); i++) {
                 auto name = globalMemberNames->Get(closureContext, i).ToLocalChecked();
                 if(!closureContext->Global()->Set(closureContext, name, globalObjectContents->Get(globalObjectContents->CreationContext(), name).ToLocalChecked()).FromMaybe(false)) {
                     Q_ASSERT(false);
@@ -645,7 +656,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             // Objects from closure need to be copied to global object too
             // V8TODO: I'm not sure which context to use with Get
             auto closureMemberNames = closureObject->GetPropertyNames(closureContext).ToLocalChecked();
-            for (size_t i = 0; i < closureMemberNames->Length(); i++) {
+            for (uint32_t i = 0; i < closureMemberNames->Length(); i++) {
                 auto name = closureMemberNames->Get(closureContext, i).ToLocalChecked();
                 if(!closureContext->Global()->Set(closureContext, name, closureObject->Get(closureContext, name).ToLocalChecked()).FromMaybe(false)) {
                     Q_ASSERT(false);
@@ -653,6 +664,11 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             }
             // "Script" API is context-dependent, so it needs to be recreated for each new context
             registerGlobalObject("Script", new ScriptManagerScriptingInterface(_manager), ScriptEngine::ScriptOwnership);
+            auto Script = globalObject().property("Script");
+            auto require = Script.property("require");
+            auto resolve = Script.property("_requireResolve");
+            require.setProperty("resolve", resolve, ScriptValue::ReadOnly | ScriptValue::Undeletable);
+            globalObject().setProperty("require", require, ScriptValue::ReadOnly | ScriptValue::Undeletable);
 
             // Script.require properties need to be copied, since that's where the Script.require cache is
             // Get source and destination Script.require objects
@@ -701,7 +717,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
 
                 auto requireMemberNames =
                     oldRequireObject->GetPropertyNames(oldRequireObject->CreationContext()).ToLocalChecked();
-                for (size_t i = 0; i < requireMemberNames->Length(); i++) {
+                for (uint32_t i = 0; i < requireMemberNames->Length(); i++) {
                     auto name = requireMemberNames->Get(closureContext, i).ToLocalChecked();
                     v8::Local<v8::Value> oldObject;
                     if (!oldRequireObject->Get(oldRequireObject->CreationContext(), name).ToLocal(&oldObject)) {
@@ -726,7 +742,13 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
                     + "tryCatch details:" + formatErrorMessageFromTryCatch(tryCatch);
                 v8Result = v8::Null(_v8Isolate);
                 if (_manager) {
-                    _manager->scriptErrorMessage(errorMessage);
+                    v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
+                    int errorLineNumber = -1;
+                    if (!exceptionMessage.IsEmpty()) {
+                        errorLineNumber = exceptionMessage->GetLineNumber(closureContext).FromJust();
+                    }
+                    _manager->scriptErrorMessage(errorMessage, getFileNameFromTryCatch(tryCatch, _v8Isolate, closureContext),
+                                                          errorLineNumber);
                 } else {
                     qWarning(scriptengine_v8) << errorMessage;
                 }
@@ -781,7 +803,13 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
         if (!v8::Script::Compile(context, v8::String::NewFromUtf8(getIsolate(), sourceCode.toStdString().c_str()).ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
             QString errorMessage(QString("Error while compiling script: \"") + fileName + QString("\" ") + formatErrorMessageFromTryCatch(tryCatch));
             if (_manager) {
-                _manager->scriptErrorMessage(errorMessage);
+                v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
+                int errorLineNumber = -1;
+                if (!exceptionMessage.IsEmpty()) {
+                    errorLineNumber = exceptionMessage->GetLineNumber(context).FromJust();
+                }
+                _manager->scriptErrorMessage(errorMessage, getFileNameFromTryCatch(tryCatch, _v8Isolate, context),
+                                                      errorLineNumber);
             } else {
                 qDebug(scriptengine_v8) << errorMessage;
             }
@@ -799,7 +827,13 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
         ScriptValue errorValue(new ScriptValueV8Wrapper(this, V8ScriptValue(this, runError->Get())));
         QString errorMessage(QString("Running script: \"") + fileName + QString("\" ") + formatErrorMessageFromTryCatch(tryCatchRun));
         if (_manager) {
-            _manager->scriptErrorMessage(errorMessage);
+            v8::Local<v8::Message> exceptionMessage = tryCatchRun.Message();
+            int errorLineNumber = -1;
+            if (!exceptionMessage.IsEmpty()) {
+                errorLineNumber = exceptionMessage->GetLineNumber(context).FromJust();
+            }
+            _manager->scriptErrorMessage(errorMessage, getFileNameFromTryCatch(tryCatchRun, _v8Isolate, context),
+                                                  errorLineNumber);
         } else {
             qDebug(scriptengine_v8) << errorMessage;
         }

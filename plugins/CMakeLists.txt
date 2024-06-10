@@ -1,9 +1,10 @@
 #
 #  Created by Bradley Austin Davis on 2015/10/25
 #  Copyright 2015 High Fidelity, Inc.
+#  Copyright 2023-2024 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
-#  See the accompanying file LICENSE or http:#www.apache.org/licenses/LICENSE-2.0.html
+#  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 #
 
 # add the plugin directories
@@ -19,9 +20,11 @@ if (NOT SERVER_ONLY AND NOT ANDROID)
       add_subdirectory(${DIR})
   endif()
 
-  # Note: OpenVR is a Steam thing, which is different from OVR, which is an Oculus SDK component.
-  set(DIR "openvr")
-  add_subdirectory(${DIR})
+  if (NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+    # Note: OpenVR is a Steam thing, which is different from OVR, which is an Oculus SDK component.
+    set(DIR "openvr")
+    add_subdirectory(${DIR})
+  endif()
 
   set(DIR "hifiSdl2")
   add_subdirectory(${DIR})

@@ -902,7 +902,12 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
     DependencyManager::set<CompositorHelper>();
     DependencyManager::set<OffscreenQmlSurfaceCache>();
     DependencyManager::set<EntityScriptClient>();
+
     DependencyManager::set<EntityScriptServerLogClient>();
+    auto scriptEngines = DependencyManager::get<ScriptEngines>();
+    auto entityScriptServerLog = DependencyManager::get<EntityScriptServerLogClient>();
+    QObject::connect(scriptEngines.data(), &ScriptEngines::requestingEntityScriptServerLog, entityScriptServerLog.data(), &EntityScriptServerLogClient::requestMessagesForScriptEngines);
+
     DependencyManager::set<GooglePolyScriptingInterface>();
     DependencyManager::set<OctreeStatsProvider>(nullptr, qApp->getOcteeSceneStats());
     DependencyManager::set<AvatarBookmarks>();
@@ -3300,7 +3305,7 @@ void Application::initializeUi() {
 
             // END PULL SAFEURLS FROM INTERFACE.JSON Settings
 
-            if (AUTHORIZED_EXTERNAL_QML_SOURCE.isParentOf(url)) {
+            if (QUrl(NetworkingConstants::OVERTE_COMMUNITY_APPLICATIONS).isParentOf(url)) {
                 return true;
             } else {
                 for (const auto& str : safeURLS) {
@@ -7652,7 +7657,7 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
 
     {
         auto connection = std::make_shared<QMetaObject::Connection>();
-        *connection = scriptManager->connect(scriptManager.get(), &ScriptManager::scriptEnding, [scriptManager, connection]() {
+        *connection = scriptManager->connect(scriptManager.get(), &ScriptManager::scriptEnding, [this, scriptManager, connection]() {
             // Request removal of controller routes with callbacks to a given script engine
             auto userInputMapper = DependencyManager::get<UserInputMapper>();
             // scheduleScriptEndpointCleanup will have the last instance of shared pointer to script manager

@@ -4,6 +4,7 @@
 //
 //  Created by Olivier Prat on 08/08/17.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -65,7 +66,7 @@ using HighlightSharedParametersPointer = std::shared_ptr<HighlightSharedParamete
 class PrepareDrawHighlight {
 public:
     using Inputs = gpu::FramebufferPointer;
-    using Outputs = HighlightResourcesPointer;
+    using Outputs = render::VaryingSet2<HighlightResourcesPointer, render::Args::RenderMode>;
     using JobModel = render::Job::ModelIO<PrepareDrawHighlight, Inputs, Outputs>;
 
     PrepareDrawHighlight();
@@ -81,12 +82,13 @@ private:
 class SelectionToHighlight {
 public:
 
-    using Outputs = std::vector<std::string>;
-    using JobModel = render::Job::ModelO<SelectionToHighlight, Outputs>;
+    using Inputs = render::VaryingSet2<render::ItemBounds, gpu::FramebufferPointer>;
+    using Outputs = render::VaryingSet2<std::vector<std::string>, std::vector<render::HighlightStage::Index>>;
+    using JobModel = render::Job::ModelIO<SelectionToHighlight, Inputs, Outputs>;
 
     SelectionToHighlight(HighlightSharedParametersPointer parameters) : _sharedParameters{ parameters } {}
 
-    void run(const render::RenderContextPointer& renderContext, Outputs& outputs);
+    void run(const render::RenderContextPointer& renderContext, const Inputs& inputs, Outputs& outputs);
 
 private:
 
@@ -96,7 +98,7 @@ private:
 class ExtractSelectionName {
 public:
 
-    using Inputs = SelectionToHighlight::Outputs;
+    using Inputs = std::vector<std::string>;
     using Outputs = std::string;
     using JobModel = render::Job::ModelIO<ExtractSelectionName, Inputs, Outputs>;
 
@@ -209,6 +211,25 @@ private:
 
 };
 
+class AppendNonMetaOutlines {
+public:
+    using Inputs = render::VaryingSet2<render::ItemIDs, render::ItemBounds>;
+    using Outputs = render::ItemIDs;
+    using JobModel = render::Job::ModelIO<AppendNonMetaOutlines, Inputs, Outputs>;
+
+    AppendNonMetaOutlines() {}
+
+    void run(const render::RenderContextPointer& renderContext, const Inputs& inputs, Outputs& outputs);
+};
+
+class HighlightCleanup {
+public:
+    using Inputs = render::VaryingSet2<std::vector<render::HighlightStage::Index>, render::Args::RenderMode>;
+    using JobModel = render::Job::ModelI<HighlightCleanup, Inputs>;
+
+    HighlightCleanup() {}
+
+    void run(const render::RenderContextPointer& renderContext, const Inputs& inputs);
+};
+
 #endif // hifi_render_utils_HighlightEffect_h
-
-

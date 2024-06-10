@@ -90,7 +90,7 @@ void Mat4::print(const QString& label, const glm::mat4& m, bool transpose) const
     QString message = QString("%1 %2").arg(qPrintable(label));
     message = message.arg(glm::to_string(out).c_str());
     qCDebug(scriptengine) << message;
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     if (ScriptManager* scriptManager = engine()->manager()) {
         scriptManager->print(message);
     }

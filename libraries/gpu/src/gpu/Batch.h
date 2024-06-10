@@ -30,11 +30,11 @@ class QDebug;
 #define BATCH_PREALLOCATE_MIN 128
 namespace gpu {
 
-// The named batch data provides a mechanism for accumulating data into buffers over the course 
-// of many independent calls.  For instance, two objects in the scene might both want to render 
+// The named batch data provides a mechanism for accumulating data into buffers over the course
+// of many independent calls.  For instance, two objects in the scene might both want to render
 // a simple box, but are otherwise unaware of each other.  The common code that they call to render
-// the box can create buffers to store the rendering parameters for each box and register a function 
-// that will be called with the accumulated buffer data when the batch commands are finally 
+// the box can create buffers to store the rendering parameters for each box and register a function
+// that will be called with the accumulated buffer data when the batch commands are finally
 // executed against the backend
 
 
@@ -100,15 +100,15 @@ public:
     void clear();
 
     // Batches may need to override the context level stereo settings
-    // if they're performing framebuffer copy operations, like the 
+    // if they're performing framebuffer copy operations, like the
     // deferred lighting resolution mechanism
     void enableStereo(bool enable = true);
     bool isStereoEnabled() const;
 
-    // Stereo batches will pre-translate the view matrix, but this isn't 
-    // appropriate for skyboxes or other things intended to be drawn at 
-    // infinite distance, so provide a mechanism to render in stereo 
-    // without the pre-translation of the view.  
+    // Stereo batches will pre-translate the view matrix, but this isn't
+    // appropriate for skyboxes or other things intended to be drawn at
+    // infinite distance, so provide a mechanism to render in stereo
+    // without the pre-translation of the view.
     void enableSkybox(bool enable = true);
     bool isSkyboxEnabled() const;
 
@@ -147,7 +147,7 @@ public:
     // Indirect buffer is used by the multiDrawXXXIndirect calls
     // The indirect buffer contains the command descriptions to execute multiple drawcalls in a single call
     void setIndirectBuffer(const BufferPointer& buffer, Offset offset = 0, Offset stride = 0);
-    
+
     // multi command desctription for multiDrawIndexedIndirect
     class DrawIndirectCommand {
     public:
@@ -248,7 +248,7 @@ public:
     void popProfileRange();
 
     // TODO: As long as we have gl calls explicitely issued from interface
-    // code, we need to be able to record and batch these calls. THe long 
+    // code, we need to be able to record and batch these calls. THe long
     // term strategy is to get rid of any GL calls in favor of the HIFI GPU API
     // For now, instead of calling the raw gl Call, use the equivalent call on the batch so the call is beeing recorded
     // THe implementation of these functions is in GLBackend.cpp
@@ -286,8 +286,6 @@ public:
     void _glUniform(int location, const glm::mat3& v) {
         _glUniformMatrix3fv(location, 1, false, glm::value_ptr(v));
     }
-
-    void _glColor4f(float red, float green, float blue, float alpha);
 
     // Maybe useful but shoudln't be public. Please convince me otherwise
     // Well porting to gles i need it...
@@ -350,7 +348,7 @@ public:
         COMMAND_stopNamedCall,
 
         // TODO: As long as we have gl calls explicitely issued from interface
-        // code, we need to be able to record and batch these calls. THe long 
+        // code, we need to be able to record and batch these calls. THe long
         // term strategy is to get rid of any GL calls in favor of the HIFI GPU API
         COMMAND_glUniform1i,
         COMMAND_glUniform1f,
@@ -362,8 +360,6 @@ public:
         COMMAND_glUniform4iv,
         COMMAND_glUniformMatrix3fv,
         COMMAND_glUniformMatrix4fv,
-
-        COMMAND_glColor4f,
 
         COMMAND_pushProfileRange,
         COMMAND_popProfileRange,
@@ -381,7 +377,7 @@ public:
         union {
 #if (QT_POINTER_SIZE == 8)
             size_t _size;
-#endif            
+#endif
             int32 _int;
             uint32 _uint;
             float _float;
@@ -389,7 +385,7 @@ public:
         };
 #if (QT_POINTER_SIZE == 8)
         Param(size_t val) : _size(val) {}
-#endif            
+#endif
         Param(int32 val) : _int(val) {}
         Param(uint32 val) : _uint(val) {}
         Param(float val) : _float(val) {}
@@ -406,7 +402,7 @@ public:
     public:
         typedef T Data;
         Data _data;
-        Cache<T>(const Data& data) : _data(data) {}
+        Cache(const Data& data) : _data(data) {}
         static size_t _max;
 
         class Vector {
@@ -573,7 +569,7 @@ private:
 
 #else
 
-#define PROFILE_RANGE_BATCH(batch, name) 
+#define PROFILE_RANGE_BATCH(batch, name)
 
 #endif
 

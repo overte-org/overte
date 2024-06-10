@@ -104,7 +104,13 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     if (tryCatch.HasCaught()) {
         QString errorMessage(QString("Function call failed: \"") + _engine->formatErrorMessageFromTryCatch(tryCatch));
         if (_engine->_manager) {
-            _engine->_manager->scriptErrorMessage(errorMessage);
+            v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
+            int errorLineNumber = -1;
+            if (!exceptionMessage.IsEmpty()) {
+                errorLineNumber = exceptionMessage->GetLineNumber(context).FromJust();
+            }
+            _engine->_manager->scriptErrorMessage(errorMessage, getFileNameFromTryCatch(tryCatch, isolate, context),
+                                                  errorLineNumber);
         } else {
             qDebug(scriptengine_v8) << errorMessage;
         }
@@ -114,9 +120,10 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     if (maybeResult.ToLocal(&result)) {
         return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
     } else {
-        QString errorMessage("JS function call failed: " + _engine->currentContext()->backtrace().join("\n"));
+        auto currentContext = _engine->currentContext();
+        QString errorMessage("JS function call failed: " + currentContext->backtrace().join("\n"));
         if (_engine->_manager) {
-            _engine->_manager->scriptErrorMessage(errorMessage);
+            _engine->_manager->scriptErrorMessage(errorMessage, currentContext->currentFileName(), currentContext->currentLineNumber());
         } else {
             qDebug(scriptengine_v8) << errorMessage;
         }
