@@ -30,7 +30,9 @@
 #  define WEBRTC_DATA_CHANNELS 1
 #  define WEBRTC_WIN 1
 #  define NOMINMAX 1
+#ifndef WIN32_LEAN_AND_MEAN
 #  define WIN32_LEAN_AND_MEAN 1
+#endif
 #elif defined(Q_OS_ANDROID)
 // I don't yet have a working libwebrtc for android
 // #  define WEBRTC_AUDIO 1

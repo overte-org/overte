@@ -48,8 +48,8 @@ private:
 
 template <class T, int MAX_NUM_SAMPLES> class MovingAverage {
 public:
-    MovingAverage<T, MAX_NUM_SAMPLES>() {}
-    MovingAverage<T, MAX_NUM_SAMPLES>(const MovingAverage<T, MAX_NUM_SAMPLES>& other) {
+    MovingAverage() {}
+    MovingAverage(const MovingAverage<T, MAX_NUM_SAMPLES>& other) {
         *this = other;
     }
     MovingAverage<T, MAX_NUM_SAMPLES>& operator=(const MovingAverage<T, MAX_NUM_SAMPLES>& other) {

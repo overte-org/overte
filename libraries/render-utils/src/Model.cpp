@@ -1802,8 +1802,8 @@ public:
 };
 
 static void packBlendshapeOffsetTo_Pos_F32_3xSN10_Nor_3xSN10_Tan_3xSN10(glm::uvec4& packed, const BlendshapeOffsetUnpacked& unpacked) {
-    float len = glm::compMax(glm::abs(unpacked.positionOffset));
-    glm::vec3 normalizedPos(unpacked.positionOffset);
+    float len = max(abs(unpacked.positionOffsetX), max(abs(unpacked.positionOffsetY), abs(unpacked.positionOffsetZ)));
+    glm::vec3 normalizedPos(unpacked.positionOffsetX, unpacked.positionOffsetY, unpacked.positionOffsetZ);
     if (len > 0.0f) {
         normalizedPos /= len;
     } else {
@@ -1813,8 +1813,8 @@ static void packBlendshapeOffsetTo_Pos_F32_3xSN10_Nor_3xSN10_Tan_3xSN10(glm::uve
     packed = glm::uvec4(
         glm::floatBitsToUint(len),
         glm_packSnorm3x10_1x2(glm::vec4(normalizedPos, 0.0f)),
-        glm_packSnorm3x10_1x2(glm::vec4(unpacked.normalOffset, 0.0f)),
-        glm_packSnorm3x10_1x2(glm::vec4(unpacked.tangentOffset, 0.0f))
+        glm_packSnorm3x10_1x2(glm::vec4(unpacked.normalOffsetX, unpacked.normalOffsetY, unpacked.normalOffsetZ, 0.0f)),
+        glm_packSnorm3x10_1x2(glm::vec4(unpacked.tangentOffsetX, unpacked.tangentOffsetY, unpacked.tangentOffsetZ, 0.0f))
     );
 }
 
@@ -1922,10 +1922,19 @@ void Blender::run() {
                 int index = blendshape.indices.at(j);
 
                 auto& currentBlendshapeOffset = unpackedBlendshapeOffsets[index];
-                currentBlendshapeOffset.positionOffset += blendshape.vertices.at(j) * vertexCoefficient;
-                currentBlendshapeOffset.normalOffset += blendshape.normals.at(j) * normalCoefficient;
+                glm::vec3 blendshapePosition = blendshape.vertices.at(j) * vertexCoefficient;
+                currentBlendshapeOffset.positionOffsetX += blendshapePosition.x;
+                currentBlendshapeOffset.positionOffsetY += blendshapePosition.y;
+                currentBlendshapeOffset.positionOffsetZ += blendshapePosition.z;
+                glm::vec3 blendshapeNormal = blendshape.normals.at(j) * normalCoefficient;
+                currentBlendshapeOffset.normalOffsetX += blendshapeNormal.x;
+                currentBlendshapeOffset.normalOffsetY += blendshapeNormal.y;
+                currentBlendshapeOffset.normalOffsetZ += blendshapeNormal.z;
                 if (j < blendshape.tangents.size()) {
-                    currentBlendshapeOffset.tangentOffset += blendshape.tangents.at(j) * normalCoefficient;
+                    glm::vec3 blendshapeTangent = blendshape.tangents.at(j) * normalCoefficient;
+                    currentBlendshapeOffset.tangentOffsetX += blendshapeTangent.x;
+                    currentBlendshapeOffset.tangentOffsetY += blendshapeTangent.y;
+                    currentBlendshapeOffset.tangentOffsetZ += blendshapeTangent.z;
                 }
             }
         }

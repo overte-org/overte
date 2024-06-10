@@ -3,6 +3,7 @@
 //
 //  Created by Zach Fox on 2019-06-11
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -93,9 +94,9 @@ Flickable {
                     width: parent.width
                     height: 18
                     labelTextOn: "Keep Old Menus (File, Edit, etc)"
-                    checked: Settings.getValue("simplifiedUI/keepMenus", false);
+                    checked: Settings.getValue("simplifiedUI/keepMenus", true);
                     onClicked: {
-                        Settings.setValue("simplifiedUI/keepMenus", !Settings.getValue("simplifiedUI/keepMenus", false));
+                        Settings.setValue("simplifiedUI/keepMenus", !Settings.getValue("simplifiedUI/keepMenus", true));
                     }
                 }
 

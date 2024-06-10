@@ -47,6 +47,24 @@ void HFMMaterial::getTextureNames(QSet<QString>& textureList) const {
     if (!lightmapTexture.isNull()) {
         textureList.insert(lightmapTexture.name);
     }
+
+    if (isMToonMaterial) {
+        if (!shadeTexture.isNull()) {
+            textureList.insert(shadeTexture.name);
+        }
+        if (!shadingShiftTexture.isNull()) {
+            textureList.insert(shadingShiftTexture.name);
+        }
+        if (!matcapTexture.isNull()) {
+            textureList.insert(matcapTexture.name);
+        }
+        if (!rimTexture.isNull()) {
+            textureList.insert(rimTexture.name);
+        }
+        if (!uvAnimationTexture.isNull()) {
+            textureList.insert(uvAnimationTexture.name);
+        }
+    }
 }
 
 void HFMMaterial::setMaxNumPixelsPerTexture(int maxNumPixels) {
@@ -61,6 +79,12 @@ void HFMMaterial::setMaxNumPixelsPerTexture(int maxNumPixels) {
     occlusionTexture.maxNumPixels = maxNumPixels;
     scatteringTexture.maxNumPixels = maxNumPixels;
     lightmapTexture.maxNumPixels = maxNumPixels;
+
+    shadeTexture.maxNumPixels = maxNumPixels;
+    shadingShiftTexture.maxNumPixels = maxNumPixels;
+    matcapTexture.maxNumPixels = maxNumPixels;
+    rimTexture.maxNumPixels = maxNumPixels;
+    uvAnimationTexture.maxNumPixels = maxNumPixels;
 }
 
 bool HFMMaterial::needTangentSpace() const {
@@ -312,6 +336,13 @@ void HFMModel::debugDump() {
         qCDebug(modelformat) << "  useMetallicMap =" << mat.useMetallicMap;
         qCDebug(modelformat) << "  useEmissiveMap =" << mat.useEmissiveMap;
         qCDebug(modelformat) << "  useOcclusionMap =" << mat.useOcclusionMap;
+
+        qCDebug(modelformat) << "  isMToonMaterial =" << mat.isMToonMaterial;
+        qCDebug(modelformat) << "  shadeTexture =" << mat.shadeTexture.filename;
+        qCDebug(modelformat) << "  shadingShiftTexture =" << mat.shadingShiftTexture.filename;
+        qCDebug(modelformat) << "  matcapTexture =" << mat.matcapTexture.filename;
+        qCDebug(modelformat) << "  rimTexture =" << mat.rimTexture.filename;
+        qCDebug(modelformat) << "  uvAnimationTexture =" << mat.uvAnimationTexture.filename;
     }
 
     qCDebug(modelformat) << "---------------- Joints ----------------";

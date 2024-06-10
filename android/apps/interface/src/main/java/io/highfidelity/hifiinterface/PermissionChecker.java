@@ -109,7 +109,7 @@ public class PermissionChecker extends Activity {
                     JSONObject obj = new JSONObject();
                         try {
                             obj.put("firstRun",false);
-                            obj.put("Avatar/fullAvatarURL", avatarPaths[which]);
+                            obj.put(SETTINGS_FULL_PRIVATE_GROUP_NAME + "/Avatar/fullAvatarURL", avatarPaths[which]);
                             File directory = new File(pathForJson);
 
                             if(!directory.exists()) directory.mkdirs();

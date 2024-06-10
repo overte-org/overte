@@ -18,6 +18,8 @@
 
 Q_LOGGING_CATEGORY(settings_handle, "settings.handle")
 
+const QString SETTINGS_FULL_PRIVATE_GROUP_NAME = "fullPrivate";
+
 const QString Settings::firstRun { "firstRun" };
 
 

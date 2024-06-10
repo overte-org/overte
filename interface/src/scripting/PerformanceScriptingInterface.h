@@ -128,6 +128,22 @@ public slots:
     void setRefreshRateProfile(RefreshRateProfile refreshRateProfile);
 
     /*@jsdoc
+     * Sets a custom refresh rate.
+     * @function Performance.setCustomRefreshRate
+     * @param {RefreshRateRegime} refreshRateRegime - The refresh rate regime
+     * @param {int} value - The value for the regime
+     */
+    void setCustomRefreshRate(RefreshRateManager::RefreshRateRegime refreshRateRegime, int value);
+
+    /*@jsdoc
+     * Gets the value for a specific RefreshRateRegime.
+     * @function Performance.getCustomRefreshRate
+     * @param {RefreshRateRegime} - The regime to get the value from
+     * @returns {int} - The value from the specified regime
+     */
+    int getCustomRefreshRate(RefreshRateManager::RefreshRateRegime regime) const;
+
+    /*@jsdoc
      * Gets the current refresh rate profile in use.
      * @function Performance.getRefreshRateProfile
      * @returns {Performance.RefreshRateProfile} The refresh rate profile.

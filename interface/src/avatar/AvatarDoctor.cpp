@@ -333,6 +333,14 @@ void AvatarDoctor::diagnoseTextures() {
         addTextureToList(material.occlusionTexture);
         addTextureToList(material.scatteringTexture);
         addTextureToList(material.lightmapTexture);
+
+        if (material.isMToonMaterial) {
+            addTextureToList(material.shadeTexture);
+            addTextureToList(material.shadingShiftTexture);
+            addTextureToList(material.matcapTexture);
+            addTextureToList(material.rimTexture);
+            addTextureToList(material.uvAnimationTexture);
+        }
     }
 
     for (const auto& materialMapping : model->getMaterialMapping()) {

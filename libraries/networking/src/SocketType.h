@@ -36,6 +36,10 @@ public:
     }
 };
 
+inline QDebug operator<<(QDebug debug, SocketType type) {
+    debug << SocketTypeToString::socketTypeToString(type);
+    return debug;
+}
 /// @}
 
 #endif // overte_SocketType_h

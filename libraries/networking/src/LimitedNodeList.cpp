@@ -41,7 +41,7 @@
 
 #if defined(Q_OS_WIN)
 #include <winsock.h>
-#else 
+#else
 #include <arpa/inet.h>
 #endif
 
@@ -196,6 +196,10 @@ void LimitedNodeList::setPermissions(const NodePermissions& newPermissions) {
     if (originalPermissions.can(NodePermissions::Permission::canRezAvatarEntities) !=
         newPermissions.can(NodePermissions::Permission::canRezAvatarEntities)) {
         emit canRezAvatarEntitiesChanged(_permissions.can(NodePermissions::Permission::canRezAvatarEntities));
+    }
+    if (originalPermissions.can(NodePermissions::Permission::canViewAssetURLs) !=
+        newPermissions.can(NodePermissions::Permission::canViewAssetURLs)) {
+        emit canViewAssetURLsChanged(_permissions.can(NodePermissions::Permission::canViewAssetURLs));
     }
 }
 
@@ -497,7 +501,7 @@ qint64 LimitedNodeList::sendUnreliableUnorderedPacketList(NLPacketList& packetLi
         }
         return bytesSent;
     } else {
-        qCDebug(networking) << "LimitedNodeList::sendUnreliableUnorderedPacketList called without active socket for node" 
+        qCDebug(networking) << "LimitedNodeList::sendUnreliableUnorderedPacketList called without active socket for node"
             << destinationNode << " - not sending.";
         return ERROR_SENDING_PACKET_BYTES;
     }
@@ -1139,7 +1143,7 @@ void LimitedNodeList::startSTUNPublicSocketUpdate() {
         if (_stunSockAddr.getAddress().isNull()) {
 
             // if we fail to lookup the socket then timeout the STUN address lookup
-            connect(&_stunSockAddr, &SockAddr::lookupFailed, this, &LimitedNodeList::possiblyTimeoutSTUNAddressLookup);
+            connect(&_stunSockAddr, &SockAddr::lookupFailed, this, &LimitedNodeList::STUNAddressLookupFailed);
 
             // immediately send a STUN request once we know the socket
             connect(&_stunSockAddr, &SockAddr::lookupCompleted, this, &LimitedNodeList::sendSTUNRequest);
@@ -1153,7 +1157,7 @@ void LimitedNodeList::startSTUNPublicSocketUpdate() {
             QTimer* lookupTimeoutTimer = new QTimer { this };
             lookupTimeoutTimer->setSingleShot(true);
 
-            connect(lookupTimeoutTimer, &QTimer::timeout, this, &LimitedNodeList::possiblyTimeoutSTUNAddressLookup);
+            connect(lookupTimeoutTimer, &QTimer::timeout, this, &LimitedNodeList::STUNAddressLookupTimeout);
 
             // delete the lookup timeout timer once it has fired
             connect(lookupTimeoutTimer, &QTimer::timeout, lookupTimeoutTimer, &QTimer::deleteLater);
@@ -1168,10 +1172,18 @@ void LimitedNodeList::startSTUNPublicSocketUpdate() {
     }
 }
 
-void LimitedNodeList::possiblyTimeoutSTUNAddressLookup() {
+void LimitedNodeList::STUNAddressLookupFailed() {
+    if (_stunSockAddr.getAddress().isNull()) {
+        // got a lookup failure
+        qCCritical(networking) << "PAGE: Failed to lookup address of STUN server" << STUN_SERVER_HOSTNAME;
+        stopInitialSTUNUpdate(false);
+    }
+}
+
+void LimitedNodeList::STUNAddressLookupTimeout() {
     if (_stunSockAddr.getAddress().isNull()) {
         // our stun address is still NULL, but we've been waiting for long enough - time to force a fail
-        qCCritical(networking) << "PAGE: Failed to lookup address of STUN server" << STUN_SERVER_HOSTNAME;
+        qCCritical(networking) << "PAGE: Address lookup of STUN server" << STUN_SERVER_HOSTNAME << "timed out";
         stopInitialSTUNUpdate(false);
     }
 }

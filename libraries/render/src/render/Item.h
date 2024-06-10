@@ -339,9 +339,9 @@ class ItemBound {
         ItemBound(ItemID id) : id(id) { }
         ItemBound(ItemID id, const AABox& bound) : id(id), bound(bound) { }
 
-        ItemID id;
+        ItemID id { 0 };
         AABox bound;
-        uint32_t padding;
+        uint32_t padding { 0 };
 };
 
 // many Item Bounds in a vector

@@ -478,10 +478,9 @@ public:
 protected:
     std::string _name { "" };
     mutable MaterialKey _key { 0 };
-
-private:
     std::string _model { HIFI_PBR };
 
+private:
     // Material properties
     glm::vec3 _emissive { DEFAULT_EMISSIVE };
     float _opacity { DEFAULT_OPACITY };

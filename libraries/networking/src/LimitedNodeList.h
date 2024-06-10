@@ -132,6 +132,7 @@ public:
     bool getThisNodeCanReplaceContent() const { return _permissions.can(NodePermissions::Permission::canReplaceDomainContent); }
     bool getThisNodeCanGetAndSetPrivateUserData() const { return _permissions.can(NodePermissions::Permission::canGetAndSetPrivateUserData); }
     bool getThisNodeCanRezAvatarEntities() const { return _permissions.can(NodePermissions::Permission::canRezAvatarEntities); }
+    bool getThisNodeCanViewAssetURLs() const { return _permissions.can(NodePermissions::Permission::canViewAssetURLs); }
 
     quint16 getSocketLocalPort(SocketType socketType) const { return _nodeSocket.localPort(socketType); }
     Q_INVOKABLE void setSocketLocalPort(SocketType socketType, quint16 socketLocalPort);
@@ -392,6 +393,7 @@ signals:
     void canReplaceContentChanged(bool canReplaceContent);
     void canGetAndSetPrivateUserDataChanged(bool canGetAndSetPrivateUserData);
     void canRezAvatarEntitiesChanged(bool canRezAvatarEntities);
+    void canViewAssetURLsChanged(bool canViewAssetURLs);
 
 protected slots:
     void connectedForLocalSocketTest();
@@ -481,7 +483,8 @@ protected:
 
 private slots:
     void flagTimeForConnectionStep(ConnectionStep connectionStep, quint64 timestamp);
-    void possiblyTimeoutSTUNAddressLookup();
+    void STUNAddressLookupTimeout();
+    void STUNAddressLookupFailed();
     void addSTUNHandlerToUnfiltered(); // called once STUN socket known
 
 private:

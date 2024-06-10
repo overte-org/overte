@@ -4,6 +4,7 @@
 //  Created by Nissim Hadar on 1 Sept 2018.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -177,7 +178,7 @@ void TestRunnerDesktop::run() {
     _user = nitpick->getSelectedUser();
 
     // This will be restored at the end of the tests
-    saveExistingHighFidelityAppDataFolder();
+    saveExistingAppDataFolder();
 
     if (_usePreviousInstallationCheckBox->isChecked()) {
         installationComplete();
@@ -266,8 +267,8 @@ void TestRunnerDesktop::runInstaller() {
         folderName += QString(" - ") + getPRNumberFromURL(_url->text());
     }
 
-    script.write((QString("cp -Rf \"$VOLUME/") + folderName + "/interface.app\" \"" + _workingFolder + "/High_Fidelity/\"\n").toStdString().c_str());
-    script.write((QString("cp -Rf \"$VOLUME/") + folderName + "/Sandbox.app\" \""   + _workingFolder + "/High_Fidelity/\"\n").toStdString().c_str());
+    script.write((QString("cp -Rf \"$VOLUME/") + folderName + "/interface.app\" \"" + _workingFolder + "/Overte/\"\n").toStdString().c_str());
+    script.write((QString("cp -Rf \"$VOLUME/") + folderName + "/Sandbox.app\" \""   + _workingFolder + "/Overte/\"\n").toStdString().c_str());
 
     script.write("hdiutil detach \"$VOLUME\"\n");
     script.write("killall yes\n");
@@ -313,7 +314,7 @@ void TestRunnerDesktop::verifyInstallationSucceeded() {
 #endif
 }
 
-void TestRunnerDesktop::saveExistingHighFidelityAppDataFolder() {
+void TestRunnerDesktop::saveExistingAppDataFolder() {
     QString dataDirectory{ "NOT FOUND" };
 #ifdef Q_OS_WIN
     dataDirectory = qgetenv("USERPROFILE") + "\\AppData\\Roaming";
@@ -339,9 +340,9 @@ void TestRunnerDesktop::saveExistingHighFidelityAppDataFolder() {
     // Copy an "empty" AppData folder (i.e. no entities)
     QDir canonicalAppDataFolder;
 #ifdef Q_OS_WIN
-    canonicalAppDataFolder = QDir::currentPath() + "/AppDataHighFidelity";
+    canonicalAppDataFolder.setPath(QDir::currentPath() + "/AppDataOverte");
 #elif defined Q_OS_MAC
-    canonicalAppDataFolder = QCoreApplication::applicationDirPath() + "/AppDataHighFidelity";
+    canonicalAppDataFolder.setPath(QCoreApplication::applicationDirPath() + "/AppDataOverte");
 #endif
     if (canonicalAppDataFolder.exists()) {
         copyFolder(canonicalAppDataFolder.path(), _appDataFolder.path());
@@ -566,7 +567,7 @@ void TestRunnerDesktop::evaluateResults() {
 
 void TestRunnerDesktop::automaticTestRunEvaluationComplete(const QString& zippedFolder, int numberOfFailures) {
     addBuildNumberToResults(zippedFolder);
-    restoreHighFidelityAppDataFolder();
+    restoreAppDataFolder();
 
     _statusLabel->setText("Testing complete");
 
@@ -604,7 +605,7 @@ void TestRunnerDesktop::addBuildNumberToResults(const QString& zippedFolderName)
     }
 }
 
-void TestRunnerDesktop::restoreHighFidelityAppDataFolder() {
+void TestRunnerDesktop::restoreAppDataFolder() {
     _appDataFolder.removeRecursively();
 
     if (_savedAppDataFolder != QDir()) {

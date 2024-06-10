@@ -253,9 +253,10 @@ void CrashRecoveryHandler::handleCrash(CrashRecoveryHandler::Action action) {
         // Display name and avatar
         settings.beginGroup(AVATAR_GROUP);
         displayName = settings.value(DISPLAY_NAME_KEY).toString();
-        fullAvatarURL = settings.value(FULL_AVATAR_URL_KEY).toUrl();
         fullAvatarModelName = settings.value(FULL_AVATAR_MODEL_NAME_KEY).toString();
         settings.endGroup();
+
+        fullAvatarURL = settings.value(SETTINGS_FULL_PRIVATE_GROUP_NAME + "/" + AVATAR_GROUP + "/" + FULL_AVATAR_URL_KEY).toUrl();
 
         // Tutorial complete
         tutorialComplete = settings.value(TUTORIAL_COMPLETE_FLAG_KEY).toBool();
@@ -275,9 +276,10 @@ void CrashRecoveryHandler::handleCrash(CrashRecoveryHandler::Action action) {
         // Display name and avatar
         settings.beginGroup(AVATAR_GROUP);
         settings.setValue(DISPLAY_NAME_KEY, displayName);
-        settings.setValue(FULL_AVATAR_URL_KEY, fullAvatarURL);
         settings.setValue(FULL_AVATAR_MODEL_NAME_KEY, fullAvatarModelName);
         settings.endGroup();
+
+        settings.setValue(SETTINGS_FULL_PRIVATE_GROUP_NAME + "/" + AVATAR_GROUP + "/" + FULL_AVATAR_URL_KEY, fullAvatarURL);
 
         // Tutorial complete
         settings.setValue(TUTORIAL_COMPLETE_FLAG_KEY, tutorialComplete);
