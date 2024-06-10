@@ -103,7 +103,7 @@ public:
      *     ignorePickIntersection: true
      * };
      * var intersectedPath = {
-     *     type: "line3d",
+     *     type: "PolyLine",
      *     color: { red: 0, green: 255, blue: 0 },
      * };
      * var searchEnd = {
@@ -114,7 +114,7 @@ public:
      *     ignorePickIntersection: true
      * };
      * var searchPath = {
-     *     type: "line3d",
+     *     type: "PolyLine",
      *     color: { red: 255, green: 0, blue: 0 },
      * };
      * 
@@ -224,8 +224,8 @@ public:
      * @param {number} id - The ID of the pointer.
      * @param {string} renderState - The name of the render state to edit.
      * @param {Pointers.RayPointerRenderState|Pointers.ParabolaPointerRenderState} properties - The new properties for the 
-     *     render state. Only the overlay properties to change need be specified.
-     * @example <caption>Change the dimensions of a ray pointer's intersecting end overlay.</caption>
+     *     render state. Only the properties to change need be specified.
+     * @example <caption>Change the dimensions of a ray pointer's intersecting end entity.</caption>
      * var intersectEnd = {
      *     type: "sphere",
      *     dimensions: { x: 0.2, y: 0.2, z: 0.2 },
@@ -234,7 +234,7 @@ public:
      *     ignorePickIntersection: true
      * };
      * var intersectedPath = {
-     *     type: "line3d",
+     *     type: "PolyLine",
      *     color: { red: 0, green: 255, blue: 0 },
      * };
      * var searchEnd = {
@@ -245,7 +245,7 @@ public:
      *     ignorePickIntersection: true
      * };
      * var searchPath = {
-     *     type: "line3d",
+     *     type: "PolyLine",
      *     color: { red: 255, green: 0, blue: 0 },
      * };
      * 
@@ -310,7 +310,7 @@ public:
      *     ignorePickIntersection: true
      * };
      * var intersectedPath = {
-     *     type: "line3d",
+     *     type: "PolyLine",
      *     color: { red: 0, green: 255, blue: 0 },
      * };
      * var searchEnd = {
@@ -321,7 +321,7 @@ public:
      *     ignorePickIntersection: true
      * };
      * var searchPath = {
-     *     type: "line3d",
+     *     type: "PolyLine",
      *     color: { red: 255, green: 0, blue: 0 },
      * };
      * 

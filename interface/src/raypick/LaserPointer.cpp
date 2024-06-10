@@ -33,13 +33,18 @@ PickQuery::PickType LaserPointer::getType() const {
 }
 
 void LaserPointer::editRenderStatePath(const std::string& state, const QVariant& pathProps) {
-    //V8TODO pathProps are not a thing anymore
     auto renderState = std::static_pointer_cast<RenderState>(_renderStates[state]);
     if (renderState) {
         updateRenderState(renderState->getPathID(), pathProps);
-        QVariant lineWidth = pathProps.toMap()["lineWidth"];
+        QVariantMap pathPropsMap = pathProps.toMap();
+        QVariant lineWidth = pathPropsMap["lineWidth"];
         if (lineWidth.isValid()) {
             renderState->setLineWidth(lineWidth.toFloat());
+        }
+
+        if (pathPropsMap.contains("linePoints")) {
+            QVariantList linePoints = pathPropsMap["linePoints"].toList();
+            renderState->setNumPoints(linePoints.length());
         }
     }
 }
@@ -133,18 +138,18 @@ LaserPointer::RenderState::RenderState(const QUuid& startID, const QUuid& pathID
     StartEndRenderState(startID, endID), _pathID(pathID)
 {
     if (!getPathID().isNull()) {
-        auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
-        {
-            EntityPropertyFlags desiredProperties;
-            desiredProperties += PROP_IGNORE_PICK_INTERSECTION;
-            _pathIgnorePicks = entityScriptingInterface->getEntityPropertiesInternal(getPathID(), desiredProperties, false).getIgnorePickIntersection();
-        }
-        {
-            EntityPropertyFlags desiredProperties;
-            desiredProperties += PROP_STROKE_WIDTHS;
-            auto widths = entityScriptingInterface->getEntityPropertiesInternal(getPathID(), desiredProperties, false).getStrokeWidths();
-            _lineWidth = widths.length() == 0 ? PolyLineEntityItem::DEFAULT_LINE_WIDTH : widths[0];
-        }
+        EntityPropertyFlags desiredProperties;
+        desiredProperties += PROP_IGNORE_PICK_INTERSECTION;
+        desiredProperties += PROP_LINE_POINTS;
+        desiredProperties += PROP_STROKE_WIDTHS;
+        auto properties = DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(getPathID(), desiredProperties, false);
+
+        auto widths = properties.getStrokeWidths();
+        _lineWidth = widths.length() == 0 ? PolyLineEntityItem::DEFAULT_LINE_WIDTH : widths[0];
+
+        setNumPoints(properties.getLinePoints().length());
+
+        _pathIgnorePicks = properties.getIgnorePickIntersection();
     }
 }
 
@@ -171,28 +176,51 @@ void LaserPointer::RenderState::update(const glm::vec3& origin, const glm::vec3&
     if (!getPathID().isNull()) {
         EntityItemProperties properties;
         QVector<glm::vec3> points;
+        const size_t numPoints = getNumPoints();
         points.append(glm::vec3(0.0f));
-        points.append(end - origin);
+        const glm::vec3 endPoint = end - origin;
+        if (numPoints > 2) {
+            EntityPropertyFlags desiredProperties;
+            desiredProperties += PROP_VISIBLE;
+            auto oldProperties = DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(getPathID(), desiredProperties, false);
+
+            bool hasUnmodifiedEndPoint = false;
+            glm::vec3 unmodifiedEndPoint;
+            auto rayPickResult = std::static_pointer_cast<RayPickResult>(pickResult);
+            if (rayPickResult && rayPickResult->pickVariant.contains("unmodifiedDirection")) {
+                unmodifiedEndPoint = glm::length(endPoint) * vec3FromVariant(rayPickResult->pickVariant["unmodifiedDirection"]);
+                hasUnmodifiedEndPoint = true;
+            }
+
+            // Segment points are evenly spaced between origin and end
+            for (size_t i = 1; i < numPoints - 1; i++) {
+                const float frac = ((float)i / (numPoints - 1));
+                if (!oldProperties.getVisible() || !_hasSetLinePoints || !hasUnmodifiedEndPoint) {
+                    points.append(frac * endPoint);
+                } else {
+                    points.append(frac * mix(unmodifiedEndPoint, endPoint, frac));
+                }
+            }
+            _hasSetLinePoints = true;
+        }
+        points.append(endPoint);
         properties.setPosition(origin);
-        properties.setRotation(glm::quat(1.0f, 0.0f ,0.0f ,0.0f));
+        properties.setRotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
         properties.setLinePoints(points);
         properties.setVisible(true);
         properties.setIgnorePickIntersection(doesPathIgnorePicks());
         QVector<glm::vec3> normals;
-        normals.append(glm::vec3(0.0f, 0.0f, 1.0f));
-        normals.append(glm::vec3(0.0f, 0.0f, 1.0f));
+        normals.fill(glm::vec3(0.0f, 0.0f, 1.0f), (int)numPoints);
         properties.setNormals(normals);
         QVector<float> widths;
         float width = getLineWidth() * parentScale;
-        widths.append(width);
-        widths.append(width);
+        widths.fill(width, (int)numPoints);
         properties.setStrokeWidths(widths);
         DependencyManager::get<EntityScriptingInterface>()->editEntity(getPathID(), properties);
     }
 }
 
 std::shared_ptr<StartEndRenderState> LaserPointer::buildRenderState(const QVariantMap& propMap, const QList<EntityItemProperties> &entityProperties) {
-    // FIXME: we have to keep using the Overlays interface here, because existing scripts use overlay properties to define pointers
     QUuid startID;
     if (propMap["startPropertyIndex"].isValid()) {
         int startPropertyIndex = propMap["startPropertyIndex"].toInt();
@@ -205,11 +233,11 @@ std::shared_ptr<StartEndRenderState> LaserPointer::buildRenderState(const QVaria
 
     QUuid pathID;
     if (propMap["pathPropertyIndex"].isValid()) {
-        // laser paths must be PolyLine
         int pathPropertyIndex = propMap["pathPropertyIndex"].toInt();
         if (pathPropertyIndex >= 0 && pathPropertyIndex < entityProperties.length()) {
-            //pathMap["type"].toString() == "PolyLine"
             EntityItemProperties pathProperties(entityProperties[pathPropertyIndex]);
+            // laser paths must be PolyLine
+            pathProperties.setType(EntityTypes::EntityType::PolyLine);
             pathProperties.getGrab().setGrabbable(false);
             pathID = DependencyManager::get<EntityScriptingInterface>()->addEntityInternal(pathProperties, entity::HostType::LOCAL);
         }

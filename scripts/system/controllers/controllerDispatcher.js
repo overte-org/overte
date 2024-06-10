@@ -577,6 +577,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 
         Controller.enableMapping(MAPPING_NAME);
 
+        const POINTER_DELAY = 0.5;
         this.leftPointer = this.pointerManager.createPointer(false, PickType.Ray, {
             joint: "_CAMERA_RELATIVE_CONTROLLER_LEFTHAND",
             filter: Picks.PICK_OVERLAYS | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
@@ -585,7 +586,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             hover: true,
             scaleWithParent: true,
             distanceScaleEnd: true,
-            hand: LEFT_HAND
+            hand: LEFT_HAND,
+            delay: POINTER_DELAY
         });
         Keyboard.setLeftHandLaser(this.leftPointer);
         this.rightPointer = this.pointerManager.createPointer(false, PickType.Ray, {
@@ -596,7 +598,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             hover: true,
             scaleWithParent: true,
             distanceScaleEnd: true,
-            hand: RIGHT_HAND
+            hand: RIGHT_HAND,
+            delay: POINTER_DELAY
         });
         Keyboard.setRightHandLaser(this.rightPointer);
         this.leftHudPointer = this.pointerManager.createPointer(true, PickType.Ray, {
@@ -608,7 +611,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             hover: true,
             scaleWithParent: true,
             distanceScaleEnd: true,
-            hand: LEFT_HAND
+            hand: LEFT_HAND,
+            delay: POINTER_DELAY
         });
         this.rightHudPointer = this.pointerManager.createPointer(true, PickType.Ray, {
             joint: "_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND",
@@ -619,7 +623,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             hover: true,
             scaleWithParent: true,
             distanceScaleEnd: true,
-            hand: RIGHT_HAND
+            hand: RIGHT_HAND,
+            delay: POINTER_DELAY
         });
 
         this.mouseRayPointer = Pointers.createRayPointer({

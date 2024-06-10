@@ -121,6 +121,7 @@ PickFilter getPickFilter(unsigned int filter) {
  * @property {Vec3} [dirOffset] - Synonym for <code>direction</code>.
  * @property {Quat} [orientation] - Alternative property for specifying <code>direction</code>. The value is applied to the 
  *     default <code>direction</code> value.
+ * @property {number} [delay=0.0] - The delay, in seconds, to apply to the ray direction.
  * @property {PickType} pickType - The type of pick when getting these properties from {@link Picks.getPickProperties} or 
  *     {@link Picks.getPickScriptParameters}. A ray pick's type is {@link PickType.Ray}.
  * @property {Vec3} baseScale - Returned from {@link Picks.getPickProperties} when the pick has a parent with varying scale 
@@ -173,7 +174,14 @@ std::shared_ptr<PickQuery> PickScriptingInterface::buildRayPick(const QVariantMa
         direction = vec3FromVariant(propMap["dirOffset"]);
     }
 
-    auto rayPick = std::make_shared<RayPick>(position, direction, filter, maxDistance, enabled);
+    float delayHalf = 0.0f;
+    if (propMap["delay"].isValid()) {
+        // We want to be within 0.1% of the target in <delay> seconds
+        // https://twitter.com/FreyaHolmer/status/1757836988495847568
+        delayHalf = -std::max(propMap["delay"].toFloat(), 0.0f) / log2(0.001);
+    }
+
+    auto rayPick = std::make_shared<RayPick>(position, direction, filter, maxDistance, delayHalf, enabled);
     setParentTransform(rayPick, propMap);
 
     return rayPick;

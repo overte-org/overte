@@ -19,10 +19,39 @@ PickRay RayPick::getMathematicalPick() const {
         return _mathPick;
     }
 
+    const bool hasDelay = _prevUpdate != 0 && _delayHalf > 0.0f && !isNaN(_prevDirection.x);
+    const float now = secTimestampNow();
+    const float dt = now - _prevUpdate;
+    float alpha = 0.0f;
+    if (hasDelay) {
+        // This equation gives a framerate-independent lerp for a moving target
+        // https://twitter.com/FreyaHolmer/status/1757836988495847568
+        alpha = 1 - exp2(-dt / _delayHalf);
+    }
+
     Transform currentParentTransform = parentTransform->getTransform();
     glm::vec3 origin = currentParentTransform.transform(_mathPick.origin);
-    glm::vec3 direction = glm::normalize(currentParentTransform.transformDirection(_mathPick.direction));
-    return PickRay(origin, direction);
+
+    glm::vec3 direction;
+    glm::vec3 newDirection = glm::normalize(currentParentTransform.transformDirection(_mathPick.direction));
+    if (hasDelay) {
+        PickResultPointer result = getPrevPickResult();
+        if (!result || !result->doesIntersect()) {
+            direction = glm::normalize(glm::mix(_prevDirection, newDirection, alpha));
+        } else {
+            auto rayResult = std::static_pointer_cast<RayPickResult>(result);
+            glm::vec3 oldDirection = glm::normalize(rayResult->intersection - origin);
+            direction = glm::normalize(glm::mix(oldDirection, newDirection, alpha));
+        }
+    } else {
+        direction = newDirection;
+    }
+
+    _prevUpdate = now;
+    if (!isNaN(direction.x)) {
+        _prevDirection = direction;
+    }
+    return PickRay(origin, direction, newDirection);
 }
 
 PickResultPointer RayPick::getEntityIntersection(const PickRay& pick) {
@@ -88,8 +117,6 @@ glm::vec3 RayPick::intersectRayWithEntityXYPlane(const QUuid& entityID, const gl
     auto props = DependencyManager::get<EntityScriptingInterface>()->getEntityProperties(entityID);
     return intersectRayWithXYPlane(origin, direction, props.getPosition(), props.getRotation(), props.getRegistrationPoint());
 }
-
-
 
 glm::vec2 RayPick::projectOntoXYPlane(const glm::vec3& worldPos, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& dimensions, const glm::vec3& registrationPoint, bool unNormalized) {
     glm::quat invRot = glm::inverse(rotation);
