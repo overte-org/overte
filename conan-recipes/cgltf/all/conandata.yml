@@ -2,6 +2,9 @@ sources:
   "2024.02":
     url: "https://github.com/jkuhlmann/cgltf/archive/de399881c65c438a635627c749440eeea7e05599.tar.gz"
     sha256: "82f66737421cbd2a0797d7eb1dda61707317c44091dd514bf4a55401ba03fc8f"
+  "1.14":
+    url: "https://github.com/jkuhlmann/cgltf/archive/v1.14.tar.gz"
+    sha256: "2f3c97a6b989943f50e7d7f228688f6558fe37b1411c13a350e3560d061707d8"
   "1.13":
     url: "https://github.com/jkuhlmann/cgltf/archive/v1.13.tar.gz"
     sha256: "053d5320097334767486c6e33d01dd1b1c6224eac82aac2d720f4ec456d8c50b"
