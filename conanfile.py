@@ -46,7 +46,7 @@ class Overte(ConanFile):
         # self.requires("shaderc/2021.1") # Broken
         # self.requires("crashpad/cci.20220219") # Broken
         self.requires("bullet3/3.25")
-        self.requires("cgltf/2024.02@overte/stable")
+        self.requires("cgltf/1.14@overte/stable")
         self.requires("discord-rpc/3.4.0@anotherfoxguy/stable")
         self.requires("draco/1.3.5")
         self.requires("etc2comp/cci.20170424")
@@ -131,3 +131,8 @@ class Overte(ConanFile):
         )
         copy(self, "*.dll", src, bindir, False)
         copy(self, "*.so*", src, bindir, False)
+        if self.settings.os == "Windows" and self.settings.build_type == "Release":
+            bindir = os.path.join(
+                self.build_folder, "conanlibs", "RelWithDebInfo"
+            )
+            copy(self, "*.dll", src, bindir, False)
