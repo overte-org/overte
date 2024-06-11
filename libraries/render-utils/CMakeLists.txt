@@ -14,6 +14,9 @@ include_hifi_library_headers(octree)
 include_hifi_library_headers(script-engine)
 include_hifi_library_headers(hfm)
 
+# Artery Font Format
+target_aff()
+
 # tell CMake to exclude qrc_fonts.cpp for policy CMP0071
 set_property(SOURCE qrc_fonts.cpp PROPERTY SKIP_AUTOMOC ON)
 
