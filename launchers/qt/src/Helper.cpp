@@ -20,7 +20,7 @@ QString getMetaverseAPIDomain() {
     if (processEnvironment.contains("HIFI_METAVERSE_URL")) {
         return processEnvironment.value("HIFI_METAVERSE_URL");
     }
-    return "https://metaverse.highfidelity.com";
+    return "https://mv.overte.org/server";
 }
 
 
