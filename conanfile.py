@@ -45,6 +45,7 @@ class Overte(ConanFile):
     def requirements(self):
         # self.requires("shaderc/2021.1") # Broken
         # self.requires("crashpad/cci.20220219") # Broken
+        self.requires("artery-font-format/1.0.1")
         self.requires("bullet3/3.25")
         self.requires("cgltf/1.14@overte/stable")
         self.requires("discord-rpc/3.4.0@anotherfoxguy/stable")
