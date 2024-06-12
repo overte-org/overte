@@ -19,6 +19,7 @@ echo "Preparing environment …";
 export CMAKE_BACKTRACE_URL=""
 export CMAKE_BACKTRACE_TOKEN="$TAG"
 export PRODUCTION_BUILD=1
+export RELEASE_NUMBER="$TAG"
 export RPMVERSION="$TAG"
 export DEBVERSION="$TAG-$OS"
 export DEBEMAIL="julian.gro@overte.org"
