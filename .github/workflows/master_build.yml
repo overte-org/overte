@@ -120,7 +120,7 @@ jobs:
         rm -rf ~/overte-files
         rm -rf ~/.cache
 
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
       with:
         submodules: false
         fetch-depth: 1

@@ -165,7 +165,7 @@ jobs:
         rm -rf ~/overte-files
         rm -rf ~/.cache
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: false
         fetch-depth: 1
@@ -335,7 +335,7 @@ jobs:
 
     - name: Upload Artifact
       if: startsWith(matrix.os, 'Windows') || startsWith(matrix.os, 'macOS')
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARTIFACT_PATTERN }}
         path: ./build/${{ env.ARTIFACT_PATTERN }}
