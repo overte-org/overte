@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2020-2022 Vircadia contributors.
-# Copyright 2021-2022 Overte e.V.
+# Copyright 2021-2024 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 name: Pull Request CI Build
@@ -54,7 +54,12 @@ jobs:
             #- os: macOS-10.15
             #  build_type: full
             - os: Ubuntu 20.04
-              runner: linux_amd64
+              # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels
+              # self_hosted makes the Hetzner auto-scaler put up the job.
+              # type-cx52 is a Hetzner VPS server type. In this case cs52 is a server with 16-cores and 32GB of RAM.
+              # image-x86-app-docker-ce is a Hetzner image.
+              # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image
+              runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
               arch: amd64
               build_type: full
               apt-dependencies: pkg-config libxext-dev libdouble-conversion-dev libpcre2-16-0 libpulse0 libharfbuzz-dev libnss3 libnspr4 libxdamage1 libasound2 # add missing dependencies to docker image when convenient
@@ -65,7 +70,7 @@ jobs:
             #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
             # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
             - os: Ubuntu 22.04
-              runner: linux_aarch64
+              runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
               arch: aarch64
               build_type: full
               image: docker.io/overte/overte-full-build:0.1.1-ubuntu-22.04-aarch64
