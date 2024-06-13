@@ -12,6 +12,10 @@ on:
   push:
     branches:
       - master
+    tags:
+      # Release tags. E.g. 2024.06.1
+      # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+      - "[0-9][0-9][0-9][0-9].[0-9][0-9].**"
 
 env:
   BUILD_TYPE: Release
@@ -19,8 +23,6 @@ env:
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
-  CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
-  CMAKE_BACKTRACE_TOKEN: server_${{ github.event.number }}_${{ github.sha }}
   # Disable VCPKG caching to save time.
   VCPKG_FEATURE_FLAGS: -binarycaching
 
@@ -149,7 +151,7 @@ jobs:
         fi
 
         # Tagged builds. E.g. release or release candidate builds.
-        if [ "${{github.event_name}}" != "pull_request" ]; then
+        if [ "${{github.ref_type}}" == "tag" ]; then
           echo "PRODUCTION_BUILD=true" >> $GITHUB_ENV
         fi
 
@@ -183,16 +185,30 @@ jobs:
           echo "UPLOAD_PREFIX=build/overte/master" >> $GITHUB_ENV
           echo "RELEASE_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
         else # tagged
-          echo "DEBVERSION=${{ github.run_number }}-${{ github.ref_name }}-$GIT_COMMIT_SHORT-${{ matrix.os }}" >> $GITHUB_ENV
-          echo "RPMVERSION=${${{ github.ref_name }}//-/.}.${{ github.run_number }}.$GIT_COMMIT_SHORT" >> $GITHUB_ENV
+          echo "DEBVERSION=${{ github.ref_name }}-$GIT_COMMIT_SHORT-${{ matrix.os }}" >> $GITHUB_ENV
+          echo "RPMVERSION=${{ github.ref_name }}.$GIT_COMMIT_SHORT" >> $GITHUB_ENV
         fi
 
-        if [[ "${{ github.ref_name }}" != "master" && "${{ github.ref_name }}" != "pull_request" ]]; then  # tagged
-          echo "RELEASE_NUMBER=/${{ github.ref_name }}" >> $GITHUB_ENV
-          if [ "${{ github.ref_name }}" == *"rc"* ]; then  # release candidate
-            echo "UPLOAD_PREFIX=build/overte/release-candidate" >> $GITHUB_ENV
+        if [ "${{ github.ref_type }}" == "tag" ]; then  # tagged
+          echo "RELEASE_NUMBER=${{ github.ref_name }}" >> $GITHUB_ENV
+          if [[ "${{ github.ref_name }}" == *"rc"* ]]; then  # release candidate
+            # The uploader already creates a subfolder for each RELEASE_NUMBER.
+            echo "UPLOAD_PREFIX=build/overte/release-candidate/" >> $GITHUB_ENV
           else  # release
-            echo "UPLOAD_PREFIX=build/overte/release" >> $GITHUB_ENV
+            echo "UPLOAD_PREFIX=build/overte/release/" >> $GITHUB_ENV
+          fi
+        fi
+
+        echo "BUILD_NUMBER=$GIT_COMMIT_SHORT" >> $GITHUB_ENV
+
+        if [ -z "$CMAKE_BACKTRACE_URL" ]; then
+          if [ "${{ github.ref_type }}" == "tag" ]; then
+            export CMAKE_BACKTRACE_URL="${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}"
+            export CMAKE_BACKTRACE_TOKEN="${{ github.ref_name }}_${{ matrix.os }}_${{ github.sha }}"
+          else
+            # We're building a PR, default to the PR endpoint
+            export CMAKE_BACKTRACE_URL="https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
+            export CMAKE_BACKTRACE_TOKEN="server_pr_${{ github.event.number }}_${{ github.sha }}"
           fi
         fi
 
@@ -235,11 +251,6 @@ jobs:
       working-directory: build
       shell: bash
       run: |
-        if [ -z "$CMAKE_BACKTRACE_URL" ] ; then
-          # We're building a PR, default to the PR endpoint
-          export CMAKE_BACKTRACE_URL="https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
-          export CMAKE_BACKTRACE_TOKEN="server_pr_${{ github.event.number }}_${{ github.sha }}"
-        fi
 
         cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release $CMAKE_EXTRA
 
