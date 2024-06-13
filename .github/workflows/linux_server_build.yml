@@ -21,6 +21,8 @@ env:
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
   CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
   CMAKE_BACKTRACE_TOKEN: server_${{ github.event.number }}_${{ github.sha }}
+  # Disable VCPKG caching to save time.
+  VCPKG_FEATURE_FLAGS: -binarycaching
 
 jobs:
   build:

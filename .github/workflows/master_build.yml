@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2020-2022 Vircadia contributors
-# Copyright 2021-2022 Overte e.V.
+# Copyright 2021-2024 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 name: Master CI Build
@@ -26,6 +26,8 @@ env:
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
   CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
   CMAKE_BACKTRACE_TOKEN: master_${{ github.event.number }}_${{ github.sha }}
+  # Disable VCPKG caching to save time.
+  VCPKG_FEATURE_FLAGS: -binarycaching
 
   # OSX-specific variables
   DEVELOPER_DIR: /Applications/Xcode_11.2.app/Contents/Developer
