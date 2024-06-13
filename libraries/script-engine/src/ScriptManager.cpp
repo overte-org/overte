@@ -589,6 +589,10 @@ void ScriptManager::scriptErrorMessage(const QString& message, const QString& fi
     emit errorMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
         emit errorEntityMessage(message, fileName, lineNumber, currentEntityIdentifier, isEntityServerScript());
+    } else {
+        if (isEntityServerScript()) {
+            emit errorEntityMessage(message, fileName, lineNumber, EntityItemID(), isEntityServerScript());
+        }
     }
 }
 
@@ -597,6 +601,10 @@ void ScriptManager::scriptWarningMessage(const QString& message, const QString& 
     emit warningMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
         emit warningEntityMessage(message, fileName, lineNumber, currentEntityIdentifier, isEntityServerScript());
+    } else {
+        if (isEntityServerScript()) {
+            emit warningEntityMessage(message, fileName, lineNumber, EntityItemID(), isEntityServerScript());
+        }
     }
 }
 
@@ -605,6 +613,10 @@ void ScriptManager::scriptInfoMessage(const QString& message, const QString& fil
     emit infoMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
         emit infoEntityMessage(message, fileName, lineNumber, currentEntityIdentifier, isEntityServerScript());
+    } else {
+        if (isEntityServerScript()) {
+            emit infoEntityMessage(message, fileName, lineNumber, EntityItemID(), isEntityServerScript());
+        }
     }
 }
 
@@ -613,6 +625,12 @@ void ScriptManager::scriptPrintedMessage(const QString& message, const QString& 
     emit printedMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
         emit printedEntityMessage(message, fileName, lineNumber, currentEntityIdentifier, isEntityServerScript());
+    } else {
+        if (isEntityServerScript()) {
+            // TODO: Some callbacks like for example websockets one right now
+            // don't set currentEntityIdentifier and there doesn't seem to be easy way to add it currently
+            emit printedEntityMessage(message, fileName, lineNumber, EntityItemID(), isEntityServerScript());
+        }
     }
 }
 
