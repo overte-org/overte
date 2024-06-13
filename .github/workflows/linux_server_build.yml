@@ -213,6 +213,8 @@ jobs:
             echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc38.$INSTALLER_EXT" >> $GITHUB_ENV
           elif [ "${{ matrix.os }}" == "fedora-39" ]; then
             echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc39.$INSTALLER_EXT" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "fedora-40" ]; then
+            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc40.$INSTALLER_EXT" >> $GITHUB_ENV
           else
             echo "Error! ARTIFACT_PATTERN not set!"
             exit 1  # Fail
