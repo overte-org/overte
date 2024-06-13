@@ -294,7 +294,6 @@ jobs:
         df -h
 
     - name: Upload artifact to GitHub
-      if: github.event_name == 'pull_request'
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.ARTIFACT_PATTERN }}
