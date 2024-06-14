@@ -15,6 +15,42 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
+// TODO:
+// Remove the following from the chat messages, because they're untrustworthy:
+// * Position
+// * Color (should be a local decision)
+// *
+
+//
+// There's 3 parts to this
+// * FloofChat.js is the main script
+// * FloofChat.html provides the history window
+// * notificationCore.js (in the parent directory of this script) handles showing notifications at the bottom of the screen
+//
+// Flow for a message sent from the chat bar at the bottom:
+// 1. FloofChat.qml      : Message entered in QML
+// 2. FloofChat.qml      : sendToScript(message)
+// 3. FloofChat.js       : fromQML(message)
+
+
+// Flow for a message sent from the chat window:
+// 1. FloofChat.html     : $ChatInputText.on('keydown', ...)
+// 2. FloofChat.html     : emitWebEvent
+// 3. FloofChat.js       : onWebEventReceived
+
+// Flow for a message received from another user:
+//
+
+// 4. FloofChat.js       : processChatMessage (handle /commands)
+// 5. FloofChat.js       : (send on FLOOF_CHAT_CHANNEL)
+
+
+// 6. FloofChat.js       : messageReceived
+// 7. FloofChat.js       : addToLog (uses emitScriptEvent to send to FloofChat.html to add to chat window)
+// 8. FloofChat.js       : (send on FLOOF_NOTIFICATION_CHANNEL to notificationCore.js)
+// 9. notificationCore.js: Displays notification on the bottom of the screen
+
+//
 var ROOT = Script.resolvePath('').split("FloofChat.js")[0];
 var H_KEY = 72;
 var ENTER_KEY = 16777220;
@@ -22,7 +58,10 @@ var ESC_KEY = 16777216;
 var CONTROL_KEY = 67108864;
 var SHIFT_KEY = 33554432;
 var FLOOF_CHAT_CHANNEL = "Chat";
+
+// This talks to notificationCore.js
 var FLOOF_NOTIFICATION_CHANNEL = "Floof-Notif";
+
 var SYSTEM_NOTIFICATION_CHANNEL = "System-Notifications";
 
 var MAIN_CHAT_WINDOW_HEIGHT = 450;
@@ -63,6 +102,7 @@ var gotoJSONUrl = Settings.getValue(settingsRoot + "/gotoJSONUrl", vircadiaGotoU
 
 var muted = Settings.getValue(settingsRoot + "/muted", {"Local": false, "Domain": true, "Grid": true});
 var mutedAudio = Settings.getValue(settingsRoot + "/mutedAudio", {"Local": false, "Domain": true, "Grid": true});
+var autoFormatting = Settings.getValue(settingsRoot + "/autoFormatting", {"Local": true, "Domain": true, "Grid": true});
 var notificationSound = SoundCache.getSound(Script.resolvePath("resources/bubblepop.wav"));
 
 var ws;
@@ -119,11 +159,11 @@ function connectWebSocket(timeout) {
         }
         if (!cmd.FAILED) {
             addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel);
-            
+
             if (!mutedAudio["Grid"] && MyAvatar.sessionDisplayName !== cmd.displayName) {
                 playNotificationSound();
             }
-            
+
             if (!muted["Grid"]) {
                 Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                     sender: "(G) " + cmd.displayName,
@@ -246,11 +286,11 @@ function gotoConfirm(url, name, confirm) {
     }
 }
 
-function processChat(cmd) {
+function processChatCommands(cmd) {
 
     function commandResult() {
         msg = "";
-        setVisible(false);
+        setChatBarVisible(false);
     }
 
     var msg = cmd.message;
@@ -295,12 +335,22 @@ function processChat(cmd) {
     return cmd;
 }
 
-function onWebEventReceived(event) {
-    event = JSON.parse(event);
+// Event received from FloofChat.html -- the chat window
+function onWebEventReceived(eventdata) {
+    var event = JSON.parse(eventdata);
+
+    // Fill in additional data
+    event.time = Date.now();
+    event.formatted = autoFormatting;
+
+
+    console.log("Web Event: " + eventdata);
+
     if (event.type === "ready") {
         chatHistory.emitScriptEvent(JSON.stringify({type: "MSG", data: historyLog}));
         chatHistory.emitScriptEvent(JSON.stringify({type: "CMD", cmd: "MUTED", muted: muted}));
         chatHistory.emitScriptEvent(JSON.stringify({type: "CMD", cmd: "MUTEDAUDIO", muted: mutedAudio}));
+        chatHistory.emitScriptEvent(JSON.stringify({type: "CMD", cmd: "FORMATTING", enabled: autoFormatting}));
     }
     if (event.type === "CMD") {
         if (event.cmd === "MUTED") {
@@ -310,6 +360,10 @@ function onWebEventReceived(event) {
         if (event.cmd === "MUTEDAUDIO") {
             mutedAudio = event.muted;
             Settings.setValue(settingsRoot + "/mutedAudio", mutedAudio);
+        }
+        if (event.cmd === "FORMATTING") {
+            autoFormatting = event.enabled;
+            Settings.setValue(settingsRoot + "/autoFormatting", autoFormatting);
         }
         if (event.cmd === "COLOUR") {
             Settings.setValue(settingsRoot + "/" + event.colourType + "Colour", event.colour);
@@ -345,8 +399,17 @@ function onWebEventReceived(event) {
         });
     }
     if (event.type === "MSG") {
+        // Chat message typed into the chat window
+        // {"type":"MSG","message":"test","tab":"Local","time":"1/6 - 18:18:58","appUUID":"{cd0f1cb9-b95e-4007-9b3c-a93ba3850cbc}"}
+
+        handleUserMessage(event);
+
+        /*
         event.avatarName = MyAvatar.sessionDisplayName;
-        event = processChat(event);
+        if (!event.AvatarName) {
+            event.avatarName = MyAvatar.displayName;
+        }
+        event = processChatCommands(event);
         if (event.message === "") return;
         Messages.sendMessage("Chat", JSON.stringify({
             type: "TransmitChatMessage",
@@ -356,9 +419,113 @@ function onWebEventReceived(event) {
             message: event.message,
             displayName: event.avatarName
         }));
-        setVisible(false);
+        */
+        setChatBarVisible(false);
     }
 }
+
+// This is a message sent by our user. It was typed locally, and it may contain commands
+// we want to interpret. This comes either from the chat window or the bottom chat bar.
+function handleUserMessage(userMsg) {
+
+    // Process any user commands like /me
+    userMsg = processChatCommands(userMsg);
+
+    if (userMsg.message === "") return;
+
+    if ( userMsg.formatted ) {
+        userMsg.formattedMessage = replaceFormatting(userMsg.message);
+    } else {
+        userMsg.formattedMessage = userMsg.message;
+    }
+
+
+    sendChatMessage(userMsg);
+}
+
+// Take an user message, and produce a message that we send through the message mixer.
+// Handles both local and grid chat.
+function sendChatMessage(userMsg) {
+    var avName = MyAvatar.sessionDisplayName;
+
+    if (!avName) {
+        avName = MyAvatar.displayName;
+    }
+
+    // TODO: Improve timestamp formatting
+    var dt = new Date(userMsg.time);
+    var textTime = dt.toLocaleString();
+
+    var msg = {
+        uuid             : "", // what is this for?
+        position         : MyAvatar.position, // remove later, insecure
+        channel          : userMsg.tab,
+        colour           : chatColour("Grid"),
+        message          : userMsg.message,
+        formattedMessage : userMsg.formattedMessage,
+        isFormatted      : userMsg.formatted,
+        displayName      : avName,
+        time             : textTime
+    };
+
+    if ( userMsg.tab == "Grid" ) {
+        msg.type = "WebChat";
+    } else {
+        msg.type = "TransmitChatMessage";
+    }
+
+    console.log("Sending message: " + JSON.stringify(msg));
+
+    if ( userMsg.tab == "Grid" ) {
+        sendWS(msg);
+    } else {
+        Messages.sendMessage("Chat", JSON.stringify(msg));
+    }
+}
+
+
+// Take a message we received from the mixer/grid and add it to any UI elements.
+// * Handles formatting.
+// * Sends the message to any relevant UI elements, currently the chat window and bottom chat display.
+// * Adds the message to the chat history, for recall after a restart.
+function addReceivedMessageToUI(sender, receivedMsg) {
+
+    // We don't want to blindly copy external input, so we build our messages from scratch,
+    // making sure external entities don't get to add anything extra.
+
+    var msg = {
+        channel    : receivedMsg.channel,
+        colour     : receivedMsg.colour,
+        message    : receivedMsg.message,
+        formatted  : receivedMsg.formatted,
+        displayName: receivedMsg.displayName,
+        position   : receivedMsg.position,
+        uuid       : sender
+    };
+
+    if (receivedMsg.formatted) {
+        // We do all formatting after receiving, so that we can incorporate any
+        // user preferences in the formatting. Also, we preserve the original
+        // message, so that it's possible to display the unformatted version if
+        // needed.
+        msg.formattedMessage = replaceFormatting(receivedMsg.message);
+    } else {
+        msg.formattedMessage = receivedMsg.message;
+    }
+
+    if ( msg.channel != "Grid" && msg.channel != "Local" && msg.channel != "Domain" ) {
+        msg.channel = "Local";
+    }
+
+
+    addReceivedMessageToLog(msg);
+    addReceivedMessageToChatWindow(msg);
+
+    if (!mutedAudio["Grid"] && MyAvatar.sessionDisplayName !== cmd.displayName) {
+        playNotificationSound();
+    }
+}
+
 
 function playNotificationSound() {
     if (notificationSound.downloaded) {
@@ -371,9 +538,16 @@ function playNotificationSound() {
     }
 }
 
+
 function replaceFormatting(text) {
     var found = false;
-    if (text.indexOf("**") !== -1) {
+    console.log("Formatting: '" + text + "'");
+
+    if (text.startsWith("    ")) {
+        console.log("Typewriter");
+        found = true;
+        text = "<code>" + text + "</code>";
+    } else if (text.indexOf("**") !== -1) {
         var firstMatch = text.indexOf("**") + 2;
         var secondMatch = text.indexOf("**", firstMatch);
         if (firstMatch !== -1 && secondMatch !== -1) {
@@ -431,15 +605,19 @@ function replaceFormatting(text) {
     }
 }
 
+
 function messageReceived(channel, message, sender) {
     if (channel === FLOOF_CHAT_CHANNEL) {
         var cmd = {FAILED: true};
         try {
             cmd = JSON.parse(message);
         } catch (e) {
-            //
+            console.log("Failed to decode message: " + message + " from " + sender);
         }
+
         if (!cmd.FAILED) {
+
+
             if (cmd.type === "TransmitChatMessage") {
                 if (!cmd.hasOwnProperty("channel")) {
                     cmd.channel = "Domain";
@@ -447,20 +625,25 @@ function messageReceived(channel, message, sender) {
                 if (!cmd.hasOwnProperty("colour")) {
                     cmd.colour = {red: 222, green: 222, blue: 222};
                 }
+
                 if (cmd.message.indexOf("/me") === 0) {
                     cmd.message = cmd.message.replace("/me", cmd.displayName);
                     cmd.displayName = "";
                 }
                 if (cmd.channel === "Local") {
                     if (Vec3.withinEpsilon(MyAvatar.position, cmd.position, 20)) {
-                        addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel);
-                        
+                        addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel, autoFormatting["Local"]);
+
                         if (!mutedAudio["Local"] && MyAvatar.sessionDisplayName !== cmd.displayName) {
                             playNotificationSound();
                         }
-                        
+
                         if (!muted["Local"]) {
+                            console.log("Autoformatting: " + JSON.stringify(autoFormatting));
+                            console.log("Autoformatting local: " +  autoFormatting["Local"]);
+
                             Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
+                                autoFormatting: autoFormatting["Local"],
                                 sender: "(L) " + cmd.displayName,
                                 text: cmd.message,
                                 colour: {text: cmd.colour}
@@ -468,28 +651,30 @@ function messageReceived(channel, message, sender) {
                         }
                     }
                 } else if (cmd.channel === "Domain") {
-                    addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel);
-                    
+                    addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel, autoFormatting["Domain"]);
+
                     if (!mutedAudio["Domain"] && MyAvatar.sessionDisplayName !== cmd.displayName) {
                         playNotificationSound();
                     }
-                    
+
                     if (!muted["Domain"]) {
                         Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
+                            autoFormatting: autoFormatting["Domain"],
                             sender: "(D) " + cmd.displayName,
                             text: cmd.message,
                             colour: {text: cmd.colour}
                         }));
                     }
                 } else if (cmd.channel === "Grid") {
-                    addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel);
-                    
+                    addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel, autoFormatting["Grid"]);
+
                     if (!mutedAudio["Grid"] && MyAvatar.sessionDisplayName !== cmd.displayName) {
                         playNotificationSound();
                     }
-                    
+
                     if (!muted["Grid"]) {
                         Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
+                            autoFormatting: autoFormatting["Grid"],
                             sender: "(G) " + cmd.displayName,
                             text: cmd.message,
                             colour: {text: cmd.colour}
@@ -497,11 +682,11 @@ function messageReceived(channel, message, sender) {
                     }
                 } else {
                     addToLog(cmd.message, cmd.displayName, cmd.colour, cmd.channel);
-                    
+
                     if (MyAvatar.sessionDisplayName !== cmd.displayName) {
                         playNotificationSound();
                     }
-                    
+
                     Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                         sender: cmd.displayName,
                         text: cmd.message,
@@ -514,7 +699,7 @@ function messageReceived(channel, message, sender) {
             }
         }
     }
-    
+
     if (channel === SYSTEM_NOTIFICATION_CHANNEL && sender == MyAvatar.sessionUUID) {
         var cmd = {FAILED: true};
         try {
@@ -525,7 +710,7 @@ function messageReceived(channel, message, sender) {
         if (!cmd.FAILED) {
             if (cmd.type === "Update-Notification") {
                 addToLog(cmd.message, cmd.category, cmd.colour, cmd.channel);
-                
+
                 Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                     sender: "(" + cmd.category + ")",
                     text: cmd.message,
@@ -539,7 +724,7 @@ function messageReceived(channel, message, sender) {
 function time() {
     var d = new Date();
     // Months are returned in range 0-11 instead of 1-12, so we have to add 1.
-    var month = (d.getMonth() + 1).toString(); 
+    var month = (d.getMonth() + 1).toString();
     var day = (d.getDate()).toString();
     var h = (d.getHours()).toString();
     var m = (d.getMinutes()).toString();
@@ -551,10 +736,26 @@ function time() {
     return month + "/" + day + " - " + h2 + ":" + m2 + ":" + s2;
 }
 
-function addToLog(msg, dp, colour, tab) {
+function addToLog(msg, avatarName, colour, tab, autoFormat) {
     var currentTimestamp = time();
-    historyLog.push([currentTimestamp, msg, dp, colour, tab]);
-    chatHistory.emitScriptEvent(JSON.stringify({ type: "MSG", data: [[currentTimestamp, msg, dp, colour, tab]]}));
+    historyLog.push([currentTimestamp, msg, avatarName, colour, tab, autoFormat]);
+    //chatHistory.emitScriptEvent(JSON.stringify({ type: "MSG", data: [[currentTimestamp, msg, dp, colour, tab, autoFormat]]}));
+
+
+    // Send this over to the HTML part. This goes to the chat window
+    chatHistory.emitScriptEvent(JSON.stringify({ type: "MSG", data:
+        [ // Array because we can send multiple messages at once elsewhere
+            {
+                timestamp: currentTimestamp,
+                message: msg,
+                avatarName: avatarName,
+                colour: colour,
+                tab: tab,
+                autoFormat: autoFormat
+            }
+        ]
+    }));
+
     while (historyLog.length > chatHistoryLimit) {
         historyLog.shift();
     }
@@ -571,6 +772,12 @@ function addToChatBarHistory(msg) {
 
 function fromQml(message) {
     var cmd = {FAILED: true};
+
+    // Chat message received from the chat bar
+    // {"type":"MSG","message":"test","event":{"objectName":"","key":16777220,"text":"\r","modifiers":0,"isAutoRepeat":false,"count":1,"nativeScanCode":36,"accepted":true}}
+
+    console.log("Message from QML: " + message);
+
     try {
         cmd = JSON.parse(message);
     } catch (e) {
@@ -578,22 +785,32 @@ function fromQml(message) {
     }
     if (!cmd.FAILED) {
         if (cmd.type === "MSG") {
+            handleUserMessage(cmd);
+
+            /*
             if (cmd.message !== "") {
                 addToChatBarHistory(cmd.message);
                 if (cmd.event.modifiers === CONTROL_KEY) {
                     cmd.avatarName = MyAvatar.sessionDisplayName;
-                    cmd = processChat(cmd);
+                    if (!cmd.AvatarName) {
+                        cmd.AvatarName = MyAvatar.displayName;
+                    }
+                    cmd = processChatCommands(cmd);
                     if (cmd.message === "") return;
                     Messages.sendMessage(FLOOF_CHAT_CHANNEL, JSON.stringify({
-                        type: "TransmitChatMessage", 
-                        channel: "Domain", 
+                        type: "TransmitChatMessage",
+                        channel: "Domain",
                         colour: chatColour("Domain"),
                         message: cmd.message,
                         displayName: cmd.avatarName
                     }));
                 } else if (cmd.event.modifiers === CONTROL_KEY + SHIFT_KEY) {
                     cmd.avatarName = MyAvatar.sessionDisplayName;
-                    cmd = processChat(cmd);
+                    if (!cmd.AvatarName) {
+                        cmd.AvatarName = MyAvatar.displayName;
+                    }
+
+                    cmd = processChatCommands(cmd);
                     if (cmd.message === "") return;
                     sendWS({
                         uuid: "",
@@ -605,7 +822,11 @@ function fromQml(message) {
                     });
                 } else {
                     cmd.avatarName = MyAvatar.sessionDisplayName;
-                    cmd = processChat(cmd);
+                    if (!cmd.AvatarName) {
+                        cmd.AvatarName = MyAvatar.displayName;
+                    }
+
+                    cmd = processChatCommands(cmd);
                     if (cmd.message === "") return;
                     Messages.sendMessage(FLOOF_CHAT_CHANNEL, JSON.stringify({
                         type: "TransmitChatMessage",
@@ -617,7 +838,8 @@ function fromQml(message) {
                     }));
                 }
             }
-            setVisible(false);
+            */
+            setChatBarVisible(false);
         } else if (cmd.type === "CMD") {
             if (cmd.cmd === "Clicked") {
                 toggleMainChatWindow()
@@ -626,7 +848,7 @@ function fromQml(message) {
     }
 }
 
-function setVisible(_visible) {
+function setChatBarVisible(_visible) {
     if (_visible) {
         Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
             type: "options",
@@ -677,11 +899,11 @@ function avatarLeavesDomain(sessionID) {
     var messageText = displayName + " has left.";
     var messageColor = { red: 122, green: 122, blue: 122 };
     addToLog(messageText, "Notice", messageColor, "Domain");
-    
+
     if (!mutedAudio["Domain"]) {
         playNotificationSound();
     }
-    
+
     if (!muted["Domain"]) {
         Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
             sender: "(D)",
@@ -696,10 +918,10 @@ function keyPressEvent(event) {
         toggleMainChatWindow()
     }
     if (event.key === ENTER_KEY && !event.isAutoRepeat && !visible && !HMD.active) {
-        setVisible(true);
+        setChatBarVisible(true);
     }
     if (event.key === ESC_KEY && !event.isAutoRepeat && visible) {
-        setVisible(false);
+        setChatBarVisible(false);
     }
 }
 
@@ -709,25 +931,25 @@ function shutdown() {
     } catch (e) {
         // empty
     }
-    
+
     try {
         AvatarManager.avatarAddedEvent.disconnect(avatarJoinsDomain);
     } catch (e) {
         // empty
     }
-    
+
     try {
         AvatarManager.avatarRemovedEvent.disconnect(avatarLeavesDomain);
     } catch (e) {
         // empty
     }
-    
+
     try {
         Controller.keyPressEvent.disconnect(keyPressEvent);
     } catch (e) {
         // empty
     }
-    
+
     chatBar.close();
     chatHistory.close();
 }
