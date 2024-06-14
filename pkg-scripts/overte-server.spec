@@ -75,6 +75,7 @@ chrpath -d $RPM_BUILD_ROOT/opt/overte/plugins/*.so
 chrpath -d $RPM_BUILD_ROOT/opt/overte/plugins/*/*.so
 strip --strip-all $RPM_BUILD_ROOT/opt/overte/plugins/*.so
 strip --strip-all $RPM_BUILD_ROOT/opt/overte/plugins/*/*.so
+install -d $RPM_BUILD_ROOT/usr/share/licenses/overte-server
 cp $OVERTE/LICENSE $RPM_BUILD_ROOT/usr/share/licenses/overte-server/LICENSE
 find $RPM_BUILD_ROOT/opt/overte/resources -name ".gitignore" -delete
 
