@@ -238,7 +238,7 @@ jobs:
         fi
 
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: false
         fetch-depth: 1
@@ -305,7 +305,7 @@ jobs:
         df -h
 
     - name: Upload artifact to GitHub
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARTIFACT_PATTERN }}
         path: pkg-scripts/${{ env.ARTIFACT_PATTERN }}
