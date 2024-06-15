@@ -19,14 +19,18 @@ PickRay RayPick::getMathematicalPick() const {
         return _mathPick;
     }
 
-    const bool hasDelay = _prevUpdate != 0 && _delayHalf > 0.0f && !isNaN(_prevDirection.x);
+    float delayHalf = 0.0f;
+    withReadLock([&] {
+        delayHalf = _delayHalf;
+    });
+    const bool hasDelay = _prevUpdate != 0 && delayHalf > 0.0f && !isNaN(_prevDirection.x);
     const float now = secTimestampNow();
     const float dt = now - _prevUpdate;
     float alpha = 0.0f;
     if (hasDelay) {
         // This equation gives a framerate-independent lerp for a moving target
         // https://twitter.com/FreyaHolmer/status/1757836988495847568
-        alpha = 1 - exp2(-dt / _delayHalf);
+        alpha = 1 - exp2(-dt / delayHalf);
     }
 
     Transform currentParentTransform = parentTransform->getTransform();
@@ -92,6 +96,14 @@ PickResultPointer RayPick::getAvatarIntersection(const PickRay& pick) {
 PickResultPointer RayPick::getHUDIntersection(const PickRay& pick) {
     glm::vec3 hudRes = DependencyManager::get<HMDScriptingInterface>()->calculateRayUICollisionPoint(pick.origin, pick.direction);
     return std::make_shared<RayPickResult>(IntersectionType::HUD, QUuid(), glm::distance(pick.origin, hudRes), hudRes, pick);
+}
+
+void RayPick::setDelay(float delay) {
+    withWriteLock([&] {
+        // We want to be within 0.1% of the target in <delay> seconds
+        // https://twitter.com/FreyaHolmer/status/1757836988495847568
+        _delayHalf = -std::max(delay, 0.0f) / log2(0.001);
+    });
 }
 
 Transform RayPick::getResultTransform() const {

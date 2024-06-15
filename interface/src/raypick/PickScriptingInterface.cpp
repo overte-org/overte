@@ -463,6 +463,10 @@ void PickScriptingInterface::setIncludeItems(unsigned int uid, const ScriptValue
     DependencyManager::get<PickManager>()->setIncludeItems(uid, qVectorQUuidFromScriptValue(includeItems));
 }
 
+void PickScriptingInterface::setDelay(unsigned int uid, float delay) {
+    DependencyManager::get<PickManager>()->setDelay(uid, delay);
+}
+
 bool PickScriptingInterface::isLeftHand(unsigned int uid) {
     return DependencyManager::get<PickManager>()->isLeftHand(uid);
 }
@@ -503,6 +507,15 @@ unsigned int PickScriptingInterface::getPerFrameTimeBudget() const {
 
 void PickScriptingInterface::setPerFrameTimeBudget(unsigned int numUsecs) {
     DependencyManager::get<PickManager>()->setPerFrameTimeBudget(numUsecs);
+}
+
+float PickScriptingInterface::getHandLaserDelay() const {
+    return _handLaserDelaySetting.get();
+}
+
+void PickScriptingInterface::setHandLaserDelay(float delay) {
+    _handLaserDelaySetting.set(delay);
+    emit handLaserDelayChanged(delay);
 }
 
 void PickScriptingInterface::setParentTransform(std::shared_ptr<PickQuery> pick, const QVariantMap& propMap) {

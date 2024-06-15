@@ -59,6 +59,7 @@ public:
     virtual void setPrecisionPicking(bool precisionPicking);
     virtual void setIgnoreItems(const QVector<QUuid>& ignoreItems) const;
     virtual void setIncludeItems(const QVector<QUuid>& includeItems) const;
+    virtual void setDelay(float delay) const;
 
     bool isLeftHand() const;
     bool isRightHand() const;

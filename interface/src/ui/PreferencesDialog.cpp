@@ -18,6 +18,7 @@
 #include <plugins/PluginManager.h>
 #include <display-plugins/CompositorHelper.h>
 #include <display-plugins/hmd/HmdDisplayPlugin.h>
+#include <raypick/PickScriptingInterface.h>
 #include "scripting/RenderScriptingInterface.h"
 #include "Application.h"
 #include "DialogsManager.h"
@@ -207,6 +208,23 @@ void setupPreferences() {
         preferences->addPreference(preference);
     }
 
+    {
+        auto getter = []() -> bool { return qApp->getPreferAvatarFingerOverStylus(); };
+        auto setter = [](bool value) { qApp->setPreferAvatarFingerOverStylus(value); };
+        preferences->addPreference(new CheckPreference(UI_CATEGORY, "Prefer Avatar Finger Over Stylus", getter, setter));
+    }
+
+    {
+        auto getter = []() -> float { return DependencyManager::get<PickScriptingInterface>()->getHandLaserDelay(); };
+        auto setter = [](float value) { DependencyManager::get<PickScriptingInterface>()->setHandLaserDelay(value); };
+        auto delaySlider = new SpinnerSliderPreference(UI_CATEGORY, "Laser Delay (seconds)", getter, setter);
+        delaySlider->setMin(0.0f);
+        delaySlider->setMax(2.0f);
+        delaySlider->setStep(0.02f);
+        delaySlider->setDecimals(2.0f);
+        preferences->addPreference(delaySlider);
+    }
+
     static const QString VIEW_CATEGORY{ "View" };
     {
         auto getter = [myAvatar]()->float { return myAvatar->getRealWorldFieldOfView(); };
@@ -224,12 +242,6 @@ void setupPreferences() {
         preference->setMax(180);
         preference->setStep(1);
         preferences->addPreference(preference);
-    }
-
-    {
-        auto getter = []()->bool { return qApp->getPreferAvatarFingerOverStylus(); };
-        auto setter = [](bool value) { qApp->setPreferAvatarFingerOverStylus(value); };
-        preferences->addPreference(new CheckPreference(UI_CATEGORY, "Prefer Avatar Finger Over Stylus", getter, setter));
     }
 
     // Snapshots

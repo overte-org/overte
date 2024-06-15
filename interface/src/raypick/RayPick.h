@@ -97,6 +97,8 @@ public:
     PickResultPointer getHUDIntersection(const PickRay& pick) override;
     Transform getResultTransform() const override;
 
+    void setDelay(float delay) override;
+
     // These are helper functions for projecting and intersecting rays
     static glm::vec3 intersectRayWithEntityXYPlane(const QUuid& entityID, const glm::vec3& origin, const glm::vec3& direction);
     static glm::vec2 projectOntoEntityXYPlane(const QUuid& entityID, const glm::vec3& worldPos, bool unNormalized = true);
