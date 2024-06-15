@@ -170,9 +170,7 @@ endif()
                 if distro.id() == 'ubuntu':
                     u_major = int( distro.major_version() )
 
-                    if u_major == 18:
-                        self.qtUrl = 'http://motofckr9k.ddns.net/vircadia_packages/qt5-install-5.15.2-ubuntu-18.04-aarch64_test.tar.xz'
-                    elif u_major == 20:
+                    if u_major == 20:
                         self.qtUrl = self.assets_url + '/dependencies/qt5/qt5-install-5.15.9-2023.05.21-kde_fb3ec282151b1ee281a24f0545a40ac6438537c2-ubuntu-20.04-aarch64.tar.xz'
                     elif u_major > 20:
                         self.__no_qt_package_error()
@@ -182,9 +180,7 @@ endif()
                 elif distro.id() == 'debian':
                     u_major = int( distro.major_version() )
 
-                    if u_major == 10:
-                        self.qtUrl = 'https://data.moto9000.moe/vircadia_packages/qt5-install-5.15.2-debian-10-aarch64.tar.xz'
-                    elif u_major > 10:
+                    if u_major > 10:
                         self.__no_qt_package_error()
                     else:
                         self.__unsupported_error()
