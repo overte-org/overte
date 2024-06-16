@@ -17,8 +17,8 @@
 #include <gpu/gl/GLBackend.h>
 #include <NumericalConstants.h>
 
-#include <quazip5/quazip.h>
-#include <quazip5/JlCompress.h>
+#include <quazip/quazip.h>
+#include <quazip/JlCompress.h>
 
 #include <test-utils/QTestExtensions.h>
 #include <test-utils/Utils.h>
