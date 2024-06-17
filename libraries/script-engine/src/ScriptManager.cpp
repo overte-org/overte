@@ -2054,7 +2054,7 @@ void ScriptManager::loadEntityScript(const EntityItemID& entityID, const QString
     std::weak_ptr<ScriptManager> weakRef(shared_from_this());
     scriptCache->getScriptContents(entityScript,
         [this, weakRef, entityScript, entityID](const QString& url, const QString& contents, bool isURL, bool success, const QString& status) {
-            std::shared_ptr<ScriptManager> strongRef(weakRef);
+            std::shared_ptr<ScriptManager> strongRef = weakRef.lock();
             if (!strongRef) {
                 qCWarning(scriptengine) << "loadEntityScript.contentAvailable -- ScriptManager was deleted during getScriptContents!!";
                 return;
