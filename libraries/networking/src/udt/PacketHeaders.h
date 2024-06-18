@@ -295,6 +295,7 @@ enum class EntityVersion : PacketVersion {
     WantsKeyboardFocus,
     AudioZones,
     AnimationSmoothFrames,
+    ProceduralParticles,
     SoundEntities,
 
     // Add new versions above here

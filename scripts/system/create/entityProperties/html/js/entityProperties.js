@@ -1387,6 +1387,54 @@ const GROUPS = [
         ]
     },
     {
+        id: "particles_procedural",
+        label: "PROCEDURAL PARTICLES",
+        properties: [
+            {
+                label: "Particles",
+                type: "number-draggable",
+                propertyID: "numParticles",
+                min: 1,
+                max: 1000000
+            },
+            {
+                label: "Triangles Per Particle",
+                type: "number-draggable",
+                propertyID: "numTrianglesPerParticle",
+                min: 1,
+                max: 15
+            },
+            {
+                label: "Update Props",
+                type: "number-draggable",
+                propertyID: "numUpdateProps",
+                min: 0,
+                max: 5
+            },
+            {
+                label: "Transparent",
+                type: "bool",
+                propertyID: "particleTransparent",
+            },
+            {
+                label: "Particle Update Data",
+                type: "textarea",
+                buttons: [{ id: "clear", label: "Clear Update Data", className: "secondary_red red", onClick: clearParticleUpdateData },
+                { id: "edit", label: "Edit as JSON", className: "secondary", onClick: newJSONParticleUpdateEditor },
+                { id: "save", label: "Save Update Data", className: "secondary", onClick: saveParticleUpdateData }],
+                propertyID: "particleUpdateData",
+            },
+            {
+                label: "Particle Render Data",
+                type: "textarea",
+                buttons: [{ id: "clear", label: "Clear Render Data", className: "secondary_red red", onClick: clearParticleRenderData },
+                { id: "edit", label: "Edit as JSON", className: "secondary", onClick: newJSONParticleRenderEditor },
+                { id: "save", label: "Save Render Data", className: "secondary", onClick: saveParticleRenderData }],
+                propertyID: "particleRenderData",
+            }
+        ]
+    },
+    {
         id: "polyvox",
         label: "POLYVOX",
         properties: [
@@ -1869,6 +1917,7 @@ const GROUPS_PER_TYPE = {
   Material: [ 'base', 'material', 'spatial', 'behavior', 'scripts', 'physics' ],
   ParticleEffect: [ 'base', 'particles', 'particles_emit', 'particles_size', 'particles_color', 
                     'particles_behavior', 'particles_constraints', 'spatial', 'behavior', 'scripts', 'physics' ],
+  ProceduralParticleEffect: [ 'base', 'particles_procedural', 'spatial', 'behavior', 'scripts', 'physics' ],
   PolyLine: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Grid: [ 'base', 'grid', 'spatial', 'behavior', 'scripts', 'physics' ],
@@ -3848,6 +3897,327 @@ function saveJSONMaterialData(noUpdate, entityIDsToUpdate) {
     }, EDITOR_TIMEOUT_DURATION);
 }
 
+
+/**
+ * PROCEDURAL PARTICLE DATA FUNCTIONS
+ */
+
+function clearParticleUpdateData() {
+    let elParticleUpdateData = getPropertyInputElement("particleUpdateData");
+    deleteJSONParticleUpdateEditor();
+    elParticleUpdateData.value = "";
+    showParticleUpdateDataTextArea();
+    showNewJSONParticleUpdateEditorButton();
+    hideSaveParticleUpdateDataButton();
+    updateProperty('particleUpdateData', elParticleUpdateData.value, false);
+}
+
+function newJSONParticleUpdateEditor() {
+    getPropertyInputElement("particleUpdateData").classList.remove('multi-diff');
+    deleteJSONParticleUpdateEditor();
+    createJSONParticleUpdateEditor();
+    let data = {};
+    setParticleUpdateEditorJSON(data);
+    hideParticleUpdateDataTextArea();
+    hideNewJSONParticleUpdateEditorButton();
+    showSaveParticleUpdateDataButton();
+}
+
+/**
+ * @param {Set.<string>} [entityIDsToUpdate] Entity IDs to update particleUpdateData for.
+ */
+function saveParticleUpdateData(entityIDsToUpdate) {
+    saveJSONParticleUpdateData(true, entityIDsToUpdate);
+}
+
+function setJSONError(property, isError) {
+    $("#property-"+ property + "-editor").toggleClass('error', isError);
+    let $propertyParticleUpdateDataEditorStatus = $("#property-"+ property + "-editorStatus");
+    $propertyParticleUpdateDataEditorStatus.css('display', isError ? 'block' : 'none');
+    $propertyParticleUpdateDataEditorStatus.text(isError ? 'Invalid JSON code - look for red X in your code' : '');
+}
+
+/**
+ * @param {boolean} noUpdate - don't update the UI, but do send a property update.
+ * @param {Set.<string>} [entityIDsToUpdate] - Entity IDs to update particleUpdateData for.
+ */
+function setParticleUpdateDataFromEditor(noUpdate, entityIDsToUpdate) {
+    let errorFound = false;
+    try {
+        particleUpdateEditor.get();
+    } catch (e) {
+        errorFound = true;
+    }
+
+    setJSONError('particleUpdateData', errorFound);
+
+    if (errorFound) {
+        return;
+    }
+
+    let text = particleUpdateEditor.getText();
+    if (noUpdate) {
+        EventBridge.emitWebEvent(
+            JSON.stringify({
+                ids: [...entityIDsToUpdate],
+                type: "saveParticleUpdateData",
+                properties: {
+                    particleUpdateData: text
+                }
+            })
+        );
+    } else {
+        updateProperty('particleUpdateData', text, false);
+    }
+}
+
+let particleUpdateEditor = null;
+
+function createJSONParticleUpdateEditor() {
+    let container = document.getElementById("property-particleUpdateData-editor");
+    let options = {
+        search: false,
+        mode: 'tree',
+        modes: ['code', 'tree'],
+        name: 'particleUpdateData',
+        onError: function(e) {
+            alert('JSON editor:' + e);
+        },
+        onChange: function() {
+            let currentJSONString = particleUpdateEditor.getText();
+
+            if (currentJSONString === '{"":""}') {
+                return;
+            }
+            $('#property-particleUpdateData-button-save').attr('disabled', false);
+        }
+    };
+    particleUpdateEditor = new JSONEditor(container, options);
+}
+
+function showSaveParticleUpdateDataButton() {
+    $('#property-particleUpdateData-button-save').show();
+}
+
+function hideSaveParticleUpdateDataButton() {
+    $('#property-particleUpdateData-button-save').hide();
+}
+
+function disableSaveParticleUpdateDataButton() {
+    $('#property-particleUpdateData-button-save').attr('disabled', true);
+}
+
+function showNewJSONParticleUpdateEditorButton() {
+    $('#property-particleUpdateData-button-edit').show();
+}
+
+function hideNewJSONParticleUpdateEditorButton() {
+    $('#property-particleUpdateData-button-edit').hide();
+}
+
+function showParticleUpdateDataTextArea() {
+    $('#property-particleUpdateData').show();
+}
+
+function hideParticleUpdateDataTextArea() {
+    $('#property-particleUpdateData').hide();
+}
+
+function hideParticleUpdateDataSaved() {
+    $('#property-particleUpdateData-saved').hide();
+}
+
+function setParticleUpdateEditorJSON(json) {
+    particleUpdateEditor.set(json);
+    if (particleUpdateEditor.hasOwnProperty('expandAll')) {
+        particleUpdateEditor.expandAll();
+    }
+}
+
+function deleteJSONParticleUpdateEditor() {
+    if (particleUpdateEditor !== null) {
+        setJSONError('particleUpdateData', false);
+        particleUpdateEditor.destroy();
+        particleUpdateEditor = null;
+    }
+}
+
+let savedParticleUpdateJSONTimer = null;
+
+/**
+ * @param {boolean} noUpdate - don't update the UI, but do send a property update.
+ * @param {Set.<string>} [entityIDsToUpdate] Entity IDs to update particleUpdateData for
+ */
+function saveJSONParticleUpdateData(noUpdate, entityIDsToUpdate) {
+    setParticleUpdateDataFromEditor(noUpdate, entityIDsToUpdate ? entityIDsToUpdate : selectedEntityIDs);
+    $('#property-particleUpdateData-saved').show();
+    $('#property-particleUpdateData-button-save').attr('disabled', true);
+    if (savedJSONTimer !== null) {
+        clearTimeout(savedJSONTimer);
+    }
+    savedJSONTimer = setTimeout(function() {
+        hideParticleUpdateDataSaved();
+    }, EDITOR_TIMEOUT_DURATION);
+}
+
+function clearParticleRenderData() {
+    let elParticleRenderData = getPropertyInputElement("particleRenderData");
+    deleteJSONParticleRenderEditor();
+    elParticleRenderData.value = "";
+    showParticleRenderDataTextArea();
+    showNewJSONParticleRenderEditorButton();
+    hideSaveParticleRenderDataButton();
+    updateProperty('particleRenderData', elParticleRenderData.value, false);
+}
+
+function newJSONParticleRenderEditor() {
+    getPropertyInputElement("particleRenderData").classList.remove('multi-diff');
+    deleteJSONParticleRenderEditor();
+    createJSONParticleRenderEditor();
+    let data = {};
+    setParticleRenderEditorJSON(data);
+    hideParticleRenderDataTextArea();
+    hideNewJSONParticleRenderEditorButton();
+    showSaveParticleRenderDataButton();
+}
+
+/**
+ * @param {Set.<string>} [entityIDsToUpdate] Entity IDs to update particleRenderData for.
+ */
+function saveParticleRenderData(entityIDsToUpdate) {
+    saveJSONParticleRenderData(true, entityIDsToUpdate);
+}
+
+function setJSONError(property, isError) {
+    $("#property-"+ property + "-editor").toggleClass('error', isError);
+    let $propertyParticleRenderDataEditorStatus = $("#property-"+ property + "-editorStatus");
+    $propertyParticleRenderDataEditorStatus.css('display', isError ? 'block' : 'none');
+    $propertyParticleRenderDataEditorStatus.text(isError ? 'Invalid JSON code - look for red X in your code' : '');
+}
+
+/**
+ * @param {boolean} noUpdate - don't update the UI, but do send a property update.
+ * @param {Set.<string>} [entityIDsToUpdate] - Entity IDs to update particleRenderData for.
+ */
+function setParticleRenderDataFromEditor(noUpdate, entityIDsToUpdate) {
+    let errorFound = false;
+    try {
+        particleRenderEditor.get();
+    } catch (e) {
+        errorFound = true;
+    }
+
+    setJSONError('particleRenderData', errorFound);
+
+    if (errorFound) {
+        return;
+    }
+
+    let text = particleRenderEditor.getText();
+    if (noUpdate) {
+        EventBridge.emitWebEvent(
+            JSON.stringify({
+                ids: [...entityIDsToUpdate],
+                type: "saveParticleRenderData",
+                properties: {
+                    particleRenderData: text
+                }
+            })
+        );
+    } else {
+        updateProperty('particleRenderData', text, false);
+    }
+}
+
+let particleRenderEditor = null;
+
+function createJSONParticleRenderEditor() {
+    let container = document.getElementById("property-particleRenderData-editor");
+    let options = {
+        search: false,
+        mode: 'tree',
+        modes: ['code', 'tree'],
+        name: 'particleRenderData',
+        onError: function(e) {
+            alert('JSON editor:' + e);
+        },
+        onChange: function() {
+            let currentJSONString = particleRenderEditor.getText();
+
+            if (currentJSONString === '{"":""}') {
+                return;
+            }
+            $('#property-particleRenderData-button-save').attr('disabled', false);
+        }
+    };
+    particleRenderEditor = new JSONEditor(container, options);
+}
+
+function showSaveParticleRenderDataButton() {
+    $('#property-particleRenderData-button-save').show();
+}
+
+function hideSaveParticleRenderDataButton() {
+    $('#property-particleRenderData-button-save').hide();
+}
+
+function disableSaveParticleRenderDataButton() {
+    $('#property-particleRenderData-button-save').attr('disabled', true);
+}
+
+function showNewJSONParticleRenderEditorButton() {
+    $('#property-particleRenderData-button-edit').show();
+}
+
+function hideNewJSONParticleRenderEditorButton() {
+    $('#property-particleRenderData-button-edit').hide();
+}
+
+function showParticleRenderDataTextArea() {
+    $('#property-particleRenderData').show();
+}
+
+function hideParticleRenderDataTextArea() {
+    $('#property-particleRenderData').hide();
+}
+
+function hideParticleRenderDataSaved() {
+    $('#property-particleRenderData-saved').hide();
+}
+
+function setParticleRenderEditorJSON(json) {
+    particleRenderEditor.set(json);
+    if (particleRenderEditor.hasOwnProperty('expandAll')) {
+        particleRenderEditor.expandAll();
+    }
+}
+
+function deleteJSONParticleRenderEditor() {
+    if (particleRenderEditor !== null) {
+        setJSONError('particleRenderData', false);
+        particleRenderEditor.destroy();
+        particleRenderEditor = null;
+    }
+}
+
+let savedParticleRenderJSONTimer = null;
+
+/**
+ * @param {boolean} noUpdate - don't update the UI, but do send a property update.
+ * @param {Set.<string>} [entityIDsToUpdate] Entity IDs to update particleRenderData for
+ */
+function saveJSONParticleRenderData(noUpdate, entityIDsToUpdate) {
+    setParticleRenderDataFromEditor(noUpdate, entityIDsToUpdate ? entityIDsToUpdate : selectedEntityIDs);
+    $('#property-particleRenderData-saved').show();
+    $('#property-particleRenderData-button-save').attr('disabled', true);
+    if (savedJSONTimer !== null) {
+        clearTimeout(savedJSONTimer);
+    }
+    savedJSONTimer = setTimeout(function() {
+        hideParticleRenderDataSaved();
+    }, EDITOR_TIMEOUT_DURATION);
+}
+
 function bindAllNonJSONEditorElements() {
     let inputs = $('input');
     let i;
@@ -3858,7 +4228,9 @@ function bindAllNonJSONEditorElements() {
         //             an outer scoped variable may lead to confusing semantics.
         field.on('focus', function(e) {
             if (e.target.id === "property-userData-button-edit" || e.target.id === "property-userData-button-clear" || 
-                e.target.id === "property-materialData-button-edit" || e.target.id === "property-materialData-button-clear") {
+                e.target.id === "property-materialData-button-edit" || e.target.id === "property-materialData-button-clear" ||
+                e.target.id === "property-particleUpdateData-button-edit" || e.target.id === "property-particleUpdateData-button-clear" ||
+                e.target.id === "property-particleRenderData-button-edit" || e.target.id === "property-particleRenderData-button-clear") {
                 return;
             }
             if ($('#property-userData-editor').css('height') !== "0px") {
@@ -3866,6 +4238,12 @@ function bindAllNonJSONEditorElements() {
             }
             if ($('#property-materialData-editor').css('height') !== "0px") {
                 saveMaterialData();
+            }
+            if ($('#property-particleUpdateData-editor').css('height') !== "0px") {
+                saveParticleUpdateData();
+            }
+            if ($('#property-particleRenderData-editor').css('height') !== "0px") {
+                saveParticleRenderData();
             }
         });
     }
@@ -4275,6 +4653,8 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
     if (selections.length === 0) {
         deleteJSONEditor();
         deleteJSONMaterialEditor();
+        deleteJSONParticleUpdateEditor();
+        deleteJSONParticleRenderEditor();
 
         resetProperties();
         showGroupsForType("None");
@@ -4292,6 +4672,16 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
         showMaterialDataTextArea();
         showSaveMaterialDataButton();
         showNewJSONMaterialEditorButton();
+
+        getPropertyInputElement("particleUpdateData").value = "";
+        showParticleUpdateDataTextArea();
+        showSaveParticleUpdateDataButton();
+        showNewJSONParticleUpdateEditorButton();
+
+        getPropertyInputElement("particleRenderData").value = "";
+        showParticleRenderDataTextArea();
+        showSaveParticleRenderDataButton();
+        showNewJSONParticleRenderEditorButton();
 
         setCopyPastePositionAndRotationAvailability (selections.length, true);
 
@@ -4330,6 +4720,8 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
             enableProperties();
             disableSaveUserDataButton();
             disableSaveMaterialDataButton();
+            disableSaveParticleUpdateDataButton();
+            disableSaveParticleRenderDataButton();
             setCopyPastePositionAndRotationAvailability (selections.length, false);
         }
 
@@ -4596,6 +4988,70 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
 
         if (hasSelectedEntityChanged && selections.length === 1 && entityTypes[0] === "Material") {
             requestMaterialTarget();
+        }
+
+        let particleUpdateDataMultiValue = getMultiplePropertyValue("particleUpdateData");
+        let particleUpdateDataTextArea = getPropertyInputElement("particleUpdateData");
+        let particleUpdateJSON = null;
+        if (!particleUpdateDataMultiValue.isMultiDiffValue) {
+            try {
+                particleUpdateJSON = JSON.parse(particleUpdateDataMultiValue.value);
+            } catch (e) {
+
+            }
+        }
+        if (particleUpdateJSON !== null && !lockedMultiValue.isMultiDiffValue && !lockedMultiValue.value) {
+            if (particleUpdateEditor === null) {
+                createJSONParticleUpdateEditor();
+            }
+            particleUpdateDataTextArea.classList.remove('multi-diff');
+            setParticleUpdateEditorJSON(particleUpdateJSON);
+            showSaveParticleUpdateDataButton();
+            hideParticleUpdateDataTextArea();
+            hideNewJSONParticleUpdateEditorButton();
+            hideParticleUpdateDataSaved();
+        } else {
+            // normal text
+            deleteJSONParticleUpdateEditor();
+            particleUpdateDataTextArea.classList.toggle('multi-diff', particleUpdateDataMultiValue.isMultiDiffValue);
+            particleUpdateDataTextArea.value = particleUpdateDataMultiValue.isMultiDiffValue ? "" : particleUpdateDataMultiValue.value;
+
+            showParticleUpdateDataTextArea();
+            showNewJSONParticleUpdateEditorButton();
+            hideSaveParticleUpdateDataButton();
+            hideParticleUpdateDataSaved();
+        }
+
+        let particleRenderDataMultiValue = getMultiplePropertyValue("particleRenderData");
+        let particleRenderDataTextArea = getPropertyInputElement("particleRenderData");
+        let particleRenderJSON = null;
+        if (!particleRenderDataMultiValue.isMultiDiffValue) {
+            try {
+                particleRenderJSON = JSON.parse(particleRenderDataMultiValue.value);
+            } catch (e) {
+
+            }
+        }
+        if (particleRenderJSON !== null && !lockedMultiValue.isMultiDiffValue && !lockedMultiValue.value) {
+            if (particleRenderEditor === null) {
+                createJSONParticleRenderEditor();
+            }
+            particleRenderDataTextArea.classList.remove('multi-diff');
+            setParticleRenderEditorJSON(particleRenderJSON);
+            showSaveParticleRenderDataButton();
+            hideParticleRenderDataTextArea();
+            hideNewJSONParticleRenderEditorButton();
+            hideParticleRenderDataSaved();
+        } else {
+            // normal text
+            deleteJSONParticleRenderEditor();
+            particleRenderDataTextArea.classList.toggle('multi-diff', particleRenderDataMultiValue.isMultiDiffValue);
+            particleRenderDataTextArea.value = particleRenderDataMultiValue.isMultiDiffValue ? "" : particleRenderDataMultiValue.value;
+
+            showParticleRenderDataTextArea();
+            showNewJSONParticleRenderEditorButton();
+            hideSaveParticleRenderDataButton();
+            hideParticleRenderDataSaved();
         }
 
         let activeElement = document.activeElement;
@@ -4895,6 +5351,37 @@ function loaded() {
         elDiv.insertBefore(elMaterialDataEditor, elMaterialData);
         elDiv.insertBefore(elMaterialDataEditorStatus, elMaterialData);
 
+        // Particle Update + Render Data
+        let particleUpdateDataProperty = properties["particleUpdateData"];
+        let elParticleUpdateData = particleUpdateDataProperty.elInput;
+        let particleUpdateDataElementID = particleUpdateDataProperty.elementID;
+        elDiv = elParticleUpdateData.parentNode;
+        let elParticleUpdateDataEditor = document.createElement('div');
+        elParticleUpdateDataEditor.setAttribute("id", particleUpdateDataElementID + "-editor");
+        let elParticleUpdateDataEditorStatus = document.createElement('div');
+        elParticleUpdateDataEditorStatus.setAttribute("id", particleUpdateDataElementID + "-editorStatus");
+        let elParticleUpdateDataSaved = document.createElement('span');
+        elParticleUpdateDataSaved.setAttribute("id", particleUpdateDataElementID + "-saved");
+        elParticleUpdateDataSaved.innerText = "Saved!";
+        elDiv.childNodes[JSON_EDITOR_ROW_DIV_INDEX].appendChild(elParticleUpdateDataSaved);
+        elDiv.insertBefore(elParticleUpdateDataEditor, elParticleUpdateData);
+        elDiv.insertBefore(elParticleUpdateDataEditorStatus, elParticleUpdateData);
+
+        let particleRenderDataProperty = properties["particleRenderData"];
+        let elParticleRenderData = particleRenderDataProperty.elInput;
+        let particleRenderDataElementID = particleRenderDataProperty.elementID;
+        elDiv = elParticleRenderData.parentNode;
+        let elParticleRenderDataEditor = document.createElement('div');
+        elParticleRenderDataEditor.setAttribute("id", particleRenderDataElementID + "-editor");
+        let elParticleRenderDataEditorStatus = document.createElement('div');
+        elParticleRenderDataEditorStatus.setAttribute("id", particleRenderDataElementID + "-editorStatus");
+        let elParticleRenderDataSaved = document.createElement('span');
+        elParticleRenderDataSaved.setAttribute("id", particleRenderDataElementID + "-saved");
+        elParticleRenderDataSaved.innerText = "Saved!";
+        elDiv.childNodes[JSON_EDITOR_ROW_DIV_INDEX].appendChild(elParticleRenderDataSaved);
+        elDiv.insertBefore(elParticleRenderDataEditor, elParticleRenderData);
+        elDiv.insertBefore(elParticleRenderDataEditorStatus, elParticleRenderData);
+
         // Textarea scrollbars
         let elTextareas = document.getElementsByTagName("TEXTAREA");
 
@@ -5008,7 +5495,8 @@ function loaded() {
                 return;
             }
 
-            if (elUserDataEditor.contains(keyUpEvent.target) || elMaterialDataEditor.contains(keyUpEvent.target)) {
+            if (elUserDataEditor.contains(keyUpEvent.target) || elMaterialDataEditor.contains(keyUpEvent.target) || elParticleUpdateDataEditor.contains(keyUpEvent.target)
+                || elParticleRenderDataEditor.contains(keyUpEvent.target)) {
                 return;
             }
 
