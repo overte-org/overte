@@ -17,12 +17,16 @@
 #include <QTemporaryDir>
 
 #include <FSTReader.h>
+#include <FSTOldReader.h>
+#include <FSTJsonReader.h>
+
 #include <FBXSerializer.h>
 #include <OffscreenUi.h>
 
 #include "ModelSelector.h"
 #include "ModelPropertiesDialog.h"
 #include "InterfaceLogging.h"
+
 
 static const int MAX_TEXTURE_SIZE = 8192;
 
@@ -87,7 +91,9 @@ bool ModelPackager::loadModel() {
             return false;
         }
         qCDebug(interfaceapp) << "Reading FST file";
-        _mapping = FSTReader::readMapping(fst.readAll());
+        QByteArray data = fst.readAll();
+        auto reader = FSTReader::getReader(data);
+        _mapping = reader->readMapping(data);
         fst.close();
 
         _fbxInfo = QFileInfo(_modelFile.path() + "/" + _mapping.value(FILENAME_FIELD).toString());
@@ -212,8 +218,10 @@ bool ModelPackager::zipModel() {
     }
     // Copy FST
     QFile fst(tempDir.path() + "/" + nameField + ".fst");
+
     if (fst.open(QIODevice::WriteOnly)) {
-        fst.write(FSTReader::writeMapping(_mapping));
+        auto writer = std::make_unique<FSTOldReader>();
+        fst.write(writer->writeMapping(_mapping));
         fst.close();
     } else {
         qCDebug(interfaceapp) << "Couldn't write FST file" << fst.fileName();

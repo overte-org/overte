@@ -32,7 +32,14 @@
 #include <NetworkingConstants.h>
 #include <SharedUtil.h>
 
-const char* MODEL_TYPE_NAMES[] = { "entities", "heads", "skeletons", "skeletons", "attachments" };
+const QHash<FSTReader::ModelType, QString> MODEL_TYPE_NAMES = 
+{
+    {FSTReader::ModelType::ENTITY_MODEL, "entities"},
+    {FSTReader::ModelType::HEAD_MODEL, "heads"},
+    {FSTReader::ModelType::BODY_ONLY_MODEL, "skeletons"},
+    {FSTReader::ModelType::HEAD_AND_BODY_MODEL, "skeletons"},
+    {FSTReader::ModelType::ATTACHMENT_MODEL, "attachments"}
+};
 
 static const QString S3_URL = NetworkingConstants::HF_PUBLIC_CDN_URL;
 static const QString PUBLIC_URL = "http://public.overte.org"; // Changed to Overte but not entirely sure what to do with this yet.

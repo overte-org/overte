@@ -55,7 +55,8 @@ void FSTBaker::bakeSourceCopy() {
     }
     
     hifi::ByteArray fstData = fstFile.readAll();
-    _mapping = FSTReader::readMapping(fstData);
+    auto reader = FSTReader::getReader(fstData);
+    _mapping = reader->readMapping(fstData);
 
     auto filenameField = _mapping[FILENAME_FIELD].toString();
     if (filenameField.isEmpty()) {

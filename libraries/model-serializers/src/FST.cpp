@@ -14,6 +14,8 @@
 #include <QDir>
 #include <QFileInfo>
 #include <hfm/HFM.h>
+#include "FSTOldReader.h"
+#include "FSTJsonReader.h"
 
 constexpr float DEFAULT_SCALE { 1.0f };
 
@@ -173,6 +175,8 @@ bool FST::write() {
     if (!fst.open(QIODevice::WriteOnly)) {
         return false;
     }
-    fst.write(FSTReader::writeMapping(getMapping()));
+
+    auto writer = std::make_unique<FSTOldReader>();
+    fst.write(writer->writeMapping(getMapping()));
     return true;
 }
