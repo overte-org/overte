@@ -7251,10 +7251,6 @@ void Application::updateWindowTitle() const {
         + (BuildInfo::BUILD_TYPE == BuildInfo::BuildType::Stable ? QString("Version") : QString("Build"))
         + " " + applicationVersion();
 
-    if (BuildInfo::RELEASE_NAME != "") {
-        buildVersion += " - " + BuildInfo::RELEASE_NAME;
-    }
-
     QString connectionStatus = isInErrorState ? " (ERROR CONNECTING)" :
         nodeList->getDomainHandler().isConnected() ? "" : " (NOT CONNECTED)";
 
