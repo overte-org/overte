@@ -14,3 +14,7 @@ target_opus()
 if (BUILD_SERVER)
     install_beside_console()
 endif ()
+
+if (BUILD_CLIENT)
+  install_beside_client()
+endif ()
