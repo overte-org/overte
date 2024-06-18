@@ -106,7 +106,7 @@ For code signing to work, you will need to set the `HF_PFX_FILE` and `HF_PFX_PAS
 1. Ensure you have all the prerequisites fulfilled from the [MacOS Build Guide](BUILD_OSX.md).
 2. Perform a clean CMake in your build folder. e.g.
     ```bash
-    BUILD_GLOBAL_SERVICES=STABLE USE_STABLE_GLOBAL_SERVICES=1 RELEASE_BUILD=PRODUCTION BUILD_NUMBER="Insert Build Identifier here e.g. short hash of your last Git commit" RELEASE_NAME="Insert Release Name Here" STABLE_BUILD=1 PRODUCTION_BUILD=1 RELEASE_NUMBER="Insert Release Version Here e.g. 1.1.0" RELEASE_TYPE=PRODUCTION cmake -DCMAKE_OSX_SYSROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk" -DCLIENT_ONLY=1 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.12 -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOSX_SDK=10.12  ..
+    BUILD_GLOBAL_SERVICES=STABLE USE_STABLE_GLOBAL_SERVICES=1 RELEASE_BUILD=PRODUCTION BUILD_NUMBER="Insert Build Identifier here e.g. short hash of your last Git commit" STABLE_BUILD=1 PRODUCTION_BUILD=1 RELEASE_NUMBER="Insert Release Version Here e.g. 1.1.0" RELEASE_TYPE=PRODUCTION cmake -DCMAKE_OSX_SYSROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk" -DCLIENT_ONLY=1 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.12 -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOSX_SDK=10.12  ..
     ```
 3. Pick a method to build and package your release.
 
