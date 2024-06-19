@@ -153,14 +153,6 @@ void Overlays::render(RenderArgs* renderArgs) {
     }
 }
 
-void Overlays::disable() {
-    _enabled = false;
-}
-
-void Overlays::enable() {
-    _enabled = true;
-}
-
 Overlay::Pointer Overlays::take2DOverlay(const QUuid& id) {
     if (_shuttingDown) {
         return nullptr;
@@ -378,7 +370,7 @@ QObject* Overlays::getOverlayObject(const QUuid& id) {
 }
 
 QUuid Overlays::getOverlayAtPoint(const glm::vec2& point) {
-    if (_shuttingDown || !_enabled) {
+    if (_shuttingDown) {
         return UNKNOWN_ENTITY_ID;
     }
 

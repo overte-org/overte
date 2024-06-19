@@ -601,7 +601,7 @@ $(document).ready(function(){
     form += '<label class="control-label">' + label + '</label>';
     form += ' <a id="edit-network-address-port" class="domain-loading-hide" href="#">Edit</a>';
     form += '<input type="text" class="domain-loading-hide form-control" disabled></input>';
-    form += '<div class="domain-loading-hide help-block">This defines how nodes will connect to your domain. You can read more about automatic networking <a href="">here</a>.</div>';
+    form += '<div class="domain-loading-hide help-block">This defines how nodes will connect to your domain. Since the displayed setting is read back from directory server, it takes some time to update after being edited. You can read more about automatic networking <a href="">here</a>.</div>';
     form += '</div>';
 
     form = $(form);
@@ -664,7 +664,13 @@ $(document).ready(function(){
                 success: function(xhr) {
                   console.log(xhr, parseJSONResponse(xhr));
                   dialog.modal('hide');
-                  reloadDomainInfo();
+                  reloadDomainInfo(); // TODO: this one doesn't work since directory server still has old data
+                  setTimeout(function() {
+                    reloadDomainInfo();
+                  }, 16000);
+                  setTimeout(function() {
+                    reloadDomainInfo();
+                  }, 64000);
                 },
                 error:function(xhr) {
                   var data = parseJSONResponse(xhr);

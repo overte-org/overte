@@ -206,7 +206,8 @@ public:
      * @param {Uuid[]} entityIDs - The IDs of the entities to get the properties of.
      * @param {string[]|string} [desiredProperties=[]] - The name or names of the properties to get. For properties that are 
      *     objects (e.g., the <code>"keyLight"</code> property), use the property and subproperty names in dot notation (e.g., 
-     *     <code>"keyLight.color"</code>).
+     *     <code>"keyLight.color"</code>). Getting all subproperties with the name of an object is currently not supported (e.g.,
+     *     passing the <code>"keyLight"</code> property only).
      * @returns {Entities.EntityProperties[]} The specified properties of each entity for each entity that can be found. If 
      *     none of the entities can be found, then an empty array is returned. If no properties are specified, then all 
      *     properties are returned.
@@ -286,6 +287,14 @@ public slots:
      *     otherwise <code>false</code>.
      */
     Q_INVOKABLE bool canRezAvatarEntities();
+
+    /*@jsdoc
+     * Checks whether or not the script can view asset URLs
+     * @function Entities.canViewAssetURLs
+     * @returns {boolean} <code>true</code> if the domain server will allow the script to view asset URLs,
+     *     otherwise <code>false</code>.
+     */
+    Q_INVOKABLE bool canViewAssetURLs();
 
     /*@jsdoc
      * <p>How an entity is hosted and sent to others for display.</p>
@@ -395,7 +404,24 @@ public slots:
      */
     Q_INVOKABLE EntityItemProperties getEntityProperties(const QUuid& entityID);
     Q_INVOKABLE ScriptValue getEntityProperties(const QUuid& entityID, const ScriptValue &desiredProperties);
-    Q_INVOKABLE EntityItemProperties getEntityPropertiesInternal(const QUuid& entityID, EntityPropertyFlags desiwredProperties);
+    /**
+     * @brief Internal function to get entity properties.
+     *
+     * It's being called by EntityScriptingInterface::getEntityProperties
+     * and also from C++ side in several places in the source code.
+     *
+     * @param entityID The ID of the entity to get the properties of.
+     * @param desiredProperties Flags representing requested entity properties
+     * @param returnNothingOnEmptyPropertyFlags If this parameter is false and property flags are empty, then all possible
+     * properties will get returned. This is needed because we divide properties requested through getEntityProperties into
+     * real properties and pseudo properties. Only real properties are passed here as desiredProperties, so if user requests
+     * only pseudo properties, then desiredProperties will be empty. In such case we need to pass true
+     * as returnNothingOnEmptyPropertyFlags to avoid mistakenly returning all the properties.
+     * @return EntityItemProperties Requested properties of the entity if it can be found.
+     */
+
+    Q_INVOKABLE EntityItemProperties getEntityPropertiesInternal(const QUuid& entityID, EntityPropertyFlags desiredProperties,
+                                                                 bool returnNothingOnEmptyPropertyFlags);
     //Q_INVOKABLE EntityItemProperties getEntityProperties(const QUuid& entityID, EntityPropertyFlags desiredProperties);
 
     /*@jsdoc
@@ -2250,6 +2276,14 @@ signals:
      */
     void canRezAvatarEntitiesChanged(bool canRezAvatarEntities);
 
+    /*@jsdoc
+     * Triggered when your ability to view asset URLs is changed.
+     * @function Entities.canViewAssetURLsChanged
+     * @param {boolean} canViewAssetURLs - <code>true</code> if the script can view asset URLs,
+     *     <code>false</code> if it can't.
+     * @returns {Signal}
+     */
+    void canViewAssetURLsChanged(bool canViewAssetURLs);
 
     /*@jsdoc
      * Triggered when a mouse button is clicked while the mouse cursor is on an entity, or a controller trigger is fully 

@@ -60,7 +60,7 @@ public:
     Size getNumTypedElements() const { return getSize() / sizeof(T); };
 
     const Byte* getData() const { return getSysmem().readData(); }
-    
+
     // Resize the buffer
     // Keep previous data [0 to min(pSize, mSize)]
     Size resize(Size pSize);
@@ -95,7 +95,7 @@ public:
     // \return the number of bytes copied
     Size append(Size size, const Byte* data);
 
-    template <typename T> 
+    template <typename T>
     Size append(const T& t) {
         return append(sizeof(t), reinterpret_cast<const Byte*>(&t));
     }
@@ -110,10 +110,10 @@ public:
 
 
     const GPUObjectPointer gpuObject {};
-    
+
     // Access the sysmem object, limited to ourselves and GPUObject derived classes
     const Sysmem& getSysmem() const { return _sysmem; }
-    
+
     bool isDirty() const {
         return _pages(PageManager::DIRTY);
     }
@@ -127,7 +127,7 @@ protected:
     // For use by the render thread to avoid the intermediate step of getUpdate/applyUpdate
     void flush() const;
 
-    // FIXME don't maintain a second buffer continuously.  We should be able to apply updates 
+    // FIXME don't maintain a second buffer continuously.  We should be able to apply updates
     // directly to the GL object and discard _renderSysmem and _renderPages
     mutable PageManager _renderPages;
     mutable Sysmem _renderSysmem;
@@ -292,7 +292,7 @@ public:
     // Direct memory access to the buffer contents is incompatible with the paging memory scheme
     template <typename T> Iterator<T> begin() { return Iterator<T>(&edit<T>(0), _stride); }
     template <typename T> Iterator<T> end() { return Iterator<T>(&edit<T>(getNum<T>()), _stride); }
-#else 
+#else
     template <typename T> Iterator<const T> begin() const { return Iterator<const T>(&get<T>(), _stride); }
     template <typename T> Iterator<const T> end() const {
         // reimplement get<T> without bounds checking
@@ -378,7 +378,7 @@ public:
         return *(reinterpret_cast<T*> (_buffer->editData() + elementOffset));
     }
 };
- 
+
 
     template <class T> class StructBuffer : public gpu::BufferView {
     public:
@@ -387,8 +387,8 @@ public:
             U t;
             return std::make_shared<gpu::Buffer>(sizeof(U), (const gpu::Byte*) &t, sizeof(U));
         }
-        ~StructBuffer<T>() {};
-        StructBuffer<T>() : gpu::BufferView(makeBuffer<T>()) {}
+        ~StructBuffer() {};
+        StructBuffer() : gpu::BufferView(makeBuffer<T>()) {}
 
 
         T& edit() {

@@ -57,8 +57,11 @@ bool operator==(const AnimationPropertyGroup& a, const AnimationPropertyGroup& b
  * @property {boolean} smoothFrames=true - <code>true</code> if the frames of the animation should be linearly interpolated to
  *     create smoother movement, <code>false</code> if the frames should not be interpolated.
  */
-void AnimationPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties) const {
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_URL, Animation, animation, URL, url);
+void AnimationPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+                                               bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags,
+                                               bool isMyOwnAvatarEntity) const {
+    auto nodeList = DependencyManager::get<NodeList>();
+    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_ANIMATION_URL, Animation, animation, URL, url);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_ALLOW_TRANSLATION, Animation, animation, AllowTranslation, allowTranslation);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_FPS, Animation, animation, FPS, fps);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_FRAME_INDEX, Animation, animation, CurrentFrame, currentFrame);

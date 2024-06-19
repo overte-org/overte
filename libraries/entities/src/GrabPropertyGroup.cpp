@@ -20,7 +20,9 @@
 
 void GrabPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
                                           ScriptEngine* engine, bool skipDefaults,
-                                          EntityItemProperties& defaultEntityProperties) const {
+                                          EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags,
+                                          bool isMyOwnAvatarEntity) const {
+    auto nodeList = DependencyManager::get<NodeList>();
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_GRAB_GRABBABLE, Grab, grab, Grabbable, grabbable);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_GRAB_KINEMATIC, Grab, grab, GrabKinematic, grabKinematic);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_GRAB_FOLLOWS_CONTROLLER, Grab, grab, GrabFollowsController, grabFollowsController);
@@ -36,7 +38,7 @@ void GrabPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProp
                                         EquippableRightPosition, equippableRightPosition);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_GRAB_RIGHT_EQUIPPABLE_ROTATION_OFFSET, Grab, grab,
                                         EquippableRightRotation, equippableRightRotation);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_GRAB_EQUIPPABLE_INDICATOR_URL, Grab, grab,
+    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_GRAB_EQUIPPABLE_INDICATOR_URL, Grab, grab,
                                         EquippableIndicatorURL, equippableIndicatorURL);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_GRAB_EQUIPPABLE_INDICATOR_SCALE, Grab, grab,
                                         EquippableIndicatorScale, equippableIndicatorScale);

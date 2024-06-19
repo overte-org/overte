@@ -111,6 +111,37 @@ QStringList ScriptContextV8Wrapper::backtrace() const {
     return backTrace;
 }
 
+int ScriptContextV8Wrapper::currentLineNumber() const {
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_context.Get(isolate));
+    v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(isolate, 1);
+    if (stackTrace->GetFrameCount() > 0) {
+        v8::Local<v8::StackFrame> stackFrame = stackTrace->GetFrame(isolate, 0);
+        return stackFrame->GetLineNumber();
+    } else {
+        return -1;
+    }
+}
+
+QString ScriptContextV8Wrapper::currentFileName() const {
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_context.Get(isolate));
+    v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(isolate, 1);
+    QStringList backTrace;
+    if (stackTrace->GetFrameCount() > 0) {
+        v8::Local<v8::StackFrame> stackFrame = stackTrace->GetFrame(isolate, 0);
+        return *v8::String::Utf8Value(isolate, stackFrame->GetScriptNameOrSourceURL());
+    } else {
+        return "";
+    }
+}
+
 ScriptValue ScriptContextV8Wrapper::callee() const {
     Q_ASSERT(false);
     //V8TODO

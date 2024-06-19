@@ -1,6 +1,7 @@
 //
 //  Created by HifiExperiments on 3/14/2021
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -162,7 +163,7 @@ bool ReferenceMaterial::isReady() const {
 
 QString ReferenceMaterial::getProceduralString() const {
     return resultWithLock<QString>([&] {
-        auto material = getMaterial();
+        auto material = getProceduralMaterial();
         return material ? material->getProceduralString() : QString();
     });
 }
@@ -212,6 +213,112 @@ void ReferenceMaterial::initializeProcedural() {
     });
 }
 
+// MToonMaterial
+bool ReferenceMaterial::isMToon() const {
+    return resultWithLock<bool>([&] {
+        auto material = getMaterial();
+        return material ? material->isMToon() : false;
+    });
+}
+
+glm::vec3 ReferenceMaterial::getShade(bool SRGB) const {
+    return resultWithLock<glm::vec3>([&] {
+        auto material = getMToonMaterial();
+        return material ? material->getShade(SRGB) : glm::vec3();
+    });
+}
+
+float ReferenceMaterial::getShadingShift() const {
+    return resultWithLock<float>([&] {
+        auto material = getMToonMaterial();
+        return material ? material->getShadingShift() : 0.0f;
+    });
+}
+
+float ReferenceMaterial::getShadingToony() const {
+    return resultWithLock<float>([&] {
+        auto material = getMToonMaterial();
+        return material ? material->getShadingToony() : 0.0f;
+    });
+}
+
+glm::vec3 ReferenceMaterial::getMatcap(bool SRGB) const {
+    return resultWithLock<glm::vec3>([&] {
+        auto material = getMToonMaterial();
+        return material ? material->getMatcap(SRGB) : glm::vec3();
+    });
+}
+
+glm::vec3 ReferenceMaterial::getParametricRim(bool SRGB) const {
+    return resultWithLock<glm::vec3>([&] {
+        auto material = getMToonMaterial();
+        return material ? material->getParametricRim(SRGB) : glm::vec3();
+    });
+}
+
+float ReferenceMaterial::getParametricRimFresnelPower() const {
+    return resultWithLock<float>([&] {
+        auto material = getMToonMaterial();
+        return material ? material->getParametricRimFresnelPower() : 0.0f;
+    });
+}
+
+float ReferenceMaterial::getParametricRimLift() const {
+    return resultWithLock<float>([&] {
+        auto material = getMToonMaterial();
+        return material ? material->getParametricRimLift() : 0.0f;
+    });
+}
+
+float ReferenceMaterial::getRimLightingMix() const {
+    return resultWithLock<float>([&] {
+        auto material = getMToonMaterial();
+        return material ? material->getRimLightingMix() : 0.0f;
+    });
+}
+
+float ReferenceMaterial::getUVAnimationScrollXSpeed() const {
+    return resultWithLock<float>([&] {
+        auto material = getMToonMaterial();
+        return material ? material->getUVAnimationScrollXSpeed() : 0.0f;
+    });
+}
+
+float ReferenceMaterial::getUVAnimationScrollYSpeed() const {
+    return resultWithLock<float>([&] {
+        auto material = getMToonMaterial();
+        return material ? material->getUVAnimationScrollYSpeed() : 0.0f;
+    });
+}
+
+float ReferenceMaterial::getUVAnimationRotationSpeed() const {
+    return resultWithLock<float>([&] {
+        auto material = getMToonMaterial();
+        return material ? material->getUVAnimationRotationSpeed() : 0.0f;
+    });
+}
+
+uint8_t ReferenceMaterial::getOutlineWidthMode() {
+    return resultWithLock<uint8_t>([&] {
+        auto material = getMToonMaterial();
+        return material ? material->getOutlineWidthMode() : 0;
+    });
+}
+
+float ReferenceMaterial::getOutlineWidth() {
+    return resultWithLock<float>([&] {
+        auto material = getMToonMaterial();
+        return material ? material->getOutlineWidth() : 0.0f;
+    });
+}
+
+glm::vec3 ReferenceMaterial::getOutline(bool SRGB) const {
+    return resultWithLock<glm::vec3>([&] {
+        auto material = getMToonMaterial();
+        return material ? material->getOutline() : glm::vec3(0.0f);
+    });
+}
+
 void ReferenceMaterial::setMaterialForUUIDOperator(std::function<graphics::MaterialPointer(QUuid)> materialForUUIDOperator) {
     _unboundMaterialForUUIDOperator = materialForUUIDOperator;
 }
@@ -239,6 +346,16 @@ graphics::ProceduralMaterialPointer ReferenceMaterial::getProceduralMaterial() c
         auto material = _materialForUUIDOperator();
         if (material && material->isProcedural()) {
             return std::static_pointer_cast<graphics::ProceduralMaterial>(material);
+        }
+    }
+    return nullptr;
+}
+
+std::shared_ptr<NetworkMToonMaterial> ReferenceMaterial::getMToonMaterial() const {
+    if (_materialForUUIDOperator) {
+        std::shared_ptr<NetworkMToonMaterial> result = nullptr;
+        if (auto material = _materialForUUIDOperator()) {
+            return std::static_pointer_cast<NetworkMToonMaterial>(material);
         }
     }
     return nullptr;

@@ -8,6 +8,8 @@ SPDX-License-Identifier: Apache-2.0
 # Build Android
 
 *Last Updated on December 15, 2020*
+> [!WARNING]  
+> Android building is currently broken, due to breaking changes in Qt and Gradle. Help with updating (or rewriting) the Gradle scripts would be great.
 
 Please read the [general build guide](BUILD.md) for information on building other platforms. Only Android specific instructions are found in this file. **Note that these instructions apply to building for the Oculus Quest 1.**
 

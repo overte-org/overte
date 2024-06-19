@@ -20,9 +20,11 @@
 
 const glm::u8vec3 SkyboxPropertyGroup::DEFAULT_COLOR = { 0, 0, 0 };
 
-void SkyboxPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties) const {
+void SkyboxPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+    auto nodeList = DependencyManager::get<NodeList>();
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_SKYBOX_COLOR, Skybox, skybox, Color, color, u8vec3Color);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_SKYBOX_URL, Skybox, skybox, URL, url);
+    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_SKYBOX_URL, Skybox, skybox, URL, url);
 }
 
 void SkyboxPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {

@@ -21,6 +21,7 @@
 #include "TextureBaker.h"
 #include "baking/TextureFileNamer.h"
 
+#include <HelperScriptEngine.h>
 #include <procedural/ProceduralMaterialCache.h>
 #include <ScriptEngine.h>
 
@@ -72,7 +73,7 @@ private:
     QString _textureOutputDir;
     QString _bakedMaterialData;
 
-    ScriptEnginePointer _scriptEngine;
+    HelperScriptEngine _helperScriptEngine;
     static std::function<QThread*()> _getNextOvenWorkerThreadOperator;
     TextureFileNamer _textureFileNamer;
 
