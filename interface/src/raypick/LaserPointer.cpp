@@ -186,9 +186,10 @@ void LaserPointer::RenderState::update(const glm::vec3& origin, const glm::vec3&
 
             bool hasUnmodifiedEndPoint = false;
             glm::vec3 unmodifiedEndPoint;
+            float directionLength = glm::length(endPoint);
             auto rayPickResult = std::static_pointer_cast<RayPickResult>(pickResult);
             if (rayPickResult && rayPickResult->pickVariant.contains("unmodifiedDirection")) {
-                unmodifiedEndPoint = glm::length(endPoint) * vec3FromVariant(rayPickResult->pickVariant["unmodifiedDirection"]);
+                unmodifiedEndPoint = directionLength * vec3FromVariant(rayPickResult->pickVariant["unmodifiedDirection"]);
                 hasUnmodifiedEndPoint = true;
             }
 
@@ -198,7 +199,7 @@ void LaserPointer::RenderState::update(const glm::vec3& origin, const glm::vec3&
                 if (!oldProperties.getVisible() || !_hasSetLinePoints || !hasUnmodifiedEndPoint) {
                     points.append(frac * endPoint);
                 } else {
-                    points.append(frac * mix(unmodifiedEndPoint, endPoint, frac));
+                    points.append(frac * directionLength * glm::normalize(glm::mix(unmodifiedEndPoint, endPoint, frac)));
                 }
             }
             _hasSetLinePoints = true;

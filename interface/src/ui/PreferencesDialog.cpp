@@ -219,8 +219,8 @@ void setupPreferences() {
         auto setter = [](float value) { DependencyManager::get<PickScriptingInterface>()->setHandLaserDelay(value); };
         auto delaySlider = new SpinnerSliderPreference(UI_CATEGORY, "Laser Delay (seconds)", getter, setter);
         delaySlider->setMin(0.0f);
-        delaySlider->setMax(2.0f);
-        delaySlider->setStep(0.02f);
+        delaySlider->setMax(0.7f);
+        delaySlider->setStep(0.05f);
         delaySlider->setDecimals(2.0f);
         preferences->addPreference(delaySlider);
     }

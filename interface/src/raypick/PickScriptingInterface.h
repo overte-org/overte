@@ -488,7 +488,7 @@ protected:
     static void setParentTransform(std::shared_ptr<PickQuery> pick, const QVariantMap& propMap);
 
 private:
-    Setting::Handle<float> _handLaserDelaySetting { "handLaserDelay", 0.0f };
+    Setting::Handle<float> _handLaserDelaySetting { "handLaserDelay", 0.35f };
 };
 
 #endif // hifi_PickScriptingInterface_h
