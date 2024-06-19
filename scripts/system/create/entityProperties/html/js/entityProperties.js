@@ -450,6 +450,12 @@ const GROUPS = [
                 propertyID: "ambientLightMode",
             },
             {
+                label: "Ambient Color",
+                type: "color",
+                propertyID: "ambientLight.ambientColor",
+                showPropertyRule: { "ambientLightMode": "enabled" },
+            },
+            {
                 label: "Ambient Intensity",
                 type: "number-draggable",
                 min: -200,

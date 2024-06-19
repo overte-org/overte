@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 12/10/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -143,7 +144,9 @@ public:
     void setSpotExponent(float exponent);
     float getSpotExponent() const { return _lightSchemaBuffer->irradiance.falloffSpot; }
 
-    // If the light has an ambient (Indirect) component, then the Ambientintensity can be used to control its contribution to the lighting
+    // If the light has an ambient (Indirect) component, then the AmbientColor and AmbientIntensity can be used to control its contribution to the lighting
+    void setAmbientColor(vec3 color);
+    vec3 getAmbientColor() const { return _ambientSchemaBuffer->color; }
     void setAmbientIntensity(float intensity);
     float getAmbientIntensity() const { return _ambientSchemaBuffer->intensity; }
 
@@ -169,6 +172,9 @@ public:
 
     class AmbientSchema {
     public:
+        vec3 color { 0.0f };
+        float blend { 0.0f };
+
         float intensity { 0.0f };
         float mapNumMips { 0.0f };
         float spare1;
@@ -182,7 +188,7 @@ public:
     using AmbientSchemaBuffer = gpu::StructBuffer<AmbientSchema>;
 
     const LightSchemaBuffer& getLightSchemaBuffer() const { return _lightSchemaBuffer; }
-    const AmbientSchemaBuffer& getAmbientSchemaBuffer() const { return _ambientSchemaBuffer; }
+    const AmbientSchemaBuffer& getAmbientSchemaBuffer(); // This also updates the blend factor to make sure it's current
 
 protected:
 

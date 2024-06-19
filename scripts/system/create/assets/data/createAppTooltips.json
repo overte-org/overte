@@ -116,6 +116,9 @@
     "ambientLight.ambientURL": {
         "tooltip": "A cube map image that defines the color of the light coming from each direction."
     },
+    "ambientLight.ambientColor": {
+        "tooltip": "If the URL is blank, this changes the color of the ambient light, otherwise it modifies the color of the ambient map."
+    },
     "hazeMode": {
         "tooltip": "Configures the haze in the scene."
     },
