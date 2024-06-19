@@ -222,13 +222,23 @@ void AudioMixerClientData::parseInjectorGainSet(ReceivedMessage& message, const 
     qCDebug(audio) << "Setting MASTER injector gain for" << uuid << "to" << gain;
 }
 
-void AudioMixerClientData::setGainForAvatar(QUuid nodeID, float gain) {
-    auto it = std::find_if(_streams.active.cbegin(), _streams.active.cend(), [nodeID](const MixableStream& mixableStream){
+bool setGainInStreams(const QUuid &nodeID, float gain, std::vector<AudioMixerClientData::MixableStream> &streamVector) {
+    auto itActive = std::find_if(streamVector.cbegin(), streamVector.cend(),
+                                 [nodeID](const AudioMixerClientData::MixableStream& mixableStream){
         return mixableStream.nodeStreamID.nodeID == nodeID && mixableStream.nodeStreamID.streamID.isNull();
     });
 
-    if (it != _streams.active.cend()) {
-        it->hrtf->setGainAdjustment(gain);
+    if (itActive != streamVector.cend()) {
+        itActive->hrtf->setGainAdjustment(gain);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void AudioMixerClientData::setGainForAvatar(QUuid nodeID, float gain) {
+    if (!setGainInStreams(nodeID, gain, _streams.active)) {
+        setGainInStreams(nodeID, gain, _streams.inactive);
     }
 }
 

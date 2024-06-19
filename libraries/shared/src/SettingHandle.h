@@ -32,6 +32,15 @@
 Q_DECLARE_LOGGING_CATEGORY(settings_handle)
 
 /**
+ * @brief Name of the fully private settings group
+ *
+ * Settings in this group will be protected from reading and writing from script engines.
+ *
+ */
+
+extern const QString SETTINGS_FULL_PRIVATE_GROUP_NAME;
+
+/**
  * @brief QSettings analog
  *
  * This class emulates the interface of QSettings, and forwards all reads and writes to the global Setting::Manager.

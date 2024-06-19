@@ -58,6 +58,7 @@ exports.handlers = {
             '../../libraries/plugins/src/plugins',
             '../../libraries/procedural/src/procedural',
             '../../libraries/pointers/src',
+            '../../libraries/recording/src/recording',
             '../../libraries/render-utils/src',
             '../../libraries/script-engine/src',
             '../../libraries/shared/src',

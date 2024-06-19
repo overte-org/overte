@@ -17,7 +17,8 @@
 #include "EntityItemProperties.h"
 #include "EntityItemPropertiesMacros.h"
 
-void ZoneAudioPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties) const {
+void ZoneAudioPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine, bool skipDefaults,
+                                               EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_REVERB_ENABLED, Audio, audio, ReverbEnabled, reverbEnabled);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_REVERB_TIME, Audio, audio, ReverbTime, reverbTime);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_REVERB_WET_LEVEL, Audio, audio, ReverbWetLevel, reverbWetLevel);

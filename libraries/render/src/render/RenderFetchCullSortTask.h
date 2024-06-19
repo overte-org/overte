@@ -4,6 +4,7 @@
 //
 //  Created by Zach Pomerantz on 12/22/2016.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -25,6 +26,7 @@ public:
         META,
         MIRROR,
         SIMULATE,
+        OUTLINE,
         LAYER_FRONT_OPAQUE_SHAPE,
         LAYER_FRONT_TRANSPARENT_SHAPE,
         LAYER_HUD_OPAQUE_SHAPE,

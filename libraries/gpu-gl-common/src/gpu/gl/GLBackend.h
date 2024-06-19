@@ -242,8 +242,6 @@ public:
     virtual void do_glUniformMatrix3fv(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniformMatrix4fv(const Batch& batch, size_t paramOffset) final;
 
-    virtual void do_glColor4f(const Batch& batch, size_t paramOffset) final;
-
     // The State setters called by the GLState::Commands when a new state is assigned
     virtual void do_setStateFillMode(int32 mode) final;
     virtual void do_setStateCullMode(int32 mode) final;
@@ -351,8 +349,6 @@ protected:
     struct InputStageState {
         bool _invalidFormat { true };
         bool _lastUpdateStereoState { false };
-        bool _hasColorAttribute { false };
-        bool _hadColorAttribute { false };
         FormatReference _format { GPU_REFERENCE_INIT_VALUE };
         std::string _formatKey;
 
@@ -368,8 +364,6 @@ protected:
         std::array<Offset, MAX_NUM_INPUT_BUFFERS> _bufferOffsets;
         std::array<Offset, MAX_NUM_INPUT_BUFFERS> _bufferStrides;
         std::array<GLuint, MAX_NUM_INPUT_BUFFERS> _bufferVBOs;
-
-        glm::vec4 _colorAttribute { 1.0f };
 
         BufferReference _indexBuffer;
         Offset _indexBufferOffset { 0 };

@@ -311,7 +311,7 @@ Grabber.prototype.pressEvent = function(event) {
     mouse.startDrag(event);
 
     var clickedEntity = pickResults.objectID;
-    var entityProperties = Entities.getEntityProperties(clickedEntity, DISPATCHER_PROPERTIES);
+    var entityProperties = Entities.getEntityProperties(clickedEntity, ["position", "rotation", "dimensions"]);
     this.startPosition = entityProperties.position;
     this.lastRotation = entityProperties.rotation;
     var cameraPosition = Camera.getPosition();
@@ -422,7 +422,7 @@ Grabber.prototype.moveEvent = function(event) {
 
 Grabber.prototype.moveEventProcess = function() {
     this.moveEventTimer = null;
-    var entityProperties = Entities.getEntityProperties(this.entityID, DISPATCHER_PROPERTIES);
+    var entityProperties = Entities.getEntityProperties(this.entityID, "position");
     if (!entityProperties || HMD.active) {
         return;
     }

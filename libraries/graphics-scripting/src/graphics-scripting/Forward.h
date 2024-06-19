@@ -52,35 +52,55 @@ namespace scriptable {
         ScriptableMaterial(const ScriptableMaterial& material) { *this = material; }
         ScriptableMaterial& operator=(const ScriptableMaterial& material);
 
-        QString name;
-        QString model;
-        float opacity;
-        float roughness;
-        float metallic;
-        float scattering;
-        bool unlit;
-        glm::vec3 emissive;
-        glm::vec3 albedo;
-        QString emissiveMap;
-        QString albedoMap;
-        QString opacityMap;
-        QString opacityMapMode;
-        float opacityCutoff;
-        QString metallicMap;
-        QString specularMap;
-        QString roughnessMap;
-        QString glossMap;
-        QString normalMap;
-        QString bumpMap;
-        QString occlusionMap;
-        QString lightMap;
-        QString scatteringMap;
+        QString name { "" };
+        QString model { "" };
+        float opacity { 0.0f };
+        float roughness { 0.0f };
+        float metallic { 0.0f };
+        float scattering { 0.0f };
+        bool unlit { false };
+        glm::vec3 emissive { 0.0f };
+        glm::vec3 albedo { 0.0f };
+        QString emissiveMap { "" };
+        QString albedoMap { "" };
+        QString opacityMap { "" };
+        QString opacityMapMode { "" };
+        float opacityCutoff { 0.0f };
+        QString metallicMap { "" };
+        QString specularMap { "" };
+        QString roughnessMap { "" };
+        QString glossMap { "" };
+        QString normalMap { "" };
+        QString bumpMap { "" };
+        QString occlusionMap { "" };
+        QString lightMap { "" };
+        QString scatteringMap { "" };
         std::array<glm::mat4, graphics::Material::NUM_TEXCOORD_TRANSFORMS> texCoordTransforms;
-        QString cullFaceMode;
-        bool defaultFallthrough;
+        QString cullFaceMode { "" };
+        bool defaultFallthrough { false };
         std::unordered_map<uint, bool> propertyFallthroughs; // not actually exposed to script
 
-        QString procedural;
+        QString procedural { "" };
+
+        glm::vec3 shade { 0.0f };
+        QString shadeMap { "" };
+        float shadingShift { 0.0f };
+        QString shadingShiftMap { "" };
+        float shadingToony { 0.0f };
+        glm::vec3 matcap { 0.0f };
+        QString matcapMap { "" };
+        glm::vec3 parametricRim { 0.0f };
+        float parametricRimFresnelPower { 0.0f };
+        float parametricRimLift { 0.0f };
+        QString rimMap { "" };
+        float rimLightingMix { 0.0f };
+        QString outlineWidthMode { "" };
+        float outlineWidth { 0.0f };
+        glm::vec3 outline { 0.0f };
+        QString uvAnimationMaskMap { "" };
+        float uvAnimationScrollXSpeed { 0.0f };
+        float uvAnimationScrollYSpeed { 0.0f };
+        float uvAnimationRotationSpeed { 0.0f };
 
         graphics::MaterialKey key { 0 };
     };
@@ -88,7 +108,7 @@ namespace scriptable {
     /*@jsdoc
      * A material layer.
      * @typedef {object} Graphics.MaterialLayer
-     * @property {Graphics.Material} material - The layer's material.
+     * @property {Entities.Material} material - The layer's material.
      * @property {number} priority - The priority of the layer. If multiple materials are applied to a mesh part, only the 
      *     layer with the highest priority is applied, with materials of the same priority randomly assigned.
      */

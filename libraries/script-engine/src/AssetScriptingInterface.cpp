@@ -74,7 +74,7 @@ void AssetScriptingInterface::uploadData(QString data, const ScriptValue& callba
     auto upload = DependencyManager::get<AssetClient>()->createUpload(dataByteArray);
 
     Promise deferred = makePromise(__FUNCTION__);
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     auto scriptEngine = engine();
     deferred->ready([=](QString error, QVariantMap result) {
         auto url = result.value("url").toString();
@@ -98,7 +98,7 @@ void AssetScriptingInterface::setMapping(QString path, QString hash, const Scrip
     auto handler = jsBindCallback(thisObject(), callback);
     auto setMappingRequest = assetClient()->createSetMappingRequest(path, hash);
     Promise deferred = makePromise(__FUNCTION__);
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     auto scriptEngine = engine();
     deferred->ready([=](QString error, QVariantMap result) {
         jsCallback(handler, scriptEngine->newValue(error), result);
@@ -136,7 +136,7 @@ void AssetScriptingInterface::downloadData(QString urlString, const ScriptValue&
     auto assetRequest = assetClient->createRequest(hash);
 
     Promise deferred = makePromise(__FUNCTION__);
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     auto scriptEngine = engine();
     deferred->ready([=](QString error, QVariantMap result) {
         // FIXME: to remain backwards-compatible the signature here is "callback(data, n/a)"
@@ -200,7 +200,7 @@ void AssetScriptingInterface::getMapping(QString asset, const ScriptValue& callb
     JS_VERIFY(AssetUtils::isValidFilePath(path), "invalid ATP file path: " + asset + "(path:"+path+")");
     JS_VERIFY(callback.isFunction(), "expected second parameter to be a callback function");
     Promise promise = getAssetInfo(path);
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     auto scriptEngine = engine();
     promise->ready([=](QString error, QVariantMap result) {
         jsCallback(handler, scriptEngine->newValue(error), scriptEngine->newValue(result.value("hash").toString()));
@@ -234,7 +234,7 @@ Promise AssetScriptingInterface::jsPromiseReady(Promise promise, const ScriptVal
     if (!jsVerify(handler.isValid(), "jsPromiseReady -- invalid callback handler")) {
         return nullptr;
     }
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     auto scriptEngine = engine();
     return promise->ready([this, handler, scriptEngine](QString error, QVariantMap result) {
         jsCallback(handler, scriptEngine->newValue(error), result);
@@ -244,7 +244,6 @@ Promise AssetScriptingInterface::jsPromiseReady(Promise promise, const ScriptVal
 void AssetScriptingInterface::jsCallback(const ScriptValue& handler,
                                          const ScriptValue& error, const ScriptValue& result) {
     Q_ASSERT(thread() == QThread::currentThread());
-    Q_ASSERT(engine);
     //V8TODO: which kind of script context guard needs to be used here?
     ScriptContextGuard scriptContextGuard(_scriptManager->engine()->currentContext());
     auto errorValue = !error.toBool() ? engine()->nullValue() : error;
@@ -546,7 +545,7 @@ void AssetScriptingInterface::loadFromCache(const ScriptValue& options, const Sc
 }
 
 bool AssetScriptingInterface::canWriteCacheValue(const QUrl& url) {
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     auto scriptManager = engine()->manager();
     if (!scriptManager) {
         return false;
