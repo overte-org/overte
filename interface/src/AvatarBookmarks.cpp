@@ -41,6 +41,15 @@
 #include <QtQuick/QQuickWindow>
 #include <memory>
 #include "WarningsSuppression.h"
+#include "ScriptPermissions.h"
+
+QVariantMap AvatarBookmarks::getBookmarks() {
+    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL)) {
+        return _bookmarks;
+    } else {
+        return {};
+    }
+}
 
 void addAvatarEntities(const QVariantList& avatarEntities) {
     auto nodeList = DependencyManager::get<NodeList>();
@@ -123,6 +132,12 @@ AvatarBookmarks::AvatarBookmarks() {
 }
 
 void AvatarBookmarks::addBookmark(const QString& bookmarkName) {
+    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL)) {
+        addBookmarkInternal(bookmarkName);
+    }
+}
+
+void AvatarBookmarks::addBookmarkInternal(const QString& bookmarkName) {
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "addBookmark", Q_ARG(QString, bookmarkName));
         return;
@@ -134,6 +149,12 @@ void AvatarBookmarks::addBookmark(const QString& bookmarkName) {
 }
 
 void AvatarBookmarks::saveBookmark(const QString& bookmarkName) {
+    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL)) {
+        saveBookmarkInternal(bookmarkName);
+    }
+}
+
+void AvatarBookmarks::saveBookmarkInternal(const QString& bookmarkName) {
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "saveBookmark", Q_ARG(QString, bookmarkName));
         return;
@@ -145,6 +166,12 @@ void AvatarBookmarks::saveBookmark(const QString& bookmarkName) {
 }
 
 void AvatarBookmarks::removeBookmark(const QString& bookmarkName) {
+    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL)) {
+        removeBookmarkInternal(bookmarkName);
+    }
+}
+
+void AvatarBookmarks::removeBookmarkInternal(const QString& bookmarkName) {
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "removeBookmark", Q_ARG(QString, bookmarkName));
         return;
@@ -200,6 +227,12 @@ void AvatarBookmarks::updateAvatarEntities(const QVariantList &avatarEntities) {
  */
 
 void AvatarBookmarks::loadBookmark(const QString& bookmarkName) {
+    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL)) {
+        loadBookmarkInternal(bookmarkName);
+    }
+}
+
+void AvatarBookmarks::loadBookmarkInternal(const QString& bookmarkName) {
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "loadBookmark", Q_ARG(QString, bookmarkName));
         return;
@@ -268,6 +301,15 @@ void AvatarBookmarks::readFromFile() {
 }
 
 QVariantMap AvatarBookmarks::getBookmark(const QString &bookmarkName)
+{
+    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL)) {
+        return getBookmarkInternal(bookmarkName);
+    } else {
+        return {};
+    }
+}
+
+QVariantMap AvatarBookmarks::getBookmarkInternal(const QString &bookmarkName)
 {
     if (QThread::currentThread() != thread()) {
         QVariantMap result;

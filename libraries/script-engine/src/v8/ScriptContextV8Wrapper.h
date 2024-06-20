@@ -45,6 +45,13 @@ public: // ScriptContext implementation
     virtual int argumentCount() const override;
     virtual ScriptValue argument(int index) const override;
     virtual QStringList backtrace() const override;
+
+    // Name of the file in which message was generated. Empty string when no file name is available.
+    virtual int currentLineNumber() const override;
+
+    // Number of the line on which message was generated. -1 if there line number is not available.
+    virtual QString currentFileName() const override;
+
     virtual ScriptValue callee() const override;
     virtual ScriptEnginePointer engine() const override;
     virtual ScriptFunctionContextPointer functionContext() const override;

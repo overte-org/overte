@@ -120,6 +120,7 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
             const auto& opaques = items[RenderFetchCullSortTask::OPAQUE_SHAPE];
             const auto& transparents = items[RenderFetchCullSortTask::TRANSPARENT_SHAPE];
             const auto& mirrors = items[RenderFetchCullSortTask::MIRROR];
+            const auto& simulateItems = items[RenderFetchCullSortTask::SIMULATE];
             const auto& inFrontOpaque = items[RenderFetchCullSortTask::LAYER_FRONT_OPAQUE_SHAPE];
             const auto& inFrontTransparent = items[RenderFetchCullSortTask::LAYER_FRONT_TRANSPARENT_SHAPE];
             const auto& hudOpaque = items[RenderFetchCullSortTask::LAYER_HUD_OPAQUE_SHAPE];
@@ -157,7 +158,12 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
     const auto prepareDeferredOutputs = task.addJob<PrepareDeferred>("PrepareDeferred", prepareDeferredInputs);
     const auto deferredFramebuffer = prepareDeferredOutputs.getN<PrepareDeferred::Outputs>(0);
     const auto lightingFramebuffer = prepareDeferredOutputs.getN<PrepareDeferred::Outputs>(1);
-    const auto mirrorTargetFramebuffer = prepareDeferredOutputs.getN<PrepareDeferred::Outputs>(2);
+    const auto mainTargetFramebuffer = prepareDeferredOutputs.getN<PrepareDeferred::Outputs>(2);
+
+    if (depth == 0) {
+        const auto simulateInputs = RenderSimulateTask::Inputs(simulateItems, mainTargetFramebuffer).asVarying();
+        task.addJob<RenderSimulateTask>("RenderSimulation", simulateInputs);
+    }
 
     // draw a stencil mask in hidden regions of the framebuffer.
     task.addJob<PrepareStencil>("PrepareStencil", scaledPrimaryFramebuffer);
@@ -167,7 +173,7 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
     task.addJob<DrawStateSortDeferred>("DrawOpaqueDeferred", opaqueInputs, shapePlumber);
 
     if (depth < RenderMirrorTask::MAX_MIRROR_DEPTH) {
-        const auto mirrorInputs = RenderMirrorTask::Inputs(mirrors, mirrorTargetFramebuffer, jitter).asVarying();
+        const auto mirrorInputs = RenderMirrorTask::Inputs(mirrors, mainTargetFramebuffer, jitter).asVarying();
         for (size_t i = 0; i < RenderMirrorTask::MAX_MIRRORS_PER_LEVEL; i++) {
             task.addJob<RenderMirrorTask>("RenderMirrorTask" + std::to_string(i) + "Depth" + std::to_string(depth), mirrorInputs, i, cullFunctor, depth);
         }

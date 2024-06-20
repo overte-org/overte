@@ -15,14 +15,22 @@ string(TOUPPER ${EXTERNAL_NAME} EXTERNAL_NAME_UPPER)
 
 if (WIN32)
 
+  # Note the -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+  # It's important that we pass our build type down to other builds we make, especially on Windows.
+  # On Windows, debug libraries get a 'd' suffix, eg, LibOVRd.lib. This means that a mismatch of build
+  # types means we'll generate a LibOVRd.lib and the rest of the system will look for LibOVR.lib, or
+  # viceversa.
   ExternalProject_Add(
     ${EXTERNAL_NAME}
     URL "${EXTERNAL_BUILD_ASSETS}/dependencies/ovr_sdk_win_1.35.0.zip"
     URL_MD5 1e3e8b2101387af07ff9c841d0ea285e
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     PATCH_COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/LibOVRCMakeLists.txt" <SOURCE_DIR>/CMakeLists.txt
     LOG_DOWNLOAD 1
     DOWNLOAD_EXTRACT_TIMESTAMP 1
+    BUILD_BYPRODUCTS
+      "project/Lib/LibOVR.lib"
+      "project/Lib/LibOVRd.lib"
   )
 
   ExternalProject_Get_Property(${EXTERNAL_NAME} SOURCE_DIR)

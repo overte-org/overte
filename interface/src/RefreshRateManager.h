@@ -32,10 +32,11 @@ public:
         ECO = 0,
         INTERACTIVE,
         REALTIME,
+        CUSTOM,
         PROFILE_NUM
     };
     Q_ENUM(RefreshRateProfile)
-    static bool isValidRefreshRateProfile(RefreshRateProfile value) { return (value >= RefreshRateProfile::ECO && value <= RefreshRateProfile::REALTIME); }
+    static bool isValidRefreshRateProfile(RefreshRateProfile value) { return (value >= 0 && value < RefreshRateProfile::PROFILE_NUM); }
 
     /*@jsdoc
      * <p>Interface states that affect the refresh rate.</p>
@@ -106,6 +107,9 @@ public:
     // query the refresh rate target at the specified combination
     int queryRefreshRateTarget(RefreshRateProfile profile, RefreshRateRegime regime, UXMode uxMode) const;
 
+    int getCustomRefreshRate(RefreshRateRegime regime);
+    void setCustomRefreshRate(RefreshRateRegime regime, int value);
+
     void resetInactiveTimer();
     void toggleInactive();
 
@@ -121,7 +125,15 @@ private:
     UXMode _uxMode { UXMode::DESKTOP };
 
     mutable ReadWriteLockable _refreshRateProfileSettingLock;
-    Setting::Handle<int> _refreshRateProfileSetting { "refreshRateProfile", RefreshRateProfile::INTERACTIVE };
+    Setting::Handle<int> _refreshRateProfileSetting{ "refreshRateProfile", RefreshRateProfile::INTERACTIVE };
+    std::array<Setting::Handle<int>, REGIME_NUM> _customRefreshRateSettings { {
+        { "customRefreshRateFocusActive", 60 },
+        { "customRefreshRateFocusInactive", 60 },
+        { "customRefreshRateUnfocus", 60 },
+        { "customRefreshRateMinimized", 2 },
+        { "customRefreshRateStartup", 30 },
+        { "customRefreshRateShutdown", 30 }
+    } };
 
     std::function<void(int)> _refreshRateOperator { nullptr };
 

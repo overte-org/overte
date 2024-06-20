@@ -58,6 +58,8 @@ namespace NetworkingConstants {
     const QString HF_PUBLIC_CDN_URL = "";
     const QString HF_MARKETPLACE_CDN_HOSTNAME = "";
     const QString OVERTE_CONTENT_CDN_URL = "https://content.overte.org/";
+    const QString OVERTE_COMMUNITY_APPLICATIONS = { "https://more.overte.org/applications" };
+    const QString OVERTE_TUTORIAL_SCRIPTS = { "https://more.overte.org/tutorial" };
 
 #if USE_STABLE_GLOBAL_SERVICES
     const QString ICE_SERVER_DEFAULT_HOSTNAME = "ice.overte.org";

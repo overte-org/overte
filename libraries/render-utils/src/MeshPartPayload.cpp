@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 10/3/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -225,6 +226,10 @@ void ModelMeshPartPayload::updateKey(const render::ItemKey& key) {
         builder.withMirror();
     }
 
+    if (_drawMaterials.hasOutline()) {
+        builder.withOutline();
+    }
+
     _itemKey = builder.build();
 }
 
@@ -273,11 +278,15 @@ void ModelMeshPartPayload::setShapeKey(bool invalidateShapeKey, PrimitiveMode pr
         if (hasTangents) {
             builder.withTangents();
         }
-        if (hasLightmap) {
-            builder.withLightMap();
-        }
-        if (isUnlit) {
-            builder.withUnlit();
+        if (!_drawMaterials.isMToon()) {
+            if (hasLightmap) {
+                builder.withLightMap();
+            }
+            if (isUnlit) {
+                builder.withUnlit();
+            }
+        } else {
+            builder.withMToon();
         }
         if (material) {
             builder.withCullFaceMode(material->getCullFaceMode());
@@ -352,12 +361,17 @@ void ModelMeshPartPayload::render(RenderArgs* args) {
         outColor = procedural->getColor(outColor);
         procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created,
                             ProceduralProgramKey(outColor.a < 1.0f, _shapeKey.isDeformed(), _shapeKey.isDualQuatSkinned()));
-        batch._glColor4f(outColor.r, outColor.g, outColor.b, outColor.a);
+
+        const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        _drawMesh->getColorBuffer()->setData(sizeof(compactColor), (const gpu::Byte*)&compactColor);
     } else if (!_itemKey.isMirror()) {
         // apply material properties
         if (RenderPipelines::bindMaterials(_drawMaterials, batch, args->_renderMode, args->_enableTexturing)) {
             args->_details._materialSwitches++;
         }
+
+        const uint32_t compactColor = 0xFFFFFFFF;
+        _drawMesh->getColorBuffer()->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
     }
 
     // Draw!
@@ -388,6 +402,11 @@ ItemID ModelMeshPartPayload::computeMirrorView(ViewFrustum& viewFrustum) const {
     Transform transform = _parentTransform;
     transform = transform.worldTransform(_localTransform);
     return MirrorModeHelpers::computeMirrorView(viewFrustum, transform.getTranslation(), transform.getRotation(), _mirrorMode, _portalExitID);
+}
+
+render::HighlightStyle ModelMeshPartPayload::getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const {
+    return render::HighlightStyle::calculateOutlineStyle(_drawMaterials.getOutlineWidthMode(), _drawMaterials.getOutlineWidth(), _drawMaterials.getOutline(),
+                                                         _parentTransform.getTranslation(), viewFrustum, height);
 }
 
 void ModelMeshPartPayload::setBlendshapeBuffer(const std::unordered_map<int, gpu::BufferPointer>& blendshapeBuffers, const QVector<int>& blendedMeshSizes) {
@@ -445,5 +464,12 @@ template <> ItemID payloadComputeMirrorView(const ModelMeshPartPayload::Pointer&
         return payload->computeMirrorView(viewFrustum);
     }
     return Item::INVALID_ITEM_ID;
+}
+
+template <> HighlightStyle payloadGetOutlineStyle(const ModelMeshPartPayload::Pointer& payload, const ViewFrustum& viewFrustum, const size_t height) {
+    if (payload) {
+        return payload->getOutlineStyle(viewFrustum, height);
+    }
+    return HighlightStyle();
 }
 }

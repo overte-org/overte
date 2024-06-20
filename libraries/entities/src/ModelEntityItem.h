@@ -56,8 +56,6 @@ public:
     void setShapeType(ShapeType type) override;
     virtual ShapeType getShapeType() const override;
 
-    // TODO: Move these to subclasses, or other appropriate abstraction
-    // getters/setters applicable to models and particles
     glm::u8vec3 getColor() const;
     void setColor(const glm::u8vec3& value);
 
@@ -89,6 +87,8 @@ public:
     float getAnimationCurrentFrame() const;
     bool getAnimationAllowTranslation() const;
     bool isAnimatingSomething() const;
+    bool getAnimationSmoothFrames() const;
+    int getAnimationNextFrame(int currentFrame, int frameCount) const;
 
     void setRelayParentJoints(bool relayJoints);
     bool getRelayParentJoints() const;
@@ -148,7 +148,6 @@ protected:
     };
 
     QVector<ModelJointData> _localJointData;
-    int _lastKnownCurrentFrame{-1};
 
     glm::u8vec3 _color;
     glm::vec3 _modelScale { 1.0f };
@@ -167,8 +166,8 @@ protected:
     ShapeType _shapeType { SHAPE_TYPE_NONE };
 
 private:
-    uint64_t _lastAnimated{ 0 };
-    float _currentFrame{ -1.0f };
+    uint64_t _lastAnimated { 0 };
+    float _currentFrame { -1.0f };
 
     QVector<float> _blendshapeCoefficientsVector;
     bool _blendshapesChanged { false };

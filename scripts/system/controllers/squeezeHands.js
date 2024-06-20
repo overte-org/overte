@@ -16,6 +16,8 @@
 
 (function() { // BEGIN LOCAL_SCOPE
 
+var controllerStandard = Controller.Standard;
+
 var lastLeftTrigger = 0;
 var lastRightTrigger = 0;
 var leftHandOverlayAlpha = 0;
@@ -86,8 +88,8 @@ function animStateHandler(props) {
 }
 
 function update(dt) {
-    var leftTrigger = clamp(Controller.getValue(Controller.Standard.LT) + Controller.getValue(Controller.Standard.LeftGrip), 0, 1);
-    var rightTrigger = clamp(Controller.getValue(Controller.Standard.RT) + Controller.getValue(Controller.Standard.RightGrip), 0, 1);
+    var leftTrigger = clamp(Controller.getValue(controllerStandard.LT) + Controller.getValue(controllerStandard.LeftGrip), 0, 1);
+    var rightTrigger = clamp(Controller.getValue(controllerStandard.RT) + Controller.getValue(controllerStandard.RightGrip), 0, 1);
 
     //  Average last few trigger values together for a bit of smoothing
     var tau = clamp(dt / TRIGGER_SMOOTH_TIMESCALE, 0, 1);
@@ -95,7 +97,7 @@ function update(dt) {
     lastRightTrigger = lerp(rightTrigger, lastRightTrigger, tau);
 
     // ramp on/off left hand overlay
-    var leftHandPose = Controller.getPoseValue(Controller.Standard.LeftHand);
+    var leftHandPose = Controller.getPoseValue(controllerStandard.LeftHand);
     if (leftHandPose.valid) {
         leftHandOverlayAlpha = clamp(leftHandOverlayAlpha + OVERLAY_RAMP_RATE * dt, 0, 1);
     } else {
@@ -103,7 +105,7 @@ function update(dt) {
     }
 
     // ramp on/off right hand overlay
-    var rightHandPose = Controller.getPoseValue(Controller.Standard.RightHand);
+    var rightHandPose = Controller.getPoseValue(controllerStandard.RightHand);
     if (rightHandPose.valid) {
         rightHandOverlayAlpha = clamp(rightHandOverlayAlpha + OVERLAY_RAMP_RATE * dt, 0, 1);
     } else {
@@ -111,10 +113,10 @@ function update(dt) {
     }
 
     // Pointing index fingers and raising thumbs
-    isLeftIndexPointing = (leftIndexPointingOverride > 0) || (leftHandPose.valid && Controller.getValue(Controller.Standard.LeftIndexPoint) === 1);
-    isRightIndexPointing = (rightIndexPointingOverride > 0) || (rightHandPose.valid && Controller.getValue(Controller.Standard.RightIndexPoint) === 1);
-    isLeftThumbRaised = (leftThumbRaisedOverride > 0) || (leftHandPose.valid && Controller.getValue(Controller.Standard.LeftThumbUp) === 1);
-    isRightThumbRaised = (rightThumbRaisedOverride > 0) || (rightHandPose.valid && Controller.getValue(Controller.Standard.RightThumbUp) === 1);
+    isLeftIndexPointing = (leftIndexPointingOverride > 0) || (leftHandPose.valid && Controller.getValue(controllerStandard.LeftIndexPoint) === 1);
+    isRightIndexPointing = (rightIndexPointingOverride > 0) || (rightHandPose.valid && Controller.getValue(controllerStandard.RightIndexPoint) === 1);
+    isLeftThumbRaised = (leftThumbRaisedOverride > 0) || (leftHandPose.valid && Controller.getValue(controllerStandard.LeftThumbUp) === 1);
+    isRightThumbRaised = (rightThumbRaisedOverride > 0) || (rightHandPose.valid && Controller.getValue(controllerStandard.RightThumbUp) === 1);
 }
 
 function handleMessages(channel, message, sender) {

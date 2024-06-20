@@ -284,10 +284,6 @@ void ObjectMotionState::handleEasyChanges(uint32_t& flags) {
     if (flags & Simulation::DIRTY_MATERIAL) {
         updateBodyMaterialProperties();
     }
-
-    if (flags & Simulation::DIRTY_MASS) {
-        updateBodyMassProperties();
-    }
 }
 
 void ObjectMotionState::updateBodyMaterialProperties() {

@@ -9,6 +9,8 @@
 //
 
 (function () {
+    var controllerStandard = Controller.Standard;
+
     var tablet,
         button,
         BUTTON_NAME = "PAINT",
@@ -334,11 +336,11 @@
         leftHand = handController("left");
         rightHand = handController("right");
         var controllerMapping = Controller.newMapping(CONTROLLER_MAPPING_NAME);
-        controllerMapping.from(Controller.Standard.LT).to(leftHand.onTriggerPress);
-        controllerMapping.from(Controller.Standard.LeftGrip).to(leftHand.onGripPress);
-        controllerMapping.from(Controller.Standard.RT).to(rightHand.onTriggerPress);
-        controllerMapping.from(Controller.Standard.RightGrip).to(rightHand.onGripPress);
-        controllerMapping.from(Controller.Standard.B).to(onButtonClicked);
+        controllerMapping.from(controllerStandard.LT).to(leftHand.onTriggerPress);
+        controllerMapping.from(controllerStandard.LeftGrip).to(leftHand.onGripPress);
+        controllerMapping.from(controllerStandard.RT).to(rightHand.onTriggerPress);
+        controllerMapping.from(controllerStandard.RightGrip).to(rightHand.onGripPress);
+        controllerMapping.from(controllerStandard.B).to(onButtonClicked);
         Controller.enableMapping(CONTROLLER_MAPPING_NAME);
         
         if (!Settings.getValue("FingerPaintTutorialComplete")) {

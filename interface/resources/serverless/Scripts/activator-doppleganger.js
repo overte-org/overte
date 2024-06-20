@@ -64,7 +64,7 @@
 
     function startDopplegangerShow(entityID) {
         var properties = Entities.getEntityProperties(entityID, ["position", "rotation"]);
-        var avatarPosition = MyAvatar.position;
+        var avatarPosition = MyAvatar.feetPosition;
         var drawPosition = {
             "x": properties.position.x,
             "y": avatarPosition.y,

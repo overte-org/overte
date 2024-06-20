@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2020-2022 Vircadia contributors.
-# Copyright 2021-2023 Overte e.V.
+# Copyright 2021-2024 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 name: Linux Server CI Build
@@ -12,6 +12,10 @@ on:
   push:
     branches:
       - master
+    tags:
+      # Release tags. E.g. 2024.06.1
+      # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+      - "[0-9][0-9][0-9][0-9].[0-9][0-9].**"
 
 env:
   BUILD_TYPE: Release
@@ -19,8 +23,8 @@ env:
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
-  CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
-  CMAKE_BACKTRACE_TOKEN: server_${{ github.event.number }}_${{ github.sha }}
+  # Disable VCPKG caching to save time.
+  VCPKG_FEATURE_FLAGS: -binarycaching
 
 jobs:
   build:
@@ -33,62 +37,77 @@ jobs:
           - os: debian-11
             image: docker.io/overte/overte-server-build:0.1.3-debian-11-amd64
             arch: amd64
-            runner: linux_amd64
+            # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels
+            # self_hosted makes the Hetzner auto-scaler put up the job.
+            # type-cx52 is a Hetzner VPS server type. In this case cs52 is a server with 16-cores and 32GB of RAM.
+            # image-x86-app-docker-ce is a Hetzner image.
+            # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image
+            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
 
           - os: debian-11
             image: docker.io/overte/overte-server-build:0.1.3-debian-11-aarch64
             arch: aarch64
-            runner: linux_aarch64
+            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
           - os: debian-12
             image: docker.io/overte/overte-server-build:0.1.3-debian-12-amd64
             arch: amd64
-            runner: linux_amd64
+            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
 
           - os: debian-12
             image: docker.io/overte/overte-server-build:0.1.3-debian-12-aarch64
             arch: aarch64
-            runner: linux_aarch64
+            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
           - os: ubuntu-20.04
             image: docker.io/overte/overte-server-build:0.1.3-ubuntu-20.04-amd64
             arch: amd64
-            runner: linux_amd64
+            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
 
           - os: ubuntu-22.04
             image: docker.io/overte/overte-server-build:0.1.3-ubuntu-22.04-amd64
             arch: amd64
-            runner: linux_amd64
+            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
 
           - os: ubuntu-22.04
             image: docker.io/overte/overte-server-build:0.1.3-ubuntu-22.04-aarch64
             arch: aarch64
-            runner: linux_aarch64
+            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
-          - os: fedora-37
-            image: docker.io/overte/overte-server-build:0.1.3-fedora-37-amd64
+          - os: ubuntu-24.04
+            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-24.04-amd64
             arch: amd64
-            runner: linux_amd64
+            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
 
-          - os: fedora-37
-            image: docker.io/overte/overte-server-build:0.1.3-fedora-37-aarch64
+          - os: ubuntu-24.04
+            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-24.04-aarch64
             arch: aarch64
-            runner: linux_aarch64
+            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
-          - os: fedora-38
-            image: docker.io/overte/overte-server-build:0.1.3-fedora-38-amd64
+          - os: fedora-39
+            image: docker.io/overte/overte-server-build:0.1.4-fedora-39-amd64
             arch: amd64
-            runner: linux_amd64
+            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
 
-          - os: fedora-38
-            image: docker.io/overte/overte-server-build:0.1.3-fedora-38-aarch64
+          - os: fedora-39
+            image: docker.io/overte/overte-server-build:0.1.4-fedora-39-aarch64
             arch: aarch64
-            runner: linux_aarch64
+            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
+
+          - os: fedora-40
+            image: docker.io/overte/overte-server-build:0.1.4-fedora-39-amd64
+            arch: amd64
+            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+
+          - os: fedora-40
+            image: docker.io/overte/overte-server-build:0.1.4-fedora-39-aarch64
+            arch: aarch64
+            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
           - os: rockylinux-9
             image: docker.io/overte/overte-server-build:0.1.3-rockylinux-9-amd64
             arch: amd64
-            runner: linux_amd64
+            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
 
       fail-fast: false
 
@@ -132,7 +151,7 @@ jobs:
         fi
 
         # Tagged builds. E.g. release or release candidate builds.
-        if [ "${{github.event_name}}" != "pull_request" ]; then
+        if [ "${{github.ref_type}}" == "tag" ]; then
           echo "PRODUCTION_BUILD=true" >> $GITHUB_ENV
         fi
 
@@ -166,16 +185,30 @@ jobs:
           echo "UPLOAD_PREFIX=build/overte/master" >> $GITHUB_ENV
           echo "RELEASE_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
         else # tagged
-          echo "DEBVERSION=${{ github.run_number }}-${{ github.ref_name }}-$GIT_COMMIT_SHORT-${{ matrix.os }}" >> $GITHUB_ENV
-          echo "RPMVERSION=${${{ github.ref_name }}//-/.}.${{ github.run_number }}.$GIT_COMMIT_SHORT" >> $GITHUB_ENV
+          echo "DEBVERSION=${{ github.ref_name }}-$GIT_COMMIT_SHORT-${{ matrix.os }}" >> $GITHUB_ENV
+          echo "RPMVERSION=${{ github.ref_name }}.$GIT_COMMIT_SHORT" >> $GITHUB_ENV
         fi
 
-        if [[ "${{ github.ref_name }}" != "master" && "${{ github.ref_name }}" != "pull_request" ]]; then  # tagged
-          echo "RELEASE_NUMBER=/${{ github.ref_name }}" >> $GITHUB_ENV
-          if [ "${{ github.ref_name }}" == *"rc"* ]; then  # release candidate
-            echo "UPLOAD_PREFIX=build/overte/release-candidate" >> $GITHUB_ENV
+        if [ "${{ github.ref_type }}" == "tag" ]; then  # tagged
+          echo "RELEASE_NUMBER=${{ github.ref_name }}" >> $GITHUB_ENV
+          if [[ "${{ github.ref_name }}" == *"rc"* ]]; then  # release candidate
+            # The uploader already creates a subfolder for each RELEASE_NUMBER.
+            echo "UPLOAD_PREFIX=build/overte/release-candidate/" >> $GITHUB_ENV
           else  # release
-            echo "UPLOAD_PREFIX=build/overte/release" >> $GITHUB_ENV
+            echo "UPLOAD_PREFIX=build/overte/release/" >> $GITHUB_ENV
+          fi
+        fi
+
+        echo "BUILD_NUMBER=$GIT_COMMIT_SHORT" >> $GITHUB_ENV
+
+        if [ -z "$CMAKE_BACKTRACE_URL" ]; then
+          if [ "${{ github.ref_type }}" == "tag" ]; then
+            export CMAKE_BACKTRACE_URL="${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}"
+            export CMAKE_BACKTRACE_TOKEN="${{ github.ref_name }}_${{ matrix.os }}_${{ github.sha }}"
+          else
+            # We're building a PR, default to the PR endpoint
+            export CMAKE_BACKTRACE_URL="https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
+            export CMAKE_BACKTRACE_TOKEN="server_pr_${{ github.event.number }}_${{ github.sha }}"
           fi
         fi
 
@@ -192,10 +225,12 @@ jobs:
         else  # RPM
           if [ "${{ matrix.os }}" == "rockylinux-9" ]; then
             echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.el9.$INSTALLER_EXT" >> $GITHUB_ENV
-          elif [ "${{ matrix.os }}" == "fedora-37" ]; then
-            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc37.$INSTALLER_EXT" >> $GITHUB_ENV
           elif [ "${{ matrix.os }}" == "fedora-38" ]; then
             echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc38.$INSTALLER_EXT" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "fedora-39" ]; then
+            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc39.$INSTALLER_EXT" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "fedora-40" ]; then
+            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc40.$INSTALLER_EXT" >> $GITHUB_ENV
           else
             echo "Error! ARTIFACT_PATTERN not set!"
             exit 1  # Fail
@@ -203,7 +238,7 @@ jobs:
         fi
 
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: false
         fetch-depth: 1
@@ -216,11 +251,6 @@ jobs:
       working-directory: build
       shell: bash
       run: |
-        if [ -z "$CMAKE_BACKTRACE_URL" ] ; then
-          # We're building a PR, default to the PR endpoint
-          export CMAKE_BACKTRACE_URL="https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
-          export CMAKE_BACKTRACE_TOKEN="server_pr_${{ github.event.number }}_${{ github.sha }}"
-        fi
 
         cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release $CMAKE_EXTRA
 
@@ -275,8 +305,7 @@ jobs:
         df -h
 
     - name: Upload artifact to GitHub
-      if: github.event_name == 'pull_request'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARTIFACT_PATTERN }}
         path: pkg-scripts/${{ env.ARTIFACT_PATTERN }}

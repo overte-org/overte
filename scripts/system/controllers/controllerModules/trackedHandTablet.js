@@ -12,6 +12,8 @@ Script.include("/~/system/libraries/controllers.js");
 
 (function() {
 
+    var controllerStandard = Controller.Standard;
+
     function TrackedHandTablet() {
         this.mappingName = 'hand-track-tablet-' + Math.random();
         this.inputMapping = Controller.newMapping(this.mappingName);
@@ -103,16 +105,16 @@ Script.include("/~/system/libraries/controllers.js");
 
         this.setup = function () {
             var _this = this;
-            this.inputMapping.from(Controller.Standard.LeftHandIndex4).peek().to(function (pose) {
+            this.inputMapping.from(controllerStandard.LeftHandIndex4).peek().to(function (pose) {
                 _this.leftIndexChanged(pose);
             });
-            this.inputMapping.from(Controller.Standard.LeftHandThumb4).peek().to(function (pose) {
+            this.inputMapping.from(controllerStandard.LeftHandThumb4).peek().to(function (pose) {
                 _this.leftThumbChanged(pose);
             });
-            this.inputMapping.from(Controller.Standard.RightHandIndex4).peek().to(function (pose) {
+            this.inputMapping.from(controllerStandard.RightHandIndex4).peek().to(function (pose) {
                 _this.rightIndexChanged(pose);
             });
-            this.inputMapping.from(Controller.Standard.RightHandThumb4).peek().to(function (pose) {
+            this.inputMapping.from(controllerStandard.RightHandThumb4).peek().to(function (pose) {
                 _this.rightThumbChanged(pose);
             });
 

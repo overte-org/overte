@@ -42,6 +42,8 @@ private:
     std::shared_ptr<graphics::ProceduralMaterial> _material { std::make_shared<graphics::ProceduralMaterial>() };
     glm::vec3 _color { NAN };
     float _alpha { NAN };
+
+    gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>() };
 };
 
 } } 

@@ -34,6 +34,7 @@ EditVoxels = function() {
     var that = {};
 
     const NO_HAND = -1;
+    var controllerStandard = Controller.Standard;
 
     var controlHeld = false;
     var shiftHeld = false;
@@ -325,10 +326,10 @@ EditVoxels = function() {
             }
         }else{
             inverseOperation = false;
-            if(that.triggeredHand === Controller.Standard.RightHand && Controller.getValue(Controller.Standard.RightGrip) > 0.5){
+            if(that.triggeredHand === controllerStandard.RightHand && Controller.getValue(controllerStandard.RightGrip) > 0.5){
                 inverseOperation = true;
             }
-            if(that.triggeredHand === Controller.Standard.LeftHand && Controller.getValue(Controller.Standard.LeftGrip) > 0.5){
+            if(that.triggeredHand === controllerStandard.LeftHand && Controller.getValue(controllerStandard.LeftGrip) > 0.5){
                 inverseOperation = true;
             }
         }
@@ -458,13 +459,13 @@ EditVoxels = function() {
     }
 
     function getDistanceBetweenControllers(){
-        var poseLeft = getControllerWorldLocation(Controller.Standard.LeftHand, true);
-        var poseRight = getControllerWorldLocation(Controller.Standard.RightHand, true);
+        var poseLeft = getControllerWorldLocation(controllerStandard.LeftHand, true);
+        var poseRight = getControllerWorldLocation(controllerStandard.RightHand, true);
         return Vec3.distance(poseLeft.translation, poseRight.translation);
     }
     function getEditSpherePosition( radius ){
-        var poseLeft = getControllerWorldLocation(Controller.Standard.LeftHand, true);
-        var poseRight = getControllerWorldLocation(Controller.Standard.RightHand, true);
+        var poseLeft = getControllerWorldLocation(controllerStandard.LeftHand, true);
+        var poseRight = getControllerWorldLocation(controllerStandard.RightHand, true);
         var handsPosition = Vec3.multiply(Vec3.sum(poseLeft.translation, poseRight.translation), 0.5);
         return Vec3.sum(handsPosition, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: radius * -2.0 }));
     }
@@ -531,15 +532,15 @@ EditVoxels = function() {
                 return;
             }
             if (value > 0.5) {
-                if (hand === Controller.Standard.LeftHand) {
+                if (hand === controllerStandard.LeftHand) {
                     isLeftGripPressed = true;
-                } else if (hand === Controller.Standard.RightHand) {
+                } else if (hand === controllerStandard.RightHand) {
                     isRightGripPressed = true;
                 }
             } else if (value < 0.4){
-                if (hand === Controller.Standard.LeftHand) {
+                if (hand === controllerStandard.LeftHand) {
                     isLeftGripPressed = false;
-                } else if (hand === Controller.Standard.RightHand) {
+                } else if (hand === controllerStandard.RightHand) {
                     isRightGripPressed = false;
                 }
             }
@@ -664,12 +665,12 @@ EditVoxels = function() {
     Controller.mouseReleaseEvent.connect(mouseReleaseEvent);
     Controller.keyPressEvent.connect(keyPressEvent);
     Controller.keyReleaseEvent.connect(keyReleaseEvent);
-    that.triggerClickMapping.from(Controller.Standard.RTClick).peek().to(makeClickHandler(Controller.Standard.RightHand));
-    that.triggerClickMapping.from(Controller.Standard.LTClick).peek().to(makeClickHandler(Controller.Standard.LeftHand));
-    that.triggerPressMapping.from(Controller.Standard.RT).peek().to(makePressHandler(Controller.Standard.RightHand));
-    that.triggerPressMapping.from(Controller.Standard.LT).peek().to(makePressHandler(Controller.Standard.LeftHand));
-    that.gripPressMapping.from(Controller.Standard.LeftGrip).peek().to(makeGripPressHandler(Controller.Standard.LeftHand));
-    that.gripPressMapping.from(Controller.Standard.RightGrip).peek().to(makeGripPressHandler(Controller.Standard.RightHand));
+    that.triggerClickMapping.from(controllerStandard.RTClick).peek().to(makeClickHandler(controllerStandard.RightHand));
+    that.triggerClickMapping.from(controllerStandard.LTClick).peek().to(makeClickHandler(controllerStandard.LeftHand));
+    that.triggerPressMapping.from(controllerStandard.RT).peek().to(makePressHandler(controllerStandard.RightHand));
+    that.triggerPressMapping.from(controllerStandard.LT).peek().to(makePressHandler(controllerStandard.LeftHand));
+    that.gripPressMapping.from(controllerStandard.LeftGrip).peek().to(makeGripPressHandler(controllerStandard.LeftHand));
+    that.gripPressMapping.from(controllerStandard.RightGrip).peek().to(makeGripPressHandler(controllerStandard.RightHand));
     that.enableTriggerMapping = function() {
         that.triggerClickMapping.enable();
         that.triggerPressMapping.enable();

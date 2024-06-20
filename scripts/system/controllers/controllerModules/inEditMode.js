@@ -20,6 +20,7 @@ Script.include("/~/system/libraries/controllers.js");
 Script.include("/~/system/libraries/utils.js");
 
 (function () {
+    var controllerStandard = Controller.Standard;
     var MARGIN = 25;
     function InEditMode(hand) {
         this.hand = hand;
@@ -48,7 +49,7 @@ Script.include("/~/system/libraries/utils.js");
         };
 
         this.handToController = function() {
-            return (this.hand === RIGHT_HAND) ? Controller.Standard.RightHand : Controller.Standard.LeftHand;
+            return (this.hand === RIGHT_HAND) ? controllerStandard.RightHand : controllerStandard.LeftHand;
         };
 
         this.pointingAtTablet = function(objectID) {
@@ -70,7 +71,7 @@ Script.include("/~/system/libraries/utils.js");
 
         this.sendPickData = function(controllerData) {
             if (controllerData.triggerClicks[this.hand]) {
-                var hand = this.hand === RIGHT_HAND ? Controller.Standard.RightHand : Controller.Standard.LeftHand;
+                var hand = this.hand === RIGHT_HAND ? controllerStandard.RightHand : controllerStandard.LeftHand;
                 if (!this.triggerClicked) {
                     print("inEditMode click");
                     this.selectedTarget = controllerData.rayPicks[this.hand];

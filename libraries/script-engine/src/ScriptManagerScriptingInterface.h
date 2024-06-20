@@ -512,7 +512,7 @@ public:
 
     /*@jsdoc
      * Start collecting object statistics that can later be reported with Script.dumpHeapObjectStatistics().
-     * @function Script.dumpHeapObjectStatistics
+     * @function Script.startCollectingObjectStatistics
      */
     Q_INVOKABLE void startCollectingObjectStatistics();
 
@@ -557,7 +557,47 @@ public:
      */
      Q_INVOKABLE void stopProfilingAndSave();
 
-signals:
+     /*@jsdoc
+     * After calling this function current script engine will start receiving server-side entity script messages
+     * through signals such as errorEntityMessage. This function can be invoked both from client-side entity scripts
+     * and from interface scripts.
+     * @function Script.subscribeToServerEntityScriptMessages
+     * @param {Uuid=} entityID - The ID of the entity that requests entity server script messages. Only needs to be specified
+     * for entity scripts, and must not be specified for other types of scripts.
+     */
+
+     Q_INVOKABLE void requestServerEntityScriptMessages();
+     Q_INVOKABLE void requestServerEntityScriptMessages(const QUuid& entityID);
+
+     /*@jsdoc
+     * Calling this function signalizes that current script doesn't require stop receiving server-side entity script messages
+     * through signals such as errorEntityMessage. This function can be invoked both from client-side entity scripts
+     * and from interface scripts.
+     * @function Script.unsubscribeFromServerEntityScriptMessages
+     * @param {Uuid=} entityID - The ID of the entity that requests entity server script messages. Only needs to be specified
+     * for entity scripts, and must not be specified for other types of scripts.
+     */
+
+     Q_INVOKABLE void removeServerEntityScriptMessagesRequest();
+     Q_INVOKABLE void removeServerEntityScriptMessagesRequest(const QUuid& entityID);
+
+     /*@jsdoc
+     * This decodes Base64 string and returns contents as ArrayBuffer.
+     * @function Script.atob
+     * @param {String} base64 - String with Base64-encoded binary data.
+     * @returns {ArrayBuffer} Decoded binary data.
+     */
+     Q_INVOKABLE QByteArray atob(const QString &base64);
+
+     /*@jsdoc
+     * This encodes ArrayBuffer and returns Base64-encoded string.
+     * @function Script.btoa
+     * @param {ArrayBuffer} binary - Data to be encoded.
+     * @returns {String} String with Base64-encoded binary data.
+     */
+     Q_INVOKABLE QString btoa(const QByteArray &binary);
+
+ signals:
 
     /*@jsdoc
      * @function Script.scriptLoaded

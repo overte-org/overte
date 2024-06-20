@@ -120,7 +120,7 @@ ScriptManagerPointer ScriptEngineNetworkedTests::makeManager(const QString &scri
     return sm;
 }
 
-void ScriptEngineNetworkedTests::testRequire() {
+void ScriptEngineNetworkedTests::testScriptRequire() {
     auto sm = makeManager(
         "print(\"Starting\");"
         "Script.require('./tests/c.js');"
@@ -153,6 +153,38 @@ void ScriptEngineNetworkedTests::testRequire() {
     }
 }
 
+void ScriptEngineNetworkedTests::testRequire() {
+    auto sm = makeManager(
+        "print(\"Starting\");"
+        "require('./tests/c_require.js');"
+        "print(\"Done\");"
+        "Script.stop(true);", "testRequire.js");
+    QStringList printed;
+    QStringList expected {"Starting", "Value from A: 6", "Value from B: 6", "Done"};
+
+
+    QVERIFY(!sm->isRunning());
+    QVERIFY(!sm->isStopped());
+    QVERIFY(!sm->isFinished());
+
+    connect(sm.get(), &ScriptManager::printedMessage, [&printed](const QString& message, const QString& engineName){
+        printed.append(message);
+    });
+
+
+    qInfo() << "About to run script";
+    sm->run();
+
+    QVERIFY(!sm->isRunning());
+    QVERIFY(!sm->isStopped());
+    QVERIFY(sm->isFinished());
+
+    QVERIFY(printed.length() == expected.length());
+    for(int i=0;i<printed.length();i++) {
+        QString nomatch = QString("Result '%1' didn't match expected '%2'").arg(printed[i]).arg(expected[i]);
+        QVERIFY2(printed[i] == expected[i], qPrintable(nomatch));
+    }
+}
 
 
 void ScriptEngineNetworkedTests::testRequireInfinite() {

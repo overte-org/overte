@@ -203,7 +203,7 @@ Script.include("/~/system/libraries/utils.js");
             var candidateOverlays = controllerData.nearbyOverlayIDs[this.hand];
             var grabbableOverlays = candidateOverlays.filter(function(overlayID) {
                 // V8TODO: check if this works
-                return Entities.getEntityProperties(overlayID, ["grab"]).grab.grabbable;
+                return Entities.getEntityProperties(overlayID, ["grab.grabbable"]).grab.grabbable;
             });
 
             var targetID = this.getTargetID(grabbableOverlays, controllerData);

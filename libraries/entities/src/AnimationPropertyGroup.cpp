@@ -32,20 +32,8 @@ bool operator==(const AnimationPropertyGroup& a, const AnimationPropertyGroup& b
         (a._lastFrame == b._lastFrame) &&
         (a._fps == b._fps) &&
         (a._allowTranslation == b._allowTranslation) &&
-        (a._url == b._url);
-}
-
-bool operator!=(const AnimationPropertyGroup& a, const AnimationPropertyGroup& b) {
-    return
-        (a._currentFrame != b._currentFrame) ||
-        (a._running != b._running) ||
-        (a._loop != b._loop) ||
-        (a._hold != b._hold) ||
-        (a._firstFrame != b._firstFrame) ||
-        (a._lastFrame != b._lastFrame) ||
-        (a._fps != b._fps) ||
-        (a._allowTranslation != b._allowTranslation) ||
-        (a._url != b._url);
+        (a._url == b._url) &&
+        (a._smoothFrames == b._smoothFrames);
 }
 
 
@@ -66,9 +54,14 @@ bool operator!=(const AnimationPropertyGroup& a, const AnimationPropertyGroup& b
  *     it isn't.
  * @property {boolean} hold=false - <code>true</code> if the rotations and translations of the last frame played are 
  *     maintained when the animation stops playing, <code>false</code> if they aren't.
+ * @property {boolean} smoothFrames=true - <code>true</code> if the frames of the animation should be linearly interpolated to
+ *     create smoother movement, <code>false</code> if the frames should not be interpolated.
  */
-void AnimationPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine, bool skipDefaults, EntityItemProperties& defaultEntityProperties) const {
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_URL, Animation, animation, URL, url);
+void AnimationPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+                                               bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags,
+                                               bool isMyOwnAvatarEntity) const {
+    auto nodeList = DependencyManager::get<NodeList>();
+    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_ANIMATION_URL, Animation, animation, URL, url);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_ALLOW_TRANSLATION, Animation, animation, AllowTranslation, allowTranslation);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_FPS, Animation, animation, FPS, fps);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_FRAME_INDEX, Animation, animation, CurrentFrame, currentFrame);
@@ -77,6 +70,7 @@ void AnimationPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desire
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_FIRST_FRAME, Animation, animation, FirstFrame, firstFrame);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_LAST_FRAME, Animation, animation, LastFrame, lastFrame);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_HOLD, Animation, animation, Hold, hold);
+    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_ANIMATION_SMOOTH_FRAMES, Animation, animation, SmoothFrames, smoothFrames);
 }
 
 
@@ -96,6 +90,7 @@ void AnimationPropertyGroup::copyFromScriptValue(const ScriptValue& object, cons
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, firstFrame, float, setFirstFrame);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, lastFrame, float, setLastFrame);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, hold, bool, setHold);
+    COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(animation, smoothFrames, bool, setSmoothFrames);
 
     // legacy property support
     COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(animationFPS, float, setFPS, getFPS);
@@ -113,6 +108,7 @@ void AnimationPropertyGroup::merge(const AnimationPropertyGroup& other) {
     COPY_PROPERTY_IF_CHANGED(firstFrame);
     COPY_PROPERTY_IF_CHANGED(lastFrame);
     COPY_PROPERTY_IF_CHANGED(hold);
+    COPY_PROPERTY_IF_CHANGED(smoothFrames);
 }
 
 void AnimationPropertyGroup::setFromOldAnimationSettings(const QString& value) {
@@ -120,18 +116,22 @@ void AnimationPropertyGroup::setFromOldAnimationSettings(const QString& value) {
     // if it includes fps, currentFrame, or running, those values will be parsed out and
     // will over ride the regular animation settings
 
+    bool allowTranslation = getAllowTranslation();
     float fps = getFPS();
     float currentFrame = getCurrentFrame();
     bool running = getRunning();
+    bool loop = getLoop();
     float firstFrame = getFirstFrame();
     float lastFrame = getLastFrame();
-    bool loop = getLoop();
     bool hold = getHold();
-    bool allowTranslation = getAllowTranslation();
 
     QJsonDocument settingsAsJson = QJsonDocument::fromJson(value.toUtf8());
     QJsonObject settingsAsJsonObject = settingsAsJson.object();
     QVariantMap settingsMap = settingsAsJsonObject.toVariantMap();
+
+    if (settingsMap.contains("allowTranslation")) {
+        allowTranslation = settingsMap["allowTranslation"].toBool();
+    }
 
     if (settingsMap.contains("fps")) {
         fps = settingsMap["fps"].toFloat();
@@ -150,30 +150,25 @@ void AnimationPropertyGroup::setFromOldAnimationSettings(const QString& value) {
         firstFrame = settingsMap["firstFrame"].toFloat();
     }
 
+    if (settingsMap.contains("loop")) {
+        loop = settingsMap["loop"].toBool();
+    }
+
     if (settingsMap.contains("lastFrame")) {
         lastFrame = settingsMap["lastFrame"].toFloat();
     }
 
-    if (settingsMap.contains("loop")) {
-        running = settingsMap["loop"].toBool();
-    }
-
     if (settingsMap.contains("hold")) {
-        running = settingsMap["hold"].toBool();
+        hold = settingsMap["hold"].toBool();
     }
-
-    if (settingsMap.contains("allowTranslation")) {
-        allowTranslation = settingsMap["allowTranslation"].toBool();
-    }
-
 
     setAllowTranslation(allowTranslation);
     setFPS(fps);
     setCurrentFrame(currentFrame);
     setRunning(running);
+    setLoop(loop);
     setFirstFrame(firstFrame);
     setLastFrame(lastFrame);
-    setLoop(loop);
     setHold(hold);
 }
 
@@ -213,6 +208,9 @@ void AnimationPropertyGroup::listChangedProperties(QList<QString>& out) {
     if (holdChanged()) {
         out << "animation-hold";
     }
+    if (smoothFramesChanged()) {
+        out << "animation-smoothFrames";
+    }
 }
 
 
@@ -234,6 +232,7 @@ bool AnimationPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
     APPEND_ENTITY_PROPERTY(PROP_ANIMATION_FIRST_FRAME, getFirstFrame());
     APPEND_ENTITY_PROPERTY(PROP_ANIMATION_LAST_FRAME, getLastFrame());
     APPEND_ENTITY_PROPERTY(PROP_ANIMATION_HOLD, getHold());
+    APPEND_ENTITY_PROPERTY(PROP_ANIMATION_SMOOTH_FRAMES, getSmoothFrames());
 
     return true;
 }
@@ -253,6 +252,7 @@ bool AnimationPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyF
     READ_ENTITY_PROPERTY(PROP_ANIMATION_FIRST_FRAME, float, setFirstFrame);
     READ_ENTITY_PROPERTY(PROP_ANIMATION_LAST_FRAME, float, setLastFrame);
     READ_ENTITY_PROPERTY(PROP_ANIMATION_HOLD, bool, setHold);
+    READ_ENTITY_PROPERTY(PROP_ANIMATION_SMOOTH_FRAMES, bool, setSmoothFrames);
 
     DECODE_GROUP_PROPERTY_HAS_CHANGED(PROP_ANIMATION_URL, URL);
     DECODE_GROUP_PROPERTY_HAS_CHANGED(PROP_ANIMATION_ALLOW_TRANSLATION, AllowTranslation);
@@ -263,7 +263,8 @@ bool AnimationPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyF
     DECODE_GROUP_PROPERTY_HAS_CHANGED(PROP_ANIMATION_FIRST_FRAME, FirstFrame);
     DECODE_GROUP_PROPERTY_HAS_CHANGED(PROP_ANIMATION_LAST_FRAME, LastFrame);
     DECODE_GROUP_PROPERTY_HAS_CHANGED(PROP_ANIMATION_HOLD, Hold);
-    
+    DECODE_GROUP_PROPERTY_HAS_CHANGED(PROP_ANIMATION_SMOOTH_FRAMES, SmoothFrames);
+
     processedBytes += bytesRead;
 
     Q_UNUSED(somethingChanged);
@@ -281,6 +282,7 @@ void AnimationPropertyGroup::markAllChanged() {
     _firstFrameChanged = true;
     _lastFrameChanged = true;
     _holdChanged = true;
+    _smoothFramesChanged = true;
 }
 
 EntityPropertyFlags AnimationPropertyGroup::getChangedProperties() const {
@@ -295,6 +297,7 @@ EntityPropertyFlags AnimationPropertyGroup::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_ANIMATION_FIRST_FRAME, firstFrame);
     CHECK_PROPERTY_CHANGE(PROP_ANIMATION_LAST_FRAME, lastFrame);
     CHECK_PROPERTY_CHANGE(PROP_ANIMATION_HOLD, hold);
+    CHECK_PROPERTY_CHANGE(PROP_ANIMATION_SMOOTH_FRAMES, smoothFrames);
 
     return changedProperties;
 }
@@ -309,6 +312,7 @@ void AnimationPropertyGroup::getProperties(EntityItemProperties& properties) con
     COPY_ENTITY_GROUP_PROPERTY_TO_PROPERTIES(Animation, FirstFrame, getFirstFrame);
     COPY_ENTITY_GROUP_PROPERTY_TO_PROPERTIES(Animation, LastFrame, getLastFrame);
     COPY_ENTITY_GROUP_PROPERTY_TO_PROPERTIES(Animation, Hold, getHold);
+    COPY_ENTITY_GROUP_PROPERTY_TO_PROPERTIES(Animation, SmoothFrames, getSmoothFrames);
 }
 
 bool AnimationPropertyGroup::setProperties(const EntityItemProperties& properties) {
@@ -323,6 +327,7 @@ bool AnimationPropertyGroup::setProperties(const EntityItemProperties& propertie
     SET_ENTITY_GROUP_PROPERTY_FROM_PROPERTIES(Animation, FirstFrame, firstFrame, setFirstFrame);
     SET_ENTITY_GROUP_PROPERTY_FROM_PROPERTIES(Animation, LastFrame, lastFrame, setLastFrame);
     SET_ENTITY_GROUP_PROPERTY_FROM_PROPERTIES(Animation, Hold, hold, setHold);
+    SET_ENTITY_GROUP_PROPERTY_FROM_PROPERTIES(Animation, SmoothFrames, smoothFrames, setSmoothFrames);
     return somethingChanged;
 }
 
@@ -338,6 +343,7 @@ EntityPropertyFlags AnimationPropertyGroup::getEntityProperties(EncodeBitstreamP
     requestedProperties += PROP_ANIMATION_FIRST_FRAME;
     requestedProperties += PROP_ANIMATION_LAST_FRAME;
     requestedProperties += PROP_ANIMATION_HOLD;
+    requestedProperties += PROP_ANIMATION_SMOOTH_FRAMES;
 
     return requestedProperties;
 }
@@ -361,6 +367,7 @@ void AnimationPropertyGroup::appendSubclassData(OctreePacketData* packetData, En
     APPEND_ENTITY_PROPERTY(PROP_ANIMATION_FIRST_FRAME, getFirstFrame());
     APPEND_ENTITY_PROPERTY(PROP_ANIMATION_LAST_FRAME, getLastFrame());
     APPEND_ENTITY_PROPERTY(PROP_ANIMATION_HOLD, getHold());
+    APPEND_ENTITY_PROPERTY(PROP_ANIMATION_SMOOTH_FRAMES, getSmoothFrames());
 }
 
 int AnimationPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
@@ -380,6 +387,7 @@ int AnimationPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char
     READ_ENTITY_PROPERTY(PROP_ANIMATION_FIRST_FRAME, float, setFirstFrame);
     READ_ENTITY_PROPERTY(PROP_ANIMATION_LAST_FRAME, float, setLastFrame);
     READ_ENTITY_PROPERTY(PROP_ANIMATION_HOLD, bool, setHold);
+    READ_ENTITY_PROPERTY(PROP_ANIMATION_SMOOTH_FRAMES, bool, setSmoothFrames);
     return bytesRead;
 }
 

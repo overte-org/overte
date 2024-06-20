@@ -1,0 +1,77 @@
+<!--
+//  importEntities.html
+//
+//  Created by Alezia Kurdis on March 13th, 2024.
+//  Copyright 2024 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+-->
+<html>
+    <head>
+        <title>Import Entities</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <link rel="stylesheet" type="text/css" href="css/importEntities.css">
+        <script type="text/javascript" src="qrc:///qtwebchannel/qwebchannel.js"></script>
+        <script type="text/javascript" src="js/importEntitiesUi.js"></script>
+    </head>
+    <body onload="loaded();" >
+        <h2>Import Entities (.json)</h2>
+        <font class="red">* </font>URL/File (.json):<br>
+        <input type="text" id = "jsonUrl">&nbsp;<button id="browseBtn">...</button><br>
+        <br>
+        <table style="width: 96%;">
+            <tr style="vertical-align: top;">
+                <td style="width: 40%;">
+                    Position:<br>
+                    &nbsp;&nbsp;&nbsp;<input type="radio" name="importAtPosition" id="importAtAvatar" value="avatar" checked><label for="importAtAvatar">&nbsp;In front of your avatar</label><br>
+                    &nbsp;&nbsp;&nbsp;<input type="radio" name="importAtPosition" id="importAtSpecificPosition" value="position"><label for="importAtSpecificPosition">&nbsp;At a specified Position</label><br>
+                </td>
+                <td style="width: 60%;">
+                    <div id="importAtSpecificPositionContainer">
+                        <font class="red">X</font> <input type="number" size="6" id = "positionX" value = "0">&nbsp;&nbsp;&nbsp;
+                        <font class="green">Y</font> <input type="number" size="6" id = "positionY" value = "0">&nbsp;&nbsp;&nbsp;
+                        <font class="blue">Z</font> <input type="number" size="6" id = "positionZ" value = "0"><br>
+                        <button id="pastePositionBtn" class="black">Paste Position</button><br>
+                        <div class="explicative">
+                            Note: If you import a "serverless" json file, such data include positions. 
+                            It this case, the "Position" will act as an offset.
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <table style="width: 96%;">
+            <tr style="vertical-align: top;">
+                <td style="width: 30%;">
+                    Entity Host Type:<br>
+                    &nbsp;&nbsp;&nbsp;<input type="radio" name="entityHostType" id="entityHostTypeDomain" value="domain" checked><label for="entityHostTypeDomain">&nbsp;Domain Entities</label><br>
+                    &nbsp;&nbsp;&nbsp;<input type="radio" name="entityHostType" id="entityHostTypeAvatar" value="avatar"><label for="entityHostTypeAvatar">&nbsp;Avatar Entities</label><br>
+                </td>
+                <td style="width: 70%;">
+                    <div id="messageContainer"></div>
+                </td>
+            </tr>
+        </table>
+        <div style="text-align: right; width:96%;"><button id="importBtn">IMPORT</button></div>
+        <div id="testContainer">
+            <table style="width: 96%;">
+                <tr style="vertical-align: top;">
+                    <td style="width: 60%;">
+                        <div class="explicative">
+                        For large import, it can be wise to test it in a serverless environment before doing it in your real domain.
+                        </div>
+                    </td>
+                    <td style="width: 40%;">
+                        <div style="text-align: center; width:96%;">
+                        <button id="backBtn" class="black">&#11164; Back</button>
+                        &nbsp;&nbsp;&nbsp;
+                        <button id="tpTutorialBtn" class="black">Go test &#11166;</button>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </body>
+</html>

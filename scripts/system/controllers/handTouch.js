@@ -16,6 +16,7 @@
 
 (function () {
 
+    var controllerStandard = Controller.Standard;
     var LEAP_MOTION_NAME = "LeapMotion";
     // Hand touch is disabled due to twitchy finger bug when walking near walls or tables. see BUGZ-154.
     var handTouchEnabled = false;
@@ -792,15 +793,15 @@
 
     var MAPPING_NAME = "com.highfidelity.handTouch";
     var mapping = Controller.newMapping(MAPPING_NAME);
-    mapping.from([Controller.Standard.RT]).peek().to(rightTriggerPress);
-    mapping.from([Controller.Standard.RTClick]).peek().to(rightTriggerClick);
-    mapping.from([Controller.Standard.LT]).peek().to(leftTriggerPress);
-    mapping.from([Controller.Standard.LTClick]).peek().to(leftTriggerClick);
+    mapping.from([controllerStandard.RT]).peek().to(rightTriggerPress);
+    mapping.from([controllerStandard.RTClick]).peek().to(rightTriggerClick);
+    mapping.from([controllerStandard.LT]).peek().to(leftTriggerPress);
+    mapping.from([controllerStandard.LTClick]).peek().to(leftTriggerClick);
 
-    mapping.from([Controller.Standard.RB]).peek().to(rightSecondaryPress);
-    mapping.from([Controller.Standard.LB]).peek().to(leftSecondaryPress);
-    mapping.from([Controller.Standard.LeftGrip]).peek().to(leftSecondaryPress);
-    mapping.from([Controller.Standard.RightGrip]).peek().to(rightSecondaryPress);
+    mapping.from([controllerStandard.RB]).peek().to(rightSecondaryPress);
+    mapping.from([controllerStandard.LB]).peek().to(leftSecondaryPress);
+    mapping.from([controllerStandard.LeftGrip]).peek().to(leftSecondaryPress);
+    mapping.from([controllerStandard.RightGrip]).peek().to(rightSecondaryPress);
 
     Controller.enableMapping(MAPPING_NAME);
 

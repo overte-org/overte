@@ -41,6 +41,7 @@ class GPUObject;
 class State {
 public:
     State();
+    State(const State& state) : _values(state._values), _signature(state._signature), _stamp(state._stamp) {}
     virtual ~State();
 
     Stamp getStamp() const { return _stamp; }
@@ -464,7 +465,6 @@ public:
     const GPUObjectPointer gpuObject{};
 
 protected:
-    State(const State& state);
     State& operator=(const State& state);
 
     Data _values;

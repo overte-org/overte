@@ -27,17 +27,16 @@ public:
 
     void renderOverlay(RenderArgs* renderArgs);
 
-    gpu::TexturePointer getOverlayTexture(); 
+    gpu::TexturePointer getOverlayTexture();
+
+    bool enabled() const { return _enabled; }
+    void setEnabled(bool enabled) { _enabled = enabled; }
 
 private:
-    void renderStatsAndLogs(RenderArgs* renderArgs);
     void renderDomainConnectionStatusBorder(RenderArgs* renderArgs);
     void renderQmlUi(RenderArgs* renderArgs);
     void renderOverlays(RenderArgs* renderArgs);
     void buildFramebufferObject();
-
-    float _alpha{ 1.0f };
-    float _trailingAudioLoudness{ 0.0f };
 
     int _domainStatusBorder;
     int _magnifierBorder;
@@ -47,6 +46,8 @@ private:
     gpu::TexturePointer _overlayColorTexture;
     gpu::FramebufferPointer _overlayFramebuffer;
     int _qmlGeometryId { 0 };
+
+    bool _enabled { true };
 };
 
 #endif // hifi_ApplicationOverlay_h

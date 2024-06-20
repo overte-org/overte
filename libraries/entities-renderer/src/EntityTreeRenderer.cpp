@@ -232,6 +232,14 @@ void EntityTreeRenderer::resetPersistentEntitiesScriptEngine() {
     _persistentEntitiesScriptManager = scriptManagerFactory(ScriptManager::ENTITY_CLIENT_SCRIPT, NO_SCRIPT,
                                                 QString("about:Entities %1").arg(++_entitiesScriptEngineCount));
     DependencyManager::get<ScriptEngines>()->runScriptInitializers(_persistentEntitiesScriptManager);
+
+    // Make script engine messages available through ScriptDiscoveryService
+    auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+    connect(_persistentEntitiesScriptManager.get(), &ScriptManager::infoEntityMessage, scriptEngines, &ScriptEngines::infoEntityMessage);
+    connect(_persistentEntitiesScriptManager.get(), &ScriptManager::printedEntityMessage, scriptEngines, &ScriptEngines::printedEntityMessage);
+    connect(_persistentEntitiesScriptManager.get(), &ScriptManager::errorEntityMessage, scriptEngines, &ScriptEngines::errorEntityMessage);
+    connect(_persistentEntitiesScriptManager.get(), &ScriptManager::warningEntityMessage, scriptEngines, &ScriptEngines::warningEntityMessage);
+
     _persistentEntitiesScriptManager->runInThread();
     std::shared_ptr<EntitiesScriptEngineProvider> entitiesScriptEngineProvider = _persistentEntitiesScriptManager;
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
@@ -255,6 +263,14 @@ void EntityTreeRenderer::resetNonPersistentEntitiesScriptEngine() {
     _nonPersistentEntitiesScriptManager = scriptManagerFactory(ScriptManager::ENTITY_CLIENT_SCRIPT, NO_SCRIPT,
                                                 QString("about:Entities %1").arg(++_entitiesScriptEngineCount));
     DependencyManager::get<ScriptEngines>()->runScriptInitializers(_nonPersistentEntitiesScriptManager);
+
+    // Make script engine messages available through ScriptDiscoveryService
+    auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+    connect(_nonPersistentEntitiesScriptManager.get(), &ScriptManager::infoEntityMessage, scriptEngines, &ScriptEngines::infoEntityMessage);
+    connect(_nonPersistentEntitiesScriptManager.get(), &ScriptManager::printedEntityMessage, scriptEngines, &ScriptEngines::printedEntityMessage);
+    connect(_nonPersistentEntitiesScriptManager.get(), &ScriptManager::errorEntityMessage, scriptEngines, &ScriptEngines::errorEntityMessage);
+    connect(_nonPersistentEntitiesScriptManager.get(), &ScriptManager::warningEntityMessage, scriptEngines, &ScriptEngines::warningEntityMessage);
+
     _nonPersistentEntitiesScriptManager->runInThread();
     std::shared_ptr<EntitiesScriptEngineProvider> entitiesScriptEngineProvider = _nonPersistentEntitiesScriptManager;
     DependencyManager::get<EntityScriptingInterface>()->setNonPersistentEntitiesScriptEngine(entitiesScriptEngineProvider);
@@ -912,7 +928,7 @@ QUuid EntityTreeRenderer::mousePressEvent(QMouseEvent* event) {
                                   pos2D, rayPickResult.intersection,
                                   rayPickResult.surfaceNormal, ray.direction,
                                   toPointerButton(*event), toPointerButtons(*event),
-                                  Qt::NoModifier); // TODO -- check for modifier keys?
+                                  event->modifiers());
 
         emit entityScriptingInterface->mousePressOnEntity(rayPickResult.entityID, pointerEvent);
 
@@ -943,9 +959,10 @@ void EntityTreeRenderer::mouseDoublePressEvent(QMouseEvent* event) {
     if (rayPickResult.intersects && (entity = getTree()->findEntityByID(rayPickResult.entityID))) {
         glm::vec2 pos2D = projectOntoEntityXYPlane(entity, ray, rayPickResult);
         PointerEvent pointerEvent(PointerEvent::Press, PointerManager::MOUSE_POINTER_ID,
-            pos2D, rayPickResult.intersection,
-            rayPickResult.surfaceNormal, ray.direction,
-            toPointerButton(*event), toPointerButtons(*event), Qt::NoModifier);
+                                  pos2D, rayPickResult.intersection,
+                                  rayPickResult.surfaceNormal, ray.direction,
+                                  toPointerButton(*event), toPointerButtons(*event),
+                                  event->modifiers());
 
         emit entityScriptingInterface->mouseDoublePressOnEntity(rayPickResult.entityID, pointerEvent);
 
@@ -979,7 +996,7 @@ void EntityTreeRenderer::mouseReleaseEvent(QMouseEvent* event) {
                                   pos2D, rayPickResult.intersection,
                                   rayPickResult.surfaceNormal, ray.direction,
                                   toPointerButton(*event), toPointerButtons(*event),
-                                  Qt::NoModifier); // TODO -- check for modifier keys?
+                                  event->modifiers());
 
         emit entityScriptingInterface->mouseReleaseOnEntity(rayPickResult.entityID, pointerEvent);
 
@@ -995,7 +1012,7 @@ void EntityTreeRenderer::mouseReleaseEvent(QMouseEvent* event) {
                                   pos2D, rayPickResult.intersection,
                                   rayPickResult.surfaceNormal, ray.direction,
                                   toPointerButton(*event), toPointerButtons(*event),
-                                  Qt::NoModifier); // TODO -- check for modifier keys?
+                                  event->modifiers());
 
         emit entityScriptingInterface->clickReleaseOnEntity(_currentClickingOnEntityID, pointerEvent);
     }
@@ -1022,7 +1039,7 @@ void EntityTreeRenderer::mouseMoveEvent(QMouseEvent* event) {
                                   pos2D, rayPickResult.intersection,
                                   rayPickResult.surfaceNormal, ray.direction,
                                   toPointerButton(*event), toPointerButtons(*event),
-                                  Qt::NoModifier); // TODO -- check for modifier keys?
+                                  event->modifiers());
 
         emit entityScriptingInterface->mouseMoveOnEntity(rayPickResult.entityID, pointerEvent);
 
@@ -1036,7 +1053,7 @@ void EntityTreeRenderer::mouseMoveEvent(QMouseEvent* event) {
                                       pos2D, rayPickResult.intersection,
                                       rayPickResult.surfaceNormal, ray.direction,
                                       toPointerButton(*event), toPointerButtons(*event),
-                                      Qt::NoModifier); // TODO -- check for modifier keys?
+                                      event->modifiers());
 
             emit entityScriptingInterface->hoverLeaveEntity(_currentHoverOverEntityID, pointerEvent);
         }
@@ -1064,10 +1081,10 @@ void EntityTreeRenderer::mouseMoveEvent(QMouseEvent* event) {
         if (!_currentHoverOverEntityID.isInvalidID()) {
             glm::vec2 pos2D = projectOntoEntityXYPlane(entity, ray, rayPickResult);
             PointerEvent pointerEvent(PointerEvent::Move, PointerManager::MOUSE_POINTER_ID,
-                                  pos2D, rayPickResult.intersection,
-                                  rayPickResult.surfaceNormal, ray.direction,
+                                      pos2D, rayPickResult.intersection,
+                                      rayPickResult.surfaceNormal, ray.direction,
                                       toPointerButton(*event), toPointerButtons(*event),
-                                      Qt::NoModifier); // TODO -- check for modifier keys?
+                                      event->modifiers());
 
             emit entityScriptingInterface->hoverLeaveEntity(_currentHoverOverEntityID, pointerEvent);
             _currentHoverOverEntityID = UNKNOWN_ENTITY_ID; // makes it the unknown ID

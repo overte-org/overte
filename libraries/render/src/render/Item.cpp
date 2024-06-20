@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 1/26/16.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -147,6 +148,13 @@ namespace render {
         payload->render(args);
     }
 
+    template <> void payloadRenderSimulate(const PayloadProxyInterface::Pointer& payload, RenderArgs* args) {
+        if (!args || !payload) {
+            return;
+        }
+        payload->renderSimulate(args);
+    }
+
     template <> uint32_t metaFetchMetaSubItems(const PayloadProxyInterface::Pointer& payload, ItemIDs& subItems) {
         if (!payload) {
             return 0;
@@ -166,5 +174,12 @@ namespace render {
             return Item::INVALID_ITEM_ID;
         }
         return payload->computeMirrorView(viewFrustum);
+    }
+
+    template <> HighlightStyle payloadGetOutlineStyle(const PayloadProxyInterface::Pointer& payload, const ViewFrustum& viewFrustum, const size_t height) {
+        if (!payload) {
+            return HighlightStyle();
+        }
+        return payload->getOutlineStyle(viewFrustum, height);
     }
 }

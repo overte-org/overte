@@ -281,7 +281,7 @@ void GraphicsEngine::render_performFrame() {
 
         {
             PROFILE_RANGE(render, "/runRenderFrame");
-            renderArgs._hudOperator = displayPlugin->getHUDOperator();
+            renderArgs._hudOperator = qApp->getApplicationOverlay().enabled() ? displayPlugin->getHUDOperator() : nullptr;
             renderArgs._hudTexture = qApp->getApplicationOverlay().getOverlayTexture();
             renderArgs._takingSnapshot = qApp->takeSnapshotOperators(snapshotOperators);
             renderArgs._blitFramebuffer = finalFramebuffer;

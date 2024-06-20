@@ -1,4 +1,4 @@
-# Copyright 2022-2023 Overte e.V.
+# Copyright 2022-2024 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 name: Master Doxygen CI Build and Deploy
@@ -14,7 +14,7 @@ jobs:
 
     name: Build and deploy Doxygen documentation
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install dependencies
       run: |

@@ -127,7 +127,7 @@ function connectWebSocket(timeout) {
             if (!muted["Grid"]) {
                 Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                     sender: "(G) " + cmd.displayName,
-                    text: replaceFormatting(cmd.message),
+                    text: cmd.message,
                     colour: {text: cmd.colour}
                 }));
             }
@@ -462,7 +462,7 @@ function messageReceived(channel, message, sender) {
                         if (!muted["Local"]) {
                             Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                                 sender: "(L) " + cmd.displayName,
-                                text: replaceFormatting(cmd.message),
+                                text: cmd.message,
                                 colour: {text: cmd.colour}
                             }));
                         }
@@ -477,7 +477,7 @@ function messageReceived(channel, message, sender) {
                     if (!muted["Domain"]) {
                         Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                             sender: "(D) " + cmd.displayName,
-                            text: replaceFormatting(cmd.message),
+                            text: cmd.message,
                             colour: {text: cmd.colour}
                         }));
                     }
@@ -491,7 +491,7 @@ function messageReceived(channel, message, sender) {
                     if (!muted["Grid"]) {
                         Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                             sender: "(G) " + cmd.displayName,
-                            text: replaceFormatting(cmd.message),
+                            text: cmd.message,
                             colour: {text: cmd.colour}
                         }));
                     }
@@ -504,7 +504,7 @@ function messageReceived(channel, message, sender) {
                     
                     Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                         sender: cmd.displayName,
-                        text: replaceFormatting(cmd.message),
+                        text: cmd.message,
                         colour: {text: cmd.colour}
                     }));
                 }
@@ -528,7 +528,7 @@ function messageReceived(channel, message, sender) {
                 
                 Messages.sendLocalMessage(FLOOF_NOTIFICATION_CHANNEL, JSON.stringify({
                     sender: "(" + cmd.category + ")",
-                    text: replaceFormatting(cmd.message),
+                    text: cmd.message,
                     colour: {text: cmd.colour}
                 }));
             }

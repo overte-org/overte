@@ -35,8 +35,6 @@ void GL45Backend::updateInput() {
 #endif
     _input._lastUpdateStereoState = isStereoNow;
 
-    bool hasColorAttribute = _input._hasColorAttribute;
-
     if (_input._invalidFormat) {
         InputStageState::ActivationCache newActivation;
 
@@ -65,8 +63,6 @@ void GL45Backend::updateInput() {
                     GLboolean isNormalized = attrib._element.isNormalized();
 
                     GLenum perLocationSize = attrib._element.getLocationSize();
-
-                    hasColorAttribute |= slot == Stream::COLOR;
 
                     for (GLuint locNum = 0; locNum < locationCount; ++locNum) {
                         GLuint attriNum = (GLuint)(slot + locNum);
@@ -98,12 +94,6 @@ void GL45Backend::updateInput() {
                 glVertexBindingDivisor(bufferChannelNum, frequency);
 #endif
             }
-
-            if (!hasColorAttribute && _input._hadColorAttribute) {
-                // The previous input stage had a color attribute but this one doesn't, so reset the color to pure white.
-                _input._colorAttribute = glm::vec4(1.0f);
-                glVertexAttrib4fv(Stream::COLOR, &_input._colorAttribute.r);
-            }
         }
 
         // Manage Activation what was and what is expected now
@@ -124,9 +114,6 @@ void GL45Backend::updateInput() {
         _input._invalidFormat = false;
         _stats._ISNumFormatChanges++;
     }
-
-    _input._hadColorAttribute = hasColorAttribute;
-    _input._hasColorAttribute = false;
 
     if (_input._invalidBuffers.any()) {
         auto vbo = _input._bufferVBOs.data();

@@ -99,8 +99,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
         materials = _materials["0"];
     }
 
-    auto& schema = materials.getSchemaBuffer().get<graphics::MultiMaterial::Schema>();
-    glm::vec4 outColor = glm::vec4(ColorUtils::tosRGBVec3(schema._albedo), schema._opacity);
+    glm::vec4 outColor = materials.getColor();
     outColor = EntityRenderer::calculatePulseColor(outColor, _pulseProperties, _created);
 
     if (outColor.a == 0.0f) {
@@ -133,10 +132,12 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
             procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created, ProceduralProgramKey(outColor.a < 1.0f));
         });
 
+        const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
         if (wireframe) {
-            geometryCache->renderWireShape(batch, geometryShape, outColor);
+            geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
         } else {
-            geometryCache->renderShape(batch, geometryShape, outColor);
+            geometryCache->renderShape(batch, geometryShape, _colorBuffer);
         }
     } else if (pipelineType == Pipeline::SIMPLE) {
         // FIXME, support instanced multi-shape rendering using multidraw indirect
@@ -151,10 +152,12 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
                 geometryCache->renderSolidShapeInstance(args, batch, geometryShape, outColor, pipeline);
             }
         } else {
+            const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+            _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
             if (wireframe) {
-                geometryCache->renderWireShape(batch, geometryShape, outColor);
+                geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
             } else {
-                geometryCache->renderShape(batch, geometryShape, outColor);
+                geometryCache->renderShape(batch, geometryShape, _colorBuffer);
             }
         }
     } else {
@@ -162,7 +165,9 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
             args->_details._materialSwitches++;
         }
 
-        geometryCache->renderShape(batch, geometryShape);
+        const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+        geometryCache->renderShape(batch, geometryShape, _colorBuffer);
     }
 
     const auto triCount = geometryCache->getShapeTriangleCount(geometryShape);
@@ -179,7 +184,7 @@ scriptable::ScriptableModelBase ShapeEntityRenderer::getScriptableModel()  {
         result.appendMaterials(_materials);
         auto materials = _materials.find("0");
         if (materials != _materials.end()) {
-            vertexColor = ColorUtils::tosRGBVec3(materials->second.getSchemaBuffer().get<graphics::MultiMaterial::Schema>()._albedo);
+            vertexColor = materials->second.getColor();
         }
     }
     if (auto mesh = geometryCache->meshFromShape(geometryShape, vertexColor)) {

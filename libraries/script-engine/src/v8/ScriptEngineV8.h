@@ -309,6 +309,8 @@ private:
     ScriptEngineV8* _engine;
 };
 
+QString getFileNameFromTryCatch(v8::TryCatch &tryCatch, v8::Isolate *isolate, v8::Local<v8::Context> &context );
+
 #include "V8Types.h"
 
 #endif  // hifi_ScriptEngineV8_h

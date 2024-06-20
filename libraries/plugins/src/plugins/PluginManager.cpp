@@ -72,12 +72,13 @@ int getPluginInterfaceVersionFromMetaData(const QJsonObject& object) {
 QStringList preferredDisplayPlugins;
 QStringList disabledDisplays;
 QStringList disabledInputs;
+std::vector<PluginManager::PluginInfo> pluginInfo;
 
 bool isDisabled(QJsonObject metaData) {
     auto name = getPluginNameFromMetaData(metaData);
     auto iid = getPluginIIDFromMetaData(metaData);
 
-    if (iid == DisplayProvider_iid) {
+    if (iid == DisplayProvider_iid || iid == SteamClientProvider_iid || iid == OculusPlatformProvider_iid) {
         return disabledDisplays.contains(name);
     } else if (iid == InputProvider_iid) {
         return disabledInputs.contains(name);
@@ -126,18 +127,28 @@ int PluginManager::instantiate() {
                 qCDebug(plugins) << "Attempting plugin" << qPrintable(plugin);
                 auto loader = QSharedPointer<QPluginLoader>::create(pluginPath + plugin);
                 const QJsonObject pluginMetaData = loader->metaData();
+
+                PluginInfo info;
+                info.name = plugin;
+                info.metaData = pluginMetaData;
+
 #if defined(HIFI_PLUGINMANAGER_DEBUG)
                 QJsonDocument metaDataDoc(pluginMetaData);
                 qCInfo(plugins) << "Metadata for " << qPrintable(plugin) << ": " << QString(metaDataDoc.toJson());
 #endif
                 if (isDisabled(pluginMetaData)) {
                     qCWarning(plugins) << "Plugin" << qPrintable(plugin) << "is disabled";
+                    info.disabled = true;
+                    pluginInfo.push_back(info);
+
                     // Skip this one, it's disabled
                     continue;
                 }
 
                 if (!_pluginFilter(pluginMetaData)) {
                     qCDebug(plugins) << "Plugin" << qPrintable(plugin) << "doesn't pass provided filter";
+                    info.filteredOut = true;
+                    pluginInfo.push_back(info);
                     continue;
                 }
 
@@ -145,22 +156,33 @@ int PluginManager::instantiate() {
                     qCWarning(plugins) << "Plugin" << qPrintable(plugin) << "interface version doesn't match, not loading:"
                                        << getPluginInterfaceVersionFromMetaData(pluginMetaData)
                                        << "doesn't match" << HIFI_PLUGIN_INTERFACE_VERSION;
+
+                    info.wrongVersion = true;
+                    pluginInfo.push_back(info);
                     continue;
                 }
 
                 if (loader->load()) {
                     qCDebug(plugins) << "Plugin" << qPrintable(plugin) << "loaded successfully";
+                    info.loaded = true;
                     loadedPlugins.push_back(loader);
                 } else {
                     qCDebug(plugins) << "Plugin" << qPrintable(plugin) << "failed to load:";
                     qCDebug(plugins) << " " << qPrintable(loader->errorString());
                 }
+
+                pluginInfo.push_back(info);
             }
         } else {
             qWarning() << "pluginPath does not exit..." << pluginDir;
         }
     });
     return loadedPlugins;
+}
+
+std::vector<PluginManager::PluginInfo> PluginManager::getPluginInfo() const {
+    getLoadedPlugins(); // This builds the pluginInfo list
+    return pluginInfo;
 }
 
 const CodecPluginList& PluginManager::getCodecPlugins() {
@@ -271,14 +293,6 @@ DisplayPluginList PluginManager::getAllDisplayPlugins() {
     });
     return _displayPlugins;
 }
-
-void PluginManager::disableDisplayPlugin(const QString& name) {
-    auto it = std::remove_if(_displayPlugins.begin(), _displayPlugins.end(), [&](const DisplayPluginPointer& plugin){
-        return plugin->getName() == name;
-    });
-    _displayPlugins.erase(it, _displayPlugins.end());
-}
-
 
 const InputPluginList& PluginManager::getInputPlugins() {
     static std::once_flag once;

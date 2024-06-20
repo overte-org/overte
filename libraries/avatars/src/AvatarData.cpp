@@ -2106,6 +2106,14 @@ const QUrl& AvatarData::getSkeletonModelURL() const {
     }
 }
 
+QString AvatarData::getSkeletonModelURLFromScript() const {
+    if (isMyAvatar() && !isMyAvatarURLProtected()) {
+        return _skeletonModelURL.toString();
+    }
+
+    return QString();
+};
+
 QByteArray AvatarData::packSkeletonData() const {
     // Send an avatar trait packet with the skeleton data before the mesh is loaded
     int avatarDataSize = 0;

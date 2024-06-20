@@ -99,8 +99,6 @@ public:
     void init();
     void update(float deltatime);
     void render(RenderArgs* renderArgs);
-    void disable();
-    void enable();
 
     Overlay::Pointer take2DOverlay(const QUuid& id);
     Overlay::Pointer get2DOverlay(const QUuid& id) const;
@@ -683,7 +681,6 @@ private:
 
     unsigned int _stackOrder { 1 };
 
-    bool _enabled { true };
     std::atomic<bool> _shuttingDown { false };
 
     PointerEvent calculateOverlayPointerEvent(const QUuid& id, const PickRay& ray, const RayToOverlayIntersectionResult& rayPickResult,

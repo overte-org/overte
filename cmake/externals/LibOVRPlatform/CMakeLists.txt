@@ -16,6 +16,8 @@ if (WIN32)
     INSTALL_COMMAND ""
     LOG_DOWNLOAD 1
     DOWNLOAD_EXTRACT_TIMESTAMP 1
+    BUILD_BYPRODUCTS
+    "project/src/LibOVRPlatform/Windows/LibOVRPlatform64_1.lib"
   )
 
   ExternalProject_Get_Property(${EXTERNAL_NAME} SOURCE_DIR)

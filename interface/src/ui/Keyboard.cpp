@@ -118,7 +118,7 @@ std::pair<glm::vec3, glm::quat> calculateKeyboardPositionAndOrientation() {
         EntityPropertyFlags desiredProperties;
         desiredProperties += PROP_POSITION;
         desiredProperties += PROP_ROTATION;
-        auto properties = DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(tabletID, desiredProperties);
+        auto properties = DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(tabletID, desiredProperties, false);
 
         auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
         bool landscapeMode = tablet->getLandscape();
@@ -146,7 +146,7 @@ void Key::saveDimensionsAndLocalPosition() {
     EntityPropertyFlags desiredProperties;
     desiredProperties += PROP_LOCAL_POSITION;
     desiredProperties += PROP_DIMENSIONS;
-    auto properties = DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(_keyID, desiredProperties);
+    auto properties = DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(_keyID, desiredProperties, false);
 
     _originalLocalPosition = properties.getLocalPosition();
     _originalDimensions = properties.getDimensions();
@@ -469,7 +469,7 @@ void Keyboard::switchToLayer(int layerIndex) {
         EntityPropertyFlags desiredProperties;
         desiredProperties += PROP_POSITION;
         desiredProperties += PROP_ROTATION;
-        auto oldProperties = entityScriptingInterface->getEntityPropertiesInternal(_anchor.entityID, desiredProperties);
+        auto oldProperties = entityScriptingInterface->getEntityPropertiesInternal(_anchor.entityID, desiredProperties, false);
 
         glm::vec3 currentPosition = oldProperties.getPosition();
         glm::quat currentOrientation = oldProperties.getRotation();
@@ -530,7 +530,7 @@ void Keyboard::handleTriggerBegin(const QUuid& id, const PointerEvent& event) {
 
         EntityPropertyFlags desiredProperties;
         desiredProperties += PROP_POSITION;
-        glm::vec3 keyWorldPosition = DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(id, desiredProperties).getPosition();
+        glm::vec3 keyWorldPosition = DependencyManager::get<EntityScriptingInterface>()->getEntityPropertiesInternal(id, desiredProperties, false).getPosition();
 
         AudioInjectorOptions audioOptions;
         audioOptions.localOnly = true;
@@ -662,7 +662,7 @@ void Keyboard::handleTriggerContinue(const QUuid& id, const PointerEvent& event)
             auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
             EntityPropertyFlags desiredProperties;
             desiredProperties += PROP_ROTATION;
-            glm::quat orientation = entityScriptingInterface->getEntityPropertiesInternal(id, desiredProperties).getRotation();
+            glm::quat orientation = entityScriptingInterface->getEntityPropertiesInternal(id, desiredProperties, false).getRotation();
             glm::vec3 yAxis = orientation * Z_AXIS;
             glm::vec3 yOffset = yAxis * Z_OFFSET;
             glm::vec3 localPosition = key.getCurrentLocalPosition() - yOffset;

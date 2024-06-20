@@ -26,13 +26,10 @@ struct Glyph {
     vec2 size;
     vec2 offset;
     float d;  // xadvance - adjusts character positioning
-    size_t indexOffset;
 
     // We adjust bounds because offset is the bottom left corner of the font but the top left corner of a QRect
     QRectF bounds() const;
     QRectF textureBounds() const;
-
-    void read(QIODevice& in);
 };
 
 #endif

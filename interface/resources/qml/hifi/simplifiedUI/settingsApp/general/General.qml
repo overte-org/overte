@@ -3,6 +3,7 @@
 //
 //  Created by Zach Fox on 2019-05-06
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -175,7 +176,7 @@ Flickable {
                 spacing: simplifiedUI.margins.settings.spacingBetweenRadiobuttons
 
                 SimplifiedControls.RadioButton {
-                    id: performanceLow
+                    id: performanceLowPower
                     text: "Low Power Quality" + (PlatformInfo.getTierProfiled() === PerformanceEnums.LOW_POWER ? " (Recommended)" : "")
                     checked: Performance.getPerformancePreset() === PerformanceEnums.LOW_POWER
                     onClicked: {

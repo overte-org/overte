@@ -13,6 +13,13 @@ if (WIN32)
       INSTALL_COMMAND ""
       LOG_DOWNLOAD 1
       DOWNLOAD_EXTRACT_TIMESTAMP 1
+      BUILD_BYPRODUCTS
+        "project/src/crashpad/out/Release_x64/lib_MD/crashpad_client.lib"
+        "project/src/crashpad/out/Release_x64/lib_MD/crashpad_util.lib"
+        "project/src/crashpad/out/Release_x64/lib_MD/base.lib"
+        "project/src/crashpad/out/Debug_x64/lib_MD/crashpad_client.lib"
+        "project/src/crashpad/out/Debug_x64/lib_MD/crashpad_util.lib"
+        "project/src/crashpad/out/Debug_x64/lib_MD/base.lib"
     )
 
     ExternalProject_Get_Property(${EXTERNAL_NAME} SOURCE_DIR)

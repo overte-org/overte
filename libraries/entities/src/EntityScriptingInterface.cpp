@@ -97,6 +97,7 @@ EntityScriptingInterface::EntityScriptingInterface(bool bidOnSimulationOwnership
     connect(nodeList.data(), &NodeList::canWriteAssetsChanged, this, &EntityScriptingInterface::canWriteAssetsChanged);
     connect(nodeList.data(), &NodeList::canGetAndSetPrivateUserDataChanged, this, &EntityScriptingInterface::canGetAndSetPrivateUserDataChanged);
     connect(nodeList.data(), &NodeList::canRezAvatarEntitiesChanged, this, &EntityScriptingInterface::canRezAvatarEntitiesChanged);
+    connect(nodeList.data(), &NodeList::canViewAssetURLsChanged, this, &EntityScriptingInterface::canViewAssetURLsChanged);
 
     auto& packetReceiver = nodeList->getPacketReceiver();
     packetReceiver.registerListener(PacketType::EntityScriptCallMethod,
@@ -289,6 +290,11 @@ bool EntityScriptingInterface::canGetAndSetPrivateUserData() {
 bool EntityScriptingInterface::canRezAvatarEntities() {
     auto nodeList = DependencyManager::get<NodeList>();
     return nodeList->getThisNodeCanRezAvatarEntities();
+}
+
+bool EntityScriptingInterface::canViewAssetURLs() {
+    auto nodeList = DependencyManager::get<NodeList>();
+    return nodeList->getThisNodeCanViewAssetURLs();
 }
 
 void EntityScriptingInterface::setEntityTree(EntityTreePointer elementTree) {
@@ -785,7 +791,7 @@ QUuid EntityScriptingInterface::cloneEntity(const QUuid& entityIDToClone) {
 
 EntityItemProperties EntityScriptingInterface::getEntityProperties(const QUuid& entityID) {
     const EntityPropertyFlags noSpecificProperties;
-    return getEntityPropertiesInternal(entityID, noSpecificProperties);
+    return getEntityPropertiesInternal(entityID, noSpecificProperties, false);
 }
 
 ScriptValue EntityScriptingInterface::getEntityProperties(const QUuid& entityID, const ScriptValue& extendedDesiredProperties) {
@@ -810,12 +816,14 @@ ScriptValue EntityScriptingInterface::getEntityProperties(const QUuid& entityID,
         }
     }
 
-    EntityItemProperties properties = getEntityPropertiesInternal(entityID, desiredProperties);
+    EntityItemProperties properties = getEntityPropertiesInternal(entityID, desiredProperties, !desiredPseudoPropertyFlags.none());
 
     return properties.copyToScriptValue(extendedDesiredProperties.engine().get(), false, false, false, desiredPseudoPropertyFlags);
 }
 
-EntityItemProperties EntityScriptingInterface::getEntityPropertiesInternal(const QUuid& entityID, EntityPropertyFlags desiredProperties) {
+EntityItemProperties EntityScriptingInterface::getEntityPropertiesInternal(const QUuid& entityID,
+                                                                           EntityPropertyFlags desiredProperties,
+                                                                           bool returnNothingOnEmptyPropertyFlags) {
 
     PROFILE_RANGE(script_entities, __FUNCTION__);
 
@@ -838,7 +846,7 @@ EntityItemProperties EntityScriptingInterface::getEntityPropertiesInternal(const
                     desiredProperties.setHasProperty(PROP_PARENT_JOINT_INDEX);
                 }
 
-                if (desiredProperties.isEmpty()) {
+                if (desiredProperties.isEmpty() && !returnNothingOnEmptyPropertyFlags) {
                     // these are left out of EntityItem::getEntityProperties so that localPosition and localRotation
                     // don't end up in json saves, etc.  We still want them here, though.
                     EncodeBitstreamParams params; // unknown
@@ -850,7 +858,7 @@ EntityItemProperties EntityScriptingInterface::getEntityPropertiesInternal(const
                     desiredProperties.setHasProperty(PROP_LOCAL_DIMENSIONS);
                 }
 
-                results = entity->getProperties(desiredProperties);
+                results = entity->getProperties(desiredProperties, true);
             }
         });
     }

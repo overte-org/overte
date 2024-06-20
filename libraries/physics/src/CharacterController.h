@@ -54,7 +54,7 @@ class CharacterController : public btCharacterControllerInterface {
 
 public:
     enum class FollowType : uint8_t {
-        Rotation,
+        Rotation = 0,
         Horizontal,
         Vertical,
         Count

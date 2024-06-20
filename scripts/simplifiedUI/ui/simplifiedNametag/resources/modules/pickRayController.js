@@ -12,6 +12,9 @@
 
 
 var _this;
+
+var controllerStandard = Controller.Standard;
+
 function PickRayController(){
     _this = this;
 
@@ -36,9 +39,9 @@ function PickRayController(){
 
 // Returns the right UUID based on hand triggered
 function getUUIDFromLaser(hand) {
-    hand = hand === Controller.Standard.LeftHand
-        ? Controller.Standard.LeftHand
-        : Controller.Standard.RightHand;
+    hand = hand === controllerStandard.LeftHand
+        ? controllerStandard.LeftHand
+        : controllerStandard.RightHand;
 
     var pose = getControllerWorldLocation(hand);
     var start = pose.position;
@@ -61,7 +64,7 @@ function getGrabPointSphereOffset(handController) {
     // x = upward, y = forward, z = lateral
     var GRAB_POINT_SPHERE_OFFSET = { x: 0.04, y: 0.13, z: 0.039 };
     var offset = GRAB_POINT_SPHERE_OFFSET;
-    if (handController === Controller.Standard.LeftHand) {
+    if (handController === controllerStandard.LeftHand) {
         offset = {
             x: -GRAB_POINT_SPHERE_OFFSET.x,
             y: GRAB_POINT_SPHERE_OFFSET.y,
@@ -84,7 +87,7 @@ function getControllerWorldLocation(handController, doOffset) {
         valid = pose.valid;
         var controllerJointIndex;
         if (pose.valid) {
-            if (handController === Controller.Standard.RightHand) {
+            if (handController === controllerStandard.RightHand) {
                 controllerJointIndex = MyAvatar.getJointIndex("_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND");
             } else {
                 controllerJointIndex = MyAvatar.getJointIndex("_CAMERA_RELATIVE_CONTROLLER_LEFTHAND");
@@ -192,21 +195,21 @@ function doublePressHandler(event) {
 function create(){
     _this.mapping = Controller.newMapping(_this.mappingName);
 
-    _this.mapping.from(Controller.Standard.LTClick).to(function (value) {
+    _this.mapping.from(controllerStandard.LTClick).to(function (value) {
         if (value === 0) {
             return;
         }
 
-        getUUIDFromLaser(Controller.Standard.LeftHand);
+        getUUIDFromLaser(controllerStandard.LeftHand);
     });
 
 
-    _this.mapping.from(Controller.Standard.RTClick).to(function (value) {
+    _this.mapping.from(controllerStandard.RTClick).to(function (value) {
         if (value === 0) {
             return;
         }
 
-        getUUIDFromLaser(Controller.Standard.RightHand);
+        getUUIDFromLaser(controllerStandard.RightHand);
     });
 
     return _this;

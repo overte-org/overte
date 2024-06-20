@@ -19,6 +19,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 Script.include("/~/system/libraries/controllers.js");
 
 (function () {
+    var controllerStandard = Controller.Standard;
+
     var MARGIN = 25;
 
     function TargetObject(entityID, entityProps) {
@@ -120,7 +122,7 @@ Script.include("/~/system/libraries/controllers.js");
         };
 
         this.handToController = function () {
-            return (this.hand === RIGHT_HAND) ? Controller.Standard.RightHand : Controller.Standard.LeftHand;
+            return (this.hand === RIGHT_HAND) ? controllerStandard.RightHand : controllerStandard.LeftHand;
         };
 
         this.distanceGrabTimescale = function (mass, distance) {
@@ -222,7 +224,7 @@ Script.include("/~/system/libraries/controllers.js");
             var worldToSensorMat = Mat4.inverse(MyAvatar.getSensorToWorldMatrix());
             var roomControllerPosition = Mat4.transformPoint(worldToSensorMat, worldControllerPosition);
 
-            var targetProps = Entities.getEntityProperties(this.targetEntityID, DISPATCHER_PROPERTIES);
+            var targetProps = Entities.getEntityProperties(this.targetEntityID, "position");
             var now = Date.now();
             var deltaObjectTime = (now - this.currentObjectTime) / MSECS_PER_SEC; // convert to seconds
             this.currentObjectTime = now;
@@ -276,7 +278,7 @@ Script.include("/~/system/libraries/controllers.js");
             // This block handles the user's ability to rotate the object they're FarGrabbing
             if (this.shouldManipulateTarget(controllerData)) {
                 // Get the pose of the controller that is not grabbing.
-                var pose = Controller.getPoseValue((this.getOffhand() ? Controller.Standard.RightHand : Controller.Standard.LeftHand));
+                var pose = Controller.getPoseValue((this.getOffhand() ? controllerStandard.RightHand : controllerStandard.LeftHand));
                 if (pose.valid) {
                     // If we weren't manipulating the object yet, initialize the entity's original position.
                     if (!this.manipulating) {
@@ -356,7 +358,7 @@ Script.include("/~/system/libraries/controllers.js");
 
         this.notPointingAtEntity = function (controllerData) {
             var intersection = controllerData.rayPicks[this.hand];
-            var entityProperty = Entities.getEntityProperties(intersection.objectID, DISPATCHER_PROPERTIES);
+            var entityProperty = Entities.getEntityProperties(intersection.objectID, "type");
             var entityType = entityProperty.type;
             var hudRayPick = controllerData.hudRayPicks[this.hand];
             var point2d = this.calculateNewReticlePosition(hudRayPick.intersection);
@@ -368,7 +370,7 @@ Script.include("/~/system/libraries/controllers.js");
         };
 
         this.targetIsNull = function () {
-            var properties = Entities.getEntityProperties(this.targetEntityID, DISPATCHER_PROPERTIES);
+            var properties = Entities.getEntityProperties(this.targetEntityID, "type");
             if (Object.keys(properties).length === 0 && this.distanceHolding) {
                 return true;
             }

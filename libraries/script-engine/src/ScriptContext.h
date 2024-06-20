@@ -57,6 +57,13 @@ public:
     virtual int argumentCount() const = 0;
     virtual ScriptValue argument(int index) const = 0;
     virtual QStringList backtrace() const = 0;
+
+    // Name of the file in which message was generated. Empty string when no file name is available.
+    virtual int currentLineNumber() const = 0;
+
+    // Number of the line on which message was generated. -1 if there line number is not available.
+    virtual QString currentFileName() const = 0;
+
     virtual ScriptValue callee() const = 0;
     virtual ScriptEnginePointer engine() const = 0;
     virtual ScriptFunctionContextPointer functionContext() const = 0;

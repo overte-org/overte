@@ -51,7 +51,8 @@ var SUBMESH = 2;
 function calcSpawnInfo(hand, landscape) {
     var finalPosition;
 
-    var LEFT_HAND = Controller.Standard.LeftHand;
+    var controllerStandard = Controller.Standard;
+    var LEFT_HAND = controllerStandard.LeftHand;
     var sensorToWorldScale = MyAvatar.sensorToWorldScale;
     var headPos = (HMD.active && (Camera.mode === "first person" || Camera.mode === "first person look at")) ? HMD.position : Camera.position;
     var headRot = Quat.cancelOutRollAndPitch((HMD.active && (Camera.mode === "first person" || Camera.mode === "first person look at")) ?

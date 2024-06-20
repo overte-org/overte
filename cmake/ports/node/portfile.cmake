@@ -1,4 +1,4 @@
-# Copyright 2023 Overte e.V.
+# Copyright 2023-2024 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 set(NODE_VERSION 18.14.2)
@@ -28,9 +28,9 @@ else ()
     vcpkg_from_github(
         OUT_SOURCE_PATH SOURCE_PATH
         REPO nodejs/node
-        REF v18.16.1
-        SHA512 cd2d7871a1a2aca8d800e0a501bd2836cbce076de750dcfc0b2bbe602c8a23705154bfb12faa3ff78e25ec753f419220742228569c281fa458987fb24f6d4d09
-        HEAD_REF v18.16.1
+        REF v18.20.2
+        SHA512 10d3637c26274677d137f76bbb648d0e7851c994634a16c89858c3a13094a0692ea2cb9a787c6463c3001abd71dab0d83123127bc305171d097c48d21d691678
+        HEAD_REF v18.20.2
     )
     # node cannot configure out of source, which VCPKG expects. So we copy the source to the configure directory.
     file(COPY ${SOURCE_PATH}/ DESTINATION "${CURRENT_BUILDTREES_DIR}")

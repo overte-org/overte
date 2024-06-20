@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 1/26/16.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -29,6 +30,7 @@
 #include "ShapePipeline.h"
 
 #include "BlendshapeConstants.h"
+#include "HighlightStyle.h"
 
 namespace render {
 
@@ -104,17 +106,19 @@ public:
         META_CULL_GROUP,  // As a meta item, the culling of my sub items is based solely on my bounding box and my visibility in the view
         SUB_META_CULLED,  // As a sub item of a meta render item set as cull group, need to be set to my culling to the meta render it
 
-        FIRST_TAG_BIT, // 8 Tags available to organize the items and filter them against
+        FIRST_TAG_BIT,    // 8 Tags available to organize the items and filter them against
         LAST_TAG_BIT = FIRST_TAG_BIT + NUM_TAGS,
 
-        FIRST_LAYER_BIT, // 8 Exclusive Layers (encoded in 3 bits) available to organize the items in layers, an item can only belong to ONE layer
+        FIRST_LAYER_BIT,  // 8 Exclusive Layers (encoded in 3 bits) available to organize the items in layers, an item can only belong to ONE layer
         LAST_LAYER_BIT = FIRST_LAYER_BIT + NUM_LAYER_BITS,
 
-        MIRROR,
+        MIRROR,           // Item is a mirror
+        SIMULATE,         // Item requires simulation
+        OUTLINE,          // Item has an outline
 
         __SMALLER,        // Reserved bit for spatialized item to indicate that it is smaller than expected in the cell in which it belongs (probably because it overlaps over several smaller cells)
 
-        NUM_FLAGS,      // Not a valid flag
+        NUM_FLAGS,        // Not a valid flag
     };
     typedef std::bitset<NUM_FLAGS> Flags;
 
@@ -165,6 +169,7 @@ public:
         Builder& withSubMetaCulled() { _flags.set(SUB_META_CULLED); return (*this); }
         Builder& withoutSubMetaCulled() { _flags.reset(SUB_META_CULLED); return (*this); }
         Builder& withMirror() { _flags.set(MIRROR); return (*this); }
+        Builder& withSimulate() { _flags.set(SIMULATE); return (*this); }
 
         Builder& withTag(Tag tag) { _flags.set(FIRST_TAG_BIT + tag); return (*this); }
         // Set ALL the tags in one call using the Tag bits
@@ -172,6 +177,9 @@ public:
 
         Builder& withLayer(uint8_t layer) { _flags = evalLayerBitsWithKeyBits(layer, _flags.to_ulong()); return (*this); }
         Builder& withoutLayer() { return withLayer(LAYER_DEFAULT); }
+
+        Builder& withOutline() { _flags.set(OUTLINE); return (*this); }
+        Builder& withoutOutline() { _flags.reset(OUTLINE); return (*this); }
 
         // Convenient standard keys that we will keep on using all over the place
         static Builder opaqueShape() { return Builder().withTypeShape(); }
@@ -211,6 +219,9 @@ public:
     bool isNotMirror() const { return !_flags[MIRROR]; }
     bool isMirror() const { return _flags[MIRROR]; }
 
+    bool isNotSimulate() const { return !_flags[SIMULATE]; }
+    bool isSimulate() const { return _flags[SIMULATE]; }
+
     bool isTag(Tag tag) const { return _flags[FIRST_TAG_BIT + tag]; }
     uint8_t getTagBits() const { return ((_flags.to_ulong() & KEY_TAG_BITS_MASK) >> FIRST_TAG_BIT); }
 
@@ -218,6 +229,8 @@ public:
     bool isLayer(uint8_t layer) const { return getLayer() == layer; }
     bool isLayered() const { return getLayer() != LAYER_DEFAULT; }
     bool isSpatial() const { return !isLayered(); }
+
+    bool isOutline() const { return _flags[OUTLINE]; }
 
     // Probably not public, flags used by the scene
     bool isSmall() const { return _flags[__SMALLER]; }
@@ -285,6 +298,9 @@ public:
         Builder& withoutMirror()        { _value.reset(ItemKey::MIRROR); _mask.set(ItemKey::MIRROR); return (*this); }
         Builder& withMirror()           { _value.set(ItemKey::MIRROR); _mask.set(ItemKey::MIRROR); return (*this); }
 
+        Builder& withoutSimulate()      { _value.reset(ItemKey::SIMULATE); _mask.set(ItemKey::SIMULATE); return (*this); }
+        Builder& withSimulate()         { _value.set(ItemKey::SIMULATE); _mask.set(ItemKey::SIMULATE); return (*this); }
+
         Builder& withoutTag(ItemKey::Tag tagIndex)    { _value.reset(ItemKey::FIRST_TAG_BIT + tagIndex);  _mask.set(ItemKey::FIRST_TAG_BIT + tagIndex); return (*this); }
         Builder& withTag(ItemKey::Tag tagIndex)       { _value.set(ItemKey::FIRST_TAG_BIT + tagIndex);  _mask.set(ItemKey::FIRST_TAG_BIT + tagIndex); return (*this); }
         // Set ALL the tags in one call using the Tag bits and the Tag bits touched
@@ -292,6 +308,9 @@ public:
 
         Builder& withoutLayered() { _value = ItemKey::evalLayerBitsWithKeyBits(ItemKey::LAYER_DEFAULT, _value.to_ulong()); _mask |= ItemKey::KEY_LAYER_BITS_MASK; return (*this); }
         Builder& withLayer(uint8_t layer) { _value = ItemKey::evalLayerBitsWithKeyBits(layer, _value.to_ulong()); _mask |= ItemKey::KEY_LAYER_BITS_MASK; return (*this); }
+
+        Builder& withoutOutline() { _value.reset(ItemKey::OUTLINE); _mask.set(ItemKey::OUTLINE); return (*this); }
+        Builder& withOutline() { _value.set(ItemKey::OUTLINE);  _mask.set(ItemKey::OUTLINE); return (*this); }
 
         Builder& withNothing()          { _value.reset(); _mask.reset(); return (*this); }
 
@@ -337,9 +356,9 @@ class ItemBound {
         ItemBound(ItemID id) : id(id) { }
         ItemBound(ItemID id, const AABox& bound) : id(id), bound(bound) { }
 
-        ItemID id;
+        ItemID id { 0 };
         AABox bound;
-        uint32_t padding;
+        uint32_t padding { 0 };
 };
 
 // many Item Bounds in a vector
@@ -443,6 +462,7 @@ public:
         virtual const ItemKey getKey() const = 0;
         virtual const Bound getBound(RenderArgs* args) const = 0;
         virtual void render(RenderArgs* args) = 0;
+        virtual void renderSimulate(RenderArgs* args) = 0;
 
         virtual const ShapeKey getShapeKey() const = 0;
 
@@ -451,6 +471,8 @@ public:
         virtual bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const = 0;
 
         virtual ItemID computeMirrorView(ViewFrustum& viewFrustum) const = 0;
+
+        virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const = 0;
 
         ~PayloadInterface() {}
 
@@ -496,6 +518,9 @@ public:
     // Render call for the item
     void render(RenderArgs* args) const { _payload->render(args); }
 
+    // Render-side simulate call for the item
+    void renderSimulate(RenderArgs* args) { _payload->renderSimulate(args); }
+
     // Shape Type Interface
     const ShapeKey getShapeKey() const;
 
@@ -506,6 +531,8 @@ public:
     bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const { return _payload->passesZoneOcclusionTest(containingZones); }
 
     ItemID computeMirrorView(ViewFrustum& viewFrustum) const { return _payload->computeMirrorView(viewFrustum); }
+
+    HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const { return _payload->getOutlineStyle(viewFrustum, height); }
 
     // Access the status
     const StatusPointer& getStatus() const { return _payload->getStatus(); }
@@ -546,6 +573,7 @@ inline QDebug operator<<(QDebug debug, const Item& item) {
 template <class T> const ItemKey payloadGetKey(const std::shared_ptr<T>& payloadData) { return ItemKey(); }
 template <class T> const Item::Bound payloadGetBound(const std::shared_ptr<T>& payloadData, RenderArgs* args) { return Item::Bound(); }
 template <class T> void payloadRender(const std::shared_ptr<T>& payloadData, RenderArgs* args) { }
+template <class T> void payloadRenderSimulate(const std::shared_ptr<T>& payloadData, RenderArgs* args) { }
 
 // Shape type interface
 // This allows shapes to characterize their pipeline via a ShapeKey, to be picked with a subclass of Shape.
@@ -564,6 +592,12 @@ template <class T> bool payloadPassesZoneOcclusionTest(const std::shared_ptr<T>&
 // Mirror Interface
 template <class T> ItemID payloadComputeMirrorView(const std::shared_ptr<T>& payloadData, ViewFrustum& viewFrustum) { return Item::INVALID_ITEM_ID; }
 
+// Outline Interface
+// Allows payloads to specify an outline style
+template <class T> HighlightStyle payloadGetOutlineStyle(const std::shared_ptr<T>& payloadData, const ViewFrustum& viewFrustum, const size_t height) {
+    return HighlightStyle();
+}
+
 // THe Payload class is the real Payload to be used
 // THis allow anything to be turned into a Payload as long as the required interface functions are available
 // When creating a new kind of payload from a new "stuff" class then you need to create specialized version for "stuff"
@@ -581,6 +615,7 @@ public:
     virtual const Item::Bound getBound(RenderArgs* args) const override { return payloadGetBound<T>(_data, args); }
 
     virtual void render(RenderArgs* args) override { payloadRender<T>(_data, args); }
+    virtual void renderSimulate(RenderArgs* args) override { payloadRenderSimulate<T>(_data, args); }
 
     // Shape Type interface
     virtual const ShapeKey getShapeKey() const override { return shapeGetShapeKey<T>(_data); }
@@ -591,6 +626,8 @@ public:
     virtual bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const override { return payloadPassesZoneOcclusionTest<T>(_data, containingZones); }
 
     virtual ItemID computeMirrorView(ViewFrustum& viewFrustum) const override { return payloadComputeMirrorView<T>(_data, viewFrustum); }
+
+    virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const override { return payloadGetOutlineStyle<T>(_data, viewFrustum, height); }
 
 protected:
     DataPointer _data;
@@ -645,9 +682,11 @@ public:
     virtual ShapeKey getShapeKey() = 0;
     virtual Item::Bound getBound(RenderArgs* args) = 0;
     virtual void render(RenderArgs* args) = 0;
+    virtual void renderSimulate(RenderArgs* args) = 0;
     virtual uint32_t metaFetchMetaSubItems(ItemIDs& subItems) const = 0;
     virtual bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const = 0;
     virtual ItemID computeMirrorView(ViewFrustum& viewFrustum) const = 0;
+    virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const = 0;
 
     // FIXME: this isn't the best place for this since it's only used for ModelEntities, but currently all Entities use PayloadProxyInterface
     virtual void handleBlendedVertices(int blendshapeNumber, const QVector<BlendshapeOffset>& blendshapeOffsets,
@@ -657,10 +696,12 @@ public:
 template <> const ItemKey payloadGetKey(const PayloadProxyInterface::Pointer& payload);
 template <> const Item::Bound payloadGetBound(const PayloadProxyInterface::Pointer& payload, RenderArgs* args);
 template <> void payloadRender(const PayloadProxyInterface::Pointer& payload, RenderArgs* args);
+template <> void payloadRenderSimulate(const PayloadProxyInterface::Pointer& payload, RenderArgs* args);
 template <> uint32_t metaFetchMetaSubItems(const PayloadProxyInterface::Pointer& payload, ItemIDs& subItems);
 template <> const ShapeKey shapeGetShapeKey(const PayloadProxyInterface::Pointer& payload);
 template <> bool payloadPassesZoneOcclusionTest(const PayloadProxyInterface::Pointer& payload, const std::unordered_set<QUuid>& containingZones);
 template <> ItemID payloadComputeMirrorView(const PayloadProxyInterface::Pointer& payload, ViewFrustum& viewFrustum);
+template <> HighlightStyle payloadGetOutlineStyle(const PayloadProxyInterface::Pointer& payload, const ViewFrustum& viewFrustum, const size_t height);
 
 typedef Item::PayloadPointer PayloadPointer;
 typedef std::vector<PayloadPointer> Payloads;

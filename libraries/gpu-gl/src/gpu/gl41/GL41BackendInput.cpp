@@ -33,8 +33,6 @@ void GL41Backend::updateInput() {
 #endif
     _input._lastUpdateStereoState = isStereoNow;
 
-    bool hasColorAttribute = _input._hasColorAttribute;
-
     if (_input._invalidFormat || _input._invalidBuffers.any()) {
 
         auto format = acquire(_input._format);
@@ -110,8 +108,6 @@ void GL41Backend::updateInput() {
                             uintptr_t pointer = (uintptr_t)(attrib._offset + offsets[bufferNum]);
                             GLboolean isNormalized = attrib._element.isNormalized();
 
-                            hasColorAttribute |= slot == Stream::COLOR;
-
                             for (size_t locNum = 0; locNum < locationCount; ++locNum) {
                                 if (attrib._element.isInteger()) {
                                     glVertexAttribIPointer(slot + (GLuint)locNum, count, type, stride,
@@ -131,17 +127,8 @@ void GL41Backend::updateInput() {
                     }
                 }
             }
-
-            if (!hasColorAttribute && _input._hadColorAttribute) {
-                // The previous input stage had a color attribute but this one doesn't, so reset the color to pure white.
-                _input._colorAttribute = glm::vec4(1.0f);
-                glVertexAttrib4fv(Stream::COLOR, &_input._colorAttribute.r);
-            }
         }
         // everything format related should be in sync now
         _input._invalidFormat = false;
     }
-
-    _input._hadColorAttribute = hasColorAttribute;
-    _input._hasColorAttribute = false;
 }

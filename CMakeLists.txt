@@ -15,6 +15,9 @@ endif()
 # 3.14 is the minimum version that supports symlinks on Windows
 cmake_minimum_required(VERSION 3.14)
 
+# This should allow using long paths on Windows
+SET(CMAKE_NINJA_FORCE_RESPONSE_FILE 1 CACHE INTERNAL "")
+
 # Passing of variables to vcpkg
 #
 # vcpkg runs cmake scripts in an isolated environment, see this for details:
@@ -254,9 +257,6 @@ else()
 endif()
 
 set(SCREENSHARE 0)
-if (WIN32)
-  set(SCREENSHARE 1)
-endif()
 if (APPLE AND NOT CLIENT_ONLY)
   # Don't include Screenshare in OSX client-only builds.
   set(SCREENSHARE 1)
@@ -488,6 +488,7 @@ if (BUILD_CLIENT)
   endif()
 
   option(USE_SIXENSE "Build Interface with sixense library/plugin" OFF)
+  option(USE_NEURON "Build Interface with Neuron library/plugin" OFF)
 endif()
 
 if (BUILD_CLIENT OR BUILD_SERVER)

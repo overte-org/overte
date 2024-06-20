@@ -33,6 +33,12 @@ class EntityScriptServerLogClient : public QObject, public Dependency {
 public:
     EntityScriptServerLogClient();
 
+    /**
+     * @brief This is called by ScriptEngines when scripts need access to entity server script messages and when access
+     * is not needed anymore.
+     */
+    void requestMessagesForScriptEngines(bool areMessagesRequested);
+
 signals:
 
     /*@jsdoc
@@ -66,7 +72,10 @@ private slots:
     void connectionsChanged();
 
 private:
+    std::atomic<bool> _areMessagesRequestedByScripts {false};
     bool _subscribed { false };
+
+    friend class ScriptEngines;
 };
 
 #endif // hifi_EntityScriptServerLogClient_h

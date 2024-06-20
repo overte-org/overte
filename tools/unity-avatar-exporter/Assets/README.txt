@@ -1,5 +1,5 @@
 Avatar Exporter
-Version 0.6.0
+Version 2023.08
 Copyright 2018 High Fidelity, Inc.
 Copyright 2022 Overte e.V.
 

@@ -1,5 +1,5 @@
 {
-  "version": 2.6,
+  "version": 2.7,
   "settings": [
     {
       "name": "metaverse",
@@ -402,7 +402,7 @@
             },
             {
               "label": "Permissions <a data-toggle='tooltip' data-html='true' title='<p><strong>Domain-Wide User Permissions</strong></p><ul><li><strong>Connect</strong><br />Sets whether a user can connect to the domain.</li><li><strong>Avatar Entities</strong><br />Sets whether a user can use avatar entities on the domain.</li><li><strong>Lock / Unlock</strong><br />Sets whether a user change the &ldquo;locked&rdquo; property of an entity (either from on to off or off to on).</li><li><strong>Rez</strong><br />Sets whether a user can create new entities.</li><li><strong>Rez Temporary</strong><br />Sets whether a user can create new entities with a finite lifetime.</li><li><strong>Write Assets</strong><br />Sets whether a user can make changes to the domain&rsquo;s asset-server assets.</li><li><strong>Ignore Max Capacity</strong><br />Sets whether a user can connect even if the domain has reached or exceeded its maximum allowed agents.</li><li><strong>Replace Content</strong><br>Sets whether a user can replace entire content sets by wiping existing domain content.</li><li><strong>Get and Set Private User Data</strong><br>Sets whether a user can get and set the privateUserData entity property.</li></ul><p>Note that permissions assigned to a specific user will supersede any parameter-level permissions that might otherwise apply to that user. Additionally, if more than one parameter is applicable to a given user, the permissions given to that user will be the sum of all applicable parameters. For example, let&rsquo;s say only localhost users can connect and only logged in users can lock and unlock entities. If a user is both logged in and on localhost then they will be able to both connect and lock/unlock entities.</p>'>?</a>",
-              "span": 12
+              "span": 11
             }
           ],
           "columns": [
@@ -479,6 +479,13 @@
               "type": "checkbox",
               "editable": true,
               "default": false
+            },
+            {
+              "name": "id_can_view_asset_urls",
+              "label": "View Asset URLs",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
             }
           ],
           "non-deletable-row-key": "permissions_id",
@@ -505,6 +512,7 @@
                 "id_can_rez_tmp": true,
                 "id_can_write_to_asset_server": true,
                 "id_can_get_and_set_private_user_data": true,
+                "id_can_view_asset_urls": true,
                 "permissions_id": "localhost"
             },
             {
@@ -633,6 +641,13 @@
               "type": "checkbox",
               "editable": true,
               "default": false
+            },
+            {
+              "name": "id_can_view_asset_urls",
+              "label": "View Asset URLs",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
             }
           ]
         },
@@ -752,6 +767,13 @@
               "type": "checkbox",
               "editable": true,
               "default": false
+            },
+            {
+              "name": "id_can_view_asset_urls",
+              "label": "View Asset URLs",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
             }
           ]
         },
@@ -841,6 +863,13 @@
             {
               "name": "id_can_get_and_set_private_user_data",
               "label": "Get and Set Private User Data",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
+            },
+            {
+              "name": "id_can_view_asset_urls",
+              "label": "View Asset URLs",
               "type": "checkbox",
               "editable": true,
               "default": false
@@ -936,6 +965,13 @@
               "type": "checkbox",
               "editable": true,
               "default": false
+            },
+            {
+              "name": "id_can_view_asset_urls",
+              "label": "View Asset URLs",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
             }
           ]
         },
@@ -1022,13 +1058,20 @@
               "editable": true,
               "default": false
             },
-              {
-                "name": "id_can_get_and_set_private_user_data",
-                "label": "Get and Set Private User Data",
-                "type": "checkbox",
-                "editable": true,
-                "default": false
-              }
+            {
+              "name": "id_can_get_and_set_private_user_data",
+              "label": "Get and Set Private User Data",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
+            },
+            {
+              "name": "id_can_view_asset_urls",
+              "label": "View Asset URLs",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
+            }
           ]
         },
         {
@@ -1117,6 +1160,13 @@
             {
               "name": "id_can_get_and_set_private_user_data",
               "label": "Get and Set Private User Data",
+              "type": "checkbox",
+              "editable": true,
+              "default": false
+            },
+            {
+              "name": "id_can_view_asset_urls",
+              "label": "View Asset URLs",
               "type": "checkbox",
               "editable": true,
               "default": false

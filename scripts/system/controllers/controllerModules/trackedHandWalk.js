@@ -12,6 +12,8 @@ Script.include("/~/system/libraries/controllers.js");
 
 (function() {
 
+    var controllerStandard = Controller.Standard;
+
     function TrackedHandWalk() {
         this.gestureMappingName = 'hand-track-walk-gesture-' + Math.random();
         this.inputGestureMapping = Controller.newMapping(this.gestureMappingName);
@@ -114,16 +116,16 @@ Script.include("/~/system/libraries/controllers.js");
 
         this.setup = function () {
             var _this = this;
-            this.inputGestureMapping.from(Controller.Standard.LeftHandIndex4).peek().to(function (pose) {
+            this.inputGestureMapping.from(controllerStandard.LeftHandIndex4).peek().to(function (pose) {
                 _this.leftIndexChanged(pose);
             });
-            this.inputGestureMapping.from(Controller.Standard.LeftHandThumb4).peek().to(function (pose) {
+            this.inputGestureMapping.from(controllerStandard.LeftHandThumb4).peek().to(function (pose) {
                 _this.leftThumbChanged(pose);
             });
-            this.inputGestureMapping.from(Controller.Standard.RightHandIndex4).peek().to(function (pose) {
+            this.inputGestureMapping.from(controllerStandard.RightHandIndex4).peek().to(function (pose) {
                 _this.rightIndexChanged(pose);
             });
-            this.inputGestureMapping.from(Controller.Standard.RightHandThumb4).peek().to(function (pose) {
+            this.inputGestureMapping.from(controllerStandard.RightHandThumb4).peek().to(function (pose) {
                 _this.rightThumbChanged(pose);
             });
 
@@ -137,7 +139,7 @@ Script.include("/~/system/libraries/controllers.js");
                     // return currentPoint.z - _this.controlPoint.z;
                     return 0.5;
                 } else {
-                    // return Controller.getActionValue(Controller.Standard.TranslateZ);
+                    // return Controller.getActionValue(controllerStandard.TranslateZ);
                     return 0.0;
                 }
             }).to(Controller.Actions.TranslateZ);
@@ -147,7 +149,7 @@ Script.include("/~/system/libraries/controllers.js");
             //         var currentPoint = _this.getControlPoint();
             //         return currentPoint.x - _this.controlPoint.x;
             //     } else {
-            //         return Controller.getActionValue(Controller.Standard.Yaw);
+            //         return Controller.getActionValue(controllerStandard.Yaw);
             //     }
             // }).to(Controller.Actions.Yaw);
 

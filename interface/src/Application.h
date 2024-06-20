@@ -123,6 +123,31 @@ class Application : public QApplication,
     friend class OctreePacketProcessor;
 
 public:
+
+    /**
+     * @brief Initialize the plugin manager
+     *
+     * This both does the initial startup and parses arguments. This
+     * is necessary because the plugin manager's options must be set
+     * before any usage of it is made, or they won't apply.
+     *
+     * @param parser
+     */
+    void initializePluginManager(const QCommandLineParser& parser);
+
+    /**
+     * @brief Initialize everything
+     *
+     * This is a QApplication, and for Qt reasons it's desirable to create this object
+     * as early as possible. Without that some Qt functions don't work, like QCoreApplication::applicationDirPath()
+     *
+     * So we keep the constructor as minimal as possible, and do the rest of the work in
+     * this function.
+     */
+    void initialize(const QCommandLineParser &parser);
+
+    void setPreviousSessionCrashed(bool value) { _previousSessionCrashed = value; }
+
     // virtual functions required for PluginContainer
     virtual ui::Menu* getPrimaryMenu() override;
     virtual void requestReset() override { resetSensors(false); }
@@ -135,15 +160,12 @@ public:
 
     virtual DisplayPluginPointer getActiveDisplayPlugin() const override;
 
-    // FIXME? Empty methods, do we still need them?
-    static void initPlugins(const QCommandLineParser& parser);
     static void shutdownPlugins();
 
     Application(
         int& argc, char** argv,
         const QCommandLineParser& parser,
-        QElapsedTimer& startup_time,
-        bool runningMarkerExisted
+        QElapsedTimer& startup_time
     );
     ~Application();
 
@@ -197,16 +219,16 @@ public:
 
     const ConicalViewFrustums& getConicalViews() const override { return _conicalViews; }
 
-    const OctreePacketProcessor& getOctreePacketProcessor() const { return _octreeProcessor; }
+    const OctreePacketProcessor& getOctreePacketProcessor() const { return *_octreeProcessor; }
     QSharedPointer<EntityTreeRenderer> getEntities() const { return DependencyManager::get<EntityTreeRenderer>(); }
     MainWindow* getWindow() const { return _window; }
     EntityTreePointer getEntityClipboard() const { return _entityClipboard; }
-    EntityEditPacketSender* getEntityEditPacketSender() { return &_entityEditSender; }
+    std::shared_ptr<EntityEditPacketSender> getEntityEditPacketSender() { return _entityEditSender; }
 
     ivec2 getMouse() const;
 
-    ApplicationOverlay& getApplicationOverlay() { return _applicationOverlay; }
-    const ApplicationOverlay& getApplicationOverlay() const { return _applicationOverlay; }
+    ApplicationOverlay& getApplicationOverlay() { return *_applicationOverlay; }
+    const ApplicationOverlay& getApplicationOverlay() const { return *_applicationOverlay; }
     CompositorHelper& getApplicationCompositor() const;
 
     Overlays& getOverlays() { return _overlays; }
@@ -214,8 +236,8 @@ public:
     PerformanceManager& getPerformanceManager() { return _performanceManager; }
     RefreshRateManager& getRefreshRateManager() { return _refreshRateManager; }
 
-    size_t getRenderFrameCount() const { return _graphicsEngine.getRenderFrameCount(); }
-    float getRenderLoopRate() const { return _graphicsEngine.getRenderLoopRate(); }
+    size_t getRenderFrameCount() const { return _graphicsEngine->getRenderFrameCount(); }
+    float getRenderLoopRate() const { return _graphicsEngine->getRenderLoopRate(); }
     float getNumCollisionObjects() const;
     float getTargetRenderFrameRate() const; // frames/second
 
@@ -293,9 +315,9 @@ public:
     void setMaxOctreePacketsPerSecond(int maxOctreePPS);
     int getMaxOctreePacketsPerSecond() const;
 
-    render::ScenePointer getMain3DScene() override { return _graphicsEngine.getRenderScene(); }
-    render::EnginePointer getRenderEngine() override { return  _graphicsEngine.getRenderEngine(); }
-    gpu::ContextPointer getGPUContext() const { return _graphicsEngine.getGPUContext(); }
+    render::ScenePointer getMain3DScene() override { return _graphicsEngine->getRenderScene(); }
+    render::EnginePointer getRenderEngine() override { return  _graphicsEngine->getRenderEngine(); }
+    gpu::ContextPointer getGPUContext() const { return _graphicsEngine->getGPUContext(); }
 
     const GameWorkload& getGameWorkload() const { return _gameWorkload; }
 
@@ -709,8 +731,8 @@ private:
     bool _enableProcessOctreeThread;
     bool _interstitialMode { false };
 
-    OctreePacketProcessor _octreeProcessor;
-    EntityEditPacketSender _entityEditSender;
+    std::shared_ptr<OctreePacketProcessor> _octreeProcessor;
+    std::shared_ptr<EntityEditPacketSender> _entityEditSender;
 
     StDev _idleLoopStdev;
     float _idleLoopMeasuredJitter;
@@ -757,13 +779,13 @@ private:
 
     GameWorkload _gameWorkload;
 
-    GraphicsEngine _graphicsEngine;
+    std::shared_ptr<GraphicsEngine> _graphicsEngine;
     void updateRenderArgs(float deltaTime);
 
     bool _disableLoginScreen { true };
 
     Overlays _overlays;
-    ApplicationOverlay _applicationOverlay;
+    std::shared_ptr<ApplicationOverlay> _applicationOverlay;
     OverlayConductor _overlayConductor;
 
     DialogsManagerScriptingInterface* _dialogsManagerScriptingInterface = new DialogsManagerScriptingInterface();
@@ -860,5 +882,7 @@ private:
     bool _crashOnShutdown { false };
 
     DiscordPresence* _discordPresence{ nullptr };
+
+    bool _profilingInitialized { false };
 };
 #endif // hifi_Application_h

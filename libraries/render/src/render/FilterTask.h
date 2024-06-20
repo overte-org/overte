@@ -158,6 +158,18 @@ namespace render {
         bool _disableAABBs{ false };
     };
 
+     // Concatenate two arrays of items
+    class MergeItems {
+    public:
+        using Inputs = VaryingSet2<ItemBounds, ItemBounds>;
+        using Outputs = ItemBounds;
+        using JobModel = Job::ModelIO<MergeItems, Inputs, Outputs>;
+
+        MergeItems() {}
+
+        void run(const RenderContextPointer& renderContext, const Inputs& inputs, Outputs& outputs);
+    };
+
 }
 
 #endif // hifi_render_FilterTask_h;

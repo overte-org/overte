@@ -17,6 +17,7 @@
 #include <NodeList.h>
 #include <NetworkAccessManager.h>
 #include <DependencyManager.h>
+#include <ResourceRequestObserver.h>
 #include <StatTracker.h>
 
 QTEST_MAIN(ResourceTests)
@@ -29,6 +30,8 @@ void ResourceTests::initTestCase() {
     DependencyManager::set<NodeList>(NodeType::Agent, INVALID_PORT);
     DependencyManager::set<ResourceCacheSharedItems>();
     DependencyManager::set<ResourceManager>();
+    DependencyManager::set<ResourceRequestObserver>();
+
     const qint64 MAXIMUM_CACHE_SIZE = 1024 * 1024 * 1024; // 1GB
 
     // set up the file cache

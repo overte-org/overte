@@ -19,6 +19,48 @@
 
 #ifdef CONVERSIONS_OPTIMIZED_FOR_V8
 
+ScriptValue qBytearrayToScriptValue(ScriptEngine* engine, const QByteArray &qByteArray) {
+    auto engineV8 = dynamic_cast<ScriptEngineV8*>(engine);
+    Q_ASSERT(engineV8);
+    auto isolate = engineV8->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    auto context = engineV8->getContext();
+    v8::Context::Scope contextScope(context);
+    v8::Local<v8::ArrayBuffer> arrayBuffer = v8::ArrayBuffer::New(isolate, qByteArray.size());
+    memcpy(arrayBuffer->GetBackingStore()->Data(), qByteArray.data(), qByteArray.size());
+    v8::Local<v8::Value> arrayBufferValue = v8::Local<v8::Value>::Cast(arrayBuffer);
+
+    return {new ScriptValueV8Wrapper(engineV8, V8ScriptValue(engineV8, arrayBufferValue))};
+}
+
+bool qBytearrayFromScriptValue(const ScriptValue& object, QByteArray &qByteArray) {
+    ScriptValueV8Wrapper *proxy = ScriptValueV8Wrapper::unwrap(object);
+    if (!proxy) {
+        return false;
+    }
+
+    auto engineV8 = proxy->getV8Engine();
+
+    auto isolate = engineV8->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    auto context = engineV8->getContext();
+    v8::Context::Scope contextScope(context);
+    V8ScriptValue v8ScriptValue = proxy->toV8Value();
+
+    v8::Local<v8::Value> v8Value = v8ScriptValue.get();
+    if(!v8Value->IsArrayBuffer()) {
+        return false;
+    }
+    v8::Local<v8::ArrayBuffer> arrayBuffer = v8::Local<v8::ArrayBuffer>::Cast(v8Value);
+    qByteArray.resize((int)arrayBuffer->ByteLength());
+    memcpy(qByteArray.data(), arrayBuffer->Data(), arrayBuffer->ByteLength());
+    return true;
+}
+
 ScriptValue vec3ToScriptValue(ScriptEngine* engine, const glm::vec3& vec3) {
     ScriptValue value = engine->newObject();
 
@@ -31,7 +73,7 @@ ScriptValue vec3ToScriptValue(ScriptEngine* engine, const glm::vec3& vec3) {
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     auto context = engineV8->getContext();
-    v8::Context::Scope contextScope(engineV8->getContext());
+    v8::Context::Scope contextScope(context);
     V8ScriptValue v8ScriptValue = proxy->toV8Value();
     v8::Local<v8::Object> v8Object = v8::Local<v8::Object>::Cast(v8ScriptValue.get());
 
@@ -98,6 +140,9 @@ ScriptValue vec3ToScriptValue(ScriptEngine* engine, const glm::vec3& vec3) {
 
 bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3) {
     ScriptValueV8Wrapper *proxy = ScriptValueV8Wrapper::unwrap(object);
+    if (!proxy) {
+        return false;
+    }
 
     auto engineV8 = proxy->getV8Engine();
 
@@ -106,7 +151,7 @@ bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3) {
     v8::Isolate::Scope isolateScope(isolate);
     v8::HandleScope handleScope(isolate);
     auto context = engineV8->getContext();
-    v8::Context::Scope contextScope(engineV8->getContext());
+    v8::Context::Scope contextScope(context);
     V8ScriptValue v8ScriptValue = proxy->toV8Value();
 
     v8::Local<v8::Value> v8Value = v8ScriptValue.get();

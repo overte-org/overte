@@ -77,7 +77,7 @@ macro (setup_testcase_dependencies)
       gltf_samples
       PREFIX "models"
       GIT_REPOSITORY "https://github.com/KhronosGroup/glTF-Sample-models"
-      GIT_TAG "master"
+      GIT_TAG "main"
       DOWNLOAD_NO_EXTRACT true CONFIGURE_COMMAND "" BUILD_COMMAND "" INSTALL_COMMAND ""
     )
 

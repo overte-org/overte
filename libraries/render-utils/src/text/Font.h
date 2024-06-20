@@ -24,22 +24,25 @@ class Font : public QObject {
 public:
     using Pointer = std::shared_ptr<Font>;
 
-    Font();
+    Font(const QString& family);
 
     void read(QIODevice& path);
 
     struct DrawParams {
-        vec4 color { 0 };
+        vec4 bounds { 0.0f };
+        vec4 color { 0.0f };
 
-        vec3 effectColor { 0 };
-        float effectThickness { 0 };
+        vec2 unitRange { 1.0f };
 
         int effect { 0 };
+        float effectThickness { 0.0f };
+
+        vec3 effectColor { 0.0f };
 
 #if defined(__clang__)
         __attribute__((unused))
 #endif
-        vec3 _spare;
+        float _spare;
     };
 
     struct DrawInfo {
@@ -85,13 +88,12 @@ public:
     static Pointer load(const QString& family);
 
     bool isLoaded() const { return _loaded; }
-    void setLoaded(bool loaded) { _loaded = loaded; }
 
 public slots:
     void handleFontNetworkReply();
 
 private:
-    static Pointer load(QIODevice& fontFile);
+    static Pointer load(const QString& family, QIODevice& fontFile);
     QStringList tokenizeForWrapping(const QString& str) const;
     QStringList splitLines(const QString& str) const;
     glm::vec2 computeTokenExtent(const QString& str) const;
@@ -111,16 +113,16 @@ private:
 
     // Font characteristics
     QString _family;
+    glm::vec2 _distanceRange { 1.0f };
     float _fontSize { 0.0f };
     float _leading { 0.0f };
-    float _ascent { 0.0f };
-    float _descent { 0.0f };
     float _spaceWidth { 0.0f };
 
     float _scale { 0.0f };
-    TextAlignment _alignment;
+    TextAlignment _alignment { TextAlignment::LEFT };
 
-    bool _loaded { true };
+    bool _loaded { false };
+    bool _needsParamsUpdate { false };
 
     gpu::TexturePointer _texture;
     gpu::BufferStreamPointer _stream;

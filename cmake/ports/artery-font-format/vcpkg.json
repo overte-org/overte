@@ -1,0 +1,7 @@
+{
+  "name": "artery-font-format",
+  "version": "1.0.1",
+  "description": "Header-only C++ library that facilitates encoding and decoding of the Artery Atlas Font format",
+  "homepage": "https://github.com/Chlumsky/artery-font-format",
+  "license": "MIT"
+}

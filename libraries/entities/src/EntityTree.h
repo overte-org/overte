@@ -15,6 +15,7 @@
 #include <QSet>
 #include <QVector>
 
+#include <HelperScriptEngine.h>
 #include <Octree.h>
 #include <SpatialParentFinder.h>
 
@@ -388,8 +389,7 @@ private:
                                          MovingEntitiesOperator& moveOperator, bool force, bool tellServer);
 
     // Script engine for writing entity tree data to and from JSON
-    std::mutex scriptEngineMutex;
-    ScriptEnginePointer scriptEngine{ newScriptEngine() };
+    HelperScriptEngine _helperScriptEngine;
 };
 
 void convertGrabUserDataToProperties(EntityItemProperties& properties);

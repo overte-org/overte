@@ -357,6 +357,8 @@ protected:
     using Locker = std::unique_lock<Mutex>;
     using Flag = std::atomic<bool>;
 
+    mutable Mutex _mutex;
+
     QSharedPointer<recording::Deck> _player;
     QSharedPointer<recording::Recorder> _recorder;
     

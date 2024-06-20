@@ -31,6 +31,10 @@ void DetailedMotionState::handleEasyChanges(uint32_t& flags) {
     if (flags & Simulation::DIRTY_PHYSICS_ACTIVATION && !_body->isActive()) {
         _body->activate();
     }
+
+    if (flags & Simulation::DIRTY_MASS) {
+        updateBodyMassProperties();
+    }
 }
 
 DetailedMotionState::~DetailedMotionState() {

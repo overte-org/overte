@@ -16,6 +16,8 @@
 
 Script.include("/~/system/libraries/controllers.js");
 
+var controllerStandard = Controller.Standard;
+
 // grab the toolbar
 var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
@@ -236,8 +238,8 @@ function makeClickHandler(hand) {
         }
     };
 }
-triggerMapping.from(Controller.Standard.RTClick).peek().to(makeClickHandler(Controller.Standard.RightHand));
-triggerMapping.from(Controller.Standard.LTClick).peek().to(makeClickHandler(Controller.Standard.LeftHand));
+triggerMapping.from(controllerStandard.RTClick).peek().to(makeClickHandler(controllerStandard.RightHand));
+triggerMapping.from(controllerStandard.LTClick).peek().to(makeClickHandler(controllerStandard.LeftHand));
 
 triggerMapping.enable();
 

@@ -15,6 +15,7 @@
 
 #include <AABox.h>
 
+#include <gpu/Forward.h>
 #include <gpu/Resource.h>
 #include <gpu/Stream.h>
 
@@ -27,7 +28,6 @@ typedef glm::vec3 Vec3;
 
 class Mesh;
 using MeshPointer = std::shared_ptr< Mesh >;
-
 
 class Mesh {
 public:
@@ -142,6 +142,8 @@ public:
     std::string modelName;
     std::string displayName;
 
+    gpu::BufferPointer getColorBuffer() const { return _colorBuffer; }
+
 protected:
 
     gpu::Stream::FormatPointer _vertexFormat;
@@ -153,6 +155,8 @@ protected:
     BufferView _indexBuffer;
 
     BufferView _partBuffer;
+
+    gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>() };
 
     void evalVertexFormat();
     void evalVertexStream();

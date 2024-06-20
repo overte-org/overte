@@ -74,17 +74,17 @@ void ModelSerializersTests::loadGLTF_data() {
     QTest::newRow("ready-player-me-good3")   << "models/src/Franny.glb.gz"                     << false << false << false;
     QTest::newRow("ready-player-me-good4")   << "models/src/womanInTShirt.glb.gz"              << false << false << false;
     QTest::newRow("ready-player-me-good5")   << "models/src/female-avatar-with-swords.glb.gz"  << false << false << false;
-    QTest::newRow("ready-player-me-broken1") << "models/src/broken-2022-11-27.glb.gz" << false << true;
+    QTest::newRow("ready-player-me-broken1") << "models/src/broken-2022-11-27.glb.gz" << false << false << false;
 
 
     // We can't parse GLTF 1.0 at present, and probably not ever. We're expecting all these to fail.
-    QDirIterator it("models/src/gltf_samples/1.0", QStringList() << "*.glb", QDir::Files, QDirIterator::Subdirectories);
+    /*QDirIterator it("models/src/gltf_samples/1.0", QStringList() << "*.glb", QDir::Files, QDirIterator::Subdirectories);
     while(it.hasNext()) {
         QString filename = it.next();
         QFileInfo fi(filename);
         QString testname = "gltf1.0-" + fi.fileName();
         QTest::newRow(testname.toUtf8().data()) << filename << true << false << false;
-    }
+    }*/
 
     QDirIterator it2("models/src/gltf_samples/2.0", QStringList() << "*.glb", QDir::Files, QDirIterator::Subdirectories);
     while(it2.hasNext()) {

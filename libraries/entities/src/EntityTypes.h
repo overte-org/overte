@@ -4,6 +4,7 @@
 //
 //  Created by Brad Hefta-Gaub on 12/4/13.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -70,6 +71,9 @@ public:
      *     <tr><td><code>"ParticleEffect"</code></td><td>A particle system that can be used to simulate things such as fire, 
      *       smoke, snow, magic spells, etc.</td>
      *       <td>{@link Entities.EntityProperties-ParticleEffect|EntityProperties-ParticleEffect}</td></tr>
+     *     <tr><td><code>"ProceduralParticleEffect"</code></td><td>A GPU particle system with custom update and rendering that can
+     *       be used to simulate things such as fire, smoke, snow, magic spells, etc.</td>
+     *       <td>{@link Entities.EntityProperties-ProceduralParticleEffect|EntityProperties-ProceduralParticleEffect}</td></tr>
      *     <tr><td><code>"Line"</code></td><td>A sequence of one or more simple straight lines.</td>
      *       <td>{@link Entities.EntityProperties-Line|EntityProperties-Line}</td></tr>
      *     <tr><td><code>"PolyLine"</code></td><td>A sequence of one or more textured straight lines.</td>
@@ -100,6 +104,7 @@ public:
         Image,
         Web,
         ParticleEffect,
+        ProceduralParticleEffect,
         Line,
         PolyLine,
         PolyVox,

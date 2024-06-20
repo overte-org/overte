@@ -33,6 +33,7 @@
 #include <Extents.h>
 #include <VariantMapToScriptValue.h>
 #include <ScriptValue.h>
+#include <PhysicsHelpers.h>
 
 #include "EntitiesLogging.h"
 #include "EntityItem.h"
@@ -571,6 +572,14 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_SPIN_FINISH, spinFinish);
     CHECK_PROPERTY_CHANGE(PROP_PARTICLE_ROTATE_WITH_ENTITY, rotateWithEntity);
 
+    // Procedural Particles
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, numParticles);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, numTrianglesPerParticle);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, numUpdateProps);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, particleTransparent);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, particleUpdateData);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, particleRenderData);
+
     // Model
     CHECK_PROPERTY_CHANGE(PROP_MODEL_URL, modelURL);
     CHECK_PROPERTY_CHANGE(PROP_MODEL_SCALE, modelScale);
@@ -882,6 +891,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @see {@link Entities.EntityProperties-ParticleEffect|EntityProperties-ParticleEffect}
  * @see {@link Entities.EntityProperties-PolyLine|EntityProperties-PolyLine}
  * @see {@link Entities.EntityProperties-PolyVox|EntityProperties-PolyVox}
+ * @see {@link Entities.EntityProperties-ProceduralParticleEffect|EntityProperties-ProceduralParticleEffect}
  * @see {@link Entities.EntityProperties-Shape|EntityProperties-Shape}
  * @see {@link Entities.EntityProperties-Sphere|EntityProperties-Sphere}
  * @see {@link Entities.EntityProperties-Text|EntityProperties-Text}
@@ -1320,6 +1330,54 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  */
 
 /*@jsdoc
+ * The <code>"ProceduralParticleEffect"</code> {@link Entities.EntityType|EntityType} displays a particle system that can be
+ * used to simulate things such as fire, smoke, snow, magic spells, etc. The particles are fully controlled by the provided
+ * update and rendering shaders on the GPU.
+ * It has properties in addition to the common {@link Entities.EntityProperties|EntityProperties}.
+ *
+ * @typedef {object} Entities.EntityProperties-ProceduralParticleEffect
+ * @property {number} numParticles=10000 - The number of particles to render.
+ * @property {number} numTrianglesPerParticle=1 - The number of triangles to render per particle.  By default, these triangles
+ *     still need to be positioned in the <code>particleRenderData</code> vertex shader.
+ * @property {number} numUpdateProps=0 - The number of persistent Vec4 values stored per particle and updated once per frame.
+ *     These can be modified in the <code>particleUpdateData</code> fragment shader and read in the
+ *     <code>particleRenderData</code> vertex/fragment shaders.
+ * @property {boolean} particleTransparent=false - Whether the particles should render as transparent (with additive blending)
+ *     or opaque.
+ * @property {ProceduralData} particleUpdateData="" - Used to store {@link ProceduralData} data as a JSON string to control
+ *     per-particle updates if <code>numUpdateProps > 0</code>.  You can use <code>JSON.parse()</code> to parse the string
+ *     into a JavaScript object which you can manipulate the properties of, and use <code>JSON.stringify()</code> to convert
+ *     the object into a string to put in the property.
+ * @property {ProceduralData} particleRenderData="" - Used to store {@link ProceduralData} data as a JSON string to control
+ *     per-particle rendering.  You can use <code>JSON.parse()</code> to parse the string into a JavaScript object which you
+ *     can manipulate the properties of, and use <code>JSON.stringify()</code> to convert the object into a string to put in
+ *     the property.
+ *
+ * @example <caption>A cube of oscillating, unlit, billboarded triangles, with the oscillation in the update (computed once per particle instead of once per vertex).</caption>
+ * particles = Entities.addEntity({
+ *     type: "ProceduralParticleEffect",
+ *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.5, z: -4 })),
+ *     dimensions: 3,
+ *     numParticles: 10000,
+ *     numTrianglesPerParticle: 1,
+ *     numUpdateProps: 1,
+ *     particleUpdateData: JSON.stringify({
+ *         version: 1.0,
+ *         fragmentShaderURL: "https://gist.githubusercontent.com/HifiExperiments/9049fb4a8dcd2c1401ff4321103dce16/raw/4f9474ed82c66c1f94c1055d2724af808cd7aace/proceduralParticleUpdate.fs",
+ *     }),
+ *     particleRenderData: JSON.stringify({
+ *         version: 1.0,
+ *         vertexShaderURL: "https://gist.github.com/HifiExperiments/5dda24e28e7de1719e3a594d81306343/raw/92e0c5b82a9fa87685064cdbab92ed0c16f49f94/proceduralParticle2.vs",
+ *         fragmentShaderURL: "https://gist.github.com/HifiExperiments/7def54504362c7bc79b5c85cd515b98b/raw/93b3828c2ec66b12b789a625dd141f533c595ede/proceduralParticle.fs",
+ *         uniforms: {
+ *             radius: 0.03
+ *         }
+ *     }),
+ *     lifetime: 300  // Delete after 5 minutes.
+ * });
+ */
+
+/*@jsdoc
  * The <code>"Shape"</code> {@link Entities.EntityType|EntityType} displays an entity of a specified <code>shape</code>.
  * It has properties in addition to the common {@link Entities.EntityProperties|EntityProperties}.
  *
@@ -1373,7 +1431,8 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @property {boolean} unlit=false - <code>true</code> if the entity is unaffected by lighting, <code>false</code> if it is lit
  *     by the key light and local lights.
  * @property {string} font="" - The font to render the text with. It can be one of the following: <code>"Courier"</code>,
- *     <code>"Inconsolata"</code>, <code>"Roboto"</code>, <code>"Timeless"</code>, or a path to a .sdff file.
+ *     <code>"Inconsolata"</code>, <code>"Roboto"</code>, <code>"Timeless"</code>, or a path to a PNG MTSDF .arfont file generated
+ *     by the msdf-atlas-gen tool (https://github.com/Chlumsky/msdf-atlas-gen).
  * @property {Entities.TextEffect} textEffect="none" - The effect that is applied to the text.
  * @property {Color} textEffectColor=255,255,255 - The color of the effect.
  * @property {number} textEffectThickness=0.2 - The magnitude of the text effect, range <code>0.0</code> &ndash; <code>0.5</code>.
@@ -1608,13 +1667,15 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
 
     const bool pseudoPropertyFlagsActive = pseudoPropertyFlags.test(EntityPseudoPropertyFlag::FlagsActive);
     // Fix to skip the default return all mechanism, when pseudoPropertyFlagsActive
-    const bool pseudoPropertyFlagsButDesiredEmpty = pseudoPropertyFlagsActive && _desiredProperties.isEmpty();
+    const bool returnNothingOnEmptyPropertyFlags = pseudoPropertyFlagsActive;
 
     if (_created == UNKNOWN_CREATED_TIME && !allowUnknownCreateTime) {
         // No entity properties can have been set so return without setting any default, zero property values.
         return properties;
     }
 
+    auto nodeList = DependencyManager::get<NodeList>();
+    bool isMyOwnAvatarEntity = _entityHostType == entity::HostType::AVATAR && (_owningAvatarID == AVATAR_SELF_ID || _owningAvatarID == Physics::getSessionUUID());
     if (_idSet && (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::ID))) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_ALWAYS(id, _id.toString());
     }
@@ -1665,7 +1726,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_RENDER_WITH_ZONES, renderWithZones);
     COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_BILLBOARD_MODE, billboardMode, getBillboardModeAsString());
     COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_TAGS, tags, getTagsAsVector());
-    _grab.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
+    _grab.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
     COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_MIRROR_MODE, mirrorMode, getMirrorModeAsString());
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PORTAL_EXIT_ID, portalExitID);
 
@@ -1686,7 +1747,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     COPY_PROXY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_COLLISION_MASK, collisionMask, collidesWith, getCollisionMaskAsString());
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_DYNAMIC, dynamic);
     COPY_PROXY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_DYNAMIC, dynamic, collisionsWillMove, getDynamic()); // legacy support
-    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COLLISION_SOUND_URL, collisionSoundURL);
+    COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_COLLISION_SOUND_URL, collisionSoundURL);
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ACTION_DATA, actionData);
 
     // Cloning
@@ -1712,10 +1773,10 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     // Particles only
     if (_type == EntityTypes::ParticleEffect) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_SHAPE_TYPE, shapeType, getShapeTypeAsString());
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
         COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_COLOR, color, u8vec3Color);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA, alpha);
-        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
+        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_TEXTURES, textures);
 
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MAX_PARTICLES, maxParticles);
@@ -1759,14 +1820,24 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PARTICLE_ROTATE_WITH_ENTITY, rotateWithEntity);
     }
 
+    // Procedural Particles
+    if (_type == EntityTypes::ProceduralParticleEffect) {
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, numParticles);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, numTrianglesPerParticle);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, numUpdateProps);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, particleTransparent);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, particleUpdateData);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, particleRenderData);
+    }
+
     // Models only
     if (_type == EntityTypes::Model) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_SHAPE_TYPE, shapeType, getShapeTypeAsString());
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
         COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_COLOR, color, u8vec3Color);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_TEXTURES, textures);
 
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MODEL_URL, modelURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_MODEL_URL, modelURL);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MODEL_SCALE, modelScale);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_JOINT_ROTATIONS_SET, jointRotationsSet);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_JOINT_ROTATIONS, jointRotations);
@@ -1776,9 +1847,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_GROUP_CULLED, groupCulled);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_BLENDSHAPE_COEFFICIENTS, blendshapeCoefficients);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_USE_ORIGINAL_PIVOT, useOriginalPivot);
-        if (!pseudoPropertyFlagsButDesiredEmpty) {
-            _animation.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
-        }
+        _animation.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
     }
 
     // FIXME: Shouldn't provide a shapeType property for Box and Sphere entities.
@@ -1792,7 +1861,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     if (_type == EntityTypes::Box || _type == EntityTypes::Sphere || _type == EntityTypes::Shape) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_COLOR, color, u8vec3Color);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA, alpha);
-        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
+        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SHAPE, shape);
     }
 
@@ -1808,7 +1877,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
 
     // Text only
     if (_type == EntityTypes::Text) {
-        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
+        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
 
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_TEXT, text);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_LINE_HEIGHT, lineHeight);
@@ -1831,20 +1900,18 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     // Zones only
     if (_type == EntityTypes::Zone) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_SHAPE_TYPE, shapeType, getShapeTypeAsString());
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
 
-        if (!pseudoPropertyFlagsButDesiredEmpty) {
-            _keyLight.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
-            _ambientLight.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
-            _skybox.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
-            _haze.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
-            _bloom.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
-            _audio.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
-        }
+        _keyLight.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+        _ambientLight.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+        _skybox.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+        _haze.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+        _bloom.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+        _audio.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
 
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_FLYING_ALLOWED, flyingAllowed);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_GHOSTING_ALLOWED, ghostingAllowed);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_FILTER_URL, filterURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_FILTER_URL, filterURL);
 
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_KEY_LIGHT_MODE, keyLightMode, getKeyLightModeAsString());
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_AMBIENT_LIGHT_MODE, ambientLightMode, getAmbientLightModeAsString());
@@ -1859,11 +1926,11 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     if (_type == EntityTypes::Web) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_COLOR, color, u8vec3Color);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA, alpha);
-        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
+        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
 
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOURCE_URL, sourceUrl);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_SOURCE_URL, sourceUrl);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_DPI, dpi);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SCRIPT_URL, scriptURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_SCRIPT_URL, scriptURL);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MAX_FPS, maxFPS);
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_INPUT_MODE, inputMode, getInputModeAsString());
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_WANTS_KEYBOARD_FOCUS, wantsKeyboardFocus);
@@ -1877,9 +1944,9 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_VOXEL_VOLUME_SIZE, voxelVolumeSize);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_VOXEL_DATA, voxelData);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_VOXEL_SURFACE_STYLE, voxelSurfaceStyle);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_X_TEXTURE_URL, xTextureURL);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_Y_TEXTURE_URL, yTextureURL);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_Z_TEXTURE_URL, zTextureURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_X_TEXTURE_URL, xTextureURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_Y_TEXTURE_URL, yTextureURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_Z_TEXTURE_URL, zTextureURL);
 
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_X_N_NEIGHBOR_ID, xNNeighborID);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_Y_N_NEIGHBOR_ID, yNNeighborID);
@@ -1913,14 +1980,14 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
 
     // Materials
     if (_type == EntityTypes::Material) {
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MATERIAL_URL, materialURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_MATERIAL_URL, materialURL);
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_MATERIAL_MAPPING_MODE, materialMappingMode, getMaterialMappingModeAsString());
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MATERIAL_PRIORITY, priority);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PARENT_MATERIAL_NAME, parentMaterialName);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MATERIAL_MAPPING_POS, materialMappingPos);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MATERIAL_MAPPING_SCALE, materialMappingScale);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MATERIAL_MAPPING_ROT, materialMappingRot);
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MATERIAL_DATA, materialData);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_MATERIAL_DATA, materialData);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MATERIAL_REPEAT, materialRepeat);
     }
 
@@ -1928,15 +1995,16 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     if (_type == EntityTypes::Image) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_COLOR, color, u8vec3Color);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA, alpha);
-        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
+        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
 
-        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_IMAGE_URL, imageURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_IMAGE_URL, imageURL);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_EMISSIVE, emissive);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_KEEP_ASPECT_RATIO, keepAspectRatio);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SUB_IMAGE, subImage);
 
         // Handle conversions to old 'textures' property from "imageURL"
-        if (((!pseudoPropertyFlagsButDesiredEmpty && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(PROP_IMAGE_URL)) &&
+        if ((isMyOwnAvatarEntity || nodeList->getThisNodeCanViewAssetURLs()) &&
+                ((!returnNothingOnEmptyPropertyFlags && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(PROP_IMAGE_URL)) &&
                 (!skipDefaults || defaultEntityProperties._imageURL != _imageURL)) {
             ScriptValue textures = engine->newObject();
             textures.setProperty("tex.picture", _imageURL);
@@ -1948,7 +2016,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     if (_type == EntityTypes::Grid) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_COLOR, color, u8vec3Color);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA, alpha);
-        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
+        _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
 
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_GRID_FOLLOW_CAMERA, followCamera);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MAJOR_GRID_EVERY, majorGridEvery);
@@ -1958,7 +2026,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     // Gizmo only
     if (_type == EntityTypes::Gizmo) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_GIZMO_TYPE, gizmoType, getGizmoTypeAsString());
-        _ring.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties);
+        _ring.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
     }
 
     /*@jsdoc
@@ -2172,6 +2240,14 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE(spinStart, float, setSpinStart);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(spinFinish, float, setSpinFinish);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(rotateWithEntity, bool, setRotateWithEntity);
+
+    // Procedural Particles
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(numParticles, uint32_t, setNumParticles);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(numTrianglesPerParticle, uint8_t, setNumTrianglesPerParticle);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(numUpdateProps, uint8_t, setNumUpdateProps);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(particleTransparent, bool, setParticleTransparent);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(particleUpdateData, QString, setParticleUpdateData);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(particleRenderData, QString, setParticleRenderData);
 
     // Model
     COPY_PROPERTY_FROM_QSCRIPTVALUE(modelURL, QString, setModelURL);
@@ -2459,6 +2535,14 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(spinFinish);
     COPY_PROPERTY_IF_CHANGED(rotateWithEntity);
 
+    // Procedural Particles
+    COPY_PROPERTY_IF_CHANGED(numParticles);
+    COPY_PROPERTY_IF_CHANGED(numTrianglesPerParticle);
+    COPY_PROPERTY_IF_CHANGED(numUpdateProps);
+    COPY_PROPERTY_IF_CHANGED(particleTransparent);
+    COPY_PROPERTY_IF_CHANGED(particleUpdateData);
+    COPY_PROPERTY_IF_CHANGED(particleRenderData);
+
     // Model
     COPY_PROPERTY_IF_CHANGED(modelURL);
     COPY_PROPERTY_IF_CHANGED(modelScale);
@@ -2617,7 +2701,7 @@ bool EntityItemProperties::entityPropertyFlagsFromScriptValue(const ScriptValue&
     if (object.isString()) {
         EntityPropertyInfo propertyInfo;
         if (getPropertyInfo(object.toString(), propertyInfo)) {
-            flags << propertyInfo.propertyEnum;
+            flags << propertyInfo.propertyEnums;
         }
     }
     else if (object.isArray()) {
@@ -2626,7 +2710,7 @@ bool EntityItemProperties::entityPropertyFlagsFromScriptValue(const ScriptValue&
             QString propertyName = object.property(i).toString();
             EntityPropertyInfo propertyInfo;
             if (getPropertyInfo(propertyName, propertyInfo)) {
-                flags << propertyInfo.propertyEnum;
+                flags << propertyInfo.propertyEnums;
             }
         }
     }
@@ -2812,6 +2896,17 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
                                        particle::MINIMUM_PARTICLE_SPIN, particle::MAXIMUM_PARTICLE_SPIN);
         ADD_PROPERTY_TO_MAP(PROP_PARTICLE_ROTATE_WITH_ENTITY, RotateWithEntity, rotateWithEntity, float);
 
+        // Procedural Particles
+        ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, NumParticles, numParticles, uint32_t,
+                                       particle::MINIMUM_MAX_PARTICLES, particle::MAXIMUM_NUM_PROCEDURAL_PARTICLES);
+        ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, NumTrianglesPerParticle, numTrianglesPerParticle, uint8_t,
+                                       particle::MINIMUM_TRIS_PER, particle::MAXIMUM_TRIS_PER);
+        ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, NumUpdateProps, numUpdateProps, uint8_t,
+                                       particle::MINIMUM_NUM_UPDATE_PROPS, particle::MAXIMUM_NUM_UPDATE_PROPS);
+        ADD_PROPERTY_TO_MAP(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, ParticleTransparent, particleTransparent, bool);
+        ADD_PROPERTY_TO_MAP(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, ParticleUpdateData, particleUpdateData, QString);
+        ADD_PROPERTY_TO_MAP(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, ParticleRenderData, particleRenderData, QString);
+
         // Model
         ADD_PROPERTY_TO_MAP(PROP_MODEL_URL, ModelURL, modelURL, QString);
         ADD_PROPERTY_TO_MAP(PROP_MODEL_SCALE, ModelScale, modelScale, vec3);
@@ -2833,6 +2928,7 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
             ADD_GROUP_PROPERTY_TO_MAP(PROP_ANIMATION_FIRST_FRAME, Animation, animation, FirstFrame, firstFrame);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_ANIMATION_LAST_FRAME, Animation, animation, LastFrame, lastFrame);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_ANIMATION_HOLD, Animation, animation, Hold, hold);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_ANIMATION_SMOOTH_FRAMES, Animation, animation, SmoothFrames, smoothFrames);
         }
 
         // Light
@@ -2865,7 +2961,7 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
         { // Keylight
             ADD_GROUP_PROPERTY_TO_MAP(PROP_KEYLIGHT_COLOR, KeyLight, keyLight, Color, color);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_KEYLIGHT_INTENSITY, KeyLight, keyLight, Intensity, intensity);
-            ADD_GROUP_PROPERTY_TO_MAP(PROP_KEYLIGHT_DIRECTION, KeyLight, keylight, Direction, direction);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_KEYLIGHT_DIRECTION, KeyLight, keyLight, Direction, direction);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_KEYLIGHT_CAST_SHADOW, KeyLight, keyLight, CastShadows, castShadows);
             ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_KEYLIGHT_SHADOW_BIAS, KeyLight, keyLight, ShadowBias, shadowBias, 0.0f, 1.0f);
             ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_KEYLIGHT_SHADOW_MAX_DISTANCE, KeyLight, keyLight, ShadowMaxDistance, shadowMaxDistance, 1.0f, 250.0f);
@@ -3022,14 +3118,14 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
  */
 ScriptValue EntityPropertyInfoToScriptValue(ScriptEngine* engine, const EntityPropertyInfo& propertyInfo) {
     ScriptValue obj = engine->newObject();
-    obj.setProperty("propertyEnum", propertyInfo.propertyEnum);
+    obj.setProperty("propertyEnum", propertyInfo.propertyEnums.firstFlag());
     obj.setProperty("minimum", propertyInfo.minimum.toString());
     obj.setProperty("maximum", propertyInfo.maximum.toString());
     return obj;
 }
 
 bool EntityPropertyInfoFromScriptValue(const ScriptValue& object, EntityPropertyInfo& propertyInfo) {
-    propertyInfo.propertyEnum = (EntityPropertyList)object.property("propertyEnum").toVariant().toUInt();
+    propertyInfo.propertyEnums = (EntityPropertyList)object.property("propertyEnum").toVariant().toUInt();
     propertyInfo.minimum = object.property("minimum").toVariant();
     propertyInfo.maximum = object.property("maximum").toVariant();
     return true;
@@ -3248,6 +3344,15 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_SPIN_START, properties.getSpinStart());
                 APPEND_ENTITY_PROPERTY(PROP_SPIN_FINISH, properties.getSpinFinish());
                 APPEND_ENTITY_PROPERTY(PROP_PARTICLE_ROTATE_WITH_ENTITY, properties.getRotateWithEntity())
+            }
+
+            if (properties.getType() == EntityTypes::ProceduralParticleEffect) {
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, properties.getNumParticles());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, properties.getNumTrianglesPerParticle());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, properties.getNumUpdateProps());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, properties.getParticleTransparent());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, properties.getParticleUpdateData());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, properties.getParticleRenderData());
             }
 
             if (properties.getType() == EntityTypes::Model) {
@@ -3733,6 +3838,15 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PARTICLE_ROTATE_WITH_ENTITY, bool, setRotateWithEntity);
     }
 
+    if (properties.getType() == EntityTypes::ProceduralParticleEffect) {
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, uint32_t, setNumParticles);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, uint8_t, setNumTrianglesPerParticle);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, uint8_t, setNumUpdateProps);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, bool, setParticleTransparent);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, QString, setParticleUpdateData);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, QString, setParticleRenderData);
+    }
+
     if (properties.getType() == EntityTypes::Model) {
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SHAPE_TYPE, ShapeType, setShapeType);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_COMPOUND_SHAPE_URL, QString, setCompoundShapeURL);
@@ -4121,6 +4235,14 @@ void EntityItemProperties::markAllChanged() {
     _spinFinishChanged = true;
     _spinSpreadChanged = true;
     _rotateWithEntityChanged = true;
+
+    // Procedural Particles
+    _numParticlesChanged = true;
+    _numTrianglesPerParticleChanged = true;
+    _numUpdatePropsChanged = true;
+    _particleTransparentChanged = true;
+    _particleUpdateDataChanged = true;
+    _particleRenderDataChanged = true;
 
     // Model
     _modelURLChanged = true;
@@ -4650,6 +4772,26 @@ QList<QString> EntityItemProperties::listChangedProperties() {
     }
     if (rotateWithEntityChanged()) {
         out += "rotateWithEntity";
+    }
+
+    // Procedural Particles
+    if (numParticlesChanged()) {
+        out += "numParticles";
+    }
+    if (numTrianglesPerParticleChanged()) {
+        out += "numTrianglesPerParticle";
+    }
+    if (numUpdatePropsChanged()) {
+        out += "numUpdateProps";
+    }
+    if (particleTransparentChanged()) {
+        out += "particleTransparent";
+    }
+    if (particleUpdateDataChanged()) {
+        out += "particleUpdateData";
+    }
+    if (particleRenderDataChanged()) {
+        out += "particleRenderData";
     }
 
     // Model

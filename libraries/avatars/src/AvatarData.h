@@ -610,6 +610,8 @@ public:
     AvatarData();
     virtual ~AvatarData();
 
+    virtual bool isMyAvatarURLProtected() const { return false; } // This needs to be here because both MyAvatar and AvatarData inherit from MyAvatar
+
     static const QUrl& defaultFullAvatarModelUrl();
 
     const QUuid getSessionUUID() const { return getID(); }
@@ -1355,7 +1357,7 @@ public:
      */
     Q_INVOKABLE virtual void detachAll(const QString& modelURL, const QString& jointName = QString());
 
-    QString getSkeletonModelURLFromScript() const { return _skeletonModelURL.toString(); }
+    QString getSkeletonModelURLFromScript() const;
     void setSkeletonModelURLFromScript(const QString& skeletonModelString) { setSkeletonModelURL(QUrl(skeletonModelString)); }
 
     void setOwningAvatarMixer(const QWeakPointer<Node>& owningAvatarMixer) { _owningAvatarMixer = owningAvatarMixer; }

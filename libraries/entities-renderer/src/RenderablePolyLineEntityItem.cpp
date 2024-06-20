@@ -10,7 +10,7 @@
 //
 
 #include "RenderablePolyLineEntityItem.h"
-#include <ParticleEffectEntityItem.h>
+#include <PolyLineEntityItem.h>
 
 #include <GeometryCache.h>
 #include <StencilMaskPass.h>

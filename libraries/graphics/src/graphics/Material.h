@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 12/10/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -34,6 +35,7 @@ typedef std::shared_ptr< TextureMap > TextureMapPointer;
 // Material Key is a coarse trait description of a material used to classify the materials
 class MaterialKey {
 public:
+    // Be careful changing these, they need to match up with the bits in graphics/Material.slh
    enum FlagBit {
         EMISSIVE_VAL_BIT = 0,
         UNLIT_VAL_BIT,
@@ -56,6 +58,12 @@ public:
         OCCLUSION_MAP_BIT,
         LIGHT_MAP_BIT,
         SCATTERING_MAP_BIT,
+
+        EXTRA_1_BIT,
+        EXTRA_2_BIT,
+        EXTRA_3_BIT,
+        EXTRA_4_BIT,
+        EXTRA_5_BIT,
 
         NUM_FLAGS,
     };
@@ -419,6 +427,10 @@ public:
         MATERIAL_PARAMS,
         CULL_FACE_MODE,
 
+        EXTRA_1_BIT,
+        EXTRA_2_BIT,
+        EXTRA_3_BIT,
+
         NUM_TOTAL_FLAGS
     };
     std::unordered_map<uint, bool> getPropertyFallthroughs() { return _propertyFallthroughs; }
@@ -432,16 +444,43 @@ public:
 
     virtual bool isReference() const { return false; }
 
+    virtual bool isMToon() const { return false; }
+    static const glm::vec3 DEFAULT_SHADE;
+    virtual glm::vec3 getShade(bool SRGB = true) const { return glm::vec3(0.0f); }
+    static const float DEFAULT_SHADING_SHIFT;
+    virtual float getShadingShift() const { return 0.0f; }
+    static const float DEFAULT_SHADING_TOONY;
+    virtual float getShadingToony() const { return 0.0f; }
+    static const glm::vec3 DEFAULT_MATCAP;
+    virtual glm::vec3 getMatcap(bool SRGB = true) const { return glm::vec3(0.0f); }
+    static const glm::vec3 DEFAULT_PARAMETRIC_RIM;
+    virtual glm::vec3 getParametricRim(bool SRGB = true) const { return glm::vec3(0.0f); }
+    static const float DEFAULT_PARAMETRIC_RIM_FRESNEL_POWER;
+    virtual float getParametricRimFresnelPower() const { return 0.0f; }
+    static const float DEFAULT_PARAMETRIC_RIM_LIFT;
+    virtual float getParametricRimLift() const { return 0.0f; }
+    static const float DEFAULT_RIM_LIGHTING_MIX;
+    virtual float getRimLightingMix() const { return 0.0f; }
+    static const float DEFAULT_UV_ANIMATION_SCROLL_SPEED;
+    virtual float getUVAnimationScrollXSpeed() const { return 0.0f; }
+    virtual float getUVAnimationScrollYSpeed() const { return 0.0f; }
+    virtual float getUVAnimationRotationSpeed() const { return 0.0f; }
+
+    static const glm::vec3 DEFAULT_OUTLINE;
+    virtual uint8_t getOutlineWidthMode() { return 0; }
+    virtual float getOutlineWidth() { return 0.0f; }
+    virtual glm::vec3 getOutline(bool SRGB = true) const { return glm::vec3(0.0f); }
+
     static const std::string HIFI_PBR;
     static const std::string HIFI_SHADER_SIMPLE;
+    static const std::string VRM_MTOON;
 
 protected:
     std::string _name { "" };
+    mutable MaterialKey _key { 0 };
+    std::string _model { HIFI_PBR };
 
 private:
-    std::string _model { HIFI_PBR };
-    mutable MaterialKey _key { 0 };
-
     // Material properties
     glm::vec3 _emissive { DEFAULT_EMISSIVE };
     float _opacity { DEFAULT_OPACITY };
@@ -525,11 +564,11 @@ public:
         // Texture Coord Transform Array
         glm::mat4 _texcoordTransforms[Material::NUM_TEXCOORD_TRANSFORMS];
 
-        glm::vec2 _lightmapParams { 0.0, 1.0 };
-
         // x: material mode (0 for UV, 1 for PROJECTED)
         // y: 1 for texture repeat, 0 for discard outside of 0 - 1
         glm::vec2 _materialParams { 0.0, 1.0 };
+
+        glm::vec2 _lightmapParams { 0.0, 1.0 };
 
         Schema() {
             for (auto& transform : _texcoordTransforms) {
@@ -538,8 +577,68 @@ public:
         }
     };
 
+    class MToonSchema {
+    public:
+        glm::vec3 _emissive { Material::DEFAULT_EMISSIVE }; // No Emissive
+        float _opacity { Material::DEFAULT_OPACITY }; // Opacity = 1 => Not Transparent
+
+        glm::vec3 _albedo { Material::DEFAULT_ALBEDO }; // Grey albedo => isAlbedo
+        float _opacityCutoff { Material::DEFAULT_OPACITY_CUTOFF }; // Opacity cutoff applyed when using opacityMap as Mask
+
+        glm::vec3 _shade { Material::DEFAULT_SHADE };
+        float _shadingShift { Material::DEFAULT_SHADING_SHIFT };
+
+        glm::vec3 _matcap { Material::DEFAULT_MATCAP };
+        float _shadingToony { Material::DEFAULT_SHADING_TOONY };
+
+        glm::vec3 _parametricRim { Material::DEFAULT_PARAMETRIC_RIM };
+        float _parametricRimFresnelPower { Material::DEFAULT_PARAMETRIC_RIM_FRESNEL_POWER };
+
+        float _parametricRimLift { Material::DEFAULT_PARAMETRIC_RIM_LIFT };
+        float _rimLightingMix { Material::DEFAULT_RIM_LIGHTING_MIX };
+        glm::vec2 _uvAnimationScrollSpeed { Material::DEFAULT_UV_ANIMATION_SCROLL_SPEED };
+
+        float _uvAnimationScrollRotationSpeed { Material::DEFAULT_UV_ANIMATION_SCROLL_SPEED };
+        float _time { 0.0f };
+        uint32_t _key { 0 }; // a copy of the materialKey
+        float _spare { 0.0f };
+
+        // Texture Coord Transform Array
+        glm::mat4 _texcoordTransforms[Material::NUM_TEXCOORD_TRANSFORMS];
+
+        // x: material mode (0 for UV, 1 for PROJECTED)
+        // y: 1 for texture repeat, 0 for discard outside of 0 - 1
+        glm::vec2 _materialParams { 0.0, 1.0 };
+
+        MToonSchema() {
+            for (auto& transform : _texcoordTransforms) {
+                transform = glm::mat4();
+            }
+        }
+    };
+
     gpu::BufferView& getSchemaBuffer() { return _schemaBuffer; }
-    graphics::MaterialKey getMaterialKey() const { return graphics::MaterialKey(_schemaBuffer.get<graphics::MultiMaterial::Schema>()._key); }
+    graphics::MaterialKey getMaterialKey() const {
+        if (_isMToon) {
+            return graphics::MaterialKey(_schemaBuffer.get<graphics::MultiMaterial::MToonSchema>()._key);
+        } else {
+            return graphics::MaterialKey(_schemaBuffer.get<graphics::MultiMaterial::Schema>()._key);
+        }
+    }
+    glm::vec4 getColor() const {
+        glm::vec3 albedo;
+        float opacity;
+        if (_isMToon) {
+            const auto& schema = _schemaBuffer.get<graphics::MultiMaterial::MToonSchema>();
+            albedo = schema._albedo;
+            opacity = schema._opacity;
+        } else {
+            const auto& schema = _schemaBuffer.get<graphics::MultiMaterial::Schema>();
+            albedo = schema._albedo;
+            opacity = schema._opacity;
+        }
+        return glm::vec4(ColorUtils::tosRGBVec3(albedo), opacity);
+    }
     const gpu::TextureTablePointer& getTextureTable() const { return _textureTable; }
 
     void setCullFaceMode(graphics::MaterialKey::CullFaceMode cullFaceMode) { _cullFaceMode = cullFaceMode; }
@@ -559,6 +658,18 @@ public:
     void addReferenceTexture(const std::function<gpu::TexturePointer()>& textureOperator);
     void addReferenceMaterial(const std::function<graphics::MaterialPointer()>& materialOperator);
 
+    void setisMToon(bool isMToon);
+    bool isMToon() const { return _isMToon; }
+    void setMToonTime();
+    bool hasOutline() const { return _outlineWidthMode != 0 && _outlineWidth > 0.0f; }
+    uint8_t getOutlineWidthMode() const { return _outlineWidthMode; }
+    float getOutlineWidth() const { return _outlineWidth; }
+    glm::vec3 getOutline() const { return _outline; }
+    void resetOutline() { _outlineWidthMode = 0; _outlineWidth = 0.0f; _outline = glm::vec3(0.0f); }
+    void setOutlineWidthMode(uint8_t mode) { _outlineWidthMode = mode; }
+    void setOutlineWidth(float width) { _outlineWidth = width; }
+    void setOutline(const glm::vec3& outline) { _outline = outline; }
+
 private:
     gpu::BufferView _schemaBuffer;
     graphics::MaterialKey::CullFaceMode _cullFaceMode { graphics::Material::DEFAULT_CULL_FACE_MODE };
@@ -576,6 +687,11 @@ private:
 
     std::vector<std::pair<std::function<gpu::TexturePointer()>, gpu::TexturePointer>> _referenceTextures;
     std::vector<std::pair<std::function<graphics::MaterialPointer()>, graphics::MaterialPointer>> _referenceMaterials;
+
+    bool _isMToon { false };
+    uint8_t _outlineWidthMode { 0 };
+    float _outlineWidth { 0.0f };
+    glm::vec3 _outline { graphics::Material::DEFAULT_OUTLINE };
 };
 
 };

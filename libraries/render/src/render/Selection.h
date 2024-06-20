@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 4/4/2017.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -37,7 +38,8 @@ namespace render {
 
         // Test if the ID is in the selection, return the index or -1 if not present
         static const int NOT_FOUND{ -1 };
-                
+
+        void add(ItemID id) { _items.push_back(id); }
         int find(ItemID id) const;
         bool contains(ItemID id) const { return find(id) > NOT_FOUND; }
 

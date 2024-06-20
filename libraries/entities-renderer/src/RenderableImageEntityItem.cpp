@@ -130,8 +130,7 @@ void ImageEntityRenderer::doRender(RenderArgs* args) {
         materials = _materials["0"];
     }
 
-    auto& schema = materials.getSchemaBuffer().get<graphics::MultiMaterial::Schema>();
-    glm::vec4 color = glm::vec4(ColorUtils::tosRGBVec3(schema._albedo), schema._opacity);
+    glm::vec4 color = materials.getColor();
     color = EntityRenderer::calculatePulseColor(color, _pulseProperties, _created);
 
     if (!_texture || !_texture->isLoaded() || color.a == 0.0f) {
