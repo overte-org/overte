@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 10/3/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -17,6 +18,7 @@
 #include <gpu/Batch.h>
 #include <render/Scene.h>
 #include <graphics/Geometry.h>
+#include <render/HighlightStyle.h>
 
 class ModelMeshPartPayload {
 public:
@@ -62,6 +64,7 @@ public:
     void setPortalExitID(const QUuid& portalExitID) { _portalExitID = portalExitID; }
     bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const;
     render::ItemID computeMirrorView(ViewFrustum& viewFrustum) const;
+    render::HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const;
 
     void addMaterial(graphics::MaterialLayer material) { _drawMaterials.push(material); }
     void removeMaterial(graphics::MaterialPointer material) { _drawMaterials.remove(material); }
@@ -113,7 +116,7 @@ namespace render {
     template <> void payloadRender(const ModelMeshPartPayload::Pointer& payload, RenderArgs* args);
     template <> bool payloadPassesZoneOcclusionTest(const ModelMeshPartPayload::Pointer& payload, const std::unordered_set<QUuid>& containingZones);
     template <> ItemID payloadComputeMirrorView(const ModelMeshPartPayload::Pointer& payload, ViewFrustum& viewFrustum);
-
+    template <> HighlightStyle payloadGetOutlineStyle(const ModelMeshPartPayload::Pointer& payload, const ViewFrustum& viewFrustum, const size_t height);
 }
 
 #endif // hifi_MeshPartPayload_h

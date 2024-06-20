@@ -83,11 +83,11 @@ using u8vec3Color = glm::u8vec3;
 
 struct EntityPropertyInfo {
     EntityPropertyInfo(EntityPropertyList propEnum) :
-        propertyEnum(propEnum) {}
+        propertyEnums(propEnum) {}
     EntityPropertyInfo(EntityPropertyList propEnum, QVariant min, QVariant max) :
-        propertyEnum(propEnum), minimum(min), maximum(max) {}
+        propertyEnums(propEnum), minimum(min), maximum(max) {}
     EntityPropertyInfo() = default;
-    EntityPropertyList propertyEnum;
+    EntityPropertyFlags propertyEnums;
     QVariant minimum;
     QVariant maximum;
 };

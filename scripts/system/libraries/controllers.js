@@ -16,6 +16,8 @@
    getControllerWorldLocation:true
  */
 
+var controllerStandard = Controller.Standard;
+
 const GRAB_COMMUNICATIONS_SETTING = "io.highfidelity.isFarGrabbing";
 const setGrabCommunications = function setFarGrabCommunications(on) {
     Settings.setValue(GRAB_COMMUNICATIONS_SETTING, on ? "on" : "");
@@ -29,7 +31,7 @@ const getGrabCommunications = function getFarGrabCommunications() {
 const getGrabPointSphereOffset = function(handController, ignoreSensorToWorldScale) {
     var GRAB_POINT_SPHERE_OFFSET = { x: 0.04, y: 0.13, z: 0.039 };  // x = upward, y = forward, z = lateral
     var offset = GRAB_POINT_SPHERE_OFFSET;
-    if (handController === Controller.Standard.LeftHand) {
+    if (handController === controllerStandard.LeftHand) {
         offset = {
             x: -GRAB_POINT_SPHERE_OFFSET.x,
             y: GRAB_POINT_SPHERE_OFFSET.y,
@@ -54,7 +56,7 @@ const getControllerWorldLocation = function (handController, doOffset) {
         valid = pose.valid;
         var controllerJointIndex;
         if (pose.valid) {
-            if (handController === Controller.Standard.RightHand) {
+            if (handController === controllerStandard.RightHand) {
                 controllerJointIndex = MyAvatar.getJointIndex("_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND");
             } else {
                 controllerJointIndex = MyAvatar.getJointIndex("_CAMERA_RELATIVE_CONTROLLER_LEFTHAND");

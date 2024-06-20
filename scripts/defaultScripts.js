@@ -47,7 +47,7 @@ var DEFAULT_SCRIPTS_SEPARATE = [
     "communityScripts/notificationCore/notificationCore.js",
     "simplifiedUI/ui/simplifiedNametag/simplifiedNametag.js",
     {"stable": "system/more/app-more.js", "beta": "https://more.overte.org/more/app-more.js"},
-    {"stable": "communityScripts/chat/FloofChat.js", "beta": "https://content.fluffy.ws/scripts/chat/FloofChat.js"}
+    "communityScripts/chat/FloofChat.js",
     //"system/chat.js"
 ];
 

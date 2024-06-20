@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 12/10/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -60,7 +61,8 @@ bool MaterialKey::getCullFaceModeFromName(const std::string& modeName, CullFaceM
 }
 
 const std::string Material::HIFI_PBR { "hifi_pbr" };
-const std::string Material::HIFI_SHADER_SIMPLE { "hifi_shader_simple" };
+const std::string Material::HIFI_SHADER_SIMPLE{ "hifi_shader_simple" };
+const std::string Material::VRM_MTOON { "vrm_mtoon" };
 
 Material::Material() {
     for (int i = 0; i < NUM_TOTAL_FLAGS; i++) {
@@ -70,8 +72,8 @@ Material::Material() {
 
 Material::Material(const Material& material) :
     _name(material._name),
-    _model(material._model),
     _key(material._key),
+    _model(material._model),
     _emissive(material._emissive),
     _opacity(material._opacity),
     _albedo(material._albedo),
@@ -258,6 +260,17 @@ void Material::setTextureTransforms(const Transform& transform, MaterialMappingM
     _materialParams = glm::vec2(mode, repeat);
 }
 
+const glm::vec3 Material::DEFAULT_SHADE = glm::vec3(0.0f);
+const float Material::DEFAULT_SHADING_SHIFT = 0.0f;
+const float Material::DEFAULT_SHADING_TOONY = 0.9f;
+const glm::vec3 Material::DEFAULT_MATCAP = glm::vec3(1.0f);
+const glm::vec3 Material::DEFAULT_PARAMETRIC_RIM = glm::vec3(0.0f);
+const float Material::DEFAULT_PARAMETRIC_RIM_FRESNEL_POWER = 5.0f;
+const float Material::DEFAULT_PARAMETRIC_RIM_LIFT = 0.0f;
+const float Material::DEFAULT_RIM_LIGHTING_MIX = 1.0f;
+const float Material::DEFAULT_UV_ANIMATION_SCROLL_SPEED = 0.0f;
+const glm::vec3 Material::DEFAULT_OUTLINE = glm::vec3(0.0f);
+
 MultiMaterial::MultiMaterial() {
     Schema schema;
     _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
@@ -310,4 +323,31 @@ bool MultiMaterial::anyReferenceMaterialsOrTexturesChanged() const {
     }
 
     return false;
+}
+
+void MultiMaterial::setisMToon(bool isMToon) {
+    if (isMToon != _isMToon) {
+        if (isMToon) {
+            MToonSchema toonSchema;
+            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(MToonSchema), (const gpu::Byte*) &toonSchema, sizeof(MToonSchema)));
+        } else {
+            Schema schema;
+            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
+        }
+    }
+    _isMToon = isMToon;
+}
+
+void MultiMaterial::setMToonTime() {
+    assert(_isMToon);
+
+    // Some objects, like material entities, don't have persistent MultiMaterials to store this in, so we just store it once statically
+    static uint64_t mtoonStartTime;
+    static std::once_flag once;
+    std::call_once(once, [] {
+        mtoonStartTime = usecTimestampNow();
+    });
+
+    // Minimize floating point error by doing an integer division to milliseconds, before the floating point division to seconds
+    _schemaBuffer.edit<graphics::MultiMaterial::MToonSchema>()._time = (float)((usecTimestampNow() - mtoonStartTime) / USECS_PER_MSEC) / MSECS_PER_SECOND;
 }

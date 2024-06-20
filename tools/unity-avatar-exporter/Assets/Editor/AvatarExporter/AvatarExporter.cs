@@ -15,12 +15,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Globalization;
-
+using System.Linq;
+using Overte;
 
 class AvatarExporter : MonoBehaviour
 {
     // update version number for every PR that changes this file, also set updated version in README file
-    static readonly string AVATAR_EXPORTER_VERSION = "0.6.0";
+    public static readonly string AVATAR_EXPORTER_VERSION = "2023.08";
 
     static readonly float HIPS_MIN_Y_PERCENT_OF_HEIGHT = 0.03f;
     static readonly float BELOW_GROUND_THRESHOLD_PERCENT_OF_HEIGHT = -0.15f;
@@ -186,9 +187,11 @@ class AvatarExporter : MonoBehaviour
     };
 
     static readonly string STANDARD_SHADER = "Standard";
+    static readonly string STANDARD_ROUGHNESS_SHADER = "Autodesk Interactive"; // "Standard (Roughness setup)" Has been renamed in unity 2018.03
     static readonly string STANDARD_SPECULAR_SHADER = "Standard (Specular setup)";
     static readonly string[] SUPPORTED_SHADERS = new string[] {
         STANDARD_SHADER,
+        STANDARD_ROUGHNESS_SHADER,
         STANDARD_SPECULAR_SHADER,
     };
 
@@ -223,105 +226,12 @@ class AvatarExporter : MonoBehaviour
         AvatarRule.HeadMapped,
     };
 
-    class UserBoneInformation
-    {
-        public string humanName; // bone name in Humanoid if it is mapped, otherwise ""
-        public string parentName; // parent user bone name
-        public BoneTreeNode boneTreeNode; // node within the user bone tree
-        public int mappingCount; // number of times this bone is mapped in Humanoid
-        public Vector3 position; // absolute position
-        public Quaternion rotation; // absolute rotation
-
-        public UserBoneInformation()
-        {
-            humanName = "";
-            parentName = "";
-            boneTreeNode = new BoneTreeNode();
-            mappingCount = 0;
-            position = new Vector3();
-            rotation = new Quaternion();
-        }
-        public UserBoneInformation(string parent, BoneTreeNode treeNode, Vector3 pos)
-        {
-            humanName = "";
-            parentName = parent;
-            boneTreeNode = treeNode;
-            mappingCount = 0;
-            position = pos;
-            rotation = new Quaternion();
-        }
-
-        public bool HasHumanMapping() { return !string.IsNullOrEmpty(humanName); }
-    }
-
-    class BoneTreeNode
-    {
-        public string boneName;
-        public string parentName;
-        public List<BoneTreeNode> children = new List<BoneTreeNode>();
-
-        public BoneTreeNode() { }
-        public BoneTreeNode(string name, string parent)
-        {
-            boneName = name;
-            parentName = parent;
-        }
-    }
-
-    class MaterialData
-    {
-        public Color albedo;
-        public string albedoMap;
-        public double metallic;
-        public string metallicMap;
-        public double roughness;
-        public string roughnessMap;
-        public string normalMap;
-        public string occlusionMap;
-        public Color emissive;
-        public string emissiveMap;
-
-        public string getJSON()
-        {
-            string json = "{ \"materialVersion\": 1, \"materials\": { ";
-
-            //Albedo
-            json += $"\"albedo\": [{albedo.r.F()}, {albedo.g.F()}, {albedo.b.F()}], ";
-            if (!string.IsNullOrEmpty(albedoMap))
-                json += $"\"albedoMap\": \"{albedoMap}\", ";
-
-            //Metallic
-            json += $"\"metallic\": {metallic.F()}, ";
-            if (!string.IsNullOrEmpty(metallicMap))
-                json += $"\"metallicMap\": \"{metallicMap}\", ";
-
-            //Roughness
-            json += $"\"roughness\": {roughness.F()}, ";
-            if (!string.IsNullOrEmpty(roughnessMap))
-                json += $"\"roughnessMap\": \"{roughnessMap}\", ";
-
-            //Normal
-            if (!string.IsNullOrEmpty(normalMap))
-                json += $"\"normalMap\": \"{normalMap}\", ";
-
-            //Occlusion
-            if (!string.IsNullOrEmpty(occlusionMap))
-                json += $"\"occlusionMap\": \"{occlusionMap}\", ";
-
-            //Emissive
-            json += $"\"emissive\": [{emissive.r.F()}, {emissive.g.F()}, {emissive.b.F()}]";
-            if (!string.IsNullOrEmpty(emissiveMap))
-                json += $", \"emissiveMap\": \"{emissiveMap}\"";
-
-            json += " } }";
-            return json;
-        }
-    }
-
     static string assetPath = "";
     static string assetName = "";
     static ModelImporter modelImporter;
     static HumanDescription humanDescription;
+
+    static FST currentFst;
 
     static Dictionary<string, UserBoneInformation> userBoneInfos = new Dictionary<string, UserBoneInformation>();
     static Dictionary<string, string> humanoidToUserBoneMappings = new Dictionary<string, string>();
@@ -359,7 +269,8 @@ class AvatarExporter : MonoBehaviour
     [MenuItem("Overte/About")]
     static void About()
     {
-        EditorUtility.DisplayDialog("About", "Avatar Exporter\nVersion " + AVATAR_EXPORTER_VERSION + "\nCopyright 2022 to 2023 Overte e.V.\nCopyright 2018 High Fidelity, Inc.", "Ok");
+        EditorUtility.DisplayDialog("About",
+            $"Avatar Exporter\nVersion {AVATAR_EXPORTER_VERSION}\nCopyright 2022 to 2023 Overte e.V.\nCopyright 2018 High Fidelity, Inc.", "Ok");
     }
 
     static void ExportSelectedAvatar(bool updateExistingAvatar)
@@ -427,14 +338,10 @@ class AvatarExporter : MonoBehaviour
         warnings = "";
         foreach (var failedAvatarRule in failedAvatarRules)
         {
-            if (Array.IndexOf(EXPORT_BLOCKING_AVATAR_RULES, failedAvatarRule.Key) >= 0)
-            {
+            if (EXPORT_BLOCKING_AVATAR_RULES.Contains(failedAvatarRule.Key))
                 boneErrors += failedAvatarRule.Value + "\n\n";
-            }
             else
-            {
                 warnings += failedAvatarRule.Value + "\n\n";
-            }
         }
 
         // add material and texture warnings after bone-related warnings
@@ -443,9 +350,7 @@ class AvatarExporter : MonoBehaviour
 
         // remove trailing newlines at the end of the warnings
         if (!string.IsNullOrEmpty(warnings))
-        {
-            warnings = warnings.Substring(0, warnings.LastIndexOf("\n\n"));
-        }
+            warnings = warnings.Trim();
 
         if (!string.IsNullOrEmpty(boneErrors))
         {
@@ -456,7 +361,7 @@ class AvatarExporter : MonoBehaviour
                 boneErrors += "Warnings:\n\n" + warnings;
             }
             // remove ending newlines from the last rule failure string that was added above
-            boneErrors = boneErrors.Substring(0, boneErrors.LastIndexOf("\n\n"));
+            boneErrors = boneErrors.Trim();
             EditorUtility.DisplayDialog("Error", boneErrors, "Ok");
             return;
         }
@@ -502,33 +407,25 @@ class AvatarExporter : MonoBehaviour
     {
         bool copyModelToExport = false;
 
-        // lookup the project name field from the fst file to update
-        projectName = "";
         try
         {
-            string[] lines = File.ReadAllLines(exportFstPath);
-            foreach (string line in lines)
+            currentFst = new FST();
+            // load the old file first
+            if(!currentFst.LoadFile(exportFstPath))
             {
-                int separatorIndex = line.IndexOf("=");
-                if (separatorIndex >= 0)
-                {
-                    string key = line.Substring(0, separatorIndex).Trim();
-                    if (key == "name")
-                    {
-                        projectName = line.Substring(separatorIndex + 1).Trim();
-                        break;
-                    }
-                }
+                EditorUtility.DisplayDialog("Error",
+                    $"Failed to read from existing file {exportFstPath}. Please check the file and try again.", "Ok");
+                return;
             }
         }
         catch
         {
-            EditorUtility.DisplayDialog("Error", "Failed to read from existing file " + exportFstPath +
-                                        ". Please check the file and try again.", "Ok");
+            EditorUtility.DisplayDialog("Error",
+                $"Failed to read from existing file {exportFstPath}. Please check the file and try again.", "Ok");
             return;
         }
 
-        string exportModelPath = Path.GetDirectoryName(exportFstPath) + "/" + assetName + ".fbx";
+        string exportModelPath = $"{Path.GetDirectoryName(exportFstPath)}/{assetName}.fbx";
         if (File.Exists(exportModelPath))
         {
             // if the fbx in Unity Assets is newer than the fbx in the target export
@@ -613,21 +510,10 @@ class AvatarExporter : MonoBehaviour
             }
         }
 
-        // delete existing fst file since we will write a new file
-        // TODO: updating fst should only rewrite joint mappings and joint rotation offsets to existing file
-        try
-        {
-            File.Delete(exportFstPath);
-        }
-        catch
-        {
-            EditorUtility.DisplayDialog("Error", "Failed to overwrite existing file " + exportFstPath +
-                                        ". Please check the file and try again.", "Ok");
-            return;
-        }
+        currentFst.scale = scale;
 
         // write out a new fst file in place of the old file
-        if (!WriteFST(exportFstPath, projectName, scale))
+        if (!WriteFST(exportFstPath))
         {
             return;
         }
@@ -662,7 +548,14 @@ class AvatarExporter : MonoBehaviour
 
         // write out the avatar.fst file to the project directory
         string exportFstPath = projectDirectory + "avatar.fst";
-        if (!WriteFST(exportFstPath, projectName, scale))
+
+        currentFst = new FST
+        {
+            name = projectName,
+            scale = scale,
+            filename = $"{assetName}.fbx"
+        };
+        if (!WriteFST(exportFstPath))
         {
             return;
         }
@@ -692,39 +585,24 @@ class AvatarExporter : MonoBehaviour
     }
 
     // The Overte FBX Serializer omits the colon based prefixes. This will make the jointnames compatible.
-    static string removeTypeFromJointname(string jointName)
-    {
-        return jointName.Substring(jointName.IndexOf(':') + 1);
-    }
+    static string removeTypeFromJointname(string jointName) => jointName.Substring(jointName.IndexOf(':') + 1);
 
-    static bool WriteFST(string exportFstPath, string projectName, float scale)
+    static bool WriteFST(string exportFstPath)
     {
-        // write out core fields to top of fst file
-        try
-        {
-            File.WriteAllText(exportFstPath,
-                $"exporterVersion = {AVATAR_EXPORTER_VERSION}\n" +
-                $"name     = {projectName}\n" +
-                "type     = body+head\n" +
-                $"scale    = {scale.F()}\n" +
-                $"filename = {assetName}.fbx\n" +
-                "texdir   = textures\n"
-            );
-        }
-        catch
-        {
-            EditorUtility.DisplayDialog("Error", "Failed to write file " + exportFstPath +
-                                        ". Please check the location and try again.", "Ok");
-            return false;
-        }
-
         // write out joint mappings to fst file
         foreach (var userBoneInfo in userBoneInfos)
         {
             if (userBoneInfo.Value.HasHumanMapping())
             {
-                string overteJointName = HUMANOID_TO_OVERTE_JOINT_NAME[userBoneInfo.Value.humanName];
-                File.AppendAllText(exportFstPath, $"jointMap = {overteJointName} = {removeTypeFromJointname(userBoneInfo.Key)}\n");
+                var jointName = HUMANOID_TO_OVERTE_JOINT_NAME[userBoneInfo.Value.humanName];
+                var userJointName = removeTypeFromJointname(userBoneInfo.Key);
+                // Skip joints with the same name
+                if(jointName == userJointName)
+                    continue;
+                if (!currentFst.jointMapList.Exists(x => x.From == jointName))
+                    currentFst.jointMapList.Add(new JointMap(jointName, userJointName));
+                else
+                    currentFst.jointMapList.Find(x => x.From == jointName).To = userJointName;
             }
         }
 
@@ -772,11 +650,15 @@ class AvatarExporter : MonoBehaviour
                 }
             }
 
-            // swap from left-handed (Unity) to right-handed (Overte) coordinates and write out joint rotation offset to fst
-            jointOffset = new Quaternion(-jointOffset.x, jointOffset.y, jointOffset.z, -jointOffset.w);
-            File.AppendAllText(exportFstPath,
-                $"jointRotationOffset2 = {removeTypeFromJointname(userBoneName)} = ({jointOffset.x.F()}, {jointOffset.y.F()}, {jointOffset.z.F()}, {jointOffset.w.F()})\n"
-            );
+            var norBName = removeTypeFromJointname(userBoneName);
+            if (!currentFst.jointRotationList.Exists(x => x.BoneName == norBName))
+                // swap from left-handed (Unity) to right-handed (Overte) coordinates and write out joint rotation offset to fst
+                currentFst.jointRotationList.Add(
+                    new JointRotationOffset2(norBName, -jointOffset.x, jointOffset.y, jointOffset.z, -jointOffset.w)
+                );
+            else
+                currentFst.jointRotationList.Find(x => x.BoneName == norBName).offset =
+                    new Quaternion(-jointOffset.x, jointOffset.y, jointOffset.z, -jointOffset.w);
         }
 
         // if there is any material data to save then write out all materials in JSON material format to the materialMap field
@@ -788,10 +670,12 @@ class AvatarExporter : MonoBehaviour
                 // if this is the only material in the mapping and it is mapped to default material name No Name,
                 // then the avatar has no embedded materials and this material should be applied to all meshes
                 string matName = (materialMappings.Count == 1 && materialData.Key == DEFAULT_MATERIAL_NAME) ? "all" : $"mat::{materialData.Key}";
-                matData.Add($"\"{matName}\": {materialData.Value.getJSON()}");
+                matData.Add($"\"{matName}\": {materialData.Value}");
             }
-            File.AppendAllText(exportFstPath, $"materialMap = {{{string.Join(",", matData)}}}");
+            currentFst.materialMap = $"{{{string.Join(",", matData)}}}";
         }
+
+        var res = currentFst.ExportFile(exportFstPath);
 
         EditorPrefs.SetString("OV_LAST_PROJECT_PATH", exportFstPath);
 
@@ -801,7 +685,7 @@ class AvatarExporter : MonoBehaviour
             System.Diagnostics.Process.Start("explorer.exe", "/select," + exportFstPath);
         }*/
 
-        return true;
+        return res;
     }
 
     static void SetBoneAndMaterialInformation()
@@ -831,11 +715,10 @@ class AvatarExporter : MonoBehaviour
         {
             string humanName = bone.humanName;
             string userBoneName = bone.boneName;
-            string overteJointName;
             if (userBoneInfos.ContainsKey(userBoneName))
             {
                 ++userBoneInfos[userBoneName].mappingCount;
-                if (HUMANOID_TO_OVERTE_JOINT_NAME.TryGetValue(humanName, out overteJointName))
+                if (HUMANOID_TO_OVERTE_JOINT_NAME.ContainsKey(humanName))
                 {
                     userBoneInfos[userBoneName].humanName = humanName;
                     humanoidToUserBoneMappings.Add(humanName, userBoneName);
@@ -1350,8 +1233,9 @@ class AvatarExporter : MonoBehaviour
             }
 
             // don't store any material data for unsupported shader types
-            if (Array.IndexOf(SUPPORTED_SHADERS, shaderName) == -1)
+            if (!SUPPORTED_SHADERS.Contains(shaderName))
             {
+                Debug.LogWarning($"Unsuported shader {shaderName} in mat {materialName}");
                 if (!unsupportedShaderMaterials.Contains(materialName))
                 {
                     unsupportedShaderMaterials.Add(materialName);
@@ -1444,46 +1328,22 @@ class AvatarExporter : MonoBehaviour
 
     static void AddMaterialWarnings()
     {
-        string alternateStandardShaders = "";
-        string unsupportedShaders = "";
-        // combine all material names for each material warning into a comma-separated string
-        foreach (string materialName in alternateStandardShaderMaterials)
+        if (alternateStandardShaderMaterials.Count != 0)
         {
-            if (!string.IsNullOrEmpty(alternateStandardShaders))
-            {
-                alternateStandardShaders += ", ";
-            }
-            alternateStandardShaders += materialName;
+            string alternateStandardShaders = string.Join(", ", alternateStandardShaderMaterials);
+            warnings += alternateStandardShaderMaterials.Count == 1
+                ? $"The material {alternateStandardShaders} is not using the recommended variation of the Standard shader."
+                : $"The materials {alternateStandardShaders} are not using the recommended variation of the Standard shader."
+                  + " We recommend you change them to \"Autodesk Interactive\" shader for improved performance.\n\n";
         }
-        foreach (string materialName in unsupportedShaderMaterials)
+
+        if (unsupportedShaderMaterials.Count != 0)
         {
-            if (!string.IsNullOrEmpty(unsupportedShaders))
-            {
-                unsupportedShaders += ", ";
-            }
-            unsupportedShaders += materialName;
-        }
-        if (alternateStandardShaderMaterials.Count > 1)
-        {
-            warnings += "The materials " + alternateStandardShaders + " are not using the " +
-                        "recommended variation of the Standard shader. We recommend you change " +
-                        "them to Standard (Roughness setup) shader for improved performance.\n\n";
-        }
-        else if (alternateStandardShaderMaterials.Count == 1)
-        {
-            warnings += "The material " + alternateStandardShaders + " is not using the " +
-                        "recommended variation of the Standard shader. We recommend you change " +
-                        "it to Standard (Roughness setup) shader for improved performance.\n\n";
-        }
-        if (unsupportedShaderMaterials.Count > 1)
-        {
-            warnings += "The materials " + unsupportedShaders + " are using an unsupported shader. " +
-                        "We recommend you change them to a Standard shader type.\n\n";
-        }
-        else if (unsupportedShaderMaterials.Count == 1)
-        {
-            warnings += "The material " + unsupportedShaders + " is using an unsupported shader. " +
-                        "We recommend you change it to a Standard shader type.\n\n";
+            string unsupportedShaders = string.Join(", ", unsupportedShaderMaterials);
+            warnings += unsupportedShaderMaterials.Count == 1
+                ? $"The material {unsupportedShaders} is using an unsupported shader."
+                : $"The materials {unsupportedShaders} are using an unsupported shader."
+                  + " We recommend you change it to the \"Autodesk Interactive\" shader\n\n";
         }
     }
 
@@ -1917,11 +1777,6 @@ class AvatarUtilities
     }
 }
 
-public static class ConverterExtensions
-{
-    //Helper function to convert floats to string without commas
-    public static string F(this float x) => x.ToString("G", CultureInfo.InvariantCulture);
-    public static string F(this double x) => x.ToString("G", CultureInfo.InvariantCulture);
-}
+
 
 #endif

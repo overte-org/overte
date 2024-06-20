@@ -12,6 +12,7 @@
 
 /* global Script, Controller, RIGHT_HAND, LEFT_HAND, HMD, makeLaserParams */
 (function() {
+    var controllerStandard = Controller.Standard;
     Script.include("/~/system/libraries/controllers.js");
     var ControllerDispatcherUtils = Script.require("/~/system/libraries/controllerDispatcherUtils.js");
     var MARGIN = 25;
@@ -45,11 +46,11 @@
         };
 
         this.getOtherHandController = function() {
-            return (this.hand === RIGHT_HAND) ? Controller.Standard.LeftHand : Controller.Standard.RightHand;
+            return (this.hand === RIGHT_HAND) ? controllerStandard.LeftHand : controllerStandard.RightHand;
         };
 
         this.handToController = function() {
-            return (this.hand === RIGHT_HAND) ? Controller.Standard.RightHand : Controller.Standard.LeftHand;
+            return (this.hand === RIGHT_HAND) ? controllerStandard.RightHand : controllerStandard.LeftHand;
         };
 
         this.updateRecommendedArea = function() {

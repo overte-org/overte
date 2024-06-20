@@ -4,6 +4,7 @@
 //
 //  Created by Zach Pomerantz on 12/22/2016.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -35,7 +36,7 @@ void RenderFetchCullSortTask::build(JobModel& task, const Varying& input, Varyin
     const auto nonspatialSelection = task.addJob<FetchNonspatialItems>("FetchLayeredSelection", nonspatialFilter);
 
     // Multi filter visible items into different buckets
-    const int NUM_SPATIAL_FILTERS = 6;
+    const int NUM_SPATIAL_FILTERS = 7;
     const int NUM_NON_SPATIAL_FILTERS = 4;
     const int OPAQUE_SHAPE_BUCKET = 0;
     const int TRANSPARENT_SHAPE_BUCKET = 1;
@@ -43,6 +44,7 @@ void RenderFetchCullSortTask::build(JobModel& task, const Varying& input, Varyin
     const int LIGHT_BUCKET = 3;
     const int META_BUCKET = 4;
     const int MIRROR_BUCKET = 5;
+    const int OUTLINE_BUCKET = 6;
     const int BACKGROUND_BUCKET = 3;
     MultiFilterItems<NUM_SPATIAL_FILTERS>::ItemFilterArray spatialFilters = { {
             ItemFilter::Builder::opaqueShape().withoutMirror(),
@@ -50,7 +52,8 @@ void RenderFetchCullSortTask::build(JobModel& task, const Varying& input, Varyin
             ItemFilter::Builder().withSimulate(),
             ItemFilter::Builder::light(),
             ItemFilter::Builder::meta().withoutMirror(),
-            ItemFilter::Builder::mirror()
+            ItemFilter::Builder::mirror(),
+            ItemFilter::Builder().withVisible().withOutline()
         } };
     MultiFilterItems<NUM_NON_SPATIAL_FILTERS>::ItemFilterArray nonspatialFilters = { {
             ItemFilter::Builder::opaqueShape(),
@@ -86,7 +89,7 @@ void RenderFetchCullSortTask::build(JobModel& task, const Varying& input, Varyin
 
     task.addJob<ClearContainingZones>("ClearContainingZones");
 
-    output = Output(BucketList{ opaques, transparents, lights, metas, mirrors, simulate,
+    output = Output(BucketList{ opaques, transparents, lights, metas, mirrors, simulate, filteredSpatialBuckets[OUTLINE_BUCKET],
                     filteredLayeredOpaque.getN<FilterLayeredItems::Outputs>(0), filteredLayeredTransparent.getN<FilterLayeredItems::Outputs>(0),
                     filteredLayeredOpaque.getN<FilterLayeredItems::Outputs>(1), filteredLayeredTransparent.getN<FilterLayeredItems::Outputs>(1),
                     background }, spatialSelection);

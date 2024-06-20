@@ -10,6 +10,8 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
+#define CGLTF_IMPLEMENTATION
+
 #include "GLTFSerializer.h"
 
 #include <QtCore/QBuffer>
@@ -28,14 +30,31 @@
 #include <qfile.h>
 #include <qfileinfo.h>
 
+#include <sstream>
+
+#include <glm/gtx/transform.hpp>
+
 #include <shared/NsightHelpers.h>
 #include <NetworkAccessManager.h>
 #include <ResourceManager.h>
 #include <PathUtils.h>
 #include <image/ColorChannel.h>
 #include <BlendshapeConstants.h>
+#include <procedural/ProceduralMaterialCache.h>
 
 #include "FBXSerializer.h"
+
+float atof_locale_independent(char* str) {
+    //TODO: Once we have C++17 we can use std::from_chars
+    std::istringstream streamToParse(str);
+    streamToParse.imbue(std::locale("C"));
+    float value;
+    if (!(streamToParse >> value)) {
+        qDebug(modelformat) << "cgltf: Cannot parse float from string: " << str;
+        return 0.0f;
+    }
+    return value;
+}
 
 #define GLTF_GET_INDICIES(accCount) int index1 = (indices[n + 0] * accCount); int index2 = (indices[n + 1] * accCount); int index3 = (indices[n + 2] * accCount);
 
@@ -59,749 +78,30 @@ newArray.append(oldArray[index1]); newArray.append(oldArray[index1 + 1]); newArr
 newArray.append(oldArray[index2]); newArray.append(oldArray[index2 + 1]); newArray.append(oldArray[index2 + 2]); newArray.append(oldArray[index2 + 3]); \
 newArray.append(oldArray[index3]); newArray.append(oldArray[index3 + 1]); newArray.append(oldArray[index3 + 2]); newArray.append(oldArray[index3 + 3]);
 
-bool GLTFSerializer::getStringVal(const QJsonObject& object, const QString& fieldname,
-                              QString& value, QMap<QString, bool>&  defined) {
-    bool _defined = (object.contains(fieldname) && object[fieldname].isString());
-    if (_defined) {
-        value = object[fieldname].toString();
-    }
-    defined.insert(fieldname, _defined);
-    return _defined;
-}
-
-bool GLTFSerializer::getBoolVal(const QJsonObject& object, const QString& fieldname,
-                            bool& value, QMap<QString, bool>&  defined) {
-    bool _defined = (object.contains(fieldname) && object[fieldname].isBool());
-    if (_defined) {
-        value = object[fieldname].toBool();
-    }
-    defined.insert(fieldname, _defined);
-    return _defined;
-}
-
-bool GLTFSerializer::getIntVal(const QJsonObject& object, const QString& fieldname,
-                           int& value, QMap<QString, bool>&  defined) {
-    bool _defined = (object.contains(fieldname) && !object[fieldname].isNull());
-    if (_defined) {
-        value = object[fieldname].toInt();
-    }
-    defined.insert(fieldname, _defined);
-    return _defined;
-}
-
-bool GLTFSerializer::getDoubleVal(const QJsonObject& object, const QString& fieldname,
-                              double& value, QMap<QString, bool>&  defined) {
-    bool _defined = (object.contains(fieldname) && object[fieldname].isDouble());
-    if (_defined) {
-        value = object[fieldname].toDouble();
-    }
-    defined.insert(fieldname, _defined);
-    return _defined;
-}
-bool GLTFSerializer::getObjectVal(const QJsonObject& object, const QString& fieldname,
-                              QJsonObject& value, QMap<QString, bool>&  defined) {
-    bool _defined = (object.contains(fieldname) && object[fieldname].isObject());
-    if (_defined) {
-        value = object[fieldname].toObject();
-    }
-    defined.insert(fieldname, _defined);
-    return _defined;
-}
-
-bool GLTFSerializer::getIntArrayVal(const QJsonObject& object, const QString& fieldname,
-                                QVector<int>& values, QMap<QString, bool>&  defined) {
-    bool _defined = (object.contains(fieldname) && object[fieldname].isArray());
-    if (_defined) {
-        QJsonArray arr = object[fieldname].toArray();
-        foreach(const QJsonValue & v, arr) {
-            if (!v.isNull()) {
-                values.push_back(v.toInt());
-            }
-        }
-    }
-    defined.insert(fieldname, _defined);
-    return _defined;
-}
-
-bool GLTFSerializer::getDoubleArrayVal(const QJsonObject& object, const QString& fieldname,
-                                   QVector<double>& values, QMap<QString, bool>&  defined) {
-    bool _defined = (object.contains(fieldname) && object[fieldname].isArray());
-    if (_defined) {
-        QJsonArray arr = object[fieldname].toArray();
-        foreach(const QJsonValue & v, arr) {
-            if (v.isDouble()) {
-                values.push_back(v.toDouble());
-            }
-        }
-    }
-    defined.insert(fieldname, _defined);
-    return _defined;
-}
-
-bool GLTFSerializer::getObjectArrayVal(const QJsonObject& object, const QString& fieldname,
-                                   QJsonArray& objects, QMap<QString, bool>& defined) {
-    bool _defined = (object.contains(fieldname) && object[fieldname].isArray());
-    if (_defined) {
-        objects = object[fieldname].toArray();
-    }
-    defined.insert(fieldname, _defined);
-    return _defined;
-}
-
-hifi::ByteArray GLTFSerializer::setGLBChunks(const hifi::ByteArray& data) {
-    int byte = 4;
-    int jsonStart = data.indexOf("JSON", Qt::CaseSensitive);
-    int binStart = data.indexOf("BIN", Qt::CaseSensitive);
-    int jsonLength, binLength;
-    hifi::ByteArray jsonLengthChunk, binLengthChunk;
-
-    jsonLengthChunk = data.mid(jsonStart - byte, byte);
-    QDataStream tempJsonLen(jsonLengthChunk);
-    tempJsonLen.setByteOrder(QDataStream::LittleEndian);
-    tempJsonLen >> jsonLength;
-    hifi::ByteArray jsonChunk = data.mid(jsonStart + byte, jsonLength);
-
-    if (binStart != -1) {
-        binLengthChunk = data.mid(binStart - byte, byte);
-
-        QDataStream tempBinLen(binLengthChunk);
-        tempBinLen.setByteOrder(QDataStream::LittleEndian);
-        tempBinLen >> binLength;
-
-        _glbBinary = data.mid(binStart + byte, binLength);
-    }
-    return jsonChunk;
-}
-
-int GLTFSerializer::getMeshPrimitiveRenderingMode(const QString& type)
-{
-    if (type == "POINTS") {
-        return GLTFMeshPrimitivesRenderingMode::POINTS;
-    }
-    if (type == "LINES") {
-        return GLTFMeshPrimitivesRenderingMode::LINES;
-    }
-    if (type == "LINE_LOOP") {
-        return GLTFMeshPrimitivesRenderingMode::LINE_LOOP;
-    }
-    if (type == "LINE_STRIP") {
-        return GLTFMeshPrimitivesRenderingMode::LINE_STRIP;
-    }
-    if (type == "TRIANGLES") {
-        return GLTFMeshPrimitivesRenderingMode::TRIANGLES;
-    }
-    if (type == "TRIANGLE_STRIP") {
-        return GLTFMeshPrimitivesRenderingMode::TRIANGLE_STRIP;
-    }
-    if (type == "TRIANGLE_FAN") {
-        return GLTFMeshPrimitivesRenderingMode::TRIANGLE_FAN;
-    }
-    return GLTFMeshPrimitivesRenderingMode::TRIANGLES;
-}
-
-int GLTFSerializer::getAccessorType(const QString& type)
-{
-    if (type == "SCALAR") {
-        return GLTFAccessorType::SCALAR;
-    }
-    if (type == "VEC2") {
-        return GLTFAccessorType::VEC2;
-    }
-    if (type == "VEC3") {
-        return GLTFAccessorType::VEC3;
-    }
-    if (type == "VEC4") {
-        return GLTFAccessorType::VEC4;
-    }
-    if (type == "MAT2") {
-        return GLTFAccessorType::MAT2;
-    }
-    if (type == "MAT3") {
-        return GLTFAccessorType::MAT3;
-    }
-    if (type == "MAT4") {
-        return GLTFAccessorType::MAT4;
-    }
-    return GLTFAccessorType::SCALAR;
-}
-
-graphics::MaterialKey::OpacityMapMode GLTFSerializer::getMaterialAlphaMode(const QString& type) {
-    if (type == "OPAQUE") {
-        return graphics::MaterialKey::OPACITY_MAP_OPAQUE;
-    }
-    if (type == "MASK") {
-        return graphics::MaterialKey::OPACITY_MAP_MASK;
-    }
-    if (type == "BLEND") {
-        return graphics::MaterialKey::OPACITY_MAP_BLEND;
-    }
-    return graphics::MaterialKey::OPACITY_MAP_BLEND;
-}
-
-int GLTFSerializer::getCameraType(const QString& type)
-{
-    if (type == "orthographic") {
-        return GLTFCameraTypes::ORTHOGRAPHIC;
-    }
-    if (type == "perspective") {
-        return GLTFCameraTypes::PERSPECTIVE;
-    }
-    return GLTFCameraTypes::PERSPECTIVE;
-}
-
-int GLTFSerializer::getImageMimeType(const QString& mime)
-{
-    if (mime == "image/jpeg") {
-        return GLTFImageMimetype::JPEG;
-    }
-    if (mime == "image/png") {
-        return GLTFImageMimetype::PNG;
-    }
-    return GLTFImageMimetype::JPEG;
-}
-
-int GLTFSerializer::getAnimationSamplerInterpolation(const QString& interpolation)
-{
-    if (interpolation == "LINEAR") {
-        return GLTFAnimationSamplerInterpolation::LINEAR;
-    }
-    return GLTFAnimationSamplerInterpolation::LINEAR;
-}
-
-bool GLTFSerializer::setAsset(const QJsonObject& object) {
-    QJsonObject jsAsset;
-    bool isAssetDefined = getObjectVal(object, "asset", jsAsset, _file.defined);
-    if (isAssetDefined) {
-        if (!getStringVal(jsAsset, "version", _file.asset.version,
-                          _file.asset.defined) || _file.asset.version != "2.0") {
-            return false;
-        }
-        getStringVal(jsAsset, "generator", _file.asset.generator, _file.asset.defined);
-        getStringVal(jsAsset, "copyright", _file.asset.copyright, _file.asset.defined);
-    }
-    return isAssetDefined;
-}
-
-GLTFAccessor::GLTFAccessorSparse::GLTFAccessorSparseIndices GLTFSerializer::createAccessorSparseIndices(const QJsonObject& object) {
-    GLTFAccessor::GLTFAccessorSparse::GLTFAccessorSparseIndices accessorSparseIndices;
-
-    getIntVal(object, "bufferView", accessorSparseIndices.bufferView, accessorSparseIndices.defined);
-    getIntVal(object, "byteOffset", accessorSparseIndices.byteOffset, accessorSparseIndices.defined);
-    getIntVal(object, "componentType", accessorSparseIndices.componentType, accessorSparseIndices.defined);
-
-    return accessorSparseIndices;
-}
-
-GLTFAccessor::GLTFAccessorSparse::GLTFAccessorSparseValues GLTFSerializer::createAccessorSparseValues(const QJsonObject& object) {
-    GLTFAccessor::GLTFAccessorSparse::GLTFAccessorSparseValues accessorSparseValues;
-
-    getIntVal(object, "bufferView", accessorSparseValues.bufferView, accessorSparseValues.defined);
-    getIntVal(object, "byteOffset", accessorSparseValues.byteOffset, accessorSparseValues.defined);
-
-    return accessorSparseValues;
-}
-
-GLTFAccessor::GLTFAccessorSparse GLTFSerializer::createAccessorSparse(const QJsonObject& object) {
-    GLTFAccessor::GLTFAccessorSparse accessorSparse;
-
-    getIntVal(object, "count", accessorSparse.count, accessorSparse.defined);
-    QJsonObject sparseIndicesObject;
-    if (getObjectVal(object, "indices", sparseIndicesObject, accessorSparse.defined)) {
-        accessorSparse.indices = createAccessorSparseIndices(sparseIndicesObject);
-    }
-    QJsonObject sparseValuesObject;
-    if (getObjectVal(object, "values", sparseValuesObject, accessorSparse.defined)) {
-        accessorSparse.values = createAccessorSparseValues(sparseValuesObject);
-    }
-
-    return accessorSparse;
-}
-
-bool GLTFSerializer::addAccessor(const QJsonObject& object) {
-    GLTFAccessor accessor;
-
-    getIntVal(object, "bufferView", accessor.bufferView, accessor.defined);
-    getIntVal(object, "byteOffset", accessor.byteOffset, accessor.defined);
-    getIntVal(object, "componentType", accessor.componentType, accessor.defined);
-    getIntVal(object, "count", accessor.count, accessor.defined);
-    getBoolVal(object, "normalized", accessor.normalized, accessor.defined);
-    QString type;
-    if (getStringVal(object, "type", type, accessor.defined)) {
-        accessor.type = getAccessorType(type);
-    }
-
-    QJsonObject sparseObject;
-    if (getObjectVal(object, "sparse", sparseObject, accessor.defined)) {
-        accessor.sparse = createAccessorSparse(sparseObject);
-    }
-
-    getDoubleArrayVal(object, "max", accessor.max, accessor.defined);
-    getDoubleArrayVal(object, "min", accessor.min, accessor.defined);
-
-    _file.accessors.push_back(accessor);
-
-    return true;
-}
-
-bool GLTFSerializer::addAnimation(const QJsonObject& object) {
-    GLTFAnimation animation;
-
-    QJsonArray channels;
-    if (getObjectArrayVal(object, "channels", channels, animation.defined)) {
-        foreach(const QJsonValue & v, channels) {
-            if (v.isObject()) {
-                GLTFChannel channel;
-                getIntVal(v.toObject(), "sampler", channel.sampler, channel.defined);
-                QJsonObject jsChannel;
-                if (getObjectVal(v.toObject(), "target", jsChannel, channel.defined)) {
-                    getIntVal(jsChannel, "node", channel.target.node, channel.target.defined);
-                    getIntVal(jsChannel, "path", channel.target.path, channel.target.defined);
-                }
-            }
-        }
-    }
-
-    QJsonArray samplers;
-    if (getObjectArrayVal(object, "samplers", samplers, animation.defined)) {
-        foreach(const QJsonValue & v, samplers) {
-            if (v.isObject()) {
-                GLTFAnimationSampler sampler;
-                getIntVal(v.toObject(), "input", sampler.input, sampler.defined);
-                getIntVal(v.toObject(), "output", sampler.input, sampler.defined);
-                QString interpolation;
-                if (getStringVal(v.toObject(), "interpolation", interpolation, sampler.defined)) {
-                    sampler.interpolation = getAnimationSamplerInterpolation(interpolation);
-                }
-            }
-        }
-    }
-
-    _file.animations.push_back(animation);
-
-    return true;
-}
-
-bool GLTFSerializer::addBufferView(const QJsonObject& object) {
-    GLTFBufferView bufferview;
-
-    getIntVal(object, "buffer", bufferview.buffer, bufferview.defined);
-    getIntVal(object, "byteLength", bufferview.byteLength, bufferview.defined);
-    getIntVal(object, "byteOffset", bufferview.byteOffset, bufferview.defined);
-    getIntVal(object, "target", bufferview.target, bufferview.defined);
-
-    _file.bufferviews.push_back(bufferview);
-
-    return true;
-}
-
-bool GLTFSerializer::addBuffer(const QJsonObject& object) {
-    GLTFBuffer buffer;
-
-    getIntVal(object, "byteLength", buffer.byteLength, buffer.defined);
-
-    if (_url.path().endsWith("glb")) {
-        if (!_glbBinary.isEmpty()) {
-            buffer.blob = _glbBinary;
-        } else {
-            return false;
-        }
-    }
-    if (getStringVal(object, "uri", buffer.uri, buffer.defined)) {
-        if (!readBinary(buffer.uri, buffer.blob)) {
-            return false;
-        }
-    }
-    _file.buffers.push_back(buffer);
-
-    return true;
-}
-
-bool GLTFSerializer::addCamera(const QJsonObject& object) {
-    GLTFCamera camera;
-
-    QJsonObject jsPerspective;
-    QJsonObject jsOrthographic;
-    QString type;
-    getStringVal(object, "name", camera.name, camera.defined);
-    if (getObjectVal(object, "perspective", jsPerspective, camera.defined)) {
-        getDoubleVal(jsPerspective, "aspectRatio", camera.perspective.aspectRatio, camera.perspective.defined);
-        getDoubleVal(jsPerspective, "yfov", camera.perspective.yfov, camera.perspective.defined);
-        getDoubleVal(jsPerspective, "zfar", camera.perspective.zfar, camera.perspective.defined);
-        getDoubleVal(jsPerspective, "znear", camera.perspective.znear, camera.perspective.defined);
-        camera.type = GLTFCameraTypes::PERSPECTIVE;
-    } else if (getObjectVal(object, "orthographic", jsOrthographic, camera.defined)) {
-        getDoubleVal(jsOrthographic, "zfar", camera.orthographic.zfar, camera.orthographic.defined);
-        getDoubleVal(jsOrthographic, "znear", camera.orthographic.znear, camera.orthographic.defined);
-        getDoubleVal(jsOrthographic, "xmag", camera.orthographic.xmag, camera.orthographic.defined);
-        getDoubleVal(jsOrthographic, "ymag", camera.orthographic.ymag, camera.orthographic.defined);
-        camera.type = GLTFCameraTypes::ORTHOGRAPHIC;
-    } else if (getStringVal(object, "type", type, camera.defined)) {
-        camera.type = getCameraType(type);
-    }
-
-    _file.cameras.push_back(camera);
-
-    return true;
-}
-
-bool GLTFSerializer::addImage(const QJsonObject& object) {
-    GLTFImage image;
-
-    QString mime;
-    getStringVal(object, "uri", image.uri, image.defined);
-    if (image.uri.contains("data:image/png;base64,")) {
-        image.mimeType = getImageMimeType("image/png");
-    } else if (image.uri.contains("data:image/jpeg;base64,")) {
-        image.mimeType = getImageMimeType("image/jpeg");
-    }
-    if (getStringVal(object, "mimeType", mime, image.defined)) {
-        image.mimeType = getImageMimeType(mime);
-    }
-    getIntVal(object, "bufferView", image.bufferView, image.defined);
-
-    _file.images.push_back(image);
-
-    return true;
-}
-
-bool GLTFSerializer::getIndexFromObject(const QJsonObject& object, const QString& field,
-                                    int& outidx, QMap<QString, bool>& defined) {
-    QJsonObject subobject;
-    if (getObjectVal(object, field, subobject, defined)) {
-        QMap<QString, bool> tmpdefined = QMap<QString, bool>();
-        return getIntVal(subobject, "index", outidx, tmpdefined);
-    }
-    return false;
-}
-
-bool GLTFSerializer::addMaterial(const QJsonObject& object) {
-    GLTFMaterial material;
-
-    getStringVal(object, "name", material.name, material.defined);
-    getDoubleArrayVal(object, "emissiveFactor", material.emissiveFactor, material.defined);
-    getIndexFromObject(object, "emissiveTexture", material.emissiveTexture, material.defined);
-    getIndexFromObject(object, "normalTexture", material.normalTexture, material.defined);
-    getIndexFromObject(object, "occlusionTexture", material.occlusionTexture, material.defined);
-    getBoolVal(object, "doubleSided", material.doubleSided, material.defined);
-    QString alphaMode;
-    if (getStringVal(object, "alphaMode", alphaMode, material.defined)) {
-        material.alphaMode = getMaterialAlphaMode(alphaMode);
-    }
-    getDoubleVal(object, "alphaCutoff", material.alphaCutoff, material.defined);
-    QJsonObject jsMetallicRoughness;
-    if (getObjectVal(object, "pbrMetallicRoughness", jsMetallicRoughness, material.defined)) {
-        getDoubleArrayVal(jsMetallicRoughness, "baseColorFactor",
-                          material.pbrMetallicRoughness.baseColorFactor,
-                          material.pbrMetallicRoughness.defined);
-        getIndexFromObject(jsMetallicRoughness, "baseColorTexture",
-                           material.pbrMetallicRoughness.baseColorTexture,
-                           material.pbrMetallicRoughness.defined);
-        // Undefined metallicFactor used with pbrMetallicRoughness means metallicFactor == 1.0
-        if (!getDoubleVal(jsMetallicRoughness, "metallicFactor",
-                     material.pbrMetallicRoughness.metallicFactor,
-                     material.pbrMetallicRoughness.defined)) {
-            material.pbrMetallicRoughness.metallicFactor = 1.0;
-            material.pbrMetallicRoughness.defined["metallicFactor"] = true;
-        }
-        getDoubleVal(jsMetallicRoughness, "roughnessFactor",
-                     material.pbrMetallicRoughness.roughnessFactor,
-                     material.pbrMetallicRoughness.defined);
-        getIndexFromObject(jsMetallicRoughness, "metallicRoughnessTexture",
-                           material.pbrMetallicRoughness.metallicRoughnessTexture,
-                           material.pbrMetallicRoughness.defined);
-    }
-   _file.materials.push_back(material);
-    return true;
-}
-
-bool GLTFSerializer::addMesh(const QJsonObject& object) {
-    GLTFMesh mesh;
-
-    getStringVal(object, "name", mesh.name, mesh.defined);
-    getDoubleArrayVal(object, "weights", mesh.weights, mesh.defined);
-    QJsonArray jsPrimitives;
-    object.keys();
-    if (getObjectArrayVal(object, "primitives", jsPrimitives, mesh.defined)) {
-        foreach(const QJsonValue & prim, jsPrimitives) {
-            if (prim.isObject()) {
-                GLTFMeshPrimitive primitive;
-                QJsonObject jsPrimitive = prim.toObject();
-                getIntVal(jsPrimitive, "mode", primitive.mode, primitive.defined);
-                getIntVal(jsPrimitive, "indices", primitive.indices, primitive.defined);
-                getIntVal(jsPrimitive, "material", primitive.material, primitive.defined);
-
-                QJsonObject jsAttributes;
-                if (getObjectVal(jsPrimitive, "attributes", jsAttributes, primitive.defined)) {
-                    QStringList attrKeys = jsAttributes.keys();
-                    foreach(const QString & attrKey, attrKeys) {
-                        int attrVal;
-                        getIntVal(jsAttributes, attrKey, attrVal, primitive.attributes.defined);
-                        primitive.attributes.values.insert(attrKey, attrVal);
-                    }
-                }
-
-                QJsonArray jsTargets;
-                if (getObjectArrayVal(jsPrimitive, "targets", jsTargets, primitive.defined)) {
-                    foreach(const QJsonValue & tar, jsTargets) {
-                        if (tar.isObject()) {
-                            QJsonObject jsTarget = tar.toObject();
-                            QStringList tarKeys = jsTarget.keys();
-                            GLTFMeshPrimitiveAttr target;
-                            foreach(const QString & tarKey, tarKeys) {
-                                int tarVal;
-                                getIntVal(jsTarget, tarKey, tarVal, target.defined);
-                                target.values.insert(tarKey, tarVal);
-                            }
-                            primitive.targets.push_back(target);
-                        }
-                    }
-                }
-                mesh.primitives.push_back(primitive);
-            }
-        }
-    }
-
-    QJsonObject jsExtras;
-    GLTFMeshExtra extras;
-    if (getObjectVal(object, "extras", jsExtras, mesh.defined)) {
-        QJsonArray jsTargetNames;
-        if (getObjectArrayVal(jsExtras, "targetNames", jsTargetNames, extras.defined)) {
-            foreach (const QJsonValue& tarName, jsTargetNames) {
-                extras.targetNames.push_back(tarName.toString());
-            }
-        }
-        mesh.extras = extras;
-    }
-
-    _file.meshes.push_back(mesh);
-
-    return true;
-}
-
-bool GLTFSerializer::addNode(const QJsonObject& object) {
-    GLTFNode node;
-
-    getStringVal(object, "name", node.name, node.defined);
-    getIntVal(object, "camera", node.camera, node.defined);
-    getIntVal(object, "mesh", node.mesh, node.defined);
-    getIntArrayVal(object, "children", node.children, node.defined);
-    getDoubleArrayVal(object, "translation", node.translation, node.defined);
-    getDoubleArrayVal(object, "rotation", node.rotation, node.defined);
-    getDoubleArrayVal(object, "scale", node.scale, node.defined);
-    getDoubleArrayVal(object, "matrix", node.matrix, node.defined);
-    getIntVal(object, "skin", node.skin, node.defined);
-    getStringVal(object, "jointName", node.jointName, node.defined);
-    getIntArrayVal(object, "skeletons", node.skeletons, node.defined);
-
-    _file.nodes.push_back(node);
-
-    return true;
-}
-
-bool GLTFSerializer::addSampler(const QJsonObject& object) {
-    GLTFSampler sampler;
-
-    getIntVal(object, "magFilter", sampler.magFilter, sampler.defined);
-    getIntVal(object, "minFilter", sampler.minFilter, sampler.defined);
-    getIntVal(object, "wrapS", sampler.wrapS, sampler.defined);
-    getIntVal(object, "wrapT", sampler.wrapT, sampler.defined);
-
-    _file.samplers.push_back(sampler);
-
-    return true;
-
-}
-
-bool GLTFSerializer::addScene(const QJsonObject& object) {
-    GLTFScene scene;
-
-    getStringVal(object, "name", scene.name, scene.defined);
-    getIntArrayVal(object, "nodes", scene.nodes, scene.defined);
-
-    _file.scenes.push_back(scene);
-    return true;
-}
-
-bool GLTFSerializer::addSkin(const QJsonObject& object) {
-    GLTFSkin skin;
-
-    getIntVal(object, "inverseBindMatrices", skin.inverseBindMatrices, skin.defined);
-    getIntVal(object, "skeleton", skin.skeleton, skin.defined);
-    getIntArrayVal(object, "joints", skin.joints, skin.defined);
-
-    _file.skins.push_back(skin);
-
-    return true;
-}
-
-bool GLTFSerializer::addTexture(const QJsonObject& object) {
-    GLTFTexture texture;
-    getIntVal(object, "sampler", texture.sampler, texture.defined);
-    getIntVal(object, "source", texture.source, texture.defined);
-
-    _file.textures.push_back(texture);
-
-    return true;
-}
-
-bool GLTFSerializer::parseGLTF(const hifi::ByteArray& data) {
-    PROFILE_RANGE_EX(resource_parse, __FUNCTION__, 0xffff0000, nullptr);
-
-    hifi::ByteArray jsonChunk = data;
-
-    if (_url.path().endsWith("glb") && data.indexOf("glTF") == 0 && data.contains("JSON")) {
-        jsonChunk = setGLBChunks(data);
-    }
-
-    QJsonDocument d = QJsonDocument::fromJson(jsonChunk);
-    QJsonObject jsFile = d.object();
-
-    bool success = setAsset(jsFile);
-    if (success) {
-        QJsonArray accessors;
-        if (getObjectArrayVal(jsFile, "accessors", accessors, _file.defined)) {
-            foreach(const QJsonValue & accVal, accessors) {
-                if (accVal.isObject()) {
-                    success = success && addAccessor(accVal.toObject());
-                }
-            }
-        }
-
-        QJsonArray animations;
-        if (getObjectArrayVal(jsFile, "animations", animations, _file.defined)) {
-            foreach(const QJsonValue & animVal, accessors) {
-                if (animVal.isObject()) {
-                    success = success && addAnimation(animVal.toObject());
-                }
-            }
-        }
-
-        QJsonArray bufferViews;
-        if (getObjectArrayVal(jsFile, "bufferViews", bufferViews, _file.defined)) {
-            foreach(const QJsonValue & bufviewVal, bufferViews) {
-                if (bufviewVal.isObject()) {
-                    success = success && addBufferView(bufviewVal.toObject());
-                }
-            }
-        }
-
-        QJsonArray buffers;
-        if (getObjectArrayVal(jsFile, "buffers", buffers, _file.defined)) {
-            foreach(const QJsonValue & bufVal, buffers) {
-                if (bufVal.isObject()) {
-                    success = success && addBuffer(bufVal.toObject());
-                }
-            }
-        }
-
-        QJsonArray cameras;
-        if (getObjectArrayVal(jsFile, "cameras", cameras, _file.defined)) {
-            foreach(const QJsonValue & camVal, cameras) {
-                if (camVal.isObject()) {
-                    success = success && addCamera(camVal.toObject());
-                }
-            }
-        }
-
-        QJsonArray images;
-        if (getObjectArrayVal(jsFile, "images", images, _file.defined)) {
-            foreach(const QJsonValue & imgVal, images) {
-                if (imgVal.isObject()) {
-                    success = success && addImage(imgVal.toObject());
-                }
-            }
-        }
-
-        QJsonArray materials;
-        if (getObjectArrayVal(jsFile, "materials", materials, _file.defined)) {
-            foreach(const QJsonValue & matVal, materials) {
-                if (matVal.isObject()) {
-                    success = success && addMaterial(matVal.toObject());
-                }
-            }
-        }
-
-        QJsonArray meshes;
-        if (getObjectArrayVal(jsFile, "meshes", meshes, _file.defined)) {
-            foreach(const QJsonValue & meshVal, meshes) {
-                if (meshVal.isObject()) {
-                    success = success && addMesh(meshVal.toObject());
-                }
-            }
-        }
-
-        QJsonArray nodes;
-        if (getObjectArrayVal(jsFile, "nodes", nodes, _file.defined)) {
-            foreach(const QJsonValue & nodeVal, nodes) {
-                if (nodeVal.isObject()) {
-                    success = success && addNode(nodeVal.toObject());
-                }
-            }
-        }
-
-        QJsonArray samplers;
-        if (getObjectArrayVal(jsFile, "samplers", samplers, _file.defined)) {
-            foreach(const QJsonValue & samVal, samplers) {
-                if (samVal.isObject()) {
-                    success = success && addSampler(samVal.toObject());
-                }
-            }
-        }
-
-        QJsonArray scenes;
-        if (getObjectArrayVal(jsFile, "scenes", scenes, _file.defined)) {
-            foreach(const QJsonValue & sceneVal, scenes) {
-                if (sceneVal.isObject()) {
-                    success = success && addScene(sceneVal.toObject());
-                }
-            }
-        }
-
-        QJsonArray skins;
-        if (getObjectArrayVal(jsFile, "skins", skins, _file.defined)) {
-            foreach(const QJsonValue & skinVal, skins) {
-                if (skinVal.isObject()) {
-                    success = success && addSkin(skinVal.toObject());
-                }
-            }
-        }
-
-        QJsonArray textures;
-        if (getObjectArrayVal(jsFile, "textures", textures, _file.defined)) {
-            foreach(const QJsonValue & texVal, textures) {
-                if (texVal.isObject()) {
-                    success = success && addTexture(texVal.toObject());
-                }
-            }
-        }
-    }
-    return success;
-}
-
-glm::mat4 GLTFSerializer::getModelTransform(const GLTFNode& node) {
+glm::mat4 GLTFSerializer::getModelTransform(const cgltf_node& node) {
     glm::mat4 tmat = glm::mat4(1.0);
 
-    if (node.defined["matrix"] && node.matrix.size() == 16) {
+    if (node.has_matrix) {
         tmat = glm::mat4(node.matrix[0], node.matrix[1], node.matrix[2], node.matrix[3],
             node.matrix[4], node.matrix[5], node.matrix[6], node.matrix[7],
             node.matrix[8], node.matrix[9], node.matrix[10], node.matrix[11],
             node.matrix[12], node.matrix[13], node.matrix[14], node.matrix[15]);
     } else {
 
-        if (node.defined["scale"] && node.scale.size() == 3) {
+        if (node.has_scale) {
             glm::vec3 scale = glm::vec3(node.scale[0], node.scale[1], node.scale[2]);
             glm::mat4 s = glm::mat4(1.0);
             s = glm::scale(s, scale);
             tmat = s * tmat;
         }
 
-        if (node.defined["rotation"] && node.rotation.size() == 4) {
+        if (node.has_rotation) {
             //quat(x,y,z,w) to quat(w,x,y,z)
             glm::quat rotquat = glm::quat(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]);
             tmat = glm::mat4_cast(rotquat) * tmat;
         }
 
-        if (node.defined["translation"] && node.translation.size() == 3) {
+        if (node.has_translation) {
             glm::vec3 trans = glm::vec3(node.translation[0], node.translation[1], node.translation[2]);
             glm::mat4 t = glm::mat4(1.0);
             t = glm::translate(t, trans);
@@ -811,85 +111,151 @@ glm::mat4 GLTFSerializer::getModelTransform(const GLTFNode& node) {
     return tmat;
 }
 
-void GLTFSerializer::getSkinInverseBindMatrices(std::vector<std::vector<float>>& inverseBindMatrixValues) {
-    for (auto &skin : _file.skins) {
-        GLTFAccessor& indicesAccessor = _file.accessors[skin.inverseBindMatrices];
+bool GLTFSerializer::getSkinInverseBindMatrices(std::vector<std::vector<float>>& inverseBindMatrixValues) {
+    for (size_t i = 0; i < _data->skins_count; i++) {
+        auto &skin = _data->skins[i];
+
+        if (skin.inverse_bind_matrices == NULL) {
+            return false;
+        }
+
+        cgltf_accessor &matricesAccessor = *skin.inverse_bind_matrices;
         QVector<float> matrices;
-        addArrayFromAccessor(indicesAccessor, matrices);
+        if (matricesAccessor.type != cgltf_type_mat4) {
+            return false;
+        }
+        matrices.resize((int)matricesAccessor.count * 16);
+        size_t numFloats = cgltf_accessor_unpack_floats(&matricesAccessor, matrices.data(), matricesAccessor.count * 16);
+        Q_ASSERT(numFloats == matricesAccessor.count * 16);
         inverseBindMatrixValues.push_back(std::vector<float>(matrices.begin(), matrices.end()));
     }
+    return true;
 }
 
-void GLTFSerializer::generateTargetData(int index, float weight, QVector<glm::vec3>& returnVector) {
-    GLTFAccessor& accessor = _file.accessors[index];
+bool GLTFSerializer::generateTargetData(cgltf_accessor *accessor, float weight, QVector<glm::vec3>& returnVector) {
     QVector<float> storedValues;
-    addArrayFromAccessor(accessor, storedValues);
+    if(accessor == nullptr) {
+        return false;
+    }
+    if (accessor->type != cgltf_type_vec3) {
+        return false;
+    }
+    storedValues.resize((int)accessor->count * 3);
+    size_t numFloats = cgltf_accessor_unpack_floats(accessor, storedValues.data(), accessor->count * 3);
+    if (numFloats != accessor->count * 3) {
+        return false;
+    }
+
     for (int n = 0; n + 2 < storedValues.size(); n = n + 3) {
         returnVector.push_back(glm::vec3(weight * storedValues[n], weight * storedValues[n + 1], weight * storedValues[n + 2]));
     }
+    return true;
+}
+
+bool findNodeInPointerArray(const cgltf_node *nodePointer, cgltf_node **nodes, size_t arraySize, size_t &index) {
+    for (size_t i = 0; i < arraySize; i++) {
+        if (nodes[i] == nodePointer) {
+            index = i;
+            return true;
+        }
+    }
+    return false;
+}
+
+template<typename T> bool findPointerInArray(const T *pointer, const T *array, size_t arraySize, size_t &index) {
+    for (size_t i = 0; i < arraySize; i++) {
+        if (&array[i] == pointer) {
+            index = i;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool findAttribute(const QString &name, const cgltf_attribute *attributes, size_t numAttributes, size_t &index) {
+    std::string nameString = name.toStdString();
+    for (size_t i = 0; i < numAttributes; i++) {
+        if (attributes->name == nullptr) {
+            qDebug(modelformat) << "GLTFSerializer: attribute with a null pointer name string";
+        } else {
+            if (strcmp(nameString.c_str(), attributes->name) == 0) {
+                index = i;
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& mapping, const hifi::URL& url) {
     hfmModel.originalURL = url.toString();
 
-    int numNodes = _file.nodes.size();
+    int numNodes = (int)_data->nodes_count;
 
     //Build dependencies
     QVector<int> parents;
     QVector<int> sortedNodes;
     parents.fill(-1, numNodes);
     sortedNodes.reserve(numNodes);
-    int nodecount = 0;
-    foreach(auto &node, _file.nodes) {
-        foreach(int child, node.children) {
-            parents[child] = nodecount;
+    for(int index = 0; index < numNodes; index++) {
+        auto &node = _data->nodes[index];
+        for(size_t childIndexInParent = 0; childIndexInParent < node.children_count; childIndexInParent++) {
+            cgltf_node *child = node.children[childIndexInParent];
+            size_t childIndex = 0;
+            if (!findPointerInArray(child, _data->nodes, _data->nodes_count, childIndex)) {
+                qDebug(modelformat) << "findPointerInArray failed for model: " << _url;
+                hfmModel.loadErrorCount++;
+                return false;
+            }
+            parents[(int)childIndex] = index;
         }
-        sortedNodes.push_back(nodecount);
-        ++nodecount;
+        sortedNodes.push_back(index);
     }
-
 
     // Build transforms
-    nodecount = 0;
-    foreach(auto &node, _file.nodes) {
+    typedef QVector<glm::mat4> NodeTransforms;
+    QVector<NodeTransforms> transforms;
+    transforms.resize(numNodes);
+    for (int index = 0; index < numNodes; index++) {
         // collect node transform
-        _file.nodes[nodecount].transforms.push_back(getModelTransform(node));
-        int parentIndex = parents[nodecount];
+        auto &node = _data->nodes[index];
+        transforms[index].push_back(getModelTransform(node));
+        int parentIndex = parents[index];
         while (parentIndex != -1) {
-            const auto& parentNode = _file.nodes[parentIndex];
+            const auto& parentNode = _data->nodes[parentIndex];
             // collect transforms for a node's parents, grandparents, etc.
-            _file.nodes[nodecount].transforms.push_back(getModelTransform(parentNode));
+            transforms[index].push_back(getModelTransform(parentNode));
             parentIndex = parents[parentIndex];
         }
-        ++nodecount;
     }
-
 
     // since parent indices must exist in the sorted list before any of their children, sortedNodes might not be initialized in the correct order
     // therefore we need to re-initialize the order in which nodes will be parsed
     QVector<bool> hasBeenSorted;
     hasBeenSorted.fill(false, numNodes);
-    int i = 0;  // initial index
-    while (i < numNodes) {
-        int currentNode = sortedNodes[i];
-        int parentIndex = parents[currentNode];
-        if (parentIndex == -1 || hasBeenSorted[parentIndex]) {
-            hasBeenSorted[currentNode] = true;
-            ++i;
-        } else {
-            int j = i + 1; // index of node to be sorted
-            while (j < numNodes) {
-                int nextNode = sortedNodes[j];
-                parentIndex = parents[nextNode];
-                if (parentIndex == -1 || hasBeenSorted[parentIndex]) {
-                    // swap with currentNode
-                    hasBeenSorted[nextNode] = true;
-                    sortedNodes[i] = nextNode;
-                    sortedNodes[j] = currentNode;
-                    ++i;
-                    currentNode = sortedNodes[i];
+    {
+        int i = 0;  // initial index
+        while (i < numNodes) {
+            int currentNode = sortedNodes[i];
+            int parentIndex = parents[currentNode];
+            if (parentIndex == -1 || hasBeenSorted[parentIndex]) {
+                hasBeenSorted[currentNode] = true;
+                ++i;
+            } else {
+                int j = i + 1;  // index of node to be sorted
+                while (j < numNodes) {
+                    int nextNode = sortedNodes[j];
+                    parentIndex = parents[nextNode];
+                    if (parentIndex == -1 || hasBeenSorted[parentIndex]) {
+                        // swap with currentNode
+                        hasBeenSorted[nextNode] = true;
+                        sortedNodes[i] = nextNode;
+                        sortedNodes[j] = currentNode;
+                        ++i;
+                        currentNode = sortedNodes[i];
+                    }
+                    ++j;
                 }
-                ++j;
             }
         }
     }
@@ -911,13 +277,13 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
     globalTransforms.resize(numNodes);
 
     for (int nodeIndex : sortedNodes) {
-        auto& node = _file.nodes[nodeIndex];
+        auto& node = _data->nodes[nodeIndex];
 
         joint.parentIndex = parents[nodeIndex];
         if (joint.parentIndex != -1) {
             joint.parentIndex = originalToNewNodeIndexMap[joint.parentIndex];
         }
-        joint.transform = node.transforms.first();
+        joint.transform = transforms[nodeIndex].first();
         joint.translation = extractTranslation(joint.transform);
         joint.rotation = glmExtractRotation(joint.transform);
         glm::vec3 scale = extractScale(joint.transform);
@@ -951,24 +317,34 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
     jointInverseBindTransforms.resize(numNodes);
     globalBindTransforms.resize(numNodes);
 
-    hfmModel.hasSkeletonJoints = !_file.skins.isEmpty();
+    hfmModel.hasSkeletonJoints = _data->skins_count > 0;
     if (hfmModel.hasSkeletonJoints) {
         std::vector<std::vector<float>> inverseBindValues;
-        getSkinInverseBindMatrices(inverseBindValues);
+        if (!getSkinInverseBindMatrices(inverseBindValues)) {
+            qDebug(modelformat) << "GLTFSerializer::getSkinInverseBindMatrices: wrong matrices accessor type for model: " << _url;
+            hfmModel.loadErrorCount++;
+            return false;
+        }
 
         for (int jointIndex = 0; jointIndex < numNodes; ++jointIndex) {
             int nodeIndex = sortedNodes[jointIndex];
             auto joint = hfmModel.joints[jointIndex];
 
-            for (int s = 0; s < _file.skins.size(); ++s) {
-                const auto& skin = _file.skins[s];
-                int matrixIndex = skin.joints.indexOf(nodeIndex);
-                joint.isSkeletonJoint = skin.joints.contains(nodeIndex);
+            for (size_t s = 0; s < _data->skins_count; ++s) {
+                const auto& skin = _data->skins[s];
+                size_t jointNodeIndex = 0;
+                joint.isSkeletonJoint = findNodeInPointerArray(&_data->nodes[nodeIndex], skin.joints, skin.joints_count, jointNodeIndex);
 
                 // build inverse bind matrices
                 if (joint.isSkeletonJoint) {
+                    size_t matrixIndex = jointNodeIndex;
                     std::vector<float>& value = inverseBindValues[s];
-                    int matrixCount = 16 * matrixIndex;
+                    size_t matrixCount = 16 * matrixIndex;
+                    if (matrixCount + 15 >= value.size()) {
+                        qDebug(modelformat) << "GLTFSerializer::buildGeometry: not enough entries in jointInverseBindTransforms: " << _url;
+                        hfmModel.loadErrorCount++;
+                        return false;
+                    }
                     jointInverseBindTransforms[jointIndex] =
                         glm::mat4(value[matrixCount], value[matrixCount + 1], value[matrixCount + 2], value[matrixCount + 3],
                             value[matrixCount + 4], value[matrixCount + 5], value[matrixCount + 6], value[matrixCount + 7],
@@ -992,15 +368,15 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
     // Build materials
     QVector<QString> materialIDs;
     QString unknown = "Default";
-    int ukcount = 0;
-    foreach(auto material, _file.materials) {
-        if (!material.defined["name"]) {
-            QString name = unknown + QString::number(++ukcount);
-            material.name = name;
-            material.defined.insert("name", true);
+    for (size_t i = 0; i < _data->materials_count; i++) {
+        auto &material = _data->materials[i];
+        QString mid;
+        if (material.name != nullptr) {
+            mid = QString(material.name);
+        }else{
+            mid = QString::number(i);
         }
 
-        QString mid = material.name;
         materialIDs.push_back(mid);
     }
 
@@ -1008,19 +384,18 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
         QString& matid = materialIDs[i];
         hfmModel.materials[matid] = HFMMaterial();
         HFMMaterial& hfmMaterial = hfmModel.materials[matid];
-        hfmMaterial._material = std::make_shared<graphics::Material>();
         hfmMaterial.name = hfmMaterial.materialID = matid;
-        setHFMMaterial(hfmMaterial, _file.materials[i]);
+        setHFMMaterial(hfmMaterial, _data->materials[i]);
     }
 
 
     // Build meshes
-    nodecount = 0;
+    int nodeCount = 0;
     hfmModel.meshExtents.reset();
     for (int nodeIndex : sortedNodes) {
-        auto& node = _file.nodes[nodeIndex];
+        auto& node = _data->nodes[nodeIndex];
 
-        if (node.defined["mesh"]) {
+        if (node.mesh != nullptr) {
 
             hfmModel.meshes.append(HFMMesh());
             HFMMesh& mesh = hfmModel.meshes[hfmModel.meshes.size() - 1];
@@ -1028,7 +403,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
 
             if (!hfmModel.hasSkeletonJoints) {
                 HFMCluster cluster;
-                cluster.jointIndex = nodecount;
+                cluster.jointIndex = nodeCount;
                 cluster.inverseBindMatrix = glm::mat4();
                 cluster.inverseBindTransform = Transform(cluster.inverseBindMatrix);
                 mesh.clusters.append(cluster);
@@ -1048,27 +423,27 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
             mesh.clusters.append(root);
 
             QList<QString> meshAttributes;
-            foreach(auto &primitive, _file.meshes[node.mesh].primitives) {
-                QList<QString> keys = primitive.attributes.values.keys();
-                foreach (auto &key, keys) {
+            for (size_t primitiveIndex = 0; primitiveIndex < node.mesh->primitives_count; primitiveIndex++) {
+                auto &primitive = node.mesh->primitives[primitiveIndex];
+                for (size_t attributeIndex = 0; attributeIndex < primitive.attributes_count; attributeIndex++) {
+                    auto &attribute = primitive.attributes[attributeIndex];
+                    QString key(attribute.name);
                     if (!meshAttributes.contains(key)) {
                         meshAttributes.push_back(key);
                     }
                 }
             }
 
-            foreach(auto &primitive, _file.meshes[node.mesh].primitives) {
+            for (size_t primitiveIndex = 0; primitiveIndex < node.mesh->primitives_count; primitiveIndex++) {
+                auto &primitive = node.mesh->primitives[primitiveIndex];
                 HFMMeshPart part = HFMMeshPart();
 
-                int indicesAccessorIdx = primitive.indices;
-
-                if (indicesAccessorIdx > _file.accessors.size()) {
-                    qWarning(modelformat) << "Indices accessor index is out of bounds for model " << _url;
+                if (primitive.indices == nullptr) {
+                    qDebug() << "No indices accessor for mesh: " << _url;
                     hfmModel.loadErrorCount++;
-                    continue;
+                    return false;
                 }
-
-                GLTFAccessor& indicesAccessor = _file.accessors[indicesAccessorIdx];
+                auto &indicesAccessor = primitive.indices;
 
                 // Buffers
                 QVector<int> indices;
@@ -1089,9 +464,10 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                 QVector<float> weights;
                 int weightStride = 4;
 
-                bool success = addArrayFromAccessor(indicesAccessor, indices);
+                indices.resize((int)indicesAccessor->count);
+                size_t readIndicesCount = cgltf_accessor_unpack_indices(indicesAccessor, indices.data(), sizeof(unsigned int), indicesAccessor->count);
 
-                if (!success) {
+                if (readIndicesCount != indicesAccessor->count) {
                     qWarning(modelformat) << "There was a problem reading glTF INDICES data for model " << _url;
                     hfmModel.loadErrorCount++;
                     continue;
@@ -1100,51 +476,58 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                 // Increment the triangle indices by the current mesh vertex count so each mesh part can all reference the same buffers within the mesh
                 int prevMeshVerticesCount = mesh.vertices.count();
 
-                QList<QString> keys = primitive.attributes.values.keys();
+                // For each vertex (stride is WEIGHTS_PER_VERTEX), it contains index of the cluster that given weight belongs to.
                 QVector<uint16_t> clusterJoints;
                 QVector<float> clusterWeights;
 
-                foreach(auto &key, keys) {
-                    int accessorIdx = primitive.attributes.values[key];
-
-                    if (accessorIdx > _file.accessors.size()) {
-                        qWarning(modelformat) << "Accessor index is out of bounds for model " << _url;
+                for (size_t attributeIndex = 0; attributeIndex < primitive.attributes_count; attributeIndex++) {
+                    if (primitive.attributes[attributeIndex].name == nullptr) {
+                        qDebug() << "Inalid accessor name for mesh: " << _url;
                         hfmModel.loadErrorCount++;
-                        continue;
+                        return false;
                     }
+                    QString key(primitive.attributes[attributeIndex].name);
 
-                    GLTFAccessor& accessor = _file.accessors[accessorIdx];
+                    if (primitive.attributes[attributeIndex].data == nullptr) {
+                        qDebug() << "Inalid accessor for mesh: " << _url;
+                        hfmModel.loadErrorCount++;
+                        return false;
+                    }
+                    auto accessor = primitive.attributes[attributeIndex].data;
+                    int accessorCount = (int)accessor->count;
 
                     if (key == "POSITION") {
-                        if (accessor.type != GLTFAccessorType::VEC3) {
+                        if (accessor->type != cgltf_type_vec3) {
                             qWarning(modelformat) << "Invalid accessor type on glTF POSITION data for model " << _url;
                             hfmModel.loadErrorCount++;
                             continue;
                         }
 
-                        success = addArrayFromAccessor(accessor, vertices);
-                        if (!success) {
+                        vertices.resize(accessorCount * 3);
+                        size_t floatCount = cgltf_accessor_unpack_floats(accessor, vertices.data(), accessor->count * 3);
+                        if (floatCount != accessor->count * 3) {
                             qWarning(modelformat) << "There was a problem reading glTF POSITION data for model " << _url;
                             hfmModel.loadErrorCount++;
                             continue;
                         }
                     } else if (key == "NORMAL") {
-                        if (accessor.type != GLTFAccessorType::VEC3) {
+                        if (accessor->type != cgltf_type_vec3) {
                             qWarning(modelformat) << "Invalid accessor type on glTF NORMAL data for model " << _url;
                             hfmModel.loadErrorCount++;
                             continue;
                         }
 
-                        success = addArrayFromAccessor(accessor, normals);
-                        if (!success) {
+                        normals.resize(accessorCount * 3);
+                        size_t floatCount = cgltf_accessor_unpack_floats(accessor, normals.data(), accessor->count * 3);
+                        if (floatCount != accessor->count * 3) {
                             qWarning(modelformat) << "There was a problem reading glTF NORMAL data for model " << _url;
                             hfmModel.loadErrorCount++;
                             continue;
                         }
                     } else if (key == "TANGENT") {
-                        if (accessor.type == GLTFAccessorType::VEC4) {
+                        if (accessor->type == cgltf_type_vec4) {
                             tangentStride = 4;
-                        } else if (accessor.type == GLTFAccessorType::VEC3) {
+                        } else if (accessor->type == cgltf_type_vec3) {
                             tangentStride = 3;
                         } else {
                             qWarning(modelformat) << "Invalid accessor type on glTF TANGENT data for model " << _url;
@@ -1152,43 +535,46 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        success = addArrayFromAccessor(accessor, tangents);
-                        if (!success) {
+                        tangents.resize(accessorCount * tangentStride);
+                        size_t floatCount = cgltf_accessor_unpack_floats(accessor, tangents.data(), accessor->count * tangentStride);
+                        if (floatCount != accessor->count * tangentStride) {
                             qWarning(modelformat) << "There was a problem reading glTF TANGENT data for model " << _url;
                             hfmModel.loadErrorCount++;
                             tangentStride = 0;
                             continue;
                         }
                     } else if (key == "TEXCOORD_0") {
-                        success = addArrayFromAccessor(accessor, texcoords);
-                        if (!success) {
-                            qWarning(modelformat) << "There was a problem reading glTF TEXCOORD_0 data for model " << _url;
-                            hfmModel.loadErrorCount++;
-                            continue;
-                        }
-
-                        if (accessor.type != GLTFAccessorType::VEC2) {
+                        if (accessor->type != cgltf_type_vec2) {
                             qWarning(modelformat) << "Invalid accessor type on glTF TEXCOORD_0 data for model " << _url;
                             hfmModel.loadErrorCount++;
                             continue;
                         }
-                    } else if (key == "TEXCOORD_1") {
-                        success = addArrayFromAccessor(accessor, texcoords2);
-                        if (!success) {
-                            qWarning(modelformat) << "There was a problem reading glTF TEXCOORD_1 data for model " << _url;
+
+                        texcoords.resize(accessorCount * 2);
+                        size_t floatCount = cgltf_accessor_unpack_floats(accessor, texcoords.data(), accessor->count * 2);
+                        if (floatCount != accessor->count * 2) {
+                            qWarning(modelformat) << "There was a problem reading glTF TEXCOORD_0 data for model " << _url;
                             hfmModel.loadErrorCount++;
                             continue;
                         }
-
-                        if (accessor.type != GLTFAccessorType::VEC2) {
+                    } else if (key == "TEXCOORD_1") {
+                        if (accessor->type != cgltf_type_vec2) {
                             qWarning(modelformat) << "Invalid accessor type on glTF TEXCOORD_1 data for model " << _url;
                             hfmModel.loadErrorCount++;
                             continue;
                         }
+
+                        texcoords2.resize(accessorCount * 2);
+                        size_t floatCount = cgltf_accessor_unpack_floats(accessor, texcoords2.data(), accessor->count * 2);
+                        if (floatCount != accessor->count * 2) {
+                            qWarning(modelformat) << "There was a problem reading glTF TEXCOORD_1 data for model " << _url;
+                            hfmModel.loadErrorCount++;
+                            continue;
+                        }
                     } else if (key == "COLOR_0") {
-                        if (accessor.type == GLTFAccessorType::VEC4) {
+                        if (accessor->type == cgltf_type_vec4) {
                             colorStride = 4;
-                        } else if (accessor.type == GLTFAccessorType::VEC3) {
+                        } else if (accessor->type == cgltf_type_vec3) {
                             colorStride = 3;
                         } else {
                             qWarning(modelformat) << "Invalid accessor type on glTF COLOR_0 data for model " << _url;
@@ -1196,20 +582,21 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        success = addArrayFromAccessor(accessor, colors);
-                        if (!success) {
+                        colors.resize(accessorCount * colorStride);
+                        size_t floatCount = cgltf_accessor_unpack_floats(accessor, colors.data(), accessor->count * colorStride);
+                        if (floatCount != accessor->count * colorStride) {
                             qWarning(modelformat) << "There was a problem reading glTF COLOR_0 data for model " << _url;
                             hfmModel.loadErrorCount++;
                             continue;
                         }
                     } else if (key == "JOINTS_0") {
-                        if (accessor.type == GLTFAccessorType::VEC4) {
+                        if (accessor->type == cgltf_type_vec4) {
                             jointStride = 4;
-                        } else if (accessor.type == GLTFAccessorType::VEC3) {
+                        } else if (accessor->type == cgltf_type_vec3) {
                             jointStride = 3;
-                        } else if (accessor.type == GLTFAccessorType::VEC2) {
+                        } else if (accessor->type == cgltf_type_vec2) {
                             jointStride = 2;
-                        } else if (accessor.type == GLTFAccessorType::SCALAR) {
+                        } else if (accessor->type == cgltf_type_scalar) {
                             jointStride = 1;
                         } else {
                             qWarning(modelformat) << "Invalid accessor type on glTF JOINTS_0 data for model " << _url;
@@ -1217,20 +604,23 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        success = addArrayFromAccessor(accessor, joints);
-                        if (!success) {
-                            qWarning(modelformat) << "There was a problem reading glTF JOINTS_0 data for model " << _url;
-                            hfmModel.loadErrorCount++;
-                            continue;
+                        joints.resize(accessorCount * jointStride);
+                        cgltf_uint jointIndices[4];
+                        for (size_t i = 0; i < accessor->count; i++) {
+                            cgltf_accessor_read_uint(accessor, i, jointIndices, jointStride);
+                            for (int component = 0; component < jointStride; component++) {
+                                joints[(int)i * jointStride + component] = (uint16_t)jointIndices[component];
+                            }
                         }
+
                     } else if (key == "WEIGHTS_0") {
-                        if (accessor.type == GLTFAccessorType::VEC4) {
+                        if (accessor->type == cgltf_type_vec4) {
                             weightStride = 4;
-                        } else if (accessor.type == GLTFAccessorType::VEC3) {
+                        } else if (accessor->type == cgltf_type_vec3) {
                             weightStride = 3;
-                        } else if (accessor.type == GLTFAccessorType::VEC2) {
+                        } else if (accessor->type == cgltf_type_vec2) {
                             weightStride = 2;
-                        } else if (accessor.type == GLTFAccessorType::SCALAR) {
+                        } else if (accessor->type == cgltf_type_scalar) {
                             weightStride = 1;
                         } else {
                             qWarning(modelformat) << "Invalid accessor type on glTF WEIGHTS_0 data for model " << _url;
@@ -1238,8 +628,9 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        success = addArrayFromAccessor(accessor, weights);
-                        if (!success) {
+                        weights.resize(accessorCount * weightStride);
+                        size_t floatCount = cgltf_accessor_unpack_floats(accessor, weights.data(), accessor->count * weightStride);
+                        if (floatCount != accessor->count * weightStride) {
                             qWarning(modelformat) << "There was a problem reading glTF WEIGHTS_0 data for model " << _url;
                             hfmModel.loadErrorCount++;
                             continue;
@@ -1280,7 +671,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                         if (v1_index + 2 >= vertices.size() || v2_index + 2 >= vertices.size() || v3_index + 2 >= vertices.size()) {
                             qWarning(modelformat) << "Indices out of range for model " << _url;
                             hfmModel.loadErrorCount++;
-                            break;
+                            return false;
                         }
 
                         glm::vec3 v1 = glm::vec3(vertices[v1_index], vertices[v1_index + 1], vertices[v1_index + 2]);
@@ -1534,22 +925,21 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        if ( _file.skins.length() <= node.skin ) {
-                            qCWarning(modelformat) << "Trying to read past end of _file.skins at" << node.skin;
-                            hfmModel.loadErrorCount++;
-                            continue;
-                        }
-
-                        if ( _file.skins[node.skin].joints.length() <= clusterJoints[c]) {
+                        if ( node.skin->joints_count <= clusterJoints[c]) {
                             qCWarning(modelformat) << "Trying to read past end of _file.skins[node.skin].joints at" << clusterJoints[c]
-                                                   << "; there are only" << _file.skins[node.skin].joints.length() << "for skin" << node.skin;
+                                                   << "; there are only" << node.skin->joints_count << "for skin" << node.skin->name;
                             hfmModel.loadErrorCount++;
                             continue;
                         }
 
-
+                        size_t jointIndex = 0;
+                        if (!findPointerInArray(node.skin->joints[clusterJoints[c]], _data->nodes, _data->nodes_count, jointIndex)) {
+                            qCWarning(modelformat) << "Cannot find the joint " << node.skin->joints[clusterJoints[c]]->name <<" in joint array";
+                            hfmModel.loadErrorCount++;
+                            continue;
+                        }
                         mesh.clusterIndices[prevMeshClusterIndexCount + c] =
-                            originalToNewNodeIndexMap[_file.skins[node.skin].joints[clusterJoints[c]]];
+                            originalToNewNodeIndexMap[(int)jointIndex];
                     }
 
                     // normalize and compress to 16-bits
@@ -1568,26 +958,31 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                         } else {
                             mesh.clusterWeights[prevMeshClusterWeightCount + j] = (uint16_t)((float)(UINT16_MAX) + ALMOST_HALF);
                         }
-                        for (int clusterIndex = 0; clusterIndex < mesh.clusters.size() - 1; ++clusterIndex) {
+                        for (int k = j; k < j + WEIGHTS_PER_VERTEX; ++k) {
+                            int clusterIndex = mesh.clusterIndices[prevMeshClusterIndexCount + k];
                             ShapeVertices& points = hfmModel.shapeVertices.at(clusterIndex);
                             glm::vec3 globalMeshScale = extractScale(globalTransforms[nodeIndex]);
                             const glm::mat4 meshToJoint = glm::scale(glm::mat4(), globalMeshScale) * jointInverseBindTransforms[clusterIndex];
 
-                            // TODO: The entire clustering is probably broken and detailed collision shapes fail to generate due to it.
                             const uint16_t EXPANSION_WEIGHT_THRESHOLD = UINT16_MAX/4; // Equivalent of 0.25f?
-                            if (mesh.clusterWeights[j] >= EXPANSION_WEIGHT_THRESHOLD) {
-                                // TODO: fix transformed vertices being pushed back
-                                auto& vertex = mesh.vertices[i];
-                                const glm::mat4 vertexTransform = meshToJoint * (glm::translate(glm::mat4(), vertex));
-                                glm::vec3 transformedVertex = hfmModel.joints[clusterIndex].translation * (extractTranslation(vertexTransform));
+                            if (mesh.clusterWeights[prevMeshClusterWeightCount + k] >= EXPANSION_WEIGHT_THRESHOLD) {
+                                auto& vertex = mesh.vertices[prevMeshVerticesCount + i];
+                                const glm::mat4 vertexTransform = meshToJoint * glm::translate(vertex);
+                                glm::vec3 transformedVertex = extractTranslation(vertexTransform);
                                 points.push_back(transformedVertex);
                             }
                         }
                     }
                 }
 
-                if (primitive.defined["material"]) {
-                    part.materialID = materialIDs[primitive.material];
+                size_t materialIndex = 0;
+                if (primitive.material != nullptr && !findPointerInArray(primitive.material, _data->materials, _data->materials_count, materialIndex)) {
+                    qCWarning(modelformat) << "GLTFSerializer::buildGeometry: Invalid material pointer";
+                    hfmModel.loadErrorCount++;
+                    return false;
+                }
+                if (primitive.material != nullptr) {
+                    part.materialID = materialIDs[(int)materialIndex];
                 }
                 mesh.parts.push_back(part);
 
@@ -1599,7 +994,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                 }
 
                 // Build morph targets (blend shapes)
-                if (!primitive.targets.isEmpty()) {
+                if (primitive.targets_count) {
 
                     // Build list of blendshapes from FST and model.
                     typedef QPair<int, float> WeightedIndex;
@@ -1613,21 +1008,30 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                         auto mappings = blendshapeMappings.values(blendshapeName);
                         if (mappings.count() > 0) {
                             // Use blendshape from mapping.
-                            foreach(const QVariant& mapping, mappings) {
-                                auto blendshapeMapping = mapping.toList();
+                            foreach(const QVariant& mappingVariant, mappings) {
+                                auto blendshapeMapping = mappingVariant.toList();
                                 blendshapeIndices.insert(blendshapeMapping.at(0).toString(),
                                     WeightedIndex(i, blendshapeMapping.at(1).toFloat()));
                             }
                         } else {
                             // Use blendshape from model.
-                            if (_file.meshes[node.mesh].extras.targetNames.contains(blendshapeName)) {
-                                blendshapeIndices.insert(blendshapeName, WeightedIndex(i, 1.0f));
+                            std::string blendshapeNameString = blendshapeName.toStdString();
+                            for (size_t j = 0; j < node.mesh->target_names_count; j++) {
+                                if (strcmp(node.mesh->target_names[j], blendshapeNameString.c_str()) == 0) {
+                                    blendshapeIndices.insert(blendshapeName, WeightedIndex(i, 1.0f));
+                                    break;
+                                }
                             }
                         }
                     }
 
                     // If an FST isn't being used and the model is likely from ReadyPlayerMe, add blendshape synonyms.
-                    auto fileTargetNames = _file.meshes[node.mesh].extras.targetNames;
+                    QVector<QString> fileTargetNames;
+                    fileTargetNames.reserve((int)node.mesh->target_names_count);
+                    for (size_t i = 0; i < node.mesh->target_names_count; i++) {
+                        fileTargetNames.push_back(QString(node.mesh->target_names[i]));
+                    }
+
                     bool likelyReadyPlayerMeFile =
                            fileTargetNames.contains("browOuterUpLeft")
                         && fileTargetNames.contains("browInnerUp")
@@ -1658,7 +1062,11 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                     }
                     auto keys = blendshapeIndices.keys();
                     auto values = blendshapeIndices.values();
-                    auto names = _file.meshes[node.mesh].extras.targetNames;
+                    QVector<QString> names;
+                    names.reserve((int)node.mesh->target_names_count);
+                    for (size_t i = 0; i < node.mesh->target_names_count; i++) {
+                        names.push_back(QString(node.mesh->target_names[i]));
+                    }
 
                     for (int weightedIndex = 0; weightedIndex < keys.size(); ++weightedIndex) {
                         float weight = 1.0f;
@@ -1682,11 +1090,21 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                         QVector<glm::vec3> normals;
                         QVector<glm::vec3> vertices;
 
-                        if (target.values.contains((QString) "NORMAL")) {
-                            generateTargetData(target.values.value((QString) "NORMAL"), weight, normals);
+                        size_t normalAttributeIndex = 0;
+                        if (findAttribute("NORMAL", target.attributes, target.attributes_count, normalAttributeIndex)) {
+                            if (!generateTargetData(target.attributes[normalAttributeIndex].data, weight, normals)) {
+                                qWarning(modelformat) << "Invalid NORMAL accessor on generateTargetData vertices for model " << _url;
+                                hfmModel.loadErrorCount++;
+                                return false;
+                            }
                         }
-                        if (target.values.contains((QString) "POSITION")) {
-                            generateTargetData(target.values.value((QString) "POSITION"), weight, vertices);
+                        size_t positionAttributeIndex = 0;
+                        if (findAttribute("POSITION", target.attributes, target.attributes_count, positionAttributeIndex)) {
+                            if (!generateTargetData(target.attributes[positionAttributeIndex].data, weight, vertices)) {
+                                qWarning(modelformat) << "Invalid POSITION accessor on generateTargetData vertices for model " << _url;
+                                hfmModel.loadErrorCount++;
+                                return false;
+                            }
                         }
 
                         if (blendshape.indices.size() < prevMeshVerticesCount + vertices.size()) {
@@ -1694,12 +1112,23 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             blendshape.vertices.resize(prevMeshVerticesCount + vertices.size());
                             blendshape.normals.resize(prevMeshVerticesCount + vertices.size());
                         }
+                        //TODO: it looks like this can support sparse encoding, since there are indices?
                         for (int i = 0; i < vertices.size(); i++) {
                             blendshape.indices[prevMeshVerticesCount + i] = prevMeshVerticesCount + i;
                             blendshape.vertices[prevMeshVerticesCount + i] += vertices.value(i);
-                            blendshape.normals[prevMeshVerticesCount + i] += normals.value(i);
+                            // Prevent out-of-bounds access if blendshape normals are not available
+                            if (i < normals.size()) {
+                                blendshape.normals[prevMeshVerticesCount + i] += normals.value(i);
+                            } else {
+                                if (prevMeshVerticesCount + i < mesh.normals.size()) {
+                                    blendshape.normals[prevMeshVerticesCount + i] = mesh.normals[prevMeshVerticesCount + i];
+                                } else {
+                                    qWarning(modelformat) << "Blendshape has more vertices than original mesh " << _url;
+                                    hfmModel.loadErrorCount++;
+                                    return false;
+                                }
+                            }
                         }
-
                     }
                 }
 
@@ -1720,7 +1149,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
 
             mesh.meshIndex = hfmModel.meshes.size();
         }
-        ++nodecount;
+        ++nodeCount;
     }
 
     return true;
@@ -1752,43 +1181,56 @@ HFMModel::Pointer GLTFSerializer::read(const hifi::ByteArray& data, const hifi::
         _url = hifi::URL(QFileInfo(localFileName).absoluteFilePath());
     }
 
-    if (parseGLTF(data)) {
-        //_file.dump();
-        auto hfmModelPtr = std::make_shared<HFMModel>();
-        HFMModel& hfmModel = *hfmModelPtr;
-        buildGeometry(hfmModel, mapping, _url);
-
-        //hfmModel.debugDump();
-        //glTFDebugDump();
-
-        return hfmModelPtr;
-    } else {
+    cgltf_options options = {};
+    cgltf_result result = cgltf_parse(&options, data.data(), data.size(), &_data);
+    if (result != cgltf_result_success) {
         qCDebug(modelformat) << "Error parsing GLTF file.";
+        return nullptr;
+    }
+    cgltf_load_buffers(&options, _data, NULL);
+    for (size_t i = 0; i < _data->buffers_count; i++) {
+        cgltf_buffer &buffer = _data->buffers[i];
+        if (buffer.data == nullptr) {
+            if (!readBinary(buffer.uri, buffer)) {
+                qCDebug(modelformat) << "Error parsing GLTF file.";
+                return nullptr;
+            }
+        }
     }
 
-    return nullptr;
+
+    auto hfmModelPtr = std::make_shared<HFMModel>();
+    HFMModel& hfmModel = *hfmModelPtr;
+    buildGeometry(hfmModel, mapping, _url);
+
+    return hfmModelPtr;
 }
 
-bool GLTFSerializer::readBinary(const QString& url, hifi::ByteArray& outdata) {
+bool GLTFSerializer::readBinary(const QString& url, cgltf_buffer &buffer) {
     bool success;
+    hifi::ByteArray outdata;
 
+    // Is this part already done by cgltf?
     if (url.contains("data:application/octet-stream;base64,")) {
+        qDebug() << "GLTFSerializer::readBinary: base64";
         outdata = requestEmbeddedData(url);
         success = !outdata.isEmpty();
     } else {
         hifi::URL binaryUrl = _url.resolved(url);
         std::tie<bool, hifi::ByteArray>(success, outdata) = requestData(binaryUrl);
     }
+    if (success) {
+        if(buffer.size == (size_t)outdata.size()) {
+            _externalData.push_back(outdata);
+            buffer.data = _externalData.last().data();
+            buffer.data_free_method = cgltf_data_free_method_none;
+        } else {
+            qDebug() << "Buffer size mismatch for model: " << _url;
+            success = false;
+        }
+    }
 
     return success;
-}
-
-bool GLTFSerializer::doesResourceExist(const QString& url) {
-    if (_url.isEmpty()) {
-        return false;
-    }
-    hifi::URL candidateUrl = _url.resolved(url);
-    return DependencyManager::get<ResourceManager>()->resourceExists(candidateUrl);
 }
 
 std::tuple<bool, hifi::ByteArray> GLTFSerializer::requestData(hifi::URL& url) {
@@ -1841,263 +1283,244 @@ QNetworkReply* GLTFSerializer::request(hifi::URL& url, bool isTest) {
     return netReply;                // trying to sync later on.
 }
 
-HFMTexture GLTFSerializer::getHFMTexture(const GLTFTexture& texture) {
-    HFMTexture fbxtex = HFMTexture();
-    fbxtex.texcoordSet = 0;
+HFMTexture GLTFSerializer::getHFMTexture(const cgltf_texture *texture) {
+    HFMTexture hfmTex = HFMTexture();
+    hfmTex.texcoordSet = 0;
 
-    if (texture.defined["source"]) {
-        QString url = _file.images[texture.source].uri;
+    auto image = texture->image;
 
-        QString fname = hifi::URL(url).fileName();
-        hifi::URL textureUrl = _url.resolved(url);
-        fbxtex.name = fname;
-        fbxtex.filename = textureUrl.toEncoded();
-
-        if (_url.path().endsWith("glb") && !_glbBinary.isEmpty()) {
-            int bufferView = _file.images[texture.source].bufferView;
-
-            GLTFBufferView& imagesBufferview = _file.bufferviews[bufferView];
-            int offset = imagesBufferview.byteOffset;
-            int length = imagesBufferview.byteLength;
-
-            fbxtex.content = _glbBinary.mid(offset, length);
-            fbxtex.filename = textureUrl.toEncoded().append(texture.source);
-        }
-
-        if (url.contains("data:image/jpeg;base64,") || url.contains("data:image/png;base64,")) {
-            fbxtex.content = requestEmbeddedData(url);
+    // Check for WebP extension
+    for (size_t i = 0; i < texture->extensions_count; i++) {
+        auto &extension = texture->extensions[i];
+        if (extension.name != nullptr
+            && strcmp(extension.name, "EXT_texture_webp") == 0
+            && extension.data != nullptr) {
+            QJsonDocument webPExtension = QJsonDocument::fromJson(extension.data);
+            if (!webPExtension.isNull() && webPExtension["source"].isDouble()) {
+                int imageIndex = webPExtension["source"].isDouble();
+                if (imageIndex > 0 && (size_t)imageIndex < _data->images_count) {
+                    image = &_data->images[(int)(webPExtension["source"].toDouble())];
+                    break;
+                }
+            }
         }
     }
-    return fbxtex;
+
+    if (image) {
+        QString url = image->uri;
+
+        QString fileName = hifi::URL(url).fileName();
+        hifi::URL textureUrl = _url.resolved(url);
+        hfmTex.name = fileName;
+        hfmTex.filename = textureUrl.toEncoded();
+
+        if (_url.path().endsWith("glb")) {
+            cgltf_buffer_view *bufferView = image->buffer_view;
+
+            size_t offset = bufferView->offset;
+            int length = (int)bufferView->size;
+
+            size_t imageIndex = 0;
+            if (!findPointerInArray(image, _data->images, _data->images_count, imageIndex)) {
+                // This should never happen. It would mean a bug in cgltf library.
+                qDebug(modelformat) << "GLTFSerializer::getHFMTexture: can't find texture in the array";
+                return hfmTex;
+            }
+
+            if (offset + length > bufferView->buffer->size) {
+                qDebug(modelformat) << "GLTFSerializer::getHFMTexture: texture data to short";
+                return hfmTex;
+            }
+            hfmTex.content = QByteArray(static_cast<const char *>(bufferView->buffer->data) + offset, length);
+            hfmTex.filename = textureUrl.toEncoded().append(QString::number(imageIndex).toUtf8());
+        }
+
+        if (url.contains("data:image/jpeg;base64,") || url.contains("data:image/png;base64,") || url.contains("data:image/webp;base64,")) {
+            hfmTex.content = requestEmbeddedData(url);
+        }
+    }
+    return hfmTex;
 }
 
-void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const GLTFMaterial& material) {
-    if (material.defined["alphaMode"]) {
-        hfmMat._material->setOpacityMapMode(material.alphaMode);
+void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& material) {
+    hfmMat._material = std::make_shared<graphics::Material>();
+    for (size_t i = 0; i < material.extensions_count; i++) {
+        auto& extension = material.extensions[i];
+        if (extension.name != nullptr) {
+            if (strcmp(extension.name, "VRMC_materials_mtoon") == 0 && extension.data != nullptr) {
+                hfmMat.isMToonMaterial = true;
+                auto mToonMaterial = std::make_shared<NetworkMToonMaterial>();
+                QJsonDocument mToonExtension = QJsonDocument::fromJson(extension.data);
+                if (!mToonExtension.isNull()) {
+                    if (mToonExtension["shadeColorFactor"].isArray()) {
+                        auto array = mToonExtension["shadeColorFactor"].toArray();
+                        glm::vec3 shadeLinear = glm::vec3(array[0].toDouble(), array[1].toDouble(), array[2].toDouble());
+                        glm::vec3 shade = ColorUtils::tosRGBVec3(shadeLinear);
+                        mToonMaterial->setShade(shade);
+                    }
+                    if (mToonExtension["shadeMultiplyTexture"].isObject()) {
+                        QJsonObject object = mToonExtension["shadeMultiplyTexture"].toObject();
+                        if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
+                            hfmMat.shadeTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                        }
+                    }
+                    if (mToonExtension["shadingShiftFactor"].isDouble()) {
+                        mToonMaterial->setShadingShift(mToonExtension["shadingShiftFactor"].toDouble());
+                    }
+                    if (mToonExtension["shadingShiftTexture"].isObject()) {
+                        QJsonObject object = mToonExtension["shadingShiftTexture"].toObject();
+                        if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
+                            hfmMat.shadingShiftTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                        }
+                    }
+                    if (mToonExtension["shadingToonyFactor"].isDouble()) {
+                        mToonMaterial->setShadingToony(mToonExtension["shadingToonyFactor"].toDouble());
+                    }
+                    if (mToonExtension["matcapFactor"].isArray()) {
+                        auto array = mToonExtension["matcapFactor"].toArray();
+                        glm::vec3 matcapLinear = glm::vec3(array[0].toDouble(), array[1].toDouble(), array[2].toDouble());
+                        glm::vec3 matcap = ColorUtils::tosRGBVec3(matcapLinear);
+                        mToonMaterial->setMatcap(matcap);
+                    }
+                    if (mToonExtension["matcapTexture"].isObject()) {
+                        QJsonObject object = mToonExtension["matcapTexture"].toObject();
+                        if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
+                            hfmMat.matcapTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                        }
+                    }
+                    if (mToonExtension["parametricRimColorFactor"].isArray()) {
+                        auto array = mToonExtension["parametricRimColorFactor"].toArray();
+                        glm::vec3 parametricRimLinear = glm::vec3(array[0].toDouble(), array[1].toDouble(), array[2].toDouble());
+                        glm::vec3 parametricRim = ColorUtils::tosRGBVec3(parametricRimLinear);
+                        mToonMaterial->setParametricRim(parametricRim);
+                    }
+                    if (mToonExtension["parametricRimFresnelPowerFactor"].isDouble()) {
+                        mToonMaterial->setParametricRimFresnelPower(mToonExtension["parametricRimFresnelPowerFactor"].toDouble());
+                    }
+                    if (mToonExtension["parametricRimLiftFactor"].isDouble()) {
+                        mToonMaterial->setParametricRimLift(mToonExtension["parametricRimLiftFactor"].toDouble());
+                    }
+                    if (mToonExtension["rimMultiplyTexture"].isObject()) {
+                        QJsonObject object = mToonExtension["rimMultiplyTexture"].toObject();
+                        if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
+                            hfmMat.rimTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                        }
+                    }
+                    if (mToonExtension["rimLightingMixFactor"].isDouble()) {
+                        mToonMaterial->setRimLightingMix(mToonExtension["rimLightingMixFactor"].toDouble());
+                    }
+                    // FIXME: Outlines are currently disabled because they're buggy
+                    //if (mToonExtension["outlineWidthMode"].isString()) {
+                    //    QString outlineWidthMode = mToonExtension["outlineWidthMode"].toString();
+                    //    if (outlineWidthMode == "none") {
+                    //        mToonMaterial->setOutlineWidthMode(NetworkMToonMaterial::OutlineWidthMode::OUTLINE_NONE);
+                    //    } else if (outlineWidthMode == "worldCoordinates") {
+                    //        mToonMaterial->setOutlineWidthMode(NetworkMToonMaterial::OutlineWidthMode::OUTLINE_WORLD);
+                    //    } else if (outlineWidthMode == "screenCoordinates") {
+                    //        mToonMaterial->setOutlineWidthMode(NetworkMToonMaterial::OutlineWidthMode::OUTLINE_SCREEN);
+                    //    }
+                    //}
+                    if (mToonExtension["outlineWidthFactor"].isDouble()) {
+                        mToonMaterial->setOutlineWidth(mToonExtension["outlineWidthFactor"].toDouble());
+                    }
+                    if (mToonExtension["outlineColorFactor"].isArray()) {
+                        auto array = mToonExtension["outlineColorFactor"].toArray();
+                        glm::vec3 outlineLinear = glm::vec3(array[0].toDouble(), array[1].toDouble(), array[2].toDouble());
+                        glm::vec3 outline = ColorUtils::tosRGBVec3(outlineLinear);
+                        mToonMaterial->setOutline(outline);
+                    }
+                    if (mToonExtension["uvAnimationMaskTexture"].isObject()) {
+                        QJsonObject object = mToonExtension["uvAnimationMaskTexture"].toObject();
+                        if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
+                            hfmMat.uvAnimationTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                        }
+                    }
+                    if (mToonExtension["uvAnimationScrollXSpeedFactor"].isDouble()) {
+                        mToonMaterial->setUVAnimationScrollXSpeed(mToonExtension["uvAnimationScrollXSpeedFactor"].toDouble());
+                    }
+                    if (mToonExtension["uvAnimationScrollYSpeedFactor"].isDouble()) {
+                        mToonMaterial->setUVAnimationScrollYSpeed(mToonExtension["uvAnimationScrollYSpeedFactor"].toDouble());
+                    }
+                    if (mToonExtension["uvAnimationRotationSpeedFactor"].isDouble()) {
+                        mToonMaterial->setUVAnimationRotationSpeed(mToonExtension["uvAnimationRotationSpeedFactor"].toDouble());
+                    }
+                }
+                hfmMat._material = mToonMaterial;
+            }
+        }
+    }
+
+    if (material.alpha_mode == cgltf_alpha_mode_opaque) {
+        hfmMat._material->setOpacityMapMode(graphics::MaterialKey::OPACITY_MAP_OPAQUE);
+    } else if (material.alpha_mode == cgltf_alpha_mode_mask) {
+        hfmMat._material->setOpacityMapMode(graphics::MaterialKey::OPACITY_MAP_MASK);
+    } else if (material.alpha_mode == cgltf_alpha_mode_blend) {
+        hfmMat._material->setOpacityMapMode(graphics::MaterialKey::OPACITY_MAP_BLEND);
     } else {
         hfmMat._material->setOpacityMapMode(graphics::MaterialKey::OPACITY_MAP_OPAQUE); // GLTF defaults to opaque
     }
 
-    if (material.defined["alphaCutoff"]) {
-        hfmMat._material->setOpacityCutoff(material.alphaCutoff);
+    hfmMat._material->setOpacityCutoff(material.alpha_cutoff);
+
+    // VRMC_materials_mtoon takes precedence over KHR_materials_unlit
+    if (!hfmMat.isMToonMaterial) {
+        hfmMat._material->setUnlit(material.unlit);
     }
 
-    if (material.defined["doubleSided"] && material.doubleSided) {
+    if (material.double_sided) {
         hfmMat._material->setCullFaceMode(graphics::MaterialKey::CullFaceMode::CULL_NONE);
     }
 
-    if (material.defined["emissiveFactor"] && material.emissiveFactor.size() == 3) {
-        glm::vec3 emissiveLinear = glm::vec3(material.emissiveFactor[0], material.emissiveFactor[1], material.emissiveFactor[2]);
-        glm::vec3 emissive = ColorUtils::tosRGBVec3(emissiveLinear);
-        hfmMat._material->setEmissive(emissive);
-    }
+    glm::vec3 emissiveLinear = glm::vec3(material.emissive_factor[0], material.emissive_factor[1], material.emissive_factor[2]);
+    glm::vec3 emissive = ColorUtils::tosRGBVec3(emissiveLinear);
+    hfmMat._material->setEmissive(emissive);
 
-    if (material.defined["emissiveTexture"]) {
-        hfmMat.emissiveTexture = getHFMTexture(_file.textures[material.emissiveTexture]);
+    if (material.emissive_texture.texture != nullptr) {
+        hfmMat.emissiveTexture = getHFMTexture(material.emissive_texture.texture);
         hfmMat.useEmissiveMap = true;
     }
 
-    if (material.defined["normalTexture"]) {
-        hfmMat.normalTexture = getHFMTexture(_file.textures[material.normalTexture]);
+    if (material.normal_texture.texture != nullptr) {
+        hfmMat.normalTexture = getHFMTexture(material.normal_texture.texture);
         hfmMat.useNormalMap = true;
     }
 
-    if (material.defined["occlusionTexture"]) {
-        hfmMat.occlusionTexture = getHFMTexture(_file.textures[material.occlusionTexture]);
+    if (material.occlusion_texture.texture != nullptr) {
+        hfmMat.occlusionTexture = getHFMTexture(material.occlusion_texture.texture);
         hfmMat.useOcclusionMap = true;
     }
 
-    if (material.defined["pbrMetallicRoughness"]) {
+    if (material.has_pbr_metallic_roughness) {
         hfmMat.isPBSMaterial = true;
 
-        if (material.pbrMetallicRoughness.defined["metallicFactor"]) {
-            hfmMat.metallic = material.pbrMetallicRoughness.metallicFactor;
-            hfmMat._material->setMetallic(hfmMat.metallic);
-        }
-        if (material.pbrMetallicRoughness.defined["baseColorTexture"]) {
-            hfmMat.opacityTexture = getHFMTexture(_file.textures[material.pbrMetallicRoughness.baseColorTexture]);
-            hfmMat.albedoTexture = getHFMTexture(_file.textures[material.pbrMetallicRoughness.baseColorTexture]);
+        hfmMat.metallic = material.pbr_metallic_roughness.metallic_factor;
+        hfmMat._material->setMetallic(hfmMat.metallic);
+
+        if (material.pbr_metallic_roughness.base_color_texture.texture != nullptr) {
+            hfmMat.opacityTexture = getHFMTexture(material.pbr_metallic_roughness.base_color_texture.texture);
+            hfmMat.albedoTexture = getHFMTexture(material.pbr_metallic_roughness.base_color_texture.texture);
             hfmMat.useAlbedoMap = true;
         }
-        if (material.pbrMetallicRoughness.defined["metallicRoughnessTexture"]) {
-            hfmMat.roughnessTexture = getHFMTexture(_file.textures[material.pbrMetallicRoughness.metallicRoughnessTexture]);
+        if (material.pbr_metallic_roughness.metallic_roughness_texture.texture) {
+            hfmMat.roughnessTexture = getHFMTexture(material.pbr_metallic_roughness.metallic_roughness_texture.texture);
             hfmMat.roughnessTexture.sourceChannel = image::ColorChannel::GREEN;
             hfmMat.useRoughnessMap = true;
-            hfmMat.metallicTexture = getHFMTexture(_file.textures[material.pbrMetallicRoughness.metallicRoughnessTexture]);
+            hfmMat.metallicTexture = getHFMTexture(material.pbr_metallic_roughness.metallic_roughness_texture.texture);
             hfmMat.metallicTexture.sourceChannel = image::ColorChannel::BLUE;
             hfmMat.useMetallicMap = true;
         }
-        if (material.pbrMetallicRoughness.defined["roughnessFactor"]) {
-            hfmMat._material->setRoughness(material.pbrMetallicRoughness.roughnessFactor);
-        }
-        if (material.pbrMetallicRoughness.defined["baseColorFactor"] &&
-            material.pbrMetallicRoughness.baseColorFactor.size() == 4) {
-            glm::vec3 lcolor = glm::vec3(material.pbrMetallicRoughness.baseColorFactor[0], material.pbrMetallicRoughness.baseColorFactor[1],
-                                         material.pbrMetallicRoughness.baseColorFactor[2]);
-            glm::vec3 dcolor = ColorUtils::tosRGBVec3(lcolor);
-            hfmMat.diffuseColor = dcolor;
-            hfmMat._material->setAlbedo(dcolor);
-            hfmMat._material->setOpacity(material.pbrMetallicRoughness.baseColorFactor[3]);
-        }
+
+        hfmMat._material->setRoughness(material.pbr_metallic_roughness.roughness_factor);
+
+        glm::vec3 lcolor = glm::vec3(material.pbr_metallic_roughness.base_color_factor[0],
+                                     material.pbr_metallic_roughness.base_color_factor[1],
+                                     material.pbr_metallic_roughness.base_color_factor[2]);
+        glm::vec3 dcolor = ColorUtils::tosRGBVec3(lcolor);
+        hfmMat.diffuseColor = dcolor;
+        hfmMat._material->setAlbedo(dcolor);
+        hfmMat._material->setOpacity(material.pbr_metallic_roughness.base_color_factor[3]);
     }
 
-}
-
-template<typename T, typename L>
-bool GLTFSerializer::readArray(const hifi::ByteArray& bin, int byteOffset, int count,
-                           QVector<L>& outarray, int accessorType, bool normalized) {
-
-    QDataStream blobstream(bin);
-    blobstream.setByteOrder(QDataStream::LittleEndian);
-    blobstream.setVersion(QDataStream::Qt_5_9);
-    blobstream.setFloatingPointPrecision(QDataStream::FloatingPointPrecision::SinglePrecision);
-    blobstream.skipRawData(byteOffset);
-
-    int bufferCount = 0;
-    switch (accessorType) {
-    case GLTFAccessorType::SCALAR:
-        bufferCount = 1;
-        break;
-    case GLTFAccessorType::VEC2:
-        bufferCount = 2;
-        break;
-    case GLTFAccessorType::VEC3:
-        bufferCount = 3;
-        break;
-    case GLTFAccessorType::VEC4:
-        bufferCount = 4;
-        break;
-    case GLTFAccessorType::MAT2:
-        bufferCount = 4;
-        break;
-    case GLTFAccessorType::MAT3:
-        bufferCount = 9;
-        break;
-    case GLTFAccessorType::MAT4:
-        bufferCount = 16;
-        break;
-    default:
-        qWarning(modelformat) << "Unknown accessorType: " << accessorType;
-        blobstream.setDevice(nullptr);
-        return false;
-    }
-
-    float scale = 1.0f;  // Normalized output values should always be floats.
-    if (normalized) {
-        scale = (float)(std::numeric_limits<T>::max)();
-    }
-
-    for (int i = 0; i < count; ++i) {
-        for (int j = 0; j < bufferCount; ++j) {
-            if (!blobstream.atEnd()) {
-                T value;
-                blobstream >> value;
-                if (normalized) {
-                    outarray.push_back(std::max((float)value / scale, -1.0f));
-                } else {
-                    outarray.push_back(value);
-                }
-            } else {
-                blobstream.setDevice(nullptr);
-                return false;
-            }
-        }
-    }
-
-    blobstream.setDevice(nullptr);
-    return true;
-}
-template<typename T>
-bool GLTFSerializer::addArrayOfType(const hifi::ByteArray& bin, int byteOffset, int count,
-                                QVector<T>& outarray, int accessorType, int componentType, bool normalized) {
-
-    switch (componentType) {
-    case GLTFAccessorComponentType::BYTE: {}
-    case GLTFAccessorComponentType::UNSIGNED_BYTE: {
-        return readArray<uchar>(bin, byteOffset, count, outarray, accessorType, normalized);
-    }
-    case GLTFAccessorComponentType::SHORT: {
-        return readArray<short>(bin, byteOffset, count, outarray, accessorType, normalized);
-    }
-    case GLTFAccessorComponentType::UNSIGNED_INT: {
-        return readArray<uint>(bin, byteOffset, count, outarray, accessorType, normalized);
-    }
-    case GLTFAccessorComponentType::UNSIGNED_SHORT: {
-        return readArray<ushort>(bin, byteOffset, count, outarray, accessorType, normalized);
-    }
-    case GLTFAccessorComponentType::FLOAT: {
-        return readArray<float>(bin, byteOffset, count, outarray, accessorType, normalized);
-    }
-    }
-    return false;
-}
-
-template <typename T>
-bool GLTFSerializer::addArrayFromAccessor(GLTFAccessor& accessor, QVector<T>& outarray) {
-    bool success = true;
-
-    if (accessor.defined["bufferView"]) {
-        GLTFBufferView& bufferview = _file.bufferviews[accessor.bufferView];
-        GLTFBuffer& buffer = _file.buffers[bufferview.buffer];
-
-        int accBoffset = accessor.defined["byteOffset"] ? accessor.byteOffset : 0;
-
-        success = addArrayOfType(buffer.blob, bufferview.byteOffset + accBoffset, accessor.count, outarray, accessor.type,
-                                 accessor.componentType, accessor.normalized);
-    } else {
-        for (int i = 0; i < accessor.count; ++i) {
-            T value;
-            memset(&value, 0, sizeof(T));  // Make sure the dummy array is initialized to zero.
-            outarray.push_back(value);
-        }
-    }
-
-    if (success) {
-        if (accessor.defined["sparse"]) {
-            QVector<int> out_sparse_indices_array;
-
-            GLTFBufferView& sparseIndicesBufferview = _file.bufferviews[accessor.sparse.indices.bufferView];
-            GLTFBuffer& sparseIndicesBuffer = _file.buffers[sparseIndicesBufferview.buffer];
-
-            int accSIBoffset = accessor.sparse.indices.defined["byteOffset"] ? accessor.sparse.indices.byteOffset : 0;
-
-            success = addArrayOfType(sparseIndicesBuffer.blob, sparseIndicesBufferview.byteOffset + accSIBoffset,
-                                     accessor.sparse.count, out_sparse_indices_array, GLTFAccessorType::SCALAR,
-                                     accessor.sparse.indices.componentType, false);
-            if (success) {
-                QVector<T> out_sparse_values_array;
-
-                GLTFBufferView& sparseValuesBufferview = _file.bufferviews[accessor.sparse.values.bufferView];
-                GLTFBuffer& sparseValuesBuffer = _file.buffers[sparseValuesBufferview.buffer];
-
-                int accSVBoffset = accessor.sparse.values.defined["byteOffset"] ? accessor.sparse.values.byteOffset : 0;
-
-                success = addArrayOfType(sparseValuesBuffer.blob, sparseValuesBufferview.byteOffset + accSVBoffset,
-                                         accessor.sparse.count, out_sparse_values_array, accessor.type, accessor.componentType,
-                                         accessor.normalized);
-
-                if (success) {
-                    for (int i = 0; i < accessor.sparse.count; ++i) {
-                        if ((i * 3) + 2 < out_sparse_values_array.size()) {
-                            if ((out_sparse_indices_array[i] * 3) + 2 < outarray.length()) {
-                                for (int j = 0; j < 3; ++j) {
-                                    outarray[(out_sparse_indices_array[i] * 3) + j] = out_sparse_values_array[(i * 3) + j];
-                                }
-                            } else {
-                                success = false;
-                                break;
-                            }
-                        } else {
-                            success = false;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return success;
 }
 
 void GLTFSerializer::retriangulate(const QVector<int>& inIndices, const QVector<glm::vec3>& in_vertices,
@@ -2123,29 +1546,6 @@ void GLTFSerializer::retriangulate(const QVector<int>& inIndices, const QVector<
     }
 }
 
-void GLTFSerializer::glTFDebugDump() {
-    qCDebug(modelformat) << "\n";
-    qCDebug(modelformat) << "---------------- GLTF Model ----------------";
-
-    qCDebug(modelformat) << "---------------- Nodes ----------------";
-    for (GLTFNode node : _file.nodes) {
-        if (node.defined["mesh"]) {
-            qCDebug(modelformat) << "    node_transforms" << node.transforms;
-        }
-    }
-
-    qCDebug(modelformat) << "---------------- Accessors ----------------";
-    for (GLTFAccessor accessor : _file.accessors) {
-        qCDebug(modelformat) << "count: " << accessor.count;
-        qCDebug(modelformat) << "byteOffset: " << accessor.byteOffset;
-    }
-
-    qCDebug(modelformat) << "---------------- Textures ----------------";
-    for (GLTFTexture texture : _file.textures) {
-        if (texture.defined["source"]) {
-            QString url = _file.images[texture.source].uri;
-            QString fname = hifi::URL(url).fileName();
-            qCDebug(modelformat) << "fname: " << fname;
-        }
-    }
+GLTFSerializer::~GLTFSerializer() {
+    cgltf_free(_data);
 }

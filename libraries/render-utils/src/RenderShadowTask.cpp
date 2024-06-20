@@ -37,6 +37,7 @@
 using namespace render;
 
 extern void initZPassPipelines(ShapePlumber& plumber, gpu::StatePointer state, const render::ShapePipeline::BatchSetter& batchSetter, const render::ShapePipeline::ItemSetter& itemSetter);
+extern void sortAndRenderZPassShapes(const ShapePlumberPointer& shapePlumber, const render::RenderContextPointer& renderContext, const render::ShapeBounds& inShapes, render::ItemBounds &itemBounds);
 
 void RenderShadowTask::configure(const Config& configuration) {
     //DependencyManager::get<DeferredLightingEffect>()->setShadowMapEnabled(configuration.isEnabled());
@@ -49,13 +50,10 @@ void RenderShadowTask::build(JobModel& task, const render::Varying& input, rende
     static ShapePlumberPointer shapePlumber = std::make_shared<ShapePlumber>();
     static std::once_flag once;
     std::call_once(once, [] {
-        auto state = std::make_shared<gpu::State>();
-        state->setCullMode(gpu::State::CULL_BACK);
-        state->setDepthTest(true, true, gpu::LESS_EQUAL);
-
         auto fadeEffect = DependencyManager::get<FadeEffect>();
-        initZPassPipelines(*shapePlumber, state, fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter());
+        initZPassPipelines(*shapePlumber, std::make_shared<gpu::State>(), fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter());
     });
+
     const auto setupOutput = task.addJob<RenderShadowSetup>("ShadowSetup", input);
     const auto queryResolution = setupOutput.getN<RenderShadowSetup::Output>(1);
     const auto shadowFrame = setupOutput.getN<RenderShadowSetup::Output>(3);
@@ -254,58 +252,8 @@ void RenderShadowMap::run(const render::RenderContextPointer& renderContext, con
             batch.setProjectionTransform(projMat);
             batch.setViewTransform(viewMat, false);
 
-            const std::vector<ShapeKey::Builder> keys = {
-                ShapeKey::Builder(), ShapeKey::Builder().withFade(),
-                ShapeKey::Builder().withDeformed(), ShapeKey::Builder().withDeformed().withFade(),
-                ShapeKey::Builder().withDeformed().withDualQuatSkinned(), ShapeKey::Builder().withDeformed().withDualQuatSkinned().withFade(),
-                ShapeKey::Builder().withOwnPipeline(), ShapeKey::Builder().withOwnPipeline().withFade(),
-                ShapeKey::Builder().withDeformed().withOwnPipeline(), ShapeKey::Builder().withDeformed().withOwnPipeline().withFade(),
-                ShapeKey::Builder().withDeformed().withDualQuatSkinned().withOwnPipeline(), ShapeKey::Builder().withDeformed().withDualQuatSkinned().withOwnPipeline().withFade(),
-            };
-            std::vector<std::vector<ShapeKey>> sortedShapeKeys(keys.size());
-
-            const int OWN_PIPELINE_INDEX = 6;
-            for (const auto& items : inShapes) {
-                int index = items.first.hasOwnPipeline() ? OWN_PIPELINE_INDEX : 0;
-                if (items.first.isDeformed()) {
-                    index += 2;
-                    if (items.first.isDualQuatSkinned()) {
-                        index += 2;
-                    }
-                }
-
-                if (items.first.isFaded()) {
-                    index += 1;
-                }
-
-                sortedShapeKeys[index].push_back(items.first);
-            }
-
-            // Render non-withOwnPipeline things
-            for (size_t i = 0; i < OWN_PIPELINE_INDEX; i++) {
-                auto& shapeKeys = sortedShapeKeys[i];
-                if (shapeKeys.size() > 0) {
-                    const auto& shapePipeline = _shapePlumber->pickPipeline(args, keys[i]);
-                    args->_shapePipeline = shapePipeline;
-                    for (const auto& key : shapeKeys) {
-                        renderShapes(renderContext, _shapePlumber, inShapes.at(key));
-                    }
-                }
-            }
-
-            // Render withOwnPipeline things
-            for (size_t i = OWN_PIPELINE_INDEX; i < keys.size(); i++) {
-                auto& shapeKeys = sortedShapeKeys[i];
-                if (shapeKeys.size() > 0) {
-                    args->_shapePipeline = nullptr;
-                    for (const auto& key : shapeKeys) {
-                        args->_itemShapeKey = key._flags.to_ulong();
-                        renderShapes(renderContext, _shapePlumber, inShapes.at(key));
-                    }
-                }
-            }
-
-            args->_shapePipeline = nullptr;
+            render::ItemBounds itemBounds;
+            sortAndRenderZPassShapes(_shapePlumber, renderContext, inShapes, itemBounds);
         }
 
         args->_batch = nullptr;

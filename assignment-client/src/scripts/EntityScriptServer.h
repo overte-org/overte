@@ -27,6 +27,8 @@
 #include <SimpleEntitySimulation.h>
 #include <ThreadedAssignment.h>
 #include <ScriptManager.h>
+#include <ScriptMessage.h>
+#include <QJsonArray>
 
 #include "../entities/EntityTreeHeadlessViewer.h"
 
@@ -55,9 +57,31 @@ private slots:
     void handleSettings();
     void updateEntityPPS();
 
+    /**
+         * @brief Handles log subscribe/unsubscribe requests
+         *
+         * Clients can subscribe to logs by sending a script log packet. Entity Script Server keeps list of subscribers
+         * and sends them logs in JSON format.
+         */
+
     void handleEntityServerScriptLogPacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer senderNode);
 
+    /**
+         * @brief Transmit logs
+         *
+         * This is called periodically through a timer to transmit logs from scripts.
+         */
+
     void pushLogs();
+
+    /**
+         * @brief Adds log entry to the transmit buffer
+         *
+         * This is connected to entity script log events in the script manager and adds script log message to the buffer
+         * containing messages that will be sent to subscribed clients.
+         */
+
+    void addLogEntry(const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID, ScriptMessage::Severity severity);
 
     void handleEntityScriptCallMethodPacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer senderNode);
 
@@ -84,6 +108,9 @@ private:
     SimpleEntitySimulationPointer _entitySimulation;
     EntityEditPacketSender _entityEditSender;
     EntityTreeHeadlessViewer _entityViewer;
+
+    QJsonArray _logBuffer;
+    std::mutex _logBufferMutex;
 
     int _maxEntityPPS { DEFAULT_MAX_ENTITY_PPS };
     int _entityPPSPerScript { DEFAULT_ENTITY_PPS_PER_SCRIPT };
