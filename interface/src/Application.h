@@ -752,7 +752,7 @@ private:
     bool _cursorNeedsChanging { false };
     bool _useSystemCursor { false };
 
-    DialogsManagerScriptingInterface* _dialogsManagerScriptingInterface { new DialogsManagerScriptingInterface() };
+    DialogsManagerScriptingInterface* _dialogsManagerScriptingInterface;
 
     QPointer<LogDialog> _logDialog;
     QPointer<EntityScriptServerLogDialog> _entityScriptServerLogDialog;

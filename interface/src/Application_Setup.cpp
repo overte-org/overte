@@ -475,6 +475,7 @@ void Application::initialize(const QCommandLineParser &parser) {
     _entityEditSender = std::make_shared<EntityEditPacketSender>();
     _graphicsEngine = std::make_shared<GraphicsEngine>();
     _applicationOverlay = std::make_shared<ApplicationOverlay>();
+    _dialogsManagerScriptingInterface = new DialogsManagerScriptingInterface();
 
     auto steamClient = PluginManager::getInstance()->getSteamClientPlugin();
     setProperty(hifi::properties::STEAM, (steamClient && steamClient->isRunning()));
@@ -585,8 +586,9 @@ void Application::initialize(const QCommandLineParser &parser) {
         }
 
 #if !defined(Q_OS_ANDROID) && !defined(DISABLE_QML)
+        const bool DISABLE_LOGIN_SCREEN = true; // Login screen is currently disabled
         // Do not show login dialog if requested not to on the command line
-        if (parser.isSet("no-login-suggestion")) {
+        if (DISABLE_LOGIN_SCREEN || parser.isSet("no-login-suggestion")) {
             _noLoginSuggestion = true;
         }
 #endif
@@ -802,6 +804,10 @@ void Application::initialize(const QCommandLineParser &parser) {
     if (_displayPlugin && !_displayPlugin->isHmd()) {
         showCursor(Cursor::Manager::lookupIcon(_preferredCursor.get()));
     }
+
+    // An audio device changed signal received before the display plugins are set up will cause a crash,
+    // so we defer the setup of the `scripting::Audio` class until this point
+    DependencyManager::set<AudioScriptingInterface, scripting::Audio>();
 
     // Create the rendering engine.  This can be slow on some machines due to lots of
     // GPU pipeline creation.
@@ -2029,17 +2035,13 @@ void Application::setupSignalsAndOperators() {
             resumeAfterLoginDialogActionTaken();
         });
 #else
-        // Do not show login dialog if requested not to on the command line
-        if (_noLoginSuggestion) {
-            connect(offscreenUi, &OffscreenUi::keyboardFocusActive, [this]() {
-                resumeAfterLoginDialogActionTaken();
-            });
-        } else {
-            connect(offscreenUi, &OffscreenUi::keyboardFocusActive, [this]() {
+        connect(offscreenUi, &OffscreenUi::keyboardFocusActive, [this]() {
+            // Do not show login dialog if requested not to on the command line
+            if (!_noLoginSuggestion) {
                 showLoginScreen();
-                resumeAfterLoginDialogActionTaken();
-            });
-        }
+            }
+            resumeAfterLoginDialogActionTaken();
+        });
 #endif
 
         // Monitor model assets (e.g., from Clara.io) added to the world that may need resizing.
@@ -2137,9 +2139,7 @@ void Application::setupSignalsAndOperators() {
         });
         audioIO->startThread();
 
-        // An audio device changed signal received before the display plugins are set up will cause a crash,
-        // so we defer the setup of the `scripting::Audio` class until this point
-        auto audioScriptingInterface = DependencyManager::set<AudioScriptingInterface, scripting::Audio>().data();
+        auto audioScriptingInterface = DependencyManager::get<AudioScriptingInterface>().data();
         connect(audioIO, &AudioClient::mutedByMixer, audioScriptingInterface, &AudioScriptingInterface::mutedByMixer);
         connect(audioIO, &AudioClient::receivedFirstPacket, audioScriptingInterface, &AudioScriptingInterface::receivedFirstPacket);
         connect(audioIO, &AudioClient::disconnected, audioScriptingInterface, &AudioScriptingInterface::disconnected);
