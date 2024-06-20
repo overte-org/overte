@@ -311,6 +311,7 @@ int main(int argc, const char* argv[]) {
     parser.addOption(noLauncherOption);
     parser.addOption(responseTokensOption);
     parser.addOption(displayNameOption);
+    parser.addOption(noLoginOption);
     parser.addOption(overrideScriptsPathOption);
     parser.addOption(defaultScriptsOverrideOption);
     parser.addOption(traceFileOption);
