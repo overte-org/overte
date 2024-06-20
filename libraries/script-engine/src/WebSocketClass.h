@@ -33,8 +33,6 @@ class ScriptEngine;
  * <p>Create using <code>new WebSocket(...)</code> in Interface, client entity, avatar, and server entity scripts, or the 
  * {@link WebSocketServer} class in server entity and assignment client scripts.
  *
- * <p><strong>Note:</strong> Does not support secure, <code>wss:</code> protocol.</p>
- *
  * @class WebSocket
  * @param {string|WebSocket} urlOrWebSocket - The URL to connect to or an existing {@link WebSocket} to reuse the connection of.
  *
