@@ -17,6 +17,10 @@
 #include "Menu.h"
 #include "SceneScriptingInterface.h"
 
+#ifndef Q_OS_ANDROID
+#include <shared/FileLogger.h>
+#endif
+
 OctreePacketProcessor::OctreePacketProcessor():
     _safeLanding(new SafeLanding())
 {
@@ -55,7 +59,7 @@ void OctreePacketProcessor::processPacket(QSharedPointer<ReceivedMessage> messag
     // immediately following them inside the same packet. So, we process the PacketType_OCTREE_STATS first
     // then process any remaining bytes as if it was another packet
     if (octreePacketType == PacketType::OctreeStats) {
-        int statsMessageLength = qApp->processOctreeStats(*message, sendingNode);
+        int statsMessageLength = processOctreeStats(*message, sendingNode);
 
         wasStatsPacket = true;
         int piggybackBytes = message->getSize() - statsMessageLength;
@@ -93,7 +97,7 @@ void OctreePacketProcessor::processPacket(QSharedPointer<ReceivedMessage> messag
     }
 
     if (packetType != PacketType::EntityQueryInitialResultsComplete) {
-        qApp->trackIncomingOctreePacket(*message, sendingNode, wasStatsPacket);
+        trackIncomingOctreePacket(*message, sendingNode, wasStatsPacket);
     }
     
     // seek back to beginning of packet after tracking
@@ -174,4 +178,39 @@ bool OctreePacketProcessor::safeLandingIsComplete() const {
         return _safeLanding->trackingIsComplete();
     }
     return false;
+}
+
+int OctreePacketProcessor::processOctreeStats(ReceivedMessage& message, SharedNodePointer sendingNode) {
+    // parse the incoming stats datas stick it in a temporary object for now, while we
+    // determine which server it belongs to
+    int statsMessageLength = 0;
+
+    const QUuid& nodeUUID = sendingNode->getUUID();
+
+    // now that we know the node ID, let's add these stats to the stats for that node...
+    _octreeServerSceneStats.withWriteLock([&] {
+        OctreeSceneStats& octreeStats = _octreeServerSceneStats[nodeUUID];
+        statsMessageLength = octreeStats.unpackFromPacket(message);
+
+        if (octreeStats.isFullScene()) {
+            _fullSceneReceivedCounter++;
+        }
+    });
+
+    return statsMessageLength;
+}
+
+void OctreePacketProcessor::trackIncomingOctreePacket(ReceivedMessage& message, SharedNodePointer sendingNode, bool wasStatsPacket) {
+    // Attempt to identify the sender from its address.
+    if (sendingNode) {
+        const QUuid& nodeUUID = sendingNode->getUUID();
+
+        // now that we know the node ID, let's add these stats to the stats for that node...
+        _octreeServerSceneStats.withWriteLock([&] {
+            if (_octreeServerSceneStats.find(nodeUUID) != _octreeServerSceneStats.end()) {
+                OctreeSceneStats& stats = _octreeServerSceneStats[nodeUUID];
+                stats.trackIncomingOctreePacket(message, wasStatsPacket, sendingNode->getClockSkewUsec());
+            }
+        });
+    }
 }

@@ -21,6 +21,7 @@
 #include <OctreeSceneStats.h>
 
 #include "Application.h"
+#include "Menu.h"
 #include "../octree/OctreePacketProcessor.h"
 
 OctreeStatsDialog::OctreeStatsDialog(QWidget* parent, NodeToOctreeSceneStats* model) :

@@ -9,10 +9,14 @@
 //
 #include "RenderScriptingInterface.h"
 
+#include <QScreen>
+#include <QtQml>
+
+#include <RenderCommonTask.h>
 #include <ScriptEngineCast.h>
 
 #include "LightingModel.h"
-#include <QScreen>
+#include "Menu.h"
 #include "ScreenName.h"
 
 STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
