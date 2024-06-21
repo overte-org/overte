@@ -181,7 +181,8 @@ const GROUPS = [
             {
                 label: "Unlit",
                 type: "bool",
-                propertyID: "unlit",
+                propertyID: "shapeUnlit",
+                propertyName: "unlit"
             }
         ]
     },
