@@ -105,7 +105,7 @@ class DataSerializer {
          *
          * Since this is mostly intended to be used for networking, we default to the largest probable MTU here.
          */
-        static const int  DEFAULT_SIZE = 1500;
+        static const int DEFAULT_SIZE = 1500;
 
         /**
          * @brief Character to use for padding.
@@ -113,7 +113,7 @@ class DataSerializer {
          * Padding should be ignored, so it doesn't matter what we go with here, but it can be useful to set it
          * to something that would be distinctive in a dump.
          */
-        static const char PADDING_CHAR = 0xAA;
+        static const char PADDING_CHAR = (char)0xAA;
 
         /**
          * @brief Construct a dynamically allocated serializer
