@@ -64,19 +64,16 @@ struct GPUKTXPayload {
     void serialize(DataSerializer &ser) {
 
         ser << CURRENT_VERSION;
-        ser.addPadding(1);
 
         ser << _samplerDesc;
 
         uint32_t usageData = (uint32_t)_usage._flags.to_ulong();
         ser << usageData;
         ser << ((uint8_t)_usageType);
-        ser.addPadding(1);
         ser << _originalSize;
 
+        ser.addPadding(PADDING);
 
-        // The +1 is here because we're adding the CURRENT_VERSION at the top, but since it's declared as a static
-        // const, it's not actually part of the class' size.
         assert(ser.length() == GPUKTXPayload::SIZE);
     }
 
@@ -109,7 +106,7 @@ struct GPUKTXPayload {
         dsr >> _samplerDesc;
 
         dsr >> usageData;
-        _usage._flags = gpu::Texture::Usage::Flags(usageData);
+        _usage = gpu::Texture::Usage(usageData);
 
         dsr >> usagetype;
         dsr.skipPadding(1);
