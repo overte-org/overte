@@ -29,7 +29,7 @@ void AmbientLightPropertyGroup::copyToScriptValue(const EntityPropertyFlags& des
     auto nodeList = DependencyManager::get<NodeList>();
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_AMBIENT_LIGHT_INTENSITY, AmbientLight, ambientLight, AmbientIntensity, ambientIntensity);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_AMBIENT_LIGHT_URL, AmbientLight, ambientLight, AmbientURL, ambientURL);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_AMBIENT_LIGHT_COLOR, AmbientLight, ambientLight, AmbientColor, ambientColor);
+    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_AMBIENT_LIGHT_COLOR, AmbientLight, ambientLight, AmbientColor, ambientColor, u8vec3Color);
 }
 
 void AmbientLightPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
