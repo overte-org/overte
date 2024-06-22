@@ -267,7 +267,7 @@ signals:
      * Triggered when a client side entity script prints a message to the program log via {@link  print}, {@link Script.print},
      * {@link console.log}, {@link console.debug}, {@link console.group}, {@link console.groupEnd}, {@link console.time}, or
      * {@link console.timeEnd}.
-     * @function Script.printedMessage
+     * @function Script.printedEntityMessage
      * @param {string} message - The message.
      * @param {string} fileName - Name of the file in which message was generated. Empty string when no file name is available.
      * @param {number} lineNumber - Number of the line on which message was generated. -1 if there line number is not available.
@@ -280,7 +280,7 @@ signals:
     /*@jsdoc
      * Triggered when a client side entity script generates an error, {@link console.error} or {@link console.exception} is called, or
      * {@link console.assert} is called and fails.
-     * @function Script.errorMessage
+     * @function Script.errorEntityMessage
      * @param {string} message - The error message.
      * @param {string} fileName - Name of the file in which message was generated. Empty string when no file name is available.
      * @param {number} lineNumber - Number of the line on which message was generated. -1 if there line number is not available.
@@ -292,7 +292,7 @@ signals:
 
     /*@jsdoc
      * Triggered when a client side entity script generates a warning or {@link console.warn} is called.
-     * @function Script.warningMessage
+     * @function Script.warningEntityMessage
      * @param {string} message - The warning message.
      * @param {string} fileName - Name of the file in which message was generated. Empty string when no file name is available.
      * @param {number} lineNumber - Number of the line on which message was generated. -1 if there line number is not available.
@@ -304,7 +304,7 @@ signals:
 
     /*@jsdoc
      * Triggered when a client side entity script generates an information message or {@link console.info} is called.
-     * @function Script.infoMessage
+     * @function Script.infoEntityMessage
      * @param {string} message - The information message.
      * @param {string} fileName - Name of the file in which message was generated. Empty string when no file name is available.
      * @param {number} lineNumber - Number of the line on which message was generated. -1 if there line number is not available.
