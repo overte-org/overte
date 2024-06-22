@@ -536,6 +536,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
     CHECK_PROPERTY_CHANGE(PROP_COLOR, color);
     CHECK_PROPERTY_CHANGE(PROP_ALPHA, alpha);
+    CHECK_PROPERTY_CHANGE(PROP_UNLIT, unlit);
     changedProperties += _pulse.getChangedProperties();
     CHECK_PROPERTY_CHANGE(PROP_TEXTURES, textures);
 
@@ -611,7 +612,6 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_RIGHT_MARGIN, rightMargin);
     CHECK_PROPERTY_CHANGE(PROP_TOP_MARGIN, topMargin);
     CHECK_PROPERTY_CHANGE(PROP_BOTTOM_MARGIN, bottomMargin);
-    CHECK_PROPERTY_CHANGE(PROP_UNLIT, unlit);
     CHECK_PROPERTY_CHANGE(PROP_FONT, font);
     CHECK_PROPERTY_CHANGE(PROP_TEXT_EFFECT, textEffect);
     CHECK_PROPERTY_CHANGE(PROP_TEXT_EFFECT_COLOR, textEffectColor);
@@ -1386,6 +1386,8 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @property {Vec3} dimensions=0.1,0.1,0.1 - The dimensions of the entity.
  * @property {Color} color=255,255,255 - The color of the entity.
  * @property {number} alpha=1 - The opacity of the entity, range <code>0.0</code> &ndash; <code>1.0</code>.
+ * @property {boolean} unlit=false - <code>true</code> if the entity is unaffected by lighting, <code>false</code> if it is lit
+ *     by the key light and local lights.
  * @property {Entities.Pulse} pulse - Color and alpha pulse.
  *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  * @example <caption>Create a cylinder.</caption>
@@ -1861,6 +1863,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     if (_type == EntityTypes::Box || _type == EntityTypes::Sphere || _type == EntityTypes::Shape) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_COLOR, color, u8vec3Color);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA, alpha);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_UNLIT, unlit);
         _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SHAPE, shape);
     }
@@ -2205,6 +2208,7 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE(compoundShapeURL, QString, setCompoundShapeURL);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(color, u8vec3Color, setColor);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(alpha, float, setAlpha);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(unlit, bool, setUnlit);
     _pulse.copyFromScriptValue(object, namesSet, _defaultSettings);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(textures, QString, setTextures);
 
@@ -2280,7 +2284,6 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE(rightMargin, float, setRightMargin);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(topMargin, float, setTopMargin);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(bottomMargin, float, setBottomMargin);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(unlit, bool, setUnlit);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(font, QString, setFont);
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(textEffect, TextEffect);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(textEffectColor, u8vec3Color, setTextEffectColor);
@@ -2499,6 +2502,7 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(compoundShapeURL);
     COPY_PROPERTY_IF_CHANGED(color);
     COPY_PROPERTY_IF_CHANGED(alpha);
+    COPY_PROPERTY_IF_CHANGED(unlit);
     _pulse.merge(other._pulse);
     COPY_PROPERTY_IF_CHANGED(textures);
 
@@ -2574,7 +2578,6 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(rightMargin);
     COPY_PROPERTY_IF_CHANGED(topMargin);
     COPY_PROPERTY_IF_CHANGED(bottomMargin);
-    COPY_PROPERTY_IF_CHANGED(unlit);
     COPY_PROPERTY_IF_CHANGED(font);
     COPY_PROPERTY_IF_CHANGED(textEffect);
     COPY_PROPERTY_IF_CHANGED(textEffectColor);
@@ -2830,6 +2833,7 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
         ADD_PROPERTY_TO_MAP(PROP_COMPOUND_SHAPE_URL, CompoundShapeURL, compoundShapeURL, QString);
         ADD_PROPERTY_TO_MAP(PROP_COLOR, Color, color, u8vec3Color);
         ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_ALPHA, Alpha, alpha, float, particle::MINIMUM_ALPHA, particle::MAXIMUM_ALPHA);
+        ADD_PROPERTY_TO_MAP(PROP_UNLIT, Unlit, unlit, bool);
         { // Pulse
             ADD_GROUP_PROPERTY_TO_MAP(PROP_PULSE_MIN, Pulse, pulse, Min, min);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_PULSE_MAX, Pulse, pulse, Max, max);
@@ -2950,7 +2954,6 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
         ADD_PROPERTY_TO_MAP(PROP_RIGHT_MARGIN, RightMargin, rightMargin, float);
         ADD_PROPERTY_TO_MAP(PROP_TOP_MARGIN, TopMargin, topMargin, float);
         ADD_PROPERTY_TO_MAP(PROP_BOTTOM_MARGIN, BottomMargin, bottomMargin, float);
-        ADD_PROPERTY_TO_MAP(PROP_UNLIT, Unlit, unlit, bool);
         ADD_PROPERTY_TO_MAP(PROP_FONT, Font, font, QString);
         ADD_PROPERTY_TO_MAP(PROP_TEXT_EFFECT, TextEffect, textEffect, TextEffect);
         ADD_PROPERTY_TO_MAP(PROP_TEXT_EFFECT_COLOR, TextEffectColor, textEffectColor, u8vec3Color);
@@ -3503,6 +3506,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 properties.getType() == EntityTypes::Sphere) {
                 APPEND_ENTITY_PROPERTY(PROP_COLOR, properties.getColor());
                 APPEND_ENTITY_PROPERTY(PROP_ALPHA, properties.getAlpha());
+                APPEND_ENTITY_PROPERTY(PROP_UNLIT, properties.getUnlit());
                 _staticPulse.setProperties(properties);
                 _staticPulse.appendToEditPacket(packetData, requestedProperties, propertyFlags,
                     propertiesDidntFit, propertyCount, appendState);
@@ -3980,6 +3984,7 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
         properties.getType() == EntityTypes::Sphere) {
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_COLOR, u8vec3Color, setColor);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_ALPHA, float, setAlpha);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_UNLIT, bool, setUnlit);
         properties.getPulse().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
 
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SHAPE, QString, setShape);
@@ -4201,6 +4206,7 @@ void EntityItemProperties::markAllChanged() {
     _compoundShapeURLChanged = true;
     _colorChanged = true;
     _alphaChanged = true;
+    _unlitChanged = true;
     _pulse.markAllChanged();
     _texturesChanged = true;
 
@@ -4276,7 +4282,6 @@ void EntityItemProperties::markAllChanged() {
     _rightMarginChanged = true;
     _topMarginChanged = true;
     _bottomMarginChanged = true;
-    _unlitChanged = true;
     _fontChanged = true;
     _textEffectChanged = true;
     _textEffectColorChanged = true;
@@ -4675,6 +4680,9 @@ QList<QString> EntityItemProperties::listChangedProperties() {
     if (alphaChanged()) {
         out += "alpha";
     }
+    if (unlitChanged()) {
+        out += "unlit";
+    }
     getPulse().listChangedProperties(out);
     if (texturesChanged()) {
         out += "textures";
@@ -4875,9 +4883,6 @@ QList<QString> EntityItemProperties::listChangedProperties() {
     }
     if (bottomMarginChanged()) {
         out += "bottomMargin";
-    }
-    if (unlitChanged()) {
-        out += "unlit";
     }
     if (fontChanged()) {
         out += "font";

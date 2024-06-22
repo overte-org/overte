@@ -8,6 +8,10 @@
     "shapeAlpha": {
         "tooltip": "The opacity of the entity between 0.0 fully transparent and 1.0 completely opaque."
     },
+    "shapeUnlit": {
+        "tooltip": "If enabled, the entity will not be lit by the keylight or local lights.",
+        "jsPropertyName": "unlit"
+    },
     "text": {
         "tooltip": "The text to display on the entity."
     },

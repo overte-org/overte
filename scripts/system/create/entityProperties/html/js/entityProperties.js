@@ -178,6 +178,12 @@ const GROUPS = [
                 propertyID: "shapeAlpha",
                 propertyName: "alpha",
             },
+            {
+                label: "Unlit",
+                type: "bool",
+                propertyID: "shapeUnlit",
+                propertyName: "unlit"
+            }
         ]
     },
     {
