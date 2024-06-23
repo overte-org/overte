@@ -585,8 +585,8 @@ void Keyboard::handleTriggerBegin(const QUuid& id, const PointerEvent& event) {
 
         QKeyEvent* pressEvent = new QKeyEvent(QEvent::KeyPress, scanCode, Qt::NoModifier, keyString);
         QKeyEvent* releaseEvent = new QKeyEvent(QEvent::KeyRelease, scanCode, Qt::NoModifier, keyString);
-        QCoreApplication::postEvent(QCoreApplication::instance(), pressEvent);
-        QCoreApplication::postEvent(QCoreApplication::instance(), releaseEvent);
+        QCoreApplication::postEvent(qApp->getPrimaryWidget(), pressEvent);
+        QCoreApplication::postEvent(qApp->getPrimaryWidget(), releaseEvent);
 
         if (!getPreferMalletsOverLasers()) {
             key.startTimer(KEY_PRESS_TIMEOUT_MS);
