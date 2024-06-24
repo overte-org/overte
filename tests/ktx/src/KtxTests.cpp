@@ -17,8 +17,7 @@
 #include <image/Image.h>
 #include <image/TextureProcessing.h>
 #include "SerDes.h"
-#include "KTX.h"
-#include "Texture_ktx.cpp"
+
 
 QTEST_GUILESS_MAIN(KtxTests)
 
