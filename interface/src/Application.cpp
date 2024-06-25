@@ -8598,6 +8598,14 @@ SharedSoundPointer Application::getSampleSound() const {
     return _sampleSound;
 }
 
+void Application::showVRKeyboardForHudUI(bool show) {
+    if (show) {
+        DependencyManager::get<Keyboard>()->setRaised(true, true);
+    } else {
+        DependencyManager::get<Keyboard>()->setRaised(false);
+    }
+}
+
 void Application::loadLODToolsDialog() {
     auto tabletScriptingInterface = DependencyManager::get<TabletScriptingInterface>();
     auto tablet = dynamic_cast<TabletProxy*>(tabletScriptingInterface->getTablet(SYSTEM_TABLET));

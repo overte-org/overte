@@ -93,7 +93,7 @@ public:
     void createKeyboard();
     void registerKeyboardHighlighting();
     bool isRaised() const;
-    void setRaised(bool raised);
+    void setRaised(bool raised, bool inputToHudUI = false);
     void setResetKeyboardPositionOnRaise(bool reset);
     bool isPassword() const;
     void setPassword(bool password);
@@ -190,6 +190,8 @@ private:
     QSet<QUuid> _itemsToIgnore;
     std::vector<QHash<QUuid, Key>> _keyboardLayers;
 
+    // Send keyboard events to hud UI if true
+    std::atomic<bool> _inputToHudUI { false };
     bool _created { false };
 };
 
