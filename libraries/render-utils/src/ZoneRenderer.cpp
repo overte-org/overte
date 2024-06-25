@@ -26,6 +26,7 @@
 #include "DeferredLightingEffect.h"
 
 #include "BloomStage.h"
+#include "TonemappingStage.h"
 
 namespace ru {
     using render_utils::slot::texture::Texture;
@@ -71,6 +72,14 @@ void SetupZones::run(const RenderContextPointer& context, const Input& input) {
     assert(bloomStage);
     bloomStage->_currentFrame.clear();
 
+    auto tonemappingStage = context->_scene->getStage<TonemappingStage>();
+    assert(tonemappingStage);
+    tonemappingStage->_currentFrame.clear();
+
+    auto ambientOcclusionStage = context->_scene->getStage<AmbientOcclusionStage>();
+    assert(ambientOcclusionStage);
+    ambientOcclusionStage->_currentFrame.clear();
+
     // call render over the zones to grab their components in the correct order first...
     render::renderItems(context, input);
 
@@ -80,6 +89,8 @@ void SetupZones::run(const RenderContextPointer& context, const Input& input) {
     backgroundStage->_currentFrame.pushBackground(0);
     hazeStage->_currentFrame.pushHaze(0);
     bloomStage->_currentFrame.pushBloom(INVALID_INDEX);
+    tonemappingStage->_currentFrame.pushTonemapping(0);
+    ambientOcclusionStage->_currentFrame.pushAmbientOcclusion(0);
 }
 
 const gpu::PipelinePointer& DebugZoneLighting::getKeyLightPipeline() {

@@ -63,6 +63,8 @@
 #include "PulsePropertyGroup.h"
 #include "RingGizmoPropertyGroup.h"
 #include "ZoneAudioPropertyGroup.h"
+#include "TonemappingPropertyGroup.h"
+#include "AmbientOcclusionPropertyGroup.h"
 
 #include "MaterialMappingMode.h"
 #include "BillboardMode.h"
@@ -343,6 +345,8 @@ public:
     DEFINE_PROPERTY_GROUP(Haze, haze, HazePropertyGroup);
     DEFINE_PROPERTY_GROUP(Bloom, bloom, BloomPropertyGroup);
     DEFINE_PROPERTY_GROUP(Audio, audio, ZoneAudioPropertyGroup);
+    DEFINE_PROPERTY_GROUP(Tonemapping, tonemapping, TonemappingPropertyGroup);
+    DEFINE_PROPERTY_GROUP(AmbientOcclusion, ambientOcclusion, AmbientOcclusionPropertyGroup);
     DEFINE_PROPERTY(PROP_FLYING_ALLOWED, FlyingAllowed, flyingAllowed, bool, ZoneEntityItem::DEFAULT_FLYING_ALLOWED);
     DEFINE_PROPERTY(PROP_GHOSTING_ALLOWED, GhostingAllowed, ghostingAllowed, bool, ZoneEntityItem::DEFAULT_GHOSTING_ALLOWED);
     DEFINE_PROPERTY(PROP_FILTER_URL, FilterURL, filterURL, QString, ZoneEntityItem::DEFAULT_FILTER_URL);
@@ -353,6 +357,8 @@ public:
     DEFINE_PROPERTY_REF_ENUM(PROP_BLOOM_MODE, BloomMode, bloomMode, uint32_t, (uint32_t)COMPONENT_MODE_INHERIT);
     DEFINE_PROPERTY_REF_ENUM(PROP_AVATAR_PRIORITY, AvatarPriority, avatarPriority, uint32_t, (uint32_t)COMPONENT_MODE_INHERIT);
     DEFINE_PROPERTY_REF_ENUM(PROP_SCREENSHARE, Screenshare, screenshare, uint32_t, (uint32_t)COMPONENT_MODE_INHERIT);
+    DEFINE_PROPERTY_REF_ENUM(PROP_TONEMAPPING_MODE, TonemappingMode, tonemappingMode, uint32_t, (uint32_t)COMPONENT_MODE_INHERIT);
+    DEFINE_PROPERTY_REF_ENUM(PROP_AMBIENT_OCCLUSION_MODE, AmbientOcclusionMode, ambientOcclusionMode, uint32_t, (uint32_t)COMPONENT_MODE_INHERIT);
 
     // Polyvox
     DEFINE_PROPERTY_REF(PROP_VOXEL_VOLUME_SIZE, VoxelVolumeSize, voxelVolumeSize, glm::vec3, PolyVoxEntityItem::DEFAULT_VOXEL_VOLUME_SIZE);

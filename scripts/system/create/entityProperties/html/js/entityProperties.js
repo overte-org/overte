@@ -619,6 +619,54 @@ const GROUPS = [
         ]
     },
     {
+        id: "zone_tonemapping",
+        label: "ZONE TONEMAPPING",
+        properties: [
+            {
+                label: "Tonemapping",
+                type: "dropdown",
+                options: { inherit: "Inherit", disabled: "Off", enabled: "On" },
+                propertyID: "tonemappingMode",
+            },
+            {
+                label: "Curve",
+                type: "dropdown",
+                options: { rgb: "RGB", srgb: "sRGB", reinhard: "Reinhard", filmic: "Filmic" },
+                propertyID: "tonemapping.curve",
+                showPropertyRule: { "tonemappingMode": "enabled" },
+            },
+            {
+                label: "Exposure",
+                type: "number-draggable",
+                min: -4.0,
+                max: 4.0,
+                step: 0.1,
+                decimals: 1,
+                propertyID: "tonemapping.exposure",
+                showPropertyRule: { "tonemappingMode": "enabled" },
+            }
+        ]
+    },
+    {
+        id: "zone_ambient_occlusion",
+        label: "ZONE AMBIENT OCCLUSION",
+        properties: [
+            {
+                label: "Ambient Occlusion",
+                type: "dropdown",
+                options: { inherit: "Inherit", disabled: "Off", enabled: "On" },
+                propertyID: "ambientOcclusionMode",
+            },
+            {
+                label: "Ambient Occlusion",
+                type: "dropdown",
+                options: { ssao: "SSAO", hbao: "HBAO" },
+                propertyID: "ambientOcclusion.technique",
+                showPropertyRule: { "tonemappingMode": "enabled" },
+            }
+        ]
+    },
+    {
         id: "zone_avatar_priority",
         label: "ZONE AVATAR PRIORITY",
         properties: [
@@ -1882,8 +1930,9 @@ const GROUPS_PER_TYPE = {
   None: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Shape: [ 'base', 'shape', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Text: [ 'base', 'text', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
-  Zone: [ 'base', 'zone', 'zone_key_light', 'zone_skybox', 'zone_ambient_light', 'zone_haze', 
-            'zone_bloom', 'zone_avatar_priority', 'zone_audio', 'spatial', 'behavior', 'scripts', 'physics' ],
+  Zone: [ 'base', 'zone', 'zone_key_light', 'zone_skybox', 'zone_ambient_light', 'zone_haze',
+            'zone_bloom', 'zone_tonemapping', 'zone_ambient_occlusion', 'zone_avatar_priority',
+            'zone_audio', 'spatial', 'behavior', 'scripts', 'physics' ],
   Model: [ 'base', 'model', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Image: [ 'base', 'image', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Web: [ 'base', 'web', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],

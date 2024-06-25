@@ -23,6 +23,8 @@
 #include "HazePropertyGroup.h"
 #include "BloomPropertyGroup.h"
 #include "ZoneAudioPropertyGroup.h"
+#include "TonemappingPropertyGroup.h"
+#include "AmbientOcclusionPropertyGroup.h"
 
 class ZoneEntityItem : public EntityItem {
 public:
@@ -68,42 +70,48 @@ public:
 
     virtual bool matchesJSONFilters(const QJsonObject& jsonFilters) const override;
 
-    KeyLightPropertyGroup getKeyLightProperties() const { return resultWithReadLock<KeyLightPropertyGroup>([&] { return _keyLightProperties; }); }
-    AmbientLightPropertyGroup getAmbientLightProperties() const { return resultWithReadLock<AmbientLightPropertyGroup>([&] { return _ambientLightProperties; }); }
-
-    void setHazeMode(const uint32_t value);
-    uint32_t getHazeMode() const;
+    void setSkyboxMode(uint32_t value);
+    uint32_t getSkyboxMode() const { return _skyboxMode; }
 
     void setKeyLightMode(uint32_t value);
-    uint32_t getKeyLightMode() const;
+    uint32_t getKeyLightMode() const { return _keyLightMode; }
 
     void setAmbientLightMode(uint32_t value);
-    uint32_t getAmbientLightMode() const;
+    uint32_t getAmbientLightMode() const { return _ambientLightMode; }
 
-    void setSkyboxMode(uint32_t value);
-    uint32_t getSkyboxMode() const;
+    void setHazeMode(const uint32_t value);
+    uint32_t getHazeMode() const { return _hazeMode; }
 
     void setBloomMode(const uint32_t value);
-    uint32_t getBloomMode() const;
-
-    SkyboxPropertyGroup getSkyboxProperties() const { return resultWithReadLock<SkyboxPropertyGroup>([&] { return _skyboxProperties; }); }
-    
-    const HazePropertyGroup& getHazeProperties() const { return _hazeProperties; }
-    const BloomPropertyGroup& getBloomProperties() const { return _bloomProperties; }
-    const ZoneAudioPropertyGroup& getAudioProperties() const { return _audioProperties; }
-
-    bool getFlyingAllowed() const { return _flyingAllowed; }
-    void setFlyingAllowed(bool value) { _flyingAllowed = value; }
-    bool getGhostingAllowed() const { return _ghostingAllowed; }
-    void setGhostingAllowed(bool value) { _ghostingAllowed = value; }
-    QString getFilterURL() const;
-    void setFilterURL(const QString url); 
+    uint32_t getBloomMode() const { return _bloomMode; }
 
     uint32_t getAvatarPriority() const { return _avatarPriority; }
     void setAvatarPriority(uint32_t value) { _avatarPriority = value; }
 
     uint32_t getScreenshare() const { return _screenshare; }
     void setScreenshare(uint32_t value) { _screenshare = value; }
+
+    void setTonemappingMode(uint32_t value);
+    uint32_t getTonemappingMode() const { return _tonemappingMode; }
+
+    void setAmbientOcclusionMode(const uint32_t value);
+    uint32_t getAmbientOcclusionMode() const { return _ambientOcclusionMode; }
+
+    SkyboxPropertyGroup getSkyboxProperties() const { return resultWithReadLock<SkyboxPropertyGroup>([&] { return _skyboxProperties; }); }
+    KeyLightPropertyGroup getKeyLightProperties() const { return resultWithReadLock<KeyLightPropertyGroup>([&] { return _keyLightProperties; }); }
+    AmbientLightPropertyGroup getAmbientLightProperties() const { return resultWithReadLock<AmbientLightPropertyGroup>([&] { return _ambientLightProperties; }); }
+    const HazePropertyGroup& getHazeProperties() const { return _hazeProperties; }
+    const BloomPropertyGroup& getBloomProperties() const { return _bloomProperties; }
+    const ZoneAudioPropertyGroup& getAudioProperties() const { return _audioProperties; }
+    const TonemappingPropertyGroup& getTonemappingProperties() const { return _tonemappingProperties; }
+    const AmbientOcclusionPropertyGroup& getAmbientOcclusionProperties() const { return _ambientOcclusionProperties; }
+
+    bool getFlyingAllowed() const { return _flyingAllowed; }
+    void setFlyingAllowed(bool value) { _flyingAllowed = value; }
+    bool getGhostingAllowed() const { return _ghostingAllowed; }
+    void setGhostingAllowed(bool value) { _ghostingAllowed = value; }
+    QString getFilterURL() const;
+    void setFilterURL(const QString url);
 
     void setUserData(const QString& value) override;
 
@@ -112,6 +120,8 @@ public:
     bool skyboxPropertiesChanged() const { return _skyboxPropertiesChanged; }
     bool hazePropertiesChanged() const { return _hazePropertiesChanged; }
     bool bloomPropertiesChanged() const { return _bloomPropertiesChanged; }
+    bool tonemappingPropertiesChanged() const { return _tonemappingPropertiesChanged; }
+    bool ambientOcclusionPropertiesChanged() const { return _ambientOcclusionPropertiesChanged; }
 
     void resetRenderingPropertiesChanged();
 
@@ -142,28 +152,26 @@ protected:
     ShapeType _shapeType { DEFAULT_SHAPE_TYPE };
     QString _compoundShapeURL;
 
-    // The following 3 values are the defaults for zone creation
     uint32_t _keyLightMode { COMPONENT_MODE_INHERIT };
     uint32_t _skyboxMode { COMPONENT_MODE_INHERIT };
     uint32_t _ambientLightMode { COMPONENT_MODE_INHERIT };
-
     uint32_t _hazeMode { COMPONENT_MODE_INHERIT };
     uint32_t _bloomMode { COMPONENT_MODE_INHERIT };
+    uint32_t _avatarPriority { COMPONENT_MODE_INHERIT };
+    uint32_t _screenshare { COMPONENT_MODE_INHERIT };
+    uint32_t _tonemappingMode { COMPONENT_MODE_INHERIT };
+    uint32_t _ambientOcclusionMode { COMPONENT_MODE_INHERIT };
 
     SkyboxPropertyGroup _skyboxProperties;
     HazePropertyGroup _hazeProperties;
     BloomPropertyGroup _bloomProperties;
     ZoneAudioPropertyGroup _audioProperties;
+    TonemappingPropertyGroup _tonemappingProperties;
+    AmbientOcclusionPropertyGroup _ambientOcclusionProperties;
 
     bool _flyingAllowed { DEFAULT_FLYING_ALLOWED };
     bool _ghostingAllowed { DEFAULT_GHOSTING_ALLOWED };
     QString _filterURL { DEFAULT_FILTER_URL };
-
-    // Avatar-updates priority
-    uint32_t _avatarPriority { COMPONENT_MODE_INHERIT };
-
-    // Screen-sharing zone
-    uint32_t _screenshare { COMPONENT_MODE_INHERIT };
 
     // Dirty flags turn true when either keylight properties is changing values.
     bool _keyLightPropertiesChanged { false };
@@ -171,6 +179,8 @@ protected:
     bool _skyboxPropertiesChanged { false };
     bool _hazePropertiesChanged { false };
     bool _bloomPropertiesChanged { false };
+    bool _tonemappingPropertiesChanged { false };
+    bool _ambientOcclusionPropertiesChanged { false };
 
     static bool _drawZoneBoundaries;
     static bool _zonesArePickable;

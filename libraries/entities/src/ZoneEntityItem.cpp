@@ -61,6 +61,8 @@ EntityItemProperties ZoneEntityItem::getProperties(const EntityPropertyFlags& de
     _hazeProperties.getProperties(properties);
     _bloomProperties.getProperties(properties);
     _audioProperties.getProperties(properties);
+    _tonemappingProperties.getProperties(properties);
+    _ambientOcclusionProperties.getProperties(properties);
 
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(flyingAllowed, getFlyingAllowed);
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(ghostingAllowed, getGhostingAllowed);
@@ -73,6 +75,8 @@ EntityItemProperties ZoneEntityItem::getProperties(const EntityPropertyFlags& de
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(bloomMode, getBloomMode);
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(avatarPriority, getAvatarPriority);
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(screenshare, getScreenshare);
+    COPY_ENTITY_PROPERTY_TO_PROPERTIES(tonemappingMode, getTonemappingMode);
+    COPY_ENTITY_PROPERTY_TO_PROPERTIES(ambientOcclusionMode, getAmbientOcclusionMode);
 
     return properties;
 }
@@ -92,6 +96,8 @@ bool ZoneEntityItem::setSubClassProperties(const EntityItemProperties& propertie
     _hazePropertiesChanged |= _hazeProperties.setProperties(properties);
     _bloomPropertiesChanged |= _bloomProperties.setProperties(properties);
     bool audioPropertiesChanged = _audioProperties.setProperties(properties);
+    _tonemappingPropertiesChanged |= _tonemappingProperties.setProperties(properties);
+    _ambientOcclusionPropertiesChanged |= _ambientOcclusionProperties.setProperties(properties);
 
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(flyingAllowed, setFlyingAllowed);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(ghostingAllowed, setGhostingAllowed);
@@ -104,9 +110,12 @@ bool ZoneEntityItem::setSubClassProperties(const EntityItemProperties& propertie
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(bloomMode, setBloomMode);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(avatarPriority, setAvatarPriority);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(screenshare, setScreenshare);
+    SET_ENTITY_PROPERTY_FROM_PROPERTIES(tonemappingMode, setTonemappingMode);
+    SET_ENTITY_PROPERTY_FROM_PROPERTIES(ambientOcclusionMode, setAmbientOcclusionMode);
 
     somethingChanged |= _keyLightPropertiesChanged || _ambientLightPropertiesChanged || _skyboxPropertiesChanged ||
-                        _hazePropertiesChanged || _bloomPropertiesChanged || audioPropertiesChanged;
+                        _hazePropertiesChanged || _bloomPropertiesChanged || audioPropertiesChanged ||
+                        _tonemappingPropertiesChanged || _ambientOcclusionPropertiesChanged;
 
     return somethingChanged;
 }
@@ -177,6 +186,20 @@ int ZoneEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, 
         dataAt += bytesFromAudio;
     }
 
+    {
+        int bytesFromTonemapping = _tonemappingProperties.readEntitySubclassDataFromBuffer(dataAt, (bytesLeftToRead - bytesRead), args,
+            propertyFlags, overwriteLocalData, somethingChanged);
+        bytesRead += bytesFromTonemapping;
+        dataAt += bytesFromTonemapping;
+    }
+
+    {
+        int bytesFromAmbientOcclusion = _ambientOcclusionProperties.readEntitySubclassDataFromBuffer(dataAt, (bytesLeftToRead - bytesRead), args,
+            propertyFlags, overwriteLocalData, somethingChanged);
+        bytesRead += bytesFromAmbientOcclusion;
+        dataAt += bytesFromAmbientOcclusion;
+    }
+
     READ_ENTITY_PROPERTY(PROP_FLYING_ALLOWED, bool, setFlyingAllowed);
     READ_ENTITY_PROPERTY(PROP_GHOSTING_ALLOWED, bool, setGhostingAllowed);
     READ_ENTITY_PROPERTY(PROP_FILTER_URL, QString, setFilterURL);
@@ -188,6 +211,8 @@ int ZoneEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, 
     READ_ENTITY_PROPERTY(PROP_BLOOM_MODE, uint32_t, setBloomMode);
     READ_ENTITY_PROPERTY(PROP_AVATAR_PRIORITY, uint32_t, setAvatarPriority);
     READ_ENTITY_PROPERTY(PROP_SCREENSHARE, uint32_t, setScreenshare);
+    READ_ENTITY_PROPERTY(PROP_TONEMAPPING_MODE, uint32_t, setTonemappingMode);
+    READ_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_MODE, uint32_t, setAmbientOcclusionMode);
 
     return bytesRead;
 }
@@ -204,6 +229,8 @@ EntityPropertyFlags ZoneEntityItem::getEntityProperties(EncodeBitstreamParams& p
     requestedProperties += _hazeProperties.getEntityProperties(params);
     requestedProperties += _bloomProperties.getEntityProperties(params);
     requestedProperties += _audioProperties.getEntityProperties(params);
+    requestedProperties += _tonemappingProperties.getEntityProperties(params);
+    requestedProperties += _ambientOcclusionProperties.getEntityProperties(params);
 
     requestedProperties += PROP_FLYING_ALLOWED;
     requestedProperties += PROP_GHOSTING_ALLOWED;
@@ -216,6 +243,8 @@ EntityPropertyFlags ZoneEntityItem::getEntityProperties(EncodeBitstreamParams& p
     requestedProperties += PROP_SKYBOX_MODE;
     requestedProperties += PROP_HAZE_MODE;
     requestedProperties += PROP_BLOOM_MODE;
+    requestedProperties += PROP_TONEMAPPING_MODE;
+    requestedProperties += PROP_AMBIENT_OCCLUSION_MODE;
 
     return requestedProperties;
 }
@@ -247,32 +276,40 @@ void ZoneEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBits
         propertyFlags, propertiesDidntFit, propertyCount, appendState);
     _audioProperties.appendSubclassData(packetData, params, modelTreeElementExtraEncodeData, requestedProperties,
         propertyFlags, propertiesDidntFit, propertyCount, appendState);
+    _tonemappingProperties.appendSubclassData(packetData, params, modelTreeElementExtraEncodeData, requestedProperties,
+        propertyFlags, propertiesDidntFit, propertyCount, appendState);
+    _ambientOcclusionProperties.appendSubclassData(packetData, params, modelTreeElementExtraEncodeData, requestedProperties,
+        propertyFlags, propertiesDidntFit, propertyCount, appendState);
 
     APPEND_ENTITY_PROPERTY(PROP_FLYING_ALLOWED, getFlyingAllowed());
     APPEND_ENTITY_PROPERTY(PROP_GHOSTING_ALLOWED, getGhostingAllowed());
     APPEND_ENTITY_PROPERTY(PROP_FILTER_URL, getFilterURL());
 
-    APPEND_ENTITY_PROPERTY(PROP_KEY_LIGHT_MODE, (uint32_t)getKeyLightMode());
-    APPEND_ENTITY_PROPERTY(PROP_AMBIENT_LIGHT_MODE, (uint32_t)getAmbientLightMode());
-    APPEND_ENTITY_PROPERTY(PROP_SKYBOX_MODE, (uint32_t)getSkyboxMode());
-    APPEND_ENTITY_PROPERTY(PROP_HAZE_MODE, (uint32_t)getHazeMode());
-    APPEND_ENTITY_PROPERTY(PROP_BLOOM_MODE, (uint32_t)getBloomMode());
+    APPEND_ENTITY_PROPERTY(PROP_KEY_LIGHT_MODE, getKeyLightMode());
+    APPEND_ENTITY_PROPERTY(PROP_AMBIENT_LIGHT_MODE, getAmbientLightMode());
+    APPEND_ENTITY_PROPERTY(PROP_SKYBOX_MODE, getSkyboxMode());
+    APPEND_ENTITY_PROPERTY(PROP_HAZE_MODE, getHazeMode());
+    APPEND_ENTITY_PROPERTY(PROP_BLOOM_MODE, getBloomMode());
     APPEND_ENTITY_PROPERTY(PROP_AVATAR_PRIORITY, getAvatarPriority());
     APPEND_ENTITY_PROPERTY(PROP_SCREENSHARE, getScreenshare());
+    APPEND_ENTITY_PROPERTY(PROP_TONEMAPPING_MODE, getHazeMode());
+    APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_MODE, getBloomMode());
 }
 
 void ZoneEntityItem::debugDump() const {
     quint64 now = usecTimestampNow();
-    qCDebug(entities) << "   ZoneEntityItem id:" << getEntityItemID() << "---------------------------------------------";
-    qCDebug(entities) << "            position:" << debugTreeVector(getWorldPosition());
-    qCDebug(entities) << "          dimensions:" << debugTreeVector(getScaledDimensions());
-    qCDebug(entities) << "       getLastEdited:" << debugTime(getLastEdited(), now);
-    qCDebug(entities) << "           _hazeMode:" << EntityItemProperties::getComponentModeAsString(_hazeMode);
-    qCDebug(entities) << "       _keyLightMode:" << EntityItemProperties::getComponentModeAsString(_keyLightMode);
-    qCDebug(entities) << "   _ambientLightMode:" << EntityItemProperties::getComponentModeAsString(_ambientLightMode);
-    qCDebug(entities) << "         _skyboxMode:" << EntityItemProperties::getComponentModeAsString(_skyboxMode);
-    qCDebug(entities) << "          _bloomMode:" << EntityItemProperties::getComponentModeAsString(_bloomMode);
-    qCDebug(entities) << "     _avatarPriority:" << getAvatarPriority();
+    qCDebug(entities) << "     ZoneEntityItem id:" << getEntityItemID() << "---------------------------------------------";
+    qCDebug(entities) << "              position:" << debugTreeVector(getWorldPosition());
+    qCDebug(entities) << "            dimensions:" << debugTreeVector(getScaledDimensions());
+    qCDebug(entities) << "         getLastEdited:" << debugTime(getLastEdited(), now);
+    qCDebug(entities) << "             _hazeMode:" << EntityItemProperties::getComponentModeAsString(_hazeMode);
+    qCDebug(entities) << "         _keyLightMode:" << EntityItemProperties::getComponentModeAsString(_keyLightMode);
+    qCDebug(entities) << "     _ambientLightMode:" << EntityItemProperties::getComponentModeAsString(_ambientLightMode);
+    qCDebug(entities) << "           _skyboxMode:" << EntityItemProperties::getComponentModeAsString(_skyboxMode);
+    qCDebug(entities) << "            _bloomMode:" << EntityItemProperties::getComponentModeAsString(_bloomMode);
+    qCDebug(entities) << "       _avatarPriority:" << getAvatarPriority();
+    qCDebug(entities) << "      _tonemappingMode:" << EntityItemProperties::getComponentModeAsString(_tonemappingMode);
+    qCDebug(entities) << " _ambientOcclusionMode:" << EntityItemProperties::getComponentModeAsString(_ambientOcclusionMode);
 
     _keyLightProperties.debugDump();
     _ambientLightProperties.debugDump();
@@ -280,6 +317,8 @@ void ZoneEntityItem::debugDump() const {
     _hazeProperties.debugDump();
     _bloomProperties.debugDump();
     _audioProperties.debugDump();
+    _tonemappingProperties.debugDump();
+    _ambientOcclusionProperties.debugDump();
 }
 
 void ZoneEntityItem::setShapeType(ShapeType type) {
@@ -408,51 +447,9 @@ void ZoneEntityItem::resetRenderingPropertiesChanged() {
         _skyboxPropertiesChanged = false;
         _hazePropertiesChanged = false;
         _bloomPropertiesChanged = false;
+        _tonemappingPropertiesChanged = false;
+        _ambientOcclusionPropertiesChanged = false;
     });
-}
-
-void ZoneEntityItem::setHazeMode(const uint32_t value) {
-    if (value < COMPONENT_MODE_ITEM_COUNT && value != _hazeMode) {
-        _hazeMode = value;
-        _hazePropertiesChanged = true;
-    }
-}
-
-uint32_t ZoneEntityItem::getHazeMode() const {
-    return _hazeMode;
-}
-
-void ZoneEntityItem::setBloomMode(const uint32_t value) {
-    if (value < COMPONENT_MODE_ITEM_COUNT && value != _bloomMode) {
-        _bloomMode = value;
-        _bloomPropertiesChanged = true;
-    }
-}
-
-uint32_t ZoneEntityItem::getBloomMode() const {
-    return _bloomMode;
-}
-
-void ZoneEntityItem::setKeyLightMode(const uint32_t value) {
-    if (value < COMPONENT_MODE_ITEM_COUNT && value != _keyLightMode) {
-        _keyLightMode = value;
-        _keyLightPropertiesChanged = true;
-    }
-}
-
-uint32_t ZoneEntityItem::getKeyLightMode() const {
-    return _keyLightMode;
-}
-
-void ZoneEntityItem::setAmbientLightMode(const uint32_t value) {
-    if (value < COMPONENT_MODE_ITEM_COUNT && value != _ambientLightMode) {
-        _ambientLightMode = value;
-        _ambientLightPropertiesChanged = true;
-    }
-}
-
-uint32_t ZoneEntityItem::getAmbientLightMode() const {
-    return _ambientLightMode;
 }
 
 void ZoneEntityItem::setSkyboxMode(const uint32_t value) {
@@ -462,8 +459,46 @@ void ZoneEntityItem::setSkyboxMode(const uint32_t value) {
     }
 }
 
-uint32_t ZoneEntityItem::getSkyboxMode() const {
-    return _skyboxMode;
+void ZoneEntityItem::setKeyLightMode(const uint32_t value) {
+    if (value < COMPONENT_MODE_ITEM_COUNT && value != _keyLightMode) {
+        _keyLightMode = value;
+        _keyLightPropertiesChanged = true;
+    }
+}
+
+void ZoneEntityItem::setAmbientLightMode(const uint32_t value) {
+    if (value < COMPONENT_MODE_ITEM_COUNT && value != _ambientLightMode) {
+        _ambientLightMode = value;
+        _ambientLightPropertiesChanged = true;
+    }
+}
+
+void ZoneEntityItem::setHazeMode(const uint32_t value) {
+    if (value < COMPONENT_MODE_ITEM_COUNT && value != _hazeMode) {
+        _hazeMode = value;
+        _hazePropertiesChanged = true;
+    }
+}
+
+void ZoneEntityItem::setBloomMode(const uint32_t value) {
+    if (value < COMPONENT_MODE_ITEM_COUNT && value != _bloomMode) {
+        _bloomMode = value;
+        _bloomPropertiesChanged = true;
+    }
+}
+
+void ZoneEntityItem::setTonemappingMode(const uint32_t value) {
+    if (value < COMPONENT_MODE_ITEM_COUNT && value != _tonemappingMode) {
+        _tonemappingMode = value;
+        _tonemappingPropertiesChanged = true;
+    }
+}
+
+void ZoneEntityItem::setAmbientOcclusionMode(const uint32_t value) {
+    if (value < COMPONENT_MODE_ITEM_COUNT && value != _ambientOcclusionMode) {
+        _ambientOcclusionMode = value;
+        _ambientOcclusionPropertiesChanged = true;
+    }
 }
 
 void ZoneEntityItem::setUserData(const QString& value) {

@@ -165,6 +165,15 @@
     "bloom.bloomSize": {
         "tooltip": "The radius of bloom. The higher the value, the larger the bloom."
     },
+    "tonemappingMode": {
+        "tooltip": "Configures the tonemapping applied to the final render."
+    },
+    "tonemapping.curve": {
+        "tooltip": "The tonemapping curve used."
+    },
+    "tonemapping.exposure": {
+        "tooltip": "The exposure used during tonemapping."
+    },
     "audio.reverbEnabled": {
         "tooltip": "If reverb should be enabled for listeners in this zone."
     },

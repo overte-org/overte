@@ -662,5 +662,24 @@ void DefaultLightingSetup::run(const RenderContextPointer& renderContext) {
             _defaultHazeID = hazeStage->addHaze(_defaultHaze);
         }
     }
-}
 
+    if (!_defaultTonemapping) {
+        auto tonemappingStage = renderContext->_scene->getStage<TonemappingStage>();
+        if (tonemappingStage) {
+            auto tonemapping = std::make_shared<graphics::Tonemapping>();
+
+            _defaultTonemapping = tonemapping;
+            _defaultTonemappingID = tonemappingStage->addTonemapping(_defaultTonemapping);
+        }
+    }
+
+    if (!_defaultAmbientOcclusion) {
+        auto ambientOcclusionStage = renderContext->_scene->getStage<AmbientOcclusionStage>();
+        if (ambientOcclusionStage) {
+            auto ambientOcclusion = std::make_shared<graphics::AmbientOcclusion>();
+
+            _defaultAmbientOcclusion = ambientOcclusion;
+            _defaultAmbientOcclusionID = ambientOcclusionStage->addAmbientOcclusion(_defaultAmbientOcclusion);
+        }
+    }
+}

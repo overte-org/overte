@@ -25,10 +25,9 @@ using namespace shader::render_utils::program;
 gpu::PipelinePointer ToneMapAndResample::_pipeline;
 gpu::PipelinePointer ToneMapAndResample::_mirrorPipeline;
 
-ToneMapAndResample::ToneMapAndResample(size_t depth) {
+ToneMapAndResample::ToneMapAndResample() {
     Parameters parameters;
     _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Parameters), (const gpu::Byte*) &parameters));
-    _depth = depth;
 }
 
 void ToneMapAndResample::init() {
@@ -44,13 +43,13 @@ void ToneMapAndResample::init() {
 
 void ToneMapAndResample::setExposure(float exposure) {
     auto& params = _parametersBuffer.get<Parameters>();
-    if (params._exposure != exposure) {
-        _parametersBuffer.edit<Parameters>()._exposure = exposure;
+    if (_exposure != exposure) {
+        _exposure = exposure;
         _parametersBuffer.edit<Parameters>()._twoPowExposure = pow(2.0, exposure);
     }
 }
 
-void ToneMapAndResample::setToneCurve(ToneCurve curve) {
+void ToneMapAndResample::setCurve(TonemappingCurve curve) {
     auto& params = _parametersBuffer.get<Parameters>();
     if (params._toneCurve != (int)curve) {
         _parametersBuffer.edit<Parameters>()._toneCurve = (int)curve;
@@ -58,8 +57,9 @@ void ToneMapAndResample::setToneCurve(ToneCurve curve) {
 }
 
 void ToneMapAndResample::configure(const Config& config) {
-    setExposure(config.exposure);
-    setToneCurve((ToneCurve)config.curve);
+    _debug = config.debug;
+    _debugExposure = config.exposure;
+    _debugCurve = (TonemappingCurve)config.curve;
 }
 
 void ToneMapAndResample::run(const RenderContextPointer& renderContext, const Input& input, Output& output) {
@@ -70,6 +70,21 @@ void ToneMapAndResample::run(const RenderContextPointer& renderContext, const In
 
     auto lightingBuffer = input.get0()->getRenderBuffer(0);
     auto destinationFramebuffer = input.get1();
+    const auto tonemappingFrame = input.get2();
+
+    const auto& tonemappingStage = renderContext->_scene->getStage<TonemappingStage>();
+    graphics::TonemappingPointer tonemapping;
+    if (tonemappingStage && tonemappingFrame->_tonemappings.size()) {
+        tonemapping = tonemappingStage->getTonemapping(tonemappingFrame->_tonemappings.front());
+    }
+
+    if (_debug) {
+        setCurve(_debugCurve);
+        setExposure(_debugExposure);
+    } else if (tonemapping) {
+        setCurve(tonemapping->getCurve());
+        setExposure(tonemapping->getExposure());
+    }
 
     if (!destinationFramebuffer) {
         destinationFramebuffer = args->_blitFramebuffer;

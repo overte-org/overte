@@ -21,6 +21,7 @@
 #include "DeferredFrameTransform.h"
 #include "DeferredFramebuffer.h"
 #include "SurfaceGeometryPass.h"
+#include "AmbientOcclusionStage.h"
 
 #include "ssao_shared.h"
 
@@ -153,7 +154,8 @@ signals:
 
 class AmbientOcclusionEffect {
 public:
-    using Input = render::VaryingSet4<LightingModelPointer, DeferredFrameTransformPointer, DeferredFramebufferPointer, LinearDepthFramebufferPointer>;
+    using Input = render::VaryingSet5<LightingModelPointer, DeferredFrameTransformPointer, DeferredFramebufferPointer,
+        LinearDepthFramebufferPointer, AmbientOcclusionStage::FramePointer>;
     using Output = render::VaryingSet2<AmbientOcclusionFramebufferPointer, gpu::BufferView>;
     using Config = AmbientOcclusionEffectConfig;
     using JobModel = render::Job::ModelIO<AmbientOcclusionEffect, Input, Output, Config>;

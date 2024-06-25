@@ -108,6 +108,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
             const auto lightFrame = currentStageFrames[0];
             const auto backgroundFrame = currentStageFrames[1];
             const auto hazeFrame = currentStageFrames[2];
+            const auto tonemappingFrame = currentStageFrames[4];
  
         const auto& zones = lightingStageInputs[1];
 
@@ -178,8 +179,8 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
 
     const auto destFramebuffer = static_cast<gpu::FramebufferPointer>(nullptr);
 
-    const auto toneMappingInputs = ToneMapAndResample::Input(resolvedFramebuffer, destFramebuffer).asVarying();
-    const auto toneMappedBuffer = task.addJob<ToneMapAndResample>("ToneMapping", toneMappingInputs, depth);
+    const auto toneMappingInputs = ToneMapAndResample::Input(resolvedFramebuffer, destFramebuffer, tonemappingFrame).asVarying();
+    const auto toneMappedBuffer = task.addJob<ToneMapAndResample>("ToneMapping", toneMappingInputs);
     // HUD Layer
     const auto renderHUDLayerInputs = RenderHUDLayerTask::Input(toneMappedBuffer, lightingModel, hudOpaque, hudTransparent, hazeFrame).asVarying();
     task.addJob<RenderHUDLayerTask>("RenderHUDLayer", renderHUDLayerInputs);
