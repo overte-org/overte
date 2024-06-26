@@ -244,14 +244,12 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
-    - name: Upload artifact
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS') || matrix.build_type == 'android'  # Automatic Linux packaging is not implemented
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.s3_access_key_id }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.s3_secret_access_key }}
-      run: $PYTHON_EXEC $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
+    - name: Upload artifact to GitHub
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.ARTIFACT_PATTERN }}
+        path: ./build/${{ env.ARTIFACT_PATTERN }}
+        if-no-files-found: error
 
     #- name: Archive symbols
     #  if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
