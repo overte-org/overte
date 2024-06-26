@@ -10,8 +10,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
   push:
-    branches:
-      - master
     tags:
       # Release tags. E.g. 2024.06.1
       # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
