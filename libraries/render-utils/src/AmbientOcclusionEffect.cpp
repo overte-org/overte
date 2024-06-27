@@ -380,16 +380,17 @@ void AmbientOcclusionEffect::updateParameters(const graphics::AmbientOcclusionPo
             current.w = ambientOcclusion->getAOObscuranceLevel();
         }
 
-        if (shouldUpdateTechnique || ambientOcclusion->getAOFalloffAngle() != _aoParametersBuffer->getFalloffAngle()) {
+        const float falloffAngle = std::min(1.0f - EPSILON, ambientOcclusion->getAOFalloffAngle());
+        if (shouldUpdateTechnique || falloffAngle != _aoParametersBuffer->getFalloffAngle()) {
             auto& current = _aoParametersBuffer.edit()._falloffInfo;
-            current.x = ambientOcclusion->getAOFalloffAngle();
+            current.x = falloffAngle;
             current.y = 1.0f / (1.0f - current.x);
             // Compute sin from cos
-            current.z = sqrtf(1.0f - ambientOcclusion->getAOFalloffAngle() * ambientOcclusion->getAOFalloffAngle());
+            current.z = sqrtf(1.0f - current.x * current.x);
             current.w = 1.0f / current.z;
         }
 
-        const int numSamples = ambientOcclusion->getAOSamplingAmount() * MAX_SSAO_SAMPLES;
+        const int numSamples = std::max(1, (int)(ambientOcclusion->getAOSamplingAmount() * MAX_HBAO_SAMPLES));
         if (shouldUpdateTechnique || numSamples != _aoParametersBuffer->getNumSamples()) {
             auto& current = _aoParametersBuffer.edit()._sampleInfo;
             current.x = numSamples;
@@ -423,7 +424,7 @@ void AmbientOcclusionEffect::updateParameters(const graphics::AmbientOcclusionPo
             current.z = ambientOcclusion->getSSAONumSpiralTurns();
         }
 
-        const int numSamples = ambientOcclusion->getAOSamplingAmount() * MAX_HBAO_SAMPLES;
+        const int numSamples = std::max(1, (int)(ambientOcclusion->getAOSamplingAmount() * MAX_SSAO_SAMPLES));
         if (shouldUpdateTechnique || numSamples != _aoParametersBuffer->getNumSamples()) {
             auto& current = _aoParametersBuffer.edit()._sampleInfo;
             current.x = numSamples;

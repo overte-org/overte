@@ -11,7 +11,7 @@
 
 #include <gpu/Context.h>
 
-std::string TonemappingStage::_stageName { "TONEMAPPING_STAGE"};
+std::string TonemappingStage::_stageName { "TONEMAPPING_STAGE" };
 const TonemappingStage::Index TonemappingStage::INVALID_INDEX { render::indexed_container::INVALID_INDEX };
 
 TonemappingStage::Index TonemappingStage::findTonemapping(const TonemappingPointer& tonemapping) const {

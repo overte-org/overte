@@ -11,7 +11,7 @@
 
 #include <gpu/Context.h>
 
-std::string AmbientOcclusionStage::_stageName { "BLOOM_STAGE"};
+std::string AmbientOcclusionStage::_stageName { "AMBIENT_OCCLUSION_STAGE" };
 const AmbientOcclusionStage::Index AmbientOcclusionStage::INVALID_INDEX { render::indexed_container::INVALID_INDEX };
 
 AmbientOcclusionStage::Index AmbientOcclusionStage::findAmbientOcclusion(const AmbientOcclusionPointer& ambientOcclusion) const {

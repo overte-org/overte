@@ -90,7 +90,7 @@ void SetupZones::run(const RenderContextPointer& context, const Input& input) {
     hazeStage->_currentFrame.pushHaze(0);
     bloomStage->_currentFrame.pushBloom(INVALID_INDEX);
     tonemappingStage->_currentFrame.pushTonemapping(0);
-    ambientOcclusionStage->_currentFrame.pushAmbientOcclusion(0);
+    ambientOcclusionStage->_currentFrame.pushAmbientOcclusion(INVALID_INDEX);
 }
 
 const gpu::PipelinePointer& DebugZoneLighting::getKeyLightPipeline() {
