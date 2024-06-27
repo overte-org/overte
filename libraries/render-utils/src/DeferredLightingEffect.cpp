@@ -672,14 +672,4 @@ void DefaultLightingSetup::run(const RenderContextPointer& renderContext) {
             _defaultTonemappingID = tonemappingStage->addTonemapping(_defaultTonemapping);
         }
     }
-
-    if (!_defaultAmbientOcclusion) {
-        auto ambientOcclusionStage = renderContext->_scene->getStage<AmbientOcclusionStage>();
-        if (ambientOcclusionStage) {
-            auto ambientOcclusion = std::make_shared<graphics::AmbientOcclusion>();
-
-            _defaultAmbientOcclusion = ambientOcclusion;
-            _defaultAmbientOcclusionID = ambientOcclusionStage->addAmbientOcclusion(_defaultAmbientOcclusion);
-        }
-    }
 }

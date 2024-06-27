@@ -3051,10 +3051,19 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
         }
         {  // Tonemapping
             ADD_GROUP_PROPERTY_TO_MAP(PROP_TONEMAPPING_CURVE, Tonemapping, tonemapping, Curve, curve);
-            ADD_GROUP_PROPERTY_TO_MAP(PROP_TONEMAPPING_EXPOSURE, Tonemapping, tonemapping, Exposure, exposure);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_TONEMAPPING_EXPOSURE, Tonemapping, tonemapping, Exposure, exposure, -4.0f, -4.0f);
         }
         {  // Ambient Occlusion
-            // TODO
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_AMBIENT_OCCLUSION_TECHNIQUE, AmbientOcclusion, ambientOcclusion, Technique, technique);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_AMBIENT_OCCLUSION_JITTER, AmbientOcclusion, ambientOcclusion, Jitter, jitter);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_RESOLUTION_LEVEL, AmbientOcclusion, ambientOcclusion, ResolutionLevel, resolutionLevel, 0, 4);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_EDGE_SHARPNESS, AmbientOcclusion, ambientOcclusion, EdgeSharpness, edgeSharpness, 0.0f, 1.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_BLUR_RADIUS, AmbientOcclusion, ambientOcclusion, BlurRadius, blurRadius, 0, 15);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_AO_RADIUS, AmbientOcclusion, ambientOcclusion, AORadius, aoRadius, 0.01f, 2.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_AO_OBSCURANCE_LEVEL, AmbientOcclusion, ambientOcclusion, AOObscuranceLevel, aoObscuranceLevel, 0.01f, 1.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_AO_FALLOFF_ANGLE, AmbientOcclusion, ambientOcclusion, AOFalloffAngle, aoFalloffAngle, 0.0f, 1.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_AO_SAMPLING_AMOUNT, AmbientOcclusion, ambientOcclusion, AOSamplingAmount, aoSamplingAmount, 0.0f, 1.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_SSAO_NUM_SPIRAL_TURNS, AmbientOcclusion, ambientOcclusion, SSAONumSpiralTurns, ssaoNumSpiralTurns, 0.0f, 10.0f);
         }
         ADD_PROPERTY_TO_MAP(PROP_FLYING_ALLOWED, FlyingAllowed, flyingAllowed, bool);
         ADD_PROPERTY_TO_MAP(PROP_GHOSTING_ALLOWED, GhostingAllowed, ghostingAllowed, bool);

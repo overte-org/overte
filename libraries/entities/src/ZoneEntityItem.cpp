@@ -292,8 +292,8 @@ void ZoneEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBits
     APPEND_ENTITY_PROPERTY(PROP_BLOOM_MODE, getBloomMode());
     APPEND_ENTITY_PROPERTY(PROP_AVATAR_PRIORITY, getAvatarPriority());
     APPEND_ENTITY_PROPERTY(PROP_SCREENSHARE, getScreenshare());
-    APPEND_ENTITY_PROPERTY(PROP_TONEMAPPING_MODE, getHazeMode());
-    APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_MODE, getBloomMode());
+    APPEND_ENTITY_PROPERTY(PROP_TONEMAPPING_MODE, getTonemappingMode());
+    APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_MODE, getAmbientOcclusionMode());
 }
 
 void ZoneEntityItem::debugDump() const {

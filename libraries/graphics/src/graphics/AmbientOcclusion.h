@@ -28,7 +28,7 @@ namespace graphics {
         void setAORadius(const float aoRadius) { _aoRadius = aoRadius; }
         void setAOObscuranceLevel(const float aoObscuranceLevel) { _aoObscuranceLevel = aoObscuranceLevel; }
         void setAOFalloffAngle(const float aoFalloffAngle) { _aoFalloffAngle = aoFalloffAngle; }
-        void setAONumSamples(const uint8_t aoNumSamples) { _aoNumSamples = aoNumSamples; }
+        void setAOSamplingAmount(const float aoSamplingAmount) { _aoSamplingAmount = aoSamplingAmount; }
         void setSSAONumSpiralTurns(const float ssaoNumSpiralTurns) { _ssaoNumSpiralTurns = ssaoNumSpiralTurns; }
 
         AmbientOcclusionTechnique getTechnique() const { return _technique; }
@@ -39,7 +39,7 @@ namespace graphics {
         float getAORadius() const { return _aoRadius; }
         float getAOObscuranceLevel() const { return _aoObscuranceLevel; }
         float getAOFalloffAngle() const { return _aoFalloffAngle; }
-        uint8_t getAONumSamples() const { return _aoNumSamples; }
+        float getAOSamplingAmount() const { return _aoSamplingAmount; }
         float getSSAONumSpiralTurns() const { return _ssaoNumSpiralTurns; }
 
     private:
@@ -51,7 +51,7 @@ namespace graphics {
         float _aoRadius { 1.0f };
         float _aoObscuranceLevel { 0.5f };
         float _aoFalloffAngle { 0.25f };
-        uint8_t _aoNumSamples { 32 };
+        float _aoSamplingAmount { 0.5f };
         float _ssaoNumSpiralTurns { 7.0f };
     };
     using AmbientOcclusionPointer = std::shared_ptr<AmbientOcclusion>;

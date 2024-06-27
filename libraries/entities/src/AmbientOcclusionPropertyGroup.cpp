@@ -43,7 +43,7 @@ void AmbientOcclusionPropertyGroup::copyToScriptValue(const EntityPropertyFlags&
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_AMBIENT_OCCLUSION_AO_RADIUS, AmbientOcclusion, ambientOcclusion, AORadius, aoRadius);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_AMBIENT_OCCLUSION_AO_OBSCURANCE_LEVEL, AmbientOcclusion, ambientOcclusion, AOObscuranceLevel, aoObscuranceLevel);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_AMBIENT_OCCLUSION_AO_FALLOFF_ANGLE, AmbientOcclusion, ambientOcclusion, AOFalloffAngle, aoFalloffAngle);
-    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_AMBIENT_OCCLUSION_AO_NUM_SAMPLES, AmbientOcclusion, ambientOcclusion, AONumSamples, aoNumSamples);
+    COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_AMBIENT_OCCLUSION_AO_SAMPLING_AMOUNT, AmbientOcclusion, ambientOcclusion, AOSamplingAmount, aoSamplingAmount);
     COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(PROP_AMBIENT_OCCLUSION_SSAO_NUM_SPIRAL_TURNS, AmbientOcclusion, ambientOcclusion, SSAONumSpiralTurns, ssaoNumSpiralTurns);
 }
 
@@ -56,7 +56,7 @@ void AmbientOcclusionPropertyGroup::copyFromScriptValue(const ScriptValue& objec
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(ambientOcclusion, aoRadius, float, setAORadius);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(ambientOcclusion, aoObscuranceLevel, float, setAOObscuranceLevel);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(ambientOcclusion, aoFalloffAngle, float, setAOFalloffAngle);
-    COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(ambientOcclusion, aoNumSamples, uint8_t, setAONumSamples);
+    COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(ambientOcclusion, aoSamplingAmount, float, setAOSamplingAmount);
     COPY_GROUP_PROPERTY_FROM_QSCRIPTVALUE(ambientOcclusion, ssaoNumSpiralTurns, float, setSSAONumSpiralTurns);
 }
 
@@ -69,7 +69,7 @@ void AmbientOcclusionPropertyGroup::merge(const AmbientOcclusionPropertyGroup& o
     COPY_PROPERTY_IF_CHANGED(aoRadius);
     COPY_PROPERTY_IF_CHANGED(aoObscuranceLevel);
     COPY_PROPERTY_IF_CHANGED(aoFalloffAngle);
-    COPY_PROPERTY_IF_CHANGED(aoNumSamples);
+    COPY_PROPERTY_IF_CHANGED(aoSamplingAmount);
     COPY_PROPERTY_IF_CHANGED(ssaoNumSpiralTurns);
 }
 
@@ -83,7 +83,7 @@ void AmbientOcclusionPropertyGroup::debugDump() const {
     qCDebug(entities) << "       AORadius:" << getAORadius();
     qCDebug(entities) << "       AOObscuranceLevel:" << getAOObscuranceLevel();
     qCDebug(entities) << "       AOFalloffAngle:" << getAOFalloffAngle();
-    qCDebug(entities) << "       AONumSamples:" << getAONumSamples();
+    qCDebug(entities) << "       AOSamplingAmount:" << getAOSamplingAmount();
     qCDebug(entities) << "       SSAONumSpiralTurns:" << getSSAONumSpiralTurns();
 }
 
@@ -112,8 +112,8 @@ void AmbientOcclusionPropertyGroup::listChangedProperties(QList<QString>& out) {
     if (aoFalloffAngleChanged()) {
         out << "ambientOcclusion-aoFalloffAngle";
     }
-    if (aoNumSamplesChanged()) {
-        out << "ambientOcclusion-aoNumSamples";
+    if (aoSamplingAmountChanged()) {
+        out << "ambientOcclusion-aoSamplingAmount";
     }
     if (ssaoNumSpiralTurnsChanged()) {
         out << "ambientOcclusion-ssaoNumSpiralTurns";
@@ -137,7 +137,7 @@ bool AmbientOcclusionPropertyGroup::appendToEditPacket(OctreePacketData* packetD
     APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_RADIUS, getAORadius());
     APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_OBSCURANCE_LEVEL, getAOObscuranceLevel());
     APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_FALLOFF_ANGLE, getAOFalloffAngle());
-    APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_NUM_SAMPLES, getAONumSamples());
+    APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_SAMPLING_AMOUNT, getAOSamplingAmount());
     APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_SSAO_NUM_SPIRAL_TURNS, getSSAONumSpiralTurns());
 
     return true;
@@ -157,7 +157,7 @@ bool AmbientOcclusionPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& pr
     READ_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_RADIUS, float, setAORadius);
     READ_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_OBSCURANCE_LEVEL, float, setAOObscuranceLevel);
     READ_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_FALLOFF_ANGLE, float, setAOFalloffAngle);
-    READ_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_NUM_SAMPLES, uint8_t, setAONumSamples);
+    READ_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_SAMPLING_AMOUNT, float, setAOSamplingAmount);
     READ_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_SSAO_NUM_SPIRAL_TURNS, float, setSSAONumSpiralTurns);
 
     DECODE_GROUP_PROPERTY_HAS_CHANGED(PROP_AMBIENT_OCCLUSION_TECHNIQUE, Technique);
@@ -168,7 +168,7 @@ bool AmbientOcclusionPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& pr
     DECODE_GROUP_PROPERTY_HAS_CHANGED(PROP_AMBIENT_OCCLUSION_AO_RADIUS, AORadius);
     DECODE_GROUP_PROPERTY_HAS_CHANGED(PROP_AMBIENT_OCCLUSION_AO_OBSCURANCE_LEVEL, AOObscuranceLevel);
     DECODE_GROUP_PROPERTY_HAS_CHANGED(PROP_AMBIENT_OCCLUSION_AO_FALLOFF_ANGLE, AOFalloffAngle);
-    DECODE_GROUP_PROPERTY_HAS_CHANGED(PROP_AMBIENT_OCCLUSION_AO_NUM_SAMPLES, AONumSamples);
+    DECODE_GROUP_PROPERTY_HAS_CHANGED(PROP_AMBIENT_OCCLUSION_AO_SAMPLING_AMOUNT, AOSamplingAmount);
     DECODE_GROUP_PROPERTY_HAS_CHANGED(PROP_AMBIENT_OCCLUSION_SSAO_NUM_SPIRAL_TURNS, SSAONumSpiralTurns);
 
     processedBytes += bytesRead;
@@ -187,7 +187,7 @@ void AmbientOcclusionPropertyGroup::markAllChanged() {
     _aoRadiusChanged = true;
     _aoObscuranceLevelChanged = true;
     _aoFalloffAngleChanged = true;
-    _aoNumSamplesChanged = true;
+    _aoSamplingAmountChanged = true;
     _ssaoNumSpiralTurnsChanged = true;
 }
 
@@ -202,7 +202,7 @@ EntityPropertyFlags AmbientOcclusionPropertyGroup::getChangedProperties() const 
     CHECK_PROPERTY_CHANGE(PROP_AMBIENT_OCCLUSION_AO_RADIUS, aoRadius);
     CHECK_PROPERTY_CHANGE(PROP_AMBIENT_OCCLUSION_AO_OBSCURANCE_LEVEL, aoObscuranceLevel);
     CHECK_PROPERTY_CHANGE(PROP_AMBIENT_OCCLUSION_AO_FALLOFF_ANGLE, aoFalloffAngle);
-    CHECK_PROPERTY_CHANGE(PROP_AMBIENT_OCCLUSION_AO_NUM_SAMPLES, aoNumSamples);
+    CHECK_PROPERTY_CHANGE(PROP_AMBIENT_OCCLUSION_AO_SAMPLING_AMOUNT, aoSamplingAmount);
     CHECK_PROPERTY_CHANGE(PROP_AMBIENT_OCCLUSION_SSAO_NUM_SPIRAL_TURNS, ssaoNumSpiralTurns);
 
     return changedProperties;
@@ -217,7 +217,7 @@ void AmbientOcclusionPropertyGroup::getProperties(EntityItemProperties& properti
     COPY_ENTITY_GROUP_PROPERTY_TO_PROPERTIES(AmbientOcclusion, AORadius, getAORadius);
     COPY_ENTITY_GROUP_PROPERTY_TO_PROPERTIES(AmbientOcclusion, AOObscuranceLevel, getAOObscuranceLevel);
     COPY_ENTITY_GROUP_PROPERTY_TO_PROPERTIES(AmbientOcclusion, AOFalloffAngle, getAOFalloffAngle);
-    COPY_ENTITY_GROUP_PROPERTY_TO_PROPERTIES(AmbientOcclusion, AONumSamples, getAONumSamples);
+    COPY_ENTITY_GROUP_PROPERTY_TO_PROPERTIES(AmbientOcclusion, AOSamplingAmount, getAOSamplingAmount);
     COPY_ENTITY_GROUP_PROPERTY_TO_PROPERTIES(AmbientOcclusion, SSAONumSpiralTurns, getSSAONumSpiralTurns);
 }
 
@@ -232,7 +232,7 @@ bool AmbientOcclusionPropertyGroup::setProperties(const EntityItemProperties& pr
     SET_ENTITY_GROUP_PROPERTY_FROM_PROPERTIES(AmbientOcclusion, AORadius, aoRadius, setAORadius);
     SET_ENTITY_GROUP_PROPERTY_FROM_PROPERTIES(AmbientOcclusion, AOObscuranceLevel, aoObscuranceLevel, setAOObscuranceLevel);
     SET_ENTITY_GROUP_PROPERTY_FROM_PROPERTIES(AmbientOcclusion, AOFalloffAngle, aoFalloffAngle, setAOFalloffAngle);
-    SET_ENTITY_GROUP_PROPERTY_FROM_PROPERTIES(AmbientOcclusion, AONumSamples, aoNumSamples, setAONumSamples);
+    SET_ENTITY_GROUP_PROPERTY_FROM_PROPERTIES(AmbientOcclusion, AOSamplingAmount, aoSamplingAmount, setAOSamplingAmount);
     SET_ENTITY_GROUP_PROPERTY_FROM_PROPERTIES(AmbientOcclusion, SSAONumSpiralTurns, ssaoNumSpiralTurns, setSSAONumSpiralTurns);
 
     return somethingChanged;
@@ -249,7 +249,7 @@ EntityPropertyFlags AmbientOcclusionPropertyGroup::getEntityProperties(EncodeBit
     requestedProperties += PROP_AMBIENT_OCCLUSION_AO_RADIUS;
     requestedProperties += PROP_AMBIENT_OCCLUSION_AO_OBSCURANCE_LEVEL;
     requestedProperties += PROP_AMBIENT_OCCLUSION_AO_FALLOFF_ANGLE;
-    requestedProperties += PROP_AMBIENT_OCCLUSION_AO_NUM_SAMPLES;
+    requestedProperties += PROP_AMBIENT_OCCLUSION_AO_SAMPLING_AMOUNT;
     requestedProperties += PROP_AMBIENT_OCCLUSION_SSAO_NUM_SPIRAL_TURNS;
 
     return requestedProperties;
@@ -273,7 +273,7 @@ void AmbientOcclusionPropertyGroup::appendSubclassData(OctreePacketData* packetD
     APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_RADIUS, getAORadius());
     APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_OBSCURANCE_LEVEL, getAOObscuranceLevel());
     APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_FALLOFF_ANGLE, getAOFalloffAngle());
-    APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_NUM_SAMPLES, getAONumSamples());
+    APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_SAMPLING_AMOUNT, getAOSamplingAmount());
     APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_SSAO_NUM_SPIRAL_TURNS, getSSAONumSpiralTurns());
 }
 
@@ -293,7 +293,7 @@ int AmbientOcclusionPropertyGroup::readEntitySubclassDataFromBuffer(const unsign
     READ_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_RADIUS, float, setAORadius);
     READ_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_OBSCURANCE_LEVEL, float, setAOObscuranceLevel);
     READ_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_FALLOFF_ANGLE, float, setAOFalloffAngle);
-    READ_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_NUM_SAMPLES, uint8_t, setAONumSamples);
+    READ_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_AO_SAMPLING_AMOUNT, float, setAOSamplingAmount);
     READ_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_SSAO_NUM_SPIRAL_TURNS, float, setSSAONumSpiralTurns);
 
     return bytesRead;

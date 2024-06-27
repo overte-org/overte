@@ -116,6 +116,7 @@ const gpu::PipelinePointer& DebugZoneLighting::getAmbientPipeline() {
     }
     return _ambientPipeline;
 }
+
 const gpu::PipelinePointer& DebugZoneLighting::getBackgroundPipeline() {
     if (!_backgroundPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::zone_drawSkybox);

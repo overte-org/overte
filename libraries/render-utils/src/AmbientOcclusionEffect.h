@@ -71,15 +71,16 @@ protected:
 #endif
 
     glm::ivec2 _frameSize;
-    int _resolutionLevel{ 0 };
-    int _depthResolutionLevel{ 0 };
-    bool _isStereo{ false };
+    int _resolutionLevel { 0 };
+    int _depthResolutionLevel { 0 };
+    bool _isStereo { false };
 };
 
 using AmbientOcclusionFramebufferPointer = std::shared_ptr<AmbientOcclusionFramebuffer>;
 
 class AmbientOcclusionEffectConfig : public render::GPUJobConfig::Persistent {
     Q_OBJECT
+    Q_PROPERTY(bool debug MEMBER debug NOTIFY dirty)
     Q_PROPERTY(bool horizonBased MEMBER horizonBased NOTIFY dirty)
     Q_PROPERTY(bool ditheringEnabled MEMBER ditheringEnabled NOTIFY dirty)
     Q_PROPERTY(bool borderingEnabled MEMBER borderingEnabled NOTIFY dirty)
@@ -109,42 +110,44 @@ public:
     const int MAX_RESOLUTION_LEVEL = 4;
     const int MAX_BLUR_RADIUS = 15;
 
-    void setEdgeSharpness(float sharpness);
     void setResolutionLevel(int level);
+    void setEdgeSharpness(float sharpness);
     void setBlurRadius(int radius);
 
     void setSSAORadius(float newRadius);
     void setSSAOObscuranceLevel(float level);
     void setSSAOFalloffAngle(float bias);
-    void setSSAONumSpiralTurns(float turns);
     void setSSAONumSamples(int samples);
+    void setSSAONumSpiralTurns(float turns);
 
     void setHBAORadius(float newRadius);
     void setHBAOObscuranceLevel(float level);
     void setHBAOFalloffAngle(float bias);
     void setHBAONumSamples(int samples);
 
-    float perspectiveScale;
-    float edgeSharpness;
-    int blurRadius; // 0 means no blurring
-    int resolutionLevel;
+    bool debug { false };
 
-    float ssaoRadius;
-    float ssaoObscuranceLevel; // intensify or dim down the obscurance effect
-    float ssaoFalloffAngle;
-    float ssaoNumSpiralTurns; // defining an angle span to distribute the samples ray directions
-    int ssaoNumSamples;
+    bool jitterEnabled { false }; // Add small jittering to AO samples at each frame
+    bool horizonBased { false }; // Use horizon based AO
+    int resolutionLevel { 2 };
+    float edgeSharpness { 1.0f };
+    int blurRadius { 4 }; // 0 means no blurring
 
-    float hbaoRadius;
-    float hbaoObscuranceLevel; // intensify or dim down the obscurance effect
-    float hbaoFalloffAngle;
-    int hbaoNumSamples;
+    float ssaoRadius { 1.0f };
+    float ssaoObscuranceLevel { 0.4f }; // intensify or dim down the obscurance effect
+    float ssaoFalloffAngle { 0.15f };
+    int ssaoNumSamples { 32 };
+    float ssaoNumSpiralTurns { 7.0f }; // defining an angle span to distribute the samples ray directions
 
-    bool horizonBased; // Use horizon based AO
-    bool ditheringEnabled; // randomize the distribution of taps per pixel, should always be true
-    bool borderingEnabled; // avoid evaluating information from non existing pixels out of the frame, should always be true
-    bool fetchMipsEnabled; // fetch taps in sub mips to otpimize cache, should always be true
-    bool jitterEnabled; // Add small jittering to AO samples at each frame
+    float hbaoRadius { 0.7f };
+    float hbaoObscuranceLevel { 0.75f }; // intensify or dim down the obscurance effect
+    float hbaoFalloffAngle { 0.3f };
+    int hbaoNumSamples { 1 };
+
+    float perspectiveScale { 1.0f };
+    bool ditheringEnabled { true }; // randomize the distribution of taps per pixel, should always be true
+    bool borderingEnabled { true }; // avoid evaluating information from non existing pixels out of the frame, should always be true
+    bool fetchMipsEnabled { true }; // fetch taps in sub mips to otpimize cache, should always be true
 
 signals:
     void dirty();
@@ -160,7 +163,7 @@ public:
     using Config = AmbientOcclusionEffectConfig;
     using JobModel = render::Job::ModelIO<AmbientOcclusionEffect, Input, Output, Config>;
 
-    AmbientOcclusionEffect();
+    AmbientOcclusionEffect() {}
 
     void configure(const Config& config);
     void run(const render::RenderContextPointer& renderContext, const Input& input, Output& output);
@@ -168,7 +171,6 @@ public:
     // Class describing the uniform buffer with all the parameters common to the AO shaders
     class AOParameters : public AmbientOcclusionParams {
     public:
-
         AOParameters();
 
         int getResolutionLevel() const { return _resolutionInfo.x; }
@@ -184,7 +186,6 @@ public:
         bool isDitheringEnabled() const { return _ditheringInfo.x != 0.0f; }
         bool isBorderingEnabled() const { return _ditheringInfo.w != 0.0f; }
         bool isHorizonBased() const { return _resolutionInfo.y != 0.0f; }
-
     };
     using AOParametersBuffer = gpu::StructBuffer<AOParameters>;
 
@@ -193,17 +194,15 @@ private:
     // Class describing the uniform buffer with all the parameters common to the bilateral blur shaders
     class BlurParameters : public AmbientOcclusionBlurParams {
     public:
-
         BlurParameters();
 
         float getEdgeSharpness() const { return (float)_blurInfo.x; }
         int getBlurRadius() const { return (int)_blurInfo.w; }
-
     };
     using BlurParametersBuffer = gpu::StructBuffer<BlurParameters>;
-
     using FrameParametersBuffer = gpu::StructBuffer< AmbientOcclusionFrameParams>;
 
+    void updateParameters(const graphics::AmbientOcclusionPointer ambientOcclusion);
     void updateBlurParameters();
     void updateFramebufferSizes();
     void updateRandomSamples();
@@ -215,7 +214,7 @@ private:
     FrameParametersBuffer _aoFrameParametersBuffer[SSAO_SPLIT_COUNT*SSAO_SPLIT_COUNT];
     BlurParametersBuffer _vblurParametersBuffer;
     BlurParametersBuffer _hblurParametersBuffer;
-    float _blurEdgeSharpness{ 0.0f };
+    float _blurEdgeSharpness { 0.0f };
 
     static const gpu::PipelinePointer& getOcclusionPipeline();
     static const gpu::PipelinePointer& getBilateralBlurPipeline();
@@ -231,9 +230,14 @@ private:
 
     AmbientOcclusionFramebufferPointer _framebuffer;
     std::array<float, SSAO_RANDOM_SAMPLE_COUNT * SSAO_SPLIT_COUNT*SSAO_SPLIT_COUNT> _randomSamples;
-    int _frameId{ 0 };
-    bool _isJitterEnabled{ true };
-    
+    int _frameId { 0 };
+    bool _debug { false };
+    float _perspectiveScale { 1.0f };
+    bool _ditheringEnabled { true };
+    bool _borderingEnabled { true };
+    bool _fetchMipsEnabled { true };
+    graphics::AmbientOcclusionPointer _debugAmbientOcclusion { std::make_shared<graphics::AmbientOcclusion>() };
+
     gpu::RangeTimerPointer _gpuTimer;
 
     friend class DebugAmbientOcclusion;
@@ -248,8 +252,8 @@ class DebugAmbientOcclusionConfig : public render::Job::Config {
 public:
     DebugAmbientOcclusionConfig() : render::Job::Config(false) {}
 
-    bool showCursorPixel{ false };
-    glm::vec2 debugCursorTexcoord{ 0.5f, 0.5f };
+    bool showCursorPixel { false };
+    glm::vec2 debugCursorTexcoord { 0.5f, 0.5f };
 
 signals:
     void dirty();
@@ -262,7 +266,7 @@ public:
     using Config = DebugAmbientOcclusionConfig;
     using JobModel = render::Job::ModelI<DebugAmbientOcclusion, Inputs, Config>;
 
-    DebugAmbientOcclusion();
+    DebugAmbientOcclusion() {}
 
     void configure(const Config& config);
     void run(const render::RenderContextPointer& renderContext, const Inputs& inputs);
@@ -283,7 +287,7 @@ private:
 
     gpu::PipelinePointer _debugPipeline;
 
-    bool _showCursorPixel{ false };
+    bool _showCursorPixel { false };
 };
 
 #endif // hifi_AmbientOcclusionEffect_h

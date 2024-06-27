@@ -450,7 +450,7 @@ void ZoneEntityRenderer::updateAmbientOcclusionFromEntity(const TypedEntityPoint
     ambientOcclusion->setAORadius(_ambientOcclusionProperties.getAORadius());
     ambientOcclusion->setAOObscuranceLevel(_ambientOcclusionProperties.getAOObscuranceLevel());
     ambientOcclusion->setAOFalloffAngle(_ambientOcclusionProperties.getAOFalloffAngle());
-    ambientOcclusion->setAONumSamples(_ambientOcclusionProperties.getAONumSamples());
+    ambientOcclusion->setAOSamplingAmount(_ambientOcclusionProperties.getAOSamplingAmount());
     ambientOcclusion->setSSAONumSpiralTurns(_ambientOcclusionProperties.getSSAONumSpiralTurns());
 }
 

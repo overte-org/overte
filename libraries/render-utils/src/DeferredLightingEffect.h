@@ -170,8 +170,6 @@ protected:
     HazeStage::Index _defaultHazeID { HazeStage::INVALID_INDEX };
     graphics::TonemappingPointer _defaultTonemapping { nullptr };
     TonemappingStage::Index _defaultTonemappingID { TonemappingStage::INVALID_INDEX };
-    graphics::AmbientOcclusionPointer _defaultAmbientOcclusion { nullptr };
-    AmbientOcclusionStage::Index _defaultAmbientOcclusionID { AmbientOcclusionStage::INVALID_INDEX };
     graphics::SkyboxPointer _defaultSkybox { new ProceduralSkybox() };
     NetworkTexturePointer _defaultSkyboxNetworkTexture;
     NetworkTexturePointer _defaultAmbientNetworkTexture;

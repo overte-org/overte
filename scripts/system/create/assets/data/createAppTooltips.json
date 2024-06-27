@@ -174,6 +174,39 @@
     "tonemapping.exposure": {
         "tooltip": "The exposure used during tonemapping."
     },
+    "ambientOcclusionMode": {
+        "tooltip": "Configures the ambient occlusion in this zone."
+    },
+    "ambientOcclusion.technique": {
+        "tooltip": "The ambient occlusion technique used. Different techniques have different tradeoffs."
+    },
+    "ambientOcclusion.jitter": {
+        "tooltip": "Whether or not the ambient occlusion sampling is jittered."
+    },
+    "ambientOcclusion.resolutionLevel": {
+        "tooltip": "How high the resolution of the ambient occlusion buffer should be. Higher levels mean lower resolution buffers."
+    },
+    "ambientOcclusion.edgeSharpness": {
+        "tooltip": "How much to sharpen the edges during the ambient occlusion blurring."
+    },
+    "ambientOcclusion.blurRadius": {
+        "tooltip": "The radius used for blurring, in pixels."
+    },
+    "ambientOcclusion.aoRadius": {
+        "tooltip": "The radius used for ambient occlusion."
+    },
+    "ambientOcclusion.aoObscuranceLevel": {
+        "tooltip": "Intensify or dim ambient occlusion."
+    },
+    "ambientOcclusion.aoFalloffAngle": {
+        "tooltip": "The falloff angle for the AO calculation."
+    },
+    "ambientOcclusion.aoSamplingAmount": {
+        "tooltip": "The fraction of AO samples to use, out of the maximum for each technique."
+    },
+    "ambientOcclusion.ssaoNumSpiralTurns": {
+        "tooltip": "The angle span used to distribute the AO samples ray directions. SSAO only."
+    },
     "audio.reverbEnabled": {
         "tooltip": "If reverb should be enabled for listeners in this zone."
     },
