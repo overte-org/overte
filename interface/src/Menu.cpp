@@ -538,10 +538,8 @@ Menu::Menu() {
     addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::ComputeBlendshapes, 0, true,
         DependencyManager::get<ModelBlender>().data(), SLOT(setComputeBlendshapes(bool)));
 
-    action = addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::MaterialProceduralShaders, 0, false);
-    connect(action, &QAction::triggered, [action] {
-        ModelMeshPartPayload::enableMaterialProceduralShaders = action->isChecked();
-    });
+    addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::MaterialProceduralShaders, 0, RenderScriptingInterface::getInstance()->getProceduralMaterialsEnabled(),
+        RenderScriptingInterface::getInstance(), SLOT(setProceduralMaterialsEnabled(bool)));
 
     {
         auto drawStatusConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<render::DrawStatus>("RenderMainView.DrawStatus");
