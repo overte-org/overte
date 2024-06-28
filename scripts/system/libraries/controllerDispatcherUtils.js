@@ -73,6 +73,8 @@
    handsAreTracked: true
 */
 
+var controllerStandard = Controller.Standard;
+
 var MSECS_PER_SEC = 1000.0;
 var INCHES_TO_METERS = 1.0 / 39.3701;
 
@@ -610,8 +612,8 @@ var worldPositionToRegistrationFrameMatrix = function(wptrProps, pos) {
 };
 
 var handsAreTracked = function () {
-    return Controller.getPoseValue(Controller.Standard.LeftHandIndex3).valid ||
-        Controller.getPoseValue(Controller.Standard.RightHandIndex3).valid;
+    return Controller.getPoseValue(controllerStandard.LeftHandIndex3).valid ||
+        Controller.getPoseValue(controllerStandard.RightHandIndex3).valid;
 };
 
 if (typeof module !== 'undefined') {

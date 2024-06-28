@@ -6,6 +6,7 @@
 Trigger = function(properties) {
     properties = properties || {};
     var that = this;
+    var controllerStandard = Controller.Standard;
     that.label = properties.label || Math.random();
     that.SMOOTH_RATIO = properties.smooth || 0.1; //  Time averaging of trigger - 0.0 disables smoothing
     that.DEADZONE = properties.deadzone || 0.10; // Once pressed, a trigger must fall below the deadzone to be considered un-pressed once pressed.
@@ -44,8 +45,8 @@ Trigger = function(properties) {
 
     
     // Private values
-    var controller = properties.controller || Controller.Standard.LT;
-    var controllerClick = properties.controllerClick || Controller.Standard.LTClick;
+    var controller = properties.controller || controllerStandard.LT;
+    var controllerClick = properties.controllerClick || controllerStandard.LTClick;
     that.mapping =  Controller.newMapping('com.highfidelity.controller.trigger.' + controller + '-' + controllerClick + '.' + that.label + Math.random());
     Script.scriptEnding.connect(that.mapping.disable);
 

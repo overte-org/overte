@@ -36,8 +36,7 @@ MaterialBaker::MaterialBaker(const QString& materialData, bool isURL, const QStr
     _isURL(isURL),
     _destinationPath(destinationPath),
     _bakedOutputDir(bakedOutputDir),
-    _textureOutputDir(bakedOutputDir + "/materialTextures/" + QString::number(materialNum++)),
-    _scriptEngine(newScriptEngine())
+    _textureOutputDir(bakedOutputDir + "/materialTextures/" + QString::number(materialNum++))
 {
 }
 
@@ -214,16 +213,20 @@ void MaterialBaker::outputMaterial() {
         if (_materialResource->parsedMaterials.networkMaterials.size() == 1) {
             auto networkMaterial = _materialResource->parsedMaterials.networkMaterials.begin();
             auto scriptableMaterial = scriptable::ScriptableMaterial(networkMaterial->second);
-            QVariant materialVariant =
-                scriptable::scriptableMaterialToScriptValue(_scriptEngine.get(), scriptableMaterial).toVariant();
-            json.insert("materials", QJsonDocument::fromVariant(materialVariant).object());
+            _helperScriptEngine.run( [&] {
+                QVariant materialVariant =
+                    scriptable::scriptableMaterialToScriptValue(_helperScriptEngine.get(), scriptableMaterial).toVariant();
+                json.insert("materials", QJsonDocument::fromVariant(materialVariant).object());
+            });
         } else {
             QJsonArray materialArray;
             for (auto networkMaterial : _materialResource->parsedMaterials.networkMaterials) {
                 auto scriptableMaterial = scriptable::ScriptableMaterial(networkMaterial.second);
-                QVariant materialVariant =
-                    scriptable::scriptableMaterialToScriptValue(_scriptEngine.get(), scriptableMaterial).toVariant();
-                materialArray.append(QJsonDocument::fromVariant(materialVariant).object());
+                _helperScriptEngine.run( [&] {
+                    QVariant materialVariant =
+                        scriptable::scriptableMaterialToScriptValue(_helperScriptEngine.get(), scriptableMaterial).toVariant();
+                    materialArray.append(QJsonDocument::fromVariant(materialVariant).object());
+                });
             }
             json.insert("materials", materialArray);
         }
@@ -269,19 +272,32 @@ void MaterialBaker::setMaterials(const QHash<QString, hfm::Material>& materials,
     _materialResource = NetworkMaterialResourcePointer(new NetworkMaterialResource(), [](NetworkMaterialResource* ptr) { ptr->deleteLater(); });
     for (auto& material : materials) {
         _materialResource->parsedMaterials.names.push_back(material.name.toStdString());
-        _materialResource->parsedMaterials.networkMaterials[material.name.toStdString()] = std::make_shared<NetworkMaterial>(material, baseURL);
+        if (!material.isMToonMaterial) {
+            _materialResource->parsedMaterials.networkMaterials[material.name.toStdString()] = std::make_shared<NetworkMaterial>(material, baseURL);
+        } else {
+            _materialResource->parsedMaterials.networkMaterials[material.name.toStdString()] = std::make_shared<NetworkMToonMaterial>(material, baseURL);
+        }
 
         // Store any embedded texture content
         addTexture(material.name, image::TextureUsage::NORMAL_TEXTURE, material.normalTexture);
         addTexture(material.name, image::TextureUsage::ALBEDO_TEXTURE, material.albedoTexture);
-        addTexture(material.name, image::TextureUsage::GLOSS_TEXTURE, material.glossTexture);
-        addTexture(material.name, image::TextureUsage::ROUGHNESS_TEXTURE, material.roughnessTexture);
-        addTexture(material.name, image::TextureUsage::SPECULAR_TEXTURE, material.specularTexture);
-        addTexture(material.name, image::TextureUsage::METALLIC_TEXTURE, material.metallicTexture);
         addTexture(material.name, image::TextureUsage::EMISSIVE_TEXTURE, material.emissiveTexture);
-        addTexture(material.name, image::TextureUsage::OCCLUSION_TEXTURE, material.occlusionTexture);
-        addTexture(material.name, image::TextureUsage::SCATTERING_TEXTURE, material.scatteringTexture);
-        addTexture(material.name, image::TextureUsage::LIGHTMAP_TEXTURE, material.lightmapTexture);
+
+        if (!material.isMToonMaterial) {
+            addTexture(material.name, image::TextureUsage::GLOSS_TEXTURE, material.glossTexture);
+            addTexture(material.name, image::TextureUsage::ROUGHNESS_TEXTURE, material.roughnessTexture);
+            addTexture(material.name, image::TextureUsage::SPECULAR_TEXTURE, material.specularTexture);
+            addTexture(material.name, image::TextureUsage::METALLIC_TEXTURE, material.metallicTexture);
+            addTexture(material.name, image::TextureUsage::OCCLUSION_TEXTURE, material.occlusionTexture);
+            addTexture(material.name, image::TextureUsage::SCATTERING_TEXTURE, material.scatteringTexture);
+            addTexture(material.name, image::TextureUsage::LIGHTMAP_TEXTURE, material.lightmapTexture);
+        } else {
+            addTexture(material.name, image::TextureUsage::ALBEDO_TEXTURE, material.shadeTexture);
+            addTexture(material.name, image::TextureUsage::ROUGHNESS_TEXTURE, material.shadingShiftTexture);
+            addTexture(material.name, image::TextureUsage::EMISSIVE_TEXTURE, material.matcapTexture);
+            addTexture(material.name, image::TextureUsage::ALBEDO_TEXTURE, material.rimTexture);
+            addTexture(material.name, image::TextureUsage::ROUGHNESS_TEXTURE, material.uvAnimationTexture);
+        }
     }
 }
 

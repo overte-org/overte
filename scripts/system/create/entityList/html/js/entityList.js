@@ -1,8 +1,9 @@
 //  entityList.js
 //
-//  Created by Ryan Huffman on 19 Nov 2014
+//  Created by Ryan Huffman on November 19th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -275,6 +276,7 @@ let elEntityTable,
     elAlignGridToSelection,
     elAlignGridToAvatar,
     elBrokenURLReport,
+    elRenderWithZonesManager,
     elFilterTypeMultiselectBox,
     elFilterTypeText,
     elFilterTypeOptions,
@@ -328,6 +330,7 @@ function loaded() {
         elToolsMenu = document.getElementById("tools");
         elMenuBackgroundOverlay = document.getElementById("menuBackgroundOverlay");
         elHmdCopy = document.getElementById("hmdcopy");
+        elHmdCopyID = document.getElementById("hmdcopyid");
         elHmdCut = document.getElementById("hmdcut");
         elHmdPaste = document.getElementById("hmdpaste");
         elHmdDuplicate = document.getElementById("hmdduplicate");        
@@ -363,6 +366,7 @@ function loaded() {
         elAlignGridToSelection = document.getElementById("alignGridToSelection");
         elAlignGridToAvatar = document.getElementById("alignGridToAvatar");
         elBrokenURLReport = document.getElementById("brokenURLReport");
+        elRenderWithZonesManager = document.getElementById("renderWithZonesManager");
         elFilterTypeMultiselectBox = document.getElementById("filter-type-multiselect-box");
         elFilterTypeText = document.getElementById("filter-type-text");
         elFilterTypeOptions = document.getElementById("filter-type-options");
@@ -421,6 +425,10 @@ function loaded() {
         };
         elHmdCopy.onclick = function() {
             EventBridge.emitWebEvent(JSON.stringify({ type: "copy" }));
+            closeAllEntityListMenu();
+        };
+        elHmdCopyID.onclick = function() {
+            EventBridge.emitWebEvent(JSON.stringify({ type: "copyID" }));
             closeAllEntityListMenu();
         };
         elHmdCut.onclick = function() {
@@ -605,6 +613,10 @@ function loaded() {
             EventBridge.emitWebEvent(JSON.stringify({ type: "brokenURLReport" }));
             closeAllEntityListMenu();
         };
+        elRenderWithZonesManager.onclick = function () {
+            EventBridge.emitWebEvent(JSON.stringify({ type: "renderWithZonesManager" }));
+            closeAllEntityListMenu();
+        };        
         elToggleSpaceMode.onclick = function() {
             EventBridge.emitWebEvent(JSON.stringify({ type: "toggleSpaceMode" }));
         };
@@ -817,6 +829,9 @@ function loaded() {
                 case "Copy":
                     EventBridge.emitWebEvent(JSON.stringify({ type: "copy" }));
                     break;
+                case "Copy ID(s)":
+                    EventBridge.emitWebEvent(JSON.stringify({ type: "copyID" }));
+                    break;
                 case "Paste":
                     EventBridge.emitWebEvent(JSON.stringify({ type: "paste" }));
                     break;
@@ -856,6 +871,10 @@ function loaded() {
                 enabledContextMenuItems.push("Cut");
                 enabledContextMenuItems.push("Rename");
                 enabledContextMenuItems.push("Delete");
+            }
+            
+            if (selectedEntities.length !== 0) {
+                enabledContextMenuItems.push("Copy ID(s)");
             }
 
             entityListContextMenu.open(clickEvent, entityID, enabledContextMenuItems);

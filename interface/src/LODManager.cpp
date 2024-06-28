@@ -49,10 +49,10 @@ LODManager::LODManager() {
 const float LOD_ADJUST_RUNNING_AVG_TIMESCALE = 0.08f; // sec
 
 // batchTIme is always contained in presentTime.
-// We favor using batchTime instead of presentTime as a representative value for rendering duration (on present thread) 
+// We favor using batchTime instead of presentTime as a representative value for rendering duration (on present thread)
 // if batchTime + cushionTime < presentTime.
 // since we are shooting for fps around 60, 90Hz, the ideal frames are around 10ms
-// so we are picking a cushion time of 3ms 
+// so we are picking a cushion time of 3ms
 const float LOD_BATCH_TO_PRESENT_CUSHION_TIME = 3.0f; // msec
 
 void LODManager::setRenderTimes(float presentTime, float engineRunTime, float batchTime, float gpuTime) {
@@ -64,8 +64,8 @@ void LODManager::setRenderTimes(float presentTime, float engineRunTime, float ba
 }
 
 void LODManager::autoAdjustLOD(float realTimeDelta) {
-    std::lock_guard<std::mutex> { _automaticLODLock };
- 
+    std::lock_guard<std::mutex> lock(_automaticLODLock);
+
     // The "render time" is the worse of:
     // - engineRunTime: Time spent in the render thread in the engine producing the gpu::Frame N
     // - batchTime: Time spent in the present thread processing the batches of gpu::Frame N+1
@@ -92,7 +92,7 @@ void LODManager::autoAdjustLOD(float realTimeDelta) {
     float smoothBlend = (realTimeDelta <  LOD_ADJUST_RUNNING_AVG_TIMESCALE * _smoothScale) ? realTimeDelta / (LOD_ADJUST_RUNNING_AVG_TIMESCALE * _smoothScale) : 1.0f;
 
     //Evaluate the running averages for the render time
-    // We must sanity check for the output average evaluated to be in a valid range to avoid issues 
+    // We must sanity check for the output average evaluated to be in a valid range to avoid issues
     _nowRenderTime = (1.0f - nowBlend) * _nowRenderTime + nowBlend * maxRenderTime; // msec
     _nowRenderTime = std::max(0.0f, std::min(_nowRenderTime, (float)MSECS_PER_SECOND));
     _smoothRenderTime = (1.0f - smoothBlend) * _smoothRenderTime + smoothBlend * maxRenderTime; // msec
@@ -112,7 +112,7 @@ void LODManager::autoAdjustLOD(float realTimeDelta) {
     // Current fps based on latest measurments
     float currentNowFPS = (float)MSECS_PER_SECOND / _nowRenderTime;
     float currentSmoothFPS = (float)MSECS_PER_SECOND / _smoothRenderTime;
- 
+
     // Compute the Variance of the FPS signal (FPS - smouthFPS)^2
     // Also scale it by a percentage for fine tuning (default is 100%)
     float currentVarianceFPS = (currentSmoothFPS - currentNowFPS);
@@ -165,7 +165,7 @@ void LODManager::autoAdjustLOD(float realTimeDelta) {
 
     // Compute the output of the PID and record intermediate results for tuning
     _pidOutputs.x = _pidCoefs.x * error;        // Kp * error
-    _pidOutputs.y = _pidCoefs.y * integral;     // Ki * integral 
+    _pidOutputs.y = _pidCoefs.y * integral;     // Ki * integral
     _pidOutputs.z = _pidCoefs.z * derivative;   // Kd * derivative
 
     auto output = _pidOutputs.x + _pidOutputs.y + _pidOutputs.z;
@@ -300,7 +300,7 @@ void LODManager::resetLODAdjust() {
 }
 
 void LODManager::setAutomaticLODAdjust(bool value) {
-    std::lock_guard<std::mutex> { _automaticLODLock };
+    std::lock_guard<std::mutex> lock(_automaticLODLock);
     _automaticLODAdjust = value;
     saveSettings();
     emit autoLODChanged();
@@ -399,7 +399,7 @@ void LODManager::loadSettings() {
     if (qApp->property(hifi::properties::OCULUS_STORE).toBool() && firstRun.get()) {
         hmdQuality = WORLD_DETAIL_HIGH;
     }
-    
+
     _automaticLODAdjust = automaticLODAdjust.get();
     _lodHalfAngle = lodHalfAngle.get();
 
@@ -457,7 +457,7 @@ float LODManager::getLODTargetFPS() const {
     if (qApp->isHMDMode()) {
         lodTargetFPS = getHMDLODTargetFPS();
     }
-    
+
     // if RefreshRate is slower than LOD target then it becomes the true LOD target
     if (lodTargetFPS > refreshRateFPS) {
         return refreshRateFPS;
@@ -476,7 +476,7 @@ void LODManager::setWorldDetailQuality(WorldDetailQuality quality, bool isHMDMod
         setDesktopLODTargetFPS(desiredFPS);
     }
 }
-    
+
 void LODManager::setWorldDetailQuality(WorldDetailQuality quality) {
     setWorldDetailQuality(quality, qApp->isHMDMode());
     saveSettings();
@@ -492,7 +492,7 @@ ScriptValue worldDetailQualityToScriptValue(ScriptEngine* engine, const WorldDet
 }
 
 bool worldDetailQualityFromScriptValue(const ScriptValue& object, WorldDetailQuality& worldDetailQuality) {
-    worldDetailQuality = 
+    worldDetailQuality =
         static_cast<WorldDetailQuality>(std::min(std::max(object.toInt32(), (int)WORLD_DETAIL_LOW), (int)WORLD_DETAIL_HIGH));
     return true;
 }

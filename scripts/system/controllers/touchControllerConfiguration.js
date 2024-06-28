@@ -12,6 +12,8 @@
    Quat, Vec3, Script, MyAvatar, Controller */
 /* eslint camelcase: ["error", { "properties": "never" }] */
 
+var controllerStandard = Controller.Standard;
+
 var leftBaseRotation = Quat.multiply(
     Quat.fromPitchYawRollDegrees(-90, 0, 0),
     Quat.fromPitchYawRollDegrees(0, 0, 90)
@@ -89,7 +91,7 @@ TOUCH_CONTROLLER_CONFIGURATION_LEFT = {
                     naturalDimensions: { x: 0.027509, y: 0.025211, z: 0.018443 },
 
                     // rotational 
-                    input: Controller.Standard.LT,
+                    input: controllerStandard.LT,
                     origin: { x: 0, y: -0.015, z: -0.00 },
                     minValue: 0.0,
                     maxValue: 1.0,

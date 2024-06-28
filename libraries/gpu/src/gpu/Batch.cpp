@@ -693,15 +693,6 @@ void Batch::_glUniformMatrix4fv(int32 location, int count, uint8 transpose, cons
     _params.emplace_back(location);
 }
 
-void Batch::_glColor4f(float red, float green, float blue, float alpha) {
-    ADD_COMMAND(glColor4f);
-
-    _params.emplace_back(alpha);
-    _params.emplace_back(blue);
-    _params.emplace_back(green);
-    _params.emplace_back(red);
-}
-
 void Batch::finishFrame(BufferUpdates& updates) {
     PROFILE_RANGE(render_gpu, __FUNCTION__);
 

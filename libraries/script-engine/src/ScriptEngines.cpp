@@ -158,7 +158,68 @@ void ScriptEngines::removeScriptEngine(ScriptManagerPointer manager) {
         QMutexLocker locker(&_allScriptsMutex);
         _allKnownScriptManagers.remove(manager);
     }
+    std::lock_guard<std::mutex> lock(_subscriptionsToEntityScriptMessagesMutex);
+    _managersSubscribedToEntityScriptMessages.remove(manager.get());
+    _entitiesSubscribedToEntityScriptMessages.remove(manager.get());
 }
+
+void ScriptEngines::requestServerEntityScriptMessages(ScriptManager *manager) {
+    std::lock_guard<std::mutex> lock(_subscriptionsToEntityScriptMessagesMutex);
+    if (!_managersSubscribedToEntityScriptMessages.contains(manager)) {
+        _managersSubscribedToEntityScriptMessages.insert(manager);
+        // Emit a signal to inform EntityScriptServerLogClient about subscription request
+        emit requestingEntityScriptServerLog(true);
+        qDebug() << "ScriptEngines::requestServerEntityScriptMessages";
+    }
+}
+
+void ScriptEngines::requestServerEntityScriptMessages(ScriptManager *manager, const QUuid& entityID) {
+    std::lock_guard<std::mutex> lock(_subscriptionsToEntityScriptMessagesMutex);
+    if (!_entitiesSubscribedToEntityScriptMessages.contains(manager)) {
+        _entitiesSubscribedToEntityScriptMessages.insert(manager,QSet<QUuid>());
+    }
+    if (!_entitiesSubscribedToEntityScriptMessages[manager].contains(entityID)) {
+        _entitiesSubscribedToEntityScriptMessages[manager].insert(entityID);
+        // Emit a signal to inform EntityScriptServerLogClient about subscription request
+        emit requestingEntityScriptServerLog(true);
+        qDebug() << "ScriptEngines::requestServerEntityScriptMessages uuid";
+    }
+}
+
+void ScriptEngines::removeServerEntityScriptMessagesRequest(ScriptManager *manager) {
+    std::lock_guard<std::mutex> lock(_subscriptionsToEntityScriptMessagesMutex);
+    if (_managersSubscribedToEntityScriptMessages.contains(manager)) {
+        _managersSubscribedToEntityScriptMessages.remove(manager);
+    }
+    if (_entitiesSubscribedToEntityScriptMessages.isEmpty()
+        && _managersSubscribedToEntityScriptMessages.isEmpty()) {
+        // No managers requiring entity script server messages remain, so we inform EntityScriptServerLogClient about this
+        // Emit a signal to inform EntityScriptServerLogClient about subscription request
+        emit requestingEntityScriptServerLog(false);
+        qDebug() << "ScriptEngines::removeServerEntityScriptMessagesRequest";
+    }
+}
+
+void ScriptEngines::removeServerEntityScriptMessagesRequest(ScriptManager *manager, const QUuid& entityID) {
+    std::lock_guard<std::mutex> lock(_subscriptionsToEntityScriptMessagesMutex);
+    if (!_entitiesSubscribedToEntityScriptMessages.contains(manager)) {
+        return;
+    }
+    if (_entitiesSubscribedToEntityScriptMessages[manager].contains(entityID)) {
+        _entitiesSubscribedToEntityScriptMessages[manager].remove(entityID);
+    }
+    if (_entitiesSubscribedToEntityScriptMessages[manager].isEmpty()) {
+        _entitiesSubscribedToEntityScriptMessages.remove(manager);
+    }
+    if (_entitiesSubscribedToEntityScriptMessages.isEmpty()
+        && _managersSubscribedToEntityScriptMessages.isEmpty()) {
+        // No managers requiring entity script server messages remain, so we inform EntityScriptServerLogClient about this
+        // Emit a signal to inform EntityScriptServerLogClient about subscription request
+        emit requestingEntityScriptServerLog(false);
+        qDebug() << "ScriptEngines::removeServerEntityScriptMessagesRequest uuid";
+    }
+}
+
 
 void ScriptEngines::shutdownScripting() {
     _isStopped = true;

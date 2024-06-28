@@ -1,71 +1,46 @@
-set(OPENEXR_VERSION 2.3.0)
-set(OPENEXR_HASH 268ae64b40d21d662f405fba97c307dad1456b7d996a447aadafd41b640ca736d4851d9544b4741a94e7b7c335fe6e9d3b16180e710671abfc0c8b2740b147b2)
-
 vcpkg_from_github(
-  OUT_SOURCE_PATH SOURCE_PATH
-  REPO openexr/openexr
-  REF v${OPENEXR_VERSION}
-  SHA512 ${OPENEXR_HASH}
-  HEAD_REF master
-  PATCHES "fix_install_ilmimf.patch"
+    OUT_SOURCE_PATH SOURCE_PATH
+    REPO AcademySoftwareFoundation/openexr
+    REF "v${VERSION}"
+    SHA512 ec60e79341695452e05f50bbcc0d55e0ce00fbb64cdec01a83911189c8643eb28a8046b14ee4230e5f438f018f2f1d0714f691983474d7979befd199f3f34758
+    HEAD_REF master
+    PATCHES
+        fix-arm64-windows-build.patch # https://github.com/AcademySoftwareFoundation/openexr/pull/1447
 )
 
-set(OPENEXR_STATIC ON)
-set(OPENEXR_SHARED OFF)
-
-vcpkg_configure_cmake(SOURCE_PATH ${SOURCE_PATH}
-  PREFER_NINJA
-  OPTIONS
-    -DOPENEXR_BUILD_PYTHON_LIBS=OFF
-    -DOPENEXR_BUILD_VIEWERS=OFF
-    -DOPENEXR_RUN_FUZZ_TESTS=OFF
-    -DOPENEXR_BUILD_SHARED=${OPENEXR_SHARED}
-    -DOPENEXR_BUILD_STATIC=${OPENEXR_STATIC}
-  OPTIONS_DEBUG
-    -DILMBASE_PACKAGE_PREFIX=${CURRENT_INSTALLED_DIR}/debug
-  OPTIONS_RELEASE
-    -DILMBASE_PACKAGE_PREFIX=${CURRENT_INSTALLED_DIR})
-
-vcpkg_install_cmake()
-
-file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/debug/include)
-file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/debug/share)
-
-# NOTE: Only use ".exe" extension on Windows executables.
-# Is there a cleaner way to do this?
-if(WIN32)
-    set(EXECUTABLE_SUFFIX ".exe")
-else()
-    set(EXECUTABLE_SUFFIX "")
-endif()
-file(REMOVE ${CURRENT_PACKAGES_DIR}/debug/bin/exrenvmap${EXECUTABLE_SUFFIX})
-file(REMOVE ${CURRENT_PACKAGES_DIR}/debug/bin/exrheader${EXECUTABLE_SUFFIX})
-file(REMOVE ${CURRENT_PACKAGES_DIR}/debug/bin/exrmakepreview${EXECUTABLE_SUFFIX})
-file(REMOVE ${CURRENT_PACKAGES_DIR}/debug/bin/exrmaketiled${EXECUTABLE_SUFFIX})
-file(REMOVE ${CURRENT_PACKAGES_DIR}/debug/bin/exrmultipart${EXECUTABLE_SUFFIX})
-file(REMOVE ${CURRENT_PACKAGES_DIR}/debug/bin/exrmultiview${EXECUTABLE_SUFFIX})
-file(REMOVE ${CURRENT_PACKAGES_DIR}/debug/bin/exrstdattr${EXECUTABLE_SUFFIX})
-file(REMOVE ${CURRENT_PACKAGES_DIR}/bin/exrenvmap${EXECUTABLE_SUFFIX})
-file(REMOVE ${CURRENT_PACKAGES_DIR}/bin/exrheader${EXECUTABLE_SUFFIX})
-file(REMOVE ${CURRENT_PACKAGES_DIR}/bin/exrmakepreview${EXECUTABLE_SUFFIX})
-file(REMOVE ${CURRENT_PACKAGES_DIR}/bin/exrmaketiled${EXECUTABLE_SUFFIX})
-file(REMOVE ${CURRENT_PACKAGES_DIR}/bin/exrmultipart${EXECUTABLE_SUFFIX})
-file(REMOVE ${CURRENT_PACKAGES_DIR}/bin/exrmultiview${EXECUTABLE_SUFFIX})
-file(REMOVE ${CURRENT_PACKAGES_DIR}/bin/exrstdattr${EXECUTABLE_SUFFIX})
-
+vcpkg_check_features(OUT_FEATURE_OPTIONS OPTIONS
+    FEATURES
+        tools   OPENEXR_BUILD_TOOLS
+        tools   OPENEXR_INSTALL_TOOLS
+)
+vcpkg_cmake_configure(
+    SOURCE_PATH "${SOURCE_PATH}"
+    OPTIONS
+        ${OPTIONS}
+        -DBUILD_TESTING=OFF
+        -DOPENEXR_INSTALL_EXAMPLES=OFF
+        -DBUILD_DOCS=OFF
+    OPTIONS_DEBUG
+        -DOPENEXR_BUILD_TOOLS=OFF
+        -DOPENEXR_INSTALL_TOOLS=OFF
+)
+vcpkg_cmake_install()
 vcpkg_copy_pdbs()
 
-if (OPENEXR_STATIC)
-  file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/bin ${CURRENT_PACKAGES_DIR}/debug/bin)
+vcpkg_cmake_config_fixup(CONFIG_PATH lib/cmake/OpenEXR)
+vcpkg_fixup_pkgconfig()
+
+if(OPENEXR_INSTALL_TOOLS)
+    vcpkg_copy_tools(
+        TOOL_NAMES exrenvmap exrheader exrinfo exrmakepreview exrmaketiled exrmultipart exrmultiview exrstdattr exr2aces
+        AUTO_CLEAN
+    )
 endif()
 
-if (VCPKG_CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  set(OPENEXR_PORT_DIR "openexr")
-else()
-  set(OPENEXR_PORT_DIR "OpenEXR")
-endif()
+file(REMOVE_RECURSE
+    "${CURRENT_PACKAGES_DIR}/debug/include"
+    "${CURRENT_PACKAGES_DIR}/debug/share"
+)
 
-file(COPY ${SOURCE_PATH}/LICENSE DESTINATION ${CURRENT_PACKAGES_DIR}/share/${OPENEXR_PORT_DIR})
-file(RENAME ${CURRENT_PACKAGES_DIR}/share/${OPENEXR_PORT_DIR}/LICENSE ${CURRENT_PACKAGES_DIR}/share/${OPENEXR_PORT_DIR}/copyright)
-
-file(COPY ${CMAKE_CURRENT_LIST_DIR}/FindOpenEXR.cmake DESTINATION ${CURRENT_PACKAGES_DIR}/share/${OPENEXR_PORT_DIR})
+file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")
+file(INSTALL "${SOURCE_PATH}/LICENSE.md" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}" RENAME copyright)

@@ -8,6 +8,10 @@
     "shapeAlpha": {
         "tooltip": "The opacity of the entity between 0.0 fully transparent and 1.0 completely opaque."
     },
+    "shapeUnlit": {
+        "tooltip": "If enabled, the entity will not be lit by the keylight or local lights.",
+        "jsPropertyName": "unlit"
+    },
     "text": {
         "tooltip": "The text to display on the entity."
     },
@@ -27,7 +31,7 @@
         "tooltip": "The height of each line of text. This determines the size of the text."
     },
     "font": {
-        "tooltip": "The font to render the text. Supported values: \"Courier\", \"Inconsolata\", \"Roboto\", \"Timeless\", or a URL to a .sdff file."
+        "tooltip": "The font to render the text. Supported values: \"Courier\", \"Inconsolata\", \"Roboto\", \"Timeless\", or a URL to a PNG MTSDF .arfont file."
     },
     "textEffect": {
         "tooltip": "The effect that is applied to the text."
@@ -115,6 +119,9 @@
     },
     "ambientLight.ambientURL": {
         "tooltip": "A cube map image that defines the color of the light coming from each direction."
+    },
+    "ambientLight.ambientColor": {
+        "tooltip": "If the URL is blank, this changes the color of the ambient light, otherwise it modifies the color of the ambient map."
     },
     "hazeMode": {
         "tooltip": "Configures the haze in the scene."

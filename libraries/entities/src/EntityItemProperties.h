@@ -84,11 +84,11 @@ using u8vec3Color = glm::u8vec3;
 
 struct EntityPropertyInfo {
     EntityPropertyInfo(EntityPropertyList propEnum) :
-        propertyEnum(propEnum) {}
+        propertyEnums(propEnum) {}
     EntityPropertyInfo(EntityPropertyList propEnum, QVariant min, QVariant max) :
-        propertyEnum(propEnum), minimum(min), maximum(max) {}
+        propertyEnums(propEnum), minimum(min), maximum(max) {}
     EntityPropertyInfo() = default;
-    EntityPropertyList propertyEnum;
+    EntityPropertyFlags propertyEnums;
     QVariant minimum;
     QVariant maximum;
 };
@@ -257,6 +257,7 @@ public:
     DEFINE_PROPERTY_REF(PROP_COMPOUND_SHAPE_URL, CompoundShapeURL, compoundShapeURL, QString, "");
     DEFINE_PROPERTY_REF(PROP_COLOR, Color, color, u8vec3Color, ENTITY_ITEM_DEFAULT_COLOR);
     DEFINE_PROPERTY(PROP_ALPHA, Alpha, alpha, float, ENTITY_ITEM_DEFAULT_ALPHA);
+    DEFINE_PROPERTY_REF(PROP_UNLIT, Unlit, unlit, bool, false);
     DEFINE_PROPERTY_GROUP(Pulse, pulse, PulsePropertyGroup);
     DEFINE_PROPERTY_REF(PROP_TEXTURES, Textures, textures, QString, "");
 
@@ -332,7 +333,6 @@ public:
     DEFINE_PROPERTY_REF(PROP_RIGHT_MARGIN, RightMargin, rightMargin, float, TextEntityItem::DEFAULT_MARGIN);
     DEFINE_PROPERTY_REF(PROP_TOP_MARGIN, TopMargin, topMargin, float, TextEntityItem::DEFAULT_MARGIN);
     DEFINE_PROPERTY_REF(PROP_BOTTOM_MARGIN, BottomMargin, bottomMargin, float, TextEntityItem::DEFAULT_MARGIN);
-    DEFINE_PROPERTY_REF(PROP_UNLIT, Unlit, unlit, bool, false);
     DEFINE_PROPERTY_REF(PROP_FONT, Font, font, QString, ROBOTO_FONT_FAMILY);
     DEFINE_PROPERTY_REF_ENUM(PROP_TEXT_EFFECT, TextEffect, textEffect, TextEffect, TextEffect::NO_EFFECT);
     DEFINE_PROPERTY_REF(PROP_TEXT_EFFECT_COLOR, TextEffectColor, textEffectColor, u8vec3Color, TextEntityItem::DEFAULT_TEXT_COLOR);

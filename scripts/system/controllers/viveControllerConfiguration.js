@@ -15,6 +15,8 @@
 // var LEFT_JOINT_INDEX = MyAvatar.getJointIndex("_CONTROLLER_LEFTHAND");
 // var RIGHT_JOINT_INDEX = MyAvatar.getJointIndex("_CONTROLLER_RIGHTHAND");
 
+var controllerStandard = Controller.Standard;
+
 var leftBaseRotation = Quat.multiply(
     Quat.fromPitchYawRollDegrees(0, 0, 45),
     Quat.multiply(
@@ -141,7 +143,7 @@ VIVE_CONTROLLER_CONFIGURATION_LEFT = {
                 trigger: {
                     type: "rotational",
                     modelURL: BASE_URL + "meshes/controller/vive_trigger.fbx",
-                    input: Controller.Standard.LT,
+                    input: controllerStandard.LT,
                     naturalPosition: {"x":0.000004500150680541992,"y":-0.027690507471561432,"z":0.04830199480056763},
                     naturalDimensions: {x: 0.019105, y: 0.022189, z: 0.01909},
                     origin: { x: 0, y: -0.015, z: -0.00 },
@@ -283,7 +285,7 @@ VIVE_CONTROLLER_CONFIGURATION_RIGHT = {
                 trigger: {
                     type: "rotational",
                     modelURL: BASE_URL + "meshes/controller/vive_trigger.fbx",
-                    input: Controller.Standard.RT,
+                    input: controllerStandard.RT,
                     naturalPosition: {"x":0.000004500150680541992,"y":-0.027690507471561432,"z":0.04830199480056763},
                     naturalDimensions: {x: 0.019105, y: 0.022189, z: 0.01909},
                     origin: { x: 0, y: -0.015, z: -0.00 },

@@ -5,6 +5,7 @@
 //
 //  Created by Andrzej Kapolka on 5/6/14.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -15,8 +16,51 @@
 <@include render-utils/ShaderConstants.h@>
 <@include CullFace.slh@>
 
+<@if HIFI_USE_MTOON@>
+    <@if HIFI_USE_SHADOW@>
+        <$declareMToonMaterialTextures(ALBEDO)$>
+        <@if HIFI_USE_MIRROR@>
+            LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MIRROR) uniform sampler2D mirrorMap;
+        <@endif@>
+    <@else@>
+        <$declareMToonMaterialTextures(ALBEDO, HIFI_USE_NORMALMAP, SHADE, EMISSIVE, SHADING_SHIFT, MATCAP, RIM, UV_ANIMATION_MASK)$>
+    <@endif@>
+<@else@>
+    <@if HIFI_USE_SHADOW or HIFI_USE_UNLIT@>
+        <$declareMaterialTextures(ALBEDO)$>
+        <@if HIFI_USE_MIRROR@>
+            LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MIRROR) uniform sampler2D mirrorMap;
+        <@endif@>
+    <@else@>
+        <@if not HIFI_USE_LIGHTMAP@>
+            <@if HIFI_USE_TRANSLUCENT@>
+                <$declareMaterialTextures(ALBEDO, ROUGHNESS, HIFI_USE_NORMALMAP, METALLIC, EMISSIVE, OCCLUSION)$>
+            <@else@>
+                <$declareMaterialTextures(ALBEDO, ROUGHNESS, HIFI_USE_NORMALMAP, METALLIC, EMISSIVE, OCCLUSION, SCATTERING)$>
+            <@endif@>
+        <@else@>
+            <$declareMaterialTextures(ALBEDO, ROUGHNESS, HIFI_USE_NORMALMAP, METALLIC)$>
+            <$declareMaterialLightmap()$>
+        <@endif@>
+    <@endif@>
+<@endif@>
+
 <@if not HIFI_USE_SHADOW@>
-    <@if HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
+    <@if HIFI_USE_MTOON@>
+
+        <@include DefaultMaterials.slh@>
+        <@include GlobalLight.slh@>
+        <$declareEvalGlobalLightingAlphaBlendedMToon()$>
+
+        <@include gpu/Transform.slh@>
+        <$declareStandardCameraTransform()$>
+
+        <@if HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
+            layout(location=0) out vec4 _fragColor0;
+        <@else@>
+            <@include DeferredBufferWrite.slh@>
+        <@endif@>
+    <@elif HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
         <@include DefaultMaterials.slh@>
         <@include GlobalLight.slh@>
         <@if HIFI_USE_LIGHTMAP@>
@@ -31,6 +75,7 @@
         <@endif@>
         <@include gpu/Transform.slh@>
         <$declareStandardCameraTransform()$>
+
         layout(location=0) out vec4 _fragColor0;
     <@else@>
         <@include DeferredBufferWrite.slh@>
@@ -51,32 +96,6 @@
     <@include LightingModel.slh@>
 <@endif@>
 
-<@if HIFI_USE_SHADOW or HIFI_USE_UNLIT@>
-    <$declareMaterialTextures(ALBEDO)$>
-    <@if HIFI_USE_MIRROR@>
-        LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MIRROR) uniform sampler2D mirrorMap;
-    <@endif@>
-<@else@>
-    <@if not HIFI_USE_LIGHTMAP@>
-        <@if HIFI_USE_NORMALMAP and HIFI_USE_TRANSLUCENT@>
-            <$declareMaterialTextures(ALBEDO, ROUGHNESS, NORMAL , METALLIC, EMISSIVE, OCCLUSION)$>
-        <@elif HIFI_USE_NORMALMAP@>
-            <$declareMaterialTextures(ALBEDO, ROUGHNESS, NORMAL , METALLIC, EMISSIVE, OCCLUSION, SCATTERING)$>
-        <@elif HIFI_USE_TRANSLUCENT@>
-            <$declareMaterialTextures(ALBEDO, ROUGHNESS, _SCRIBE_NULL , METALLIC, EMISSIVE, OCCLUSION)$>
-        <@else@>
-            <$declareMaterialTextures(ALBEDO, ROUGHNESS, _SCRIBE_NULL , METALLIC, EMISSIVE, OCCLUSION, SCATTERING)$>
-        <@endif@>
-    <@else@>
-        <@if HIFI_USE_NORMALMAP@>
-            <$declareMaterialTextures(ALBEDO, ROUGHNESS, NORMAL, METALLIC)$>
-        <@else@>
-            <$declareMaterialTextures(ALBEDO, ROUGHNESS, _SCRIBE_NULL, METALLIC)$>
-        <@endif@>
-        <$declareMaterialLightmap()$>
-    <@endif@>
-<@endif@>
-
 <@if HIFI_USE_FADE@>
     <@include Fade.slh@>
     <$declareFadeFragment()$>
@@ -89,7 +108,9 @@ layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4 _texCoord01;
 <@if not HIFI_USE_SHADOW@>
     layout(location=RENDER_UTILS_ATTR_POSITION_ES) in vec4 _positionES;
     layout(location=RENDER_UTILS_ATTR_NORMAL_WS) in vec3 _normalWS;
-    layout(location=RENDER_UTILS_ATTR_COLOR) in vec4 _color;
+    <@if not HIFI_USE_MTOON@>
+        layout(location=RENDER_UTILS_ATTR_COLOR) in vec4 _color;
+    <@endif@>
     <@if HIFI_USE_NORMALMAP@>
         layout(location=RENDER_UTILS_ATTR_TANGENT_WS) in vec3 _tangentWS;
     <@endif@>
@@ -112,15 +133,21 @@ void main(void) {
     Material mat = getMaterial();
     BITFIELD matKey = getMaterialKey(mat);
 <@if HIFI_USE_SHADOW or HIFI_USE_UNLIT@>
+    <@if not HIFI_USE_MTOON@>
         <$fetchMaterialTexturesCoord0(matKey, _texCoord0, albedoTex)$>
+    <@else@>
+        <$fetchMToonMaterialTexturesCoord0(matKey, _texCoord0, albedoTex)$>
+    <@endif@>
 
-    <@if HIFI_USE_TRANSLUCENT@>
         float cutoff = getMaterialOpacityCutoff(mat);
-        float opacity = getMaterialOpacity(mat) * _color.a;
+    <@if HIFI_USE_TRANSLUCENT@>
+        float opacity = getMaterialOpacity(mat);
+        <@if not HIFI_USE_MTOON@>
+            opacity *= _color.a;
+        <@endif@>
         <$evalMaterialOpacity(albedoTex.a, cutoff, opacity, matKey, opacity)$>;
         <$discardInvisible(opacity)$>;
     <@else@>
-        float cutoff = getMaterialOpacityCutoff(mat);
         float opacity = 1.0;
         <$evalMaterialOpacityMask(albedoTex.a, cutoff, opacity, matKey, opacity)$>;
         <$discardTransparent(opacity)$>;
@@ -129,7 +156,9 @@ void main(void) {
     <@if not HIFI_USE_SHADOW@>
             vec3 albedo = getMaterialAlbedo(mat);
             <$evalMaterialAlbedo(albedoTex, albedo, matKey, albedo)$>;
-            albedo *= _color.rgb;
+            <@if not HIFI_USE_MTOON@>
+                albedo *= _color.rgb;
+            <@endif@>
         <@if HIFI_USE_FADE@>
                 albedo += fadeEmissive;
         <@endif@>
@@ -152,6 +181,73 @@ void main(void) {
                 opacity,
                 albedo * isUnlitEnabled());
     <@endif@>
+<@elif HIFI_USE_MTOON@>
+        vec3 uvScrollSpeed = getMaterialUVScrollSpeed(mat);
+        float time = getMaterialTime(mat);
+    <@if HIFI_USE_NORMALMAP@>
+        <$fetchMToonMaterialTexturesCoord0(matKey, _texCoord0, albedoTex, normalTex, shadeTex, emissiveTex, shadingShiftTex, rimTex, uvScrollSpeed, time)$>
+    <@else@>
+        <$fetchMToonMaterialTexturesCoord0(matKey, _texCoord0, albedoTex, _SCRIBE_NULL, shadeTex, emissiveTex, shadingShiftTex, rimTex, uvScrollSpeed, time)$>
+    <@endif@>
+
+        float cutoff = getMaterialOpacityCutoff(mat);
+        <@if HIFI_USE_TRANSLUCENT@>
+            float opacity = getMaterialOpacity(mat);
+            <$evalMaterialOpacity(albedoTex.a, cutoff, opacity, matKey, opacity)$>;
+            <$discardInvisible(opacity)$>;
+        <@else@>
+            float opacity = 1.0;
+            <$evalMaterialOpacityMask(albedoTex.a, cutoff, opacity, matKey, opacity)$>;
+            <$discardTransparent(opacity)$>;
+        <@endif@>
+
+        vec3 albedo = getMaterialAlbedo(mat);
+        <$evalMaterialAlbedo(albedoTex, albedo, matKey, albedo)$>;
+
+        vec3 emissive = getMaterialEmissive(mat);
+        <$evalMaterialEmissive(emissiveTex, emissive, matKey, emissive)$>;
+
+    <@if HIFI_USE_NORMALMAP@>
+            vec3 fragNormalWS;
+            <$evalMaterialNormalLOD(_positionES, normalTex, _normalWS, _tangentWS, fragNormalWS)$>
+    <@else@>
+            vec3 fragNormalWS = _normalWS;
+    <@endif@>
+        fragNormalWS = evalFrontOrBackFaceNormal(normalize(fragNormalWS));
+
+        vec3 shade = getMaterialShade(mat);
+        <$evalMaterialShade(shadeTex, shade, matKey, shade)$>;
+
+        float shadingShift = getMaterialShadingShift(mat);
+        <$evalMaterialShadingShift(shadingShiftTex, shadingShift, matKey, shadingShift)$>;
+
+        TransformCamera cam = getTransformCamera();
+        float metallic = DEFAULT_METALLIC;
+        vec3 fresnel = getFresnelF0(metallic, albedo);
+
+        vec4 color = vec4(evalGlobalLightingAlphaBlendedMToon(
+            cam._viewInverse, 1.0, _positionES.xyz, fragNormalWS,
+            albedo, fresnel, metallic, emissive, DEFAULT_ROUGHNESS, opacity,
+            shade, shadingShift, getMaterialShadingToony(mat), getMaterialMatcap(mat), getMaterialParametricRim(mat),
+            getMaterialParametricRimFresnelPower(mat), getMaterialParametricRimLift(mat), rimTex, getMaterialRimLightingMix(mat), matKey), opacity);
+
+        <@if HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
+            _fragColor0 = isUnlitEnabled() * vec4(color.rgb
+            <@if HIFI_USE_FADE@>
+                    + fadeEmissive
+            <@endif@>
+                , color.a);
+        <@else@>
+            packDeferredFragmentUnlit(
+                fragNormalWS,
+                1.0,
+                color.rgb
+            <@if HIFI_USE_FADE@>
+                    + fadeEmissive
+            <@endif@>
+                );
+        <@endif@>
+
 <@else@>
     <@if not HIFI_USE_LIGHTMAP@>
         <@if HIFI_USE_NORMALMAP and HIFI_USE_TRANSLUCENT@>
@@ -172,14 +268,13 @@ void main(void) {
         <@endif@>
             <$fetchMaterialTexturesCoord1(matKey, _texCoord1, _SCRIBE_NULL, lightmap)$>
     <@endif@>
-
-    <@if HIFI_USE_TRANSLUCENT@>
+    
         float cutoff = getMaterialOpacityCutoff(mat);
+    <@if HIFI_USE_TRANSLUCENT@>
         float opacity = getMaterialOpacity(mat) * _color.a;
         <$evalMaterialOpacity(albedoTex.a, cutoff, opacity, matKey, opacity)$>;
         <$discardInvisible(opacity)$>;
     <@else@>
-        float cutoff = getMaterialOpacityCutoff(mat);
         float opacity = 1.0;
         <$evalMaterialOpacityMask(albedoTex.a, cutoff, opacity, matKey, opacity)$>;
         <$discardTransparent(opacity)$>;

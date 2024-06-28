@@ -725,12 +725,12 @@ V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
         case QMetaType::QDateTime:
             {
                 double timeMs = val.value<QDateTime>().currentMSecsSinceEpoch();
-                return V8ScriptValue(this, v8::Date::New(getContext(), timeMs).ToLocalChecked());
+                return V8ScriptValue(this, v8::Date::New(context, timeMs).ToLocalChecked());
             }
         case QMetaType::QDate:
             {
                 double timeMs = val.value<QDate>().startOfDay().currentMSecsSinceEpoch();
-                return V8ScriptValue(this, v8::Date::New(getContext(), timeMs).ToLocalChecked());
+                return V8ScriptValue(this, v8::Date::New(context, timeMs).ToLocalChecked());
             }
         default:
             // check to see if this is a pointer to a QObject-derived object

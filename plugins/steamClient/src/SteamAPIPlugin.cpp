@@ -73,7 +73,7 @@ HAuthTicket SteamTicketRequests::startRequest(TicketRequestCallback callback) {
     uint32 ticketSize { 0 };
     char ticket[MAX_TICKET_SIZE];
 
-    auto authTicket = SteamUser()->GetAuthSessionTicket(ticket, MAX_TICKET_SIZE, &ticketSize);
+    auto authTicket = SteamUser()->GetAuthSessionTicket(ticket, MAX_TICKET_SIZE, &ticketSize, NULL);
     qDebug() << "Got Steam auth session ticket:" << authTicket;
 
     if (authTicket == k_HAuthTicketInvalid) {
@@ -282,7 +282,8 @@ void SteamAPIPlugin::runCallbacks() {
         return;
     }
 
-    Steam_RunCallbacks(steamPipe, false);
+    //Steam_RunCallbacks(steamPipe, false);
+    SteamAPI_RunCallbacks();
 }
 
 void SteamAPIPlugin::requestTicket(TicketRequestCallback callback) {

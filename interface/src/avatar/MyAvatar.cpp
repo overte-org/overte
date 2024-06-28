@@ -73,6 +73,7 @@
 #include "MovingEntitiesOperator.h"
 #include "SceneScriptingInterface.h"
 #include "WarningsSuppression.h"
+#include "ScriptPermissions.h"
 
 using namespace std;
 
@@ -226,7 +227,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     _yawSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "yawSpeed", _yawSpeed),
     _hmdYawSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "hmdYawSpeed", _hmdYawSpeed),
     _pitchSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "pitchSpeed", _pitchSpeed),
-    _fullAvatarURLSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "fullAvatarURL",
+    _fullAvatarURLSetting(QStringList() << SETTINGS_FULL_PRIVATE_GROUP_NAME << AVATAR_SETTINGS_GROUP_NAME << "fullAvatarURL",
                           AvatarData::defaultFullAvatarModelUrl()),
     _fullAvatarModelNameSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "fullAvatarModelName", _fullAvatarModelName),
     _animGraphURLSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "animGraphURL", QUrl("")),
@@ -1035,8 +1036,8 @@ void MyAvatar::simulate(float deltaTime, bool inView) {
         std::pair<bool, bool> zoneInteractionProperties;
         entityTree->withWriteLock([&] {
             zoneInteractionProperties = entityTreeRenderer->getZoneInteractionProperties();
-            EntityEditPacketSender* packetSender = qApp->getEntityEditPacketSender();
-            entityTree->updateEntityQueryAACube(shared_from_this(), packetSender, false, true);
+            std::shared_ptr<EntityEditPacketSender> packetSender = qApp->getEntityEditPacketSender();
+            entityTree->updateEntityQueryAACube(shared_from_this(), packetSender.get(), false, true);
         });
         bool isPhysicsEnabled = qApp->isPhysicsEnabled();
         bool zoneAllowsFlying = zoneInteractionProperties.first;
@@ -1729,7 +1730,7 @@ void MyAvatar::handleChangedAvatarEntityData() {
     entityTree->deleteEntitiesByID(entitiesToDelete);
 
     // ADD real entities
-    EntityEditPacketSender* packetSender = qApp->getEntityEditPacketSender();
+    auto packetSender = qApp->getEntityEditPacketSender();
     for (const auto& id : entitiesToAdd) {
         bool blobFailed = false;
         EntityItemProperties properties;
@@ -1739,10 +1740,11 @@ void MyAvatar::handleChangedAvatarEntityData() {
                 blobFailed = true; // blob doesn't exist
                 return;
             }
-            std::lock_guard<std::mutex> guard(_scriptEngineLock);
-            if (!EntityItemProperties::blobToProperties(*_scriptEngine, itr.value(), properties)) {
-                blobFailed = true; // blob is corrupt
-            }
+            _helperScriptEngine.run( [&] {
+                if (!EntityItemProperties::blobToProperties(*_helperScriptEngine.get(), itr.value(), properties)) {
+                    blobFailed = true;  // blob is corrupt
+                }
+            });
         });
         if (blobFailed) {
             // remove from _cachedAvatarEntityBlobUpdatesToSkip just in case:
@@ -1775,10 +1777,11 @@ void MyAvatar::handleChangedAvatarEntityData() {
                 skip = true;
                 return;
             }
-            std::lock_guard<std::mutex> guard(_scriptEngineLock);
-            if (!EntityItemProperties::blobToProperties(*_scriptEngine, itr.value(), properties)) {
-                skip = true;
-            }
+            _helperScriptEngine.run( [&] {
+                if (!EntityItemProperties::blobToProperties(*_helperScriptEngine.get(), itr.value(), properties)) {
+                    skip = true;
+                }
+            });
         });
         if (!skip && canRezAvatarEntites) {
             sanitizeAvatarEntityProperties(properties);
@@ -1883,10 +1886,9 @@ bool MyAvatar::updateStaleAvatarEntityBlobs() const {
         if (found) {
             ++numFound;
             QByteArray blob;
-            {
-                std::lock_guard<std::mutex> guard(_scriptEngineLock);
-                EntityItemProperties::propertiesToBlob(*_scriptEngine, getID(), properties, blob);
-            }
+            _helperScriptEngine.run( [&] {
+                EntityItemProperties::propertiesToBlob(*_helperScriptEngine.get(), getID(), properties, blob);
+            });
             _avatarEntitiesLock.withWriteLock([&] {
                 _cachedAvatarEntityBlobs[id] = blob;
             });
@@ -1947,10 +1949,9 @@ AvatarEntityMap MyAvatar::getAvatarEntityData() const {
         EntityItemProperties properties = entity->getProperties(desiredProperties);
 
         QByteArray blob;
-        {
-            std::lock_guard<std::mutex> guard(_scriptEngineLock);
-            EntityItemProperties::propertiesToBlob(*_scriptEngine, getID(), properties, blob, true);
-        }
+        _helperScriptEngine.run( [&] {
+            EntityItemProperties::propertiesToBlob(*_helperScriptEngine.get(), getID(), properties, blob, true);
+        });
 
         data[entityID] = blob;
     }
@@ -2092,9 +2093,6 @@ void MyAvatar::avatarEntityDataToJson(QJsonObject& root) const {
 }
 
 void MyAvatar::loadData() {
-    if (!_scriptEngine) {
-        _scriptEngine = newScriptEngine();
-    }
     getHead()->setBasePitch(_headPitchSetting.get());
 
     _yawSpeed = _yawSpeedSetting.get(_yawSpeed);
@@ -2236,6 +2234,9 @@ AttachmentData MyAvatar::loadAttachmentData(const QUrl& modelURL, const QString&
     return attachment;
 }
 
+bool MyAvatar::isMyAvatarURLProtected() const {
+    return !ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL);
+}
 
 int MyAvatar::parseDataFromBuffer(const QByteArray& buffer) {
     qCDebug(interfaceapp) << "Error: ignoring update packet for MyAvatar"
@@ -2700,11 +2701,10 @@ QVariantList MyAvatar::getAvatarEntitiesVariant() {
             QVariantMap avatarEntityData;
             avatarEntityData["id"] = entityID;
             EntityItemProperties entityProperties = entity->getProperties(desiredProperties);
-            {
-                std::lock_guard<std::mutex> guard(_scriptEngineLock);
-                ScriptValue scriptProperties = EntityItemPropertiesToScriptValue(_scriptEngine.get(), entityProperties);
+            _helperScriptEngine.run( [&] {
+                ScriptValue scriptProperties = EntityItemPropertiesToScriptValue(_helperScriptEngine.get(), entityProperties);
                 avatarEntityData["properties"] = scriptProperties.toVariant();
-            }
+            });
             avatarEntitiesData.append(QVariant(avatarEntityData));
         }
     }
@@ -4232,7 +4232,7 @@ void MyAvatar::setSessionUUID(const QUuid& sessionUUID) {
             _avatarEntitiesLock.withReadLock([&] {
                 avatarEntityIDs = _packedAvatarEntityData.keys();
             });
-            EntityEditPacketSender* packetSender = qApp->getEntityEditPacketSender();
+            auto packetSender = qApp->getEntityEditPacketSender();
             entityTree->withWriteLock([&] {
                 for (const auto& entityID : avatarEntityIDs) {
                     auto entity = entityTree->findEntityByID(entityID);
@@ -5769,8 +5769,7 @@ void MyAvatar::FollowHelper::deactivate() {
 }
 
 void MyAvatar::FollowHelper::deactivate(CharacterController::FollowType type) {
-    int int_type = static_cast<int>(type);
-    assert(int_type >= 0 && int_type < static_cast<int>(CharacterController::FollowType::Count));
+    assert(type < CharacterController::FollowType::Count);
     _timeRemaining[(int)type] = 0.0f;
 }
 
@@ -5778,16 +5777,14 @@ void MyAvatar::FollowHelper::deactivate(CharacterController::FollowType type) {
 // eg. activate(FollowType::Rotation, true) snaps the FollowHelper's rotation immediately
 // to the rotation of its _followDesiredBodyTransform.
 void MyAvatar::FollowHelper::activate(CharacterController::FollowType type, const bool snapFollow) {
-    int int_type = static_cast<int>(type);
-    assert(int_type >= 0 && int_type < static_cast<int>(CharacterController::FollowType::Count));
+    assert(type < CharacterController::FollowType::Count);
 
     // TODO: Perhaps, the follow time should be proportional to the displacement.
     _timeRemaining[(int)type] = snapFollow ? CharacterController::FOLLOW_TIME_IMMEDIATE_SNAP : FOLLOW_TIME;
 }
 
 bool MyAvatar::FollowHelper::isActive(CharacterController::FollowType type) const {
-    int int_type = static_cast<int>(type);
-    assert(int_type >= 0 && int_type < static_cast<int>(CharacterController::FollowType::Count));
+    assert(type < CharacterController::FollowType::Count);
     return _timeRemaining[(int)type] > 0.0f;
 }
 
@@ -6889,7 +6886,7 @@ void MyAvatar::sendPacket(const QUuid& entityID) const {
     if (entityTree) {
         entityTree->withWriteLock([&] {
             // force an update packet
-            EntityEditPacketSender* packetSender = qApp->getEntityEditPacketSender();
+            auto packetSender = qApp->getEntityEditPacketSender();
             packetSender->queueEditAvatarEntityMessage(entityTree, entityID);
         });
     }

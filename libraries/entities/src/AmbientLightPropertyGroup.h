@@ -37,13 +37,16 @@ class ScriptValue;
  * @property {string} ambientURL="" - A cube map image that defines the color of the light coming from each direction. If 
  *     <code>""</code> then the entity's {@link Entities.Skybox|Skybox} <code>url</code> property value is used, unless that also is <code>""</code> in which 
  *     case the entity's <code>ambientLightMode</code> property is set to <code>"inherit"</code>.
+ * @property {Color} ambientColor=0,0,0 - Sets the color of the ambient light if <code>ambientURL</code> is <code>""</code>, otherwise modifies the
+ *     color of the cube map image.
  */
 class AmbientLightPropertyGroup : public PropertyGroup {
 public:
     // EntityItemProperty related helpers
     virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
                                    ScriptEngine* engine, bool skipDefaults,
-                                   EntityItemProperties& defaultEntityProperties) const override;
+                                   EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags,
+                                   bool isMyOwnAvatarEntity) const override;
     virtual void copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) override;
 
     void merge(const AmbientLightPropertyGroup& other);
@@ -86,9 +89,10 @@ public:
                                                 bool& somethingChanged) override;
 
     static const float DEFAULT_AMBIENT_LIGHT_INTENSITY;
-
+    static const glm::u8vec3 DEFAULT_COLOR;
     DEFINE_PROPERTY(PROP_AMBIENT_LIGHT_INTENSITY, AmbientIntensity, ambientIntensity, float, DEFAULT_AMBIENT_LIGHT_INTENSITY);
     DEFINE_PROPERTY_REF(PROP_AMBIENT_LIGHT_URL, AmbientURL, ambientURL, QString, "");
+    DEFINE_PROPERTY_REF(PROP_AMBIENT_LIGHT_COLOR, AmbientColor, ambientColor, glm::u8vec3, DEFAULT_COLOR);
 };
 
 #endif // hifi_AmbientLightPropertyGroup_h

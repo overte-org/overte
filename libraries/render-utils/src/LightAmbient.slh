@@ -2,6 +2,7 @@
 //
 //  Created by Sam Gateau on 7/5/16.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -74,7 +75,7 @@ vec3 evalAmbientSpecularIrradiance(LightAmbient ambient, SurfaceData surface, ve
     }
     <@endif@>
 
-    return specularLight;
+    return applySkyboxColorMix(specularLight, getLightAmbientColor(ambient), getLightAmbientBlend(ambient));
 }
 <@endfunc@>
 
@@ -104,8 +105,9 @@ void evalLightingAmbient(out vec3 diffuse, out vec3 specular, LightAmbient ambie
 
     vec3 ambientFresnel = fresnelSchlickAmbient(fresnelF0, surface.ndotv, surface.roughness);
 
-    diffuse = (1.0 - metallic) * (vec3(1.0) - ambientFresnel) * 
-              sphericalHarmonics_evalSphericalLight(getLightAmbientSphere(ambient), ambientSpaceSurfaceNormal).xyz;
+    diffuse = (1.0 - metallic) * (vec3(1.0) - ambientFresnel) *
+              applySkyboxColorMix(sphericalHarmonics_evalSphericalLight(getLightAmbientSphere(ambient), ambientSpaceSurfaceNormal).xyz,
+                                  getLightAmbientColor(ambient), getLightAmbientBlend(ambient));
 
     // Specular highlight from ambient
     vec3 ambientSpaceLightDir = -reflect(ambientSpaceSurfaceEyeDir, ambientSpaceSurfaceNormal);
@@ -120,7 +122,8 @@ void evalLightingAmbient(out vec3 diffuse, out vec3 specular, LightAmbient ambie
         obscurance = min(obscurance, ambientOcclusion);
 
         // Diffuse from ambient
-        diffuse = sphericalHarmonics_evalSphericalLight(getLightAmbientSphere(ambient), ambientSpaceLowNormal).xyz;
+        diffuse = applySkyboxColorMix(sphericalHarmonics_evalSphericalLight(getLightAmbientSphere(ambient), ambientSpaceLowNormal).xyz,
+                                      getLightAmbientColor(ambient), getLightAmbientBlend(ambient));
 
         // Scattering ambient specular is the same as non scattering for now
         // TODO: we should use the same specular answer as for direct lighting

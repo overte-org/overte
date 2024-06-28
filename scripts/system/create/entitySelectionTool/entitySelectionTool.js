@@ -1,12 +1,12 @@
 //
 //  entitySelectionTool.js
 //
-//  Created by Brad hefta-Gaub on 10/1/14.
-//    Modified by Daniela Fontes * @DanielaFifo and Tiago Andrade @TagoWill on 4/7/2017
-//    Modified by David Back on 1/9/2018
+//  Created by Brad hefta-Gaub on October 1st, 2014.
+//    Modified by Daniela Fontes * @DanielaFifo and Tiago Andrade @TagoWill on April 7th, 2017
+//    Modified by David Back on January 9th, 2018
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors
-//  Copyright 2022-2023 Overte e.V.
+//  Copyright 2022-2024 Overte e.V.
 //
 //  This script implements a class useful for building tools for editing entities.
 //
@@ -22,6 +22,8 @@ const SPACE_LOCAL = "local";
 const SPACE_WORLD = "world";
 const HIGHLIGHT_LIST_NAME = "editHandleHighlightList";
 const MIN_DISTANCE_TO_REZ_FROM_AVATAR = 3;
+
+var controllerStandard = Controller.Standard;
 
 Script.include([
     "../../libraries/controllers.js",
@@ -149,7 +151,7 @@ SelectionManager = (function() {
                 that.clearSelections();
             }
         } else if (messageParsed.method === "pointingAt") {
-            if (messageParsed.hand === Controller.Standard.RightHand) {
+            if (messageParsed.hand === controllerStandard.RightHand) {
                 that.pointingAtDesktopWindowRight = messageParsed.desktopWindow;
                 that.pointingAtTabletRight = messageParsed.tablet;
             } else {
@@ -492,6 +494,18 @@ SelectionManager = (function() {
     that.cutSelectedEntities = function() {
         that.copySelectedEntities();
         that.createApp.deleteSelectedEntities();
+    };
+
+    that.copyIdsFromSelectedEntities = function() {
+        if (that.selections.length === 0) {
+            audioFeedback.rejection();
+        } else if (that.selections.length === 1) {
+            Window.copyToClipboard(that.selections[0]);
+            audioFeedback.confirmation();
+        } else {
+            Window.copyToClipboard(JSON.stringify(that.selections));
+            audioFeedback.confirmation();
+        }
     };
 
     that.copySelectedEntities = function() {
@@ -940,8 +954,8 @@ SelectionDisplay = (function() {
 
     var toolEntityNames = [];
     var lastControllerPoses = [
-        getControllerWorldLocation(Controller.Standard.LeftHand, true),
-        getControllerWorldLocation(Controller.Standard.RightHand, true)
+        getControllerWorldLocation(controllerStandard.LeftHand, true),
+        getControllerWorldLocation(controllerStandard.RightHand, true)
     ];
 
     var worldRotationX;
@@ -1323,12 +1337,12 @@ SelectionDisplay = (function() {
         return that.triggeredHand !== NO_HAND;
     };
     function pointingAtDesktopWindowOrTablet(hand) {
-        var pointingAtDesktopWindow = (hand === Controller.Standard.RightHand && 
+        var pointingAtDesktopWindow = (hand === controllerStandard.RightHand &&
                                        SelectionManager.pointingAtDesktopWindowRight) ||
-                                      (hand === Controller.Standard.LeftHand && 
+                                      (hand === controllerStandard.LeftHand &&
                                        SelectionManager.pointingAtDesktopWindowLeft);
-        var pointingAtTablet = (hand === Controller.Standard.RightHand && SelectionManager.pointingAtTabletRight) ||
-                               (hand === Controller.Standard.LeftHand && SelectionManager.pointingAtTabletLeft);
+        var pointingAtTablet = (hand === controllerStandard.RightHand && SelectionManager.pointingAtTabletRight) ||
+                               (hand === controllerStandard.LeftHand && SelectionManager.pointingAtTabletLeft);
         return pointingAtDesktopWindow || pointingAtTablet;
     }
     function makeClickHandler(hand) {
@@ -1363,10 +1377,10 @@ SelectionDisplay = (function() {
             }
         }
     }
-    that.triggerClickMapping.from(Controller.Standard.RTClick).peek().to(makeClickHandler(Controller.Standard.RightHand));
-    that.triggerClickMapping.from(Controller.Standard.LTClick).peek().to(makeClickHandler(Controller.Standard.LeftHand));
-    that.triggerPressMapping.from(Controller.Standard.RT).peek().to(makePressHandler(Controller.Standard.RightHand));
-    that.triggerPressMapping.from(Controller.Standard.LT).peek().to(makePressHandler(Controller.Standard.LeftHand));
+    that.triggerClickMapping.from(controllerStandard.RTClick).peek().to(makeClickHandler(controllerStandard.RightHand));
+    that.triggerClickMapping.from(controllerStandard.LTClick).peek().to(makeClickHandler(controllerStandard.LeftHand));
+    that.triggerPressMapping.from(controllerStandard.RT).peek().to(makePressHandler(controllerStandard.RightHand));
+    that.triggerPressMapping.from(controllerStandard.LT).peek().to(makePressHandler(controllerStandard.LeftHand));
     that.enableTriggerMapping = function() {
         that.triggerClickMapping.enable();
         that.triggerPressMapping.enable();
@@ -1494,7 +1508,7 @@ SelectionDisplay = (function() {
                     that.editingHand = that.triggeredHand;
                     Messages.sendLocalMessage(INEDIT_STATUS_CHANNEL, JSON.stringify({
                         method: "editing",
-                        hand: that.editingHand === Controller.Standard.LeftHand ? LEFT_HAND : RIGHT_HAND,
+                        hand: that.editingHand === controllerStandard.LeftHand ? LEFT_HAND : RIGHT_HAND,
                         editing: true
                     }));
                     activeTool.onBegin(event, pickRay, results);
@@ -1705,7 +1719,7 @@ SelectionDisplay = (function() {
                 }
                 Messages.sendLocalMessage(INEDIT_STATUS_CHANNEL, JSON.stringify({
                     method: "editing",
-                    hand: that.editingHand === Controller.Standard.LeftHand ? LEFT_HAND : RIGHT_HAND,
+                    hand: that.editingHand === controllerStandard.LeftHand ? LEFT_HAND : RIGHT_HAND,
                     editing: false
                 }));
                 that.editingHand = NO_HAND;
@@ -1775,7 +1789,7 @@ SelectionDisplay = (function() {
     that.checkControllerMove = function() {
         if (SelectionManager.hasSelection()) {
             var controllerPose = getControllerWorldLocation(that.triggeredHand, true);
-            var hand = (that.triggeredHand === Controller.Standard.LeftHand) ? 0 : 1;
+            var hand = (that.triggeredHand === controllerStandard.LeftHand) ? 0 : 1;
             if (controllerPose.valid && lastControllerPoses[hand].valid && that.triggered()) {
                 if (!Vec3.equal(controllerPose.position, lastControllerPoses[hand].position) ||
                     !Vec3.equal(controllerPose.rotation, lastControllerPoses[hand].rotation)) {

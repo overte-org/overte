@@ -309,6 +309,7 @@ void ZoneEntityRenderer::updateAmbientLightFromEntity(const TypedEntityPointer& 
     ambientLight->setOrientation(_lastRotation);
 
     // Set the ambient light
+    ambientLight->setAmbientColor(ColorUtils::toVec3(_ambientLightProperties.getAmbientColor()));
     ambientLight->setAmbientIntensity(_ambientLightProperties.getAmbientIntensity());
 
     if (_ambientLightProperties.getAmbientURL().isEmpty()) {

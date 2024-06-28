@@ -92,6 +92,9 @@ void PacketTests::readTest() {
 }
 
 void PacketTests::writePastCapacityTest() {
+    #ifndef QT_NO_DEBUG
+    QSKIP("This test triggers an assertion when built in debug mode");
+    #else
     auto packet = NLPacket::create(PacketType::Unknown);
 
     auto size = packet->getPayloadCapacity();
@@ -116,6 +119,7 @@ void PacketTests::writePastCapacityTest() {
 
     // NLPacket::write() shouldn't allow the caller to write if no space is left
     QCOMPARE(packet->getPayloadSize(), size);
+    #endif
 }
 
 void PacketTests::primitiveTest() {

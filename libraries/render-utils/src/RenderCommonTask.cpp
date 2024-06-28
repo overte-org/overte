@@ -94,6 +94,8 @@ void DrawLayered3D::run(const RenderContextPointer& renderContext, const Inputs&
     }
 
     if (!inItems.empty()) {
+        auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
+
         // Render the items
         gpu::doInBatch("DrawLayered3D::main", args->_context, [&](gpu::Batch& batch) {
             args->_batch = &batch;
@@ -117,11 +119,20 @@ void DrawLayered3D::run(const RenderContextPointer& renderContext, const Inputs&
                 batch.setUniformBuffer(graphics::slot::buffer::Buffer::HazeParams, haze->getHazeParametersBuffer());
             }
 
+            // Set the light
+            deferredLightingEffect->setupKeyLightBatch(args, batch);
+
+            auto renderMethod = args->_renderMethod;
+            args->_renderMethod = Args::RenderMethod::FORWARD;
             if (_opaquePass) {
                 renderStateSortShapes(renderContext, _shapePlumber, inItems, _maxDrawn);
             } else {
                 renderShapes(renderContext, _shapePlumber, inItems, _maxDrawn);
             }
+
+            deferredLightingEffect->unsetLocalLightsBatch(batch);
+
+            args->_renderMethod = renderMethod;
             args->_batch = nullptr;
         });
     }

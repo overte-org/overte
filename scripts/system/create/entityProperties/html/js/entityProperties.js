@@ -1,9 +1,9 @@
 //  entityProperties.js
 //
-//  Created by Ryan Huffman on 13 Nov 2014
+//  Created by Ryan Huffman on November 13th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -152,7 +152,7 @@ const GROUPS = [
     },
     {
         id: "shape",
-        label: "SHAPE",        
+        label: "SHAPE",
         properties: [
             {
                 label: "Shape",
@@ -177,7 +177,13 @@ const GROUPS = [
                 decimals: 2,
                 propertyID: "shapeAlpha",
                 propertyName: "alpha",
-            },            
+            },
+            {
+                label: "Unlit",
+                type: "bool",
+                propertyID: "shapeUnlit",
+                propertyName: "unlit"
+            }
         ]
     },
     {
@@ -319,6 +325,7 @@ const GROUPS = [
                 type: "string",
                 propertyID: "zoneCompoundShapeURL",
                 propertyName: "compoundShapeURL", // actual entity property name
+                placeholder: "URL",
             },
             {
                 label: "Flying Allowed",
@@ -334,6 +341,7 @@ const GROUPS = [
                 label: "Filter",
                 type: "string",
                 propertyID: "filterURL",
+                placeholder: "URL",
             }
         ]
     },
@@ -409,7 +417,7 @@ const GROUPS = [
                 decimals: 2,
                 propertyID: "keyLight.shadowMaxDistance",
                 showPropertyRule: { "keyLightMode": "enabled" },
-            }    
+            }
         ]
     },    
     {
@@ -433,6 +441,7 @@ const GROUPS = [
                 type: "string",
                 propertyID: "skybox.url",
                 showPropertyRule: { "skyboxMode": "enabled" },
+                placeholder: "URL",
             }
         ]
     },
@@ -445,6 +454,12 @@ const GROUPS = [
                 type: "dropdown",
                 options: { inherit: "Inherit", disabled: "Off", enabled: "On" },
                 propertyID: "ambientLightMode",
+            },
+            {
+                label: "Ambient Color",
+                type: "color",
+                propertyID: "ambientLight.ambientColor",
+                showPropertyRule: { "ambientLightMode": "enabled" },
             },
             {
                 label: "Ambient Intensity",
@@ -461,6 +476,7 @@ const GROUPS = [
                 type: "string",
                 propertyID: "ambientLight.ambientURL",
                 showPropertyRule: { "ambientLightMode": "enabled" },
+                placeholder: "URL",
             },
             {
                 type: "buttons",
@@ -678,6 +694,7 @@ const GROUPS = [
                 label: "Compound Shape",
                 type: "string",
                 propertyID: "compoundShapeURL",
+                placeholder: "URL",
             },
             {
                 label: "Use Original Pivot",
@@ -688,6 +705,7 @@ const GROUPS = [
                 label: "Animation",
                 type: "string",
                 propertyID: "animation.url",
+                placeholder: "URL",
             },
             {
                 label: "Play Automatically",
@@ -806,6 +824,7 @@ const GROUPS = [
                 label: "Source",
                 type: "string",
                 propertyID: "sourceUrl",
+                placeholder: "URL",
             },
             {
                 label: "Source Resolution",
@@ -932,6 +951,7 @@ const GROUPS = [
                 label: "Material URL",
                 type: "string",
                 propertyID: "materialURL",
+                placeholder: "URL",
             },
             {
                 label: "Material Data",
@@ -1100,6 +1120,7 @@ const GROUPS = [
                 type: "string",
                 propertyID: "particleCompoundShapeURL",
                 propertyName: "compoundShapeURL",
+                placeholder: "URL",
             },
             {
                 label: "Emit Dimensions",
@@ -1470,18 +1491,21 @@ const GROUPS = [
                 type: "string",
                 propertyID: "xTextureURL",
                 propertyName: "xTextureURL",
+                placeholder: "URL",
             },
             {
                 label: "Y Texture URL",
                 type: "string",
                 propertyID: "yTextureURL",
                 propertyName: "yTextureURL",
+                placeholder: "URL",
             },
             {
                 label: "Z Texture URL",
                 type: "string",
                 propertyID: "zTextureURL",
                 propertyName: "zTextureURL",
+                placeholder: "URL",
             },
         ]
     },
@@ -1623,6 +1647,12 @@ const GROUPS = [
                 unit: "m",
                 propertyID: "localDimensions",
                 spaceMode: PROPERTY_SPACE_MODE.LOCAL,
+            },
+            {
+                type: "buttons",
+                buttons: [  { id: "copyDimensions", label: "Copy Dimensions", className: "secondary", onClick: copyDimensionsProperty },
+                            { id: "pasteDimensions", label: "Paste Dimensions", className: "secondary", onClick: pasteDimensionsProperty } ],
+                propertyID: "copyPasteDimensions"
             },
             {
                 label: "Scale",
@@ -1990,6 +2020,7 @@ let currentSelections = [];
 let createAppTooltip = new CreateAppTooltip();
 let currentSpaceMode = PROPERTY_SPACE_MODE.LOCAL;
 let zonesList = [];
+let canViewAssetURLs = false;
 
 function createElementFromHTML(htmlString) {
     let elTemplate = document.createElement('template');
@@ -2083,14 +2114,17 @@ function setCopyPastePositionAndRotationAvailability (selectionLength, islocked)
     if (selectionLength === 1) {
         $('#property-copyPastePosition-button-copyPosition').attr('disabled', false);
         $('#property-copyPasteRotation-button-copyRotation').attr('disabled', false);
+        $('#property-copyPasteDimensions-button-copyDimensions').attr('disabled', false);
     } else {
         $('#property-copyPastePosition-button-copyPosition').attr('disabled', true);
-        $('#property-copyPasteRotation-button-copyRotation').attr('disabled', true);        
+        $('#property-copyPasteRotation-button-copyRotation').attr('disabled', true);
+        $('#property-copyPasteDimensions-button-copyDimensions').attr('disabled', true);
     }
     
     if (selectionLength > 0 && !islocked) {
         $('#property-copyPastePosition-button-pastePosition').attr('disabled', false);
         $('#property-copyPasteRotation-button-pasteRotation').attr('disabled', false);
+        $('#property-copyPasteDimensions-button-pasteDimensions').attr('disabled', false);
         if (selectionLength === 1) {
             $('#property-copyPasteRotation-button-setRotationToZero').attr('disabled', false);
         } else {
@@ -2100,6 +2134,7 @@ function setCopyPastePositionAndRotationAvailability (selectionLength, islocked)
         $('#property-copyPastePosition-button-pastePosition').attr('disabled', true);
         $('#property-copyPasteRotation-button-pasteRotation').attr('disabled', true);
         $('#property-copyPasteRotation-button-setRotationToZero').attr('disabled', true);
+        $('#property-copyPasteDimensions-button-pasteDimensions').attr('disabled', true);
     }
 }
 
@@ -2655,7 +2690,7 @@ function createStringProperty(property, elProperty) {
     let elInput = createElementFromHTML(`
         <input id="${elementID}"
                type="text"
-               ${propertyData.placeholder ? 'placeholder="' + propertyData.placeholder + '"' : ''}
+               ${propertyData.placeholder ? 'placeholder="' + ((propertyData.placeholder === "URL" && !canViewAssetURLs) ? "You don't have permission to view this URL" : propertyData.placeholder) + '"' : ''}
                ${propertyData.readOnly ? 'readonly' : ''}/>
         `);
 
@@ -3536,27 +3571,41 @@ function pastePositionProperty() {
     EventBridge.emitWebEvent(JSON.stringify({
         type: "action",
         action: "pastePosition"
-    }));    
+    }));
 }
 
 function copyRotationProperty() {
     EventBridge.emitWebEvent(JSON.stringify({
         type: "action",
         action: "copyRotation"
-    }));    
+    }));
 }
 
 function pasteRotationProperty() {
     EventBridge.emitWebEvent(JSON.stringify({
         type: "action",
         action: "pasteRotation"
-    }));    
+    }));
 }
 function setRotationToZeroProperty() {
     EventBridge.emitWebEvent(JSON.stringify({
         type: "action",
         action: "setRotationToZero"
-    }));    
+    }));
+}
+
+function copyDimensionsProperty() {
+    EventBridge.emitWebEvent(JSON.stringify({
+        type: "action",
+        action: "copyDimensions"
+    }));
+}
+
+function pasteDimensionsProperty() {
+    EventBridge.emitWebEvent(JSON.stringify({
+        type: "action",
+        action: "pasteDimensions"
+    }));
 }
 /**
  * USER DATA FUNCTIONS
@@ -5275,7 +5324,7 @@ function loaded() {
                                     break;
                                 case 'vec3rgb':
                                     updateVectorMinMax(properties[property]);
-                                    break;                                    
+                                    break;
                                 case 'rect':
                                     updateRectMinMax(properties[property]);
                                     break;
@@ -5288,6 +5337,16 @@ function loaded() {
                     }
                 } else if (data.type === 'zoneListRequest') {
                     zonesList = data.zones;
+                } else if (data.type === 'urlPermissionChanged') {
+                    canViewAssetURLs = data.canViewAssetURLs;
+                    Object.entries(properties).forEach(function ([propertyID, property]) {
+                        if (property.data.placeholder && property.data.placeholder === "URL") {
+                            if (!canViewAssetURLs) {
+                                property.elInput.value = "";
+                            }
+                            property.elInput.placeholder = canViewAssetURLs ? property.data.placeholder : "You don't have permission to view this URL";
+                        }
+                    });
                 }
             });
 

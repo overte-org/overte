@@ -216,6 +216,7 @@ class ScriptEngine;
  *
  * @property {Controller.Actions} Actions - Predefined actions on Interface and the user's avatar. These can be used as end
  *     points in a {@link RouteObject} mapping. A synonym for <code>Controller.Hardware.Actions</code>.
+ *     Getting this property is computationally expensive, so it's best to cache it once on script start.
  *     <em>Read-only.</em>
  *     <p>Default mappings are provided from the <code>Controller.Hardware.Keyboard</code> and <code>Controller.Standard</code> 
  *     to actions in 
@@ -225,13 +226,16 @@ class ScriptEngine;
  *     standard.json</a>, respectively.</p>
  *
  * @property {Controller.Hardware} Hardware - Standard and hardware-specific controller and computer outputs, plus predefined 
- *     actions on Interface and the user's avatar. The outputs can be mapped to <code>Actions</code> or functions in a 
+ *     actions on Interface and the user's avatar. Getting this property is computationally expensive, so it's best to cache it
+ *     instead of calling on every update.
+ *     The outputs can be mapped to <code>Actions</code> or functions in a
  *     {@link RouteObject} mapping. Additionally, hardware-specific controller outputs can be mapped to 
  *     <code>Controller.Standard</code> controller outputs. <em>Read-only.</em>
  *
  * @property {Controller.Standard} Standard - Standard controller outputs that can be mapped to <code>Actions</code> or 
  *     functions in a {@link RouteObject} mapping. <em>Read-only.</em>
- *     <p>Each hardware device has a mapping from its outputs to <code>Controller.Standard</code> items, specified in a JSON file. 
+ *     <p>Each hardware device has a mapping from its outputs to <code>Controller.Standard</code> items, specified in a JSON file.
+ *     Getting this property is computationally expensive, so it's best to cache it once on script start.
  *     For example, <a href="https://github.com/highfidelity/hifi/blob/master/interface/resources/controllers/leapmotion.json">
  *     leapmotion.json</a> and 
  *     <a href="https://github.com/highfidelity/hifi/blob/master/interface/resources/controllers/vive.json">vive.json</a>.</p>

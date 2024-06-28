@@ -4,7 +4,7 @@
 //
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2023 Overte e.V.
+//  Copyright 2023-2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -353,6 +353,8 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
             that.selectionManager.cutSelectedEntities();
         } else if (data.type === "copy") {
             that.selectionManager.copySelectedEntities();
+        } else if (data.type === "copyID") {
+            that.selectionManager.copyIdsFromSelectedEntities();
         } else if (data.type === "paste") {
             that.selectionManager.pasteEntities();
         } else if (data.type === "duplicate") {
@@ -424,6 +426,8 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
             that.createApp.alignGridToAvatar();
         } else if (data.type === 'brokenURLReport') {
             brokenURLReport(that.selectionManager.selections);
+        } else if (data.type === 'renderWithZonesManager') {
+            renderWithZonesManager(that.selectionManager.selections);
         } else if (data.type === 'toggleGridVisibility') {
             that.createApp.toggleGridVisibility();
         } else if (data.type === 'toggleSnapToGrid') {

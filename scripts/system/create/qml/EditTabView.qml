@@ -313,6 +313,22 @@ TabBar {
         }
     }
 
+    EditTabButton {
+        title: "IMPORT"
+        active: true
+        enabled: true
+        property string originalUrl: ""
+
+        property Component visualItem: Component {
+            WebView {
+                id: advancedImportWebView
+                url: Qt.resolvedUrl("../importEntities/html/importEntities.html")
+                enabled: true
+                blurOnCtrlShift: false
+            }
+        }
+    }
+
     function fromScript(message) {
         switch (message.method) {
             case 'selectTab':
@@ -344,6 +360,9 @@ TabBar {
                     break;
                 case 'grid':
                     editTabView.currentIndex = 3;
+                    break;
+                case 'import':
+                    editTabView.currentIndex = 4;
                     break;
                 default:
                     console.warn('Attempt to switch to invalid tab:', id);

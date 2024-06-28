@@ -21,6 +21,9 @@ SettingsScriptingInterface* SettingsScriptingInterface::getInstance() {
 }
 
 QVariant SettingsScriptingInterface::getValue(const QString& setting) {
+    if (_restrictPrivateValues && setting.startsWith(SETTINGS_FULL_PRIVATE_GROUP_NAME + "/")) {
+        return {""};
+    }
     QVariant value = Setting::Handle<QVariant>(setting).get();
     if (!value.isValid()) {
         value = "";
@@ -29,6 +32,9 @@ QVariant SettingsScriptingInterface::getValue(const QString& setting) {
 }
 
 QVariant SettingsScriptingInterface::getValue(const QString& setting, const QVariant& defaultValue) {
+    if (_restrictPrivateValues && setting.startsWith(SETTINGS_FULL_PRIVATE_GROUP_NAME + "/")) {
+        return {""};
+    }
     QVariant value = Setting::Handle<QVariant>(setting, defaultValue).get();
     if (!value.isValid()) {
         value = "";
@@ -40,7 +46,7 @@ void SettingsScriptingInterface::setValue(const QString& setting, const QVariant
     if (getValue(setting) == value) {
         return;
     }
-    if (setting.startsWith("private/")) {
+    if (setting.startsWith("private/") || setting.startsWith(SETTINGS_FULL_PRIVATE_GROUP_NAME + "/")) {
         if (_restrictPrivateValues) {
             qWarning() << "SettingsScriptingInterface::setValue -- restricted write: " << setting << value;
             return;

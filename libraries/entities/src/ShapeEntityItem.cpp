@@ -119,6 +119,7 @@ EntityItemProperties ShapeEntityItem::getProperties(const EntityPropertyFlags& d
 
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(color, getColor);
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(alpha, getAlpha);
+    COPY_ENTITY_PROPERTY_TO_PROPERTIES(unlit, getUnlit);
     withReadLock([&] {
         _pulseProperties.getProperties(properties);
     });
@@ -170,6 +171,7 @@ bool ShapeEntityItem::setSubClassProperties(const EntityItemProperties& properti
 
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(color, setColor);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(alpha, setAlpha);
+    SET_ENTITY_PROPERTY_FROM_PROPERTIES(unlit, setUnlit);
     withWriteLock([&] {
         bool pulsePropertiesChanged = _pulseProperties.setProperties(properties);
         somethingChanged |= pulsePropertiesChanged;
@@ -190,6 +192,7 @@ int ShapeEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data,
 
     READ_ENTITY_PROPERTY(PROP_COLOR, glm::u8vec3, setColor);
     READ_ENTITY_PROPERTY(PROP_ALPHA, float, setAlpha);
+    READ_ENTITY_PROPERTY(PROP_UNLIT, bool, setUnlit);
     withWriteLock([&] {
         int bytesFromPulse = _pulseProperties.readEntitySubclassDataFromBuffer(dataAt, (bytesLeftToRead - bytesRead), args,
             propertyFlags, overwriteLocalData,
@@ -206,6 +209,7 @@ EntityPropertyFlags ShapeEntityItem::getEntityProperties(EncodeBitstreamParams& 
     EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
     requestedProperties += PROP_COLOR;
     requestedProperties += PROP_ALPHA;
+    requestedProperties += PROP_UNLIT;
     requestedProperties += _pulseProperties.getEntityProperties(params);
     requestedProperties += PROP_SHAPE;
     return requestedProperties;
@@ -222,6 +226,7 @@ void ShapeEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBit
     bool successPropertyFits = true;
     APPEND_ENTITY_PROPERTY(PROP_COLOR, getColor());
     APPEND_ENTITY_PROPERTY(PROP_ALPHA, getAlpha());
+    APPEND_ENTITY_PROPERTY(PROP_UNLIT, getUnlit());
     withReadLock([&] {
         _pulseProperties.appendSubclassData(packetData, params, entityTreeElementExtraEncodeData, requestedProperties,
             propertyFlags, propertiesDidntFit, propertyCount, appendState);
@@ -252,6 +257,19 @@ void ShapeEntityItem::setAlpha(float alpha) {
 float ShapeEntityItem::getAlpha() const {
     return resultWithReadLock<float>([&] {
         return _alpha;
+    });
+}
+
+void ShapeEntityItem::setUnlit(bool unlit) {
+    withWriteLock([&] {
+        _needsRenderUpdate |= _unlit != unlit;
+        _unlit = unlit;
+    });
+}
+
+bool ShapeEntityItem::getUnlit() const {
+    return resultWithReadLock<bool>([&] {
+        return _unlit;
     });
 }
 
