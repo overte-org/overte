@@ -48,6 +48,7 @@ public:
     void setPrecisionPicking(unsigned int uid, bool precisionPicking) const;
     void setIgnoreItems(unsigned int uid, const QVector<QUuid>& ignore) const;
     void setIncludeItems(unsigned int uid, const QVector<QUuid>& include) const;
+    void setDelay(unsigned int uid, float delay) const;
 
     Transform getParentTransform(unsigned int uid) const;
     Transform getResultTransform(unsigned int uid) const;
