@@ -16,9 +16,11 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 
+#include <AudioInjectorManager.h>
 #include <EntityTree.h>
 #include <ResourceCache.h>
 #include <ScriptCache.h>
+#include <SoundCache.h>
 #include <plugins/PluginManager.h>
 #include <EntityEditFilters.h>
 #include <NetworkingConstants.h>
@@ -49,6 +51,9 @@ EntityServer::EntityServer(ReceivedMessage& message) :
     DependencyManager::set<ModelFormatRegistry>(); // ModelFormatRegistry must be defined before ModelCache. See the ModelCache ctor
     DependencyManager::set<ModelCache>();
 
+    DependencyManager::set<SoundCache>();
+    DependencyManager::set<AudioInjectorManager>();
+
     auto& packetReceiver = DependencyManager::get<NodeList>()->getPacketReceiver();
     packetReceiver.registerListenerForTypes({ PacketType::EntityAdd,
         PacketType::EntityClone,
@@ -71,6 +76,8 @@ EntityServer::~EntityServer() {
 void EntityServer::aboutToFinish() {
     DependencyManager::get<ResourceManager>()->cleanup();
 
+    DependencyManager::destroy<AudioInjectorManager>();
+    DependencyManager::destroy<SoundCache>();
     DependencyManager::destroy<AssignmentDynamicFactory>();
 
     OctreeServer::aboutToFinish();
@@ -90,6 +97,7 @@ OctreePointer EntityServer::createTree() {
     EntityTreePointer tree = std::make_shared<EntityTree>(true);
     tree->createRootElement();
     tree->addNewlyCreatedHook(this);
+    tree->setIsEntityServer(true);
     if (!_entitySimulation) {
         SimpleEntitySimulationPointer simpleSimulation { new SimpleEntitySimulation() };
         simpleSimulation->setEntityTree(tree);

@@ -5,6 +5,7 @@
 set(TARGET_NAME physics)
 setup_hifi_library()
 link_hifi_libraries(shared workload entities shaders)
+include_hifi_library_headers(audio)
 include_hifi_library_headers(networking)
 include_hifi_library_headers(gpu)
 include_hifi_library_headers(avatars)

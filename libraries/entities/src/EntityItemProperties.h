@@ -53,6 +53,7 @@
 #include "PolyVoxEntityItem.h"
 #include "GridEntityItem.h"
 #include "GizmoEntityItem.h"
+#include "SoundEntityItem.h"
 #include "LightEntityItem.h"
 #include "ZoneEntityItem.h"
 
@@ -126,6 +127,8 @@ class EntityItemProperties {
     friend class LightEntityItem;
     friend class ZoneEntityItem;
     friend class MaterialEntityItem;
+    friend class SoundEntityItem;
+
 public:
     static bool blobToProperties(ScriptEngine& scriptEngine, const QByteArray& blob, EntityItemProperties& properties);
     static void propertiesToBlob(ScriptEngine& scriptEngine, const QUuid& myAvatarID, const EntityItemProperties& properties, 
@@ -416,6 +419,16 @@ public:
     // Gizmo
     DEFINE_PROPERTY_REF_ENUM(PROP_GIZMO_TYPE, GizmoType, gizmoType, GizmoType, GizmoType::RING);
     DEFINE_PROPERTY_GROUP(Ring, ring, RingGizmoPropertyGroup);
+
+    // Sound
+    DEFINE_PROPERTY_REF(PROP_SOUND_URL, SoundURL, soundURL, QString, "");
+    DEFINE_PROPERTY(PROP_SOUND_VOLUME, Volume, volume, float, 1.0f);
+    DEFINE_PROPERTY(PROP_SOUND_TIME_OFFSET, TimeOffset, timeOffset, float, 0.0f);
+    DEFINE_PROPERTY(PROP_SOUND_PITCH, Pitch, pitch, float, 1.0f);
+    DEFINE_PROPERTY(PROP_SOUND_PLAYING, Playing, playing, bool, true);
+    DEFINE_PROPERTY(PROP_SOUND_LOOP, Loop, loop, bool, true);
+    DEFINE_PROPERTY(PROP_SOUND_POSITIONAL, Positional, positional, bool, true);
+    DEFINE_PROPERTY(PROP_SOUND_LOCAL_ONLY, LocalOnly, localOnly, bool, false);
 
     static QString getComponentModeAsString(uint32_t mode);
 
