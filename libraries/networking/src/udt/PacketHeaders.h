@@ -297,6 +297,7 @@ enum class EntityVersion : PacketVersion {
     AnimationSmoothFrames,
     ProceduralParticles,
     ShapeUnlit,
+    AmbientColor,
 
     // Add new versions above here
     NUM_PACKET_TYPE,
