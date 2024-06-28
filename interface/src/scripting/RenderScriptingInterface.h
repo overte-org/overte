@@ -233,18 +233,17 @@ private:
     mutable ReadWriteLockable _renderSettingLock;
 
     // Runtime value of each settings
-    int  _renderMethod{ RENDER_FORWARD ? render::Args::RenderMethod::FORWARD : render::Args::RenderMethod::DEFERRED };
-    bool _shadowsEnabled{ true };
-    bool _ambientOcclusionEnabled{ false };
-    AntialiasingConfig::Mode _antialiasingMode{ AntialiasingConfig::Mode::NONE };
-    float _viewportResolutionScale{ 1.0f };
+    int  _renderMethod { RENDER_FORWARD ? render::Args::RenderMethod::FORWARD : render::Args::RenderMethod::DEFERRED };
+    bool _shadowsEnabled { true };
+    bool _ambientOcclusionEnabled { true };
+    AntialiasingConfig::Mode _antialiasingMode { AntialiasingConfig::Mode::NONE };
+    float _viewportResolutionScale { 1.0f };
     QString _fullScreenScreen;
-
 
     // Actual settings saved on disk
     Setting::Handle<int> _renderMethodSetting { "renderMethod", RENDER_FORWARD ? render::Args::RenderMethod::FORWARD : render::Args::RenderMethod::DEFERRED };
     Setting::Handle<bool> _shadowsEnabledSetting { "shadowsEnabled", true };
-    Setting::Handle<bool> _ambientOcclusionEnabledSetting { "ambientOcclusionEnabled", false };
+    Setting::Handle<bool> _ambientOcclusionEnabledSetting { "ambientOcclusionEnabled", true };
     //Setting::Handle<AntialiasingConfig::Mode> _antialiasingModeSetting { "antialiasingMode", AntialiasingConfig::Mode::TAA };
     Setting::Handle<int> _antialiasingModeSetting { "antialiasingMode", AntialiasingConfig::Mode::NONE };
     Setting::Handle<float> _viewportResolutionScaleSetting { "viewportResolutionScale", 1.0f };

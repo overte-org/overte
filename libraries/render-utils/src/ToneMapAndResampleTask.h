@@ -20,28 +20,24 @@
 #include <render/Forward.h>
 #include <render/DrawTask.h>
 
-enum class ToneCurve {
-    // Different tone curve available
-    None,
-    Gamma22,
-    Reinhard,
-    Filmic,
-};
+#include "TonemappingStage.h"
 
 class ToneMappingConfig : public render::Job::Config {
     Q_OBJECT
-    Q_PROPERTY(float exposure MEMBER exposure WRITE setExposure);
-    Q_PROPERTY(int curve MEMBER curve WRITE setCurve);
+    Q_PROPERTY(bool debug MEMBER debug WRITE setDebug NOTIFY dirty);
+    Q_PROPERTY(int curve MEMBER curve WRITE setCurve NOTIFY dirty);
+    Q_PROPERTY(float exposure MEMBER exposure WRITE setExposure NOTIFY dirty);
 
 public:
     ToneMappingConfig() : render::Job::Config(true) {}
 
+    void setDebug(bool newDebug) { debug = newDebug; emit dirty(); }
+    void setCurve(int newCurve) { curve = std::max(0, std::min((int)TonemappingCurve::FILMIC, newCurve)); emit dirty(); }
     void setExposure(float newExposure) { exposure = newExposure; emit dirty(); }
-    void setCurve(int newCurve) { curve = std::max((int)ToneCurve::None, std::min((int)ToneCurve::Filmic, newCurve)); emit dirty(); }
 
-
-    float exposure{ 0.0f };
-    int curve{ (int)ToneCurve::Gamma22 };
+    bool debug { false };
+    int curve { (int)TonemappingCurve::SRGB };
+    float exposure { 0.0f };
 
 signals:
     void dirty();
@@ -49,17 +45,14 @@ signals:
 
 class ToneMapAndResample {
 public:
-    ToneMapAndResample(size_t depth);
+    ToneMapAndResample();
     virtual ~ToneMapAndResample() {}
 
+    void setCurve(TonemappingCurve curve);
     void setExposure(float exposure);
-    float getExposure() const { return _parametersBuffer.get<Parameters>()._exposure; }
 
-    void setToneCurve(ToneCurve curve);
-    ToneCurve getToneCurve() const { return (ToneCurve)_parametersBuffer.get<Parameters>()._toneCurve; }
-
-    // Inputs: lightingFramebuffer, destinationFramebuffer
-    using Input = render::VaryingSet2<gpu::FramebufferPointer, gpu::FramebufferPointer>;
+    // Inputs: lightingFramebuffer, destinationFramebuffer, tonemappingFrame
+    using Input = render::VaryingSet3<gpu::FramebufferPointer, gpu::FramebufferPointer, TonemappingStage::FramePointer>;
     using Output = gpu::FramebufferPointer;
     using Config = ToneMappingConfig;
     using JobModel = render::Job::ModelIO<ToneMapAndResample, Input, Output, Config>;
@@ -73,22 +66,19 @@ protected:
 
     gpu::FramebufferPointer _destinationFrameBuffer;
 
-    float _factor { 2.0f };
-    size_t _depth { 0 };
-
-    gpu::FramebufferPointer getResampledFrameBuffer(const gpu::FramebufferPointer& sourceFramebuffer);
-
 private:
     gpu::PipelinePointer _blitLightBuffer;
+    float _exposure { 0.0f };
+
+    bool _debug { false };
+    TonemappingCurve _debugCurve { TonemappingCurve::SRGB };
+    float _debugExposure { 0.0f };
 
     // Class describing the uniform buffer with all the parameters common to the tone mapping shaders
     class Parameters {
     public:
-        float _exposure = 0.0f;
         float _twoPowExposure = 1.0f;
-        glm::vec2 spareA;
-        int _toneCurve = (int)ToneCurve::Gamma22;
-        glm::vec3 spareB;
+        int _toneCurve = (int)TonemappingCurve::SRGB;
 
         Parameters() {}
     };

@@ -137,6 +137,8 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
             const auto backgroundFrame = currentStageFrames[1];
             const auto& hazeFrame = currentStageFrames[2];
             const auto& bloomFrame = currentStageFrames[3];
+            const auto& tonemappingFrame = currentStageFrames[4];
+            const auto& ambientOcclusionFrame = currentStageFrames[5];
 
     // Shadow Task Outputs
     const auto& shadowTaskOutputs = inputs.get3();
@@ -198,7 +200,7 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
     const auto scatteringResource = task.addJob<SubsurfaceScattering>("Scattering");
 
     // AO job
-    const auto ambientOcclusionInputs = AmbientOcclusionEffect::Input(lightingModel, deferredFrameTransform, deferredFramebuffer, linearDepthTarget).asVarying();
+    const auto ambientOcclusionInputs = AmbientOcclusionEffect::Input(lightingModel, deferredFrameTransform, deferredFramebuffer, linearDepthTarget, ambientOcclusionFrame).asVarying();
     const auto ambientOcclusionOutputs = task.addJob<AmbientOcclusionEffect>("AmbientOcclusion", ambientOcclusionInputs);
     const auto ambientOcclusionFramebuffer = ambientOcclusionOutputs.getN<AmbientOcclusionEffect::Output>(0);
     const auto ambientOcclusionUniforms = ambientOcclusionOutputs.getN<AmbientOcclusionEffect::Output>(1);
@@ -250,8 +252,8 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
     const auto destFramebuffer = static_cast<gpu::FramebufferPointer>(nullptr);
 
     // Lighting Buffer ready for tone mapping
-    const auto toneMappingInputs = ToneMapAndResample::Input(lightingFramebuffer, destFramebuffer).asVarying();
-    const auto toneMappedBuffer = task.addJob<ToneMapAndResample>("ToneMapping", toneMappingInputs, depth);
+    const auto toneMappingInputs = ToneMapAndResample::Input(lightingFramebuffer, destFramebuffer, tonemappingFrame).asVarying();
+    const auto toneMappedBuffer = task.addJob<ToneMapAndResample>("ToneMapping", toneMappingInputs);
 
     // Debugging task is happening in the "over" layer after tone mapping and just before HUD
     { // Debug the bounds of the rendered items, still look at the zbuffer
