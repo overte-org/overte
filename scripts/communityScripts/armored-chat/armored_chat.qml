@@ -215,6 +215,10 @@ Rectangle {
                                 text = ""
                             }
                         }
+                        onFocusChanged: {
+                            if (focus) return ApplicationInterface.showVRKeyboardForHudUI(true);
+                            ApplicationInterface.showVRKeyboardForHudUI(false);
+                        }
                     }
                     Button {
                         width: 60
