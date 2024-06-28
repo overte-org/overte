@@ -16,6 +16,8 @@
 #include <QScreen>
 #include "ScreenName.h"
 
+#include <MeshPartPayload.h>
+
 STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
@@ -43,16 +45,17 @@ RenderScriptingInterface::RenderScriptingInterface() {
     });
 }
 
-
 void RenderScriptingInterface::loadSettings() {
     _renderSettingLock.withReadLock([&] {
-        _renderMethod = (_renderMethodSetting.get());
-        _shadowsEnabled = (_shadowsEnabledSetting.get());
-        _ambientOcclusionEnabled = (_ambientOcclusionEnabledSetting.get());
-        //_antialiasingMode = (_antialiasingModeSetting.get());
+        _renderMethod = _renderMethodSetting.get();
+        _shadowsEnabled = _shadowsEnabledSetting.get();
+        _hazeEnabled = _hazeEnabledSetting.get();
+        _bloomEnabled = _bloomEnabledSetting.get();
+        _ambientOcclusionEnabled = _ambientOcclusionEnabledSetting.get();
+        _proceduralMaterialsEnabled = _proceduralMaterialsEnabledSetting.get();
         _antialiasingMode = static_cast<AntialiasingConfig::Mode>(_antialiasingModeSetting.get());
-        _viewportResolutionScale = (_viewportResolutionScaleSetting.get());
-        _fullScreenScreen = (_fullScreenScreenSetting.get());
+        _viewportResolutionScale = _viewportResolutionScaleSetting.get();
+        _fullScreenScreen = _fullScreenScreenSetting.get();
     });
 
     // If full screen screen is not initialized, or set to an invalid value,
@@ -65,7 +68,10 @@ void RenderScriptingInterface::loadSettings() {
 
     forceRenderMethod((RenderMethod)_renderMethod);
     forceShadowsEnabled(_shadowsEnabled);
+    forceHazeEnabled(_hazeEnabled);
+    forceBloomEnabled(_bloomEnabled);
     forceAmbientOcclusionEnabled(_ambientOcclusionEnabled);
+    forceProceduralMaterialsEnabled(_proceduralMaterialsEnabled);
     forceAntialiasingMode(_antialiasingMode);
     forceViewportResolutionScale(_viewportResolutionScale);
 }
@@ -136,15 +142,72 @@ void RenderScriptingInterface::forceShadowsEnabled(bool enabled) {
 
         auto renderConfig = qApp->getRenderEngine()->getConfiguration();
         assert(renderConfig);
+        Menu::getInstance()->setIsOptionChecked(MenuOption::Shadows, enabled);
         auto lightingModelConfig = renderConfig->getConfig<MakeLightingModel>("RenderMainView.LightingModel");
         if (lightingModelConfig) {
-            Menu::getInstance()->setIsOptionChecked(MenuOption::Shadows, enabled);
             lightingModelConfig->setShadow(enabled);
         }
         auto secondaryLightingModelConfig = renderConfig->getConfig<MakeLightingModel>("RenderSecondView.LightingModel");
         if (secondaryLightingModelConfig) {
-            Menu::getInstance()->setIsOptionChecked(MenuOption::Shadows, enabled);
             secondaryLightingModelConfig->setShadow(enabled);
+        }
+    });
+}
+
+bool RenderScriptingInterface::getHazeEnabled() const {
+    return _hazeEnabled;
+}
+
+void RenderScriptingInterface::setHazeEnabled(bool enabled) {
+    if (_hazeEnabled != enabled) {
+        forceHazeEnabled(enabled);
+        emit settingsChanged();
+    }
+}
+
+void RenderScriptingInterface::forceHazeEnabled(bool enabled) {
+    _renderSettingLock.withWriteLock([&] {
+        _hazeEnabled = (enabled);
+        _hazeEnabledSetting.set(enabled);
+
+        auto renderConfig = qApp->getRenderEngine()->getConfiguration();
+        assert(renderConfig);
+        auto lightingModelConfig = renderConfig->getConfig<MakeLightingModel>("RenderMainView.LightingModel");
+        if (lightingModelConfig) {
+            lightingModelConfig->setHaze(enabled);
+        }
+        auto secondaryLightingModelConfig = renderConfig->getConfig<MakeLightingModel>("RenderSecondView.LightingModel");
+        if (secondaryLightingModelConfig) {
+            secondaryLightingModelConfig->setHaze(enabled);
+        }
+    });
+}
+
+bool RenderScriptingInterface::getBloomEnabled() const {
+    return _bloomEnabled;
+}
+
+void RenderScriptingInterface::setBloomEnabled(bool enabled) {
+    if (_bloomEnabled != enabled) {
+        forceBloomEnabled(enabled);
+        emit settingsChanged();
+    }
+}
+
+void RenderScriptingInterface::forceBloomEnabled(bool enabled) {
+    _renderSettingLock.withWriteLock([&] {
+        _bloomEnabled = (enabled);
+        _bloomEnabledSetting.set(enabled);
+
+        auto renderConfig = qApp->getRenderEngine()->getConfiguration();
+        assert(renderConfig);
+        auto lightingModelConfig = renderConfig->getConfig<MakeLightingModel>("RenderMainView.LightingModel");
+        if (lightingModelConfig) {
+            lightingModelConfig->setBloom(enabled);
+        }
+        auto secondaryLightingModelConfig = renderConfig->getConfig<MakeLightingModel>("RenderSecondView.LightingModel");
+        if (secondaryLightingModelConfig) {
+            secondaryLightingModelConfig->setBloom(enabled);
         }
     });
 }
@@ -165,11 +228,29 @@ void RenderScriptingInterface::forceAmbientOcclusionEnabled(bool enabled) {
         _ambientOcclusionEnabled = (enabled);
         _ambientOcclusionEnabledSetting.set(enabled);
 
-        auto lightingModelConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<MakeLightingModel>("RenderMainView.LightingModel");
-        if (lightingModelConfig) {
-            Menu::getInstance()->setIsOptionChecked(MenuOption::AmbientOcclusion, enabled);
-            lightingModelConfig->setAmbientOcclusion(enabled);
-        }
+        Menu::getInstance()->setIsOptionChecked(MenuOption::AmbientOcclusion, enabled);
+        ModelMeshPartPayload::enableMaterialProceduralShaders = enabled;
+    });
+}
+
+bool RenderScriptingInterface::getProceduralMaterialsEnabled() const {
+    return _proceduralMaterialsEnabled;
+}
+
+void RenderScriptingInterface::setProceduralMaterialsEnabled(bool enabled) {
+    if (_proceduralMaterialsEnabled != enabled) {
+        forceProceduralMaterialsEnabled(enabled);
+        emit settingsChanged();
+    }
+}
+
+void RenderScriptingInterface::forceProceduralMaterialsEnabled(bool enabled) {
+    _renderSettingLock.withWriteLock([&] {
+        _proceduralMaterialsEnabled = (enabled);
+        _proceduralMaterialsEnabledSetting.set(enabled);
+
+        Menu::getInstance()->setIsOptionChecked(MenuOption::MaterialProceduralShaders, enabled);
+        ModelMeshPartPayload::enableMaterialProceduralShaders = enabled;
     });
 }
 
@@ -232,7 +313,6 @@ void RenderScriptingInterface::forceAntialiasingMode(AntialiasingConfig::Mode mo
         _antialiasingModeSetting.set(_antialiasingMode);
     });
 }
-
 
 float RenderScriptingInterface::getViewportResolutionScale() const {
     return _viewportResolutionScale;
