@@ -155,6 +155,7 @@ EntityPropertyFlags EntityItem::getEntityProperties(EncodeBitstreamParams& param
 
 OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packetData, EncodeBitstreamParams& params,
                                             EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                            EntityPropertyList& firstDidntFitProperty,
                                             const bool destinationNodeCanGetAndSetPrivateUserData) const {
 
     // ALL this fits...
@@ -166,6 +167,7 @@ OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packet
     // ~27-35 bytes...
 
     OctreeElement::AppendState appendState = OctreeElement::COMPLETED; // assume the best
+    bool firstProperty = true;
 
     // encode our ID as a byte count coded byte stream
     QByteArray encodedID = getID().toRfc4122();
@@ -266,7 +268,6 @@ OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packet
         // NOTE: When we enable partial packing of entity properties, we'll want to pack simulationOwner, transform, and velocity properties near each other
         // since they will commonly be transmitted together.  simulationOwner must always go first, to avoid race conditions of simulation ownership bids
         // These items would go here once supported....
-        //      PROP_PAGED_PROPERTY,
         //      PROP_CUSTOM_PROPERTIES_INCLUDED,
 
         APPEND_ENTITY_PROPERTY(PROP_SIMULATION_OWNER, _simulationOwner.toByteArray());
@@ -303,7 +304,7 @@ OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packet
         APPEND_ENTITY_PROPERTY(PROP_BILLBOARD_MODE, (uint32_t)getBillboardMode());
         withReadLock([&] {
             _grabProperties.appendSubclassData(packetData, params, entityTreeElementExtraEncodeData, requestedProperties,
-                propertyFlags, propertiesDidntFit, propertyCount, appendState);
+                propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
         });
 
         // Physics
@@ -354,6 +355,7 @@ OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packet
                                 requestedProperties,
                                 propertyFlags,
                                 propertiesDidntFit,
+                                firstProperty, firstDidntFitProperty,
                                 propertyCount,
                                 appendState);
     }
@@ -385,9 +387,8 @@ OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packet
         appendState = OctreeElement::NONE; // if we got here, then we didn't include the item
     }
 
-    // If any part of the model items didn't fit, then the element is considered partial
-    if (appendState != OctreeElement::COMPLETED) {
-        // add this item into our list for the next appendElementData() pass
+    // add this item into our list for the next appendElementData() pass
+    if (entityTreeElementExtraEncodeData) {
         entityTreeElementExtraEncodeData->entities.insert(getEntityItemID(), propertiesDidntFit);
     }
 

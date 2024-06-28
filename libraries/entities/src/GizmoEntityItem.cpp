@@ -89,6 +89,7 @@ void GizmoEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBit
                                     EntityPropertyFlags& requestedProperties,
                                     EntityPropertyFlags& propertyFlags,
                                     EntityPropertyFlags& propertiesDidntFit,
+                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                     int& propertyCount,
                                     OctreeElement::AppendState& appendState) const {
 
@@ -97,7 +98,7 @@ void GizmoEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBit
     APPEND_ENTITY_PROPERTY(PROP_GIZMO_TYPE, (uint32_t)getGizmoType());
     withReadLock([&] {
         _ringProperties.appendSubclassData(packetData, params, entityTreeElementExtraEncodeData, requestedProperties,
-            propertyFlags, propertiesDidntFit, propertyCount, appendState);
+            propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
     });
 }
 
