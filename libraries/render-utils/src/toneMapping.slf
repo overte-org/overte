@@ -16,8 +16,8 @@
 <@include render-utils/ShaderConstants.h@>
 
 struct ToneMappingParams {
-    vec4 _exp_2powExp_s0_s1;
-    ivec4 _toneCurve_s0_s1_s2;
+    float _2powExp;
+    int _toneCurve;
 };
 
 const float GAMMA_22 = 2.2;
@@ -31,17 +31,17 @@ LAYOUT(binding=RENDER_UTILS_BUFFER_TM_PARAMS) uniform toneMappingParamsBuffer {
     ToneMappingParams params;
 };
 float getTwoPowExposure() {
-    return params._exp_2powExp_s0_s1.y;
+    return params._2powExp;
 }
 int getToneCurve() {
-    return params._toneCurve_s0_s1_s2.x;
+    return params._toneCurve;
 }
 
 LAYOUT(binding=RENDER_UTILS_TEXTURE_TM_COLOR) uniform sampler2D colorMap;
 
 layout(location=0) in vec2 varTexCoord0;
 layout(location=0) out vec4 outFragColor;
-        
+
 void main(void) {
 <@if HIFI_USE_MIRRORED@>
     vec4 fragColorRaw = texture(colorMap, vec2(1.0 - varTexCoord0.x, varTexCoord0.y));
