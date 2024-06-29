@@ -205,25 +205,33 @@ public:
  * @typedef {object} PickRay
  * @property {Vec3} origin - The starting position of the ray.
  * @property {Vec3} direction - The direction that the ray travels.
+ * @property {Vec3} unmodifiedDirection - The direction that the ray would travel, if not for applied effects like delays.
  */
 class PickRay : public MathPick {
 public:
-    PickRay() : origin(NAN), direction(NAN)  { }
-    PickRay(const QVariantMap& pickVariant) : origin(vec3FromVariant(pickVariant["origin"])), direction(vec3FromVariant(pickVariant["direction"])) {}
-    PickRay(const glm::vec3& origin, const glm::vec3 direction) : origin(origin), direction(direction) {}
+    PickRay() : origin(NAN), direction(NAN), unmodifiedDirection(NAN)  { }
+    PickRay(const QVariantMap& pickVariant) :
+        origin(vec3FromVariant(pickVariant["origin"])), direction(vec3FromVariant(pickVariant["direction"])),
+        unmodifiedDirection(vec3FromVariant(pickVariant["unmodifiedDirection"])) {}
+    PickRay(const glm::vec3& origin, const glm::vec3& direction) :
+        origin(origin), direction(direction), unmodifiedDirection(direction) {}
+    PickRay(const glm::vec3& origin, const glm::vec3& direction, const glm::vec3& unmodifiedDirection) :
+        origin(origin), direction(direction), unmodifiedDirection(unmodifiedDirection) {}
     glm::vec3 origin;
     glm::vec3 direction;
+    glm::vec3 unmodifiedDirection;
 
     operator bool() const override {
-        return !(glm::any(glm::isnan(origin)) || glm::any(glm::isnan(direction)));
+        return !(glm::any(glm::isnan(origin)) || glm::any(glm::isnan(direction)) || glm::any(glm::isnan(unmodifiedDirection)));
     }
     bool operator==(const PickRay& other) const {
-        return (origin == other.origin && direction == other.direction);
+        return (origin == other.origin && direction == other.direction && unmodifiedDirection == other.unmodifiedDirection);
     }
     QVariantMap toVariantMap() const override {
         QVariantMap pickRay;
         pickRay["origin"] = vec3toVariant(origin);
         pickRay["direction"] = vec3toVariant(direction);
+        pickRay["unmodifiedDirection"] = vec3toVariant(unmodifiedDirection);
         return pickRay;
     }
 };

@@ -32,6 +32,7 @@
 <@include sdf_text3D.slh@>
 <$declareEvalSDFSuperSampled()$>
 
+layout(location=RENDER_UTILS_ATTR_POSITION_MS) in vec2 _positionMS;
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
     layout(location=RENDER_UTILS_ATTR_POSITION_ES) in vec4 _positionES;
 <@endif@>
@@ -42,7 +43,7 @@ layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4 _texCoord01;
 layout(location=RENDER_UTILS_ATTR_FADE1) flat in vec4 _glyphBounds; // we're reusing the fade texcoord locations here
 
 void main() {
-    vec4 color = evalSDFSuperSampled(_texCoord0, _glyphBounds);
+    vec4 color = evalSDFSuperSampled(_texCoord0, _positionMS, _glyphBounds);
 
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
     color.a *= params.color.a;

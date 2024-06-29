@@ -64,7 +64,7 @@ void LODManager::setRenderTimes(float presentTime, float engineRunTime, float ba
 }
 
 void LODManager::autoAdjustLOD(float realTimeDelta) {
-    std::lock_guard<std::mutex> lock{ _automaticLODLock };
+    std::lock_guard<std::mutex> lock(_automaticLODLock);
 
     // The "render time" is the worse of:
     // - engineRunTime: Time spent in the render thread in the engine producing the gpu::Frame N
@@ -300,7 +300,7 @@ void LODManager::resetLODAdjust() {
 }
 
 void LODManager::setAutomaticLODAdjust(bool value) {
-    std::lock_guard<std::mutex> lock{ _automaticLODLock };
+    std::lock_guard<std::mutex> lock(_automaticLODLock);
     _automaticLODAdjust = value;
     saveSettings();
     emit autoLODChanged();

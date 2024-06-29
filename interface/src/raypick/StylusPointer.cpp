@@ -48,29 +48,6 @@ PickQuery::PickType StylusPointer::getType() const {
 }
 
 QUuid StylusPointer::buildStylus(const QVariantMap& properties) {
-    // FIXME: we have to keep using the Overlays interface here, because existing scripts use overlay properties to define pointers
-    /*QVariantMap propertiesMap;
-
-    QString modelUrl = DEFAULT_STYLUS_MODEL_URL;
-
-    if (properties["model"].isValid()) {
-        QVariantMap modelData = properties["model"].toMap();
-
-        if (modelData["url"].isValid()) {
-            modelUrl = modelData["url"].toString();
-        }
-    }
-    // TODO: make these configurable per pointer
-    propertiesMap["name"] = "stylus";
-    propertiesMap["url"] = modelUrl;
-    propertiesMap["loadPriority"] = 10.0f;
-    propertiesMap["solid"] = true;
-    propertiesMap["visible"] = false;
-    propertiesMap["ignorePickIntersection"] = true;
-    propertiesMap["drawInFront"] = false;
-
-    return qApp->getOverlays().addOverlay("model", propertiesMap);*/
-
     EntityItemProperties entityProperties;
     QString modelURL = DEFAULT_STYLUS_MODEL_URL;
 

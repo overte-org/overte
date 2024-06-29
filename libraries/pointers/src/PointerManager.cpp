@@ -157,6 +157,13 @@ void PointerManager::setLockEndUUID(unsigned int uid, const QUuid& objectID, boo
     }
 }
 
+void PointerManager::setDelay(unsigned int uid, float delay) const {
+    auto pointer = find(uid);
+    if (pointer) {
+        pointer->setDelay(delay);
+    }
+}
+
 bool PointerManager::isLeftHand(unsigned int uid) {
     auto pointer = find(uid);
     if (pointer) {

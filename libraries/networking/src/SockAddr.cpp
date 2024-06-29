@@ -67,12 +67,13 @@ SockAddr::SockAddr(SocketType socketType, const QString& hostname, quint16 hostO
     if (_address.protocol() != QAbstractSocket::IPv4Protocol) {
         // lookup the IP by the hostname
         if (shouldBlockForLookup) {
-            qCDebug(networking) << "Synchronously looking up IP address for hostname" << hostname;
+            qCDebug(networking) << "Synchronously looking up IP address for hostname" << hostname << "for" << socketType << "socket on port" << hostOrderPort;
             QHostInfo result = QHostInfo::fromName(hostname);
             handleLookupResult(result);
         } else {
-            int lookupID = QHostInfo::lookupHost(hostname, this, SLOT(handleLookupResult(QHostInfo)));
-            qCDebug(networking) << "Asynchronously looking up IP address for hostname" << hostname << "- lookup ID is" << lookupID;
+            qCDebug(networking) << "Asynchronously looking up IP address for hostname" << hostname << "for" << socketType << "socket on port" << hostOrderPort;
+            int lookupID = QHostInfo::lookupHost(hostname, this, &SockAddr::handleLookupResult);
+            qCDebug(networking) << "Lookup ID for " << hostname << "is" << lookupID;
         }
     }
 }
@@ -95,6 +96,8 @@ bool SockAddr::operator==(const SockAddr& rhsSockAddr) const {
 }
 
 void SockAddr::handleLookupResult(const QHostInfo& hostInfo) {
+    qCDebug(networking) << "handleLookupResult for" << hostInfo.lookupId();
+
     if (hostInfo.error() != QHostInfo::NoError) {
         qCDebug(networking) << "Lookup failed for" << hostInfo.lookupId() << ":" << hostInfo.errorString();
         emit lookupFailed();

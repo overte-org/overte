@@ -16,6 +16,7 @@
 #include <PhysicsEngine.h>
 #include <Pick.h>
 #include <PickFilter.h>
+#include <SettingHandle.h>
 
 class ScriptEngine;
 class ScriptValue;
@@ -72,6 +73,7 @@ class ScriptValue;
  * @property {IntersectionType} INTERSECTED_HUD - Intersected the HUD surface. <em>Read-only.</em>
  *
  * @property {number} perFrameTimeBudget - The maximum time, in microseconds, to spend per frame updating pick results.
+ * @property {number} handLaserDelay - The delay, in seconds, applied to the hand lasers to smooth their movement.
  */
 
 class PickScriptingInterface : public QObject, public Dependency {
@@ -105,6 +107,7 @@ class PickScriptingInterface : public QObject, public Dependency {
     Q_PROPERTY(unsigned int INTERSECTED_AVATAR READ getIntersectedAvatar CONSTANT)
     Q_PROPERTY(unsigned int INTERSECTED_HUD READ getIntersectedHud CONSTANT)
     Q_PROPERTY(unsigned int perFrameTimeBudget READ getPerFrameTimeBudget WRITE setPerFrameTimeBudget)
+    Q_PROPERTY(float handLaserDelay READ getHandLaserDelay WRITE setHandLaserDelay)
     SINGLETON_DEPENDENCY
 
 public:
@@ -264,6 +267,15 @@ public:
     Q_INVOKABLE void setIncludeItems(unsigned int uid, const ScriptValue& includeItems);
 
     /*@jsdoc
+     * Sets the delay of a Ray pick.
+     * <p><strong>Note:</strong> Not used by other pick types.</p>
+     * @function Picks.setDelay
+     * @param {number} id - The ID of the pointer.
+     * @param {number} delay - The desired delay in seconds.
+     */
+    Q_INVOKABLE void setDelay(unsigned int uid, float delay);
+
+    /*@jsdoc
      * Checks if a pick is associated with the left hand: a ray or parabola pick with <code>joint</code> property set to 
      * <code>"_CONTROLLER_LEFTHAND"</code> or <code>"_CAMERA_RELATIVE_CONTROLLER_LEFTHAND"</code>, or a stylus pick with 
      * <code>hand</code> property set to <code>0</code>.
@@ -294,6 +306,9 @@ public:
 
     unsigned int getPerFrameTimeBudget() const;
     void setPerFrameTimeBudget(unsigned int numUsecs);
+
+    float getHandLaserDelay() const;
+    void setHandLaserDelay(float delay);
 
 public slots:
 
@@ -461,6 +476,9 @@ public slots:
      */
     static constexpr unsigned int getIntersectedHud() { return IntersectionType::HUD; }
 
+signals:
+    void handLaserDelayChanged(float delay);
+
 protected:
     static std::shared_ptr<PickQuery> buildRayPick(const QVariantMap& properties);
     static std::shared_ptr<PickQuery> buildStylusPick(const QVariantMap& properties);
@@ -468,6 +486,9 @@ protected:
     static std::shared_ptr<PickQuery> buildParabolaPick(const QVariantMap& properties);
 
     static void setParentTransform(std::shared_ptr<PickQuery> pick, const QVariantMap& propMap);
+
+private:
+    Setting::Handle<float> _handLaserDelaySetting { "handLaserDelay", 0.35f };
 };
 
 #endif // hifi_PickScriptingInterface_h

@@ -132,6 +132,11 @@ void FileCacheTests::testFreeSpacePreservation() {
     cache->setMinFreeSize(targetFreeSpace);
     QCOMPARE(cache->getNumCachedFiles(), (size_t)5);
     QCOMPARE(cache->getNumTotalFiles(), (size_t)5);
+    qDebug() << "Free space: " << getFreeSpace();
+    qDebug() << "Target    : " << targetFreeSpace;
+
+    qInfo() << "The following test may fail if free disk space was changed by another program during the test's runtime";
+
     QVERIFY(getFreeSpace() >= targetFreeSpace);
     for (int i = 0; i < 95; ++i) {
         std::string key = getFileKey(i);

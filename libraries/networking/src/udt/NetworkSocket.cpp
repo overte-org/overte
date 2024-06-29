@@ -45,7 +45,7 @@ void NetworkSocket::setSocketOption(SocketType socketType, QAbstractSocket::Sock
         break;
 #endif
     default:
-        qCCritical(networking) << "Socket type not specified in setSocketOption()";
+        qCCritical(networking) << "Socket type" << socketType << "not recognized in setSocketOption()";
     }
 }
 
@@ -58,7 +58,7 @@ QVariant NetworkSocket::socketOption(SocketType socketType, QAbstractSocket::Soc
         return _webrtcSocket.socketOption(option);
 #endif
     default:
-        qCCritical(networking) << "Socket type not specified in socketOption()";
+        qCCritical(networking) << "Socket type" << socketType << "not recognized in socketOption()";
         return "";
     }
 }
@@ -75,7 +75,7 @@ void NetworkSocket::bind(SocketType socketType, const QHostAddress& address, qui
         break;
 #endif
     default:
-        qCCritical(networking) << "Socket type not specified in bind()";
+        qCCritical(networking) << "Socket type" << socketType << "not recognized in bind()";
     }
 }
 
@@ -90,7 +90,7 @@ void NetworkSocket::abort(SocketType socketType) {
         break;
 #endif
     default:
-        qCCritical(networking) << "Socket type not specified in abort()";
+        qCCritical(networking) << "Socket type" << socketType << "not recognized in abort()";
     }
 }
 
@@ -104,7 +104,7 @@ quint16 NetworkSocket::localPort(SocketType socketType) const {
         return _webrtcSocket.localPort();
 #endif
     default:
-        qCCritical(networking) << "Socket type not specified in localPort()";
+        qCCritical(networking) << "Socket type" << socketType << "not recognized in localPort()";
         return 0;
     }
 }
@@ -119,7 +119,7 @@ qintptr NetworkSocket::socketDescriptor(SocketType socketType) const {
         return 0;
 #endif
     default:
-        qCCritical(networking) << "Socket type not specified in socketDescriptor()";
+        qCCritical(networking) << "Socket type" << socketType << "not recognized in socketDescriptor()";
         return 0;
     }
 }
@@ -136,7 +136,7 @@ qint64 NetworkSocket::writeDatagram(const QByteArray& datagram, const SockAddr& 
         return _webrtcSocket.writeDatagram(datagram, sockAddr);
 #endif
     default:
-        qCCritical(networking) << "Socket type not specified in writeDatagram() address";
+        qCCritical(networking) << "Socket type" << sockAddr.getType() << "not recognized in writeDatagram() address";
         return 0;
     }
 }
@@ -150,7 +150,7 @@ qint64 NetworkSocket::bytesToWrite(SocketType socketType, const SockAddr& addres
         return _webrtcSocket.bytesToWrite(address);
 #endif
     default:
-        qCCritical(networking) << "Socket type not specified in bytesToWrite()";
+        qCCritical(networking) << "Socket type" << socketType << "not recognized in bytesToWrite()";
         return 0;
     }
 }
@@ -232,7 +232,7 @@ QAbstractSocket::SocketState NetworkSocket::state(SocketType socketType) const {
         return _webrtcSocket.state();
 #endif
     default:
-        qCCritical(networking) << "Socket type not specified in state()";
+        qCCritical(networking) << "Socket type" << socketType << "not recognized in state()";
         return QAbstractSocket::SocketState::UnconnectedState;
     }
 }
@@ -247,7 +247,7 @@ QAbstractSocket::SocketError NetworkSocket::error(SocketType socketType) const {
         return _webrtcSocket.error();
 #endif
     default:
-        qCCritical(networking) << "Socket type not specified in error()";
+        qCCritical(networking) << "Socket type" << socketType << "not recognized in error()";
         return QAbstractSocket::SocketError::UnknownSocketError;
     }
 }
@@ -261,7 +261,7 @@ QString NetworkSocket::errorString(SocketType socketType) const {
         return _webrtcSocket.errorString();
 #endif
     default:
-        qCCritical(networking) << "Socket type not specified in errorString()";
+        qCCritical(networking) << "Socket type" << socketType << "not recognized in errorString()";
         return "";
     }
 }

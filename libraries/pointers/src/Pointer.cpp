@@ -74,6 +74,10 @@ void Pointer::setIncludeItems(const QVector<QUuid>& includeItems) const {
     DependencyManager::get<PickManager>()->setIncludeItems(_pickUID, includeItems);
 }
 
+void Pointer::setDelay(float delay) const {
+    DependencyManager::get<PickManager>()->setDelay(_pickUID, delay);
+}
+
 bool Pointer::isLeftHand() const {
     return DependencyManager::get<PickManager>()->isLeftHand(_pickUID);
 }

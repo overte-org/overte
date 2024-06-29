@@ -303,10 +303,13 @@ bool Keyboard::isRaised() const {
     return resultWithReadLock<bool>([&] { return _raised; });
 }
 
-void Keyboard::setRaised(bool raised) {
+void Keyboard::setRaised(bool raised, bool inputToHudUI) {
 
     bool isRaised;
     withReadLock([&] { isRaised = _raised; });
+
+    _inputToHudUI = inputToHudUI;
+
     if (isRaised != raised) {
         raiseKeyboardAnchor(raised);
         raiseKeyboard(raised);
@@ -585,8 +588,13 @@ void Keyboard::handleTriggerBegin(const QUuid& id, const PointerEvent& event) {
 
         QKeyEvent* pressEvent = new QKeyEvent(QEvent::KeyPress, scanCode, Qt::NoModifier, keyString);
         QKeyEvent* releaseEvent = new QKeyEvent(QEvent::KeyRelease, scanCode, Qt::NoModifier, keyString);
-        QCoreApplication::postEvent(QCoreApplication::instance(), pressEvent);
-        QCoreApplication::postEvent(QCoreApplication::instance(), releaseEvent);
+        if (_inputToHudUI) {
+            QCoreApplication::postEvent(qApp->getPrimaryWidget(), pressEvent);
+            QCoreApplication::postEvent(qApp->getPrimaryWidget(), releaseEvent);
+        } else {
+            QCoreApplication::postEvent(QCoreApplication::instance(), pressEvent);
+            QCoreApplication::postEvent(QCoreApplication::instance(), releaseEvent);
+        }
 
         if (!getPreferMalletsOverLasers()) {
             key.startTimer(KEY_PRESS_TIMEOUT_MS);

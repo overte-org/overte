@@ -14,12 +14,16 @@
 #ifndef hifi_GLTFSerializer_h
 #define hifi_GLTFSerializer_h
 
-#include "cgltf.h"
-
 #include <memory.h>
 #include <QtNetwork/QNetworkReply>
 #include <hfm/ModelFormatLogging.h>
 #include <hfm/HFMSerializer.h>
+
+float atof_locale_independent(char* str);
+
+#define CGLTF_ATOF(str) atof_locale_independent(str)
+
+#include "cgltf.h"
 
 
 class GLTFSerializer : public QObject, public HFMSerializer {

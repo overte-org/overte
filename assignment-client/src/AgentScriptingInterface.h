@@ -40,7 +40,7 @@
  */
 class AgentScriptingInterface : public QObject {
     Q_OBJECT
-    Q_PROPERTY(bool isAvatar READ isAvatar WRITE setIsAvatar)
+    Q_PROPERTY(bool isAvatar READ getIsAvatar WRITE setIsAvatar)
     Q_PROPERTY(bool isPlayingAvatarSound READ isPlayingAvatarSound)
     Q_PROPERTY(bool isListeningToAudioStream READ isListeningToAudioStream WRITE setIsListeningToAudioStream)
     Q_PROPERTY(bool isNoiseGateEnabled READ isNoiseGateEnabled WRITE setIsNoiseGateEnabled)
@@ -77,15 +77,15 @@ public slots:
 
     /*@jsdoc
      * Checks whether the script is emulating an avatar.
-     * @function Agent.isAvatar
+     * @function Agent.getIsAvatar
      * @returns {boolean} <code>true</code> if the script is emulating an avatar, otherwise <code>false</code>.
      * @example <caption>Check whether the agent is emulating an avatar.</caption>
      * (function () {
-     *     print("Agent is avatar: " + Agent.isAvatar());
+     *     print("Agent is avatar: " + Agent.getIsAvatar());
      *     print("Agent is avatar: " + Agent.isAvatar); // Same result.
      * }());
      */
-    bool isAvatar() const { return _agent->isAvatar(); }
+    bool getIsAvatar() const { return _agent->isAvatar(); }
 
     /*@jsdoc
      * Plays a sound from the position and with the orientation of the emulated avatar's head. No sound is played unless 

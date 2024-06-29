@@ -111,10 +111,7 @@ CMAKE_BACKTRACE_TOKEN
 
 // The release version, e.g., 2021.3.2.
 RELEASE_NUMBER
-// The release name, e.g., Eos.
-RELEASE_NAME
 // The build commit, e.g., use a Git hash for the most recent commit in the branch - fd6973b.
-
 BUILD_NUMBER
 
 // The type of release.

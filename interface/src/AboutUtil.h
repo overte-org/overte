@@ -30,7 +30,6 @@
  *     <em>Read-only.</em>
  * @property {string} buildDate - The build date of Interface that is currently running. <em>Read-only.</em>
  * @property {string} buildVersion - The build version of Interface that is currently running. <em>Read-only.</em>
- * @property {string} releaseName - The release codename of the version that Interface is currently running. <em>Read-only.</em>
  * @property {string} qtVersion - The Qt version used in Interface that is currently running. <em>Read-only.</em>
  * @property {string} qtWebEngineVersion - The Qt WebEngine version used in Interface that is currently running. <em>Read-only.</em>
  * @property {string} qtChromiumVersion - The Qt Chromium version used in Interface that is currently running. <em>Read-only.</em>
@@ -40,7 +39,6 @@
  * print("Interface platform: " + About.platform);
  * print("Interface build date: " + About.buildDate);
  * print("Interface version: " + About.buildVersion);
- * print("Interface release name: " + About.releaseName);
  * print("Qt version: " + About.qtVersion);
  */
 
@@ -71,7 +69,6 @@ class AboutUtil : public QObject {
     Q_PROPERTY(QString platform READ getPlatformName CONSTANT)
     Q_PROPERTY(QString buildDate READ getBuildDate CONSTANT)
     Q_PROPERTY(QString buildVersion READ getBuildVersion CONSTANT)
-    Q_PROPERTY(QString releaseName READ getReleaseName CONSTANT)
     Q_PROPERTY(QString qtVersion READ getQtVersion CONSTANT)
     Q_PROPERTY(QString qtWebEngineVersion READ getQtWebEngineVersion CONSTANT)
     Q_PROPERTY(QString qtChromiumVersion READ getQtChromiumVersion CONSTANT)
@@ -83,7 +80,6 @@ public:
     QString getPlatformName() const { return "Overte"; }
     QString getBuildDate() const;
     QString getBuildVersion() const;
-    QString getReleaseName() const;
     QString getQtVersion() const;
     QString getQtWebEngineVersion() const;
     QString getQtChromiumVersion() const;
