@@ -124,6 +124,33 @@ QStringList RenderScriptingInterface::getRenderMethodNames() const {
     return refrenderMethodNames;
 }
 
+void recursivelyUpdateLightingModel(const QString& parentTaskName, std::function<void(MakeLightingModelConfig *)> updateLambda, int depth = -1) {
+    if (depth == -1) {
+        auto secondaryLightingModelConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<MakeLightingModel>("RenderSecondView.LightingModel");
+        if (secondaryLightingModelConfig) {
+            updateLambda(secondaryLightingModelConfig);
+        }
+
+        auto mainLightingModelConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<MakeLightingModel>("RenderMainView.LightingModel");
+        if (mainLightingModelConfig) {
+            updateLambda(mainLightingModelConfig);
+        }
+
+        recursivelyUpdateLightingModel("RenderMainView", updateLambda, depth + 1);
+    } else if (depth == RenderMirrorTask::MAX_MIRROR_DEPTH) {
+        return;
+    }
+
+    for (size_t mirrorIndex = 0; mirrorIndex < RenderMirrorTask::MAX_MIRRORS_PER_LEVEL; mirrorIndex++) {
+        std::string mirrorTaskString = parentTaskName.toStdString() + ".RenderMirrorView" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth);
+        auto lightingModelConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<MakeLightingModel>(mirrorTaskString + ".LightingModel");
+        if (lightingModelConfig) {
+            updateLambda(lightingModelConfig);
+            recursivelyUpdateLightingModel(QString::fromStdString(mirrorTaskString), updateLambda, depth + 1);
+        }
+    }
+}
+
 bool RenderScriptingInterface::getShadowsEnabled() const {
     return _shadowsEnabled;
 }
@@ -140,17 +167,9 @@ void RenderScriptingInterface::forceShadowsEnabled(bool enabled) {
         _shadowsEnabled = (enabled);
         _shadowsEnabledSetting.set(enabled);
 
-        auto renderConfig = qApp->getRenderEngine()->getConfiguration();
-        assert(renderConfig);
         Menu::getInstance()->setIsOptionChecked(MenuOption::Shadows, enabled);
-        auto lightingModelConfig = renderConfig->getConfig<MakeLightingModel>("RenderMainView.LightingModel");
-        if (lightingModelConfig) {
-            lightingModelConfig->setShadow(enabled);
-        }
-        auto secondaryLightingModelConfig = renderConfig->getConfig<MakeLightingModel>("RenderSecondView.LightingModel");
-        if (secondaryLightingModelConfig) {
-            secondaryLightingModelConfig->setShadow(enabled);
-        }
+
+        recursivelyUpdateLightingModel("", [enabled] (MakeLightingModelConfig *config) { config->setShadow(enabled); });
     });
 }
 
@@ -170,16 +189,7 @@ void RenderScriptingInterface::forceHazeEnabled(bool enabled) {
         _hazeEnabled = (enabled);
         _hazeEnabledSetting.set(enabled);
 
-        auto renderConfig = qApp->getRenderEngine()->getConfiguration();
-        assert(renderConfig);
-        auto lightingModelConfig = renderConfig->getConfig<MakeLightingModel>("RenderMainView.LightingModel");
-        if (lightingModelConfig) {
-            lightingModelConfig->setHaze(enabled);
-        }
-        auto secondaryLightingModelConfig = renderConfig->getConfig<MakeLightingModel>("RenderSecondView.LightingModel");
-        if (secondaryLightingModelConfig) {
-            secondaryLightingModelConfig->setHaze(enabled);
-        }
+        recursivelyUpdateLightingModel("", [enabled] (MakeLightingModelConfig *config) { config->setHaze(enabled); });
     });
 }
 
@@ -199,16 +209,7 @@ void RenderScriptingInterface::forceBloomEnabled(bool enabled) {
         _bloomEnabled = (enabled);
         _bloomEnabledSetting.set(enabled);
 
-        auto renderConfig = qApp->getRenderEngine()->getConfiguration();
-        assert(renderConfig);
-        auto lightingModelConfig = renderConfig->getConfig<MakeLightingModel>("RenderMainView.LightingModel");
-        if (lightingModelConfig) {
-            lightingModelConfig->setBloom(enabled);
-        }
-        auto secondaryLightingModelConfig = renderConfig->getConfig<MakeLightingModel>("RenderSecondView.LightingModel");
-        if (secondaryLightingModelConfig) {
-            secondaryLightingModelConfig->setBloom(enabled);
-        }
+        recursivelyUpdateLightingModel("", [enabled] (MakeLightingModelConfig *config) { config->setBloom(enabled); });
     });
 }
 
@@ -229,7 +230,8 @@ void RenderScriptingInterface::forceAmbientOcclusionEnabled(bool enabled) {
         _ambientOcclusionEnabledSetting.set(enabled);
 
         Menu::getInstance()->setIsOptionChecked(MenuOption::AmbientOcclusion, enabled);
-        ModelMeshPartPayload::enableMaterialProceduralShaders = enabled;
+
+        recursivelyUpdateLightingModel("", [enabled] (MakeLightingModelConfig *config) { config->setAmbientOcclusion(enabled); });
     });
 }
 
