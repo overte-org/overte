@@ -22,6 +22,8 @@ ProceduralSkybox::ProceduralSkybox(uint64_t created) : graphics::Skybox(), _crea
     _procedural._vertexSource = shader::Source::get(shader::graphics::vertex::skybox);
     _procedural._opaqueFragmentSource = shader::Source::get(shader::procedural::fragment::proceduralSkybox);
 
+    _procedural._errorFallbackFragmentPath = ":" + QUrl("qrc:///shaders/errorSkyboxShader.frag").path();
+
     _procedural.setDoesFade(false);
 
     // Adjust the pipeline state for background using the stencil test

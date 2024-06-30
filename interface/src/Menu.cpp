@@ -540,7 +540,7 @@ Menu::Menu() {
 
     action = addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::MaterialProceduralShaders, 0, false);
     connect(action, &QAction::triggered, [action] {
-        ModelMeshPartPayload::enableMaterialProceduralShaders = action->isChecked();
+        Procedural::enableProceduralShaders = action->isChecked();
     });
 
     {
