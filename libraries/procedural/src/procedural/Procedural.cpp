@@ -28,6 +28,8 @@
 
 Q_LOGGING_CATEGORY(proceduralLog, "hifi.gpu.procedural")
 
+bool Procedural::enableProceduralShaders = false;
+
 // User-data parsing constants
 static const QString PROCEDURAL_USER_DATA_KEY = "ProceduralEntity";
 static const QString VERTEX_URL_KEY = "vertexShaderURL";
@@ -377,15 +379,26 @@ void Procedural::prepare(gpu::Batch& batch,
 
         _proceduralPipelines[key] = gpu::Pipeline::create(program, key.isTransparent() ? _transparentState : _opaqueState);
 
+        // Error falllback: pink checkerboard
         if (_errorFallbackFragmentSource.isEmpty()) {
             QFile file(_errorFallbackFragmentPath);
             file.open(QIODevice::ReadOnly);
             _errorFallbackFragmentSource = QTextStream(&file).readAll();
         }
+        vertexSource.replacements.erase(PROCEDURAL_BLOCK);
         fragmentSource.replacements[PROCEDURAL_BLOCK] = _errorFallbackFragmentSource.toStdString();
+        gpu::ShaderPointer errorVertexShader = gpu::Shader::createVertex(vertexSource);
         gpu::ShaderPointer errorFragmentShader = gpu::Shader::createPixel(fragmentSource);
-        gpu::ShaderPointer errorProgram = gpu::Shader::createProgram(vertexShader, errorFragmentShader);
+        gpu::ShaderPointer errorProgram = gpu::Shader::createProgram(errorVertexShader, errorFragmentShader);
         _errorPipelines[key] = gpu::Pipeline::create(errorProgram, _opaqueState);
+
+        // Disabled falllback: nothing
+        vertexSource.replacements.erase(PROCEDURAL_BLOCK);
+        fragmentSource.replacements.erase(PROCEDURAL_BLOCK);
+        gpu::ShaderPointer disabledVertexShader = gpu::Shader::createVertex(vertexSource);
+        gpu::ShaderPointer disabledFragmentShader = gpu::Shader::createPixel(fragmentSource);
+        gpu::ShaderPointer disabledProgram = gpu::Shader::createProgram(disabledVertexShader, disabledFragmentShader);
+        _disabledPipelines[key] = gpu::Pipeline::create(disabledProgram, _opaqueState);
 
         _lastCompile = usecTimestampNow();
         if (_firstCompile == 0) {
@@ -396,7 +409,9 @@ void Procedural::prepare(gpu::Batch& batch,
     }
 
     gpu::PipelinePointer finalPipeline = recompiledShader ? _proceduralPipelines[key] : pipeline->second;
-    if (!finalPipeline || finalPipeline->getProgram()->compilationHasFailed()) {
+    if (!enableProceduralShaders) {
+        finalPipeline = _disabledPipelines[key];
+    } else if (!finalPipeline || finalPipeline->getProgram()->compilationHasFailed()) {
         finalPipeline = _errorPipelines[key];
     }
 
