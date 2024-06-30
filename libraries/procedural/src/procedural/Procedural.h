@@ -124,6 +124,8 @@ public:
     gpu::Shader::Source _opaqueFragmentSource;
     gpu::Shader::Source _transparentFragmentSource;
 
+    QString _errorFallbackFragmentSource;
+
     gpu::StatePointer _opaqueState { std::make_shared<gpu::State>() };
     gpu::StatePointer _transparentState { std::make_shared<gpu::State>() };
 
@@ -176,11 +178,14 @@ protected:
     bool _shaderDirty { true };
     bool _uniformsDirty { true };
 
+    QString _errorFallbackFragmentPath;
+
     // Rendering objects
     UniformLambdas _uniforms;
     NetworkTexturePointer _channels[MAX_PROCEDURAL_TEXTURE_CHANNELS];
 
     std::unordered_map<ProceduralProgramKey, gpu::PipelinePointer> _proceduralPipelines;
+    std::unordered_map<ProceduralProgramKey, gpu::PipelinePointer> _errorPipelines;
 
     StandardInputs _standardInputs;
     gpu::BufferPointer _standardInputsBuffer;

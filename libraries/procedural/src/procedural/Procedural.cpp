@@ -377,6 +377,16 @@ void Procedural::prepare(gpu::Batch& batch,
 
         _proceduralPipelines[key] = gpu::Pipeline::create(program, key.isTransparent() ? _transparentState : _opaqueState);
 
+        if (_errorFallbackFragmentSource.isEmpty()) {
+            QFile file(_errorFallbackFragmentPath);
+            file.open(QIODevice::ReadOnly);
+            _errorFallbackFragmentSource = QTextStream(&file).readAll();
+        }
+        fragmentSource.replacements[PROCEDURAL_BLOCK] = _errorFallbackFragmentSource.toStdString();
+        gpu::ShaderPointer errorFragmentShader = gpu::Shader::createPixel(fragmentSource);
+        gpu::ShaderPointer errorProgram = gpu::Shader::createProgram(vertexShader, errorFragmentShader);
+        _errorPipelines[key] = gpu::Pipeline::create(errorProgram, _opaqueState);
+
         _lastCompile = usecTimestampNow();
         if (_firstCompile == 0) {
             _firstCompile = _lastCompile;
@@ -385,8 +395,13 @@ void Procedural::prepare(gpu::Batch& batch,
         recompiledShader = true;
     }
 
+    gpu::PipelinePointer finalPipeline = recompiledShader ? _proceduralPipelines[key] : pipeline->second;
+    if (!finalPipeline || finalPipeline->getProgram()->compilationHasFailed()) {
+        finalPipeline = _errorPipelines[key];
+    }
+
     // FIXME: need to handle forward rendering
-    batch.setPipeline(recompiledShader ? _proceduralPipelines[key] : pipeline->second);
+    batch.setPipeline(finalPipeline);
 
     bool recreateUniforms = _shaderDirty || _uniformsDirty || recompiledShader || _prevKey != key;
     if (recreateUniforms) {
@@ -533,4 +548,6 @@ void graphics::ProceduralMaterial::initializeProcedural() {
     // FIXME: Setup proper uniform slots and use correct pipelines for forward rendering
     _procedural._opaqueFragmentSource = gpu::Shader::getFragmentShaderSource(shader::render_utils::fragment::simple_procedural);
     _procedural._transparentFragmentSource = gpu::Shader::getFragmentShaderSource(shader::render_utils::fragment::simple_procedural_translucent);
+
+    _procedural._errorFallbackFragmentPath = ":" + QUrl("qrc:///shaders/errorShader.frag").path();
 }
