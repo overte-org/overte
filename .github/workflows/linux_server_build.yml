@@ -93,12 +93,12 @@ jobs:
             runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
           - os: fedora-40
-            image: docker.io/overte/overte-server-build:0.1.4-fedora-39-amd64
+            image: docker.io/overte/overte-server-build:0.1.4-fedora-40-amd64
             arch: amd64
             runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
 
           - os: fedora-40
-            image: docker.io/overte/overte-server-build:0.1.4-fedora-39-aarch64
+            image: docker.io/overte/overte-server-build:0.1.4-fedora-40-aarch64
             arch: aarch64
             runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
