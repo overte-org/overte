@@ -2566,7 +2566,7 @@ QDataStream& operator>>(QDataStream& in, AttachmentData& attachment) {
 void AttachmentDataObject::setModelURL(const QString& modelURL) {
     AttachmentData data = scriptvalue_cast<AttachmentData>(thisObject());
     data.modelURL = modelURL;
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     thisObject() = engine()->toScriptValue(data);
 }
 
@@ -2577,7 +2577,7 @@ QString AttachmentDataObject::getModelURL() const {
 void AttachmentDataObject::setJointName(const QString& jointName) {
     AttachmentData data = scriptvalue_cast<AttachmentData>(thisObject());
     data.jointName = jointName;
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     thisObject() = engine()->toScriptValue(data);
 }
 
@@ -2588,7 +2588,7 @@ QString AttachmentDataObject::getJointName() const {
 void AttachmentDataObject::setTranslation(const glm::vec3& translation) {
     AttachmentData data = scriptvalue_cast<AttachmentData>(thisObject());
     data.translation = translation;
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     thisObject() = engine()->toScriptValue(data);
 }
 
@@ -2599,7 +2599,7 @@ glm::vec3 AttachmentDataObject::getTranslation() const {
 void AttachmentDataObject::setRotation(const glm::quat& rotation) {
     AttachmentData data = scriptvalue_cast<AttachmentData>(thisObject());
     data.rotation = rotation;
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     thisObject() = engine()->toScriptValue(data);
 }
 
@@ -2610,7 +2610,7 @@ glm::quat AttachmentDataObject::getRotation() const {
 void AttachmentDataObject::setScale(float scale) {
     AttachmentData data = scriptvalue_cast<AttachmentData>(thisObject());
     data.scale = scale;
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     thisObject() = engine()->toScriptValue(data);
 }
 
@@ -2621,7 +2621,7 @@ float AttachmentDataObject::getScale() const {
 void AttachmentDataObject::setIsSoft(bool isSoft) {
     AttachmentData data = scriptvalue_cast<AttachmentData>(thisObject());
     data.isSoft = isSoft;
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     thisObject() = engine()->toScriptValue(data);
 }
 

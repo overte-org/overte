@@ -1309,7 +1309,8 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
                 }
 
                 v8::TryCatch tryCatch(isolate);
-                callback->Call(functionContext, v8This, numArgs, args);
+                auto maybeResult = callback->Call(functionContext, v8This, numArgs, args);
+                Q_UNUSED(maybeResult); // Signals don't have return values
                 if (tryCatch.HasCaught()) {
                     QString errorMessage(QString("Signal proxy ") + fullName() + " connection call failed: \""
                                           + _engine->formatErrorMessageFromTryCatch(tryCatch)

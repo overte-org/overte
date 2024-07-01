@@ -30,6 +30,8 @@
 #include <qfile.h>
 #include <qfileinfo.h>
 
+#include <sstream>
+
 #include <glm/gtx/transform.hpp>
 
 #include <shared/NsightHelpers.h>
@@ -41,6 +43,18 @@
 #include <procedural/ProceduralMaterialCache.h>
 
 #include "FBXSerializer.h"
+
+float atof_locale_independent(char* str) {
+    //TODO: Once we have C++17 we can use std::from_chars
+    std::istringstream streamToParse(str);
+    streamToParse.imbue(std::locale("C"));
+    float value;
+    if (!(streamToParse >> value)) {
+        qDebug(modelformat) << "cgltf: Cannot parse float from string: " << str;
+        return 0.0f;
+    }
+    return value;
+}
 
 #define GLTF_GET_INDICIES(accCount) int index1 = (indices[n + 0] * accCount); int index2 = (indices[n + 1] * accCount); int index3 = (indices[n + 2] * accCount);
 
@@ -148,8 +162,8 @@ bool findNodeInPointerArray(const cgltf_node *nodePointer, cgltf_node **nodes, s
     return false;
 }
 
-template<typename T> bool findPointerInArray(const T *pointer, const T *array, size_t arraySize, int &index) {
-    for (int i = 0; i < arraySize; i++) {
+template<typename T> bool findPointerInArray(const T *pointer, const T *array, size_t arraySize, size_t &index) {
+    for (size_t i = 0; i < arraySize; i++) {
         if (&array[i] == pointer) {
             index = i;
             return true;
@@ -187,13 +201,13 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
         auto &node = _data->nodes[index];
         for(size_t childIndexInParent = 0; childIndexInParent < node.children_count; childIndexInParent++) {
             cgltf_node *child = node.children[childIndexInParent];
-            int childIndex = 0;
+            size_t childIndex = 0;
             if (!findPointerInArray(child, _data->nodes, _data->nodes_count, childIndex)) {
                 qDebug(modelformat) << "findPointerInArray failed for model: " << _url;
                 hfmModel.loadErrorCount++;
                 return false;
             }
-            parents[childIndex] = index;
+            parents[(int)childIndex] = index;
         }
         sortedNodes.push_back(index);
     }
@@ -918,14 +932,14 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             continue;
                         }
 
-                        int jointIndex = 0;
+                        size_t jointIndex = 0;
                         if (!findPointerInArray(node.skin->joints[clusterJoints[c]], _data->nodes, _data->nodes_count, jointIndex)) {
                             qCWarning(modelformat) << "Cannot find the joint " << node.skin->joints[clusterJoints[c]]->name <<" in joint array";
                             hfmModel.loadErrorCount++;
                             continue;
                         }
                         mesh.clusterIndices[prevMeshClusterIndexCount + c] =
-                            originalToNewNodeIndexMap[jointIndex];
+                            originalToNewNodeIndexMap[(int)jointIndex];
                     }
 
                     // normalize and compress to 16-bits
@@ -961,14 +975,14 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                     }
                 }
 
-                int materialIndex = 0;
+                size_t materialIndex = 0;
                 if (primitive.material != nullptr && !findPointerInArray(primitive.material, _data->materials, _data->materials_count, materialIndex)) {
                     qCWarning(modelformat) << "GLTFSerializer::buildGeometry: Invalid material pointer";
                     hfmModel.loadErrorCount++;
                     return false;
                 }
                 if (primitive.material != nullptr) {
-                    part.materialID = materialIDs[materialIndex];
+                    part.materialID = materialIDs[(int)materialIndex];
                 }
                 mesh.parts.push_back(part);
 
@@ -1306,7 +1320,7 @@ HFMTexture GLTFSerializer::getHFMTexture(const cgltf_texture *texture) {
             size_t offset = bufferView->offset;
             int length = (int)bufferView->size;
 
-            int imageIndex = 0;
+            size_t imageIndex = 0;
             if (!findPointerInArray(image, _data->images, _data->images_count, imageIndex)) {
                 // This should never happen. It would mean a bug in cgltf library.
                 qDebug(modelformat) << "GLTFSerializer::getHFMTexture: can't find texture in the array";
@@ -1346,7 +1360,7 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& m
                     }
                     if (mToonExtension["shadeMultiplyTexture"].isObject()) {
                         QJsonObject object = mToonExtension["shadeMultiplyTexture"].toObject();
-                        if (object["index"].isDouble() && object["index"].toInt() < _data->textures_count) {
+                        if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
                             hfmMat.shadeTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
                         }
                     }
@@ -1355,7 +1369,7 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& m
                     }
                     if (mToonExtension["shadingShiftTexture"].isObject()) {
                         QJsonObject object = mToonExtension["shadingShiftTexture"].toObject();
-                        if (object["index"].isDouble() && object["index"].toInt() < _data->textures_count) {
+                        if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
                             hfmMat.shadingShiftTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
                         }
                     }
@@ -1370,7 +1384,7 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& m
                     }
                     if (mToonExtension["matcapTexture"].isObject()) {
                         QJsonObject object = mToonExtension["matcapTexture"].toObject();
-                        if (object["index"].isDouble() && object["index"].toInt() < _data->textures_count) {
+                        if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
                             hfmMat.matcapTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
                         }
                     }
@@ -1388,7 +1402,7 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& m
                     }
                     if (mToonExtension["rimMultiplyTexture"].isObject()) {
                         QJsonObject object = mToonExtension["rimMultiplyTexture"].toObject();
-                        if (object["index"].isDouble() && object["index"].toInt() < _data->textures_count) {
+                        if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
                             hfmMat.rimTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
                         }
                     }
@@ -1417,7 +1431,7 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& m
                     }
                     if (mToonExtension["uvAnimationMaskTexture"].isObject()) {
                         QJsonObject object = mToonExtension["uvAnimationMaskTexture"].toObject();
-                        if (object["index"].isDouble() && object["index"].toInt() < _data->textures_count) {
+                        if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
                             hfmMat.uvAnimationTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
                         }
                     }

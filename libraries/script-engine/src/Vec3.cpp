@@ -39,7 +39,7 @@ void Vec3::print(const QString& label, const glm::vec3& v) {
     QString message = QString("%1 %2").arg(qPrintable(label));
     message = message.arg(glm::to_string(glm::dvec3(v)).c_str());
     qCDebug(scriptengine) << message;
-    Q_ASSERT(engine);
+    Q_ASSERT(engine());
     if (ScriptManager* scriptManager = engine()->manager()) {
         scriptManager->print(message);
     }
