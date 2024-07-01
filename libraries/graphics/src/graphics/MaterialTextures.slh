@@ -465,7 +465,7 @@ float fetchUVAnimationMaskMap(vec2 uv) {
 <@func evalMaterialShadingShift(fetchedShadingShift, materialShadingShift, matKey, shadingShift)@>
 {
     <$shadingShift$> = mix(0.0, <$materialShadingShift$>, float((<$matKey$> & SHADING_SHIFT_VAL_BIT) != 0));
-    <$shadingShift$> += mix(0.0, <$fetchedShadingShift$>.r, float((<$matKey$> & SHADING_SHIFT_MAP_BIT) != 0));
+    <$shadingShift$> += mix(0.0, <$fetchedShadingShift$>, float((<$matKey$> & SHADING_SHIFT_MAP_BIT) != 0));
 }
 <@endfunc@>
 
