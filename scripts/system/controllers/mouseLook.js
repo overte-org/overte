@@ -1,204 +1,95 @@
-/*
-mouseLook.js – mouse look switching script
-by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
-*/
-(function() { // BEGIN LOCAL_SCOPE
+//
+// mouseLook.js
+//
+// By Armored Dragon (June 6). Refactored from Rampa3 & Vegaslon work
+//  Copyright 2024 Overte e.V.
+//
+//
+// Distributed under the Apache License, Version 2.0.
+// See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
 
-    var away;
+(() => {
+    // States ----
+    let mouseLookActive = Settings.getValue("mouselook-active", false);
+    let mouseLookEnabled = Camera.getMouseLook();
+    let hmdActive = HMD.active;
+    let overlayActive = Desktop.isOverlayWindowFocused();
 
-    var hmd = HMD.active;
+    // Resources ----
+    let tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
-    var mouseLookEnabled = Camera.getMouseLook();
-
-    var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
-
-    var tabletUp;
-    
-    var keysOnOverlay = Desktop.isOverlayWindowFocused();
-
-    var tempOff = false;
-
-    var altMode = false;
-
+    // Events ----
     Camera.mouseLookChanged.connect(onMouseLookChanged);
+    Controller.keyPressEvent.connect(onKeyPressEvent);
+    Desktop.uiFocusChanged.connect(onUiFocusChanged);
+    HMD.displayModeChanged.connect(onDisplayModeChanged);
+    MyAvatar.wentActive.connect(onWentActive);
+    MyAvatar.wentAway.connect(onWentAway);
+    tablet.tabletShownChanged.connect(onTabletShownChanged);
+    Script.scriptEnding.connect(onScriptEnding);
 
+    // Program ----
     function onMouseLookChanged(newMouseLook) {
         mouseLookEnabled = newMouseLook;
     }
 
-    if (!hmd){
-        if (mouseLookEnabled) {
-            if (!keysOnOverlay) {
-                if (!tablet.tabletShown){
-                    Window.displayAnnouncement("Mouse look: ON");
-                    mouseLookOn();
-                } else {
-                    Window.displayAnnouncement("Tablet is up – mouse look temporarily OFF.");
-                }
-            }
-        }
-    }
-
-    Controller.keyPressEvent.connect(onKeyPressEvent);
-
     function onKeyPressEvent(event) {
-        if (!hmd){
-            if(event.isAlt){
-                if (keysOnOverlay) return;
-                if (!mouseLookEnabled) return;
-                mouseLookOff();
-                Window.displayAnnouncement("Mouse look: Temporarily OFF");
-                tempOff = true;
-                altMode = true;
-            }
-            if (tempOff && altMode && ['left', 'right', 'up', 'down', 'esc', 'w', 'a', 's', 'd'].includes(event.text.toLowerCase())){
-                if (keysOnOverlay) return;
-                if (!mouseLookEnabled) return;
-                mouseLookOn();
-                tempOff = false;
-                altMode = false
-            }
-            if (event.text.toLowerCase() === 'm') {
-                if (!keysOnOverlay) {
-                    if (mouseLookEnabled) {
-                        if (!Camera.getCaptureMouse()){
-                            tempOff = false;
-                            Window.displayAnnouncement("Mouse look: ON");
-                            mouseLookOn();
-                        } else {
-                            tempOff = true;
-                            Window.displayAnnouncement("Mouse look: Temporarily OFF");
-                            mouseLookOff();
-                        }
-                    }
-                }
+        // Toggle using the m key
+        if (event.text.toLowerCase() === "m") {
+            if (Camera.captureMouse) {
+                mouseLookActive = false;
+                Settings.setValue("mouselook-active", false);
+                disableMouseLook();
+            } else {
+                mouseLookActive = true;
+                Settings.setValue("mouselook-active", true);
+                enableMouseLook();
             }
         }
     }
-
-    tablet.tabletShownChanged.connect(onTabletShownChanged);
 
     function onTabletShownChanged() {
-        if (!hmd) {
-            if (mouseLookEnabled) {
-                if (!tablet.toolbarMode) {
-                    if (!keysOnOverlay) {
-                        if (tablet.tabletShown) {
-                            tabletUp = true;
-                            if (!tempOff) {
-                                if (!away) {
-                                    Window.displayAnnouncement("Tablet is up – mouse look temporarily OFF.");
-                                    mouseLookOff();
-                                }
-                            }
-                        } else if (!tablet.tabletShown) {
-                            tabletUp = false;
-                            if (!tempOff) {
-                                if (!away && !keysOnOverlay) {
-                                    Window.displayAnnouncement("Tablet hidden – mouse look ON.");
-                                    mouseLookOn();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        if (tablet.tabletShown) disableMouseLook();
+        else enableMouseLook();
     }
-
-    MyAvatar.wentAway.connect(onWentAway);
 
     function onWentAway() {
-        if (!hmd) {
-            if (mouseLookEnabled) {
-                away = true;
-                if (!keysOnOverlay) {
-                    if (!tabletUp){
-                        Window.displayAnnouncement("Away state ON – mouse look temporarily OFF.")
-                        tempOff = false;
-                        mouseLookOff()
-                    }
-                }
-            }
-        }
+        disableMouseLook();
     }
-
-    MyAvatar.wentActive.connect(onWentActive);
 
     function onWentActive() {
-        if (!hmd) {
-            if (mouseLookEnabled) {
-                away = false;
-                if (!keysOnOverlay) {
-                    if (!tabletUp) {
-                        Window.displayAnnouncement("Away state OFF – mouse look ON.");
-                        mouseLookOn();
-                    }
-                }
-            }
-        }
+        enableMouseLook();
     }
-
-    HMD.displayModeChanged.connect(onDisplayModeChanged);
 
     function onDisplayModeChanged() {
-        if (mouseLookEnabled) {
-            if (HMD.active) {
-                hmd = true;
-                mouseLookOff();
-            } else {
-                hmd = false;
-                if (!tempOff) {
-                    if (!keysOnOverlay) {
-                        if (!tabletUp) {
-                            mouseLookOn();
-                        }
-                    }
-                }
-            }
+        hmdActive = HMD.active;
+        if (hmdActive) disableMouseLook();
+        else enableMouseLook();
+    }
+
+    function onUiFocusChanged(keyFocus) {
+        if (keyFocus) {
+            overlayActive = true;
+            disableMouseLook();
+        } else {
+            overlayActive = false;
+            enableMouseLook();
         }
     }
 
-    function mouseLookOn() {
-        if (mouseLookEnabled)
-            Camera.captureMouse = true;
+    function enableMouseLook() {
+        if (hmdActive) return;
+        if (tablet.tabletShown) return;
+        if (overlayActive) return;
+        if (!mouseLookActive) return; // Mouse look disabled via the hotkey
+
+        Camera.captureMouse = true;
     }
 
-    function mouseLookOff() {
+    function disableMouseLook() {
         Camera.captureMouse = false;
     }
-    
-    Desktop.uiFocusChanged.connect(onUiFocusChanged);
-    
-    function onUiFocusChanged(keyFocus) {
-        if (!hmd) {
-            if (mouseLookEnabled) {
-                if (keyFocus) {
-                    keysOnOverlay = true;
-                    if (Camera.captureMouse) {
-                        mouseLookOff();
-                    }
-                } else {
-                    keysOnOverlay = false;
-                    if (!tablet.tabletShown) {
-                        if (!tempOff) {
-                            if (!away) {
-                                mouseLookOn();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    Messages.messageReceived.connect(onMessageReceived);
-    function onMessageReceived(channel, message, sender, localOnly) {
-        if (channel === "Hifi-Away-Enable")
-            if (message === 'enable') mouseLookOn();
-    }
-
-    Script.scriptEnding.connect(onScriptEnding);
 
     function onScriptEnding() {
         Camera.captureMouse = false;
@@ -211,5 +102,4 @@ by rampa3 (https://github.com/rampa3) and vegaslon (https://github.com/vegaslon)
         Desktop.uiFocusChanged.disconnect(onUiFocusChanged);
         Script.scriptEnding.disconnect(onScriptEnding);
     }
-
-}()); // END LOCAL_SCOPE
+})();

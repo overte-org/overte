@@ -253,6 +253,9 @@ function keyPressEvent(event) {
         if (isEditUsingCamera) {
             return;
         }
+        if (Settings.getValue("mouselook-active", false)){
+            return;
+        }
         alt = true;
         changed = true;
         Picks.enablePick(pick);
