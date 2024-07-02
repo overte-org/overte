@@ -55,7 +55,7 @@ Windows.Window {
             id: contentBackground
             anchors.fill: parent
             //anchors.rightMargin: parent.isScrolling ? verticalScrollWidth + 1 : 0
-            color: hifi.colors.baseGray
+            color: "transparent"
             visible: !window.hideBackground && modality != Qt.ApplicationModal
         }
 
