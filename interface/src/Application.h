@@ -34,6 +34,7 @@
 #include <AvatarHashMap.h>
 #include <ThreadHelpers.h>
 #include <AbstractScriptingServicesInterface.h>
+#include <controllers/AbstractInputEventInterface.h>
 #include <AbstractViewStateInterface.h>
 #include <EntityEditPacketSender.h>
 #include <EntityTreeRenderer.h>
@@ -112,6 +113,7 @@ class Application;
 #define qApp (static_cast<Application*>(QCoreApplication::instance()))
 
 class Application : public QApplication,
+                    public AbstractInputEventInterface,
                     public AbstractViewStateInterface,
                     public AbstractScriptingServicesInterface,
                     public AbstractUriHandler,
@@ -277,6 +279,7 @@ public:
     NodeToOctreeSceneStats* getOcteeSceneStats() { return &_octreeServerSceneStats; }
 
     virtual controller::ScriptingInterface* getControllerScriptingInterface() { return _controllerScriptingInterface; }
+    void postEventToOverlayUI(QEvent *event) override;
     virtual void registerScriptEngineWithApplicationServices(ScriptManagerPointer& scriptManager) override;
 
     virtual void copyCurrentViewFrustum(ViewFrustum& viewOut) const override { copyDisplayViewFrustum(viewOut); }

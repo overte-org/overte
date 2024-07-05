@@ -7516,6 +7516,10 @@ int Application::processOctreeStats(ReceivedMessage& message, SharedNodePointer 
     return statsMessageLength;
 }
 
+void Application::postEventToOverlayUI(QEvent *event) {
+    QCoreApplication::postEvent(getPrimaryWidget(), event);
+}
+
 void Application::registerScriptEngineWithApplicationServices(ScriptManagerPointer& scriptManager) {
 
     auto scriptEngine = scriptManager->engine();

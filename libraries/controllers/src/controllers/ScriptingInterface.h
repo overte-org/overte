@@ -250,6 +250,22 @@ namespace controller {
         Q_INVOKABLE bool triggerShortHapticPulseOnDevice(unsigned int device, float strength, uint16_t index = 2) const;
 
         /*@jsdoc
+         * Emits a mouse wheel scroll event.
+         * @function Controller.emitMouseWheelEvent
+         * @param {Vec2} position - Event position relative to the UI element.
+         * @param {Vec2} globalPosition - Global position of the event.
+         * @param {Vec2} delta - Amount to scroll horizontally and vertically.
+         * @param {boolean} sendToHUDUI - If <code>true</code>, the event will be sent to HUD UI first, and only if it
+         * is not used there it will go to other UI elements. If <code>false</code> the mouse wheel event will skip HUD UI.
+         * @example <caption>Emit a sideways scroll event every 1 second.</caption>
+         * Script.setInterval(function () {
+         *     Controller.emitMouseWheelEvent({x:50,y:50}, {x:50,y:50}, {x:50,y:50}, true);
+         *     print("Wheel event emitted.");
+         * }, 1000);
+         */
+        Q_INVOKABLE void emitMouseWheelEvent(glm::vec2 position, glm::vec2 globalPosition, glm::vec2 delta, bool sendToHUDUI);
+
+        /*@jsdoc
          * Creates a new controller mapping. Routes can then be added to the mapping using {@link MappingObject} methods and 
          * routed to <code>Standard</code> controls, <code>Actions</code>, or script functions using {@link RouteObject} 
          * methods. The mapping can then be enabled using {@link Controller.enableMapping|enableMapping} for it to take effect.

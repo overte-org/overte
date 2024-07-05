@@ -16,6 +16,7 @@
 
 #include <QEventLoop>
 #include <QThread>
+#include <QWheelEvent>
 
 #include <GLMHelpers.h>
 #include <DependencyManager.h>
@@ -31,6 +32,8 @@
 #include <ScriptEngineCast.h>
 #include <ScriptManager.h>
 #include <ScriptValue.h>
+
+#include "AbstractInputEventInterface.h"
 
 
 ScriptValue inputControllerToScriptValue(ScriptEngine* engine, controller::InputController* const& in) {
@@ -212,6 +215,27 @@ namespace controller {
     bool ScriptingInterface::triggerShortHapticPulseOnDevice(unsigned int device, float strength, uint16_t index) const {
         const float SHORT_HAPTIC_DURATION_MS = 250.0f;
         return DependencyManager::get<UserInputMapper>()->triggerHapticPulseOnDevice(device, strength, SHORT_HAPTIC_DURATION_MS, index);
+    }
+
+    void ScriptingInterface::emitMouseWheelEvent(glm::vec2 position, glm::vec2 globalPosition, glm::vec2 angleDelta, bool sendToHUDUI) {
+        auto wheelEvent = new QWheelEvent(QPointF(position.x, position.y),
+                                      QPointF(globalPosition.x, globalPosition.y),
+                                      QPoint(0,0),
+                                      QPoint((int)(angleDelta.x), (int)(angleDelta.y)),
+                                      Qt::NoButton,
+                                      Qt::NoModifier, Qt::NoScrollPhase,
+                                      false);
+        if (sendToHUDUI) {
+            auto abstractViewStateInterface = dynamic_cast<AbstractInputEventInterface*>(QCoreApplication::instance());
+            if (abstractViewStateInterface) {
+                abstractViewStateInterface->postEventToOverlayUI(wheelEvent);
+            } else {
+                // This should never happen.
+                Q_ASSERT(false);
+            }
+        } else {
+            QCoreApplication::postEvent(QCoreApplication::instance(), wheelEvent);
+        }
     }
 
     void ScriptingInterface::updateMaps() {
