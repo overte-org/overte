@@ -2969,10 +2969,6 @@ void EntityItem::setVisible(bool value) {
         _needsRenderUpdate |= changed;
         _visible = value;
     });
-
-    if (changed) {
-        bumpAncestorChainRenderableVersion();
-    }
 }
 
 bool EntityItem::isVisibleInSecondaryCamera() const {

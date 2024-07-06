@@ -316,7 +316,6 @@ static const QString JS_EXTENSION = ".js";
 static const QString FST_EXTENSION = ".fst";
 static const QString FBX_EXTENSION = ".fbx";
 static const QString OBJ_EXTENSION = ".obj";
-static const QString AVA_JSON_EXTENSION = ".ava.json";
 static const QString WEB_VIEW_TAG = "noDownload=true";
 static const QString ZIP_EXTENSION = ".zip";
 static const QString CONTENT_ZIP_EXTENSION = ".content.zip";
@@ -365,7 +364,6 @@ static const QString TESTER_FILE = "/sdcard/_hifi_test_device.txt";
 const std::vector<std::pair<QString, Application::AcceptURLMethod>> Application::_acceptedExtensions {
     { SVO_EXTENSION, &Application::importSVOFromURL },
     { SVO_JSON_EXTENSION, &Application::importSVOFromURL },
-    { AVA_JSON_EXTENSION, &Application::askToWearAvatarAttachmentUrl },
     { JSON_EXTENSION, &Application::importJSONFromURL },
     { JS_EXTENSION, &Application::askToLoadScript },
     { FST_EXTENSION, &Application::askToSetAvatarUrl },
@@ -7838,74 +7836,6 @@ bool Application::askToLoadScript(const QString& scriptFilenameOrURL) {
     return true;
 }
 
-bool Application::askToWearAvatarAttachmentUrl(const QString& url) {
-    QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
-    QNetworkRequest networkRequest = QNetworkRequest(url);
-    networkRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
-    networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
-    QNetworkReply* reply = networkAccessManager.get(networkRequest);
-    int requestNumber = ++_avatarAttachmentRequest;
-    connect(reply, &QNetworkReply::finished, [this, reply, url, requestNumber]() {
-
-        if (requestNumber != _avatarAttachmentRequest) {
-            // this request has been superseded by another more recent request
-            reply->deleteLater();
-            return;
-        }
-
-        QNetworkReply::NetworkError networkError = reply->error();
-        if (networkError == QNetworkReply::NoError) {
-            // download success
-            QByteArray contents = reply->readAll();
-
-            QJsonParseError jsonError;
-            auto doc = QJsonDocument::fromJson(contents, &jsonError);
-            if (jsonError.error == QJsonParseError::NoError) {
-
-                auto jsonObject = doc.object();
-
-                // retrieve optional name field from JSON
-                QString name = tr("Unnamed Attachment");
-                auto nameValue = jsonObject.value("name");
-                if (nameValue.isString()) {
-                    name = nameValue.toString();
-                }
-
-                auto avatarAttachmentConfirmationTitle = tr("Avatar Attachment Confirmation");
-                auto avatarAttachmentConfirmationMessage = tr("Would you like to wear '%1' on your avatar?").arg(name);
-                ModalDialogListener* dlg = OffscreenUi::asyncQuestion(avatarAttachmentConfirmationTitle,
-                                           avatarAttachmentConfirmationMessage,
-                                           QMessageBox::Ok | QMessageBox::Cancel);
-                QObject::connect(dlg, &ModalDialogListener::response, this, [=] (QVariant answer) {
-                    QObject::disconnect(dlg, &ModalDialogListener::response, this, nullptr);
-                    if (static_cast<QMessageBox::StandardButton>(answer.toInt()) == QMessageBox::Yes) {
-                        // add attachment to avatar
-                        auto myAvatar = getMyAvatar();
-                        assert(myAvatar);
-                        auto attachmentDataVec = myAvatar->getAttachmentData();
-                        AttachmentData attachmentData;
-                        attachmentData.fromJson(jsonObject);
-                        attachmentDataVec.push_back(attachmentData);
-                        myAvatar->setAttachmentData(attachmentDataVec);
-                    } else {
-                        qCDebug(interfaceapp) << "User declined to wear the avatar attachment";
-                    }
-                });
-            } else {
-                // json parse error
-                auto avatarAttachmentParseErrorString = tr("Error parsing attachment JSON from url: \"%1\"");
-                displayAvatarAttachmentWarning(avatarAttachmentParseErrorString.arg(url));
-            }
-        } else {
-            // download failure
-            auto avatarAttachmentDownloadErrorString = tr("Error downloading attachment JSON from url: \"%1\"");
-            displayAvatarAttachmentWarning(avatarAttachmentDownloadErrorString.arg(url));
-        }
-        reply->deleteLater();
-    });
-    return true;
-}
-
 static const QString CONTENT_SET_NAME_QUERY_PARAM = "name";
 
 void Application::replaceDomainContent(const QString& url, const QString& itemName) {
@@ -7982,11 +7912,6 @@ bool Application::askToReplaceDomainContent(const QString& url) {
             UserActivityLogger::getInstance().logAction("replace_domain_content", messageProperties);
     }
     return true;
-}
-
-void Application::displayAvatarAttachmentWarning(const QString& message) const {
-    auto avatarAttachmentWarningTitle = tr("Avatar Attachment Failure");
-    OffscreenUi::asyncWarning(avatarAttachmentWarningTitle, message);
 }
 
 void Application::showDialog(const QUrl& widgetUrl, const QUrl& tabletUrl, const QString& name) const {

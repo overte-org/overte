@@ -172,10 +172,6 @@ void RecordingScriptingInterface::setPlayerUseDisplayName(bool useDisplayName) {
     _useDisplayName = useDisplayName;
 }
 
-void RecordingScriptingInterface::setPlayerUseAttachments(bool useAttachments) {
-    _useAttachments = useAttachments;
-}
-
 void RecordingScriptingInterface::setPlayerUseHeadModel(bool useHeadModel) {
     _useHeadModel = useHeadModel;
 }

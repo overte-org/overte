@@ -30,7 +30,6 @@
 #include <VariantMapToScriptValue.h>
 #include <DebugDraw.h>
 #include <shared/Camera.h>
-#include <SoftAttachmentModel.h>
 #include <render/TransitionStage.h>
 #include <GLMHelpers.h>
 #include "ModelEntityItem.h"
@@ -52,7 +51,6 @@ const float DISPLAYNAME_BACKGROUND_ALPHA = 0.4f;
 const glm::vec3 HAND_TO_PALM_OFFSET(0.0f, 0.12f, 0.08f);
 const float Avatar::MYAVATAR_LOADING_PRIORITY = (float)M_PI; // Entity priority is computed as atan2(maxDim, distance) which is <= PI / 2
 const float Avatar::OTHERAVATAR_LOADING_PRIORITY = MYAVATAR_LOADING_PRIORITY - EPSILON;
-const float Avatar::ATTACHMENT_LOADING_PRIORITY = OTHERAVATAR_LOADING_PRIORITY - EPSILON;
 
 namespace render {
     template <> const ItemKey payloadGetKey(const AvatarSharedPointer& avatar) {
@@ -651,19 +649,6 @@ void Avatar::addToScene(AvatarSharedPointer self, const render::ScenePointer& sc
     _skeletonModel->setVisibleInScene(_isMeshVisible, scene);
 
     processMaterials();
-    bool attachmentRenderingNeedsUpdate = false;
-    for (auto& attachmentModel : _attachmentModels) {
-        attachmentModel->addToScene(scene, transaction);
-        attachmentModel->setTagMask(render::hifi::TAG_ALL_VIEWS);
-        attachmentModel->setGroupCulled(true);
-        attachmentModel->setCanCastShadow(true);
-        attachmentModel->setVisibleInScene(_isMeshVisible, scene);
-        attachmentRenderingNeedsUpdate = true;
-    }
-
-    if (attachmentRenderingNeedsUpdate) {
-        updateAttachmentRenderIDs();
-    }
 
     _mustFadeIn = true;
     emit DependencyManager::get<scriptable::ModelProviderFactory>()->modelAddedToScene(getSessionUUID(), NestableType::Avatar, _skeletonModel);
@@ -688,11 +673,6 @@ void Avatar::fadeOut(render::Transaction& transaction, KillAvatarReason reason) 
 
 void Avatar::fade(render::Transaction& transaction, render::Transition::Type type) {
     transaction.resetTransitionOnItem(_renderItemID, type);
-    for (auto& attachmentModel : _attachmentModels) {
-        for (auto itemId : attachmentModel->fetchRenderItemIDs()) {
-            transaction.resetTransitionOnItem(itemId, type, _renderItemID);
-        }
-    }
     _lastFadeRequested = type;
 }
 
@@ -704,9 +684,6 @@ void Avatar::removeFromScene(AvatarSharedPointer self, const render::ScenePointe
     transaction.removeItem(_renderItemID);
     render::Item::clearID(_renderItemID);
     _skeletonModel->removeFromScene(scene, transaction);
-    for (auto& attachmentModel : _attachmentModels) {
-        attachmentModel->removeFromScene(scene, transaction);
-    }
     emit DependencyManager::get<scriptable::ModelProviderFactory>()->modelRemovedFromScene(getSessionUUID(), NestableType::Avatar, _skeletonModel);
 }
 
@@ -866,8 +843,6 @@ bool Avatar::getEnableMeshVisible() const {
 void Avatar::fixupModelsInScene(const render::ScenePointer& scene) {
     bool canTryFade{ false };
 
-    _attachmentsToDelete.clear();
-
     // check to see if when we added our models to the scene they were ready, if they were not ready, then
     // fix them up in the scene
     render::Transaction transaction;
@@ -885,27 +860,9 @@ void Avatar::fixupModelsInScene(const render::ScenePointer& scene) {
         canTryFade = true;
         _isAnimatingScale = true;
     }
-    bool attachmentRenderingNeedsUpdate = false;
-    for (auto attachmentModel : _attachmentModels) {
-        if (attachmentModel->isRenderable() && attachmentModel->needsFixupInScene()) {
-            attachmentModel->removeFromScene(scene, transaction);
-            attachmentModel->addToScene(scene, transaction);
-
-            attachmentModel->setTagMask(render::hifi::TAG_ALL_VIEWS);
-            attachmentModel->setGroupCulled(true);
-            attachmentModel->setCanCastShadow(true);
-            attachmentModel->setVisibleInScene(_isMeshVisible, scene);
-            attachmentRenderingNeedsUpdate = true;
-        }
-    }
 
     if (_needMeshVisibleSwitch) {
         _skeletonModel->setVisibleInScene(_isMeshVisible, scene);
-        for (auto attachmentModel : _attachmentModels) {
-            if (attachmentModel->isRenderable()) {
-                attachmentModel->setVisibleInScene(_isMeshVisible, scene);
-            }
-        }
         updateRenderItem(transaction);
         _needMeshVisibleSwitch = false;
     }
@@ -916,64 +873,11 @@ void Avatar::fixupModelsInScene(const render::ScenePointer& scene) {
         _mustFadeIn = false;
     }
 
-    for (auto attachmentModelToRemove : _attachmentsToRemove) {
-        attachmentModelToRemove->removeFromScene(scene, transaction);
-        attachmentRenderingNeedsUpdate = true;
-    }
-    _attachmentsToDelete.insert(_attachmentsToDelete.end(), _attachmentsToRemove.begin(), _attachmentsToRemove.end());
-    _attachmentsToRemove.clear();
-
-    if (attachmentRenderingNeedsUpdate) {
-        updateAttachmentRenderIDs();
-    }
-
     scene->enqueueTransaction(transaction);
 }
 
 bool Avatar::shouldRenderHead(const RenderArgs* renderArgs) const {
     return true;
-}
-
-void Avatar::simulateAttachments(float deltaTime) {
-    assert(_attachmentModels.size() == _attachmentModelsTexturesLoaded.size());
-    PerformanceTimer perfTimer("attachments");
-    for (int i = 0; i < (int)_attachmentModels.size(); i++) {
-        const AttachmentData& attachment = _attachmentData.at(i);
-        auto& model = _attachmentModels.at(i);
-        bool texturesLoaded = _attachmentModelsTexturesLoaded.at(i);
-
-        // Watch for texture loading
-        if (!texturesLoaded && model->getGeometry() && model->getGeometry()->areTexturesLoaded()) {
-            _attachmentModelsTexturesLoaded[i] = true;
-            model->updateRenderItems();
-        }
-
-        int jointIndex = getJointIndex(attachment.jointName);
-        glm::vec3 jointPosition;
-        glm::quat jointRotation;
-        if (attachment.isSoft) {
-            // soft attachments do not have transform offsets
-            model->setTransformNoUpdateRenderItems(Transform(getWorldOrientation() * Quaternions::Y_180, glm::vec3(1.0), getWorldPosition()));
-            model->simulate(deltaTime);
-            model->updateRenderItems();
-        } else {
-            if (_skeletonModel->getJointPositionInWorldFrame(jointIndex, jointPosition) &&
-                _skeletonModel->getJointRotationInWorldFrame(jointIndex, jointRotation)) {
-                model->setTransformNoUpdateRenderItems(Transform(jointRotation * attachment.rotation, glm::vec3(1.0), jointPosition + jointRotation * attachment.translation * getModelScale()));
-                float scale = getModelScale() * attachment.scale;
-                model->setScaleToFit(true, model->getNaturalDimensions() * scale, true); // hack to force rescale
-                model->setSnapModelToCenter(false); // hack to force resnap
-                model->setSnapModelToCenter(true);
-                model->simulate(deltaTime);
-                model->updateRenderItems();
-            }
-        }
-    }
-
-    if (_ancestorChainRenderableVersion != _lastAncestorChainRenderableVersion) {
-        _lastAncestorChainRenderableVersion = _ancestorChainRenderableVersion;
-        updateDescendantRenderIDs();
-    }
 }
 
 float Avatar::getBoundingRadius() const {
@@ -1631,58 +1535,6 @@ void Avatar::updateFitBoundingBox() {
     }
 }
 
-// create new model, can return an instance of a SoftAttachmentModel rather then Model
-static std::shared_ptr<Model> allocateAttachmentModel(bool isSoft, const Rig& rigOverride, bool isCauterized) {
-    if (isSoft) {
-        // cast to std::shared_ptr<Model>
-        std::shared_ptr<SoftAttachmentModel> softModel = std::make_shared<SoftAttachmentModel>(nullptr, rigOverride);
-        if (isCauterized) {
-            softModel->flagAsCauterized();
-        }
-        return std::dynamic_pointer_cast<Model>(softModel);
-    } else {
-        return std::make_shared<Model>();
-    }
-}
-
-void Avatar::setAttachmentData(const QVector<AttachmentData>& attachmentData) {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "setAttachmentData",
-                                  Q_ARG(const QVector<AttachmentData>, attachmentData));
-        return;
-    }
-
-    auto oldAttachmentData = _attachmentData;
-    AvatarData::setAttachmentData(attachmentData);
-
-    // if number of attachments has been reduced, remove excess models.
-    while ((int)_attachmentModels.size() > attachmentData.size()) {
-        auto attachmentModel = _attachmentModels.back();
-        _attachmentModels.pop_back();
-        _attachmentModelsTexturesLoaded.pop_back();
-        _attachmentsToRemove.push_back(attachmentModel);
-    }
-
-    for (int i = 0; i < attachmentData.size(); i++) {
-        if (i == (int)_attachmentModels.size()) {
-            // if number of attachments has been increased, we need to allocate a new model
-            _attachmentModels.push_back(allocateAttachmentModel(attachmentData[i].isSoft, _skeletonModel->getRig(), isMyAvatar()));
-            _attachmentModelsTexturesLoaded.push_back(false);
-        } else if (i < oldAttachmentData.size() && oldAttachmentData[i].isSoft != attachmentData[i].isSoft) {
-            // if the attachment has changed type, we need to re-allocate a new one.
-            _attachmentsToRemove.push_back(_attachmentModels[i]);
-            _attachmentModels[i] = allocateAttachmentModel(attachmentData[i].isSoft, _skeletonModel->getRig(), isMyAvatar());
-            _attachmentModelsTexturesLoaded[i] = false;
-        }
-        // If the model URL has changd, we need to wait for the textures to load
-        if (_attachmentModels[i]->getURL() != attachmentData[i].modelURL) {
-            _attachmentModelsTexturesLoaded[i] = false;
-        }
-        _attachmentModels[i]->setLoadingPriority(ATTACHMENT_LOADING_PRIORITY);
-        _attachmentModels[i]->setURL(attachmentData[i].modelURL);
-    }
-}
-
 int Avatar::parseDataFromBuffer(const QByteArray& buffer) {
     PerformanceTimer perfTimer("unpack");
     if (!_initialized) {
@@ -2102,29 +1954,12 @@ uint32_t Avatar::appendSubMetaItems(render::ItemIDs& subItems) {
     return _subItemLock.resultWithReadLock<uint32_t>([&] {
         uint32_t total = 0;
 
-        if (_attachmentRenderIDs.size() > 0) {
-            subItems.insert(subItems.end(), _attachmentRenderIDs.begin(), _attachmentRenderIDs.end());
-            total += (uint32_t)_attachmentRenderIDs.size();
-        }
-
         if (_descendantRenderIDs.size() > 0) {
             subItems.insert(subItems.end(), _descendantRenderIDs.begin(), _descendantRenderIDs.end());
             total += (uint32_t)_descendantRenderIDs.size();
         }
 
         return total;
-    });
-}
-
-void Avatar::updateAttachmentRenderIDs() {
-    _subItemLock.withWriteLock([&] {
-        _attachmentRenderIDs.clear();
-        for (auto& attachmentModel : _attachmentModels) {
-            if (attachmentModel && attachmentModel->isRenderable()) {
-                auto& metaSubItems = attachmentModel->fetchRenderItemIDs();
-                _attachmentRenderIDs.insert(_attachmentRenderIDs.end(), metaSubItems.begin(), metaSubItems.end());
-            }
-        }
     });
 }
 
