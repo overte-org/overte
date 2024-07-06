@@ -216,6 +216,7 @@ Rectangle {
                             }
                         }
                         onFocusChanged: {
+                            if (!HMD.active) return;
                             if (focus) return ApplicationInterface.showVRKeyboardForHudUI(true);
                             ApplicationInterface.showVRKeyboardForHudUI(false);
                         }
