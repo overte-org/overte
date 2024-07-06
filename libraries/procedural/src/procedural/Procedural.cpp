@@ -379,7 +379,7 @@ void Procedural::prepare(gpu::Batch& batch,
 
         _proceduralPipelines[key] = gpu::Pipeline::create(program, key.isTransparent() ? _transparentState : _opaqueState);
 
-        // Error falllback: pink checkerboard
+        // Error fallback: pink checkerboard
         if (_errorFallbackFragmentSource.isEmpty()) {
             QFile file(_errorFallbackFragmentPath);
             file.open(QIODevice::ReadOnly);
@@ -392,7 +392,7 @@ void Procedural::prepare(gpu::Batch& batch,
         gpu::ShaderPointer errorProgram = gpu::Shader::createProgram(errorVertexShader, errorFragmentShader);
         _errorPipelines[key] = gpu::Pipeline::create(errorProgram, _opaqueState);
 
-        // Disabled falllback: nothing
+        // Disabled fallback: nothing
         vertexSource.replacements.erase(PROCEDURAL_BLOCK);
         fragmentSource.replacements.erase(PROCEDURAL_BLOCK);
         gpu::ShaderPointer disabledVertexShader = gpu::Shader::createVertex(vertexSource);
