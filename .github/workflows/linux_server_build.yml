@@ -26,8 +26,8 @@ env:
 
 jobs:
   build:
-    # Only run master or tagged builds, or PRs if labeled as "server"
-    if: contains( github.event.pull_request.labels.*.name, 'server') || github.event_name != 'pull_request'
+    # Only run master or tagged builds, or PRs when labeled as "server"
+    if: github.event.label.name == 'server'|| github.event_name != 'pull_request'
     name: "${{matrix.os}}, ${{matrix.arch}}"
     strategy:
       matrix:
