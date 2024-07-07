@@ -23,3 +23,5 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     # Silence GCC warnings
     target_compile_options(openxr PRIVATE -Wno-missing-field-initializers)
 endif()
+
+set_property(TARGET openxr PROPERTY CXX_STANDARD 20)
