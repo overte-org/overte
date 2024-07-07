@@ -1207,6 +1207,8 @@ Section "-Core installation"
   ; 2016-02-25 - The following delete blocks are temporary and can be removed once users who had the initial installer have updated
   ; 2019-09-10 - (3 and a half years later) Sure they are buddy.  Sure they are.
 
+  ; Delete old hifiNeuron.dll, since we dropped support for it and it causes a crash on startup.
+  Delete "$INSTDIR\plugins\hifiNeuron.dll"
 
   ;Use the entire tree produced by the INSTALL target.  Keep the
   ;list of directories here in sync with the RMDir commands below.
