@@ -132,6 +132,8 @@ jobs:
           echo "GIT_COMMIT_SHORT=`echo ${{ github.sha }} | cut -c1-7`" >> $GITHUB_ENV
         fi
 
+        echo "REFNAME=${{ github.ref_name }}" >> $GITHUB_ENV
+
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.arch}}" >> $GITHUB_ENV
 
         echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
@@ -184,7 +186,8 @@ jobs:
           echo "RELEASE_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
         else # tagged
           echo "DEBVERSION=${{ github.ref_name }}-$GIT_COMMIT_SHORT-${{ matrix.os }}" >> $GITHUB_ENV
-          echo "RPMVERSION=${{ github.ref_name }}.$GIT_COMMIT_SHORT" >> $GITHUB_ENV
+          # We remove all dash characters from RPM versions, because rpmbuild doesn't allow dashes in version numbers.
+          echo "RPMVERSION=${REFNAME//-}.$GIT_COMMIT_SHORT" >> $GITHUB_ENV
         fi
 
         if [ "${{ github.ref_type }}" == "tag" ]; then  # tagged
