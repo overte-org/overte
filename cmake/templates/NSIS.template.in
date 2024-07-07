@@ -1207,53 +1207,6 @@ Section "-Core installation"
   ; 2016-02-25 - The following delete blocks are temporary and can be removed once users who had the initial installer have updated
   ; 2019-09-10 - (3 and a half years later) Sure they are buddy.  Sure they are.
 
-  ; MessageBox MB_OK|MB_ICONEXCLAMATION "installer type is @INSTALLER_TYPE@"
-
-  ;Delete any server executables that might have been installed by bad versions of the client-only installer, but ONLY if we are a client-only installer
-  ${If} "@INSTALLER_TYPE@" == "client_only"
-    ; MessageBox MB_OK|MB_ICONEXCLAMATION "trying to delete server binaries"
-    Delete "$INSTDIR\assignment-client.exe"
-    Delete "$INSTDIR\domain-server.exe"
-  ${EndIf}
-
-  ;Delete any server-console files installed before it was placed in sub-folder
-  Delete "$INSTDIR\server-console.exe"
-  RMDir /r "$INSTDIR\locales"
-  RMDir /r "$INSTDIR\resources\app"
-  RMDir /r "$INSTDIR\client"
-  Delete "$INSTDIR\resources\atom.asar"
-  Delete "$INSTDIR\build-info.json"
-  Delete "$INSTDIR\content_resources_200_percent.pak"
-  Delete "$INSTDIR\content_shell.pak"
-  Delete "$INSTDIR\LICENSE"
-  Delete "$INSTDIR\LICENSES.chromium.html"
-  Delete "$INSTDIR\natives_blob.bin"
-  Delete "$INSTDIR\node.dll"
-  Delete "$INSTDIR\pdf.dll"
-  Delete "$INSTDIR\snapshot_blob.bin"
-  Delete "$INSTDIR\ui_resources_200_percent.pak"
-  Delete "$INSTDIR\vccorlib120.dll"
-  Delete "$INSTDIR\version"
-  Delete "$INSTDIR\xinput1_3.dll"
-
-  ; Delete old desktop shortcuts before they were renamed during Sandbox rename
-  Delete "$DESKTOP\@PRE_SANDBOX_INTERFACE_SHORTCUT_NAME@.lnk"
-  Delete "$DESKTOP\@PRE_SANDBOX_CONSOLE_SHORTCUT_NAME@.lnk"
-
-  ; Delete old Start Menu shortcuts before Sandbox rename
-  Delete "$SMPROGRAMS\$STARTMENU_FOLDER\@PRE_SANDBOX_INTERFACE_SHORTCUT_NAME@.lnk"
-  Delete "$SMPROGRAMS\$STARTMENU_FOLDER\@PRE_SANDBOX_CONSOLE_SHORTCUT_NAME@.lnk"
-
-  ; Delete old startup item for Server Console before Sandbox rename
-  SetShellVarContext current
-  Delete "$SMSTARTUP\@PRE_SANDBOX_CONSOLE_SHORTCUT_NAME@.lnk"
-  SetShellVarContext all
-
-  ; Rename the incorrectly cased Raleway font
-  Rename "$INSTDIR\resources\qml\styles-uit\RalewaySemibold.qml" "$INSTDIR\resources\qml\styles-uit\RalewaySemiBold.qml"
-
-  ; Remove the Old Interface directory and vcredist_x64.exe (from installs prior to Server Console)
-  RMDir /r "$INSTDIR\Interface"
 
   ;Use the entire tree produced by the INSTALL target.  Keep the
   ;list of directories here in sync with the RMDir commands below.
