@@ -17,6 +17,8 @@ import stylesUit 1.0
 Decoration {
     id: root
     HifiConstants { id: hifi }
+    is_window: false // Not a window, don't show top box
+
 
     property bool horizontalSpacers: false
     property bool verticalSpacers: false
@@ -25,6 +27,7 @@ Decoration {
     property int spacerWidth: 8
     property int spacerRadius: 4
     property int spacerMargin: 12
+
     frameMargin: 6
     frameMarginLeft: frameMargin + (horizontalSpacers ? spacerMargin : 0)
     frameMarginRight: frameMargin + (horizontalSpacers ? spacerMargin : 0)
