@@ -33,9 +33,6 @@ Rectangle {
            scrollToBottom();
         }
     }
-    // Component.onCompleted: {
-    //     toScript({type: "initialized"});
-    // }
 
     // User view
     Item {
