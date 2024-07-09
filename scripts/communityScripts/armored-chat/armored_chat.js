@@ -96,9 +96,10 @@
         if (channel !== "chat") return;
         message = JSON.parse(message);
 
+        if (!message.channel) message.channel = 'domain'; // We don't know where to put this message. Assume it is a domain wide message.
+
         // Floofchat compatibility hook
         message = floofChatCompatibilityConversion(message);
-
         message.channel = message.channel.toLowerCase(); // Make sure the "local", "domain", etc. is formatted consistently
 
         if (!channels.includes(message.channel)) return; // Check the channel
