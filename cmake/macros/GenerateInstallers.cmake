@@ -5,7 +5,7 @@
 #  Created by Leonardo Murillo on 12/16/2015.
 #  Copyright 2015 High Fidelity, Inc.
 #  Copyright 2021 Vircadia contributors.
-#  Copyright 2022 Overte e.V.
+#  Copyright 2022-2024 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -33,8 +33,7 @@ macro(GENERATE_INSTALLERS)
   set(CPACK_PACKAGE_NAME ${_DISPLAY_NAME})
   set(CPACK_PACKAGE_VENDOR "Overte")
   set(CPACK_PACKAGE_VERSION ${BUILD_VERSION})
-  # There is some sort of bug which adds a "-" between the BUILD_VERSION and the RELEASE_NAME.
-  set(CPACK_PACKAGE_FILE_NAME "Overte${_PACKAGE_NAME_EXTRA}-${BUILD_VERSION}${RELEASE_NAME}")
+  set(CPACK_PACKAGE_FILE_NAME "Overte${_PACKAGE_NAME_EXTRA}-${BUILD_VERSION}")
   set(CPACK_NSIS_DISPLAY_NAME ${_DISPLAY_NAME})
   set(CPACK_NSIS_PACKAGE_NAME ${_DISPLAY_NAME})
   set(CPACK_NSIS_COMPRESSOR "LZMA")
