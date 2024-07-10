@@ -64,6 +64,7 @@ var notificationCore = {
     },
     add: function (text, sender, colour) {
         sender = sender ? sender : "NoName";
+        sender = sender.replace(ARROW_REGEX, "&lt;");
         colour = colour ? colour : {};
         colour.text = colour.text ? colour.text : {red: 255, green: 255, blue: 255};
         colour.bg = colour.bg ? colour.bg : {red: 10, green: 10, blue: 10};
