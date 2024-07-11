@@ -8,7 +8,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
 (() => {
-    "use strict";
+    ("use strict");
 
     var appIsVisible = false;
     var settings = {
@@ -27,6 +27,7 @@
     var palData = AvatarManager.getPalData().data;
 
     Controller.keyPressEvent.connect(keyPressEvent);
+    Messages.subscribe("Chat"); // Floofchat
     Messages.subscribe("chat");
     Messages.messageReceived.connect(receivedMessage);
     AvatarManager.avatarAddedEvent.connect((sessionId) => {
@@ -96,7 +97,8 @@
         if (channel !== "chat") return;
         message = JSON.parse(message);
 
-        if (!message.channel) message.channel = 'domain'; // We don't know where to put this message. Assume it is a domain wide message.
+        if (!message.channel) message.channel = "domain"; // We don't know where to put this message. Assume it is a domain wide message.
+        if (message.forApp) return; // Floofchat
 
         // Floofchat compatibility hook
         message = floofChatCompatibilityConversion(message);
