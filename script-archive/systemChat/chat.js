@@ -4,7 +4,7 @@
 //
 // By Don Hopkins (dhopkins@donhopkins.com) on May 5th, 2017
 //  Copyright 2017 High Fidelity, Inc.
-//  Copyright 2023 Overte e.V.
+//  Copyright 2024 Overte e.V.
 //
 //
 // Distributed under the Apache License, Version 2.0.
@@ -13,7 +13,7 @@
 
 (function() {
 
-    var webPageURL = Script.resolvePath("html/ChatPage.html"); // URL of tablet web page.
+    var webPageURL = Script.resolvePath("ChatPage.html"); // URL of tablet web page.
     var randomizeWebPageURL = true; // Set to true for debugging.
     var lastWebPageURL = ""; // Last random URL of tablet web page.
     var onChatPage = false; // True when chat web page is opened.
