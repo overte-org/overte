@@ -40,7 +40,15 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 
     var PROFILE = false;
     var DEBUG = false;
+    var DEBUG_FPS = false;
     var SHOW_GRAB_SPHERE = false;
+
+    // State of the pointers, used to avoid setting it every frame
+    const POINTERS_UNKNOWN = 0;
+    const POINTERS_DISABLED = 1;
+    const POINTERS_ENABLED = 2;
+
+    var pointersState = POINTERS_UNKNOWN;
 
     if (typeof Test !== "undefined") {
         PROFILE = true;
@@ -56,12 +64,14 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
         this.veryhighVarianceCount = 0;
         this.orderedPluginNames = [];
         this.tabletID = null;
+        _this.miniTabletID = HMD.miniTabletID;
         this.blacklist = [];
         this.pointerManager = new PointerManager();
         this.grabSphereOverlays = [null, null];
         this.targetIDs = {};
         this.debugPanelID = null;
         this.debugLines = [];
+        this.fps_report_counter = 0;
 
         // a module can occupy one or more "activity" slots while it's running.  If all the required slots for a module are
         // not set to false (not in use), a module cannot start.  When a module is using a slot, that module's name
@@ -163,12 +173,22 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
                 _this.veryhighVarianceCount++;
             }
 
+            if (DEBUG_FPS) {
+                if (_this.fps_report_counter >= 100) {
+                    print("FPS: " + 1000.0 / deltaTime);
+                    _this.fps_report_counter = 0;
+                }
+                _this.fps_report_counter += 1;
+            }
+
             return deltaTime;
         };
 
         this.setIgnorePointerItems = function() {
-            if (HMD.tabletID && HMD.tabletID !== this.tabletID) {
-                this.tabletID = HMD.tabletID;
+            let newTabletID = HMD.tabletID;
+            _this.miniTabletID = HMD.miniTabletID;
+            if (newTabletID && newTabletID !== this.tabletID) {
+                _this.tabletID = newTabletID;
                 Pointers.setIgnoreItems(_this.leftPointer, _this.blacklist);
                 Pointers.setIgnoreItems(_this.rightPointer, _this.blacklist);
             }
@@ -274,21 +294,22 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 
                     // Tablet and mini-tablet must be within NEAR_TABLET_MAX_RADIUS in order to be grabbed.
                     // Mini tablet can only be grabbed the hand it's displayed on.
-                    var tabletIndex = nearbyOverlays.indexOf(HMD.tabletID);
-                    var miniTabletIndex = nearbyOverlays.indexOf(HMD.miniTabletID);
+                    var tabletIndex = nearbyOverlays.indexOf(_this.tabletID);
+                    var miniTabletIndex = nearbyOverlays.indexOf(_this.miniTabletID);
                     if (tabletIndex !== -1 || miniTabletIndex !== -1) {
                         var closebyOverlays =
                             Overlays.findOverlays(controllerLocations[h].position, NEAR_TABLET_MAX_RADIUS * sensorScaleFactor);
                         // Assumes that the tablet and mini-tablet are not displayed at the same time.
-                        if (tabletIndex !== -1 && closebyOverlays.indexOf(HMD.tabletID) === -1) {
+                        if (tabletIndex !== -1 && closebyOverlays.indexOf(_this.tabletID) === -1) {
                             nearbyOverlays.splice(tabletIndex, 1);
                         }
                         if (miniTabletIndex !== -1 &&
-                            ((closebyOverlays.indexOf(HMD.miniTabletID) === -1) || h !== HMD.miniTabletHand)) {
+                            ((closebyOverlays.indexOf(_this.miniTabletID) === -1) || h !== HMD.miniTabletHand)) {
                             nearbyOverlays.splice(miniTabletIndex, 1);
                         }
                     }
 
+                    // TODO: this might not scale well for large number of entities
                     nearbyOverlays.sort(function (a, b) {
                         var aPosition = Entities.getEntityProperties(a, ["position"]).position;
                         var aDistance = Vec3.distance(aPosition, controllerLocations[h].position);
@@ -356,17 +377,23 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 
             // Enable/disable controller raypicking depending on whether we are in HMD
             if (HMD.active) {
-                Pointers.enablePointer(_this.leftPointer);
-                Pointers.enablePointer(_this.rightPointer);
-                Pointers.enablePointer(_this.leftHudPointer);
-                Pointers.enablePointer(_this.rightHudPointer);
-                Pointers.enablePointer(_this.mouseRayPointer);
+                if (pointersState === POINTERS_DISABLED || pointersState === POINTERS_UNKNOWN) {
+                    Pointers.enablePointer(_this.leftPointer);
+                    Pointers.enablePointer(_this.rightPointer);
+                    Pointers.enablePointer(_this.leftHudPointer);
+                    Pointers.enablePointer(_this.rightHudPointer);
+                    Pointers.enablePointer(_this.mouseRayPointer);
+                    pointersState = POINTERS_ENABLED;
+                }
             } else {
-                Pointers.disablePointer(_this.leftPointer);
-                Pointers.disablePointer(_this.rightPointer);
-                Pointers.disablePointer(_this.leftHudPointer);
-                Pointers.disablePointer(_this.rightHudPointer);
-                Pointers.disablePointer(_this.mouseRayPointer);
+                if (pointersState === POINTERS_ENABLED || pointersState === POINTERS_UNKNOWN) {
+                    Pointers.disablePointer(_this.leftPointer);
+                    Pointers.disablePointer(_this.rightPointer);
+                    Pointers.disablePointer(_this.leftHudPointer);
+                    Pointers.disablePointer(_this.rightHudPointer);
+                    Pointers.disablePointer(_this.mouseRayPointer);
+                    pointersState = POINTERS_DISABLED;
+                }
             }
 
             // raypick for each controller
@@ -441,7 +468,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             }
 
 
-            // TODO: These are not used currently, but have severe impact on performace. They can be re-enabled when we have OpenXR support
+            // TODO: These are not used currently, but have severe impact on performance. They can be re-enabled when we have OpenXR support
             // check for hand-tracking "click"
             //_this.checkForHandTrackingClick();
 
@@ -654,7 +681,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 
                         if (action === "tablet") {
                             var tabletIDs = message.blacklist ?
-                                [HMD.tabletID, HMD.tabletScreenID, HMD.homeButtonID, HMD.homeButtonHighlightID] :
+                                [_this.tabletID, HMD.tabletScreenID, HMD.homeButtonID, HMD.homeButtonHighlightID] :
                                 [];
                             if (message.hand === LEFT_HAND) {
                                 _this.leftBlacklistTabletIDs = tabletIDs;
