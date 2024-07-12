@@ -86,7 +86,7 @@ class Overte(ConanFile):
             self.requires("qt/5.15.13", force=True)
 
         if self.options.with_webrtc:
-            self.requires("google-webrtc/94@overte/stable", force=True)
+            self.requires("google-webrtc/124@overte/stable", force=True)
 
     def generate(self):
         tc = CMakeToolchain(self)
