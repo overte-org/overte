@@ -25,10 +25,10 @@
 
 using namespace scripting;
 
-static Setting::Handle<QString> desktopInputDeviceSetting { QStringList { Audio::AUDIO, Audio::DESKTOP, "INPUT" }};
-static Setting::Handle<QString> desktopOutputDeviceSetting { QStringList { Audio::AUDIO, Audio::DESKTOP, "OUTPUT" }};
-static Setting::Handle<QString> hmdInputDeviceSetting { QStringList { Audio::AUDIO, Audio::HMD, "INPUT" }};
-static Setting::Handle<QString> hmdOutputDeviceSetting { QStringList { Audio::AUDIO, Audio::HMD, "OUTPUT" }};
+static Setting::Handle<QString> desktopInputDeviceSetting { QStringList { "Audio", "Desktop", "INPUT" }};
+static Setting::Handle<QString> desktopOutputDeviceSetting { QStringList { "Audio", "Desktop", "OUTPUT" }};
+static Setting::Handle<QString> hmdInputDeviceSetting { QStringList { "Audio", "VR", "INPUT" }};
+static Setting::Handle<QString> hmdOutputDeviceSetting { QStringList { "Audio", "VR", "OUTPUT" }};
 
 Q_DECLARE_METATYPE(HifiAudioDeviceInfo);
 
