@@ -12,14 +12,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-<!-- ## [Unreleased] 2023.07.22 -->
-<!-- ## [2023.07.1] 2023.07.22 -->
+<!-- ## [Unreleased] 2023.07.2 -->
 
-<!--
-### Misc
-- Updated the Unity Avatar Exporter and added Linux support
-- Added Linux support to the Unity Avatar Exporter
--->
+<!-- ## [2023.07.1] 2023.07.2 -->
+
+<!-- ## [2023.06.1] 2023.06.12 -->
+
+## [2023.11.1] 2023.11.24
 
 ### Fixes
 - Fixed color conversion for glTF material colors (PR307)
@@ -36,14 +35,37 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Hugely improved Create app performance in Domains with many entities (PR498)
 - Fixed an issue that could cause laser pointers to rapidly flash (PR495)
 - Fixed the connection failure dialog mentioning "Explore" instead of "Places" (PR515)
+- Fixed broken documentation and code-completion of the "Script" API namespace (PR450)
+- Fixed warning about ForceHtmlAudioOutputDeviceUpdate (PR473)
+- Fixed Shield bubble dimensions (PR510)
+- Fixed Places app connecting to IP instead of Place name (PR522)
+- Fixed Interface scripts failing to shut down (PR521)
+- Fixed deadlock related to entity script engines (PR540)
+- Fixed leave and join messages in Chat (PR573)
+- Fixed crash when closing script log window (PR520)
+- Fixed some API documentation (PR598)
+- Fixed some missing assets, notably the sound when successfully shaking hands (PR590)
+- Fixed multiple script engine reload and shutdown related crashes (PR574)
+- Fixed flow bones on avatars with scale ≠ 100 (PR604)
+- Fixed curved flow bone chains (PR604)
+- Fixed invisible cursor (PR629)
+- Fixed loading avatars from URLs containing" =" such as Dropbox (PR634)
+- Fixed MicBar type error spam on Windows (PR669)
+- Fixed grabbing local entities in VR (PR671)
+- Fixed memory leak in entity server and improved its performance (PR690)
+- Fixed chat bar appearing in VR (PR672)
+- Fixed issues with third-party apps such as ALVR, Virtual Desktop and Streaming Assistant (PR700,PR714)
+- Fixed custom graphics settings not being saved (PR706)
+- Fixed Script.require behavior  (PR697)
+- Fixed Entities.setLocalJointRotation not updating (PR708)
+- Improved client performance by moving squeezeHands.js to separate thread (PR737)
 
 ### Changes
-- Replaced Vircadia Metaverse Server with a testing server as federation default (PR330)
 - An empty audio device list now throws a warning instead of just a debug message (PR347)
 - Increased the maximum log file size from 512 kiB to 10 MiB (PR342,PR513)
 - Decreased the amount of retained log files from 100 to 20 (PR342)
 - Pressing the Return key with the the address/search bar in the Places App selected now navigates you to that address (PR403)
-- Replaced QT Script with V8 scripting engine (PR185,PR507,PR519)
+- Replaced QT Script with V8 scripting engine (PR185,PR507,PR519,PR566)
 	This is a huge change under the hood, which ended up fixing a lot of issues.
 	Since the new scripting engine does not behave exactly the same as the old one,
 	some scripts might need fixing. The new scripting engine is especially picky when it comes to undefined behaviour.
@@ -54,6 +76,14 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 	It will also ask once in case of a non-stable build.
 - Changed the VR overlay to only recenter when moving (PR478)
 - Added a workaround that prevents most users from needing to press down on the thumbstick to move (PR481,PR512)
+- Lowered inertia while moving (PR542)
+- Lowered control delays in VR (PR542)
+	Configurable under Settings → Controls → Calibration
+- Changed Home button in Places app to lead to the tutorial by default (PR560)
+- Rewritten tutorial wizard in QML (PR645,PR737)
+- Disabled Oculus VR plugin by default (PR700,PR714)
+- Changed gravity constant to be more realistic (PR729)
+	This fixes being catapulted into the air when moving up a slope. It also improves taking off, flying, and general movement.
 
 ### Additions
 - Added option to graphics menu for choosing which screen to use for full screen mode (PR302)
@@ -62,12 +92,28 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 	This allows typing in languages like Japanese or Chinese that make use of an IME.
 - Added vertical Field Of View setting to graphics menu (PR465)
 - Added crash reporting to the Domain server, Assignment client, and Oven (PR482)
+- Added JavaScript profiling API (PR564)
+- Added require() to global scope in scipting API (PR585)
+- Added support for HDR lightmaps (PR611)
+- Added mouse look (PR607,PR624,PR627,PR662)
+- Dropbox URLs to assets now get rewritten to DDL URLs (PR636)
+- Added development script to configure avatar smoothing (PR579)
+- Added distance based LOD (PR663)
+	Configurable under Settings → Graphics → Target frame rate
+- Added support for QML inside web-entities (PR645)
+	QML files must be whitelisted in the settings.
+- Added Discord rich presence support (PR686,PR723)
+- Added command line arguments to ICE server (PR722)
 
 ### Removals
 - Removed outdated Inventory and Marketplace options from Wearables UI (PR303)
 - Removed outdated Beacon system (PR327)
 - Removed long deprecated styles-uit and controls-uit QML modules (PR380)
 - Removed outdated Marketplace and Wallet code (PR381,PR477,PR487)
+- Removed Appreciate app from defaults (PR563)
+- Removed debug messages from Places app (PR561)
+- Removed JQuery dependency from Emote app (PR560)
+- Removed File API (PR691)
 
 ### Build system
 - Fixed error in configuration step on some rolling release Linux distributions (PR301)
@@ -78,12 +124,21 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Updated TBB dependency from version 2019_U8-1 to 2021.5.0 (PR412)
 - Fixed NVTT compilation on Visual Studio 2022 (PR374)
 - Disabled libOVR on MSVC 2022 (PR430)
-- Added Qt 5.15.9 package for aarch64 Ubuntu 20.04 (PR409)
 - Fixed build error on aarch64 (PR409)
-- Replaced QT Script with V8/libnode (PR185,PR409,PR443)
+- Replaced QT Script with V8/libnode (PR185,PR409,PR443,PR535,PR566)
 - Updated Qt on Windows to 5.15.10 with KDE patches (PR448)
 - Updated included OpenSSL to 3.0.5 (PR448)
+- Updated OpenSSL Windwos dependency (PR448)
+- Changed libnode dependency to be built from source (PR452)
+- Disabled Crashpad on aarch64 Linux by default (PR526)
+- Added discord-rpc dependency (PR686)
+- Fixed building with memory debugging (PR704)
+- Updated VCPKG on Windows to version 2023.10.19 (PR730)
 
+### Security
+- Updated Qt packages to fix CVE-2023-4863 (PR630,PR631)
+- Updated Qt packages to fix CVE-2023-5217(PR652,PR653)
+- Limited audio recording location (PR691)
 
 
 ## [2022.12.1] 2022.12.24
