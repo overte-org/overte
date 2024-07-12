@@ -1,10 +1,10 @@
-# 
+#
 #  Created by Bradley Austin Davis on 2017/11/28
 #  Copyright 2013-2017 High Fidelity, Inc.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
-# 
+#
 macro(TARGET_POLYVOX)
     if (ANDROID)
         set(INSTALL_DIR ${HIFI_ANDROID_PRECOMPILED}/polyvox)
@@ -24,5 +24,13 @@ macro(TARGET_POLYVOX)
     endif()
     target_link_libraries(${TARGET_NAME} ${POLYVOX_LIBRARIES})
     target_include_directories(${TARGET_NAME} PUBLIC ${POLYVOX_INCLUDE_DIRS})
+
+
+    install_external_library("${POLYVOX_LIBRARIES}")
+
+    #install(
+    #    PROGRAMS ${POLYVOX_LIBRARIES}
+    #    DESTINATION "${CMAKE_INSTALL_LIBDIR}/overte"
+    #  )
 endmacro()
 
