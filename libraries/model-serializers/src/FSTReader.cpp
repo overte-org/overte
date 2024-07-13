@@ -22,7 +22,7 @@
 #include <SharedUtil.h>
 
 
-const QStringList SINGLE_VALUE_PROPERTIES{"name", "filename", "texdir", "script", "comment"};
+const QStringList SINGLE_VALUE_PROPERTIES { NAME_FIELD, FILENAME_FIELD, TEXDIR_FIELD, SCRIPT_FIELD, WAIT_FOR_WEARABLES_FIELD, COMMENT_FIELD };
 
 hifi::VariantMultiHash FSTReader::parseMapping(QIODevice* device) {
     hifi::VariantMultiHash properties;

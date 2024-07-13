@@ -2277,12 +2277,12 @@ void Application::initialize(const QCommandLineParser &parser) {
         auto loadingRequests = ResourceCache::getLoadingRequests();
 
         QJsonArray loadingRequestsStats;
-        for (const auto& request : loadingRequests) {
+        for (const auto& requestPair : loadingRequests) {
             QJsonObject requestStats;
-            requestStats["filename"] = request->getURL().fileName();
-            requestStats["received"] = request->getBytesReceived();
-            requestStats["total"] = request->getBytesTotal();
-            requestStats["attempts"] = (int)request->getDownloadAttempts();
+            requestStats["filename"] = requestPair.first->getURL().fileName();
+            requestStats["received"] = requestPair.first->getBytesReceived();
+            requestStats["total"] = requestPair.first->getBytesTotal();
+            requestStats["attempts"] = (int)requestPair.first->getDownloadAttempts();
             loadingRequestsStats.append(requestStats);
         }
 
@@ -5731,15 +5731,30 @@ void Application::init() {
 
     getEntities()->init();
     getEntities()->setEntityLoadingPriorityFunction([this](const EntityItem& item) {
-        auto dims = item.getScaledDimensions();
-        auto maxSize = glm::compMax(dims);
+        if (item.getEntityHostType() == entity::HostType::AVATAR) {
+            return item.isMyAvatarEntity() ? Avatar::MYAVATAR_ENTITY_LOADING_PRIORITY : Avatar::OTHERAVATAR_ENTITY_LOADING_PRIORITY;
+        }
 
+        const float maxSize = glm::compMax(item.getScaledDimensions());
         if (maxSize <= 0.0f) {
             return 0.0f;
         }
 
-        auto distance = glm::distance(getMyAvatar()->getWorldPosition(), item.getWorldPosition());
-        return atan2(maxSize, distance);
+        const glm::vec3 itemPosition = item.getWorldPosition();
+        const float distance = glm::distance(getMyAvatar()->getWorldPosition(), itemPosition);
+        float result = atan2(maxSize, distance);
+
+        bool isInView = true;
+        {
+            QMutexLocker viewLocker(&_viewMutex);
+            isInView = _viewFrustum.sphereIntersectsKeyhole(itemPosition, maxSize);
+        }
+        if (!isInView) {
+            const float OUT_OF_VIEW_PENALTY = -M_PI_2;
+            result += OUT_OF_VIEW_PENALTY;
+        }
+
+        return result;
     });
 
     ObjectMotionState::setShapeManager(&_shapeManager);

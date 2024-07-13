@@ -73,7 +73,7 @@ public:
     QList<QSharedPointer<Resource>> getPendingRequests() const;
     QSharedPointer<Resource> getHighestPendingRequest();
     uint32_t getPendingRequestsCount() const;
-    QList<QSharedPointer<Resource>> getLoadingRequests() const;
+    QList<std::pair<QSharedPointer<Resource>, float>> getLoadingRequests() const;
     uint32_t getLoadingRequestsCount() const;
     void clear();
 
@@ -82,7 +82,7 @@ private:
 
     mutable Mutex _mutex;
     QList<QWeakPointer<Resource>> _pendingRequests;
-    QList<QWeakPointer<Resource>> _loadingRequests;
+    QList<std::pair<QWeakPointer<Resource>, float>> _loadingRequests;
     const uint32_t DEFAULT_REQUEST_LIMIT = 10;
     uint32_t _requestLimit { DEFAULT_REQUEST_LIMIT };
 };
@@ -216,7 +216,7 @@ public:
     void setUnusedResourceCacheSize(qint64 unusedResourcesMaxSize);
     qint64 getUnusedResourceCacheSize() const { return _unusedResourcesMaxSize; }
 
-    static QList<QSharedPointer<Resource>> getLoadingRequests();
+    static QList<std::pair<QSharedPointer<Resource>, float>> getLoadingRequests();
     static uint32_t getPendingRequestCount();
     static uint32_t getLoadingRequestCount();
 
@@ -424,13 +424,7 @@ public:
     void ensureLoading();
 
     /// Sets the load priority for one owner.
-    virtual void setLoadPriority(const QPointer<QObject>& owner, float priority);
-
-    /// Sets a set of priorities at once.
-    virtual void setLoadPriorities(const QHash<QPointer<QObject>, float>& priorities);
-
-    /// Clears the load priority for one owner.
-    virtual void clearLoadPriority(const QPointer<QObject>& owner);
+    virtual void setLoadPriorityOperator(const QPointer<QObject>& owner, std::function<float()> priorityOperator);
 
     /// Returns the highest load priority across all owners.
     float getLoadPriority();
@@ -451,7 +445,7 @@ public:
     qint64 getBytes() const { return _bytes; }
 
     /// For loading resources, returns the load progress.
-    float getProgress() const { return (_bytesTotal <= 0) ? 0.0f : (float)_bytesReceived / _bytesTotal; }
+    float getProgress() const { return (_bytesTotal <= 0) ? 0.0f : ((float)_bytesReceived / _bytesTotal); }
 
     /// Refreshes the resource.
     virtual void refresh();
@@ -537,7 +531,7 @@ protected:
     bool _failedToLoad = false;
     bool _loaded = false;
 
-    QHash<QPointer<QObject>, float> _loadPriorities;
+    QHash<QPointer<QObject>, std::function<float()>> _loadPriorityOperators;
     QWeakPointer<Resource> _self;
     QPointer<ResourceCache> _cache;
 

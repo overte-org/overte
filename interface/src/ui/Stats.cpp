@@ -289,8 +289,8 @@ void Stats::updateStats(bool force) {
 
         STAT_UPDATE(entityPacketsInKbps, octreeServerCount ? totalEntityKbps / octreeServerCount : -1);
 
-        auto loadingRequests = ResourceCache::getLoadingRequests();
-        STAT_UPDATE(downloads, loadingRequests.size());
+        auto loadingRequestPairs = ResourceCache::getLoadingRequests();
+        STAT_UPDATE(downloads, loadingRequestPairs.size());
         STAT_UPDATE(downloadLimit, (int)ResourceCache::getRequestLimit())
         STAT_UPDATE(downloadsPending, (int)ResourceCache::getPendingRequestCount());
         STAT_UPDATE(processing, DependencyManager::get<StatTracker>()->getStat("Processing").toInt());
@@ -298,29 +298,37 @@ void Stats::updateStats(bool force) {
 
         // See if the active download urls have changed
         bool shouldUpdateUrls = _downloads != _downloadUrls.size();
+        bool shouldUpdateProgresses = false;
         if (!shouldUpdateUrls) {
             for (int i = 0; i < _downloads; i++) {
-                if (loadingRequests[i]->getURL().toString() != _downloadUrls[i]) {
+                if (loadingRequestPairs[i].first->getURL().toString() != _downloadUrls[i]) {
                     shouldUpdateUrls = true;
                     break;
+                } else if (loadingRequestPairs[i].first->getProgress() != _downloadProgresses[i]) {
+                    shouldUpdateProgresses = true;
                 }
             }
         }
         // If the urls have changed, update the list
         if (shouldUpdateUrls) {
             _downloadUrls.clear();
-            foreach (const auto& resource, loadingRequests) {
-                _downloadUrls << resource->getURL().toString();
+            _downloadPriorities.clear();
+            foreach (const auto& resourcePair, loadingRequestPairs) {
+                _downloadUrls << resourcePair.first->getURL().toString();
+                _downloadPriorities << resourcePair.second;
             }
             emit downloadUrlsChanged();
+            emit downloadPrioritiesChanged();
+            shouldUpdateProgresses = true;
         }
-        // TODO fix to match original behavior
-        //stringstream downloads;
-        //downloads << "Downloads: ";
-        //foreach(Resource* resource, ) {
-        //    downloads << (int)(resource->getProgress() * 100.0f) << "% ";
-        //}
-        //downloads << "(" <<  << " pending)";
+
+        if (shouldUpdateProgresses) {
+            _downloadProgresses.clear();
+            foreach (const auto& resourcePair, loadingRequestPairs) {
+                _downloadProgresses << (int)(100.0f * resourcePair.first->getProgress());
+            }
+            emit downloadProgressesChanged();
+        }
     }
 
     // Fourth column, octree stats

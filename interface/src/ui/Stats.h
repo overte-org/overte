@@ -211,7 +211,10 @@ private: \
  *     <em>Read-only.</em>
  * @property {string[]} downloadUrls - The download URLs.
  *     <em>Read-only.</em>
- *     <p><strong>Note:</strong> Property not available in the API.</p>
+ * @property {number[]} downloadProgresses - The download progresses.
+ *     <em>Read-only.</em>
+ * @property {number[]} downloadPriorities - The download priorities.
+ *     <em>Read-only.</em>
  * @property {number} processing - The number of completed downloads being processed.
  *     <em>Read-only.</em>
  * @property {number} processingPending - The number of completed downloads waiting to be processed.
@@ -529,6 +532,8 @@ class Stats : public QQuickItem {
     STATS_PROPERTY(int, downloadLimit, 0)
     STATS_PROPERTY(int, downloadsPending, 0)
     Q_PROPERTY(QStringList downloadUrls READ downloadUrls NOTIFY downloadUrlsChanged)
+    Q_PROPERTY(QList<int> downloadProgresses READ downloadProgresses NOTIFY downloadProgressesChanged)
+    Q_PROPERTY(QList<float> downloadPriorities READ downloadPriorities NOTIFY downloadPrioritiesChanged)
     STATS_PROPERTY(int, processing, 0)
     STATS_PROPERTY(int, processingPending, 0)
     STATS_PROPERTY(int, triangles, 0)
@@ -622,7 +627,9 @@ public:
         }
     }
 
-    QStringList downloadUrls () { return _downloadUrls; }
+    QStringList downloadUrls() { return _downloadUrls; }
+    QList<int> downloadProgresses() { return _downloadProgresses; }
+    QList<float> downloadPriorities() { return _downloadPriorities; }
 
 public slots:
 
@@ -1090,6 +1097,20 @@ signals:
      * @returns {Signal}
      */
     void downloadUrlsChanged();
+
+    /*@jsdoc
+     * Triggered when the value of the <code>downloadProgresses</code> property changes.
+     * @function Stats.downloadProgressesChanged
+     * @returns {Signal}
+     */
+    void downloadProgressesChanged();
+
+    /*@jsdoc
+     * Triggered when the value of the <code>downloadPriorities</code> property changes.
+     * @function Stats.downloadPrioritiesChanged
+     * @returns {Signal}
+     */
+    void downloadPrioritiesChanged();
 
     /*@jsdoc
      * Triggered when the value of the <code>processing</code> property changes.
@@ -1809,14 +1830,16 @@ signals:
      */
 
 private:
-    int _recentMaxPackets{ 0 } ; // recent max incoming voxel packets to process
-    bool _resetRecentMaxPacketsSoon{ true };
-    bool _expanded{ false };
-    bool _showTimingDetails{ false };
-    bool _showGameUpdateStats{ false };
+    int _recentMaxPackets { 0 } ; // recent max incoming voxel packets to process
+    bool _resetRecentMaxPacketsSoon { true };
+    bool _expanded { false };
+    bool _showTimingDetails { false };
+    bool _showGameUpdateStats { false };
     QString _monospaceFont;
     const AudioIOStats* _audioStats;
-    QStringList _downloadUrls = QStringList();
+    QStringList _downloadUrls { QStringList() };
+    QList<int> _downloadProgresses { QList<int>() };
+    QList<float> _downloadPriorities { QList<float>() };
 };
 
 #endif // hifi_Stats_h
