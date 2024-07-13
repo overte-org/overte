@@ -51,6 +51,8 @@ const float DISPLAYNAME_BACKGROUND_ALPHA = 0.4f;
 const glm::vec3 HAND_TO_PALM_OFFSET(0.0f, 0.12f, 0.08f);
 const float Avatar::MYAVATAR_LOADING_PRIORITY = (float)M_PI; // Entity priority is computed as atan2(maxDim, distance) which is <= PI / 2
 const float Avatar::OTHERAVATAR_LOADING_PRIORITY = MYAVATAR_LOADING_PRIORITY - EPSILON;
+const float Avatar::MYAVATAR_ENTITY_LOADING_PRIORITY = MYAVATAR_LOADING_PRIORITY - EPSILON;
+const float Avatar::OTHERAVATAR_ENTITY_LOADING_PRIORITY = OTHERAVATAR_LOADING_PRIORITY - EPSILON;
 
 namespace render {
     template <> const ItemKey payloadGetKey(const AvatarSharedPointer& avatar) {
@@ -841,8 +843,23 @@ bool Avatar::getEnableMeshVisible() const {
 }
 
 void Avatar::fixupModelsInScene(const render::ScenePointer& scene) {
-    bool canTryFade{ false };
+    if (_needsWearablesLoadedCheck) {
+        bool wearablesAreLoaded = true;
+        // Technically, we should be checking for descendant avatar entities that are owned by this avatar.
+        // But it's sufficient to just check all children entities here.
+        forEachChild([&](SpatiallyNestablePointer child) {
+            if (child->getNestableType() == NestableType::Entity) {
+                auto entity = std::dynamic_pointer_cast<EntityItem>(child);
+                if (entity && !entity->isVisuallyReady()) {
+                    wearablesAreLoaded = false;
+                }
+            }
+        });
+        setEnableMeshVisible(_isMeshVisible || wearablesAreLoaded);
+        _needsWearablesLoadedCheck = !wearablesAreLoaded;
+    }
 
+    bool canTryFade = false;
     // check to see if when we added our models to the scene they were ready, if they were not ready, then
     // fix them up in the scene
     render::Transaction transaction;
@@ -1484,6 +1501,12 @@ void Avatar::rigReady() {
     buildSpine2SplineRatioCache();
     setSkeletonData(getSkeletonDefaultData());
     sendSkeletonData();
+
+    const bool prevNeedsWearablesLoadedCheck = _needsWearablesLoadedCheck;
+    _needsWearablesLoadedCheck = _skeletonModel && _skeletonModel->isLoaded() && _skeletonModel->getGeometry()->shouldWaitForWearables();
+    if (prevNeedsWearablesLoadedCheck != _needsWearablesLoadedCheck) {
+        setEnableMeshVisible(!_needsWearablesLoadedCheck);
+    }
 }
 
 // rig has been reset.

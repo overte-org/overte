@@ -295,7 +295,7 @@ public:
     // returns 'true' if needs fullUpdate after geometry change
     virtual bool updateGeometry();
 
-    void setLoadingPriority(float priority) { _loadingPriority = priority; }
+    void setLoadingPriorityOperator(std::function<float()> priorityOperator) { _loadingPriorityOperator = priorityOperator; }
 
     size_t getRenderInfoVertexCount() const { return _renderInfoVertexCount; }
     size_t getRenderInfoTextureSize();
@@ -518,7 +518,7 @@ protected:
     uint64_t _created;
 
 private:
-    float _loadingPriority { 0.0f };
+    std::function<float()> _loadingPriorityOperator { []() { return 0.0f; } };
 
     void calculateTextureInfo();
 
