@@ -72,6 +72,7 @@ EntityItemProperties ModelEntityItem::getProperties(const EntityPropertyFlags& d
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(groupCulled, getGroupCulled);
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(blendshapeCoefficients, getBlendshapeCoefficients);
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(useOriginalPivot, getUseOriginalPivot);
+    COPY_ENTITY_PROPERTY_TO_PROPERTIES(loadPriority, getLoadPriority);
     withReadLock([&] {
         _animationProperties.getProperties(properties);
     });
@@ -96,6 +97,7 @@ bool ModelEntityItem::setSubClassProperties(const EntityItemProperties& properti
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(groupCulled, setGroupCulled);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(blendshapeCoefficients, setBlendshapeCoefficients);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(useOriginalPivot, setUseOriginalPivot);
+    SET_ENTITY_PROPERTY_FROM_PROPERTIES(loadPriority, setLoadPriority);
 
     withWriteLock([&] {
         AnimationPropertyGroup animationProperties = _animationProperties;
@@ -131,6 +133,7 @@ int ModelEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data,
     READ_ENTITY_PROPERTY(PROP_GROUP_CULLED, bool, setGroupCulled);
     READ_ENTITY_PROPERTY(PROP_BLENDSHAPE_COEFFICIENTS, QString, setBlendshapeCoefficients);
     READ_ENTITY_PROPERTY(PROP_USE_ORIGINAL_PIVOT, bool, setUseOriginalPivot);
+    READ_ENTITY_PROPERTY(PROP_LOAD_PRIORITY, float, setLoadPriority);
 
     // grab a local copy of _animationProperties to avoid multiple locks
     int bytesFromAnimation;
@@ -171,6 +174,7 @@ EntityPropertyFlags ModelEntityItem::getEntityProperties(EncodeBitstreamParams& 
     requestedProperties += PROP_GROUP_CULLED;
     requestedProperties += PROP_BLENDSHAPE_COEFFICIENTS;
     requestedProperties += PROP_USE_ORIGINAL_PIVOT;
+    requestedProperties += PROP_LOAD_PRIORITY;
     requestedProperties += _animationProperties.getEntityProperties(params);
 
     return requestedProperties;
@@ -201,6 +205,7 @@ void ModelEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBit
     APPEND_ENTITY_PROPERTY(PROP_GROUP_CULLED, getGroupCulled());
     APPEND_ENTITY_PROPERTY(PROP_BLENDSHAPE_COEFFICIENTS, getBlendshapeCoefficients());
     APPEND_ENTITY_PROPERTY(PROP_USE_ORIGINAL_PIVOT, getUseOriginalPivot());
+    APPEND_ENTITY_PROPERTY(PROP_LOAD_PRIORITY, getLoadPriority());
 
     withReadLock([&] {
         _animationProperties.appendSubclassData(packetData, params, entityTreeElementExtraEncodeData, requestedProperties,
@@ -255,6 +260,7 @@ void ModelEntityItem::debugDump() const {
     qCDebug(entities) << "    compound shape URL:" << getCompoundShapeURL();
     qCDebug(entities) << "    blendshapeCoefficients:" << getBlendshapeCoefficients();
     qCDebug(entities) << "    useOrigialPivot:" << getUseOriginalPivot();
+    qCDebug(entities) << "    loadPriority:" << getLoadPriority();
 }
 
 void ModelEntityItem::setShapeType(ShapeType type) {
@@ -766,5 +772,17 @@ void ModelEntityItem::setUseOriginalPivot(bool value) {
 bool ModelEntityItem::getUseOriginalPivot() const {
     return resultWithReadLock<bool>([&] {
         return _useOriginalPivot;
+    });
+}
+
+float ModelEntityItem::getLoadPriority() const {
+    return resultWithReadLock<float>([&] {
+        return _loadPriority;
+    });
+}
+
+void ModelEntityItem::setLoadPriority(float loadPriority) {
+    withWriteLock([&] {
+        _loadPriority = loadPriority;
     });
 }

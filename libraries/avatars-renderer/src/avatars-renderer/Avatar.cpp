@@ -843,7 +843,7 @@ bool Avatar::getEnableMeshVisible() const {
 }
 
 void Avatar::fixupModelsInScene(const render::ScenePointer& scene) {
-    if (_needsWearablesLoadedCheck) {
+    if (_needsWearablesLoadedCheck && _hasCheckedForAvatarEntities) {
         bool wearablesAreLoaded = true;
         // Technically, we should be checking for descendant avatar entities that are owned by this avatar.
         // But it's sufficient to just check all children entities here.

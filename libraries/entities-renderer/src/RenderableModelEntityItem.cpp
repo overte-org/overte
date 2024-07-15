@@ -1310,7 +1310,10 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
             scene->enqueueTransaction(transaction);
         });
         entity->setModel(model);
-        model->setLoadingPriorityOperator([entity]() { return EntityTreeRenderer::getEntityLoadingPriority(*entity); });
+        model->setLoadingPriorityOperator([entity]() {
+            float loadPriority = entity->getLoadPriority();
+            return fabs(loadPriority) > EPSILON ? loadPriority : EntityTreeRenderer::getEntityLoadingPriority(*entity);
+        });
         withWriteLock([&] { _model = model; });
     }
 

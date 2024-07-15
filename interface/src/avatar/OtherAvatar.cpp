@@ -595,7 +595,8 @@ void OtherAvatar::handleChangedAvatarEntityData() {
         }
     });
 
-    setAvatarEntityDataChanged(false);
+    _avatarEntityDataChanged = false;
+    _hasCheckedForAvatarEntities = true;
 }
 
 void OtherAvatar::onAddAttachedAvatarEntity(const QUuid& id) {
@@ -628,5 +629,13 @@ void OtherAvatar::updateAttachedAvatarEntities() {
         for (const QUuid& id : _attachedAvatarEntities) {
             treeRenderer->onEntityChanged(id);
         }
+    }
+}
+
+void OtherAvatar::onIdentityRecieved() {
+    if (_avatarEntityIdentityCountdown > 0) {
+        _avatarEntityIdentityCountdown--;
+    } else {
+        _hasCheckedForAvatarEntities = true;
     }
 }

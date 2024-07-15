@@ -30,14 +30,9 @@
 #include "NetworkLogging.h"
 #include "NodeList.h"
 
-bool ResourceCacheSharedItems::appendRequest(QWeakPointer<Resource> resource) {
+bool ResourceCacheSharedItems::appendRequest(QWeakPointer<Resource> resource, float priority) {
     Lock lock(_mutex);
     if ((uint32_t)_loadingRequests.size() < _requestLimit) {
-        float priority = 0.0f;
-        // This should always be true, but just in case
-        if (QSharedPointer<Resource> resourceStrong = resource.lock()) {
-            priority = resourceStrong->getLoadPriority();
-        }
         _loadingRequests.append({ resource, priority });
         return true;
     } else {
@@ -111,7 +106,7 @@ void ResourceCacheSharedItems::removeRequest(QWeakPointer<Resource> resource) {
     }
 }
 
-QSharedPointer<Resource> ResourceCacheSharedItems::getHighestPendingRequest() {
+std::pair<QSharedPointer<Resource>, float> ResourceCacheSharedItems::getHighestPendingRequest() {
     // look for the highest priority pending request
     int highestIndex = -1;
     float highestPriority = -FLT_MAX;
@@ -144,7 +139,7 @@ QSharedPointer<Resource> ResourceCacheSharedItems::getHighestPendingRequest() {
         _pendingRequests.takeAt(highestIndex);
     }
 
-    return highestResource;
+    return { highestResource, highestPriority };
 }
 
 void ResourceCacheSharedItems::clear() {
@@ -536,11 +531,11 @@ uint32_t ResourceCache::getLoadingRequestCount() {
     return DependencyManager::get<ResourceCacheSharedItems>()->getLoadingRequestsCount();
 }
 
-bool ResourceCache::attemptRequest(QSharedPointer<Resource> resource) {
+bool ResourceCache::attemptRequest(QSharedPointer<Resource> resource, float priority) {
     Q_ASSERT(!resource.isNull());
 
     auto sharedItems = DependencyManager::get<ResourceCacheSharedItems>();
-    if (sharedItems->appendRequest(resource)) {
+    if (sharedItems->appendRequest(resource, priority)) {
         resource->makeRequest();
         return true;
     }
@@ -560,8 +555,8 @@ void ResourceCache::requestCompleted(QWeakPointer<Resource> resource) {
 
 bool ResourceCache::attemptHighestPriorityRequest() {
     auto sharedItems = DependencyManager::get<ResourceCacheSharedItems>();
-    auto resource = sharedItems->getHighestPendingRequest();
-    return (resource && attemptRequest(resource));
+    auto resourcePair = sharedItems->getHighestPendingRequest();
+    return (resourcePair.first && attemptRequest(resourcePair.first, resourcePair.second));
 }
 
 static int requestID = 0;

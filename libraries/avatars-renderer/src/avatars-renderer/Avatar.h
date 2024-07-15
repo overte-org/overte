@@ -748,6 +748,7 @@ protected:
     bool _isMeshVisible { true };
     bool _needMeshVisibleSwitch { true };
     bool _needsWearablesLoadedCheck { false };
+    bool _hasCheckedForAvatarEntities { false };
 
     static const float MYAVATAR_LOADING_PRIORITY;
     static const float OTHERAVATAR_LOADING_PRIORITY;
