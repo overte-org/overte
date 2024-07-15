@@ -66,12 +66,12 @@ class ResourceCacheSharedItems : public Dependency  {
     using Lock = std::unique_lock<Mutex>;
 
 public:
-    bool appendRequest(QWeakPointer<Resource> newRequest);
+    bool appendRequest(QWeakPointer<Resource> newRequest, float priority);
     void removeRequest(QWeakPointer<Resource> doneRequest);
     void setRequestLimit(uint32_t limit);
     uint32_t getRequestLimit() const;
     QList<QSharedPointer<Resource>> getPendingRequests() const;
-    QSharedPointer<Resource> getHighestPendingRequest();
+    std::pair<QSharedPointer<Resource>, float> getHighestPendingRequest();
     uint32_t getPendingRequestsCount() const;
     QList<std::pair<QSharedPointer<Resource>, float>> getLoadingRequests() const;
     uint32_t getLoadingRequestsCount() const;
@@ -268,7 +268,7 @@ protected:
 
     /// Attempt to load a resource if requests are below the limit, otherwise queue the resource for loading
     /// \return true if the resource began loading, otherwise false if the resource is in the pending queue
-    static bool attemptRequest(QSharedPointer<Resource> resource);
+    static bool attemptRequest(QSharedPointer<Resource> resource, float priority = NAN);
     static void requestCompleted(QWeakPointer<Resource> resource);
     static bool attemptHighestPriorityRequest();
 

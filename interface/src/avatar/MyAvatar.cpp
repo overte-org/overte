@@ -1841,6 +1841,8 @@ void MyAvatar::handleChangedAvatarEntityData() {
             }
         });
     }
+
+    _hasCheckedForAvatarEntities = true;
 }
 
 bool MyAvatar::updateStaleAvatarEntityBlobs() const {
@@ -1896,6 +1898,7 @@ void MyAvatar::prepareAvatarEntityDataForReload() {
     });
 
     _reloadAvatarEntityDataFromSettings = true;
+    _hasCheckedForAvatarEntities = false;
 }
 
 AvatarEntityMap MyAvatar::getAvatarEntityData() const {

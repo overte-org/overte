@@ -2072,6 +2072,8 @@ void AvatarData::processAvatarIdentity(QDataStream& packetStream, bool& identity
             << "is >=" << (udt::SequenceNumber::Type) incomingSequenceNumber;
 #endif
     }
+
+    onIdentityRecieved();
 }
 
 QUrl AvatarData::getWireSafeSkeletonModelURL() const {
