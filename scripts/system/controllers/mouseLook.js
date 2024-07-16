@@ -31,6 +31,7 @@
 
     // Program ----
     function onMouseLookChanged(newMouseLook) {
+        disableMouseLook();
         mouseLookEnabled = newMouseLook;
     }
 
@@ -38,8 +39,6 @@
         // Toggle using the m key
         if (event.text.toLowerCase() === "m") {
             if (Camera.captureMouse) {
-                mouseLookActive = false;
-                Settings.setValue("mouselook-active", false);
                 disableMouseLook();
             } else {
                 mouseLookActive = true;
@@ -82,12 +81,16 @@
         if (hmdActive) return;
         if (tablet.tabletShown) return;
         if (overlayActive) return;
+        if (!mouseLookEnabled) return; // Mouse look disabled via setting
         if (!mouseLookActive) return; // Mouse look disabled via the hotkey
 
         Camera.captureMouse = true;
     }
 
     function disableMouseLook() {
+        mouseLookActive = false;
+        Settings.setValue("mouselook-active", false);
+
         Camera.captureMouse = false;
     }
 
