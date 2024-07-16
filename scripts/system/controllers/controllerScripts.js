@@ -58,7 +58,7 @@ function runDefaultsTogether() {
 function runDefaultsSeparately() {
     for (var i in CONTOLLER_SCRIPTS) {
         if (CONTOLLER_SCRIPTS.hasOwnProperty(i)) {
-            print("loading " + CONTOLLER_SCRIPTS[j]);
+            print("loading " + CONTOLLER_SCRIPTS[i]);
             Script.load(CONTOLLER_SCRIPTS[i]);
         }
     }
