@@ -17,6 +17,7 @@
 #include "OctreeLogging.h"
 #include "NumericalConstants.h"
 #include <glm/gtc/type_ptr.hpp>
+#include "SerDes.h"
 
 bool OctreePacketData::_debug = false;
 AtomicUIntStat OctreePacketData::_totalBytesOfOctalCodes { 0 };
@@ -812,10 +813,10 @@ int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, QByteA
 }
 
 int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, AACube& result) {
-    aaCubeData cube;
-    memcpy(&cube, dataBytes, sizeof(aaCubeData));
-    result = AACube(cube.corner, cube.scale);
-    return sizeof(aaCubeData);
+    DataDeserializer des(dataBytes, sizeof(aaCubeData));
+    des >> result;
+
+    return des.length();
 }
 
 int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, QRect& result) {
