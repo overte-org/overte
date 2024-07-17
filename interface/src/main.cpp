@@ -275,6 +275,14 @@ int main(int argc, const char* argv[]) {
         "abortAfterInit",
         "Debug option. Aborts after initialization, right before the program starts running the event loop."
     );
+    QCommandLineOption getProtocolVersionHashOption(
+        "getProtocolVersionHash",
+        "Debug option. Returns the network protocol version MD5 hash."
+    );
+    QCommandLineOption getProtocolVersionDataOption(
+        "getProtocolVersionData",
+        "Debug option. Returns the network protocol detailed data in JSON."
+    );
 
     // "--qmljsdebugger", which appears in output from "--help-all".
     // Those below don't seem to be optional.
@@ -321,6 +329,8 @@ int main(int argc, const char* argv[]) {
     parser.addOption(abortAfterStartupOption);
     parser.addOption(abortAfterInitOption);
     parser.addOption(getPluginsOption);
+    parser.addOption(getProtocolVersionHashOption);
+    parser.addOption(getProtocolVersionDataOption);
 
 
     QString applicationPath;
@@ -455,6 +465,34 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
     }
+    if (parser.isSet(getProtocolVersionHashOption)) {
+        std::cout << protocolVersionsSignatureHex().toStdString() << std::endl;
+        return 0;
+    }
+    if (parser.isSet(getProtocolVersionDataOption)) {
+        auto protocolMap = protocolVersionsSignatureMap();
+        QMetaEnum packetMetaEnum = QMetaEnum::fromType<PacketTypeEnum::Value>();
+
+        QJsonArray packetTypesList;
+        auto keyList = protocolMap.keys();
+        std::sort(keyList.begin(), keyList.end()); // Sort by numeric value
+
+        for(const auto packet : keyList) {
+            QJsonObject data;
+            int intValue = static_cast<int>(packet);
+            QString keyName = packetMetaEnum.valueToKey(intValue);
+
+            data["name"] = keyName;
+            data["value"] = intValue;
+            data["version"] = versionForPacketType(packet);
+
+            packetTypesList.append(data);
+        }
+
+        std::cout << QJsonDocument(packetTypesList).toJson().toStdString() << std::endl;
+        return 0;
+    }
+
 
     static const QString APPLICATION_CONFIG_FILENAME = "config.json";
     QDir applicationDir(applicationPath);
