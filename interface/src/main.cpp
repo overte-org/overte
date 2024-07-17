@@ -97,7 +97,7 @@ int main(int argc, const char* argv[]) {
     );
     QCommandLineOption protocolVersionOption(
         "protocolVersion",
-        "Writes the protocol version base64 signature to a file?",
+        "Writes the protocol version base64 signature to a file",
         "path"
     );
     QCommandLineOption noUpdaterOption(
