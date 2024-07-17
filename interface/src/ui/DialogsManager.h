@@ -20,14 +20,10 @@
 #include "HMDToolsDialog.h"
 #include "TestingDialog.h"
 
-class AnimationsDialog;
-class AttachmentsDialog;
-class CachesSizeDialog;
 class LodToolsDialog;
 class OctreeStatsDialog;
 class ScriptEditorWindow;
 class TestingDialog;
-class QMessageBox;
 class DomainConnectionDialog;
 
 class DialogsManager : public QObject, public Dependency {
@@ -77,10 +73,6 @@ private:
     template<typename T>
     void maybeCreateDialog(QPointer<T>& member);
 
-    QPointer<AnimationsDialog> _animationsDialog;
-    QPointer<AttachmentsDialog> _attachmentsDialog;
-    QPointer<CachesSizeDialog> _cachesSizeDialog;
-    QPointer<QMessageBox> _ircInfoBox;
     QPointer<HMDToolsDialog> _hmdToolsDialog;
     QPointer<LodToolsDialog> _lodToolsDialog;
     QPointer<OctreeStatsDialog> _octreeStatsDialog;

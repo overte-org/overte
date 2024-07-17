@@ -546,9 +546,6 @@ private slots:
     bool askToSetAvatarUrl(const QString& url);
     bool askToLoadScript(const QString& scriptFilenameOrURL);
 
-    bool askToWearAvatarAttachmentUrl(const QString& url);
-    void displayAvatarAttachmentWarning(const QString& message) const;
-
     bool askToReplaceDomainContent(const QString& url);
 
     void setSessionUUID(const QUuid& sessionUUID) const;
@@ -799,8 +796,6 @@ private:
 
     bool _reticleClickPressed { false };
     bool _keyboardFocusWaitingOnRenderable { false };
-
-    int _avatarAttachmentRequest = 0;
 
     bool _settingsLoaded { false };
 
