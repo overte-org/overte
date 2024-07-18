@@ -259,6 +259,7 @@ function p_hfudt.dissector(buf, pinfo, tree)
       type:append_text(" (".. control_types[shifted_type][1] .. ")")
 
       subtree:add(f_control_type_text, control_types[shifted_type][1])
+      pinfo.cols.info:append(" [" .. control_types[shifted_type][1] .. "]")
     end
 
     if shifted_type == 0 then
@@ -337,10 +338,12 @@ function p_hfudt.dissector(buf, pinfo, tree)
     local packet_type = buf(payload_offset, 1):le_uint()
     local ptype = subtree:add_le(f_type, buf(payload_offset, 1))
     local packet_type_text = packet_types[packet_type]
+
     if packet_type_text ~= nil then
       subtree:add(f_type_text, packet_type_text)
       -- if we know this packet type then add the name
       ptype:append_text(" (".. packet_type_text .. ")")
+      pinfo.cols.info:append(" [" .. packet_type_text .. "]")
     end
 
     -- read the version

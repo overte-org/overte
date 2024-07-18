@@ -48,3 +48,26 @@ After a capture any detected Overte Packets should be easily identifiable by one
 `[Expert Info (Error/Undecoded): Lua Error: /home/dale/.local/lib/wireshark/plugins/1-hfudt.lua:207: attempt to index global 'bit32' (a nil value)]`
 
 See the installation requirements, you need to install the bit32 Lua module for the right Lua version.
+
+## Development hints
+
+
+* Symlink files from the development tree to  `$HOME/.local/lib/wireshark/plugins`, to have Wireshark work on the latest dissector code.
+* Capture packets for later analysis in a PCAPNG file.
+* Only save needed packets in the dump
+
+Decode on the commandline with:
+
+    tshark -r packets.pcapng.gz -V
+
+Decode only the first packet:
+
+    tshark -r packets.pcapng.gz -V -c 1
+
+### Useful tshark arguments
+
+* `-x` hex dump
+* `-c N` Only decode first N packets
+* `-O hfudt,hf-domain,hf-entity,hf-avatar,hf-audio` Only dump Overte protocol data, skip dumping UDP/etc parts.
+* `-V` decode protocols
+*
