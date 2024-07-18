@@ -1,4 +1,5 @@
 print("Loading hf-avatar")
+bit32 = require("bit32")
 
 -- create the avatar protocol
 p_hf_avatar = Proto("hf-avatar", "HF Avatar Protocol")

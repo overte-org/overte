@@ -1,4 +1,5 @@
 print("Loading hf-entity")
+bit32 = require("bit32")
 
 -- create the entity protocol
 p_hf_entity = Proto("hf-entity", "HF Entity Protocol")
