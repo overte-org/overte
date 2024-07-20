@@ -351,17 +351,18 @@ function p_hfudt.dissector(buf, pinfo, tree)
 
     local i = payload_offset + 2
 
+
     if unsourced_packet_types[packet_type_text] == nil then
       -- read node local ID
       local sender_id = buf(payload_offset + 2, 2)
       subtree:add_le(f_sender_id, sender_id)
       i = i + 2
+    end
 
     if nonverified_packet_types[packet_type_text] == nil then
         -- read HMAC MD5 hash
         subtree:add(f_hmac_hash, buf(i, 16))
         i = i + 16
-        end
     end
 
     local payload_to_dissect = nil
