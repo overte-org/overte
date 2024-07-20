@@ -359,8 +359,8 @@ void SoundEntityItem::setLocalOnly(bool value) {
 
             if (_injector) {
                 DependencyManager::get<AudioInjectorManager>()->stop(_injector);
+                _injector = nullptr;
             }
-            _injector = nullptr;
         }
 
         if (_sound) {
@@ -409,7 +409,7 @@ bool SoundEntityItem::restartSound(bool lock) {
     options.ambisonic = _sound->isAmbisonic();
 
     if (_injector) {
-        DependencyManager::get<AudioInjectorManager>()->setOptionsAndRestart(_injector, options);
+        DependencyManager::get<AudioInjectorManager>()->setOptions(_injector, options);
     } else {
         _injector = DependencyManager::get<AudioInjectorManager>()->playSound(_sound, options);
     }
@@ -431,8 +431,8 @@ void SoundEntityItem::updateSound(bool restart) {
     if (restart) {
         if (_injector) {
             DependencyManager::get<AudioInjectorManager>()->stop(_injector);
+            _injector = nullptr;
         }
-        _injector = nullptr;
     }
 
     if (_playing) {
@@ -440,6 +440,7 @@ void SoundEntityItem::updateSound(bool restart) {
     } else {
         if (_injector) {
             DependencyManager::get<AudioInjectorManager>()->stop(_injector);
+            _injector = nullptr;
         }
     }
 }
