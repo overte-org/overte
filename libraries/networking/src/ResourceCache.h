@@ -16,6 +16,7 @@
 
 #include <atomic>
 #include <mutex>
+#include <math.h>
 
 #include <QtCore/QHash>
 #include <QtCore/QList>
