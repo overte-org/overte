@@ -1,4 +1,5 @@
 print("Loading hfudt")
+bit32 = require("bit32")
 
 -- create the HFUDT protocol
 p_hfudt = Proto("hfudt", "HFUDT Protocol")
@@ -154,19 +155,55 @@ local packet_types = {
   [99] = "EntityQueryInitialResultsComplete",
   [100] = "BulkAvatarTraits",
   [101] = "AudioSoloRequest",
-  [102] = "BulkAvatarTraitsAck"
+  [102] = "BulkAvatarTraitsAck",
+  [103] = "StopInjector",
+  [104] = "AvatarZonePresence",
+  [105] = "WebRTCSignaling"
 }
 
+-- PacketHeaders.h, getNonSourcedPackets()
 local unsourced_packet_types = {
-  ["DomainList"] = true,
+  ["DomainConnectRequestPending"] = true,
+  ["CreateAssignment"] = true,
+  ["RequestAssignment"] = true,
+  ["DomainServerRequireDTLS"] = true,
   ["DomainConnectRequest"] = true,
-  ["ICEPing"] = true,
-  ["ICEPingReply"] = true,
+  ["DomainList"] = true,
+  ["DomainConnectionDenied"] = true,
+  ["DomainServerPathQuery"] = true,
+  ["DomainServerPathResponse"] = true,
+  ["DomainServerAddedNode"] = true,
   ["DomainServerConnectionToken"] = true,
   ["DomainSettingsRequest"] = true,
-  ["ICEServerHeartbeatACK"] = true
+  ["OctreeDataFileRequest"] = true,
+  ["OctreeDataFileReply"] = true,
+  ["OctreeDataPersist"] = true,
+  ["DomainContentReplacementFromUrl"] = true,
+  ["DomainSettings"] = true,
+  ["ICEServerPeerInformation"] = true,
+  ["ICEServerQuery"] = true,
+  ["ICEServerHeartbeat"] = true,
+  ["ICEServerHeartbeatACK"] = true,
+  ["ICEPing"] = true,
+  ["ICEPingReply"] = true,
+  ["ICEServerHeartbeatDenied"] = true,
+  ["AssignmentClientStatus"] = true,
+  ["StopNode"] = true,
+  ["DomainServerRemovedNode"] = true,
+  ["UsernameFromIDReply"] = true,
+  ["OctreeFileReplacement"] = true,
+  ["ReplicatedMicrophoneAudioNoEcho"] = true,
+  ["ReplicatedMicrophoneAudioWithEcho"] = true,
+  ["ReplicatedInjectAudio"] = true,
+  ["ReplicatedSilentAudioFrame"] = true,
+  ["ReplicatedAvatarIdentity"] = true,
+  ["ReplicatedKillAvatar"] = true,
+  ["ReplicatedBulkAvatarData"] = true,
+  ["AvatarZonePresence"] = true,
+  ["WebRTCSignaling"] = true
 }
 
+-- PacketHeaders.h, getNonVerifiedPackets()
 local nonverified_packet_types = {
     ["NodeJsonStats"] = true,
     ["EntityQuery"] = true,
@@ -222,6 +259,7 @@ function p_hfudt.dissector(buf, pinfo, tree)
       type:append_text(" (".. control_types[shifted_type][1] .. ")")
 
       subtree:add(f_control_type_text, control_types[shifted_type][1])
+      pinfo.cols.info:append(" [" .. control_types[shifted_type][1] .. "]")
     end
 
     if shifted_type == 0 then
@@ -257,7 +295,7 @@ function p_hfudt.dissector(buf, pinfo, tree)
     -- read the obfuscation level
     local obfuscation_bits = bit32.band(0x03, bit32.rshift(first_word, 27))
     subtree:add(f_obfuscation_level, obfuscation_bits)
-    
+
     -- read the sequence number
     subtree:add(f_sequence_number, bit32.band(first_word, SEQUENCE_NUMBER_MASK))
 
@@ -300,10 +338,12 @@ function p_hfudt.dissector(buf, pinfo, tree)
     local packet_type = buf(payload_offset, 1):le_uint()
     local ptype = subtree:add_le(f_type, buf(payload_offset, 1))
     local packet_type_text = packet_types[packet_type]
+
     if packet_type_text ~= nil then
       subtree:add(f_type_text, packet_type_text)
       -- if we know this packet type then add the name
       ptype:append_text(" (".. packet_type_text .. ")")
+      pinfo.cols.info:append(" [" .. packet_type_text .. "]")
     end
 
     -- read the version
@@ -431,12 +471,12 @@ function deobfuscate(message_bit, buf, level)
   else
     return
   end
-  
+
   local start = 4
   if message_bit == 1 then
     local start = 12
   end
-  
+
   local p = 0
   for i = start, buf:len() - 1 do
     out:set_index(i, bit.bxor(buf(i, 1):le_uint(), key:get_index(7 - (p % 8))) )
