@@ -78,8 +78,8 @@
                         <div class="uiMaterialAssistant-group">
                             <font class="uiMaterialAssistant-label">Model: </font><br><br> 
                             <input type="radio" class="uiMaterialAssistant-radio" checked name = "ma-Model" id = "ma-Model-hifi_pbr" value = "hifi_pbr"> PBR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                            <input type="radio" class="uiMaterialAssistant-radio" name = "ma-Model" id = "ma-Model-vrm_mtoon" value = "vrm_mtoon"> MTOON&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                            <input type="radio" class="uiMaterialAssistant-radio" name = "ma-Model" id = "ma-Model-hifi_shader_simple" value = "hifi_shader_simple"> SHADER (Simple)<br>
+                            <input type="radio" class="uiMaterialAssistant-radio" name = "ma-Model" id = "ma-Model-vrm_mtoon" value = "vrm_mtoon"> MToon&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            <input type="radio" class="uiMaterialAssistant-radio" name = "ma-Model" id = "ma-Model-hifi_shader_simple" value = "hifi_shader_simple"> Shader (Simple)<br>
                         </div>
                         
                         <div class="uiMaterialAssistant-group">
@@ -157,7 +157,7 @@
                             <br>
                             <div id="maContainerOpacityMap">
                                 <font class="uiMaterialAssistant-label">Opacity Map Mode:</font><br><br>
-                                <input type="radio" class="uiMaterialAssistant-radio" checked name = "ma-opacityMapMode" id = "ma-opacityMapMode-dont" value = "OPACITY_MAP_OPAQUE"> Do not used&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                <input type="radio" class="uiMaterialAssistant-radio" checked name = "ma-opacityMapMode" id = "ma-opacityMapMode-dont" value = "OPACITY_MAP_OPAQUE"> Not used&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                 <input type="radio" class="uiMaterialAssistant-radio" name = "ma-opacityMapMode" id = "ma-opacityMapMode-mask" value = "OPACITY_MAP_MASK"> Cut off mask&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                 <input type="radio" class="uiMaterialAssistant-radio" name = "ma-opacityMapMode" id = "ma-opacityMapMode-blend" value = "OPACITY_MAP_BLEND"> Blend<br>
                                 <font class="uiMaterialAssistant-Explain"><br>Note: For an opacity map, the alpha layer of the Albedo Map will be used.<br>
@@ -323,13 +323,13 @@
                                     <button class="uiMaterialAssistant-active" id="ma-uvAnimationScrollXSpeed-isActive"></button>
                                     <font class="uiMaterialAssistant-label">UV Animation Scroll X Speed: </font>
                                     <input name = "ma-uvAnimationScrollXSpeed" id = "ma-uvAnimationScrollXSpeed" readonly class="uiMaterialAssistant-input" type = "text" size = "5"><br>
-                                    <input type="range"  style="width:100%;" min="-10000" max="10000" value="0" class="uiMaterialAssistant-slider" name = "ma-uvAnimationScrollXSpeed-slider" id = "ma-uvAnimationScrollXSpeed-slider">
+                                    <input type="range"  style="width:100%;" min="-3000" max="3000" value="0" class="uiMaterialAssistant-slider" name = "ma-uvAnimationScrollXSpeed-slider" id = "ma-uvAnimationScrollXSpeed-slider">
                                     <font class="uiMaterialAssistant-Explain">The speed of the UV scrolling animation in the X dimension, in UV units per second.</font>
                                 <br><br>
                                     <button class="uiMaterialAssistant-active" id="ma-uvAnimationScrollYSpeed-isActive"></button>
                                     <font class="uiMaterialAssistant-label">UV Animation Scroll Y Speed: </font>
                                     <input name = "ma-uvAnimationScrollYSpeed" id = "ma-uvAnimationScrollYSpeed" readonly class="uiMaterialAssistant-input" type = "text" size = "5"><br>
-                                    <input type="range"  style="width:100%;" min="-10000" max="10000" value="0" class="uiMaterialAssistant-slider" name = "ma-uvAnimationScrollYSpeed-slider" id = "ma-uvAnimationScrollYSpeed-slider">
+                                    <input type="range"  style="width:100%;" min="-3000" max="3000" value="0" class="uiMaterialAssistant-slider" name = "ma-uvAnimationScrollYSpeed-slider" id = "ma-uvAnimationScrollYSpeed-slider">
                                     <font class="uiMaterialAssistant-Explain">The speed of the UV scrolling animation in the Y dimension, in UV units per second.</font>
                                 <br><br>
                                     <button class="uiMaterialAssistant-active" id="ma-uvAnimationRotationSpeed-isActive"></button>
