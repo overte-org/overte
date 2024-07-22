@@ -1,3 +1,4 @@
+//
 //  materialAssistant.js
 //
 //  Created by Alezia Kurdis on May 19th, 2022.
@@ -1164,7 +1165,7 @@ function loadDataInMaUi(materialDataPropertyValue) {
             maModelHifiShaderSimple.checked = true;
             break;
         default:
-            alert("ERROR: model = '" + maMaterialData.model + "'. Something has been broken in the code.");
+            alert("ERROR: Unrecognized material model. (model = '" + maMaterialData.model + "')");
     }
 
     //NAME
@@ -1422,7 +1423,7 @@ function loadDataInMaUi(materialDataPropertyValue) {
             maOpacityMapModeBlend.checked = true;
             break;
         default:
-            alert("ERROR: opacityMapMode = '" + maMaterialData.opacityMapMode + "'. Something has been broken in the code.");
+            alert("ERROR: Unrecognized material opacityMapMode. (opacityMapMode = '" + maMaterialData.opacityMapMode + "')");
     }
 
     if (materialDefinition.opacityCutoff !== undefined) {
@@ -1846,7 +1847,7 @@ function loadDataInMaUi(materialDataPropertyValue) {
             maOutlineWidthModeScreen.checked = true;
             break;
         default:
-            alert("ERROR: outlineWidthMode = '" + maMaterialData.outlineWidthMode + "'. Something has been broken in the code.");
+            alert("ERROR: Unrecognized material outlineWidthMode. (outlineWidthMode = '" + maMaterialData.outlineWidthMode + "')");
     }
 
     //OUTLINE WIDTH
@@ -2012,7 +2013,7 @@ function loadDataInMaUi(materialDataPropertyValue) {
             maCullFaceModeNone.checked = true;
             break;
         default:
-            alert("ERROR: cullFaceMode = '" + maMaterialData.cullFaceMode + "'. Something has been broken in the code.");
+            alert("ERROR: Unrecognized material cullFaceMode. (cullFaceMode = '" + maMaterialData.cullFaceMode + "')");
     }
     
     maFieldContextualDisplayer();
@@ -2156,7 +2157,7 @@ function maGenerateJsonAndSave() {
                     newMaterial.opacityMap = maMaterialData.albedoMap;
                     break;
                 default:
-                    alert("ERROR: opacityMapMode = '" + maMaterialData.opacityMapMode + "'. Something has been broken in the code.");
+                    alert("ERROR: Unrecognized material opacityMapMode. (opacityMapMode = '" + maMaterialData.opacityMapMode + "')");
             }
         } else {
             defaultFallthrough = true;
@@ -2249,7 +2250,7 @@ function maGenerateJsonAndSave() {
                     newMaterial.opacityMap = maMaterialData.albedoMap;
                     break;
                 default:
-                    alert("ERROR: opacityMapMode = '" + maMaterialData.opacityMapMode + "'. Something has been broken in the code.");
+                    alert("ERROR: Unrecognized material opacityMapMode. (opacityMapMode = '" + maMaterialData.opacityMapMode + "')");
             }
         } else {
             defaultFallthrough = true;
