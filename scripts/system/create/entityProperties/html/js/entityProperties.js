@@ -1841,6 +1841,7 @@ let createAppTooltip = new CreateAppTooltip();
 let currentSpaceMode = PROPERTY_SPACE_MODE.LOCAL;
 let zonesList = [];
 let canViewAssetURLs = false;
+let maSelectedId;
 
 function createElementFromHTML(htmlString) {
     let elTemplate = document.createElement('template');
@@ -3613,10 +3614,9 @@ function saveMaterialData() {
 
 function openMaterialAssistant() {
     if (materialEditor === null) {
-        loadDataInMaUi({});
-    } else {
-        loadDataInMaUi(materialEditor.getText());
+        newJSONMaterialEditor();
     }
+    loadDataInMaUi(materialEditor.getText());
     $('#uiMaterialAssistant').show();
     $('#properties-list').hide();
 }
@@ -4177,7 +4177,16 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
     const multipleSelections = currentSelections.length > 1;
     const hasSelectedEntityChanged = !areSetsEqual(selectedEntityIDs, previouslySelectedEntityIDs);
 
-    closeMaterialAssistant();
+    if (selections.length === 1) {
+        if (maSelectedId !== selections[0].id) {
+            closeMaterialAssistant();
+        }
+        maSelectedId = selections[0].id;
+    } else {
+        closeMaterialAssistant();
+        maSelectedId = "";
+    }
+
     requestZoneList();
     
     if (selections.length === 0) {
