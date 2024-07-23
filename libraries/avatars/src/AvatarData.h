@@ -451,7 +451,6 @@ Q_DECLARE_METATYPE(KillAvatarReason);
 
 class QDataStream;
 
-class AttachmentData;
 class Transform;
 using TransformPointer = std::shared_ptr<Transform>;
 
@@ -523,8 +522,6 @@ class AvatarData : public QObject, public SpatiallyNestable {
      * @property {boolean} lookAtSnappingEnabled=true - <code>true</code> if the avatar's eyes snap to look at another avatar's
      *     eyes when the other avatar is in the line of sight and also has <code>lookAtSnappingEnabled == true</code>.
      * @property {string} skeletonModelURL - The avatar's FST file.
-     * @property {AttachmentData[]} attachmentData - Information on the avatar's attachments.
-     *     <p class="important">Deprecated: This property is deprecated and will be removed. Use avatar entities instead.</p>
      * @property {string[]} jointNames - The list of joints in the current avatar model. <em>Read-only.</em>
      * @property {Uuid} sessionUUID - Unique ID of the avatar in the domain. <em>Read-only.</em>
      * @property {Mat4} sensorToWorldMatrix - The scale, rotation, and translation transform from the user's real world to the
@@ -580,7 +577,6 @@ class AvatarData : public QObject, public SpatiallyNestable {
     Q_PROPERTY(QString sessionDisplayName READ getSessionDisplayName WRITE setSessionDisplayName NOTIFY sessionDisplayNameChanged)
     Q_PROPERTY(bool lookAtSnappingEnabled MEMBER _lookAtSnappingEnabled NOTIFY lookAtSnappingChanged)
     Q_PROPERTY(QString skeletonModelURL READ getSkeletonModelURLFromScript WRITE setSkeletonModelURLFromScript NOTIFY skeletonModelURLChanged)
-    Q_PROPERTY(QVector<AttachmentData> attachmentData READ getAttachmentData WRITE setAttachmentData)
 
     Q_PROPERTY(QStringList jointNames READ getJointNames)
 
@@ -1145,27 +1141,6 @@ public:
      */
     Q_INVOKABLE void setBlendshape(QString name, float val) { _headData->setBlendshape(name, val); }
 
-
-    /*@jsdoc
-     * Gets information about the models currently attached to your avatar.
-     * @function Avatar.getAttachmentsVariant
-     * @returns {AttachmentData[]} Information about all models attached to your avatar.
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     */
-    // FIXME: Can this name be improved? Can it be deprecated?
-    Q_INVOKABLE virtual QVariantList getAttachmentsVariant() const;
-
-    /*@jsdoc
-     * Sets all models currently attached to your avatar. For example, if you retrieve attachment data using
-     * {@link MyAvatar.getAttachmentsVariant} or {@link Avatar.getAttachmentsVariant}, make changes to it, and then want to
-     * update your avatar's attachments per the changed data.
-     * @function Avatar.setAttachmentsVariant
-     * @param {AttachmentData[]} variant - The attachment data defining the models to have attached to your avatar.
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     */
-    // FIXME: Can this name be improved? Can it be deprecated?
-    Q_INVOKABLE virtual void setAttachmentsVariant(const QVariantList& variant);
-
     virtual void storeAvatarEntityDataPayload(const QUuid& entityID, const QByteArray& payload);
 
     /*@jsdoc
@@ -1209,7 +1184,6 @@ public:
     const HeadData* getHeadData() const { return _headData; }
 
     struct Identity {
-        QVector<AttachmentData> attachmentData;
         QString displayName;
         QString sessionDisplayName;
         bool isReplicated;
@@ -1253,109 +1227,6 @@ public:
         markIdentityDataChanged();
     }
     virtual bool isCertifyFailed() const { return _verificationFailed; }
-
-    /*@jsdoc
-     * Gets information about the models currently attached to your avatar.
-     * @function Avatar.getAttachmentData
-     * @returns {AttachmentData[]} Information about all models attached to your avatar.
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     * @example <caption>Report the URLs of all current attachments.</caption>
-     * var attachments = MyAvatar.getaAttachmentData();
-     * for (var i = 0; i < attachments.length; i++) {
-     *     print(attachments[i].modelURL);
-     * }
-     *
-     * // Note: If using from the Avatar API, replace "MyAvatar" with "Avatar".
-     */
-    Q_INVOKABLE virtual QVector<AttachmentData> getAttachmentData() const;
-
-    /*@jsdoc
-     * Sets all models currently attached to your avatar. For example, if you retrieve attachment data using
-     * {@link MyAvatar.getAttachmentData} or {@link Avatar.getAttachmentData}, make changes to it, and then want to update your avatar's attachments per the
-     * changed data. You can also remove all attachments by using setting <code>attachmentData</code> to <code>null</code>.
-     * @function Avatar.setAttachmentData
-     * @param {AttachmentData[]} attachmentData - The attachment data defining the models to have attached to your avatar. Use
-     *     <code>null</code> to remove all attachments.
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     * @example <caption>Remove a hat attachment if your avatar is wearing it.</caption>
-     * var hatURL = "https://apidocs.overte.org/examples/cowboy-hat.fbx";
-     * var attachments = MyAvatar.getAttachmentData();
-     *
-     * for (var i = 0; i < attachments.length; i++) {
-     *     if (attachments[i].modelURL === hatURL) {
-     *         attachments.splice(i, 1);
-     *         MyAvatar.setAttachmentData(attachments);
-     *         break;
-     *     }
-     *  }
-     *
-     * // Note: If using from the Avatar API, replace all occurrences of "MyAvatar" with "Avatar".
-     */
-    Q_INVOKABLE virtual void setAttachmentData(const QVector<AttachmentData>& attachmentData);
-
-    /*@jsdoc
-     * Attaches a model to your avatar. For example, you can give your avatar a hat to wear, a guitar to hold, or a surfboard to
-     * stand on.
-     * @function Avatar.attach
-     * @param {string} modelURL - The URL of the glTF, FBX, or OBJ model to attach. glTF models may be in JSON or binary format
-     *     (".gltf" or ".glb" URLs respectively).
-     * @param {string} [jointName=""] - The name of the avatar joint (see {@link MyAvatar.getJointNames} or
-     *     {@link Avatar.getJointNames}) to attach the model to.
-     * @param {Vec3} [translation=Vec3.ZERO] - The offset to apply to the model relative to the joint position.
-     * @param {Quat} [rotation=Quat.IDENTITY] - The rotation to apply to the model relative to the joint orientation.
-     * @param {number} [scale=1.0] - The scale to apply to the model.
-     * @param {boolean} [isSoft=false] -  If the model has a skeleton, set this to <code>true</code> so that the bones of the
-     *     attached model's skeleton are rotated to fit the avatar's current pose. <code>isSoft</code> is used, for example,
-     *     to have clothing that moves with the avatar.
-     *     <p>If <code>true</code>, the <code>translation</code>, <code>rotation</code>, and <code>scale</code> parameters are
-     *     ignored.</p>
-     * @param {boolean} [allowDuplicates=false] - If <code>true</code> then more than one copy of any particular model may be
-     *     attached to the same joint; if <code>false</code> then the same model cannot be attached to the same joint.
-     * @param {boolean} [useSaved=true] - <em>Not used.</em>
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     * @example <caption>Attach a cowboy hat to your avatar's head.</caption>
-     * var attachment = {
-     *     modelURL: "https://apidocs.overte.org/examples/cowboy-hat.fbx",
-     *     jointName: "Head",
-     *     translation: {"x": 0, "y": 0.25, "z": 0},
-     *     rotation: {"x": 0, "y": 0, "z": 0, "w": 1},
-     *     scale: 0.01,
-     *     isSoft: false
-     * };
-     *
-     *  MyAvatar.attach(attachment.modelURL,
-     *                  attachment.jointName,
-     *                  attachment.translation,
-     *                  attachment.rotation,
-     *                  attachment.scale,
-     *                  attachment.isSoft);
-     *
-     * // Note: If using from the Avatar API, replace "MyAvatar" with "Avatar".
-     */
-    Q_INVOKABLE virtual void attach(const QString& modelURL, const QString& jointName = QString(),
-                                    const glm::vec3& translation = glm::vec3(), const glm::quat& rotation = glm::quat(),
-                                    float scale = 1.0f, bool isSoft = false,
-                                    bool allowDuplicates = false, bool useSaved = true);
-
-    /*@jsdoc
-     * Detaches the most recently attached instance of a particular model from either a specific joint or any joint.
-     * @function Avatar.detachOne
-     * @param {string} modelURL - The URL of the model to detach.
-     * @param {string} [jointName=""] - The name of the joint to detach the model from. If <code>""</code>, then the most
-     *     recently attached model is removed from which ever joint it was attached to.
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     */
-    Q_INVOKABLE virtual void detachOne(const QString& modelURL, const QString& jointName = QString());
-
-    /*@jsdoc
-     * Detaches all instances of a particular model from either a specific joint or all joints.
-     * @function Avatar.detachAll
-     * @param {string} modelURL - The URL of the model to detach.
-     * @param {string} [jointName=""] - The name of the joint to detach the model from. If <code>""</code>, then the model is
-     *     detached from all joints.
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     */
-    Q_INVOKABLE virtual void detachAll(const QString& modelURL, const QString& jointName = QString());
 
     QString getSkeletonModelURLFromScript() const;
     void setSkeletonModelURLFromScript(const QString& skeletonModelString) { setSkeletonModelURL(QUrl(skeletonModelString)); }
@@ -1732,8 +1603,6 @@ protected:
     mutable HeadData* _headData { nullptr };
 
     QUrl _skeletonModelURL;
-    QVector<AttachmentData> _attachmentData;
-    QVector<AttachmentData> _oldAttachmentData;
     QString _displayName;
     QString _sessionDisplayName { };
     bool _lookAtSnappingEnabled { true };
@@ -1898,66 +1767,6 @@ Q_DECLARE_METATYPE(AvatarData*)
 
 QJsonValue toJsonValue(const JointData& joint);
 JointData jointDataFromJsonValue(const QJsonValue& q);
-
-class AttachmentData {
-public:
-    QUrl modelURL;
-    QString jointName;
-    glm::vec3 translation;
-    glm::quat rotation;
-    float scale { 1.0f };
-    bool isSoft { false };
-
-    bool isValid() const { return modelURL.isValid(); }
-
-    bool operator==(const AttachmentData& other) const;
-
-    QJsonObject toJson() const;
-    void fromJson(const QJsonObject& json);
-
-    QVariant toVariant() const;
-    bool fromVariant(const QVariant& variant);
-};
-
-QDataStream& operator<<(QDataStream& out, const AttachmentData& attachment);
-QDataStream& operator>>(QDataStream& in, AttachmentData& attachment);
-
-Q_DECLARE_METATYPE(AttachmentData)
-Q_DECLARE_METATYPE(QVector<AttachmentData>)
-
-/// Scriptable wrapper for attachments.
-class AttachmentDataObject : public QObject, protected Scriptable {
-    Q_OBJECT
-    Q_PROPERTY(QString modelURL READ getModelURL WRITE setModelURL)
-    Q_PROPERTY(QString jointName READ getJointName WRITE setJointName)
-    Q_PROPERTY(glm::vec3 translation READ getTranslation WRITE setTranslation)
-    Q_PROPERTY(glm::quat rotation READ getRotation WRITE setRotation)
-    Q_PROPERTY(float scale READ getScale WRITE setScale)
-    Q_PROPERTY(bool isSoft READ getIsSoft WRITE setIsSoft)
-
-public:
-
-    Q_INVOKABLE void setModelURL(const QString& modelURL);
-    Q_INVOKABLE QString getModelURL() const;
-
-    Q_INVOKABLE void setJointName(const QString& jointName);
-    Q_INVOKABLE QString getJointName() const;
-
-    Q_INVOKABLE void setTranslation(const glm::vec3& translation);
-    Q_INVOKABLE glm::vec3 getTranslation() const;
-
-    Q_INVOKABLE void setRotation(const glm::quat& rotation);
-    Q_INVOKABLE glm::quat getRotation() const;
-
-    Q_INVOKABLE void setScale(float scale);
-    Q_INVOKABLE float getScale() const;
-
-    Q_INVOKABLE void setIsSoft(bool scale);
-    Q_INVOKABLE bool getIsSoft() const;
-};
-
-void registerAvatarTypes(ScriptEngine* engine);
-void registerAvatarPrototypes(ScriptEngine* engine);
 
 class RayToAvatarIntersectionResult {
 public:

@@ -816,6 +816,7 @@ void AudioMixer::parseSettingsObject(const QJsonObject& settingsObject) {
 void AudioMixer::setupEntityQuery() {
     _entityViewer.init();
     EntityTreePointer entityTree = _entityViewer.getTree();
+    entityTree->setIsServer(true);
     DependencyManager::registerInheritance<SpatialParentFinder, AssignmentParentFinder>();
     DependencyManager::set<AssignmentParentFinder>(entityTree);
 

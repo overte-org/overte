@@ -69,7 +69,6 @@ const QUuid SpatiallyNestable::getParentID() const {
 }
 
 void SpatiallyNestable::setParentID(const QUuid& parentID) {
-    bumpAncestorChainRenderableVersion();
     bool success = false;
     auto parent = getParentPointer(success);
     bool parentChanged = false;
@@ -89,7 +88,6 @@ void SpatiallyNestable::setParentID(const QUuid& parentID) {
         success = false;
         parent = getParentPointer(success);
         if (success && parent) {
-            bumpAncestorChainRenderableVersion();
             parent->updateQueryAACube();
             parent->recalculateChildCauterization();
         }
@@ -1508,18 +1506,4 @@ QUuid SpatiallyNestable::getEditSenderID() {
         }
     });
     return editSenderID;
-}
-
-void SpatiallyNestable::bumpAncestorChainRenderableVersion(int depth) const {
-    if (depth > MAX_PARENTING_CHAIN_SIZE) {
-        // can't break the parent chain here, because it will call setParentID, which calls this
-        return;
-    }
-
-    _ancestorChainRenderableVersion++;
-    bool success = false;
-    auto parent = getParentPointer(success);
-    if (success && parent) {
-        parent->bumpAncestorChainRenderableVersion(depth + 1);
-    }
 }

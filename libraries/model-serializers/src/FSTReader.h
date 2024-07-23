@@ -42,8 +42,7 @@ public:
         ENTITY_MODEL,
         HEAD_MODEL,
         BODY_ONLY_MODEL,
-        HEAD_AND_BODY_MODEL,
-        ATTACHMENT_MODEL
+        HEAD_AND_BODY_MODEL
     };
 
     /// Reads an FST mapping from the supplied data.

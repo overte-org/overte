@@ -1261,7 +1261,6 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
     if (!_hasModel) {
         if (model) {
             model->removeFromScene(scene, transaction);
-            entity->bumpAncestorChainRenderableVersion();
             emit DependencyManager::get<scriptable::ModelProviderFactory>()->
                 modelRemovedFromScene(entity->getEntityItemID(), NestableType::Entity, model);
             withWriteLock([&] { _model.reset(); });
@@ -1391,7 +1390,6 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
             makeStatusGetters(entity, statusGetters);
             using namespace std::placeholders;
             model->addToScene(scene, transaction, statusGetters, std::bind(&ModelEntityRenderer::metaBlendshapeOperator, _renderItemID, _1, _2, _3, _4));
-            entity->bumpAncestorChainRenderableVersion();
             processMaterials();
         }
     }
