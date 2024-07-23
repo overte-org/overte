@@ -734,5 +734,29 @@
     },
     "particleRenderData": {
         "tooltip": "A JSON description of the shaders, textures, and uniforms to use during particle rendering."
+    },
+    "soundURL": {
+        "tooltip": "The URL of the sound, as a wav, mp3, or raw file."
+    },
+    "playing": {
+        "tooltip": "Whether or not the sound should play."
+    },
+    "volume": {
+        "tooltip": "The volume of the sound."
+    },
+    "pitch": {
+        "tooltip": "Alter the pitch of the sound, within +/- 2 octaves. The value is the relative sample rate at which to resample the sound."
+    },
+    "timeOffset": {
+        "tooltip": "Starts playback from a specified time (seconds) within the sound file."
+    },
+    "loop": {
+        "tooltip": "Whether or not the sound is played repeatedly."
+    },
+    "positional": {
+        "tooltip": "Whether or not the sound volume drops off with distance."
+    },
+    "localOnly": {
+        "tooltip": "Whether the sound should play locally for everyone separately, or globally via the audio mixer."
     }
 }

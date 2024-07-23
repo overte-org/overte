@@ -180,6 +180,7 @@ const FILTER_TYPES = [
     "PolyVox",
     "Text",
     "Grid",
+    "Sound",
 ];
 
 const DOUBLE_CLICK_TIMEOUT = 300; // ms

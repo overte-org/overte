@@ -1264,6 +1264,27 @@ public slots:
     Q_INVOKABLE bool appendPoint(const QUuid& entityID, const glm::vec3& point);
 
     /*@jsdoc
+     * Restart a {@link Entities.EntityProperties-Sound|Sound} entity, locally only.  It must also be <code>localOnly</code>.
+     * @function Entities.restartSound
+     * @param {Uuid} entityID - The ID of the {@link Entities.EntityProperties-Sound|Sound} entity.
+     * @example <caption>Play a sound once and repeat it every 3 seconds.</caption>
+     * var position = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.5, z: -8 }));
+     * var sound = Entities.addEntity({
+     *     type: "Sound",
+     *     position: position,
+     *     soundURL: "https://themushroomkingdom.net/sounds/wav/lm/lm_gold_mouse.wav",
+     *     positional: false,
+     *     localOnly: true,
+     *     loop: false,
+     *     lifetime: 300  // Delete after 5 minutes.
+     * });
+     * Script.setInterval(() => {
+     *     Entities.restartSound(sound);
+     * }, 3000);
+     */
+    Q_INVOKABLE bool restartSound(const QUuid& entityID);
+
+    /*@jsdoc
      * Dumps debug information about all entities in Interface's local in-memory tree of entities it knows about to the program 
      * log.
      * @function Entities.dumpTree

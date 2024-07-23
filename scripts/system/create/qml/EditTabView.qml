@@ -190,6 +190,18 @@ TabBar {
                                 editTabView.currentIndex = 2
                             }
                         }
+
+                        NewEntityButton {
+                            icon: "icons/sound.svg"
+                            text: "SOUND"
+                            onClicked: {
+                                editRoot.sendToScript({
+                                    method: "newEntityButtonClicked",
+                                    params: { buttonName: "newSoundButton" }
+                                });
+                                editTabView.currentIndex = 2
+                            }
+                        }
                     }
 
                     HifiControls.Button {
