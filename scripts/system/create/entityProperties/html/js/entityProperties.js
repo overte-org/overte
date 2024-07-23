@@ -1510,6 +1510,62 @@ const GROUPS = [
         ]
     },
     {
+        id: "sound",
+        label: "SOUND",
+        properties: [
+            {
+                label: "Sound",
+                type: "string",
+                propertyID: "soundURL",
+                placeholder: "URL",
+            },
+            {
+                label: "Playing",
+                type: "bool",
+                propertyID: "playing",
+            },
+            {
+                label: "Loop",
+                type: "bool",
+                propertyID: "loop",
+            },
+            {
+                label: "Volume",
+                type: "number-draggable",
+                min: 0,
+                max: 1,
+                step: 0.01,
+                decimals: 2,
+                propertyID: "volume",
+            },
+            {
+                label: "Positional",
+                type: "bool",
+                propertyID: "positional",
+            },
+            {
+                label: "Pitch",
+                type: "number-draggable",
+                min: 0.0625,
+                max: 16,
+                step: 0.1,
+                decimals: 2,
+                propertyID: "pitch",
+            },
+            {
+                label: "Time Offset",
+                type: "number-draggable",
+                step: 0.1,
+                propertyID: "timeOffset",
+            },
+            {
+                label: "Local Only",
+                type: "bool",
+                propertyID: "localOnly",
+            }
+        ]
+    },
+    {
         id: "spatial",
         label: "SPATIAL",
         properties: [
@@ -1895,6 +1951,7 @@ const GROUPS_PER_TYPE = {
   PolyLine: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
   Grid: [ 'base', 'grid', 'spatial', 'behavior', 'scripts', 'physics' ],
+  Sound: [ 'base', 'sound', 'spatial', 'behavior', 'scripts', 'physics' ],
   Multiple: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
 };
 

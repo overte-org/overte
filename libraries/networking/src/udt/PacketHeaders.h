@@ -298,6 +298,7 @@ enum class EntityVersion : PacketVersion {
     ProceduralParticles,
     ShapeUnlit,
     AmbientColor,
+    SoundEntities,
     ModelLoadPriority,
 
     // Add new versions above here
