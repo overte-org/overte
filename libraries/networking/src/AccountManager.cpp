@@ -696,7 +696,8 @@ void AccountManager::setAccessTokens(const QString& response) {
         if (!rootObject.contains("access_token") || !rootObject.contains("expires_in")
             || !rootObject.contains("token_type")) {
             // TODO: error handling - malformed token response
-            qCDebug(networking) << "Received a response for password grant that is missing one or more expected values.";
+            qCWarning(networking) << "Error setting access token. Received a response for password grant that is missing one or more expected values.";
+            qCWarning(networking) << "Response:" << QJsonDocument(rootObject).toJson(QJsonDocument::Compact);
         } else {
             // clear the path from the response URL so we have the right root URL for this access token
             QUrl rootURL = rootObject.contains("url") ? rootObject["url"].toString() : _authURL;
@@ -731,7 +732,8 @@ void AccountManager::requestAccessTokenFinished() {
         if (!rootObject.contains("access_token") || !rootObject.contains("expires_in")
             || !rootObject.contains("token_type")) {
             // TODO: error handling - malformed token response
-            qCDebug(networking) << "Received a response for password grant that is missing one or more expected values.";
+            qCWarning(networking) << "Error requesting access token. Received a response for password grant that is missing one or more expected values.";
+            qCWarning(networking) << "Response:" << QJsonDocument(rootObject).toJson(QJsonDocument::Compact);
         } else {
             // clear the path from the response URL so we have the right root URL for this access token
             QUrl rootURL = requestReply->url();
