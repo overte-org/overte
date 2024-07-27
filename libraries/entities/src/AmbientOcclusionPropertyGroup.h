@@ -91,7 +91,9 @@ public:
                                                  EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
                                                  bool& somethingChanged) override;
 
-    DEFINE_PROPERTY_REF_ENUM(PROP_AMBIENT_OCCLUSION_TECHNIQUE, Technique, technique, AmbientOcclusionTechnique, AmbientOcclusionTechnique::SSAO);
+    // FIXME: On some machines, SSAO seems to be causing performance problems.  Let's default to HBAO for now and maybe
+    // revisit when we have Vulkan
+    DEFINE_PROPERTY_REF_ENUM(PROP_AMBIENT_OCCLUSION_TECHNIQUE, Technique, technique, AmbientOcclusionTechnique, AmbientOcclusionTechnique::HBAO);
     DEFINE_PROPERTY(PROP_AMBIENT_OCCLUSION_JITTER, Jitter, jitter, bool, false);
     DEFINE_PROPERTY(PROP_AMBIENT_OCCLUSION_RESOLUTION_LEVEL, ResolutionLevel, resolutionLevel, uint8_t, 2);
     DEFINE_PROPERTY(PROP_AMBIENT_OCCLUSION_EDGE_SHARPNESS, EdgeSharpness, edgeSharpness, float, 1.0f);

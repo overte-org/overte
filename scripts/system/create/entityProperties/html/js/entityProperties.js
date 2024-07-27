@@ -657,13 +657,13 @@ const GROUPS = [
                 options: { inherit: "Inherit", disabled: "Off", enabled: "On" },
                 propertyID: "ambientOcclusionMode",
             },
-            {
-                label: "Technique",
-                type: "dropdown",
-                options: { ssao: "SSAO", hbao: "HBAO" },
-                propertyID: "ambientOcclusion.technique",
-                showPropertyRule: { "ambientOcclusionMode": "enabled" },
-            },
+            //{
+            //    label: "Technique",
+            //    type: "dropdown",
+            //    options: { ssao: "SSAO", hbao: "HBAO" },
+            //    propertyID: "ambientOcclusion.technique",
+            //    showPropertyRule: { "ambientOcclusionMode": "enabled" },
+            //},
             {
                 label: "Jitter",
                 type: "bool",
