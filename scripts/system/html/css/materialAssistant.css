@@ -3,7 +3,7 @@
 //
 //  Created by Alezia Kurdis on May 17th, 2022.
 //  Copyright 2022 Vircadia contributors.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -22,7 +22,12 @@
     background-color: #404040;
     z-index: 2;
     border-collapse: collapse;
+}
+
+#uiMaterialAssistant-scrollable {
+    border-collapse: collapse;
     overflow-y: scroll;
+    height: 100%;
 }
 
 #uiMaterialAssistant-headerContainer {
@@ -80,12 +85,21 @@ font.uiMaterialAssistant-label{
     color: #D2D2D2;
 }
 
+label.uiMaterialAssistant-label{
+    background-color: #2E2E2E;
+    font-family: Raleway-SemiBold;
+    text-decoration: none;
+    font-size: 12px;
+    color: #D2D2D2;
+}
+
 font.uiMaterialAssistant-title{
     background-color: #404040;
     font-family: Raleway-Bold;
     font-size: 18px;
     text-decoration: none;
     color: #F2F2F2;
+    white-space: normal;
 }
 
 input[type=range].uiMaterialAssistant-slider {
@@ -151,6 +165,18 @@ input[type=text].uiMaterialAssistant-input {
     color: #000000;
 }
 
+textarea.uiMaterialAssistant-textarea {
+    background-color: #ffffff;
+    border: 1px solid #000000;
+    font-family: FiraSans-SemiBold;
+    font-size: 12px;
+    width: 100%;
+    height: 200px;
+    padding: 3px;
+    margin: 3px 0px 3px 0px;
+    color: #000000;
+}
+
 input[type=text].uiMaterialAssistant-input:disabled {
     background-color: #555555;
     color: #888888;
@@ -171,8 +197,8 @@ input[type=checkbox].uiMaterialAssistant-checkbox {
     height: 16px;
     margin: 2px;
     padding: 3px;
-    display: block;
     text-align: left;
+    display: block;
 }
 
 input[type=checkbox].uiMaterialAssistant-checkbox:focus {
@@ -221,3 +247,30 @@ div.uiMaterialAssistant-color-picker {
     width: 120px;
     height: 30px;
 }
+
+button.uiMaterialAssistant-smallButton {
+    font-family: Raleway-Regular;
+    font-size: 12px;
+    border-radius: 5px;
+    border: none;
+    color: #cccccc;
+    background-color: #000000;
+    background: linear-gradient(#575757 20%, #000000 100%);
+    cursor: pointer;
+    padding: 3px 10px 3px 10px;
+}
+
+button.uiMaterialAssistant-smallButton:hover {
+    background: linear-gradient(#383838, #000000);
+    color: #eeeeee;
+    border: none;
+}
+
+button.uiMaterialAssistant-smallButton:disabled {
+    color: #555555;
+}
+
+button.uiMaterialAssistant-smallButton:focus {
+    outline: none;
+}
+
