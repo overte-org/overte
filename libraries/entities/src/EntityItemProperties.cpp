@@ -48,6 +48,8 @@ BloomPropertyGroup EntityItemProperties::_staticBloom;
 ZoneAudioPropertyGroup EntityItemProperties::_staticAudio;
 KeyLightPropertyGroup EntityItemProperties::_staticKeyLight;
 AmbientLightPropertyGroup EntityItemProperties::_staticAmbientLight;
+TonemappingPropertyGroup EntityItemProperties::_staticTonemapping;
+AmbientOcclusionPropertyGroup EntityItemProperties::_staticAmbientOcclusion;
 GrabPropertyGroup EntityItemProperties::_staticGrab;
 PulsePropertyGroup EntityItemProperties::_staticPulse;
 RingGizmoPropertyGroup EntityItemProperties::_staticRing;
@@ -90,6 +92,8 @@ void EntityItemProperties::debugDump() const {
     getAmbientLight().debugDump();
     getBloom().debugDump();
     getAudio().debugDump();
+    getTonemapping().debugDump();
+    getAmbientOcclusion().debugDump();
     getGrab().debugDump();
 
     qCDebug(entities) << "   changed properties...";
@@ -254,6 +258,8 @@ QString EntityItemProperties::getKeyLightModeAsString() const { return getCompon
 QString EntityItemProperties::getAmbientLightModeAsString() const { return getComponentModeAsString(_ambientLightMode); }
 QString EntityItemProperties::getHazeModeAsString() const { return getComponentModeAsString(_hazeMode); }
 QString EntityItemProperties::getBloomModeAsString() const { return getComponentModeAsString(_bloomMode); }
+QString EntityItemProperties::getTonemappingModeAsString() const { return getComponentModeAsString(_tonemappingMode); }
+QString EntityItemProperties::getAmbientOcclusionModeAsString() const { return getComponentModeAsString(_ambientOcclusionMode); }
 void EntityItemProperties::setSkyboxModeFromString(const QString& mode) {
     auto modeItr = stringToComponentMode.find(mode.toLower());
     if (modeItr != stringToComponentMode.end()) {
@@ -287,6 +293,20 @@ void EntityItemProperties::setBloomModeFromString(const QString& mode) {
     if (modeItr != stringToComponentMode.end()) {
         _bloomMode = modeItr.value();
         _bloomModeChanged = true;
+    }
+}
+void EntityItemProperties::setTonemappingModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _tonemappingMode = modeItr.value();
+        _tonemappingModeChanged = true;
+    }
+}
+void EntityItemProperties::setAmbientOcclusionModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _ambientOcclusionMode = modeItr.value();
+        _ambientOcclusionModeChanged = true;
     }
 }
 
@@ -625,6 +645,8 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     changedProperties += _haze.getChangedProperties();
     changedProperties += _bloom.getChangedProperties();
     changedProperties += _audio.getChangedProperties();
+    changedProperties += _tonemapping.getChangedProperties();
+    changedProperties += _ambientOcclusion.getChangedProperties();
     CHECK_PROPERTY_CHANGE(PROP_FLYING_ALLOWED, flyingAllowed);
     CHECK_PROPERTY_CHANGE(PROP_GHOSTING_ALLOWED, ghostingAllowed);
     CHECK_PROPERTY_CHANGE(PROP_FILTER_URL, filterURL);
@@ -635,6 +657,8 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_BLOOM_MODE, bloomMode);
     CHECK_PROPERTY_CHANGE(PROP_AVATAR_PRIORITY, avatarPriority);
     CHECK_PROPERTY_CHANGE(PROP_SCREENSHARE, screenshare);
+    CHECK_PROPERTY_CHANGE(PROP_TONEMAPPING_MODE, tonemappingMode);
+    CHECK_PROPERTY_CHANGE(PROP_AMBIENT_OCCLUSION_MODE, ambientOcclusionMode);
 
     // Polyvox
     CHECK_PROPERTY_CHANGE(PROP_VOXEL_VOLUME_SIZE, voxelVolumeSize);
@@ -1587,6 +1611,12 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *
  * @property {Entities.ZoneAudio} audio - The audio properties of the zone.
  *
+ * @property {Entities.ComponentMode} tonemappingMode="inherit" - Configures the tonemapping in the zone.
+ * @property {Entities.Tonemapping} tonemapping - The tonemapping properties of the zone.
+ *
+ * @property {Entities.ComponentMode} ambientOcclusionMode="inherit" - Configures the ambient occlusion in the zone.
+ * @property {Entities.AmbientOcclusion} ambientOcclusion - The ambient occlusion properties of the zone.
+ *
  * @property {boolean} flyingAllowed=true - <code>true</code> if visitors can fly in the zone; <code>false</code> if they
  *     cannot. Only works for domain entities.
  * @property {boolean} ghostingAllowed=true - <code>true</code> if visitors with avatar collisions turned off will not
@@ -1951,6 +1981,8 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         _haze.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
         _bloom.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
         _audio.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+        _tonemapping.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+        _ambientOcclusion.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
 
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_FLYING_ALLOWED, flyingAllowed);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_GHOSTING_ALLOWED, ghostingAllowed);
@@ -1963,6 +1995,8 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_BLOOM_MODE, bloomMode, getBloomModeAsString());
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_AVATAR_PRIORITY, avatarPriority, getAvatarPriorityAsString());
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_SCREENSHARE, screenshare, getScreenshareAsString());
+        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_TONEMAPPING_MODE, tonemappingMode, getTonemappingModeAsString());
+        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_AMBIENT_OCCLUSION_MODE, ambientOcclusionMode, getAmbientOcclusionModeAsString());
     }
 
     // Web only
@@ -2349,6 +2383,8 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     _haze.copyFromScriptValue(object, namesSet, _defaultSettings);
     _bloom.copyFromScriptValue(object, namesSet, _defaultSettings);
     _audio.copyFromScriptValue(object, namesSet, _defaultSettings);
+    _tonemapping.copyFromScriptValue(object, namesSet, _defaultSettings);
+    _ambientOcclusion.copyFromScriptValue(object, namesSet, _defaultSettings);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(flyingAllowed, bool, setFlyingAllowed);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(ghostingAllowed, bool, setGhostingAllowed);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(filterURL, QString, setFilterURL);
@@ -2359,6 +2395,8 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(bloomMode, BloomMode);
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(avatarPriority, AvatarPriority);
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(screenshare, Screenshare);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(tonemappingMode, TonemappingMode);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(ambientOcclusionMode, AmbientOcclusionMode);
 
     // Polyvox
     COPY_PROPERTY_FROM_QSCRIPTVALUE(voxelVolumeSize, vec3, setVoxelVolumeSize);
@@ -2653,6 +2691,8 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     _haze.merge(other._haze);
     _bloom.merge(other._bloom);
     _audio.merge(other._audio);
+    _tonemapping.merge(other._tonemapping);
+    _ambientOcclusion.merge(other._ambientOcclusion);
     COPY_PROPERTY_IF_CHANGED(flyingAllowed);
     COPY_PROPERTY_IF_CHANGED(ghostingAllowed);
     COPY_PROPERTY_IF_CHANGED(filterURL);
@@ -2663,6 +2703,8 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(bloomMode);
     COPY_PROPERTY_IF_CHANGED(avatarPriority);
     COPY_PROPERTY_IF_CHANGED(screenshare);
+    COPY_PROPERTY_IF_CHANGED(tonemappingMode);
+    COPY_PROPERTY_IF_CHANGED(ambientOcclusionMode);
 
     // Polyvox
     COPY_PROPERTY_IF_CHANGED(voxelVolumeSize);
@@ -3079,6 +3121,22 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
             ADD_GROUP_PROPERTY_TO_MAP(PROP_LISTENER_ZONES, Audio, audio, ListenerZones, listenerZones);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_LISTENER_ATTENUATION_COEFFICIENTS, Audio, audio, ListenerAttenuationCoefficients, listenerAttenuationCoefficients);
         }
+        {  // Tonemapping
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_TONEMAPPING_CURVE, Tonemapping, tonemapping, Curve, curve);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_TONEMAPPING_EXPOSURE, Tonemapping, tonemapping, Exposure, exposure, -4.0f, -4.0f);
+        }
+        {  // Ambient Occlusion
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_AMBIENT_OCCLUSION_TECHNIQUE, AmbientOcclusion, ambientOcclusion, Technique, technique);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_AMBIENT_OCCLUSION_JITTER, AmbientOcclusion, ambientOcclusion, Jitter, jitter);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_RESOLUTION_LEVEL, AmbientOcclusion, ambientOcclusion, ResolutionLevel, resolutionLevel, 0, 4);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_EDGE_SHARPNESS, AmbientOcclusion, ambientOcclusion, EdgeSharpness, edgeSharpness, 0.0f, 1.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_BLUR_RADIUS, AmbientOcclusion, ambientOcclusion, BlurRadius, blurRadius, 0, 15);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_AO_RADIUS, AmbientOcclusion, ambientOcclusion, AORadius, aoRadius, 0.01f, 2.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_AO_OBSCURANCE_LEVEL, AmbientOcclusion, ambientOcclusion, AOObscuranceLevel, aoObscuranceLevel, 0.01f, 1.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_AO_FALLOFF_ANGLE, AmbientOcclusion, ambientOcclusion, AOFalloffAngle, aoFalloffAngle, 0.0f, 1.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_AO_SAMPLING_AMOUNT, AmbientOcclusion, ambientOcclusion, AOSamplingAmount, aoSamplingAmount, 0.0f, 1.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_SSAO_NUM_SPIRAL_TURNS, AmbientOcclusion, ambientOcclusion, SSAONumSpiralTurns, ssaoNumSpiralTurns, 0.0f, 10.0f);
+        }
         ADD_PROPERTY_TO_MAP(PROP_FLYING_ALLOWED, FlyingAllowed, flyingAllowed, bool);
         ADD_PROPERTY_TO_MAP(PROP_GHOSTING_ALLOWED, GhostingAllowed, ghostingAllowed, bool);
         ADD_PROPERTY_TO_MAP(PROP_FILTER_URL, FilterURL, filterURL, QString);
@@ -3089,6 +3147,8 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
         ADD_PROPERTY_TO_MAP(PROP_BLOOM_MODE, BloomMode, bloomMode, uint32_t);
         ADD_PROPERTY_TO_MAP(PROP_AVATAR_PRIORITY, AvatarPriority, avatarPriority, uint32_t);
         ADD_PROPERTY_TO_MAP(PROP_SCREENSHARE, Screenshare, screenshare, uint32_t);
+        ADD_PROPERTY_TO_MAP(PROP_TONEMAPPING_MODE, TonemappingMode, tonemappingMode, uint32_t);
+        ADD_PROPERTY_TO_MAP(PROP_AMBIENT_OCCLUSION_MODE, AmbientOcclusionMode, ambientOcclusionMode, uint32_t);
 
         // Polyvox
         ADD_PROPERTY_TO_MAP(PROP_VOXEL_VOLUME_SIZE, VoxelVolumeSize, voxelVolumeSize, vec3);
@@ -3516,6 +3576,12 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 _staticAudio.setProperties(properties);
                 _staticAudio.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
 
+                _staticTonemapping.setProperties(properties);
+                _staticTonemapping.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
+
+                _staticAmbientOcclusion.setProperties(properties);
+                _staticAmbientOcclusion.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
+
                 APPEND_ENTITY_PROPERTY(PROP_FLYING_ALLOWED, properties.getFlyingAllowed());
                 APPEND_ENTITY_PROPERTY(PROP_GHOSTING_ALLOWED, properties.getGhostingAllowed());
                 APPEND_ENTITY_PROPERTY(PROP_FILTER_URL, properties.getFilterURL());
@@ -3527,6 +3593,8 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_BLOOM_MODE, (uint32_t)properties.getBloomMode());
                 APPEND_ENTITY_PROPERTY(PROP_AVATAR_PRIORITY, (uint32_t)properties.getAvatarPriority());
                 APPEND_ENTITY_PROPERTY(PROP_SCREENSHARE, (uint32_t)properties.getScreenshare());
+                APPEND_ENTITY_PROPERTY(PROP_TONEMAPPING_MODE, (uint32_t)properties.getTonemappingMode());
+                APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_MODE, (uint32_t)properties.getAmbientOcclusionMode());
             }
 
             if (properties.getType() == EntityTypes::PolyVox) {
@@ -4006,6 +4074,8 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
         properties.getHaze().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
         properties.getBloom().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
         properties.getAudio().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
+        properties.getTonemapping().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
+        properties.getAmbientOcclusion().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
 
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_FLYING_ALLOWED, bool, setFlyingAllowed);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_GHOSTING_ALLOWED, bool, setGhostingAllowed);
@@ -4018,6 +4088,8 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_BLOOM_MODE, uint32_t, setBloomMode);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_AVATAR_PRIORITY, uint32_t, setAvatarPriority);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SCREENSHARE, uint32_t, setScreenshare);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_TONEMAPPING_MODE, uint32_t, setTonemappingMode);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_AMBIENT_OCCLUSION_MODE, uint32_t, setAmbientOcclusionMode);
     }
 
     if (properties.getType() == EntityTypes::PolyVox) {
@@ -4399,6 +4471,8 @@ void EntityItemProperties::markAllChanged() {
     _haze.markAllChanged();
     _bloom.markAllChanged();
     _audio.markAllChanged();
+    _tonemapping.markAllChanged();
+    _ambientOcclusion.markAllChanged();
     _flyingAllowedChanged = true;
     _ghostingAllowedChanged = true;
     _filterURLChanged = true;
@@ -4409,6 +4483,8 @@ void EntityItemProperties::markAllChanged() {
     _bloomModeChanged = true;
     _avatarPriorityChanged = true;
     _screenshareChanged = true;
+    _tonemappingModeChanged = true;
+    _ambientOcclusionModeChanged = true;
 
     // Polyvox
     _voxelVolumeSizeChanged = true;
@@ -5021,6 +5097,8 @@ QList<QString> EntityItemProperties::listChangedProperties() {
     getHaze().listChangedProperties(out);
     getBloom().listChangedProperties(out);
     getAudio().listChangedProperties(out);
+    getTonemapping().listChangedProperties(out);
+    getAmbientOcclusion().listChangedProperties(out);
     if (flyingAllowedChanged()) {
         out += "flyingAllowed";
     }
@@ -5050,6 +5128,12 @@ QList<QString> EntityItemProperties::listChangedProperties() {
     }
     if (screenshareChanged()) {
         out += "screenshare";
+    }
+    if (tonemappingModeChanged()) {
+        out += "tonemappingMode";
+    }
+    if (ambientOcclusionModeChanged()) {
+        out += "ambientOcclusionMode";
     }
 
     // Polyvox

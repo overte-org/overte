@@ -299,6 +299,7 @@ enum class EntityVersion : PacketVersion {
     ShapeUnlit,
     AmbientColor,
     SoundEntities,
+    TonemappingAndAmbientOcclusion,
 
     // Add new versions above here
     NUM_PACKET_TYPE,
