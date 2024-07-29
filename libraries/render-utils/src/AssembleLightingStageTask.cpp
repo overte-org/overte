@@ -25,6 +25,14 @@ void FetchCurrentFrames::run(const render::RenderContextPointer& renderContext, 
     auto bloomStage = renderContext->_scene->getStage<BloomStage>();
     assert(bloomStage);
     output.edit3() = std::make_shared<BloomStage::Frame>(bloomStage->_currentFrame);
+
+    auto tonemappingStage = renderContext->_scene->getStage<TonemappingStage>();
+    assert(tonemappingStage);
+    output.edit4() = std::make_shared<TonemappingStage::Frame>(tonemappingStage->_currentFrame);
+
+    auto ambientOcclusionStage = renderContext->_scene->getStage<AmbientOcclusionStage>();
+    assert(ambientOcclusionStage);
+    output.edit5() = std::make_shared<AmbientOcclusionStage::Frame>(ambientOcclusionStage->_currentFrame);
 }
 
 
@@ -47,4 +55,3 @@ void AssembleLightingStageTask::build(JobModel& task, const render::Varying& inp
 
     output = Output(currentStageFrames, zones);
 }
-

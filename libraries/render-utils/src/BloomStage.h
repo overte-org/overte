@@ -81,26 +81,4 @@ public:
 protected:
 };
 
-class FetchBloomConfig : public render::Job::Config {
-    Q_OBJECT
-    Q_PROPERTY(float bloomIntensity MEMBER bloomIntensity WRITE setBloomIntensity NOTIFY dirty);
-    Q_PROPERTY(float bloomThreshold MEMBER bloomThreshold WRITE setBloomThreshold NOTIFY dirty);
-    Q_PROPERTY(float bloomSize MEMBER bloomSize WRITE setBloomSize NOTIFY dirty);
-
-public:
-    FetchBloomConfig() : render::Job::Config() {}
-
-    float bloomIntensity { graphics::Bloom::INITIAL_BLOOM_INTENSITY };
-    float bloomThreshold { graphics::Bloom::INITIAL_BLOOM_THRESHOLD };
-    float bloomSize { graphics::Bloom::INITIAL_BLOOM_SIZE };
-
-public slots:
-    void setBloomIntensity(const float value) { bloomIntensity = value; emit dirty(); }
-    void setBloomThreshold(const float value) { bloomThreshold = value; emit dirty(); }
-    void setBloomSize(const float value) { bloomSize = value; emit dirty(); }
-
-signals:
-    void dirty();
-};
-
 #endif

@@ -68,6 +68,20 @@ void ZoneEntityRenderer::onRemoveFromSceneTyped(const TypedEntityPointer& entity
             _bloomIndex = INVALID_INDEX;
         }
     }
+
+    if (_tonemappingStage) {
+        if (!TonemappingStage::isIndexInvalid(_tonemappingIndex)) {
+            _tonemappingStage->removeTonemapping(_tonemappingIndex);
+            _tonemappingIndex = INVALID_INDEX;
+        }
+    }
+
+    if (_ambientOcclusionStage) {
+        if (!AmbientOcclusionStage::isIndexInvalid(_ambientOcclusionIndex)) {
+            _ambientOcclusionStage->removeAmbientOcclusion(_ambientOcclusionIndex);
+            _ambientOcclusionIndex = INVALID_INDEX;
+        }
+    }
 }
 
 void ZoneEntityRenderer::doRender(RenderArgs* args) {
@@ -94,6 +108,16 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
     if (!_bloomStage) {
         _bloomStage = args->_scene->getStage<BloomStage>();
         assert(_bloomStage);
+    }
+
+    if (!_tonemappingStage) {
+        _tonemappingStage = args->_scene->getStage<TonemappingStage>();
+        assert(_tonemappingStage);
+    }
+
+    if (!_ambientOcclusionStage) {
+        _ambientOcclusionStage = args->_scene->getStage<AmbientOcclusionStage>();
+        assert(_ambientOcclusionStage);
     }
 
     { // Sun 
@@ -149,6 +173,24 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
         }
     }
 
+    {
+        if (_needTonemappingUpdate) {
+            if (TonemappingStage::isIndexInvalid(_tonemappingIndex)) {
+                _tonemappingIndex = _tonemappingStage->addTonemapping(_tonemapping);
+            }
+            _needTonemappingUpdate = false;
+        }
+    }
+
+    {
+        if (_needAmbientOcclusionUpdate) {
+            if (AmbientOcclusionStage::isIndexInvalid(_ambientOcclusionIndex)) {
+                _ambientOcclusionIndex = _ambientOcclusionStage->addAmbientOcclusion(_ambientOcclusion);
+            }
+            _needAmbientOcclusionUpdate = false;
+        }
+    }
+
     if (_visible) {
         // Finally, push the lights visible in the frame
         //
@@ -184,6 +226,18 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
         } else if (_bloomMode == COMPONENT_MODE_ENABLED) {
             _bloomStage->_currentFrame.pushBloom(_bloomIndex);
         }
+
+        if (_tonemappingMode == COMPONENT_MODE_DISABLED) {
+            _tonemappingStage->_currentFrame.pushTonemapping(0); // Use the fallback tonemapping for "off"
+        } else if (_tonemappingMode == COMPONENT_MODE_ENABLED) {
+            _tonemappingStage->_currentFrame.pushTonemapping(_tonemappingIndex);
+        }
+
+        if (_ambientOcclusionMode == COMPONENT_MODE_DISABLED) {
+            _ambientOcclusionStage->_currentFrame.pushAmbientOcclusion(INVALID_INDEX);
+        } else if (_ambientOcclusionMode == COMPONENT_MODE_ENABLED) {
+            _ambientOcclusionStage->_currentFrame.pushAmbientOcclusion(_ambientOcclusionIndex);
+        }
     }
 
     CullTest::_containingZones.insert(_entityID);
@@ -216,6 +270,8 @@ void ZoneEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointe
     bool skyboxChanged = entity->skyboxPropertiesChanged() || proceduralUserDataChanged;
     bool hazeChanged = entity->hazePropertiesChanged();
     bool bloomChanged = entity->bloomPropertiesChanged();
+    bool tonemappingChanged = entity->tonemappingPropertiesChanged();
+    bool ambientOcclusionChanged = entity->ambientOcclusionPropertiesChanged();
     entity->resetRenderingPropertiesChanged();
 
     if (transformChanged) {
@@ -255,6 +311,16 @@ void ZoneEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointe
         updateBloomFromEntity(entity);
     }
 
+    if (tonemappingChanged) {
+        _tonemappingProperties = entity->getTonemappingProperties();
+        updateTonemappingFromEntity(entity);
+    }
+
+    if (ambientOcclusionChanged) {
+        _ambientOcclusionProperties = entity->getAmbientOcclusionProperties();
+        updateAmbientOcclusionFromEntity(entity);
+    }
+
     bool visuallyReady = true;
     uint32_t skyboxMode = entity->getSkyboxMode();
     if (skyboxMode == COMPONENT_MODE_ENABLED && !_skyboxTextureURL.isEmpty()) {
@@ -275,7 +341,9 @@ bool ZoneEntityRenderer::needsRenderUpdateFromTypedEntity(const TypedEntityPoint
         entity->ambientLightPropertiesChanged() ||
         entity->hazePropertiesChanged() ||
         entity->bloomPropertiesChanged() ||
-        entity->skyboxPropertiesChanged()) {
+        entity->skyboxPropertiesChanged() ||
+        entity->tonemappingPropertiesChanged() ||
+        entity->ambientOcclusionPropertiesChanged()) {
 
         return true;
     }
@@ -358,6 +426,32 @@ void ZoneEntityRenderer::updateBloomFromEntity(const TypedEntityPointer& entity)
     bloom->setBloomIntensity(_bloomProperties.getBloomIntensity());
     bloom->setBloomThreshold(_bloomProperties.getBloomThreshold());
     bloom->setBloomSize(_bloomProperties.getBloomSize());
+}
+
+void ZoneEntityRenderer::updateTonemappingFromEntity(const TypedEntityPointer& entity) {
+    _tonemappingMode = (ComponentMode)entity->getTonemappingMode();
+
+    const auto& tonemapping = editTonemapping();
+
+    tonemapping->setCurve(_tonemappingProperties.getCurve());
+    tonemapping->setExposure(_tonemappingProperties.getExposure());
+}
+
+void ZoneEntityRenderer::updateAmbientOcclusionFromEntity(const TypedEntityPointer& entity) {
+    _ambientOcclusionMode = (ComponentMode)entity->getAmbientOcclusionMode();
+
+    const auto& ambientOcclusion = editAmbientOcclusion();
+
+    ambientOcclusion->setTechnique(_ambientOcclusionProperties.getTechnique());
+    ambientOcclusion->setJitter(_ambientOcclusionProperties.getJitter());
+    ambientOcclusion->setResolutionLevel(_ambientOcclusionProperties.getResolutionLevel());
+    ambientOcclusion->setEdgeSharpness(_ambientOcclusionProperties.getEdgeSharpness());
+    ambientOcclusion->setBlurRadius(_ambientOcclusionProperties.getBlurRadius());
+    ambientOcclusion->setAORadius(_ambientOcclusionProperties.getAORadius());
+    ambientOcclusion->setAOObscuranceLevel(_ambientOcclusionProperties.getAOObscuranceLevel());
+    ambientOcclusion->setAOFalloffAngle(_ambientOcclusionProperties.getAOFalloffAngle());
+    ambientOcclusion->setAOSamplingAmount(_ambientOcclusionProperties.getAOSamplingAmount());
+    ambientOcclusion->setSSAONumSpiralTurns(_ambientOcclusionProperties.getSSAONumSpiralTurns());
 }
 
 void ZoneEntityRenderer::updateKeyBackgroundFromEntity(const TypedEntityPointer& entity) {

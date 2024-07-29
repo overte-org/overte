@@ -32,6 +32,7 @@
 #include "LightClusters.h"
 #include "BackgroundStage.h"
 #include "HazeStage.h"
+#include "TonemappingStage.h"
 
 #include "SurfaceGeometryPass.h"
 #include "SubsurfaceScattering.h"
@@ -162,11 +163,13 @@ public:
 
 protected:
     graphics::LightPointer _defaultLight;
-    LightStage::Index _defaultLightID{ LightStage::INVALID_INDEX };
+    LightStage::Index _defaultLightID { LightStage::INVALID_INDEX };
     graphics::SunSkyStagePointer _defaultBackground;
-    BackgroundStage::Index _defaultBackgroundID{ BackgroundStage::INVALID_INDEX };
-    graphics::HazePointer _defaultHaze{ nullptr };
-    HazeStage::Index _defaultHazeID{ HazeStage::INVALID_INDEX };
+    BackgroundStage::Index _defaultBackgroundID { BackgroundStage::INVALID_INDEX };
+    graphics::HazePointer _defaultHaze { nullptr };
+    HazeStage::Index _defaultHazeID { HazeStage::INVALID_INDEX };
+    graphics::TonemappingPointer _defaultTonemapping { nullptr };
+    TonemappingStage::Index _defaultTonemappingID { TonemappingStage::INVALID_INDEX };
     graphics::SkyboxPointer _defaultSkybox { new ProceduralSkybox() };
     NetworkTexturePointer _defaultSkyboxNetworkTexture;
     NetworkTexturePointer _defaultAmbientNetworkTexture;
