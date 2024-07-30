@@ -144,13 +144,11 @@ void PathPointer::updateVisuals(const PickResultPointer& pickResult) {
     auto renderState = _renderStates.find(_currentRenderState);
     auto defaultRenderState = _defaultRenderStates.find(_currentRenderState);
     float parentScale = 1.0f;
-    //if (_scaleWithParent) {
     if (_enabled && _scaleWithParent) {
         glm::vec3 dimensions = DependencyManager::get<PickManager>()->getParentTransform(_pickUID).getScale();
         parentScale = glm::max(glm::max(dimensions.x, dimensions.y), dimensions.z);
     }
 
-    //if (!_currentRenderState.empty() && renderState != _renderStates.end() &&
     if (_enabled && !_currentRenderState.empty() && renderState != _renderStates.end() &&
         (type != IntersectionType::NONE || _pathLength > 0.0f)) {
         glm::vec3 origin = getPickOrigin(pickResult);
@@ -162,14 +160,14 @@ void PathPointer::updateVisuals(const PickResultPointer& pickResult) {
             defaultRenderState->second.second->disable();
         }
     } else if (_enabled && !_currentRenderState.empty() && defaultRenderState != _defaultRenderStates.end()) {
-    //} else if (!_currentRenderState.empty() && defaultRenderState != _defaultRenderStates.end()) {
         if (renderState != _renderStates.end() && renderState->second->isEnabled()) {
             renderState->second->disable();
         }
         glm::vec3 origin = getPickOrigin(pickResult);
         glm::vec3 end = getPickEnd(pickResult, defaultRenderState->second.first);
         defaultRenderState->second.second->update(origin, end, Vectors::UP, parentScale, _distanceScaleEnd, _centerEndY,
-                                                  _faceAvatar, _followNormal, _followNormalStrength, defaultRenderState->second.first, pickResult);
+                                                  _faceAvatar, _followNormal, _followNormalStrength, defaultRenderState->second.first,
+                                                  pickResult);
     } else if (!_currentRenderState.empty()) {
         if (renderState != _renderStates.end() && renderState->second->isEnabled()) {
             renderState->second->disable();
@@ -205,12 +203,12 @@ void PathPointer::editRenderState(const std::string& state, const QVariant& star
 }
 
 void PathPointer::updateRenderState(const QUuid& id, const QVariant& props) {
-    // FIXME: we have to keep using the Overlays interface here, because existing scripts use overlay properties to define pointers
-    if (!id.isNull() && props.isValid()) {
-        QVariantMap propMap = props.toMap();
-        propMap.remove("visible");
-        qApp->getOverlays().editOverlay(id, propMap);
-    }
+    // FIXME: updating render state props no longer works since removing 3D Overlays
+    //if (!id.isNull() && props.isValid()) {
+    //    QVariantMap propMap = props.toMap();
+    //    propMap.remove("visible");
+    //    qApp->getOverlays().editOverlay(id, propMap);
+    //}
 }
 
 Pointer::PickedObject PathPointer::getHoveredObject(const PickResultPointer& pickResult) {
@@ -300,8 +298,9 @@ void StartEndRenderState::disable() {
     _enabled = false;
 }
 
-void StartEndRenderState::update(const glm::vec3& origin, const glm::vec3& end, const glm::vec3& surfaceNormal, float parentScale, bool distanceScaleEnd, bool centerEndY,
-                                 bool faceAvatar, bool followNormal, float followNormalStrength, float distance, const PickResultPointer& pickResult) {
+void StartEndRenderState::update(const glm::vec3& origin, const glm::vec3& end, const glm::vec3& surfaceNormal, float parentScale, bool distanceScaleEnd,
+                                 bool centerEndY, bool faceAvatar, bool followNormal, float followNormalStrength, float distance,
+                                 const PickResultPointer& pickResult) {
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
     if (!getStartID().isNull()) {
         EntityItemProperties properties;

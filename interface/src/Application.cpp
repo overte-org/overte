@@ -2478,7 +2478,7 @@ void Application::initialize(const QCommandLineParser &parser) {
 
     // Setup the mouse ray pick and related operators
     {
-        auto mouseRayPick = std::make_shared<RayPick>(Vectors::ZERO, Vectors::UP, PickFilter(PickScriptingInterface::getPickEntities() | PickScriptingInterface::getPickLocalEntities()), 0.0f, true);
+        auto mouseRayPick = std::make_shared<RayPick>(Vectors::ZERO, Vectors::UP, PickFilter(PickScriptingInterface::getPickEntities() | PickScriptingInterface::getPickLocalEntities()), 0.0f, 0.0f, true);
         mouseRayPick->parentTransform = std::make_shared<MouseTransformNode>();
         mouseRayPick->setJointState(PickQuery::JOINT_STATE_MOUSE);
         auto mouseRayPickID = DependencyManager::get<PickManager>()->addPick(PickQuery::Ray, mouseRayPick);
@@ -7250,10 +7250,6 @@ void Application::updateWindowTitle() const {
         + (BuildInfo::BUILD_TYPE == BuildInfo::BuildType::Stable ? QString("Version") : QString("Build"))
         + " " + applicationVersion();
 
-    if (BuildInfo::RELEASE_NAME != "") {
-        buildVersion += " - " + BuildInfo::RELEASE_NAME;
-    }
-
     QString connectionStatus = isInErrorState ? " (ERROR CONNECTING)" :
         nodeList->getDomainHandler().isConnected() ? "" : " (NOT CONNECTED)";
 
@@ -8522,6 +8518,14 @@ void Application::loadScriptURLDialog() const {
 
 SharedSoundPointer Application::getSampleSound() const {
     return _sampleSound;
+}
+
+void Application::showVRKeyboardForHudUI(bool show) {
+    if (show) {
+        DependencyManager::get<Keyboard>()->setRaised(true, true);
+    } else {
+        DependencyManager::get<Keyboard>()->setRaised(false);
+    }
 }
 
 void Application::loadLODToolsDialog() {

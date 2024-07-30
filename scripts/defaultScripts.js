@@ -7,7 +7,7 @@
 //
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -47,7 +47,7 @@ var DEFAULT_SCRIPTS_SEPARATE = [
     "communityScripts/notificationCore/notificationCore.js",
     "simplifiedUI/ui/simplifiedNametag/simplifiedNametag.js",
     {"stable": "system/more/app-more.js", "beta": "https://more.overte.org/more/app-more.js"},
-    "communityScripts/chat/FloofChat.js",
+    "communityScripts/armored-chat/armored_chat.js",
     //"system/chat.js"
 ];
 

@@ -10,8 +10,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
   push:
-    branches:
-      - master
     tags:
       # Release tags. E.g. 2024.06.1
       # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
@@ -28,8 +26,8 @@ env:
 
 jobs:
   build:
-    # Only run master or tagged builds, or PRs if labeled as "server"
-    if: contains( github.event.pull_request.labels.*.name, 'server') || github.event_name != 'pull_request'
+    # Only run master or tagged builds, or PRs when labeled as "server"
+    if: github.event.label.name == 'server'|| github.event_name != 'pull_request'
     name: "${{matrix.os}}, ${{matrix.arch}}"
     strategy:
       matrix:
@@ -95,12 +93,12 @@ jobs:
             runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
           - os: fedora-40
-            image: docker.io/overte/overte-server-build:0.1.4-fedora-39-amd64
+            image: docker.io/overte/overte-server-build:0.1.4-fedora-40-amd64
             arch: amd64
             runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
 
           - os: fedora-40
-            image: docker.io/overte/overte-server-build:0.1.4-fedora-39-aarch64
+            image: docker.io/overte/overte-server-build:0.1.4-fedora-40-aarch64
             arch: aarch64
             runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
@@ -133,6 +131,8 @@ jobs:
         else # master or tagged
           echo "GIT_COMMIT_SHORT=`echo ${{ github.sha }} | cut -c1-7`" >> $GITHUB_ENV
         fi
+
+        echo "REFNAME=${{ github.ref_name }}" >> $GITHUB_ENV
 
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.arch}}" >> $GITHUB_ENV
 
@@ -186,7 +186,8 @@ jobs:
           echo "RELEASE_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
         else # tagged
           echo "DEBVERSION=${{ github.ref_name }}-$GIT_COMMIT_SHORT-${{ matrix.os }}" >> $GITHUB_ENV
-          echo "RPMVERSION=${{ github.ref_name }}.$GIT_COMMIT_SHORT" >> $GITHUB_ENV
+          # We remove all dash characters from RPM versions, because rpmbuild doesn't allow dashes in version numbers.
+          echo "RPMVERSION=${REFNAME//-}.$GIT_COMMIT_SHORT" >> $GITHUB_ENV
         fi
 
         if [ "${{ github.ref_type }}" == "tag" ]; then  # tagged
@@ -201,15 +202,13 @@ jobs:
 
         echo "BUILD_NUMBER=$GIT_COMMIT_SHORT" >> $GITHUB_ENV
 
-        if [ -z "$CMAKE_BACKTRACE_URL" ]; then
-          if [ "${{ github.ref_type }}" == "tag" ]; then
-            export CMAKE_BACKTRACE_URL="${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}"
-            export CMAKE_BACKTRACE_TOKEN="${{ github.ref_name }}_${{ matrix.os }}_${{ github.sha }}"
-          else
-            # We're building a PR, default to the PR endpoint
-            export CMAKE_BACKTRACE_URL="https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
-            export CMAKE_BACKTRACE_TOKEN="server_pr_${{ github.event.number }}_${{ github.sha }}"
-          fi
+        if [ "${{ github.ref_type }}" == "tag" ]; then
+          export CMAKE_BACKTRACE_URL="${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}"
+          export CMAKE_BACKTRACE_TOKEN="${{ github.ref_name }}_${{ matrix.os }}_${{ github.sha }}"
+        else
+          # We're building a PR, default to the PR endpoint
+          export CMAKE_BACKTRACE_URL="https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
+          export CMAKE_BACKTRACE_TOKEN="server_pr_${{ github.event.number }}_${{ github.sha }}"
         fi
 
     - name: Configure Build Environment 3
