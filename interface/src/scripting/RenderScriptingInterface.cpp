@@ -292,43 +292,51 @@ void setAntialiasingModeForView(AntialiasingConfig::Mode mode, JitterSampleConfi
     }
 }
 
-void RenderScriptingInterface::forceAntialiasingMode(AntialiasingConfig::Mode mode) {
-    _renderSettingLock.withWriteLock([&] {
-        _antialiasingMode = mode;
+void recursivelyUpdateAntialiasingMode(const QString& parentTaskName, AntialiasingConfig::Mode mode, int depth = -1) {
+    if (depth == -1) {
+        auto secondViewJitterCamConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<JitterSample>("RenderSecondView.JitterCam");
+        auto secondViewAntialiasingConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<Antialiasing>("RenderSecondView.Antialiasing");
+        if (secondViewJitterCamConfig && secondViewAntialiasingConfig) {
+            setAntialiasingModeForView(mode, secondViewJitterCamConfig, secondViewAntialiasingConfig);
+        }
 
         auto mainViewJitterCamConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<JitterSample>("RenderMainView.JitterCam");
         auto mainViewAntialiasingConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<Antialiasing>("RenderMainView.Antialiasing");
-        auto secondViewJitterCamConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<JitterSample>("RenderSecondView.JitterCam");
-        auto secondViewAntialiasingConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<Antialiasing>("RenderSecondView.Antialiasing");
-        if (mode != AntialiasingConfig::Mode::NONE
-                && mode != AntialiasingConfig::Mode::TAA
-                && mode != AntialiasingConfig::Mode::FXAA) {
-            _antialiasingMode = AntialiasingConfig::Mode::NONE;
-        }
         if (mainViewJitterCamConfig && mainViewAntialiasingConfig) {
             setAntialiasingModeForView( mode, mainViewJitterCamConfig, mainViewAntialiasingConfig);
         }
-        if (secondViewJitterCamConfig && secondViewAntialiasingConfig) {
-            setAntialiasingModeForView( mode, secondViewJitterCamConfig, secondViewAntialiasingConfig);
+
+        recursivelyUpdateAntialiasingMode("RenderMainView", mode, depth + 1);
+    } else if (depth == RenderMirrorTask::MAX_MIRROR_DEPTH) {
+        return;
+    }
+
+    for (size_t mirrorIndex = 0; mirrorIndex < RenderMirrorTask::MAX_MIRRORS_PER_LEVEL; mirrorIndex++) {
+        std::string mirrorTaskString = parentTaskName.toStdString() + ".RenderMirrorView" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth);
+        auto jitterCamConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<JitterSample>(mirrorTaskString + ".JitterCam");
+        auto antialiasingConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<Antialiasing>(mirrorTaskString + ".Antialiasing");
+        if (jitterCamConfig && antialiasingConfig) {
+            setAntialiasingModeForView(mode, jitterCamConfig, antialiasingConfig);
+            recursivelyUpdateAntialiasingMode(QString::fromStdString(mirrorTaskString), mode, depth + 1);
         }
-
-        _antialiasingModeSetting.set(_antialiasingMode);
-    });
-}
-
-float RenderScriptingInterface::getViewportResolutionScale() const {
-    return _viewportResolutionScale;
-}
-
-void RenderScriptingInterface::setViewportResolutionScale(float scale) {
-    if (_viewportResolutionScale != scale) {
-        forceViewportResolutionScale(scale);
-        emit settingsChanged();
     }
 }
 
+void RenderScriptingInterface::forceAntialiasingMode(AntialiasingConfig::Mode mode) {
+    if ((int)mode < 0 || mode >= AntialiasingConfig::Mode::MODE_COUNT) {
+        mode = AntialiasingConfig::Mode::NONE;
+    }
+
+    _renderSettingLock.withWriteLock([&] {
+        _antialiasingMode = mode;
+        _antialiasingModeSetting.set(_antialiasingMode);
+
+        recursivelyUpdateAntialiasingMode("", _antialiasingMode);
+    });
+}
+
 void RenderScriptingInterface::setVerticalFieldOfView(float fieldOfView) {
-    if (getViewportResolutionScale() != fieldOfView) {
+    if (qApp->getFieldOfView() != fieldOfView) {
         qApp->setFieldOfView(fieldOfView);
         emit settingsChanged();
     }
@@ -368,6 +376,16 @@ QString RenderScriptingInterface::getFullScreenScreen() const {
     return _fullScreenScreen;
 }
 
+float RenderScriptingInterface::getViewportResolutionScale() const {
+    return _viewportResolutionScale;
+}
+
+void RenderScriptingInterface::setViewportResolutionScale(float scale) {
+    if (_viewportResolutionScale != scale) {
+        forceViewportResolutionScale(scale);
+        emit settingsChanged();
+    }
+}
 
 void RenderScriptingInterface::forceViewportResolutionScale(float scale) {
     // just not negative values or zero
