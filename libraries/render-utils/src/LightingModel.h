@@ -197,6 +197,8 @@ public:
     bool isAmbientOcclusionEnabled() const { return enableAmbientOcclusion; }
     void setShadow(bool enable) { enableShadow = enable; emit dirty(); }
     bool isShadowEnabled() const { return enableShadow; }
+    void setHaze(bool enable) { enableHaze = enable; emit dirty(); }
+    void setBloom(bool enable) { enableBloom = enable; emit dirty(); }
 
 signals:
     void dirty();

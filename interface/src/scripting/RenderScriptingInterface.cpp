@@ -16,6 +16,8 @@
 #include <QScreen>
 #include "ScreenName.h"
 
+#include <MeshPartPayload.h>
+
 STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
@@ -43,16 +45,17 @@ RenderScriptingInterface::RenderScriptingInterface() {
     });
 }
 
-
 void RenderScriptingInterface::loadSettings() {
     _renderSettingLock.withReadLock([&] {
-        _renderMethod = (_renderMethodSetting.get());
-        _shadowsEnabled = (_shadowsEnabledSetting.get());
-        _ambientOcclusionEnabled = (_ambientOcclusionEnabledSetting.get());
-        //_antialiasingMode = (_antialiasingModeSetting.get());
+        _renderMethod = _renderMethodSetting.get();
+        _shadowsEnabled = _shadowsEnabledSetting.get();
+        _hazeEnabled = _hazeEnabledSetting.get();
+        _bloomEnabled = _bloomEnabledSetting.get();
+        _ambientOcclusionEnabled = _ambientOcclusionEnabledSetting.get();
+        _proceduralMaterialsEnabled = _proceduralMaterialsEnabledSetting.get();
         _antialiasingMode = static_cast<AntialiasingConfig::Mode>(_antialiasingModeSetting.get());
-        _viewportResolutionScale = (_viewportResolutionScaleSetting.get());
-        _fullScreenScreen = (_fullScreenScreenSetting.get());
+        _viewportResolutionScale = _viewportResolutionScaleSetting.get();
+        _fullScreenScreen = _fullScreenScreenSetting.get();
     });
 
     // If full screen screen is not initialized, or set to an invalid value,
@@ -65,7 +68,10 @@ void RenderScriptingInterface::loadSettings() {
 
     forceRenderMethod((RenderMethod)_renderMethod);
     forceShadowsEnabled(_shadowsEnabled);
+    forceHazeEnabled(_hazeEnabled);
+    forceBloomEnabled(_bloomEnabled);
     forceAmbientOcclusionEnabled(_ambientOcclusionEnabled);
+    forceProceduralMaterialsEnabled(_proceduralMaterialsEnabled);
     forceAntialiasingMode(_antialiasingMode);
     forceViewportResolutionScale(_viewportResolutionScale);
 }
@@ -118,6 +124,33 @@ QStringList RenderScriptingInterface::getRenderMethodNames() const {
     return refrenderMethodNames;
 }
 
+void recursivelyUpdateLightingModel(const QString& parentTaskName, std::function<void(MakeLightingModelConfig *)> updateLambda, int depth = -1) {
+    if (depth == -1) {
+        auto secondaryLightingModelConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<MakeLightingModel>("RenderSecondView.LightingModel");
+        if (secondaryLightingModelConfig) {
+            updateLambda(secondaryLightingModelConfig);
+        }
+
+        auto mainLightingModelConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<MakeLightingModel>("RenderMainView.LightingModel");
+        if (mainLightingModelConfig) {
+            updateLambda(mainLightingModelConfig);
+        }
+
+        recursivelyUpdateLightingModel("RenderMainView", updateLambda, depth + 1);
+    } else if (depth == RenderMirrorTask::MAX_MIRROR_DEPTH) {
+        return;
+    }
+
+    for (size_t mirrorIndex = 0; mirrorIndex < RenderMirrorTask::MAX_MIRRORS_PER_LEVEL; mirrorIndex++) {
+        std::string mirrorTaskString = parentTaskName.toStdString() + ".RenderMirrorView" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth);
+        auto lightingModelConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<MakeLightingModel>(mirrorTaskString + ".LightingModel");
+        if (lightingModelConfig) {
+            updateLambda(lightingModelConfig);
+            recursivelyUpdateLightingModel(QString::fromStdString(mirrorTaskString), updateLambda, depth + 1);
+        }
+    }
+}
+
 bool RenderScriptingInterface::getShadowsEnabled() const {
     return _shadowsEnabled;
 }
@@ -134,18 +167,49 @@ void RenderScriptingInterface::forceShadowsEnabled(bool enabled) {
         _shadowsEnabled = (enabled);
         _shadowsEnabledSetting.set(enabled);
 
-        auto renderConfig = qApp->getRenderEngine()->getConfiguration();
-        assert(renderConfig);
-        auto lightingModelConfig = renderConfig->getConfig<MakeLightingModel>("RenderMainView.LightingModel");
-        if (lightingModelConfig) {
-            Menu::getInstance()->setIsOptionChecked(MenuOption::Shadows, enabled);
-            lightingModelConfig->setShadow(enabled);
-        }
-        auto secondaryLightingModelConfig = renderConfig->getConfig<MakeLightingModel>("RenderSecondView.LightingModel");
-        if (secondaryLightingModelConfig) {
-            Menu::getInstance()->setIsOptionChecked(MenuOption::Shadows, enabled);
-            secondaryLightingModelConfig->setShadow(enabled);
-        }
+        Menu::getInstance()->setIsOptionChecked(MenuOption::Shadows, enabled);
+
+        recursivelyUpdateLightingModel("", [enabled] (MakeLightingModelConfig *config) { config->setShadow(enabled); });
+    });
+}
+
+bool RenderScriptingInterface::getHazeEnabled() const {
+    return _hazeEnabled;
+}
+
+void RenderScriptingInterface::setHazeEnabled(bool enabled) {
+    if (_hazeEnabled != enabled) {
+        forceHazeEnabled(enabled);
+        emit settingsChanged();
+    }
+}
+
+void RenderScriptingInterface::forceHazeEnabled(bool enabled) {
+    _renderSettingLock.withWriteLock([&] {
+        _hazeEnabled = (enabled);
+        _hazeEnabledSetting.set(enabled);
+
+        recursivelyUpdateLightingModel("", [enabled] (MakeLightingModelConfig *config) { config->setHaze(enabled); });
+    });
+}
+
+bool RenderScriptingInterface::getBloomEnabled() const {
+    return _bloomEnabled;
+}
+
+void RenderScriptingInterface::setBloomEnabled(bool enabled) {
+    if (_bloomEnabled != enabled) {
+        forceBloomEnabled(enabled);
+        emit settingsChanged();
+    }
+}
+
+void RenderScriptingInterface::forceBloomEnabled(bool enabled) {
+    _renderSettingLock.withWriteLock([&] {
+        _bloomEnabled = (enabled);
+        _bloomEnabledSetting.set(enabled);
+
+        recursivelyUpdateLightingModel("", [enabled] (MakeLightingModelConfig *config) { config->setBloom(enabled); });
     });
 }
 
@@ -165,11 +229,30 @@ void RenderScriptingInterface::forceAmbientOcclusionEnabled(bool enabled) {
         _ambientOcclusionEnabled = (enabled);
         _ambientOcclusionEnabledSetting.set(enabled);
 
-        auto lightingModelConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<MakeLightingModel>("RenderMainView.LightingModel");
-        if (lightingModelConfig) {
-            Menu::getInstance()->setIsOptionChecked(MenuOption::AmbientOcclusion, enabled);
-            lightingModelConfig->setAmbientOcclusion(enabled);
-        }
+        Menu::getInstance()->setIsOptionChecked(MenuOption::AmbientOcclusion, enabled);
+
+        recursivelyUpdateLightingModel("", [enabled] (MakeLightingModelConfig *config) { config->setAmbientOcclusion(enabled); });
+    });
+}
+
+bool RenderScriptingInterface::getProceduralMaterialsEnabled() const {
+    return _proceduralMaterialsEnabled;
+}
+
+void RenderScriptingInterface::setProceduralMaterialsEnabled(bool enabled) {
+    if (_proceduralMaterialsEnabled != enabled) {
+        forceProceduralMaterialsEnabled(enabled);
+        emit settingsChanged();
+    }
+}
+
+void RenderScriptingInterface::forceProceduralMaterialsEnabled(bool enabled) {
+    _renderSettingLock.withWriteLock([&] {
+        _proceduralMaterialsEnabled = (enabled);
+        _proceduralMaterialsEnabledSetting.set(enabled);
+
+        Menu::getInstance()->setIsOptionChecked(MenuOption::MaterialProceduralShaders, enabled);
+        ModelMeshPartPayload::enableMaterialProceduralShaders = enabled;
     });
 }
 
@@ -209,44 +292,51 @@ void setAntialiasingModeForView(AntialiasingConfig::Mode mode, JitterSampleConfi
     }
 }
 
-void RenderScriptingInterface::forceAntialiasingMode(AntialiasingConfig::Mode mode) {
-    _renderSettingLock.withWriteLock([&] {
-        _antialiasingMode = mode;
+void recursivelyUpdateAntialiasingMode(const QString& parentTaskName, AntialiasingConfig::Mode mode, int depth = -1) {
+    if (depth == -1) {
+        auto secondViewJitterCamConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<JitterSample>("RenderSecondView.JitterCam");
+        auto secondViewAntialiasingConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<Antialiasing>("RenderSecondView.Antialiasing");
+        if (secondViewJitterCamConfig && secondViewAntialiasingConfig) {
+            setAntialiasingModeForView(mode, secondViewJitterCamConfig, secondViewAntialiasingConfig);
+        }
 
         auto mainViewJitterCamConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<JitterSample>("RenderMainView.JitterCam");
         auto mainViewAntialiasingConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<Antialiasing>("RenderMainView.Antialiasing");
-        auto secondViewJitterCamConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<JitterSample>("RenderSecondView.JitterCam");
-        auto secondViewAntialiasingConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<Antialiasing>("RenderSecondView.Antialiasing");
-        if (mode != AntialiasingConfig::Mode::NONE
-                && mode != AntialiasingConfig::Mode::TAA
-                && mode != AntialiasingConfig::Mode::FXAA) {
-            _antialiasingMode = AntialiasingConfig::Mode::NONE;
-        }
         if (mainViewJitterCamConfig && mainViewAntialiasingConfig) {
             setAntialiasingModeForView( mode, mainViewJitterCamConfig, mainViewAntialiasingConfig);
         }
-        if (secondViewJitterCamConfig && secondViewAntialiasingConfig) {
-            setAntialiasingModeForView( mode, secondViewJitterCamConfig, secondViewAntialiasingConfig);
+
+        recursivelyUpdateAntialiasingMode("RenderMainView", mode, depth + 1);
+    } else if (depth == RenderMirrorTask::MAX_MIRROR_DEPTH) {
+        return;
+    }
+
+    for (size_t mirrorIndex = 0; mirrorIndex < RenderMirrorTask::MAX_MIRRORS_PER_LEVEL; mirrorIndex++) {
+        std::string mirrorTaskString = parentTaskName.toStdString() + ".RenderMirrorView" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth);
+        auto jitterCamConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<JitterSample>(mirrorTaskString + ".JitterCam");
+        auto antialiasingConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<Antialiasing>(mirrorTaskString + ".Antialiasing");
+        if (jitterCamConfig && antialiasingConfig) {
+            setAntialiasingModeForView(mode, jitterCamConfig, antialiasingConfig);
+            recursivelyUpdateAntialiasingMode(QString::fromStdString(mirrorTaskString), mode, depth + 1);
         }
-
-        _antialiasingModeSetting.set(_antialiasingMode);
-    });
-}
-
-
-float RenderScriptingInterface::getViewportResolutionScale() const {
-    return _viewportResolutionScale;
-}
-
-void RenderScriptingInterface::setViewportResolutionScale(float scale) {
-    if (_viewportResolutionScale != scale) {
-        forceViewportResolutionScale(scale);
-        emit settingsChanged();
     }
 }
 
+void RenderScriptingInterface::forceAntialiasingMode(AntialiasingConfig::Mode mode) {
+    if ((int)mode < 0 || mode >= AntialiasingConfig::Mode::MODE_COUNT) {
+        mode = AntialiasingConfig::Mode::NONE;
+    }
+
+    _renderSettingLock.withWriteLock([&] {
+        _antialiasingMode = mode;
+        _antialiasingModeSetting.set(_antialiasingMode);
+
+        recursivelyUpdateAntialiasingMode("", _antialiasingMode);
+    });
+}
+
 void RenderScriptingInterface::setVerticalFieldOfView(float fieldOfView) {
-    if (getViewportResolutionScale() != fieldOfView) {
+    if (qApp->getFieldOfView() != fieldOfView) {
         qApp->setFieldOfView(fieldOfView);
         emit settingsChanged();
     }
@@ -286,6 +376,16 @@ QString RenderScriptingInterface::getFullScreenScreen() const {
     return _fullScreenScreen;
 }
 
+float RenderScriptingInterface::getViewportResolutionScale() const {
+    return _viewportResolutionScale;
+}
+
+void RenderScriptingInterface::setViewportResolutionScale(float scale) {
+    if (_viewportResolutionScale != scale) {
+        forceViewportResolutionScale(scale);
+        emit settingsChanged();
+    }
+}
 
 void RenderScriptingInterface::forceViewportResolutionScale(float scale) {
     // just not negative values or zero
