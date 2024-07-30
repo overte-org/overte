@@ -36,6 +36,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
         faceCamera: true,
         ignorePickIntersection: true, // always ignore this
         renderLayer: this.renderLayer,
+        linePoints: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     };
     this.halfEnd = {
         type: "Sphere",
@@ -57,6 +58,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
         faceCamera: true,
         ignorePickIntersection: true, // always ignore this
         renderLayer: this.renderLayer,
+        linePoints: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     };
     this.fullEnd = {
         type: "Sphere",
@@ -78,6 +80,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
         faceCamera: true,
         ignorePickIntersection: true, // always ignore this
         renderLayer: this.renderLayer,
+        linePoints: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     };
 
     this.renderStates = [

@@ -129,6 +129,13 @@ void PickManager::setIncludeItems(unsigned int uid, const QVector<QUuid>& includ
     }
 }
 
+void PickManager::setDelay(unsigned int uid, float delay) const {
+    auto pick = findPick(uid);
+    if (pick) {
+        pick->setDelay(delay);
+    }
+}
+
 Transform PickManager::getParentTransform(unsigned int uid) const {
     auto pick = findPick(uid);
     if (pick) {

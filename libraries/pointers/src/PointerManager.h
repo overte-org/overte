@@ -45,6 +45,7 @@ public:
 
     void setLength(unsigned int uid, float length) const;
     void setLockEndUUID(unsigned int uid, const QUuid& objectID, bool isAvatar, const glm::mat4& offsetMat = glm::mat4()) const;
+    void setDelay(unsigned int uid, float delay) const;
 
     void update();
 

@@ -4,6 +4,7 @@
 //  Created by Wayne Chen on 10/18/18
 //  Copyright 2018 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -377,13 +378,13 @@ Item {
             }
         }
 
-        function onHandleLoginCompleted(): {
+        function onHandleLoginCompleted() {
             console.log("Login Succeeded");
             loggingInBody.loadingSuccess();
         }
 
         function onHandleLoginFailed() {
-            console.log("Login Failed")
+            console.log("Login Failed");
             loggingInSpinner.visible = false;
             loggingInGlyph.visible = false;
             var errorString = "";

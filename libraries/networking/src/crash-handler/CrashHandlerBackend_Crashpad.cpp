@@ -457,6 +457,11 @@ bool startCrashHandler(std::string appPath, std::string crashURL, std::string cr
 }
 
 void setCrashReportingEnabled(bool enabled) {
+    if (!crashpadDatabase) {
+        qCCritical(crash_handler) << "Can't set to enabled, crash handler not initialized!";
+        return;
+    }
+
     auto settings = crashpadDatabase->GetSettings();
     settings->SetUploadsEnabled(enabled);
 

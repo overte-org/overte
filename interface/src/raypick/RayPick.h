@@ -84,9 +84,8 @@ public:
 class RayPick : public Pick<PickRay> {
 
 public:
-    RayPick(glm::vec3 position, glm::vec3 direction, const PickFilter& filter, float maxDistance, bool enabled) :
-        Pick(PickRay(position, direction), filter, maxDistance, enabled) {
-    }
+    RayPick(glm::vec3 position, glm::vec3 direction, const PickFilter& filter, float maxDistance, float delayHalf, bool enabled) :
+        Pick(PickRay(position, direction), filter, maxDistance, enabled), _delayHalf(delayHalf) {}
 
     PickType getType() const override { return PickType::Ray; }
 
@@ -98,6 +97,8 @@ public:
     PickResultPointer getHUDIntersection(const PickRay& pick) override;
     Transform getResultTransform() const override;
 
+    void setDelay(float delay) override;
+
     // These are helper functions for projecting and intersecting rays
     static glm::vec3 intersectRayWithEntityXYPlane(const QUuid& entityID, const glm::vec3& origin, const glm::vec3& direction);
     static glm::vec2 projectOntoEntityXYPlane(const QUuid& entityID, const glm::vec3& worldPos, bool unNormalized = true);
@@ -107,6 +108,10 @@ public:
 
 private:
     static glm::vec3 intersectRayWithXYPlane(const glm::vec3& origin, const glm::vec3& direction, const glm::vec3& point, const glm::quat& rotation, const glm::vec3& registration);
+
+    float _delayHalf { 0.0f };
+    mutable float _prevUpdate { 0.0f };
+    mutable glm::vec3 _prevDirection { NAN };
 };
 
 #endif // hifi_RayPick_h

@@ -130,6 +130,10 @@ void sendWrongProtocolVersionsSignature(bool sendWrongVersion) {
 
 static QByteArray protocolVersionSignature;
 static QString protocolVersionSignatureBase64;
+static QString protocolVersionSignatureHex;
+static QMap<PacketType, uint8_t> protocolVersionMap;
+
+
 static void ensureProtocolVersionsSignature() {
     static std::once_flag once;
     std::call_once(once, [&] {
@@ -139,12 +143,14 @@ static void ensureProtocolVersionsSignature() {
         stream << numberOfProtocols;
         for (uint8_t packetType = 0; packetType < numberOfProtocols; packetType++) {
             uint8_t packetTypeVersion = static_cast<uint8_t>(versionForPacketType(static_cast<PacketType>(packetType)));
+            protocolVersionMap[static_cast<PacketType>(packetType)] = packetTypeVersion;
             stream << packetTypeVersion;
         }
         QCryptographicHash hash(QCryptographicHash::Md5);
         hash.addData(buffer);
         protocolVersionSignature = hash.result();
         protocolVersionSignatureBase64 = protocolVersionSignature.toBase64();
+        protocolVersionSignatureHex = protocolVersionSignature.toHex(0);
     });
 }
 QByteArray protocolVersionsSignature() {
@@ -160,4 +166,14 @@ QByteArray protocolVersionsSignature() {
 QString protocolVersionsSignatureBase64() {
     ensureProtocolVersionsSignature();
     return protocolVersionSignatureBase64;
+}
+
+QString protocolVersionsSignatureHex() {
+    ensureProtocolVersionsSignature();
+    return protocolVersionSignatureHex;
+}
+
+QMap<PacketType, uint8_t> protocolVersionsSignatureMap() {
+    ensureProtocolVersionsSignature();
+    return protocolVersionMap;
 }

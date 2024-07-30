@@ -43,16 +43,17 @@ public:
 
     virtual void cleanup();
     virtual void disable();
-    virtual void update(const glm::vec3& origin, const glm::vec3& end, const glm::vec3& surfaceNormal, float parentScale, bool distanceScaleEnd, bool centerEndY,
-                        bool faceAvatar, bool followNormal, float followNormalStrength, float distance, const PickResultPointer& pickResult);
+    virtual void update(const glm::vec3& origin, const glm::vec3& end, const glm::vec3& surfaceNormal, float parentScale, bool distanceScaleEnd,
+                        bool centerEndY, bool faceAvatar, bool followNormal, float followNormalStrength, float distance,
+                        const PickResultPointer& pickResult);
 
     bool isEnabled() const { return _enabled; }
 
 protected:
     QUuid _startID;
     QUuid _endID;
-    bool _startIgnorePicks;
-    bool _endIgnorePicks;
+    bool _startIgnorePicks { false };
+    bool _endIgnorePicks { false };
 
     glm::vec3 _startDim;
     glm::vec3 _endDim;
