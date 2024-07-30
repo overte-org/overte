@@ -4,7 +4,7 @@
 //
 //  Created by Stephen Birarda on 2/18/2014.
 //  Copyright 2014 High Fidelity, Inc.
-//  Copyright 2023 Overte e.V.
+//  Copyright 2023-2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -696,7 +696,8 @@ void AccountManager::setAccessTokens(const QString& response) {
         if (!rootObject.contains("access_token") || !rootObject.contains("expires_in")
             || !rootObject.contains("token_type")) {
             // TODO: error handling - malformed token response
-            qCDebug(networking) << "Received a response for password grant that is missing one or more expected values.";
+            qCWarning(networking) << "Error setting access token. Received a response for password grant that is missing one or more expected values.";
+            qCWarning(networking) << "Response:" << QJsonDocument(rootObject).toJson(QJsonDocument::Compact);
         } else {
             // clear the path from the response URL so we have the right root URL for this access token
             QUrl rootURL = rootObject.contains("url") ? rootObject["url"].toString() : _authURL;
@@ -714,7 +715,7 @@ void AccountManager::setAccessTokens(const QString& response) {
         }
     } else {
         // TODO: error handling
-        qCDebug(networking) << "Error in response for password grant -" << rootObject["error_description"].toString();
+        qCWarning(networking) << "Error in response for password grant -" << rootObject["error"].toString();
         emit loginFailed();
     }
 }
@@ -731,7 +732,8 @@ void AccountManager::requestAccessTokenFinished() {
         if (!rootObject.contains("access_token") || !rootObject.contains("expires_in")
             || !rootObject.contains("token_type")) {
             // TODO: error handling - malformed token response
-            qCDebug(networking) << "Received a response for password grant that is missing one or more expected values.";
+            qCWarning(networking) << "Error requesting access token. Received a response for password grant that is missing one or more expected values.";
+            qCWarning(networking) << "Response:" << QJsonDocument(rootObject).toJson(QJsonDocument::Compact);
         } else {
             // clear the path from the response URL so we have the right root URL for this access token
             QUrl rootURL = requestReply->url();
@@ -750,7 +752,7 @@ void AccountManager::requestAccessTokenFinished() {
         }
     } else {
         // TODO: error handling
-        qCDebug(networking) <<  "Error in response for password grant -" << rootObject["error_description"].toString();
+        qCWarning(networking) <<  "Error in response for password grant -" << rootObject["error"].toString();
         emit loginFailed();
     }
 }
