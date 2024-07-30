@@ -123,6 +123,9 @@ public:
     bool getUseOriginalPivot() const;
     void setUseOriginalPivot(bool useOriginalPivot);
 
+    float getLoadPriority() const;
+    void setLoadPriority(float loadPriority);
+
 private:
     void setAnimationSettings(const QString& value); // only called for old bitstream format
     bool applyNewAnimationProperties(AnimationPropertyGroup newProperties);
@@ -152,6 +155,7 @@ protected:
     glm::u8vec3 _color;
     glm::vec3 _modelScale { 1.0f };
     QString _modelURL;
+    float _loadPriority { 0.0f };
     bool _relayParentJoints;
     bool _groupCulled { false };
     QVariantMap _blendshapeCoefficientsMap;

@@ -1343,7 +1343,7 @@ void Model::setURL(const QUrl& url) {
 
     auto resource = DependencyManager::get<ModelCache>()->getGeometryResource(url);
     if (resource) {
-        resource->setLoadPriority(this, _loadingPriority);
+        resource->setLoadPriorityOperator(this, _loadingPriorityOperator);
         _renderWatcher.setResource(resource);
     }
     _rig.initFlow(false);

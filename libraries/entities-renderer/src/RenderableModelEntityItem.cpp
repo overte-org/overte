@@ -1310,6 +1310,10 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
             scene->enqueueTransaction(transaction);
         });
         entity->setModel(model);
+        model->setLoadingPriorityOperator([entity]() {
+            float loadPriority = entity->getLoadPriority();
+            return fabs(loadPriority) > EPSILON ? loadPriority : EntityTreeRenderer::getEntityLoadingPriority(*entity);
+        });
         withWriteLock([&] { _model = model; });
     }
 
@@ -1317,7 +1321,6 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
     if (_parsedModelURL != model->getURL()) {
         _texturesLoaded = false;
         _jointMappingCompleted = false;
-        model->setLoadingPriority(EntityTreeRenderer::getEntityLoadingPriority(*entity));
         model->setURL(_parsedModelURL);
     }
 

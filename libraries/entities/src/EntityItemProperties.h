@@ -315,6 +315,7 @@ public:
     DEFINE_PROPERTY_REF(PROP_GROUP_CULLED, GroupCulled, groupCulled, bool, false);
     DEFINE_PROPERTY_REF(PROP_BLENDSHAPE_COEFFICIENTS, BlendshapeCoefficients, blendshapeCoefficients, QString, "");
     DEFINE_PROPERTY_REF(PROP_USE_ORIGINAL_PIVOT, UseOriginalPivot, useOriginalPivot, bool, false);
+    DEFINE_PROPERTY_REF(PROP_LOAD_PRIORITY, LoadPriority, loadPriority, float, 0.0f);
     DEFINE_PROPERTY_GROUP(Animation, animation, AnimationPropertyGroup);
 
     // Light

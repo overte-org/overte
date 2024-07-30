@@ -73,6 +73,8 @@ protected:
     void onAddAttachedAvatarEntity(const QUuid& id);
     void onRemoveAttachedAvatarEntity(const QUuid& id);
 
+    void onIdentityRecieved() override;
+
     class AvatarEntityDataHash {
     public:
         AvatarEntityDataHash(uint32_t h) : hash(h) {};
@@ -91,6 +93,14 @@ protected:
     uint8_t _workloadRegion { workload::Region::INVALID };
     BodyLOD _bodyLOD { BodyLOD::Sphere };
     bool _needsDetailedRebuild { false };
+
+private:
+    // When determining _hasCheckedForAvatarEntities for OtherAvatars, we can set it to true in
+    // handleChangedAvatarEntityData if we have avatar entities.  But we never receive explicit
+    // confirmation from the avatar mixer if we don't have any.  So instead, we wait to receive
+    // a few identity packets, and assume that if we haven't gotten any avatar entities by then,
+    // that we're safe to say there aren't any.
+    uint8_t _avatarEntityIdentityCountdown { 2 };
 };
 
 using OtherAvatarPointer = std::shared_ptr<OtherAvatar>;
