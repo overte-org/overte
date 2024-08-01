@@ -48,10 +48,12 @@
 #include "TextEntityItem.h"
 #include "WebEntityItem.h"
 #include "ParticleEffectEntityItem.h"
+#include "ProceduralParticleEffectEntityItem.h"
 #include "LineEntityItem.h"
 #include "PolyVoxEntityItem.h"
 #include "GridEntityItem.h"
 #include "GizmoEntityItem.h"
+#include "SoundEntityItem.h"
 #include "LightEntityItem.h"
 #include "ZoneEntityItem.h"
 
@@ -61,6 +63,9 @@
 #include "BloomPropertyGroup.h"
 #include "PulsePropertyGroup.h"
 #include "RingGizmoPropertyGroup.h"
+#include "ZoneAudioPropertyGroup.h"
+#include "TonemappingPropertyGroup.h"
+#include "AmbientOcclusionPropertyGroup.h"
 
 #include "MaterialMappingMode.h"
 #include "BillboardMode.h"
@@ -70,6 +75,7 @@
 #include "GizmoType.h"
 #include "TextEffect.h"
 #include "TextAlignment.h"
+#include "MirrorMode.h"
 
 class ScriptEngine;
 
@@ -114,6 +120,7 @@ class EntityItemProperties {
     friend class ImageEntityItem;
     friend class WebEntityItem;
     friend class ParticleEffectEntityItem;
+    friend class ProceduralParticleEffectEntityItem;
     friend class LineEntityItem;
     friend class PolyLineEntityItem;
     friend class PolyVoxEntityItem;
@@ -122,6 +129,8 @@ class EntityItemProperties {
     friend class LightEntityItem;
     friend class ZoneEntityItem;
     friend class MaterialEntityItem;
+    friend class SoundEntityItem;
+
 public:
     static bool blobToProperties(ScriptEngine& scriptEngine, const QByteArray& blob, EntityItemProperties& properties);
     static void propertiesToBlob(ScriptEngine& scriptEngine, const QUuid& myAvatarID, const EntityItemProperties& properties, 
@@ -203,7 +212,10 @@ public:
     DEFINE_PROPERTY(PROP_IGNORE_PICK_INTERSECTION, IgnorePickIntersection, ignorePickIntersection, bool, false);
     DEFINE_PROPERTY_REF(PROP_RENDER_WITH_ZONES, RenderWithZones, renderWithZones, QVector<QUuid>, QVector<QUuid>());
     DEFINE_PROPERTY_REF_ENUM(PROP_BILLBOARD_MODE, BillboardMode, billboardMode, BillboardMode, BillboardMode::NONE);
+    DEFINE_PROPERTY_REF(PROP_TAGS, Tags, tags, QSet<QString>, QSet<QString>());
     DEFINE_PROPERTY_GROUP(Grab, grab, GrabPropertyGroup);
+    DEFINE_PROPERTY_REF_ENUM(PROP_MIRROR_MODE, MirrorMode, mirrorMode, MirrorMode, MirrorMode::NONE);
+    DEFINE_PROPERTY_REF(PROP_PORTAL_EXIT_ID, PortalExitID, portalExitID, QUuid, UNKNOWN_ENTITY_ID);
 
     // Physics
     DEFINE_PROPERTY(PROP_DENSITY, Density, density, float, ENTITY_ITEM_DEFAULT_DENSITY);
@@ -247,6 +259,7 @@ public:
     DEFINE_PROPERTY_REF(PROP_COMPOUND_SHAPE_URL, CompoundShapeURL, compoundShapeURL, QString, "");
     DEFINE_PROPERTY_REF(PROP_COLOR, Color, color, u8vec3Color, ENTITY_ITEM_DEFAULT_COLOR);
     DEFINE_PROPERTY(PROP_ALPHA, Alpha, alpha, float, ENTITY_ITEM_DEFAULT_ALPHA);
+    DEFINE_PROPERTY_REF(PROP_UNLIT, Unlit, unlit, bool, false);
     DEFINE_PROPERTY_GROUP(Pulse, pulse, PulsePropertyGroup);
     DEFINE_PROPERTY_REF(PROP_TEXTURES, Textures, textures, QString, "");
 
@@ -283,6 +296,14 @@ public:
     DEFINE_PROPERTY(PROP_SPIN_FINISH, SpinFinish, spinFinish, float, particle::DEFAULT_SPIN_FINISH);
     DEFINE_PROPERTY(PROP_PARTICLE_ROTATE_WITH_ENTITY, RotateWithEntity, rotateWithEntity, bool, particle::DEFAULT_ROTATE_WITH_ENTITY);
 
+    // Procedural Particles
+    DEFINE_PROPERTY_REF(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, NumParticles, numParticles, uint32_t, particle::DEFAULT_NUM_PROCEDURAL_PARTICLES);
+    DEFINE_PROPERTY_REF(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, NumTrianglesPerParticle, numTrianglesPerParticle, uint8_t, particle::DEFAULT_NUM_TRIS_PER);
+    DEFINE_PROPERTY_REF(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, NumUpdateProps, numUpdateProps, uint8_t, particle::DEFAULT_NUM_UPDATE_PROPS);
+    DEFINE_PROPERTY_REF(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, ParticleTransparent, particleTransparent, bool, false);
+    DEFINE_PROPERTY_REF(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, ParticleUpdateData, particleUpdateData, QString, "");
+    DEFINE_PROPERTY_REF(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, ParticleRenderData, particleRenderData, QString, "");
+
     // Model
     DEFINE_PROPERTY_REF(PROP_MODEL_URL, ModelURL, modelURL, QString, "");
     DEFINE_PROPERTY_REF(PROP_MODEL_SCALE, ModelScale, modelScale, glm::vec3, glm::vec3(1.0f));
@@ -314,7 +335,6 @@ public:
     DEFINE_PROPERTY_REF(PROP_RIGHT_MARGIN, RightMargin, rightMargin, float, TextEntityItem::DEFAULT_MARGIN);
     DEFINE_PROPERTY_REF(PROP_TOP_MARGIN, TopMargin, topMargin, float, TextEntityItem::DEFAULT_MARGIN);
     DEFINE_PROPERTY_REF(PROP_BOTTOM_MARGIN, BottomMargin, bottomMargin, float, TextEntityItem::DEFAULT_MARGIN);
-    DEFINE_PROPERTY_REF(PROP_UNLIT, Unlit, unlit, bool, false);
     DEFINE_PROPERTY_REF(PROP_FONT, Font, font, QString, ROBOTO_FONT_FAMILY);
     DEFINE_PROPERTY_REF_ENUM(PROP_TEXT_EFFECT, TextEffect, textEffect, TextEffect, TextEffect::NO_EFFECT);
     DEFINE_PROPERTY_REF(PROP_TEXT_EFFECT_COLOR, TextEffectColor, textEffectColor, u8vec3Color, TextEntityItem::DEFAULT_TEXT_COLOR);
@@ -327,6 +347,9 @@ public:
     DEFINE_PROPERTY_GROUP(Skybox, skybox, SkyboxPropertyGroup);
     DEFINE_PROPERTY_GROUP(Haze, haze, HazePropertyGroup);
     DEFINE_PROPERTY_GROUP(Bloom, bloom, BloomPropertyGroup);
+    DEFINE_PROPERTY_GROUP(Audio, audio, ZoneAudioPropertyGroup);
+    DEFINE_PROPERTY_GROUP(Tonemapping, tonemapping, TonemappingPropertyGroup);
+    DEFINE_PROPERTY_GROUP(AmbientOcclusion, ambientOcclusion, AmbientOcclusionPropertyGroup);
     DEFINE_PROPERTY(PROP_FLYING_ALLOWED, FlyingAllowed, flyingAllowed, bool, ZoneEntityItem::DEFAULT_FLYING_ALLOWED);
     DEFINE_PROPERTY(PROP_GHOSTING_ALLOWED, GhostingAllowed, ghostingAllowed, bool, ZoneEntityItem::DEFAULT_GHOSTING_ALLOWED);
     DEFINE_PROPERTY(PROP_FILTER_URL, FilterURL, filterURL, QString, ZoneEntityItem::DEFAULT_FILTER_URL);
@@ -337,6 +360,8 @@ public:
     DEFINE_PROPERTY_REF_ENUM(PROP_BLOOM_MODE, BloomMode, bloomMode, uint32_t, (uint32_t)COMPONENT_MODE_INHERIT);
     DEFINE_PROPERTY_REF_ENUM(PROP_AVATAR_PRIORITY, AvatarPriority, avatarPriority, uint32_t, (uint32_t)COMPONENT_MODE_INHERIT);
     DEFINE_PROPERTY_REF_ENUM(PROP_SCREENSHARE, Screenshare, screenshare, uint32_t, (uint32_t)COMPONENT_MODE_INHERIT);
+    DEFINE_PROPERTY_REF_ENUM(PROP_TONEMAPPING_MODE, TonemappingMode, tonemappingMode, uint32_t, (uint32_t)COMPONENT_MODE_INHERIT);
+    DEFINE_PROPERTY_REF_ENUM(PROP_AMBIENT_OCCLUSION_MODE, AmbientOcclusionMode, ambientOcclusionMode, uint32_t, (uint32_t)COMPONENT_MODE_INHERIT);
 
     // Polyvox
     DEFINE_PROPERTY_REF(PROP_VOXEL_VOLUME_SIZE, VoxelVolumeSize, voxelVolumeSize, glm::vec3, PolyVoxEntityItem::DEFAULT_VOXEL_VOLUME_SIZE);
@@ -358,6 +383,7 @@ public:
     DEFINE_PROPERTY_REF(PROP_SCRIPT_URL, ScriptURL, scriptURL, QString, "");
     DEFINE_PROPERTY_REF(PROP_MAX_FPS, MaxFPS, maxFPS, uint8_t, WebEntityItem::DEFAULT_MAX_FPS);
     DEFINE_PROPERTY_REF_ENUM(PROP_INPUT_MODE, InputMode, inputMode, WebInputMode, WebInputMode::TOUCH);
+    DEFINE_PROPERTY_REF(PROP_WANTS_KEYBOARD_FOCUS, WantsKeyboardFocus, wantsKeyboardFocus, bool, true);
     DEFINE_PROPERTY_REF(PROP_SHOW_KEYBOARD_FOCUS_HIGHLIGHT, ShowKeyboardFocusHighlight, showKeyboardFocusHighlight, bool, true);
     DEFINE_PROPERTY_REF(PROP_WEB_USE_BACKGROUND, UseBackground, useBackground, bool, true);
     DEFINE_PROPERTY_REF(PROP_USER_AGENT, UserAgent, userAgent, QString, WebEntityItem::DEFAULT_USER_AGENT);
@@ -399,6 +425,16 @@ public:
     // Gizmo
     DEFINE_PROPERTY_REF_ENUM(PROP_GIZMO_TYPE, GizmoType, gizmoType, GizmoType, GizmoType::RING);
     DEFINE_PROPERTY_GROUP(Ring, ring, RingGizmoPropertyGroup);
+
+    // Sound
+    DEFINE_PROPERTY_REF(PROP_SOUND_URL, SoundURL, soundURL, QString, "");
+    DEFINE_PROPERTY(PROP_SOUND_VOLUME, Volume, volume, float, 1.0f);
+    DEFINE_PROPERTY(PROP_SOUND_TIME_OFFSET, TimeOffset, timeOffset, float, 0.0f);
+    DEFINE_PROPERTY(PROP_SOUND_PITCH, Pitch, pitch, float, 1.0f);
+    DEFINE_PROPERTY(PROP_SOUND_PLAYING, Playing, playing, bool, true);
+    DEFINE_PROPERTY(PROP_SOUND_LOOP, Loop, loop, bool, true);
+    DEFINE_PROPERTY(PROP_SOUND_POSITIONAL, Positional, positional, bool, true);
+    DEFINE_PROPERTY(PROP_SOUND_LOCAL_ONLY, LocalOnly, localOnly, bool, false);
 
     static QString getComponentModeAsString(uint32_t mode);
 
@@ -497,6 +533,9 @@ public:
 protected:
     QString getCollisionMaskAsString() const;
     void setCollisionMaskFromString(const QString& maskString);
+
+    QVector<QString> getTagsAsVector() const;
+    void setTagsFromVector(const QVector<QString>& tags);
 
 private:
     QUuid _id;

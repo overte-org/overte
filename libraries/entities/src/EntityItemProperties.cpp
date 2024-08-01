@@ -45,8 +45,11 @@ AnimationPropertyGroup EntityItemProperties::_staticAnimation;
 SkyboxPropertyGroup EntityItemProperties::_staticSkybox;
 HazePropertyGroup EntityItemProperties::_staticHaze;
 BloomPropertyGroup EntityItemProperties::_staticBloom;
+ZoneAudioPropertyGroup EntityItemProperties::_staticAudio;
 KeyLightPropertyGroup EntityItemProperties::_staticKeyLight;
 AmbientLightPropertyGroup EntityItemProperties::_staticAmbientLight;
+TonemappingPropertyGroup EntityItemProperties::_staticTonemapping;
+AmbientOcclusionPropertyGroup EntityItemProperties::_staticAmbientOcclusion;
 GrabPropertyGroup EntityItemProperties::_staticGrab;
 PulsePropertyGroup EntityItemProperties::_staticPulse;
 RingGizmoPropertyGroup EntityItemProperties::_staticRing;
@@ -88,6 +91,9 @@ void EntityItemProperties::debugDump() const {
     getKeyLight().debugDump();
     getAmbientLight().debugDump();
     getBloom().debugDump();
+    getAudio().debugDump();
+    getTonemapping().debugDump();
+    getAmbientOcclusion().debugDump();
     getGrab().debugDump();
 
     qCDebug(entities) << "   changed properties...";
@@ -252,6 +258,8 @@ QString EntityItemProperties::getKeyLightModeAsString() const { return getCompon
 QString EntityItemProperties::getAmbientLightModeAsString() const { return getComponentModeAsString(_ambientLightMode); }
 QString EntityItemProperties::getHazeModeAsString() const { return getComponentModeAsString(_hazeMode); }
 QString EntityItemProperties::getBloomModeAsString() const { return getComponentModeAsString(_bloomMode); }
+QString EntityItemProperties::getTonemappingModeAsString() const { return getComponentModeAsString(_tonemappingMode); }
+QString EntityItemProperties::getAmbientOcclusionModeAsString() const { return getComponentModeAsString(_ambientOcclusionMode); }
 void EntityItemProperties::setSkyboxModeFromString(const QString& mode) {
     auto modeItr = stringToComponentMode.find(mode.toLower());
     if (modeItr != stringToComponentMode.end()) {
@@ -285,6 +293,20 @@ void EntityItemProperties::setBloomModeFromString(const QString& mode) {
     if (modeItr != stringToComponentMode.end()) {
         _bloomMode = modeItr.value();
         _bloomModeChanged = true;
+    }
+}
+void EntityItemProperties::setTonemappingModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _tonemappingMode = modeItr.value();
+        _tonemappingModeChanged = true;
+    }
+}
+void EntityItemProperties::setAmbientOcclusionModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _ambientOcclusionMode = modeItr.value();
+        _ambientOcclusionModeChanged = true;
     }
 }
 
@@ -425,6 +447,38 @@ void EntityItemProperties::setEntityHostTypeFromString(const QString& entityHost
     }
 }
 
+inline void addMirrorMode(QHash<QString, MirrorMode>& lookup, MirrorMode mirrorMode) { lookup[MirrorModeHelpers::getNameForMirrorMode(mirrorMode)] = mirrorMode; }
+const QHash<QString, MirrorMode> stringToMirrorModeLookup = [] {
+    QHash<QString, MirrorMode> toReturn;
+    addMirrorMode(toReturn, MirrorMode::NONE);
+    addMirrorMode(toReturn, MirrorMode::MIRROR);
+    addMirrorMode(toReturn, MirrorMode::PORTAL);
+    return toReturn;
+}();
+QString EntityItemProperties::getMirrorModeAsString() const { return MirrorModeHelpers::getNameForMirrorMode(_mirrorMode); }
+void EntityItemProperties::setMirrorModeFromString(const QString& mirrorMode) {
+    auto mirrorModeItr = stringToMirrorModeLookup.find(mirrorMode.toLower());
+    if (mirrorModeItr != stringToMirrorModeLookup.end()) {
+        _mirrorMode = mirrorModeItr.value();
+        _mirrorModeChanged = true;
+    }
+}
+
+QVector<QString> EntityItemProperties::getTagsAsVector() const {
+    QVector<QString> tags;
+    for (const QString& tag : _tags) {
+        tags.push_back(tag);
+    }
+    return tags;
+}
+
+void EntityItemProperties::setTagsFromVector(const QVector<QString>& tags) {
+    _tags.clear();
+    for (const QString& tag : tags) {
+        _tags.insert(tag);
+    }
+}
+
 EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     EntityPropertyFlags changedProperties;
 
@@ -455,7 +509,10 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_IGNORE_PICK_INTERSECTION, ignorePickIntersection);
     CHECK_PROPERTY_CHANGE(PROP_RENDER_WITH_ZONES, renderWithZones);
     CHECK_PROPERTY_CHANGE(PROP_BILLBOARD_MODE, billboardMode);
+    CHECK_PROPERTY_CHANGE(PROP_TAGS, tags);
     changedProperties += _grab.getChangedProperties();
+    CHECK_PROPERTY_CHANGE(PROP_MIRROR_MODE, mirrorMode);
+    CHECK_PROPERTY_CHANGE(PROP_PORTAL_EXIT_ID, portalExitID);
 
     // Physics
     CHECK_PROPERTY_CHANGE(PROP_DENSITY, density);
@@ -499,6 +556,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_COMPOUND_SHAPE_URL, compoundShapeURL);
     CHECK_PROPERTY_CHANGE(PROP_COLOR, color);
     CHECK_PROPERTY_CHANGE(PROP_ALPHA, alpha);
+    CHECK_PROPERTY_CHANGE(PROP_UNLIT, unlit);
     changedProperties += _pulse.getChangedProperties();
     CHECK_PROPERTY_CHANGE(PROP_TEXTURES, textures);
 
@@ -535,6 +593,14 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_SPIN_FINISH, spinFinish);
     CHECK_PROPERTY_CHANGE(PROP_PARTICLE_ROTATE_WITH_ENTITY, rotateWithEntity);
 
+    // Procedural Particles
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, numParticles);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, numTrianglesPerParticle);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, numUpdateProps);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, particleTransparent);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, particleUpdateData);
+    CHECK_PROPERTY_CHANGE(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, particleRenderData);
+
     // Model
     CHECK_PROPERTY_CHANGE(PROP_MODEL_URL, modelURL);
     CHECK_PROPERTY_CHANGE(PROP_MODEL_SCALE, modelScale);
@@ -566,7 +632,6 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_RIGHT_MARGIN, rightMargin);
     CHECK_PROPERTY_CHANGE(PROP_TOP_MARGIN, topMargin);
     CHECK_PROPERTY_CHANGE(PROP_BOTTOM_MARGIN, bottomMargin);
-    CHECK_PROPERTY_CHANGE(PROP_UNLIT, unlit);
     CHECK_PROPERTY_CHANGE(PROP_FONT, font);
     CHECK_PROPERTY_CHANGE(PROP_TEXT_EFFECT, textEffect);
     CHECK_PROPERTY_CHANGE(PROP_TEXT_EFFECT_COLOR, textEffectColor);
@@ -579,6 +644,9 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     changedProperties += _skybox.getChangedProperties();
     changedProperties += _haze.getChangedProperties();
     changedProperties += _bloom.getChangedProperties();
+    changedProperties += _audio.getChangedProperties();
+    changedProperties += _tonemapping.getChangedProperties();
+    changedProperties += _ambientOcclusion.getChangedProperties();
     CHECK_PROPERTY_CHANGE(PROP_FLYING_ALLOWED, flyingAllowed);
     CHECK_PROPERTY_CHANGE(PROP_GHOSTING_ALLOWED, ghostingAllowed);
     CHECK_PROPERTY_CHANGE(PROP_FILTER_URL, filterURL);
@@ -589,6 +657,8 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_BLOOM_MODE, bloomMode);
     CHECK_PROPERTY_CHANGE(PROP_AVATAR_PRIORITY, avatarPriority);
     CHECK_PROPERTY_CHANGE(PROP_SCREENSHARE, screenshare);
+    CHECK_PROPERTY_CHANGE(PROP_TONEMAPPING_MODE, tonemappingMode);
+    CHECK_PROPERTY_CHANGE(PROP_AMBIENT_OCCLUSION_MODE, ambientOcclusionMode);
 
     // Polyvox
     CHECK_PROPERTY_CHANGE(PROP_VOXEL_VOLUME_SIZE, voxelVolumeSize);
@@ -610,6 +680,7 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     CHECK_PROPERTY_CHANGE(PROP_SCRIPT_URL, scriptURL);
     CHECK_PROPERTY_CHANGE(PROP_MAX_FPS, maxFPS);
     CHECK_PROPERTY_CHANGE(PROP_INPUT_MODE, inputMode);
+    CHECK_PROPERTY_CHANGE(PROP_WANTS_KEYBOARD_FOCUS, wantsKeyboardFocus);
     CHECK_PROPERTY_CHANGE(PROP_SHOW_KEYBOARD_FOCUS_HIGHLIGHT, showKeyboardFocusHighlight);
     CHECK_PROPERTY_CHANGE(PROP_WEB_USE_BACKGROUND, useBackground);
     CHECK_PROPERTY_CHANGE(PROP_USER_AGENT, userAgent);
@@ -651,6 +722,16 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
     // Gizmo
     CHECK_PROPERTY_CHANGE(PROP_GIZMO_TYPE, gizmoType);
     changedProperties += _ring.getChangedProperties();
+
+    // Sound
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_URL, soundURL);
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_VOLUME, volume);
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_TIME_OFFSET, timeOffset);
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_PITCH, pitch);
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_PLAYING, playing);
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_LOOP, loop);
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_POSITIONAL, positional);
+    CHECK_PROPERTY_CHANGE(PROP_SOUND_LOCAL_ONLY, localOnly);
 
     return changedProperties;
 }
@@ -818,13 +899,19 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     avatar entities, <code>false</code> if they won't be.
  * @property {Uuid} cloneOriginID - The ID of the entity that this entity was cloned from.
  *
- * @property {Uuid[]} renderWithZones=[]] - A list of entity IDs representing with which zones this entity should render.
+ * @property {Uuid[]} renderWithZones=[] - A list of entity IDs representing with which zones this entity should render.
  *     If it is empty, this entity will render normally.  Otherwise, this entity will only render if your avatar is within
  *     one of the zones in this list.
  * @property {BillboardMode} billboardMode="none" - Whether the entity is billboarded to face the camera.  Use the rotation
  *     property to control which axis is facing you.
+ * @property {string[]} tags=[] - A set of tags describing this entity.
  *
  * @property {Entities.Grab} grab - The entity's grab-related properties.
+ *
+ * @property {MirrorMode} mirrorMode="none" - If this entity should render as a mirror (reflecting the view of the camera),
+ *     a portal (reflecting the view through its <code>portalExitID</code>), or normally.
+ * @property {Uuid} portalExitID=Uuid.NULL - The ID of the entity that should act as the portal exit if the <code>mirrorMode</code>
+ *     is set to <code>portal</code>.
  *
  * @comment The different entity types have additional properties as follows:
  * @see {@link Entities.EntityProperties-Box|EntityProperties-Box}
@@ -838,7 +925,9 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @see {@link Entities.EntityProperties-ParticleEffect|EntityProperties-ParticleEffect}
  * @see {@link Entities.EntityProperties-PolyLine|EntityProperties-PolyLine}
  * @see {@link Entities.EntityProperties-PolyVox|EntityProperties-PolyVox}
+ * @see {@link Entities.EntityProperties-ProceduralParticleEffect|EntityProperties-ProceduralParticleEffect}
  * @see {@link Entities.EntityProperties-Shape|EntityProperties-Shape}
+ * @see {@link Entities.EntityProperties-Sound|EntityProperties-Sound}
  * @see {@link Entities.EntityProperties-Sphere|EntityProperties-Sphere}
  * @see {@link Entities.EntityProperties-Text|EntityProperties-Text}
  * @see {@link Entities.EntityProperties-Web|EntityProperties-Web}
@@ -1276,6 +1365,54 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  */
 
 /*@jsdoc
+ * The <code>"ProceduralParticleEffect"</code> {@link Entities.EntityType|EntityType} displays a particle system that can be
+ * used to simulate things such as fire, smoke, snow, magic spells, etc. The particles are fully controlled by the provided
+ * update and rendering shaders on the GPU.
+ * It has properties in addition to the common {@link Entities.EntityProperties|EntityProperties}.
+ *
+ * @typedef {object} Entities.EntityProperties-ProceduralParticleEffect
+ * @property {number} numParticles=10000 - The number of particles to render.
+ * @property {number} numTrianglesPerParticle=1 - The number of triangles to render per particle.  By default, these triangles
+ *     still need to be positioned in the <code>particleRenderData</code> vertex shader.
+ * @property {number} numUpdateProps=0 - The number of persistent Vec4 values stored per particle and updated once per frame.
+ *     These can be modified in the <code>particleUpdateData</code> fragment shader and read in the
+ *     <code>particleRenderData</code> vertex/fragment shaders.
+ * @property {boolean} particleTransparent=false - Whether the particles should render as transparent (with additive blending)
+ *     or opaque.
+ * @property {ProceduralData} particleUpdateData="" - Used to store {@link ProceduralData} data as a JSON string to control
+ *     per-particle updates if <code>numUpdateProps > 0</code>.  You can use <code>JSON.parse()</code> to parse the string
+ *     into a JavaScript object which you can manipulate the properties of, and use <code>JSON.stringify()</code> to convert
+ *     the object into a string to put in the property.
+ * @property {ProceduralData} particleRenderData="" - Used to store {@link ProceduralData} data as a JSON string to control
+ *     per-particle rendering.  You can use <code>JSON.parse()</code> to parse the string into a JavaScript object which you
+ *     can manipulate the properties of, and use <code>JSON.stringify()</code> to convert the object into a string to put in
+ *     the property.
+ *
+ * @example <caption>A cube of oscillating, unlit, billboarded triangles, with the oscillation in the update (computed once per particle instead of once per vertex).</caption>
+ * particles = Entities.addEntity({
+ *     type: "ProceduralParticleEffect",
+ *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.5, z: -4 })),
+ *     dimensions: 3,
+ *     numParticles: 10000,
+ *     numTrianglesPerParticle: 1,
+ *     numUpdateProps: 1,
+ *     particleUpdateData: JSON.stringify({
+ *         version: 1.0,
+ *         fragmentShaderURL: "https://gist.githubusercontent.com/HifiExperiments/9049fb4a8dcd2c1401ff4321103dce16/raw/4f9474ed82c66c1f94c1055d2724af808cd7aace/proceduralParticleUpdate.fs",
+ *     }),
+ *     particleRenderData: JSON.stringify({
+ *         version: 1.0,
+ *         vertexShaderURL: "https://gist.github.com/HifiExperiments/5dda24e28e7de1719e3a594d81306343/raw/92e0c5b82a9fa87685064cdbab92ed0c16f49f94/proceduralParticle2.vs",
+ *         fragmentShaderURL: "https://gist.github.com/HifiExperiments/7def54504362c7bc79b5c85cd515b98b/raw/93b3828c2ec66b12b789a625dd141f533c595ede/proceduralParticle.fs",
+ *         uniforms: {
+ *             radius: 0.03
+ *         }
+ *     }),
+ *     lifetime: 300  // Delete after 5 minutes.
+ * });
+ */
+
+/*@jsdoc
  * The <code>"Shape"</code> {@link Entities.EntityType|EntityType} displays an entity of a specified <code>shape</code>.
  * It has properties in addition to the common {@link Entities.EntityProperties|EntityProperties}.
  *
@@ -1284,6 +1421,8 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @property {Vec3} dimensions=0.1,0.1,0.1 - The dimensions of the entity.
  * @property {Color} color=255,255,255 - The color of the entity.
  * @property {number} alpha=1 - The opacity of the entity, range <code>0.0</code> &ndash; <code>1.0</code>.
+ * @property {boolean} unlit=false - <code>true</code> if the entity is unaffected by lighting, <code>false</code> if it is lit
+ *     by the key light and local lights.
  * @property {Entities.Pulse} pulse - Color and alpha pulse.
  *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  * @example <caption>Create a cylinder.</caption>
@@ -1292,6 +1431,35 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *     shape: "Cylinder",
  *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: -5 })),
  *     dimensions: { x: 0.4, y: 0.6, z: 0.4 },
+ *     lifetime: 300  // Delete after 5 minutes.
+ * });
+ */
+
+/*@jsdoc
+ * The <code>"Sound"</code> {@link Entities.EntityType|EntityType} plays a sound from a URL. It has properties in addition to
+ * the common {@link Entities.EntityProperties|EntityProperties}.
+ *
+ * @typedef {object} Entities.EntityProperties-Sound
+ * @property {string} soundURL="" - The URL of the sound to play, as a wav, mp3, or raw file.  Supports stereo and ambisonic.
+ *     Note: ambisonic sounds can only play as <code>localOnly</code>.
+ * @property {boolean} playing=true - Whether or not the sound should play.
+ * @property {number} volume=1.0 - The volume of the sound, from <code>0</code> to <code>1</code>.
+ * @property {number} pitch=1.0 - The relative sample rate at which to resample the sound, within +/- 2 octaves.
+ * @property {number} timeOffset=0.0 - The time (in seconds) at which to start playback within the sound file.  If looping,
+ *     this only affects the first loop.
+ * @property {boolean} loop=true - Whether or not to loop the sound.
+ * @property {boolean} positional=true - Whether or not the volume of the sound should decay with distance.
+ * @property {boolean} localOnly=false - Whether or not the sound should play locally for everyone (unsynced), or synchronously
+ *     for everyone via the Entity Mixer.
+ * @example <caption>Create a Sound entity.</caption>
+ * var entity = Entities.addEntity({
+ *     type: "Sound",
+ *     soundURL: "https://themushroomkingdom.net/sounds/wav/lm/lm_gold_mouse.wav",
+ *     positional: true,
+ *     volume: 0.75,
+ *     localOnly: true,
+ *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.75, z: -4 })),
+ *     rotation: MyAvatar.orientation,
  *     lifetime: 300  // Delete after 5 minutes.
  * });
  */
@@ -1384,6 +1552,8 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  * @property {string} scriptURL="" - The URL of a JavaScript file to inject into the web page.
  * @property {number} maxFPS=10 - The maximum update rate for the web content, in frames/second.
  * @property {WebInputMode} inputMode="touch" - The user input mode to use.
+ * @property {boolean} wantsKeyboardFocus=true - <code>true</code> if the entity should capture keyboard focus, <code>false</code> if it
+ *     shouldn't.
  * @property {boolean} showKeyboardFocusHighlight=true - <code>true</code> if the entity is highlighted when it has keyboard
  *     focus, <code>false</code> if it isn't.
  * @property {boolean} useBackground=true - <code>true</code> if the web entity should have a background,
@@ -1438,6 +1608,14 @@ EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
  *
  * @property {Entities.ComponentMode} bloomMode="inherit" - Configures the bloom in the zone.
  * @property {Entities.Bloom} bloom - The bloom properties of the zone.
+ *
+ * @property {Entities.ZoneAudio} audio - The audio properties of the zone.
+ *
+ * @property {Entities.ComponentMode} tonemappingMode="inherit" - Configures the tonemapping in the zone.
+ * @property {Entities.Tonemapping} tonemapping - The tonemapping properties of the zone.
+ *
+ * @property {Entities.ComponentMode} ambientOcclusionMode="inherit" - Configures the ambient occlusion in the zone.
+ * @property {Entities.AmbientOcclusion} ambientOcclusion - The ambient occlusion properties of the zone.
  *
  * @property {boolean} flyingAllowed=true - <code>true</code> if visitors can fly in the zone; <code>false</code> if they
  *     cannot. Only works for domain entities.
@@ -1619,7 +1797,10 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_IGNORE_PICK_INTERSECTION, ignorePickIntersection);
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_RENDER_WITH_ZONES, renderWithZones);
     COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_BILLBOARD_MODE, billboardMode, getBillboardModeAsString());
+    COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_TAGS, tags, getTagsAsVector());
     _grab.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+    COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_MIRROR_MODE, mirrorMode, getMirrorModeAsString());
+    COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PORTAL_EXIT_ID, portalExitID);
 
     // Physics
     COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_DENSITY, density);
@@ -1711,6 +1892,16 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PARTICLE_ROTATE_WITH_ENTITY, rotateWithEntity);
     }
 
+    // Procedural Particles
+    if (_type == EntityTypes::ProceduralParticleEffect) {
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, numParticles);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, numTrianglesPerParticle);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, numUpdateProps);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, particleTransparent);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, particleUpdateData);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, particleRenderData);
+    }
+
     // Models only
     if (_type == EntityTypes::Model) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_SHAPE_TYPE, shapeType, getShapeTypeAsString());
@@ -1742,6 +1933,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     if (_type == EntityTypes::Box || _type == EntityTypes::Sphere || _type == EntityTypes::Shape) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_TYPED(PROP_COLOR, color, u8vec3Color);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_ALPHA, alpha);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_UNLIT, unlit);
         _pulse.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SHAPE, shape);
     }
@@ -1788,6 +1980,9 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         _skybox.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
         _haze.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
         _bloom.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+        _audio.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+        _tonemapping.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+        _ambientOcclusion.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
 
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_FLYING_ALLOWED, flyingAllowed);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_GHOSTING_ALLOWED, ghostingAllowed);
@@ -1800,6 +1995,8 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_BLOOM_MODE, bloomMode, getBloomModeAsString());
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_AVATAR_PRIORITY, avatarPriority, getAvatarPriorityAsString());
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_SCREENSHARE, screenshare, getScreenshareAsString());
+        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_TONEMAPPING_MODE, tonemappingMode, getTonemappingModeAsString());
+        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_AMBIENT_OCCLUSION_MODE, ambientOcclusionMode, getAmbientOcclusionModeAsString());
     }
 
     // Web only
@@ -1813,6 +2010,7 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(PROP_SCRIPT_URL, scriptURL);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_MAX_FPS, maxFPS);
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_INPUT_MODE, inputMode, getInputModeAsString());
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_WANTS_KEYBOARD_FOCUS, wantsKeyboardFocus);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SHOW_KEYBOARD_FOCUS_HIGHLIGHT, showKeyboardFocusHighlight);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_WEB_USE_BACKGROUND, useBackground);
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_USER_AGENT, userAgent);
@@ -1906,6 +2104,18 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
     if (_type == EntityTypes::Gizmo) {
         COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER(PROP_GIZMO_TYPE, gizmoType, getGizmoTypeAsString());
         _ring.copyToScriptValue(_desiredProperties, properties, engine, skipDefaults, defaultEntityProperties, returnNothingOnEmptyPropertyFlags, isMyOwnAvatarEntity);
+    }
+
+    // Sound only
+    if (_type == EntityTypes::Sound) {
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_URL, soundURL);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_VOLUME, volume);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_TIME_OFFSET, timeOffset);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_PITCH, pitch);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_PLAYING, playing);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_LOOP, loop);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_POSITIONAL, positional);
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_SOUND_LOCAL_ONLY, localOnly);
     }
 
     /*@jsdoc
@@ -2032,7 +2242,10 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE(ignorePickIntersection, bool, setIgnorePickIntersection);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(renderWithZones, qVectorQUuid, setRenderWithZones);
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(billboardMode, BillboardMode);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(tags, qVectorQString, setTagsFromVector, getTagsAsVector);
     _grab.copyFromScriptValue(object, namesSet, _defaultSettings);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(mirrorMode, MirrorMode);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(portalExitID, QUuid, setPortalExitID);
 
     // Physics
     COPY_PROPERTY_FROM_QSCRIPTVALUE(density, float, setDensity);
@@ -2081,6 +2294,7 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE(compoundShapeURL, QString, setCompoundShapeURL);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(color, u8vec3Color, setColor);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(alpha, float, setAlpha);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(unlit, bool, setUnlit);
     _pulse.copyFromScriptValue(object, namesSet, _defaultSettings);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(textures, QString, setTextures);
 
@@ -2117,6 +2331,14 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE(spinFinish, float, setSpinFinish);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(rotateWithEntity, bool, setRotateWithEntity);
 
+    // Procedural Particles
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(numParticles, uint32_t, setNumParticles);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(numTrianglesPerParticle, uint8_t, setNumTrianglesPerParticle);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(numUpdateProps, uint8_t, setNumUpdateProps);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(particleTransparent, bool, setParticleTransparent);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(particleUpdateData, QString, setParticleUpdateData);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(particleRenderData, QString, setParticleRenderData);
+
     // Model
     COPY_PROPERTY_FROM_QSCRIPTVALUE(modelURL, QString, setModelURL);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(modelScale, vec3, setModelScale);
@@ -2148,7 +2370,6 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE(rightMargin, float, setRightMargin);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(topMargin, float, setTopMargin);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(bottomMargin, float, setBottomMargin);
-    COPY_PROPERTY_FROM_QSCRIPTVALUE(unlit, bool, setUnlit);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(font, QString, setFont);
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(textEffect, TextEffect);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(textEffectColor, u8vec3Color, setTextEffectColor);
@@ -2161,6 +2382,9 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     _skybox.copyFromScriptValue(object, namesSet, _defaultSettings);
     _haze.copyFromScriptValue(object, namesSet, _defaultSettings);
     _bloom.copyFromScriptValue(object, namesSet, _defaultSettings);
+    _audio.copyFromScriptValue(object, namesSet, _defaultSettings);
+    _tonemapping.copyFromScriptValue(object, namesSet, _defaultSettings);
+    _ambientOcclusion.copyFromScriptValue(object, namesSet, _defaultSettings);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(flyingAllowed, bool, setFlyingAllowed);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(ghostingAllowed, bool, setGhostingAllowed);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(filterURL, QString, setFilterURL);
@@ -2171,6 +2395,8 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(bloomMode, BloomMode);
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(avatarPriority, AvatarPriority);
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(screenshare, Screenshare);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(tonemappingMode, TonemappingMode);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(ambientOcclusionMode, AmbientOcclusionMode);
 
     // Polyvox
     COPY_PROPERTY_FROM_QSCRIPTVALUE(voxelVolumeSize, vec3, setVoxelVolumeSize);
@@ -2192,6 +2418,7 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     COPY_PROPERTY_FROM_QSCRIPTVALUE(scriptURL, QString, setScriptURL);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(maxFPS, uint8_t, setMaxFPS);
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(inputMode, InputMode);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(wantsKeyboardFocus, bool, setWantsKeyboardFocus);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(showKeyboardFocusHighlight, bool, setShowKeyboardFocusHighlight);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(useBackground, bool, setUseBackground);
     COPY_PROPERTY_FROM_QSCRIPTVALUE(userAgent, QString, setUserAgent);
@@ -2233,6 +2460,16 @@ void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool h
     // Gizmo
     COPY_PROPERTY_FROM_QSCRIPTVALUE_ENUM(gizmoType, GizmoType);
     _ring.copyFromScriptValue(object, namesSet, _defaultSettings);
+
+    // Sound
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(soundURL, QString, setSoundURL);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(volume, float, setVolume);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(timeOffset, float, setTimeOffset);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(pitch, float, setPitch);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(playing, bool, setPlaying);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(loop, bool, setLoop);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(positional, bool, setPositional);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE(localOnly, bool, setLocalOnly);
 
     // Handle conversions from old 'textures' property to "imageURL"
     if (namesSet.contains("textures")) {
@@ -2318,7 +2555,10 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(ignorePickIntersection);
     COPY_PROPERTY_IF_CHANGED(renderWithZones);
     COPY_PROPERTY_IF_CHANGED(billboardMode);
+    COPY_PROPERTY_IF_CHANGED(tags);
     _grab.merge(other._grab);
+    COPY_PROPERTY_IF_CHANGED(mirrorMode);
+    COPY_PROPERTY_IF_CHANGED(portalExitID);
 
     // Physics
     COPY_PROPERTY_IF_CHANGED(density);
@@ -2362,6 +2602,7 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(compoundShapeURL);
     COPY_PROPERTY_IF_CHANGED(color);
     COPY_PROPERTY_IF_CHANGED(alpha);
+    COPY_PROPERTY_IF_CHANGED(unlit);
     _pulse.merge(other._pulse);
     COPY_PROPERTY_IF_CHANGED(textures);
 
@@ -2398,6 +2639,14 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(spinFinish);
     COPY_PROPERTY_IF_CHANGED(rotateWithEntity);
 
+    // Procedural Particles
+    COPY_PROPERTY_IF_CHANGED(numParticles);
+    COPY_PROPERTY_IF_CHANGED(numTrianglesPerParticle);
+    COPY_PROPERTY_IF_CHANGED(numUpdateProps);
+    COPY_PROPERTY_IF_CHANGED(particleTransparent);
+    COPY_PROPERTY_IF_CHANGED(particleUpdateData);
+    COPY_PROPERTY_IF_CHANGED(particleRenderData);
+
     // Model
     COPY_PROPERTY_IF_CHANGED(modelURL);
     COPY_PROPERTY_IF_CHANGED(modelScale);
@@ -2429,7 +2678,6 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(rightMargin);
     COPY_PROPERTY_IF_CHANGED(topMargin);
     COPY_PROPERTY_IF_CHANGED(bottomMargin);
-    COPY_PROPERTY_IF_CHANGED(unlit);
     COPY_PROPERTY_IF_CHANGED(font);
     COPY_PROPERTY_IF_CHANGED(textEffect);
     COPY_PROPERTY_IF_CHANGED(textEffectColor);
@@ -2442,6 +2690,9 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     _skybox.merge(other._skybox);
     _haze.merge(other._haze);
     _bloom.merge(other._bloom);
+    _audio.merge(other._audio);
+    _tonemapping.merge(other._tonemapping);
+    _ambientOcclusion.merge(other._ambientOcclusion);
     COPY_PROPERTY_IF_CHANGED(flyingAllowed);
     COPY_PROPERTY_IF_CHANGED(ghostingAllowed);
     COPY_PROPERTY_IF_CHANGED(filterURL);
@@ -2452,6 +2703,8 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(bloomMode);
     COPY_PROPERTY_IF_CHANGED(avatarPriority);
     COPY_PROPERTY_IF_CHANGED(screenshare);
+    COPY_PROPERTY_IF_CHANGED(tonemappingMode);
+    COPY_PROPERTY_IF_CHANGED(ambientOcclusionMode);
 
     // Polyvox
     COPY_PROPERTY_IF_CHANGED(voxelVolumeSize);
@@ -2473,6 +2726,7 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     COPY_PROPERTY_IF_CHANGED(scriptURL);
     COPY_PROPERTY_IF_CHANGED(maxFPS);
     COPY_PROPERTY_IF_CHANGED(inputMode);
+    COPY_PROPERTY_IF_CHANGED(wantsKeyboardFocus);
     COPY_PROPERTY_IF_CHANGED(showKeyboardFocusHighlight);
     COPY_PROPERTY_IF_CHANGED(useBackground);
     COPY_PROPERTY_IF_CHANGED(userAgent);
@@ -2514,6 +2768,16 @@ void EntityItemProperties::merge(const EntityItemProperties& other) {
     // Gizmo
     COPY_PROPERTY_IF_CHANGED(gizmoType);
     _ring.merge(other._ring);
+
+    // Sound
+    COPY_PROPERTY_IF_CHANGED(soundURL);
+    COPY_PROPERTY_IF_CHANGED(volume);
+    COPY_PROPERTY_IF_CHANGED(timeOffset);
+    COPY_PROPERTY_IF_CHANGED(pitch);
+    COPY_PROPERTY_IF_CHANGED(playing);
+    COPY_PROPERTY_IF_CHANGED(loop);
+    COPY_PROPERTY_IF_CHANGED(positional);
+    COPY_PROPERTY_IF_CHANGED(localOnly);
 
     _lastEdited = usecTimestampNow();
 }
@@ -2606,6 +2870,7 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
         ADD_PROPERTY_TO_MAP(PROP_IGNORE_PICK_INTERSECTION, IgnorePickIntersection, ignorePickIntersection, bool);
         ADD_PROPERTY_TO_MAP(PROP_RENDER_WITH_ZONES, RenderWithZones, renderWithZones, QVector<QUuid>);
         ADD_PROPERTY_TO_MAP(PROP_BILLBOARD_MODE, BillboardMode, billboardMode, BillboardMode);
+        ADD_PROPERTY_TO_MAP(PROP_TAGS, Tags, tags, QSet<QString>);
         { // Grab
             ADD_GROUP_PROPERTY_TO_MAP(PROP_GRAB_GRABBABLE, Grab, grab, Grabbable, grabbable);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_GRAB_KINEMATIC, Grab, grab, GrabKinematic, grabKinematic);
@@ -2628,6 +2893,8 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
             ADD_GROUP_PROPERTY_TO_MAP(PROP_GRAB_EQUIPPABLE_INDICATOR_OFFSET, Grab, grab,
                                       EquippableIndicatorOffset, equippableIndicatorOffset);
         }
+        ADD_PROPERTY_TO_MAP(PROP_MIRROR_MODE, MirrorMode, mirrorMode, MirrorMode);
+        ADD_PROPERTY_TO_MAP(PROP_PORTAL_EXIT_ID, PortalExitID, portalExitID, QUuid);
 
         // Physics
         ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_DENSITY, Density, density, float,
@@ -2680,6 +2947,7 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
         ADD_PROPERTY_TO_MAP(PROP_COMPOUND_SHAPE_URL, CompoundShapeURL, compoundShapeURL, QString);
         ADD_PROPERTY_TO_MAP(PROP_COLOR, Color, color, u8vec3Color);
         ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_ALPHA, Alpha, alpha, float, particle::MINIMUM_ALPHA, particle::MAXIMUM_ALPHA);
+        ADD_PROPERTY_TO_MAP(PROP_UNLIT, Unlit, unlit, bool);
         { // Pulse
             ADD_GROUP_PROPERTY_TO_MAP(PROP_PULSE_MIN, Pulse, pulse, Min, min);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_PULSE_MAX, Pulse, pulse, Max, max);
@@ -2746,6 +3014,17 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
                                        particle::MINIMUM_PARTICLE_SPIN, particle::MAXIMUM_PARTICLE_SPIN);
         ADD_PROPERTY_TO_MAP(PROP_PARTICLE_ROTATE_WITH_ENTITY, RotateWithEntity, rotateWithEntity, float);
 
+        // Procedural Particles
+        ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, NumParticles, numParticles, uint32_t,
+                                       particle::MINIMUM_MAX_PARTICLES, particle::MAXIMUM_NUM_PROCEDURAL_PARTICLES);
+        ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, NumTrianglesPerParticle, numTrianglesPerParticle, uint8_t,
+                                       particle::MINIMUM_TRIS_PER, particle::MAXIMUM_TRIS_PER);
+        ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, NumUpdateProps, numUpdateProps, uint8_t,
+                                       particle::MINIMUM_NUM_UPDATE_PROPS, particle::MAXIMUM_NUM_UPDATE_PROPS);
+        ADD_PROPERTY_TO_MAP(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, ParticleTransparent, particleTransparent, bool);
+        ADD_PROPERTY_TO_MAP(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, ParticleUpdateData, particleUpdateData, QString);
+        ADD_PROPERTY_TO_MAP(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, ParticleRenderData, particleRenderData, QString);
+
         // Model
         ADD_PROPERTY_TO_MAP(PROP_MODEL_URL, ModelURL, modelURL, QString);
         ADD_PROPERTY_TO_MAP(PROP_MODEL_SCALE, ModelScale, modelScale, vec3);
@@ -2767,6 +3046,7 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
             ADD_GROUP_PROPERTY_TO_MAP(PROP_ANIMATION_FIRST_FRAME, Animation, animation, FirstFrame, firstFrame);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_ANIMATION_LAST_FRAME, Animation, animation, LastFrame, lastFrame);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_ANIMATION_HOLD, Animation, animation, Hold, hold);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_ANIMATION_SMOOTH_FRAMES, Animation, animation, SmoothFrames, smoothFrames);
         }
 
         // Light
@@ -2788,7 +3068,6 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
         ADD_PROPERTY_TO_MAP(PROP_RIGHT_MARGIN, RightMargin, rightMargin, float);
         ADD_PROPERTY_TO_MAP(PROP_TOP_MARGIN, TopMargin, topMargin, float);
         ADD_PROPERTY_TO_MAP(PROP_BOTTOM_MARGIN, BottomMargin, bottomMargin, float);
-        ADD_PROPERTY_TO_MAP(PROP_UNLIT, Unlit, unlit, bool);
         ADD_PROPERTY_TO_MAP(PROP_FONT, Font, font, QString);
         ADD_PROPERTY_TO_MAP(PROP_TEXT_EFFECT, TextEffect, textEffect, TextEffect);
         ADD_PROPERTY_TO_MAP(PROP_TEXT_EFFECT_COLOR, TextEffectColor, textEffectColor, u8vec3Color);
@@ -2805,8 +3084,9 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
             ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_KEYLIGHT_SHADOW_MAX_DISTANCE, KeyLight, keyLight, ShadowMaxDistance, shadowMaxDistance, 1.0f, 250.0f);
         }
         { // Ambient light
-            ADD_GROUP_PROPERTY_TO_MAP(PROP_AMBIENT_LIGHT_INTENSITY, AmbientLight, ambientLight, Intensity, intensity);
-            ADD_GROUP_PROPERTY_TO_MAP(PROP_AMBIENT_LIGHT_URL, AmbientLight, ambientLight, URL, url);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_AMBIENT_LIGHT_INTENSITY, AmbientLight, ambientLight, AmbientIntensity, ambientIntensity);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_AMBIENT_LIGHT_URL, AmbientLight, ambientLight, AmbientURL, ambientURL);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_AMBIENT_LIGHT_COLOR, AmbientLight, ambientLight, AmbientColor, ambientColor);
         }
         { // Skybox
             ADD_GROUP_PROPERTY_TO_MAP(PROP_SKYBOX_COLOR, Skybox, skybox, Color, color);
@@ -2834,6 +3114,29 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
             ADD_GROUP_PROPERTY_TO_MAP(PROP_BLOOM_THRESHOLD, Bloom, bloom, BloomThreshold, bloomThreshold);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_BLOOM_SIZE, Bloom, bloom, BloomSize, bloomSize);
         }
+        {  // Audio
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_REVERB_ENABLED, Audio, audio, ReverbEnabled, reverbEnabled);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_REVERB_TIME, Audio, audio, ReverbTime, reverbTime);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_REVERB_WET_LEVEL, Audio, audio, ReverbWetLevel, reverbWetLevel);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_LISTENER_ZONES, Audio, audio, ListenerZones, listenerZones);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_LISTENER_ATTENUATION_COEFFICIENTS, Audio, audio, ListenerAttenuationCoefficients, listenerAttenuationCoefficients);
+        }
+        {  // Tonemapping
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_TONEMAPPING_CURVE, Tonemapping, tonemapping, Curve, curve);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_TONEMAPPING_EXPOSURE, Tonemapping, tonemapping, Exposure, exposure, -4.0f, -4.0f);
+        }
+        {  // Ambient Occlusion
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_AMBIENT_OCCLUSION_TECHNIQUE, AmbientOcclusion, ambientOcclusion, Technique, technique);
+            ADD_GROUP_PROPERTY_TO_MAP(PROP_AMBIENT_OCCLUSION_JITTER, AmbientOcclusion, ambientOcclusion, Jitter, jitter);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_RESOLUTION_LEVEL, AmbientOcclusion, ambientOcclusion, ResolutionLevel, resolutionLevel, 0, 4);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_EDGE_SHARPNESS, AmbientOcclusion, ambientOcclusion, EdgeSharpness, edgeSharpness, 0.0f, 1.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_BLUR_RADIUS, AmbientOcclusion, ambientOcclusion, BlurRadius, blurRadius, 0, 15);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_AO_RADIUS, AmbientOcclusion, ambientOcclusion, AORadius, aoRadius, 0.01f, 2.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_AO_OBSCURANCE_LEVEL, AmbientOcclusion, ambientOcclusion, AOObscuranceLevel, aoObscuranceLevel, 0.01f, 1.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_AO_FALLOFF_ANGLE, AmbientOcclusion, ambientOcclusion, AOFalloffAngle, aoFalloffAngle, 0.0f, 1.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_AO_SAMPLING_AMOUNT, AmbientOcclusion, ambientOcclusion, AOSamplingAmount, aoSamplingAmount, 0.0f, 1.0f);
+            ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(PROP_AMBIENT_OCCLUSION_SSAO_NUM_SPIRAL_TURNS, AmbientOcclusion, ambientOcclusion, SSAONumSpiralTurns, ssaoNumSpiralTurns, 0.0f, 10.0f);
+        }
         ADD_PROPERTY_TO_MAP(PROP_FLYING_ALLOWED, FlyingAllowed, flyingAllowed, bool);
         ADD_PROPERTY_TO_MAP(PROP_GHOSTING_ALLOWED, GhostingAllowed, ghostingAllowed, bool);
         ADD_PROPERTY_TO_MAP(PROP_FILTER_URL, FilterURL, filterURL, QString);
@@ -2844,6 +3147,8 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
         ADD_PROPERTY_TO_MAP(PROP_BLOOM_MODE, BloomMode, bloomMode, uint32_t);
         ADD_PROPERTY_TO_MAP(PROP_AVATAR_PRIORITY, AvatarPriority, avatarPriority, uint32_t);
         ADD_PROPERTY_TO_MAP(PROP_SCREENSHARE, Screenshare, screenshare, uint32_t);
+        ADD_PROPERTY_TO_MAP(PROP_TONEMAPPING_MODE, TonemappingMode, tonemappingMode, uint32_t);
+        ADD_PROPERTY_TO_MAP(PROP_AMBIENT_OCCLUSION_MODE, AmbientOcclusionMode, ambientOcclusionMode, uint32_t);
 
         // Polyvox
         ADD_PROPERTY_TO_MAP(PROP_VOXEL_VOLUME_SIZE, VoxelVolumeSize, voxelVolumeSize, vec3);
@@ -2865,6 +3170,7 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
         ADD_PROPERTY_TO_MAP(PROP_SCRIPT_URL, ScriptURL, scriptURL, QString);
         ADD_PROPERTY_TO_MAP(PROP_MAX_FPS, MaxFPS, maxFPS, uint8_t);
         ADD_PROPERTY_TO_MAP(PROP_INPUT_MODE, InputMode, inputMode, WebInputMode);
+        ADD_PROPERTY_TO_MAP(PROP_WANTS_KEYBOARD_FOCUS, WantsKeyboardFocus, wantsKeyboardFocus, bool);
         ADD_PROPERTY_TO_MAP(PROP_SHOW_KEYBOARD_FOCUS_HIGHLIGHT, ShowKeyboardFocusHighlight, showKeyboardFocusHighlight, bool);
         ADD_PROPERTY_TO_MAP(PROP_WEB_USE_BACKGROUND, useBackground, useBackground, bool);
         ADD_PROPERTY_TO_MAP(PROP_USER_AGENT, UserAgent, userAgent, QString);
@@ -2928,6 +3234,16 @@ bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPr
             ADD_GROUP_PROPERTY_TO_MAP(PROP_MAJOR_TICK_MARKS_COLOR, Ring, ring, MajorTickMarksColor, majorTickMarksColor);
             ADD_GROUP_PROPERTY_TO_MAP(PROP_MINOR_TICK_MARKS_COLOR, Ring, ring, MinorTickMarksColor, minorTickMarksColor);
         }
+
+        // Sound
+        ADD_PROPERTY_TO_MAP(PROP_SOUND_URL, SoundURL, soundURL, QString);
+        ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_SOUND_VOLUME, Volume, volume, float, 0.0f, 1.0f);
+        ADD_PROPERTY_TO_MAP(PROP_SOUND_TIME_OFFSET, TimeOffset, timeOffset, float);
+        ADD_PROPERTY_TO_MAP_WITH_RANGE(PROP_SOUND_PITCH, Pitch, pitch, float, 1.0f / 16.0f, 16.0f);
+        ADD_PROPERTY_TO_MAP(PROP_SOUND_PLAYING, Playing, playing, bool);
+        ADD_PROPERTY_TO_MAP(PROP_SOUND_LOOP, Loop, loop, bool);
+        ADD_PROPERTY_TO_MAP(PROP_SOUND_POSITIONAL, Positional, positional, bool);
+        ADD_PROPERTY_TO_MAP(PROP_SOUND_LOCAL_ONLY, LocalOnly, localOnly, bool);
     });
 
     auto iter = _propertyInfos.find(propertyName);
@@ -3088,9 +3404,12 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
             APPEND_ENTITY_PROPERTY(PROP_IGNORE_PICK_INTERSECTION, properties.getIgnorePickIntersection());
             APPEND_ENTITY_PROPERTY(PROP_RENDER_WITH_ZONES, properties.getRenderWithZones());
             APPEND_ENTITY_PROPERTY(PROP_BILLBOARD_MODE, (uint32_t)properties.getBillboardMode());
+            APPEND_ENTITY_PROPERTY(PROP_TAGS, properties.getTags());
             _staticGrab.setProperties(properties);
             _staticGrab.appendToEditPacket(packetData, requestedProperties, propertyFlags,
                                            propertiesDidntFit, propertyCount, appendState);
+            APPEND_ENTITY_PROPERTY(PROP_MIRROR_MODE, (uint32_t)properties.getMirrorMode());
+            APPEND_ENTITY_PROPERTY(PROP_PORTAL_EXIT_ID, properties.getPortalExitID());
 
             // Physics
             APPEND_ENTITY_PROPERTY(PROP_DENSITY, properties.getDensity());
@@ -3173,6 +3492,15 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_PARTICLE_ROTATE_WITH_ENTITY, properties.getRotateWithEntity())
             }
 
+            if (properties.getType() == EntityTypes::ProceduralParticleEffect) {
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, properties.getNumParticles());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, properties.getNumTrianglesPerParticle());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, properties.getNumUpdateProps());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, properties.getParticleTransparent());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, properties.getParticleUpdateData());
+                APPEND_ENTITY_PROPERTY(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, properties.getParticleRenderData());
+            }
+
             if (properties.getType() == EntityTypes::Model) {
                 APPEND_ENTITY_PROPERTY(PROP_SHAPE_TYPE, (uint32_t)(properties.getShapeType()));
                 APPEND_ENTITY_PROPERTY(PROP_COMPOUND_SHAPE_URL, properties.getCompoundShapeURL());
@@ -3245,6 +3573,15 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 _staticBloom.setProperties(properties);
                 _staticBloom.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
 
+                _staticAudio.setProperties(properties);
+                _staticAudio.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
+
+                _staticTonemapping.setProperties(properties);
+                _staticTonemapping.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
+
+                _staticAmbientOcclusion.setProperties(properties);
+                _staticAmbientOcclusion.appendToEditPacket(packetData, requestedProperties, propertyFlags, propertiesDidntFit, propertyCount, appendState);
+
                 APPEND_ENTITY_PROPERTY(PROP_FLYING_ALLOWED, properties.getFlyingAllowed());
                 APPEND_ENTITY_PROPERTY(PROP_GHOSTING_ALLOWED, properties.getGhostingAllowed());
                 APPEND_ENTITY_PROPERTY(PROP_FILTER_URL, properties.getFilterURL());
@@ -3256,6 +3593,8 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_BLOOM_MODE, (uint32_t)properties.getBloomMode());
                 APPEND_ENTITY_PROPERTY(PROP_AVATAR_PRIORITY, (uint32_t)properties.getAvatarPriority());
                 APPEND_ENTITY_PROPERTY(PROP_SCREENSHARE, (uint32_t)properties.getScreenshare());
+                APPEND_ENTITY_PROPERTY(PROP_TONEMAPPING_MODE, (uint32_t)properties.getTonemappingMode());
+                APPEND_ENTITY_PROPERTY(PROP_AMBIENT_OCCLUSION_MODE, (uint32_t)properties.getAmbientOcclusionMode());
             }
 
             if (properties.getType() == EntityTypes::PolyVox) {
@@ -3285,6 +3624,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 APPEND_ENTITY_PROPERTY(PROP_SCRIPT_URL, properties.getScriptURL());
                 APPEND_ENTITY_PROPERTY(PROP_MAX_FPS, properties.getMaxFPS());
                 APPEND_ENTITY_PROPERTY(PROP_INPUT_MODE, (uint32_t)properties.getInputMode());
+                APPEND_ENTITY_PROPERTY(PROP_WANTS_KEYBOARD_FOCUS, properties.getWantsKeyboardFocus());
                 APPEND_ENTITY_PROPERTY(PROP_SHOW_KEYBOARD_FOCUS_HIGHLIGHT, properties.getShowKeyboardFocusHighlight());
                 APPEND_ENTITY_PROPERTY(PROP_WEB_USE_BACKGROUND, properties.getUseBackground());
                 APPEND_ENTITY_PROPERTY(PROP_USER_AGENT, properties.getUserAgent());
@@ -3316,6 +3656,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 properties.getType() == EntityTypes::Sphere) {
                 APPEND_ENTITY_PROPERTY(PROP_COLOR, properties.getColor());
                 APPEND_ENTITY_PROPERTY(PROP_ALPHA, properties.getAlpha());
+                APPEND_ENTITY_PROPERTY(PROP_UNLIT, properties.getUnlit());
                 _staticPulse.setProperties(properties);
                 _staticPulse.appendToEditPacket(packetData, requestedProperties, propertyFlags,
                     propertiesDidntFit, propertyCount, appendState);
@@ -3367,6 +3708,17 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
                 _staticRing.setProperties(properties);
                 _staticRing.appendToEditPacket(packetData, requestedProperties, propertyFlags,
                     propertiesDidntFit, propertyCount, appendState);
+            }
+
+            if (properties.getType() == EntityTypes::Sound) {
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_URL, properties.getSoundURL());
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_VOLUME, properties.getVolume());
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_TIME_OFFSET, properties.getTimeOffset());
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_PITCH, properties.getPitch());
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_PLAYING, properties.getPlaying());
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_LOOP, properties.getLoop());
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_POSITIONAL, properties.getPositional());
+                APPEND_ENTITY_PROPERTY(PROP_SOUND_LOCAL_ONLY, properties.getLocalOnly());
             }
         }
 
@@ -3568,7 +3920,10 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
     READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_IGNORE_PICK_INTERSECTION, bool, setIgnorePickIntersection);
     READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_RENDER_WITH_ZONES, QVector<QUuid>, setRenderWithZones);
     READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_BILLBOARD_MODE, BillboardMode, setBillboardMode);
+    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_TAGS, QSet<QString>, setTags);
     properties.getGrab().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
+    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_MIRROR_MODE, MirrorMode, setMirrorMode);
+    READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PORTAL_EXIT_ID, QUuid, setPortalExitID);
 
     // Physics
     READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_DENSITY, float, setDensity);
@@ -3649,6 +4004,15 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PARTICLE_ROTATE_WITH_ENTITY, bool, setRotateWithEntity);
     }
 
+    if (properties.getType() == EntityTypes::ProceduralParticleEffect) {
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTICLE_NUM_PARTICLES, uint32_t, setNumParticles);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTICLE_NUM_TRIS_PER, uint8_t, setNumTrianglesPerParticle);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTICLE_NUM_UPDATE_PROPS, uint8_t, setNumUpdateProps);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTICLE_TRANSPARENT, bool, setParticleTransparent);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTCILE_UPDATE_DATA, QString, setParticleUpdateData);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_PROCEDURAL_PARTCILE_RENDER_DATA, QString, setParticleRenderData);
+    }
+
     if (properties.getType() == EntityTypes::Model) {
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SHAPE_TYPE, ShapeType, setShapeType);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_COMPOUND_SHAPE_URL, QString, setCompoundShapeURL);
@@ -3709,6 +4073,9 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
         properties.getSkybox().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
         properties.getHaze().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
         properties.getBloom().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
+        properties.getAudio().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
+        properties.getTonemapping().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
+        properties.getAmbientOcclusion().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
 
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_FLYING_ALLOWED, bool, setFlyingAllowed);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_GHOSTING_ALLOWED, bool, setGhostingAllowed);
@@ -3721,6 +4088,8 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_BLOOM_MODE, uint32_t, setBloomMode);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_AVATAR_PRIORITY, uint32_t, setAvatarPriority);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SCREENSHARE, uint32_t, setScreenshare);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_TONEMAPPING_MODE, uint32_t, setTonemappingMode);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_AMBIENT_OCCLUSION_MODE, uint32_t, setAmbientOcclusionMode);
     }
 
     if (properties.getType() == EntityTypes::PolyVox) {
@@ -3748,6 +4117,7 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SCRIPT_URL, QString, setScriptURL);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_MAX_FPS, uint8_t, setMaxFPS);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_INPUT_MODE, WebInputMode, setInputMode);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_WANTS_KEYBOARD_FOCUS, bool, setWantsKeyboardFocus);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SHOW_KEYBOARD_FOCUS_HIGHLIGHT, bool, setShowKeyboardFocusHighlight);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_WEB_USE_BACKGROUND, bool, setUseBackground);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_USER_AGENT, QString, setUserAgent);
@@ -3779,6 +4149,7 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
         properties.getType() == EntityTypes::Sphere) {
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_COLOR, u8vec3Color, setColor);
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_ALPHA, float, setAlpha);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_UNLIT, bool, setUnlit);
         properties.getPulse().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
 
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SHAPE, QString, setShape);
@@ -3823,6 +4194,17 @@ bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int
     if (properties.getType() == EntityTypes::Gizmo) {
         READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_GIZMO_TYPE, GizmoType, setGizmoType);
         properties.getRing().decodeFromEditPacket(propertyFlags, dataAt, processedBytes);
+    }
+
+    if (properties.getType() == EntityTypes::Sound) {
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_URL, QString, setSoundURL);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_VOLUME, float, setVolume);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_TIME_OFFSET, float, setTimeOffset);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_PITCH, float, setPitch);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_PLAYING, bool, setPlaying);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_LOOP, bool, setLoop);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_POSITIONAL, bool, setPositional);
+        READ_ENTITY_PROPERTY_TO_PROPERTIES(PROP_SOUND_LOCAL_ONLY, bool, setLocalOnly);
     }
 
     return valid;
@@ -3960,7 +4342,10 @@ void EntityItemProperties::markAllChanged() {
     _ignorePickIntersectionChanged = true;
     _renderWithZonesChanged = true;
     _billboardModeChanged = true;
+    _tagsChanged = true;
     _grab.markAllChanged();
+    _mirrorModeChanged = true;
+    _portalExitIDChanged = true;
 
     // Physics
     _densityChanged = true;
@@ -3997,6 +4382,7 @@ void EntityItemProperties::markAllChanged() {
     _compoundShapeURLChanged = true;
     _colorChanged = true;
     _alphaChanged = true;
+    _unlitChanged = true;
     _pulse.markAllChanged();
     _texturesChanged = true;
 
@@ -4033,6 +4419,14 @@ void EntityItemProperties::markAllChanged() {
     _spinSpreadChanged = true;
     _rotateWithEntityChanged = true;
 
+    // Procedural Particles
+    _numParticlesChanged = true;
+    _numTrianglesPerParticleChanged = true;
+    _numUpdatePropsChanged = true;
+    _particleTransparentChanged = true;
+    _particleUpdateDataChanged = true;
+    _particleRenderDataChanged = true;
+
     // Model
     _modelURLChanged = true;
     _modelScaleChanged = true;
@@ -4064,7 +4458,6 @@ void EntityItemProperties::markAllChanged() {
     _rightMarginChanged = true;
     _topMarginChanged = true;
     _bottomMarginChanged = true;
-    _unlitChanged = true;
     _fontChanged = true;
     _textEffectChanged = true;
     _textEffectColorChanged = true;
@@ -4077,6 +4470,9 @@ void EntityItemProperties::markAllChanged() {
     _skybox.markAllChanged();
     _haze.markAllChanged();
     _bloom.markAllChanged();
+    _audio.markAllChanged();
+    _tonemapping.markAllChanged();
+    _ambientOcclusion.markAllChanged();
     _flyingAllowedChanged = true;
     _ghostingAllowedChanged = true;
     _filterURLChanged = true;
@@ -4087,6 +4483,8 @@ void EntityItemProperties::markAllChanged() {
     _bloomModeChanged = true;
     _avatarPriorityChanged = true;
     _screenshareChanged = true;
+    _tonemappingModeChanged = true;
+    _ambientOcclusionModeChanged = true;
 
     // Polyvox
     _voxelVolumeSizeChanged = true;
@@ -4108,6 +4506,7 @@ void EntityItemProperties::markAllChanged() {
     _scriptURLChanged = true;
     _maxFPSChanged = true;
     _inputModeChanged = true;
+    _wantsKeyboardFocusChanged = true;
     _showKeyboardFocusHighlightChanged = true;
     _useBackgroundChanged = true;
     _userAgentChanged = true;
@@ -4149,6 +4548,16 @@ void EntityItemProperties::markAllChanged() {
     // Gizmo
     _gizmoTypeChanged = true;
     _ring.markAllChanged();
+
+    // Sound
+    _soundURLChanged = true;
+    _volumeChanged = true;
+    _timeOffsetChanged = true;
+    _pitchChanged = true;
+    _playingChanged = true;
+    _loopChanged = true;
+    _positionalChanged = true;
+    _localOnlyChanged = true;
 }
 
 // The minimum bounding box for the entity.
@@ -4359,7 +4768,16 @@ QList<QString> EntityItemProperties::listChangedProperties() {
     if (billboardModeChanged()) {
         out += "billboardMode";
     }
+    if (tagsChanged()) {
+        out += "tags";
+    }
     getGrab().listChangedProperties(out);
+    if (mirrorModeChanged()) {
+        out += "mirrorMode";
+    }
+    if (portalExitIDChanged()) {
+        out += "portalExitID";
+    }
 
     // Physics
     if (densityChanged()) {
@@ -4451,6 +4869,9 @@ QList<QString> EntityItemProperties::listChangedProperties() {
     }
     if (alphaChanged()) {
         out += "alpha";
+    }
+    if (unlitChanged()) {
+        out += "unlit";
     }
     getPulse().listChangedProperties(out);
     if (texturesChanged()) {
@@ -4552,6 +4973,26 @@ QList<QString> EntityItemProperties::listChangedProperties() {
         out += "rotateWithEntity";
     }
 
+    // Procedural Particles
+    if (numParticlesChanged()) {
+        out += "numParticles";
+    }
+    if (numTrianglesPerParticleChanged()) {
+        out += "numTrianglesPerParticle";
+    }
+    if (numUpdatePropsChanged()) {
+        out += "numUpdateProps";
+    }
+    if (particleTransparentChanged()) {
+        out += "particleTransparent";
+    }
+    if (particleUpdateDataChanged()) {
+        out += "particleUpdateData";
+    }
+    if (particleRenderDataChanged()) {
+        out += "particleRenderData";
+    }
+
     // Model
     if (modelURLChanged()) {
         out += "modelURL";
@@ -4633,9 +5074,6 @@ QList<QString> EntityItemProperties::listChangedProperties() {
     if (bottomMarginChanged()) {
         out += "bottomMargin";
     }
-    if (unlitChanged()) {
-        out += "unlit";
-    }
     if (fontChanged()) {
         out += "font";
     }
@@ -4658,6 +5096,9 @@ QList<QString> EntityItemProperties::listChangedProperties() {
     getSkybox().listChangedProperties(out);
     getHaze().listChangedProperties(out);
     getBloom().listChangedProperties(out);
+    getAudio().listChangedProperties(out);
+    getTonemapping().listChangedProperties(out);
+    getAmbientOcclusion().listChangedProperties(out);
     if (flyingAllowedChanged()) {
         out += "flyingAllowed";
     }
@@ -4687,6 +5128,12 @@ QList<QString> EntityItemProperties::listChangedProperties() {
     }
     if (screenshareChanged()) {
         out += "screenshare";
+    }
+    if (tonemappingModeChanged()) {
+        out += "tonemappingMode";
+    }
+    if (ambientOcclusionModeChanged()) {
+        out += "ambientOcclusionMode";
     }
 
     // Polyvox
@@ -4766,6 +5213,9 @@ QList<QString> EntityItemProperties::listChangedProperties() {
     if (faceCameraChanged()) {
         out += "faceCamera";
     }
+    if (wantsKeyboardFocusChanged()) {
+        out += "wantsKeyboardFocus";
+    }
     if (showKeyboardFocusHighlightChanged()) {
         out += "showKeyboardFocusHighlight";
     }
@@ -4840,6 +5290,32 @@ QList<QString> EntityItemProperties::listChangedProperties() {
         out += "gizmoType";
     }
     getRing().listChangedProperties(out);
+
+    // Sound
+    if (soundURLChanged()) {
+        out += "soundURL";
+    }
+    if (volumeChanged()) {
+        out += "volume";
+    }
+    if (timeOffsetChanged()) {
+        out += "timeOffset";
+    }
+    if (pitchChanged()) {
+        out += "pitch";
+    }
+    if (playingChanged()) {
+        out += "playing";
+    }
+    if (loopChanged()) {
+        out += "loop";
+    }
+    if (positionalChanged()) {
+        out += "positional";
+    }
+    if (localOnlyChanged()) {
+        out += "localOnly";
+    }
 
     return out;
 }

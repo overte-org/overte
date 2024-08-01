@@ -224,6 +224,9 @@ ScriptValue qVectorQUuidToScriptValue(ScriptEngine* engine, const QVector<QUuid>
 bool qVectorQUuidFromScriptValue(const ScriptValue& array, QVector<QUuid>& vector);
 QVector<QUuid> qVectorQUuidFromScriptValue(const ScriptValue& array);
 
+ScriptValue qVectorQStringToScriptValue(ScriptEngine* engine, const QVector<QString>& vector);
+QVector<QString> qVectorQStringFromScriptValue(const ScriptValue& array);
+
 class AACube;
 ScriptValue aaCubeToScriptValue(ScriptEngine* engine, const AACube& aaCube);
 bool aaCubeFromScriptValue(const ScriptValue& object, AACube& aaCube);

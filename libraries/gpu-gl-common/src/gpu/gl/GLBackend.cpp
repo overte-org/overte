@@ -81,6 +81,7 @@ GLBackend::CommandCall GLBackend::_commandCalls[Batch::NUM_COMMANDS] =
 
     (&::gpu::gl::GLBackend::do_disableContextViewCorrection),
     (&::gpu::gl::GLBackend::do_restoreContextViewCorrection),
+    (&::gpu::gl::GLBackend::do_setContextMirrorViewCorrection),
     (&::gpu::gl::GLBackend::do_disableContextStereo),
     (&::gpu::gl::GLBackend::do_restoreContextStereo),
 
@@ -346,6 +347,7 @@ void GLBackend::renderPassTransfer(const Batch& batch) {
                 case Batch::COMMAND_setViewTransform:
                 case Batch::COMMAND_setProjectionTransform:
                 case Batch::COMMAND_setProjectionJitter:
+                case Batch::COMMAND_setContextMirrorViewCorrection:
                 {
                     CommandCall call = _commandCalls[(*command)];
                     (this->*(call))(batch, *offset);
@@ -411,6 +413,7 @@ void GLBackend::renderPassDraw(const Batch& batch) {
             case Batch::COMMAND_setProjectionJitter:
             case Batch::COMMAND_setViewportTransform:
             case Batch::COMMAND_setDepthRangeTransform:
+            case Batch::COMMAND_setContextMirrorViewCorrection:
             {
                 PROFILE_RANGE(render_gpu_gl_detail, "transform");
                 CommandCall call = _commandCalls[(*command)];
@@ -615,6 +618,16 @@ void GLBackend::do_disableContextViewCorrection(const Batch& batch, size_t param
 
 void GLBackend::do_restoreContextViewCorrection(const Batch& batch, size_t paramOffset) {
     _transform._viewCorrectionEnabled = true;
+}
+
+void GLBackend::do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) {
+    bool prevMirrorViewCorrection = _transform._mirrorViewCorrection;
+    _transform._mirrorViewCorrection = batch._params[paramOffset]._uint != 0;
+
+    if (_transform._correction.correction != glm::mat4()) {
+        setCameraCorrection(_transform._mirrorViewCorrection ? _transform._flippedCorrection : _transform._unflippedCorrection, _transform._correction.prevView, false);
+        _transform._invalidView = true;
+    }
 }
 
 void GLBackend::do_disableContextStereo(const Batch& batch, size_t paramOffset) {
@@ -979,15 +992,29 @@ void GLBackend::recycle() const {
     _textureManagement._transferEngine->manageMemory();
 }
 
-void GLBackend::setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool reset) {
+void GLBackend::setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool primary, bool reset) {
     auto invCorrection = glm::inverse(correction);
     auto invPrevView = glm::inverse(prevRenderView);
     _transform._correction.prevView = (reset ? Mat4() : prevRenderView);
     _transform._correction.prevViewInverse = (reset ? Mat4() : invPrevView);
     _transform._correction.correction = correction;
     _transform._correction.correctionInverse = invCorrection;
-    _pipeline._cameraCorrectionBuffer._buffer->setSubData(0, _transform._correction);
-    _pipeline._cameraCorrectionBuffer._buffer->flush();
+
+    if (!_inRenderTransferPass) {
+        _pipeline._cameraCorrectionBuffer._buffer->setSubData(0, _transform._correction);
+        _pipeline._cameraCorrectionBuffer._buffer->flush();
+    }
+
+    if (primary) {
+        _transform._unflippedCorrection = _transform._correction.correction;
+        quat flippedRotation = glm::quat_cast(_transform._unflippedCorrection);
+        flippedRotation.y *= -1.0f;
+        flippedRotation.z *= -1.0f;
+        vec3 flippedTranslation = _transform._unflippedCorrection[3];
+        flippedTranslation.x *= -1.0f;
+        _transform._flippedCorrection = glm::translate(glm::mat4_cast(flippedRotation), flippedTranslation);
+        _transform._mirrorViewCorrection = false;
+    }
 }
 
 void GLBackend::syncProgram(const gpu::ShaderPointer& program) {

@@ -73,7 +73,7 @@ namespace render {
         using Input = gpu::FramebufferPointer;
         using JobModel = Job::ModelIO<UpsampleToBlitFramebuffer, Input, gpu::FramebufferPointer>;
 
-        UpsampleToBlitFramebuffer() {}
+        UpsampleToBlitFramebuffer(size_t depth) : _depth(depth) {}
 
         void run(const RenderContextPointer& renderContext, const Input& input, gpu::FramebufferPointer& resampledFrameBuffer);
 
@@ -81,6 +81,8 @@ namespace render {
 
         static gpu::PipelinePointer _pipeline;
         static gpu::PipelinePointer _mirrorPipeline;
+
+        size_t _depth;
     };
 }
 

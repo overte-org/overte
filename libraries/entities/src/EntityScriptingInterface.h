@@ -816,6 +816,25 @@ public slots:
         bool caseSensitiveSearch = false) const;
 
     /*@jsdoc
+     * Finds all domain and avatar entities with particular tags that intersect a sphere.
+     * <p><strong>Note:</strong> Server entity scripts only find entities that have a server entity script
+     * running in them or a parent entity. You can apply a dummy script to entities that you want found in a search.</p>
+     * @function Entities.findEntitiesByTags
+     * @param {string[]} entityTags - The tags of the entity to search for.
+     * @param {Vec3} center - The point about which to search.
+     * @param {number} radius - The radius within which to search.
+     * @param {boolean} [caseSensitive=false] - <code>true</code> if the search is case-sensitive, <code>false</code> if it is
+     *     case-insensitive.
+     * @returns {Uuid[]} An array of entity IDs that have the specified name and intersect the search sphere. The array is
+     *     empty if no entities could be found.
+     * @example <caption>Report the number of entities with the tag, "Light-Target".</caption>
+     * var entityIDs = Entities.findEntitiesByTags(["Light-Target"], MyAvatar.position, 10, false);
+     * print("Number of entities with the tag Light-Target: " + entityIDs.length);
+     */
+    Q_INVOKABLE QVector<QUuid> findEntitiesByTags(const QVector<QString> entityTags, const glm::vec3& center, float radius,
+        bool caseSensitiveSearch = false) const;
+
+    /*@jsdoc
      * Finds the first avatar or domain entity intersected by a {@link PickRay}. <code>Light</code> and <code>Zone</code> 
      * entities are not intersected unless they've been configured as pickable using 
      * {@link Entities.setLightsArePickable|setLightsArePickable} and {@link Entities.setZonesArePickable|setZonesArePickable}, 
@@ -1243,6 +1262,27 @@ public slots:
      * }, 50); // Wait for the entity to be created.
      */
     Q_INVOKABLE bool appendPoint(const QUuid& entityID, const glm::vec3& point);
+
+    /*@jsdoc
+     * Restart a {@link Entities.EntityProperties-Sound|Sound} entity, locally only.  It must also be <code>localOnly</code>.
+     * @function Entities.restartSound
+     * @param {Uuid} entityID - The ID of the {@link Entities.EntityProperties-Sound|Sound} entity.
+     * @example <caption>Play a sound once and repeat it every 3 seconds.</caption>
+     * var position = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.5, z: -8 }));
+     * var sound = Entities.addEntity({
+     *     type: "Sound",
+     *     position: position,
+     *     soundURL: "https://themushroomkingdom.net/sounds/wav/lm/lm_gold_mouse.wav",
+     *     positional: false,
+     *     localOnly: true,
+     *     loop: false,
+     *     lifetime: 300  // Delete after 5 minutes.
+     * });
+     * Script.setInterval(() => {
+     *     Entities.restartSound(sound);
+     * }, 3000);
+     */
+    Q_INVOKABLE bool restartSound(const QUuid& entityID);
 
     /*@jsdoc
      * Dumps debug information about all entities in Interface's local in-memory tree of entities it knows about to the program 

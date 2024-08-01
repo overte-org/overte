@@ -646,25 +646,34 @@ void sendMutePacket(const SharedNodePointer& node, AudioMixerClientData& data) {
     data.setShouldMuteClient(false);
 }
 
+const AABox UNIT_BOX(vec3(-0.5f), vec3(1.0f));
 void sendEnvironmentPacket(const SharedNodePointer& node, AudioMixerClientData& data) {
     bool hasReverb = false;
     float reverbTime, wetLevel;
 
-    auto& reverbSettings = AudioMixer::getReverbSettings();
     auto& audioZones = AudioMixer::getAudioZones();
 
     AvatarAudioStream* stream = data.getAvatarAudioStream();
-    glm::vec3 streamPosition = stream->getPosition();
+    vec4 streamPosition = vec4(stream->getPosition(), 1.0f);
 
     // find reverb properties
-    for (const auto& settings : reverbSettings) {
-        AABox box = audioZones[settings.zone].area;
-        if (box.contains(streamPosition)) {
-            hasReverb = true;
-            reverbTime = settings.reverbTime;
-            wetLevel = settings.wetLevel;
-            break;
+    QString bestZone;
+    float bestZoneVolume = FLT_MAX;
+    for (const auto& zone : audioZones) {
+        if (zone.second.reverbEnabled) {
+            vec4 localPosition = zone.second.inverseTransform * streamPosition;
+            if (UNIT_BOX.contains(localPosition) && zone.second.volume < bestZoneVolume) {
+                bestZone = zone.first;
+                bestZoneVolume = zone.second.volume;
+            }
         }
+    }
+
+    if (bestZoneVolume < FLT_MAX) {
+        const auto& zone = audioZones.at(bestZone);
+        hasReverb = zone.reverbEnabled;
+        reverbTime = zone.reverbTime;
+        wetLevel = zone.wetLevel;
     }
 
     // check if data changed
@@ -759,16 +768,38 @@ float computeGain(float masterAvatarGain,
     }
 
     auto& audioZones = AudioMixer::getAudioZones();
-    auto& zoneSettings = AudioMixer::getZoneSettings();
 
     // find distance attenuation coefficient
     float attenuationPerDoublingInDistance = AudioMixer::getAttenuationPerDoublingInDistance();
-    for (const auto& settings : zoneSettings) {
-        if (audioZones[settings.source].area.contains(streamToAdd.getPosition()) &&
-            audioZones[settings.listener].area.contains(listeningNodeStream.getPosition())) {
-            attenuationPerDoublingInDistance = settings.coefficient;
-            break;
+
+    float bestZonesVolume = FLT_MAX;
+    float bestZonesCoefficient;
+    for (const auto& sourceZone : audioZones) {
+        if (sourceZone.second.listeners.size() > 0 && sourceZone.second.listeners.size() == sourceZone.second.coefficients.size()) {
+            vec4 localSourcePosition = sourceZone.second.inverseTransform * vec4(streamToAdd.getPosition(), 1.0f);
+            if (UNIT_BOX.contains(localSourcePosition)) {
+                size_t listenerIndex = 0;
+                for (const auto& listener : sourceZone.second.listeners) {
+                    const auto& listenerZone = audioZones.find(listener);
+                    if (listenerZone != audioZones.end()) {
+                        vec4 localListenerPosition = listenerZone->second.inverseTransform * vec4(listeningNodeStream.getPosition(), 1.0f);
+                        if (UNIT_BOX.contains(localListenerPosition)) {
+                            // This isn't an exact solution, but we target the smallest sum of volumes of the source and listener zones
+                            const float zonesVolume = sourceZone.second.volume + listenerZone->second.volume;
+                            if (zonesVolume < bestZonesVolume) {
+                                bestZonesVolume = zonesVolume;
+                                bestZonesCoefficient = sourceZone.second.coefficients[listenerIndex];
+                            }
+                        }
+                    }
+                    listenerIndex++;
+                }
+            }
         }
+    }
+
+    if (bestZonesVolume < FLT_MAX) {
+        attenuationPerDoublingInDistance = bestZonesCoefficient;
     }
 
     if (attenuationPerDoublingInDistance < 0.0f) {

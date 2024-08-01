@@ -62,7 +62,7 @@ void SimpleEntitySimulation::addEntityToInternalLists(EntityItemPointer entity) 
             // we don't allow dynamic objects to move without an owner so nothing to do here
         } else if (entity->isMovingRelativeToParent()) {
             SetOfEntities::iterator itr = _simpleKinematicEntities.find(entity);
-            if (itr != _simpleKinematicEntities.end()) {
+            if (itr == _simpleKinematicEntities.end()) {
                 _simpleKinematicEntities.insert(entity);
                 entity->setLastSimulated(usecTimestampNow());
             }
@@ -73,7 +73,7 @@ void SimpleEntitySimulation::addEntityToInternalLists(EntityItemPointer entity) 
 
         if (entity->isMovingRelativeToParent()) {
             SetOfEntities::iterator itr = _simpleKinematicEntities.find(entity);
-            if (itr != _simpleKinematicEntities.end()) {
+            if (itr == _simpleKinematicEntities.end()) {
                 _simpleKinematicEntities.insert(entity);
                 entity->setLastSimulated(usecTimestampNow());
             }

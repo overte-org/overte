@@ -171,6 +171,12 @@ bool ParticleEffectEntityRenderer::isTransparent() const {
     return particleTransparent || Parent::isTransparent();
 }
 
+ItemKey ParticleEffectEntityRenderer::getKey() {
+    auto builder = ItemKey::Builder(Parent::getKey());
+    builder.withSimulate();
+    return builder.build();
+}
+
 ShapeKey ParticleEffectEntityRenderer::getShapeKey() {
     auto builder = ShapeKey::Builder().withCustom(CUSTOM_PIPELINE_NUMBER);
 
@@ -386,7 +392,11 @@ ParticleEffectEntityRenderer::CpuParticle ParticleEffectEntityRenderer::createPa
     return particle;
 }
 
-void ParticleEffectEntityRenderer::stepSimulation() {
+void ParticleEffectEntityRenderer::renderSimulate(RenderArgs* args) {
+    if (!_visible || !(_networkTexture && _networkTexture->isLoaded())) {
+        return;
+    }
+
     if (_lastSimulated == 0) {
         _lastSimulated = usecTimestampNow();
         return;
@@ -459,9 +469,6 @@ void ParticleEffectEntityRenderer::doRender(RenderArgs* args) {
     if (!_visible || !(_networkTexture && _networkTexture->isLoaded())) {
         return;
     }
-
-    // FIXME migrate simulation to a compute stage
-    stepSimulation();
 
     gpu::Batch& batch = *args->_batch;
     batch.setResourceTexture(0, _networkTexture->getGPUTexture());

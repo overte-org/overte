@@ -132,9 +132,11 @@ void AudioInjector::restart() {
 
 bool AudioInjector::inject(bool(AudioInjectorManager::*injection)(const AudioInjectorPointer&)) {
     AudioInjectorOptions options;
+    uint32_t numBytes;
     withWriteLock([&] {
         _state = AudioInjectorState::NotFinished;
         options = _options;
+        numBytes = _audioData->getNumBytes();
     });
 
     int byteOffset = 0;
@@ -142,6 +144,7 @@ bool AudioInjector::inject(bool(AudioInjectorManager::*injection)(const AudioInj
         int numChannels = options.ambisonic ? 4 : (options.stereo ? 2 : 1);
         byteOffset = (int)(AudioConstants::SAMPLE_RATE * options.secondOffset * numChannels);
         byteOffset *= AudioConstants::SAMPLE_SIZE;
+        byteOffset = byteOffset % numBytes;
     }
     _currentSendOffset = byteOffset;
 

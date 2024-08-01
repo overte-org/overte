@@ -316,7 +316,6 @@ void OtherAvatar::simulate(float deltaTime, bool inView) {
     {
         PROFILE_RANGE(simulation, "misc");
         measureMotionDerivatives(deltaTime);
-        simulateAttachments(deltaTime);
         updatePalms();
     }
     {
@@ -384,7 +383,7 @@ void OtherAvatar::debugJointData() const {
 }
 
 void OtherAvatar::handleChangedAvatarEntityData() {
-    PerformanceTimer perfTimer("attachments");
+    PerformanceTimer perfTimer("avatarEntities");
 
     // AVATAR ENTITY UPDATE FLOW
     // - if queueEditEntityMessage() sees "AvatarEntity" HostType it calls _myAvatar->storeAvatarEntityDataPayload()

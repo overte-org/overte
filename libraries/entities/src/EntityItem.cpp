@@ -104,7 +104,10 @@ EntityPropertyFlags EntityItem::getEntityProperties(EncodeBitstreamParams& param
     requestedProperties += PROP_IGNORE_PICK_INTERSECTION;
     requestedProperties += PROP_RENDER_WITH_ZONES;
     requestedProperties += PROP_BILLBOARD_MODE;
+    requestedProperties += PROP_TAGS;
     requestedProperties += _grabProperties.getEntityProperties(params);
+    requestedProperties += PROP_MIRROR_MODE;
+    requestedProperties += PROP_PORTAL_EXIT_ID;
 
     // Physics
     requestedProperties += PROP_DENSITY;
@@ -301,10 +304,13 @@ OctreeElement::AppendState EntityItem::appendEntityData(OctreePacketData* packet
         APPEND_ENTITY_PROPERTY(PROP_IGNORE_PICK_INTERSECTION, getIgnorePickIntersection());
         APPEND_ENTITY_PROPERTY(PROP_RENDER_WITH_ZONES, getRenderWithZones());
         APPEND_ENTITY_PROPERTY(PROP_BILLBOARD_MODE, (uint32_t)getBillboardMode());
+        APPEND_ENTITY_PROPERTY(PROP_TAGS, getTags());
         withReadLock([&] {
             _grabProperties.appendSubclassData(packetData, params, entityTreeElementExtraEncodeData, requestedProperties,
                 propertyFlags, propertiesDidntFit, propertyCount, appendState);
         });
+        APPEND_ENTITY_PROPERTY(PROP_MIRROR_MODE, (uint32_t)getMirrorMode());
+        APPEND_ENTITY_PROPERTY(PROP_PORTAL_EXIT_ID, getPortalExitID());
 
         // Physics
         APPEND_ENTITY_PROPERTY(PROP_DENSITY, getDensity());
@@ -874,6 +880,7 @@ int EntityItem::readEntityDataFromBuffer(const unsigned char* data, int bytesLef
     READ_ENTITY_PROPERTY(PROP_IGNORE_PICK_INTERSECTION, bool, setIgnorePickIntersection);
     READ_ENTITY_PROPERTY(PROP_RENDER_WITH_ZONES, QVector<QUuid>, setRenderWithZones);
     READ_ENTITY_PROPERTY(PROP_BILLBOARD_MODE, BillboardMode, setBillboardMode);
+    READ_ENTITY_PROPERTY(PROP_TAGS, QSet<QString>, setTags);
     withWriteLock([&] {
         int bytesFromGrab = _grabProperties.readEntitySubclassDataFromBuffer(dataAt, (bytesLeftToRead - bytesRead), args,
             propertyFlags, overwriteLocalData,
@@ -881,6 +888,8 @@ int EntityItem::readEntityDataFromBuffer(const unsigned char* data, int bytesLef
         bytesRead += bytesFromGrab;
         dataAt += bytesFromGrab;
     });
+    READ_ENTITY_PROPERTY(PROP_MIRROR_MODE, MirrorMode, setMirrorMode);
+    READ_ENTITY_PROPERTY(PROP_PORTAL_EXIT_ID, QUuid, setPortalExitID);
 
     READ_ENTITY_PROPERTY(PROP_DENSITY, float, setDensity);
     {
@@ -1358,9 +1367,12 @@ EntityItemProperties EntityItem::getProperties(const EntityPropertyFlags& desire
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(ignorePickIntersection, getIgnorePickIntersection);
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(renderWithZones, getRenderWithZones);
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(billboardMode, getBillboardMode);
+    COPY_ENTITY_PROPERTY_TO_PROPERTIES(tags, getTags);
     withReadLock([&] {
         _grabProperties.getProperties(properties);
     });
+    COPY_ENTITY_PROPERTY_TO_PROPERTIES(mirrorMode, getMirrorMode);
+    COPY_ENTITY_PROPERTY_TO_PROPERTIES(portalExitID, getPortalExitID);
 
     // Physics
     COPY_ENTITY_PROPERTY_TO_PROPERTIES(density, getDensity);
@@ -1495,10 +1507,13 @@ bool EntityItem::setProperties(const EntityItemProperties& properties) {
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(ignorePickIntersection, setIgnorePickIntersection);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(renderWithZones, setRenderWithZones);
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(billboardMode, setBillboardMode);
+    SET_ENTITY_PROPERTY_FROM_PROPERTIES(tags, setTags);
     withWriteLock([&] {
         bool grabPropertiesChanged = _grabProperties.setProperties(properties);
         somethingChanged |= grabPropertiesChanged;
     });
+    SET_ENTITY_PROPERTY_FROM_PROPERTIES(mirrorMode, setMirrorMode);
+    SET_ENTITY_PROPERTY_FROM_PROPERTIES(portalExitID, setPortalExitID);
 
     // Physics
     SET_ENTITY_PROPERTY_FROM_PROPERTIES(density, setDensity);
@@ -2954,10 +2969,6 @@ void EntityItem::setVisible(bool value) {
         _needsRenderUpdate |= changed;
         _visible = value;
     });
-
-    if (changed) {
-        bumpAncestorChainRenderableVersion();
-    }
 }
 
 bool EntityItem::isVisibleInSecondaryCamera() const {
@@ -3551,5 +3562,43 @@ void EntityItem::setBillboardMode(BillboardMode value) {
     withWriteLock([&] {
         _needsRenderUpdate |= _billboardMode != value;
         _billboardMode = value;
+    });
+}
+
+MirrorMode EntityItem::getMirrorMode() const {
+    return resultWithReadLock<MirrorMode>([&] {
+        return _mirrorMode;
+    });
+}
+
+void EntityItem::setMirrorMode(MirrorMode value) {
+    withWriteLock([&] {
+        _needsRenderUpdate |= _mirrorMode != value;
+        _mirrorMode = value;
+    });
+}
+
+QUuid EntityItem::getPortalExitID() const {
+    return resultWithReadLock<QUuid>([&] {
+        return _portalExitID;
+    });
+}
+
+void EntityItem::setPortalExitID(const QUuid& value) {
+    withWriteLock([&] {
+        _needsRenderUpdate |= _portalExitID != value;
+        _portalExitID = value;
+    });
+}
+
+void EntityItem::setTags(const QSet<QString>& tags) {
+    withWriteLock([&] {
+        _tags = tags;
+    });
+}
+
+QSet<QString> EntityItem::getTags() const {
+    return resultWithReadLock<QSet<QString>>([&] {
+      return _tags;
     });
 }

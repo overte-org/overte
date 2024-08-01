@@ -44,14 +44,6 @@
 
 <@endfunc@>
 
-<@func declareEvalAmbientGlobalColor()@>
-vec3 evalAmbientGlobalColor(mat4 invViewMat, float shadowAttenuation, float obscurance, vec3 position, vec3 normal, vec3 albedo, vec3 fresnel, float metallic, float roughness) {
-    <$prepareGlobalLight(position, normal)$>
-    color += albedo * getLightColor(light) * obscurance * getLightAmbientIntensity(lightAmbient);
-    return color;
-}
-<@endfunc@>
-
 <@func declareEvalAmbientSphereGlobalColor(supportScattering)@>
 
 <$declareLightingAmbient(1, _SCRIBE_NULL, _SCRIBE_NULL, $supportScattering$)$>

@@ -36,24 +36,29 @@ void RenderFetchCullSortTask::build(JobModel& task, const Varying& input, Varyin
     const auto nonspatialSelection = task.addJob<FetchNonspatialItems>("FetchLayeredSelection", nonspatialFilter);
 
     // Multi filter visible items into different buckets
-    const int NUM_SPATIAL_FILTERS = 5;
-    const int NUM_NON_SPATIAL_FILTERS = 3;
+    const int NUM_SPATIAL_FILTERS = 7;
+    const int NUM_NON_SPATIAL_FILTERS = 4;
     const int OPAQUE_SHAPE_BUCKET = 0;
     const int TRANSPARENT_SHAPE_BUCKET = 1;
-    const int LIGHT_BUCKET = 2;
-    const int META_BUCKET = 3;
-    const int OUTLINE_BUCKET = 4;
-    const int BACKGROUND_BUCKET = 2;
+    const int SIMULATE_BUCKET = 2;
+    const int LIGHT_BUCKET = 3;
+    const int META_BUCKET = 4;
+    const int MIRROR_BUCKET = 5;
+    const int OUTLINE_BUCKET = 6;
+    const int BACKGROUND_BUCKET = 3;
     MultiFilterItems<NUM_SPATIAL_FILTERS>::ItemFilterArray spatialFilters = { {
-            ItemFilter::Builder::opaqueShape(),
+            ItemFilter::Builder::opaqueShape().withoutMirror(),
             ItemFilter::Builder::transparentShape(),
+            ItemFilter::Builder().withSimulate(),
             ItemFilter::Builder::light(),
-            ItemFilter::Builder::meta(),
+            ItemFilter::Builder::meta().withoutMirror(),
+            ItemFilter::Builder::mirror(),
             ItemFilter::Builder().withVisible().withOutline()
         } };
     MultiFilterItems<NUM_NON_SPATIAL_FILTERS>::ItemFilterArray nonspatialFilters = { {
             ItemFilter::Builder::opaqueShape(),
             ItemFilter::Builder::transparentShape(),
+            ItemFilter::Builder().withSimulate(),
             ItemFilter::Builder::background()
         } };
     const auto filteredSpatialBuckets = 
@@ -68,6 +73,7 @@ void RenderFetchCullSortTask::build(JobModel& task, const Varying& input, Varyin
     const auto transparents = task.addJob<DepthSortItems>("DepthSortTransparent", filteredSpatialBuckets[TRANSPARENT_SHAPE_BUCKET], DepthSortItems(false));
     const auto lights = filteredSpatialBuckets[LIGHT_BUCKET];
     const auto metas = filteredSpatialBuckets[META_BUCKET];
+    const auto mirrors = task.addJob<DepthSortItems>("DepthSortMirrors", filteredSpatialBuckets[MIRROR_BUCKET]);
 
     const auto background = filteredNonspatialBuckets[BACKGROUND_BUCKET];
 
@@ -77,9 +83,13 @@ void RenderFetchCullSortTask::build(JobModel& task, const Varying& input, Varyin
     const auto filteredLayeredOpaque = task.addJob<FilterLayeredItems>("FilterLayeredOpaque", layeredOpaques, ItemKey::Layer::LAYER_1);
     const auto filteredLayeredTransparent = task.addJob<FilterLayeredItems>("FilterLayeredTransparent", layeredTransparents, ItemKey::Layer::LAYER_1);
 
+    // collect our simulate objects from both buckets
+    const auto mergeInputs = MergeItems::Inputs(filteredSpatialBuckets[SIMULATE_BUCKET], filteredNonspatialBuckets[SIMULATE_BUCKET]).asVarying();
+    const auto simulate = task.addJob<MergeItems>("MergeSimulateItems", mergeInputs);
+
     task.addJob<ClearContainingZones>("ClearContainingZones");
 
-    output = Output(BucketList{ opaques, transparents, lights, metas, filteredSpatialBuckets[OUTLINE_BUCKET],
+    output = Output(BucketList{ opaques, transparents, lights, metas, mirrors, simulate, filteredSpatialBuckets[OUTLINE_BUCKET],
                     filteredLayeredOpaque.getN<FilterLayeredItems::Outputs>(0), filteredLayeredTransparent.getN<FilterLayeredItems::Outputs>(0),
                     filteredLayeredOpaque.getN<FilterLayeredItems::Outputs>(1), filteredLayeredTransparent.getN<FilterLayeredItems::Outputs>(1),
                     background }, spatialSelection);

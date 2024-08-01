@@ -82,6 +82,9 @@ public:
     glm::u8vec3 getColor() const;
     void setColor(const glm::u8vec3& value);
 
+    bool getUnlit() const;
+    void setUnlit(bool unlit);
+
     void setUnscaledDimensions(const glm::vec3& value) override;
 
     bool supportsDetailedIntersection() const override;
@@ -107,6 +110,7 @@ public:
 protected:
     glm::u8vec3 _color;
     float _alpha { 1.0f };
+    bool _unlit { false };
     PulsePropertyGroup _pulseProperties;
     entity::Shape _shape { entity::Shape::Sphere };
 

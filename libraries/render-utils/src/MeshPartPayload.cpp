@@ -13,6 +13,7 @@
 #include "MeshPartPayload.h"
 
 #include <BillboardMode.h>
+#include <MirrorMode.h>
 #include <PerfStat.h>
 #include <DualQuaternion.h>
 #include <graphics/ShaderConstants.h>
@@ -187,7 +188,7 @@ void ModelMeshPartPayload::bindMesh(gpu::Batch& batch) {
     batch.setInputStream(0, _drawMesh->getVertexStream());
 }
 
-void ModelMeshPartPayload::bindTransform(gpu::Batch& batch, const Transform& transform, RenderArgs::RenderMode renderMode) const {
+void ModelMeshPartPayload::bindTransform(gpu::Batch& batch, const Transform& transform, RenderArgs::RenderMode renderMode, size_t mirrorDepth) const {
     if (_clusterBuffer) {
         batch.setUniformBuffer(graphics::slot::buffer::Skinning, _clusterBuffer);
     }
@@ -217,6 +218,10 @@ void ModelMeshPartPayload::updateKey(const render::ItemKey& key) {
 
     if (_cullWithParent) {
         builder.withSubMetaCulled();
+    }
+
+    if (_mirrorMode == MirrorMode::MIRROR || (_mirrorMode == MirrorMode::PORTAL && !_portalExitID.isNull())) {
+        builder.withMirror();
     }
 
     if (_drawMaterials.hasOutline()) {
@@ -306,8 +311,9 @@ Item::Bound ModelMeshPartPayload::getBound(RenderArgs* args) const {
     auto worldBound = _adjustedLocalBound;
     auto parentTransform = _parentTransform;
     if (args) {
+        bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
         parentTransform.setRotation(BillboardModeHelpers::getBillboardRotation(parentTransform.getTranslation(), parentTransform.getRotation(), _billboardMode,
-            args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
+            usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
     }
     worldBound.transform(parentTransform);
     return worldBound;
@@ -320,18 +326,19 @@ ShapeKey ModelMeshPartPayload::getShapeKey() const {
 void ModelMeshPartPayload::render(RenderArgs* args) {
     PerformanceTimer perfTimer("ModelMeshPartPayload::render");
 
-    if (!args || (args->_renderMode == RenderArgs::RenderMode::DEFAULT_RENDER_MODE && _cauterized)) {
+    if (!args || (_cauterized && args->_renderMode == RenderArgs::RenderMode::DEFAULT_RENDER_MODE && args->_mirrorDepth == 0)) {
         return;
     }
 
     gpu::Batch& batch = *(args->_batch);
 
     Transform transform = _parentTransform;
+    bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), _billboardMode,
-        args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
+        usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
 
     Transform modelTransform = transform.worldTransform(_localTransform);
-    bindTransform(batch, modelTransform, args->_renderMode);
+    bindTransform(batch, modelTransform, args->_renderMode, args->_mirrorDepth);
 
     //Bind the index buffer and vertex buffer and Blend shapes if needed
     bindMesh(batch);
@@ -352,7 +359,7 @@ void ModelMeshPartPayload::render(RenderArgs* args) {
 
         const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
         _drawMesh->getColorBuffer()->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
-    } else {
+    } else if (!_itemKey.isMirror()) {
         // apply material properties
         if (RenderPipelines::bindMaterials(_drawMaterials, batch, args->_renderMode, args->_enableTexturing)) {
             args->_details._materialSwitches++;
@@ -384,6 +391,12 @@ bool ModelMeshPartPayload::passesZoneOcclusionTest(const std::unordered_set<QUui
         return false;
     }
     return true;
+}
+
+ItemID ModelMeshPartPayload::computeMirrorView(ViewFrustum& viewFrustum) const {
+    Transform transform = _parentTransform;
+    transform = transform.worldTransform(_localTransform);
+    return MirrorModeHelpers::computeMirrorView(viewFrustum, transform.getTranslation(), transform.getRotation(), _mirrorMode, _portalExitID);
 }
 
 render::HighlightStyle ModelMeshPartPayload::getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const {
@@ -439,6 +452,13 @@ template <> bool payloadPassesZoneOcclusionTest(const ModelMeshPartPayload::Poin
         return payload->passesZoneOcclusionTest(containingZones);
     }
     return false;
+}
+
+template <> ItemID payloadComputeMirrorView(const ModelMeshPartPayload::Pointer& payload, ViewFrustum& viewFrustum) {
+    if (payload) {
+        return payload->computeMirrorView(viewFrustum);
+    }
+    return Item::INVALID_ITEM_ID;
 }
 
 template <> HighlightStyle payloadGetOutlineStyle(const ModelMeshPartPayload::Pointer& payload, const ViewFrustum& viewFrustum, const size_t height) {

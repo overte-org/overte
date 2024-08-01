@@ -42,6 +42,9 @@
 #include "GizmoType.h"
 #include "TextEffect.h"
 #include "TextAlignment.h"
+#include "MirrorMode.h"
+#include "TonemappingCurve.h"
+#include "AmbientOcclusionTechnique.h"
 
 #include "OctreeConstants.h"
 #include "OctreeElement.h"
@@ -190,6 +193,9 @@ public:
     /// appends a QVector of QUuids to the end of the stream, may fail if new data stream is too long to fit in packet
     bool appendValue(const QVector<QUuid>& value);
 
+    /// appends a QSet of QStrings to the end of the stream, may fail if new data stream is too long to fit in packet
+    bool appendValue(const QSet<QString>& value);
+
     /// appends a packed quat to the end of the stream, may fail if new data stream is too long to fit in packet
     bool appendValue(const glm::quat& value);
 
@@ -280,6 +286,9 @@ public:
     static int unpackDataFromBytes(const unsigned char* dataBytes, GizmoType& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, TextEffect& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, TextAlignment& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
+    static int unpackDataFromBytes(const unsigned char* dataBytes, MirrorMode& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
+    static int unpackDataFromBytes(const unsigned char* dataBytes, TonemappingCurve& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
+    static int unpackDataFromBytes(const unsigned char* dataBytes, AmbientOcclusionTechnique& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, glm::vec2& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, glm::vec3& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, glm::u8vec3& result);
@@ -290,6 +299,7 @@ public:
     static int unpackDataFromBytes(const unsigned char* dataBytes, QVector<float>& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, QVector<bool>& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, QVector<QUuid>& result);
+    static int unpackDataFromBytes(const unsigned char* dataBytes, QSet<QString>& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, QByteArray& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, AACube& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, QRect& result);

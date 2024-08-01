@@ -157,7 +157,6 @@ public:
     void init();
     void removeAvatarEntitiesFromTree();
     virtual void simulate(float deltaTime, bool inView) = 0;
-    virtual void simulateAttachments(float deltaTime);
 
     virtual void render(RenderArgs* renderArgs);
 
@@ -344,7 +343,6 @@ public:
     Q_INVOKABLE glm::quat jointToWorldRotation(const glm::quat& rotation, const int jointIndex = -1) const;
 
     Q_INVOKABLE virtual void setSkeletonModelURL(const QUrl& skeletonModelURL) override;
-    virtual void setAttachmentData(const QVector<AttachmentData>& attachmentData) override;
 
     void updateDisplayNameAlpha(bool showDisplayName);
     virtual void setSessionDisplayName(const QString& sessionDisplayName) override { }; // no-op
@@ -650,10 +648,6 @@ protected:
     mutable bool _modelJointsCached { false };
 
     glm::vec3 _skeletonOffset;
-    std::vector<std::shared_ptr<Model>> _attachmentModels;
-    std::vector<bool> _attachmentModelsTexturesLoaded;
-    std::vector<std::shared_ptr<Model>> _attachmentsToRemove;
-    std::vector<std::shared_ptr<Model>> _attachmentsToDelete;
 
     float _bodyYawDelta { 0.0f };  // degrees/sec
     float _seatedBodyYawDelta{ 0.0f };  // degrees/renderframe
@@ -753,7 +747,6 @@ protected:
 
     static const float MYAVATAR_LOADING_PRIORITY;
     static const float OTHERAVATAR_LOADING_PRIORITY;
-    static const float ATTACHMENT_LOADING_PRIORITY;
 
     LoadingStatus _loadingStatus { LoadingStatus::NoModel };
 
@@ -773,12 +766,9 @@ protected:
     VectorOfIDs _grabsToDelete; // deleted grab IDs -- changes needed to entities or physics
 
     ReadWriteLockable _subItemLock;
-    void updateAttachmentRenderIDs();
-    render::ItemIDs _attachmentRenderIDs;
     void updateDescendantRenderIDs();
     render::ItemIDs _descendantRenderIDs;
     std::unordered_set<EntityItemID> _renderingDescendantEntityIDs;
-    uint32_t _lastAncestorChainRenderableVersion { 0 };
 };
 
 #endif // hifi_Avatar_h

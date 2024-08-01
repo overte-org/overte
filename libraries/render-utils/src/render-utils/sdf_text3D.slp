@@ -1,1 +1,1 @@
-DEFINES (translucent unlit:f)/forward
+DEFINES (translucent unlit:f)/forward mirror:f
