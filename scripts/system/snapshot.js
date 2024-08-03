@@ -1,8 +1,9 @@
 //
 // snapshot.js
 //
-// Created by David Kelly on 1 August 2016
-// Copyright 2016 High Fidelity, Inc
+// Created by David Kelly on August 1st, 2016
+// Copyright 2016 High Fidelity, Inc.
+// Copyright 2024 Overte e.V.
 //
 // Distributed under the Apache License, Version 2.0
 // See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -373,6 +374,7 @@ function fillImageDataFromPrevious() {
             errorPath: Script.resourcesPath() + 'snapshot/img/no-image.jpg'
         });
     }
+    setTakePhotoControllerMappingStatus(true);
 }
 
 function snapshotUploaded(isError, reply) {
@@ -474,6 +476,8 @@ function takeSnapshot() {
             volume: 1.0
         });
         HMD.closeTablet();
+        setTakePhotoControllerMappingStatus(false);
+        
         var DOUBLE_RENDER_TIME_TO_MS = 2000; // If rendering is bogged down, allow double the render time to close the tablet.
         Script.setTimeout(function () {
             Window.takeSnapshot(false, includeAnimated, 1.91);
@@ -530,7 +534,11 @@ function stillSnapshotTaken(pathStillSnapshot, notify) {
     Settings.setValue("previousStillSnapPath", pathStillSnapshot);
 
     HMD.openTablet();
-
+    var includeAnimated = Settings.getValue("alsoTakeAnimatedSnapshot", true);
+    if (!includeAnimated) {
+        setTakePhotoControllerMappingStatus(true);
+    }
+    
     isDomainOpen(snapshotDomainID, function (canShare) {
         snapshotOptions = {
             containsGif: false,
@@ -614,6 +622,7 @@ function processingGifCompleted(pathAnimatedSnapshot) {
             image_data: imageData
         });
     });
+    setTakePhotoControllerMappingStatus(true);
 }
 function maybeDeleteSnapshotStories() {
     storyIDsToMaybeDelete.forEach(function (element, idx, array) {
@@ -703,20 +712,81 @@ function processRezPermissionChange(canRez) {
     });
 }
 
+function setTakePhotoControllerMappingStatus(status) {
+    if (!takePhotoControllerMapping) {
+        return;
+    }
+    if (status) {
+        takePhotoControllerMapping.enable();
+    } else {
+        takePhotoControllerMapping.disable();
+    }
+}
+
+var takePhotoControllerMapping;
+var takePhotoControllerMappingName = 'Hifi-SnapshotApp-Mapping-TakePhoto';
+function registerTakePhotoControllerMapping() {
+    takePhotoControllerMapping = Controller.newMapping(takePhotoControllerMappingName);
+    if (controllerType === "OculusTouch") {
+        takePhotoControllerMapping.from(Controller.Standard.RS).to(function (value) {
+            if (value === 1.0) {
+                takeSnapshot();
+            }
+            return;
+        });
+    } else if (controllerType === "Vive") {
+        takePhotoControllerMapping.from(Controller.Standard.RightPrimaryThumb).to(function (value) {
+            if (value === 1.0) {
+                takeSnapshot();
+            }
+            return;
+        });
+    }
+}
+
+var controllerType = "Other";
+function registerButtonMappings() {
+    var VRDevices = Controller.getDeviceNames().toString();
+    if (VRDevices) {
+        if (VRDevices.indexOf("Vive") !== -1) {
+            controllerType = "Vive";
+        } else if (VRDevices.indexOf("OculusTouch") !== -1) {
+            controllerType = "OculusTouch";
+        } else {
+            return; // Neither Vive nor Touch detected
+        }
+    }
+
+    if (!takePhotoControllerMapping) {
+        registerTakePhotoControllerMapping();
+    }
+}
+
+function onHMDChanged(isHMDMode) {
+    registerButtonMappings();
+}
+
+function onClosingWindow () {
+    setTakePhotoControllerMappingStatus(false);
+}
+
 function startup() {
     ui = new AppUi({
         buttonName: "SNAP",
         sortOrder: 5,
         home: Script.resolvePath("html/SnapshotReview.html"),
         onOpened: fillImageDataFromPrevious,
-        onMessage: onMessage
+        onMessage: onMessage,
+        onClosed: onClosingWindow
     });
 
+    HMD.displayModeChanged.connect(onHMDChanged);
     Entities.canRezChanged.connect(updatePrintPermissions);
     Entities.canRezTmpChanged.connect(updatePrintPermissions);
     GlobalServices.myUsernameChanged.connect(onUsernameChanged);
     Snapshot.snapshotLocationSet.connect(snapshotLocationSet);
     Window.snapshotShared.connect(snapshotUploaded);
+    registerButtonMappings();
 }
 startup();
 
@@ -726,6 +796,7 @@ function shutdown() {
     GlobalServices.myUsernameChanged.disconnect(onUsernameChanged);
     Entities.canRezChanged.disconnect(updatePrintPermissions);
     Entities.canRezTmpChanged.disconnect(updatePrintPermissions);
+    HMD.displayModeChanged.disconnect(onHMDChanged);
 }
 Script.scriptEnding.connect(shutdown);
 
