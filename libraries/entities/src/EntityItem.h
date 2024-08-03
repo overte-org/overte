@@ -137,6 +137,7 @@ public:
 
     virtual OctreeElement::AppendState appendEntityData(OctreePacketData* packetData, EncodeBitstreamParams& params,
                                                         EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                                        EntityPropertyList& firstDidntFitProperty,
                                                         const bool destinationNodeCanGetAndSetPrivateUserData = false) const;
 
     virtual void appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
@@ -144,6 +145,7 @@ public:
                                     EntityPropertyFlags& requestedProperties,
                                     EntityPropertyFlags& propertyFlags,
                                     EntityPropertyFlags& propertiesDidntFit,
+                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                     int& propertyCount,
                                     OctreeElement::AppendState& appendState) const { /* do nothing*/ };
 

@@ -117,6 +117,7 @@ bool PulsePropertyGroup::appendToEditPacket(OctreePacketData* packetData,
                                            EntityPropertyFlags& requestedProperties,
                                            EntityPropertyFlags& propertyFlags,
                                            EntityPropertyFlags& propertiesDidntFit,
+                                           bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                            int& propertyCount,
                                            OctreeElement::AppendState& appendState) const {
 
@@ -214,6 +215,7 @@ void PulsePropertyGroup::appendSubclassData(OctreePacketData* packetData, Encode
                                            EntityPropertyFlags& requestedProperties,
                                            EntityPropertyFlags& propertyFlags,
                                            EntityPropertyFlags& propertiesDidntFit,
+                                           bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                            int& propertyCount,
                                            OctreeElement::AppendState& appendState) const {
 
