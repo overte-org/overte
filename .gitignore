@@ -11,13 +11,10 @@ CMakeCache.txt
 CMakeFiles/
 CMakeScripts/
 cmake_install.cmake
-/build*/
-cmake-build-minsizerelease-visual-studio/
-cmake-build-release-visual-studio/
-cmake-build-relwithdebinfo-visual-studio/
-cmake-build-debug-visual-studio/
-cmake-build-debug/
-/release*/
+CMakeUserPresets.json
+build*/
+_build/
+cmake-build-*/
 /debug*/
 /gprof*/
 /valgrind*/
