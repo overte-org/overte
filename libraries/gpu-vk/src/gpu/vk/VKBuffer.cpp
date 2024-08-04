@@ -29,7 +29,7 @@ VKBuffer* VKBuffer::sync(VKBackend& backend, const gpu::Buffer& buffer) {
     return object;
 }
 
-vk::Buffer VKBuffer::getBuffer(VKBackend& backend, const gpu::Buffer& buffer) {
+VkBuffer VKBuffer::getBuffer(VKBackend& backend, const gpu::Buffer& buffer) {
     VKBuffer* bo = sync(backend, buffer);
     if (bo) {
         return bo->buffer;
@@ -39,9 +39,9 @@ vk::Buffer VKBuffer::getBuffer(VKBackend& backend, const gpu::Buffer& buffer) {
 }
 
 VKBuffer::VKBuffer(VKBackend& backend, const gpu::Buffer& buffer) : VKObject(backend, buffer) {
-    vk::BufferUsageFlags usageFlags{ (VkBufferUsageFlags)buffer.getUsage() };
+    VkBufferUsageFlags usageFlags{ (VkBufferUsageFlags)buffer.getUsage() };
     (vks::Buffer&)(*this) =
-        backend._context.createBuffer(usageFlags, buffer.getSize(), vk::MemoryPropertyFlagBits::eDeviceLocal);
+        backend._context.createBuffer(usageFlags, buffer.getSize(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     Backend::bufferCount.increment();
     Backend::bufferGPUMemSize.update(0, size);

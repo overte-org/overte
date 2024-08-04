@@ -4,26 +4,28 @@
 
 #include "Debug.h"
 #include "Image.h"
-#include "Buffer.h"
+#include "VulkanBuffer.h"
 #include "Helpers.h"
-#include "Device.h"
+#include "VulkanDevice.h"
+#include "VulkanDebug.h"
+#include "VulkanTools.h"
 #include <unordered_set>
 
 namespace vks {
 using StringList = std::list<std::string>;
 using CStringVector = std::vector<const char*>;
 
-using DevicePickerFunction = std::function<vk::PhysicalDevice(const std::vector<vk::PhysicalDevice>&)>;
-using DeviceExtensionsPickerFunction = std::function<std::set<std::string>(const vk::PhysicalDevice&)>;
+using DevicePickerFunction = std::function<VkPhysicalDevice(const std::vector<VkPhysicalDevice>&)>;
+using DeviceExtensionsPickerFunction = std::function<std::set<std::string>(const VkPhysicalDevice&)>;
 using InstanceExtensionsPickerFunction = std::function<std::set<std::string>()>;
 using InstanceExtensionsPickerFunctions = std::list<InstanceExtensionsPickerFunction>;
 using LayerVector = std::vector<const char*>;
-using MipData = ::std::pair<vk::Extent3D, vk::DeviceSize>;
+using MipData = ::std::pair<VkExtent3D, VkDeviceSize>;
 
-namespace queues {
+/*namespace queues {
 
-struct DeviceCreateInfo : public vk::DeviceCreateInfo {
-    std::vector<vk::DeviceQueueCreateInfo> deviceQueues;
+struct DeviceCreateInfo : public VkDeviceCreateInfo {
+    std::vector<VkDeviceQueueCreateInfo> deviceQueues;
     std::vector<std::vector<float>> deviceQueuesPriorities;
 
     void addQueueFamily(uint32_t queueFamilyIndex, vk::ArrayProxy<float> priorities) {
@@ -54,7 +56,7 @@ struct DeviceCreateInfo : public vk::DeviceCreateInfo {
         this->pQueueCreateInfos = deviceQueues.data();
     }
 };
-}  // namespace queues
+}*/  // namespace queues
 ///////////////////////////////////////////////////////////////////////
 //
 // Object destruction support
@@ -73,79 +75,35 @@ struct DeviceCreateInfo : public vk::DeviceCreateInfo {
 // in order to check the fences and execute the associated destructors for any that are signalled.
 using VoidLambda = std::function<void()>;
 using VoidLambdaList = std::list<VoidLambda>;
-using FencedLambda = std::pair<vk::Fence, VoidLambda>;
+using FencedLambda = std::pair<VkFence, VoidLambda>;
 using FencedLambdaQueue = std::queue<FencedLambda>;
 
 struct Context {
 private:
-    static CStringVector toCStrings(const StringList& values) {
-        CStringVector result;
-        result.reserve(values.size());
-        for (const auto& string : values) {
-            result.push_back(string.c_str());
-        }
-        return result;
-    }
+    //static CStringVector toCStrings(const StringList& values);
 
-    static CStringVector toCStrings(const vk::ArrayProxy<const std::string>& values) {
-        CStringVector result;
-        result.reserve(values.size());
-        for (const auto& string : values) {
-            result.push_back(string.c_str());
-        }
-        return result;
-    }
+    //static CStringVector toCStrings(const vk::ArrayProxy<const std::string>& values);
 
-    static CStringVector filterLayers(const StringList& desiredLayers) {
-        static std::set<std::string> validLayerNames = getAvailableLayers();
-        CStringVector result;
-        for (const auto& string : desiredLayers) {
-            if (validLayerNames.count(string) != 0) {
-                result.push_back(string.c_str());
-            }
-        }
-        return result;
-    }
+    static CStringVector filterLayers(const StringList& desiredLayers);
 
     Context() {};
 public:
     static Context& get();
 
     // Create application wide Vulkan instance
-    static std::set<std::string> getAvailableLayers() {
-        std::set<std::string> result;
-        auto layers = vk::enumerateInstanceLayerProperties();
-        for (auto layer : layers) {
-            result.insert(layer.layerName);
-        }
-        return result;
-    }
+    static std::set<std::string> getAvailableLayers();
 
-    static std::vector<vk::ExtensionProperties> getExtensions() { return vk::enumerateInstanceExtensionProperties(); }
+    static std::vector<VkExtensionProperties> getExtensions();
 
-    static std::set<std::string> getExtensionNames() {
-        std::set<std::string> extensionNames;
-        for (auto& ext : getExtensions()) {
-            extensionNames.insert(ext.extensionName);
-        }
-        return extensionNames;
-    }
+    static std::set<std::string> getExtensionNames();
 
     static bool isExtensionPresent(const std::string& extensionName) { return getExtensionNames().count(extensionName) != 0; }
 
-    static std::vector<vk::ExtensionProperties> getDeviceExtensions(const vk::PhysicalDevice& physicalDevice) {
-        return physicalDevice.enumerateDeviceExtensionProperties();
-    }
+    static std::vector<VkExtensionProperties> getDeviceExtensions(const VkPhysicalDevice& physicalDevice);
 
-    static std::set<std::string> getDeviceExtensionNames(const vk::PhysicalDevice& physicalDevice) {
-        std::set<std::string> extensionNames;
-        for (auto& ext : getDeviceExtensions(physicalDevice)) {
-            extensionNames.insert(ext.extensionName);
-        }
-        return extensionNames;
-    }
+    static std::set<std::string> getDeviceExtensionNames(const VkPhysicalDevice& physicalDevice);
 
-    static bool isDeviceExtensionPresent(const vk::PhysicalDevice& physicalDevice, const std::string& extension) {
+    static bool isDeviceExtensionPresent(const VkPhysicalDevice& physicalDevice, const std::string& extension) {
         return getDeviceExtensionNames(physicalDevice).count(extension) != 0;
     }
 
@@ -165,116 +123,13 @@ public:
 
     void setDeviceExtensionsPicker(const DeviceExtensionsPickerFunction& picker) { deviceExtensionsPicker = picker; }
 
-    void setValidationEnabled(bool enable) {
-        if (instance) {
-            throw std::runtime_error("Cannot change validations state after instance creation");
-        }
-        enableValidation = enable;
-    }
+    void setValidationEnabled(bool enable);
 
-    void createInstance() {
-        if (instance) {
-            throw std::runtime_error("Instance already exists");
-        }
+    void createInstance();
 
-        if (isExtensionPresent(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
-            requireExtensions({ VK_EXT_DEBUG_UTILS_EXTENSION_NAME });
-            enableValidation = true;
-            enableDebugMarkers = true;
-            qDebug() << "Found debug marker extension";
-        }
+    void destroyContext();
 
-        // Vulkan instance
-        vk::ApplicationInfo appInfo;
-        appInfo.pApplicationName = "VulkanExamples";
-        appInfo.pEngineName = "VulkanExamples";
-        appInfo.apiVersion = VK_API_VERSION_1_0;
-
-
-
-        std::set<std::string> instanceExtensions;
-        instanceExtensions.insert(requiredExtensions.begin(), requiredExtensions.end());
-        for (const auto& picker : instanceExtensionsPickers) {
-            auto extensions = picker();
-            instanceExtensions.insert(extensions.begin(), extensions.end());
-        }
-
-        std::vector<const char*> enabledExtensions;
-        for (const auto& extension : instanceExtensions) {
-            enabledExtensions.push_back(extension.c_str());
-        }
-
-        // Enable surface extensions depending on os
-        vk::InstanceCreateInfo instanceCreateInfo;
-        instanceCreateInfo.pApplicationInfo = &appInfo;
-        if (enabledExtensions.size() > 0) {
-            instanceCreateInfo.enabledExtensionCount = (uint32_t)enabledExtensions.size();
-            instanceCreateInfo.ppEnabledExtensionNames = enabledExtensions.data();
-        }
-
-        CStringVector layers;
-        if (enableValidation) {
-            layers = filterLayers(debug::getDefaultValidationLayers());
-            instanceCreateInfo.enabledLayerCount = (uint32_t)layers.size();
-            instanceCreateInfo.ppEnabledLayerNames = layers.data();
-        }
-
-        instance = vk::createInstance(instanceCreateInfo);
-
-        if (enableValidation) {
-            debug::setupDebugging(instance);
-        }
-
-        if (enableDebugMarkers) {
-            debug::marker::setup(instance);
-        }
-    }
-
-    void destroyContext() {
-        queue.waitIdle();
-        device.waitIdle();
-        for (const auto& trash : dumpster) {
-            trash();
-        }
-
-        while (!recycler.empty()) {
-            recycle();
-        }
-
-        destroyCommandPool();
-        device.destroy();
-        if (enableValidation) {
-            debug::cleanupDebugging(instance);
-        }
-        instance.destroy();
-    }
-
-    uint32_t findQueue(const vk::QueueFlags& desiredFlags, const vk::SurfaceKHR& presentSurface = vk::SurfaceKHR()) const {
-        uint32_t bestMatch{ VK_QUEUE_FAMILY_IGNORED };
-        VkQueueFlags bestMatchExtraFlags{ VK_QUEUE_FLAG_BITS_MAX_ENUM };
-        size_t queueCount = queueFamilyProperties.size();
-        for (uint32_t i = 0; i < queueCount; ++i) {
-            auto currentFlags = queueFamilyProperties[i].queueFlags;
-            // Doesn't contain the required flags, skip it
-            if (!(currentFlags & desiredFlags)) {
-                continue;
-            }
-
-            VkQueueFlags currentExtraFlags = (currentFlags & ~desiredFlags).operator VkQueueFlags();
-
-            // If we find an exact match, return immediately
-            if (0 == currentExtraFlags) {
-                return i;
-            }
-
-            if (bestMatch == VK_QUEUE_FAMILY_IGNORED || currentExtraFlags < bestMatchExtraFlags) {
-                bestMatch = i;
-                bestMatchExtraFlags = currentExtraFlags;
-            }
-        }
-
-        return bestMatch;
-    }
+    uint32_t findQueue(const VkQueueFlags& desiredFlags, const VkSurfaceKHR& presentSurface = VkSurfaceKHR()) const;
 
     template <typename T>
     void trash(T value, std::function<void(T t)> destructor = [](T t) { t.destroy(); }) const {
@@ -297,405 +152,132 @@ public:
     // call to make for destroying a given Vulkan object.
     //
 
-    void trashPipeline(vk::Pipeline& pipeline) const {
-        trash<vk::Pipeline>(pipeline, [this](vk::Pipeline pipeline) { device.destroyPipeline(pipeline); });
-    }
+    /*void trashPipeline(VkPipeline& pipeline) const {
+        trash<VkPipeline>(pipeline, [this](VkPipeline pipeline) { device.destroyPipeline(pipeline); });
+    }*/
 
-    void trashCommandBuffers(const std::vector<vk::CommandBuffer>& cmdBuffers, vk::CommandPool commandPool = nullptr) const {
-        if (!commandPool) {
-            commandPool = getCommandPool();
-        }
-        using DtorLambda = std::function<void(const std::vector<vk::CommandBuffer>&)>;
-        DtorLambda destructor =
-            [=](const std::vector<vk::CommandBuffer>& cmdBuffers) { 
-            device.freeCommandBuffers(commandPool, cmdBuffers); 
-        };
-        trashAll<vk::CommandBuffer>(cmdBuffers, destructor);
-    }
+    void trashCommandBuffers(const std::vector<VkCommandBuffer>& cmdBuffers, VkCommandPool commandPool = nullptr) const;
 
     // Should be called from time to time by the application to migrate zombie resources
     // to the recycler along with a fence that will be signalled when the objects are
     // safe to delete.
-    void emptyDumpster(vk::Fence fence) {
-        VoidLambdaList newDumpster;
-        newDumpster.swap(dumpster);
-        recycler.push(FencedLambda{ fence, [fence, newDumpster, this] {
-                                       for (const auto& f : newDumpster) {
-                                           f();
-                                       }
-                                   } });
-    }
+    void emptyDumpster(vk::Fence fence);
 
     // Check the recycler fences for signalled status.  Any that are signalled will have their corresponding
     // lambdas executed, freeing up the associated resources
-    void recycle() {
-        while (!recycler.empty()) {
-            const auto& trashItem = recycler.front();
-            const auto& fence = trashItem.first;
-            auto fenceStatus = device.getFenceStatus(fence);
-            if (vk::Result::eSuccess != fenceStatus) {
-                break;
-            }
-            const VoidLambda& lambda = trashItem.second;
-            lambda();
-            device.destroyFence(fence);
-            recycler.pop();
-        }
-    }
+    void recycle();
 
     // Create an image memory barrier for changing the layout of
     // an image and put it into an active command buffer
     // See chapter 11.4 "vk::Image Layout" for details
 
-    void setImageLayout(vk::CommandBuffer cmdbuffer,
-                        vk::Image image,
-                        vk::ImageLayout oldImageLayout,
-                        vk::ImageLayout newImageLayout,
-                        vk::ImageSubresourceRange subresourceRange) const {
-        // Create an image barrier object
-        vk::ImageMemoryBarrier imageMemoryBarrier;
-        imageMemoryBarrier.oldLayout = oldImageLayout;
-        imageMemoryBarrier.newLayout = newImageLayout;
-        imageMemoryBarrier.image = image;
-        imageMemoryBarrier.subresourceRange = subresourceRange;
-        imageMemoryBarrier.srcAccessMask = vks::util::accessFlagsForLayout(oldImageLayout);
-        imageMemoryBarrier.dstAccessMask = vks::util::accessFlagsForLayout(newImageLayout);
-
-        // Put barrier on top
-        // Put barrier inside setup command buffer
-        cmdbuffer.pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands,
-                                  vk::DependencyFlags(), nullptr, nullptr, imageMemoryBarrier);
-    }
+    void setImageLayout(VkCommandBuffer cmdbuffer,
+                        VkImage image,
+                        VkImageLayout oldImageLayout,
+                        VkImageLayout newImageLayout,
+                        VkImageSubresourceRange subresourceRange) const;
 
     // Fixed sub resource on first mip level and layer
-    void setImageLayout(vk::CommandBuffer cmdbuffer,
-                        vk::Image image,
-                        vk::ImageAspectFlags aspectMask,
-                        vk::ImageLayout oldImageLayout,
-                        vk::ImageLayout newImageLayout) const {
-        vk::ImageSubresourceRange subresourceRange;
-        subresourceRange.aspectMask = aspectMask;
-        subresourceRange.levelCount = 1;
-        subresourceRange.layerCount = 1;
-        setImageLayout(cmdbuffer, image, oldImageLayout, newImageLayout, subresourceRange);
-    }
+    void setImageLayout(VkCommandBuffer cmdbuffer,
+                        VkImage image,
+                        VkImageAspectFlags aspectMask,
+                        VkImageLayout oldImageLayout,
+                        VkImageLayout newImageLayout) const;
 
-    void setImageLayout(vk::Image image,
-                        vk::ImageLayout oldImageLayout,
-                        vk::ImageLayout newImageLayout,
-                        vk::ImageSubresourceRange subresourceRange) const {
+    void setImageLayout(VkImage image,
+                        VkImageLayout oldImageLayout,
+                        VkImageLayout newImageLayout,
+                        VkImageSubresourceRange subresourceRange) const {
         withPrimaryCommandBuffer([&](const auto& commandBuffer) {
             setImageLayout(commandBuffer, image, oldImageLayout, newImageLayout, subresourceRange);
         });
     }
 
     // Fixed sub resource on first mip level and layer
-    void setImageLayout(vk::Image image,
-                        vk::ImageAspectFlags aspectMask,
-                        vk::ImageLayout oldImageLayout,
-                        vk::ImageLayout newImageLayout) const {
+    void setImageLayout(VkImage image,
+                        VkImageAspectFlags aspectMask,
+                        VkImageLayout oldImageLayout,
+                        VkImageLayout newImageLayout) const {
         withPrimaryCommandBuffer([&](const auto& commandBuffer) {
             setImageLayout(commandBuffer, image, aspectMask, oldImageLayout, newImageLayout);
         });
     }
 
-    void createDevice(const vk::SurfaceKHR& surface = nullptr) {
-        pickDevice(surface);
-
-        buildDevice();
-
-#if VULKAN_USE_VMA
-        vks::Allocation::initAllocator(physicalDevice, device);
-#endif
-
-        // Get the graphics queue
-        queue = device.getQueue(queueIndices.graphics, 0);
-    }
+    void createDevice(const VkSurfaceKHR& surface = nullptr);
 
 protected:
-    void pickDevice(const vk::SurfaceKHR& surface ) {
-        // Physical device
-        physicalDevices = instance.enumeratePhysicalDevices();
+    void pickDevice(const VkSurfaceKHR& surface );
 
-        // Note :
-        // This example will always use the first physical device reported,
-        // change the vector index if you have multiple Vulkan devices installed
-        // and want to use another one
-        physicalDevice = devicePicker(physicalDevices);
-        struct Version {
-            uint32_t patch : 12;
-            uint32_t minor : 10;
-            uint32_t major : 10;
-        } _version;
-
-
-        for (const auto& extensionProperties : physicalDevice.enumerateDeviceExtensionProperties()) {
-            physicalDeviceExtensions.insert(extensionProperties.extensionName);
-            qDebug() << "Device Extension " << extensionProperties.extensionName;
-        }
-        // Store properties (including limits) and features of the phyiscal device
-        // So examples can check against them and see if a feature is actually supported
-        queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
-        deviceProperties = physicalDevice.getProperties();
-        memcpy(&_version, &deviceProperties.apiVersion, sizeof(uint32_t));
-        deviceFeatures = physicalDevice.getFeatures();
-        // Gather physical device memory properties
-        deviceMemoryProperties = physicalDevice.getMemoryProperties();
-        queueIndices.graphics = findQueue(vk::QueueFlagBits::eGraphics, surface);
-        queueIndices.compute = findQueue(vk::QueueFlagBits::eCompute);
-        queueIndices.transfer = findQueue(vk::QueueFlagBits::eTransfer);
-    }
-
-    void buildDevice() {
-        // Vulkan device
-        vks::queues::DeviceCreateInfo deviceCreateInfo;
-        deviceCreateInfo.addQueueFamily(queueIndices.graphics, queueFamilyProperties[queueIndices.graphics].queueCount);
-        if (queueIndices.compute != VK_QUEUE_FAMILY_IGNORED && queueIndices.compute != queueIndices.graphics) {
-            deviceCreateInfo.addQueueFamily(queueIndices.compute, queueFamilyProperties[queueIndices.compute].queueCount);
-        }
-        if (queueIndices.transfer != VK_QUEUE_FAMILY_IGNORED && queueIndices.transfer != queueIndices.graphics &&
-            queueIndices.transfer != queueIndices.compute) {
-            deviceCreateInfo.addQueueFamily(queueIndices.transfer, queueFamilyProperties[queueIndices.transfer].queueCount);
-        }
-        deviceCreateInfo.update();
-
-        deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
-
-        std::set<std::string> requestedDeviceExtensions = deviceExtensionsPicker(physicalDevice);
-        requestedDeviceExtensions.insert(requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
-
-        // enable the debug marker extension if it is present (likely meaning a debugging tool is present)
-
-        std::vector<const char*> enabledExtensions;
-        for (const auto& extension : requestedDeviceExtensions) {
-            enabledExtensions.push_back(extension.c_str());
-        }
-
-
-        if (enabledExtensions.size() > 0) {
-            deviceCreateInfo.enabledExtensionCount = (uint32_t)enabledExtensions.size();
-            deviceCreateInfo.ppEnabledExtensionNames = enabledExtensions.data();
-        }
-        device = physicalDevice.createDevice(deviceCreateInfo);
-    }
+    void buildDevice();
 
 public:
     // Vulkan instance, stores all per-application states
-    vk::Instance instance;
+    VkInstance instance;
 
-    std::vector<vk::PhysicalDevice> physicalDevices;
+    std::vector<VkPhysicalDevice> physicalDevices;
     // Physical device (GPU) that Vulkan will use
-    vk::PhysicalDevice physicalDevice;
-    std::unordered_set<std::string> physicalDeviceExtensions;
+    VkPhysicalDevice physicalDevice;
+    //std::unordered_set<std::string> physicalDeviceExtensions;
 
-    // Queue family properties
-    std::vector<vk::QueueFamilyProperties> queueFamilyProperties;
-    // Stores physical device properties (for e.g. checking device limits)
-    vk::PhysicalDeviceProperties deviceProperties;
-    // Stores phyiscal device features (for e.g. checking if a feature is available)
-    vk::PhysicalDeviceFeatures deviceFeatures;
+    std::shared_ptr<vks::VulkanDevice> device;
 
-    vk::PhysicalDeviceFeatures enabledFeatures;
-    // Stores all available memory (type) properties for the physical device
-    vk::PhysicalDeviceMemoryProperties deviceMemoryProperties;
-    // Logical device, application's view of the physical device (GPU)
-    vks::Device device;
+    VkQueue queue;
 
-    struct QueueIndices {
-        uint32_t graphics{ VK_QUEUE_FAMILY_IGNORED };
-        uint32_t transfer{ VK_QUEUE_FAMILY_IGNORED };
-        uint32_t compute{ VK_QUEUE_FAMILY_IGNORED };
-    } queueIndices;
+    const VkCommandPool& getCommandPool() const;
 
-    vk::Queue queue;
-
-    const vk::CommandPool& getCommandPool() const {
-        if (!commandPool) {
-            vk::CommandPoolCreateInfo cmdPoolInfo;
-            cmdPoolInfo.queueFamilyIndex = queueIndices.graphics;
-            cmdPoolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-            auto pool = device.createCommandPool(cmdPoolInfo);
-            const_cast<vk::CommandPool&>(commandPool) = pool;
-        }
-        return commandPool;
-    }
-
-    void destroyCommandPool() {
-        if (commandPool) {
-            device.destroy(commandPool);
-            commandPool = nullptr;
-        }
-    }
-
-    std::vector<vk::CommandBuffer> allocateCommandBuffers(
+    /*std::vector<VkCommandBuffer> allocateCommandBuffers(
         uint32_t count,
-        vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary) const {
-        std::vector<vk::CommandBuffer> result;
-        vk::CommandBufferAllocateInfo commandBufferAllocateInfo;
-        commandBufferAllocateInfo.commandPool = getCommandPool();
-        commandBufferAllocateInfo.commandBufferCount = count;
-        commandBufferAllocateInfo.level = vk::CommandBufferLevel::ePrimary;
-        result = device.allocateCommandBuffers(commandBufferAllocateInfo);
-        return result;
-    }
+        VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) const;*/
 
-    vk::CommandBuffer createCommandBuffer(vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary) const {
-        vk::CommandBuffer cmdBuffer;
-        vk::CommandBufferAllocateInfo cmdBufAllocateInfo;
-        cmdBufAllocateInfo.commandPool = getCommandPool();
-        cmdBufAllocateInfo.level = level;
-        cmdBufAllocateInfo.commandBufferCount = 1;
-        cmdBuffer = device.allocateCommandBuffers(cmdBufAllocateInfo)[0];
-        return cmdBuffer;
-    }
+    //VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) const;
 
-    void flushCommandBuffer(vk::CommandBuffer& commandBuffer) const {
-        if (!commandBuffer) {
-            return;
-        }
-        queue.submit(vk::SubmitInfo{ 0, nullptr, nullptr, 1, &commandBuffer }, vk::Fence());
-        queue.waitIdle();
-        device.waitIdle();
-    }
+    //void flushCommandBuffer(VkCommandBuffer& commandBuffer) const;
 
-    // Create a short lived command buffer which is immediately executed and released
+    // Create a short-lived command buffer which is immediately executed and released
     // This function is intended for initialization only.  It incurs a queue and device
     // flush and may impact performance if used in non-setup code
-    void withPrimaryCommandBuffer(const std::function<void(const vk::CommandBuffer& commandBuffer)>& f) const {
-        vk::CommandBuffer commandBuffer = createCommandBuffer(vk::CommandBufferLevel::ePrimary);
-        commandBuffer.begin(vk::CommandBufferBeginInfo{ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
+    void withPrimaryCommandBuffer(const std::function<void(const VkCommandBuffer& commandBuffer)>& f) const {
+        vk::CommandBuffer commandBuffer = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+        VkCommandBufferBeginInfo vkCommandBufferBeginInfo {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .pNext = nullptr,
+            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+            .pInheritanceInfo = nullptr
+        };
+        commandBuffer.begin(vkCommandBufferBeginInfo);
         f(commandBuffer);
         commandBuffer.end();
-        flushCommandBuffer(commandBuffer);
-        device.freeCommandBuffers(getCommandPool(), commandBuffer);
+        device->flushCommandBuffer(commandBuffer, queue, true);
     }
 
-    Image createImage(const vk::ImageCreateInfo& imageCreateInfo, const vk::MemoryPropertyFlags& memoryPropertyFlags) const {
-        Image result;
-        result.device = device;
-        result.format = imageCreateInfo.format;
-        result.extent = imageCreateInfo.extent;
+    Image createImage(const VkImageCreateInfo& imageCreateInfo, const VkMemoryPropertyFlags& memoryPropertyFlags) const;
 
-#if VULKAN_USE_VMA
-        VmaAllocationCreateInfo allocInfo = {};
-        allocInfo.requiredFlags = memoryPropertyFlags.operator unsigned int();
-        auto pCreateInfo = &(imageCreateInfo.operator const VkImageCreateInfo&());
-        auto pImage = &reinterpret_cast<VkImage&>(result.image);
-        vmaCreateImage(Allocation::getAllocator(), pCreateInfo, &allocInfo, pImage, &result.allocation, nullptr);
-#else
-        result.image = device.createImage(imageCreateInfo);
-        if ((memoryPropertyFlags & vk::MemoryPropertyFlagBits::eLazilyAllocated) !=
-            vk::MemoryPropertyFlagBits::eLazilyAllocated) {
-            vk::MemoryRequirements memReqs = device.getImageMemoryRequirements(result.image);
-            vk::MemoryAllocateInfo memAllocInfo;
-            memAllocInfo.allocationSize = result.allocSize = memReqs.size;
-            memAllocInfo.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
-            result.memory = device.allocateMemory(memAllocInfo);
-            device.bindImageMemory(result.image, result.memory, 0);
-        }
-#endif
-        return result;
-    }
-
-    Image stageToDeviceImage(vk::ImageCreateInfo imageCreateInfo,
-                             const vk::MemoryPropertyFlags& memoryPropertyFlags,
-                             vk::DeviceSize size,
+    Image stageToDeviceImage(VkImageCreateInfo imageCreateInfo,
+                             const VkMemoryPropertyFlags& memoryPropertyFlags,
+                             VkDeviceSize size,
                              const void* data,
-                             const std::vector<MipData>& mipData = {}) const {
-        Buffer staging = createStagingBuffer(size, data);
-        imageCreateInfo.usage = imageCreateInfo.usage | vk::ImageUsageFlagBits::eTransferDst;
-        Image result = createImage(imageCreateInfo, memoryPropertyFlags);
-
-        withPrimaryCommandBuffer([&](const vk::CommandBuffer& copyCmd) {
-            vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, imageCreateInfo.mipLevels, 0, 1);
-            // Prepare for transfer
-            setImageLayout(copyCmd, result.image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, range);
-
-            // Prepare for transfer
-            std::vector<vk::BufferImageCopy> bufferCopyRegions;
-            {
-                vk::BufferImageCopy bufferCopyRegion;
-                bufferCopyRegion.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-                bufferCopyRegion.imageSubresource.layerCount = 1;
-                if (!mipData.empty()) {
-                    for (uint32_t i = 0; i < imageCreateInfo.mipLevels; i++) {
-                        bufferCopyRegion.imageSubresource.mipLevel = i;
-                        bufferCopyRegion.imageExtent = mipData[i].first;
-                        bufferCopyRegions.push_back(bufferCopyRegion);
-                        bufferCopyRegion.bufferOffset += mipData[i].second;
-                    }
-                } else {
-                    bufferCopyRegion.imageExtent = imageCreateInfo.extent;
-                    bufferCopyRegions.push_back(bufferCopyRegion);
-                }
-            }
-            copyCmd.copyBufferToImage(staging.buffer, result.image, vk::ImageLayout::eTransferDstOptimal, bufferCopyRegions);
-            // Prepare for shader read
-            setImageLayout(copyCmd, result.image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
-                           range);
-        });
-        staging.destroy();
-        return result;
-    }
+                             const std::vector<MipData>& mipData = {}) const;
 
     template <typename T>
-    Image stageToDeviceImage(const vk::ImageCreateInfo& imageCreateInfo,
-                             const vk::MemoryPropertyFlags& memoryPropertyFlags,
+    Image stageToDeviceImage(const VkImageCreateInfo& imageCreateInfo,
+                             const VkMemoryPropertyFlags& memoryPropertyFlags,
                              const std::vector<T>& data) const {
         return stageToDeviceImage(imageCreateInfo, memoryPropertyFlags, data.size() * sizeof(T), (void*)data.data());
     }
 
     template <typename T>
-    Image stageToDeviceImage(const vk::ImageCreateInfo& imageCreateInfo, const std::vector<T>& data) const {
-        return stageToDeviceImage(imageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal, data.size() * sizeof(T),
+    Image stageToDeviceImage(const VkImageCreateInfo& imageCreateInfo, const std::vector<T>& data) const {
+        return stageToDeviceImage(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, data.size() * sizeof(T),
                                   (void*)data.data());
     }
 
-    Buffer createBuffer(const vk::BufferUsageFlags& usageFlags,
-                        vk::DeviceSize size,
-                        const vk::MemoryPropertyFlags& memoryPropertyFlags) const {
-        Buffer result;
-        result.device = device;
-        result.size = size;
-        result.descriptor.range = size;
-        result.descriptor.offset = 0;
+    Buffer createBuffer(const VkBufferUsageFlags& usageFlags,
+                        VkDeviceSize size,
+                        const VkMemoryPropertyFlags& memoryPropertyFlags) const;
 
-        vk::BufferCreateInfo createInfo{ {}, size, usageFlags };
+    Buffer createDeviceBuffer(const VkBufferUsageFlags& usageFlags, VkDeviceSize size) const;
 
-#if VULKAN_USE_VMA
-        VmaAllocationCreateInfo allocInfo = {};
-        allocInfo.requiredFlags = memoryPropertyFlags.operator unsigned int();
-        auto pCreateInfo = &createInfo.operator const VkBufferCreateInfo&();
-        auto pBuffer = &reinterpret_cast<VkBuffer&>(result.buffer);
-        vmaCreateBuffer(Allocation::getAllocator(), pCreateInfo, &allocInfo, pBuffer, &result.allocation, nullptr);
-#else
-        result.descriptor.buffer = result.buffer = device.createBuffer(bufferCreateInfo);
-        vk::MemoryRequirements memReqs = device.getBufferMemoryRequirements(result.buffer);
-        vk::MemoryAllocateInfo memAlloc;
-        result.allocSize = memAlloc.allocationSize = memReqs.size;
-        memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
-        result.memory = device.allocateMemory(memAlloc);
-        device.bindBufferMemory(result.buffer, result.memory, 0);
-#endif
-        result.descriptor.buffer = result.buffer;
-        return result;
-    }
-
-    Buffer createDeviceBuffer(const vk::BufferUsageFlags& usageFlags, vk::DeviceSize size) const {
-        static const vk::MemoryPropertyFlags memoryProperties = vk::MemoryPropertyFlagBits::eDeviceLocal;
-        return createBuffer(usageFlags, size, memoryProperties);
-    }
-
-    Buffer createStagingBuffer(vk::DeviceSize size, const void* data = nullptr) const {
-        auto result = createBuffer(vk::BufferUsageFlagBits::eTransferSrc, size,
-                                   vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-        if (data != nullptr) {
-            result.map();
-            result.copy(size, data);
-            result.unmap();
-        }
-        return result;
-    }
+    Buffer createStagingBuffer(VkDeviceSize size, const void* data = nullptr) const;
 
     template <typename T>
     Buffer createStagingBuffer(const std::vector<T>& data) const {
@@ -707,81 +289,43 @@ public:
         return createStagingBuffer(sizeof(T), &data);
     }
 
-    template <typename T>
+    /*template <typename T>
     Buffer createUniformBuffer(const T& data, size_t count = 3) const {
         auto alignment = deviceProperties.limits.minUniformBufferOffsetAlignment;
         auto extra = sizeof(T) % alignment;
         auto alignedSize = sizeof(T) + (alignment - extra);
         auto allocatedSize = count * alignedSize;
-        static const auto usageFlags = vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst;
-        static const auto memoryFlags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+        static const auto usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        static const auto memoryFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         auto result = createBuffer(usageFlags, allocatedSize, memoryFlags);
         result.alignment = alignedSize;
         result.descriptor.range = result.alignment;
-        result.map();
-        result.copy(data);
+        VK_CHECK_RESULT(result.map());
+        for (size_t i = 0; i < count; i++) {
+            memcpy(result.mapped, );
+        }
+        // This is a bit weird, what's the purpose of "count", if data is not an array?
+        //result.copy(data);
         return result;
-    }
+    }*/
 
-    Buffer stageToDeviceBuffer(const vk::BufferUsageFlags& usage, size_t size, const void* data) const {
-        Buffer staging = createStagingBuffer(size, data);
-        Buffer result = createDeviceBuffer(usage | vk::BufferUsageFlagBits::eTransferDst, size);
-        withPrimaryCommandBuffer(
-            [&](vk::CommandBuffer copyCmd) { copyCmd.copyBuffer(staging.buffer, result.buffer, vk::BufferCopy(0, 0, size)); });
-        staging.destroy();
-        return result;
-    }
+    Buffer stageToDeviceBuffer(const VkBufferUsageFlags& usage, size_t size, const void* data) const;
 
     template <typename T>
-    Buffer stageToDeviceBuffer(const vk::BufferUsageFlags& usage, const std::vector<T>& data) const {
+    Buffer stageToDeviceBuffer(const VkBufferUsageFlags& usage, const std::vector<T>& data) const {
         return stageToDeviceBuffer(usage, sizeof(T) * data.size(), data.data());
     }
 
     template <typename T>
-    Buffer stageToDeviceBuffer(const vk::BufferUsageFlags& usage, const T& data) const {
+    Buffer stageToDeviceBuffer(const VkBufferUsageFlags& usage, const T& data) const {
         return stageToDeviceBuffer(usage, sizeof(T), (void*)&data);
     }
 
-    vk::Bool32 getMemoryType(uint32_t typeBits, const vk::MemoryPropertyFlags& properties, uint32_t* typeIndex) const {
-        for (uint32_t i = 0; i < 32; i++) {
-            if ((typeBits & 1) == 1) {
-                if ((deviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-                    *typeIndex = i;
-                    return true;
-                }
-            }
-            typeBits >>= 1;
-        }
-        return false;
-    }
+    //vk::Bool32 getMemoryType(uint32_t typeBits, const VkMemoryPropertyFlags& properties, uint32_t* typeIndex) const;
 
-    uint32_t getMemoryType(uint32_t typeBits, const vk::MemoryPropertyFlags& properties) const {
-        uint32_t result = 0;
-        if (!getMemoryType(typeBits, properties, &result)) {
-            // todo : throw error
-        }
-        return result;
-    }
+    //uint32_t getMemoryType(uint32_t typeBits, const VkMemoryPropertyFlags& properties) const;
 
-    vk::Format getSupportedDepthFormat() const {
-        // Since all depth formats may be optional, we need to find a suitable depth format to use
-        // Start with the highest precision packed format
-        std::vector<vk::Format> depthFormats = { vk::Format::eD32SfloatS8Uint, vk::Format::eD32Sfloat,
-                                                 vk::Format::eD24UnormS8Uint, vk::Format::eD16UnormS8Uint,
-                                                 vk::Format::eD16Unorm };
-
-        for (auto& format : depthFormats) {
-            vk::FormatProperties formatProps;
-            formatProps = physicalDevice.getFormatProperties(format);
-            // vk::Format must support depth stencil attachment for optimal tiling
-            if (formatProps.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment) {
-                return format;
-            }
-        }
-
-        throw std::runtime_error("No supported depth format");
-    }
-
+    VkFormat getSupportedDepthFormat() const;
 
 private:
     // A collection of items queued for destruction.  Once a fence has been created
@@ -799,16 +343,15 @@ private:
     std::set<std::string> requiredExtensions;
     std::set<std::string> requiredDeviceExtensions;
 
-    DevicePickerFunction devicePicker = [](const std::vector<vk::PhysicalDevice>& devices) -> vk::PhysicalDevice {
+    DevicePickerFunction devicePicker = [](const std::vector<VkPhysicalDevice>& devices) -> VkPhysicalDevice {
         return devices[0];
     };
 
-    DeviceExtensionsPickerFunction deviceExtensionsPicker = [](const vk::PhysicalDevice& device) -> std::set<std::string> {
+    DeviceExtensionsPickerFunction deviceExtensionsPicker = [](const VkPhysicalDevice& device) -> std::set<std::string> {
         return {};
     };
-
-    vk::CommandPool commandPool;
 };
 
 using ContextPtr = std::shared_ptr<Context>;
 }  // namespace vks
+

@@ -132,7 +132,7 @@ void Batch::setDrawcallUniformReset(uint16_t uniformReset) {
     _drawcallUniformReset = uniformReset;
 }
 
-#pragma optimize("", off)
+//#pragma optimize("", off)
 
 void Batch::validateDrawState() const {
     return;
