@@ -10,14 +10,14 @@
 
 #include "VKForward.h"
 #include "VKShared.h"
-#include <vk/Buffer.h>
+#include <vk/VulkanBuffer.h>
 
 namespace gpu { namespace vulkan {
 
 class VKBuffer : public VKObject<gpu::Buffer>, public vks::Buffer {
 public:
     static VKBuffer* sync(VKBackend& backend, const gpu::Buffer& buffer);
-    static ::vk::Buffer getBuffer(VKBackend& backend, const gpu::Buffer& buffer);
+    static VkBuffer getBuffer(VKBackend& backend, const gpu::Buffer& buffer);
 
     ~VKBuffer();
 protected:

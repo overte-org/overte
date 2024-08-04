@@ -15,11 +15,11 @@
 namespace gpu { namespace vk {
 
 struct VKFilterMode {
-    vk::Filter minFilter;
-    vk::Filter magFilter;
+    VkFilter minFilter;
+    VkFilter magFilter;
 };
 
-class VKTexture : public VKObject<Texture, vk::Image> {
+class VKTexture : public VKObject<Texture, VkImage> {
 public:
     static void initTextureTransferHelper();
     static std::shared_ptr<VKTextureTransferHelper> _textureTransferHelper;
@@ -76,7 +76,7 @@ public:
     }
 
     template <typename VKTextureType> 
-    static vk::Image getId(VKBackend& backend, const TexturePointer& texture, bool shouldSync) {
+    static VkImage getId(VKBackend& backend, const TexturePointer& texture, bool shouldSync) {
         if (!texture) {
             return 0;
         }
@@ -106,16 +106,16 @@ public:
     }
 
     // Used by derived classes and helpers to ensure the actual VK object exceeds the lifetime of `this`
-    vk::Image takeOwnership() {
-        vk::Image result = _id;
-        const_cast<vk::Image&>(_id) = 0;
+    VkImage takeOwnership() {
+        VkImage result = _id;
+        const_cast<VkImage&>(_id) = 0;
         return result;
     }
 
     ~VKTexture();
 
     const Stamp _storageStamp;
-    const vk::ImageType _target;
+    const VkImageType _target;
     const uint16 _maxMip;
     const uint16 _minMip;
     const Size _virtualSize; // theoretical size as expected
@@ -131,7 +131,8 @@ public:
         void reset() const { const_cast<VKuint&>(_texture) = 0; }
         const std::weak_ptr<vk::VKBackend>& _backend;
         const Size _size { 0 };
-        const vk::Image _texture { 0 };
+        // TODO: Shouldn't that be texture instead?
+        const VkImage _texture { 0 };
         const uint16 _minMip { 0 };
         const uint16 _maxMip { 0 };
     } _downsampleSource;

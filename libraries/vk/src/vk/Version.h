@@ -41,9 +41,9 @@ namespace vks {
             return buffer.str();
         }
 
-        const uint32_t vulkan_patch : 12;
-        const uint32_t vulkan_minor : 10;
         const uint32_t vulkan_major : 10;
+        const uint32_t vulkan_minor : 10;
+        const uint32_t vulkan_patch : 12;
 
     };
 }

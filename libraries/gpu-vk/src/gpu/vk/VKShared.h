@@ -20,65 +20,65 @@ Q_DECLARE_LOGGING_CATEGORY(trace_gpu_vk_detail)
 namespace gpu { namespace vulkan {
 
 gpu::Size getDedicatedMemory();
-ComparisonFunction comparisonFuncFromGL(vk::CompareOp func);
-State::StencilOp stencilOpFromGL(vk::StencilOp stencilOp);
-State::BlendOp blendOpFromGL(vk::BlendOp blendOp);
-State::BlendArg blendArgFromGL(vk::BlendFactor blendArg);
+ComparisonFunction comparisonFuncFromGL(VkCompareOp func);
+State::StencilOp stencilOpFromGL(VkStencilOp stencilOp);
+State::BlendOp blendOpFromGL(VkBlendOp blendOp);
+State::BlendArg blendArgFromGL(VkBlendFactor blendArg);
 
 struct ShaderObject {
-    vk::ShaderModule glshader{ nullptr };
+    VkShaderModule glshader{ nullptr };
     int32_t transformCameraSlot { -1 };
     int32_t transformObjectSlot { -1 };
 };
 
-vk::Format evalTexelFormatInternal(const Element& dstFormat);
+VkFormat evalTexelFormatInternal(const Element& dstFormat);
 
-bool isDepthStencilFormat(vk::Format format);
+bool isDepthStencilFormat(VkFormat format);
 
-static const vk::BlendOp BLEND_OPS_TO_VK[State::NUM_BLEND_OPS] = {
-    vk::BlendOp::eAdd,
-    vk::BlendOp::eSubtract,
-    vk::BlendOp::eReverseSubtract,
-    vk::BlendOp::eMin,
-    vk::BlendOp::eMax
+static const VkBlendOp BLEND_OPS_TO_VK[State::NUM_BLEND_OPS] = {
+    VK_BLEND_OP_ADD,
+    VK_BLEND_OP_SUBTRACT,
+    VK_BLEND_OP_REVERSE_SUBTRACT,
+    VK_BLEND_OP_MIN,
+    VK_BLEND_OP_MAX
 };
 
-static const vk::BlendFactor BLEND_ARGS_TO_VK[State::NUM_BLEND_ARGS] = {
-    vk::BlendFactor::eZero,
-    vk::BlendFactor::eOne,
-    vk::BlendFactor::eSrcColor,
-    vk::BlendFactor::eOneMinusSrcColor,
-    vk::BlendFactor::eSrcAlpha,
-    vk::BlendFactor::eOneMinusSrcAlpha,
-    vk::BlendFactor::eDstAlpha,
-    vk::BlendFactor::eOneMinusDstAlpha,
-    vk::BlendFactor::eDstColor,
-    vk::BlendFactor::eOneMinusDstColor,
-    vk::BlendFactor::eSrcAlphaSaturate,
-    vk::BlendFactor::eConstantColor,
-    vk::BlendFactor::eOneMinusConstantColor,
-    vk::BlendFactor::eConstantAlpha,
-    vk::BlendFactor::eOneMinusConstantAlpha,
+static const VkBlendFactor BLEND_ARGS_TO_VK[State::NUM_BLEND_ARGS] = {
+    VK_BLEND_FACTOR_ZERO,
+    VK_BLEND_FACTOR_ONE,
+    VK_BLEND_FACTOR_SRC_COLOR,
+    VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
+    VK_BLEND_FACTOR_SRC_ALPHA,
+    VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+    VK_BLEND_FACTOR_DST_ALPHA,
+    VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA,
+    VK_BLEND_FACTOR_DST_COLOR,
+    VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR,
+    VK_BLEND_FACTOR_SRC_ALPHA_SATURATE,
+    VK_BLEND_FACTOR_CONSTANT_COLOR,
+    VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR,
+    VK_BLEND_FACTOR_CONSTANT_ALPHA,
+    VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA,
 };
 
-static const vk::CompareOp COMPARISON_TO_VK[gpu::NUM_COMPARISON_FUNCS] = {
-    vk::CompareOp::eNever,
-    vk::CompareOp::eLess,
-    vk::CompareOp::eEqual,
-    vk::CompareOp::eLessOrEqual,
-    vk::CompareOp::eGreater,
-    vk::CompareOp::eNotEqual,
-    vk::CompareOp::eGreaterOrEqual,
-    vk::CompareOp::eAlways
+static const VkCompareOp COMPARISON_TO_VK[gpu::NUM_COMPARISON_FUNCS] = {
+    VK_COMPARE_OP_NEVER,
+    VK_COMPARE_OP_LESS,
+    VK_COMPARE_OP_EQUAL,
+    VK_COMPARE_OP_LESS_OR_EQUAL,
+    VK_COMPARE_OP_GREATER,
+    VK_COMPARE_OP_NOT_EQUAL,
+    VK_COMPARE_OP_GREATER_OR_EQUAL,
+    VK_COMPARE_OP_ALWAYS
 };
 
-static const vk::PrimitiveTopology PRIMITIVE_TO_VK[gpu::NUM_PRIMITIVES] = {
-    vk::PrimitiveTopology::ePointList,
-    vk::PrimitiveTopology::eLineList,
-    vk::PrimitiveTopology::eLineStrip,
-    vk::PrimitiveTopology::eTriangleList,
-    vk::PrimitiveTopology::eTriangleStrip,
-    vk::PrimitiveTopology::eTriangleFan,
+static const VkPrimitiveTopology PRIMITIVE_TO_VK[gpu::NUM_PRIMITIVES] = {
+    VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+    VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+    VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
 };
 
 //static const VKenum ELEMENT_TYPE_TO_VK[gpu::NUM_TYPES] = {
