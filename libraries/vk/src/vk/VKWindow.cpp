@@ -17,7 +17,7 @@
 
 #include "VKWindow.h"
 #include "Config.h"
-#include "Swapchain.h"
+#include "VulkanSwapChain.h"
 #include "Context.h"
 
 VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
@@ -28,30 +28,28 @@ VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
     connect(_resizeTimer, &QTimer::timeout, this, &VKWindow::resizeFramebuffer);
 }
 
-const vk::SurfaceKHR& VKWindow::createSurface() {
+const void VKWindow::createSurface() {
 #ifdef WIN32
+    // TODO
     _surface = _context.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)winId() });
 #else
-    vk::XcbSurfaceCreateInfoKHR surfaceCreateInfo;
+    VkXcbSurfaceCreateInfoKHR surfaceCreateInfo{};
     //dynamic_cast<QGuiApplication*>(QGuiApplication::instance())->platformNativeInterface()->connection();
-    surfaceCreateInfo.connection = QX11Info::connection();
-    surfaceCreateInfo.window = QX11Info::appRootWindow();
-    _surface = _context.instance.createXcbSurfaceKHR(surfaceCreateInfo);
+    //surfaceCreateInfo.connection = QX11Info::connection();
+    //surfaceCreateInfo.window = QX11Info::appRootWindow();
+    _swapchain.initSurface(QX11Info::connection(), QX11Info::appRootWindow());
+    //VkSurfaceKHR surface;
+    //VK_CHECK_RESULT(vkCreateXcbSurfaceKHR(_context.instance, &surfaceCreateInfo, nullptr, &surface));
 #endif
-    _swapchain.setSurface(_surface);
-    return _surface;
+    //_swapchain.setSurface(_surface);
 }
 
 void VKWindow::createSwapchain() {
-    if (!_surface) {
-        throw std::runtime_error("No surface");
-    }
-
     {
         auto qsize = size();
-        _extent = vk::Extent2D((uint32_t)qsize.width(), (uint32_t)qsize.height());
+        _extent = VkExtent2D{(uint32_t)qsize.width(), (uint32_t)qsize.height()};
     }
-    _swapchain.create(_extent, true);
+    _swapchain.create(&_extent.width, &_extent.height, false, false);
 
     setupRenderPass();
     setupDepthStencil();
@@ -59,123 +57,165 @@ void VKWindow::createSwapchain() {
 }
 
 void VKWindow::setupDepthStencil() {
-    if (_depthStencil) {
-        _depthStencil.destroy();
-        _depthStencil = {};
+    auto &device = _context.device->logicalDevice;
+    if (_depthStencil.isAllocated) {
+        vkDestroyImageView(device, _depthStencil.view, nullptr);
+        vkDestroyImage(device, _depthStencil.image, nullptr);
+#if VULKAN_USE_VMA
+        vmaFreeMemory(_depthStencil.getAllocator(), _depthStencil.allocation);
+#else
+        vkFreeMemory(device, _depthStencil.memory, nullptr);
+#endif
+        _depthStencil.isAllocated = false;
     }
 
-    vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
-    vk::ImageCreateInfo depthStencilCreateInfo;
-    depthStencilCreateInfo.imageType = vk::ImageType::e2D;
-    depthStencilCreateInfo.extent = vk::Extent3D{ _extent.width, _extent.height, 1 };
-    depthStencilCreateInfo.format = vk::Format::eD24UnormS8Uint;
-    depthStencilCreateInfo.mipLevels = 1;
-    depthStencilCreateInfo.arrayLayers = 1;
-    depthStencilCreateInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
-    _depthStencil = _context.createImage(depthStencilCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    const VkFormat depthFormat = VK_FORMAT_D24_UNORM_S8_UINT;
+    VkImageCreateInfo imageCI{};
+    imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCI.imageType = VK_IMAGE_TYPE_2D;
+    imageCI.format = depthFormat;
+    imageCI.extent = { _extent.width, _extent.height, 1 };
+    imageCI.mipLevels = 1;
+    imageCI.arrayLayers = 1;
+    imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-    vk::ImageViewCreateInfo depthStencilView;
-    depthStencilView.viewType = vk::ImageViewType::e2D;
-    depthStencilView.format = vk::Format::eD24UnormS8Uint;
-    depthStencilView.subresourceRange.aspectMask = aspect;
-    depthStencilView.subresourceRange.levelCount = 1;
-    depthStencilView.subresourceRange.layerCount = 1;
-    depthStencilView.image = _depthStencil.image;
-    _depthStencil.view = _device.createImageView(depthStencilView);
+    VK_CHECK_RESULT(vkCreateImage(device, &imageCI, nullptr, &_depthStencil.image));
+    VkMemoryRequirements memReqs{};
+    vkGetImageMemoryRequirements(device, _depthStencil.image, &memReqs);
+
+#if VULKAN_USE_VMA
+    VmaAllocationCreateInfo allocationCI {};
+    allocationCI.pool = VK_NULL_HANDLE;
+    allocationCI.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    // TODO: I'm not sure of this part, how does it know size and does it call vkBindImageMemory?
+    VK_CHECK_RESULT(vmaAllocateMemoryForImage(_depthStencil.getAllocator(), _depthStencil.image, &allocationCI, &_depthStencil.allocation, nullptr));
+#else
+    VkMemoryAllocateInfo memAlloc{};
+    memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memAlloc.allocationSize = memReqs.size;
+    memAlloc.memoryTypeIndex = _context.device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &depthStencil.memory));
+    VK_CHECK_RESULT(vkBindImageMemory(device, depthStencil.image, depthStencil.memory, 0));
+#endif
+
+    VkImageViewCreateInfo imageViewCI{};
+    imageViewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imageViewCI.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imageViewCI.image = _depthStencil.image;
+    imageViewCI.format = depthFormat;
+    imageViewCI.subresourceRange.baseMipLevel = 0;
+    imageViewCI.subresourceRange.levelCount = 1;
+    imageViewCI.subresourceRange.baseArrayLayer = 0;
+    imageViewCI.subresourceRange.layerCount = 1;
+    imageViewCI.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    // Stencil aspect should only be set on depth + stencil formats (VK_FORMAT_D16_UNORM_S8_UINT..VK_FORMAT_D32_SFLOAT_S8_UINT
+    if (depthFormat >= VK_FORMAT_D16_UNORM_S8_UINT) {
+        imageViewCI.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+
+    VK_CHECK_RESULT(vkCreateImageView(device, &imageViewCI, nullptr, &_depthStencil.view));
 }
 
 void VKWindow::setupFramebuffers() {
     // Recreate the frame buffers
-    if (!_framebuffers.empty()) {
-        for (auto& framebuffer : _framebuffers) {
-            _device.destroy(framebuffer);
+    if (!_frameBuffers.empty()) {
+        for (auto& framebuffer : _frameBuffers) {
+            vkDestroyFramebuffer(_device, framebuffer, nullptr);
         }
-        _framebuffers.clear();
+        _frameBuffers.clear();
     }
 
-    vk::ImageView attachments[2];
+    VkImageView attachments[2];
 
     // Depth/Stencil attachment is the same for all frame buffers
     attachments[1] = _depthStencil.view;
 
-    vk::FramebufferCreateInfo framebufferCreateInfo;
-    framebufferCreateInfo.renderPass = _renderPass;
-    framebufferCreateInfo.attachmentCount = 2;
-    framebufferCreateInfo.pAttachments = attachments;
-    framebufferCreateInfo.width = _extent.width;
-    framebufferCreateInfo.height = _extent.height;
-    framebufferCreateInfo.layers = 1;
+    VkFramebufferCreateInfo frameBufferCreateInfo = {};
+    frameBufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    frameBufferCreateInfo.pNext = NULL;
+    frameBufferCreateInfo.renderPass = _renderPass;
+    frameBufferCreateInfo.attachmentCount = 2;
+    frameBufferCreateInfo.pAttachments = attachments;
+    frameBufferCreateInfo.width = _extent.width;
+    frameBufferCreateInfo.height = _extent.height;
+    frameBufferCreateInfo.layers = 1;
 
     // Create frame buffers for every swap chain image
-    _framebuffers = _swapchain.createFramebuffers(framebufferCreateInfo);
-
+    _frameBuffers.resize(_swapchain.imageCount);
+    for (uint32_t i = 0; i < _frameBuffers.size(); i++)
+    {
+        attachments[0] = _swapchain.buffers[i].view;
+        VK_CHECK_RESULT(vkCreateFramebuffer(_context.device->logicalDevice, &frameBufferCreateInfo, nullptr, &_frameBuffers[i]));
+    }
 }
 
 void VKWindow::setupRenderPass() {
     if (_renderPass) {
-        _device.destroy(_renderPass);
+        vkDestroyRenderPass(_device, _renderPass, nullptr);
     }
 
-    std::array<vk::AttachmentDescription, 2> attachments;
+    std::array<VkAttachmentDescription, 2> attachments;
     // Color attachment
     attachments[0].format = _swapchain.colorFormat;
-    attachments[0].loadOp = vk::AttachmentLoadOp::eClear;
-    attachments[0].storeOp = vk::AttachmentStoreOp::eStore;
-    attachments[0].initialLayout = vk::ImageLayout::eUndefined;
-    attachments[0].finalLayout = vk::ImageLayout::ePresentSrcKHR;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     // Depth attachment
-    attachments[1].format = vk::Format::eD24UnormS8Uint;
-    attachments[1].loadOp = vk::AttachmentLoadOp::eClear;
-    attachments[1].storeOp = vk::AttachmentStoreOp::eDontCare;
-    attachments[1].stencilLoadOp = vk::AttachmentLoadOp::eClear;
-    attachments[1].stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    attachments[1].initialLayout = vk::ImageLayout::eUndefined;
-    attachments[1].finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+    attachments[1].format = VK_FORMAT_D24_UNORM_S8_UINT;
+    attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     // Only one depth attachment, so put it first in the references
-    vk::AttachmentReference depthReference;
+    VkAttachmentReference depthReference;
     depthReference.attachment = 1;
-    depthReference.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+    depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    std::vector<vk::AttachmentReference> colorAttachmentReferences;
+    std::vector<VkAttachmentReference> colorAttachmentReferences;
     {
-        vk::AttachmentReference colorReference;
+        VkAttachmentReference colorReference;
         colorReference.attachment = 0;
-        colorReference.layout = vk::ImageLayout::eColorAttachmentOptimal;
+        colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         colorAttachmentReferences.push_back(colorReference);
     }
 
-    std::vector<vk::SubpassDescription> subpasses;
-    std::vector<vk::SubpassDependency> subpassDependencies;
+    std::vector<VkSubpassDescription> subpasses;
+    std::vector<VkSubpassDependency> subpassDependencies;
     {
         {
-            vk::SubpassDependency dependency;
+            VkSubpassDependency dependency;
             dependency.srcSubpass = 0;
-            dependency.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-            dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+            dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             dependency.dstSubpass = VK_SUBPASS_EXTERNAL;
-            dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentRead;
-            dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+            dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+            dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             subpassDependencies.push_back(dependency);
         }
 
-        vk::SubpassDescription subpass;
-        subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+        VkSubpassDescription subpass;
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.pDepthStencilAttachment = &depthReference;
         subpass.colorAttachmentCount = (uint32_t)colorAttachmentReferences.size();
         subpass.pColorAttachments = colorAttachmentReferences.data();
         subpasses.push_back(subpass);
     }
 
-    vk::RenderPassCreateInfo renderPassInfo;
+    VkRenderPassCreateInfo renderPassInfo;
     renderPassInfo.attachmentCount = (uint32_t)attachments.size();
     renderPassInfo.pAttachments = attachments.data();
     renderPassInfo.subpassCount = (uint32_t)subpasses.size();
     renderPassInfo.pSubpasses = subpasses.data();
     renderPassInfo.dependencyCount = (uint32_t)subpassDependencies.size();
     renderPassInfo.pDependencies = subpassDependencies.data();
-    _renderPass = _device.createRenderPass(renderPassInfo);
+    VK_CHECK_RESULT(vkCreateRenderPass(_device, &renderPassInfo, nullptr, &_renderPass));
 }
 
 
@@ -189,23 +229,28 @@ void VKWindow::resizeEvent(QResizeEvent* event) {
 
 void VKWindow::resizeFramebuffer() {
     auto qsize = size();
-    _extent = vk::Extent2D((uint32_t)qsize.width(), (uint32_t)qsize.height());
-    _swapchain.waitIdle();
-    _swapchain.create(_extent, true);
+    _extent = VkExtent2D{
+        .width = (uint32_t)qsize.width(),
+        .height = (uint32_t)qsize.height()
+    };
+    //vkQueueWaitIdle();
+    VK_CHECK_RESULT(vkDeviceWaitIdle(_device));
+    _swapchain.create(&_extent.width, &_extent.height, false, false);
+    // TODO: add an assert here to see if width and height changed?
     setupDepthStencil();
     setupFramebuffers();
 }
 
 VKWindow::~VKWindow() {
-    _swapchain.destroy();
+    _swapchain.cleanup();
 }
 
 void VKWindow::emitClosing() {
     emit aboutToClose();
 }
 
-vk::Framebuffer VKWindow::acquireFramebuffer(const vk::Semaphore& semaphore) {
-    auto result = _swapchain.acquireNextImage(semaphore);
-    auto imageIndex = result.value;
+/*VkFramebuffer VKWindow::acquireFramebuffer(const VkSemaphore& semaphore) {
+    uint32_t imageIndex;
+    VK_CHECK_RESULT(_swapchain.acquireNextImage(semaphore, &imageIndex));
     return _framebuffers[imageIndex];
-}
+}*/

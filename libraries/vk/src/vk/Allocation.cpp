@@ -12,7 +12,7 @@ VmaAllocator& Allocation::getAllocator() {
     return allocator;
 }
 
-void Allocation::initAllocator(const vk::PhysicalDevice& physicalDevice, const vk::Device& device) {
+void Allocation::initAllocator(const VkPhysicalDevice& physicalDevice, const VkDevice& device) {
     static std::once_flag once;
     std::call_once(once, [&] {
         VmaAllocatorCreateInfo allocatorInfo = {};
@@ -26,15 +26,15 @@ void Allocation::initAllocator(const vk::PhysicalDevice& physicalDevice, const v
 
 
 
-void Allocation::flush(vk::DeviceSize size, vk::DeviceSize offset) {
+void Allocation::flush(VkDeviceSize size, VkDeviceSize offset) {
     vmaFlushAllocation(getAllocator(), allocation, offset, size);
 }
 
-void Allocation::invalidate(vk::DeviceSize size, vk::DeviceSize offset) {
+void Allocation::invalidate(VkDeviceSize size, VkDeviceSize offset) {
     vmaInvalidateAllocation(getAllocator(), allocation, offset, size);
 }
 
-void* Allocation::rawmap(size_t offset, vk::DeviceSize size) {
+void* Allocation::rawmap(size_t offset, VkDeviceSize size) {
     if (offset != 0 || size != VK_WHOLE_SIZE) {
         throw std::runtime_error("Unsupported");
     }

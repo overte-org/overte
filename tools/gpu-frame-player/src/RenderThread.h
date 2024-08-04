@@ -32,15 +32,15 @@ public:
     QWindow* _window{ nullptr };
 
     vks::Context& _vkcontext{ vks::Context::get() };
-    const vk::Device& _vkdevice{ _vkcontext.device };
+    const VkDevice& _vkdevice{ _vkcontext.device->logicalDevice };
     vks::Buffer _vkstagingBuffer;
 
 #ifdef USE_GL
     gl::Context _context;
 #else
 
-    vk::SurfaceKHR _surface;
-    vk::RenderPass _renderPass;
+    VkSurfaceKHR _surface;
+    VkRenderPass _renderPass;
     vks::Swapchain _swapchain;
     vk::Semaphore acquireComplete, renderComplete;
     std::vector<vk::Framebuffer> _framebuffers;

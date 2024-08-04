@@ -65,16 +65,24 @@ public:
     static uint32_t getBufferCPUCount();
     static Size getBufferCPUMemSize();
 
-    Buffer(Size pageSize = PageManager::DEFAULT_PAGE_SIZE);
-    Buffer(Size size, const Byte* bytes, Size pageSize = PageManager::DEFAULT_PAGE_SIZE);
-    Buffer(const Buffer& buf); // deep copy of the sysmem buffer
-    Buffer& operator=(const Buffer& buf); // deep copy of the sysmem buffer
+    Buffer(uint32_t usage, Size pageSize = PageManager::DEFAULT_PAGE_SIZE);
+
+    template <typename T>
+    static Buffer* createBuffer(uint32_t usage, const std::vector<T>& v) {
+        return new Buffer(usage, sizeof(T) * v.size(), (const gpu::Byte*)v.data());
+    }
+
+    Buffer(uint32_t usage, Size size, const Byte* bytes, Size pageSize = PageManager::DEFAULT_PAGE_SIZE);
+    Buffer(const Buffer& buf);             // deep copy of the sysmem buffer
+    Buffer& operator=(const Buffer& buf);  // deep copy of the sysmem buffer
     ~Buffer();
 
     // The size in bytes of data stored in the buffer
     Size getSize() const override;
     template <typename T>
-    Size getNumTypedElements() const { return getSize() / sizeof(T); };
+    Size getNumTypedElements() const {
+        return getSize() / sizeof(T);
+    };
 
     const Byte* getData() const { return getSysmem().readData(); }
 
@@ -132,9 +140,7 @@ public:
     // Access the sysmem object, limited to ourselves and GPUObject derived classes
     const Sysmem& getSysmem() const { return _sysmem; }
 
-    bool isDirty() const {
-        return _pages(PageManager::DIRTY);
-    }
+    bool isDirty() const { return _pages(PageManager::DIRTY); }
 
     void applyUpdate(const Update& update);
 

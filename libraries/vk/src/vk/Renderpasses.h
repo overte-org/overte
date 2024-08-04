@@ -1,44 +1,45 @@
 #pragma once
 
 #include "Config.h"
+#include "VulkanTools.h"
 
 namespace vks { namespace renderpasses {
 
-    struct AttachmentDescription : public vk::AttachmentDescription {
-        AttachmentDescription& withFlags(vk::AttachmentDescriptionFlags flags) {
+    struct AttachmentDescription : public VkAttachmentDescription {
+        AttachmentDescription& withFlags(VkAttachmentDescriptionFlags flags) {
             this->flags = flags; return *this;
         }
-        AttachmentDescription& withFormat(vk::Format format) {
+        AttachmentDescription& withFormat(VkFormat format) {
             this->format = format; return *this;
         }
-        AttachmentDescription& withInitialLayout(vk::ImageLayout layout) {
+        AttachmentDescription& withInitialLayout(VkImageLayout layout) {
             this->initialLayout = layout; return *this;
         }
-        AttachmentDescription& withFinalLayout(vk::ImageLayout layout) {
+        AttachmentDescription& withFinalLayout(VkImageLayout layout) {
             this->finalLayout = layout; return *this;
         }
-        AttachmentDescription& withSampleCount(vk::SampleCountFlagBits samples) {
+        AttachmentDescription& withSampleCount(VkSampleCountFlagBits samples) {
             this->samples = samples; return *this;
         }
-        AttachmentDescription& withLoadOp(vk::AttachmentLoadOp loadOp) {
+        AttachmentDescription& withLoadOp(VkAttachmentLoadOp loadOp) {
             this->loadOp = loadOp; return *this;
         }
-        AttachmentDescription& withStoreOp(vk::AttachmentStoreOp storeOp) {
+        AttachmentDescription& withStoreOp(VkAttachmentStoreOp storeOp) {
             this->storeOp = storeOp; return *this;
         }
-        AttachmentDescription& withLStenciloadOp(vk::AttachmentLoadOp loadOp) {
+        AttachmentDescription& withLStenciloadOp(VkAttachmentLoadOp loadOp) {
             this->stencilLoadOp = loadOp; return *this;
         }
-        AttachmentDescription& withStencilStoreOp(vk::AttachmentStoreOp storeOp) {
+        AttachmentDescription& withStencilStoreOp(VkAttachmentStoreOp storeOp) {
             this->stencilStoreOp = storeOp; return *this;
         }
     };
 
-    struct SubpassDescription : public vk::SubpassDescription {
-        std::vector<vk::AttachmentReference> colorAttachments;
-        std::vector<vk::AttachmentReference> inputAttachments;
-        std::vector<vk::AttachmentReference> resolveAttachments;
-        vk::AttachmentReference depthStencilAttachment;
+    struct SubpassDescription : public VkSubpassDescription {
+        std::vector<VkAttachmentReference> colorAttachments;
+        std::vector<VkAttachmentReference> inputAttachments;
+        std::vector<VkAttachmentReference> resolveAttachments;
+        VkAttachmentReference depthStencilAttachment;
         std::vector<uint32_t> preserveAttachments;
 
         void update() {
@@ -54,28 +55,31 @@ namespace vks { namespace renderpasses {
     };
 
     struct RenderPassBuilder {
-        std::vector<vk::AttachmentDescription> attachments;
-        std::vector<vk::SubpassDependency> subpassDependencies;
+        std::vector<VkAttachmentDescription> attachments;
+        std::vector<VkSubpassDependency> subpassDependencies;
         std::vector<SubpassDescription> subpasses;
 
-        size_t addAttachment(const vk::AttachmentDescription& attachment) {
+        size_t addAttachment(const VkAttachmentDescription& attachment) {
             attachments.push_back(attachment);
             return attachments.size() - 1;
         }
 
-        vk::RenderPass build(const vk::Device& device) {
+        VkRenderPass build(const VkDevice& device) {
             for (auto& subpass : subpasses) {
                 subpass.update();
             }
 
-            vk::RenderPassCreateInfo renderPassInfo;
+            VkRenderPassCreateInfo renderPassInfo{};
+            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
             renderPassInfo.attachmentCount = (uint32_t)attachments.size();
             renderPassInfo.pAttachments = attachments.data();
             renderPassInfo.subpassCount = (uint32_t)subpasses.size();
             renderPassInfo.pSubpasses = subpasses.data();
             renderPassInfo.dependencyCount = (uint32_t)subpassDependencies.size();
             renderPassInfo.pDependencies = subpassDependencies.data();
-            return device.createRenderPass(renderPassInfo);
+            VkRenderPass renderPass;
+            VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
+            return renderPass;
         }
     };
 

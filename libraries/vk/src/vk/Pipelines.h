@@ -4,42 +4,53 @@
 
 namespace vks {
     namespace pipelines {
-        struct PipelineRasterizationStateCreateInfo : public vk::PipelineRasterizationStateCreateInfo {
-            using Parent = vk::PipelineRasterizationStateCreateInfo;
-            PipelineRasterizationStateCreateInfo() {
+        struct PipelineRasterizationStateCreateInfo : public VkPipelineRasterizationStateCreateInfo {
+            using Parent = VkPipelineRasterizationStateCreateInfo;
+            PipelineRasterizationStateCreateInfo() : Parent {} {
+                sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
                 lineWidth = 1.0f;
-                cullMode = vk::CullModeFlagBits::eBack;
+                cullMode = VK_CULL_MODE_BACK_BIT;
             }
         };
 
 
-        struct PipelineInputAssemblyStateCreateInfo : public vk::PipelineInputAssemblyStateCreateInfo {
-            PipelineInputAssemblyStateCreateInfo() {
-                topology = vk::PrimitiveTopology::eTriangleList;
+        struct PipelineInputAssemblyStateCreateInfo : public VkPipelineInputAssemblyStateCreateInfo {
+            PipelineInputAssemblyStateCreateInfo() :
+                VkPipelineInputAssemblyStateCreateInfo {} {
+                sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+                topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             }
         };
 
-        struct PipelineColorBlendAttachmentState : public vk::PipelineColorBlendAttachmentState {
-            PipelineColorBlendAttachmentState() {
+        struct PipelineColorBlendAttachmentState : public VkPipelineColorBlendAttachmentState {
+            PipelineColorBlendAttachmentState() :
+                VkPipelineColorBlendAttachmentState {} {
                 colorWriteMask = vks::util::fullColorWriteMask();
             }
         };
 
-        struct PipelineColorBlendStateCreateInfo : public vk::PipelineColorBlendStateCreateInfo {
+        struct PipelineColorBlendStateCreateInfo : public VkPipelineColorBlendStateCreateInfo {
             // Default to a single color attachment state with no blending
             std::vector<PipelineColorBlendAttachmentState> blendAttachmentStates{ PipelineColorBlendAttachmentState() };
             
+            PipelineColorBlendStateCreateInfo() :
+                VkPipelineColorBlendStateCreateInfo{} {
+                sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+            }
+
             void update() {
                 this->attachmentCount = (uint32_t)blendAttachmentStates.size();
                 this->pAttachments = blendAttachmentStates.data();
             }
         };
 
-        struct PipelineDynamicStateCreateInfo : public vk::PipelineDynamicStateCreateInfo {
-            std::vector<vk::DynamicState> dynamicStateEnables;
+        struct PipelineDynamicStateCreateInfo : public VkPipelineDynamicStateCreateInfo {
+            std::vector<VkDynamicState> dynamicStateEnables;
 
-            PipelineDynamicStateCreateInfo() {
-                dynamicStateEnables = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+            PipelineDynamicStateCreateInfo() :
+                VkPipelineDynamicStateCreateInfo{} {
+                sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+                dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
             }
 
             void update() {
@@ -48,10 +59,14 @@ namespace vks {
             }
         };
 
-        struct PipelineVertexInputStateCreateInfo : public vk::PipelineVertexInputStateCreateInfo {
-            std::vector<vk::VertexInputBindingDescription> bindingDescriptions;
-            std::vector<vk::VertexInputAttributeDescription> attributeDescriptions;
+        struct PipelineVertexInputStateCreateInfo : public VkPipelineVertexInputStateCreateInfo {
+            std::vector<VkVertexInputBindingDescription> bindingDescriptions;
+            std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
+            PipelineVertexInputStateCreateInfo() :
+                VkPipelineVertexInputStateCreateInfo{} {
+                sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+            }
             void update() {
                 vertexAttributeDescriptionCount = (uint32_t)attributeDescriptions.size();
                 vertexBindingDescriptionCount = (uint32_t)bindingDescriptions.size();
@@ -60,9 +75,14 @@ namespace vks {
             }
         };
 
-        struct PipelineViewportStateCreateInfo : public vk::PipelineViewportStateCreateInfo {
-            std::vector<vk::Viewport> viewports;
-            std::vector<vk::Rect2D> scissors;
+        struct PipelineViewportStateCreateInfo : public VkPipelineViewportStateCreateInfo {
+            std::vector<VkViewport> viewports;
+            std::vector<VkRect2D> scissors;
+
+            PipelineViewportStateCreateInfo() :
+                VkPipelineViewportStateCreateInfo{} {
+                sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+            }
 
             void update() {
                 if (viewports.empty()) {
@@ -83,12 +103,14 @@ namespace vks {
             }
         };
 
-        struct PipelineDepthStencilStateCreateInfo : public vk::PipelineDepthStencilStateCreateInfo {
-            PipelineDepthStencilStateCreateInfo(bool depthEnable = true) {
+        struct PipelineDepthStencilStateCreateInfo : public VkPipelineDepthStencilStateCreateInfo {
+            PipelineDepthStencilStateCreateInfo(bool depthEnable = true):
+                VkPipelineDepthStencilStateCreateInfo{} {
+                sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
                 if (depthEnable) {
                     depthTestEnable = VK_TRUE;
                     depthWriteEnable = VK_TRUE;
-                    depthCompareOp = vk::CompareOp::eLessOrEqual;
+                    depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
                 }
             }
         };
@@ -105,7 +127,7 @@ namespace vks {
                 pipelineCreateInfo.pVertexInputState = &vertexInputState;
             }
         public:
-            GraphicsPipelineBuilder(const vk::Device& device, const vk::PipelineLayout layout, const vk::RenderPass& renderPass) :
+            GraphicsPipelineBuilder(const VkDevice& device, const VkPipelineLayout layout, const VkRenderPass& renderPass) :
                 device(device) {
                 pipelineCreateInfo.layout = layout;
                 pipelineCreateInfo.renderPass = renderPass;
@@ -120,21 +142,21 @@ namespace vks {
                 destroyShaderModules();
             }
 
-            const vk::Device& device;
-            vk::PipelineCache pipelineCache;
-            vk::RenderPass& renderPass { pipelineCreateInfo.renderPass };
-            vk::PipelineLayout& layout { pipelineCreateInfo.layout };
+            const VkDevice& device;
+            VkPipelineCache pipelineCache;
+            VkRenderPass& renderPass { pipelineCreateInfo.renderPass };
+            VkPipelineLayout& layout { pipelineCreateInfo.layout };
             PipelineInputAssemblyStateCreateInfo inputAssemblyState;
             PipelineRasterizationStateCreateInfo rasterizationState;
-            vk::PipelineMultisampleStateCreateInfo multisampleState;
+            VkPipelineMultisampleStateCreateInfo multisampleState;
             PipelineDepthStencilStateCreateInfo depthStencilState;
             PipelineViewportStateCreateInfo viewportState;
             PipelineDynamicStateCreateInfo dynamicState;
             PipelineColorBlendStateCreateInfo colorBlendState;
             PipelineVertexInputStateCreateInfo vertexInputState;
-            std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
+            std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 
-            vk::GraphicsPipelineCreateInfo pipelineCreateInfo;
+            VkGraphicsPipelineCreateInfo pipelineCreateInfo;
 
             void update() {
                 pipelineCreateInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
@@ -147,18 +169,19 @@ namespace vks {
 
             void destroyShaderModules() {
                 for (const auto shaderStage : shaderStages) {
-                    device.destroyShaderModule(shaderStage.module);
+                    vkDestroyShaderModule(device, shaderStage.module, nullptr);
                 }
                 shaderStages.clear();
             }
 
-            vk::Pipeline create(const vk::PipelineCache& cache) {
+            VkPipeline create(const VkPipelineCache& cache) {
                 update();
-                vk::ResultValue<vk::Pipeline> res = device.createGraphicsPipeline(cache, pipelineCreateInfo);
-                return res.value;
+                VkPipeline vkPipeline;
+                vkCreateGraphicsPipelines(device, cache, 1, &pipelineCreateInfo, nullptr, &vkPipeline);
+                return vkPipeline;
             }
 
-            vk::Pipeline create() {
+            VkPipeline create() {
                 return create(pipelineCache);
             }
         };
