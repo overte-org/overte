@@ -78,33 +78,38 @@ VKBackend::VKBackend() {
     }
 
     {
-        vk::PipelineCacheCreateInfo createInfo;
+        VkPipelineCacheCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
         std::vector<uint8_t> pipelineCacheData;
         if (vks::util::loadPipelineCacheData(pipelineCacheData) && !pipelineCacheData.empty()) {
             createInfo.pInitialData = pipelineCacheData.data();
             createInfo.initialDataSize = pipelineCacheData.size();
         }
-        _pipelineCache = _device.createPipelineCache(createInfo);
+
+        vkCreatePipelineCache(_context.device->logicalDevice, &createInfo, nullptr, &_pipelineCache);
     }
 
     // Get the graphics queue
-    qCDebug(gpu_vk_logging) << "VK Version:     " << vks::Version(_deviceProperties.apiVersion).toString().c_str();
-    qCDebug(gpu_vk_logging) << "VK Driver:      " << vks::Version(_deviceProperties.driverVersion).toString().c_str();
-    qCDebug(gpu_vk_logging) << "VK Vendor ID:   " << _deviceProperties.vendorID;
-    qCDebug(gpu_vk_logging) << "VK Device ID:   " << _deviceProperties.deviceID;
-    qCDebug(gpu_vk_logging) << "VK Device Name: " << _deviceProperties.deviceName;
-    qCDebug(gpu_vk_logging) << "VK Device Type: " << to_string(_deviceProperties.deviceType).c_str();
+    qCDebug(gpu_vk_logging) << "VK Version:     " << vks::Version(_context.device->properties.apiVersion).toString().c_str();
+    qCDebug(gpu_vk_logging) << "VK Driver:      " << vks::Version(_context.device->properties.driverVersion).toString().c_str();
+    qCDebug(gpu_vk_logging) << "VK Vendor ID:   " << _context.device->properties.vendorID;
+    qCDebug(gpu_vk_logging) << "VK Device ID:   " << _context.device->properties.deviceID;
+    qCDebug(gpu_vk_logging) << "VK Device Name: " << _context.device->properties.deviceName;
+    qCDebug(gpu_vk_logging) << "VK Device Type: " << _context.device->properties.deviceType;
 }
 
 VKBackend::~VKBackend() {
     // FIXME queue up all the trash calls
-    _graphicsQueue.waitIdle();
-    _transferQueue.waitIdle();
-    _device.waitIdle();
+    VK_CHECK_RESULT(vkQueueWaitIdle(_graphicsQueue));
+    VK_CHECK_RESULT(vkQueueWaitIdle(_transferQueue));
+    VK_CHECK_RESULT(vkDeviceWaitIdle(_context.device->logicalDevice));
 
     {
+        size_t pipelineCacheDataSize;
+        VK_CHECK_RESULT(vkGetPipelineCacheData(_context.device->logicalDevice, _pipelineCache, &pipelineCacheDataSize, nullptr));
         std::vector<uint8_t> pipelineCacheData;
-        pipelineCacheData = _device.getPipelineCacheData(_pipelineCache);
+        pipelineCacheData.resize(pipelineCacheDataSize);
+        VK_CHECK_RESULT(vkGetPipelineCacheData(_context.device->logicalDevice, _pipelineCache, &pipelineCacheDataSize, nullptr));
         if (!pipelineCacheData.empty()) {
             vks::util::savePipelineCacheData(pipelineCacheData);
         }
@@ -119,7 +124,7 @@ const std::string& VKBackend::getVersion() const {
 }
 
 bool VKBackend::isTextureManagementSparseEnabled() const {
-    return _deviceFeatures.sparseResidencyImage2D == VK_TRUE;
+    return _context.device->features.sparseResidencyImage2D == VK_TRUE;
 }
 
 bool VKBackend::supportedTextureFormat(const gpu::Element& format) const {
@@ -131,7 +136,7 @@ bool VKBackend::supportedTextureFormat(const gpu::Element& format) const {
         case COMPRESSED_BC5_XY:
         case COMPRESSED_BC6_RGB:
         case COMPRESSED_BC7_SRGBA:
-            return _deviceFeatures.textureCompressionBC == VK_TRUE;
+            return _context.device->features.textureCompressionBC == VK_TRUE;
 
         case COMPRESSED_ETC2_RGB:
         case COMPRESSED_ETC2_SRGB:
@@ -143,7 +148,7 @@ bool VKBackend::supportedTextureFormat(const gpu::Element& format) const {
         case COMPRESSED_EAC_RED_SIGNED:
         case COMPRESSED_EAC_XY:
         case COMPRESSED_EAC_XY_SIGNED:
-            return _deviceFeatures.textureCompressionETC2 == VK_TRUE;
+            return _context.device->features.textureCompressionETC2 == VK_TRUE;
 
             //case COMPRESSED_ASTC_RGBA_10x10:
             //case COMPRESSED_ASTC_RGBA_10x5:
@@ -182,19 +187,19 @@ bool VKBackend::supportedTextureFormat(const gpu::Element& format) const {
 }
 
 struct Cache {
-    std::unordered_map<uint32_t, vk::ShaderModule> moduleMap;
+    std::unordered_map<uint32_t, VkShaderModule> moduleMap;
 
     struct Pipeline {
-        using RenderpassKey = std::vector<vk::Format>;
-        using BindingMap = std::unordered_map<uint32_t, vk::ShaderStageFlags>;
+        using RenderpassKey = std::vector<VkFormat>;
+        using BindingMap = std::unordered_map<uint32_t, VkShaderStageFlags>;
         using LocationMap = shader::Reflection::LocationMap;
 
         gpu::PipelineReference pipeline{ GPU_REFERENCE_INIT_VALUE };
         gpu::FormatReference format{ GPU_REFERENCE_INIT_VALUE };
         gpu::FramebufferReference framebuffer{ GPU_REFERENCE_INIT_VALUE };
 
-        std::unordered_map<gpu::PipelineReference, vk::PipelineLayout> _layoutMap;
-        std::unordered_map<RenderpassKey, vk::RenderPass, container_hash<RenderpassKey>> _renderPassMap;
+        std::unordered_map<gpu::PipelineReference, VkPipelineLayout> _layoutMap;
+        std::unordered_map<RenderpassKey, VkRenderPass, container_hash<RenderpassKey>> _renderPassMap;
 
         template <typename T>
         static std::string hex(T t) {
@@ -223,7 +228,7 @@ struct Cache {
 
         static void updateBindingMap(BindingMap& bindingMap,
                                      const LocationMap& locationMap,
-                                     vk::ShaderStageFlagBits shaderStage) {
+                                     VkShaderStageFlagBits shaderStage) {
             for (const auto& entry : locationMap) {
                 bindingMap[entry.second] |= shaderStage;
             }
@@ -231,8 +236,8 @@ struct Cache {
 
         static void setBindingMap(BindingMap& bindingMap, const LocationMap& vertexMap, const LocationMap& fragmentMap) {
             bindingMap.clear();
-            updateBindingMap(bindingMap, vertexMap, vk::ShaderStageFlagBits::eVertex);
-            updateBindingMap(bindingMap, fragmentMap, vk::ShaderStageFlagBits::eFragment);
+            updateBindingMap(bindingMap, vertexMap, VK_SHADER_STAGE_VERTEX_BIT);
+            updateBindingMap(bindingMap, fragmentMap, VK_SHADER_STAGE_FRAGMENT_BIT);
         }
 
         static BindingMap getBindingMap(const LocationMap& vertexMap, const LocationMap& fragmentMap) {
@@ -241,7 +246,7 @@ struct Cache {
             return result;
         }
 
-        vk::PipelineLayout getPipelineLayout(const vks::Context& context) {
+        VkPipelineLayout getPipelineLayout(const vks::Context& context) {
             auto itr = _layoutMap.find(pipeline);
             if (_layoutMap.end() == itr) {
                 auto pipeline = gpu::acquire(this->pipeline);
@@ -249,44 +254,54 @@ struct Cache {
                 const auto& vertexReflection = program->getShaders()[0]->getReflection();
                 const auto& fragmentRefelection = program->getShaders()[1]->getReflection();
 
-                std::vector<vk::DescriptorSetLayoutBinding> uniLayout;
+                std::vector<VkDescriptorSetLayoutBinding> uniLayout;
 #define SEP_DESC 1
 #if SEP_DESC
-                std::vector<vk::DescriptorSetLayoutBinding> texLayout;
-                std::vector<vk::DescriptorSetLayoutBinding> stoLayout;
+                std::vector<VkDescriptorSetLayoutBinding> texLayout;
+                std::vector<VkDescriptorSetLayoutBinding> stoLayout;
 #else
                 auto& texLayout = uniLayout;
                 auto& stoLayout = uniLayout;
 #endif
 
                 for (const auto& entry : getBindingMap(vertexReflection.uniformBuffers, fragmentRefelection.uniformBuffers)) {
-                    uniLayout.push_back({ entry.first, vk::DescriptorType::eUniformBuffer, 1, entry.second });
+                    VkDescriptorSetLayoutBinding binding = vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,entry.second,entry.first,1);
+                    uniLayout.push_back(binding);
                 }
                 for (const auto& entry : getBindingMap(vertexReflection.textures, fragmentRefelection.textures)) {
-                    texLayout.push_back({ entry.first, vk::DescriptorType::eCombinedImageSampler, 1, entry.second });
+                    VkDescriptorSetLayoutBinding binding = vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,entry.second,entry.first,1);
+                    texLayout.push_back(binding);
                 }
                 for (const auto& entry : getBindingMap(vertexReflection.resourceBuffers, fragmentRefelection.resourceBuffers)) {
-                    stoLayout.push_back({ entry.first, vk::DescriptorType::eStorageBuffer, 1, entry.second });
+                    VkDescriptorSetLayoutBinding binding = vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,entry.second,entry.first,1);
+                    stoLayout.push_back(binding);
                 }
 
                 // Create the descriptor set layouts
-                std::vector<vk::DescriptorSetLayout> layouts;
+                std::vector<VkDescriptorSetLayout> layouts;
                 if (!uniLayout.empty()) {
-                    layouts.push_back(context.device.createDescriptorSetLayout(
-                        { {}, static_cast<uint32_t>(uniLayout.size()), uniLayout.data() }));
+                    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = vks::initializers::descriptorSetLayoutCreateInfo(uniLayout.data(), uniLayout.size());
+                    VkDescriptorSetLayout descriptorSetLayout;
+                    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr, &descriptorSetLayout));
+                    layouts.push_back(descriptorSetLayout);
                 }
 #if SEP_DESC
                 if (!texLayout.empty()) {
-                    layouts.push_back(context.device.createDescriptorSetLayout(
-                        { {}, static_cast<uint32_t>(texLayout.size()), texLayout.data() }));
+                    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = vks::initializers::descriptorSetLayoutCreateInfo(texLayout.data(), texLayout.size());
+                    VkDescriptorSetLayout descriptorSetLayout;
+                    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr, &descriptorSetLayout));
+                    layouts.push_back(descriptorSetLayout);
                 }
                 if (!stoLayout.empty()) {
-                    layouts.push_back(context.device.createDescriptorSetLayout(
-                        { {}, static_cast<uint32_t>(stoLayout.size()), stoLayout.data() }));
+                    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = vks::initializers::descriptorSetLayoutCreateInfo(stoLayout.data(), stoLayout.size());
+                    VkDescriptorSetLayout descriptorSetLayout;
+                    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr, &descriptorSetLayout));
+                    layouts.push_back(descriptorSetLayout);
                 }
 #endif
-                vk::PipelineLayout pipelineLayout =
-                    context.device.createPipelineLayout({ {}, (uint32_t)layouts.size(), layouts.data() });
+                VkPipelineLayoutCreateInfo pipelineLayoutCI = vks::initializers::pipelineLayoutCreateInfo(layouts.data(), (uint32_t)layouts.size());
+                VkPipelineLayout pipelineLayout;
+                vkCreatePipelineLayout(context.device->logicalDevice, &pipelineLayoutCI, nullptr, &pipelineLayout);
                 return _layoutMap[this->pipeline] = pipelineLayout;
                 //return _layoutMap[this->pipeline] = nullptr;
             }
@@ -296,7 +311,7 @@ struct Cache {
         RenderpassKey getRenderPassKey(gpu::Framebuffer* framebuffer) const {
             RenderpassKey result;
             if (!framebuffer) {
-                result.push_back(vk::Format::eR8G8B8A8Srgb);
+                result.push_back(VK_FORMAT_R8G8B8A8_SRGB);
             } else {
                 for (const auto& attachment : framebuffer->getRenderBuffers()) {
                     if (attachment.isValid()) {
@@ -310,45 +325,43 @@ struct Cache {
             return result;
         }
 
-        vk::RenderPass getRenderPass(const vks::Context& context) {
+        VkRenderPass getRenderPass(const vks::Context& context) {
             const auto framebuffer = gpu::acquire(this->framebuffer);
 
             RenderpassKey key = getRenderPassKey(framebuffer);
             auto itr = _renderPassMap.find(key);
             if (itr == _renderPassMap.end()) {
-                vk::RenderPassCreateInfo createInfo;
-
-                std::vector<vk::AttachmentDescription> attachments;
+                std::vector<VkAttachmentDescription> attachments;
                 attachments.reserve(key.size());
-                std::vector<vk::AttachmentReference> colorAttachmentReferences;
-                vk::AttachmentReference depthReference;
+                std::vector<VkAttachmentReference> colorAttachmentReferences;
+                VkAttachmentReference depthReference;
                 for (const auto& format : key) {
-                    vk::AttachmentDescription attachment;
+                    VkAttachmentDescription attachment;
                     attachment.format = format;
-                    attachment.loadOp = vk::AttachmentLoadOp::eClear;
-                    attachment.storeOp = vk::AttachmentStoreOp::eStore;
-                    attachment.stencilLoadOp = vk::AttachmentLoadOp::eClear;
-                    attachment.stencilStoreOp = vk::AttachmentStoreOp::eStore;
-                    attachment.initialLayout = vk::ImageLayout::eUndefined;
+                    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+                    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+                    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                     if (isDepthStencilFormat(format)) {
-                        attachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+                        attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                         depthReference.attachment = (uint32_t)(attachments.size());
-                        depthReference.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+                        depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                     } else {
-                        attachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
-                        vk::AttachmentReference reference;
+                        attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                        VkAttachmentReference reference;
                         reference.attachment = (uint32_t)(attachments.size());
-                        reference.layout = vk::ImageLayout::eColorAttachmentOptimal;
+                        reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                         colorAttachmentReferences.push_back(reference);
                     }
                     attachments.push_back(attachment);
                 }
 
-                std::vector<vk::SubpassDescription> subpasses;
+                std::vector<VkSubpassDescription> subpasses;
                 {
-                    vk::SubpassDescription subpass;
-                    subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-                    if (depthReference.layout != vk::ImageLayout::eUndefined) {
+                    VkSubpassDescription subpass;
+                    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+                    if (depthReference.layout != VK_IMAGE_LAYOUT_UNDEFINED) {
                         subpass.pDepthStencilAttachment = &depthReference;
                     }
                     subpass.colorAttachmentCount = (uint32_t)colorAttachmentReferences.size();
@@ -356,12 +369,14 @@ struct Cache {
                     subpasses.push_back(subpass);
                 }
 
-                vk::RenderPassCreateInfo renderPassInfo;
+                VkRenderPassCreateInfo renderPassInfo{};
+                renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
                 renderPassInfo.attachmentCount = (uint32_t)attachments.size();
                 renderPassInfo.pAttachments = attachments.data();
                 renderPassInfo.subpassCount = (uint32_t)subpasses.size();
                 renderPassInfo.pSubpasses = subpasses.data();
-                auto renderPass = context.device.createRenderPass(renderPassInfo);
+                VkRenderPass renderPass;
+                VK_CHECK_RESULT(vkCreateRenderPass(context.device->logicalDevice, &renderPassInfo, nullptr, &renderPass));
                 _renderPassMap[key] = renderPass;
                 return renderPass;
             }
@@ -392,32 +407,37 @@ struct Cache {
         }
     } pipelineState;
 
-    static vk::StencilOpState getStencilOp(const gpu::State::StencilTest& stencil) {
-        vk::StencilOpState result;
-        result.compareOp = (vk::CompareOp)stencil.getFunction();
-        result.passOp = (vk::StencilOp)stencil.getPassOp();
-        result.failOp = (vk::StencilOp)stencil.getFailOp();
-        result.depthFailOp = (vk::StencilOp)stencil.getDepthFailOp();
+    static VkStencilOpState getStencilOp(const gpu::State::StencilTest& stencil) {
+        VkStencilOpState result;
+        result.compareOp = (VkCompareOp)stencil.getFunction();
+        result.passOp = (VkStencilOp)stencil.getPassOp();
+        result.failOp = (VkStencilOp)stencil.getFailOp();
+        result.depthFailOp = (VkStencilOp)stencil.getDepthFailOp();
         result.reference = stencil.getReference();
         result.compareMask = stencil.getReadMask();
         result.writeMask = 0xFF;
         return result;
     }
 
-    vk::ShaderModule getShaderModule(const vks::Context& context, const shader::Source& source) {
+    VkShaderModule getShaderModule(const vks::Context& context, const shader::Source& source) {
         auto itr = moduleMap.find(source.id);
         if (moduleMap.end() == itr) {
             const auto& dialectSource = source.dialectSources.find(shader::Dialect::glsl450)->second;
             const auto& variantSource = dialectSource.variantSources.find(shader::Variant::Mono)->second;
             const auto& spirv = variantSource.spirv;
-            vk::ShaderModule result = context.device.createShaderModule({ {}, spirv.size(), (const uint32_t*)spirv.data() });
+            VkShaderModule result;
+            VkShaderModuleCreateInfo shaderModuleCreateInfo{};
+            shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+            shaderModuleCreateInfo.codeSize = spirv.size();
+            shaderModuleCreateInfo.pCode = (const uint32_t*)spirv.data();
+            VK_CHECK_RESULT(vkCreateShaderModule(context.device->logicalDevice, &shaderModuleCreateInfo, nullptr, &result));
             moduleMap[source.id] = result;
             return result;
         }
         return itr->second;
     }
 
-    vk::Pipeline getPipeline(const vks::Context& context) {
+    VkPipeline getPipeline(const vks::Context& context) {
         auto renderpass = pipelineState.getRenderPass(context);
         auto pipelineLayout = pipelineState.getPipelineLayout(context);
         const gpu::Pipeline& pipeline = *gpu::acquire(pipelineState.pipeline);
@@ -428,7 +448,7 @@ struct Cache {
         // FIXME
 
         const gpu::State::Data& stateData = state.getValues();
-        vks::pipelines::GraphicsPipelineBuilder builder{ context.device, pipelineLayout, renderpass };
+        vks::pipelines::GraphicsPipelineBuilder builder{ context.device->logicalDevice, pipelineLayout, renderpass };
 
         // Input assembly
         {
@@ -444,13 +464,13 @@ struct Cache {
             builder.shaderStages.resize(2);
             {
                 auto& shaderStage = builder.shaderStages[0];
-                shaderStage.stage = vk::ShaderStageFlagBits::eVertex;
+                shaderStage.stage = VK_SHADER_STAGE_VERTEX_BIT;
                 shaderStage.pName = "main";
                 shaderStage.module = getShaderModule(context, vertexShader);
             }
             {
                 auto& shaderStage = builder.shaderStages[1];
-                shaderStage.stage = vk::ShaderStageFlagBits::eFragment;
+                shaderStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
                 shaderStage.pName = "main";
                 shaderStage.module = getShaderModule(context, fragmentShader);
             }
@@ -459,15 +479,15 @@ struct Cache {
         // Rasterization state
         {
             auto& ra = builder.rasterizationState;
-            ra.cullMode = (vk::CullModeFlagBits)stateData.cullMode;
+            ra.cullMode = (VkCullModeFlagBits)stateData.cullMode;
             //Bool32 ra.depthBiasEnable;
             //float ra.depthBiasConstantFactor;
             //float ra.depthBiasClamp;
             //float ra.depthBiasSlopeFactor;
             ra.depthClampEnable = stateData.flags.depthClampEnable ? VK_TRUE : VK_FALSE;
-            ra.frontFace = stateData.flags.frontFaceClockwise ? vk::FrontFace::eClockwise : vk::FrontFace::eCounterClockwise;
+            ra.frontFace = stateData.flags.frontFaceClockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
             // ra.lineWidth
-            ra.polygonMode = (vk::PolygonMode)(2 - stateData.fillMode);
+            ra.polygonMode = (VkPolygonMode)(2 - stateData.fillMode);
         }
 
         // Color blending
@@ -492,7 +512,7 @@ struct Cache {
             auto& ds = builder.depthStencilState;
             ds.depthTestEnable = stateData.depthTest.isEnabled() ? VK_TRUE : VK_FALSE;
             ds.depthWriteEnable = stateData.depthTest.getWriteMask() != 0 ? VK_TRUE : VK_FALSE;
-            ds.depthCompareOp = (vk::CompareOp)stateData.depthTest.getFunction();
+            ds.depthCompareOp = (VkCompareOp)stateData.depthTest.getFunction();
             ds.front = getStencilOp(stateData.stencilTestFront);
             ds.back = getStencilOp(stateData.stencilTestBack);
         }
@@ -508,7 +528,7 @@ struct Cache {
             for (const auto& entry : format.getChannels()) {
                 const auto& slot = entry.first;
                 const auto& channel = entry.second;
-                bd.push_back({ slot, (uint32_t)channel._stride, (vk::VertexInputRate)(channel._frequency) });
+                bd.push_back({ slot, (uint32_t)channel._stride, (VkVertexInputRate)(channel._frequency) });
             }
 
             bool colorFound = false;
@@ -525,14 +545,14 @@ struct Cache {
             }
 
             if (!colorFound && vertexShader.reflection.validInput(Stream::COLOR)) {
-                ad.push_back({ Stream::COLOR, 0, vk::Format::eR8G8B8A8Unorm, 0 });
+                ad.push_back({ Stream::COLOR, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
             }
 
             // Explicitly add the draw call info slot if required
             if (vertexReflection.validInput(gpu::slot::attr::DrawCallInfo)) {
                 ad.push_back(
-                    { gpu::slot::attr::DrawCallInfo, gpu::slot::attr::DrawCallInfo, vk::Format::eR32G32Sint, (uint32_t)0 });
-                bd.push_back({ gpu::slot::attr::DrawCallInfo, (uint32_t)sizeof(uint16_t) * 2, vk::VertexInputRate::eVertex });
+                    { gpu::slot::attr::DrawCallInfo, gpu::slot::attr::DrawCallInfo, VK_FORMAT_R32G32_SINT, (uint32_t)0 });
+                bd.push_back({ gpu::slot::attr::DrawCallInfo, (uint32_t)sizeof(uint16_t) * 2, VK_VERTEX_INPUT_RATE_VERTEX });
             }
         }
 
@@ -544,16 +564,16 @@ struct Cache {
 
 Cache _cache;
 
-vk::CommandBuffer currentCommandBuffer;
+VkCommandBuffer currentCommandBuffer;
 
 void VKBackend::executeFrame(const FramePointer& frame) {
-    using namespace vks::debug::marker;
+    using namespace vks::debugutils;
     {
         PROFILE_RANGE(gpu_vk_detail, "Preprocess");
         const auto& commandBuffer = currentCommandBuffer;
         for (const auto& batchPtr : frame->batches) {
             const auto& batch = *batchPtr;
-            vks::debug::marker::beginRegion(commandBuffer, "batch:" + batch.getName(), glm::vec4{ 1, 1, 0, 1 });
+            cmdBeginLabel(commandBuffer, "batch:" + batch.getName(), glm::vec4{ 1, 1, 0, 1 });
             const auto& commands = batch.getCommands();
             const auto& offsets = batch.getCommandOffsets();
             const auto numCommands = commands.size();
@@ -588,10 +608,10 @@ void VKBackend::executeFrame(const FramePointer& frame) {
 
                     case Batch::COMMAND_setFramebuffer: {
                         if (renderpassActive) {
-                            endRegion(commandBuffer);
+                            cmdEndLabel(commandBuffer);
                         }
                         const auto& framebuffer = batch._framebuffers.get(batch._params[paramOffset]._uint);
-                        beginRegion(commandBuffer, "framebuffer:" + framebuffer->getName(), vec4{ 1, 0, 1, 1 });
+                        cmdBeginLabel(commandBuffer, "framebuffer:" + framebuffer->getName(), vec4{ 1, 0, 1, 1 });
                         renderpassActive = true;
                         _cache.pipelineState.setFramebuffer(framebuffer);
                     } break;
@@ -644,6 +664,15 @@ void VKBackend::executeFrame(const FramePointer& frame) {
                     case Batch::COMMAND_pushProfileRange:
                     case Batch::COMMAND_popProfileRange:
                         break;
+                    // These weren't handled here old Vulkan branch
+                    case Batch::COMMAND_generateTextureMipsWithPipeline:
+                    case Batch::COMMAND_glUniform1f:
+                    case Batch::COMMAND_glUniform2f:
+                    case Batch::COMMAND_glUniform3f:
+                    case Batch::COMMAND_glUniform4f:
+                        Q_ASSERT(false);
+                    case Batch::NUM_COMMANDS:
+                        Q_ASSERT(false);
                 }
                 // loop through commands
                 // did the framebuffer setup change?  (new renderpass)
@@ -656,10 +685,10 @@ void VKBackend::executeFrame(const FramePointer& frame) {
             }
 
             if (renderpassActive) {
-                endRegion(commandBuffer);
+                cmdEndLabel(commandBuffer);
                 renderpassActive = false;
             }
-            endRegion(commandBuffer);
+            cmdEndLabel(commandBuffer);
         }
     }
 

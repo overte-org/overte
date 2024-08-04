@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Config.h"
-#include "Device.h"
+//#include "VulkanDevice.h"
 
 
 namespace vks {
@@ -11,7 +11,7 @@ namespace vks {
     //
     // Provides easy to use mechanisms for mapping, unmapping and copying host data to the device memory
     struct Allocation {
-        static void initAllocator(const vk::PhysicalDevice&, const vk::Device&);
+        static void initAllocator(const VkPhysicalDevice&, const VkDevice&);
 
         void* rawmap(size_t offset = 0, VkDeviceSize size = VK_WHOLE_SIZE);
         void unmap();
@@ -35,24 +35,24 @@ namespace vks {
             copy(sizeof(T) * data.size(), data.data(), offset);
         }
 
-        void flush(vk::DeviceSize size, vk::DeviceSize offset = 0);
-        void invalidate(vk::DeviceSize size, vk::DeviceSize offset = 0);
+        void flush(VkDeviceSize size, VkDeviceSize offset = 0);
+        void invalidate(VkDeviceSize size, VkDeviceSize offset = 0);
         virtual void destroy();
 
 
-        vks::Device device;
-        vk::DeviceSize size{ 0 };
-        vk::DeviceSize alignment{ 0 };
-        vk::DeviceSize allocSize{ 0 };
+        VkDevice device;
+        VkDeviceSize size{ 0 };
+        VkDeviceSize alignment{ 0 };
+        VkDeviceSize allocSize{ 0 };
 
 #if VULKAN_USE_VMA
         static VmaAllocator& getAllocator();
 
         VmaAllocation allocation;
         /** @brief Memory propertys flags to be filled by external source at buffer creation (to query at some later point) */
-        vk::MemoryPropertyFlags memoryPropertyFlags;
+        VkMemoryPropertyFlags memoryPropertyFlags;
 #else
-        vk::DeviceMemory memory;
+        VkDeviceMemory memory;
 #endif
         void* mapped{ nullptr };
 
