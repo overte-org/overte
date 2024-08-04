@@ -11,8 +11,8 @@ Q_LOGGING_CATEGORY(gpu_vk_logging, "hifi.gpu.vk")
 Q_LOGGING_CATEGORY(trace_gpu_vk, "trace.gpu.vk")
 Q_LOGGING_CATEGORY(trace_gpu_vk_detail, "trace.gpu.vk.detail")
 
-vk::Format gpu::vulkan::evalTexelFormatInternal(const gpu::Element& dstFormat) {
-    vk::Format result = vk::Format::eR8G8B8Unorm;
+VkFormat gpu::vulkan::evalTexelFormatInternal(const gpu::Element& dstFormat) {
+    VkFormat result = VK_FORMAT_R8G8B8_UNORM;
     switch (dstFormat.getDimension()) {
     case gpu::SCALAR:
     {
@@ -24,52 +24,52 @@ vk::Format gpu::vulkan::evalTexelFormatInternal(const gpu::Element& dstFormat) {
         case gpu::SRGBA:
             switch (dstFormat.getType()) {
             case gpu::UINT32:
-                result = vk::Format::eR32Uint;
+                result = VK_FORMAT_R32_UINT;
                 break;
             case gpu::INT32:
-                result = vk::Format::eR32Sint;
+                result = VK_FORMAT_R32_SINT;
                 break;
             case gpu::NUINT32:
-                result = vk::Format::eR8Unorm;
+                result = VK_FORMAT_R8_UNORM;
                 break;
             case gpu::NINT32:
-                result = vk::Format::eR8Snorm;
+                result = VK_FORMAT_R8_SNORM;
                 break;
             case gpu::FLOAT:
-                result = vk::Format::eR32Sfloat;
+                result = VK_FORMAT_R32_SFLOAT;
                 break;
             case gpu::UINT16:
-                result = vk::Format::eR16Uint;
+                result = VK_FORMAT_R16_UINT;
                 break;
             case gpu::INT16:
-                result = vk::Format::eR16Sint;
+                result = VK_FORMAT_R16_SINT;
                 break;
             case gpu::NUINT16:
-                result = vk::Format::eR16Unorm;
+                result = VK_FORMAT_R16_UNORM;
                 break;
             case gpu::NINT16:
-                result = vk::Format::eR16Snorm;
+                result = VK_FORMAT_R16_SNORM;
                 break;
             case gpu::HALF:
-                result = vk::Format::eR16Sfloat;
+                result = VK_FORMAT_R16_SFLOAT;
                 break;
             case gpu::UINT8:
-                result = vk::Format::eR8Uint;
+                result = VK_FORMAT_R8_UINT;
                 break;
             case gpu::INT8:
-                result = vk::Format::eR8Sint;
+                result = VK_FORMAT_R8_SINT;
                 break;
 
             case gpu::NUINT8:
 
                 if ((dstFormat.getSemantic() == gpu::SRGB || dstFormat.getSemantic() == gpu::SRGBA)) {
-                    result = vk::Format::eR8Srgb;
+                    result = VK_FORMAT_R8_SRGB;
                 } else {
-                    result = vk::Format::eR8Unorm;
+                    result = VK_FORMAT_R8_UNORM;
                 }
                 break;
             case gpu::NINT8:
-                result = vk::Format::eR8Snorm;
+                result = VK_FORMAT_R8_SNORM;
                 break;
 
             default:
@@ -80,30 +80,30 @@ vk::Format gpu::vulkan::evalTexelFormatInternal(const gpu::Element& dstFormat) {
 
         case gpu::R11G11B10:
             // the type should be float
-            result = vk::Format::eB10G11R11UfloatPack32;
+            result = VK_FORMAT_B10G11R11_UFLOAT_PACK32;
             break;
 
         case gpu::RGB9E5:
             // the type should be float
-            result = vk::Format::eE5B9G9R9UfloatPack32;
+            result = VK_FORMAT_E5B9G9R9_UFLOAT_PACK32;
             break;
 
         case gpu::DEPTH:
-            result = vk::Format::eD32Sfloat;
+            result = VK_FORMAT_D32_SFLOAT;
             switch (dstFormat.getType()) {
             case gpu::UINT32:
             case gpu::INT32:
             case gpu::NUINT32:
             case gpu::NINT32:
             case gpu::FLOAT:
-                result = vk::Format::eD32Sfloat;
+                result = VK_FORMAT_D32_SFLOAT;
                 break;
             case gpu::UINT16:
             case gpu::INT16:
             case gpu::NUINT16:
             case gpu::NINT16:
             case gpu::HALF:
-                result = vk::Format::eD16Unorm;
+                result = VK_FORMAT_D16_UNORM;
                 break;
             case gpu::UINT8:
             case gpu::INT8:
@@ -116,7 +116,7 @@ vk::Format gpu::vulkan::evalTexelFormatInternal(const gpu::Element& dstFormat) {
             break;
 
         case gpu::DEPTH_STENCIL:
-            result = vk::Format::eD24UnormS8Uint;
+            result = VK_FORMAT_D24_UNORM_S8_UINT;
             break;
 
         default:
@@ -135,40 +135,40 @@ vk::Format gpu::vulkan::evalTexelFormatInternal(const gpu::Element& dstFormat) {
         case gpu::UV:
             switch (dstFormat.getType()) {
             case gpu::UINT32:
-                result = vk::Format::eR32G32Uint;
+                result = VK_FORMAT_R32G32_UINT;
                 break;
             case gpu::INT32:
-                result = vk::Format::eR32G32Sint;
+                result = VK_FORMAT_R32G32_SINT;
                 break;
             case gpu::FLOAT:
-                result = vk::Format::eR32G32Sfloat;
+                result = VK_FORMAT_R32G32_SFLOAT;
                 break;
             case gpu::UINT16:
-                result = vk::Format::eR16G16Uint;
+                result = VK_FORMAT_R16G16_UINT;
                 break;
             case gpu::INT16:
-                result = vk::Format::eR16G16Sint;
+                result = VK_FORMAT_R16G16_SINT;
                 break;
             case gpu::NUINT16:
-                result = vk::Format::eR16G16Unorm;
+                result = VK_FORMAT_R16G16_UNORM;
                 break;
             case gpu::NINT16:
-                result = vk::Format::eR16G16Snorm;
+                result = VK_FORMAT_R16G16_SNORM;
                 break;
             case gpu::HALF:
-                result = vk::Format::eR16G16Sfloat;
+                result = VK_FORMAT_R16G16_SFLOAT;
                 break;
             case gpu::UINT8:
-                result = vk::Format::eR8G8Uint;
+                result = VK_FORMAT_R8G8_UINT;
                 break;
             case gpu::INT8:
-                result = vk::Format::eR8G8Sint;
+                result = VK_FORMAT_R8G8_SINT;
                 break;
             case gpu::NUINT8:
-                result = vk::Format::eR8G8Unorm;
+                result = VK_FORMAT_R8G8_UNORM;
                 break;
             case gpu::NINT8:
-                result = vk::Format::eR8G8Snorm;
+                result = VK_FORMAT_R8G8_SNORM;
                 break;
             case gpu::NUINT32:
             case gpu::NINT32:
@@ -191,17 +191,17 @@ vk::Format gpu::vulkan::evalTexelFormatInternal(const gpu::Element& dstFormat) {
         switch (dstFormat.getSemantic()) {
         case gpu::RGB:
         case gpu::RGBA:
-            result = vk::Format::eR8G8B8Unorm;
+            result = VK_FORMAT_R8G8B8_UNORM;
             break;
 
         case gpu::SRGB:
         case gpu::SRGBA:
-            result = vk::Format::eR8G8B8Srgb; // standard 2.2 gamma correction color
+            result = VK_FORMAT_R8G8B8_SRGB; // standard 2.2 gamma correction color
             break;
         case gpu::XYZ:
             switch (dstFormat.getType()) { 
                 case gpu::FLOAT:
-                    result = vk::Format::eR32G32B32Sfloat;
+                    result = VK_FORMAT_R32G32B32_SFLOAT;
                     break;
                 default:
                     qCWarning(gpu_vk_logging) << "Unknown combination of texel format";
@@ -219,49 +219,49 @@ vk::Format gpu::vulkan::evalTexelFormatInternal(const gpu::Element& dstFormat) {
     {
         switch (dstFormat.getSemantic()) {
         case gpu::RGB:
-            result = vk::Format::eR8G8B8Unorm;
+            result = VK_FORMAT_R8G8B8_UNORM;
             break;
         case gpu::RGBA:
         case gpu::XYZW:
             switch (dstFormat.getType()) {
             case gpu::UINT32:
-                result = vk::Format::eR32G32B32A32Uint;
+                result = VK_FORMAT_R32G32B32A32_UINT;
                 break;
             case gpu::INT32:
-                result = vk::Format::eR32G32B32A32Sint;
+                result = VK_FORMAT_R32G32B32A32_SINT;
                 break;
             case gpu::FLOAT:
-                result = vk::Format::eR32G32B32A32Sfloat;
+                result = VK_FORMAT_R32G32B32A32_SFLOAT;
                 break;
             case gpu::UINT16:
-                result = vk::Format::eR16G16B16A16Uint;
+                result = VK_FORMAT_R16G16B16A16_UINT;
                 break;
             case gpu::INT16:
-                result = vk::Format::eR16G16B16A16Sint;
+                result = VK_FORMAT_R16G16B16A16_SINT;
                 break;
             case gpu::NUINT16:
-                result = vk::Format::eR16G16B16A16Unorm;
+                result = VK_FORMAT_R16G16B16A16_UNORM;
                 break;
             case gpu::NINT16:
-                result = vk::Format::eR16G16B16A16Snorm;
+                result = VK_FORMAT_R16G16B16A16_SNORM;
                 break;
             case gpu::HALF:
-                result = vk::Format::eR16G16B16A16Sfloat;
+                result = VK_FORMAT_R16G16B16A16_SFLOAT;
                 break;
             case gpu::UINT8:
-                result = vk::Format::eR8G8B8A8Uint;
+                result = VK_FORMAT_R8G8B8A8_UINT;
                 break;
             case gpu::INT8:
-                result = vk::Format::eR8G8B8A8Sint;
+                result = VK_FORMAT_R8G8B8A8_SINT;
                 break;
             case gpu::NUINT8:
-                result = vk::Format::eR8G8B8A8Unorm;
+                result = VK_FORMAT_R8G8B8A8_UNORM;
                 break;
             case gpu::NINT8:
-                result = vk::Format::eR8G8B8A8Snorm;
+                result = VK_FORMAT_R8G8B8A8_SNORM;
                 break;
             case gpu::NINT2_10_10_10:
-                result = vk::Format::eA2B10G10R10SnormPack32;
+                result = VK_FORMAT_A2B10G10R10_SNORM_PACK32;
                 break;
 
             case gpu::NUINT32:
@@ -273,10 +273,10 @@ vk::Format gpu::vulkan::evalTexelFormatInternal(const gpu::Element& dstFormat) {
             }
             break;
         case gpu::SRGB:
-            result = vk::Format::eR8G8B8Srgb; // standard 2.2 gamma correction color
+            result = VK_FORMAT_R8G8B8_SRGB; // standard 2.2 gamma correction color
             break;
         case gpu::SRGBA:
-            result = vk::Format::eR8G8B8A8Srgb; // standard 2.2 gamma correction color
+            result = VK_FORMAT_R8G8B8A8_SRGB; // standard 2.2 gamma correction color
             break;
         default:
             qCWarning(gpu_vk_logging) << "Unknown combination of texel format";
@@ -287,55 +287,55 @@ vk::Format gpu::vulkan::evalTexelFormatInternal(const gpu::Element& dstFormat) {
     {
         switch (dstFormat.getSemantic()) {
         case gpu::COMPRESSED_BC4_RED:
-            result = vk::Format::eBc4UnormBlock;
+            result = VK_FORMAT_BC4_UNORM_BLOCK;
             break;
         case gpu::COMPRESSED_BC1_SRGB:
-            result = vk::Format::eBc1RgbSrgbBlock;
+            result = VK_FORMAT_BC1_RGB_SRGB_BLOCK;
             break;
         case gpu::COMPRESSED_BC1_SRGBA:
-            result = vk::Format::eBc1RgbaSrgbBlock;
+            result = VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
             break;
         case gpu::COMPRESSED_BC3_SRGBA:
-            result = vk::Format::eBc3SrgbBlock;
+            result = VK_FORMAT_BC3_SRGB_BLOCK;
             break;
         case gpu::COMPRESSED_BC5_XY:
-            result = vk::Format::eBc5UnormBlock;
+            result = VK_FORMAT_BC5_UNORM_BLOCK;
             break;
         case gpu::COMPRESSED_BC6_RGB:
-            result = vk::Format::eBc6HUfloatBlock;
+            result = VK_FORMAT_BC6H_UFLOAT_BLOCK;
             break;
         case gpu::COMPRESSED_BC7_SRGBA:
-            result = vk::Format::eBc7SrgbBlock;
+            result = VK_FORMAT_BC7_SRGB_BLOCK;
             break;
         case gpu::COMPRESSED_ETC2_RGB:
-            result = vk::Format::eEtc2R8G8B8UnormBlock;
+            result = VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK;
             break;
         case gpu::COMPRESSED_ETC2_SRGB:
-            result = vk::Format::eEtc2R8G8B8SrgbBlock;
+            result = VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK;
             break;
         case gpu::COMPRESSED_ETC2_RGB_PUNCHTHROUGH_ALPHA:
-            result = vk::Format::eEtc2R8G8B8A1UnormBlock;
+            result = VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK;
             break;
         case gpu::COMPRESSED_ETC2_SRGB_PUNCHTHROUGH_ALPHA:
-            result = vk::Format::eEtc2R8G8B8A1SrgbBlock;
+            result = VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK;
             break;
         case gpu::COMPRESSED_ETC2_RGBA:
-            result = vk::Format::eEtc2R8G8B8A8UnormBlock;
+            result = VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK;
             break;
         case gpu::COMPRESSED_ETC2_SRGBA:
-            result = vk::Format::eEtc2R8G8B8A8SrgbBlock;
+            result = VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK;
             break;
         case gpu::COMPRESSED_EAC_RED:
-            result = vk::Format::eEacR11UnormBlock;
+            result = VK_FORMAT_EAC_R11_UNORM_BLOCK;
             break;
         case gpu::COMPRESSED_EAC_RED_SIGNED:
-            result = vk::Format::eEacR11SnormBlock;
+            result = VK_FORMAT_EAC_R11_SNORM_BLOCK;
             break;
         case gpu::COMPRESSED_EAC_XY:
-            result = vk::Format::eEacR11G11UnormBlock;
+            result = VK_FORMAT_EAC_R11G11_UNORM_BLOCK;
             break;
         case gpu::COMPRESSED_EAC_XY_SIGNED:
-            result = vk::Format::eEacR11G11SnormBlock;
+            result = VK_FORMAT_EAC_R11G11_SNORM_BLOCK;
             break;
         default:
             qCWarning(gpu_vk_logging) << "Unknown combination of texel format";
@@ -349,15 +349,15 @@ vk::Format gpu::vulkan::evalTexelFormatInternal(const gpu::Element& dstFormat) {
     return result;
 }
 
-bool gpu::vulkan::isDepthStencilFormat(vk::Format format) {
+bool gpu::vulkan::isDepthStencilFormat(VkFormat format) {
     switch (format) {
-        case vk::Format::eD16Unorm:
-        case vk::Format::eX8D24UnormPack32:
-        case vk::Format::eD32Sfloat:
-        case vk::Format::eS8Uint:
-        case vk::Format::eD16UnormS8Uint:
-        case vk::Format::eD24UnormS8Uint:
-        case vk::Format::eD32SfloatS8Uint:
+        case VK_FORMAT_D16_UNORM:
+        case VK_FORMAT_X8_D24_UNORM_PACK32:
+        case VK_FORMAT_D32_SFLOAT:
+        case VK_FORMAT_S8_UINT:
+        case VK_FORMAT_D16_UNORM_S8_UINT:
+        case VK_FORMAT_D24_UNORM_S8_UINT:
+        case VK_FORMAT_D32_SFLOAT_S8_UINT:
             return true;
         default:
             break;

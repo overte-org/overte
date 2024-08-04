@@ -13,29 +13,20 @@ namespace vks {
     private:
         using Parent = Allocation;
     public:
-        vk::Image image;
-        vk::Extent3D extent;
-        vk::ImageView view;
-        vk::Sampler sampler;
-        vk::Format format{ vk::Format::eUndefined };
+        VkImage image {nullptr};
+        VkExtent3D extent {};
+        VkImageView view {nullptr};
+        VkSampler sampler {nullptr};
+        VkFormat format{ VK_FORMAT_UNDEFINED };
 
         operator bool() const {
-            return image.operator bool();
+            return image != nullptr;
         }
 
         void destroy() override {
-            if (sampler) {
-                device.destroySampler(sampler);
-                sampler = vk::Sampler();
-            }
-            if (view) {
-                device.destroyImageView(view);
-                view = vk::ImageView();
-            }
-            if (image) {
-                device.destroyImage(image);
-                image = vk::Image();
-            }
+            vkDestroySampler(device, sampler, nullptr);
+            vkDestroyImageView(device, view, nullptr);
+            vkDestroyImage(device, image, nullptr);
             Parent::destroy();
         }
     };

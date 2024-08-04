@@ -18,16 +18,10 @@
 #ifdef DEBUG
 
 #include <atomic>
+#include <mutex>
 #include <QDebug>
 
-// Return a string suffixed with a monotonically increasing ID, as string(ID).
-// Useful for Tracker<std::string> instances, when many instances share the same "name".
-//
-// K must have an implemented streaming operator for QDebug operator<<. (Done for std::string in this header.)
-static std::string getUniqString(const std::string& s) {
-    static std::atomic<size_t> counter{ 0 };
-    return s + '(' + std::to_string(counter.fetch_add(1)) + ')';
-}
+#include "SharedLogging.h"
 
 // Implement the streaming operator for std::string for ease-of-use.
 static QDebug operator<<(QDebug debug, const std::string& s) {

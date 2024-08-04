@@ -22,9 +22,11 @@
 
 #include <vk/Config.h>
 #include <vk/Context.h>
-#include <vk/Debug.h>
+#include <vk/VulkanDebug.h>
+#include <vulkan/vulkan_core.h>
 
 #include "VKForward.h"
+#include "../../../../vk/src/vk/Context.h"
 
 namespace gpu { namespace vulkan {
 
@@ -124,16 +126,12 @@ public:
 #endif
 protected:
     // Logical device, application's view of the physical device (GPU)
-    // vk::Pipeline cache object
-    vk::PipelineCache _pipelineCache;
+    // VkPipeline cache object
+    VkPipelineCache _pipelineCache;
 
     vks::Context& _context{ vks::Context::get() };
-    const vk::PhysicalDeviceProperties& _deviceProperties { _context.deviceProperties };
-    const vk::PhysicalDeviceFeatures& _deviceFeatures { _context.deviceFeatures };
-    const vk::PhysicalDeviceMemoryProperties& _memoryProperties { _context.deviceMemoryProperties };
-    const vk::Device& _device{ _context.device };
-    const vk::Queue _graphicsQueue;
-    const vk::Queue _transferQueue;
+    VkQueue _graphicsQueue; //TODO: initialize from device
+    VkQueue _transferQueue; //TODO: initialize from device
     friend class VKBuffer;
 };
 

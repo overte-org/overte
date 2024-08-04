@@ -14,9 +14,10 @@
 #include <QtCore/QTimer>
 #include <QtCore/QDebug>
 
+#include "Allocation.h"
 #include "Config.h"
 #include "Context.h"
-#include "Swapchain.h"
+#include "VulkanSwapChain.h"
 
 class VKWindow : public QWindow {
     Q_OBJECT
@@ -25,11 +26,11 @@ public:
     virtual ~VKWindow();
 
     void createSwapchain();
-    void queuePresent(const vk::ArrayProxy<const vk::Semaphore>& waitSemaphores);
-    const vk::SurfaceKHR& createSurface();
-    const vk::SurfaceKHR& getSurface() { return _surface; }
-    vks::Swapchain& getSwapchain() { return _swapchain; }
-    vk::Framebuffer acquireFramebuffer(const vk::Semaphore& semaphore);
+    //void queuePresent(const vk::ArrayProxy<const VkSemaphore>& waitSemaphores);
+    const void createSurface();
+    //const VkSurfaceKHR& getSurface() { return _surface; }
+    VulkanSwapChain& getSwapchain() { return _swapchain; }
+    VkFramebuffer acquireFramebuffer(const VkSemaphore& semaphore);
 
 signals:
     void aboutToClose();
@@ -50,12 +51,19 @@ protected:
 
 public:
     vks::Context& _context{ vks::Context::get() };
-    const vk::Device& _device{ _context.device };
-    vk::SurfaceKHR _surface;
-    vk::RenderPass _renderPass;
-    vk::Extent2D _extent;
-    vks::Swapchain _swapchain;
-    vks::Image _depthStencil;
-    std::vector<vk::Framebuffer> _framebuffers;
+    const VkDevice& _device{ _context.device->logicalDevice };
+    //VkSurfaceKHR _surface;
+    VkRenderPass _renderPass;
+    VkExtent2D _extent;
+    VulkanSwapChain _swapchain;
+    struct : vks::Allocation {
+        bool isAllocated {false};
+        VkImage image;
+        VkDeviceMemory memory;
+        VkImageView view;
+    } _depthStencil{};
+    std::vector<VkFramebuffer>_frameBuffers;
+    //vks::Image _depthStencil;
+    //std::vector<VkFramebuffer> _framebuffers;
     QTimer* _resizeTimer{ nullptr };
 };
