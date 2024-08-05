@@ -1,0 +1,134 @@
+//
+//  HazePropertyGroup.h
+//  libraries/entities/src
+//
+//  Created by Nissim hadar on 9/21/17.
+//  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "HazePropertyGroup.h"
+
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+
+void HazePropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+
+@Haze_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void HazePropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
+
+@Haze_GROUP_COPY_FROM_SCRIPT@
+
+}
+
+void HazePropertyGroup::merge(const HazePropertyGroup& other) {
+
+@Haze_GROUP_MERGE@
+
+}
+
+void HazePropertyGroup::debugDump() const {
+
+@Haze_GROUP_DEBUG_DUMP@
+
+}
+
+void HazePropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@Haze_GROUP_LIST_CHANGED@
+
+}
+
+bool HazePropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                    EntityPropertyFlags& requestedProperties,
+                                    EntityPropertyFlags& propertyFlags,
+                                    EntityPropertyFlags& propertiesDidntFit,
+                                    int& propertyCount,
+                                    OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Haze_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool HazePropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags, const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@Haze_GROUP_READ@
+
+@Haze_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void HazePropertyGroup::markAllChanged() {
+
+@Haze_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags HazePropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@Haze_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void HazePropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@Haze_GROUP_COPY_TO@
+
+}
+
+bool HazePropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Haze_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags HazePropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@Haze_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int HazePropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                            ReadBitstreamToTreeParams& args,
+                                            EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                            bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Haze_GROUP_READ@
+
+    return bytesRead;
+}
+
+void HazePropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                       QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@Haze_GROUP_ADD_TO_MAP@
+
+}

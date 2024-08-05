@@ -1887,7 +1887,7 @@ bool EntityScriptingInterface::setAllPoints(const QUuid& entityID, const QVector
     if (entityType == EntityTypes::Line) {
         return setPoints(entityID, [points](LineEntityItem& lineEntity) -> bool
         {
-            return (LineEntityItem*)lineEntity.setLinePoints(points);
+            return lineEntity.setLinePoints(points);
         });
     }
 

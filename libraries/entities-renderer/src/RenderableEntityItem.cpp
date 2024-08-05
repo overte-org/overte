@@ -573,7 +573,7 @@ void EntityRenderer::doRenderUpdateSynchronous(const ScenePointer& scene, Transa
 }
 
 void EntityRenderer::doRenderUpdateAsynchronous(const EntityItemPointer& entity) {
-    setIsVisibleInSecondaryCamera(entity->isVisibleInSecondaryCamera());
+    setIsVisibleInSecondaryCamera(entity->getIsVisibleInSecondaryCamera());
     setRenderLayer(entity->getRenderLayer());
     _billboardMode = entity->getBillboardMode();
     _primitiveMode = entity->getPrimitiveMode();

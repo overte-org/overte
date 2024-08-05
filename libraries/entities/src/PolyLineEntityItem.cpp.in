@@ -1,0 +1,226 @@
+//
+//  PolyLineEntityItem.cpp
+//  libraries/entities/src
+//
+//  Created by Eric Levin on 6/22/15.
+//  Copyright 2015 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#include "PolyLineEntityItem.h"
+
+#include <QDebug>
+
+#include <ByteCountCoding.h>
+#include <Extents.h>
+
+#include "EntitiesLogging.h"
+#include "EntityItemProperties.h"
+#include "EntityTree.h"
+#include "EntityTreeElement.h"
+#include "OctreeConstants.h"
+
+const float PolyLineEntityItem::DEFAULT_LINE_WIDTH = 0.1f;
+const int PolyLineEntityItem::MAX_POINTS_PER_LINE = 60;
+
+EntityItemPointer PolyLineEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    std::shared_ptr<PolyLineEntityItem> entity(new PolyLineEntityItem(entityID), [](PolyLineEntityItem* ptr) { ptr->deleteLater(); });
+    entity->setProperties(properties);
+    return entity;
+}
+
+
+PolyLineEntityItem::PolyLineEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
+    _type = EntityTypes::PolyLine;
+}
+
+EntityItemProperties PolyLineEntityItem::getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const {
+    EntityItemProperties properties = EntityItem::getProperties(desiredProperties, allowEmptyDesiredProperties); // get the properties from our base class
+
+@PolyLine_ENTITY_COPY_TO@
+
+    return properties;
+}
+
+bool PolyLineEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@PolyLine_ENTITY_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags PolyLineEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
+
+@PolyLine_REQUESTED_PROP@
+
+    return requestedProperties;
+}
+
+void PolyLineEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
+                                            EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                            EntityPropertyFlags& requestedProperties,
+                                            EntityPropertyFlags& propertyFlags,
+                                            EntityPropertyFlags& propertiesDidntFit,
+                                            int& propertyCount,
+                                            OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@PolyLine_ENTITY_APPEND@
+
+}
+
+int PolyLineEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                         ReadBitstreamToTreeParams& args,
+                                                         EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                         bool& somethingChanged) {
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@PolyLine_ENTITY_READ@
+
+    return bytesRead;
+}
+
+void PolyLineEntityItem::debugDump() const {
+    qCDebug(entities) << "PolyLineEntityItem id:" << getEntityItemID() << "---------------------------------------------";
+    qCDebug(entities) << "    name:" << _name;
+    qCDebug(entities) << "    position:" << debugTreeVector(getWorldPosition());
+    qCDebug(entities) << "    dimensions:" << debugTreeVector(getScaledDimensions());
+    qCDebug(entities) << "    editedAgo:" << debugTime(getLastEdited(), usecTimestampNow());
+    qCDebug(entities) << "    pointer:" << this;
+
+@PolyLine_ENTITY_DEBUG@
+
+}
+
+void PolyLineEntityItem::setLinePoints(const QVector<glm::vec3>& points) {
+    withWriteLock([&] {
+        _linePoints = points;
+        _pointsChanged = true;
+    });
+    computeAndUpdateDimensions();
+}
+
+void PolyLineEntityItem::setStrokeWidths(const QVector<float>& strokeWidths) {
+    withWriteLock([&] {
+        _strokeWidths = strokeWidths;
+        _widthsChanged = true;
+    });
+    computeAndUpdateDimensions();
+}
+
+void PolyLineEntityItem::setNormals(const QVector<glm::vec3>& normals) {
+    withWriteLock([&] {
+        _normals = normals;
+        _normalsChanged = true;
+    });
+}
+
+void PolyLineEntityItem::setStrokeColors(const QVector<glm::vec3>& strokeColors) {
+    withWriteLock([&] {
+        _strokeColors = strokeColors;
+        _colorsChanged = true;
+    });
+}
+
+void PolyLineEntityItem::computeAndUpdateDimensions() {
+    QVector<glm::vec3> points;
+    QVector<float> widths;
+
+    withReadLock([&] {
+        points = _linePoints;
+        widths = _strokeWidths;
+    });
+
+    glm::vec3 maxHalfDim(0.5f * ENTITY_ITEM_DEFAULT_WIDTH);
+    float maxWidth = 0.0f;
+    for (int i = 0; i < points.length(); i++) {
+        maxHalfDim = glm::max(maxHalfDim, glm::abs(points[i]));
+        maxWidth = glm::max(maxWidth, i < widths.length() ? widths[i] : DEFAULT_LINE_WIDTH);
+    }
+
+    setScaledDimensions(2.0f * (maxHalfDim + maxWidth));
+}
+
+void PolyLineEntityItem::computeTightLocalBoundingBox(AABox& localBox) const {
+    QVector<glm::vec3> points;
+    QVector<float> widths;
+    withReadLock([&] {
+        points = _linePoints;
+        widths = _strokeWidths;
+    });
+
+    if (points.size() > 0) {
+        Extents extents;
+        float maxWidth = DEFAULT_LINE_WIDTH;
+        for (int i = 0; i < points.length(); i++) {
+            extents.addPoint(points[i]);
+            if (i < widths.size()) {
+                maxWidth = glm::max(maxWidth, widths[i]);
+            }
+        }
+        extents.addPoint(extents.minimum - maxWidth * Vectors::ONE);
+        extents.addPoint(extents.maximum + maxWidth * Vectors::ONE);
+
+        localBox.setBox(extents.minimum, extents.maximum - extents.minimum);
+    } else {
+        localBox.setBox(glm::vec3(-0.5f * DEFAULT_LINE_WIDTH), glm::vec3(DEFAULT_LINE_WIDTH));
+    }
+}
+
+QVector<glm::vec3> PolyLineEntityItem::getLinePoints() const {
+    return resultWithReadLock<QVector<glm::vec3>>([&] {
+        return _linePoints;
+    });
+}
+
+QVector<glm::vec3> PolyLineEntityItem::getNormals() const {
+    return resultWithReadLock<QVector<glm::vec3>>([&] {
+        return _normals;
+    });
+}
+
+QVector<glm::vec3> PolyLineEntityItem::getStrokeColors() const {
+    return resultWithReadLock<QVector<glm::vec3>>([&] {
+        return _strokeColors;
+    });
+}
+
+QVector<float> PolyLineEntityItem::getStrokeWidths() const {
+    return resultWithReadLock<QVector<float>>([&] {
+        return _strokeWidths;
+    });
+}
+
+QString PolyLineEntityItem::getTextures() const {
+    return resultWithReadLock<QString>([&] {
+        return _textures;
+    });
+}
+
+void PolyLineEntityItem::setTextures(const QString& textures) {
+    withWriteLock([&] {
+        if (_textures != textures) {
+            _textures = textures;
+            _texturesChanged = true;
+        }
+    });
+}
+
+void PolyLineEntityItem::setColor(const glm::u8vec3& value) {
+    withWriteLock([&] {
+        _color = value;
+        _colorsChanged = true;
+    });
+}
+
+glm::u8vec3 PolyLineEntityItem::getColor() const {
+    return resultWithReadLock<glm::u8vec3>([&] {
+        return _color;
+    });
+}

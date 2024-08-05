@@ -1,0 +1,52 @@
+//
+//  Created by HifiExperiments on 12/30/2023
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#ifndef hifi_SoundEntityItem_h
+#define hifi_SoundEntityItem_h
+
+#include "EntityItem.h"
+
+#include <SoundCache.h>
+#include <AudioInjectorManager.h>
+
+class SoundEntityItem : public EntityItem {
+public:
+    static EntityItemPointer factory(const EntityItemID& entityID, const EntityItemProperties& properties);
+
+    SoundEntityItem(const EntityItemID& entityItemID);
+    ~SoundEntityItem();
+
+    ALLOW_INSTANTIATION  // This class can be instantiated
+    ENTITY_PROPERTY_SUBCLASS_METHODS
+
+    bool shouldBePhysical() const override { return false; }
+
+    virtual bool supportsDetailedIntersection() const override { return false; }
+
+    virtual void update(const quint64& now) override;
+    bool needsToCallUpdate() const override { return _updateNeeded; }
+
+    void locationChanged(bool tellPhysics = true, bool tellChildren = true) override;
+    void dimensionsChanged() override;
+
+    bool restartSound(bool lock = false);
+
+protected:
+
+@Sound_ENTITY_PROPS@
+
+    bool shouldCreateSound(const EntityTreePointer& tree) const;
+    void updateSound(bool restart = false);
+
+    std::recursive_mutex _soundLock;
+    SharedSoundPointer _sound;
+    AudioInjectorPointer _injector;
+    bool _updateNeeded { false };
+};
+
+#endif // hifi_SoundEntityItem_h
