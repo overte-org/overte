@@ -1,0 +1,140 @@
+//
+//  GrabPropertyGroup.h
+//  libraries/entities/src
+//
+//  Created by Seth Alves on 2018-8-8.
+//  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "GrabPropertyGroup.h"
+
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+#include "EntityItemPropertiesMacros.h"
+
+void GrabPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
+                                          ScriptEngine* engine, bool skipDefaults,
+                                          EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags,
+                                          bool isMyOwnAvatarEntity) const {
+    auto nodeList = DependencyManager::get<NodeList>();
+
+@Grab_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void GrabPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString>& namesSet, bool& _defaultSettings) {
+
+@Grab_GROUP_COPY_FROM_SCRIPT@
+
+}
+
+void GrabPropertyGroup::merge(const GrabPropertyGroup& other) {
+
+@Grab_GROUP_MERGE@
+
+}
+
+void GrabPropertyGroup::debugDump() const {
+
+@Grab_GROUP_DEBUG_DUMP@
+
+}
+
+void GrabPropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@Grab_GROUP_LIST_CHANGED@
+
+}
+
+bool GrabPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                           EntityPropertyFlags& requestedProperties,
+                                           EntityPropertyFlags& propertyFlags,
+                                           EntityPropertyFlags& propertiesDidntFit,
+                                           int& propertyCount,
+                                           OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Grab_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool GrabPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags,
+                                             const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@Grab_GROUP_READ@
+
+@Grab_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void GrabPropertyGroup::markAllChanged() {
+
+@Grab_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags GrabPropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@Grab_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void GrabPropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@Grab_GROUP_COPY_TO@
+
+}
+
+bool GrabPropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Grab_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags GrabPropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@Grab_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int GrabPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                        ReadBitstreamToTreeParams& args,
+                                                        EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                        bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Grab_GROUP_READ@
+
+    return bytesRead;
+}
+
+
+void GrabPropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                       QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@Grab_GROUP_ADD_TO_MAP@
+
+}

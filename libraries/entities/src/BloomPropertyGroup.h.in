@@ -1,0 +1,52 @@
+//
+//  BloomPropertyGroup.h
+//  libraries/entities/src
+//
+//  Created by Sam Gondelman on 8/7/2018
+//  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#ifndef hifi_BloomPropertyGroup_h
+#define hifi_BloomPropertyGroup_h
+
+#include <stdint.h>
+#include <glm/glm.hpp>
+
+#include "PropertyGroup.h"
+#include "EntityItemPropertiesMacros.h"
+
+class EntityItemProperties;
+class EncodeBitstreamParams;
+class OctreePacketData;
+class EntityTreeElementExtraEncodeData;
+class ReadBitstreamToTreeParams;
+class ScriptEngine;
+class ScriptValue;
+
+static const float INITIAL_BLOOM_INTENSITY { 0.25f };
+static const float INITIAL_BLOOM_THRESHOLD { 0.7f };
+static const float INITIAL_BLOOM_SIZE { 0.9f };
+
+/*@jsdoc
+ * Bloom is defined by the following properties:
+ * @typedef {object} Entities.Bloom
+ * @property {number} bloomIntensity=0.25 - The intensity of the bloom effect.
+ * @property {number} bloomThreshold=0.7 - The threshold for the bloom effect.
+ * @property {number} bloomSize=0.9 - The size of the bloom effect.
+ */
+class BloomPropertyGroup : public PropertyGroup {
+public:
+    ENTITY_PROPERTY_GROUP_METHODS(BloomPropertyGroup)
+
+protected:
+
+@Bloom_GROUP_PROPS@
+
+};
+
+#endif // hifi_BloomPropertyGroup_h

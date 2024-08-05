@@ -1,0 +1,261 @@
+//
+//  AnimationPropertyGroup.cpp
+//  libraries/entities/src
+//
+//  Created by Brad Hefta-Gaub on 12/4/13.
+//  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "AnimationPropertyGroup.h"
+
+#include <QJsonDocument>
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+
+const float AnimationPropertyGroup::MAXIMUM_POSSIBLE_FRAME = 100000.0f;
+
+bool operator==(const AnimationPropertyGroup& a, const AnimationPropertyGroup& b) {
+    return
+        (a._currentFrame == b._currentFrame) &&
+        (a._running == b._running) &&
+        (a._loop == b._loop) &&
+        (a._hold == b._hold) &&
+        (a._firstFrame == b._firstFrame) &&
+        (a._lastFrame == b._lastFrame) &&
+        (a._fps == b._fps) &&
+        (a._allowTranslation == b._allowTranslation) &&
+        (a._url == b._url) &&
+        (a._smoothFrames == b._smoothFrames);
+}
+
+
+/*@jsdoc
+ * An animation is configured by the following properties:
+ * @typedef {object} Entities.AnimationProperties
+ * @property {string} url="" - The URL of the glTF or FBX file that has the animation. glTF files may be in JSON or binary
+ *     format (".gltf" or ".glb" URLs respectively).
+ *     <p><strong>Warning:</strong> glTF animations currently do not always animate correctly.</p>
+ * @property {boolean} allowTranslation=true - <code>true</code> to enable translations contained in the animation to be
+ *     played, <code>false</code> to disable translations.
+ * @property {number} fps=30 - The speed in frames/s that the animation is played at.
+ * @property {number} firstFrame=0 - The first frame to play in the animation.
+ * @property {number} lastFrame=100000 - The last frame to play in the animation.
+ * @property {number} currentFrame=0 - The current frame being played in the animation.
+ * @property {boolean} running=false - <code>true</code> if the animation should play, <code>false</code> if it shouldn't.
+ * @property {boolean} loop=true - <code>true</code> if the animation is continuously repeated in a loop, <code>false</code> if
+ *     it isn't.
+ * @property {boolean} hold=false - <code>true</code> if the rotations and translations of the last frame played are
+ *     maintained when the animation stops playing, <code>false</code> if they aren't.
+ * @property {boolean} smoothFrames=true - <code>true</code> if the frames of the animation should be linearly interpolated to
+ *     create smoother movement, <code>false</code> if the frames should not be interpolated.
+ */
+
+void AnimationPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+
+    auto nodeList = DependencyManager::get<NodeList>();
+
+@Animation_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void AnimationPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
+
+@Animation_GROUP_COPY_FROM_SCRIPT@
+
+    // legacy property support
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(animationURL, QString, setUrl, getUrl);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_NOCHECK(animationSettings, QString, setFromOldAnimationSettings);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(animationFPS, float, setFps, getFps);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(animationIsPlaying, bool, setRunning, getRunning);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(animationFrameIndex, float, setCurrentFrame, getCurrentFrame);
+
+}
+
+void AnimationPropertyGroup::merge(const AnimationPropertyGroup& other) {
+
+@Animation_GROUP_MERGE@
+
+}
+
+void AnimationPropertyGroup::debugDump() const {
+
+@Animation_GROUP_DEBUG_DUMP@
+
+}
+
+void AnimationPropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@Animation_GROUP_LIST_CHANGED@
+
+}
+
+bool AnimationPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                    EntityPropertyFlags& requestedProperties,
+                                    EntityPropertyFlags& propertyFlags,
+                                    EntityPropertyFlags& propertiesDidntFit,
+                                    int& propertyCount,
+                                    OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Animation_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool AnimationPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags, const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@Animation_GROUP_READ@
+
+@Animation_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void AnimationPropertyGroup::markAllChanged() {
+
+@Animation_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags AnimationPropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@Animation_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void AnimationPropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@Animation_GROUP_COPY_TO@
+
+}
+
+bool AnimationPropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Animation_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags AnimationPropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@Animation_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int AnimationPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                            ReadBitstreamToTreeParams& args,
+                                            EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                            bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Animation_GROUP_READ@
+
+    return bytesRead;
+}
+
+void AnimationPropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                            QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@Animation_GROUP_ADD_TO_MAP@
+
+}
+
+void AnimationPropertyGroup::setFromOldAnimationSettings(const QString& value) {
+    // the animations setting is a JSON string that may contain various animation settings.
+    // if it includes fps, currentFrame, or running, those values will be parsed out and
+    // will over ride the regular animation settings
+
+    bool allowTranslation = getAllowTranslation();
+    float fps = getFps();
+    float currentFrame = getCurrentFrame();
+    bool running = getRunning();
+    bool loop = getLoop();
+    float firstFrame = getFirstFrame();
+    float lastFrame = getLastFrame();
+    bool hold = getHold();
+
+    QJsonDocument settingsAsJson = QJsonDocument::fromJson(value.toUtf8());
+    QJsonObject settingsAsJsonObject = settingsAsJson.object();
+    QVariantMap settingsMap = settingsAsJsonObject.toVariantMap();
+
+    if (settingsMap.contains("allowTranslation")) {
+        allowTranslation = settingsMap["allowTranslation"].toBool();
+    }
+
+    if (settingsMap.contains("fps")) {
+        fps = settingsMap["fps"].toFloat();
+    }
+
+    // old settings had frameIndex
+    if (settingsMap.contains("frameIndex")) {
+        currentFrame = settingsMap["frameIndex"].toFloat();
+    }
+
+    if (settingsMap.contains("running")) {
+        running = settingsMap["running"].toBool();
+    }
+
+    if (settingsMap.contains("firstFrame")) {
+        firstFrame = settingsMap["firstFrame"].toFloat();
+    }
+
+    if (settingsMap.contains("loop")) {
+        loop = settingsMap["loop"].toBool();
+    }
+
+    if (settingsMap.contains("lastFrame")) {
+        lastFrame = settingsMap["lastFrame"].toFloat();
+    }
+
+    if (settingsMap.contains("hold")) {
+        hold = settingsMap["hold"].toBool();
+    }
+
+    setAllowTranslation(allowTranslation);
+    setFps(fps);
+    setCurrentFrame(currentFrame);
+    setRunning(running);
+    setLoop(loop);
+    setFirstFrame(firstFrame);
+    setLastFrame(lastFrame);
+    setHold(hold);
+}
+
+float AnimationPropertyGroup::getNumFrames() const {
+    return _lastFrame - _firstFrame + 1.0f;
+}
+
+float AnimationPropertyGroup::computeLoopedFrame(float frame) const {
+    float numFrames = getNumFrames();
+    if (numFrames > 1.0f) {
+        frame = getFirstFrame() + fmodf(frame - getFirstFrame(), numFrames);
+    } else {
+        frame = getFirstFrame();
+    }
+    return frame;
+}
+
+bool AnimationPropertyGroup::isValidAndRunning() const {
+    return getRunning() && (getFps() > 0.0f) && (getNumFrames() > 1.0f) && !(getUrl().isEmpty());
+}

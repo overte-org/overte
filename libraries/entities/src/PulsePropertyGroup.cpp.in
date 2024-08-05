@@ -1,0 +1,183 @@
+//
+//  PulsePropertyGroup.cpp
+//
+//  Created by Sam Gondelman on 1/15/19
+//  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "PulsePropertyGroup.h"
+
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+
+QHash<QString, PulseMode> stringToPulseModeLookup;
+
+void addPulseMode(PulseMode mode) {
+    stringToPulseModeLookup[PulseModeHelpers::getNameForPulseMode(mode)] = mode;
+}
+
+void buildStringToPulseModeLookup() {
+    addPulseMode(PulseMode::NONE);
+    addPulseMode(PulseMode::IN_PHASE);
+    addPulseMode(PulseMode::OUT_PHASE);
+}
+
+QString PulsePropertyGroup::getColorModeAsString() const {
+    return PulseModeHelpers::getNameForPulseMode(_colorMode);
+}
+
+void PulsePropertyGroup::setColorModeFromString(const QString& pulseMode) {
+    if (stringToPulseModeLookup.empty()) {
+        buildStringToPulseModeLookup();
+    }
+    auto pulseModeItr = stringToPulseModeLookup.find(pulseMode.toLower());
+    if (pulseModeItr != stringToPulseModeLookup.end()) {
+        _colorMode = pulseModeItr.value();
+        _colorModeChanged = true;
+    }
+}
+
+QString PulsePropertyGroup::getAlphaModeAsString() const {
+    return PulseModeHelpers::getNameForPulseMode(_alphaMode);
+}
+
+void PulsePropertyGroup::setAlphaModeFromString(const QString& pulseMode) {
+    if (stringToPulseModeLookup.empty()) {
+        buildStringToPulseModeLookup();
+    }
+    auto pulseModeItr = stringToPulseModeLookup.find(pulseMode.toLower());
+    if (pulseModeItr != stringToPulseModeLookup.end()) {
+        _alphaMode = pulseModeItr.value();
+        _alphaModeChanged = true;
+    }
+}
+
+void PulsePropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+
+@Pulse_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void PulsePropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
+
+@Pulse_GROUP_COPY_FROM_SCRIPT@
+
+}
+
+void PulsePropertyGroup::merge(const PulsePropertyGroup& other) {
+
+@Pulse_GROUP_MERGE@
+
+}
+
+void PulsePropertyGroup::debugDump() const {
+
+@Pulse_GROUP_DEBUG_DUMP@
+
+}
+
+void PulsePropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@Pulse_GROUP_LIST_CHANGED@
+
+}
+
+bool PulsePropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                    EntityPropertyFlags& requestedProperties,
+                                    EntityPropertyFlags& propertyFlags,
+                                    EntityPropertyFlags& propertiesDidntFit,
+                                    int& propertyCount,
+                                    OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Pulse_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool PulsePropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags, const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@Pulse_GROUP_READ@
+
+@Pulse_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void PulsePropertyGroup::markAllChanged() {
+
+@Pulse_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags PulsePropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@Pulse_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void PulsePropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@Pulse_GROUP_COPY_TO@
+
+}
+
+bool PulsePropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Pulse_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags PulsePropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@Pulse_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int PulsePropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                            ReadBitstreamToTreeParams& args,
+                                            EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                            bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Pulse_GROUP_READ@
+
+    return bytesRead;
+}
+
+void PulsePropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                        QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@Pulse_GROUP_ADD_TO_MAP@
+
+}
+
+bool PulsePropertyGroup::operator==(const PulsePropertyGroup& a) const {
+    return (a._min == _min) &&
+           (a._max == _max) &&
+           (a._period == _period) &&
+           (a._colorMode == _colorMode) &&
+           (a._alphaMode == _alphaMode);
+}

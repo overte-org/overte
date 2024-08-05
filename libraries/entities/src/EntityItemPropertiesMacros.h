@@ -16,10 +16,37 @@
 #define hifi_EntityItemPropertiesMacros_h
 
 #include <EntityItemID.h>
+#include <EntityPropertyFlags.h>
 #include <RegisteredMetaTypes.h>
 #include <ScriptEngine.h>
 #include <ScriptValue.h>
 #include <ScriptValueUtils.h>
+
+const quint64 UNKNOWN_CREATED_TIME = 0;
+
+using vec3Color = glm::vec3;
+using u8vec3Color = glm::u8vec3;
+
+struct EntityPropertyInfo {
+    EntityPropertyInfo(EntityPropertyList propEnum) :
+        propertyEnums(propEnum) {}
+    EntityPropertyInfo(EntityPropertyList propEnum, QVariant min, QVariant max) :
+        propertyEnums(propEnum), minimum(min), maximum(max) {}
+    EntityPropertyInfo() = default;
+    EntityPropertyFlags propertyEnums;
+    QVariant minimum;
+    QVariant maximum;
+};
+
+template <typename T>
+EntityPropertyInfo makePropertyInfo(EntityPropertyList p, typename std::enable_if<!std::is_integral<T>::value>::type* = 0) {
+    return EntityPropertyInfo(p);
+}
+
+template <typename T>
+EntityPropertyInfo makePropertyInfo(EntityPropertyList p, typename std::enable_if<std::is_integral<T>::value>::type* = 0) {
+    return EntityPropertyInfo(p, std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
+}
 
 #define APPEND_ENTITY_PROPERTY(P,V) \
         if (requestedProperties.getHasProperty(P)) {                \
@@ -201,7 +228,7 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return
 #define COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_TYPED(p, P, G, T) \
     if ((_desiredProperties.isEmpty() || _desiredProperties.getHasProperty(p)) && \
         (!skipDefaults || defaultEntityProperties._##P != _##P)) { \
-        ScriptValue V = T##_convertScriptValue(engine, G); \
+        ScriptValue V = T##_convertScriptValue(engine, G()); \
         properties.setProperty(#P, V); \
     }
 
@@ -209,7 +236,7 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return
 #define COPY_PROXY_PROPERTY_TO_QSCRIPTVALUE_GETTER(p, P, X, G) \
     if (((!returnNothingOnEmptyPropertyFlags && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
         (!skipDefaults || defaultEntityProperties._##P != _##P)) { \
-        ScriptValue V = convertScriptValue(engine, G); \
+        ScriptValue V = convertScriptValue(engine, G()); \
         properties.setProperty(#X, V); \
     }
 
@@ -256,6 +283,7 @@ typedef QVector<bool> qVectorBool;
 typedef QVector<float> qVectorFloat;
 typedef QVector<QUuid> qVectorQUuid;
 typedef QVector<QString> qVectorQString;
+typedef QSet<QString> qSetQString;
 inline float float_convertFromScriptValue(const ScriptValue& v, bool& isValid) { return v.toVariant().toFloat(&isValid); }
 inline quint64 quint64_convertFromScriptValue(const ScriptValue& v, bool& isValid) { return v.toVariant().toULongLong(&isValid); }
 inline quint32 quint32_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
@@ -380,8 +408,6 @@ inline QRect QRect_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
     }                               \
 }
 
-
-
 #define COPY_PROPERTY_FROM_QSCRIPTVALUE(P, T, S)                         \
     {                                                                    \
         if (namesSet.contains(#P)) {                                     \
@@ -479,21 +505,21 @@ inline QRect QRect_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
         static T _static##N; 
 
 
-#define ADD_PROPERTY_TO_MAP(P, N, n, T) \
+#define ADD_PROPERTY_TO_MAP(P, n, T) \
     { \
         EntityPropertyInfo propertyInfo { makePropertyInfo<T>(P) }; \
         _propertyInfos[#n] = propertyInfo; \
 		_enumsToPropertyStrings[P] = #n; \
     }
 
-#define ADD_PROPERTY_TO_MAP_WITH_RANGE(P, N, n, T, M, X) \
+#define ADD_PROPERTY_TO_MAP_WITH_RANGE(P, n, M, X) \
     { \
         EntityPropertyInfo propertyInfo = EntityPropertyInfo(P, M, X); \
         _propertyInfos[#n] = propertyInfo; \
 		_enumsToPropertyStrings[P] = #n; \
     }
 
-#define ADD_GROUP_PROPERTY_TO_MAP(P, G, g, N, n) \
+#define ADD_GROUP_PROPERTY_TO_MAP(P, g, n) \
     { \
         EntityPropertyInfo propertyInfo = EntityPropertyInfo(P); \
         _propertyInfos[#g "." #n] = propertyInfo; \
@@ -501,7 +527,7 @@ inline QRect QRect_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
         _enumsToPropertyStrings[P] = #g "." #n; \
     }
 
-#define ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(P, G, g, N, n, M, X) \
+#define ADD_GROUP_PROPERTY_TO_MAP_WITH_RANGE(P, g, n, M, X) \
     { \
         EntityPropertyInfo propertyInfo = EntityPropertyInfo(P, M, X); \
         _propertyInfos[#g "." #n] = propertyInfo; \
@@ -517,31 +543,31 @@ inline QRect QRect_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
         T _##n = V; \
         bool _##n##Changed { false };
 
-#define DEFINE_PROPERTY(P, N, n, T, V)        \
+#define DEFINE_PROPERTY(N, n, T, V)        \
     public: \
         T get##N() const { return _##n; } \
         void set##N(T value) { _##n = value; _##n##Changed = true; } \
     DEFINE_CORE(N, n, T, V)
 
-#define DEFINE_PROPERTY_REF(P, N, n, T, V)        \
+#define DEFINE_PROPERTY_REF(N, n, T, V)        \
     public: \
         const T& get##N() const { return _##n; } \
         void set##N(const T& value) { _##n = value; _##n##Changed = true; } \
     DEFINE_CORE(N, n, T, V)
 
-#define DEFINE_PROPERTY_REF_WITH_SETTER(P, N, n, T, V)        \
+#define DEFINE_PROPERTY_REF_WITH_SETTER(N, n, T, V)        \
     public: \
         const T& get##N() const { return _##n; } \
         void set##N(const T& value); \
     DEFINE_CORE(N, n, T, V)
 
-#define DEFINE_PROPERTY_REF_WITH_SETTER_AND_GETTER(P, N, n, T, V)        \
+#define DEFINE_PROPERTY_REF_WITH_SETTER_AND_GETTER(N, n, T, V)        \
     public: \
         T get##N() const; \
         void set##N(const T& value); \
     DEFINE_CORE(N, n, T, V)
 
-#define DEFINE_PROPERTY_REF_ENUM(P, N, n, T, V) \
+#define DEFINE_PROPERTY_REF_ENUM(N, n, T, V) \
     public: \
         const T& get##N() const { return _##n; } \
         void set##N(const T& value) { _##n = value; _##n##Changed = true; } \
@@ -556,5 +582,135 @@ inline QRect QRect_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
     if (P.n##Changed()) {                                       \
         D << "  " << #n << ":" << P.get##N() << x << "\n";      \
     }
+
+// EntityItem helpers
+#define DEFINE_VARIABLE_NO_GETTER_SETTER(N, n, T, V) \
+    protected:                                       \
+        T _##n = V;
+
+#define DEFINE_VARIABLE(N, n, T, V)  \
+    public:                          \
+        T get##N() const;            \
+        void set##N(T value);        \
+    protected:                       \
+        T _##n = V;
+
+#define DEFINE_VARIABLE_REF(N, n, T, V)  \
+    public:                              \
+        T get##N() const;                \
+        void set##N(const T& value);     \
+    protected:                           \
+        T _##n = V;
+
+#define DEFINE_VARIABLE_BASIC(N, n, T, V)      \
+    public:                                    \
+        T get##N() const {                     \
+            return resultWithReadLock<T>([&] { \
+                return _##n;                   \
+            });                                \
+        }                                      \
+        void set##N(T value) {                 \
+            withWriteLock([&] {                \
+                _##n = value;                  \
+            });                                \
+        }                                      \
+    protected:                                 \
+        T _##n = V;
+
+#define DEFINE_VARIABLE_BASIC_REF(N, n, T, V)  \
+    public:                                    \
+        T get##N() const {                     \
+            return resultWithReadLock<T>([&] { \
+                return _##n;                   \
+            });                                \
+        }                                      \
+        void set##N(const T& value) {          \
+            withWriteLock([&] {                \
+                _##n = value;                  \
+            });                                \
+        }                                      \
+    protected:                                 \
+        T _##n = V;
+
+#define DEFINE_VARIABLE_RENDER(N, n, T, V)           \
+    public:                                          \
+        T get##N() const {                           \
+            return resultWithReadLock<T>([&] {       \
+                return _##n;                         \
+            });                                      \
+        }                                            \
+        void set##N(T value) {                       \
+            withWriteLock([&] {                      \
+                _needsRenderUpdate |= _##n != value; \
+                _##n = value;                        \
+            });                                      \
+        }                                            \
+    protected:                                       \
+        T _##n = V;
+
+#define DEFINE_VARIABLE_RENDER_REF(N, n, T, V)       \
+    public:                                          \
+        T get##N() const {                           \
+            return resultWithReadLock<T>([&] {       \
+                return _##n;                         \
+            });                                      \
+        }                                            \
+        void set##N(const T& value) {                \
+            withWriteLock([&] {                      \
+                _needsRenderUpdate |= _##n != value; \
+                _##n = value;                        \
+            });                                      \
+        }                                            \
+    protected:                                       \
+        T _##n = V;
+
+#define ENTITY_PROPERTY_SUBCLASS_METHODS                                                                \
+    EntityItemProperties getProperties(const EntityPropertyFlags& desiredProperties,                    \
+                                       bool allowEmptyDesiredProperties) const override;                \
+    bool setSubClassProperties(const EntityItemProperties& properties) override;                        \
+    EntityPropertyFlags getEntityProperties(EncodeBitstreamParams& params) const override;              \
+    void appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,                \
+                            EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,   \
+                            EntityPropertyFlags& requestedProperties,                                   \
+                            EntityPropertyFlags& propertyFlags,                                         \
+                            EntityPropertyFlags& propertiesDidntFit,                                    \
+                            int& propertyCount,                                                         \
+                            OctreeElement::AppendState& appendState) const override;                    \
+    int readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,                \
+                                         ReadBitstreamToTreeParams& args,                               \
+                                         EntityPropertyFlags& propertyFlags, bool overwriteLocalData,   \
+                                         bool& somethingChanged) override;                              \
+    virtual void debugDump() const override;
+
+#define ENTITY_PROPERTY_GROUP_METHODS(P)                                                                    \
+    virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,   \
+                                   ScriptEngine* engine, bool skipDefaults,                                 \
+                                   EntityItemProperties& defaultEntityProperties,                           \
+                                   bool returnNothingOnEmptyPropertyFlags,                                  \
+                                   bool isMyOwnAvatarEntity) const override;                                \
+    virtual void copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet,              \
+                                     bool& _defaultSettings) override;                                      \
+    void merge(const P& other);                                                                             \
+    virtual void debugDump() const override;                                                                \
+    virtual void listChangedProperties(QList<QString>& out) override;                                       \
+    virtual bool appendToEditPacket(OctreePacketData* packetData,                                           \
+                                    EntityPropertyFlags& requestedProperties,                               \
+                                    EntityPropertyFlags& propertyFlags,                                     \
+                                    EntityPropertyFlags& propertiesDidntFit,                                \
+                                    int& propertyCount,                                                     \
+                                    OctreeElement::AppendState& appendState) const override;                \
+    virtual bool decodeFromEditPacket(EntityPropertyFlags& propertyFlags,                                   \
+                                      const unsigned char*& dataAt, int& processedBytes) override;          \
+    virtual void markAllChanged() override;                                                                 \
+    virtual EntityPropertyFlags getChangedProperties() const override;                                      \
+    virtual void getProperties(EntityItemProperties& propertiesOut) const override;                         \
+    virtual bool setProperties(const EntityItemProperties& properties) override;                            \
+    virtual EntityPropertyFlags getEntityProperties(EncodeBitstreamParams& params) const override;          \
+    virtual int readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,            \
+                                                 ReadBitstreamToTreeParams& args,                           \
+                                                 EntityPropertyFlags& propertyFlags,                        \
+                                                 bool overwriteLocalData, bool& somethingChanged) override; \
+	static void addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,                          \
+                               QHash<EntityPropertyList, QString>& _enumsToPropertyStrings);
 
 #endif // hifi_EntityItemPropertiesMacros_h

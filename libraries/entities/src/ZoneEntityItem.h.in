@@ -1,0 +1,111 @@
+//
+//  ZoneEntityItem.h
+//  libraries/entities/src
+//
+//  Created by Brad Hefta-Gaub on 12/4/13.
+//  Copyright 2013 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#ifndef hifi_ZoneEntityItem_h
+#define hifi_ZoneEntityItem_h
+
+#include <ComponentMode.h>
+#include <model-networking/ModelCache.h>
+
+#include "KeyLightPropertyGroup.h"
+#include "AmbientLightPropertyGroup.h"
+#include "EntityItem.h"
+#include "EntityTree.h"
+#include "SkyboxPropertyGroup.h"
+#include "HazePropertyGroup.h"
+#include "BloomPropertyGroup.h"
+#include "ZoneAudioPropertyGroup.h"
+#include "TonemappingPropertyGroup.h"
+#include "AmbientOcclusionPropertyGroup.h"
+
+class ZoneEntityItem : public EntityItem {
+public:
+    static EntityItemPointer factory(const EntityItemID& entityID, const EntityItemProperties& properties);
+
+    ZoneEntityItem(const EntityItemID& entityItemID);
+
+    ALLOW_INSTANTIATION // This class can be instantiated
+    ENTITY_PROPERTY_SUBCLASS_METHODS
+
+    static bool getZonesArePickable() { return _zonesArePickable; }
+    static void setZonesArePickable(bool value) { _zonesArePickable = value; }
+
+    static bool getDrawZoneBoundaries() { return _drawZoneBoundaries; }
+    static void setDrawZoneBoundaries(bool value) { _drawZoneBoundaries = value; }
+
+    virtual bool isReadyToComputeShape() const override { return false; }
+    virtual void setShapeType(ShapeType type) override;
+    virtual ShapeType getShapeType() const override;
+    bool shouldBePhysical() const override { return false; }
+
+    virtual bool matchesJSONFilters(const QJsonObject& jsonFilters) const override;
+
+    SkyboxPropertyGroup getSkyboxProperties() const { return resultWithReadLock<SkyboxPropertyGroup>([&] { return _skyboxProperties; }); }
+    KeyLightPropertyGroup getKeyLightProperties() const { return resultWithReadLock<KeyLightPropertyGroup>([&] { return _keyLightProperties; }); }
+    AmbientLightPropertyGroup getAmbientLightProperties() const { return resultWithReadLock<AmbientLightPropertyGroup>([&] { return _ambientLightProperties; }); }
+    const HazePropertyGroup& getHazeProperties() const { return _hazeProperties; }
+    const BloomPropertyGroup& getBloomProperties() const { return _bloomProperties; }
+    const ZoneAudioPropertyGroup& getAudioProperties() const { return _audioProperties; }
+    const TonemappingPropertyGroup& getTonemappingProperties() const { return _tonemappingProperties; }
+    const AmbientOcclusionPropertyGroup& getAmbientOcclusionProperties() const { return _ambientOcclusionProperties; }
+
+    void setUserData(const QString& value) override;
+
+    bool keyLightPropertiesChanged() const { return _keyLightPropertiesChanged; }
+    bool ambientLightPropertiesChanged() const { return _ambientLightPropertiesChanged; }
+    bool skyboxPropertiesChanged() const { return _skyboxPropertiesChanged; }
+    bool hazePropertiesChanged() const { return _hazePropertiesChanged; }
+    bool bloomPropertiesChanged() const { return _bloomPropertiesChanged; }
+    bool tonemappingPropertiesChanged() const { return _tonemappingPropertiesChanged; }
+    bool ambientOcclusionPropertiesChanged() const { return _ambientOcclusionPropertiesChanged; }
+
+    void resetRenderingPropertiesChanged();
+
+    virtual bool supportsDetailedIntersection() const override { return true; }
+    virtual bool findDetailedRayIntersection(const glm::vec3& origin, const glm::vec3& direction,
+                         const glm::vec3& viewFrustumPos, OctreeElementPointer& element, float& distance,
+                         BoxFace& face, glm::vec3& surfaceNormal,
+                         QVariantMap& extraInfo, bool precisionPicking) const override;
+    virtual bool findDetailedParabolaIntersection(const glm::vec3& origin, const glm::vec3& velocity,
+                         const glm::vec3& acceleration, const glm::vec3& viewFrustumPos, OctreeElementPointer& element,
+                         float& parabolicDistance, BoxFace& face, glm::vec3& surfaceNormal,
+                         QVariantMap& extraInfo, bool precisionPicking) const override;
+
+    bool contains(const glm::vec3& point) const override;
+
+    static const ShapeType DEFAULT_SHAPE_TYPE;
+    static const QString DEFAULT_COMPOUND_SHAPE_URL;
+    static const bool DEFAULT_FLYING_ALLOWED;
+    static const bool DEFAULT_GHOSTING_ALLOWED;
+    static const QString DEFAULT_FILTER_URL;
+
+protected:
+
+@Zone_ENTITY_PROPS@
+
+    // Dirty flags turn true when either keylight properties is changing values.
+    bool _keyLightPropertiesChanged { false };
+    bool _ambientLightPropertiesChanged { false };
+    bool _skyboxPropertiesChanged { false };
+    bool _hazePropertiesChanged { false };
+    bool _bloomPropertiesChanged { false };
+    bool _tonemappingPropertiesChanged { false };
+    bool _ambientOcclusionPropertiesChanged { false };
+
+    static bool _drawZoneBoundaries;
+    static bool _zonesArePickable;
+
+    void fetchCollisionGeometryResource();
+    GeometryResource::Pointer _shapeResource;
+
+};
+
+#endif // hifi_ZoneEntityItem_h

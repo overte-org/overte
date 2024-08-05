@@ -1,0 +1,39 @@
+//
+//  Created by Sam Gondelman on 11/29/18
+//  Copyright 2018 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#ifndef hifi_GridEntityItem_h
+#define hifi_GridEntityItem_h
+
+#include "EntityItem.h"
+
+#include "PulsePropertyGroup.h"
+
+class GridEntityItem : public EntityItem {
+    using Pointer = std::shared_ptr<GridEntityItem>;
+public:
+    static EntityItemPointer factory(const EntityItemID& entityID, const EntityItemProperties& properties);
+
+    GridEntityItem(const EntityItemID& entityItemID);
+
+    ALLOW_INSTANTIATION // This class can be instantiated
+    ENTITY_PROPERTY_SUBCLASS_METHODS
+
+    virtual void setUnscaledDimensions(const glm::vec3& value) override;
+
+    static const uint32_t DEFAULT_MAJOR_GRID_EVERY;
+    static const float DEFAULT_MINOR_GRID_EVERY;
+
+    PulsePropertyGroup getPulseProperties() const;
+
+protected:
+
+@Grid_ENTITY_PROPS@
+
+};
+
+#endif // hifi_GridEntityItem_h

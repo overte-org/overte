@@ -57,9 +57,9 @@ macro(SETUP_HIFI_LIBRARY)
 
   # create a library and set the property so it can be referenced later
   if (${${TARGET_NAME}_SHARED})
-    add_library(${TARGET_NAME} SHARED ${LIB_SRCS} ${AUTOSCRIBE_SHADER_LIB_SRC} ${QT_RESOURCES_FILE})
+    add_library(${TARGET_NAME} SHARED ${LIB_SRCS} ${AUTOSCRIBE_SHADER_LIB_SRC} ${GENERATE_ENTITIES_LIB_SRC} ${QT_RESOURCES_FILE})
   else ()
-    add_library(${TARGET_NAME} ${LIB_SRCS} ${AUTOSCRIBE_SHADER_LIB_SRC} ${QT_RESOURCES_FILE})
+    add_library(${TARGET_NAME} ${LIB_SRCS} ${AUTOSCRIBE_SHADER_LIB_SRC} ${GENERATE_ENTITIES_LIB_SRC} ${QT_RESOURCES_FILE})
   endif ()
 
   set(${TARGET_NAME}_DEPENDENCY_QT_MODULES ${ARGN})
@@ -72,8 +72,9 @@ macro(SETUP_HIFI_LIBRARY)
     target_link_libraries(${TARGET_NAME} Qt5::${QT_MODULE})
   endforeach()
 
-  # Don't make scribed shaders or QT resource files cumulative
+  # Don't make scribed shaders, generated entity files, or QT resource files cumulative
   set(AUTOSCRIBE_SHADER_LIB_SRC "")
+  set(GENERATE_ENTITIES_LIB_SRC "")
   set(QT_RESOURCES_FILE "")
 
   target_glm()

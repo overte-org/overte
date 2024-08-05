@@ -233,6 +233,7 @@ link_hifi_libraries(
   shaders
 )
 include_hifi_library_headers(script-engine)
+include_hifi_library_headers(entities)
 
 # include the binary directory of render-utils for shader includes
 target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_BINARY_DIR}/libraries/render-utils")

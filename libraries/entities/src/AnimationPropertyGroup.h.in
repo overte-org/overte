@@ -1,0 +1,52 @@
+//
+//  AnimationPropertyGroup.h
+//  libraries/entities/src
+//
+//  Created by Brad Hefta-Gaub on 2015/9/30.
+//  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+
+#ifndef hifi_AnimationPropertyGroup_h
+#define hifi_AnimationPropertyGroup_h
+
+#include <stdint.h>
+
+#include <glm/glm.hpp>
+
+#include "EntityItemPropertiesMacros.h"
+#include "PropertyGroup.h"
+
+class EntityItemProperties;
+class EncodeBitstreamParams;
+class OctreePacketData;
+class EntityTreeElementExtraEncodeData;
+class ReadBitstreamToTreeParams;
+class ScriptEngine;
+class ScriptValue;
+
+class AnimationPropertyGroup : public PropertyGroup {
+public:
+    ENTITY_PROPERTY_GROUP_METHODS(AnimationPropertyGroup)
+
+    static const float MAXIMUM_POSSIBLE_FRAME;
+
+    float getNumFrames() const;
+    float computeLoopedFrame(float frame) const;
+    bool isValidAndRunning() const;
+
+protected:
+
+@Animation_GROUP_PROPS@
+
+    friend bool operator==(const AnimationPropertyGroup& a, const AnimationPropertyGroup& b);
+    friend bool operator!=(const AnimationPropertyGroup& a, const AnimationPropertyGroup& b) { return !(a == b); }
+    void setFromOldAnimationSettings(const QString& value);
+};
+
+#endif // hifi_AnimationPropertyGroup_h

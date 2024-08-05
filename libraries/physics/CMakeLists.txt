@@ -20,5 +20,6 @@ include_hifi_library_headers(hfm)
 include_hifi_library_headers(model-serializers)
 include_hifi_library_headers(graphics)
 include_hifi_library_headers(script-engine)
+include_hifi_library_headers(entities)
 
 target_bullet()
