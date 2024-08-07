@@ -381,7 +381,7 @@ void ZoneEntityRenderer::updateAmbientLightFromEntity(const TypedEntityPointer& 
     ambientLight->setAmbientIntensity(_ambientLightProperties.getAmbientIntensity());
 
     if (_ambientLightProperties.getAmbientURL().isEmpty()) {
-        setAmbientURL(_skyboxProperties.getURL());
+        setAmbientURL(_skyboxProperties.getUrl());
     } else {
         setAmbientURL(_ambientLightProperties.getAmbientURL());
     }
@@ -447,11 +447,11 @@ void ZoneEntityRenderer::updateAmbientOcclusionFromEntity(const TypedEntityPoint
     ambientOcclusion->setResolutionLevel(_ambientOcclusionProperties.getResolutionLevel());
     ambientOcclusion->setEdgeSharpness(_ambientOcclusionProperties.getEdgeSharpness());
     ambientOcclusion->setBlurRadius(_ambientOcclusionProperties.getBlurRadius());
-    ambientOcclusion->setAORadius(_ambientOcclusionProperties.getAORadius());
-    ambientOcclusion->setAOObscuranceLevel(_ambientOcclusionProperties.getAOObscuranceLevel());
-    ambientOcclusion->setAOFalloffAngle(_ambientOcclusionProperties.getAOFalloffAngle());
-    ambientOcclusion->setAOSamplingAmount(_ambientOcclusionProperties.getAOSamplingAmount());
-    ambientOcclusion->setSSAONumSpiralTurns(_ambientOcclusionProperties.getSSAONumSpiralTurns());
+    ambientOcclusion->setAORadius(_ambientOcclusionProperties.getAoRadius());
+    ambientOcclusion->setAOObscuranceLevel(_ambientOcclusionProperties.getAoObscuranceLevel());
+    ambientOcclusion->setAOFalloffAngle(_ambientOcclusionProperties.getAoFalloffAngle());
+    ambientOcclusion->setAOSamplingAmount(_ambientOcclusionProperties.getAoSamplingAmount());
+    ambientOcclusion->setSSAONumSpiralTurns(_ambientOcclusionProperties.getSsaoNumSpiralTurns());
 }
 
 void ZoneEntityRenderer::updateKeyBackgroundFromEntity(const TypedEntityPointer& entity) {
@@ -460,7 +460,7 @@ void ZoneEntityRenderer::updateKeyBackgroundFromEntity(const TypedEntityPointer&
     editBackground();
     setSkyboxColor(toGlm(_skyboxProperties.getColor()));
     setProceduralUserData(_proceduralUserData);
-    setSkyboxURL(_skyboxProperties.getURL());
+    setSkyboxURL(_skyboxProperties.getUrl());
 }
 
 void ZoneEntityRenderer::updateKeyZoneItemFromEntity(const TypedEntityPointer& entity) {

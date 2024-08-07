@@ -1,0 +1,50 @@
+//
+//  Created by Bradley Austin Davis on 2015/05/12
+//  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2020 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#ifndef hifi_WebEntityItem_h
+#define hifi_WebEntityItem_h
+
+#include "EntityItem.h"
+
+#include "PulsePropertyGroup.h"
+
+class WebEntityItem : public EntityItem {
+public:
+    static EntityItemPointer factory(const EntityItemID& entityID, const EntityItemProperties& properties);
+
+    WebEntityItem(const EntityItemID& entityItemID);
+
+    ALLOW_INSTANTIATION // This class can be instantiated
+    ENTITY_PROPERTY_SUBCLASS_METHODS
+
+    /// set dimensions in domain scale units (0.0 - 1.0) this will also reset radius appropriately
+    virtual void setUnscaledDimensions(const glm::vec3& value) override;
+    virtual ShapeType getShapeType() const override { return SHAPE_TYPE_BOX; }
+
+    void setScriptURL(const QString& value);
+    QString getScriptURL() const;
+
+    bool getLocalSafeContext() const;
+
+    static const QString DEFAULT_SOURCE_URL;
+    static const uint8_t DEFAULT_MAX_FPS;
+    static const QString DEFAULT_USER_AGENT;
+
+    PulsePropertyGroup getPulseProperties() const;
+
+protected:
+
+@Web_ENTITY_PROPS@
+
+    bool _localSafeContext { false };
+};
+
+#endif // hifi_WebEntityItem_h

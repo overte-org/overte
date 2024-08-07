@@ -1,0 +1,117 @@
+//
+//  TextEntityItem.cpp
+//  libraries/entities/src
+//
+//  Created by Brad Hefta-Gaub on 12/4/13.
+//  Copyright 2013 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#include "TextEntityItem.h"
+
+#include <glm/gtx/transform.hpp>
+
+#include <QDebug>
+
+#include <ByteCountCoding.h>
+#include <GeometryUtil.h>
+
+#include "EntityItemProperties.h"
+#include "EntitiesLogging.h"
+#include "EntityTree.h"
+#include "EntityTreeElement.h"
+
+const QString TextEntityItem::DEFAULT_TEXT("");
+const float TextEntityItem::DEFAULT_LINE_HEIGHT = 0.1f;
+const glm::u8vec3 TextEntityItem::DEFAULT_TEXT_COLOR = { 255, 255, 255 };
+const float TextEntityItem::DEFAULT_TEXT_ALPHA = 1.0f;
+const glm::u8vec3 TextEntityItem::DEFAULT_BACKGROUND_COLOR = { 0, 0, 0};
+const float TextEntityItem::DEFAULT_MARGIN = 0.0f;
+const float TextEntityItem::DEFAULT_TEXT_EFFECT_THICKNESS = 0.2f;
+
+EntityItemPointer TextEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    std::shared_ptr<TextEntityItem> entity(new TextEntityItem(entityID), [](TextEntityItem* ptr) { ptr->deleteLater(); });
+    entity->setProperties(properties);
+    return entity;
+}
+
+TextEntityItem::TextEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
+    _type = EntityTypes::Text;
+}
+
+void TextEntityItem::setUnscaledDimensions(const glm::vec3& value) {
+    const float TEXT_ENTITY_ITEM_FIXED_DEPTH = 0.01f;
+    // NOTE: Text Entities always have a "depth" of 1cm.
+    EntityItem::setUnscaledDimensions(glm::vec3(value.x, value.y, TEXT_ENTITY_ITEM_FIXED_DEPTH));
+}
+
+EntityItemProperties TextEntityItem::getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const {
+    EntityItemProperties properties = EntityItem::getProperties(desiredProperties, allowEmptyDesiredProperties); // get the properties from our base class
+
+@Text_ENTITY_COPY_TO@
+
+    return properties;
+}
+
+bool TextEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Text_ENTITY_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags TextEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
+
+@Text_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+void TextEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
+                                        EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                        EntityPropertyFlags& requestedProperties,
+                                        EntityPropertyFlags& propertyFlags,
+                                        EntityPropertyFlags& propertiesDidntFit,
+                                        int& propertyCount,
+                                        OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Text_ENTITY_APPEND@
+
+}
+
+int TextEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                ReadBitstreamToTreeParams& args,
+                                                EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Text_ENTITY_READ@
+
+    return bytesRead;
+}
+
+void TextEntityItem::debugDump() const {
+    qCDebug(entities) << "TextEntityItem id:" << getEntityItemID() << "---------------------------------------------";
+    qCDebug(entities) << "    name:" << _name;
+    qCDebug(entities) << "    position:" << debugTreeVector(getWorldPosition());
+    qCDebug(entities) << "    dimensions:" << debugTreeVector(getScaledDimensions());
+    qCDebug(entities) << "    editedAgo:" << debugTime(getLastEdited(), usecTimestampNow());
+    qCDebug(entities) << "    pointer:" << this;
+
+@Text_ENTITY_DEBUG@
+
+}
+
+PulsePropertyGroup TextEntityItem::getPulseProperties() const {
+    return resultWithReadLock<PulsePropertyGroup>([&] {
+        return _pulseProperties;
+    });
+}

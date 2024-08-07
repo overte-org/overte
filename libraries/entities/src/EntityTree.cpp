@@ -2804,8 +2804,8 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
             // Use skybox value only if it is not empty, else set ambientMode to inherit (to use default URL)
             properties.setAmbientLightMode(COMPONENT_MODE_ENABLED);
             if (properties.getAmbientLight().getAmbientURL() == "") {
-                if (properties.getSkybox().getURL() != "") {
-                    properties.getAmbientLight().setAmbientURL(properties.getSkybox().getURL());
+                if (properties.getSkybox().getUrl() != "") {
+                    properties.getAmbientLight().setAmbientURL(properties.getSkybox().getUrl());
                 } else {
                     properties.setAmbientLightMode(COMPONENT_MODE_INHERIT);
                 }

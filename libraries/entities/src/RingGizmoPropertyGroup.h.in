@@ -1,0 +1,76 @@
+//
+//  Created by Sam Gondelman on 1/22/19
+//  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#ifndef hifi_RingGizmoPropertyGroup_h
+#define hifi_RingGizmoPropertyGroup_h
+
+#include <stdint.h>
+
+#include "PropertyGroup.h"
+#include "EntityItemPropertiesMacros.h"
+#include "EntityItemPropertiesDefaults.h"
+
+class EntityItemProperties;
+class EncodeBitstreamParams;
+class OctreePacketData;
+class ReadBitstreamToTreeParams;
+class ScriptEngine;
+class ScriptValue;
+
+/*@jsdoc
+ * A {@link Entities.EntityProperties-Gizmo|ring Gizmo} entity is defined by the following properties:
+ * @typedef {object} Entities.RingGizmo
+ *
+ * @property {number} startAngle=0 - The angle at which the ring starts, in degrees.
+ * @property {number} endAngle=360 - The angle at which the ring ends, in degrees.
+ * @property {number} innerRadius=0 - The inner radius of the ring as a fraction of the total radius, range <code>0.0</code> 
+ *     &mdash; <code>1.0</code>.
+
+ * @property {Color} innerStartColor=255,255,255 - The color at the inner start point of the ring.
+ * @property {Color} innerEndColor=255,255,255 - The color at the inner end point of the ring.
+ * @property {Color} outerStartColor=255,255,255 - The color at the outer start point of the ring.
+ * @property {Color} outerEndColor=255,255,255 - The color at the outer end point of the ring.
+ * @property {number} innerStartAlpha=1 - The opacity at the inner start point of the ring.
+ * @property {number} innerEndAlpha=1 - The opacity at the inner end point of the ring.
+ * @property {number} outerStartAlpha=1 - The opacity at the outer start point of the ring.
+ * @property {number} outerEndAlpha=1 - The opacity at the outer end point of the ring.
+
+ * @property {boolean} hasTickMarks=false - <code>true</code> to render tick marks, otherwise <code>false</code>.
+ * @property {number} majorTickMarksAngle=0 - The angle between major tick marks, in degrees.
+ * @property {number} minorTickMarksAngle=0 - The angle between minor tick marks, in degrees.
+ * @property {number} majorTickMarksLength=0 - The length of the major tick marks as a fraction of the radius. A positive value 
+ *     draws tick marks outwards from the inner radius; a negative value draws tick marks inwards from the outer radius.
+ * @property {number} minorTickMarksLength=0 - The length of the minor tick marks, as a fraction of the radius. A positive 
+ *     value draws tick marks outwards from the inner radius; a negative value draws tick marks inwards from the outer radius.
+ * @property {Color} majorTickMarksColor=255,255,255 - The color of the major tick marks.
+ * @property {Color} minorTickMarksColor=255,255,255 - The color of the minor tick marks.
+ */
+
+class RingGizmoPropertyGroup : public PropertyGroup {
+public:
+    ENTITY_PROPERTY_GROUP_METHODS(RingGizmoPropertyGroup)
+
+    bool operator==(const RingGizmoPropertyGroup& a) const;
+    bool operator!=(const RingGizmoPropertyGroup& a) const { return !(*this == a); }
+
+    static const float MIN_ANGLE;
+    static const float MAX_ANGLE;
+    static const float MIN_ALPHA;
+    static const float MAX_ALPHA;
+    static const float MIN_RADIUS;
+    static const float MAX_RADIUS;
+
+protected:
+
+@Ring_GROUP_PROPS@
+
+};
+
+#endif // hifi_RingGizmoPropertyGroup_h
