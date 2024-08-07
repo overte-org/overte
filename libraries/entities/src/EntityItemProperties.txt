@@ -41,11 +41,11 @@ enum:RESTITUTION prop:restitution type:float default:ENTITY_ITEM_DEFAULT_RESTITU
 enum:FRICTION prop:friction type:float default:ENTITY_ITEM_DEFAULT_FRICTION min:ENTITY_ITEM_MIN_FRICTION max:ENTITY_ITEM_MAX_FRICTION,
 enum:LIFETIME prop:lifetime type:float default:ENTITY_ITEM_DEFAULT_LIFETIME debugString:"seconds",
 enum:COLLISIONLESS prop:collisionless type:bool default:ENTITY_ITEM_DEFAULT_COLLISIONLESS,
-enum:COLLISIONLESS prop:ignoreForCollisions proxy:collisionless type:bool fromScriptType:bool legacy getter:getCollisionless setter:setCollisionless,
+enum:COLLISIONLESS prop:ignoreForCollisions proxy:collisionless type:bool legacy getter:getCollisionless setter:setCollisionless,
 enum:COLLISION_MASK prop:collisionMask type:uint16_t default:ENTITY_COLLISION_MASK_DEFAULT,
 enum:COLLISION_MASK prop:collidesWith proxy:collisionMask type:CollisionMask proxyType:uint16_t enum legacy getter:getCollisionMaskAsString,
 enum:DYNAMIC prop:dynamic type:bool default:ENTITY_ITEM_DEFAULT_DYNAMIC,
-enum:DYNAMIC prop:collisionWillMove proxy:dynamic type:bool fromScriptType:bool legacy getter:getDynamic setter:setDynamic,
+enum:DYNAMIC prop:collisionWillMove proxy:dynamic type:bool legacy getter:getDynamic setter:setDynamic,
 enum:COLLISION_SOUND_URL prop:collisionSoundURL type:QString default:ENTITY_ITEM_DEFAULT_COLLISION_SOUND_URL urlPermission,
 enum:ACTION_DATA prop:actionData type:QByteArray default:QByteArray() readOnly inherited variableCopyGetter:getDynamicData variableCopySetter:setDynamicData variableNetworkGetter:getDynamicData() variableNetworkSetter:setDynamicData debugGetter:getDynamicData(),
 Cloning
