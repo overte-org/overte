@@ -80,6 +80,10 @@ jobs:
       run: |
         git clone --depth=1 https://github.com/overte-org/overte-builder.git
 
+    - name: Add nodejs repository
+      shell: bash
+      run: curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+
     - name: Install dependencies
       shell: bash
       working-directory: appimage
@@ -91,10 +95,6 @@ jobs:
         ./overte-builder --auto --make-appimage --skip-build --skip-install --install-deps-only --destdir="$overtedir"
 
         sudo apt install ninja-build
-
-    - name: Overwrite nodejs version
-      shell: bash
-      run: curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 
     - name: Build AppImage
       shell: bash
