@@ -41,9 +41,9 @@ jobs:
             # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image
             runner: [self_hosted, type-cx52, image-x86-system-ubuntu-20.04]
 
-          - os: ubuntu-24.04
-            arch: aarch64
-            runner: [self_hosted, type-cax41, image-arm-system-ubuntu-24.04]
+          # - os: ubuntu-24.04
+          #   arch: aarch64
+          #   runner: [self_hosted, type-cax41, image-arm-system-ubuntu-24.04]
 
       fail-fast: true
 
