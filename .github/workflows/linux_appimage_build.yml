@@ -69,6 +69,16 @@ jobs:
       run: |
         git clone --depth=1 https://github.com/overte-org/overte-builder.git
 
+    - name: Install dependencies
+      shell: bash
+      working-directory: appimage
+      run: |
+        basedir=`pwd`
+        overtedir="$basedir/Overte"
+
+        cd overte-builder
+        ./overte-builder --auto --make-appimage --skip-build --skip-install --install-deps-only --destdir="$overtedir"
+
     - name: Build AppImage
       shell: bash
       working-directory: appimage
