@@ -79,6 +79,10 @@ jobs:
         cd overte-builder
         ./overte-builder --auto --make-appimage --skip-build --skip-install --install-deps-only --destdir="$overtedir"
 
+    - name: Overwrite nodejs version
+      shell: bash
+      run: curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+
     - name: Build AppImage
       shell: bash
       working-directory: appimage
