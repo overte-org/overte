@@ -41,6 +41,10 @@ jobs:
             # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image
             runner: [self_hosted, type-cx52, image-x86-system-ubuntu-20.04]
 
+          - os: ubuntu-24.04
+            arch: aarch64
+            runner: [self_hosted, type-cax41, image-arm-system-ubuntu-24.04]
+
       fail-fast: true
 
     runs-on: ${{matrix.runner}}
@@ -63,6 +67,13 @@ jobs:
             rm -rf "overte-builder"
         fi
 
+    - name: Prepare environment
+      shell: bash
+      run: |
+        if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
+          echo "VCPKG_FORCE_SYSTEM_BINARIES=true" >> $GITHUB_ENV
+        fi
+
     - name: Download Overte Builder
       shell: bash
       working-directory: appimage
@@ -78,6 +89,8 @@ jobs:
 
         cd overte-builder
         ./overte-builder --auto --make-appimage --skip-build --skip-install --install-deps-only --destdir="$overtedir"
+
+        apt install ninja-build
 
     - name: Overwrite nodejs version
       shell: bash
