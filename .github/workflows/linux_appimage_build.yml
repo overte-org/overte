@@ -90,7 +90,7 @@ jobs:
         cd overte-builder
         ./overte-builder --auto --make-appimage --skip-build --skip-install --install-deps-only --destdir="$overtedir"
 
-        apt install ninja-build
+        sudo apt install ninja-build
 
     - name: Overwrite nodejs version
       shell: bash
