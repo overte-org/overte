@@ -1,17 +1,18 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2020-2022 Vircadia contributors.
-# Copyright 2021-2023 Overte e.V.
+# Copyright 2021-2024 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 name: Linux AppImage build
-# This was made for a particular self-hosted setup containing helper scripts.
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened]
   push:
-    branches:
-      - master
+    tags:
+      # Release tags. E.g. 2024.06.1
+      # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+      - "[0-9][0-9][0-9][0-9].[0-9][0-9].**"
 
 defaults:
   run:
@@ -19,20 +20,26 @@ defaults:
 
 env:
   BUILD_TYPE: Release
+  UPLOAD_BUCKET: overte-public
+  UPLOAD_REGION: fra1
+  UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
+  # Disable VCPKG caching to save time.
+  VCPKG_FEATURE_FLAGS: -binarycaching
 
-  # Sentry Crash Reporting
-  CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
-  CMAKE_BACKTRACE_TOKEN: AppImage_${{ github.event.number }}_${{ github.sha }}
 jobs:
   build:
-
     name: "${{matrix.os}}, ${{matrix.arch}}"
     strategy:
       matrix:
         include:
-          - os: Ubuntu 20.04
-            runner: AppImage
+          - os: ubuntu-20.04
             arch: amd64
+            # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels
+            # self_hosted makes the Hetzner auto-scaler put up the job.
+            # type-cx52 is a Hetzner VPS server type. In this case cs52 is a server with 16-cores and 32GB of RAM.
+            # image-x86-app-docker-ce is a Hetzner image.
+            # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image
+            runner: [self_hosted, type-cx52, image-x86-system-ubuntu-20.04]
 
       fail-fast: true
 
@@ -40,6 +47,13 @@ jobs:
 
     steps:
     - name: Clear Working Directories
+      shell: bash
+      run: |
+        rm -rf ./*
+        rm -rf ~/overte-files
+        rm -rf ~/.cache
+
+    - name: Prepare Working Directories
       shell: bash
       run: |
         mkdir -p appimage
@@ -53,7 +67,7 @@ jobs:
       shell: bash
       working-directory: appimage
       run: |
-        git clone https://github.com/overte-org/overte-builder.git
+        git clone --depth=1 https://github.com/overte-org/overte-builder.git
 
     - name: Build AppImage
       shell: bash
@@ -68,11 +82,13 @@ jobs:
             rm -v $overtedir/*AppImage || true
         fi
 
-        if [ -z "$CMAKE_BACKTRACE_URL" ] ; then
+        if [ "${{ github.ref_type }}" == "tag" ]; then
+          export CMAKE_BACKTRACE_URL="${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}"
+          export CMAKE_BACKTRACE_TOKEN="${{ github.ref_name }}_${{ matrix.os }}_${{ github.sha }}"
+        else
           # We're building a PR, default to the PR endpoint
-          echo "Setting up crash reporting for a PR"
           export CMAKE_BACKTRACE_URL="https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
-          export CMAKE_BACKTRACE_TOKEN="AppImage_pr_${{ github.event.number }}_${{ github.sha }}"
+          export CMAKE_BACKTRACE_TOKEN="server_pr_${{ github.event.number }}_${{ github.sha }}"
         fi
 
         cd overte-builder
@@ -104,39 +120,38 @@ jobs:
       if: contains( github.event.pull_request.labels.*.name, 'upload_to_github')
       uses: actions/upload-artifact@v3
       with:
-        name: Overte-x86_64.AppImage
-        path: |
-            appimage/Overte/Overte-*-debug-x86_64.AppImage
+        name: Overte-debug-x86_64.AppImage
+        path: appimage/Overte/Overte-*-debug-x86_64.AppImage
 
-    - name: Upload AppImage without debugging to S3
-      if: contains( github.event.pull_request.labels.*.name, 'upload_to_github') == false
-      shell: bash
-      working-directory: appimage
-      run: |
-        if [ ! -x "/usr/local/bin/upload_to_s3" ] ; then
-            echo "Couldn't find /usr/local/bin/upload_to_s3 upload script. Label this with upload_to_github to upload to GitHub instead."
-            exit 1
-        fi
-
-        filename=`find Overte -maxdepth 1 -name 'Overte-*-nodebug-x86_64.AppImage'`
-        base=`basename "$filename"`
-
-        sudo -u uploader /usr/local/bin/upload_to_s3 --type "${{ github.event_name }}" --number ${{ github.event.number }} --name "$base" < "$filename"
-
-    - name: Upload AppImage with debugging to S3
-      if: contains( github.event.pull_request.labels.*.name, 'upload_to_github') == false
-      shell: bash
-      working-directory: appimage
-      run: |
-        if [ ! -x "/usr/local/bin/upload_to_s3" ] ; then
-          echo "Couldn't find /usr/local/bin/upload_to_s3 upload script. Label this with upload_to_github to upload to GitHub instead."
-          exit 1
-        fi
-
-        filename=`find Overte -maxdepth 1 -name 'Overte-*-debug-x86_64.AppImage'`
-        base=`basename "$filename"`
-
-        sudo -u uploader /usr/local/bin/upload_to_s3 --type "${{ github.event_name }}" --number ${{ github.event.number }} --name "$base" < "$filename"
+    # - name: Upload AppImage without debugging to S3
+    #   if: contains( github.event.pull_request.labels.*.name, 'upload_to_github') == false
+    #   shell: bash
+    #   working-directory: appimage
+    #   run: |
+    #     if [ ! -x "/usr/local/bin/upload_to_s3" ] ; then
+    #         echo "Couldn't find /usr/local/bin/upload_to_s3 upload script. Label this with upload_to_github to upload to GitHub instead."
+    #         exit 1
+    #     fi
+    #
+    #     filename=`find Overte -maxdepth 1 -name 'Overte-*-nodebug-x86_64.AppImage'`
+    #     base=`basename "$filename"`
+    #
+    #     sudo -u uploader /usr/local/bin/upload_to_s3 --type "${{ github.event_name }}" --number ${{ github.event.number }} --name "$base" < "$filename"
+    #
+    # - name: Upload AppImage with debugging to S3
+    #   if: contains( github.event.pull_request.labels.*.name, 'upload_to_github') == false
+    #   shell: bash
+    #   working-directory: appimage
+    #   run: |
+    #     if [ ! -x "/usr/local/bin/upload_to_s3" ] ; then
+    #       echo "Couldn't find /usr/local/bin/upload_to_s3 upload script. Label this with upload_to_github to upload to GitHub instead."
+    #       exit 1
+    #     fi
+    #
+    #     filename=`find Overte -maxdepth 1 -name 'Overte-*-debug-x86_64.AppImage'`
+    #     base=`basename "$filename"`
+    #
+    #     sudo -u uploader /usr/local/bin/upload_to_s3 --type "${{ github.event_name }}" --number ${{ github.event.number }} --name "$base" < "$filename"
 
     - name: Cleanup
       if: ${{ always() }}
@@ -144,6 +159,13 @@ jobs:
       working-directory: appimage
       run: |
         rm -rf Overte/*AppImage Overte/build
+
+    - name: Clear Working Directories
+      shell: bash
+      run: |
+        rm -rf ./*
+        rm -rf ~/overte-files
+        rm -rf ~/.cache
 
     - name: Output system stats
       if: ${{ always() }}
