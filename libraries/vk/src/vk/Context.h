@@ -203,10 +203,10 @@ public:
         });
     }
 
-    void createDevice(const VkSurfaceKHR& surface = nullptr);
+    void createDevice();
 
 protected:
-    void pickDevice(const VkSurfaceKHR& surface );
+    void pickDevice();
 
     void buildDevice();
 
@@ -229,7 +229,7 @@ public:
         uint32_t count,
         VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) const;*/
 
-    //VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) const;
+    VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) const;
 
     //void flushCommandBuffer(VkCommandBuffer& commandBuffer) const;
 

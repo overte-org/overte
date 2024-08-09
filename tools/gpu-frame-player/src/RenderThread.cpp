@@ -10,9 +10,9 @@
 #include <QtGui/QWindow>
 #include <QtCore/QThreadPool>
 #include <QtX11Extras/QX11Info>
-#include <gl/OffscreenGLCanvas.h>
 //#include <QVulkanInstance>
 #ifdef USE_GL
+#include <gl/OffscreenGLCanvas.h>
 #include <gl/QOpenGLContextWrapper.h>
 #endif
 
@@ -87,21 +87,18 @@ void RenderThread::initialize(QWindow* window) {
 #ifdef WIN32
     _surface = _vkcontext.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)window->winId() });
 #else
-    VkXcbSurfaceCreateInfoKHR surfaceCreateInfo;
-    //dynamic_cast<QGuiApplication*>(QGuiApplication::instance())->platformNativeInterface()->connection();
-    surfaceCreateInfo.connection = QX11Info::connection();
-    surfaceCreateInfo.window = (xcb_window_t)(window->winId());
-    _surface = _vkcontext.instance.createXcbSurfaceKHR(surfaceCreateInfo);
+    _vkcontext.createDevice();
+    _swapchain.setContext(_vkcontext.instance, _vkcontext.physicalDevice, _vkcontext.device->logicalDevice);
+    _swapchain.initSurface(QX11Info::connection(), (xcb_window_t)(window->winId()));
 #endif
-    _vkcontext.createDevice(_surface);
-    _swapchain.setSurface(_surface);
-    _swapchain.create(_extent, true);
+    _swapchain.create(&_extent.width, &_extent.height, true);
 
     setupRenderPass();
     setupFramebuffers();
 
-    acquireComplete = _vkcontext.device.createSemaphore(VkSemaphoreCreateInfo{});
-    renderComplete = _vkcontext.device.createSemaphore(VkSemaphoreCreateInfo{});
+    VkSemaphoreCreateInfo semaphoreCI{};
+    VK_CHECK_RESULT(vkCreateSemaphore(_vkcontext.device->logicalDevice, &semaphoreCI, nullptr, &acquireComplete));
+    VK_CHECK_RESULT(vkCreateSemaphore(_vkcontext.device->logicalDevice, &semaphoreCI, nullptr, &renderComplete));
 
     // GPU library init
     gpu::Context::init<gpu::vulkan::VKBackend>();
@@ -162,32 +159,41 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
 
 #ifndef USE_GL
     auto windowExtent = VkExtent2D{ (uint32_t)windowSize.width(), (uint32_t)windowSize.height() };
-    if (windowExtent != _extent) {
+    if (windowExtent.width != _extent.width || windowExtent.height != _extent.height) {
         return;
     }
 
-    if (_extent != _swapchain.extent) {
-        _swapchain.create(_extent);
+    if (_extent.width != _swapchain.extent.width || _extent.width != _swapchain.extent.width) {
+        _swapchain.create(&_extent.width, &_extent.height, false, false);
         setupFramebuffers();
         return;
     }
 
-    static const VkOffset2D offset;
+    static const VkOffset2D offset{0, 0};
     static const std::array<VkClearValue, 2> clearValues{
-        VkClearColorValue(std::array<float, 4>{ { 0.2f, 0.2f, 0.2f, 0.2f } }),
-        VkClearDepthStencilValue( 1.0f, 0 ),
+        VkClearValue{color: VkClearColorValue{float32: { 0.2f, 0.2f, 0.2f, 0.2f }}},
+        VkClearValue{depthStencil: VkClearDepthStencilValue{ 1.0f, 0 }},
     };
 
-    auto swapchainIndex = _swapchain.acquireNextImage(acquireComplete).value;
+    uint32_t swapchainIndex;
+    VK_CHECK_RESULT(_swapchain.acquireNextImage(acquireComplete, &swapchainIndex));
     auto framebuffer = _framebuffers[swapchainIndex];
     const auto& commandBuffer = currentCommandBuffer = _vkcontext.createCommandBuffer();
 
     auto rect = VkRect2D{ offset, _extent };
-    VkRenderPassBeginInfo beginInfo{ _renderPass, framebuffer, rect, (uint32_t)clearValues.size(), clearValues.data() };
-    commandBuffer.begin(VkCommandBufferBeginInfo{ VkCommandBufferUsageFlagBits::eOneTimeSubmit });
+    VkRenderPassBeginInfo beginInfo = vks::initializers::renderPassBeginInfo();
+    beginInfo.renderPass = _renderPass;
+    beginInfo.framebuffer = framebuffer;
+    beginInfo.renderArea = rect;
+    beginInfo.clearValueCount = (uint32_t)clearValues.size();
+    beginInfo.pClearValues = clearValues.data();
+        //_renderPass, framebuffer, rect, (uint32_t)clearValues.size(), clearValues.data() };
+    VkCommandBufferBeginInfo commandBufferBeginInfo = vks::initializers::commandBufferBeginInfo();
+    commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    VK_CHECK_RESULT(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
 
-    using namespace vks::debug::marker;
-    beginRegion(commandBuffer, "executeFrame", glm::vec4{ 1, 1, 1, 1 });
+    using namespace vks::debugutils;
+    cmdBeginLabel(commandBuffer, "executeFrame", glm::vec4{ 1, 1, 1, 1 });
 #endif
     auto& glbackend = (gpu::gl::GLBackend&)(*_backend);
     glm::uvec2 fboSize{ frame->framebuffer->getWidth(), frame->framebuffer->getHeight() };
@@ -232,18 +238,28 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     _context.swapBuffers();
     _context.doneCurrent();
 #else
-    endRegion(commandBuffer);
-    beginRegion(commandBuffer, "renderpass:testClear", glm::vec4{ 0, 1, 1, 1 });
-    commandBuffer.beginRenderPass(beginInfo, VkSubpassContents::eInline);
-    commandBuffer.endRenderPass();
-    endRegion(commandBuffer);
-    commandBuffer.end();
+    cmdEndLabel(commandBuffer);
+    cmdBeginLabel(commandBuffer, "renderpass:testClear", glm::vec4{ 0, 1, 1, 1 });
+    vkCmdBeginRenderPass(commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdEndRenderPass(commandBuffer);
+    cmdEndLabel(commandBuffer);
+    VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
 
-    static const VkPipelineStageFlags waitFlags{ VkPipelineStageFlagBits::eBottomOfPipe };
-    VkSubmitInfo submitInfo{ 1, &acquireComplete, &waitFlags, 1, &commandBuffer, 1, &renderComplete };
-    VkFence frameFence = _vkcontext.device.createFence(VkFenceCreateInfo{});
-    _vkcontext.queue.submit(submitInfo, frameFence);
-    _swapchain.queuePresent(renderComplete);
+    static const VkPipelineStageFlags waitFlags{ VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
+    VkSubmitInfo submitInfo = vks::initializers::submitInfo();
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = &acquireComplete;
+    submitInfo.pWaitDstStageMask = &waitFlags;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &renderComplete;
+    submitInfo.commandBufferCount = 1;
+    VkFenceCreateInfo fenceCI{};
+    VkFence frameFence;
+    vkCreateFence(_vkdevice, &fenceCI, nullptr, &frameFence);
+    vkQueueSubmit(_vkcontext.queue, 1, &submitInfo, frameFence);
+    _swapchain.queuePresent(_vkcontext.queue, swapchainIndex, renderComplete);
     _vkcontext.trashCommandBuffers({ commandBuffer });
     _vkcontext.emptyDumpster(frameFence);
     _vkcontext.recycle();
@@ -269,7 +285,7 @@ bool RenderThread::process() {
     while (!pendingSize.empty()) {
 #ifndef USE_GL
         const auto& size = pendingSize.front();
-        _extent = VkExtent2D( (uint32_t)size.width(), (uint32_t)size.height() );
+        _extent = VkExtent2D{ (uint32_t)size.width(), (uint32_t)size.height() };
 #endif
         pendingSize.pop();
     }
@@ -289,62 +305,67 @@ void RenderThread::setupFramebuffers() {
     // Recreate the frame buffers
     _vkcontext.trashAll<VkFramebuffer>(_framebuffers, [this](const std::vector<VkFramebuffer>& framebuffers) {
         for (const auto& framebuffer : framebuffers) {
-            _vkdevice.destroy(framebuffer);
+            vkDestroyFramebuffer(_vkdevice, framebuffer, nullptr);
         }
     });
 
-    VkImageView attachment;
-    VkFramebufferCreateInfo framebufferCreateInfo;
-    framebufferCreateInfo.sType = TODO;
+    std::vector<VkImageView> attachments;
+    attachments.resize(1);
+    VkFramebufferCreateInfo framebufferCreateInfo{};
+    framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebufferCreateInfo.renderPass = _renderPass;
     framebufferCreateInfo.attachmentCount = 1;
-    framebufferCreateInfo.pAttachments = &attachment;
+    framebufferCreateInfo.pAttachments = attachments.data();
     framebufferCreateInfo.width = _extent.width;
     framebufferCreateInfo.height = _extent.height;
     framebufferCreateInfo.layers = 1;
 
     // Create frame buffers for every swap chain image
-    _framebuffers = _swapchain.createFramebuffers(framebufferCreateInfo);
+    _framebuffers.resize(_swapchain.imageCount);
+    for (uint32_t i = 0; i < _swapchain.imageCount; i++) {
+        attachments[0] = _swapchain.buffers[i].view;
+        VK_CHECK_RESULT(vkCreateFramebuffer(_vkdevice, &framebufferCreateInfo, nullptr, &_framebuffers[i]));
+    }
 }
 
 void RenderThread::setupRenderPass() {
     if (_renderPass) {
-        _vkdevice.destroy(_renderPass);
+        vkDestroyRenderPass(_vkcontext.device->logicalDevice, _renderPass, nullptr);
     }
 
     VkAttachmentDescription attachment;
     // Color attachment
     attachment.format = _swapchain.colorFormat;
-    attachment.loadOp = VkAttachmentLoadOp::eClear;
-    attachment.storeOp = VkAttachmentStoreOp::eStore;
-    attachment.initialLayout = VkImageLayout::eUndefined;
-    attachment.finalLayout = VkImageLayout::ePresentSrcKHR;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     VkAttachmentReference colorAttachmentReference;
     colorAttachmentReference.attachment = 0;
-    colorAttachmentReference.layout = VkImageLayout::eColorAttachmentOptimal;
+    colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription subpass;
-    subpass.pipelineBindPoint = VkPipelineBindPoint::eGraphics;
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentReference;
     VkSubpassDependency subpassDependency;
     subpassDependency.srcSubpass = 0;
-    subpassDependency.srcAccessMask = VkAccessFlagBits::eColorAttachmentWrite;
-    subpassDependency.srcStageMask = VkPipelineStageFlagBits::eColorAttachmentOutput;
+    subpassDependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     subpassDependency.dstSubpass = VK_SUBPASS_EXTERNAL;
-    subpassDependency.dstAccessMask = VkAccessFlagBits::eColorAttachmentRead;
-    subpassDependency.dstStageMask = VkPipelineStageFlagBits::eColorAttachmentOutput;
+    subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+    subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
     VkRenderPassCreateInfo renderPassInfo;
-    renderPassInfo.sType = TODO;
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = 1;
     renderPassInfo.pAttachments = &attachment;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &subpassDependency;
-    _renderPass = _vkdevice.createRenderPass(renderPassInfo);
+    VK_CHECK_RESULT(vkCreateRenderPass(_vkcontext.device->logicalDevice, &renderPassInfo, nullptr, &_renderPass));
 }
 #endif
 
