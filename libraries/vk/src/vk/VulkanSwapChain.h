@@ -40,6 +40,7 @@ private:
     VkPhysicalDevice physicalDevice;
     VkSurfaceKHR surface;
 public:
+    VkExtent2D extent{0, 0};
     VkFormat colorFormat;
     VkColorSpaceKHR colorSpace;
     VkSwapchainKHR swapChain = VK_NULL_HANDLE;    
