@@ -285,8 +285,8 @@ void Context::setImageLayout(VkImage image,
     });
 }*/
 
-void Context::createDevice(const VkSurfaceKHR& surface) {
-    pickDevice(surface);
+void Context::createDevice() {
+    pickDevice();
 
     buildDevice();
 
@@ -299,7 +299,7 @@ void Context::createDevice(const VkSurfaceKHR& surface) {
     //queue = device.getQueue(queueIndices.graphics, 0);
 }
 
-void Context::pickDevice(const VkSurfaceKHR& surface ) {
+void Context::pickDevice() {
     // Physical device
     uint32_t physicalDeviceCount;
     VK_CHECK_RESULT(vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, nullptr));
@@ -392,15 +392,15 @@ void Context::buildDevice() {
     return result;
 }*/
 
-/*VkCommandBuffer Context::createCommandBuffer(VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) const {
+VkCommandBuffer Context::createCommandBuffer(VkCommandBufferLevel level) const {
     VkCommandBuffer cmdBuffer;
     VkCommandBufferAllocateInfo cmdBufAllocateInfo;
     cmdBufAllocateInfo.commandPool = getCommandPool();
     cmdBufAllocateInfo.level = level;
     cmdBufAllocateInfo.commandBufferCount = 1;
-    cmdBuffer = device.allocateCommandBuffers(cmdBufAllocateInfo)[0];
+    VK_CHECK_RESULT(vkAllocateCommandBuffers(device->logicalDevice, &cmdBufAllocateInfo, &cmdBuffer));
     return cmdBuffer;
-}*/
+}
 
 /*void Context::flushCommandBuffer(VkCommandBuffer& commandBuffer) const {
     if (!commandBuffer) {

@@ -23,7 +23,7 @@
 #include <gpu/gl/GLBackend.h>
 #else
 #include <gpu/vk/VKBackend.h>
-#include <vk/Swapchain.h>
+#include <vk/VulkanSwapChain.h>
 #endif
 
 class RenderThread : public GenericThread {
@@ -32,6 +32,7 @@ public:
     QWindow* _window{ nullptr };
 
     vks::Context& _vkcontext{ vks::Context::get() };
+    // TODO: is the _vkcontext.device->logicalDevice created at the time?
     const VkDevice& _vkdevice{ _vkcontext.device->logicalDevice };
     vks::Buffer _vkstagingBuffer;
 
@@ -39,12 +40,12 @@ public:
     gl::Context _context;
 #else
 
-    VkSurfaceKHR _surface;
+    //VkSurfaceKHR _surface;
     VkRenderPass _renderPass;
-    vks::Swapchain _swapchain;
-    vk::Semaphore acquireComplete, renderComplete;
-    std::vector<vk::Framebuffer> _framebuffers;
-    vk::Extent2D _extent;
+    VulkanSwapChain _swapchain;
+    VkSemaphore acquireComplete, renderComplete;
+    std::vector<VkFramebuffer> _framebuffers;
+    VkExtent2D _extent;
 
     void setupFramebuffers();
     void setupRenderPass();
@@ -69,9 +70,11 @@ public:
     void setup() override;
     bool process() override;
     void shutdown() override;
-    void testVkTransfer();
+#ifdef USE_GL
     void testGlTransfer();
-
+#else
+    void testVkTransfer();
+#endif
     void submitFrame(const gpu::FramePointer& frame);
     void initialize(QWindow* window);
     void renderFrame(gpu::FramePointer& frame);

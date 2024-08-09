@@ -76,7 +76,9 @@ void PlayerWindow::keyPressEvent(QKeyEvent* event) {
             return;
 
         case Qt::Key_F3:
+#ifdef USE_GL
             _renderThread.testGlTransfer();
+#endif
             return;
 
         case Qt::Key_F4:
