@@ -393,6 +393,8 @@ void VulkanSwapChain::create(uint32_t *width, uint32_t *height, bool vsync, bool
 
         VK_CHECK_RESULT(vkCreateImageView(device, &colorAttachmentView, nullptr, &buffers[i].view));
     }
+    extent.width = *width;
+    extent.height = *height;
 }
 
 VkResult VulkanSwapChain::acquireNextImage(VkSemaphore presentCompleteSemaphore, uint32_t *imageIndex)
