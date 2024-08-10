@@ -2,18 +2,41 @@
 // Overte OpenXR Plugin
 //
 // Copyright 2024 Lubosz Sarnecki
+// Copyright 2024 Overte e.V.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
 
 #pragma once
 
-#include "controllers/Pose.h"
 
 #include <openxr/openxr.h>
 
+#include "gpu/gl/GLBackend.h"
+
+#if defined(Q_OS_LINUX)
+    #define XR_USE_PLATFORM_XLIB
+    #include <GL/glx.h>
+    // Unsorted from glx.h conflicts with qdir.h
+    #undef Unsorted
+    // MappingPointer from X11 conflicts with one from controllers/Forward.h
+    #undef MappingPointer
+#elif defined(Q_OS_WIN)
+    #define XR_USE_PLATFORM_WIN32
+    #include <Unknwn.h>
+    #include <Windows.h>
+#else
+    #error "Unimplemented platform"
+#endif
+
+
+#define XR_USE_GRAPHICS_API_OPENGL
+#include <openxr/openxr_platform.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
+
+#include "controllers/Pose.h"
 
 #define HAND_COUNT 2
 
