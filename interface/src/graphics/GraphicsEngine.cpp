@@ -55,7 +55,11 @@ void GraphicsEngine::initializeGPU(GLWidget* glwidget) {
     // and the GPU backend will make things like the VAO which cannot be shared across
     // contexts
     glwidget->makeCurrent();
+#ifdef USE_GL
     gpu::Context::init<gpu::gl::GLBackend>();
+#else
+    gpu::Context::init<gpu::vulkan::VKBackend>();
+#endif
     glwidget->makeCurrent();
     _gpuContext = std::make_shared<gpu::Context>();
 
