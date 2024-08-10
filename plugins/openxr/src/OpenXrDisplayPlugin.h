@@ -2,6 +2,7 @@
 // Overte OpenXR Plugin
 //
 // Copyright 2024 Lubosz Sarnecki
+// Copyright 2024 Overte e.V.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -12,15 +13,6 @@
 #include <display-plugins/hmd/HmdDisplayPlugin.h>
 
 #include "OpenXrContext.h"
-
-#include "gpu/gl/GLBackend.h"
-
-#include <GL/glx.h>
-
-#define XR_USE_PLATFORM_XLIB
-#define XR_USE_GRAPHICS_API_OPENGL
-#include <openxr/openxr.h>
-#include <openxr/openxr_platform.h>
 
 class OpenXrDisplayPlugin : public HmdDisplayPlugin {
 public:
