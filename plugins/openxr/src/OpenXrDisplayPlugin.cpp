@@ -2,6 +2,7 @@
 // Overte OpenXR Plugin
 //
 // Copyright 2024 Lubosz Sarnecki
+// Copyright 2024 Overte e.V.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -15,6 +16,11 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/transform.hpp>
 #include <thread>
+
+#if defined(Q_OS_WIN)
+#undef near
+#undef far
+#endif
 
 Q_DECLARE_LOGGING_CATEGORY(xr_display_cat)
 Q_LOGGING_CATEGORY(xr_display_cat, "openxr.display")
@@ -264,7 +270,7 @@ void OpenXrDisplayPlugin::internalDeactivate() {
     // We can get into a state where activate -> deactivate -> activate is called in a chain.
     // We are probably gonna have a bad time then. At least check if the session is already running.
     // This happens when the application decides to switch display plugins back and forth. This should
-    // prbably be fixed there.
+    // probably be fixed there.
     if (_context->_isSessionRunning) {
         if (!_context->requestExitSession()) {
             qCCritical(xr_display_cat, "Failed to request exit session");
