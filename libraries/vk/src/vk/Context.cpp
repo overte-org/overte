@@ -103,7 +103,7 @@ void Context::createInstance() {
     }
 
     // Vulkan instance
-    VkApplicationInfo appInfo;
+    VkApplicationInfo appInfo{};
     appInfo.pApplicationName = "VulkanExamples";
     appInfo.pEngineName = "VulkanExamples";
     appInfo.apiVersion = VK_API_VERSION_1_0;
@@ -123,7 +123,7 @@ void Context::createInstance() {
     }
 
     // Enable surface extensions depending on os
-    VkInstanceCreateInfo instanceCreateInfo;
+    VkInstanceCreateInfo instanceCreateInfo{};
     instanceCreateInfo.pApplicationInfo = &appInfo;
     if (enabledExtensions.size() > 0) {
         instanceCreateInfo.enabledExtensionCount = (uint32_t)enabledExtensions.size();
@@ -132,10 +132,15 @@ void Context::createInstance() {
 
     CStringVector layers;
     if (enableValidation) {
-        std::list<std::string> validationLayers {"VK_LAYER_LUNARG_standard_validation"};
+        const char* validationLayerName = "VK_LAYER_KHRONOS_validation";
+        std::list<std::string> validationLayers {validationLayerName}; // Just one layer for now
         layers = filterLayers(validationLayers);
-        instanceCreateInfo.enabledLayerCount = (uint32_t)layers.size();
-        instanceCreateInfo.ppEnabledLayerNames = layers.data();
+        if (layers.size() == 1) {
+            instanceCreateInfo.enabledLayerCount = (uint32_t)layers.size();
+            instanceCreateInfo.ppEnabledLayerNames = &validationLayerName;
+        } else {
+            qWarning() << "Cannot find VK_LAYER_KHRONOS_validation layer, validation not enabled";
+        }
     } else {
         Q_ASSERT(false);
     }
