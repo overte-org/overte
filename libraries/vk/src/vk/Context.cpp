@@ -1,3 +1,6 @@
+// Based on Vulkan samples.
+// TODO: add copyright header
+
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDebug>
 
@@ -94,6 +97,9 @@ void Context::createInstance() {
     if (instance) {
         throw std::runtime_error("Instance already exists");
     }
+    if (device) {
+        throw std::runtime_error("Vulkan device already exists");
+    }
 
     if (isExtensionPresent(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
         requireExtensions({ VK_EXT_DEBUG_UTILS_EXTENSION_NAME });
@@ -108,9 +114,33 @@ void Context::createInstance() {
     appInfo.pEngineName = "VulkanExamples";
     appInfo.apiVersion = VK_API_VERSION_1_0;
 
+    std::set<std::string> instanceExtensions = { VK_KHR_SURFACE_EXTENSION_NAME };
 
+// Enable surface extensions depending on OS
+#if defined(_WIN32)
+    instanceExtensions.insert(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
+    instanceExtensions.insert(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
+#elif defined(_DIRECT2DISPLAY)
+    instanceExtensions.insert(VK_KHR_DISPLAY_EXTENSION_NAME);
+#elif defined(VK_USE_PLATFORM_DIRECTFB_EXT)
+    instanceExtensions.insert(VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME);
+#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    instanceExtensions.insert(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
+#elif defined(VK_USE_PLATFORM_XCB_KHR)
+    instanceExtensions.insert(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+#elif defined(VK_USE_PLATFORM_IOS_MVK)
+    instanceExtensions.insert(VK_MVK_IOS_SURFACE_EXTENSION_NAME);
+#elif defined(VK_USE_PLATFORM_MACOS_MVK)
+    instanceExtensions.insert(VK_MVK_MACOS_SURFACE_EXTENSION_NAME);
+#elif defined(VK_USE_PLATFORM_METAL_EXT)
+    instanceExtensions.insert(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
+#elif defined(VK_USE_PLATFORM_HEADLESS_EXT)
+    instanceExtensions.insert(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
+#elif defined(VK_USE_PLATFORM_SCREEN_QNX)
+    instanceExtensions.insert(VK_QNX_SCREEN_SURFACE_EXTENSION_NAME);
+#endif
 
-    std::set<std::string> instanceExtensions;
     instanceExtensions.insert(requiredExtensions.begin(), requiredExtensions.end());
     for (const auto& picker : instanceExtensionsPickers) {
         auto extensions = picker();
@@ -124,6 +154,7 @@ void Context::createInstance() {
 
     // Enable surface extensions depending on os
     VkInstanceCreateInfo instanceCreateInfo{};
+    instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.pApplicationInfo = &appInfo;
     if (enabledExtensions.size() > 0) {
         instanceCreateInfo.enabledExtensionCount = (uint32_t)enabledExtensions.size();
@@ -381,7 +412,7 @@ void Context::buildDevice() {
 
     Q_ASSERT(!device);
     device.reset(new VulkanDevice(physicalDevice));
-    device->createLogicalDevice(device->enabledFeatures, enabledExtensions, nullptr, true,
+    device->createLogicalDevice(enabledFeatures, enabledExtensions, nullptr, true,
                                 VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT);
 }
 
