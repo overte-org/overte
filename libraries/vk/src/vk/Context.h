@@ -218,6 +218,8 @@ public:
     // Physical device (GPU) that Vulkan will use
     VkPhysicalDevice physicalDevice;
     //std::unordered_set<std::string> physicalDeviceExtensions;
+    // TODO: this needs to be filled in
+    VkPhysicalDeviceFeatures enabledFeatures{};
 
     std::shared_ptr<vks::VulkanDevice> device;
 
