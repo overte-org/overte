@@ -564,6 +564,7 @@ struct Cache {
 
 Cache _cache;
 
+// TODO: this is very cursed and will need to be changed in the future
 VkCommandBuffer currentCommandBuffer;
 
 void VKBackend::executeFrame(const FramePointer& frame) {

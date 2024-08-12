@@ -13,6 +13,7 @@
 #include <QtCore/QTimer>
 #include <QtCore/QDebug>
 #include <QtPlatformHeaders/QXcbWindowFunctions>
+#include <qpa/qplatformnativeinterface.h>
 #include <QtX11Extras/QX11Info>
 
 #include "VKWindow.h"
@@ -35,9 +36,13 @@ const void VKWindow::createSurface() {
 #else
     VkXcbSurfaceCreateInfoKHR surfaceCreateInfo{};
     //dynamic_cast<QGuiApplication*>(QGuiApplication::instance())->platformNativeInterface()->connection();
-    //surfaceCreateInfo.connection = QX11Info::connection();
-    //surfaceCreateInfo.window = QX11Info::appRootWindow();
-    _swapchain.initSurface(QX11Info::connection(), QX11Info::appRootWindow());
+
+    auto* platformInterface = QGuiApplication::platformNativeInterface();
+    auto* handle = platformInterface->nativeResourceForWindow("handle", this);
+    Q_ASSERT(winId());
+    qDebug() << "VKWindow::createSurface winId:" << winId();
+    _swapchain.initSurface(QX11Info::connection(), winId());
+    //_swapchain.initSurface(QX11Info::connection(), QX11Info::appRootWindow());
     //VkSurfaceKHR surface;
     //VK_CHECK_RESULT(vkCreateXcbSurfaceKHR(_context.instance, &surfaceCreateInfo, nullptr, &surface));
 #endif
