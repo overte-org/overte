@@ -30,6 +30,7 @@ VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
 }
 
 const void VKWindow::createSurface() {
+    _swapchain.setContext(_context.instance, _context.physicalDevice, _context.device->logicalDevice);
 #ifdef WIN32
     // TODO
     _surface = _context.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)winId() });
@@ -96,6 +97,7 @@ void VKWindow::setupDepthStencil() {
     allocationCI.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     // TODO: I'm not sure of this part, how does it know size and does it call vkBindImageMemory?
     VK_CHECK_RESULT(vmaAllocateMemoryForImage(_depthStencil.getAllocator(), _depthStencil.image, &allocationCI, &_depthStencil.allocation, nullptr));
+    VK_CHECK_RESULT(vmaBindImageMemory(_depthStencil.getAllocator(), _depthStencil.allocation, _depthStencil.image));
 #else
     VkMemoryAllocateInfo memAlloc{};
     memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -161,8 +163,9 @@ void VKWindow::setupRenderPass() {
         vkDestroyRenderPass(_device, _renderPass, nullptr);
     }
 
-    std::array<VkAttachmentDescription, 2> attachments;
+    std::array<VkAttachmentDescription, 2> attachments{};
     // Color attachment
+    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
     attachments[0].format = _swapchain.colorFormat;
     attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -170,6 +173,7 @@ void VKWindow::setupRenderPass() {
     attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     // Depth attachment
+    attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
     attachments[1].format = VK_FORMAT_D24_UNORM_S8_UINT;
     attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -185,7 +189,7 @@ void VKWindow::setupRenderPass() {
 
     std::vector<VkAttachmentReference> colorAttachmentReferences;
     {
-        VkAttachmentReference colorReference;
+        VkAttachmentReference colorReference{};
         colorReference.attachment = 0;
         colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         colorAttachmentReferences.push_back(colorReference);
@@ -195,7 +199,7 @@ void VKWindow::setupRenderPass() {
     std::vector<VkSubpassDependency> subpassDependencies;
     {
         {
-            VkSubpassDependency dependency;
+            VkSubpassDependency dependency{};
             dependency.srcSubpass = 0;
             dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -205,7 +209,7 @@ void VKWindow::setupRenderPass() {
             subpassDependencies.push_back(dependency);
         }
 
-        VkSubpassDescription subpass;
+        VkSubpassDescription subpass{};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.pDepthStencilAttachment = &depthReference;
         subpass.colorAttachmentCount = (uint32_t)colorAttachmentReferences.size();
@@ -213,7 +217,8 @@ void VKWindow::setupRenderPass() {
         subpasses.push_back(subpass);
     }
 
-    VkRenderPassCreateInfo renderPassInfo;
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = (uint32_t)attachments.size();
     renderPassInfo.pAttachments = attachments.data();
     renderPassInfo.subpassCount = (uint32_t)subpasses.size();
