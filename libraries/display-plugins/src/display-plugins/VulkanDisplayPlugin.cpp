@@ -322,6 +322,8 @@ bool VulkanDisplayPlugin::activate() {
 
     _vkWindow = std::make_shared<VKWindow>();
     _vkWindow->setVisible(true);
+    _vkWindow->createSurface();
+    _vkWindow->createSwapchain();
 
     return Parent::activate();
 }
