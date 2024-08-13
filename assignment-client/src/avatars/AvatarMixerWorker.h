@@ -1,5 +1,5 @@
 //
-//  AvatarMixerSlave.h
+//  AvatarMixerWorker.h
 //  assignment-client/src/avatar
 //
 //  Created by Brad Hefta-Gaub on 2/14/2017.
@@ -9,14 +9,14 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#ifndef hifi_AvatarMixerSlave_h
-#define hifi_AvatarMixerSlave_h
+#ifndef hifi_AvatarMixerWorker_h
+#define hifi_AvatarMixerWorker_h
 
 #include <NodeList.h>
 
 class AvatarMixerClientData;
 
-class AvatarMixerSlaveStats {
+class AvatarMixerWorkerStats {
 public:
     int nodesProcessed { 0 };
     int packetsProcessed { 0 };
@@ -67,7 +67,7 @@ public:
         jobElapsedTime = 0;
     }
 
-    AvatarMixerSlaveStats& operator+=(const AvatarMixerSlaveStats& rhs) {
+    AvatarMixerWorkerStats& operator+=(const AvatarMixerWorkerStats& rhs) {
         nodesProcessed += rhs.nodesProcessed;
         packetsProcessed += rhs.packetsProcessed;
         processIncomingPacketsElapsedTime += rhs.processIncomingPacketsElapsedTime;
@@ -96,15 +96,15 @@ public:
 class EntityTree;
 using EntityTreePointer = std::shared_ptr<EntityTree>;
 
-struct SlaveSharedData {
+struct WorkerSharedData {
     QStringList skeletonURLWhitelist;
     QUrl skeletonReplacementURL;
     EntityTreePointer entityTree;
 };
 
-class AvatarMixerSlave {
+class AvatarMixerWorker {
 public:
-    AvatarMixerSlave(SlaveSharedData* sharedData) : _sharedData(sharedData) {};
+    AvatarMixerWorker(WorkerSharedData* sharedData) : _sharedData(sharedData) {};
     using ConstIter = NodeList::const_iterator;
 
     void configure(ConstIter begin, ConstIter end);
@@ -116,7 +116,7 @@ public:
     void processIncomingPackets(const SharedNodePointer& node);
     void broadcastAvatarData(const SharedNodePointer& node);
 
-    void harvestStats(AvatarMixerSlaveStats& stats);
+    void harvestStats(AvatarMixerWorkerStats& stats);
 
 private:
     int sendIdentityPacket(NLPacketList& packet, const AvatarMixerClientData* nodeData, const Node& destinationNode);
@@ -143,8 +143,8 @@ private:
     float _throttlingRatio { 0.0f };
     float _avatarHeroFraction { 0.4f };
 
-    AvatarMixerSlaveStats _stats;
-    SlaveSharedData* _sharedData;
+    AvatarMixerWorkerStats _stats;
+    WorkerSharedData* _sharedData;
 };
 
-#endif // hifi_AvatarMixerSlave_h
+#endif // hifi_AvatarMixerWorker_h

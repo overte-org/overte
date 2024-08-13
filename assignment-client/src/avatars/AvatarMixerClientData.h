@@ -36,7 +36,7 @@ const QString OUTBOUND_AVATAR_DATA_STATS_KEY = "outbound_av_data_kbps";
 const QString OUTBOUND_AVATAR_TRAITS_STATS_KEY = "outbound_av_traits_kbps";
 const QString INBOUND_AVATAR_DATA_STATS_KEY = "inbound_av_data_kbps";
 
-struct SlaveSharedData;
+struct WorkerSharedData;
 
 class AvatarMixerClientData : public NodeData {
     Q_OBJECT
@@ -47,7 +47,7 @@ public:
     using PerNodeTraitVersions = std::unordered_map<Node::LocalID, AvatarTraits::TraitVersions>;
 
     using NodeData::parseData;  // Avoid clang warning about hiding.
-    int parseData(ReceivedMessage& message, const SlaveSharedData& SlaveSharedData);
+    int parseData(ReceivedMessage& message, const WorkerSharedData& WorkerSharedData);
     MixerAvatar& getAvatar() { return *_avatar; }
     const MixerAvatar& getAvatar() const { return *_avatar; }
     const MixerAvatar* getConstAvatarData() const { return _avatar.get(); }
@@ -130,12 +130,12 @@ public:
     QVector<JointData>& getLastOtherAvatarSentJoints(NLPacket::LocalID otherAvatar) { return _lastOtherAvatarSentJoints[otherAvatar]; }
 
     void queuePacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer node);
-    int processPackets(const SlaveSharedData& slaveSharedData); // returns number of packets processed
+    int processPackets(const WorkerSharedData& workerSharedData); // returns number of packets processed
 
-    void processSetTraitsMessage(ReceivedMessage& message, const SlaveSharedData& slaveSharedData, Node& sendingNode);
+    void processSetTraitsMessage(ReceivedMessage& message, const WorkerSharedData& workerSharedData, Node& sendingNode);
     void emulateDeleteEntitiesTraitsMessage(const QList<QUuid>& avatarEntityIDs);
     void processBulkAvatarTraitsAckMessage(ReceivedMessage& message);
-    void checkSkeletonURLAgainstWhitelist(const SlaveSharedData& slaveSharedData, Node& sendingNode,
+    void checkSkeletonURLAgainstWhitelist(const WorkerSharedData& workerSharedData, Node& sendingNode,
                                           AvatarTraits::TraitVersion traitVersion);
 
     using TraitsCheckTimestamp = std::chrono::steady_clock::time_point;

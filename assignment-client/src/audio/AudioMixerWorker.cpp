@@ -1,5 +1,5 @@
 //
-//  AudioMixerSlave.cpp
+//  AudioMixerWorker.cpp
 //  assignment-client/src/audio
 //
 //  Created by Zach Pomerantz on 11/22/16.
@@ -9,7 +9,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#include "AudioMixerSlave.h"
+#include "AudioMixerWorker.h"
 
 #include <algorithm>
 
@@ -55,7 +55,7 @@ inline float computeGain(float masterAvatarGain, float masterInjectorGain, const
 inline float computeAzimuth(const AvatarAudioStream& listeningNodeStream, const PositionalAudioStream& streamToAdd,
         const glm::vec3& relativePosition);
 
-void AudioMixerSlave::processPackets(const SharedNodePointer& node) {
+void AudioMixerWorker::processPackets(const SharedNodePointer& node) {
     AudioMixerClientData* data = (AudioMixerClientData*)node->getLinkedData();
     if (data) {
         // process packets and collect the number of streams available for this frame
@@ -63,14 +63,14 @@ void AudioMixerSlave::processPackets(const SharedNodePointer& node) {
     }
 }
 
-void AudioMixerSlave::configureMix(ConstIter begin, ConstIter end, unsigned int frame, int numToRetain) {
+void AudioMixerWorker::configureMix(ConstIter begin, ConstIter end, unsigned int frame, int numToRetain) {
     _begin = begin;
     _end = end;
     _frame = frame;
     _numToRetain = numToRetain;
 }
 
-void AudioMixerSlave::mix(const SharedNodePointer& node) {
+void AudioMixerWorker::mix(const SharedNodePointer& node) {
     // check that the node is valid
     AudioMixerClientData* data = (AudioMixerClientData*)node->getLinkedData();
     if (data == nullptr) {
@@ -178,7 +178,7 @@ private:
 };
 
 
-void AudioMixerSlave::addStreams(Node& listener, AudioMixerClientData& listenerData) {
+void AudioMixerWorker::addStreams(Node& listener, AudioMixerClientData& listenerData) {
     auto& ignoredNodeIDs = listener.getIgnoredNodeIDs();
     auto& ignoringNodeIDs = listenerData.getIgnoringNodeIDs();
 
@@ -229,7 +229,7 @@ void AudioMixerSlave::addStreams(Node& listener, AudioMixerClientData& listenerD
     }
 }
 
-bool shouldBeRemoved(const MixableStream& stream, const AudioMixerSlave::SharedData& sharedData) {
+bool shouldBeRemoved(const MixableStream& stream, const AudioMixerWorker::SharedData& sharedData) {
     return (contains(sharedData.removedNodes, stream.nodeStreamID.nodeLocalID) ||
             contains(sharedData.removedStreams, stream.nodeStreamID));
 };
@@ -306,7 +306,7 @@ float approximateVolume(const MixableStream& stream, const AvatarAudioStream* li
     return stream.positionalStream->getLastPopOutputTrailingLoudness() * gain;
 };
 
-bool AudioMixerSlave::prepareMix(const SharedNodePointer& listener) {
+bool AudioMixerWorker::prepareMix(const SharedNodePointer& listener) {
     AvatarAudioStream* listenerAudioStream = static_cast<AudioMixerClientData*>(listener->getLinkedData())->getAvatarAudioStream();
     AudioMixerClientData* listenerData = static_cast<AudioMixerClientData*>(listener->getLinkedData());
 
@@ -489,7 +489,7 @@ bool AudioMixerSlave::prepareMix(const SharedNodePointer& listener) {
     return hasAudio;
 }
 
-void AudioMixerSlave::addStream(AudioMixerClientData::MixableStream& mixableStream,
+void AudioMixerWorker::addStream(AudioMixerClientData::MixableStream& mixableStream,
                                 AvatarAudioStream& listeningNodeStream,
                                 float masterAvatarGain,
                                 float masterInjectorGain,
@@ -575,7 +575,7 @@ void AudioMixerSlave::addStream(AudioMixerClientData::MixableStream& mixableStre
     }
 }
 
-void AudioMixerSlave::updateHRTFParameters(AudioMixerClientData::MixableStream& mixableStream,
+void AudioMixerWorker::updateHRTFParameters(AudioMixerClientData::MixableStream& mixableStream,
                                            AvatarAudioStream& listeningNodeStream,
                                            float masterAvatarGain,
                                            float masterInjectorGain) {
@@ -596,7 +596,7 @@ void AudioMixerSlave::updateHRTFParameters(AudioMixerClientData::MixableStream& 
     ++stats.hrtfUpdates;
 }
 
-void AudioMixerSlave::resetHRTFState(AudioMixerClientData::MixableStream& mixableStream) {
+void AudioMixerWorker::resetHRTFState(AudioMixerClientData::MixableStream& mixableStream) {
      mixableStream.hrtf->reset();
     ++stats.hrtfResets;
 }

@@ -140,11 +140,11 @@ public:
 
     Streams& getStreams() { return _streams; }
 
-    // thread-safe, called from AudioMixerSlave(s) while processing ignore packets for other nodes
+    // thread-safe, called from AudioMixerWorker(s) while processing ignore packets for other nodes
     void ignoredByNode(QUuid nodeID);
     void unignoredByNode(QUuid nodeID);
 
-    // start of methods called non-concurrently from single AudioMixerSlave mixing for the owning node
+    // start of methods called non-concurrently from single AudioMixerWorker mixing for the owning node
 
     const Node::IgnoredNodeIDs& getNewIgnoredNodeIDs() const { return _newIgnoredNodeIDs; }
     const Node::IgnoredNodeIDs& getNewUnignoredNodeIDs() const { return _newUnignoredNodeIDs; }
@@ -163,7 +163,7 @@ public:
     bool getHasReceivedFirstMix() const { return _hasReceivedFirstMix; }
     void setHasReceivedFirstMix(bool hasReceivedFirstMix) { _hasReceivedFirstMix = hasReceivedFirstMix; }
 
-    // end of methods called non-concurrently from single AudioMixerSlave
+    // end of methods called non-concurrently from single AudioMixerWorker
 
 signals:
     void injectorStreamFinished(const QUuid& streamID);

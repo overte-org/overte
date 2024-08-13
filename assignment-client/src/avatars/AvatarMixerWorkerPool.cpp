@@ -1,24 +1,20 @@
 //
-//  AudioMixerSlavePool.cpp
-//  assignment-client/src/audio
+//  AvatarMixerWorkerPool.cpp
+//  assignment-client/src/avatar
 //
-//  Created by Zach Pomerantz on 11/16/2016.
-//  Copyright 2016 High Fidelity, Inc.
+//  Created by Brad Hefta-Gaub on 2/14/2017.
+//  Copyright 2017 High Fidelity, Inc.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#include "AudioMixerSlavePool.h"
-
-#include <QObject>
+#include "AvatarMixerWorkerPool.h"
 
 #include <assert.h>
 #include <algorithm>
 
-#include <ThreadHelpers.h>
-
-void AudioMixerSlaveThread::run() {
+void AvatarMixerWorkerThread::run() {
     while (true) {
         wait();
 
@@ -36,23 +32,22 @@ void AudioMixerSlaveThread::run() {
     }
 }
 
-void AudioMixerSlaveThread::wait() {
+void AvatarMixerWorkerThread::wait() {
     {
         Lock lock(_pool._mutex);
-        _pool._slaveCondition.wait(lock, [&] {
+        _pool._workerCondition.wait(lock, [&] {
             assert(_pool._numStarted <= _pool._numThreads);
             return _pool._numStarted != _pool._numThreads;
         });
         ++_pool._numStarted;
     }
-
     if (_pool._configure) {
         _pool._configure(*this);
     }
     _function = _pool._function;
 }
 
-void AudioMixerSlaveThread::notify(bool stopping) {
+void AvatarMixerWorkerThread::notify(bool stopping) {
     {
         Lock lock(_pool._mutex);
         assert(_pool._numFinished < _pool._numThreads);
@@ -64,26 +59,30 @@ void AudioMixerSlaveThread::notify(bool stopping) {
     _pool._poolCondition.notify_one();
 }
 
-bool AudioMixerSlaveThread::try_pop(SharedNodePointer& node) {
+bool AvatarMixerWorkerThread::try_pop(SharedNodePointer& node) {
     return _pool._queue.try_pop(node);
 }
 
-void AudioMixerSlavePool::processPackets(ConstIter begin, ConstIter end) {
-    _function = &AudioMixerSlave::processPackets;
-    _configure = [](AudioMixerSlave& slave) {};
-    run(begin, end);
-}
-
-void AudioMixerSlavePool::mix(ConstIter begin, ConstIter end, unsigned int frame, int numToRetain) {
-    _function = &AudioMixerSlave::mix;
-    _configure = [=](AudioMixerSlave& slave) {
-        slave.configureMix(_begin, _end, frame, numToRetain);
+void AvatarMixerWorkerPool::processIncomingPackets(ConstIter begin, ConstIter end) {
+    _function = &AvatarMixerWorker::processIncomingPackets;
+    _configure = [=](AvatarMixerWorker& worker) { 
+        worker.configure(begin, end);
     };
-
     run(begin, end);
 }
 
-void AudioMixerSlavePool::run(ConstIter begin, ConstIter end) {
+void AvatarMixerWorkerPool::broadcastAvatarData(ConstIter begin, ConstIter end, 
+                                               p_high_resolution_clock::time_point lastFrameTimestamp,
+                                               float maxKbpsPerNode, float throttlingRatio) {
+    _function = &AvatarMixerWorker::broadcastAvatarData;
+    _configure = [=](AvatarMixerWorker& worker) { 
+        worker.configureBroadcast(begin, end, lastFrameTimestamp, maxKbpsPerNode, throttlingRatio,
+            _priorityReservedFraction);
+   };
+    run(begin, end);
+}
+
+void AvatarMixerWorkerPool::run(ConstIter begin, ConstIter end) {
     _begin = begin;
     _end = end;
 
@@ -97,7 +96,7 @@ void AudioMixerSlavePool::run(ConstIter begin, ConstIter end) {
 
         // run
         _numStarted = _numFinished = 0;
-        _slaveCondition.notify_all();
+        _workerCondition.notify_all();
 
         // wait
         _poolCondition.wait(lock, [&] {
@@ -111,18 +110,19 @@ void AudioMixerSlavePool::run(ConstIter begin, ConstIter end) {
     assert(_queue.empty());
 }
 
-void AudioMixerSlavePool::each(std::function<void(AudioMixerSlave& slave)> functor) {
-    for (auto& slave : _slaves) {
-        functor(*slave.get());
+
+void AvatarMixerWorkerPool::each(std::function<void(AvatarMixerWorker& worker)> functor) {
+    for (auto& worker : _workers) {
+        functor(*worker.get());
     }
 }
 
 #ifdef DEBUG_EVENT_QUEUE
-void AudioMixerSlavePool::queueStats(QJsonObject& stats) {
+void AvatarMixerWorkerPool::queueStats(QJsonObject& stats) {
     unsigned i = 0;
-    for (auto& slave : _slaves) {
-        int queueSize = ::hifi::qt::getEventQueueSize(slave.get());
-        QString queueName = QString("audio_thread_event_queue_%1").arg(i);
+    for (auto& worker : _workers) {
+        int queueSize = ::hifi::qt::getEventQueueSize(worker.get());
+        QString queueName = QString("avatar_thread_event_queue_%1").arg(i);
         stats[queueName] = queueSize;
 
         i++;
@@ -130,7 +130,7 @@ void AudioMixerSlavePool::queueStats(QJsonObject& stats) {
 }
 #endif // DEBUG_EVENT_QUEUE
 
-void AudioMixerSlavePool::setNumThreads(int numThreads) {
+void AvatarMixerWorkerPool::setNumThreads(int numThreads) {
     // clamp to allowed size
     {
         int maxThreads = QThread::idealThreadCount();
@@ -150,36 +150,35 @@ void AudioMixerSlavePool::setNumThreads(int numThreads) {
     resize(numThreads);
 }
 
-void AudioMixerSlavePool::resize(int numThreads) {
-    assert(_numThreads == (int)_slaves.size());
+void AvatarMixerWorkerPool::resize(int numThreads) {
+    assert(_numThreads == (int)_workers.size());
 
     qDebug("%s: set %d threads (was %d)", __FUNCTION__, numThreads, _numThreads);
 
     Lock lock(_mutex);
 
     if (numThreads > _numThreads) {
-        // start new slaves
+        // start new workers
         for (int i = 0; i < numThreads - _numThreads; ++i) {
-            auto slave = new AudioMixerSlaveThread(*this, _workerSharedData);
-            QObject::connect(slave, &QThread::started, [] { setThreadName("AudioMixerSlaveThread"); });
-            slave->start();
-            _slaves.emplace_back(slave);
+            auto worker = new AvatarMixerWorkerThread(*this, _workerSharedData);
+            worker->start();
+            _workers.emplace_back(worker);
         }
     } else if (numThreads < _numThreads) {
-        auto extraBegin = _slaves.begin() + numThreads;
+        auto extraBegin = _workers.begin() + numThreads;
 
-        // mark slaves to stop...
-        auto slave = extraBegin;
-        while (slave != _slaves.end()) {
-            (*slave)->_stop = true;
-            ++slave;
+        // mark workers to stop...
+        auto worker = extraBegin;
+        while (worker != _workers.end()) {
+            (*worker)->_stop = true;
+            ++worker;
         }
 
         // ...cycle them until they do stop...
         _numStopped = 0;
         while (_numStopped != (_numThreads - numThreads)) {
             _numStarted = _numFinished = _numStopped;
-            _slaveCondition.notify_all();
+            _workerCondition.notify_all();
             _poolCondition.wait(lock, [&] {
                 assert(_numFinished <= _numThreads);
                 return _numFinished == _numThreads;
@@ -187,18 +186,18 @@ void AudioMixerSlavePool::resize(int numThreads) {
         }
 
         // ...wait for threads to finish...
-        slave = extraBegin;
-        while (slave != _slaves.end()) {
-            QThread* thread = reinterpret_cast<QThread*>(slave->get());
+        worker = extraBegin;
+        while (worker != _workers.end()) {
+            QThread* thread = reinterpret_cast<QThread*>(worker->get());
             static const int MAX_THREAD_WAIT_TIME = 10;
             thread->wait(MAX_THREAD_WAIT_TIME);
-            ++slave;
+            ++worker;
         }
 
         // ...and erase them
-        _slaves.erase(extraBegin, _slaves.end());
+        _workers.erase(extraBegin, _workers.end());
     }
 
     _numThreads = _numStarted = _numFinished = numThreads;
-    assert(_numThreads == (int)_slaves.size());
+    assert(_numThreads == (int)_workers.size());
 }

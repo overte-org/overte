@@ -655,7 +655,7 @@ uint8_t EntityMotionState::getSimulationPriority() const {
     return _entity->getSimulationPriority();
 }
 
-void EntityMotionState::slaveBidPriority() {
+void EntityMotionState::workerBidPriority() {
     _bumpedPriority = glm::max(_bumpedPriority, _entity->getSimulationPriority());
 }
 
