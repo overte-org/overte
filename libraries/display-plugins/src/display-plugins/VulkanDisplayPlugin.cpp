@@ -58,14 +58,14 @@ using namespace shader::gpu::program;
 
 extern QThread* RENDER_THREAD;
 
-class PresentThread : public QThread, public Dependency {
+class VulkanPresentThread : public QThread, public Dependency {
     using Mutex = std::mutex;
     using Condition = std::condition_variable;
     using Lock = std::unique_lock<Mutex>;
 
 public:
 
-    PresentThread() {
+    VulkanPresentThread() {
         connect(qApp, &QCoreApplication::aboutToQuit, [this] {
             shutdown(); 
         });
@@ -74,7 +74,7 @@ public:
         _refreshRateController = std::make_shared<RefreshRateController>();
     }
 
-    ~PresentThread() {
+    ~VulkanPresentThread() {
         shutdown();
     }
 
@@ -273,13 +273,13 @@ bool VulkanDisplayPlugin::activate() {
     }
 
     // Start the present thread if necessary
-    QSharedPointer<PresentThread> presentThread;
-    if (DependencyManager::isSet<PresentThread>()) {
-        presentThread = DependencyManager::get<PresentThread>();
+    QSharedPointer<VulkanPresentThread> presentThread;
+    if (DependencyManager::isSet<VulkanPresentThread>()) {
+        presentThread = DependencyManager::get<VulkanPresentThread>();
     } else {
         auto widget = _container->getPrimaryWidget();
-        DependencyManager::set<PresentThread>();
-        presentThread = DependencyManager::get<PresentThread>();
+        DependencyManager::set<VulkanPresentThread>();
+        presentThread = DependencyManager::get<VulkanPresentThread>();
         presentThread->setObjectName("Presentation Thread");
         if (!widget->context()->makeCurrent()) {
             throw std::runtime_error("Failed to make context current");
@@ -332,8 +332,8 @@ void VulkanDisplayPlugin::deactivate() {
     auto compositorHelper = DependencyManager::get<CompositorHelper>();
     disconnect(compositorHelper.data());
 
-    auto presentThread = DependencyManager::get<PresentThread>();
-    // Does not return until the GL transition has completeed
+    auto presentThread = DependencyManager::get<VulkanPresentThread>();
+    // Does not return until the GL transition has completed
     presentThread->setNewDisplayPlugin(nullptr);
     internalDeactivate();
 
@@ -360,7 +360,7 @@ void VulkanDisplayPlugin::endSession() {
 }
 
 void VulkanDisplayPlugin::customizeContext() {
-    auto presentThread = DependencyManager::get<PresentThread>();
+    auto presentThread = DependencyManager::get<VulkanPresentThread>();
     Q_ASSERT(thread() == presentThread->thread());
 
     getBackend()->setCameraCorrection(mat4(), mat4(), true);
@@ -772,7 +772,7 @@ float VulkanDisplayPlugin::presentRate() const {
 
 std::function<void(int)> VulkanDisplayPlugin::getRefreshRateOperator() {
     return [](int targetRefreshRate) {
-        auto refreshRateController = DependencyManager::get<PresentThread>()->getRefreshRateController();
+        auto refreshRateController = DependencyManager::get<VulkanPresentThread>()->getRefreshRateController();
         refreshRateController->setRefreshRateLimitPeriod(targetRefreshRate);
     };
 }
@@ -792,7 +792,7 @@ void VulkanDisplayPlugin::swapBuffers() {
 }
 
 void VulkanDisplayPlugin::withOtherThreadContext(std::function<void()> f) const {
-    static auto presentThread = DependencyManager::get<PresentThread>();
+    static auto presentThread = DependencyManager::get<VulkanPresentThread>();
     presentThread->withOtherThreadContext(f);
     if (!OffscreenGLCanvas::restoreThreadContext()) {
         qWarning("Unable to restore original OpenGL context");
