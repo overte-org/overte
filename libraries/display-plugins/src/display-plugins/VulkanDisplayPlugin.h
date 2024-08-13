@@ -88,7 +88,7 @@ public:
     virtual void pluginUpdate() override {};
 
 protected:
-    friend class PresentThread;
+    friend class VulkanPresentThread;
 
     glm::uvec2 getSurfaceSize() const;
     glm::uvec2 getSurfacePixels() const;

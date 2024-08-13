@@ -91,7 +91,7 @@ public:
     static bool getExtraLinearToSRGBConversion() { return _extraLinearToSRGBConversionSetting.get(); };
 
 protected:
-    friend class PresentThread;
+    friend class OpenGLPresentThread;
 
     glm::uvec2 getSurfaceSize() const;
     glm::uvec2 getSurfacePixels() const;
