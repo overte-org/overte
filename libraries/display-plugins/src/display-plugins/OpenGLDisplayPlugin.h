@@ -87,7 +87,7 @@ public:
                                        GLsync* fenceSync) override;
 
 protected:
-    friend class PresentThread;
+    friend class OpenGLPresentThread;
 
     glm::uvec2 getSurfaceSize() const;
     glm::uvec2 getSurfacePixels() const;
