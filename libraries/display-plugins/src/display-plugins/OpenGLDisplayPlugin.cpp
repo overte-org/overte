@@ -60,14 +60,14 @@ extern QThread* RENDER_THREAD;
 
 Setting::Handle<bool> OpenGLDisplayPlugin::_extraLinearToSRGBConversionSetting("extraLinearToSRGBConversion", false);
 
-class PresentThread : public QThread, public Dependency {
+class OpenGLPresentThread : public QThread, public Dependency {
     using Mutex = std::mutex;
     using Condition = std::condition_variable;
     using Lock = std::unique_lock<Mutex>;
 
 public:
 
-    PresentThread() {
+    OpenGLPresentThread() {
         connect(qApp, &QCoreApplication::aboutToQuit, [this] {
             shutdown(); 
         });
@@ -76,7 +76,7 @@ public:
         _refreshRateController = std::make_shared<RefreshRateController>();
     }
 
-    ~PresentThread() {
+    ~OpenGLPresentThread() {
         shutdown();
     }
 
@@ -275,13 +275,13 @@ bool OpenGLDisplayPlugin::activate() {
     }
 
     // Start the present thread if necessary
-    QSharedPointer<PresentThread> presentThread;
-    if (DependencyManager::isSet<PresentThread>()) {
-        presentThread = DependencyManager::get<PresentThread>();
+    QSharedPointer<OpenGLPresentThread> presentThread;
+    if (DependencyManager::isSet<OpenGLPresentThread>()) {
+        presentThread = DependencyManager::get<OpenGLPresentThread>();
     } else {
         auto widget = _container->getPrimaryWidget();
-        DependencyManager::set<PresentThread>();
-        presentThread = DependencyManager::get<PresentThread>();
+        DependencyManager::set<OpenGLPresentThread>();
+        presentThread = DependencyManager::get<OpenGLPresentThread>();
         presentThread->setObjectName("Presentation Thread");
         if (!widget->context()->makeCurrent()) {
             throw std::runtime_error("Failed to make context current");
@@ -329,7 +329,7 @@ void OpenGLDisplayPlugin::deactivate() {
     auto compositorHelper = DependencyManager::get<CompositorHelper>();
     disconnect(compositorHelper.data());
 
-    auto presentThread = DependencyManager::get<PresentThread>();
+    auto presentThread = DependencyManager::get<OpenGLPresentThread>();
     // Does not return until the GL transition has completeed
     presentThread->setNewDisplayPlugin(nullptr);
     internalDeactivate();
@@ -357,7 +357,7 @@ void OpenGLDisplayPlugin::endSession() {
 }
 
 void OpenGLDisplayPlugin::customizeContext() {
-    auto presentThread = DependencyManager::get<PresentThread>();
+    auto presentThread = DependencyManager::get<OpenGLPresentThread>();
     Q_ASSERT(thread() == presentThread->thread());
 
     getBackend()->setCameraCorrection(mat4(), mat4(), true, true);
@@ -769,7 +769,7 @@ float OpenGLDisplayPlugin::presentRate() const {
 
 std::function<void(int)> OpenGLDisplayPlugin::getRefreshRateOperator() {
     return [](int targetRefreshRate) {
-        auto refreshRateController = DependencyManager::get<PresentThread>()->getRefreshRateController();
+        auto refreshRateController = DependencyManager::get<OpenGLPresentThread>()->getRefreshRateController();
         refreshRateController->setRefreshRateLimitPeriod(targetRefreshRate);
     };
 }
@@ -789,7 +789,7 @@ void OpenGLDisplayPlugin::swapBuffers() {
 }
 
 void OpenGLDisplayPlugin::withOtherThreadContext(std::function<void()> f) const {
-    static auto presentThread = DependencyManager::get<PresentThread>();
+    static auto presentThread = DependencyManager::get<OpenGLPresentThread>();
     presentThread->withOtherThreadContext(f);
     if (!OffscreenGLCanvas::restoreThreadContext()) {
         qWarning("Unable to restore original OpenGL context");
