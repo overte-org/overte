@@ -50,7 +50,7 @@ void sendEnvironmentPacket(const SharedNodePointer& node, AudioMixerClientData& 
 
 // mix helpers
 inline float approximateGain(const AvatarAudioStream& listeningNodeStream, const PositionalAudioStream& streamToAdd);
-inline float computeGain(float masterAvatarGain, float masterInjectorGain, const AvatarAudioStream& listeningNodeStream,
+inline float computeGain(float primaryAvatarGain, float primaryInjectorGain, const AvatarAudioStream& listeningNodeStream,
         const PositionalAudioStream& streamToAdd, const glm::vec3& relativePosition, float distance);
 inline float computeAzimuth(const AvatarAudioStream& listeningNodeStream, const PositionalAudioStream& streamToAdd,
         const glm::vec3& relativePosition);
@@ -338,8 +338,8 @@ bool AudioMixerWorker::prepareMix(const SharedNodePointer& listener) {
         }
 
         if (!isThrottling) {
-            updateHRTFParameters(stream, *listenerAudioStream, listenerData->getMasterAvatarGain(),
-                                 listenerData->getMasterInjectorGain());
+            updateHRTFParameters(stream, *listenerAudioStream, listenerData->getPrimaryAvatarGain(),
+                                 listenerData->getPrimaryInjectorGain());
         }
         return false;
     });
@@ -363,8 +363,8 @@ bool AudioMixerWorker::prepareMix(const SharedNodePointer& listener) {
         }
 
         if (!isThrottling) {
-            updateHRTFParameters(stream, *listenerAudioStream, listenerData->getMasterAvatarGain(),
-                                 listenerData->getMasterInjectorGain());
+            updateHRTFParameters(stream, *listenerAudioStream, listenerData->getPrimaryAvatarGain(),
+                                 listenerData->getPrimaryInjectorGain());
         }
         return false;
     });
@@ -387,7 +387,7 @@ bool AudioMixerWorker::prepareMix(const SharedNodePointer& listener) {
                 return true;
             }
 
-            addStream(stream, *listenerAudioStream, listenerData->getMasterAvatarGain(), listenerData->getMasterInjectorGain(),
+            addStream(stream, *listenerAudioStream, listenerData->getPrimaryAvatarGain(), listenerData->getPrimaryInjectorGain(),
                       isSoloing);
 
             if (shouldBeInactive(stream)) {
@@ -423,7 +423,7 @@ bool AudioMixerWorker::prepareMix(const SharedNodePointer& listener) {
                 return true;
             }
 
-            addStream(stream, *listenerAudioStream, listenerData->getMasterAvatarGain(), listenerData->getMasterInjectorGain(),
+            addStream(stream, *listenerAudioStream, listenerData->getPrimaryAvatarGain(), listenerData->getPrimaryInjectorGain(),
                       isSoloing);
 
             if (shouldBeInactive(stream)) {
@@ -491,8 +491,8 @@ bool AudioMixerWorker::prepareMix(const SharedNodePointer& listener) {
 
 void AudioMixerWorker::addStream(AudioMixerClientData::MixableStream& mixableStream,
                                 AvatarAudioStream& listeningNodeStream,
-                                float masterAvatarGain,
-                                float masterInjectorGain,
+                                float primaryAvatarGain,
+                                float primaryInjectorGain,
                                 bool isSoloing) {
     ++stats.totalMixes;
 
@@ -505,8 +505,8 @@ void AudioMixerWorker::addStream(AudioMixerClientData::MixableStream& mixableStr
 
     float distance = glm::max(glm::length(relativePosition), EPSILON);
     float gain = isEcho ? 1.0f
-                        : (isSoloing ? masterAvatarGain
-                                     : computeGain(masterAvatarGain, masterInjectorGain, listeningNodeStream, *streamToAdd,
+                        : (isSoloing ? primaryAvatarGain
+                                     : computeGain(primaryAvatarGain, primaryInjectorGain, listeningNodeStream, *streamToAdd,
                                                    relativePosition, distance));
     float azimuth = isEcho ? 0.0f : computeAzimuth(listeningNodeStream, listeningNodeStream, relativePosition);
 
@@ -577,8 +577,8 @@ void AudioMixerWorker::addStream(AudioMixerClientData::MixableStream& mixableStr
 
 void AudioMixerWorker::updateHRTFParameters(AudioMixerClientData::MixableStream& mixableStream,
                                            AvatarAudioStream& listeningNodeStream,
-                                           float masterAvatarGain,
-                                           float masterInjectorGain) {
+                                           float primaryAvatarGain,
+                                           float primaryInjectorGain) {
     auto streamToAdd = mixableStream.positionalStream;
 
     // check if this is a server echo of a source back to itself
@@ -587,7 +587,7 @@ void AudioMixerWorker::updateHRTFParameters(AudioMixerClientData::MixableStream&
     glm::vec3 relativePosition = streamToAdd->getPosition() - listeningNodeStream.getPosition();
 
     float distance = glm::max(glm::length(relativePosition), EPSILON);
-    float gain = isEcho ? 1.0f : computeGain(masterAvatarGain, masterInjectorGain, listeningNodeStream, *streamToAdd, 
+    float gain = isEcho ? 1.0f : computeGain(primaryAvatarGain, primaryInjectorGain, listeningNodeStream, *streamToAdd, 
                                              relativePosition, distance);
     float azimuth = isEcho ? 0.0f : computeAzimuth(listeningNodeStream, listeningNodeStream, relativePosition);
 
@@ -713,7 +713,7 @@ float approximateGain(const AvatarAudioStream& listeningNodeStream, const Positi
     // injector: apply attenuation
     if (streamToAdd.getType() == PositionalAudioStream::Injector) {
         gain *= reinterpret_cast<const InjectedAudioStream*>(&streamToAdd)->getAttenuationRatio();
-        // injector: skip master gain
+        // injector: skip primary gain
     }
 
     // avatar: skip attenuation - it is too costly to approximate
@@ -723,11 +723,11 @@ float approximateGain(const AvatarAudioStream& listeningNodeStream, const Positi
     float distance = glm::length(relativePosition);
     return gain / distance;
 
-    // avatar: skip master gain
+    // avatar: skip primary gain
 }
 
-float computeGain(float masterAvatarGain,
-                  float masterInjectorGain,
+float computeGain(float primaryAvatarGain,
+                  float primaryInjectorGain,
                   const AvatarAudioStream& listeningNodeStream,
                   const PositionalAudioStream& streamToAdd,
                   const glm::vec3& relativePosition,
@@ -737,8 +737,8 @@ float computeGain(float masterAvatarGain,
     // injector: apply attenuation
     if (streamToAdd.getType() == PositionalAudioStream::Injector) {
         gain *= reinterpret_cast<const InjectedAudioStream*>(&streamToAdd)->getAttenuationRatio();
-        // apply master gain
-        gain *= masterInjectorGain;
+        // apply primary gain
+        gain *= primaryInjectorGain;
 
     // avatar: apply fixed off-axis attenuation to make them quieter as they turn away
     } else if (streamToAdd.getType() == PositionalAudioStream::Microphone) {
@@ -754,8 +754,8 @@ float computeGain(float masterAvatarGain,
 
         gain *= offAxisCoefficient;
 
-        // apply master gain
-        gain *= masterAvatarGain;
+        // apply primary gain
+        gain *= primaryAvatarGain;
     }
 
     auto& audioZones = AudioMixer::getAudioZones();

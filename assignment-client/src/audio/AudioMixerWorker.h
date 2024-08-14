@@ -60,13 +60,13 @@ private:
     bool prepareMix(const SharedNodePointer& listener);
     void addStream(AudioMixerClientData::MixableStream& mixableStream,
                    AvatarAudioStream& listeningNodeStream,
-                   float masterAvatarGain,
-                   float masterInjectorGain,
+                   float primaryAvatarGain,
+                   float primaryInjectorGain,
                    bool isSoloing);
     void updateHRTFParameters(AudioMixerClientData::MixableStream& mixableStream,
                               AvatarAudioStream& listeningNodeStream,
-                              float masterAvatarGain,
-                              float masterInjectorGain);
+                              float primaryAvatarGain,
+                              float primaryInjectorGain);
     void resetHRTFState(AudioMixerClientData::MixableStream& mixableStream);
 
     void addStreams(Node& listener, AudioMixerClientData& listenerData);

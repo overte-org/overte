@@ -86,10 +86,10 @@ public:
     // uses randomization to have the AudioMixer send a stats packet to this node around every second
     bool shouldSendStats(int frameNumber);
 
-    float getMasterAvatarGain() const { return _masterAvatarGain; }
-    void setMasterAvatarGain(float gain) { _masterAvatarGain = gain; }
-    float getMasterInjectorGain() const { return _masterInjectorGain; }
-    void setMasterInjectorGain(float gain) { _masterInjectorGain = gain; }
+    float getPrimaryAvatarGain() const { return _primaryAvatarGain; }
+    void setPrimaryAvatarGain(float gain) { _primaryAvatarGain = gain; }
+    float getPrimaryInjectorGain() const { return _primaryInjectorGain; }
+    void setPrimaryInjectorGain(float gain) { _primaryInjectorGain = gain; }
 
     AudioLimiter audioLimiter;
 
@@ -194,8 +194,8 @@ private:
 
     int _frameToSendStats { 0 };
 
-    float _masterAvatarGain { 1.0f };   // per-listener mixing gain, applied only to avatars
-    float _masterInjectorGain { 1.0f }; // per-listener mixing gain, applied only to injectors
+    float _primaryAvatarGain { 1.0f };   // per-listener mixing gain, applied only to avatars
+    float _primaryInjectorGain { 1.0f }; // per-listener mixing gain, applied only to injectors
 
     CodecPluginPointer _codec;
     QString _selectedCodecName;

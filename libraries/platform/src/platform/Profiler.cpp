@@ -32,9 +32,9 @@ Profiler::Tier Profiler::profilePlatform() {
         return platformTier;
     }
 
-    // Not filtered yet, let s try to make sense of the  master cpu and master gpu info
-    auto cpuInfo = platform::getCPU(platform::getMasterCPU());
-    auto gpuInfo = platform::getGPU(platform::getMasterGPU());
+    // Not filtered yet, let's try to make sense of the primary cpu and primary gpu info
+    auto cpuInfo = platform::getCPU(platform::getPrimaryCPU());
+    auto gpuInfo = platform::getGPU(platform::getPrimaryGPU());
     if (filterOnProcessors(computerInfo, cpuInfo, gpuInfo, platformTier)) {
         return platformTier;
     }
@@ -62,7 +62,7 @@ bool filterOnComputerMACOS(const platform::json& computer, Profiler::Tier& tier)
     // The simple rule for mac is
     // if it s an intel gpu then LOW
     // else go mid
-    auto gpu = platform::getGPU(platform::getMasterGPU());
+    auto gpu = platform::getGPU(platform::getPrimaryGPU());
     if (gpu.count(keys::gpu::vendor)) {
         std::string gpuVendor = gpu[keys::gpu::vendor].get<std::string>();
         

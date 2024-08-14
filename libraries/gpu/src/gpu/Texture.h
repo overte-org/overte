@@ -405,7 +405,7 @@ public:
     Stamp getDataStamp() const { return _storage->getStamp(); }
 
     // The theoretical size in bytes of data stored in the texture
-    // For the master (level) first level of mip
+    // For the primary (level) first level of mip
     Size getSize() const override { return _size; }
 
     // Size and format

@@ -167,8 +167,8 @@ void WINInstance::enumerateGpusAndDisplays() {
                     // refreshrate
                     display[keys::display::modeRefreshrate] = devMode.dmDisplayFrequency;;
                 
-                    // Master display ?
-                    display[keys::display::isMaster] = (bool) (monitorInfo.dwFlags & MONITORINFOF_PRIMARY);
+                    // Primary display ?
+                    display[keys::display::isPrimary] = (bool) (monitorInfo.dwFlags & MONITORINFOF_PRIMARY);
  
                     // Add the display index to the list of displays of the gpu
                     displayIndices.push_back((int) _displays.size());

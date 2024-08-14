@@ -110,17 +110,17 @@ public slots:
     bool getPersonalMuteStatus(const QUuid& nodeID);
 
     /*@jsdoc
-     * Sets an avatar's gain (volume) for you and you only, or sets the master gain.
+     * Sets an avatar's gain (volume) for you and you only, or sets the primary gain.
      * @function Users.setAvatarGain
-     * @param {Uuid} nodeID - The session ID of the avatar to set the gain for, or <code>null</code> to set the master gain.
+     * @param {Uuid} nodeID - The session ID of the avatar to set the gain for, or <code>null</code> to set the primary gain.
      * @param {number} gain - The gain to set, in dB.
     */
     void setAvatarGain(const QUuid& nodeID, float gain);
 
     /*@jsdoc
-     * Gets an avatar's gain (volume) for you and you only, or gets the master gain.
+     * Gets an avatar's gain (volume) for you and you only, or gets the primary gain.
      * @function Users.getAvatarGain
-     * @param {Uuid} nodeID - The session ID of the avatar to get the gain for, or <code>null</code> to get the master gain.
+     * @param {Uuid} nodeID - The session ID of the avatar to get the gain for, or <code>null</code> to get the primary gain.
      * @returns {number} The gain, in dB.
     */
     float getAvatarGain(const QUuid& nodeID);
