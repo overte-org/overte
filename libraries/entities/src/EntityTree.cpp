@@ -65,8 +65,8 @@ EntityTree::~EntityTree() {
     //eraseAllOctreeElements(false); // KEEP THIS
 }
 
-void EntityTree::setEntityScriptSourceWhitelist(const QString& entityScriptSourceWhitelist) { 
-    _entityScriptSourceWhitelist = entityScriptSourceWhitelist.split(',', Qt::SkipEmptyParts);
+void EntityTree::setEntityScriptSourceAllowlist(const QString& entityScriptSourceAllowlist) {
+    _entityScriptSourceAllowlist = entityScriptSourceAllowlist.split(',', Qt::SkipEmptyParts);
 }
 
 
@@ -1411,17 +1411,17 @@ void EntityTree::bumpTimestamp(EntityItemProperties& properties) { //fixme put c
     properties.setLastEdited(properties.getLastEdited() + LAST_EDITED_SERVERSIDE_BUMP);
 }
 
-bool EntityTree::isScriptInWhitelist(const QString& scriptProperty) {
+bool EntityTree::isScriptInAllowlist(const QString& scriptProperty) {
 
     // grab a URL representation of the entity script so we can check the host for this script
     auto entityScriptURL = QUrl::fromUserInput(scriptProperty);
 
-    for (const auto& whiteListedPrefix : _entityScriptSourceWhitelist) {
-        auto whiteListURL = QUrl::fromUserInput(whiteListedPrefix);
+    for (const auto& allowListedPrefix : _entityScriptSourceAllowlist) {
+        auto allowListURL = QUrl::fromUserInput(allowListedPrefix);
 
-        // check if this script URL matches the whitelist domain and, optionally, is beneath the path
-        if (entityScriptURL.host().compare(whiteListURL.host(), Qt::CaseInsensitive) == 0 &&
-            entityScriptURL.path().startsWith(whiteListURL.path(), Qt::CaseInsensitive)) {
+        // check if this script URL matches the allowlist domain and, optionally, is beneath the path
+        if (entityScriptURL.host().compare(allowListURL.host(), Qt::CaseInsensitive) == 0 &&
+            entityScriptURL.path().startsWith(allowListURL.path(), Qt::CaseInsensitive)) {
             return true;
         }
     }
@@ -1504,18 +1504,18 @@ int EntityTree::processEditPacketData(ReceivedMessage& message, const unsigned c
                 }
             }
 
-            if (validEditPacket && !_entityScriptSourceWhitelist.isEmpty()) {
+            if (validEditPacket && !_entityScriptSourceAllowlist.isEmpty()) {
 
                 bool wasDeletedBecauseOfClientScript = false;
 
-                // check the client entity script to make sure its URL is in the whitelist
+                // check the client entity script to make sure its URL is in the allowlist
                 if (!properties.getScript().isEmpty()) {
-                    bool clientScriptPassedWhitelist = isScriptInWhitelist(properties.getScript());
+                    bool clientScriptPassedAllowlist = isScriptInAllowlist(properties.getScript());
 
-                    if (!clientScriptPassedWhitelist) {
+                    if (!clientScriptPassedAllowlist) {
                         if (wantEditLogging()) {
                             qCDebug(entities) << "User [" << senderNode->getUUID()
-                                << "] attempting to set entity script not on whitelist, edit rejected";
+                                << "] attempting to set entity script not on allowlist, edit rejected";
                         }
 
                         // If this was an add, we also want to tell the client that sent this edit that the entity was not added.
@@ -1530,20 +1530,20 @@ int EntityTree::processEditPacketData(ReceivedMessage& message, const unsigned c
                     }
                 }
 
-                // check all server entity scripts to make sure their URLs are in the whitelist
+                // check all server entity scripts to make sure their URLs are in the allowlist
                 if (!properties.getServerScripts().isEmpty()) {
-                    bool serverScriptPassedWhitelist = isScriptInWhitelist(properties.getServerScripts());
+                    bool serverScriptPassedAllowlist = isScriptInAllowlist(properties.getServerScripts());
 
-                    if (!serverScriptPassedWhitelist) {
+                    if (!serverScriptPassedAllowlist) {
                         if (wantEditLogging()) {
                             qCDebug(entities) << "User [" << senderNode->getUUID()
-                                << "] attempting to set server entity script not on whitelist, edit rejected";
+                                << "] attempting to set server entity script not on allowlist, edit rejected";
                         }
 
                         // If this was an add, we also want to tell the client that sent this edit that the entity was not added.
                         if (isAdd) {
                             // Make sure we didn't already need to send back a delete because the client script failed
-                            // the whitelist check
+                            // the allowlist check
                             if (!wasDeletedBecauseOfClientScript) {
                                 QWriteLocker locker(&_recentlyDeletedEntitiesLock);
                                 _recentlyDeletedEntityItemIDs.insert(usecTimestampNow(), entityItemID);

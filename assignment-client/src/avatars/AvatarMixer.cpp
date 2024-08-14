@@ -1058,23 +1058,23 @@ void AvatarMixer::parseDomainServerSettings(const QJsonObject& domainSettings) {
     qCDebug(avatars) << "This domain requires a minimum avatar height of" << _domainMinimumHeight
                      << "and a maximum avatar height of" << _domainMaximumHeight;
 
-    static const QString AVATAR_WHITELIST_OPTION = "avatar_whitelist";
-    _workerSharedData.skeletonURLWhitelist = avatarMixerGroupObject[AVATAR_WHITELIST_OPTION]
+    static const QString AVATAR_ALLOWLIST_OPTION = "avatar_allowlist";
+    _workerSharedData.skeletonURLAllowlist = avatarMixerGroupObject[AVATAR_ALLOWLIST_OPTION]
         .toString().split(',', Qt::KeepEmptyParts);
 
     static const QString REPLACEMENT_AVATAR_OPTION = "replacement_avatar";
     _workerSharedData.skeletonReplacementURL = avatarMixerGroupObject[REPLACEMENT_AVATAR_OPTION]
         .toString();
 
-    if (_workerSharedData.skeletonURLWhitelist.count() == 1 && _workerSharedData.skeletonURLWhitelist[0].isEmpty()) {
+    if (_workerSharedData.skeletonURLAllowlist.count() == 1 && _workerSharedData.skeletonURLAllowlist[0].isEmpty()) {
         // KeepEmptyParts above will parse "," as ["", ""] (which is ok), but "" as [""] (which is not ok).
-        _workerSharedData.skeletonURLWhitelist.clear();
+        _workerSharedData.skeletonURLAllowlist.clear();
     }
 
-    if (_workerSharedData.skeletonURLWhitelist.isEmpty()) {
+    if (_workerSharedData.skeletonURLAllowlist.isEmpty()) {
         qCDebug(avatars) << "All avatars are allowed.";
     } else {
-        qCDebug(avatars) << "Avatars other than" << _workerSharedData.skeletonURLWhitelist << "will be replaced by" << (_workerSharedData.skeletonReplacementURL.isEmpty() ? "default" : _workerSharedData.skeletonReplacementURL.toString());
+        qCDebug(avatars) << "Avatars other than" << _workerSharedData.skeletonURLAllowlist << "will be replaced by" << (_workerSharedData.skeletonReplacementURL.isEmpty() ? "default" : _workerSharedData.skeletonReplacementURL.toString());
     }
 }
 

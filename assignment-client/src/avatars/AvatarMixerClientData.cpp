@@ -221,8 +221,8 @@ void AvatarMixerClientData::processSetTraitsMessage(ReceivedMessage& message,
                 _avatar->processTrait(traitType, message.read(traitSize));
                 _lastReceivedTraitVersions[traitType] = packetTraitVersion;
                 if (traitType == AvatarTraits::SkeletonModelURL) {
-                    // special handling for skeleton model URL, since we need to make sure it is in the whitelist
-                    checkSkeletonURLAgainstWhitelist(workerSharedData, sendingNode, packetTraitVersion);
+                    // special handling for skeleton model URL, since we need to make sure it is in the allowlist
+                    checkSkeletonURLAgainstAllowlist(workerSharedData, sendingNode, packetTraitVersion);
                 }
 
                 anyTraitsChanged = true;
@@ -366,30 +366,30 @@ void AvatarMixerClientData::processBulkAvatarTraitsAckMessage(ReceivedMessage& m
     }
 }
 
-void AvatarMixerClientData::checkSkeletonURLAgainstWhitelist(const WorkerSharedData& workerSharedData,
+void AvatarMixerClientData::checkSkeletonURLAgainstAllowlist(const WorkerSharedData& workerSharedData,
                                                              Node& sendingNode,
                                                              AvatarTraits::TraitVersion traitVersion) {
-    const auto& whitelist = workerSharedData.skeletonURLWhitelist;
+    const auto& allowlist = workerSharedData.skeletonURLAllowlist;
 
-    if (!whitelist.isEmpty()) {
-        bool inWhitelist = false;
+    if (!allowlist.isEmpty()) {
+        bool inAllowlist = false;
         auto avatarURL = _avatar->getSkeletonModelURL();
 
-        // The avatar is in the whitelist if:
-        // 1. The avatar's URL's host matches one of the hosts of the URLs in the whitelist AND
-        // 2. The avatar's URL's path starts with the path of that same URL in the whitelist
-        for (const auto& whiteListedPrefix : whitelist) {
-            auto whiteListURL = QUrl::fromUserInput(whiteListedPrefix);
-            // check if this script URL matches the whitelist domain and, optionally, is beneath the path
-            if (avatarURL.host().compare(whiteListURL.host(), Qt::CaseInsensitive) == 0 &&
-                avatarURL.path().startsWith(whiteListURL.path(), Qt::CaseInsensitive)) {
-                inWhitelist = true;
+        // The avatar is in the allowlist if:
+        // 1. The avatar's URL's host matches one of the hosts of the URLs in the allowlist AND
+        // 2. The avatar's URL's path starts with the path of that same URL in the allowlist
+        for (const auto& allowListedPrefix : allowlist) {
+            auto allowListURL = QUrl::fromUserInput(allowListedPrefix);
+            // check if this script URL matches the allowlist domain and, optionally, is beneath the path
+            if (avatarURL.host().compare(allowListURL.host(), Qt::CaseInsensitive) == 0 &&
+                avatarURL.path().startsWith(allowListURL.path(), Qt::CaseInsensitive)) {
+                inAllowlist = true;
 
                 break;
             }
         }
 
-        if (!inWhitelist) {
+        if (!inAllowlist) {
             // make sure we're not unecessarily overriding the default avatar with the default avatar
             if (_avatar->getWireSafeSkeletonModelURL() != workerSharedData.skeletonReplacementURL) {
                 // we need to change this avatar's skeleton URL, and send them a traits packet informing them of the change

@@ -854,11 +854,11 @@ void printSystemInformation() {
 
     qCDebug(shared) << "Environment Variables";
     // List of env variables to include in the log. For privacy reasons we don't send all env variables.
-    const QStringList envWhitelist = {
+    const QStringList envAllowlist = {
         "QTWEBENGINE_REMOTE_DEBUGGING"
     };
     auto envVariables = QProcessEnvironment::systemEnvironment();
-    for (auto& env : envWhitelist)
+    for (auto& env : envAllowlist)
     {
         qCDebug(shared).noquote().nospace() << "\t" <<
             (envVariables.contains(env) ? " = " + envVariables.value(env) : " NOT FOUND");

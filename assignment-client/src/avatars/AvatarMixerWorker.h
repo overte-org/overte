@@ -97,7 +97,7 @@ class EntityTree;
 using EntityTreePointer = std::shared_ptr<EntityTree>;
 
 struct WorkerSharedData {
-    QStringList skeletonURLWhitelist;
+    QStringList skeletonURLAllowlist;
     QUrl skeletonReplacementURL;
     EntityTreePointer entityTree;
 };

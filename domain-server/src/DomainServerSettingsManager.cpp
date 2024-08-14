@@ -1743,7 +1743,7 @@ bool DomainServerSettingsManager::recurseJSONObjectAndOverwriteSettings(const QJ
     QJsonObject postedObject(postedSettingsObject);
 
     static const QString SECURITY_ROOT_KEY = "security";
-    static const QString AC_SUBNET_WHITELIST_KEY = "ac_subnet_whitelist";
+    static const QString AC_SUBNET_ALLOWLIST_KEY = "ac_subnet_allowlist";
     static const QString BROADCASTING_KEY = "broadcasting";
     static const QString WIZARD_KEY = "wizard";
     static const QString DESCRIPTION_ROOT_KEY = "descriptors";
@@ -1863,7 +1863,7 @@ bool DomainServerSettingsManager::recurseJSONObjectAndOverwriteSettings(const QJ
 
                     if ((rootKey != SECURITY_ROOT_KEY && rootKey != BROADCASTING_KEY &&
                          rootKey != DESCRIPTION_ROOT_KEY && rootKey != WIZARD_KEY) ||
-                        settingKey == AC_SUBNET_WHITELIST_KEY) {
+                        settingKey == AC_SUBNET_ALLOWLIST_KEY) {
                         needRestart = true;
                     }
                 } else {

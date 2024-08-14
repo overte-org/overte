@@ -135,7 +135,7 @@ public:
     void processSetTraitsMessage(ReceivedMessage& message, const WorkerSharedData& workerSharedData, Node& sendingNode);
     void emulateDeleteEntitiesTraitsMessage(const QList<QUuid>& avatarEntityIDs);
     void processBulkAvatarTraitsAckMessage(ReceivedMessage& message);
-    void checkSkeletonURLAgainstWhitelist(const WorkerSharedData& workerSharedData, Node& sendingNode,
+    void checkSkeletonURLAgainstAllowlist(const WorkerSharedData& workerSharedData, Node& sendingNode,
                                           AvatarTraits::TraitVersion traitVersion);
 
     using TraitsCheckTimestamp = std::chrono::steady_clock::time_point;
