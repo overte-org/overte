@@ -4,6 +4,7 @@
 //
 //  Created by Zach Fox on 2019-07-10
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -268,16 +269,16 @@ Flickable {
                                 }
                             }
                             HifiControlsUit.CheckBox {
-                                id: renderingEffectFog
+                                id: renderingEffectHaze
                                 checked: Render.hazeEnabled
                                 boxSize: 16
-                                text: "Fog"
+                                text: "Haze"
                                 spacing: -1
                                 colorScheme: hifi.colorSchemes.dark
                                 anchors.left: parent.left
                                 anchors.top: renderingEffectShadows.bottom
                                 onCheckedChanged: {
-                                    Render.hazeEnabled = renderingEffectFog.checked;
+                                    Render.hazeEnabled = renderingEffectHaze.checked;
                                 }
                             }
                             HifiControlsUit.CheckBox {
@@ -288,7 +289,7 @@ Flickable {
                                 spacing: -1
                                 colorScheme: hifi.colorSchemes.dark
                                 anchors.left: parent.left
-                                anchors.top: renderingEffectFog.bottom
+                                anchors.top: renderingEffectHaze.bottom
                                 onCheckedChanged: {
                                     Render.bloomEnabled = renderingEffectBloom.checked;
                                 }
@@ -834,7 +835,7 @@ Flickable {
                         text: "Procedural Materials"
                         anchors.left: parent.left
                         anchors.top: parent.top
-                        width: 130
+                        width: 150
                         height: parent.height
                         size: 16
                         color: "#FFFFFF"
