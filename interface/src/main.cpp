@@ -286,7 +286,7 @@ int main(int argc, const char* argv[]) {
 
     // "--qmljsdebugger", which appears in output from "--help-all".
     // Those below don't seem to be optional.
-    //     --ignore-gpu-blacklist
+    //     --ignore-gpu-blocklist
     //     --suppress-settings-reset
 
 

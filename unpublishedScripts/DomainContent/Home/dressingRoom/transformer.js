@@ -119,14 +119,14 @@
         },
 
         removeCurrentBigVersion: function(rotatorBlock) {
-            var blacklistKey = 'Hifi-Hand-RayPick-Blacklist';
+            var blocklistKey = 'Hifi-Hand-RayPick-Blocklist';
             var myProps = Entities.getEntityProperties(_this.entityID);
             var results = Entities.findEntities(myProps.position, 10);
 
             results.forEach(function(result) {
                 var resultProps = Entities.getEntityProperties(result);
                 if (resultProps.name === "hifi-home-dressing-room-big-transformer") {
-                    Messages.sendMessage(blacklistKey, JSON.stringify({
+                    Messages.sendMessage(blocklistKey, JSON.stringify({
                         action: 'remove',
                         id: result
                     }));
@@ -192,8 +192,8 @@
 
             var bigVersion = Entities.addEntity(bigVersionProps);
 
-            var blacklistKey = 'Hifi-Hand-RayPick-Blacklist';
-            Messages.sendMessage(blacklistKey, JSON.stringify({
+            var blocklistKey = 'Hifi-Hand-RayPick-Blocklist';
+            Messages.sendMessage(blocklistKey, JSON.stringify({
                 action: 'add',
                 id: bigVersion
             }));

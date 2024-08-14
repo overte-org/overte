@@ -688,7 +688,7 @@ void DomainServerSettingsManager::packPermissions() {
     // save settings for groups
     packPermissionsForMap("permissions", _groupPermissions, GROUP_PERMISSIONS_KEYPATH);
 
-    // save settings for blacklist groups
+    // save settings for blocklist groups
     packPermissionsForMap("permissions", _groupForbiddens, GROUP_FORBIDDENS_KEYPATH);
 
     persistToFile();
@@ -869,7 +869,7 @@ bool DomainServerSettingsManager::ensurePermissionsForGroupRanks() {
         }
     }
 
-    QList<QUuid> forbiddenGroupIDs = getBlacklistGroupIDs();
+    QList<QUuid> forbiddenGroupIDs = getBlocklistGroupIDs();
     foreach (QUuid groupID, forbiddenGroupIDs) {
         QString groupName = _groupNames[groupID];
         QHash<QUuid, GroupRank>& ranksForGroup = _groupRanks[groupID];
@@ -2038,7 +2038,7 @@ void DomainServerSettingsManager::apiRefreshGroupInformation() {
         }
         if (_groupIDs.contains(lowerGroupName)) {
             // we already know about this one.  recall setGroupID in case the group has been
-            // added to another section (the same group is found in both groups and blacklists).
+            // added to another section (the same group is found in both groups and blocklists).
             changed = setGroupID(groupName, _groupIDs[lowerGroupName]);
             continue;
         }
@@ -2245,7 +2245,7 @@ QList<QUuid> DomainServerSettingsManager::getGroupIDs() {
     return result.values();
 }
 
-QList<QUuid> DomainServerSettingsManager::getBlacklistGroupIDs() {
+QList<QUuid> DomainServerSettingsManager::getBlocklistGroupIDs() {
     QSet<QUuid> result;
     foreach (NodePermissionsKey groupKey, _groupForbiddens.keys()) {
         if (_groupForbiddens[groupKey]->isGroup()) {
@@ -2264,7 +2264,7 @@ QStringList DomainServerSettingsManager::getDomainServerGroupNames() {
     return result.values();
 }
 
-QStringList DomainServerSettingsManager::getDomainServerBlacklistGroupNames() {
+QStringList DomainServerSettingsManager::getDomainServerBlocklistGroupNames() {
     // All names as listed in the domain server settings; not necessarily Directory Services groups.
     QSet<QString> result;
     foreach (NodePermissionsKey groupKey, _groupForbiddens.keys()) {

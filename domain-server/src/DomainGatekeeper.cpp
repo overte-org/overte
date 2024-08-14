@@ -178,7 +178,7 @@ NodePermissions DomainGatekeeper::setPermissionsForUser(bool isLocalUser, QStrin
     }
 
     // If this user is a known member of a domain group, give them the implied permissions.
-    // Do before processing verifiedUsername in case user is logged into the Directory Services and is a member of a blacklist group.
+    // Do before processing verifiedUsername in case user is logged into the Directory Services and is a member of a blocklist group.
     if (!verifiedDomainUserName.isEmpty()) {
         auto userGroups = _domainGroupMemberships[verifiedDomainUserName];
         foreach (QString userGroup, userGroups) {
@@ -277,8 +277,8 @@ NodePermissions DomainGatekeeper::setPermissionsForUser(bool isLocalUser, QStrin
                 }
             }
 
-            // if this user is a known member of a blacklist group, remove the implied permissions
-            foreach (QUuid groupID, _server->_settingsManager.getBlacklistGroupIDs()) {
+            // if this user is a known member of a blocklist group, remove the implied permissions
+            foreach (QUuid groupID, _server->_settingsManager.getBlocklistGroupIDs()) {
                 QUuid rankID = _server->_settingsManager.isGroupMember(verifiedUsername, groupID);
                 if (rankID != QUuid()) {
                     QUuid rankID = _server->_settingsManager.isGroupMember(verifiedUsername, groupID);
@@ -287,7 +287,7 @@ NodePermissions DomainGatekeeper::setPermissionsForUser(bool isLocalUser, QStrin
 
                         GroupRank rank = _server->_settingsManager.getGroupRank(groupID, rankID);
 #ifdef WANT_DEBUG
-                        qDebug() << "|  user-permissions: user is in blacklist group:" << groupID << " rank:" << rank.name
+                        qDebug() << "|  user-permissions: user is in blocklist group:" << groupID << " rank:" << rank.name
                                  << "so:" << userPerms;
 #endif
                     }
@@ -299,20 +299,20 @@ NodePermissions DomainGatekeeper::setPermissionsForUser(bool isLocalUser, QStrin
         userPerms.setVerifiedUserName(verifiedUsername);
     }
 
-    // If this user is a known member of an domain group that is blacklisted, remove the implied permissions.
+    // If this user is a known member of an domain group that is blocklisted, remove the implied permissions.
     if (!verifiedDomainUserName.isEmpty()) {
         auto userGroups = _domainGroupMemberships[verifiedDomainUserName];
         foreach(QString userGroup, userGroups) {
             // A domain group is signified by a leading special character, "@".
             // Multiple domain groups may be specified in one domain server setting as a comma- and/or space-separated lists of
             // domain group names. For example, "@silver @Gold, @platinum".
-            auto domainGroups = _server->_settingsManager.getDomainServerBlacklistGroupNames()
+            auto domainGroups = _server->_settingsManager.getDomainServerBlocklistGroupNames()
                 .filter(QRegularExpression("^(.*[\\s,])?" + QRegularExpression::escape(userGroup) + "([\\s,].*)?$",
                     QRegularExpression::CaseInsensitiveOption));
             foreach(QString domainGroup, domainGroups) {
                 userPerms &= ~_server->_settingsManager.getForbiddensForGroup(domainGroup, QUuid());
 #ifdef WANT_DEBUG
-                qDebug() << "|  user-permissions: domain user is in blacklist group:" << domainGroup << "so:" << userPerms;
+                qDebug() << "|  user-permissions: domain user is in blocklist group:" << domainGroup << "so:" << userPerms;
 #endif
             }
         }
@@ -1027,7 +1027,7 @@ void DomainGatekeeper::getGroupMemberships(const QString& username) {
 
     QJsonObject json;
     QSet<QString> groupIDSet;
-    foreach (QUuid groupID, _server->_settingsManager.getGroupIDs() + _server->_settingsManager.getBlacklistGroupIDs()) {
+    foreach (QUuid groupID, _server->_settingsManager.getGroupIDs() + _server->_settingsManager.getBlocklistGroupIDs()) {
         groupIDSet += groupID.toString().mid(1,36);
     }
 

@@ -254,9 +254,9 @@ static const QMap<QString, DomainServerExporter::MetricType> TYPE_MAP {
 //
 // For numeric values with an unit, instead of trying to parse it, the stats will just need to
 // have a second copy of the metric added, with the value expressed as a number, with the original
-// being blacklisted here.
+// being blocklisted here.
 
-static const QSet<QString> BLACKLIST = {
+static const QSet<QString> BLOCKLIST = {
     "asset_server_connection_stats_last_heard",                 // Timestamp as a string
     "asset_server_username",                                    // Username
     "audio_mixer_listeners_jitter_downstream_avg_gap",          // Number as string with unit name, alternative added
@@ -379,7 +379,7 @@ void DomainServerExporter::generateMetricsFromJson(QTextStream& stream,
             continue;
         }
 
-        if (BLACKLIST.contains(metricName)) {
+        if (BLOCKLIST.contains(metricName)) {
             continue;
         }
 
