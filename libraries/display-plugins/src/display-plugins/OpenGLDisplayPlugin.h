@@ -18,6 +18,7 @@
 #include <QtGui/QImage>
 
 #include <GLMHelpers.h>
+#include <SettingHandle.h>
 #include <SimpleMovingAverage.h>
 #include <shared/RateCounter.h>
 
@@ -85,6 +86,9 @@ public:
     void copyTextureToQuickFramebuffer(NetworkTexturePointer source,
                                        QOpenGLFramebufferObject* target,
                                        GLsync* fenceSync) override;
+
+    static void setExtraLinearToSRGBConversion(bool value) { _extraLinearToSRGBConversionSetting.set(value); }
+    static bool getExtraLinearToSRGBConversion() { return _extraLinearToSRGBConversionSetting.get(); };
 
 protected:
     friend class PresentThread;
@@ -201,4 +205,7 @@ protected:
 
     QImage getScreenshot(float aspectRatio);
     QImage getSecondaryCameraScreenshot();
+
+private:
+    static Setting::Handle<bool> _extraLinearToSRGBConversionSetting;
 };
