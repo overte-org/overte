@@ -33,10 +33,16 @@ public:
     using Inputs = render::VaryingSet6<HazeStage::FramePointer, gpu::FramebufferPointer, LinearDepthFramebufferPointer, DeferredFrameTransformPointer, LightingModelPointer, LightStage::FramePointer>;
     using JobModel = render::Job::ModelI<DrawHaze, Inputs>;
 
+    DrawHaze(bool separateBackgroundPass) : _separateBackgroundPass(separateBackgroundPass) {}
+
     void run(const render::RenderContextPointer& renderContext, const Inputs& inputs);
 
 private:
-    gpu::PipelinePointer _hazePipeline;
+    bool _separateBackgroundPass { false };
+
+    static gpu::PipelinePointer _hazePipeline;
+    static gpu::PipelinePointer _separateHazePipeline;
+    static gpu::PipelinePointer _separateHazeBackgroundPipeline;
 };
 
 #endif // hifi_render_utils_DrawHaze_h
