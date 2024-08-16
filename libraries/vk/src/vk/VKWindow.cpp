@@ -5,6 +5,7 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
+// TODO: based on Vulkan Samples
 
 #include <QtCore/QCoreApplication>
 #include <QGuiApplication>
@@ -57,9 +58,24 @@ void VKWindow::createSwapchain() {
     }
     _swapchain.create(&_extent.width, &_extent.height, false, false);
 
+    createCommandBuffers();
     setupRenderPass();
     setupDepthStencil();
     setupFramebuffers();
+}
+
+void VKWindow::createCommandBuffers() {
+    VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::semaphoreCreateInfo();
+    // Create a semaphore used to synchronize image presentation
+    // Ensures that the image is displayed before we start submitting new commands to the queue
+    VK_CHECK_RESULT(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_presentCompleteSemaphore));
+    // Create a semaphore used to synchronize command submission
+    // Ensures that the image is not presented until all commands have been submitted and executed
+    VK_CHECK_RESULT(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderCompleteSemaphore));
+    // Create one command buffer for each swap chain image
+    _drawCommandBuffers.resize(_swapchain.imageCount);
+    VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::commandBufferAllocateInfo(_context.device->commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, static_cast<uint32_t>(_drawCommandBuffers.size()));
+    VK_CHECK_RESULT(vkAllocateCommandBuffers(_device, &cmdBufAllocateInfo, _drawCommandBuffers.data()));
 }
 
 void VKWindow::setupDepthStencil() {
@@ -252,6 +268,8 @@ void VKWindow::resizeFramebuffer() {
 }
 
 VKWindow::~VKWindow() {
+    vkDestroySemaphore(_device, _presentCompleteSemaphore, nullptr);
+    vkDestroySemaphore(_device, _renderCompleteSemaphore, nullptr);
     _swapchain.cleanup();
 }
 

@@ -48,14 +48,18 @@ protected:
     void setupRenderPass();
     void setupDepthStencil();
     void setupFramebuffers();
+    void createCommandBuffers();
 
 public:
     vks::Context& _context{ vks::Context::get() };
     const VkDevice& _device{ _context.device->logicalDevice };
     //VkSurfaceKHR _surface;
-    VkRenderPass _renderPass;
+    VkRenderPass _renderPass{};
     VkExtent2D _extent;
     VulkanSwapChain _swapchain;
+    VkSemaphore _presentCompleteSemaphore{};
+    VkSemaphore _renderCompleteSemaphore{};
+    std::vector<VkCommandBuffer> _drawCommandBuffers;
     struct : vks::Allocation {
         bool isAllocated {false};
         VkImage image;
