@@ -100,12 +100,12 @@ public:
         }
     }
 
-    void setContext(gl::Context* context) {
+    void setContext(vks::Context* context) {
         // Move the OpenGL context to the present thread
         // Extra code because of the widget 'wrapper' context
         _context = context;
-        _context->doneCurrent();
-        _context->moveToThread(this);
+        //_context->doneCurrent();
+        //_context->moveToThread(this);
     }
 
     virtual void run() override {
@@ -119,16 +119,16 @@ public:
         setPriority(QThread::HighPriority);
         VulkanDisplayPlugin* currentPlugin{ nullptr };
         Q_ASSERT(_context);
-        _context->makeCurrent();
-        CHECK_GL_ERROR();
+        //_context->makeCurrent();
+        //CHECK_GL_ERROR();
         while (!_shutdown) {
             if (_pendingOtherThreadOperation) {
                 PROFILE_RANGE(render, "MainThreadOp")
                 {
                     Lock lock(_mutex);
-                    _context->doneCurrent();
+                    //_context->doneCurrent();
                     // Move the context to the main thread
-                    _context->moveToThread(_targetOperationThread);
+                    //_context->moveToThread(_targetOperationThread);
                     _pendingOtherThreadOperation = false;
                     // Release the main thread to do it's action
                     _condition.notify_one();
@@ -139,7 +139,7 @@ public:
                     Lock lock(_mutex);
                     _condition.wait(lock, [&] { return _finishedOtherThreadOperation; });
                 }
-                _context->makeCurrent();
+                //_context->makeCurrent();
             }
 
             // Check for a new display plugin
@@ -152,9 +152,9 @@ public:
                         // Deactivate the old plugin
                         if (currentPlugin != nullptr) {
                             currentPlugin->uncustomizeContext();
-                            CHECK_GL_ERROR();
+                            //CHECK_GL_ERROR();
                             // Force completion of all pending GL commands
-                            glFinish();
+                            //glFinish();
                         }
 
                         if (newPlugin) {
@@ -164,16 +164,16 @@ public:
 #if defined(Q_OS_MAC)
                             newPlugin->swapBuffers();
 #endif
-                            gl::setSwapInterval(wantVsync ? 1 : 0);
+                            //gl::setSwapInterval(wantVsync ? 1 : 0);
 #if defined(Q_OS_MAC)
                             newPlugin->swapBuffers();
 #endif
-                            hasVsync = gl::getSwapInterval() != 0;
-                            newPlugin->setVsyncEnabled(hasVsync);
-                            newPlugin->customizeContext();
-                            CHECK_GL_ERROR();
+                            //hasVsync = gl::getSwapInterval() != 0;
+                            //newPlugin->setVsyncEnabled(hasVsync);
+                            //newPlugin->customizeContext();
+                            //CHECK_GL_ERROR();
                             // Force completion of all pending GL commands
-                            glFinish();
+                            //glFinish();
                         }
                         currentPlugin = newPlugin;
                     }
@@ -194,11 +194,11 @@ public:
 #endif
             // Execute the frame and present it to the display device.
             {
-                PROFILE_RANGE(render, "PluginPresent")
-                gl::globalLock();
+                //PROFILE_RANGE(render, "PluginPresent")
+                //gl::globalLock();
                 currentPlugin->present(_refreshRateController);
-                gl::globalRelease(false);
-                CHECK_GL_ERROR();
+                //gl::globalRelease(false);
+                //CHECK_GL_ERROR();
             }
 #if defined(Q_OS_MAC)
             _context->doneCurrent();
@@ -207,9 +207,9 @@ public:
             _refreshRateController->sleepThreadIfNeeded(this, currentPlugin->isHmd());
         }
 
-        _context->doneCurrent();
+        //_context->doneCurrent();
         Lock lock(_mutex);
-        _context->moveToThread(qApp->thread());
+        //_context->moveToThread(qApp->thread());
         _shutdown = false;
         _condition.notify_one();
     }
@@ -222,13 +222,13 @@ public:
         _finishedOtherThreadOperation = false;
         _condition.wait(lock, [&] { return !_pendingOtherThreadOperation; });
 
-        _context->makeCurrent();
+        //_context->makeCurrent();
         f();
-        _context->doneCurrent();
+        //_context->doneCurrent();
 
         _targetOperationThread = nullptr;
         // Move the context back to the presentation thread
-        _context->moveToThread(this);
+        //_context->moveToThread(this);
 
         // restore control of the context to the presentation thread and signal
         // the end of the operation
@@ -250,7 +250,7 @@ private:
     bool _pendingOtherThreadOperation { false };
     bool _finishedOtherThreadOperation { false };
     std::queue<VulkanDisplayPlugin*> _newPluginQueue;
-    gl::Context* _context { nullptr };
+    vks::Context* _context { nullptr };
     std::shared_ptr<RefreshRateController> _refreshRateController { nullptr };
 };
 
@@ -284,10 +284,10 @@ bool VulkanDisplayPlugin::activate() {
         if (!widget->context()->makeCurrent()) {
             throw std::runtime_error("Failed to make context current");
         }
-        CHECK_GL_ERROR();
+        //CHECK_GL_ERROR();
         widget->context()->doneCurrent();
 
-        presentThread->setContext(widget->context());
+        presentThread->setContext(&vks::Context::get());
         connect(presentThread.data(), &QThread::started, [] { setThreadName("OpenGL Present Thread"); });
         // Start execution
         presentThread->start();
@@ -496,6 +496,7 @@ ktx::StoragePointer textureToKtxVulkan(const gpu::Texture& texture) {
     }
 
     {
+        // TODO
         auto gltexelformat = gpu::gl::GLTexelFormat::evalGLTexelFormat(texture.getStoredMipFormat());
         header.glInternalFormat = gltexelformat.internalFormat;
         header.glFormat = gltexelformat.format;
@@ -707,8 +708,13 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
 
     if (_currentFrame) {
         auto correction = getViewCorrection();
-        getBackend()->setCameraCorrection(correction, _prevRenderView);
+        auto vkBackend = std::dynamic_pointer_cast<gpu::vulkan::VKBackend>(getBackend());
+        Q_ASSERT(vkBackend);
+        vkBackend->setCameraCorrection(correction, _prevRenderView);
         _prevRenderView = correction * _currentFrame->view;
+        uint32_t currentImageIndex = UINT32_MAX;
+        VK_CHECK_RESULT(_vkWindow->_swapchain.acquireNextImage(_vkWindow->_presentCompleteSemaphore, &currentImageIndex));
+        Q_ASSERT(currentImageIndex != UINT32_MAX);
         {
             withPresentThreadLock([&] {
                 _renderRate.increment();
@@ -719,6 +725,8 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             });
             // Execute the frame rendering commands
             PROFILE_RANGE_EX(render, "execute", 0xff00ff00, frameId)
+
+            vkBackend->setDrawCommandBuffer(_vkWindow->_drawCommandBuffers[currentImageIndex]);
             _gpuContext->executeFrame(_currentFrame);
         }
 
@@ -747,6 +755,7 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             PROFILE_RANGE_EX(render, "internalPresent", 0xff00ffff, frameId)
             internalPresent();
         }
+        _vkWindow->_swapchain.queuePresent(_vkWindow->_context.queue, currentImageIndex, _vkWindow->_renderCompleteSemaphore);
 
         gpu::Backend::freeGPUMemSize.set(gpu::gl::getFreeDedicatedMemory());
     } else if (alwaysPresent()) {

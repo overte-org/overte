@@ -131,10 +131,6 @@ void RenderThread::shutdown() {
     _gpuContext.reset();
 }
 
-#ifndef USE_GL
-extern VkCommandBuffer currentCommandBuffer;
-#endif
-
 void RenderThread::renderFrame(gpu::FramePointer& frame) {
 #ifdef USE_GL
     PROFILE_RANGE(render_gpu_gl, __FUNCTION__);
@@ -178,7 +174,9 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     uint32_t swapchainIndex;
     VK_CHECK_RESULT(_swapchain.acquireNextImage(acquireComplete, &swapchainIndex));
     auto framebuffer = _framebuffers[swapchainIndex];
-    const auto& commandBuffer = currentCommandBuffer = _vkcontext.createCommandBuffer();
+    const auto& commandBuffer = _vkcontext.createCommandBuffer();
+    //auto vkBackend = dynamic_pointer_cast<gpu::vulkan::VKBackend>(getBackend());
+    //Q_ASSERT(vkBackend);
 
     auto rect = VkRect2D{ offset, _extent };
     VkRenderPassBeginInfo beginInfo = vks::initializers::renderPassBeginInfo();

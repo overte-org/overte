@@ -144,21 +144,24 @@ namespace vks {
 
             const VkDevice& device;
             VkPipelineCache pipelineCache;
+            // TODO: is this initialized properly
             VkRenderPass& renderPass { pipelineCreateInfo.renderPass };
             VkPipelineLayout& layout { pipelineCreateInfo.layout };
-            PipelineInputAssemblyStateCreateInfo inputAssemblyState;
-            PipelineRasterizationStateCreateInfo rasterizationState;
-            VkPipelineMultisampleStateCreateInfo multisampleState;
-            PipelineDepthStencilStateCreateInfo depthStencilState;
-            PipelineViewportStateCreateInfo viewportState;
-            PipelineDynamicStateCreateInfo dynamicState;
-            PipelineColorBlendStateCreateInfo colorBlendState;
-            PipelineVertexInputStateCreateInfo vertexInputState;
-            std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+            // TODO: these need to be initialized
+            PipelineInputAssemblyStateCreateInfo inputAssemblyState {};
+            PipelineRasterizationStateCreateInfo rasterizationState {};
+            VkPipelineMultisampleStateCreateInfo multisampleState {};
+            PipelineDepthStencilStateCreateInfo depthStencilState {};
+            PipelineViewportStateCreateInfo viewportState {};
+            PipelineDynamicStateCreateInfo dynamicState {};
+            PipelineColorBlendStateCreateInfo colorBlendState {};
+            PipelineVertexInputStateCreateInfo vertexInputState {};
+            std::vector<VkPipelineShaderStageCreateInfo> shaderStages {};
 
-            VkGraphicsPipelineCreateInfo pipelineCreateInfo;
+            VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
 
             void update() {
+                pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
                 pipelineCreateInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
                 pipelineCreateInfo.pStages = shaderStages.data();
                 dynamicState.update();
