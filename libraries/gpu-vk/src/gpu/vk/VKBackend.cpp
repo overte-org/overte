@@ -334,15 +334,16 @@ struct Cache {
                 std::vector<VkAttachmentDescription> attachments;
                 attachments.reserve(key.size());
                 std::vector<VkAttachmentReference> colorAttachmentReferences;
-                VkAttachmentReference depthReference;
+                VkAttachmentReference depthReference{};
                 for (const auto& format : key) {
-                    VkAttachmentDescription attachment;
+                    VkAttachmentDescription attachment{};
                     attachment.format = format;
                     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                     attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
                     attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                     attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
                     attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
                     if (isDepthStencilFormat(format)) {
                         attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                         depthReference.attachment = (uint32_t)(attachments.size());
@@ -359,7 +360,7 @@ struct Cache {
 
                 std::vector<VkSubpassDescription> subpasses;
                 {
-                    VkSubpassDescription subpass;
+                    VkSubpassDescription subpass{};
                     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
                     if (depthReference.layout != VK_IMAGE_LAYOUT_UNDEFINED) {
                         subpass.pDepthStencilAttachment = &depthReference;
@@ -461,15 +462,17 @@ struct Cache {
 
         // Shader modules
         {
-            builder.shaderStages.resize(2);
+            builder.shaderStages.resize(2,{});
             {
                 auto& shaderStage = builder.shaderStages[0];
+                shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
                 shaderStage.stage = VK_SHADER_STAGE_VERTEX_BIT;
                 shaderStage.pName = "main";
                 shaderStage.module = getShaderModule(context, vertexShader);
             }
             {
                 auto& shaderStage = builder.shaderStages[1];
+                shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
                 shaderStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
                 shaderStage.pName = "main";
                 shaderStage.module = getShaderModule(context, fragmentShader);
@@ -564,14 +567,11 @@ struct Cache {
 
 Cache _cache;
 
-// TODO: this is very cursed and will need to be changed in the future
-VkCommandBuffer currentCommandBuffer;
-
 void VKBackend::executeFrame(const FramePointer& frame) {
     using namespace vks::debugutils;
     {
         PROFILE_RANGE(gpu_vk_detail, "Preprocess");
-        const auto& commandBuffer = currentCommandBuffer;
+        const auto& commandBuffer = _currentCommandBuffer;
         for (const auto& batchPtr : frame->batches) {
             const auto& batch = *batchPtr;
             cmdBeginLabel(commandBuffer, "batch:" + batch.getName(), glm::vec4{ 1, 1, 0, 1 });
@@ -704,6 +704,10 @@ void VKBackend::executeFrame(const FramePointer& frame) {
 
     // Restore the saved stereo state for the next batch
     // _stereo._enable = savedStereo;
+}
+
+void VKBackend::setDrawCommandBuffer(VkCommandBuffer commandBuffer) {
+    _currentCommandBuffer = commandBuffer;
 }
 
 void VKBackend::trash(const VKBuffer& buffer) {

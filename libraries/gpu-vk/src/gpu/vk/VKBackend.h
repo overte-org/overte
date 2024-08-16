@@ -49,6 +49,7 @@ public:
     bool supportedTextureFormat(const gpu::Element& format) const override;
     const std::string& getVersion() const override;
     void downloadFramebuffer(const FramebufferPointer& srcFramebuffer, const Vec4i& region, QImage& destImage) final override {}
+    void setDrawCommandBuffer(VkCommandBuffer commandBuffer);
 
     void trash(const VKBuffer& buffer);
 
@@ -133,6 +134,7 @@ protected:
     VkQueue _graphicsQueue; //TODO: initialize from device
     VkQueue _transferQueue; //TODO: initialize from device
     friend class VKBuffer;
+    VkCommandBuffer _currentCommandBuffer;
 };
 
 }}  // namespace gpu::vulkan
