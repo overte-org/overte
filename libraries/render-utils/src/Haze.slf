@@ -53,7 +53,9 @@ void main(void) {
     mat4 viewInverse = getViewInverse();
 
 <@if HIFI_USE_BACKGROUND@>
-    fragPositionES = vec4(-32000.0 * normalize(fragPositionES.xyz), 1.0);
+    // We choose an arbitrary large number > BLEND_DISTANCE in Haze.slh
+    const float SKYBOX_DISTANCE = 32000.0;
+    fragPositionES = vec4(-SKYBOX_DISTANCE * normalize(fragPositionES.xyz), 1.0);
 <@endif@>
 
     vec4 fragPositionWS = viewInverse * fragPositionES;
