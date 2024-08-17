@@ -29,8 +29,12 @@
  *
  * @property {Render.RenderMethod} renderMethod - The render method being used.
  * @property {boolean} shadowsEnabled - <code>true</code> if shadows are enabled, <code>false</code> if they're disabled.
+ * @property {boolean} hazeEnabled - <code>true</code> if haze (fog) is enabled, <code>false</code> if it's disabled.
+ * @property {boolean} bloomEnabled - <code>true</code> if bloom is enabled, <code>false</code> if it's disabled.
  * @property {boolean} ambientOcclusionEnabled - <code>true</code> if ambient occlusion is enabled, <code>false</code> if it's
  *     disabled.
+ * @property {boolean} proceduralMaterialsEnabled - <code>true</code> if procedural shaders are enabled, <code>false</code> if
+ *     they're disabled.
  * @property {integer} antialiasingMode - The active anti-aliasing mode.
  * @property {number} viewportResolutionScale - The view port resolution scale, <code>&gt; 0.0</code>.
  */
@@ -38,7 +42,10 @@ class RenderScriptingInterface : public QObject {
     Q_OBJECT
     Q_PROPERTY(RenderMethod renderMethod READ getRenderMethod WRITE setRenderMethod NOTIFY settingsChanged)
     Q_PROPERTY(bool shadowsEnabled READ getShadowsEnabled WRITE setShadowsEnabled NOTIFY settingsChanged)
+    Q_PROPERTY(bool hazeEnabled READ getHazeEnabled WRITE setHazeEnabled NOTIFY settingsChanged)
+    Q_PROPERTY(bool bloomEnabled READ getBloomEnabled WRITE setBloomEnabled NOTIFY settingsChanged)
     Q_PROPERTY(bool ambientOcclusionEnabled READ getAmbientOcclusionEnabled WRITE setAmbientOcclusionEnabled NOTIFY settingsChanged)
+    Q_PROPERTY(bool proceduralMaterialsEnabled READ getProceduralMaterialsEnabled WRITE setProceduralMaterialsEnabled NOTIFY settingsChanged)
     Q_PROPERTY(AntialiasingConfig::Mode antialiasingMode READ getAntialiasingMode WRITE setAntialiasingMode NOTIFY settingsChanged)
     Q_PROPERTY(float viewportResolutionScale READ getViewportResolutionScale WRITE setViewportResolutionScale NOTIFY settingsChanged)
     Q_PROPERTY(float verticalFieldOfView READ getVerticalFieldOfView WRITE setVerticalFieldOfView NOTIFY settingsChanged)
@@ -135,6 +142,34 @@ public slots:
     void setShadowsEnabled(bool enabled);
 
     /*@jsdoc
+     * Gets whether or not haze is enabled.
+     * @function Render.getHazeEnabled
+     * @returns {boolean} <code>true</code> if haze is enabled, <code>false</code> if it's disabled.
+     */
+    bool getHazeEnabled() const;
+
+    /*@jsdoc
+     * Sets whether or not haze is enabled.
+     * @function Render.setHazeEnabled
+     * @param {boolean} enabled - <code>true</code> to enable haze, <code>false</code> to disable.
+     */
+    void setHazeEnabled(bool enabled);
+
+    /*@jsdoc
+     * Gets whether or not bloom is enabled.
+     * @function Render.getBloomEnabled
+     * @returns {boolean} <code>true</code> if bloom is enabled, <code>false</code> if it's disabled.
+     */
+    bool getBloomEnabled() const;
+
+    /*@jsdoc
+     * Sets whether or not bloom is enabled.
+     * @function Render.setBloomEnabled
+     * @param {boolean} enabled - <code>true</code> to enable bloom, <code>false</code> to disable.
+     */
+    void setBloomEnabled(bool enabled);
+
+    /*@jsdoc
      * Gets whether or not ambient occlusion is enabled.
      * @function Render.getAmbientOcclusionEnabled
      * @returns {boolean} <code>true</code> if ambient occlusion is enabled, <code>false</code> if it's disabled.
@@ -147,6 +182,20 @@ public slots:
      * @param {boolean} enabled - <code>true</code> to enable ambient occlusion, <code>false</code> to disable.
      */
     void setAmbientOcclusionEnabled(bool enabled);
+
+    /*@jsdoc
+     * Gets whether or not procedural materials are enabled.
+     * @function Render.getProceduralMaterialsEnabled
+     * @returns {boolean} <code>true</code> if procedural materials are enabled, <code>false</code> if they're disabled.
+     */
+    bool getProceduralMaterialsEnabled() const;
+
+    /*@jsdoc
+     * Sets whether or not procedural materials are enabled.
+     * @function Render.setProceduralMaterialsEnabled
+     * @param {boolean} enabled - <code>true</code> to enable procedural materials, <code>false</code> to disable.
+     */
+    void setProceduralMaterialsEnabled(bool enabled);
 
     /*@jsdoc
      * Gets the active anti-aliasing mode.
@@ -235,7 +284,10 @@ private:
     // Runtime value of each settings
     int  _renderMethod { RENDER_FORWARD ? render::Args::RenderMethod::FORWARD : render::Args::RenderMethod::DEFERRED };
     bool _shadowsEnabled { true };
+    bool _hazeEnabled { true };
+    bool _bloomEnabled { true };
     bool _ambientOcclusionEnabled { true };
+    bool _proceduralMaterialsEnabled { true };
     AntialiasingConfig::Mode _antialiasingMode { AntialiasingConfig::Mode::NONE };
     float _viewportResolutionScale { 1.0f };
     QString _fullScreenScreen;
@@ -243,8 +295,10 @@ private:
     // Actual settings saved on disk
     Setting::Handle<int> _renderMethodSetting { "renderMethod", RENDER_FORWARD ? render::Args::RenderMethod::FORWARD : render::Args::RenderMethod::DEFERRED };
     Setting::Handle<bool> _shadowsEnabledSetting { "shadowsEnabled", true };
+    Setting::Handle<bool> _hazeEnabledSetting { "hazeEnabled", true };
+    Setting::Handle<bool> _bloomEnabledSetting { "bloomEnabled", true };
     Setting::Handle<bool> _ambientOcclusionEnabledSetting { "ambientOcclusionEnabled", true };
-    //Setting::Handle<AntialiasingConfig::Mode> _antialiasingModeSetting { "antialiasingMode", AntialiasingConfig::Mode::TAA };
+    Setting::Handle<bool> _proceduralMaterialsEnabledSetting { "proceduralMaterialsEnabled", true };
     Setting::Handle<int> _antialiasingModeSetting { "antialiasingMode", AntialiasingConfig::Mode::NONE };
     Setting::Handle<float> _viewportResolutionScaleSetting { "viewportResolutionScale", 1.0f };
     Setting::Handle<QString> _fullScreenScreenSetting { "fullScreenScreen", "" };
@@ -252,7 +306,10 @@ private:
     // Force assign both setting AND runtime value to the parameter value
     void forceRenderMethod(RenderMethod renderMethod);
     void forceShadowsEnabled(bool enabled);
+    void forceHazeEnabled(bool enabled);
+    void forceBloomEnabled(bool enabled);
     void forceAmbientOcclusionEnabled(bool enabled);
+    void forceProceduralMaterialsEnabled(bool enabled);
     void forceAntialiasingMode(AntialiasingConfig::Mode mode);
     void forceViewportResolutionScale(float scale);
 

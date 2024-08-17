@@ -4,6 +4,7 @@
 //
 //  Created by Zach Fox on 2019-07-10
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -212,8 +213,8 @@ Flickable {
                     ColumnLayout {
                         anchors.left: renderingEffectsHeader.right
                         anchors.leftMargin: 20
-			Layout.preferredWidth: parent.width
-			spacing: 0
+                        Layout.preferredWidth: parent.width
+                        spacing: 0
                         enabled: performanceCustom.checked
 
                         HifiControlsUit.RadioButton {
@@ -268,6 +269,45 @@ Flickable {
                                 }
                             }
                             HifiControlsUit.CheckBox {
+                                id: renderingEffectHaze
+                                checked: Render.hazeEnabled
+                                boxSize: 16
+                                text: "Haze"
+                                spacing: -1
+                                colorScheme: hifi.colorSchemes.dark
+                                anchors.left: parent.left
+                                anchors.top: renderingEffectShadows.bottom
+                                onCheckedChanged: {
+                                    Render.hazeEnabled = renderingEffectHaze.checked;
+                                }
+                            }
+                            HifiControlsUit.CheckBox {
+                                id: renderingEffectBloom
+                                checked: Render.bloomEnabled
+                                boxSize: 16
+                                text: "Bloom"
+                                spacing: -1
+                                colorScheme: hifi.colorSchemes.dark
+                                anchors.left: parent.left
+                                anchors.top: renderingEffectHaze.bottom
+                                onCheckedChanged: {
+                                    Render.bloomEnabled = renderingEffectBloom.checked;
+                                }
+                            }
+                            HifiControlsUit.CheckBox {
+                                id: renderingEffectAO
+                                checked: Render.ambientOcclusionEnabled
+                                boxSize: 16
+                                text: "AO"
+                                spacing: -1
+                                colorScheme: hifi.colorSchemes.dark
+                                anchors.left: parent.left
+                                anchors.top: renderingEffectBloom.bottom
+                                onCheckedChanged: {
+                                    Render.ambientOcclusionEnabled = renderingEffectAO.checked;
+                                }
+                            }
+                            HifiControlsUit.CheckBox {
                                 id: renderingEffectLocalLights
                                 enabled: false
                                 //checked: Render.localLightsEnabled
@@ -277,39 +317,9 @@ Flickable {
                                 spacing: -1
                                 colorScheme: hifi.colorSchemes.dark
                                 anchors.left: parent.left
-                                anchors.top: renderingEffectShadows.bottom
+                                anchors.top: renderingEffectAO.bottom
                                 //onCheckedChanged: {
                                 //    Render.localLightsEnabled = renderingEffectLocalLightsEnabled.checked;
-                                //}
-                            }
-                            HifiControlsUit.CheckBox {
-                                id: renderingEffectFog
-                                enabled: false
-                                //checked: Render.fogEnabled
-                                checked: renderingEffectsEnabled.checked
-                                boxSize: 16
-                                text: "Fog"
-                                spacing: -1
-                                colorScheme: hifi.colorSchemes.dark
-                                anchors.left: parent.left
-                                anchors.top: renderingEffectLocalLights.bottom
-                                //onCheckedChanged: {
-                                //    Render.fogEnabled = renderingEffectFogEnabled.checked;
-                                //}
-                            }
-                            HifiControlsUit.CheckBox {
-                                id: renderingEffectBloom
-                                enabled: false
-                                //checked: Render.bloomEnabled
-                                checked: renderingEffectsEnabled.checked
-                                boxSize: 16
-                                text: "Bloom"
-                                spacing: -1
-                                colorScheme: hifi.colorSchemes.dark
-                                anchors.left: parent.left
-                                anchors.top: renderingEffectFog.bottom
-                                //onCheckedChanged: {
-                                //    Render.bloomEnabled = renderingEffectBloomEnabled.checked;
                                 //}
                             }
                         }
@@ -806,6 +816,42 @@ Flickable {
                                 console.log("Called with currentIndex =", currentIndex);
                                 console.trace();
                             }
+                        }
+                    }
+                }
+            }
+
+            ColumnLayout {
+                Layout.topMargin: 20
+                Layout.preferredWidth: parent.width
+                spacing: 0
+
+                Item {
+                    Layout.preferredWidth: parent.width
+                    Layout.preferredHeight: 35
+
+                    HifiStylesUit.RalewayRegular {
+                        id: proceduralMaterialsHeader
+                        text: "Procedural Materials"
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        width: 150
+                        height: parent.height
+                        size: 16
+                        color: "#FFFFFF"
+                    }
+
+                    HifiControlsUit.CheckBox {
+                        id: renderingEffectProceduralMaterials
+                        checked: Render.proceduralMaterialsEnabled
+                        boxSize: 16
+                        spacing: -1
+                        colorScheme: hifi.colorSchemes.dark
+                        anchors.left: proceduralMaterialsHeader.right
+                        anchors.leftMargin: 20
+                        anchors.top: parent.top
+                        onCheckedChanged: {
+                            Render.proceduralMaterialsEnabled = renderingEffectProceduralMaterials.checked;
                         }
                     }
                 }
