@@ -30,7 +30,7 @@ namespace platform { namespace keys {
      * @property {string} vendor - The CPU vendor (e.g., <code>"Intel"</code> or <code>"AMD"</code>).
      * @property {string} model - The CPU model.
      * @property {number} numCores - The number of logical cores.
-     * @property {boolean} isMaster - <code>true</code> if the CPU is the "master" or primary CPU, <code>false</code> or 
+     * @property {boolean} isPrimary - <code>true</code> if the CPU is the primary CPU, <code>false</code> or
      *     <code>undefined</code> if it isn't.
      */
     namespace cpu {
@@ -41,7 +41,7 @@ namespace platform { namespace keys {
         const char*  model = "model";
         const char*  clockSpeed = "clockSpeed";  // FIXME: Not used.
         const char*  numCores = "numCores";
-        const char*  isMaster = "isMaster";
+        const char*  isPrimary = "isPrimary";
         }
 
     /*@jsdoc
@@ -53,7 +53,7 @@ namespace platform { namespace keys {
      * @property {number} videoMemory - The size of the GPU's video memory, in MB.
      * @property {number[]} displays - The index numbers of the displays currently being driven by the GPU. An empty array if 
      *     the GPU is currently not driving any displays.
-     * @property {boolean} isMaster - <code>true</code> if the GPU is the "master" or primary GPU, <code>false</code> or
+     * @property {boolean} isPrimary - <code>true</code> if the GPU is the primary GPU, <code>false</code> or
      *     <code>undefined</code> if it isn't.
      */
     namespace gpu {
@@ -66,7 +66,7 @@ namespace platform { namespace keys {
         const char*  videoMemory = "videoMemory";
         const char*  driver = "driver";
         const char*  displays = "displays";
-        const char*  isMaster = "isMaster";
+        const char*  isPrimary = "isPrimary";
     }
     
     /*@jsdoc
@@ -175,7 +175,7 @@ namespace platform { namespace keys {
      * @property {number} modeRefreshrate - The refresh rate of the current display mode, in Hz.
      * @property {number} modeWidth - The width of the current display mode, in pixels.
      * @property {number} modeHeight - The height of the current display mode, in pixels.
-     * @property {boolean} isMaster - <code>true</code> if the GPU is the "master" or primary display, <code>false</code> or
+     * @property {boolean} isPrimary - <code>true</code> if the GPU is the primary display, <code>false</code> or
      *     <code>undefined</code> if it isn't.
      */
     namespace display {
@@ -193,7 +193,7 @@ namespace platform { namespace keys {
         const char*  modeRefreshrate = "modeRefreshrate";
         const char*  modeWidth = "modeWidth";
         const char*  modeHeight = "modeHeight";
-        const char*  isMaster = "isMaster";
+        const char*  isPrimary = "isPrimary";
     }
 
     /*@jsdoc
@@ -300,8 +300,8 @@ json platform::getCPU(int index) {
     return _instance->getCPU(index);
 }
 
-int platform::getMasterCPU() {
-    return _instance->getMasterCPU();
+int platform::getPrimaryCPU() {
+    return _instance->getPrimaryCPU();
 }
 
 int platform::getNumGPUs() {
@@ -312,8 +312,8 @@ json platform::getGPU(int index) {
     return _instance->getGPU(index);
 }
 
-int platform::getMasterGPU() {
-    return _instance->getMasterGPU();
+int platform::getPrimaryGPU() {
+    return _instance->getPrimaryGPU();
 }
 
 int platform::getNumDisplays() {
@@ -324,8 +324,8 @@ json platform::getDisplay(int index) {
     return _instance->getDisplay(index);
 }
 
-int platform::getMasterDisplay() {
-    return _instance->getMasterDisplay();
+int platform::getPrimaryDisplay() {
+    return _instance->getPrimaryDisplay();
 }
 
 json platform::getMemory() {

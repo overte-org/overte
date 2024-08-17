@@ -20,7 +20,7 @@ namespace platform { namespace keys{
         extern const char*  model;
         extern const char*  clockSpeed;
         extern const char*  numCores;
-        extern const char*  isMaster;
+        extern const char*  isPrimary;
     }
     namespace gpu {
         extern const char*  vendor;
@@ -32,7 +32,7 @@ namespace platform { namespace keys{
         extern const char*  videoMemory;
         extern const char*  driver;
         extern const char*  displays;
-        extern const char*  isMaster;
+        extern const char*  isPrimary;
     }
     namespace graphicsAPI {
         extern const char* name;
@@ -90,7 +90,7 @@ namespace platform { namespace keys{
         extern const char*  modeRefreshrate;
         extern const char*  modeWidth;
         extern const char*  modeHeight;
-        extern const char*  isMaster;
+        extern const char*  isPrimary;
     }
     namespace memory {
         extern const char*  memTotal;

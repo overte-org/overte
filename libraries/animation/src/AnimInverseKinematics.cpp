@@ -538,7 +538,7 @@ void AnimInverseKinematics::solveTargetWithCCD(const AnimContext& context, const
                 }
             }
         } else if (targetType == IKTarget::Type::HmdHead) {
-            // An HmdHead target slaves the orientation of the end-effector by distributing rotation
+            // An HmdHead target workers the orientation of the end-effector by distributing rotation
             // deltas up the hierarchy.  Its target position is enforced later (by shifting the hips).
             deltaRotation = target.getRotation() * glm::inverse(tipOrientation);
             const float ANGLE_DISTRIBUTION_FACTOR = 0.45f;

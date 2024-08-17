@@ -63,7 +63,7 @@ public:
 
 
     void setEntityMaxTmpLifetime(float maxTmpEntityLifetime) { _maxTmpEntityLifetime = maxTmpEntityLifetime; }
-    void setEntityScriptSourceWhitelist(const QString& entityScriptSourceWhitelist);
+    void setEntityScriptSourceAllowlist(const QString& entityScriptSourceAllowlist);
 
     /// Implements our type specific root element factory
     virtual OctreeElementPointer createNewElement(unsigned char* octalCode = NULL) override;
@@ -304,7 +304,7 @@ protected:
 
     void notifyNewlyCreatedEntity(const EntityItem& newEntity, const SharedNodePointer& senderNode);
 
-    bool isScriptInWhitelist(const QString& scriptURL);
+    bool isScriptInAllowlist(const QString& scriptURL);
 
     QReadWriteLock _newlyCreatedHooksLock;
     QVector<NewlyCreatedEntityHook*> _newlyCreatedHooks;
@@ -367,7 +367,7 @@ protected:
 
     bool filterProperties(const EntityItemPointer& existingEntity, EntityItemProperties& propertiesIn, EntityItemProperties& propertiesOut, bool& wasChanged, FilterType filterType) const;
     bool _hasEntityEditFilter{ false };
-    QStringList _entityScriptSourceWhitelist;
+    QStringList _entityScriptSourceAllowlist;
 
     MovingEntitiesOperator _entityMover;
     QHash<EntityItemID, EntityItemPointer> _entitiesToAdd;

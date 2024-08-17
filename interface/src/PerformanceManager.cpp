@@ -75,13 +75,13 @@ void PerformanceManager::applyPerformancePreset(PerformanceManager::PerformanceP
 
     // Ugly case that prevent us to run deferred everywhere...
     bool isDeferredCapable = platform::Profiler::isRenderMethodDeferredCapable();
-    auto masterDisplay = platform::getDisplay(platform::getMasterDisplay());
+    auto primaryDisplay = platform::getDisplay(platform::getPrimaryDisplay());
     
     // eval recommended PPI and Scale
     float recommendedPpiScale = 1.0f;
     const float RECOMMENDED_PPI[] = { 200.0f, 200.0f, 120.f, 160.f, 250.f};
-    if (!masterDisplay.empty() && masterDisplay.count(platform::keys::display::ppi)) {
-        float ppi = masterDisplay[platform::keys::display::ppi];
+    if (!primaryDisplay.empty() && primaryDisplay.count(platform::keys::display::ppi)) {
+        float ppi = primaryDisplay[platform::keys::display::ppi];
         // only scale if the actual ppi is higher than the recommended ppi
         if (ppi > RECOMMENDED_PPI[preset]) {
             // make sure the scale is no less than a quarter

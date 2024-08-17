@@ -60,7 +60,7 @@ bool AvatarMixer::SessionDisplayName::operator<(const SessionDisplayName& rhs) c
 
 AvatarMixer::AvatarMixer(ReceivedMessage& message) :
     ThreadedAssignment(message),
-    _slavePool(&_slaveSharedData)
+    _workerPool(&_workerSharedData)
 {
     DependencyManager::registerInheritance<EntityDynamicFactoryInterface, AssignmentDynamicFactory>();
     DependencyManager::set<AssignmentDynamicFactory>();
@@ -297,7 +297,7 @@ void AvatarMixer::start() {
                 auto end = usecTimestampNow();
                 _processQueuedAvatarDataPacketsLockWaitElapsedTime += (end - start);
 
-                _slavePool.processIncomingPackets(cbegin, cend);
+                _workerPool.processIncomingPackets(cbegin, cend);
             }, &lockWait, &nodeTransform, &functor);
             auto end = usecTimestampNow();
             _processQueuedAvatarDataPacketsElapsedTime += (end - start);
@@ -333,7 +333,7 @@ void AvatarMixer::start() {
             auto start = usecTimestampNow();
             nodeList->nestedEach([&](NodeList::const_iterator cbegin, NodeList::const_iterator cend) {
                 auto start = usecTimestampNow();
-                _slavePool.broadcastAvatarData(cbegin, cend, _lastFrameTimestamp, _maxKbpsPerNode, _throttlingRatio);
+                _workerPool.broadcastAvatarData(cbegin, cend, _lastFrameTimestamp, _maxKbpsPerNode, _throttlingRatio);
                 auto end = usecTimestampNow();
                 _broadcastAvatarDataInner += (end - start);
             }, &lockWait, &nodeTransform, &functor);
@@ -761,14 +761,14 @@ void AvatarMixer::sendStatsPacket() {
     QJsonObject statsObject;
 
     statsObject["broadcast_loop_rate"] = _loopRate.rate();
-    statsObject["threads"] = _slavePool.numThreads();
+    statsObject["threads"] = _workerPool.numThreads();
     statsObject["trailing_mix_ratio"] = _trailingMixRatio;
     statsObject["throttling_ratio"] = _throttlingRatio;
 
 #ifdef DEBUG_EVENT_QUEUE
     QJsonObject qtStats;
 
-    _slavePool.queueStats(qtStats);
+    _workerPool.queueStats(qtStats);
     statsObject["avatar_thread_event_queue"] = qtStats;
 #endif
 
@@ -821,41 +821,41 @@ void AvatarMixer::sendStatsPacket() {
     statsObject["parallelTasks"] = parallelTasks;
 
 
-    AvatarMixerSlaveStats aggregateStats;
+    AvatarMixerWorkerStats aggregateStats;
 
     // gather stats
-    _slavePool.each([&](AvatarMixerSlave& slave) {
-        AvatarMixerSlaveStats stats;
-        slave.harvestStats(stats);
+    _workerPool.each([&](AvatarMixerWorker& worker) {
+        AvatarMixerWorkerStats stats;
+        worker.harvestStats(stats);
         aggregateStats += stats;
     });
 
-    QJsonObject slavesAggregatObject;
+    QJsonObject workersAggregatObject;
 
-    slavesAggregatObject["received_1_nodesProcessed"] = TIGHT_LOOP_STAT(aggregateStats.nodesProcessed);
+    workersAggregatObject["received_1_nodesProcessed"] = TIGHT_LOOP_STAT(aggregateStats.nodesProcessed);
 
-    slavesAggregatObject["sent_1_nodesBroadcastedTo"] = TIGHT_LOOP_STAT(aggregateStats.nodesBroadcastedTo);
+    workersAggregatObject["sent_1_nodesBroadcastedTo"] = TIGHT_LOOP_STAT(aggregateStats.nodesBroadcastedTo);
 
     float averageNodes = ((float)aggregateStats.nodesBroadcastedTo / (float)tightLoopFrames);
 
     float averageOthersIncluded = averageNodes ? aggregateStats.numOthersIncluded / averageNodes : 0.0f;
-    slavesAggregatObject["sent_2_averageOthersIncluded"] = TIGHT_LOOP_STAT(averageOthersIncluded);
+    workersAggregatObject["sent_2_averageOthersIncluded"] = TIGHT_LOOP_STAT(averageOthersIncluded);
 
     float averageOverBudgetAvatars = averageNodes ? aggregateStats.overBudgetAvatars / averageNodes : 0.0f;
-    slavesAggregatObject["sent_3_averageOverBudgetAvatars"] = TIGHT_LOOP_STAT(averageOverBudgetAvatars);
-    slavesAggregatObject["sent_4_averageDataBytes"] = TIGHT_LOOP_STAT(aggregateStats.numDataBytesSent);
-    slavesAggregatObject["sent_5_averageTraitsBytes"] = TIGHT_LOOP_STAT(aggregateStats.numTraitsBytesSent);
-    slavesAggregatObject["sent_6_averageIdentityBytes"] = TIGHT_LOOP_STAT(aggregateStats.numIdentityBytesSent);
-    slavesAggregatObject["sent_7_averageHeroAvatars"] = TIGHT_LOOP_STAT(aggregateStats.numHeroesIncluded);
+    workersAggregatObject["sent_3_averageOverBudgetAvatars"] = TIGHT_LOOP_STAT(averageOverBudgetAvatars);
+    workersAggregatObject["sent_4_averageDataBytes"] = TIGHT_LOOP_STAT(aggregateStats.numDataBytesSent);
+    workersAggregatObject["sent_5_averageTraitsBytes"] = TIGHT_LOOP_STAT(aggregateStats.numTraitsBytesSent);
+    workersAggregatObject["sent_6_averageIdentityBytes"] = TIGHT_LOOP_STAT(aggregateStats.numIdentityBytesSent);
+    workersAggregatObject["sent_7_averageHeroAvatars"] = TIGHT_LOOP_STAT(aggregateStats.numHeroesIncluded);
 
-    slavesAggregatObject["timing_1_processIncomingPackets"] = TIGHT_LOOP_STAT_UINT64(aggregateStats.processIncomingPacketsElapsedTime);
-    slavesAggregatObject["timing_2_ignoreCalculation"] = TIGHT_LOOP_STAT_UINT64(aggregateStats.ignoreCalculationElapsedTime);
-    slavesAggregatObject["timing_3_toByteArray"] = TIGHT_LOOP_STAT_UINT64(aggregateStats.toByteArrayElapsedTime);
-    slavesAggregatObject["timing_4_avatarDataPacking"] = TIGHT_LOOP_STAT_UINT64(aggregateStats.avatarDataPackingElapsedTime);
-    slavesAggregatObject["timing_5_packetSending"] = TIGHT_LOOP_STAT_UINT64(aggregateStats.packetSendingElapsedTime);
-    slavesAggregatObject["timing_6_jobElapsedTime"] = TIGHT_LOOP_STAT_UINT64(aggregateStats.jobElapsedTime);
+    workersAggregatObject["timing_1_processIncomingPackets"] = TIGHT_LOOP_STAT_UINT64(aggregateStats.processIncomingPacketsElapsedTime);
+    workersAggregatObject["timing_2_ignoreCalculation"] = TIGHT_LOOP_STAT_UINT64(aggregateStats.ignoreCalculationElapsedTime);
+    workersAggregatObject["timing_3_toByteArray"] = TIGHT_LOOP_STAT_UINT64(aggregateStats.toByteArrayElapsedTime);
+    workersAggregatObject["timing_4_avatarDataPacking"] = TIGHT_LOOP_STAT_UINT64(aggregateStats.avatarDataPackingElapsedTime);
+    workersAggregatObject["timing_5_packetSending"] = TIGHT_LOOP_STAT_UINT64(aggregateStats.packetSendingElapsedTime);
+    workersAggregatObject["timing_6_jobElapsedTime"] = TIGHT_LOOP_STAT_UINT64(aggregateStats.jobElapsedTime);
 
-    statsObject["slaves_aggregate (per frame)"] = slavesAggregatObject;
+    statsObject["workers_aggregate (per frame)"] = workersAggregatObject;
 
     _handleViewFrustumPacketElapsedTime = 0;
     _handleAvatarIdentityPacketElapsedTime = 0;
@@ -1016,9 +1016,9 @@ void AvatarMixer::parseDomainServerSettings(const QJsonObject& domainSettings) {
             numThreads = 1;
         }
         qCDebug(avatars) << "Avatar mixer will use specified number of threads:" << numThreads;
-        _slavePool.setNumThreads(numThreads);
+        _workerPool.setNumThreads(numThreads);
     } else {
-        qCDebug(avatars) << "Avatar mixer will automatically determine number of threads to use. Using:" << _slavePool.numThreads() << "threads.";
+        qCDebug(avatars) << "Avatar mixer will automatically determine number of threads to use. Using:" << _workerPool.numThreads() << "threads.";
     }
 
     {
@@ -1035,7 +1035,7 @@ void AvatarMixer::parseDomainServerSettings(const QJsonObject& domainSettings) {
         static const QString PRIORITY_FRACTION_KEY = "priority_fraction";
         if (avatarMixerGroupObject.contains(PRIORITY_FRACTION_KEY)) {
             float priorityFraction = float(avatarMixerGroupObject[PRIORITY_FRACTION_KEY].toDouble());
-            _slavePool.setPriorityReservedFraction(std::min(std::max(0.0f, priorityFraction), 1.0f));
+            _workerPool.setPriorityReservedFraction(std::min(std::max(0.0f, priorityFraction), 1.0f));
             qCDebug(avatars) << "Avatar mixer reserving" << priorityFraction << "of bandwidth for priority avatars";
         }
     }
@@ -1058,23 +1058,23 @@ void AvatarMixer::parseDomainServerSettings(const QJsonObject& domainSettings) {
     qCDebug(avatars) << "This domain requires a minimum avatar height of" << _domainMinimumHeight
                      << "and a maximum avatar height of" << _domainMaximumHeight;
 
-    static const QString AVATAR_WHITELIST_OPTION = "avatar_whitelist";
-    _slaveSharedData.skeletonURLWhitelist = avatarMixerGroupObject[AVATAR_WHITELIST_OPTION]
+    static const QString AVATAR_ALLOWLIST_OPTION = "avatar_allowlist";
+    _workerSharedData.skeletonURLAllowlist = avatarMixerGroupObject[AVATAR_ALLOWLIST_OPTION]
         .toString().split(',', Qt::KeepEmptyParts);
 
     static const QString REPLACEMENT_AVATAR_OPTION = "replacement_avatar";
-    _slaveSharedData.skeletonReplacementURL = avatarMixerGroupObject[REPLACEMENT_AVATAR_OPTION]
+    _workerSharedData.skeletonReplacementURL = avatarMixerGroupObject[REPLACEMENT_AVATAR_OPTION]
         .toString();
 
-    if (_slaveSharedData.skeletonURLWhitelist.count() == 1 && _slaveSharedData.skeletonURLWhitelist[0].isEmpty()) {
+    if (_workerSharedData.skeletonURLAllowlist.count() == 1 && _workerSharedData.skeletonURLAllowlist[0].isEmpty()) {
         // KeepEmptyParts above will parse "," as ["", ""] (which is ok), but "" as [""] (which is not ok).
-        _slaveSharedData.skeletonURLWhitelist.clear();
+        _workerSharedData.skeletonURLAllowlist.clear();
     }
 
-    if (_slaveSharedData.skeletonURLWhitelist.isEmpty()) {
+    if (_workerSharedData.skeletonURLAllowlist.isEmpty()) {
         qCDebug(avatars) << "All avatars are allowed.";
     } else {
-        qCDebug(avatars) << "Avatars other than" << _slaveSharedData.skeletonURLWhitelist << "will be replaced by" << (_slaveSharedData.skeletonReplacementURL.isEmpty() ? "default" : _slaveSharedData.skeletonReplacementURL.toString());
+        qCDebug(avatars) << "Avatars other than" << _workerSharedData.skeletonURLAllowlist << "will be replaced by" << (_workerSharedData.skeletonReplacementURL.isEmpty() ? "default" : _workerSharedData.skeletonReplacementURL.toString());
     }
 }
 
@@ -1100,7 +1100,7 @@ void AvatarMixer::setupEntityQuery() {
     priorityZoneQuery["name"] = true; // Handy for debugging.
 
     _entityViewer.getOctreeQuery().setJSONParameters(priorityZoneQuery);
-    _slaveSharedData.entityTree = entityTree;
+    _workerSharedData.entityTree = entityTree;
 }
 
 void AvatarMixer::handleOctreePacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer senderNode) {

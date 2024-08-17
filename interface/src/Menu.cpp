@@ -309,13 +309,13 @@ Menu::Menu() {
 		}
     });
 
-    // Settings > Entity Script / QML Whitelist
-    action = addActionToQMenuAndActionHash(settingsMenu, "Entity Script / QML Whitelist");
+    // Settings > Entity Script / QML Allowlist
+    action = addActionToQMenuAndActionHash(settingsMenu, "Entity Script / QML Allowlist");
     connect(action, &QAction::triggered, [] {
         auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
         auto hmd = DependencyManager::get<HMDScriptingInterface>();
 
-        tablet->pushOntoStack("hifi/dialogs/security/EntityScriptQMLWhitelist.qml");
+        tablet->pushOntoStack("hifi/dialogs/security/EntityScriptQMLAllowlist.qml");
 
         if (!hmd->getShouldShowTablet()) {
             hmd->toggleShouldShowTablet();

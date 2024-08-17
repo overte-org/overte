@@ -283,14 +283,14 @@ void AudioMixer::sendStatsPacket() {
 #ifdef DEBUG_EVENT_QUEUE
     QJsonObject qtStats;
 
-    _slavePool.queueStats(qtStats);
+    _workerPool.queueStats(qtStats);
     statsObject["audio_thread_event_queue"] = qtStats;
 #endif
 
     // general stats
     statsObject["useDynamicJitterBuffers"] = _numStaticJitterFrames == DISABLE_STATIC_JITTER_FRAMES;
 
-    statsObject["threads"] = _slavePool.numThreads();
+    statsObject["threads"] = _workerPool.numThreads();
 
     statsObject["trailing_mix_ratio"] = _trailingMixRatio;
     statsObject["throttling_ratio"] = _throttlingRatio;
@@ -446,15 +446,15 @@ void AudioMixer::start() {
 
         auto frameTimer = _frameTiming.timer();
 
-        // process (node-isolated) audio packets across slave threads
+        // process (node-isolated) audio packets across worker threads
         {
             auto packetsTimer = _packetsTiming.timer();
 
-            // first clear the concurrent vector of added streams that the slaves will add to when they process packets
+            // first clear the concurrent vector of added streams that the workers will add to when they process packets
             _workerSharedData.addedStreams.clear();
 
             nodeList->nestedEach([&](NodeList::const_iterator cbegin, NodeList::const_iterator cend) {
-                _slavePool.processPackets(cbegin, cend);
+                _workerPool.processPackets(cbegin, cend);
             });
         }
 
@@ -476,15 +476,15 @@ void AudioMixer::start() {
             numToRetain = nodeList->size() * (1.0f - _throttlingRatio);
         }
         nodeList->nestedEach([&](NodeList::const_iterator cbegin, NodeList::const_iterator cend) {
-            // mix across slave threads
+            // mix across worker threads
             auto mixTimer = _mixTiming.timer();
-            _slavePool.mix(cbegin, cend, frame, numToRetain);
+            _workerPool.mix(cbegin, cend, frame, numToRetain);
         });
 
         // gather stats
-        _slavePool.each([&](AudioMixerSlave& slave) {
-            _stats.accumulate(slave.stats);
-            slave.stats.reset();
+        _workerPool.each([&](AudioMixerWorker& worker) {
+            _stats.accumulate(worker.stats);
+            worker.stats.reset();
         });
 
         ++frame;
@@ -584,7 +584,7 @@ void AudioMixer::parseSettingsObject(const QJsonObject& settingsObject) {
             const QString NUM_THREADS = "num_threads";
             int numThreads = audioThreadingGroupObject[NUM_THREADS].toString().toInt(&ok);
             if (ok) {
-                _slavePool.setNumThreads(numThreads);
+                _workerPool.setNumThreads(numThreads);
             }
         }
 

@@ -19,21 +19,21 @@ void ScriptGatekeeper::initialize() {
         return;
     }
 
-    QVariant rawCurrentWhitelistValues = Setting::Handle<QVariant>(SCRIPT_WHITELIST_ENTRIES_KEY).get();
-    QString settingsSafeValues = rawCurrentWhitelistValues.toString();
+    QVariant rawCurrentAllowlistValues = Setting::Handle<QVariant>(SCRIPT_ALLOWLIST_ENTRIES_KEY).get();
+    QString settingsSafeValues = rawCurrentAllowlistValues.toString();
 
-    Setting::Handle<bool> whitelistEnabled { SCRIPT_WHITELIST_ENABLED_KEY, false };
+    Setting::Handle<bool> allowlistEnabled { SCRIPT_ALLOWLIST_ENABLED_KEY, false };
     Setting::Handle<bool> isFirstRun { Settings::firstRun, true };
 
-    QString preloadedVal = BuildInfo::PRELOADED_SCRIPT_WHITELIST;
+    QString preloadedVal = BuildInfo::PRELOADED_SCRIPT_ALLOWLIST;
 
     if (settingsSafeValues.isEmpty() && !preloadedVal.isEmpty() && isFirstRun.get()) {
-        // We assume that the whitelist should be enabled if a preloaded whitelist is attached, so we activate it if it's not already active.
-        if (!whitelistEnabled.get()) {
-            whitelistEnabled.set(true);
+        // We assume that the allowlist should be enabled if a preloaded allowlist is attached, so we activate it if it's not already active.
+        if (!allowlistEnabled.get()) {
+            allowlistEnabled.set(true);
         }
 
-        Setting::Handle<QVariant>(SCRIPT_WHITELIST_ENTRIES_KEY).set(preloadedVal);
+        Setting::Handle<QVariant>(SCRIPT_ALLOWLIST_ENTRIES_KEY).set(preloadedVal);
     }
     
     _initialized = true;

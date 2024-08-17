@@ -137,7 +137,7 @@ void UserActivityLogger::changedDomain(QString domainURL) {
 }
 
 void UserActivityLogger::connectedDevice(QString typeOfDevice, QString deviceName) {
-    static QStringList DEVICE_BLACKLIST = {
+    static QStringList DEVICE_BLOCKLIST = {
         "Desktop",
         "NullDisplayPlugin",
         "3D TV - Side by Side Stereo",
@@ -145,7 +145,7 @@ void UserActivityLogger::connectedDevice(QString typeOfDevice, QString deviceNam
         "Keyboard/Mouse"
     };
 
-    if (DEVICE_BLACKLIST.contains(deviceName) || deviceName.isEmpty()) {
+    if (DEVICE_BLOCKLIST.contains(deviceName) || deviceName.isEmpty()) {
         return;
     }
 

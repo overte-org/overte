@@ -1575,7 +1575,7 @@ protected:
     void unpackSkeletonModelURL(const QByteArray& data);
     void unpackSkeletonData(const QByteArray& data);
 
-    // isReplicated will be true on downstream Avatar Mixers and their clients, but false on the upstream "master"
+    // isReplicated will be true on downstream Avatar Mixers and their clients, but false on the upstream "primary"
     // Audio Mixer that the replicated avatar is connected to.
     bool _isReplicated{ false };
 
