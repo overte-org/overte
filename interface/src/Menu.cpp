@@ -46,6 +46,7 @@
 #include "avatar/AvatarManager.h"
 #include "avatar/AvatarPackager.h"
 #include "AvatarBookmarks.h"
+#include <display-plugins/OpenGLDisplayPlugin.h>
 #include "DomainAccountManager.h"
 #include "MainWindow.h"
 #include "render/DrawStatus.h"
@@ -547,6 +548,13 @@ Menu::Menu() {
         auto drawStatusConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<render::DrawStatus>("RenderMainView.DrawStatus");
         addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::HighlightTransitions, 0, false,
             drawStatusConfig, SLOT(setShowFade(bool)));
+    }
+
+    {
+        action = addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::ExtraLinearTosRGBConversion, 0, OpenGLDisplayPlugin::getExtraLinearToSRGBConversion());
+        connect(action, &QAction::triggered, [action] {
+            OpenGLDisplayPlugin::setExtraLinearToSRGBConversion(action->isChecked());
+        });
     }
 
     // Developer > Assets >>>
