@@ -50,7 +50,7 @@
         },
 
         triggerReset: function() {
-            MasterReset();
+            PrimaryReset();
         },
 
         preload: function(entityID) {
@@ -60,7 +60,7 @@
     };
 
 
-    MasterReset = function() {
+    PrimaryReset = function() {
         var resetKey = "resetMe";
 
 

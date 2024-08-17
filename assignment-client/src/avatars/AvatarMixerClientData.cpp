@@ -21,7 +21,7 @@
 
 #include "AvatarLogging.h"
 
-#include "AvatarMixerSlave.h"
+#include "AvatarMixerWorker.h"
 
 AvatarMixerClientData::AvatarMixerClientData(const QUuid& nodeID, Node::LocalID nodeLocalID) : NodeData(nodeID, nodeLocalID) {
     // in case somebody calls getSessionUUID on the AvatarData instance, make sure it has the right ID
@@ -52,7 +52,7 @@ void AvatarMixerClientData::queuePacket(QSharedPointer<ReceivedMessage> message,
     _packetQueue.push(message);
 }
 
-int AvatarMixerClientData::processPackets(const SlaveSharedData& slaveSharedData) {
+int AvatarMixerClientData::processPackets(const WorkerSharedData& workerSharedData) {
     int packetsProcessed = 0;
     SharedNodePointer node = _packetQueue.node;
     assert(_packetQueue.empty() || node);
@@ -65,10 +65,10 @@ int AvatarMixerClientData::processPackets(const SlaveSharedData& slaveSharedData
 
         switch (packet->getType()) {
             case PacketType::AvatarData:
-                parseData(*packet, slaveSharedData);
+                parseData(*packet, workerSharedData);
                 break;
             case PacketType::SetAvatarTraits:
-                processSetTraitsMessage(*packet, slaveSharedData, *node);
+                processSetTraitsMessage(*packet, workerSharedData, *node);
                 break;
             case PacketType::BulkAvatarTraitsAck:
                 processBulkAvatarTraitsAckMessage(*packet);
@@ -127,7 +127,7 @@ struct FindContainingZone {
 
 }  // namespace
 
-int AvatarMixerClientData::parseData(ReceivedMessage& message, const SlaveSharedData& slaveSharedData) {
+int AvatarMixerClientData::parseData(ReceivedMessage& message, const WorkerSharedData& workerSharedData) {
     // pull the sequence number from the data first
     uint16_t sequenceNumber;
 
@@ -150,7 +150,7 @@ int AvatarMixerClientData::parseData(ReceivedMessage& message, const SlaveShared
 
     auto newPosition = _avatar->getClientGlobalPosition();
     if (newPosition != oldPosition || _avatar->getNeedsHeroCheck()) {
-        EntityTree& entityTree = *slaveSharedData.entityTree;
+        EntityTree& entityTree = *workerSharedData.entityTree;
         FindContainingZone findContainingZone{ newPosition };
         entityTree.recurseTreeWithOperation(&FindContainingZone::operation, &findContainingZone);
         bool currentlyHasPriority = findContainingZone.isInPriorityZone;
@@ -176,7 +176,7 @@ int AvatarMixerClientData::parseData(ReceivedMessage& message, const SlaveShared
 }
 
 void AvatarMixerClientData::processSetTraitsMessage(ReceivedMessage& message,
-                                                    const SlaveSharedData& slaveSharedData,
+                                                    const WorkerSharedData& workerSharedData,
                                                     Node& sendingNode) {
     // Trying to read more bytes than available, bail
     if (message.getBytesLeftToRead() < qint64(sizeof(AvatarTraits::TraitVersion))) {
@@ -221,8 +221,8 @@ void AvatarMixerClientData::processSetTraitsMessage(ReceivedMessage& message,
                 _avatar->processTrait(traitType, message.read(traitSize));
                 _lastReceivedTraitVersions[traitType] = packetTraitVersion;
                 if (traitType == AvatarTraits::SkeletonModelURL) {
-                    // special handling for skeleton model URL, since we need to make sure it is in the whitelist
-                    checkSkeletonURLAgainstWhitelist(slaveSharedData, sendingNode, packetTraitVersion);
+                    // special handling for skeleton model URL, since we need to make sure it is in the allowlist
+                    checkSkeletonURLAgainstAllowlist(workerSharedData, sendingNode, packetTraitVersion);
                 }
 
                 anyTraitsChanged = true;
@@ -366,36 +366,36 @@ void AvatarMixerClientData::processBulkAvatarTraitsAckMessage(ReceivedMessage& m
     }
 }
 
-void AvatarMixerClientData::checkSkeletonURLAgainstWhitelist(const SlaveSharedData& slaveSharedData,
+void AvatarMixerClientData::checkSkeletonURLAgainstAllowlist(const WorkerSharedData& workerSharedData,
                                                              Node& sendingNode,
                                                              AvatarTraits::TraitVersion traitVersion) {
-    const auto& whitelist = slaveSharedData.skeletonURLWhitelist;
+    const auto& allowlist = workerSharedData.skeletonURLAllowlist;
 
-    if (!whitelist.isEmpty()) {
-        bool inWhitelist = false;
+    if (!allowlist.isEmpty()) {
+        bool inAllowlist = false;
         auto avatarURL = _avatar->getSkeletonModelURL();
 
-        // The avatar is in the whitelist if:
-        // 1. The avatar's URL's host matches one of the hosts of the URLs in the whitelist AND
-        // 2. The avatar's URL's path starts with the path of that same URL in the whitelist
-        for (const auto& whiteListedPrefix : whitelist) {
-            auto whiteListURL = QUrl::fromUserInput(whiteListedPrefix);
-            // check if this script URL matches the whitelist domain and, optionally, is beneath the path
-            if (avatarURL.host().compare(whiteListURL.host(), Qt::CaseInsensitive) == 0 &&
-                avatarURL.path().startsWith(whiteListURL.path(), Qt::CaseInsensitive)) {
-                inWhitelist = true;
+        // The avatar is in the allowlist if:
+        // 1. The avatar's URL's host matches one of the hosts of the URLs in the allowlist AND
+        // 2. The avatar's URL's path starts with the path of that same URL in the allowlist
+        for (const auto& allowListedPrefix : allowlist) {
+            auto allowListURL = QUrl::fromUserInput(allowListedPrefix);
+            // check if this script URL matches the allowlist domain and, optionally, is beneath the path
+            if (avatarURL.host().compare(allowListURL.host(), Qt::CaseInsensitive) == 0 &&
+                avatarURL.path().startsWith(allowListURL.path(), Qt::CaseInsensitive)) {
+                inAllowlist = true;
 
                 break;
             }
         }
 
-        if (!inWhitelist) {
+        if (!inAllowlist) {
             // make sure we're not unecessarily overriding the default avatar with the default avatar
-            if (_avatar->getWireSafeSkeletonModelURL() != slaveSharedData.skeletonReplacementURL) {
+            if (_avatar->getWireSafeSkeletonModelURL() != workerSharedData.skeletonReplacementURL) {
                 // we need to change this avatar's skeleton URL, and send them a traits packet informing them of the change
                 qDebug() << "Overwriting avatar URL" << _avatar->getWireSafeSkeletonModelURL() << "to replacement"
-                         << slaveSharedData.skeletonReplacementURL << "for" << sendingNode.getUUID();
-                _avatar->setSkeletonModelURL(slaveSharedData.skeletonReplacementURL);
+                         << workerSharedData.skeletonReplacementURL << "for" << sendingNode.getUUID();
+                _avatar->setSkeletonModelURL(workerSharedData.skeletonReplacementURL);
 
                 auto packet = NLPacket::create(PacketType::SetAvatarTraits, -1, true);
 

@@ -19,7 +19,7 @@
  */
 
 
-#ifdef OVERTE_WARNINGS_WHITELIST_GCC
+#ifdef OVERTE_WARNINGS_ALLOWLIST_GCC
 
     #define OVERTE_IGNORE_DEPRECATED_BEGIN \
         _Pragma("GCC diagnostic push") \
@@ -27,7 +27,7 @@
 
     #define OVERTE_IGNORE_DEPRECATED_END _Pragma("GCC diagnostic pop")
 
-#elif OVERTE_WARNINGS_WHITELIST_CLANG
+#elif OVERTE_WARNINGS_ALLOWLIST_CLANG
 
     #define OVERTE_IGNORE_DEPRECATED_BEGIN \
         _Pragma("clang diagnostic push") \
@@ -35,7 +35,7 @@
 
     #define OVERTE_IGNORE_DEPRECATED_END _Pragma("clang diagnostic pop")
 
-#elif OVERTE_WARNINGS_WHITELIST_MSVC
+#elif OVERTE_WARNINGS_ALLOWLIST_MSVC
 
     #define OVERTE_IGNORE_DEPRECATED_BEGIN \
         _Pragma("warning(push)") \

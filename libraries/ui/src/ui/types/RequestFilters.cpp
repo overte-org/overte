@@ -54,7 +54,7 @@ namespace {
              return false;
          }
 
-         // We can potentially add whitelisting logic or development environment variables that
+         // We can potentially add allowlisting logic or development environment variables that
          // will allow people to override this setting on a per-client basis here.
          QString targetFilePath = QFileInfo(requestUrl.toLocalFile()).canonicalFilePath();
 

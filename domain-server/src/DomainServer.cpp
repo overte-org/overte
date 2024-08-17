@@ -341,17 +341,17 @@ DomainServer::DomainServer(int argc, char* argv[]) :
     connect(&_settingsManager, &DomainServerSettingsManager::updateNodePermissions, [this] { _metadata->securityChanged(true); });
 
     qDebug() << "domain-server is running";
-    static const QString AC_SUBNET_WHITELIST_SETTING_PATH = "security.ac_subnet_whitelist";
+    static const QString AC_SUBNET_ALLOWLIST_SETTING_PATH = "security.ac_subnet_allowlist";
 
     static const Subnet LOCALHOST { QHostAddress("127.0.0.1"), 32 };
-    _acSubnetWhitelist = { LOCALHOST };
+    _acSubnetAllowlist = { LOCALHOST };
 
-    auto whitelist = _settingsManager.valueOrDefaultValueForKeyPath(AC_SUBNET_WHITELIST_SETTING_PATH).toStringList();
-    for (auto& subnet : whitelist) {
+    auto allowlist = _settingsManager.valueOrDefaultValueForKeyPath(AC_SUBNET_ALLOWLIST_SETTING_PATH).toStringList();
+    for (auto& subnet : allowlist) {
         auto netmaskParts = subnet.trimmed().split("/");
 
         if (netmaskParts.size() > 2) {
-            qDebug() << "Ignoring subnet in whitelist, malformed: " << subnet;
+            qDebug() << "Ignoring subnet in allowlist, malformed: " << subnet;
             continue;
         }
 
@@ -363,7 +363,7 @@ DomainServer::DomainServer(int argc, char* argv[]) :
             bool ok;
             netmask = netmaskParts[1].toInt(&ok);
             if (!ok) {
-                qDebug() << "Ignoring subnet in whitelist, bad netmask: " << subnet;
+                qDebug() << "Ignoring subnet in allowlist, bad netmask: " << subnet;
                 continue;
             }
         }
@@ -371,10 +371,10 @@ DomainServer::DomainServer(int argc, char* argv[]) :
         auto ip = QHostAddress(netmaskParts[0]);
 
         if (!ip.isNull()) {
-            qDebug() << "Adding AC whitelist subnet: " << subnet << " -> " << (ip.toString() + "/" + QString::number(netmask));
-            _acSubnetWhitelist.push_back({ ip , netmask });
+            qDebug() << "Adding AC allowlist subnet: " << subnet << " -> " << (ip.toString() + "/" + QString::number(netmask));
+            _acSubnetAllowlist.push_back({ ip , netmask });
         } else {
-            qDebug() << "Ignoring subnet in whitelist, invalid ip portion: " << subnet;
+            qDebug() << "Ignoring subnet in allowlist, invalid ip portion: " << subnet;
         }
     }
 
@@ -1502,8 +1502,8 @@ void DomainServer::processRequestAssignmentPacket(QSharedPointer<ReceivedMessage
         return senderAddr.isInSubnet(mask);
     };
 
-    auto it = find_if(_acSubnetWhitelist.begin(), _acSubnetWhitelist.end(), isHostAddressInSubnet);
-    if (it == _acSubnetWhitelist.end()) {
+    auto it = find_if(_acSubnetAllowlist.begin(), _acSubnetAllowlist.end(), isHostAddressInSubnet);
+    if (it == _acSubnetAllowlist.end()) {
         HIFI_FDEBUG("Received an assignment connect request from a disallowed ip address:"
             << senderAddr.toString());
         return;

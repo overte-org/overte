@@ -5,7 +5,7 @@
 //  Created by dr Karol Suprynowicz on 2024/03/24.
 //  Copyright 2024 Overte e.V.
 //
-//  Based on EntityScriptQMLWhitelist.qml
+//  Based on EntityScriptQMLAllowlist.qml
 //  Created by Kalila L. on 2019.12.05 | realities.dev | somnilibertas@gmail.com
 //  Copyright 2019 Kalila L.
 //
@@ -27,15 +27,15 @@ import "../../../windows"
 Rectangle {
     id: parentBody;
 
-    function getWhitelistAsText() {
-        var whitelist = Settings.getValue("private/scriptPermissionGetAvatarURLSafeURLs");
-        var arrayWhitelist = whitelist.replace(",", "\n");
-        return arrayWhitelist;
+    function getAllowlistAsText() {
+        var allowlist = Settings.getValue("private/scriptPermissionGetAvatarURLSafeURLs");
+        var arrayAllowlist = allowlist.replace(",", "\n");
+        return arrayAllowlist;
     }
 
-    function setWhitelistAsText(whitelistText) {
-        Settings.setValue("private/scriptPermissionGetAvatarURLSafeURLs", whitelistText.text);
-        notificationText.text = "Whitelist saved.";
+    function setAllowlistAsText(allowlistText) {
+        Settings.setValue("private/scriptPermissionGetAvatarURLSafeURLs", allowlistText.text);
+        notificationText.text = "Allowlist saved.";
     }
 
     function setAvatarProtection(enabled) {
@@ -65,7 +65,7 @@ Rectangle {
         height: 60;
 
         CheckBox {
-            id: whitelistEnabled;
+            id: allowlistEnabled;
 
             checked: Settings.getValue("private/scriptPermissionGetAvatarURLEnable", true);
 
@@ -73,7 +73,7 @@ Rectangle {
             anchors.top: parent.top;
             anchors.topMargin: 10;
             onToggled: {
-                setAvatarProtection(whitelistEnabled.checked)
+                setAvatarProtection(allowlistEnabled.checked)
             }
 
             Label {
@@ -104,8 +104,8 @@ Rectangle {
             clip: false;
 
             TextArea {
-                id: whitelistTextArea
-                text: getWhitelistAsText();
+                id: allowlistTextArea
+                text: getAllowlistAsText();
                 onTextChanged: notificationText.text = "";
                 width: parent.width;
                 height: parent.height;
@@ -133,7 +133,7 @@ Rectangle {
                 elide: Text.ElideRight
             }
             text: "Save Changes"
-            onClicked: setWhitelistAsText(whitelistTextArea)
+            onClicked: setAllowlistAsText(allowlistTextArea)
           
             HifiStylesUit.RalewayRegular {
                 id: notificationText;

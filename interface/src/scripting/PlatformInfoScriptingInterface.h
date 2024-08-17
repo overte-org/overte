@@ -106,8 +106,8 @@ public slots:
      * @function PlatformInfo.getGraphicsCardType
      * @returns {string} The model of the graphics card currently being used.
      * @deprecated This function is deprecated and will be removed.
-     *     Use <code>JSON.parse({@link PlatformInfo.getGPU|PlatformInfo.getGPU(} 
-     *     {@link PlatformInfo.getMasterGPU|PlatformInfo.getMasterGPU() )}).model</code> 
+     *     Use <code>JSON.parse({@link PlatformInfo.getGPU|PlatformInfo.getGPU(}
+     *     {@link PlatformInfo.getPrimaryGPU|PlatformInfo.getPrimaryGPU() )}).model</code>
      *     instead.
      */
     QString getGraphicsCardType();
@@ -149,11 +149,11 @@ public slots:
     int getNumCPUs();
 
     /*@jsdoc
-     * Gets the index number of the master CPU.
-     * @function PlatformInfo.getMasterCPU
-     * @returns {number} The index of the master CPU.
+     * Gets the index number of the primary CPU.
+     * @function PlatformInfo.getPrimaryCPU
+     * @returns {number} The index of the primary CPU.
      */
-    int getMasterCPU();
+    int getPrimaryCPU();
 
     /*@jsdoc
      * Gets the platform description of a CPU.
@@ -178,11 +178,11 @@ public slots:
     int getNumGPUs();
 
     /*@jsdoc
-     * Gets the index number of the master GPU.
-     * @function PlatformInfo.getMasterGPU
-     * @returns {number} The index of the master GPU.
+     * Gets the index number of the primary GPU.
+     * @function PlatformInfo.getPrimaryGPU
+     * @returns {number} The index of the primary GPU.
      */
-    int getMasterGPU();
+    int getPrimaryGPU();
 
     /*@jsdoc
      * Gets the platform description of a GPU.
@@ -207,11 +207,11 @@ public slots:
     int getNumDisplays();
 
     /*@jsdoc
-     * Gets the index number of the master display.
-     * @function PlatformInfo.getMasterDisplay
-     * @returns {number} The index of the master display.
+     * Gets the index number of the primary display.
+     * @function PlatformInfo.getPrimaryDisplay
+     * @returns {number} The index of the primary display.
      */
-    int getMasterDisplay();
+    int getPrimaryDisplay();
 
     /*@jsdoc
      * Gets the platform description of a display.

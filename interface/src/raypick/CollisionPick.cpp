@@ -408,9 +408,9 @@ CollisionRegion CollisionPick::getMathematicalPick() const {
 void CollisionPick::filterIntersections(std::vector<ContactTestResult>& intersections) const {
     const QVector<QUuid>& ignoreItems = getIgnoreItems();
     const QVector<QUuid>& includeItems = getIncludeItems();
-    bool isWhitelist = !includeItems.empty();
+    bool isAllowlist = !includeItems.empty();
 
-    if (!isWhitelist && ignoreItems.empty()) {
+    if (!isAllowlist && ignoreItems.empty()) {
         return;
     }
 
@@ -420,7 +420,7 @@ void CollisionPick::filterIntersections(std::vector<ContactTestResult>& intersec
     for (int i = 0; i < n; i++) {
         auto& intersection = intersections[i];
         const QUuid& id = intersection.foundID;
-        if (!ignoreItems.contains(id) && (!isWhitelist || includeItems.contains(id))) {
+        if (!ignoreItems.contains(id) && (!isAllowlist || includeItems.contains(id))) {
             filteredIntersections.push_back(intersection);
         }
     }

@@ -41,8 +41,8 @@ bool Instance::enumeratePlatform() {
     enumerateNics();
     enumerateGraphicsApis();
     
-    // eval the master index for each platform scopes
-    updateMasterIndices();
+    // eval the primary index for each platform scopes
+    updatePrimaryIndices();
 
     // And profile the platform and put the tier in "computer"
     _computer[keys::computer::profileTier] = Profiler::TierNames[Profiler::profilePlatform()];
@@ -50,54 +50,54 @@ bool Instance::enumeratePlatform() {
     return true;
 }
 
-void Instance::updateMasterIndices() {
+void Instance::updatePrimaryIndices() {
     // We assume a single CPU at the moment:
     {
         if (!_cpus.empty()) {
-            _masterCPU = 0;
-            _cpus[0][keys::cpu::isMaster] = true; 
+            _primaryCPU = 0;
+            _cpus[0][keys::cpu::isPrimary] = true;
         } else {
-            _masterCPU = NOT_FOUND;
+            _primaryCPU = NOT_FOUND;
         }
     }
 
     // Go through the displays list
     {
-        _masterDisplay = NOT_FOUND;
+        _primaryDisplay = NOT_FOUND;
         for (int i = 0; i < (int) _displays.size(); ++i) {
             const auto& display = _displays[i];
-            if (display.count(keys::display::isMaster)) {
-                if (display[keys::display::isMaster].get<bool>()) {
-                    _masterDisplay = i;
+            if (display.count(keys::display::isPrimary)) {
+                if (display[keys::display::isPrimary].get<bool>()) {
+                    _primaryDisplay = i;
                     break;
                 }
             }
         }
-        // NO master display found, return the first one or NOT_FOUND if no display
-        if (_masterDisplay == NOT_FOUND) {
+        // NO primary display found, return the first one or NOT_FOUND if no display
+        if (_primaryDisplay == NOT_FOUND) {
             if (!_displays.empty()) {
-                _masterDisplay = 0;
-                _displays[0][keys::display::isMaster] = true;
+                _primaryDisplay = 0;
+                _displays[0][keys::display::isPrimary] = true;
             }
         }
     }
 
-    // From the master display decide the master gpu
+    // From the primary display decide the primary gpu
     {
-        _masterGPU = NOT_FOUND;
-        if (_masterDisplay != NOT_FOUND) {
-            const auto& display = _displays[_masterDisplay];
-            // FInd the GPU index of the master display
+        _primaryGPU = NOT_FOUND;
+        if (_primaryDisplay != NOT_FOUND) {
+            const auto& display = _displays[_primaryDisplay];
+            // FInd the GPU index of the primary display
             if (display.count(keys::display::gpu)) {
-                _masterGPU = display[keys::display::gpu];
-                _gpus[_masterGPU][keys::gpu::isMaster] = true; 
+                _primaryGPU = display[keys::display::gpu];
+                _gpus[_primaryGPU][keys::gpu::isPrimary] = true;
             }
         }
-        // NO master GPU found from master display, bummer, return the first one or NOT_FOUND if no display
-        if (_masterGPU == NOT_FOUND) {
+        // NO primary GPU found from primary display, bummer, return the first one or NOT_FOUND if no display
+        if (_primaryGPU == NOT_FOUND) {
             if (!_gpus.empty()) {
-                _masterGPU = 0;
-                _gpus[0][keys::gpu::isMaster] = true;
+                _primaryGPU = 0;
+                _gpus[0][keys::gpu::isPrimary] = true;
             }
         }        
     }
