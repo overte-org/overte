@@ -127,11 +127,15 @@ public:
     gpu::Shader::Source _opaqueFragmentSource;
     gpu::Shader::Source _transparentFragmentSource;
 
+    QString _errorFallbackFragmentPath;
+
     gpu::StatePointer _opaqueState { std::make_shared<gpu::State>() };
     gpu::StatePointer _transparentState { std::make_shared<gpu::State>() };
 
     static std::function<void(gpu::StatePointer)> opaqueStencil;
     static std::function<void(gpu::StatePointer)> transparentStencil;
+
+    static bool enableProceduralShaders;
 
 protected:
     // DO NOT TOUCH
@@ -179,6 +183,8 @@ protected:
     bool _shaderDirty { true };
     bool _uniformsDirty { true };
 
+    QString _errorFallbackFragmentSource;
+
     // Rendering objects
     UniformLambdas _uniforms;
     NetworkTexturePointer _channels[MAX_PROCEDURAL_TEXTURE_CHANNELS];
@@ -186,6 +192,8 @@ protected:
     std::unordered_map<std::string, std::string> _fragmentReplacements;
 
     std::unordered_map<ProceduralProgramKey, gpu::PipelinePointer> _proceduralPipelines;
+    std::unordered_map<ProceduralProgramKey, gpu::PipelinePointer> _errorPipelines;
+    std::unordered_map<ProceduralProgramKey, gpu::PipelinePointer> _disabledPipelines;
 
     StandardInputs _standardInputs;
     gpu::BufferPointer _standardInputsBuffer;

@@ -64,7 +64,6 @@
 #include "SpeechRecognizer.h"
 #endif
 
-#include "MeshPartPayload.h"
 #include "scripting/RenderScriptingInterface.h"
 
 extern bool DEV_DECIMATE_TEXTURES;
