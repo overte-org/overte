@@ -3292,9 +3292,9 @@ void Application::initializeUi() {
     {
         auto defaultUrlValidator = OffscreenQmlSurface::getUrlValidator();
         auto newValidator = [=](const QUrl& url) -> bool {
-            QString whitelistPrefix = "[WHITELIST ENTITY SCRIPTS]";
+            QString allowlistPrefix = "[ALLOWLIST ENTITY SCRIPTS]";
             QList<QString> safeURLS = { "" };
-            safeURLS += qEnvironmentVariable("EXTRA_WHITELIST").trimmed().split(QRegExp("\\s*,\\s*"), Qt::SkipEmptyParts);
+            safeURLS += qEnvironmentVariable("EXTRA_ALLOWLIST").trimmed().split(QRegExp("\\s*,\\s*"), Qt::SkipEmptyParts);
 
             // PULL SAFEURLS FROM INTERFACE.JSON Settings
 
@@ -3331,7 +3331,7 @@ void Application::initializeUi() {
     QmlContextCallback platformInfoCallback = [](QQmlContext* context) {
         context->setContextProperty("PlatformInfo", new PlatformInfoScriptingInterface());
     };
-    OffscreenQmlSurface::addWhitelistContextHandler({
+    OffscreenQmlSurface::addAllowlistContextHandler({
         QUrl{ "hifi/tablet/TabletAddressDialog.qml" },
         QUrl{ "hifi/Card.qml" },
         QUrl{ "hifi/Pal.qml" },
@@ -3341,7 +3341,7 @@ void Application::initializeUi() {
     QmlContextCallback ttsCallback = [](QQmlContext* context) {
         context->setContextProperty("TextToSpeech", DependencyManager::get<TTSScriptingInterface>().data());
     };
-    OffscreenQmlSurface::addWhitelistContextHandler({
+    OffscreenQmlSurface::addAllowlistContextHandler({
         QUrl{ "hifi/tts/TTS.qml" }
     }, ttsCallback);
     qmlRegisterType<ResourceImageItem>("Hifi", 1, 0, "ResourceImageItem");

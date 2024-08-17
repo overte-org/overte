@@ -1,5 +1,5 @@
 //
-//  EntityScriptQMLWhitelist.qml
+//  EntityScriptQMLAllowlist.qml
 //  interface/resources/qml/hifi/dialogs/security
 //
 //  Created by Kalila L. on 2019.12.05 | realities.dev | somnilibertas@gmail.com
@@ -8,7 +8,7 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
-// Security Settings for the Entity Script QML Whitelist
+// Security Settings for the Entity Script QML Allowlist
 
 import Hifi 1.0 as Hifi
 import QtQuick 2.8
@@ -23,25 +23,25 @@ import "../../../windows"
 Rectangle {
     id: parentBody;
 
-    function getWhitelistAsText() {
-        var whitelist = Settings.getValue("private/settingsSafeURLS");
-        var arrayWhitelist = whitelist.split(",").join("\n");
-        return arrayWhitelist;
+    function getAllowlistAsText() {
+        var allowlist = Settings.getValue("private/settingsSafeURLS");
+        var arrayAllowlist = allowlist.split(",").join("\n");
+        return arrayAllowlist;
     }
 
-    function setWhitelistAsText(whitelistText) {
-        Settings.setValue("private/settingsSafeURLS", whitelistText.text);
+    function setAllowlistAsText(allowlistText) {
+        Settings.setValue("private/settingsSafeURLS", allowlistText.text);
 
-        var originalSetString = whitelistText.text;
+        var originalSetString = allowlistText.text;
         var originalSet = originalSetString.split(' ').join('');
 
         var check = Settings.getValue("private/settingsSafeURLS");
         var arrayCheck = check.split(",").join("\n");
 
-        setWhitelistSuccess(arrayCheck === originalSet);
+        setAllowlistSuccess(arrayCheck === originalSet);
     }
 
-    function setWhitelistSuccess(success) {
+    function setAllowlistSuccess(success) {
         if (success) {
             notificationText.text = "Successfully saved settings.";
         } else {
@@ -49,20 +49,20 @@ Rectangle {
         }
     }
 
-    function toggleWhitelist(enabled) {
-        Settings.setValue("private/whitelistEnabled", enabled);
-        console.info("Toggling Whitelist to:", enabled);
+    function toggleAllowlist(enabled) {
+        Settings.setValue("private/allowlistEnabled", enabled);
+        console.info("Toggling Allowlist to:", enabled);
     }
 
     function initCheckbox() {
-        var check = Settings.getValue("private/whitelistEnabled", false);
+        var check = Settings.getValue("private/allowlistEnabled", false);
 
         if (check) {
-            whitelistEnabled.toggle();
+            allowlistEnabled.toggle();
         }
     }
-  
-  
+
+
     anchors.fill: parent
     width: parent.width;
     height: 120;
@@ -70,7 +70,7 @@ Rectangle {
 
     HifiStylesUit.RalewayRegular {
         id: titleText;
-        text: "Entity Script / QML Whitelist"
+        text: "Entity Script / QML Allowlist"
         // Text size
         size: 24;
         // Style
@@ -89,13 +89,13 @@ Rectangle {
                 initCheckbox();
             }
 
-            id: whitelistEnabled;
+            id: allowlistEnabled;
 
             anchors.right: parent.right;
             anchors.top: parent.top;
             anchors.topMargin: 10;
             onToggled: {
-                toggleWhitelist(whitelistEnabled.checked)
+                toggleAllowlist(allowlistEnabled.checked)
             }
 
             Label {
@@ -115,7 +115,7 @@ Rectangle {
         width: parent.width;
         height: 250;
         anchors.top: titleText.bottom;
-    
+
         ScrollView {
             id: textAreaScrollView
             anchors.fill: parent;
@@ -126,8 +126,8 @@ Rectangle {
             clip: false;
 
             TextArea {
-                id: whitelistTextArea
-                text: getWhitelistAsText();
+                id: allowlistTextArea
+                text: getAllowlistAsText();
                 onTextChanged: notificationText.text = "";
                 width: parent.width;
                 height: parent.height;
@@ -136,7 +136,7 @@ Rectangle {
                 color: "white";
             }
         }
-        
+
         Button {
             id: saveChanges
             anchors.topMargin: 5;
@@ -155,8 +155,8 @@ Rectangle {
                 elide: Text.ElideRight
             }
             text: "Save Changes"
-            onClicked: setWhitelistAsText(whitelistTextArea)
-          
+            onClicked: setAllowlistAsText(allowlistTextArea)
+
             HifiStylesUit.RalewayRegular {
                 id: notificationText;
                 text: ""
@@ -170,15 +170,15 @@ Rectangle {
                 anchors.rightMargin: 10;
             }
         }
-        
+
         HifiStylesUit.RalewayRegular {
             id: descriptionText;
-            text: 
-    "The whitelist checks scripts and QML as they are loaded.<br/>
+            text:
+    "The allowlist checks scripts and QML as they are loaded.<br/>
     Therefore, if a script is cached or has no reason to load again,<br/>
-    removing it from the whitelist will have no effect until<br/>
+    removing it from the allowlist will have no effect until<br/>
     it is reloaded.<br/>
-    Separate your whitelisted domains by line, not commas. e.g.
+    Separate your allowlisted domains by line, not commas. e.g.
     <blockquote>
         <b>https://google.com/</b><br/>
         <b>hifi://the-spot/</b><br/>
@@ -186,7 +186,7 @@ Rectangle {
         <b>https://mydomain.here/</b>
     </blockquote>
     Ensure there are no spaces or whitespace.<br/><br/>
-    For QML files, you can only whitelist each file individually<br/>
+    For QML files, you can only allowlist each file individually<br/>
     ending with '.qml'."
             // Text size
             size: 16;

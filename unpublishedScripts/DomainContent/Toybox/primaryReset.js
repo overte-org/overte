@@ -1,4 +1,4 @@
-//  masterReset.js
+//  primaryReset.js
 //  Created by Eric Levin on 9/23/2015
 //  Copyright 2015 High Fidelity, Inc.
 //
@@ -25,7 +25,7 @@ var basketballResetterScriptURL = Script.resolvePath('basketballsResetter.js');
 var targetsResetterScriptURL = Script.resolvePath('targetsResetter.js');
 
 
-MasterReset = function() {
+PrimaryReset = function() {
     var resetKey = "resetMe";
 
 

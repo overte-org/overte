@@ -67,7 +67,7 @@ void MACOSInstance::enumerateGpusAndDisplays() {
             auto displaySizeHeightInches = displaySize.height * MM_TO_IN;
             
             auto displayBounds = CGDisplayBounds(displayID);
-            auto displayMaster =CGDisplayIsMain(displayID);
+            auto displayPrimary =CGDisplayIsMain(displayID);
             
             auto displayUnit =CGDisplayUnitNumber(displayID);
             auto displayModel =CGDisplayModelNumber(displayID);
@@ -112,8 +112,8 @@ void MACOSInstance::enumerateGpusAndDisplays() {
             // refreshrate
             display[keys::display::modeRefreshrate] = displayRefreshrate;
             
-            // Master display ?
-            display[keys::display::isMaster] = (displayMaster ? true : false);
+            // Primary display ?
+            display[keys::display::isPrimary] = (displayPrimary ? true : false);
             
             // Macos specific
             display["macos_unit"] = displayUnit;

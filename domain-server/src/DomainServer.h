@@ -251,7 +251,7 @@ private:
 
     QString operationToString(const QNetworkAccessManager::Operation &op);
 
-    SubnetList _acSubnetWhitelist;
+    SubnetList _acSubnetAllowlist;
 
     std::vector<QString> _replicatedUsernames;
 

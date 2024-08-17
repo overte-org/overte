@@ -71,11 +71,11 @@ public:
 
     using IgnoreBox = AABox;
 
-    // called from single AudioMixerSlave while processing packets for node
+    // called from single AudioMixerWorker while processing packets for node
     void enableIgnoreBox();
     void disableIgnoreBox() { _isIgnoreBoxEnabled = false; }
 
-    // thread-safe, called from AudioMixerSlave(s) while preparing mixes
+    // thread-safe, called from AudioMixerWorker(s) while preparing mixes
     bool isIgnoreBoxEnabled() const { return _isIgnoreBoxEnabled; }
     const IgnoreBox& getIgnoreBox() const { return _ignoreBox; }
 

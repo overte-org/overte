@@ -55,21 +55,21 @@
             })
         },
 
-        masterLightOn: function(masterLight) {
-            Entities.editEntity(masterLight, {
+        primaryLightOn: function(primaryLight) {
+            Entities.editEntity(primaryLight, {
                 visible: true
             });
         },
 
-        masterLightOff: function(masterLight) {
+        primaryLightOff: function(primaryLight) {
             print("EBL TURN LIGHT OFF");
-            Entities.editEntity(masterLight, {
+            Entities.editEntity(primaryLight, {
                 visible: false
             });
         },
 
 
-        findMasterLights: function() {
+        findPrimaryLights: function() {
             var found = [];
             var results = Entities.findEntities(_this.position, SEARCH_RADIUS);
             results.forEach(function(result) {
@@ -101,13 +101,13 @@
                 state: 'off'
             });
 
-            var masterLights = this.findMasterLights();
+            var primaryLights = this.findPrimaryLights();
             var emitModels = this.findEmitModels();
 
             if (this._switch.state === 'off') {
                 print("EBL TURN LIGHTS ON");
-                masterLights.forEach(function(masterLight) {
-                    _this.masterLightOn(masterLight);
+                primaryLights.forEach(function(primaryLight) {
+                    _this.primaryLightOn(primaryLight);
                 });
                 emitModels.forEach(function(emitModel) {
                     _this.modelEmitOn(emitModel);
@@ -118,8 +118,8 @@
 
             } else {
                 print("EBL TURN LIGHTS OFF");
-                masterLights.forEach(function(masterLight) {
-                    _this.masterLightOff(masterLight);
+                primaryLights.forEach(function(primaryLight) {
+                    _this.primaryLightOff(primaryLight);
                 });
                 emitModels.forEach(function(emitModel) {
                     _this.modelEmitOff(emitModel);

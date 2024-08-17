@@ -201,9 +201,9 @@ void AudioMixerClientData::parsePerAvatarGainSet(ReceivedMessage& message, const
     float gain = unpackFloatGainFromByte(packedGain);
 
     if (avatarUUID.isNull()) {
-        // set the MASTER avatar gain
-        setMasterAvatarGain(gain);
-        qCDebug(audio) << "Setting MASTER avatar gain for" << uuid << "to" << gain;
+        // set the PRIMARY avatar gain
+        setPrimaryAvatarGain(gain);
+        qCDebug(audio) << "Setting PRIMARY avatar gain for" << uuid << "to" << gain;
     } else {
         // set the per-source avatar gain
         setGainForAvatar(avatarUUID, gain);
@@ -218,8 +218,8 @@ void AudioMixerClientData::parseInjectorGainSet(ReceivedMessage& message, const 
     message.readPrimitive(&packedGain);
     float gain = unpackFloatGainFromByte(packedGain);
 
-    setMasterInjectorGain(gain);
-    qCDebug(audio) << "Setting MASTER injector gain for" << uuid << "to" << gain;
+    setPrimaryInjectorGain(gain);
+    qCDebug(audio) << "Setting PRIMARY injector gain for" << uuid << "to" << gain;
 }
 
 bool setGainInStreams(const QUuid &nodeID, float gain, std::vector<AudioMixerClientData::MixableStream> &streamVector) {

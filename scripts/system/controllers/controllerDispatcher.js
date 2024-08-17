@@ -56,7 +56,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
         this.veryhighVarianceCount = 0;
         this.orderedPluginNames = [];
         this.tabletID = null;
-        this.blacklist = [];
+        this.blocklist = [];
         this.pointerManager = new PointerManager();
         this.grabSphereOverlays = [null, null];
         this.targetIDs = {};
@@ -169,8 +169,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
         this.setIgnorePointerItems = function() {
             if (HMD.tabletID && HMD.tabletID !== this.tabletID) {
                 this.tabletID = HMD.tabletID;
-                Pointers.setIgnoreItems(_this.leftPointer, _this.blacklist);
-                Pointers.setIgnoreItems(_this.rightPointer, _this.blacklist);
+                Pointers.setIgnoreItems(_this.leftPointer, _this.blocklist);
+                Pointers.setIgnoreItems(_this.rightPointer, _this.blocklist);
             }
         };
 
@@ -547,19 +547,19 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             }
         };
 
-        this.leftBlacklistTabletIDs = [];
-        this.rightBlacklistTabletIDs = [];
+        this.leftBlocklistTabletIDs = [];
+        this.rightBlocklistTabletIDs = [];
 
-        this.setLeftBlacklist = function () {
-            Pointers.setIgnoreItems(_this.leftPointer, _this.blacklist.concat(_this.leftBlacklistTabletIDs));
+        this.setLeftBlocklist = function () {
+            Pointers.setIgnoreItems(_this.leftPointer, _this.blocklist.concat(_this.leftBlocklistTabletIDs));
         };
-        this.setRightBlacklist = function () {
-            Pointers.setIgnoreItems(_this.rightPointer, _this.blacklist.concat(_this.rightBlacklistTabletIDs));
+        this.setRightBlocklist = function () {
+            Pointers.setIgnoreItems(_this.rightPointer, _this.blocklist.concat(_this.rightBlocklistTabletIDs));
         };
 
-        this.setBlacklist = function() {
-            _this.setLeftBlacklist();
-            _this.setRightBlacklist();
+        this.setBlocklist = function() {
+            _this.setLeftBlocklist();
+            _this.setRightBlocklist();
         };
 
         var MAPPING_NAME = "com.highfidelity.controllerDispatcher";
@@ -634,34 +634,34 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             var message;
             if (sender === MyAvatar.sessionUUID) {
                 try {
-                    if (channel === 'Hifi-Hand-RayPick-Blacklist') {
+                    if (channel === 'Hifi-Hand-RayPick-Blocklist') {
                         message = JSON.parse(data);
                         var action = message.action;
                         var id = message.id;
-                        var index = _this.blacklist.indexOf(id);
+                        var index = _this.blocklist.indexOf(id);
 
                         if (action === 'add' && index === -1) {
-                            _this.blacklist.push(id);
-                            _this.setBlacklist();
+                            _this.blocklist.push(id);
+                            _this.setBlocklist();
                         }
 
                         if (action === 'remove') {
                             if (index > -1) {
-                                _this.blacklist.splice(index, 1);
-                                _this.setBlacklist();
+                                _this.blocklist.splice(index, 1);
+                                _this.setBlocklist();
                             }
                         }
 
                         if (action === "tablet") {
-                            var tabletIDs = message.blacklist ?
+                            var tabletIDs = message.blocklist ?
                                 [HMD.tabletID, HMD.tabletScreenID, HMD.homeButtonID, HMD.homeButtonHighlightID] :
                                 [];
                             if (message.hand === LEFT_HAND) {
-                                _this.leftBlacklistTabletIDs = tabletIDs;
-                                _this.setLeftBlacklist();
+                                _this.leftBlocklistTabletIDs = tabletIDs;
+                                _this.setLeftBlocklist();
                             } else {
-                                _this.rightBlacklistTabletIDs = tabletIDs;
-                                _this.setRightBlacklist();
+                                _this.rightBlocklistTabletIDs = tabletIDs;
+                                _this.setRightBlocklist();
                             }
                         }
                     }
@@ -737,7 +737,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
     Entities.mousePressOnEntity.connect(mousePress);
 
     var controllerDispatcher = new ControllerDispatcher();
-    Messages.subscribe('Hifi-Hand-RayPick-Blacklist');
+    Messages.subscribe('Hifi-Hand-RayPick-Blocklist');
     Messages.messageReceived.connect(controllerDispatcher.handleMessage);
 
     Picks.handLaserDelayChanged.connect(controllerDispatcher.handLaserDelayChanged);

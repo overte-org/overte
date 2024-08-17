@@ -148,22 +148,22 @@ endif()
 
 # OVERTE_WARNINGS
 #
-# Here we add the ability to whitelist warnings we've determined we can't fix, or are safe to
+# Here we add the ability to allowlist warnings we've determined we can't fix, or are safe to
 # ignore for one reason or another. The way of doing so is compiler-specific, so we deal with
 # the detection of that in cmake, and just pass it down to the code from here.
 #
-# We can also treat warnings as errors. Without the whitelist this will almost certainly lead
+# We can also treat warnings as errors. Without the allowlist this will almost certainly lead
 # to a build failure.
 
-if(NOT DEFINED OVERTE_WARNINGS_WHITELIST)
-    set(OVERTE_WARNINGS_WHITELIST true CACHE BOOL "Whitelist some warnings we can't currently fix")
+if(NOT DEFINED OVERTE_WARNINGS_ALLOWLIST)
+    set(OVERTE_WARNINGS_ALLOWLIST true CACHE BOOL "Allowlist some warnings we can't currently fix")
 endif()
 
 if(NOT DEFINED OVERTE_WARNINGS_AS_ERRORS)
     set(OVERTE_WARNINGS_AS_ERRORS false CACHE BOOL "Count warnings as errors")
 endif()
 
-if(OVERTE_WARNINGS_WHITELIST)
+if(OVERTE_WARNINGS_ALLOWLIST)
     if (NOT WIN32)
       set(CMAKE_PLATFORM_INFO_DIR "${CMAKE_CURRENT_BINARY_DIR}")
       include(CMakeDetermineCXXCompiler)
@@ -171,15 +171,15 @@ if(OVERTE_WARNINGS_WHITELIST)
 
     if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         message("GCC compiler detected, suppressing some unsolvable warnings.")
-        add_compile_definitions(OVERTE_WARNINGS_WHITELIST_GCC)
+        add_compile_definitions(OVERTE_WARNINGS_ALLOWLIST_GCC)
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         message("Clang compiler detected, suppressing some unsolvable warnings.")
-        add_compile_definitions(OVERTE_WARNINGS_WHITELIST_CLANG)
+        add_compile_definitions(OVERTE_WARNINGS_ALLOWLIST_CLANG)
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "" AND WIN32))
         message("Microsoft Visual Studio compiler detected, suppressing some unsolvable warnings.")
-        add_compile_definitions(OVERTE_WARNINGS_WHITELIST_MSVC)
+        add_compile_definitions(OVERTE_WARNINGS_ALLOWLIST_MSVC)
     else()
-        message("We don't know yet how to whitelist warnings for ${CMAKE_CXX_COMPILER_ID}")
+        message("We don't know yet how to allowlist warnings for ${CMAKE_CXX_COMPILER_ID}")
     endif()
 endif()
 

@@ -28,9 +28,9 @@ class OffscreenQmlSurface : public hifi::qml::OffscreenSurface {
 public:
     ~OffscreenQmlSurface();
 
-    static void addWhitelistContextHandler(const std::initializer_list<QUrl>& urls, const QmlContextCallback& callback);
-    static void addWhitelistContextHandler(const QUrl& url, const QmlContextCallback& callback) { addWhitelistContextHandler({ { url } }, callback); };
-    static void applyWhiteList(const QUrl& url,QQmlContext* context);
+    static void addAllowlistContextHandler(const std::initializer_list<QUrl>& urls, const QmlContextCallback& callback);
+    static void addAllowlistContextHandler(const QUrl& url, const QmlContextCallback& callback) { addAllowlistContextHandler({ { url } }, callback); };
+    static void applyAllowList(const QUrl& url,QQmlContext* context);
     
     bool isFocusText() const { return _focusText; }
     bool getCleaned() { return _isCleaned; }

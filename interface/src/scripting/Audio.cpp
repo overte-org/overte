@@ -533,7 +533,7 @@ void Audio::setAvatarGain(float gain) {
     }
 
     withWriteLock([&] {
-        // ask the NodeList to set the master avatar gain
+        // ask the NodeList to set the primary avatar gain
         DependencyManager::get<NodeList>()->setAvatarGain(QUuid(), gain);
     });
 
