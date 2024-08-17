@@ -71,8 +71,6 @@ public:
 
     void setBlendshapeBuffer(const std::unordered_map<int, gpu::BufferPointer>& blendshapeBuffers, const QVector<int>& blendedMeshSizes);
 
-    static bool enableMaterialProceduralShaders;
-
 private:
     void initCache(const ModelPointer& model, int shapeID);
 

@@ -26,8 +26,6 @@
 
 using namespace render;
 
-bool ModelMeshPartPayload::enableMaterialProceduralShaders = false;
-
 ModelMeshPartPayload::ModelMeshPartPayload(ModelPointer model, int meshIndex, int partIndex, int shapeIndex,
                                            const Transform& transform, const uint64_t& created) :
     _meshIndex(meshIndex),
@@ -352,9 +350,6 @@ void ModelMeshPartPayload::render(RenderArgs* args) {
     }
 
     if (_shapeKey.hasOwnPipeline()) {
-        if (!(enableMaterialProceduralShaders)) {
-            return;
-        }
         auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(_drawMaterials.top().material);
         auto& schema = _drawMaterials.getSchemaBuffer().get<graphics::MultiMaterial::Schema>();
         glm::vec4 outColor = glm::vec4(ColorUtils::tosRGBVec3(schema._albedo), schema._opacity);

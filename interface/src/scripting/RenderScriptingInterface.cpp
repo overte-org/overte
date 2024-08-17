@@ -16,7 +16,7 @@
 #include <QScreen>
 #include "ScreenName.h"
 
-#include <MeshPartPayload.h>
+#include <procedural/Procedural.h>
 
 STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
@@ -252,7 +252,7 @@ void RenderScriptingInterface::forceProceduralMaterialsEnabled(bool enabled) {
         _proceduralMaterialsEnabledSetting.set(enabled);
 
         Menu::getInstance()->setIsOptionChecked(MenuOption::MaterialProceduralShaders, enabled);
-        ModelMeshPartPayload::enableMaterialProceduralShaders = enabled;
+        Procedural::enableProceduralShaders = enabled;
     });
 }
 
