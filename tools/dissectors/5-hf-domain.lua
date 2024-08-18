@@ -143,7 +143,7 @@ function p_hf_domain.dissector(buf, pinfo, tree)
 
       len = buf(i, 4):uint()
       domain_subtree:add(f_macaddress_len_id, buf(i, 4)); i = i + 4
-      domain_subtree:add(f_macaddress_id, buf(i, len):ustring()); i = i + len
+      domain_subtree:add(f_macaddress_id, buf(i,len), buf(i, len):ustring()); i = i + len
 
       domain_subtree:add(f_fingerprint_id, buf(i, 16)); i = i + 16
 
@@ -190,15 +190,15 @@ function p_hf_domain.dissector(buf, pinfo, tree)
 
       len = buf(i, 4):uint()
       domain_subtree:add(f_placename_length_id, buf(i, 4)); i = i + 4
-      domain_subtree:add(f_placename_id, buf(i, len):ustring()); i = i + len
+      domain_subtree:add(f_placename_id, buf(i,len), buf(i, len):ustring()); i = i + len
 
       len = buf(i, 4):uint()
       domain_subtree:add(f_username_length_id, buf(i, 4)); i = i + 4
-      domain_subtree:add(f_username_id, buf(i, len):ustring()); i = i + len
+      domain_subtree:add(f_username_id, buf(i,len), buf(i, len):ustring()); i = i + len
 
       len = buf(i, 4):uint()
       domain_subtree:add(f_username_signature_length_id, buf(i, 4)); i = i + 4
-      domain_subtree:add(f_username_signature_id, buf(i, len):ustring()); i = i + len
+      domain_subtree:add(f_username_signature_id, buf(i,len), buf(i, len):ustring()); i = i + len
 
     else
       tree:add_proto_expert_info(ef_version_unsupported)
