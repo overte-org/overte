@@ -1,48 +1,11 @@
 print("Loading hfudt")
 bit32 = require("bit32")
 
--- create the HFUDT protocol
-p_hfudt = Proto("hfudt", "HFUDT Protocol")
-
--- create fields shared between packets in HFUDT
-local f_data = ProtoField.string("hfudt.data", "Data")
-
--- create the fields for data packets in HFUDT
-local f_length = ProtoField.uint16("hfudt.length", "Length", base.DEC)
-local f_control_bit = ProtoField.uint8("hfudt.control", "Control Bit", base.DEC)
-local f_reliable_bit = ProtoField.uint8("hfudt.reliable", "Reliability Bit", base.DEC)
-local f_message_bit = ProtoField.uint8("hfudt.message", "Message Bit", base.DEC)
-local f_obfuscation_level = ProtoField.uint8("hfudt.obfuscation_level", "Obfuscation Level", base.DEC)
-local f_sequence_number = ProtoField.uint32("hfudt.sequence_number", "Sequence Number", base.DEC)
-local f_message_position = ProtoField.uint8("hfudt.message_position", "Message Position", base.DEC)
-local f_message_number = ProtoField.uint32("hfudt.message_number", "Message Number", base.DEC)
-local f_message_part_number = ProtoField.uint32("hfudt.message_part_number", "Message Part Number", base.DEC)
-local f_type = ProtoField.uint8("hfudt.type", "Type", base.DEC)
-local f_version = ProtoField.uint8("hfudt.version", "Version", base.DEC)
-local f_type_text = ProtoField.string("hfudt.type_text", "TypeText")
-local f_sender_id = ProtoField.uint16("hfudt.sender_id", "Sender ID", base.DEC)
-local f_hmac_hash = ProtoField.bytes("hfudt.hmac_hash", "HMAC Hash")
-
--- create the fields for control packets in HFUDT
-local f_control_type = ProtoField.uint16("hfudt.control_type", "Control Type", base.DEC)
-local f_control_type_text = ProtoField.string("hfudt.control_type_text", "Control Type Text", base.ASCII)
-local f_ack_sequence_number = ProtoField.uint32("hfudt.ack_sequence_number", "ACKed Sequence Number", base.DEC)
-
-local SEQUENCE_NUMBER_MASK = 0x07FFFFFF
-
-p_hfudt.fields = {
-  f_length,
-  f_control_bit, f_reliable_bit, f_message_bit, f_sequence_number, f_type, f_type_text, f_version,
-  f_sender_id, f_hmac_hash,
-  f_message_position, f_message_number, f_message_part_number, f_obfuscation_level,
-  f_control_type, f_control_type_text, f_ack_sequence_number, f_data
-}
-
 local control_types = {
-  [0] = { "ACK", "Acknowledgement" },
-  [1] = { "Handshake", "Handshake" },
-  [2] = { "HandshakeACK", "Acknowledgement of Handshake" },
-  [3] = { "HandshakeRequest", "Request a Handshake" }
+  [0] = "ACK",
+  [1] = "Handshake",
+  [2] = "HandshakeACK",
+  [3] = "HandshakeRequest"
 }
 
 local message_positions = {
@@ -216,6 +179,47 @@ local nonverified_packet_types = {
     ["NodeKickRequest"] = true,
     ["NodeMuteRequest"] = true,
 }
+
+
+
+-- create the HFUDT protocol
+p_hfudt = Proto("hfudt", "HFUDT Protocol")
+
+-- create fields shared between packets in HFUDT
+local f_data = ProtoField.string("hfudt.data", "Data")
+
+-- create the fields for data packets in HFUDT
+local f_length = ProtoField.uint16("hfudt.length", "Length", base.DEC)
+local f_control_bit = ProtoField.uint8("hfudt.control", "Control Bit", base.DEC)
+local f_reliable_bit = ProtoField.uint8("hfudt.reliable", "Reliability Bit", base.DEC)
+local f_message_bit = ProtoField.uint8("hfudt.message", "Message Bit", base.DEC)
+local f_obfuscation_level = ProtoField.uint8("hfudt.obfuscation_level", "Obfuscation Level", base.DEC)
+local f_sequence_number = ProtoField.uint32("hfudt.sequence_number", "Sequence Number", base.DEC)
+local f_message_position = ProtoField.uint8("hfudt.message_position", "Message Position", base.DEC)
+local f_message_number = ProtoField.uint32("hfudt.message_number", "Message Number", base.DEC)
+local f_message_part_number = ProtoField.uint32("hfudt.message_part_number", "Message Part Number", base.DEC)
+local f_type = ProtoField.uint8("hfudt.type", "Type", base.DEC, packet_types)
+local f_version = ProtoField.uint8("hfudt.version", "Version", base.DEC)
+local f_type_text = ProtoField.string("hfudt.type_text", "TypeText")
+local f_sender_id = ProtoField.uint16("hfudt.sender_id", "Sender ID", base.DEC)
+local f_hmac_hash = ProtoField.bytes("hfudt.hmac_hash", "HMAC Hash")
+
+-- create the fields for control packets in HFUDT
+local f_control_type = ProtoField.uint16("hfudt.control_type", "Control Type", base.DEC, control_types)
+local f_control_type_text = ProtoField.string("hfudt.control_type_text", "Control Type Text", base.ASCII)
+local f_ack_sequence_number = ProtoField.uint32("hfudt.ack_sequence_number", "ACKed Sequence Number", base.DEC)
+
+local SEQUENCE_NUMBER_MASK = 0x07FFFFFF
+
+p_hfudt.fields = {
+  f_length,
+  f_control_bit, f_reliable_bit, f_message_bit, f_sequence_number, f_type, f_type_text, f_version,
+  f_sender_id, f_hmac_hash,
+  f_message_position, f_message_number, f_message_part_number, f_obfuscation_level,
+  f_control_type, f_control_type_text, f_ack_sequence_number, f_data
+}
+
+
 
 local fragments = {}
 
