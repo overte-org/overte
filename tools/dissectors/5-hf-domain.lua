@@ -128,46 +128,54 @@ function p_hf_domain.dissector(buf, pinfo, tree)
   domain_subtree = tree:add(p_hf_domain, buf())
 
 
-  if packet_type == 31 then
-    -- DomainConnectRequest
+  if packet_type == 31 or packet_type == 13 then
+    -- DomainConnectRequest or DomainListRequest
 
     local i = 0
     local len = 0
 
-    if packet_version == 27 then
+    if (packet_type == 31 and packet_version == 27) or (packet_type == 13 and packet_version == 23) then
+      -- This replicates the way the packet is created on NodeList.cpp. DomainListRequest is a subset
+      -- of what's contained in DomainConnectRequest
 
-      -- we're writing 32 bit sizes everywhere, see BasePacket.cpp
-      len = buf(i, 4):uint()
-      domain_subtree:add(f_protocol_signature_len_id, buf(i, 4)); i = i + 4
-      domain_subtree:add(f_protocol_signature_id, buf(i, len)); i = i + len
+      if (packet_type == 31) then
+        -- DomainConnectRequest only
 
-      len = buf(i, 4):uint()
-      domain_subtree:add(f_macaddress_len_id, buf(i, 4)); i = i + 4
-      domain_subtree:add(f_macaddress_id, buf(i,len), buf(i, len):ustring()); i = i + len
+        -- we're writing 32 bit sizes everywhere, see BasePacket.cpp
+        len = buf(i, 4):uint()
+        domain_subtree:add(f_protocol_signature_len_id, buf(i, 4)); i = i + 4
+        domain_subtree:add(f_protocol_signature_id, buf(i, len)); i = i + len
 
-      domain_subtree:add(f_fingerprint_id, buf(i, 16)); i = i + 16
+        len = buf(i, 4):uint()
+        domain_subtree:add(f_macaddress_len_id, buf(i, 4)); i = i + 4
+        domain_subtree:add(f_macaddress_id, buf(i,len), buf(i, len):ustring()); i = i + len
+
+        domain_subtree:add(f_fingerprint_id, buf(i, 16)); i = i + 16
 
 
-      len = buf(i, 4):uint()
-      domain_subtree:add(f_sysinfo_len_id, buf(i, 4)); i = i + 4
-      --print("Sysinfo raw: " .. buf(i, len):uncompress_zlib("sysinfo"))
-      --domain_subtree:add(f_sysinfo_id, buf(i, len):uncompress_zlib("sysinfo"))
+        len = buf(i, 4):uint()
+        domain_subtree:add(f_sysinfo_len_id, buf(i, 4)); i = i + 4
+        --print("Sysinfo raw: " .. buf(i, len):uncompress_zlib("sysinfo"))
+        --domain_subtree:add(f_sysinfo_id, buf(i, len):uncompress_zlib("sysinfo"))
 
-      domain_subtree:add(f_sysinfo_uncompressed_len_id, buf(i, 4));
+        domain_subtree:add(f_sysinfo_uncompressed_len_id, buf(i, 4));
 
-      if not pcall(function() domain_subtree:add(f_sysinfo_id, buf(i+4, len-4):uncompress_zlib("sysinfo")) end ) then
-          -- we add +4 bytes and subtract -4 length to compensate for the 4 bytes uncompressed length Qt adds
-          -- zlib decoding only supported starting with Wireshark 4.3
-          domain_subtree:add(f_sysinfo_id, "[uncompressing zlib not supported in this Wireshark version]")
-          tree:add_proto_expert_info(ef_zlib_unsupported)
+        if not pcall(function() domain_subtree:add(f_sysinfo_id, buf(i+4, len-4):uncompress_zlib("sysinfo")) end ) then
+            -- we add +4 bytes and subtract -4 length to compensate for the 4 bytes uncompressed length Qt adds
+            -- zlib decoding only supported starting with Wireshark 4.3
+            domain_subtree:add(f_sysinfo_id, "[uncompressing zlib not supported in this Wireshark version]")
+            tree:add_proto_expert_info(ef_zlib_unsupported)
+        end
+        i = i + len
+
+        local reason = buf(i, 4):uint()
+  --      domain_subtree:add(f_connect_reason_id, string.format("%i [%s]", reason, connect_reasons[reason]))
+        domain_subtree:add(f_connect_reason_id, buf(i, 4)); i = i + 4
+
+        domain_subtree:add(f_uptime_id, buf(i, 8)); i = i + 8
       end
-      i = i + len
 
-      local reason = buf(i, 4):uint()
---      domain_subtree:add(f_connect_reason_id, string.format("%i [%s]", reason, connect_reasons[reason]))
-      domain_subtree:add(f_connect_reason_id, buf(i, 4)); i = i + 4
 
-      domain_subtree:add(f_uptime_id, buf(i, 8)); i = i + 8
       domain_subtree:add(f_time_id, buf(i, 8)); i = i + 8
 
       domain_subtree:add(f_owner_type_id, buf(i, 1)); i = i + 1
@@ -192,14 +200,16 @@ function p_hf_domain.dissector(buf, pinfo, tree)
       domain_subtree:add(f_placename_length_id, buf(i, 4)); i = i + 4
       domain_subtree:add(f_placename_id, buf(i,len), buf(i, len):ustring()); i = i + len
 
-      len = buf(i, 4):uint()
-      domain_subtree:add(f_username_length_id, buf(i, 4)); i = i + 4
-      domain_subtree:add(f_username_id, buf(i,len), buf(i, len):ustring()); i = i + len
+      if packet_type == 31 then
+        -- DomainConnectRequest only
+        len = buf(i, 4):uint()
+        domain_subtree:add(f_username_length_id, buf(i, 4)); i = i + 4
+        domain_subtree:add(f_username_id, buf(i,len), buf(i, len):ustring()); i = i + len
 
-      len = buf(i, 4):uint()
-      domain_subtree:add(f_username_signature_length_id, buf(i, 4)); i = i + 4
-      domain_subtree:add(f_username_signature_id, buf(i,len), buf(i, len):ustring()); i = i + len
-
+        len = buf(i, 4):uint()
+        domain_subtree:add(f_username_signature_length_id, buf(i, 4)); i = i + 4
+        domain_subtree:add(f_username_signature_id, buf(i,len), buf(i, len):ustring()); i = i + len
+      end
     else
       tree:add_proto_expert_info(ef_version_unsupported)
     end

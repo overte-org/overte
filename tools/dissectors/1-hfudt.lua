@@ -428,7 +428,8 @@ function p_hfudt.dissector(buf, pinfo, tree)
     if payload_to_dissect ~= nil then
       -- Domain packets
       if packet_type_text == "DomainList" or
-         packet_type_text == "DomainConnectRequest"
+         packet_type_text == "DomainConnectRequest" or
+         packet_type_text == "DomainListRequest"
       then
         Dissector.get("hf-domain"):call(payload_to_dissect, pinfo, tree)
       end
