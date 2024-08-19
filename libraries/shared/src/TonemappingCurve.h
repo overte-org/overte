@@ -27,7 +27,7 @@
  * @typedef {string} TonemappingCurve
  */
 
-enum class TonemappingCurve {
+enum class TonemappingCurve : uint8_t {
     RGB = 0,
     SRGB,
     REINHARD,

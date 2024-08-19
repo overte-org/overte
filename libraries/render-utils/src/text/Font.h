@@ -15,6 +15,7 @@
 #include "Glyph.h"
 #include "TextEffect.h"
 #include "TextAlignment.h"
+#include "TextVerticalAlignment.h"
 #include <gpu/Batch.h>
 #include <gpu/Pipeline.h>
 
@@ -55,6 +56,10 @@ public:
         glm::vec2 origin;
         glm::vec2 bounds;
         DrawParams params;
+
+        float scale { 0.0f };
+        TextAlignment alignment { TextAlignment::LEFT };
+        TextVerticalAlignment verticalAlignment { TextVerticalAlignment::TOP };
     };
 
     glm::vec2 computeExtent(const QString& str) const;
@@ -62,9 +67,10 @@ public:
 
     struct DrawProps {
         DrawProps(const QString& str, const glm::vec4& color, const glm::vec3& effectColor, const glm::vec2& origin, const glm::vec2& bounds,
-                  float scale, float effectThickness, TextEffect effect, TextAlignment alignment, bool unlit, bool forward, bool mirror) :
+                  float scale, float effectThickness, TextEffect effect, TextAlignment alignment, TextVerticalAlignment verticalAlignment, bool unlit,
+                  bool forward, bool mirror) :
             str(str), color(color), effectColor(effectColor), origin(origin), bounds(bounds), scale(scale), effectThickness(effectThickness),
-            effect(effect), alignment(alignment), unlit(unlit), forward(forward), mirror(mirror) {}
+            effect(effect), alignment(alignment), verticalAlignment(verticalAlignment), unlit(unlit), forward(forward), mirror(mirror) {}
         DrawProps(const QString& str, const glm::vec4& color, const glm::vec2& origin, const glm::vec2& bounds, bool forward) :
             str(str), color(color), origin(origin), bounds(bounds), forward(forward) {}
 
@@ -77,6 +83,7 @@ public:
         float effectThickness { 0.0f };
         TextEffect effect { TextEffect::NO_EFFECT };
         TextAlignment alignment { TextAlignment::LEFT };
+        TextVerticalAlignment verticalAlignment { TextVerticalAlignment::TOP };
         bool unlit = true;
         bool forward;
         bool mirror = false;
@@ -100,7 +107,7 @@ private:
 
     const Glyph& getGlyph(const QChar& c) const;
     void buildVertices(DrawInfo& drawInfo, const QString& str, const glm::vec2& origin, const glm::vec2& bounds, float scale, bool enlargeForShadows,
-                       TextAlignment alignment);
+                       TextAlignment alignment, TextVerticalAlignment verticalAlignment);
 
     void setupGPU();
 
@@ -117,9 +124,6 @@ private:
     float _fontSize { 0.0f };
     float _leading { 0.0f };
     float _spaceWidth { 0.0f };
-
-    float _scale { 0.0f };
-    TextAlignment _alignment { TextAlignment::LEFT };
 
     bool _loaded { false };
     bool _needsParamsUpdate { false };

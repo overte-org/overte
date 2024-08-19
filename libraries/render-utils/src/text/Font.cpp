@@ -373,17 +373,22 @@ void Font::setupGPU() {
 }
 
 inline QuadBuilder adjustedQuadBuilderForAlignmentMode(const Glyph& glyph, glm::vec2 advance, float scale, float enlargeForShadows,
-                                                TextAlignment alignment, float rightSpacing) {
+                                                TextAlignment alignment, float rightSpacing, TextVerticalAlignment verticalAlignment, float bottomSpacing) {
     if (alignment == TextAlignment::RIGHT) {
         advance.x += rightSpacing;
     } else if (alignment == TextAlignment::CENTER) {
         advance.x += 0.5f * rightSpacing;
     }
+    if (verticalAlignment == TextVerticalAlignment::BOTTOM) {
+        advance.y += bottomSpacing;
+    } else if (verticalAlignment == TextVerticalAlignment::CENTER) {
+        advance.y += 0.5f * bottomSpacing;
+    }
     return QuadBuilder(glyph, advance, scale, enlargeForShadows);
 }
 
 void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm::vec2& origin, const glm::vec2& bounds, float scale, bool enlargeForShadows,
-                         TextAlignment alignment) {
+                         TextAlignment alignment, TextVerticalAlignment verticalAlignment) {
     drawInfo.verticesBuffer = std::make_shared<gpu::Buffer>();
     drawInfo.indicesBuffer = std::make_shared<gpu::Buffer>();
     drawInfo.indexCount = 0;
@@ -394,6 +399,7 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     drawInfo.origin = origin;
 
     float rightEdge = origin.x + bounds.x;
+    float bottomEdge = origin.y - bounds.y;
 
     // Top left of text
     bool firstTokenOfLine = true;
@@ -403,7 +409,7 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     for (int i = 0; i < tokens.length(); i++) {
         const QString& token = tokens[i];
 
-        if ((bounds.y != -1) && (advance.y < origin.y - bounds.y)) {
+        if ((bounds.y != -1) && (advance.y < bottomEdge)) {
             // We are out of the y bound, stop drawing
             break;
         }
@@ -459,25 +465,47 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     std::vector<QuadBuilder> quadBuilders;
     quadBuilders.reserve(glyphsAndCorners.size());
     {
+        float bottomSpacing = -FLT_MAX;
+        bool foundBottomSpacing = false;
+        if (verticalAlignment != TextVerticalAlignment::TOP) {
+            int i = (int)glyphsAndCorners.size() - 1;
+            while (!foundBottomSpacing && i >= 0) {
+                auto* nextGlyphAndCorner = &glyphsAndCorners[i];
+                bottomSpacing = std::max(bottomSpacing, bottomEdge - (nextGlyphAndCorner->second.y + (nextGlyphAndCorner->first.offset.y - nextGlyphAndCorner->first.size.y)));
+                i--;
+                while (i >= 0) {
+                    auto& prevGlyphAndCorner = glyphsAndCorners[i];
+                    // We're to the right of the last character we checked, which means we're on a previous line, so we can stop
+                    if (prevGlyphAndCorner.second.x >= nextGlyphAndCorner->second.x) {
+                        foundBottomSpacing = true;
+                        break;
+                    }
+                    nextGlyphAndCorner = &prevGlyphAndCorner;
+                    bottomSpacing = std::max(bottomSpacing, bottomEdge - (nextGlyphAndCorner->second.y + (nextGlyphAndCorner->first.offset.y - nextGlyphAndCorner->first.size.y)));
+                    i--;
+                }
+            }
+        }
+
         int i = (int)glyphsAndCorners.size() - 1;
         while (i >= 0) {
-            auto nextGlyphAndCorner = glyphsAndCorners[i];
-            float rightSpacing = rightEdge - (nextGlyphAndCorner.second.x + nextGlyphAndCorner.first.d);
-            quadBuilders.push_back(adjustedQuadBuilderForAlignmentMode(nextGlyphAndCorner.first, nextGlyphAndCorner.second, scale, enlargeForShadows,
-                                                                       alignment, rightSpacing));
+            auto* nextGlyphAndCorner = &glyphsAndCorners[i];
+            float rightSpacing = rightEdge - (nextGlyphAndCorner->second.x + nextGlyphAndCorner->first.d);
+            quadBuilders.push_back(adjustedQuadBuilderForAlignmentMode(nextGlyphAndCorner->first, nextGlyphAndCorner->second, scale, enlargeForShadows,
+                                                                       alignment, rightSpacing, verticalAlignment, bottomSpacing));
             i--;
             while (i >= 0) {
-                const auto& prevGlyphAndCorner = glyphsAndCorners[i];
+                auto& prevGlyphAndCorner = glyphsAndCorners[i];
                 // We're to the right of the last character we checked, which means we're on a previous line, so we need to
                 // recalculate the spacing, so we exit this loop
-                if (prevGlyphAndCorner.second.x >= nextGlyphAndCorner.second.x) {
+                if (prevGlyphAndCorner.second.x >= nextGlyphAndCorner->second.x) {
                     break;
                 }
 
                 quadBuilders.push_back(adjustedQuadBuilderForAlignmentMode(prevGlyphAndCorner.first, prevGlyphAndCorner.second, scale, enlargeForShadows,
-                                                                           alignment, rightSpacing));
+                                                                           alignment, rightSpacing, verticalAlignment, bottomSpacing));
 
-                nextGlyphAndCorner = prevGlyphAndCorner;
+                nextGlyphAndCorner = &prevGlyphAndCorner;
                 i--;
             }
         }
@@ -529,12 +557,13 @@ void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const DrawPro
     const bool boundsChanged = props.bounds != drawInfo.bounds || props.origin != drawInfo.origin;
 
     // If we're switching to or from shadow effect mode, we need to rebuild the vertices
-    if (props.str != drawInfo.string || boundsChanged || props.alignment != _alignment ||
+    if (props.str != drawInfo.string || boundsChanged || props.alignment != drawInfo.alignment || props.verticalAlignment != drawInfo.verticalAlignment ||
             (drawInfo.params.effect != textEffect && (textEffect == SHADOW_EFFECT || drawInfo.params.effect == SHADOW_EFFECT)) ||
-            (textEffect == SHADOW_EFFECT && props.scale != _scale)) {
-        _scale = props.scale;
-        _alignment = props.alignment;
-        buildVertices(drawInfo, props.str, props.origin, props.bounds, props.scale, textEffect == SHADOW_EFFECT, props.alignment);
+            (textEffect == SHADOW_EFFECT && props.scale != drawInfo.scale)) {
+        drawInfo.scale = props.scale;
+        drawInfo.alignment = props.alignment;
+        drawInfo.verticalAlignment = props.verticalAlignment;
+        buildVertices(drawInfo, props.str, props.origin, props.bounds, props.scale, textEffect == SHADOW_EFFECT, drawInfo.alignment, drawInfo.verticalAlignment);
     }
 
     setupGPU();

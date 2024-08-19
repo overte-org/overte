@@ -26,7 +26,7 @@
  * @typedef {string} Entities.PulseMode
  */
 
-enum class PulseMode {
+enum class PulseMode : uint8_t {
     NONE = 0,
     IN_PHASE,
     OUT_PHASE

@@ -779,7 +779,8 @@
  * @property {Entities.TextEffect} textEffect="none" - The effect that is applied to the text.
  * @property {Color} textEffectColor=255,255,255 - The color of the effect.
  * @property {number} textEffectThickness=0.2 - The magnitude of the text effect, range <code>0.0</code> &ndash; <code>0.5</code>.
- * @property {Entities.TextAlignment} alignment="left" - How the text is aligned against its background.
+ * @property {Entities.TextAlignment} alignment="left" - How the text is horizontally aligned against its background.
+ * @property {Entities.TextVerticalAlignment} verticalAlignment="top" - How the text is vertically aligned against its background.
  * @property {boolean} faceCamera - <code>true</code> if <code>billboardMode</code> is <code>"yaw"</code>, <code>false</code>
  *     if it isn't. Setting this property to <code>false</code> sets the <code>billboardMode</code> to <code>"none"</code>.
  *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>

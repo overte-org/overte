@@ -376,6 +376,23 @@ void EntityItemProperties::setAlignmentFromString(const QString& alignment) {
     }
 }
 
+inline void addTextVerticalAlignment(QHash<QString, TextVerticalAlignment>& lookup, TextVerticalAlignment verticalAlignment) { lookup[TextVerticalAlignmentHelpers::getNameForTextVerticalAlignment(verticalAlignment)] = verticalAlignment; }
+const QHash<QString, TextVerticalAlignment> stringToTextVerticalAlignmentLookup = [] {
+    QHash<QString, TextVerticalAlignment> toReturn;
+    addTextVerticalAlignment(toReturn, TextVerticalAlignment::TOP);
+    addTextVerticalAlignment(toReturn, TextVerticalAlignment::BOTTOM);
+    addTextVerticalAlignment(toReturn, TextVerticalAlignment::CENTER);
+    return toReturn;
+}();
+QString EntityItemProperties::getVerticalAlignmentAsString() const { return TextVerticalAlignmentHelpers::getNameForTextVerticalAlignment(_verticalAlignment); }
+void EntityItemProperties::setVerticalAlignmentFromString(const QString& verticalAlignment) {
+    auto textVerticalAlignmentItr = stringToTextVerticalAlignmentLookup.find(verticalAlignment.toLower());
+    if (textVerticalAlignmentItr != stringToTextVerticalAlignmentLookup.end()) {
+        _verticalAlignment = textVerticalAlignmentItr.value();
+        _verticalAlignmentChanged = true;
+    }
+}
+
 QString getCollisionGroupAsString(uint16_t group) {
     switch (group) {
         case USER_COLLISION_GROUP_DYNAMIC:

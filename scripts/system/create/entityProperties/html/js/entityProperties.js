@@ -274,6 +274,17 @@ const GROUPS = [
                 propertyName: "alignment", // actual entity property name
             },
             {
+                label: "Vertical Alignment",
+                type: "dropdown",
+                options: {
+                    top: "Top",
+                    center: "Center",
+                    bottom: "Bottom"
+                },
+                propertyID: "textVerticalAlignment",
+                propertyName: "verticalAlignment", // actual entity property name
+            },
+            {
                 label: "Top Margin",
                 type: "number-draggable",
                 step: 0.01,
