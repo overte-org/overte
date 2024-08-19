@@ -313,7 +313,7 @@ Item {
                             visible: root.expanded;
                             text: (modelData.length > 30
                                 ?  modelData.substring(0, 5) + "..." + modelData.substring(modelData.length - 22)
-                                : modelData) + "\n\t" + "Priority: " + root.downloadPriorities[index] + ", Progress: " + root.downloadProgresses[index] + "%"
+                                : modelData) + "\n\t" + (!isNaN(root.downloadPriorities[index]) ? ("Priority: " + root.downloadPriorities[index] + ", ") : "") + "Progress: " + root.downloadProgresses[index] + "%"
                         }
                     }
                 }

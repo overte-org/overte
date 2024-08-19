@@ -554,6 +554,8 @@ public:
 
     uint32_t appendSubMetaItems(render::ItemIDs& subItems);
 
+    virtual bool shouldRender() const { return _isMeshVisible && _isReadyToDraw; }
+
     static const float MYAVATAR_ENTITY_LOADING_PRIORITY;
     static const float OTHERAVATAR_ENTITY_LOADING_PRIORITY;
 
@@ -747,6 +749,7 @@ protected:
     AABox _renderBound;
     bool _isMeshVisible { true };
     bool _needMeshVisibleSwitch { true };
+    bool _isReadyToDraw { false };
     bool _needsWearablesLoadedCheck { false };
     bool _hasCheckedForAvatarEntities { false };
 

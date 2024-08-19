@@ -58,7 +58,7 @@ namespace render {
     template <> const ItemKey payloadGetKey(const AvatarSharedPointer& avatar) {
         ItemKey::Builder keyBuilder = ItemKey::Builder::opaqueShape().withTypeMeta().withTagBits(render::hifi::TAG_ALL_VIEWS).withMetaCullGroup();
         auto avatarPtr = static_pointer_cast<Avatar>(avatar);
-        if (!avatarPtr->getEnableMeshVisible()) {
+        if (!avatarPtr->shouldRender()) {
             keyBuilder.withInvisible();
         }
         return keyBuilder.build();
@@ -648,7 +648,7 @@ void Avatar::addToScene(AvatarSharedPointer self, const render::ScenePointer& sc
     _skeletonModel->setTagMask(render::hifi::TAG_ALL_VIEWS);
     _skeletonModel->setGroupCulled(true);
     _skeletonModel->setCanCastShadow(true);
-    _skeletonModel->setVisibleInScene(_isMeshVisible, scene);
+    _skeletonModel->setVisibleInScene(shouldRender(), scene);
 
     processMaterials();
 
@@ -855,7 +855,10 @@ void Avatar::fixupModelsInScene(const render::ScenePointer& scene) {
                 }
             }
         });
-        setEnableMeshVisible(_isMeshVisible || wearablesAreLoaded);
+        _isReadyToDraw = wearablesAreLoaded;
+        if (_isReadyToDraw) {
+            _needMeshVisibleSwitch = true;
+        }
         _needsWearablesLoadedCheck = !wearablesAreLoaded;
     }
 
@@ -871,7 +874,7 @@ void Avatar::fixupModelsInScene(const render::ScenePointer& scene) {
         _skeletonModel->setTagMask(render::hifi::TAG_ALL_VIEWS);
         _skeletonModel->setGroupCulled(true);
         _skeletonModel->setCanCastShadow(true);
-        _skeletonModel->setVisibleInScene(_isMeshVisible, scene);
+        _skeletonModel->setVisibleInScene(shouldRender(), scene);
 
         processMaterials();
         canTryFade = true;
@@ -879,7 +882,7 @@ void Avatar::fixupModelsInScene(const render::ScenePointer& scene) {
     }
 
     if (_needMeshVisibleSwitch) {
-        _skeletonModel->setVisibleInScene(_isMeshVisible, scene);
+        _skeletonModel->setVisibleInScene(shouldRender(), scene);
         updateRenderItem(transaction);
         _needMeshVisibleSwitch = false;
     }
@@ -1502,11 +1505,9 @@ void Avatar::rigReady() {
     setSkeletonData(getSkeletonDefaultData());
     sendSkeletonData();
 
-    const bool prevNeedsWearablesLoadedCheck = _needsWearablesLoadedCheck;
     _needsWearablesLoadedCheck = _skeletonModel && _skeletonModel->isLoaded() && _skeletonModel->getGeometry()->shouldWaitForWearables();
-    if (prevNeedsWearablesLoadedCheck != _needsWearablesLoadedCheck) {
-        setEnableMeshVisible(!_needsWearablesLoadedCheck);
-    }
+    _needMeshVisibleSwitch = (_isReadyToDraw != !_needsWearablesLoadedCheck);
+    _isReadyToDraw = !_needsWearablesLoadedCheck;
 }
 
 // rig has been reset.
