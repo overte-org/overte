@@ -32,8 +32,6 @@ public:
     QWindow* _window{ nullptr };
 
     vks::Context& _vkcontext{ vks::Context::get() };
-    // TODO: is the _vkcontext.device->logicalDevice created at the time?
-    const VkDevice& _vkdevice{ _vkcontext.device->logicalDevice };
     vks::Buffer _vkstagingBuffer;
 
 #ifdef USE_GL
@@ -41,7 +39,7 @@ public:
 #else
 
     //VkSurfaceKHR _surface;
-    VkRenderPass _renderPass;
+    VkRenderPass _renderPass{VK_NULL_HANDLE};
     VulkanSwapChain _swapchain;
     VkSemaphore acquireComplete, renderComplete;
     std::vector<VkFramebuffer> _framebuffers;

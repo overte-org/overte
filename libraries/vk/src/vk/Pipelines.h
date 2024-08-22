@@ -131,6 +131,8 @@ namespace vks {
                 device(device) {
                 pipelineCreateInfo.layout = layout;
                 pipelineCreateInfo.renderPass = renderPass;
+                multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+                multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
                 init();
             }
 
@@ -148,14 +150,14 @@ namespace vks {
             VkRenderPass& renderPass { pipelineCreateInfo.renderPass };
             VkPipelineLayout& layout { pipelineCreateInfo.layout };
             // TODO: these need to be initialized
-            PipelineInputAssemblyStateCreateInfo inputAssemblyState {};
-            PipelineRasterizationStateCreateInfo rasterizationState {};
+            PipelineInputAssemblyStateCreateInfo inputAssemblyState;
+            PipelineRasterizationStateCreateInfo rasterizationState;
             VkPipelineMultisampleStateCreateInfo multisampleState {};
-            PipelineDepthStencilStateCreateInfo depthStencilState {};
-            PipelineViewportStateCreateInfo viewportState {};
-            PipelineDynamicStateCreateInfo dynamicState {};
-            PipelineColorBlendStateCreateInfo colorBlendState {};
-            PipelineVertexInputStateCreateInfo vertexInputState {};
+            PipelineDepthStencilStateCreateInfo depthStencilState;
+            PipelineViewportStateCreateInfo viewportState;
+            PipelineDynamicStateCreateInfo dynamicState;
+            PipelineColorBlendStateCreateInfo colorBlendState;
+            PipelineVertexInputStateCreateInfo vertexInputState;
             std::vector<VkPipelineShaderStageCreateInfo> shaderStages {};
 
             VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
