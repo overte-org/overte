@@ -274,6 +274,7 @@ static AppNapDisabler appNapDisabler;   // disabled, while in scope
 #endif
 
 #include "graphics/RenderEventHandler.h"
+#include "display-plugins/VulkanDisplayPlugin.h"
 
 Q_LOGGING_CATEGORY(trace_app_input_mouse, "trace.app.input.mouse")
 
@@ -9020,7 +9021,11 @@ void Application::setDisplayPlugin(DisplayPluginPointer newDisplayPlugin) {
         }
 
         RefreshRateManager& refreshRateManager = getRefreshRateManager();
+#ifdef USE_GL
         refreshRateManager.setRefreshRateOperator(OpenGLDisplayPlugin::getRefreshRateOperator());
+#else
+        refreshRateManager.setRefreshRateOperator(VulkanDisplayPlugin::getRefreshRateOperator());
+#endif
         bool isHmd = newDisplayPlugin->isHmd();
         RefreshRateManager::UXMode uxMode = isHmd ? RefreshRateManager::UXMode::VR :
             RefreshRateManager::UXMode::DESKTOP;

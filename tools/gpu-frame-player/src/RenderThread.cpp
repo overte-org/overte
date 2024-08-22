@@ -96,7 +96,7 @@ void RenderThread::initialize(QWindow* window) {
     setupRenderPass();
     setupFramebuffers();
 
-    VkSemaphoreCreateInfo semaphoreCI{};
+    VkSemaphoreCreateInfo semaphoreCI = vks::initializers::semaphoreCreateInfo();
     VK_CHECK_RESULT(vkCreateSemaphore(_vkcontext.device->logicalDevice, &semaphoreCI, nullptr, &acquireComplete));
     VK_CHECK_RESULT(vkCreateSemaphore(_vkcontext.device->logicalDevice, &semaphoreCI, nullptr, &renderComplete));
 
@@ -205,6 +205,9 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
 #endif
 
     //_gpuContext->enableStereo(true);
+    auto vkBackend = std::dynamic_pointer_cast<gpu::vulkan::VKBackend>(_gpuContext->getBackend());
+    vkBackend->setDrawCommandBuffer(commandBuffer);
+
     if (frame && !frame->batches.empty()) {
         _gpuContext->executeFrame(frame);
     }
@@ -255,7 +258,7 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     submitInfo.commandBufferCount = 1;
     VkFenceCreateInfo fenceCI{};
     VkFence frameFence;
-    vkCreateFence(_vkdevice, &fenceCI, nullptr, &frameFence);
+    vkCreateFence(_vkcontext.device->logicalDevice, &fenceCI, nullptr, &frameFence);
     vkQueueSubmit(_vkcontext.queue, 1, &submitInfo, frameFence);
     _swapchain.queuePresent(_vkcontext.queue, swapchainIndex, renderComplete);
     _vkcontext.trashCommandBuffers({ commandBuffer });
@@ -303,7 +306,7 @@ void RenderThread::setupFramebuffers() {
     // Recreate the frame buffers
     _vkcontext.trashAll<VkFramebuffer>(_framebuffers, [this](const std::vector<VkFramebuffer>& framebuffers) {
         for (const auto& framebuffer : framebuffers) {
-            vkDestroyFramebuffer(_vkdevice, framebuffer, nullptr);
+            vkDestroyFramebuffer(_vkcontext.device->logicalDevice, framebuffer, nullptr);
         }
     });
 
@@ -311,6 +314,7 @@ void RenderThread::setupFramebuffers() {
     attachments.resize(1);
     VkFramebufferCreateInfo framebufferCreateInfo{};
     framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferCreateInfo.pNext = NULL;
     framebufferCreateInfo.renderPass = _renderPass;
     framebufferCreateInfo.attachmentCount = 1;
     framebufferCreateInfo.pAttachments = attachments.data();
@@ -322,7 +326,7 @@ void RenderThread::setupFramebuffers() {
     _framebuffers.resize(_swapchain.imageCount);
     for (uint32_t i = 0; i < _swapchain.imageCount; i++) {
         attachments[0] = _swapchain.buffers[i].view;
-        VK_CHECK_RESULT(vkCreateFramebuffer(_vkdevice, &framebufferCreateInfo, nullptr, &_framebuffers[i]));
+        VK_CHECK_RESULT(vkCreateFramebuffer(_vkcontext.device->logicalDevice, &framebufferCreateInfo, nullptr, &_framebuffers[i]));
     }
 }
 
@@ -331,23 +335,24 @@ void RenderThread::setupRenderPass() {
         vkDestroyRenderPass(_vkcontext.device->logicalDevice, _renderPass, nullptr);
     }
 
-    VkAttachmentDescription attachment;
+    VkAttachmentDescription attachment{};
     // Color attachment
     attachment.format = _swapchain.colorFormat;
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkAttachmentReference colorAttachmentReference;
+    VkAttachmentReference colorAttachmentReference{};
     colorAttachmentReference.attachment = 0;
     colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkSubpassDescription subpass;
+    VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentReference;
-    VkSubpassDependency subpassDependency;
+    VkSubpassDependency subpassDependency{};
     subpassDependency.srcSubpass = 0;
     subpassDependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -355,7 +360,7 @@ void RenderThread::setupRenderPass() {
     subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
     subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-    VkRenderPassCreateInfo renderPassInfo;
+    VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = 1;
     renderPassInfo.pAttachments = &attachment;
