@@ -612,7 +612,11 @@ void VKBackend::executeFrame(const FramePointer& frame) {
                             cmdEndLabel(commandBuffer);
                         }
                         const auto& framebuffer = batch._framebuffers.get(batch._params[paramOffset]._uint);
-                        cmdBeginLabel(commandBuffer, "framebuffer:" + framebuffer->getName(), vec4{ 1, 0, 1, 1 });
+                        if (framebuffer) {
+                            cmdBeginLabel(commandBuffer, "framebuffer:" + framebuffer->getName(), vec4{ 1, 0, 1, 1 });
+                        } else {
+                            cmdBeginLabel(commandBuffer, "framebuffer: NULL", vec4{ 1, 0, 1, 1 });
+                        }
                         renderpassActive = true;
                         _cache.pipelineState.setFramebuffer(framebuffer);
                     } break;

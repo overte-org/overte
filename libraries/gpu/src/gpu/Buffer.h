@@ -432,8 +432,8 @@ public:
         U t;
         return std::make_shared<gpu::Buffer>(usage, sizeof(U), (const gpu::Byte*)&t, sizeof(U));
     }
-    ~StructBuffer<T>(){};
-    StructBuffer<T>() : gpu::BufferView(makeBuffer<T>()) {}
+    ~StructBuffer(){};
+    StructBuffer() : gpu::BufferView(makeBuffer<T>()) {}
 
     T& edit() { return BufferView::edit<T>(0); }
     const T& get() const { return BufferView::get<T>(0); }
