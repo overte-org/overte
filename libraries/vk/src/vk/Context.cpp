@@ -430,10 +430,7 @@ void Context::buildDevice() {
 
 VkCommandBuffer Context::createCommandBuffer(VkCommandBufferLevel level) const {
     VkCommandBuffer cmdBuffer;
-    VkCommandBufferAllocateInfo cmdBufAllocateInfo;
-    cmdBufAllocateInfo.commandPool = getCommandPool();
-    cmdBufAllocateInfo.level = level;
-    cmdBufAllocateInfo.commandBufferCount = 1;
+    VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::commandBufferAllocateInfo(getCommandPool(), level, 1);
     VK_CHECK_RESULT(vkAllocateCommandBuffers(device->logicalDevice, &cmdBufAllocateInfo, &cmdBuffer));
     return cmdBuffer;
 }
