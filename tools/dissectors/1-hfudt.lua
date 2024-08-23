@@ -125,6 +125,7 @@ local packet_types = {
 }
 
 -- PacketHeaders.h, getNonSourcedPackets()
+-- all unsourced packets are also nonverified, see NLPacket::localHeaderSize
 local unsourced_packet_types = {
   ["DomainConnectRequestPending"] = true,
   ["CreateAssignment"] = true,
@@ -363,7 +364,8 @@ function p_hfudt.dissector(buf, pinfo, tree)
       i = i + 2
     end
 
-    if nonverified_packet_types[packet_type_text] == nil then
+    -- Unsourced packets are also nonverified, see NLPacket::localHeaderSize
+    if nonverified_packet_types[packet_type_text] == nil and unsourced_packet_types[packet_type_text] == nil then
         -- read HMAC MD5 hash
         subtree:add(f_hmac_hash, buf(i, 16))
         i = i + 16
