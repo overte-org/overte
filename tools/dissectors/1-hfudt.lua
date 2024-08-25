@@ -1,5 +1,5 @@
 print("Loading hfudt")
-bit32 = require("bit32")
+--bit32 = require("bit32")
 
 local control_types = {
   [0] = "ACK",
@@ -246,7 +246,7 @@ function p_hfudt.dissector(buf, pinfo, tree)
   local first_word = buf(0, 4):le_uint()
 
   -- pull out the control bit and add it to the subtree
-  local control_bit = bit32.rshift(first_word, 31)
+  local control_bit = bit.rshift(first_word, 31)
   subtree:add(f_control_bit, control_bit)
 
   local data_length = 0
@@ -256,7 +256,7 @@ function p_hfudt.dissector(buf, pinfo, tree)
     pinfo.cols.protocol = p_hfudt.name .. " Control"
 
     -- remove the control bit and shift to the right to get the type value
-    local shifted_type = bit32.rshift(bit32.lshift(first_word, 1), 17)
+    local shifted_type = bit.rshift(bit.lshift(first_word, 1), 17)
     local type = subtree:add(f_control_type, shifted_type)
 
     if control_types[shifted_type] ~= nil then
@@ -272,7 +272,7 @@ function p_hfudt.dissector(buf, pinfo, tree)
 
       -- This is an ACK let's read out the sequence number
       local sequence_number = buf(data_index, 4):le_uint()
-      subtree:add(f_ack_sequence_number, bit32.band(sequence_number, SEQUENCE_NUMBER_MASK))
+      subtree:add(f_ack_sequence_number, bit.band(sequence_number, SEQUENCE_NUMBER_MASK))
       data_index = data_index + 4
 
       data_length = buf:len() - data_index
@@ -290,19 +290,19 @@ function p_hfudt.dissector(buf, pinfo, tree)
     pinfo.cols.protocol = p_hfudt.name
 
     -- set the reliability bit
-    subtree:add(f_reliable_bit, bit32.rshift(first_word, 30))
+    subtree:add(f_reliable_bit, bit.rshift(first_word, 30))
 
-    local message_bit = bit32.band(0x01, bit32.rshift(first_word, 29))
+    local message_bit = bit.band(0x01, bit.rshift(first_word, 29))
 
     -- set the message bit
     subtree:add(f_message_bit, message_bit)
 
     -- read the obfuscation level
-    local obfuscation_bits = bit32.band(0x03, bit32.rshift(first_word, 27))
+    local obfuscation_bits = bit.band(0x03, bit.rshift(first_word, 27))
     subtree:add(f_obfuscation_level, obfuscation_bits)
 
     -- read the sequence number
-    subtree:add(f_sequence_number, bit32.band(first_word, SEQUENCE_NUMBER_MASK))
+    subtree:add(f_sequence_number, bit.band(first_word, SEQUENCE_NUMBER_MASK))
 
     local payload_offset = 4
 
@@ -317,7 +317,7 @@ function p_hfudt.dissector(buf, pinfo, tree)
       local second_word = buf(4, 4):le_uint()
 
       -- read message position from upper 2 bits
-      message_position = bit32.rshift(second_word, 30)
+      message_position = bit.rshift(second_word, 30)
       local position = subtree:add(f_message_position, message_position)
 
       if message_positions[message_position] ~= nil then
@@ -326,7 +326,7 @@ function p_hfudt.dissector(buf, pinfo, tree)
       end
 
       -- read message number from lower 30 bits
-      message_number = bit32.band(second_word, 0x3FFFFFFF)
+      message_number = bit.band(second_word, 0x3FFFFFFF)
       subtree:add(f_message_number, message_number)
 
       -- read the message part number
@@ -365,7 +365,7 @@ function p_hfudt.dissector(buf, pinfo, tree)
     end
 
     -- Unsourced packets are also nonverified, see NLPacket::localHeaderSize
-    if nonverified_packet_types[packet_type_text] == nil and unsourced_packet_types[packet_type_text] == nil then
+    if nonverified_packet_types[packet_type_text] then --== nil and unsourced_packet_types[packet_type_text] == nil then
         -- read HMAC MD5 hash
         subtree:add(f_hmac_hash, buf(i, 16))
         i = i + 16
