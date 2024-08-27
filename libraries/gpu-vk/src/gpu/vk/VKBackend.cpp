@@ -301,7 +301,7 @@ struct Cache {
 #endif
                 VkPipelineLayoutCreateInfo pipelineLayoutCI = vks::initializers::pipelineLayoutCreateInfo(layouts.data(), (uint32_t)layouts.size());
                 VkPipelineLayout pipelineLayout;
-                vkCreatePipelineLayout(context.device->logicalDevice, &pipelineLayoutCI, nullptr, &pipelineLayout);
+                VK_CHECK_RESULT(vkCreatePipelineLayout(context.device->logicalDevice, &pipelineLayoutCI, nullptr, &pipelineLayout));
                 return _layoutMap[this->pipeline] = pipelineLayout;
                 //return _layoutMap[this->pipeline] = nullptr;
             }
