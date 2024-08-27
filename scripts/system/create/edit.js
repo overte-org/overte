@@ -2162,11 +2162,6 @@
             createApp.deleteSelectedEntities();
         }
     }
-    function copyKey(value){
-        if (value === 0) { // on release
-            createApp.deleteSelectedEntities();
-        }
-    }
     function deselectKey(value) {
         if (value === 0) { // on release
             selectionManager.clearSelections(this);
