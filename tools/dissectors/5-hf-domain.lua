@@ -98,6 +98,7 @@ local packet_version_extractor = Field.new('hfudt.version')
 
 local ef_version_unsupported = ProtoExpert.new("hfudt.version_unsupported.expert", "Protocol version unsupported by decoder", expert.group.UNDECODED, expert.severity.ERROR)
 local ef_zlib_unsupported = ProtoExpert.new("hfudt.zlib_unsupported.expert", "zlib decompression not supported by this Wireshark version, 4.3.0 or later required.", expert.group.UNDECODED, expert.severity.WARN)
+local ef_guid_too_short = ProtoExpert.new("hfudt.guid_too_short.expert", "GUID field is shorter than 16 bytes", expert.group.UNDECODED, expert.severity.WARN)
 
 
 p_hf_domain.fields = {
@@ -116,7 +117,7 @@ p_hf_domain.fields = {
   f_username_signature_length_id, f_username_signature_id
 }
 
-p_hf_domain.experts = { ef_version_unsupported, ef_zlib_unsupported }
+p_hf_domain.experts = { ef_version_unsupported, ef_zlib_unsupported, ef_guid_too_short }
 
 function p_hf_domain.dissector(buf, pinfo, tree)
   pinfo.cols.protocol = p_hf_domain.name
@@ -144,7 +145,14 @@ function p_hf_domain.dissector(buf, pinfo, tree)
         -- we're writing 32 bit sizes everywhere, see BasePacket.cpp
         len = buf(i, 4):uint()
         domain_subtree:add(f_protocol_signature_len_id, buf(i, 4)); i = i + 4
-        domain_subtree:add(f_protocol_signature_id, buf(i, len)); i = i + len
+        
+        if len == 16 then
+          domain_subtree:add(f_protocol_signature_id, buf(i, len)); 
+        else
+          tree:add_proto_expert_info(ef_zlib_unsupported)
+        end
+
+        i = i + len
 
         len = buf(i, 4):uint()
         domain_subtree:add(f_macaddress_len_id, buf(i, 4)); i = i + 4
