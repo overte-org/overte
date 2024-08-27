@@ -2130,6 +2130,24 @@
         if (isActive) {
             cameraManager.keyPressEvent(event);
         }
+        
+        // Hacks to get the menu bar buttons to work
+        // Copy
+        if (event.key === 67 && event.isControl && !event.isShifted) {
+            selectionManager.copySelectedEntities();
+        }
+        // Paste
+        if (event.key === 86 && event.isControl && !event.isShifted) {
+            selectionManager.pasteEntities();
+        }
+        // Cut
+        if (event.key === 88 && event.isControl && !event.isShifted) {
+            selectionManager.cutSelectedEntities();
+        }
+        // Delete
+        if (event.key === 16777223 && !event.isControl && !event.isShifted) {
+            createApp.deleteSelectedEntities();
+        }
     };
     var keyReleaseEvent = function (event) {
         if (isActive) {
@@ -2140,7 +2158,12 @@
     Controller.keyPressEvent.connect(keyPressEvent);
 
     function deleteKey(value) {
-        if (value === 1) { // on release
+        if (value === 0) { // on press
+            createApp.deleteSelectedEntities();
+        }
+    }
+    function copyKey(value){
+        if (value === 1) { // on press
             createApp.deleteSelectedEntities();
         }
     }
