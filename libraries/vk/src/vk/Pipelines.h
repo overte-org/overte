@@ -145,7 +145,7 @@ namespace vks {
             }
 
             const VkDevice& device;
-            VkPipelineCache pipelineCache;
+            VkPipelineCache pipelineCache{ VK_NULL_HANDLE }; // TODO: Add pipeline cache here
             // TODO: is this initialized properly
             VkRenderPass& renderPass { pipelineCreateInfo.renderPass };
             VkPipelineLayout& layout { pipelineCreateInfo.layout };
@@ -182,7 +182,7 @@ namespace vks {
             VkPipeline create(const VkPipelineCache& cache) {
                 update();
                 VkPipeline vkPipeline;
-                vkCreateGraphicsPipelines(device, cache, 1, &pipelineCreateInfo, nullptr, &vkPipeline);
+                VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, cache, 1, &pipelineCreateInfo, nullptr, &vkPipeline));
                 return vkPipeline;
             }
 
