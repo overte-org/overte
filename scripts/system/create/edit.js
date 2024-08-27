@@ -2130,7 +2130,7 @@
         if (isActive) {
             cameraManager.keyPressEvent(event);
         }
-        
+
         // Hacks to get the menu bar buttons to work
         // Copy
         if (event.key === 67 && event.isControl && !event.isShifted) {
@@ -2158,12 +2158,12 @@
     Controller.keyPressEvent.connect(keyPressEvent);
 
     function deleteKey(value) {
-        if (value === 0) { // on press
+        if (value === 0) { // on release
             createApp.deleteSelectedEntities();
         }
     }
     function copyKey(value){
-        if (value === 1) { // on press
+        if (value === 0) { // on release
             createApp.deleteSelectedEntities();
         }
     }
