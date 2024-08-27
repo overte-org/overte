@@ -135,7 +135,6 @@ void Batch::setDrawcallUniformReset(uint16_t uniformReset) {
 //#pragma optimize("", off)
 
 void Batch::validateDrawState() const {
-    return;
     if (!_currentPipeline) {
         qCWarning(gpulogging) << "Missing pipeline during draw call";
     }
@@ -156,7 +155,7 @@ void Batch::validateDrawState() const {
             continue;
         }
         if (!_currentStreamFormat || (0 == _currentStreamFormat->getAttributes().count(slot))) {
-            qCWarning(gpulogging) << "Vertex shader expects slot " << slot << " which is not proveded";
+            qCWarning(gpulogging) << "Vertex shader expects slot " << slot << " which is not provided";
         }
     }
 }

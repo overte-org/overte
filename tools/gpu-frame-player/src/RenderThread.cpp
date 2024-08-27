@@ -256,7 +256,7 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = &renderComplete;
     submitInfo.commandBufferCount = 1;
-    VkFenceCreateInfo fenceCI{};
+    VkFenceCreateInfo fenceCI = vks::initializers::fenceCreateInfo();
     VkFence frameFence;
     vkCreateFence(_vkcontext.device->logicalDevice, &fenceCI, nullptr, &frameFence);
     vkQueueSubmit(_vkcontext.queue, 1, &submitInfo, frameFence);

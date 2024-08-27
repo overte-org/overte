@@ -28,7 +28,7 @@ vec4 evalSkyboxLight(vec3 direction, float lod) {
 <@endfunc@>
 
 <@func declareEvalAmbientSpecularIrradiance(supportAmbientSphere, supportAmbientMap, supportIfAmbientMapElseAmbientSphere)@>
-LAYOUT(binding=RENDER_UTILS_TEXTURE_AMBIENT_FRESNEL) uniform sampler2D ambientFresnelLUT;
+TEXTURE(RENDER_UTILS_TEXTURE_AMBIENT_FRESNEL, sampler2D, ambientFresnelLUT);
 
 vec3 fresnelSchlickAmbient(vec3 fresnelColor, float ndotd, float roughness) {
 #if RENDER_UTILS_ENABLE_AMBIENT_FRESNEL_LUT
