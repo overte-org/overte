@@ -2140,7 +2140,7 @@
     Controller.keyPressEvent.connect(keyPressEvent);
 
     function deleteKey(value) {
-        if (value === 0) { // on release
+        if (value === 1) { // on release
             createApp.deleteSelectedEntities();
         }
     }
