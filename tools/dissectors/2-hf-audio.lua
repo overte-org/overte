@@ -15,7 +15,7 @@ p_hf_audio.fields = {
   f_audio_is_stereo, f_audio_num_silent_samples
 }
 
-local packet_type_extractor = Field.new('hfudt.type_text')
+local packet_type_extractor = Field.new('hfudt.type')
 
 function p_hf_audio.dissector(buf, pinfo, tree)
   pinfo.cols.protocol = p_hf_audio.name
@@ -35,7 +35,7 @@ function p_hf_audio.dissector(buf, pinfo, tree)
   audio_subtree:add(f_audio_codec, buf(i, codec_name_bytes))
   i = i + codec_name_bytes
 
-  local packet_type = packet_type_extractor().value
+  local packet_type = packet_type_extractor().display
   if packet_type == "SilentAudioFrame" then
     audio_subtree:add_le(f_audio_num_silent_samples, buf(i, 2))
     i = i + 2

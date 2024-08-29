@@ -210,13 +210,13 @@ p_hfudt = Proto("hfudt", "HFUDT Protocol")
 local f_data = ProtoField.string("hfudt.data", "Data")
 
 -- create the fields for data packets in HFUDT
-local f_control_bit = ProtoField.uint8("hfudt.control", "Control Bit", base.DEC, control_packet_types, 0x01)
-local f_reliable_bit = ProtoField.uint8("hfudt.reliable", "Reliability Bit", base.DEC, reliability_bit_types, 0x02)
-local f_message_bit = ProtoField.uint8("hfudt.message", "Message Bit", base.DEC, message_bit_types, 0x04)
-local f_obfuscation_level = ProtoField.uint8("hfudt.obfuscation_level", "Obfuscation Level", base.DEC,nil,0x18)
-local f_sequence_number = ProtoField.uint32("hfudt.sequence_number", "Sequence Number", base.HEX, nil, 0xFFFFFF70)
-local f_message_position = ProtoField.uint8("hfudt.message_position", "Message Position", base.DEC, message_position_types, 0xC0)
-local f_message_number = ProtoField.uint32("hfudt.message_number", "Message Number", base.DEC)
+local f_control_bit         = ProtoField.uint8 ("hfudt.control"            , "Control Bit"        , base.DEC, control_packet_types  , 0x80000000)
+local f_reliable_bit        = ProtoField.uint8 ("hfudt.reliable"           , "Reliability Bit"    , base.DEC, reliability_bit_types , 0x40000000)
+local f_message_bit         = ProtoField.uint8 ("hfudt.message"            , "Message Bit"        , base.DEC, message_bit_types     , 0x20000000)
+local f_obfuscation_level   = ProtoField.uint8 ("hfudt.obfuscation_level"  , "Obfuscation Level"  , base.DEC, nil                   , 0x18000000)
+local f_sequence_number     = ProtoField.uint32("hfudt.sequence_number"    , "Sequence Number"    , base.HEX, nil                   , 0x07FFFFFF)
+local f_message_position    = ProtoField.uint8 ("hfudt.message_position"   , "Message Position"   , base.DEC, message_position_types, 0xC0000000)
+local f_message_number      = ProtoField.uint32("hfudt.message_number"     , "Message Number"     , base.DEC, nil                   , 0x3FFFFFFF)
 local f_message_part_number = ProtoField.uint32("hfudt.message_part_number", "Message Part Number", base.DEC)
 local f_type = ProtoField.uint8("hfudt.type", "Type", base.DEC, packet_types)
 local f_version = ProtoField.uint8("hfudt.version", "Version", base.DEC)
@@ -262,8 +262,7 @@ function p_hfudt.dissector(buf, pinfo, tree)
 
   -- pull out the control bit and add it to the subtree
   local control_bit = bit.rshift(first_word, 31)
-  --subtree:add(f_control_bit, control_bit)
-  subtree:add(f_control_bit, buf(0,4))
+  subtree:add_le(f_control_bit, buf(0,4))
 
   local data_length = 0
 
@@ -274,14 +273,6 @@ function p_hfudt.dissector(buf, pinfo, tree)
     -- remove the control bit and shift to the right to get the type value
     local shifted_type = bit.rshift(bit.lshift(first_word, 1), 17)
     local type = subtree:add(f_control_type, shifted_type)
-
-    if control_types[shifted_type] ~= nil then
-      -- if we know this type then add the name
-      --type:append_text(" (".. control_types[shifted_type][1] .. ")")
-
-     -- subtree:add(f_control_type_text, control_types[shifted_type][1])
-    --  pinfo.cols.info:append(" [" .. control_types[shifted_type][1] .. "]")
-    end
 
     if shifted_type == 0 then
       local data_index = 4
@@ -306,24 +297,20 @@ function p_hfudt.dissector(buf, pinfo, tree)
     pinfo.cols.protocol = p_hfudt.name
 
     -- set the reliability bit
-    --subtree:add(f_reliable_bit, bit.rshift(first_word, 30))
-    subtree:add(f_reliable_bit, buf(0,4))
+    subtree:add_le(f_reliable_bit, buf(0,4))
 
     local message_bit = bit.band(0x01, bit.rshift(first_word, 29))
 
     -- set the message bit
---    subtree:add(f_message_bit, message_bit)
-    subtree:add(f_message_bit, buf(0,4))
+    subtree:add_le(f_message_bit, buf(0,4))
 
 
     -- read the obfuscation level
     local obfuscation_bits = bit.band(0x03, bit.rshift(first_word, 27))
-   -- subtree:add(f_obfuscation_level, obfuscation_bits)
-    subtree:add(f_obfuscation_level, buf(0,4))
+    subtree:add_le(f_obfuscation_level, buf(0,4))
 
     -- read the sequence number
-  --  subtree:add(f_sequence_number, bit.band(first_word, SEQUENCE_NUMBER_MASK))
-    subtree:add(f_sequence_number, buf(0,4))
+    subtree:add_le(f_sequence_number, buf(0,4))
 
 
     local payload_offset = 4
@@ -340,21 +327,16 @@ function p_hfudt.dissector(buf, pinfo, tree)
 
       -- read message position from upper 2 bits
       message_position = bit.rshift(second_word, 30)
-   --   local position = subtree:add(f_message_posit  ion, message_position)
-      subtree:add(f_message_position, buf(4,1))
-
-  --    if message_positions[message_position] ~= nil then
-        -- if we know this position then add the name
-   --     position:append_text(" (".. message_positions[message_position] .. ")")
-   --   end
+      subtree:add_le(f_message_position, buf(4,4))
 
       -- read message number from lower 30 bits
       message_number = bit.band(second_word, 0x3FFFFFFF)
-      subtree:add(f_message_number, message_number)
+      subtree:add_le(f_message_number, buf(4,4))
+
 
       -- read the message part number
       message_part_number = buf(8, 4):le_uint()
-      subtree:add(f_message_part_number, message_part_number)
+      subtree:add_le(f_message_part_number, buf(8,4))
     end
 
     if obfuscation_bits ~= 0 then
@@ -366,13 +348,6 @@ function p_hfudt.dissector(buf, pinfo, tree)
     local packet_type = buf(payload_offset, 1):le_uint()
     local ptype = subtree:add_le(f_type, buf(payload_offset, 1))
     local packet_type_text = packet_types[packet_type]
-
-    if packet_type_text ~= nil then
-  --    subtree:add(f_type_text, packet_type_text)
-      -- if we know this packet type then add the name
-  --    ptype:append_text(" (".. packet_type_text .. ")")
-      pinfo.cols.info:append(" [" .. packet_type_text .. "]")
-    end
 
     -- read the version
     subtree:add_le(f_version, buf(payload_offset + 1, 1))
