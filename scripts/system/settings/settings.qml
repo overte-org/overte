@@ -149,7 +149,7 @@ Rectangle {
 				Layout.maximumWidth: 50
 				id: max_fps
 				inputMethodHints: Qt.ImhFormattedNumbersOnly
-				validator: RegExpValidator { regExp: /^-?[0-9]*(\[0-9]*[1-9])?$/ }
+				validator: RegExpValidator { regExp: /[0-9]*/ }
 			}
 		}
 	}
