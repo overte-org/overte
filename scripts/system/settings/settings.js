@@ -23,6 +23,7 @@
 	var tablet;
 	var appButton;
 	var active = false;
+	const url = Script.resolvePath("./settings.qml")
 
 	tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 	appButton = tablet.addButton({
@@ -41,29 +42,26 @@
 	// Overlay button toggle
 	appButton.clicked.connect(toolbarButtonClicked);
 	tablet.fromQml.connect(fromQML);
+	tablet.screenChanged.connect(onTabletScreenChanged);
 
 	function toolbarButtonClicked() {
-		if (active) {
-			tablet.gotoHomeScreen();
-			active = !active;
-			appButton.editProperties({
-				isActive: active,
-			});
-		} else {
-			tablet.loadQMLSource(Script.resolvePath("./settings.qml"));
-			active = !active;
-			appButton.editProperties({
-				isActive: active,
-			});
-		}
+		if (active) tablet.gotoHomeScreen();
+		else tablet.loadQMLSource(url);
+		
+		active = !active;
+		appButton.editProperties({
+			isActive: active,
+		});
 	}
 
-	// Functions
-	function getActivePolls(){
-		// Send hello world
-		// Add responses to list
+	function onTabletScreenChanged(type, new_url){
+		if (url == new_url) active = true;
+		else active = false;
+		
+		appButton.editProperties({
+			isActive: active,
+		});
 	}
-
 
 	// Communication
 	function fromQML(event) {
