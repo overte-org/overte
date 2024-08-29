@@ -274,6 +274,8 @@ function p_hfudt.dissector(buf, pinfo, tree)
     local shifted_type = bit.rshift(bit.lshift(first_word, 1), 17)
     local type = subtree:add(f_control_type, shifted_type)
 
+
+
     if shifted_type == 0 then
       local data_index = 4
 
@@ -287,6 +289,10 @@ function p_hfudt.dissector(buf, pinfo, tree)
       -- set the data from whatever is left in the packet
       subtree:add(f_data, buf(data_index, data_length))
     else
+
+
+      
+      
       data_length = buf:len() - 4
 
       -- no sub-sequence number, just read the data
@@ -349,6 +355,9 @@ function p_hfudt.dissector(buf, pinfo, tree)
     local ptype = subtree:add_le(f_type, buf(payload_offset, 1))
     local packet_type_text = packet_types[packet_type]
 
+    if packet_type_text  ~= nil then
+      pinfo.cols.info:append(" [" .. packet_type_text .. "]")
+    end
     -- read the version
     subtree:add_le(f_version, buf(payload_offset + 1, 1))
 
