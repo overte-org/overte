@@ -225,7 +225,7 @@ local f_sender_id = ProtoField.uint16("hfudt.sender_id", "Sender ID", base.DEC)
 local f_hmac_hash = ProtoField.bytes("hfudt.hmac_hash", "HMAC Hash")
 
 -- create the fields for control packets in HFUDT
-local f_control_type = ProtoField.uint16("hfudt.control_type", "Control Type", base.DEC, control_types)
+local f_control_type = ProtoField.uint16("hfudt.control_type", "Control Type", base.DEC, control_types, 0x7FFF0000)
 --local f_control_type_text = ProtoField.string("hfudt.control_type_text", "Control Type Text", base.ASCII)
 local f_ack_sequence_number = ProtoField.uint32("hfudt.ack_sequence_number", "ACKed Sequence Number", base.DEC)
 
@@ -272,7 +272,9 @@ function p_hfudt.dissector(buf, pinfo, tree)
 
     -- remove the control bit and shift to the right to get the type value
     local shifted_type = bit.rshift(bit.lshift(first_word, 1), 17)
-    local type = subtree:add(f_control_type, shifted_type)
+    --local type = subtree:add(f_control_type, shifted_type)
+
+    local type = subtree:add_le(f_control_type, buf(0,4))
 
 
 
