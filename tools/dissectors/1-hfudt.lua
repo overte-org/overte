@@ -225,9 +225,16 @@ local f_sender_id = ProtoField.uint16("hfudt.sender_id", "Sender ID", base.DEC)
 local f_hmac_hash = ProtoField.bytes("hfudt.hmac_hash", "HMAC Hash")
 
 -- create the fields for control packets in HFUDT
-local f_control_type = ProtoField.uint16("hfudt.control_type", "Control Type", base.DEC, control_types, 0x7FFF0000)
+local f_control_type        = ProtoField.uint32("hfudt.control_type"     , "Control Type"      , base.DEC, control_types, 0x7FFF0000)
+
+-- control packets are formatted like data packets. The bit fields in data packets are not used, but
+-- their space is still reserved. 
+local f_control_reserved1   = ProtoField.uint32("hfudt.control_reserved1", "Control reserved 1", base.HEX, nil          , 0x0000FFFF)
+local f_control_reserved2   = ProtoField.uint32("hfudt.control_reserved2", "Control reserved 2", base.HEX, nil          , 0xC0000000)
+
 --local f_control_type_text = ProtoField.string("hfudt.control_type_text", "Control Type Text", base.ASCII)
-local f_ack_sequence_number = ProtoField.uint32("hfudt.ack_sequence_number", "ACKed Sequence Number", base.DEC)
+local f_initial_sequence_number     = ProtoField.uint32("hfudt.initial_sequence_number", "Initial Sequence number"      , base.HEX, nil       , 0x07FFFFFF)
+local f_ack_sequence_number = ProtoField.uint32("hfudt.ack_sequence_number", "ACKed Sequence Number", base.HEX, nil,                          0x07FFFFFF) 
 
 local SEQUENCE_NUMBER_MASK = 0x07FFFFFF
 
@@ -235,7 +242,7 @@ p_hfudt.fields = {
   f_control_bit, f_reliable_bit, f_message_bit, f_sequence_number, f_type, f_version,
   f_sender_id, f_hmac_hash,
   f_message_position, f_message_number, f_message_part_number, f_obfuscation_level,
-  f_control_type, f_ack_sequence_number, f_data
+  f_control_type, f_control_reserved1, f_control_reserved2, f_initial_sequence_number, f_ack_sequence_number, f_data
 }
 
 
@@ -275,30 +282,40 @@ function p_hfudt.dissector(buf, pinfo, tree)
     --local type = subtree:add(f_control_type, shifted_type)
 
     local type = subtree:add_le(f_control_type, buf(0,4))
+    subtree:add_le(f_control_reserved1, buf(0,4))
 
 
 
-    if shifted_type == 0 then
-      local data_index = 4
+    if shifted_type == 0 then -- ACK
+ --     local data_index = 4
 
       -- This is an ACK let's read out the sequence number
-      local sequence_number = buf(data_index, 4):le_uint()
-      subtree:add(f_ack_sequence_number, bit.band(sequence_number, SEQUENCE_NUMBER_MASK))
-      data_index = data_index + 4
+ --     local sequence_number = buf(data_index, 4):le_uint()
+ --     subtree:add(f_ack_sequence_number, bit.band(sequence_number, SEQUENCE_NUMBER_MASK))
+ --     data_index = data_index + 4
 
-      data_length = buf:len() - datF8000000a_index
+--      data_length = buf:len() - datF8000000a_index
 
       -- set the data from whatever is left in the packet
-      subtree:add(f_data, buf(data_index, data_length))
+  --    subtree:add(f_data, buf(data_index, data_length))
+      subtree:add_le(f_control_reserved2, buf(4,4))
+      subtree:add_le(f_ack_sequence_number, buf(4,4))
+    elseif shifted_type == 1 then -- Handshake
+      subtree:add_le(f_control_reserved2, buf(4,4))
+      subtree:add_le(f_initial_sequence_number, buf(4,4))
+    elseif shifted_type == 2 then -- HandshakeACK
+      subtree:add_le(f_control_reserved2, buf(4,4))
+      subtree:add_le(f_initial_sequence_number, buf(4,4))
     else
-
-
-      
-      
       data_length = buf:len() - 4
 
       -- no sub-sequence number, just read the data
       subtree:add(f_data, buf(4, data_length))
+    end
+
+    local name = control_types[shifted_type]
+    if name ~= nil then
+      pinfo.cols.info:append(" [Ctl: " .. name .. "]")
     end
   else
     -- dissect the data packet
@@ -311,7 +328,6 @@ function p_hfudt.dissector(buf, pinfo, tree)
 
     -- set the message bit
     subtree:add_le(f_message_bit, buf(0,4))
-
 
     -- read the obfuscation level
     local obfuscation_bits = bit.band(0x03, bit.rshift(first_word, 27))
