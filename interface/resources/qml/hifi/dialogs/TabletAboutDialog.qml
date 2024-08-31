@@ -4,6 +4,7 @@
 //  Created by David Rowe on 18 Apr 2017
 //  Copyright 2017 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -39,7 +40,7 @@ Rectangle {
                 color: "white"
             }
             RalewayRegular {
-                text: "Build " + About.buildVersion + " " + About.releaseName
+                text: "Build " + About.buildVersion
                 size: 16
                 color: "white"
             }

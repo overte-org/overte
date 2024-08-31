@@ -1,5 +1,5 @@
 //
-//  AvatarMixerSlave.cpp
+//  AvatarMixerWorker.cpp
 //  assignment-client/src/avatar
 //
 //  Created by Brad Hefta-Gaub on 2/14/2017.
@@ -9,7 +9,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#include "AvatarMixerSlave.h"
+#include "AvatarMixerWorker.h"
 
 #include <algorithm>
 #include <random>
@@ -36,12 +36,12 @@
 
 namespace chrono = std::chrono;
 
-void AvatarMixerSlave::configure(ConstIter begin, ConstIter end) {
+void AvatarMixerWorker::configure(ConstIter begin, ConstIter end) {
     _begin = begin;
     _end = end;
 }
 
-void AvatarMixerSlave::configureBroadcast(ConstIter begin, ConstIter end, 
+void AvatarMixerWorker::configureBroadcast(ConstIter begin, ConstIter end, 
                                 p_high_resolution_clock::time_point lastFrameTimestamp,
                                 float maxKbpsPerNode, float throttlingRatio,
                                 float priorityReservedFraction) {
@@ -53,13 +53,13 @@ void AvatarMixerSlave::configureBroadcast(ConstIter begin, ConstIter end,
     _avatarHeroFraction = priorityReservedFraction;
 }
 
-void AvatarMixerSlave::harvestStats(AvatarMixerSlaveStats& stats) {
+void AvatarMixerWorker::harvestStats(AvatarMixerWorkerStats& stats) {
     stats = _stats;
     _stats.reset();
 }
 
 
-void AvatarMixerSlave::processIncomingPackets(const SharedNodePointer& node) {
+void AvatarMixerWorker::processIncomingPackets(const SharedNodePointer& node) {
     auto start = usecTimestampNow();
     auto nodeData = dynamic_cast<AvatarMixerClientData*>(node->getLinkedData());
     if (nodeData) {
@@ -70,7 +70,7 @@ void AvatarMixerSlave::processIncomingPackets(const SharedNodePointer& node) {
     _stats.processIncomingPacketsElapsedTime += (end - start);
 }
 
-int AvatarMixerSlave::sendIdentityPacket(NLPacketList& packetList, const AvatarMixerClientData* nodeData, const Node& destinationNode) {
+int AvatarMixerWorker::sendIdentityPacket(NLPacketList& packetList, const AvatarMixerClientData* nodeData, const Node& destinationNode) {
     if (destinationNode.getType() == NodeType::Agent && !destinationNode.isUpstream()) {
         QByteArray individualData = nodeData->getConstAvatarData()->identityByteArray();
         individualData.replace(0, NUM_BYTES_RFC4122_UUID, nodeData->getNodeID().toRfc4122()); // FIXME, this looks suspicious
@@ -83,7 +83,7 @@ int AvatarMixerSlave::sendIdentityPacket(NLPacketList& packetList, const AvatarM
     }
 }
 
-qint64 AvatarMixerSlave::addTraitsNodeHeader(AvatarMixerClientData* listeningNodeData,
+qint64 AvatarMixerWorker::addTraitsNodeHeader(AvatarMixerClientData* listeningNodeData,
                                              const AvatarMixerClientData* sendingNodeData,
                                              NLPacketList& traitsPacketList,
                                              qint64 bytesWritten) {
@@ -98,7 +98,7 @@ qint64 AvatarMixerSlave::addTraitsNodeHeader(AvatarMixerClientData* listeningNod
     return bytesWritten;
 }
 
-qint64 AvatarMixerSlave::addChangedTraitsToBulkPacket(AvatarMixerClientData* listeningNodeData,
+qint64 AvatarMixerWorker::addChangedTraitsToBulkPacket(AvatarMixerClientData* listeningNodeData,
                                                       const AvatarMixerClientData* sendingNodeData,
                                                       NLPacketList& traitsPacketList) {
 
@@ -245,7 +245,7 @@ qint64 AvatarMixerSlave::addChangedTraitsToBulkPacket(AvatarMixerClientData* lis
     return bytesWritten;
 }
 
-int AvatarMixerSlave::sendReplicatedIdentityPacket(const Node& agentNode, const AvatarMixerClientData* nodeData, const Node& destinationNode) {
+int AvatarMixerWorker::sendReplicatedIdentityPacket(const Node& agentNode, const AvatarMixerClientData* nodeData, const Node& destinationNode) {
     if (AvatarMixer::shouldReplicateTo(agentNode, destinationNode)) {
         QByteArray individualData = nodeData->getConstAvatarData()->identityByteArray(true);
         individualData.replace(0, NUM_BYTES_RFC4122_UUID, nodeData->getNodeID().toRfc4122()); // FIXME, this looks suspicious
@@ -262,7 +262,7 @@ int AvatarMixerSlave::sendReplicatedIdentityPacket(const Node& agentNode, const 
 
 static const int AVATAR_MIXER_BROADCAST_FRAMES_PER_SECOND = 45;
 
-void AvatarMixerSlave::broadcastAvatarData(const SharedNodePointer& node) {
+void AvatarMixerWorker::broadcastAvatarData(const SharedNodePointer& node) {
     quint64 start = usecTimestampNow();
 
     if ((node->getType() == NodeType::Agent || node->getType() == NodeType::EntityScriptServer) && node->getLinkedData() && node->getActiveSocket() && !node->isUpstream()) {
@@ -311,7 +311,7 @@ namespace {
 
 }  // Close anonymous namespace.
 
-void AvatarMixerSlave::broadcastAvatarDataToAgent(const SharedNodePointer& node) {
+void AvatarMixerWorker::broadcastAvatarDataToAgent(const SharedNodePointer& node) {
     const Node* destinationNode = node.data();
 
     auto nodeList = DependencyManager::get<NodeList>();
@@ -680,7 +680,7 @@ void AvatarMixerSlave::broadcastAvatarDataToAgent(const SharedNodePointer& node)
 
 uint64_t REBROADCAST_IDENTITY_TO_DOWNSTREAM_EVERY_US = 5 * 1000 * 1000;
 
-void AvatarMixerSlave::broadcastAvatarDataToDownstreamMixer(const SharedNodePointer& node) {
+void AvatarMixerWorker::broadcastAvatarDataToDownstreamMixer(const SharedNodePointer& node) {
     _stats.downstreamMixersBroadcastedTo++;
 
     AvatarMixerClientData* nodeData = reinterpret_cast<AvatarMixerClientData*>(node->getLinkedData());

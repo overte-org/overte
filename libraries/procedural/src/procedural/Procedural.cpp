@@ -28,6 +28,8 @@
 
 Q_LOGGING_CATEGORY(proceduralLog, "hifi.gpu.procedural")
 
+bool Procedural::enableProceduralShaders = false;
+
 // User-data parsing constants
 static const QString PROCEDURAL_USER_DATA_KEY = "ProceduralEntity";
 static const QString VERTEX_URL_KEY = "vertexShaderURL";
@@ -377,6 +379,27 @@ void Procedural::prepare(gpu::Batch& batch,
 
         _proceduralPipelines[key] = gpu::Pipeline::create(program, key.isTransparent() ? _transparentState : _opaqueState);
 
+        // Error fallback: pink checkerboard
+        if (_errorFallbackFragmentSource.isEmpty()) {
+            QFile file(_errorFallbackFragmentPath);
+            file.open(QIODevice::ReadOnly);
+            _errorFallbackFragmentSource = QTextStream(&file).readAll();
+        }
+        vertexSource.replacements.erase(PROCEDURAL_BLOCK);
+        fragmentSource.replacements[PROCEDURAL_BLOCK] = _errorFallbackFragmentSource.toStdString();
+        gpu::ShaderPointer errorVertexShader = gpu::Shader::createVertex(vertexSource);
+        gpu::ShaderPointer errorFragmentShader = gpu::Shader::createPixel(fragmentSource);
+        gpu::ShaderPointer errorProgram = gpu::Shader::createProgram(errorVertexShader, errorFragmentShader);
+        _errorPipelines[key] = gpu::Pipeline::create(errorProgram, _opaqueState);
+
+        // Disabled fallback: nothing
+        vertexSource.replacements.erase(PROCEDURAL_BLOCK);
+        fragmentSource.replacements.erase(PROCEDURAL_BLOCK);
+        gpu::ShaderPointer disabledVertexShader = gpu::Shader::createVertex(vertexSource);
+        gpu::ShaderPointer disabledFragmentShader = gpu::Shader::createPixel(fragmentSource);
+        gpu::ShaderPointer disabledProgram = gpu::Shader::createProgram(disabledVertexShader, disabledFragmentShader);
+        _disabledPipelines[key] = gpu::Pipeline::create(disabledProgram, _opaqueState);
+
         _lastCompile = usecTimestampNow();
         if (_firstCompile == 0) {
             _firstCompile = _lastCompile;
@@ -385,8 +408,15 @@ void Procedural::prepare(gpu::Batch& batch,
         recompiledShader = true;
     }
 
+    gpu::PipelinePointer finalPipeline = recompiledShader ? _proceduralPipelines[key] : pipeline->second;
+    if (!enableProceduralShaders) {
+        finalPipeline = _disabledPipelines[key];
+    } else if (!finalPipeline || finalPipeline->getProgram()->compilationHasFailed()) {
+        finalPipeline = _errorPipelines[key];
+    }
+
     // FIXME: need to handle forward rendering
-    batch.setPipeline(recompiledShader ? _proceduralPipelines[key] : pipeline->second);
+    batch.setPipeline(finalPipeline);
 
     bool recreateUniforms = _shaderDirty || _uniformsDirty || recompiledShader || _prevKey != key;
     if (recreateUniforms) {
@@ -533,4 +563,6 @@ void graphics::ProceduralMaterial::initializeProcedural() {
     // FIXME: Setup proper uniform slots and use correct pipelines for forward rendering
     _procedural._opaqueFragmentSource = gpu::Shader::getFragmentShaderSource(shader::render_utils::fragment::simple_procedural);
     _procedural._transparentFragmentSource = gpu::Shader::getFragmentShaderSource(shader::render_utils::fragment::simple_procedural_translucent);
+
+    _procedural._errorFallbackFragmentPath = ":" + QUrl("qrc:///shaders/errorShader.frag").path();
 }

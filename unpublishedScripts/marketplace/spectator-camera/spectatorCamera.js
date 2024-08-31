@@ -587,7 +587,7 @@
     }
 
     function updateSpectatorCameraQML() {
-        sendToQml({ method: 'initializeUI', masterSwitchOn: !!camera, flashCheckboxChecked: !!flash, monitorShowsCamView: monitorShowsCameraView });
+        sendToQml({ method: 'initializeUI', primarySwitchOn: !!camera, flashCheckboxChecked: !!flash, monitorShowsCamView: monitorShowsCameraView });
         registerButtonMappings();
         Menu.setIsOptionChecked("Disable Preview", false);
         Menu.setIsOptionChecked("Mono Preview", true);

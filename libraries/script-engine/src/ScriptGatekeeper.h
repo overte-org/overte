@@ -17,14 +17,14 @@
 
 #include <QtCore/QObject>
 
-/// Manages script whitelisting in a domain
+/// Manages script allowlisting in a domain
 class ScriptGatekeeper : public QObject {
     Q_OBJECT
 public:
     void initialize();
 
-    QString SCRIPT_WHITELIST_ENABLED_KEY{ "private/whitelistEnabled" };
-    QString SCRIPT_WHITELIST_ENTRIES_KEY{ "private/settingsSafeURLS" };
+    QString SCRIPT_ALLOWLIST_ENABLED_KEY{ "private/allowlistEnabled" };
+    QString SCRIPT_ALLOWLIST_ENTRIES_KEY{ "private/settingsSafeURLS" };
 
 private:
     bool _initialized { false };

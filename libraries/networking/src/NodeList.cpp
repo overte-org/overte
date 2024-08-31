@@ -1250,7 +1250,7 @@ void NodeList::setAvatarGain(const QUuid& nodeID, float gain) {
             setAvatarGainPacket->writePrimitive(packFloatGainToByte(fastExp2f(gain / 6.02059991f)));
 
             if (nodeID.isNull()) {
-                qCDebug(networking) << "Sending Set MASTER Avatar Gain packet with Gain:" << gain;
+                qCDebug(networking) << "Sending Set PRIMARY Avatar Gain packet with Gain:" << gain;
 
                 sendPacket(std::move(setAvatarGainPacket), *audioMixer);
 
