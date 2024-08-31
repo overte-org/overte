@@ -183,7 +183,7 @@ void Transaction::clear() {
 
 
 Scene::Scene(glm::vec3 origin, float size) :
-    _masterSpatialTree(origin, size)
+    _primarySpatialTree(origin, size)
 {
     _items.push_back(Item()); // add the itemID #0 to nothing
 }
@@ -306,10 +306,10 @@ void Scene::resetItems(const Transaction::Resets& transactions) {
         // Update the item's container
         assert((oldKey.isSpatial() == newKey.isSpatial()) || oldKey._flags.none());
         if (newKey.isSpatial()) {
-            auto newCell = _masterSpatialTree.resetItem(oldCell, oldKey, item.getBound(nullptr), itemId, newKey);
+            auto newCell = _primarySpatialTree.resetItem(oldCell, oldKey, item.getBound(nullptr), itemId, newKey);
             item.resetCell(newCell, newKey.isSmall());
         } else {
-            _masterNonspatialSet.insert(itemId);
+            _primaryNonspatialSet.insert(itemId);
         }
     }
 }
@@ -323,9 +323,9 @@ void Scene::removeItems(const Transaction::Removes& transactions) {
 
         // Remove the item
         if (oldKey.isSpatial()) {
-            _masterSpatialTree.removeItem(oldCell, oldKey, removedID);
+            _primarySpatialTree.removeItem(oldCell, oldKey, removedID);
         } else {
-            _masterNonspatialSet.erase(removedID);
+            _primaryNonspatialSet.erase(removedID);
         }
 
         // Remove the transition to prevent updating it for nothing
@@ -362,20 +362,20 @@ void Scene::updateItems(const Transaction::Updates& transactions) {
         // Update the item's container
         if (oldKey.isSpatial() == newKey.isSpatial()) {
             if (newKey.isSpatial()) {
-                auto newCell = _masterSpatialTree.resetItem(oldCell, oldKey, item.getBound(nullptr), updateID, newKey);
+                auto newCell = _primarySpatialTree.resetItem(oldCell, oldKey, item.getBound(nullptr), updateID, newKey);
                 item.resetCell(newCell, newKey.isSmall());
             }
         } else {
             if (newKey.isSpatial()) {
-                _masterNonspatialSet.erase(updateID);
+                _primaryNonspatialSet.erase(updateID);
 
-                auto newCell = _masterSpatialTree.resetItem(oldCell, oldKey, item.getBound(nullptr), updateID, newKey);
+                auto newCell = _primarySpatialTree.resetItem(oldCell, oldKey, item.getBound(nullptr), updateID, newKey);
                 item.resetCell(newCell, newKey.isSmall());
             } else {
-                _masterSpatialTree.removeItem(oldCell, oldKey, updateID);
+                _primarySpatialTree.removeItem(oldCell, oldKey, updateID);
                 item.resetCell();
 
-                _masterNonspatialSet.insert(updateID);
+                _primaryNonspatialSet.insert(updateID);
             }
         }
     }

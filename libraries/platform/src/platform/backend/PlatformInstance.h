@@ -23,15 +23,15 @@ public:
 
     int getNumCPUs() { return (int)_cpus.size(); }
     json getCPU(int index);
-    int getMasterCPU() const { return _masterCPU; }
+    int getPrimaryCPU() const { return _primaryCPU; }
 
     int getNumGPUs() { return (int)_gpus.size(); }
     json getGPU(int index);
-    int getMasterGPU() const { return _masterGPU; }
+    int getPrimaryGPU() const { return _primaryGPU; }
 
     int getNumDisplays() { return (int)_displays.size(); }
     json getDisplay(int index);
-    int getMasterDisplay() const { return _masterDisplay; }
+    int getPrimaryDisplay() const { return _primaryDisplay; }
 
     json getMemory() { return _memory; }
 
@@ -62,12 +62,12 @@ protected:
     json  _memory;
     json  _computer;
 
-    int _masterCPU{ -1 };
-    int _masterGPU{ -1 };
-    int _masterDisplay{ -1 };
+    int _primaryCPU{ -1 };
+    int _primaryGPU{ -1 };
+    int _primaryDisplay{ -1 };
 
-    // Traverse the cpus, gpus and displays to update the "master" index in each domain
-    void updateMasterIndices();
+    // Traverse the cpus, gpus and displays to update the "primary" index in each domain
+    void updatePrimaryIndices();
 
 };
 

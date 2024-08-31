@@ -46,6 +46,7 @@
 #include "avatar/AvatarManager.h"
 #include "avatar/AvatarPackager.h"
 #include "AvatarBookmarks.h"
+#include <display-plugins/OpenGLDisplayPlugin.h>
 #include "DomainAccountManager.h"
 #include "MainWindow.h"
 #include "render/DrawStatus.h"
@@ -310,13 +311,13 @@ Menu::Menu() {
 		}
     });
 
-    // Settings > Entity Script / QML Whitelist
-    action = addActionToQMenuAndActionHash(settingsMenu, "Entity Script / QML Whitelist");
+    // Settings > Entity Script / QML Allowlist
+    action = addActionToQMenuAndActionHash(settingsMenu, "Entity Script / QML Allowlist");
     connect(action, &QAction::triggered, [] {
         auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
         auto hmd = DependencyManager::get<HMDScriptingInterface>();
 
-        tablet->pushOntoStack("hifi/dialogs/security/EntityScriptQMLWhitelist.qml");
+        tablet->pushOntoStack("hifi/dialogs/security/EntityScriptQMLAllowlist.qml");
 
         if (!hmd->getShouldShowTablet()) {
             hmd->toggleShouldShowTablet();
@@ -540,13 +541,20 @@ Menu::Menu() {
 
     action = addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::MaterialProceduralShaders, 0, false);
     connect(action, &QAction::triggered, [action] {
-        ModelMeshPartPayload::enableMaterialProceduralShaders = action->isChecked();
+        Procedural::enableProceduralShaders = action->isChecked();
     });
 
     {
         auto drawStatusConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<render::DrawStatus>("RenderMainView.DrawStatus");
         addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::HighlightTransitions, 0, false,
             drawStatusConfig, SLOT(setShowFade(bool)));
+    }
+
+    {
+        action = addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::ExtraLinearTosRGBConversion, 0, OpenGLDisplayPlugin::getExtraLinearToSRGBConversion());
+        connect(action, &QAction::triggered, [action] {
+            OpenGLDisplayPlugin::setExtraLinearToSRGBConversion(action->isChecked());
+        });
     }
 
     // Developer > Assets >>>

@@ -354,7 +354,7 @@ Rectangle {
                 font: avatarGainSliderText.font
             }
             RalewayRegular {
-                // The slider for my card is special, it controls the master gain
+                // The slider for my card is special, it controls the primary gain
                 id: avatarGainSliderText;
                 text: "People volume";
                 size: 16;
@@ -645,7 +645,7 @@ Rectangle {
                 font: noiseReductionThresholdSliderText.font
             }
             RalewayRegular {
-                // The slider for my card is special, it controls the master gain
+                // The slider for my card is special, it controls the primary gain
                 id: noiseReductionThresholdSliderText;
                 text: "Audio input threshold";
                 size: 16;

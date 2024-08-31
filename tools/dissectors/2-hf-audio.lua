@@ -1,5 +1,5 @@
 print("Loading hf-audio")
-
+bit32 = require("bit32")
 -- create the audio protocol
 p_hf_audio = Proto("hf-audio", "HF Audio Protocol")
 

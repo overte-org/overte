@@ -12,14 +12,14 @@
                 action: 'add',
                 id: this.entityID
             };
-            Messages.sendLocalMessage('Hifi-Hand-RayPick-Blacklist', JSON.stringify(data))
+            Messages.sendLocalMessage('Hifi-Hand-RayPick-Blocklist', JSON.stringify(data))
         },
         unload: function() {
             var data = {
                 action: 'remove',
                 id: this.entityID
             };
-            Messages.sendLocalMessage('Hifi-Hand-RayPick-Blacklist', JSON.stringify(data))
+            Messages.sendLocalMessage('Hifi-Hand-RayPick-Blocklist', JSON.stringify(data))
         }
     }
 

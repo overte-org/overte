@@ -172,20 +172,20 @@ static const QMap<QString, DomainServerExporter::MetricType> TYPE_MAP {
     { "avatar_mixer_single_core_tasks_process_events"                                             , DomainServerExporter::MetricType::Counter },
     { "avatar_mixer_single_core_tasks_queue_incoming_packet"                                      , DomainServerExporter::MetricType::Gauge },
     { "avatar_mixer_single_core_tasks_send_stats"                                                 , DomainServerExporter::MetricType::Gauge },
-    { "avatar_mixer_slaves_aggregate_per_frame_received_1_nodes_processed"                        , DomainServerExporter::MetricType::Gauge },
-    { "avatar_mixer_slaves_aggregate_per_frame_sent_1_nodes_broadcasted_to"                       , DomainServerExporter::MetricType::Gauge },
-    { "avatar_mixer_slaves_aggregate_per_frame_sent_2_average_others_included"                    , DomainServerExporter::MetricType::Gauge },
-    { "avatar_mixer_slaves_aggregate_per_frame_sent_3_average_over_budget_avatars"                , DomainServerExporter::MetricType::Gauge },
-    { "avatar_mixer_slaves_aggregate_per_frame_sent_4_average_data_bytes"                         , DomainServerExporter::MetricType::Gauge },
-    { "avatar_mixer_slaves_aggregate_per_frame_sent_5_average_traits_bytes"                       , DomainServerExporter::MetricType::Gauge },
-    { "avatar_mixer_slaves_aggregate_per_frame_sent_6_average_identity_bytes"                     , DomainServerExporter::MetricType::Gauge },
-    { "avatar_mixer_slaves_aggregate_per_frame_sent_7_average_hero_avatars"                       , DomainServerExporter::MetricType::Gauge },
-    { "avatar_mixer_slaves_aggregate_per_frame_timing_1_process_incoming_packets"                 , DomainServerExporter::MetricType::Gauge },
-    { "avatar_mixer_slaves_aggregate_per_frame_timing_2_ignore_calculation"                       , DomainServerExporter::MetricType::Gauge },
-    { "avatar_mixer_slaves_aggregate_per_frame_timing_3_to_byte_array"                            , DomainServerExporter::MetricType::Gauge },
-    { "avatar_mixer_slaves_aggregate_per_frame_timing_4_avatar_data_packing"                      , DomainServerExporter::MetricType::Gauge },
-    { "avatar_mixer_slaves_aggregate_per_frame_timing_5_packet_sending"                           , DomainServerExporter::MetricType::Gauge },
-    { "avatar_mixer_slaves_aggregate_per_frame_timing_6_job_elapsed_time"                         , DomainServerExporter::MetricType::Gauge },
+    { "avatar_mixer_workers_aggregate_per_frame_received_1_nodes_processed"                        , DomainServerExporter::MetricType::Gauge },
+    { "avatar_mixer_workers_aggregate_per_frame_sent_1_nodes_broadcasted_to"                       , DomainServerExporter::MetricType::Gauge },
+    { "avatar_mixer_workers_aggregate_per_frame_sent_2_average_others_included"                    , DomainServerExporter::MetricType::Gauge },
+    { "avatar_mixer_workers_aggregate_per_frame_sent_3_average_over_budget_avatars"                , DomainServerExporter::MetricType::Gauge },
+    { "avatar_mixer_workers_aggregate_per_frame_sent_4_average_data_bytes"                         , DomainServerExporter::MetricType::Gauge },
+    { "avatar_mixer_workers_aggregate_per_frame_sent_5_average_traits_bytes"                       , DomainServerExporter::MetricType::Gauge },
+    { "avatar_mixer_workers_aggregate_per_frame_sent_6_average_identity_bytes"                     , DomainServerExporter::MetricType::Gauge },
+    { "avatar_mixer_workers_aggregate_per_frame_sent_7_average_hero_avatars"                       , DomainServerExporter::MetricType::Gauge },
+    { "avatar_mixer_workers_aggregate_per_frame_timing_1_process_incoming_packets"                 , DomainServerExporter::MetricType::Gauge },
+    { "avatar_mixer_workers_aggregate_per_frame_timing_2_ignore_calculation"                       , DomainServerExporter::MetricType::Gauge },
+    { "avatar_mixer_workers_aggregate_per_frame_timing_3_to_byte_array"                            , DomainServerExporter::MetricType::Gauge },
+    { "avatar_mixer_workers_aggregate_per_frame_timing_4_avatar_data_packing"                      , DomainServerExporter::MetricType::Gauge },
+    { "avatar_mixer_workers_aggregate_per_frame_timing_5_packet_sending"                           , DomainServerExporter::MetricType::Gauge },
+    { "avatar_mixer_workers_aggregate_per_frame_timing_6_job_elapsed_time"                         , DomainServerExporter::MetricType::Gauge },
     { "avatar_mixer_threads"                                                                      , DomainServerExporter::MetricType::Gauge },
     { "avatar_mixer_throttling_ratio"                                                             , DomainServerExporter::MetricType::Gauge },
     { "avatar_mixer_trailing_mix_ratio"                                                           , DomainServerExporter::MetricType::Gauge },
@@ -254,9 +254,9 @@ static const QMap<QString, DomainServerExporter::MetricType> TYPE_MAP {
 //
 // For numeric values with an unit, instead of trying to parse it, the stats will just need to
 // have a second copy of the metric added, with the value expressed as a number, with the original
-// being blacklisted here.
+// being blocklisted here.
 
-static const QSet<QString> BLACKLIST = {
+static const QSet<QString> BLOCKLIST = {
     "asset_server_connection_stats_last_heard",                 // Timestamp as a string
     "asset_server_username",                                    // Username
     "audio_mixer_listeners_jitter_downstream_avg_gap",          // Number as string with unit name, alternative added
@@ -379,7 +379,7 @@ void DomainServerExporter::generateMetricsFromJson(QTextStream& stream,
             continue;
         }
 
-        if (BLACKLIST.contains(metricName)) {
+        if (BLOCKLIST.contains(metricName)) {
             continue;
         }
 

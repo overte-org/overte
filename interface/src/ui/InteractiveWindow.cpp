@@ -221,8 +221,8 @@ InteractiveWindow::InteractiveWindow(const QString& sourceUrl, const QVariantMap
 
         Application::setupQmlSurface(quickView->rootContext(), true);
 
-        //add any whitelisted callbacks
-        OffscreenUi::applyWhiteList(sourceUrl, quickView->rootContext());
+        //add any allowlisted callbacks
+        OffscreenUi::applyAllowList(sourceUrl, quickView->rootContext());
 
         /*@jsdoc
          * Configures how a <code>NATIVE</code> window is displayed.

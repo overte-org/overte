@@ -12,11 +12,147 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-<!-- ## [Unreleased] 2023.07.2 -->
+<!-- ## [2024.09.1] Unreleased -->
 
-<!-- ## [2023.07.1] 2023.07.2 -->
+## [2024.07.1] 2023.07.12
 
-<!-- ## [2023.06.1] 2023.06.12 -->
+### Fixes
+- Fix more warnings (PR1007)
+- Fix new debug build warning (PR1013)
+- Fix RPM packaging (PR1025)
+- Temporary fix for some script messages not being transmitted (PR1024)
+- Fix unhandled std::bad_weak_ptr (PR1037)
+- Fix long messages in Entity script log (PR1029)
+- Allow events from VR keyboard to overlay UI (PR1046)
+- Fix Fedora 40 server packages. (PR1057)
+- Fix crash in setCrashReporterEnabled (PR1065)
+- Fix mtoon issue on GLES (PR1055)
+- Fix GHA building hundreds of servers (PR1071)
+- Fix broken upload paths for RPM distributions. (PR1072)
+
+### Changes
+- Text Entity Improvements (PR937)
+- GitHub Action Runner auto-scaling (PR1021)
+- Remove some external refrences (PR1026)
+- Update from deprecated actions/checkout and actions/upload-artifact (PR1023)
+- Update Ubuntu 20.04 amd64 Qt package (PR1032)
+- Cut back on master builds. (PR1049)
+- Increase default vertical FOV (PR1061)
+- Always enable crash reporting. (PR1064)
+- Update make-rpm-server to remove - characters. (PR1063)
+- Update VCPKG on Windows, so it can find newer versions of Visual Studio. (PR1073)
+
+### Additions
+- Add a script to more easily build Debian and RPM server packages. (PR1011)
+- Add Fedora 40 servers (PR1010)
+- GitHub Actions server release builds (PR1022)
+- Wiggly lasers (PR1014)
+- Create Windows release builds. (PR1048)
+
+### Removals
+- Remove broken ccache macro (PR1018)
+- Remove note about secure WebSockets not being supported. (PR1040)
+- Remove RELEASE_NAME (PR1039)
+- Remove hifiNeuron.dll (PR1075)
+- Remove remnants of RELEASE_NAME. (PR1077)
+
+
+## [2024.06.1] 2023.06.24
+
+### Fixes
+- Fix QNetworkRequest::FollowRedirectsAttribute deprecated warning (PR711)
+- Fix luci (PR724)
+- Fix setting external port and IP address for manual networking modes (PR746)
+- particle billboarding is wrong in VR (PR747)
+- Upgrade openexr (PR752)
+- Fix OpenEXR on Windows (PR756)
+- Upgrade Steamworks and fix for ninja build (PR755)
+- Fixes for Oculus VR plugin (PR758)
+- Fix Ninja builds with Crashpad enabled on Windows (PR765)
+- Fix a bug in Entities.getEntityProperties (PR768)
+- Fixed returnNothingOnEmptyPropertyFlags (PR770)
+- ✨ "Update Existing Avatar" now properly updates the fst file (PR576)
+- Fix the doppleganger position in the tutorial (PR781)
+- Fix entity density not setting and not updating for motion states (PR819)
+- Add keyboard modifiers to entity pointer events (PR815)
+- 🐛 Fixed build on Windows (PR827)
+- Fix recording API documentation not being built (PR829)
+- Fix the display of Notifications (PR831)
+- Fix prebuild.py code ordering to make --get-vcpkg-id and --get-vcpkg-path correctly in the repo root (PR836)
+- Fixed avatar volume adjustment (PR841)
+- Respect cull face during shadow pass (PR820)
+- Fix Developer > UI > Show Overlays + Snap UI not hiding (PR823)
+- Fixed blendshapes in gltf importer (PR840)
+- Fix require behavior for modules (PR855)
+- 🐛 Fixed avatar bounding box being inverted (PR866)
+- Fix collisions on glTF avatars (PR867)
+- Clean up GeometryCache and remove _glColor4f (PR845)
+- Fix warnings as errors for MSVC (PR873)
+- Fix invalid animation reference in assignment client (PR854)
+- Fix previous commit for not loading textures on agent (PR893)
+- conversionPenaltyScore should accumulate (PR935)
+- Fix getEntityProperties for group properties + keylight direction (PR927)
+- Move helper script engines to their own threads (PR853)
+- Fix C++20 warnings (PR950)
+- Fix access check in getSkeletonModelURLFromScript (PR955)
+- SimplifiedUI adjustemnts (PR960)
+- Fixed locale problems with cgltf.h (PR978)
+- Fixed script signal proxy crashes (PR964)
+- Fixed deadlocks in Recording API (PR959)
+- Fix tests (PR991)
+- Add missing dependencymanager call, fixes test crash (PR994)
+- Skip packet capacity test when built in debug mode, as it triggers an assertion (PR993)
+- Fix some warnings (PR1003)
+- Fix Locker issue in RecordingScriptingInterface (PR1006)
+
+### Changes
+- Update Linux vcpkg to the same as the Windows version (PR751)
+- Disable Oculus plugin on Visual Studio 2022 (PR754)
+- Reorganize startup to allow more control over plugins (PR716)
+- Script performance improvements (PR744)
+- Re-enable building Oculus plugin on VS 2022 (PR761)
+- Use response files on Ninja for long paths (PR764)
+- Improvement in controller scripts performance (PR766)
+- Update VCPKG for Linux aarch64 (PR807)
+- Linux server gha update (PR812)
+- glTF importer using cgltf library (PR835)
+- 🔧 Disable building electron screenshare app on windows (PR864)
+- Change the hash salt from Vircadia to Overte (PR869)
+- Change vircadia launcher dir (PR870)
+- Add Oculus to fullbody-enabled headsets list (PR882)
+- Add Ubuntu 24.04 to server packaging (PR966)
+- Improve network debugging messages to help with Conan PR (PR995)
+- Send OpenGL errors to log on debug builds (PR998)
+
+### Additions
+- Add initial benchmarks for the script engine (PR710)
+- Add more ram Options (PR763)
+- Add VS22 cmake jumpstart script (PR773)
+- MToon materials (PR805)
+- Add a way to get VCPKG path and hash ID (PR813)
+- Entity script logging for script editor (PR673)
+- Create app: RenderWithZones Manager (PR806)
+- Added WebP support for binary glTF (PR860)
+- Support opaque (and black) particles (PR844)
+- Create App: Tools tab: CSS&HTML adjustments (PR880)
+- Create Application: Advanced Import functionality (PR877)
+- Create App.: "Copy Dimensions" and "Paste Dimensions" (PR863)
+- Create app: Entity List: "Copy ID" on menu and contextual menu. (PR865)
+- Add qByteArray to script value conversion (PR868)
+- Custom refresh rate profile (PR899)
+- support VRMC_materials_mtoon and KHR_materials_unlit (PR936)
+- Add very basic HTTP and HTTPS network tests (PR996)
+
+### Removals
+- Disable Neuron by default (PR753)
+- Removing markdown from floof chat (PR769)
+- Remove debug print with URL from ModelLoader (PR837)
+- Remove legally problematic texture (PR851)
+
+### Security
+- Added simple protection for avatar URL (PR887)
+- add canViewAssetURLs domain permissions (PR152)
+
 
 ## [2023.11.1] 2023.11.24
 
