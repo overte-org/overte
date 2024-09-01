@@ -220,7 +220,6 @@ local f_message_number      = ProtoField.uint32("hfudt.message_number"     , "Me
 local f_message_part_number = ProtoField.uint32("hfudt.message_part_number", "Message Part Number", base.DEC)
 local f_type = ProtoField.uint8("hfudt.type", "Type", base.DEC, packet_types)
 local f_version = ProtoField.uint8("hfudt.version", "Version", base.DEC)
---local f_type_text = ProtoField.string("hfudt.type_text", "TypeText")
 local f_sender_id = ProtoField.uint16("hfudt.sender_id", "Sender ID", base.DEC)
 local f_hmac_hash = ProtoField.bytes("hfudt.hmac_hash", "HMAC Hash")
 
@@ -287,17 +286,6 @@ function p_hfudt.dissector(buf, pinfo, tree)
 
 
     if shifted_type == 0 then -- ACK
- --     local data_index = 4
-
-      -- This is an ACK let's read out the sequence number
- --     local sequence_number = buf(data_index, 4):le_uint()
- --     subtree:add(f_ack_sequence_number, bit.band(sequence_number, SEQUENCE_NUMBER_MASK))
- --     data_index = data_index + 4
-
---      data_length = buf:len() - datF8000000a_index
-
-      -- set the data from whatever is left in the packet
-  --    subtree:add(f_data, buf(data_index, data_length))
       subtree:add_le(f_control_reserved2, buf(4,4))
       subtree:add_le(f_ack_sequence_number, buf(4,4))
     elseif shifted_type == 1 then -- Handshake
