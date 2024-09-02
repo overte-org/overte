@@ -8,17 +8,17 @@
 
 
 Script.include('libraries/utils.js');
-var masterResetScript = Script.resolvePath("masterReset.js");
+var primaryResetScript = Script.resolvePath("primaryReset.js");
 var hiddenEntityScriptURL = Script.resolvePath("hiddenEntityReset.js");
 
-Script.include(masterResetScript);
+Script.include(primaryResetScript);
 
-function createHiddenMasterSwitch() {
+function createHiddenPrimarySwitch() {
 
     var resetKey = "resetMe";
-    var masterSwitch = Entities.addEntity({
+    var primarySwitch = Entities.addEntity({
         type: "Box",
-        name: "Master Switch",
+        name: "Primary Switch",
         script: hiddenEntityScriptURL,
         dimensions: {
             x: 0.7,
@@ -44,11 +44,11 @@ var entities = Entities.findEntities(MyAvatar.position, 100);
 
 entities.forEach(function(entity) {
     var name = Entities.getEntityProperties(entity, "name").name
-    if (name === "Master Switch") {
+    if (name === "Primary Switch") {
         Entities.deleteEntity(entity);
     }
 });
 
-createHiddenMasterSwitch();
+createHiddenPrimarySwitch();
 
-MasterReset();
+PrimaryReset();

@@ -111,7 +111,7 @@ protected:
     void updateServerPhysicsVariables();
     bool remoteSimulationOutOfSync(uint32_t simulationStep);
 
-    void slaveBidPriority(); // computeNewBidPriority() with value stored in _entity
+    void workerBidPriority(); // computeNewBidPriority() with value stored in _entity
 
     void clearObjectVelocities() const;
 

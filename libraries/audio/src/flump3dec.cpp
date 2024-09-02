@@ -4417,9 +4417,9 @@ bs_new ()
   bs = (Bit_stream_struc *) calloc(1, sizeof(Bit_stream_struc));
   g_return_val_if_fail (bs != NULL, NULL);
 
-  bs->master.cur_bit = 8;
-  bs->master.size = 0;
-  bs->master.cur_used = 0;
+  bs->primary.cur_bit = 8;
+  bs->primary.size = 0;
+  bs->primary.cur_used = 0;
   bs->read.cur_bit = 8;
   bs->read.size = 0;
   bs->read.cur_used = 0;
@@ -4443,11 +4443,11 @@ bs_set_data (Bit_stream_struc * bs, const guint8 * data, gsize size)
   g_return_val_if_fail (data != NULL, FALSE);
   g_return_val_if_fail (size != 0, FALSE);
   
-  bs->master.data = data;
-  bs->master.cur_byte = (guint8 *) data;
-  bs->master.size = size;
-  bs->master.bitpos = 0;
-  bs->master.cur_used = 0;
+  bs->primary.data = data;
+  bs->primary.cur_byte = (guint8 *) data;
+  bs->primary.size = size;
+  bs->primary.bitpos = 0;
+  bs->primary.cur_used = 0;
   bs_reset (bs);
   return TRUE;
 }
@@ -4494,7 +4494,7 @@ bs_eat (Bit_stream_struc * bs, BSReader * read, guint32 Nbits)
   }
 }
 
-/* Advance the master position by Nbits */
+/* Advance the primary position by Nbits */
 void
 bs_consume (Bit_stream_struc * bs, guint32 Nbits)
 {
@@ -4503,7 +4503,7 @@ bs_consume (Bit_stream_struc * bs, guint32 Nbits)
   GST_DEBUG ("%d Consumed %d bits to end at %" G_GUINT64_FORMAT,
       n++, Nbits, bs_pos (bs) + Nbits);
 #endif
-  bs_eat (bs, &bs->master, Nbits);
+  bs_eat (bs, &bs->primary, Nbits);
 }
 
 /* Advance the read position by Nbits */

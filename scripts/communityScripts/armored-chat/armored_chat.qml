@@ -487,13 +487,17 @@ Rectangle {
         var last_item_index = channel.count - 1;
         var last_item = channel.get(last_item_index);
 
-        if (last_message_user === username && elapsed_minutes < 1 && last_item){
-            message = "<br>" + message 
-            last_item.text = last_item.text += "\n" + message;
-            scrollToBottom()
-            last_message_time = new Date();
-            return;
-        }
+		// FIXME: When adding a new message this would check to see if we could append the incoming message
+		// to the bottom of the last message. This current implimentation causes issues with scrollToBottom()
+		// Specifically, scrolling to the bottom does not like image embeds.
+		// This needs to be reworked entirely before it can be reimplimented 
+        // if (last_message_user === username && elapsed_minutes < 1 && last_item){
+        //     message = "<br>" + message 
+        //     last_item.text = last_item.text += "\n" + message;
+        //     scrollToBottom()
+        //     last_message_time = new Date();
+        //     return;
+        // }
 
         last_message_user = username;
         last_message_time = new Date();
@@ -510,7 +514,7 @@ Rectangle {
         mess = mess.replace(arrow, "&lt;");
 
         var link = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
-        mess = mess.replace(link, (match) => {return "<a onclick='Window.openUrl("+match+")' href='" + match + "'>" + match + "</a> <a onclick='Window.openUrl("+match+")'>🗗</a>"});
+        mess = mess.replace(link, (match) => {return `<a style="color:#4EBAFD" onclick='Window.openUrl("+match+")' href='` + match + `'>` + match + `</a> <a onclick='Window.openUrl(`+match+`)'>🗗</a>`});
 
         var newline = /\n/gi;
         mess = mess.replace(newline, "<br>");

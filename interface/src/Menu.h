@@ -189,7 +189,7 @@ namespace MenuOption {
     const QString RunningScripts = "Running Scripts...";
     const QString RunTimingTests = "Run Timing Tests";
     const QString ScriptedMotorControl = "Enable Scripted Motor Control";
-    const QString EntityScriptQMLWhitelist = "Entity Script / QML Whitelist";
+    const QString EntityScriptQMLAllowlist = "Entity Script / QML Allowlist";
     const QString ScriptSecurity = "Script Security";
     const QString ShowTrackedObjects = "Show Tracked Objects";
     const QString SelfieCamera = "Selfie";
@@ -237,7 +237,8 @@ namespace MenuOption {
     const QString ComputeBlendshapes = "Compute Blendshapes";
     const QString HighlightTransitions = "Highlight Transitions";
     const QString MaterialProceduralShaders = "Enable Procedural Materials";
-}
+    const QString ExtraLinearTosRGBConversion = "Extra Linear to sRGB Conversion";
+    }
 
 #endif // hifi_Menu_h
 

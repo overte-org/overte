@@ -63,14 +63,14 @@
             });
         },
 
-        masterLightOn: function(masterLight) {
-            Entities.editEntity(masterLight, {
+        primaryLightOn: function(primaryLight) {
+            Entities.editEntity(primaryLight, {
                 visible: true
             });
         },
 
-        masterLightOff: function(masterLight) {
-            Entities.editEntity(masterLight, {
+        primaryLightOff: function(primaryLight) {
+            Entities.editEntity(primaryLight, {
                 visible: false
             });
         },
@@ -99,12 +99,12 @@
             return found;
         },
 
-        findMasterLights: function() {
+        findPrimaryLights: function() {
             var found = [];
             var results = Entities.findEntities(this.position, SEARCH_RADIUS);
             results.forEach(function(result) {
                 var properties = Entities.getEntityProperties(result);
-                if (properties.name === _this.prefix + "light-master") {
+                if (properties.name === _this.prefix + "light-primary") {
                     found.push(result);
                 }
             });
@@ -131,15 +131,15 @@
             });
 
             var glowLights = this.findGlowLights();
-            var masterLights = this.findMasterLights();
+            var primaryLights = this.findPrimaryLights();
             var emitModels = this.findEmitModels();
 
             if (this._switch.state === 'off') {
                 glowLights.forEach(function(glowLight) {
                     _this.glowLightOn(glowLight);
                 });
-                masterLights.forEach(function(masterLight) {
-                    _this.masterLightOn(masterLight);
+                primaryLights.forEach(function(primaryLight) {
+                    _this.primaryLightOn(primaryLight);
                 });
                 emitModels.forEach(function(emitModel) {
                     _this.modelEmitOn(emitModel);
@@ -162,8 +162,8 @@
                 glowLights.forEach(function(glowLight) {
                     _this.glowLightOff(glowLight);
                 });
-                masterLights.forEach(function(masterLight) {
-                    _this.masterLightOff(masterLight);
+                primaryLights.forEach(function(primaryLight) {
+                    _this.primaryLightOff(primaryLight);
                 });
                 emitModels.forEach(function(emitModel) {
                     _this.modelEmitOff(emitModel);

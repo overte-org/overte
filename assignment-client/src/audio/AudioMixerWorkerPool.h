@@ -1,5 +1,5 @@
 //
-//  AudioMixerSlavePool.h
+//  AudioMixerWorkerPool.h
 //  assignment-client/src/audio
 //
 //  Created by Zach Pomerantz on 11/16/2016.
@@ -9,8 +9,8 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#ifndef hifi_AudioMixerSlavePool_h
-#define hifi_AudioMixerSlavePool_h
+#ifndef hifi_AudioMixerWorkerPool_h
+#define hifi_AudioMixerWorkerPool_h
 
 #include <condition_variable>
 #include <mutex>
@@ -20,37 +20,37 @@
 #include <shared/QtHelpers.h>
 #include <TBBHelpers.h>
 
-#include "AudioMixerSlave.h"
+#include "AudioMixerWorker.h"
 
-class AudioMixerSlavePool;
+class AudioMixerWorkerPool;
 
-class AudioMixerSlaveThread : public QThread, public AudioMixerSlave {
+class AudioMixerWorkerThread : public QThread, public AudioMixerWorker {
     Q_OBJECT
     using ConstIter = NodeList::const_iterator;
     using Mutex = std::mutex;
     using Lock = std::unique_lock<Mutex>;
 
 public:
-    AudioMixerSlaveThread(AudioMixerSlavePool& pool, AudioMixerSlave::SharedData& sharedData)
-        : AudioMixerSlave(sharedData), _pool(pool) {}
+    AudioMixerWorkerThread(AudioMixerWorkerPool& pool, AudioMixerWorker::SharedData& sharedData)
+        : AudioMixerWorker(sharedData), _pool(pool) {}
 
     void run() override final;
 
 private:
-    friend class AudioMixerSlavePool;
+    friend class AudioMixerWorkerPool;
 
     void wait();
     void notify(bool stopping);
     bool try_pop(SharedNodePointer& node);
 
-    AudioMixerSlavePool& _pool;
-    void (AudioMixerSlave::*_function)(const SharedNodePointer& node) { nullptr };
+    AudioMixerWorkerPool& _pool;
+    void (AudioMixerWorker::*_function)(const SharedNodePointer& node) { nullptr };
     bool _stop { false };
 };
 
-// Slave pool for audio mixers
-//   AudioMixerSlavePool is not thread-safe! It should be instantiated and used from a single thread.
-class AudioMixerSlavePool {
+// Worker pool for audio mixers
+//   AudioMixerWorkerPool is not thread-safe! It should be instantiated and used from a single thread.
+class AudioMixerWorkerPool {
     using Queue = tbb::concurrent_queue<SharedNodePointer>;
     using Mutex = std::mutex;
     using Lock = std::unique_lock<Mutex>;
@@ -59,18 +59,18 @@ class AudioMixerSlavePool {
 public:
     using ConstIter = NodeList::const_iterator;
 
-    AudioMixerSlavePool(AudioMixerSlave::SharedData& sharedData, int numThreads = QThread::idealThreadCount())
+    AudioMixerWorkerPool(AudioMixerWorker::SharedData& sharedData, int numThreads = QThread::idealThreadCount())
         : _workerSharedData(sharedData) { setNumThreads(numThreads); }
-    ~AudioMixerSlavePool() { resize(0); }
+    ~AudioMixerWorkerPool() { resize(0); }
 
-    // process packets on slave threads
+    // process packets on worker threads
     void processPackets(ConstIter begin, ConstIter end);
 
-    // mix on slave threads
+    // mix on worker threads
     void mix(ConstIter begin, ConstIter end, unsigned int frame, int numToRetain);
 
-    // iterate over all slaves
-    void each(std::function<void(AudioMixerSlave& slave)> functor);
+    // iterate over all workers
+    void each(std::function<void(AudioMixerWorker& worker)> functor);
 
 #ifdef DEBUG_EVENT_QUEUE
     void queueStats(QJsonObject& stats);
@@ -83,18 +83,18 @@ private:
     void run(ConstIter begin, ConstIter end);
     void resize(int numThreads);
 
-    std::vector<std::unique_ptr<AudioMixerSlaveThread>> _slaves;
+    std::vector<std::unique_ptr<AudioMixerWorkerThread>> _workers;
 
-    friend void AudioMixerSlaveThread::wait();
-    friend void AudioMixerSlaveThread::notify(bool stopping);
-    friend bool AudioMixerSlaveThread::try_pop(SharedNodePointer& node);
+    friend void AudioMixerWorkerThread::wait();
+    friend void AudioMixerWorkerThread::notify(bool stopping);
+    friend bool AudioMixerWorkerThread::try_pop(SharedNodePointer& node);
 
     // synchronization state
     Mutex _mutex;
-    ConditionVariable _slaveCondition;
+    ConditionVariable _workerCondition;
     ConditionVariable _poolCondition;
-    void (AudioMixerSlave::*_function)(const SharedNodePointer& node);
-    std::function<void(AudioMixerSlave&)> _configure;
+    void (AudioMixerWorker::*_function)(const SharedNodePointer& node);
+    std::function<void(AudioMixerWorker&)> _configure;
     int _numThreads { 0 };
     int _numStarted { 0 }; // guarded by _mutex
     int _numFinished { 0 }; // guarded by _mutex
@@ -105,7 +105,7 @@ private:
     ConstIter _begin;
     ConstIter _end;
 
-    AudioMixerSlave::SharedData& _workerSharedData;
+    AudioMixerWorker::SharedData& _workerSharedData;
 };
 
-#endif // hifi_AudioMixerSlavePool_h
+#endif // hifi_AudioMixerWorkerPool_h

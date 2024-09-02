@@ -1,4 +1,6 @@
 -- create the domain protocol
+print("Loading hf-domain")
+bit32 = require("bit32")
 p_hf_domain = Proto("hf-domain", "HF Domain Protocol")
 
 -- domain packet fields
