@@ -21,6 +21,8 @@ var DEFAULT_SIZE = 30;
 var DEFAULT_OFFSET = 10;
 var FLOOF_NOTIFICATION_CHANNEL = "Floof-Notif";
 var MAIN_CHAT_APP_CHANNEL = "Chat";
+var ARROW_REGEX = /\</gi;
+
 
 var offset = DEFAULT_OFFSET;
 
@@ -62,9 +64,11 @@ var notificationCore = {
     },
     add: function (text, sender, colour) {
         sender = sender ? sender : "NoName";
+        sender = sender.replace(ARROW_REGEX, "&lt;");
         colour = colour ? colour : {};
         colour.text = colour.text ? colour.text : {red: 255, green: 255, blue: 255};
         colour.bg = colour.bg ? colour.bg : {red: 10, green: 10, blue: 10};
+        text = text.replace(ARROW_REGEX, "&lt;");
         var lines = text.split("\n");
         for (var i = lines.length - 1; i >= 0; i--) {
             if (i === 0) {
