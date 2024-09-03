@@ -22,6 +22,9 @@ include_hifi_library_headers(script-engine)
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     # Silence GCC warnings
     target_compile_options(openxr PRIVATE -Wno-missing-field-initializers)
+
+    # Fix build issue where lerp is already defined on C++20 / GCC
+    target_compile_definitions(openxr PRIVATE -DDONT_REDEFINE_LERP)
 endif()
 
 set_property(TARGET openxr PROPERTY CXX_STANDARD 20)
