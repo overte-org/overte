@@ -67,13 +67,13 @@ inline static glm::mat4 fovToProjection(const XrFovf fov, const float near, cons
 }
 
 glm::mat4 OpenXrDisplayPlugin::getEyeProjection(Eye eye, const glm::mat4& baseProjection) const {
-    if (!_viewsInitialized) {
+    if (!_views.has_value()) {
         return baseProjection;
     }
 
     ViewFrustum frustum;
     frustum.setProjection(baseProjection);
-    return fovToProjection(_views[(eye == Left) ? 0 : 1].fov, frustum.getNearClip(), frustum.getFarClip());
+    return fovToProjection(_views.value()[(eye == Left) ? 0 : 1].fov, frustum.getNearClip(), frustum.getFarClip());
 }
 
 // TODO: This apparently wasn't right in the OpenVR plugin, but this is what it basically did.
@@ -99,9 +99,11 @@ bool OpenXrDisplayPlugin::initViews() {
 
     assert(_viewCount != 0);
 
+    _views = std::vector<XrView>();
+
     for (uint32_t i = 0; i < _viewCount; i++) {
         XrView view = { .type = XR_TYPE_VIEW };
-        _views.push_back(view);
+        _views.value().push_back(view);
 
         XrViewConfigurationView viewConfig = { .type = XR_TYPE_VIEW_CONFIGURATION_VIEW };
         _viewConfigs.push_back(viewConfig);
@@ -363,7 +365,6 @@ bool OpenXrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
         return false;
 
     _context->_lastPredictedDisplayTime = _lastFrameState.predictedDisplayTime;
-    _context->_lastPredictedDisplayTimeInitialized = true;
 
     std::vector<XrView> eye_views(_viewCount);
     for (uint32_t i = 0; i < _viewCount; i++) {
@@ -399,16 +400,14 @@ bool OpenXrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
         .space = _context->_stageSpace,
     };
 
-    result = xrLocateViews(_context->_session, &viewLocateInfo, &_lastViewState, _viewCount, &_viewCount, _views.data());
+    result = xrLocateViews(_context->_session, &viewLocateInfo, &_lastViewState, _viewCount, &_viewCount, _views.value().data());
     if (!xrCheck(_context->_instance, result, "Could not locate views"))
         return false;
 
     for (uint32_t i = 0; i < _viewCount; i++) {
-        _projectionLayerViews[i].pose = _views[i].pose;
-        _projectionLayerViews[i].fov = _views[i].fov;
+        _projectionLayerViews[i].pose = _views.value()[i].pose;
+        _projectionLayerViews[i].fov = _views.value()[i].fov;
     }
-
-    _viewsInitialized = true;
 
     XrSpaceLocation headLocation = {
         .type = XR_TYPE_SPACE_LOCATION,

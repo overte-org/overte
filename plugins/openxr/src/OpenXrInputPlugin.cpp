@@ -228,8 +228,8 @@ XrSpaceLocation OpenXrInputPlugin::Action::getPose(uint32_t handId) {
         .type = XR_TYPE_SPACE_LOCATION,
     };
 
-    if (_context->_lastPredictedDisplayTimeInitialized) {
-        result = xrLocateSpace(_poseSpaces[handId], _context->_stageSpace, _context->_lastPredictedDisplayTime, &location);
+    if (_context->_lastPredictedDisplayTime.has_value()) {
+        result = xrLocateSpace(_poseSpaces[handId], _context->_stageSpace, _context->_lastPredictedDisplayTime.value(), &location);
         xrCheck(_context->_instance, result, "Failed to locate hand space!");
     }
 
