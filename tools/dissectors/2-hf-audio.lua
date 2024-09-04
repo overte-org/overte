@@ -15,7 +15,7 @@ p_hf_audio.fields = {
   f_audio_is_stereo, f_audio_num_silent_samples
 }
 
-local packet_type_extractor = Field.new('hfudt.type')
+local packet_type_extractor = Field.new('nlpacket.type')
 
 function p_hf_audio.dissector(buf, pinfo, tree)
   pinfo.cols.protocol = p_hf_audio.name
