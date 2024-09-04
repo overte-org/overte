@@ -385,12 +385,12 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
     };
     // clang-format on
 
-    for (const auto& pathAndType : actionsToInit) {
-        std::shared_ptr<Action> action = std::make_shared<Action>(_context, pathAndType.second, pathAndType.first);
+    for (const auto& [path, type] : actionsToInit) {
+        std::shared_ptr<Action> action = std::make_shared<Action>(_context, type, path);
         if (!action->init(_actionSet)) {
-            qCCritical(xr_input_cat, "Creating action %s failed!", pathAndType.first.c_str());
+            qCCritical(xr_input_cat, "Creating action %s failed!", path.c_str());
         } else {
-            _actions.emplace(pathAndType.first, action);
+            _actions.emplace(path, action);
         }
     }
 
@@ -516,12 +516,12 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
     };
 
     for (uint32_t i = 0; i < HAND_COUNT; i++) {
-        for (const auto& channelAndPath : axesToUpdate[i]) {
-            _axisStateMap[channelAndPath.first].value = _actions.at(channelAndPath.second)->getFloat(i).currentState;
+        for (const auto& [channel, path] : axesToUpdate[i]) {
+            _axisStateMap[channel].value = _actions.at(path)->getFloat(i).currentState;
 
-            // if (_axisStateMap[channelAndPath.first].value != 0) {
-            //     qCDebug(xr_input_cat, "🐸 Controller %d: %s (%d): %f", i, channelAndPath.second.c_str(), channelAndPath.first,
-            //             (double)_axisStateMap[channelAndPath.first].value);
+            // if (_axisStateMap[channel].value != 0) {
+            //     qCDebug(xr_input_cat, "🐸 Controller %d: %s (%d): %f", i, path.c_str(), channel,
+            //             (double)_axisStateMap[channel].value);
             // }
         }
     }
@@ -553,10 +553,10 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
     };
 
     for (uint32_t i = 0; i < HAND_COUNT; i++) {
-        for (const auto& channelAndPath : buttonsToUpdate[i]) {
-            if (_actions.at(channelAndPath.second)->getBool(i).currentState == XR_TRUE) {
-                _buttonPressedMap.insert(channelAndPath.first);
-                // qCDebug(xr_input_cat, "🐸 Controller %d: %s (%d)", i, channelAndPath.second.c_str(), channelAndPath.first);
+        for (const auto& [channel, path] : buttonsToUpdate[i]) {
+            if (_actions.at(path)->getBool(i).currentState == XR_TRUE) {
+                _buttonPressedMap.insert(channel);
+                // qCDebug(xr_input_cat, "🐸 Controller %d: %s (%d)", i, path.c_str(), channel);
             }
         }
     }
