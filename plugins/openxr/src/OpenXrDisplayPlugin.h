@@ -66,9 +66,7 @@ private:
     uint32_t _viewCount = 0;
     std::vector<XrCompositionLayerProjectionView> _projectionLayerViews;
 
-    std::vector<XrView> _views;
-    // TODO: Enable C++17 and use std::optional
-    bool _viewsInitialized = false;
+    std::optional<std::vector<XrView>> _views;
 
     std::vector<XrViewConfigurationView> _viewConfigs;
 
