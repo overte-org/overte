@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <optional>
 
 #include <openxr/openxr.h>
 
@@ -58,9 +59,7 @@ public:
     XrPath _handPaths[HAND_COUNT];
 
     controller::Pose _lastHeadPose;
-    XrTime _lastPredictedDisplayTime;
-    // TODO: Enable C++17 and use std::optional
-    bool _lastPredictedDisplayTimeInitialized = false;
+    std::optional<XrTime> _lastPredictedDisplayTime;
 
     bool _shouldQuit = false;
     bool _shouldRunFrameCycle = false;
