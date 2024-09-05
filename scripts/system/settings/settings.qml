@@ -37,6 +37,7 @@ Rectangle {
 
 	// Graphics 
     ColumnLayout {
+		id: graphics_page
         width: parent.width - 10
         visible: current_page == "Graphics"
 		anchors.horizontalCenter: parent.horizontalCenter
@@ -133,12 +134,13 @@ Rectangle {
 			}
 		}
 
+
 		// FPS
 		RowLayout {
 			width: parent.width
 
 			Text {
-				text: "Max FPS"
+				text: "Refresh Rate"
 				color: "white"
 				height: parent.height
 				width: parent.width - 150
@@ -146,11 +148,124 @@ Rectangle {
 				Layout.fillWidth: true
 			}
 
-			TextField {
-				Layout.maximumWidth: 50
-				id: max_fps
-				inputMethodHints: Qt.ImhFormattedNumbersOnly
-				validator: RegExpValidator { regExp: /[0-9]*/ }
+			ComboBox {
+				id: refresh_rate_cb
+				currentIndex: 3
+				Layout.fillWidth: true
+				model: ListModel {
+					ListElement { text: "Economical" }
+					ListElement { text: "Interactive" }
+					ListElement { text: "Real-Time" }
+					ListElement { text: "Custom" }
+				}
+			}
+		}
+
+
+		// FIXME: Height is hardcoded
+		// FPS sub options
+		Item {
+			Layout.fillWidth: true
+			visible: refresh_rate_cb.currentIndex == 3
+			height: 75 * 3
+
+
+			Rectangle {
+				color: "#333333"
+				height: parent.children[1].height
+				width: parent.width
+			}
+			
+			GridLayout {
+				columns: 2
+				width: parent.width - 10
+				anchors.horizontalCenter: parent.horizontalCenter
+				height: 75 * 3
+
+				Column {
+					Text {
+						text: "Focus Active"
+						Layout.fillWidth: true
+						color: "white"
+					}
+					TextField {
+						width: 100
+						Layout.maximumWidth: 50
+						inputMethodHints: Qt.ImhFormattedNumbersOnly
+						validator: RegExpValidator { regExp: /[0-9]*/ }
+					}
+				}
+
+				Column {
+					Text {
+						text: "Focus Inactive"
+						Layout.fillWidth: true
+						color: "white"
+					}
+					TextField {
+						width: 100
+						Layout.maximumWidth: 50
+						inputMethodHints: Qt.ImhFormattedNumbersOnly
+						validator: RegExpValidator { regExp: /[0-9]*/ }
+					}
+				}
+
+				Column {
+					Text {
+						text: "Unfocus"
+						Layout.fillWidth: true
+						color: "white"
+					}
+					TextField {
+						width: 100
+						Layout.maximumWidth: 50
+						inputMethodHints: Qt.ImhFormattedNumbersOnly
+						validator: RegExpValidator { regExp: /[0-9]*/ }
+					}
+				}
+
+				Column {
+					Text {
+						text: "Minimized"
+						Layout.fillWidth: true
+						color: "white"
+					}
+					TextField {
+						width: 100
+						Layout.maximumWidth: 50
+						inputMethodHints: Qt.ImhFormattedNumbersOnly
+						validator: RegExpValidator { regExp: /[0-9]*/ }
+					}
+				}
+
+				Column {
+					Text {
+						text: "Startup"
+						Layout.fillWidth: true
+						color: "white"
+					}
+					TextField {
+						width: 100
+						Layout.maximumWidth: 50
+						inputMethodHints: Qt.ImhFormattedNumbersOnly
+						validator: RegExpValidator { regExp: /[0-9]*/ }
+					}
+				}
+
+				Column {
+					Text {
+						text: "Shutdown"
+						Layout.fillWidth: true
+						color: "white"
+					}
+					TextField {
+						width: 100
+						Layout.maximumWidth: 50
+						inputMethodHints: Qt.ImhFormattedNumbersOnly
+						validator: RegExpValidator { regExp: /[0-9]*/ }
+					}
+				}
+
 			}
 		}
 
@@ -195,7 +310,7 @@ Rectangle {
 			}
 
 			Text {
-				text: parent.children[2].value.toFixed(1)
+				text: parent.children[2].value.toFixed(0)
 				color: "white"
 			}
 
@@ -208,7 +323,7 @@ Rectangle {
 			}
 		}
 
-		// Graphics Presets
+		// Anti Aliasing
 		RowLayout {
 			width: parent.width
 
