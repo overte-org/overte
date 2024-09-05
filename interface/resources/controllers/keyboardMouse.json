@@ -172,7 +172,6 @@
             ]
         },
 
-
         { "from": "Keyboard.W", "when": ["!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.LONGITUDINAL_FORWARD" },
         { "from": "Keyboard.S", "when": ["!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.LONGITUDINAL_BACKWARD" },
         { "from": "Keyboard.S", "when": ["Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.LONGITUDINAL_FORWARD" },
@@ -209,5 +208,5 @@
         { "from": "Keyboard.R", "to": "Actions.ACTION1" },
         { "from": "Keyboard.T", "to": "Actions.ACTION2" },
         { "from": "Keyboard.Tab", "to": "Actions.ContextMenu" }
-  ]
+    ]
 }
