@@ -12,10 +12,6 @@
 /* global Script Tablet */
 
 // TODO: Bind Target frame Rate to Graphics Preset
-// TODO: Refresh rates
-// TODO: Rendering scale
-// TODO: FOV
-// TODO: Anti-Aliasing
 // TODO: Fullscreen display? 
 
 (() => {
