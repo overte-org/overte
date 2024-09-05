@@ -3,6 +3,8 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import controlsUit 1.0 as HifiControlsUit
 
+// TODO: Some default values wait until component is completed. Is this nessicary? 
+
 Rectangle {
     color: Qt.rgba(0.1,0.1,0.1,1)
     signal sendToScript(var message);
@@ -58,7 +60,7 @@ Rectangle {
 			}
 
 			ComboBox {
-				currentIndex: 2
+				currentIndex: Performance.getPerformancePreset() - 1 // One off error FTW!
 				Layout.fillWidth: true
 				model: ListModel {
 					id: cbItems
@@ -68,9 +70,14 @@ Rectangle {
 					ListElement { text: "High" }
 					ListElement { text: "Custom" }
 				}
+
+				Component.onCompleted: {
+					console.log("\n\n"+ Performance.getPerformancePreset())
+				}
 			}
 		}
 
+		// TODO: Deferred render vs forward render?
 		// Rendering Effects
 		RowLayout {
 			width: parent.width
@@ -86,6 +93,8 @@ Rectangle {
 
 			CheckBox {
 				id: rendering_effects_state
+				checked: Render.renderMethod === 0
+
             }
 		}
 
@@ -108,28 +117,36 @@ Rectangle {
 				width: parent.width - 10
 				anchors.horizontalCenter: parent.horizontalCenter
 
+				// TODO: Some things were hard corded to be enabled / disabled depending on renderer. Why?
 				CheckBox {
 					text: "Shadows"
 					Layout.fillWidth: true
-					palette.windowText: "gray" // TODO: Is this good?
+					palette.windowText: "gray"
+					checked: Render.shadowsEnabled
 				}
 				
 				CheckBox {
 					text: "Local Lights"
 					Layout.fillWidth: true
-					palette.windowText: "gray" // TODO: Is this good?
+					palette.windowText: "gray"
+					//checked: Render.localLightsEnabled
+					checked: rendering_effects_state.checked // FIXME Hardcoded, why?
 				}
 				
 				CheckBox {
 					text: "Fog"
 					Layout.fillWidth: true
-					palette.windowText: "gray" // TODO: Is this good?
+					palette.windowText: "gray" 
+					//checked: Render.fogEnabled
+					checked: rendering_effects_state.checked // FIXME Hardcoded, why?
 				}
 				
 				CheckBox {
 					text: "Bloom"
 					Layout.fillWidth: true
-					palette.windowText: "gray" // TODO: Is this good?
+					palette.windowText: "gray"
+					//checked: Render.bloomEnabled
+					checked: rendering_effects_state.checked // FIXME Hardcoded, why?
 				}
 			}
 		}
@@ -157,6 +174,10 @@ Rectangle {
 					ListElement { text: "Interactive" }
 					ListElement { text: "Real-Time" }
 					ListElement { text: "Custom" }
+				}
+
+				Component.onCompleted: {
+					refresh_rate_cb.currentIndex = Performance.getRefreshRateProfile()
 				}
 			}
 		}
@@ -193,6 +214,10 @@ Rectangle {
 						Layout.maximumWidth: 50
 						inputMethodHints: Qt.ImhFormattedNumbersOnly
 						validator: RegExpValidator { regExp: /[0-9]*/ }
+
+						Component.onCompleted: {
+							text = Performance.getCustomRefreshRate(0)
+						}
 					}
 				}
 
@@ -207,6 +232,10 @@ Rectangle {
 						Layout.maximumWidth: 50
 						inputMethodHints: Qt.ImhFormattedNumbersOnly
 						validator: RegExpValidator { regExp: /[0-9]*/ }
+
+						Component.onCompleted: {
+							text = Performance.getCustomRefreshRate(1)
+						}
 					}
 				}
 
@@ -221,6 +250,10 @@ Rectangle {
 						Layout.maximumWidth: 50
 						inputMethodHints: Qt.ImhFormattedNumbersOnly
 						validator: RegExpValidator { regExp: /[0-9]*/ }
+
+						Component.onCompleted: {
+							text = Performance.getCustomRefreshRate(2)
+						}
 					}
 				}
 
@@ -235,6 +268,10 @@ Rectangle {
 						Layout.maximumWidth: 50
 						inputMethodHints: Qt.ImhFormattedNumbersOnly
 						validator: RegExpValidator { regExp: /[0-9]*/ }
+
+						Component.onCompleted: {
+							text = Performance.getCustomRefreshRate(3)
+						}
 					}
 				}
 
@@ -249,6 +286,10 @@ Rectangle {
 						Layout.maximumWidth: 50
 						inputMethodHints: Qt.ImhFormattedNumbersOnly
 						validator: RegExpValidator { regExp: /[0-9]*/ }
+
+						Component.onCompleted: {
+							text = Performance.getCustomRefreshRate(4)
+						}
 					}
 				}
 
@@ -263,6 +304,10 @@ Rectangle {
 						Layout.maximumWidth: 50
 						inputMethodHints: Qt.ImhFormattedNumbersOnly
 						validator: RegExpValidator { regExp: /[0-9]*/ }
+
+						Component.onCompleted: {
+							text = Performance.getCustomRefreshRate(5)
+						}
 					}
 				}
 
@@ -291,7 +336,7 @@ Rectangle {
 				id: resolution_slider
 				from: 0.1
 				to: 2
-				value: 1
+				value: Render.viewportResolutionScale.toFixed(1)
 				stepSize: 0.1
 			}
 		}
@@ -318,7 +363,7 @@ Rectangle {
 				id: fov_slider
 				from: 20
 				to: 130
-				value: 90 // TODO: Need to set to Overte default
+				value: Render.verticalFieldOfView.toFixed(1) // TODO: Need to set to Overte default
 				stepSize: 1
 			}
 		}
@@ -337,7 +382,7 @@ Rectangle {
 			}
 
 			ComboBox {
-				currentIndex: 2
+				currentIndex: Render.antialiasingMode
 				Layout.fillWidth: true
 				model: ListModel {
 					ListElement { text: "None" }
