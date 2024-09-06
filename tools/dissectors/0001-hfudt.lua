@@ -185,18 +185,7 @@ function p_hfudt.dissector(buf, pinfo, tree)
       buf = newbuf:tvb("Unobfuscated")
     end
 
-    -- read the type
-    local packet_type = buf(payload_offset, 1):le_uint()
-    local ptype = subtree:add_le(f_type, buf(payload_offset, 1))
-    local packet_type_text = packet_types[packet_type]
-
-    if packet_type_text  ~= nil then
-      pinfo.cols.info:append(" [" .. packet_type_text .. "]")
-    end
-    -- read the version
-    subtree:add_le(f_version, buf(payload_offset + 1, 1))
-
-    local i = payload_offset + 2
+    local i = payload_offset 
 
 
 

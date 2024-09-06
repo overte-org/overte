@@ -93,8 +93,8 @@ local f_username_id = ProtoField.string("hf_domain.username", "Username")
 local f_username_signature_length_id = ProtoField.uint32("hf_domain.username_signature_len", "Username Signature Length")
 local f_username_signature_id = ProtoField.string("hf_domain.username_signature", "Username Signature")
 
-local packet_type_extractor = Field.new('hfudt.type')
-local packet_version_extractor = Field.new('hfudt.version')
+local packet_type_extractor = Field.new('hf-nlpacket.type')
+local packet_version_extractor = Field.new('hf-nlpacket.version')
 
 local ef_version_unsupported = ProtoExpert.new("hfudt.version_unsupported.expert", "Protocol version unsupported by decoder", expert.group.UNDECODED, expert.severity.ERROR)
 local ef_zlib_unsupported = ProtoExpert.new("hfudt.zlib_unsupported.expert", "zlib decompression not supported by this Wireshark version, 4.3.0 or later required.", expert.group.UNDECODED, expert.severity.WARN)
@@ -216,7 +216,7 @@ function p_hf_domain.dissector(buf, pinfo, tree)
 
         len = buf(i, 4):uint()
         domain_subtree:add(f_username_signature_length_id, buf(i, 4)); i = i + 4
-        domain_subtree:add(f_username_signature_id, buf(i,len), buf(i, len):ustring()); i = i + len
+        domain_subtree:add(f_username_signature_id, buf(i,len)); i = i + len
       end
     else
       tree:add_proto_expert_info(ef_version_unsupported)

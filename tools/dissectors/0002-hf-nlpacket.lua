@@ -168,6 +168,20 @@ local nonverified_packet_types = {
     ["NodeMuteRequest"] = true,
 }
 
+-- Mapping of packet type to decoder
+local dissectors = {
+  ["DomainList"] = "hf-domain",
+  ["DomainConnectRequest"] = "hf-domain",
+  ["DomainListRequest"] = "hf-domain",
+  ["AvatarData"] = "hf-avatar",
+  ["BulkAvatarData"] = "hf-avatar",
+  ["BulkAvatarTraits"] = "hf-avatar",
+  ["EntityEdit"] = "hf-entity",
+  ["MicrophoneAudioNoEcho"] = "hf-audio",
+  ["MicrophoneAudioWithEcho"] = "hf-audio",
+  ["SilentAudioFrame"] = "hf-audio"
+}
+
 
 p_nlpacket = Proto("hf-nlpacket", "HF NLPacket")
 
@@ -176,72 +190,75 @@ local f_version = ProtoField.uint8("hf-nlpacket.version"     , "Version"  , base
 local f_sender_id = ProtoField.uint16("hf-nlpacket.sender_id", "Sender ID", base.DEC)
 local f_hmac_hash = ProtoField.bytes("hf-nlpacket.hmac_hash" , "HMAC Hash")
 
+-- We don't know what this is at all.
+local ef_unknown_type = ProtoExpert.new("nf-nlpacket.unknown_type.expert", "Packet type unrecognized. Wireshark decoder too old?", expert.group.UNDECODED, expert.severity.ERROR)
+
+-- We know what it is, but there's no decoder for it.
+local ef_no_decoder = ProtoExpert.new("hf-nlpacket.no_decoder.expert", "Decoder for this packet hasn't been implemented yet", expert.group.UNDECODED, expert.severity.ERROR)
+
 p_nlpacket.fields = {
-    f_type, f_version, f_sender_id, f_hmac_hash
+  f_type, f_version, f_sender_id, f_hmac_hash
 }
 
+p_nlpacket.experts = { 
+  ef_unknown_type, ef_no_decoder 
+}
+
+function p_nlpacket.dissector(buf, pinfo, tree)
+  pinfo.cols.protocol = p_nlpacket.name
+
+  local pos = 0
+
+  -- Packet must at least have type and version
+  if buf:len() < 2 then return end
 
 
-local packet_type_extractor = Field.new('hfudt.type')
-
-function p_hf_nlpacket.dissector(buf, pinfo, tree)
-    pinfo.cols.protocol = p_nlpacket.name
-
-    local pos = 0
-
-    local packet_type = buf(0, 1):le_uint()
-    local packet_type_text = packet_types[packet_type]
+  subtree = tree:add(p_nlpacket, buf(0))
 
 
-    subtree.add(f_type, buf(pos,1)); pos = pos + 1
-    subtree.add(f_version, buf(pos,1)); pos = pos + 1
+  local packet_type = buf(0, 1):le_uint()
+  local packet_type_text = packet_types[packet_type]
 
-
-    if unsourced_packet_types[packet_type_text] == nil then
-        subtree:add_le(f_sender_id, buf(pos,2))
-        pos = pos + 2
-    end
-
-    if nonverified_packet_types[packet_type_text] then --== nil and unsourced_packet_types[packet_type_text] == nil then
-        -- read HMAC MD5 hash
-        subtree:add(f_hmac_hash, buf(pos, 16))
-        pos = pos + 16
-    end
-
-    ---------------------------------------------------------------------------
-    -- Payload dissection
-    ---------------------------------------------------------------------------
-
-    local payload_to_dissect = nil
-
-    if payload_to_dissect ~= nil then
-        -- Domain packets
-        if packet_type_text == "DomainList" or
-           packet_type_text == "DomainConnectRequest" or
-           packet_type_text == "DomainListRequest"
-        then
-          Dissector.get("hf-domain"):call(payload_to_dissect, pinfo, tree)
-        end
   
-        -- AvatarData or BulkAvatarDataPacket
-        if packet_type_text == "AvatarData" or
-           packet_type_text == "BulkAvatarData" or
-           packet_type_text == "BulkAvatarTraits" then
-          Dissector.get("hf-avatar"):call(payload_to_dissect, pinfo, tree)
-        end
-  
-        if packet_type_text == "EntityEdit" then
-          Dissector.get("hf-entity"):call(payload_to_dissect, pinfo, tree)
-        end
-  
-        if packet_types[packet_type] == "MicrophoneAudioNoEcho" or
-           packet_types[packet_type] == "MicrophoneAudioWithEcho" or
-           packet_types[packet_type] == "SilentAudioFrame" then
-          Dissector.get("hf-audio"):call(payload_to_dissect, pinfo, tree)
-        end
-      end
-  
-    end
+
+  subtree:add(f_type, buf(pos,1)); pos = pos + 1
+  subtree:add(f_version, buf(pos,1)); pos = pos + 1
+
+
+  if unsourced_packet_types[packet_type_text] == nil then
+    subtree:add_le(f_sender_id, buf(pos,2))
+    pos = pos + 2
+  end
+
+  if nonverified_packet_types[packet_type_text] == nil then --== nil and unsourced_packet_types[packet_type_text] == nil then
+      -- read HMAC MD5 hash
+      subtree:add(f_hmac_hash, buf(pos, 16))
+      pos = pos + 16
+  end
+
+  ---------------------------------------------------------------------------
+  -- Payload dissection
+  ---------------------------------------------------------------------------
+
+  if packet_type_text == nil then
+    -- We don't even know what this packet type is. Please contribute!
+    tree:add_proto_expert_info(ef_no_decoder)
+    print("Packet type " .. packet_type .. " is not known")
+    return
+  end
+
+  pinfo.cols.info:append(" [" .. packet_type_text .. "]")
+
+  local payload_to_dissect = buf(pos):tvb()
+
+  dissector = dissectors[packet_type_text]
+
+  if dissector ~= nil then
+    Dissector.get(dissector):call(payload_to_dissect, pinfo, tree)
+  else
+    -- We don't know how to decode this. Please contribute!
+    tree:add_proto_expert_info(ef_no_decoder)
+  end
 
 end
 
