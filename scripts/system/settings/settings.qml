@@ -3,7 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import controlsUit 1.0 as HifiControlsUit
 
-// TODO: Some default values wait until component is completed. Is this nessicary? 
+// TODO: Some default values wait until component is completed. Is this necessary? 
 
 Rectangle {
     color: Qt.rgba(0.1,0.1,0.1,1)
@@ -71,13 +71,12 @@ Rectangle {
 					ListElement { text: "Custom" }
 				}
 
-				Component.onCompleted: {
-					console.log("\n\n"+ Performance.getPerformancePreset())
+				onCurrentIndexChanged: {
+					Performance.setPerformancePreset(currentIndex + 1)
 				}
 			}
 		}
 
-		// TODO: Deferred render vs forward render?
 		// Rendering Effects
 		RowLayout {
 			width: parent.width
@@ -94,7 +93,6 @@ Rectangle {
 			CheckBox {
 				id: rendering_effects_state
 				checked: Render.renderMethod === 0
-
             }
 		}
 
@@ -111,42 +109,61 @@ Rectangle {
 				width: parent.width
 			}
 			
+
+			// TODO: Some things were hard corded to be enabled / disabled depending on renderer.
+			// This is fixed currently in the ProtocolChanges branch, but not yet merged into master
+			// Remove "checked: XXXXXX" and replace with commented out "checked: XXXXX" this when merged
+			// Also please remove "enabled:false". That was just to make sure users don't diddle with settings they can't change :)
 			GridLayout {
 				columns: 2
 				height: 100
 				width: parent.width - 10
 				anchors.horizontalCenter: parent.horizontalCenter
 
-				// TODO: Some things were hard corded to be enabled / disabled depending on renderer. Why?
 				CheckBox {
 					text: "Shadows"
 					Layout.fillWidth: true
 					palette.windowText: "gray"
 					checked: Render.shadowsEnabled
+					onCheckedChanged: {
+					   Render.shadowsEnabled = checked;
+					}
 				}
 				
 				CheckBox {
+					enabled: false
 					text: "Local Lights"
 					Layout.fillWidth: true
 					palette.windowText: "gray"
 					//checked: Render.localLightsEnabled
-					checked: rendering_effects_state.checked // FIXME Hardcoded, why?
+					checked: rendering_effects_state.checked
+					//onCheckedChanged: {
+					//    Render.localLightsEnabled = checked;
+					//}
 				}
 				
 				CheckBox {
+					enabled: false
 					text: "Fog"
 					Layout.fillWidth: true
 					palette.windowText: "gray" 
 					//checked: Render.fogEnabled
-					checked: rendering_effects_state.checked // FIXME Hardcoded, why?
+					checked: rendering_effects_state.checked 
+					//onCheckedChanged: {
+					//    Render.fogEnabled = checked;
+					//}
 				}
 				
 				CheckBox {
+					enabled: false
 					text: "Bloom"
 					Layout.fillWidth: true
 					palette.windowText: "gray"
 					//checked: Render.bloomEnabled
-					checked: rendering_effects_state.checked // FIXME Hardcoded, why?
+					checked: rendering_effects_state.checked 
+					//onCheckedChanged: {
+					//    Render.bloomEnabled = checked;
+					//}
 				}
 			}
 		}
@@ -178,6 +195,10 @@ Rectangle {
 
 				Component.onCompleted: {
 					refresh_rate_cb.currentIndex = Performance.getRefreshRateProfile()
+				}
+
+				onCurrentIndexChanged: {
+					Performance.setRefreshRateProfile(currentIndex)
 				}
 			}
 		}
@@ -218,6 +239,10 @@ Rectangle {
 						Component.onCompleted: {
 							text = Performance.getCustomRefreshRate(0)
 						}
+						
+						onTextChanged: {
+							Performance.setCustomRefreshRate(0, text)
+						}
 					}
 				}
 
@@ -235,6 +260,10 @@ Rectangle {
 
 						Component.onCompleted: {
 							text = Performance.getCustomRefreshRate(1)
+						}
+						
+						onTextChanged: {
+							Performance.setCustomRefreshRate(1, text)
 						}
 					}
 				}
@@ -254,6 +283,10 @@ Rectangle {
 						Component.onCompleted: {
 							text = Performance.getCustomRefreshRate(2)
 						}
+						
+						onTextChanged: {
+							Performance.setCustomRefreshRate(2, text)
+						}
 					}
 				}
 
@@ -271,6 +304,11 @@ Rectangle {
 
 						Component.onCompleted: {
 							text = Performance.getCustomRefreshRate(3)
+						}
+
+						
+						onTextChanged: {
+							Performance.setCustomRefreshRate(3, text)
 						}
 					}
 				}
@@ -290,6 +328,10 @@ Rectangle {
 						Component.onCompleted: {
 							text = Performance.getCustomRefreshRate(4)
 						}
+						
+						onTextChanged: {
+							Performance.setCustomRefreshRate(4, text)
+						}
 					}
 				}
 
@@ -307,6 +349,10 @@ Rectangle {
 
 						Component.onCompleted: {
 							text = Performance.getCustomRefreshRate(5)
+						}
+
+						onTextChanged: {
+							Performance.setCustomRefreshRate(5, text)
 						}
 					}
 				}
@@ -338,6 +384,10 @@ Rectangle {
 				to: 2
 				value: Render.viewportResolutionScale.toFixed(1)
 				stepSize: 0.1
+
+				onValueChanged: {
+					Render.viewportResolutionScale = value
+				}
 			}
 		}
 
@@ -365,6 +415,10 @@ Rectangle {
 				to: 130
 				value: Render.verticalFieldOfView.toFixed(1) // TODO: Need to set to Overte default
 				stepSize: 1
+
+				onValueChanged: {
+					Render.verticalFieldOfView = value
+				}
 			}
 		}
 
@@ -389,6 +443,10 @@ Rectangle {
 					ListElement { text: "TAA" }
 					ListElement { text: "FXAA" }
 				}
+
+				onCurrentIndexChanged: {
+					Render.antialiasingMode = currentIndex;
+				}
 			}
 		}
 	}
@@ -398,8 +456,7 @@ Rectangle {
     // Messages from script
     function fromScript(message) {
         switch (message.type){
-            // TODO:
-            case "active_polls":
+            case "":
                 break;
         }
     }
