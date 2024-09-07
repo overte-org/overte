@@ -241,9 +241,9 @@ Item {
                         model: root.downloadUrls
                         delegate: StatText {
                             visible: root.expanded;
-                            text: modelData.length > 30
+                            text: (modelData.length > 30
                                 ?  modelData.substring(0, 5) + "..." + modelData.substring(modelData.length - 22)
-                                : modelData
+                                : modelData) + "\n\t" + (!isNaN(root.downloadPriorities[index]) ? ("Priority: " + root.downloadPriorities[index] + ", ") : "") + "Progress: " + root.downloadProgresses[index] + "%"
                         }
                     }
                 }

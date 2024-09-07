@@ -259,7 +259,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     _headData = new MyHead(this);
 
     _skeletonModel = std::make_shared<MySkeletonModel>(this, nullptr);
-    _skeletonModel->setLoadingPriority(MYAVATAR_LOADING_PRIORITY);
+    _skeletonModel->setLoadingPriorityOperator([]() { return MYAVATAR_LOADING_PRIORITY; });
     connect(_skeletonModel.get(), &Model::setURLFinished, this, &Avatar::setModelURLFinished);
     connect(_skeletonModel.get(), &Model::setURLFinished, this, [this](bool success) {
         if (success) {
@@ -1841,6 +1841,8 @@ void MyAvatar::handleChangedAvatarEntityData() {
             }
         });
     }
+
+    _hasCheckedForAvatarEntities = true;
 }
 
 bool MyAvatar::updateStaleAvatarEntityBlobs() const {
@@ -1896,6 +1898,7 @@ void MyAvatar::prepareAvatarEntityDataForReload() {
     });
 
     _reloadAvatarEntityDataFromSettings = true;
+    _hasCheckedForAvatarEntities = false;
 }
 
 AvatarEntityMap MyAvatar::getAvatarEntityData() const {

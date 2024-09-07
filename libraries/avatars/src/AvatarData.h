@@ -1276,7 +1276,6 @@ public:
      */
     Q_INVOKABLE virtual void setAvatarEntityData(const AvatarEntityMap& avatarEntityData);
 
-    void setAvatarEntityDataChanged(bool value) { _avatarEntityDataChanged = value; }
     AvatarEntityIDs getAndClearRecentlyRemovedIDs();
 
     /*@jsdoc
@@ -1582,6 +1581,8 @@ protected:
     glm::vec3 _handPosition;
     virtual const QString& getSessionDisplayNameForTransport() const { return _sessionDisplayName; }
     virtual void maybeUpdateSessionDisplayNameFromTransport(const QString& sessionDisplayName) { } // No-op in AvatarMixer
+
+    virtual void onIdentityRecieved() {}
 
     // Body scale
     float _targetScale;
