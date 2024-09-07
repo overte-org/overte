@@ -184,11 +184,20 @@ jobs:
       run: |
         if [[ "${{ matrix.os }}" =~ "Ubuntu" || "${{ matrix.os }}" =~ "Debian" ]]; then
 
+          echo "Adding Toolchain test PPA"
+          add-apt-repository ppa:ubuntu-toolchain-r/test
+
           echo "Updating apt repository index"
           sudo apt update || exit 1
 
           echo "Installing apt packages"
           sudo apt install -y ${{ matrix.apt-dependencies }} || exit 1
+
+          echo "Installing gcc-13"
+          apt install -y gcc-13 g++-13 || exit 1
+
+          # Set GCC 13 as default
+          update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13 --slave /usr/bin/gcov gcov /usr/bin/gcov-13
 
         else # macOS
           echo "Downloading MacOSX10.12 SDK.."
