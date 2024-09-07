@@ -105,7 +105,6 @@ void Socket::rebind(SocketType socketType, quint16 localPort) {
 
 #if defined(WEBRTC_DATA_CHANNELS)
 const WebRTCSocket* Socket::getWebRTCSocket() {
-    Guard  socketLock(_socketMutex);
     return _networkSocket.getWebRTCSocket();
 }
 #endif
@@ -121,13 +120,13 @@ void Socket::setSystemBufferSizes(SocketType socketType) {
 
         if (i == 0) {
             bufferOpt = QAbstractSocket::SendBufferSizeSocketOption;
-            numBytes = socketType == SocketType::UDP 
+            numBytes = socketType == SocketType::UDP
                 ? udt::UDP_SEND_BUFFER_SIZE_BYTES : udt::WEBRTC_SEND_BUFFER_SIZE_BYTES;
             bufferTypeString = "send";
 
         } else {
             bufferOpt = QAbstractSocket::ReceiveBufferSizeSocketOption;
-            numBytes = socketType == SocketType::UDP 
+            numBytes = socketType == SocketType::UDP
                 ? udt::UDP_RECEIVE_BUFFER_SIZE_BYTES : udt::WEBRTC_RECEIVE_BUFFER_SIZE_BYTES;
             bufferTypeString = "receive";
         }
