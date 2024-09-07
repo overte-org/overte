@@ -33,9 +33,9 @@ glm::vec2 TextRenderer3D::computeExtent(const QString& str) const {
     return glm::vec2(0.0f, 0.0f);
 }
 
-float TextRenderer3D::getFontSize() const {
+float TextRenderer3D::getFontHeight() const {
     if (_font) {
-        return _font->getFontSize();
+        return _font->getFontHeight();
     }
     return 0.0f;
 }

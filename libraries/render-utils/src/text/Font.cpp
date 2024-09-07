@@ -129,7 +129,7 @@ void Font::read(QIODevice& in) {
     }
 
     _distanceRange = glm::vec2(arteryFont.variants[0].metrics.distanceRange);
-    _fontSize = arteryFont.variants[0].metrics.ascender + fabs(arteryFont.variants[0].metrics.descender);
+    _fontHeight = arteryFont.variants[0].metrics.ascender + fabs(arteryFont.variants[0].metrics.descender);
     _leading = arteryFont.variants[0].metrics.lineHeight;
     _spaceWidth = 0.5f * arteryFont.variants[0].metrics.emSize; // We use half the emSize as a first guess for _spaceWidth
 
@@ -303,11 +303,11 @@ QStringList Font::tokenizeForWrapping(const QString& str) const {
     return tokens;
 }
 
-glm::vec2 Font::computeTokenExtent(const QString& token) const {
-    glm::vec2 advance(0, _fontSize);
+float Font::computeTokenWidth(const QString& token) const {
+    float advance = 0.0f;
     foreach(QChar c, token) {
         Q_ASSERT(c != '\n');
-        advance.x += (c == ' ') ? _spaceWidth : getGlyph(c).d;
+        advance += (c == ' ') ? _spaceWidth : getGlyph(c).d;
     }
     return advance;
 }
@@ -318,10 +318,10 @@ glm::vec2 Font::computeExtent(const QString& str) const {
     QStringList lines = splitLines(str);
     if (!lines.empty()) {
         for(const auto& line : lines) {
-            glm::vec2 tokenExtent = computeTokenExtent(line);
-            extent.x = std::max(tokenExtent.x, extent.x);
+            float tokenWidth = computeTokenWidth(line);
+            extent.x = std::max(tokenWidth, extent.x);
         }
-        extent.y = lines.count() * _fontSize;
+        extent.y = lines.count() * _fontHeight;
     }
     return extent;
 }

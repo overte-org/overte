@@ -25,10 +25,6 @@
 using namespace render;
 using namespace render::entities;
 
-static const int FIXED_FONT_POINT_SIZE = 40;
-const int FIXED_FONT_SCALING_RATIO = FIXED_FONT_POINT_SIZE * 92.0f; // Determined through experimentation to fit font to line height.
-const float LINE_SCALE_RATIO = 1.2f;
-
 TextEntityRenderer::TextEntityRenderer(const EntityItemPointer& entity) :
     Parent(entity),
     _textRenderer(TextRenderer3D::getInstance(ROBOTO_FONT_FAMILY)) {
@@ -193,12 +189,8 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
 
 QSizeF TextEntityRenderer::textSize(const QString& text) const {
     auto extents = _textRenderer->computeExtent(text);
-    extents.y *= 2.0f;
-
-    float maxHeight = (float)_textRenderer->computeExtent("Xy").y * LINE_SCALE_RATIO;
-    float pointToWorldScale = (maxHeight / FIXED_FONT_SCALING_RATIO) * _lineHeight;
-
-    return QSizeF(extents.x, extents.y) * pointToWorldScale;
+    float scale = _lineHeight / _textRenderer->getFontHeight();
+    return scale * QSizeF(extents.x, extents.y);
 }
 
 void TextEntityRenderer::onAddToSceneTyped(const TypedEntityPointer& entity) {
@@ -375,7 +367,7 @@ void entities::TextPayload::render(RenderArgs* args) {
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), textRenderable->_billboardMode,
         usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
 
-    float scale = textRenderable->_lineHeight / textRenderer->getFontSize();
+    float scale = textRenderable->_lineHeight / textRenderer->getFontHeight();
     transform.postTranslate(glm::vec3(-0.5, 0.5, 1.0f + EPSILON / dimensions.z));
     transform.setScale(scale);
     batch.setModelTransform(transform);

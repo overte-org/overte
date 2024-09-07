@@ -63,7 +63,7 @@ public:
     };
 
     glm::vec2 computeExtent(const QString& str) const;
-    float getFontSize() const { return _fontSize; }
+    float getFontHeight() const { return _fontHeight; }
 
     struct DrawProps {
         DrawProps(const QString& str, const glm::vec4& color, const glm::vec3& effectColor, const glm::vec2& origin, const glm::vec2& bounds,
@@ -103,7 +103,7 @@ private:
     static Pointer load(const QString& family, QIODevice& fontFile);
     QStringList tokenizeForWrapping(const QString& str) const;
     QStringList splitLines(const QString& str) const;
-    glm::vec2 computeTokenExtent(const QString& str) const;
+    float computeTokenWidth(const QString& str) const;
 
     const Glyph& getGlyph(const QChar& c) const;
     void buildVertices(DrawInfo& drawInfo, const QString& str, const glm::vec2& origin, const glm::vec2& bounds, float scale, bool enlargeForShadows,
@@ -121,7 +121,7 @@ private:
     // Font characteristics
     QString _family;
     glm::vec2 _distanceRange { 1.0f };
-    float _fontSize { 0.0f };
+    float _fontHeight { 0.0f };
     float _leading { 0.0f };
     float _spaceWidth { 0.0f };
 
