@@ -30,8 +30,7 @@
 #define VK_USE_PLATFORM_XCB_KHR
 #endif
 
-#define VKCPP_ENHANCED_MODE
-#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan.h>
 
 #define VULKAN_USE_VMA 1
 

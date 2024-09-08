@@ -11,23 +11,22 @@
 #include "VKShared.h"
 #include "VKBackend.h"
 
-namespace gpu { namespace vk {
+namespace gpu { namespace vulkan {
 
-class VKFramebuffer : public VKObject<Framebuffer> {
+class VKFramebuffer : public vulkan::VKObject<Framebuffer> {
 public:
-    template <typename VKFramebufferType>
-    static VKFramebufferType* sync(VKBackend& backend, const Framebuffer& framebuffer) {
-        VKFramebufferType* object = Backend::getGPUObject<VKFramebufferType>(framebuffer);
+    static VKFramebuffer* sync(vulkan::VKBackend& backend, const Framebuffer& framebuffer) {
+        VKFramebuffer* object = Backend::getGPUObject<VKFramebuffer>(framebuffer);
 
-        bool needsUpate { false };
+        bool needsUpdate{ false };
         if (!object ||
             framebuffer.getDepthStamp() != object->_depthStamp ||
             framebuffer.getColorStamps() != object->_colorStamps) {
-            needsUpate = true;
+            needsUpdate = true;
         }
 
         // If GPU object already created and in sync
-        if (!needsUpate) {
+        if (!needsUpdate) {
             return object;
         } else if (framebuffer.isEmpty()) {
             // NO framebuffer definition yet so let's avoid thinking
@@ -37,18 +36,18 @@ public:
         // need to have a gpu object?
         if (!object) {
             // All is green, assign the gpuobject to the Framebuffer
-            object = new VKFramebufferType(backend.shared_from_this(), framebuffer);
+            object = new VKFramebuffer(backend.shared_from_this(), framebuffer);
             Backend::setGPUObject(framebuffer, object);
-            (void)CHECK_VK_ERROR();
         }
 
         object->update();
         return object;
     }
 
+    // VKTODO: what type should it return?
     template <typename VKFramebufferType>
-    static VKuint getId(VKBackend& backend, const Framebuffer& framebuffer) {
-        VKFramebufferType* fbo = sync<VKFramebufferType>(backend, framebuffer);
+    static uint32_t getId(vulkan::VKBackend& backend, const Framebuffer& framebuffer) {
+        VKFramebufferType* fbo = sync(backend, framebuffer);
         if (fbo) {
             return fbo->_id;
         } else {
@@ -56,17 +55,20 @@ public:
         }
     }
 
-    const VKuint& _fbo { _id };
-    std::vector<VKenum> _colorBuffers;
+    // VKTODO: probably a Vulkan handle instead of this
+    //const VKuint& _fbo { _id };
+    //std::vector<VKenum> _colorBuffers;
     Stamp _depthStamp { 0 };
     std::vector<Stamp> _colorStamps;
 
 protected:
-    VKenum _status { VK_FRAMEBUFFER_COMPLETE };
-    virtual void update() = 0;
-    bool checkStatus(VKenum target) const;
+    enum FramebufferStatus { VK_FRAMEBUFFER_COMPLETE } _status;
+    virtual void update();
+    bool checkStatus(FramebufferStatus target) const;
 
-    VKFramebuffer(const std::weak_ptr<VKBackend>& backend, const Framebuffer& framebuffer, VKuint id) : VKObject(backend, framebuffer, id) {}
+    // VKTODO: We need a check on backend.lock(), or to pass backend reference instead
+    VKFramebuffer(const std::weak_ptr<vulkan::VKBackend>& backend, const Framebuffer& framebuffer) : VKObject(*backend.lock(), framebuffer) {}
+    // VKTODO: Do we need virtual destructor here?
     ~VKFramebuffer();
 
 };
