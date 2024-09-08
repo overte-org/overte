@@ -244,7 +244,7 @@ void Context::trashCommandBuffers(const std::vector<VkCommandBuffer>& cmdBuffers
     trashAll<VkCommandBuffer>(cmdBuffers, destructor);
 }
 
-void Context::emptyDumpster(vk::Fence fence) {
+void Context::emptyDumpster(VkFence fence) {
     VoidLambdaList newDumpster;
     newDumpster.swap(dumpster);
     recycler.push(FencedLambda{ fence, [fence, newDumpster, this] {
@@ -577,7 +577,10 @@ Buffer Context::stageToDeviceBuffer(const VkBufferUsageFlags& usage, size_t size
     Buffer staging = createStagingBuffer(size, data);
     Buffer result = createDeviceBuffer(usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT, size);
     withPrimaryCommandBuffer(
-        [&](vk::CommandBuffer copyCmd) { copyCmd.copyBuffer(staging.buffer, result.buffer, vk::BufferCopy(0, 0, size)); });
+        [&](VkCommandBuffer copyCmd) {
+            VkBufferCopy bufferCopy{ 0, 0, size };
+            vkCmdCopyBuffer(copyCmd, staging.buffer, result.buffer, 1, &bufferCopy);
+        });
     staging.destroy();
     return result;
 }

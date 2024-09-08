@@ -1,6 +1,7 @@
 #include "Allocation.h"
 
 #include <mutex>
+#include <stdexcept>
 
 using namespace vks;
 
