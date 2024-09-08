@@ -107,11 +107,11 @@ public:
         return getDeviceExtensionNames(physicalDevice).count(extension) != 0;
     }
 
-    void requireExtensions(const vk::ArrayProxy<const std::string>& requestedExtensions) {
+    void requireExtensions(const std::set<std::string>& requestedExtensions) {
         requiredExtensions.insert(requestedExtensions.begin(), requestedExtensions.end());
     }
 
-    void requireDeviceExtensions(const vk::ArrayProxy<const std::string>& requestedExtensions) {
+    void requireDeviceExtensions(const std::set<std::string>& requestedExtensions) {
         requiredDeviceExtensions.insert(requestedExtensions.begin(), requestedExtensions.end());
     }
 
@@ -161,7 +161,7 @@ public:
     // Should be called from time to time by the application to migrate zombie resources
     // to the recycler along with a fence that will be signalled when the objects are
     // safe to delete.
-    void emptyDumpster(vk::Fence fence);
+    void emptyDumpster(VkFence fence);
 
     // Check the recycler fences for signalled status.  Any that are signalled will have their corresponding
     // lambdas executed, freeing up the associated resources
@@ -239,16 +239,16 @@ public:
     // This function is intended for initialization only.  It incurs a queue and device
     // flush and may impact performance if used in non-setup code
     void withPrimaryCommandBuffer(const std::function<void(const VkCommandBuffer& commandBuffer)>& f) const {
-        vk::CommandBuffer commandBuffer = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+        VkCommandBuffer commandBuffer = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
         VkCommandBufferBeginInfo vkCommandBufferBeginInfo {
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
             .pNext = nullptr,
             .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
             .pInheritanceInfo = nullptr
         };
-        commandBuffer.begin(vkCommandBufferBeginInfo);
+        vkBeginCommandBuffer(commandBuffer, &vkCommandBufferBeginInfo);
         f(commandBuffer);
-        commandBuffer.end();
+        vkEndCommandBuffer(commandBuffer);
         device->flushCommandBuffer(commandBuffer, queue, true);
     }
 
