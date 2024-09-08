@@ -12,6 +12,7 @@
 #include <gpu/Forward.h>
 #include <gpu/Format.h>
 #include <gpu/Context.h>
+#include "VKBackend.h"
 
 Q_DECLARE_LOGGING_CATEGORY(gpu_vk_logging)
 Q_DECLARE_LOGGING_CATEGORY(trace_gpu_vk)
@@ -81,26 +82,24 @@ static const VkPrimitiveTopology PRIMITIVE_TO_VK[gpu::NUM_PRIMITIVES] = {
     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
 };
 
-//static const VKenum ELEMENT_TYPE_TO_VK[gpu::NUM_TYPES] = {
-//    VK_FLOAT,
-//    VK_INT,
-//    VK_UNSIGNED_INT,
-//    VK_HALF_FLOAT,
-//    VK_SHORT,
-//    VK_UNSIGNED_SHORT,
-//    VK_BYTE,
-//    VK_UNSIGNED_BYTE,
-//    // Normalized values
-//    VK_INT,
-//    VK_UNSIGNED_INT,
-//    VK_SHORT,
-//    VK_UNSIGNED_SHORT,
-//    VK_BYTE,
-//    VK_UNSIGNED_BYTE
-//};
-
-bool checkGLError(const char* name = nullptr);
-bool checkGLErrorDebug(const char* name = nullptr);
+// VKTODO is it needed?
+/*static const enum ELEMENT_TYPE_TO_VK[gpu::NUM_TYPES] = {
+    VK_FLOAT,
+    VK_INT,
+    VK_UNSIGNED_INT,
+    VK_HALF_FLOAT,
+    VK_SHORT,
+    VK_UNSIGNED_SHORT,
+    VK_BYTE,
+    VK_UNSIGNED_BYTE,
+    // Normalized values
+    VK_INT,
+    VK_UNSIGNED_INT,
+    VK_SHORT,
+    VK_UNSIGNED_SHORT,
+    VK_BYTE,
+    VK_UNSIGNED_BYTE
+};*/
 
 class VKBackend;
 
@@ -116,9 +115,7 @@ protected:
     const std::weak_ptr<VKBackend> _backend;
 };
 
-} } // namespace gpu::gl 
-
-#define CHECK_VK_ERROR() gpu::vk::checkGLErrorDebug(__FUNCTION__)
+} } // namespace gpu::vulkan
 
 #endif
 
