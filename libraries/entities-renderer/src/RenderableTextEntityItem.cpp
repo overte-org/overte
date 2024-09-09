@@ -367,7 +367,11 @@ void entities::TextPayload::render(RenderArgs* args) {
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), textRenderable->_billboardMode,
         usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
 
-    float scale = textRenderable->_lineHeight / textRenderer->getFontHeight();
+    float scale = 1.0f;
+    float fontHeight = textRenderer->getFontHeight();
+    if (fontHeight > 0.0f) {
+        scale = textRenderable->_lineHeight / fontHeight;
+    }
     transform.postTranslate(glm::vec3(-0.5, 0.5, 1.0f + EPSILON / dimensions.z));
     transform.setScale(scale);
     batch.setModelTransform(transform);
