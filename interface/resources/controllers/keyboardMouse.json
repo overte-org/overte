@@ -147,10 +147,19 @@
 
         { "from": { "makeAxis" : ["Keyboard.MouseMoveUp", "Keyboard.MouseMoveDown"] },
           "to": "Actions.DeltaPitch",
-          "when": "Application.CaptureMouse",
+          "when": ["Application.CaptureMouse", "!Application.CameraSelfie"],
           "filters":
             [
                 { "type": "scale", "scale": 0.2 }
+            ]
+        },
+
+        { "from": { "makeAxis" : ["Keyboard.MouseMoveUp", "Keyboard.MouseMoveDown"] },
+          "to": "Actions.DeltaPitch",
+          "when": ["Application.CaptureMouse", "Application.CameraSelfie"],
+          "filters":
+            [
+                { "type": "scale", "scale": -0.2 }
             ]
         },
 
