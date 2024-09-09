@@ -2,7 +2,7 @@
     "name": "Keyboard/Mouse to Actions",
     "channels": [
         { "from": "Keyboard.A", "when": ["Keyboard.RightMouseButton", "Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeRight" },
-        { "from": "Keyboard.A", "when": ["Keyboard.RightMouseButton","!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeLeft" },
+        { "from": "Keyboard.A", "when": ["Keyboard.RightMouseButton", "!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeLeft" },
         { "from": "Keyboard.D", "when": ["Keyboard.RightMouseButton", "!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeRight" },
         { "from": "Keyboard.D", "when": ["Keyboard.RightMouseButton", "Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeLeft" },
         { "from": "Keyboard.Q", "when": ["!Application.CameraSelfie", "!Keyboard.Control", "!Application.CaptureMouse"], "to": "Actions.LATERAL_LEFT" },
