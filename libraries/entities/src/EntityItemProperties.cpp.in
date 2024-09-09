@@ -257,7 +257,7 @@ const QHash<QString, ComponentMode> stringToComponentMode = [] {
     addComponentMode(toReturn, ComponentMode::COMPONENT_MODE_ENABLED);
     return toReturn;
 }();
-QString EntityItemProperties::getComponentModeAsString(uint32_t mode) { return ComponentModeHelpers::getNameForComponentMode((ComponentMode)mode); }
+QString EntityItemProperties::getComponentModeAsString(uint8_t mode) { return ComponentModeHelpers::getNameForComponentMode((ComponentMode)mode); }
 QString EntityItemProperties::getSkyboxModeAsString() const { return getComponentModeAsString(_skyboxMode); }
 QString EntityItemProperties::getKeyLightModeAsString() const { return getComponentModeAsString(_keyLightMode); }
 QString EntityItemProperties::getAmbientLightModeAsString() const { return getComponentModeAsString(_ambientLightMode); }

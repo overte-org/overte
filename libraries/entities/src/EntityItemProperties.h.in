@@ -117,7 +117,7 @@ public:
 
 @ENTITY_ITEM_PROPERTY_DEFINES@
 
-    static QString getComponentModeAsString(uint32_t mode);
+    static QString getComponentModeAsString(uint8_t mode);
 
 public:
     float getMaxDimension() const { return glm::compMax(_dimensions); }

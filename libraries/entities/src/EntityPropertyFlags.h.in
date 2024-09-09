@@ -16,7 +16,7 @@
 
 #include <PropertyFlags.h>
 
-enum EntityPropertyList {
+enum EntityPropertyList : uint16_t {
     PROP_PAGED_PROPERTY,
     PROP_CUSTOM_PROPERTIES_INCLUDED,
 
