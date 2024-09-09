@@ -2365,6 +2365,11 @@ function updateMultiDiffProperties(propertiesMapToUpdate, onlyUpdateEntity) {
 
 function createEmitTextPropertyUpdateFunction(property) {
     return function() {
+        // If we don't have canViewAssetURLs permissions, ignore clearing URLs
+        if (!canViewAssetURLs && property.data.placeholder === "URL" && this.value === "") {
+            return;
+        }
+
         property.elInput.classList.remove('multi-diff');
         updateProperty(property.name, this.value, property.isParticleProperty);
     };
