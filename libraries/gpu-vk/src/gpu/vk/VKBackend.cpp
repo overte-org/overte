@@ -500,6 +500,7 @@ struct Cache {
         {
             auto& cb = builder.colorBlendState;
             auto& ass = cb.blendAttachmentStates;
+            Q_ASSERT(pipelineState.framebuffer);
             auto& rbs = pipelineState.framebuffer->getRenderBuffers();
             uint32_t rbCount = 0;
             for (const auto& rb : rbs) {
@@ -568,12 +569,12 @@ struct Cache {
     }
 };
 
+// VKTODO: this is ugly solution
 Cache _cache;
 
 void VKBackend::executeFrame(const FramePointer& frame) {
     using namespace vks::debugutils;
     {
-        PROFILE_RANGE(gpu_vk_detail, "Preprocess");
         const auto& commandBuffer = _currentCommandBuffer;
         for (const auto& batchPtr : frame->batches) {
             const auto& batch = *batchPtr;
@@ -586,101 +587,104 @@ void VKBackend::executeFrame(const FramePointer& frame) {
             bool renderpassActive = false;
             for (auto commandIndex = 0; commandIndex < numCommands; ++commandIndex, ++command, ++offset) {
                 const auto& paramOffset = *offset;
-                // How to resolve renderpass
-                switch (*command) {
-                    case Batch::COMMAND_draw:
-                    case Batch::COMMAND_drawIndexed:
-                    case Batch::COMMAND_drawInstanced:
-                    case Batch::COMMAND_drawIndexedInstanced:
-                    case Batch::COMMAND_multiDrawIndirect:
-                    case Batch::COMMAND_multiDrawIndexedIndirect:
-                        // resolve layout
-                        // resolve pipeline
-                        // resolve descriptor set(s)
-                        _cache.getPipeline(_context);
-                        break;
+                {
+                    PROFILE_RANGE(gpu_vk_detail, "Preprocess");
+                    // How to resolve renderpass
+                    switch (*command) {
+                        case Batch::COMMAND_draw:
+                        case Batch::COMMAND_drawIndexed:
+                        case Batch::COMMAND_drawInstanced:
+                        case Batch::COMMAND_drawIndexedInstanced:
+                        case Batch::COMMAND_multiDrawIndirect:
+                        case Batch::COMMAND_multiDrawIndexedIndirect:
+                            // resolve layout
+                            // resolve pipeline
+                            // resolve descriptor set(s)
+                            _cache.getPipeline(_context);
+                            break;
 
-                    case Batch::COMMAND_setPipeline: {
-                        const auto& pipeline = batch._pipelines.get(batch._params[paramOffset]._uint);
-                        _cache.pipelineState.setPipeline(pipeline);
-                    } break;
+                        case Batch::COMMAND_setPipeline: {
+                            const auto& pipeline = batch._pipelines.get(batch._params[paramOffset]._uint);
+                            _cache.pipelineState.setPipeline(pipeline);
+                        } break;
 
-                    case Batch::COMMAND_setInputFormat: {
-                        const auto& format = batch._streamFormats.get(batch._params[paramOffset]._uint);
-                        _cache.pipelineState.setVertexFormat(format);
-                    } break;
+                        case Batch::COMMAND_setInputFormat: {
+                            const auto& format = batch._streamFormats.get(batch._params[paramOffset]._uint);
+                            _cache.pipelineState.setVertexFormat(format);
+                        } break;
 
-                    case Batch::COMMAND_setFramebuffer: {
-                        if (renderpassActive) {
-                            cmdEndLabel(commandBuffer);
-                        }
-                        const auto& framebuffer = batch._framebuffers.get(batch._params[paramOffset]._uint);
-                        if (framebuffer) {
-                            cmdBeginLabel(commandBuffer, "framebuffer:" + framebuffer->getName(), vec4{ 1, 0, 1, 1 });
-                        } else {
-                            cmdBeginLabel(commandBuffer, "framebuffer: NULL", vec4{ 1, 0, 1, 1 });
-                        }
-                        renderpassActive = true;
-                        _cache.pipelineState.setFramebuffer(framebuffer);
-                    } break;
+                        case Batch::COMMAND_setFramebuffer: {
+                            if (renderpassActive) {
+                                cmdEndLabel(commandBuffer);
+                            }
+                            const auto& framebuffer = batch._framebuffers.get(batch._params[paramOffset]._uint);
+                            if (framebuffer) {
+                                cmdBeginLabel(commandBuffer, "framebuffer:" + framebuffer->getName(), vec4{ 1, 0, 1, 1 });
+                            } else {
+                                cmdBeginLabel(commandBuffer, "framebuffer: NULL", vec4{ 1, 0, 1, 1 });
+                            }
+                            renderpassActive = true;
+                            _cache.pipelineState.setFramebuffer(framebuffer);
+                        } break;
 
-                    case Batch::COMMAND_setInputBuffer:
-                    case Batch::COMMAND_setIndexBuffer:
-                    case Batch::COMMAND_setIndirectBuffer:
+                        case Batch::COMMAND_setInputBuffer:
+                        case Batch::COMMAND_setIndexBuffer:
+                        case Batch::COMMAND_setIndirectBuffer:
 
-                    case Batch::COMMAND_setModelTransform:
-                    case Batch::COMMAND_setViewTransform:
-                    case Batch::COMMAND_setProjectionTransform:
-                    case Batch::COMMAND_setProjectionJitter:
-                    case Batch::COMMAND_setViewportTransform:
-                    case Batch::COMMAND_setDepthRangeTransform:
+                        case Batch::COMMAND_setModelTransform:
+                        case Batch::COMMAND_setViewTransform:
+                        case Batch::COMMAND_setProjectionTransform:
+                        case Batch::COMMAND_setProjectionJitter:
+                        case Batch::COMMAND_setViewportTransform:
+                        case Batch::COMMAND_setDepthRangeTransform:
 
-                    case Batch::COMMAND_setStateBlendFactor:
-                    case Batch::COMMAND_setStateScissorRect:
+                        case Batch::COMMAND_setStateBlendFactor:
+                        case Batch::COMMAND_setStateScissorRect:
 
-                    case Batch::COMMAND_setUniformBuffer:
-                    case Batch::COMMAND_setResourceBuffer:
-                    case Batch::COMMAND_setResourceTexture:
-                    case Batch::COMMAND_setResourceTextureTable:
-                    case Batch::COMMAND_setResourceFramebufferSwapChainTexture:
-                        break;
+                        case Batch::COMMAND_setUniformBuffer:
+                        case Batch::COMMAND_setResourceBuffer:
+                        case Batch::COMMAND_setResourceTexture:
+                        case Batch::COMMAND_setResourceTextureTable:
+                        case Batch::COMMAND_setResourceFramebufferSwapChainTexture:
+                            break;
 
-                    case Batch::COMMAND_setFramebufferSwapChain:
-                    case Batch::COMMAND_clearFramebuffer:
-                    case Batch::COMMAND_blit:
-                    case Batch::COMMAND_generateTextureMips:
+                        case Batch::COMMAND_setFramebufferSwapChain:
+                        case Batch::COMMAND_clearFramebuffer:
+                        case Batch::COMMAND_blit:
+                        case Batch::COMMAND_generateTextureMips:
 
-                    case Batch::COMMAND_advance:
+                        case Batch::COMMAND_advance:
 
-                    case Batch::COMMAND_beginQuery:
-                    case Batch::COMMAND_endQuery:
-                    case Batch::COMMAND_getQuery:
+                        case Batch::COMMAND_beginQuery:
+                        case Batch::COMMAND_endQuery:
+                        case Batch::COMMAND_getQuery:
 
-                    case Batch::COMMAND_resetStages:
+                        case Batch::COMMAND_resetStages:
 
-                    case Batch::COMMAND_disableContextViewCorrection:
-                    case Batch::COMMAND_restoreContextViewCorrection:
+                        case Batch::COMMAND_disableContextViewCorrection:
+                        case Batch::COMMAND_restoreContextViewCorrection:
 
-                    case Batch::COMMAND_disableContextStereo:
-                    case Batch::COMMAND_restoreContextStereo:
+                        case Batch::COMMAND_disableContextStereo:
+                        case Batch::COMMAND_restoreContextStereo:
 
-                    case Batch::COMMAND_runLambda:
+                        case Batch::COMMAND_runLambda:
 
-                    case Batch::COMMAND_startNamedCall:
-                    case Batch::COMMAND_stopNamedCall:
+                        case Batch::COMMAND_startNamedCall:
+                        case Batch::COMMAND_stopNamedCall:
 
-                    case Batch::COMMAND_pushProfileRange:
-                    case Batch::COMMAND_popProfileRange:
-                        break;
-                    // These weren't handled here old Vulkan branch
-                    case Batch::COMMAND_generateTextureMipsWithPipeline:
-                    case Batch::COMMAND_glUniform1f:
-                    case Batch::COMMAND_glUniform2f:
-                    case Batch::COMMAND_glUniform3f:
-                    case Batch::COMMAND_glUniform4f:
-                        Q_ASSERT(false);
-                    case Batch::NUM_COMMANDS:
-                        Q_ASSERT(false);
+                        case Batch::COMMAND_pushProfileRange:
+                        case Batch::COMMAND_popProfileRange:
+                            break;
+                        // These weren't handled here old Vulkan branch
+                        case Batch::COMMAND_generateTextureMipsWithPipeline:
+                        case Batch::COMMAND_glUniform1f:
+                        case Batch::COMMAND_glUniform2f:
+                        case Batch::COMMAND_glUniform3f:
+                        case Batch::COMMAND_glUniform4f:
+                            Q_ASSERT(false);
+                        case Batch::NUM_COMMANDS:
+                            Q_ASSERT(false);
+                    }
                 }
                 // loop through commands
                 // did the framebuffer setup change?  (new renderpass)
@@ -690,6 +694,14 @@ void VKBackend::executeFrame(const FramePointer& frame) {
                 // generate pipeline
                 // find unique descriptor targets
                 // do we need to transfer data to the GPU?
+                {
+                    PROFILE_RANGE(gpu_vk_detail, "Transfer");
+                    renderPassTransfer(batch);
+                }
+                {
+                    PROFILE_RANGE(gpu_vk_detail, _stereo._enable ? "Render Stereo" : "Render");
+                    renderPassDraw(batch);
+                }
             }
 
             if (renderpassActive) {
@@ -704,10 +716,6 @@ void VKBackend::executeFrame(const FramePointer& frame) {
 
     //
 
-    //{
-    //    PROFILE_RANGE(gpu_vk_detail, _stereo._enable ? "Render Stereo" : "Render");
-    //    renderPassDraw(batch);
-    //}
 
     // Restore the saved stereo state for the next batch
     // _stereo._enable = savedStereo;
@@ -918,7 +926,7 @@ void VKBackend::setCameraCorrection(const Mat4& correction, const Mat4& prevRend
     _pipeline._cameraCorrectionBuffer._buffer->flush();*/
 }
 
-void VKBackend::renderPassTransfer(Batch& batch) {
+void VKBackend::renderPassTransfer(const Batch& batch) {
     const size_t numCommands = batch.getCommands().size();
     const Batch::Commands::value_type* command = batch.getCommands().data();
     const Batch::CommandOffsets::value_type* offset = batch.getCommandOffsets().data();
@@ -1003,9 +1011,38 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             updateInput();
             updateTransform(batch);
             updatePipeline();
-
+            auto renderPassBeginInfo = vks::initializers::renderPassBeginInfo();
+            renderPassBeginInfo.renderPass = _cache.pipelineState.getRenderPass(_context);
+            Q_ASSERT(_cache.pipelineState.framebuffer);
+            //auto framebuffer = getGPUObject<VKFramebuffer>(*_cache.pipelineState.framebuffer);
+            auto framebuffer = VKFramebuffer::sync(*this, *_cache.pipelineState.framebuffer);
+            Q_ASSERT(framebuffer);
+            renderPassBeginInfo.framebuffer = framebuffer->vksFrameBuffer.framebuffer;
+            renderPassBeginInfo.clearValueCount = 0;
+            renderPassBeginInfo.renderArea = VkRect2D{VkOffset2D {_transform._viewport.x, _transform._viewport.y}, VkExtent2D {_transform._viewport.z, _transform._viewport.w}};
+            // VKTODO: this is inefficient
+            vkCmdBeginRenderPass(_currentCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+            // VKTODO: this is inefficient
+            vkCmdBindPipeline(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _cache.getPipeline(_context));
+            // VKTODO: this will create too many set viewport commands, but should work
+            VkViewport viewport;
+            viewport.x = (float)_transform._viewport.x;
+            viewport.y = (float)_transform._viewport.y;
+            viewport.width = (float)_transform._viewport.z;
+            viewport.height = (float)_transform._viewport.w;
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+            vkCmdSetViewport(_currentCommandBuffer, 0, 1, &viewport);
+            // VKTODO: this will create too many set scissor commands, but should work
+            VkRect2D scissor;
+            scissor.offset.x = _currentScissorRect.x;
+            scissor.offset.y = _currentScissorRect.y;
+            scissor.extent.width = _currentScissorRect.z;
+            scissor.extent.height = _currentScissorRect.w;
+            vkCmdSetScissor(_currentCommandBuffer, 0, 1, &scissor);
             CommandCall call = _commandCalls[(*command)];
             (this->*(call))(batch, *offset);
+            vkCmdEndRenderPass(_currentCommandBuffer);
             break;
         }
         default: {
@@ -1512,7 +1549,9 @@ void VKBackend::do_multiDrawIndexedIndirect(const Batch& batch, size_t paramOffs
 }
 
 void VKBackend::do_setFramebuffer(const Batch& batch, size_t paramOffset) {
-    // VKTODO: this needs to be done with VkRenderPass
+    auto framebuffer = batch._framebuffers.get(batch._params[paramOffset]._uint);
+    _cache.pipelineState.setFramebuffer(framebuffer);
+    // VKTODO?
     /*auto framebuffer = batch._framebuffers.get(batch._params[paramOffset]._uint);
     if (_output._framebuffer != framebuffer) {
         auto newFBO = getFramebufferID(framebuffer);
@@ -1525,13 +1564,13 @@ void VKBackend::do_setFramebuffer(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_setFramebufferSwapChain(const Batch& batch, size_t paramOffset) {
-    // VKTODO
-    /*auto swapChain = std::static_pointer_cast<FramebufferSwapChain>(batch._swapChains.get(batch._params[paramOffset]._uint));
+    // VKTODO?
+    auto swapChain = std::static_pointer_cast<FramebufferSwapChain>(batch._swapChains.get(batch._params[paramOffset]._uint));
     if (swapChain) {
         auto index = batch._params[paramOffset + 1]._uint;
         const auto& framebuffer = swapChain->get(index);
-        setFramebuffer(framebuffer);
-    }*/
+        _cache.pipelineState.setFramebuffer(framebuffer);
+    }
 }
 
 void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
@@ -1649,6 +1688,9 @@ void VKBackend::do_blit(const Batch& batch, size_t paramOffset) {
 
 void VKBackend::do_setInputFormat(const Batch& batch, size_t paramOffset) {
     const auto& format = batch._streamFormats.get(batch._params[paramOffset]._uint);
+    // VKTODO: what about index format?
+    _cache.pipelineState.setVertexFormat(format);
+    // VKTODO: is _input needed anywhere?
     if (!compare(_input._format, format)) {
         if (format) {
             assign(_input._format, format);
@@ -1837,16 +1879,15 @@ void VKBackend::do_setProjectionJitter(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_setViewportTransform(const Batch& batch, size_t paramOffset) {
-    //VKTODO
-    /*memcpy(&_transform._viewport, batch.editData(batch._params[paramOffset]._uint), sizeof(Vec4i));
+    memcpy(glm::value_ptr(_transform._viewport), batch.readData(batch._params[paramOffset]._uint), sizeof(Vec4i));
+    //memcpy(&_transform._viewport, batch.editData(batch._params[paramOffset]._uint), sizeof(Vec4i));
 
     if (!_inRenderTransferPass && !isStereo()) {
         ivec4& vp = _transform._viewport;
-        glViewport(vp.x, vp.y, vp.z, vp.w);
     }
 
     // The Viewport is tagged invalid because the CameraTransformUBO is not up to date and will need update on next drawcall
-    _transform._invalidViewport = true;*/
+    _transform._invalidViewport = true;
 }
 
 void VKBackend::do_setDepthRangeTransform(const Batch& batch, size_t paramOffset) {
@@ -1861,9 +1902,9 @@ void VKBackend::do_setDepthRangeTransform(const Batch& batch, size_t paramOffset
 }
 
 void VKBackend::do_setStateScissorRect(const Batch& batch, size_t paramOffset) {
-    //VKTODO
-    /*Vec4i rect;
-    memcpy(&rect, batch.editData(batch._params[paramOffset]._uint), sizeof(Vec4i));
+    //VKTODO: this is ugly but should work
+    Vec4i rect;
+    memcpy(glm::value_ptr(rect), batch.readData(batch._params[paramOffset]._uint), sizeof(Vec4i));
 
     if (_stereo._enable) {
         rect.z /= 2;
@@ -1871,24 +1912,28 @@ void VKBackend::do_setStateScissorRect(const Batch& batch, size_t paramOffset) {
             rect.x += rect.z;
         }
     }
-    glScissor(rect.x, rect.y, rect.z, rect.w);
-    (void)CHECK_VK_ERROR();*/
+    _currentScissorRect = rect;
+    //glScissor(rect.x, rect.y, rect.z, rect.w);
 }
 
 void VKBackend::do_setPipeline(const Batch& batch, size_t paramOffset) {
     //VKTODO
-    /*PipelinePointer pipeline = batch._pipelines.get(batch._params[paramOffset + 0]._uint);
+    PipelinePointer pipeline = batch._pipelines.get(batch._params[paramOffset + 0]._uint);
 
-    if (_pipeline._pipeline == pipeline) {
+    /*auto currentPipeline = _cache.pipelineState;
+    if (currentPipeline.pipeline == pipeline.get()) {
         return;
-    }
+    }*/
+
+    _cache.pipelineState.setPipeline(pipeline);
 
     // A true new Pipeline
     _stats._PSNumSetPipelines++;
 
     // null pipeline == reset
-    if (!pipeline) {
-        _pipeline._pipeline.reset();
+    /*if (!pipeline) {
+
+        currentPipeline._pipeline.reset();
 
         _pipeline._program = 0;
         _pipeline._cameraCorrectionLocation = -1;

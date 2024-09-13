@@ -209,7 +209,10 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     vkBackend->setDrawCommandBuffer(commandBuffer);
 
     if (frame && !frame->batches.empty()) {
+        // VKTODO: this is a temporary workaround, until render passes are selected inside Vulkan backend
+        //vkCmdBeginRenderPass(commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
         _gpuContext->executeFrame(frame);
+        vkCmdEndRenderPass(commandBuffer);
     }
 
 #ifdef USE_GL

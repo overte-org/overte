@@ -183,6 +183,7 @@ namespace vks
             vkGetImageMemoryRequirements(vulkanDevice->logicalDevice, attachment.image, &memReqs);
             memAlloc.allocationSize = memReqs.size;
             memAlloc.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            // VKTODO: this may need to be changed to VMA
             VK_CHECK_RESULT(vkAllocateMemory(vulkanDevice->logicalDevice, &memAlloc, nullptr, &attachment.memory));
             VK_CHECK_RESULT(vkBindImageMemory(vulkanDevice->logicalDevice, attachment.image, attachment.memory, 0));
 
