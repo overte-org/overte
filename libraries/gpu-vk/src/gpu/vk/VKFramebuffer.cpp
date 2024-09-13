@@ -10,13 +10,18 @@
 #include "VKBackend.h"
 
 void gpu::vulkan::VKFramebuffer::update() {
-    // VKTODO
-    /*gl::GLTexture* gltexture = nullptr;
+    auto backend = _backend.lock();
+    VkDevice device = backend->getContext().device->logicalDevice;
+    if (vkFramebuffer != VK_NULL_HANDLE) {
+        vkDestroyFramebuffer(device, vkFramebuffer, nullptr);
+    }
+    // VKTODO: free all attachments too
+    //gl::GLTexture* gltexture = nullptr;
     TexturePointer surface;
     if (_gpuObject.getColorStamps() != _colorStamps) {
         if (_gpuObject.hasColor()) {
-            _colorBuffers.clear();
-            static const GLenum colorAttachments[] = {
+            //_colorBuffers.clear();
+            /*static const GLenum colorAttachments[] = {
                 GL_COLOR_ATTACHMENT0,
                 GL_COLOR_ATTACHMENT1,
                 GL_COLOR_ATTACHMENT2,
@@ -32,10 +37,9 @@ void gpu::vulkan::VKFramebuffer::update() {
                 GL_COLOR_ATTACHMENT12,
                 GL_COLOR_ATTACHMENT13,
                 GL_COLOR_ATTACHMENT14,
-                GL_COLOR_ATTACHMENT15 };
+                GL_COLOR_ATTACHMENT15 };*/
 
             int unit = 0;
-            auto backend = _backend.lock();
             for (auto& b : _gpuObject.getRenderBuffers()) {
                 surface = b._texture;
                 if (surface) {
@@ -102,10 +106,10 @@ void gpu::vulkan::VKFramebuffer::update() {
     }
 
     // Now check for completness
-    _status = glCheckNamedFramebufferStatus(_id, GL_DRAW_FRAMEBUFFER);
+    //_status = glCheckNamedFramebufferStatus(_id, GL_DRAW_FRAMEBUFFER);
 
     // restore the current framebuffer
-    checkStatus();*/
+    //checkStatus();
 }
 
 bool gpu::vulkan::VKFramebuffer::checkStatus(gpu::vulkan::VKFramebuffer::FramebufferStatus target) const {

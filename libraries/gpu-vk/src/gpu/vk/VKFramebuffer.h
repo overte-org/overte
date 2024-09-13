@@ -10,11 +10,15 @@
 
 #include "VKShared.h"
 #include "VKBackend.h"
+#include <vk/VulkanFrameBuffer.hpp>
 
 namespace gpu { namespace vulkan {
 
 class VKFramebuffer : public vulkan::VKObject<Framebuffer> {
 public:
+    //vks::Framebuffer vksFrameBuffer;
+    VkFramebuffer vkFramebuffer{VK_NULL_HANDLE};
+
     static VKFramebuffer* sync(vulkan::VKBackend& backend, const Framebuffer& framebuffer) {
         VKFramebuffer* object = Backend::getGPUObject<VKFramebuffer>(framebuffer);
 
@@ -68,6 +72,7 @@ protected:
 
     // VKTODO: We need a check on backend.lock(), or to pass backend reference instead
     VKFramebuffer(const std::weak_ptr<vulkan::VKBackend>& backend, const Framebuffer& framebuffer) : VKObject(*backend.lock(), framebuffer) {}
+        //vksFrameBuffer(backend.lock()->getContext().device.get()){}
     // VKTODO: Do we need virtual destructor here?
     ~VKFramebuffer();
 
