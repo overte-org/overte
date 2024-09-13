@@ -69,7 +69,7 @@ class MeshProxyList;
 #endif
 
 namespace entity {
-enum class HostType {
+enum class HostType : uint8_t {
     DOMAIN = 0,
     AVATAR,
     LOCAL

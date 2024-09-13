@@ -26,7 +26,7 @@
  * @typedef {string} Entities.TextVerticalAlignment
  */
 
-enum class TextVerticalAlignment {
+enum class TextVerticalAlignment : uint8_t {
     TOP = 0,
     BOTTOM,
     CENTER,
