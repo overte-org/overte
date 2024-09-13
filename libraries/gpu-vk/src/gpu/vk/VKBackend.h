@@ -167,7 +167,7 @@ protected:
     } _input;
 
     void draw(VkPrimitiveTopology mode, uint32 numVertices, uint32 startVertex);
-    void renderPassTransfer(Batch& batch);
+    void renderPassTransfer(const Batch& batch);
     void renderPassDraw(const Batch& batch);
     void transferTransformState(const Batch& batch) const;
     void updateInput();
@@ -182,6 +182,7 @@ protected:
 public:
     VKBackend();
     ~VKBackend();
+    vks::Context& getContext() { return _context; }
     void syncProgram(const gpu::ShaderPointer& program) override {}
     void syncCache() override {}
     void recycle() const override {}
@@ -275,10 +276,14 @@ protected:
     VkQueue _graphicsQueue; //TODO: initialize from device
     VkQueue _transferQueue; //TODO: initialize from device
     friend class VKBuffer;
+    friend class VKFramebuffer;
     VkCommandBuffer _currentCommandBuffer;
     size_t _commandIndex{ 0 };
     int _currentDraw{ -1 };
     bool _inRenderTransferPass{ false };
+    // VKTODO: maybe move to _transform?
+    Vec4i _currentScissorRect{ 0 };
+
     typedef void (VKBackend::*CommandCall)(const Batch&, size_t);
     static std::array<VKBackend::CommandCall, Batch::NUM_COMMANDS> _commandCalls;
     static const size_t INVALID_OFFSET = (size_t)-1;
