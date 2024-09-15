@@ -52,7 +52,7 @@ void OctreeProcessor::processDatagram(ReceivedMessage& message, SharedNodePointe
     bool showTimingDetails = false; // Menu::getInstance()->isOptionChecked(MenuOption::PipelineWarnings);
     PerformanceWarning warn(showTimingDetails, "OctreeProcessor::processDatagram()", showTimingDetails);
 
-    if (message.getType() == getExpectedPacketType()) {
+    if (message.getType() == getExpectedPacketType() || message.getType() == PacketType::EntityDataLarge) {
         PerformanceWarning warn(showTimingDetails, "OctreeProcessor::processDatagram expected PacketType", showTimingDetails);
         // if we are getting inbound packets, then our tree is also viewing, and we should remember that fact.
         _tree->setIsViewing(true);
@@ -102,7 +102,7 @@ void OctreeProcessor::processDatagram(ReceivedMessage& message, SharedNodePointe
 
         while (message.getBytesLeftToRead() > 0 && !error) {
             if (packetIsCompressed) {
-                if (message.getBytesLeftToRead() > (qint64) sizeof(OCTREE_PACKET_INTERNAL_SECTION_SIZE)) {
+                if (message.getBytesLeftToRead() > (qint64)sizeof(OCTREE_PACKET_INTERNAL_SECTION_SIZE)) {
                     message.readPrimitive(&sectionLength);
                 } else {
                     sectionLength = 0;

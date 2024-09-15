@@ -888,6 +888,7 @@ void ParticleEffectEntityItem::appendSubclassData(OctreePacketData* packetData, 
                                                   EntityPropertyFlags& requestedProperties,
                                                   EntityPropertyFlags& propertyFlags,
                                                   EntityPropertyFlags& propertiesDidntFit,
+                                                  bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                                   int& propertyCount,
                                                   OctreeElement::AppendState& appendState) const {
 
@@ -898,7 +899,7 @@ void ParticleEffectEntityItem::appendSubclassData(OctreePacketData* packetData, 
     APPEND_ENTITY_PROPERTY(PROP_ALPHA, getAlpha());
     withReadLock([&] {
         _pulseProperties.appendSubclassData(packetData, params, entityTreeElementExtraEncodeData, requestedProperties,
-            propertyFlags, propertiesDidntFit, propertyCount, appendState);
+            propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
     });
     APPEND_ENTITY_PROPERTY(PROP_TEXTURES, getTextures());
 

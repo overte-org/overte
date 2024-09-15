@@ -93,6 +93,7 @@ public:
                                     EntityPropertyFlags& requestedProperties,
                                     EntityPropertyFlags& propertyFlags,
                                     EntityPropertyFlags& propertiesDidntFit,
+                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                     int& propertyCount,
                                     OctreeElement::AppendState& appendState) const override;
 
@@ -115,6 +116,7 @@ public:
                                     EntityPropertyFlags& requestedProperties,
                                     EntityPropertyFlags& propertyFlags,
                                     EntityPropertyFlags& propertiesDidntFit,
+                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                     int& propertyCount,
                                     OctreeElement::AppendState& appendState) const override;
 

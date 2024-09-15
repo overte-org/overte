@@ -31,7 +31,9 @@ PacketVersion versionForPacketType(PacketType packetType) {
         case PacketType::EntityAdd:
         case PacketType::EntityClone:
         case PacketType::EntityEdit:
+        case PacketType::EntityEditLarge:
         case PacketType::EntityData:
+        case PacketType::EntityDataLarge:
         case PacketType::EntityPhysics:
             return static_cast<PacketVersion>(EntityVersion::LAST_PACKET_TYPE);
         case PacketType::EntityQuery:

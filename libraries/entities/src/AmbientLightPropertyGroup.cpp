@@ -61,6 +61,7 @@ bool AmbientLightPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
                                     EntityPropertyFlags& requestedProperties,
                                     EntityPropertyFlags& propertyFlags,
                                     EntityPropertyFlags& propertiesDidntFit,
+                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                     int& propertyCount, 
                                     OctreeElement::AppendState& appendState) const {
 
@@ -134,6 +135,7 @@ void AmbientLightPropertyGroup::appendSubclassData(OctreePacketData* packetData,
     EntityPropertyFlags& requestedProperties,
     EntityPropertyFlags& propertyFlags,
     EntityPropertyFlags& propertiesDidntFit,
+    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
     int& propertyCount, 
     OctreeElement::AppendState& appendState) const {
 

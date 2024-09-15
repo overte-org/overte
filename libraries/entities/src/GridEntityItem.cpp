@@ -108,6 +108,7 @@ void GridEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBits
                                     EntityPropertyFlags& requestedProperties,
                                     EntityPropertyFlags& propertyFlags,
                                     EntityPropertyFlags& propertiesDidntFit,
+                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                     int& propertyCount,
                                     OctreeElement::AppendState& appendState) const {
 
@@ -117,7 +118,7 @@ void GridEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBits
     APPEND_ENTITY_PROPERTY(PROP_ALPHA, getAlpha());
     withReadLock([&] {
         _pulseProperties.appendSubclassData(packetData, params, entityTreeElementExtraEncodeData, requestedProperties,
-            propertyFlags, propertiesDidntFit, propertyCount, appendState);
+            propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
     });
 
     APPEND_ENTITY_PROPERTY(PROP_GRID_FOLLOW_CAMERA, getFollowCamera());
