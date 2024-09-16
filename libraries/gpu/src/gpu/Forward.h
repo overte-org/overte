@@ -150,7 +150,7 @@ namespace gpu {
         class GLESBuffer;
     }
 
-    namespace vulkan {
+    namespace vk {
         class VKBackend;
         class VKBuffer;
     }

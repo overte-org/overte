@@ -708,7 +708,7 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
 
     if (_currentFrame) {
         auto correction = getViewCorrection();
-        auto vkBackend = std::dynamic_pointer_cast<gpu::vulkan::VKBackend>(getBackend());
+        auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(getBackend());
         Q_ASSERT(vkBackend);
         vkBackend->setCameraCorrection(correction, _prevRenderView);
         _prevRenderView = correction * _currentFrame->view;

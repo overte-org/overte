@@ -46,7 +46,7 @@
 #define GPU_STEREO_CAMERA_BUFFER
 #endif
 
-namespace gpu { namespace vulkan {
+namespace gpu { namespace vk {
 
 class VKInputFormat : public GPUObject {
 public:
@@ -174,9 +174,9 @@ protected:
     void updateTransform(const Batch& batch);
     void updatePipeline();
 
-    vulkan::VKFramebuffer* syncGPUObject(const Framebuffer& framebuffer);
+    vk::VKFramebuffer* syncGPUObject(const Framebuffer& framebuffer);
     VKBuffer* syncGPUObject(const Buffer& buffer);
-    VKTexture* syncGPUObject(const TexturePointer& texture);
+    VKTexture* syncGPUObject(const TexturePointer& texturePointer);
     VKQuery* syncGPUObject(const Query& query);
 
 public:
