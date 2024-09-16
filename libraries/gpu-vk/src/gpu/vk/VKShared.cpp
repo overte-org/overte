@@ -11,7 +11,7 @@ Q_LOGGING_CATEGORY(gpu_vk_logging, "hifi.gpu.vk")
 Q_LOGGING_CATEGORY(trace_gpu_vk, "trace.gpu.vk")
 Q_LOGGING_CATEGORY(trace_gpu_vk_detail, "trace.gpu.vk.detail")
 
-VkFormat gpu::vulkan::evalTexelFormatInternal(const gpu::Element& dstFormat) {
+VkFormat gpu::vk::evalTexelFormatInternal(const gpu::Element& dstFormat) {
     VkFormat result = VK_FORMAT_R8G8B8_UNORM;
     switch (dstFormat.getDimension()) {
     case gpu::SCALAR:
@@ -349,7 +349,7 @@ VkFormat gpu::vulkan::evalTexelFormatInternal(const gpu::Element& dstFormat) {
     return result;
 }
 
-bool gpu::vulkan::isDepthStencilFormat(VkFormat format) {
+bool gpu::vk::isDepthStencilFormat(VkFormat format) {
     switch (format) {
         case VK_FORMAT_D16_UNORM:
         case VK_FORMAT_X8_D24_UNORM_PACK32:

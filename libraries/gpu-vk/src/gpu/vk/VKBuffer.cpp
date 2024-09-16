@@ -8,7 +8,7 @@
 #include "VKBuffer.h"
 #include "VKBackend.h"
 
-using namespace gpu::vulkan;
+using namespace gpu::vk;
 
 VKBuffer* VKBuffer::sync(VKBackend& backend, const gpu::Buffer& buffer) {
     if (buffer.getSysmem().getSize() != 0) {
