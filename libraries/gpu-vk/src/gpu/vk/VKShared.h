@@ -18,7 +18,7 @@ Q_DECLARE_LOGGING_CATEGORY(gpu_vk_logging)
 Q_DECLARE_LOGGING_CATEGORY(trace_gpu_vk)
 Q_DECLARE_LOGGING_CATEGORY(trace_gpu_vk_detail)
 
-namespace gpu { namespace vulkan {
+namespace gpu { namespace vk {
 
 gpu::Size getDedicatedMemory();
 ComparisonFunction comparisonFuncFromGL(VkCompareOp func);
@@ -82,6 +82,19 @@ static const VkPrimitiveTopology PRIMITIVE_TO_VK[gpu::NUM_PRIMITIVES] = {
     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
 };
 
+enum VKSyncState {
+    // The object is currently undergoing no processing, although it's content
+    // may be out of date, or it's storage may be invalid relative to the
+    // owning GPU object
+    Idle,
+    // The object has been queued for transfer to the GPU
+    Pending,
+    // The object has been transferred to the GPU, but is awaiting
+    // any post transfer operations that may need to occur on the
+    // primary rendering thread
+    Transferred,
+};
+
 // VKTODO is it needed?
 /*static const enum ELEMENT_TYPE_TO_VK[gpu::NUM_TYPES] = {
     VK_FLOAT,
@@ -112,6 +125,7 @@ public:
 
     const GPUType& _gpuObject;
 protected:
+    // VKTODO: Maybe replace with regular pointer for efficiency
     const std::weak_ptr<VKBackend> _backend;
 };
 
