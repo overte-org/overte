@@ -101,7 +101,7 @@ void RenderThread::initialize(QWindow* window) {
     VK_CHECK_RESULT(vkCreateSemaphore(_vkcontext.device->logicalDevice, &semaphoreCI, nullptr, &renderComplete));
 
     // GPU library init
-    gpu::Context::init<gpu::vulkan::VKBackend>();
+    gpu::Context::init<gpu::vk::VKBackend>();
     _gpuContext = std::make_shared<gpu::Context>();
     _backend = _gpuContext->getBackend();
 #endif
@@ -205,7 +205,7 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
 #endif
 
     //_gpuContext->enableStereo(true);
-    auto vkBackend = std::dynamic_pointer_cast<gpu::vulkan::VKBackend>(_gpuContext->getBackend());
+    auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(_gpuContext->getBackend());
     vkBackend->setDrawCommandBuffer(commandBuffer);
 
     if (frame && !frame->batches.empty()) {

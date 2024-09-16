@@ -58,7 +58,7 @@ void GraphicsEngine::initializeGPU(GLWidget* glwidget) {
 #ifdef USE_GL
     gpu::Context::init<gpu::gl::GLBackend>();
 #else
-    gpu::Context::init<gpu::vulkan::VKBackend>();
+    gpu::Context::init<gpu::vk::VKBackend>();
 #endif
     glwidget->makeCurrent();
     _gpuContext = std::make_shared<gpu::Context>();
