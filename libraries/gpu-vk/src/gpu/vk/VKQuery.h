@@ -11,10 +11,10 @@
 #include "VKShared.h"
 #include "VKBackend.h"
 
-namespace gpu { namespace vulkan {
+namespace gpu { namespace vk {
 
 class VKQuery : public VKObject<Query> {
-    using Parent = gpu::vulkan::VKObject<Query>;
+    using Parent = gpu::vk::VKObject<Query>;
 public:
     static VKQuery* sync(VKBackend& backend, const Query& query) {
         VKQuery* object = Backend::getGPUObject<VKQuery>(query);

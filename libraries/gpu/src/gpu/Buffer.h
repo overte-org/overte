@@ -181,13 +181,13 @@ protected:
     friend class Batch;
 
     // FIXME find a more generic way to do this.
-    friend class ::gpu::vulkan::VKBuffer;
+    friend class ::gpu::vk::VKBuffer;
     friend class gl::GLBackend;
     friend class gl::GLBuffer;
     friend class gl41::GL41Buffer;
     friend class gl45::GL45Buffer;
     friend class gles::GLESBuffer;
-    friend class vulkan::VKBuffer;
+    friend class vk::VKBuffer;
 };
 
 using BufferUpdates = std::vector<Buffer::Update>;

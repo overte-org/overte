@@ -11,7 +11,7 @@
 #include <vk/Config.h>
 #include <gpu/Forward.h>
 
-namespace gpu { namespace vulkan {
+namespace gpu { namespace vk {
 
 class VKBuffer;
 class VKShader;

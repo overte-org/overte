@@ -28,9 +28,10 @@
 
 #include "VKForward.h"
 #include "VKShared.h"
+#include "VKTexture.h"
 
 using namespace gpu;
-using namespace gpu::vulkan;
+using namespace gpu::vk;
 
 static VKBackend* INSTANCE{ nullptr };
 static const char* VK_BACKEND_PROPERTY_NAME = "com.highfidelity.vk.backend";
@@ -1017,7 +1018,7 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             //auto framebuffer = getGPUObject<VKFramebuffer>(*_cache.pipelineState.framebuffer);
             auto framebuffer = VKFramebuffer::sync(*this, *_cache.pipelineState.framebuffer);
             Q_ASSERT(framebuffer);
-            renderPassBeginInfo.framebuffer = framebuffer->vksFrameBuffer.framebuffer;
+            renderPassBeginInfo.framebuffer = framebuffer->vkFramebuffer;
             renderPassBeginInfo.clearValueCount = 0;
             renderPassBeginInfo.renderArea = VkRect2D{VkOffset2D {_transform._viewport.x, _transform._viewport.y}, VkExtent2D {_transform._viewport.z, _transform._viewport.w}};
             // VKTODO: this is inefficient
@@ -1102,26 +1103,27 @@ void VKBackend::setupStereoSide(int side) {
 }
 #endif
 
-vulkan::VKFramebuffer* VKBackend::syncGPUObject(const Framebuffer& framebuffer) {
+vk::VKFramebuffer* VKBackend::syncGPUObject(const Framebuffer& framebuffer) {
     // VKTODO
-    return vulkan::VKFramebuffer::sync(*this, framebuffer);
+    return vk::VKFramebuffer::sync(*this, framebuffer);
 }
 
 VKBuffer* VKBackend::syncGPUObject(const Buffer& buffer) {
     // VKTODO
-    return vulkan::VKBuffer::sync(*this, buffer);
+    return vk::VKBuffer::sync(*this, buffer);
 }
 
-VKTexture* syncGPUObject(const TexturePointer& texture) {
+VKTexture* VKBackend::syncGPUObject(const TexturePointer& texturePointer) {
     // VKTODO
-    return nullptr;
-    /*if (!texturePointer) {
+    if (!texturePointer) {
         return nullptr;
     }
 
     const Texture& texture = *texturePointer;
     if (TextureUsageType::EXTERNAL == texture.getUsageType()) {
-        return Parent::syncGPUObject(texturePointer);
+        // VKTODO:
+        return nullptr;
+        //return Parent::syncGPUObject(texturePointer);
     }
 
     if (!texture.isDefined()) {
@@ -1129,24 +1131,26 @@ VKTexture* syncGPUObject(const TexturePointer& texture) {
         return nullptr;
     }
 
-    GL45Texture* object = Backend::getGPUObject<GL45Texture>(texture);
+    VKTexture* object = Backend::getGPUObject<VKTexture>(texture);
     if (!object) {
         switch (texture.getUsageType()) {
             case TextureUsageType::RENDERBUFFER:
-                object = new GL45AttachmentTexture(shared_from_this(), texture);
+                object = new VKAttachmentTexture(shared_from_this(), texture);
                 break;
 
 #if FORCE_STRICT_TEXTURE
             case TextureUsageType::RESOURCE:
 #endif
             case TextureUsageType::STRICT_RESOURCE:
-                qCDebug(gpugllogging) << "Strict texture " << texture.source().c_str();
-                object = new GL45StrictResourceTexture(shared_from_this(), texture);
+                // VKTODO
+                //qCDebug(gpugllogging) << "Strict texture " << texture.source().c_str();
+                //object = new GL45StrictResourceTexture(shared_from_this(), texture);
                 break;
 
 #if !FORCE_STRICT_TEXTURE
             case TextureUsageType::RESOURCE: {
-                auto& transferEngine  = _textureManagement._transferEngine;
+                // VKTODO
+                /*auto& transferEngine  = _textureManagement._transferEngine;
                 if (transferEngine->allowCreate()) {
 #if ENABLE_SPARSE_TEXTURE
                     if (isTextureManagementSparseEnabled() && GL45Texture::isSparseEligible(texture)) {
@@ -1163,7 +1167,7 @@ VKTexture* syncGPUObject(const TexturePointer& texture) {
                     if (fallback) {
                         object = static_cast<GL45Texture*>(syncGPUObject(fallback));
                     }
-                }
+                }*/
                 break;
             }
 #endif
@@ -1173,23 +1177,24 @@ VKTexture* syncGPUObject(const TexturePointer& texture) {
     } else {
 
         if (texture.getUsageType() == TextureUsageType::RESOURCE) {
-            auto varTex = static_cast<GL45VariableAllocationTexture*> (object);
+            // VKTODO
+            /*auto varTex = static_cast<GL45VariableAllocationTexture*> (object);
 
             if (varTex->_minAllocatedMip > 0) {
                 auto minAvailableMip = texture.minAvailableMipLevel();
                 if (minAvailableMip < varTex->_minAllocatedMip) {
                     varTex->_minAllocatedMip = minAvailableMip;
                 }
-            }
+            }*/
         }
     }
 
-    return object;*/
+    return object;
 }
 
 VKQuery* VKBackend::syncGPUObject(const Query& query) {
     // VKTODO
-    return vulkan::VKQuery::sync(*this, query);
+    return vk::VKQuery::sync(*this, query);
 }
 
 void VKBackend::updateInput() {
@@ -2116,66 +2121,66 @@ void VKBackend::do_setResourceFramebufferSwapChainTexture(const Batch& batch, si
 }
 
 std::array<VKBackend::CommandCall, Batch::NUM_COMMANDS> VKBackend::_commandCalls{ {
-    (&::gpu::vulkan::VKBackend::do_draw),
-    (&::gpu::vulkan::VKBackend::do_drawIndexed),
-    (&::gpu::vulkan::VKBackend::do_drawInstanced),
-    (&::gpu::vulkan::VKBackend::do_drawIndexedInstanced),
-    (&::gpu::vulkan::VKBackend::do_multiDrawIndirect),
-    (&::gpu::vulkan::VKBackend::do_multiDrawIndexedIndirect),
+    (&::gpu::vk::VKBackend::do_draw),
+    (&::gpu::vk::VKBackend::do_drawIndexed),
+    (&::gpu::vk::VKBackend::do_drawInstanced),
+    (&::gpu::vk::VKBackend::do_drawIndexedInstanced),
+    (&::gpu::vk::VKBackend::do_multiDrawIndirect),
+    (&::gpu::vk::VKBackend::do_multiDrawIndexedIndirect),
 
-    (&::gpu::vulkan::VKBackend::do_setInputFormat),
-    (&::gpu::vulkan::VKBackend::do_setInputBuffer),
-    (&::gpu::vulkan::VKBackend::do_setIndexBuffer),
-    (&::gpu::vulkan::VKBackend::do_setIndirectBuffer),
+    (&::gpu::vk::VKBackend::do_setInputFormat),
+    (&::gpu::vk::VKBackend::do_setInputBuffer),
+    (&::gpu::vk::VKBackend::do_setIndexBuffer),
+    (&::gpu::vk::VKBackend::do_setIndirectBuffer),
 
-    (&::gpu::vulkan::VKBackend::do_setModelTransform),
-    (&::gpu::vulkan::VKBackend::do_setViewTransform),
-    (&::gpu::vulkan::VKBackend::do_setProjectionTransform),
-    (&::gpu::vulkan::VKBackend::do_setProjectionJitter),
-    (&::gpu::vulkan::VKBackend::do_setViewportTransform),
-    (&::gpu::vulkan::VKBackend::do_setDepthRangeTransform),
+    (&::gpu::vk::VKBackend::do_setModelTransform),
+    (&::gpu::vk::VKBackend::do_setViewTransform),
+    (&::gpu::vk::VKBackend::do_setProjectionTransform),
+    (&::gpu::vk::VKBackend::do_setProjectionJitter),
+    (&::gpu::vk::VKBackend::do_setViewportTransform),
+    (&::gpu::vk::VKBackend::do_setDepthRangeTransform),
 
-    (&::gpu::vulkan::VKBackend::do_setPipeline),
-    (&::gpu::vulkan::VKBackend::do_setStateBlendFactor),
-    (&::gpu::vulkan::VKBackend::do_setStateScissorRect),
+    (&::gpu::vk::VKBackend::do_setPipeline),
+    (&::gpu::vk::VKBackend::do_setStateBlendFactor),
+    (&::gpu::vk::VKBackend::do_setStateScissorRect),
 
-    (&::gpu::vulkan::VKBackend::do_setUniformBuffer),
-    (&::gpu::vulkan::VKBackend::do_setResourceBuffer),
-    (&::gpu::vulkan::VKBackend::do_setResourceTexture),
-    (&::gpu::vulkan::VKBackend::do_setResourceTextureTable), // This is not needed, it's only for bindless textures, which are not enabled in OpenGL version
-    (&::gpu::vulkan::VKBackend::do_setResourceFramebufferSwapChainTexture),
+    (&::gpu::vk::VKBackend::do_setUniformBuffer),
+    (&::gpu::vk::VKBackend::do_setResourceBuffer),
+    (&::gpu::vk::VKBackend::do_setResourceTexture),
+    (&::gpu::vk::VKBackend::do_setResourceTextureTable), // This is not needed, it's only for bindless textures, which are not enabled in OpenGL version
+    (&::gpu::vk::VKBackend::do_setResourceFramebufferSwapChainTexture),
 
-    (&::gpu::vulkan::VKBackend::do_setFramebuffer),
-    (&::gpu::vulkan::VKBackend::do_setFramebufferSwapChain),
-    (&::gpu::vulkan::VKBackend::do_clearFramebuffer),
-    (&::gpu::vulkan::VKBackend::do_blit),
-    (&::gpu::vulkan::VKBackend::do_generateTextureMips),
+    (&::gpu::vk::VKBackend::do_setFramebuffer),
+    (&::gpu::vk::VKBackend::do_setFramebufferSwapChain),
+    (&::gpu::vk::VKBackend::do_clearFramebuffer),
+    (&::gpu::vk::VKBackend::do_blit),
+    (&::gpu::vk::VKBackend::do_generateTextureMips),
 
-    (&::gpu::vulkan::VKBackend::do_advance),
+    (&::gpu::vk::VKBackend::do_advance),
 
-    (&::gpu::vulkan::VKBackend::do_beginQuery),
-    (&::gpu::vulkan::VKBackend::do_endQuery),
-    (&::gpu::vulkan::VKBackend::do_getQuery),
+    (&::gpu::vk::VKBackend::do_beginQuery),
+    (&::gpu::vk::VKBackend::do_endQuery),
+    (&::gpu::vk::VKBackend::do_getQuery),
 
-    (&::gpu::vulkan::VKBackend::do_resetStages),
+    (&::gpu::vk::VKBackend::do_resetStages),
 
-    (&::gpu::vulkan::VKBackend::do_disableContextViewCorrection),
-    (&::gpu::vulkan::VKBackend::do_restoreContextViewCorrection),
-    (&::gpu::vulkan::VKBackend::do_disableContextStereo),
-    (&::gpu::vulkan::VKBackend::do_restoreContextStereo),
+    (&::gpu::vk::VKBackend::do_disableContextViewCorrection),
+    (&::gpu::vk::VKBackend::do_restoreContextViewCorrection),
+    (&::gpu::vk::VKBackend::do_disableContextStereo),
+    (&::gpu::vk::VKBackend::do_restoreContextStereo),
 
-    (&::gpu::vulkan::VKBackend::do_runLambda),
+    (&::gpu::vk::VKBackend::do_runLambda),
 
-    (&::gpu::vulkan::VKBackend::do_startNamedCall),
-    (&::gpu::vulkan::VKBackend::do_stopNamedCall),
+    (&::gpu::vk::VKBackend::do_startNamedCall),
+    (&::gpu::vk::VKBackend::do_stopNamedCall),
 
-    (&::gpu::vulkan::VKBackend::do_glUniform1f), // Seems to be deprecated?
-    (&::gpu::vulkan::VKBackend::do_glUniform2f),
-    (&::gpu::vulkan::VKBackend::do_glUniform3f),
-    (&::gpu::vulkan::VKBackend::do_glUniform4f),
+    (&::gpu::vk::VKBackend::do_glUniform1f), // Seems to be deprecated?
+    (&::gpu::vk::VKBackend::do_glUniform2f),
+    (&::gpu::vk::VKBackend::do_glUniform3f),
+    (&::gpu::vk::VKBackend::do_glUniform4f),
 
-    (&::gpu::vulkan::VKBackend::do_pushProfileRange),
-    (&::gpu::vulkan::VKBackend::do_popProfileRange),
+    (&::gpu::vk::VKBackend::do_pushProfileRange),
+    (&::gpu::vk::VKBackend::do_popProfileRange),
 } };
 
 VKInputFormat::VKInputFormat() {

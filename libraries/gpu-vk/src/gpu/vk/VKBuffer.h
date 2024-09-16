@@ -12,7 +12,7 @@
 #include "VKShared.h"
 #include <vk/VulkanBuffer.h>
 
-namespace gpu { namespace vulkan {
+namespace gpu { namespace vk {
 
 class VKBuffer : public VKObject<gpu::Buffer>, public vks::Buffer {
 public:

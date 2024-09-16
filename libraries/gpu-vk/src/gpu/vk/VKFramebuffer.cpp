@@ -8,19 +8,22 @@
 
 #include "VKFramebuffer.h"
 #include "VKBackend.h"
+#include "VKTexture.h"
+#include "VKShared.h"
 
-void gpu::vulkan::VKFramebuffer::update() {
+void gpu::vk::VKFramebuffer::update() {
     auto backend = _backend.lock();
     VkDevice device = backend->getContext().device->logicalDevice;
     if (vkFramebuffer != VK_NULL_HANDLE) {
         vkDestroyFramebuffer(device, vkFramebuffer, nullptr);
     }
     // VKTODO: free all attachments too
-    //gl::GLTexture* gltexture = nullptr;
+    VKTexture* vkTexture = nullptr;
     TexturePointer surface;
     if (_gpuObject.getColorStamps() != _colorStamps) {
         if (_gpuObject.hasColor()) {
-            //_colorBuffers.clear();
+            // VKTODO: Do these need to be deleted?
+            attachments.clear();
             /*static const GLenum colorAttachments[] = {
                 GL_COLOR_ATTACHMENT0,
                 GL_COLOR_ATTACHMENT1,
@@ -39,70 +42,99 @@ void gpu::vulkan::VKFramebuffer::update() {
                 GL_COLOR_ATTACHMENT14,
                 GL_COLOR_ATTACHMENT15 };*/
 
-            int unit = 0;
+            //int unit = 0;
             for (auto& b : _gpuObject.getRenderBuffers()) {
                 surface = b._texture;
                 if (surface) {
                     Q_ASSERT(TextureUsageType::RENDERBUFFER == surface->getUsageType());
-                    gltexture = backend->syncGPUObject(surface);
+                    vkTexture = backend->syncGPUObject(surface);
                 } else {
-                    gltexture = nullptr;
+                    vkTexture = nullptr;
                 }
 
-                if (gltexture) {
-                    if (gltexture->_target == GL_TEXTURE_2D) {
-                        glNamedFramebufferTexture(_id, colorAttachments[unit], gltexture->_texture, 0);
-                    } else if (gltexture->_target == GL_TEXTURE_2D_MULTISAMPLE) {
-                        glNamedFramebufferTexture(_id, colorAttachments[unit], gltexture->_texture, 0);
+                if (vkTexture) {
+                    if (vkTexture->_target == VK_IMAGE_VIEW_TYPE_2D) {
+                        VKAttachmentCreateInfo attachmentCI {};
+                        attachmentCI.width = vkTexture->_gpuObject.getWidth();
+                        attachmentCI.height = vkTexture->_gpuObject.getHeight();
+                        attachmentCI.layerCount = 1;
+                        attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat());
+                        attachmentCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                        attachmentCI.imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
+                        addAttachment(attachmentCI, vkTexture->_texture);
+                        //glNamedFramebufferTexture(_id, colorAttachments[unit], gltexture->_texture, 0);
+                        // VKTODO: how to do this?
+                    /*} else if (vkTexture->_target == GL_TEXTURE_2D_MULTISAMPLE) {
+                        glNamedFramebufferTexture(_id, colorAttachments[unit], gltexture->_texture, 0);*/
                     } else {
-                        glNamedFramebufferTextureLayer(_id, colorAttachments[unit], gltexture->_texture, 0, b._subresource);
+                        // VKTODO: what is subresource?
+                        Q_ASSERT(false);
+                        //glNamedFramebufferTextureLayer(_id, colorAttachments[unit], gltexture->_texture, 0, b._subresource);
                     }
-                    _colorBuffers.push_back(colorAttachments[unit]);
+                    //_colorBuffers.push_back(unit);
                 } else {
-                    glNamedFramebufferTexture(_id, colorAttachments[unit], 0, 0);
+                    Q_ASSERT(false);
+                    // VKTODO: what to do here?
+                    //glNamedFramebufferTexture(_id, colorAttachments[unit], 0, 0);
                 }
-                unit++;
+                //unit++;
             }
         }
         _colorStamps = _gpuObject.getColorStamps();
     }
 
-    GLenum attachement = GL_DEPTH_STENCIL_ATTACHMENT;
+    /*GLenum attachement = GL_DEPTH_STENCIL_ATTACHMENT;
     if (!_gpuObject.hasStencil()) {
         attachement = GL_DEPTH_ATTACHMENT;
     } else if (!_gpuObject.hasDepth()) {
         attachement = GL_STENCIL_ATTACHMENT;
-    }
+    }*/
 
     if (_gpuObject.getDepthStamp() != _depthStamp) {
         auto surface = _gpuObject.getDepthStencilBuffer();
         auto backend = _backend.lock();
         if (_gpuObject.hasDepthStencil() && surface) {
             Q_ASSERT(TextureUsageType::RENDERBUFFER == surface->getUsageType());
-            gltexture = backend->syncGPUObject(surface);
+            vkTexture = backend->syncGPUObject(surface);
         }
 
-        if (gltexture) {
-            if (gltexture->_target == GL_TEXTURE_2D) {
-                glNamedFramebufferTexture(_id, attachement, gltexture->_texture, 0);
-            }
-            else if (gltexture->_target == GL_TEXTURE_2D_MULTISAMPLE) {
-                glNamedFramebufferTexture(_id, attachement, gltexture->_texture, 0);
+        if (vkTexture) {
+            if (vkTexture->_target == VK_IMAGE_VIEW_TYPE_2D) {
+                VKAttachmentCreateInfo attachmentCI {};
+                attachmentCI.width = vkTexture->_gpuObject.getWidth();
+                attachmentCI.height = vkTexture->_gpuObject.getHeight();
+                attachmentCI.layerCount = 1;
+                attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat());
+                attachmentCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+                attachmentCI.imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
+                addAttachment(attachmentCI, vkTexture->_texture);
+                //glNamedFramebufferTexture(_id, attachement, gltexture->_texture, 0);
+                // VKTODO
+            /*}
+            else if (vkTexture->_target == GL_TEXTURE_2D_MULTISAMPLE) {
+                glNamedFramebufferTexture(_id, attachement, gltexture->_texture, 0);*/
             } else {
-                glNamedFramebufferTextureLayer(_id, attachement, gltexture->_texture, 0,
-                                               _gpuObject.getDepthStencilBufferSubresource());
+                Q_ASSERT(false);
+                // VKTODO
+                //glNamedFramebufferTextureLayer(_id, attachement, gltexture->_texture, 0,
+                //                               _gpuObject.getDepthStencilBufferSubresource());
             }
         } else {
-            glNamedFramebufferTexture(_id, attachement, 0, 0);
+            Q_ASSERT(false);
+            // VKTODO
+            //glNamedFramebufferTexture(_id, attachement, 0, 0);
         }
         _depthStamp = _gpuObject.getDepthStamp();
     }
 
     // Last but not least, define where we draw
-    if (!_colorBuffers.empty()) {
-        glNamedFramebufferDrawBuffers(_id, (GLsizei)_colorBuffers.size(), _colorBuffers.data());
+    if (!attachments.empty()) {
+        VK_CHECK_RESULT(createFramebuffer());
+        //glNamedFramebufferDrawBuffers(_id, (GLsizei)_colorBuffers.size(), _colorBuffers.data());
     } else {
-        glNamedFramebufferDrawBuffer(_id, GL_NONE);
+        Q_ASSERT(false);
+        // VKTODO
+        //glNamedFramebufferDrawBuffer(_id, GL_NONE);
     }
 
     // Now check for completness
@@ -112,7 +144,114 @@ void gpu::vulkan::VKFramebuffer::update() {
     //checkStatus();
 }
 
-bool gpu::vulkan::VKFramebuffer::checkStatus(gpu::vulkan::VKFramebuffer::FramebufferStatus target) const {
+// From VKS
+VkResult gpu::vk::VKFramebuffer::createFramebuffer()
+{
+    std::vector<VkAttachmentDescription> attachmentDescriptions;
+    for (auto& attachment : attachments)
+    {
+        attachmentDescriptions.push_back(attachment.description);
+    };
+
+    // Collect attachment references
+    std::vector<VkAttachmentReference> colorReferences;
+    VkAttachmentReference depthReference = {};
+    bool hasDepth = false;
+    bool hasColor = false;
+
+    uint32_t attachmentIndex = 0;
+
+    for (auto& attachment : attachments)
+    {
+        if (attachment.isDepthStencil())
+        {
+            // Only one depth attachment allowed
+            assert(!hasDepth);
+            depthReference.attachment = attachmentIndex;
+            depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            hasDepth = true;
+        }
+        else
+        {
+            colorReferences.push_back({ attachmentIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+            hasColor = true;
+        }
+        attachmentIndex++;
+    };
+
+    // Default render pass setup uses only one subpass
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    if (hasColor)
+    {
+        subpass.pColorAttachments = colorReferences.data();
+        subpass.colorAttachmentCount = static_cast<uint32_t>(colorReferences.size());
+    }
+    if (hasDepth)
+    {
+        subpass.pDepthStencilAttachment = &depthReference;
+    }
+
+    // Use subpass dependencies for attachment layout transitions
+    std::array<VkSubpassDependency, 2> dependencies;
+
+    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[0].dstSubpass = 0;
+    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    dependencies[1].srcSubpass = 0;
+    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    // Create render pass
+    VkRenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.pAttachments = attachmentDescriptions.data();
+    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentDescriptions.size());
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 2;
+    renderPassInfo.pDependencies = dependencies.data();
+    VK_CHECK_RESULT(vkCreateRenderPass(_backend.lock()->_context.device->logicalDevice, &renderPassInfo, nullptr, &vkRenderPass));
+
+    std::vector<VkImageView> attachmentViews;
+    for (auto attachment : attachments)
+    {
+        attachmentViews.push_back(attachment.view);
+    }
+
+    // Find. max number of layers across attachments
+    uint32_t maxLayers = 0;
+    for (auto attachment : attachments)
+    {
+        if (attachment.subresourceRange.layerCount > maxLayers)
+        {
+            maxLayers = attachment.subresourceRange.layerCount;
+        }
+    }
+
+    VkFramebufferCreateInfo framebufferInfo = {};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = vkRenderPass;
+    framebufferInfo.pAttachments = attachmentViews.data();
+    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachmentViews.size());
+    framebufferInfo.width = _gpuObject.getWidth();
+    framebufferInfo.height = _gpuObject.getHeight();
+    framebufferInfo.layers = maxLayers;
+    VK_CHECK_RESULT(vkCreateFramebuffer(_backend.lock()->_context.device->logicalDevice, &framebufferInfo, nullptr, &vkFramebuffer));
+
+    return VK_SUCCESS;
+}
+
+bool gpu::vk::VKFramebuffer::checkStatus(gpu::vk::VKFramebuffer::FramebufferStatus target) const {
     // VKTODO
     /*switch (_status) {
         case GL_FRAMEBUFFER_COMPLETE:
@@ -143,7 +282,7 @@ bool gpu::vulkan::VKFramebuffer::checkStatus(gpu::vulkan::VKFramebuffer::Framebu
 */
 }
 
-gpu::vulkan::VKFramebuffer::~VKFramebuffer() {
+gpu::vk::VKFramebuffer::~VKFramebuffer() {
     //VKTODO
     /*if (_id) {
         auto backend = _backend.lock();
@@ -152,6 +291,103 @@ gpu::vulkan::VKFramebuffer::~VKFramebuffer() {
         }
     }*/
 }
+
+// From VKS
+uint32_t gpu::vk::VKFramebuffer::addAttachment(VKAttachmentCreateInfo createinfo, VkImage image)
+{
+    FramebufferAttachment attachment {};
+
+    attachment.format = createinfo.format;
+
+    VkImageAspectFlags aspectMask = VK_FLAGS_NONE;
+
+    // Select aspect mask and layout depending on usage
+
+    // Color attachment
+    if (createinfo.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+    {
+        aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+
+    // Depth (and/or stencil) attachment
+    if (createinfo.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+    {
+        if (attachment.hasDepth())
+        {
+            aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        }
+        if (attachment.hasStencil())
+        {
+            aspectMask = aspectMask | VK_IMAGE_ASPECT_STENCIL_BIT;
+        }
+    }
+
+    assert(aspectMask > 0);
+
+    /*VkImageCreateInfo image = vks::initializers::imageCreateInfo();
+    image.imageType = VK_IMAGE_TYPE_2D;
+    image.format = createinfo.format;
+    image.extent.width = createinfo.width;
+    image.extent.height = createinfo.height;
+    image.extent.depth = 1;
+    image.mipLevels = 1;
+    image.arrayLayers = createinfo.layerCount;
+    image.samples = createinfo.imageSampleCount;
+    image.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image.usage = createinfo.usage;*/
+
+    VkMemoryAllocateInfo memAlloc = vks::initializers::memoryAllocateInfo();
+    VkMemoryRequirements memReqs;
+
+    // Create image for this attachment
+    /*VK_CHECK_RESULT(vkCreateImage(vulkanDevice->logicalDevice, &image, nullptr, &attachment.image));
+    vkGetImageMemoryRequirements(vulkanDevice->logicalDevice, attachment.image, &memReqs);
+    memAlloc.allocationSize = memReqs.size;
+    memAlloc.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    // VKTODO: this may need to be changed to VMA
+    VK_CHECK_RESULT(vkAllocateMemory(vulkanDevice->logicalDevice, &memAlloc, nullptr, &attachment.memory));
+    VK_CHECK_RESULT(vkBindImageMemory(vulkanDevice->logicalDevice, attachment.image, attachment.memory, 0));*/
+    attachment.image = image;
+
+    attachment.subresourceRange = {};
+    attachment.subresourceRange.aspectMask = aspectMask;
+    attachment.subresourceRange.levelCount = 1;
+    attachment.subresourceRange.layerCount = createinfo.layerCount;
+
+    VkImageViewCreateInfo imageView = vks::initializers::imageViewCreateInfo();
+    imageView.viewType = (createinfo.layerCount == 1) ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    imageView.format = createinfo.format;
+    imageView.subresourceRange = attachment.subresourceRange;
+    imageView.subresourceRange.aspectMask = (attachment.hasDepth()) ? VK_IMAGE_ASPECT_DEPTH_BIT : aspectMask;
+    imageView.image = attachment.image;
+    VK_CHECK_RESULT(vkCreateImageView(_backend.lock()->_context.device->logicalDevice, &imageView, nullptr, &attachment.view));
+
+    // Fill attachment description
+    attachment.description = {};
+    attachment.description.samples = createinfo.imageSampleCount;
+    attachment.description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment.description.storeOp = (createinfo.usage & VK_IMAGE_USAGE_SAMPLED_BIT) ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment.description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment.description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment.description.format = createinfo.format;
+    attachment.description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    // Final layout
+    // If not, final layout depends on attachment type
+    if (attachment.hasDepth() || attachment.hasStencil())
+    {
+        attachment.description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    }
+    else
+    {
+        attachment.description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+
+    attachments.push_back(attachment);
+
+    return static_cast<uint32_t>(attachments.size() - 1);
+}
+
+// VKTODO: get rid of _backend.lock()
 
 #if 0
 
