@@ -292,6 +292,10 @@ void ModelMeshPartPayload::setShapeKey(bool invalidateShapeKey, PrimitiveMode pr
         }
         if (material) {
             builder.withCullFaceMode(material->getCullFaceMode());
+
+            if ((MaterialMappingMode)material->getMaterialParams().x == MaterialMappingMode::TRIPLANAR) {
+                builder.withTriplanar();
+            }
         }
     }
 

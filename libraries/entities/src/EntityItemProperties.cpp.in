@@ -157,6 +157,7 @@ const QHash<QString, MaterialMappingMode> stringToMaterialMappingModeLookup = []
     QHash<QString, MaterialMappingMode> toReturn;
     addMaterialMappingMode(toReturn, UV);
     addMaterialMappingMode(toReturn, PROJECTED);
+    addMaterialMappingMode(toReturn, TRIPLANAR);
     return toReturn;
 }();
 QString EntityItemProperties::getMaterialMappingModeAsString() const { return MaterialMappingModeHelpers::getNameForMaterialMappingMode(_materialMappingMode); }

@@ -204,11 +204,13 @@ public:
 
 protected:
     virtual ShapeKey getShapeKey() override;
+    virtual bool isTransparent() const override;
+    virtual Item::Bound getBound(RenderArgs* args) override;
+    virtual bool needsRenderUpdate() const override;
     virtual bool needsRenderUpdateFromTypedEntity(const TypedEntityPointer& entity) const override;
     virtual void doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) override;
     virtual void doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) override;
     virtual void doRender(RenderArgs* args) override;
-    virtual bool isTransparent() const override { return false; }
 
 private:
 #ifdef POLYVOX_ENTITY_USE_FADE_EFFECT
@@ -224,6 +226,8 @@ private:
     glm::quat _orientation;
     PolyVoxEntityItem::PolyVoxSurfaceStyle _lastSurfaceStyle { PolyVoxEntityItem::SURFACE_MARCHING_CUBES };
     std::array<QString, 3> _xyzTextureUrls;
+
+    gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>() };
 };
 
 } }

@@ -31,7 +31,7 @@ struct TexMapArray {
 {
     <$outTexcoord0$> = mix(<$texMapArray$>._texcoordTransforms0 * vec4(<$inTexcoord0$>.st, 0.0, 1.0),
                            <$texMapArray$>._texcoordTransforms0 * <$worldPosition$> + vec4(0.5),
-                           <$texMapArray$>._materialParams.x).st;
+                           float(<$texMapArray$>._materialParams.x == 1.0)).st;
 }
 <@endfunc@>
 
@@ -39,7 +39,7 @@ struct TexMapArray {
 {
     <$outTexcoord1$> = mix(<$texMapArray$>._texcoordTransforms1 * vec4(<$inTexcoord1$>.st, 0.0, 1.0),
                            <$texMapArray$>._texcoordTransforms1 * <$worldPosition$> + vec4(0.5),
-                           <$texMapArray$>._materialParams.x).st;
+                           float(<$texMapArray$>._materialParams.x == 1.0)).st;
 }
 <@endfunc@>
 
