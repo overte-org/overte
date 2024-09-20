@@ -1,7 +1,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
-import controlsUit 1.0 as HifiControlsUit
+import "./qml_widgets"
+
 
 // TODO: Some default values wait until component is completed. Is this necessary? 
 
@@ -13,27 +14,31 @@ Rectangle {
 	anchors.horizontalCenter: parent.horizontalCenter
     id: root
 
-    property string current_page: "Graphics"
+	property var pages: ["Graphics", "Audio", "Controls", "Privacy and Security"]
+    property string current_page: "Settings"
 
 	// Navigation Header
-	Item {
-		height: 60
+	HeaderElement {
+		id: header
+	}
+
+	// Home page
+	ScrollView {
 		width: parent.width
+		id: home_page
 
-		Rectangle {
-			anchors.fill: parent;
-			color: "black"
-		}
-
-		Text {
-			y: 10
-			text: current_page
-			color: "white"
-			font.pointSize: 18
+		ColumnLayout {
+			width: parent.width
+			visible: current_page == "Settings"
 			anchors.horizontalCenter: parent.horizontalCenter
-			anchors.verticalCenter: parent.verticalCenter
-			horizontalAlignment: Text.AlignHCenter
-			width: parent.width - 10
+			y: header.height
+			spacing: 0
+			Repeater {
+				model: pages.length
+				delegate: SettingSubviewListElement {
+					property string page_name: pages[index];
+				}
+			}
 		}
 	}
 
@@ -409,6 +414,7 @@ Rectangle {
 				color: "white"
 			}
 
+			// FIXME: QML Slider binding loop
 			Slider {
 				id: fov_slider
 				from: 20
