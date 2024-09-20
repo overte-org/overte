@@ -25,14 +25,16 @@ Rectangle {
 	// Home page
 	ScrollView {
 		width: parent.width
+		height:parent.height
+		y: header.height
 		id: home_page
 
 		ColumnLayout {
 			width: parent.width
 			visible: current_page == "Settings"
 			anchors.horizontalCenter: parent.horizontalCenter
-			y: header.height
 			spacing: 0
+			
 			Repeater {
 				model: pages.length
 				delegate: SettingSubviewListElement {
