@@ -23,23 +23,14 @@ Rectangle {
 	}
 
 	// Home page
-	ScrollView {
-		width: parent.width
-		height:parent.height
-		y: header.height
+	SettingCenterContainer {
 		id: home_page
+        visible: current_page == "Settings"
 
-		ColumnLayout {
-			width: parent.width
-			visible: current_page == "Settings"
-			anchors.horizontalCenter: parent.horizontalCenter
-			spacing: 0
-			
-			Repeater {
-				model: pages.length
-				delegate: SettingSubviewListElement {
-					property string page_name: pages[index];
-				}
+		Repeater {
+			model: pages.length
+			delegate: SettingSubviewListElement {
+				property string page_name: pages[index];
 			}
 		}
 	}
@@ -458,6 +449,14 @@ Rectangle {
 			}
 		}
 	}
+
+	// Audio
+	SettingCenterContainer {
+		id: audio_page
+        visible: current_page == "Audio"
+	}
+
+
 
     // Templates
 
