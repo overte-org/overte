@@ -114,7 +114,6 @@ GLTexture* GL45Backend::syncGPUObject(const TexturePointer& texturePointer) {
                 Q_UNREACHABLE();
         }
     } else {
-
         if (texture.getUsageType() == TextureUsageType::RESOURCE) {
             auto varTex = static_cast<GL45VariableAllocationTexture*> (object);
 
@@ -285,11 +284,10 @@ const GL45Texture::Bindless& GL45Texture::getBindless() const {
 #endif
 
 
-void GL45Texture::syncSampler() const {
-    const Sampler& sampler = _gpuObject.getSampler();
+void GL45Texture::syncSampler(const Sampler& sampler) const {
     if (_cachedSampler == sampler) {
         return;
-    } 
+    }
 
     _cachedSampler = sampler;
 
@@ -328,7 +326,7 @@ using GL45FixedAllocationTexture = GL45Backend::GL45FixedAllocationTexture;
 
 GL45FixedAllocationTexture::GL45FixedAllocationTexture(const std::weak_ptr<GLBackend>& backend, const Texture& texture) : GL45Texture(backend, texture), _size(texture.evalTotalSize()) {
     allocateStorage();
-    syncSampler();
+    syncSampler(texture.getSampler());
 }
 
 GL45FixedAllocationTexture::~GL45FixedAllocationTexture() {
@@ -361,9 +359,8 @@ void GL45FixedAllocationTexture::allocateStorage() const {
     glTextureParameteri(_id, GL_TEXTURE_MAX_LEVEL, mips - 1);
 }
 
-void GL45FixedAllocationTexture::syncSampler() const {
-    Parent::syncSampler();
-    const Sampler& sampler = _gpuObject.getSampler();
+void GL45FixedAllocationTexture::syncSampler(const Sampler& sampler) const {
+    Parent::syncSampler(sampler);
     glTextureParameterf(_id, GL_TEXTURE_MIN_LOD, (float)sampler.getMinMip());
     glTextureParameterf(_id, GL_TEXTURE_MAX_LOD, (sampler.getMaxMip() == Sampler::MAX_MIP_LEVEL ? 1000.f : sampler.getMaxMip()));
 }
@@ -401,7 +398,7 @@ GL45StrictResourceTexture::GL45StrictResourceTexture(const std::weak_ptr<GLBacke
     }
 
     // Re-sync the sampler to force access to the new mip level
-    syncSampler();
+    syncSampler(texture.getSampler());
 }
 
 GL45StrictResourceTexture::~GL45StrictResourceTexture() {
@@ -491,5 +488,6 @@ void GL45Backend::do_setResourceTextureTable(const Batch& batch, size_t paramOff
     if (glTextureTable) {
         glBindBufferBase(GL_UNIFORM_BUFFER, slot + GLBackend::RESOURCE_TABLE_TEXTURE_SLOT_OFFSET, glTextureTable->_id);
     }
+    // FIXME: handle samplers
 }
 #endif

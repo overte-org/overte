@@ -168,7 +168,7 @@ public:
 
 protected:
     virtual void generateMips() const = 0;
-    virtual void syncSampler() const = 0;
+    virtual void syncSampler(const Sampler& sampler) const = 0;
 
     virtual void copyTextureMipsInGPUMem(GLuint srcId, GLuint destId, uint16_t srcMipOffset, uint16_t destMipOffset, uint16_t populatedMips) {} // Only relevant for Variable Allocation textures
 
@@ -183,7 +183,7 @@ public:
 protected:
     GLExternalTexture(const std::weak_ptr<gl::GLBackend>& backend, const Texture& texture, GLuint id);
     void generateMips() const override {}
-    void syncSampler() const override {}
+    void syncSampler(const Sampler& sampler) const override {}
     Size copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face, const uvec3& size, uint32_t yOffset, GLenum internalFormat, GLenum format, GLenum type, Size sourceSize, const void* sourcePointer) const override { return 0;}
 
     Size size() const override { return 0; }

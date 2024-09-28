@@ -236,6 +236,24 @@ json Serializer::writeBatch(const Batch& batch) {
     if (0 != batch._textureTables.size()) {
         batchNode[keys::textureTables] = serializePointerCache(batch._textureTables, textureTableMap);
     }
+    if (0 != batch._samplers.size()) {
+        auto transform = [](const Sampler& object) -> json {
+            json result = json::object();
+            const Sampler::Desc& desc = object.getDesc();
+            result["borderColor"] = writeVec4(desc._borderColor);
+            result["maxAnisotropy"] = desc._maxAnisotropy;
+            result["filter"] = desc._filter;
+            result["comparisonFunc"] = desc._comparisonFunc;
+            result["wrapModeU"] = desc._wrapModeU;
+            result["wrapModeV"] = desc._wrapModeV;
+            result["wrapModeW"] = desc._wrapModeW;
+            result["mipOffset"] = desc._mipOffset;
+            result["minMip"] = desc._minMip;
+            result["maxMip"] = desc._maxMip;
+            return result;
+        };
+        batchNode[keys::samplers] = serializeDataCache<Sampler, json>(batch._samplers, transform);
+    }
     if (0 != batch._buffers.size()) {
         batchNode[keys::buffers] = serializePointerCache(batch._buffers, bufferMap);
     }

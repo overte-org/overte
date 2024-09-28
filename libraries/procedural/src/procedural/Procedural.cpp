@@ -160,18 +160,46 @@ void Procedural::setProceduralData(const ProceduralData& proceduralData) {
 
     if (proceduralData.channels != _data.channels) {
         _data.channels = proceduralData.channels;
+
+        static gpu::Sampler defaultSampler;
+        static std::once_flag once;
+        std::call_once(once, [&] {
+            defaultSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR);
+        });
+
         // Must happen on the main thread
         auto textureCache = DependencyManager::get<TextureCache>();
         size_t channelCount = std::min(MAX_PROCEDURAL_TEXTURE_CHANNELS, (size_t)proceduralData.channels.size());
-        size_t channel;
-        for (channel = 0; channel < MAX_PROCEDURAL_TEXTURE_CHANNELS; ++channel) {
+        for (size_t channel = 0; channel < MAX_PROCEDURAL_TEXTURE_CHANNELS; ++channel) {
             if (channel < channelCount) {
-                QString url = proceduralData.channels.at((int)channel).toString();
-                _channels[channel] = textureCache->getTexture(QUrl(url));
-            } else {
-                // Release those textures no longer in use
-                _channels[channel] = textureCache->getTexture(QUrl());
+                QJsonValue channelValue = proceduralData.channels.at((int)channel);
+                if (channelValue.isString()) {
+                    QString url = channelValue.toString();
+                    _channels[channel] = textureCache->getTexture(QUrl(url));
+                    _samplers[channel] = defaultSampler;
+                    continue;
+                } else if (channelValue.isObject()) {
+                    QJsonObject channelMap = channelValue.toObject();
+
+                    auto urlItr = channelMap.constFind("url");
+                    if (urlItr != channelMap.constEnd() && urlItr->isString()) {
+                        _channels[channel] = textureCache->getTexture(QUrl(urlItr->toString()));
+
+                        auto samplerItr = channelMap.constFind("sampler");
+                        if (samplerItr != channelMap.constEnd() && samplerItr->isObject()) {
+                            _samplers[channel] = gpu::Sampler::parseSampler(samplerItr->toObject());
+                        } else {
+                            _samplers[channel] = defaultSampler;
+                        }
+                        continue;
+                    }
+                }
             }
+
+            // Fallthrough case:
+            // Release those textures no longer in use
+            _channels[channel] = textureCache->getTexture(QUrl());
+            _samplers[channel] = defaultSampler;
         }
     }
 
@@ -467,17 +495,11 @@ void Procedural::prepare(gpu::Batch& batch,
         lambda(batch);
     }
 
-    static gpu::Sampler sampler;
-    static std::once_flag once;
-    std::call_once(once, [&] {
-        sampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR);
-    });
-
     for (size_t i = 0; i < MAX_PROCEDURAL_TEXTURE_CHANNELS; ++i) {
         if (_channels[i] && _channels[i]->isLoaded()) {
             auto gpuTexture = _channels[i]->getGPUTexture();
             if (gpuTexture) {
-                gpuTexture->setSampler(sampler);
+                gpuTexture->setSampler(_samplers[i]);
                 gpuTexture->setAutoGenerateMips(true);
             }
             batch.setResourceTexture((gpu::uint32)(procedural::slot::texture::Channel0 + i), gpuTexture);

@@ -245,15 +245,19 @@ void GLBackend::do_setResourceTexture(const Batch& batch, size_t paramOffset) {
     }
 
     const auto& resourceTexture = batch._textures.get(batch._params[paramOffset + 0]._uint);
-    bindResourceTexture(slot, resourceTexture);
+    Sampler sampler;
+    if (resourceTexture) {
+        sampler = batch._samplers.get(batch._params[paramOffset + 2]._uint);
+    }
+    bindResourceTexture(slot, resourceTexture, sampler);
 }
 
-void GLBackend::bindResourceTexture(uint32_t slot, const TexturePointer& resourceTexture) {
+void GLBackend::bindResourceTexture(uint32_t slot, const TexturePointer& resourceTexture, const Sampler& sampler) {
     if (!resourceTexture) {
         releaseResourceTexture(slot);
         return;
     }
-    setResourceTexture(slot, resourceTexture);
+    setResourceTexture(slot, resourceTexture, sampler);
 }
 
 void GLBackend::do_setResourceFramebufferSwapChainTexture(const Batch& batch, size_t paramOffset) {
@@ -276,13 +280,14 @@ void GLBackend::do_setResourceFramebufferSwapChainTexture(const Batch& batch, si
     auto renderBufferSlot = batch._params[paramOffset + 3]._uint;
     const auto& resourceFramebuffer = swapChain->get(index);
     const auto& resourceTexture = resourceFramebuffer->getRenderBuffer(renderBufferSlot);
-    setResourceTexture(slot, resourceTexture);
+    Sampler sampler = batch._samplers.get(batch._params[paramOffset + 4]._uint);
+    setResourceTexture(slot, resourceTexture, sampler);
 }
 
-void GLBackend::setResourceTexture(unsigned int slot, const TexturePointer& resourceTexture) {
+void GLBackend::setResourceTexture(unsigned int slot, const TexturePointer& resourceTexture, const Sampler& sampler) {
     auto& textureState = _resource._textures[slot];
     // check cache before thinking
-    if (compare(textureState._texture, resourceTexture)) {
+    if (compare(textureState._texture, resourceTexture) && textureState._sampler == sampler) {
         return;
     }
 
@@ -295,8 +300,10 @@ void GLBackend::setResourceTexture(unsigned int slot, const TexturePointer& reso
         assign(textureState._texture, resourceTexture);
         GLuint to = object->_texture;
         textureState._target = object->_target;
+        textureState._sampler = sampler;
         glActiveTexture(GL_TEXTURE0 + slot);
         glBindTexture(textureState._target, to);
+        object->syncSampler(sampler);
         (void)CHECK_GL_ERROR();
         _stats._RSAmountTextureMemoryBounded += (uint64_t)object->size();
 
@@ -312,10 +319,19 @@ void GLBackend::do_setResourceTextureTable(const Batch& batch, size_t paramOffse
         return;
     }
 
+    GLuint startSlot = batch._params[paramOffset + 1]._uint;
+    size_t samplerIndex = 0;
     const auto& textureTable = *textureTablePointer;
     const auto& textures = textureTable.getTextures();
     for (GLuint slot = 0; slot < textures.size(); ++slot) {
-        bindResourceTexture(slot, textures[slot]);
+        const auto& texture = textures[slot];
+
+        Sampler sampler;
+        if (texture) {
+            sampler = batch._samplers.get(batch._params[paramOffset + 2 + (samplerIndex++)]._uint);
+        }
+
+        bindResourceTexture(slot + startSlot, texture, sampler);
     }
 }
 

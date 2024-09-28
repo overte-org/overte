@@ -22,6 +22,7 @@
 #include <Extents.h>
 #include <Transform.h>
 
+#include <gpu/Texture.h>
 #include <graphics/Geometry.h>
 #include <graphics/Material.h>
 
@@ -143,7 +144,9 @@ public:
     int texcoordSet;
     QString texcoordSetName;
 
-    bool isBumpmap{ false };
+    bool isBumpmap { false };
+
+    gpu::Sampler sampler;
 
     bool isNull() const { return name.isEmpty() && filename.isEmpty() && content.isEmpty(); }
 };

@@ -104,6 +104,7 @@ constexpr const char*  texelFormat = "texelFormat";
 constexpr const char*  texture = "texture";
 constexpr const char*  textureTables = "textureTables";
 constexpr const char*  textures = "textures";
+constexpr const char*  samplers = "samplers";
 constexpr const char*  transforms = "transforms";
 constexpr const char*  type = "type";
 constexpr const char*  usageType = "usageType";

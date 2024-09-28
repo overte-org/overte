@@ -206,9 +206,7 @@ Size GLESTexture::copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face, const 
     return amountCopied;
 }
 
-void GLESTexture::syncSampler() const {
-    const Sampler& sampler = _gpuObject.getSampler();
-
+void GLESTexture::syncSampler(const Sampler& sampler) const {
     const auto& fm = FILTER_MODES[sampler.getFilter()];
     glTexParameteri(_target, GL_TEXTURE_MIN_FILTER, fm.minFilter);
     glTexParameteri(_target, GL_TEXTURE_MAG_FILTER, fm.magFilter);
@@ -238,7 +236,7 @@ using GLESFixedAllocationTexture = GLESBackend::GLESFixedAllocationTexture;
 GLESFixedAllocationTexture::GLESFixedAllocationTexture(const std::weak_ptr<GLBackend>& backend, const Texture& texture) : GLESTexture(backend, texture), _size(texture.evalTotalSize()) {
     withPreservedTexture([&] {
         allocateStorage();
-        syncSampler();
+        syncSampler(texture.getSampler());
     });
 }
 
@@ -313,9 +311,8 @@ void GLESFixedAllocationTexture::allocateStorage() const {
     (void)CHECK_GL_ERROR();
 }
 
-void GLESFixedAllocationTexture::syncSampler() const {
-    Parent::syncSampler();
-    const Sampler& sampler = _gpuObject.getSampler();
+void GLESFixedAllocationTexture::syncSampler(const Sampler& sampler) const {
+    Parent::syncSampler(sampler);
     glTexParameterf(_target, GL_TEXTURE_MIN_LOD, (float)sampler.getMinMip());
     glTexParameterf(_target, GL_TEXTURE_MAX_LOD, (sampler.getMaxMip() == Sampler::MAX_MIP_LEVEL ? 1000.0f : sampler.getMaxMip()));
 }
@@ -386,7 +383,7 @@ GLESVariableAllocationTexture::GLESVariableAllocationTexture(const std::weak_ptr
     allocateStorage(allocatedMip);
     copyMipsFromTexture();
 
-    syncSampler();
+    syncSampler(texture.getSampler());
 }
 
 GLESVariableAllocationTexture::~GLESVariableAllocationTexture() {
@@ -433,9 +430,9 @@ Size GLESVariableAllocationTexture::copyMipFaceLinesFromTexture(uint16_t mip, ui
     return amountCopied;
 }
 
-void GLESVariableAllocationTexture::syncSampler() const {
+void GLESVariableAllocationTexture::syncSampler(const Sampler& sampler) const {
     withPreservedTexture([&] {
-        Parent::syncSampler();
+        Parent::syncSampler(sampler);
         glTexParameteri(_target, GL_TEXTURE_BASE_LEVEL, _populatedMip - _allocatedMip);
     });
 }
@@ -486,7 +483,7 @@ size_t GLESVariableAllocationTexture::promote() {
     glDeleteTextures(1, &oldId);
 
     // Update sampler
-    syncSampler();
+    syncSampler(_gpuObject.getSampler());
 
     // update the memory usage
     Backend::textureResourceGPUMemSize.update(oldSize, 0);
@@ -515,7 +512,7 @@ size_t GLESVariableAllocationTexture::demote() {
     glDeleteTextures(1, &oldId);
 
     // Update sampler
-    syncSampler();
+    syncSampler(_gpuObject.getSampler());
 
     // update the memory usage
     Backend::textureResourceGPUMemSize.update(oldSize, 0);
@@ -580,7 +577,7 @@ void GLESVariableAllocationTexture::populateTransferQueue(TransferJob::Queue& qu
             _populatedMip = sourceMip;
             incrementPopulatedSize(_gpuObject.evalMipSize(sourceMip));
             sanityCheck();
-            syncSampler();
+            syncSampler(_gpuObject.getSampler());
         }));
     } while (sourceMip != _allocatedMip);
 }

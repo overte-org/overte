@@ -16,6 +16,7 @@
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtc/packing.hpp>
 
+#include "QJsonObject"
 #include <QtCore/QDebug>
 #include <QtCore/QThread>
 #include <Trace.h>
@@ -927,6 +928,19 @@ bool TextureSource::isDefined() const {
     return _gpuTexture && _gpuTexture->isDefined();
 }
 
+void TextureSource::setSampler(const gpu::Sampler& sampler) {
+    if (_gpuTextureOperator && !_locked) {
+        _locked = true;
+        auto gpuTexture = _gpuTextureOperator();
+        _locked = false;
+        if (gpuTexture) {
+            gpuTexture->setSampler(sampler);
+        }
+    } else if (_gpuTexture) {
+        _gpuTexture->setSampler(sampler);
+    }
+}
+
 bool Texture::setMinMip(uint16 newMinMip) {
     uint16 oldMinMip = _minMip;
     _minMip = std::min(std::max(_minMip, newMinMip), getMaxMip());
@@ -972,4 +986,111 @@ Texture::ExternalUpdates Texture::getUpdates() const {
 
 void Texture::setStorage(std::unique_ptr<Storage>& newStorage) {
     _storage.swap(newStorage);
+}
+
+Sampler Sampler::parseSampler(const QJsonObject& object) {
+    gpu::Sampler::Desc samplerDesc;
+
+    auto filterItr = object.constFind("filter");
+    if (filterItr != object.constEnd() && filterItr->isString()) {
+        auto filterStr = filterItr->toString();
+        if (filterStr == "point") {
+            samplerDesc._filter = gpu::Sampler::Filter::FILTER_MIN_MAG_POINT;
+        } else if (filterStr == "linear") {
+            samplerDesc._filter = gpu::Sampler::Filter::FILTER_MIN_MAG_LINEAR;
+        }
+    } else {
+        auto minFilterItr = object.constFind("minFilter");
+        auto magFilterItr = object.constFind("magFilter");
+        if (minFilterItr != object.constEnd() && minFilterItr->isString() && magFilterItr != object.constEnd() &&
+            magFilterItr->isString()) {
+            auto minFilterStr = minFilterItr->toString();
+            auto magFilterStr = magFilterItr->toString();
+            if (magFilterStr == "point") {
+                if (minFilterStr == "point") {
+                    samplerDesc._filter = gpu::Sampler::Filter::FILTER_MIN_MAG_POINT;
+                } else if (minFilterStr == "linear") {
+                    samplerDesc._filter = gpu::Sampler::Filter::FILTER_MIN_LINEAR_MAG_POINT;
+                } else if (minFilterStr == "mipmapPoint") {
+                    samplerDesc._filter = gpu::Sampler::Filter::FILTER_MIN_MAG_MIP_POINT;
+                } else if (minFilterStr == "mipmapLinear") {
+                    samplerDesc._filter = gpu::Sampler::Filter::FILTER_MIN_MAG_POINT_MIP_LINEAR;
+                } else if (minFilterStr == "linearMipmapPoint") {
+                    samplerDesc._filter = gpu::Sampler::Filter::FILTER_MIN_LINEAR_MAG_MIP_POINT;
+                } else if (minFilterStr == "linearMipmapLinear") {
+                    samplerDesc._filter = gpu::Sampler::Filter::FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+                }
+            } else if (magFilterStr == "linear") {
+                if (minFilterStr == "point") {
+                    samplerDesc._filter = gpu::Sampler::Filter::FILTER_MIN_POINT_MAG_LINEAR;
+                } else if (minFilterStr == "linear") {
+                    samplerDesc._filter = gpu::Sampler::Filter::FILTER_MIN_MAG_LINEAR;
+                } else if (minFilterStr == "mipmapPoint") {
+                    samplerDesc._filter = gpu::Sampler::Filter::FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
+                } else if (minFilterStr == "mipmapLinear") {
+                    samplerDesc._filter = gpu::Sampler::Filter::FILTER_MIN_POINT_MAG_MIP_LINEAR;
+                } else if (minFilterStr == "linearMipmapPoint") {
+                    samplerDesc._filter = gpu::Sampler::Filter::FILTER_MIN_MAG_LINEAR_MIP_POINT;
+                } else if (minFilterStr == "linearMipmapLinear") {
+                    samplerDesc._filter = gpu::Sampler::Filter::FILTER_MIN_MAG_MIP_LINEAR;
+                }
+            }
+        }
+    }
+
+    auto wrapItr = object.constFind("wrap");
+    if (wrapItr != object.constEnd() && wrapItr->isString()) {
+        auto wrapStr = wrapItr->toString();
+        if (wrapStr == "repeat") {
+            samplerDesc._wrapModeU = gpu::Sampler::WrapMode::WRAP_REPEAT;
+        } else if (wrapStr == "mirror") {
+            samplerDesc._wrapModeU = gpu::Sampler::WrapMode::WRAP_MIRROR;
+        } else if (wrapStr == "clamp") {
+            samplerDesc._wrapModeU = gpu::Sampler::WrapMode::WRAP_CLAMP;
+        } else if (wrapStr == "border") {
+            samplerDesc._wrapModeU = gpu::Sampler::WrapMode::WRAP_BORDER;
+        } else if (wrapStr == "mirrorOnce") {
+            samplerDesc._wrapModeU = gpu::Sampler::WrapMode::WRAP_MIRROR_ONCE;
+        }
+        samplerDesc._wrapModeV = samplerDesc._wrapModeU;
+    } else {
+        auto wrapSItr = object.constFind("wrapS");
+        if (wrapSItr != object.constEnd() && wrapSItr->isString()) {
+            auto wrapSStr = wrapSItr->toString();
+            if (wrapSStr == "repeat") {
+                samplerDesc._wrapModeU = gpu::Sampler::WrapMode::WRAP_REPEAT;
+            } else if (wrapSStr == "mirror") {
+                samplerDesc._wrapModeU = gpu::Sampler::WrapMode::WRAP_MIRROR;
+            } else if (wrapSStr == "clamp") {
+                samplerDesc._wrapModeU = gpu::Sampler::WrapMode::WRAP_CLAMP;
+            } else if (wrapSStr == "border") {
+                samplerDesc._wrapModeU = gpu::Sampler::WrapMode::WRAP_BORDER;
+            } else if (wrapSStr == "mirrorOnce") {
+                samplerDesc._wrapModeU = gpu::Sampler::WrapMode::WRAP_MIRROR_ONCE;
+            }
+        }
+
+        auto wrapTItr = object.constFind("wrapT");
+        if (wrapTItr != object.constEnd() && wrapTItr->isString()) {
+            auto wrapTStr = wrapTItr->toString();
+            if (wrapTStr == "repeat") {
+                samplerDesc._wrapModeV = gpu::Sampler::WrapMode::WRAP_REPEAT;
+            } else if (wrapTStr == "mirror") {
+                samplerDesc._wrapModeV = gpu::Sampler::WrapMode::WRAP_MIRROR;
+            } else if (wrapTStr == "clamp") {
+                samplerDesc._wrapModeV = gpu::Sampler::WrapMode::WRAP_CLAMP;
+            } else if (wrapTStr == "border") {
+                samplerDesc._wrapModeV = gpu::Sampler::WrapMode::WRAP_BORDER;
+            } else if (wrapTStr == "mirrorOnce") {
+                samplerDesc._wrapModeV = gpu::Sampler::WrapMode::WRAP_MIRROR_ONCE;
+            }
+        }
+    }
+
+    auto borderColorItr = object.constFind("borderColor");
+    if (borderColorItr != object.constEnd()) {
+        samplerDesc._borderColor = vec4FromVariant(borderColorItr->toVariant());
+    }
+
+    return Sampler(samplerDesc);
 }

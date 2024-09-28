@@ -197,6 +197,21 @@ void Material::setTextureMap(MapChannel channel, const TextureMapPointer& textur
 
 }
 
+void Material::setSampler(MapChannel channel, const gpu::Sampler& sampler) {
+    std::lock_guard<std::recursive_mutex> locker(_textureMapsMutex);
+    _samplers[channel] = sampler;
+}
+
+void Material::applySampler(MapChannel channel) {
+    std::lock_guard<std::recursive_mutex> locker(_textureMapsMutex);
+
+    auto samplerItr = _samplers.find(channel);
+    auto textureMapsItr = _textureMaps.find(channel);
+    if (samplerItr != _samplers.end() && textureMapsItr != _textureMaps.end() && textureMapsItr->second->getTextureSource()) {
+        textureMapsItr->second->getTextureSource()->setSampler(samplerItr->second);
+    }
+}
+
 bool Material::resetOpacityMap() const {
     // If OpacityMapMode explicit then nothing need to change here.
     if (_key.isOpacityMapMode()) {
@@ -350,4 +365,10 @@ void MultiMaterial::setMToonTime() {
 
     // Minimize floating point error by doing an integer division to milliseconds, before the floating point division to seconds
     _schemaBuffer.edit<graphics::MultiMaterial::MToonSchema>()._time = (float)((usecTimestampNow() - mtoonStartTime) / USECS_PER_MSEC) / MSECS_PER_SECOND;
+}
+
+void MultiMaterial::applySamplers() const {
+    for (auto& func : _samplerFuncs) {
+        func();
+    }
 }
