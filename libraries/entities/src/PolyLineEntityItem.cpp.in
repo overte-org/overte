@@ -55,7 +55,7 @@ bool PolyLineEntityItem::setSubClassProperties(const EntityItemProperties& prope
 EntityPropertyFlags PolyLineEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
     EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
 
-@PolyLine_REQUESTED_PROP@
+@PolyLine_REQUESTED_PROPS@
 
     return requestedProperties;
 }
