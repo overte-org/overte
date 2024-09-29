@@ -9,7 +9,7 @@ enum:GRAB_LEFT_EQUIPPABLE_POSITION_OFFSET prop:equippableLeftPosition type:vec3 
 enum:GRAB_LEFT_EQUIPPABLE_ROTATION_OFFSET prop:equippableLeftRotation type:quat default:INITIAL_LEFT_EQUIPPABLE_ROTATION,
 enum:GRAB_RIGHT_EQUIPPABLE_POSITION_OFFSET prop:equippableRightPosition type:vec3 default:INITIAL_RIGHT_EQUIPPABLE_POSITION,
 enum:GRAB_RIGHT_EQUIPPABLE_ROTATION_OFFSET prop:equippableRightRotation type:quat default:INITIAL_RIGHT_EQUIPPABLE_ROTATION,
-enum:GRAB_EQUIPPABLE_INDICATOR_URL prop:equippableIndicatorURL type:QString default:"",
+enum:GRAB_EQUIPPABLE_INDICATOR_URL prop:equippableIndicatorURL type:QString default:"" urlPermission,
 enum:GRAB_EQUIPPABLE_INDICATOR_SCALE prop:equippableIndicatorScale type:vec3 default:INITIAL_EQUIPPABLE_INDICATOR_SCALE,
 enum:GRAB_EQUIPPABLE_INDICATOR_OFFSET prop:equippableIndicatorOffset type:vec3 default:INITIAL_EQUIPPABLE_INDICATOR_OFFSET,
 pulse
