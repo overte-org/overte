@@ -37,6 +37,11 @@ void KeyLightPropertyGroup::copyFromScriptValue(const ScriptValue& object, const
 
 @KeyLight_GROUP_COPY_FROM_SCRIPT@
 
+    // legacy property support
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(keyLightColor, u8vec3Color, setColor, getColor);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(keyLightIntensity, float, setIntensity, getIntensity);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(keyLightDirection, vec3, setDirection, getDirection);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(keyLightCastShadows, bool, setCastShadows, getCastShadows);
 }
 
 void KeyLightPropertyGroup::merge(const KeyLightPropertyGroup& other) {
