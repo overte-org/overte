@@ -17,6 +17,7 @@ endmacro()
 macro(GENERATE_ENTITY_PROPERTIES)
     message(STATUS "Entity property processing start")
 
+    # Define most of our variables.  Some are initialized only in the loops below.
     set(ENTITY_ITEM_PROPERTY_DEFINES "")
     set(ENTITY_ITEM_PROPERTY_INCLUDES "#include \"EntityItem.h\"\n")
     set(ENTITY_ITEM_PROPERTY_FRIENDS "\tfriend class EntityItem;\n")
@@ -36,16 +37,24 @@ macro(GENERATE_ENTITY_PROPERTIES)
     list(APPEND ENTITY_TYPES ${CURRENT_TYPE})
     set(ENTITY_PROPERTY_FLAGS "")
 
+    # These types are passed by value everywhere, anything else is passed by reference.
     set(NON_REF_TYPES "bool" "int" "float" "uint8_t" "uint16_t" "quint16" "uint32_t" "quint32" "quint64")
+    # These property sections are shared by all types.  "Common" must be at the end.
     set(BASE_ENTITY_TYPES "Core" "Physics" "Cloning" "Scripts" "LocalProps" "Common")
+    # These types have special methods for converting to/from scripts.
     set(TYPED_SCRIPT_CONVERT "u8vec3Color" "vec3Color" "qVectorVec3Color")
     set(COMMON_PROPS false)
     set(LOCAL_PROPS false)
     set(NEEDS_CLOSING_BRACE false)
 
+    # All (non-group) properties are defined in EntityItemProperties.txt.  We loop over them in order.
     file(STRINGS src/EntityItemProperties.txt ENTITY_PROPERTIES_FILE)
     while(ENTITY_PROPERTIES_FILE)
         list(POP_FRONT ENTITY_PROPERTIES_FILE LINE)
+
+        # Single-word lines represent sections of properties, which can be base properties like "Physics" or
+        # Entity types like "Model".  We use the section names to generate comments, and also handle indentation
+        # and opening/closing braces.
         if(NOT LINE MATCHES ".*:.*")
             if(LINE STREQUAL "Common")
                 set(COMMON_PROPS true)
@@ -108,10 +117,13 @@ macro(GENERATE_ENTITY_PROPERTIES)
                 endif()
             endif()
         elseif(LINE MATCHES "group:.*,")
+            # Lines that start with "group:" represent property groups like "grab".
             string(REGEX MATCH ".*group:+([A-Z0-9a-z_<>::\/\.\"\(\)\+\-]+)( |,)" ENTITY_PROPERTY_GROUP ${LINE})
             set(ENTITY_PROPERTY_GROUP ${CMAKE_MATCH_1})
             CAPITALIZE_FIRST_LETTER(${ENTITY_PROPERTY_GROUP})
             set(ENTITY_PROPERTY_GROUP_CAPS ${CAPITALIZE_RESULT})
+            # Most property groups have the same filenames, e.g. "pulse" to "PulsePropertyGroup", but some are different,
+            # e.g. "ring" is "RingGizmoPropertyGroup"
             string(REGEX MATCH ".*type:+([A-Z0-9a-z_<>::\/\.\"\(\)\+\-]+)( |,)" ENTITY_PROPERTY_GROUP_TYPE ${LINE})
             if (CMAKE_MATCH_1)
                 set(ENTITY_PROPERTY_GROUP_TYPE "${CMAKE_MATCH_1}PropertyGroup")
@@ -164,6 +176,8 @@ macro(GENERATE_ENTITY_PROPERTIES)
                 string(CONCAT ${CURRENT_TYPE}_ENTITY_DEBUG "${${CURRENT_TYPE}_ENTITY_DEBUG}" "\t_${ENTITY_PROPERTY_GROUP}Properties.debugDump();\n")
             endif()
         else()
+            # Everything else is just a normal, non-group property.  Properties support a wide variety of settings,
+            # which control things like default/min/max, script conversions, and networking behavior.
             string(REGEX MATCH ".*enum:+([A-Z0-9a-z_<>::\/\.\"\(\)\+\-]+)( |,)" ENTITY_PROPERTY_ENUM ${LINE})
             string(CONCAT ENTITY_PROPERTY_ENUM "PROP_" ${CMAKE_MATCH_1})
             string(REGEX MATCH ".*prop:+([A-Z0-9a-z_<>::\/\.\"\(\)\+\-]+)( |,)" ENTITY_PROPERTY_NAME ${LINE})
@@ -341,6 +355,8 @@ macro(GENERATE_ENTITY_PROPERTIES)
                     endif()
                 endif()
             else()
+                # We have some "legacy" properties, which are mostly aliases of existing properties with old names or different types.
+                # They only need to worry about script conversions.
                 if(NOT LINE MATCHES ".*noScript( |,).*")
                     string(REGEX MATCH ".*proxy:+([A-Z0-9a-z_<>::\/\.\"\(\)\+\-]+)( |,)" ENTITY_PROPERTY_PROXY ${LINE})
                     set(ENTITY_PROPERTY_PROXY ${CMAKE_MATCH_1})
@@ -376,10 +392,12 @@ macro(GENERATE_ENTITY_PROPERTIES)
         endif()
     endwhile()
 
+    # Final closing parentheses
     string(CONCAT ENTITY_ITEM_PROPERTY_COPY_TO_SCRIPT "${ENTITY_ITEM_PROPERTY_COPY_TO_SCRIPT}" "\t}")
     string(CONCAT ENTITY_ITEM_PROPERTY_APPEND "${ENTITY_ITEM_PROPERTY_APPEND}" "\t\t\t}")
     string(CONCAT ENTITY_ITEM_PROPERTY_READ "${ENTITY_ITEM_PROPERTY_READ}" "\t}")
 
+    # Generate the real code!
     configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/EntityItemProperties.cpp.in
         ${CMAKE_CURRENT_BINARY_DIR}/src/EntityItemProperties.cpp)
@@ -404,9 +422,12 @@ macro(GENERATE_ENTITY_PROPERTIES)
     # Group Properties
     set(GROUP_TYPES "")
 
+    # All group properties are defined in EntityItemGroupProperties.txt.  We loop over them in order.
     file(STRINGS src/EntityItemGroupProperties.txt GROUP_PROPERTIES_FILE)
     while(GROUP_PROPERTIES_FILE)
         list(POP_FRONT GROUP_PROPERTIES_FILE LINE)
+
+        # Lines that don't end in a comma represent the start of a new property group.
         if(NOT LINE MATCHES ".*,")
             string(REGEX MATCH ".*type:+([A-Z0-9a-z_<>::\/\.\"\(\)\+\-]+).*" GROUP_PROPERTY_TYPE ${LINE})
             set(GROUP_PROPERTY_TYPE ${CMAKE_MATCH_1})
@@ -426,6 +447,8 @@ macro(GENERATE_ENTITY_PROPERTIES)
                 list(APPEND GROUP_TYPES ${CURRENT_TYPE_CAPS})
             endif()
         else()
+            # Everything else is just a normal group property.  Group properties support almost all of the same
+            # settings as non-group properties.
             string(REGEX MATCH ".*enum:+([A-Z0-9a-z_<>::\/\.\"\(\)\+\-]+)( |,)" GROUP_PROPERTY_ENUM ${LINE})
             string(CONCAT GROUP_PROPERTY_ENUM "PROP_" ${CMAKE_MATCH_1})
             list(APPEND ${CURRENT_TYPE}_PROPERTY_FLAGS ${GROUP_PROPERTY_ENUM})
@@ -538,6 +561,7 @@ macro(GENERATE_ENTITY_PROPERTIES)
         endif()
     endwhile()
 
+    # Generate the real code!
     foreach(TYPE IN LISTS GROUP_TYPES)
         configure_file(
             ${CMAKE_CURRENT_SOURCE_DIR}/src/${TYPE}PropertyGroup.cpp.in
@@ -548,6 +572,8 @@ macro(GENERATE_ENTITY_PROPERTIES)
         list(APPEND GENERATE_ENTITIES_LIB_SRC ${CMAKE_CURRENT_BINARY_DIR}/src/${TYPE}PropertyGroup.h ${CMAKE_CURRENT_BINARY_DIR}/src/${TYPE}PropertyGroup.cpp)
     endforeach()
 
+    # Lastly, now that we have a big list of all of our properties in order, we build our EntityPropertyList enum.
+    # Shared properties are defined first, and then subclass properties are defined using PROP_DERIVED_XXXX.
     set(HAS_REACHED_COMMON_PROPS false)
     set(DERIVED_PROP false)
     set(DERIVED_PROP_INDEX 0)
@@ -589,6 +615,7 @@ macro(GENERATE_ENTITY_PROPERTIES)
         endif()
     endforeach()
 
+    # Generate the real code!
     configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/EntityPropertyFlags.h.in
         ${CMAKE_CURRENT_BINARY_DIR}/src/EntityPropertyFlags.h)
