@@ -1,0 +1,55 @@
+//
+//  PulsePropertyGroup.h
+//
+//  Created by Sam Gondelman on 1/15/19
+//  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#ifndef hifi_PulsePropertyGroup_h
+#define hifi_PulsePropertyGroup_h
+
+#include <stdint.h>
+
+#include <PulseMode.h>
+
+#include "PropertyGroup.h"
+#include "EntityItemPropertiesMacros.h"
+
+class EntityItemProperties;
+class EncodeBitstreamParams;
+class OctreePacketData;
+class ReadBitstreamToTreeParams;
+class ScriptEngine;
+class ScriptValue;
+
+/*@jsdoc
+ * A color and alpha pulse that an entity may have.
+ * @typedef {object} Entities.Pulse
+ * @property {number} min=0 - The minimum value of the pulse multiplier.
+ * @property {number} max=1 - The maximum value of the pulse multiplier.
+ * @property {number} period=1 - The duration of the color and alpha pulse, in seconds. A pulse multiplier value goes from
+ *     <code>min</code> to <code>max</code>, then <code>max</code> to <code>min</code> in one period.
+ * @property {Entities.PulseMode} colorMode="none" - If "in", the color is pulsed in phase with the pulse period; if "out"
+ *     the color is pulsed out of phase with the pulse period.
+ * @property {Entities.PulseMode} alphaMode="none" - If "in", the alpha is pulsed in phase with the pulse period; if "out"
+ *     the alpha is pulsed out of phase with the pulse period.
+ */
+class PulsePropertyGroup : public PropertyGroup {
+public:
+    ENTITY_PROPERTY_GROUP_METHODS(PulsePropertyGroup)
+
+    bool operator==(const PulsePropertyGroup& a) const;
+    bool operator!=(const PulsePropertyGroup& a) const { return !(*this == a); }
+
+protected:
+
+@Pulse_GROUP_PROPS@
+
+};
+
+#endif // hifi_PulsePropertyGroup_h

@@ -33,6 +33,7 @@
 #include <NLPacket.h>
 #include <udt/PacketHeaders.h>
 
+#include "EntityShape.h"
 #include "MaterialMappingMode.h"
 #include "BillboardMode.h"
 #include "RenderLayer.h"
@@ -276,6 +277,7 @@ public:
     static int unpackDataFromBytes(const unsigned char* dataBytes, uint16_t& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, uint8_t& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, glm::quat& result) { int bytes = unpackOrientationQuatFromBytes(dataBytes, result); return bytes; }
+    static int unpackDataFromBytes(const unsigned char* dataBytes, EntityShape& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, ShapeType& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, MaterialMappingMode& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, BillboardMode& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }

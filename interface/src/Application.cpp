@@ -5750,7 +5750,7 @@ void Application::init() {
             isInView = _viewFrustum.sphereIntersectsKeyhole(itemPosition, maxSize);
         }
         if (!isInView) {
-            const float OUT_OF_VIEW_PENALTY = -M_PI_2;
+            const float OUT_OF_VIEW_PENALTY = -(float)M_PI_2;
             result += OUT_OF_VIEW_PENALTY;
         }
 
@@ -9179,7 +9179,7 @@ void Application::createLoginDialog() {
     properties.getGrab().setGrabbable(false);
     properties.setIgnorePickIntersection(false);
     properties.setAlpha(1.0f);
-    properties.setDPI(DPI);
+    properties.setDpi(DPI);
     properties.setVisible(true);
 
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
@@ -9263,7 +9263,7 @@ void Application::createAvatarInputsBar() {
     properties.getGrab().setGrabbable(false);
     properties.setIgnorePickIntersection(false);
     properties.setAlpha(1.0f);
-    properties.setDPI(DPI);
+    properties.setDpi(DPI);
     properties.setVisible(true);
 
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();

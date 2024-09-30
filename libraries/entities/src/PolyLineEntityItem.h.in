@@ -1,0 +1,66 @@
+//
+//  PolyLineEntityItem.h
+//  libraries/entities/src
+//
+//  Created by Eric Levin on 8/3/15.
+//  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#ifndef hifi_PolyLineEntityItem_h
+#define hifi_PolyLineEntityItem_h
+
+#include "EntityItem.h"
+
+class PolyLineEntityItem : public EntityItem {
+public:
+    static EntityItemPointer factory(const EntityItemID& entityID, const EntityItemProperties& properties);
+
+    PolyLineEntityItem(const EntityItemID& entityItemID);
+
+    ALLOW_INSTANTIATION // This class can be instantiated
+    ENTITY_PROPERTY_SUBCLASS_METHODS
+
+    static const int MAX_POINTS_PER_LINE;
+    static const float DEFAULT_LINE_WIDTH;
+
+    bool pointsChanged() const { return _pointsChanged; }
+    bool normalsChanged() const { return _normalsChanged; }
+    bool colorsChanged() const { return _colorsChanged; }
+    bool widthsChanged() const { return _widthsChanged; }
+    bool texturesChanged() const { return _texturesChanged; }
+
+    void resetTexturesChanged() { _texturesChanged = false; }
+    void resetPolyLineChanged() { _colorsChanged = _widthsChanged = _normalsChanged = _pointsChanged = false; }
+
+    // never have a ray intersection pick a PolyLineEntityItem.
+    virtual bool supportsDetailedIntersection() const override { return true; }
+    virtual bool findDetailedRayIntersection(const glm::vec3& origin, const glm::vec3& direction,
+                                             const glm::vec3& viewFrustumPos, OctreeElementPointer& element, float& distance,
+                                             BoxFace& face, glm::vec3& surfaceNormal,
+                                             QVariantMap& extraInfo, bool precisionPicking) const override { return false; }
+    virtual bool findDetailedParabolaIntersection(const glm::vec3& origin, const glm::vec3& velocity,
+                                                  const glm::vec3& acceleration, const glm::vec3& viewFrustumPos, OctreeElementPointer& element,
+                                                  float& parabolicDistance, BoxFace& face, glm::vec3& surfaceNormal,
+                                                  QVariantMap& extraInfo, bool precisionPicking) const override { return false; }
+
+    void computeTightLocalBoundingBox(AABox& box) const;
+private:
+    void computeAndUpdateDimensions();
+
+protected:
+
+@PolyLine_ENTITY_PROPS@
+
+    bool _pointsChanged { false };
+    bool _normalsChanged { false };
+    bool _colorsChanged { false };
+    bool _widthsChanged { false };
+    bool _texturesChanged { false };
+};
+
+#endif // hifi_PolyLineEntityItem_h

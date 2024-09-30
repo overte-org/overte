@@ -147,7 +147,7 @@ public:
         NUM_SHAPES,
     };
 
-    /// @param entityShapeEnum:  The entity::Shape enumeration for the shape
+    /// @param entityShapeEnum:  The EntityShape enumeration for the shape
     ///           whose GeometryCache::Shape is desired.
     /// @return GeometryCache::NUM_SHAPES in the event of an error; otherwise,
     ///         the GeometryCache::Shape enum which aligns with the 

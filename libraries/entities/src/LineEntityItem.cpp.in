@@ -1,0 +1,145 @@
+//
+//  LineEntityItem.cpp
+//  libraries/entities/src
+//
+//  Created by Seth Alves on 5/11/15.
+//  Copyright 2015 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#include "LineEntityItem.h"
+
+#include <QDebug>
+
+#include <ByteCountCoding.h>
+
+#include "EntitiesLogging.h"
+#include "EntityItemProperties.h"
+#include "EntityTree.h"
+#include "EntityTreeElement.h"
+#include "OctreeConstants.h"
+
+const int LineEntityItem::MAX_POINTS_PER_LINE = 70;
+
+EntityItemPointer LineEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    std::shared_ptr<LineEntityItem> entity(new LineEntityItem(entityID), [](LineEntityItem* ptr) { ptr->deleteLater(); });
+    entity->setProperties(properties);
+    return entity;
+}
+
+LineEntityItem::LineEntityItem(const EntityItemID& entityItemID) :
+    EntityItem(entityItemID)
+{
+    _type = EntityTypes::Line;
+}
+
+EntityItemProperties LineEntityItem::getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const {
+
+    EntityItemProperties properties = EntityItem::getProperties(desiredProperties, allowEmptyDesiredProperties); // get the properties from our base class
+
+@Line_ENTITY_COPY_TO@
+
+    return properties;
+}
+
+bool LineEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Line_ENTITY_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags LineEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
+
+@Line_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+void LineEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
+                                        EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                        EntityPropertyFlags& requestedProperties,
+                                        EntityPropertyFlags& propertyFlags,
+                                        EntityPropertyFlags& propertiesDidntFit,
+                                        int& propertyCount,
+                                        OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Line_ENTITY_APPEND@
+
+}
+
+int LineEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                     ReadBitstreamToTreeParams& args,
+                                                     EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                     bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Line_ENTITY_READ@
+
+    return bytesRead;
+}
+
+void LineEntityItem::debugDump() const {
+    qCDebug(entities) << "LineEntityItem id:" << getEntityItemID() << "---------------------------------------------";
+    qCDebug(entities) << "    name:" << _name;
+    qCDebug(entities) << "    position:" << debugTreeVector(getWorldPosition());
+    qCDebug(entities) << "    dimensions:" << debugTreeVector(getScaledDimensions());
+    qCDebug(entities) << "    editedAgo:" << debugTime(getLastEdited(), usecTimestampNow());
+    qCDebug(entities) << "    pointer:" << this;
+
+@Line_ENTITY_DEBUG@
+
+}
+
+bool LineEntityItem::appendPoint(const glm::vec3& point) {
+    if (_linePoints.size() > MAX_POINTS_PER_LINE - 1) {
+        qCDebug(entities) << "MAX POINTS REACHED!";
+        return false;
+    }
+    glm::vec3 halfBox = getScaledDimensions() * 0.5f;
+    if ( (point.x < - halfBox.x || point.x > halfBox.x) || (point.y < -halfBox.y || point.y > halfBox.y) || (point.z < - halfBox.z || point.z > halfBox.z) ) {
+        qCDebug(entities) << "Point is outside entity's bounding box";
+        return false;
+    }
+    withWriteLock([&] {
+        _needsRenderUpdate = true;
+        _linePoints << point;
+    });
+
+    return true;
+}
+
+QVector<glm::vec3> LineEntityItem::getLinePoints() const {
+    return resultWithReadLock<QVector<glm::vec3>>([&] {
+        return _linePoints;
+    });
+}
+
+bool LineEntityItem::setLinePoints(const QVector<glm::vec3>& points) {
+    if (points.size() > MAX_POINTS_PER_LINE) {
+        return false;
+    }
+    glm::vec3 halfBox = getScaledDimensions() * 0.5f;
+    for (int i = 0; i < points.size(); i++) {
+        glm::vec3 point = points.at(i);
+        if ( (point.x < - halfBox.x || point.x > halfBox.x) || (point.y < -halfBox.y || point.y > halfBox.y) || (point.z < - halfBox.z || point.z > halfBox.z) ) {
+            qCDebug(entities) << "Point is outside entity's bounding box";
+            return false;
+        }
+    }
+
+    withWriteLock([&] {
+        _needsRenderUpdate = true;
+        _linePoints = points;
+    });
+
+    return true;
+}

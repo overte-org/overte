@@ -1,0 +1,45 @@
+//
+//  TonemappingPropertyGroup.h
+//  libraries/entities/src
+//
+//  Created by HifiExperiments on 6/23/24
+//  Copyright 2024 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#ifndef hifi_TonemappingPropertyGroup_h
+#define hifi_TonemappingPropertyGroup_h
+
+#include <TonemappingCurve.h>
+
+#include "PropertyGroup.h"
+#include "EntityItemPropertiesMacros.h"
+
+class EntityItemProperties;
+class EncodeBitstreamParams;
+class OctreePacketData;
+class EntityTreeElementExtraEncodeData;
+class ReadBitstreamToTreeParams;
+class ScriptEngine;
+class ScriptValue;
+
+/*@jsdoc
+ * Tonemapping is defined by the following properties:
+ * @typedef {object} Entities.Tonemapping
+ * @property {TonemappingCurve} curve="srgb" - The tonemapping curve used.
+ * @property {number} exposure=0.0 - The applied exposure.
+ */
+class TonemappingPropertyGroup : public PropertyGroup {
+public:
+    ENTITY_PROPERTY_GROUP_METHODS(TonemappingPropertyGroup)
+
+protected:
+
+@Tonemapping_GROUP_PROPS@
+
+};
+
+#endif // hifi_TonemappingPropertyGroup_h

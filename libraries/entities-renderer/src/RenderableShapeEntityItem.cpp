@@ -38,7 +38,7 @@ void ShapeEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& sce
         withWriteLock([&] {
             _shape = entity->getShape();
             _renderTransform = getModelTransform(); // contains parent scale, if this entity scales with its parent
-            if (_shape == entity::Sphere) {
+            if (_shape == EntityShape::Sphere) {
                 _renderTransform.postScale(SPHERE_ENTITY_SCALE);
             }
 
@@ -116,7 +116,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
     gpu::Batch& batch = *args->_batch;
 
     auto geometryCache = DependencyManager::get<GeometryCache>();
-    GeometryCache::Shape geometryShape = geometryCache->getShapeForEntityShape(_shape);
+    GeometryCache::Shape geometryShape = geometryCache->getShapeForEntityShape((int)_shape);
     Transform transform;
     withReadLock([&] {
         transform = _renderTransform;
@@ -127,7 +127,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
     bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), _billboardMode,
         usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition(),
-        _shape < entity::Shape::Cube || _shape > entity::Shape::Icosahedron));
+        _shape < EntityShape::Cube || _shape > EntityShape::Icosahedron));
     batch.setModelTransform(transform);
 
     Pipeline pipelineType = getPipelineType(materials);
@@ -184,7 +184,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
 scriptable::ScriptableModelBase ShapeEntityRenderer::getScriptableModel()  {
     scriptable::ScriptableModelBase result;
     auto geometryCache = DependencyManager::get<GeometryCache>();
-    auto geometryShape = geometryCache->getShapeForEntityShape(_shape);
+    auto geometryShape = geometryCache->getShapeForEntityShape((int)_shape);
     glm::vec3 vertexColor;
     {
         std::lock_guard<std::mutex> lock(_materialsLock);

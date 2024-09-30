@@ -1,0 +1,42 @@
+//
+//  Created by Sam Gondelman on 1/12/18
+//  Copyright 2018 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#ifndef hifi_MaterialEntityItem_h
+#define hifi_MaterialEntityItem_h
+
+#include "EntityItem.h"
+
+#include "MaterialMappingMode.h"
+
+class MaterialEntityItem : public EntityItem {
+    using Pointer = std::shared_ptr<MaterialEntityItem>;
+public:
+    static EntityItemPointer factory(const EntityItemID& entityID, const EntityItemProperties& properties);
+
+    MaterialEntityItem(const EntityItemID& entityItemID);
+
+    ALLOW_INSTANTIATION // This class can be instantiated
+    ENTITY_PROPERTY_SUBCLASS_METHODS
+
+    virtual void setUnscaledDimensions(const glm::vec3& value) override;
+    void setParentID(const QUuid& parentID) override;
+
+    AACube calculateInitialQueryAACube(bool& success) override;
+
+    void setHasVertexShader(bool hasVertexShader);
+
+private:
+
+@Material_ENTITY_PROPS@
+
+    glm::vec3 _desiredDimensions;
+    bool _hasVertexShader { false };
+
+};
+
+#endif // hifi_MaterialEntityItem_h

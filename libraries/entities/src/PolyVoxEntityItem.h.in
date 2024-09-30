@@ -1,0 +1,142 @@
+//
+//  PolyVoxEntityItem.h
+//  libraries/entities/src
+//
+//  Created by Seth Alves on 5/11/15.
+//  Copyright 2015 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#ifndef hifi_PolyVoxEntityItem_h
+#define hifi_PolyVoxEntityItem_h
+
+#include "EntityItem.h"
+
+class PolyVoxEntityItem : public EntityItem {
+public:
+    static EntityItemPointer factory(const EntityItemID& entityID, const EntityItemProperties& properties);
+
+    PolyVoxEntityItem(const EntityItemID& entityItemID);
+
+    ALLOW_INSTANTIATION // This class can be instantiated
+    ENTITY_PROPERTY_SUBCLASS_METHODS
+
+    // never have a ray intersection pick a PolyVoxEntityItem.
+    virtual bool supportsDetailedIntersection() const override { return true; }
+    virtual bool findDetailedRayIntersection(const glm::vec3& origin, const glm::vec3& direction,
+                                             const glm::vec3& viewFrustumPos, OctreeElementPointer& element, float& distance,
+                                             BoxFace& face, glm::vec3& surfaceNormal,
+                                             QVariantMap& extraInfo, bool precisionPicking) const override { return false; }
+    virtual bool findDetailedParabolaIntersection(const glm::vec3& origin, const glm::vec3& velocity,
+                                                  const glm::vec3& acceleration, const glm::vec3& viewFrustumPos, OctreeElementPointer& element,
+                                                  float& parabolicDistance, BoxFace& face, glm::vec3& surfaceNormal,
+                                                  QVariantMap& extraInfo, bool precisionPicking) const override { return false; }
+
+    virtual int getOnCount() const { return 0; }
+
+    /*@jsdoc
+    * <p>The surface of a {@link Entities.EntityProperties-PolyVox|PolyVox} entity may be one of the following styles:</p>
+    * <table>
+    *   <thead>
+    *     <tr><th>Value</th><th>Type</th><th>Description</th></tr>
+    *   </thead>
+    *   <tbody>
+    *     <tr><td><code>0</code></td><td>Marching cubes.</td><td>Chamfered edges. Open volume.
+    *       Joins neighboring PolyVox entities reasonably well.</td></tr>
+    *     <tr><td><code>1</code></td><td>Cubic.</td><td>Square edges. Open volume.
+    *       Joins neighboring PolyVox entities cleanly.</td></tr>
+    *     <tr><td><code>2</code></td><td>Edged cubic.</td><td>Square edges. Enclosed volume.
+    *       Joins neighboring PolyVox entities cleanly.</td></tr>
+    *     <tr><td><code>3</code></td><td>Edged marching cubes.</td><td>Chamfered edges. Enclosed volume.
+    *       Doesn't join neighboring PolyVox entities.</td></tr>
+    *   </tbody>
+    * </table>
+    * @typedef {number} Entities.PolyVoxSurfaceStyle
+    */
+    enum PolyVoxSurfaceStyle {
+        SURFACE_MARCHING_CUBES,
+        SURFACE_CUBIC,
+        SURFACE_EDGED_CUBIC,
+        SURFACE_EDGED_MARCHING_CUBES
+    };
+
+    static bool isEdged(PolyVoxSurfaceStyle surfaceStyle);
+
+    static const glm::vec3 DEFAULT_VOXEL_VOLUME_SIZE;
+    static const float MAX_VOXEL_DIMENSION;
+
+    static const QByteArray DEFAULT_VOXEL_DATA;
+    static const PolyVoxSurfaceStyle DEFAULT_VOXEL_SURFACE_STYLE;
+
+    QByteArray getVoxelData() const;
+    virtual void setVoxelData(const QByteArray& voxelData);
+    glm::vec3 getVoxelVolumeSize() const;
+    virtual void setVoxelVolumeSize(const glm::vec3& voxelVolumeSize);
+    uint16_t getVoxelSurfaceStyle() const;
+    virtual void setVoxelSurfaceStyle(uint16_t voxelSurfaceStyle);
+
+    EntityItemID getXNNeighborID() const;
+    virtual void setXNNeighborID(const EntityItemID& value);
+    EntityItemID getYNNeighborID() const;
+    virtual void setYNNeighborID(const EntityItemID& value);
+    EntityItemID getZNNeighborID() const;
+    virtual void setZNNeighborID(const EntityItemID& value);
+    EntityItemID getXPNeighborID() const;
+    virtual void setXPNeighborID(const EntityItemID& value);
+    EntityItemID getYPNeighborID() const;
+    virtual void setYPNeighborID(const EntityItemID& value);
+    EntityItemID getZPNeighborID() const;
+    virtual void setZPNeighborID(const EntityItemID& value);
+
+    glm::vec3 voxelCoordsToWorldCoords(const glm::vec3& voxelCoords) const;
+    glm::vec3 worldCoordsToVoxelCoords(const glm::vec3& worldCoords) const;
+    glm::vec3 voxelCoordsToLocalCoords(const glm::vec3& voxelCoords) const;
+    glm::vec3 localCoordsToVoxelCoords(const glm::vec3& localCoords) const;
+
+    // coords are in voxel-volume space
+    virtual bool setSphereInVolume(const vec3& center, float radius, uint8_t toValue) { return false; }
+    virtual bool setVoxelInVolume(const vec3& position, uint8_t toValue) { return false; }
+    // coords are in world-space
+    virtual bool setSphere(const vec3& center, float radius, uint8_t toValue) { return false; }
+    virtual bool setCapsule(const vec3& startWorldCoords, const vec3& endWorldCoords,
+                            float radiusWorldCoords, uint8_t toValue) { return false; }
+    virtual bool setAll(uint8_t toValue) { return false; }
+    virtual bool setCuboid(const vec3& lowPosition, const vec3& cuboidSize, int value) { return false; }
+
+    virtual uint8_t getVoxel(int x, int y, int z) const final { return getVoxel({ x, y, z }); }
+    virtual bool setVoxel(int x, int y, int z, uint8_t toValue) final{ return setVoxel({ x, y, z }, toValue); }
+
+    virtual uint8_t getVoxel(const ivec3& v) const { return 0; }
+    virtual bool setVoxel(const ivec3& v, uint8_t toValue) { return false; }
+
+    static QByteArray makeEmptyVoxelData(quint16 voxelXSize = 16, quint16 voxelYSize = 16, quint16 voxelZSize = 16);
+
+    static const QString DEFAULT_X_TEXTURE_URL;
+    static const QString DEFAULT_Y_TEXTURE_URL;
+    static const QString DEFAULT_Z_TEXTURE_URL;
+
+    std::array<EntityItemID, 3> getNNeigborIDs() const;
+    std::array<EntityItemID, 3> getPNeigborIDs() const;
+
+    glm::vec3 getSurfacePositionAdjustment() const;
+
+    virtual ShapeType getShapeType() const override;
+
+    bool isEdged() const;
+
+    glm::mat4 voxelToWorldMatrix(bool includeBillboard = false) const;
+    glm::mat4 worldToVoxelMatrix(bool includeBillboard = false) const;
+    glm::mat4 voxelToLocalMatrix() const;
+    glm::mat4 localToVoxelMatrix() const;
+
+ protected:
+
+@PolyVox_ENTITY_PROPS@
+
+    void setVoxelDataDirty(bool value) { withWriteLock([&] { _voxelDataDirty = value; }); }
+    bool _voxelDataDirty { true }; // _voxelData has changed, things that depend on it should be updated
+};
+
+#endif // hifi_PolyVoxEntityItem_h

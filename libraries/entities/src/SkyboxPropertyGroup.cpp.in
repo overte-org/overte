@@ -1,0 +1,138 @@
+//
+//  SkyboxPropertyGroup.cpp
+//  libraries/entities/src
+//
+//  Created by Brad Hefta-Gaub on 12/4/13.
+//  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "SkyboxPropertyGroup.h"
+
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+
+const glm::u8vec3 SkyboxPropertyGroup::DEFAULT_COLOR = { 0, 0, 0 };
+
+void SkyboxPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+
+    auto nodeList = DependencyManager::get<NodeList>();
+
+@Skybox_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void SkyboxPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
+
+@Skybox_GROUP_COPY_FROM_SCRIPT@
+
+}
+
+void SkyboxPropertyGroup::merge(const SkyboxPropertyGroup& other) {
+
+@Skybox_GROUP_MERGE@
+
+}
+
+void SkyboxPropertyGroup::debugDump() const {
+
+@Skybox_GROUP_DEBUG_DUMP@
+
+}
+
+void SkyboxPropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@Skybox_GROUP_LIST_CHANGED@
+
+}
+
+bool SkyboxPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                             EntityPropertyFlags& requestedProperties,
+                                             EntityPropertyFlags& propertyFlags,
+                                             EntityPropertyFlags& propertiesDidntFit,
+                                             int& propertyCount,
+                                             OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Skybox_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool SkyboxPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags, const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@Skybox_GROUP_READ@
+
+@Skybox_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void SkyboxPropertyGroup::markAllChanged() {
+
+@Skybox_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags SkyboxPropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@Skybox_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void SkyboxPropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@Skybox_GROUP_COPY_TO@
+
+}
+
+bool SkyboxPropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Skybox_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags SkyboxPropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@Skybox_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int SkyboxPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                          ReadBitstreamToTreeParams& args,
+                                                          EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                          bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Skybox_GROUP_READ@
+
+    return bytesRead;
+}
+
+void SkyboxPropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                         QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@Skybox_GROUP_ADD_TO_MAP@
+
+}

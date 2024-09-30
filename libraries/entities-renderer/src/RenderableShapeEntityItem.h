@@ -36,7 +36,7 @@ private:
     virtual bool isTransparent() const override;
 
     QString _proceduralData;
-    entity::Shape _shape { entity::Sphere };
+    EntityShape _shape { EntityShape::Sphere };
 
     PulsePropertyGroup _pulseProperties;
     std::shared_ptr<graphics::ProceduralMaterial> _material { std::make_shared<graphics::ProceduralMaterial>() };

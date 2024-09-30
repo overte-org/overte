@@ -11,4 +11,8 @@
 
 macro(include_hifi_library_headers LIBRARY)
   target_include_directories(${TARGET_NAME} PRIVATE "${HIFI_LIBRARY_DIR}/${LIBRARY}/src")
+  if (${LIBRARY} STREQUAL "entities")
+    target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/libraries/entities/src")
+    target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_BINARY_DIR}/libraries/entities/src")
+  endif()
 endmacro(include_hifi_library_headers _library _root_dir)

@@ -168,7 +168,7 @@ void WebEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene
 
     withWriteLock([&] {
         _inputMode = entity->getInputMode();
-        _dpi = entity->getDPI();
+        _dpi = entity->getDpi();
         _color = entity->getColor();
         _alpha = entity->getAlpha();
         _wantsKeyboardFocus = entity->wantsKeyboardFocus();

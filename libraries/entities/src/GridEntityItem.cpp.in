@@ -1,0 +1,132 @@
+//
+//  Created by Sam Gondelman on 11/29/18
+//  Copyright 2018 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#include "GridEntityItem.h"
+
+#include "EntityItemProperties.h"
+
+const uint32_t GridEntityItem::DEFAULT_MAJOR_GRID_EVERY = 5;
+const float GridEntityItem::DEFAULT_MINOR_GRID_EVERY = 1.0f;
+
+EntityItemPointer GridEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    Pointer entity(new GridEntityItem(entityID), [](GridEntityItem* ptr) { ptr->deleteLater(); });
+    entity->setProperties(properties);
+    return entity;
+}
+
+// our non-pure virtual subclass for now...
+GridEntityItem::GridEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
+    _type = EntityTypes::Grid;
+}
+
+void GridEntityItem::setUnscaledDimensions(const glm::vec3& value) {
+    const float GRID_ENTITY_ITEM_FIXED_DEPTH = 0.01f;
+    // NOTE: Grid Entities always have a "depth" of 1cm.
+    EntityItem::setUnscaledDimensions(glm::vec3(value.x, value.y, GRID_ENTITY_ITEM_FIXED_DEPTH));
+}
+
+EntityItemProperties GridEntityItem::getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const {
+    EntityItemProperties properties = EntityItem::getProperties(desiredProperties, allowEmptyDesiredProperties); // get the properties from our base class
+
+@Grid_ENTITY_COPY_TO@
+
+    return properties;
+}
+
+bool GridEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Grid_ENTITY_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags GridEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
+
+@Grid_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+void GridEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
+                                        EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                        EntityPropertyFlags& requestedProperties,
+                                        EntityPropertyFlags& propertyFlags,
+                                        EntityPropertyFlags& propertiesDidntFit,
+                                        int& propertyCount,
+                                        OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Grid_ENTITY_APPEND@
+
+}
+
+int GridEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                ReadBitstreamToTreeParams& args,
+                                                EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Grid_ENTITY_READ@
+
+    return bytesRead;
+}
+
+void GridEntityItem::debugDump() const {
+    qCDebug(entities) << "GridEntityItem id:" << getEntityItemID() << "---------------------------------------------";
+    qCDebug(entities) << "    name:" << _name;
+    qCDebug(entities) << "    position:" << debugTreeVector(getWorldPosition());
+    qCDebug(entities) << "    dimensions:" << debugTreeVector(getScaledDimensions());
+    qCDebug(entities) << "    editedAgo:" << debugTime(getLastEdited(), usecTimestampNow());
+    qCDebug(entities) << "    pointer:" << this;
+
+@Grid_ENTITY_DEBUG@
+
+}
+
+void GridEntityItem::setMajorGridEvery(uint32_t majorGridEvery) {
+    const uint32_t MAJOR_GRID_EVERY_MIN = 1;
+    majorGridEvery = std::max(majorGridEvery, MAJOR_GRID_EVERY_MIN);
+
+    withWriteLock([&] {
+        _needsRenderUpdate |= _majorGridEvery != majorGridEvery;
+        _majorGridEvery = majorGridEvery;
+    });
+}
+
+uint32_t GridEntityItem::getMajorGridEvery() const {
+    return resultWithReadLock<uint32_t>([&] {
+        return _majorGridEvery;
+    });
+}
+
+void GridEntityItem::setMinorGridEvery(float minorGridEvery) {
+    const float MINOR_GRID_EVERY_MIN = 0.01f;
+    minorGridEvery = std::max(minorGridEvery, MINOR_GRID_EVERY_MIN);
+
+    withWriteLock([&] {
+        _needsRenderUpdate |= _minorGridEvery != minorGridEvery;
+        _minorGridEvery = minorGridEvery;
+    });
+}
+
+float GridEntityItem::getMinorGridEvery() const {
+    return resultWithReadLock<float>([&] {
+        return _minorGridEvery;
+    });
+}
+
+PulsePropertyGroup GridEntityItem::getPulseProperties() const {
+    return resultWithReadLock<PulsePropertyGroup>([&] {
+        return _pulseProperties;
+    });
+}
