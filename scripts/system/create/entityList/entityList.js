@@ -211,7 +211,7 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
             PROFILE("getMultipleProperties", function () {
                 var multipleProperties = Entities.getMultipleEntityProperties(ids, ['position', 'name', 'type', 'locked',
                     'visible', 'renderInfo', 'modelURL', 'materialURL', 'imageURL', 'script', 'serverScripts', 
-                    'skybox.url', 'ambientLight.url', 'created', 'lastEdited']);
+                    'skybox.url', 'ambientLight.url', 'created', 'lastEdited', 'entityHostType']);
                 for (var i = 0; i < multipleProperties.length; i++) {
                     var properties = multipleProperties[i];
 
@@ -256,7 +256,8 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
                             hasScript: (properties.script !== "" || properties.serverScripts !== ""),
                             parentState: parentState,
                             created: formatToStringDateTime(properties.created),
-                            lastEdited: formatToStringDateTime(properties.lastEdited)
+                            lastEdited: formatToStringDateTime(properties.lastEdited),
+                            entityHostType: properties.entityHostType
                         });
                     }
                 }
