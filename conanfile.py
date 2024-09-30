@@ -10,7 +10,7 @@ class Overte(ConanFile):
     options = {"with_qt": [True, False], "with_webrtc": [True, False]}
     default_options = {
         "with_qt": False,
-        "with_webrtc": False,
+        "with_webrtc": True,
         "sdl*:alsa": "False",
         "sdl*:pulse": "False",
         "sdl*:wayland": "False",
@@ -87,12 +87,11 @@ class Overte(ConanFile):
             self.requires("qt/5.15.13", force=True)
 
         if self.options.with_webrtc:
-            self.requires("google-webrtc/124@overte/stable", force=True)
+            self.requires("webrtc-prebuild/2021.01.05@overte/stable", force=True)
 
     def generate(self):
         tc = CMakeToolchain(self)
-        if not self.options.with_webrtc:
-            tc.variables["DISABLE_WEBRTC"] = "ON"
+        tc.variables["DISABLE_WEBRTC"] = "OFF" if self.options.with_webrtc else "ON"
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()
@@ -134,7 +133,5 @@ class Overte(ConanFile):
         copy(self, "*.dll", src, bindir, False)
         copy(self, "*.so*", src, bindir, False)
         if self.settings.os == "Windows" and self.settings.build_type == "Release":
-            bindir = os.path.join(
-                self.build_folder, "conanlibs", "RelWithDebInfo"
-            )
+            bindir = os.path.join(self.build_folder, "conanlibs", "RelWithDebInfo")
             copy(self, "*.dll", src, bindir, False)
