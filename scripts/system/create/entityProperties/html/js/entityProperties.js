@@ -15,6 +15,10 @@ var currentTab = "base";
 
 const DEGREES_TO_RADIANS = Math.PI / 180.0;
 
+const ENTITY_HOST_TYPE_COLOR_DOMAIN = "#afafaf";
+const ENTITY_HOST_TYPE_COLOR_AVATAR = "#7fdb98";
+const ENTITY_HOST_TYPE_COLOR_LOCAL = "#f0d769";
+
 const NO_SELECTION = ",";
 
 const PROPERTY_SPACE_MODE = Object.freeze({
@@ -4219,6 +4223,8 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
 
         disableProperties();
     } else {
+        let entityHostType = selections[0].properties.entityHostType;
+        
         if (!isPropertiesToolUpdate && !hasSelectedEntityChanged && document.hasFocus()) {
             // in case the selection has not changed and we still have focus on the properties page,
             // we will ignore the event.
@@ -4303,9 +4309,31 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
                             property.elInput.classList.add('multi-diff');
                             property.elInput.value = "";
                         }
+                        if (propertyName === "id") {
+                            property.elInput.style.color = ENTITY_HOST_TYPE_COLOR_DOMAIN;
+                        }
                     } else {
                         property.elInput.classList.remove('multi-diff');
                         property.elInput.value = propertyValue;
+                        if (propertyName === "name" || propertyName === "id") {
+                            if (selections.length === 1) {
+                                switch (entityHostType) {
+                                    case "domain":
+                                        property.elInput.style.color = ENTITY_HOST_TYPE_COLOR_DOMAIN;
+                                        break;
+                                    case "avatar":
+                                        property.elInput.style.color = ENTITY_HOST_TYPE_COLOR_AVATAR;
+                                        break;
+                                    case "local":
+                                        property.elInput.style.color = ENTITY_HOST_TYPE_COLOR_LOCAL;
+                                        break;
+                                    default:
+                                        property.elInput.style.color = ENTITY_HOST_TYPE_COLOR_DOMAIN;
+                                }
+                            } else {
+                                property.elInput.style.color = ENTITY_HOST_TYPE_COLOR_DOMAIN;
+                            }
+                        }
                     }
                     break;
                 }
