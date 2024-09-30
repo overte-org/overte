@@ -2133,19 +2133,19 @@
 
         // Hacks to get the menu bar buttons to work
         // Copy
-        if (event.key === 67 && event.isControl && !event.isShifted) {
+        if (event.text.toLowerCase() === "c" && event.isControl && !event.isShifted) {
             selectionManager.copySelectedEntities();
         }
         // Paste
-        if (event.key === 86 && event.isControl && !event.isShifted) {
+        if (event.text.toLowerCase() === "v" && event.isControl && !event.isShifted) {
             selectionManager.pasteEntities();
         }
         // Cut
-        if (event.key === 88 && event.isControl && !event.isShifted) {
+        if (event.text.toLowerCase() === "x" && event.isControl && !event.isShifted) {
             selectionManager.cutSelectedEntities();
         }
-        // Delete
-        if (event.key === 16777223 && !event.isControl && !event.isShifted) {
+        // Delete - This uses the physical 'delete' key on a keyboard.
+        if (event.text.toLowerCase() === "delete" && !event.isControl && !event.isShifted) {
             createApp.deleteSelectedEntities();
         }
     };
