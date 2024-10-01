@@ -33,6 +33,8 @@
 using namespace gpu;
 using namespace gpu::vk;
 
+size_t VKBackend::UNIFORM_BUFFER_OFFSET_ALIGNMENT{ 4 };
+
 static VKBackend* INSTANCE{ nullptr };
 static const char* VK_BACKEND_PROPERTY_NAME = "com.highfidelity.vk.backend";
 static bool enableDebugMarkers = false;
@@ -100,6 +102,8 @@ VKBackend::VKBackend() {
     qCDebug(gpu_vk_logging) << "VK Device ID:   " << _context.device->properties.deviceID;
     qCDebug(gpu_vk_logging) << "VK Device Name: " << _context.device->properties.deviceName;
     qCDebug(gpu_vk_logging) << "VK Device Type: " << _context.device->properties.deviceType;
+
+    initTransform();
 }
 
 VKBackend::~VKBackend() {
@@ -1019,7 +1023,17 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             auto framebuffer = VKFramebuffer::sync(*this, *_cache.pipelineState.framebuffer);
             Q_ASSERT(framebuffer);
             renderPassBeginInfo.framebuffer = framebuffer->vkFramebuffer;
-            renderPassBeginInfo.clearValueCount = 0;
+            renderPassBeginInfo.clearValueCount = framebuffer->attachments.size();
+            std::vector<VkClearValue> clearValues;
+            clearValues.resize(framebuffer->attachments.size());
+            for (size_t i = 0; i < framebuffer->attachments.size(); i++) {
+                if (framebuffer->attachments[i].isDepthStencil()) {
+                    clearValues[i].depthStencil = { 1.0f, 0 };
+                } else {
+                    clearValues[i].color = { { 0.2f, 0.5f, 0.1f, 1.0f } };
+                }
+            }
+            renderPassBeginInfo.pClearValues = clearValues.data();
             renderPassBeginInfo.renderArea = VkRect2D{VkOffset2D {_transform._viewport.x, _transform._viewport.y}, VkExtent2D {_transform._viewport.z, _transform._viewport.w}};
             // VKTODO: this is inefficient
             vkCmdBeginRenderPass(_currentCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -1199,7 +1213,7 @@ VKQuery* VKBackend::syncGPUObject(const Query& query) {
 
 void VKBackend::updateInput() {
     // VKTODO
-    /*bool isStereoNow = isStereo();
+    bool isStereoNow = isStereo();
     // track stereo state change potentially happening without changing the input format
     // this is a rare case requesting to invalid the format
 #ifdef GPU_STEREO_DRAWCALL_INSTANCED
@@ -1207,7 +1221,7 @@ void VKBackend::updateInput() {
 #endif
     _input._lastUpdateStereoState = isStereoNow;
 
-    if (_input._invalidFormat) {
+    /*if (_input._invalidFormat) {
         InputStageState::ActivationCache newActivation;
 
         // Assign the vertex format required
@@ -1257,8 +1271,6 @@ void VKBackend::updateInput() {
                         assert(frequency == attrib._frequency);
                     }
 
-
-                    (void)CHECK_GL_ERROR();
                 }
 #ifdef GPU_STEREO_DRAWCALL_INSTANCED
                 glVertexBindingDivisor(bufferChannelNum, frequency * (isStereoNow ? 2 : 1));
@@ -1281,11 +1293,10 @@ void VKBackend::updateInput() {
                 _input._attributeActivation.flip(i);
             }
         }
-        (void)CHECK_GL_ERROR();
 
         _input._invalidFormat = false;
         _stats._ISNumFormatChanges++;
-    }
+    }*/
 
     if (_input._invalidBuffers.any()) {
         auto vbo = _input._bufferVBOs.data();
@@ -1296,10 +1307,12 @@ void VKBackend::updateInput() {
         int numInvalids = (int) _input._invalidBuffers.count();
         _stats._ISNumInputBufferChanges += numInvalids;
 
-        auto numBuffers = _input._buffers.size();
-        for (GLuint buffer = 0; buffer < numBuffers; buffer++, vbo++, offset++, stride++) {
+        for (size_t buffer = 0; buffer < _input._buffers.size(); buffer++, vbo++, offset++, stride++) {
             if (_input._invalidBuffers.test(buffer)) {
-                glBindVertexBuffer(buffer, (*vbo), (*offset), (GLsizei)(*stride));
+                auto vkBuffer = VKBuffer::getBuffer(*this, *_input._buffers[buffer]);
+                VkDeviceSize vkOffset = _input._bufferOffsets[buffer];
+                vkCmdBindVertexBuffers(_currentCommandBuffer, buffer, 1, &vkBuffer, &vkOffset);
+                //glBindVertexBuffer(buffer, (*vbo), (*offset), (GLsizei)(*stride));
                 numInvalids--;
                 if (numInvalids <= 0) {
                     break;
@@ -1308,38 +1321,53 @@ void VKBackend::updateInput() {
         }
 
         _input._invalidBuffers.reset();
-    }*/
+    }
+}
+
+void VKBackend::initTransform() {
+
+#ifdef GPU_SSBO_TRANSFORM_OBJECT
+//#else
+////    glCreateTextures(GL_TEXTURE_BUFFER, 1, &_transform._objectBufferTexture);
+#endif
+    size_t cameraSize = sizeof(TransformStageState::CameraBufferElement);
+    while (_transform._cameraUboSize < cameraSize) {
+        _transform._cameraUboSize += UNIFORM_BUFFER_OFFSET_ALIGNMENT;
+    }
 }
 
 void VKBackend::updateTransform(const gpu::Batch& batch) {
     // VKTODO
     _transform.update(_commandIndex, _stereo);
 
-    /*auto& drawCallInfoBuffer = batch.getDrawCallInfoBuffer();
+    auto& drawCallInfoBuffer = batch.getDrawCallInfoBuffer();
     if (batch._currentNamedCall.empty()) {
         auto& drawCallInfo = drawCallInfoBuffer[_currentDraw];
         if (_transform._enabledDrawcallInfoBuffer) {
-            glDisableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is disabled
+            //glDisableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is disabled
             _transform._enabledDrawcallInfoBuffer = false;
         }
-        glVertexAttribI2i(gpu::Stream::DRAW_CALL_INFO, drawCallInfo.index, drawCallInfo.unused);
+        //glVertexAttribI2i(gpu::Stream::DRAW_CALL_INFO, drawCallInfo.index, drawCallInfo.unused);
     } else {
         if (!_transform._enabledDrawcallInfoBuffer) {
-            glEnableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is enabled
-            glVertexAttribIFormat(gpu::Stream::DRAW_CALL_INFO, 2, GL_UNSIGNED_SHORT, 0);
-            glVertexAttribBinding(gpu::Stream::DRAW_CALL_INFO, gpu::Stream::DRAW_CALL_INFO);
+            //glEnableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is enabled
+            //glVertexAttribIFormat(gpu::Stream::DRAW_CALL_INFO, 2, GL_UNSIGNED_SHORT, 0);
+            //glVertexAttribBinding(gpu::Stream::DRAW_CALL_INFO, gpu::Stream::DRAW_CALL_INFO);
 #ifdef GPU_STEREO_DRAWCALL_INSTANCED
-            glVertexBindingDivisor(gpu::Stream::DRAW_CALL_INFO, (isStereo() ? 2 : 1));
+            //glVertexBindingDivisor(gpu::Stream::DRAW_CALL_INFO, (isStereo() ? 2 : 1));
 #else
-            glVertexBindingDivisor(gpu::Stream::DRAW_CALL_INFO, 1);
+            //glVertexBindingDivisor(gpu::Stream::DRAW_CALL_INFO, 1);
 #endif
             _transform._enabledDrawcallInfoBuffer = true;
         }
         // NOTE: A stride of zero in BindVertexBuffer signifies that all elements are sourced from the same location,
         //       so we must provide a stride.
         //       This is in contrast to VertexAttrib*Pointer, where a zero signifies tightly-packed elements.
-        glBindVertexBuffer(gpu::Stream::DRAW_CALL_INFO, _transform._drawCallInfoBuffer, (GLintptr)_transform._drawCallInfoOffsets[batch._currentNamedCall], 2 * sizeof(GLushort));
-    }*/
+        // VKTODO: _drawCallInfoBuffer is empty currently
+        VkDeviceSize vkOffset = _transform._drawCallInfoOffsets[batch._currentNamedCall];
+        vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &_transform._drawCallInfoBuffer->buffer, &vkOffset);
+        //glBindVertexBuffer(gpu::Stream::DRAW_CALL_INFO, _transform._drawCallInfoBuffer, (GLintptr)_transform._drawCallInfoOffsets[batch._currentNamedCall], 2 * sizeof(GLushort));
+    }
 }
 
 void VKBackend::updatePipeline() {
@@ -1372,20 +1400,31 @@ void VKBackend::updatePipeline() {
     }*/
 }
 
-void VKBackend::transferTransformState(const Batch& batch) const {
+void VKBackend::transferTransformState(const Batch& batch) {
     // VKTODO
     // FIXME not thread safe
-    /*static std::vector<uint8_t> bufferData;
+    static std::vector<uint8_t> bufferData;
     if (!_transform._cameras.empty()) {
         bufferData.resize(_transform._cameraUboSize * _transform._cameras.size());
         for (size_t i = 0; i < _transform._cameras.size(); ++i) {
             memcpy(bufferData.data() + (_transform._cameraUboSize * i), &_transform._cameras[i], sizeof(TransformStageState::CameraBufferElement));
         }
-        glNamedBufferData(_transform._cameraBuffer, bufferData.size(), bufferData.data(), GL_STREAM_DRAW);
+        _transform._cameraBuffer = vks::Buffer::createUniform(bufferData.size());
+        _frameData._buffers.push_back(_transform._cameraBuffer);
+        _transform._cameraBuffer->copy(bufferData.size(), bufferData.data());
+        _transform._cameraBuffer->flush(VK_WHOLE_SIZE);
+    }else{
+        _transform._cameraBuffer.reset();
     }
 
     if (!batch._objects.empty()) {
-        glNamedBufferData(_transform._objectBuffer, batch._objects.size() * sizeof(Batch::TransformObject), batch._objects.data(), GL_STREAM_DRAW);
+        _transform._objectBuffer = vks::Buffer::createUniform(batch._objects.size() * sizeof(Batch::TransformObject));
+        _frameData._buffers.push_back(_transform._objectBuffer);
+        _transform._objectBuffer->copy(batch._objects.size() * sizeof(Batch::TransformObject), batch._objects.data());
+        _transform._objectBuffer->flush(VK_WHOLE_SIZE);
+        //glNamedBufferData(_transform._objectBuffer, batch._objects.size() * sizeof(Batch::TransformObject), batch._objects.data(), GL_STREAM_DRAW);
+    }else{
+        _transform._objectBuffer.reset();
     }
 
     if (!batch._namedData.empty()) {
@@ -1395,23 +1434,24 @@ void VKBackend::transferTransformState(const Batch& batch) const {
             auto bytesToCopy = data.second.drawCallInfos.size() * sizeof(Batch::DrawCallInfo);
             bufferData.resize(currentSize + bytesToCopy);
             memcpy(bufferData.data() + currentSize, data.second.drawCallInfos.data(), bytesToCopy);
-            _transform._drawCallInfoOffsets[data.first] = (GLvoid*)currentSize;
+            _transform._drawCallInfoOffsets[data.first] = currentSize;
         }
-        glNamedBufferData(_transform._drawCallInfoBuffer, bufferData.size(), bufferData.data(), GL_STREAM_DRAW);
+        //_transform._drawCallInfoBuffer = std::make_shared<vks::Buffer>();
+        //_frameData._buffers.push_back(_transform._drawCallInfoBuffer);
+        _transform._drawCallInfoBuffer = vks::Buffer::createUniform(bufferData.size());
+        _frameData._buffers.push_back(_transform._drawCallInfoBuffer);
+        _transform._drawCallInfoBuffer->copy(bufferData.size(), bufferData.data());
+        _transform._drawCallInfoBuffer->flush(VK_WHOLE_SIZE);
+        //glNamedBufferData(_transform._drawCallInfoBuffer, bufferData.size(), bufferData.data(), GL_STREAM_DRAW);
+    }else{
+        _transform._drawCallInfoBuffer.reset();
     }
 
-#ifdef GPU_SSBO_TRANSFORM_OBJECT
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, slot::storage::ObjectTransforms, _transform._objectBuffer);
-#else
-    glActiveTexture(GL_TEXTURE0 + slot::texture::ObjectTransforms);
-    glBindTexture(GL_TEXTURE_BUFFER, _transform._objectBufferTexture);
-    glTextureBuffer(_transform._objectBufferTexture, GL_RGBA32F, _transform._objectBuffer);
-#endif
-
-    CHECK_GL_ERROR();
+    // VKTODO
+    //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, slot::storage::ObjectTransforms, _transform._objectBuffer);
 
     // Make sure the current Camera offset is unknown before render Draw
-    _transform._currentCameraOffset = INVALID_OFFSET;*/
+    _transform._currentCameraOffset = INVALID_OFFSET;
 }
 
 
@@ -1715,21 +1755,22 @@ void VKBackend::do_setInputFormat(const Batch& batch, size_t paramOffset) {
 
 void VKBackend::do_setInputBuffer(const Batch& batch, size_t paramOffset) {
     // VKTODO
-    /*Offset stride = batch._params[paramOffset + 0]._uint;
+    Offset stride = batch._params[paramOffset + 0]._uint;
     Offset offset = batch._params[paramOffset + 1]._uint;
     BufferPointer buffer = batch._buffers.get(batch._params[paramOffset + 2]._uint);
     uint32 channel = batch._params[paramOffset + 3]._uint;
 
     if (channel < getNumInputBuffers()) {
         bool isModified = false;
-        if (_input._buffers[channel] != buffer) {
-            _input._buffers[channel] = buffer;
+        if (_input._buffers[channel] != buffer.get()) {
+            // VKTODO: _input._buffers should be a smart pointer probably to avoid access after delete
+            _input._buffers[channel] = buffer.get();
 
-            VKuint vbo = 0;
+            VkBuffer vkBuffer = VK_NULL_HANDLE;
             if (buffer) {
-                vbo = getBufferID((*buffer));
+                vkBuffer = VKBuffer::getBuffer(*this, *buffer);
             }
-            _input._bufferVBOs[channel] = vbo;
+            _input._bufferVBOs[channel] = vkBuffer;
 
             isModified = true;
         }
@@ -1747,27 +1788,36 @@ void VKBackend::do_setInputBuffer(const Batch& batch, size_t paramOffset) {
         if (isModified) {
             _input._invalidBuffers.set(channel);
         }
-    }*/
+    }
 }
 
 void VKBackend::do_setIndexBuffer(const Batch& batch, size_t paramOffset) {
     // VKTODO
-    /*_input._indexBufferType = (Type)batch._params[paramOffset + 2]._uint;
+    _input._indexBufferType = (Type)batch._params[paramOffset + 2]._uint;
     _input._indexBufferOffset = batch._params[paramOffset + 0]._uint;
 
     BufferPointer indexBuffer = batch._buffers.get(batch._params[paramOffset + 1]._uint);
     if (indexBuffer.get() != _input._indexBuffer) {
         _input._indexBuffer = indexBuffer.get();
         if (indexBuffer) {
-            // VKTODO: we need to get VkBuffer, offset and index type
-            vkCmdBindIndexBuffer(_currentCommandBuffer, ,,);
-            glBindBuffer(VK_ELEMENT_ARRAY_BUFFER, getBufferID(*indexBuffer));
+            //auto vulkanBuffer = getGPUObject<VKBuffer>(*indexBuffer);
+            // VKTODO: which index type?
+            VkIndexType indexType = VK_INDEX_TYPE_NONE_KHR;
+            if (_input._indexBufferType == gpu::UINT32) {
+                indexType = VK_INDEX_TYPE_UINT32;
+            } else if (_input._indexBufferType == gpu::UINT16) {
+                indexType = VK_INDEX_TYPE_UINT16;
+            } else {
+                Q_ASSERT(false);
+            }
+            vkCmdBindIndexBuffer(_currentCommandBuffer, VKBuffer::getBuffer(*this, *indexBuffer), _input._indexBufferOffset, VK_INDEX_TYPE_UINT32);
+            //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, getBufferID(*indexBuffer));
         } else {
             // FIXME do we really need this?  Is there ever a draw call where we care that the element buffer is null?
-            glBindBuffer(VK_ELEMENT_ARRAY_BUFFER, 0);
+            Q_ASSERT(false);
+            //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
     }
-    (void)CHECK_VK_ERROR();*/
 }
 
 void VKBackend::do_setIndirectBuffer(const Batch& batch, size_t paramOffset) {
