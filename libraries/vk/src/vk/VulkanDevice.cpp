@@ -425,10 +425,10 @@ namespace vks
         // If a pointer to the buffer data has been passed, map the buffer and copy over the data
         if (data != nullptr)
         {
-            VK_CHECK_RESULT(buffer->map());
+            buffer->map();
             memcpy(buffer->mapped, data, size);
             if ((memoryPropertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
-                buffer->flush();
+                buffer->flush(buffer->size);
 
             buffer->unmap();
         }
