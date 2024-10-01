@@ -98,12 +98,12 @@ protected:
         TransformCamera _camera;
         TransformCameras _cameras;
 
-        mutable std::map<std::string, void*> _drawCallInfoOffsets;
+        mutable std::map<std::string, VkDeviceSize> _drawCallInfoOffsets;
 
-        uint32_t _objectBuffer{ 0 };
-        uint32_t _cameraBuffer{ 0 };
-        uint32_t _drawCallInfoBuffer{ 0 };
-        uint32_t _objectBufferTexture{ 0 };
+        std::shared_ptr<vks::Buffer> _objectBuffer;
+        std::shared_ptr<vks::Buffer> _cameraBuffer;
+        std::shared_ptr<vks::Buffer> _drawCallInfoBuffer;
+        //uint32_t _objectBufferTexture{ 0 };
         size_t _cameraUboSize{ 0 };
         bool _viewIsCamera{ false };
         bool _skybox{ false };
@@ -153,7 +153,7 @@ protected:
         std::array<BufferReference, MAX_NUM_INPUT_BUFFERS> _buffers;
         std::array<Offset, MAX_NUM_INPUT_BUFFERS> _bufferOffsets;
         std::array<Offset, MAX_NUM_INPUT_BUFFERS> _bufferStrides;
-        std::array<uint32_t, MAX_NUM_INPUT_BUFFERS> _bufferVBOs;
+        std::array<VkBuffer, MAX_NUM_INPUT_BUFFERS> _bufferVBOs;
 
         BufferReference _indexBuffer;
         Offset _indexBufferOffset { 0 };
@@ -166,10 +166,18 @@ protected:
         uint32_t _defaultVAO { 0 };
     } _input;
 
+    // VKTODO: one instance per each frame
+    // Contains objects that are created per frame and need to be deleted after the frame is rendered
+    struct FrameData {
+        std::vector<std::shared_ptr<vks::Buffer>> _buffers;
+        std::vector<VkRenderPass> _renderPasses;
+        void reset() {}; // VKTODO
+    } _frameData;
+
     void draw(VkPrimitiveTopology mode, uint32 numVertices, uint32 startVertex);
     void renderPassTransfer(const Batch& batch);
     void renderPassDraw(const Batch& batch);
-    void transferTransformState(const Batch& batch) const;
+    void transferTransformState(const Batch& batch);
     void updateInput();
     void updateTransform(const Batch& batch);
     void updatePipeline();
@@ -194,6 +202,8 @@ public:
     const std::string& getVersion() const override;
     void downloadFramebuffer(const FramebufferPointer& srcFramebuffer, const Vec4i& region, QImage& destImage) final;
     void setDrawCommandBuffer(VkCommandBuffer commandBuffer);
+    size_t getNumInputBuffers() const { return _input._invalidBuffers.size(); }
+
 
     void trash(const VKBuffer& buffer);
 
@@ -268,6 +278,7 @@ public:
     virtual void do_popProfileRange(const Batch& batch, size_t paramOffset) final;
 
 protected:
+    void initTransform();
     // Logical device, application's view of the physical device (GPU)
     // VkPipeline cache object
     VkPipelineCache _pipelineCache;
@@ -287,6 +298,7 @@ protected:
     typedef void (VKBackend::*CommandCall)(const Batch&, size_t);
     static std::array<VKBackend::CommandCall, Batch::NUM_COMMANDS> _commandCalls;
     static const size_t INVALID_OFFSET = (size_t)-1;
+    static size_t UNIFORM_BUFFER_OFFSET_ALIGNMENT;
 };
 
 }}  // namespace gpu::vulkan

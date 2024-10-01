@@ -369,8 +369,10 @@ void RenderThread::setupRenderPass() {
     renderPassInfo.pAttachments = &attachment;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
-    renderPassInfo.dependencyCount = 1;
-    renderPassInfo.pDependencies = &subpassDependency;
+    // VKTODO
+    // renderPassInfo.dependencyCount = 1;
+    // renderPassInfo.pDependencies = &subpassDependency;
+    renderPassInfo.dependencyCount = 0;
     VK_CHECK_RESULT(vkCreateRenderPass(_vkcontext.device->logicalDevice, &renderPassInfo, nullptr, &_renderPass));
 }
 #endif

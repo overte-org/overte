@@ -38,10 +38,13 @@ VkBuffer VKBuffer::getBuffer(VKBackend& backend, const gpu::Buffer& buffer) {
     }
 }
 
-VKBuffer::VKBuffer(VKBackend& backend, const gpu::Buffer& buffer) : VKObject(backend, buffer) {
-    VkBufferUsageFlags usageFlags{ (VkBufferUsageFlags)buffer.getUsage() };
+VKBuffer::VKBuffer(VKBackend& backend, const gpu::Buffer& gpuBuffer) : VKObject(backend, gpuBuffer) {
+
+    // Flags match VkBufferUsageFlagBits - this was in original Vulkan branch
+    VkBufferUsageFlags usageFlags{ (VkBufferUsageFlags)gpuBuffer.getUsage() };
+    // VKTODO:
     (vks::Buffer&)(*this) =
-        backend._context.createBuffer(usageFlags, buffer.getSize(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        backend._context.createBuffer(usageFlags, gpuBuffer.getSize(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     Backend::bufferCount.increment();
     Backend::bufferGPUMemSize.update(0, size);

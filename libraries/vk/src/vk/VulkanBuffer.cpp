@@ -8,6 +8,7 @@
 * This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
 */
 
+#include <memory>
 #include "VulkanBuffer.h"
 
 namespace vks
@@ -20,21 +21,21 @@ namespace vks
     * 
     * @return VkResult of the buffer mapping call
     */
-    VkResult Buffer::map(VkDeviceSize size, VkDeviceSize offset)
+    /*VkResult Buffer::map(VkDeviceSize size, VkDeviceSize offset)
     {
 #if VULKAN_USE_VMA
             return vmaMapMemory(getAllocator(),allocation, &mapped);
 #else
         return vkMapMemory(device, memory, offset, size, 0, &mapped);
 #endif
-    }
+    }*/
 
     /**
     * Unmap a mapped memory range
     *
     * @note Does not return a result as vkUnmapMemory can't fail
     */
-    void Buffer::unmap()
+    /*void Buffer::unmap()
     {
         if (mapped)
         {
@@ -45,7 +46,7 @@ namespace vks
 #endif
             mapped = nullptr;
         }
-    }
+    }*/
 
     /** 
     * Attach the allocated memory block to the buffer
@@ -77,6 +78,21 @@ namespace vks
         descriptor.range = size;
     }
 
+    // VKTODO: maybe this should be a static function returning buffer
+    std::shared_ptr<Buffer> Buffer::createUniform(VkDeviceSize bufferSize) {
+        std::shared_ptr<Buffer> newBuffer = std::make_shared<Buffer>();
+        newBuffer->size = bufferSize;
+        VkBufferCreateInfo bufferCI = {  };
+        bufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferCI.size = newBuffer->size;
+        bufferCI.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        VmaAllocationCreateInfo allocationCI{};
+        allocationCI.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+        vmaCreateBuffer(vks::Allocation::getAllocator(), &bufferCI, &allocationCI, &newBuffer->buffer, &newBuffer->allocation, nullptr);
+        return newBuffer;
+    }
+
     /**
     * Copies the specified data to the mapped buffer
     * 
@@ -100,7 +116,7 @@ namespace vks
     *
     * @return VkResult of the flush call
     */
-    VkResult Buffer::flush(VkDeviceSize size, VkDeviceSize offset)
+    /*VkResult Buffer::flush(VkDeviceSize size, VkDeviceSize offset)
     {
 #if VULKAN_USE_VMA
         vmaFlushAllocation(getAllocator(), allocation, offset, size);
@@ -113,7 +129,7 @@ namespace vks
         mappedRange.size = size;
         return vkFlushMappedMemoryRanges(device, 1, &mappedRange);
 #endif
-    }
+    }*/
 
     /**
     * Invalidate a memory range of the buffer to make it visible to the host
@@ -125,7 +141,7 @@ namespace vks
     *
     * @return VkResult of the invalidate call
     */
-    VkResult Buffer::invalidate(VkDeviceSize size, VkDeviceSize offset)
+    /*VkResult Buffer::invalidate(VkDeviceSize size, VkDeviceSize offset)
     {
 #if VULKAN_USE_VMA
         vmaInvalidateAllocation(getAllocator(), allocation, offset, size);
@@ -138,7 +154,7 @@ namespace vks
         mappedRange.size = size;
         return vkInvalidateMappedMemoryRanges(device, 1, &mappedRange);
 #endif
-    }
+    }*/
 
     /** 
     * Release all Vulkan resources held by this buffer
