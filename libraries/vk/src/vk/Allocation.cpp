@@ -1,7 +1,8 @@
 #include "Allocation.h"
 
 #include <mutex>
-#include <stdexcept>
+
+#include "VulkanTools.h"
 
 using namespace vks;
 
@@ -21,7 +22,7 @@ void Allocation::initAllocator(const VkPhysicalDevice& physicalDevice, const VkD
         allocatorInfo.device = device;
 
         VmaAllocator& allocator = getAllocator();
-        vmaCreateAllocator(&allocatorInfo, &allocator);
+        VK_CHECK_RESULT(vmaCreateAllocator(&allocatorInfo, &allocator));
     });
 }
 
@@ -37,11 +38,12 @@ void Allocation::invalidate(VkDeviceSize size, VkDeviceSize offset) {
 
 void* Allocation::rawmap(size_t offset, VkDeviceSize size) {
     if (offset != 0 || size != VK_WHOLE_SIZE) {
-        throw std::runtime_error("Unsupported");
+        //throw std::runtime_error("Unsupported");
+        Q_ASSERT(false);
     }
 
     if (!mapped) {
-        vmaMapMemory(getAllocator(), allocation, &mapped);
+        VK_CHECK_RESULT(vmaMapMemory(getAllocator(), allocation, &mapped));
     }
 
     return mapped;

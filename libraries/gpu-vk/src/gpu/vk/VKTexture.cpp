@@ -203,19 +203,18 @@ void VKAttachmentTexture::createTexture() {
         Q_ASSERT(false);
     }
 
-    VkMemoryAllocateInfo memAlloc = vks::initializers::memoryAllocateInfo();
-    VkMemoryRequirements memReqs;
-
     auto device = _backend.lock()->getContext().device->logicalDevice;
 
     // Create image for this attachment
-    VK_CHECK_RESULT(vkCreateImage(device, &imageCI, nullptr, &vkImage));
-    vkGetImageMemoryRequirements(device, vkImage, &memReqs);
+    VK_CHECK_RESULT(vkCreateImage(device, &imageCI, nullptr, &_texture));
+    VkMemoryAllocateInfo memAlloc = vks::initializers::memoryAllocateInfo();
+    VkMemoryRequirements memReqs;
+    vkGetImageMemoryRequirements(device, _texture, &memReqs);
     memAlloc.allocationSize = memReqs.size;
     memAlloc.memoryTypeIndex = _backend.lock()->getContext().device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     // VKTODO: this may need to be changed to VMA
-    VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &vkDeviceMemory));
-    VK_CHECK_RESULT(vkBindImageMemory(device, vkImage, vkDeviceMemory, 0));
+    VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &_vkDeviceMemory));
+    VK_CHECK_RESULT(vkBindImageMemory(device, _texture, _vkDeviceMemory, 0));
 
     /*attachment.subresourceRange = {};
     attachment.subresourceRange.aspectMask = aspectMask;

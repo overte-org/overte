@@ -20,6 +20,7 @@ void gpu::vk::VKFramebuffer::update() {
     // VKTODO: free all attachments too
     VKTexture* vkTexture = nullptr;
     TexturePointer surface;
+    bool lastTextureWasNull = false;
     if (_gpuObject.getColorStamps() != _colorStamps) {
         if (_gpuObject.hasColor()) {
             // VKTODO: Do these need to be deleted?
@@ -53,6 +54,9 @@ void gpu::vk::VKFramebuffer::update() {
                 }
 
                 if (vkTexture) {
+                    if (lastTextureWasNull) {
+                        Q_ASSERT(false);
+                    }
                     if (vkTexture->_target == VK_IMAGE_VIEW_TYPE_2D) {
                         VKAttachmentCreateInfo attachmentCI {};
                         attachmentCI.width = vkTexture->_gpuObject.getWidth();
@@ -73,7 +77,7 @@ void gpu::vk::VKFramebuffer::update() {
                     }
                     //_colorBuffers.push_back(unit);
                 } else {
-                    Q_ASSERT(false);
+                    lastTextureWasNull = true;
                     // VKTODO: what to do here?
                     //glNamedFramebufferTexture(_id, colorAttachments[unit], 0, 0);
                 }
@@ -195,7 +199,8 @@ VkResult gpu::vk::VKFramebuffer::createFramebuffer()
     // Use subpass dependencies for attachment layout transitions
     std::array<VkSubpassDependency, 2> dependencies;
 
-    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    // VKTODO: what are these for?
+    /*dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
     dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -209,7 +214,7 @@ VkResult gpu::vk::VKFramebuffer::createFramebuffer()
     dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;*/
 
     // Create render pass
     VkRenderPassCreateInfo renderPassInfo = {};
@@ -218,8 +223,10 @@ VkResult gpu::vk::VKFramebuffer::createFramebuffer()
     renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentDescriptions.size());
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
-    renderPassInfo.dependencyCount = 2;
-    renderPassInfo.pDependencies = dependencies.data();
+    // VKTODO
+    //renderPassInfo.dependencyCount = 2;
+    //renderPassInfo.pDependencies = dependencies.data();
+    renderPassInfo.dependencyCount = 0;
     VK_CHECK_RESULT(vkCreateRenderPass(_backend.lock()->_context.device->logicalDevice, &renderPassInfo, nullptr, &vkRenderPass));
 
     std::vector<VkImageView> attachmentViews;

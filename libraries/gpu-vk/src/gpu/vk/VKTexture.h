@@ -196,10 +196,10 @@ protected:
 
     virtual void createTexture() = 0;
 
-    virtual void allocateStorage() const = 0;
-    virtual void updateSize() const = 0;
+    //virtual void allocateStorage() const = 0;
+    //virtual void updateSize() const = 0;
     virtual void transfer() const = 0;
-    virtual void syncSampler() const = 0;
+    //virtual void syncSampler() const = 0;
     // VKTODO
     //virtual void generateMips() const = 0;
     // VKTODO what does this mean?
@@ -228,9 +228,12 @@ public:
 protected:
     Size size() const override { return _size; }
 
-    void allocateStorage() const;
-    void syncSampler() const override;
-    void updateSize() const override;
+    // VKTODO
+    //void allocateStorage() const;
+    // VKTODO
+    //void syncSampler() const override;
+    // VKTODO
+    //void updateSize() const override {};
     const Size _size{ 0 };
 };
 
@@ -240,13 +243,15 @@ class VKAttachmentTexture : public VKFixedAllocationTexture {
 
 protected:
     VKAttachmentTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture) :
-        VKFixedAllocationTexture(backend, texture, false) {};
+        VKFixedAllocationTexture(backend, texture, false) {
+            VKAttachmentTexture::createTexture();
+        };
     virtual ~VKAttachmentTexture() {}; // VKTODO: delete image and image view, release memory
     void createTexture() override;
     void transfer() const override {}; // VKTODO
     void postTransfer() override {}; // VKTODO
-    VkImage vkImage { VK_NULL_HANDLE };
-    VkDeviceMemory vkDeviceMemory { VK_NULL_HANDLE };
+    //VkImage vkImage { VK_NULL_HANDLE };
+    VkDeviceMemory _vkDeviceMemory{ VK_NULL_HANDLE };
 };
 
 } }
