@@ -20,16 +20,6 @@ ShadowRectangle {
 
     color: style.colors.lightGrayBackground
 
-    HiFiGlyphs {
-        id: avatarIcon
-        anchors.left: parent.left
-        anchors.leftMargin: 23
-        anchors.verticalCenter: header.verticalCenter
-
-        size: 38
-        text: "<"
-    }
-
     // TextStyle6
     RalewaySemiBold {
         id: title

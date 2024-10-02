@@ -2,9 +2,10 @@
 //  NewModelDialog.qml
 //  qml/hifi
 //
-//  Created by Seth Alves on 2017-2-10
+//  Created by Seth Alves on February 10th, 2017
 //  Copyright 2017 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -54,17 +55,30 @@ Rectangle {
 
         Text {
             id: text1
-            text: qsTr("Model URL <i>(.fbx, .fst, .glb, .gltf, .obj, .gz)</i>")
+            text: qsTr("Model URL <i>(.fbx, .fst, .glb, .gltf, .obj, .gz)</i>&nbsp;&nbsp;&nbsp;")
             color: "#ffffff"
             font.pixelSize: 12
         }
-
+        Button {
+            id: pasteBtn
+            text: "Paste"
+            font.pixelSize: 11
+            height: 16
+            width: 40
+            radius: 4
+            anchors.top: text1.top + 10
+            anchors.left: text1.right
+            anchors.bottom: text1.bottom
+            onClicked: {
+                modelURL.paste()
+            }
+        }
         TextInput {
             id: modelURL
             height: 20
             text: qsTr("")
             color: "white"
-            anchors.top: text1.bottom
+            anchors.top: pasteBtn.bottom
             anchors.topMargin: 5
             anchors.left: parent.left
             anchors.leftMargin: 0

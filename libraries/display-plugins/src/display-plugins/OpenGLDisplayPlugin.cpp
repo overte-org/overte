@@ -32,6 +32,7 @@
 #include <gl/GLEscrow.h>
 #include <gl/Context.h>
 #include <gl/OffscreenGLCanvas.h>
+#include <gl/GLHelpers.h>
 
 #include <gpu/Texture.h>
 #include <gpu/FrameIO.h>
@@ -56,6 +57,8 @@
 using namespace shader::gpu::program;
 
 extern QThread* RENDER_THREAD;
+
+Setting::Handle<bool> OpenGLDisplayPlugin::_extraLinearToSRGBConversionSetting("extraLinearToSRGBConversion", false);
 
 class PresentThread : public QThread, public Dependency {
     using Mutex = std::mutex;
@@ -956,5 +959,16 @@ void OpenGLDisplayPlugin::copyTextureToQuickFramebuffer(NetworkTexturePointer ne
 }
 
 gpu::PipelinePointer OpenGLDisplayPlugin::getRenderTexturePipeline() {
-    return _drawTexturePipeline;
+#ifdef USE_GLES
+    if (!_extraLinearToSRGBConversionSetting.isSet()) {
+        const gl::ContextInfo &contextInfo = gl::ContextInfo::get();
+        _extraLinearToSRGBConversionSetting.set(std::find(contextInfo.extensions.cbegin(), contextInfo.extensions.cend(), "GL_EXT_framebuffer_sRGB") == contextInfo.extensions.cend());
+    }
+#endif
+
+    if (getExtraLinearToSRGBConversion()) {
+        return _linearToSRGBPipeline;
+    } else {
+        return _drawTexturePipeline;
+    }
 }

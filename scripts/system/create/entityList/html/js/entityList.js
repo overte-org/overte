@@ -989,6 +989,7 @@ function loaded() {
                         parentState: entity.parentState,
                         created: entity.created,
                         lastEdited: entity.lastEdited,
+                        entityHostType: entity.entityHostType,
                         elRow: null, // if this entity has a visible row element assigned to it
                         selected: false // if this entity is selected for edit regardless of having a visible row
                     };
@@ -1185,7 +1186,11 @@ function loaded() {
                 if (entity !== undefined) {
                     entity.selected = false;
                     if (entity.elRow) {
-                        entity.elRow.className = "";
+                        if (entity.entityHostType === "avatar") {
+                            entity.elRow.className = "avatarEntity";
+                        } else {
+                            entity.elRow.className = "";
+                        }
                     }
                 }
             });
@@ -1199,9 +1204,17 @@ function loaded() {
                     entity.selected = true;
                     if (entity.elRow) {
                         if (id === lastSelectedEntity) {
-                            entity.elRow.className = "last-selected";
+                            if (entity.entityHostType === "avatar") {
+                                entity.elRow.className = "lastSelAvatarEntity";
+                            } else {
+                                entity.elRow.className = "last-selected";
+                            }
                         } else {
-                            entity.elRow.className = "selected";
+                            if (entity.entityHostType === "avatar") {
+                                entity.elRow.className = "selAvatarEntity";
+                            } else {
+                                entity.elRow.className = "selected";
+                            }
                         }
                     }
                 } else {
@@ -1272,12 +1285,24 @@ function loaded() {
             // if this entity was previously selected flag it's row as selected
             if (itemData.selected) {
                 if (itemData.id === lastSelectedEntity) {
-                    elRow.className = "last-selected";
+                    if (itemData.entityHostType === "avatar") {
+                        elRow.className = "lastSelAvatarEntity";
+                    } else {
+                        elRow.className = "last-selected";
+                    }
                 } else {
-                    elRow.className = "selected";
+                    if (itemData.entityHostType === "avatar") {
+                        elRow.className = "selAvatarEntity";
+                    } else {
+                        elRow.className = "selected";
+                    }
                 }
             } else {
-                elRow.className = "";
+                if (itemData.entityHostType === "avatar") {
+                    elRow.className = "avatarEntity";
+                } else {
+                    elRow.className = "";
+                }
             }
 
             // if this row previously had an associated entity ID that wasn't the new entity ID then clear

@@ -1,12 +1,12 @@
 //
 //  NewPolyVoxDialog.qml
-//  Created by dr Karol Suprynowicz on 2022.05.17.
+//  Created by dr Karol Suprynowicz on May 17th, 2022
 //  based on NewModelDialog.qml
 //  qml/hifi
 //
 //  Copyright 2017 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -116,9 +116,24 @@ Rectangle {
             id: text1
             anchors.top: texturePreset.bottom
             anchors.topMargin: 5
-            text: qsTr("X Texture URL")
+            text: qsTr("X Texture URL <i>&nbsp;&nbsp;&nbsp;</i>")
             color: "#ffffff"
             font.pixelSize: 12
+        }
+
+        Button {
+            id: pasteBtn1
+            text: "Paste"
+            font.pixelSize: 11
+            height: 16
+            width: 40
+            radius: 4
+            anchors.top: text1.top
+            anchors.left: text1.right
+            anchors.bottom: text1.bottom
+            onClicked: {
+                xTextureURL.paste()
+            }
         }
 
         TextInput {
@@ -126,7 +141,7 @@ Rectangle {
             height: 20
             text: qsTr("")
             color: "white"
-            anchors.top: text1.bottom
+            anchors.top: pasteBtn1.bottom
             anchors.topMargin: 5
             anchors.left: parent.left
             anchors.leftMargin: 0
@@ -166,11 +181,25 @@ Rectangle {
 
         Text {
             id: text2
-            text: qsTr("Y Texture URL")
+            text: qsTr("Y Texture URL <i>&nbsp;&nbsp;&nbsp;</i>")
             color: "#ffffff"
             font.pixelSize: 12
             anchors.top: textInputBox1.bottom
             anchors.topMargin: 5
+        }
+        Button {
+            id: pasteBtn2
+            text: "Paste"
+            font.pixelSize: 11
+            height: 16
+            width: 40
+            radius: 4
+            anchors.top: text2.top
+            anchors.left: text2.right
+            anchors.bottom: text2.bottom
+            onClicked: {
+                yTextureURL.paste()
+            }
         }
 
         TextInput {
@@ -178,7 +207,7 @@ Rectangle {
             height: 20
             text: qsTr("")
             color: "white"
-            anchors.top: text2.bottom
+            anchors.top: pasteBtn2.bottom
             anchors.topMargin: 5
             anchors.left: parent.left
             anchors.leftMargin: 0
@@ -218,11 +247,25 @@ Rectangle {
         
         Text {
             id: text3
-            text: qsTr("Z Texture URL")
+            text: qsTr("Z Texture URL <i>&nbsp;&nbsp;&nbsp;</i>")
             color: "#ffffff"
             font.pixelSize: 12
             anchors.top: textInputBox2.bottom
             anchors.topMargin: 5
+        }
+        Button {
+            id: pasteBtn3
+            text: "Paste"
+            font.pixelSize: 11
+            height: 16
+            width: 40
+            radius: 4
+            anchors.top: text3.top
+            anchors.left: text3.right
+            anchors.bottom: text3.bottom
+            onClicked: {
+                zTextureURL.paste()
+            }
         }
 
         TextInput {
@@ -230,7 +273,7 @@ Rectangle {
             height: 20
             text: qsTr("")
             color: "white"
-            anchors.top: text3.bottom
+            anchors.top: pasteBtn3.bottom
             anchors.topMargin: 5
             anchors.left: parent.left
             anchors.leftMargin: 0

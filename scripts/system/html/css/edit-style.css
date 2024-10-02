@@ -175,6 +175,28 @@ tr:focus {
     outline: none;
 }
 
+tr.avatarEntity {
+    color: #7fdb98;
+}
+
+tr.selAvatarEntity {
+    color: #000000;
+    background-color: #7fdb98;
+}
+
+tr.selAvatarEntity + tr.selAvatarEntity {
+    border-top: 1px solid #2e2e2e;
+}
+
+tr.lastSelAvatarEntity {
+    color: #000000;
+    background-color: #06c73a;
+}
+
+tr.lastSelAvatarEntity + tr.lastSelAvatarEntity {
+    border-top: 1px solid #2e2e2e;
+}
+
 tr.selected {
     color: #000000;
     background-color: #00b4ef;

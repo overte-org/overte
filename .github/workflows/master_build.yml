@@ -13,13 +13,13 @@ on:
 env:
   APP_NAME: interface
   BUILD_TYPE: Release
-  BUILD_NUMBER: ${{ github.run_number }}
+  BUILD_NUMBER: ${{ github.event.number }}_${{ github.sha }}
   CI_BUILD: Github
   GIT_COMMIT: ${{ github.sha }}
   # VCPKG did not build well on OSX disabling HIFI_VCPKG_BOOTSTRAP, which invokes a download to a working version of vcpkg
   # HIFI_VCPKG_BOOTSTRAP: true
   RELEASE_TYPE: PRODUCTION
-  RELEASE_NUMBER: ${{ github.run_number }}
+  RELEASE_NUMBER: ${{ github.event.number }}_${{ github.sha }}
   STABLE_BUILD: 0
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
@@ -108,7 +108,7 @@ jobs:
         # Build type variables
         if [ "${{ matrix.build_type }}" = "full" ]; then
           echo "CLIENT_ONLY=FALSE" >> $GITHUB_ENV
-          echo "INSTALLER=Overte-master$BUILD_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "INSTALLER=Overte-${{ github.event.number }}_${{ github.sha }}.$INSTALLER_EXT" >> $GITHUB_ENV
         else
           echo "CLIENT_ONLY=TRUE" >> $GITHUB_ENV
           echo "INSTALLER=Overte-Interface-master$BUILD_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
@@ -247,8 +247,8 @@ jobs:
     - name: Upload artifact to GitHub
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.ARTIFACT_PATTERN }}
-        path: ./build/${{ env.ARTIFACT_PATTERN }}
+        name: ${{ env.INSTALLER }}
+        path: ${{runner.workspace}}/build/${{ env.INSTALLER }}
         if-no-files-found: error
 
     #- name: Archive symbols
