@@ -24,7 +24,7 @@
  * @typedef {string} Entities.GizmoType
  */
 
-enum GizmoType {
+enum GizmoType : uint8_t {
     RING = 0,
     // put new gizmo-types before this line.
     UNSET_GIZMO_TYPE

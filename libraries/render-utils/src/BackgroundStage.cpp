@@ -15,7 +15,7 @@
 
 #include <graphics/ShaderConstants.h>
 
-std::string BackgroundStage::_stageName { "BACKGROUND_STAGE"};
+std::string BackgroundStage::_stageName { "BACKGROUND_STAGE" };
 const BackgroundStage::Index BackgroundStage::INVALID_INDEX { render::indexed_container::INVALID_INDEX };
 
 BackgroundStage::Index BackgroundStage::findBackground(const BackgroundPointer& background) const {

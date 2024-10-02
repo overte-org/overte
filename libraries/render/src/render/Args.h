@@ -159,6 +159,10 @@ namespace render {
         bool _takingSnapshot { false };
         StencilMaskMode _stencilMaskMode { StencilMaskMode::NONE };
         std::function<void(gpu::Batch&)> _stencilMaskOperator;
+
+        ItemID _ignoreItem { 0 };
+        size_t _mirrorDepth { 0 };
+        size_t _numMirrorFlips { 0 };
     };
 
 }

@@ -1,0 +1,47 @@
+//
+//  ProceduralParticleEffectEntityItem.h
+//  libraries/entities/src
+//
+//  Created by HifiExperiements on 11/19/23
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#ifndef hifi_ProceduralParticleEffectEntityItem_h
+#define hifi_ProceduralParticleEffectEntityItem_h
+
+#include "EntityItem.h"
+
+namespace particle {
+    static const uint32_t DEFAULT_NUM_PROCEDURAL_PARTICLES = 10000;
+    static const uint32_t MAXIMUM_NUM_PROCEDURAL_PARTICLES = 1024 * 1024;
+    static const uint8_t DEFAULT_NUM_TRIS_PER = 1;
+    static const uint8_t MINIMUM_TRIS_PER = 1;
+    static const uint8_t MAXIMUM_TRIS_PER = 15;
+    static const uint8_t DEFAULT_NUM_UPDATE_PROPS = 0;
+    static const uint8_t MINIMUM_NUM_UPDATE_PROPS = 0;
+    static const uint8_t MAXIMUM_NUM_UPDATE_PROPS = 5;
+}
+
+class ProceduralParticleEffectEntityItem : public EntityItem {
+public:
+    static EntityItemPointer factory(const EntityItemID& entityID, const EntityItemProperties& properties);
+
+    ProceduralParticleEffectEntityItem(const EntityItemID& entityItemID);\
+
+    ALLOW_INSTANTIATION // This class can be instantiated
+    ENTITY_PROPERTY_SUBCLASS_METHODS
+
+    bool shouldBePhysical() const override { return false; }
+
+    virtual bool supportsDetailedIntersection() const override { return false; }
+
+protected:
+
+@ProceduralParticleEffect_ENTITY_PROPS@
+
+};
+
+#endif // hifi_ProceduralParticleEffectEntityItem_h

@@ -33,6 +33,7 @@ static const QString BLENDSHAPE_FIELD = "bs";
 static const QString SCRIPT_FIELD = "script";
 static const QString JOINT_NAME_MAPPING_FIELD = "jointMap";
 static const QString MATERIAL_MAPPING_FIELD = "materialMap";
+static const QString WAIT_FOR_WEARABLES_FIELD = "waitForWearables";
 static const QString COMMENT_FIELD = "comment";
 
 class FSTReader {
@@ -42,8 +43,7 @@ public:
         ENTITY_MODEL,
         HEAD_MODEL,
         BODY_ONLY_MODEL,
-        HEAD_AND_BODY_MODEL,
-        ATTACHMENT_MODEL
+        HEAD_AND_BODY_MODEL
     };
 
     /// Reads an FST mapping from the supplied data.

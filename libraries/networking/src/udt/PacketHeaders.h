@@ -349,6 +349,19 @@ enum class EntityVersion : PacketVersion {
     UserAgent,
     AllBillboardMode,
     TextAlignment,
+    Mirror,
+    EntityTags,
+    WantsKeyboardFocus,
+    AudioZones,
+    AnimationSmoothFrames,
+    ProceduralParticles,
+    ShapeUnlit,
+    AmbientColor,
+    SoundEntities,
+    TonemappingAndAmbientOcclusion,
+    ModelLoadPriority,
+    PropertyCleanup,
+    TextVerticalAlignment,
 
     // Add new versions above here
     NUM_PACKET_TYPE,
@@ -414,7 +427,8 @@ enum class AvatarMixerPacketVersion : PacketVersion {
     FBXJointOrderChange,
     HandControllerSection,
     SendVerificationFailed,
-    ARKitBlendshapes
+    ARKitBlendshapes,
+    RemoveAttachments,
 };
 
 enum class DomainConnectRequestVersion : PacketVersion {

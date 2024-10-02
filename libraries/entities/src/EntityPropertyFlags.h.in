@@ -1,0 +1,107 @@
+//
+//  EntityPropertyFlags.h
+//  libraries/entities/src
+//
+//  Created by Brad Hefta-Gaub on 12/4/13.
+//  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2020 Vircadia contributors.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#ifndef hifi_EntityPropertyFlags_h
+#define hifi_EntityPropertyFlags_h
+
+#include <PropertyFlags.h>
+
+enum EntityPropertyList : uint16_t {
+    PROP_PAGED_PROPERTY,
+    PROP_CUSTOM_PROPERTIES_INCLUDED,
+
+@ENTITY_PROPERTY_FLAGS_COMMON@
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // ATTENTION: add new shared EntityItem properties to the list ABOVE this line
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // We need as many of these as the number of unique properties of a derived EntityItem class
+    PROP_DERIVED_0,
+    PROP_DERIVED_1,
+    PROP_DERIVED_2,
+    PROP_DERIVED_3,
+    PROP_DERIVED_4,
+    PROP_DERIVED_5,
+    PROP_DERIVED_6,
+    PROP_DERIVED_7,
+    PROP_DERIVED_8,
+    PROP_DERIVED_9,
+    PROP_DERIVED_10,
+    PROP_DERIVED_11,
+    PROP_DERIVED_12,
+    PROP_DERIVED_13,
+    PROP_DERIVED_14,
+    PROP_DERIVED_15,
+    PROP_DERIVED_16,
+    PROP_DERIVED_17,
+    PROP_DERIVED_18,
+    PROP_DERIVED_19,
+    PROP_DERIVED_20,
+    PROP_DERIVED_21,
+    PROP_DERIVED_22,
+    PROP_DERIVED_23,
+    PROP_DERIVED_24,
+    PROP_DERIVED_25,
+    PROP_DERIVED_26,
+    PROP_DERIVED_27,
+    PROP_DERIVED_28,
+    PROP_DERIVED_29,
+    PROP_DERIVED_30,
+    PROP_DERIVED_31,
+    PROP_DERIVED_32,
+    PROP_DERIVED_33,
+    PROP_DERIVED_34,
+    PROP_DERIVED_35,
+    PROP_DERIVED_36,
+    PROP_DERIVED_37,
+    PROP_DERIVED_38,
+    PROP_DERIVED_39,
+    PROP_DERIVED_40,
+    PROP_DERIVED_41,
+    PROP_DERIVED_42,
+    PROP_DERIVED_43,
+    PROP_DERIVED_44,
+    PROP_DERIVED_45,
+    PROP_DERIVED_46,
+    PROP_DERIVED_47,
+    PROP_DERIVED_48,
+    PROP_DERIVED_49,
+    PROP_DERIVED_50,
+    PROP_DERIVED_51,
+    PROP_DERIVED_52,
+    PROP_DERIVED_53,
+    PROP_DERIVED_54,
+
+    PROP_AFTER_LAST_ITEM,
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // WARNING! Do not add props here unless you intentionally mean to reuse PROP_DERIVED_X indexes
+    //
+    // These properties intentionally reuse the enum values for other properties which will never overlap with each other. We do this so that we don't have to expand
+    // the size of the properties bitflags mask
+    //
+    // Only add properties here that are only used by one subclass.  Otherwise, they should go above to prevent collisions
+
+@ENTITY_PROPERTY_FLAGS_DERIVED@
+
+    // WARNING!!! DO NOT ADD PROPS_xxx here unless you really really meant to.... Add them UP above
+};
+
+typedef PropertyFlags<EntityPropertyList> EntityPropertyFlags;
+
+// this is set at the top of EntityItemProperties.cpp to PROP_AFTER_LAST_ITEM - 1.  PROP_AFTER_LAST_ITEM is always
+// one greater than the last item property due to the enum's auto-incrementing.
+extern EntityPropertyList PROP_LAST_ITEM;
+
+#endif // hifi_EntityPropertyFlags_h

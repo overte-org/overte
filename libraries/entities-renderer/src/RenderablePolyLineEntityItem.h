@@ -13,7 +13,6 @@
 #define hifi_RenderablePolyLineEntityItem_h
 
 #include "RenderableEntityItem.h"
-#include <PolyLineEntityItem.h>
 #include <TextureCache.h>
 
 namespace render { namespace entities {

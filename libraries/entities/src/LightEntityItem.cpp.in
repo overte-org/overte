@@ -1,0 +1,220 @@
+//
+//  LightEntityItem.cpp
+//  libraries/entities/src
+//
+//  Created by Brad Hefta-Gaub on 12/4/13.
+//  Copyright 2013 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#include "LightEntityItem.h"
+
+#include <QDebug>
+
+#include <ByteCountCoding.h>
+
+#include "EntitiesLogging.h"
+#include "EntityItemID.h"
+#include "EntityItemProperties.h"
+#include "EntityTree.h"
+#include "EntityTreeElement.h"
+
+const bool LightEntityItem::DEFAULT_IS_SPOTLIGHT = false;
+const float LightEntityItem::DEFAULT_INTENSITY = 1.0f;
+const float LightEntityItem::DEFAULT_FALLOFF_RADIUS = 0.1f;
+const float LightEntityItem::DEFAULT_EXPONENT = 0.0f;
+const float LightEntityItem::MIN_CUTOFF = 0.0f;
+const float LightEntityItem::MAX_CUTOFF = 90.0f;
+const float LightEntityItem::DEFAULT_CUTOFF = PI / 2.0f;
+
+bool LightEntityItem::_lightsArePickable = false;
+
+EntityItemPointer LightEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    std::shared_ptr<LightEntityItem> entity(new LightEntityItem(entityID), [](LightEntityItem* ptr) { ptr->deleteLater(); });
+    entity->setProperties(properties);
+    return entity;
+}
+
+// our non-pure virtual subclass for now...
+LightEntityItem::LightEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
+    _type = EntityTypes::Light;
+}
+
+void LightEntityItem::setUnscaledDimensions(const glm::vec3& value) {
+    if (_isSpotlight) {
+        // If we are a spotlight, treat the z value as our radius or length, and
+        // recalculate the x/y dimensions to properly encapsulate the spotlight.
+        const float length = value.z;
+        const float width = length * glm::sin(glm::radians(_cutoff));
+        EntityItem::setUnscaledDimensions(glm::vec3(width, width, length));
+    } else {
+        float maxDimension = glm::compMax(value);
+        EntityItem::setUnscaledDimensions(glm::vec3(maxDimension, maxDimension, maxDimension));
+    }
+}
+
+EntityItemProperties LightEntityItem::getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const {
+    EntityItemProperties properties = EntityItem::getProperties(desiredProperties, allowEmptyDesiredProperties); // get the properties from our base class
+
+@Light_ENTITY_COPY_TO@
+
+    return properties;
+}
+
+float LightEntityItem::getFalloffRadius() const {
+    return resultWithReadLock<float>([&] {
+        return _falloffRadius;
+    });
+}
+
+void LightEntityItem::setFalloffRadius(float value) {
+    value = glm::max(value, 0.0f);
+
+    withWriteLock([&] {
+        _needsRenderUpdate |= _falloffRadius != value;
+        _falloffRadius = value;
+    });
+}
+
+bool LightEntityItem::getIsSpotlight() const {
+    return resultWithReadLock<bool>([&] {
+        return _isSpotlight;
+    });
+}
+
+void LightEntityItem::setIsSpotlight(bool value) {
+    bool needsRenderUpdate;
+    withWriteLock([&] {
+        needsRenderUpdate = value != _isSpotlight;
+        _needsRenderUpdate |= needsRenderUpdate;
+        _isSpotlight = value;
+    });
+
+    if (!needsRenderUpdate) {
+        return;
+    }
+
+    glm::vec3 dimensions = getScaledDimensions();
+    glm::vec3 newDimensions;
+    if (value) {
+        const float length = dimensions.z;
+        const float width = length * glm::sin(glm::radians(getCutoff()));
+        newDimensions = glm::vec3(width, width, length);
+    } else {
+        newDimensions = glm::vec3(glm::compMax(dimensions));
+    }
+
+    setScaledDimensions(newDimensions);
+}
+
+float LightEntityItem::getCutoff() const {
+    return resultWithReadLock<float>([&] {
+        return _cutoff;
+    });
+}
+
+void LightEntityItem::setCutoff(float value) {
+    value = glm::clamp(value, MIN_CUTOFF, MAX_CUTOFF);
+    bool needsRenderUpdate;
+    bool spotlight;
+    withWriteLock([&] {
+        needsRenderUpdate = value != _cutoff;
+        _needsRenderUpdate |= needsRenderUpdate;
+        _cutoff = value;
+        spotlight = _isSpotlight;
+    });
+
+    if (!needsRenderUpdate) {
+        return;
+    }
+
+    if (spotlight) {
+        // If we are a spotlight, adjusting the cutoff will affect the area we encapsulate,
+        // so update the dimensions to reflect this.
+        const float length = getScaledDimensions().z;
+        const float width = length * glm::sin(glm::radians(_cutoff));
+        setScaledDimensions(glm::vec3(width, width, length));
+    }
+}
+
+bool LightEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Light_ENTITY_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags LightEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
+
+@Light_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int LightEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                ReadBitstreamToTreeParams& args,
+                                                EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Light_ENTITY_READ@
+
+    return bytesRead;
+}
+
+void LightEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
+                                         EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                         EntityPropertyFlags& requestedProperties,
+                                         EntityPropertyFlags& propertyFlags,
+                                         EntityPropertyFlags& propertiesDidntFit,
+                                         int& propertyCount,
+                                         OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Light_ENTITY_APPEND@
+
+}
+
+void LightEntityItem::debugDump() const {
+    qCDebug(entities) << "LightEntityItem id:" << getEntityItemID() << "---------------------------------------------";
+    qCDebug(entities) << "    name:" << _name;
+    qCDebug(entities) << "    position:" << debugTreeVector(getWorldPosition());
+    qCDebug(entities) << "    dimensions:" << debugTreeVector(getScaledDimensions());
+    qCDebug(entities) << "    editedAgo:" << debugTime(getLastEdited(), usecTimestampNow());
+    qCDebug(entities) << "    pointer:" << this;
+
+@Light_ENTITY_DEBUG@
+
+}
+
+bool LightEntityItem::findDetailedRayIntersection(const glm::vec3& origin, const glm::vec3& direction,
+                        const glm::vec3& viewFrustumPos, OctreeElementPointer& element, float& distance,
+                        BoxFace& face, glm::vec3& surfaceNormal,
+                        QVariantMap& extraInfo, bool precisionPicking) const {
+
+    // TODO: consider if this is really what we want to do. We've made it so that "lights are pickable" is a global state
+    // this is probably reasonable since there's typically only one tree you'd be picking on at a time. Technically we could
+    // be on the clipboard and someone might be trying to use the ray intersection API there. Anyway... if you ever try to
+    // do ray intersection testing off of trees other than the main tree of the main entity renderer, then we'll need to
+    // fix this mechanism.
+    return _lightsArePickable;
+}
+
+bool LightEntityItem::findDetailedParabolaIntersection(const glm::vec3& origin, const glm::vec3& velocity,
+                        const glm::vec3& acceleration, const glm::vec3& viewFrustumPos, OctreeElementPointer& element,
+                        float& parabolicDistance, BoxFace& face, glm::vec3& surfaceNormal,
+                        QVariantMap& extraInfo, bool precisionPicking) const {
+    // TODO: consider if this is really what we want to do. We've made it so that "lights are pickable" is a global state
+    // this is probably reasonable since there's typically only one tree you'd be picking on at a time. Technically we could
+    // be on the clipboard and someone might be trying to use the parabola intersection API there. Anyway... if you ever try to
+    // do parabola intersection testing off of trees other than the main tree of the main entity renderer, then we'll need to
+    // fix this mechanism.
+    return _lightsArePickable;
+}

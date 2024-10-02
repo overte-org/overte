@@ -1,0 +1,132 @@
+//
+//  Created by Sam Gondelman on 1/12/18
+//  Copyright 2018 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#include "MaterialEntityItem.h"
+
+#include "EntityItemProperties.h"
+
+#include "QJsonDocument"
+#include "QJsonArray"
+
+EntityItemPointer MaterialEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    Pointer entity(new MaterialEntityItem(entityID), [](MaterialEntityItem* ptr) { ptr->deleteLater(); });
+    entity->setProperties(properties);
+    return entity;
+}
+
+// our non-pure virtual subclass for now...
+MaterialEntityItem::MaterialEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
+    _type = EntityTypes::Material;
+}
+
+EntityItemProperties MaterialEntityItem::getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const {
+    EntityItemProperties properties = EntityItem::getProperties(desiredProperties, allowEmptyDesiredProperties); // get the properties from our base class
+
+@Material_ENTITY_COPY_TO@
+
+    return properties;
+}
+
+bool MaterialEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Material_ENTITY_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags MaterialEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
+
+@Material_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+void MaterialEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
+                                            EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                            EntityPropertyFlags& requestedProperties,
+                                            EntityPropertyFlags& propertyFlags,
+                                            EntityPropertyFlags& propertiesDidntFit,
+                                            int& propertyCount,
+                                            OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Material_ENTITY_APPEND@
+
+}
+
+int MaterialEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                ReadBitstreamToTreeParams& args,
+                                                EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Material_ENTITY_READ@
+
+    return bytesRead;
+}
+
+void MaterialEntityItem::debugDump() const {
+    qCDebug(entities) << "MaterialEntityItem id:" << getEntityItemID() << "---------------------------------------------";
+    qCDebug(entities) << "    name:" << _name;
+    qCDebug(entities) << "    position:" << debugTreeVector(getWorldPosition());
+    qCDebug(entities) << "    dimensions:" << debugTreeVector(getScaledDimensions());
+    qCDebug(entities) << "    editedAgo:" << debugTime(getLastEdited(), usecTimestampNow());
+    qCDebug(entities) << "    pointer:" << this;
+
+@Material_ENTITY_DEBUG@
+
+}
+
+void MaterialEntityItem::setUnscaledDimensions(const glm::vec3& value) {
+    _desiredDimensions = value;
+    if (_hasVertexShader || _materialMappingMode == MaterialMappingMode::PROJECTED) {
+        EntityItem::setUnscaledDimensions(value);
+    } else if (_materialMappingMode == MaterialMappingMode::UV) {
+        EntityItem::setUnscaledDimensions(ENTITY_ITEM_DEFAULT_DIMENSIONS);
+    }
+}
+
+void MaterialEntityItem::setParentID(const QUuid& parentID) {
+    if (parentID != getParentID()) {
+        EntityItem::setParentID(parentID);
+        _hasVertexShader = false;
+    }
+}
+
+AACube MaterialEntityItem::calculateInitialQueryAACube(bool& success) {
+    AACube aaCube = EntityItem::calculateInitialQueryAACube(success);
+    // A Material entity's queryAACube contains its parent's queryAACube
+    auto parent = getParentPointer(success);
+    if (success && parent) {
+        success = false;
+        AACube parentQueryAACube = parent->calculateInitialQueryAACube(success);
+        if (success) {
+            aaCube += parentQueryAACube.getMinimumPoint();
+            aaCube += parentQueryAACube.getMaximumPoint();
+        }
+    }
+    return aaCube;
+}
+
+void MaterialEntityItem::setHasVertexShader(bool hasVertexShader) {
+    bool prevHasVertexShader = _hasVertexShader;
+    _hasVertexShader = hasVertexShader;
+
+    if (hasVertexShader && !prevHasVertexShader) {
+        setLocalPosition(glm::vec3(0.0f));
+        setLocalOrientation(glm::quat());
+        setUnscaledDimensions(EntityTree::getUnscaledDimensionsForID(getParentID()));
+    } else if (!hasVertexShader && prevHasVertexShader) {
+        setUnscaledDimensions(_desiredDimensions);
+    }
+}

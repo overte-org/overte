@@ -100,11 +100,14 @@ void RenderDeferredTask::configure(const Config& config) {
     preparePrimaryBufferConfig->setResolutionScale(config.resolutionScale);
 }
 
-void RenderDeferredTask::build(JobModel& task, const render::Varying& input, render::Varying& output) {
-    auto fadeEffect = DependencyManager::get<FadeEffect>();
+void RenderDeferredTask::build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, size_t depth) {
+    static auto fadeEffect = DependencyManager::get<FadeEffect>();
     // Prepare the ShapePipelines
-    ShapePlumberPointer shapePlumber = std::make_shared<ShapePlumber>();
-    initDeferredPipelines(*shapePlumber, fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter());
+    static ShapePlumberPointer shapePlumber = std::make_shared<ShapePlumber>();
+    static std::once_flag once;
+    std::call_once(once, [] {
+        initDeferredPipelines(*shapePlumber, fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter());
+    });
 
     const auto& inputs = input.get<Input>();
     
@@ -116,6 +119,8 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
             // Extract opaques / transparents / lights / metas / layered / background
             const auto& opaques = items[RenderFetchCullSortTask::OPAQUE_SHAPE];
             const auto& transparents = items[RenderFetchCullSortTask::TRANSPARENT_SHAPE];
+            const auto& mirrors = items[RenderFetchCullSortTask::MIRROR];
+            const auto& simulateItems = items[RenderFetchCullSortTask::SIMULATE];
             const auto& inFrontOpaque = items[RenderFetchCullSortTask::LAYER_FRONT_OPAQUE_SHAPE];
             const auto& inFrontTransparent = items[RenderFetchCullSortTask::LAYER_FRONT_TRANSPARENT_SHAPE];
             const auto& hudOpaque = items[RenderFetchCullSortTask::LAYER_HUD_OPAQUE_SHAPE];
@@ -132,13 +137,14 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
             const auto backgroundFrame = currentStageFrames[1];
             const auto& hazeFrame = currentStageFrames[2];
             const auto& bloomFrame = currentStageFrames[3];
+            const auto& tonemappingFrame = currentStageFrames[4];
+            const auto& ambientOcclusionFrame = currentStageFrames[5];
 
     // Shadow Task Outputs
     const auto& shadowTaskOutputs = inputs.get3();
 
         // Shadow Stage Frame
         const auto shadowFrame = shadowTaskOutputs[1];
-
 
     fadeEffect->build(task, opaques);
 
@@ -154,6 +160,12 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
     const auto prepareDeferredOutputs = task.addJob<PrepareDeferred>("PrepareDeferred", prepareDeferredInputs);
     const auto deferredFramebuffer = prepareDeferredOutputs.getN<PrepareDeferred::Outputs>(0);
     const auto lightingFramebuffer = prepareDeferredOutputs.getN<PrepareDeferred::Outputs>(1);
+    const auto mainTargetFramebuffer = prepareDeferredOutputs.getN<PrepareDeferred::Outputs>(2);
+
+    if (depth == 0) {
+        const auto simulateInputs = RenderSimulateTask::Inputs(simulateItems, mainTargetFramebuffer).asVarying();
+        task.addJob<RenderSimulateTask>("RenderSimulation", simulateInputs);
+    }
 
     // draw a stencil mask in hidden regions of the framebuffer.
     task.addJob<PrepareStencil>("PrepareStencil", scaledPrimaryFramebuffer);
@@ -161,6 +173,13 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
     // Render opaque objects in DeferredBuffer
     const auto opaqueInputs = DrawStateSortDeferred::Inputs(opaques, lightingModel, jitter).asVarying();
     task.addJob<DrawStateSortDeferred>("DrawOpaqueDeferred", opaqueInputs, shapePlumber);
+
+    if (depth < RenderMirrorTask::MAX_MIRROR_DEPTH) {
+        const auto mirrorInputs = RenderMirrorTask::Inputs(mirrors, mainTargetFramebuffer, jitter).asVarying();
+        for (size_t i = 0; i < RenderMirrorTask::MAX_MIRRORS_PER_LEVEL; i++) {
+            task.addJob<RenderMirrorTask>("RenderMirrorTask" + std::to_string(i) + "Depth" + std::to_string(depth), mirrorInputs, i, cullFunctor, depth);
+        }
+    }
 
     // Opaque all rendered
 
@@ -181,7 +200,7 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
     const auto scatteringResource = task.addJob<SubsurfaceScattering>("Scattering");
 
     // AO job
-    const auto ambientOcclusionInputs = AmbientOcclusionEffect::Input(lightingModel, deferredFrameTransform, deferredFramebuffer, linearDepthTarget).asVarying();
+    const auto ambientOcclusionInputs = AmbientOcclusionEffect::Input(lightingModel, deferredFrameTransform, deferredFramebuffer, linearDepthTarget, ambientOcclusionFrame).asVarying();
     const auto ambientOcclusionOutputs = task.addJob<AmbientOcclusionEffect>("AmbientOcclusion", ambientOcclusionInputs);
     const auto ambientOcclusionFramebuffer = ambientOcclusionOutputs.getN<AmbientOcclusionEffect::Output>(0);
     const auto ambientOcclusionUniforms = ambientOcclusionOutputs.getN<AmbientOcclusionEffect::Output>(1);
@@ -206,7 +225,7 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
     task.addJob<DrawBackgroundStage>("DrawBackgroundDeferred", backgroundInputs);
 
     const auto drawHazeInputs = render::Varying(DrawHaze::Inputs(hazeFrame, lightingFramebuffer, linearDepthTarget, deferredFrameTransform, lightingModel, lightFrame));
-    task.addJob<DrawHaze>("DrawHazeDeferred", drawHazeInputs);
+    task.addJob<DrawHaze>("DrawHazeDeferred", drawHazeInputs, depth > 0);
 
     // Render transparent objects forward in LightingBuffer
     const auto transparentsInputs = RenderTransparentDeferred::Inputs(transparents, hazeFrame, lightFrame, lightingModel, lightClusters, shadowFrame, jitter).asVarying();
@@ -233,7 +252,7 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
     const auto destFramebuffer = static_cast<gpu::FramebufferPointer>(nullptr);
 
     // Lighting Buffer ready for tone mapping
-    const auto toneMappingInputs = ToneMapAndResample::Input(lightingFramebuffer, destFramebuffer).asVarying();
+    const auto toneMappingInputs = ToneMapAndResample::Input(lightingFramebuffer, destFramebuffer, tonemappingFrame).asVarying();
     const auto toneMappedBuffer = task.addJob<ToneMapAndResample>("ToneMapping", toneMappingInputs);
 
     // Debugging task is happening in the "over" layer after tone mapping and just before HUD
@@ -398,8 +417,12 @@ void RenderDeferredTaskDebug::build(JobModel& task, const render::Varying& input
         // Status icon rendering job
         {
             // Grab a texture map representing the different status icons and assign that to the drawStatusJob
-            auto iconMapPath = PathUtils::resourcesPath() + "icons/statusIconAtlas.svg";
-            auto statusIconMap = DependencyManager::get<TextureCache>()->getImageTexture(iconMapPath, image::TextureUsage::STRICT_TEXTURE);
+            static gpu::TexturePointer statusIconMap;
+            static std::once_flag once;
+            std::call_once(once, [] {
+                auto iconMapPath = PathUtils::resourcesPath() + "icons/statusIconAtlas.svg";
+                statusIconMap = DependencyManager::get<TextureCache>()->getImageTexture(iconMapPath, image::TextureUsage::STRICT_TEXTURE);
+            });
             const auto drawStatusInputs = DrawStatus::Input(opaques, jitter).asVarying();
             task.addJob<DrawStatus>("DrawStatus", drawStatusInputs, DrawStatus(statusIconMap));
         }
@@ -407,8 +430,6 @@ void RenderDeferredTaskDebug::build(JobModel& task, const render::Varying& input
         const auto debugZoneInputs = DebugZoneLighting::Inputs(deferredFrameTransform, lightFrame, backgroundFrame).asVarying();
         task.addJob<DebugZoneLighting>("DrawZoneStack", debugZoneInputs);
     }
-
-
 }
 
 gpu::FramebufferPointer PreparePrimaryFramebuffer::createFramebuffer(const char* name, const glm::uvec2& frameSize) {

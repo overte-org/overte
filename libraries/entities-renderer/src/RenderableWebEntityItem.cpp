@@ -168,9 +168,10 @@ void WebEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene
 
     withWriteLock([&] {
         _inputMode = entity->getInputMode();
-        _dpi = entity->getDPI();
+        _dpi = entity->getDpi();
         _color = entity->getColor();
         _alpha = entity->getAlpha();
+        _wantsKeyboardFocus = entity->wantsKeyboardFocus();
         _pulseProperties = entity->getPulseProperties();
 
         if (_contentType == ContentType::NoContent) {
@@ -320,8 +321,9 @@ void WebEntityRenderer::doRender(RenderArgs* args) {
 
     batch.setResourceTexture(0, _texture);
 
+    bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), _billboardMode,
-        args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
+        usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
     batch.setModelTransform(transform);
 
     // Turn off jitter for these entities

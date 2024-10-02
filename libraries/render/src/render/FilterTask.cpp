@@ -148,3 +148,11 @@ void IDsToBounds::run(const RenderContextPointer& renderContext, const ItemIDs& 
         }
     }
 }
+
+void MergeItems::run(const RenderContextPointer& renderContext, const Inputs& inputs, Outputs& outputs) {
+    const auto& array1 = inputs.get0();
+    const auto& array2 = inputs.get1();
+
+    outputs = array1;
+    outputs.insert(outputs.end(), array2.begin(), array2.end());
+}

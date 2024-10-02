@@ -27,7 +27,7 @@
  * @typedef {string} Entities.TextEffect
  */
 
-enum class TextEffect {
+enum class TextEffect : uint8_t {
     NO_EFFECT = 0,
     OUTLINE_EFFECT,
     OUTLINE_WITH_FILL_EFFECT,

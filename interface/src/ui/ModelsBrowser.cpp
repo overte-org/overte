@@ -32,7 +32,7 @@
 #include <NetworkingConstants.h>
 #include <SharedUtil.h>
 
-const char* MODEL_TYPE_NAMES[] = { "entities", "heads", "skeletons", "skeletons", "attachments" };
+const char* MODEL_TYPE_NAMES[] = { "entities", "heads", "skeletons", "skeletons" };
 
 static const QString S3_URL = NetworkingConstants::HF_PUBLIC_CDN_URL;
 static const QString PUBLIC_URL = "http://public.overte.org"; // Changed to Overte but not entirely sure what to do with this yet.

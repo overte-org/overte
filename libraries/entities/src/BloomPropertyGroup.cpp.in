@@ -1,0 +1,134 @@
+//
+//  BloomPropertyGroup.cpp
+//  libraries/entities/src
+//
+//  Created by Sam Gondelman on 8/7/2018
+//  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "BloomPropertyGroup.h"
+
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+
+void BloomPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+
+@Bloom_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void BloomPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
+
+@Bloom_GROUP_COPY_FROM_SCRIPT@
+
+}
+
+void BloomPropertyGroup::merge(const BloomPropertyGroup& other) {
+
+@Bloom_GROUP_MERGE@
+
+}
+
+void BloomPropertyGroup::debugDump() const {
+
+@Bloom_GROUP_DEBUG_DUMP@
+
+}
+
+void BloomPropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@Bloom_GROUP_LIST_CHANGED@
+
+}
+
+bool BloomPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                                  EntityPropertyFlags& requestedProperties,
+                                                  EntityPropertyFlags& propertyFlags,
+                                                  EntityPropertyFlags& propertiesDidntFit,
+                                                  int& propertyCount,
+                                                  OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Bloom_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool BloomPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags, const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@Bloom_GROUP_READ@
+
+@Bloom_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void BloomPropertyGroup::markAllChanged() {
+
+@Bloom_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags BloomPropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@Bloom_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void BloomPropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@Bloom_GROUP_COPY_TO@
+
+}
+
+bool BloomPropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Bloom_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags BloomPropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@Bloom_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int BloomPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                               ReadBitstreamToTreeParams& args,
+                                                               EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                               bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Bloom_GROUP_READ@
+
+    return bytesRead;
+}
+
+void BloomPropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                              QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@Bloom_GROUP_ADD_TO_MAP@
+
+}

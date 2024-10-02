@@ -1,0 +1,151 @@
+//
+//  TonemappingPropertyGroup.cpp
+//  libraries/entities/src
+//
+//  Created by HifiExperiments on 6/23/24
+//  Copyright 2024 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "TonemappingPropertyGroup.h"
+
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+
+inline void addTonemappingCurve(QHash<QString, TonemappingCurve>& lookup, TonemappingCurve curve) { lookup[TonemappingCurveHelpers::getNameForTonemappingCurve(curve)] = curve; }
+const QHash<QString, TonemappingCurve> stringToTonemappingCurveLookup = [] {
+    QHash<QString, TonemappingCurve> toReturn;
+    addTonemappingCurve(toReturn, TonemappingCurve::RGB);
+    addTonemappingCurve(toReturn, TonemappingCurve::SRGB);
+    addTonemappingCurve(toReturn, TonemappingCurve::FILMIC);
+    addTonemappingCurve(toReturn, TonemappingCurve::REINHARD);
+    return toReturn;
+}();
+QString TonemappingPropertyGroup::getCurveAsString() const { return TonemappingCurveHelpers::getNameForTonemappingCurve(_curve); }
+void TonemappingPropertyGroup::setCurveFromString(const QString& curve) {
+    auto curveItr = stringToTonemappingCurveLookup.find(curve.toLower());
+    if (curveItr != stringToTonemappingCurveLookup.end()) {
+        _curve = curveItr.value();
+        _curveChanged = true;
+    }
+}
+
+void TonemappingPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+
+@Tonemapping_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void TonemappingPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
+
+@Tonemapping_GROUP_COPY_FROM_SCRIPT@
+
+}
+
+void TonemappingPropertyGroup::merge(const TonemappingPropertyGroup& other) {
+
+@Tonemapping_GROUP_MERGE@
+
+}
+
+void TonemappingPropertyGroup::debugDump() const {
+
+@Tonemapping_GROUP_DEBUG_DUMP@
+
+}
+
+void TonemappingPropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@Tonemapping_GROUP_LIST_CHANGED@
+
+}
+
+bool TonemappingPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                                  EntityPropertyFlags& requestedProperties,
+                                                  EntityPropertyFlags& propertyFlags,
+                                                  EntityPropertyFlags& propertiesDidntFit,
+                                                  int& propertyCount,
+                                                  OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Tonemapping_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool TonemappingPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags, const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@Tonemapping_GROUP_READ@
+
+@Tonemapping_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void TonemappingPropertyGroup::markAllChanged() {
+
+@Tonemapping_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags TonemappingPropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@Tonemapping_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void TonemappingPropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@Tonemapping_GROUP_COPY_TO@
+
+}
+
+bool TonemappingPropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Tonemapping_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags TonemappingPropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@Tonemapping_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int TonemappingPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                               ReadBitstreamToTreeParams& args,
+                                                               EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                               bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Tonemapping_GROUP_READ@
+
+    return bytesRead;
+}
+
+void TonemappingPropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                              QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@Tonemapping_GROUP_ADD_TO_MAP@
+
+}

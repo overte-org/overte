@@ -1,0 +1,93 @@
+//
+//  ProceduralParticleEffectEntityItem.cpp
+//  libraries/entities/src
+//
+//  Created by HifiExperiements on 11/19/23
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#include "ProceduralParticleEffectEntityItem.h"
+
+#include "EntityTree.h"
+#include "EntityTreeElement.h"
+#include "EntitiesLogging.h"
+#include "EntityScriptingInterface.h"
+
+EntityItemPointer ProceduralParticleEffectEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    std::shared_ptr<ProceduralParticleEffectEntityItem> entity(new ProceduralParticleEffectEntityItem(entityID), [](ProceduralParticleEffectEntityItem* ptr) { ptr->deleteLater(); });
+    entity->setProperties(properties);
+    return entity;
+}
+
+// our non-pure virtual subclass for now...
+ProceduralParticleEffectEntityItem::ProceduralParticleEffectEntityItem(const EntityItemID& entityItemID) :
+    EntityItem(entityItemID)
+{
+    _type = EntityTypes::ProceduralParticleEffect;
+}
+
+EntityItemProperties ProceduralParticleEffectEntityItem::getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const {
+    EntityItemProperties properties = EntityItem::getProperties(desiredProperties, allowEmptyDesiredProperties); // get the properties from our base class
+
+@ProceduralParticleEffect_ENTITY_COPY_TO@
+
+    return properties;
+}
+
+bool ProceduralParticleEffectEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@ProceduralParticleEffect_ENTITY_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags ProceduralParticleEffectEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
+
+@ProceduralParticleEffect_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+void ProceduralParticleEffectEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
+                                                            EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                                            EntityPropertyFlags& requestedProperties,
+                                                            EntityPropertyFlags& propertyFlags,
+                                                            EntityPropertyFlags& propertiesDidntFit,
+                                                            int& propertyCount,
+                                                            OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@ProceduralParticleEffect_ENTITY_APPEND@
+
+}
+
+int ProceduralParticleEffectEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                                         ReadBitstreamToTreeParams& args,
+                                                                         EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                                         bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@ProceduralParticleEffect_ENTITY_READ@
+
+    return bytesRead;
+}
+
+void ProceduralParticleEffectEntityItem::debugDump() const {
+    qCDebug(entities) << "ProceduralParticleEffectEntityItem id:" << getEntityItemID() << "---------------------------------------------";
+    qCDebug(entities) << "    name:" << _name;
+    qCDebug(entities) << "    position:" << debugTreeVector(getWorldPosition());
+    qCDebug(entities) << "    dimensions:" << debugTreeVector(getScaledDimensions());
+    qCDebug(entities) << "    editedAgo:" << debugTime(getLastEdited(), usecTimestampNow());
+    qCDebug(entities) << "    pointer:" << this;
+
+@ProceduralParticleEffect_ENTITY_DEBUG@
+
+}

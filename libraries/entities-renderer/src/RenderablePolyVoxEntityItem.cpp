@@ -185,18 +185,6 @@ void RenderablePolyVoxEntityItem::initializePolyVox() {
     setVoxelVolumeSize(_voxelVolumeSize);
 }
 
-bool isEdged(PolyVoxEntityItem::PolyVoxSurfaceStyle surfaceStyle) {
-    switch (surfaceStyle) {
-        case PolyVoxEntityItem::SURFACE_CUBIC:
-        case PolyVoxEntityItem::SURFACE_MARCHING_CUBES:
-            return false;
-        case PolyVoxEntityItem::SURFACE_EDGED_CUBIC:
-        case PolyVoxEntityItem::SURFACE_EDGED_MARCHING_CUBES:
-            return true;
-    }
-    return false;
-}
-
 void RenderablePolyVoxEntityItem::setVoxelData(const QByteArray& voxelData) {
     // accept compressed voxel information from the entity-server
     bool changed = false;
@@ -212,7 +200,7 @@ void RenderablePolyVoxEntityItem::setVoxelData(const QByteArray& voxelData) {
     }
 }
 
-void RenderablePolyVoxEntityItem::setVoxelSurfaceStyle(PolyVoxSurfaceStyle voxelSurfaceStyle) {
+void RenderablePolyVoxEntityItem::setVoxelSurfaceStyle(uint16_t voxelSurfaceStyle) {
     // this controls whether the polyvox surface extractor does marching-cubes or makes a cubic mesh.  It
     // also determines if the extra "edged" layer is used.
     bool volSizeChanged = false;
@@ -224,7 +212,7 @@ void RenderablePolyVoxEntityItem::setVoxelSurfaceStyle(PolyVoxSurfaceStyle voxel
 
         // if we are switching to or from "edged" we need to force a resize of _volData.
         bool wasEdged = isEdged();
-        bool willBeEdged = isEdged(voxelSurfaceStyle);
+        bool willBeEdged = isEdged((PolyVoxSurfaceStyle)voxelSurfaceStyle);
 
         if (wasEdged != willBeEdged) {
             _volData.reset();
@@ -952,7 +940,7 @@ uint8_t RenderablePolyVoxEntityItem::getVoxel(const ivec3& v) const {
 
 
 uint8_t RenderablePolyVoxEntityItem::getVoxelInternal(const ivec3& v) const {
-    if (!inUserBounds(_volData, _voxelSurfaceStyle, v)) {
+    if (!inUserBounds(_volData, (PolyVoxSurfaceStyle)_voxelSurfaceStyle, v)) {
         return 0;
     }
 
@@ -998,7 +986,7 @@ bool RenderablePolyVoxEntityItem::setVoxelInternal(const ivec3& v, uint8_t toVal
 
 bool RenderablePolyVoxEntityItem::updateOnCount(const ivec3& v, uint8_t toValue) {
     // keep _onCount up to date
-    if (!inUserBounds(_volData, _voxelSurfaceStyle, v)) {
+    if (!inUserBounds(_volData, (PolyVoxSurfaceStyle)_voxelSurfaceStyle, v)) {
         return false;
     }
 
@@ -1210,7 +1198,7 @@ void RenderablePolyVoxEntityItem::cacheNeighbors() {
 
 void RenderablePolyVoxEntityItem::copyUpperEdgesFromNeighbors() {
     // fill in our upper edges with a copy of our neighbors lower edges so that the meshes knit together
-    if (_voxelSurfaceStyle != PolyVoxEntityItem::SURFACE_MARCHING_CUBES) {
+    if ((PolyVoxSurfaceStyle)_voxelSurfaceStyle != PolyVoxEntityItem::SURFACE_MARCHING_CUBES) {
         return;
     }
 
@@ -1315,7 +1303,7 @@ void RenderablePolyVoxEntityItem::recomputeMesh() {
     // use _volData to make a renderable mesh
     PolyVoxSurfaceStyle voxelSurfaceStyle;
     withReadLock([&] {
-        voxelSurfaceStyle = _voxelSurfaceStyle;
+        voxelSurfaceStyle = (PolyVoxSurfaceStyle)_voxelSurfaceStyle;
     });
 
     auto entity = std::static_pointer_cast<RenderablePolyVoxEntityItem>(getThisPointer());
@@ -1414,7 +1402,7 @@ void RenderablePolyVoxEntityItem::computeShapeInfoWorker() {
     graphics::MeshPointer mesh;
 
     withReadLock([&] {
-        voxelSurfaceStyle = _voxelSurfaceStyle;
+        voxelSurfaceStyle = (PolyVoxSurfaceStyle)_voxelSurfaceStyle;
         voxelVolumeSize = _voxelVolumeSize;
         mesh = _mesh;
     });
@@ -1857,8 +1845,9 @@ void PolyVoxEntityRenderer::doRender(RenderArgs* args) {
     PerformanceTimer perfTimer("RenderablePolyVoxEntityItem::render");
     gpu::Batch& batch = *args->_batch;
 
+    bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
     glm::mat4 rotation = glm::mat4_cast(BillboardModeHelpers::getBillboardRotation(_position, _orientation, _billboardMode,
-        args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
+        usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
     Transform transform(glm::translate(_position) * rotation * _lastVoxelToLocalMatrix);
     batch.setModelTransform(transform);
 

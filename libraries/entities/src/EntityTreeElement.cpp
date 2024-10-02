@@ -257,8 +257,8 @@ EntityItemID EntityTreeElement::evalDetailedRayIntersection(const glm::vec3& ori
                     }
                 } else {
                     // if the entity type doesn't support a detailed intersection, then just return the non-AABox results
-                    // Never intersect with particle entities
-                    if (localDistance < distance && entity->getType() != EntityTypes::ParticleEffect) {
+                    // Never intersect with particle or sound entities
+                    if (localDistance < distance && (entity->getType() != EntityTypes::ParticleEffect && entity->getType() != EntityTypes::ProceduralParticleEffect && entity->getType() != EntityTypes::Sound)) {
                         distance = localDistance;
                         face = localFace;
                         surfaceNormal = glm::vec3(rotation * glm::vec4(localSurfaceNormal, 0.0f));
@@ -409,8 +409,8 @@ EntityItemID EntityTreeElement::evalDetailedParabolaIntersection(const glm::vec3
                     }
                 } else {
                     // if the entity type doesn't support a detailed intersection, then just return the non-AABox results
-                    // Never intersect with particle entities
-                    if (localDistance < parabolicDistance && entity->getType() != EntityTypes::ParticleEffect) {
+                    // Never intersect with particle or sound entities
+                    if (localDistance < parabolicDistance && (entity->getType() != EntityTypes::ParticleEffect && entity->getType() != EntityTypes::ProceduralParticleEffect && entity->getType() != EntityTypes::Sound)) {
                         parabolicDistance = localDistance;
                         face = localFace;
                         surfaceNormal = glm::vec3(rotation * glm::vec4(localSurfaceNormal, 0.0f));
@@ -553,6 +553,78 @@ void EntityTreeElement::evalEntitiesInSphereWithName(const glm::vec3& position, 
         QString entityName = entity->getName();
         if ((caseSensitive && name != entityName) || (!caseSensitive && name.toLower() != entityName.toLower())) {
             return;
+        }
+
+        bool success;
+        AABox entityBox = entity->getAABox(success);
+
+        // if the sphere doesn't intersect with our world frame AABox, we don't need to consider the more complex case
+        glm::vec3 penetration;
+        if (success && entityBox.findSpherePenetration(position, radius, penetration)) {
+
+            glm::vec3 dimensions = entity->getScaledDimensions();
+
+            // FIXME - consider allowing the entity to determine penetration so that
+            //         entities could presumably do actual hull testing if they wanted to
+            // FIXME - handle entity->getShapeType() == SHAPE_TYPE_SPHERE case better in particular
+            //         can we handle the ellipsoid case better? We only currently handle perfect spheres
+            //         with centered registration points
+            if (entity->getShapeType() == SHAPE_TYPE_SPHERE && (dimensions.x == dimensions.y && dimensions.y == dimensions.z)) {
+
+                // NOTE: entity->getRadius() doesn't return the true radius, it returns the radius of the
+                //       maximum bounding sphere, which is actually larger than our actual radius
+                float entityTrueRadius = dimensions.x / 2.0f;
+                bool success;
+                glm::vec3 center = entity->getCenterPosition(success);
+
+                if (success && findSphereSpherePenetration(position, radius, center, entityTrueRadius, penetration)) {
+                    foundEntities.push_back(entity->getID());
+                }
+            } else {
+                // determine the worldToEntityMatrix that doesn't include scale because
+                // we're going to use the registration aware aa box in the entity frame
+                glm::mat4 translation = glm::translate(entity->getWorldPosition());
+                glm::mat4 rotation = glm::mat4_cast(entity->getWorldOrientation());
+                glm::mat4 entityToWorldMatrix = translation * rotation;
+                glm::mat4 worldToEntityMatrix = glm::inverse(entityToWorldMatrix);
+
+                glm::vec3 registrationPoint = entity->getRegistrationPoint();
+                glm::vec3 corner = -(dimensions * registrationPoint) + entity->getPivot();
+
+                AABox entityFrameBox(corner, dimensions);
+
+                glm::vec3 entityFrameSearchPosition = glm::vec3(worldToEntityMatrix * glm::vec4(position, 1.0f));
+                if (entityFrameBox.findSpherePenetration(entityFrameSearchPosition, radius, penetration)) {
+                    foundEntities.push_back(entity->getID());
+                }
+            }
+        }
+    });
+}
+
+void EntityTreeElement::evalEntitiesInSphereWithTags(const glm::vec3& position, float radius, const QVector<QString>& tags, bool caseSensitive, PickFilter searchFilter, QVector<QUuid>& foundEntities) const {
+    forEachEntity([&](EntityItemPointer entity) {
+        if (!checkFilterSettings(entity, searchFilter)) {
+            return;
+        }
+
+        QSet<QString> entityTags = entity->getTags();
+        for (const QString& tag : tags) {
+            if (caseSensitive && !entityTags.contains(tag)) {
+                return;
+            } else {
+                const QString lowerTag = tag.toLower();
+                bool found = false;
+                for (const QString& entityTag : entityTags) {
+                    if (lowerTag == entityTag.toLower()) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    return;
+                }
+            }
         }
 
         bool success;

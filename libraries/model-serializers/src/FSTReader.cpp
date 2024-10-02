@@ -22,7 +22,7 @@
 #include <SharedUtil.h>
 
 
-const QStringList SINGLE_VALUE_PROPERTIES{"name", "filename", "texdir", "script", "comment"};
+const QStringList SINGLE_VALUE_PROPERTIES { NAME_FIELD, FILENAME_FIELD, TEXDIR_FIELD, SCRIPT_FIELD, WAIT_FOR_WEARABLES_FIELD, COMMENT_FIELD };
 
 hifi::VariantMultiHash FSTReader::parseMapping(QIODevice* device) {
     hifi::VariantMultiHash properties;
@@ -183,7 +183,6 @@ QString FSTReader::getNameFromType(ModelType modelType) {
         _typesToNames[HEAD_MODEL] = "head";
         _typesToNames[BODY_ONLY_MODEL] = "body";
         _typesToNames[HEAD_AND_BODY_MODEL] = "body+head";
-        _typesToNames[ATTACHMENT_MODEL] = "attachment";
     }
     return _typesToNames[modelType];
 }
@@ -195,9 +194,6 @@ FSTReader::ModelType FSTReader::getTypeFromName(const QString& name) {
         _namesToTypes["head"] = HEAD_MODEL ;
         _namesToTypes["body"] = BODY_ONLY_MODEL;
         _namesToTypes["body+head"] = HEAD_AND_BODY_MODEL;
-
-        // NOTE: this is not yet implemented, but will be used to allow you to attach fully independent models to your avatar
-        _namesToTypes["attachment"] = ATTACHMENT_MODEL;
     }
     return _namesToTypes[name];
 }

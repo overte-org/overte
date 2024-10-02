@@ -25,7 +25,7 @@ public:
 
     void updateTransformForCauterizedMesh(const Transform& modelTransform, const Model::MeshState& meshState, bool useDualQuaternionSkinning);
 
-    void bindTransform(gpu::Batch& batch, const Transform& transform, RenderArgs::RenderMode renderMode) const override;
+    void bindTransform(gpu::Batch& batch, const Transform& transform, RenderArgs::RenderMode renderMode, size_t mirrorDepth) const override;
 
     void setEnableCauterization(bool enableCauterization) { _enableCauterization = enableCauterization; }
 

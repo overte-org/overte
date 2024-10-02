@@ -14,7 +14,7 @@
 
 #include <QString>
 
-enum ComponentMode {
+enum ComponentMode : uint8_t {
     COMPONENT_MODE_INHERIT,
     COMPONENT_MODE_DISABLED,
     COMPONENT_MODE_ENABLED,
@@ -22,7 +22,7 @@ enum ComponentMode {
     COMPONENT_MODE_ITEM_COUNT
 };
 
-enum AvatarPriorityMode {
+enum AvatarPriorityMode : uint8_t {
     AVATAR_PRIORITY_INHERIT,
     AVATAR_PRIORITY_CROWD,
     AVATAR_PRIORITY_HERO,

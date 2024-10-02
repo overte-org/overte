@@ -24,6 +24,8 @@ public:
         TRANSPARENT_SHAPE,
         LIGHT,
         META,
+        MIRROR,
+        SIMULATE,
         OUTLINE,
         LAYER_FRONT_OPAQUE_SHAPE,
         LAYER_FRONT_TRANSPARENT_SHAPE,

@@ -28,7 +28,7 @@ const int MAX_HULL_POINTS = 42;
 const int32_t END_OF_MESH_PART = -1; // bogus vertex index at end of mesh part
 const int32_t END_OF_MESH = -2; // bogus vertex index at end of mesh
 
-enum ShapeType {
+enum ShapeType : uint8_t {
     SHAPE_TYPE_NONE,
     SHAPE_TYPE_BOX,
     SHAPE_TYPE_SPHERE,

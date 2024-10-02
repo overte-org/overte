@@ -52,7 +52,6 @@ public slots:
     // Avatar zone possibly changed
     void entityAdded(EntityItem* entity);
     void entityRemoved(EntityItem* entity);
-    void entityChange();
 
 private slots:
     void queueIncomingPacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer node);

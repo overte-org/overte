@@ -95,11 +95,13 @@ void PerformanceManager::applyPerformancePreset(PerformanceManager::PerformanceP
                 RenderScriptingInterface::RenderMethod::DEFERRED : 
                 RenderScriptingInterface::RenderMethod::FORWARD ) );
 
-            RenderScriptingInterface::getInstance()->setViewportResolutionScale(recommendedPpiScale);
-            
             RenderScriptingInterface::getInstance()->setShadowsEnabled(true);
-            qApp->getRefreshRateManager().setRefreshRateProfile(RefreshRateManager::RefreshRateProfile::REALTIME);
+            RenderScriptingInterface::getInstance()->setHazeEnabled(true);
+            RenderScriptingInterface::getInstance()->setBloomEnabled(true);
+            RenderScriptingInterface::getInstance()->setAmbientOcclusionEnabled(true);
+            RenderScriptingInterface::getInstance()->setViewportResolutionScale(recommendedPpiScale);
 
+            qApp->getRefreshRateManager().setRefreshRateProfile(RefreshRateManager::RefreshRateProfile::REALTIME);
             DependencyManager::get<LODManager>()->setWorldDetailQuality(WORLD_DETAIL_MEDIUM);
             
             break;
@@ -108,30 +110,39 @@ void PerformanceManager::applyPerformancePreset(PerformanceManager::PerformanceP
                 RenderScriptingInterface::RenderMethod::DEFERRED :
                 RenderScriptingInterface::RenderMethod::FORWARD));
 
+            RenderScriptingInterface::getInstance()->setShadowsEnabled(false);
+            RenderScriptingInterface::getInstance()->setHazeEnabled(true);
+            RenderScriptingInterface::getInstance()->setBloomEnabled(true);
+            RenderScriptingInterface::getInstance()->setAmbientOcclusionEnabled(false);
             RenderScriptingInterface::getInstance()->setViewportResolutionScale(recommendedPpiScale);
 
-            RenderScriptingInterface::getInstance()->setShadowsEnabled(false);
             qApp->getRefreshRateManager().setRefreshRateProfile(RefreshRateManager::RefreshRateProfile::REALTIME);
             DependencyManager::get<LODManager>()->setWorldDetailQuality(WORLD_DETAIL_MEDIUM);
 
             break;
         case PerformancePreset::LOW:
             RenderScriptingInterface::getInstance()->setRenderMethod(RenderScriptingInterface::RenderMethod::FORWARD);
-            RenderScriptingInterface::getInstance()->setShadowsEnabled(false);
-            qApp->getRefreshRateManager().setRefreshRateProfile(RefreshRateManager::RefreshRateProfile::REALTIME);
 
+            RenderScriptingInterface::getInstance()->setShadowsEnabled(false);
+            RenderScriptingInterface::getInstance()->setHazeEnabled(true);
+            RenderScriptingInterface::getInstance()->setBloomEnabled(false);
+            RenderScriptingInterface::getInstance()->setAmbientOcclusionEnabled(false);
             RenderScriptingInterface::getInstance()->setViewportResolutionScale(recommendedPpiScale);
 
+            qApp->getRefreshRateManager().setRefreshRateProfile(RefreshRateManager::RefreshRateProfile::REALTIME);
             DependencyManager::get<LODManager>()->setWorldDetailQuality(WORLD_DETAIL_LOW);
 
             break;
         case PerformancePreset::LOW_POWER:
             RenderScriptingInterface::getInstance()->setRenderMethod(RenderScriptingInterface::RenderMethod::FORWARD);
-            RenderScriptingInterface::getInstance()->setShadowsEnabled(false);
-            qApp->getRefreshRateManager().setRefreshRateProfile(RefreshRateManager::RefreshRateProfile::ECO);
 
+            RenderScriptingInterface::getInstance()->setShadowsEnabled(false);
+            RenderScriptingInterface::getInstance()->setHazeEnabled(false);
+            RenderScriptingInterface::getInstance()->setBloomEnabled(false);
+            RenderScriptingInterface::getInstance()->setAmbientOcclusionEnabled(false);
             RenderScriptingInterface::getInstance()->setViewportResolutionScale(recommendedPpiScale);
 
+            qApp->getRefreshRateManager().setRefreshRateProfile(RefreshRateManager::RefreshRateProfile::ECO);
             DependencyManager::get<LODManager>()->setWorldDetailQuality(WORLD_DETAIL_LOW);
 
             break;

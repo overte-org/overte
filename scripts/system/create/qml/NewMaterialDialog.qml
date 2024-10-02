@@ -28,7 +28,6 @@ Rectangle {
     signal sendToScript(var message);
     property bool keyboardEnabled: false
     property bool punctuationMode: false
-    property bool keyboardRasied: false
 
     function errorMessageBox(message) {
         try {

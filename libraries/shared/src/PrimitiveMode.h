@@ -25,7 +25,7 @@
  * @typedef {string} Entities.PrimitiveMode
  */
 
-enum class PrimitiveMode {
+enum class PrimitiveMode : uint8_t {
     SOLID = 0,
     LINES
 };

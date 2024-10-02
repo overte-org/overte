@@ -44,7 +44,7 @@ OtherAvatar::OtherAvatar(QThread* thread) : Avatar(thread) {
     // give the pointer to our head to inherited _headData variable from AvatarData
     _headData = new Head(this);
     _skeletonModel = std::make_shared<SkeletonModel>(this, nullptr);
-    _skeletonModel->setLoadingPriority(OTHERAVATAR_LOADING_PRIORITY);
+    _skeletonModel->setLoadingPriorityOperator([]() { return OTHERAVATAR_LOADING_PRIORITY; });
     connect(_skeletonModel.get(), &Model::setURLFinished, this, &Avatar::setModelURLFinished);
     connect(_skeletonModel.get(), &Model::rigReady, this, &Avatar::rigReady);
     connect(_skeletonModel.get(), &Model::rigReset, this, &Avatar::rigReset);
@@ -316,7 +316,6 @@ void OtherAvatar::simulate(float deltaTime, bool inView) {
     {
         PROFILE_RANGE(simulation, "misc");
         measureMotionDerivatives(deltaTime);
-        simulateAttachments(deltaTime);
         updatePalms();
     }
     {
@@ -384,7 +383,7 @@ void OtherAvatar::debugJointData() const {
 }
 
 void OtherAvatar::handleChangedAvatarEntityData() {
-    PerformanceTimer perfTimer("attachments");
+    PerformanceTimer perfTimer("avatarEntities");
 
     // AVATAR ENTITY UPDATE FLOW
     // - if queueEditEntityMessage() sees "AvatarEntity" HostType it calls _myAvatar->storeAvatarEntityDataPayload()
@@ -596,7 +595,8 @@ void OtherAvatar::handleChangedAvatarEntityData() {
         }
     });
 
-    setAvatarEntityDataChanged(false);
+    _avatarEntityDataChanged = false;
+    _hasCheckedForAvatarEntities = true;
 }
 
 void OtherAvatar::onAddAttachedAvatarEntity(const QUuid& id) {
@@ -629,5 +629,13 @@ void OtherAvatar::updateAttachedAvatarEntities() {
         for (const QUuid& id : _attachedAvatarEntities) {
             treeRenderer->onEntityChanged(id);
         }
+    }
+}
+
+void OtherAvatar::onIdentityRecieved() {
+    if (_avatarEntityIdentityCountdown > 0) {
+        _avatarEntityIdentityCountdown--;
+    } else {
+        _hasCheckedForAvatarEntities = true;
     }
 }

@@ -11,7 +11,7 @@
 
 #include "QString"
 
-enum MaterialMappingMode {
+enum MaterialMappingMode : uint8_t {
     UV = 0,
     PROJECTED,
     // put new mapping-modes before this line.

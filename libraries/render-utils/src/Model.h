@@ -41,6 +41,7 @@
 #include "Rig.h"
 #include "PrimitiveMode.h"
 #include "BillboardMode.h"
+#include "MirrorMode.h"
 
 // Use dual quaternion skinning!
 // Must match define in Skinning.slh
@@ -130,6 +131,12 @@ public:
 
     void setRenderWithZones(const QVector<QUuid>& renderWithZones, const render::ScenePointer& scene = nullptr);
     const QVector<QUuid>& getRenderWithZones() const { return _renderWithZones; }
+
+    void setMirrorMode(MirrorMode mirrorMode, const render::ScenePointer& scene = nullptr);
+    MirrorMode getMirrorMode() const { return _mirrorMode; }
+
+    void setPortalExitID(const QUuid& portalExitID, const render::ScenePointer& scene = nullptr);
+    const QUuid& getPortalExitID() const { return _portalExitID; }
 
     // Access the current RenderItemKey Global Flags used by the model and applied to the render items  representing the parts of the model.
     const render::ItemKey getRenderItemKeyGlobalFlags() const;
@@ -288,7 +295,7 @@ public:
     // returns 'true' if needs fullUpdate after geometry change
     virtual bool updateGeometry();
 
-    void setLoadingPriority(float priority) { _loadingPriority = priority; }
+    void setLoadingPriorityOperator(std::function<float()> priorityOperator) { _loadingPriorityOperator = priorityOperator; }
 
     size_t getRenderInfoVertexCount() const { return _renderInfoVertexCount; }
     size_t getRenderInfoTextureSize();
@@ -503,13 +510,15 @@ protected:
     bool _cauterized { false };
     bool _cullWithParent { false };
     QVector<QUuid> _renderWithZones;
+    MirrorMode _mirrorMode { MirrorMode::NONE };
+    QUuid _portalExitID;
 
     bool shouldInvalidatePayloadShapeKey(int meshIndex);
 
     uint64_t _created;
 
 private:
-    float _loadingPriority { 0.0f };
+    std::function<float()> _loadingPriorityOperator { []() { return 0.0f; } };
 
     void calculateTextureInfo();
 

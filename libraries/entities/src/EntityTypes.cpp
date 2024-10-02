@@ -4,6 +4,7 @@
 //
 //  Created by Brad Hefta-Gaub on 12/4/13.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -23,6 +24,7 @@
 #include "ShapeEntityItem.h"
 #include "ModelEntityItem.h"
 #include "ParticleEffectEntityItem.h"
+#include "ProceduralParticleEffectEntityItem.h"
 #include "TextEntityItem.h"
 #include "ImageEntityItem.h"
 #include "WebEntityItem.h"
@@ -34,6 +36,7 @@
 #include "LightEntityItem.h"
 #include "ZoneEntityItem.h"
 #include "MaterialEntityItem.h"
+#include "SoundEntityItem.h"
 
 QMap<EntityTypes::EntityType, QString> EntityTypes::_typeToNameMap;
 QMap<QString, EntityTypes::EntityType> EntityTypes::_nameToTypeMap;
@@ -51,6 +54,7 @@ REGISTER_ENTITY_TYPE(Text)
 REGISTER_ENTITY_TYPE(Image)
 REGISTER_ENTITY_TYPE(Web)
 REGISTER_ENTITY_TYPE(ParticleEffect)
+REGISTER_ENTITY_TYPE(ProceduralParticleEffect)
 REGISTER_ENTITY_TYPE(Line)
 REGISTER_ENTITY_TYPE(PolyLine)
 REGISTER_ENTITY_TYPE(PolyVox)
@@ -59,6 +63,7 @@ REGISTER_ENTITY_TYPE(Gizmo)
 REGISTER_ENTITY_TYPE(Light)
 REGISTER_ENTITY_TYPE(Zone)
 REGISTER_ENTITY_TYPE(Material)
+REGISTER_ENTITY_TYPE(Sound)
 
 bool EntityTypes::typeIsValid(EntityType type) {
     return type > EntityType::Unknown && type <= EntityType::NUM_TYPES;
