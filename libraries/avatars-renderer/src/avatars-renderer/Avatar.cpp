@@ -1040,7 +1040,7 @@ void Avatar::renderDisplayName(gpu::Batch& batch, const ViewFrustum& view, const
         QByteArray nameUTF8 = renderedDisplayName.toLocal8Bit();
 
         // Render text slightly in front to avoid z-fighting
-        textTransform.postTranslate(glm::vec3(0.0f, 0.0f, SLIGHTLY_IN_FRONT * displayNameRenderer->getFontSize()));
+        textTransform.postTranslate(glm::vec3(0.0f, 0.0f, SLIGHTLY_IN_FRONT));
         batch.setModelTransform(textTransform);
         {
             PROFILE_RANGE_BATCH(batch, __FUNCTION__":renderText");

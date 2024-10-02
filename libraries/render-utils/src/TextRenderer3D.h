@@ -25,7 +25,7 @@ public:
     static TextRenderer3D* getInstance(const char* family);
 
     glm::vec2 computeExtent(const QString& str) const;
-    float getFontSize() const; // Pixel size
+    float getFontHeight() const;
 
     void draw(gpu::Batch& batch, const Font::DrawProps& props);
     void draw(gpu::Batch& batch, const QString& font, const Font::DrawProps& props);

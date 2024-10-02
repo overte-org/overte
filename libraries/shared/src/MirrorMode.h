@@ -30,7 +30,7 @@
  * @typedef {string} MirrorMode
  */
 
-enum class MirrorMode {
+enum class MirrorMode : uint8_t {
     NONE = 0,
     MIRROR,
     PORTAL

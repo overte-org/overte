@@ -43,6 +43,7 @@
 #include "GizmoType.h"
 #include "TextEffect.h"
 #include "TextAlignment.h"
+#include "TextVerticalAlignment.h"
 #include "MirrorMode.h"
 #include "TonemappingCurve.h"
 #include "AmbientOcclusionTechnique.h"
@@ -288,6 +289,7 @@ public:
     static int unpackDataFromBytes(const unsigned char* dataBytes, GizmoType& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, TextEffect& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, TextAlignment& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
+    static int unpackDataFromBytes(const unsigned char* dataBytes, TextVerticalAlignment& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, MirrorMode& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, TonemappingCurve& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, AmbientOcclusionTechnique& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }

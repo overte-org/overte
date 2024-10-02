@@ -361,6 +361,7 @@ enum class EntityVersion : PacketVersion {
     TonemappingAndAmbientOcclusion,
     ModelLoadPriority,
     PropertyCleanup,
+    TextVerticalAlignment,
 
     // Add new versions above here
     NUM_PACKET_TYPE,

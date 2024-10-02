@@ -45,6 +45,9 @@
     "textAlignment": {
         "tooltip": "How the text is aligned within its left and right bounds."
     },
+    "textVerticalAlignment": {
+        "tooltip": "How the text is aligned within its top and bottom bounds."
+    },
     "topMargin": {
         "tooltip": "The top margin, in meters."
     },

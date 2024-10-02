@@ -37,7 +37,7 @@
  * </table>
  * @typedef {string} Entities.Shape
  */
-enum class EntityShape {
+enum class EntityShape : uint8_t {
     Triangle,
     Quad,
     Hexagon,

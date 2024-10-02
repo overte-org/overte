@@ -25,10 +25,6 @@
 using namespace render;
 using namespace render::entities;
 
-static const int FIXED_FONT_POINT_SIZE = 40;
-const int FIXED_FONT_SCALING_RATIO = FIXED_FONT_POINT_SIZE * 92.0f; // Determined through experimentation to fit font to line height.
-const float LINE_SCALE_RATIO = 1.2f;
-
 TextEntityRenderer::TextEntityRenderer(const EntityItemPointer& entity) :
     Parent(entity),
     _textRenderer(TextRenderer3D::getInstance(ROBOTO_FONT_FAMILY)) {
@@ -77,6 +73,7 @@ void TextEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointe
     _effectColor = toGlm(entity->getTextEffectColor());
     _effectThickness = entity->getTextEffectThickness();
     _alignment = entity->getAlignment();
+    _verticalAlignment = entity->getVerticalAlignment();
 
     bool materialChanged = false;
     glm::vec3 color = toGlm(entity->getBackgroundColor());
@@ -192,12 +189,8 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
 
 QSizeF TextEntityRenderer::textSize(const QString& text) const {
     auto extents = _textRenderer->computeExtent(text);
-    extents.y *= 2.0f;
-
-    float maxHeight = (float)_textRenderer->computeExtent("Xy").y * LINE_SCALE_RATIO;
-    float pointToWorldScale = (maxHeight / FIXED_FONT_SCALING_RATIO) * _lineHeight;
-
-    return QSizeF(extents.x, extents.y) * pointToWorldScale;
+    float scale = _lineHeight / _textRenderer->getFontHeight();
+    return scale * QSizeF(extents.x, extents.y);
 }
 
 void TextEntityRenderer::onAddToSceneTyped(const TypedEntityPointer& entity) {
@@ -374,14 +367,18 @@ void entities::TextPayload::render(RenderArgs* args) {
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), textRenderable->_billboardMode,
         usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
 
-    float scale = textRenderable->_lineHeight / textRenderer->getFontSize();
+    float scale = 1.0f;
+    float fontHeight = textRenderer->getFontHeight();
+    if (fontHeight > 0.0f) {
+        scale = textRenderable->_lineHeight / fontHeight;
+    }
     transform.postTranslate(glm::vec3(-0.5, 0.5, 1.0f + EPSILON / dimensions.z));
     transform.setScale(scale);
     batch.setModelTransform(transform);
 
     glm::vec2 bounds = glm::vec2(dimensions.x - (textRenderable->_leftMargin + textRenderable->_rightMargin), dimensions.y - (textRenderable->_topMargin + textRenderable->_bottomMargin));
     textRenderer->draw(batch, textRenderable->_font, { textRenderable->_text, textColor, effectColor, { textRenderable->_leftMargin / scale, -textRenderable->_topMargin / scale },
-        bounds / scale, scale, textRenderable->_effectThickness, textRenderable->_effect, textRenderable->_alignment, textRenderable->_unlit, forward, mirror });
+        bounds / scale, scale, textRenderable->_effectThickness, textRenderable->_effect, textRenderable->_alignment, textRenderable->_verticalAlignment, textRenderable->_unlit, forward, mirror });
 }
 
 namespace render {

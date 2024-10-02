@@ -74,6 +74,7 @@ private:
 
     QString _font { "" };
     TextAlignment _alignment { TextAlignment::LEFT };
+    TextVerticalAlignment _verticalAlignment { TextVerticalAlignment::TOP };
     TextEffect _effect { TextEffect::NO_EFFECT };
     glm::vec3 _effectColor { 0 };
     float _effectThickness { 0.0f };

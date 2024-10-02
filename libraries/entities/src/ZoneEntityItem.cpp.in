@@ -239,80 +239,80 @@ void ZoneEntityItem::resetRenderingPropertiesChanged() {
     });
 }
 
-void ZoneEntityItem::setSkyboxMode(const uint32_t value) {
+void ZoneEntityItem::setSkyboxMode(const uint8_t value) {
     if (value < COMPONENT_MODE_ITEM_COUNT && value != _skyboxMode) {
         _skyboxMode = value;
         _skyboxPropertiesChanged = true;
     }
 }
 
-uint32_t ZoneEntityItem::getSkyboxMode() const {
+uint8_t ZoneEntityItem::getSkyboxMode() const {
     return _skyboxMode;
 }
 
-void ZoneEntityItem::setKeyLightMode(const uint32_t value) {
+void ZoneEntityItem::setKeyLightMode(const uint8_t value) {
     if (value < COMPONENT_MODE_ITEM_COUNT && value != _keyLightMode) {
         _keyLightMode = value;
         _keyLightPropertiesChanged = true;
     }
 }
 
-uint32_t ZoneEntityItem::getKeyLightMode() const {
+uint8_t ZoneEntityItem::getKeyLightMode() const {
     return _keyLightMode;
 }
 
-void ZoneEntityItem::setAmbientLightMode(const uint32_t value) {
+void ZoneEntityItem::setAmbientLightMode(const uint8_t value) {
     if (value < COMPONENT_MODE_ITEM_COUNT && value != _ambientLightMode) {
         _ambientLightMode = value;
         _ambientLightPropertiesChanged = true;
     }
 }
 
-uint32_t ZoneEntityItem::getAmbientLightMode() const {
+uint8_t ZoneEntityItem::getAmbientLightMode() const {
     return _ambientLightMode;
 }
 
-void ZoneEntityItem::setHazeMode(const uint32_t value) {
+void ZoneEntityItem::setHazeMode(const uint8_t value) {
     if (value < COMPONENT_MODE_ITEM_COUNT && value != _hazeMode) {
         _hazeMode = value;
         _hazePropertiesChanged = true;
     }
 }
 
-uint32_t ZoneEntityItem::getHazeMode() const {
+uint8_t ZoneEntityItem::getHazeMode() const {
     return _hazeMode;
 }
 
-void ZoneEntityItem::setBloomMode(const uint32_t value) {
+void ZoneEntityItem::setBloomMode(const uint8_t value) {
     if (value < COMPONENT_MODE_ITEM_COUNT && value != _bloomMode) {
         _bloomMode = value;
         _bloomPropertiesChanged = true;
     }
 }
 
-uint32_t ZoneEntityItem::getBloomMode() const {
+uint8_t ZoneEntityItem::getBloomMode() const {
     return _bloomMode;
 }
 
-void ZoneEntityItem::setTonemappingMode(const uint32_t value) {
+void ZoneEntityItem::setTonemappingMode(const uint8_t value) {
     if (value < COMPONENT_MODE_ITEM_COUNT && value != _tonemappingMode) {
         _tonemappingMode = value;
         _tonemappingPropertiesChanged = true;
     }
 }
 
-uint32_t ZoneEntityItem::getTonemappingMode() const {
+uint8_t ZoneEntityItem::getTonemappingMode() const {
     return _tonemappingMode;
 }
 
-void ZoneEntityItem::setAmbientOcclusionMode(const uint32_t value) {
+void ZoneEntityItem::setAmbientOcclusionMode(const uint8_t value) {
     if (value < COMPONENT_MODE_ITEM_COUNT && value != _ambientOcclusionMode) {
         _ambientOcclusionMode = value;
         _ambientOcclusionPropertiesChanged = true;
     }
 }
 
-uint32_t ZoneEntityItem::getAmbientOcclusionMode() const {
+uint8_t ZoneEntityItem::getAmbientOcclusionMode() const {
     return _ambientOcclusionMode;
 }
 

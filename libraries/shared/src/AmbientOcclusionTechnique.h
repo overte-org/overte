@@ -25,7 +25,7 @@
  * @typedef {string} AmbientOcclusionTechnique
  */
 
-enum class AmbientOcclusionTechnique {
+enum class AmbientOcclusionTechnique : uint8_t {
     SSAO = 0,
     HBAO,
 };
