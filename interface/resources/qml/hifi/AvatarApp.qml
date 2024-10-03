@@ -238,7 +238,6 @@ Rectangle {
         }
 
         pageTitle: currentPage
-        avatarIconVisible: mainPageVisible
         settingsButtonVisible: mainPageVisible
         onSettingsClicked: {
             displayNameInput.focus = false;
