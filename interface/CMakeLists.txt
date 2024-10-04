@@ -189,6 +189,8 @@ else ()
   add_executable(${TARGET_NAME} ${INTERFACE_SRCS} ${QM})
 endif ()
 
+set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+
 if (NOT ANDROID)
   add_dependencies(${TARGET_NAME} resources)
 endif()
