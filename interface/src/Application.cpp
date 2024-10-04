@@ -232,7 +232,6 @@
 
 #include <GPUIdent.h>
 #include <gl/GLHelpers.h>
-#include <src/scripting/GooglePolyScriptingInterface.h>
 #include <EntityScriptClient.h>
 #include <ModelScriptingInterface.h>
 
@@ -908,7 +907,6 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
     auto entityScriptServerLog = DependencyManager::get<EntityScriptServerLogClient>();
     QObject::connect(scriptEngines.data(), &ScriptEngines::requestingEntityScriptServerLog, entityScriptServerLog.data(), &EntityScriptServerLogClient::requestMessagesForScriptEngines);
 
-    DependencyManager::set<GooglePolyScriptingInterface>();
     DependencyManager::set<OctreeStatsProvider>(nullptr, qApp->getOcteeSceneStats());
     DependencyManager::set<AvatarBookmarks>();
     DependencyManager::set<LocationBookmarks>();
@@ -4084,11 +4082,8 @@ bool Application::importFromZIP(const QString& filePath) {
     qDebug() << "A zip file has been dropped in: " << filePath;
     QUrl empty;
     // handle Blocks download from Marketplace
-    if (filePath.contains("poly.google.com/downloads")) {
-        addAssetToWorldFromURL(filePath);
-    } else {
-        qApp->getFileDownloadInterface()->runUnzip(filePath, empty, true, true, false);
-    }
+    qApp->getFileDownloadInterface()->runUnzip(filePath, empty, true, true, false);
+    
     return true;
 }
 
@@ -7643,8 +7638,6 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     scriptEngine->registerGlobalObject("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
     scriptEngine->registerGlobalObject("Users", DependencyManager::get<UsersScriptingInterface>().data());
 
-    //scriptEngine->registerGlobalObject("GooglePoly", DependencyManager::get<GooglePolyScriptingInterface>().data());
-
     if (auto steamClient = PluginManager::getInstance()->getSteamClientPlugin()) {
         scriptEngine->registerGlobalObject("Steam", new SteamScriptingInterface(scriptManager.get(), steamClient.get()));
     }
@@ -8043,15 +8036,6 @@ void Application::addAssetToWorldFromURL(QString url) {
     if (url.contains("filename")) {
         filename = url.section("filename=", 1, 1);  // Filename is in "?filename=" parameter at end of URL.
     }
-    if (url.contains("poly.google.com/downloads")) {
-        filename = url.section('/', -1);
-        if (url.contains("noDownload")) {
-            filename.remove(".zip?noDownload=false");
-        } else {
-            filename.remove(".zip");
-        }
-
-    }
 
     if (!DependencyManager::get<NodeList>()->getThisNodeCanWriteAssets()) {
         QString errorInfo = "You do not have permissions to write to the Asset Server.";
@@ -8079,15 +8063,6 @@ void Application::addAssetToWorldFromURLRequestFinished() {
 
     if (url.contains("filename")) {
         filename = url.section("filename=", 1, 1);  // Filename is in "?filename=" parameter at end of URL.
-    }
-    if (url.contains("poly.google.com/downloads")) {
-        filename = url.section('/', -1);
-        if (url.contains("noDownload")) {
-            filename.remove(".zip?noDownload=false");
-        } else {
-            filename.remove(".zip");
-        }
-        isBlocks = true;
     }
 
     if (result == ResourceRequest::Success) {

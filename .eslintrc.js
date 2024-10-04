@@ -42,7 +42,6 @@ module.exports = {
         "EventBridge": false,
         "FaceTracker": false,
         "GlobalServices": false,
-        "GooglePoly": false,
         "Graphics": false,
         "HifiAbout": false,
         "HMD": false,
