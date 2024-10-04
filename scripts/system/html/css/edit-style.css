@@ -1061,13 +1061,16 @@ span.indented {
 
 div.refresh {
     box-sizing: border-box;
-    padding-right: 44px;
+    display: flex;
 }
+
+div.refresh input[type="text"] {
+    flex: 1 1;
+    margin-right: 6px;
+}
+
 div.refresh input[type="button"] {
-    float: right;
-    margin-right: -44px;
-    position: relative;
-    left: 10px;
+    flex: 0 0;
 }
 
 .color-picker {
