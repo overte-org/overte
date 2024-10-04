@@ -271,7 +271,7 @@ if (APPLE)
     BUNDLE DESTINATION "."
     COMPONENT applications)
 
-  set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
+  #set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 
   include(CPackComponent)
 

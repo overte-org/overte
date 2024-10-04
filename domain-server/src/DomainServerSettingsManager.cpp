@@ -39,6 +39,7 @@
 #include <FingerprintUtils.h>
 #include <ModerationFlags.h>
 
+#include <PathUtils.h>
 #include "DomainServerNodeData.h"
 
 const QString SETTINGS_DESCRIPTION_RELATIVE_PATH = "/resources/describe-settings.json";
@@ -63,10 +64,13 @@ const QString SETTINGS_VIEWPOINT_KEY = "viewpoint";
 
 DomainServerSettingsManager::DomainServerSettingsManager() {
     // load the description object from the settings description
-    qDebug() << "Application dir: " << QCoreApplication::applicationDirPath();
-    QString descriptionFilePath = QCoreApplication::applicationDirPath() + SETTINGS_DESCRIPTION_RELATIVE_PATH;
+
+    QString descriptionFilePath = PathUtils::getSettingsDescriptionPath();
     QFile descriptionFile(descriptionFilePath);
-    descriptionFile.open(QIODevice::ReadOnly);
+    if (!descriptionFile.open(QIODevice::ReadOnly)) {
+        qCritical() << "Failed to read settings description file" << descriptionFile;
+        // Domain server will abort after failing on the attempt to parse the config below
+    }
 
     QJsonParseError parseError;
     QJsonDocument descriptionDocument = QJsonDocument::fromJson(descriptionFile.readAll(), &parseError);
@@ -1944,14 +1948,14 @@ void DomainServerSettingsManager::persistToFile() {
         // If the path already exists when the `mkpath` method is
         // called, it will return true. It will only return false if the
         // path doesn't exist after the call returns.
-        qCritical("Could not create the settings file parent directory. Unable to persist settings.");
+        qCritical() << "Could not create the settings file parent directory" << QFileInfo(settingsFilename).absolutePath() << ". Unable to persist settings.";
         QWriteLocker locker(&_settingsLock);
         _configMap.loadConfig();
         return;
     }
     QSaveFile settingsFile(settingsFilename);
     if (!settingsFile.open(QIODevice::WriteOnly)) {
-        qCritical("Could not open the JSON settings file. Unable to persist settings.");
+        qCritical() << "Could not open the JSON settings file" << settingsFilename << ". Unable to persist settings.";
         QWriteLocker locker(&_settingsLock);
         _configMap.loadConfig();
         return;
