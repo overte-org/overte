@@ -2130,6 +2130,24 @@
         if (isActive) {
             cameraManager.keyPressEvent(event);
         }
+
+        // Hacks to get the menu bar buttons to work
+        // Copy
+        if (event.text.toLowerCase() === "c" && event.isControl && !event.isShifted) {
+            selectionManager.copySelectedEntities();
+        }
+        // Paste
+        if (event.text.toLowerCase() === "v" && event.isControl && !event.isShifted) {
+            selectionManager.pasteEntities();
+        }
+        // Cut
+        if (event.text.toLowerCase() === "x" && event.isControl && !event.isShifted) {
+            selectionManager.cutSelectedEntities();
+        }
+        // Delete - This uses the physical 'delete' key on a keyboard.
+        if (event.text.toLowerCase() === "delete" && !event.isControl && !event.isShifted) {
+            createApp.deleteSelectedEntities();
+        }
     };
     var keyReleaseEvent = function (event) {
         if (isActive) {
@@ -2139,11 +2157,6 @@
     Controller.keyReleaseEvent.connect(keyReleaseEvent);
     Controller.keyPressEvent.connect(keyPressEvent);
 
-    function deleteKey(value) {
-        if (value === 0) { // on release
-            createApp.deleteSelectedEntities();
-        }
-    }
     function deselectKey(value) {
         if (value === 0) { // on release
             selectionManager.clearSelections(this);
@@ -3105,11 +3118,6 @@
     var isOnMacPlatform = Controller.getValue(Controller.Hardware.Application.PlatformMac);
 
     var mapping = Controller.newMapping(CONTROLLER_MAPPING_NAME);
-    if (isOnMacPlatform) {
-        mapping.from([Controller.Hardware.Keyboard.Backspace]).to(deleteKey);
-    } else {
-        mapping.from([Controller.Hardware.Keyboard.Delete]).to(deleteKey);
-    }
     mapping.from([Controller.Hardware.Keyboard.T]).to(toggleKey);
     mapping.from([Controller.Hardware.Keyboard.F]).to(focusKey);
     mapping.from([Controller.Hardware.Keyboard.J]).to(gridKey);
@@ -3120,15 +3128,9 @@
     mapping.from([Controller.Hardware.Keyboard["7"]]).to(quickRotate90xKey);
     mapping.from([Controller.Hardware.Keyboard["8"]]).to(quickRotate90yKey);
     mapping.from([Controller.Hardware.Keyboard["9"]]).to(quickRotate90zKey);
-    mapping.from([Controller.Hardware.Keyboard.X])
-        .when([Controller.Hardware.Keyboard.Control])
-        .to(whenReleased(function() { selectionManager.cutSelectedEntities() }));
     mapping.from([Controller.Hardware.Keyboard.C])
         .when([Controller.Hardware.Keyboard.Control])
         .to(whenReleased(function() { selectionManager.copySelectedEntities() }));
-    mapping.from([Controller.Hardware.Keyboard.V])
-        .when([Controller.Hardware.Keyboard.Control])
-        .to(whenReleased(function() { selectionManager.pasteEntities() }));
     mapping.from([Controller.Hardware.Keyboard.D])
         .when([Controller.Hardware.Keyboard.Control])
         .to(whenReleased(function() { selectionManager.duplicateSelection() }));
@@ -3152,10 +3154,8 @@
 
         var pressedValue = 0.0;
 
-        if ((!isOnMacPlatform && keyUpEvent.keyCodeString === "Delete")
-            || (isOnMacPlatform && keyUpEvent.keyCodeString === "Backspace")) {
-
-            deleteKey(pressedValue);
+        if (isOnMacPlatform && keyUpEvent.keyCodeString === "Backspace") {
+            createApp.deleteSelectedEntities();
         } else if (keyUpEvent.keyCodeString === "T") {
             toggleKey(pressedValue);
         } else if (keyUpEvent.keyCodeString === "F") {
@@ -3176,12 +3176,8 @@
             quickRotate90yKey(pressedValue);
         } else if (keyUpEvent.keyCodeString === "9") {
             quickRotate90zKey(pressedValue);
-        } else if (keyUpEvent.controlKey && keyUpEvent.keyCodeString === "X") {
-            selectionManager.cutSelectedEntities();
         } else if (keyUpEvent.controlKey && keyUpEvent.keyCodeString === "C") {
             selectionManager.copySelectedEntities();
-        } else if (keyUpEvent.controlKey && keyUpEvent.keyCodeString === "V") {
-            selectionManager.pasteEntities();
         } else if (keyUpEvent.controlKey && keyUpEvent.keyCodeString === "D") {
             selectionManager.duplicateSelection();
         } else if (!isOnMacPlatform && keyUpEvent.controlKey && !keyUpEvent.shiftKey && keyUpEvent.keyCodeString === "Z") {
