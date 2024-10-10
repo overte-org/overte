@@ -20,6 +20,8 @@ import controlsUit 1.0 as HifiControlsUit
 import stylesUit 1.0 as HifiStylesUit
 import TabletScriptingInterface 1.0
 
+// FIXME: The bottom text gets cut off due to new combo box. Replace with flexbox layout?.
+
 Item {
     z: -2
     id: linkAccountBody
@@ -74,6 +76,8 @@ Item {
     }
 
     function login() {
+        var loginType = loginTypeComboBox.model.get(loginTypeComboBox.currentIndex).text;
+
         // make sure the directory server is set so we don't send your password to the wrong place!
         if (!isLoggingInToDomain) {
             Settings.setValue("private/selectedMetaverseURL", metaverseServerField.text);
@@ -90,7 +94,7 @@ Item {
         if (!isLoggingInToDomain) {
             loginDialog.login(emailField.text, passwordField.text);
         } else {
-            loginDialog.loginDomain(emailField.text, passwordField.text);
+            loginDialog.loginDomain(emailField.text, passwordField.text, loginType);
         }
         
         if (linkAccountBody.loginDialogPoppedUp) {
@@ -128,6 +132,9 @@ Item {
         var savedDisplayName = Settings.getValue("Avatar/displayName", "");
         displayNameField.text = savedDisplayName;
         emailField.placeholderText = "Username or Email";
+        if (isLoggingInToDomain) {
+            loginTypeComboBox.visible = true;
+        }
         if (!isLoggingInToDomain) {
             var savedUsername = Settings.getValue("keepMeLoggedIn/savedUsername", "");
             emailField.text = keepMeLoggedInCheckbox.checked ? savedUsername === "Unknown user" ? "" : savedUsername : "";
@@ -234,6 +241,26 @@ Item {
                 }
             }
 
+            HifiControlsUit.ComboBox {
+                id: loginTypeComboBox
+                comboBox.textRole: "text"
+                currentIndex: 0
+                width: root.bannerWidth
+                visible: false
+                anchors {
+                    top: loginDialogTextContainer.bottom
+                    topMargin: 1.5 * hifi.dimensions.contentSpacing.y
+                }
+
+                model: ListModel {
+                    ListElement {
+                        text: "WordPress"
+                    }
+                    ListElement {
+                        text: "LDAP"
+                    }
+                }
+            }
             HifiControlsUit.TextField {
                 id: displayNameField
                 width: root.bannerWidth
@@ -241,7 +268,7 @@ Item {
                 font.pixelSize: linkAccountBody.textFieldFontSize
                 styleRenderType: Text.QtRendering
                 anchors {
-                    top: loginDialogTextContainer.bottom
+                    top: loginTypeComboBox.bottom
                     topMargin: 1.5 * hifi.dimensions.contentSpacing.y
                 }
                 placeholderText: "Display Name (optional)"

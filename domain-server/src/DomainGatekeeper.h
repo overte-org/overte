@@ -77,6 +77,7 @@ private slots:
 
     // Login and groups for domain, separate from directory services.
     void requestDomainUserFinished();
+    void requestDomainLDAPUserFinished(const QString& username);
 
 private:
     SharedNodePointer processAssignmentConnectRequest(const NodeConnectionData& nodeConnection,
@@ -153,7 +154,7 @@ private:
     Node::LocalID _idIncrement;
 
     // Login and groups for domain, separate from directory services.
-    bool domainHasLogin();
+    bool domainHasLogin(const QString& type);
     void requestDomainUser(const QString& username, const QString& accessToken, const QString& refreshToken);
     
     typedef QHash<QString, QPair<QString, QString>> DomainUserIdentities; // <domainUserName, <access_token, refresh_token>>
