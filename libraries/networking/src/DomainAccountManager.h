@@ -49,7 +49,7 @@ public:
     Q_INVOKABLE bool checkAndSignalForAccessToken();
 
 public slots:
-    void requestAccessToken(const QString& username, const QString& password);
+    void requestAccessToken(const QString& username, const QString& password, const QString& type);
     void requestAccessTokenFinished();
 
 signals:
@@ -65,6 +65,8 @@ private:
     bool accessTokenIsExpired();
     void setTokensFromJSON(const QJsonObject&, const QUrl& url);
     void sendInterfaceAccessTokenToServer();
+    void requestAccessTokenWordPress(const QString& username, const QString& password);
+    void requestAccessTokenLDAP(const QString& username, const QString& password);
 
     DomainAccountDetails _currentAuth;
     QHash<QUrl, DomainAccountDetails> _knownAuths;  // <domainURL, DomainAccountDetails>

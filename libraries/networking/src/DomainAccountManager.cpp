@@ -25,6 +25,7 @@
 #include "NetworkAccessManager.h"
 #include "NetworkLogging.h"
 #include "NodeList.h"
+#include "LDAPAccount.h"
 
 // FIXME: Generalize to other OAuth2 sources for domain login.
 
@@ -75,8 +76,12 @@ bool DomainAccountManager::isLoggedIn() {
     return !_currentAuth.authURL.isEmpty() && hasValidAccessToken();
 }
 
-void DomainAccountManager::requestAccessToken(const QString& username, const QString& password) {
+void DomainAccountManager::requestAccessToken(const QString& username, const QString& password, const QString& type) {
+    if (type == "wordpress") return requestAccessTokenWordPress(username, password);
+    if (type == "ldap") return requestAccessTokenLDAP(username, password);
+}
 
+void DomainAccountManager::requestAccessTokenWordPress(const QString& username, const QString& password) {
     _currentAuth.username = username;
     _currentAuth.accessToken = "";
     _currentAuth.refreshToken = "";
@@ -102,6 +107,25 @@ void DomainAccountManager::requestAccessToken(const QString& username, const QSt
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
     QNetworkReply* requestReply = networkAccessManager.post(request, formData);
     connect(requestReply, &QNetworkReply::finished, this, &DomainAccountManager::requestAccessTokenFinished);
+}
+
+void DomainAccountManager::requestAccessTokenLDAP(const QString& username, const QString& password) {
+    _currentAuth.username = username;
+    _currentAuth.accessToken = "";
+    _currentAuth.refreshToken = "";
+
+    const bool isValidLDAPCredentials = LDAPAccount::isValidCredentials(username, password);
+
+    if (isValidLDAPCredentials) {
+        emit loginComplete();
+        _currentAuth.accessToken = password;
+        return;
+    }
+
+    // Failure.
+    // FIXME: QML does not update to show sign in failure.
+    qCDebug(networking) << "LDAP account failed to verify";
+    emit loginFailed();
 }
 
 void DomainAccountManager::requestAccessTokenFinished() {
