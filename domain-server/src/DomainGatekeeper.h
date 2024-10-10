@@ -77,7 +77,7 @@ private slots:
 
     // Login and groups for domain, separate from directory services.
     void requestDomainUserFinished();
-    void requestDomainLDAPUserFinished(const QString& username, const QString& password);
+    void requestDomainLDAPUserFinished(const QString& username);
 
 private:
     SharedNodePointer processAssignmentConnectRequest(const NodeConnectionData& nodeConnection,

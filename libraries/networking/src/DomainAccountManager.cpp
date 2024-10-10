@@ -114,24 +114,13 @@ void DomainAccountManager::requestAccessTokenLDAP(const QString& username, const
     _currentAuth.accessToken = "";
     _currentAuth.refreshToken = "";
 
-    // LDAPAccount::setLDAPServerURL(_currentAuth.authURL.toString());
-    // const bool isValidLDAPCredentials = LDAPAccount::isValidCredentials(username, password);
+    const bool isValidLDAPCredentials = LDAPAccount::isValidCredentials(username, password);
 
-    // NOTE: Don't verify credentials before sending it, let the server verify.
-    // if (isValidLDAPCredentials) {
-        // Set the password as the access token.
+    if (isValidLDAPCredentials) {
+        emit loginComplete();
         _currentAuth.accessToken = password;
-
-        // Set the authenticated host name.
-        auto nodeList = DependencyManager::get<NodeList>();
-        _currentAuth.authedDomainName = nodeList->getDomainHandler().getHostname();
-
-        // Remember domain login for the current Interface session.
-        _knownAuths.insert(_currentAuth.domainURL, _currentAuth);
-
-        // emit loginComplete();
-        // return;
-    // }
+        return;
+    }
 
     // Failure.
     // FIXME: QML does not update to show sign in failure.
