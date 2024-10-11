@@ -53,8 +53,6 @@ bool LDAPAccount::isValidCredentials(const QString& username, const QString& pas
         return false;
     }
 
-    ldap_connect(ldapHandle);
-
     // if (connectSuccess == LDAP_SUCCESS) {
     //     qDebug(networking) << "Successfully connected to LDAP";
     // }
@@ -63,7 +61,7 @@ bool LDAPAccount::isValidCredentials(const QString& username, const QString& pas
     result = ldap_sasl_bind_s(ldapHandle, bindDN, LDAP_SASL_SIMPLE, &creds, nullptr, nullptr, nullptr);
     if (result != LDAP_SUCCESS) {
         // Login info is invalid
-        qDebug(networking) << "Failed trying to bind to LDAP. Status: " << result;
+        qDebug(networking) << "Failed trying to bind to LDAP. Status: " << result << ". " << ldap_err2string(result);
         ldap_unbind_ext(ldapHandle, nullptr, nullptr);
         return false;
     }
