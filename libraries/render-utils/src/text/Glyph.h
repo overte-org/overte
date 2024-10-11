@@ -26,6 +26,7 @@ struct Glyph {
     vec2 size;
     vec2 offset;
     float d;  // xadvance - adjusts character positioning
+    bool isTofu { false };
 
     // We adjust bounds because offset is the bottom left corner of the font but the top left corner of a QRect
     QRectF bounds() const;

@@ -60,8 +60,14 @@ vec2 evalSDF(vec2 texCoord) {
     return vec2(opacity, msdf.a);
 }
 
-vec4 evalSDFColor(vec2 texCoord, vec4 glyphBounds) {
+vec4 evalSDFColor(vec2 texCoord, vec4 glyphBounds, float isTofu) {
     vec3 color = params.color.rgb;
+
+    if (isTofu > 0.0f) {
+        const float OUTLINE_WIDTH = 0.1;
+        return vec4(color, any(greaterThan(abs(texCoord - vec2(0.5)), vec2(0.5 - OUTLINE_WIDTH, 0.5 - (glyphBounds.z / glyphBounds.w) * OUTLINE_WIDTH))));
+    }
+
     vec2 sdf = evalSDF(texCoord);
 
     // Outline
@@ -95,14 +101,14 @@ vec4 evalSDFColor(vec2 texCoord, vec4 glyphBounds) {
     return vec4(color, sdf.x);
 }
 
-vec4 evalSDFSuperSampled(vec2 texCoord, vec2 positionMS, vec4 glyphBounds) {
+vec4 evalSDFSuperSampled(vec2 texCoord, vec2 positionMS, vec4 glyphBounds, float isTofu) {
     // Clip to edges. Note: We don't need to check the top edge.
     if ((params.bounds.z > 0.0 && (positionMS.x < params.bounds.x || positionMS.x > (params.bounds.x + params.bounds.z))) ||
         (params.bounds.w > 0.0 && (positionMS.y < params.bounds.y - params.bounds.w))) {
         return vec4(0.0);
     }
 
-    vec4 color = evalSDFColor(texCoord, glyphBounds);
+    vec4 color = evalSDFColor(texCoord, glyphBounds, isTofu);
 
     // Rely on TAA for anti-aliasing but smooth transition when minification
     // to help filtering

@@ -40,8 +40,9 @@ struct TextureVertex {
     glm::vec2 pos;
     glm::vec2 tex;
     glm::vec4 bounds;
+    float isTofu;
     TextureVertex() {}
-    TextureVertex(const glm::vec2& pos, const glm::vec2& tex, const glm::vec4& bounds) : pos(pos), tex(tex), bounds(bounds) {}
+    TextureVertex(const glm::vec2& pos, const glm::vec2& tex, const glm::vec4& bounds, bool isTofu) : pos(pos), tex(tex), bounds(bounds), isTofu(isTofu ? 1.0f : 0.0f) {}
 };
 
 static const int NUMBER_OF_INDICES_PER_QUAD = 6;  // 1 quad = 2 triangles
@@ -71,13 +72,13 @@ struct QuadBuilder {
 
         // min = bottomLeft
         vertices[0] = TextureVertex(min,
-                                    texMin + glm::vec2(0.0f, texSize.y), bounds);
+                                    texMin + glm::vec2(0.0f, texSize.y), bounds, glyph.isTofu);
         vertices[1] = TextureVertex(min + glm::vec2(size.x, 0.0f),
-                                    texMin + texSize, bounds);
+                                    texMin + texSize, bounds, glyph.isTofu);
         vertices[2] = TextureVertex(min + glm::vec2(0.0f, size.y),
-                                    texMin, bounds);
+                                    texMin, bounds, glyph.isTofu);
         vertices[3] = TextureVertex(min + size,
-                                    texMin + glm::vec2(texSize.x, 0.0f), bounds);
+                                    texMin + glm::vec2(texSize.x, 0.0f), bounds, glyph.isTofu);
     }
 };
 
@@ -129,7 +130,8 @@ void Font::read(QIODevice& in) {
     }
 
     _distanceRange = glm::vec2(arteryFont.variants[0].metrics.distanceRange);
-    _fontHeight = arteryFont.variants[0].metrics.ascender + fabs(arteryFont.variants[0].metrics.descender);
+    const float ascent = arteryFont.variants[0].metrics.ascender;
+    _fontHeight = ascent + fabs(arteryFont.variants[0].metrics.descender);
     _leading = arteryFont.variants[0].metrics.lineHeight;
     _spaceWidth = 0.5f * arteryFont.variants[0].metrics.emSize; // We use half the emSize as a first guess for _spaceWidth
 
@@ -193,6 +195,7 @@ void Font::read(QIODevice& in) {
     _glyphs.clear();
     glm::vec2 imageSize = toGlm(image.size());
     _distanceRange /= imageSize;
+    bool hasTofu = false;
     foreach(Glyph g, glyphs) {
         // Adjust the pixel texture coordinates into UV coordinates,
         g.texSize /= imageSize;
@@ -202,7 +205,20 @@ void Font::read(QIODevice& in) {
         g.offset.y = -(1.0f - (g.offset.y + g.size.y));
         // store in the character to glyph hash
         _glyphs[g.c] = g;
+        if (g.c == '?') {
+            _tofuGlyph = g;
+            hasTofu = true;
+        }
     };
+
+    _tofuGlyph.texSize = glm::vec2(1.0f);
+    _tofuGlyph.texOffset = glm::vec2(0.0f);
+    if (!hasTofu) {
+        _tofuGlyph.size = glm::vec2(2.0f * _spaceWidth, ascent);
+        _tofuGlyph.offset = glm::vec2(0.0f, -(1.0f - ascent));
+        _tofuGlyph.d = 2.0f * _spaceWidth;
+    }
+    _tofuGlyph.isTofu = true;
 
     image = image.convertToFormat(QImage::Format_RGBA8888);
 
@@ -283,7 +299,7 @@ Font::Font(const QString& family) : _family(family) {
 // NERD RAGE: why doesn't QHash have a 'const T & operator[] const' member
 const Glyph& Font::getGlyph(const QChar& c) const {
     if (!_glyphs.contains(c)) {
-        return _glyphs[QChar('?')];
+        return _tofuGlyph;
     }
     return _glyphs[c];
 }
@@ -360,6 +376,7 @@ void Font::setupGPU() {
         // Sanity checks
         static const int TEX_COORD_OFFSET = offsetof(TextureVertex, tex);
         static const int TEX_BOUNDS_OFFSET = offsetof(TextureVertex, bounds);
+        static const int TOFU_OFFSET = offsetof(TextureVertex, isTofu);
         assert(TEX_COORD_OFFSET == sizeof(glm::vec2));
         assert(sizeof(TextureVertex) == 2 * sizeof(glm::vec2) + sizeof(glm::vec4));
         assert(sizeof(QuadBuilder) == 4 * sizeof(TextureVertex));
@@ -369,6 +386,7 @@ void Font::setupGPU() {
         _format->setAttribute(gpu::Stream::POSITION, 0, gpu::Element(gpu::VEC2, gpu::FLOAT, gpu::XYZ), 0);
         _format->setAttribute(gpu::Stream::TEXCOORD, 0, gpu::Element(gpu::VEC2, gpu::FLOAT, gpu::UV), TEX_COORD_OFFSET);
         _format->setAttribute(gpu::Stream::TEXCOORD1, 0, gpu::Element(gpu::VEC4, gpu::FLOAT, gpu::XYZW), TEX_BOUNDS_OFFSET);
+        _format->setAttribute(gpu::Stream::TEXCOORD2, 0, gpu::Element(gpu::SCALAR, gpu::FLOAT, gpu::RED), TOFU_OFFSET);
     }
 }
 
@@ -441,7 +459,7 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
             if (bounds.x != -1 && advance.x > rightEdge) {
                 break;
             }
-            const Glyph& glyph = _glyphs[c];
+            const Glyph& glyph = getGlyph(c);
 
             glyphsAndCorners.emplace_back(glyph, advance);
 
