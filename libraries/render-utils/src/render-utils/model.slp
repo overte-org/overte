@@ -1,1 +1,1 @@
-DEFINES (normalmap translucent:f unlit:f/lightmap:f)/(shadow mirror:f) mtoon triplanar fade:f/forward:f deformed:v/deformeddq:v
+DEFINES (normalmap translucent:f unlit:f/lightmap:f)/(shadow mirror:f) mtoon triplanar deformed:v/deformeddq:v fade:f/forward:f
