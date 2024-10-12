@@ -510,7 +510,7 @@
         "tooltip": "If enabled, when the entity is grabbed, the grab will be transferred to its parent entity if there is one. If disabled, the grab won't be transferred, so a child entity can be grabbed and moved relative to its parent."
     },
     "grab.equippable": {
-        "tooltip": "If enabled, this entity can be mounted to the hands/controllers."
+        "tooltip": "If enabled, this entity can be mounted to the hands/controllers. (Note: Entities can't be equipped if 'ignorePickIntersection' is set to true.)"
     },
     "grab.equippableLeftPosition": {
         "tooltip": "When equipped on an avatar, this defines the 'position' of the entity relative to the 'left' hand."
