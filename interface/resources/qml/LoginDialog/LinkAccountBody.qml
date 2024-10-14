@@ -20,8 +20,6 @@ import controlsUit 1.0 as HifiControlsUit
 import stylesUit 1.0 as HifiStylesUit
 import TabletScriptingInterface 1.0
 
-// FIXME: The bottom text gets cut off due to new combo box. Replace with flexbox layout?.
-
 Item {
     z: -2
     id: linkAccountBody
@@ -172,7 +170,7 @@ Item {
             id: loginContainer
             width: displayNameField.width
             height: errorContainer.height + loginDialogTextContainer.height + displayNameField.height + emailField.height + passwordField.height + metaverseServerField.height + 5.5 * hifi.dimensions.contentSpacing.y +
-                keepMeLoggedInCheckbox.height + loginButton.height + cantAccessTextMetrics.height + continueButton.height
+                keepMeLoggedInCheckbox.height + loginButton.height + cantAccessTextMetrics.height + continueButton.height + loginTypeComboBox.height
             anchors {
                 top: parent.top
                 topMargin: root.bannerHeight + 0.25 * parent.height
@@ -268,7 +266,7 @@ Item {
                 font.pixelSize: linkAccountBody.textFieldFontSize
                 styleRenderType: Text.QtRendering
                 anchors {
-                    top: loginTypeComboBox.bottom
+                    top: loginTypeComboBox.visible ? loginTypeComboBox.bottom : loginDialogTextContainer.bottom
                     topMargin: 1.5 * hifi.dimensions.contentSpacing.y
                 }
                 placeholderText: "Display Name (optional)"
@@ -649,7 +647,7 @@ Item {
             anchors {
                 left: loginContainer.left
                 top: loginContainer.bottom
-                topMargin: 0.05 * parent.height
+                topMargin: 10
             }
             TextMetrics {
                 id: signUpTextMetrics
@@ -680,6 +678,7 @@ Item {
                 anchors {
                      left: signUpText.right
                      leftMargin: hifi.dimensions.contentSpacing.x
+                     top: cantAccessText.bottom - 10
                 }
 
                 text: "<a href='https://mv.overte.org/server/users/register'>Sign Up</a>"
