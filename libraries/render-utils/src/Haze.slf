@@ -6,6 +6,7 @@
 //
 //  Created by Nissim Hadar on 9/5/2107.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -45,10 +46,6 @@ layout(location=0) in vec2 varTexCoord0;
 layout(location=0) out vec4 outFragColor;
 
 void main(void) {
-    if ((isHazeEnabled() == 0.0) || (hazeParams.hazeMode & HAZE_MODE_IS_ACTIVE) != HAZE_MODE_IS_ACTIVE) {
-        discard;
-    }
-
     vec4 fragPositionES = unpackPositionFromZeye(varTexCoord0);
     mat4 viewInverse = getViewInverse();
 
