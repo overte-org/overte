@@ -3,6 +3,7 @@
 
 //  Created by Olivier Prat on 07/07/2017.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -570,7 +571,7 @@ void FadeJob::run(const render::RenderContextPointer& renderContext, FadeJob::Ou
 
     // And now update fade effect
     for (auto transitionId : *transitionStage) {
-        auto& state = transitionStage->editTransition(transitionId);
+        auto& state = transitionStage->editElement(transitionId);
 #ifdef DEBUG
         auto& item = scene->getItem(state.itemId);
         assert(item.getTransitionId() == transitionId);
