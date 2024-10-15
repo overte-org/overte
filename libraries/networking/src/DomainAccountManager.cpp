@@ -117,8 +117,17 @@ void DomainAccountManager::requestAccessTokenLDAP(const QString& username, const
     const bool isValidLDAPCredentials = LDAPAccount::isValidCredentials(username, password);
 
     if (isValidLDAPCredentials) {
-        emit loginComplete();
+        // Set the password as the access token.
         _currentAuth.accessToken = password;
+
+        // Set the authenticated host name.
+        auto nodeList = DependencyManager::get<NodeList>();
+        _currentAuth.authedDomainName = nodeList->getDomainHandler().getHostname();
+
+        // Remember domain login for the current Interface session.
+        _knownAuths.insert(_currentAuth.domainURL, _currentAuth);
+
+        emit loginComplete();
         return;
     }
 
