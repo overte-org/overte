@@ -6916,6 +6916,11 @@ void Application::update(float deltaTime) {
         AnimDebugDraw::getInstance().update();
     }
 
+    // a hack to prevent the engine from trying
+    // to pump out hundreds and hundreds of simulation
+    // ticks per second that can't be displayed
+    std::this_thread::sleep_for(5ms);
+
 
     { // Game loop is done, mark the end of the frame for the scene transactions and the render loop to take over
         PerformanceTimer perfTimer("enqueueFrame");
