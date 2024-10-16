@@ -403,15 +403,3 @@ void LightStage::updateLightArrayBuffer(Index lightId) {
         // this should not happen ?
     }
 }
-
-LightStageSetup::LightStageSetup() {
-}
-
-void LightStageSetup::run(const render::RenderContextPointer& renderContext) {
-    if (renderContext->_scene) {
-        auto stage = renderContext->_scene->getStage(LightStage::getName());
-        if (!stage) {
-            renderContext->_scene->resetStage(LightStage::getName(), std::make_shared<LightStage>());
-        }
-    }
-}

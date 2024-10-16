@@ -1,6 +1,6 @@
 //
 //  BackgroundStage.h
-
+//
 //  Created by Sam Gateau on 5/9/2017.
 //  Copyright 2015 High Fidelity, Inc.
 //  Copyright 2024 Overte e.V.
@@ -14,6 +14,7 @@
 
 #include <graphics/Stage.h>
 #include <render/Stage.h>
+#include <render/StageSetup.h>
 
 #include "HazeStage.h"
 #include "LightingModel.h"
@@ -22,12 +23,9 @@
 class BackgroundStage : public render::PointerStage<graphics::SunSkyStage, graphics::SunSkyStagePointer> {};
 using BackgroundStagePointer = std::shared_ptr<BackgroundStage>;
 
-class BackgroundStageSetup {
+class BackgroundStageSetup : public render::StageSetup<BackgroundStage> {
 public:
     using JobModel = render::Job::Model<BackgroundStageSetup>;
-
-    BackgroundStageSetup() {}
-    void run(const render::RenderContextPointer& renderContext);
 };
 
 class DrawBackgroundStage {

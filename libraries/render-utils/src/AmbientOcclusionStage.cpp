@@ -10,13 +10,4 @@
 
 #include "AmbientOcclusionStage.h"
 
-#include <gpu/Context.h>
-
 std::string AmbientOcclusionStage::_name { "AMBIENT_OCCLUSION_STAGE" };
-
-void AmbientOcclusionStageSetup::run(const render::RenderContextPointer& renderContext) {
-    auto stage = renderContext->_scene->getStage(AmbientOcclusionStage::getName());
-    if (!stage) {
-        renderContext->_scene->resetStage(AmbientOcclusionStage::getName(), std::make_shared<AmbientOcclusionStage>());
-    }
-}

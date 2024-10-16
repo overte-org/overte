@@ -11,8 +11,6 @@
 
 #include "TransitionStage.h"
 
-#include <algorithm>
-
 using namespace render;
 
 std::string TransitionStage::_name { "TRANSITION_STAGE" };
@@ -23,11 +21,4 @@ TransitionStage::Index TransitionStage::addTransition(ItemID itemId, Transition:
     transition.itemId = itemId;
     transition.boundItemId = boundId;
     return addElement(transition);
-}
-
-void TransitionStageSetup::run(const RenderContextPointer& renderContext) {
-    auto stage = renderContext->_scene->getStage(TransitionStage::getName());
-    if (!stage) {
-        renderContext->_scene->resetStage(TransitionStage::getName(), std::make_shared<TransitionStage>());
-    }
 }

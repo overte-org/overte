@@ -13,22 +13,16 @@
 #define hifi_render_utils_HazeStage_h
 
 #include <graphics/Haze.h>
-#include <render/Forward.h>
-#include <render/DrawTask.h>
 #include <render/Stage.h>
+#include <render/StageSetup.h>
 
 // Haze stage to set up haze-related rendering tasks
 class HazeStage : public render::PointerStage<graphics::Haze, graphics::HazePointer> {};
 using HazeStagePointer = std::shared_ptr<HazeStage>;
 
-class HazeStageSetup {
+class HazeStageSetup : public render::StageSetup<HazeStage> {
 public:
     using JobModel = render::Job::Model<HazeStageSetup>;
-
-    HazeStageSetup() {}
-    void run(const render::RenderContextPointer& renderContext);
-
-protected:
 };
 
 class FetchHazeConfig : public render::Job::Config {

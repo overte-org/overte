@@ -15,8 +15,8 @@
 
 #include <gpu/Framebuffer.h>
 #include <graphics/Light.h>
-#include <render/Engine.h>
 #include <render/Stage.h>
+#include <render/StageSetup.h>
 
 class ViewFrustum;
 
@@ -185,14 +185,9 @@ protected:
 };
 using LightStagePointer = std::shared_ptr<LightStage>;
 
-
-class LightStageSetup {
+class LightStageSetup : public render::StageSetup<LightStage> {
 public:
     using JobModel = render::Job::Model<LightStageSetup>;
-
-    LightStageSetup();
-    void run(const render::RenderContextPointer& renderContext);
 };
-
 
 #endif

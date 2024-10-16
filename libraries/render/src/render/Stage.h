@@ -108,7 +108,7 @@ namespace render {
         P getElement(Index id) const { return _elements.get(id); }
 
         Index findElement(const P& element) const {
-            auto found = _elementMap.find(haze);
+            auto found = _elementMap.find(element);
             if (found != _elementMap.end()) {
                 return INVALID_INDEX;
             } else {

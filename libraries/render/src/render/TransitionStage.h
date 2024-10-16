@@ -1,6 +1,6 @@
 //
 //  TransitionStage.h
-
+//
 //  Created by Olivier Prat on 07/07/2017.
 //  Copyright 2017 High Fidelity, Inc.
 //  Copyright 2024 Overte e.V.
@@ -13,7 +13,7 @@
 #define hifi_render_TransitionStage_h
 
 #include "Stage.h"
-#include "Engine.h"
+#include "StageSetup.h"
 #include "Transition.h"
 
 namespace render {
@@ -26,13 +26,11 @@ namespace render {
     };
     using TransitionStagePointer = std::shared_ptr<TransitionStage>;
 
-    class TransitionStageSetup {
+    class TransitionStageSetup : public StageSetup<TransitionStage> {
     public:
-        using JobModel = render::Job::Model<TransitionStageSetup>;
-
-        TransitionStageSetup() {}
-        void run(const RenderContextPointer& renderContext);
+        using JobModel = Job::Model<TransitionStageSetup>;
     };
+
 }
 
 #endif // hifi_render_TransitionStage_h

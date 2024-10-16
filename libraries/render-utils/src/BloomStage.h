@@ -13,22 +13,16 @@
 #define hifi_render_utils_BloomStage_h
 
 #include <graphics/Bloom.h>
-#include <render/Forward.h>
-#include <render/DrawTask.h>
 #include <render/Stage.h>
+#include <render/StageSetup.h>
 
 // Bloom stage to set up bloom-related rendering tasks
 class BloomStage : public render::PointerStage<graphics::Bloom, graphics::BloomPointer> {};
 using BloomStagePointer = std::shared_ptr<BloomStage>;
 
-class BloomStageSetup {
+class BloomStageSetup : public render::StageSetup<BloomStage> {
 public:
     using JobModel = render::Job::Model<BloomStageSetup>;
-
-    BloomStageSetup() {}
-    void run(const render::RenderContextPointer& renderContext);
-
-protected:
 };
 
 #endif

@@ -13,8 +13,6 @@
 
 #include "DeferredLightingEffect.h"
 
-#include <gpu/Context.h>
-
 #include <graphics/ShaderConstants.h>
 
 std::string BackgroundStage::_name { "BACKGROUND_STAGE" };
@@ -72,12 +70,5 @@ void DrawBackgroundStage::run(const render::RenderContextPointer& renderContext,
             skybox->render(batch, args->getViewFrustum(), args->_renderMethod == render::Args::RenderMethod::FORWARD);
         });
         args->_batch = nullptr;
-    }
-}
-
-void BackgroundStageSetup::run(const render::RenderContextPointer& renderContext) {
-    auto stage = renderContext->_scene->getStage(BackgroundStage::getName());
-    if (!stage) {
-        renderContext->_scene->resetStage(BackgroundStage::getName(), std::make_shared<BackgroundStage>());
     }
 }

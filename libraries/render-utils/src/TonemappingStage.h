@@ -12,22 +12,16 @@
 #define hifi_render_utils_TonemappingStage_h
 
 #include <graphics/Tonemapping.h>
-#include <render/Forward.h>
-#include <render/DrawTask.h>
 #include <render/Stage.h>
+#include <render/StageSetup.h>
 
 // Tonemapping stage to set up tonemapping-related rendering tasks
 class TonemappingStage : public render::PointerStage<graphics::Tonemapping, graphics::TonemappingPointer> {};
 using TonemappingStagePointer = std::shared_ptr<TonemappingStage>;
 
-class TonemappingStageSetup {
+class TonemappingStageSetup : public render::StageSetup<TonemappingStage> {
 public:
     using JobModel = render::Job::Model<TonemappingStageSetup>;
-
-    TonemappingStageSetup() {}
-    void run(const render::RenderContextPointer& renderContext);
-
-protected:
 };
 
 #endif

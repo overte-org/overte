@@ -1,6 +1,6 @@
 //
 //  HighlightStage.cpp
-
+//
 //  Created by Olivier Prat on 07/07/2017.
 //  Copyright 2017 High Fidelity, Inc.
 //  Copyright 2024 Overte e.V.
@@ -11,6 +11,8 @@
 
 #include "HighlightStage.h"
 
+#include "Engine.h"
+
 using namespace render;
 
 std::string HighlightStage::_name { "HIGHLIGHT_STAGE" };
@@ -20,7 +22,7 @@ HighlightStage::Index HighlightStage::addHighlight(const std::string& selectionN
     return addElement(outline);
 }
 
-Index HighlightStage::getHighlightIdBySelection(const std::string& selectionName) const {
+HighlightStage::Index HighlightStage::getHighlightIdBySelection(const std::string& selectionName) const {
     for (auto outlineId : _activeElementIDs) {
         const auto& outline = _elements.get(outlineId);
         if (outline._selectionName == selectionName) {

@@ -12,9 +12,9 @@
 #ifndef hifi_render_utils_HighlightStage_h
 #define hifi_render_utils_HighlightStage_h
 
-#include "Stage.h"
 #include "Engine.h"
 #include "HighlightStyle.h"
+#include "Stage.h"
 
 namespace render {
 

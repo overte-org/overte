@@ -12,20 +12,16 @@
 #define hifi_render_utils_AmbientOcclusionStage_h
 
 #include <graphics/AmbientOcclusion.h>
-#include <render/Forward.h>
-#include <render/DrawTask.h>
 #include <render/Stage.h>
+#include <render/StageSetup.h>
 
 // AmbientOcclusion stage to set up ambientOcclusion-related rendering tasks
 class AmbientOcclusionStage : public render::PointerStage<graphics::AmbientOcclusion, graphics::AmbientOcclusionPointer> {};
 using AmbientOcclusionStagePointer = std::shared_ptr<AmbientOcclusionStage>;
 
-class AmbientOcclusionStageSetup {
+class AmbientOcclusionStageSetup : public render::StageSetup<AmbientOcclusionStage> {
 public:
     using JobModel = render::Job::Model<AmbientOcclusionStageSetup>;
-
-    AmbientOcclusionStageSetup() {}
-    void run(const render::RenderContextPointer& renderContext);
 };
 
 #endif
