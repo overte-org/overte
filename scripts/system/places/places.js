@@ -20,7 +20,7 @@
     var SETTING_METAVERSE_TO_FETCH = "placesAppMetaverseToFetch";
     var SETTING_PINNED_METAVERSE = "placesAppPinnedMetaverse";
     var SETTING_MATURITY_FILTER = "placesAppMaturityFilter";
-    var DEFAULT_MATURITY = ["teen", "everyone"]; //["adult", "mature", "teen", "everyone", "unrated"];
+    var DEFAULT_MATURITY = ["adult", "mature", "teen", "everyone", "unrated"];
     var REQUEST_TIMEOUT = 10000; //10 seconds
 
     var httpRequest = null;
