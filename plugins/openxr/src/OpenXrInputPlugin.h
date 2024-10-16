@@ -80,6 +80,8 @@ private:
         void focusOutEvent() override;
         bool triggerHapticPulse(float strength, float duration, uint16_t index) override;
 
+        void partitionTouchpad(int sButton, int xAxis, int yAxis, int centerPseudoButton, int xPseudoButton, int yPseudoButton);
+
         mutable std::recursive_mutex _lock;
         template <typename F>
         void withLock(F&& f) {

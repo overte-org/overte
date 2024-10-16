@@ -7,6 +7,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
+#include <glm/ext.hpp>
+
 #include "OpenXrInputPlugin.h"
 
 #include "AvatarConstants.h"
@@ -100,7 +102,7 @@ void OpenXrInputPlugin::loadSettings() {
 void OpenXrInputPlugin::saveSettings() const {
 }
 
-OpenXrInputPlugin::InputDevice::InputDevice(std::shared_ptr<OpenXrContext> c) : controller::InputDevice("Index") {
+OpenXrInputPlugin::InputDevice::InputDevice(std::shared_ptr<OpenXrContext> c) : controller::InputDevice("Vive") {
     _context = c;
 }
 
@@ -303,40 +305,120 @@ controller::Input::NamedVector OpenXrInputPlugin::InputDevice::getAvailableInput
 
     // clang-format off
     QVector<Input::NamedPair> availableInputs{
-        // Poses
-        makePair(LEFT_HAND, "LeftHand"),
-        makePair(RIGHT_HAND, "RightHand"),
-        makePair(HEAD, "Head"),
-        // Sticks
+        // Trackpad analogs
         makePair(LX, "LX"),
         makePair(LY, "LY"),
-        makePair(LS, "LS"),
-        makePair(LS_TOUCH, "LSTouch"),
         makePair(RX, "RX"),
         makePair(RY, "RY"),
-        makePair(RS, "RS"),
-        makePair(RS_TOUCH, "RSTouch"),
-        // Face buttons
-        makePair(RIGHT_PRIMARY_THUMB, "RightPrimaryThumb"),
-        makePair(RIGHT_PRIMARY_THUMB_TOUCH, "RightPrimaryThumbTouch"),
-        makePair(RIGHT_SECONDARY_THUMB, "RightSecondaryThumb"),
-        makePair(RIGHT_SECONDARY_THUMB_TOUCH, "RightSecondaryThumbTouch"),
 
-        makePair(LEFT_PRIMARY_THUMB, "LeftPrimaryThumb"),
-        makePair(LEFT_PRIMARY_THUMB_TOUCH, "LeftPrimaryThumbTouch"),
-        makePair(LEFT_SECONDARY_THUMB, "LeftSecondaryThumb"),
-        makePair(LEFT_SECONDARY_THUMB_TOUCH, "LeftSecondaryThumbTouch"),
-        // Triggers
-        makePair(RT, "RT"),
+        // capacitive touch on the touch pad
+        makePair(LS_TOUCH, "LSTouch"),
+        makePair(RS_TOUCH, "RSTouch"),
+
+        // touch pad press
+        makePair(LS, "LS"),
+        makePair(RS, "RS"),
+        // Differentiate where we are in the touch pad click
+        makePair(LS_CENTER, "LSCenter"),
+        makePair(LS_X, "LSX"),
+        makePair(LS_Y, "LSY"),
+        makePair(RS_CENTER, "RSCenter"),
+        makePair(RS_X, "RSX"),
+        makePair(RS_Y, "RSY"),
+
+
+        // triggers
         makePair(LT, "LT"),
-        makePair(RT_CLICK, "RTClick"),
+        makePair(RT, "RT"),
+
+        // Trigger clicks
         makePair(LT_CLICK, "LTClick"),
-        makePair(LEFT_PRIMARY_INDEX_TOUCH, "LeftPrimaryIndexTouch"),
-        makePair(RIGHT_PRIMARY_INDEX_TOUCH, "RightPrimaryIndexTouch"),
-        // Menu buttons
-        // TODO: Add this to button channel
-        // Input::NamedPair(Input(_deviceID, LEFT_APP_MENU, ChannelType::BUTTON), "LeftApplicationMenu"),
-        // Input::NamedPair(Input(_deviceID, RIGHT_APP_MENU, ChannelType::BUTTON), "RightApplicationMenu"),
+        makePair(RT_CLICK, "RTClick"),
+
+        // low profile side grip button.
+        makePair(LEFT_GRIP, "LeftGrip"),
+        makePair(RIGHT_GRIP, "RightGrip"),
+
+        // 3d location of left controller and fingers
+        makePair(LEFT_HAND, "LeftHand"),
+        makePair(LEFT_HAND_THUMB1, "LeftHandThumb1"),
+        makePair(LEFT_HAND_THUMB2, "LeftHandThumb2"),
+        makePair(LEFT_HAND_THUMB3, "LeftHandThumb3"),
+        makePair(LEFT_HAND_THUMB4, "LeftHandThumb4"),
+        makePair(LEFT_HAND_INDEX1, "LeftHandIndex1"),
+        makePair(LEFT_HAND_INDEX2, "LeftHandIndex2"),
+        makePair(LEFT_HAND_INDEX3, "LeftHandIndex3"),
+        makePair(LEFT_HAND_INDEX4, "LeftHandIndex4"),
+        makePair(LEFT_HAND_MIDDLE1, "LeftHandMiddle1"),
+        makePair(LEFT_HAND_MIDDLE2, "LeftHandMiddle2"),
+        makePair(LEFT_HAND_MIDDLE3, "LeftHandMiddle3"),
+        makePair(LEFT_HAND_MIDDLE4, "LeftHandMiddle4"),
+        makePair(LEFT_HAND_RING1, "LeftHandRing1"),
+        makePair(LEFT_HAND_RING2, "LeftHandRing2"),
+        makePair(LEFT_HAND_RING3, "LeftHandRing3"),
+        makePair(LEFT_HAND_RING4, "LeftHandRing4"),
+        makePair(LEFT_HAND_PINKY1, "LeftHandPinky1"),
+        makePair(LEFT_HAND_PINKY2, "LeftHandPinky2"),
+        makePair(LEFT_HAND_PINKY3, "LeftHandPinky3"),
+        makePair(LEFT_HAND_PINKY4, "LeftHandPinky4"),
+
+        // 3d location of right controller and fingers
+        makePair(RIGHT_HAND, "RightHand"),
+        makePair(RIGHT_HAND_THUMB1, "RightHandThumb1"),
+        makePair(RIGHT_HAND_THUMB2, "RightHandThumb2"),
+        makePair(RIGHT_HAND_THUMB3, "RightHandThumb3"),
+        makePair(RIGHT_HAND_THUMB4, "RightHandThumb4"),
+        makePair(RIGHT_HAND_INDEX1, "RightHandIndex1"),
+        makePair(RIGHT_HAND_INDEX2, "RightHandIndex2"),
+        makePair(RIGHT_HAND_INDEX3, "RightHandIndex3"),
+        makePair(RIGHT_HAND_INDEX4, "RightHandIndex4"),
+        makePair(RIGHT_HAND_MIDDLE1, "RightHandMiddle1"),
+        makePair(RIGHT_HAND_MIDDLE2, "RightHandMiddle2"),
+        makePair(RIGHT_HAND_MIDDLE3, "RightHandMiddle3"),
+        makePair(RIGHT_HAND_MIDDLE4, "RightHandMiddle4"),
+        makePair(RIGHT_HAND_RING1, "RightHandRing1"),
+        makePair(RIGHT_HAND_RING2, "RightHandRing2"),
+        makePair(RIGHT_HAND_RING3, "RightHandRing3"),
+        makePair(RIGHT_HAND_RING4, "RightHandRing4"),
+        makePair(RIGHT_HAND_PINKY1, "RightHandPinky1"),
+        makePair(RIGHT_HAND_PINKY2, "RightHandPinky2"),
+        makePair(RIGHT_HAND_PINKY3, "RightHandPinky3"),
+        makePair(RIGHT_HAND_PINKY4, "RightHandPinky4"),
+
+        makePair(LEFT_FOOT, "LeftFoot"),
+        makePair(RIGHT_FOOT, "RightFoot"),
+        makePair(HIPS, "Hips"),
+        makePair(SPINE2, "Spine2"),
+        makePair(HEAD, "Head"),
+        makePair(LEFT_ARM, "LeftArm"),
+        makePair(RIGHT_ARM, "RightArm"),
+        makePair(LEFT_EYE, "LeftEye"),
+        makePair(RIGHT_EYE, "RightEye"),
+        makePair(EYEBLINK_L, "EyeBlink_L"),
+        makePair(EYEBLINK_R, "EyeBlink_R"),
+
+        // 16 tracked poses
+        makePair(TRACKED_OBJECT_00, "TrackedObject00"),
+        makePair(TRACKED_OBJECT_01, "TrackedObject01"),
+        makePair(TRACKED_OBJECT_02, "TrackedObject02"),
+        makePair(TRACKED_OBJECT_03, "TrackedObject03"),
+        makePair(TRACKED_OBJECT_04, "TrackedObject04"),
+        makePair(TRACKED_OBJECT_05, "TrackedObject05"),
+        makePair(TRACKED_OBJECT_06, "TrackedObject06"),
+        makePair(TRACKED_OBJECT_07, "TrackedObject07"),
+        makePair(TRACKED_OBJECT_08, "TrackedObject08"),
+        makePair(TRACKED_OBJECT_09, "TrackedObject09"),
+        makePair(TRACKED_OBJECT_10, "TrackedObject10"),
+        makePair(TRACKED_OBJECT_11, "TrackedObject11"),
+        makePair(TRACKED_OBJECT_12, "TrackedObject12"),
+        makePair(TRACKED_OBJECT_13, "TrackedObject13"),
+        makePair(TRACKED_OBJECT_14, "TrackedObject14"),
+        makePair(TRACKED_OBJECT_15, "TrackedObject15"),
+
+        // application buttons, system buttons are unused(?)
+        // in openxr but it opens the dashboard in steamvr
+        makePair(LEFT_SECONDARY_THUMB, "LeftApplicationMenu"),
+        makePair(RIGHT_SECONDARY_THUMB, "RightApplicationMenu"),
     };
     // clang-format on
 
@@ -344,7 +426,7 @@ controller::Input::NamedVector OpenXrInputPlugin::InputDevice::getAvailableInput
 }
 
 QString OpenXrInputPlugin::InputDevice::getDefaultMappingConfig() const {
-    return PathUtils::resourcesPath() + "/controllers/openxr_index.json";
+    return PathUtils::resourcesPath() + "/controllers/vive.json";
 }
 
 bool OpenXrInputPlugin::InputDevice::initActions() {
@@ -365,6 +447,23 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
     if (!xrCheck(instance, result, "Failed to create action set."))
         return false;
 
+#if 1
+    std::map<std::string, XrActionType> actionsToInit = {
+        { "/input/trackpad/x", XR_ACTION_TYPE_FLOAT_INPUT },
+        { "/input/trackpad/y", XR_ACTION_TYPE_FLOAT_INPUT },
+        { "/input/trackpad/touch", XR_ACTION_TYPE_BOOLEAN_INPUT },
+        { "/input/trackpad/click", XR_ACTION_TYPE_BOOLEAN_INPUT },
+        { "/input/trigger/value", XR_ACTION_TYPE_FLOAT_INPUT },
+        { "/input/trigger/click", XR_ACTION_TYPE_BOOLEAN_INPUT },
+        { "/input/trigger/touch", XR_ACTION_TYPE_BOOLEAN_INPUT },
+        { "/input/squeeze/click", XR_ACTION_TYPE_BOOLEAN_INPUT },
+        { "/input/system/click", XR_ACTION_TYPE_BOOLEAN_INPUT },
+        { "/input/menu/click", XR_ACTION_TYPE_BOOLEAN_INPUT },
+        { "/input/grip/pose", XR_ACTION_TYPE_POSE_INPUT },
+        { "/input/aim/pose", XR_ACTION_TYPE_POSE_INPUT },
+        { "/output/haptic", XR_ACTION_TYPE_VIBRATION_OUTPUT },
+    };
+#else
     // clang-format off
     std::map<std::string, XrActionType> actionsToInit = {
         { "/input/thumbstick/x", XR_ACTION_TYPE_FLOAT_INPUT },
@@ -384,6 +483,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
         { "/input/system/click", XR_ACTION_TYPE_BOOLEAN_INPUT },
     };
     // clang-format on
+#endif
 
     for (const auto& [path, type] : actionsToInit) {
         std::shared_ptr<Action> action = std::make_shared<Action>(_context, type, path);
@@ -394,6 +494,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
         }
     }
 
+#if 0
     // Khronos Simple Controller
     std::vector<std::string> simpleBindings = {
         "/input/grip/pose",
@@ -404,6 +505,29 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
     if (!initBindings("/interaction_profiles/khr/simple_controller", simpleBindings)) {
         qCCritical(xr_input_cat, "Failed to init bindings.");
     }
+#endif
+
+#if 1
+    // HTC Vive Wand
+    std::vector<std::string> viveWandBindings = {
+        "/input/system/click",
+        "/input/squeeze/click",
+        "/input/menu/click",
+        "/input/trigger/click",
+        "/input/trigger/value",
+        "/input/trackpad/x",
+        "/input/trackpad/y",
+        "/input/trackpad/click",
+        "/input/trackpad/touch",
+        "/input/grip/pose",
+        "/input/aim/pose",
+        "/output/haptic",
+    };
+
+    if (!initBindings("/interaction_profiles/htc/vive_controller", viveWandBindings)) {
+        qCCritical(xr_input_cat, "Failed to init bindings.");
+    }
+#else
 
     // Valve Index Controller
     // clang-format off
@@ -428,6 +552,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
     if (!initBindings("/interaction_profiles/valve/index_controller", indexBindings)) {
         qCCritical(xr_input_cat, "Failed to init bindings.");
     }
+#endif
 
     XrSessionActionSetsAttachInfo attachInfo = {
         .type = XR_TYPE_SESSION_ACTION_SETS_ATTACH_INFO,
@@ -494,8 +619,15 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
             quat rotation = xrQuatToGlm(handLocation.pose.orientation);
             auto pose = controller::Pose(translation, rotation);
             glm::mat4 handOffset = i == 0 ? glm::toMat4(leftRotationOffset) : glm::toMat4(rightRotationOffset);
+
+            // offset constants taken from OpenComposite
+            // (apparently the openvr plugin uses similar constants?)
+            glm::mat4 posOffset(1.0f);
+            posOffset *= glm::translate(glm::vec3(handOffset[0]) * (i == 0 ? 0.04f : -0.04f));
+            posOffset *= glm::translate(glm::vec3(handOffset[1]) * -0.15f);
+            posOffset *= glm::translate(glm::vec3(handOffset[2]) * 0.02f);
             _poseStateMap[i == 0 ? controller::LEFT_HAND : controller::RIGHT_HAND] =
-                pose.postTransform(handOffset).transform(sensorToAvatar);
+                pose.postTransform(posOffset).postTransform(handOffset).transform(sensorToAvatar);
         }
     }
 
@@ -504,13 +636,13 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
 
     std::map<controller::StandardAxisChannel, std::string> axesToUpdate[2] = {
         {
-            { controller::LX, "/input/thumbstick/x" },
-            { controller::LY, "/input/thumbstick/y" },
+            { controller::LX, "/input/trackpad/x" },
+            { controller::LY, "/input/trackpad/y" },
             { controller::LT, "/input/trigger/value" },
         },
         {
-            { controller::RX, "/input/thumbstick/x" },
-            { controller::RY, "/input/thumbstick/y" },
+            { controller::RX, "/input/trackpad/x" },
+            { controller::RY, "/input/trackpad/y" },
             { controller::RT, "/input/trigger/value" },
         },
     };
@@ -518,37 +650,21 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
     for (uint32_t i = 0; i < HAND_COUNT; i++) {
         for (const auto& [channel, path] : axesToUpdate[i]) {
             _axisStateMap[channel].value = _actions.at(path)->getFloat(i).currentState;
-
-            // if (_axisStateMap[channel].value != 0) {
-            //     qCDebug(xr_input_cat, "🐸 Controller %d: %s (%d): %f", i, path.c_str(), channel,
-            //             (double)_axisStateMap[channel].value);
-            // }
         }
     }
 
-    // TODO: Figure out why LEFT_APP_MENU is misssing in StandardButtonChannel
     std::map<controller::StandardButtonChannel, std::string> buttonsToUpdate[2] = {
         {
-            { controller::LEFT_PRIMARY_THUMB, "/input/a/click" },
-            { controller::LEFT_PRIMARY_THUMB_TOUCH, "/input/a/touch" },
-            { controller::LEFT_SECONDARY_THUMB, "/input/b/click" },
-            { controller::LEFT_SECONDARY_THUMB_TOUCH, "/input/b/touch" },
+            { controller::LS, "/input/trackpad/click" },
             { controller::LT_CLICK, "/input/trigger/click" },
-            { controller::LEFT_PRIMARY_INDEX_TOUCH, "/input/trigger/touch" },
-            { controller::LS, "/input/thumbstick/click" },
-            { controller::LS_TOUCH, "/input/thumbstick/touch" },
-            //{ LEFT_APP_MENU, "/input/system/click" },
+            { controller::LS_TOUCH, "/input/trackpad/touch" },
+            { controller::LEFT_SECONDARY_THUMB, "/input/menu/click" },
         },
         {
-            { controller::RIGHT_PRIMARY_THUMB, "/input/a/click" },
-            { controller::RIGHT_PRIMARY_THUMB_TOUCH, "/input/a/touch" },
-            { controller::RIGHT_SECONDARY_THUMB, "/input/b/click" },
-            { controller::RIGHT_SECONDARY_THUMB_TOUCH, "/input/b/touch" },
+            { controller::RS, "/input/trackpad/click" },
             { controller::RT_CLICK, "/input/trigger/click" },
-            { controller::RIGHT_PRIMARY_INDEX_TOUCH, "/input/trigger/touch" },
-            { controller::RS, "/input/thumbstick/click" },
-            { controller::RS_TOUCH, "/input/thumbstick/touch" },
-            //{ RIGHT_APP_MENU, "/input/system/click" },
+            { controller::RS_TOUCH, "/input/trackpad/touch" },
+            { controller::RIGHT_SECONDARY_THUMB, "/input/menu/click" },
         },
     };
 
@@ -556,8 +672,30 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
         for (const auto& [channel, path] : buttonsToUpdate[i]) {
             if (_actions.at(path)->getBool(i).currentState == XR_TRUE) {
                 _buttonPressedMap.insert(channel);
-                // qCDebug(xr_input_cat, "🐸 Controller %d: %s (%d)", i, path.c_str(), channel);
             }
         }
+    }
+
+    partitionTouchpad(controller::LS, controller::LX, controller::LY, controller::LS_CENTER, controller::LS_X, controller::LS_Y);
+    partitionTouchpad(controller::RS, controller::RX, controller::RY, controller::RS_CENTER, controller::RS_X, controller::RS_Y);
+
+    // hack to convert the boolean squeeze buttons into axes
+    _axisStateMap[controller::LEFT_GRIP].value = _actions.at("/input/squeeze/click")->getBool(0).currentState ? 1.0f : 0.0f;
+    _axisStateMap[controller::RIGHT_GRIP].value = _actions.at("/input/squeeze/click")->getBool(1).currentState ? 1.0f : 0.0f;
+}
+
+// copied from openvr/ViveControllerManager
+void OpenXrInputPlugin::InputDevice::partitionTouchpad(int sButton, int xAxis, int yAxis, int centerPseudoButton, int xPseudoButton, int yPseudoButton) {
+    // Populate the L/RS_CENTER/OUTER pseudo buttons, corresponding to a partition of the L/RS space based on the X/Y values.
+    const float CENTER_DEADBAND = 0.6f;
+    const float DIAGONAL_DIVIDE_IN_RADIANS = PI / 4.0f;
+    if (_buttonPressedMap.find(sButton) != _buttonPressedMap.end()) {
+        float absX = abs(_axisStateMap[xAxis].value);
+        float absY = abs(_axisStateMap[yAxis].value);
+        glm::vec2 cartesianQuadrantI(absX, absY);
+        float angle = glm::atan(cartesianQuadrantI.y / cartesianQuadrantI.x);
+        float radius = glm::length(cartesianQuadrantI);
+        bool isCenter = radius < CENTER_DEADBAND;
+        _buttonPressedMap.insert(isCenter ? centerPseudoButton : ((angle < DIAGONAL_DIVIDE_IN_RADIANS) ? xPseudoButton :yPseudoButton));
     }
 }
