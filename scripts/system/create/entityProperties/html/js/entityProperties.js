@@ -1545,11 +1545,6 @@ const GROUPS = [
                 showPropertyRule: { "cloneable": "true" },
             },
             {
-                label: "Triggerable",
-                type: "bool",
-                propertyID: "grab.triggerable",
-            },
-            {
                 label: "Cast Shadows",
                 type: "bool",
                 propertyID: "canCastShadow",
@@ -1599,6 +1594,11 @@ const GROUPS = [
                 type: "bool",
                 propertyID: "grab.grabDelegateToParent",
                 showPropertyRule: { "grab.grabbable": "true" },
+            },
+            {
+                label: "Triggerable",
+                type: "bool",
+                propertyID: "grab.triggerable",
             },
             {
                 label: "Equippable",
