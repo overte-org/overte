@@ -52,7 +52,7 @@ public:
     void setVerifiedUserName(QString userName) { _verifiedUserName = userName; }
     const QString& getVerifiedUserName() const { return _verifiedUserName; }
 
-    void setVerifiedDomainUserName(QString userName) { _verifiedDomainUserName = userName.toLower(); }
+    void setVerifiedDomainUserName(QString userName) { _verifiedDomainUserName = userName; }
     const QString& getVerifiedDomainUserName() const { return _verifiedDomainUserName; }
 
     void setGroupID(QUuid groupID) { _groupID = groupID; if (!groupID.isNull()) { _groupIDSet = true; }}

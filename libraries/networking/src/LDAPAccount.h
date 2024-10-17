@@ -13,6 +13,7 @@
 #ifndef LDAPACCOUNT_H
 #define LDAPACCOUNT_H
 
+#include <ldap.h>
 #include <QtCore/QObject>
 
 class LDAPAccount : public QObject {
@@ -20,5 +21,8 @@ class LDAPAccount : public QObject {
 public:
     static bool isValidCredentials(const QString& username, const QString& password);
     static const char* toChar(const QString& str);
+    static std::vector<std::string> getRolesAsStrings(const QString& username, const QString& password);
+private:
+    static LDAP* initialize();
 };
 #endif //LDAPACCOUNT_H
