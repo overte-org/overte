@@ -23,6 +23,7 @@ struct TexMapArray {
 <@if not HIFI_USE_MTOON@>
     vec2 _lightmapParams;
 <@endif@>
+    uint _texCoordSets;
 };
 
 <@func declareMaterialTexMapArrayBuffer()@>
@@ -77,6 +78,11 @@ Material getMaterial() {
 }
 TexMapArray getTexMapArray() {
     return _texMapArray;
+}
+vec2 evalTexCoordSet(mat2 uvs, int channel) {
+    // We support up to 4 texCoord sets (0 - 3, 2 bits per channel), but currently we only use 0 and 1 (see setTexCoordSet in Material.h)
+    const int MAX_TEX_COORD_SET = 3;
+    return uvs[(_texMapArray._texCoordSets >> (2 * channel)) & MAX_TEX_COORD_SET];
 }
 
 <@if not HIFI_USE_MTOON@>
