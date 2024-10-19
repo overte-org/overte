@@ -23,7 +23,7 @@ const float ACTIVATION_POSITION_DELTA = 0.005f;
 const float ACTIVATION_ALIGNMENT_DOT = 0.99990f;
 const float ACTIVATION_LINEAR_VELOCITY_DELTA = 0.01f;
 const float ACTIVATION_GRAVITY_DELTA = 0.1f;
-const float ACTIVATION_ANGULAR_VELOCITY_DELTA = 0.03f;
+const float ACTIVATION_ANGULAR_VELOCITY_DELTA = 0.0004f;
 
 
 // origin of physics simulation in world-frame
