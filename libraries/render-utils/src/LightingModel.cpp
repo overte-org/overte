@@ -11,6 +11,7 @@
 #include "LightingModel.h"
 #include "RandomAndNoise.h"
 #include "BRDF.h"
+#include "ZoneRenderer.h"
 
 #include "render-utils/ShaderConstants.h"
 
@@ -283,6 +284,12 @@ bool LightingModel::isShadowEnabled() const {
     return (bool)_parametersBuffer.get<Parameters>().enableShadow;
 }
 
+void LightingModel::setNormalMapAttenuation(float min, float max) {
+    Parameters& parameters = _parametersBuffer.edit<Parameters>();
+    parameters.normalMapAttenuationMin = std::min(min, max);
+    parameters.normalMapAttenuationMax = max;
+}
+
 MakeLightingModel::MakeLightingModel() {
     _lightingModel = std::make_shared<LightingModel>();
 }
@@ -322,6 +329,7 @@ void MakeLightingModel::configure(const Config& config) {
 void MakeLightingModel::run(const render::RenderContextPointer& renderContext, LightingModelPointer& lightingModel) {
 
     lightingModel = _lightingModel;
+    ZoneRendererTask::_lightingModel = _lightingModel;
 
     // make sure the enableTexturing flag of the render ARgs is in sync
     renderContext->args->_enableTexturing = _lightingModel->isMaterialTexturingEnabled();

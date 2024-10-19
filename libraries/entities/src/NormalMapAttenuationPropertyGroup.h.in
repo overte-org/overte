@@ -1,0 +1,43 @@
+//
+//  NormalMapAttenuationPropertyGroup.h
+//  libraries/entities/src
+//
+//  Created by HifiExperiments on 10/18/24
+//  Copyright 2024 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#ifndef hifi_NormalMapAttenuationPropertyGroup_h
+#define hifi_NormalMapAttenuationPropertyGroup_h
+
+#include "PropertyGroup.h"
+#include "EntityItemPropertiesMacros.h"
+
+class EntityItemProperties;
+class EncodeBitstreamParams;
+class OctreePacketData;
+class EntityTreeElementExtraEncodeData;
+class ReadBitstreamToTreeParams;
+class ScriptEngine;
+class ScriptValue;
+
+/*@jsdoc
+ * NormalMapAttenuation is defined by the following properties:
+ * @typedef {object} Entities.NormalMapAttenuation
+ * @property {number} min=30.0 - The distance, in meters, at which the normal map starts to fade out.
+ * @property {number} max=100.0 - The distance, in meters, at which the normal map is fully faded out.
+ */
+class NormalMapAttenuationPropertyGroup : public PropertyGroup {
+public:
+    ENTITY_PROPERTY_GROUP_METHODS(NormalMapAttenuationPropertyGroup)
+
+protected:
+
+@NormalMapAttenuation_GROUP_PROPS@
+
+};
+
+#endif // hifi_NormalMapAttenuationPropertyGroup_h
