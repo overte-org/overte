@@ -7779,7 +7779,7 @@ bool Application::askToSetAvatarUrl(const QString& url) {
             agreeToLicense = (static_cast<QMessageBox::StandardButton>(answer.toInt()) == QMessageBox::Yes);
             if (agreeToLicense) {
                 switch (modelType) {
-                    case FSTReader::HEAD_AND_BODY_MODEL: {
+                    case FSTReader::ModelType::HEAD_AND_BODY_MODEL: {
                     setAvatar(url, modelName);
                     break;
                 }

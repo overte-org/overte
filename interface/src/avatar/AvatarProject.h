@@ -106,6 +106,7 @@ private:
 
     ~AvatarProject() { _fst->deleteLater(); }
 
+    void setFST(FST *fst);
     FST* getFST() { return _fst; }
 
     void refreshProjectFiles();
