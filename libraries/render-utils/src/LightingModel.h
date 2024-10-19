@@ -81,6 +81,8 @@ public:
     void setShadow(bool enable);
     bool isShadowEnabled() const;
 
+    void setNormalMapAttenuation(float min, float max);
+
     UniformBufferView getParametersBuffer() const { return _parametersBuffer; }
     gpu::TexturePointer getAmbientFresnelLUT() const { return _ambientFresnelLUT; }
 
@@ -118,8 +120,8 @@ protected:
 
         float enableAmbientOcclusion { 1.0f };
         float enableShadow { 1.0f };
-        float spare1 { 1.0f };
-        float spare2 { 1.0f };
+        float normalMapAttenuationMin { 1.0f };
+        float normalMapAttenuationMax { 1.0f };
 
         Parameters() {}
     };

@@ -380,6 +380,24 @@ const GROUPS = [
                 type: "string",
                 propertyID: "filterURL",
                 placeholder: "URL",
+            },
+            {
+                label: "Normal Map Fade Min Distance",
+                type: "number-draggable",
+                min: 0,
+                max: 16000,
+                step: 1,
+                decimals: 2,
+                propertyID: "normalMapAttenuation.min",
+            },
+            {
+                label: "Normal Map Fade Max Distance",
+                type: "number-draggable",
+                min: 0,
+                max: 16000,
+                step: 1,
+                decimals: 2,
+                propertyID: "normalMapAttenuation.max",
             }
         ]
     },

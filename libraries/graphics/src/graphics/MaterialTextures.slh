@@ -25,8 +25,8 @@
     vec3 normalizedTangent = normalize(<$interpolatedTangent$>.xyz);
     vec3 normalizedBitangent = cross(normalizedNormal, normalizedTangent);
     // attenuate the normal map divergence from the mesh normal based on distance
-    // The attenuation range [30,100] meters from the eye is arbitrary for now
-    vec3 localNormal = mix(<$fetchedNormal$>, vec3(0.0, 1.0, 0.0), smoothstep(30.0, 100.0, (-<$fragPosES$>).z));
+    vec2 normalMapAttenuation = getNormalMapAttenuation();
+    vec3 localNormal = mix(<$fetchedNormal$>, vec3(0.0, 1.0, 0.0), smoothstep(normalMapAttenuation.x, normalMapAttenuation.y, (-<$fragPosES$>).z));
     <$normal$> = normalize(vec3(normalizedBitangent * localNormal.x + normalizedNormal * localNormal.y + normalizedTangent * localNormal.z));
 }
 <@endfunc@>

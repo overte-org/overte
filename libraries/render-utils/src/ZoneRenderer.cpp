@@ -42,6 +42,7 @@ namespace gr {
 using namespace render;
 
 const Selection::Name ZoneRendererTask::ZONES_SELECTION { "RankedZones" };
+LightingModelPointer ZoneRendererTask::_lightingModel { nullptr };
 
 void ZoneRendererTask::build(JobModel& task, const Varying& input, Varying& output) {
     // Filter out the sorted list of zones

@@ -50,7 +50,6 @@ public:
 
     static const render::Selection::Name ZONES_SELECTION;
 
-
     using Input = render::ItemBounds;
     using Output = render::ItemBounds;
     using Config = ZoneRendererConfig;
@@ -61,6 +60,9 @@ public:
     void build(JobModel& task, const render::Varying& input, render::Varying& output);
 
     void configure(const Config& config) { _maxDrawn = config.maxDrawn; }
+
+    // We use this to pass the normalMapAttenuation from the current Zone to the LightingModel
+    static LightingModelPointer _lightingModel;
 
 protected:
     int _maxDrawn; // initialized by Config
