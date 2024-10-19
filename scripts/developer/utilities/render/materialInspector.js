@@ -139,7 +139,7 @@ function setSelectedObject(id, type) {
 
 function setWindow(window) {
     if (activeWindow !== undefined) {
-        setSelectedObject(Uuid.NULL, "");
+        setSelectedObject(Uuid.NONE, "");
        // activeWindow.closed.disconnect(killWindow);
         activeWindow.fromQml.disconnect(fromQml);
         Controller.mousePressEvent.disconnect(mousePressEvent);

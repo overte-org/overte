@@ -106,7 +106,7 @@
         } else if (properties.type === "Zone") {
             return { imageURL: ZONE_URL };
         } else if (properties.type === "Material") {
-            if (properties.parentID !== Uuid.NULL && properties.name !== "MATERIAL_" + entityShapeVisualizerSessionName) {
+            if (properties.parentID !== Uuid.NONE && properties.name !== "MATERIAL_" + entityShapeVisualizerSessionName) {
                 return { imageURL: MATERIAL_URL };
             } else {
                 return { imageURL: "" };
@@ -1858,7 +1858,7 @@
             }
             selectedEntities.forEach(function (id, index) {
                 var parentId = Entities.getEntityProperties(id, ["parentID"]).parentID;
-                if (parentId !== null && parentId.length > 0 && parentId !== Uuid.NULL) {
+                if (parentId !== null && parentId.length > 0 && parentId !== Uuid.NONE) {
                     parentCheck = true;
                 }
                 Entities.editEntity(id, {parentID: null});
@@ -2890,7 +2890,7 @@
             } else if (data.type === "materialTargetRequest") {
                 var parentModelData;
                 var properties = Entities.getEntityProperties(data.entityID, ["type", "parentID"]);
-                if (properties.type === "Material" && properties.parentID !== Uuid.NULL) {
+                if (properties.type === "Material" && properties.parentID !== Uuid.NONE) {
                     var parentType = Entities.getEntityProperties(properties.parentID, ["type"]).type;
                     if (parentType === "Model" || Entities.getNestableType(properties.parentID) === "avatar") {
                         parentModelData = Graphics.getModel(properties.parentID);
@@ -3313,7 +3313,7 @@
         var state = "NONE";
         var properties = Entities.getEntityProperties(id, ["parentID"]);
         var children = createApp.getDomainOnlyChildrenIDs(id);
-        if (properties.parentID !== Uuid.NULL) {
+        if (properties.parentID !== Uuid.NONE) {
             if (children.length > 0) {
                 state = "PARENT_CHILDREN";
             } else {

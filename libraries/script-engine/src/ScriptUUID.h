@@ -41,7 +41,7 @@
 /// Provides the <code><a href="https://apidocs.overte.org/Uuid.html">Uuid</a></code> scripting interface
 class ScriptUUID : public QObject, protected Scriptable {
     Q_OBJECT
-    Q_PROPERTY(QString NULL READ NULL_UUID CONSTANT) // String for use in scripts.
+    Q_PROPERTY(QString NONE READ getNullUuid CONSTANT) // String for use in scripts.
 
 public slots:
     /*@jsdoc
@@ -100,14 +100,14 @@ public slots:
      * Tests whether a UUID is null.
      * @function Uuid(0).isNull
      * @param {Uuid} id - The UUID to test.
-     * @returns {boolean} <code>true</code> if the UUID equals <code>Uuid.NULL</code> or is <code>null</code>, otherwise 
+     * @returns {boolean} <code>true</code> if the UUID equals <code>Uuid.NONE</code> or is <code>null</code>, otherwise
      *     <code>false</code>.
      * @example <caption>Demonstrate <code>true</code> and <code>false</code> cases.</caption>
      * var uuid; // undefined
      * print(Uuid.isNull(uuid)); // false
      * uuid = Uuid.generate();
      * print(Uuid.isNull(uuid)); // false
-     * uuid = Uuid.NULL;
+     * uuid = Uuid.NONE;
      * print(Uuid.isNull(uuid)); // true
      * uuid = null;
      * print(Uuid.isNull(uuid)); // true
@@ -125,9 +125,9 @@ public slots:
      * print("Generated UUID: " + uuid);    // Generated UUID: {nnnnnnnn-nnnn-nnnn-nnnn-nnnnnnnnnnnn}
      */
     void print(const QString& label, const QUuid& id);
+    QString getNullUuid() const { return NULL_ID; }
 
 private:
-    const QString NULL_UUID() { return NULL_ID; }
     const QString NULL_ID { "{00000000-0000-0000-0000-000000000000}" };
 };
 

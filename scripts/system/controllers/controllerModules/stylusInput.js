@@ -108,7 +108,7 @@ Script.include("/~/system/libraries/controllers.js");
             }
 
             // add the tabletScreen, if it is valid
-            if (HMD.tabletScreenID && HMD.tabletScreenID !== Uuid.NULL &&
+            if (HMD.tabletScreenID && HMD.tabletScreenID !== Uuid.NONE &&
                 Entities.getEntityProperties(HMD.tabletScreenID, ["visible"]).visible) {
                 stylusTarget = getOverlayDistance(controllerPosition, HMD.tabletScreenID);
                 if (stylusTarget) {
@@ -117,7 +117,7 @@ Script.include("/~/system/libraries/controllers.js");
             }
 
             // add the tablet home button.
-            if (HMD.homeButtonID && HMD.homeButtonID !== Uuid.NULL &&
+            if (HMD.homeButtonID && HMD.homeButtonID !== Uuid.NONE &&
                 Entities.getEntityProperties(HMD.homeButtonID, ["visible"]).visible) {
                 stylusTarget = getOverlayDistance(controllerPosition, HMD.homeButtonID);
                 if (stylusTarget) {
