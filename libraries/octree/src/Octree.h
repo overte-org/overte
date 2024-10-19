@@ -69,6 +69,7 @@ public:
     typedef enum {
         UNKNOWN,
         DIDNT_FIT,
+        SENT_LARGE,
         FINISHED
     } reason;
     reason stopReason;

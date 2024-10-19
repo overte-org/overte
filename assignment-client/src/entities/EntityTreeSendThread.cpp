@@ -317,6 +317,34 @@ void EntityTreeSendThread::startNewTraversal(const DiffTraversal::View& view, En
     }
 }
 
+void addPacketHeader(OctreePacketData& packetData, bool includeExistsBits, OctreeServer *octreeServer, const uint16_t numEntities, int32_t& numEntitiesOffset) {
+    // This is the beginning of a new packet.
+    // We pack minimal data for this to be accepted as an OctreeElement payload for the root element.
+    // The Octree header bytes look like this:
+    //
+    // 0x00  octalcode for root
+    // 0x00  colors (1 bit where recipient should call: child->readElementDataFromBuffer())
+    // 0xXX  childrenInTreeMask (when params.includeExistsBits is true: 1 bit where child is existant)
+    // 0x00  childrenInBufferMask (1 bit where recipient should call: child->readElementData() recursively)
+    const uint8_t zeroByte = 0;
+    packetData.appendValue(zeroByte);   // octalcode
+    packetData.appendValue(zeroByte);  // colors
+    if (includeExistsBits) {
+        uint8_t childrenExistBits = 0;
+        EntityTreeElementPointer root = std::dynamic_pointer_cast<EntityTreeElement>(octreeServer->getOctree()->getRoot());
+        for (int32_t i = 0; i < NUMBER_OF_CHILDREN; ++i) {
+            if (root->getChildAtIndex(i)) {
+                childrenExistBits += (1 << i);
+            }
+        }
+        packetData.appendValue(childrenExistBits);  // childrenInTreeMask
+    }
+    packetData.appendValue(zeroByte);  // childrenInBufferMask
+
+    numEntitiesOffset = packetData.getUncompressedByteOffset();
+    packetData.appendValue(numEntities);
+}
+
 bool EntityTreeSendThread::traverseTreeAndBuildNextPacketPayload(EncodeBitstreamParams& params, const QJsonObject& jsonFilters) {
     if (_sendQueue.empty()) {
         params.stopReason = EncodeBitstreamParams::FINISHED;
@@ -325,38 +353,15 @@ bool EntityTreeSendThread::traverseTreeAndBuildNextPacketPayload(EncodeBitstream
     }
     quint64 encodeStart = usecTimestampNow();
     if (!_packetData.hasContent()) {
-        // This is the beginning of a new packet.
-        // We pack minimal data for this to be accepted as an OctreeElement payload for the root element.
-        // The Octree header bytes look like this:
-        //
-        // 0x00  octalcode for root
-        // 0x00  colors (1 bit where recipient should call: child->readElementDataFromBuffer())
-        // 0xXX  childrenInTreeMask (when params.includeExistsBits is true: 1 bit where child is existant)
-        // 0x00  childrenInBufferMask (1 bit where recipient should call: child->readElementData() recursively)
-        const uint8_t zeroByte = 0;
-        _packetData.appendValue(zeroByte); // octalcode
-        _packetData.appendValue(zeroByte); // colors
-        if (params.includeExistsBits) {
-            uint8_t childrenExistBits = 0;
-            EntityTreeElementPointer root = std::dynamic_pointer_cast<EntityTreeElement>(_myServer->getOctree()->getRoot());
-            for (int32_t i = 0; i < NUMBER_OF_CHILDREN; ++i) {
-                if (root->getChildAtIndex(i)) {
-                    childrenExistBits += (1 << i);
-                }
-            }
-            _packetData.appendValue(childrenExistBits); // childrenInTreeMask
-        }
-        _packetData.appendValue(zeroByte); // childrenInBufferMask
-
         // Pack zero for numEntities.
-        // But before we do: grab current byteOffset so we can come back later
+        // Also grab current byteOffset so we can come back later
         // and update this with the real number.
         _numEntities = 0;
-        _numEntitiesOffset = _packetData.getUncompressedByteOffset();
-        _packetData.appendValue(_numEntities);
+        addPacketHeader(_packetData, params.includeExistsBits, _myServer, _numEntities, _numEntitiesOffset);
     }
 
     LevelDetails entitiesLevel = _packetData.startLevel();
+    LevelDetails entitiesLargeLevel = _packetDataLarge.startLevel();;
     uint64_t sendTime = usecTimestampNow();
     auto nodeData = static_cast<OctreeQueryNode*>(params.nodeData);
     nodeData->stats.encodeStarted();
@@ -371,18 +376,41 @@ bool EntityTreeSendThread::traverseTreeAndBuildNextPacketPayload(EncodeBitstream
             // also send if we previously matched since this represents change to a matched item.
             bool entityMatchesFilters = entity->matchesJSONFilters(jsonFilters);
             bool entityPreviouslyMatchedFilter = entityNodeData->sentFilteredEntity(entityID);
+            bool entityHasPropsToSend = !_extraEncodeData->entities.contains(entityID) || !_extraEncodeData->entities.value(entityID).isEmpty();
 
-            if (entityMatchesFilters || entityNodeData->isEntityFlaggedAsExtra(entityID) || entityPreviouslyMatchedFilter) {
+            if ((entityMatchesFilters || entityNodeData->isEntityFlaggedAsExtra(entityID) || entityPreviouslyMatchedFilter) && entityHasPropsToSend) {
                 if (!jsonFilters.isEmpty() && entityMatchesFilters) {
                     // Record explicitly filtered-in entity so that extra entities can be flagged.
                     entityNodeData->insertSentFilteredEntity(entityID);
                 }
-                OctreeElement::AppendState appendEntityState = entity->appendEntityData(&_packetData, params, _extraEncodeData, entityNode->getCanGetAndSetPrivateUserData());
+                EntityPropertyList firstDidntFitProperty = (EntityPropertyList)0;
+                OctreeElement::AppendState appendEntityState = entity->appendEntityData(&_packetData, params, _extraEncodeData, firstDidntFitProperty, entityNode->getCanGetAndSetPrivateUserData());
 
-                if (appendEntityState != OctreeElement::COMPLETED) {
-                    if (appendEntityState == OctreeElement::PARTIAL) {
-                        ++_numEntities;
+                if (appendEntityState == OctreeElement::NONE && firstDidntFitProperty != 0) {
+                    if (_numEntities != 0) {
+                        params.stopReason = EncodeBitstreamParams::DIDNT_FIT;
+                        break;
                     }
+
+                    EntityPropertyList targetProperty = firstDidntFitProperty;
+                    unsigned int bufferMultiplier = 2;
+                    int32_t numEntitiesOffset;
+                    while (true) {
+                        _packetDataLarge.changeSettings(true, bufferMultiplier * _packetData.getTargetSize());
+                        addPacketHeader(_packetDataLarge, params.includeExistsBits, _myServer, 1, numEntitiesOffset);
+                        // TODO: should this just handle the single property (via _extraEncodeData) or should it just send everything since it's big anyways?
+                        firstDidntFitProperty = (EntityPropertyList)0;
+                        appendEntityState = entity->appendEntityData(&_packetDataLarge, params, _extraEncodeData, firstDidntFitProperty, entityNode->getCanGetAndSetPrivateUserData());
+                        if (firstDidntFitProperty != targetProperty) {
+                            // We don't update _numEntities here, as we only use that for individual packets
+                            params.stopReason = EncodeBitstreamParams::SENT_LARGE;
+                            break;
+                        }
+                        bufferMultiplier++;
+                    }
+                    break;
+                } else if (appendEntityState == OctreeElement::PARTIAL) {
+                    ++_numEntities;
                     params.stopReason = EncodeBitstreamParams::DIDNT_FIT;
                     break;
                 }
@@ -407,13 +435,20 @@ bool EntityTreeSendThread::traverseTreeAndBuildNextPacketPayload(EncodeBitstream
         _extraEncodeData->entities.clear();
     }
 
-    if (_numEntities == 0) {
+    if (params.stopReason != EncodeBitstreamParams::SENT_LARGE) {
+        _packetDataLarge.discardLevel(entitiesLargeLevel);
+        if (_numEntities == 0) {
+            _packetData.discardLevel(entitiesLevel);
+            OctreeServer::trackEncodeTime((float)(usecTimestampNow() - encodeStart));
+            return false;
+        }
+        _packetData.endLevel(entitiesLevel);
+        _packetData.updatePriorBytes(_numEntitiesOffset, (const unsigned char*)&_numEntities, sizeof(_numEntities));
+    } else {
         _packetData.discardLevel(entitiesLevel);
-        OctreeServer::trackEncodeTime((float)(usecTimestampNow() - encodeStart));
-        return false;
+        _packetDataLarge.endLevel(entitiesLargeLevel);
+        // _paacketDataLarge already has numEntities (1) set
     }
-    _packetData.endLevel(entitiesLevel);
-    _packetData.updatePriorBytes(_numEntitiesOffset, (const unsigned char*)&_numEntities, sizeof(_numEntities));
     OctreeServer::trackEncodeTime((float)(usecTimestampNow() - encodeStart));
     return true;
 }

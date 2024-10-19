@@ -57,6 +57,7 @@ bool SkyboxPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
                                     EntityPropertyFlags& requestedProperties,
                                     EntityPropertyFlags& propertyFlags,
                                     EntityPropertyFlags& propertiesDidntFit,
+                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                     int& propertyCount, 
                                     OctreeElement::AppendState& appendState) const {
 
@@ -130,6 +131,7 @@ void SkyboxPropertyGroup::appendSubclassData(OctreePacketData* packetData, Encod
                                 EntityPropertyFlags& requestedProperties,
                                 EntityPropertyFlags& propertyFlags,
                                 EntityPropertyFlags& propertiesDidntFit,
+                                bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                 int& propertyCount, 
                                 OctreeElement::AppendState& appendState) const {
 

@@ -61,6 +61,7 @@ bool BloomPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
                                             EntityPropertyFlags& requestedProperties,
                                             EntityPropertyFlags& propertyFlags,
                                             EntityPropertyFlags& propertiesDidntFit,
+                                            bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                             int& propertyCount, 
                                             OctreeElement::AppendState& appendState) const {
     bool successPropertyFits = true;
@@ -139,6 +140,7 @@ void BloomPropertyGroup::appendSubclassData(OctreePacketData* packetData, Encode
                                             EntityPropertyFlags& requestedProperties,
                                             EntityPropertyFlags& propertyFlags,
                                             EntityPropertyFlags& propertiesDidntFit,
+                                            bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                             int& propertyCount, 
                                             OctreeElement::AppendState& appendState) const {
     bool successPropertyFits = true;

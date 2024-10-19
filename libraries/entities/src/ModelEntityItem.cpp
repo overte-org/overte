@@ -184,6 +184,7 @@ void ModelEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBit
                                 EntityPropertyFlags& requestedProperties,
                                 EntityPropertyFlags& propertyFlags,
                                 EntityPropertyFlags& propertiesDidntFit,
+                                bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                 int& propertyCount, OctreeElement::AppendState& appendState) const {
 
     bool successPropertyFits = true;
@@ -206,7 +207,7 @@ void ModelEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBit
 
     withReadLock([&] {
         _animationProperties.appendSubclassData(packetData, params, entityTreeElementExtraEncodeData, requestedProperties,
-            propertyFlags, propertiesDidntFit, propertyCount, appendState);
+            propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
     });
 }
 
