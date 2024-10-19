@@ -1,0 +1,133 @@
+//
+//  NormalMapAttenuationPropertyGroup.cpp
+//  libraries/entities/src
+//
+//  Created by HifiExperiments on 10/18/24
+//  Copyright 2024 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "NormalMapAttenuationPropertyGroup.h"
+
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+
+void NormalMapAttenuationPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+
+@NormalMapAttenuation_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void NormalMapAttenuationPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
+
+@NormalMapAttenuation_GROUP_COPY_FROM_SCRIPT@
+
+}
+
+void NormalMapAttenuationPropertyGroup::merge(const NormalMapAttenuationPropertyGroup& other) {
+
+@NormalMapAttenuation_GROUP_MERGE@
+
+}
+
+void NormalMapAttenuationPropertyGroup::debugDump() const {
+
+@NormalMapAttenuation_GROUP_DEBUG_DUMP@
+
+}
+
+void NormalMapAttenuationPropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@NormalMapAttenuation_GROUP_LIST_CHANGED@
+
+}
+
+bool NormalMapAttenuationPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                                  EntityPropertyFlags& requestedProperties,
+                                                  EntityPropertyFlags& propertyFlags,
+                                                  EntityPropertyFlags& propertiesDidntFit,
+                                                  int& propertyCount,
+                                                  OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@NormalMapAttenuation_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool NormalMapAttenuationPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags, const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@NormalMapAttenuation_GROUP_READ@
+
+@NormalMapAttenuation_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void NormalMapAttenuationPropertyGroup::markAllChanged() {
+
+@NormalMapAttenuation_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags NormalMapAttenuationPropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@NormalMapAttenuation_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void NormalMapAttenuationPropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@NormalMapAttenuation_GROUP_COPY_TO@
+
+}
+
+bool NormalMapAttenuationPropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@NormalMapAttenuation_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags NormalMapAttenuationPropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@NormalMapAttenuation_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int NormalMapAttenuationPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                               ReadBitstreamToTreeParams& args,
+                                                               EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                               bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@NormalMapAttenuation_GROUP_READ@
+
+    return bytesRead;
+}
+
+void NormalMapAttenuationPropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                              QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@NormalMapAttenuation_GROUP_ADD_TO_MAP@
+
+}

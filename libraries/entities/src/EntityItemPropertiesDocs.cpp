@@ -894,6 +894,7 @@
  *
  * @property {Entities.ComponentMode} tonemappingMode="inherit" - Configures the tonemapping in the zone.
  * @property {Entities.Tonemapping} tonemapping - The tonemapping properties of the zone.
+ * @property {Entities.NormalMapAttenuation} normalMapAttenuation - The normal map attenuation properties of the zone.
  *
  * @property {Entities.ComponentMode} ambientOcclusionMode="inherit" - Configures the ambient occlusion in the zone.
  * @property {Entities.AmbientOcclusion} ambientOcclusion - The ambient occlusion properties of the zone.
