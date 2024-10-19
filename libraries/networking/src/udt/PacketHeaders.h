@@ -363,6 +363,7 @@ enum class EntityVersion : PacketVersion {
     ModelLoadPriority,
     PropertyCleanup,
     TextVerticalAlignment,
+    RemoveScreenshare,
 
     // Add new versions above here
     NUM_PACKET_TYPE,
