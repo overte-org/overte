@@ -1,3 +1,8 @@
+# This is a windows only test
+if(NOT WIN32)
+    return()
+endif ()
+
 set(TARGET_NAME gl-test)
 # This is not a testcase -- just set it up as a regular hifi project
 setup_hifi_project(Quick Gui OpenGL)
