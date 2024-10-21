@@ -1195,9 +1195,9 @@ Mapping::Pointer UserInputMapper::parseMapping(const QString& json) {
     QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8(), &error);
     // check validity of the document
     if (doc.isNull()) {
-        qCDebug(controllers) << "Invalid JSON...\n";
-        qCDebug(controllers) << error.errorString();
-        qCDebug(controllers) << "JSON was:\n" << json << Qt::endl;
+        qCCritical(controllers) << "Invalid JSON...\n";
+        qCCritical(controllers) << error.errorString();
+        qCCritical(controllers) << "JSON was:\n" << json << Qt::endl;
         return Mapping::Pointer();
     }
 
