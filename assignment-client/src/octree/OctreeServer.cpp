@@ -1239,7 +1239,7 @@ void OctreeServer::beginRunning() {
 
     // we need to ask the DS about agents so we can ping/reply with them
     nodeList->addSetOfNodeTypesToNodeInterestSet({ NodeType::Agent, NodeType::EntityScriptServer,
-        NodeType::AvatarMixer });
+        NodeType::AvatarMixer, NodeType::AudioMixer });
 
     beforeRun(); // after payload has been processed
 

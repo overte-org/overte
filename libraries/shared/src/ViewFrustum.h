@@ -47,7 +47,7 @@ public:
     const glm::vec3& getRight() const { return _right; }
 
     // setters for lens attributes
-    void setProjection(const glm::mat4 & projection);
+    void setProjection(const glm::mat4& projection, bool isOblique = false);
     void setProjection(float cameraFov, float cameraAspectRatio, float cameraNearClip, float cameraFarClip);
     void setFocalLength(float focalLength) { _focalLength = focalLength; }
     bool isPerspective() const;
@@ -103,7 +103,6 @@ public:
 
     bool pointIntersectsFrustum(const glm::vec3& point) const;
     bool sphereIntersectsFrustum(const glm::vec3& center, float radius) const;
-    bool cubeIntersectsFrustum(const AACube& box) const;
     bool boxIntersectsFrustum(const AABox& box) const;
     bool boxInsideFrustum(const AABox& box) const;
 
@@ -174,6 +173,8 @@ private:
 
     float _nearClip { DEFAULT_NEAR_CLIP };
     float _farClip { DEFAULT_FAR_CLIP };
+
+    bool _isOblique { false };
 
     const char* debugPlaneName (int plane) const;
 

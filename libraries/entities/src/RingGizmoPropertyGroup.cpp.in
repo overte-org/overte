@@ -1,0 +1,159 @@
+//
+//  Created by Sam Gondelman on 1/22/19
+//  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "RingGizmoPropertyGroup.h"
+
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+
+const float RingGizmoPropertyGroup::MIN_ANGLE = 0.0f;
+const float RingGizmoPropertyGroup::MAX_ANGLE = 360.0f;
+const float RingGizmoPropertyGroup::MIN_ALPHA = 0.0f;
+const float RingGizmoPropertyGroup::MAX_ALPHA = 1.0f;
+const float RingGizmoPropertyGroup::MIN_RADIUS = 0.0f;
+const float RingGizmoPropertyGroup::MAX_RADIUS = 0.5f;
+
+void RingGizmoPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+
+@Ring_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void RingGizmoPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
+
+@Ring_GROUP_COPY_FROM_SCRIPT@
+
+}
+
+void RingGizmoPropertyGroup::merge(const RingGizmoPropertyGroup& other) {
+
+@Ring_GROUP_MERGE@
+
+}
+
+void RingGizmoPropertyGroup::debugDump() const {
+
+@Ring_GROUP_DEBUG_DUMP@
+
+}
+
+void RingGizmoPropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@Ring_GROUP_LIST_CHANGED@
+
+}
+
+bool RingGizmoPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                    EntityPropertyFlags& requestedProperties,
+                                    EntityPropertyFlags& propertyFlags,
+                                    EntityPropertyFlags& propertiesDidntFit,
+                                    int& propertyCount,
+                                    OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Ring_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool RingGizmoPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags, const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@Ring_GROUP_READ@
+
+@Ring_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void RingGizmoPropertyGroup::markAllChanged() {
+
+@Ring_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags RingGizmoPropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@Ring_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void RingGizmoPropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@Ring_GROUP_COPY_TO@
+
+}
+
+bool RingGizmoPropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Ring_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags RingGizmoPropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@Ring_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int RingGizmoPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                            ReadBitstreamToTreeParams& args,
+                                            EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                            bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Ring_GROUP_READ@
+
+    return bytesRead;
+}
+
+void RingGizmoPropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                            QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@Ring_GROUP_ADD_TO_MAP@
+
+}
+
+bool RingGizmoPropertyGroup::operator==(const RingGizmoPropertyGroup& a) const {
+    return (a._startAngle == _startAngle) &&
+           (a._endAngle == _endAngle) &&
+           (a._innerRadius == _innerRadius) &&
+           (a._innerStartColor == _innerStartColor) &&
+           (a._innerEndColor == _innerEndColor) &&
+           (a._outerStartColor == _outerStartColor) &&
+           (a._outerEndColor == _outerEndColor) &&
+           (a._innerStartAlpha == _innerStartAlpha) &&
+           (a._innerEndAlpha == _innerEndAlpha) &&
+           (a._outerStartAlpha == _outerStartAlpha) &&
+           (a._outerEndAlpha == _outerEndAlpha) &&
+           (a._hasTickMarks == _hasTickMarks) &&
+           (a._majorTickMarksAngle == _majorTickMarksAngle) &&
+           (a._minorTickMarksAngle == _minorTickMarksAngle) &&
+           (a._majorTickMarksLength == _majorTickMarksLength) &&
+           (a._minorTickMarksLength == _minorTickMarksLength) &&
+           (a._majorTickMarksColor == _majorTickMarksColor) &&
+           (a._minorTickMarksColor == _minorTickMarksColor);
+}

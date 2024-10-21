@@ -200,7 +200,7 @@ bool ScriptAvatarData::getLookAtSnappingEnabled() const {
 //
 
 //
-// ATTACHMENT AND JOINT PROPERTIES
+// JOINT PROPERTIES
 // START
 //
 QString ScriptAvatarData::getSkeletonModelURLFromScript() const {
@@ -285,15 +285,8 @@ QStringList ScriptAvatarData::getJointNames() const {
         return QStringList();
     }
 }
-QVector<AttachmentData> ScriptAvatarData::getAttachmentData() const {
-    if (AvatarSharedPointer sharedAvatarData = _avatarData.lock()) {
-        return sharedAvatarData->getAttachmentData();
-    } else {
-        return QVector<AttachmentData>();
-    }
-}
 //
-// ATTACHMENT AND JOINT PROPERTIES
+// JOINT PROPERTIES
 // END
 //
 

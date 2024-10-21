@@ -95,8 +95,9 @@
     var SPOT_LIGHT_URL = Script.resolvePath("assets/images/icon-spot-light.svg");
     var ZONE_URL = Script.resolvePath("assets/images/icon-zone.svg");
     var MATERIAL_URL = Script.resolvePath("assets/images/icon-material.svg");
+    var SOUND_URL = Script.resolvePath("assets/images/icon-sound.svg");
 
-    var entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "Zone", "Material"], function(entityID) {
+    var entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "ProceduralParticleEffect", "Zone", "Material", "Sound"], function(entityID) {
         var properties = Entities.getEntityProperties(entityID, ["type", "isSpotlight", "parentID", "name"]);
         if (properties.type === "Light") {
             return {
@@ -110,6 +111,8 @@
             } else {
                 return { imageURL: "" };
             }
+        } else if (properties.type === "Sound") {
+            return { imageURL: SOUND_URL, rotation: Quat.fromPitchYawRollDegrees(0, 0, 0) };
         } else {
             return { imageURL: PARTICLE_SYSTEM_URL };
         }
@@ -496,6 +499,31 @@
             azimuthStart: -Math.PI,
             azimuthFinish: Math.PI
         },
+        ProceduralParticleEffect: {
+            dimensions: 3,
+            numParticles: 10000,
+            numTrianglesPerParticle: 6,
+            numUpdateProps: 3,
+            particleUpdateData: JSON.stringify({
+                version: 1.0,
+                fragmentShaderURL: "qrc:///shaders/proceduralParticleSwarmUpdate.frag",
+                uniforms: {
+                    lifespan: 3.0,
+                    speed: 2.0,
+                    speedSpread: 0.25,
+                    mass: 50000000000
+                }
+            }),
+            particleRenderData: JSON.stringify({
+                version: 3.0,
+                vertexShaderURL: "qrc:///shaders/proceduralParticleSwarmRender.vert",
+                fragmentShaderURL: "qrc:///shaders/proceduralParticleSwarmRender.frag",
+                uniforms: {
+                    radius: 0.03,
+                    lifespan: 3.0
+                }
+            })
+        },
         Light: {
             color: { red: 255, green: 255, blue: 255 },
             intensity: 5.0,
@@ -504,6 +532,13 @@
             isSpotlight: false,
             exponent: 1.0,
             cutoff: 75.0,
+        },
+        Sound: {
+            volume: 1.0,
+            playing: true,
+            loop: true,
+            positional: true,
+            localOnly: false
         },
     };
 
@@ -583,8 +618,9 @@
                 if (!properties.grab) {
                     properties.grab = {};
                     if (Menu.isOptionChecked(MENU_CREATE_ENTITIES_GRABBABLE) &&
-                        !(properties.type === "Zone" || properties.type === "Light"
-                        || properties.type === "ParticleEffect" || properties.type === "Web")) {
+                        !(properties.type === "Zone" || properties.type === "Light" || properties.type === "Sound"
+                            || properties.type === "ParticleEffect" || properties.type == "ProceduralParticleEffect"
+                            || properties.type === "Web")) {
                         properties.grab.grabbable = true;
                     } else {
                         properties.grab.grabbable = false;
@@ -872,6 +908,26 @@
             }
         }
 
+        function handleNewParticleDialogResult(result) {
+            if (result) {
+                createNewEntity({
+                    type: result.procedural ? "ProceduralParticleEffect" : "ParticleEffect"
+                });
+            }
+        }
+
+        function handleNewSoundDialogResult(result) {
+            if (result) {
+                var soundURL = result.textInput;
+                if (soundURL) {
+                    createNewEntity({
+                        type: "Sound",
+                        soundURL: soundURL
+                    });
+                }
+            }
+        }
+
         function fromQml(message) { // messages are {method, params}, like json-rpc. See also sendToQml.
             var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
             tablet.popFromStack();
@@ -893,11 +949,25 @@
                 case "newMaterialDialogCancel":
                     closeExistingDialogWindow();
                     break;
+                case "newParticleDialogAdd":
+                    handleNewParticleDialogResult(message.params);
+                    closeExistingDialogWindow();
+                    break;
+                case "newParticleDialogCancel":
+                    closeExistingDialogWindow();
+                    break;
                 case "newPolyVoxDialogAdd":
                     handleNewPolyVoxDialogResult(message.params);
                     closeExistingDialogWindow();
                     break;
                 case "newPolyVoxDialogCancel":
+                    closeExistingDialogWindow();
+                    break;
+                case "newSoundDialogAdd":
+                    handleNewSoundDialogResult(message.params);
+                    closeExistingDialogWindow();
+                    break;
+                case "newSoundDialogCancel":
                     closeExistingDialogWindow();
                     break;
             }
@@ -1059,15 +1129,13 @@
                 });
             });
 
-            addButton("newParticleButton", function () {
-                createNewEntity({
-                    type: "ParticleEffect",
-                });
-            });
+            addButton("newParticleButton", createNewEntityDialogButtonCallback("Particle"));
 
             addButton("newMaterialButton", createNewEntityDialogButtonCallback("Material"));
 
             addButton("newPolyVoxButton", createNewEntityDialogButtonCallback("PolyVox"));
+
+            addButton("newSoundButton", createNewEntityDialogButtonCallback("Sound"));
 
             var deactivateCreateIfDesktopWindowsHidden = function() {
                 if (!shouldUseEditTabletApp() && !entityListTool.isVisible() && !createToolsWindow.isVisible()) {
@@ -2055,7 +2123,7 @@
                     var entityParentIDs = [];
 
                     var propType = Entities.getEntityProperties(pastedEntityIDs[0], ["type"]).type;
-                    var NO_ADJUST_ENTITY_TYPES = ["Zone", "Light", "ParticleEffect"];
+                    var NO_ADJUST_ENTITY_TYPES = ["Zone", "Light", "ParticleEffect", "ProceduralParticleEffect", "Sound"];
                     if (NO_ADJUST_ENTITY_TYPES.indexOf(propType) === -1) {
                         var targetDirection;
                         if (Camera.mode === "entity" || Camera.mode === "independent") {
@@ -2621,7 +2689,7 @@
                 if (data.snapToGrid !== undefined) {
                     entityListTool.setListMenuSnapToGrid(data.snapToGrid);
                 }
-            } else if (data.type === 'saveUserData' || data.type === 'saveMaterialData') {
+            } else if (data.type === 'saveUserData' || data.type === 'saveMaterialData' || data.type === 'saveParticleUpdateData' || data.type === 'saveParticleRenderData') {
                 data.ids.forEach(function(entityID) {
                     Entities.editEntity(entityID, data.properties);
                 });

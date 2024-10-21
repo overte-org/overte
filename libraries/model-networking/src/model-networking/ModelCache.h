@@ -58,6 +58,7 @@ public:
 
     virtual bool areTexturesLoaded() const;
     const QUrl& getAnimGraphOverrideUrl() const { return _animGraphOverrideUrl; }
+    bool shouldWaitForWearables() const { return _waitForWearables; }
     const QVariantHash& getMapping() const { return _mapping; }
 
 protected:
@@ -72,6 +73,7 @@ protected:
 
     QUrl _animGraphOverrideUrl;
     QVariantHash _mapping;  // parsed contents of FST file.
+    bool _waitForWearables { false };
 
 private:
     mutable bool _areTexturesLoaded { false };

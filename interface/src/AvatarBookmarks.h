@@ -66,8 +66,7 @@ public slots:
     void saveBookmark(const QString& bookmarkName);
 
     /*@jsdoc
-     * Loads an avatar bookmark, setting your avatar model, scale, and avatar entities (or attachments if an old bookmark) to 
-     * those in the bookmark.
+     * Loads an avatar bookmark, setting your avatar model, scale, and avatar entities to those in the bookmark.
      * @function AvatarBookmarks.loadBookmark
      * @param {string} bookmarkName - The name of the avatar bookmark to load (case sensitive).
      */
@@ -104,8 +103,7 @@ public slots:
 
 signals:
     /*@jsdoc
-     * Triggered when an avatar bookmark is loaded, setting your avatar model, scale, and avatar entities (or attachments if an 
-     * old bookmark) to those in the bookmark.
+     * Triggered when an avatar bookmark is loaded, setting your avatar model, scale, and avatar entities to those in the bookmark.
      * @function AvatarBookmarks.bookmarkLoaded
      * @param {string} bookmarkName - The name of the avatar bookmark loaded.
      * @returns {Signal}
@@ -155,7 +153,6 @@ private:
     const QString AVATARBOOKMARKS_FILENAME = "avatarbookmarks.json";
     const QString ENTRY_AVATAR_URL = "avatarUrl";
     const QString ENTRY_AVATAR_ICON = "avatarIcon";
-    const QString ENTRY_AVATAR_ATTACHMENTS = "attachments";
     const QString ENTRY_AVATAR_ENTITIES = "avatarEntites";
     const QString ENTRY_AVATAR_SCALE = "avatarScale";
     const QString ENTRY_VERSION = "version";

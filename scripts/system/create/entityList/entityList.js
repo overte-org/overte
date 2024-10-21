@@ -210,8 +210,8 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
             var cameraPosition = Camera.position;
             PROFILE("getMultipleProperties", function () {
                 var multipleProperties = Entities.getMultipleEntityProperties(ids, ['position', 'name', 'type', 'locked',
-                    'visible', 'renderInfo', 'modelURL', 'materialURL', 'imageURL', 'script', 'serverScripts', 
-                    'skybox.url', 'ambientLight.url', 'created', 'lastEdited', 'entityHostType']);
+                    'visible', 'renderInfo', 'modelURL', 'materialURL', 'imageURL', 'script', 'serverScripts',
+                    'skybox.url', 'ambientLight.url', 'soundURL', 'created', 'lastEdited', 'entityHostType']);
                 for (var i = 0; i < multipleProperties.length; i++) {
                     var properties = multipleProperties[i];
 
@@ -223,6 +223,8 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
                             url = properties.materialURL;
                         } else if (properties.type === "Image") {
                             url = properties.imageURL;
+                        } else if (properties.type === "Sound") {
+                            url = properties.soundURL;
                         }
                         //print("Global object before getParentState call: " + JSON.stringify(globalThis));
                         var parentStatus = that.createApp.getParentState(ids[i]);

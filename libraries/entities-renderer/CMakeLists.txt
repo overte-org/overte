@@ -18,6 +18,7 @@ include_hifi_library_headers(avatars)
 include_hifi_library_headers(controllers)
 include_hifi_library_headers(task)
 include_hifi_library_headers(graphics-scripting) # for Forward.h
+include_hifi_library_headers(entities)
 
 target_bullet()
 target_polyvox()

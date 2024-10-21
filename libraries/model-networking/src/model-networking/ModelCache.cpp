@@ -252,7 +252,6 @@ void GeometryResource::downloadFinished(const QByteArray& data) {
             }
 
             auto animGraphVariant = _mapping.value("animGraphUrl");
-
             if (animGraphVariant.isValid()) {
                 QUrl fstUrl(animGraphVariant.toString());
                 if (fstUrl.isValid()) {
@@ -263,6 +262,8 @@ void GeometryResource::downloadFinished(const QByteArray& data) {
             } else {
                 _animGraphOverrideUrl = QUrl();
             }
+
+            _waitForWearables = _mapping.value(WAIT_FOR_WEARABLES_FIELD).toBool();
 
             auto modelCache = DependencyManager::get<ModelCache>();
             GeometryExtra extra { GeometryMappingPair(base, _mapping), _textureBaseURL, false };
@@ -452,6 +453,7 @@ Geometry::Geometry(const Geometry& geometry) {
     }
 
     _animGraphOverrideUrl = geometry._animGraphOverrideUrl;
+    _waitForWearables = geometry._waitForWearables;
     _mapping = geometry._mapping;
 }
 

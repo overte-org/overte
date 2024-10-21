@@ -31,6 +31,10 @@ namespace gr {
     using graphics::slot::buffer::Buffer;
 }
 
+gpu::PipelinePointer DrawHaze::_hazePipeline = nullptr;
+gpu::PipelinePointer DrawHaze::_separateHazePipeline = nullptr;
+gpu::PipelinePointer DrawHaze::_separateHazeBackgroundPipeline = nullptr;
+
 void DrawHaze::run(const render::RenderContextPointer& renderContext, const Inputs& inputs) {
     const auto hazeFrame = inputs.get0();
     const auto& hazeStage = renderContext->args->_scene->getStage<HazeStage>();
@@ -55,15 +59,29 @@ void DrawHaze::run(const render::RenderContextPointer& renderContext, const Inpu
 
     if (!_hazePipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::haze);
-        gpu::StatePointer state = std::make_shared<gpu::State>();
 
-        state->setBlendFunction(true,
-                                gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
-                                gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
+        auto createState = []() {
+            gpu::StatePointer state = std::make_shared<gpu::State>();
+            state->setBlendFunction(true,
+                                    gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
+                                    gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
+            return state;
+        };
 
         // Mask out haze on the tablet
-        PrepareStencil::testMask(*state);
-        _hazePipeline = gpu::PipelinePointer(gpu::Pipeline::create(program, state));
+        auto hazeState = createState();
+        PrepareStencil::testMask(*hazeState);
+        _hazePipeline = gpu::PipelinePointer(gpu::Pipeline::create(program, hazeState));
+
+        // For our separated passes, we perform one pass on anything marked shape, and one on just the background
+        auto hazeSeparatedState = createState();
+        PrepareStencil::testShape(*hazeSeparatedState);
+        _separateHazePipeline = gpu::PipelinePointer(gpu::Pipeline::create(program, hazeSeparatedState));
+
+        gpu::ShaderPointer backgroundProgram = gpu::Shader::createProgram(shader::render_utils::program::haze_background);
+        auto hazeBackgroundSeparatedState = createState();
+        PrepareStencil::testBackground(*hazeBackgroundSeparatedState);
+        _separateHazeBackgroundPipeline = gpu::PipelinePointer(gpu::Pipeline::create(backgroundProgram, hazeBackgroundSeparatedState));
     }
 
     auto outputFramebufferSize = glm::ivec2(outputBuffer->getSize());
@@ -77,7 +95,6 @@ void DrawHaze::run(const render::RenderContextPointer& renderContext, const Inpu
         batch.resetViewTransform();
         batch.setModelTransform(gpu::Framebuffer::evalSubregionTexcoordTransform(outputFramebufferSize, args->_viewport));
 
-        batch.setPipeline(_hazePipeline);
         batch.setUniformBuffer(graphics::slot::buffer::Buffer::HazeParams, haze->getHazeParametersBuffer());
 
         batch.setUniformBuffer(ru::Buffer::DeferredFrameTransform, transformBuffer->getFrameTransformBuffer());
@@ -92,6 +109,15 @@ void DrawHaze::run(const render::RenderContextPointer& renderContext, const Inpu
             }
         }
 
-        batch.draw(gpu::TRIANGLE_STRIP, 4);
+        if (!_separateBackgroundPass) {
+            batch.setPipeline(_hazePipeline);
+            batch.draw(gpu::TRIANGLE_STRIP, 4);
+        } else {
+            batch.setPipeline(_separateHazePipeline);
+            batch.draw(gpu::TRIANGLE_STRIP, 4);
+
+            batch.setPipeline(_separateHazeBackgroundPipeline);
+            batch.draw(gpu::TRIANGLE_STRIP, 4);
+        }
     });
 }

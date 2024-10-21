@@ -55,6 +55,7 @@ Rectangle {
             Column {
                 Repeater {
                     model: [
+                        "debugEnabled:debug",
                         "horizonBased:horizonBased",
                         "jitterEnabled:jitterEnabled",
                         "ditheringEnabled:ditheringEnabled",
@@ -72,7 +73,7 @@ Rectangle {
             Column {
                 Repeater {
                     model: [
-                       "debugEnabled:showCursorPixel"
+                       "showCursorPixel:showCursorPixel"
                     ]
                     HifiControls.CheckBox {
                         boxSize: 20
@@ -99,8 +100,6 @@ Rectangle {
                }
             ]
         }
-
-
 
         TabView {
             anchors.left: parent.left

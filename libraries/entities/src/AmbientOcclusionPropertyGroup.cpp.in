@@ -1,0 +1,149 @@
+//
+//  AmbientOcclusionPropertyGroup.cpp
+//  libraries/entities/src
+//
+//  Created by HifiExperiments on 6/23/24
+//  Copyright 2024 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "AmbientOcclusionPropertyGroup.h"
+
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+
+inline void addAmbientOcclusionTechnique(QHash<QString, AmbientOcclusionTechnique>& lookup, AmbientOcclusionTechnique technique) { lookup[AmbientOcclusionTechniqueHelpers::getNameForAmbientOcclusionTechnique(technique)] = technique; }
+const QHash<QString, AmbientOcclusionTechnique> stringToAmbientOcclusionTechniqueLookup = [] {
+    QHash<QString, AmbientOcclusionTechnique> toReturn;
+    addAmbientOcclusionTechnique(toReturn, AmbientOcclusionTechnique::SSAO);
+    addAmbientOcclusionTechnique(toReturn, AmbientOcclusionTechnique::HBAO);
+    return toReturn;
+}();
+QString AmbientOcclusionPropertyGroup::getTechniqueAsString() const { return AmbientOcclusionTechniqueHelpers::getNameForAmbientOcclusionTechnique(_technique); }
+void AmbientOcclusionPropertyGroup::setTechniqueFromString(const QString& technique) {
+    auto techniqueItr = stringToAmbientOcclusionTechniqueLookup.find(technique.toLower());
+    if (techniqueItr != stringToAmbientOcclusionTechniqueLookup.end()) {
+        _technique = techniqueItr.value();
+        _techniqueChanged = true;
+    }
+}
+
+void AmbientOcclusionPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+
+@AmbientOcclusion_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void AmbientOcclusionPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
+
+@AmbientOcclusion_GROUP_COPY_FROM_SCRIPT@
+
+}
+
+void AmbientOcclusionPropertyGroup::merge(const AmbientOcclusionPropertyGroup& other) {
+
+@AmbientOcclusion_GROUP_MERGE@
+
+}
+
+void AmbientOcclusionPropertyGroup::debugDump() const {
+
+@AmbientOcclusion_GROUP_DEBUG_DUMP@
+
+}
+
+void AmbientOcclusionPropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@AmbientOcclusion_GROUP_LIST_CHANGED@
+
+}
+
+bool AmbientOcclusionPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                    EntityPropertyFlags& requestedProperties,
+                                    EntityPropertyFlags& propertyFlags,
+                                    EntityPropertyFlags& propertiesDidntFit,
+                                    int& propertyCount,
+                                    OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@AmbientOcclusion_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool AmbientOcclusionPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags, const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@AmbientOcclusion_GROUP_READ@
+
+@AmbientOcclusion_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void AmbientOcclusionPropertyGroup::markAllChanged() {
+
+@AmbientOcclusion_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags AmbientOcclusionPropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@AmbientOcclusion_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void AmbientOcclusionPropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@AmbientOcclusion_GROUP_COPY_TO@
+
+}
+
+bool AmbientOcclusionPropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@AmbientOcclusion_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags AmbientOcclusionPropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@AmbientOcclusion_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int AmbientOcclusionPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                            ReadBitstreamToTreeParams& args,
+                                            EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                            bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@AmbientOcclusion_GROUP_READ@
+
+    return bytesRead;
+}
+
+void AmbientOcclusionPropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                                   QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@AmbientOcclusion_GROUP_ADD_TO_MAP@
+
+}

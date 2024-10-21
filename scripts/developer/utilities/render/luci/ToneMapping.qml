@@ -14,15 +14,11 @@ import "../../lib/prop" as Prop
 
 Column {
     anchors.left: parent.left
-    anchors.right: parent.right 
-    Prop.PropScalar {
-        label: "Exposure"
+    anchors.right: parent.right
+    Prop.PropBool {
+        label: "Debug"
         object: Render.getConfig("RenderMainView.ToneMapping")
-        property: "exposure"
-        min: -4
-        max: 4
-        anchors.left: parent.left
-        anchors.right: parent.right 
+        property: "debug"
     }
     Prop.PropEnum {
         label: "Tone Curve"
@@ -35,6 +31,15 @@ Column {
                     "Filmic",
                 ]
         anchors.left: parent.left
-        anchors.right: parent.right 
-    }  
+        anchors.right: parent.right
+    }
+    Prop.PropScalar {
+        label: "Exposure"
+        object: Render.getConfig("RenderMainView.ToneMapping")
+        property: "exposure"
+        min: -4
+        max: 4
+        anchors.left: parent.left
+        anchors.right: parent.right
+    }
 }

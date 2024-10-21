@@ -33,7 +33,7 @@
  * @typedef {string} BillboardMode
  */
 
-enum class BillboardMode {
+enum class BillboardMode : uint8_t {
     NONE = 0,
     YAW,
     FULL

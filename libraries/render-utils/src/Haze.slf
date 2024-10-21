@@ -21,10 +21,16 @@
 
 <@include graphics/Haze.slh@>
 
+<@if not HIFI_USE_BACKGROUND@>
 LAYOUT(binding=RENDER_UTILS_TEXTURE_HAZE_LINEAR_DEPTH) uniform sampler2D linearDepthMap;
+<@endif@>
 
 vec4 unpackPositionFromZeye(vec2 texcoord) {
+<@if not HIFI_USE_BACKGROUND@>
     float Zeye = -texture(linearDepthMap, texcoord).x;
+<@else@>
+    float Zeye = 1.0; // We just want to get the direction first
+<@endif@>
 
     float check = float(isStereo());
     float check2 = check * float(texcoord.x > 0.5);
@@ -44,8 +50,14 @@ void main(void) {
     }
 
     vec4 fragPositionES = unpackPositionFromZeye(varTexCoord0);
-
     mat4 viewInverse = getViewInverse();
+
+<@if HIFI_USE_BACKGROUND@>
+    // We choose an arbitrary large number > BLEND_DISTANCE in Haze.slh
+    const float SKYBOX_DISTANCE = 32000.0;
+    fragPositionES = vec4(-SKYBOX_DISTANCE * normalize(fragPositionES.xyz), 1.0);
+<@endif@>
+
     vec4 fragPositionWS = viewInverse * fragPositionES;
     vec4 eyePositionWS = viewInverse[3];
 

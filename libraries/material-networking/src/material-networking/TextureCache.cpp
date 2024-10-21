@@ -448,9 +448,9 @@ void NetworkTexture::setExtra(void* extra) {
     _shouldFailOnRedirect = _currentlyLoadingResourceType != ResourceType::KTX;
 
     if (_type == image::TextureUsage::SKY_TEXTURE) {
-        setLoadPriority(this, SKYBOX_LOAD_PRIORITY);
+        setLoadPriorityOperator(this, []() { return SKYBOX_LOAD_PRIORITY; });
     } else if (_currentlyLoadingResourceType == ResourceType::KTX) {
-        setLoadPriority(this, HIGH_MIPS_LOAD_PRIORITY);
+        setLoadPriorityOperator(this, []() { return HIGH_MIPS_LOAD_PRIORITY; });
     }
 
     if (!_url.isValid()) {
@@ -704,7 +704,7 @@ void NetworkTexture::startRequestForNextMipLevel() {
 
         init(false);
         float priority = -(float)_originalKtxDescriptor->header.numberOfMipmapLevels + (float)_lowestKnownPopulatedMip;
-        setLoadPriority(this, priority);
+        setLoadPriorityOperator(this, [priority]() { return priority; });
         _url.setFragment(QString::number(_lowestKnownPopulatedMip - 1));
         TextureCache::attemptRequest(self);
     }

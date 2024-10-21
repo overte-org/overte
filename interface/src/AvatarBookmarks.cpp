@@ -222,8 +222,6 @@ void AvatarBookmarks::updateAvatarEntities(const QVariantList &avatarEntities) {
  * @property {number} avatarScale - The target scale of the avatar.
  * @property {Array<Object<"properties",Entities.EntityProperties>>} [avatarEntites] - The avatar entities included with the
  *     bookmark.
- * @property {AttachmentData[]} [attachments] - The attachments included with the bookmark.
- *     <p class="important">Deprecated: Use avatar entities instead.
  */
 
 void AvatarBookmarks::loadBookmark(const QString& bookmarkName) {
@@ -266,8 +264,6 @@ void AvatarBookmarks::loadBookmarkInternal(const QString& bookmarkName) {
                 myAvatar->clearWornAvatarEntities();
                 const float& qScale = bookmark.value(ENTRY_AVATAR_SCALE, 1.0f).toFloat();
                 myAvatar->setAvatarScale(qScale);
-                QList<QVariant> attachments = bookmark.value(ENTRY_AVATAR_ATTACHMENTS, QList<QVariant>()).toList();
-                myAvatar->setAttachmentsVariant(attachments);
                 QVariantList avatarEntities = bookmark.value(ENTRY_AVATAR_ENTITIES, QVariantList()).toList();
                 addAvatarEntities(avatarEntities);
                 emit bookmarkLoaded(bookmarkName);
@@ -335,7 +331,6 @@ QVariantMap AvatarBookmarks::getAvatarDataToBookmark() {
     const QString& avatarIcon = QString("");
     const QVariant& avatarScale = myAvatar->getAvatarScale();
 
-    // If Avatar attachments ever change, this is where to update them, when saving remember to also append to AVATAR_BOOKMARK_VERSION
     QVariantMap bookmark;
     bookmark.insert(ENTRY_VERSION, AVATAR_BOOKMARK_VERSION);
     bookmark.insert(ENTRY_AVATAR_URL, avatarUrl);

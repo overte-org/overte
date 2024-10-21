@@ -1,0 +1,38 @@
+//
+//  Created by Sam Gondelman on 11/29/18
+//  Copyright 2018 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#ifndef hifi_ImageEntityItem_h
+#define hifi_ImageEntityItem_h
+
+#include "EntityItem.h"
+
+#include "PulsePropertyGroup.h"
+
+class ImageEntityItem : public EntityItem {
+    using Pointer = std::shared_ptr<ImageEntityItem>;
+public:
+    static EntityItemPointer factory(const EntityItemID& entityID, const EntityItemProperties& properties);
+
+    ImageEntityItem(const EntityItemID& entityItemID);
+
+    ALLOW_INSTANTIATION // This class can be instantiated
+    ENTITY_PROPERTY_SUBCLASS_METHODS
+
+    void setNaturalDimension(const glm::vec3& naturalDimensions) const;
+    virtual void setUnscaledDimensions(const glm::vec3& value) override;
+
+    PulsePropertyGroup getPulseProperties() const;
+
+protected:
+
+@Image_ENTITY_PROPS@
+
+    mutable glm::vec3 _naturalDimensions;
+};
+
+#endif // hifi_ImageEntityItem_h

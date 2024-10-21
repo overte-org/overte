@@ -67,7 +67,7 @@ protected:
     virtual bool isTransparent() const override;
 
     virtual bool wantsHandControllerPointerEvents() const override { return true; }
-    virtual bool wantsKeyboardFocus() const override { return true; }
+    virtual bool wantsKeyboardFocus() const override { return _wantsKeyboardFocus; }
 
     void handlePointerEventAsTouch(const PointerEvent& event);
     void handlePointerEventAsMouse(const PointerEvent& event);
@@ -103,6 +103,7 @@ private:
     bool _useBackground { false };
     QString _userAgent;
     WebInputMode _inputMode { WebInputMode::TOUCH };
+    bool _wantsKeyboardFocus { true };
 
     glm::vec3 _contextPosition;
 

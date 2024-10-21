@@ -47,11 +47,13 @@ void RenderShadowTask::configure(const Config& configuration) {
 
 void RenderShadowTask::build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cameraCullFunctor, uint8_t tagBits, uint8_t tagMask) {
     // Prepare the ShapePipeline
-    ShapePlumberPointer shapePlumber = std::make_shared<ShapePlumber>();
-    {
+    static ShapePlumberPointer shapePlumber = std::make_shared<ShapePlumber>();
+    static std::once_flag once;
+    std::call_once(once, [] {
         auto fadeEffect = DependencyManager::get<FadeEffect>();
         initZPassPipelines(*shapePlumber, std::make_shared<gpu::State>(), fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter());
-    }
+    });
+
     const auto setupOutput = task.addJob<RenderShadowSetup>("ShadowSetup", input);
     const auto queryResolution = setupOutput.getN<RenderShadowSetup::Output>(1);
     const auto shadowFrame = setupOutput.getN<RenderShadowSetup::Output>(3);
