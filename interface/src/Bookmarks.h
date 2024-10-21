@@ -4,6 +4,7 @@
 //
 //  Created by David Rowe on 13 Jan 2015.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -25,11 +26,13 @@ class Bookmarks: public QObject {
     Q_OBJECT
 
 public:
-    Bookmarks();
+    Bookmarks() : _isMenuSorted(false) {}
 
     virtual void setupMenus(Menu* menubar, MenuWrapper* menu) = 0;
     void insert(const QString& name, const QVariant& address);  // Overwrites any existing entry with same name.
     QString addressForBookmark(const QString& name) const;
+
+    const QString& getBookmarkError() const { return _bookmarkError; }
 
 protected:
     void deleteBookmark(const QString& bookmarkName);
@@ -45,6 +48,7 @@ protected:
     void remove(const QString& name);
 
     QVariantMap _bookmarks;  // { name: url, ... }
+    QString _bookmarkError;
     QPointer<MenuWrapper> _bookmarksMenu;
     QPointer<QAction> _deleteBookmarksAction;
     QString _bookmarksFilename;
