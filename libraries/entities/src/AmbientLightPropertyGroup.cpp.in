@@ -1,0 +1,139 @@
+//
+//  AmbientLightPropertyGroup.cpp
+//  libraries/entities/src
+//
+//  Created by Nissim Hadar on 2017/12/24.
+//  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "AmbientLightPropertyGroup.h"
+
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+
+const float AmbientLightPropertyGroup::DEFAULT_AMBIENT_LIGHT_INTENSITY = 0.5f;
+const glm::u8vec3 AmbientLightPropertyGroup::DEFAULT_COLOR = { 0, 0, 0 };
+
+void AmbientLightPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+
+    auto nodeList = DependencyManager::get<NodeList>();
+
+@AmbientLight_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void AmbientLightPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
+
+@AmbientLight_GROUP_COPY_FROM_SCRIPT@
+
+}
+
+void AmbientLightPropertyGroup::merge(const AmbientLightPropertyGroup& other) {
+
+@AmbientLight_GROUP_MERGE@
+
+}
+
+void AmbientLightPropertyGroup::debugDump() const {
+
+@AmbientLight_GROUP_DEBUG_DUMP@
+
+}
+
+void AmbientLightPropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@AmbientLight_GROUP_LIST_CHANGED@
+
+}
+
+bool AmbientLightPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                    EntityPropertyFlags& requestedProperties,
+                                    EntityPropertyFlags& propertyFlags,
+                                    EntityPropertyFlags& propertiesDidntFit,
+                                    int& propertyCount,
+                                    OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@AmbientLight_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool AmbientLightPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags, const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@AmbientLight_GROUP_READ@
+
+@AmbientLight_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void AmbientLightPropertyGroup::markAllChanged() {
+
+@AmbientLight_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags AmbientLightPropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@AmbientLight_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void AmbientLightPropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@AmbientLight_GROUP_COPY_TO@
+
+}
+
+bool AmbientLightPropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@AmbientLight_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags AmbientLightPropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@AmbientLight_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int AmbientLightPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                            ReadBitstreamToTreeParams& args,
+                                            EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                            bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@AmbientLight_GROUP_READ@
+
+    return bytesRead;
+}
+
+void AmbientLightPropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                               QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@AmbientLight_GROUP_ADD_TO_MAP@
+
+}

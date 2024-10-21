@@ -15,7 +15,7 @@
 
 #include "ViewFrustum.h"
 
-std::string LightStage::_stageName { "LIGHT_STAGE"};
+std::string LightStage::_stageName { "LIGHT_STAGE" };
 // The bias matrix goes from homogeneous coordinates to UV coords (see http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/#basic-shader)
 const glm::mat4 LightStage::Shadow::_biasMatrix {
     0.5, 0.0, 0.0, 0.0,

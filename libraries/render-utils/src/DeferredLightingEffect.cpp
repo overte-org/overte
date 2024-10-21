@@ -286,6 +286,7 @@ void PrepareDeferred::run(const RenderContextPointer& renderContext, const Input
 
     outputs.edit0() = _deferredFramebuffer;
     outputs.edit1() = _deferredFramebuffer->getLightingFramebuffer();
+    outputs.edit2() = _deferredFramebuffer->getDeferredFramebuffer();
 
     gpu::doInBatch("PrepareDeferred::run", args->_context, [&](gpu::Batch& batch) {
         batch.enableStereo(false);
@@ -661,5 +662,14 @@ void DefaultLightingSetup::run(const RenderContextPointer& renderContext) {
             _defaultHazeID = hazeStage->addHaze(_defaultHaze);
         }
     }
-}
 
+    if (!_defaultTonemapping) {
+        auto tonemappingStage = renderContext->_scene->getStage<TonemappingStage>();
+        if (tonemappingStage) {
+            auto tonemapping = std::make_shared<graphics::Tonemapping>();
+
+            _defaultTonemapping = tonemapping;
+            _defaultTonemappingID = tonemappingStage->addTonemapping(_defaultTonemapping);
+        }
+    }
+}

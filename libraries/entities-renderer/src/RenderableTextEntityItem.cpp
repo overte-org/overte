@@ -25,10 +25,6 @@
 using namespace render;
 using namespace render::entities;
 
-static const int FIXED_FONT_POINT_SIZE = 40;
-const int FIXED_FONT_SCALING_RATIO = FIXED_FONT_POINT_SIZE * 92.0f; // Determined through experimentation to fit font to line height.
-const float LINE_SCALE_RATIO = 1.2f;
-
 TextEntityRenderer::TextEntityRenderer(const EntityItemPointer& entity) :
     Parent(entity),
     _textRenderer(TextRenderer3D::getInstance(ROBOTO_FONT_FAMILY)) {
@@ -77,6 +73,7 @@ void TextEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointe
     _effectColor = toGlm(entity->getTextEffectColor());
     _effectThickness = entity->getTextEffectThickness();
     _alignment = entity->getAlignment();
+    _verticalAlignment = entity->getVerticalAlignment();
 
     bool materialChanged = false;
     glm::vec3 color = toGlm(entity->getBackgroundColor());
@@ -163,8 +160,9 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
         transform = _renderTransform;
     });
 
+    bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), _billboardMode,
-        args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
+        usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
     batch.setModelTransform(transform);
 
     Pipeline pipelineType = getPipelineType(materials);
@@ -179,7 +177,7 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
     }
 
     auto geometryCache = DependencyManager::get<GeometryCache>();
-    if (pipelineType == Pipeline::SIMPLE) {
+    if (pipelineType == Pipeline::SIMPLE || pipelineType == Pipeline::MIRROR) {
         geometryCache->renderQuad(batch, glm::vec2(-0.5f), glm::vec2(0.5f), backgroundColor, _geometryID);
     } else {
         geometryCache->renderQuad(batch, glm::vec2(-0.5f), glm::vec2(0.5f), glm::vec2(0.0f), glm::vec2(1.0f), backgroundColor, _geometryID);
@@ -191,12 +189,8 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
 
 QSizeF TextEntityRenderer::textSize(const QString& text) const {
     auto extents = _textRenderer->computeExtent(text);
-    extents.y *= 2.0f;
-
-    float maxHeight = (float)_textRenderer->computeExtent("Xy").y * LINE_SCALE_RATIO;
-    float pointToWorldScale = (maxHeight / FIXED_FONT_SCALING_RATIO) * _lineHeight;
-
-    return QSizeF(extents.x, extents.y) * pointToWorldScale;
+    float scale = _lineHeight / _textRenderer->getFontHeight();
+    return scale * QSizeF(extents.x, extents.y);
 }
 
 void TextEntityRenderer::onAddToSceneTyped(const TypedEntityPointer& entity) {
@@ -259,6 +253,10 @@ ItemKey entities::TextPayload::getKey() const {
                 builder.withInvisible();
             }
 
+            if (textRenderable->_mirrorMode == MirrorMode::MIRROR || (textRenderable->_mirrorMode == MirrorMode::PORTAL && !textRenderable->_portalExitID.isNull())) {
+                builder.withMirror();
+            }
+
             return builder;
         }
     }
@@ -310,6 +308,17 @@ bool entities::TextPayload::passesZoneOcclusionTest(const std::unordered_set<QUu
     return false;
 }
 
+ItemID entities::TextPayload::computeMirrorView(ViewFrustum& viewFrustum) const {
+    auto entityTreeRenderer = DependencyManager::get<EntityTreeRenderer>();
+    if (entityTreeRenderer) {
+        auto renderable = entityTreeRenderer->renderableForEntityId(_entityID);
+        if (renderable) {
+            return renderable->computeMirrorView(viewFrustum);
+        }
+    }
+    return Item::INVALID_ITEM_ID;
+}
+
 void entities::TextPayload::render(RenderArgs* args) {
     PerformanceTimer perfTimer("TextPayload::render");
     Q_ASSERT(args->_batch);
@@ -334,12 +343,15 @@ void entities::TextPayload::render(RenderArgs* args) {
     glm::vec3 dimensions;
 
     glm::vec4 textColor;
+    bool mirror;
     textRenderable->withReadLock([&] {
         transform = textRenderable->_renderTransform;
         dimensions = textRenderable->_dimensions;
 
         float fadeRatio = textRenderable->_isFading ? Interpolate::calculateFadeRatio(textRenderable->_fadeStartTime) : 1.0f;
         textColor = glm::vec4(textRenderable->_textColor, fadeRatio * textRenderable->_textAlpha);
+
+        mirror = textRenderable->_mirrorMode == MirrorMode::MIRROR || (textRenderable->_mirrorMode == MirrorMode::PORTAL && !textRenderable->_portalExitID.isNull());
     });
 
     bool forward = textRenderable->_renderLayer != RenderLayer::WORLD || args->_renderMethod == render::Args::FORWARD;
@@ -351,18 +363,22 @@ void entities::TextPayload::render(RenderArgs* args) {
         return;
     }
 
+    bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), textRenderable->_billboardMode,
-        args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
+        usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
 
-    float scale = textRenderable->_lineHeight / textRenderer->getFontSize();
+    float scale = 1.0f;
+    float fontHeight = textRenderer->getFontHeight();
+    if (fontHeight > 0.0f) {
+        scale = textRenderable->_lineHeight / fontHeight;
+    }
     transform.postTranslate(glm::vec3(-0.5, 0.5, 1.0f + EPSILON / dimensions.z));
     transform.setScale(scale);
     batch.setModelTransform(transform);
 
     glm::vec2 bounds = glm::vec2(dimensions.x - (textRenderable->_leftMargin + textRenderable->_rightMargin), dimensions.y - (textRenderable->_topMargin + textRenderable->_bottomMargin));
-    textRenderer->draw(batch, textRenderable->_leftMargin / scale, -textRenderable->_topMargin / scale, bounds / scale, scale,
-                       textRenderable->_text, textRenderable->_font, textColor, effectColor, textRenderable->_effectThickness, textRenderable->_effect,
-                       textRenderable->_alignment, textRenderable->_unlit, forward);
+    textRenderer->draw(batch, textRenderable->_font, { textRenderable->_text, textColor, effectColor, { textRenderable->_leftMargin / scale, -textRenderable->_topMargin / scale },
+        bounds / scale, scale, textRenderable->_effectThickness, textRenderable->_effect, textRenderable->_alignment, textRenderable->_verticalAlignment, textRenderable->_unlit, forward, mirror });
 }
 
 namespace render {
@@ -396,6 +412,13 @@ template <> bool payloadPassesZoneOcclusionTest(const entities::TextPayload::Poi
         return payload->passesZoneOcclusionTest(containingZones);
     }
     return false;
+}
+
+template <> ItemID payloadComputeMirrorView(const entities::TextPayload::Pointer& payload, ViewFrustum& viewFrustum) {
+    if (payload) {
+        return payload->computeMirrorView(viewFrustum);
+    }
+    return Item::INVALID_ITEM_ID;
 }
 
 }

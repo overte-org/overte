@@ -16,13 +16,16 @@
 #include "BackgroundStage.h"
 #include "HazeStage.h"
 #include "BloomStage.h"
+#include "TonemappingStage.h"
+#include "AmbientOcclusionStage.h"
 
 #include "ZoneRenderer.h"
 
 
 class FetchCurrentFrames {
 public:
-    using Output = render::VaryingSet4<LightStage::FramePointer, BackgroundStage::FramePointer, HazeStage::FramePointer, BloomStage::FramePointer>;
+    using Output = render::VaryingSet6<LightStage::FramePointer, BackgroundStage::FramePointer, HazeStage::FramePointer,
+        BloomStage::FramePointer, TonemappingStage::FramePointer, AmbientOcclusionStage::FramePointer>;
     using JobModel = render::Job::ModelO<FetchCurrentFrames, Output>;
 
     FetchCurrentFrames() {}

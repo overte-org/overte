@@ -22,6 +22,7 @@ link_hifi_libraries(
   material-networking model-networking ktx shaders
 )
 include_hifi_library_headers(procedural)
+include_hifi_library_headers(entities)
 
 add_crashpad()
 target_breakpad()

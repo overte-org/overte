@@ -203,6 +203,8 @@ public:
     void setItemTransition(ItemID id, Index transitionId);
     void removeItemTransition(ItemID id);
 
+    void simulate(ItemID id, RenderArgs* args) { _items[id].renderSimulate(args); }
+
     HighlightStyle getOutlineStyle(ItemID id, const ViewFrustum& viewFrustum, uint16_t height) { return _items[id].getOutlineStyle(viewFrustum, height); }
 
 protected:

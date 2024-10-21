@@ -58,8 +58,6 @@
  *     when the other avatar is in the line of sight and also has <code>lookAtSnappingEnabled == true</code>.
  *
  * @property {string} skeletonModelURL - The avatar's FST file.
- * @property {AttachmentData[]} attachmentData - Information on the avatar's attachments.
- *     <p class="important">Deprecated: This property is deprecated and will be removed. Use avatar entities instead.</p>
  * @property {string[]} jointNames - The list of joints in the avatar model.
  *
  * @property {number} audioLoudness - The instantaneous loudness of the audio input that the avatar is injecting into the

@@ -224,8 +224,6 @@ public:
     bool hasGrabs();
     virtual QUuid getEditSenderID();
 
-    void bumpAncestorChainRenderableVersion(int depth = 0) const;
-
 protected:
     QUuid _id;
     mutable SpatiallyNestableWeakPointer _parent;
@@ -247,8 +245,6 @@ protected:
 
     mutable ReadWriteLockable _grabsLock;
     QSet<GrabPointer> _grabs; // upon this thing
-
-    mutable std::atomic<uint32_t> _ancestorChainRenderableVersion { 0 };
 
 private:
     SpatiallyNestable() = delete;

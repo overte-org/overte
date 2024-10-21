@@ -19,12 +19,18 @@
 <@if HIFI_USE_MTOON@>
     <@if HIFI_USE_SHADOW@>
         <$declareMToonMaterialTextures(ALBEDO)$>
+        <@if HIFI_USE_MIRROR@>
+            LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MIRROR) uniform sampler2D mirrorMap;
+        <@endif@>
     <@else@>
         <$declareMToonMaterialTextures(ALBEDO, HIFI_USE_NORMALMAP, SHADE, EMISSIVE, SHADING_SHIFT, MATCAP, RIM, UV_ANIMATION_MASK)$>
     <@endif@>
 <@else@>
     <@if HIFI_USE_SHADOW or HIFI_USE_UNLIT@>
         <$declareMaterialTextures(ALBEDO)$>
+        <@if HIFI_USE_MIRROR@>
+            LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MIRROR) uniform sampler2D mirrorMap;
+        <@endif@>
     <@else@>
         <@if not HIFI_USE_LIGHTMAP@>
             <@if HIFI_USE_TRANSLUCENT@>
@@ -75,7 +81,15 @@
         <@include DeferredBufferWrite.slh@>
     <@endif@>
 <@else@>
-    layout(location=0) out vec4 _fragColor0;
+    <@if HIFI_USE_MIRROR@>
+        <@if HIFI_USE_FORWARD@>
+            layout(location=0) out vec4 _fragColor0;
+        <@else@>
+            <@include DeferredBufferWrite.slh@>
+        <@endif@>
+    <@else@>
+        layout(location=0) out vec4 _fragColor0;
+    <@endif@>
 <@endif@>
 
 <@if HIFI_USE_UNLIT@>
@@ -150,7 +164,14 @@ void main(void) {
         <@endif@>
     <@endif@>
 
-    <@if HIFI_USE_SHADOW@>
+    <@if HIFI_USE_MIRROR@>
+            vec3 mirrorColor = texelFetch(mirrorMap, ivec2(gl_FragCoord.xy), 0).rgb;
+            <@if HIFI_USE_FORWARD@>
+                _fragColor0 = vec4(mirrorColor, 1.0);
+            <@else@>
+                packDeferredFragmentUnlit(vec3(1.0, 0.0, 0.0), 1.0, mirrorColor);
+            <@endif@>
+    <@elif HIFI_USE_SHADOW@>
             _fragColor0 = vec4(1.0);
     <@elif HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
             _fragColor0 = vec4(albedo * isUnlitEnabled(), opacity);

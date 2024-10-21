@@ -12,21 +12,21 @@
 #include "QString"
 
 /*@jsdoc
- * <p>A {@link Entities.EntityProperties-Text|Text} entity may use one of the following alignments:</p>
+ * <p>A {@link Entities.EntityProperties-Text|Text} entity may use one of the following horizontal alignments:</p>
  * <table>
  *   <thead>
  *     <tr><th>Value</th><th>Description</th></tr>
  *   </thead>
  *   <tbody>
  *     <tr><td><code>"left"</code></td><td>Text is aligned to the left side.</td></tr>
- *     <tr><td><code>"center"</code></td><td>Text is centered.</td></tr>
+ *     <tr><td><code>"center"</code></td><td>Text is centered horizontally.</td></tr>
  *     <tr><td><code>"right"</code></td><td>Text is aligned to the right side.</td></tr>
  *   </tbody>
  * </table>
  * @typedef {string} Entities.TextAlignment
  */
 
-enum class TextAlignment {
+enum class TextAlignment : uint8_t {
     LEFT = 0,
     CENTER,
     RIGHT

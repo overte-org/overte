@@ -1,0 +1,148 @@
+//
+//  KeyLightPropertyGroup.cpp
+//  libraries/entities/src
+//
+//  Created by Sam Gateau on 2015/10/23.
+//  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "KeyLightPropertyGroup.h"
+
+#include <QJsonDocument>
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+
+const glm::u8vec3 KeyLightPropertyGroup::DEFAULT_KEYLIGHT_COLOR = { 255, 255, 255 };
+const float KeyLightPropertyGroup::DEFAULT_KEYLIGHT_INTENSITY = 1.0f;
+const float KeyLightPropertyGroup::DEFAULT_KEYLIGHT_AMBIENT_INTENSITY = 0.5f;
+const glm::vec3 KeyLightPropertyGroup::DEFAULT_KEYLIGHT_DIRECTION = { 0.0f, -1.0f, 0.0f };
+const bool KeyLightPropertyGroup::DEFAULT_KEYLIGHT_CAST_SHADOWS { false };
+const float KeyLightPropertyGroup::DEFAULT_KEYLIGHT_SHADOW_BIAS { 0.5f };
+const float KeyLightPropertyGroup::DEFAULT_KEYLIGHT_SHADOW_MAX_DISTANCE { 40.0f };
+
+void KeyLightPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+
+@KeyLight_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void KeyLightPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
+
+@KeyLight_GROUP_COPY_FROM_SCRIPT@
+
+    // legacy property support
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(keyLightColor, u8vec3Color, setColor, getColor);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(keyLightIntensity, float, setIntensity, getIntensity);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(keyLightDirection, vec3, setDirection, getDirection);
+    COPY_PROPERTY_FROM_QSCRIPTVALUE_GETTER(keyLightCastShadows, bool, setCastShadows, getCastShadows);
+}
+
+void KeyLightPropertyGroup::merge(const KeyLightPropertyGroup& other) {
+
+@KeyLight_GROUP_MERGE@
+
+}
+
+void KeyLightPropertyGroup::debugDump() const {
+
+@KeyLight_GROUP_DEBUG_DUMP@
+
+}
+
+void KeyLightPropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@KeyLight_GROUP_LIST_CHANGED@
+
+}
+
+bool KeyLightPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                    EntityPropertyFlags& requestedProperties,
+                                    EntityPropertyFlags& propertyFlags,
+                                    EntityPropertyFlags& propertiesDidntFit,
+                                    int& propertyCount,
+                                    OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@KeyLight_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool KeyLightPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags, const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@KeyLight_GROUP_READ@
+
+@KeyLight_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void KeyLightPropertyGroup::markAllChanged() {
+
+@KeyLight_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags KeyLightPropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@KeyLight_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void KeyLightPropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@KeyLight_GROUP_COPY_TO@
+
+}
+
+bool KeyLightPropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@KeyLight_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags KeyLightPropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@KeyLight_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int KeyLightPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                            ReadBitstreamToTreeParams& args,
+                                            EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                            bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@KeyLight_GROUP_READ@
+
+    return bytesRead;
+}
+
+void KeyLightPropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                           QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@KeyLight_GROUP_ADD_TO_MAP@
+
+}

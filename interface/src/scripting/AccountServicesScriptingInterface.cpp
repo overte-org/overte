@@ -159,8 +159,8 @@ bool DownloadInfoResultFromScriptValue(const ScriptValue& object, DownloadInfoRe
 
 DownloadInfoResult AccountServicesScriptingInterface::getDownloadInfo() {
     DownloadInfoResult result;
-    foreach(const auto& resource, ResourceCache::getLoadingRequests()) {
-        result.downloading.append(resource->getProgress() * 100.0f);
+    foreach(const auto& resourcePair, ResourceCache::getLoadingRequests()) {
+        result.downloading.append(resourcePair.first->getProgress() * 100.0f);
     }
     result.pending = ResourceCache::getPendingRequestCount();
     return result;

@@ -368,7 +368,7 @@ bool EntityTree::updateEntity(EntityItemPointer entity, const EntityItemProperti
             }
         }
     } else {
-        if (getIsServer()) {
+        if (isEntityServer()) {
             bool simulationBlocked = !entity->getSimulatorID().isNull();
             if (properties.simulationOwnerChanged()) {
                 QUuid submittedID = properties.getSimulationOwner().getID();
@@ -674,7 +674,7 @@ void EntityTree::deleteEntitiesByID(const std::vector<EntityItemID>& ids, bool f
     // this method has two paths:
     // (a) entity-server: applies delete filter
     // (b) interface-client: deletes local- and my-avatar-entities immediately, submits domainEntity deletes to the entity-server
-    if (getIsServer()) {
+    if (isEntityServer()) {
         withWriteLock([&] {
             std::vector<EntityItemPointer> entitiesToDelete;
             entitiesToDelete.reserve(ids.size());
@@ -1110,6 +1110,42 @@ void EntityTree::evalEntitiesInSphereWithName(const glm::vec3& center, float rad
     foundEntities.swap(args.entities);
 }
 
+class FindEntitiesInSphereWithTagsArgs {
+public:
+    // Inputs
+    glm::vec3 position;
+    float targetRadius;
+    QVector<QString> tags;
+    bool caseSensitive;
+    PickFilter searchFilter;
+
+    // Outputs
+    QVector<QUuid> entities;
+};
+
+bool evalInSphereWithTagsOperation(const OctreeElementPointer& element, void* extraData) {
+    FindEntitiesInSphereWithTagsArgs* args = static_cast<FindEntitiesInSphereWithTagsArgs*>(extraData);
+    glm::vec3 penetration;
+    bool sphereIntersection = element->getAACube().findSpherePenetration(args->position, args->targetRadius, penetration);
+
+    // If this element contains the point, then search it...
+    if (sphereIntersection) {
+        EntityTreeElementPointer entityTreeElement = std::static_pointer_cast<EntityTreeElement>(element);
+        entityTreeElement->evalEntitiesInSphereWithTags(args->position, args->targetRadius, args->tags, args->caseSensitive, args->searchFilter, args->entities);
+        return true; // keep searching in case children have closer entities
+    }
+
+    // if this element doesn't contain the point, then none of it's children can contain the point, so stop searching
+    return false;
+}
+
+// NOTE: assumes caller has handled locking
+void EntityTree::evalEntitiesInSphereWithTags(const glm::vec3& center, float radius, const QVector<QString>& tags, bool caseSensitive, PickFilter searchFilter, QVector<QUuid>& foundEntities) {
+    FindEntitiesInSphereWithTagsArgs args = { center, radius, tags, caseSensitive, searchFilter, QVector<QUuid>() };
+    recurseTreeWithOperation(evalInSphereWithTagsOperation, &args);
+    foundEntities.swap(args.entities);
+}
+
 class FindEntitiesInCubeArgs {
 public:
     // Inputs
@@ -1432,7 +1468,7 @@ bool EntityTree::isScriptInAllowlist(const QString& scriptProperty) {
 // NOTE: Caller must lock the tree before calling this.
 int EntityTree::processEditPacketData(ReceivedMessage& message, const unsigned char* editData, int maxLength,
                                      const SharedNodePointer& senderNode) {
-    if (!getIsServer()) {
+    if (!isEntityServer()) {
         qCWarning(entities) << "EntityTree::processEditPacketData() should only be called on a server tree.";
         return 0;
     }
@@ -2035,7 +2071,7 @@ int EntityTree::processEraseMessage(ReceivedMessage& message, const SharedNodePo
     // Which means this is a state synchronization message from the the entity-server.  It is saying
     // "The following domain-entities have already been deleted". While need to perform sanity checking
     // (e.g. verify these are domain entities) permissions need NOT checked for the domain-entities.
-    assert(!getIsServer());
+    assert(!isEntityServer());
     // TODO: remove this stuff out of EntityTree:: and into interface-client code.
     #ifdef EXTRA_ERASE_DEBUGGING
         qCDebug(entities) << "EntityTree::processEraseMessage()";
@@ -2105,7 +2141,7 @@ int EntityTree::processEraseMessage(ReceivedMessage& message, const SharedNodePo
 int EntityTree::processEraseMessageDetails(const QByteArray& dataByteArray, const SharedNodePointer& sourceNode) {
     // NOTE: this is called on entity-server when receiving a delete request from an interface-client or agent
     //TODO: assert(treeIsLocked);
-    assert(getIsServer());
+    assert(isEntityServer());
     #ifdef EXTRA_ERASE_DEBUGGING
         qCDebug(entities) << "EntityTree::processEraseMessageDetails()";
     #endif
@@ -2768,8 +2804,8 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
             // Use skybox value only if it is not empty, else set ambientMode to inherit (to use default URL)
             properties.setAmbientLightMode(COMPONENT_MODE_ENABLED);
             if (properties.getAmbientLight().getAmbientURL() == "") {
-                if (properties.getSkybox().getURL() != "") {
-                    properties.getAmbientLight().setAmbientURL(properties.getSkybox().getURL());
+                if (properties.getSkybox().getUrl() != "") {
+                    properties.getAmbientLight().setAmbientURL(properties.getSkybox().getUrl());
                 } else {
                     properties.setAmbientLightMode(COMPONENT_MODE_INHERIT);
                 }
@@ -2852,6 +2888,11 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
             if (properties.getBillboardMode() != BillboardMode::NONE) {
                 properties.setRotation(glm::quat());
             }
+        }
+
+        // Before, animations weren't smoothed
+        if (contentVersion < (int)EntityVersion::AnimationSmoothFrames && properties.getType() == EntityTypes::EntityType::Model) {
+            properties.getAnimation().setSmoothFrames(false);
         }
 
         EntityItemPointer entity = addEntity(entityItemID, properties, isImport);
