@@ -4,6 +4,7 @@
 //
 //  Created by Nissim Hadar on 9/13/2017.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -94,6 +95,8 @@ namespace graphics {
 
         using UniformBufferView = gpu::BufferView;
         UniformBufferView getHazeParametersBuffer() const { return _hazeParametersBuffer; }
+
+        bool isActive() const;
 
     protected:
         class Parameters {

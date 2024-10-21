@@ -4,6 +4,7 @@
 //
 //  Created by Nissim Hadar on 9/13/2017.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -181,4 +182,8 @@ void Haze::setHazeBackgroundBlend(const float hazeBackgroundBlend) {
     if (params.hazeBackgroundBlend != newBlend) {
         _hazeParametersBuffer.edit<Parameters>().hazeBackgroundBlend = newBlend;
     }
+}
+
+bool Haze::isActive() const {
+    return (_hazeParametersBuffer.get<Parameters>().hazeMode & HAZE_MODE_IS_ACTIVE) == HAZE_MODE_IS_ACTIVE;
 }

@@ -4,6 +4,7 @@
 //
 //  Created by Nissim Hadar on 9/1/2017.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -54,6 +55,10 @@ void DrawHaze::run(const render::RenderContextPointer& renderContext, const Inpu
     const auto lightFrame = inputs.get5();
 
     auto depthBuffer = framebuffer->getLinearDepthTexture();
+
+    if (!lightingModel->isHazeEnabled() || !haze->isActive()) {
+        return;
+    }
 
     RenderArgs* args = renderContext->args;
 
