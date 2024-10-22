@@ -1659,7 +1659,7 @@ void EntityItem::setAngularVelocity(const glm::vec3& value) {
     if (angularVelocity != value) {
         float speed = glm::length(value);
         if (!glm::isnan(speed)) {
-            const float MIN_ANGULAR_SPEED = 0.0002f;
+            const float MIN_ANGULAR_SPEED = 0.00001f;
             const float MAX_ANGULAR_SPEED = 9.0f * TWO_PI; // 1/10 rotation per step at 90Hz
             if (speed < MIN_ANGULAR_SPEED) {
                 angularVelocity = ENTITY_ITEM_ZERO_VEC3;
