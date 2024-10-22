@@ -573,6 +573,39 @@
     "grab.grabbable": {
         "tooltip": "If enabled, this entity will allow grabbing input and will be movable."
     },
+    "grab.grabFollowsController": {
+        "tooltip": "If enabled, grabbed entities will follow the movements of your hand controller instead of your avatar's hand."
+    },
+    "grab.grabKinematic": {
+        "tooltip": "If enabled, this grabbed entity will be updated in a kinematic manner. If disabled, it will be grabbed using a tractor action. A kinematic grab will make the item appear more tightly held but will cause it to behave poorly when interacting with dynamic entities."
+    },
+    "grab.grabDelegateToParent": {
+        "tooltip": "If enabled, when the entity is grabbed, the grab will be transferred to its parent entity if there is one. If disabled, the grab won't be transferred, so a child entity can be grabbed and moved relative to its parent."
+    },
+    "grab.equippable": {
+        "tooltip": "If enabled, this entity can be attached to the hands/controllers in a simple click. (Note: Entities can't be equipped if 'ignorePickIntersection' is set to true.)"
+    },
+    "grab.equippableLeftPosition": {
+        "tooltip": "When equipped on an avatar, this defines the 'position' of the entity relative to the 'left' hand."
+    },
+    "grab.equippableLeftRotation": {
+        "tooltip": "When equipped on an avatar, this defines the 'rotation' of the entity relative to the 'left' hand."
+    },
+    "grab.equippableRightPosition": {
+        "tooltip": "When equipped on an avatar, this defines the 'position' of the entity relative to the 'right' hand."
+    },
+    "grab.equippableRightRotation": {
+        "tooltip": "When equipped on an avatar, this defines the 'rotation' of the entity relative to the 'right' hand."
+    },
+    "grab.equippableIndicatorURL": {
+        "tooltip": "If a model URL is specified, this model will be used to indicate that an entity is equippable."
+    },
+    "grab.equippableIndicatorScale": {
+        "tooltip": "If an 'Indicator URL' is specified, this controls the scale factors for each dimension of the displayed indicator."
+    },
+    "grab.equippableIndicatorOffset": {
+        "tooltip": "If an 'Indicator URL' is specified, this controls the relative offset of the displayed indicator from the equippable entity."
+    },
     "grab.triggerable": {
         "tooltip": "If enabled, the collider on this entity is used for triggering events."
     },
@@ -596,9 +629,6 @@
     },
     "cloneAvatarEntity": {
         "tooltip": "If enabled, then clones created from this entity will be created as avatar entities."
-    },
-    "grab.grabFollowsController": {
-        "tooltip": "If enabled, grabbed entities will follow the movements of your hand controller instead of your avatar's hand."
     },
     "canCastShadow": {
         "tooltip": "If enabled, the geometry of this entity casts shadows when a shadow-casting light source shines on it. Note: Shadows are rendered only on high-profiled computers. This setting will have no effect on computers profiled to medium or low graphics."
