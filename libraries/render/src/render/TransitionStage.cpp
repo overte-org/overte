@@ -13,7 +13,8 @@
 
 using namespace render;
 
-std::string TransitionStage::_name { "TRANSITION_STAGE" };
+template <>
+std::string TypedStage<Transition>::_name { "TRANSITION_STAGE" };
 
 TransitionStage::Index TransitionStage::addTransition(ItemID itemId, Transition::Type type, ItemID boundId) {
     Transition transition;

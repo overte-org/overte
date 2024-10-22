@@ -10,4 +10,5 @@
 
 #include "AmbientOcclusionStage.h"
 
-std::string AmbientOcclusionStage::_name { "AMBIENT_OCCLUSION_STAGE" };
+template <>
+std::string render::PointerStage<graphics::AmbientOcclusion, graphics::AmbientOcclusionPointer>::_name { "AMBIENT_OCCLUSION_STAGE" };

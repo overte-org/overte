@@ -11,4 +11,5 @@
 
 #include "BloomStage.h"
 
-std::string BloomStage::_name { "BLOOM_STAGE" };
+template <>
+std::string render::PointerStage<graphics::Bloom, graphics::BloomPointer>::_name { "BLOOM_STAGE" };

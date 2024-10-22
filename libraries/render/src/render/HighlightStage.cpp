@@ -15,7 +15,8 @@
 
 using namespace render;
 
-std::string HighlightStage::_name { "HIGHLIGHT_STAGE" };
+template <>
+std::string TypedStage<Highlight>::_name { "HIGHLIGHT_STAGE" };
 
 HighlightStage::Index HighlightStage::addHighlight(const std::string& selectionName, const HighlightStyle& style) {
     Highlight outline { selectionName, style };

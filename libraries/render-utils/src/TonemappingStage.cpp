@@ -10,4 +10,5 @@
 
 #include "TonemappingStage.h"
 
-std::string TonemappingStage::_name { "TONEMAPPING_STAGE" };
+template <>
+std::string render::PointerStage<graphics::Tonemapping, graphics::TonemappingPointer>::_name { "TONEMAPPING_STAGE" };

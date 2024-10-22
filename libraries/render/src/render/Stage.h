@@ -73,9 +73,7 @@ namespace render {
     protected:
         static Name _name;
 
-        using Elements = indexed_container::IndexedVector<T>;
-
-        Elements _elements;
+        indexed_container::IndexedVector<T> _elements;
         IDList _activeElementIDs;
     };
 
@@ -123,7 +121,7 @@ namespace render {
                 // Avoid failing to allocate an element, just pass
                 if (id != INVALID_INDEX) {
                     // Insert the element and its index in the reverse map
-                    _elementMap.insert(ElementMap::value_type(element, id));
+                    _elementMap[element] = id;
                 }
                 return id;
             } else {
@@ -147,11 +145,8 @@ namespace render {
     protected:
         static Name _name;
 
-        using Elements = indexed_container::IndexedPointerVector<T>;
-        using ElementMap = std::unordered_map<P, Index>;
-
-        Elements _elements;
-        ElementMap _elementMap;
+        indexed_container::IndexedPointerVector<T> _elements;
+        std::unordered_map<P, Index> _elementMap;
     };
 }
 

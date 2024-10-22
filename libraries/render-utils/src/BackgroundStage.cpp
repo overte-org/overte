@@ -15,7 +15,8 @@
 
 #include <graphics/ShaderConstants.h>
 
-std::string BackgroundStage::_name { "BACKGROUND_STAGE" };
+template <>
+std::string render::PointerStage<graphics::SunSkyStage, graphics::SunSkyStagePointer>::_name { "BACKGROUND_STAGE" };
 
 void DrawBackgroundStage::run(const render::RenderContextPointer& renderContext, const Inputs& inputs) {
     const auto& lightingModel = inputs.get0();

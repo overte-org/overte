@@ -16,7 +16,8 @@
 
 #include "ViewFrustum.h"
 
-std::string LightStage::_name { "LIGHT_STAGE" };
+template <>
+std::string render::PointerStage<graphics::Light, graphics::LightPointer, LightFrame>::_name { "LIGHT_STAGE" };
 
 // The bias matrix goes from homogeneous coordinates to UV coords (see http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/#basic-shader)
 const glm::mat4 LightStage::Shadow::_biasMatrix {
@@ -340,8 +341,8 @@ LightStage::Index LightStage::addElement(const LightPointer& light, const bool s
                 _descs[lightId] = Desc();
             }
 
-            // INsert the light and its index in the reverese map
-            _elementMap.insert(ElementMap::value_type(light, lightId));
+            // Insert the light and its index in the reverese map
+            _elementMap[light] = lightId;
 
             updateLightArrayBuffer(lightId);
         }

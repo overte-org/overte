@@ -11,4 +11,5 @@
 
 #include "HazeStage.h"
 
-std::string HazeStage::_name { "HAZE_STAGE" };
+template <>
+std::string render::PointerStage<graphics::Haze, graphics::HazePointer>::_name { "HAZE_STAGE" };
