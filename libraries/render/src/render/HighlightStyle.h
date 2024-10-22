@@ -17,6 +17,8 @@
 
 #include <string>
 
+#include <ViewFrustum.h>
+
 namespace render {
 
     // This holds the configuration for a particular outline style

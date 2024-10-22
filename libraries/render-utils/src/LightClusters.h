@@ -95,7 +95,7 @@ public:
 
     FrustumGrid::Planes _gridPlanes[3];
 
-    LightStage::LightIndices _visibleLightIndices;
+    render::ElementIndices _visibleLightIndices;
     gpu::BufferView _lightIndicesBuffer;
 
     const uint32_t EMPTY_CLUSTER { 0x0000FFFF };
