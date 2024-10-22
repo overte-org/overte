@@ -134,9 +134,9 @@ Script.include("/~/system/libraries/utils.js");
 
         this.endNearParentingGrabOverlay = function () {
             var previousParentID = this.previousParentID[this.grabbedThingID];
-            if ((previousParentID === Uuid.NULL || previousParentID === null) && !this.robbed) {
+            if ((previousParentID === Uuid.NONE || previousParentID === null) && !this.robbed) {
                 Entities.editEntity(this.grabbedThingID, {
-                    parentID: Uuid.NULL,
+                    parentID: Uuid.NONE,
                     parentJointIndex: -1
                 });
             } else if (!this.robbed){

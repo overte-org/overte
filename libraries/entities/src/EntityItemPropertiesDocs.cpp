@@ -31,8 +31,8 @@
  *     <code>false</code> if it isn't. The value is per the <code>entityHostType</code> property value, set at entity creation
  *     by one of the {@link Entities.addEntity} methods. <em>Read-only.</em>
  *
- * @property {Uuid} owningAvatarID=Uuid.NULL - The session ID of the owning avatar if <code>avatarEntity</code> is
- *     <code>true</code>, otherwise {@link Uuid(0)|Uuid.NULL}. <em>Read-only.</em>
+ * @property {Uuid} owningAvatarID=Uuid.NONE - The session ID of the owning avatar if <code>avatarEntity</code> is
+ *     <code>true</code>, otherwise {@link Uuid(0)|Uuid.NONE}. <em>Read-only.</em>
  *
  * @property {number} created - When the entity was created, expressed as the number of microseconds since
  *     1970-01-01T00:00:00 UTC. <em>Read-only.</em>
@@ -131,8 +131,8 @@
  *     button beside the "script URL" field in properties tab of the Create app works.
  * @property {string} serverScripts="" - The URL of the server entity script, if any, that is attached to the entity.
  *
- * @property {Uuid} parentID=Uuid.NULL - The ID of the entity or avatar that the entity is parented to. A value of
- *     {@link Uuid(0)|Uuid.NULL} is used if the entity is not parented.
+ * @property {Uuid} parentID=Uuid.NONE - The ID of the entity or avatar that the entity is parented to. A value of
+ *     {@link Uuid(0)|Uuid.NONE} is used if the entity is not parented.
  * @property {number} parentJointIndex=65535 - The joint of the entity or avatar that the entity is parented to. Use
  *     <code>65535</code> or <code>-1</code> to parent to the entity or avatar's position and orientation rather than a joint.
  * @property {Vec3} localPosition=0,0,0 - The position of the entity relative to its parent if the entity is parented,
@@ -184,7 +184,7 @@
  *
  * @property {MirrorMode} mirrorMode="none" - If this entity should render as a mirror (reflecting the view of the camera),
  *     a portal (reflecting the view through its <code>portalExitID</code>), or normally.
- * @property {Uuid} portalExitID=Uuid.NULL - The ID of the entity that should act as the portal exit if the <code>mirrorMode</code>
+ * @property {Uuid} portalExitID=Uuid.NONE - The ID of the entity that should act as the portal exit if the <code>mirrorMode</code>
  *     is set to <code>portal</code>.
  *
  * @comment The different entity types have additional properties as follows:
@@ -612,18 +612,18 @@
  *     JPG or PNG format. If no texture is specified the surfaces display white.
  * @property {string} zTextureURL="" - The URL of the texture to map to surfaces perpendicular to the entity's local z-axis.
  *     JPG or PNG format. If no texture is specified the surfaces display white.
- * @property {Uuid} xNNeighborID=Uuid.NULL - The ID of the neighboring PolyVox entity in the entity's -ve local x-axis
- *     direction, if you want them joined. Set to {@link Uuid(0)|Uuid.NULL} if there is none or you don't want to join them.
- * @property {Uuid} yNNeighborID=Uuid.NULL - The ID of the neighboring PolyVox entity in the entity's -ve local y-axis
- *     direction, if you want them joined. Set to {@link Uuid(0)|Uuid.NULL} if there is none or you don't want to join them.
- * @property {Uuid} zNNeighborID=Uuid.NULL - The ID of the neighboring PolyVox entity in the entity's -ve local z-axis
- *     direction, if you want them joined. Set to {@link Uuid(0)|Uuid.NULL} if there is none or you don't want to join them.
- * @property {Uuid} xPNeighborID=Uuid.NULL - The ID of the neighboring PolyVox entity in the entity's +ve local x-axis
- *     direction, if you want them joined. Set to {@link Uuid(0)|Uuid.NULL} if there is none or you don't want to join them.
- * @property {Uuid} yPNeighborID=Uuid.NULL - The ID of the neighboring PolyVox entity in the entity's +ve local y-axis
- *     direction, if you want them joined. Set to {@link Uuid(0)|Uuid.NULL} if there is none or you don't want to join them.
- * @property {Uuid} zPNeighborID=Uuid.NULL - The ID of the neighboring PolyVox entity in the entity's +ve local z-axis
- *     direction, if you want them joined. Set to {@link Uuid(0)|Uuid.NULL} if there is none or you don't want to join them.
+ * @property {Uuid} xNNeighborID=Uuid.NONE - The ID of the neighboring PolyVox entity in the entity's -ve local x-axis
+ *     direction, if you want them joined. Set to {@link Uuid(0)|Uuid.NONE} if there is none or you don't want to join them.
+ * @property {Uuid} yNNeighborID=Uuid.NONE - The ID of the neighboring PolyVox entity in the entity's -ve local y-axis
+ *     direction, if you want them joined. Set to {@link Uuid(0)|Uuid.NONE} if there is none or you don't want to join them.
+ * @property {Uuid} zNNeighborID=Uuid.NONE - The ID of the neighboring PolyVox entity in the entity's -ve local z-axis
+ *     direction, if you want them joined. Set to {@link Uuid(0)|Uuid.NONE} if there is none or you don't want to join them.
+ * @property {Uuid} xPNeighborID=Uuid.NONE - The ID of the neighboring PolyVox entity in the entity's +ve local x-axis
+ *     direction, if you want them joined. Set to {@link Uuid(0)|Uuid.NONE} if there is none or you don't want to join them.
+ * @property {Uuid} yPNeighborID=Uuid.NONE - The ID of the neighboring PolyVox entity in the entity's +ve local y-axis
+ *     direction, if you want them joined. Set to {@link Uuid(0)|Uuid.NONE} if there is none or you don't want to join them.
+ * @property {Uuid} zPNeighborID=Uuid.NONE - The ID of the neighboring PolyVox entity in the entity's +ve local z-axis
+ *     direction, if you want them joined. Set to {@link Uuid(0)|Uuid.NONE} if there is none or you don't want to join them.
  * @example <caption>Create a textured PolyVox sphere.</caption>
  * var position = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.5, z: -8 }));
  * var texture = "http://public.highfidelity.com/cozza13/tuscany/Concrete2.jpg";

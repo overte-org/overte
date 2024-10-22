@@ -153,7 +153,7 @@ public slots:
     /*@jsdoc
      * Gets the ID of the entity or avatar that the avatar is parented to.
      * @function ScriptAvatar.getParentID
-     * @returns {Uuid} The ID of the entity or avatar that the avatar is parented to. {@link Uuid(0)|Uuid.NULL} if not parented
+     * @returns {Uuid} The ID of the entity or avatar that the avatar is parented to. {@link Uuid(0)|Uuid.NONE} if not parented
      *     or avatar data aren't available.
      */
     QUuid getParentID() const;
