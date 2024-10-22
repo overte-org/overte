@@ -19,6 +19,8 @@
     var metaverseServers = [];
     var SETTING_METAVERSE_TO_FETCH = "placesAppMetaverseToFetch";
     var SETTING_PINNED_METAVERSE = "placesAppPinnedMetaverse";
+    var SETTING_MATURITY_FILTER = "placesAppMaturityFilter";
+    var DEFAULT_MATURITY = ["adult", "mature", "teen", "everyone", "unrated"];
     var REQUEST_TIMEOUT = 10000; //10 seconds
 
     var httpRequest = null;
@@ -78,8 +80,8 @@
             if (messageObj.action === "READY_FOR_CONTENT" && (n - timestamp) > INTERCALL_DELAY) {
                 d = new Date();
                 timestamp = d.getTime();
+                sendPersistedMaturityFilter();
                 transmitPortalList();
-
                 sendCurrentLocationToUI();
 
             } else if (messageObj.action === "TELEPORT" && (n - timestamp) > INTERCALL_DELAY) {
@@ -88,17 +90,23 @@
 
                 if (messageObj.address.length > 0) {
                     Window.location = messageObj.address;
-                }                
+                }
                 
             } else if (messageObj.action === "GO_HOME" && (n - timestamp) > INTERCALL_DELAY) {
+                d = new Date();
+                timestamp = d.getTime();
                 if (LocationBookmarks.getHomeLocationAddress()) {
                     location.handleLookupString(LocationBookmarks.getHomeLocationAddress());
                 } else {
                     Window.location = "file:///~/serverless/tutorial.json";
                 }                
             } else if (messageObj.action === "GO_BACK" && (n - timestamp) > INTERCALL_DELAY) {
+                d = new Date();
+                timestamp = d.getTime();
                 location.goBack();
             } else if (messageObj.action === "GO_FORWARD" && (n - timestamp) > INTERCALL_DELAY) {
+                d = new Date();
+                timestamp = d.getTime();
                 location.goForward();
             } else if (messageObj.action === "PIN_META" && (n - timestamp) > INTERCALL_DELAY) {
                 d = new Date();
@@ -122,6 +130,10 @@
                 }
                 metaverseServers.push(newMs);
                 savePinnedMetaverseSetting();
+            } else if (messageObj.action === "SET_MATURITY_FILTER" && (n - timestamp) > INTERCALL_DELAY) {
+                d = new Date();
+                timestamp = d.getTime();
+                Settings.setValue(SETTING_MATURITY_FILTER, messageObj.filter);
             }
         }
     }
@@ -223,6 +235,15 @@
         tablet.emitScriptEvent(message);
         
     };
+
+    function sendPersistedMaturityFilter() {
+        var messageSent = {
+            "channel": channel,
+            "action": "MATURITY_FILTER",
+            "filter": Settings.getValue(SETTING_MATURITY_FILTER, DEFAULT_MATURITY)
+        };
+        tablet.emitScriptEvent(messageSent);
+    }
 
     function getFederationData() {
         /*
