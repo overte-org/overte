@@ -915,8 +915,6 @@
  * @property {Entities.AvatarPriorityMode} avatarPriority="inherit" - Configures the priority of updates from avatars in the
  *     zone to other clients.
  *
- * @property {Entities.ScreenshareMode} screenshare="inherit" - Configures a zone for screen-sharing.
- *
  * @example <caption>Create a zone that casts a red key light along the x-axis.</caption>
  * var zone = Entities.addEntity({
  *     type: "Zone",

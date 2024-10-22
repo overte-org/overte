@@ -332,15 +332,6 @@ void EntityItemProperties::setAvatarPriorityFromString(const QString& mode) {
     }
 }
 
-QString EntityItemProperties::getScreenshareAsString() const { return getComponentModeAsString(_screenshare); }
-void EntityItemProperties::setScreenshareFromString(const QString& mode) {
-    auto modeItr = stringToComponentMode.find(mode.toLower());
-    if (modeItr != stringToComponentMode.end()) {
-        _screenshare = modeItr.value();
-        _screenshareChanged = true;
-    }
-}
-
 inline void addTextEffect(QHash<QString, TextEffect>& lookup, TextEffect effect) { lookup[TextEffectHelpers::getNameForTextEffect(effect)] = effect; }
 const QHash<QString, TextEffect> stringToTextEffectLookup = [] {
     QHash<QString, TextEffect> toReturn;

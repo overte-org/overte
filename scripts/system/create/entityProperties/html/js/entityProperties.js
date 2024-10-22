@@ -760,12 +760,6 @@ const GROUPS = [
                 type: "dropdown",
                 options: { inherit: "Inherit", crowd: "Crowd", hero: "Hero" },
                 propertyID: "avatarPriority",
-            },
-            {
-                label: "Screen-share",
-                type: "dropdown",
-                options: { inherit: "Inherit", disabled: "Off", enabled: "On" },
-                propertyID: "screenshare",
             }
         ]
     },
