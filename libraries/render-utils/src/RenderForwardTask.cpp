@@ -161,8 +161,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     task.addJob<DrawLayered3D>("DrawInFrontOpaque", inFrontOpaquesInputs, true);
     task.addJob<DrawLayered3D>("DrawInFrontTransparent", inFrontTransparentsInputs, false);
 
-    {  // Debug the bounds of the rendered items, still look at the zbuffer
-
+    if (depth == 0) {  // Debug the bounds of the rendered items, still look at the zbuffer
         task.addJob<DrawBounds>("DrawMetaBounds", metas);
         task.addJob<DrawBounds>("DrawBounds", opaques);
         task.addJob<DrawBounds>("DrawTransparentBounds", transparents);
