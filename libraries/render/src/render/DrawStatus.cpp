@@ -32,6 +32,10 @@ void DrawStatusConfig::dirtyHelper() {
     emit dirty();
 }
 
+gpu::PipelinePointer DrawStatus::_drawItemBoundsPipeline;
+gpu::PipelinePointer DrawStatus::_drawItemStatusPipeline;
+gpu::Stream::FormatPointer DrawStatus::_vertexFormat;
+
 const gpu::PipelinePointer DrawStatus::getDrawItemBoundsPipeline() {
     if (!_drawItemBoundsPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render::program::drawItemBounds);

@@ -311,6 +311,8 @@ const gpu::PipelinePointer& DrawHighlight::getPipeline(const render::HighlightSt
     return style.isFilled() ? _pipelineFilled : _pipeline;
 }
 
+gpu::PipelinePointer DebugHighlight::_depthPipeline;
+
 DebugHighlight::DebugHighlight() {
     _geometryDepthId = DependencyManager::get<GeometryCache>()->allocateID();
 }
@@ -396,7 +398,7 @@ void DebugHighlight::initializePipelines() {
     _depthPipeline = gpu::Pipeline::create(program, state);
 }
 
-const gpu::PipelinePointer& DebugHighlight::getDepthPipeline() {
+gpu::PipelinePointer& DebugHighlight::getDepthPipeline() {
     if (!_depthPipeline) {
         initializePipelines();
     }
