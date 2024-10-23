@@ -156,7 +156,7 @@ void DrawHighlightMask::run(const render::RenderContextPointer& renderContext, c
         _boundsBuffer = std::make_shared<gpu::Buffer>(sizeof(render::ItemBound));
     }
 
-    auto highlightStage = renderContext->_scene->getStage<render::HighlightStage>(render::HighlightStage::getName());
+    auto highlightStage = renderContext->_scene->getStage<render::HighlightStage>();
     auto highlightId = _sharedParameters->_highlightIds[_highlightPassIndex];
 
     if (!inShapes.empty() && !render::HighlightStage::isIndexInvalid(highlightId)) {
@@ -244,7 +244,7 @@ void DrawHighlight::run(const render::RenderContextPointer& renderContext, const
         if (sceneDepthBuffer) {
             auto args = renderContext->args;
 
-            auto highlightStage = renderContext->_scene->getStage<render::HighlightStage>(render::HighlightStage::getName());
+            auto highlightStage = renderContext->_scene->getStage<render::HighlightStage>();
             auto highlightId = _sharedParameters->_highlightIds[_highlightPassIndex];
             if (!render::HighlightStage::isIndexInvalid(highlightId)) {
                 auto& highlight = highlightStage->getHighlight(highlightId);
@@ -408,7 +408,7 @@ gpu::PipelinePointer& DebugHighlight::getDepthPipeline() {
 
 void SelectionToHighlight::run(const render::RenderContextPointer& renderContext, const Inputs& inputs, Outputs& outputs) {
     auto scene = renderContext->_scene;
-    auto highlightStage = scene->getStage<render::HighlightStage>(render::HighlightStage::getName());
+    auto highlightStage = scene->getStage<render::HighlightStage>();
 
     auto outlines = inputs.get0();
     auto framebuffer = inputs.get1();
@@ -570,7 +570,7 @@ void AppendNonMetaOutlines::run(const render::RenderContextPointer& renderContex
 
 void HighlightCleanup::run(const render::RenderContextPointer& renderContext, const Inputs& inputs) {
     auto scene = renderContext->_scene;
-    auto highlightStage = scene->getStage<render::HighlightStage>(render::HighlightStage::getName());
+    auto highlightStage = scene->getStage<render::HighlightStage>();
 
     for (auto index : inputs.get0()) {
         std::string selectionName = highlightStage->getHighlight(index)._selectionName;

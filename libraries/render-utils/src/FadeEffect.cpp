@@ -43,7 +43,7 @@ render::ShapePipeline::ItemSetter FadeEffect::getItemUniformSetter() const {
         if (!render::TransitionStage::isIndexInvalid(item.getTransitionId())) {
             const auto& scene = args->_scene;
             const auto& batch = args->_batch;
-            auto transitionStage = scene->getStage<render::TransitionStage>(render::TransitionStage::getName());
+            auto transitionStage = scene->getStage<render::TransitionStage>();
             auto& transitionState = transitionStage->getTransition(item.getTransitionId());
 
             if (transitionState.paramsBuffer._size != sizeof(gpu::StructBuffer<FadeObjectParams>)) {
@@ -76,7 +76,7 @@ render::ShapePipeline::ItemSetter FadeEffect::getItemStoredSetter() {
     return [this](const render::ShapePipeline& shapePipeline, render::Args* args, const render::Item& item) {
         if (!render::TransitionStage::isIndexInvalid(item.getTransitionId())) {
             auto scene = args->_scene;
-            auto transitionStage = scene->getStage<render::TransitionStage>(render::TransitionStage::getName());
+            auto transitionStage = scene->getStage<render::TransitionStage>();
             auto& transitionState = transitionStage->getTransition(item.getTransitionId());
             const auto fadeCategory = FadeJob::transitionToCategory[transitionState.eventType];
 
