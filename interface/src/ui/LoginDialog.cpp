@@ -147,9 +147,22 @@ void LoginDialog::login(const QString& username, const QString& password) const 
     DependencyManager::get<AccountManager>()->requestAccessToken(username, password);
 }
 
-void LoginDialog::loginDomain(const QString& username, const QString& password) const {
+// FIXME: Docs not descriptive enough.
+/**
+ * @brief Send a request to log into a domain.
+ *
+ * @param username The username of the account to use
+ * @param password The password of the account to use
+ * @param type The type of login to preform. Example: Wordpress, LDAP, .etc
+ */
+void LoginDialog::loginDomain(const QString& username, const QString& password, const QString& type) const {
     qDebug() << "Attempting to login" << username << "into a domain";
-    DependencyManager::get<DomainAccountManager>()->requestAccessToken(username, password);
+
+    const QString normalizedType = type.toLower(); // Convert to lowercase for ease.
+
+    if (normalizedType == "ldap") return DependencyManager::get<DomainAccountManager>()->requestAccessToken(username, password, "ldap");
+    if (normalizedType == "wordpress") return DependencyManager::get<DomainAccountManager>()->requestAccessToken(username, password, "wordpress");
+
 }
 
 void LoginDialog::loginThroughOculus() {
