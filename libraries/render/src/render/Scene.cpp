@@ -382,7 +382,7 @@ void Scene::updateItems(const Transaction::Updates& transactions) {
 }
 
 void Scene::resetTransitionItems(const Transaction::TransitionResets& transactions) {
-    auto transitionStage = getStage<TransitionStage>(TransitionStage::getName());
+    auto transitionStage = getStage<TransitionStage>();
 
     if (!transitionStage) {
         return;
@@ -425,7 +425,7 @@ void Scene::removeTransitionItems(const Transaction::TransitionRemoves& transact
 }
 
 void Scene::queryTransitionItems(const Transaction::TransitionQueries& transactions) {
-    auto transitionStage = getStage<TransitionStage>(TransitionStage::getName());
+    auto transitionStage = getStage<TransitionStage>();
 
     if (!transitionStage) {
         return;
@@ -467,7 +467,7 @@ void Scene::resetTransitionFinishedOperator(const Transaction::TransitionFinishe
 }
 
 void Scene::resetHighlights(const Transaction::HighlightResets& transactions) {
-    auto outlineStage = getStage<HighlightStage>(HighlightStage::getName());
+    auto outlineStage = getStage<HighlightStage>();
     if (outlineStage) {
         for (auto& transaction : transactions) {
             const auto& selectionName = std::get<0>(transaction);
@@ -484,7 +484,7 @@ void Scene::resetHighlights(const Transaction::HighlightResets& transactions) {
 }
 
 void Scene::removeHighlights(const Transaction::HighlightRemoves& transactions) {
-    auto outlineStage = getStage<HighlightStage>(HighlightStage::getName());
+    auto outlineStage = getStage<HighlightStage>();
     if (outlineStage) {
         for (auto& selectionName : transactions) {
             auto outlineId = outlineStage->getHighlightIdBySelection(selectionName);
@@ -497,7 +497,7 @@ void Scene::removeHighlights(const Transaction::HighlightRemoves& transactions) 
 }
 
 void Scene::queryHighlights(const Transaction::HighlightQueries& transactions) {
-    auto outlineStage = getStage<HighlightStage>(HighlightStage::getName());
+    auto outlineStage = getStage<HighlightStage>();
     if (outlineStage) {
         for (auto& transaction : transactions) {
             const auto& selectionName = std::get<0>(transaction);
@@ -551,7 +551,7 @@ void Scene::setItemTransition(ItemID itemId, Index transitionId) {
 }
 
 void Scene::removeItemTransition(ItemID itemId) {
-    auto transitionStage = getStage<TransitionStage>(TransitionStage::getName());
+    auto transitionStage = getStage<TransitionStage>();
     if (!transitionStage) {
         return;
     }

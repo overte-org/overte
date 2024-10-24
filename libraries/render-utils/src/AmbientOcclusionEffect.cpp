@@ -842,6 +842,8 @@ void AmbientOcclusionEffect::run(const render::RenderContextPointer& renderConte
     config->setGPUBatchRunTime(_gpuTimer->getGPUAverage(), _gpuTimer->getBatchAverage());
 }
 
+gpu::PipelinePointer DebugAmbientOcclusion::_debugPipeline;
+
 void DebugAmbientOcclusion::configure(const Config& config) {
     _showCursorPixel = config.showCursorPixel;
 
@@ -851,7 +853,7 @@ void DebugAmbientOcclusion::configure(const Config& config) {
     }
 }
 
-const gpu::PipelinePointer& DebugAmbientOcclusion::getDebugPipeline() {
+gpu::PipelinePointer& DebugAmbientOcclusion::getDebugPipeline() {
     if (!_debugPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::ssao_debugOcclusion);
         gpu::StatePointer state = std::make_shared<gpu::State>();

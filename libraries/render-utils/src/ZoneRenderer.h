@@ -83,13 +83,13 @@ public:
 
 protected:
 
-    gpu::PipelinePointer _keyLightPipeline;
-    gpu::PipelinePointer _ambientPipeline;
-    gpu::PipelinePointer _backgroundPipeline;
+    static gpu::PipelinePointer _keyLightPipeline;
+    static gpu::PipelinePointer _ambientPipeline;
+    static gpu::PipelinePointer _backgroundPipeline;
 
-    const gpu::PipelinePointer& getKeyLightPipeline();
-    const gpu::PipelinePointer& getAmbientPipeline();
-    const gpu::PipelinePointer& getBackgroundPipeline();
+    static const gpu::PipelinePointer& getKeyLightPipeline();
+    static const gpu::PipelinePointer& getAmbientPipeline();
+    static const gpu::PipelinePointer& getBackgroundPipeline();
 };
 
 

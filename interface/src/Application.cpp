@@ -242,8 +242,6 @@
 #include <raypick/RayPick.h>
 #include <raypick/MouseTransformNode.h>
 
-#include <FadeEffect.h>
-
 #include "ResourceRequestObserver.h"
 
 #include "webbrowser/WebBrowserSuggestionsEngine.h"
@@ -913,7 +911,6 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
     DependencyManager::set<SelectionScriptingInterface>();
     DependencyManager::set<TTSScriptingInterface>();
 
-    DependencyManager::set<FadeEffect>();
     DependencyManager::set<ResourceRequestObserver>();
     DependencyManager::set<Keyboard>();
     DependencyManager::set<KeyboardScriptingInterface>();

@@ -725,9 +725,8 @@ render::ShapePipelinePointer GeometryCache::getShapePipeline(bool textured, bool
 
 render::ShapePipelinePointer GeometryCache::getFadingShapePipeline(bool textured, bool transparent, bool unlit, bool depthBias, bool forward,
         graphics::MaterialKey::CullFaceMode cullFaceMode) {
-    auto fadeEffect = DependencyManager::get<FadeEffect>();
-    auto fadeBatchSetter = fadeEffect->getBatchSetter();
-    auto fadeItemSetter = fadeEffect->getItemUniformSetter();
+    auto fadeBatchSetter = FadeEffect::getBatchSetter();
+    auto fadeItemSetter = FadeEffect::getItemUniformSetter();
     return std::make_shared<render::ShapePipeline>(getSimplePipeline(textured, transparent, unlit, depthBias, true, true, forward, cullFaceMode), nullptr,
         [fadeBatchSetter, fadeItemSetter](const render::ShapePipeline& shapePipeline, gpu::Batch& batch, render::Args* args) {
             batch.setResourceTexture(gr::Texture::MaterialAlbedo, DependencyManager::get<TextureCache>()->getWhiteTexture());

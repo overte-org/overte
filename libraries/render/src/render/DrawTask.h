@@ -63,8 +63,8 @@ public:
         const Inputs& items);
 
 private:
-    const gpu::PipelinePointer getPipeline();
-    gpu::PipelinePointer _boundsPipeline;
+    static const gpu::PipelinePointer getPipeline();
+    static gpu::PipelinePointer _boundsPipeline;
     gpu::BufferPointer _drawBuffer;
     gpu::BufferPointer _paramsBuffer;
 };

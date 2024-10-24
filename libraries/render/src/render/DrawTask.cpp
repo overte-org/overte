@@ -155,6 +155,8 @@ void DrawLight::run(const RenderContextPointer& renderContext, const ItemBounds&
     config->setNumDrawn((int)inLights.size());
 }
 
+gpu::PipelinePointer DrawBounds::_boundsPipeline;
+
 const gpu::PipelinePointer DrawBounds::getPipeline() {
     if (!_boundsPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render::program::drawItemBounds);

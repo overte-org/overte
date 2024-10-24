@@ -137,9 +137,8 @@ gpu::TexturePointer LinearDepthFramebuffer::getHalfNormalTexture() {
     return _halfNormalTexture;
 }
 
-
-LinearDepthPass::LinearDepthPass() {
-}
+gpu::PipelinePointer LinearDepthPass::_linearDepthPipeline;
+gpu::PipelinePointer LinearDepthPass::_downsamplePipeline;
 
 void LinearDepthPass::configure(const Config& config) {
 }
@@ -179,8 +178,8 @@ void LinearDepthPass::run(const render::RenderContextPointer& renderContext, con
     outputs.edit3() = halfLinearDepthTexture;
     outputs.edit4() = halfNormalTexture;
    
-    auto linearDepthPipeline = getLinearDepthPipeline(renderContext);
-    auto downsamplePipeline = getDownsamplePipeline(renderContext);
+    auto linearDepthPipeline = getLinearDepthPipeline();
+    auto downsamplePipeline = getDownsamplePipeline();
 
     auto depthViewport = args->_viewport;
     auto halfViewport = depthViewport >> 1;
@@ -222,8 +221,7 @@ void LinearDepthPass::run(const render::RenderContextPointer& renderContext, con
     config->setGPUBatchRunTime(_gpuTimer->getGPUAverage(), _gpuTimer->getBatchAverage());
 }
 
-
-const gpu::PipelinePointer& LinearDepthPass::getLinearDepthPipeline(const render::RenderContextPointer& renderContext) {
+const gpu::PipelinePointer& LinearDepthPass::getLinearDepthPipeline() {
     gpu::ShaderPointer program;
     if (!_linearDepthPipeline) {
         program = gpu::Shader::createProgram(shader::render_utils::program::surfaceGeometry_makeLinearDepth);
@@ -243,8 +241,7 @@ const gpu::PipelinePointer& LinearDepthPass::getLinearDepthPipeline(const render
     return _linearDepthPipeline;
 }
 
-
-const gpu::PipelinePointer& LinearDepthPass::getDownsamplePipeline(const render::RenderContextPointer& renderContext) {
+const gpu::PipelinePointer& LinearDepthPass::getDownsamplePipeline() {
     if (!_downsamplePipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::surfaceGeometry_downsampleDepthNormal);
 
@@ -366,6 +363,8 @@ void SurfaceGeometryFramebuffer::setResolutionLevel(int resolutionLevel) {
     }
 }
 
+gpu::PipelinePointer SurfaceGeometryPass::_curvaturePipeline;
+
 SurfaceGeometryPass::SurfaceGeometryPass() :
     _diffusePass(false)
 {
@@ -454,7 +453,7 @@ void SurfaceGeometryPass::run(const render::RenderContextPointer& renderContext,
     outputs.edit2() = curvatureFramebuffer;
     outputs.edit3() = lowCurvatureFramebuffer;
 
-    auto curvaturePipeline = getCurvaturePipeline(renderContext);
+    auto curvaturePipeline = getCurvaturePipeline();
     auto diffuseVPipeline = _diffusePass.getBlurVPipeline();
     auto diffuseHPipeline = _diffusePass.getBlurHPipeline();
 
@@ -532,7 +531,7 @@ void SurfaceGeometryPass::run(const render::RenderContextPointer& renderContext,
     config->setGPUBatchRunTime(_gpuTimer->getGPUAverage(), _gpuTimer->getBatchAverage());
 }
 
-const gpu::PipelinePointer& SurfaceGeometryPass::getCurvaturePipeline(const render::RenderContextPointer& renderContext) {
+const gpu::PipelinePointer& SurfaceGeometryPass::getCurvaturePipeline() {
     if (!_curvaturePipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::surfaceGeometry_makeCurvature);
 

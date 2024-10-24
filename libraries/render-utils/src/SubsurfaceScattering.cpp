@@ -411,8 +411,8 @@ gpu::TexturePointer SubsurfaceScatteringResource::generateScatteringSpecularBeck
     return beckmannMap;
 }
 
-DebugSubsurfaceScattering::DebugSubsurfaceScattering() {
-}
+gpu::PipelinePointer DebugSubsurfaceScattering::_scatteringPipeline;
+gpu::PipelinePointer DebugSubsurfaceScattering::_showLUTPipeline;
 
 void DebugSubsurfaceScattering::configure(const Config& config) {
 
@@ -427,8 +427,6 @@ void DebugSubsurfaceScattering::configure(const Config& config) {
     _debugParams->setSubData(0, _debugCursorTexcoord);
 }
 
-
-
 gpu::PipelinePointer DebugSubsurfaceScattering::getScatteringPipeline() {
     if (!_scatteringPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::subsurfaceScattering_drawScattering);
@@ -440,8 +438,6 @@ gpu::PipelinePointer DebugSubsurfaceScattering::getScatteringPipeline() {
     return _scatteringPipeline;
 }
 
-gpu::PipelinePointer _showLUTPipeline;
-
 gpu::PipelinePointer DebugSubsurfaceScattering::getShowLUTPipeline() {
     if (!_showLUTPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::gpu::program::drawUnitQuatTextureOpaque);
@@ -452,13 +448,11 @@ gpu::PipelinePointer DebugSubsurfaceScattering::getShowLUTPipeline() {
     return _showLUTPipeline;
 }
 
-
 void DebugSubsurfaceScattering::run(const render::RenderContextPointer& renderContext, const Inputs& inputs) {
     assert(renderContext->args);
     assert(renderContext->args->hasViewFrustum());
 
     RenderArgs* args = renderContext->args;
-
 
     auto& frameTransform = inputs.get0();
     auto& deferredFramebuffer = inputs.get1();
@@ -477,8 +471,6 @@ void DebugSubsurfaceScattering::run(const render::RenderContextPointer& renderCo
     auto scatteringTable = scatteringResource->getScatteringTable();
     auto scatteringSpecular = scatteringResource->getScatteringSpecular();
 
-
-
     auto lightStage = renderContext->_scene->getStage<LightStage>();
     assert(lightStage);
    // const auto light = DependencyManager::get<DeferredLightingEffect>()->getLightStage()->getLight(0);
@@ -490,7 +482,6 @@ void DebugSubsurfaceScattering::run(const render::RenderContextPointer& renderCo
     
     gpu::doInBatch("DebugSubsurfaceScattering::run", args->_context, [=](gpu::Batch& batch) {
         batch.enableStereo(false);
-
 
         auto viewportSize = std::min(args->_viewport.z, args->_viewport.w) >> 1;
         auto offsetViewport = viewportSize * 0.1;

@@ -93,6 +93,10 @@ void SetupZones::run(const RenderContextPointer& context, const Input& input) {
     ambientOcclusionStage->_currentFrame.pushAmbientOcclusion(INVALID_INDEX);
 }
 
+gpu::PipelinePointer DebugZoneLighting::_keyLightPipeline;
+gpu::PipelinePointer DebugZoneLighting::_ambientPipeline;
+gpu::PipelinePointer DebugZoneLighting::_backgroundPipeline;
+
 const gpu::PipelinePointer& DebugZoneLighting::getKeyLightPipeline() {
     if (!_keyLightPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::zone_drawKeyLight);

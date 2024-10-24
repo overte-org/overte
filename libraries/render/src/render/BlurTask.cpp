@@ -195,6 +195,9 @@ bool BlurInOutResource::updateResources(const gpu::FramebufferPointer& sourceFra
     return true;
 }
 
+gpu::PipelinePointer BlurGaussian::_blurVPipeline;
+gpu::PipelinePointer BlurGaussian::_blurHPipeline;
+
 BlurGaussian::BlurGaussian() {
     _parameters = std::make_shared<BlurParams>();
 }
@@ -294,7 +297,8 @@ void BlurGaussian::run(const RenderContextPointer& renderContext, const Inputs& 
     });
 }
 
-
+gpu::PipelinePointer BlurGaussianDepthAware::_blurVPipeline;
+gpu::PipelinePointer BlurGaussianDepthAware::_blurHPipeline;
 
 BlurGaussianDepthAware::BlurGaussianDepthAware(bool generateOutputFramebuffer, const BlurParamsPointer& params) :
     _inOutResources(generateOutputFramebuffer, 1U),

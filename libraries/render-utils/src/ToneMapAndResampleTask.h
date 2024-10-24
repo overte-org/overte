@@ -67,7 +67,6 @@ protected:
     gpu::FramebufferPointer _destinationFrameBuffer;
 
 private:
-    gpu::PipelinePointer _blitLightBuffer;
     float _exposure { 0.0f };
 
     bool _debug { false };

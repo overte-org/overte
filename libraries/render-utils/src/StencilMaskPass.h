@@ -59,14 +59,14 @@ public:
     static void testMaskDrawShapeNoAA(gpu::State& state);
 
 private:
-    gpu::PipelinePointer _meshStencilPipeline;
-    gpu::PipelinePointer getMeshStencilPipeline();
+    static gpu::PipelinePointer _meshStencilPipeline;
+    static gpu::PipelinePointer getMeshStencilPipeline();
 
-    gpu::PipelinePointer _paintStencilPipeline;
-    gpu::PipelinePointer getPaintStencilPipeline();
+    static gpu::PipelinePointer _paintStencilPipeline;
+    static gpu::PipelinePointer getPaintStencilPipeline();
 
-    graphics::MeshPointer _mesh;
-    graphics::MeshPointer getMesh();
+    static graphics::MeshPointer _mesh;
+    static graphics::MeshPointer getMesh();
 
     StencilMaskMode _maskMode { StencilMaskMode::NONE };
 };

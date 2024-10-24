@@ -283,9 +283,9 @@ private:
     };
     gpu::StructBuffer<Parameters> _parametersBuffer;
 
-    const gpu::PipelinePointer& getDebugPipeline();
+    static gpu::PipelinePointer& getDebugPipeline();
 
-    gpu::PipelinePointer _debugPipeline;
+    static gpu::PipelinePointer _debugPipeline;
 
     bool _showCursorPixel { false };
 };

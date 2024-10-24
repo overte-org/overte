@@ -129,11 +129,11 @@ protected:
 
     BlurParamsPointer _parameters;
 
-    gpu::PipelinePointer _blurVPipeline;
-    gpu::PipelinePointer _blurHPipeline;
+    static gpu::PipelinePointer _blurVPipeline;
+    static gpu::PipelinePointer _blurHPipeline;
 
-    gpu::PipelinePointer getBlurVPipeline();
-    gpu::PipelinePointer getBlurHPipeline();
+    static gpu::PipelinePointer getBlurVPipeline();
+    static gpu::PipelinePointer getBlurHPipeline();
 
     BlurInOutResource _inOutResources;
 };
@@ -163,12 +163,12 @@ public:
 
     const BlurParamsPointer& getParameters() const { return _parameters; }
  
-    gpu::PipelinePointer getBlurVPipeline();
-    gpu::PipelinePointer getBlurHPipeline();
+    static gpu::PipelinePointer getBlurVPipeline();
+    static gpu::PipelinePointer getBlurHPipeline();
 
 protected:
-    gpu::PipelinePointer _blurVPipeline;
-    gpu::PipelinePointer _blurHPipeline;
+    static gpu::PipelinePointer _blurVPipeline;
+    static gpu::PipelinePointer _blurHPipeline;
 
     BlurInOutResource _inOutResources;
     BlurParamsPointer _parameters;

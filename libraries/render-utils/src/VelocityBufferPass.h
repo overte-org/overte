@@ -69,7 +69,7 @@ public:
     using Config = VelocityBufferPassConfig;
     using JobModel = render::Job::ModelIO<VelocityBufferPass, Inputs, Outputs, Config>;
 
-    VelocityBufferPass();
+    VelocityBufferPass() {}
 
     void configure(const Config& config);
     void run(const render::RenderContextPointer& renderContext, const Inputs& inputs, Outputs& outputs);
@@ -79,8 +79,8 @@ private:
 
     VelocityFramebufferPointer _velocityFramebuffer;
 
-    const gpu::PipelinePointer& getCameraMotionPipeline(const render::RenderContextPointer& renderContext);
-    gpu::PipelinePointer _cameraMotionPipeline;
+    static const gpu::PipelinePointer& getCameraMotionPipeline();
+    static gpu::PipelinePointer _cameraMotionPipeline;
 
     gpu::RangeTimerPointer _gpuTimer;
 };

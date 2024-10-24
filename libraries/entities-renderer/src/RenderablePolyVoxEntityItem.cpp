@@ -1748,9 +1748,8 @@ ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, const Sha
                 if (!std::get<2>(key)) {
                     _pipelines[std::make_tuple(std::get<0>(key), std::get<1>(key), std::get<2>(key), wireframe)] = std::make_shared<render::ShapePipeline>(pipeline, nullptr, nullptr, nullptr);
                 } else {
-                    const auto& fadeEffect = DependencyManager::get<FadeEffect>();
                     _pipelines[std::make_tuple(std::get<0>(key), std::get<1>(key), std::get<2>(key), wireframe)] = std::make_shared<render::ShapePipeline>(pipeline, nullptr,
-                        fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter());
+                        FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter());
                 }
             }
         }

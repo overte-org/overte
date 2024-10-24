@@ -207,7 +207,7 @@ public:
     void configure(const Config& config);
     void run(const render::RenderContextPointer& renderContext, FadeJob::Output& output);
 
-    gpu::BufferView getConfigurationBuffer() const { return _configurations; }
+    static gpu::BufferView getConfigurationBuffer() { return _configurations; }
 
 private:
 
@@ -219,7 +219,7 @@ private:
     };
     using FadeConfigurationBuffer = gpu::StructBuffer<FadeConfiguration>;
 
-    FadeConfigurationBuffer _configurations;
+    static FadeConfigurationBuffer _configurations;
     float _thresholdScale[FADE_CATEGORY_COUNT];
     uint64_t _previousTime{ 0 };
 
