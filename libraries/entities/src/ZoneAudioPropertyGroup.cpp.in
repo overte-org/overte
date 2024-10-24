@@ -1,0 +1,132 @@
+//
+//  ZoneAudioPropertyGroup.cpp
+//  libraries/entities/src
+//
+//  Created by HifiExperiments on 11/28/23
+//  Copyright 2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "ZoneAudioPropertyGroup.h"
+
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+void ZoneAudioPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+
+@Audio_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void ZoneAudioPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
+
+@Audio_GROUP_COPY_FROM_SCRIPT@
+
+}
+
+void ZoneAudioPropertyGroup::merge(const ZoneAudioPropertyGroup& other) {
+
+@Audio_GROUP_MERGE@
+
+}
+
+void ZoneAudioPropertyGroup::debugDump() const {
+
+@Audio_GROUP_DEBUG_DUMP@
+
+}
+
+void ZoneAudioPropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@Audio_GROUP_LIST_CHANGED@
+
+}
+
+bool ZoneAudioPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                                EntityPropertyFlags& requestedProperties,
+                                                EntityPropertyFlags& propertyFlags,
+                                                EntityPropertyFlags& propertiesDidntFit,
+                                                int& propertyCount,
+                                                OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Audio_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool ZoneAudioPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags, const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@Audio_GROUP_READ@
+
+@Audio_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void ZoneAudioPropertyGroup::markAllChanged() {
+
+@Audio_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags ZoneAudioPropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@Audio_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void ZoneAudioPropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@Audio_GROUP_COPY_TO@
+
+}
+
+bool ZoneAudioPropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Audio_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags ZoneAudioPropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@Audio_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int ZoneAudioPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                             ReadBitstreamToTreeParams& args,
+                                                             EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                             bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Audio_GROUP_READ@
+
+    return bytesRead;
+}
+
+void ZoneAudioPropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                            QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@Audio_GROUP_ADD_TO_MAP@
+
+}

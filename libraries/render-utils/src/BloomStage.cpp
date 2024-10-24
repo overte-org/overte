@@ -13,7 +13,7 @@
 
 #include <gpu/Context.h>
 
-std::string BloomStage::_stageName { "BLOOM_STAGE"};
+std::string BloomStage::_stageName { "BLOOM_STAGE" };
 const BloomStage::Index BloomStage::INVALID_INDEX { render::indexed_container::INVALID_INDEX };
 
 BloomStage::Index BloomStage::findBloom(const BloomPointer& bloom) const {

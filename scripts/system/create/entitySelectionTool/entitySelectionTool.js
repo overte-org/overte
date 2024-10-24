@@ -428,7 +428,7 @@ SelectionManager = (function() {
                     entityID: newEntityID,
                     properties: properties
                 });
-                if (properties.parentID !== Uuid.NULL) {
+                if (properties.parentID !== Uuid.NONE) {
                     duplicatedChildrenWithOldParents[newEntityID] = properties.parentID;
                 }
                 originalEntityToNewEntityID[originalEntityID] = newEntityID;
@@ -480,7 +480,7 @@ SelectionManager = (function() {
                     entityID: newEntityID,
                     properties: properties
                 });
-                if (properties.parentID !== Uuid.NULL) {
+                if (properties.parentID !== Uuid.NONE) {
                     createdChildrenWithOldParents[newEntityID] = properties.parentID;
                 }
                 originalEntityToNewEntityID[properties.id] = newEntityID;
@@ -755,7 +755,7 @@ SelectionManager = (function() {
             that.selections = [];
             for (var i = 0; i < currentSelection.length; i++) {
                 var properties = Entities.getEntityProperties(currentSelection[i], ['parentID']);
-                if (properties.parentID !== Uuid.NULL) {
+                if (properties.parentID !== Uuid.NONE) {
                     that.selections.push(properties.parentID);
                 }
             }
@@ -772,7 +772,7 @@ SelectionManager = (function() {
             that.selections = [];
             for (var i = 0; i < currentSelection.length; i++) {
                 var topParentId = getTopParent(currentSelection[i]);
-                if (topParentId !== Uuid.NULL) {
+                if (topParentId !== Uuid.NONE) {
                     that.selections.push(topParentId);
                 }
             }
@@ -784,9 +784,9 @@ SelectionManager = (function() {
     };
 
     function getTopParent(id) {
-        var topParentId = Uuid.NULL;
+        var topParentId = Uuid.NONE;
         var properties = Entities.getEntityProperties(id, ['parentID']);
-        if (properties.parentID === Uuid.NULL) {
+        if (properties.parentID === Uuid.NONE) {
             topParentId = id;
         } else {
             topParentId = getTopParent(properties.parentID);
@@ -1567,7 +1567,7 @@ SelectionDisplay = (function() {
         } else if (toolEntity === handleTranslateZCylinder) {
             return handleTranslateZCone;
         }
-        return Uuid.NULL;
+        return Uuid.NONE;
     };
     
     that.updateHighlight = function(event) {
@@ -2255,7 +2255,7 @@ SelectionDisplay = (function() {
             Entities.editEntity(selectionBox, selectionBoxGeometry);
 
             // UPDATE ICON TRANSLATE HANDLE
-            if (SelectionManager.entityType === "ParticleEffect" || SelectionManager.entityType === "Light") {
+            if (SelectionManager.entityType === "ParticleEffect" || SelectionManager.entityType === "ProceduralParticleEffect" || SelectionManager.entityType === "Light" || SelectionManager.entityType === "Sound") {
                 var iconSelectionBoxGeometry = {
                     position: position,
                     rotation: rotation

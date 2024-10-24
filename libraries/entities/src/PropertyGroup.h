@@ -59,14 +59,6 @@ public:
     virtual bool setProperties(const EntityItemProperties& properties) = 0;
 
     virtual EntityPropertyFlags getEntityProperties(EncodeBitstreamParams& params) const = 0;
-        
-    virtual void appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params, 
-                                    EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
-                                    EntityPropertyFlags& requestedProperties,
-                                    EntityPropertyFlags& propertyFlags,
-                                    EntityPropertyFlags& propertiesDidntFit,
-                                    int& propertyCount, 
-                                    OctreeElement::AppendState& appendState) const = 0;
 
     virtual int readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead, 
                                                 ReadBitstreamToTreeParams& args,

@@ -9,7 +9,6 @@ ShadowRectangle {
     height: 60
 
     property alias pageTitle: title.text
-    property alias avatarIconVisible: avatarIcon.visible
     property alias settingsButtonVisible: settingsButton.visible
 
     signal settingsClicked;
@@ -24,9 +23,8 @@ ShadowRectangle {
     RalewaySemiBold {
         id: title
         size: 22;
-        anchors.left: avatarIcon.visible ? avatarIcon.right : avatarIcon.left
-        anchors.leftMargin: 4
-        anchors.verticalCenter: avatarIcon.verticalCenter
+        x: 20
+        anchors.verticalCenter: parent.verticalCenter
         text: 'Avatar'
     }
 
@@ -34,7 +32,7 @@ ShadowRectangle {
         id: settingsButton
         anchors.right: parent.right
         anchors.rightMargin: 30
-        anchors.verticalCenter: avatarIcon.verticalCenter
+        anchors.verticalCenter: parent.verticalCenter
         text: "&"
 
         MouseArea {

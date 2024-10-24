@@ -8,6 +8,10 @@
     "shapeAlpha": {
         "tooltip": "The opacity of the entity between 0.0 fully transparent and 1.0 completely opaque."
     },
+    "shapeUnlit": {
+        "tooltip": "If enabled, the entity will not be lit by the keylight or local lights.",
+        "jsPropertyName": "unlit"
+    },
     "text": {
         "tooltip": "The text to display on the entity."
     },
@@ -40,6 +44,9 @@
     },
     "textAlignment": {
         "tooltip": "How the text is aligned within its left and right bounds."
+    },
+    "textVerticalAlignment": {
+        "tooltip": "How the text is aligned within its top and bottom bounds."
     },
     "topMargin": {
         "tooltip": "The top margin, in meters."
@@ -116,6 +123,9 @@
     "ambientLight.ambientURL": {
         "tooltip": "A cube map image that defines the color of the light coming from each direction."
     },
+    "ambientLight.ambientColor": {
+        "tooltip": "If the URL is blank, this changes the color of the ambient light, otherwise it modifies the color of the ambient map."
+    },
     "hazeMode": {
         "tooltip": "Configures the haze in the scene."
     },
@@ -158,11 +168,65 @@
     "bloom.bloomSize": {
         "tooltip": "The radius of bloom. The higher the value, the larger the bloom."
     },
+    "tonemappingMode": {
+        "tooltip": "Configures the tonemapping applied to the final render."
+    },
+    "tonemapping.curve": {
+        "tooltip": "The tonemapping curve used."
+    },
+    "tonemapping.exposure": {
+        "tooltip": "The exposure used during tonemapping."
+    },
+    "ambientOcclusionMode": {
+        "tooltip": "Configures the ambient occlusion in this zone."
+    },
+    "ambientOcclusion.technique": {
+        "tooltip": "The ambient occlusion technique used. Different techniques have different tradeoffs."
+    },
+    "ambientOcclusion.jitter": {
+        "tooltip": "Whether or not the ambient occlusion sampling is jittered."
+    },
+    "ambientOcclusion.resolutionLevel": {
+        "tooltip": "How high the resolution of the ambient occlusion buffer should be. Higher levels mean lower resolution buffers."
+    },
+    "ambientOcclusion.edgeSharpness": {
+        "tooltip": "How much to sharpen the edges during the ambient occlusion blurring."
+    },
+    "ambientOcclusion.blurRadius": {
+        "tooltip": "The radius used for blurring, in pixels."
+    },
+    "ambientOcclusion.aoRadius": {
+        "tooltip": "The radius used for ambient occlusion."
+    },
+    "ambientOcclusion.aoObscuranceLevel": {
+        "tooltip": "Intensify or dim ambient occlusion."
+    },
+    "ambientOcclusion.aoFalloffAngle": {
+        "tooltip": "The falloff angle for the AO calculation."
+    },
+    "ambientOcclusion.aoSamplingAmount": {
+        "tooltip": "The fraction of AO samples to use, out of the maximum for each technique."
+    },
+    "ambientOcclusion.ssaoNumSpiralTurns": {
+        "tooltip": "The angle span used to distribute the AO samples ray directions. SSAO only."
+    },
+    "audio.reverbEnabled": {
+        "tooltip": "If reverb should be enabled for listeners in this zone."
+    },
+    "audio.reverbTime": {
+        "tooltip": "The time (seconds) for the reverb tail to decay by 60dB."
+    },
+    "audio.reverbWetLevel": {
+        "tooltip": "Adjusts the wet/dry percentage, from completely dry (0%) to completely wet (100%)."
+    },
+    "audio.listenerZones": {
+        "tooltip": "A list of entity IDs representing listener zones with this zone as a source."
+    },
+    "audio.listenerAttenuationCoefficients": {
+        "tooltip": "A list of attenuation coefficients."
+    },
     "avatarPriority": {
         "tooltip": "Alter Avatars' update priorities."
-    },
-    "screenshare": {
-        "tooltip": "Enable screen-sharing within this zone"
     },
     "modelURL": {
         "tooltip": "A mesh model from an FBX or OBJ file."
@@ -200,6 +264,9 @@
     "animation.fps": {
         "tooltip": "The speed of the animation."
     },
+    "animation.smoothFrames": {
+        "tooltip": "If enabled, the frames of the animation will be linearly interpolated to create smoother movement."
+    },
     "textures": {
         "tooltip": "A JSON string containing a texture. Use a name from the Original Texture property to override it."
     },
@@ -215,7 +282,7 @@
     },
     "imageAlpha": {
         "tooltip": "The opacity of the image between 0.0 fully transparent and 1.0 completely opaque."
-    },    
+    },
     "emissive": {
         "tooltip": "If enabled, the image will display at full brightness."
     },
@@ -236,7 +303,10 @@
     },
     "showKeyboardFocusHighlight": {
         "tooltip": "If enabled, highlights when it has keyboard focus."
-    },    
+    },
+    "wantsKeyboardFocus": {
+        "tooltip": "If enabled, this web entity will capture keyboard focus once clicked."
+    },
     "isEmitting": {
         "tooltip": "If enabled, then particles are emitted."
     },
@@ -500,8 +570,47 @@
     "grab.grabbable": {
         "tooltip": "If enabled, this entity will allow grabbing input and will be movable."
     },
+    "grab.grabFollowsController": {
+        "tooltip": "If enabled, grabbed entities will follow the movements of your hand controller instead of your avatar's hand."
+    },
+    "grab.grabKinematic": {
+        "tooltip": "If enabled, this grabbed entity will be updated in a kinematic manner. If disabled, it will be grabbed using a tractor action. A kinematic grab will make the item appear more tightly held but will cause it to behave poorly when interacting with dynamic entities."
+    },
+    "grab.grabDelegateToParent": {
+        "tooltip": "If enabled, when the entity is grabbed, the grab will be transferred to its parent entity if there is one. If disabled, the grab won't be transferred, so a child entity can be grabbed and moved relative to its parent."
+    },
+    "grab.equippable": {
+        "tooltip": "If enabled, this entity can be attached to the hands/controllers in a simple click. (Note: Entities can't be equipped if 'ignorePickIntersection' is set to true.)"
+    },
+    "grab.equippableLeftPosition": {
+        "tooltip": "When equipped on an avatar, this defines the 'position' of the entity relative to the 'left' hand."
+    },
+    "grab.equippableLeftRotation": {
+        "tooltip": "When equipped on an avatar, this defines the 'rotation' of the entity relative to the 'left' hand."
+    },
+    "grab.equippableRightPosition": {
+        "tooltip": "When equipped on an avatar, this defines the 'position' of the entity relative to the 'right' hand."
+    },
+    "grab.equippableRightRotation": {
+        "tooltip": "When equipped on an avatar, this defines the 'rotation' of the entity relative to the 'right' hand."
+    },
+    "grab.equippableIndicatorURL": {
+        "tooltip": "If a model URL is specified, this model will be used to indicate that an entity is equippable."
+    },
+    "grab.equippableIndicatorScale": {
+        "tooltip": "If an 'Indicator URL' is specified, this controls the scale factors for each dimension of the displayed indicator."
+    },
+    "grab.equippableIndicatorOffset": {
+        "tooltip": "If an 'Indicator URL' is specified, this controls the relative offset of the displayed indicator from the equippable entity."
+    },
     "grab.triggerable": {
         "tooltip": "If enabled, the collider on this entity is used for triggering events."
+    },
+    "mirrorMode": {
+        "tooltip": "If this entity should render normally, or as a  \"Mirror\" or  \"Portal\""
+    },
+    "portalExitID": {
+        "tooltip": "If this entity is a portal, what entity it should use as its exit."
     },
     "cloneable": {
         "tooltip": "If enabled, this entity can be duplicated."
@@ -517,9 +626,6 @@
     },
     "cloneAvatarEntity": {
         "tooltip": "If enabled, then clones created from this entity will be created as avatar entities."
-    },
-    "grab.grabFollowsController": {
-        "tooltip": "If enabled, grabbed entities will follow the movements of your hand controller instead of your avatar's hand."
     },
     "canCastShadow": {
         "tooltip": "If enabled, the geometry of this entity casts shadows when a shadow-casting light source shines on it. Note: Shadows are rendered only on high-profiled computers. This setting will have no effect on computers profiled to medium or low graphics."
@@ -606,7 +712,7 @@
     },
     "useBackground": {
         "tooltip": "If disabled, this web entity will support a transparent background for the webpage and its elements if the CSS property of 'background-color' on the 'body' is set with transparency."
-    },    
+    },
     "maxFPS": {
         "tooltip": "The FPS at which to render the web entity. Higher values will have a performance impact."
     },
@@ -682,5 +788,47 @@
     },
     "zTextureURL": {
         "tooltip": "The URL of the texture to map to surfaces perpendicular to the entity's local z-axis. JPG or PNG format."
+    },
+    "numParticles": {
+        "tooltip": "The maximum number of particles to render at one time."
+    },
+    "numTrianglesPerParticle": {
+        "tooltip": "The number of triangles to render per particle."
+    },
+    "numUpdateProps": {
+        "tooltip": "The number of persistent Vec4 per-particle properties to use during simulation and rendering."
+    },
+    "particleTransparent": {
+        "tooltip": "If the particles should render as transparent (with additive blending) or as opaque."
+    },
+    "particleUpdateData": {
+        "tooltip": "A JSON description of the shaders, textures, and uniforms to use during particle updating."
+    },
+    "particleRenderData": {
+        "tooltip": "A JSON description of the shaders, textures, and uniforms to use during particle rendering."
+    },
+    "soundURL": {
+        "tooltip": "The URL of the sound, as a wav, mp3, or raw file."
+    },
+    "playing": {
+        "tooltip": "Whether or not the sound should play."
+    },
+    "volume": {
+        "tooltip": "The volume of the sound."
+    },
+    "pitch": {
+        "tooltip": "Alter the pitch of the sound, within +/- 2 octaves. The value is the relative sample rate at which to resample the sound."
+    },
+    "timeOffset": {
+        "tooltip": "Starts playback from a specified time (seconds) within the sound file."
+    },
+    "loop": {
+        "tooltip": "Whether or not the sound is played repeatedly."
+    },
+    "positional": {
+        "tooltip": "Whether or not the sound volume drops off with distance."
+    },
+    "localOnly": {
+        "tooltip": "Whether the sound should play locally for everyone separately, or globally via the audio mixer."
     }
 }

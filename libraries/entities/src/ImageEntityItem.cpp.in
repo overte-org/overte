@@ -1,0 +1,107 @@
+//
+//  Created by Sam Gondelman on 11/29/18
+//  Copyright 2018 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#include "ImageEntityItem.h"
+
+#include "EntityItemProperties.h"
+
+EntityItemPointer ImageEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    Pointer entity(new ImageEntityItem(entityID), [](ImageEntityItem* ptr) { ptr->deleteLater(); });
+    entity->setProperties(properties);
+    return entity;
+}
+
+// our non-pure virtual subclass for now...
+ImageEntityItem::ImageEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
+    _type = EntityTypes::Image;
+}
+
+void ImageEntityItem::setUnscaledDimensions(const glm::vec3& value) {
+    const float IMAGE_ENTITY_ITEM_FIXED_DEPTH = 0.01f;
+    // NOTE: Image Entities always have a "depth" of 1cm.
+    EntityItem::setUnscaledDimensions(glm::vec3(value.x, value.y, IMAGE_ENTITY_ITEM_FIXED_DEPTH));
+}
+
+EntityItemProperties ImageEntityItem::getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const {
+    EntityItemProperties properties = EntityItem::getProperties(desiredProperties, allowEmptyDesiredProperties); // get the properties from our base class
+
+@Image_ENTITY_COPY_TO@
+
+    withReadLock([&] {
+        properties.setNaturalDimensions(_naturalDimensions);
+    });
+
+    return properties;
+}
+
+bool ImageEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Image_ENTITY_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags ImageEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
+
+@Image_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+void ImageEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
+                                         EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                         EntityPropertyFlags& requestedProperties,
+                                         EntityPropertyFlags& propertyFlags,
+                                         EntityPropertyFlags& propertiesDidntFit,
+                                         int& propertyCount,
+                                         OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Image_ENTITY_APPEND@
+
+}
+
+int ImageEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                ReadBitstreamToTreeParams& args,
+                                                EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Image_ENTITY_READ@
+
+    return bytesRead;
+}
+
+void ImageEntityItem::debugDump() const {
+    qCDebug(entities) << "ImageEntityItem id:" << getEntityItemID() << "---------------------------------------------";
+    qCDebug(entities) << "    name:" << _name;
+    qCDebug(entities) << "    position:" << debugTreeVector(getWorldPosition());
+    qCDebug(entities) << "    dimensions:" << debugTreeVector(getScaledDimensions());
+    qCDebug(entities) << "    editedAgo:" << debugTime(getLastEdited(), usecTimestampNow());
+    qCDebug(entities) << "    pointer:" << this;
+
+@Image_ENTITY_DEBUG@
+
+}
+
+PulsePropertyGroup ImageEntityItem::getPulseProperties() const {
+    return resultWithReadLock<PulsePropertyGroup>([&] {
+        return _pulseProperties;
+    });
+}
+
+void ImageEntityItem::setNaturalDimension(const glm::vec3& naturalDimensions) const {
+    withWriteLock([&] {
+        _naturalDimensions = naturalDimensions;
+    });
+}

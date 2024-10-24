@@ -50,10 +50,9 @@ class ScriptAvatarData : public QObject {
     Q_PROPERTY(bool lookAtSnappingEnabled READ getLookAtSnappingEnabled NOTIFY lookAtSnappingChanged)
 
     //
-    // ATTACHMENT AND JOINT PROPERTIES
+    // JOINT PROPERTIES
     //
     Q_PROPERTY(QString skeletonModelURL READ getSkeletonModelURLFromScript NOTIFY skeletonModelURLChanged)
-    Q_PROPERTY(QVector<AttachmentData> attachmentData READ getAttachmentData)
     Q_PROPERTY(QStringList jointNames READ getJointNames)
 
     //
@@ -104,7 +103,7 @@ public:
     bool getLookAtSnappingEnabled() const;
 
     //
-    // ATTACHMENT AND JOINT PROPERTIES
+    // JOINT PROPERTIES
     //
     QString getSkeletonModelURLFromScript() const;
 
@@ -203,15 +202,6 @@ public:
      * @returns {string[]} The joint names, or <code>[]</code> if the avatar data aren't available.
      */
     Q_INVOKABLE QStringList getJointNames() const;
-
-    /*@jsdoc
-     * Gets information about the models currently attached to the avatar.
-     * @function ScriptAvatar.getAttachmentData
-     * @returns {AttachmentData[]} Information about all models attached to the avatar, or <code>[]</code> if the avatar data
-     *     aren't available.
-     * @deprecated This function is deprecated and will be removed. Use avatar entities instead.
-     */
-    Q_INVOKABLE QVector<AttachmentData> getAttachmentData() const;
 
 #if DEV_BUILD || PR_BUILD
     Q_INVOKABLE AvatarEntityMap getAvatarEntities() const;

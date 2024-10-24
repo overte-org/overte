@@ -193,9 +193,6 @@ if (NOT ANDROID)
   add_dependencies(${TARGET_NAME} resources)
 endif()
 
-if (SCREENSHARE)
-  add_dependencies(${TARGET_NAME} screenshare)
-endif()
 
 if (WIN32)
   # These are external plugins, but we need to do the 'add dependency' here so that their
@@ -233,6 +230,7 @@ link_hifi_libraries(
   shaders
 )
 include_hifi_library_headers(script-engine)
+include_hifi_library_headers(entities)
 
 # include the binary directory of render-utils for shader includes
 target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_BINARY_DIR}/libraries/render-utils")
@@ -358,15 +356,6 @@ if (APPLE)
       "${PROJECT_SOURCE_DIR}/resources/serverless/redirect.json"
       "${RESOURCES_DEV_DIR}/serverless/redirect.json"
     )
-
-  if (SCREENSHARE)
-    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-      # copy screenshare app to the resource folder
-      COMMAND "${CMAKE_COMMAND}" -E copy_directory
-        "${CMAKE_CURRENT_BINARY_DIR}/../screenshare/hifi-screenshare-darwin-x64/hifi-screenshare.app"
-        "${RESOURCES_DEV_DIR}/hifi-screenshare.app"
-      )
-  endif()
 
   if (JSDOC_ENABLED)
     add_custom_command(TARGET ${TARGET_NAME} POST_BUILD

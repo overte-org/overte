@@ -496,6 +496,24 @@ bool OctreePacketData::appendValue(const QVector<QUuid>& value) {
     return success;
 }
 
+bool OctreePacketData::appendValue(const QSet<QString>& value) {
+    QVector<QString> valueVector;
+    for (const QString& valueString : value) {
+        valueVector.push_back(valueString);
+    }
+
+    uint16_t qVecSize = value.size();
+    bool success = appendValue(qVecSize);
+    if (success) {
+        success = append((const unsigned char*)valueVector.constData(), qVecSize * sizeof(QString));
+        if (success) {
+            _bytesOfValues += qVecSize * sizeof(QString);
+            _totalBytesOfValues += qVecSize * sizeof(QString);
+        }
+    }
+    return success;
+}
+
 bool OctreePacketData::appendValue(const glm::quat& value) {
     const size_t VALUES_PER_QUAT = 4;
     const size_t PACKED_QUAT_SIZE = sizeof(uint16_t) * VALUES_PER_QUAT;
@@ -800,6 +818,23 @@ int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, QVecto
     result.resize(length);
     memcpy(result.data(), dataBytes, length * sizeof(QUuid));
     return sizeof(uint16_t) + length * sizeof(QUuid);
+}
+
+int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, QSet<QString>& result) {
+    QVector<QString> resultVector;
+
+    uint16_t length;
+    memcpy(&length, dataBytes, sizeof(uint16_t));
+    dataBytes += sizeof(length);
+    resultVector.resize(length);
+    memcpy(resultVector.data(), dataBytes, length * sizeof(QString));
+
+    result.clear();
+    for (const QString& resultString : resultVector) {
+        result.insert(resultString);
+    }
+
+    return sizeof(uint16_t) + length * sizeof(QString);
 }
 
 int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, QByteArray& result) {

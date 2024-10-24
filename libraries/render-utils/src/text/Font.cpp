@@ -33,7 +33,7 @@
 
 static std::mutex fontMutex;
 
-std::map<std::tuple<bool, bool, bool>, gpu::PipelinePointer> Font::_pipelines;
+std::map<std::tuple<bool, bool, bool, bool>, gpu::PipelinePointer> Font::_pipelines;
 gpu::Stream::FormatPointer Font::_format;
 
 struct TextureVertex {
@@ -129,7 +129,7 @@ void Font::read(QIODevice& in) {
     }
 
     _distanceRange = glm::vec2(arteryFont.variants[0].metrics.distanceRange);
-    _fontSize = arteryFont.variants[0].metrics.ascender + fabs(arteryFont.variants[0].metrics.descender);
+    _fontHeight = arteryFont.variants[0].metrics.ascender + fabs(arteryFont.variants[0].metrics.descender);
     _leading = arteryFont.variants[0].metrics.lineHeight;
     _spaceWidth = 0.5f * arteryFont.variants[0].metrics.emSize; // We use half the emSize as a first guess for _spaceWidth
 
@@ -303,11 +303,11 @@ QStringList Font::tokenizeForWrapping(const QString& str) const {
     return tokens;
 }
 
-glm::vec2 Font::computeTokenExtent(const QString& token) const {
-    glm::vec2 advance(0, _fontSize);
+float Font::computeTokenWidth(const QString& token) const {
+    float advance = 0.0f;
     foreach(QChar c, token) {
         Q_ASSERT(c != '\n');
-        advance.x += (c == ' ') ? _spaceWidth : getGlyph(c).d;
+        advance += (c == ' ') ? _spaceWidth : getGlyph(c).d;
     }
     return advance;
 }
@@ -318,10 +318,10 @@ glm::vec2 Font::computeExtent(const QString& str) const {
     QStringList lines = splitLines(str);
     if (!lines.empty()) {
         for(const auto& line : lines) {
-            glm::vec2 tokenExtent = computeTokenExtent(line);
-            extent.x = std::max(tokenExtent.x, extent.x);
+            float tokenWidth = computeTokenWidth(line);
+            extent.x = std::max(tokenWidth, extent.x);
         }
-        extent.y = lines.count() * _fontSize;
+        extent.y = lines.count() * _fontHeight;
     }
     return extent;
 }
@@ -330,6 +330,7 @@ void Font::setupGPU() {
     if (_pipelines.empty()) {
         using namespace shader::render_utils::program;
 
+        // transparent, unlit, forward
         static const std::vector<std::tuple<bool, bool, bool, uint32_t>> keys = {
             std::make_tuple(false, false, false, sdf_text3D), std::make_tuple(true, false, false, sdf_text3D_translucent),
             std::make_tuple(false, true, false, sdf_text3D_unlit), std::make_tuple(true, true, false, sdf_text3D_translucent_unlit),
@@ -337,18 +338,23 @@ void Font::setupGPU() {
             std::make_tuple(false, true, true, sdf_text3D_translucent_unlit/*sdf_text3D_unlit_forward*/), std::make_tuple(true, true, true, sdf_text3D_translucent_unlit/*sdf_text3D_translucent_unlit_forward*/)
         };
         for (auto& key : keys) {
+            bool transparent = std::get<0>(key);
+            bool unlit = std::get<1>(key);
+            bool forward = std::get<2>(key);
+
             auto state = std::make_shared<gpu::State>();
             state->setCullMode(gpu::State::CULL_BACK);
-            state->setDepthTest(true, !std::get<0>(key), gpu::LESS_EQUAL);
-            state->setBlendFunction(std::get<0>(key),
+            state->setDepthTest(true, !transparent, gpu::LESS_EQUAL);
+            state->setBlendFunction(transparent,
                 gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
                 gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
-            if (std::get<0>(key)) {
+            if (transparent) {
                 PrepareStencil::testMask(*state);
             } else {
                 PrepareStencil::testMaskDrawShape(*state);
             }
-            _pipelines[std::make_tuple(std::get<0>(key), std::get<1>(key), std::get<2>(key))] = gpu::Pipeline::create(gpu::Shader::createProgram(std::get<3>(key)), state);
+            _pipelines[std::make_tuple(transparent, unlit, forward, false)] = gpu::Pipeline::create(gpu::Shader::createProgram(std::get<3>(key)), state);
+            _pipelines[std::make_tuple(transparent, unlit, forward, true)] = gpu::Pipeline::create(gpu::Shader::createProgram(forward ? sdf_text3D_forward_mirror : sdf_text3D_mirror), state);
         }
 
         // Sanity checks
@@ -367,17 +373,22 @@ void Font::setupGPU() {
 }
 
 inline QuadBuilder adjustedQuadBuilderForAlignmentMode(const Glyph& glyph, glm::vec2 advance, float scale, float enlargeForShadows,
-                                                TextAlignment alignment, float rightSpacing) {
+                                                TextAlignment alignment, float rightSpacing, TextVerticalAlignment verticalAlignment, float bottomSpacing) {
     if (alignment == TextAlignment::RIGHT) {
         advance.x += rightSpacing;
     } else if (alignment == TextAlignment::CENTER) {
         advance.x += 0.5f * rightSpacing;
     }
+    if (verticalAlignment == TextVerticalAlignment::BOTTOM) {
+        advance.y += bottomSpacing;
+    } else if (verticalAlignment == TextVerticalAlignment::CENTER) {
+        advance.y += 0.5f * bottomSpacing;
+    }
     return QuadBuilder(glyph, advance, scale, enlargeForShadows);
 }
 
 void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm::vec2& origin, const glm::vec2& bounds, float scale, bool enlargeForShadows,
-                         TextAlignment alignment) {
+                         TextAlignment alignment, TextVerticalAlignment verticalAlignment) {
     drawInfo.verticesBuffer = std::make_shared<gpu::Buffer>();
     drawInfo.indicesBuffer = std::make_shared<gpu::Buffer>();
     drawInfo.indexCount = 0;
@@ -388,6 +399,7 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     drawInfo.origin = origin;
 
     float rightEdge = origin.x + bounds.x;
+    float bottomEdge = origin.y - bounds.y;
 
     // Top left of text
     bool firstTokenOfLine = true;
@@ -397,7 +409,7 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     for (int i = 0; i < tokens.length(); i++) {
         const QString& token = tokens[i];
 
-        if ((bounds.y != -1) && (advance.y < origin.y - bounds.y)) {
+        if ((bounds.y != -1) && (advance.y < bottomEdge)) {
             // We are out of the y bound, stop drawing
             break;
         }
@@ -453,25 +465,47 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     std::vector<QuadBuilder> quadBuilders;
     quadBuilders.reserve(glyphsAndCorners.size());
     {
+        float bottomSpacing = -FLT_MAX;
+        bool foundBottomSpacing = false;
+        if (verticalAlignment != TextVerticalAlignment::TOP) {
+            int i = (int)glyphsAndCorners.size() - 1;
+            while (!foundBottomSpacing && i >= 0) {
+                auto* nextGlyphAndCorner = &glyphsAndCorners[i];
+                bottomSpacing = std::max(bottomSpacing, bottomEdge - (nextGlyphAndCorner->second.y + (nextGlyphAndCorner->first.offset.y - nextGlyphAndCorner->first.size.y)));
+                i--;
+                while (i >= 0) {
+                    auto& prevGlyphAndCorner = glyphsAndCorners[i];
+                    // We're to the right of the last character we checked, which means we're on a previous line, so we can stop
+                    if (prevGlyphAndCorner.second.x >= nextGlyphAndCorner->second.x) {
+                        foundBottomSpacing = true;
+                        break;
+                    }
+                    nextGlyphAndCorner = &prevGlyphAndCorner;
+                    bottomSpacing = std::max(bottomSpacing, bottomEdge - (nextGlyphAndCorner->second.y + (nextGlyphAndCorner->first.offset.y - nextGlyphAndCorner->first.size.y)));
+                    i--;
+                }
+            }
+        }
+
         int i = (int)glyphsAndCorners.size() - 1;
         while (i >= 0) {
-            auto nextGlyphAndCorner = glyphsAndCorners[i];
-            float rightSpacing = rightEdge - (nextGlyphAndCorner.second.x + nextGlyphAndCorner.first.d);
-            quadBuilders.push_back(adjustedQuadBuilderForAlignmentMode(nextGlyphAndCorner.first, nextGlyphAndCorner.second, scale, enlargeForShadows,
-                                                                       alignment, rightSpacing));
+            auto* nextGlyphAndCorner = &glyphsAndCorners[i];
+            float rightSpacing = rightEdge - (nextGlyphAndCorner->second.x + nextGlyphAndCorner->first.d);
+            quadBuilders.push_back(adjustedQuadBuilderForAlignmentMode(nextGlyphAndCorner->first, nextGlyphAndCorner->second, scale, enlargeForShadows,
+                                                                       alignment, rightSpacing, verticalAlignment, bottomSpacing));
             i--;
             while (i >= 0) {
-                const auto& prevGlyphAndCorner = glyphsAndCorners[i];
+                auto& prevGlyphAndCorner = glyphsAndCorners[i];
                 // We're to the right of the last character we checked, which means we're on a previous line, so we need to
                 // recalculate the spacing, so we exit this loop
-                if (prevGlyphAndCorner.second.x >= nextGlyphAndCorner.second.x) {
+                if (prevGlyphAndCorner.second.x >= nextGlyphAndCorner->second.x) {
                     break;
                 }
 
                 quadBuilders.push_back(adjustedQuadBuilderForAlignmentMode(prevGlyphAndCorner.first, prevGlyphAndCorner.second, scale, enlargeForShadows,
-                                                                           alignment, rightSpacing));
+                                                                           alignment, rightSpacing, verticalAlignment, bottomSpacing));
 
-                nextGlyphAndCorner = prevGlyphAndCorner;
+                nextGlyphAndCorner = &prevGlyphAndCorner;
                 i--;
             }
         }
@@ -512,40 +546,39 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
     }
 }
 
-void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const QString& str, const glm::vec4& color,
-                      const glm::vec3& effectColor, float effectThickness, TextEffect effect, TextAlignment alignment,
-                      const glm::vec2& origin, const glm::vec2& bounds, float scale, bool unlit, bool forward) {
-    if (!_loaded || str == "") {
+void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const DrawProps& props) {
+    if (!_loaded || props.str == "") {
         return;
     }
 
-    int textEffect = (int)effect;
+    int textEffect = (int)props.effect;
     const int SHADOW_EFFECT = (int)TextEffect::SHADOW_EFFECT;
 
-    const bool boundsChanged = bounds != drawInfo.bounds || origin != drawInfo.origin;
+    const bool boundsChanged = props.bounds != drawInfo.bounds || props.origin != drawInfo.origin;
 
     // If we're switching to or from shadow effect mode, we need to rebuild the vertices
-    if (str != drawInfo.string || boundsChanged || alignment != _alignment ||
+    if (props.str != drawInfo.string || boundsChanged || props.alignment != drawInfo.alignment || props.verticalAlignment != drawInfo.verticalAlignment ||
             (drawInfo.params.effect != textEffect && (textEffect == SHADOW_EFFECT || drawInfo.params.effect == SHADOW_EFFECT)) ||
-            (textEffect == SHADOW_EFFECT && scale != _scale)) {
-        _scale = scale;
-        _alignment = alignment;
-        buildVertices(drawInfo, str, origin, bounds, scale, textEffect == SHADOW_EFFECT, alignment);
+            (textEffect == SHADOW_EFFECT && props.scale != drawInfo.scale)) {
+        drawInfo.scale = props.scale;
+        drawInfo.alignment = props.alignment;
+        drawInfo.verticalAlignment = props.verticalAlignment;
+        buildVertices(drawInfo, props.str, props.origin, props.bounds, props.scale, textEffect == SHADOW_EFFECT, drawInfo.alignment, drawInfo.verticalAlignment);
     }
 
     setupGPU();
 
-    if (!drawInfo.paramsBuffer || boundsChanged || _needsParamsUpdate || drawInfo.params.color != color ||
-            drawInfo.params.effectColor != effectColor || drawInfo.params.effectThickness != effectThickness ||
+    if (!drawInfo.paramsBuffer || boundsChanged || _needsParamsUpdate || drawInfo.params.color != props.color ||
+            drawInfo.params.effectColor != props.effectColor || drawInfo.params.effectThickness != props.effectThickness ||
             drawInfo.params.effect != textEffect) {
-        drawInfo.params.color = color;
-        drawInfo.params.effectColor = effectColor;
-        drawInfo.params.effectThickness = effectThickness;
+        drawInfo.params.color = props.color;
+        drawInfo.params.effectColor = props.effectColor;
+        drawInfo.params.effectThickness = props.effectThickness;
         drawInfo.params.effect = textEffect;
 
         // need the gamma corrected color here
         DrawParams gpuDrawParams;
-        gpuDrawParams.bounds = glm::vec4(origin, bounds);
+        gpuDrawParams.bounds = glm::vec4(props.origin, props.bounds);
         gpuDrawParams.color = ColorUtils::sRGBToLinearVec4(drawInfo.params.color);
         gpuDrawParams.unitRange = _distanceRange;
         gpuDrawParams.effect = drawInfo.params.effect;
@@ -559,7 +592,7 @@ void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const QString
         _needsParamsUpdate = false;
     }
 
-    batch.setPipeline(_pipelines[std::make_tuple(color.a < 1.0f, unlit, forward)]);
+    batch.setPipeline(_pipelines[std::make_tuple(props.color.a < 1.0f, props.unlit, props.forward, props.mirror)]);
     batch.setInputFormat(_format);
     batch.setInputBuffer(0, drawInfo.verticesBuffer, 0, _format->getChannels().at(0)._stride);
     batch.setResourceTexture(render_utils::slot::texture::TextFont, _texture);

@@ -132,6 +132,22 @@ const GROUPS = [
                 propertyID: "billboardMode",
             },
             {
+                label: "Mirror Mode",
+                type: "dropdown",
+                options: {
+                    none: "None",
+                    mirror: "Mirror",
+                    portal: "Portal"
+                },
+                propertyID: "mirrorMode",
+            },
+            {
+                label: "Portal Exit",
+                type: "string",
+                propertyID: "portalExitID",
+                showPropertyRule: { "mirrorMode": "portal" },
+            },
+            {
                 label: "Render With Zones",
                 type: "multipleZonesSelection",
                 propertyID: "renderWithZones",
@@ -166,6 +182,12 @@ const GROUPS = [
                 propertyID: "shapeAlpha",
                 propertyName: "alpha",
             },
+            {
+                label: "Unlit",
+                type: "bool",
+                propertyID: "shapeUnlit",
+                propertyName: "unlit"
+            }
         ]
     },
     {
@@ -254,6 +276,17 @@ const GROUPS = [
                 },
                 propertyID: "textAlignment",
                 propertyName: "alignment", // actual entity property name
+            },
+            {
+                label: "Vertical Alignment",
+                type: "dropdown",
+                options: {
+                    top: "Top",
+                    center: "Center",
+                    bottom: "Bottom"
+                },
+                propertyID: "textVerticalAlignment",
+                propertyName: "verticalAlignment", // actual entity property name
             },
             {
                 label: "Top Margin",
@@ -438,6 +471,12 @@ const GROUPS = [
                 propertyID: "ambientLightMode",
             },
             {
+                label: "Ambient Color",
+                type: "color",
+                propertyID: "ambientLight.ambientColor",
+                showPropertyRule: { "ambientLightMode": "enabled" },
+            },
+            {
                 label: "Ambient Intensity",
                 type: "number-draggable",
                 min: -200,
@@ -595,6 +634,124 @@ const GROUPS = [
         ]
     },
     {
+        id: "zone_tonemapping",
+        label: "ZONE TONEMAPPING",
+        properties: [
+            {
+                label: "Tonemapping",
+                type: "dropdown",
+                options: { inherit: "Inherit", disabled: "Off", enabled: "On" },
+                propertyID: "tonemappingMode",
+            },
+            {
+                label: "Curve",
+                type: "dropdown",
+                options: { rgb: "RGB", srgb: "sRGB", reinhard: "Reinhard", filmic: "Filmic" },
+                propertyID: "tonemapping.curve",
+                showPropertyRule: { "tonemappingMode": "enabled" },
+            },
+            {
+                label: "Exposure",
+                type: "number-draggable",
+                min: -4.0,
+                max: 4.0,
+                step: 0.1,
+                decimals: 1,
+                propertyID: "tonemapping.exposure",
+                showPropertyRule: { "tonemappingMode": "enabled" },
+            }
+        ]
+    },
+    {
+        id: "zone_ambient_occlusion",
+        label: "ZONE AMBIENT OCCLUSION",
+        properties: [
+            {
+                label: "Ambient Occlusion",
+                type: "dropdown",
+                options: { inherit: "Inherit", disabled: "Off", enabled: "On" },
+                propertyID: "ambientOcclusionMode",
+            },
+            //{
+            //    label: "Technique",
+            //    type: "dropdown",
+            //    options: { ssao: "SSAO", hbao: "HBAO" },
+            //    propertyID: "ambientOcclusion.technique",
+            //    showPropertyRule: { "ambientOcclusionMode": "enabled" },
+            //},
+            {
+                label: "Jitter",
+                type: "bool",
+                propertyID: "ambientOcclusion.jitter",
+                showPropertyRule: { "ambientOcclusionMode": "enabled" },
+            },
+            {
+                label: "Resolution Level",
+                type: "number-draggable",
+                step: 1,
+                decimals: 0,
+                propertyID: "ambientOcclusion.resolutionLevel",
+                showPropertyRule: { "ambientOcclusionMode": "enabled" },
+            },
+            {
+                label: "Edge Sharpness",
+                type: "number-draggable",
+                step: 0.01,
+                decimals: 2,
+                propertyID: "ambientOcclusion.edgeSharpness",
+                showPropertyRule: { "ambientOcclusionMode": "enabled" },
+            },
+            {
+                label: "Blur Radius (pixels)",
+                type: "number-draggable",
+                step: 1,
+                decimals: 0,
+                propertyID: "ambientOcclusion.blurRadius",
+                showPropertyRule: { "ambientOcclusionMode": "enabled" },
+            },
+            {
+                label: "AO Radius",
+                type: "number-draggable",
+                step: 0.01,
+                decimals: 2,
+                propertyID: "ambientOcclusion.aoRadius",
+                showPropertyRule: { "ambientOcclusionMode": "enabled" },
+            },
+            {
+                label: "Intensity",
+                type: "number-draggable",
+                step: 0.01,
+                decimals: 2,
+                propertyID: "ambientOcclusion.aoObscuranceLevel",
+                showPropertyRule: { "ambientOcclusionMode": "enabled" },
+            },
+            {
+                label: "Falloff Angle",
+                type: "number-draggable",
+                step: 0.01,
+                decimals: 2,
+                propertyID: "ambientOcclusion.aoFalloffAngle",
+                showPropertyRule: { "ambientOcclusionMode": "enabled" },
+            },
+            {
+                label: "Sampling Amount",
+                type: "number-draggable",
+                step: 0.01,
+                decimals: 2,
+                propertyID: "ambientOcclusion.aoSamplingAmount",
+                showPropertyRule: { "ambientOcclusionMode": "enabled" },
+            },
+            {
+                label: "Num Spiral Turns",
+                type: "number-draggable",
+                step: 0.01,
+                decimals: 2,
+                propertyID: "ambientOcclusion.ssaoNumSpiralTurns",
+                showPropertyRule: { "ambientOcclusionMode": "enabled" },
+            }
+        ]
+    },
+    {
         id: "zone_avatar_priority",
         label: "ZONE AVATAR PRIORITY",
         properties: [
@@ -603,12 +760,42 @@ const GROUPS = [
                 type: "dropdown",
                 options: { inherit: "Inherit", crowd: "Crowd", hero: "Hero" },
                 propertyID: "avatarPriority",
+            }
+        ]
+    },
+    {
+        id: "zone_audio",
+        label: "ZONE AUDIO",
+        properties: [
+            {
+                label: "Enable Reverb",
+                type: "bool",
+                propertyID: "audio.reverbEnabled"
             },
             {
-                label: "Screen-share",
-                type: "dropdown",
-                options: { inherit: "Inherit", disabled: "Off", enabled: "On" },
-                propertyID: "screenshare",
+                label: "Reverb Time",
+                type: "number-draggable",
+                min: 0,
+                max: 10,
+                step: 0.1,
+                decimals: 2,
+                propertyID: "audio.reverbTime",
+                showPropertyRule: { "audio.reverbEnabled": "true" },
+            },
+            {
+                label: "Reverb Wet Level",
+                type: "number-draggable",
+                min: 0,
+                max: 100,
+                step: 1,
+                decimals: 1,
+                propertyID: "audio.reverbWetLevel",
+                showPropertyRule: { "audio.reverbEnabled": "true" },
+            },
+            {
+                label: "Listener Zones",
+                type: "multipleZonesSelection",
+                propertyID: "audio.listenerZones",
             }
         ]
     },
@@ -686,6 +873,11 @@ const GROUPS = [
                 label: "Animation FPS",
                 type: "number-draggable",
                 propertyID: "animation.fps",
+            },
+            {
+                label: "Smooth Animation",
+                type: "bool",
+                propertyID: "animation.smoothFrames",
             },
             {
                 label: "Texture",
@@ -802,6 +994,11 @@ const GROUPS = [
                     mouse: "Mouse events"
                 },
                 propertyID: "inputMode",
+            },
+            {
+                label: "Wants Keyboard Focus",
+                type: "bool",
+                propertyID: "wantsKeyboardFocus",
             },
             {
                 label: "Focus Highlight",
@@ -1338,6 +1535,54 @@ const GROUPS = [
         ]
     },
     {
+        id: "particles_procedural",
+        label: "PROCEDURAL PARTICLES",
+        properties: [
+            {
+                label: "Particles",
+                type: "number-draggable",
+                propertyID: "numParticles",
+                min: 1,
+                max: 1000000
+            },
+            {
+                label: "Triangles Per Particle",
+                type: "number-draggable",
+                propertyID: "numTrianglesPerParticle",
+                min: 1,
+                max: 15
+            },
+            {
+                label: "Update Props",
+                type: "number-draggable",
+                propertyID: "numUpdateProps",
+                min: 0,
+                max: 5
+            },
+            {
+                label: "Transparent",
+                type: "bool",
+                propertyID: "particleTransparent",
+            },
+            {
+                label: "Particle Update Data",
+                type: "textarea",
+                buttons: [{ id: "clear", label: "Clear Update Data", className: "secondary_red red", onClick: clearParticleUpdateData },
+                { id: "edit", label: "Edit as JSON", className: "secondary", onClick: newJSONParticleUpdateEditor },
+                { id: "save", label: "Save Update Data", className: "secondary", onClick: saveParticleUpdateData }],
+                propertyID: "particleUpdateData",
+            },
+            {
+                label: "Particle Render Data",
+                type: "textarea",
+                buttons: [{ id: "clear", label: "Clear Render Data", className: "secondary_red red", onClick: clearParticleRenderData },
+                { id: "edit", label: "Edit as JSON", className: "secondary", onClick: newJSONParticleRenderEditor },
+                { id: "save", label: "Save Render Data", className: "secondary", onClick: saveParticleRenderData }],
+                propertyID: "particleRenderData",
+            }
+        ]
+    },
+    {
         id: "polyvox",
         label: "POLYVOX",
         properties: [
@@ -1389,6 +1634,62 @@ const GROUPS = [
                 propertyName: "zTextureURL",
                 placeholder: "URL",
             },
+        ]
+    },
+    {
+        id: "sound",
+        label: "SOUND",
+        properties: [
+            {
+                label: "Sound",
+                type: "string",
+                propertyID: "soundURL",
+                placeholder: "URL",
+            },
+            {
+                label: "Playing",
+                type: "bool",
+                propertyID: "playing",
+            },
+            {
+                label: "Loop",
+                type: "bool",
+                propertyID: "loop",
+            },
+            {
+                label: "Volume",
+                type: "number-draggable",
+                min: 0,
+                max: 1,
+                step: 0.01,
+                decimals: 2,
+                propertyID: "volume",
+            },
+            {
+                label: "Positional",
+                type: "bool",
+                propertyID: "positional",
+            },
+            {
+                label: "Pitch",
+                type: "number-draggable",
+                min: 0.0625,
+                max: 16,
+                step: 0.1,
+                decimals: 2,
+                propertyID: "pitch",
+            },
+            {
+                label: "Time Offset",
+                type: "number-draggable",
+                step: 0.1,
+                propertyID: "timeOffset",
+            },
+            {
+                label: "Local Only",
+                type: "bool",
+                propertyID: "localOnly",
+            }
         ]
     },
     {
@@ -1513,11 +1814,6 @@ const GROUPS = [
         label: "BEHAVIOR",
         properties: [
             {
-                label: "Grabbable",
-                type: "bool",
-                propertyID: "grab.grabbable",
-            },
-            {
                 label: "Cloneable",
                 type: "bool",
                 propertyID: "cloneable",
@@ -1550,16 +1846,6 @@ const GROUPS = [
                 showPropertyRule: { "cloneable": "true" },
             },
             {
-                label: "Triggerable",
-                type: "bool",
-                propertyID: "grab.triggerable",
-            },
-            {
-                label: "Follow Controller",
-                type: "bool",
-                propertyID: "grab.grabFollowsController",
-            },
-            {
                 label: "Cast Shadows",
                 type: "bool",
                 propertyID: "canCastShadow",
@@ -1581,6 +1867,118 @@ const GROUPS = [
                 unit: "s",
                 propertyID: "lifetime",
             }
+        ]
+    },
+    {
+        id: "grabAndEquip",
+        label: "GRAB AND EQUIP",
+        properties: [
+            {
+                label: "Grabbable",
+                type: "bool",
+                propertyID: "grab.grabbable",
+            },
+            {
+                label: "Follow Controller",
+                type: "bool",
+                propertyID: "grab.grabFollowsController",
+                showPropertyRule: { "grab.grabbable": "true" },
+            },
+            {
+                label: "Kinematic Grab",
+                type: "bool",
+                propertyID: "grab.grabKinematic",
+                showPropertyRule: { "grab.grabbable": "true" },
+            },
+            {
+                label: "Delegate To Parent",
+                type: "bool",
+                propertyID: "grab.grabDelegateToParent",
+                showPropertyRule: { "grab.grabbable": "true" },
+            },
+            {
+                label: "Triggerable",
+                type: "bool",
+                propertyID: "grab.triggerable",
+            },
+            {
+                label: "Equippable",
+                type: "bool",
+                propertyID: "grab.equippable",
+            },
+            {
+                label: "Left Position",
+                type: "vec3",
+                vec3Type: "xyz",
+                subLabels: [ "x", "y", "z" ],
+                step: 0.0025,
+                decimals: 4,
+                unit: "m",
+                propertyID: "grab.equippableLeftPosition",
+                showPropertyRule: { "grab.equippable": "true" },
+            },
+            {
+                label: "Left Rotation",
+                type: "vec3",
+                vec3Type: "pyr",
+                step: 0.1,
+                decimals: 4,
+                subLabels: [ "x", "y", "z" ],
+                unit: "deg",
+                propertyID: "grab.equippableLeftRotation",
+                showPropertyRule: { "grab.equippable": "true" },
+            },
+            {
+                label: "Right Position",
+                type: "vec3",
+                vec3Type: "xyz",
+                subLabels: [ "x", "y", "z" ],
+                step: 0.0025,
+                decimals: 4,
+                unit: "m",
+                propertyID: "grab.equippableRightPosition",
+                showPropertyRule: { "grab.equippable": "true" },
+            },
+            {
+                label: "Right Rotation",
+                type: "vec3",
+                vec3Type: "pyr",
+                step: 0.1,
+                decimals: 4,
+                subLabels: [ "x", "y", "z" ],
+                unit: "deg",
+                propertyID: "grab.equippableRightRotation",
+                showPropertyRule: { "grab.equippable": "true" },
+            },
+            {
+                label: "Indicator Model URL",
+                type: "string",
+                propertyID: "grab.equippableIndicatorURL",
+                placeholder: "URL",
+                showPropertyRule: { "grab.equippable": "true" },
+            },
+            {
+                label: "Indicator Scale",
+                type: "vec3",
+                vec3Type: "xyz",
+                subLabels: [ "x", "y", "z" ],
+                step: 0.0025,
+                decimals: 4,
+                unit: "scale",
+                propertyID: "grab.equippableIndicatorScale",
+                showPropertyRule: { "grab.equippable": "true" },
+            },
+            {
+                label: "Indicator Offset",
+                type: "vec3",
+                vec3Type: "xyz",
+                subLabels: [ "x", "y", "z" ],
+                step: 0.005,
+                decimals: 4,
+                unit: "m",
+                propertyID: "grab.equippableIndicatorOffset",
+                showPropertyRule: { "grab.equippable": "true" },
+            },
         ]
     },
     {
@@ -1761,22 +2159,25 @@ const GROUPS = [
 ];
 
 const GROUPS_PER_TYPE = {
-  None: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
-  Shape: [ 'base', 'shape', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
-  Text: [ 'base', 'text', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
-  Zone: [ 'base', 'zone', 'zone_key_light', 'zone_skybox', 'zone_ambient_light', 'zone_haze', 
-            'zone_bloom', 'zone_avatar_priority', 'spatial', 'behavior', 'scripts', 'physics' ],
-  Model: [ 'base', 'model', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
-  Image: [ 'base', 'image', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
-  Web: [ 'base', 'web', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
-  Light: [ 'base', 'light', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
-  Material: [ 'base', 'material', 'spatial', 'behavior', 'scripts', 'physics' ],
+  None: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
+  Shape: [ 'base', 'shape', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
+  Text: [ 'base', 'text', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
+  Zone: [ 'base', 'zone', 'zone_key_light', 'zone_skybox', 'zone_ambient_light', 'zone_haze',
+            'zone_bloom', 'zone_tonemapping', 'zone_ambient_occlusion', 'zone_avatar_priority',
+            'zone_audio', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
+  Model: [ 'base', 'model', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
+  Image: [ 'base', 'image', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
+  Web: [ 'base', 'web', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
+  Light: [ 'base', 'light', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
+  Material: [ 'base', 'material', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
   ParticleEffect: [ 'base', 'particles', 'particles_emit', 'particles_size', 'particles_color', 
-                    'particles_behavior', 'particles_constraints', 'spatial', 'behavior', 'scripts', 'physics' ],
-  PolyLine: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
-  PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
-  Grid: [ 'base', 'grid', 'spatial', 'behavior', 'scripts', 'physics' ],
-  Multiple: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
+                    'particles_behavior', 'particles_constraints', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
+  ProceduralParticleEffect: [ 'base', 'particles_procedural', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
+  PolyLine: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
+  PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
+  Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
+  Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
+  Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
 };
 
 const EDITOR_TIMEOUT_DURATION = 1500;
@@ -2859,10 +3260,18 @@ function createVec2Property(property, elProperty) {
 function updateVectorMinMax(property) {
     let min = property.data.min;
     let max = property.data.max;
-    property.elNumberX.updateMinMax(min, max);
-    property.elNumberY.updateMinMax(min, max);
-    if (property.elNumberZ) {
-        property.elNumberZ.updateMinMax(min, max);
+    if (property.elNumberX) {
+        property.elNumberX.updateMinMax(min, max);
+        property.elNumberY.updateMinMax(min, max);
+        if (property.elNumberZ) {
+            property.elNumberZ.updateMinMax(min, max);
+        }
+    } else if (property.elNumberR) {
+        property.elNumberR.updateMinMax(min, max);
+        property.elNumberG.updateMinMax(min, max);
+        if (property.elNumberB) {
+            property.elNumberB.updateMinMax(min, max);
+        }
     }
 }
 
@@ -3767,6 +4176,327 @@ function saveJSONMaterialData(noUpdate, entityIDsToUpdate) {
     }, EDITOR_TIMEOUT_DURATION);
 }
 
+
+/**
+ * PROCEDURAL PARTICLE DATA FUNCTIONS
+ */
+
+function clearParticleUpdateData() {
+    let elParticleUpdateData = getPropertyInputElement("particleUpdateData");
+    deleteJSONParticleUpdateEditor();
+    elParticleUpdateData.value = "";
+    showParticleUpdateDataTextArea();
+    showNewJSONParticleUpdateEditorButton();
+    hideSaveParticleUpdateDataButton();
+    updateProperty('particleUpdateData', elParticleUpdateData.value, false);
+}
+
+function newJSONParticleUpdateEditor() {
+    getPropertyInputElement("particleUpdateData").classList.remove('multi-diff');
+    deleteJSONParticleUpdateEditor();
+    createJSONParticleUpdateEditor();
+    let data = {};
+    setParticleUpdateEditorJSON(data);
+    hideParticleUpdateDataTextArea();
+    hideNewJSONParticleUpdateEditorButton();
+    showSaveParticleUpdateDataButton();
+}
+
+/**
+ * @param {Set.<string>} [entityIDsToUpdate] Entity IDs to update particleUpdateData for.
+ */
+function saveParticleUpdateData(entityIDsToUpdate) {
+    saveJSONParticleUpdateData(true, entityIDsToUpdate);
+}
+
+function setJSONError(property, isError) {
+    $("#property-"+ property + "-editor").toggleClass('error', isError);
+    let $propertyParticleUpdateDataEditorStatus = $("#property-"+ property + "-editorStatus");
+    $propertyParticleUpdateDataEditorStatus.css('display', isError ? 'block' : 'none');
+    $propertyParticleUpdateDataEditorStatus.text(isError ? 'Invalid JSON code - look for red X in your code' : '');
+}
+
+/**
+ * @param {boolean} noUpdate - don't update the UI, but do send a property update.
+ * @param {Set.<string>} [entityIDsToUpdate] - Entity IDs to update particleUpdateData for.
+ */
+function setParticleUpdateDataFromEditor(noUpdate, entityIDsToUpdate) {
+    let errorFound = false;
+    try {
+        particleUpdateEditor.get();
+    } catch (e) {
+        errorFound = true;
+    }
+
+    setJSONError('particleUpdateData', errorFound);
+
+    if (errorFound) {
+        return;
+    }
+
+    let text = particleUpdateEditor.getText();
+    if (noUpdate) {
+        EventBridge.emitWebEvent(
+            JSON.stringify({
+                ids: [...entityIDsToUpdate],
+                type: "saveParticleUpdateData",
+                properties: {
+                    particleUpdateData: text
+                }
+            })
+        );
+    } else {
+        updateProperty('particleUpdateData', text, false);
+    }
+}
+
+let particleUpdateEditor = null;
+
+function createJSONParticleUpdateEditor() {
+    let container = document.getElementById("property-particleUpdateData-editor");
+    let options = {
+        search: false,
+        mode: 'tree',
+        modes: ['code', 'tree'],
+        name: 'particleUpdateData',
+        onError: function(e) {
+            alert('JSON editor:' + e);
+        },
+        onChange: function() {
+            let currentJSONString = particleUpdateEditor.getText();
+
+            if (currentJSONString === '{"":""}') {
+                return;
+            }
+            $('#property-particleUpdateData-button-save').attr('disabled', false);
+        }
+    };
+    particleUpdateEditor = new JSONEditor(container, options);
+}
+
+function showSaveParticleUpdateDataButton() {
+    $('#property-particleUpdateData-button-save').show();
+}
+
+function hideSaveParticleUpdateDataButton() {
+    $('#property-particleUpdateData-button-save').hide();
+}
+
+function disableSaveParticleUpdateDataButton() {
+    $('#property-particleUpdateData-button-save').attr('disabled', true);
+}
+
+function showNewJSONParticleUpdateEditorButton() {
+    $('#property-particleUpdateData-button-edit').show();
+}
+
+function hideNewJSONParticleUpdateEditorButton() {
+    $('#property-particleUpdateData-button-edit').hide();
+}
+
+function showParticleUpdateDataTextArea() {
+    $('#property-particleUpdateData').show();
+}
+
+function hideParticleUpdateDataTextArea() {
+    $('#property-particleUpdateData').hide();
+}
+
+function hideParticleUpdateDataSaved() {
+    $('#property-particleUpdateData-saved').hide();
+}
+
+function setParticleUpdateEditorJSON(json) {
+    particleUpdateEditor.set(json);
+    if (particleUpdateEditor.hasOwnProperty('expandAll')) {
+        particleUpdateEditor.expandAll();
+    }
+}
+
+function deleteJSONParticleUpdateEditor() {
+    if (particleUpdateEditor !== null) {
+        setJSONError('particleUpdateData', false);
+        particleUpdateEditor.destroy();
+        particleUpdateEditor = null;
+    }
+}
+
+let savedParticleUpdateJSONTimer = null;
+
+/**
+ * @param {boolean} noUpdate - don't update the UI, but do send a property update.
+ * @param {Set.<string>} [entityIDsToUpdate] Entity IDs to update particleUpdateData for
+ */
+function saveJSONParticleUpdateData(noUpdate, entityIDsToUpdate) {
+    setParticleUpdateDataFromEditor(noUpdate, entityIDsToUpdate ? entityIDsToUpdate : selectedEntityIDs);
+    $('#property-particleUpdateData-saved').show();
+    $('#property-particleUpdateData-button-save').attr('disabled', true);
+    if (savedJSONTimer !== null) {
+        clearTimeout(savedJSONTimer);
+    }
+    savedJSONTimer = setTimeout(function() {
+        hideParticleUpdateDataSaved();
+    }, EDITOR_TIMEOUT_DURATION);
+}
+
+function clearParticleRenderData() {
+    let elParticleRenderData = getPropertyInputElement("particleRenderData");
+    deleteJSONParticleRenderEditor();
+    elParticleRenderData.value = "";
+    showParticleRenderDataTextArea();
+    showNewJSONParticleRenderEditorButton();
+    hideSaveParticleRenderDataButton();
+    updateProperty('particleRenderData', elParticleRenderData.value, false);
+}
+
+function newJSONParticleRenderEditor() {
+    getPropertyInputElement("particleRenderData").classList.remove('multi-diff');
+    deleteJSONParticleRenderEditor();
+    createJSONParticleRenderEditor();
+    let data = {};
+    setParticleRenderEditorJSON(data);
+    hideParticleRenderDataTextArea();
+    hideNewJSONParticleRenderEditorButton();
+    showSaveParticleRenderDataButton();
+}
+
+/**
+ * @param {Set.<string>} [entityIDsToUpdate] Entity IDs to update particleRenderData for.
+ */
+function saveParticleRenderData(entityIDsToUpdate) {
+    saveJSONParticleRenderData(true, entityIDsToUpdate);
+}
+
+function setJSONError(property, isError) {
+    $("#property-"+ property + "-editor").toggleClass('error', isError);
+    let $propertyParticleRenderDataEditorStatus = $("#property-"+ property + "-editorStatus");
+    $propertyParticleRenderDataEditorStatus.css('display', isError ? 'block' : 'none');
+    $propertyParticleRenderDataEditorStatus.text(isError ? 'Invalid JSON code - look for red X in your code' : '');
+}
+
+/**
+ * @param {boolean} noUpdate - don't update the UI, but do send a property update.
+ * @param {Set.<string>} [entityIDsToUpdate] - Entity IDs to update particleRenderData for.
+ */
+function setParticleRenderDataFromEditor(noUpdate, entityIDsToUpdate) {
+    let errorFound = false;
+    try {
+        particleRenderEditor.get();
+    } catch (e) {
+        errorFound = true;
+    }
+
+    setJSONError('particleRenderData', errorFound);
+
+    if (errorFound) {
+        return;
+    }
+
+    let text = particleRenderEditor.getText();
+    if (noUpdate) {
+        EventBridge.emitWebEvent(
+            JSON.stringify({
+                ids: [...entityIDsToUpdate],
+                type: "saveParticleRenderData",
+                properties: {
+                    particleRenderData: text
+                }
+            })
+        );
+    } else {
+        updateProperty('particleRenderData', text, false);
+    }
+}
+
+let particleRenderEditor = null;
+
+function createJSONParticleRenderEditor() {
+    let container = document.getElementById("property-particleRenderData-editor");
+    let options = {
+        search: false,
+        mode: 'tree',
+        modes: ['code', 'tree'],
+        name: 'particleRenderData',
+        onError: function(e) {
+            alert('JSON editor:' + e);
+        },
+        onChange: function() {
+            let currentJSONString = particleRenderEditor.getText();
+
+            if (currentJSONString === '{"":""}') {
+                return;
+            }
+            $('#property-particleRenderData-button-save').attr('disabled', false);
+        }
+    };
+    particleRenderEditor = new JSONEditor(container, options);
+}
+
+function showSaveParticleRenderDataButton() {
+    $('#property-particleRenderData-button-save').show();
+}
+
+function hideSaveParticleRenderDataButton() {
+    $('#property-particleRenderData-button-save').hide();
+}
+
+function disableSaveParticleRenderDataButton() {
+    $('#property-particleRenderData-button-save').attr('disabled', true);
+}
+
+function showNewJSONParticleRenderEditorButton() {
+    $('#property-particleRenderData-button-edit').show();
+}
+
+function hideNewJSONParticleRenderEditorButton() {
+    $('#property-particleRenderData-button-edit').hide();
+}
+
+function showParticleRenderDataTextArea() {
+    $('#property-particleRenderData').show();
+}
+
+function hideParticleRenderDataTextArea() {
+    $('#property-particleRenderData').hide();
+}
+
+function hideParticleRenderDataSaved() {
+    $('#property-particleRenderData-saved').hide();
+}
+
+function setParticleRenderEditorJSON(json) {
+    particleRenderEditor.set(json);
+    if (particleRenderEditor.hasOwnProperty('expandAll')) {
+        particleRenderEditor.expandAll();
+    }
+}
+
+function deleteJSONParticleRenderEditor() {
+    if (particleRenderEditor !== null) {
+        setJSONError('particleRenderData', false);
+        particleRenderEditor.destroy();
+        particleRenderEditor = null;
+    }
+}
+
+let savedParticleRenderJSONTimer = null;
+
+/**
+ * @param {boolean} noUpdate - don't update the UI, but do send a property update.
+ * @param {Set.<string>} [entityIDsToUpdate] Entity IDs to update particleRenderData for
+ */
+function saveJSONParticleRenderData(noUpdate, entityIDsToUpdate) {
+    setParticleRenderDataFromEditor(noUpdate, entityIDsToUpdate ? entityIDsToUpdate : selectedEntityIDs);
+    $('#property-particleRenderData-saved').show();
+    $('#property-particleRenderData-button-save').attr('disabled', true);
+    if (savedJSONTimer !== null) {
+        clearTimeout(savedJSONTimer);
+    }
+    savedJSONTimer = setTimeout(function() {
+        hideParticleRenderDataSaved();
+    }, EDITOR_TIMEOUT_DURATION);
+}
+
 function bindAllNonJSONEditorElements() {
     let inputs = $('input');
     let i;
@@ -3777,7 +4507,9 @@ function bindAllNonJSONEditorElements() {
         //             an outer scoped variable may lead to confusing semantics.
         field.on('focus', function(e) {
             if (e.target.id === "property-userData-button-edit" || e.target.id === "property-userData-button-clear" || 
-                e.target.id === "property-materialData-button-edit" || e.target.id === "property-materialData-button-clear") {
+                e.target.id === "property-materialData-button-edit" || e.target.id === "property-materialData-button-clear" ||
+                e.target.id === "property-particleUpdateData-button-edit" || e.target.id === "property-particleUpdateData-button-clear" ||
+                e.target.id === "property-particleRenderData-button-edit" || e.target.id === "property-particleRenderData-button-clear") {
                 return;
             }
             if ($('#property-userData-editor').css('height') !== "0px") {
@@ -3785,6 +4517,12 @@ function bindAllNonJSONEditorElements() {
             }
             if ($('#property-materialData-editor').css('height') !== "0px") {
                 saveMaterialData();
+            }
+            if ($('#property-particleUpdateData-editor').css('height') !== "0px") {
+                saveParticleUpdateData();
+            }
+            if ($('#property-particleRenderData-editor').css('height') !== "0px") {
+                saveParticleRenderData();
             }
         });
     }
@@ -3893,6 +4631,7 @@ function addZoneToZonesSelection(propertyId, id) {
     hiddenField.value = JSON.stringify(selectedZones);
     displaySelectedZones(propertyId, true);
     let propertyName = propertyId.replace("property-", "");
+    propertyName = propertyName.replace("-", ".");
     updateProperty(propertyName, selectedZones, false);
     document.getElementById("zones-select-selector-list-panel-" + propertyId).style.display = "none";
 }
@@ -3910,6 +4649,7 @@ function removeZoneFromZonesSelection(propertyId, zoneId) {
     hiddenField.value = JSON.stringify(selectedZones);
     displaySelectedZones(propertyId, true);
     let propertyName = propertyId.replace("property-", "");
+    propertyName = propertyName.replace("-", ".");
     updateProperty(propertyName, selectedZones, false);
 }
 
@@ -4201,6 +4941,8 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
     if (selections.length === 0) {
         deleteJSONEditor();
         deleteJSONMaterialEditor();
+        deleteJSONParticleUpdateEditor();
+        deleteJSONParticleRenderEditor();
 
         resetProperties();
         showGroupsForType("None");
@@ -4218,6 +4960,16 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
         showMaterialDataTextArea();
         showSaveMaterialDataButton();
         showNewJSONMaterialEditorButton();
+
+        getPropertyInputElement("particleUpdateData").value = "";
+        showParticleUpdateDataTextArea();
+        showSaveParticleUpdateDataButton();
+        showNewJSONParticleUpdateEditorButton();
+
+        getPropertyInputElement("particleRenderData").value = "";
+        showParticleRenderDataTextArea();
+        showSaveParticleRenderDataButton();
+        showNewJSONParticleRenderEditorButton();
 
         setCopyPastePositionAndRotationAvailability (selections.length, true);
 
@@ -4258,6 +5010,8 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
             enableProperties();
             disableSaveUserDataButton();
             disableSaveMaterialDataButton();
+            disableSaveParticleUpdateDataButton();
+            disableSaveParticleRenderDataButton();
             setCopyPastePositionAndRotationAvailability (selections.length, false);
         }
 
@@ -4546,6 +5300,70 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
 
         if (hasSelectedEntityChanged && selections.length === 1 && entityTypes[0] === "Material") {
             requestMaterialTarget();
+        }
+
+        let particleUpdateDataMultiValue = getMultiplePropertyValue("particleUpdateData");
+        let particleUpdateDataTextArea = getPropertyInputElement("particleUpdateData");
+        let particleUpdateJSON = null;
+        if (!particleUpdateDataMultiValue.isMultiDiffValue) {
+            try {
+                particleUpdateJSON = JSON.parse(particleUpdateDataMultiValue.value);
+            } catch (e) {
+
+            }
+        }
+        if (particleUpdateJSON !== null && !lockedMultiValue.isMultiDiffValue && !lockedMultiValue.value) {
+            if (particleUpdateEditor === null) {
+                createJSONParticleUpdateEditor();
+            }
+            particleUpdateDataTextArea.classList.remove('multi-diff');
+            setParticleUpdateEditorJSON(particleUpdateJSON);
+            showSaveParticleUpdateDataButton();
+            hideParticleUpdateDataTextArea();
+            hideNewJSONParticleUpdateEditorButton();
+            hideParticleUpdateDataSaved();
+        } else {
+            // normal text
+            deleteJSONParticleUpdateEditor();
+            particleUpdateDataTextArea.classList.toggle('multi-diff', particleUpdateDataMultiValue.isMultiDiffValue);
+            particleUpdateDataTextArea.value = particleUpdateDataMultiValue.isMultiDiffValue ? "" : particleUpdateDataMultiValue.value;
+
+            showParticleUpdateDataTextArea();
+            showNewJSONParticleUpdateEditorButton();
+            hideSaveParticleUpdateDataButton();
+            hideParticleUpdateDataSaved();
+        }
+
+        let particleRenderDataMultiValue = getMultiplePropertyValue("particleRenderData");
+        let particleRenderDataTextArea = getPropertyInputElement("particleRenderData");
+        let particleRenderJSON = null;
+        if (!particleRenderDataMultiValue.isMultiDiffValue) {
+            try {
+                particleRenderJSON = JSON.parse(particleRenderDataMultiValue.value);
+            } catch (e) {
+
+            }
+        }
+        if (particleRenderJSON !== null && !lockedMultiValue.isMultiDiffValue && !lockedMultiValue.value) {
+            if (particleRenderEditor === null) {
+                createJSONParticleRenderEditor();
+            }
+            particleRenderDataTextArea.classList.remove('multi-diff');
+            setParticleRenderEditorJSON(particleRenderJSON);
+            showSaveParticleRenderDataButton();
+            hideParticleRenderDataTextArea();
+            hideNewJSONParticleRenderEditorButton();
+            hideParticleRenderDataSaved();
+        } else {
+            // normal text
+            deleteJSONParticleRenderEditor();
+            particleRenderDataTextArea.classList.toggle('multi-diff', particleRenderDataMultiValue.isMultiDiffValue);
+            particleRenderDataTextArea.value = particleRenderDataMultiValue.isMultiDiffValue ? "" : particleRenderDataMultiValue.value;
+
+            showParticleRenderDataTextArea();
+            showNewJSONParticleRenderEditorButton();
+            hideSaveParticleRenderDataButton();
+            hideParticleRenderDataSaved();
         }
 
         let activeElement = document.activeElement;
@@ -4855,6 +5673,37 @@ function loaded() {
         elDiv.insertBefore(elMaterialDataEditor, elMaterialData);
         elDiv.insertBefore(elMaterialDataEditorStatus, elMaterialData);
 
+        // Particle Update + Render Data
+        let particleUpdateDataProperty = properties["particleUpdateData"];
+        let elParticleUpdateData = particleUpdateDataProperty.elInput;
+        let particleUpdateDataElementID = particleUpdateDataProperty.elementID;
+        elDiv = elParticleUpdateData.parentNode;
+        let elParticleUpdateDataEditor = document.createElement('div');
+        elParticleUpdateDataEditor.setAttribute("id", particleUpdateDataElementID + "-editor");
+        let elParticleUpdateDataEditorStatus = document.createElement('div');
+        elParticleUpdateDataEditorStatus.setAttribute("id", particleUpdateDataElementID + "-editorStatus");
+        let elParticleUpdateDataSaved = document.createElement('span');
+        elParticleUpdateDataSaved.setAttribute("id", particleUpdateDataElementID + "-saved");
+        elParticleUpdateDataSaved.innerText = "Saved!";
+        elDiv.childNodes[JSON_EDITOR_ROW_DIV_INDEX].appendChild(elParticleUpdateDataSaved);
+        elDiv.insertBefore(elParticleUpdateDataEditor, elParticleUpdateData);
+        elDiv.insertBefore(elParticleUpdateDataEditorStatus, elParticleUpdateData);
+
+        let particleRenderDataProperty = properties["particleRenderData"];
+        let elParticleRenderData = particleRenderDataProperty.elInput;
+        let particleRenderDataElementID = particleRenderDataProperty.elementID;
+        elDiv = elParticleRenderData.parentNode;
+        let elParticleRenderDataEditor = document.createElement('div');
+        elParticleRenderDataEditor.setAttribute("id", particleRenderDataElementID + "-editor");
+        let elParticleRenderDataEditorStatus = document.createElement('div');
+        elParticleRenderDataEditorStatus.setAttribute("id", particleRenderDataElementID + "-editorStatus");
+        let elParticleRenderDataSaved = document.createElement('span');
+        elParticleRenderDataSaved.setAttribute("id", particleRenderDataElementID + "-saved");
+        elParticleRenderDataSaved.innerText = "Saved!";
+        elDiv.childNodes[JSON_EDITOR_ROW_DIV_INDEX].appendChild(elParticleRenderDataSaved);
+        elDiv.insertBefore(elParticleRenderDataEditor, elParticleRenderData);
+        elDiv.insertBefore(elParticleRenderDataEditorStatus, elParticleRenderData);
+
         // Textarea scrollbars
         let elTextareas = document.getElementsByTagName("TEXTAREA");
 
@@ -4968,7 +5817,8 @@ function loaded() {
                 return;
             }
 
-            if (elUserDataEditor.contains(keyUpEvent.target) || elMaterialDataEditor.contains(keyUpEvent.target)) {
+            if (elUserDataEditor.contains(keyUpEvent.target) || elMaterialDataEditor.contains(keyUpEvent.target) || elParticleUpdateDataEditor.contains(keyUpEvent.target)
+                || elParticleRenderDataEditor.contains(keyUpEvent.target)) {
                 return;
             }
 

@@ -47,7 +47,7 @@
     var HMD_UI_SCALE_FACTOR = 1.0; //This define the size of all the notification system in HMD.
     var hmdPanelLocalPosition = {"x": 0.3, "y": 0.25, "z": -1.5};
     var hmdPanelLocalRotation = Quat.fromVec3Degrees({"x": 0, "y": -3, "z": 0});
-    var mainHMDnotificationContainerID = Uuid.NULL;
+    var mainHMDnotificationContainerID = Uuid.NONE;
     var CAMERA_MATRIX_INDEX = -7;
     
     //HMD LOCAL ENTITY PROPERTIES
@@ -128,7 +128,7 @@
                         "unlit": true,
                         "renderLayer": "hud"
                     };
-                    if (notifications[i].entityID === Uuid.NULL){
+                    if (notifications[i].entityID === Uuid.NONE){
                         properties.text =  notifications[i].dataText;
                         notifications[i].entityID = Entities.addEntity(properties, "local");
                     } else {
@@ -149,7 +149,7 @@
                             "alpha": alpha,
                             "renderLayer": "hud"
                         };                        
-                        if (notifications[i].imageEntityID === Uuid.NULL){
+                        if (notifications[i].imageEntityID === Uuid.NONE){
                             properties.imageURL = notifications[i].dataImage.path;
                             notifications[i].imageEntityID = Entities.addEntity(properties, "local");
                         } else {
@@ -174,7 +174,7 @@
                         "leftMargin": overlayLeftMargin,
                         "font": {"size": overlayFontSize}
                     };
-                    if (notifications[i].overlayID === Uuid.NULL){
+                    if (notifications[i].overlayID === Uuid.NONE){
                         properties.text =  notifications[i].dataText;
                         notifications[i].overlayID = Overlays.addOverlay("text", properties);
                     } else {
@@ -192,7 +192,7 @@
                             "visible": true,
                             "alpha": alpha
                         };
-                        if (notifications[i].imageOverlayID === Uuid.NULL){
+                        if (notifications[i].imageOverlayID === Uuid.NONE){
                             properties.imageURL = notifications[i].dataImage.path;
                             notifications[i].imageOverlayID = Overlays.addOverlay("image", properties);
                         } else {
@@ -214,26 +214,26 @@
     }
     
     function deleteSpecificNotification(indexNotification) {
-        if (notifications[indexNotification].entityID !== Uuid.NULL){
+        if (notifications[indexNotification].entityID !== Uuid.NONE){
             Entities.deleteEntity(notifications[indexNotification].entityID);
-            notifications[indexNotification].entityID = Uuid.NULL;
+            notifications[indexNotification].entityID = Uuid.NONE;
         }
-        if (notifications[indexNotification].overlayID !== Uuid.NULL){
+        if (notifications[indexNotification].overlayID !== Uuid.NONE){
             Overlays.deleteOverlay(notifications[indexNotification].overlayID);
-            notifications[indexNotification].overlayID = Uuid.NULL;
+            notifications[indexNotification].overlayID = Uuid.NONE;
         }
-        if (notifications[indexNotification].imageEntityID !== Uuid.NULL){
+        if (notifications[indexNotification].imageEntityID !== Uuid.NONE){
             Entities.deleteEntity(notifications[indexNotification].imageEntityID);
-            notifications[indexNotification].imageEntityID = Uuid.NULL;
+            notifications[indexNotification].imageEntityID = Uuid.NONE;
         }
-        if (notifications[indexNotification].imageOverlayID !== Uuid.NULL){
+        if (notifications[indexNotification].imageOverlayID !== Uuid.NONE){
             Overlays.deleteOverlay(notifications[indexNotification].imageOverlayID);
-            notifications[indexNotification].imageOverlayID = Uuid.NULL;
+            notifications[indexNotification].imageOverlayID = Uuid.NONE;
         }
     }
     
     function createMainHMDnotificationContainer() {
-        if (mainHMDnotificationContainerID === Uuid.NULL) {
+        if (mainHMDnotificationContainerID === Uuid.NONE) {
             var properties = {
                 "type": "Shape",
                 "shape": "Cube",
@@ -249,9 +249,9 @@
     }
     
     function deleteMainHMDnotificationContainer() {
-        if (mainHMDnotificationContainerID !== Uuid.NULL) {
+        if (mainHMDnotificationContainerID !== Uuid.NONE) {
             Entities.deleteEntity(mainHMDnotificationContainerID);
-            mainHMDnotificationContainerID = Uuid.NULL;
+            mainHMDnotificationContainerID = Uuid.NONE;
         }
     }    
     //UTILITY FUNCTIONS
@@ -288,10 +288,10 @@
             "dataText": dataText,
             "dataImage": dataImage,
             "timestamp": d.getTime(),
-            "entityID": Uuid.NULL,
-            "imageEntityID": Uuid.NULL,
-            "overlayID": Uuid.NULL,
-            "imageOverlayID": Uuid.NULL
+            "entityID": Uuid.NONE,
+            "imageEntityID": Uuid.NONE,
+            "overlayID": Uuid.NONE,
+            "imageOverlayID": Uuid.NONE
         };
         notifications.push(notification);
         newEventDetected = true;

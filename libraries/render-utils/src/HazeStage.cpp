@@ -13,7 +13,7 @@
 
 #include <gpu/Context.h>
 
-std::string HazeStage::_stageName { "HAZE_STAGE"};
+std::string HazeStage::_stageName { "HAZE_STAGE" };
 const HazeStage::Index HazeStage::INVALID_INDEX { render::indexed_container::INVALID_INDEX };
 
 HazeStage::Index HazeStage::findHaze(const HazePointer& haze) const {

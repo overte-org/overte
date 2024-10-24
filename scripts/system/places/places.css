@@ -487,6 +487,10 @@ div.placeEntry {
     text-align: center;
 }
 
+div.placeEntryLargeSize {
+    height: 220px;
+}
+
 div.addMsEntry {
     width: 85%;
     height: 38px;
@@ -625,6 +629,10 @@ div.placeDetail-event {
     border: 0px;
 }
 
+.promotedblur {
+    backdrop-filter: blur(0px);
+}
+
 .placeTitle {
   color: #ffffff;
   font-size: 21px;
@@ -633,6 +641,10 @@ div.placeDetail-event {
   text-shadow: 1px 1px 3px #000000;
 }
 
+.placeTitlePromoted {
+    font-size: 28px;
+    text-shadow: 1px 1px 4px #000000;
+}
 .placeTable {
     width: 100%;
 }

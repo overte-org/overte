@@ -1085,7 +1085,7 @@ AnimNodeLoader::AnimNodeLoader(const QUrl& url) :
 {
     _resource = QSharedPointer<Resource>::create(url);
     _resource->setSelf(_resource);
-    _resource->setLoadPriority(this, ANIM_GRAPH_LOAD_PRIORITY);
+    _resource->setLoadPriorityOperator(this, []() { return ANIM_GRAPH_LOAD_PRIORITY; });
     connect(_resource.data(), &Resource::loaded, this, &AnimNodeLoader::onRequestDone);
     connect(_resource.data(), &Resource::failed, this, &AnimNodeLoader::onRequestError);
     _resource->ensureLoading();

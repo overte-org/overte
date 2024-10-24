@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 1/26/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -156,6 +157,10 @@ void Light::setSpotExponent(float exponent) {
     _lightSchemaBuffer.edit().irradiance.falloffSpot = exponent;
 }
 
+void Light::setAmbientColor(vec3 color) {
+    _ambientSchemaBuffer.edit().color = color;
+}
+
 void Light::setAmbientIntensity(float intensity) {
     _ambientSchemaBuffer.edit().intensity = intensity;
 }
@@ -187,3 +192,18 @@ void Light::setTransform(const glm::mat4& transform) {
     }
 }
 
+const Light::AmbientSchemaBuffer& Light::getAmbientSchemaBuffer() {
+    auto blend = 0.0f;
+    if (getAmbientMap() && getAmbientMap()->isDefined()) {
+        blend = 0.5f;
+
+        // If pitch black neutralize the color
+        if (glm::all(glm::equal(getAmbientColor(), glm::vec3(0.0f)))) {
+            blend = 1.0f;
+        }
+    }
+
+    _ambientSchemaBuffer.edit().blend = blend;
+
+    return _ambientSchemaBuffer;
+}

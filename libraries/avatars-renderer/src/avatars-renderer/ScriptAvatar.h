@@ -58,8 +58,6 @@
  *     when the other avatar is in the line of sight and also has <code>lookAtSnappingEnabled == true</code>.
  *
  * @property {string} skeletonModelURL - The avatar's FST file.
- * @property {AttachmentData[]} attachmentData - Information on the avatar's attachments.
- *     <p class="important">Deprecated: This property is deprecated and will be removed. Use avatar entities instead.</p>
  * @property {string[]} jointNames - The list of joints in the avatar model.
  *
  * @property {number} audioLoudness - The instantaneous loudness of the audio input that the avatar is injecting into the
@@ -155,7 +153,7 @@ public slots:
     /*@jsdoc
      * Gets the ID of the entity or avatar that the avatar is parented to.
      * @function ScriptAvatar.getParentID
-     * @returns {Uuid} The ID of the entity or avatar that the avatar is parented to. {@link Uuid(0)|Uuid.NULL} if not parented
+     * @returns {Uuid} The ID of the entity or avatar that the avatar is parented to. {@link Uuid(0)|Uuid.NONE} if not parented
      *     or avatar data aren't available.
      */
     QUuid getParentID() const;

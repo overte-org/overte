@@ -26,7 +26,7 @@
  * @typedef {string} Entities.RenderLayer
  */
 
-enum class RenderLayer {
+enum class RenderLayer : uint8_t {
     WORLD = 0,
     FRONT,
     HUD

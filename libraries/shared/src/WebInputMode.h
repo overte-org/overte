@@ -25,7 +25,7 @@
  * @typedef {string} WebInputMode
  */
 
-enum class WebInputMode {
+enum class WebInputMode : uint8_t {
     TOUCH = 0,
     MOUSE,
 };

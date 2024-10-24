@@ -317,7 +317,7 @@ var isAnothersAvatarEntity = function (iaaeProps) {
 };
 
 var isAnothersChildEntity = function (iaceProps) {
-    while (iaceProps.parentID && iaceProps.parentID !== Uuid.NULL) {
+    while (iaceProps.parentID && iaceProps.parentID !== Uuid.NONE) {
         if (Entities.getNestableType(iaceProps.parentID) == "avatar") {
             if (iaceProps.parentID == MyAvatar.SELF_ID || iaceProps.parentID == MyAvatar.sessionUUID) {
                 return false; // not another's, it's mine.
@@ -452,7 +452,7 @@ var ensureDynamic = function (entityID) {
     // if we distance hold something and keep it very still before releasing it, it ends up
     // non-dynamic in bullet.  If it's too still, give it a little bounce so it will fall.
     var edProps = Entities.getEntityProperties(entityID, ["velocity", "dynamic", "parentID"]);
-    if (edProps.dynamic && edProps.parentID === Uuid.NULL) {
+    if (edProps.dynamic && edProps.parentID === Uuid.NONE) {
         var velocity = edProps.velocity;
         if (Vec3.length(velocity) < 0.05) { // see EntityMotionState.cpp DYNAMIC_LINEAR_VELOCITY_THRESHOLD
             velocity = { x: 0.0, y: 0.2, z: 0.0 };
@@ -464,7 +464,7 @@ var ensureDynamic = function (entityID) {
 var findGrabbableGroupParent = function (controllerData, targetProps) {
     while (targetProps.grab.grabDelegateToParent &&
            targetProps.parentID &&
-           targetProps.parentID !== Uuid.NULL &&
+           targetProps.parentID !== Uuid.NONE &&
            Entities.getNestableType(targetProps.parentID) == "entity") {
         var parentProps = Entities.getEntityProperties(targetProps.parentID, DISPATCHER_PROPERTIES);
         if (!parentProps) {
@@ -484,7 +484,7 @@ var findGrabbableGroupParent = function (controllerData, targetProps) {
 var getEntityParents = function(targetProps) {
     var parentProperties = [];
     while (targetProps.parentID &&
-           targetProps.parentID !== Uuid.NULL &&
+           targetProps.parentID !== Uuid.NONE &&
            Entities.getNestableType(targetProps.parentID) == "entity") {
         var parentProps = Entities.getEntityProperties(targetProps.parentID, DISPATCHER_PROPERTIES);
         if (!parentProps) {
