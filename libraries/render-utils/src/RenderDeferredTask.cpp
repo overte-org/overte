@@ -101,12 +101,11 @@ void RenderDeferredTask::configure(const Config& config) {
 }
 
 void RenderDeferredTask::build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, size_t depth) {
-    static auto fadeEffect = DependencyManager::get<FadeEffect>();
     // Prepare the ShapePipelines
     static ShapePlumberPointer shapePlumber = std::make_shared<ShapePlumber>();
     static std::once_flag once;
     std::call_once(once, [] {
-        initDeferredPipelines(*shapePlumber, fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter());
+        initDeferredPipelines(*shapePlumber, FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter());
     });
 
     const auto& inputs = input.get<Input>();
@@ -146,7 +145,9 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
         // Shadow Stage Frame
         const auto shadowFrame = shadowTaskOutputs[1];
 
-    fadeEffect->build(task, opaques);
+    if (depth == 0) {
+        task.addJob<FadeEffect>("FadeEffect", opaques);
+    }
 
     const auto jitter = task.addJob<JitterSample>("JitterCam");
 

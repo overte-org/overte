@@ -30,7 +30,10 @@ gpu::PipelinePointer DrawSceneOctree::_drawItemBoundPipeline;
 gpu::Stream::FormatPointer DrawSceneOctree::_cellBoundsFormat = std::make_shared<gpu::Stream::Format>();
 
 DrawSceneOctree::DrawSceneOctree() {
-    _cellBoundsFormat->setAttribute(0, 0, gpu::Element(gpu::VEC4, gpu::INT32, gpu::XYZW), 0, gpu::Stream::PER_INSTANCE);
+    std::once_flag once;
+    std::call_once(once, [] {
+        _cellBoundsFormat->setAttribute(0, 0, gpu::Element(gpu::VEC4, gpu::INT32, gpu::XYZW), 0, gpu::Stream::PER_INSTANCE);
+    });
 }
 
 const gpu::PipelinePointer DrawSceneOctree::getDrawCellBoundsPipeline() {

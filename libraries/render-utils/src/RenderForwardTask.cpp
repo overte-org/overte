@@ -26,7 +26,6 @@
 #include "render-utils/ShaderConstants.h"
 #include "StencilMaskPass.h"
 #include "ZoneRenderer.h"
-#include "FadeEffect.h"
 #include "ToneMapAndResampleTask.h"
 #include "BackgroundStage.h"
 #include "FramebufferCache.h"
@@ -72,7 +71,6 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     task.addJob<SetRenderMethod>("SetRenderMethodTask", render::Args::FORWARD);
 
     // Prepare the ShapePipelines
-    auto fadeEffect = DependencyManager::get<FadeEffect>();
     static ShapePlumberPointer shapePlumber = std::make_shared<ShapePlumber>();
     static std::once_flag once;
     std::call_once(once, [] {
@@ -111,9 +109,6 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
             const auto tonemappingFrame = currentStageFrames[4];
  
         const auto& zones = lightingStageInputs[1];
-
-    // First job, alter faded
-    fadeEffect->build(task, opaques);
 
     // GPU jobs: Start preparing the main framebuffer
     const auto scaledPrimaryFramebuffer = task.addJob<PreparePrimaryFramebufferMSAA>("PreparePrimaryBufferForward");
