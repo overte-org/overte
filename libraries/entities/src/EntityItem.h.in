@@ -397,7 +397,6 @@ public:
     QUuid getOwningAvatarIDForProperties() const;
 
     virtual bool wantsHandControllerPointerEvents() const { return false; }
-    virtual bool wantsKeyboardFocus() const { return false; }
     virtual void setProxyWindow(QWindow* proxyWindow) {}
     virtual QObject* getEventHandler() { return nullptr; }
 
