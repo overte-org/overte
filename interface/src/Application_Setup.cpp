@@ -44,7 +44,6 @@
 #include <DomainAccountManager.h>
 #include <EntityScriptClient.h>
 #include <EntityScriptServerLogClient.h>
-#include <FadeEffect.h>
 #include <FingerprintUtils.h>
 #include <FramebufferCache.h>
 #include <gl/GLHelpers.h>
@@ -90,11 +89,8 @@
 #include <scripting/AssetMappingsScriptingInterface.h>
 #include <scripting/ControllerScriptingInterface.h>
 #include <scripting/DesktopScriptingInterface.h>
-#include <scripting/GooglePolyScriptingInterface.h>
 #include <scripting/HMDScriptingInterface.h>
 #include <scripting/KeyboardScriptingInterface.h>
-#include <scripting/ScreenshareScriptingInterface.h>
-#include <scripting/SelectionScriptingInterface.h>
 #include <scripting/TestScriptingInterface.h>
 #include <scripting/TTSScriptingInterface.h>
 #include <scripting/WindowScriptingInterface.h>
@@ -423,7 +419,6 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
 
     DependencyManager::set<EntityScriptServerLogClient>();
 
-    DependencyManager::set<GooglePolyScriptingInterface>();
     DependencyManager::set<OctreeStatsProvider>(nullptr, qApp->getOcteeSceneStats());
     DependencyManager::set<AvatarBookmarks>();
     DependencyManager::set<LocationBookmarks>();
@@ -433,13 +428,11 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
     DependencyManager::set<SelectionScriptingInterface>();
     DependencyManager::set<TTSScriptingInterface>();
 
-    DependencyManager::set<FadeEffect>();
     DependencyManager::set<ResourceRequestObserver>();
     DependencyManager::set<Keyboard>();
     DependencyManager::set<KeyboardScriptingInterface>();
     DependencyManager::set<GrabManager>();
     DependencyManager::set<AvatarPackager>();
-    DependencyManager::set<ScreenshareScriptingInterface>();
     PlatformHelper::setup();
 
     QObject::connect(PlatformHelper::instance(), &PlatformHelper::systemWillWake, [] {

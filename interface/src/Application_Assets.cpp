@@ -103,15 +103,6 @@ void Application::addAssetToWorldFromURL(QString url) {
     if (url.contains("filename")) {
         filename = url.section("filename=", 1, 1);  // Filename is in "?filename=" parameter at end of URL.
     }
-    if (url.contains("poly.google.com/downloads")) {
-        filename = url.section('/', -1);
-        if (url.contains("noDownload")) {
-            filename.remove(".zip?noDownload=false");
-        } else {
-            filename.remove(".zip");
-        }
-
-    }
 
     if (!DependencyManager::get<NodeList>()->getThisNodeCanWriteAssets()) {
         QString errorInfo = "You do not have permissions to write to the Asset Server.";
@@ -135,19 +126,8 @@ void Application::addAssetToWorldFromURLRequestFinished() {
     auto result = request->getResult();
 
     QString filename;
-    bool isBlocks = false;
-
     if (url.contains("filename")) {
         filename = url.section("filename=", 1, 1);  // Filename is in "?filename=" parameter at end of URL.
-    }
-    if (url.contains("poly.google.com/downloads")) {
-        filename = url.section('/', -1);
-        if (url.contains("noDownload")) {
-            filename.remove(".zip?noDownload=false");
-        } else {
-            filename.remove(".zip");
-        }
-        isBlocks = true;
     }
 
     if (result == ResourceRequest::Success) {
@@ -162,7 +142,7 @@ void Application::addAssetToWorldFromURLRequestFinished() {
                 tempFile.write(request->getData());
                 addAssetToWorldInfoClear(filename);  // Remove message from list; next one added will have a different key.
                 tempFile.close();
-                qApp->getFileDownloadInterface()->runUnzip(downloadPath, url, true, false, isBlocks);
+                qApp->getFileDownloadInterface()->runUnzip(downloadPath, url, true, false);
             } else {
                 QString errorInfo = "Couldn't open temporary file for download";
                 qWarning(interfaceapp) << errorInfo;
@@ -185,11 +165,11 @@ QString filenameFromPath(QString filePath) {
     return filePath.right(filePath.length() - filePath.lastIndexOf("/") - 1);
 }
 
-void Application::addAssetToWorld(QString path, QString zipFile, bool isZip, bool isBlocks) {
+void Application::addAssetToWorld(QString path, QString zipFile, bool isZip) {
     // Automatically upload and add asset to world as an alternative manual process initiated by showAssetServerWidget().
     QString mapping;
     QString filename = filenameFromPath(path);
-    if (isZip || isBlocks) {
+    if (isZip) {
         QString assetName = zipFile.section("/", -1).remove(QRegExp("[.]zip(.*)$"));
         QString assetFolder = path.section("model_repo/", -1);
         mapping = "/" + assetName + "/" + assetFolder;
@@ -207,7 +187,7 @@ void Application::addAssetToWorld(QString path, QString zipFile, bool isZip, boo
 
     addAssetToWorldInfo(filename, "Adding " + mapping.mid(1) + " to the Asset Server.");
 
-    addAssetToWorldWithNewMapping(path, mapping, 0, isZip, isBlocks);
+    addAssetToWorldWithNewMapping(path, mapping, 0, isZip);
 }
 
 void Application::addAssetToWorldUnzipFailure(QString filePath) {
@@ -216,14 +196,14 @@ void Application::addAssetToWorldUnzipFailure(QString filePath) {
     addAssetToWorldError(filename, "Couldn't unzip file " + filename + ".");
 }
 
-void Application::addAssetToWorldWithNewMapping(QString filePath, QString mapping, int copy, bool isZip, bool isBlocks) {
+void Application::addAssetToWorldWithNewMapping(QString filePath, QString mapping, int copy, bool isZip) {
     auto request = DependencyManager::get<AssetClient>()->createGetMappingRequest(mapping);
 
     QObject::connect(request, &GetMappingRequest::finished, this, [=](GetMappingRequest* request) mutable {
         const int MAX_COPY_COUNT = 100;  // Limit number of duplicate assets; recursion guard.
         auto result = request->getError();
         if (result == GetMappingRequest::NotFound) {
-            addAssetToWorldUpload(filePath, mapping, isZip, isBlocks);
+            addAssetToWorldUpload(filePath, mapping, isZip);
         } else if (result != GetMappingRequest::NoError) {
             QString errorInfo = "Could not map asset name: "
                 + mapping.left(mapping.length() - QString::number(copy).length() - 1);
@@ -235,7 +215,7 @@ void Application::addAssetToWorldWithNewMapping(QString filePath, QString mappin
             }
             copy++;
             mapping = mapping.insert(mapping.lastIndexOf("."), "-" + QString::number(copy));
-            addAssetToWorldWithNewMapping(filePath, mapping, copy, isZip, isBlocks);
+            addAssetToWorldWithNewMapping(filePath, mapping, copy, isZip);
         } else {
             QString errorInfo = "Too many copies of asset name: "
                 + mapping.left(mapping.length() - QString::number(copy).length() - 1);
@@ -248,7 +228,7 @@ void Application::addAssetToWorldWithNewMapping(QString filePath, QString mappin
     request->start();
 }
 
-void Application::addAssetToWorldUpload(QString filePath, QString mapping, bool isZip, bool isBlocks) {
+void Application::addAssetToWorldUpload(QString filePath, QString mapping, bool isZip) {
     qInfo(interfaceapp) << "Uploading" << filePath << "to Asset Server as" << mapping;
     auto upload = DependencyManager::get<AssetClient>()->createUpload(filePath);
     QObject::connect(upload, &AssetUpload::finished, this, [=](AssetUpload* upload, const QString& hash) mutable {
@@ -257,7 +237,7 @@ void Application::addAssetToWorldUpload(QString filePath, QString mapping, bool 
             qWarning(interfaceapp) << "Error downloading model: " + errorInfo;
             addAssetToWorldError(filenameFromPath(filePath), errorInfo);
         } else {
-            addAssetToWorldSetMapping(filePath, mapping, hash, isZip, isBlocks);
+            addAssetToWorldSetMapping(filePath, mapping, hash, isZip);
         }
 
         // Remove temporary directory created by Clara.io market place download.
@@ -274,7 +254,7 @@ void Application::addAssetToWorldUpload(QString filePath, QString mapping, bool 
     upload->start();
 }
 
-void Application::addAssetToWorldSetMapping(QString filePath, QString mapping, QString hash, bool isZip, bool isBlocks) {
+void Application::addAssetToWorldSetMapping(QString filePath, QString mapping, QString hash, bool isZip) {
     auto request = DependencyManager::get<AssetClient>()->createSetMappingRequest(mapping, hash);
     connect(request, &SetMappingRequest::finished, this, [=](SetMappingRequest* request) mutable {
         if (request->getError() != SetMappingRequest::NoError) {
@@ -286,7 +266,7 @@ void Application::addAssetToWorldSetMapping(QString filePath, QString mapping, Q
             if ((filePath.toLower().endsWith(OBJ_EXTENSION) || filePath.toLower().endsWith(FBX_EXTENSION) ||
                  filePath.toLower().endsWith(GLTF_EXTENSION) || filePath.toLower().endsWith(GLB_EXTENSION)) ||
                 ((filePath.toLower().endsWith(JPG_EXTENSION) || filePath.toLower().endsWith(PNG_EXTENSION)) &&
-                ((!isBlocks) && (!isZip)))) {
+                !isZip)) {
                 addAssetToWorldAddEntity(filePath, mapping);
             } else {
                 qCDebug(interfaceapp) << "Zipped contents are not supported entity files";
@@ -340,13 +320,13 @@ void Application::addAssetToWorldAddEntity(QString filePath, QString mapping) {
     }
 }
 
-void Application::handleUnzip(QString zipFile, QStringList unzipFile, bool autoAdd, bool isZip, bool isBlocks) {
+void Application::handleUnzip(QString zipFile, QStringList unzipFile, bool autoAdd, bool isZip) {
     if (autoAdd) {
         if (!unzipFile.isEmpty()) {
             for (int i = 0; i < unzipFile.length(); i++) {
                 if (QFileInfo(unzipFile.at(i)).isFile()) {
                     qCDebug(interfaceapp) << "Preparing file for asset server: " << unzipFile.at(i);
-                    addAssetToWorld(unzipFile.at(i), zipFile, isZip, isBlocks);
+                    addAssetToWorld(unzipFile.at(i), zipFile, isZip);
                 }
             }
         } else {
@@ -503,13 +483,7 @@ bool Application::importSVOFromURL(const QString& urlString) {
 
 bool Application::importFromZIP(const QString& filePath) {
     qDebug() << "A zip file has been dropped in: " << filePath;
-    QUrl empty;
-    // handle Blocks download from Marketplace
-    if (filePath.contains("poly.google.com/downloads")) {
-        addAssetToWorldFromURL(filePath);
-    } else {
-        qApp->getFileDownloadInterface()->runUnzip(filePath, empty, true, true, false);
-    }
+    qApp->getFileDownloadInterface()->runUnzip(filePath, QUrl(), true, true, false);
     return true;
 }
 
@@ -521,6 +495,6 @@ bool Application::importImage(const QString& urlString) {
 #else
     filepath.remove("file://");
 #endif
-    addAssetToWorld(filepath, "", false, false);
+    addAssetToWorld(filepath, "", false);
     return true;
 }

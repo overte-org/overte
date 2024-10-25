@@ -298,9 +298,9 @@ public:
      * Audio is recorded to snapshots directory specified in settings.
      * @function Audio.startRecording
      * @returns {Uuid} A valid <code>Uuid</code> if the specified file could be opened and audio recording has started, otherwise
-     *     <code>Uuid.NULL</code>.
+     *     <code>Uuid.NONE</code>.
      * @example <caption>Make a 10 second audio recording.</caption>
-     * if (Audio.startRecording() !== Uuid.NULL) {
+     * if (Audio.startRecording() !== Uuid.NONE) {
      *     Script.setTimeout(function () {
      *         Audio.stopRecording();
      *         print("Audio recording finished.");

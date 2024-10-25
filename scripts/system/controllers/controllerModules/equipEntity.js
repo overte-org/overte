@@ -340,7 +340,7 @@ EquipHotspotBuddy.prototype.update = function(deltaTime, timestamp, controllerDa
             var props = controllerData.nearbyEntityPropertiesByID[hotspot.entityID];
 
             var hasParent = true;
-            if (props.parentID === Uuid.NULL) {
+            if (props.parentID === Uuid.NONE) {
                 hasParent = false;
             }
 
@@ -561,7 +561,7 @@ EquipHotspotBuddy.prototype.update = function(deltaTime, timestamp, controllerDa
 
             this.storeAttachPointInSettings();
             Entities.editEntity(this.targetEntityID, {
-                parentID: Uuid.NULL,
+                parentID: Uuid.NONE,
                 parentJointIndex: -1
             });
 

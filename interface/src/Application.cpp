@@ -86,7 +86,6 @@
 #include <scripting/PlatformInfoScriptingInterface.h>
 #include <scripting/RatesScriptingInterface.h>
 #include <scripting/RenderScriptingInterface.h>
-#include <scripting/ScreenshareScriptingInterface.h>
 #include <scripting/SelectionScriptingInterface.h>
 #include <scripting/SettingsScriptingInterface.h>
 #include <scripting/TestScriptingInterface.h>
@@ -324,7 +323,6 @@ Application::~Application() {
     DependencyManager::destroy<SoundCache>();
     DependencyManager::destroy<OctreeStatsProvider>();
     DependencyManager::destroy<GeometryCache>();
-    DependencyManager::destroy<ScreenshareScriptingInterface>();
 
     if (auto resourceManager = DependencyManager::get<ResourceManager>()) {
         resourceManager->cleanup();
@@ -541,7 +539,6 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     scriptEngine->registerGlobalObject("AvatarList", DependencyManager::get<AvatarManager>().data());
 
     scriptEngine->registerGlobalObject("Camera", &_myCamera);
-    scriptEngine->registerGlobalObject("Screenshare", DependencyManager::get<ScreenshareScriptingInterface>().data());
 
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
     scriptEngine->registerGlobalObject("SpeechRecognizer", DependencyManager::get<SpeechRecognizer>().data());
@@ -643,8 +640,6 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
 
     scriptEngine->registerGlobalObject("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
     scriptEngine->registerGlobalObject("Users", DependencyManager::get<UsersScriptingInterface>().data());
-
-    //scriptEngine->registerGlobalObject("GooglePoly", DependencyManager::get<GooglePolyScriptingInterface>().data());
 
     if (auto steamClient = PluginManager::getInstance()->getSteamClientPlugin()) {
         scriptEngine->registerGlobalObject("Steam", new SteamScriptingInterface(scriptManager.get(), steamClient.get()));

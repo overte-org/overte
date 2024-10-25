@@ -442,7 +442,7 @@
 
         function release() {
             Entities.editEntity(miniOverlay, {
-                "parentID": Uuid.NULL, // Release hold so that hand can grab tablet proper.
+                "parentID": Uuid.NONE, // Release hold so that hand can grab tablet proper.
                 "grab": {
                     "grabbable": false
                 }

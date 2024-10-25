@@ -53,7 +53,6 @@
 #include <scripting/PlatformInfoScriptingInterface.h>
 #include <scripting/RatesScriptingInterface.h>
 #include <scripting/RenderScriptingInterface.h>
-#include <scripting/ScreenshareScriptingInterface.h>
 #include <scripting/SelectionScriptingInterface.h>
 #include <scripting/SettingsScriptingInterface.h>
 #include <scripting/WindowScriptingInterface.h>
@@ -198,7 +197,6 @@ PickRay Application::computePickRay(float x, float y) const {
 }
 
 void Application::setupQmlSurface(QQmlContext* surfaceContext, bool setAdditionalContextProperties) {
-    surfaceContext->setContextProperty("Screenshare", DependencyManager::get<ScreenshareScriptingInterface>().data());
     surfaceContext->setContextProperty("Users", DependencyManager::get<UsersScriptingInterface>().data());
     surfaceContext->setContextProperty("HMD", DependencyManager::get<HMDScriptingInterface>().data());
     surfaceContext->setContextProperty("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
@@ -838,7 +836,6 @@ void Application::onDesktopRootContextCreated(QQmlContext* surfaceContext) {
     surfaceContext->setContextProperty("Users", DependencyManager::get<UsersScriptingInterface>().data());
 
     surfaceContext->setContextProperty("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
-    surfaceContext->setContextProperty("Screenshare", DependencyManager::get<ScreenshareScriptingInterface>().data());
     surfaceContext->setContextProperty("Camera", &_myCamera);
 
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)

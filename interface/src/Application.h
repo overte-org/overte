@@ -481,14 +481,14 @@ public slots:
     // Assets
     void addAssetToWorldFromURL(QString url);
     void addAssetToWorldFromURLRequestFinished();
-    void addAssetToWorld(QString filePath, QString zipFile, bool isZip = false, bool isBlocks = false);
+    void addAssetToWorld(QString filePath, QString zipFile, bool isZip = false);
     void addAssetToWorldUnzipFailure(QString filePath);
-    void addAssetToWorldWithNewMapping(QString filePath, QString mapping, int copy, bool isZip = false, bool isBlocks = false);
-    void addAssetToWorldUpload(QString filePath, QString mapping, bool isZip = false, bool isBlocks = false);
-    void addAssetToWorldSetMapping(QString filePath, QString mapping, QString hash, bool isZip = false, bool isBlocks = false);
+    void addAssetToWorldWithNewMapping(QString filePath, QString mapping, int copy, bool isZip = false);
+    void addAssetToWorldUpload(QString filePath, QString mapping, bool isZip = false);
+    void addAssetToWorldSetMapping(QString filePath, QString mapping, QString hash, bool isZip = false);
     void addAssetToWorldAddEntity(QString filePath, QString mapping);
 
-    void handleUnzip(QString sourceFile, QStringList destinationFile, bool autoAdd, bool isZip, bool isBlocks);
+    void handleUnzip(QString sourceFile, QStringList destinationFile, bool autoAdd, bool isZip);
 
     ArchiveDownloadInterface* getFileDownloadInterface() { return _fileDownload; }
 
