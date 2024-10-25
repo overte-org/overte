@@ -18,11 +18,21 @@
 
 class LDAPAccount : public QObject {
     Q_OBJECT
-public:
-    static bool isValidCredentials(const QString& username, const QString& password);
-    static const char* toChar(const QString& str);
-    static std::vector<std::string> getRolesAsStrings(const QString& username, const QString& password);
 private:
     static LDAP* initialize();
+    static int login(LDAP* ldapHandle, const QString& username, const QString& password);
+    static QString buildDNFromUsername(const QString& username);
+    static QString ldapServerURL;
+    static QString ldapServerUserBase;
+    static QString ldapServerGroupBase;
+    static QString readLDAPServerURL() {return ldapServerURL;}
+    static QString readLDAPUserBase() {return ldapServerUserBase;}
+    static QString readLDAPGroupBase() {return ldapServerGroupBase;}
+public:
+    static bool isValidCredentials(const QString& username, const QString& password);
+    static std::vector<std::string> getRolesAsStrings(const QString& username, const QString& password);
+    static void setLDAPServerURL(const QString& url) {ldapServerURL = url;}
+    static void setLDAPUserBase(const QString& base) {ldapServerUserBase = base;}
+    static void setLDAPGroupBase(const QString& base) {ldapServerGroupBase = base;}
 };
 #endif //LDAPACCOUNT_H
