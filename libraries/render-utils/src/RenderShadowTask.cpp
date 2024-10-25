@@ -50,8 +50,7 @@ void RenderShadowTask::build(JobModel& task, const render::Varying& input, rende
     static ShapePlumberPointer shapePlumber = std::make_shared<ShapePlumber>();
     static std::once_flag once;
     std::call_once(once, [] {
-        auto fadeEffect = DependencyManager::get<FadeEffect>();
-        initZPassPipelines(*shapePlumber, std::make_shared<gpu::State>(), fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter());
+        initZPassPipelines(*shapePlumber, std::make_shared<gpu::State>(), FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter());
     });
 
     const auto setupOutput = task.addJob<RenderShadowSetup>("ShadowSetup", input);

@@ -91,6 +91,7 @@
 #include <scripting/DesktopScriptingInterface.h>
 #include <scripting/HMDScriptingInterface.h>
 #include <scripting/KeyboardScriptingInterface.h>
+#include <scripting/SelectionScriptingInterface.h>
 #include <scripting/TestScriptingInterface.h>
 #include <scripting/TTSScriptingInterface.h>
 #include <scripting/WindowScriptingInterface.h>

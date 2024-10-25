@@ -73,21 +73,19 @@ public:
     using Config = LinearDepthPassConfig;
     using JobModel = render::Job::ModelIO<LinearDepthPass, Inputs, Outputs, Config>;
 
-    LinearDepthPass();
+    LinearDepthPass() {}
 
     void configure(const Config& config);
     void run(const render::RenderContextPointer& renderContext, const Inputs& inputs, Outputs& outputs);
     
 private:
-    typedef gpu::BufferView UniformBufferView;
-
     LinearDepthFramebufferPointer _linearDepthFramebuffer;
 
-    const gpu::PipelinePointer& getLinearDepthPipeline(const render::RenderContextPointer& renderContext);
-    gpu::PipelinePointer _linearDepthPipeline;
+    static const gpu::PipelinePointer& getLinearDepthPipeline();
+    static gpu::PipelinePointer _linearDepthPipeline;
 
-    const gpu::PipelinePointer& getDownsamplePipeline(const render::RenderContextPointer& renderContext);
-    gpu::PipelinePointer _downsamplePipeline;
+    static const gpu::PipelinePointer& getDownsamplePipeline();
+    static gpu::PipelinePointer _downsamplePipeline;
 
     gpu::RangeTimerPointer _gpuTimer;
 };
@@ -194,15 +192,13 @@ private:
     };
     gpu::BufferView _parametersBuffer;
 
-
     SurfaceGeometryFramebufferPointer _surfaceGeometryFramebuffer;
 
-    const gpu::PipelinePointer& getCurvaturePipeline(const render::RenderContextPointer& renderContext);
+    static const gpu::PipelinePointer& getCurvaturePipeline();
 
-    gpu::PipelinePointer _curvaturePipeline;
-    
+    static gpu::PipelinePointer _curvaturePipeline;
+
     render::BlurGaussianDepthAware _diffusePass;
-
 
     gpu::RangeTimerPointer _gpuTimer;
 };

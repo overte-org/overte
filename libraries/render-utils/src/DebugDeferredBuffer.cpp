@@ -250,6 +250,9 @@ static std::string getFileContent(const std::string& fileName, const std::string
     return defaultContent;
 }
 
+DebugDeferredBuffer::StandardPipelines DebugDeferredBuffer::_pipelines;
+DebugDeferredBuffer::CustomPipelines DebugDeferredBuffer::_customPipelines;
+
 #include <QStandardPaths>  // TODO REMOVE: Temporary until UI
 DebugDeferredBuffer::DebugDeferredBuffer() {
     // TODO REMOVE: Temporary until UI
@@ -334,7 +337,7 @@ std::string DebugDeferredBuffer::getShaderSourceCode(Mode mode, const std::strin
     return std::string();
 }
 
-bool DebugDeferredBuffer::pipelineNeedsUpdate(Mode mode, const std::string& customFile) const {
+bool DebugDeferredBuffer::pipelineNeedsUpdate(Mode mode, const std::string& customFile) {
     if (mode != CustomMode) {
         return !_pipelines[mode];
     }
@@ -351,7 +354,7 @@ bool DebugDeferredBuffer::pipelineNeedsUpdate(Mode mode, const std::string& cust
     return true;
 }
 
-const gpu::PipelinePointer& DebugDeferredBuffer::getPipeline(Mode mode, const std::string& customFile) {
+gpu::PipelinePointer& DebugDeferredBuffer::getPipeline(Mode mode, const std::string& customFile) {
     if (pipelineNeedsUpdate(mode, customFile)) {
         static_assert(shader::render_utils::program::debug_deferred_buffer != 0, "Validate debug deferred program");
 

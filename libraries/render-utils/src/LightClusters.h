@@ -217,23 +217,25 @@ public:
     using Config = DebugLightClustersConfig;
     using JobModel = render::Job::ModelI<DebugLightClusters, Inputs, Config>;
 
-    DebugLightClusters();
+    DebugLightClusters() {}
 
     void configure(const Config& config);
 
     void run(const render::RenderContextPointer& renderContext, const Inputs& inputs);
 
 protected:
+    static gpu::PipelinePointer _drawClusterGrid;
+    static gpu::PipelinePointer _drawClusterFromDepth;
+    static gpu::PipelinePointer _drawClusterContent;
     gpu::BufferPointer _gridBuffer;
-    gpu::PipelinePointer _drawClusterGrid;
-    gpu::PipelinePointer _drawClusterFromDepth;
-    gpu::PipelinePointer _drawClusterContent;
-    const gpu::PipelinePointer getDrawClusterGridPipeline();
-    const gpu::PipelinePointer getDrawClusterFromDepthPipeline();
-    const gpu::PipelinePointer getDrawClusterContentPipeline();
+
     bool doDrawGrid { false };
     bool doDrawClusterFromDepth { false };
     bool doDrawContent { false };
+
+    static gpu::PipelinePointer getDrawClusterGridPipeline();
+    static gpu::PipelinePointer getDrawClusterFromDepthPipeline();
+    static gpu::PipelinePointer getDrawClusterContentPipeline();
 };
 
 #endif

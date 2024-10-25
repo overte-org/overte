@@ -483,7 +483,7 @@ bool Application::importSVOFromURL(const QString& urlString) {
 
 bool Application::importFromZIP(const QString& filePath) {
     qDebug() << "A zip file has been dropped in: " << filePath;
-    qApp->getFileDownloadInterface()->runUnzip(filePath, QUrl(), true, true, false);
+    qApp->getFileDownloadInterface()->runUnzip(filePath, QUrl(), true, true);
     return true;
 }
 
