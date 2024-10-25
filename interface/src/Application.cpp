@@ -192,7 +192,6 @@
 #include "scripting/AssetMappingsScriptingInterface.h"
 #include "scripting/ClipboardScriptingInterface.h"
 #include "scripting/DesktopScriptingInterface.h"
-#include "scripting/ScreenshareScriptingInterface.h"
 #include "scripting/AccountServicesScriptingInterface.h"
 #include "scripting/HMDScriptingInterface.h"
 #include "scripting/MenuScriptingInterface.h"
@@ -232,7 +231,6 @@
 
 #include <GPUIdent.h>
 #include <gl/GLHelpers.h>
-#include <src/scripting/GooglePolyScriptingInterface.h>
 #include <EntityScriptClient.h>
 #include <ModelScriptingInterface.h>
 
@@ -243,8 +241,6 @@
 #include <raypick/PointerScriptingInterface.h>
 #include <raypick/RayPick.h>
 #include <raypick/MouseTransformNode.h>
-
-#include <FadeEffect.h>
 
 #include "ResourceRequestObserver.h"
 
@@ -906,7 +902,6 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
     auto entityScriptServerLog = DependencyManager::get<EntityScriptServerLogClient>();
     QObject::connect(scriptEngines.data(), &ScriptEngines::requestingEntityScriptServerLog, entityScriptServerLog.data(), &EntityScriptServerLogClient::requestMessagesForScriptEngines);
 
-    DependencyManager::set<GooglePolyScriptingInterface>();
     DependencyManager::set<OctreeStatsProvider>(nullptr, qApp->getOcteeSceneStats());
     DependencyManager::set<AvatarBookmarks>();
     DependencyManager::set<LocationBookmarks>();
@@ -916,13 +911,11 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
     DependencyManager::set<SelectionScriptingInterface>();
     DependencyManager::set<TTSScriptingInterface>();
 
-    DependencyManager::set<FadeEffect>();
     DependencyManager::set<ResourceRequestObserver>();
     DependencyManager::set<Keyboard>();
     DependencyManager::set<KeyboardScriptingInterface>();
     DependencyManager::set<GrabManager>();
     DependencyManager::set<AvatarPackager>();
-    DependencyManager::set<ScreenshareScriptingInterface>();
     PlatformHelper::setup();
 
     QObject::connect(PlatformHelper::instance(), &PlatformHelper::systemWillWake, [] {
@@ -3018,7 +3011,6 @@ Application::~Application() {
     DependencyManager::destroy<SoundCache>();
     DependencyManager::destroy<OctreeStatsProvider>();
     DependencyManager::destroy<GeometryCache>();
-    DependencyManager::destroy<ScreenshareScriptingInterface>();
 
     if (auto resourceManager = DependencyManager::get<ResourceManager>()) {
         resourceManager->cleanup();
@@ -3519,7 +3511,6 @@ void Application::onDesktopRootContextCreated(QQmlContext* surfaceContext) {
     surfaceContext->setContextProperty("Users", DependencyManager::get<UsersScriptingInterface>().data());
 
     surfaceContext->setContextProperty("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
-    surfaceContext->setContextProperty("Screenshare", DependencyManager::get<ScreenshareScriptingInterface>().data());
     surfaceContext->setContextProperty("Camera", &_myCamera);
 
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
@@ -3625,7 +3616,6 @@ void Application::userKickConfirmation(const QUuid& nodeID, unsigned int banFlag
 }
 
 void Application::setupQmlSurface(QQmlContext* surfaceContext, bool setAdditionalContextProperties) {
-    surfaceContext->setContextProperty("Screenshare", DependencyManager::get<ScreenshareScriptingInterface>().data());
     surfaceContext->setContextProperty("Users", DependencyManager::get<UsersScriptingInterface>().data());
     surfaceContext->setContextProperty("HMD", DependencyManager::get<HMDScriptingInterface>().data());
     surfaceContext->setContextProperty("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
@@ -4083,11 +4073,8 @@ bool Application::importFromZIP(const QString& filePath) {
     qDebug() << "A zip file has been dropped in: " << filePath;
     QUrl empty;
     // handle Blocks download from Marketplace
-    if (filePath.contains("poly.google.com/downloads")) {
-        addAssetToWorldFromURL(filePath);
-    } else {
-        qApp->getFileDownloadInterface()->runUnzip(filePath, empty, true, true, false);
-    }
+    qApp->getFileDownloadInterface()->runUnzip(filePath, empty, true, true, false);
+    
     return true;
 }
 
@@ -7554,7 +7541,6 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     scriptEngine->registerGlobalObject("AvatarList", DependencyManager::get<AvatarManager>().data());
 
     scriptEngine->registerGlobalObject("Camera", &_myCamera);
-    scriptEngine->registerGlobalObject("Screenshare", DependencyManager::get<ScreenshareScriptingInterface>().data());
 
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
     scriptEngine->registerGlobalObject("SpeechRecognizer", DependencyManager::get<SpeechRecognizer>().data());
@@ -7656,8 +7642,6 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
 
     scriptEngine->registerGlobalObject("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
     scriptEngine->registerGlobalObject("Users", DependencyManager::get<UsersScriptingInterface>().data());
-
-    //scriptEngine->registerGlobalObject("GooglePoly", DependencyManager::get<GooglePolyScriptingInterface>().data());
 
     if (auto steamClient = PluginManager::getInstance()->getSteamClientPlugin()) {
         scriptEngine->registerGlobalObject("Steam", new SteamScriptingInterface(scriptManager.get(), steamClient.get()));
@@ -7984,15 +7968,6 @@ void Application::addAssetToWorldFromURL(QString url) {
     if (url.contains("filename")) {
         filename = url.section("filename=", 1, 1);  // Filename is in "?filename=" parameter at end of URL.
     }
-    if (url.contains("poly.google.com/downloads")) {
-        filename = url.section('/', -1);
-        if (url.contains("noDownload")) {
-            filename.remove(".zip?noDownload=false");
-        } else {
-            filename.remove(".zip");
-        }
-
-    }
 
     if (!DependencyManager::get<NodeList>()->getThisNodeCanWriteAssets()) {
         QString errorInfo = "You do not have permissions to write to the Asset Server.";
@@ -8020,15 +7995,6 @@ void Application::addAssetToWorldFromURLRequestFinished() {
 
     if (url.contains("filename")) {
         filename = url.section("filename=", 1, 1);  // Filename is in "?filename=" parameter at end of URL.
-    }
-    if (url.contains("poly.google.com/downloads")) {
-        filename = url.section('/', -1);
-        if (url.contains("noDownload")) {
-            filename.remove(".zip?noDownload=false");
-        } else {
-            filename.remove(".zip");
-        }
-        isBlocks = true;
     }
 
     if (result == ResourceRequest::Success) {

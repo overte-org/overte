@@ -513,7 +513,7 @@ Script.include("/~/system/libraries/controllers.js");
             if (Vec3.distance(targetXZPosition, avatarXZPosition) < MIN_PARENTING_DISTANCE) {
                 // Set play area position and rotation in world coordinates with no parenting.
                 Overlays.editOverlay(_this.playAreaOverlay, {
-                    parentID: Uuid.NULL,
+                    parentID: Uuid.NONE,
                     position: Vec3.sum(position,
                         Vec3.multiplyQbyV(sensorToWorldRotation,
                             Vec3.multiply(MyAvatar.sensorToWorldScale,

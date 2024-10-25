@@ -182,7 +182,6 @@ enum:SKYBOX_MODE prop:skyboxMode type:uint8_t default:(uint8_t)COMPONENT_MODE_IN
 enum:HAZE_MODE prop:hazeMode type:uint8_t default:(uint8_t)COMPONENT_MODE_INHERIT enum,
 enum:BLOOM_MODE prop:bloomMode type:uint8_t default:(uint8_t)COMPONENT_MODE_INHERIT enum,
 enum:AVATAR_PRIORITY prop:avatarPriority type:uint8_t default:(uint8_t)COMPONENT_MODE_INHERIT enum basicProp,
-enum:SCREENSHARE prop:screenshare type:uint8_t default:(uint8_t)COMPONENT_MODE_INHERIT enum basicProp,
 enum:TONEMAPPING_MODE prop:tonemappingMode type:uint8_t default:(uint8_t)COMPONENT_MODE_INHERIT enum,
 enum:AMBIENT_OCCLUSION_MODE prop:ambientOcclusionMode type:uint8_t default:(uint8_t)COMPONENT_MODE_INHERIT enum,
 PolyVox

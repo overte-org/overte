@@ -435,7 +435,7 @@ public:
      * @param {Uuid} entityID - The ID of the entity running the entity script.
      * @param {string} methodName - The name of the method to call.
      * @param {string[]} [parameters=[]] - The parameters to call the specified method with.
-     * @param {Uuid} [remoteCallerID=Uuid.NULL] - An ID that identifies the caller.
+     * @param {Uuid} [remoteCallerID=Uuid.NONE] - An ID that identifies the caller.
      */
     Q_INVOKABLE void callEntityScriptMethod(const EntityItemID& entityID, const QString& methodName,
                                             const QStringList& params = QStringList(),
@@ -740,7 +740,7 @@ public:
      * @returns {Signal}
      * @example <caption>Get the ID of the entity that a client entity script is running in.</caption>
      * var entityScript = function () {
-     *     this.entityID = Uuid.NULL;
+     *     this.entityID = Uuid.NONE;
      * };
      *
      * Script.entityScriptPreloadFinished.connect(function (entityID) {

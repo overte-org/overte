@@ -168,7 +168,7 @@ Script.include("/~/system/libraries/controllers.js");
                 tag: "far-grab-" + MyAvatar.sessionUUID,
                 ttl: ACTION_TTL
             });
-            if (this.actionID === Uuid.NULL) {
+            if (this.actionID === Uuid.NONE) {
                 this.actionID = null;
             }
 

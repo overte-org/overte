@@ -13,21 +13,21 @@
 
 var controllerDispatcher = Script.require("/~/system/libraries/controllerDispatcherUtils.js");
 function touchTargetHasKeyboardFocus(touchTarget) {
-    if (touchTarget.entityID && touchTarget.entityID !== Uuid.NULL) {
+    if (touchTarget.entityID && touchTarget.entityID !== Uuid.NONE) {
         return Entities.keyboardFocusEntity === touchTarget.entityID;
-    } else if (touchTarget.overlayID && touchTarget.overlayID !== Uuid.NULL) {
+    } else if (touchTarget.overlayID && touchTarget.overlayID !== Uuid.NONE) {
         return Overlays.keyboardFocusOverlay === touchTarget.overlayID;
     }
 }
 
 function setKeyboardFocusOnTouchTarget(touchTarget) {
-    if (touchTarget.entityID && touchTarget.entityID !== Uuid.NULL &&
+    if (touchTarget.entityID && touchTarget.entityID !== Uuid.NONE &&
         Entities.wantsHandControllerPointerEvents(touchTarget.entityID)) {
-        Overlays.keyboardFocusOverlay = Uuid.NULL;
+        Overlays.keyboardFocusOverlay = Uuid.NONE;
         Entities.keyboardFocusEntity = touchTarget.entityID;
-    } else if (touchTarget.overlayID && touchTarget.overlayID !== Uuid.NULL) {
+    } else if (touchTarget.overlayID && touchTarget.overlayID !== Uuid.NONE) {
         Overlays.keyboardFocusOverlay = touchTarget.overlayID;
-        Entities.keyboardFocusEntity = Uuid.NULL;
+        Entities.keyboardFocusEntity = Uuid.NONE;
     }
 }
 
@@ -42,9 +42,9 @@ function sendHoverEnterEventToTouchTarget(hand, touchTarget) {
         button: "None"
     };
 
-    if (touchTarget.entityID && touchTarget.entityID !== Uuid.NULL) {
+    if (touchTarget.entityID && touchTarget.entityID !== Uuid.NONE) {
         Entities.sendHoverEnterEntity(touchTarget.entityID, pointerEvent);
-    } else if (touchTarget.overlayID && touchTarget.overlayID !== Uuid.NULL) {
+    } else if (touchTarget.overlayID && touchTarget.overlayID !== Uuid.NONE) {
         Overlays.sendHoverEnterOverlay(touchTarget.overlayID, pointerEvent);
     }
 }
@@ -60,10 +60,10 @@ function sendHoverOverEventToTouchTarget(hand, touchTarget) {
         button: "None"
     };
 
-    if (touchTarget.entityID && touchTarget.entityID !== Uuid.NULL) {
+    if (touchTarget.entityID && touchTarget.entityID !== Uuid.NONE) {
         Entities.sendMouseMoveOnEntity(touchTarget.entityID, pointerEvent);
         Entities.sendHoverOverEntity(touchTarget.entityID, pointerEvent);
-    } else if (touchTarget.overlayID && touchTarget.overlayID !== Uuid.NULL) {
+    } else if (touchTarget.overlayID && touchTarget.overlayID !== Uuid.NONE) {
         Overlays.sendMouseMoveOnOverlay(touchTarget.overlayID, pointerEvent);
         Overlays.sendHoverOverOverlay(touchTarget.overlayID, pointerEvent);
     }
@@ -81,10 +81,10 @@ function sendTouchStartEventToTouchTarget(hand, touchTarget) {
         isPrimaryHeld: true
     };
 
-    if (touchTarget.entityID && touchTarget.entityID !== Uuid.NULL) {
+    if (touchTarget.entityID && touchTarget.entityID !== Uuid.NONE) {
         Entities.sendMousePressOnEntity(touchTarget.entityID, pointerEvent);
         Entities.sendClickDownOnEntity(touchTarget.entityID, pointerEvent);
-    } else if (touchTarget.overlayID && touchTarget.overlayID !== Uuid.NULL) {
+    } else if (touchTarget.overlayID && touchTarget.overlayID !== Uuid.NONE) {
         Overlays.sendMousePressOnOverlay(touchTarget.overlayID, pointerEvent);
     }
 }
@@ -100,11 +100,11 @@ function sendTouchEndEventToTouchTarget(hand, touchTarget) {
         button: "Primary"
     };
 
-    if (touchTarget.entityID && touchTarget.entityID !== Uuid.NULL) {
+    if (touchTarget.entityID && touchTarget.entityID !== Uuid.NONE) {
         Entities.sendMouseReleaseOnEntity(touchTarget.entityID, pointerEvent);
         Entities.sendClickReleaseOnEntity(touchTarget.entityID, pointerEvent);
         Entities.sendHoverLeaveEntity(touchTarget.entityID, pointerEvent);
-    } else if (touchTarget.overlayID && touchTarget.overlayID !== Uuid.NULL) {
+    } else if (touchTarget.overlayID && touchTarget.overlayID !== Uuid.NONE) {
         Overlays.sendMouseReleaseOnOverlay(touchTarget.overlayID, pointerEvent);
     }
 }
@@ -121,10 +121,10 @@ function sendTouchMoveEventToTouchTarget(hand, touchTarget) {
         isPrimaryHeld: true
     };
 
-    if (touchTarget.entityID && touchTarget.entityID !== Uuid.NULL) {
+    if (touchTarget.entityID && touchTarget.entityID !== Uuid.NONE) {
         Entities.sendMouseMoveOnEntity(touchTarget.entityID, pointerEvent);
         Entities.sendHoldingClickOnEntity(touchTarget.entityID, pointerEvent);
-    } else if (touchTarget.overlayID && touchTarget.overlayID !== Uuid.NULL) {
+    } else if (touchTarget.overlayID && touchTarget.overlayID !== Uuid.NONE) {
         Overlays.sendMouseMoveOnOverlay(touchTarget.overlayID, pointerEvent);
     }
 }

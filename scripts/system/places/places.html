@@ -150,7 +150,11 @@
                 if (message.channel === channel && message.action === "CURRENT_LOCATION") {
                     currentLocation = message.data;
                     displayCurrentLocation();
-                }                
+                }
+                if (message.channel === channel && message.action === "MATURITY_FILTER") {
+                    maturityFilter = message.filter;
+                    displayMaturityFilter();
+                }
             });
             
             var goSignal = {
@@ -600,8 +604,16 @@
                     maturityFilter = arrayRemove(maturityFilter, targeted);
                 }
                 loadRecordsUpTo = NUMBER_OF_RECORDS_PER_LOAD;
+
+                var messageSent = {
+                    "channel": channel,
+                    "action": "SET_MATURITY_FILTER",
+                    "filter": maturityFilter
+                    };
+                EventBridge.emitWebEvent(JSON.stringify(messageSent));
+
                 displayMaturityFilter();
-                generateContent();            
+                generateContent();
             }
 
             function filterSearchField(targeted) {

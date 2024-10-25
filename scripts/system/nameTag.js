@@ -23,7 +23,7 @@ const SIZE_Y = 0.075;
 const LETTER_OFFSET = 0.03; // arbitrary value to dynamically change width, could be more accurate by detecting characters
 const LINE_HEIGHT = 0.05;
 
-var nameTagEntityID = Uuid.NULL;
+var nameTagEntityID = Uuid.NONE;
 var lastCheckForEntity = 0;
 
 // create the name tag entity after a brief delay
@@ -61,9 +61,9 @@ function updateNameTag() {
 };
 
 function deleteNameTag() {
-    if(nameTagEntityID !== Uuid.NULL) {
+    if(nameTagEntityID !== Uuid.NONE) {
         Entities.deleteEntity(nameTagEntityID);
-        nameTagEntityID = Uuid.NULL;
+        nameTagEntityID = Uuid.NONE;
     }
 }
 
@@ -84,7 +84,7 @@ function cleanup() {
 Script.update.connect(update);
 function update() {
     // if no entity we return
-    if(nameTagEntityID == Uuid.NULL) {
+    if(nameTagEntityID == Uuid.NONE) {
         return;
     }
 

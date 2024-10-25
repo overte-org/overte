@@ -156,7 +156,7 @@ void DrawHighlightMask::run(const render::RenderContextPointer& renderContext, c
         _boundsBuffer = std::make_shared<gpu::Buffer>(sizeof(render::ItemBound));
     }
 
-    auto highlightStage = renderContext->_scene->getStage<render::HighlightStage>(render::HighlightStage::getName());
+    auto highlightStage = renderContext->_scene->getStage<render::HighlightStage>();
     auto highlightId = _sharedParameters->_highlightIds[_highlightPassIndex];
 
     if (!inShapes.empty() && !render::HighlightStage::isIndexInvalid(highlightId)) {
@@ -244,7 +244,7 @@ void DrawHighlight::run(const render::RenderContextPointer& renderContext, const
         if (sceneDepthBuffer) {
             auto args = renderContext->args;
 
-            auto highlightStage = renderContext->_scene->getStage<render::HighlightStage>(render::HighlightStage::getName());
+            auto highlightStage = renderContext->_scene->getStage<render::HighlightStage>();
             auto highlightId = _sharedParameters->_highlightIds[_highlightPassIndex];
             if (!render::HighlightStage::isIndexInvalid(highlightId)) {
                 auto& highlight = highlightStage->getElement(highlightId);
@@ -310,6 +310,8 @@ const gpu::PipelinePointer& DrawHighlight::getPipeline(const render::HighlightSt
     }
     return style.isFilled() ? _pipelineFilled : _pipeline;
 }
+
+gpu::PipelinePointer DebugHighlight::_depthPipeline;
 
 DebugHighlight::DebugHighlight() {
     _geometryDepthId = DependencyManager::get<GeometryCache>()->allocateID();
@@ -396,7 +398,7 @@ void DebugHighlight::initializePipelines() {
     _depthPipeline = gpu::Pipeline::create(program, state);
 }
 
-const gpu::PipelinePointer& DebugHighlight::getDepthPipeline() {
+gpu::PipelinePointer& DebugHighlight::getDepthPipeline() {
     if (!_depthPipeline) {
         initializePipelines();
     }
@@ -406,7 +408,7 @@ const gpu::PipelinePointer& DebugHighlight::getDepthPipeline() {
 
 void SelectionToHighlight::run(const render::RenderContextPointer& renderContext, const Inputs& inputs, Outputs& outputs) {
     auto scene = renderContext->_scene;
-    auto highlightStage = scene->getStage<render::HighlightStage>(render::HighlightStage::getName());
+    auto highlightStage = scene->getStage<render::HighlightStage>();
 
     auto outlines = inputs.get0();
     auto framebuffer = inputs.get1();
@@ -479,8 +481,7 @@ void DrawHighlightTask::build(JobModel& task, const render::Varying& inputs, ren
     std::call_once(once, [] {
         auto state = std::make_shared<gpu::State>();
         state->setColorWriteMask(false, false, false, false);
-        auto fadeEffect = DependencyManager::get<FadeEffect>();
-        initZPassPipelines(*shapePlumber, state, fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter());
+        initZPassPipelines(*shapePlumber, state, FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter());
     });
     auto sharedParameters = std::make_shared<HighlightSharedParameters>();
 
@@ -568,7 +569,7 @@ void AppendNonMetaOutlines::run(const render::RenderContextPointer& renderContex
 
 void HighlightCleanup::run(const render::RenderContextPointer& renderContext, const Inputs& inputs) {
     auto scene = renderContext->_scene;
-    auto highlightStage = scene->getStage<render::HighlightStage>(render::HighlightStage::getName());
+    auto highlightStage = scene->getStage<render::HighlightStage>();
 
     for (auto index : inputs.get0()) {
         std::string selectionName = highlightStage->getElement(index)._selectionName;

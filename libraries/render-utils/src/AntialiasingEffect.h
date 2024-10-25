@@ -213,18 +213,18 @@ public:
     void configure(const Config& config);
     void run(const render::RenderContextPointer& renderContext, const Inputs& inputs);
 
-    const gpu::PipelinePointer& getAntialiasingPipeline(const render::RenderContextPointer& renderContext);
-    const gpu::PipelinePointer& getBlendPipeline();
-    const gpu::PipelinePointer& getDebugBlendPipeline();
+    static gpu::PipelinePointer& getAntialiasingPipeline();
+    static gpu::PipelinePointer& getBlendPipeline();
+    static gpu::PipelinePointer& getDebugBlendPipeline();
 
 private:
 
     gpu::FramebufferSwapChainPointer _antialiasingBuffers;
     gpu::TexturePointer _antialiasingTextures[2];
     gpu::BufferPointer _blendParamsBuffer;
-    gpu::PipelinePointer _antialiasingPipeline;
-    gpu::PipelinePointer _blendPipeline;
-    gpu::PipelinePointer _debugBlendPipeline;
+    static gpu::PipelinePointer _antialiasingPipeline;
+    static gpu::PipelinePointer _blendPipeline;
+    static gpu::PipelinePointer _debugBlendPipeline;
 
     TAAParamsBuffer _params;
     AntialiasingConfig::Mode _mode{ AntialiasingConfig::TAA };
@@ -251,8 +251,8 @@ public:
     void configure(const Config& config) {}
     void run(const render::RenderContextPointer& renderContext, const gpu::FramebufferPointer& sourceBuffer);
     
-    const gpu::PipelinePointer& getAntialiasingPipeline();
-    const gpu::PipelinePointer& getBlendPipeline();
+    static gpu::PipelinePointer& getAntialiasingPipeline();
+    static gpu::PipelinePointer& getBlendPipeline();
 
 private:
     gpu::FramebufferPointer _antialiasingBuffer;
@@ -260,8 +260,8 @@ private:
     gpu::TexturePointer _antialiasingTexture;
     gpu::BufferPointer _paramsBuffer;
     
-    gpu::PipelinePointer _antialiasingPipeline;
-    gpu::PipelinePointer _blendPipeline;
+    static gpu::PipelinePointer _antialiasingPipeline;
+    static gpu::PipelinePointer _blendPipeline;
     int _geometryId { 0 };
 };
 #endif

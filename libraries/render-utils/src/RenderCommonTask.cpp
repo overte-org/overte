@@ -360,9 +360,8 @@ public:
             state->setDepthTest(true, true, gpu::LESS_EQUAL);
             PrepareStencil::testMaskDrawShape(*state);
 
-            auto fadeEffect = DependencyManager::get<FadeEffect>();
-            initMirrorPipelines(*_forwardPipelines, state, fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter(), true);
-            initMirrorPipelines(*_deferredPipelines, state, fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter(), false);
+            initMirrorPipelines(*_forwardPipelines, state, FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter(), true);
+            initMirrorPipelines(*_deferredPipelines, state, FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter(), false);
         });
     }
 

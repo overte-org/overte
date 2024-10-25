@@ -20,6 +20,11 @@
 
 #define BLOOM_BLUR_LEVEL_COUNT  3
 
+gpu::PipelinePointer BloomThreshold::_pipeline;
+gpu::PipelinePointer BloomApply::_pipeline;
+gpu::PipelinePointer BloomDraw::_pipeline;
+gpu::PipelinePointer DebugBloom::_pipeline;
+
 BloomThreshold::BloomThreshold(unsigned int downsamplingFactor) {
     assert(downsamplingFactor > 0);
     _parameters.edit()._sampleCount = downsamplingFactor;

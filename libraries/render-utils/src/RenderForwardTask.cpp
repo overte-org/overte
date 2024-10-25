@@ -27,7 +27,6 @@
 #include "render-utils/ShaderConstants.h"
 #include "StencilMaskPass.h"
 #include "ZoneRenderer.h"
-#include "FadeEffect.h"
 #include "ToneMapAndResampleTask.h"
 #include "BackgroundStage.h"
 #include "FramebufferCache.h"
@@ -73,7 +72,6 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     task.addJob<SetRenderMethod>("SetRenderMethodTask", render::Args::FORWARD);
 
     // Prepare the ShapePipelines
-    auto fadeEffect = DependencyManager::get<FadeEffect>();
     static ShapePlumberPointer shapePlumber = std::make_shared<ShapePlumber>();
     static std::once_flag once;
     std::call_once(once, [] {
@@ -112,9 +110,6 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
             const auto tonemappingFrame = currentStageFrames[4];
  
         const auto& zones = lightingStageInputs[1];
-
-    // First job, alter faded
-    fadeEffect->build(task, opaques);
 
     // GPU jobs: Start preparing the main framebuffer
     const auto scaledPrimaryFramebuffer = task.addJob<PreparePrimaryFramebufferMSAA>("PreparePrimaryBufferForward");
@@ -162,8 +157,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     task.addJob<DrawLayered3D>("DrawInFrontOpaque", inFrontOpaquesInputs, true);
     task.addJob<DrawLayered3D>("DrawInFrontTransparent", inFrontTransparentsInputs, false);
 
-    {  // Debug the bounds of the rendered items, still look at the zbuffer
-
+    if (depth == 0) {  // Debug the bounds of the rendered items, still look at the zbuffer
         task.addJob<DrawBounds>("DrawMetaBounds", metas);
         task.addJob<DrawBounds>("DrawBounds", opaques);
         task.addJob<DrawBounds>("DrawTransparentBounds", transparents);

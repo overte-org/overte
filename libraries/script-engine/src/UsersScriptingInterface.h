@@ -235,7 +235,7 @@ signals:
      * @param {string} userName - The user name of the client, if the requesting client is an administrator in the domain or 
      *     the <code>sessionID</code> is that of the client, otherwise <code>""</code>.
      * @param {Uuid} machineFingerprint - The machine fingerprint of the client, if the requesting client is an administrator 
-     *     in the domain or the <code>sessionID</code> is that of the client, otherwise {@link Uuid|Uuid.NULL}.
+     *     in the domain or the <code>sessionID</code> is that of the client, otherwise {@link Uuid|Uuid.NONE}.
      * @param {boolean} isAdmin - <code>true</code> if the client is an administrator in the domain, <code>false</code> if not.
      * @returns {Signal}
     */

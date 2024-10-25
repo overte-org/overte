@@ -341,7 +341,8 @@ enum class EntityVersion : PacketVersion {
     ShadowBiasAndDistance,
     TextEntityFonts,
     ScriptServerKinematicMotion,
-    ScreenshareZone,
+    // This was ScreenshareZone, property was dropped.
+    ScreenshareZoneUnused,
     ZoneOcclusion,
     ModelBlendshapes,
     TransparentWeb,
@@ -362,6 +363,7 @@ enum class EntityVersion : PacketVersion {
     ModelLoadPriority,
     PropertyCleanup,
     TextVerticalAlignment,
+    RemoveScreenshare,
 
     // Add new versions above here
     NUM_PACKET_TYPE,
