@@ -40,6 +40,9 @@ namespace gr {
 
 #if !ANTIALIASING_USE_TAA
 
+gpu::PipelinePointer Antialiasing::_antialiasingPipeline;
+gpu::PipelinePointer Antialiasing::_blendPipeline;
+
 Antialiasing::Antialiasing() {
     _geometryId = DependencyManager::get<GeometryCache>()->allocateID();
 }
@@ -144,6 +147,10 @@ void AntialiasingConfig::setAAMode(int mode) {
     emit dirty();
 }
 
+gpu::PipelinePointer Antialiasing::_antialiasingPipeline;
+gpu::PipelinePointer Antialiasing::_blendPipeline;
+gpu::PipelinePointer Antialiasing::_debugBlendPipeline;
+
 Antialiasing::Antialiasing(bool isSharpenEnabled) : 
     _isSharpenEnabled{ isSharpenEnabled } {
 }
@@ -154,7 +161,7 @@ Antialiasing::~Antialiasing() {
     _antialiasingTextures[1].reset();
 }
 
-const gpu::PipelinePointer& Antialiasing::getAntialiasingPipeline(const render::RenderContextPointer& renderContext) {
+gpu::PipelinePointer& Antialiasing::getAntialiasingPipeline() {
    
     if (!_antialiasingPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::taa);
@@ -169,7 +176,7 @@ const gpu::PipelinePointer& Antialiasing::getAntialiasingPipeline(const render::
     return _antialiasingPipeline;
 }
 
-const gpu::PipelinePointer& Antialiasing::getBlendPipeline() {
+gpu::PipelinePointer& Antialiasing::getBlendPipeline() {
     if (!_blendPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::fxaa_blend);
         gpu::StatePointer state = std::make_shared<gpu::State>();
@@ -180,7 +187,7 @@ const gpu::PipelinePointer& Antialiasing::getBlendPipeline() {
     return _blendPipeline;
 }
 
-const gpu::PipelinePointer& Antialiasing::getDebugBlendPipeline() {
+gpu::PipelinePointer& Antialiasing::getDebugBlendPipeline() {
     if (!_debugBlendPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::taa_blend);
         gpu::StatePointer state = std::make_shared<gpu::State>();
@@ -260,7 +267,6 @@ void Antialiasing::run(const render::RenderContextPointer& renderContext, const 
         batch.setViewportTransform(args->_viewport);
 
         // TAA step
-        getAntialiasingPipeline(renderContext);
         batch.setResourceFramebufferSwapChainTexture(ru::Texture::TaaHistory, _antialiasingBuffers, 0);
         batch.setResourceTexture(ru::Texture::TaaSource, sourceBuffer->getRenderBuffer(0));
         batch.setResourceTexture(ru::Texture::TaaVelocity, velocityBuffer->getVelocityTexture());
@@ -269,9 +275,9 @@ void Antialiasing::run(const render::RenderContextPointer& renderContext, const 
 
         batch.setUniformBuffer(ru::Buffer::TaaParams, _params);
         batch.setUniformBuffer(ru::Buffer::DeferredFrameTransform, deferredFrameTransform->getFrameTransformBuffer());
-        
+
         batch.setFramebufferSwapChain(_antialiasingBuffers, 1);
-        batch.setPipeline(getAntialiasingPipeline(renderContext));
+        batch.setPipeline(getAntialiasingPipeline());
         batch.draw(gpu::TRIANGLE_STRIP, 4);
 
         // Blend step

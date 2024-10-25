@@ -101,12 +101,11 @@ void RenderDeferredTask::configure(const Config& config) {
 }
 
 void RenderDeferredTask::build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, size_t depth) {
-    static auto fadeEffect = DependencyManager::get<FadeEffect>();
     // Prepare the ShapePipelines
     static ShapePlumberPointer shapePlumber = std::make_shared<ShapePlumber>();
     static std::once_flag once;
     std::call_once(once, [] {
-        initDeferredPipelines(*shapePlumber, fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter());
+        initDeferredPipelines(*shapePlumber, FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter());
     });
 
     const auto& inputs = input.get<Input>();
@@ -146,7 +145,9 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
         // Shadow Stage Frame
         const auto shadowFrame = shadowTaskOutputs[1];
 
-    fadeEffect->build(task, opaques);
+    if (depth == 0) {
+        task.addJob<FadeEffect>("FadeEffect", opaques);
+    }
 
     const auto jitter = task.addJob<JitterSample>("JitterCam");
 
@@ -256,7 +257,7 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
     const auto toneMappedBuffer = task.addJob<ToneMapAndResample>("ToneMapping", toneMappingInputs);
 
     // Debugging task is happening in the "over" layer after tone mapping and just before HUD
-    { // Debug the bounds of the rendered items, still look at the zbuffer
+    if (depth == 0) { // Debug the bounds of the rendered items, still look at the zbuffer
         const auto extraDebugBuffers = RenderDeferredTaskDebug::ExtraBuffers(linearDepthTarget, surfaceGeometryFramebuffer, ambientOcclusionFramebuffer, ambientOcclusionUniforms, scatteringResource, velocityBuffer);
         const auto debugInputs = RenderDeferredTaskDebug::Input(fetchedItems, shadowTaskOutputs, lightingStageInputs, lightClusters, prepareDeferredOutputs, extraDebugBuffers,
             deferredFrameTransform, jitter, lightingModel).asVarying();

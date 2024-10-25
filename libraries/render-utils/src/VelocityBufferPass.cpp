@@ -81,8 +81,7 @@ gpu::TexturePointer VelocityFramebuffer::getVelocityTexture() {
     return _velocityTexture;
 }
 
-VelocityBufferPass::VelocityBufferPass() {
-}
+gpu::PipelinePointer VelocityBufferPass::_cameraMotionPipeline;
 
 void VelocityBufferPass::configure(const Config& config) {
 }
@@ -114,7 +113,7 @@ void VelocityBufferPass::run(const render::RenderContextPointer& renderContext, 
     outputs.edit1() = velocityFBO;
     outputs.edit2() = velocityTexture;
    
-    auto cameraMotionPipeline = getCameraMotionPipeline(renderContext);
+    auto cameraMotionPipeline = getCameraMotionPipeline();
 
     auto fullViewport = args->_viewport;
 
@@ -144,7 +143,7 @@ void VelocityBufferPass::run(const render::RenderContextPointer& renderContext, 
 }
 
 
-const gpu::PipelinePointer& VelocityBufferPass::getCameraMotionPipeline(const render::RenderContextPointer& renderContext) {
+const gpu::PipelinePointer& VelocityBufferPass::getCameraMotionPipeline() {
     if (!_cameraMotionPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::velocityBuffer_cameraMotion);
         gpu::StatePointer state = std::make_shared<gpu::State>();

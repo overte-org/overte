@@ -100,7 +100,6 @@ function job_print_functor(printout, showProps, showInOuts, maxDepth) {
             }
         }
         if (showInOuts) {
-            printout("jsdkfkjdskflj")
             var inouts = job_inoutKeys(job);
             for (var p=0; p < inouts.length;p++) {
                 var prop = job[inouts[p]]

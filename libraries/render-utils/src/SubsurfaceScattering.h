@@ -167,18 +167,19 @@ public:
     using Config = DebugSubsurfaceScatteringConfig;
     using JobModel = render::Job::ModelI<DebugSubsurfaceScattering, Inputs, Config>;
 
-    DebugSubsurfaceScattering();
+    DebugSubsurfaceScattering() {}
 
     void configure(const Config& config);
     void run(const render::RenderContextPointer& renderContext, const Inputs& inputs);
 
 private:
 
-    gpu::PipelinePointer _scatteringPipeline;
-    gpu::PipelinePointer getScatteringPipeline();
+    static gpu::PipelinePointer _scatteringPipeline;
+    static gpu::PipelinePointer getScatteringPipeline();
 
-    gpu::PipelinePointer _showLUTPipeline;
-    gpu::PipelinePointer getShowLUTPipeline();
+    static gpu::PipelinePointer _showLUTPipeline;
+    static gpu::PipelinePointer getShowLUTPipeline();
+
     gpu::BufferPointer _debugParams;
     bool _showProfile{ false };
     bool _showLUT{ false };
