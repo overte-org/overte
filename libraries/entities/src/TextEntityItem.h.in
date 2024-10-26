@@ -1,0 +1,48 @@
+//
+//  TextEntityItem.h
+//  libraries/entities/src
+//
+//  Created by Brad Hefta-Gaub on 12/4/13.
+//  Copyright 2013 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#ifndef hifi_TextEntityItem_h
+#define hifi_TextEntityItem_h
+
+#include "EntityItem.h"
+
+#include "PulsePropertyGroup.h"
+
+class TextEntityItem : public EntityItem {
+public:
+    static EntityItemPointer factory(const EntityItemID& entityID, const EntityItemProperties& properties);
+
+    TextEntityItem(const EntityItemID& entityItemID);
+
+    ALLOW_INSTANTIATION // This class can be instantiated
+    ENTITY_PROPERTY_SUBCLASS_METHODS
+
+    /// set dimensions in domain scale units (0.0 - 1.0) this will also reset radius appropriately
+    virtual void setUnscaledDimensions(const glm::vec3& value) override;
+    virtual ShapeType getShapeType() const override { return SHAPE_TYPE_BOX; }
+
+    static const QString DEFAULT_TEXT;
+    static const float DEFAULT_LINE_HEIGHT;
+    static const glm::u8vec3 DEFAULT_TEXT_COLOR;
+    static const float DEFAULT_TEXT_ALPHA;
+    static const glm::u8vec3 DEFAULT_BACKGROUND_COLOR;
+    static const float DEFAULT_MARGIN;
+    static const float DEFAULT_TEXT_EFFECT_THICKNESS;
+
+    PulsePropertyGroup getPulseProperties() const;
+
+private:
+
+@Text_ENTITY_PROPS@
+
+};
+
+#endif // hifi_TextEntityItem_h

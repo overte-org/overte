@@ -147,7 +147,7 @@ public:
         NUM_SHAPES,
     };
 
-    /// @param entityShapeEnum:  The entity::Shape enumeration for the shape
+    /// @param entityShapeEnum:  The EntityShape enumeration for the shape
     ///           whose GeometryCache::Shape is desired.
     /// @return GeometryCache::NUM_SHAPES in the event of an error; otherwise,
     ///         the GeometryCache::Shape enum which aligns with the 
@@ -180,30 +180,9 @@ public:
     void renderShapeInstances(gpu::Batch& batch, Shape shape, size_t count, gpu::BufferPointer& colorBuffer);
     void renderWireShapeInstances(gpu::Batch& batch, Shape shape, size_t count, gpu::BufferPointer& colorBuffer);
 
-    void renderFadeShapeInstances(gpu::Batch& batch, Shape shape, size_t count, gpu::BufferPointer& colorBuffer,
-        gpu::BufferPointer& fadeBuffer1, gpu::BufferPointer& fadeBuffer2, gpu::BufferPointer& fadeBuffer3);
-    void renderWireFadeShapeInstances(gpu::Batch& batch, Shape shape, size_t count, gpu::BufferPointer& colorBuffer,
-        gpu::BufferPointer& fadeBuffer1, gpu::BufferPointer& fadeBuffer2, gpu::BufferPointer& fadeBuffer3);
-
     void renderSolidShapeInstance(RenderArgs* args, gpu::Batch& batch, Shape shape, const glm::vec4& color,
-                                    const render::ShapePipelinePointer& pipeline);
-    void renderSolidShapeInstance(RenderArgs* args, gpu::Batch& batch, Shape shape, const glm::vec3& color,
-                                    const render::ShapePipelinePointer& pipeline) {
-        renderSolidShapeInstance(args, batch, shape, glm::vec4(color, 1.0f), pipeline);
-    }
-
+                                  const render::ShapePipelinePointer& pipeline);
     void renderWireShapeInstance(RenderArgs* args, gpu::Batch& batch, Shape shape, const glm::vec4& color,
-        const render::ShapePipelinePointer& pipeline);
-    void renderWireShapeInstance(RenderArgs* args, gpu::Batch& batch, Shape shape, const glm::vec3& color,
-        const render::ShapePipelinePointer& pipeline) {
-        renderWireShapeInstance(args, batch, shape, glm::vec4(color, 1.0f), pipeline);
-    }
-
-    void renderSolidFadeShapeInstance(RenderArgs* args, gpu::Batch& batch, Shape shape, const glm::vec4& color, int fadeCategory, float fadeThreshold,
-        const glm::vec3& fadeNoiseOffset, const glm::vec3& fadeBaseOffset, const glm::vec3& fadeBaseInvSize,
-        const render::ShapePipelinePointer& pipeline);
-    void renderWireFadeShapeInstance(RenderArgs* args, gpu::Batch& batch, Shape shape, const glm::vec4& color, int fadeCategory, float fadeThreshold,
-        const glm::vec3& fadeNoiseOffset, const glm::vec3& fadeBaseOffset, const glm::vec3& fadeBaseInvSize,
         const render::ShapePipelinePointer& pipeline);
 
     void renderSolidSphereInstance(RenderArgs* args, gpu::Batch& batch, const glm::vec4& color,
@@ -211,20 +190,6 @@ public:
     void renderSolidSphereInstance(RenderArgs* args, gpu::Batch& batch, const glm::vec3& color,
                                     const render::ShapePipelinePointer& pipeline) {
         renderSolidSphereInstance(args, batch, glm::vec4(color, 1.0f), pipeline);
-    }
-
-    void renderWireSphereInstance(RenderArgs* args, gpu::Batch& batch, const glm::vec4& color,
-                                    const render::ShapePipelinePointer& pipeline);
-    void renderWireSphereInstance(RenderArgs* args, gpu::Batch& batch, const glm::vec3& color,
-                                    const render::ShapePipelinePointer& pipeline) {
-        renderWireSphereInstance(args, batch, glm::vec4(color, 1.0f), pipeline);
-    }
-
-    void renderSolidCubeInstance(RenderArgs* args, gpu::Batch& batch, const glm::vec4& color,
-                                    const render::ShapePipelinePointer& pipeline);
-    void renderSolidCubeInstance(RenderArgs* args, gpu::Batch& batch, const glm::vec3& color,
-                                    const render::ShapePipelinePointer& pipeline) {
-        renderSolidCubeInstance(args, batch, glm::vec4(color, 1.0f), pipeline);
     }
 
     void renderWireCubeInstance(RenderArgs* args, gpu::Batch& batch, const glm::vec4& color,
@@ -235,23 +200,9 @@ public:
     }
 
     // Dynamic geometry
-    void renderShape(gpu::Batch& batch, Shape shape);
-    void renderWireShape(gpu::Batch& batch, Shape shape);
-    void renderShape(gpu::Batch& batch, Shape shape, const glm::vec4& color);
-    void renderWireShape(gpu::Batch& batch, Shape shape, const glm::vec4& color);
+    void renderShape(gpu::Batch& batch, Shape shape, gpu::BufferPointer& colorBuffer);
+    void renderWireShape(gpu::Batch& batch, Shape shape, gpu::BufferPointer& colorBuffer);
     size_t getShapeTriangleCount(Shape shape);
-
-    void renderCube(gpu::Batch& batch);
-    void renderWireCube(gpu::Batch& batch);
-    void renderCube(gpu::Batch& batch, const glm::vec4& color);
-    void renderWireCube(gpu::Batch& batch, const glm::vec4& color);
-    size_t getCubeTriangleCount();
-
-    void renderSphere(gpu::Batch& batch);
-    void renderWireSphere(gpu::Batch& batch);
-    void renderSphere(gpu::Batch& batch, const glm::vec4& color);
-    void renderWireSphere(gpu::Batch& batch, const glm::vec4& color);
-    size_t getSphereTriangleCount();
 
     void renderGrid(gpu::Batch& batch, const glm::vec2& minCorner, const glm::vec2& maxCorner,
         int majorRows, int majorCols, float majorEdge,
@@ -261,10 +212,6 @@ public:
     void renderBevelCornersRect(gpu::Batch& batch, int x, int y, int width, int height, int bevelDistance, const glm::vec4& color, int id);
 
     void renderUnitQuad(gpu::Batch& batch, const glm::vec4& color, int id);
-
-    void renderUnitQuad(gpu::Batch& batch, int id) {
-        renderUnitQuad(batch, glm::vec4(1), id);
-    }
 
     void renderQuad(gpu::Batch& batch, int x, int y, int width, int height, const glm::vec4& color, int id)
             { renderQuad(batch, glm::vec2(x,y), glm::vec2(x + width, y + height), color, id); }
@@ -306,19 +253,6 @@ public:
 
     void renderDashedLine(gpu::Batch& batch, const glm::vec3& start, const glm::vec3& end, const glm::vec4& color,
                           const float dash_length, const float gap_length, int id);
-
-    void renderLine(gpu::Batch& batch, const glm::vec2& p1, const glm::vec2& p2, const glm::vec3& color, int id)
-                    { renderLine(batch, p1, p2, glm::vec4(color, 1.0f), id); }
-
-    void renderLine(gpu::Batch& batch, const glm::vec2& p1, const glm::vec2& p2, const glm::vec4& color, int id)
-                    { renderLine(batch, p1, p2, color, color, id); }
-
-    void renderLine(gpu::Batch& batch, const glm::vec2& p1, const glm::vec2& p2,
-                    const glm::vec3& color1, const glm::vec3& color2, int id)
-                    { renderLine(batch, p1, p2, glm::vec4(color1, 1.0f), glm::vec4(color2, 1.0f), id); }
-
-    void renderLine(gpu::Batch& batch, const glm::vec2& p1, const glm::vec2& p2,
-                                    const glm::vec4& color1, const glm::vec4& color2, int id);
 
     void updateVertices(int id, const QVector<glm::vec2>& points, const glm::vec4& color);
     void updateVertices(int id, const QVector<glm::vec2>& points, const QVector<glm::vec4>& colors);
@@ -364,6 +298,8 @@ public:
 
     graphics::MeshPointer meshFromShape(Shape geometryShape, glm::vec3 color);
 
+    static uint32_t toCompactColor(const glm::vec4& color);
+
 private:
 
     GeometryCache();
@@ -397,6 +333,7 @@ private:
     public:
         static int population;
         gpu::BufferPointer verticesBuffer;
+        gpu::BufferPointer normalBuffer;
         gpu::BufferPointer colorBuffer;
         gpu::BufferPointer uniformBuffer;
         gpu::Stream::FormatPointer streamFormat;
@@ -445,18 +382,9 @@ private:
     QHash<int, Vec2FloatPairPair> _lastRegisteredGridBuffer;
     QHash<int, GridBuffer> _registeredGridBuffers;
 
-    // FIXME: clean these up
-    static gpu::ShaderPointer _simpleShader;
-    static gpu::ShaderPointer _transparentShader;
-    static gpu::ShaderPointer _unlitShader;
-    static gpu::ShaderPointer _simpleFadeShader;
-    static gpu::ShaderPointer _unlitFadeShader;
-    static gpu::ShaderPointer _forwardSimpleShader;
-    static gpu::ShaderPointer _forwardTransparentShader;
-    static gpu::ShaderPointer _forwardUnlitShader;
-    static gpu::ShaderPointer _forwardSimpleFadeShader;
-    static gpu::ShaderPointer _forwardUnlitFadeShader;
-
+    // transparent, unlit, forward, fade
+    static std::map<std::tuple<bool, bool, bool, bool>, gpu::ShaderPointer> _shapeShaders;
+    // transparent, unlit, forward
     static std::map<std::tuple<bool, bool, bool, graphics::MaterialKey::CullFaceMode>, render::ShapePipelinePointer> _shapePipelines;
     static QHash<SimpleProgramKey, gpu::PipelinePointer> _simplePrograms;
 

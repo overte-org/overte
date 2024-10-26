@@ -41,7 +41,13 @@ endif()
         else:
             self.id = hifi_utils.hashFolder(self.sourcePortsPath)[:8]
         self.configFilePath = os.path.join(args.build_root, 'vcpkg.cmake')
-        self.assets_url = self.readVar('EXTERNAL_BUILD_ASSETS')
+
+        if args.get_vcpkg_id or args.get_vcpkg_path:
+            # With these arguments no assets will be downloaded, and they may be used in conditions
+            # where the _env hack doesn't work.
+            self.assets_url = "http://no_assets.invalid"
+        else:
+            self.assets_url = self.readVar('EXTERNAL_BUILD_ASSETS')
 
         # The noClean flag indicates we're doing weird dependency maintenance stuff
         # i.e. we've got an explicit checkout of vcpkg and we don't want the script to
@@ -95,7 +101,7 @@ endif()
         if 'Windows' == system:
             self.exe = os.path.join(self.path, 'vcpkg.exe')
             self.bootstrapCmds = [ os.path.join(self.path, 'bootstrap-vcpkg.bat'), '-disableMetrics' ]
-            self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/vcpkg-windows_x86_64_2023.10.19.zip'
+            self.vcpkgUrl = self.assets_url + '/dependencies/vcpkg/vcpkg-windows_x86_64_2024.06.15.zip'
             self.vcpkgHash = 'f335234f0722c15376fb10747f558c18c83a3e1e3b6565cf0dabfb18c9625a99234d054457fd05190c0ecd7a59ca43305bc93b50dbf764a4e1f567a15168d051'
             self.hostTriplet = 'x64-windows'
             if usePrebuilt:

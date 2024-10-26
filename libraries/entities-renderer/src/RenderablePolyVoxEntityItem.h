@@ -81,7 +81,7 @@ public:
 
     virtual void setVoxelData(const QByteArray& voxelData) override;
     virtual void setVoxelVolumeSize(const glm::vec3& voxelVolumeSize) override;
-    virtual void setVoxelSurfaceStyle(PolyVoxSurfaceStyle voxelSurfaceStyle) override;
+    virtual void setVoxelSurfaceStyle(uint16_t voxelSurfaceStyle) override;
 
     virtual ShapeType getShapeType() const override;
     virtual bool isReadyToComputeShape() const override;
@@ -203,7 +203,6 @@ public:
     }
 
 protected:
-    virtual ItemKey getKey() override;
     virtual ShapeKey getShapeKey() override;
     virtual bool needsRenderUpdateFromTypedEntity(const TypedEntityPointer& entity) const override;
     virtual void doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) override;

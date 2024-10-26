@@ -99,7 +99,7 @@ inline bool operator!=(const ProceduralProgramKey& a, const ProceduralProgramKey
 // FIXME better mechanism for extending to things rendered using shaders other than simple.slv
 struct Procedural {
 public:
-    Procedural();
+    Procedural(bool useAA = true);
     void setProceduralData(const ProceduralData& proceduralData);
 
     bool isReady() const;
@@ -118,17 +118,24 @@ public:
     bool hasBoundOperator() const { return (bool)_boundOperator; }
     AABox getBound(RenderArgs* args) { return _boundOperator(args); }
 
+    void setVertexReplacements(const std::unordered_map<std::string, std::string>& replacements);
+    void setFragmentReplacements(const std::unordered_map<std::string, std::string>& replacements);
+
     gpu::Shader::Source _vertexSource;
     gpu::Shader::Source _vertexSourceSkinned;
     gpu::Shader::Source _vertexSourceSkinnedDQ;
     gpu::Shader::Source _opaqueFragmentSource;
     gpu::Shader::Source _transparentFragmentSource;
 
+    QString _errorFallbackFragmentPath;
+
     gpu::StatePointer _opaqueState { std::make_shared<gpu::State>() };
     gpu::StatePointer _transparentState { std::make_shared<gpu::State>() };
 
-    static std::function<void(gpu::StatePointer)> opaqueStencil;
+    static std::function<void(gpu::StatePointer, bool)> opaqueStencil;
     static std::function<void(gpu::StatePointer)> transparentStencil;
+
+    static bool enableProceduralShaders;
 
 protected:
     // DO NOT TOUCH
@@ -176,11 +183,17 @@ protected:
     bool _shaderDirty { true };
     bool _uniformsDirty { true };
 
+    QString _errorFallbackFragmentSource;
+
     // Rendering objects
     UniformLambdas _uniforms;
     NetworkTexturePointer _channels[MAX_PROCEDURAL_TEXTURE_CHANNELS];
+    std::unordered_map<std::string, std::string> _vertexReplacements;
+    std::unordered_map<std::string, std::string> _fragmentReplacements;
 
     std::unordered_map<ProceduralProgramKey, gpu::PipelinePointer> _proceduralPipelines;
+    std::unordered_map<ProceduralProgramKey, gpu::PipelinePointer> _errorPipelines;
+    std::unordered_map<ProceduralProgramKey, gpu::PipelinePointer> _disabledPipelines;
 
     StandardInputs _standardInputs;
     gpu::BufferPointer _standardInputsBuffer;

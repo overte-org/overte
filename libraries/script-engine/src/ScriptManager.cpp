@@ -478,10 +478,10 @@ void ScriptManager::waitTillDoneRunning(bool shutdown) {
             }
         }
 #else
-        auto startedWaiting = usecTimestampNow();
+        //auto startedWaiting = usecTimestampNow();
         while (!_isDoneRunning) {
             // If the final evaluation takes too long, then tell the script engine to stop running
-            auto elapsedUsecs = usecTimestampNow() - startedWaiting;
+            //auto elapsedUsecs = usecTimestampNow() - startedWaiting;
             // TODO: This part was very unsafe and was causing crashes all the time.
             //  I disabled it for now until we find a safer solution.
             //  With it disabled now we get clean shutdowns and restarts.
@@ -542,6 +542,10 @@ QString ScriptManager::getFilename() const {
     return lastPart;
 }
 
+QString ScriptManager::getAbsoluteFilename() const {
+    return _fileNameString;
+}
+
 bool ScriptManager::hasValidScriptSuffix(const QString& scriptFileName) {
     QFileInfo fileInfo(scriptFileName);
     QString scriptSuffixToLower = fileInfo.completeSuffix().toLower();
@@ -585,6 +589,10 @@ void ScriptManager::scriptErrorMessage(const QString& message, const QString& fi
     emit errorMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
         emit errorEntityMessage(message, fileName, lineNumber, currentEntityIdentifier, isEntityServerScript());
+    } else {
+        if (isEntityServerScript()) {
+            emit errorEntityMessage(message, fileName, lineNumber, EntityItemID(), isEntityServerScript());
+        }
     }
 }
 
@@ -593,6 +601,10 @@ void ScriptManager::scriptWarningMessage(const QString& message, const QString& 
     emit warningMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
         emit warningEntityMessage(message, fileName, lineNumber, currentEntityIdentifier, isEntityServerScript());
+    } else {
+        if (isEntityServerScript()) {
+            emit warningEntityMessage(message, fileName, lineNumber, EntityItemID(), isEntityServerScript());
+        }
     }
 }
 
@@ -601,6 +613,10 @@ void ScriptManager::scriptInfoMessage(const QString& message, const QString& fil
     emit infoMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
         emit infoEntityMessage(message, fileName, lineNumber, currentEntityIdentifier, isEntityServerScript());
+    } else {
+        if (isEntityServerScript()) {
+            emit infoEntityMessage(message, fileName, lineNumber, EntityItemID(), isEntityServerScript());
+        }
     }
 }
 
@@ -609,6 +625,12 @@ void ScriptManager::scriptPrintedMessage(const QString& message, const QString& 
     emit printedMessage(message, getFilename());
     if (!currentEntityIdentifier.isInvalidID()) {
         emit printedEntityMessage(message, fileName, lineNumber, currentEntityIdentifier, isEntityServerScript());
+    } else {
+        if (isEntityServerScript()) {
+            // TODO: Some callbacks like for example websockets one right now
+            // don't set currentEntityIdentifier and there doesn't seem to be easy way to add it currently
+            emit printedEntityMessage(message, fileName, lineNumber, EntityItemID(), isEntityServerScript());
+        }
     }
 }
 
@@ -2032,7 +2054,7 @@ void ScriptManager::loadEntityScript(const EntityItemID& entityID, const QString
     std::weak_ptr<ScriptManager> weakRef(shared_from_this());
     scriptCache->getScriptContents(entityScript,
         [this, weakRef, entityScript, entityID](const QString& url, const QString& contents, bool isURL, bool success, const QString& status) {
-            std::shared_ptr<ScriptManager> strongRef(weakRef);
+            std::shared_ptr<ScriptManager> strongRef = weakRef.lock();
             if (!strongRef) {
                 qCWarning(scriptengine) << "loadEntityScript.contentAvailable -- ScriptManager was deleted during getScriptContents!!";
                 return;
@@ -2170,17 +2192,17 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
             exception = testConstructor;
         }
     } else {
-        // ENTITY SCRIPT WHITELIST STARTS HERE
+        // ENTITY SCRIPT ALLOWLIST STARTS HERE
         auto nodeList = DependencyManager::get<NodeList>();
         bool passList = false;  // assume unsafe
-        QString whitelistPrefix = "[WHITELIST ENTITY SCRIPTS]";
+        QString allowlistPrefix = "[ALLOWLIST ENTITY SCRIPTS]";
         QList<QString> safeURLPrefixes = { "file:///", "atp:", "cache:" };
-        safeURLPrefixes += qEnvironmentVariable("EXTRA_WHITELIST").trimmed().split(QRegExp("\\s*,\\s*"), Qt::SkipEmptyParts);
+        safeURLPrefixes += qEnvironmentVariable("EXTRA_ALLOWLIST").trimmed().split(QRegExp("\\s*,\\s*"), Qt::SkipEmptyParts);
 
-        // Entity Script Whitelist toggle check.
-        Setting::Handle<bool> whitelistEnabled {"private/whitelistEnabled", false };
+        // Entity Script Allowlist toggle check.
+        Setting::Handle<bool> allowlistEnabled {"private/allowlistEnabled", false };
 
-        if (!whitelistEnabled.get()) {
+        if (!allowlistEnabled.get()) {
             passList = true;
         }
 
@@ -2190,39 +2212,39 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
         safeURLPrefixes += settingsSafeURLS;
         // END Pull SAFEURLS from the Interface.JSON settings.
 
-        // Get current domain whitelist bypass, in case an entire domain is whitelisted.
+        // Get current domain allowlist bypass, in case an entire domain is allowlisted.
         QString currentDomain = DependencyManager::get<AddressManager>()->getDomainURL().host();
 
         QString domainSafeIP = nodeList->getDomainHandler().getHostname();
         QString domainSafeURL = URL_SCHEME_OVERTE + "://" + currentDomain;
         for (const auto& str : safeURLPrefixes) {
             if (domainSafeURL.startsWith(str) || domainSafeIP.startsWith(str)) {
-                qCDebug(scriptengine) << whitelistPrefix << "Whitelist Bypassed, entire domain is whitelisted. Current Domain Host: "
+                qCDebug(scriptengine) << allowlistPrefix << "Allowlist Bypassed, entire domain is allowlisted. Current Domain Host: "
                     << nodeList->getDomainHandler().getHostname()
                     << "Current Domain: " << currentDomain;
                 passList = true;
             }
         }
-        // END bypass whitelist based on current domain.
+        // END bypass allowlist based on current domain.
 
-        // Start processing scripts through the whitelist.
-        if (ScriptManager::getContext() == "entity_server") { // If running on the server, do not engage whitelist.
+        // Start processing scripts through the allowlist.
+        if (ScriptManager::getContext() == "entity_server") { // If running on the server, do not engage allowlist.
             passList = true;
-        } else if (!passList) { // If waved through, do not engage whitelist.
+        } else if (!passList) { // If waved through, do not engage allowlist.
             for (const auto& str : safeURLPrefixes) {
-                qCDebug(scriptengine) << whitelistPrefix << "Script URL: " << scriptOrURL << "TESTING AGAINST" << str << "RESULTS IN"
+                qCDebug(scriptengine) << allowlistPrefix << "Script URL: " << scriptOrURL << "TESTING AGAINST" << str << "RESULTS IN"
                     << scriptOrURL.startsWith(str);
                 if (!str.isEmpty() && scriptOrURL.startsWith(str)) {
                     passList = true;
-                    qCDebug(scriptengine) << whitelistPrefix << "Script approved.";
+                    qCDebug(scriptengine) << allowlistPrefix << "Script approved.";
                     break; // Bail early since we found a match.
                 }
             }
         }
-        // END processing of scripts through the whitelist.
+        // END processing of scripts through the allowlist.
 
         if (!passList) { // If the entity failed to pass for any reason, it's blocked and an error is thrown.
-            qCDebug(scriptengine) << whitelistPrefix << "(disabled entity script)" << entityID.toString() << scriptOrURL;
+            qCDebug(scriptengine) << allowlistPrefix << "(disabled entity script)" << entityID.toString() << scriptOrURL;
             exception = _engine->makeError(_engine->newValue("UNSAFE_ENTITY_SCRIPTS == 0"));
         } else {
             QTimer timeout;
@@ -2245,7 +2267,7 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
                 exception = testConstructor;
             }
         }
-      // ENTITY SCRIPT WHITELIST ENDS HERE, uncomment below for original full disabling.
+      // ENTITY SCRIPT ALLOWLIST ENDS HERE, uncomment below for original full disabling.
 
       // qCDebug(scriptengine) << "(disabled entity script)" << entityID.toString() << scriptOrURL;
       // exception = makeError("UNSAFE_ENTITY_SCRIPTS == 0");
@@ -2281,17 +2303,17 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
         return; // done processing script
     }*/
 
-    // ENTITY SCRIPT WHITELIST STARTS HERE
+    // ENTITY SCRIPT ALLOWLIST STARTS HERE
     auto nodeList = DependencyManager::get<NodeList>();
     bool passList = false;  // assume unsafe
-    QString whitelistPrefix = "[WHITELIST ENTITY SCRIPTS]";
+    QString allowlistPrefix = "[ALLOWLIST ENTITY SCRIPTS]";
     QList<QString> safeURLPrefixes = { "file:///", "atp:", "cache:" };
-    safeURLPrefixes += qEnvironmentVariable("EXTRA_WHITELIST").trimmed().split(QRegExp("\\s*,\\s*"), Qt::SkipEmptyParts);
+    safeURLPrefixes += qEnvironmentVariable("EXTRA_ALLOWLIST").trimmed().split(QRegExp("\\s*,\\s*"), Qt::SkipEmptyParts);
 
-    // Entity Script Whitelist toggle check.
-    Setting::Handle<bool> whitelistEnabled {"private/whitelistEnabled", false };
+    // Entity Script Allowlist toggle check.
+    Setting::Handle<bool> allowlistEnabled {"private/allowlistEnabled", false };
 
-    if (!whitelistEnabled.get()) {
+    if (!allowlistEnabled.get()) {
         passList = true;
     }
 
@@ -2301,40 +2323,40 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
     safeURLPrefixes += settingsSafeURLS;
     // END Pull SAFEURLS from the Interface.JSON settings.
 
-    // Get current domain whitelist bypass, in case an entire domain is whitelisted.
+    // Get current domain allowlist bypass, in case an entire domain is allowlisted.
     QString currentDomain = DependencyManager::get<AddressManager>()->getDomainURL().host();
 
     QString domainSafeIP = nodeList->getDomainHandler().getHostname();
     QString domainSafeURL = URL_SCHEME_OVERTE + "://" + currentDomain;
     for (const auto& str : safeURLPrefixes) {
         if (domainSafeURL.startsWith(str) || domainSafeIP.startsWith(str)) {
-            qCDebug(scriptengine) << whitelistPrefix << "Whitelist Bypassed, entire domain is whitelisted. Current Domain Host: "
+            qCDebug(scriptengine) << allowlistPrefix << "Allowlist Bypassed, entire domain is allowlisted. Current Domain Host: "
                                   << nodeList->getDomainHandler().getHostname()
                                   << "Current Domain: " << currentDomain;
             passList = true;
         }
     }
-    // END bypass whitelist based on current domain.
+    // END bypass allowlist based on current domain.
 
-    // Start processing scripts through the whitelist.
-    if (ScriptManager::getContext() == "entity_server") { // If running on the server, do not engage whitelist.
+    // Start processing scripts through the allowlist.
+    if (ScriptManager::getContext() == "entity_server") { // If running on the server, do not engage allowlist.
         passList = true;
-    } else if (!passList) { // If waved through, do not engage whitelist.
+    } else if (!passList) { // If waved through, do not engage allowlist.
         for (const auto& str : safeURLPrefixes) {
-            qCDebug(scriptengine) << whitelistPrefix << "Script URL: " << scriptOrURL << "TESTING AGAINST" << str << "RESULTS IN"
+            qCDebug(scriptengine) << allowlistPrefix << "Script URL: " << scriptOrURL << "TESTING AGAINST" << str << "RESULTS IN"
                                   << scriptOrURL.startsWith(str);
             if (!str.isEmpty() && scriptOrURL.startsWith(str)) {
                 passList = true;
-                qCDebug(scriptengine) << whitelistPrefix << "Script approved.";
+                qCDebug(scriptengine) << allowlistPrefix << "Script approved.";
                 break; // Bail early since we found a match.
             }
         }
     }
-    // END processing of scripts through the whitelist.
+    // END processing of scripts through the allowlist.
 
     ScriptValue exception;
     if (!passList) { // If the entity failed to pass for any reason, it's blocked and an error is thrown.
-        qCDebug(scriptengine) << whitelistPrefix << "(disabled entity script)" << entityID.toString() << scriptOrURL;
+        qCDebug(scriptengine) << allowlistPrefix << "(disabled entity script)" << entityID.toString() << scriptOrURL;
         exception = _engine->makeError(_engine->newValue("UNSAFE_ENTITY_SCRIPTS == 0"));
     }
 
@@ -2347,7 +2369,7 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
         emit unhandledException(scriptRuntimeException);
         return;
     }
-    // ENTITY SCRIPT WHITELIST ENDS HERE, uncomment below for original full disabling.
+    // ENTITY SCRIPT ALLOWLIST ENDS HERE, uncomment below for original full disabling.
 
     // qCDebug(scriptengine) << "(disabled entity script)" << entityID.toString() << scriptOrURL;
     // exception = makeError("UNSAFE_ENTITY_SCRIPTS == 0");

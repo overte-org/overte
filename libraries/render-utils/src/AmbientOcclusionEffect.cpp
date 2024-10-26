@@ -37,6 +37,9 @@ gpu::PipelinePointer AmbientOcclusionEffect::_mipCreationPipeline;
 gpu::PipelinePointer AmbientOcclusionEffect::_gatherPipeline;
 gpu::PipelinePointer AmbientOcclusionEffect::_buildNormalsPipeline;
 
+#define MAX_SSAO_SAMPLES 64.0f
+#define MAX_HBAO_SAMPLES 6.0f
+
 AmbientOcclusionFramebuffer::AmbientOcclusionFramebuffer() {
 }
 
@@ -205,29 +208,7 @@ gpu::TexturePointer AmbientOcclusionFramebuffer::getNormalTexture() {
 }
 
 AmbientOcclusionEffectConfig::AmbientOcclusionEffectConfig() :
-    render::GPUJobConfig::Persistent(QStringList() << "Render" << "Engine" << "Ambient Occlusion"),
-    perspectiveScale{ 1.0f },
-    edgeSharpness{ 1.0f },
-    blurRadius{ 4 },
-    resolutionLevel{ 2 },
-
-    ssaoRadius{ 1.0f },
-    ssaoObscuranceLevel{ 0.4f },
-    ssaoFalloffAngle{ 0.15f },
-    ssaoNumSpiralTurns{ 7.0f },
-    ssaoNumSamples{ 32 },
-
-    hbaoRadius{ 0.7f },
-    hbaoObscuranceLevel{ 0.75f },
-    hbaoFalloffAngle{ 0.3f },
-    hbaoNumSamples{ 1 },
-
-    horizonBased{ false },
-    ditheringEnabled{ true },
-    borderingEnabled{ true },
-    fetchMipsEnabled{ true },
-    jitterEnabled{ false }{
-}
+    render::GPUJobConfig::Persistent(QStringList() << "Render" << "Engine" << "Ambient Occlusion") {}
 
 void AmbientOcclusionEffectConfig::setSSAORadius(float newRadius) {
     ssaoRadius = std::max(0.01f, newRadius); emit dirty();
@@ -288,25 +269,40 @@ void AmbientOcclusionEffectConfig::setBlurRadius(int radius) {
 }
 
 AmbientOcclusionEffect::AOParameters::AOParameters() {
-    _resolutionInfo = glm::vec4{ 0.0f };
-    _radiusInfo = glm::vec4{ 0.0f };
-    _ditheringInfo = glm::vec4{ 0.0f };
-    _sampleInfo = glm::vec4{ 0.0f };
-    _falloffInfo = glm::vec4{ 0.0f };
+    _resolutionInfo = glm::vec4(0.0f);
+    _radiusInfo = glm::vec4(0.0f);
+    _ditheringInfo = glm::vec4(0.0f);
+    _sampleInfo = glm::vec4(0.0f);
+    _falloffInfo = glm::vec4(0.0f);
 }
 
 AmbientOcclusionEffect::BlurParameters::BlurParameters() {
     _blurInfo = { 1.0f, 2.0f, 0.0f, 3.0f };
 }
 
-AmbientOcclusionEffect::AmbientOcclusionEffect() {
+void AmbientOcclusionEffect::configure(const Config& config) {
+    _debug = config.debug;
+    _debugAmbientOcclusion->setTechnique(config.horizonBased ? AmbientOcclusionTechnique::HBAO : AmbientOcclusionTechnique::SSAO);
+    _debugAmbientOcclusion->setJitter(config.jitterEnabled);
+    _debugAmbientOcclusion->setResolutionLevel(config.resolutionLevel);
+    _debugAmbientOcclusion->setEdgeSharpness(config.edgeSharpness);
+    _debugAmbientOcclusion->setBlurRadius(config.blurRadius);
+    _debugAmbientOcclusion->setAORadius(config.horizonBased ? config.hbaoRadius : config.ssaoRadius);
+    _debugAmbientOcclusion->setAOObscuranceLevel(config.horizonBased ? config.hbaoObscuranceLevel : config.ssaoObscuranceLevel);
+    _debugAmbientOcclusion->setAOFalloffAngle(config.horizonBased ? config.hbaoFalloffAngle : config.ssaoFalloffAngle);
+    _debugAmbientOcclusion->setAOSamplingAmount(config.horizonBased ? (config.hbaoNumSamples / MAX_HBAO_SAMPLES) :
+        (config.ssaoNumSamples / MAX_SSAO_SAMPLES));
+    _debugAmbientOcclusion->setSSAONumSpiralTurns(config.ssaoNumSpiralTurns);
+
+    _perspectiveScale = config.perspectiveScale;
+    _ditheringEnabled = config.ditheringEnabled;
+    _borderingEnabled = config.borderingEnabled;
+    _fetchMipsEnabled = config.fetchMipsEnabled;
 }
 
-void AmbientOcclusionEffect::configure(const Config& config) {
+void AmbientOcclusionEffect::updateParameters(const graphics::AmbientOcclusionPointer ambientOcclusion) {
     bool shouldUpdateBlurs = false;
     bool shouldUpdateTechnique = false;
-
-    _isJitterEnabled = config.jitterEnabled;
 
     if (!_framebuffer) {
         _framebuffer = std::make_shared<AmbientOcclusionFramebuffer>();
@@ -314,63 +310,64 @@ void AmbientOcclusionEffect::configure(const Config& config) {
     }
 
     // Update bilateral blur
-    if (config.blurRadius != _hblurParametersBuffer->getBlurRadius() || _blurEdgeSharpness != config.edgeSharpness) {
+    if (ambientOcclusion->getBlurRadius() != _hblurParametersBuffer->getBlurRadius() || _blurEdgeSharpness != ambientOcclusion->getEdgeSharpness()) {
         const float BLUR_EDGE_DISTANCE_SCALE = float(10000 * SSAO_DEPTH_KEY_SCALE);
         const float BLUR_EDGE_NORMAL_SCALE = 2.0f;
 
         auto& hblur = _hblurParametersBuffer.edit()._blurInfo;
         auto& vblur = _vblurParametersBuffer.edit()._blurInfo;
-        float blurRadialSigma = float(config.blurRadius) * 0.5f;
+        float blurRadialSigma = float(ambientOcclusion->getBlurRadius()) * 0.5f;
         float blurRadialScale = 1.0f / (2.0f*blurRadialSigma*blurRadialSigma);
-        glm::vec3 blurScales = -glm::vec3(blurRadialScale, glm::vec2(BLUR_EDGE_DISTANCE_SCALE, BLUR_EDGE_NORMAL_SCALE) * config.edgeSharpness);
+        glm::vec3 blurScales = -glm::vec3(blurRadialScale, glm::vec2(BLUR_EDGE_DISTANCE_SCALE, BLUR_EDGE_NORMAL_SCALE) * ambientOcclusion->getEdgeSharpness());
 
-        _blurEdgeSharpness = config.edgeSharpness;
+        _blurEdgeSharpness = ambientOcclusion->getEdgeSharpness();
 
         hblur.x = blurScales.x;
         hblur.y = blurScales.y;
         hblur.z = blurScales.z;
-        hblur.w = (float)config.blurRadius;
+        hblur.w = (float)ambientOcclusion->getBlurRadius();
 
         vblur.x = blurScales.x;
         vblur.y = blurScales.y;
         vblur.z = blurScales.z;
-        vblur.w = (float)config.blurRadius;
+        vblur.w = (float)ambientOcclusion->getBlurRadius();
     }
 
-    if (_aoParametersBuffer->isHorizonBased() != config.horizonBased) {
+    if (_perspectiveScale != _aoParametersBuffer->getPerspectiveScale()) {
+        _aoParametersBuffer.edit()._resolutionInfo.z = _perspectiveScale;
+    }
+
+    if (_ditheringEnabled != _aoParametersBuffer->isDitheringEnabled()) {
+        auto& current = _aoParametersBuffer.edit()._ditheringInfo;
+        current.x = (float)_ditheringEnabled;
+    }
+
+    if (_borderingEnabled != _aoParametersBuffer->isBorderingEnabled()) {
+        auto& current = _aoParametersBuffer.edit()._ditheringInfo;
+        current.w = (float)_borderingEnabled;
+    }
+
+    if (_fetchMipsEnabled != _aoParametersBuffer->isFetchMipsEnabled()) {
+        auto& current = _aoParametersBuffer.edit()._sampleInfo;
+        current.w = (float)_fetchMipsEnabled;
+    }
+
+    bool horizonBased = ambientOcclusion->getTechnique() == AmbientOcclusionTechnique::HBAO;
+    if (_aoParametersBuffer->isHorizonBased() != horizonBased) {
         auto& current = _aoParametersBuffer.edit()._resolutionInfo;
-        current.y = config.horizonBased & 1;
+        current.y = horizonBased & 1;
         shouldUpdateTechnique = true;
     }
 
-    if (config.fetchMipsEnabled != _aoParametersBuffer->isFetchMipsEnabled()) {
-        auto& current = _aoParametersBuffer.edit()._sampleInfo;
-        current.w = (float)config.fetchMipsEnabled;
-    }
-
-    if (config.perspectiveScale != _aoParametersBuffer->getPerspectiveScale()) {
-        _aoParametersBuffer.edit()._resolutionInfo.z = config.perspectiveScale;
-    }
-
-    if (config.resolutionLevel != _aoParametersBuffer->getResolutionLevel()) {
+    if (ambientOcclusion->getResolutionLevel() != _aoParametersBuffer->getResolutionLevel()) {
         auto& current = _aoParametersBuffer.edit()._resolutionInfo;
-        current.x = (float)config.resolutionLevel;
+        current.x = (float)ambientOcclusion->getResolutionLevel();
         shouldUpdateBlurs = true;
     }
 
-    if (config.ditheringEnabled != _aoParametersBuffer->isDitheringEnabled()) {
-        auto& current = _aoParametersBuffer.edit()._ditheringInfo;
-        current.x = (float)config.ditheringEnabled;
-    }
-
-    if (config.borderingEnabled != _aoParametersBuffer->isBorderingEnabled()) {
-        auto& current = _aoParametersBuffer.edit()._ditheringInfo;
-        current.w = (float)config.borderingEnabled;
-    }
-
-    if (config.horizonBased) {
+    if (horizonBased) {
         // Configure for HBAO
-        const auto& radius = config.hbaoRadius;
+        const auto& radius = ambientOcclusion->getAORadius();
         if (shouldUpdateTechnique || radius != _aoParametersBuffer->getRadius()) {
             auto& current = _aoParametersBuffer.edit()._radiusInfo;
             current.x = radius;
@@ -378,31 +375,33 @@ void AmbientOcclusionEffect::configure(const Config& config) {
             current.z = 1.0f / current.y;
         }
 
-        if (shouldUpdateTechnique || config.hbaoObscuranceLevel != _aoParametersBuffer->getObscuranceLevel()) {
+        if (shouldUpdateTechnique || ambientOcclusion->getAOObscuranceLevel() != _aoParametersBuffer->getObscuranceLevel()) {
             auto& current = _aoParametersBuffer.edit()._radiusInfo;
-            current.w = config.hbaoObscuranceLevel;
+            current.w = ambientOcclusion->getAOObscuranceLevel();
         }
 
-        if (shouldUpdateTechnique || config.hbaoFalloffAngle != _aoParametersBuffer->getFalloffAngle()) {
+        const float falloffAngle = std::min(1.0f - EPSILON, ambientOcclusion->getAOFalloffAngle());
+        if (shouldUpdateTechnique || falloffAngle != _aoParametersBuffer->getFalloffAngle()) {
             auto& current = _aoParametersBuffer.edit()._falloffInfo;
-            current.x = config.hbaoFalloffAngle;
+            current.x = falloffAngle;
             current.y = 1.0f / (1.0f - current.x);
             // Compute sin from cos
-            current.z = sqrtf(1.0f - config.hbaoFalloffAngle * config.hbaoFalloffAngle);
+            current.z = sqrtf(1.0f - current.x * current.x);
             current.w = 1.0f / current.z;
         }
 
-        if (shouldUpdateTechnique || config.hbaoNumSamples != _aoParametersBuffer->getNumSamples()) {
+        const int numSamples = std::max(1, (int)(ambientOcclusion->getAOSamplingAmount() * MAX_HBAO_SAMPLES));
+        if (shouldUpdateTechnique || numSamples != _aoParametersBuffer->getNumSamples()) {
             auto& current = _aoParametersBuffer.edit()._sampleInfo;
-            current.x = config.hbaoNumSamples;
-            current.y = 1.0f / config.hbaoNumSamples;
+            current.x = numSamples;
+            current.y = 1.0f / numSamples;
             updateRandomSamples();
             updateJitterSamples();
         }
     } else {
         // Configure for SSAO
         const double RADIUS_POWER = 6.0;
-        const auto& radius = config.ssaoRadius;
+        const auto& radius = ambientOcclusion->getAORadius();
         if (shouldUpdateTechnique || radius != _aoParametersBuffer->getRadius()) {
             auto& current = _aoParametersBuffer.edit()._radiusInfo;
             current.x = radius;
@@ -410,25 +409,26 @@ void AmbientOcclusionEffect::configure(const Config& config) {
             current.z = (float)(10.0 / pow((double)radius, RADIUS_POWER));
         }
 
-        if (shouldUpdateTechnique || config.ssaoObscuranceLevel != _aoParametersBuffer->getObscuranceLevel()) {
+        if (shouldUpdateTechnique || ambientOcclusion->getAOObscuranceLevel() != _aoParametersBuffer->getObscuranceLevel()) {
             auto& current = _aoParametersBuffer.edit()._radiusInfo;
-            current.w = config.ssaoObscuranceLevel;
+            current.w = ambientOcclusion->getAOObscuranceLevel();
         }
 
-        if (shouldUpdateTechnique || config.ssaoFalloffAngle != _aoParametersBuffer->getFalloffAngle()) {
+        if (shouldUpdateTechnique || ambientOcclusion->getAOFalloffAngle() != _aoParametersBuffer->getFalloffAngle()) {
             auto& current = _aoParametersBuffer.edit()._falloffInfo;
-            current.x = config.ssaoFalloffAngle;
+            current.x = ambientOcclusion->getAOFalloffAngle();
         }
 
-        if (shouldUpdateTechnique || config.ssaoNumSpiralTurns != _aoParametersBuffer->getNumSpiralTurns()) {
+        if (shouldUpdateTechnique || ambientOcclusion->getSSAONumSpiralTurns() != _aoParametersBuffer->getNumSpiralTurns()) {
             auto& current = _aoParametersBuffer.edit()._sampleInfo;
-            current.z = config.ssaoNumSpiralTurns;
+            current.z = ambientOcclusion->getSSAONumSpiralTurns();
         }
 
-        if (shouldUpdateTechnique || config.ssaoNumSamples != _aoParametersBuffer->getNumSamples()) {
+        const int numSamples = std::max(1, (int)(ambientOcclusion->getAOSamplingAmount() * MAX_SSAO_SAMPLES));
+        if (shouldUpdateTechnique || numSamples != _aoParametersBuffer->getNumSamples()) {
             auto& current = _aoParametersBuffer.edit()._sampleInfo;
-            current.x = config.ssaoNumSamples;
-            current.y = 1.0f / config.ssaoNumSamples;
+            current.x = numSamples;
+            current.y = 1.0f / numSamples;
             updateRandomSamples();
             updateJitterSamples();
         }
@@ -600,11 +600,22 @@ void AmbientOcclusionEffect::run(const render::RenderContextPointer& renderConte
     RenderArgs* args = renderContext->args;
 
     const auto& lightingModel = input.get0();
+    const auto ambientOcclusionFrame = input.get4();
 
-    if (!lightingModel->isAmbientOcclusionEnabled()) {
+    const auto& ambientOcclusionStage = renderContext->_scene->getStage<AmbientOcclusionStage>();
+    graphics::AmbientOcclusionPointer ambientOcclusion;
+    if (_debug) {
+        ambientOcclusion = _debugAmbientOcclusion;
+    } else if (ambientOcclusionStage && ambientOcclusionFrame->_ambientOcclusions.size()) {
+        ambientOcclusion = ambientOcclusionStage->getAmbientOcclusion(ambientOcclusionFrame->_ambientOcclusions.front());
+    }
+
+    if (!ambientOcclusion || !lightingModel->isAmbientOcclusionEnabled()) {
         output.edit0().reset();
         return;
     }
+
+    updateParameters(ambientOcclusion);
 
     const auto& frameTransform = input.get1();
     const auto& linearDepthFramebuffer = input.get3();
@@ -657,7 +668,7 @@ void AmbientOcclusionEffect::run(const render::RenderContextPointer& renderConte
 #endif
 
     // Update sample rotation
-    if (_isJitterEnabled) {
+    if (ambientOcclusion->getJitter()) {
         updateJitterSamples();
         _frameId = (_frameId + 1) % (SSAO_RANDOM_SAMPLE_COUNT);
     }
@@ -831,11 +842,9 @@ void AmbientOcclusionEffect::run(const render::RenderContextPointer& renderConte
     config->setGPUBatchRunTime(_gpuTimer->getGPUAverage(), _gpuTimer->getBatchAverage());
 }
 
-DebugAmbientOcclusion::DebugAmbientOcclusion() {
-}
+gpu::PipelinePointer DebugAmbientOcclusion::_debugPipeline;
 
 void DebugAmbientOcclusion::configure(const Config& config) {
-
     _showCursorPixel = config.showCursorPixel;
 
     auto cursorPos = glm::vec2(_parametersBuffer->pixelInfo);
@@ -844,7 +853,7 @@ void DebugAmbientOcclusion::configure(const Config& config) {
     }
 }
 
-const gpu::PipelinePointer& DebugAmbientOcclusion::getDebugPipeline() {
+gpu::PipelinePointer& DebugAmbientOcclusion::getDebugPipeline() {
     if (!_debugPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::ssao_debugOcclusion);
         gpu::StatePointer state = std::make_shared<gpu::State>();
@@ -916,9 +925,6 @@ void DebugAmbientOcclusion::run(const render::RenderContextPointer& renderContex
         batch.setResourceTexture(render_utils::slot::texture::SsaoDepth, fullResDepthTexture);
         batch.draw(gpu::TRIANGLE_STRIP, 4);
 
-        
         batch.setResourceTexture(render_utils::slot::texture::SsaoDepth, nullptr);
     });
-
 }
- 

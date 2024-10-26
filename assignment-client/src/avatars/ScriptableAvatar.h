@@ -19,6 +19,9 @@
 #include <AvatarData.h>
 #include <ScriptEngine.h>
 #include <EntityItem.h>
+#include "model-networking/ModelCache.h"
+#include "Rig.h"
+#include <HelperScriptEngine.h>
 
 /*@jsdoc
  * The <code>Avatar</code> API is used to manipulate scriptable avatars on the domain. This API is a subset of the 
@@ -64,8 +67,6 @@
  * @property {boolean} lookAtSnappingEnabled=true - <code>true</code> if the avatar's eyes snap to look at another avatar's
  *     eyes when the other avatar is in the line of sight and also has <code>lookAtSnappingEnabled == true</code>.
  * @property {string} skeletonModelURL - The avatar's FST file.
- * @property {AttachmentData[]} attachmentData - Information on the avatar's attachments. 
- *     <p class="important">Deprecated: This property is deprecated and will be removed. Use avatar entities instead.</p>
  * @property {string[]} jointNames - The list of joints in the current avatar model. <em>Read-only.</em>
  * @property {Uuid} sessionUUID - Unique ID of the avatar in the domain. <em>Read-only.</em>
  * @property {Mat4} sensorToWorldMatrix - The scale, rotation, and translation transform from the user's real world to the
@@ -217,12 +218,16 @@ private:
     AnimationPointer _animation;
     AnimationDetails _animationDetails;
     QStringList _maskedJoints;
-    AnimationPointer _bind; // a sleazy way to get the skeleton, given the various library/cmake dependencies
-    std::shared_ptr<AnimSkeleton> _animSkeleton;
+    GeometryResource::Pointer _geometryResource;
+    Rig _rig;
+    bool _isRigValid{false};
+    Rig _animationRig;
+    bool _isAnimationRigValid{false};
+    std::shared_ptr<AnimSkeleton> _avatarAnimSkeleton;
     QHash<QString, int> _fstJointIndices; ///< 1-based, since zero is returned for missing keys
     QStringList _fstJointNames; ///< in order of depth-first traversal
-    QUrl _skeletonFBXURL;
-    mutable ScriptEnginePointer _scriptEngine;
+    QUrl _skeletonModelFilenameURL; // This contains URL from filename field in fst file
+    mutable HelperScriptEngine _helperScriptEngine;
     std::map<QUuid, EntityItemPointer> _entities;
 
     /// Loads the joint indices, names from the FST file (if any)

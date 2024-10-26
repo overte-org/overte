@@ -39,7 +39,7 @@ void ShapeEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& sce
         withWriteLock([&] {
             _shape = entity->getShape();
             _renderTransform = getModelTransform(); // contains parent scale, if this entity scales with its parent
-            if (_shape == entity::Sphere) {
+            if (_shape == EntityShape::Sphere) {
                 _renderTransform.postScale(SPHERE_ENTITY_SCALE);
             }
 
@@ -63,6 +63,13 @@ void ShapeEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
     if (_alpha != alpha) {
         _alpha = alpha;
         _material->setOpacity(alpha);
+        materialChanged = true;
+    }
+
+    bool unlit = entity->getUnlit();
+    if (_unlit != unlit) {
+        _unlit = unlit;
+        _material->setUnlit(unlit);
         materialChanged = true;
     }
 
@@ -110,7 +117,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
     gpu::Batch& batch = *args->_batch;
 
     auto geometryCache = DependencyManager::get<GeometryCache>();
-    GeometryCache::Shape geometryShape = geometryCache->getShapeForEntityShape(_shape);
+    GeometryCache::Shape geometryShape = geometryCache->getShapeForEntityShape((int)_shape);
     Transform transform;
     withReadLock([&] {
         transform = _renderTransform;
@@ -118,9 +125,10 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
 
     bool wireframe = render::ShapeKey(args->_globalShapeKey).isWireframe() || _primitiveMode == PrimitiveMode::LINES;
 
+    bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), _billboardMode,
-        args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition(),
-        _shape < entity::Shape::Cube || _shape > entity::Shape::Icosahedron));
+        usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition(),
+        _shape < EntityShape::Cube || _shape > EntityShape::Icosahedron));
     batch.setModelTransform(transform, _prevRenderTransform);
     if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
         _prevRenderTransform = transform;
@@ -135,10 +143,12 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
             procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created, ProceduralProgramKey(outColor.a < 1.0f));
         });
 
+        const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
         if (wireframe) {
-            geometryCache->renderWireShape(batch, geometryShape, outColor);
+            geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
         } else {
-            geometryCache->renderShape(batch, geometryShape, outColor);
+            geometryCache->renderShape(batch, geometryShape, _colorBuffer);
         }
     } else if (pipelineType == Pipeline::SIMPLE) {
         // FIXME, support instanced multi-shape rendering using multidraw indirect
@@ -153,18 +163,22 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
                 geometryCache->renderSolidShapeInstance(args, batch, geometryShape, outColor, pipeline);
             }
         } else {
+            const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+            _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
             if (wireframe) {
-                geometryCache->renderWireShape(batch, geometryShape, outColor);
+                geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
             } else {
-                geometryCache->renderShape(batch, geometryShape, outColor);
+                geometryCache->renderShape(batch, geometryShape, _colorBuffer);
             }
         }
     } else {
-        if (RenderPipelines::bindMaterials(materials, batch, args->_renderMode, args->_enableTexturing)) {
+        if (pipelineType == Pipeline::MATERIAL && RenderPipelines::bindMaterials(materials, batch, args->_renderMode, args->_enableTexturing)) {
             args->_details._materialSwitches++;
         }
 
-        geometryCache->renderShape(batch, geometryShape);
+        const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+        geometryCache->renderShape(batch, geometryShape, _colorBuffer);
     }
 
     const auto triCount = geometryCache->getShapeTriangleCount(geometryShape);
@@ -174,7 +188,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
 scriptable::ScriptableModelBase ShapeEntityRenderer::getScriptableModel()  {
     scriptable::ScriptableModelBase result;
     auto geometryCache = DependencyManager::get<GeometryCache>();
-    auto geometryShape = geometryCache->getShapeForEntityShape(_shape);
+    auto geometryShape = geometryCache->getShapeForEntityShape((int)_shape);
     glm::vec3 vertexColor;
     {
         std::lock_guard<std::mutex> lock(_materialsLock);

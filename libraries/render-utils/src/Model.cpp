@@ -232,6 +232,8 @@ void Model::updateRenderItems() {
         auto renderWithZones = self->getRenderWithZones();
         auto renderItemKeyGlobalFlags = self->getRenderItemKeyGlobalFlags();
         bool cauterized = self->isCauterized();
+        auto mirrorMode = self->getMirrorMode();
+        const QUuid& portalExitID = self->getPortalExitID();
 
         render::Transaction transaction;
         for (int i = 0; i < (int) self->_modelMeshRenderItemIDs.size(); i++) {
@@ -246,7 +248,7 @@ void Model::updateRenderItems() {
 
             transaction.updateItem<ModelMeshPartPayload>(itemID, [modelTransform, meshState, useDualQuaternionSkinning,
                                                                   invalidatePayloadShapeKey, primitiveMode, billboardMode, renderItemKeyGlobalFlags,
-                                                                  cauterized, renderWithZones](ModelMeshPartPayload& data) {
+                                                                  cauterized, renderWithZones, mirrorMode, portalExitID](ModelMeshPartPayload& data) {
                 if (useDualQuaternionSkinning) {
                     data.updateClusterBuffer(meshState.clusterDualQuaternions);
                     data.computeAdjustedLocalBound(meshState.clusterDualQuaternions);
@@ -260,6 +262,8 @@ void Model::updateRenderItems() {
                 data.setCauterized(cauterized);
                 data.setRenderWithZones(renderWithZones);
                 data.setBillboardMode(billboardMode);
+                data.setMirrorMode(mirrorMode);
+                data.setPortalExitID(portalExitID);
                 data.updateKey(renderItemKeyGlobalFlags);
                 data.setShapeKey(invalidatePayloadShapeKey, primitiveMode, useDualQuaternionSkinning);
             });
@@ -1065,6 +1069,46 @@ void Model::setRenderWithZones(const QVector<QUuid>& renderWithZones, const rend
     }
 }
 
+void Model::setMirrorMode(MirrorMode mirrorMode, const render::ScenePointer& scene) {
+    if (_mirrorMode != mirrorMode) {
+        _mirrorMode = mirrorMode;
+        if (!scene) {
+            _needsFixupInScene = true;
+            return;
+        }
+
+        render::Transaction transaction;
+        auto renderItemsKey = _renderItemKeyGlobalFlags;
+        for (auto item : _modelMeshRenderItemIDs) {
+            transaction.updateItem<ModelMeshPartPayload>(item, [mirrorMode, renderItemsKey](ModelMeshPartPayload& data) {
+                data.setMirrorMode(mirrorMode);
+                data.updateKey(renderItemsKey);
+            });
+        }
+        scene->enqueueTransaction(transaction);
+    }
+}
+
+void Model::setPortalExitID(const QUuid& portalExitID, const render::ScenePointer& scene) {
+    if (_portalExitID != portalExitID) {
+        _portalExitID = portalExitID;
+        if (!scene) {
+            _needsFixupInScene = true;
+            return;
+        }
+
+        render::Transaction transaction;
+        auto renderItemsKey = _renderItemKeyGlobalFlags;
+        for (auto item : _modelMeshRenderItemIDs) {
+            transaction.updateItem<ModelMeshPartPayload>(item, [portalExitID, renderItemsKey](ModelMeshPartPayload& data) {
+                data.setPortalExitID(portalExitID);
+                data.updateKey(renderItemsKey);
+            });
+        }
+        scene->enqueueTransaction(transaction);
+    }
+}
+
 const render::ItemKey Model::getRenderItemKeyGlobalFlags() const {
     return _renderItemKeyGlobalFlags;
 }
@@ -1299,7 +1343,7 @@ void Model::setURL(const QUrl& url) {
 
     auto resource = DependencyManager::get<ModelCache>()->getGeometryResource(url);
     if (resource) {
-        resource->setLoadPriority(this, _loadingPriority);
+        resource->setLoadPriorityOperator(this, _loadingPriorityOperator);
         _renderWatcher.setResource(resource);
     }
     _rig.initFlow(false);
@@ -1802,8 +1846,8 @@ public:
 };
 
 static void packBlendshapeOffsetTo_Pos_F32_3xSN10_Nor_3xSN10_Tan_3xSN10(glm::uvec4& packed, const BlendshapeOffsetUnpacked& unpacked) {
-    float len = glm::compMax(glm::abs(unpacked.positionOffset));
-    glm::vec3 normalizedPos(unpacked.positionOffset);
+    float len = max(abs(unpacked.positionOffsetX), max(abs(unpacked.positionOffsetY), abs(unpacked.positionOffsetZ)));
+    glm::vec3 normalizedPos(unpacked.positionOffsetX, unpacked.positionOffsetY, unpacked.positionOffsetZ);
     if (len > 0.0f) {
         normalizedPos /= len;
     } else {
@@ -1813,8 +1857,8 @@ static void packBlendshapeOffsetTo_Pos_F32_3xSN10_Nor_3xSN10_Tan_3xSN10(glm::uve
     packed = glm::uvec4(
         glm::floatBitsToUint(len),
         glm_packSnorm3x10_1x2(glm::vec4(normalizedPos, 0.0f)),
-        glm_packSnorm3x10_1x2(glm::vec4(unpacked.normalOffset, 0.0f)),
-        glm_packSnorm3x10_1x2(glm::vec4(unpacked.tangentOffset, 0.0f))
+        glm_packSnorm3x10_1x2(glm::vec4(unpacked.normalOffsetX, unpacked.normalOffsetY, unpacked.normalOffsetZ, 0.0f)),
+        glm_packSnorm3x10_1x2(glm::vec4(unpacked.tangentOffsetX, unpacked.tangentOffsetY, unpacked.tangentOffsetZ, 0.0f))
     );
 }
 
@@ -1922,10 +1966,19 @@ void Blender::run() {
                 int index = blendshape.indices.at(j);
 
                 auto& currentBlendshapeOffset = unpackedBlendshapeOffsets[index];
-                currentBlendshapeOffset.positionOffset += blendshape.vertices.at(j) * vertexCoefficient;
-                currentBlendshapeOffset.normalOffset += blendshape.normals.at(j) * normalCoefficient;
+                glm::vec3 blendshapePosition = blendshape.vertices.at(j) * vertexCoefficient;
+                currentBlendshapeOffset.positionOffsetX += blendshapePosition.x;
+                currentBlendshapeOffset.positionOffsetY += blendshapePosition.y;
+                currentBlendshapeOffset.positionOffsetZ += blendshapePosition.z;
+                glm::vec3 blendshapeNormal = blendshape.normals.at(j) * normalCoefficient;
+                currentBlendshapeOffset.normalOffsetX += blendshapeNormal.x;
+                currentBlendshapeOffset.normalOffsetY += blendshapeNormal.y;
+                currentBlendshapeOffset.normalOffsetZ += blendshapeNormal.z;
                 if (j < blendshape.tangents.size()) {
-                    currentBlendshapeOffset.tangentOffset += blendshape.tangents.at(j) * normalCoefficient;
+                    glm::vec3 blendshapeTangent = blendshape.tangents.at(j) * normalCoefficient;
+                    currentBlendshapeOffset.tangentOffsetX += blendshapeTangent.x;
+                    currentBlendshapeOffset.tangentOffsetY += blendshapeTangent.y;
+                    currentBlendshapeOffset.tangentOffsetZ += blendshapeTangent.z;
                 }
             }
         }

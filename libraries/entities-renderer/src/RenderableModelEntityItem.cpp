@@ -1124,37 +1124,7 @@ void ModelEntityRenderer::onRemoveFromSceneTyped(const TypedEntityPointer& entit
     entity->setModel({});
 }
 
-void ModelEntityRenderer::animate(const TypedEntityPointer& entity, const ModelPointer& model) {
-    if (!_animation || !_animation->isLoaded()) {
-        return;
-    }
-
-    QVector<EntityJointData> jointsData;
-
-    const QVector<HFMAnimationFrame>& frames = _animation->getFramesReference(); // NOTE: getFrames() is too heavy
-    int frameCount = frames.size();
-    if (frameCount <= 0) {
-        return;
-    }
-
-    {
-        float currentFrame = fmod(entity->getAnimationCurrentFrame(), (float)(frameCount));
-        if (currentFrame < 0.0f) {
-            currentFrame += (float)frameCount;
-        }
-        int currentIntegerFrame = (int)(glm::floor(currentFrame));
-        if (currentIntegerFrame == _lastKnownCurrentFrame) {
-            return;
-        }
-        _lastKnownCurrentFrame = currentIntegerFrame;
-    }
-
-    if (_jointMapping.size() != model->getJointStateCount()) {
-        qCWarning(entitiesrenderer) << "RenderableModelEntityItem::getAnimationFrame -- joint count mismatch"
-                    << _jointMapping.size() << model->getJointStateCount();
-        return;
-    }
-
+void ModelEntityRenderer::updateJointData(const QVector<glm::vec3>& translations, const QVector<glm::quat>& rotations, const TypedEntityPointer& entity, const ModelPointer& model) {
     QStringList animationJointNames = _animation->getHFMModel().getJointNames();
     auto& hfmJoints = _animation->getHFMModel().joints;
 
@@ -1163,10 +1133,7 @@ void ModelEntityRenderer::animate(const TypedEntityPointer& entity, const ModelP
 
     bool allowTranslation = entity->getAnimationAllowTranslation();
 
-    const QVector<glm::quat>& rotations = frames[_lastKnownCurrentFrame].rotations;
-    const QVector<glm::vec3>& translations = frames[_lastKnownCurrentFrame].translations;
-
-    jointsData.resize(_jointMapping.size());
+    QVector<EntityJointData> jointsData(_jointMapping.size());
     for (int j = 0; j < _jointMapping.size(); j++) {
         int index = _jointMapping[j];
 
@@ -1207,6 +1174,58 @@ void ModelEntityRenderer::animate(const TypedEntityPointer& entity, const ModelP
     entity->copyAnimationJointDataToModel();
 }
 
+void ModelEntityRenderer::animate(const TypedEntityPointer& entity, const ModelPointer& model) {
+    if (!_animation || !_animation->isLoaded()) {
+        return;
+    }
+
+    const QVector<HFMAnimationFrame>& frames = _animation->getFramesReference(); // NOTE: getFrames() is too heavy
+    int frameCount = frames.size();
+    if (frameCount <= 0) {
+        return;
+    }
+
+    float currentFrame = fmod(entity->getAnimationCurrentFrame(), (float)(frameCount));
+    if (currentFrame < 0.0f) {
+        currentFrame += (float)frameCount;
+    }
+
+    const bool smoothFrames = entity->getAnimationSmoothFrames();
+    const int currentIntegerFrame = (int)(glm::floor(currentFrame));
+    if (!smoothFrames && currentIntegerFrame == _lastKnownCurrentIntegerFrame) {
+        return;
+    }
+    _lastKnownCurrentIntegerFrame = currentIntegerFrame;
+
+    if (_jointMapping.size() != model->getJointStateCount()) {
+        qCWarning(entitiesrenderer) << "RenderableModelEntityItem::getAnimationFrame -- joint count mismatch"
+                    << _jointMapping.size() << model->getJointStateCount();
+        return;
+    }
+
+    if (smoothFrames) {
+        QVector<glm::quat> rotations = frames[_lastKnownCurrentIntegerFrame].rotations;
+        QVector<glm::vec3> translations = frames[_lastKnownCurrentIntegerFrame].translations;
+
+        const int nextIntegerFrame = entity->getAnimationNextFrame(_lastKnownCurrentIntegerFrame, frameCount);
+
+        const QVector<glm::quat>& nextRotations = frames[nextIntegerFrame].rotations;
+        const QVector<glm::vec3>& nextTranslations = frames[nextIntegerFrame].translations;
+
+        const float frac = glm::fract(currentFrame);
+        for (int i = 0; i < translations.size(); i++) {
+            translations[i] = glm::mix(translations[i], nextTranslations[i], frac);
+        }
+        for (int i = 0; i < rotations.size(); i++) {
+            rotations[i] = glm::slerp(rotations[i], nextRotations[i], frac);
+        }
+
+        updateJointData(translations, rotations, entity, model);
+    } else {
+        updateJointData(frames[_lastKnownCurrentIntegerFrame].translations, frames[_lastKnownCurrentIntegerFrame].rotations, entity, model);
+    }
+}
+
 bool ModelEntityRenderer::needsRenderUpdateFromTypedEntity(const TypedEntityPointer& entity) const {
     if (entity->blendshapesChanged()) {
         return true;
@@ -1243,7 +1262,6 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
     if (!_hasModel) {
         if (model) {
             model->removeFromScene(scene, transaction);
-            entity->bumpAncestorChainRenderableVersion();
             emit DependencyManager::get<scriptable::ModelProviderFactory>()->
                 modelRemovedFromScene(entity->getEntityItemID(), NestableType::Entity, model);
             withWriteLock([&] { _model.reset(); });
@@ -1275,6 +1293,8 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
                     _model->setBillboardMode(_billboardMode, scene);
                     _model->setCullWithParent(_cullWithParent, scene);
                     _model->setRenderWithZones(_renderWithZones, scene);
+                    _model->setMirrorMode(_mirrorMode, scene);
+                    _model->setPortalExitID(_portalExitID, scene);
                 });
                 if (didVisualGeometryRequestSucceed) {
                     emit DependencyManager::get<scriptable::ModelProviderFactory>()->
@@ -1291,6 +1311,10 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
             scene->enqueueTransaction(transaction);
         });
         entity->setModel(model);
+        model->setLoadingPriorityOperator([entity]() {
+            float loadPriority = entity->getLoadPriority();
+            return fabs(loadPriority) > EPSILON ? loadPriority : EntityTreeRenderer::getEntityLoadingPriority(*entity);
+        });
         withWriteLock([&] { _model = model; });
     }
 
@@ -1298,7 +1322,6 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
     if (_parsedModelURL != model->getURL()) {
         _texturesLoaded = false;
         _jointMappingCompleted = false;
-        model->setLoadingPriority(EntityTreeRenderer::getEntityLoadingPriority(*entity));
         model->setURL(_parsedModelURL);
     }
 
@@ -1354,6 +1377,8 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
         model->setBillboardMode(_billboardMode, scene);
         model->setCullWithParent(_cullWithParent, scene);
         model->setRenderWithZones(_renderWithZones, scene);
+        model->setMirrorMode(_mirrorMode, scene);
+        model->setPortalExitID(_portalExitID, scene);
     });
 
     if (entity->blendshapesChanged()) {
@@ -1369,7 +1394,6 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
             makeStatusGetters(entity, statusGetters);
             using namespace std::placeholders;
             model->addToScene(scene, transaction, statusGetters, std::bind(&ModelEntityRenderer::metaBlendshapeOperator, _renderItemID, _1, _2, _3, _4));
-            entity->bumpAncestorChainRenderableVersion();
             processMaterials();
         }
     }
@@ -1463,6 +1487,18 @@ void ModelEntityRenderer::setRenderLayer(RenderLayer value) {
 
 void ModelEntityRenderer::setCullWithParent(bool value) {
     Parent::setCullWithParent(value);
+    // called within a lock so no need to lock for _model
+    setKey(_didLastVisualGeometryRequestSucceed, _model);
+}
+
+void ModelEntityRenderer::setMirrorMode(MirrorMode value) {
+    Parent::setMirrorMode(value);
+    // called within a lock so no need to lock for _model
+    setKey(_didLastVisualGeometryRequestSucceed, _model);
+}
+
+void ModelEntityRenderer::setPortalExitID(const QUuid& value) {
+    Parent::setPortalExitID(value);
     // called within a lock so no need to lock for _model
     setKey(_didLastVisualGeometryRequestSucceed, _model);
 }

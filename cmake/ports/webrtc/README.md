@@ -180,6 +180,8 @@ Also use the path in the `gn gen` commands, below, making sure to escape `\`s as
 
 Use a VS2019 developer command prompt in the *src* directory.
 
+If it complains about the debugger being missing from your Windows SDK, modify your Windows "Software Development Kit" in your installed programs (See: https://stackoverflow.com/questions/46237620/how-to-install-debugging-tools-with-visual-studio-2017-installer).
+
 Create a release build of the WebRTC library:
 - `gn gen --ide=vs2019 out\Release --filters=//:webrtc "--args=is_debug=false is_clang=false use_custom_libcxx=false libcxx_is_shared=true symbol_level=2 use_lld=false rtc_include_tests=false rtc_build_tools=false rtc_build_examples=false proprietary_codecs=true rtc_use_h264=true enable_libaom=false rtc_enable_protobuf=false rtc_build_ssl=false rtc_ssl_root=\"<path>\""`
 - `ninja -C out\Release`

@@ -27,13 +27,14 @@
 #include "render-utils/ShaderConstants.h"
 #include "StencilMaskPass.h"
 #include "ZoneRenderer.h"
-#include "FadeEffect.h"
 #include "ToneMapAndResampleTask.h"
 #include "BackgroundStage.h"
 #include "FramebufferCache.h"
 #include "TextureCache.h"
 #include "RenderCommonTask.h"
 #include "RenderHUDLayerTask.h"
+
+#include "RenderViewTask.h"
 
 namespace ru {
     using render_utils::slot::texture::Texture;
@@ -67,13 +68,15 @@ void RenderForwardTask::configure(const Config& config) {
     preparePrimaryBufferConfig->setResolutionScale(config.resolutionScale);
 }
 
-void RenderForwardTask::build(JobModel& task, const render::Varying& input, render::Varying& output, uint8_t transformOffset) {
+void RenderForwardTask::build(JobModel& task, const render::Varying& input, render::Varying& output, uint8_t transformOffset, render::CullFunctor cullFunctor, size_t depth) {
     task.addJob<SetRenderMethod>("SetRenderMethodTask", render::Args::FORWARD);
 
     // Prepare the ShapePipelines
-    auto fadeEffect = DependencyManager::get<FadeEffect>();
-    ShapePlumberPointer shapePlumber = std::make_shared<ShapePlumber>();
-    initForwardPipelines(*shapePlumber);
+    static ShapePlumberPointer shapePlumber = std::make_shared<ShapePlumber>();
+    static std::once_flag once;
+    std::call_once(once, [] {
+        initForwardPipelines(*shapePlumber);
+    });
 
     uint backgroundViewTransformSlot = render::RenderEngine::TS_BACKGROUND_VIEW + transformOffset;
     uint mainViewTransformSlot = render::RenderEngine::TS_MAIN_VIEW + transformOffset;
@@ -90,6 +93,8 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
             const auto& opaques = items[RenderFetchCullSortTask::OPAQUE_SHAPE];
             const auto& transparents = items[RenderFetchCullSortTask::TRANSPARENT_SHAPE];
             const auto& metas = items[RenderFetchCullSortTask::META];
+            const auto& mirrors = items[RenderFetchCullSortTask::MIRROR];
+            const auto& simulateItems = items[RenderFetchCullSortTask::SIMULATE];
             const auto& inFrontOpaque = items[RenderFetchCullSortTask::LAYER_FRONT_OPAQUE_SHAPE];
             const auto& inFrontTransparent = items[RenderFetchCullSortTask::LAYER_FRONT_TRANSPARENT_SHAPE];
             const auto& hudOpaque = items[RenderFetchCullSortTask::LAYER_HUD_OPAQUE_SHAPE];
@@ -105,12 +110,9 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
             const auto lightFrame = currentStageFrames[0];
             const auto backgroundFrame = currentStageFrames[1];
             const auto hazeFrame = currentStageFrames[2];
+            const auto tonemappingFrame = currentStageFrames[4];
  
         const auto& zones = lightingStageInputs[1];
-
-    // First job, alter faded
-    fadeEffect->build(task, opaques);
-
 
     // GPU jobs: Start preparing the main framebuffer
     const auto scaledPrimaryFramebuffer = task.addJob<PreparePrimaryFramebufferMSAA>("PreparePrimaryBufferForward");
@@ -122,12 +124,26 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     const auto prepareForwardInputs = PrepareForward::Inputs(scaledPrimaryFramebuffer, lightFrame).asVarying();
     task.addJob<PrepareForward>("PrepareForward", prepareForwardInputs);
 
+    if (depth == 0) {
+        const auto simulateInputs = RenderSimulateTask::Inputs(simulateItems, scaledPrimaryFramebuffer).asVarying();
+        task.addJob<RenderSimulateTask>("RenderSimulation", simulateInputs);
+    }
+
     // draw a stencil mask in hidden regions of the framebuffer.
     task.addJob<PrepareStencil>("PrepareStencil", scaledPrimaryFramebuffer);
 
     // Draw opaques forward
     const auto opaqueInputs = DrawForward::Inputs(opaques, lightingModel, hazeFrame).asVarying();
     task.addJob<DrawForward>("DrawOpaques", opaqueInputs, shapePlumber, true, mainViewTransformSlot);
+
+#ifndef Q_OS_ANDROID
+    if (depth < RenderMirrorTask::MAX_MIRROR_DEPTH) {
+        const auto mirrorInputs = RenderMirrorTask::Inputs(mirrors, scaledPrimaryFramebuffer).asVarying();
+        for (size_t i = 0; i < RenderMirrorTask::MAX_MIRRORS_PER_LEVEL; i++) {
+            task.addJob<RenderMirrorTask>("RenderMirrorTask" + std::to_string(i) + "Depth" + std::to_string(depth), mirrorInputs, i, cullFunctor, transformOffset, depth);
+        }
+    }
+#endif
 
     // Similar to light stage, background stage has been filled by several potential render items and resolved for the frame in this job
     const auto backgroundInputs = DrawBackgroundStage::Inputs(lightingModel, backgroundFrame, hazeFrame).asVarying();
@@ -138,14 +154,12 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     task.addJob<DrawForward>("DrawTransparents", transparentInputs, shapePlumber, false, mainViewTransformSlot);
 
      // Layered
-    const auto nullJitter = Varying(glm::vec2(0.0f, 0.0f));
     const auto inFrontOpaquesInputs = DrawLayered3D::Inputs(inFrontOpaque, deferredFrameTransform, lightingModel, hazeFrame).asVarying();
     const auto inFrontTransparentsInputs = DrawLayered3D::Inputs(inFrontTransparent, deferredFrameTransform, lightingModel, hazeFrame).asVarying();
     task.addJob<DrawLayered3D>("DrawInFrontOpaque", inFrontOpaquesInputs, shapePlumber, true, false, mainViewTransformSlot);
     task.addJob<DrawLayered3D>("DrawInFrontTransparent", inFrontTransparentsInputs, shapePlumber, false, false, mainViewTransformSlot);
 
-    {  // Debug the bounds of the rendered items, still look at the zbuffer
-
+    if (depth == 0) {  // Debug the bounds of the rendered items, still look at the zbuffer
         task.addJob<DrawBounds>("DrawMetaBounds", metas, mainViewTransformSlot);
         task.addJob<DrawBounds>("DrawBounds", opaques, mainViewTransformSlot);
         task.addJob<DrawBounds>("DrawTransparentBounds", transparents, mainViewTransformSlot);
@@ -162,7 +176,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
 
     const auto destFramebuffer = static_cast<gpu::FramebufferPointer>(nullptr);
 
-    const auto toneMappingInputs = ToneMapAndResample::Input(resolvedFramebuffer, destFramebuffer).asVarying();
+    const auto toneMappingInputs = ToneMapAndResample::Input(resolvedFramebuffer, destFramebuffer, tonemappingFrame).asVarying();
     const auto toneMappedBuffer = task.addJob<ToneMapAndResample>("ToneMapping", toneMappingInputs);
     // HUD Layer
     const auto renderHUDLayerInputs = RenderHUDLayerTask::Input(toneMappedBuffer, lightingModel, hudOpaque, hudTransparent, hazeFrame, deferredFrameTransform).asVarying();

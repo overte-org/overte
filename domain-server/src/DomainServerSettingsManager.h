@@ -135,10 +135,10 @@ public:
     GroupRank getGroupRank(QUuid groupID, QUuid rankID) { return _groupRanks[groupID][rankID]; }
 
     QList<QUuid> getGroupIDs();
-    QList<QUuid> getBlacklistGroupIDs();
+    QList<QUuid> getBlocklistGroupIDs();
 
     QStringList getDomainServerGroupNames();
-    QStringList getDomainServerBlacklistGroupNames();
+    QStringList getDomainServerBlocklistGroupNames();
 
     // these are used to locally cache the result of calling "/api/v1/groups/.../is_member/..." on Directory Services api
     void clearGroupMemberships(const QString& name) { _groupMembership[name.toLower()].clear(); }

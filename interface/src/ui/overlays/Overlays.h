@@ -85,7 +85,7 @@ public:
  *
  * @property {Uuid} keyboardFocusOverlay - The <code>{@link Overlays.OverlayProperties-Web3D|"web3d"}</code> overlay
  *     ({@link Entities.EntityProperties-Web|Web} entity) that has keyboard focus. If no overlay (entity) has keyboard focus,
- *     returns <code>null</code>; set to <code>null</code> or {@link Uuid(0)|Uuid.NULL} to clear keyboard focus.
+ *     returns <code>null</code>; set to <code>null</code> or {@link Uuid(0)|Uuid.NONE} to clear keyboard focus.
  */
 
 class Overlays : public QObject {
@@ -99,8 +99,6 @@ public:
     void init();
     void update(float deltatime);
     void render(RenderArgs* renderArgs);
-    void disable();
-    void enable();
 
     Overlay::Pointer take2DOverlay(const QUuid& id);
     Overlay::Pointer get2DOverlay(const QUuid& id) const;
@@ -127,7 +125,7 @@ public slots:
      * @function Overlays.addOverlay
      * @param {Overlays.OverlayType} type - The type of the overlay to add.
      * @param {Overlays.OverlayProperties} properties - The properties of the overlay to add.
-     * @returns {Uuid} The ID of the newly created overlay if successful, otherwise {@link Uuid(0)|Uuid.NULL}.
+     * @returns {Uuid} The ID of the newly created overlay if successful, otherwise {@link Uuid(0)|Uuid.NONE}.
      * @example <caption>Add a cube overlay in front of your avatar.</caption>
      * var overlay = Overlays.addOverlay("cube", {
      *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: -3 })),
@@ -143,7 +141,7 @@ public slots:
      * <p>Note: For cloning behavior of 3D overlays and entities, see {@link Entities.cloneEntity}.</p>
      * @function Overlays.cloneOverlay
      * @param {Uuid} id - The ID of the overlay (or entity) to clone.
-     * @returns {Uuid} The ID of the new overlay (or entity) if successful, otherwise {@link Uuid(0)|Uuid.NULL}.
+     * @returns {Uuid} The ID of the new overlay (or entity) if successful, otherwise {@link Uuid(0)|Uuid.NONE}.
      */
     QUuid cloneOverlay(const QUuid& id);
 
@@ -537,7 +535,7 @@ public slots:
      * @function Overlays.setKeyboardFocusOverlay
      * @param {Uuid} id - The ID of the <code>{@link Overlays.OverlayProperties-Web3D|"web3d"}</code> overlay
      * ({@link Entities.EntityProperties-Web|Web} entity) to set keyboard focus to. Use <code>null</code> or
-     * {@link Uuid(0)|Uuid.NULL} to unset keyboard focus from an overlay (entity).
+     * {@link Uuid(0)|Uuid.NONE} to unset keyboard focus from an overlay (entity).
      */
     void setKeyboardFocusOverlay(const QUuid& id) { DependencyManager::get<EntityScriptingInterface>()->setKeyboardFocusEntity(id); }
 
@@ -683,7 +681,6 @@ private:
 
     unsigned int _stackOrder { 1 };
 
-    bool _enabled { true };
     std::atomic<bool> _shuttingDown { false };
 
     PointerEvent calculateOverlayPointerEvent(const QUuid& id, const PickRay& ray, const RayToOverlayIntersectionResult& rayPickResult,

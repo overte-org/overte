@@ -185,18 +185,6 @@ void RenderablePolyVoxEntityItem::initializePolyVox() {
     setVoxelVolumeSize(_voxelVolumeSize);
 }
 
-bool isEdged(PolyVoxEntityItem::PolyVoxSurfaceStyle surfaceStyle) {
-    switch (surfaceStyle) {
-        case PolyVoxEntityItem::SURFACE_CUBIC:
-        case PolyVoxEntityItem::SURFACE_MARCHING_CUBES:
-            return false;
-        case PolyVoxEntityItem::SURFACE_EDGED_CUBIC:
-        case PolyVoxEntityItem::SURFACE_EDGED_MARCHING_CUBES:
-            return true;
-    }
-    return false;
-}
-
 void RenderablePolyVoxEntityItem::setVoxelData(const QByteArray& voxelData) {
     // accept compressed voxel information from the entity-server
     bool changed = false;
@@ -212,7 +200,7 @@ void RenderablePolyVoxEntityItem::setVoxelData(const QByteArray& voxelData) {
     }
 }
 
-void RenderablePolyVoxEntityItem::setVoxelSurfaceStyle(PolyVoxSurfaceStyle voxelSurfaceStyle) {
+void RenderablePolyVoxEntityItem::setVoxelSurfaceStyle(uint16_t voxelSurfaceStyle) {
     // this controls whether the polyvox surface extractor does marching-cubes or makes a cubic mesh.  It
     // also determines if the extra "edged" layer is used.
     bool volSizeChanged = false;
@@ -224,7 +212,7 @@ void RenderablePolyVoxEntityItem::setVoxelSurfaceStyle(PolyVoxSurfaceStyle voxel
 
         // if we are switching to or from "edged" we need to force a resize of _volData.
         bool wasEdged = isEdged();
-        bool willBeEdged = isEdged(voxelSurfaceStyle);
+        bool willBeEdged = isEdged((PolyVoxSurfaceStyle)voxelSurfaceStyle);
 
         if (wasEdged != willBeEdged) {
             _volData.reset();
@@ -952,7 +940,7 @@ uint8_t RenderablePolyVoxEntityItem::getVoxel(const ivec3& v) const {
 
 
 uint8_t RenderablePolyVoxEntityItem::getVoxelInternal(const ivec3& v) const {
-    if (!inUserBounds(_volData, _voxelSurfaceStyle, v)) {
+    if (!inUserBounds(_volData, (PolyVoxSurfaceStyle)_voxelSurfaceStyle, v)) {
         return 0;
     }
 
@@ -998,7 +986,7 @@ bool RenderablePolyVoxEntityItem::setVoxelInternal(const ivec3& v, uint8_t toVal
 
 bool RenderablePolyVoxEntityItem::updateOnCount(const ivec3& v, uint8_t toValue) {
     // keep _onCount up to date
-    if (!inUserBounds(_volData, _voxelSurfaceStyle, v)) {
+    if (!inUserBounds(_volData, (PolyVoxSurfaceStyle)_voxelSurfaceStyle, v)) {
         return false;
     }
 
@@ -1210,7 +1198,7 @@ void RenderablePolyVoxEntityItem::cacheNeighbors() {
 
 void RenderablePolyVoxEntityItem::copyUpperEdgesFromNeighbors() {
     // fill in our upper edges with a copy of our neighbors lower edges so that the meshes knit together
-    if (_voxelSurfaceStyle != PolyVoxEntityItem::SURFACE_MARCHING_CUBES) {
+    if ((PolyVoxSurfaceStyle)_voxelSurfaceStyle != PolyVoxEntityItem::SURFACE_MARCHING_CUBES) {
         return;
     }
 
@@ -1315,7 +1303,7 @@ void RenderablePolyVoxEntityItem::recomputeMesh() {
     // use _volData to make a renderable mesh
     PolyVoxSurfaceStyle voxelSurfaceStyle;
     withReadLock([&] {
-        voxelSurfaceStyle = _voxelSurfaceStyle;
+        voxelSurfaceStyle = (PolyVoxSurfaceStyle)_voxelSurfaceStyle;
     });
 
     auto entity = std::static_pointer_cast<RenderablePolyVoxEntityItem>(getThisPointer());
@@ -1414,7 +1402,7 @@ void RenderablePolyVoxEntityItem::computeShapeInfoWorker() {
     graphics::MeshPointer mesh;
 
     withReadLock([&] {
-        voxelSurfaceStyle = _voxelSurfaceStyle;
+        voxelSurfaceStyle = (PolyVoxSurfaceStyle)_voxelSurfaceStyle;
         voxelVolumeSize = _voxelVolumeSize;
         mesh = _mesh;
     });
@@ -1719,21 +1707,28 @@ using namespace render;
 using namespace render::entities;
 
 static uint8_t CUSTOM_PIPELINE_NUMBER;
-static std::map<std::tuple<bool, bool, bool>, ShapePipelinePointer> _pipelines;
+// forward, shadow, fade, wireframe
+static std::map<std::tuple<bool, bool, bool, bool>, ShapePipelinePointer> _pipelines;
 static gpu::Stream::FormatPointer _vertexFormat;
 
 ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, const ShapeKey& key, RenderArgs* args) {
-    // FIXME: custom pipelines like this don't handle shadows or renderLayers correctly
-
     if (_pipelines.empty()) {
         using namespace shader::entities_renderer::program;
 
-        static const std::vector<std::tuple<bool, bool, uint32_t>> keys = {
-            std::make_tuple(false, false, polyvox), std::make_tuple(true, false, polyvox_forward)
+        // forward, shadow, fade
+        static const std::vector<std::tuple<bool, bool, bool, uint32_t>> keys = {
+            std::make_tuple(false, false, false, polyvox),
+            std::make_tuple(true, false, false, polyvox_forward),
+            std::make_tuple(false, true, false, polyvox_shadow),
+            // no such thing as forward + shadow
 #ifdef POLYVOX_ENTITY_USE_FADE_EFFECT
-            , std::make_tuple(false, true, polyvox_fade), std::make_tuple(true, true, polyvox_forward_fade)
+            std::make_tuple(false, false, true, polyvox_fade),
+            std::make_tuple(false, true, true, polyvox_shadow_fade),
+            // no such thing as forward + fade/shadow
 #else
-            , std::make_tuple(false, true, polyvox), std::make_tuple(true, true, polyvox_forward)
+            std::make_tuple(false, false, true, polyvox),
+            std::make_tuple(false, true, true, polyvox_shadow),
+            // no such thing as forward + fade/shadow
 #endif
         };
         for (auto& key : keys) {
@@ -1749,19 +1744,18 @@ ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, const Sha
                     state->setFillMode(gpu::State::FILL_LINE);
                 }
 
-                auto pipeline = gpu::Pipeline::create(gpu::Shader::createProgram(std::get<2>(key)), state);
-                if (std::get<1>(key)) {
-                    _pipelines[std::make_tuple(std::get<0>(key), std::get<1>(key), wireframe)] = std::make_shared<render::ShapePipeline>(pipeline, nullptr, nullptr, nullptr);
+                auto pipeline = gpu::Pipeline::create(gpu::Shader::createProgram(std::get<3>(key)), state);
+                if (!std::get<2>(key)) {
+                    _pipelines[std::make_tuple(std::get<0>(key), std::get<1>(key), std::get<2>(key), wireframe)] = std::make_shared<render::ShapePipeline>(pipeline, nullptr, nullptr, nullptr);
                 } else {
-                    const auto& fadeEffect = DependencyManager::get<FadeEffect>();
-                    _pipelines[std::make_tuple(std::get<0>(key), std::get<1>(key), wireframe)] = std::make_shared<render::ShapePipeline>(pipeline, nullptr,
-                        fadeEffect->getBatchSetter(), fadeEffect->getItemUniformSetter());
+                    _pipelines[std::make_tuple(std::get<0>(key), std::get<1>(key), std::get<2>(key), wireframe)] = std::make_shared<render::ShapePipeline>(pipeline, nullptr,
+                        FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter());
                 }
             }
         }
     }
 
-    return _pipelines[std::make_tuple(args->_renderMethod == Args::RenderMethod::FORWARD, key.isFaded(), key.isWireframe())];
+    return _pipelines[std::make_tuple(args->_renderMethod == Args::RenderMethod::FORWARD, args->_renderMode == Args::RenderMode::SHADOW_RENDER_MODE, key.isFaded(), key.isWireframe())];
 }
 
 PolyVoxEntityRenderer::PolyVoxEntityRenderer(const EntityItemPointer& entity) : Parent(entity) {
@@ -1773,16 +1767,6 @@ PolyVoxEntityRenderer::PolyVoxEntityRenderer(const EntityItemPointer& entity) : 
         _vertexFormat->setAttribute(gpu::Stream::NORMAL, 0, gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ), 12);
     });
     _params = std::make_shared<gpu::Buffer>(sizeof(glm::vec4), nullptr);
-}
-
-ItemKey PolyVoxEntityRenderer::getKey() {
-    auto builder = ItemKey::Builder::opaqueShape().withTagBits(getTagMask()).withLayer(getHifiRenderLayer());
-
-    if (_cullWithParent) {
-        builder.withSubMetaCulled();
-    }
-
-    return builder.build();
 }
 
 ShapeKey PolyVoxEntityRenderer::getShapeKey() {
@@ -1860,8 +1844,9 @@ void PolyVoxEntityRenderer::doRender(RenderArgs* args) {
     PerformanceTimer perfTimer("RenderablePolyVoxEntityItem::render");
     gpu::Batch& batch = *args->_batch;
 
+    bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
     glm::mat4 rotation = glm::mat4_cast(BillboardModeHelpers::getBillboardRotation(_position, _orientation, _billboardMode,
-        args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
+        usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
     Transform transform(glm::translate(_position) * rotation * _lastVoxelToLocalMatrix);
     batch.setModelTransform(transform, _prevRenderTransform);
     if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
@@ -1869,13 +1854,7 @@ void PolyVoxEntityRenderer::doRender(RenderArgs* args) {
     }
 
     batch.setInputFormat(_vertexFormat);
-    batch.setInputBuffer(gpu::Stream::POSITION, _mesh->getVertexBuffer()._buffer, 0,
-        sizeof(PolyVox::PositionMaterialNormal));
-
-    // TODO -- should we be setting this?
-    // batch.setInputBuffer(gpu::Stream::NORMAL, mesh->getVertexBuffer()._buffer,
-    //                      12,
-    //                      sizeof(PolyVox::PositionMaterialNormal));
+    batch.setInputBuffer(gpu::Stream::POSITION, _mesh->getVertexBuffer()._buffer, 0, sizeof(PolyVox::PositionMaterialNormal));
     batch.setIndexBuffer(gpu::UINT32, _mesh->getIndexBuffer()._buffer, 0);
 
     for (size_t i = 0; i < _xyzTextures.size(); ++i) {

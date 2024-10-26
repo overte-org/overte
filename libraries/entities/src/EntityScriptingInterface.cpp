@@ -97,6 +97,7 @@ EntityScriptingInterface::EntityScriptingInterface(bool bidOnSimulationOwnership
     connect(nodeList.data(), &NodeList::canWriteAssetsChanged, this, &EntityScriptingInterface::canWriteAssetsChanged);
     connect(nodeList.data(), &NodeList::canGetAndSetPrivateUserDataChanged, this, &EntityScriptingInterface::canGetAndSetPrivateUserDataChanged);
     connect(nodeList.data(), &NodeList::canRezAvatarEntitiesChanged, this, &EntityScriptingInterface::canRezAvatarEntitiesChanged);
+    connect(nodeList.data(), &NodeList::canViewAssetURLsChanged, this, &EntityScriptingInterface::canViewAssetURLsChanged);
 
     auto& packetReceiver = nodeList->getPacketReceiver();
     packetReceiver.registerListener(PacketType::EntityScriptCallMethod,
@@ -289,6 +290,11 @@ bool EntityScriptingInterface::canGetAndSetPrivateUserData() {
 bool EntityScriptingInterface::canRezAvatarEntities() {
     auto nodeList = DependencyManager::get<NodeList>();
     return nodeList->getThisNodeCanRezAvatarEntities();
+}
+
+bool EntityScriptingInterface::canViewAssetURLs() {
+    auto nodeList = DependencyManager::get<NodeList>();
+    return nodeList->getThisNodeCanViewAssetURLs();
 }
 
 void EntityScriptingInterface::setEntityTree(EntityTreePointer elementTree) {
@@ -1459,6 +1465,17 @@ QVector<QUuid> EntityScriptingInterface::findEntitiesByName(const QString entity
     return result;
 }
 
+QVector<QUuid> EntityScriptingInterface::findEntitiesByTags(const QVector<QString> entityTags, const glm::vec3& center, float radius, bool caseSensitiveSearch) const {
+    QVector<QUuid> result;
+    if (_entityTree) {
+        _entityTree->withReadLock([&] {
+            unsigned int searchFilter = PickFilter::getBitMask(PickFilter::FlagBit::DOMAIN_ENTITIES) | PickFilter::getBitMask(PickFilter::FlagBit::AVATAR_ENTITIES);
+            _entityTree->evalEntitiesInSphereWithTags(center, radius, entityTags, caseSensitiveSearch, PickFilter(searchFilter), result);
+        });
+    }
+    return result;
+}
+
 RayToEntityIntersectionResult EntityScriptingInterface::findRayIntersection(const PickRay& ray, bool precisionPicking,
         const ScriptValue& entityIdsToInclude, const ScriptValue& entityIdsToDiscard, bool visibleOnly, bool collidableOnly) const {
     PROFILE_RANGE(script_entities, __FUNCTION__);
@@ -1862,6 +1879,7 @@ bool EntityScriptingInterface::setAllPoints(const QUuid& entityID, const QVector
     EntityItemPointer entity = static_cast<EntityItemPointer>(_entityTree->findEntityByEntityItemID(entityID));
     if (!entity) {
         qCDebug(entities) << "EntityScriptingInterface::setPoints no entity with ID" << entityID;
+        return false;
     }
 
     EntityTypes::EntityType entityType = entity->getType();
@@ -1869,7 +1887,7 @@ bool EntityScriptingInterface::setAllPoints(const QUuid& entityID, const QVector
     if (entityType == EntityTypes::Line) {
         return setPoints(entityID, [points](LineEntityItem& lineEntity) -> bool
         {
-            return (LineEntityItem*)lineEntity.setLinePoints(points);
+            return lineEntity.setLinePoints(points);
         });
     }
 
@@ -1898,6 +1916,29 @@ bool EntityScriptingInterface::appendPoint(const QUuid& entityID, const glm::vec
     return false;
 }
 
+bool EntityScriptingInterface::restartSound(const QUuid& entityID) {
+    PROFILE_RANGE(script_entities, __FUNCTION__);
+
+    EntityItemPointer entity = static_cast<EntityItemPointer>(_entityTree->findEntityByEntityItemID(entityID));
+    if (!entity) {
+        qCDebug(entities) << "EntityScriptingInterface::restartSound no entity with ID" << entityID;
+        // There is no entity
+        return false;
+    }
+
+    EntityTypes::EntityType entityType = entity->getType();
+
+    if (entityType == EntityTypes::Sound) {
+        auto soundEntity = std::dynamic_pointer_cast<SoundEntityItem>(entity);
+        bool isPlaying = soundEntity->getPlaying();
+        if (isPlaying) {
+            soundEntity->restartSound(true);
+        }
+        return isPlaying;
+    }
+
+    return false;
+}
 
 bool EntityScriptingInterface::actionWorker(const QUuid& entityID,
                                             std::function<bool(EntitySimulationPointer, EntityItemPointer)> actor) {

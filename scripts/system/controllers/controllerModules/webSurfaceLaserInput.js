@@ -113,7 +113,7 @@ Script.include("/~/system/libraries/controllers.js");
                             action: 'add',
                             id: objectID
                         };
-                        Messages.sendMessage('Hifi-Hand-RayPick-Blacklist', JSON.stringify(data));
+                        Messages.sendMessage('Hifi-Hand-RayPick-Blocklist', JSON.stringify(data));
                         this.ignoredObjects.push(objectID);
                     }
                 } else if (intersection.type === Picks.INTERSECTED_ENTITY) {
@@ -122,7 +122,7 @@ Script.include("/~/system/libraries/controllers.js");
                         action: 'add',
                         id: objectID
                     };
-                    Messages.sendMessage('Hifi-Hand-RayPick-Blacklist', JSON.stringify(data));
+                    Messages.sendMessage('Hifi-Hand-RayPick-Blocklist', JSON.stringify(data));
                     this.ignoredObjects.push(objectID);
                 }
             }
@@ -134,7 +134,7 @@ Script.include("/~/system/libraries/controllers.js");
                     action: 'remove',
                     id: this.ignoredObjects[index]
                 };
-                Messages.sendMessage('Hifi-Hand-RayPick-Blacklist', JSON.stringify(data));
+                Messages.sendMessage('Hifi-Hand-RayPick-Blocklist', JSON.stringify(data));
             }
 
             this.ignoredObjects = [];

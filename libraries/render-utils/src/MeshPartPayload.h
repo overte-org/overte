@@ -39,7 +39,7 @@ public:
 
     // ModelMeshPartPayload functions to perform render
     void bindMesh(gpu::Batch& batch);
-    virtual void bindTransform(gpu::Batch& batch, const Transform& transform, RenderArgs::RenderMode renderMode) const;
+    virtual void bindTransform(gpu::Batch& batch, const Transform& transform, RenderArgs::RenderMode renderMode, size_t mirrorDepth) const;
     void drawCall(gpu::Batch& batch) const;
 
     void updateKey(const render::ItemKey& key);
@@ -60,15 +60,16 @@ public:
     void setCullWithParent(bool value) { _cullWithParent = value; }
     void setRenderWithZones(const QVector<QUuid>& renderWithZones) { _renderWithZones = renderWithZones; }
     void setBillboardMode(BillboardMode billboardMode) { _billboardMode = billboardMode; }
+    void setMirrorMode(MirrorMode mirrorMode) { _mirrorMode = mirrorMode; }
+    void setPortalExitID(const QUuid& portalExitID) { _portalExitID = portalExitID; }
     bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const;
+    render::ItemID computeMirrorView(ViewFrustum& viewFrustum) const;
     render::HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const;
 
     void addMaterial(graphics::MaterialLayer material) { _drawMaterials.push(material); }
     void removeMaterial(graphics::MaterialPointer material) { _drawMaterials.remove(material); }
 
     void setBlendshapeBuffer(const std::unordered_map<int, gpu::BufferPointer>& blendshapeBuffers, const QVector<int>& blendedMeshSizes);
-
-    static bool enableMaterialProceduralShaders;
 
 protected:
     mutable Transform _previousRenderTransform;
@@ -99,6 +100,8 @@ private:
     bool _cullWithParent { false };
     QVector<QUuid> _renderWithZones;
     BillboardMode _billboardMode { BillboardMode::NONE };
+    MirrorMode _mirrorMode { MirrorMode::NONE };
+    QUuid _portalExitID;
     uint64_t _created;
 
     Transform _localTransform;
@@ -113,6 +116,7 @@ namespace render {
     template <> const ShapeKey shapeGetShapeKey(const ModelMeshPartPayload::Pointer& payload);
     template <> void payloadRender(const ModelMeshPartPayload::Pointer& payload, RenderArgs* args);
     template <> bool payloadPassesZoneOcclusionTest(const ModelMeshPartPayload::Pointer& payload, const std::unordered_set<QUuid>& containingZones);
+    template <> ItemID payloadComputeMirrorView(const ModelMeshPartPayload::Pointer& payload, ViewFrustum& viewFrustum);
     template <> HighlightStyle payloadGetOutlineStyle(const ModelMeshPartPayload::Pointer& payload, const ViewFrustum& viewFrustum, const size_t height);
 }
 

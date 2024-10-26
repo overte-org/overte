@@ -18,6 +18,10 @@
 
 using namespace render;
 
+gpu::PipelinePointer PrepareStencil::_meshStencilPipeline;
+gpu::PipelinePointer PrepareStencil::_paintStencilPipeline;
+graphics::MeshPointer PrepareStencil::_mesh;
+
 void PrepareStencil::configure(const Config& config) {
     _maskMode = config.maskMode;
 }

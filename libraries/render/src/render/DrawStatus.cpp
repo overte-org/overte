@@ -33,6 +33,10 @@ void DrawStatusConfig::dirtyHelper() {
     emit dirty();
 }
 
+gpu::PipelinePointer DrawStatus::_drawItemBoundsPipeline;
+gpu::PipelinePointer DrawStatus::_drawItemStatusPipeline;
+gpu::Stream::FormatPointer DrawStatus::_vertexFormat;
+
 const gpu::PipelinePointer DrawStatus::getDrawItemBoundsPipeline() {
     if (!_drawItemBoundsPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render::program::drawItemBounds);
@@ -147,7 +151,7 @@ void DrawStatus::run(const RenderContextPointer& renderContext, const Input& inI
                         // We have a transition. Show this icon.
                         status.setScale(1.0f);
                         // Is this a valid transition ID according to FadeJob?
-                        auto transitionStage = scene->getStage<TransitionStage>(TransitionStage::getName());
+                        auto transitionStage = scene->getStage<TransitionStage>();
                         if (transitionStage) {
                             if (transitionStage->isTransitionUsed(transitionID)) {
                                 // Valid, active transition

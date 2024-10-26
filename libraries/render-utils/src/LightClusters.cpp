@@ -576,10 +576,9 @@ void LightClusteringPass::run(const render::RenderContextPointer& renderContext,
     config->setNumClusteredLightReferences(clusteringStats.z);
 }
 
-DebugLightClusters::DebugLightClusters(uint transformSlot) : _transformSlot(transformSlot) {
-
-}
-
+gpu::PipelinePointer DebugLightClusters::_drawClusterGrid;
+gpu::PipelinePointer DebugLightClusters::_drawClusterFromDepth;
+gpu::PipelinePointer DebugLightClusters::_drawClusterContent;
 
 void DebugLightClusters::configure(const Config& config) {
     doDrawGrid = config.doDrawGrid;
@@ -588,7 +587,7 @@ void DebugLightClusters::configure(const Config& config) {
 
 }
 
-const gpu::PipelinePointer DebugLightClusters::getDrawClusterGridPipeline() {
+gpu::PipelinePointer DebugLightClusters::getDrawClusterGridPipeline() {
     if (!_drawClusterGrid) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::lightClusters_drawGrid);
         auto state = std::make_shared<gpu::State>();
@@ -604,7 +603,7 @@ const gpu::PipelinePointer DebugLightClusters::getDrawClusterGridPipeline() {
     return _drawClusterGrid;
 }
 
-const gpu::PipelinePointer DebugLightClusters::getDrawClusterFromDepthPipeline() {
+gpu::PipelinePointer DebugLightClusters::getDrawClusterFromDepthPipeline() {
     if (!_drawClusterFromDepth) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::lightClusters_drawClusterFromDepth);
         auto state = std::make_shared<gpu::State>();
@@ -618,7 +617,7 @@ const gpu::PipelinePointer DebugLightClusters::getDrawClusterFromDepthPipeline()
     return _drawClusterFromDepth;
 }
 
-const gpu::PipelinePointer DebugLightClusters::getDrawClusterContentPipeline() {
+gpu::PipelinePointer DebugLightClusters::getDrawClusterContentPipeline() {
     if (!_drawClusterContent) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::lightClusters_drawClusterContent);
         auto state = std::make_shared<gpu::State>();

@@ -252,7 +252,6 @@ void GeometryResource::downloadFinished(const QByteArray& data) {
             }
 
             auto animGraphVariant = _mapping.value("animGraphUrl");
-
             if (animGraphVariant.isValid()) {
                 QUrl fstUrl(animGraphVariant.toString());
                 if (fstUrl.isValid()) {
@@ -263,6 +262,8 @@ void GeometryResource::downloadFinished(const QByteArray& data) {
             } else {
                 _animGraphOverrideUrl = QUrl();
             }
+
+            _waitForWearables = _mapping.value(WAIT_FOR_WEARABLES_FIELD).toBool();
 
             auto modelCache = DependencyManager::get<ModelCache>();
             GeometryExtra extra { GeometryMappingPair(base, _mapping), _textureBaseURL, false };
@@ -325,7 +326,11 @@ void GeometryResource::setGeometryDefinition(HFMModel::Pointer hfmModel, const M
     QHash<QString, size_t> materialIDAtlas;
     for (const HFMMaterial& material : _hfmModel->materials) {
         materialIDAtlas[material.materialID] = _materials.size();
-        _materials.push_back(std::make_shared<NetworkMaterial>(material, _textureBaseURL));
+        if (!material.isMToonMaterial) {
+            _materials.push_back(std::make_shared<NetworkMaterial>(material, _textureBaseURL));
+        } else {
+            _materials.push_back(std::make_shared<NetworkMToonMaterial>(material, _textureBaseURL));
+        }
     }
 
     std::shared_ptr<GeometryMeshes> meshes = std::make_shared<GeometryMeshes>();
@@ -355,8 +360,16 @@ void GeometryResource::deleter() {
 
 void GeometryResource::setTextures() {
     if (_hfmModel) {
-        for (const HFMMaterial& material : _hfmModel->materials) {
-            _materials.push_back(std::make_shared<NetworkMaterial>(material, _textureBaseURL));
+        if (DependencyManager::get<TextureCache>()) {
+            for (const HFMMaterial& material : _hfmModel->materials) {
+                if (!material.isMToonMaterial) {
+                    _materials.push_back(std::make_shared<NetworkMaterial>(material, _textureBaseURL));
+                } else {
+                    _materials.push_back(std::make_shared<NetworkMToonMaterial>(material, _textureBaseURL));
+                }
+            }
+        } else {
+            qDebug() << "GeometryResource::setTextures: TextureCache dependency not available, skipping textures";
         }
     }
 }
@@ -432,10 +445,15 @@ Geometry::Geometry(const Geometry& geometry) {
 
     _materials.reserve(geometry._materials.size());
     for (const auto& material : geometry._materials) {
-        _materials.push_back(std::make_shared<NetworkMaterial>(*material));
+        if (!material->isMToon()) {
+            _materials.push_back(std::make_shared<NetworkMaterial>(*material));
+        } else if (auto mToonMaterial = std::static_pointer_cast<NetworkMToonMaterial>(material)) {
+            _materials.push_back(std::make_shared<NetworkMToonMaterial>(*mToonMaterial));
+        }
     }
 
     _animGraphOverrideUrl = geometry._animGraphOverrideUrl;
+    _waitForWearables = geometry._waitForWearables;
     _mapping = geometry._mapping;
 }
 
@@ -448,9 +466,13 @@ void Geometry::setTextures(const QVariantMap& textureMap) {
 
                 // FIXME: The Model currently caches the materials (waste of space!)
                 //        so they must be copied in the Geometry copy-ctor
-                // if (material->isOriginal()) {
+                //if (material->isOriginal()) {
                 //    // Copy the material to avoid mutating the cached version
-                //    material = std::make_shared<NetworkMaterial>(*material);
+                //    if (!material->isMToon()) {
+                //        material = std::make_shared<NetworkMaterial>(*material);
+                //    } else {
+                //        material = std::make_shared<NetworkMToonMaterial>(*material);
+                //    }
                 //}
 
                 material->setTextures(textureMap);

@@ -164,14 +164,6 @@ public slots:
 
     /*@jsdoc
      * <p><em>Not used.</em></p>
-     * @function Recording.setPlayerUseAttachments
-     * @param {boolean} useAttachments - Use attachments.
-     * @deprecated This method is deprecated and will be removed.
-     */
-    void setPlayerUseAttachments(bool useAttachments);
-
-    /*@jsdoc
-     * <p><em>Not used.</em></p>
      * @function Recording.setPlayerUseHeadModel
      * @param {boolean} useHeadModel - Use head model.
      * @deprecated This method is deprecated and will be removed.
@@ -202,14 +194,6 @@ public slots:
      *     <code>false</code> if playback will keep the current display name.
      */
     bool getPlayerUseDisplayName() { return _useDisplayName; }
-
-    /*@jsdoc
-     * <p><em>Not used.</em></p>
-     * @function Recording.getPlayerUseAttachments
-     * @returns {boolean} Use attachments.
-     * @deprecated This method is deprecated and will be removed.
-     */
-    bool getPlayerUseAttachments() { return _useAttachments; }
 
     /*@jsdoc
      * <p><em>Not used.</em></p>
@@ -357,13 +341,14 @@ protected:
     using Locker = std::unique_lock<Mutex>;
     using Flag = std::atomic<bool>;
 
+    mutable Mutex _mutex;
+
     QSharedPointer<recording::Deck> _player;
     QSharedPointer<recording::Recorder> _recorder;
     
     Flag _playFromCurrentLocation { true };
     Flag _useDisplayName { false };
     Flag _useHeadModel { false };
-    Flag _useAttachments { false };
     Flag _useSkeletonModel { false };
     recording::ClipPointer _lastClip;
 

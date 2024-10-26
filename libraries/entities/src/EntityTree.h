@@ -15,6 +15,7 @@
 #include <QSet>
 #include <QVector>
 
+#include <HelperScriptEngine.h>
 #include <Octree.h>
 #include <SpatialParentFinder.h>
 
@@ -62,7 +63,7 @@ public:
 
 
     void setEntityMaxTmpLifetime(float maxTmpEntityLifetime) { _maxTmpEntityLifetime = maxTmpEntityLifetime; }
-    void setEntityScriptSourceWhitelist(const QString& entityScriptSourceWhitelist);
+    void setEntityScriptSourceAllowlist(const QString& entityScriptSourceAllowlist);
 
     /// Implements our type specific root element factory
     virtual OctreeElementPointer createNewElement(unsigned char* octalCode = NULL) override;
@@ -138,6 +139,7 @@ public:
     void evalEntitiesInSphere(const glm::vec3& center, float radius, PickFilter searchFilter, QVector<QUuid>& foundEntities);
     void evalEntitiesInSphereWithType(const glm::vec3& center, float radius, EntityTypes::EntityType type, PickFilter searchFilter, QVector<QUuid>& foundEntities);
     void evalEntitiesInSphereWithName(const glm::vec3& center, float radius, const QString& name, bool caseSensitive, PickFilter searchFilter, QVector<QUuid>& foundEntities);
+    void evalEntitiesInSphereWithTags(const glm::vec3& center, float radius, const QVector<QString>& tags, bool caseSensitive, PickFilter searchFilter, QVector<QUuid>& foundEntities);
     void evalEntitiesInCube(const AACube& cube, PickFilter searchFilter, QVector<QUuid>& foundEntities);
     void evalEntitiesInBox(const AABox& box, PickFilter searchFilter, QVector<QUuid>& foundEntities);
     void evalEntitiesInFrustum(const ViewFrustum& frustum, PickFilter searchFilter, QVector<QUuid>& foundEntities);
@@ -256,6 +258,9 @@ public:
     void setIsServerlessMode(bool value) { _serverlessDomain = value; }
     bool isServerlessMode() const { return _serverlessDomain; }
 
+    void setIsEntityServer(bool value) { _entityServer = value; }
+    bool isEntityServer() const { return _entityServer; }
+
     static void setGetEntityObjectOperator(std::function<QObject*(const QUuid&)> getEntityObjectOperator) { _getEntityObjectOperator = getEntityObjectOperator; }
     static QObject* getEntityObject(const QUuid& id);
 
@@ -299,7 +304,7 @@ protected:
 
     void notifyNewlyCreatedEntity(const EntityItem& newEntity, const SharedNodePointer& senderNode);
 
-    bool isScriptInWhitelist(const QString& scriptURL);
+    bool isScriptInAllowlist(const QString& scriptURL);
 
     QReadWriteLock _newlyCreatedHooksLock;
     QVector<NewlyCreatedEntityHook*> _newlyCreatedHooks;
@@ -362,7 +367,7 @@ protected:
 
     bool filterProperties(const EntityItemPointer& existingEntity, EntityItemProperties& propertiesIn, EntityItemProperties& propertiesOut, bool& wasChanged, FilterType filterType) const;
     bool _hasEntityEditFilter{ false };
-    QStringList _entityScriptSourceWhitelist;
+    QStringList _entityScriptSourceAllowlist;
 
     MovingEntitiesOperator _entityMover;
     QHash<EntityItemID, EntityItemPointer> _entitiesToAdd;
@@ -379,6 +384,7 @@ private:
     std::vector<int32_t> _staleProxies;
 
     bool _serverlessDomain { false };
+    bool _entityServer { false };
 
     std::map<QString, QString> _namedPaths;
 
@@ -387,8 +393,7 @@ private:
                                          MovingEntitiesOperator& moveOperator, bool force, bool tellServer);
 
     // Script engine for writing entity tree data to and from JSON
-    std::mutex scriptEngineMutex;
-    ScriptEnginePointer scriptEngine{ newScriptEngine() };
+    HelperScriptEngine _helperScriptEngine;
 };
 
 void convertGrabUserDataToProperties(EntityItemProperties& properties);

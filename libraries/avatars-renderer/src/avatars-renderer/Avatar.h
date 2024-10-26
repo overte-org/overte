@@ -157,7 +157,6 @@ public:
     void init();
     void removeAvatarEntitiesFromTree();
     virtual void simulate(float deltaTime, bool inView) = 0;
-    virtual void simulateAttachments(float deltaTime);
 
     virtual void render(RenderArgs* renderArgs);
 
@@ -344,7 +343,6 @@ public:
     Q_INVOKABLE glm::quat jointToWorldRotation(const glm::quat& rotation, const int jointIndex = -1) const;
 
     Q_INVOKABLE virtual void setSkeletonModelURL(const QUrl& skeletonModelURL) override;
-    virtual void setAttachmentData(const QVector<AttachmentData>& attachmentData) override;
 
     void updateDisplayNameAlpha(bool showDisplayName);
     virtual void setSessionDisplayName(const QString& sessionDisplayName) override { }; // no-op
@@ -445,7 +443,7 @@ public:
     /*@jsdoc
      * Gets the ID of the entity or avatar that the avatar is parented to.
      * @function MyAvatar.getParentID
-     * @returns {Uuid} The ID of the entity or avatar that the avatar is parented to. {@link Uuid(0)|Uuid.NULL} if not parented.
+     * @returns {Uuid} The ID of the entity or avatar that the avatar is parented to. {@link Uuid(0)|Uuid.NONE} if not parented.
      */
     // This calls through to the SpatiallyNestable versions, but is here to expose these to JavaScript.
     Q_INVOKABLE virtual const QUuid getParentID() const override { return SpatiallyNestable::getParentID(); }
@@ -454,7 +452,7 @@ public:
      * Sets the ID of the entity or avatar that the avatar is parented to.
      * @function MyAvatar.setParentID
      * @param {Uuid} parentID - The ID of the entity or avatar that the avatar should be parented to. Set to
-     *    {@link Uuid(0)|Uuid.NULL} to unparent.
+     *    {@link Uuid(0)|Uuid.NONE} to unparent.
      */
     // This calls through to the SpatiallyNestable versions, but is here to expose these to JavaScript.
     Q_INVOKABLE virtual void setParentID(const QUuid& parentID) override;
@@ -556,6 +554,11 @@ public:
 
     uint32_t appendSubMetaItems(render::ItemIDs& subItems);
 
+    virtual bool shouldRender() const { return _isMeshVisible && _isReadyToDraw; }
+
+    static const float MYAVATAR_ENTITY_LOADING_PRIORITY;
+    static const float OTHERAVATAR_ENTITY_LOADING_PRIORITY;
+
 signals:
     /*@jsdoc
      * Triggered when the avatar's target scale is changed. The target scale is the desired scale of the avatar without any
@@ -650,10 +653,6 @@ protected:
     mutable bool _modelJointsCached { false };
 
     glm::vec3 _skeletonOffset;
-    std::vector<std::shared_ptr<Model>> _attachmentModels;
-    std::vector<bool> _attachmentModelsTexturesLoaded;
-    std::vector<std::shared_ptr<Model>> _attachmentsToRemove;
-    std::vector<std::shared_ptr<Model>> _attachmentsToDelete;
 
     float _bodyYawDelta { 0.0f };  // degrees/sec
     float _seatedBodyYawDelta{ 0.0f };  // degrees/renderframe
@@ -748,12 +747,14 @@ protected:
     void processMaterials();
 
     AABox _renderBound;
-    bool _isMeshVisible{ true };
-    bool _needMeshVisibleSwitch{ true };
+    bool _isMeshVisible { true };
+    bool _needMeshVisibleSwitch { true };
+    bool _isReadyToDraw { false };
+    bool _needsWearablesLoadedCheck { false };
+    bool _hasCheckedForAvatarEntities { false };
 
     static const float MYAVATAR_LOADING_PRIORITY;
     static const float OTHERAVATAR_LOADING_PRIORITY;
-    static const float ATTACHMENT_LOADING_PRIORITY;
 
     LoadingStatus _loadingStatus { LoadingStatus::NoModel };
 
@@ -773,12 +774,9 @@ protected:
     VectorOfIDs _grabsToDelete; // deleted grab IDs -- changes needed to entities or physics
 
     ReadWriteLockable _subItemLock;
-    void updateAttachmentRenderIDs();
-    render::ItemIDs _attachmentRenderIDs;
     void updateDescendantRenderIDs();
     render::ItemIDs _descendantRenderIDs;
     std::unordered_set<EntityItemID> _renderingDescendantEntityIDs;
-    uint32_t _lastAncestorChainRenderableVersion { 0 };
 };
 
 #endif // hifi_Avatar_h

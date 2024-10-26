@@ -196,6 +196,18 @@ TabBar {
                                 editTabView.currentIndex = tabIndex.properties
                             }
                         }
+
+                        NewEntityButton {
+                            icon: "icons/sound.svg"
+                            text: "SOUND"
+                            onClicked: {
+                                editRoot.sendToScript({
+                                    method: "newEntityButtonClicked",
+                                    params: { buttonName: "newSoundButton" }
+                                });
+                                editTabView.currentIndex = tabIndex.properties
+                            }
+                        }
                     }
 
                     HifiControls.Button {
@@ -291,6 +303,22 @@ TabBar {
         }
     }
 
+    EditTabButton {
+        title: "IMPORT"
+        active: true
+        enabled: true
+        property string originalUrl: ""
+
+        property Component visualItem: Component {
+            WebView {
+                id: advancedImportWebView
+                url: Qt.resolvedUrl("../importEntities/html/importEntities.html")
+                enabled: true
+                blurOnCtrlShift: false
+            }
+        }
+    }
+
     function fromScript(message) {
         switch (message.method) {
             case 'selectTab':
@@ -304,7 +332,7 @@ TabBar {
     // Changes the current tab based on tab index or title as input
     function selectTab(id) {
         if (typeof id === 'number') {
-            if (id >= tabIndex.create && id <= tabIndex.grid) {
+            if (id >= tabIndex.create && id <= tabIndex.import) {
                 editTabView.currentIndex = id;
             } else {
                 console.warn('Attempt to switch to invalid tab:', id);
@@ -319,6 +347,9 @@ TabBar {
                     break;
                 case 'grid':
                     editTabView.currentIndex = tabIndex.grid;
+                    break;
+                case 'import':
+                    editTabView.currentIndex = tabIndex.import;
                     break;
                 default:
                     console.warn('Attempt to switch to invalid tab:', id);

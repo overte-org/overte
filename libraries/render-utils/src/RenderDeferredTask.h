@@ -145,7 +145,7 @@ public:
     using JobModel = render::Task::ModelI<RenderDeferredTask, Input, Config>;
 
     void configure(const Config& config);
-    void build(JobModel& task, const render::Varying& input, render::Varying& output, uint8_t transformOffset);
+    void build(JobModel& task, const render::Varying& input, render::Varying& output, uint8_t transformOffset, render::CullFunctor cullFunctor, size_t depth);
 };
 
 

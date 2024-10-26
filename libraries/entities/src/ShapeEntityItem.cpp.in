@@ -1,0 +1,358 @@
+//
+//  Created by Bradley Austin Davis on 2016/05/09
+//  Copyright 2013 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#include "ShapeEntityItem.h"
+
+#include <glm/gtx/transform.hpp>
+
+#include <QtCore/QDebug>
+
+#include <GeometryUtil.h>
+
+#include "EntitiesLogging.h"
+#include "EntityItemProperties.h"
+#include "EntityTree.h"
+#include "EntityTreeElement.h"
+
+// hullShapeCalculator is a hook for external code that knows how to configure a ShapeInfo
+// for given EntityShape and dimensions
+ShapeEntityItem::ShapeInfoCalculator hullShapeCalculator = nullptr;
+
+void ShapeEntityItem::setShapeInfoCalulator(ShapeEntityItem::ShapeInfoCalculator callback) {
+    hullShapeCalculator = callback;
+}
+
+ShapeEntityItem::Pointer ShapeEntityItem::baseFactory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    Pointer entity(new ShapeEntityItem(entityID), [](ShapeEntityItem* ptr) { ptr->deleteLater(); });
+    entity->setProperties(properties);
+    return entity;
+}
+
+EntityItemPointer ShapeEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    return baseFactory(entityID, properties);
+}
+
+EntityItemPointer ShapeEntityItem::boxFactory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    auto result = baseFactory(entityID, properties);
+    result->setShape(EntityShape::Cube);
+    return result;
+}
+
+EntityItemPointer ShapeEntityItem::sphereFactory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    auto result = baseFactory(entityID, properties);
+    result->setShape(EntityShape::Sphere);
+    return result;
+}
+
+// our non-pure virtual subclass for now...
+ShapeEntityItem::ShapeEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
+    _type = EntityTypes::Shape;
+    _volumeMultiplier *= PI / 6.0f;
+}
+
+EntityItemProperties ShapeEntityItem::getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const {
+    EntityItemProperties properties = EntityItem::getProperties(desiredProperties, allowEmptyDesiredProperties); // get the properties from our base class
+
+@Shape_ENTITY_COPY_TO@
+
+    return properties;
+}
+
+void ShapeEntityItem::setShape(EntityShape shape) {
+    switch (shape) {
+        case EntityShape::Cube:
+            _type = EntityTypes::Box;
+            break;
+        case EntityShape::Sphere:
+            _type = EntityTypes::Sphere;
+            break;
+        case EntityShape::Circle:
+            // Circle is implicitly flat so we enforce flat dimensions
+            setUnscaledDimensions(getUnscaledDimensions());
+            break;
+        case EntityShape::Quad:
+            // Quad is implicitly flat so we enforce flat dimensions
+            setUnscaledDimensions(getUnscaledDimensions());
+            break;
+        default:
+            _type = EntityTypes::Shape;
+            break;
+    }
+
+    if (shape != getShape()) {
+        // Internally grabs writeLock
+        markDirtyFlags(Simulation::DIRTY_SHAPE);
+        withWriteLock([&] {
+            _needsRenderUpdate = true;
+            _shape = shape;
+        });
+    }
+}
+
+EntityShape ShapeEntityItem::getShape() const {
+    return resultWithReadLock<EntityShape>([&] {
+        return _shape;
+    });
+}
+
+bool ShapeEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Shape_ENTITY_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags ShapeEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
+
+@Shape_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+void ShapeEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
+                                         EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                         EntityPropertyFlags& requestedProperties,
+                                         EntityPropertyFlags& propertyFlags,
+                                         EntityPropertyFlags& propertiesDidntFit,
+                                         int& propertyCount,
+                                         OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Shape_ENTITY_APPEND@
+
+}
+
+int ShapeEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                ReadBitstreamToTreeParams& args,
+                                                EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Shape_ENTITY_READ@
+
+    return bytesRead;
+}
+
+void ShapeEntityItem::setUnscaledDimensions(const glm::vec3& value) {
+    const float MAX_FLAT_DIMENSION = 0.0001f;
+    const auto shape = getShape();
+    if ((shape == EntityShape::Circle || shape == EntityShape::Quad) && value.y > MAX_FLAT_DIMENSION) {
+        // enforce flatness in Y
+        glm::vec3 newDimensions = value;
+        newDimensions.y = MAX_FLAT_DIMENSION;
+        EntityItem::setUnscaledDimensions(newDimensions);
+    } else {
+        EntityItem::setUnscaledDimensions(value);
+    }
+}
+
+bool ShapeEntityItem::supportsDetailedIntersection() const {
+    return getShape() == EntityShape::Sphere;
+}
+
+bool ShapeEntityItem::findDetailedRayIntersection(const glm::vec3& origin, const glm::vec3& direction,
+                                                  const glm::vec3& viewFrustumPos, OctreeElementPointer& element,
+                                                  float& distance, BoxFace& face, glm::vec3& surfaceNormal,
+                                                  QVariantMap& extraInfo, bool precisionPicking) const {
+    glm::vec3 dimensions = getScaledDimensions();
+    BillboardMode billboardMode = getBillboardMode();
+    glm::quat rotation = billboardMode == BillboardMode::NONE ? getWorldOrientation() : getLocalOrientation();
+    glm::vec3 position = getWorldPosition() + rotation * (dimensions * (ENTITY_ITEM_DEFAULT_REGISTRATION_POINT - getRegistrationPoint()));
+    rotation = BillboardModeHelpers::getBillboardRotation(position, rotation, billboardMode, viewFrustumPos);
+
+    // determine the ray in the frame of the entity transformed from a unit sphere
+    glm::mat4 entityToWorldMatrix = glm::translate(position) * glm::mat4_cast(rotation) * glm::scale(dimensions);
+    glm::mat4 worldToEntityMatrix = glm::inverse(entityToWorldMatrix);
+    glm::vec3 entityFrameOrigin = glm::vec3(worldToEntityMatrix * glm::vec4(origin, 1.0f));
+    glm::vec3 entityFrameDirection = glm::vec3(worldToEntityMatrix * glm::vec4(direction, 0.0f));
+
+    // NOTE: unit sphere has center of 0,0,0 and radius of 0.5
+    if (findRaySphereIntersection(entityFrameOrigin, entityFrameDirection, glm::vec3(0.0f), 0.5f, distance)) {
+        bool success;
+        glm::vec3 center = getCenterPosition(success);
+        if (success) {
+            // FIXME: this is only correct for uniformly scaled spheres
+            // determine where on the unit sphere the hit point occured
+            glm::vec3 hitAt = origin + (direction * distance);
+            surfaceNormal = glm::normalize(hitAt - center);
+        } else {
+            return false;
+        }
+        return true;
+    }
+    return false;
+}
+
+bool ShapeEntityItem::findDetailedParabolaIntersection(const glm::vec3& origin, const glm::vec3& velocity, const glm::vec3& acceleration,
+                                                       const glm::vec3& viewFrustumPos, OctreeElementPointer& element, float& parabolicDistance,
+                                                       BoxFace& face, glm::vec3& surfaceNormal,
+                                                       QVariantMap& extraInfo, bool precisionPicking) const {
+    glm::vec3 dimensions = getScaledDimensions();
+    BillboardMode billboardMode = getBillboardMode();
+    glm::quat rotation = billboardMode == BillboardMode::NONE ? getWorldOrientation() : getLocalOrientation();
+    glm::vec3 position = getWorldPosition() + rotation * (dimensions * (ENTITY_ITEM_DEFAULT_REGISTRATION_POINT - getRegistrationPoint()));
+    rotation = BillboardModeHelpers::getBillboardRotation(position, rotation, billboardMode, viewFrustumPos);
+
+    // determine the parabola in the frame of the entity transformed from a unit sphere
+    glm::mat4 entityToWorldMatrix = glm::translate(position) * glm::mat4_cast(rotation) * glm::scale(dimensions);
+    glm::mat4 worldToEntityMatrix = glm::inverse(entityToWorldMatrix);
+    glm::vec3 entityFrameOrigin = glm::vec3(worldToEntityMatrix * glm::vec4(origin, 1.0f));
+    glm::vec3 entityFrameVelocity = glm::vec3(worldToEntityMatrix * glm::vec4(velocity, 0.0f));
+    glm::vec3 entityFrameAcceleration = glm::vec3(worldToEntityMatrix * glm::vec4(acceleration, 0.0f));
+
+    // NOTE: unit sphere has center of 0,0,0 and radius of 0.5
+    if (findParabolaSphereIntersection(entityFrameOrigin, entityFrameVelocity, entityFrameAcceleration, glm::vec3(0.0f), 0.5f, parabolicDistance)) {
+        bool success;
+        glm::vec3 center = getCenterPosition(success);
+        if (success) {
+            // FIXME: this is only correct for uniformly scaled spheres
+            surfaceNormal = glm::normalize((origin + velocity * parabolicDistance + 0.5f * acceleration * parabolicDistance * parabolicDistance) - center);
+        } else {
+            return false;
+        }
+        return true;
+    }
+    return false;
+}
+
+bool ShapeEntityItem::getRotateForPicking() const {
+    auto shape = getShape();
+    return getBillboardMode() != BillboardMode::NONE && (shape < EntityShape::Cube || shape > EntityShape::Icosahedron);
+}
+
+void ShapeEntityItem::debugDump() const {
+    qCDebug(entities) << "ShapeEntityItem id:" << getEntityItemID() << "---------------------------------------------";
+    qCDebug(entities) << "    name:" << _name;
+    qCDebug(entities) << "    position:" << debugTreeVector(getWorldPosition());
+    qCDebug(entities) << "    dimensions:" << debugTreeVector(getScaledDimensions());
+    qCDebug(entities) << "    editedAgo:" << debugTime(getLastEdited(), usecTimestampNow());
+    qCDebug(entities) << "    pointer:" << this;
+
+@Shape_ENTITY_DEBUG@
+
+}
+
+void ShapeEntityItem::computeShapeInfo(ShapeInfo& info) {
+
+    // This will be called whenever DIRTY_SHAPE flag (set by dimension change, etc)
+    // is set.
+
+    const glm::vec3 entityDimensions = getScaledDimensions();
+    const auto shape = getShape();
+
+    switch (shape){
+        case EntityShape::Quad:
+            // Quads collide like flat Cubes
+        case EntityShape::Cube: {
+            _collisionShapeType = SHAPE_TYPE_BOX;
+        }
+        break;
+        case EntityShape::Sphere: {
+            float diameter = entityDimensions.x;
+            const float MIN_DIAMETER = 0.001f;
+            const float MIN_RELATIVE_SPHERICAL_ERROR = 0.001f;
+            if (diameter > MIN_DIAMETER
+                && fabsf(diameter - entityDimensions.y) / diameter < MIN_RELATIVE_SPHERICAL_ERROR
+                && fabsf(diameter - entityDimensions.z) / diameter < MIN_RELATIVE_SPHERICAL_ERROR) {
+
+                _collisionShapeType = SHAPE_TYPE_SPHERE;
+            } else {
+                _collisionShapeType = SHAPE_TYPE_ELLIPSOID;
+            }
+        }
+        break;
+        case EntityShape::Circle:
+            // Circles collide like flat Cylinders
+        case EntityShape::Cylinder: {
+            float diameter = entityDimensions.x;
+            const float MIN_DIAMETER = 0.001f;
+            const float MIN_RELATIVE_SPHERICAL_ERROR = 0.001f;
+            if (diameter > MIN_DIAMETER
+                && fabsf(diameter - entityDimensions.z) / diameter < MIN_RELATIVE_SPHERICAL_ERROR) {
+                _collisionShapeType = SHAPE_TYPE_CYLINDER_Y;
+            } else if (hullShapeCalculator) {
+                hullShapeCalculator(this, info);
+                _collisionShapeType = SHAPE_TYPE_SIMPLE_HULL;
+            } else {
+                // woops, someone forgot to hook up the hullShapeCalculator()!
+                // final fallback is ellipsoid
+                _collisionShapeType = SHAPE_TYPE_ELLIPSOID;
+            }
+        }
+        break;
+        case EntityShape::Cone: {
+            if (hullShapeCalculator) {
+                hullShapeCalculator(this, info);
+                _collisionShapeType = SHAPE_TYPE_SIMPLE_HULL;
+            } else {
+                _collisionShapeType = SHAPE_TYPE_ELLIPSOID;
+            }
+        }
+        break;
+        // gons, ones, & angles built via GeometryCache::extrudePolygon
+        case EntityShape::Triangle:
+        case EntityShape::Hexagon:
+        case EntityShape::Octagon: {
+            if (hullShapeCalculator) {
+                hullShapeCalculator(this, info);
+                _collisionShapeType = SHAPE_TYPE_SIMPLE_HULL;
+            } else {
+                _collisionShapeType = SHAPE_TYPE_ELLIPSOID;
+            }
+        }
+        break;
+        // hedrons built via GeometryCache::setUpFlatShapes
+        case EntityShape::Tetrahedron:
+        case EntityShape::Octahedron:
+        case EntityShape::Dodecahedron:
+        case EntityShape::Icosahedron: {
+            if ( hullShapeCalculator ) {
+                hullShapeCalculator(this, info);
+                _collisionShapeType = SHAPE_TYPE_SIMPLE_HULL;
+            } else {
+                _collisionShapeType = SHAPE_TYPE_ELLIPSOID;
+            }
+        }
+        break;
+        case EntityShape::Torus: {
+            // Not in GeometryCache::buildShapes, unsupported.
+            _collisionShapeType = SHAPE_TYPE_ELLIPSOID;
+            //TODO handle this shape more correctly
+        }
+        break;
+        default: {
+            _collisionShapeType = SHAPE_TYPE_ELLIPSOID;
+        }
+        break;
+    }
+
+    EntityItem::computeShapeInfo(info);
+}
+
+// This value specifies how the shape should be treated by physics calculations.
+ShapeType ShapeEntityItem::getShapeType() const {
+    return _collisionShapeType;
+}
+
+PulsePropertyGroup ShapeEntityItem::getPulseProperties() const {
+    return resultWithReadLock<PulsePropertyGroup>([&] {
+        return _pulseProperties;
+    });
+}
+
+void ShapeEntityItem::setUserData(const QString& value) {
+    withWriteLock([&] {
+        _needsRenderUpdate |= _userData != value;
+        _userData = value;
+    });
+}

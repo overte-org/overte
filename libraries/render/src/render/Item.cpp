@@ -148,6 +148,13 @@ namespace render {
         payload->render(args);
     }
 
+    template <> void payloadRenderSimulate(const PayloadProxyInterface::Pointer& payload, RenderArgs* args) {
+        if (!args || !payload) {
+            return;
+        }
+        payload->renderSimulate(args);
+    }
+
     template <> uint32_t metaFetchMetaSubItems(const PayloadProxyInterface::Pointer& payload, ItemIDs& subItems) {
         if (!payload) {
             return 0;
@@ -160,6 +167,13 @@ namespace render {
             return false;
         }
         return payload->passesZoneOcclusionTest(containingZones);
+    }
+
+    template <> ItemID payloadComputeMirrorView(const PayloadProxyInterface::Pointer& payload, ViewFrustum& viewFrustum) {
+        if (!payload) {
+            return Item::INVALID_ITEM_ID;
+        }
+        return payload->computeMirrorView(viewFrustum);
     }
 
     template <> HighlightStyle payloadGetOutlineStyle(const PayloadProxyInterface::Pointer& payload, const ViewFrustum& viewFrustum, const size_t height) {

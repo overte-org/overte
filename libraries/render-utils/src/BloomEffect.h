@@ -43,8 +43,8 @@ private:
 
 #include "BloomThreshold.shared.slh"
 
+    static gpu::PipelinePointer _pipeline;
     gpu::FramebufferPointer _outputBuffer;
-    gpu::PipelinePointer _pipeline;
     gpu::StructBuffer<Parameters> _parameters;
 };
 
@@ -68,7 +68,7 @@ private:
 
 #include "BloomApply.shared.slh"
 
-    gpu::PipelinePointer _pipeline;
+    static gpu::PipelinePointer _pipeline;
     gpu::StructBuffer<Parameters> _parameters;
 };
 
@@ -83,7 +83,7 @@ public:
 
 private:
 
-    gpu::PipelinePointer _pipeline;
+    static gpu::PipelinePointer _pipeline;
 };
 
 class DebugBloomConfig : public render::Job::Config {
@@ -125,7 +125,7 @@ public:
     void run(const render::RenderContextPointer& renderContext, const Inputs& inputs);
 
 private:
-    gpu::PipelinePointer _pipeline;
+    static gpu::PipelinePointer _pipeline;
     gpu::BufferPointer _params;
     DebugBloomConfig::Mode _mode;
 };

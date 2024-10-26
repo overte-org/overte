@@ -56,12 +56,22 @@ void PerformanceScriptingInterface::setRefreshRateProfile(RefreshRateProfile ref
     emit settingsChanged();
 }
 
+void PerformanceScriptingInterface::setCustomRefreshRate(RefreshRateManager::RefreshRateRegime refreshRateRegime, int value)
+{
+    qApp->getRefreshRateManager().setCustomRefreshRate(refreshRateRegime, value);
+    emit settingsChanged();
+}
+
+int PerformanceScriptingInterface::getCustomRefreshRate(RefreshRateManager::RefreshRateRegime refreshRateRegime) const {
+    return qApp->getRefreshRateManager().getCustomRefreshRate(refreshRateRegime);
+}
+
 PerformanceScriptingInterface::RefreshRateProfile PerformanceScriptingInterface::getRefreshRateProfile() const {
     return (PerformanceScriptingInterface::RefreshRateProfile)qApp->getRefreshRateManager().getRefreshRateProfile();
 }
 
 QStringList PerformanceScriptingInterface::getRefreshRateProfileNames() const {
-    static const QStringList refreshRateProfileNames = { "ECO", "INTERACTIVE", "REALTIME" };
+    static const QStringList refreshRateProfileNames = { "ECO", "INTERACTIVE", "REALTIME", "CUSTOM" };
     return refreshRateProfileNames;
 }
 

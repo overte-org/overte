@@ -192,7 +192,6 @@
 #include "scripting/AssetMappingsScriptingInterface.h"
 #include "scripting/ClipboardScriptingInterface.h"
 #include "scripting/DesktopScriptingInterface.h"
-#include "scripting/ScreenshareScriptingInterface.h"
 #include "scripting/AccountServicesScriptingInterface.h"
 #include "scripting/HMDScriptingInterface.h"
 #include "scripting/MenuScriptingInterface.h"
@@ -232,7 +231,6 @@
 
 #include <GPUIdent.h>
 #include <gl/GLHelpers.h>
-#include <src/scripting/GooglePolyScriptingInterface.h>
 #include <EntityScriptClient.h>
 #include <ModelScriptingInterface.h>
 
@@ -243,8 +241,6 @@
 #include <raypick/PointerScriptingInterface.h>
 #include <raypick/RayPick.h>
 #include <raypick/MouseTransformNode.h>
-
-#include <FadeEffect.h>
 
 #include "ResourceRequestObserver.h"
 
@@ -316,7 +312,6 @@ static const QString JS_EXTENSION = ".js";
 static const QString FST_EXTENSION = ".fst";
 static const QString FBX_EXTENSION = ".fbx";
 static const QString OBJ_EXTENSION = ".obj";
-static const QString AVA_JSON_EXTENSION = ".ava.json";
 static const QString WEB_VIEW_TAG = "noDownload=true";
 static const QString ZIP_EXTENSION = ".zip";
 static const QString CONTENT_ZIP_EXTENSION = ".content.zip";
@@ -365,7 +360,6 @@ static const QString TESTER_FILE = "/sdcard/_hifi_test_device.txt";
 const std::vector<std::pair<QString, Application::AcceptURLMethod>> Application::_acceptedExtensions {
     { SVO_EXTENSION, &Application::importSVOFromURL },
     { SVO_JSON_EXTENSION, &Application::importSVOFromURL },
-    { AVA_JSON_EXTENSION, &Application::askToWearAvatarAttachmentUrl },
     { JSON_EXTENSION, &Application::importJSONFromURL },
     { JS_EXTENSION, &Application::askToLoadScript },
     { FST_EXTENSION, &Application::askToSetAvatarUrl },
@@ -908,7 +902,6 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
     auto entityScriptServerLog = DependencyManager::get<EntityScriptServerLogClient>();
     QObject::connect(scriptEngines.data(), &ScriptEngines::requestingEntityScriptServerLog, entityScriptServerLog.data(), &EntityScriptServerLogClient::requestMessagesForScriptEngines);
 
-    DependencyManager::set<GooglePolyScriptingInterface>();
     DependencyManager::set<OctreeStatsProvider>(nullptr, qApp->getOcteeSceneStats());
     DependencyManager::set<AvatarBookmarks>();
     DependencyManager::set<LocationBookmarks>();
@@ -918,13 +911,11 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
     DependencyManager::set<SelectionScriptingInterface>();
     DependencyManager::set<TTSScriptingInterface>();
 
-    DependencyManager::set<FadeEffect>();
     DependencyManager::set<ResourceRequestObserver>();
     DependencyManager::set<Keyboard>();
     DependencyManager::set<KeyboardScriptingInterface>();
     DependencyManager::set<GrabManager>();
     DependencyManager::set<AvatarPackager>();
-    DependencyManager::set<ScreenshareScriptingInterface>();
     PlatformHelper::setup();
 
     QObject::connect(PlatformHelper::instance(), &PlatformHelper::systemWillWake, [] {
@@ -2146,8 +2137,8 @@ void Application::initialize(const QCommandLineParser &parser) {
         }
         return glm::vec3(1.0f);
     });
-    Procedural::opaqueStencil = [](gpu::StatePointer state) { PrepareStencil::testMaskDrawShape(*state); };
-    Procedural::transparentStencil = [](gpu::StatePointer state) { PrepareStencil::testMask(*state); };
+    Procedural::opaqueStencil = [](gpu::StatePointer state, bool useAA) { useAA ? PrepareStencil::testMaskDrawShape(*state) : PrepareStencil::testMaskDrawShapeNoAA(*state); };
+    Procedural::transparentStencil = [](gpu::StatePointer state) { PrepareStencil::testMaskResetNoAA(*state); };
 
     EntityTree::setGetEntityObjectOperator([this](const QUuid& id) -> QObject* {
         auto entities = getEntities();
@@ -2279,12 +2270,12 @@ void Application::initialize(const QCommandLineParser &parser) {
         auto loadingRequests = ResourceCache::getLoadingRequests();
 
         QJsonArray loadingRequestsStats;
-        for (const auto& request : loadingRequests) {
+        for (const auto& requestPair : loadingRequests) {
             QJsonObject requestStats;
-            requestStats["filename"] = request->getURL().fileName();
-            requestStats["received"] = request->getBytesReceived();
-            requestStats["total"] = request->getBytesTotal();
-            requestStats["attempts"] = (int)request->getDownloadAttempts();
+            requestStats["filename"] = requestPair.first->getURL().fileName();
+            requestStats["received"] = requestPair.first->getBytesReceived();
+            requestStats["total"] = requestPair.first->getBytesTotal();
+            requestStats["attempts"] = (int)requestPair.first->getDownloadAttempts();
             loadingRequestsStats.append(requestStats);
         }
 
@@ -2480,7 +2471,7 @@ void Application::initialize(const QCommandLineParser &parser) {
 
     // Setup the mouse ray pick and related operators
     {
-        auto mouseRayPick = std::make_shared<RayPick>(Vectors::ZERO, Vectors::UP, PickFilter(PickScriptingInterface::getPickEntities() | PickScriptingInterface::getPickLocalEntities()), 0.0f, true);
+        auto mouseRayPick = std::make_shared<RayPick>(Vectors::ZERO, Vectors::UP, PickFilter(PickScriptingInterface::getPickEntities() | PickScriptingInterface::getPickLocalEntities()), 0.0f, 0.0f, true);
         mouseRayPick->parentTransform = std::make_shared<MouseTransformNode>();
         mouseRayPick->setJointState(PickQuery::JOINT_STATE_MOUSE);
         auto mouseRayPickID = DependencyManager::get<PickManager>()->addPick(PickQuery::Ray, mouseRayPick);
@@ -2541,6 +2532,7 @@ void Application::initialize(const QCommandLineParser &parser) {
         copyViewFrustum(viewFrustum);
         return viewFrustum.getPosition();
     });
+    MirrorModeHelpers::setComputeMirrorViewOperator(EntityRenderer::computeMirrorViewOperator);
 
     DependencyManager::get<UsersScriptingInterface>()->setKickConfirmationOperator([this] (const QUuid& nodeID, unsigned int banFlags) { userKickConfirmation(nodeID, banFlags); });
 
@@ -3019,7 +3011,6 @@ Application::~Application() {
     DependencyManager::destroy<SoundCache>();
     DependencyManager::destroy<OctreeStatsProvider>();
     DependencyManager::destroy<GeometryCache>();
-    DependencyManager::destroy<ScreenshareScriptingInterface>();
 
     if (auto resourceManager = DependencyManager::get<ResourceManager>()) {
         resourceManager->cleanup();
@@ -3293,9 +3284,9 @@ void Application::initializeUi() {
     {
         auto defaultUrlValidator = OffscreenQmlSurface::getUrlValidator();
         auto newValidator = [=](const QUrl& url) -> bool {
-            QString whitelistPrefix = "[WHITELIST ENTITY SCRIPTS]";
+            QString allowlistPrefix = "[ALLOWLIST ENTITY SCRIPTS]";
             QList<QString> safeURLS = { "" };
-            safeURLS += qEnvironmentVariable("EXTRA_WHITELIST").trimmed().split(QRegExp("\\s*,\\s*"), Qt::SkipEmptyParts);
+            safeURLS += qEnvironmentVariable("EXTRA_ALLOWLIST").trimmed().split(QRegExp("\\s*,\\s*"), Qt::SkipEmptyParts);
 
             // PULL SAFEURLS FROM INTERFACE.JSON Settings
 
@@ -3305,7 +3296,7 @@ void Application::initializeUi() {
 
             // END PULL SAFEURLS FROM INTERFACE.JSON Settings
 
-            if (AUTHORIZED_EXTERNAL_QML_SOURCE.isParentOf(url)) {
+            if (QUrl(NetworkingConstants::OVERTE_COMMUNITY_APPLICATIONS).isParentOf(url)) {
                 return true;
             } else {
                 for (const auto& str : safeURLS) {
@@ -3332,7 +3323,7 @@ void Application::initializeUi() {
     QmlContextCallback platformInfoCallback = [](QQmlContext* context) {
         context->setContextProperty("PlatformInfo", new PlatformInfoScriptingInterface());
     };
-    OffscreenQmlSurface::addWhitelistContextHandler({
+    OffscreenQmlSurface::addAllowlistContextHandler({
         QUrl{ "hifi/tablet/TabletAddressDialog.qml" },
         QUrl{ "hifi/Card.qml" },
         QUrl{ "hifi/Pal.qml" },
@@ -3342,7 +3333,7 @@ void Application::initializeUi() {
     QmlContextCallback ttsCallback = [](QQmlContext* context) {
         context->setContextProperty("TextToSpeech", DependencyManager::get<TTSScriptingInterface>().data());
     };
-    OffscreenQmlSurface::addWhitelistContextHandler({
+    OffscreenQmlSurface::addAllowlistContextHandler({
         QUrl{ "hifi/tts/TTS.qml" }
     }, ttsCallback);
     qmlRegisterType<ResourceImageItem>("Hifi", 1, 0, "ResourceImageItem");
@@ -3520,7 +3511,6 @@ void Application::onDesktopRootContextCreated(QQmlContext* surfaceContext) {
     surfaceContext->setContextProperty("Users", DependencyManager::get<UsersScriptingInterface>().data());
 
     surfaceContext->setContextProperty("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
-    surfaceContext->setContextProperty("Screenshare", DependencyManager::get<ScreenshareScriptingInterface>().data());
     surfaceContext->setContextProperty("Camera", &_myCamera);
 
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
@@ -3626,7 +3616,6 @@ void Application::userKickConfirmation(const QUuid& nodeID, unsigned int banFlag
 }
 
 void Application::setupQmlSurface(QQmlContext* surfaceContext, bool setAdditionalContextProperties) {
-    surfaceContext->setContextProperty("Screenshare", DependencyManager::get<ScreenshareScriptingInterface>().data());
     surfaceContext->setContextProperty("Users", DependencyManager::get<UsersScriptingInterface>().data());
     surfaceContext->setContextProperty("HMD", DependencyManager::get<HMDScriptingInterface>().data());
     surfaceContext->setContextProperty("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
@@ -4084,11 +4073,8 @@ bool Application::importFromZIP(const QString& filePath) {
     qDebug() << "A zip file has been dropped in: " << filePath;
     QUrl empty;
     // handle Blocks download from Marketplace
-    if (filePath.contains("poly.google.com/downloads")) {
-        addAssetToWorldFromURL(filePath);
-    } else {
-        qApp->getFileDownloadInterface()->runUnzip(filePath, empty, true, true, false);
-    }
+    qApp->getFileDownloadInterface()->runUnzip(filePath, empty, true, true, false);
+    
     return true;
 }
 
@@ -5732,15 +5718,30 @@ void Application::init() {
 
     getEntities()->init();
     getEntities()->setEntityLoadingPriorityFunction([this](const EntityItem& item) {
-        auto dims = item.getScaledDimensions();
-        auto maxSize = glm::compMax(dims);
+        if (item.getEntityHostType() == entity::HostType::AVATAR) {
+            return item.isMyAvatarEntity() ? Avatar::MYAVATAR_ENTITY_LOADING_PRIORITY : Avatar::OTHERAVATAR_ENTITY_LOADING_PRIORITY;
+        }
 
+        const float maxSize = glm::compMax(item.getScaledDimensions());
         if (maxSize <= 0.0f) {
             return 0.0f;
         }
 
-        auto distance = glm::distance(getMyAvatar()->getWorldPosition(), item.getWorldPosition());
-        return atan2(maxSize, distance);
+        const glm::vec3 itemPosition = item.getWorldPosition();
+        const float distance = glm::distance(getMyAvatar()->getWorldPosition(), itemPosition);
+        float result = atan2(maxSize, distance);
+
+        bool isInView = true;
+        {
+            QMutexLocker viewLocker(&_viewMutex);
+            isInView = _viewFrustum.sphereIntersectsKeyhole(itemPosition, maxSize);
+        }
+        if (!isInView) {
+            const float OUT_OF_VIEW_PENALTY = -(float)M_PI_2;
+            result += OUT_OF_VIEW_PENALTY;
+        }
+
+        return result;
     });
 
     ObjectMotionState::setShapeManager(&_shapeManager);
@@ -7251,10 +7252,6 @@ void Application::updateWindowTitle() const {
         + (BuildInfo::BUILD_TYPE == BuildInfo::BuildType::Stable ? QString("Version") : QString("Build"))
         + " " + applicationVersion();
 
-    if (BuildInfo::RELEASE_NAME != "") {
-        buildVersion += " - " + BuildInfo::RELEASE_NAME;
-    }
-
     QString connectionStatus = isInErrorState ? " (ERROR CONNECTING)" :
         nodeList->getDomainHandler().isConnected() ? "" : " (NOT CONNECTED)";
 
@@ -7544,7 +7541,6 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     scriptEngine->registerGlobalObject("AvatarList", DependencyManager::get<AvatarManager>().data());
 
     scriptEngine->registerGlobalObject("Camera", &_myCamera);
-    scriptEngine->registerGlobalObject("Screenshare", DependencyManager::get<ScreenshareScriptingInterface>().data());
 
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
     scriptEngine->registerGlobalObject("SpeechRecognizer", DependencyManager::get<SpeechRecognizer>().data());
@@ -7647,8 +7643,6 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     scriptEngine->registerGlobalObject("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
     scriptEngine->registerGlobalObject("Users", DependencyManager::get<UsersScriptingInterface>().data());
 
-    //scriptEngine->registerGlobalObject("GooglePoly", DependencyManager::get<GooglePolyScriptingInterface>().data());
-
     if (auto steamClient = PluginManager::getInstance()->getSteamClientPlugin()) {
         scriptEngine->registerGlobalObject("Steam", new SteamScriptingInterface(scriptManager.get(), steamClient.get()));
     }
@@ -7657,7 +7651,7 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
 
     {
         auto connection = std::make_shared<QMetaObject::Connection>();
-        *connection = scriptManager->connect(scriptManager.get(), &ScriptManager::scriptEnding, [scriptManager, connection]() {
+        *connection = scriptManager->connect(scriptManager.get(), &ScriptManager::scriptEnding, [this, scriptManager, connection]() {
             // Request removal of controller routes with callbacks to a given script engine
             auto userInputMapper = DependencyManager::get<UserInputMapper>();
             // scheduleScriptEndpointCleanup will have the last instance of shared pointer to script manager
@@ -7837,74 +7831,6 @@ bool Application::askToLoadScript(const QString& scriptFilenameOrURL) {
     return true;
 }
 
-bool Application::askToWearAvatarAttachmentUrl(const QString& url) {
-    QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
-    QNetworkRequest networkRequest = QNetworkRequest(url);
-    networkRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
-    networkRequest.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
-    QNetworkReply* reply = networkAccessManager.get(networkRequest);
-    int requestNumber = ++_avatarAttachmentRequest;
-    connect(reply, &QNetworkReply::finished, [this, reply, url, requestNumber]() {
-
-        if (requestNumber != _avatarAttachmentRequest) {
-            // this request has been superseded by another more recent request
-            reply->deleteLater();
-            return;
-        }
-
-        QNetworkReply::NetworkError networkError = reply->error();
-        if (networkError == QNetworkReply::NoError) {
-            // download success
-            QByteArray contents = reply->readAll();
-
-            QJsonParseError jsonError;
-            auto doc = QJsonDocument::fromJson(contents, &jsonError);
-            if (jsonError.error == QJsonParseError::NoError) {
-
-                auto jsonObject = doc.object();
-
-                // retrieve optional name field from JSON
-                QString name = tr("Unnamed Attachment");
-                auto nameValue = jsonObject.value("name");
-                if (nameValue.isString()) {
-                    name = nameValue.toString();
-                }
-
-                auto avatarAttachmentConfirmationTitle = tr("Avatar Attachment Confirmation");
-                auto avatarAttachmentConfirmationMessage = tr("Would you like to wear '%1' on your avatar?").arg(name);
-                ModalDialogListener* dlg = OffscreenUi::asyncQuestion(avatarAttachmentConfirmationTitle,
-                                           avatarAttachmentConfirmationMessage,
-                                           QMessageBox::Ok | QMessageBox::Cancel);
-                QObject::connect(dlg, &ModalDialogListener::response, this, [=] (QVariant answer) {
-                    QObject::disconnect(dlg, &ModalDialogListener::response, this, nullptr);
-                    if (static_cast<QMessageBox::StandardButton>(answer.toInt()) == QMessageBox::Yes) {
-                        // add attachment to avatar
-                        auto myAvatar = getMyAvatar();
-                        assert(myAvatar);
-                        auto attachmentDataVec = myAvatar->getAttachmentData();
-                        AttachmentData attachmentData;
-                        attachmentData.fromJson(jsonObject);
-                        attachmentDataVec.push_back(attachmentData);
-                        myAvatar->setAttachmentData(attachmentDataVec);
-                    } else {
-                        qCDebug(interfaceapp) << "User declined to wear the avatar attachment";
-                    }
-                });
-            } else {
-                // json parse error
-                auto avatarAttachmentParseErrorString = tr("Error parsing attachment JSON from url: \"%1\"");
-                displayAvatarAttachmentWarning(avatarAttachmentParseErrorString.arg(url));
-            }
-        } else {
-            // download failure
-            auto avatarAttachmentDownloadErrorString = tr("Error downloading attachment JSON from url: \"%1\"");
-            displayAvatarAttachmentWarning(avatarAttachmentDownloadErrorString.arg(url));
-        }
-        reply->deleteLater();
-    });
-    return true;
-}
-
 static const QString CONTENT_SET_NAME_QUERY_PARAM = "name";
 
 void Application::replaceDomainContent(const QString& url, const QString& itemName) {
@@ -7983,11 +7909,6 @@ bool Application::askToReplaceDomainContent(const QString& url) {
     return true;
 }
 
-void Application::displayAvatarAttachmentWarning(const QString& message) const {
-    auto avatarAttachmentWarningTitle = tr("Avatar Attachment Failure");
-    OffscreenUi::asyncWarning(avatarAttachmentWarningTitle, message);
-}
-
 void Application::showDialog(const QUrl& widgetUrl, const QUrl& tabletUrl, const QString& name) const {
     auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet(SYSTEM_TABLET);
     auto hmd = DependencyManager::get<HMDScriptingInterface>();
@@ -8047,15 +7968,6 @@ void Application::addAssetToWorldFromURL(QString url) {
     if (url.contains("filename")) {
         filename = url.section("filename=", 1, 1);  // Filename is in "?filename=" parameter at end of URL.
     }
-    if (url.contains("poly.google.com/downloads")) {
-        filename = url.section('/', -1);
-        if (url.contains("noDownload")) {
-            filename.remove(".zip?noDownload=false");
-        } else {
-            filename.remove(".zip");
-        }
-
-    }
 
     if (!DependencyManager::get<NodeList>()->getThisNodeCanWriteAssets()) {
         QString errorInfo = "You do not have permissions to write to the Asset Server.";
@@ -8083,15 +7995,6 @@ void Application::addAssetToWorldFromURLRequestFinished() {
 
     if (url.contains("filename")) {
         filename = url.section("filename=", 1, 1);  // Filename is in "?filename=" parameter at end of URL.
-    }
-    if (url.contains("poly.google.com/downloads")) {
-        filename = url.section('/', -1);
-        if (url.contains("noDownload")) {
-            filename.remove(".zip?noDownload=false");
-        } else {
-            filename.remove(".zip");
-        }
-        isBlocks = true;
     }
 
     if (result == ResourceRequest::Success) {
@@ -8596,6 +8499,14 @@ void Application::loadScriptURLDialog() const {
 
 SharedSoundPointer Application::getSampleSound() const {
     return _sampleSound;
+}
+
+void Application::showVRKeyboardForHudUI(bool show) {
+    if (show) {
+        DependencyManager::get<Keyboard>()->setRaised(true, true);
+    } else {
+        DependencyManager::get<Keyboard>()->setRaised(false);
+    }
 }
 
 void Application::loadLODToolsDialog() {
@@ -9234,7 +9145,7 @@ void Application::createLoginDialog() {
     properties.getGrab().setGrabbable(false);
     properties.setIgnorePickIntersection(false);
     properties.setAlpha(1.0f);
-    properties.setDPI(DPI);
+    properties.setDpi(DPI);
     properties.setVisible(true);
 
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
@@ -9318,7 +9229,7 @@ void Application::createAvatarInputsBar() {
     properties.getGrab().setGrabbable(false);
     properties.setIgnorePickIntersection(false);
     properties.setAlpha(1.0f);
-    properties.setDPI(DPI);
+    properties.setDpi(DPI);
     properties.setVisible(true);
 
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();

@@ -75,13 +75,13 @@ void PerformanceManager::applyPerformancePreset(PerformanceManager::PerformanceP
 
     // Ugly case that prevent us to run deferred everywhere...
     bool isDeferredCapable = platform::Profiler::isRenderMethodDeferredCapable();
-    auto masterDisplay = platform::getDisplay(platform::getMasterDisplay());
+    auto primaryDisplay = platform::getDisplay(platform::getPrimaryDisplay());
     
     // eval recommended PPI and Scale
     float recommendedPpiScale = 1.0f;
     const float RECOMMENDED_PPI[] = { 200.0f, 200.0f, 120.f, 160.f, 250.f};
-    if (!masterDisplay.empty() && masterDisplay.count(platform::keys::display::ppi)) {
-        float ppi = masterDisplay[platform::keys::display::ppi];
+    if (!primaryDisplay.empty() && primaryDisplay.count(platform::keys::display::ppi)) {
+        float ppi = primaryDisplay[platform::keys::display::ppi];
         // only scale if the actual ppi is higher than the recommended ppi
         if (ppi > RECOMMENDED_PPI[preset]) {
             // make sure the scale is no less than a quarter
@@ -95,11 +95,13 @@ void PerformanceManager::applyPerformancePreset(PerformanceManager::PerformanceP
                 RenderScriptingInterface::RenderMethod::DEFERRED : 
                 RenderScriptingInterface::RenderMethod::FORWARD ) );
 
-            RenderScriptingInterface::getInstance()->setViewportResolutionScale(recommendedPpiScale);
-            
             RenderScriptingInterface::getInstance()->setShadowsEnabled(true);
-            qApp->getRefreshRateManager().setRefreshRateProfile(RefreshRateManager::RefreshRateProfile::REALTIME);
+            RenderScriptingInterface::getInstance()->setHazeEnabled(true);
+            RenderScriptingInterface::getInstance()->setBloomEnabled(true);
+            RenderScriptingInterface::getInstance()->setAmbientOcclusionEnabled(true);
+            RenderScriptingInterface::getInstance()->setViewportResolutionScale(recommendedPpiScale);
 
+            qApp->getRefreshRateManager().setRefreshRateProfile(RefreshRateManager::RefreshRateProfile::REALTIME);
             DependencyManager::get<LODManager>()->setWorldDetailQuality(WORLD_DETAIL_MEDIUM);
             
             break;
@@ -108,30 +110,39 @@ void PerformanceManager::applyPerformancePreset(PerformanceManager::PerformanceP
                 RenderScriptingInterface::RenderMethod::DEFERRED :
                 RenderScriptingInterface::RenderMethod::FORWARD));
 
+            RenderScriptingInterface::getInstance()->setShadowsEnabled(false);
+            RenderScriptingInterface::getInstance()->setHazeEnabled(true);
+            RenderScriptingInterface::getInstance()->setBloomEnabled(true);
+            RenderScriptingInterface::getInstance()->setAmbientOcclusionEnabled(false);
             RenderScriptingInterface::getInstance()->setViewportResolutionScale(recommendedPpiScale);
 
-            RenderScriptingInterface::getInstance()->setShadowsEnabled(false);
             qApp->getRefreshRateManager().setRefreshRateProfile(RefreshRateManager::RefreshRateProfile::REALTIME);
             DependencyManager::get<LODManager>()->setWorldDetailQuality(WORLD_DETAIL_MEDIUM);
 
             break;
         case PerformancePreset::LOW:
             RenderScriptingInterface::getInstance()->setRenderMethod(RenderScriptingInterface::RenderMethod::FORWARD);
-            RenderScriptingInterface::getInstance()->setShadowsEnabled(false);
-            qApp->getRefreshRateManager().setRefreshRateProfile(RefreshRateManager::RefreshRateProfile::REALTIME);
 
+            RenderScriptingInterface::getInstance()->setShadowsEnabled(false);
+            RenderScriptingInterface::getInstance()->setHazeEnabled(true);
+            RenderScriptingInterface::getInstance()->setBloomEnabled(false);
+            RenderScriptingInterface::getInstance()->setAmbientOcclusionEnabled(false);
             RenderScriptingInterface::getInstance()->setViewportResolutionScale(recommendedPpiScale);
 
+            qApp->getRefreshRateManager().setRefreshRateProfile(RefreshRateManager::RefreshRateProfile::REALTIME);
             DependencyManager::get<LODManager>()->setWorldDetailQuality(WORLD_DETAIL_LOW);
 
             break;
         case PerformancePreset::LOW_POWER:
             RenderScriptingInterface::getInstance()->setRenderMethod(RenderScriptingInterface::RenderMethod::FORWARD);
-            RenderScriptingInterface::getInstance()->setShadowsEnabled(false);
-            qApp->getRefreshRateManager().setRefreshRateProfile(RefreshRateManager::RefreshRateProfile::ECO);
 
+            RenderScriptingInterface::getInstance()->setShadowsEnabled(false);
+            RenderScriptingInterface::getInstance()->setHazeEnabled(false);
+            RenderScriptingInterface::getInstance()->setBloomEnabled(false);
+            RenderScriptingInterface::getInstance()->setAmbientOcclusionEnabled(false);
             RenderScriptingInterface::getInstance()->setViewportResolutionScale(recommendedPpiScale);
 
+            qApp->getRefreshRateManager().setRefreshRateProfile(RefreshRateManager::RefreshRateProfile::ECO);
             DependencyManager::get<LODManager>()->setWorldDetailQuality(WORLD_DETAIL_LOW);
 
             break;

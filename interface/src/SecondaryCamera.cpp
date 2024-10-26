@@ -27,7 +27,7 @@ public:
     using Config = SecondaryCameraJobConfig;
     using JobModel = render::Job::ModelO<SecondaryCameraJob, RenderArgsPointer, Config>;
     SecondaryCameraJob() {
-        _cachedArgsPointer = std::make_shared<RenderArgs>(_cachedArgs);
+        _cachedArgsPointer = std::make_shared<RenderArgs>();
         _attachedEntityPropertyFlags += PROP_POSITION;
         _attachedEntityPropertyFlags += PROP_ROTATION;
     }
@@ -203,7 +203,6 @@ public:
     }
 
 protected:
-    RenderArgs _cachedArgs;
     RenderArgsPointer _cachedArgsPointer;
 
 private:

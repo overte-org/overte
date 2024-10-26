@@ -197,10 +197,10 @@ typedef struct BSReader
 
 typedef struct Bit_stream_struc
 {
-  BSReader master;              /* Master tracking position, advanced
+  BSReader primary;             /* Primary tracking position, advanced
                                  * by bs_consume() */
   BSReader read;                /* Current read position, set back to the 
-                                 * master by bs_reset() */
+                                 * primary by bs_reset() */
 } Bit_stream_struc;
 
 /* Create and initialise a new bitstream reader */
@@ -209,25 +209,25 @@ Bit_stream_struc *bs_new ();
 /* Release a bitstream reader */
 void bs_free (Bit_stream_struc * bs);
 
-/* Reset the current read position to the master position */
+/* Reset the current read position to the primary position */
 static inline void
 bs_reset (Bit_stream_struc * bs)
 {
-  memcpy (&bs->read, &bs->master, sizeof (BSReader));
+  memcpy (&bs->read, &bs->primary, sizeof (BSReader));
 }
 
-/* Reset master and read states */
+/* Reset primary and read states */
 static inline void
 bs_flush (Bit_stream_struc * bs)
 {
   g_return_if_fail (bs != NULL);
 
-  bs->master.cur_bit = 8;
-  bs->master.size = 0;
-  bs->master.cur_used = 0;
-  bs->master.cur_byte = NULL;
-  bs->master.data = NULL;
-  bs->master.bitpos = 0;
+  bs->primary.cur_bit = 8;
+  bs->primary.size = 0;
+  bs->primary.cur_used = 0;
+  bs->primary.cur_byte = NULL;
+  bs->primary.data = NULL;
+  bs->primary.bitpos = 0;
 
   bs_reset (bs);
 }
@@ -235,7 +235,7 @@ bs_flush (Bit_stream_struc * bs)
 /* Set data as the stream for processing */
 gboolean bs_set_data (Bit_stream_struc * bs, const guint8 * data, gsize size);
 
-/* Advance the master position by Nbits */
+/* Advance the primary position by Nbits */
 void bs_consume (Bit_stream_struc * bs, guint32 Nbits);
 
 /* Number of bits available for reading */
@@ -253,14 +253,14 @@ void bs_skipbits (Bit_stream_struc * bs, guint32 N);
 /* give number of consumed bytes */
 static inline gsize bs_get_consumed (Bit_stream_struc * bs)
 {
-  return bs->master.cur_used;
+  return bs->primary.cur_used;
 }
 
 /* Current bitstream position in bits */
 static inline guint64
 bs_pos (Bit_stream_struc * bs)
 {
-  return bs->master.bitpos;
+  return bs->primary.bitpos;
 }
 
 /* Current read bitstream position in bits */

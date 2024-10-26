@@ -185,10 +185,10 @@ public:
     const Item getItemSafe(const ItemID& id) const { if (isAllocatedID(id)) { return _items[id]; } else { return Item(); } }
 
     // Access the spatialized items
-    const ItemSpatialTree& getSpatialTree() const { return _masterSpatialTree; }
+    const ItemSpatialTree& getSpatialTree() const { return _primarySpatialTree; }
 
     // Access non-spatialized items (layered objects, backgrounds)
-    const ItemIDSet& getNonspatialSet() const { return _masterNonspatialSet; }
+    const ItemIDSet& getNonspatialSet() const { return _primaryNonspatialSet; }
 
     // Access a particular Stage (empty if doesn't exist)
     // Thread safe
@@ -202,6 +202,8 @@ public:
 
     void setItemTransition(ItemID id, Index transitionId);
     void removeItemTransition(ItemID id);
+
+    void simulate(ItemID id, RenderArgs* args) { _items[id].renderSimulate(args); }
 
     HighlightStyle getOutlineStyle(ItemID id, const ViewFrustum& viewFrustum, uint16_t height) { return _items[id].getOutlineStyle(viewFrustum, height); }
 
@@ -226,8 +228,8 @@ protected:
     // database of items is protected for editing by a mutex
     std::mutex _itemsMutex;
     Item::Vector _items;
-    ItemSpatialTree _masterSpatialTree;
-    ItemIDSet _masterNonspatialSet;
+    ItemSpatialTree _primarySpatialTree;
+    ItemIDSet _primaryNonspatialSet;
 
     void resetItems(const Transaction::Resets& transactions);
     void resetTransitionFinishedOperator(const Transaction::TransitionFinishedOperators& transactions);

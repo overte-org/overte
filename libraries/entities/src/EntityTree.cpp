@@ -65,8 +65,8 @@ EntityTree::~EntityTree() {
     //eraseAllOctreeElements(false); // KEEP THIS
 }
 
-void EntityTree::setEntityScriptSourceWhitelist(const QString& entityScriptSourceWhitelist) { 
-    _entityScriptSourceWhitelist = entityScriptSourceWhitelist.split(',', Qt::SkipEmptyParts);
+void EntityTree::setEntityScriptSourceAllowlist(const QString& entityScriptSourceAllowlist) {
+    _entityScriptSourceAllowlist = entityScriptSourceAllowlist.split(',', Qt::SkipEmptyParts);
 }
 
 
@@ -368,7 +368,7 @@ bool EntityTree::updateEntity(EntityItemPointer entity, const EntityItemProperti
             }
         }
     } else {
-        if (getIsServer()) {
+        if (isEntityServer()) {
             bool simulationBlocked = !entity->getSimulatorID().isNull();
             if (properties.simulationOwnerChanged()) {
                 QUuid submittedID = properties.getSimulationOwner().getID();
@@ -674,7 +674,7 @@ void EntityTree::deleteEntitiesByID(const std::vector<EntityItemID>& ids, bool f
     // this method has two paths:
     // (a) entity-server: applies delete filter
     // (b) interface-client: deletes local- and my-avatar-entities immediately, submits domainEntity deletes to the entity-server
-    if (getIsServer()) {
+    if (isEntityServer()) {
         withWriteLock([&] {
             std::vector<EntityItemPointer> entitiesToDelete;
             entitiesToDelete.reserve(ids.size());
@@ -1110,6 +1110,42 @@ void EntityTree::evalEntitiesInSphereWithName(const glm::vec3& center, float rad
     foundEntities.swap(args.entities);
 }
 
+class FindEntitiesInSphereWithTagsArgs {
+public:
+    // Inputs
+    glm::vec3 position;
+    float targetRadius;
+    QVector<QString> tags;
+    bool caseSensitive;
+    PickFilter searchFilter;
+
+    // Outputs
+    QVector<QUuid> entities;
+};
+
+bool evalInSphereWithTagsOperation(const OctreeElementPointer& element, void* extraData) {
+    FindEntitiesInSphereWithTagsArgs* args = static_cast<FindEntitiesInSphereWithTagsArgs*>(extraData);
+    glm::vec3 penetration;
+    bool sphereIntersection = element->getAACube().findSpherePenetration(args->position, args->targetRadius, penetration);
+
+    // If this element contains the point, then search it...
+    if (sphereIntersection) {
+        EntityTreeElementPointer entityTreeElement = std::static_pointer_cast<EntityTreeElement>(element);
+        entityTreeElement->evalEntitiesInSphereWithTags(args->position, args->targetRadius, args->tags, args->caseSensitive, args->searchFilter, args->entities);
+        return true; // keep searching in case children have closer entities
+    }
+
+    // if this element doesn't contain the point, then none of it's children can contain the point, so stop searching
+    return false;
+}
+
+// NOTE: assumes caller has handled locking
+void EntityTree::evalEntitiesInSphereWithTags(const glm::vec3& center, float radius, const QVector<QString>& tags, bool caseSensitive, PickFilter searchFilter, QVector<QUuid>& foundEntities) {
+    FindEntitiesInSphereWithTagsArgs args = { center, radius, tags, caseSensitive, searchFilter, QVector<QUuid>() };
+    recurseTreeWithOperation(evalInSphereWithTagsOperation, &args);
+    foundEntities.swap(args.entities);
+}
+
 class FindEntitiesInCubeArgs {
 public:
     // Inputs
@@ -1411,17 +1447,17 @@ void EntityTree::bumpTimestamp(EntityItemProperties& properties) { //fixme put c
     properties.setLastEdited(properties.getLastEdited() + LAST_EDITED_SERVERSIDE_BUMP);
 }
 
-bool EntityTree::isScriptInWhitelist(const QString& scriptProperty) {
+bool EntityTree::isScriptInAllowlist(const QString& scriptProperty) {
 
     // grab a URL representation of the entity script so we can check the host for this script
     auto entityScriptURL = QUrl::fromUserInput(scriptProperty);
 
-    for (const auto& whiteListedPrefix : _entityScriptSourceWhitelist) {
-        auto whiteListURL = QUrl::fromUserInput(whiteListedPrefix);
+    for (const auto& allowListedPrefix : _entityScriptSourceAllowlist) {
+        auto allowListURL = QUrl::fromUserInput(allowListedPrefix);
 
-        // check if this script URL matches the whitelist domain and, optionally, is beneath the path
-        if (entityScriptURL.host().compare(whiteListURL.host(), Qt::CaseInsensitive) == 0 &&
-            entityScriptURL.path().startsWith(whiteListURL.path(), Qt::CaseInsensitive)) {
+        // check if this script URL matches the allowlist domain and, optionally, is beneath the path
+        if (entityScriptURL.host().compare(allowListURL.host(), Qt::CaseInsensitive) == 0 &&
+            entityScriptURL.path().startsWith(allowListURL.path(), Qt::CaseInsensitive)) {
             return true;
         }
     }
@@ -1432,7 +1468,7 @@ bool EntityTree::isScriptInWhitelist(const QString& scriptProperty) {
 // NOTE: Caller must lock the tree before calling this.
 int EntityTree::processEditPacketData(ReceivedMessage& message, const unsigned char* editData, int maxLength,
                                      const SharedNodePointer& senderNode) {
-    if (!getIsServer()) {
+    if (!isEntityServer()) {
         qCWarning(entities) << "EntityTree::processEditPacketData() should only be called on a server tree.";
         return 0;
     }
@@ -1504,18 +1540,18 @@ int EntityTree::processEditPacketData(ReceivedMessage& message, const unsigned c
                 }
             }
 
-            if (validEditPacket && !_entityScriptSourceWhitelist.isEmpty()) {
+            if (validEditPacket && !_entityScriptSourceAllowlist.isEmpty()) {
 
                 bool wasDeletedBecauseOfClientScript = false;
 
-                // check the client entity script to make sure its URL is in the whitelist
+                // check the client entity script to make sure its URL is in the allowlist
                 if (!properties.getScript().isEmpty()) {
-                    bool clientScriptPassedWhitelist = isScriptInWhitelist(properties.getScript());
+                    bool clientScriptPassedAllowlist = isScriptInAllowlist(properties.getScript());
 
-                    if (!clientScriptPassedWhitelist) {
+                    if (!clientScriptPassedAllowlist) {
                         if (wantEditLogging()) {
                             qCDebug(entities) << "User [" << senderNode->getUUID()
-                                << "] attempting to set entity script not on whitelist, edit rejected";
+                                << "] attempting to set entity script not on allowlist, edit rejected";
                         }
 
                         // If this was an add, we also want to tell the client that sent this edit that the entity was not added.
@@ -1530,20 +1566,20 @@ int EntityTree::processEditPacketData(ReceivedMessage& message, const unsigned c
                     }
                 }
 
-                // check all server entity scripts to make sure their URLs are in the whitelist
+                // check all server entity scripts to make sure their URLs are in the allowlist
                 if (!properties.getServerScripts().isEmpty()) {
-                    bool serverScriptPassedWhitelist = isScriptInWhitelist(properties.getServerScripts());
+                    bool serverScriptPassedAllowlist = isScriptInAllowlist(properties.getServerScripts());
 
-                    if (!serverScriptPassedWhitelist) {
+                    if (!serverScriptPassedAllowlist) {
                         if (wantEditLogging()) {
                             qCDebug(entities) << "User [" << senderNode->getUUID()
-                                << "] attempting to set server entity script not on whitelist, edit rejected";
+                                << "] attempting to set server entity script not on allowlist, edit rejected";
                         }
 
                         // If this was an add, we also want to tell the client that sent this edit that the entity was not added.
                         if (isAdd) {
                             // Make sure we didn't already need to send back a delete because the client script failed
-                            // the whitelist check
+                            // the allowlist check
                             if (!wasDeletedBecauseOfClientScript) {
                                 QWriteLocker locker(&_recentlyDeletedEntitiesLock);
                                 _recentlyDeletedEntityItemIDs.insert(usecTimestampNow(), entityItemID);
@@ -2035,7 +2071,7 @@ int EntityTree::processEraseMessage(ReceivedMessage& message, const SharedNodePo
     // Which means this is a state synchronization message from the the entity-server.  It is saying
     // "The following domain-entities have already been deleted". While need to perform sanity checking
     // (e.g. verify these are domain entities) permissions need NOT checked for the domain-entities.
-    assert(!getIsServer());
+    assert(!isEntityServer());
     // TODO: remove this stuff out of EntityTree:: and into interface-client code.
     #ifdef EXTRA_ERASE_DEBUGGING
         qCDebug(entities) << "EntityTree::processEraseMessage()";
@@ -2105,7 +2141,7 @@ int EntityTree::processEraseMessage(ReceivedMessage& message, const SharedNodePo
 int EntityTree::processEraseMessageDetails(const QByteArray& dataByteArray, const SharedNodePointer& sourceNode) {
     // NOTE: this is called on entity-server when receiving a delete request from an interface-client or agent
     //TODO: assert(treeIsLocked);
-    assert(getIsServer());
+    assert(isEntityServer());
     #ifdef EXTRA_ERASE_DEBUGGING
         qCDebug(entities) << "EntityTree::processEraseMessageDetails()";
     #endif
@@ -2553,11 +2589,10 @@ bool EntityTree::writeToMap(QVariantMap& entityDescription, OctreeElementPointer
     }
     entityDescription["DataVersion"] = _persistDataVersion;
     entityDescription["Id"] = _persistID;
-    const std::lock_guard<std::mutex> scriptLock(scriptEngineMutex);
-    RecurseOctreeToMapOperator theOperator(entityDescription, element, scriptEngine.get(), skipDefaultValues,
-                                            skipThoseWithBadParents, _myAvatar);
-    withReadLock([&] {
-        recurseTreeWithOperator(&theOperator);
+    _helperScriptEngine.run( [&] {
+        RecurseOctreeToMapOperator theOperator(entityDescription, element, _helperScriptEngine.get(), skipDefaultValues,
+                                               skipThoseWithBadParents, _myAvatar);
+        withReadLock([&] { recurseTreeWithOperator(&theOperator); });
     });
     return true;
 }
@@ -2728,11 +2763,10 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
         }
 
         EntityItemProperties properties;
-        {
-            const std::lock_guard<std::mutex> scriptLock(scriptEngineMutex);
-            ScriptValue entityScriptValue = variantMapToScriptValue(entityMap, *scriptEngine);
+        _helperScriptEngine.run( [&] {
+            ScriptValue entityScriptValue = variantMapToScriptValue(entityMap, *_helperScriptEngine.get());
             EntityItemPropertiesFromScriptValueIgnoreReadOnly(entityScriptValue, properties);
-        }
+        });
 
         EntityItemID entityItemID;
         if (entityMap.contains("id")) {
@@ -2770,8 +2804,8 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
             // Use skybox value only if it is not empty, else set ambientMode to inherit (to use default URL)
             properties.setAmbientLightMode(COMPONENT_MODE_ENABLED);
             if (properties.getAmbientLight().getAmbientURL() == "") {
-                if (properties.getSkybox().getURL() != "") {
-                    properties.getAmbientLight().setAmbientURL(properties.getSkybox().getURL());
+                if (properties.getSkybox().getUrl() != "") {
+                    properties.getAmbientLight().setAmbientURL(properties.getSkybox().getUrl());
                 } else {
                     properties.setAmbientLightMode(COMPONENT_MODE_INHERIT);
                 }
@@ -2856,6 +2890,11 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
             }
         }
 
+        // Before, animations weren't smoothed
+        if (contentVersion < (int)EntityVersion::AnimationSmoothFrames && properties.getType() == EntityTypes::EntityType::Model) {
+            properties.getAnimation().setSmoothFrames(false);
+        }
+
         EntityItemPointer entity = addEntity(entityItemID, properties, isImport);
         if (!entity) {
             qCDebug(entities) << "adding Entity failed:" << entityItemID << properties.getType();
@@ -2881,13 +2920,12 @@ bool EntityTree::readFromMap(QVariantMap& map, const bool isImport) {
 }
 
 bool EntityTree::writeToJSON(QString& jsonString, const OctreeElementPointer& element) {
-    const std::lock_guard<std::mutex> scriptLock(scriptEngineMutex);
-    RecurseOctreeToJSONOperator theOperator(element, scriptEngine.get(), jsonString);
-    withReadLock([&] {
-        recurseTreeWithOperator(&theOperator);
-    });
+    _helperScriptEngine.run( [&] {
+        RecurseOctreeToJSONOperator theOperator(element, _helperScriptEngine.get(), jsonString);
+        withReadLock([&] { recurseTreeWithOperator(&theOperator); });
 
-    jsonString = theOperator.getJson();
+        jsonString = theOperator.getJson();
+    });
     return true;
 }
 

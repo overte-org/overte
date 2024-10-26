@@ -86,10 +86,10 @@ public:
     // uses randomization to have the AudioMixer send a stats packet to this node around every second
     bool shouldSendStats(int frameNumber);
 
-    float getMasterAvatarGain() const { return _masterAvatarGain; }
-    void setMasterAvatarGain(float gain) { _masterAvatarGain = gain; }
-    float getMasterInjectorGain() const { return _masterInjectorGain; }
-    void setMasterInjectorGain(float gain) { _masterInjectorGain = gain; }
+    float getPrimaryAvatarGain() const { return _primaryAvatarGain; }
+    void setPrimaryAvatarGain(float gain) { _primaryAvatarGain = gain; }
+    float getPrimaryInjectorGain() const { return _primaryInjectorGain; }
+    void setPrimaryInjectorGain(float gain) { _primaryInjectorGain = gain; }
 
     AudioLimiter audioLimiter;
 
@@ -140,11 +140,11 @@ public:
 
     Streams& getStreams() { return _streams; }
 
-    // thread-safe, called from AudioMixerSlave(s) while processing ignore packets for other nodes
+    // thread-safe, called from AudioMixerWorker(s) while processing ignore packets for other nodes
     void ignoredByNode(QUuid nodeID);
     void unignoredByNode(QUuid nodeID);
 
-    // start of methods called non-concurrently from single AudioMixerSlave mixing for the owning node
+    // start of methods called non-concurrently from single AudioMixerWorker mixing for the owning node
 
     const Node::IgnoredNodeIDs& getNewIgnoredNodeIDs() const { return _newIgnoredNodeIDs; }
     const Node::IgnoredNodeIDs& getNewUnignoredNodeIDs() const { return _newUnignoredNodeIDs; }
@@ -163,7 +163,7 @@ public:
     bool getHasReceivedFirstMix() const { return _hasReceivedFirstMix; }
     void setHasReceivedFirstMix(bool hasReceivedFirstMix) { _hasReceivedFirstMix = hasReceivedFirstMix; }
 
-    // end of methods called non-concurrently from single AudioMixerSlave
+    // end of methods called non-concurrently from single AudioMixerWorker
 
 signals:
     void injectorStreamFinished(const QUuid& streamID);
@@ -194,8 +194,8 @@ private:
 
     int _frameToSendStats { 0 };
 
-    float _masterAvatarGain { 1.0f };   // per-listener mixing gain, applied only to avatars
-    float _masterInjectorGain { 1.0f }; // per-listener mixing gain, applied only to injectors
+    float _primaryAvatarGain { 1.0f };   // per-listener mixing gain, applied only to avatars
+    float _primaryInjectorGain { 1.0f }; // per-listener mixing gain, applied only to injectors
 
     CodecPluginPointer _codec;
     QString _selectedCodecName;

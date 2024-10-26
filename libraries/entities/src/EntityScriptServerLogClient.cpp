@@ -69,7 +69,6 @@ void EntityScriptServerLogClient::handleEntityServerScriptLogPacket(QSharedPoint
     QString messageText = QString::fromUtf8(message->readAll());
     QJsonParseError error;
     QJsonDocument document = QJsonDocument::fromJson(messageText.toUtf8(), &error);
-    emit receivedNewLogLines(messageText);
     if(document.isNull()) {
         qWarning() << "EntityScriptServerLogClient::handleEntityServerScriptLogPacket: Cannot parse JSON: " << error.errorString()
             << " Contents: " << messageText;
@@ -98,21 +97,37 @@ void EntityScriptServerLogClient::handleEntityServerScriptLogPacket(QSharedPoint
             case ScriptMessage::Severity::SEVERITY_INFO:
                 emit scriptEngines->infoEntityMessage(scriptMessage.getMessage(), scriptMessage.getFileName(),
                                                       scriptMessage.getLineNumber(), scriptMessage.getEntityID(), true);
+                emit receivedNewLogLines("[ INFO {" + scriptMessage.getEntityID().toString() + "} "
+                                         + scriptMessage.getFileName() + ":"
+                                         + QString::number(scriptMessage.getLineNumber()) + "] "
+                                         + scriptMessage.getMessage());
             break;
 
             case ScriptMessage::Severity::SEVERITY_PRINT:
                 emit scriptEngines->printedEntityMessage(scriptMessage.getMessage(), scriptMessage.getFileName(),
                                                   scriptMessage.getLineNumber(), scriptMessage.getEntityID(), true);
+                emit receivedNewLogLines("[ WARNING {" + scriptMessage.getEntityID().toString() + "} "
+                                         + scriptMessage.getFileName() + ":"
+                                         + QString::number(scriptMessage.getLineNumber()) + "] "
+                                         + scriptMessage.getMessage());
             break;
 
             case ScriptMessage::Severity::SEVERITY_WARNING:
                 emit scriptEngines->warningEntityMessage(scriptMessage.getMessage(), scriptMessage.getFileName(),
                                                   scriptMessage.getLineNumber(), scriptMessage.getEntityID(), true);
+                emit receivedNewLogLines("[ WARNING {" + scriptMessage.getEntityID().toString() + "} "
+                                         + scriptMessage.getFileName() + ":"
+                                         + QString::number(scriptMessage.getLineNumber()) + "] "
+                                         + scriptMessage.getMessage());
             break;
 
             case ScriptMessage::Severity::SEVERITY_ERROR:
                 emit scriptEngines->errorEntityMessage(scriptMessage.getMessage(), scriptMessage.getFileName(),
                                                   scriptMessage.getLineNumber(), scriptMessage.getEntityID(), true);
+                emit receivedNewLogLines("[ ERROR {" + scriptMessage.getEntityID().toString() + "} "
+                                         + scriptMessage.getFileName() + ":"
+                                         + QString::number(scriptMessage.getLineNumber()) + "] "
+                                         + scriptMessage.getMessage());
             break;
 
             default:

@@ -109,18 +109,18 @@ private:
 
     struct CustomPipeline {
         gpu::PipelinePointer pipeline;
-        mutable QFileInfo info;
+        QFileInfo info;
     };
     using StandardPipelines = std::array<gpu::PipelinePointer, NumModes>;
     using CustomPipelines = std::unordered_map<std::string, CustomPipeline>;
 
-    bool pipelineNeedsUpdate(Mode mode, const std::string& customFile = std::string()) const;
-    const gpu::PipelinePointer& getPipeline(Mode mode, const std::string& customFile = std::string());
-    std::string getShaderSourceCode(Mode mode, const std::string& customFile = std::string());
+    static bool pipelineNeedsUpdate(Mode mode, const std::string& customFile = std::string());
+    static gpu::PipelinePointer& getPipeline(Mode mode, const std::string& customFile = std::string());
+    static std::string getShaderSourceCode(Mode mode, const std::string& customFile = std::string());
 
     ParametersBuffer _parameters;
-    StandardPipelines _pipelines;
-    CustomPipelines _customPipelines;
+    static StandardPipelines _pipelines;
+    static CustomPipelines _customPipelines;
     int _geometryId{ 0 };
 };
 

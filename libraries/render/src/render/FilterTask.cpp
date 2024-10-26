@@ -139,12 +139,20 @@ void IDsToBounds::run(const RenderContextPointer& renderContext, const ItemIDs& 
         for (auto id : inItems) {
             auto& item = scene->getItem(id);
             if (item.exist()) {
-                outItems.emplace_back(ItemBound{ id, item.getBound(renderContext->args) });
+                outItems.emplace_back(ItemBound(id, item.getBound(renderContext->args)));
             }
         }
     } else {
         for (auto id : inItems) {
-            outItems.emplace_back(ItemBound{ id });
+            outItems.emplace_back(ItemBound(id));
         }
     }
+}
+
+void MergeItems::run(const RenderContextPointer& renderContext, const Inputs& inputs, Outputs& outputs) {
+    const auto& array1 = inputs.get0();
+    const auto& array2 = inputs.get1();
+
+    outputs = array1;
+    outputs.insert(outputs.end(), array2.begin(), array2.end());
 }

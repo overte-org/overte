@@ -188,6 +188,7 @@ constexpr const char*  COMMAND_NAMES[] = {
 
     "disableContextViewCorrection",
     "restoreContextViewCorrection",
+    "setContextMirrorViewCorrection",
 
     "disableContextStereo",
     "restoreContextStereo",
@@ -207,8 +208,6 @@ constexpr const char*  COMMAND_NAMES[] = {
     "glUniform4iv",
     "glUniformMatrix3fv",
     "glUniformMatrix4fv",
-
-    "glColor4f",
 
     "pushProfileRange",
     "popProfileRange",

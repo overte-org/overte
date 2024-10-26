@@ -54,6 +54,7 @@ public:
         CUSTOM_7,
 
         NUM_FLAGS, // Not a valid flag
+        NUM_NON_CUSTOM = INVALID,
 
         CUSTOM_MASK = (0xFF << CUSTOM_0),
 
@@ -112,7 +113,7 @@ public:
         Builder& withOwnPipeline() { _flags.set(OWN_PIPELINE); return (*this); }
         Builder& invalidate() { _flags.set(INVALID); return (*this); }
 
-        Builder& withCustom(uint8_t custom) {  _flags &= (~CUSTOM_MASK); _flags |= (custom << CUSTOM_0); return (*this); }
+        Builder& withCustom(uint8_t custom) { _flags &= (~CUSTOM_MASK); _flags |= (custom << CUSTOM_0); return (*this); }
         
         static const ShapeKey ownPipeline() { return Builder().withOwnPipeline(); }
         static const ShapeKey invalid() { return Builder().invalidate(); }
@@ -216,6 +217,8 @@ public:
     bool isDepthBiased() const { return _flags[DEPTH_BIAS]; }
     bool isWireframe() const { return _flags[WIREFRAME]; }
     bool isCullFace() const { return !_flags[CULL_FACE_NONE] && !_flags[CULL_FACE_FRONT]; }
+    bool isCullFaceNone() const { return _flags[CULL_FACE_NONE] && !_flags[CULL_FACE_FRONT]; }
+    bool isCullFaceFront() const { return !_flags[CULL_FACE_NONE] && _flags[CULL_FACE_FRONT]; }
     bool isFaded() const { return _flags[FADE]; }
     bool isMToon() const { return _flags[MTOON]; }
 

@@ -1,8 +1,10 @@
 {
     "name": "Keyboard/Mouse to Actions",
     "channels": [
-        { "from": "Keyboard.A", "when": ["Keyboard.RightMouseButton", "!Keyboard.Control"], "to": "Actions.LATERAL_LEFT" },
-        { "from": "Keyboard.D", "when": ["Keyboard.RightMouseButton", "!Keyboard.Control"], "to": "Actions.LATERAL_RIGHT" },
+        { "from": "Keyboard.A", "when": ["Keyboard.RightMouseButton", "Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeRight" },
+        { "from": "Keyboard.A", "when": ["Keyboard.RightMouseButton", "!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeLeft" },
+        { "from": "Keyboard.D", "when": ["Keyboard.RightMouseButton", "!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeRight" },
+        { "from": "Keyboard.D", "when": ["Keyboard.RightMouseButton", "Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeLeft" },
         { "from": "Keyboard.Q", "when": ["!Application.CameraSelfie", "!Keyboard.Control", "!Application.CaptureMouse"], "to": "Actions.LATERAL_LEFT" },
         { "from": "Keyboard.Q", "when": ["Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.LATERAL_RIGHT" },
         { "from": "Keyboard.E", "when": ["!Application.CameraSelfie", "!Keyboard.Control", "!Application.CaptureMouse"], "to": "Actions.LATERAL_RIGHT" },
@@ -145,10 +147,19 @@
 
         { "from": { "makeAxis" : ["Keyboard.MouseMoveUp", "Keyboard.MouseMoveDown"] },
           "to": "Actions.DeltaPitch",
-          "when": "Application.CaptureMouse",
+          "when": ["Application.CaptureMouse", "!Application.CameraSelfie"],
           "filters":
             [
                 { "type": "scale", "scale": 0.2 }
+            ]
+        },
+
+        { "from": { "makeAxis" : ["Keyboard.MouseMoveUp", "Keyboard.MouseMoveDown"] },
+          "to": "Actions.DeltaPitch",
+          "when": ["Application.CaptureMouse", "Application.CameraSelfie"],
+          "filters":
+            [
+                { "type": "scale", "scale": -0.2 }
             ]
         },
 

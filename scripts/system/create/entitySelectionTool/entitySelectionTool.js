@@ -1,12 +1,12 @@
 //
 //  entitySelectionTool.js
 //
-//  Created by Brad hefta-Gaub on 10/1/14.
-//    Modified by Daniela Fontes * @DanielaFifo and Tiago Andrade @TagoWill on 4/7/2017
-//    Modified by David Back on 1/9/2018
+//  Created by Brad hefta-Gaub on October 1st, 2014.
+//    Modified by Daniela Fontes * @DanielaFifo and Tiago Andrade @TagoWill on April 7th, 2017
+//    Modified by David Back on January 9th, 2018
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors
-//  Copyright 2022-2023 Overte e.V.
+//  Copyright 2022-2024 Overte e.V.
 //
 //  This script implements a class useful for building tools for editing entities.
 //
@@ -428,7 +428,7 @@ SelectionManager = (function() {
                     entityID: newEntityID,
                     properties: properties
                 });
-                if (properties.parentID !== Uuid.NULL) {
+                if (properties.parentID !== Uuid.NONE) {
                     duplicatedChildrenWithOldParents[newEntityID] = properties.parentID;
                 }
                 originalEntityToNewEntityID[originalEntityID] = newEntityID;
@@ -480,7 +480,7 @@ SelectionManager = (function() {
                     entityID: newEntityID,
                     properties: properties
                 });
-                if (properties.parentID !== Uuid.NULL) {
+                if (properties.parentID !== Uuid.NONE) {
                     createdChildrenWithOldParents[newEntityID] = properties.parentID;
                 }
                 originalEntityToNewEntityID[properties.id] = newEntityID;
@@ -494,6 +494,18 @@ SelectionManager = (function() {
     that.cutSelectedEntities = function() {
         that.copySelectedEntities();
         that.createApp.deleteSelectedEntities();
+    };
+
+    that.copyIdsFromSelectedEntities = function() {
+        if (that.selections.length === 0) {
+            audioFeedback.rejection();
+        } else if (that.selections.length === 1) {
+            Window.copyToClipboard(that.selections[0]);
+            audioFeedback.confirmation();
+        } else {
+            Window.copyToClipboard(JSON.stringify(that.selections));
+            audioFeedback.confirmation();
+        }
     };
 
     that.copySelectedEntities = function() {
@@ -743,7 +755,7 @@ SelectionManager = (function() {
             that.selections = [];
             for (var i = 0; i < currentSelection.length; i++) {
                 var properties = Entities.getEntityProperties(currentSelection[i], ['parentID']);
-                if (properties.parentID !== Uuid.NULL) {
+                if (properties.parentID !== Uuid.NONE) {
                     that.selections.push(properties.parentID);
                 }
             }
@@ -760,7 +772,7 @@ SelectionManager = (function() {
             that.selections = [];
             for (var i = 0; i < currentSelection.length; i++) {
                 var topParentId = getTopParent(currentSelection[i]);
-                if (topParentId !== Uuid.NULL) {
+                if (topParentId !== Uuid.NONE) {
                     that.selections.push(topParentId);
                 }
             }
@@ -772,9 +784,9 @@ SelectionManager = (function() {
     };
 
     function getTopParent(id) {
-        var topParentId = Uuid.NULL;
+        var topParentId = Uuid.NONE;
         var properties = Entities.getEntityProperties(id, ['parentID']);
-        if (properties.parentID === Uuid.NULL) {
+        if (properties.parentID === Uuid.NONE) {
             topParentId = id;
         } else {
             topParentId = getTopParent(properties.parentID);
@@ -1555,7 +1567,7 @@ SelectionDisplay = (function() {
         } else if (toolEntity === handleTranslateZCylinder) {
             return handleTranslateZCone;
         }
-        return Uuid.NULL;
+        return Uuid.NONE;
     };
     
     that.updateHighlight = function(event) {
@@ -2243,7 +2255,7 @@ SelectionDisplay = (function() {
             Entities.editEntity(selectionBox, selectionBoxGeometry);
 
             // UPDATE ICON TRANSLATE HANDLE
-            if (SelectionManager.entityType === "ParticleEffect" || SelectionManager.entityType === "Light") {
+            if (SelectionManager.entityType === "ParticleEffect" || SelectionManager.entityType === "ProceduralParticleEffect" || SelectionManager.entityType === "Light" || SelectionManager.entityType === "Sound") {
                 var iconSelectionBoxGeometry = {
                     position: position,
                     rotation: rotation

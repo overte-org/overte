@@ -547,6 +547,29 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
 
         // No migration needed to version 2.6.
 
+        if (oldVersion < 2.7) {
+            // Default values for new canViewAssetURLs permission.
+            unpackPermissions();
+            std::list<std::unordered_map<NodePermissionsKey, NodePermissionsPointer>> permissionsSets{
+                _standardAgentPermissions.get(),
+                _agentPermissions.get(),
+                _ipPermissions.get(),
+                _macPermissions.get(),
+                _machineFingerprintPermissions.get(),
+                _groupPermissions.get(),
+                _groupForbiddens.get()
+            };
+            foreach (auto permissionsSet, permissionsSets) {
+                for (auto entry : permissionsSet) {
+                    const auto& userKey = entry.first;
+                    if (permissionsSet[userKey]->can(NodePermissions::Permission::canConnectToDomain)) {
+                        permissionsSet[userKey]->set(NodePermissions::Permission::canViewAssetURLs);
+                    }
+                }
+            }
+            packPermissions();
+        }
+
         // write the current description version to our settings
         *versionVariant = _descriptionVersion;
 
@@ -665,7 +688,7 @@ void DomainServerSettingsManager::packPermissions() {
     // save settings for groups
     packPermissionsForMap("permissions", _groupPermissions, GROUP_PERMISSIONS_KEYPATH);
 
-    // save settings for blacklist groups
+    // save settings for blocklist groups
     packPermissionsForMap("permissions", _groupForbiddens, GROUP_FORBIDDENS_KEYPATH);
 
     persistToFile();
@@ -846,7 +869,7 @@ bool DomainServerSettingsManager::ensurePermissionsForGroupRanks() {
         }
     }
 
-    QList<QUuid> forbiddenGroupIDs = getBlacklistGroupIDs();
+    QList<QUuid> forbiddenGroupIDs = getBlocklistGroupIDs();
     foreach (QUuid groupID, forbiddenGroupIDs) {
         QString groupName = _groupNames[groupID];
         QHash<QUuid, GroupRank>& ranksForGroup = _groupRanks[groupID];
@@ -1720,7 +1743,7 @@ bool DomainServerSettingsManager::recurseJSONObjectAndOverwriteSettings(const QJ
     QJsonObject postedObject(postedSettingsObject);
 
     static const QString SECURITY_ROOT_KEY = "security";
-    static const QString AC_SUBNET_WHITELIST_KEY = "ac_subnet_whitelist";
+    static const QString AC_SUBNET_ALLOWLIST_KEY = "ac_subnet_allowlist";
     static const QString BROADCASTING_KEY = "broadcasting";
     static const QString WIZARD_KEY = "wizard";
     static const QString DESCRIPTION_ROOT_KEY = "descriptors";
@@ -1840,7 +1863,7 @@ bool DomainServerSettingsManager::recurseJSONObjectAndOverwriteSettings(const QJ
 
                     if ((rootKey != SECURITY_ROOT_KEY && rootKey != BROADCASTING_KEY &&
                          rootKey != DESCRIPTION_ROOT_KEY && rootKey != WIZARD_KEY) ||
-                        settingKey == AC_SUBNET_WHITELIST_KEY) {
+                        settingKey == AC_SUBNET_ALLOWLIST_KEY) {
                         needRestart = true;
                     }
                 } else {
@@ -2015,7 +2038,7 @@ void DomainServerSettingsManager::apiRefreshGroupInformation() {
         }
         if (_groupIDs.contains(lowerGroupName)) {
             // we already know about this one.  recall setGroupID in case the group has been
-            // added to another section (the same group is found in both groups and blacklists).
+            // added to another section (the same group is found in both groups and blocklists).
             changed = setGroupID(groupName, _groupIDs[lowerGroupName]);
             continue;
         }
@@ -2222,7 +2245,7 @@ QList<QUuid> DomainServerSettingsManager::getGroupIDs() {
     return result.values();
 }
 
-QList<QUuid> DomainServerSettingsManager::getBlacklistGroupIDs() {
+QList<QUuid> DomainServerSettingsManager::getBlocklistGroupIDs() {
     QSet<QUuid> result;
     foreach (NodePermissionsKey groupKey, _groupForbiddens.keys()) {
         if (_groupForbiddens[groupKey]->isGroup()) {
@@ -2241,7 +2264,7 @@ QStringList DomainServerSettingsManager::getDomainServerGroupNames() {
     return result.values();
 }
 
-QStringList DomainServerSettingsManager::getDomainServerBlacklistGroupNames() {
+QStringList DomainServerSettingsManager::getDomainServerBlocklistGroupNames() {
     // All names as listed in the domain server settings; not necessarily Directory Services groups.
     QSet<QString> result;
     foreach (NodePermissionsKey groupKey, _groupForbiddens.keys()) {

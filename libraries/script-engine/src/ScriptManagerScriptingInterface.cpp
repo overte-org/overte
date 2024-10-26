@@ -125,3 +125,11 @@ void ScriptManagerScriptingInterface::removeServerEntityScriptMessagesRequest(co
         _manager->engine()->raiseException("Uuid must not be specified when removeServerEntityScriptMessagesRequest is invoked from entity script");
     }
 }
+
+QString ScriptManagerScriptingInterface::btoa(const QByteArray &binary) {
+    return binary.toBase64();
+}
+
+QByteArray ScriptManagerScriptingInterface::atob(const QString &base64) {
+    return QByteArray::fromBase64(base64.toUtf8());
+}

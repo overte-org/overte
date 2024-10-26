@@ -168,7 +168,7 @@ Script.include("/~/system/libraries/controllers.js");
                 tag: "far-grab-" + MyAvatar.sessionUUID,
                 ttl: ACTION_TTL
             });
-            if (this.actionID === Uuid.NULL) {
+            if (this.actionID === Uuid.NONE) {
                 this.actionID = null;
             }
 
@@ -299,7 +299,7 @@ Script.include("/~/system/libraries/controllers.js");
                     action: 'remove',
                     id: this.ignoredEntities[i]
                 };
-                Messages.sendMessage('Hifi-Hand-RayPick-Blacklist', JSON.stringify(data));
+                Messages.sendMessage('Hifi-Hand-RayPick-Blocklist', JSON.stringify(data));
             }
             this.ignoredEntities = [];
         };
@@ -394,7 +394,7 @@ Script.include("/~/system/libraries/controllers.js");
                         action: 'add',
                         id: intersection.objectID
                     };
-                    Messages.sendMessage('Hifi-Hand-RayPick-Blacklist', JSON.stringify(data));
+                    Messages.sendMessage('Hifi-Hand-RayPick-Blocklist', JSON.stringify(data));
                     this.ignoredEntities.push(intersection.objectID);
                 }
             }

@@ -5,6 +5,7 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
+
 #include "OffscreenQmlSurface.h"
 
 #include <unordered_set>
@@ -41,6 +42,7 @@
 #include <AbstractUriHandler.h>
 #include <AccountManager.h>
 #include <NetworkAccessManager.h>
+
 #include <GLMHelpers.h>
 #include <AudioClient.h>
 #include <shared/LocalFileAccessGate.h>
@@ -61,11 +63,11 @@
 
 namespace hifi { namespace qml { namespace offscreen {
 
-class OffscreenQmlWhitelist : public Dependency, private ReadWriteLockable {
+class OffscreenQmlAllowlist : public Dependency, private ReadWriteLockable {
     SINGLETON_DEPENDENCY
 
 public:
-    void addWhitelistContextHandler(const std::initializer_list<QUrl>& urls, const QmlContextCallback& callback) {
+    void addAllowlistContextHandler(const std::initializer_list<QUrl>& urls, const QmlContextCallback& callback) {
         withWriteLock([&] {
             for (auto url : urls) {
                 if (url.isRelative()) {
@@ -91,11 +93,11 @@ private:
     QHash<QUrl, QList<QmlContextCallback>> _callbacks;
 };
 
-QSharedPointer<OffscreenQmlWhitelist> getQmlWhitelist() {
+QSharedPointer<OffscreenQmlAllowlist> getQmlAllowlist() {
     static std::once_flag once;
-    std::call_once(once, [&] { DependencyManager::set<OffscreenQmlWhitelist>(); });
+    std::call_once(once, [&] { DependencyManager::set<OffscreenQmlAllowlist>(); });
 
-    return DependencyManager::get<OffscreenQmlWhitelist>();
+    return DependencyManager::get<OffscreenQmlAllowlist>();
 }
 
 // Class to handle changing QML audio output device using another thread
@@ -290,9 +292,9 @@ void OffscreenQmlSurface::initializeEngine(QQmlEngine* engine) {
     engine->setObjectOwnership(tablet, QQmlEngine::CppOwnership);
 }
 
-void OffscreenQmlSurface::addWhitelistContextHandler(const std::initializer_list<QUrl>& urls,
+void OffscreenQmlSurface::addAllowlistContextHandler(const std::initializer_list<QUrl>& urls,
                                                      const QmlContextCallback& callback) {
-    getQmlWhitelist()->addWhitelistContextHandler(urls, callback);
+    getQmlAllowlist()->addAllowlistContextHandler(urls, callback);
 }
 
 void OffscreenQmlSurface::onRootContextCreated(QQmlContext* qmlContext) {
@@ -317,17 +319,17 @@ void OffscreenQmlSurface::onRootContextCreated(QQmlContext* qmlContext) {
 #endif
 }
 
-void OffscreenQmlSurface::applyWhiteList(const QUrl& url, QQmlContext* context) {
-    QList<QmlContextCallback> callbacks = getQmlWhitelist()->getCallbacksForUrl(url);
+void OffscreenQmlSurface::applyAllowList(const QUrl& url, QQmlContext* context) {
+    QList<QmlContextCallback> callbacks = getQmlAllowlist()->getCallbacksForUrl(url);
     for(const auto& callback : callbacks){
         callback(context);
     }
 }
 
 QQmlContext* OffscreenQmlSurface::contextForUrl(const QUrl& qmlSource, QQuickItem* parent, bool forceNewContext) {
-    // Get any whitelist functionality
-    QList<QmlContextCallback> callbacks = getQmlWhitelist()->getCallbacksForUrl(qmlSource);
-    // If we have whitelisted content, we must load a new context
+    // Get any allowlist functionality
+    QList<QmlContextCallback> callbacks = getQmlAllowlist()->getCallbacksForUrl(qmlSource);
+    // If we have allowlisted content, we must load a new context
     forceNewContext |= !callbacks.empty();
 
     QQmlContext* targetContext = Parent::contextForUrl(qmlSource, parent, forceNewContext);

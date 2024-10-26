@@ -234,10 +234,10 @@ public:
     void configure(const Config& config);
     void run(const render::RenderContextPointer& renderContext, const Inputs& inputs, Outputs& outputs);
 
-    const gpu::PipelinePointer& getAntialiasingPipeline();
-    const gpu::PipelinePointer& getIntensityPipeline();
-    const gpu::PipelinePointer& getBlendPipeline();
-    const gpu::PipelinePointer& getDebugBlendPipeline();
+    static const gpu::PipelinePointer& getAntialiasingPipeline();
+    static const gpu::PipelinePointer& getIntensityPipeline();
+    static const gpu::PipelinePointer& getBlendPipeline();
+    static const gpu::PipelinePointer& getDebugBlendPipeline();
 
 private:
     struct AntialiasingBuffer {

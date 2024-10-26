@@ -26,7 +26,7 @@ const float PHYSICS_ENGINE_FIXED_SUBSTEP = 1.0f / (float)NUM_SUBSTEPS_PER_SECOND
 const float DYNAMIC_LINEAR_SPEED_THRESHOLD = 0.05f;  // 5 cm/sec
 const float DYNAMIC_ANGULAR_SPEED_THRESHOLD = 0.087266f;  // ~5 deg/sec
 const float KINEMATIC_LINEAR_SPEED_THRESHOLD = 0.001f;  // 1 mm/sec
-const float KINEMATIC_ANGULAR_SPEED_THRESHOLD = 0.008f;  // ~0.5 deg/sec
+const float KINEMATIC_ANGULAR_SPEED_THRESHOLD = 0.0004f;  // ~0.025 deg/sec
 
 // return incremental rotation (Bullet-style) caused by angularVelocity over timeStep
 glm::quat computeBulletRotationStep(const glm::vec3& angularVelocity, float timeStep);

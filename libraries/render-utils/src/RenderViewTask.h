@@ -26,8 +26,7 @@ public:
     RenderShadowsAndDeferredTask() {}
 
     void build(JobModel& task, const render::Varying& inputs, render::Varying& outputs, render::CullFunctor cullFunctor,
-        uint8_t tagBits, uint8_t tagMask, uint8_t transformOffset);
-
+        uint8_t tagBits, uint8_t tagMask, uint8_t transformOffset, size_t depth);
 };
 
 class DeferredForwardSwitchJob {
@@ -39,8 +38,7 @@ public:
 
     void configure(const render::SwitchConfig& config) {}
     void build(JobModel& task, const render::Varying& inputs, render::Varying& outputs, render::CullFunctor cullFunctor,
-        uint8_t tagBits, uint8_t tagMask, uint8_t transformOffset);
-
+        uint8_t tagBits, uint8_t tagMask, uint8_t transformOffset, size_t depth);
 };
 
 class RenderViewTask {
@@ -56,8 +54,7 @@ public:
     };
 
     void build(JobModel& task, const render::Varying& inputs, render::Varying& outputs, render::CullFunctor cullFunctor,
-        uint8_t tagBits = 0x00, uint8_t tagMask = 0x00, TransformOffset transformOffset = TransformOffset::MAIN_VIEW);
-
+        uint8_t tagBits = 0x00, uint8_t tagMask = 0x00, TransformOffset transformOffset = TransformOffset::MAIN_VIEW, size_t depth = 0);
 };
 
 

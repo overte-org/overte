@@ -187,13 +187,13 @@ public:
 
 private:
 
-    gpu::PipelinePointer _depthPipeline;
+    static gpu::PipelinePointer _depthPipeline;
     int _geometryDepthId { 0 };
     bool _isDisplayEnabled { false };
     uint _transformSlot { 0 };
 
-    const gpu::PipelinePointer& getDepthPipeline();
-    void initializePipelines();
+    static gpu::PipelinePointer& getDepthPipeline();
+    static void initializePipelines();
 };
 
 class DrawHighlightTask {

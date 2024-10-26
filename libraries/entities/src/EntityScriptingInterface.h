@@ -164,7 +164,7 @@ public:
  * @hifi-assignment-client
  *
  * @property {Uuid} keyboardFocusEntity -  The {@link Entities.EntityProperties-Web|Web} entity that has keyboard focus. If no 
- *     Web entity has keyboard focus, returns <code>null</code>; set to <code>null</code> or {@link Uuid(0)|Uuid.NULL} to clear 
+ *     Web entity has keyboard focus, returns <code>null</code>; set to <code>null</code> or {@link Uuid(0)|Uuid.NONE} to clear
  *     keyboard focus.
  */
 /// handles scripting of Entity commands from JS passed to assigned clients
@@ -289,6 +289,14 @@ public slots:
     Q_INVOKABLE bool canRezAvatarEntities();
 
     /*@jsdoc
+     * Checks whether or not the script can view asset URLs
+     * @function Entities.canViewAssetURLs
+     * @returns {boolean} <code>true</code> if the domain server will allow the script to view asset URLs,
+     *     otherwise <code>false</code>.
+     */
+    Q_INVOKABLE bool canViewAssetURLs();
+
+    /*@jsdoc
      * <p>How an entity is hosted and sent to others for display.</p>
      * <table>
      *   <thead>
@@ -315,7 +323,7 @@ public slots:
      * @param {Entities.EntityProperties} properties - The properties of the entity to create.
      * @param {Entities.EntityHostType} [entityHostType="domain"] - The type of entity to create.
      
-     * @returns {Uuid} The ID of the entity if successfully created, otherwise {@link Uuid(0)|Uuid.NULL}.
+     * @returns {Uuid} The ID of the entity if successfully created, otherwise {@link Uuid(0)|Uuid.NONE}.
      * @example <caption>Create a box domain entity in front of your avatar.</caption>
      * var entityID = Entities.addEntity({
      *     type: "Box",
@@ -346,7 +354,7 @@ public slots:
      * @param {Entities.EntityProperties} properties - The properties of the entity to create.
      * @param {boolean} [avatarEntity=false] - <code>true</code> to create an avatar entity, <code>false</code> to create a 
      *     domain entity.
-     * @returns {Uuid} The ID of the entity if successfully created, otherwise {@link Uuid(0)|Uuid.NULL}.
+     * @returns {Uuid} The ID of the entity if successfully created, otherwise {@link Uuid(0)|Uuid.NONE}.
      */
     Q_INVOKABLE QUuid addEntity(const EntityItemProperties& properties, bool avatarEntity = false) {
         entity::HostType entityHostType = avatarEntity ? entity::HostType::AVATAR : entity::HostType::DOMAIN;
@@ -370,7 +378,7 @@ public slots:
      * <code>true</code> in order to be cloned.</p>
      * @function Entities.cloneEntity
      * @param {Uuid} entityID - The ID of the entity to clone.
-     * @returns {Uuid} The ID of the new entity if successfully cloned, otherwise {@link Uuid(0)|Uuid.NULL}.
+     * @returns {Uuid} The ID of the new entity if successfully cloned, otherwise {@link Uuid(0)|Uuid.NONE}.
      */
     Q_INVOKABLE QUuid cloneEntity(const QUuid& entityID);
 
@@ -421,7 +429,7 @@ public slots:
      * @function Entities.editEntity
      * @param {Uuid} entityID - The ID of the entity to edit.
      * @param {Entities.EntityProperties} properties - The new property values.
-     * @returns {Uuid} The ID of the entity if the edit was successful, otherwise <code>null</code> or {@link Uuid|Uuid.NULL}.
+     * @returns {Uuid} The ID of the entity if the edit was successful, otherwise <code>null</code> or {@link Uuid|Uuid.NONE}.
      * @example <caption>Change the color of an entity.</caption>
      * var entityID = Entities.addEntity({
      *     type: "Box",
@@ -805,6 +813,25 @@ public slots:
      * print("Number of entities with the name Light-Target: " + entityIDs.length);
      */
     Q_INVOKABLE QVector<QUuid> findEntitiesByName(const QString entityName, const glm::vec3& center, float radius,
+        bool caseSensitiveSearch = false) const;
+
+    /*@jsdoc
+     * Finds all domain and avatar entities with particular tags that intersect a sphere.
+     * <p><strong>Note:</strong> Server entity scripts only find entities that have a server entity script
+     * running in them or a parent entity. You can apply a dummy script to entities that you want found in a search.</p>
+     * @function Entities.findEntitiesByTags
+     * @param {string[]} entityTags - The tags of the entity to search for.
+     * @param {Vec3} center - The point about which to search.
+     * @param {number} radius - The radius within which to search.
+     * @param {boolean} [caseSensitive=false] - <code>true</code> if the search is case-sensitive, <code>false</code> if it is
+     *     case-insensitive.
+     * @returns {Uuid[]} An array of entity IDs that have the specified name and intersect the search sphere. The array is
+     *     empty if no entities could be found.
+     * @example <caption>Report the number of entities with the tag, "Light-Target".</caption>
+     * var entityIDs = Entities.findEntitiesByTags(["Light-Target"], MyAvatar.position, 10, false);
+     * print("Number of entities with the tag Light-Target: " + entityIDs.length);
+     */
+    Q_INVOKABLE QVector<QUuid> findEntitiesByTags(const QVector<QString> entityTags, const glm::vec3& center, float radius,
         bool caseSensitiveSearch = false) const;
 
     /*@jsdoc
@@ -1237,6 +1264,27 @@ public slots:
     Q_INVOKABLE bool appendPoint(const QUuid& entityID, const glm::vec3& point);
 
     /*@jsdoc
+     * Restart a {@link Entities.EntityProperties-Sound|Sound} entity, locally only.  It must also be <code>localOnly</code>.
+     * @function Entities.restartSound
+     * @param {Uuid} entityID - The ID of the {@link Entities.EntityProperties-Sound|Sound} entity.
+     * @example <caption>Play a sound once and repeat it every 3 seconds.</caption>
+     * var position = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.5, z: -8 }));
+     * var sound = Entities.addEntity({
+     *     type: "Sound",
+     *     position: position,
+     *     soundURL: "https://themushroomkingdom.net/sounds/wav/lm/lm_gold_mouse.wav",
+     *     positional: false,
+     *     localOnly: true,
+     *     loop: false,
+     *     lifetime: 300  // Delete after 5 minutes.
+     * });
+     * Script.setInterval(() => {
+     *     Entities.restartSound(sound);
+     * }, 3000);
+     */
+    Q_INVOKABLE bool restartSound(const QUuid& entityID);
+
+    /*@jsdoc
      * Dumps debug information about all entities in Interface's local in-memory tree of entities it knows about to the program 
      * log.
      * @function Entities.dumpTree
@@ -1633,7 +1681,7 @@ public slots:
      * }
      *
      * var position = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 2, z: -5 }));
-     * var root = createEntity("Root", position, Uuid.NULL);
+     * var root = createEntity("Root", position, Uuid.NONE);
      * var child = createEntity("Child", Vec3.sum(position, { x: 0, y: -1, z: 0 }), root);
      * var grandChild = createEntity("Grandchild", Vec3.sum(position, { x: 0, y: -2, z: 0 }), child);
      *
@@ -1665,7 +1713,7 @@ public slots:
      * }
      *
      * var position = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 2, z: -5 }));
-     * var root = createEntity("Root", position, Uuid.NULL);
+     * var root = createEntity("Root", position, Uuid.NONE);
      * var child = createEntity("Child", Vec3.sum(position, { x: 0, y: -1, z: 0 }), root);
      *
      * Script.setTimeout(function () { // Wait for the entity to be created before editing.
@@ -1701,7 +1749,7 @@ public slots:
      * }
      *
      * var position = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 2, z: -5 }));
-     * var root = createEntity("Root", position, Uuid.NULL);
+     * var root = createEntity("Root", position, Uuid.NONE);
      * var child = createEntity("Child", Vec3.sum(position, { x: 0, y: -1, z: 0 }), root);
      * var grandChild = createEntity("Grandchild", Vec3.sum(position, { x: 0, y: -2, z: 0 }), child);
      *
@@ -1737,7 +1785,7 @@ public slots:
      * Sets the {@link Entities.EntityProperties-Web|Web} entity that has keyboard focus.
      * @function Entities.setKeyboardFocusEntity
      * @param {Uuid} id - The ID of the {@link Entities.EntityProperties-Web|Web} entity to set keyboard focus to. Use 
-     *     <code>null</code> or {@link Uuid(0)|Uuid.NULL} to unset keyboard focus from an entity.
+     *     <code>null</code> or {@link Uuid(0)|Uuid.NONE} to unset keyboard focus from an entity.
      */
     Q_INVOKABLE void setKeyboardFocusEntity(const QUuid& id);
 
@@ -1969,7 +2017,7 @@ public slots:
      *
      * var position = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 2, z: -5 }));
      *
-     * var parent = createEntity(position, MyAvatar.orientation, Uuid.NULL);
+     * var parent = createEntity(position, MyAvatar.orientation, Uuid.NONE);
      *
      * var childTranslation = { x: 0, y: -1.5, z: 0 };
      * var childRotation = Quat.fromPitchYawRollDegrees(0, 45, 0);
@@ -2249,6 +2297,14 @@ signals:
      */
     void canRezAvatarEntitiesChanged(bool canRezAvatarEntities);
 
+    /*@jsdoc
+     * Triggered when your ability to view asset URLs is changed.
+     * @function Entities.canViewAssetURLsChanged
+     * @param {boolean} canViewAssetURLs - <code>true</code> if the script can view asset URLs,
+     *     <code>false</code> if it can't.
+     * @returns {Signal}
+     */
+    void canViewAssetURLsChanged(bool canViewAssetURLs);
 
     /*@jsdoc
      * Triggered when a mouse button is clicked while the mouse cursor is on an entity, or a controller trigger is fully 

@@ -79,6 +79,7 @@ void registerMetaTypes(ScriptEngine* engine) {
     scriptRegisterMetaType<QUrl, qURLToScriptValue, qURLFromScriptValue>(engine);
     scriptRegisterMetaType<QColor, qColorToScriptValue, qColorFromScriptValue>(engine);
     scriptRegisterMetaType<QTimer*, qTimerToScriptValue, qTimerFromScriptValue>(engine, "QTimer*");
+    scriptRegisterMetaType<QByteArray, qBytearrayToScriptValue, qBytearrayFromScriptValue>(engine, "QByteArray");
 
     scriptRegisterMetaType<PickRay, pickRayToScriptValue, pickRayFromScriptValue>(engine);
     scriptRegisterMetaType<Collision, collisionToScriptValue, collisionFromScriptValue>(engine);
@@ -862,6 +863,14 @@ bool quuidFromScriptValue(const ScriptValue& object, QUuid& uuid) {
     return true;
 }
 
+ScriptValue qStringToScriptValue(ScriptEngine* engine, const QString& string) {
+    if (string.isNull()) {
+        return engine->nullValue();
+    }
+    ScriptValue obj(engine->newValue(string));
+    return obj;
+}
+
 /*@jsdoc
  * A 2D size value.
  * @typedef {object} Size
@@ -1026,6 +1035,28 @@ QVector<EntityItemID> qVectorEntityItemIDFromScriptValue(const ScriptValue& arra
         QString uuidAsString = array.property(i).toString();
         EntityItemID fromString(uuidAsString);
         newVector << fromString;
+    }
+    return newVector;
+}
+
+ScriptValue qVectorQStringToScriptValue(ScriptEngine* engine, const QVector<QString>& vector) {
+    ScriptValue array = engine->newArray();
+    for (int i = 0; i < vector.size(); i++) {
+        array.setProperty(i, qStringToScriptValue(engine, vector.at(i)));
+    }
+    return array;
+}
+
+QVector<QString> qVectorQStringFromScriptValue(const ScriptValue& array) {
+    if (!array.isArray()) {
+        return QVector<QString>();
+    }
+    QVector<QString> newVector;
+    int length = array.property("length").toInteger();
+    newVector.reserve(length);
+    for (int i = 0; i < length; i++) {
+        QString string = array.property(i).toString();
+        newVector << string;
     }
     return newVector;
 }

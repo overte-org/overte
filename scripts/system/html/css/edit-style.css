@@ -1,10 +1,10 @@
 /*
 //  edit-style.css
 //
-//  Created by Ryan Huffman on 13 Nov 2014
+//  Created by Ryan Huffman on November 13th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -173,6 +173,28 @@ tr:nth-child(even) {
 
 tr:focus {
     outline: none;
+}
+
+tr.avatarEntity {
+    color: #7fdb98;
+}
+
+tr.selAvatarEntity {
+    color: #000000;
+    background-color: #7fdb98;
+}
+
+tr.selAvatarEntity + tr.selAvatarEntity {
+    border-top: 1px solid #2e2e2e;
+}
+
+tr.lastSelAvatarEntity {
+    color: #000000;
+    background-color: #06c73a;
+}
+
+tr.lastSelAvatarEntity + tr.lastSelAvatarEntity {
+    border-top: 1px solid #2e2e2e;
 }
 
 tr.selected {
@@ -699,6 +721,17 @@ div.section-header, hr {
     outline: none;
     margin-bottom: 10px;
     align-items: center;
+}
+
+div.simpleSeparator {
+    width: 97%;
+    height: 2px;
+    border: 0px;
+    margin-top: 4px;
+    margin-right: 8px;
+    margin-left: 8px;
+    margin-bottom: 4px;
+    background-color: #777777;
 }
 
 .section.minor {
@@ -1304,6 +1337,27 @@ div#grid-section, body#entity-list-body {
     margin: 0px 8px 8px 8px;
 }
 
+#voxels-section {
+    padding-bottom: 0px;
+    margin: 8px 8px 8px 8px;
+}
+
+#mode-section {
+    padding: 3px;
+    height: 28px;
+    margin: 8px 8px 8px 8px;
+    color: #000000;
+    background-color: #999999;
+    font-family: Raleway-Bold;
+    font-size: 16px;
+    border-radius: 5px;
+}
+#creationModeLabel {
+    padding-top: 4px;
+    width: 156px;
+}
+
+
 #entity-list-header {
     margin-bottom: 6px;
 }
@@ -1433,6 +1487,11 @@ input[type=button].entity-list-menutitle {
     background: linear-gradient(#343434 30%, #000 100%);
     cursor: pointer;
 }
+
+#voxel-edit-mode {
+    width: 120px;
+}
+
 input[type=button].entity-list-menutitle:enabled:hover {
     background: linear-gradient(#000, #000);
     border: none;
@@ -1712,7 +1771,9 @@ input#property-scale-button-reset {
 }
 
 #property-userData-static,
-#property-materialData-static {
+#property-materialData-static,
+#property-particleUpdateData-static,
+#property-particleRenderData-static {
     display: none;
     z-index: 99;
     position: absolute;
@@ -1724,7 +1785,9 @@ input#property-scale-button-reset {
 }
 
 #property-userData-saved,
-#property-materialData-saved {
+#property-materialData-saved,
+#property-particleUpdateData-saved
+#property-particleRenderData-saved {
     margin-top: 5px;
     font-size: 16px;
     display: none;
@@ -1739,6 +1802,7 @@ input#property-scale-button-reset {
     display: none;
     position: fixed;
     color: #000000;
+    font-family: FiraSans-SemiBold;
     background-color: #afafaf;
     padding: 5px 0 5px 0;
     cursor: default;
@@ -1758,7 +1822,7 @@ input#property-scale-button-reset {
     padding: 0 0;
 }
 .context-menu li.disabled {
-    color: #333333;
+    color: #777777;
 }
 .context-menu li.separator:hover, .context-menu li.disabled:hover {
     background-color: #afafaf;
@@ -1930,23 +1994,17 @@ input.number-slider {
     cursor: pointer;
 }
 
-#property-userData-editor.error {
+#property-userData-editor.error,
+#property-materialData-editor.error,
+#property-particleUpdateData-editor.error,
+#property-particleRenderData-editor.error {
     border: 2px solid red;
 }
 
-#property-userData-editorStatus {
-    color: white;
-    background-color: red;
-    padding: 5px;
-    display: none;
-    cursor: pointer;
-}
-
-#property-materialData-editor.error {
-    border: 2px solid red;
-}
-
-#property-materialData-editorStatus {
+#property-userData-editorStatus,
+#property-materialData-editorStatus,
+#property-particleUpdateData-editorStatus,
+#property-particleRenderData-editorStatus {
     color: white;
     background-color: red;
     padding: 5px;
@@ -2082,10 +2140,10 @@ div.entity-list-menu {
 div.tools-select-menu {
     position: relative;
     display: none;
-    width: 370px;
+    width: 200px;
     height: 0px;
-    top: 0px;
-    left: 8px;
+    top: -16px;
+    left: 124px;
     right: 0;
     bottom: 0;
     border-style: solid;
@@ -2097,20 +2155,19 @@ div.tools-select-menu {
 }
 
 div.tools-help-popup {
-    font-family: FiraSans-SemiBold;
-    font-size: 15px;
+    font-family: Raleway-SemiBold;
+    font-size: 14px;
     position: relative;
     display: none;
-    width: 690px;
+    width: 96%;
+    padding: 5px;
     height: auto;
-    top: 0px;
+    top: -16px;
     left: 8px;
     right: 0;
     bottom: 0;
-    border-style: solid;
-    border-color: #505050;
-    border-width: 1px;
-    background-color: #404040;
+    border: 2px solid #c0c0c0;
+    background-color: #333333;
     z-index: 2;
     cursor: pointer;
 }

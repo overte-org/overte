@@ -17,8 +17,7 @@
    controllerDispatcherPlugins:true, controllerDispatcherPluginsNeedSort:true,
    LEFT_HAND, RIGHT_HAND, NEAR_GRAB_PICK_RADIUS, DEFAULT_SEARCH_SPHERE_DISTANCE, DISPATCHER_PROPERTIES,
    getGrabPointSphereOffset, HMD, MyAvatar, Messages, findHandChildEntities, Picks, PickType, Pointers,
-   PointerManager, getGrabPointSphereOffset, HMD, MyAvatar, Messages, findHandChildEntities, Picks, PickType, Pointers,
-   PointerManager, print, Keyboard
+   PointerManager, getGrabPointSphereOffset, HMD, MyAvatar, Messages, findHandChildEntities, print, Keyboard
 */
 
 var controllerDispatcherPlugins = {};
@@ -57,7 +56,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
         this.veryhighVarianceCount = 0;
         this.orderedPluginNames = [];
         this.tabletID = null;
-        this.blacklist = [];
+        this.blocklist = [];
         this.pointerManager = new PointerManager();
         this.grabSphereOverlays = [null, null];
         this.targetIDs = {};
@@ -170,8 +169,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
         this.setIgnorePointerItems = function() {
             if (HMD.tabletID && HMD.tabletID !== this.tabletID) {
                 this.tabletID = HMD.tabletID;
-                Pointers.setIgnoreItems(_this.leftPointer, _this.blacklist);
-                Pointers.setIgnoreItems(_this.rightPointer, _this.blacklist);
+                Pointers.setIgnoreItems(_this.leftPointer, _this.blocklist);
+                Pointers.setIgnoreItems(_this.rightPointer, _this.blocklist);
             }
         };
 
@@ -548,19 +547,19 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             }
         };
 
-        this.leftBlacklistTabletIDs = [];
-        this.rightBlacklistTabletIDs = [];
+        this.leftBlocklistTabletIDs = [];
+        this.rightBlocklistTabletIDs = [];
 
-        this.setLeftBlacklist = function () {
-            Pointers.setIgnoreItems(_this.leftPointer, _this.blacklist.concat(_this.leftBlacklistTabletIDs));
+        this.setLeftBlocklist = function () {
+            Pointers.setIgnoreItems(_this.leftPointer, _this.blocklist.concat(_this.leftBlocklistTabletIDs));
         };
-        this.setRightBlacklist = function () {
-            Pointers.setIgnoreItems(_this.rightPointer, _this.blacklist.concat(_this.rightBlacklistTabletIDs));
+        this.setRightBlocklist = function () {
+            Pointers.setIgnoreItems(_this.rightPointer, _this.blocklist.concat(_this.rightBlocklistTabletIDs));
         };
 
-        this.setBlacklist = function() {
-            _this.setLeftBlacklist();
-            _this.setRightBlacklist();
+        this.setBlocklist = function() {
+            _this.setLeftBlocklist();
+            _this.setRightBlocklist();
         };
 
         var MAPPING_NAME = "com.highfidelity.controllerDispatcher";
@@ -585,7 +584,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             hover: true,
             scaleWithParent: true,
             distanceScaleEnd: true,
-            hand: LEFT_HAND
+            hand: LEFT_HAND,
+            delay: Picks.handLaserDelay
         });
         Keyboard.setLeftHandLaser(this.leftPointer);
         this.rightPointer = this.pointerManager.createPointer(false, PickType.Ray, {
@@ -596,7 +596,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             hover: true,
             scaleWithParent: true,
             distanceScaleEnd: true,
-            hand: RIGHT_HAND
+            hand: RIGHT_HAND,
+            delay: Picks.handLaserDelay
         });
         Keyboard.setRightHandLaser(this.rightPointer);
         this.leftHudPointer = this.pointerManager.createPointer(true, PickType.Ray, {
@@ -608,7 +609,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             hover: true,
             scaleWithParent: true,
             distanceScaleEnd: true,
-            hand: LEFT_HAND
+            hand: LEFT_HAND,
+            delay: Picks.handLaserDelay
         });
         this.rightHudPointer = this.pointerManager.createPointer(true, PickType.Ray, {
             joint: "_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND",
@@ -619,7 +621,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             hover: true,
             scaleWithParent: true,
             distanceScaleEnd: true,
-            hand: RIGHT_HAND
+            hand: RIGHT_HAND,
+            delay: Picks.handLaserDelay
         });
 
         this.mouseRayPointer = Pointers.createRayPointer({
@@ -631,34 +634,34 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             var message;
             if (sender === MyAvatar.sessionUUID) {
                 try {
-                    if (channel === 'Hifi-Hand-RayPick-Blacklist') {
+                    if (channel === 'Hifi-Hand-RayPick-Blocklist') {
                         message = JSON.parse(data);
                         var action = message.action;
                         var id = message.id;
-                        var index = _this.blacklist.indexOf(id);
+                        var index = _this.blocklist.indexOf(id);
 
                         if (action === 'add' && index === -1) {
-                            _this.blacklist.push(id);
-                            _this.setBlacklist();
+                            _this.blocklist.push(id);
+                            _this.setBlocklist();
                         }
 
                         if (action === 'remove') {
                             if (index > -1) {
-                                _this.blacklist.splice(index, 1);
-                                _this.setBlacklist();
+                                _this.blocklist.splice(index, 1);
+                                _this.setBlocklist();
                             }
                         }
 
                         if (action === "tablet") {
-                            var tabletIDs = message.blacklist ?
+                            var tabletIDs = message.blocklist ?
                                 [HMD.tabletID, HMD.tabletScreenID, HMD.homeButtonID, HMD.homeButtonHighlightID] :
                                 [];
                             if (message.hand === LEFT_HAND) {
-                                _this.leftBlacklistTabletIDs = tabletIDs;
-                                _this.setLeftBlacklist();
+                                _this.leftBlocklistTabletIDs = tabletIDs;
+                                _this.setLeftBlocklist();
                             } else {
-                                _this.rightBlacklistTabletIDs = tabletIDs;
-                                _this.setRightBlacklist();
+                                _this.rightBlocklistTabletIDs = tabletIDs;
+                                _this.setRightBlocklist();
                             }
                         }
                     }
@@ -666,6 +669,13 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
                     print("WARNING: handControllerGrab.js -- error parsing message: " + data);
                 }
             }
+        };
+
+        this.handLaserDelayChanged = function (delay) {
+            Pointers.setDelay(_this.leftPointer, delay);
+            Pointers.setDelay(_this.rightPointer, delay);
+            Pointers.setDelay(_this.leftHudPointer, delay);
+            Pointers.setDelay(_this.rightHudPointer, delay);
         };
 
         this.cleanup = function () {
@@ -727,8 +737,10 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
     Entities.mousePressOnEntity.connect(mousePress);
 
     var controllerDispatcher = new ControllerDispatcher();
-    Messages.subscribe('Hifi-Hand-RayPick-Blacklist');
+    Messages.subscribe('Hifi-Hand-RayPick-Blocklist');
     Messages.messageReceived.connect(controllerDispatcher.handleMessage);
+
+    Picks.handLaserDelayChanged.connect(controllerDispatcher.handLaserDelayChanged);
 
     Script.scriptEnding.connect(function () {
         controllerDispatcher.cleanup();

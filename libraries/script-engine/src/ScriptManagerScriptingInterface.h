@@ -435,7 +435,7 @@ public:
      * @param {Uuid} entityID - The ID of the entity running the entity script.
      * @param {string} methodName - The name of the method to call.
      * @param {string[]} [parameters=[]] - The parameters to call the specified method with.
-     * @param {Uuid} [remoteCallerID=Uuid.NULL] - An ID that identifies the caller.
+     * @param {Uuid} [remoteCallerID=Uuid.NONE] - An ID that identifies the caller.
      */
     Q_INVOKABLE void callEntityScriptMethod(const EntityItemID& entityID, const QString& methodName,
                                             const QStringList& params = QStringList(),
@@ -581,6 +581,22 @@ public:
      Q_INVOKABLE void removeServerEntityScriptMessagesRequest();
      Q_INVOKABLE void removeServerEntityScriptMessagesRequest(const QUuid& entityID);
 
+     /*@jsdoc
+     * This decodes Base64 string and returns contents as ArrayBuffer.
+     * @function Script.atob
+     * @param {String} base64 - String with Base64-encoded binary data.
+     * @returns {ArrayBuffer} Decoded binary data.
+     */
+     Q_INVOKABLE QByteArray atob(const QString &base64);
+
+     /*@jsdoc
+     * This encodes ArrayBuffer and returns Base64-encoded string.
+     * @function Script.btoa
+     * @param {ArrayBuffer} binary - Data to be encoded.
+     * @returns {String} String with Base64-encoded binary data.
+     */
+     Q_INVOKABLE QString btoa(const QByteArray &binary);
+
  signals:
 
     /*@jsdoc
@@ -724,7 +740,7 @@ public:
      * @returns {Signal}
      * @example <caption>Get the ID of the entity that a client entity script is running in.</caption>
      * var entityScript = function () {
-     *     this.entityID = Uuid.NULL;
+     *     this.entityID = Uuid.NONE;
      * };
      *
      * Script.entityScriptPreloadFinished.connect(function (entityID) {

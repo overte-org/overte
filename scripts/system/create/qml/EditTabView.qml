@@ -190,6 +190,18 @@ TabBar {
                                 editTabView.currentIndex = 2
                             }
                         }
+
+                        NewEntityButton {
+                            icon: "icons/sound.svg"
+                            text: "SOUND"
+                            onClicked: {
+                                editRoot.sendToScript({
+                                    method: "newEntityButtonClicked",
+                                    params: { buttonName: "newSoundButton" }
+                                });
+                                editTabView.currentIndex = 2
+                            }
+                        }
                     }
 
                     HifiControls.Button {
@@ -301,6 +313,22 @@ TabBar {
         }
     }
 
+    EditTabButton {
+        title: "IMPORT"
+        active: true
+        enabled: true
+        property string originalUrl: ""
+
+        property Component visualItem: Component {
+            WebView {
+                id: advancedImportWebView
+                url: Qt.resolvedUrl("../importEntities/html/importEntities.html")
+                enabled: true
+                blurOnCtrlShift: false
+            }
+        }
+    }
+
     function fromScript(message) {
         switch (message.method) {
             case 'selectTab':
@@ -332,6 +360,9 @@ TabBar {
                     break;
                 case 'grid':
                     editTabView.currentIndex = 3;
+                    break;
+                case 'import':
+                    editTabView.currentIndex = 4;
                     break;
                 default:
                     console.warn('Attempt to switch to invalid tab:', id);

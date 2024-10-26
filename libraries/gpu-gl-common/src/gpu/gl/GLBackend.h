@@ -122,7 +122,7 @@ public:
     // Shutdown rendering and persist any required resources
     void shutdown() override;
 
-    void updatePresentFrame(const Mat4& correction = Mat4()) override;
+    void updatePresentFrame(const Mat4& correction = Mat4(), bool primary = true) override;
 
     void render(const Batch& batch) final override;
 
@@ -219,6 +219,7 @@ public:
 
     virtual void do_disableContextViewCorrection(const Batch& batch, size_t paramOffset) final;
     virtual void do_restoreContextViewCorrection(const Batch& batch, size_t paramOffset) final;
+    virtual void do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) final;
 
     virtual void do_disableContextStereo(const Batch& batch, size_t paramOffset) final;
     virtual void do_restoreContextStereo(const Batch& batch, size_t paramOffset) final;
@@ -248,8 +249,6 @@ public:
     virtual void do_glUniform4iv(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniformMatrix3fv(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniformMatrix4fv(const Batch& batch, size_t paramOffset) final;
-
-    virtual void do_glColor4f(const Batch& batch, size_t paramOffset) final;
 
     // The State setters called by the GLState::Commands when a new state is assigned
     virtual void do_setStateFillMode(int32 mode) final;
@@ -359,8 +358,6 @@ protected:
     struct InputStageState {
         bool _invalidFormat { true };
         bool _lastUpdateStereoState { false };
-        bool _hasColorAttribute { false };
-        bool _hadColorAttribute { false };
         FormatReference _format { GPU_REFERENCE_INIT_VALUE };
         std::string _formatKey;
 
@@ -376,8 +373,6 @@ protected:
         std::array<Offset, MAX_NUM_INPUT_BUFFERS> _bufferOffsets;
         std::array<Offset, MAX_NUM_INPUT_BUFFERS> _bufferStrides;
         std::array<GLuint, MAX_NUM_INPUT_BUFFERS> _bufferVBOs;
-
-        glm::vec4 _colorAttribute { 1.0f };
 
         BufferReference _indexBuffer;
         Offset _indexBufferOffset { 0 };
@@ -404,6 +399,10 @@ protected:
     struct PresentFrame {
         mat4 correction;
         mat4 correctionInverse;
+
+        mat4 unflippedCorrection;
+        mat4 flippedCorrection;
+        bool mirrorViewCorrection { false };
     };
 
     struct TransformStageState {

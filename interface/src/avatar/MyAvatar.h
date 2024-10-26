@@ -28,6 +28,7 @@
 #include <controllers/Pose.h>
 #include <controllers/Actions.h>
 #include <EntityItem.h>
+#include <HelperScriptEngine.h>
 #include <ThreadSafeValueCache.h>
 #include <Rig.h>
 #include <SettingHandle.h>
@@ -140,8 +141,6 @@ class MyAvatar : public Avatar {
      * @property {boolean} lookAtSnappingEnabled=true - <code>true</code> if the avatar's eyes snap to look at another avatar's
      *     eyes when the other avatar is in the line of sight and also has <code>lookAtSnappingEnabled == true</code>.
      * @property {string} skeletonModelURL - The avatar's FST file.
-     * @property {AttachmentData[]} attachmentData - Information on the avatar's attachments.
-     *     <p class="important">Deprecated: This property is deprecated and will be removed. Use avatar entities instead.</p>
      * @property {string[]} jointNames - The list of joints in the current avatar model. <em>Read-only.</em>
      * @property {Uuid} sessionUUID - Unique ID of the avatar in the domain. <em>Read-only.</em>
      * @property {Mat4} sensorToWorldMatrix - The scale, rotation, and translation transform from the user's real world to the
@@ -325,17 +324,10 @@ class MyAvatar : public Avatar {
      * @borrows Avatar.getJointIndex as getJointIndex
      * @borrows Avatar.getJointNames as getJointNames
      * @borrows Avatar.setBlendshape as setBlendshape
-     * @borrows Avatar.getAttachmentsVariant as getAttachmentsVariant
-     * @borrows Avatar.setAttachmentsVariant as setAttachmentsVariant
      * @borrows Avatar.updateAvatarEntity as updateAvatarEntity
      * @borrows Avatar.clearAvatarEntity as clearAvatarEntity
      * @borrows Avatar.setForceFaceTrackerConnected as setForceFaceTrackerConnected
      * @borrows Avatar.setSkeletonModelURL as setSkeletonModelURL
-     * @borrows Avatar.getAttachmentData as getAttachmentData
-     * @borrows Avatar.setAttachmentData as setAttachmentData
-     * @borrows Avatar.attach as attach
-     * @borrows Avatar.detachOne as detachOne
-     * @borrows Avatar.detachAll as detachAll
      * @comment Avatar.getAvatarEntityData as getAvatarEntityData - Don't borrow because implementation is different.
      * @comment Avatar.setAvatarEntityData as setAvatarEntityData - Don't borrow because implementation is different.
      * @borrows Avatar.getSensorToWorldMatrix as getSensorToWorldMatrix
@@ -588,8 +580,6 @@ public:
     void instantiableAvatar() override {};
     static void registerMetaTypes(ScriptEnginePointer engine);
     void registerProperties(ScriptEnginePointer engine);
-
-    virtual void simulateAttachments(float deltaTime) override;
 
     AudioListenerMode getAudioListenerModeHead() const { return FROM_HEAD; }
     AudioListenerMode getAudioListenerModeCamera() const { return FROM_CAMERA; }
@@ -1071,9 +1061,6 @@ public:
     void saveAvatarEntityDataToSettings();
     void loadData();
     void loadAvatarEntityDataFromSettings();
-
-    void saveAttachmentData(const AttachmentData& attachment) const;
-    AttachmentData loadAttachmentData(const QUrl& modelURL, const QString& jointName = QString()) const;
 
     //  Set what driving keys are being pressed to control thrust levels
     void clearDriveKeys();
@@ -1820,12 +1807,6 @@ public:
 
     float computeStandingHeightMode(const controller::Pose& head);
     glm::quat computeAverageHeadRotation(const controller::Pose& head);
-
-    virtual void setAttachmentData(const QVector<AttachmentData>& attachmentData) override;
-    virtual QVector<AttachmentData> getAttachmentData() const override;
-
-    virtual QVariantList getAttachmentsVariant() const override;
-    virtual void setAttachmentsVariant(const QVariantList& variant) override;
 
     glm::vec3 getNextPosition() { return _goToPending ? _goToPosition : getWorldPosition(); }
     void prepareAvatarEntityDataForReload();
@@ -2610,16 +2591,6 @@ signals:
     void sensorToWorldScaleChanged(float sensorToWorldScale);
 
     /*@jsdoc
-     * Triggered when the a model is attached to or detached from one of the avatar's joints using one of
-     * {@link MyAvatar.attach|attach}, {@link MyAvatar.detachOne|detachOne}, {@link MyAvatar.detachAll|detachAll}, or
-     * {@link MyAvatar.setAttachmentData|setAttachmentData}.
-     * @function MyAvatar.attachmentsChanged
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed. Use avatar entities instead.
-     */
-    void attachmentsChanged();
-
-    /*@jsdoc
      * Triggered when the avatar's size changes. This can be due to the user changing the size of their avatar or the domain
      * limiting the size of their avatar.
      * @function MyAvatar.scaleChanged
@@ -2683,6 +2654,7 @@ private:
     void setEnableDrawAverageFacing(bool drawAverage) { _drawAverageFacingEnabled = drawAverage; }
     bool getEnableDrawAverageFacing() const { return _drawAverageFacingEnabled; }
     virtual bool isMyAvatar() const override { return true; }
+    virtual bool isMyAvatarURLProtected() const override;
     virtual int parseDataFromBuffer(const QByteArray& buffer) override;
     virtual glm::vec3 getSkeletonPosition() const override;
     int _skeletonModelChangeCount { 0 };
@@ -2699,18 +2671,7 @@ private:
     void setScriptedMotorFrame(QString frame);
     void setScriptedMotorMode(QString mode);
 
-    // Attachments
-    virtual void attach(const QString& modelURL, const QString& jointName = QString(),
-                        const glm::vec3& translation = glm::vec3(), const glm::quat& rotation = glm::quat(),
-                        float scale = 1.0f, bool isSoft = false,
-                        bool allowDuplicates = false, bool useSaved = true) override;
-
-    virtual void detachOne(const QString& modelURL, const QString& jointName = QString()) override;
-    virtual void detachAll(const QString& modelURL, const QString& jointName = QString()) override;
-
-    // Attachments/Avatar Entity
-    void attachmentDataToEntityProperties(const AttachmentData& data, EntityItemProperties& properties);
-    AttachmentData entityPropertiesToAttachmentData(const EntityItemProperties& properties) const;
+    // Avatar Entities
     bool findAvatarEntity(const QString& modelURL, const QString& jointName, QUuid& entityID);
     void addAvatarEntitiesToTree();
 
@@ -3101,8 +3062,10 @@ private:
     mutable std::set<EntityItemID> _staleCachedAvatarEntityBlobs;
     //
     // keep a ScriptEngine around so we don't have to instantiate on the fly (these are very slow to create/delete)
-    mutable std::mutex _scriptEngineLock;
-    ScriptEnginePointer _scriptEngine { nullptr };
+    // TODO: profile if it performs better when script engine is on avatar thread or on its own thread
+    // Own thread is safer from deadlocks
+    mutable HelperScriptEngine _helperScriptEngine;
+
     bool _needToSaveAvatarEntitySettings { false };
 
     bool _reactionTriggers[NUM_AVATAR_TRIGGER_REACTIONS] { false, false };

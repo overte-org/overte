@@ -341,17 +341,17 @@ DomainServer::DomainServer(int argc, char* argv[]) :
     connect(&_settingsManager, &DomainServerSettingsManager::updateNodePermissions, [this] { _metadata->securityChanged(true); });
 
     qDebug() << "domain-server is running";
-    static const QString AC_SUBNET_WHITELIST_SETTING_PATH = "security.ac_subnet_whitelist";
+    static const QString AC_SUBNET_ALLOWLIST_SETTING_PATH = "security.ac_subnet_allowlist";
 
     static const Subnet LOCALHOST { QHostAddress("127.0.0.1"), 32 };
-    _acSubnetWhitelist = { LOCALHOST };
+    _acSubnetAllowlist = { LOCALHOST };
 
-    auto whitelist = _settingsManager.valueOrDefaultValueForKeyPath(AC_SUBNET_WHITELIST_SETTING_PATH).toStringList();
-    for (auto& subnet : whitelist) {
+    auto allowlist = _settingsManager.valueOrDefaultValueForKeyPath(AC_SUBNET_ALLOWLIST_SETTING_PATH).toStringList();
+    for (auto& subnet : allowlist) {
         auto netmaskParts = subnet.trimmed().split("/");
 
         if (netmaskParts.size() > 2) {
-            qDebug() << "Ignoring subnet in whitelist, malformed: " << subnet;
+            qDebug() << "Ignoring subnet in allowlist, malformed: " << subnet;
             continue;
         }
 
@@ -363,7 +363,7 @@ DomainServer::DomainServer(int argc, char* argv[]) :
             bool ok;
             netmask = netmaskParts[1].toInt(&ok);
             if (!ok) {
-                qDebug() << "Ignoring subnet in whitelist, bad netmask: " << subnet;
+                qDebug() << "Ignoring subnet in allowlist, bad netmask: " << subnet;
                 continue;
             }
         }
@@ -371,10 +371,10 @@ DomainServer::DomainServer(int argc, char* argv[]) :
         auto ip = QHostAddress(netmaskParts[0]);
 
         if (!ip.isNull()) {
-            qDebug() << "Adding AC whitelist subnet: " << subnet << " -> " << (ip.toString() + "/" + QString::number(netmask));
-            _acSubnetWhitelist.push_back({ ip , netmask });
+            qDebug() << "Adding AC allowlist subnet: " << subnet << " -> " << (ip.toString() + "/" + QString::number(netmask));
+            _acSubnetAllowlist.push_back({ ip , netmask });
         } else {
-            qDebug() << "Ignoring subnet in whitelist, invalid ip portion: " << subnet;
+            qDebug() << "Ignoring subnet in allowlist, invalid ip portion: " << subnet;
         }
     }
 
@@ -1502,8 +1502,8 @@ void DomainServer::processRequestAssignmentPacket(QSharedPointer<ReceivedMessage
         return senderAddr.isInSubnet(mask);
     };
 
-    auto it = find_if(_acSubnetWhitelist.begin(), _acSubnetWhitelist.end(), isHostAddressInSubnet);
-    if (it == _acSubnetWhitelist.end()) {
+    auto it = find_if(_acSubnetAllowlist.begin(), _acSubnetAllowlist.end(), isHostAddressInSubnet);
+    if (it == _acSubnetAllowlist.end()) {
         HIFI_FDEBUG("Received an assignment connect request from a disallowed ip address:"
             << senderAddr.toString());
         return;
@@ -3813,72 +3813,4 @@ void DomainServer::processAvatarZonePresencePacket(QSharedPointer<ReceivedMessag
         qCWarning(domain_server) << "Ignoring null avatar presence";
         return;
     }
-    static const int SCREENSHARE_EXPIRATION_SECONDS = 24 * 60 * 60;
-    screensharePresence(zoneID.isNull() ? "" : zoneID.toString(), avatarID, SCREENSHARE_EXPIRATION_SECONDS);
-}
-
-void DomainServer::screensharePresence(QString roomname, QUuid avatarID, int expirationSeconds) {
-    if (!DependencyManager::get<AccountManager>()->hasValidAccessToken()) {
-        static std::once_flag presenceAuthorityWarning;
-        std::call_once(presenceAuthorityWarning, [] {
-            qCDebug(domain_server) << "No authority to send screensharePresence.";
-        });
-        return;
-    }
-
-    auto limitedNodeList = DependencyManager::get<LimitedNodeList>();
-    auto matchingNode = limitedNodeList->nodeWithUUID(avatarID);
-    if (!matchingNode) {
-        qCWarning(domain_server) << "Ignoring avatar presence for unknown avatar ID" << avatarID;
-        return;
-    }
-    QString verifiedUsername = matchingNode->getPermissions().getVerifiedUserName();
-    if (verifiedUsername.isEmpty()) { // Silently bail for users who are not logged in.
-        return;
-    }
-
-    JSONCallbackParameters callbackParams;
-    callbackParams.callbackReceiver = this;
-    callbackParams.jsonCallbackMethod = "handleSuccessfulScreensharePresence";
-    callbackParams.errorCallbackMethod = "handleFailedScreensharePresence";
-    // Construct `callbackData`, which is data that will be available to the callback functions.
-    // In this case, the "success" callback needs access to the "roomname" (the zone ID) and the
-    // relevant avatar's UUID.
-    QJsonObject callbackData;
-    callbackData.insert("roomname", roomname);
-    callbackData.insert("avatarID", avatarID.toString());
-    callbackParams.callbackData = callbackData;
-    const QString PATH = "/api/v1/domains/%1/screenshare";
-    QString domain_id = uuidStringWithoutCurlyBraces(getID());
-    QJsonObject json, screenshare;
-    screenshare["username"] = verifiedUsername;
-    screenshare["roomname"] = roomname;
-    if (expirationSeconds > 0) {
-        screenshare["expiration"] = expirationSeconds;
-    }
-    json["screenshare"] = screenshare;
-    DependencyManager::get<AccountManager>()->sendRequest(
-        PATH.arg(domain_id),
-        AccountManagerAuth::Required,
-        QNetworkAccessManager::PostOperation,
-        callbackParams, QJsonDocument(json).toJson()
-        );
-}
-
-void DomainServer::handleSuccessfulScreensharePresence(QNetworkReply* requestReply, QJsonObject callbackData) {
-    QJsonObject jsonObject = QJsonDocument::fromJson(requestReply->readAll()).object();
-    if (jsonObject["status"].toString() != "success") {
-        qCWarning(domain_server) << "screensharePresence api call failed:" << QJsonDocument(jsonObject).toJson(QJsonDocument::Compact);
-        return;
-    }
-
-    // Tell the client that we just authorized to screenshare which zone ID in which they are authorized to screenshare.
-    auto nodeList = DependencyManager::get<LimitedNodeList>();
-    auto packet = NLPacket::create(PacketType::AvatarZonePresence, NUM_BYTES_RFC4122_UUID, true);
-    packet->write(QUuid(callbackData["roomname"].toString()).toRfc4122());
-    nodeList->sendPacket(std::move(packet), *(nodeList->nodeWithUUID(QUuid(callbackData["avatarID"].toString()))));
-}
-
-void DomainServer::handleFailedScreensharePresence(QNetworkReply* requestReply) {
-    qCWarning(domain_server) << "screensharePresence api call failed:" << requestReply->error();
 }

@@ -136,6 +136,14 @@ AvatarProject* AvatarProject::createAvatarProject(const QString& projectsFolder,
         addTextureToList(material.occlusionTexture);
         addTextureToList(material.scatteringTexture);
         addTextureToList(material.lightmapTexture);
+
+        if (material.isMToonMaterial) {
+            addTextureToList(material.shadeTexture);
+            addTextureToList(material.shadingShiftTexture);
+            addTextureToList(material.matcapTexture);
+            addTextureToList(material.rimTexture);
+            addTextureToList(material.uvAnimationTexture);
+        }
     }
 
     QDir textureDir(textureFolder.isEmpty() ? fbxInfo.absoluteDir() : textureFolder);

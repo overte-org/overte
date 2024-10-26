@@ -11,7 +11,7 @@
 
 #include "PathPointer.h"
 
-#include<EntityItemProperties.h>
+#include <EntityItemProperties.h>
 
 #include <render/Item.h>
 

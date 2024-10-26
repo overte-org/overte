@@ -539,7 +539,7 @@ void ScriptEngineV8::storeGlobalObjectContents() {
     v8::Local<v8::Object> globalMemberObjects = v8::Object::New(_v8Isolate);
 
     auto globalMemberNames = context->Global()->GetPropertyNames(context).ToLocalChecked();
-    for (size_t i = 0; i < globalMemberNames->Length(); i++) {
+    for (uint32_t i = 0; i < globalMemberNames->Length(); i++) {
         auto name = globalMemberNames->Get(context, i).ToLocalChecked();
         if(!globalMemberObjects->Set(context, name, context->Global()->Get(context, name).ToLocalChecked()).FromMaybe(false)) {
             Q_ASSERT(false);
@@ -645,7 +645,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             // Since V8 cannot use arbitrary object as global object, objects from main global need to be copied to closure's global object
             auto globalObjectContents = _globalObjectContents.Get(_v8Isolate);
             auto globalMemberNames = globalObjectContents->GetPropertyNames(globalObjectContents->CreationContext()).ToLocalChecked();
-            for (size_t i = 0; i < globalMemberNames->Length(); i++) {
+            for (uint32_t i = 0; i < globalMemberNames->Length(); i++) {
                 auto name = globalMemberNames->Get(closureContext, i).ToLocalChecked();
                 if(!closureContext->Global()->Set(closureContext, name, globalObjectContents->Get(globalObjectContents->CreationContext(), name).ToLocalChecked()).FromMaybe(false)) {
                     Q_ASSERT(false);
@@ -656,7 +656,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             // Objects from closure need to be copied to global object too
             // V8TODO: I'm not sure which context to use with Get
             auto closureMemberNames = closureObject->GetPropertyNames(closureContext).ToLocalChecked();
-            for (size_t i = 0; i < closureMemberNames->Length(); i++) {
+            for (uint32_t i = 0; i < closureMemberNames->Length(); i++) {
                 auto name = closureMemberNames->Get(closureContext, i).ToLocalChecked();
                 if(!closureContext->Global()->Set(closureContext, name, closureObject->Get(closureContext, name).ToLocalChecked()).FromMaybe(false)) {
                     Q_ASSERT(false);
@@ -664,6 +664,11 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             }
             // "Script" API is context-dependent, so it needs to be recreated for each new context
             registerGlobalObject("Script", new ScriptManagerScriptingInterface(_manager), ScriptEngine::ScriptOwnership);
+            auto Script = globalObject().property("Script");
+            auto require = Script.property("require");
+            auto resolve = Script.property("_requireResolve");
+            require.setProperty("resolve", resolve, ScriptValue::ReadOnly | ScriptValue::Undeletable);
+            globalObject().setProperty("require", require, ScriptValue::ReadOnly | ScriptValue::Undeletable);
 
             // Script.require properties need to be copied, since that's where the Script.require cache is
             // Get source and destination Script.require objects
@@ -712,7 +717,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
 
                 auto requireMemberNames =
                     oldRequireObject->GetPropertyNames(oldRequireObject->CreationContext()).ToLocalChecked();
-                for (size_t i = 0; i < requireMemberNames->Length(); i++) {
+                for (uint32_t i = 0; i < requireMemberNames->Length(); i++) {
                     auto name = requireMemberNames->Get(closureContext, i).ToLocalChecked();
                     v8::Local<v8::Value> oldObject;
                     if (!oldRequireObject->Get(oldRequireObject->CreationContext(), name).ToLocal(&oldObject)) {

@@ -30,10 +30,10 @@
 #include "NetworkLogging.h"
 #include "NodeList.h"
 
-bool ResourceCacheSharedItems::appendRequest(QWeakPointer<Resource> resource) {
+bool ResourceCacheSharedItems::appendRequest(QWeakPointer<Resource> resource, float priority) {
     Lock lock(_mutex);
     if ((uint32_t)_loadingRequests.size() < _requestLimit) {
-        _loadingRequests.append(resource);
+        _loadingRequests.append({ resource, priority });
         return true;
     } else {
         _pendingRequests.append(resource);
@@ -70,14 +70,14 @@ uint32_t ResourceCacheSharedItems::getPendingRequestsCount() const {
     return _pendingRequests.size();
 }
 
-QList<QSharedPointer<Resource>> ResourceCacheSharedItems::getLoadingRequests() const {
-    QList<QSharedPointer<Resource>> result;
+QList<std::pair<QSharedPointer<Resource>, float>> ResourceCacheSharedItems::getLoadingRequests() const {
+    QList<std::pair<QSharedPointer<Resource>, float>> result;
     Lock lock(_mutex);
 
-    foreach(QWeakPointer<Resource> resource, _loadingRequests) {
-        auto locked = resource.lock();
+    foreach(auto resourcePair, _loadingRequests) {
+        auto locked = resourcePair.first.lock();
         if (locked) {
-            result.append(locked);
+            result.append({ locked, resourcePair.second });
         }
     }
 
@@ -96,7 +96,7 @@ void ResourceCacheSharedItems::removeRequest(QWeakPointer<Resource> resource) {
     // QWeakPointer has no operator== implementation for two weak ptrs, so
     // manually loop in case resource has been freed.
     for (int i = 0; i < _loadingRequests.size();) {
-        auto request = _loadingRequests.at(i);
+        auto request = _loadingRequests.at(i).first;
         // Clear our resource and any freed resources
         if (!request || request.toStrongRef().data() == resource.toStrongRef().data()) {
             _loadingRequests.removeAt(i);
@@ -106,7 +106,7 @@ void ResourceCacheSharedItems::removeRequest(QWeakPointer<Resource> resource) {
     }
 }
 
-QSharedPointer<Resource> ResourceCacheSharedItems::getHighestPendingRequest() {
+std::pair<QSharedPointer<Resource>, float> ResourceCacheSharedItems::getHighestPendingRequest() {
     // look for the highest priority pending request
     int highestIndex = -1;
     float highestPriority = -FLT_MAX;
@@ -139,7 +139,7 @@ QSharedPointer<Resource> ResourceCacheSharedItems::getHighestPendingRequest() {
         _pendingRequests.takeAt(highestIndex);
     }
 
-    return highestResource;
+    return { highestResource, highestPriority };
 }
 
 void ResourceCacheSharedItems::clear() {
@@ -519,7 +519,7 @@ void ResourceCache::updateTotalSize(const qint64& deltaSize) {
     emit dirty();
 }
 
-QList<QSharedPointer<Resource>> ResourceCache::getLoadingRequests() {
+QList<std::pair<QSharedPointer<Resource>, float>> ResourceCache::getLoadingRequests() {
     return DependencyManager::get<ResourceCacheSharedItems>()->getLoadingRequests();
 }
 
@@ -531,11 +531,11 @@ uint32_t ResourceCache::getLoadingRequestCount() {
     return DependencyManager::get<ResourceCacheSharedItems>()->getLoadingRequestsCount();
 }
 
-bool ResourceCache::attemptRequest(QSharedPointer<Resource> resource) {
+bool ResourceCache::attemptRequest(QSharedPointer<Resource> resource, float priority) {
     Q_ASSERT(!resource.isNull());
 
     auto sharedItems = DependencyManager::get<ResourceCacheSharedItems>();
-    if (sharedItems->appendRequest(resource)) {
+    if (sharedItems->appendRequest(resource, priority)) {
         resource->makeRequest();
         return true;
     }
@@ -555,8 +555,8 @@ void ResourceCache::requestCompleted(QWeakPointer<Resource> resource) {
 
 bool ResourceCache::attemptHighestPriorityRequest() {
     auto sharedItems = DependencyManager::get<ResourceCacheSharedItems>();
-    auto resource = sharedItems->getHighestPendingRequest();
-    return (resource && attemptRequest(resource));
+    auto resourcePair = sharedItems->getHighestPendingRequest();
+    return (resourcePair.first && attemptRequest(resourcePair.first, resourcePair.second));
 }
 
 static int requestID = 0;
@@ -571,7 +571,7 @@ Resource::Resource(const Resource& other) :
     _startedLoading(other._startedLoading),
     _failedToLoad(other._failedToLoad),
     _loaded(other._loaded),
-    _loadPriorities(other._loadPriorities),
+    _loadPriorityOperators(other._loadPriorityOperators),
     _bytesReceived(other._bytesReceived),
     _bytesTotal(other._bytesTotal),
     _bytes(other._bytes),
@@ -605,40 +605,24 @@ void Resource::ensureLoading() {
     }
 }
 
-void Resource::setLoadPriority(const QPointer<QObject>& owner, float priority) {
+void Resource::setLoadPriorityOperator(const QPointer<QObject>& owner, std::function<float()> priorityOperator) {
     if (!_failedToLoad) {
-        _loadPriorities.insert(owner, priority);
-    }
-}
-
-void Resource::setLoadPriorities(const QHash<QPointer<QObject>, float>& priorities) {
-    if (_failedToLoad) {
-        return;
-    }
-    for (QHash<QPointer<QObject>, float>::const_iterator it = priorities.constBegin();
-            it != priorities.constEnd(); it++) {
-        _loadPriorities.insert(it.key(), it.value());
-    }
-}
-
-void Resource::clearLoadPriority(const QPointer<QObject>& owner) {
-    if (!_failedToLoad) {
-        _loadPriorities.remove(owner);
+        _loadPriorityOperators.insert(owner, priorityOperator);
     }
 }
 
 float Resource::getLoadPriority() {
-    if (_loadPriorities.size() == 0) {
+    if (_loadPriorityOperators.size() == 0) {
         return 0;
     }
 
     float highestPriority = -FLT_MAX;
-    for (QHash<QPointer<QObject>, float>::iterator it = _loadPriorities.begin(); it != _loadPriorities.end(); ) {
-        if (it.key().isNull()) {
-            it = _loadPriorities.erase(it);
+    for (QHash<QPointer<QObject>, std::function<float()>>::iterator it = _loadPriorityOperators.begin(); it != _loadPriorityOperators.end();) {
+        if (it.key().isNull() || !it.value()) {
+            it = _loadPriorityOperators.erase(it);
             continue;
         }
-        highestPriority = qMax(highestPriority, it.value());
+        highestPriority = qMax(highestPriority, it.value()());
         it++;
     }
     return highestPriority;
@@ -742,7 +726,7 @@ void Resource::attemptRequest() {
 
 void Resource::finishedLoading(bool success) {
     if (success) {
-        _loadPriorities.clear();
+        _loadPriorityOperators.clear();
         _loaded = true;
     } else {
         _failedToLoad = true;

@@ -1,10 +1,10 @@
 //  edit.js
 //
-//  Created by Brad Hefta-Gaub on 10/2/14.
-//  Persist toolbar by HRS 6/11/15.
+//  Created by Brad Hefta-Gaub on October 2nd, 2014.
+//  Persist toolbar by HRS on June 2nd, 2015.
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2023 Overte e.V.
+//  Copyright 2022-2024 Overte e.V.
 //
 //  This script allows you to edit entities with a new UI/UX for mouse and trackpad based editing
 //
@@ -38,6 +38,7 @@
         "entitySelectionTool/entitySelectionTool.js",
         "audioFeedback/audioFeedback.js",
         "modules/brokenURLReport.js",
+        "modules/renderWithZonesManager.js",
         "editModes/editModes.js",
         "editModes/editVoxels.js"
     ]);
@@ -94,8 +95,9 @@
     var SPOT_LIGHT_URL = Script.resolvePath("assets/images/icon-spot-light.svg");
     var ZONE_URL = Script.resolvePath("assets/images/icon-zone.svg");
     var MATERIAL_URL = Script.resolvePath("assets/images/icon-material.svg");
+    var SOUND_URL = Script.resolvePath("assets/images/icon-sound.svg");
 
-    var entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "Zone", "Material"], function(entityID) {
+    var entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "ProceduralParticleEffect", "Zone", "Material", "Sound"], function(entityID) {
         var properties = Entities.getEntityProperties(entityID, ["type", "isSpotlight", "parentID", "name"]);
         if (properties.type === "Light") {
             return {
@@ -104,11 +106,13 @@
         } else if (properties.type === "Zone") {
             return { imageURL: ZONE_URL };
         } else if (properties.type === "Material") {
-            if (properties.parentID !== Uuid.NULL && properties.name !== "MATERIAL_" + entityShapeVisualizerSessionName) {
+            if (properties.parentID !== Uuid.NONE && properties.name !== "MATERIAL_" + entityShapeVisualizerSessionName) {
                 return { imageURL: MATERIAL_URL };
             } else {
                 return { imageURL: "" };
             }
+        } else if (properties.type === "Sound") {
+            return { imageURL: SOUND_URL, rotation: Quat.fromPitchYawRollDegrees(0, 0, 0) };
         } else {
             return { imageURL: PARTICLE_SYSTEM_URL };
         }
@@ -120,6 +124,18 @@
 
     var copiedPosition;
     var copiedRotation;
+    var copiedDimensions;
+
+    var importUiPersistedData = {
+        "elJsonUrl": "",
+        "elImportAtAvatar": true,
+        "elImportAtSpecificPosition": false,
+        "elPositionX": 0,
+        "elPositionY": 0,
+        "elPositionZ": 0,
+        "elEntityHostTypeDomain": true,
+        "elEntityHostTypeAvatar": false
+    };
 
     var cameraManager = new CameraManager();
 
@@ -401,8 +417,7 @@
             },
             shapeType: "box",
             bloomMode: "inherit",
-            avatarPriority: "inherit",
-            screenshare: "inherit",
+            avatarPriority: "inherit"
         },
         Model: {
             collisionShape: "none",
@@ -483,6 +498,31 @@
             azimuthStart: -Math.PI,
             azimuthFinish: Math.PI
         },
+        ProceduralParticleEffect: {
+            dimensions: 3,
+            numParticles: 10000,
+            numTrianglesPerParticle: 6,
+            numUpdateProps: 3,
+            particleUpdateData: JSON.stringify({
+                version: 1.0,
+                fragmentShaderURL: "qrc:///shaders/proceduralParticleSwarmUpdate.frag",
+                uniforms: {
+                    lifespan: 3.0,
+                    speed: 2.0,
+                    speedSpread: 0.25,
+                    mass: 50000000000
+                }
+            }),
+            particleRenderData: JSON.stringify({
+                version: 3.0,
+                vertexShaderURL: "qrc:///shaders/proceduralParticleSwarmRender.vert",
+                fragmentShaderURL: "qrc:///shaders/proceduralParticleSwarmRender.frag",
+                uniforms: {
+                    radius: 0.03,
+                    lifespan: 3.0
+                }
+            })
+        },
         Light: {
             color: { red: 255, green: 255, blue: 255 },
             intensity: 5.0,
@@ -491,6 +531,13 @@
             isSpotlight: false,
             exponent: 1.0,
             cutoff: 75.0,
+        },
+        Sound: {
+            volume: 1.0,
+            playing: true,
+            loop: true,
+            positional: true,
+            localOnly: false
         },
     };
 
@@ -570,8 +617,9 @@
                 if (!properties.grab) {
                     properties.grab = {};
                     if (Menu.isOptionChecked(MENU_CREATE_ENTITIES_GRABBABLE) &&
-                        !(properties.type === "Zone" || properties.type === "Light"
-                        || properties.type === "ParticleEffect" || properties.type === "Web")) {
+                        !(properties.type === "Zone" || properties.type === "Light" || properties.type === "Sound"
+                            || properties.type === "ParticleEffect" || properties.type == "ProceduralParticleEffect"
+                            || properties.type === "Web")) {
                         properties.grab.grabbable = true;
                     } else {
                         properties.grab.grabbable = false;
@@ -859,6 +907,26 @@
             }
         }
 
+        function handleNewParticleDialogResult(result) {
+            if (result) {
+                createNewEntity({
+                    type: result.procedural ? "ProceduralParticleEffect" : "ParticleEffect"
+                });
+            }
+        }
+
+        function handleNewSoundDialogResult(result) {
+            if (result) {
+                var soundURL = result.textInput;
+                if (soundURL) {
+                    createNewEntity({
+                        type: "Sound",
+                        soundURL: soundURL
+                    });
+                }
+            }
+        }
+
         function fromQml(message) { // messages are {method, params}, like json-rpc. See also sendToQml.
             var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
             tablet.popFromStack();
@@ -880,11 +948,25 @@
                 case "newMaterialDialogCancel":
                     closeExistingDialogWindow();
                     break;
+                case "newParticleDialogAdd":
+                    handleNewParticleDialogResult(message.params);
+                    closeExistingDialogWindow();
+                    break;
+                case "newParticleDialogCancel":
+                    closeExistingDialogWindow();
+                    break;
                 case "newPolyVoxDialogAdd":
                     handleNewPolyVoxDialogResult(message.params);
                     closeExistingDialogWindow();
                     break;
                 case "newPolyVoxDialogCancel":
+                    closeExistingDialogWindow();
+                    break;
+                case "newSoundDialogAdd":
+                    handleNewSoundDialogResult(message.params);
+                    closeExistingDialogWindow();
+                    break;
+                case "newSoundDialogCancel":
                     closeExistingDialogWindow();
                     break;
             }
@@ -1046,15 +1128,13 @@
                 });
             });
 
-            addButton("newParticleButton", function () {
-                createNewEntity({
-                    type: "ParticleEffect",
-                });
-            });
+            addButton("newParticleButton", createNewEntityDialogButtonCallback("Particle"));
 
             addButton("newMaterialButton", createNewEntityDialogButtonCallback("Material"));
 
             addButton("newPolyVoxButton", createNewEntityDialogButtonCallback("PolyVox"));
+
+            addButton("newSoundButton", createNewEntityDialogButtonCallback("Sound"));
 
             var deactivateCreateIfDesktopWindowsHidden = function() {
                 if (!shouldUseEditTabletApp() && !entityListTool.isVisible() && !createToolsWindow.isVisible()) {
@@ -1777,7 +1857,7 @@
             }
             selectedEntities.forEach(function (id, index) {
                 var parentId = Entities.getEntityProperties(id, ["parentID"]).parentID;
-                if (parentId !== null && parentId.length > 0 && parentId !== Uuid.NULL) {
+                if (parentId !== null && parentId.length > 0 && parentId !== Uuid.NONE) {
                     parentCheck = true;
                 }
                 Entities.editEntity(id, {parentID: null});
@@ -2008,7 +2088,8 @@
         return position;
     }
 
-    function importSVO(importURL) {
+    function importSVO(importURL, importEntityHostType) {
+        importEntityHostType = importEntityHostType || "domain";
         if (!Entities.canRez() && !Entities.canRezTmp()) {
             Window.notifyEditError(INSUFFICIENT_PERMISSIONS_IMPORT_ERROR_MSG);
             return;
@@ -2031,7 +2112,7 @@
                 position = createApp.getPositionToCreateEntity(Clipboard.getClipboardContentsLargestDimension() / 2);
             }
             if (position !== null && position !== undefined) {
-                var pastedEntityIDs = Clipboard.pasteEntities(position);
+                var pastedEntityIDs = Clipboard.pasteEntities(position, importEntityHostType);
                 if (!isLargeImport) {
                     // The first entity in Clipboard gets the specified position with the rest being relative to it. Therefore, move
                     // entities after they're imported so that they're all the correct distance in front of and with geometric mean
@@ -2041,7 +2122,7 @@
                     var entityParentIDs = [];
 
                     var propType = Entities.getEntityProperties(pastedEntityIDs[0], ["type"]).type;
-                    var NO_ADJUST_ENTITY_TYPES = ["Zone", "Light", "ParticleEffect"];
+                    var NO_ADJUST_ENTITY_TYPES = ["Zone", "Light", "ParticleEffect", "ProceduralParticleEffect", "Sound"];
                     if (NO_ADJUST_ENTITY_TYPES.indexOf(propType) === -1) {
                         var targetDirection;
                         if (Camera.mode === "entity" || Camera.mode === "independent") {
@@ -2116,6 +2197,24 @@
         if (isActive) {
             cameraManager.keyPressEvent(event);
         }
+
+        // Hacks to get the menu bar buttons to work
+        // Copy
+        if (event.text.toLowerCase() === "c" && event.isControl && !event.isShifted) {
+            selectionManager.copySelectedEntities();
+        }
+        // Paste
+        if (event.text.toLowerCase() === "v" && event.isControl && !event.isShifted) {
+            selectionManager.pasteEntities();
+        }
+        // Cut
+        if (event.text.toLowerCase() === "x" && event.isControl && !event.isShifted) {
+            selectionManager.cutSelectedEntities();
+        }
+        // Delete - This uses the physical 'delete' key on a keyboard.
+        if (event.text.toLowerCase() === "delete" && !event.isControl && !event.isShifted) {
+            createApp.deleteSelectedEntities();
+        }
     };
     var keyReleaseEvent = function (event) {
         if (isActive) {
@@ -2125,11 +2224,6 @@
     Controller.keyReleaseEvent.connect(keyReleaseEvent);
     Controller.keyPressEvent.connect(keyPressEvent);
 
-    function deleteKey(value) {
-        if (value === 0) { // on release
-            createApp.deleteSelectedEntities();
-        }
-    }
     function deselectKey(value) {
         if (value === 0) { // on release
             selectionManager.clearSelections(this);
@@ -2594,7 +2688,7 @@
                 if (data.snapToGrid !== undefined) {
                     entityListTool.setListMenuSnapToGrid(data.snapToGrid);
                 }
-            } else if (data.type === 'saveUserData' || data.type === 'saveMaterialData') {
+            } else if (data.type === 'saveUserData' || data.type === 'saveMaterialData' || data.type === 'saveParticleUpdateData' || data.type === 'saveParticleRenderData') {
                 data.ids.forEach(function(entityID) {
                     Entities.editEntity(entityID, data.properties);
                 });
@@ -2706,12 +2800,32 @@
                         copiedRotation = properties.rotation;
                         Window.copyToClipboard(JSON.stringify(copiedRotation));
                     }
+                } else if (data.action === "copyDimensions") {
+                    if (selectionManager.selections.length === 1) {
+                        selectionManager.saveProperties();
+                        properties = selectionManager.savedProperties[selectionManager.selections[0]];
+                        copiedDimensions = properties.dimensions;
+                        Window.copyToClipboard(JSON.stringify(copiedDimensions));
+                    }
                 } else if (data.action === "pastePosition") {
                     if (copiedPosition !== undefined && selectionManager.selections.length > 0 && SelectionManager.hasUnlockedSelection()) {
                         selectionManager.saveProperties();
                         for (i = 0; i < selectionManager.selections.length; i++) {
                             Entities.editEntity(selectionManager.selections[i], {
                                 position: copiedPosition
+                            });
+                        }
+                        createApp.pushCommandForSelections();
+                        selectionManager._update(false, this);
+                    } else {
+                        audioFeedback.rejection();
+                    }
+                } else if (data.action === "pasteDimensions") {
+                    if (copiedDimensions !== undefined && selectionManager.selections.length > 0 && SelectionManager.hasUnlockedSelection()) {
+                        selectionManager.saveProperties();
+                        for (i = 0; i < selectionManager.selections.length; i++) {
+                            Entities.editEntity(selectionManager.selections[i], {
+                                dimensions: copiedDimensions
                             });
                         }
                         createApp.pushCommandForSelections();
@@ -2752,6 +2866,10 @@
                     }
                 }
             } else if (data.type === "propertiesPageReady") {
+                emitScriptEvent({
+                    type: 'urlPermissionChanged',
+                    canViewAssetURLs: Entities.canViewAssetURLs(),
+                });
                 updateSelections(true);
             } else if (data.type === "tooltipsRequest") {
                 emitScriptEvent({
@@ -2771,7 +2889,7 @@
             } else if (data.type === "materialTargetRequest") {
                 var parentModelData;
                 var properties = Entities.getEntityProperties(data.entityID, ["type", "parentID"]);
-                if (properties.type === "Material" && properties.parentID !== Uuid.NULL) {
+                if (properties.type === "Material" && properties.parentID !== Uuid.NONE) {
                     var parentType = Entities.getEntityProperties(properties.parentID, ["type"]).type;
                     if (parentType === "Model" || Entities.getNestableType(properties.parentID) === "avatar") {
                         parentModelData = Graphics.getModel(properties.parentID);
@@ -2791,6 +2909,72 @@
                     type: 'zoneListRequest',
                     zones: getExistingZoneList()
                 });
+            } else if (data.type === "importUiBrowse") {
+                let fileToImport = Window.browse("Select .json to Import", "", "*.json");
+                if (fileToImport !== null) {
+                     emitScriptEvent({
+                        type: 'importUi_SELECTED_FILE',
+                        file: fileToImport
+                    });
+                } else {
+                    audioFeedback.rejection();
+                }
+            } else if (data.type === "importUiImport") {
+                if ((data.entityHostType === "domain" && Entities.canAdjustLocks() && Entities.canRez()) || 
+                    (data.entityHostType === "avatar" && Entities.canRezAvatarEntities())) {
+                    if (data.positioningMode === "avatar") {
+                        importSVO(data.jsonURL, data.entityHostType);
+                    } else {
+                        if (Clipboard.importEntities(data.jsonURL)) {
+                            let importedPastedEntities = Clipboard.pasteEntities(data.position, data.entityHostType);
+                            if (importedPastedEntities.length === 0) {
+                                emitScriptEvent({
+                                    type: 'importUi_IMPORT_ERROR',
+                                    reason: "No Entity has been imported."
+                                });
+                            } else {
+                                if (isActive) {
+                                    selectionManager.setSelections(importedPastedEntities, this);
+                                }
+                                emitScriptEvent({type: 'importUi_IMPORT_CONFIRMATION'});
+                            }
+                        } else {
+                            emitScriptEvent({
+                                type: 'importUi_IMPORT_ERROR',
+                                reason: "Import Entities has failed."
+                            });
+                        }
+                    }
+                } else {
+                    emitScriptEvent({
+                        type: 'importUi_IMPORT_ERROR',
+                        reason: "You don't have permission to create in this domain."
+                    });
+                }
+            } else if (data.type === "importUiGoBack") {
+                if (location.canGoBack()) {
+                    location.goBack();
+                } else {
+                    audioFeedback.rejection();
+                }
+            } else if (data.type === "importUiGoTutorial") {
+                Window.location = "file:///~/serverless/tutorial.json";
+            } else if (data.type === "importUiGetCopiedPosition") {
+                if (copiedPosition !== undefined) {
+                    emitScriptEvent({
+                        type: 'importUi_POSITION_TO_PASTE',
+                        position: copiedPosition
+                    });
+                } else {
+                    audioFeedback.rejection();
+                }
+            } else if (data.type === "importUiPersistData") {
+                importUiPersistedData = data.importUiPersistedData;
+            } else if (data.type === "importUiGetPersistData") {
+                emitScriptEvent({
+                    type: 'importUi_LOAD_DATA',
+                    importUiPersistedData: importUiPersistedData
+                });
             }
         };
 
@@ -2798,6 +2982,13 @@
             emitScriptEvent({
                 type: 'hmdActiveChanged',
                 hmdActive: HMD.active,
+            });
+        });
+
+        Entities.canViewAssetURLsChanged.connect((value) => {
+            emitScriptEvent({
+                type: 'urlPermissionChanged',
+                canViewAssetURLs: value,
             });
         });
 
@@ -2994,11 +3185,6 @@
     var isOnMacPlatform = Controller.getValue(Controller.Hardware.Application.PlatformMac);
 
     var mapping = Controller.newMapping(CONTROLLER_MAPPING_NAME);
-    if (isOnMacPlatform) {
-        mapping.from([Controller.Hardware.Keyboard.Backspace]).to(deleteKey);
-    } else {
-        mapping.from([Controller.Hardware.Keyboard.Delete]).to(deleteKey);
-    }
     mapping.from([Controller.Hardware.Keyboard.T]).to(toggleKey);
     mapping.from([Controller.Hardware.Keyboard.F]).to(focusKey);
     mapping.from([Controller.Hardware.Keyboard.J]).to(gridKey);
@@ -3009,15 +3195,9 @@
     mapping.from([Controller.Hardware.Keyboard["7"]]).to(quickRotate90xKey);
     mapping.from([Controller.Hardware.Keyboard["8"]]).to(quickRotate90yKey);
     mapping.from([Controller.Hardware.Keyboard["9"]]).to(quickRotate90zKey);
-    mapping.from([Controller.Hardware.Keyboard.X])
-        .when([Controller.Hardware.Keyboard.Control])
-        .to(whenReleased(function() { selectionManager.cutSelectedEntities() }));
     mapping.from([Controller.Hardware.Keyboard.C])
         .when([Controller.Hardware.Keyboard.Control])
         .to(whenReleased(function() { selectionManager.copySelectedEntities() }));
-    mapping.from([Controller.Hardware.Keyboard.V])
-        .when([Controller.Hardware.Keyboard.Control])
-        .to(whenReleased(function() { selectionManager.pasteEntities() }));
     mapping.from([Controller.Hardware.Keyboard.D])
         .when([Controller.Hardware.Keyboard.Control])
         .to(whenReleased(function() { selectionManager.duplicateSelection() }));
@@ -3041,10 +3221,8 @@
 
         var pressedValue = 0.0;
 
-        if ((!isOnMacPlatform && keyUpEvent.keyCodeString === "Delete")
-            || (isOnMacPlatform && keyUpEvent.keyCodeString === "Backspace")) {
-
-            deleteKey(pressedValue);
+        if (isOnMacPlatform && keyUpEvent.keyCodeString === "Backspace") {
+            createApp.deleteSelectedEntities();
         } else if (keyUpEvent.keyCodeString === "T") {
             toggleKey(pressedValue);
         } else if (keyUpEvent.keyCodeString === "F") {
@@ -3065,12 +3243,8 @@
             quickRotate90yKey(pressedValue);
         } else if (keyUpEvent.keyCodeString === "9") {
             quickRotate90zKey(pressedValue);
-        } else if (keyUpEvent.controlKey && keyUpEvent.keyCodeString === "X") {
-            selectionManager.cutSelectedEntities();
         } else if (keyUpEvent.controlKey && keyUpEvent.keyCodeString === "C") {
             selectionManager.copySelectedEntities();
-        } else if (keyUpEvent.controlKey && keyUpEvent.keyCodeString === "V") {
-            selectionManager.pasteEntities();
         } else if (keyUpEvent.controlKey && keyUpEvent.keyCodeString === "D") {
             selectionManager.duplicateSelection();
         } else if (!isOnMacPlatform && keyUpEvent.controlKey && !keyUpEvent.shiftKey && keyUpEvent.keyCodeString === "Z") {
@@ -3138,7 +3312,7 @@
         var state = "NONE";
         var properties = Entities.getEntityProperties(id, ["parentID"]);
         var children = createApp.getDomainOnlyChildrenIDs(id);
-        if (properties.parentID !== Uuid.NULL) {
+        if (properties.parentID !== Uuid.NONE) {
             if (children.length > 0) {
                 state = "PARENT_CHILDREN";
             } else {

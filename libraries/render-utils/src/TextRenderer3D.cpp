@@ -33,28 +33,25 @@ glm::vec2 TextRenderer3D::computeExtent(const QString& str) const {
     return glm::vec2(0.0f, 0.0f);
 }
 
-float TextRenderer3D::getFontSize() const {
+float TextRenderer3D::getFontHeight() const {
     if (_font) {
-        return _font->getFontSize();
+        return _font->getFontHeight();
     }
     return 0.0f;
 }
 
-void TextRenderer3D::draw(gpu::Batch& batch, float x, float y, const glm::vec2& bounds,
-                          const QString& str, const glm::vec4& color, bool unlit, bool forward) {
+void TextRenderer3D::draw(gpu::Batch& batch, const Font::DrawProps& props) {
     if (_font) {
-        _font->drawString(batch, _drawInfo, str, color, glm::vec3(0.0f), 0, TextEffect::NO_EFFECT, TextAlignment::LEFT, { x, y }, bounds, 1.0f, unlit, forward);
+        _font->drawString(batch, _drawInfo, props);
     }
 }
 
-void TextRenderer3D::draw(gpu::Batch& batch, float x, float y, const glm::vec2& bounds, float scale,
-                          const QString& str, const QString& font, const glm::vec4& color, const glm::vec3& effectColor,
-                          float effectThickness, TextEffect effect, TextAlignment alignment, bool unlit, bool forward) {
+void TextRenderer3D::draw(gpu::Batch& batch, const QString& font, const Font::DrawProps& props) {
     if (font != _family) {
         _family = font;
         _font = Font::load(_family);
     }
     if (_font) {
-        _font->drawString(batch, _drawInfo, str, color, effectColor, effectThickness, effect, alignment, { x, y }, bounds, scale, unlit, forward);
+        _font->drawString(batch, _drawInfo, props);
     }
 }

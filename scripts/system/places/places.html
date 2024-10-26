@@ -150,7 +150,11 @@
                 if (message.channel === channel && message.action === "CURRENT_LOCATION") {
                     currentLocation = message.data;
                     displayCurrentLocation();
-                }                
+                }
+                if (message.channel === channel && message.action === "MATURITY_FILTER") {
+                    maturityFilter = message.filter;
+                    displayMaturityFilter();
+                }
             });
             
             var goSignal = {
@@ -415,8 +419,12 @@
                                         } else if (placeRecords[i].category === "Z") {
                                             moreStyle = " style='background-color: #364a6e;'";
                                         }
-
-                                        var shortenedDescription = placeRecords[i].description.substr(0, 55);
+                                        
+                                        var maxCharNumber = 55;
+                                        if (currentListFormat === "PLACES" && i === 0) {
+                                            maxCharNumber = 180;
+                                        }
+                                        var shortenedDescription = placeRecords[i].description.substr(0, maxCharNumber);
                                         if (shortenedDescription.slice(-1) !== ".") {
                                             shortenedDescription = shortenedDescription + "...";
                                         }
@@ -429,21 +437,31 @@
                                             placeUrl = "file:///~/serverless/tutorial.json";
                                         }
 
+                                        var promotedblur = "";
+                                        var promoted = "";
+                                        var placeTitlePromoted = "";
+                                        var prompotionDescHeight = "";
+                                        if (currentListFormat === "PLACES" && i === 0) {
+                                            promotedblur = " promotedblur";
+                                            promoted = " placeEntryLargeSize";
+                                            placeTitlePromoted = " placeTitlePromoted";
+                                            prompotionDescHeight = " style='height: 175px; '";
+                                        }
                                         //Add the place to the list
 
-                                        formatedList = formatedList + "<div class = 'placeEntry' id='place-" + placeRecords[i].id + "'" + moreStyle + "><div class = 'blur'>";
+                                        formatedList = formatedList + "<div class = 'placeEntry" + promoted + "' id='place-" + placeRecords[i].id + "'" + moreStyle + "><div class = 'blur" + promotedblur + "'>";
                                         formatedList = formatedList + "<table class='placeTable'>";
                                         formatedList = formatedList + "    <tr valign = 'top'>";
                                         formatedList = formatedList + "        <td width='2%'></td>";                                
-                                        formatedList = formatedList + "        <td align='left' width='75%' onclick='teleport(" + '"' + placeRecords[i].id + '"' + ", " + '"' + placeUrl + '"' + "); return false;'><a class= 'placeTitle' href='javascript:void(0)' onclick='teleport(" + '"' + placeRecords[i].id + '"' + ", " + '"' + placeUrl + '"' + "); return false;'>" + placeRecords[i].name + "</a></td>";
+                                        formatedList = formatedList + "        <td align='left' width='75%' onclick='teleport(" + '"' + placeRecords[i].id + '"' + ", " + '"' + placeUrl + '"' + "); return false;'><a class= 'placeTitle" + placeTitlePromoted + "' href='javascript:void(0)' onclick='teleport(" + '"' + placeRecords[i].id + '"' + ", " + '"' + placeUrl + '"' + "); return false;'>" + placeRecords[i].name + "</a></td>";
                                         if (placeRecords[i].category !== "Z") {
                                             formatedList = formatedList + "        <td align='right' ><span style='padding: 0%; cursor: pointer;' onclick='openDetail(" + '"' + placeRecords[i].id + '"' + ")'><img src='icons/info.png' width='26' height='26' draggable='false'></span></td>";
                                         }
                                         formatedList = formatedList + "    </tr>";
                                         formatedList = formatedList + "</table>";
                                         if (placeRecords[i].category !== "Z") {
-                                            formatedList = formatedList + "<table class='placeTable'>";
-                                            formatedList = formatedList + "    <tr>";
+                                            formatedList = formatedList + "<table class='placeTable'" + prompotionDescHeight + ">";
+                                            formatedList = formatedList + "    <tr valign = 'bottom'>";
                                             formatedList = formatedList + "        <td width='2%'></td>";
                                             formatedList = formatedList + "        <td align='left' width='88%' class='place-entry-description' onclick='teleport(" + '"' + placeRecords[i].id + '"' + ", " + '"' + placeUrl + '"' + "); return false;'>" + shortenedDescription + "</td>";
                                             formatedList = formatedList + "        <td align='right' class='presenceOfLife-" + placeRecords[i].accessStatus + "'>&#9603;</td>";
@@ -586,8 +604,16 @@
                     maturityFilter = arrayRemove(maturityFilter, targeted);
                 }
                 loadRecordsUpTo = NUMBER_OF_RECORDS_PER_LOAD;
+
+                var messageSent = {
+                    "channel": channel,
+                    "action": "SET_MATURITY_FILTER",
+                    "filter": maturityFilter
+                    };
+                EventBridge.emitWebEvent(JSON.stringify(messageSent));
+
                 displayMaturityFilter();
-                generateContent();            
+                generateContent();
             }
 
             function filterSearchField(targeted) {

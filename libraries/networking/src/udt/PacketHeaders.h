@@ -31,8 +31,15 @@ class PacketTypeEnum {
     Q_GADGET
     Q_ENUMS(Value)
 public:
-    // If adding a new packet packetType, you can replace one marked usable or add at the end.
-    // This enum must hold 256 or fewer packet types (so the value is <= 255) since it is statically typed as a uint8_t
+
+    /**
+     * @brief Packet type identifier
+     *
+     * Identifies the type of packet being sent.
+     *
+     * @note If adding a new packet packetType, you can replace one marked usable or add at the end.
+     * @note This enum must hold 256 or fewer packet types (so the value is <= 255) since it is statically typed as a uint8_t
+     */
     enum class Value : uint8_t {
         Unknown,
         DomainConnectRequestPending,
@@ -143,6 +150,8 @@ public:
         NUM_PACKET_TYPE
     };
 
+    Q_ENUM(Value)
+
     const static QHash<PacketTypeEnum::Value, PacketTypeEnum::Value> getReplicatedPacketMapping() {
         const static QHash<PacketTypeEnum::Value, PacketTypeEnum::Value> REPLICATED_PACKET_MAPPING {
             { PacketTypeEnum::Value::MicrophoneAudioNoEcho, PacketTypeEnum::Value::ReplicatedMicrophoneAudioNoEcho },
@@ -219,9 +228,59 @@ const int NUM_BYTES_MD5_HASH = 16;
 // NOTE: There is a max limit of 255, hopefully we have a better way to manage this by then.
 typedef uint8_t PacketVersion;
 
+/**
+ * @brief Returns the version number of the given packet type
+ *
+ * If the implementation of a packet type is modified in an incompatible way, the implementation
+ * of this function needs to be modified to return an incremented value.
+ *
+ * This is used to determine whether the protocol is compatible between client and server.
+ *
+ * @note Version is limited to a max of 255.
+ *
+ * @param packetType Type of packet
+ * @return PacketVersion Version
+ */
 PacketVersion versionForPacketType(PacketType packetType);
-QByteArray protocolVersionsSignature(); /// returns a unique signature for all the current protocols
+
+/**
+ * @brief Returns a unique signature for all the current protocols
+ *
+ * This computes a MD5 hash that expresses the state of the protocol's specification. The calculation
+ * is done in ensureProtocolVersionsSignature and accounts for the following:
+ *
+ * * Number of known packet types
+ * * versionForPacketType(type) for each packet type.
+ *
+ * There's no provision for backwards compatibility, anything that changes this calculation is a protocol break.
+ *
+ * @return QByteArray MD5 digest as a byte array
+ */
+QByteArray protocolVersionsSignature();
+
+/***
+ * @brief Returns a unique signature for all the current protocols
+ *
+ * Same as protocolVersionsSignature(), in base64.
+ */
 QString protocolVersionsSignatureBase64();
+
+/***
+ * @brief Returns a unique signature for all the current protocols
+ *
+ * Same as protocolVersionsSignature(), in hex;
+ */
+QString protocolVersionsSignatureHex();
+
+/***
+ * @brief Returns the data used to compute the protocol version
+ *
+ * The key is the packet type. The value is the version for that packet type.
+ *
+ * Used for aiding in development.
+ */
+QMap<PacketType, uint8_t> protocolVersionsSignatureMap();
+
 
 #if (PR_BUILD || DEV_BUILD)
 void sendWrongProtocolVersionsSignature(bool sendWrongVersion); /// for debugging version negotiation
@@ -282,7 +341,8 @@ enum class EntityVersion : PacketVersion {
     ShadowBiasAndDistance,
     TextEntityFonts,
     ScriptServerKinematicMotion,
-    ScreenshareZone,
+    // This was ScreenshareZone, property was dropped.
+    ScreenshareZoneUnused,
     ZoneOcclusion,
     ModelBlendshapes,
     TransparentWeb,
@@ -290,6 +350,20 @@ enum class EntityVersion : PacketVersion {
     UserAgent,
     AllBillboardMode,
     TextAlignment,
+    Mirror,
+    EntityTags,
+    WantsKeyboardFocus,
+    AudioZones,
+    AnimationSmoothFrames,
+    ProceduralParticles,
+    ShapeUnlit,
+    AmbientColor,
+    SoundEntities,
+    TonemappingAndAmbientOcclusion,
+    ModelLoadPriority,
+    PropertyCleanup,
+    TextVerticalAlignment,
+    RemoveScreenshare,
 
     // Add new versions above here
     NUM_PACKET_TYPE,
@@ -355,7 +429,8 @@ enum class AvatarMixerPacketVersion : PacketVersion {
     FBXJointOrderChange,
     HandControllerSection,
     SendVerificationFailed,
-    ARKitBlendshapes
+    ARKitBlendshapes,
+    RemoveAttachments,
 };
 
 enum class DomainConnectRequestVersion : PacketVersion {
@@ -427,5 +502,6 @@ enum class AvatarQueryVersion : PacketVersion {
     SendMultipleFrustums = 21,
     ConicalFrustums = 22
 };
+
 
 #endif // hifi_PacketHeaders_h

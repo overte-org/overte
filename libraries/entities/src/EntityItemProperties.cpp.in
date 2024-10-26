@@ -1,0 +1,1454 @@
+//
+//  EntityItemProperties.cpp
+//  libraries/entities/src
+//
+//  Created by Brad Hefta-Gaub on 12/4/13.
+//  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2020 Vircadia contributors.
+//  Copyright 2022-2023 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "EntityItemProperties.h"
+
+#include <openssl/err.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+#include <openssl/ecdsa.h>
+
+#include <QDebug>
+#include <QHash>
+#include <QObject>
+#include <QtCore/QJsonDocument>
+#include <QtNetwork/QNetworkReply>
+#include <QtNetwork/QNetworkRequest>
+
+#include <NetworkAccessManager.h>
+#include <ByteCountCoding.h>
+#include <GLMHelpers.h>
+#include <RegisteredMetaTypes.h>
+#include <Extents.h>
+#include <VariantMapToScriptValue.h>
+#include <ScriptValue.h>
+#include <PhysicsHelpers.h>
+
+#include "EntitiesLogging.h"
+#include "WarningsSuppression.h"
+
+@ENTITY_ITEM_PROPERTY_STATIC_GROUPS@
+
+EntityPropertyList PROP_LAST_ITEM = (EntityPropertyList)(PROP_AFTER_LAST_ITEM - 1);
+
+EntityItemProperties::EntityItemProperties(EntityPropertyFlags desiredProperties) :
+    _id(UNKNOWN_ENTITY_ID),
+    _idSet(false),
+    _lastEdited(0),
+    _type(EntityTypes::Unknown),
+
+    _defaultSettings(true),
+    _naturalDimensions(1.0f, 1.0f, 1.0f),
+    _naturalPosition(0.0f, 0.0f, 0.0f),
+    _desiredProperties(desiredProperties)
+{
+
+}
+
+void EntityItemProperties::calculateNaturalPosition(const vec3& min, const vec3& max) {
+    vec3 halfDimension = (max - min) / 2.0f;
+    _naturalPosition = max - halfDimension;
+}
+
+void EntityItemProperties::debugDump() const {
+    qCDebug(entities) << "EntityItemProperties...";
+    qCDebug(entities) << "    _type=" << EntityTypes::getEntityTypeName(_type);
+    qCDebug(entities) << "   _id=" << _id;
+    qCDebug(entities) << "   _idSet=" << _idSet;
+    qCDebug(entities) << "   _position=" << _position.x << "," << _position.y << "," << _position.z;
+    qCDebug(entities) << "   _dimensions=" << getDimensions();
+    qCDebug(entities) << "   _modelURL=" << _modelURL;
+    qCDebug(entities) << "   _compoundShapeURL=" << _compoundShapeURL;
+
+@ENTITY_ITEM_PROPERTY_DEBUG_DUMP_GROUPS@
+
+    qCDebug(entities) << "   changed properties...";
+    EntityPropertyFlags props = getChangedProperties();
+    props.debugDumpBits();
+}
+
+void EntityItemProperties::setLastEdited(quint64 usecTime) {
+    _lastEdited = usecTime > _created ? usecTime : _created;
+}
+
+bool EntityItemProperties::constructFromBuffer(const unsigned char* data, int dataLength) {
+    ReadBitstreamToTreeParams args;
+    EntityItemPointer tempEntity = EntityTypes::constructEntityItem(data, dataLength);
+    if (!tempEntity) {
+        return false;
+    }
+    tempEntity->readEntityDataFromBuffer(data, dataLength, args);
+    (*this) = tempEntity->getProperties();
+    return true;
+}
+
+inline void addEntityShape(QHash<QString, EntityShape>& lookup, EntityShape type) { lookup[EntityShapeHelpers::getNameForEntityShape(type)] = type; }
+QHash<QString, EntityShape> stringToEntityShapeLookup = [] {
+    QHash<QString, EntityShape> toReturn;
+    addEntityShape(toReturn, EntityShape::Triangle);
+    addEntityShape(toReturn, EntityShape::Quad);
+    addEntityShape(toReturn, EntityShape::Hexagon);
+    addEntityShape(toReturn, EntityShape::Octagon);
+    addEntityShape(toReturn, EntityShape::Circle);
+    addEntityShape(toReturn, EntityShape::Cube);
+    addEntityShape(toReturn, EntityShape::Sphere);
+    addEntityShape(toReturn, EntityShape::Tetrahedron);
+    addEntityShape(toReturn, EntityShape::Octahedron);
+    addEntityShape(toReturn, EntityShape::Dodecahedron);
+    addEntityShape(toReturn, EntityShape::Icosahedron);
+    addEntityShape(toReturn, EntityShape::Torus);
+    addEntityShape(toReturn, EntityShape::Cone);
+    addEntityShape(toReturn, EntityShape::Cylinder);
+    return toReturn;
+}();
+QString EntityItemProperties::getShapeAsString() const { return EntityShapeHelpers::getNameForEntityShape(_shape); }
+void EntityItemProperties::setShapeFromString(const QString& shapeName) {
+    auto shapeItr = stringToEntityShapeLookup.find(shapeName);
+    if (shapeItr != stringToEntityShapeLookup.end()) {
+        _shape = shapeItr.value();
+        _shapeChanged = true;
+    }
+}
+
+inline void addShapeType(QHash<QString, ShapeType>& lookup, ShapeType type) { lookup[ShapeInfo::getNameForShapeType(type)] = type; }
+QHash<QString, ShapeType> stringToShapeTypeLookup = [] {
+    QHash<QString, ShapeType> toReturn;
+    addShapeType(toReturn, SHAPE_TYPE_NONE);
+    addShapeType(toReturn, SHAPE_TYPE_BOX);
+    addShapeType(toReturn, SHAPE_TYPE_SPHERE);
+    addShapeType(toReturn, SHAPE_TYPE_CAPSULE_X);
+    addShapeType(toReturn, SHAPE_TYPE_CAPSULE_Y);
+    addShapeType(toReturn, SHAPE_TYPE_CAPSULE_Z);
+    addShapeType(toReturn, SHAPE_TYPE_CYLINDER_X);
+    addShapeType(toReturn, SHAPE_TYPE_CYLINDER_Y);
+    addShapeType(toReturn, SHAPE_TYPE_CYLINDER_Z);
+    addShapeType(toReturn, SHAPE_TYPE_HULL);
+    addShapeType(toReturn, SHAPE_TYPE_PLANE);
+    addShapeType(toReturn, SHAPE_TYPE_COMPOUND);
+    addShapeType(toReturn, SHAPE_TYPE_SIMPLE_HULL);
+    addShapeType(toReturn, SHAPE_TYPE_SIMPLE_COMPOUND);
+    addShapeType(toReturn, SHAPE_TYPE_STATIC_MESH);
+    addShapeType(toReturn, SHAPE_TYPE_ELLIPSOID);
+    addShapeType(toReturn, SHAPE_TYPE_CIRCLE);
+    return toReturn;
+}();
+QString EntityItemProperties::getShapeTypeAsString() const { return ShapeInfo::getNameForShapeType(_shapeType); }
+void EntityItemProperties::setShapeTypeFromString(const QString& shapeName) {
+    auto shapeTypeItr = stringToShapeTypeLookup.find(shapeName.toLower());
+    if (shapeTypeItr != stringToShapeTypeLookup.end()) {
+        _shapeType = shapeTypeItr.value();
+        _shapeTypeChanged = true;
+    }
+}
+
+inline void addMaterialMappingMode(QHash<QString, MaterialMappingMode>& lookup, MaterialMappingMode mode) { lookup[MaterialMappingModeHelpers::getNameForMaterialMappingMode(mode)] = mode; }
+const QHash<QString, MaterialMappingMode> stringToMaterialMappingModeLookup = [] {
+    QHash<QString, MaterialMappingMode> toReturn;
+    addMaterialMappingMode(toReturn, UV);
+    addMaterialMappingMode(toReturn, PROJECTED);
+    return toReturn;
+}();
+QString EntityItemProperties::getMaterialMappingModeAsString() const { return MaterialMappingModeHelpers::getNameForMaterialMappingMode(_materialMappingMode); }
+void EntityItemProperties::setMaterialMappingModeFromString(const QString& materialMappingMode) {
+    auto materialMappingModeItr = stringToMaterialMappingModeLookup.find(materialMappingMode.toLower());
+    if (materialMappingModeItr != stringToMaterialMappingModeLookup.end()) {
+        _materialMappingMode = materialMappingModeItr.value();
+        _materialMappingModeChanged = true;
+    }
+}
+
+inline void addBillboardMode(QHash<QString, BillboardMode>& lookup, BillboardMode mode) { lookup[BillboardModeHelpers::getNameForBillboardMode(mode)] = mode; }
+const QHash<QString, BillboardMode> stringToBillboardModeLookup = [] {
+    QHash<QString, BillboardMode> toReturn;
+    addBillboardMode(toReturn, BillboardMode::NONE);
+    addBillboardMode(toReturn, BillboardMode::YAW);
+    addBillboardMode(toReturn, BillboardMode::FULL);
+    return toReturn;
+}();
+QString EntityItemProperties::getBillboardModeAsString() const { return BillboardModeHelpers::getNameForBillboardMode(_billboardMode); }
+void EntityItemProperties::setBillboardModeFromString(const QString& billboardMode) {
+    auto billboardModeItr = stringToBillboardModeLookup.find(billboardMode.toLower());
+    if (billboardModeItr != stringToBillboardModeLookup.end()) {
+        _billboardMode = billboardModeItr.value();
+        _billboardModeChanged = true;
+    }
+}
+
+inline void addRenderLayer(QHash<QString, RenderLayer>& lookup, RenderLayer mode) { lookup[RenderLayerHelpers::getNameForRenderLayer(mode)] = mode; }
+const QHash<QString, RenderLayer> stringToRenderLayerLookup = [] {
+    QHash<QString, RenderLayer> toReturn;
+    addRenderLayer(toReturn, RenderLayer::WORLD);
+    addRenderLayer(toReturn, RenderLayer::FRONT);
+    addRenderLayer(toReturn, RenderLayer::HUD);
+    return toReturn;
+}();
+QString EntityItemProperties::getRenderLayerAsString() const { return RenderLayerHelpers::getNameForRenderLayer(_renderLayer); }
+void EntityItemProperties::setRenderLayerFromString(const QString& renderLayer) {
+    auto renderLayerItr = stringToRenderLayerLookup.find(renderLayer.toLower());
+    if (renderLayerItr != stringToRenderLayerLookup.end()) {
+        _renderLayer = renderLayerItr.value();
+        _renderLayerChanged = true;
+    }
+}
+
+inline void addPrimitiveMode(QHash<QString, PrimitiveMode>& lookup, PrimitiveMode mode) { lookup[PrimitiveModeHelpers::getNameForPrimitiveMode(mode)] = mode; }
+const QHash<QString, PrimitiveMode> stringToPrimitiveModeLookup = [] {
+    QHash<QString, PrimitiveMode> toReturn;
+    addPrimitiveMode(toReturn, PrimitiveMode::SOLID);
+    addPrimitiveMode(toReturn, PrimitiveMode::LINES);
+    return toReturn;
+}();
+QString EntityItemProperties::getPrimitiveModeAsString() const { return PrimitiveModeHelpers::getNameForPrimitiveMode(_primitiveMode); }
+void EntityItemProperties::setPrimitiveModeFromString(const QString& primitiveMode) {
+    auto primitiveModeItr = stringToPrimitiveModeLookup.find(primitiveMode.toLower());
+    if (primitiveModeItr != stringToPrimitiveModeLookup.end()) {
+        _primitiveMode = primitiveModeItr.value();
+        _primitiveModeChanged = true;
+    }
+}
+
+inline void addWebInputMode(QHash<QString, WebInputMode>& lookup, WebInputMode mode) { lookup[WebInputModeHelpers::getNameForWebInputMode(mode)] = mode; }
+const QHash<QString, WebInputMode> stringToWebInputModeLookup = [] {
+    QHash<QString, WebInputMode> toReturn;
+    addWebInputMode(toReturn, WebInputMode::TOUCH);
+    addWebInputMode(toReturn, WebInputMode::MOUSE);
+    return toReturn;
+}();
+QString EntityItemProperties::getInputModeAsString() const { return WebInputModeHelpers::getNameForWebInputMode(_inputMode); }
+void EntityItemProperties::setInputModeFromString(const QString& webInputMode) {
+    auto webInputModeItr = stringToWebInputModeLookup.find(webInputMode.toLower());
+    if (webInputModeItr != stringToWebInputModeLookup.end()) {
+        _inputMode = webInputModeItr.value();
+        _inputModeChanged = true;
+    }
+}
+
+inline void addGizmoType(QHash<QString, GizmoType>& lookup, GizmoType mode) { lookup[GizmoTypeHelpers::getNameForGizmoType(mode)] = mode; }
+const QHash<QString, GizmoType> stringToGizmoTypeLookup = [] {
+    QHash<QString, GizmoType> toReturn;
+    addGizmoType(toReturn, GizmoType::RING);
+    return toReturn;
+}();
+QString EntityItemProperties::getGizmoTypeAsString() const { return GizmoTypeHelpers::getNameForGizmoType(_gizmoType); }
+void EntityItemProperties::setGizmoTypeFromString(const QString& gizmoType) {
+    auto gizmoTypeItr = stringToGizmoTypeLookup.find(gizmoType.toLower());
+    if (gizmoTypeItr != stringToGizmoTypeLookup.end()) {
+        _gizmoType = gizmoTypeItr.value();
+        _gizmoTypeChanged = true;
+    }
+}
+
+inline void addComponentMode(QHash<QString, ComponentMode>& lookup, ComponentMode mode) { lookup[ComponentModeHelpers::getNameForComponentMode(mode)] = mode; }
+const QHash<QString, ComponentMode> stringToComponentMode = [] {
+    QHash<QString, ComponentMode> toReturn;
+    addComponentMode(toReturn, ComponentMode::COMPONENT_MODE_INHERIT);
+    addComponentMode(toReturn, ComponentMode::COMPONENT_MODE_DISABLED);
+    addComponentMode(toReturn, ComponentMode::COMPONENT_MODE_ENABLED);
+    return toReturn;
+}();
+QString EntityItemProperties::getComponentModeAsString(uint8_t mode) { return ComponentModeHelpers::getNameForComponentMode((ComponentMode)mode); }
+QString EntityItemProperties::getSkyboxModeAsString() const { return getComponentModeAsString(_skyboxMode); }
+QString EntityItemProperties::getKeyLightModeAsString() const { return getComponentModeAsString(_keyLightMode); }
+QString EntityItemProperties::getAmbientLightModeAsString() const { return getComponentModeAsString(_ambientLightMode); }
+QString EntityItemProperties::getHazeModeAsString() const { return getComponentModeAsString(_hazeMode); }
+QString EntityItemProperties::getBloomModeAsString() const { return getComponentModeAsString(_bloomMode); }
+QString EntityItemProperties::getTonemappingModeAsString() const { return getComponentModeAsString(_tonemappingMode); }
+QString EntityItemProperties::getAmbientOcclusionModeAsString() const { return getComponentModeAsString(_ambientOcclusionMode); }
+void EntityItemProperties::setSkyboxModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _skyboxMode = modeItr.value();
+        _skyboxModeChanged = true;
+    }
+}
+void EntityItemProperties::setKeyLightModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _keyLightMode = modeItr.value();
+        _keyLightModeChanged = true;
+    }
+}
+void EntityItemProperties::setAmbientLightModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _ambientLightMode = modeItr.value();
+        _ambientLightModeChanged = true;
+    }
+}
+void EntityItemProperties::setHazeModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _hazeMode = modeItr.value();
+        _hazeModeChanged = true;
+    }
+}
+void EntityItemProperties::setBloomModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _bloomMode = modeItr.value();
+        _bloomModeChanged = true;
+    }
+}
+void EntityItemProperties::setTonemappingModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _tonemappingMode = modeItr.value();
+        _tonemappingModeChanged = true;
+    }
+}
+void EntityItemProperties::setAmbientOcclusionModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _ambientOcclusionMode = modeItr.value();
+        _ambientOcclusionModeChanged = true;
+    }
+}
+
+inline void addAvatarPriorityMode(QHash<QString, AvatarPriorityMode>& lookup, AvatarPriorityMode mode) { lookup[AvatarPriorityModeHelpers::getNameForAvatarPriorityMode(mode)] = mode; }
+const QHash<QString, AvatarPriorityMode> stringToAvatarPriority = [] {
+    QHash<QString, AvatarPriorityMode> toReturn;
+    addAvatarPriorityMode(toReturn, AvatarPriorityMode::AVATAR_PRIORITY_INHERIT);
+    addAvatarPriorityMode(toReturn, AvatarPriorityMode::AVATAR_PRIORITY_CROWD);
+    addAvatarPriorityMode(toReturn, AvatarPriorityMode::AVATAR_PRIORITY_HERO);
+    return toReturn;
+}();
+QString EntityItemProperties::getAvatarPriorityAsString() const { return AvatarPriorityModeHelpers::getNameForAvatarPriorityMode((AvatarPriorityMode)_avatarPriority); }
+void EntityItemProperties::setAvatarPriorityFromString(const QString& mode) {
+    auto modeItr = stringToAvatarPriority.find(mode.toLower());
+    if (modeItr != stringToAvatarPriority.end()) {
+        _avatarPriority = modeItr.value();
+        _avatarPriorityChanged = true;
+    }
+}
+
+inline void addTextEffect(QHash<QString, TextEffect>& lookup, TextEffect effect) { lookup[TextEffectHelpers::getNameForTextEffect(effect)] = effect; }
+const QHash<QString, TextEffect> stringToTextEffectLookup = [] {
+    QHash<QString, TextEffect> toReturn;
+    addTextEffect(toReturn, TextEffect::NO_EFFECT);
+    addTextEffect(toReturn, TextEffect::OUTLINE_EFFECT);
+    addTextEffect(toReturn, TextEffect::OUTLINE_WITH_FILL_EFFECT);
+    addTextEffect(toReturn, TextEffect::SHADOW_EFFECT);
+    return toReturn;
+}();
+QString EntityItemProperties::getTextEffectAsString() const { return TextEffectHelpers::getNameForTextEffect(_textEffect); }
+void EntityItemProperties::setTextEffectFromString(const QString& effect) {
+    auto textEffectItr = stringToTextEffectLookup.find(effect.toLower());
+    if (textEffectItr != stringToTextEffectLookup.end()) {
+        _textEffect = textEffectItr.value();
+        _textEffectChanged = true;
+    }
+}
+
+inline void addTextAlignment(QHash<QString, TextAlignment>& lookup, TextAlignment alignment) { lookup[TextAlignmentHelpers::getNameForTextAlignment(alignment)] = alignment; }
+const QHash<QString, TextAlignment> stringToTextAlignmentLookup = [] {
+    QHash<QString, TextAlignment> toReturn;
+    addTextAlignment(toReturn, TextAlignment::LEFT);
+    addTextAlignment(toReturn, TextAlignment::CENTER);
+    addTextAlignment(toReturn, TextAlignment::RIGHT);
+    return toReturn;
+}();
+QString EntityItemProperties::getAlignmentAsString() const { return TextAlignmentHelpers::getNameForTextAlignment(_alignment); }
+void EntityItemProperties::setAlignmentFromString(const QString& alignment) {
+    auto textAlignmentItr = stringToTextAlignmentLookup.find(alignment.toLower());
+    if (textAlignmentItr != stringToTextAlignmentLookup.end()) {
+        _alignment = textAlignmentItr.value();
+        _alignmentChanged = true;
+    }
+}
+
+inline void addTextVerticalAlignment(QHash<QString, TextVerticalAlignment>& lookup, TextVerticalAlignment verticalAlignment) { lookup[TextVerticalAlignmentHelpers::getNameForTextVerticalAlignment(verticalAlignment)] = verticalAlignment; }
+const QHash<QString, TextVerticalAlignment> stringToTextVerticalAlignmentLookup = [] {
+    QHash<QString, TextVerticalAlignment> toReturn;
+    addTextVerticalAlignment(toReturn, TextVerticalAlignment::TOP);
+    addTextVerticalAlignment(toReturn, TextVerticalAlignment::BOTTOM);
+    addTextVerticalAlignment(toReturn, TextVerticalAlignment::CENTER);
+    return toReturn;
+}();
+QString EntityItemProperties::getVerticalAlignmentAsString() const { return TextVerticalAlignmentHelpers::getNameForTextVerticalAlignment(_verticalAlignment); }
+void EntityItemProperties::setVerticalAlignmentFromString(const QString& verticalAlignment) {
+    auto textVerticalAlignmentItr = stringToTextVerticalAlignmentLookup.find(verticalAlignment.toLower());
+    if (textVerticalAlignmentItr != stringToTextVerticalAlignmentLookup.end()) {
+        _verticalAlignment = textVerticalAlignmentItr.value();
+        _verticalAlignmentChanged = true;
+    }
+}
+
+QString getCollisionGroupAsString(uint16_t group) {
+    switch (group) {
+        case USER_COLLISION_GROUP_DYNAMIC:
+            return "dynamic";
+        case USER_COLLISION_GROUP_STATIC:
+            return "static";
+        case USER_COLLISION_GROUP_KINEMATIC:
+            return "kinematic";
+        case USER_COLLISION_GROUP_MY_AVATAR:
+            return "myAvatar";
+        case USER_COLLISION_GROUP_OTHER_AVATAR:
+            return "otherAvatar";
+    };
+    return "";
+}
+
+uint16_t getCollisionGroupAsBitMask(const QStringRef& name) {
+    if (0 == name.compare(QString("dynamic"))) {
+        return USER_COLLISION_GROUP_DYNAMIC;
+    } else if (0 == name.compare(QString("static"))) {
+        return USER_COLLISION_GROUP_STATIC;
+    } else if (0 == name.compare(QString("kinematic"))) {
+        return USER_COLLISION_GROUP_KINEMATIC;
+    } else if (0 == name.compare(QString("myAvatar"))) {
+        return USER_COLLISION_GROUP_MY_AVATAR;
+    } else if (0 == name.compare(QString("otherAvatar"))) {
+        return USER_COLLISION_GROUP_OTHER_AVATAR;
+    }
+    return 0;
+}
+
+QString EntityItemProperties::getCollisionMaskAsString() const {
+    QString maskString("");
+    for (int i = 0; i < NUM_USER_COLLISION_GROUPS; ++i) {
+        uint16_t group = 0x0001 << i;
+        if (group & _collisionMask) {
+            maskString.append(getCollisionGroupAsString(group));
+            maskString.append(',');
+        }
+    }
+    return maskString;
+}
+
+void EntityItemProperties::setCollisionMaskFromString(const QString& maskString) {
+    QVector<QStringRef> groups = maskString.splitRef(',');
+    uint16_t mask = 0x0000;
+    for (auto groupName : groups) {
+        mask |= getCollisionGroupAsBitMask(groupName);
+    }
+    _collisionMask = mask;
+    _collisionMaskChanged = true;
+}
+
+QString EntityItemProperties::getEntityHostTypeAsString() const {
+    switch (_entityHostType) {
+        case entity::HostType::DOMAIN:
+            return "domain";
+        case entity::HostType::AVATAR:
+            return "avatar";
+        case entity::HostType::LOCAL:
+            return "local";
+        default:
+            return "";
+    }
+}
+
+void EntityItemProperties::setEntityHostTypeFromString(const QString& entityHostType) {
+    if (entityHostType == "domain") {
+        _entityHostType = entity::HostType::DOMAIN;
+    } else if (entityHostType == "avatar") {
+        _entityHostType = entity::HostType::AVATAR;
+    } else if (entityHostType == "local") {
+        _entityHostType = entity::HostType::LOCAL;
+    }
+}
+
+inline void addMirrorMode(QHash<QString, MirrorMode>& lookup, MirrorMode mirrorMode) { lookup[MirrorModeHelpers::getNameForMirrorMode(mirrorMode)] = mirrorMode; }
+const QHash<QString, MirrorMode> stringToMirrorModeLookup = [] {
+    QHash<QString, MirrorMode> toReturn;
+    addMirrorMode(toReturn, MirrorMode::NONE);
+    addMirrorMode(toReturn, MirrorMode::MIRROR);
+    addMirrorMode(toReturn, MirrorMode::PORTAL);
+    return toReturn;
+}();
+QString EntityItemProperties::getMirrorModeAsString() const { return MirrorModeHelpers::getNameForMirrorMode(_mirrorMode); }
+void EntityItemProperties::setMirrorModeFromString(const QString& mirrorMode) {
+    auto mirrorModeItr = stringToMirrorModeLookup.find(mirrorMode.toLower());
+    if (mirrorModeItr != stringToMirrorModeLookup.end()) {
+        _mirrorMode = mirrorModeItr.value();
+        _mirrorModeChanged = true;
+    }
+}
+
+QVector<QString> EntityItemProperties::getTagsAsVector() const {
+    QVector<QString> tags;
+    for (const QString& tag : _tags) {
+        tags.push_back(tag);
+    }
+    return tags;
+}
+
+void EntityItemProperties::setTagsFromVector(const QVector<QString>& tags) {
+    _tags.clear();
+    for (const QString& tag : tags) {
+        _tags.insert(tag);
+    }
+}
+
+EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@ENTITY_ITEM_PROPERTY_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool skipDefaults, bool allowUnknownCreateTime,
+    bool strictSemantics,
+                                                    EntityPseudoPropertyFlags pseudoPropertyFlags) const {
+
+    // If strictSemantics is true and skipDefaults is false, then all and only those properties are copied for which the property flag
+    // is included in _desiredProperties, or is one of the specially enumerated ALWAYS properties below.
+    // (There may be exceptions, but if so, they are bugs.)
+    // In all other cases, you are welcome to inspect the code and try to figure out what was intended. I wish you luck. -HRS 1/18/17
+    ScriptValue properties = engine->newObject();
+    EntityItemProperties defaultEntityProperties;
+
+    const bool pseudoPropertyFlagsActive = pseudoPropertyFlags.test(EntityPseudoPropertyFlag::FlagsActive);
+    // Fix to skip the default return all mechanism, when pseudoPropertyFlagsActive
+    const bool returnNothingOnEmptyPropertyFlags = pseudoPropertyFlagsActive;
+
+    if (_created == UNKNOWN_CREATED_TIME && !allowUnknownCreateTime) {
+        // No entity properties can have been set so return without setting any default, zero property values.
+        return properties;
+    }
+
+    auto nodeList = DependencyManager::get<NodeList>();
+    bool isMyOwnAvatarEntity = _entityHostType == entity::HostType::AVATAR && (_owningAvatarID == AVATAR_SELF_ID || _owningAvatarID == Physics::getSessionUUID());
+    if (_idSet && (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::ID))) {
+        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_ALWAYS(id, _id.toString());
+    }
+    if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::Type)) {
+        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_ALWAYS(type, EntityTypes::getEntityTypeName(_type));
+    }
+    if ((!skipDefaults || _lifetime != defaultEntityProperties._lifetime) && !strictSemantics) {
+        if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::Age)) {
+            COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_NO_SKIP(age, getAge()); // gettable, but not settable
+        }
+        if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::AgeAsText)) {
+            COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_NO_SKIP(ageAsText, formatSecondsElapsed(getAge())); // gettable, but not settable
+        }
+    }
+    if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::LastEdited)) {
+        properties.setProperty("lastEdited", convertScriptValue(engine, _lastEdited));
+    }
+    if (!skipDefaults) {
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_DIMENSIONS, naturalDimensions); // gettable, but not settable
+        COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_POSITION, naturalPosition);
+    }
+
+    // FIXME: Shouldn't provide a shapeType property for Box and Sphere entities.
+@ENTITY_ITEM_PROPERTY_COPY_TO_SCRIPT@
+
+    if (_type == EntityTypes::Image) {
+        // Handle conversions to old 'textures' property from "imageURL"
+        if ((isMyOwnAvatarEntity || nodeList->getThisNodeCanViewAssetURLs()) &&
+                ((!returnNothingOnEmptyPropertyFlags && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(PROP_IMAGE_URL)) &&
+                (!skipDefaults || defaultEntityProperties._imageURL != _imageURL)) {
+            ScriptValue textures = engine->newObject();
+            textures.setProperty("tex.picture", _imageURL);
+            properties.setProperty("textures", textures);
+        }
+    }
+
+    /*@jsdoc
+     * The axis-aligned bounding box of an entity.
+     * @typedef {object} Entities.BoundingBox
+     * @property {Vec3} brn - The bottom right near (minimum axes values) corner of the AA box.
+     * @property {Vec3} tfl - The top far left (maximum axes values) corner of the AA box.
+     * @property {Vec3} center - The center of the AA box.
+     * @property {Vec3} dimensions - The dimensions of the AA box.
+     */
+    if (!skipDefaults && !strictSemantics &&
+        (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::BoundingBox))) {
+
+        AABox aaBox = getAABox();
+        ScriptValue boundingBox = engine->newObject();
+        ScriptValue bottomRightNear = vec3ToScriptValue(engine, aaBox.getCorner());
+        ScriptValue topFarLeft = vec3ToScriptValue(engine, aaBox.calcTopFarLeft());
+        ScriptValue center = vec3ToScriptValue(engine, aaBox.calcCenter());
+        ScriptValue boundingBoxDimensions = vec3ToScriptValue(engine, aaBox.getDimensions());
+        boundingBox.setProperty("brn", bottomRightNear);
+        boundingBox.setProperty("tfl", topFarLeft);
+        boundingBox.setProperty("center", center);
+        boundingBox.setProperty("dimensions", boundingBoxDimensions);
+        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_NO_SKIP(boundingBox, boundingBox); // gettable, but not settable
+    }
+
+    QString textureNamesStr = QJsonDocument::fromVariant(_textureNames).toJson();
+    if (!skipDefaults && !strictSemantics && (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::OriginalTextures))) {
+        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_NO_SKIP(originalTextures, textureNamesStr); // gettable, but not settable
+    }
+
+    // Rendering info
+    if (!skipDefaults && !strictSemantics &&
+        (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::RenderInfo))) {
+
+        ScriptValue renderInfo = engine->newObject();
+
+        /*@jsdoc
+         * Information on how an entity is rendered. Properties are only filled in for <code>Model</code> entities; other
+         * entity types have an empty object, <code>{}</code>.
+         * @typedef {object} Entities.RenderInfo
+         * @property {number} verticesCount - The number of vertices in the entity.
+         * @property {number} texturesCount  - The number of textures in the entity.
+         * @property {number} texturesSize - The total size of the textures in the entity, in bytes.
+         * @property {boolean} hasTransparent - <code>true</code> if any of the textures has transparency, <code>false</code>
+         *     if none of them do.
+         * @property {number} drawCalls - The number of draw calls required to render the entity.
+         */
+        // currently only supported by models
+        if (_type == EntityTypes::Model) {
+            renderInfo.setProperty("verticesCount", (int)getRenderInfoVertexCount()); // FIXME - theoretically the number of vertex could be > max int
+            renderInfo.setProperty("texturesSize", (int)getRenderInfoTextureSize()); // FIXME - theoretically the size of textures could be > max int
+            renderInfo.setProperty("hasTransparent", getRenderInfoHasTransparent());
+            renderInfo.setProperty("drawCalls", getRenderInfoDrawCalls());
+            renderInfo.setProperty("texturesCount", getRenderInfoTextureCount());
+        }
+
+        COPY_PROPERTY_TO_QSCRIPTVALUE_GETTER_NO_SKIP(renderInfo, renderInfo);  // Gettable but not settable
+    }
+
+    if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::ClientOnly)) {
+        properties.setProperty("clientOnly", convertScriptValue(engine, getEntityHostType() == entity::HostType::AVATAR));
+    }
+    if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::AvatarEntity)) {
+        properties.setProperty("avatarEntity", convertScriptValue(engine, getEntityHostType() == entity::HostType::AVATAR));
+    }
+    if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::LocalEntity)) {
+        properties.setProperty("localEntity", convertScriptValue(engine, getEntityHostType() == entity::HostType::LOCAL));
+    }
+
+    if (_type != EntityTypes::PolyLine && (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::FaceCamera))) {
+        properties.setProperty("faceCamera", convertScriptValue(engine, getBillboardMode() == BillboardMode::YAW));
+    }
+    if (!pseudoPropertyFlagsActive || pseudoPropertyFlags.test(EntityPseudoPropertyFlag::IsFacingAvatar)) {
+        properties.setProperty("isFacingAvatar", convertScriptValue(engine, getBillboardMode() == BillboardMode::FULL));
+    }
+
+    return properties;
+}
+
+void EntityItemProperties::copyFromScriptValue(const ScriptValue& object, bool honorReadOnly) {
+    //qDebug() << "EntityItemProperties::copyFromScriptValue: properties: " << object.getPropertyNames();
+    QList<QString> namesList = object.getPropertyNames();
+
+    QSet<QString> namesSet;
+    for (auto name = namesList.cbegin(); name != namesList.cend(); name++) {
+        namesSet.insert(*name);
+    }
+
+    ScriptValue typeScriptValue = object.property("type");
+    if (typeScriptValue.isValid()) {
+        setType(typeScriptValue.toVariant().toString());
+    }
+
+    // TODO: should scripts be able to set queryAACube?
+@ENTITY_ITEM_PROPERTY_COPY_FROM_SCRIPT@
+
+    // Handle conversions from old 'textures' property to "imageURL"
+    if (namesSet.contains("textures")) {
+        ScriptValue V = object.property("textures");
+        if (_type == EntityTypes::Image && V.isValid() && !object.property("imageURL").isValid()) {
+            bool isValid = false;
+            QString textures = QString_convertFromScriptValue(V, isValid);
+            if (isValid) {
+                QVariantMap texturesMap = parseTexturesToMap(textures, QVariantMap());
+                auto texPicture = texturesMap.find("tex.picture");
+                if (texPicture != texturesMap.end()) {
+                    auto imageURL = texPicture.value().toString();
+                    if (_defaultSettings || imageURL != _imageURL) {
+                        setImageURL(imageURL);
+                    }
+                }
+            }
+        }
+    }
+
+    // Handle old "faceCamera" and "isFacingAvatar" props
+    if (_type != EntityTypes::PolyLine && namesSet.contains("faceCamera")) {
+        ScriptValue P = object.property("faceCamera");
+        if (P.isValid() && !object.property("billboardMode").isValid()) {
+            bool newValue = P.toVariant().toBool();
+            bool oldValue = getBillboardMode() == BillboardMode::YAW;
+            if (_defaultSettings || newValue != oldValue) {
+                setBillboardMode(newValue ? BillboardMode::YAW : BillboardMode::NONE);
+            }
+        }
+    }
+    if (namesSet.contains("isFacingAvatar")) {
+        ScriptValue P = object.property("isFacingAvatar");
+        if (P.isValid() && !object.property("billboardMode").isValid() && !object.property("faceCamera").isValid()) {
+            bool newValue = P.toVariant().toBool();
+            bool oldValue = getBillboardMode() == BillboardMode::FULL;
+            if (_defaultSettings || newValue != oldValue) {
+                setBillboardMode(newValue ? BillboardMode::FULL : BillboardMode::NONE);
+            }
+        }
+    }
+
+    _lastEdited = usecTimestampNow();
+}
+
+void EntityItemProperties::copyFromJSONString(ScriptEngine& scriptEngine, const QString& jsonString) {
+    // DANGER: this method is expensive
+    QJsonDocument propertiesDoc = QJsonDocument::fromJson(jsonString.toUtf8());
+    QJsonObject propertiesObj = propertiesDoc.object();
+    QVariant propertiesVariant(propertiesObj);
+    QVariantMap propertiesMap = propertiesVariant.toMap();
+    ScriptValue propertiesScriptValue = variantMapToScriptValue(propertiesMap, scriptEngine);
+    bool honorReadOnly = true;
+    copyFromScriptValue(propertiesScriptValue, honorReadOnly);
+}
+
+
+void EntityItemProperties::merge(const EntityItemProperties& other) {
+@ENTITY_ITEM_PROPERTY_MERGE@
+
+    _lastEdited = usecTimestampNow();
+}
+
+ScriptValue EntityItemPropertiesToScriptValue(ScriptEngine* engine, const EntityItemProperties& properties) {
+    return properties.copyToScriptValue(engine, false);
+}
+
+ScriptValue EntityItemNonDefaultPropertiesToScriptValue(ScriptEngine* engine, const EntityItemProperties& properties) {
+    return properties.copyToScriptValue(engine, true);
+}
+
+bool EntityItemPropertiesFromScriptValueIgnoreReadOnly(const ScriptValue &object, EntityItemProperties& properties) {
+    properties.copyFromScriptValue(object, false);
+    return true;
+}
+
+bool EntityItemPropertiesFromScriptValueHonorReadOnly(const ScriptValue &object, EntityItemProperties& properties) {
+    properties.copyFromScriptValue(object, true);
+    return true;
+}
+
+ScriptValue EntityPropertyFlagsToScriptValue(ScriptEngine* engine, const EntityPropertyFlags& flags) {
+    return EntityItemProperties::entityPropertyFlagsToScriptValue(engine, flags);
+}
+
+bool EntityPropertyFlagsFromScriptValue(const ScriptValue& object, EntityPropertyFlags& flags) {
+    return EntityItemProperties::entityPropertyFlagsFromScriptValue(object, flags);
+}
+
+
+ScriptValue EntityItemProperties::entityPropertyFlagsToScriptValue(ScriptEngine* engine, const EntityPropertyFlags& flags) {
+    ScriptValue result = engine->newObject();
+    return result;
+}
+
+bool EntityItemProperties::entityPropertyFlagsFromScriptValue(const ScriptValue& object, EntityPropertyFlags& flags) {
+    if (object.isString()) {
+        EntityPropertyInfo propertyInfo;
+        if (getPropertyInfo(object.toString(), propertyInfo)) {
+            flags << propertyInfo.propertyEnums;
+        }
+    }
+    else if (object.isArray()) {
+        quint32 length = object.property("length").toInt32();
+        for (quint32 i = 0; i < length; i++) {
+            QString propertyName = object.property(i).toString();
+            EntityPropertyInfo propertyInfo;
+            if (getPropertyInfo(propertyName, propertyInfo)) {
+                flags << propertyInfo.propertyEnums;
+            }
+        }
+    }
+    return true;
+}
+
+static QHash<QString, EntityPropertyInfo> _propertyInfos;
+static QHash<EntityPropertyList, QString> _enumsToPropertyStrings;
+
+bool EntityItemProperties::getPropertyInfo(const QString& propertyName, EntityPropertyInfo& propertyInfo) {
+
+    static std::once_flag initMap;
+    // V8TODO: Probably needs mutex before call_once
+    std::call_once(initMap, []() {
+@ENTITY_ITEM_PROPERTY_ADD_TO_MAP@
+    });
+
+    auto iter = _propertyInfos.find(propertyName);
+    if (iter != _propertyInfos.end()) {
+        propertyInfo = *iter;
+        return true;
+    }
+
+    return false;
+}
+
+/*@jsdoc
+ * Information about an entity property.
+ * @typedef {object} Entities.EntityPropertyInfo
+ * @property {number} propertyEnum - The internal number of the property.
+ * @property {string} minimum - The minimum numerical value the property may have, if available, otherwise <code>""</code>.
+ * @property {string} maximum - The maximum numerical value the property may have, if available, otherwise <code>""</code>.
+ */
+ScriptValue EntityPropertyInfoToScriptValue(ScriptEngine* engine, const EntityPropertyInfo& propertyInfo) {
+    ScriptValue obj = engine->newObject();
+    obj.setProperty("propertyEnum", propertyInfo.propertyEnums.firstFlag());
+    obj.setProperty("minimum", propertyInfo.minimum.toString());
+    obj.setProperty("maximum", propertyInfo.maximum.toString());
+    return obj;
+}
+
+bool EntityPropertyInfoFromScriptValue(const ScriptValue& object, EntityPropertyInfo& propertyInfo) {
+    propertyInfo.propertyEnums = (EntityPropertyList)object.property("propertyEnum").toVariant().toUInt();
+    propertyInfo.minimum = object.property("minimum").toVariant();
+    propertyInfo.maximum = object.property("maximum").toVariant();
+    return true;
+}
+
+// TODO: Implement support for edit packets that can span an MTU sized buffer. We need to implement a mechanism for the
+//       encodeEntityEditPacket() method to communicate the the caller which properties couldn't fit in the buffer. Similar
+//       to how we handle this in the Octree streaming case.
+//
+// TODO: Right now, all possible properties for all subclasses are handled here. Ideally we'd prefer
+//       to handle this in a more generic way. Allowing subclasses of EntityItem to register their properties
+//
+// TODO: There's a lot of repeated patterns in the code below to handle each property. It would be nice if the property
+//       registration mechanism allowed us to collapse these repeated sections of code into a single implementation that
+//       utilized the registration table to shorten up and simplify this code.
+//
+// TODO: Implement support for paged properties, spanning MTU, and custom properties
+//
+// TODO: Implement support for script and visible properties.
+//
+OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketType command, EntityItemID id, const EntityItemProperties& properties,
+                QByteArray& buffer, EntityPropertyFlags requestedProperties, EntityPropertyFlags& didntFitProperties) {
+
+    OctreePacketData ourDataPacket(false, buffer.size()); // create a packetData object to add out packet details too.
+    OctreePacketData* packetData = &ourDataPacket; // we want a pointer to this so we can use our APPEND_ENTITY_PROPERTY macro
+
+    bool success = true; // assume the best
+    OctreeElement::AppendState appendState = OctreeElement::COMPLETED; // assume the best
+
+    // TODO: We need to review how jurisdictions should be handled for entities. (The old Models and Particles code
+    // didn't do anything special for jurisdictions, so we're keeping that same behavior here.)
+    //
+    // Always include the root octcode. This is only because the OctreeEditPacketSender will check these octcodes
+    // to determine which server to send the changes to in the case of multiple jurisdictions. The root will be sent
+    // to all servers.
+    vec3 rootPosition(0);
+    float rootScale = 0.5f;
+    unsigned char* octcode = pointToOctalCode(rootPosition.x, rootPosition.y, rootPosition.z, rootScale);
+
+    success = packetData->startSubTree(octcode);
+    delete[] octcode;
+
+    // assuming we have room to fit our octalCode, proceed...
+    if (success) {
+
+        // Now add our edit content details...
+
+        // id
+        // encode our ID as a byte count coded byte stream
+        QByteArray encodedID = id.toRfc4122(); // NUM_BYTES_RFC4122_UUID
+
+        // encode our ID as a byte count coded byte stream
+        ByteCountCoded<quint32> tokenCoder;
+        QByteArray encodedToken;
+
+        // encode our type as a byte count coded byte stream
+        ByteCountCoded<quint32> typeCoder = (quint32)properties.getType();
+        QByteArray encodedType = typeCoder;
+
+        quint64 updateDelta = 0; // this is an edit so by definition, it's update is in sync
+        ByteCountCoded<quint64> updateDeltaCoder = updateDelta;
+        QByteArray encodedUpdateDelta = updateDeltaCoder;
+
+        EntityPropertyFlags propertyFlags(PROP_LAST_ITEM);
+        EntityPropertyFlags propertiesDidntFit = requestedProperties;
+
+        LevelDetails entityLevel = packetData->startLevel();
+
+        // Last Edited quint64 always first, before any other details, which allows us easy access to adjusting this
+        // timestamp for clock skew
+        quint64 lastEdited = properties.getLastEdited();
+        bool successLastEditedFits = packetData->appendValue(lastEdited);
+
+        bool successIDFits = packetData->appendRawData(encodedID);
+        if (successIDFits) {
+            successIDFits = packetData->appendRawData(encodedToken);
+        }
+        bool successTypeFits = packetData->appendRawData(encodedType);
+
+        // NOTE: We intentionally do not send "created" times in edit messages. This is because:
+        //   1) if the edit is to an existing entity, the created time can not be changed
+        //   2) if the edit is to a new entity, the created time is the last edited time
+
+        // TODO: Should we get rid of this in this in edit packets, since this has to always be 0?
+        bool successLastUpdatedFits = packetData->appendRawData(encodedUpdateDelta);
+
+        int propertyFlagsOffset = packetData->getUncompressedByteOffset();
+        QByteArray encodedPropertyFlags = propertyFlags;
+        int oldPropertyFlagsLength = encodedPropertyFlags.length();
+        bool successPropertyFlagsFits = packetData->appendRawData(encodedPropertyFlags);
+        int propertyCount = 0;
+
+        bool headerFits = successIDFits && successTypeFits && successLastEditedFits &&
+            successLastUpdatedFits && successPropertyFlagsFits;
+
+        int startOfEntityItemData = packetData->getUncompressedByteOffset();
+
+        if (headerFits) {
+            bool successPropertyFits;
+            propertyFlags -= PROP_LAST_ITEM; // clear the last item for now, we may or may not set it as the actual item
+
+            // These items would go here once supported....
+            //      PROP_PAGED_PROPERTY,
+            //      PROP_CUSTOM_PROPERTIES_INCLUDED,
+
+@ENTITY_ITEM_PROPERTY_APPEND@
+
+        }
+
+        if (propertyCount > 0) {
+            int endOfEntityItemData = packetData->getUncompressedByteOffset();
+
+            encodedPropertyFlags = propertyFlags;
+            int newPropertyFlagsLength = encodedPropertyFlags.length();
+            packetData->updatePriorBytes(propertyFlagsOffset, (const unsigned char*)encodedPropertyFlags.constData(),
+                                         encodedPropertyFlags.length());
+
+            // if the size of the PropertyFlags shrunk, we need to shift everything down to front of packet.
+            if (newPropertyFlagsLength < oldPropertyFlagsLength) {
+                int oldSize = packetData->getUncompressedSize();
+
+                const unsigned char* modelItemData = packetData->getUncompressedData(propertyFlagsOffset + oldPropertyFlagsLength);
+                int modelItemDataLength = endOfEntityItemData - startOfEntityItemData;
+                int newEntityItemDataStart = propertyFlagsOffset + newPropertyFlagsLength;
+                packetData->updatePriorBytes(newEntityItemDataStart, modelItemData, modelItemDataLength);
+
+                int newSize = oldSize - (oldPropertyFlagsLength - newPropertyFlagsLength);
+                packetData->setUncompressedSize(newSize);
+
+            } else {
+                assert(newPropertyFlagsLength == oldPropertyFlagsLength); // should not have grown
+            }
+
+            packetData->endLevel(entityLevel);
+        } else {
+            packetData->discardLevel(entityLevel);
+            appendState = OctreeElement::NONE; // if we got here, then we didn't include the item
+        }
+
+        // If any part of the model items didn't fit, then the element is considered partial
+        if (appendState != OctreeElement::COMPLETED) {
+            didntFitProperties = propertiesDidntFit;
+        }
+
+        packetData->endSubTree();
+
+        const char* finalizedData = reinterpret_cast<const char*>(packetData->getFinalizedData());
+        int finalizedSize = packetData->getFinalizedSize();
+
+        if (finalizedSize <= buffer.size()) {
+            buffer.replace(0, finalizedSize, finalizedData, finalizedSize);
+            buffer.resize(finalizedSize);
+        } else {
+            qCDebug(entities) << "ERROR - encoded edit message doesn't fit in output buffer.";
+            appendState = OctreeElement::NONE; // if we got here, then we didn't include the item
+            // maybe we should assert!!!
+        }
+    } else {
+        packetData->discardSubTree();
+    }
+
+    return appendState;
+}
+
+QByteArray EntityItemProperties::getPackedNormals() const {
+    return packNormals(getNormals());
+}
+
+QByteArray EntityItemProperties::packNormals(const QVector<vec3>& normals) const {
+    int normalsSize = normals.size();
+    QByteArray packedNormals = QByteArray(normalsSize * 6 + 1, '0');
+    // add size of the array
+    packedNormals[0] = ((uint8_t)normalsSize);
+
+    int index = 1;
+    for (int i = 0; i < normalsSize; i++) {
+        int numBytes = packFloatVec3ToSignedTwoByteFixed((unsigned char*)packedNormals.data() + index, normals[i], 15);
+        index += numBytes;
+    }
+    return packedNormals;
+}
+
+QByteArray EntityItemProperties::getPackedStrokeColors() const {
+    return packStrokeColors(getStrokeColors());
+}
+QByteArray EntityItemProperties::packStrokeColors(const QVector<vec3>& strokeColors) const {
+    int strokeColorsSize = strokeColors.size();
+    QByteArray packedStrokeColors = QByteArray(strokeColorsSize * 3 + 1, '0');
+
+    // add size of the array
+    packedStrokeColors[0] = ((uint8_t)strokeColorsSize);
+
+
+    for (int i = 0; i < strokeColorsSize; i++) {
+        // add the color to the QByteArray
+        packedStrokeColors[i * 3 + 1] = strokeColors[i].x * 255;
+        packedStrokeColors[i * 3 + 2] = strokeColors[i].y * 255;
+        packedStrokeColors[i * 3 + 3] = strokeColors[i].z * 255;
+    }
+    return packedStrokeColors;
+}
+
+// TODO:
+//   how to handle lastEdited?
+//   how to handle lastUpdated?
+//   consider handling case where no properties are included... we should just ignore this packet...
+//
+// TODO: Right now, all possible properties for all subclasses are handled here. Ideally we'd prefer
+//       to handle this in a more generic way. Allowing subclasses of EntityItem to register their properties
+//
+// TODO: There's a lot of repeated patterns in the code below to handle each property. It would be nice if the property
+//       registration mechanism allowed us to collapse these repeated sections of code into a single implementation that
+//       utilized the registration table to shorten up and simplify this code.
+//
+// TODO: Implement support for paged properties, spanning MTU, and custom properties
+//
+// TODO: Implement support for script and visible properties.
+//
+bool EntityItemProperties::decodeEntityEditPacket(const unsigned char* data, int bytesToRead, int& processedBytes,
+                                                  EntityItemID& entityID, EntityItemProperties& properties) {
+    bool valid = false;
+
+    const unsigned char* dataAt = data;
+    processedBytes = 0;
+
+    // the first part of the data is an octcode, this is a required element of the edit packet format, but we don't
+    // actually use it, we do need to skip it and read to the actual data we care about.
+    int octets = numberOfThreeBitSectionsInCode(data);
+    int bytesToReadOfOctcode = (int)bytesRequiredForCodeLength(octets);
+
+    // we don't actually do anything with this octcode...
+    dataAt += bytesToReadOfOctcode;
+    processedBytes += bytesToReadOfOctcode;
+
+    // Edit packets have a last edited time stamp immediately following the octcode.
+    // NOTE: the edit times have been set by the editor to match out clock, so we don't need to adjust
+    // these times for clock skew at this point.
+    quint64 lastEdited;
+    memcpy(&lastEdited, dataAt, sizeof(lastEdited));
+    dataAt += sizeof(lastEdited);
+    processedBytes += sizeof(lastEdited);
+    properties.setLastEdited(lastEdited);
+
+    // encoded id
+    QUuid editID = QUuid::fromRfc4122(QByteArray::fromRawData(reinterpret_cast<const char*>(dataAt), NUM_BYTES_RFC4122_UUID));
+    dataAt += NUM_BYTES_RFC4122_UUID;
+    processedBytes += NUM_BYTES_RFC4122_UUID;
+
+    entityID = editID;
+    valid = true;
+
+    // Entity Type...
+    QByteArray encodedType((const char*)dataAt, (bytesToRead - processedBytes));
+    ByteCountCoded<quint32> typeCoder = encodedType;
+    quint32 entityTypeCode = typeCoder;
+    properties.setType((EntityTypes::EntityType)entityTypeCode);
+    encodedType = typeCoder; // determine true bytesToRead
+    dataAt += encodedType.size();
+    processedBytes += encodedType.size();
+
+    // Update Delta - when was this item updated relative to last edit... this really should be 0
+    // TODO: Should we get rid of this in this in edit packets, since this has to always be 0?
+    // TODO: do properties need to handle lastupdated???
+
+    // last updated is stored as ByteCountCoded delta from lastEdited
+    QByteArray encodedUpdateDelta((const char*)dataAt, (bytesToRead - processedBytes));
+    ByteCountCoded<quint64> updateDeltaCoder = encodedUpdateDelta;
+    encodedUpdateDelta = updateDeltaCoder; // determine true bytesToRead
+    dataAt += encodedUpdateDelta.size();
+    processedBytes += encodedUpdateDelta.size();
+
+    // TODO: Do we need this lastUpdated?? We don't seem to use it.
+    //quint64 updateDelta = updateDeltaCoder;
+    //quint64 lastUpdated = lastEdited + updateDelta; // don't adjust for clock skew since we already did that for lastEdited
+
+    // Property Flags...
+    QByteArray encodedPropertyFlags((const char*)dataAt, (bytesToRead - processedBytes));
+    EntityPropertyFlags propertyFlags = encodedPropertyFlags;
+    dataAt += propertyFlags.getEncodedLength();
+    processedBytes += propertyFlags.getEncodedLength();
+
+@ENTITY_ITEM_PROPERTY_READ@
+
+    return valid;
+}
+
+void EntityItemProperties::setPackedNormals(const QByteArray& value) {
+    setNormals(unpackNormals(value));
+}
+
+QVector<vec3> EntityItemProperties::unpackNormals(const QByteArray& normals) {
+    // the size of the vector is packed first
+    QVector<vec3> unpackedNormals = QVector<vec3>((int)normals[0]);
+
+    if ((int)normals[0] == normals.size() / 6) {
+        int j = 0;
+        for (int i = 1; i < normals.size();) {
+            vec3 aux = vec3();
+            i += unpackFloatVec3FromSignedTwoByteFixed((unsigned char*)normals.data() + i, aux, 15);
+            unpackedNormals[j] = aux;
+            j++;
+        }
+    } else {
+        qCDebug(entities) << "WARNING - Expected received size for normals does not match. Expected: " << (int)normals[0]
+                          << " Received: " << (normals.size() / 6);
+    }
+    return unpackedNormals;
+}
+
+void EntityItemProperties::setPackedStrokeColors(const QByteArray& value) {
+    setStrokeColors(unpackStrokeColors(value));
+}
+
+QVector<vec3> EntityItemProperties::unpackStrokeColors(const QByteArray& strokeColors) {
+    // the size of the vector is packed first
+    QVector<vec3> unpackedStrokeColors = QVector<vec3>((int)strokeColors[0]);
+
+    if ((int)strokeColors[0] == strokeColors.size() / 3) {
+        int j = 0;
+        for (int i = 1; i < strokeColors.size();) {
+
+            float r = (uint8_t)strokeColors[i++] / 255.0f;
+            float g = (uint8_t)strokeColors[i++] / 255.0f;
+            float b = (uint8_t)strokeColors[i++] / 255.0f;
+            unpackedStrokeColors[j++] = vec3(r, g, b);
+        }
+    } else {
+        qCDebug(entities) << "WARNING - Expected received size for stroke colors does not match. Expected: "
+            << (int)strokeColors[0] << " Received: " << (strokeColors.size() / 3);
+    }
+
+    return unpackedStrokeColors;
+}
+
+// NOTE: This version will only encode the portion of the edit message immediately following the
+// header it does not include the send times and sequence number because that is handled by the
+// edit packet sender...
+bool EntityItemProperties::encodeEraseEntityMessage(const EntityItemID& entityItemID, QByteArray& buffer) {
+
+    uint16_t numberOfIds = 1; // only one entity ID in this message
+
+    if (buffer.size() < (int)(sizeof(numberOfIds) + NUM_BYTES_RFC4122_UUID)) {
+        qCDebug(entities) << "ERROR - encodeEraseEntityMessage() called with buffer that is too small!";
+        return false;
+    }
+
+    buffer.resize(0);
+    buffer.append(reinterpret_cast<char*>(&numberOfIds), sizeof(numberOfIds));
+    buffer.append(entityItemID.toRfc4122().constData(), NUM_BYTES_RFC4122_UUID);
+
+    return true;
+}
+
+bool EntityItemProperties::encodeCloneEntityMessage(const EntityItemID& entityIDToClone, const EntityItemID& newEntityID, QByteArray& buffer) {
+    if (buffer.size() < (int)(NUM_BYTES_RFC4122_UUID * 2)) {
+        qCDebug(entities) << "ERROR - encodeCloneEntityMessage() called with buffer that is too small!";
+        return false;
+    }
+
+    buffer.resize(0);
+    buffer.append(entityIDToClone.toRfc4122().constData(), NUM_BYTES_RFC4122_UUID);
+    buffer.append(newEntityID.toRfc4122().constData(), NUM_BYTES_RFC4122_UUID);
+
+    return true;
+}
+
+bool EntityItemProperties::decodeCloneEntityMessage(const QByteArray& buffer, int& processedBytes, EntityItemID& entityIDToClone, EntityItemID& newEntityID) {
+    const unsigned char* packetData = (const unsigned char*)buffer.constData();
+    const unsigned char* dataAt = packetData;
+    size_t packetLength = buffer.size();
+    processedBytes = 0;
+
+    if (NUM_BYTES_RFC4122_UUID * 2 > packetLength) {
+        qCDebug(entities) << "EntityItemProperties::decodeCloneEntityMessage().... bailing because not enough bytes in buffer";
+        return false; // bail to prevent buffer overflow
+    }
+
+    QByteArray encodedID = buffer.mid((int)processedBytes, NUM_BYTES_RFC4122_UUID);
+    entityIDToClone = QUuid::fromRfc4122(encodedID);
+    dataAt += encodedID.size();
+    processedBytes += encodedID.size();
+
+    encodedID = buffer.mid((int)processedBytes, NUM_BYTES_RFC4122_UUID);
+    newEntityID = QUuid::fromRfc4122(encodedID);
+    dataAt += encodedID.size();
+    processedBytes += encodedID.size();
+
+    return true;
+}
+
+void EntityItemProperties::markAllChanged() {
+@ENTITY_ITEM_PROPERTY_MARK_CHANGED@
+}
+
+// The minimum bounding box for the entity.
+AABox EntityItemProperties::getAABox() const {
+
+    // _position represents the position of the registration point.
+    vec3 registrationRemainder = vec3(1.0f) - _registrationPoint;
+
+    vec3 unrotatedMinRelativeToEntity = -(_dimensions * _registrationPoint);
+    vec3 unrotatedMaxRelativeToEntity = _dimensions * registrationRemainder;
+    Extents unrotatedExtentsRelativeToRegistrationPoint = { unrotatedMinRelativeToEntity, unrotatedMaxRelativeToEntity };
+    Extents rotatedExtentsRelativeToRegistrationPoint = unrotatedExtentsRelativeToRegistrationPoint.getRotated(_rotation);
+
+    // shift the extents to be relative to the position/registration point
+    rotatedExtentsRelativeToRegistrationPoint.shiftBy(_position);
+
+    return AABox(rotatedExtentsRelativeToRegistrationPoint);
+}
+
+bool EntityItemProperties::hasTransformOrVelocityChanges() const {
+    return _positionChanged || _localPositionChanged
+        || _rotationChanged || _localRotationChanged
+        || _velocityChanged || _localVelocityChanged
+        || _angularVelocityChanged || _localAngularVelocityChanged
+        || _accelerationChanged;
+}
+
+void EntityItemProperties::clearTransformOrVelocityChanges() {
+    _positionChanged = false;
+    _localPositionChanged = false;
+    _rotationChanged = false;
+    _localRotationChanged = false;
+    _velocityChanged = false;
+    _localVelocityChanged = false;
+    _angularVelocityChanged = false;
+    _localAngularVelocityChanged = false;
+    _accelerationChanged = false;
+}
+
+bool EntityItemProperties::hasMiscPhysicsChanges() const {
+    return _gravityChanged || _dimensionsChanged || _densityChanged || _frictionChanged
+        || _restitutionChanged || _dampingChanged || _angularDampingChanged || _registrationPointChanged ||
+        _compoundShapeURLChanged || _dynamicChanged || _collisionlessChanged || _collisionMaskChanged;
+}
+
+bool EntityItemProperties::hasSimulationRestrictedChanges() const {
+    return _positionChanged || _localPositionChanged
+        || _rotationChanged || _localRotationChanged
+        || _velocityChanged || _localVelocityChanged
+        || _localDimensionsChanged || _dimensionsChanged
+        || _angularVelocityChanged || _localAngularVelocityChanged
+        || _accelerationChanged
+        || _parentIDChanged || _parentJointIndexChanged;
+}
+
+void EntityItemProperties::copySimulationRestrictedProperties(const EntityItemPointer& entity) {
+    if (!_parentIDChanged) {
+        setParentID(entity->getParentID());
+    }
+    if (!_parentJointIndexChanged) {
+        setParentJointIndex(entity->getParentJointIndex());
+    }
+    if (!_localPositionChanged && !_positionChanged) {
+        setPosition(entity->getWorldPosition());
+    }
+    if (!_localRotationChanged && !_rotationChanged) {
+        setRotation(entity->getWorldOrientation());
+    }
+    if (!_localVelocityChanged && !_velocityChanged) {
+        setVelocity(entity->getWorldVelocity());
+    }
+    if (!_localAngularVelocityChanged && !_angularVelocityChanged) {
+        setAngularVelocity(entity->getWorldAngularVelocity());
+    }
+    if (!_accelerationChanged) {
+        setAcceleration(entity->getAcceleration());
+    }
+    if (!_localDimensionsChanged && !_dimensionsChanged) {
+        setLocalDimensions(entity->getScaledDimensions());
+    }
+}
+
+void EntityItemProperties::clearSimulationRestrictedProperties() {
+    _positionChanged = false;
+    _localPositionChanged = false;
+    _rotationChanged = false;
+    _localRotationChanged = false;
+    _velocityChanged = false;
+    _localVelocityChanged = false;
+    _angularVelocityChanged = false;
+    _localAngularVelocityChanged = false;
+    _accelerationChanged = false;
+    _parentIDChanged = false;
+    _parentJointIndexChanged = false;
+}
+
+void EntityItemProperties::clearSimulationOwner() {
+    _simulationOwner.clear();
+    _simulationOwnerChanged = true;
+}
+
+void EntityItemProperties::setSimulationOwner(const QUuid& id, uint8_t priority) {
+    if (!_simulationOwner.matchesValidID(id) || _simulationOwner.getPriority() != priority) {
+        _simulationOwner.set(id, priority);
+        _simulationOwnerChanged = true;
+    }
+}
+
+void EntityItemProperties::setSimulationOwner(const QByteArray& data) {
+    if (_simulationOwner.fromByteArray(data)) {
+        _simulationOwnerChanged = true;
+    }
+}
+
+uint8_t EntityItemProperties::computeSimulationBidPriority() const {
+    uint8_t priority = 0;
+    if (_parentIDChanged || _parentJointIndexChanged) {
+        // we need higher simulation ownership priority to chang parenting info
+        priority = SCRIPT_GRAB_SIMULATION_PRIORITY;
+    } else if (_positionChanged || _localPositionChanged
+            || _rotationChanged || _localRotationChanged
+            || _velocityChanged || _localVelocityChanged
+            || _angularVelocityChanged || _localAngularVelocityChanged) {
+        priority = SCRIPT_POKE_SIMULATION_PRIORITY;
+    }
+    return priority;
+}
+
+QList<QString> EntityItemProperties::listChangedProperties() {
+    QList<QString> out;
+
+@ENTITY_ITEM_PROPERTY_LIST_CHANGED@
+
+    return out;
+}
+
+bool EntityItemProperties::transformChanged() const {
+    return positionChanged() || rotationChanged() ||
+        localPositionChanged() || localRotationChanged();
+}
+
+bool EntityItemProperties::getScalesWithParent() const {
+    // keep this logic the same as in EntityItem::getScalesWithParent
+    bool scalesWithParent { false };
+    if (parentIDChanged()) {
+        bool success;
+        SpatiallyNestablePointer parent = SpatiallyNestable::findByID(getParentID(), success);
+        if (success && parent) {
+            bool avatarAncestor = (parent->getNestableType() == NestableType::Avatar ||
+                                   parent->hasAncestorOfType(NestableType::Avatar));
+            scalesWithParent = getEntityHostType() == entity::HostType::AVATAR && avatarAncestor;
+        }
+    }
+    return scalesWithParent;
+}
+
+bool EntityItemProperties::parentRelatedPropertyChanged() const {
+    return positionChanged() || rotationChanged() ||
+        localPositionChanged() || localRotationChanged() ||
+        localDimensionsChanged() ||
+        parentIDChanged() || parentJointIndexChanged();
+}
+
+bool EntityItemProperties::queryAACubeRelatedPropertyChanged() const {
+    return parentRelatedPropertyChanged() || dimensionsChanged();
+}
+
+bool EntityItemProperties::grabbingRelatedPropertyChanged() const {
+    const GrabPropertyGroup& grabProperties = getGrab();
+    return grabProperties.triggerableChanged() || grabProperties.grabbableChanged() ||
+        grabProperties.grabFollowsControllerChanged() || grabProperties.grabKinematicChanged() ||
+        grabProperties.equippableChanged() || grabProperties.equippableLeftPositionChanged() ||
+        grabProperties.equippableRightPositionChanged() || grabProperties.equippableLeftRotationChanged() ||
+        grabProperties.equippableRightRotationChanged() || grabProperties.equippableIndicatorURLChanged() ||
+        grabProperties.equippableIndicatorScaleChanged() || grabProperties.equippableIndicatorOffsetChanged();
+}
+
+void EntityItemProperties::convertToCloneProperties(const EntityItemID& entityIDToClone) {
+    setName(getName() + "-clone-" + entityIDToClone.toString());
+    setLocked(false);
+    setParentID(QUuid());
+    setParentJointIndex(-1);
+    setLifetime(getCloneLifetime());
+    setDynamic(getCloneDynamic());
+    if (getEntityHostType() != entity::HostType::LOCAL) {
+        setEntityHostType(getCloneAvatarEntity() ? entity::HostType::AVATAR : entity::HostType::DOMAIN);
+    } else {
+        // Local Entities clone as local entities
+        setEntityHostType(entity::HostType::LOCAL);
+        setCollisionless(true);
+    }
+    uint64_t now = usecTimestampNow();
+    setCreated(now);
+    setLastEdited(now);
+    setCloneable(ENTITY_ITEM_DEFAULT_CLONEABLE);
+    setCloneLifetime(ENTITY_ITEM_DEFAULT_CLONE_LIFETIME);
+    setCloneLimit(ENTITY_ITEM_DEFAULT_CLONE_LIMIT);
+    setCloneDynamic(ENTITY_ITEM_DEFAULT_CLONE_DYNAMIC);
+    setCloneAvatarEntity(ENTITY_ITEM_DEFAULT_CLONE_AVATAR_ENTITY);
+}
+
+bool EntityItemProperties::blobToProperties(ScriptEngine& scriptEngine, const QByteArray& blob, EntityItemProperties& properties) {
+    // DANGER: this method is NOT efficient.
+    // begin recipe for converting unfortunately-formatted-binary-blob to EntityItemProperties
+    OVERTE_IGNORE_DEPRECATED_BEGIN
+    QJsonDocument jsonProperties = QJsonDocument::fromBinaryData(blob);
+    OVERTE_IGNORE_DEPRECATED_END
+    if (jsonProperties.isEmpty() || jsonProperties.isNull() || !jsonProperties.isObject() || jsonProperties.object().isEmpty()) {
+        qCDebug(entities) << "bad avatarEntityData json" << QString(blob.toHex());
+        return false;
+    }
+    QVariant variant = jsonProperties.toVariant();
+    QVariantMap variantMap = variant.toMap();
+    ScriptValue scriptValue = variantMapToScriptValue(variantMap, scriptEngine);
+    EntityItemPropertiesFromScriptValueIgnoreReadOnly(scriptValue, properties);
+    // end recipe
+    return true;
+}
+
+void EntityItemProperties::propertiesToBlob(ScriptEngine& scriptEngine, const QUuid& myAvatarID,
+            const EntityItemProperties& properties, QByteArray& blob, bool allProperties) {
+    // DANGER: this method is NOT efficient.
+    // begin recipe for extracting unfortunately-formatted-binary-blob from EntityItem
+    ScriptValue scriptValue = allProperties
+        ? EntityItemPropertiesToScriptValue(&scriptEngine, properties)
+        : EntityItemNonDefaultPropertiesToScriptValue(&scriptEngine, properties);
+    QVariant variantProperties = scriptValue.toVariant();
+    QJsonDocument jsonProperties = QJsonDocument::fromVariant(variantProperties);
+    // the ID of the parent/avatar changes from session to session.  use a special UUID to indicate the avatar
+    QJsonObject jsonObject = jsonProperties.object();
+    if (jsonObject.contains("parentID")) {
+        if (QUuid(jsonObject["parentID"].toString()) == myAvatarID) {
+            jsonObject["parentID"] = AVATAR_SELF_ID.toString();
+        }
+    }
+    jsonProperties = QJsonDocument(jsonObject);
+    OVERTE_IGNORE_DEPRECATED_BEGIN
+    blob = jsonProperties.toBinaryData();
+    OVERTE_IGNORE_DEPRECATED_END
+    // end recipe
+}
+
+QDebug& operator<<(QDebug& dbg, const EntityPropertyFlags& f) {
+    QString result = "[ ";
+
+    for (int i = 0; i < PROP_AFTER_LAST_ITEM; i++) {
+        auto prop = EntityPropertyList(i);
+        if (f.getHasProperty(prop)) {
+            result = result + _enumsToPropertyStrings[prop] + " ";
+        }
+    }
+
+    result += "]";
+    dbg.nospace() << result;
+    return dbg;
+}

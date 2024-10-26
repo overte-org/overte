@@ -79,7 +79,8 @@ public:
         canKick = 64,
         canReplaceDomainContent = 128,
         canGetAndSetPrivateUserData = 1024,
-        canRezAvatarEntities = 2048
+        canRezAvatarEntities = 2048,
+        canViewAssetURLs = 4096
     };
     Q_DECLARE_FLAGS(Permissions, Permission)
     Permissions permissions;

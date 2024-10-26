@@ -36,8 +36,8 @@ var pickID = Picks.createPick(PickType.Ray, {
     filter: PICK_FILTERS,
     enabled: true,
 });
-var blacklist = [ overlayID ]; // exclude hover text from ray pick results
-Picks.setIgnoreItems(pickID, blacklist);
+var blocklist = [ overlayID ]; // exclude hover text from ray pick results
+Picks.setIgnoreItems(pickID, blocklist);
 Script.scriptEnding.connect(function() {
     Picks.removePick(pickID);
 });

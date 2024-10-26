@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Copyright 2020-2021 Vircadia contributors.
-# Copyright 2022-2023 Overte e.V.
+# Copyright 2022-2024 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 if [ "$OVERTE" = "" ]; then
@@ -13,7 +13,8 @@ fi
 # The regex below extracts the path from the VCPKG_INSTALL_ROOT variable. Said variable gets populated during the CMake step.
 VCPKG_INSTALL_ROOT=`grep VCPKG_INSTALL_ROOT $OVERTE/build/vcpkg.cmake | perl -ne 'm/set\(VCPKG_INSTALL_ROOT\s+\"(.*?)\"/; print $1'`
 
-VERSION=${RPMVERSION}
+# Remove minus character from version numbers, because rpmtool doesn't allow them.
+VERSION=${RPMVERSION//-}
 
 if [ "$OVERTE_USE_SYSTEM_QT" = "" ]; then
 SOFILES=`ls \
@@ -55,7 +56,7 @@ DEPENDS=mesa-libGL,`ls \
 	| xargs -I {} sh -c 'objdump -p {} | grep NEEDED' \
 	| awk '{print $2}' \
 	| sort | uniq \
-	| egrep -v "^($SOFILES)$" \
+	| grep -E -v "^($SOFILES)$" \
 	| grep -v ^libGL \
 	| xargs -I {} sh -c "ldconfig -p | grep {} | tr ' ' '\n' | grep /" \
 	| xargs rpm -qf --queryformat "%{NAME}\n" \
@@ -73,7 +74,7 @@ DEPENDS=mesa-libGL,`ls \
 	| xargs -I {} sh -c 'objdump -p {} | grep NEEDED' \
 	| awk '{print $2}' \
 	| sort | uniq \
-	| egrep -v "^($SOFILES)$" \
+	| grep -E -v "^($SOFILES)$" \
 	| grep -v ^libGL \
 	| xargs -I {} sh -c "ldconfig -p | grep {} | tr ' ' '\n' | grep /" \
 	| xargs rpm -qf --queryformat "%{NAME}\n" \

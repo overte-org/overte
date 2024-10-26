@@ -73,6 +73,7 @@
 #include "MovingEntitiesOperator.h"
 #include "SceneScriptingInterface.h"
 #include "WarningsSuppression.h"
+#include "ScriptPermissions.h"
 
 using namespace std;
 
@@ -226,7 +227,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     _yawSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "yawSpeed", _yawSpeed),
     _hmdYawSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "hmdYawSpeed", _hmdYawSpeed),
     _pitchSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "pitchSpeed", _pitchSpeed),
-    _fullAvatarURLSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "fullAvatarURL",
+    _fullAvatarURLSetting(QStringList() << SETTINGS_FULL_PRIVATE_GROUP_NAME << AVATAR_SETTINGS_GROUP_NAME << "fullAvatarURL",
                           AvatarData::defaultFullAvatarModelUrl()),
     _fullAvatarModelNameSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "fullAvatarModelName", _fullAvatarModelName),
     _animGraphURLSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "animGraphURL", QUrl("")),
@@ -258,7 +259,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     _headData = new MyHead(this);
 
     _skeletonModel = std::make_shared<MySkeletonModel>(this, nullptr);
-    _skeletonModel->setLoadingPriority(MYAVATAR_LOADING_PRIORITY);
+    _skeletonModel->setLoadingPriorityOperator([]() { return MYAVATAR_LOADING_PRIORITY; });
     connect(_skeletonModel.get(), &Model::setURLFinished, this, &Avatar::setModelURLFinished);
     connect(_skeletonModel.get(), &Model::setURLFinished, this, [this](bool success) {
         if (success) {
@@ -271,12 +272,6 @@ MyAvatar::MyAvatar(QThread* thread) :
             auto hfmModel = getSkeletonModel()->getHFMModel();
             qApp->loadAvatarScripts(hfmModel.scripts);
             _shouldLoadScripts = false;
-        }
-                // Load and convert old attachments to avatar entities
-        if (_oldAttachmentData.size() > 0) {
-            setAttachmentData(_oldAttachmentData);
-            _oldAttachmentData.clear();
-            _attachmentData.clear();
         }
     });
     connect(_skeletonModel.get(), &Model::rigReady, this, &Avatar::rigReady);
@@ -369,10 +364,6 @@ MyAvatar::MyAvatar(QThread* thread) :
 
         setWorldPosition(dummyAvatar.getWorldPosition());
         setWorldOrientation(dummyAvatar.getWorldOrientation());
-
-        if (!dummyAvatar.getAttachmentData().isEmpty()) {
-            setAttachmentData(dummyAvatar.getAttachmentData());
-        }
 
         auto headData = dummyAvatar.getHeadData();
         if (headData && _headData) {
@@ -498,11 +489,6 @@ glm::quat MyAvatar::getOrientationOutbound() const {
     float t = _smoothOrientationTimer / SMOOTH_TIME_ORIENTATION;
     float interp = Interpolate::easeInOutQuad(glm::clamp(t, 0.0f, 1.0f));
     return (slerp(_smoothOrientationInitial, _smoothOrientationTarget, interp));
-}
-
-// virtual
-void MyAvatar::simulateAttachments(float deltaTime) {
-    // don't update attachments here, do it in harvestResultsFromPhysicsSimulation()
 }
 
 QByteArray MyAvatar::toByteArrayStateful(AvatarDataDetail dataDetail, bool dropFaceTracking) {
@@ -981,8 +967,7 @@ void MyAvatar::simulate(float deltaTime, bool inView) {
     }
 
     // we've achived our final adjusted position and rotation for the avatar
-    // and all of its joints, now update our attachements.
-    Avatar::simulateAttachments(deltaTime);
+    // and all of its joints, now update our children.
     relayJointDataToChildren();
     if (applyGrabChanges()) {
         _cauterizationNeedsUpdate = true;
@@ -1739,10 +1724,11 @@ void MyAvatar::handleChangedAvatarEntityData() {
                 blobFailed = true; // blob doesn't exist
                 return;
             }
-            std::lock_guard<std::mutex> guard(_scriptEngineLock);
-            if (!EntityItemProperties::blobToProperties(*_scriptEngine, itr.value(), properties)) {
-                blobFailed = true; // blob is corrupt
-            }
+            _helperScriptEngine.run( [&] {
+                if (!EntityItemProperties::blobToProperties(*_helperScriptEngine.get(), itr.value(), properties)) {
+                    blobFailed = true;  // blob is corrupt
+                }
+            });
         });
         if (blobFailed) {
             // remove from _cachedAvatarEntityBlobUpdatesToSkip just in case:
@@ -1775,10 +1761,11 @@ void MyAvatar::handleChangedAvatarEntityData() {
                 skip = true;
                 return;
             }
-            std::lock_guard<std::mutex> guard(_scriptEngineLock);
-            if (!EntityItemProperties::blobToProperties(*_scriptEngine, itr.value(), properties)) {
-                skip = true;
-            }
+            _helperScriptEngine.run( [&] {
+                if (!EntityItemProperties::blobToProperties(*_helperScriptEngine.get(), itr.value(), properties)) {
+                    skip = true;
+                }
+            });
         });
         if (!skip && canRezAvatarEntites) {
             sanitizeAvatarEntityProperties(properties);
@@ -1854,6 +1841,8 @@ void MyAvatar::handleChangedAvatarEntityData() {
             }
         });
     }
+
+    _hasCheckedForAvatarEntities = true;
 }
 
 bool MyAvatar::updateStaleAvatarEntityBlobs() const {
@@ -1883,10 +1872,9 @@ bool MyAvatar::updateStaleAvatarEntityBlobs() const {
         if (found) {
             ++numFound;
             QByteArray blob;
-            {
-                std::lock_guard<std::mutex> guard(_scriptEngineLock);
-                EntityItemProperties::propertiesToBlob(*_scriptEngine, getID(), properties, blob);
-            }
+            _helperScriptEngine.run( [&] {
+                EntityItemProperties::propertiesToBlob(*_helperScriptEngine.get(), getID(), properties, blob);
+            });
             _avatarEntitiesLock.withWriteLock([&] {
                 _cachedAvatarEntityBlobs[id] = blob;
             });
@@ -1910,6 +1898,7 @@ void MyAvatar::prepareAvatarEntityDataForReload() {
     });
 
     _reloadAvatarEntityDataFromSettings = true;
+    _hasCheckedForAvatarEntities = false;
 }
 
 AvatarEntityMap MyAvatar::getAvatarEntityData() const {
@@ -1947,10 +1936,9 @@ AvatarEntityMap MyAvatar::getAvatarEntityData() const {
         EntityItemProperties properties = entity->getProperties(desiredProperties);
 
         QByteArray blob;
-        {
-            std::lock_guard<std::mutex> guard(_scriptEngineLock);
-            EntityItemProperties::propertiesToBlob(*_scriptEngine, getID(), properties, blob, true);
-        }
+        _helperScriptEngine.run( [&] {
+            EntityItemProperties::propertiesToBlob(*_helperScriptEngine.get(), getID(), properties, blob, true);
+        });
 
         data[entityID] = blob;
     }
@@ -2092,9 +2080,6 @@ void MyAvatar::avatarEntityDataToJson(QJsonObject& root) const {
 }
 
 void MyAvatar::loadData() {
-    if (!_scriptEngine) {
-        _scriptEngine = newScriptEngine();
-    }
     getHead()->setBasePitch(_headPitchSetting.get());
 
     _yawSpeed = _yawSpeedSetting.get(_yawSpeed);
@@ -2177,65 +2162,9 @@ void MyAvatar::loadAvatarEntityDataFromSettings() {
     });
 }
 
-void MyAvatar::saveAttachmentData(const AttachmentData& attachment) const {
-    Settings settings;
-    settings.beginGroup("savedAttachmentData");
-    settings.beginGroup(_skeletonModel->getURL().toString());
-    settings.beginGroup(attachment.modelURL.toString());
-    settings.setValue("jointName", attachment.jointName);
-
-    settings.beginGroup(attachment.jointName);
-    settings.setValue("translation_x", attachment.translation.x);
-    settings.setValue("translation_y", attachment.translation.y);
-    settings.setValue("translation_z", attachment.translation.z);
-    glm::vec3 eulers = safeEulerAngles(attachment.rotation);
-    settings.setValue("rotation_x", eulers.x);
-    settings.setValue("rotation_y", eulers.y);
-    settings.setValue("rotation_z", eulers.z);
-    settings.setValue("scale", attachment.scale);
-
-    settings.endGroup();
-    settings.endGroup();
-    settings.endGroup();
-    settings.endGroup();
+bool MyAvatar::isMyAvatarURLProtected() const {
+    return !ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL);
 }
-
-AttachmentData MyAvatar::loadAttachmentData(const QUrl& modelURL, const QString& jointName) const {
-    Settings settings;
-    settings.beginGroup("savedAttachmentData");
-    settings.beginGroup(_skeletonModel->getURL().toString());
-    settings.beginGroup(modelURL.toString());
-
-    AttachmentData attachment;
-    attachment.modelURL = modelURL;
-    if (jointName.isEmpty()) {
-        attachment.jointName = settings.value("jointName").toString();
-    } else {
-        attachment.jointName = jointName;
-    }
-    settings.beginGroup(attachment.jointName);
-    if (settings.contains("translation_x")) {
-        attachment.translation.x = loadSetting(settings, "translation_x", 0.0f);
-        attachment.translation.y = loadSetting(settings, "translation_y", 0.0f);
-        attachment.translation.z = loadSetting(settings, "translation_z", 0.0f);
-        glm::vec3 eulers;
-        eulers.x = loadSetting(settings, "rotation_x", 0.0f);
-        eulers.y = loadSetting(settings, "rotation_y", 0.0f);
-        eulers.z = loadSetting(settings, "rotation_z", 0.0f);
-        attachment.rotation = glm::quat(eulers);
-        attachment.scale = loadSetting(settings, "scale", 1.0f);
-    } else {
-        attachment = AttachmentData();
-    }
-
-    settings.endGroup();
-    settings.endGroup();
-    settings.endGroup();
-    settings.endGroup();
-
-    return attachment;
-}
-
 
 int MyAvatar::parseDataFromBuffer(const QByteArray& buffer) {
     qCDebug(interfaceapp) << "Error: ignoring update packet for MyAvatar"
@@ -2700,11 +2629,10 @@ QVariantList MyAvatar::getAvatarEntitiesVariant() {
             QVariantMap avatarEntityData;
             avatarEntityData["id"] = entityID;
             EntityItemProperties entityProperties = entity->getProperties(desiredProperties);
-            {
-                std::lock_guard<std::mutex> guard(_scriptEngineLock);
-                ScriptValue scriptProperties = EntityItemPropertiesToScriptValue(_scriptEngine.get(), entityProperties);
+            _helperScriptEngine.run( [&] {
+                ScriptValue scriptProperties = EntityItemPropertiesToScriptValue(_helperScriptEngine.get(), entityProperties);
                 avatarEntityData["properties"] = scriptProperties.toVariant();
-            }
+            });
             avatarEntitiesData.append(QVariant(avatarEntityData));
         }
     }
@@ -2994,171 +2922,6 @@ SharedSoundPointer MyAvatar::getCollisionSound() {
     return _collisionSound;
 }
 
-void MyAvatar::attach(const QString& modelURL, const QString& jointName,
-                      const glm::vec3& translation, const glm::quat& rotation,
-                      float scale, bool isSoft,
-                      bool allowDuplicates, bool useSaved) {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "attach",
-            Q_ARG(const QString&, modelURL),
-            Q_ARG(const QString&, jointName),
-            Q_ARG(const glm::vec3&, translation),
-            Q_ARG(const glm::quat&, rotation),
-            Q_ARG(float, scale),
-            Q_ARG(bool, isSoft),
-            Q_ARG(bool, allowDuplicates),
-            Q_ARG(bool, useSaved)
-        );
-        return;
-    }
-    if (!DependencyManager::get<NodeList>()->getThisNodeCanRezAvatarEntities()) {
-        qCDebug(interfaceapp) << "Ignoring attach() because don't have canRezAvatarEntities permission on domain";
-        return;
-    }
-
-    AttachmentData data;
-    data.modelURL = modelURL;
-    data.jointName = jointName;
-    data.translation = translation;
-    data.rotation = rotation;
-    data.scale = scale;
-    data.isSoft = isSoft;
-    EntityItemProperties properties;
-    attachmentDataToEntityProperties(data, properties);
-    DependencyManager::get<EntityScriptingInterface>()->addEntity(properties, true);
-    emit attachmentsChanged();
-}
-
-void MyAvatar::detachOne(const QString& modelURL, const QString& jointName) {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "detachOne",
-            Q_ARG(const QString&, modelURL),
-            Q_ARG(const QString&, jointName)
-        );
-        return;
-    }
-    if (!DependencyManager::get<NodeList>()->getThisNodeCanRezAvatarEntities()) {
-        qCDebug(interfaceapp) << "Ignoring detachOne() because don't have canRezAvatarEntities permission on domain";
-        return;
-    }
-
-    QUuid entityID;
-    if (findAvatarEntity(modelURL, jointName, entityID)) {
-        DependencyManager::get<EntityScriptingInterface>()->deleteEntity(entityID);
-    }
-    emit attachmentsChanged();
-}
-
-void MyAvatar::detachAll(const QString& modelURL, const QString& jointName) {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "detachAll",
-            Q_ARG(const QString&, modelURL),
-            Q_ARG(const QString&, jointName)
-        );
-        return;
-    }
-    if (!DependencyManager::get<NodeList>()->getThisNodeCanRezAvatarEntities()) {
-        qCDebug(interfaceapp) << "Ignoring detachAll() because don't have canRezAvatarEntities permission on domain";
-        return;
-    }
-
-    QUuid entityID;
-    while (findAvatarEntity(modelURL, jointName, entityID)) {
-        DependencyManager::get<EntityScriptingInterface>()->deleteEntity(entityID);
-    }
-    emit attachmentsChanged();
-}
-
-void MyAvatar::setAttachmentData(const QVector<AttachmentData>& attachmentData) {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "setAttachmentData",
-            Q_ARG(const QVector<AttachmentData>&, attachmentData));
-        return;
-    }
-    if (!DependencyManager::get<NodeList>()->getThisNodeCanRezAvatarEntities()) {
-        qCDebug(interfaceapp) << "Ignoring setAttachmentData() because don't have canRezAvatarEntities permission on domain";
-        return;
-    }
-
-    std::vector<EntityItemProperties> newEntitiesProperties;
-    for (auto& data : attachmentData) {
-        QUuid entityID;
-        EntityItemProperties properties;
-        if (findAvatarEntity(data.modelURL.toString(), data.jointName, entityID)) {
-            properties = DependencyManager::get<EntityScriptingInterface>()->getEntityProperties(entityID);
-        }
-        attachmentDataToEntityProperties(data, properties);
-        newEntitiesProperties.push_back(properties);
-    }
-
-    // clear any existing wearables
-    clearWornAvatarEntities();
-
-    for (auto& properties : newEntitiesProperties) {
-        DependencyManager::get<EntityScriptingInterface>()->addEntity(properties, true);
-    }
-    emit attachmentsChanged();
-}
-
-QVector<AttachmentData> MyAvatar::getAttachmentData() const {
-    QVector<AttachmentData> attachmentData;
-
-    if (!DependencyManager::get<NodeList>()->getThisNodeCanRezAvatarEntities()) {
-        qCDebug(interfaceapp) << "Ignoring getAttachmentData() because don't have canRezAvatarEntities permission on domain";
-        return attachmentData;
-    }
-
-    QList<QUuid> avatarEntityIDs;
-    _avatarEntitiesLock.withReadLock([&] {
-        avatarEntityIDs = _packedAvatarEntityData.keys();
-    });
-    for (const auto& entityID : avatarEntityIDs) {
-        auto properties = DependencyManager::get<EntityScriptingInterface>()->getEntityProperties(entityID);
-        AttachmentData data = entityPropertiesToAttachmentData(properties);
-        attachmentData.append(data);
-    }
-    return attachmentData;
-}
-
-QVariantList MyAvatar::getAttachmentsVariant() const {
-    QVariantList result;
-
-    if (!DependencyManager::get<NodeList>()->getThisNodeCanRezAvatarEntities()) {
-        qCDebug(interfaceapp)
-            << "Ignoring getAttachmentsVariant() because don't have canRezAvatarEntities permission on domain";
-        return result;
-    }
-
-    for (const auto& attachment : getAttachmentData()) {
-        result.append(attachment.toVariant());
-    }
-    return result;
-}
-
-void MyAvatar::setAttachmentsVariant(const QVariantList& variant) {
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "setAttachmentsVariant",
-            Q_ARG(const QVariantList&, variant));
-        return;
-    }
-
-    if (!DependencyManager::get<NodeList>()->getThisNodeCanRezAvatarEntities()) {
-        qCDebug(interfaceapp)
-            << "Ignoring setAttachmentsVariant() because don't have canRezAvatarEntities permission on domain";
-        return;
-    }
-
-    QVector<AttachmentData> newAttachments;
-    newAttachments.reserve(variant.size());
-    for (const auto& attachmentVar : variant) {
-        AttachmentData attachment;
-        if (attachment.fromVariant(attachmentVar)) {
-            newAttachments.append(attachment);
-        }
-    }
-    setAttachmentData(newAttachments);
-}
-
 bool MyAvatar::findAvatarEntity(const QString& modelURL, const QString& jointName, QUuid& entityID) {
     QList<QUuid> avatarEntityIDs;
     _avatarEntitiesLock.withReadLock([&] {
@@ -3172,34 +2935,6 @@ bool MyAvatar::findAvatarEntity(const QString& modelURL, const QString& jointNam
         }
     }
     return false;
-}
-
-AttachmentData MyAvatar::entityPropertiesToAttachmentData(const EntityItemProperties& properties) const {
-    AttachmentData data;
-    data.modelURL = properties.getModelURL();
-    data.translation = properties.getLocalPosition();
-    data.rotation = properties.getLocalRotation();
-    data.isSoft = properties.getRelayParentJoints();
-    int jointIndex = (int)properties.getParentJointIndex();
-    if (jointIndex > -1 && jointIndex < getJointNames().size()) {
-        data.jointName = getJointNames()[jointIndex];
-    }
-    return data;
-}
-
-void MyAvatar::attachmentDataToEntityProperties(const AttachmentData& data, EntityItemProperties& properties) {
-    QString url = data.modelURL.toString();
-    properties.setName(QFileInfo(url).baseName());
-    properties.setType(EntityTypes::Model);
-    properties.setParentID(AVATAR_SELF_ID);
-    properties.setLocalPosition(data.translation);
-    properties.setLocalRotation(data.rotation);
-    if (!data.isSoft) {
-        properties.setParentJointIndex(getJointIndex(data.jointName));
-    } else {
-        properties.setRelayParentJoints(true);
-    }
-    properties.setModelURL(url);
 }
 
 void MyAvatar::initHeadBones() {
@@ -3444,22 +3179,6 @@ void MyAvatar::preDisplaySide(const RenderArgs* renderArgs) {
     if (shouldDrawHead != _prevShouldDrawHead) {
         _cauterizationNeedsUpdate = true;
         _skeletonModel->setEnableCauterization(!shouldDrawHead);
-
-        for (int i = 0; i < _attachmentData.size(); i++) {
-            if (_attachmentData[i].jointName.compare("Head", Qt::CaseInsensitive) == 0 ||
-                _attachmentData[i].jointName.compare("Neck", Qt::CaseInsensitive) == 0 ||
-                _attachmentData[i].jointName.compare("LeftEye", Qt::CaseInsensitive) == 0 ||
-                _attachmentData[i].jointName.compare("RightEye", Qt::CaseInsensitive) == 0 ||
-                _attachmentData[i].jointName.compare("HeadTop_End", Qt::CaseInsensitive) == 0 ||
-                _attachmentData[i].jointName.compare("Face", Qt::CaseInsensitive) == 0) {
-                uint8_t modelRenderTagBits = shouldDrawHead ? render::hifi::TAG_ALL_VIEWS : render::hifi::TAG_SECONDARY_VIEW;
-
-                _attachmentModels[i]->setTagMask(modelRenderTagBits);
-                _attachmentModels[i]->setGroupCulled(false);
-                _attachmentModels[i]->setCanCastShadow(true);
-                _attachmentModels[i]->setVisibleInScene(true, qApp->getMain3DScene());
-            }
-        }
     }
     _prevShouldDrawHead = shouldDrawHead;
 }
@@ -3530,8 +3249,9 @@ bool MyAvatar::shouldRenderHead(const RenderArgs* renderArgs) const {
     bool firstPerson = qApp->getCamera().getMode() == CAMERA_MODE_FIRST_PERSON_LOOK_AT ||
                        qApp->getCamera().getMode() == CAMERA_MODE_FIRST_PERSON;
     bool overrideAnim = _skeletonModel ? _skeletonModel->getRig().isPlayingOverrideAnimation() : false;
+    bool isInMirror = renderArgs->_mirrorDepth > 0;
     bool insideHead = cameraInsideHead(renderArgs->getViewFrustum().getPosition());
-    return !defaultMode || (!firstPerson && !insideHead) || (overrideAnim && !insideHead);
+    return !defaultMode || isInMirror || (!firstPerson && !insideHead) || (overrideAnim && !insideHead);
 }
 
 void MyAvatar::setRotationRecenterFilterLength(float length) {
@@ -5768,8 +5488,7 @@ void MyAvatar::FollowHelper::deactivate() {
 }
 
 void MyAvatar::FollowHelper::deactivate(CharacterController::FollowType type) {
-    int int_type = static_cast<int>(type);
-    assert(int_type >= 0 && int_type < static_cast<int>(CharacterController::FollowType::Count));
+    assert(type < CharacterController::FollowType::Count);
     _timeRemaining[(int)type] = 0.0f;
 }
 
@@ -5777,16 +5496,14 @@ void MyAvatar::FollowHelper::deactivate(CharacterController::FollowType type) {
 // eg. activate(FollowType::Rotation, true) snaps the FollowHelper's rotation immediately
 // to the rotation of its _followDesiredBodyTransform.
 void MyAvatar::FollowHelper::activate(CharacterController::FollowType type, const bool snapFollow) {
-    int int_type = static_cast<int>(type);
-    assert(int_type >= 0 && int_type < static_cast<int>(CharacterController::FollowType::Count));
+    assert(type < CharacterController::FollowType::Count);
 
     // TODO: Perhaps, the follow time should be proportional to the displacement.
     _timeRemaining[(int)type] = snapFollow ? CharacterController::FOLLOW_TIME_IMMEDIATE_SNAP : FOLLOW_TIME;
 }
 
 bool MyAvatar::FollowHelper::isActive(CharacterController::FollowType type) const {
-    int int_type = static_cast<int>(type);
-    assert(int_type >= 0 && int_type < static_cast<int>(CharacterController::FollowType::Count));
+    assert(type < CharacterController::FollowType::Count);
     return _timeRemaining[(int)type] > 0.0f;
 }
 

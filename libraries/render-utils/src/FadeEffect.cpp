@@ -17,33 +17,36 @@
 #include "render-utils/ShaderConstants.h"
 #include <PathUtils.h>
 
+gpu::TexturePointer FadeEffect::_maskMap;
+
 FadeEffect::FadeEffect() {
-    auto texturePath = PathUtils::resourcesPath() + "images/fadeMask.png";
-    _maskMap = DependencyManager::get<TextureCache>()->getImageTexture(texturePath, image::TextureUsage::STRICT_TEXTURE);
+    std::once_flag once;
+    std::call_once(once, [] {
+        auto texturePath = PathUtils::resourcesPath() + "images/fadeMask.png";
+        _maskMap = DependencyManager::get<TextureCache>()->getImageTexture(texturePath, image::TextureUsage::STRICT_TEXTURE);
+    });
 }
 
-void FadeEffect::build(render::Task::TaskConcept& task, const task::Varying& editableItems) {
+void FadeEffect::build(JobModel& task, const render::Varying& inputs, render::Varying& outputs) {
     auto editedFadeCategory = task.addJob<FadeJob>("Fade");
-    auto& fadeJob = task._jobs.back();
-    _configurations = fadeJob.get<FadeJob>().getConfigurationBuffer();
 
-    const auto fadeEditInput = FadeEditJob::Input(editableItems, editedFadeCategory).asVarying();
+    const auto fadeEditInput = FadeEditJob::Input(inputs, editedFadeCategory).asVarying();
     task.addJob<FadeEditJob>("FadeEdit", fadeEditInput);
 }
 
-render::ShapePipeline::BatchSetter FadeEffect::getBatchSetter() const {
-    return [this](const render::ShapePipeline& shapePipeline, gpu::Batch& batch, render::Args*) {
+render::ShapePipeline::BatchSetter FadeEffect::getBatchSetter() {
+    return [](const render::ShapePipeline& shapePipeline, gpu::Batch& batch, render::Args*) {
         batch.setResourceTexture(render_utils::slot::texture::FadeMask, _maskMap);
-        batch.setUniformBuffer(render_utils::slot::buffer::FadeParameters, _configurations);
+        batch.setUniformBuffer(render_utils::slot::buffer::FadeParameters, FadeJob::getConfigurationBuffer());
     };
 }
 
-render::ShapePipeline::ItemSetter FadeEffect::getItemUniformSetter() const {
+render::ShapePipeline::ItemSetter FadeEffect::getItemUniformSetter() {
     return [](const render::ShapePipeline& shapePipeline, render::Args* args, const render::Item& item) {
         if (!render::TransitionStage::isIndexInvalid(item.getTransitionId())) {
             const auto& scene = args->_scene;
             const auto& batch = args->_batch;
-            auto transitionStage = scene->getStage<render::TransitionStage>(render::TransitionStage::getName());
+            auto transitionStage = scene->getStage<render::TransitionStage>();
             auto& transitionState = transitionStage->getTransition(item.getTransitionId());
 
             if (transitionState.paramsBuffer._size != sizeof(gpu::StructBuffer<FadeObjectParams>)) {
@@ -70,40 +73,4 @@ render::ShapePipeline::ItemSetter FadeEffect::getItemUniformSetter() const {
             batch->setUniformBuffer(render_utils::slot::buffer::FadeObjectParameters, transitionState.paramsBuffer);
         }
     };
-}
-
-render::ShapePipeline::ItemSetter FadeEffect::getItemStoredSetter() {
-    return [this](const render::ShapePipeline& shapePipeline, render::Args* args, const render::Item& item) {
-        if (!render::TransitionStage::isIndexInvalid(item.getTransitionId())) {
-            auto scene = args->_scene;
-            auto transitionStage = scene->getStage<render::TransitionStage>(render::TransitionStage::getName());
-            auto& transitionState = transitionStage->getTransition(item.getTransitionId());
-            const auto fadeCategory = FadeJob::transitionToCategory[transitionState.eventType];
-
-            _lastCategory = fadeCategory;
-            _lastThreshold = transitionState.threshold;
-            _lastNoiseOffset = transitionState.noiseOffset;
-            _lastBaseOffset = transitionState.baseOffset;
-            _lastBaseInvSize = transitionState.baseInvSize;
-        }
-    };
-}
-
-void FadeEffect::packToAttributes(const int category, const float threshold, const glm::vec3& noiseOffset,
-    const glm::vec3& baseOffset, const glm::vec3& baseInvSize,
-    glm::vec4& packedData1, glm::vec4& packedData2, glm::vec4& packedData3) {
-    packedData1.x = noiseOffset.x;
-    packedData1.y = noiseOffset.y;
-    packedData1.z = noiseOffset.z;
-    packedData1.w = (float)(category+0.1f); // GLSL hack so that casting back from float to int in fragment shader returns the correct value.
-
-    packedData2.x = baseOffset.x;
-    packedData2.y = baseOffset.y;
-    packedData2.z = baseOffset.z;
-    packedData2.w = threshold;
-
-    packedData3.x = baseInvSize.x;
-    packedData3.y = baseInvSize.y;
-    packedData3.z = baseInvSize.z;
-    packedData3.w = 0.f;
 }

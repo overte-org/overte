@@ -170,6 +170,8 @@ public:
     void setIgnoreItems(const QVector<QUuid>& items);
     void setIncludeItems(const QVector<QUuid>& items);
 
+    virtual void setDelay(float delay) {}
+
     virtual QVariantMap toVariantMap() const {
         QVariantMap properties;
 

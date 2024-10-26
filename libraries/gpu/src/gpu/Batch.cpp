@@ -513,6 +513,12 @@ void Batch::restoreContextViewCorrection() {
     ADD_COMMAND(restoreContextViewCorrection);
 }
 
+void Batch::setContextMirrorViewCorrection(bool shouldMirror) {
+    ADD_COMMAND(setContextMirrorViewCorrection);
+    uint mirrorFlag = shouldMirror ? 1 : 0;
+    _params.emplace_back(mirrorFlag);
+}
+
 void Batch::disableContextStereo() {
     ADD_COMMAND(disableContextStereo);
 }
@@ -737,15 +743,6 @@ void Batch::_glUniformMatrix4fv(int32 location, int count, uint8 transpose, cons
     _params.emplace_back(transpose);
     _params.emplace_back(count);
     _params.emplace_back(location);
-}
-
-void Batch::_glColor4f(float red, float green, float blue, float alpha) {
-    ADD_COMMAND(glColor4f);
-
-    _params.emplace_back(alpha);
-    _params.emplace_back(blue);
-    _params.emplace_back(green);
-    _params.emplace_back(red);
 }
 
 void Batch::finishFrame(BufferUpdates& updates) {

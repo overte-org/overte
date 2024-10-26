@@ -213,8 +213,8 @@ Flickable {
                     ColumnLayout {
                         anchors.left: renderingEffectsHeader.right
                         anchors.leftMargin: 20
-			Layout.preferredWidth: parent.width
-			spacing: 0
+                        Layout.preferredWidth: parent.width
+                        spacing: 0
                         enabled: performanceCustom.checked
 
                         HifiControlsUit.RadioButton {
@@ -269,6 +269,45 @@ Flickable {
                                 }
                             }
                             HifiControlsUit.CheckBox {
+                                id: renderingEffectHaze
+                                checked: Render.hazeEnabled
+                                boxSize: 16
+                                text: "Haze"
+                                spacing: -1
+                                colorScheme: hifi.colorSchemes.dark
+                                anchors.left: parent.left
+                                anchors.top: renderingEffectShadows.bottom
+                                onCheckedChanged: {
+                                    Render.hazeEnabled = renderingEffectHaze.checked;
+                                }
+                            }
+                            HifiControlsUit.CheckBox {
+                                id: renderingEffectBloom
+                                checked: Render.bloomEnabled
+                                boxSize: 16
+                                text: "Bloom"
+                                spacing: -1
+                                colorScheme: hifi.colorSchemes.dark
+                                anchors.left: parent.left
+                                anchors.top: renderingEffectHaze.bottom
+                                onCheckedChanged: {
+                                    Render.bloomEnabled = renderingEffectBloom.checked;
+                                }
+                            }
+                            HifiControlsUit.CheckBox {
+                                id: renderingEffectAO
+                                checked: Render.ambientOcclusionEnabled
+                                boxSize: 16
+                                text: "AO"
+                                spacing: -1
+                                colorScheme: hifi.colorSchemes.dark
+                                anchors.left: parent.left
+                                anchors.top: renderingEffectBloom.bottom
+                                onCheckedChanged: {
+                                    Render.ambientOcclusionEnabled = renderingEffectAO.checked;
+                                }
+                            }
+                            HifiControlsUit.CheckBox {
                                 id: renderingEffectLocalLights
                                 enabled: false
                                 //checked: Render.localLightsEnabled
@@ -278,39 +317,9 @@ Flickable {
                                 spacing: -1
                                 colorScheme: hifi.colorSchemes.dark
                                 anchors.left: parent.left
-                                anchors.top: renderingEffectShadows.bottom
+                                anchors.top: renderingEffectAO.bottom
                                 //onCheckedChanged: {
                                 //    Render.localLightsEnabled = renderingEffectLocalLightsEnabled.checked;
-                                //}
-                            }
-                            HifiControlsUit.CheckBox {
-                                id: renderingEffectFog
-                                enabled: false
-                                //checked: Render.fogEnabled
-                                checked: renderingEffectsEnabled.checked
-                                boxSize: 16
-                                text: "Fog"
-                                spacing: -1
-                                colorScheme: hifi.colorSchemes.dark
-                                anchors.left: parent.left
-                                anchors.top: renderingEffectLocalLights.bottom
-                                //onCheckedChanged: {
-                                //    Render.fogEnabled = renderingEffectFogEnabled.checked;
-                                //}
-                            }
-                            HifiControlsUit.CheckBox {
-                                id: renderingEffectBloom
-                                enabled: false
-                                //checked: Render.bloomEnabled
-                                checked: renderingEffectsEnabled.checked
-                                boxSize: 16
-                                text: "Bloom"
-                                spacing: -1
-                                colorScheme: hifi.colorSchemes.dark
-                                anchors.left: parent.left
-                                anchors.top: renderingEffectFog.bottom
-                                //onCheckedChanged: {
-                                //    Render.bloomEnabled = renderingEffectBloomEnabled.checked;
                                 //}
                             }
                         }
@@ -348,6 +357,10 @@ Flickable {
                             text: "Real-Time"
                             refreshRatePreset: 2 // RefreshRateProfile::REALTIME
                         }
+                        ListElement {
+                            text: "Custom"
+                            refreshRatePreset: 3 // RefreshRateProfile::CUSTOM
+                        }
                     }
 
                     HifiControlsUit.ComboBox {
@@ -363,13 +376,7 @@ Flickable {
                         currentIndex: -1
 
                         function refreshRefreshRateDropdownDisplay() {
-                            if (Performance.getRefreshRateProfile() === 0) {
-                                refreshRateDropdown.currentIndex = 0;
-                            } else if (Performance.getRefreshRateProfile() === 1) {
-                                refreshRateDropdown.currentIndex = 1;
-                            } else {
-                                refreshRateDropdown.currentIndex = 2;
-                            }
+                            refreshRateDropdown.currentIndex = Performance.getRefreshRateProfile();
                         }
 
                         Component.onCompleted: {
@@ -379,6 +386,180 @@ Flickable {
                         onCurrentIndexChanged: {
                             Performance.setRefreshRateProfile(model.get(currentIndex).refreshRatePreset);
                             refreshRateDropdown.displayText = model.get(currentIndex).text;
+                        }
+                    }
+                }
+
+                ColumnLayout {
+                    width: parent.width
+                    Layout.topMargin: 32
+                    visible: refreshRateDropdown.currentIndex == 3
+
+                    RowLayout {
+                        Layout.margins: 8
+
+                        HifiControlsUit.SpinBox {
+                            id: refreshRateCustomFocusActive
+                            decimals: 0
+                            width: 160
+                            height: 32
+                            suffix: " FPS"
+                            label: "Focus Active"
+                            realFrom: 1
+                            realTo: 1000
+                            realStepSize: 15
+                            realValue: 60
+                            colorScheme: hifi.colorSchemes.dark
+                            property var loaded: false
+
+                            Component.onCompleted: {
+                                realValue = Performance.getCustomRefreshRate(0)
+                                loaded = true
+                            }
+
+                            onRealValueChanged: {
+                                if (loaded) {
+                                    Performance.setCustomRefreshRate(0, realValue)
+                                }
+                            }
+                        }
+
+                        HifiControlsUit.SpinBox {
+                            id: refreshRateCustomFocusInactive
+                            decimals: 0
+                            width: 160
+                            height: 32
+                            suffix: " FPS"
+                            label: "Focus Inactive"
+                            realFrom: 1
+                            realTo: 1000
+                            realStepSize: 15
+                            realValue: 60
+                            colorScheme: hifi.colorSchemes.dark
+                            property var loaded: false
+
+                            Component.onCompleted: {
+                                realValue = Performance.getCustomRefreshRate(1)
+                                loaded = true
+                            }
+
+                            onRealValueChanged: {
+                                if (loaded) {
+                                    Performance.setCustomRefreshRate(1, realValue)
+                                }
+                            }
+                        }
+                    }
+
+                    RowLayout {
+                        Layout.margins: 8
+
+                        HifiControlsUit.SpinBox {
+                            id: refreshRateCustomUnfocus
+                            decimals: 0
+                            width: 160
+                            height: 32
+                            suffix: " FPS"
+                            label: "Unfocus"
+                            realFrom: 1
+                            realTo: 1000
+                            realStepSize: 15
+                            realValue: 60
+                            colorScheme: hifi.colorSchemes.dark
+                            property var loaded: false
+
+                            Component.onCompleted: {
+                                realValue = Performance.getCustomRefreshRate(2)
+                                loaded = true
+                            }
+
+                            onRealValueChanged: {
+                                if (loaded) {
+                                    Performance.setCustomRefreshRate(2, realValue);
+                                }
+                            }
+                        }
+
+                        HifiControlsUit.SpinBox {
+                            id: refreshRateCustomMinimized
+                            decimals: 0
+                            width: 160
+                            height: 32
+                            suffix: " FPS"
+                            label: "Minimized"
+                            realFrom: 1
+                            realTo: 1000
+                            realStepSize: 1
+                            realValue: 60
+                            colorScheme: hifi.colorSchemes.dark
+                            property var loaded: false
+
+                            Component.onCompleted: {
+                                realValue = Performance.getCustomRefreshRate(3)
+                                loaded = true
+                            }
+
+                            onRealValueChanged: {
+                                if (loaded) {
+                                    Performance.setCustomRefreshRate(3, realValue)
+                                }
+                            }
+                        }
+                    }
+
+                    RowLayout {
+                        Layout.margins: 8
+
+                        HifiControlsUit.SpinBox {
+                            id: refreshRateCustomStartup
+                            decimals: 0
+                            width: 160
+                            height: 32
+                            suffix: " FPS"
+                            label: "Startup"
+                            realFrom: 1
+                            realTo: 1000
+                            realStepSize: 15
+                            realValue: 60
+                            colorScheme: hifi.colorSchemes.dark
+                            property var loaded: false
+
+                            Component.onCompleted: {
+                                realValue = Performance.getCustomRefreshRate(4)
+                                loaded = true
+                            }
+
+                            onRealValueChanged: {
+                                if (loaded) {
+                                    Performance.setCustomRefreshRate(4, realValue)
+                                }
+                            }
+                        }
+
+                        HifiControlsUit.SpinBox {
+                            id: refreshRateCustomShutdown
+                            decimals: 0
+                            width: 160
+                            height: 32
+                            suffix: " FPS"
+                            label: "Shutdown"
+                            realFrom: 1
+                            realTo: 1000
+                            realStepSize: 15
+                            realValue: 60
+                            colorScheme: hifi.colorSchemes.dark
+                            property var loaded: false
+
+                            Component.onCompleted: {
+                                realValue = Performance.getCustomRefreshRate(5)
+                                loaded = true
+                            }
+
+                            onRealValueChanged: {
+                                if (loaded) {
+                                    Performance.setCustomRefreshRate(5, realValue)
+                                }
+                            }
                         }
                     }
                 }
@@ -635,6 +816,42 @@ Flickable {
                                 console.log("Called with currentIndex =", currentIndex);
                                 console.trace();
                             }
+                        }
+                    }
+                }
+            }
+
+            ColumnLayout {
+                Layout.topMargin: 20
+                Layout.preferredWidth: parent.width
+                spacing: 0
+
+                Item {
+                    Layout.preferredWidth: parent.width
+                    Layout.preferredHeight: 35
+
+                    HifiStylesUit.RalewayRegular {
+                        id: proceduralMaterialsHeader
+                        text: "Procedural Materials"
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        width: 150
+                        height: parent.height
+                        size: 16
+                        color: "#FFFFFF"
+                    }
+
+                    HifiControlsUit.CheckBox {
+                        id: renderingEffectProceduralMaterials
+                        checked: Render.proceduralMaterialsEnabled
+                        boxSize: 16
+                        spacing: -1
+                        colorScheme: hifi.colorSchemes.dark
+                        anchors.left: proceduralMaterialsHeader.right
+                        anchors.leftMargin: 20
+                        anchors.top: parent.top
+                        onCheckedChanged: {
+                            Render.proceduralMaterialsEnabled = renderingEffectProceduralMaterials.checked;
                         }
                     }
                 }

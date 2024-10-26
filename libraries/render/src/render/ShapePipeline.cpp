@@ -61,8 +61,8 @@ ShapeKey::Filter::Builder::Builder() {
 }
 
 void ShapePlumber::addPipelineHelper(const Filter& filter, ShapeKey key, int bit, const PipelinePointer& pipeline) const {
-    // Iterate over all keys
-    if (bit < (int)ShapeKey::FlagBit::NUM_FLAGS) {
+    // Iterate over all non-custom keys
+    if (bit < (int)ShapeKey::FlagBit::NUM_NON_CUSTOM - 1) {
         addPipelineHelper(filter, key, bit + 1, pipeline);
         if (!filter._mask[bit]) {
             // Toggle bits set as insignificant in filter._mask 

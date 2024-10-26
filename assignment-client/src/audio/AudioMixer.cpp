@@ -31,6 +31,7 @@
 #include <StDev.h>
 #include <UUID.h>
 #include <CPUDetect.h>
+#include <ZoneEntityItem.h>
 
 #include "AudioLogging.h"
 #include "AudioHelpers.h"
@@ -39,6 +40,8 @@
 #include "AvatarAudioStream.h"
 #include "InjectedAudioStream.h"
 #include "crash-handler/CrashHandler.h"
+#include "../AssignmentDynamicFactory.h"
+#include "../entities/AssignmentParentFinder.h"
 
 using namespace std;
 
@@ -56,13 +59,14 @@ float AudioMixer::_noiseMutingThreshold{ DEFAULT_NOISE_MUTING_THRESHOLD };
 float AudioMixer::_attenuationPerDoublingInDistance{ DEFAULT_ATTENUATION_PER_DOUBLING_IN_DISTANCE };
 map<QString, shared_ptr<CodecPlugin>> AudioMixer::_availableCodecs{ };
 QStringList AudioMixer::_codecPreferenceOrder{};
-vector<AudioMixer::ZoneDescription> AudioMixer::_audioZones;
-vector<AudioMixer::ZoneSettings> AudioMixer::_zoneSettings;
-vector<AudioMixer::ReverbSettings> AudioMixer::_zoneReverbSettings;
+unordered_map<QString, AudioMixer::ZoneSettings> AudioMixer::_audioZones;
 
 AudioMixer::AudioMixer(ReceivedMessage& message) :
     ThreadedAssignment(message)
 {
+
+    DependencyManager::registerInheritance<EntityDynamicFactoryInterface, AssignmentDynamicFactory>();
+    DependencyManager::set<AssignmentDynamicFactory>();
 
     // Always clear settings first
     // This prevents previous assignment settings from sticking around
@@ -112,6 +116,8 @@ AudioMixer::AudioMixer(ReceivedMessage& message) :
         PacketReceiver::makeSourcedListenerReference<AudioMixer>(this, &AudioMixer::handleNodeMuteRequestPacket));
     packetReceiver.registerListener(PacketType::KillAvatar,
         PacketReceiver::makeSourcedListenerReference<AudioMixer>(this, &AudioMixer::handleKillAvatarPacket));
+    packetReceiver.registerListenerForTypes({ PacketType::OctreeStats, PacketType::EntityData, PacketType::EntityErase },
+        PacketReceiver::makeSourcedListenerReference<AudioMixer>(this, &AudioMixer::handleOctreePacket));
 
     packetReceiver.registerListenerForTypes({
         PacketType::ReplicatedMicrophoneAudioNoEcho,
@@ -277,14 +283,14 @@ void AudioMixer::sendStatsPacket() {
 #ifdef DEBUG_EVENT_QUEUE
     QJsonObject qtStats;
 
-    _slavePool.queueStats(qtStats);
+    _workerPool.queueStats(qtStats);
     statsObject["audio_thread_event_queue"] = qtStats;
 #endif
 
     // general stats
     statsObject["useDynamicJitterBuffers"] = _numStaticJitterFrames == DISABLE_STATIC_JITTER_FRAMES;
 
-    statsObject["threads"] = _slavePool.numThreads();
+    statsObject["threads"] = _workerPool.numThreads();
 
     statsObject["trailing_mix_ratio"] = _trailingMixRatio;
     statsObject["throttling_ratio"] = _throttlingRatio;
@@ -405,7 +411,7 @@ void AudioMixer::start() {
 
     // prepare the NodeList
     nodeList->addSetOfNodeTypesToNodeInterestSet({
-        NodeType::Agent, NodeType::EntityScriptServer,
+        NodeType::Agent, NodeType::EntityScriptServer, NodeType::EntityServer,
         NodeType::UpstreamAudioMixer, NodeType::DownstreamAudioMixer
     });
     nodeList->linkedDataCreateCallback = [&](Node* node) { getOrCreateClientData(node); };
@@ -417,11 +423,18 @@ void AudioMixer::start() {
         parseSettingsObject(settingsObject);
     }
 
+    setupEntityQuery();
+
     // mix state
     unsigned int frame = 1;
 
     while (!_isFinished) {
         auto ticTimer = _ticTiming.timer();
+
+        // Set our query each frame
+        {
+            _entityViewer.queryOctree();
+        }
 
         if (_startFrameTimestamp.time_since_epoch().count() == 0) {
             _startFrameTimestamp = _idealFrameTimestamp = p_high_resolution_clock::now();
@@ -433,15 +446,15 @@ void AudioMixer::start() {
 
         auto frameTimer = _frameTiming.timer();
 
-        // process (node-isolated) audio packets across slave threads
+        // process (node-isolated) audio packets across worker threads
         {
             auto packetsTimer = _packetsTiming.timer();
 
-            // first clear the concurrent vector of added streams that the slaves will add to when they process packets
+            // first clear the concurrent vector of added streams that the workers will add to when they process packets
             _workerSharedData.addedStreams.clear();
 
             nodeList->nestedEach([&](NodeList::const_iterator cbegin, NodeList::const_iterator cend) {
-                _slavePool.processPackets(cbegin, cend);
+                _workerPool.processPackets(cbegin, cend);
             });
         }
 
@@ -463,15 +476,15 @@ void AudioMixer::start() {
             numToRetain = nodeList->size() * (1.0f - _throttlingRatio);
         }
         nodeList->nestedEach([&](NodeList::const_iterator cbegin, NodeList::const_iterator cend) {
-            // mix across slave threads
+            // mix across worker threads
             auto mixTimer = _mixTiming.timer();
-            _slavePool.mix(cbegin, cend, frame, numToRetain);
+            _workerPool.mix(cbegin, cend, frame, numToRetain);
         });
 
         // gather stats
-        _slavePool.each([&](AudioMixerSlave& slave) {
-            _stats.accumulate(slave.stats);
-            slave.stats.reset();
+        _workerPool.each([&](AudioMixerWorker& worker) {
+            _stats.accumulate(worker.stats);
+            worker.stats.reset();
         });
 
         ++frame;
@@ -555,8 +568,6 @@ void AudioMixer::clearDomainSettings() {
     _noiseMutingThreshold = DEFAULT_NOISE_MUTING_THRESHOLD;
     _codecPreferenceOrder.clear();
     _audioZones.clear();
-    _zoneSettings.clear();
-    _zoneReverbSettings.clear();
 }
 
 void AudioMixer::parseSettingsObject(const QJsonObject& settingsObject) {
@@ -573,7 +584,7 @@ void AudioMixer::parseSettingsObject(const QJsonObject& settingsObject) {
             const QString NUM_THREADS = "num_threads";
             int numThreads = audioThreadingGroupObject[NUM_THREADS].toString().toInt(&ok);
             if (ok) {
-                _slavePool.setNumThreads(numThreads);
+                _workerPool.setNumThreads(numThreads);
             }
         }
 
@@ -727,8 +738,13 @@ void AudioMixer::parseSettingsObject(const QJsonObject& settingsObject) {
                     if (allOk) {
                         glm::vec3 corner(xMin, yMin, zMin);
                         glm::vec3 dimensions(xMax - xMin, yMax - yMin, zMax - zMin);
-                        AABox zoneAABox(corner, dimensions);
-                        _audioZones.push_back({ zoneName, zoneAABox });
+
+                        Transform t;
+                        t.setTranslation(corner + 0.5f * dimensions);
+                        t.setScale(dimensions);
+                        _audioZones[zoneName].inverseTransform = t.getInverseMatrix();
+                        _audioZones[zoneName].volume = dimensions.x * dimensions.y * dimensions.z;
+
                         qCDebug(audio) << "Added zone:" << zoneName << "(corner:" << corner << ", dimensions:" << dimensions << ")";
                     }
                 }
@@ -749,28 +765,17 @@ void AudioMixer::parseSettingsObject(const QJsonObject& settingsObject) {
                     coefficientObject.contains(LISTENER) &&
                     coefficientObject.contains(COEFFICIENT)) {
 
-                    auto itSource = find_if(begin(_audioZones), end(_audioZones), [&](const ZoneDescription& description) {
-                        return description.name == coefficientObject.value(SOURCE).toString();
-                    });
-                    auto itListener = find_if(begin(_audioZones), end(_audioZones), [&](const ZoneDescription& description) {
-                        return description.name == coefficientObject.value(LISTENER).toString();
-                    });
+                    auto itSource = _audioZones.find(coefficientObject.value(SOURCE).toString());
 
                     bool ok;
                     float coefficient = coefficientObject.value(COEFFICIENT).toString().toFloat(&ok);
 
+                    if (ok && coefficient <= 1.0f && itSource != _audioZones.end()) {
+                        auto listener = coefficientObject.value(LISTENER).toString();
+                        itSource->second.listeners.emplace_back(listener);
+                        itSource->second.coefficients.emplace_back(coefficient);
 
-                    if (ok && coefficient <= 1.0f &&
-                        itSource != end(_audioZones) &&
-                        itListener != end(_audioZones)) {
-
-                        ZoneSettings settings;
-                        settings.source = itSource - begin(_audioZones);
-                        settings.listener = itListener - begin(_audioZones);
-                        settings.coefficient = coefficient;
-
-                        _zoneSettings.push_back(settings);
-                        qCDebug(audio) << "Added Coefficient:" << itSource->name << itListener->name << settings.coefficient;
+                        qCDebug(audio) << "Added Coefficient:" << itSource->first << listener << coefficient;
                     }
                 }
             }
@@ -791,25 +796,122 @@ void AudioMixer::parseSettingsObject(const QJsonObject& settingsObject) {
                     reverbObject.contains(WET_LEVEL)) {
 
                     bool okReverbTime, okWetLevel;
-                    auto itZone = find_if(begin(_audioZones), end(_audioZones), [&](const ZoneDescription& description) {
-                        return description.name == reverbObject.value(ZONE).toString();
-                    });
+                    auto itZone = _audioZones.find(reverbObject.value(ZONE).toString());
                     float reverbTime = reverbObject.value(REVERB_TIME).toString().toFloat(&okReverbTime);
                     float wetLevel = reverbObject.value(WET_LEVEL).toString().toFloat(&okWetLevel);
 
-                    if (okReverbTime && okWetLevel && itZone != end(_audioZones)) {
-                        ReverbSettings settings;
-                        settings.zone = itZone - begin(_audioZones);
-                        settings.reverbTime = reverbTime;
-                        settings.wetLevel = wetLevel;
+                    if (okReverbTime && okWetLevel && itZone != _audioZones.end()) {
+                        itZone->second.reverbEnabled = true;
+                        itZone->second.reverbTime = reverbTime;
+                        itZone->second.wetLevel = wetLevel;
 
-                        _zoneReverbSettings.push_back(settings);
-
-                        qCDebug(audio) << "Added Reverb:" << itZone->name << reverbTime << wetLevel;
+                        qCDebug(audio) << "Added Reverb:" << itZone->first << reverbTime << wetLevel;
                     }
                 }
             }
         }
+    }
+}
+
+void AudioMixer::setupEntityQuery() {
+    _entityViewer.init();
+    EntityTreePointer entityTree = _entityViewer.getTree();
+    entityTree->setIsServer(true);
+    DependencyManager::registerInheritance<SpatialParentFinder, AssignmentParentFinder>();
+    DependencyManager::set<AssignmentParentFinder>(entityTree);
+
+    connect(entityTree.get(), &EntityTree::addingEntityPointer, this, &AudioMixer::entityAdded);
+    connect(entityTree.get(), &EntityTree::deletingEntityPointer, this, &AudioMixer::entityRemoved);
+
+    // ES query: {"type": "Zone"}
+    QJsonObject zoneQuery;
+    zoneQuery["type"] = "Zone";
+
+    QJsonObject queryFlags;
+    queryFlags["includeAncestors"] = true;
+    queryFlags["includeDescendants"] = true;
+    zoneQuery["flags"] = queryFlags;
+    zoneQuery["name"] = true;  // Handy for debugging.
+
+    _entityViewer.getOctreeQuery().setJSONParameters(zoneQuery);
+}
+
+void AudioMixer::handleOctreePacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer senderNode) {
+    PacketType packetType = message->getType();
+
+    switch (packetType) {
+    case PacketType::OctreeStats:
+    {   // Ignore stats, but may have a different Entity packet appended.
+        OctreeHeadlessViewer::parseOctreeStats(message, senderNode);
+        const auto piggyBackedSizeWithHeader = message->getBytesLeftToRead();
+        if (piggyBackedSizeWithHeader > 0) {
+            // pull out the piggybacked packet and create a new QSharedPointer<NLPacket> for it
+            auto buffer = std::unique_ptr<char[]>(new char[piggyBackedSizeWithHeader]);
+            memcpy(buffer.get(), message->getRawMessage() + message->getPosition(), piggyBackedSizeWithHeader);
+
+            auto newPacket = NLPacket::fromReceivedPacket(std::move(buffer), piggyBackedSizeWithHeader, message->getSenderSockAddr());
+            auto newMessage = QSharedPointer<ReceivedMessage>::create(*newPacket);
+            handleOctreePacket(newMessage, senderNode);
+        }
+        break;
+    }
+
+    case PacketType::EntityData:
+        _entityViewer.processDatagram(*message, senderNode);
+        break;
+
+    case PacketType::EntityErase:
+        _entityViewer.processEraseMessage(*message, senderNode);
+        break;
+
+    default:
+        qCDebug(audio) << "Unexpected packet type:" << packetType;
+        break;
+    }
+}
+
+void updateAudioZone(EntityItem* entity, std::unordered_map<QString, AudioMixer::ZoneSettings>& audioZones) {
+    auto zoneEntity = (ZoneEntityItem*)entity;
+    auto& audioZone = audioZones[entity->getID().toString()];
+    auto& audioSettings = zoneEntity->getAudioProperties();
+
+    vec3 dimensions = entity->getScaledDimensions();
+    Transform t;
+    t.setTranslation(entity->getWorldPosition());
+    t.setScale(dimensions);
+    t.setRotation(entity->getWorldOrientation());
+    audioZone.inverseTransform = t.getInverseMatrix();
+    audioZone.volume = dimensions.x * dimensions.y * dimensions.z;
+
+    audioZone.reverbEnabled = audioSettings.getReverbEnabled();
+    audioZone.reverbTime = audioSettings.getReverbTime();
+    audioZone.wetLevel = audioSettings.getReverbWetLevel();
+
+    audioZone.listeners.clear();
+    auto listenerZones = audioSettings.getListenerZones();
+    audioZone.listeners.reserve(listenerZones.length());
+    for (auto& listener : listenerZones) {
+        audioZone.listeners.push_back(listener.toString());
+    }
+
+    audioZone.coefficients = audioSettings.getListenerAttenuationCoefficients().toStdVector();
+
+    /*qCDebug(audio) << "Updated audio zone:" << entity->getID().toString() << "(position:" << t.getTranslation()
+                   << ", dimensions:" << t.getScale() << ")";*/
+}
+
+void AudioMixer::entityAdded(EntityItem* entity) {
+    if (entity->getType() == EntityTypes::Zone) {
+        updateAudioZone(entity, _audioZones);
+        entity->registerChangeHandler([entity](const EntityItemID& entityItemID) {
+            updateAudioZone(entity, _audioZones);
+        });
+    }
+}
+
+void AudioMixer::entityRemoved(EntityItem* entity) {
+    if (entity->getType() == EntityTypes::Zone) {
+        _audioZones.erase(entity->getID().toString());
     }
 }
 

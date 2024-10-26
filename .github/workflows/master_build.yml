@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2020-2022 Vircadia contributors
-# Copyright 2021-2022 Overte e.V.
+# Copyright 2021-2024 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 name: Master CI Build
@@ -13,19 +13,21 @@ on:
 env:
   APP_NAME: interface
   BUILD_TYPE: Release
-  BUILD_NUMBER: ${{ github.run_number }}
+  BUILD_NUMBER: ${{ github.event.number }}_${{ github.sha }}
   CI_BUILD: Github
   GIT_COMMIT: ${{ github.sha }}
   # VCPKG did not build well on OSX disabling HIFI_VCPKG_BOOTSTRAP, which invokes a download to a working version of vcpkg
   # HIFI_VCPKG_BOOTSTRAP: true
   RELEASE_TYPE: PRODUCTION
-  RELEASE_NUMBER: ${{ github.run_number }}
+  RELEASE_NUMBER: ${{ github.event.number }}_${{ github.sha }}
   STABLE_BUILD: 0
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
   CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
   CMAKE_BACKTRACE_TOKEN: master_${{ github.event.number }}_${{ github.sha }}
+  # Disable VCPKG caching to save time.
+  VCPKG_FEATURE_FLAGS: -binarycaching
 
   # OSX-specific variables
   DEVELOPER_DIR: /Applications/Xcode_11.2.app/Contents/Developer
@@ -106,7 +108,7 @@ jobs:
         # Build type variables
         if [ "${{ matrix.build_type }}" = "full" ]; then
           echo "CLIENT_ONLY=FALSE" >> $GITHUB_ENV
-          echo "INSTALLER=Overte-master$BUILD_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "INSTALLER=Overte-${{ github.event.number }}_${{ github.sha }}-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
         else
           echo "CLIENT_ONLY=TRUE" >> $GITHUB_ENV
           echo "INSTALLER=Overte-Interface-master$BUILD_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
@@ -120,7 +122,7 @@ jobs:
         rm -rf ~/overte-files
         rm -rf ~/.cache
 
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
       with:
         submodules: false
         fetch-depth: 1
@@ -242,14 +244,12 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
-    - name: Upload artifact
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS') || matrix.build_type == 'android'  # Automatic Linux packaging is not implemented
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.s3_access_key_id }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.s3_secret_access_key }}
-      run: $PYTHON_EXEC $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
+    - name: Upload artifact to GitHub
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.INSTALLER }}
+        path: ${{runner.workspace}}/build/${{ env.INSTALLER }}
+        if-no-files-found: error
 
     #- name: Archive symbols
     #  if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')

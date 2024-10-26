@@ -22,24 +22,48 @@ using namespace render::entities;
 
 static uint8_t CUSTOM_PIPELINE_NUMBER = 0;
 static gpu::Stream::FormatPointer _vertexFormat;
-static std::weak_ptr<gpu::Pipeline> _texturedPipeline;
+// forward, transparent, shadow, wireframe
+static std::map<std::tuple<bool, bool, bool, bool>, gpu::PipelinePointer> _pipelines;
 
 static ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, const ShapeKey& key, RenderArgs* args) {
-    auto texturedPipeline = _texturedPipeline.lock();
-    if (!texturedPipeline) {
-        auto state = std::make_shared<gpu::State>();
-        state->setCullMode(gpu::State::CULL_BACK);
-        state->setDepthTest(true, false, gpu::LESS_EQUAL);
-        state->setBlendFunction(true, gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE,
-            gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
-        // TODO: handle opaque
-        PrepareStencil::testMaskResetNoAA(*state);
+    if (_pipelines.empty()) {
+        using namespace shader::entities_renderer::program;
 
-        auto program = gpu::Shader::createProgram(shader::entities_renderer::program::textured_particle);
-        _texturedPipeline = texturedPipeline = gpu::Pipeline::create(program, state);
+        // forward, translucent, shadow
+        static const std::vector<std::tuple<bool, bool, bool, uint32_t>> keys = {
+            std::make_tuple(false, false, false, textured_particle),
+            std::make_tuple(true, false, false, textured_particle_forward),
+            std::make_tuple(false, true, false, textured_particle_translucent),
+            std::make_tuple(true, true, false, textured_particle_translucent_forward),
+            std::make_tuple(false, false, true, textured_particle_shadow),
+            // no such thing as shadow and forward/translucent
+        };
+
+        for (auto& key : keys) {
+            for (int i = 0; i < 2; ++i) {
+                bool transparent = std::get<1>(key);
+                bool wireframe = i == 0;
+
+                auto state = std::make_shared<gpu::State>();
+                state->setCullMode(gpu::State::CULL_BACK);
+
+                if (wireframe) {
+                    state->setFillMode(gpu::State::FILL_LINE);
+                }
+
+                state->setDepthTest(true, !transparent, gpu::LESS_EQUAL);
+                state->setBlendFunction(transparent, gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE,
+                    gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
+                transparent ? PrepareStencil::testMaskResetNoAA(*state) : PrepareStencil::testMaskDrawShapeNoAA(*state);
+
+                auto program = gpu::Shader::createProgram(std::get<3>(key));
+                _pipelines[std::make_tuple(std::get<0>(key), transparent, std::get<2>(key), wireframe)] = gpu::Pipeline::create(program, state);
+            }
+        }
     }
 
-    return std::make_shared<render::ShapePipeline>(texturedPipeline, nullptr, nullptr, nullptr);
+    return std::make_shared<render::ShapePipeline>(_pipelines[std::make_tuple(args->_renderMethod == Args::RenderMethod::FORWARD, key.isTranslucent(),
+        args->_renderMode == Args::RenderMode::SHADOW_RENDER_MODE, key.isWireframe())], nullptr, nullptr, nullptr);
 }
 
 struct GpuParticle {
@@ -140,26 +164,31 @@ void ParticleEffectEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEn
     _uniformBuffer.edit<ParticleUniforms>() = particleUniforms;
 }
 
+bool ParticleEffectEntityRenderer::isTransparent() const {
+    bool particleTransparent = _particleProperties.getColorStart().a < 1.0f || _particleProperties.getColorMiddle().a < 1.0f ||
+                               _particleProperties.getColorFinish().a < 1.0f || _particleProperties.getColorSpread().a > 0.0f ||
+                               _pulseProperties.getAlphaMode() != PulseMode::NONE || (_textureLoaded && _networkTexture && _networkTexture->getGPUTexture() &&
+                                   _networkTexture->getGPUTexture()->getUsage().isAlpha() && !_networkTexture->getGPUTexture()->getUsage().isAlphaMask());
+    return particleTransparent || Parent::isTransparent();
+}
+
 ItemKey ParticleEffectEntityRenderer::getKey() {
-    // FIXME: implement isTransparent() for particles and an opaque pipeline
-    auto builder = ItemKey::Builder::transparentShape().withTagBits(getTagMask()).withLayer(getHifiRenderLayer());
-
-    if (!_visible) {
-        builder.withInvisible();
-    }
-
-    if (_cullWithParent) {
-        builder.withSubMetaCulled();
-    }
-
+    auto builder = ItemKey::Builder(Parent::getKey());
+    builder.withSimulate();
     return builder.build();
 }
 
 ShapeKey ParticleEffectEntityRenderer::getShapeKey() {
-    auto builder = ShapeKey::Builder().withCustom(CUSTOM_PIPELINE_NUMBER).withTranslucent();
+    auto builder = ShapeKey::Builder().withCustom(CUSTOM_PIPELINE_NUMBER);
+
+    if (isTransparent()) {
+        builder.withTranslucent();
+    }
+
     if (_primitiveMode == PrimitiveMode::LINES) {
         builder.withWireframe();
     }
+
     return builder.build();
 }
 
@@ -364,7 +393,11 @@ ParticleEffectEntityRenderer::CpuParticle ParticleEffectEntityRenderer::createPa
     return particle;
 }
 
-void ParticleEffectEntityRenderer::stepSimulation() {
+void ParticleEffectEntityRenderer::renderSimulate(RenderArgs* args) {
+    if (!_visible || !(_networkTexture && _networkTexture->isLoaded())) {
+        return;
+    }
+
     if (_lastSimulated == 0) {
         _lastSimulated = usecTimestampNow();
         return;
@@ -438,9 +471,6 @@ void ParticleEffectEntityRenderer::doRender(RenderArgs* args) {
         return;
     }
 
-    // FIXME migrate simulation to a compute stage
-    stepSimulation();
-
     gpu::Batch& batch = *args->_batch;
     batch.setResourceTexture(0, _networkTexture->getGPUTexture());
 
@@ -457,10 +487,7 @@ void ParticleEffectEntityRenderer::doRender(RenderArgs* args) {
     color.finish = EntityRenderer::calculatePulseColor(_particleProperties.getColorFinish(), _pulseProperties, _created);
     color.spread = EntityRenderer::calculatePulseColor(_particleProperties.getColorSpread(), _pulseProperties, _created);
 
-    batch.setModelTransform(transform, _prevRenderTransform);
-    if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
-        _prevRenderTransform = transform;
-    }
+    batch.setModelTransform(transform);
 
     batch.setUniformBuffer(0, _uniformBuffer);
     batch.setInputFormat(_vertexFormat);

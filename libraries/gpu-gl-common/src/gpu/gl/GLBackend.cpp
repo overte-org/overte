@@ -88,6 +88,7 @@ GLBackend::CommandCall GLBackend::_commandCalls[Batch::NUM_COMMANDS] =
 
     (&::gpu::gl::GLBackend::do_disableContextViewCorrection),
     (&::gpu::gl::GLBackend::do_restoreContextViewCorrection),
+    (&::gpu::gl::GLBackend::do_setContextMirrorViewCorrection),
     (&::gpu::gl::GLBackend::do_disableContextStereo),
     (&::gpu::gl::GLBackend::do_restoreContextStereo),
 
@@ -106,8 +107,6 @@ GLBackend::CommandCall GLBackend::_commandCalls[Batch::NUM_COMMANDS] =
     (&::gpu::gl::GLBackend::do_glUniform4iv),
     (&::gpu::gl::GLBackend::do_glUniformMatrix3fv),
     (&::gpu::gl::GLBackend::do_glUniformMatrix4fv),
-
-    (&::gpu::gl::GLBackend::do_glColor4f),
 
     (&::gpu::gl::GLBackend::do_pushProfileRange),
     (&::gpu::gl::GLBackend::do_popProfileRange),
@@ -346,6 +345,7 @@ void GLBackend::renderPassTransfer(const Batch& batch) {
                 case Batch::COMMAND_setProjectionJitterScale:
                 case Batch::COMMAND_saveViewProjectionTransform:
                 case Batch::COMMAND_setSavedViewProjectionTransform:
+                case Batch::COMMAND_setContextMirrorViewCorrection:
                 {
                     CommandCall call = _commandCalls[(*command)];
                     (this->*(call))(batch, *offset);
@@ -413,6 +413,7 @@ void GLBackend::renderPassDraw(const Batch& batch) {
             //case Batch::COMMAND_setProjectionTransform:
             case Batch::COMMAND_setViewportTransform:
             case Batch::COMMAND_setDepthRangeTransform:
+            case Batch::COMMAND_setContextMirrorViewCorrection:
             {
                 PROFILE_RANGE(render_gpu_gl_detail, "transform");
                 CommandCall call = _commandCalls[(*command)];
@@ -625,6 +626,16 @@ void GLBackend::do_disableContextViewCorrection(const Batch& batch, size_t param
 
 void GLBackend::do_restoreContextViewCorrection(const Batch& batch, size_t paramOffset) {
     _transform._viewCorrectionEnabled = true;
+}
+
+void GLBackend::do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) {
+    bool prevMirrorViewCorrection = _transform._presentFrame.mirrorViewCorrection;
+    _transform._presentFrame.mirrorViewCorrection = batch._params[paramOffset]._uint != 0;
+
+    if (_transform._presentFrame.correction != glm::mat4()) {
+        updatePresentFrame(_transform._presentFrame.mirrorViewCorrection ? _transform._presentFrame.flippedCorrection : _transform._presentFrame.unflippedCorrection, false);
+        _transform._invalidView = true;
+    }
 }
 
 void GLBackend::do_disableContextStereo(const Batch& batch, size_t paramOffset) {
@@ -846,22 +857,6 @@ void GLBackend::do_glUniformMatrix4fv(const Batch& batch, size_t paramOffset) {
     (void)CHECK_GL_ERROR();
 }
 
-void GLBackend::do_glColor4f(const Batch& batch, size_t paramOffset) {
-
-    glm::vec4 newColor(
-        batch._params[paramOffset + 3]._float,
-        batch._params[paramOffset + 2]._float,
-        batch._params[paramOffset + 1]._float,
-        batch._params[paramOffset + 0]._float);
-
-    if (_input._colorAttribute != newColor) {
-        _input._colorAttribute = newColor;
-        glVertexAttrib4fv(gpu::Stream::COLOR, &_input._colorAttribute.r);
-        _input._hasColorAttribute = true;
-    }
-    (void)CHECK_GL_ERROR();
-}
-
 void GLBackend::releaseBuffer(GLuint id, Size size) const {
     Lock lock(_trashMutex);
     _currentFrameTrash.buffersTrash.push_back({ id, size });
@@ -1005,7 +1000,7 @@ void GLBackend::recycle() const {
     _textureManagement._transferEngine->manageMemory();
 }
 
-void GLBackend::updatePresentFrame(const Mat4& correction) {
+void GLBackend::updatePresentFrame(const Mat4& correction, bool primary) {
     _transform._presentFrame.correction = correction;
     _transform._presentFrame.correctionInverse = glm::inverse(correction);
 
@@ -1015,6 +1010,17 @@ void GLBackend::updatePresentFrame(const Mat4& correction) {
     for (auto& viewProjState : _transform._savedTransforms) {
         viewProjState._state._previousCorrectedView = viewProjState._state._correctedView;
         viewProjState._state._previousProjection = viewProjState._state._projection;
+    }
+
+    if (primary) {
+        _transform._presentFrame.unflippedCorrection = _transform._presentFrame.correction;
+        quat flippedRotation = glm::quat_cast(_transform._presentFrame.unflippedCorrection);
+        flippedRotation.y *= -1.0f;
+        flippedRotation.z *= -1.0f;
+        vec3 flippedTranslation = _transform._presentFrame.unflippedCorrection[3];
+        flippedTranslation.x *= -1.0f;
+        _transform._presentFrame.flippedCorrection = glm::translate(glm::mat4_cast(flippedRotation), flippedTranslation);
+        _transform._presentFrame.mirrorViewCorrection = false;
     }
 }
 

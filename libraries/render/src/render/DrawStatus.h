@@ -52,8 +52,8 @@ namespace render {
         void configure(const Config& config);
         void run(const RenderContextPointer& renderContext, const Input& input);
 
-        const gpu::PipelinePointer getDrawItemBoundsPipeline();
-        const gpu::PipelinePointer getDrawItemStatusPipeline();
+        static const gpu::PipelinePointer getDrawItemBoundsPipeline();
+        static const gpu::PipelinePointer getDrawItemStatusPipeline();
 
         void setStatusIconMap(const gpu::TexturePointer& map);
         const gpu::TexturePointer getStatusIconMap() const;
@@ -63,13 +63,12 @@ namespace render {
         bool _showNetwork { false }; // initialized by Config
         bool _showFade { false }; // initialized by Config
 
-        gpu::Stream::FormatPointer _drawItemFormat;
-        gpu::PipelinePointer _drawItemBoundsPipeline;
-        gpu::PipelinePointer _drawItemStatusPipeline;
+        static gpu::PipelinePointer _drawItemBoundsPipeline;
+        static gpu::PipelinePointer _drawItemStatusPipeline;
+        static gpu::Stream::FormatPointer _vertexFormat;
 
         gpu::BufferPointer _boundsBuffer;
         gpu::BufferPointer _instanceBuffer;
-        gpu::Stream::FormatPointer _vertexFormat;
         gpu::TexturePointer _statusIconMap;
 
         uint _transformSlot;

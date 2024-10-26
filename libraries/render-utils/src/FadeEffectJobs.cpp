@@ -531,6 +531,8 @@ void FadeConfig::load(const QString& configFilePath) {
     }
 }
 
+FadeJob::FadeConfigurationBuffer FadeJob::_configurations;
+
 FadeJob::FadeJob() {
     _previousTime = usecTimestampNow();
 }
@@ -558,15 +560,15 @@ void FadeJob::configure(const Config& config) {
 
 void FadeJob::run(const render::RenderContextPointer& renderContext, FadeJob::Output& output) {
     Config* jobConfig = static_cast<Config*>(renderContext->jobConfig.get());
+    output = (FadeCategory)jobConfig->editedCategory;
+
     auto scene = renderContext->args->_scene;
-    auto transitionStage = scene->getStage<render::TransitionStage>(render::TransitionStage::getName());
+    auto transitionStage = scene->getStage<render::TransitionStage>();
     uint64_t now = usecTimestampNow();
     const double deltaTime = (int64_t(now) - int64_t(_previousTime)) / double(USECS_PER_SECOND);
     render::Transaction transaction;
     bool isFirstItem = true;
     bool hasTransaction = false;
-    
-    output = (FadeCategory) jobConfig->editedCategory;
 
     // And now update fade effect
     for (auto transitionId : *transitionStage) {

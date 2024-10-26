@@ -46,6 +46,7 @@
 #include "avatar/AvatarManager.h"
 #include "avatar/AvatarPackager.h"
 #include "AvatarBookmarks.h"
+#include <display-plugins/OpenGLDisplayPlugin.h>
 #include "DomainAccountManager.h"
 #include "MainWindow.h"
 #include "render/DrawStatus.h"
@@ -64,7 +65,6 @@
 #include "SpeechRecognizer.h"
 #endif
 
-#include "MeshPartPayload.h"
 #include "scripting/RenderScriptingInterface.h"
 
 extern bool DEV_DECIMATE_TEXTURES;
@@ -310,13 +310,26 @@ Menu::Menu() {
 		}
     });
 
-    // Settings > Entity Script / QML Whitelist
-    action = addActionToQMenuAndActionHash(settingsMenu, "Entity Script / QML Whitelist");
+    // Settings > Entity Script / QML Allowlist
+    action = addActionToQMenuAndActionHash(settingsMenu, "Entity Script / QML Allowlist");
     connect(action, &QAction::triggered, [] {
         auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
         auto hmd = DependencyManager::get<HMDScriptingInterface>();
 
-        tablet->pushOntoStack("hifi/dialogs/security/EntityScriptQMLWhitelist.qml");
+        tablet->pushOntoStack("hifi/dialogs/security/EntityScriptQMLAllowlist.qml");
+
+        if (!hmd->getShouldShowTablet()) {
+            hmd->toggleShouldShowTablet();
+        }
+    });
+
+    // Settings > Script Security
+    action = addActionToQMenuAndActionHash(settingsMenu, MenuOption::ScriptSecurity);
+    connect(action, &QAction::triggered, [] {
+        auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
+        auto hmd = DependencyManager::get<HMDScriptingInterface>();
+
+        tablet->pushOntoStack("hifi/dialogs/security/ScriptSecurity.qml");
 
         if (!hmd->getShouldShowTablet()) {
             hmd->toggleShouldShowTablet();
@@ -388,13 +401,18 @@ Menu::Menu() {
 
     // Developer > UI >>>
     MenuWrapper* uiOptionsMenu = developerMenu->addMenu("UI");
+
+    // Developer > UI > Show Overlays
+    action = addCheckableActionToQMenuAndActionHash(uiOptionsMenu, MenuOption::Overlays, 0, true);
+
+    connect(action, &QAction::triggered, [action] {
+        qApp->getApplicationOverlay().setEnabled(action->isChecked());
+    });
+
+    // Developer > UI > Desktop Tablet Becomes Toolbar
     action = addCheckableActionToQMenuAndActionHash(uiOptionsMenu, MenuOption::DesktopTabletToToolbar, 0,
                                                     qApp->getDesktopTabletBecomesToolbarSetting());
 
-    // Developer > UI > Show Overlays
-    addCheckableActionToQMenuAndActionHash(uiOptionsMenu, MenuOption::Overlays, 0, true);
-
-    // Developer > UI > Desktop Tablet Becomes Toolbar
     connect(action, &QAction::triggered, [action] {
         qApp->setDesktopTabletBecomesToolbarSetting(action->isChecked());
     });
@@ -520,15 +538,20 @@ Menu::Menu() {
     addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::ComputeBlendshapes, 0, true,
         DependencyManager::get<ModelBlender>().data(), SLOT(setComputeBlendshapes(bool)));
 
-    action = addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::MaterialProceduralShaders, 0, false);
-    connect(action, &QAction::triggered, [action] {
-        ModelMeshPartPayload::enableMaterialProceduralShaders = action->isChecked();
-    });
+    addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::MaterialProceduralShaders, 0, RenderScriptingInterface::getInstance()->getProceduralMaterialsEnabled(),
+        RenderScriptingInterface::getInstance(), SLOT(setProceduralMaterialsEnabled(bool)));
 
     {
         auto drawStatusConfig = qApp->getRenderEngine()->getConfiguration()->getConfig<render::DrawStatus>("RenderMainView.DrawStatus");
         addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::HighlightTransitions, 0, false,
             drawStatusConfig, SLOT(setShowFade(bool)));
+    }
+
+    {
+        action = addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::ExtraLinearTosRGBConversion, 0, OpenGLDisplayPlugin::getExtraLinearToSRGBConversion());
+        connect(action, &QAction::triggered, [action] {
+            OpenGLDisplayPlugin::setExtraLinearToSRGBConversion(action->isChecked());
+        });
     }
 
     // Developer > Assets >>>

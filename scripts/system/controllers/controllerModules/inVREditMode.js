@@ -146,7 +146,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
     enableDispatcherModule("RightHandInVREditMode", rightHandInVREditMode);
 
     var INVREDIT_STATUS_CHANNEL = "Hifi-InVREdit-Status";
-    var HAND_RAYPICK_BLACKLIST_CHANNEL = "Hifi-Hand-RayPick-Blacklist";
+    var HAND_RAYPICK_BLOCKLIST_CHANNEL = "Hifi-Hand-RayPick-Blocklist";
     this.handleMessage = function (channel, data, sender) {
         if (channel === INVREDIT_STATUS_CHANNEL && sender === MyAvatar.sessionUUID) {
             var message;
@@ -168,10 +168,10 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
                     } else {
                         rightHandInVREditMode.isEditing = message.editing;
                     }
-                    Messages.sendLocalMessage(HAND_RAYPICK_BLACKLIST_CHANNEL, JSON.stringify({
+                    Messages.sendLocalMessage(HAND_RAYPICK_BLOCKLIST_CHANNEL, JSON.stringify({
                         action: "tablet",
                         hand: message.hand,
-                        blacklist: message.editing
+                        blocklist: message.editing
                     }));
                     break;
             }

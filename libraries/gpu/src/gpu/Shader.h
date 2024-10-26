@@ -126,7 +126,7 @@ protected:
     const Shaders _shaders;
 
      
-    // The type of the shader, the master key
+    // The type of the shader, the primary key
     const Type _type;
 
     // Number of attempts to compile the shader

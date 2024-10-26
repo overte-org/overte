@@ -25,6 +25,18 @@
 
 using namespace render;
 
+gpu::PipelinePointer DrawSceneOctree::_drawCellBoundsPipeline;
+gpu::PipelinePointer DrawSceneOctree::_drawLODReticlePipeline;
+gpu::PipelinePointer DrawSceneOctree::_drawItemBoundPipeline;
+gpu::Stream::FormatPointer DrawSceneOctree::_cellBoundsFormat = std::make_shared<gpu::Stream::Format>();
+
+DrawSceneOctree::DrawSceneOctree(uint transformSlot) : _transformSlot(transformSlot) {
+    std::once_flag once;
+    std::call_once(once, [] {
+        _cellBoundsFormat->setAttribute(0, 0, gpu::Element(gpu::VEC4, gpu::INT32, gpu::XYZW), 0, gpu::Stream::PER_INSTANCE);
+    });
+}
+
 const gpu::PipelinePointer DrawSceneOctree::getDrawCellBoundsPipeline() {
     if (!_drawCellBoundsPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render::program::drawCellBounds);
@@ -37,9 +49,6 @@ const gpu::PipelinePointer DrawSceneOctree::getDrawCellBoundsPipeline() {
 
         // Good to go add the brand new pipeline
         _drawCellBoundsPipeline = gpu::Pipeline::create(program, state);
-        _cellBoundsFormat = std::make_shared<gpu::Stream::Format>();
-        _cellBoundsFormat->setAttribute(0, 0, gpu::Element(gpu::VEC4, gpu::INT32, gpu::XYZW), 0, gpu::Stream::PER_INSTANCE);
-        _cellBoundsBuffer = std::make_shared<gpu::Buffer>();
     }
     return _drawCellBoundsPipeline;
 }
@@ -63,7 +72,6 @@ void DrawSceneOctree::configure(const Config& config) {
     _showEmptyCells = config.showEmptyCells;
     _showLODReticle = config.showLODReticle;
 }
-
 
 void DrawSceneOctree::run(const RenderContextPointer& renderContext, const ItemSpatialTree::ItemSelection& inSelection) {
     assert(renderContext->args);
@@ -130,6 +138,8 @@ void DrawSceneOctree::run(const RenderContextPointer& renderContext, const ItemS
         }
     });
 }
+
+gpu::PipelinePointer DrawItemSelection::_drawItemBoundPipeline;
 
 const gpu::PipelinePointer DrawItemSelection::getDrawItemBoundPipeline() {
     if (!_drawItemBoundPipeline) {

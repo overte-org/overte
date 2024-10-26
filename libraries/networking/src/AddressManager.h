@@ -49,7 +49,7 @@ const QString GET_PLACE = "/api/v1/places/%1";
  * @hifi-avatar
  * @hifi-assignment-client
  *
- * @property {Uuid} domainID - A UUID uniquely identifying the domain you're visiting. Is {@link Uuid(0)|Uuid.NULL} if you're not
+ * @property {Uuid} domainID - A UUID uniquely identifying the domain you're visiting. Is {@link Uuid(0)|Uuid.NONE} if you're not
  *     connected to the domain or are in a serverless domain.
  *     <em>Read-only.</em>
  * @property {string} hostname - The name of the domain for your current directory services address (e.g., <code>"DomainName"</code>,
@@ -83,7 +83,7 @@ const QString GET_PLACE = "/api/v1/places/%1";
  * @deprecated This API is deprecated and will be removed. Use the {@link location} or {@link Window|Window.location} APIs
  * instead.
  *
- * @property {Uuid} domainID - A UUID uniquely identifying the domain you're visiting. Is {@link Uuid(0)|Uuid.NULL} if you're not
+ * @property {Uuid} domainID - A UUID uniquely identifying the domain you're visiting. Is {@link Uuid(0)|Uuid.NONE} if you're not
  *     connected to the domain or are in a serverless domain.
  *     <em>Read-only.</em>
  * @property {string} hostname - The name of the domain for your current directory services address (e.g., <code>"DomainName"</code>,
@@ -397,7 +397,7 @@ signals:
      * Triggered when a request is made to go to a URL or IP address.
      * @function location.possibleDomainChangeRequired
      * @param {string} domainURL - The URL of the domain.
-     * @param {Uuid} domainID - The UUID of the domain to go to. May be {@link Uuid|Uuid.NULL} if not yet known.
+     * @param {Uuid} domainID - The UUID of the domain to go to. May be {@link Uuid|Uuid.NONE} if not yet known.
      * @returns {Signal}
      */
     // No example because this function isn't typically used in scripts.

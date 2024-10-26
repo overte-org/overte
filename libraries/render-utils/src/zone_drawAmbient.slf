@@ -42,10 +42,10 @@ void main(void) {
     vec3 ambientMap = evalSkyboxLight(fragNormal, lod).xyz;
     vec3 ambientSH = sphericalHarmonics_evalSphericalLight(getLightAmbientSphere(lightAmbient), fragNormal).xyz;
 
-   // vec3 ambient = sphericalHarmonics_evalSphericalLight(getLightAmbientSphere(lightAmbient), fragNormal).xyz;
-  //  _fragColor = vec4( 0.5  * (fragNormal + vec3(1.0)), 1.0);
+    // _fragColor = vec4( 0.5  * (fragNormal + vec3(1.0)), 1.0);
 
     vec3 color = mix(ambientSH, ambientMap, float(sphereUV.x > 0.0));
+    color = applySkyboxColorMix(color, getLightAmbientColor(lightAmbient), getLightAmbientBlend(lightAmbient));
 
     color = color * 1.0 - base.w + base.xyz * base.w;
     const float INV_GAMMA_22 = 1.0 / 2.2;

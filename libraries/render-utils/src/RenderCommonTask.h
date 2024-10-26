@@ -11,6 +11,8 @@
 #define hifi_RenderCommonTask_h
 
 #include <gpu/Pipeline.h>
+#include <render/CullTask.h>
+
 #include "LightStage.h"
 #include "HazeStage.h"
 #include "LightingModel.h"
@@ -154,6 +156,30 @@ public:
 
 protected:
     render::Args::RenderMethod _method;
+};
+
+class RenderMirrorTask {
+public:
+    using Inputs = render::VaryingSet2<render::ItemBounds, gpu::FramebufferPointer>;
+    using JobModel = render::Task::ModelI<RenderMirrorTask, Inputs>;
+
+    RenderMirrorTask() {}
+
+    void build(JobModel& task, const render::Varying& inputs, render::Varying& output, size_t mirrorIndex, render::CullFunctor cullFunctor,
+        uint8_t transformOffset, size_t depth);
+
+    static const size_t MAX_MIRROR_DEPTH { 3 };
+    static const size_t MAX_MIRRORS_PER_LEVEL { 3 };
+};
+
+class RenderSimulateTask {
+public:
+    using Inputs = render::VaryingSet2<render::ItemBounds, gpu::FramebufferPointer>;
+    using JobModel = render::Job::ModelI<RenderSimulateTask, Inputs>;
+
+    RenderSimulateTask() {}
+
+    void run(const render::RenderContextPointer& renderContext, const Inputs& inputs);
 };
 
 #endif // hifi_RenderDeferredTask_h

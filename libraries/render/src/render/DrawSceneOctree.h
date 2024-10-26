@@ -55,11 +55,11 @@ namespace render {
     };
 
     class DrawSceneOctree {
-        gpu::PipelinePointer _drawCellBoundsPipeline;
-        gpu::PipelinePointer _drawLODReticlePipeline;
-        gpu::PipelinePointer _drawItemBoundPipeline;
-        gpu::BufferPointer _cellBoundsBuffer;
-        gpu::Stream::FormatPointer _cellBoundsFormat;
+        static gpu::PipelinePointer _drawCellBoundsPipeline;
+        static gpu::PipelinePointer _drawLODReticlePipeline;
+        static gpu::PipelinePointer _drawItemBoundPipeline;
+        static gpu::Stream::FormatPointer _cellBoundsFormat;
+        gpu::BufferPointer _cellBoundsBuffer { std::make_shared<gpu::Buffer>() };
 
         // initialized by Config
         bool _showVisibleCells;
@@ -70,17 +70,17 @@ namespace render {
         using Config = DrawSceneOctreeConfig;
         using JobModel = Job::ModelI<DrawSceneOctree, ItemSpatialTree::ItemSelection, Config>;
 
-        DrawSceneOctree(uint transformSlot) : _transformSlot(transformSlot) {}
+        DrawSceneOctree(uint transformSlot);
 
         void configure(const Config& config);
         void run(const RenderContextPointer& renderContext, const ItemSpatialTree::ItemSelection& selection);
 
-        const gpu::PipelinePointer getDrawCellBoundsPipeline();
-        const gpu::PipelinePointer getDrawLODReticlePipeline();
-        const gpu::PipelinePointer getDrawItemBoundPipeline();
-
     private:
         uint _transformSlot;
+
+        static const gpu::PipelinePointer getDrawCellBoundsPipeline();
+        static const gpu::PipelinePointer getDrawLODReticlePipeline();
+        static const gpu::PipelinePointer getDrawItemBoundPipeline();
     };
 
 
@@ -115,7 +115,7 @@ namespace render {
     };
 
     class DrawItemSelection {
-        gpu::PipelinePointer _drawItemBoundPipeline;
+        static gpu::PipelinePointer _drawItemBoundPipeline;
         gpu::BufferPointer _boundsBufferInside;
         gpu::BufferPointer _boundsBufferInsideSubcell;
         gpu::BufferPointer _boundsBufferPartial;
@@ -135,10 +135,10 @@ namespace render {
         void configure(const Config& config);
         void run(const RenderContextPointer& renderContext, const ItemSpatialTree::ItemSelection& selection);
 
-        const gpu::PipelinePointer getDrawItemBoundPipeline();
-
     private:
         uint _transformSlot;
+
+        static const gpu::PipelinePointer getDrawItemBoundPipeline();
     };
 }
 

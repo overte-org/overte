@@ -75,7 +75,7 @@ Rectangle {
         }
 
         Switch {
-            id: masterSwitch;
+            id: primarySwitch;
             focusPolicy: Qt.ClickFocus;
             width: 65;
             height: 30;
@@ -102,14 +102,14 @@ Rectangle {
 
             background: Rectangle {
                 color: parent.checked ? "#1FC6A6" : hifi.colors.white;
-                implicitWidth: masterSwitch.width;
-                implicitHeight: masterSwitch.height;
+                implicitWidth: primarySwitch.width;
+                implicitHeight: primarySwitch.height;
                 radius: height/2;
             }
 
             indicator: Rectangle {
                 id: switchHandle;
-                implicitWidth: masterSwitch.height - 4;
+                implicitWidth: primarySwitch.height - 4;
                 implicitHeight: implicitWidth;
                 radius: implicitWidth/2;
                 border.color: "#E3E3E3";
@@ -117,7 +117,7 @@ Rectangle {
                 x: Math.max(4, Math.min(parent.width - width - 4, parent.visualPosition * parent.width - (width / 2) - 4))
                 y: parent.height / 2 - height / 2;
                 Behavior on x {
-                    enabled: !masterSwitch.down
+                    enabled: !primarySwitch.down
                     SmoothedAnimation { velocity: 200 }
                 }
 
@@ -186,11 +186,11 @@ Rectangle {
             anchors.top: parent.top;
             anchors.right: parent.right;
             height: 250;
-            color: masterSwitch.checked ? "transparent" : "black";
+            color: primarySwitch.checked ? "transparent" : "black";
 
             AnimatedImage {
                 source: "static.gif"
-                visible: !masterSwitch.checked;
+                visible: !primarySwitch.checked;
                 anchors.fill: parent;
                 opacity: 0.15;
             }
@@ -201,7 +201,7 @@ Rectangle {
                 text: "Turn on Spectator Camera for a preview\nof " + (HMD.active ? "what your monitor shows." : "the camera's view.");
                 size: 16;
                 color: hifi.colors.white;
-                visible: !masterSwitch.checked;
+                visible: !primarySwitch.checked;
                 anchors.fill: parent;
                 horizontalAlignment: Text.AlignHCenter;
                 verticalAlignment: Text.AlignVCenter;
@@ -220,13 +220,13 @@ Rectangle {
             // Spectator Camera Preview
             Hifi.ResourceImageItem {
                 id: spectatorCameraPreview;
-                visible: masterSwitch.checked && !root.processing360Snapshot && !root.processingStillSnapshot;
+                visible: primarySwitch.checked && !root.processing360Snapshot && !root.processingStillSnapshot;
                 url: showCameraView.checked || !HMD.active ? "resource://spectatorCameraFrame" : "resource://hmdPreviewFrame";
-                ready: masterSwitch.checked;
+                ready: primarySwitch.checked;
                 mirrorVertically: true;
                 anchors.fill: parent;
                 onVisibleChanged: {
-                    ready = masterSwitch.checked;
+                    ready = primarySwitch.checked;
                     update();
                 }
             }
@@ -339,7 +339,7 @@ Rectangle {
             }
             HifiControlsUit.CheckBox {
                 id: flashCheckBox;
-                visible: masterSwitch.checked;
+                visible: primarySwitch.checked;
                 color: hifi.colors.white;
                 colorScheme: hifi.colorSchemes.dark;
                 anchors.right: takeSnapshotButton.left;
@@ -352,7 +352,7 @@ Rectangle {
             }
             HifiControlsUit.Button {
                 id: takeSnapshotButton;
-                enabled: masterSwitch.checked;
+                enabled: primarySwitch.checked;
                 text: "SNAP PICTURE";
                 colorScheme: hifi.colorSchemes.light;
                 color: hifi.buttons.white;
@@ -369,7 +369,7 @@ Rectangle {
             }
             HifiControlsUit.Button {
                 id: take360SnapshotButton;
-                enabled: masterSwitch.checked;
+                enabled: primarySwitch.checked;
                 text: "SNAP 360";
                 colorScheme: hifi.colorSchemes.light;
                 color: hifi.buttons.white;
@@ -397,7 +397,7 @@ Rectangle {
 
             Item {
                 id: fieldOfView;
-                visible: masterSwitch.checked;
+                visible: primarySwitch.checked;
                 anchors.top: parent.top;
                 anchors.left: parent.left;
                 anchors.right: parent.right;
@@ -622,7 +622,7 @@ Rectangle {
     function fromScript(message) {
         switch (message.method) {
         case 'initializeUI':
-            masterSwitch.checked = message.masterSwitchOn;
+            primarySwitch.checked = message.primarySwitchOn;
             flashCheckBox.checked = message.flashCheckboxChecked;
             showCameraView.checked = message.monitorShowsCamView;
             showHmdPreview.checked = !message.monitorShowsCamView;

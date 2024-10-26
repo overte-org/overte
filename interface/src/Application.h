@@ -431,6 +431,16 @@ public slots:
     Q_INVOKABLE void loadAddAvatarBookmarkDialog() const;
     Q_INVOKABLE void loadAvatarBrowser() const;
     Q_INVOKABLE SharedSoundPointer getSampleSound() const;
+    /**
+     * @brief Shows/hides VR keyboard input for Overlay windows
+     *
+     * This is used by QML scripts to show and hide VR keyboard. Unlike JS API Keyboard.raised = true,
+     * with showVRKeyboardForHudUI the input is passed to the active window on the overlay first.
+     *
+     * @param show
+     * If set to true, then keyboard is shown, for false it's hidden.
+     */
+    Q_INVOKABLE void showVRKeyboardForHudUI(bool show);
 
     void showDialog(const QUrl& widgetUrl, const QUrl& tabletUrl, const QString& name) const;
 
@@ -545,9 +555,6 @@ private slots:
     bool acceptSnapshot(const QString& urlString);
     bool askToSetAvatarUrl(const QString& url);
     bool askToLoadScript(const QString& scriptFilenameOrURL);
-
-    bool askToWearAvatarAttachmentUrl(const QString& url);
-    void displayAvatarAttachmentWarning(const QString& message) const;
 
     bool askToReplaceDomainContent(const QString& url);
 
@@ -799,8 +806,6 @@ private:
 
     bool _reticleClickPressed { false };
     bool _keyboardFocusWaitingOnRenderable { false };
-
-    int _avatarAttachmentRequest = 0;
 
     bool _settingsLoaded { false };
 
