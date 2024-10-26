@@ -179,9 +179,15 @@
           "advanced": true
         },
         {
-          "name": "ldap_search_base",
-          "label": "LDAP base search",
-          "help": "The LDAP base that the domain server will use to make LDAP API calls.",
+          "name": "ldap_search_user_base",
+          "label": "LDAP user base",
+          "help": "The LDAP base that the domain server will use to make LDAP API calls.<br>Example: 'ou=users,dc=my-company,dc=com'",
+          "advanced": true
+        },
+        {
+          "name": "ldap_search_group_base",
+          "label": "LDAP group base",
+          "help": "The LDAP base that the domain server will use to make LDAP API calls to find group memberships.<br>Example: 'ou=groups,dc=my-company,dc=com'",
           "advanced": true
         }
       ]

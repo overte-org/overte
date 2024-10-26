@@ -114,27 +114,30 @@ void DomainAccountManager::requestAccessTokenLDAP(const QString& username, const
     _currentAuth.accessToken = "";
     _currentAuth.refreshToken = "";
 
-    const bool isValidLDAPCredentials = LDAPAccount::isValidCredentials(username, password);
+    LDAPAccount::setLDAPServerURL(_currentAuth.authURL.toString());
 
-    if (isValidLDAPCredentials) {
-        // Set the password as the access token.
-        _currentAuth.accessToken = password;
+    // NOTE: Do not check if the credentials are valid on the client side first. Let the server handle everything.
+    // FIXME: Check that this is secure. Worst comes to worse we can splice in cryptography to make it secure at the cost of sanity for future developers. -AD
+    // const bool isValidLDAPCredentials = LDAPAccount::isValidCredentials(username, password);
+    // if (isValidLDAPCredentials) {
+    // Set the password as the access token.
+    _currentAuth.accessToken = password;
 
-        // Set the authenticated host name.
-        auto nodeList = DependencyManager::get<NodeList>();
-        _currentAuth.authedDomainName = nodeList->getDomainHandler().getHostname();
+    // Set the authenticated host name.
+    auto nodeList = DependencyManager::get<NodeList>();
+    _currentAuth.authedDomainName = nodeList->getDomainHandler().getHostname();
 
-        // Remember domain login for the current Interface session.
-        _knownAuths.insert(_currentAuth.domainURL, _currentAuth);
+    // Remember domain login for the current Interface session.
+    _knownAuths.insert(_currentAuth.domainURL, _currentAuth);
 
-        emit loginComplete();
-        return;
-    }
+    emit loginComplete();
+    return;
+    // }
 
+    // TODO: Failure state: This code will not run due to not checking validity of credentials. See notes and fixmes above.
     // Failure.
     // FIXME: QML does not update to show sign in failure.
-    qCDebug(networking) << "LDAP account failed to verify";
-    emit loginFailed();
+    // qCDebug(networking) << "LDAP account failed to verify";
 }
 
 void DomainAccountManager::requestAccessTokenFinished() {

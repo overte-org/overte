@@ -460,12 +460,11 @@ const QString AUTHENTICATION_WORDPRESS_URL_BASE = "authentication.wordpress_url_
 const QString AUTHENTICATION_PLUGIN_CLIENT_ID = "authentication.plugin_client_id";
 const QString LDAP_AUTHENTICATION_ENABLE = "ldap_authentication.enable_ldap";
 const QString LDAP_AUTHENTICATION_URL_BASE = "ldap_authentication.ldap_server";
-const QString LDAP_AUTHENTICATION_BASE_SEARCH = "ldap_authentication.ldap_search_base";
+const QString LDAP_AUTHENTICATION_BASE_USER_SEARCH = "ldap_authentication.ldap_search_user_base";
+const QString LDAP_AUTHENTICATION_BASE_GROUP_SEARCH = "ldap_authentication.ldap_search_group_base";
 const QString MAXIMUM_USER_CAPACITY = "security.maximum_user_capacity";
 const QString MAXIMUM_USER_CAPACITY_REDIRECT_LOCATION = "security.maximum_user_capacity_redirect_location";
 
-// TODO LDAP: domainUsername does not preserve capitalization. Users with capital letters in the username can not sign in.
-// FIXME LDAP: accessToken is used to store the password in plain text? Don't.
 SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnectionData& nodeConnection,
                                                                const QString& username,
                                                                const QByteArray& usernameSignature,
@@ -557,7 +556,6 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
     if (domainHasLogin("ldap") && !domainUsername.isEmpty()) {
         qDebug() << "Attempting to sign in "<< username << " as " << domainUsername << " via LDAP";
         // TODO: Get domain directory
-        // TODO: Get domain LDAP server url
 
         bool isValidLDAPCredentials = LDAPAccount::isValidCredentials(domainUsername, domainAccessToken);
         if (isValidLDAPCredentials) {
@@ -575,7 +573,9 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
                                       nodeConnection.machineFingerprint);
 
     if (!userPerms.can(NodePermissions::Permission::canConnectToDomain)) {
-        if (domainHasLogin("")) {
+        // FIXME: If server has wordpress enabled, LDAP becomes impossible. Wordpress must be disabled (or invalid :P) for LDAP check.
+        // Fine for now, will need to be addressed soon. -AD
+        if (domainHasLogin("wordpress")) {
             QString domainAuthURL;
             auto domainAuthURLVariant = _server->_settingsManager.valueForKeyPath(AUTHENTICATION_OAUTH2_URL_PATH);
             if (domainAuthURLVariant.canConvert<QString>()) {
@@ -590,7 +590,32 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
             sendConnectionDeniedPacket("You lack the required domain permissions to connect to this domain.",
                 nodeConnection.senderSockAddr, DomainHandler::ConnectionRefusedReason::NotAuthorizedDomain,
                     domainAuthURL + "|" + domainAuthClientID);
-        } else {
+        }
+        if (domainHasLogin("ldap")) {
+            QString ldapServerURL;
+            auto ldapServerURLVariant = _server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_URL_BASE);
+            if (ldapServerURLVariant.canConvert<QString>()) {
+                // qDebug() << "TRYING TO SET " << ldapServerURLVariant.toString() << " AS URL!";
+                ldapServerURL = ldapServerURLVariant.toString();
+                LDAPAccount::setLDAPServerURL(ldapServerURLVariant.toString());
+            }
+
+            auto ldapUserBaseVariant = _server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_BASE_USER_SEARCH);
+            if (ldapUserBaseVariant.canConvert<QString>()) {
+                LDAPAccount::setLDAPUserBase(ldapUserBaseVariant.toString());
+            }
+
+            auto ldapGroupBaseVariant = _server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_BASE_GROUP_SEARCH);
+            if (ldapGroupBaseVariant.canConvert<QString>()) {
+                LDAPAccount::setLDAPGroupBase(ldapGroupBaseVariant.toString());
+            }
+            // FIXME: As this uses existing infrastructure for authentication, this format is likely required just to prevent weird issues.
+            // This will need to be addressed soon as well. -AD
+            sendConnectionDeniedPacket("You lack the required domain permissions to connect to this domain.",
+                nodeConnection.senderSockAddr, DomainHandler::ConnectionRefusedReason::NotAuthorizedDomain,
+                    ldapServerURL + "|" + "");
+        }
+        else {
             sendConnectionDeniedPacket("You lack the required Directory Services permissions to connect to this domain.",
                 nodeConnection.senderSockAddr, DomainHandler::ConnectionRefusedReason::NotAuthorizedMetaverse);
         }
@@ -785,7 +810,7 @@ bool DomainGatekeeper::verifyUserSignature(const QString& username,
         }
     } else {
         if (!senderSockAddr.isNull()) {
-            qDebug() << "Insufficient data to decrypt username signature - delaying connection.";
+            qDebug() << "Insufficient data to decrypt username signature for "<< username <<" - delaying connection.";
         }
     }
 
@@ -1257,7 +1282,8 @@ bool DomainGatekeeper::domainHasLogin(const QString& type = "") {
         // The domain may have an LDAP server it can connect to.
         domainHasLDAP = _server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_ENABLE).toBool()
             && !_server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_URL_BASE).toString().isEmpty()
-            && !_server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_BASE_SEARCH).toString().isEmpty();
+            && !_server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_BASE_USER_SEARCH).toString().isEmpty()
+            && !_server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_BASE_GROUP_SEARCH).toString().isEmpty();
     }
     return domainHasWordpress || domainHasLDAP;
 }
