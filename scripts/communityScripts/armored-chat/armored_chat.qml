@@ -205,6 +205,8 @@ Rectangle {
                         height: parent.height
                         placeholderText: pageVal.charAt(0).toUpperCase() + pageVal.slice(1) + " chat message..."
                         clip: false
+                        font.italic: text == ""
+
                         Keys.onPressed: {
                             if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && !(event.modifiers & Qt.ShiftModifier)) {
                                 event.accepted = true;
