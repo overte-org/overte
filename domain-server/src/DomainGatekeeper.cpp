@@ -519,7 +519,7 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
     QStringList verifiedDomainUserGroups;
 
     if (domainHasLogin("wordpress") && !domainUsername.isEmpty()) {
-        qDebug() << "Attempting to sign in "<< username << " as " << domainUsername << " via LDAP";
+        qDebug() << "Attempting to sign in "<< username << " as " << domainUsername << " via Wordpress";
 
         if (domainAccessToken.isEmpty()) {
             // User is attempting to prove their domain identity.
