@@ -1062,7 +1062,7 @@ Rectangle {
             width: myCardWidth;
             height: parent.height;
             // Anchors
-            anchors.top: parent.children[0].bottom
+            anchors.top: parent.children[0].bottom;
             anchors.left: parent.left;
         }
         Item {
