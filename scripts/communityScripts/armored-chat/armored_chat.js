@@ -14,6 +14,7 @@
     var settings = {
         external_window: false,
         maximum_messages: 200,
+        join_notification: true
     };
 
     // Global vars
@@ -147,17 +148,16 @@
                 _sendMessage(event.message, event.channel);
                 break;
             case "setting_change":
+                // Set the setting value, and save the config
                 settings[event.setting] = event.value; // Update local settings
                 _saveSettings(); // Save local settings
 
+                // Extra actions to preform. 
                 switch (event.setting) {
                     case "external_window":
                         chatOverlayWindow.presentationMode = event.value
                             ? Desktop.PresentationMode.NATIVE
                             : Desktop.PresentationMode.VIRTUAL;
-                        break;
-                    case "maximum_messages":
-                        // Do nothing
                         break;
                 }
 
@@ -230,13 +230,15 @@
             message.message = `${displayName} ${type}`;
 
             // Show new message on screen
-            Messages.sendLocalMessage(
-                "Floof-Notif",
-                JSON.stringify({
-                    sender: displayName,
-                    text: type,
-                })
-            );
+            if (settings.join_notification){
+                Messages.sendLocalMessage(
+                    "Floof-Notif",
+                    JSON.stringify({
+                        sender: displayName,
+                        text: type,
+                    })
+                );
+            }
 
             _emitEvent({ type: "notification", ...message });
         }, 1500);
