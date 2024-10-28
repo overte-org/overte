@@ -1039,6 +1039,14 @@ Rectangle {
         anchors.top: pal.top;
         anchors.topMargin: 10;
         anchors.left: pal.left;
+        RalewayRegular {
+            text: " Display Name";
+            size: hifi.fontSizes.tabularData;
+            anchors.left: parent.left;
+
+            color: hifi.colors.baseGrayHighlight;
+            verticalAlignment: Text.AlignTop;
+        }
         // This NameCard refers to the current user's NameCard (the one above the nearbyTable)
         NameCard {
             id: myCard;
@@ -1054,7 +1062,7 @@ Rectangle {
             width: myCardWidth;
             height: parent.height;
             // Anchors
-            anchors.top: parent.top
+            anchors.top: parent.children[0].bottom
             anchors.left: parent.left;
         }
         Item {
@@ -1066,7 +1074,7 @@ Rectangle {
 
             RalewayRegular {
                 id: availabilityText;
-                text: "set availability";
+                text: "Availability";
                 // Text size
                 size: hifi.fontSizes.tabularData;
                 // Anchors
