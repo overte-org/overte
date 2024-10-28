@@ -6,6 +6,7 @@ target_openssl()
 target_tbb()
 add_crashpad()
 target_breakpad()
+target_openldap()
 
 if (WIN32 OR (UNIX AND NOT APPLE))
     if (NOT DISABLE_WEBRTC )
