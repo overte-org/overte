@@ -15,7 +15,6 @@
 
 #include <iostream>
 #include <cstring>
-#include <cctype>
 #include <vector>
 #include <regex>
 #include <string>
@@ -26,6 +25,13 @@ QString LDAPAccount::ldapServerURL;
 QString LDAPAccount::ldapServerUserBase;
 QString LDAPAccount::ldapServerGroupBase;
 
+/**
+ * @brief Check that a given username and password are valid cridentials for a known LDAP server
+ *
+ * @param username The account username
+ * @param password The account password
+ * @return bool
+ */
 bool LDAPAccount::isValidCredentials(const QString& username, const QString& password) {
     LDAP* ldapHandle = initialize(); // Initialize the ldap connection.
     if (ldapHandle == nullptr) {return false;}
@@ -40,6 +46,13 @@ bool LDAPAccount::isValidCredentials(const QString& username, const QString& pas
     return true;
 }
 
+/**
+ * @brief Returns a list of strings that represent an accounts groups on a given LDAP server
+ *
+ * @param username The account username
+ * @param password The account password
+ * @return std::vector<std::string>
+ */
 std::vector<std::string> LDAPAccount::getRolesAsStrings(const QString& username, const QString& password) {
     berval** memberOf;
     std::regex cnRegex(R"(cn=([^,]+))");
@@ -108,6 +121,11 @@ std::vector<std::string> LDAPAccount::getRolesAsStrings(const QString& username,
     return roles;
 }
 
+/**
+ * @brief Initializes a LDAP connection
+ *
+ * @return LDAP*
+ */
 LDAP* LDAPAccount::initialize(){
     LDAP* ldapHandle;
     // const char* saslMechanism = "LDAP_SASL_SIMPLE";
@@ -130,12 +148,24 @@ LDAP* LDAPAccount::initialize(){
     }
     return ldapHandle;
 }
+/**
+ * @brief Construct a full username in DN notation from the servers current LDAP server setting.
+ *
+ * @return QString
+ */
 QString LDAPAccount::buildDNFromUsername(const QString& username) {
-    // Build the DN
     QString loginDN = "cn=" + username + "," + readLDAPUserBase();
     return loginDN;
 }
 
+/**
+ * @brief Construct a full username in DN notation from the servers current LDAP server setting.
+ *
+ * @param ldapHandle The LDAP connection to use to preform the bind
+ * @param username The account username
+ * @param password The account password
+ * @return int LDAP binding status code
+ */
 int LDAPAccount::login(LDAP* ldapHandle, const QString& username, const QString& password){
     QString loginDN = buildDNFromUsername(username);
 

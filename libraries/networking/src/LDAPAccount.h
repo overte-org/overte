@@ -33,8 +33,22 @@ public:
     static bool isValidCredentials(const QString& username, const QString& password);
     static std::vector<std::string> getRolesAsStrings(const QString& username, const QString& password);
 
+    /**
+    * @brief Set the url the server will use to attempt to connect to an LDAP server
+    * @param url The url of the server
+    */
     static void setLDAPServerURL(const QString& url) {ldapServerURL = url;}
+
+    /**
+    * @brief Set the base of the search that will be appended to the username.
+    * @param base The base of the users
+    */
     static void setLDAPUserBase(const QString& base) {ldapServerUserBase = base;}
+
+    /**
+    * @brief Set the base of the search that will be appended to the username.
+    * @param base The base of the groups
+    */
     static void setLDAPGroupBase(const QString& base) {ldapServerGroupBase = base;}
 
 
