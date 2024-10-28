@@ -115,6 +115,7 @@
         // Update qml view of to new message
         _emitEvent({ type: "show_message", ...message });
 
+        // Show new message on screen
         Messages.sendLocalMessage(
             "Floof-Notif",
             JSON.stringify({
@@ -227,6 +228,15 @@
             // Format the packet
             let message = {};
             message.message = `${displayName} ${type}`;
+
+            // Show new message on screen
+            Messages.sendLocalMessage(
+                "Floof-Notif",
+                JSON.stringify({
+                    sender: displayName,
+                    text: type,
+                })
+            );
 
             _emitEvent({ type: "notification", ...message });
         }, 1500);
