@@ -27,8 +27,6 @@
 #include "NodeList.h"
 #include "LDAPAccount.h"
 
-// FIXME: Generalize to other OAuth2 sources for domain login.
-
 const bool VERBOSE_HTTP_REQUEST_DEBUGGING = false;
 
 DomainAccountManager::DomainAccountManager() {
@@ -117,7 +115,6 @@ void DomainAccountManager::requestAccessTokenLDAP(const QString& username, const
     LDAPAccount::setLDAPServerURL(_currentAuth.authURL.toString());
 
     // NOTE: Do not check if the credentials are valid on the client side first. Let the server handle everything.
-    // FIXME: Check that this is secure. Worst comes to worse we can splice in cryptography to make it secure at the cost of sanity for future developers. -AD
     // const bool isValidLDAPCredentials = LDAPAccount::isValidCredentials(username, password);
     // if (isValidLDAPCredentials) {
     // Set the password as the access token.

@@ -109,9 +109,6 @@ std::vector<std::string> LDAPAccount::getRolesAsStrings(const QString& username,
 }
 
 LDAP* LDAPAccount::initialize(){
-    // TODO FIXME: Check to see if username/password is null
-    // TODO FIXME: Get domain URL or LDAP url?
-
     LDAP* ldapHandle;
     // const char* saslMechanism = "LDAP_SASL_SIMPLE";
     ulong version = LDAP_VERSION3;

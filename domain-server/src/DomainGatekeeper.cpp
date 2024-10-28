@@ -29,8 +29,6 @@
 #include "WarningsSuppression.h"
 #include "LDAPAccount.h"
 
-// TODO: A lot of references to "lowerUsername". Usernames are no longer lower case and the extra variable should be removed.
-
 using SharedAssignmentPointer = QSharedPointer<Assignment>;
 
 DomainGatekeeper::DomainGatekeeper(DomainServer* server) :
@@ -555,7 +553,6 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
     // Basic LDAP - Here to preform a basic LDAP connection to the server (if it exists)
     if (domainHasLogin("ldap") && !domainUsername.isEmpty()) {
         qDebug() << "Attempting to sign in "<< username << " as " << domainUsername << " via LDAP";
-        // TODO: Get domain directory
 
         bool isValidLDAPCredentials = LDAPAccount::isValidCredentials(domainUsername, domainAccessToken);
         if (isValidLDAPCredentials) {
@@ -741,13 +738,12 @@ bool DomainGatekeeper::verifyUserSignature(const QString& username,
                                            const QByteArray& usernameSignature,
                                            const SockAddr& senderSockAddr) {
     // it's possible this user can be allowed to connect, but we need to check their username signature
-    auto lowerUsername = username;
-    KeyFlagPair publicKeyPair = _userPublicKeys.value(lowerUsername);
+    KeyFlagPair publicKeyPair = _userPublicKeys.value(username);
 
     QByteArray publicKeyArray = publicKeyPair.first;
     bool isOptimisticKey = publicKeyPair.second;
 
-    const QUuid& connectionToken = _connectionTokenHash.value(lowerUsername);
+    const QUuid& connectionToken = _connectionTokenHash.value(username);
 
     if (!publicKeyArray.isEmpty() && !connectionToken.isNull()) {
         // if we do have a public key for the user, check for a signature match
@@ -759,7 +755,7 @@ bool DomainGatekeeper::verifyUserSignature(const QString& username,
         // first load up the public key into an RSA struct
         RSA* rsaPublicKey = d2i_RSA_PUBKEY(NULL, &publicKeyData, publicKeyArray.size());
 
-        QByteArray lowercaseUsernameUTF8 = lowerUsername.toUtf8();
+        QByteArray lowercaseUsernameUTF8 = username.toUtf8();
         QByteArray usernameWithToken = QCryptographicHash::hash(lowercaseUsernameUTF8.append(connectionToken.toRfc4122()),
                                                                 QCryptographicHash::Sha256);
 
@@ -863,12 +859,11 @@ void DomainGatekeeper::requestUserPublicKey(const QString& username, bool isOpti
         return;
     }
 
-    QString lowerUsername = username;
-    if (_inFlightPublicKeyRequests.contains(lowerUsername)) {
+    if (_inFlightPublicKeyRequests.contains(username)) {
         // public-key request for this username is already flight, not rerequesting
         return;
     }
-    _inFlightPublicKeyRequests.insert(lowerUsername, isOptimistic);
+    _inFlightPublicKeyRequests.insert(username, isOptimistic);
 
     // even if we have a public key for them right now, request a new one in case it has just changed
     JSONCallbackParameters callbackParams;
@@ -1091,12 +1086,11 @@ void DomainGatekeeper::getGroupMemberships(const QString& username) {
     json["groups"] = groupIDs;
 
     // if we've already asked, wait for the answer before asking again
-    QString lowerUsername = username;
-    if (_inFlightGroupMembershipsRequests.contains(lowerUsername)) {
+    if (_inFlightGroupMembershipsRequests.contains(username)) {
         // public-key request for this username is already flight, not rerequesting
         return;
     }
-    _inFlightGroupMembershipsRequests += lowerUsername;
+    _inFlightGroupMembershipsRequests += username;
 
 
     JSONCallbackParameters callbackParams;
