@@ -164,7 +164,7 @@
             case "action":
                 switch (event.action) {
                     case "erase_history":
-                        Settings.setValue("ArmoredChat-Messages", []);
+                        Settings.setValue("ArmoredChat-Messages", null);
                         _emitEvent({
                             type: "clear_messages",
                         });

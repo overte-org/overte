@@ -1,5 +1,5 @@
 import QtQuick 2.7
-import QtQuick.Controls 2.0
+import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import controlsUit 1.0 as HifiControlsUit
 
@@ -30,7 +30,7 @@ Rectangle {
         running: false
         repeat: false
         onTriggered: {
-           scrollToBottom();
+           scrollToBottom(true);
         }
     }
 
@@ -145,41 +145,45 @@ Rectangle {
             anchors.top: navigation_bar.bottom
             visible: ["local", "domain"].includes(pageVal) ? true : false
 
-
             // Chat Message History
-            ListView {
+            Flickable {
                 width: parent.width
                 height: parent.height - 40
+                contentWidth: parent.width
+                contentHeight: listview.height
                 clip: true
-                interactive: true
-                spacing: 5
-                id: listview
+                id: testflickable
 
-                delegate: Loader {
-                    property int delegateIndex: index
-                    property string delegateText: model.text
-                    property string delegateUsername: model.username
-                    property string delegateDate: model.date
-                    width: listview.width
+                ColumnLayout {
+                    id: listview //localChat
+                    Layout.fillWidth: true
 
-                    sourceComponent: {
-                        if (model.type === "chat") {
-                            return template_chat_message;
-                        } else if (model.type === "notification") {
-                            return template_notification;
+                    Repeater {
+                        model: getChannel(pageVal)
+                        delegate: Loader {
+                            property int delegateIndex: model.index
+                            property string delegateText: model.text
+                            property string delegateUsername: model.username
+                            property string delegateDate: model.date
+
+                            sourceComponent: template_chat_message
                         }
                     }
                 }
 
-                ScrollBar.vertical: ScrollBar {
-                    id: chat_scrollbar
-                    height: 100
-                    size: 0.05
+                ScrollBar.vertical: ScrollBar { 
+                    size: 100
+                    minimumSize: 0.1
                 }
 
-                model: getChannel(pageVal)
-
+                rebound: Transition {
+                    NumberAnimation {
+                        properties: "x,y"
+                        duration: 1
+                    }
+                }
             }
+
 
             ListModel {
                 id: local
@@ -187,7 +191,7 @@ Rectangle {
 
             ListModel {
                 id: domain
-             }
+            }
 
             // Chat Entry
             Rectangle {
@@ -346,7 +350,7 @@ Rectangle {
     Component {
         id: template_chat_message
 
-        Rectangle{
+        Rectangle {
             property int index: delegateIndex
             property string texttest: delegateText
             property string username: delegateUsername
@@ -354,6 +358,8 @@ Rectangle {
 
             height: Math.max(65, children[1].height + 30)
             color: index % 2 === 0 ? "transparent" : Qt.rgba(0.15,0.15,0.15,1)
+            width: listview.parent.parent.width
+            Layout.fillWidth: true
 
             Item {
                 width: parent.width - 10
@@ -372,7 +378,7 @@ Rectangle {
                 }
             }
 
-            TextEdit{
+            TextEdit {
                 anchors.top: parent.children[0].bottom
                 x: 5
                 text: texttest
@@ -460,9 +466,21 @@ Rectangle {
         "domain": domain,
     }
 
-    function scrollToBottom() {
-        if (listview.count == 0) return;
-        listview.positionViewAtEnd();
+    function scrollToBottom(bypassDistanceCheck = false, extraMoveDistance = 0) {
+        const totalHeight = listview.height; // Total height of the content
+        const currentPosition = testflickable.contentY; // Current position of the view
+        const windowHeight = listview.parent.parent.height; // Total height of the window
+        const bottomPosition = currentPosition + windowHeight;
+
+        // Check if the view is within 300 units from the bottom
+        const closeEnoughToBottom = totalHeight - bottomPosition <= 300;
+        if (!bypassDistanceCheck && !closeEnoughToBottom) return;
+        if (totalHeight < windowHeight) return; // No reason to scroll, we don't have an overflow.
+        if (bottomPosition == totalHeight) return; // At the bottom, do nothing.
+
+        testflickable.contentY = listview.height - listview.parent.parent.height
+        // testflickable.flick(0, -1000)
+        testflickable.returnToBounds();
     }
 
 
@@ -471,13 +489,13 @@ Rectangle {
 
         // Format content
         message = formatContent(message);
-
         message = embedImages(message);
 
         if (type === "notification"){
             channel.append({ text: message, date: date, type: "notification" });
             last_message_user = "";
-            scrollToBottom();
+            scrollToBottom(null, 30);
+
             last_message_time = new Date();
             return;
         }
@@ -489,22 +507,18 @@ Rectangle {
         var last_item_index = channel.count - 1;
         var last_item = channel.get(last_item_index);
 
-		// FIXME: When adding a new message this would check to see if we could append the incoming message
-		// to the bottom of the last message. This current implimentation causes issues with scrollToBottom()
-		// Specifically, scrolling to the bottom does not like image embeds.
-		// This needs to be reworked entirely before it can be reimplimented 
-        // if (last_message_user === username && elapsed_minutes < 1 && last_item){
-        //     message = "<br>" + message 
-        //     last_item.text = last_item.text += "\n" + message;
-        //     scrollToBottom()
-        //     last_message_time = new Date();
-        //     return;
-        // }
+        if (last_message_user === username && elapsed_minutes < 1 && last_item){
+            message = "<br>" + message 
+            last_item.text = last_item.text += "\n" + message;
+            load_scroll_timer.running = true;
+            last_message_time = new Date();
+            return;
+        }
 
         last_message_user = username;
         last_message_time = new Date();
         channel.append({ text: message, username: username, date: date, type: type });
-        scrollToBottom();
+        load_scroll_timer.running = true;
     }
 
     function getChannel(id) {
