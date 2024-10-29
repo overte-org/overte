@@ -155,7 +155,7 @@ Rectangle {
                 id: testflickable
 
                 ColumnLayout {
-                    id: listview //localChat
+                    id: listview 
                     Layout.fillWidth: true
 
                     Repeater {
