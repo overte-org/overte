@@ -165,6 +165,7 @@
                 switch (event.action) {
                     case "erase_history":
                         Settings.setValue("ArmoredChat-Messages", null);
+                        messageHistory = [];
                         _emitEvent({
                             type: "clear_messages",
                         });
