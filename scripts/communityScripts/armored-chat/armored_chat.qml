@@ -152,7 +152,7 @@ Rectangle {
                 contentWidth: parent.width
                 contentHeight: listview.height
                 clip: true
-                id: testflickable
+                id: messageViewFlickable
 
                 ColumnLayout {
                     id: listview 
@@ -466,8 +466,6 @@ Rectangle {
 
     }
 
-
-
     property var channels: {
         "local": local,
         "domain": domain,
@@ -475,7 +473,7 @@ Rectangle {
 
     function scrollToBottom(bypassDistanceCheck = false, extraMoveDistance = 0) {
         const totalHeight = listview.height; // Total height of the content
-        const currentPosition = testflickable.contentY; // Current position of the view
+        const currentPosition = messageViewFlickable.contentY; // Current position of the view
         const windowHeight = listview.parent.parent.height; // Total height of the window
         const bottomPosition = currentPosition + windowHeight;
 
@@ -485,9 +483,8 @@ Rectangle {
         if (totalHeight < windowHeight) return; // No reason to scroll, we don't have an overflow.
         if (bottomPosition == totalHeight) return; // At the bottom, do nothing.
 
-        testflickable.contentY = listview.height - listview.parent.parent.height
-        // testflickable.flick(0, -1000)
-        testflickable.returnToBounds();
+        messageViewFlickable.contentY = listview.height - listview.parent.parent.height;
+        messageViewFlickable.returnToBounds();
     }
 
 
