@@ -166,7 +166,14 @@ Rectangle {
                             property string delegateUsername: model.username
                             property string delegateDate: model.date
 
-                            sourceComponent: template_chat_message
+                            sourceComponent: {
+                                if (model.type === "chat") {
+                                    return template_chat_message;
+                                } else if (model.type === "notification") {
+                                    return template_notification;
+                                }
+                            }
+                        
                         }
                     }
                 }
