@@ -68,7 +68,7 @@ void RenderForwardTask::configure(const Config& config) {
     preparePrimaryBufferConfig->setResolutionScale(config.resolutionScale);
 }
 
-void RenderForwardTask::build(JobModel& task, const render::Varying& input, render::Varying& output, uint8_t transformOffset, render::CullFunctor cullFunctor, size_t depth) {
+void RenderForwardTask::build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, uint transformOffset, size_t depth) {
     task.addJob<SetRenderMethod>("SetRenderMethodTask", render::Args::FORWARD);
 
     // Prepare the ShapePipelines

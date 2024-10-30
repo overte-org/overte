@@ -48,9 +48,11 @@ public:
 
     RenderViewTask() {}
 
+    // each view uses 1 transform for the main view, and one for the background, so these need to be increments of 2
     enum TransformOffset: uint8_t {
         MAIN_VIEW = 0,
-        SECONDARY_VIEW = 2 // each view uses 1 transform for the main view, and one for the background, so these need to be increments of 2
+        SECONDARY_VIEW = 2,
+        FIRST_MIRROR_VIEW = 4
     };
 
     void build(JobModel& task, const render::Varying& inputs, render::Varying& outputs, render::CullFunctor cullFunctor,

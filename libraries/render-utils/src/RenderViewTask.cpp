@@ -30,14 +30,14 @@ void RenderShadowsAndDeferredTask::build(JobModel& task, const render::Varying& 
     const auto shadowTaskOut = task.addJob<RenderShadowTask>("RenderShadowTask", shadowTaskIn, cullFunctor, tagBits, tagMask);
 
     const auto renderDeferredInput = RenderDeferredTask::Input(items, lightingModel, lightingStageFramesAndZones, shadowTaskOut).asVarying();
-    task.addJob<RenderDeferredTask>("RenderDeferredTask", renderDeferredInput, transformOffset, cullFunctor, depth);
+    task.addJob<RenderDeferredTask>("RenderDeferredTask", renderDeferredInput, cullFunctor, transformOffset, depth);
 }
 
 void DeferredForwardSwitchJob::build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, uint8_t tagBits,
         uint8_t tagMask, uint8_t transformOffset, size_t depth) {
     task.addBranch<RenderShadowsAndDeferredTask>("RenderShadowsAndDeferredTask", 0, input, cullFunctor, tagBits, tagMask, transformOffset, depth);
 
-    task.addBranch<RenderForwardTask>("RenderForwardTask", 1, input, transformOffset, cullFunctor, depth);
+    task.addBranch<RenderForwardTask>("RenderForwardTask", 1, input, cullFunctor, transformOffset, depth);
 }
 
 void RenderViewTask::build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, uint8_t tagBits, uint8_t tagMask,
@@ -55,6 +55,6 @@ void RenderViewTask::build(JobModel& task, const render::Varying& input, render:
         task.addJob<DeferredForwardSwitchJob>("DeferredForwardSwitch", deferredForwardIn, cullFunctor, tagBits, tagMask, transformOffset, depth);
 #else
         const auto renderInput = RenderForwardTask::Input(items, lightingModel, lightingStageFramesAndZones).asVarying();
-        task.addJob<RenderForwardTask>("RenderForwardTask", renderInput, transformOffset);
+        task.addJob<RenderForwardTask>("RenderForwardTask", renderInput, cullFunctor, transformOffset, depth);
 #endif
 }

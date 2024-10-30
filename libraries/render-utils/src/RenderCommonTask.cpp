@@ -52,7 +52,7 @@ void EndGPURangeTimer::run(const render::RenderContextPointer& renderContext, co
     config->setGPUBatchRunTime(timer->getGPUAverage(), timer->getBatchAverage());
 }
 
-DrawLayered3D::DrawLayered3D(const render::ShapePlumberPointer& shapePlumber, bool opaque, bool jitter, unsigned int transformSlot) :
+DrawLayered3D::DrawLayered3D(const render::ShapePlumberPointer& shapePlumber, bool opaque, bool jitter, uint transformSlot) :
     _shapePlumber(shapePlumber),
     _transformSlot(transformSlot),
     _opaquePass(opaque),
@@ -343,7 +343,7 @@ public:
     using Inputs = SetupMirrorTask::Outputs;
     using JobModel = render::Job::ModelI<DrawMirrorTask, Inputs>;
 
-    DrawMirrorTask() {
+    DrawMirrorTask(uint transformSlot) : _transformSlot(transformSlot) {
         static std::once_flag once;
         std::call_once(once, [this] {
             auto state = std::make_shared<gpu::State>();
@@ -379,13 +379,7 @@ public:
             batch.setViewportTransform(args->_viewport);
             batch.setStateScissorRect(args->_viewport);
 
-            glm::mat4 projMat;
-            Transform viewMat;
-            args->getViewFrustum().evalProjectionMatrix(projMat);
-            args->getViewFrustum().evalViewTransform(viewMat);
-
-            batch.setProjectionTransform(projMat);
-            batch.setViewTransform(viewMat);
+            batch.setSavedViewProjectionTransform(_transformSlot);
 
             batch.setResourceTexture(gr::Texture::MaterialMirror, args->_blitFramebuffer->getRenderBuffer(0));
 
@@ -406,20 +400,54 @@ public:
 private:
     static ShapePlumberPointer _forwardPipelines;
     static ShapePlumberPointer _deferredPipelines;
+
+    uint _transformSlot;
 };
 
 ShapePlumberPointer DrawMirrorTask::_forwardPipelines = std::make_shared<ShapePlumber>();
 ShapePlumberPointer DrawMirrorTask::_deferredPipelines = std::make_shared<ShapePlumber>();
 
 void RenderMirrorTask::build(JobModel& task, const render::Varying& inputs, render::Varying& output, size_t mirrorIndex, render::CullFunctor cullFunctor,
-        uint8_t transformOffset, size_t depth) {
+        uint transformOffset,size_t depth) {
     size_t nextDepth = depth + 1;
     const auto setupOutput = task.addJob<SetupMirrorTask>("SetupMirror" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), inputs, mirrorIndex, nextDepth);
 
-    task.addJob<RenderViewTask>("RenderMirrorView" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), cullFunctor, render::ItemKey::TAG_BITS_1,
-        render::ItemKey::TAG_BITS_1, (RenderViewTask::TransformOffset) transformOffset, nextDepth);
+    // Our primary view starts at transformOffset 0, and the secondary camera starts at transformOffset 2
+    // Our primary mirror views thus start after the secondary camera, at transformOffset 4, and the secondary
+    // camera mirror views start after all of the primary camera mirror views, at 4 + NUM_MAIN_MIRROR_SLOTS
+    static uint NUM_MAIN_MIRROR_SLOTS = 0;
+    static std::once_flag once;
+    std::call_once(once, [] {
+        for (size_t mirrorDepth = 0; mirrorDepth < MAX_MIRROR_DEPTH; mirrorDepth++) {
+            NUM_MAIN_MIRROR_SLOTS += pow(MAX_MIRRORS_PER_LEVEL, mirrorDepth + 1);
+        }
+        NUM_MAIN_MIRROR_SLOTS *= 2;
+    });
 
-    task.addJob<DrawMirrorTask>("DrawMirrorTask" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), setupOutput);
+    uint mirrorOffset;
+    if (transformOffset == RenderViewTask::TransformOffset::MAIN_VIEW) {
+        mirrorOffset = RenderViewTask::TransformOffset::FIRST_MIRROR_VIEW - 2;
+    } else if (transformOffset == RenderViewTask::TransformOffset::SECONDARY_VIEW) {
+        mirrorOffset = RenderViewTask::TransformOffset::FIRST_MIRROR_VIEW + NUM_MAIN_MIRROR_SLOTS - 2;
+    } else {
+        mirrorOffset = transformOffset;
+    }
+
+    // To calculate our transformSlot, we take the transformSlot of our parent and add numSubSlots (the number of slots
+    // taken up by a sub-tree starting at this depth) per preceding mirrorIndex
+    uint numSubSlots = 0;
+    for (size_t mirrorDepth = depth; mirrorDepth < MAX_MIRROR_DEPTH; mirrorDepth++) {
+        numSubSlots += pow(MAX_MIRRORS_PER_LEVEL, mirrorDepth + 1 - nextDepth);
+    }
+    numSubSlots *= 2;
+
+    mirrorOffset += 2 + numSubSlots * (uint)mirrorIndex;
+
+    task.addJob<RenderViewTask>("RenderMirrorView" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), cullFunctor, render::ItemKey::TAG_BITS_1,
+        render::ItemKey::TAG_BITS_1, (RenderViewTask::TransformOffset) mirrorOffset, nextDepth);
+
+    task.addJob<DrawMirrorTask>("DrawMirrorTask" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), setupOutput,
+        render::RenderEngine::TS_MAIN_VIEW + transformOffset);
 }
 
 void RenderSimulateTask::run(const render::RenderContextPointer& renderContext, const Inputs& inputs) {

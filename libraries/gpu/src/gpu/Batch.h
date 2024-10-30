@@ -44,7 +44,11 @@ public:
     typedef Stream::Slot Slot;
 
     enum {
-        MAX_TRANSFORM_SAVE_SLOT_COUNT = 6
+        // This is tied to RenderMirrorTask::MAX_MIRROR_DEPTH and RenderMirrorTask::MAX_MIRRORS_PER_LEVEL
+        // We have 1 view at mirror depth 0, 3 more at mirror depth 1, 9 more at mirror depth 2, and 27 more at mirror depth 3
+        // For each view, we have one slot for the background and one for the primary view, and that's all repeated for the secondary camera
+        // So this is 2 slots/view/camera * 2 cameras * (1 + 3 + 9 + 27) views
+        MAX_TRANSFORM_SAVE_SLOT_COUNT = 160
     };
 
     class DrawCallInfo {
@@ -192,9 +196,9 @@ public:
     void setViewportTransform(const Vec4i& viewport);
     void setDepthRangeTransform(float nearDepth, float farDepth);
 
-    void saveViewProjectionTransform(uint32 saveSlot);
-    void setSavedViewProjectionTransform(uint32 saveSlot);
-    void copySavedViewProjectionTransformToBuffer(uint32 saveSlot, const BufferPointer& buffer, Offset offset);
+    void saveViewProjectionTransform(uint saveSlot);
+    void setSavedViewProjectionTransform(uint saveSlot);
+    void copySavedViewProjectionTransformToBuffer(uint saveSlot, const BufferPointer& buffer, Offset offset);
 
     // Pipeline Stage
     void setPipeline(const PipelinePointer& pipeline);

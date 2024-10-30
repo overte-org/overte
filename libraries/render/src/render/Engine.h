@@ -86,7 +86,7 @@ namespace render {
     class RenderEngine : public Engine {
     public:
 
-        enum TransformSlot {
+        enum TransformSlot : uint8_t {
             TS_MAIN_VIEW = 0,
             TS_BACKGROUND_VIEW
         };

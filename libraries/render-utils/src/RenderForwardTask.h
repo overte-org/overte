@@ -37,7 +37,7 @@ public:
     RenderForwardTask() {}
 
     void configure(const Config& config);
-    void build(JobModel& task, const render::Varying& input, render::Varying& output, uint8_t transformOffset, render::CullFunctor cullFunctor, size_t depth);
+    void build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, uint transformOffset, size_t depth);
 };
 
 

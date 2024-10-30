@@ -69,7 +69,7 @@ public:
     using Config = DrawLayered3DConfig;
     using JobModel = render::Job::ModelI<DrawLayered3D, Inputs, Config>;
 
-    DrawLayered3D(const render::ShapePlumberPointer& shapePlumber, bool opaque, bool jitter, unsigned int transformSlot);
+    DrawLayered3D(const render::ShapePlumberPointer& shapePlumber, bool opaque, bool jitter, uint transformSlot);
 
     void configure(const Config& config) { _maxDrawn = config.maxDrawn; }
     void run(const render::RenderContextPointer& renderContext, const Inputs& inputs);
@@ -165,9 +165,9 @@ public:
 
     RenderMirrorTask() {}
 
-    void build(JobModel& task, const render::Varying& inputs, render::Varying& output, size_t mirrorIndex, render::CullFunctor cullFunctor,
-        uint8_t transformOffset, size_t depth);
+    void build(JobModel& task, const render::Varying& inputs, render::Varying& output, size_t mirrorIndex, render::CullFunctor cullFunctor, uint transformOffset, size_t depth);
 
+    // NOTE: if these change, must also change Batch::MAX_TRANSFORM_SAVE_SLOT_COUNT
     static const size_t MAX_MIRROR_DEPTH { 3 };
     static const size_t MAX_MIRRORS_PER_LEVEL { 3 };
 };
