@@ -406,23 +406,19 @@ void RenderScriptingInterface::forceViewportResolutionScale(float scale) {
         auto renderConfig = qApp->getRenderEngine()->getConfiguration();
         assert(renderConfig);
         auto deferredView = renderConfig->getConfig("RenderMainView.RenderDeferredTask");
-        // mainView can be null if we're rendering in forward mode
         if (deferredView) {
             deferredView->setProperty("resolutionScale", scale);
         }
         auto forwardView = renderConfig->getConfig("RenderMainView.RenderForwardTask");
-        // mainView can be null if we're rendering in forward mode
         if (forwardView) {
             forwardView->setProperty("resolutionScale", scale);
         }
 
         auto deferredSecondView = renderConfig->getConfig("RenderSecondView.RenderDeferredTask");
-        // mainView can be null if we're rendering in forward mode
         if (deferredSecondView) {
             deferredSecondView->setProperty("resolutionScale", scale);
         }
-        auto forwardSecondView = renderConfig->getConfig("RenderMainView.RenderForwardTask");
-        // mainView can be null if we're rendering in forward mode
+        auto forwardSecondView = renderConfig->getConfig("RenderSecondView.RenderForwardTask");
         if (forwardSecondView) {
             forwardSecondView->setProperty("resolutionScale", scale);
         }
