@@ -12,9 +12,71 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-<!-- ## [2024.09.1] Unreleased -->
+## [2024.10.2] 2024.11.??
 
-## [2024.07.1] 2023.07.12
+### Fixes
+- Hard code link colors in Armored Chat (PR1083)
+- ArmoredChat: Alleviate scrolling issue (PR1106)
+- Armored Chat: Change the 'open in new window' character (PR1084)
+- Fix mouselook ignoring setting. (PR1081)
+- Fix controllerScripts uncaught exception. (PR1086)
+- Fix wireshark dissector (PR1088)
+- Create App: Material Assistant: Add Mtoon, Shader_simple, missing PBR properties and bug fixes. (PR1091)
+- Fix login failure handling and improve logging. (PR1093)
+- add a setting to workaround the GLES colorspace conversion issue (PR1105)
+- Improve model load priority (PR1085)
+- fix accidentally clearing url fields when you don't have view permission (PR1138)
+- Avatar App: Fixed lingering references to now deleted QML element (PR1155)
+- Fix selfie mode movement (PR1127)
+- Fix Create App not honoring menu bar actions (PR1123)
+- Fix Uuid.NULL behavior (PR1168)
+- Rebuild fonts with full charset (NOT -allglyphs) (PR1172)
+- fix web entities not accepting keyboard focus (PR1187)
+- Fix stutter when an object is fading (PR1185)
+
+### Changes
+- Replace Floofchat with ArmoredChat (PR961)
+- MouseLook.js refactor (PR1004)
+- Custom shader fallbacks (PR1058)
+- Update outdated language (PR1102)
+- Automated entity property serialization (PR1098)
+- Create app: highlight avatar entities (PR1152)
+- Update Avatar App icons (PR1141)
+- Place App: Weekly promoted place (PR1153)
+- Change minimum angular velocity to a lower one (PR1171)
+- Places App: Persisted Maturity Filter and Default value for Newbies. (PR1164)
+
+### Additions
+- Mirrors + Portals (PR721)
+- Entity tags (PR748)
+- Web Entity wantsKeyboardFocus (PR814)
+- Audio Zone Properties (PR847)
+- Ability to smooth model animations (PR889)
+- GPU Particles (PR884)
+- Unlit Shapes (PR1041)
+- Ambient Light Color (PR1043)
+- Dump protocol data (PR1087)
+- Sound Entities (PR894)
+- Zone properties for tonemapping and ambient occlusion (PR1050)
+- Add bloom, haze, AO, and procedural shaders to Graphics settings (PR1053)
+- Create App: Revolutionary "Paste" Url buttons for the "Create Model", "Create Material" and "Create Voxels" UI (PR1094)
+- Text verticalAlignment, send entity property enums as uint8_t, fix text recalculating too often, fix textSize (PR1111)
+- Create app: Grab and Equip (PR1160)
+
+### Removals
+- Remove (deprecated) attachments (PR1069)
+- Remove unused onFirstRun.js (PR1089)
+- Remove Google Poly (PR1137)
+- Remove hifi screenshare (PR1165)
+
+### Build System
+- Add CLion-style build directories to .gitignore (PR1135)
+
+### Security
+- Sanitize notificationCore text to prevent XSS (PR1078)
+
+
+## [2024.07.1] 2024.07.12
 
 ### Fixes
 - Fix more warnings (PR1007)
@@ -57,7 +119,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Remove remnants of RELEASE_NAME. (PR1077)
 
 
-## [2024.06.1] 2023.06.24
+## [2024.06.1] 2024.06.24
 
 ### Fixes
 - Fix QNetworkRequest::FollowRedirectsAttribute deprecated warning (PR711)
@@ -305,9 +367,6 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Added tooltips for PolyVox/Voxel properties to Create App (PR244)
 - Added a setting to disable snapshot notifications (PR189)
 - Added a setting to switch between screenshot formats (PR134)
-
-### Removals
--
 
 ### Build system
 - Fixed "may be used uninitialized" warning for blendtime (PR269)
