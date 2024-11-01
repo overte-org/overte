@@ -280,9 +280,6 @@ public:
  */
 class ScriptManager : public QObject, public EntitiesScriptEngineProvider, public std::enable_shared_from_this<ScriptManager> {
     Q_OBJECT
-    Q_PROPERTY(QString context READ getContext)
-    Q_PROPERTY(QString type READ getTypeAsString)
-    Q_PROPERTY(QString fileName MEMBER _fileNameString CONSTANT)
 public:
     static const QString SCRIPT_EXCEPTION_FORMAT;
     static const QString SCRIPT_BACKTRACE_SEP;
