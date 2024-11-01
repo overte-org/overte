@@ -430,16 +430,21 @@
       return;
     }
 
+    if (url.match(/(file|https?):\/\//)) {
+      fileName = this.getFileNameFromUrl(url);
+    }
+
     // Script will be copied to the Asset Server
-    var proceed = Window.confirm("The script will be copied to the Asset Server and may overwrite some other files. Say YES if you want to proceed.");
-    if (!proceed) {
+    var answer = Window.prompt(
+        "The script will be copied to the Asset Server "
+        + "and may overwrite some other files. Enter file name.", fileName);
+    if (!answer) {
       return;
     }
+    fileName = answer;
 
     var content = url || ' ';
     if (url.match(/(file|https?):\/\//)) {
-      fileName = this.getFileNameFromUrl(url);
-
       content = this.downloadFileFromUrl(url);
       if (content === undefined) {
         Window.alert("Unable to download the file.");
