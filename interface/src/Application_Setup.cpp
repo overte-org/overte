@@ -1281,7 +1281,7 @@ void Application::initialize(const QCommandLineParser &parser) {
     // Setup the camera clipping ray pick
     {
         _prevCameraClippingEnabled = _cameraClippingEnabled.get();
-        auto cameraRayPick = std::make_shared<RayPick>(Vectors::ZERO, -Vectors::UP, PickFilter(PickScriptingInterface::getPickEntities() | PickScriptingInterface::getPickLocalEntities()),
+        auto cameraRayPick = std::make_shared<RayPick>(Vectors::ZERO, -Vectors::UP, PickFilter(PickScriptingInterface::getPickDomainEntities() | PickScriptingInterface::getPickLocalEntities()),
             MyAvatar::ZOOM_MAX, 0.0f, _prevCameraClippingEnabled);
         cameraRayPick->parentTransform = std::make_shared<CameraRootTransformNode>();
         _cameraClippingRayPickID = DependencyManager::get<PickManager>()->addPick(PickQuery::Ray, cameraRayPick);
