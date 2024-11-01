@@ -246,6 +246,9 @@ public:
     float getFieldOfView() { return _fieldOfView.get(); }
     void setFieldOfView(float fov);
 
+    bool getCameraClippingEnabled() { return _cameraClippingEnabled.get(); }
+    void setCameraClippingEnabled(bool enabled);
+
     float getHMDTabletScale() { return _hmdTabletScale.get(); }
     void setHMDTabletScale(float hmdTabletScale);
     float getDesktopTabletScale() { return _desktopTabletScale.get(); }
@@ -719,6 +722,7 @@ private:
 
     Setting::Handle<QString> _previousScriptLocation;
     Setting::Handle<float> _fieldOfView;
+    Setting::Handle<float> _cameraClippingEnabled;
     Setting::Handle<float> _hmdTabletScale;
     Setting::Handle<float> _desktopTabletScale;
     Setting::Handle<bool> _firstRun;
@@ -893,5 +897,8 @@ private:
     DiscordPresence* _discordPresence{ nullptr };
 
     bool _profilingInitialized { false };
+
+    bool _prevCameraClippingEnabled { false };
+    unsigned int _cameraClippingRayPickID;
 };
 #endif // hifi_Application_h

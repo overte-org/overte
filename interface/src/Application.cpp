@@ -241,6 +241,7 @@
 #include <raypick/PointerScriptingInterface.h>
 #include <raypick/RayPick.h>
 #include <raypick/MouseTransformNode.h>
+#include <CameraRootTransformNode.h>
 
 #include "ResourceRequestObserver.h"
 
@@ -1004,6 +1005,7 @@ Application::Application(
     _previousSessionCrashed(false), //setupEssentials(parser, false)),
     _previousScriptLocation("LastScriptLocation", DESKTOP_LOCATION),
     _fieldOfView("fieldOfView", DEFAULT_FIELD_OF_VIEW_DEGREES),
+    _cameraClippingEnabled("cameraClippingEnabled", false),
     _hmdTabletScale("hmdTabletScale", DEFAULT_HMD_TABLET_SCALE_PERCENT),
     _desktopTabletScale("desktopTabletScale", DEFAULT_DESKTOP_TABLET_SCALE_PERCENT),
     _firstRun(Settings::firstRun, true),
@@ -2499,6 +2501,17 @@ void Application::initialize(const QCommandLineParser &parser) {
         DependencyManager::get<PickManager>()->setPrecisionPicking(rayPickID, value);
     });
 
+    // Setup the camera clipping ray pick
+    {
+        _prevCameraClippingEnabled = _cameraClippingEnabled.get();
+        auto cameraRayPick = std::make_shared<RayPick>(Vectors::ZERO, -Vectors::UP,
+                                                       PickFilter(PickScriptingInterface::getPickEntities() |
+                                                                  PickScriptingInterface::getPickLocalEntities()),
+                                                       MyAvatar::ZOOM_MAX, 0.0f, _prevCameraClippingEnabled);
+        cameraRayPick->parentTransform = std::make_shared<CameraRootTransformNode>();
+        _cameraClippingRayPickID = DependencyManager::get<PickManager>()->addPick(PickQuery::Ray, cameraRayPick);
+    }
+
     BillboardModeHelpers::setBillboardRotationOperator([](const glm::vec3& position, const glm::quat& rotation,
                                                           BillboardMode billboardMode, const glm::vec3& frustumPos, bool rotate90x) {
         const glm::quat ROTATE_90X = glm::angleAxis(-(float)M_PI_2, Vectors::RIGHT);
@@ -3684,9 +3697,7 @@ void Application::updateCamera(RenderArgs& renderArgs, float deltaTime) {
     PROFILE_RANGE(render, __FUNCTION__);
     PerformanceTimer perfTimer("updateCamera");
 
-    glm::vec3 boomOffset;
     auto myAvatar = getMyAvatar();
-    boomOffset = myAvatar->getModelScale() * myAvatar->getBoomLength() * -IDENTITY_FORWARD;
 
     // The render mode is default or mirror if the camera is in mirror mode, assigned further below
     renderArgs._renderMode = RenderArgs::DEFAULT_RENDER_MODE;
@@ -3725,6 +3736,16 @@ void Application::updateCamera(RenderArgs& renderArgs, float deltaTime) {
             _myCamera.setOrientation(glm::normalize(glmExtractRotation(worldCameraMat)));
             _myCamera.setPosition(extractTranslation(worldCameraMat));
         } else {
+            float boomLength = myAvatar->getBoomLength();
+            if (getCameraClippingEnabled()) {
+                auto result =
+                    DependencyManager::get<PickManager>()->getPrevPickResultTyped<RayPickResult>(_cameraClippingRayPickID);
+                if (result && result->doesIntersect()) {
+                    const float CAMERA_CLIPPING_EPSILON = 0.1f;
+                    boomLength = std::min(boomLength, result->distance - CAMERA_CLIPPING_EPSILON);
+                }
+            }
+            glm::vec3 boomOffset = myAvatar->getModelScale() * boomLength * -IDENTITY_FORWARD;
             _thirdPersonHMDCameraBoomValid = false;
             if (mode == CAMERA_MODE_THIRD_PERSON) {
                 _myCamera.setOrientation(myAvatar->getHead()->getOrientation());
@@ -3802,7 +3823,19 @@ void Application::updateCamera(RenderArgs& renderArgs, float deltaTime) {
         _myCamera.update();
     }
 
-    renderArgs._cameraMode = (int8_t)_myCamera.getMode();
+    renderArgs._cameraMode = (int8_t)mode;
+
+    const bool shouldEnableCameraClipping =
+        (mode == CAMERA_MODE_THIRD_PERSON || mode == CAMERA_MODE_LOOK_AT || mode == CAMERA_MODE_SELFIE) && !isHMDMode() &&
+        getCameraClippingEnabled();
+    if (_prevCameraClippingEnabled != shouldEnableCameraClipping) {
+        if (shouldEnableCameraClipping) {
+            DependencyManager::get<PickManager>()->enablePick(_cameraClippingRayPickID);
+        } else {
+            DependencyManager::get<PickManager>()->disablePick(_cameraClippingRayPickID);
+        }
+        _prevCameraClippingEnabled = shouldEnableCameraClipping;
+    }
 }
 
 void Application::runTests() {
@@ -3814,6 +3847,16 @@ void Application::setFieldOfView(float fov) {
     if (fov != _fieldOfView.get()) {
         _fieldOfView.set(fov);
         resizeGL();
+    }
+}
+
+void Application::setCameraClippingEnabled(bool enabled) {
+    _cameraClippingEnabled.set(enabled);
+    _prevCameraClippingEnabled = enabled;
+    if (enabled) {
+        DependencyManager::get<PickManager>()->enablePick(_cameraClippingRayPickID);
+    } else {
+        DependencyManager::get<PickManager>()->disablePick(_cameraClippingRayPickID);
     }
 }
 
