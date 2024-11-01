@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Build Linux
 
-*Last Updated on January 6, 2022*
+*Last Updated on 21-10-2024*
 
 Please read the [general build guide](BUILD.md) for information on dependencies required for all platforms. Only Linux specific instructions are found in this file.
 
@@ -48,6 +48,12 @@ sudo apt-get install cmake -y
 ```
 Verify CMake was installed by running `cmake --version`.
 
+-  Conan
+
+See https://conan.io/downloads for download instructions
+
+Verify Conan was installed by running `conan --version`.
+
 ### Install build dependencies:
 -  OpenSSL:
 ```bash
@@ -62,6 +68,29 @@ sudo apt-get install libgl1-mesa-dev -y
 Verify OpenGL:
   - First install mesa-utils with the command `sudo apt install mesa-utils -y`.
   - Then run `glxinfo | grep "OpenGL version"`.
+
+
+- QT 5:
+```bash
+sudo apt-get install -y qtbase5-dev \
+                        qtbase5-private-dev \
+                        qtwebengine5-dev \
+                        qtwebengine5-dev-tools \
+                        qtmultimedia5-dev \
+                        libqt5opengl5-dev \
+                        libqt5webchannel5-dev \
+                        libqt5websockets5-dev \
+                        qtxmlpatterns5-dev-tools \
+                        qttools5-dev \
+                        libqt5xmlpatterns5-dev \
+                        libqt5svg5-dev \
+                        qml-module-qtwebchannel \
+                        qml-module-qtquick-controls \
+                        qml-module-qtquick-controls2 \
+                        qml-module-qt-labs-settings \
+                        qml-module-qtquick-dialogs \
+                        qml-module-qtwebengine
+```
 
 
 ### Extra dependencies to compile Interface on a server
@@ -105,19 +134,6 @@ git fetch --tags
 git tag
 ```
 
-### Using a custom Qt build
-
-Qt binaries are only provided for Ubuntu. In order to build on other distributions, a Qt5 install
-needs to be provided by setting the `OVERTE_QT_PATH` environment variable to a directory containing
-a Qt install.
-
-### Using the system's Qt
-
-The system's Qt can be used, if the development packages are installed, by setting the
-`OVERTE_USE_SYSTEM_QT` environment variable. The minimum recommended version is Qt 5.15.2, which is
-also the last version available in the Qt 5 branch. It is expected that Linux distributions will have
-Qt 5.15.2 available for a long time.
-
 ### Architecture support
 
 If the build is intended to be packaged for distribution, the `OVERTE_CPU_ARCHITECTURE`
@@ -130,21 +146,39 @@ For packaging, it is recommended to set it to a different value, for example `-m
 
 Setting `OVERTE_CPU_ARCHITECTURE` to an empty string will use the default compiler settings and yield maximum compatibility.
 
+
+### Prepare conan
+
+The next step is setting up conan
+
+First, create a conan profile
+```bash
+conan profile detect --force
+```
+
+Next, add the overte remote to conan
+```bash
+conan remote add overte https://git.anotherfoxguy.com/api/packages/overte/conan -f
+```
+
+Optionally you can let conan automatically install the required system packages
+```bash
+echo "tools.system.package_manager:mode = install" >> ~/.conan2/global.conf
+echo "tools.system.package_manager:sudo = True" >> ~/.conan2/global.conf
+```
+
 ### Compiling
 
-Create the build directory:
+Install the dependencies with conan
 ```bash
 cd overte
-mkdir build
-cd build
+conan install . -s build_type=Release -b missing -pr:b=default -of build
 ```
 
 Prepare makefiles:
 ```bash
-cmake ..
+cmake --preset conan-release
 ```
-
-If cmake fails with a vcpkg error, then delete `~/overte-files/vcpkg/`.  
 
 #### Server
 
@@ -192,9 +226,3 @@ Running Interface:
 
 Go to "localhost" in the running Interface to visit your newly launched Domain server.
 
-### Notes
-
-If your goal is to set up a development environment, it is desirable to set the directory that vcpkg builds into with the `HIFI_VCPKG_BASE` environment variable.
-For example, you might set `HIFI_VCPKG_BASE` to `/home/$USER/vcpkg`.
-
-By default, vcpkg will build in the `~/overte-files/vcpkg/` directory.

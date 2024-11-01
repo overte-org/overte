@@ -1,13 +1,13 @@
 <!--
 Copyright 2013-2019 High Fidelity, Inc.
 Copyright 2019-2021 Vircadia contributors
-Copyright 2021-2022 Overte e.V.
+Copyright 2021-2024 Overte e.V.
 SPDX-License-Identifier: Apache-2.0
 -->
 
 # Build Windows
 
-*Last Updated on 15 Apr 2021*
+*Last Updated on 21-10-2024*
 
 This is a stand-alone guide for creating your first Overte build for Windows 64-bit.
 
@@ -36,29 +36,29 @@ On the right on the Summary toolbar, select the following components.
 
 If you do not wish to use the Python installation bundled with Visual Studio, you can download the installer from [here](https://www.python.org/downloads/). Ensure that you get version 3.6.6 or higher.
 
-## Step 2. Python Dependencies
+## Step 2. Python Dependencies and conan
 
 In an administrator command-line that can access Python's pip you will need to run the following command:
 
-`pip install distro`
+`pip install distro conan`
 
 If you do not use an administrator command-line, you will get errors.
 
 ## Step 3. Installing CMake
 
-Download and install the latest version of CMake 3.15.
+Download and install the latest version of CMake.
  * Note that earlier versions of CMake will work, but there is a specific bug related to the interaction of Visual Studio 2019 and CMake versions prior to 3.15 that will cause Visual Studio to rebuild far more than it needs to on every build
 
-Download the file named win64-x64 Installer from the [CMake Website](https://cmake.org/download/). You can access the installer on this [3.15 Version page](https://cmake.org/files/v3.15/). During installation, make sure to check "Add CMake to system PATH for all users" when prompted.
+Download the file named cmake-[version]-windows-x86_64.msi Installer from the [CMake Website](https://cmake.org/download/). During installation, make sure to check "Add CMake to system PATH for all users" when prompted.
 
 ## Step 4. (Optional) Node.JS and NPM
 
-Install version 10.15.0 LTS (or greater) of [Node.JS and NPM](<https://nodejs.org/en/download/>).
+Install the latest LTS version of [Node.JS and NPM](<https://nodejs.org/en/download/>).
 This is required to build the server-console, hifi-screenshare, jsdoc, and for javascript console autocompletion.
 
-## Step 5. (Optional) Install Qt
+## Step 5. Install Qt
 
-If you would like to compile Qt instead of using the precompiled package provided during CMake, you can do so now. Install version 5.12.3 of [Qt](<https://www.qt.io/download-open-source>), as well as the following packages:
+Install version 5.15.2 of [Qt](<https://www.qt.io/download-open-source>), as well as the following packages:
 * Qt 5.15.2
 * MSVC 2019 64-bit
 * Qt WebEngine
@@ -75,24 +75,16 @@ To create this variable:
 * Set "Variable name" to `QT_CMAKE_PREFIX_PATH`
 * Set "Variable value" to `%QT_INSTALL_DIR%\5.15.2\msvc2019_64\lib\cmake`, where `%QT_INSTALL_DIR%` is the directory you specified for Qt's installation. The default is `C:\Qt`.
 
-## Step 6. (Optional) Create VCPKG environment variable
-In the next step, you will use CMake to build Overte. By default, the CMake process builds dependency files in Windows' `%TEMP%` directory, which is periodically cleared by the operating system. To prevent you from having to re-build the dependencies in the event that Windows clears that directory, we recommend that you create a `HIFI_VCPKG_BASE` environment variable linked to a directory somewhere on your machine. That directory will contain all dependency files until you manually remove them.
+## Step 6. (Optional) Create conan environment variable
+In the next step, you will use conan to install the dependencies required to build Overte. By default, conan will build and install the dependencies in `<username>/.conan2`.
+If you want to change that location you can create a `CONAN_HOME` environment variable linked to a directory somewhere on your machine.
 
 To create this variable:
 * Navigate to 'Edit the System Environment Variables' Through the Start menu.
 * Click on 'Environment Variables'
 * Select 'New'
-* Set "Variable name" to `HIFI_VCPKG_BASE`
+* Set "Variable name" to `CONAN_HOME`
 * Set "Variable value" to any directory that you have control over.
-
-Additionally, if you have Visual Studio 2019 installed and _only_ Visual Studio 2019 (i.e., you do not have Visual Studio 2017 installed) you must add an additional environment variable `HIFI_VCPKG_BOOTSTRAP` that will fix a bug in our `vcpkg` pre-build step.
-
-To create this variable:
-* Navigate to 'Edit the System Environment Variables' through the Start menu.
-* Click on 'Environment Variables'
-* Select 'New'
-* Set "Variable name" to `HIFI_VCPKG_BOOTSTRAP`
-* Set "Variable value" to `1`
 
 ## Step 7. Running CMake to Generate Build Files
 
@@ -110,12 +102,14 @@ Run The Command Prompt from Start and run the following commands:
 
 ```Bash
 cd "%OVERTE_DIR%"
-mkdir build
-cd build
-cmake .. -G "Visual Studio 16 2019" -A x64
+conan install . -b missing -pr=tools/conan-profiles/vs-19-release -of build
+conan install . -b missing -pr=tools/conan-profiles/vs-19-debug -of build
+cmake --preset conan-default
 ```
 
 Where `%OVERTE_DIR%` is the directory for the Overte repository.
+
+Note: After running conan I would highly recommend running `conan cache clean "*" -sbd` to clean the build folders created by conan (This saves a lot of disk space)
 
 ## Step 8. Making a Build
 
